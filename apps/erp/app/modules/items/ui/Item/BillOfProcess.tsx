@@ -162,7 +162,9 @@ type MethodMaterialType = {
   description?: string | null;
   quantity?: number | null;
   methodOperationId?: string | null;
-  methodMaterialStep?: { methodOperationStepId: string }[] | null;
+  methodMaterialStep?:
+    | { methodOperationStepId: string; quantity?: number | null }[]
+    | null;
 };
 
 type BillOfProcessProps = {
@@ -1981,6 +1983,11 @@ function AttributesForm({
     [materials, allItems]
   );
   const [draftParts, setDraftParts] = useState<string[]>([]);
+  // Per-step share of each buffered part's BOM line (absent = the full line
+  // quantity), keyed by methodMaterial id; written with the links on step create.
+  const [draftPartQuantities, setDraftPartQuantities] = useState<
+    Record<string, number>
+  >({});
 
   // Tools (this operation's tools) the operator can assign to a step — the tool twin of
   // operationParts/draftParts. Tools picked while CREATING a step are buffered here and
@@ -2125,7 +2132,8 @@ function AttributesForm({
       const { error } = await carbon.from("methodMaterialStep").insert(
         draftParts.map((methodMaterialId) => ({
           methodMaterialId,
-          methodOperationStepId: newStepId
+          methodOperationStepId: newStepId,
+          quantity: draftPartQuantities[methodMaterialId] ?? null
         }))
       );
       if (cancelled) return;
@@ -2134,6 +2142,7 @@ function AttributesForm({
         return;
       }
       setDraftParts([]);
+      setDraftPartQuantities({});
       revalidator.revalidate();
     })();
     return () => {
@@ -2336,7 +2345,10 @@ function AttributesForm({
                 emptyLabel={t`No parts`}
                 searchPlaceholder={t`Search parts...`}
                 removeLabel={t`Remove part`}
-                items={operationParts}
+                items={operationParts.map((p) => ({
+                  ...p,
+                  linkedQuantity: draftPartQuantities[p.id] ?? null
+                }))}
                 linkedIds={draftParts}
                 isDisabled={isDisabled}
                 onAdd={(partId) =>
@@ -2344,8 +2356,18 @@ function AttributesForm({
                     prev.includes(partId) ? prev : [...prev, partId]
                   )
                 }
-                onRemove={(partId) =>
-                  setDraftParts((prev) => prev.filter((id) => id !== partId))
+                onRemove={(partId) => {
+                  setDraftParts((prev) => prev.filter((id) => id !== partId));
+                  setDraftPartQuantities((prev) => {
+                    const { [partId]: _removed, ...rest } = prev;
+                    return rest;
+                  });
+                }}
+                onQuantityChange={(partId, quantity) =>
+                  setDraftPartQuantities((prev) => ({
+                    ...prev,
+                    [partId]: quantity
+                  }))
                 }
               />
 
@@ -2915,11 +2937,15 @@ function StepParts({
 
   const operationParts = (materials ?? []).map((m) => {
     const item = allItems.find((i) => i.id === m.itemId);
+    const link = (m.methodMaterialStep ?? []).find(
+      (s) => s.methodOperationStepId === step.id
+    );
     return {
       id: m.id,
       name: item?.readableIdWithRevision ?? m.description ?? m.itemId,
       secondary: item ? (m.description ?? item.name ?? undefined) : undefined,
-      quantity: m.quantity ?? 1
+      quantity: m.quantity ?? 1,
+      linkedQuantity: link?.quantity ?? null
     };
   });
 
@@ -2931,12 +2957,15 @@ function StepParts({
     )
     .map((m) => m.id);
 
-  const toggle = (partId: string, linked: boolean) => {
+  const toggle = (partId: string, linked: boolean, quantity?: number) => {
     if (!step.id) return;
     const fd = new FormData();
     fd.append("materialId", partId);
     fd.append("stepId", step.id);
     fd.append("linked", String(linked));
+    if (linked && quantity !== undefined) {
+      fd.append("quantity", String(quantity));
+    }
     fetcher.submit(fd, {
       method: "post",
       action: path.to.methodOperationStepMaterial
@@ -2956,6 +2985,7 @@ function StepParts({
       busy={fetcher.state !== "idle"}
       onAdd={(id) => toggle(id, true)}
       onRemove={(id) => toggle(id, false)}
+      onQuantityChange={(id, quantity) => toggle(id, true, quantity)}
     />
   );
 }

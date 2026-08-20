@@ -17,8 +17,18 @@ export async function action({ request }: ActionFunctionArgs) {
   const methodMaterialId = String(formData.get("materialId") ?? "");
   const methodOperationStepId = String(formData.get("stepId") ?? "");
   const linked = formData.get("linked") === "true";
+  // Per-step share of the BOM line; absent/blank = the full line quantity.
+  const rawQuantity = formData.get("quantity");
+  const quantity =
+    rawQuantity === null || String(rawQuantity).trim() === ""
+      ? null
+      : Number(rawQuantity);
 
-  if (!methodMaterialId || !methodOperationStepId) {
+  if (
+    !methodMaterialId ||
+    !methodOperationStepId ||
+    (quantity !== null && (!Number.isFinite(quantity) || quantity < 0))
+  ) {
     return data({ success: false }, { status: 400 });
   }
 
@@ -35,7 +45,8 @@ export async function action({ request }: ActionFunctionArgs) {
   const result = await setMethodMaterialStepLink(client, {
     methodMaterialId,
     methodOperationStepId,
-    linked
+    linked,
+    quantity
   });
   if (result.error) {
     return data(

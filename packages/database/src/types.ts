@@ -23023,14 +23023,17 @@ export type Database = {
         Row: {
           jobMaterialId: string
           jobOperationStepId: string
+          quantity: number | null
         }
         Insert: {
           jobMaterialId: string
           jobOperationStepId: string
+          quantity?: number | null
         }
         Update: {
           jobMaterialId?: string
           jobOperationStepId?: string
+          quantity?: number | null
         }
         Relationships: [
           {
@@ -29018,14 +29021,17 @@ export type Database = {
         Row: {
           methodMaterialId: string
           methodOperationStepId: string
+          quantity: number | null
         }
         Insert: {
           methodMaterialId: string
           methodOperationStepId: string
+          quantity?: number | null
         }
         Update: {
           methodMaterialId?: string
           methodOperationStepId?: string
+          quantity?: number | null
         }
         Relationships: [
           {
@@ -43225,14 +43231,17 @@ export type Database = {
       }
       quoteMaterialStep: {
         Row: {
+          quantity: number | null
           quoteMaterialId: string
           quoteOperationStepId: string
         }
         Insert: {
+          quantity?: number | null
           quoteMaterialId: string
           quoteOperationStepId: string
         }
         Update: {
+          quantity?: number | null
           quoteMaterialId?: string
           quoteOperationStepId?: string
         }

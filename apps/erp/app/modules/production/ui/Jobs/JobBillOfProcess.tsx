@@ -200,7 +200,9 @@ type JobMaterial = {
   description?: string | null;
   quantity?: number | null;
   jobOperationId?: string | null;
-  jobMaterialStep?: { jobOperationStepId: string }[] | null;
+  jobMaterialStep?:
+    | { jobOperationStepId: string; quantity?: number | null }[]
+    | null;
 };
 
 type JobBillOfProcessProps = {
@@ -1211,6 +1213,11 @@ function StepsForm({
     [materials, allItems]
   );
   const [draftParts, setDraftParts] = useState<string[]>([]);
+  // Per-step share of each buffered part's BOM line (absent = the full line
+  // quantity), keyed by jobMaterial id; written with the links on step create.
+  const [draftPartQuantities, setDraftPartQuantities] = useState<
+    Record<string, number>
+  >({});
 
   // Tools (this operation's tools) the operator can assign to a step — the tool twin of
   // operationParts/draftParts. Tools picked while CREATING a step are buffered here and
@@ -1375,7 +1382,8 @@ function StepsForm({
       const { error } = await carbon.from("jobMaterialStep").insert(
         batch.map((jobMaterialId) => ({
           jobMaterialId,
-          jobOperationStepId: newStepId
+          jobOperationStepId: newStepId,
+          quantity: draftPartQuantities[jobMaterialId] ?? null
         }))
       );
       if (cancelled) return;
@@ -1385,6 +1393,7 @@ function StepsForm({
       }
       const savedIds = new Set(batch);
       setDraftParts((prev) => prev.filter((id) => !savedIds.has(id)));
+      setDraftPartQuantities({});
       revalidator.revalidate();
     })();
     return () => {
@@ -1595,7 +1604,10 @@ function StepsForm({
                 emptyLabel={t`No parts`}
                 searchPlaceholder={t`Search parts...`}
                 removeLabel={t`Remove part`}
-                items={operationParts}
+                items={operationParts.map((p) => ({
+                  ...p,
+                  linkedQuantity: draftPartQuantities[p.id] ?? null
+                }))}
                 linkedIds={draftParts}
                 isDisabled={isDisabled}
                 onAdd={(partId) =>
@@ -1603,8 +1615,18 @@ function StepsForm({
                     prev.includes(partId) ? prev : [...prev, partId]
                   )
                 }
-                onRemove={(partId) =>
-                  setDraftParts((prev) => prev.filter((id) => id !== partId))
+                onRemove={(partId) => {
+                  setDraftParts((prev) => prev.filter((id) => id !== partId));
+                  setDraftPartQuantities((prev) => {
+                    const { [partId]: _removed, ...rest } = prev;
+                    return rest;
+                  });
+                }}
+                onQuantityChange={(partId, quantity) =>
+                  setDraftPartQuantities((prev) => ({
+                    ...prev,
+                    [partId]: quantity
+                  }))
                 }
               />
 
@@ -1710,11 +1732,15 @@ function JobStepParts({
 
   const operationParts = (materials ?? []).map((m) => {
     const item = allItems.find((i) => i.id === m.itemId);
+    const link = (m.jobMaterialStep ?? []).find(
+      (s) => s.jobOperationStepId === step.id
+    );
     return {
       id: m.id,
       name: item?.readableIdWithRevision ?? m.description ?? m.itemId,
       secondary: item ? (m.description ?? item.name ?? undefined) : undefined,
-      quantity: m.quantity ?? 1
+      quantity: m.quantity ?? 1,
+      linkedQuantity: link?.quantity ?? null
     };
   });
 
@@ -1724,12 +1750,15 @@ function JobStepParts({
     )
     .map((m) => m.id);
 
-  const toggle = (partId: string, linked: boolean) => {
+  const toggle = (partId: string, linked: boolean, quantity?: number) => {
     if (!step.id) return;
     const fd = new FormData();
     fd.append("materialId", partId);
     fd.append("stepId", step.id);
     fd.append("linked", String(linked));
+    if (linked && quantity !== undefined) {
+      fd.append("quantity", String(quantity));
+    }
     fetcher.submit(fd, {
       method: "post",
       action: path.to.jobOperationStepMaterial
@@ -1749,6 +1778,7 @@ function JobStepParts({
       busy={fetcher.state !== "idle"}
       onAdd={(id) => toggle(id, true)}
       onRemove={(id) => toggle(id, false)}
+      onQuantityChange={(id, quantity) => toggle(id, true, quantity)}
     />
   );
 }

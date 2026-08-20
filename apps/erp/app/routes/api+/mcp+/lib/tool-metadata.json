@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-18T19:07:39.197Z",
-  "totalTools": 1444,
+  "generated": "2026-08-20T18:41:20.350Z",
+  "totalTools": 1443,
   "modules": 15,
   "tools": [
     {
@@ -15467,7 +15467,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "set method material step link",
-      "paramCount": 3,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "args"
@@ -15487,6 +15487,12 @@
           },
           "linked": {
             "type": "boolean"
+          },
+          "quantity": {
+            "type": [
+              "number",
+              "null"
+            ]
           }
         },
         "required": [
@@ -22353,7 +22359,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "set job material step link",
-      "paramCount": 3,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "args"
@@ -22373,6 +22379,12 @@
           },
           "linked": {
             "type": "boolean"
+          },
+          "quantity": {
+            "type": [
+              "number",
+              "null"
+            ]
           }
         },
         "required": [
@@ -42128,37 +42140,6 @@
           "digitalQuoteEnabled",
           "digitalQuoteNotificationGroup",
           "digitalQuoteIncludesPurchaseOrders"
-        ]
-      }
-    },
-    {
-      "name": "settings_updateIntegrationMetadata",
-      "module": "settings",
-      "classification": "WRITE",
-      "description": "update integration metadata",
-      "paramCount": 2,
-      "serviceParams": [
-        "client",
-        "companyId",
-        "integrationId",
-        "metadata",
-        "updatedBy"
-      ],
-      "injectAuth": [
-        "companyId",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "integrationId": {
-            "type": "string"
-          },
-          "metadata": {}
-        },
-        "required": [
-          "integrationId",
-          "metadata"
         ]
       }
     },

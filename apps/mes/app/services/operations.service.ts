@@ -671,24 +671,35 @@ export async function getJobMaterialsByOperationId(
   // Step assignment (Phase 2: part ↔ step, many-to-many). The make-method view doesn't carry
   // the join rows, so look them up from jobMaterialStep and attach an array. No rows = the
   // material applies to the whole operation (shown on every step); 1+ rows scope it to those
-  // steps so the MES shows only the parts involved in the current step.
+  // steps so the MES shows only the parts involved in the current step. Each link may carry
+  // a per-step quantity (NULL = the full BOM line quantity), so a line split across steps
+  // shows the split share on each step.
   const stepLinks = await client
     .from("jobMaterialStep")
-    .select("jobMaterialId, jobOperationStepId")
+    .select("jobMaterialId, jobOperationStepId, quantity")
     .in(
       "jobMaterialId",
       (materials.data ?? []).map((m) => m.id ?? "")
     );
   const stepIdsByMaterialId = new Map<string, string[]>();
+  const stepQuantitiesByMaterialId = new Map<
+    string,
+    Record<string, number | null>
+  >();
   for (const r of stepLinks.data ?? []) {
     const list = stepIdsByMaterialId.get(r.jobMaterialId) ?? [];
     list.push(r.jobOperationStepId);
     stepIdsByMaterialId.set(r.jobMaterialId, list);
+    const quantities = stepQuantitiesByMaterialId.get(r.jobMaterialId) ?? {};
+    quantities[r.jobOperationStepId] = r.quantity;
+    stepQuantitiesByMaterialId.set(r.jobMaterialId, quantities);
   }
   if (materials.data) {
     materials.data = materials.data.map((m) => ({
       ...m,
-      jobOperationStepIds: stepIdsByMaterialId.get(m.id ?? "") ?? []
+      jobOperationStepIds: stepIdsByMaterialId.get(m.id ?? "") ?? [],
+      jobOperationStepQuantities:
+        stepQuantitiesByMaterialId.get(m.id ?? "") ?? {}
     }));
   }
 
@@ -919,20 +930,27 @@ export async function backflushUntrackedMaterialsOnStepRecord(
     return { error: materials.error };
   }
 
-  // Step ownership: materialId → the step ids it's assigned to (empty = loose).
+  // Step ownership: materialId → the step ids it's assigned to (empty = loose),
+  // plus each link's per-step quantity (NULL = the full BOM line quantity).
   const stepLinks = await client
     .from("jobMaterialStep")
-    .select("jobMaterialId, jobOperationStepId")
+    .select("jobMaterialId, jobOperationStepId, quantity")
     .in(
       "jobMaterialId",
       materials.data.map((m) => m.id)
     );
   if (stepLinks.error) return { error: stepLinks.error };
   const ownedSteps = new Map<string, Set<string>>();
+  const linkQuantities = new Map<string, Map<string, number | null>>();
   for (const link of stepLinks.data ?? []) {
     const set = ownedSteps.get(link.jobMaterialId) ?? new Set<string>();
     set.add(link.jobOperationStepId);
     ownedSteps.set(link.jobMaterialId, set);
+    const quantities =
+      linkQuantities.get(link.jobMaterialId) ??
+      new Map<string, number | null>();
+    quantities.set(link.jobOperationStepId, link.quantity);
+    linkQuantities.set(link.jobMaterialId, quantities);
   }
 
   // Units (index) that have recorded each of the operation's steps, so we can
@@ -960,13 +978,33 @@ export async function backflushUntrackedMaterialsOnStepRecord(
       owning && owning.size > 0
         ? stepIds.filter((id) => owning.has(id))
         : [firstStepId];
-    // Distinct units that recorded at least one owning step — a unit that
-    // recorded several owning steps of the same material still counts once.
-    const units = new Set<number>();
-    for (const id of triggerStepIds) {
-      for (const idx of unitsByStep.get(id) ?? []) units.add(idx);
+    const quantities = linkQuantities.get(material.id);
+    const hasSplitQuantities = triggerStepIds.some(
+      (id) => (quantities?.get(id) ?? null) !== null
+    );
+    let target: number;
+    if (hasSplitQuantities) {
+      // The line is SPLIT across steps (5 screws at step 1, 5 at step 2): each
+      // owning step consumes its own share as it is recorded, so the target is
+      // the per-step sum. A link left without an explicit quantity falls back
+      // to the full per-unit quantity for its step.
+      target = triggerStepIds.reduce(
+        (sum, id) =>
+          sum +
+          (unitsByStep.get(id)?.size ?? 0) * (quantities?.get(id) ?? perUnit),
+        0
+      );
+    } else {
+      // Unsplit: distinct units that recorded at least one owning step — a unit
+      // that recorded several owning steps of the same material still counts
+      // once, so the requirement never multiplies.
+      const units = new Set<number>();
+      for (const id of triggerStepIds) {
+        for (const idx of unitsByStep.get(id) ?? []) units.add(idx);
+      }
+      target = units.size * perUnit;
     }
-    const delta = units.size * perUnit - (material.quantityIssued ?? 0);
+    const delta = target - (material.quantityIssued ?? 0);
     if (delta <= 0) continue;
     const issue = await client.functions.invoke("issue", {
       body: {

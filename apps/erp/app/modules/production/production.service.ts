@@ -1534,7 +1534,9 @@ export async function getJobMaterialsByMethodId(
 ) {
   return client
     .from("jobMaterial")
-    .select("*, item(replenishmentSystem), jobMaterialStep(jobOperationStepId)")
+    .select(
+      "*, item(replenishmentSystem), jobMaterialStep(jobOperationStepId, quantity)"
+    )
     .eq("jobMakeMethodId", jobMakeMethodId)
     .order("order", { ascending: true });
 }
@@ -3394,7 +3396,7 @@ export async function duplicateJobOperationStep(
   // Copy step-scoped part/material links (same operation-level-vs-scoped semantics as tools).
   const materialLinks = await client
     .from("jobMaterialStep")
-    .select("jobMaterialId")
+    .select("jobMaterialId, quantity")
     .eq("jobOperationStepId", args.id);
   if (materialLinks.error) {
     return { data: null, error: materialLinks.error };
@@ -3403,7 +3405,8 @@ export async function duplicateJobOperationStep(
     const materialLinkInsert = await client.from("jobMaterialStep").insert(
       materialLinks.data.map((l) => ({
         jobMaterialId: l.jobMaterialId,
-        jobOperationStepId: newStepId
+        jobOperationStepId: newStepId,
+        quantity: l.quantity
       }))
     );
     if (materialLinkInsert.error) {
@@ -3512,6 +3515,17 @@ export async function replaceJobMaterialSteps(
   jobMaterialId: string,
   jobOperationStepIds: string[]
 ) {
+  // Per-step quantities are edited from the step side; a BOM-side rewrite of the
+  // step set must not wipe them, so carry each retained step's quantity across
+  // the delete-then-insert.
+  const existing = await client
+    .from("jobMaterialStep")
+    .select("jobOperationStepId, quantity")
+    .eq("jobMaterialId", jobMaterialId);
+  if (existing.error) return existing;
+  const quantityByStepId = new Map(
+    (existing.data ?? []).map((l) => [l.jobOperationStepId, l.quantity])
+  );
   const del = await client
     .from("jobMaterialStep")
     .delete()
@@ -3520,28 +3534,36 @@ export async function replaceJobMaterialSteps(
   return client.from("jobMaterialStep").insert(
     jobOperationStepIds.map((jobOperationStepId) => ({
       jobMaterialId,
-      jobOperationStepId
+      jobOperationStepId,
+      quantity: quantityByStepId.get(jobOperationStepId) ?? null
     }))
   );
 }
 
 // Toggle a single part↔step link from the STEP side (the step editor's Parts picker).
 // `linked` true = link the material to the step, false = unlink. Idempotent on link.
+// `quantity` is the per-step share of the BOM line (NULL = the full line quantity);
+// re-linking an existing link updates the quantity, so the same call edits a split.
 export async function setJobMaterialStepLink(
   client: SupabaseClient<Database>,
-  args: { jobMaterialId: string; jobOperationStepId: string; linked: boolean }
+  args: {
+    jobMaterialId: string;
+    jobOperationStepId: string;
+    linked: boolean;
+    quantity?: number | null;
+  }
 ) {
   if (args.linked) {
     return client.from("jobMaterialStep").upsert(
       [
         {
           jobMaterialId: args.jobMaterialId,
-          jobOperationStepId: args.jobOperationStepId
+          jobOperationStepId: args.jobOperationStepId,
+          quantity: args.quantity ?? null
         }
       ],
       {
-        onConflict: "jobMaterialId,jobOperationStepId",
-        ignoreDuplicates: true
+        onConflict: "jobMaterialId,jobOperationStepId"
       }
     );
   }

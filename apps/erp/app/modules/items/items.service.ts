@@ -1559,7 +1559,7 @@ export async function getMethodMaterialsByMakeMethod(
   return client
     .from("methodMaterial")
     .select(
-      "*, item(name, itemTrackingType, replenishmentSystem, defaultMethodType, sourcingType), methodMaterialStep(methodOperationStepId)"
+      "*, item(name, itemTrackingType, replenishmentSystem, defaultMethodType, sourcingType), methodMaterialStep(methodOperationStepId, quantity)"
     )
     .eq("makeMethodId", makeMethodId)
     .order("order", { ascending: true });
@@ -4179,7 +4179,7 @@ export async function duplicateMethodOperationStep(
   // Copy step-scoped part/material links (same operation-level-vs-scoped semantics as tools).
   const materialLinks = await client
     .from("methodMaterialStep")
-    .select("methodMaterialId")
+    .select("methodMaterialId, quantity")
     .eq("methodOperationStepId", args.id);
   if (materialLinks.error) {
     return { data: null, error: materialLinks.error };
@@ -4188,7 +4188,8 @@ export async function duplicateMethodOperationStep(
     const materialLinkInsert = await client.from("methodMaterialStep").insert(
       materialLinks.data.map((l) => ({
         methodMaterialId: l.methodMaterialId,
-        methodOperationStepId: newStepId
+        methodOperationStepId: newStepId,
+        quantity: l.quantity
       }))
     );
     if (materialLinkInsert.error) {
@@ -4294,6 +4295,17 @@ export async function replaceMethodMaterialSteps(
   methodMaterialId: string,
   methodOperationStepIds: string[]
 ) {
+  // Per-step quantities are edited from the step side; a BOM-side rewrite of the
+  // step set must not wipe them, so carry each retained step's quantity across
+  // the delete-then-insert.
+  const existing = await client
+    .from("methodMaterialStep")
+    .select("methodOperationStepId, quantity")
+    .eq("methodMaterialId", methodMaterialId);
+  if (existing.error) return existing;
+  const quantityByStepId = new Map(
+    (existing.data ?? []).map((l) => [l.methodOperationStepId, l.quantity])
+  );
   const del = await client
     .from("methodMaterialStep")
     .delete()
@@ -4302,19 +4314,23 @@ export async function replaceMethodMaterialSteps(
   return client.from("methodMaterialStep").insert(
     methodOperationStepIds.map((methodOperationStepId) => ({
       methodMaterialId,
-      methodOperationStepId
+      methodOperationStepId,
+      quantity: quantityByStepId.get(methodOperationStepId) ?? null
     }))
   );
 }
 
 // Toggle a single part↔step link from the STEP side (the step editor's Parts picker).
 // `linked` true = link the material to the step, false = unlink. Idempotent on link.
+// `quantity` is the per-step share of the BOM line (NULL = the full line quantity);
+// re-linking an existing link updates the quantity, so the same call edits a split.
 export async function setMethodMaterialStepLink(
   client: SupabaseClient<Database>,
   args: {
     methodMaterialId: string;
     methodOperationStepId: string;
     linked: boolean;
+    quantity?: number | null;
   }
 ) {
   if (args.linked) {
@@ -4322,12 +4338,12 @@ export async function setMethodMaterialStepLink(
       [
         {
           methodMaterialId: args.methodMaterialId,
-          methodOperationStepId: args.methodOperationStepId
+          methodOperationStepId: args.methodOperationStepId,
+          quantity: args.quantity ?? null
         }
       ],
       {
-        onConflict: "methodMaterialId,methodOperationStepId",
-        ignoreDuplicates: true
+        onConflict: "methodMaterialId,methodOperationStepId"
       }
     );
   }

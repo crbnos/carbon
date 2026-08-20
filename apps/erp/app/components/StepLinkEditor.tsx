@@ -8,11 +8,14 @@ import {
   CommandList,
   IconButton,
   Label,
+  NumberField,
+  NumberInput,
   Popover,
   PopoverContent,
   PopoverTrigger,
   VStack
 } from "@carbon/react";
+import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuCirclePlus, LuX } from "react-icons/lu";
@@ -23,7 +26,41 @@ export type StepLinkItem = {
   // Optional muted second line (e.g. a tool's descriptive name under its id).
   secondary?: string;
   quantity: number;
+  // Per-step share of the BOM line (parts only). null/undefined = the full line
+  // quantity. Editable when the caller supplies onQuantityChange.
+  linkedQuantity?: number | null;
 };
+
+// Compact per-step quantity editor on a linked row. Commits on blur/Enter via
+// react-aria's NumberField; only fires when the value actually changed, so a
+// plain blur never re-posts. Defaults to the full BOM line quantity.
+function LinkedQuantity({
+  item,
+  isDisabled,
+  onCommit
+}: {
+  item: StepLinkItem;
+  isDisabled: boolean;
+  onCommit: (quantity: number) => void;
+}) {
+  const value = item.linkedQuantity ?? item.quantity;
+  return (
+    <NumberField
+      value={value}
+      minValue={0}
+      step={INPUT_STEP.quantity}
+      formatOptions={INPUT_FORMAT.quantity}
+      isDisabled={isDisabled}
+      onChange={(next) => {
+        if (Number.isFinite(next) && next !== value) onCommit(next);
+      }}
+      className="w-20 shrink-0"
+      aria-label="Quantity"
+    >
+      <NumberInput size="sm" className="h-8 pr-2 text-right text-xs" />
+    </NumberField>
+  );
+}
 
 // Step-side link picker: assign an operation's BOM parts OR tools to a step (the inverse of the
 // old BOM/tool "Steps" picker). Presentational — the caller owns the linked set and persists
@@ -42,7 +79,8 @@ export function StepLinkEditor({
   isDisabled,
   busy,
   onAdd,
-  onRemove
+  onRemove,
+  onQuantityChange
 }: {
   label: string;
   addLabel: string;
@@ -57,6 +95,10 @@ export function StepLinkEditor({
   busy?: boolean;
   onAdd: (id: string) => void;
   onRemove: (id: string) => void;
+  // When supplied, linked rows show an editable per-step quantity (defaulting to
+  // the full BOM line quantity) instead of the static ×N badge — so one line's
+  // quantity can be split across steps (5 screws here, 5 on the next step).
+  onQuantityChange?: (id: string, quantity: number) => void;
 }) {
   const { t } = useLingui();
   const [open, setOpen] = useState(false);
@@ -142,9 +184,17 @@ export function StepLinkEditor({
                   </span>
                 )}
               </div>
-              <span className="shrink-0 rounded-md border px-2 py-0.5 text-xs text-muted-foreground">
-                ×{item.quantity}
-              </span>
+              {onQuantityChange && !isDisabled ? (
+                <LinkedQuantity
+                  item={item}
+                  isDisabled={Boolean(busy)}
+                  onCommit={(quantity) => onQuantityChange(item.id, quantity)}
+                />
+              ) : (
+                <span className="shrink-0 rounded-md border px-2 py-0.5 text-xs text-muted-foreground">
+                  ×{item.linkedQuantity ?? item.quantity}
+                </span>
+              )}
               {!isDisabled && (
                 <IconButton
                   aria-label={removeLabel}
