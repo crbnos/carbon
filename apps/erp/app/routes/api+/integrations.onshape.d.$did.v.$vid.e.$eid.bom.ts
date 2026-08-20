@@ -69,14 +69,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
         // Map each header to its corresponding value in the row
         headers.forEach((header) => {
-          if (header.name === "Material") {
-            // Handle special case for Material field which might have a displayName
-            rowData[header.name] =
-              row.headerIdToValue[header.id]?.displayName || "";
-          } else {
-            // For other fields, just use the value directly
-            rowData[header.name] = row.headerIdToValue[header.id] || "";
-          }
+          const value = row.headerIdToValue[header.id];
+          // Some columns (e.g. Material) come back as an object carrying a
+          // displayName rather than a plain string — unwrap those so the
+          // flattened value is usable downstream (Revision, State, etc.).
+          rowData[header.name] =
+            value && typeof value === "object"
+              ? value.displayName || ""
+              : value || "";
         });
 
         return rowData;

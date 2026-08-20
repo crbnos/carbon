@@ -16,6 +16,7 @@ import {
 import { useNavigate } from "react-router";
 import {
   CustomerAvatar,
+  DateTime,
   Hyperlink,
   New,
   SupplierAvatar,
@@ -24,11 +25,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useAccounts } from "~/components/Form/Account";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  useCurrencyFormatter,
-  useDateFormatter,
-  usePermissions
-} from "~/hooks";
+import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomers, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import { memoDirection, memoStatus } from "../../invoicing.models";
@@ -60,7 +57,6 @@ const MemosTable = memo(({ data, count }: MemosTableProps) => {
   const permissions = usePermissions();
   const navigate = useNavigate();
   const currencyFormatter = useCurrencyFormatter();
-  const { formatDate } = useDateFormatter();
   const [customers] = useCustomers();
   const [suppliers] = useSuppliers();
   const accounts = useAccounts();
@@ -156,7 +152,9 @@ const MemosTable = memo(({ data, count }: MemosTableProps) => {
       {
         accessorKey: "memoDate",
         header: t`Memo Date`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: { icon: <LuCalendar /> }
       },
       {
@@ -217,7 +215,7 @@ const MemosTable = memo(({ data, count }: MemosTableProps) => {
         cell: ({ row }) => row.original.reference ?? null
       }
     ],
-    [t, formatDate, currencyFormatter, customers, suppliers, accounts]
+    [t, currencyFormatter, customers, suppliers, accounts]
   );
 
   return (

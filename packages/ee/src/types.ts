@@ -55,6 +55,7 @@ export type IntegrationSetting = {
     | "text"
     | "number"
     | "password"
+    | "secret"
     | "switch"
     | "processes"
     | "options"
@@ -127,6 +128,14 @@ export type IntegrationServerHooks = {
    * Use this for creating database subscriptions, webhooks, or other server setup.
    */
   onInstall?: (companyId: string) => void | Promise<void>;
+  /**
+   * Server-side hook called after the settings of an ALREADY-installed
+   * integration are saved. Use this to re-converge derived server state
+   * (e.g. event-system subscriptions) so existing installs self-heal when
+   * the required set changes. Best-effort: a failure is logged, never
+   * rolls back the save.
+   */
+  onUpdate?: (companyId: string) => void | Promise<void>;
   /**
    * Server-side hook called after the integration is deactivated/uninstalled.
    * Use this for cleaning up server resources, webhooks, etc.

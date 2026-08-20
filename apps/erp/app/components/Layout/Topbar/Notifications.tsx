@@ -35,6 +35,7 @@ import {
   LuMailCheck,
   LuMessageSquare,
   LuPackageSearch,
+  LuRefreshCw,
   LuShieldAlert,
   LuShieldX,
   LuShoppingCart,
@@ -46,10 +47,12 @@ import {
   RiProgress8Line
 } from "react-icons/ri";
 import { Link, useFetcher } from "react-router";
-import { useDateFormatter, useNotifications, useUser } from "~/hooks";
+import { DateTime } from "~/components";
+import { useNotifications, useUser } from "~/hooks";
 import type { ApprovalDocumentType } from "~/modules/shared";
 import { usePeople } from "~/stores";
 import type { Notification as NotificationRecord } from "~/types";
+import { getRecordPath } from "~/utils/entity";
 import { path } from "~/utils/path";
 
 type OutstandingTraining = {
@@ -134,7 +137,6 @@ function Notification({
 }) {
   const { id: userId } = useUser();
   const { t } = useLingui();
-  const { formatTimeAgo } = useDateFormatter();
   const [people] = usePeople();
   let byUser = "";
   if (from) {
@@ -161,7 +163,7 @@ function Notification({
             {description} {byUser && <span>{t`by ${byUser}`}</span>}
           </p>
           <span className="text-xs text-muted-foreground">
-            {formatTimeAgo(createdAt)}
+            <DateTime value={createdAt} variant="relative" />
           </span>
         </div>
       </Link>
@@ -233,6 +235,16 @@ function GenericNotification({
         <Notification
           icon={<LuCircleGauge />}
           to={path.to.gauge(id)}
+          {...props}
+        />
+      );
+    case NotificationEvent.IntegrationSync:
+      // id is the provider id ("rillet", "xero", ...) — link to that
+      // integration's settings page, where the Sync Activity tab lives.
+      return (
+        <Notification
+          icon={<LuRefreshCw />}
+          to={path.to.integration(id)}
           {...props}
         />
       );
@@ -405,6 +417,14 @@ function GenericNotification({
         <Notification
           icon={<LuGraduationCap />}
           to={path.to.training(id)}
+          {...props}
+        />
+      );
+    case NotificationEvent.Workflow:
+      return (
+        <Notification
+          icon={<LuGitPullRequestArrow />}
+          to={getRecordPath(documentType, id) ?? path.to.authenticatedRoot}
           {...props}
         />
       );

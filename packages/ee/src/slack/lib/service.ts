@@ -5,6 +5,7 @@ import { trigger } from "@carbon/lib/trigger";
 import { getLogger } from "@carbon/logger";
 import { isUrl } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { resolveIntegrationSecrets } from "../../integrations/secrets";
 import { createSlackWebClient } from "./client";
 
 const logger = getLogger("ee", "slack");
@@ -213,7 +214,16 @@ export async function getSlackAuth(
     return null;
   }
 
-  const metadata = companyIntegration.data?.metadata as {
+  // Secret material (access_token) lives in Supabase Vault; merge it back so we
+  // read the same shape as before. Vault RPCs require the service-role client.
+  const serviceRole = getCarbonServiceRole();
+  const metadata = (await resolveIntegrationSecrets(
+    serviceRole,
+    companyId,
+    "slack",
+    companyIntegration.data.metadata,
+    companyIntegration.data.secretRef
+  )) as {
     access_token: string;
     channel_id: string;
   };

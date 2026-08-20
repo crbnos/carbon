@@ -7,6 +7,7 @@ import type {
   Position
 } from "~/components/Editable";
 import Cell from "./Cell";
+import { areRowPropsEqual } from "./rowMemo";
 
 type RowProps<T> = ComponentProps<typeof Tr> & {
   editableComponents?: Record<string, EditableTableCellComponent<T> | object>;
@@ -15,10 +16,15 @@ type RowProps<T> = ComponentProps<typeof Tr> & {
   isEditMode: boolean;
   isFrozenColumn?: boolean;
   isRowSelected?: boolean;
-  pinnedColumns: string;
-  // See Cell.tsx — primitive render key so memoized rows/cells pick up the
-  // pinned-edge shadow when the horizontal scroll position changes.
-  pinnedShadow?: string;
+  // Memo key, not rendered: `table.getVisibleLeafColumns()` is memoized by
+  // TanStack, so its identity flips exactly when the column defs are rebuilt or
+  // visibility/order/pinning changes — the cases where a memoized row would
+  // otherwise keep rendering stale cells.
+  visibleColumns: Column<any, unknown>[];
+  // See Cell.tsx — primitive render key covering everything `getPinnedStyles`
+  // can return (scrolled edges + each pinned column's sticky offset), since the
+  // getter itself is a fresh closure every render and can't be compared.
+  pinnedStyleKey?: string;
   selectedCell: Position;
   row: RowType<T>;
   rowIsSelected: boolean;
@@ -34,8 +40,8 @@ const Row = <T extends object>({
   isEditMode,
   isFrozenColumn = false,
   isRowSelected = false,
-  pinnedColumns,
-  pinnedShadow,
+  visibleColumns,
+  pinnedStyleKey,
   row,
   rowIsSelected,
   selectedCell,
@@ -74,8 +80,8 @@ const Row = <T extends object>({
             isSelected={isSelected}
             isEditing={isEditing}
             isEditMode={isEditMode}
-            pinnedColumns={pinnedColumns}
-            pinnedShadow={pinnedShadow}
+            visibleColumns={visibleColumns}
+            pinnedStyleKey={pinnedStyleKey}
             getPinnedStyles={getPinnedStyles}
             onClick={
               isEditMode
@@ -90,19 +96,8 @@ const Row = <T extends object>({
   );
 };
 
-const MemoizedRow = memo(
-  Row,
-  (prev, next) =>
-    next.rowIsSelected === false &&
-    prev.rowIsSelected === false &&
-    next.isRowSelected === prev.isRowSelected &&
-    next.selectedCell?.row === prev.row.index &&
-    next.row.index === prev.selectedCell?.row &&
-    next.selectedCell?.column === prev.selectedCell?.column &&
-    next.isEditing === prev.isEditing &&
-    next.isEditMode === prev.isEditMode &&
-    next.pinnedColumns === prev.pinnedColumns &&
-    next.pinnedShadow === prev.pinnedShadow
-) as typeof Row;
+// See rowMemo.ts — the comparator lives there so it can be unit tested without
+// mounting the table.
+const MemoizedRow = memo(Row, areRowPropsEqual) as typeof Row;
 
 export default MemoizedRow;

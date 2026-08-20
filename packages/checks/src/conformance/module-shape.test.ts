@@ -42,6 +42,34 @@ describe("moduleShape", () => {
     );
   });
 
+  it("accepts the .ee-licensed service/server variant as the primary file", () => {
+    const v = moduleShape.inspect(
+      mod("accounting", [
+        "accounting.ee.service.ts",
+        "accounting.models.ts",
+        "types.ts",
+        "ui",
+        "index.ts",
+        "accounting.ee.server.ts"
+      ])
+    );
+    expect(v).toHaveLength(0);
+  });
+
+  it("still flags a second service file alongside the .ee variant", () => {
+    const v = moduleShape.inspect(
+      mod("accounting", [
+        "accounting.ee.service.ts",
+        "accounting.models.ts",
+        "types.ts",
+        "ui",
+        "index.ts",
+        "extra.service.ts"
+      ])
+    );
+    expect(v.map((x) => x.snippet)).toContain("extra-service:extra.service.ts");
+  });
+
   it("flags a missing primary service file", () => {
     const v = moduleShape.inspect(
       mod("sales", ["sales.models.ts", "types.ts", "ui", "index.ts"])

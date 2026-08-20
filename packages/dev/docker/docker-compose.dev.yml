@@ -21,6 +21,7 @@ services:
     ports:
       - "${PORT_DB}:5432"
     environment:
+      TZ: UTC
       POSTGRES_HOST: /var/run/postgresql
       POSTGRES_PORT: 5432
       PGPORT: 5432
@@ -107,6 +108,9 @@ services:
       GOTRUE_EXTERNAL_AZURE_REDIRECT_URI: ${SUPABASE_AUTH_EXTERNAL_AZURE_REDIRECT_URI}
       GOTRUE_MAILER_TEMPLATES_MAGIC_LINK: ${ERP_URL}/templates/magic-link.html
       GOTRUE_MAILER_TEMPLATES_INVITE: ${ERP_URL}/templates/invite.html
+      GOTRUE_MFA_TOTP_ENROLL_ENABLED: "true"
+      GOTRUE_MFA_TOTP_VERIFY_ENABLED: "true"
+      GOTRUE_MFA_MAX_ENROLLED_FACTORS: 10
       SSL_CERT_FILE: /etc/ssl/certs/portless-ca.pem
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -283,6 +287,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
+      TZ: UTC
       JWT_SECRET: ${SUPABASE_JWT_SECRET}
       SUPABASE_URL: http://kong:8000
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}

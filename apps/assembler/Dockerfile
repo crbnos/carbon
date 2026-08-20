@@ -134,6 +134,7 @@ COPY --from=build /usr/local/bin/assembler /usr/local/bin/assembler
 COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.9.1 /lambda-adapter /opt/extensions/lambda-adapter
 # Both the app and the Lambda Web Adapter read PORT (LWA falls back to it).
 ENV PORT=8000
+ENV TZ=UTC
 # Non-HTTP (Event) invokes — the self-dispatch worker path — are POSTed by the
 # adapter to this app route instead of being translated as HTTP requests.
 ENV AWS_LWA_PASS_THROUGH_PATH=/events

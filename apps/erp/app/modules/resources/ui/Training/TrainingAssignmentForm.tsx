@@ -22,7 +22,6 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useLocale } from "@react-aria/i18n";
 import { memo, useMemo, useState } from "react";
 import {
   LuCalendar,
@@ -33,7 +32,7 @@ import {
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
-import { EmployeeAvatar, Empty } from "~/components";
+import { DateTime, EmployeeAvatar, Empty } from "~/components";
 import { Hidden, Submit, Users } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { trainingAssignmentValidator } from "~/modules/resources";
@@ -101,7 +100,6 @@ function AssignmentListItem({
   isLast: boolean;
 }) {
   const fetcher = useFetcher();
-  const { locale } = useLocale();
   const isSubmitting = fetcher.state !== "idle";
   const canMarkComplete =
     assignment.status !== "Completed" && assignment.status !== "Not Required";
@@ -117,9 +115,10 @@ function AssignmentListItem({
                 <LuCalendar className="size-3" />
                 <span>
                   Started{" "}
-                  {new Date(assignment.employeeStartDate).toLocaleDateString(
-                    locale
-                  )}
+                  <DateTime
+                    value={assignment.employeeStartDate}
+                    variant="date"
+                  />
                 </span>
               </HStack>
             )}
@@ -130,7 +129,7 @@ function AssignmentListItem({
           {assignment.completedAt && (
             <span className="text-xs text-muted-foreground">
               <LuClock className="inline mr-1 size-3" />
-              {new Date(assignment.completedAt).toLocaleDateString(locale)}
+              <DateTime value={assignment.completedAt} variant="date" />
             </span>
           )}
           {canMarkComplete && (

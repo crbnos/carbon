@@ -2,11 +2,10 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getLocalTimeZone, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { useUrlParams, useUser } from "~/hooks";
+import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
 import {
   insertSupplierQuote,
   supplierQuoteValidator
@@ -65,12 +64,13 @@ export default function SupplierQuoteNewRoute() {
   const [params] = useUrlParams();
   const { company } = useUser();
   const supplierId = params.get("supplierId");
+  const companyToday = useCompanyToday();
   const initialValues = {
     supplierContactId: "",
     supplierId: supplierId ?? "",
     supplierReference: "",
     expirationDate: "",
-    quotedDate: today(getLocalTimeZone()).toString(),
+    quotedDate: companyToday,
     supplierQuoteId: undefined,
     status: "Draft" as const,
     currencyCode: company.baseCurrencyCode,

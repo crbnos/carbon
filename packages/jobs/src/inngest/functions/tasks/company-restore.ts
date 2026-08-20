@@ -1,6 +1,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { chunkArray } from "@carbon/utils";
 import { sql } from "kysely";
+import { getJobDatabaseClient, type JobDatabase } from "../../../db";
 import { inngest } from "../../client";
 import type { Catalog, CompanyBackup } from "./company-backup";
 import {
@@ -12,7 +13,6 @@ import {
   bindValue,
   canSetReplicationRole,
   getCompanyTableCatalog,
-  getJobDatabaseClient,
   isUserScopedIdentityTable,
   newIdForTable,
   RESTORE_INTEGRATION,
@@ -33,7 +33,6 @@ import { buildCompanyBackup } from "./company-export";
 const INSERT_CHUNK_SIZE = 200;
 
 type ServiceRole = ReturnType<typeof getCarbonServiceRole>;
-type JobDatabase = ReturnType<typeof getJobDatabaseClient>;
 
 /**
  * Wipe the company's restorable tables and reload them from `backup`. Two modes:

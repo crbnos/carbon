@@ -413,6 +413,44 @@ export const auditConfig = {
       }
     },
 
+    itarCertification: {
+      label: "ITAR Certification",
+      tables: {
+        itarCertification: {
+          role: "root",
+          createFields: [
+            "type",
+            "userId",
+            "docVersion",
+            "docHash",
+            "fullLegalName",
+            "title",
+            "complianceContact",
+            "certifiedAt",
+            "expiresAt",
+            "ipAddress",
+            "userAgent"
+          ]
+        }
+      }
+    },
+
+    invite: {
+      label: "Invite",
+      tables: {
+        invite: {
+          role: "root",
+          createFields: [
+            "email",
+            "role",
+            "createdBy",
+            "attestedBy",
+            "attestedAt"
+          ]
+        }
+      }
+    },
+
     nonConformance: {
       label: "Non-Conformance",
       tables: {
@@ -642,7 +680,10 @@ export const auditConfig = {
     customerItemPriceOverride: "Price Override",
     customerItemPriceOverrideBreak: "Quantity Break",
     fixedAsset: "Fixed Asset",
-    accountingPeriod: "Accounting Period"
+    accountingPeriod: "Accounting Period",
+    group: "Group",
+    location: "Location",
+    user: "User"
   } satisfies Partial<Record<TableName, string>>,
 
   /** Fields to skip in diff computation */

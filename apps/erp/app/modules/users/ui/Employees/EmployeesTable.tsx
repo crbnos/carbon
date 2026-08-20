@@ -5,6 +5,9 @@ import {
   DropdownMenuItem,
   MenuIcon,
   MenuItem,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -17,6 +20,8 @@ import {
   LuMailCheck,
   LuPencil,
   LuShield,
+  LuShieldCheck,
+  LuShieldOff,
   LuToggleRight,
   LuUser,
   LuUserCheck
@@ -41,6 +46,7 @@ type EmployeesTableProps = {
   count: number;
   employeeTypes: ListItem[];
   unrevokedInviteEmails: string[];
+  mfaEnrolledUserIds: string[];
 };
 
 const defaultColumnVisibility = {
@@ -53,7 +59,8 @@ const EmployeesTable = memo(
     data,
     count,
     employeeTypes,
-    unrevokedInviteEmails
+    unrevokedInviteEmails,
+    mfaEnrolledUserIds
   }: EmployeesTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
@@ -74,6 +81,13 @@ const EmployeesTable = memo(
     const unrevokedInviteSet = useMemo(
       () => new Set(unrevokedInviteEmails),
       [unrevokedInviteEmails]
+    );
+
+    const requireMfa = settings.requireMfa === true;
+
+    const mfaEnrolledSet = useMemo(
+      () => new Set(mfaEnrolledUserIds),
+      [mfaEnrolledUserIds]
     );
 
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
@@ -186,16 +200,72 @@ const EmployeesTable = memo(
             icon: <LuUserCheck />
           }
         },
+        // Only meaningful once the company enforces it; otherwise the column
+        // is a wall of "Not set up" for a policy nobody opted into.
+        ...(requireMfa
+          ? ([
+              {
+                id: "mfa",
+                header: t`Two-Factor`,
+                cell: ({ row }) => {
+                  // Console operators cannot sign in, so 2FA is not applicable.
+                  if (row.original.email?.endsWith("@console.internal")) {
+                    return null;
+                  }
+                  return mfaEnrolledSet.has(row.original.id!) ? (
+                    <Badge variant="green">{t`Enabled`}</Badge>
+                  ) : (
+                    <Badge variant="secondary">{t`Not set up`}</Badge>
+                  );
+                },
+                meta: {
+                  icon: <LuShieldCheck />,
+                  exportValue: (row: (typeof data)[number]) =>
+                    mfaEnrolledSet.has(row.id!) ? "Enabled" : "Not set up"
+                }
+              }
+            ] as ColumnDef<(typeof data)[number]>[])
+          : []),
         {
           accessorKey: "active",
           header: t`Active`,
-          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+          cell: (item) => {
+            const isActive = item.getValue<boolean>();
+            const status = item.row.original.status;
+            return (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="w-fit">
+                    <Checkbox isChecked={isActive} />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {isActive ? (
+                    <Trans>
+                      To deactivate, use the row menu and choose Deactivate
+                      Account.
+                    </Trans>
+                  ) : status === "Invited" ? (
+                    <Trans>
+                      An invitation is pending. They become active once they
+                      accept it.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      To reactivate, use the row menu and choose Send Invite.
+                      The employee becomes active once they accept.
+                    </Trans>
+                  )}
+                </TooltipContent>
+              </Tooltip>
+            );
+          },
           meta: {
             icon: <LuToggleRight />
           }
         }
       ];
-    }, [params]);
+    }, [params, mfaEnrolledSet, requireMfa]);
 
     const renderActions = useCallback(
       (selectedRows: typeof data) => {
@@ -316,6 +386,16 @@ const EmployeesTable = memo(
                     <Trans>Set Console PIN</Trans>
                   </MenuItem>
                 )}
+                <MenuItem
+                  onClick={() =>
+                    navigate(
+                      `${path.to.employeeResetMfa(row.id!)}?${params.toString()}`
+                    )
+                  }
+                >
+                  <MenuIcon icon={<LuShieldOff />} />
+                  <Trans>Reset Two-Factor Auth</Trans>
+                </MenuItem>
                 {!isSelf && (
                   <MenuItem
                     onClick={(e) => {

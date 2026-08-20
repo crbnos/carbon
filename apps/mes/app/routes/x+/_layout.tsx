@@ -2,11 +2,17 @@ import {
   CarbonEdition,
   CarbonProvider,
   CONTROLLED_ENVIRONMENT,
+  getAppUrl,
   getCarbon,
   getCompanies,
-  getUser
+  getUser,
+  ITAR_RIDER_PDF_PATH,
+  isAuthProviderEnabled,
+  SESSION_HEARTBEAT_MS,
+  SESSION_IDLE_LOCK_MS
 } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import {
   destroyAuthSession,
   requireAuthSession
@@ -15,17 +21,26 @@ import type { PrintingSettings } from "@carbon/printing";
 import { getPrinterRoutes } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
 import {
-  ItarPopup,
+  Button,
+  Heading,
+  ItarEntityPendingBlock,
+  ItarUserCertification,
   SidebarProvider,
   TooltipProvider,
   useKeyboardWedge,
-  useMount,
-  useNProgress
+  useNProgress,
+  VStack
 } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
-import { Edition } from "@carbon/utils";
+import {
+  Edition,
+  isSearchParamOnlyNavigation,
+  requiresItarEntityCertification
+} from "@carbon/utils";
+import { Trans } from "@lingui/react/macro";
 import posthog from "posthog-js";
-import { Suspense } from "react";
+import type { ReactNode } from "react";
+import { Suspense, useEffect } from "react";
 import type {
   LoaderFunctionArgs,
   MiddlewareFunction,
@@ -34,6 +49,7 @@ import type {
 import {
   Await,
   data,
+  Form,
   Outlet,
   redirect,
   useLoaderData,
@@ -43,10 +59,13 @@ import { AppSidebar } from "~/components";
 import { ConsolePill } from "~/components/ConsolePill";
 import { PinInOverlay } from "~/components/PinInOverlay";
 import RealtimeDataProvider from "~/components/RealtimeDataProvider";
+import SessionLockOverlay from "~/components/SessionLockOverlay";
 import { TimeCardWarning } from "~/components/TimeCardWarning";
 import { userContext } from "~/context";
+import { useIdle } from "~/hooks";
 import { userMiddleware } from "~/middleware/user";
 import { refreshConsolePinIn } from "~/services/console.server";
+import { getItarCertificationStatus } from "~/services/itar.service";
 import { getActiveMaintenanceEventsCount } from "~/services/maintenance.service";
 import {
   getActiveJobCount,
@@ -57,13 +76,28 @@ import { ERP_URL, MES_URL, path } from "~/utils/path";
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
+  nextUrl,
+  formMethod,
   defaultShouldRevalidate
 }) => {
   if (
     currentUrl.pathname.startsWith("/refresh-session") ||
-    currentUrl.pathname.startsWith("/switch-company")
+    currentUrl.pathname.startsWith("/switch-company") ||
+    currentUrl.pathname.startsWith("/x/acknowledge")
   ) {
     return true;
+  }
+
+  // This loader is the app shell: 9 queries plus an auth round-trip. Without
+  // this it re-ran on every filter, sort and page click, none of which can
+  // change anything it returns.
+  // NOTE: `useRevalidator().revalidate()` — how the realtime hooks refresh —
+  // also looks like a same-pathname GET, so the shell does not re-run for
+  // realtime events either. Leaf loaders still refresh, which is the intent.
+  // Shell data that must react to a realtime change needs an explicit case
+  // above.
+  if (isSearchParamOnlyNavigation({ currentUrl, nextUrl, formMethod })) {
+    return false;
   }
 
   return defaultShouldRevalidate;
@@ -119,7 +153,9 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     }),
     client
       .from("companySettings")
-      .select("timeCardEnabled, consoleEnabled, printing, useMetric")
+      .select(
+        "timeCardEnabled, consoleEnabled, printing, useMetric, requireMfa"
+      )
       .eq("id", companyId)
       .single(),
     getOpenClockEntry(client, effectiveUserId, companyId),
@@ -139,11 +175,34 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const timeCardEnabled = companySettings.data?.timeCardEnabled ?? false;
   const consoleEnabled = companySettings.data?.consoleEnabled ?? false;
 
+  // Org-enforced MFA, mirroring the ERP shell. Enrollment itself lives only in
+  // the ERP (MES has no account settings), so the gate here points there.
+  // Console terminals are exempt: the operators pinning in are not the session
+  // user, and a shared kiosk cannot complete a personal enrollment.
+  const mfaRequired =
+    !consoleMode &&
+    (CONTROLLED_ENVIRONMENT || companySettings.data?.requireMfa === true);
+  const mfaEnrollmentRequired = mfaRequired
+    ? !(await userHasVerifiedTotpFactor(userId))
+    : false;
+
   // Get active maintenance count after we have the location
   const activeMaintenanceCount = await getActiveMaintenanceEventsCount(
     client,
     locationId
   );
+
+  // ITAR gate — only queried in controlled environments. `entityRequired` is
+  // false for Carbon staff: the Rider binds the customer's own organization, so
+  // it is not ours to accept and the pending block would strand us behind a
+  // signature we can never provide. Decided server-side from the account's
+  // email, and defaults to required when the email is unknown.
+  const itarCertification = CONTROLLED_ENVIRONMENT
+    ? {
+        ...(await getItarCertificationStatus(client, companyId, userId)),
+        entityRequired: requiresItarEntityCertification(user.data?.email)
+      }
+    : { entityCertified: true, userCertified: true, entityRequired: false };
 
   if (!companyPlan && CarbonEdition === Edition.Cloud) {
     throw redirect(path.to.onboarding);
@@ -194,7 +253,22 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       printerRoutes: printerRoutes.data ?? [],
       timeCardEnabled,
       useMetric: companySettings.data?.useMetric ?? false,
-      user: user.data
+      user: user.data,
+      itarCertification,
+      // Server-decided, never client-inferred — same reason as the ITAR gate.
+      mfaEnrollmentRequired,
+      // Session lock (NIST 3.1.10) — client idle UX config. Console DEVICE
+      // sessions are exempt (their lock is the operator pin-in; a shared kiosk
+      // must not be force-logged-out mid-shift). Server enforcement lives in
+      // requireAuthSession, which also skips console sessions.
+      sessionTimeout: {
+        enabled: CONTROLLED_ENVIRONMENT && !(consoleEnabled && consoleMode),
+        idleMs: SESSION_IDLE_LOCK_MS,
+        heartbeatMs: SESSION_HEARTBEAT_MS,
+        // Offer passkey re-auth on the lock overlay when the provider is enabled;
+        // the /unlock action gates the actual credential, TOTP stays available.
+        hasPasskeyAuth: isAuthProviderEnabled("passkey")
+      }
     },
     headers.has("Set-Cookie") ? { headers } : undefined
   );
@@ -218,10 +292,39 @@ export default function AuthenticatedRoute() {
     printerRoutes,
     timeCardEnabled,
     useMetric,
-    user
+    user,
+    itarCertification,
+    mfaEnrollmentRequired,
+    sessionTimeout
   } = useLoaderData<typeof loader>();
 
   const navigate = useNavigate();
+
+  // Session lock (NIST 3.1.10) — client idle UX only; server enforces in
+  // requireAuthSession. Inert unless CONTROLLED_ENVIRONMENT and non-console.
+  const { isIdle, resume } = useIdle({
+    enabled: sessionTimeout.enabled,
+    idleMs: sessionTimeout.idleMs,
+    heartbeatMs: sessionTimeout.heartbeatMs,
+    heartbeatUrl: "/api/session/heartbeat"
+  });
+
+  // Console (shared-kiosk) idle lock (NIST 3.1.10). A controlled-environment
+  // console session is exempt from the session-wide lock above (sessionTimeout.
+  // enabled is false for it) — its lock is the operator pin-in. On idle, reload:
+  // the server-tightened pin-in (console.server) has by then expired, so the
+  // reload surfaces the PinInOverlay and the operator must re-PIN.
+  const { isIdle: consoleIsIdle } = useIdle({
+    enabled: CONTROLLED_ENVIRONMENT && consoleMode,
+    idleMs: sessionTimeout.idleMs,
+    heartbeatMs: sessionTimeout.heartbeatMs,
+    heartbeatUrl: "/api/session/heartbeat"
+  });
+  useEffect(() => {
+    if (consoleIsIdle && typeof window !== "undefined") {
+      window.location.reload();
+    }
+  }, [consoleIsIdle]);
 
   useNProgress();
   useKeyboardWedge({
@@ -238,22 +341,106 @@ export default function AuthenticatedRoute() {
     }
   });
 
-  useMount(() => {
-    posthog.identify(user?.id, {
-      email: user?.email,
-      name: `${user?.firstName} ${user?.lastName}`
-    });
-  });
+  const userId = user?.id;
+  const userEmail = user?.email;
+  const userFullName = user ? `${user.firstName} ${user.lastName}` : undefined;
+  const companyId = company?.companyId;
+  const companyName = company?.name;
+
+  // Keyed on the identity rather than run once on mount: switching company
+  // redirects back into x+/_layout without unmounting it, so a mount-only
+  // effect would leave the previous company attached to every later event.
+  // The deps are primitives because `user`/`company` get fresh object
+  // identities on every revalidation, and group() re-sends $groupidentify
+  // each time it is called.
+  useEffect(() => {
+    if (!userId) return;
+
+    posthog.identify(userId, { email: userEmail, name: userFullName });
+
+    if (!companyId) return;
+
+    // Adoption is measured per customer, and a user can belong to more than one
+    // company — so the company rides on the events rather than on the person.
+    // register() puts companyId on every event including autocapture; group()
+    // is what lets PostHog aggregate by customer.
+    posthog.register({ companyId });
+    posthog.group("company", companyId, { name: companyName });
+  }, [userId, userEmail, userFullName, companyId, companyName]);
 
   // Scroll stays unlocked until lg, where the controls dock beside the content
   // instead of stacking below it.
+  // ITAR gate. Entity Rider acceptance is an admin action performed in the ERP,
+  // so shop-floor MES users never see Screen 1 — they wait on the pending block
+  // until an admin accepts, then attest their own U.S.-Person status.
+  //
+  // Carbon staff are exempt from the entity gate entirely (the Rider binds the
+  // customer's organization, not ours), so they skip the pending block too and
+  // go straight to their own attestation.
+  // Enforced-MFA gate. Enrollment is an ERP-only flow, so this screen sends
+  // them there rather than trying to run a QR ceremony on the shop floor.
+  const mfaScreen: ReactNode = mfaEnrollmentRequired ? (
+    <div className="flex flex-col items-center justify-center h-full w-full p-8">
+      <div className="rounded-lg bg-card border border-border shadow-lg p-8 w-[420px] max-w-full">
+        <VStack spacing={4} className="items-center">
+          <Heading size="h3" className="text-center">
+            <Trans>Two-factor authentication required</Trans>
+          </Heading>
+          <p className="text-muted-foreground tracking-tight text-sm text-center">
+            <Trans>
+              Your organization requires an authenticator app. Set it up in
+              Carbon, then come back here.
+            </Trans>
+          </p>
+          <Button size="lg" className="w-full" asChild>
+            <a href={`${getAppUrl()}/x/account/profile`}>
+              <Trans>Set up in Carbon</Trans>
+            </a>
+          </Button>
+          <Form method="post" action={path.to.logout} className="w-full">
+            <Button
+              type="submit"
+              variant="link"
+              size="sm"
+              className="w-full text-muted-foreground"
+            >
+              <Trans>Sign out</Trans>
+            </Button>
+          </Form>
+        </VStack>
+      </div>
+    </div>
+  ) : null;
+
+  let itarScreen: ReactNode = null;
+  const entityBlocking =
+    itarCertification.entityRequired && !itarCertification.entityCertified;
+  if (
+    CONTROLLED_ENVIRONMENT &&
+    (entityBlocking || !itarCertification.userCertified)
+  ) {
+    itarScreen = entityBlocking ? (
+      <ItarEntityPendingBlock logoutAction={path.to.logout} />
+    ) : (
+      <ItarUserCertification
+        riderPdfPath={ITAR_RIDER_PDF_PATH}
+        acknowledgeAction={path.to.acknowledge}
+        logoutAction={path.to.logout}
+      />
+    );
+  }
+
   return (
     <div className="h-screen w-full overflow-y-auto lg:overflow-hidden">
-      {user?.acknowledgedITAR === false && CONTROLLED_ENVIRONMENT ? (
-        <ItarPopup
-          acknowledgeAction={path.to.acknowledge}
-          logoutAction={path.to.logout}
+      {/* Idle lock conceals the app (3.1.10). Not over the ITAR/MFA gates. */}
+      {isIdle && !itarScreen && !mfaScreen && (
+        <SessionLockOverlay
+          onUnlocked={resume}
+          hasPasskeyAuth={sessionTimeout.hasPasskeyAuth}
         />
+      )}
+      {(itarScreen ?? mfaScreen) ? (
+        (itarScreen ?? mfaScreen)
       ) : (
         <CarbonProvider session={session}>
           <PrintingProvider

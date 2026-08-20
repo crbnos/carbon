@@ -22,16 +22,24 @@ export function useAsyncLayout(
   direction: LayoutDirection,
   spacing: number,
   rejectIds: Set<string>,
+  rootIds: string[],
   layoutVersion: number
 ): LayoutResult | null {
   const [result, setResult] = useState<LayoutResult | null>(null);
   const rejectIdsArray = useMemo(() => Array.from(rejectIds), [rejectIds]);
+  const rootKey = rootIds.join("|");
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: layoutVersion is a manual relayout trigger
+  // biome-ignore lint/correctness/useExhaustiveDependencies: layoutVersion is a manual relayout trigger; rootIds is keyed by rootKey
   useEffect(() => {
     let cancelled = false;
     manager
-      .layout({ payload, direction, spacing, rejectIds: rejectIdsArray })
+      .layout({
+        payload,
+        direction,
+        spacing,
+        rejectIds: rejectIdsArray,
+        rootIds
+      })
       .then((r) => {
         if (cancelled || r === null) return;
         setResult(r);
@@ -39,7 +47,15 @@ export function useAsyncLayout(
     return () => {
       cancelled = true;
     };
-  }, [manager, payload, direction, spacing, rejectIdsArray, layoutVersion]);
+  }, [
+    manager,
+    payload,
+    direction,
+    spacing,
+    rejectIdsArray,
+    rootKey,
+    layoutVersion
+  ]);
 
   return result;
 }

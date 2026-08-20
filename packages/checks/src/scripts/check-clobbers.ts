@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
-import { findClobbers, type SourceFile } from "../clobber";
+import type { SourceFile } from "../check";
+import { findClobbers } from "../clobber";
 import { repoRoot } from "../sources/migrations";
 
 const MIGRATIONS = "packages/database/supabase/migrations";

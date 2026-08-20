@@ -21,12 +21,11 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
 import { Link, useParams } from "react-router";
-import { MethodIcon, SupplierAvatar } from "~/components";
+import { DateTime, MethodIcon, SupplierAvatar } from "~/components";
 import { useAccounts } from "~/components/Form/Account";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import {
   useCurrencyFormatter,
-  useDateFormatter,
   usePercentFormatter,
   useRouteData,
   useUser
@@ -364,7 +363,6 @@ const PurchaseInvoiceSummary = ({
 }: PurchaseInvoiceSummaryProps) => {
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("Could not find invoiceId");
-  const { formatDate } = useDateFormatter();
 
   const routeData = useRouteData<{
     purchaseInvoice: PurchaseInvoice;
@@ -441,7 +439,11 @@ const PurchaseInvoiceSummary = ({
             />
             {routeData?.purchaseInvoice?.dateDue && (
               <span className="text-xs text-muted-foreground tracking-tight">
-                Due {formatDate(routeData?.purchaseInvoice.dateDue)}
+                Due{" "}
+                <DateTime
+                  value={routeData?.purchaseInvoice.dateDue}
+                  variant="date"
+                />
               </span>
             )}
           </div>

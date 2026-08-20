@@ -14,10 +14,9 @@ import {
   LuUser
 } from "react-icons/lu";
 import { useParams } from "react-router";
-import { EmployeeAvatar, Table } from "~/components";
+import { DateTime, EmployeeAvatar, Table } from "~/components";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
-import { useDateFormatter } from "~/hooks";
 import { procedureStepType } from "~/modules/shared/shared.models";
 import { usePeople } from "~/stores";
 import { getPrivateUrl } from "~/utils/path";
@@ -57,7 +56,6 @@ const JobOperationStepRecordsTable = memo(
     const { jobId } = useParams();
     const { t } = useLingui();
     if (!jobId) throw new Error("Job ID is required");
-    const { formatDateTime } = useDateFormatter();
 
     const numberFormatter = useNumberFormatter();
     const unitOfMeasures = useUnitOfMeasure();
@@ -122,7 +120,7 @@ const JobOperationStepRecordsTable = memo(
               case "Timestamp":
                 return (
                   <p className="text-sm">
-                    {formatDateTime(record.value ?? "")}
+                    <DateTime value={record.value} variant="absolute" />
                   </p>
                 );
               case "List":
@@ -217,13 +215,15 @@ const JobOperationStepRecordsTable = memo(
         {
           accessorKey: "createdAt",
           header: t`Created At`,
-          cell: ({ row }) => formatDateTime(row.original.createdAt ?? ""),
+          cell: ({ row }) => (
+            <DateTime value={row.original.createdAt} variant="absolute" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
         }
       ];
-    }, [numberFormatter, unitOfMeasures, employees, t, formatDateTime]);
+    }, [numberFormatter, unitOfMeasures, employees, t]);
 
     return (
       <Table<JobOperationStepRecord>

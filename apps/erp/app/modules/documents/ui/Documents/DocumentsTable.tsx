@@ -36,11 +36,11 @@ import {
 } from "react-icons/lu";
 import { RxCheck } from "react-icons/rx";
 import { Link, useRevalidator } from "react-router";
-import { EmployeeAvatar, Hyperlink, Table } from "~/components";
+import { DateTime, EmployeeAvatar, Hyperlink, Table } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { Enumerable } from "~/components/Enumerable";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
-import { useDateFormatter, usePermissions, useUrlParams } from "~/hooks";
+import { usePermissions, useUrlParams } from "~/hooks";
 import { documentTypes } from "~/modules/shared";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -59,7 +59,6 @@ type DocumentsTableProps = {
 const DocumentsTable = memo(
   ({ data, count, labels, extensions }: DocumentsTableProps) => {
     const { t } = useLingui();
-    const { formatDate } = useDateFormatter();
     const permissions = usePermissions();
     const revalidator = useRevalidator();
     const [params] = useUrlParams();
@@ -360,7 +359,9 @@ const DocumentsTable = memo(
         {
           accessorKey: "createdAt",
           header: t`Created At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuFileText />
           }
@@ -385,7 +386,9 @@ const DocumentsTable = memo(
         {
           accessorKey: "updatedAt",
           header: t`Updated At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuFileText />
           }

@@ -39,7 +39,7 @@ export type BatchSplitInput = {
   userId: string;
   /** yyyy-MM-dd */
   postingDate: string;
-  childStatus: "Available" | "Consumed";
+  childStatus: "Available" | "Consumed" | "Scrapped";
   extraChildAttributes?: Record<string, unknown>;
 };
 
@@ -73,7 +73,7 @@ export function buildBatchSplitRecords(input: BatchSplitInput): {
     sourceDocumentId: string | null;
     sourceDocumentReadableId: string | null;
     quantity: number;
-    status: "Available" | "Consumed";
+    status: "Available" | "Consumed" | "Scrapped";
     attributes: Record<string, unknown>;
     itemId: string | null;
     expirationDate: string | null;

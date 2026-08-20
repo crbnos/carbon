@@ -16,6 +16,7 @@ import { LuFile, LuPaperclip } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import type { ZodSchema } from "zod";
 import CustomerAvatar from "~/components/CustomerAvatar";
+import { DateTime } from "~/components/DateTime";
 import FileDropzone from "~/components/FileDropzone";
 import {
   Boolean as BooleanInput,
@@ -505,7 +506,15 @@ function TypedDisplay(
       return (
         <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
           <p className="text-muted-foreground self-center">{attribute.name}</p>
-          <p className="self-center">{displayValue}</p>
+          <p className="self-center">
+            {type === DataType.Date &&
+            typeof displayValue === "string" &&
+            displayValue ? (
+              <DateTime value={displayValue} variant="date" />
+            ) : (
+              displayValue
+            )}
+          </p>
           <UpdateRemoveButtons
             canRemove={
               !isAuthorized ||

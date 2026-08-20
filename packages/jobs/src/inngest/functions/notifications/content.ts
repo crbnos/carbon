@@ -118,6 +118,9 @@ type EventContentOptions = {
   companyId: string;
   documentIds?: string[];
   userId?: string;
+  // Workflow-authored text, carried on the payload instead of read from a document.
+  title?: string;
+  body?: string;
 };
 
 function changeNoticeStageDescription(
@@ -1178,6 +1181,23 @@ async function buildEventContent(
           { label: "Status", value: changeNoticeData.status },
           { label: "Assignee", value: assigneeName }
         ])
+      };
+    }
+
+    // The only kinds whose text comes from the payload — they read nothing.
+    case NotificationEvent.Workflow: {
+      return {
+        description: opts?.title ?? "A workflow ran",
+        details: opts?.body ? [{ label: "Message", value: opts.body }] : []
+      };
+    }
+
+    // Payload-carried like Workflow: documentId is a provider id (e.g.
+    // "rillet"), not a readable document, so there is nothing to look up.
+    case NotificationEvent.IntegrationSync: {
+      return {
+        description: opts?.title ?? "Accounting sync needs attention",
+        details: opts?.body ? [{ label: "Detail", value: opts.body }] : []
       };
     }
 

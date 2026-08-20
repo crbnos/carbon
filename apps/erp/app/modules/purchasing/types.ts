@@ -22,12 +22,16 @@ import type {
 
 export type PurchaseOrderAttachment = FileObject; // TODO: remove
 
-export type PurchaseOrder = NonNullable<
+// The `X`/`XListItem` pairs below are deliberately separate: `X` is the full
+// view row that detail screens read, `XListItem` is exactly what the list
+// query selects. Defining `X` from the list getter is what broke ~250 call
+// sites when the list selects were narrowed.
+export type PurchaseOrder =
+  Database["public"]["Views"]["purchaseOrders"]["Row"];
+
+export type PurchaseOrderListItem = NonNullable<
   Awaited<ReturnType<typeof getPurchaseOrders>>["data"]
->[number] & {
-  receivableQuantity?: number | null;
-  receivedQuantity?: number | null;
-};
+>[number];
 
 export type PurchaseOrderDelivery = NonNullable<
   Awaited<ReturnType<typeof getPurchaseOrderDelivery>>["data"]

@@ -24,7 +24,12 @@ import {
   Tr,
   VStack
 } from "@carbon/react";
-import { pluralize } from "@carbon/utils";
+import {
+  deriveRate,
+  INPUT_FORMAT,
+  pluralize,
+  taxableBase
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -32,7 +37,7 @@ import { LuImage } from "react-icons/lu";
 import { Form, useNavigation, useParams } from "react-router";
 import type { z } from "zod";
 import { useAccounts } from "~/components/Form/Account";
-import { useUser } from "~/hooks";
+import { useCurrencyDecimals, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { getPrivateUrl, path } from "~/utils/path";
 import type { selectedLineSchema } from "../../purchasing.models";
@@ -262,6 +267,7 @@ const LinePricingOptions = ({
   setSelectedLines
 }: LinePricingOptionsProps) => {
   const { t } = useLingui();
+  const currencyDecimals = useCurrencyDecimals(quoteCurrency);
   const [selectedValue, setSelectedValue] = useState("");
   const [showOverride, setShowOverride] = useState(false);
   const [overridePricing, setOverridePricing] = useState<SelectedLine>({
@@ -271,7 +277,8 @@ const LinePricingOptions = ({
     supplierUnitPrice: 0,
     supplierShippingCost: 0,
     shippingCost: 0,
-    supplierTaxAmount: 0
+    supplierTaxAmount: 0,
+    taxPercent: 0
   });
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -286,7 +293,17 @@ const LinePricingOptions = ({
           supplierShippingCost: overridePricing.supplierShippingCost,
           shippingCost: overridePricing.shippingCost,
           leadTime: overridePricing.leadTime,
-          supplierTaxAmount: overridePricing.supplierTaxAmount
+          supplierTaxAmount: overridePricing.supplierTaxAmount,
+          // Override collects amounts only — seed the rate from the canonical
+          // denominator (unit price x quantity + shipping).
+          taxPercent: deriveRate(
+            overridePricing.supplierTaxAmount,
+            taxableBase(
+              overridePricing.supplierUnitPrice,
+              overridePricing.quantity,
+              overridePricing.supplierShippingCost
+            )
+          )
         }
       }));
     }
@@ -319,7 +336,8 @@ const LinePricingOptions = ({
                 supplierShippingCost: selectedOption.supplierShippingCost ?? 0,
                 shippingCost: selectedOption.shippingCost ?? 0,
                 leadTime: selectedOption.leadTime,
-                supplierTaxAmount: selectedOption.supplierTaxAmount ?? 0
+                supplierTaxAmount: selectedOption.supplierTaxAmount ?? 0,
+                taxPercent: selectedOption.taxPercent ?? 0
               }
             }));
             setSelectedValue(value);
@@ -438,10 +456,10 @@ const LinePricingOptions = ({
                     aria-label={t`Unit Price`}
                     minValue={0}
                     value={overridePricing.supplierUnitPrice}
-                    formatOptions={{
-                      style: "currency",
-                      currency: quoteCurrency
-                    }}
+                    formatOptions={INPUT_FORMAT.rate(
+                      quoteCurrency,
+                      currencyDecimals
+                    )}
                     onChange={(unitPrice) =>
                       setOverridePricing((v) => ({
                         ...v,
@@ -462,10 +480,10 @@ const LinePricingOptions = ({
                     aria-label={t`Shipping`}
                     minValue={0}
                     value={overridePricing.supplierShippingCost}
-                    formatOptions={{
-                      style: "currency",
-                      currency: quoteCurrency
-                    }}
+                    formatOptions={INPUT_FORMAT.money(
+                      quoteCurrency,
+                      currencyDecimals
+                    )}
                     onChange={(shippingCost) =>
                       setOverridePricing((v) => ({
                         ...v,
@@ -511,10 +529,10 @@ const LinePricingOptions = ({
                     aria-label={t`Tax`}
                     minValue={0}
                     value={overridePricing.supplierTaxAmount}
-                    formatOptions={{
-                      style: "currency",
-                      currency: quoteCurrency
-                    }}
+                    formatOptions={INPUT_FORMAT.money(
+                      quoteCurrency,
+                      currencyDecimals
+                    )}
                     onChange={(taxAmount) =>
                       setOverridePricing((v) => ({
                         ...v,

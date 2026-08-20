@@ -20,7 +20,6 @@ import {
   useMode,
   VStack
 } from "@carbon/react";
-import { getLocalTimeZone } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   lazy,
@@ -355,7 +354,11 @@ export function InspectionView({
   const opAttrKey = `Operation ${operationId}`;
   const entityOpenAtOp = useCallback(
     (entity: TrackedEntity) => {
-      if (entity.status === "Consumed" || entity.status === "Rejected") {
+      if (
+        entity.status === "Consumed" ||
+        entity.status === "Rejected" ||
+        entity.status === "Scrapped"
+      ) {
         return false;
       }
       const attributes = (entity.attributes ?? {}) as Record<string, unknown>;
@@ -384,11 +387,13 @@ export function InspectionView({
     return ids;
   }, [samples, sampleStatuses]);
 
+  // Remaining GOOD work: scrap no longer counts toward targetQuantity
+  // (20260807090629), so a scrapped unit doesn't reduce what's left to make —
+  // its replacement still has to be completed.
   const opRemaining = Math.max(
     0,
     (operation.targetQuantity ?? operation.operationQuantity ?? 0) -
       (operation.quantityComplete ?? 0) -
-      (operation.quantityScrapped ?? 0) -
       (operation.quantityReworked ?? 0)
   );
 
@@ -1245,7 +1250,6 @@ function AutoTimer({
     if (running || busy) return;
     const fd = new FormData();
     fd.set("jobOperationId", operationId);
-    fd.set("timezone", getLocalTimeZone());
     fd.set("type", workType);
     fd.set("action", "Start");
     fd.set("exclusive", "true");
@@ -1316,7 +1320,6 @@ function TimerControl({
       className="h-full shrink-0"
     >
       <input type="hidden" name="jobOperationId" value={operationId} />
-      <input type="hidden" name="timezone" value={getLocalTimeZone()} />
       <input type="hidden" name="type" value={workType} />
       <input type="hidden" name="exclusive" value="true" />
       <input type="hidden" name="action" value={openEvent ? "End" : "Start"} />

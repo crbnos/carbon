@@ -29,7 +29,6 @@ import { ResizablePanels } from "~/components/Layout";
 import { flattenTree } from "~/components/TreeView";
 import type { ItemFile, PartSummary } from "~/modules/items";
 import {
-  changeNoticeOpenStatuses,
   findChangeNoticesForItem,
   getItemFiles,
   getItemSupersededBy,
@@ -40,8 +39,10 @@ import {
   getPart,
   getPartUsedIn,
   getPickMethods,
-  getSupplierParts
+  getSupplierParts,
+  isChangeNoticeOpen
 } from "~/modules/items";
+import { getUnreleasedChangeOrderForItem } from "~/modules/items/items.server";
 import type { Method } from "~/modules/items/types";
 import {
   BoMActions,
@@ -49,7 +50,11 @@ import {
   SelectedItemProperties
 } from "~/modules/items/ui/Item";
 import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
-import { UsedInSkeleton, UsedInTree } from "~/modules/items/ui/Item/UsedIn";
+import {
+  changeNoticesUsedInNode,
+  UsedInSkeleton,
+  UsedInTree
+} from "~/modules/items/ui/Item/UsedIn";
 import { PartHeader, PartProperties } from "~/modules/items/ui/Parts";
 import { getTagsList } from "~/modules/shared";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
@@ -79,7 +84,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     tags,
     supersession,
     supersededBy,
-    openChangeNotices
+    allChangeNotices,
+    unreleasedChangeOrder
   ] = await Promise.all([
     getPart(client, itemId, companyId),
     getSupplierParts(client, itemId, companyId),
@@ -87,12 +93,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getTagsList(client, companyId, "part"),
     getItemSupersession(client, itemId, companyId),
     getItemSupersededBy(client, itemId, companyId),
-    // Locks manual version/revision creation while a CO owns this part
-    findChangeNoticesForItem(client, {
-      itemId,
-      companyId,
-      statuses: changeNoticeOpenStatuses
-    })
+    // Every CO, any status; the open subset (which locks manual version/revision
+    // creation) is derived below.
+    findChangeNoticesForItem(client, { itemId, companyId }),
+    // Locks the Active toggle while the change notice that minted this item is
+    // still open — release is what activates it.
+    getUnreleasedChangeOrderForItem(client, { itemId, companyId })
   ]);
 
   if (partSummary.data?.companyId !== companyId) {
@@ -109,41 +115,49 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const changeNotices = allChangeNotices.data ?? [];
+  const openChangeNotices = changeNotices.filter((cn) =>
+    isChangeNoticeOpen(cn.status)
+  );
+
   const url = new URL(request.url);
   const requestedMethodId = url.searchParams.get("methodId");
 
-  const methodTree = getMakeMethods(client, itemId, companyId).then(
-    async (makeMethods) => {
-      // Include CO-owned drafts so a revision/new-part item created by an open
-      // Change Notice shows its method tree on the item master, in sync with the
-      // CO (same makeMethod). Active is still preferred as the default below.
-      const selectable = makeMethods.data ?? [];
-      const makeMethod = requestedMethodId
-        ? (selectable.find((m) => m.id === requestedMethodId) ??
-          selectable.find((m) => m.status === "Active") ??
-          selectable[0])
-        : (selectable.find((m) => m.status === "Active") ?? selectable[0]);
-      if (!makeMethod) return null;
+  // One query, two consumers: `methodTree` derives from it and the raw list is
+  // also deferred to the client. Calling getMakeMethods twice issued the same
+  // query twice on every part-detail load.
+  const makeMethodsPromise = getMakeMethods(client, itemId, companyId);
 
-      const fullMethod = await getMakeMethodById(
-        client,
-        makeMethod.id,
-        companyId
-      );
-      if (fullMethod.error || !fullMethod.data) return null;
+  const methodTree = makeMethodsPromise.then(async (makeMethods) => {
+    // Include CO-owned drafts so a revision/new-part item created by an open
+    // Change Notice shows its method tree on the item master, in sync with the
+    // CO (same makeMethod). Active is still preferred as the default below.
+    const selectable = makeMethods.data ?? [];
+    const makeMethod = requestedMethodId
+      ? (selectable.find((m) => m.id === requestedMethodId) ??
+        selectable.find((m) => m.status === "Active") ??
+        selectable[0])
+      : (selectable.find((m) => m.status === "Active") ?? selectable[0]);
+    if (!makeMethod) return null;
 
-      const tree = await getMethodTree(client, fullMethod.data.id);
-      if (tree.error) return null;
+    const fullMethod = await getMakeMethodById(
+      client,
+      makeMethod.id,
+      companyId
+    );
+    if (fullMethod.error || !fullMethod.data) return null;
 
-      const methods =
-        tree.data.length > 0 ? flattenTree<Method>(tree.data[0]) : [];
+    const tree = await getMethodTree(client, fullMethod.data.id);
+    if (tree.error) return null;
 
-      return {
-        makeMethod: fullMethod.data,
-        methods
-      };
-    }
-  );
+    const methods =
+      tree.data.length > 0 ? flattenTree<Method>(tree.data[0]) : [];
+
+    return {
+      makeMethod: fullMethod.data,
+      methods
+    };
+  });
 
   return {
     partSummary: partSummary.data,
@@ -152,11 +166,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     files: getItemFiles(client, itemId, companyId),
     supplierParts: supplierParts.data ?? [],
     pickMethods: pickMethods.data ?? [],
-    makeMethods: getMakeMethods(client, itemId, companyId),
+    makeMethods: makeMethodsPromise,
     tags: tags.data ?? [],
     usedIn: getPartUsedIn(client, itemId, companyId),
     methodTree,
-    openChangeNotices: openChangeNotices.data ?? []
+    changeNotices,
+    openChangeNotices,
+    // Fail closed: a lookup we couldn't read can't prove the item is CO-free.
+    changeNoticesUnavailable: allChangeNotices.error !== null,
+    unreleasedChangeOrder
   };
 }
 
@@ -172,7 +190,7 @@ export default function PartRoute() {
 
   if (!partData) throw new Error("Could not find part data");
 
-  const { usedIn, methodTree } = useLoaderData<typeof loader>();
+  const { usedIn, methodTree, changeNotices } = useLoaderData<typeof loader>();
 
   const isManufactured = partData.partSummary?.replenishmentSystem !== "Buy";
 
@@ -382,6 +400,13 @@ export default function PartRoute() {
                                 children: inspections
                               });
 
+                              tree.push(
+                                changeNoticesUsedInNode(
+                                  changeNotices,
+                                  t`Change Notices`
+                                )
+                              );
+
                               return (
                                 <UsedInTree
                                   tree={tree}
@@ -548,6 +573,13 @@ export default function PartRoute() {
                               module: "quality",
                               children: inspections
                             });
+
+                            tree.push(
+                              changeNoticesUsedInNode(
+                                changeNotices,
+                                t`Change Notices`
+                              )
+                            );
 
                             return (
                               <UsedInTree

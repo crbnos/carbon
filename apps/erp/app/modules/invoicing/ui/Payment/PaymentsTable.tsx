@@ -16,6 +16,7 @@ import {
 import { useNavigate } from "react-router";
 import {
   CustomerAvatar,
+  DateTime,
   Hyperlink,
   New,
   SupplierAvatar,
@@ -23,11 +24,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  useCurrencyFormatter,
-  useDateFormatter,
-  usePermissions
-} from "~/hooks";
+import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomers, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import { paymentStatus, paymentType } from "../../invoicing.models";
@@ -45,7 +42,6 @@ const PaymentsTable = memo(({ data, count }: PaymentsTableProps) => {
   const permissions = usePermissions();
   const navigate = useNavigate();
   const currencyFormatter = useCurrencyFormatter();
-  const { formatDate } = useDateFormatter();
   const [customers] = useCustomers();
   const [suppliers] = useSuppliers();
   const deleteModal = useDisclosure();
@@ -142,7 +138,9 @@ const PaymentsTable = memo(({ data, count }: PaymentsTableProps) => {
       {
         accessorKey: "paymentDate",
         header: t`Payment Date`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: { icon: <LuCalendar /> }
       },
       {
@@ -186,7 +184,7 @@ const PaymentsTable = memo(({ data, count }: PaymentsTableProps) => {
         cell: ({ row }) => row.original.reference ?? null
       }
     ],
-    [t, formatDate, currencyFormatter, customers, suppliers]
+    [t, currencyFormatter, customers, suppliers]
   );
 
   return (

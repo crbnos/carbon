@@ -1,3 +1,4 @@
+import { EPSILON, round } from "./precision";
 import type { Violation } from "./storage-rules";
 
 export type OverReceiptReceiptLine = {
@@ -36,8 +37,6 @@ export function getOverReceiptViolations(
     );
   }
 
-  const round = (value: number) => Math.round(value * 100000) / 100000;
-
   const violations: Violation[] = [];
   const ruleNames: Record<string, string> = {};
   for (const poLine of purchaseOrderLines) {
@@ -49,7 +48,7 @@ export function getOverReceiptViolations(
     const total = alreadyReceived + incoming;
     // Small tolerance so float artifacts from unit conversion don't flag an
     // exact receipt as over.
-    if (total > ordered + 1e-6) {
+    if (total > ordered + EPSILON) {
       const ruleId = `over-receipt:${poLine.id}`;
       violations.push({
         ruleId,

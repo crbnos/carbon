@@ -1,4 +1,6 @@
 import { getLogger } from "@carbon/logger";
+import { datetime } from "@carbon/utils";
+import { CalendarDate, now } from "@internationalized/date";
 
 export { stripSpecialCharacters } from "@carbon/utils";
 
@@ -52,31 +54,20 @@ export const copyToClipboard = async (
   }
 };
 
-// ISO 8601 week number (1-53). Week 1 is the week containing the year's first Thursday.
-export const getISOWeek = (date: Date): number => {
-  const d = new Date(
-    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
-  );
-  const dayNum = d.getUTCDay() || 7; // Sunday → 7
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum); // shift to the week's Thursday
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-};
-
-// used to generate sequences
-export const interpolateSequenceDate = (value: string | null) => {
+// used to generate sequences — date tokens derive in the company's business
+// timezone so document prefixes roll over at the company's midnight, not the
+// process's. Mirrors functions/lib/utils.ts; keep the two in sync.
+export const interpolateSequenceDate = (
+  value: string | null,
+  timezone = "UTC"
+) => {
   // replace all instances of %{year} with the current year
   if (!value) return "";
   let result = value;
 
   if (result.includes("%{")) {
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const hours = date.getHours();
-    const seconds = date.getSeconds();
-    const week = getISOWeek(date);
+    const { year, month, day, hour: hours, second: seconds } = now(timezone);
+    const week = datetime.weekNumber(new CalendarDate(year, month, day));
 
     result = result.replace(/%{yyyy}/g, year.toString());
     result = result.replace(/%{yy}/g, year.toString().slice(-2));

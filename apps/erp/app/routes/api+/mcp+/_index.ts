@@ -4,9 +4,11 @@ import {
   getUserScopedClient
 } from "@carbon/auth/client.server";
 import { getAppUrl } from "@carbon/env";
+import { datetime } from "@carbon/utils";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "react-router";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { createMcpServer } from "./lib/server";
 
 const corsHeaders = {
@@ -123,7 +125,14 @@ async function resolveAuth(request: Request): Promise<{
 export async function action({ request }: ActionFunctionArgs) {
   const { ctx, request: authedRequest } = await resolveAuth(request);
 
-  const server = createMcpServer(ctx);
+  // The agent is told what "today" is; it has to be the company's day, not the
+  // server's, or every relative-date tool call it makes lands a day off.
+  const server = createMcpServer(
+    ctx,
+    datetime
+      .today(await getCompanyTimeZone(ctx.client, ctx.companyId))
+      .toString()
+  );
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
     enableJsonResponse: true

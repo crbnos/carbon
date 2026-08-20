@@ -7,6 +7,10 @@ import { ONSHAPE_CLIENT_ID, ONSHAPE_CLIENT_SECRET } from "@carbon/env";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import axios from "axios";
+import {
+  persistIntegrationSecrets,
+  resolveIntegrationSecrets
+} from "../../integrations/secrets";
 import type { OnshapeDocument } from "./document.type";
 import type { OnshapeElementType } from "./element.type";
 
@@ -253,7 +257,7 @@ export class OnshapeClient {
   ): Promise<any> {
     return this.request(
       "GET",
-      `/api/v10/assemblies/d/${documentId}/v/${versionId}/e/${elementId}/bom?indented=true&multiLevel=true&generateIfAbsent=true&onlyVisibleColumns=true&includeItemMicroversions=false&includeTopLevelAssemblyRow=true&thumbnail=false`
+      `/api/v10/assemblies/d/${documentId}/v/${versionId}/e/${elementId}/bom?indented=true&multiLevel=true&generateIfAbsent=true&onlyVisibleColumns=false&includeItemMicroversions=false&includeTopLevelAssemblyRow=true&thumbnail=false`
     );
   }
 
@@ -606,7 +610,18 @@ export async function getOnshapeClient(
     return { client: null, error: "Onshape integration not found" };
   }
 
-  const metadata = integration.data.metadata as Record<string, any>;
+  // Secret material (accessToken/refreshToken) lives in Supabase Vault; merge it
+  // back so we read `metadata.credentials` the same as before. Vault RPCs require
+  // the service-role client (the passed `client` may be RLS-scoped).
+  const { getCarbonServiceRole } = await import("@carbon/auth/client.server");
+  const serviceRole = getCarbonServiceRole();
+  const metadata = (await resolveIntegrationSecrets(
+    serviceRole,
+    companyId,
+    "onshape",
+    integration.data.metadata,
+    integration.data.secretRef
+  )) as Record<string, any>;
   const credentials = metadata?.credentials;
 
   if (!credentials?.accessToken) {
@@ -629,24 +644,17 @@ export async function getOnshapeClient(
 
       accessToken = refreshed.access_token;
 
-      // Persist the new tokens
-      await client
-        .from("companyIntegration")
-        .update({
-          metadata: {
-            ...metadata,
-            credentials: {
-              ...credentials,
-              accessToken: refreshed.access_token,
-              refreshToken: refreshed.refresh_token,
-              expiresAt: new Date(Date.now() + 3600 * 1000).toISOString()
-            }
-          },
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
-        .eq("id", "onshape")
-        .eq("companyId", companyId);
+      // Persist the new tokens. Secret material is split out to Supabase Vault;
+      // only the non-secret config is written to the metadata column.
+      await persistIntegrationSecrets(serviceRole, companyId, "onshape", {
+        ...metadata,
+        credentials: {
+          ...credentials,
+          accessToken: refreshed.access_token,
+          refreshToken: refreshed.refresh_token,
+          expiresAt: new Date(Date.now() + 3600 * 1000).toISOString()
+        }
+      });
     } catch (error) {
       logger.error("Failed to refresh Onshape token", { error });
       return { client: null, error: "Failed to refresh Onshape token" };

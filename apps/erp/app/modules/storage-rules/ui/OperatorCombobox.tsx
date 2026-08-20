@@ -78,6 +78,37 @@ export const OPERATOR_META: Record<
     description: "Numeric <",
     icon: <LuArrowDown className="h-3.5 w-3.5" />,
     symbol: "<"
+  },
+  // No storage-rule field offers these yet; present so the map stays exhaustive.
+  gte: {
+    title: "greater than or equal to",
+    description: "Numeric ≥",
+    icon: <LuArrowUp className="h-3.5 w-3.5" />,
+    symbol: "≥"
+  },
+  lte: {
+    title: "less than or equal to",
+    description: "Numeric ≤",
+    icon: <LuArrowDown className="h-3.5 w-3.5" />,
+    symbol: "≤"
+  },
+  contains: {
+    title: "contains",
+    description: "Text contains, or list includes",
+    icon: <LuList className="h-3.5 w-3.5" />,
+    symbol: "⊇"
+  },
+  startsWith: {
+    title: "starts with",
+    description: "Text begins with",
+    icon: <LuSquareDot className="h-3.5 w-3.5" />,
+    symbol: "a…"
+  },
+  endsWith: {
+    title: "ends with",
+    description: "Text ends with",
+    icon: <LuSquareSlash className="h-3.5 w-3.5" />,
+    symbol: "…a"
   }
 };
 

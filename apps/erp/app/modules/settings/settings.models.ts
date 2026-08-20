@@ -6,7 +6,7 @@ import {
   sectionConfigSchema,
   themeSchema
 } from "@carbon/documents/template";
-import { labelSizes } from "@carbon/utils";
+import { isValidTimeZone, labelSizes } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { plmReleaseControl } from "~/modules/items/items.models";
@@ -54,7 +54,7 @@ export type ApiKeyPermissionModule = keyof typeof apiKeyPermissionModules;
 
 export const apiKeyValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   scopes: zfd.text(z.string().optional()),
   expiresAt: zfd.text(
     z
@@ -67,7 +67,7 @@ export const apiKeyValidator = z.object({
 });
 
 const companyAddress = {
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   addressLine1: z.string().min(1, { message: "Address is required" }),
   addressLine2: zfd.text(z.string().optional()),
   city: z.string().min(1, { message: "City is required" }),
@@ -75,6 +75,10 @@ const companyAddress = {
   postalCode: z.string().min(1, { message: "Postal Code is required" }),
   countryCode: z.string().min(1, { message: "Country is required" }),
   baseCurrencyCode: zfd.text(z.string()),
+  timezone: z
+    .string()
+    .min(1, { message: "Timezone is required" })
+    .refine(isValidTimeZone, { message: "Invalid timezone" }),
   website: zfd.text(z.string().optional())
 };
 
@@ -110,7 +114,7 @@ export const onboardingCompanyValidator = z.object({
 export const customFieldValidator = z
   .object({
     id: zfd.text(z.string().optional()),
-    name: z.string().min(1, { message: "Name is required" }),
+    name: z.string().trim().min(1, { message: "Name is required" }),
     table: z.string().min(1, { message: "Table is required" }),
     dataTypeId: zfd.numeric(
       z.number().min(1, { message: "Data type is required" })
@@ -353,7 +357,7 @@ export const themeValidator = z.object({
 export const webhookValidator = z
   .object({
     id: zfd.text(z.string().optional()),
-    name: z.string().min(1, { message: "Name is required" }),
+    name: z.string().trim().min(1, { message: "Name is required" }),
     table: z.string().min(1, { message: "Table is required" }),
     url: z.string().url({ message: "Must be a valid URL" }),
     onInsert: zfd.checkbox(),
@@ -374,6 +378,237 @@ export const webhookValidator = z
 
 export const consoleSettingsValidator = z.object({
   consoleEnabled: zfd.checkbox()
+});
+
+/**
+ * Retry / Skip / Re-send actions on accounting sync operations. `ids` is a
+ * repeated form field (one entry per selected operation) so bulk retry can
+ * submit many operations in one POST. The only user-driven target statuses
+ * are "Pending" (retry / re-send) and "Skipped" — the service's transition
+ * guard re-validates against the row's current status.
+ */
+export const syncOperationTransitionValidator = z.object({
+  intent: z.literal("transition-sync-operation"),
+  ids: zfd.repeatable(
+    z.array(z.string().min(1)).min(1, { message: "No operations selected" })
+  ),
+  to: z.enum(["Pending", "Skipped"])
+});
+
+/**
+ * Saves one account mapping row (Carbon account.id → provider account id)
+ * from the integration drawer's Account Mapping tab. externalCode /
+ * externalName are display metadata captured from the selected provider
+ * account — the journal syncer resolves provider account codes from the
+ * mapping's stored externalCode, so the code must be persisted.
+ */
+export const accountMappingUpsertValidator = z.object({
+  intent: z.literal("upsert-account-mapping"),
+  accountId: z.string().min(1, { message: "Account is required" }),
+  externalId: z.string().min(1, { message: "Provider account is required" }),
+  externalCode: zfd.text(z.string().optional()),
+  externalName: zfd.text(z.string().optional())
+});
+
+const accountMappingEntrySchema = z.object({
+  accountId: z.string().min(1),
+  externalId: z.string().min(1),
+  externalCode: z.string().optional(),
+  externalName: z.string().optional()
+});
+
+/**
+ * Confirm-all from the match-by-code drawer. `mappings` is a repeated form
+ * field (per the sync-operation `ids` precedent) — each entry a
+ * JSON-encoded proposal validated against the same shape as the single-row
+ * upsert.
+ */
+export const accountMappingBulkUpsertValidator = z.object({
+  intent: z.literal("bulk-upsert-account-mappings"),
+  mappings: zfd.repeatable(
+    z
+      .array(
+        z
+          .string()
+          .transform((value, ctx) => {
+            try {
+              return JSON.parse(value);
+            } catch {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Invalid account mapping payload"
+              });
+              return z.NEVER;
+            }
+          })
+          .pipe(accountMappingEntrySchema)
+      )
+      .min(1, { message: "No account mappings to save" })
+  )
+});
+
+/**
+ * "Suggest with AI" from the Account Mapping tab. The unmapped Carbon
+ * accounts and the provider chart already sit in the loaded tab data, so
+ * the client ships them back as two JSON-encoded hidden fields instead of
+ * the action re-fetching the provider chart. The AI step only proposes
+ * matches (nothing is written) — proposals are confirmed through the same
+ * `bulk-upsert-account-mappings` path.
+ */
+const jsonArrayField = <T extends z.ZodTypeAny>(element: T) =>
+  z.string().transform((value, ctx) => {
+    try {
+      const parsed = JSON.parse(value);
+      const result = z.array(element).safeParse(parsed);
+      if (!result.success) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Invalid account list payload"
+        });
+        return z.NEVER;
+      }
+      return result.data;
+    } catch {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Invalid account list payload"
+      });
+      return z.NEVER;
+    }
+  });
+
+export const accountMappingAiSuggestValidator = z.object({
+  intent: z.literal("ai-suggest-account-mappings"),
+  accounts: jsonArrayField(
+    z.object({
+      id: z.string().min(1),
+      number: z.string().nullable(),
+      name: z.string()
+    })
+  ),
+  providerAccounts: jsonArrayField(
+    z.object({
+      id: z.string().min(1),
+      code: z.string().nullable().optional(),
+      name: z.string().nullable().optional()
+    })
+  )
+});
+
+/**
+ * Posting-sync settings persisted (deep-merged) at
+ * companyIntegration.metadata.settings.postingSync in the v3 shape. Field
+ * semantics mirror @carbon/ee/accounting's PostingSyncSettingsSchema:
+ * posting sync is ALWAYS-ON (no master enable, no per-type enable — Manual
+ * never syncs per POSTING_POLICY); `sourceTypeConfigs` is a repeated hidden
+ * field of "<sourceType>|<granularity>" carrying each non-Manual
+ * journal-represented type's granularity; `familyAr`/`familyAp` are the
+ * AR/AP representation modes ("journals" is schema-valid but UI-gated until
+ * the spec's Phase 4 ships).
+ */
+export const postingSyncSettingsValidator = z.object({
+  intent: z.literal("update-posting-settings"),
+  sourceTypeConfigs: zfd.repeatable(
+    z.array(
+      z
+        .string()
+        .regex(
+          /^[^|]+\|(individual|daily-summary)$/,
+          "Malformed source-type config"
+        )
+    )
+  ),
+  familyAr: z.enum(["documents", "journals", "none"]),
+  familyAp: z.enum(["documents", "journals", "none"]),
+  periodLockPolicy: z.enum(["park", "redate"]),
+  lockDate: zfd.text(z.string().optional())
+});
+
+/**
+ * Saves the dimension-slot configuration (Dimensions tab): which Carbon
+ * dimensions ride along on pushed journals and which provider analytics
+ * target each one maps to. `slots` is a repeated JSON-encoded hidden field
+ * (per the bulk account-mapping precedent); zero slots is a valid save
+ * (dimension sync off). The action re-validates the slots against the
+ * provider's declared targets via validateDimensionSlots before writing.
+ */
+const dimensionSlotEntrySchema = z.object({
+  dimensionId: z.string().min(1),
+  target: z.string().min(1),
+  autoCreate: z.boolean().optional()
+});
+
+export const dimensionSlotsUpdateValidator = z.object({
+  intent: z.literal("update-dimension-slots"),
+  onUnmappedDimensionValue: z.enum(["warn", "drop"]),
+  slots: zfd.repeatable(
+    z.array(
+      z
+        .string()
+        .transform((value, ctx) => {
+          try {
+            return JSON.parse(value);
+          } catch {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Invalid dimension slot payload"
+            });
+            return z.NEVER;
+          }
+        })
+        .pipe(dimensionSlotEntrySchema)
+    )
+  )
+});
+
+/**
+ * Saves one dimension-value mapping row (Carbon `<dimensionId>:<valueId>`
+ * → provider option id) from the Dimensions tab. externalName is display
+ * metadata captured from the selected provider option, mirroring the
+ * account-mapping upsert.
+ */
+export const dimensionValueMappingUpsertValidator = z.object({
+  intent: z.literal("upsert-dimension-value-mapping"),
+  dimensionId: z.string().min(1, { message: "Dimension is required" }),
+  valueId: z.string().min(1, { message: "Value is required" }),
+  externalId: z.string().min(1, { message: "Provider value is required" }),
+  externalName: zfd.text(z.string().optional())
+});
+
+const dimensionValueMappingEntrySchema = z.object({
+  dimensionId: z.string().min(1),
+  valueId: z.string().min(1),
+  externalId: z.string().min(1),
+  externalName: z.string().optional()
+});
+
+/**
+ * Confirm-all from the match-by-name drawer. `mappings` is a repeated
+ * JSON-encoded form field — the same shape/precedent as
+ * accountMappingBulkUpsertValidator.
+ */
+export const dimensionValueMappingBulkUpsertValidator = z.object({
+  intent: z.literal("bulk-upsert-dimension-value-mappings"),
+  mappings: zfd.repeatable(
+    z
+      .array(
+        z
+          .string()
+          .transform((value, ctx) => {
+            try {
+              return JSON.parse(value);
+            } catch {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Invalid dimension value mapping payload"
+              });
+              return z.NEVER;
+            }
+          })
+          .pipe(dimensionValueMappingEntrySchema)
+      )
+      .min(1, { message: "No dimension value mappings to save" })
+  )
 });
 
 export const quoteLineCategoryMarkupsSettingsValidator = z.object({

@@ -1,7 +1,9 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { scrapTrackedEntityValidator } from "~/services/models";
 import { getTrackedEntity } from "~/services/operations.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -14,6 +16,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Get optional parentId from query params
   const url = new URL(request.url);
   const parentTrackedEntityId = url.searchParams.get("parentId") || undefined;
+
+  const formData = await request.formData();
+  const validation = await validator(scrapTrackedEntityValidator).validate(
+    formData
+  );
+  if (validation.error) {
+    return validationError(validation.error);
+  }
 
   const trackedEntity = await getTrackedEntity(client, trackedEntityId);
   if (trackedEntity.error) {
@@ -30,6 +40,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
       materialId,
       parentTrackedEntityId,
       type: "scrapTrackedEntity",
+      scrapReasonId: validation.data.scrapReasonId,
+      makeReplacement: validation.data.makeReplacement,
       companyId,
       userId
     }
@@ -37,10 +49,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (issue.error) {
     return data(
-      { success: false, message: "Failed to scrape entity" },
+      { success: false, message: "Failed to scrap entity" },
       { status: 400 }
     );
   }
 
-  return { success: true, message: "Entity scraped successfully" };
+  return { success: true, message: "Entity scrapped successfully" };
 }

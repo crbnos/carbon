@@ -2,6 +2,15 @@ import { emailHealthcheck } from "./email/hooks.server";
 import { jiraHealthcheck } from "./jira/hooks.server";
 import { linearHealthcheck } from "./linear/hooks.server";
 import { onshapeOnUninstall } from "./onshape/hooks.server";
+import {
+  quickbooksOnInstall,
+  quickbooksOnUninstall
+} from "./quickbooks/hooks.server";
+import {
+  rilletHealthcheck,
+  rilletOnInstall,
+  rilletOnUninstall
+} from "./rillet/hooks.server";
 import type { IntegrationServerHooks } from "./types";
 
 // Onshape keeps its release webhook subscription in lockstep with the asset-sync
@@ -39,9 +48,25 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
   onshape: {
     onUninstall: onshapeOnUninstall
   },
+  // The accounting providers' onUpdate re-runs the same subscription
+  // convergence as onInstall: a settings save on an existing install
+  // self-heals the company's `${provider}-sync` subscription rows whenever
+  // REQUIRED_SYNC_SUBSCRIPTIONS grows.
+  quickbooks: {
+    onInstall: quickbooksOnInstall,
+    onUpdate: quickbooksOnInstall,
+    onUninstall: quickbooksOnUninstall
+  },
+  rillet: {
+    onHealthcheck: rilletHealthcheck,
+    onInstall: rilletOnInstall,
+    onUpdate: rilletOnInstall,
+    onUninstall: rilletOnUninstall
+  },
   xero: {
     onHealthcheck: xeroHealthcheck,
     onInstall: xeroOnInstall,
+    onUpdate: xeroOnInstall,
     onUninstall: xeroOnUninstall
   }
 };

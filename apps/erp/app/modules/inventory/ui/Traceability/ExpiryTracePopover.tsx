@@ -16,6 +16,7 @@ import {
   LuShieldCheck
 } from "react-icons/lu";
 import { Link } from "react-router";
+import { DateTime } from "~/components";
 import { useDateFormatter } from "~/hooks";
 import type { TrackedEntity } from "~/modules/inventory";
 import { path } from "~/utils/path";
@@ -187,7 +188,11 @@ export function ExpiryTracePopover({
                       : "text-muted-foreground")
                   }
                 >
-                  {step.date ? formatDate(step.date) : ""}
+                  {step.date ? (
+                    <DateTime value={step.date} variant="date" />
+                  ) : (
+                    ""
+                  )}
                 </div>
               </li>
             );

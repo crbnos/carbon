@@ -13,6 +13,7 @@ import { Trans } from "@lingui/react/macro";
 import { LuTriangleAlert } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
+import { DateTime } from "~/components";
 import { PickingListStatus } from "~/components/PickingListStatus";
 import { userContext } from "~/context";
 import { getAssignedPickingLists } from "~/services/picking.service";
@@ -83,7 +84,7 @@ export default function PickingIndexRoute() {
                               <Trans>Due Date</Trans>
                             </span>
                             <span>
-                              {new Date(pl.dueDate).toLocaleDateString()}
+                              <DateTime value={pl.dueDate} variant="date" />
                             </span>
                           </HStack>
                         )}

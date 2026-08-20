@@ -28,6 +28,8 @@ Carbon is a manufacturing ERP/MES/QMS. It contains apps for ERP, MES, academy, a
 - Never use `npm` — always `pnpm`.
 - Never use JavaScript `Date` for parsing, formatting, or arithmetic — use `@internationalized/date` + `@carbon/utils` `formatDate` (see `.claude/rules/date-handling.md`).
 - Never expose cross-tenant data or skip `companyId` scoping.
+- Never query inside a loop (N+1) — collect the ids and make one `.in()` call, an embed, or a view (see `.claude/rules/database-patterns.md`).
+- Never chain Supabase-client writes and call it a transaction — the client has none. Use a Kysely transaction, or an RPC when it must also be callable from an edge function.
 - Never hand-edit generated DB types (`@carbon/database` types).
 - Never scatter service/models files — one `{module}.service.ts` and one `{module}.models.ts` per module.
 - Never rebuild the database to test changes — wait for the user.
@@ -84,6 +86,8 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Traceability / lot tracking | `.claude/rules/traceability-model.md` |
 | Revision system | `.claude/rules/revision-system.md` |
 | Kanban | `.claude/rules/kanban-system.md` |
+| Workflows (customer automation rules) | `.claude/rules/workflow-event-catalog.md` + `.claude/rules/workflow-matcher.md` + `.claude/rules/workflow-engine.md` + `packages/workflows/AGENTS.md` |
+| Workflow run history + retention | `.claude/rules/workflow-run-history.md` |
 | Fixed assets | `.claude/rules/fixed-asset-lifecycle.md` |
 | Risk register | `.claude/rules/risk-register-module.md` |
 | **Infrastructure** | |
@@ -104,6 +108,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | **Architecture** | |
 | General coding conventions | `.claude/rules/coding-conventions.md` |
 | Date & time handling (no JS `Date`) | `.claude/rules/date-handling.md` |
+| Numeric precision & formatting (two scales, named kinds, tax pair) | `.claude/rules/numeric-precision.md` |
 | Project overview | `.claude/rules/project-overview.md` |
 | Customer/supplier DB schema | `.claude/rules/customer-supplier-database-schema.md` |
 | User/employee/job relationships | `.claude/rules/user-employee-job-relationships.md` |
@@ -174,6 +179,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 - **Multi-tenancy**: every table has `companyId` + composite PK `("id", "companyId")`
 - **IDs**: `id('prefix')` default in SQL
 - **Imports**: `~/*` → app code; `@carbon/*` → workspace packages
+- **Precision**: `packages/utils/src/math.ts` re-exports `functions/shared/precision.ts` by design (the edge runtime only mounts `supabase/functions/`) — not an import to "fix"
 
 ## ERP Module Layout
 

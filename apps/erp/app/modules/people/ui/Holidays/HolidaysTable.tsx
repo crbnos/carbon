@@ -7,9 +7,9 @@ import { BsFillPenFill } from "react-icons/bs";
 import { IoMdTrash } from "react-icons/io";
 import { LuCalendar, LuCalendarDays, LuCalendarRange } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { Hyperlink, New, Table } from "~/components";
+import { DateTime, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { useDateFormatter, usePermissions, useUrlParams } from "~/hooks";
+import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
 import type { Holiday } from "../../types";
@@ -24,7 +24,6 @@ const HolidaysTable = memo(({ data, count, years }: HolidaysTableProps) => {
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
-  const { formatDate } = useDateFormatter();
   const [params] = useUrlParams();
 
   const customColumns = useCustomColumns<(typeof data)[number]>("holiday");
@@ -61,14 +60,16 @@ const HolidaysTable = memo(({ data, count, years }: HolidaysTableProps) => {
       {
         accessorKey: "date",
         header: t`Date`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => (
+          <DateTime value={item.getValue<string>()} variant="date" />
+        ),
         meta: {
           icon: <LuCalendarDays />
         }
       }
     ];
     return [...defaultColumns, ...customColumns];
-  }, [customColumns, years, t, formatDate]);
+  }, [customColumns, years, t]);
 
   const renderContextMenu = useCallback(
     (row: (typeof data)[number]) => {

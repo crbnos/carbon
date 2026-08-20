@@ -16,8 +16,8 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { LuBanknote, LuClock, LuHandCoins } from "react-icons/lu";
 import { Link } from "react-router";
-import { MetricCard } from "~/components";
-import { useCurrencyFormatter, useDateFormatter } from "~/hooks";
+import { DateTime, MetricCard } from "~/components";
+import { useCurrencyFormatter } from "~/hooks";
 import { useCustomers, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import PaymentStatus from "../Payment/PaymentStatus";
@@ -175,7 +175,6 @@ const InvoicingDashboard = ({
   recentPayments
 }: InvoicingDashboardProps) => {
   const { t } = useLingui();
-  const { formatDate } = useDateFormatter();
   const currencyFormatter = useCurrencyFormatter();
   const format = (n: number) => currencyFormatter.format(n);
   const [customers] = useCustomers();
@@ -318,7 +317,11 @@ const InvoicingDashboard = ({
                     return (
                       <Tr key={p.id}>
                         <Td>
-                          {p.paymentDate ? formatDate(p.paymentDate) : "—"}
+                          {p.paymentDate ? (
+                            <DateTime value={p.paymentDate} variant="date" />
+                          ) : (
+                            "—"
+                          )}
                         </Td>
                         <Td>
                           <Link

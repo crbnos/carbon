@@ -13,8 +13,6 @@ import {
   Input,
   InputControlled,
   MultiSelect,
-  Number,
-  NumberControlled,
   Password,
   PhoneInput,
   Radios,
@@ -22,8 +20,7 @@ import {
   SelectControlled,
   Submit,
   TextArea,
-  TimePicker,
-  Timezone
+  TimePicker
 } from "@carbon/form";
 
 import Abilities from "./Abilities";
@@ -36,6 +33,7 @@ import Color from "./Color";
 import ConversionFactor from "./ConversionFactor";
 import CostCenter from "./CostCenter";
 import Currency from "./Currency";
+import { Number, NumberControlled } from "./CurrencyNumber";
 import Customer from "./Customer";
 import CustomerContact from "./CustomerContact";
 import CustomerLocation from "./CustomerLocation";
@@ -83,6 +81,8 @@ import SupplierStatus from "./SupplierStatus";
 import Suppliers from "./Suppliers";
 import SupplierType from "./SupplierType";
 import Tags from "./Tags";
+import { TaxFields, useTaxPair } from "./TaxFields";
+import Timezone from "./Timezone";
 import Tool from "./Tool";
 import UnitHint from "./UnitHint";
 import UnitOfMeasure from "./UnitOfMeasure";
@@ -172,6 +172,8 @@ export {
   SupplierStatus,
   SupplierType,
   Tags,
+  TaxFields,
+  useTaxPair,
   TextArea,
   TimePicker,
   Timezone,

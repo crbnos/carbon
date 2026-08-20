@@ -35,13 +35,21 @@ import {
   ChartTooltip,
   ChartTooltipContent
 } from "@carbon/react/Chart";
+import {
+  formatDate,
+  formatExchangeRate,
+  INPUT_FORMAT,
+  INPUT_STEP
+} from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import { json2csv } from "json-2-csv";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { LuDownload } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import type { z } from "zod";
+import { DateTime } from "~/components";
 import {
   CustomFormFields,
   Hidden,
@@ -78,9 +86,7 @@ const CurrencyForm = ({
   const permissions = usePermissions();
   const navigate = useNavigate();
   const onClose = () => navigate(-1);
-  const [decimalPlaces, setDecimalPlaces] = useState(
-    initialValues.decimalPlaces ?? 2
-  );
+  const { locale } = useLocale();
 
   const { company } = useUser();
 
@@ -152,7 +158,6 @@ const CurrencyForm = ({
                 termId="decimal-places-currency"
                 minValue={0}
                 maxValue={4}
-                onChange={setDecimalPlaces}
               />
               <NumberField
                 name="exchangeRate"
@@ -160,9 +165,8 @@ const CurrencyForm = ({
                 termId="exchange-rate"
                 minValue={isBaseCurrency ? 1 : 0}
                 maxValue={isBaseCurrency ? 1 : undefined}
-                formatOptions={{
-                  minimumFractionDigits: decimalPlaces ?? 0
-                }}
+                step={INPUT_STEP.exchangeRate}
+                formatOptions={INPUT_FORMAT.exchangeRate}
                 helperText={exchangeRateHelperText}
               />
               {!isBaseCurrency && (
@@ -171,9 +175,8 @@ const CurrencyForm = ({
                   label={t`Historical Rate (Equity)`}
                   termId="historical-exchange-rate"
                   minValue={0}
-                  formatOptions={{
-                    minimumFractionDigits: decimalPlaces ?? 0
-                  }}
+                  step={INPUT_STEP.exchangeRate}
+                  formatOptions={INPUT_FORMAT.exchangeRate}
                   helperText="Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
                 />
               )}
@@ -226,7 +229,7 @@ const CurrencyForm = ({
                           <XAxis
                             dataKey="date"
                             tickFormatter={(v) =>
-                              new Date(v).toLocaleDateString(undefined, {
+                              formatDate(v, {
                                 month: "short",
                                 day: "numeric"
                               })
@@ -245,7 +248,7 @@ const CurrencyForm = ({
                             content={
                               <ChartTooltipContent
                                 labelFormatter={(v) =>
-                                  new Date(v).toLocaleDateString(undefined, {
+                                  formatDate(v, {
                                     year: "numeric",
                                     month: "short",
                                     day: "numeric"
@@ -278,17 +281,10 @@ const CurrencyForm = ({
                             {[...chartData].reverse().map((row) => (
                               <Tr key={row.date}>
                                 <Td>
-                                  {new Date(row.date).toLocaleDateString(
-                                    undefined,
-                                    {
-                                      year: "numeric",
-                                      month: "short",
-                                      day: "numeric"
-                                    }
-                                  )}
+                                  <DateTime value={row.date} variant="date" />
                                 </Td>
                                 <Td className="text-right">
-                                  {row.rate.toFixed(decimalPlaces)}
+                                  {formatExchangeRate(row.rate, locale)}
                                 </Td>
                               </Tr>
                             ))}

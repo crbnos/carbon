@@ -3,6 +3,7 @@ import { createMappingService } from "../../../core/external-mapping";
 import { type Accounting, BaseEntitySyncer } from "../../../core/types";
 import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
+import type { XeroProvider } from "../provider";
 
 // Type for rows returned from customer/supplier queries with address and contact joins
 type EntityRow = {
@@ -34,6 +35,10 @@ export class ContactSyncer extends BaseEntitySyncer<
   Xero.Contact,
   "UpdatedDateUTC"
 > {
+  private get xeroProvider(): XeroProvider {
+    return this.provider as XeroProvider;
+  }
+
   // =================================================================
   // 1. ID MAPPING (Override to check both customer and supplier)
   // =================================================================
@@ -302,10 +307,9 @@ export class ContactSyncer extends BaseEntitySyncer<
   // =================================================================
 
   async fetchRemote(id: string): Promise<Xero.Contact | null> {
-    const result = await this.provider.request<{ Contacts: Xero.Contact[] }>(
-      "GET",
-      `/Contacts/${id}`
-    );
+    const result = await this.xeroProvider.request<{
+      Contacts: Xero.Contact[];
+    }>("GET", `/Contacts/${id}`);
 
     return result.error ? null : (result.data?.Contacts?.[0] ?? null);
   }
@@ -316,10 +320,9 @@ export class ContactSyncer extends BaseEntitySyncer<
     const result = new Map<string, Xero.Contact>();
     if (ids.length === 0) return result;
 
-    const response = await this.provider.request<{ Contacts: Xero.Contact[] }>(
-      "GET",
-      `/Contacts?IDs=${ids.join(",")}`
-    );
+    const response = await this.xeroProvider.request<{
+      Contacts: Xero.Contact[];
+    }>("GET", `/Contacts?IDs=${ids.join(",")}`);
 
     if (response.error) {
       throwXeroApiError("fetch contacts batch", response);
@@ -639,11 +642,9 @@ export class ContactSyncer extends BaseEntitySyncer<
       ? [{ ...data, ContactID: existingRemoteId }]
       : [data];
 
-    const result = await this.provider.request<{ Contacts: Xero.Contact[] }>(
-      "POST",
-      "/Contacts",
-      { body: JSON.stringify({ Contacts: contacts }) }
-    );
+    const result = await this.xeroProvider.request<{
+      Contacts: Xero.Contact[];
+    }>("POST", "/Contacts", { body: JSON.stringify({ Contacts: contacts }) });
 
     if (result.error) {
       throwXeroApiError(
@@ -668,10 +669,9 @@ export class ContactSyncer extends BaseEntitySyncer<
   private async findRemoteContactByName(name: string): Promise<string | null> {
     // Xero where filter requires double-quoting string values and escaping quotes
     const escapedName = name.replace(/"/g, '\\"');
-    const result = await this.provider.request<{ Contacts: Xero.Contact[] }>(
-      "GET",
-      `/Contacts?where=Name=="${escapedName}"`
-    );
+    const result = await this.xeroProvider.request<{
+      Contacts: Xero.Contact[];
+    }>("GET", `/Contacts?where=Name=="${escapedName}"`);
 
     if (!result.error && result.data?.Contacts?.[0]?.ContactID) {
       return result.data.Contacts[0].ContactID;
@@ -702,11 +702,9 @@ export class ContactSyncer extends BaseEntitySyncer<
       localIdOrder.push(localId);
     }
 
-    const response = await this.provider.request<{ Contacts: Xero.Contact[] }>(
-      "POST",
-      "/Contacts",
-      { body: JSON.stringify({ Contacts: contacts }) }
-    );
+    const response = await this.xeroProvider.request<{
+      Contacts: Xero.Contact[];
+    }>("POST", "/Contacts", { body: JSON.stringify({ Contacts: contacts }) });
 
     if (response.error) {
       throwXeroApiError("batch upsert contacts", response);

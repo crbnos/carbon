@@ -40,6 +40,7 @@ import { RxCodesandboxLogo } from "react-icons/rx";
 import { TbTargetArrow } from "react-icons/tb";
 import { Link, useFetcher, useNavigate } from "react-router";
 import {
+  DateTime,
   EmployeeAvatar,
   exportOnlyColumn,
   Hyperlink,
@@ -53,17 +54,17 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { ConfirmDelete } from "~/components/Modals";
-import { useDateFormatter, usePermissions } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import { itemTrackingTypes } from "../../items.models";
-import type { Consumable } from "../../types";
+import type { ConsumableListItem } from "../../types";
 
 type ConsumablesTableProps = {
-  data: Consumable[];
+  data: ConsumableListItem[];
   tags: { name: string }[];
   count: number;
 };
@@ -93,17 +94,18 @@ const ConsumablesTable = memo(
     );
     const navigate = useNavigate();
     const permissions = usePermissions();
-    const { formatDate } = useDateFormatter();
 
     const deleteItemModal = useDisclosure();
-    const [selectedItem, setSelectedItem] = useState<Consumable | null>(null);
+    const [selectedItem, setSelectedItem] = useState<ConsumableListItem | null>(
+      null
+    );
 
     const [people] = usePeople();
     const itemPostingGroups = useItemPostingGroups();
-    const customColumns = useCustomColumns<Consumable>("consumable");
+    const customColumns = useCustomColumns<ConsumableListItem>("consumable");
 
-    const columns = useMemo<ColumnDef<Consumable>[]>(() => {
-      const defaultColumns: ColumnDef<Consumable>[] = [
+    const columns = useMemo<ColumnDef<ConsumableListItem>[]>(() => {
+      const defaultColumns: ColumnDef<ConsumableListItem>[] = [
         {
           accessorKey: "id",
           header: t`Consumable ID`,
@@ -130,7 +132,7 @@ const ConsumablesTable = memo(
             exportValue: (row) => row.readableIdWithRevision ?? null
           }
         },
-        exportOnlyColumn<Consumable>({
+        exportOnlyColumn<ConsumableListItem>({
           id: "itemName",
           header: t`Item Name`,
           value: (row) => row.name ?? null
@@ -350,7 +352,9 @@ const ConsumablesTable = memo(
         {
           accessorKey: "createdAt",
           header: t`Created At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -375,7 +379,9 @@ const ConsumablesTable = memo(
         {
           accessorKey: "updatedAt",
           header: t`Updated At`,
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             icon: <LuCalendar />
           }
@@ -389,8 +395,7 @@ const ConsumablesTable = memo(
       itemPostingGroups,
       t,
       translateMethodType,
-      translateTrackingType,
-      formatDate
+      translateTrackingType
     ]);
 
     const fetcher = useFetcher<typeof action>();
@@ -512,11 +517,11 @@ const ConsumablesTable = memo(
     );
 
     const renderContextMenu = useMemo(() => {
-      return (row: Consumable) => (
+      return (row: ConsumableListItem) => (
         <>
           <MenuItem onClick={() => navigate(path.to.consumable(row.id!))}>
             <MenuIcon icon={<LuPencil />} />
-            Edit Consumable
+            Edit ConsumableListItem
           </MenuItem>
           <MenuItem
             disabled={!permissions.can("delete", "parts")}
@@ -527,7 +532,7 @@ const ConsumablesTable = memo(
             }}
           >
             <MenuIcon icon={<LuTrash />} />
-            Delete Consumable
+            Delete ConsumableListItem
           </MenuItem>
         </>
       );
@@ -535,7 +540,7 @@ const ConsumablesTable = memo(
 
     return (
       <>
-        <Table<Consumable>
+        <Table<ConsumableListItem>
           count={count}
           columns={columns}
           data={data}

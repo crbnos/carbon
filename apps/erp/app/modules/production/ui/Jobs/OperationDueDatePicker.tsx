@@ -3,7 +3,7 @@ import { DatePicker as DatePickerInput } from "@carbon/react";
 import { parseDate } from "@internationalized/date";
 import { LuPin } from "react-icons/lu";
 import { useSubmit } from "react-router";
-import { useDateFormatter } from "~/hooks";
+import { DateTime } from "~/components";
 import { path } from "~/utils/path";
 
 type OperationDueDatePickerProps = {
@@ -20,7 +20,6 @@ export function OperationDueDatePicker({
   onChange
 }: OperationDueDatePickerProps) {
   const submit = useSubmit();
-  const { formatDate } = useDateFormatter();
 
   return (
     <DatePickerInput
@@ -30,7 +29,7 @@ export function OperationDueDatePicker({
         dueDate ? (
           <span className="flex flex-grow line-clamp-1 items-center gap-1 text-xs text-muted-foreground">
             {manuallyScheduled && <LuPin className="h-3 w-3 shrink-0" />}
-            {formatDate(dueDate)}
+            <DateTime value={dueDate} variant="date" />
           </span>
         ) : (
           true

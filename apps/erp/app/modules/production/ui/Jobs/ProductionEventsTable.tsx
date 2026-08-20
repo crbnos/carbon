@@ -6,6 +6,7 @@ import { memo, useCallback, useMemo, useState } from "react";
 import { LuPencil, LuTimer, LuTrash } from "react-icons/lu";
 import { useNavigate, useParams } from "react-router";
 import {
+  DateTime,
   EmployeeAvatar,
   Hyperlink,
   New,
@@ -14,7 +15,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import { useDateFormatter, usePermissions, useUrlParams } from "~/hooks";
+import { usePermissions, useUrlParams } from "~/hooks";
 import type { WorkCenter } from "~/modules/resources/types";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -32,7 +33,6 @@ const ProductionEventsTable = memo(
     const { jobId } = useParams();
     const { t } = useLingui();
     if (!jobId) throw new Error("Job ID is required");
-    const { formatDateTime } = useDateFormatter();
     const [people] = usePeople();
 
     const columns = useMemo<ColumnDef<ProductionEvent>[]>(() => {
@@ -149,13 +149,16 @@ const ProductionEventsTable = memo(
         {
           accessorKey: "startTime",
           header: t`Start Time`,
-          cell: ({ row }) => formatDateTime(row.original.startTime)
+          cell: ({ row }) => (
+            <DateTime value={row.original.startTime} variant="absolute" />
+          )
         },
         {
           accessorKey: "endTime",
           header: t`End Time`,
-          cell: ({ row }) =>
-            row.original.endTime ? formatDateTime(row.original.endTime) : null
+          cell: ({ row }) => (
+            <DateTime value={row.original.endTime} variant="absolute" />
+          )
         },
         {
           accessorKey: "notes",
@@ -170,7 +173,7 @@ const ProductionEventsTable = memo(
           )
         }
       ];
-    }, [operations, people, workCenters, t, formatDateTime]);
+    }, [operations, people, workCenters, t]);
 
     const permissions = usePermissions();
 

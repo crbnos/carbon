@@ -21,6 +21,10 @@ msgstr "{0} - Jeu {1}"
 msgid "{0} Active"
 msgstr "{0} Actif(s)"
 
+#. placeholder {0}: precise?.text
+msgid "{0} ago"
+msgstr "il y a {0}"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -149,6 +153,9 @@ msgstr "Erreur d'authentification"
 msgid "available"
 msgstr "disponible"
 
+msgid "Available"
+msgstr "Disponible"
+
 msgid "Batch"
 msgstr "Lot"
 
@@ -211,9 +218,8 @@ msgstr "Pointer l'entrée"
 msgid "Clock Out"
 msgstr "Pointer la sortie"
 
-#. placeholder {0}: formatTime(openEntry.clockIn, locale)
-msgid "Clocked in since {0}"
-msgstr "Pointé depuis {0}"
+msgid "Clocked in since <0/>"
+msgstr "Connecté depuis <0/>"
 
 msgid "Close"
 msgstr "Fermer"
@@ -265,6 +271,9 @@ msgstr "Console"
 msgid "Console Mode"
 msgstr "Mode console"
 
+msgid "Consumed"
+msgstr "Consommé"
+
 msgid "Consumed expired"
 msgstr "Consommé expiré"
 
@@ -313,9 +322,8 @@ msgstr "Supprimer"
 msgid "Delete Step"
 msgstr "Supprimer l'étape"
 
-#. placeholder {0}: new Date(deletingEntry.clockIn).toLocaleString(locale)
-msgid "Delete Timecard ({0})"
-msgstr "Supprimer la fiche de temps ({0})"
+msgid "Delete Timecard (<0/>)"
+msgstr "Supprimer la feuille de temps (<0/>)"
 
 msgid "Describe the problem..."
 msgstr "Décrivez le problème..."
@@ -414,6 +422,12 @@ msgstr "Arrêter les opérations"
 msgid "Enter PIN for {0}"
 msgstr "Saisir le NIP pour {0}"
 
+msgid "Enter the 6-digit code from your authenticator app"
+msgstr "Entrez le code à 6 chiffres de votre application d'authentification"
+
+msgid "Enter the 6-digit code from your authenticator app to resume."
+msgstr "Entrez le code à 6 chiffres de votre application d'authentification pour continuer."
+
 msgid "Error"
 msgstr "Erreur"
 
@@ -429,11 +443,12 @@ msgstr "Développer le tableau des caractéristiques"
 msgid "Expired"
 msgstr "Expiré"
 
-msgid "Expired {date}"
-msgstr "Expiré {date}"
+#. placeholder {0}: formatDate(date)
+msgid "Expired {0}"
+msgstr "Expiré {0}"
 
-msgid "Expires {date}"
-msgstr "Expire le {date}"
+msgid "Expires <0/>"
+msgstr "Expire <0/>"
 
 msgid "Expiring first"
 msgstr "Expiration en premier"
@@ -533,6 +548,10 @@ msgstr "Impact"
 msgid "Imperial"
 msgstr "Impérial"
 
+#. placeholder {0}: precise?.text
+msgid "in {0}"
+msgstr "dans {0}"
+
 msgid "In Progress"
 msgstr "En cours"
 
@@ -623,6 +642,9 @@ msgstr "Chargement des détails de l'article..."
 msgid "Loading..."
 msgstr "Chargement..."
 
+msgid "Local"
+msgstr "Local"
+
 msgid "Location"
 msgstr "Emplacement"
 
@@ -667,6 +689,9 @@ msgstr "Maintenance terminée"
 
 msgid "Maintenance overdue"
 msgstr "Maintenance en retard"
+
+msgid "Make a replacement"
+msgstr "Effectuer un remplacement"
 
 msgid "Manually add items to inventory"
 msgstr "Ajouter manuellement des articles au stock"
@@ -858,6 +883,9 @@ msgstr "Rien en cours"
 msgid "Nothing scheduled at this work center"
 msgstr "Rien de planifié à ce centre de travail"
 
+msgid "Nothing to scrap"
+msgstr "Rien à rebuter"
+
 msgid "OEE Impact"
 msgstr "Impact TRS"
 
@@ -901,6 +929,9 @@ msgstr "Effectué par l'opérateur"
 msgid "Optional"
 msgstr "Optionnel"
 
+msgid "or"
+msgstr "ou"
+
 msgid "Overall result"
 msgstr "Résultat global"
 
@@ -921,6 +952,9 @@ msgstr "Disposition partielle"
 
 msgid "Passed Inspection"
 msgstr "Inspection réussie"
+
+msgid "Passkey unlock failed"
+msgstr "Le déverrouillage par clé d'accès a échoué"
 
 msgid "Pause"
 msgstr "Pause"
@@ -1043,6 +1077,9 @@ msgstr "Retirer du stock"
 msgid "Remove part"
 msgstr "Retirer la pièce"
 
+msgid "Reopen the subassembly and create a replacement unit"
+msgstr "Rouvrir le sous-ensemble et créer une unité de remplacement"
+
 msgid "Result"
 msgstr "Résultat"
 
@@ -1091,6 +1128,12 @@ msgstr "Planification"
 msgid "Scrap"
 msgstr "Rebut"
 
+msgid "Scrap {readableId}"
+msgstr "Rebut {readableId}"
+
+msgid "Scrap material"
+msgstr "Mise au rebut du matériel"
+
 msgid "Scrap quantity"
 msgstr "Quantité de rebut"
 
@@ -1099,6 +1142,12 @@ msgstr "Motif de rebut"
 
 msgid "Scrapped"
 msgstr "Rebuté"
+
+msgid "Scrapping serial {trackedEntityReadableId}"
+msgstr "Mise au rebut du numéro de série {trackedEntityReadableId}"
+
+msgid "Scrapping the selected serial"
+msgstr "Mise au rebut du numéro de série sélectionné"
 
 msgid "Search"
 msgstr "Rechercher"
@@ -1181,11 +1230,17 @@ msgstr "Numéros de série"
 msgid "Serial Numbers"
 msgstr "Numéros de série"
 
+msgid "Session locked"
+msgstr "Session verrouillée"
+
 msgid "Set Clock Out"
 msgstr "Définir la sortie"
 
 msgid "Set clock-out time"
 msgstr "Définir l'heure de sortie"
+
+msgid "Set up in Carbon"
+msgstr "Configurer dans Carbon"
 
 msgid "Setup"
 msgstr "Réglage"
@@ -1211,8 +1266,14 @@ msgstr "Se connecter avec Outlook"
 msgid "Sign in with Passkey"
 msgstr "Se connecter avec Passkey"
 
+msgid "Sign out"
+msgstr "Se déconnecter"
+
 msgid "Sign Out"
 msgstr "Se déconnecter"
+
+msgid "Sign out instead"
+msgstr "Se déconnecter plutôt"
 
 msgid "Signed in as {stationName}"
 msgstr "Connecté en tant que {stationName}"
@@ -1284,6 +1345,9 @@ msgstr "Le lot sera marqué comme Réussi et {remaining} unité(s) restante(s) s
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "Le lot sera toujours dispositionné, mais un NCR ne peut pas être créé tant qu'au moins un type de problème n'est pas configuré."
 
+msgid "There are no available or consumed tracked parts for this material."
+msgstr "Il n'y a aucun article suivi disponible ou consommé pour ce matériel."
+
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "Il existe des matériaux suivis par numéro de série ou par lot dans la nomenclature qui n'ont pas été entièrement distribués. Terminer sans distribuer peut entraîner des enregistrements de traçabilité incorrects."
 
@@ -1292,6 +1356,15 @@ msgstr "Ces articles ont encore du matériel à prélever. L'arrêt maintenant m
 
 msgid "This lot is expired and can't be picked."
 msgstr "Ce lot est expiré et ne peut pas être prélevé."
+
+msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
+msgstr "Cette pièce a été fabriquée sur commande. Sa mise au rebut peut rouvrir son itinéraire pour créer un remplacement."
+
+msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
+msgstr "Cette pièce sera mise au rebut du stock. Son besoin reste ouvert pour que vous puissiez émettre un remplacement."
+
+msgid "This unit will be permanently scrapped and a replacement serial number will be created."
+msgstr "Cette unité sera définitivement mise au rebut et un nouveau numéro de série de remplacement sera créé."
 
 msgid "Thumbnail"
 msgstr "Miniature"
@@ -1326,14 +1399,29 @@ msgstr "Entité suivie"
 msgid "Tracking"
 msgstr "Suivi"
 
+msgid "Two-factor authentication"
+msgstr "Authentification à deux facteurs"
+
+msgid "Two-factor authentication required"
+msgstr "Authentification à deux facteurs requise"
+
 msgid "Type a message..."
 msgstr "Saisissez un message..."
+
+msgid "Unable to unlock"
+msgstr "Impossible de déverrouiller"
 
 msgid "Unissued serial/batch materials"
 msgstr "Matériaux série/lot non distribués"
 
 msgid "Unknown"
 msgstr "Inconnu"
+
+msgid "Unlock"
+msgstr "Déverrouiller"
+
+msgid "Unlock with passkey"
+msgstr "Déverrouiller avec une clé d'accès"
 
 msgid "Unpick"
 msgstr "Dépicker"
@@ -1376,6 +1464,12 @@ msgstr "Téléversé : {0}"
 msgid "Uploading {0}"
 msgstr "Téléversement de {0}"
 
+msgid "Use a different account"
+msgstr "Utiliser un compte différent"
+
+msgid "Verify"
+msgstr "Vérifier"
+
 msgid "View maintenance dispatch"
 msgstr "Voir l'intervention de maintenance"
 
@@ -1397,9 +1491,14 @@ msgstr "Affichages du Centre de Travail"
 msgid "Yes"
 msgstr "Oui"
 
-#. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
-msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Vous avez pointé votre entrée à {0}. Vous pouvez modifier votre heure de sortie ci-dessous ou confirmer que vous travaillez encore."
+msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
+msgstr "Vous avez pointé à <0/>. Vous pouvez modifier votre heure de départ ci-dessous ou confirmer que vous travaillez toujours."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Vous êtes pointé depuis {hoursElapsed} heures. Avez-vous oublié de pointer la sortie ?"
+
+msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
+msgstr "Votre organisation nécessite une application d'authentification. Configurez-la dans Carbon, puis revenez ici."
+
+msgid "Your session was locked after inactivity."
+msgstr "Votre session a été verrouillée après inactivité."

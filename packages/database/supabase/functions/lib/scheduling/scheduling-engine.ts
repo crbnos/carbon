@@ -1,11 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Kysely } from "kysely";
+import { sql, type Kysely } from "kysely";
 import type { DB } from "../database.ts";
 import type { Database } from "../types.ts";
 import {
   AssemblyHandler,
   buildMakeMethodDependencies,
 } from "./assembly-handler.ts";
+import { datetime, getCompanyTimeZone, getLocationTimeZone } from "../datetime.ts";
 import { calculateOperationDates } from "./date-calculator.ts";
 import {
   buildOperationDependencies,
@@ -54,6 +55,7 @@ export class SchedulingEngine {
   private affectedWorkCenters: Set<string> = new Set();
   private assemblyDepth: number = 0;
   private conflictsDetected: number = 0;
+  private timezone: string = "UTC";
 
   private assemblyHandler: AssemblyHandler;
   private workCenterSelector: WorkCenterSelector | null = null;
@@ -97,6 +99,12 @@ export class SchedulingEngine {
     }
 
     this.job = job;
+
+    // "Today" (conflict detection, fallback anchor) follows the job site's
+    // wall clock — scheduling is operational, not ledger-scoped.
+    this.timezone = job.locationId
+      ? await getLocationTimeZone(this.db, job.locationId, this.companyId)
+      : await getCompanyTimeZone(this.db, this.companyId);
 
     // Initialize work center selector with location
     if (job.locationId) {
@@ -338,33 +346,45 @@ export class SchedulingEngine {
       .filter((op) => op.reworkId)
       .map((op) => op.id!);
 
-    let deleteQuery = this.db
-      .deleteFrom("jobOperationDependency")
-      .where("jobId", "=", this.jobId);
-
-    if (reworkOpIds.length > 0) {
-      deleteQuery = deleteQuery
-        .where("operationId", "not in", reworkOpIds)
-        .where("dependsOnId", "not in", reworkOpIds);
-    }
-
-    await deleteQuery.execute();
-
-    // Insert new dependencies
     const records = dependenciesToRecords(
       allDependencies,
       this.jobId,
       this.companyId
     );
 
-    if (records.length > 0) {
-      for (const record of records) {
-        await this.db
+    // Rebuild atomically. Two schedule runs for the same job can overlap
+    // (an Inngest retry racing a still-running invocation, or a direct
+    // functions.invoke alongside the queued one); interleaved delete/insert
+    // then violates jobOperationDependency_pk. The advisory lock serializes
+    // the rebuild per job, and onConflict absorbs any edge that survives a
+    // race with trigger-rework's inserts.
+    await this.db.transaction().execute(async (trx) => {
+      await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`schedule:dependencies:${this.jobId}`}, 0))`.execute(
+        trx
+      );
+
+      let deleteQuery = trx
+        .deleteFrom("jobOperationDependency")
+        .where("jobId", "=", this.jobId);
+
+      if (reworkOpIds.length > 0) {
+        deleteQuery = deleteQuery
+          .where("operationId", "not in", reworkOpIds)
+          .where("dependsOnId", "not in", reworkOpIds);
+      }
+
+      await deleteQuery.execute();
+
+      if (records.length > 0) {
+        await trx
           .insertInto("jobOperationDependency")
-          .values(record)
+          .values(records)
+          .onConflict((oc) =>
+            oc.columns(["operationId", "dependsOnId"]).doNothing()
+          )
           .execute();
       }
-    }
+    });
 
     // Update operations with no dependencies to Ready status
     for (const [opId, deps] of allDependencies) {
@@ -424,6 +444,7 @@ export class SchedulingEngine {
       this.operations,
       graph,
       anchorDate,
+      datetime.today(this.timezone).toString(),
       this.direction
     );
 
@@ -639,6 +660,13 @@ export class SchedulingEngine {
     for (const op of this.scheduledOperations.values()) {
       const originalOp = this.operations.find((o) => o.id === op.id);
       const isManuallyScheduled = originalOp?.manuallyScheduled ?? false;
+      // Never clobber a work center the user (or method) already set.
+      // Auto-selection may only fill null/empty work centers.
+      const originalWorkCenterId = originalOp?.workCenterId;
+      const workCenterId =
+        originalWorkCenterId != null && originalWorkCenterId !== ""
+          ? originalWorkCenterId
+          : op.workCenterId;
 
       if (isManuallyScheduled) {
         await this.db
@@ -646,7 +674,7 @@ export class SchedulingEngine {
           .set({
             startDate: op.startDate,
             priority: op.priority ?? undefined,
-            workCenterId: op.workCenterId,
+            workCenterId,
             hasConflict: op.hasConflict,
             conflictReason: op.conflictReason,
             updatedAt: new Date().toISOString(),
@@ -661,7 +689,7 @@ export class SchedulingEngine {
             startDate: op.startDate,
             dueDate: op.dueDate,
             priority: op.priority ?? undefined,
-            workCenterId: op.workCenterId,
+            workCenterId,
             hasConflict: op.hasConflict,
             conflictReason: op.conflictReason,
             updatedAt: new Date().toISOString(),

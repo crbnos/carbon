@@ -90,6 +90,7 @@ import {
 } from "react-icons/lu";
 import { Await, Link, useFetcher, useNavigate, useParams } from "react-router";
 import {
+  DateTime,
   DeadlineIcon,
   FileIcon,
   FilePreview,
@@ -232,7 +233,7 @@ export const JobOperation = ({
   workCenter
 }: JobOperationProps) => {
   const { t } = useLingui();
-  const { formatDate, formatRelativeTime } = useDateFormatter();
+  const { formatRelativeTime } = useDateFormatter();
   const [params, setParams] = useUrlParams();
 
   const trackedEntityParam = params.get("trackedEntityId");
@@ -484,7 +485,9 @@ export const JobOperation = ({
         key={`operation-${operation.id}`}
         value={activeTab}
         onValueChange={setActiveTab}
-        className="w-full min-w-0 h-screen bg-card relative"
+        // Below lg the page scrolls (Controls stacks inline). A fixed h-screen
+        // box would clip that overflow; grow with content on small viewports.
+        className="w-full min-w-0 min-h-screen h-auto lg:h-screen bg-card relative"
         style={
           {
             "--controls-height": `${controlsHeight}px`,
@@ -640,7 +643,13 @@ export const JobOperation = ({
         <Separator />
 
         <TabsContent value="details" className="flex flex-col">
-          <ScrollArea className="w-full min-w-0 lg:pr-[var(--controls-gutter)] h-[calc(100dvh-var(--header-height)*2-var(--controls-height)-2rem)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+          {/*
+            Native scrollport (not Radix ScrollArea): below lg height is auto so
+            Files/Serials participate in page scroll with the stacked Controls.
+            At lg+ a fixed height + overflow-y-auto docks beside absolute Controls.
+            (#959)
+          */}
+          <div className="w-full min-w-0 lg:pr-[var(--controls-gutter)] h-auto lg:h-[calc(100dvh-var(--header-height)*2-var(--controls-height)-2rem)] overflow-y-visible lg:overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
             <div className="flex items-start justify-between gap-4 p-4 lg:p-6">
               <HStack className="min-w-0">
                 {thumbnailPath && (
@@ -738,9 +747,12 @@ export const JobOperation = ({
                             : "–"}
                       </Heading>
                       <span className="text-muted-foreground text-sm">
-                        {operation.operationDueDate
-                          ? formatDate(operation.operationDueDate)
-                          : null}
+                        {operation.operationDueDate ? (
+                          <DateTime
+                            value={operation.operationDueDate}
+                            variant="date"
+                          />
+                        ) : null}
                       </span>
                     </VStack>
                   </CardContent>
@@ -1748,7 +1760,10 @@ export const JobOperation = ({
                           trackedEntities?.map((entity) => (
                             <Tr
                               key={`serial-${entity.id}`}
-                              className="[&>td]:py-3"
+                              className={cn(
+                                "[&>td]:py-3",
+                                entity.status === "Scrapped" && "opacity-60"
+                              )}
                             >
                               <Td>
                                 <div className="flex gap-2 items-center">
@@ -1772,6 +1787,11 @@ export const JobOperation = ({
                                     <LuCheck className="text-emerald-500 size-4 shrink-0" />
                                   )}
                                   <Copy text={entity.readableId || entity.id} />
+                                  {entity.status === "Scrapped" && (
+                                    <Badge variant="red">
+                                      <Trans>Scrapped</Trans>
+                                    </Badge>
+                                  )}
                                 </div>
                               </Td>
 
@@ -1794,7 +1814,10 @@ export const JobOperation = ({
                                   <Button
                                     variant="secondary"
                                     size="lg"
-                                    isDisabled={entity.id === trackedEntityId}
+                                    isDisabled={
+                                      entity.id === trackedEntityId ||
+                                      entity.status === "Scrapped"
+                                    }
                                     onClick={() => {
                                       const entityIndex =
                                         trackedEntities.findIndex(
@@ -1821,7 +1844,7 @@ export const JobOperation = ({
                 </div>
               </>
             )}
-          </ScrollArea>
+          </div>
         </TabsContent>
         <TabsContent value="model">
           <div className="relative w-full min-w-0 lg:pr-[var(--controls-gutter)] h-[calc(100dvh-var(--header-height)*2-var(--controls-height)-2rem)] p-0">
@@ -2541,6 +2564,10 @@ export const JobOperation = ({
           parentIsBatch={parentIsBatch}
           setupProductionEvent={setupProductionEvent}
           trackedEntityId={trackedEntityId}
+          trackedEntityReadableId={
+            trackedEntities.find((entity) => entity.id === trackedEntityId)
+              ?.readableId ?? undefined
+          }
           onClose={scrapModal.onClose}
         />
       )}

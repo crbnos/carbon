@@ -1,5 +1,13 @@
 import { Badge, MenuIcon, MenuItem } from "@carbon/react";
+import { formatTimeOfDay } from "@carbon/utils";
+import {
+  parseTime,
+  toCalendarDateTime,
+  today,
+  toZoned
+} from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import {
@@ -11,7 +19,7 @@ import {
   LuTrash
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { Hyperlink, New, Table } from "~/components";
+import { DateTime, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
@@ -27,6 +35,7 @@ type ShiftsTableProps = {
 
 const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
   const { t } = useLingui();
+  const { locale } = useLocale();
   const navigate = useNavigate();
   const permissions = usePermissions();
   const [params] = useUrlParams();
@@ -51,6 +60,43 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
 
   const customColumns = useCustomColumns<Shift>("shift");
 
+  const locationTimeZones = useMemo(
+    () =>
+      new Map(
+        locations.flatMap((l) =>
+          l.id && l.timezone ? [[l.id, l.timezone]] : []
+        )
+      ),
+    [locations]
+  );
+
+  // A shift time is the location's wall clock ("08:00:00", no date, no zone).
+  // Anchor it to today's occurrence at the location so the popover can show
+  // what that moment is in the viewer's zone and UTC.
+  const renderShiftTime = useCallback(
+    (time: string | null, locationId: string | null) => {
+      if (!time) return null;
+      const tz = locationId ? locationTimeZones.get(locationId) : undefined;
+      const inline = formatTimeOfDay(time, locale);
+      if (!tz) return inline;
+      const instant = toZoned(
+        toCalendarDateTime(today(tz), parseTime(time)),
+        tz
+      ).toAbsoluteString();
+      return (
+        <DateTime
+          value={instant}
+          variant="time"
+          locationTimeZone={tz}
+          className="cursor-pointer underline decoration-muted-foreground/50 decoration-dotted underline-offset-[3px]"
+        >
+          {inline}
+        </DateTime>
+      );
+    },
+    [locale, locationTimeZones]
+  );
+
   const columns = useMemo<ColumnDef<Shift>[]>(() => {
     const defaultColumns: ColumnDef<Shift>[] = [
       {
@@ -66,7 +112,8 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
       {
         accessorKey: "startTime",
         header: t`Start Time`,
-        cell: (item) => item.getValue(),
+        cell: ({ row }) =>
+          renderShiftTime(row.original.startTime, row.original.locationId),
         meta: {
           icon: <LuClock />
         }
@@ -74,7 +121,8 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
       {
         accessorKey: "endTime",
         header: t`End Time`,
-        cell: (item) => item.getValue(),
+        cell: ({ row }) =>
+          renderShiftTime(row.original.endTime, row.original.locationId),
         meta: {
           icon: <LuClock />
         }
@@ -122,7 +170,7 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
     ];
 
     return [...defaultColumns, ...customColumns];
-  }, [locations, renderDays, customColumns, t]);
+  }, [locations, renderDays, renderShiftTime, customColumns, t]);
 
   const renderContextMenu = useCallback(
     (row: Shift) => {

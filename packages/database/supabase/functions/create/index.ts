@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 
 import z from "npm:zod@^3.24.1";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
@@ -2567,7 +2568,7 @@ serve(async (req: Request) => {
             .insertInto("journal")
             .values({
               journalEntryId,
-              postingDate: new Date().toISOString().split("T")[0],
+              postingDate: datetime.today(await getCompanyTimeZone(client, companyId)).toString(),
               companyId,
               sourceType: "Manual",
               status: "Draft",

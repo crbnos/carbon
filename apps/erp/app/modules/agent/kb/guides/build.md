@@ -1,21 +1,21 @@
 # Inside the build
 
-> How each robot part is made or bought.
+> How each satellite part is made or bought.
 
-Open the job you just released and look at what it actually takes to build a robot. This is where the product structure you set up in PLM meets the reality of the floor.
+Open the job you just released and look at what it actually takes to build a satellite bus. This is where the product structure you set up in PLM meets the reality of the floor.
 
 > PLM specifies the parts. The method adds the clarity: how each part is obtained, and whether it's built, bought, or pulled from the shelf.
 
 ## The bill of materials
 
-A robot's bill of materials (BoM) is a tree. The robot is built from an arm and a leg; each of those is built from a machined part and a motor. Carbon shows the whole structure at a glance, with every node carrying an icon for how it's obtained.
+A satellite bus's bill of materials (BoM) is a tree. SAT-1000 is built from subassemblies — the BUS-STR-001 structural frame, the EPS-001 electrical power subsystem, ADCS-001, COMMS-001 and the rest — and each of those is built from parts of its own: the power subsystem from solar array wings and a battery pack, the frame from aluminium plate and fasteners. Carbon shows the whole structure at a glance, with every node carrying an icon for how it's obtained.
 
 ## Method types
 
 Every item in that tree carries a method type, and it's the single most load-bearing field in your whole catalog. There are three values, and each one routes the item down a completely different path:
 
-- Make to Order: you manufacture it. The arm part and leg part are machined in-house, so each becomes its own job with its own operations.
-- Purchase to Order: you purchase it. The motors come from a supplier, so they flow through `guides/rfq-to-po` as a purchase order, never touching the floor.
+- Make to Order: you manufacture it. The structural frame and the solar array wings are built in-house, so each becomes its own job with its own operations.
+- Purchase to Order: you purchase it. The battery packs come from a supplier, so they flow through `guides/rfq-to-po` as a purchase order, never touching the floor.
 - Pull from Inventory: you pull it from stock when the parent is built, whether you originally made it or bought it.
 
 You don't tag this on each BoM line by hand. The method type lives on `docs/reference/items`, and every BoM that uses that item mirrors it. Switch a part's method type once, and it cascades everywhere the part appears.
@@ -24,16 +24,16 @@ Method type answers "how does this part get into its parent?": Make to Order, Pu
 
 ## Kits & subassemblies
 
-Because the arm and leg are Make to Order parts, they aren't just line items — they're built things. But Carbon gives a made item in a BoM two flavors, and the choice changes how the floor handles it:
+Because the structural frame and the power subsystem are Make to Order parts, they aren't just line items — they're built things. But Carbon gives a made item in a BoM two flavors, and the choice changes how the floor handles it:
 
-- Subassembly: built as its own job, with its own routing and its own completion. You can release the left arm independently of the final robot, and Carbon keeps the hierarchy in sync.
+- Subassembly: built as its own job, with its own routing and its own completion. You can release the structural frame independently of the final satellite, and Carbon keeps the hierarchy in sync.
 - Kit: not built separately at all. Its components are issued together straight into the parent job, as a set. There's no kit job and no kit operation — just the parts, grouped.
 
 Reach for a subassembly when the thing is genuinely manufactured and worth tracking on its own. Reach for a kit when a cluster of parts always goes in together and a separate build would just be ceremony.
 
 ## Methods on the job
 
-Back on the job, you're looking at that working copy of the method from the last chapter, and you can drill the whole way down. The robot's method lists the arm and leg; open the arm and you're in the arm's method, its machined part set to Make to Order and its motor set to Purchase to Order. The tree is as deep as the product.
+Back on the job, you're looking at that working copy of the method from the last chapter, and you can drill the whole way down. The bus's method lists the structural frame, the power subsystem, and their siblings; open the power subsystem and you're in its method, its solar array wings set to Make to Order and its battery pack set to Purchase to Order. The tree is as deep as the product.
 
 Methods are versioned, which is what keeps a busy shop sane. A method is Draft, Active, or Archived, and only a Draft can be edited. An Active method is frozen, the jobs running against it won't shift under anyone's feet, so you revise by publishing a new version, not by editing a live one.
 

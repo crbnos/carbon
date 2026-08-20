@@ -29,7 +29,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { pluralize } from "@carbon/utils";
+import { INPUT_FORMAT, pluralize } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -48,12 +48,12 @@ import {
 } from "react-icons/lu";
 import { useNavigation, useParams } from "react-router";
 import type { z } from "zod";
-import { CustomerAvatar } from "~/components";
+import { CustomerAvatar, DateTime } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { CustomerContact, EmailRecipients } from "~/components/Form";
 import { usePaymentTerm } from "~/components/Form/PaymentTerm";
 import { useShippingMethod } from "~/components/Form/ShippingMethod";
-import { useDateFormatter, useRouteData, useUser } from "~/hooks";
+import { useCurrencyDecimals, useRouteData, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import { getDocumentType } from "~/modules/shared";
@@ -403,7 +403,14 @@ const LinePricingForm = ({
   const pricingByLine = useMemo(
     () =>
       lines.reduce<Record<string, QuotationPrice[]>>((acc, line) => {
-        acc[line.id!] = pricing.filter((p) => p.quoteLineId === line.id);
+        // Scope to the breaks the line still offers — an orphaned price row
+        // picked here would convert into a real sales order line.
+        acc[line.id!] = pricing.filter(
+          (p) =>
+            p.quoteLineId === line.id &&
+            Array.isArray(line.quantity) &&
+            line.quantity.includes(p.quantity)
+        );
         return acc;
       }, {}),
     [lines, pricing]
@@ -477,6 +484,7 @@ const LinePricingOptions = ({
   setSelectedLines
 }: LinePricingOptionsProps) => {
   const [selectedValue, setSelectedValue] = useState("");
+  const currencyDecimals = useCurrencyDecimals(quoteCurrency);
   const [showOverride, setShowOverride] = useState(false);
   const [overridePricing, setOverridePricing] = useState<SelectedLine>({
     quantity: 1,
@@ -714,10 +722,10 @@ const LinePricingOptions = ({
                         ? overridePricing.convertedNetUnitPrice
                         : overridePricing.netUnitPrice
                     }
-                    formatOptions={{
-                      style: "currency",
-                      currency: quoteCurrency
-                    }}
+                    formatOptions={INPUT_FORMAT.rate(
+                      quoteCurrency,
+                      currencyDecimals
+                    )}
                     onChange={(netUnitPrice) =>
                       setOverridePricing((v) => ({
                         ...v,
@@ -744,10 +752,10 @@ const LinePricingOptions = ({
                         ? overridePricing.convertedShippingCost
                         : overridePricing.shippingCost
                     }
-                    formatOptions={{
-                      style: "currency",
-                      currency: quoteCurrency
-                    }}
+                    formatOptions={INPUT_FORMAT.money(
+                      quoteCurrency,
+                      currencyDecimals
+                    )}
                     onChange={(shippingCost) =>
                       setOverridePricing((v) => ({
                         ...v,
@@ -774,10 +782,10 @@ const LinePricingOptions = ({
                         ? overridePricing.convertedAddOn
                         : overridePricing.addOn
                     }
-                    formatOptions={{
-                      style: "currency",
-                      currency: quoteCurrency
-                    }}
+                    formatOptions={INPUT_FORMAT.money(
+                      quoteCurrency,
+                      currencyDecimals
+                    )}
                     onChange={(addOn) =>
                       setOverridePricing((v) => ({
                         ...v,
@@ -970,7 +978,6 @@ function CustomerDetailsForm({ poNumber }: { poNumber: string }) {
 
 function ShippingDetailsForm() {
   const [isExpanded, setIsExpanded] = useState(true);
-  const { formatDate } = useDateFormatter();
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
 
@@ -1015,9 +1022,12 @@ function ShippingDetailsForm() {
                 <Trans>Requested Date</Trans>
               </Td>
               <Td>
-                {quoteData?.shipment.receiptRequestedDate
-                  ? formatDate(quoteData?.shipment?.receiptRequestedDate!)
-                  : null}
+                {quoteData?.shipment.receiptRequestedDate ? (
+                  <DateTime
+                    value={quoteData?.shipment?.receiptRequestedDate!}
+                    variant="date"
+                  />
+                ) : null}
               </Td>
             </Tr>
           </Tbody>

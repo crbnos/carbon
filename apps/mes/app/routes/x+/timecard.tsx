@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCompanyTimeZone } from "@carbon/database";
 import {
   Badge,
   Button,
@@ -28,6 +29,7 @@ import {
   Thead,
   Tr
 } from "@carbon/react";
+import { datetime } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useEffect, useState } from "react";
@@ -41,7 +43,7 @@ import {
 } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Link, useFetcher, useLoaderData } from "react-router";
-import { useDateFormatter } from "~/hooks";
+import { DateTime } from "~/components";
 import {
   clockIn,
   clockOut,
@@ -49,25 +51,6 @@ import {
   updateTimeCardEntry
 } from "~/services/people.service";
 import { path } from "~/utils/path";
-
-function getWeekBounds(offset: number = 0) {
-  const now = new Date();
-  const dayOfWeek = now.getDay();
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7) + offset * 7);
-  monday.setHours(0, 0, 0, 0);
-
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  sunday.setHours(23, 59, 59, 999);
-
-  return {
-    from: monday.toISOString(),
-    to: sunday.toISOString(),
-    monday,
-    sunday
-  };
-}
 
 function formatDuration(clockInStr: string, clockOutStr: string | null) {
   const end = clockOutStr ? new Date(clockOutStr).getTime() : Date.now();
@@ -90,13 +73,6 @@ function formatTotalHours(
   const hours = Math.floor(totalMs / 3600000);
   const minutes = Math.floor((totalMs % 3600000) / 60000);
   return `${hours}h ${minutes}m`;
-}
-
-function formatTime(dateStr: string, locale: string) {
-  return new Date(dateStr).toLocaleTimeString(locale, {
-    hour: "2-digit",
-    minute: "2-digit"
-  });
 }
 
 function formatDay(dateStr: string, locale: string) {
@@ -122,7 +98,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const weekOffset = parseInt(url.searchParams.get("week") ?? "0", 10);
-  const { from, to } = getWeekBounds(weekOffset);
+  // Week runs Monday → Sunday on the company calendar (one payroll boundary
+  // per books, not the server's zone).
+  const tz = await getCompanyTimeZone(client, companyId);
+  const { from, to } = datetime.weekBounds(tz, weekOffset);
+  // Calendar days of the window on the COMPANY calendar — the client renders
+  // these directly so the header never shifts a day in a different browser tz.
+  const weekStart = datetime.businessDay(from, tz).toString();
+  const weekEnd = datetime.businessDay(to, tz).toString();
 
   const [entries, openEntry] = await Promise.all([
     client
@@ -140,8 +123,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     entries: entries.data ?? [],
     openEntry: openEntry.data,
     weekOffset,
-    from,
-    to
+    weekStart,
+    weekEnd
   };
 }
 
@@ -195,7 +178,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function MESTimecardPage() {
-  const { entries, openEntry, weekOffset, from, to } =
+  const { entries, openEntry, weekOffset, weekStart, weekEnd } =
     useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -204,14 +187,11 @@ export default function MESTimecardPage() {
   const [, setTick] = useState(0);
   const { t } = useLingui();
   const { locale } = useLocale();
-  const { formatDate } = useDateFormatter();
   const [deletingEntry, setDeletingEntry] = useState<{
     id: string;
     clockIn: string;
   } | null>(null);
 
-  const monday = new Date(from);
-  const sunday = new Date(to);
   const isCurrentWeek = weekOffset === 0;
 
   useEffect(() => {
@@ -273,7 +253,8 @@ export default function MESTimecardPage() {
             {openEntry && (
               <Badge variant="green" className="w-fit">
                 <Trans>
-                  Clocked in since {formatTime(openEntry.clockIn, locale)}
+                  Clocked in since{" "}
+                  <DateTime value={openEntry.clockIn} variant="time" />
                 </Trans>
               </Badge>
             )}
@@ -286,8 +267,17 @@ export default function MESTimecardPage() {
                 </Link>
               </Button>
               <span className="text-sm text-muted-foreground">
-                {formatDate(monday.toISOString(), { dateStyle: "medium" })} —{" "}
-                {formatDate(sunday.toISOString(), { dateStyle: "medium" })}
+                <DateTime
+                  value={weekStart}
+                  variant="date"
+                  dateOptions={{ dateStyle: "medium" }}
+                />{" "}
+                —{" "}
+                <DateTime
+                  value={weekEnd}
+                  variant="date"
+                  dateOptions={{ dateStyle: "medium" }}
+                />
               </span>
               <Button
                 variant="outline"
@@ -420,10 +410,12 @@ export default function MESTimecardPage() {
                         <Td className="whitespace-nowrap">
                           {formatDay(entry.clockIn, locale)}
                         </Td>
-                        <Td>{formatTime(entry.clockIn, locale)}</Td>
+                        <Td>
+                          <DateTime value={entry.clockIn} variant="time" />
+                        </Td>
                         <Td>
                           {entry.clockOut ? (
-                            formatTime(entry.clockOut, locale)
+                            <DateTime value={entry.clockOut} variant="time" />
                           ) : (
                             <Badge variant="green">
                               <Trans>Active</Trans>
@@ -492,7 +484,7 @@ export default function MESTimecardPage() {
               <ModalTitle>
                 <Trans>
                   Delete Timecard (
-                  {new Date(deletingEntry.clockIn).toLocaleString(locale)})
+                  <DateTime value={deletingEntry.clockIn} variant="absolute" />)
                 </Trans>
               </ModalTitle>
             </ModalHeader>

@@ -53,7 +53,7 @@ const baseItemValidator = z.object({
   customerId: z.string().optional(),
   deadlineType: z.enum(deadlineTypes).optional(),
   description: z.string().optional(),
-  dueDate: z.string().optional(), // 2024-05-28
+  dueDate: z.string().nullable().optional(), // 2024-05-28
   employeeIds: z.array(z.string()).optional(),
   itemDescription: z.string().optional(),
   itemReadableId: z.string(),

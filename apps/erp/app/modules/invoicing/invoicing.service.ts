@@ -1,11 +1,8 @@
 import type { Database, Json } from "@carbon/database";
+import { getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import {
-  endOfMonth,
-  getLocalTimeZone,
-  parseDate,
-  today
-} from "@internationalized/date";
+import { datetime, EPSILON, round } from "@carbon/utils";
+import { endOfMonth, parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import {
@@ -14,9 +11,9 @@ import {
   insertSupplierInteraction
 } from "~/modules/purchasing";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
-import { getCurrencyByCode } from "../accounting/accounting.service";
+import { getCurrencyByCode } from "../accounting/accounting.ee.service";
 import { getEmployeeJob } from "../people/people.service";
 import {
   getCustomerPayment,
@@ -37,15 +34,38 @@ import type {
   salesInvoiceValidator
 } from "./invoicing.models";
 
+const PURCHASE_INVOICES_LIST_COLUMNS =
+  "id,invoiceId,supplierId,invoiceSupplierId,supplierReference,postingDate,dateIssued,dateDue,datePaid,balance,assignee,createdBy,createdAt,updatedBy,updatedAt,customFields,companyId,thumbnailPath,itemType,orderTotal,status,paymentTermName" as const;
+
+const SALES_INVOICES_LIST_COLUMNS =
+  "id,invoiceId,status,customerId,customerReference,invoiceCustomerId,postingDate,dateIssued,dateDue,datePaid,balance,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,invoiceTotal,paymentTermName" as const;
+
+/**
+ * The payment term an invoice falls back to when none is specified — Net 30,
+ * matching Stripe's default of 30 days until an invoice is due. Without it an
+ * invoice with no payment term carried no due date at all, so it could never
+ * read as overdue and never surfaced in AR/AP aging.
+ *
+ * Mirrors DEFAULT_PAYMENT_TERM in
+ * packages/database/supabase/functions/shared/calculate-due-date.ts — keep the
+ * two in sync.
+ */
+export const DEFAULT_PAYMENT_TERM: {
+  daysDue: number;
+  calculationMethod: Database["public"]["Enums"]["paymentTermCalculationMethod"];
+} = { daysDue: 30, calculationMethod: "Net" };
+
 /**
  * Compute an invoice's Due Date from its Issue Date and Payment Term.
- * Returns null when either input is missing, the payment term genuinely doesn't
- * exist for the company, or the stored date can't be parsed — callers fall back
- * to a plain field update in that case. A payment-term *query failure* is
- * different: it throws, so callers abort instead of writing the invoice with a
- * stale dateDue. The read is scoped by companyId for tenant isolation (defense
- * in depth alongside RLS) and uses maybeSingle so an absent row is data: null
- * (not an error) — keeping "missing" distinguishable from "failed".
+ * Returns null only when the issue date is missing or can't be parsed — callers
+ * fall back to a plain field update in that case. A missing payment term is NOT
+ * a missing due date: an unset paymentTermId, or one whose row genuinely
+ * doesn't exist for the company, falls back to DEFAULT_PAYMENT_TERM (Net 30).
+ * A payment-term *query failure* is different: it throws, so callers abort
+ * instead of writing the invoice with a stale dateDue. The read is scoped by
+ * companyId for tenant isolation (defense in depth alongside RLS) and uses
+ * maybeSingle so an absent row is data: null (not an error) — keeping "missing"
+ * distinguishable from "failed".
  *
  * The term's calculationMethod decides the anchor for daysDue:
  * - "Net": daysDue days after the issue date.
@@ -66,23 +86,25 @@ export async function computeInvoiceDateDue(
   }
 ): Promise<string | null> {
   const { dateIssued, paymentTermId, companyId } = args;
-  if (!dateIssued || !paymentTermId) return null;
+  if (!dateIssued) return null;
 
-  const paymentTerm = await client
-    .from("paymentTerm")
-    .select("daysDue, calculationMethod")
-    .eq("id", paymentTermId)
-    .eq("companyId", companyId)
-    .maybeSingle();
+  const paymentTerm = paymentTermId
+    ? await client
+        .from("paymentTerm")
+        .select("daysDue, calculationMethod")
+        .eq("id", paymentTermId)
+        .eq("companyId", companyId)
+        .maybeSingle()
+    : null;
 
-  if (paymentTerm.error) {
+  if (paymentTerm?.error) {
     throw new Error(
       `Failed to load payment term ${paymentTermId} while recomputing invoice due date: ${paymentTerm.error.message}`
     );
   }
-  if (!paymentTerm.data) return null;
 
-  const { daysDue, calculationMethod } = paymentTerm.data;
+  const { daysDue, calculationMethod } =
+    paymentTerm?.data ?? DEFAULT_PAYMENT_TERM;
 
   try {
     const issued = parseDate(dateIssued);
@@ -248,7 +270,7 @@ export async function getPurchaseInvoices(
 ) {
   let query = client
     .from("purchaseInvoices")
-    .select("*", { count: "exact" })
+    .select(PURCHASE_INVOICES_LIST_COLUMNS, { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -331,7 +353,7 @@ export async function getSalesInvoices(
 ) {
   let query = client
     .from("salesInvoices")
-    .select("*", { count: "exact" })
+    .select(SALES_INVOICES_LIST_COLUMNS, { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -571,7 +593,11 @@ export async function insertPurchaseInvoice(
       exchangeRate,
       exchangeRateUpdatedAt,
       paymentTermId: input.paymentTermId ?? paymentTermId,
-      dateIssued: input.dateIssued ?? today(getLocalTimeZone()).toString(),
+      dateIssued:
+        input.dateIssued ??
+        datetime
+          .today(await getCompanyTimeZone(client, input.companyId))
+          .toString(),
       dateDue: input.dateDue ?? null,
       locationId,
       customFields: input.customFields,
@@ -635,7 +661,7 @@ export async function updatePurchaseInvoice(
     .from("purchaseInvoice")
     .update({
       ...sanitize(rest),
-      updatedAt: today(getLocalTimeZone()).toString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", id)
     .select("id")
@@ -668,7 +694,7 @@ export async function upsertPurchaseInvoice(
       .from("purchaseInvoice")
       .update({
         ...sanitize(purchaseInvoice),
-        updatedAt: today(getLocalTimeZone()).toString()
+        updatedAt: datetime.timestamp()
       })
       .eq("id", purchaseInvoice.id)
       .select("id, invoiceId");
@@ -945,7 +971,11 @@ export async function insertSalesInvoice(
       exchangeRate,
       exchangeRateUpdatedAt,
       paymentTermId: input.paymentTermId ?? paymentTermId,
-      dateIssued: input.dateIssued ?? today(getLocalTimeZone()).toString(),
+      dateIssued:
+        input.dateIssued ??
+        datetime
+          .today(await getCompanyTimeZone(client, input.companyId))
+          .toString(),
       dateDue: input.dateDue ?? null,
       locationId,
       customFields: input.customFields,
@@ -1009,7 +1039,7 @@ export async function updateSalesInvoice(
     .from("salesInvoice")
     .update({
       ...sanitize(rest),
-      updatedAt: today(getLocalTimeZone()).toString()
+      updatedAt: datetime.timestamp()
     })
     .eq("id", id)
     .select("id")
@@ -1042,7 +1072,7 @@ export async function upsertSalesInvoice(
       .from("salesInvoice")
       .update({
         ...sanitize(salesInvoice),
-        updatedAt: today(getLocalTimeZone()).toString()
+        updatedAt: datetime.timestamp()
       })
       .eq("id", salesInvoice.id)
       .select("id, invoiceId");
@@ -1640,7 +1670,7 @@ export async function getAvailableOnAccountCredit(
       Number(p.totalAmount) * Number(p.exchangeRate) -
       (appliedBaseByPayment.get(p.id) ?? 0);
   }
-  return Math.max(0, Math.round(baseCredit * 10000) / 10000);
+  return Math.max(0, round(baseCredit));
 }
 
 export async function upsertPayment(
@@ -2007,10 +2037,9 @@ export async function getAvailableCreditsForParty(
 
   const result = rows
     .map((m) => {
-      const remaining =
-        Math.round(
-          (Number(m.amount) - (appliedByMemo.get(m.id) ?? 0)) * 10000
-        ) / 10000;
+      const remaining = round(
+        Number(m.amount) - (appliedByMemo.get(m.id) ?? 0)
+      );
       return {
         id: m.id as string,
         memoId: m.memoId as string,
@@ -2323,13 +2352,13 @@ export async function applyCreditsToInvoices(
       const invoiceOpen =
         Number(balById.get(app.invoiceId)?.balance ?? 0) -
         (cashByInvoice.get(app.invoiceId) ?? 0);
-      if (invoiceUse.get(app.invoiceId)! > invoiceOpen + 0.0001)
+      if (invoiceUse.get(app.invoiceId)! > invoiceOpen + EPSILON)
         throw new Error(
-          invoiceOpen <= 0.0001
+          invoiceOpen <= EPSILON
             ? `Invoice ${invoiceLabel} has no open balance to apply credit to (it is already fully settled)`
             : `Credit applied to invoice ${invoiceLabel} (${invoiceUse.get(
                 app.invoiceId
-              )}) exceeds its open balance of ${invoiceOpen.toFixed(2)}`
+              )}) exceeds its open balance of ${round(invoiceOpen)}`
         );
     }
 

@@ -10,6 +10,7 @@ import {
   ModalDrawerTitle,
   VStack
 } from "@carbon/react";
+import { today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect } from "react";
 import type { z } from "zod";
@@ -26,7 +27,12 @@ import { intercompanyTransactionValidator } from "../../accounting.models";
 
 type IntercompanyTransactionFormProps = {
   initialValues: z.infer<typeof intercompanyTransactionValidator>;
-  companies: { id: string; name: string; baseCurrencyCode: string | null }[];
+  companies: {
+    id: string;
+    name: string;
+    baseCurrencyCode: string | null;
+    timezone: string | null;
+  }[];
   open?: boolean;
   onClose: () => void;
 };
@@ -98,6 +104,7 @@ const IntercompanyTransactionForm = ({
                   termId="intercompany-posting-date"
                   type="date"
                 />
+                <SourcePostingDateSync companies={companies} />
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>
@@ -113,6 +120,32 @@ const IntercompanyTransactionForm = ({
     </ModalDrawerProvider>
   );
 };
+
+// The journal posts to the SOURCE company's books, so the default posting date
+// is that company's calendar day — which can differ from the acting company's
+// (and the browser's) around midnight. Only overwrites while the user hasn't
+// picked a source yet or switches it; an explicit date edit stays theirs until
+// the next source change.
+function SourcePostingDateSync({
+  companies
+}: {
+  companies: { id: string; timezone: string | null }[];
+}) {
+  const [sourceCompanyId] = useControlField<string>("sourceCompanyId");
+  const [, setPostingDate] = useControlField<string>("postingDate");
+
+  const timezone =
+    companies.find((c) => c.id === sourceCompanyId)?.timezone ?? null;
+
+  // Keyed on sourceCompanyId (not just timezone) so switching between two
+  // companies in the SAME zone still re-defaults a manually edited date.
+  useEffect(() => {
+    if (timezone) setPostingDate(today(timezone).toString());
+    // biome-ignore lint/correctness/useExhaustiveDependencies: sourceCompanyId intentionally re-triggers the default
+  }, [sourceCompanyId, timezone, setPostingDate]);
+
+  return null;
+}
 
 function SourceCurrencySync({
   companies

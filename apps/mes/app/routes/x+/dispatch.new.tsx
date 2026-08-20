@@ -6,7 +6,7 @@ import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { getLocalTimeZone, now } from "@internationalized/date";
+import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { maintenanceDispatchValidator } from "~/services/models";
@@ -58,7 +58,7 @@ export async function action({ request }: ActionFunctionArgs) {
       : "In Progress"
     : "Open";
 
-  const currentTime = now(getLocalTimeZone()).toAbsoluteString();
+  const currentTime = datetime.timestamp();
 
   // Get locationId from work center
   let locationId: string | undefined;
@@ -115,7 +115,7 @@ export async function action({ request }: ActionFunctionArgs) {
     await endProductionEventsByWorkCenter(serviceRole, {
       workCenterId: validation.data.workCenterId,
       companyId,
-      endTime: now(getLocalTimeZone()).toAbsoluteString()
+      endTime: datetime.timestamp()
     });
   }
 

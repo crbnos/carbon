@@ -1,7 +1,7 @@
 import { ValidatedForm } from "@carbon/form";
 import { VStack } from "@carbon/react";
 import type { z } from "zod";
-import { Currency, Input, Select, Submit } from "~/components/Form";
+import { Currency, Input, Select, Submit, Timezone } from "~/components/Form";
 import AddressAutocomplete from "~/components/Form/AddressAutocomplete";
 import { useRouteData } from "~/hooks";
 import { type Company, subsidiaryValidator } from "~/modules/settings";
@@ -41,6 +41,7 @@ const SubsidiaryCompanyForm = ({
             />
             <Input name="name" label="Company Name" />
             <AddressAutocomplete variant="grid" />
+            <Timezone name="timezone" label="Timezone" />
             <Currency name="baseCurrencyCode" label="Base Currency" />
           </div>
           <Submit withBlocker={false}>Save</Submit>

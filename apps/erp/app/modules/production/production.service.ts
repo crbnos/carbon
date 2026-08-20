@@ -2,9 +2,12 @@ import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
+import type { JobSource } from "@carbon/lib/telemetry";
+import { asJobSource, trackWorkEvent } from "@carbon/lib/telemetry";
+import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { nameSimilarity, tiptapToText } from "@carbon/utils";
+import { nameSimilarity, scrapAllowance, tiptapToText } from "@carbon/utils";
 import type {
   AssemblyGraph,
   AssemblyGraphIndex,
@@ -25,7 +28,11 @@ import { nanoid } from "nanoid";
 import type { z } from "zod";
 import type { StorageItem } from "~/types";
 import type { GenericQueryFilters } from "~/utils/query";
-import { getGenericFilter, setGenericQueryFilters } from "~/utils/query";
+import {
+  getGenericFilter,
+  LIST_COUNT,
+  setGenericQueryFilters
+} from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { getDefaultStorageUnitForJob } from "../inventory";
 import { getEmployeeJob } from "../people";
@@ -230,8 +237,7 @@ export async function convertSalesOrderLinesToJobs(
 
         // Calculate scrap quantity based on item's scrap percentage
         const scrapPercentage = manufacturing.data?.scrapPercentage ?? 0;
-        const scrapQuantity =
-          scrapPercentage > 0 ? Math.ceil(jobQuantity * scrapPercentage) : 0;
+        const scrapQuantity = scrapAllowance(jobQuantity, scrapPercentage);
 
         const data = {
           customerId: salesOrder.data?.customerId ?? undefined,
@@ -282,6 +288,24 @@ export async function convertSalesOrderLinesToJobs(
           );
           continue;
         }
+
+        // This function inserts into `job` itself rather than going through
+        // insertJob, so it inherits none of its instrumentation. Without this,
+        // "Create Jobs" on a sales order — the make-to-order path, and for some
+        // shops the only way jobs are ever raised — produced no job_created at
+        // all, and the account would read as not running production.
+        trackWorkEvent("job_created", {
+          companyId,
+          userId,
+          jobId: createJob.data.id,
+          itemId: data.itemId,
+          quantity: data.quantity,
+          scrapQuantity: data.scrapQuantity ?? 0,
+          locationId: locationId ?? null,
+          salesOrderLineId: line.id,
+          deadlineType: data.deadlineType ?? null,
+          source: "salesOrder"
+        });
 
         if (quoteId) {
           const upsertMethod = await client.functions.invoke("get-method", {
@@ -992,7 +1016,7 @@ export async function getJobs(
   let query = client
     .from("jobs")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -2379,12 +2403,13 @@ export async function updateJobStatus(
   client: SupabaseClient<Database>,
   params: {
     id: string;
+    companyId: string;
     status: (typeof jobStatus)[number];
     assignee?: string | null;
     updatedBy: string;
   }
 ) {
-  const { id, status, assignee, updatedBy } = params;
+  const { id, companyId, status, assignee, updatedBy } = params;
 
   // Reopening a job (leaving a completed state) must clear completedDate so it
   // isn't left stale. Done in the same UPDATE as status so the job event
@@ -2393,7 +2418,15 @@ export async function updateJobStatus(
   // set completedDate — that is the complete route's / complete_job_to_inventory's job.
   const clearsCompletion = !["Completed", "Closed"].includes(status);
 
-  return client
+  // The prior status is what tells a real release/hold apart from a re-save.
+  const prior = await client
+    .from("job")
+    .select("status")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  const result = await client
     .from("job")
     .update({
       status,
@@ -2403,6 +2436,32 @@ export async function updateJobStatus(
       ...(clearsCompletion ? { completedDate: null } : {})
     })
     .eq("id", id);
+
+  if (!result.error && prior.data && prior.data.status !== status) {
+    if (status === "Ready") {
+      await raiseMoment("production.jobReleased", {
+        outputs: { job: { id }, releasedBy: { id: updatedBy } },
+        companyId,
+        actorId: updatedBy
+      });
+      // Same guard as the moment above: a real transition, never a re-save.
+      trackWorkEvent("job_released", {
+        companyId,
+        userId: updatedBy,
+        jobId: id,
+        priorStatus: prior.data.status,
+        source: "erp"
+      });
+    } else if (status === "Paused") {
+      await raiseMoment("production.jobHeld", {
+        outputs: { job: { id }, heldBy: { id: updatedBy } },
+        companyId,
+        actorId: updatedBy
+      });
+    }
+  }
+
+  return result;
 }
 
 export async function updateJobMaterialOrder(
@@ -2715,6 +2774,20 @@ export async function upsertProductionQuantity(
   }
 }
 
+/**
+ * `options.source` is telemetry-only: which surface raised the job. Five
+ * routes, MRP, the MCP tools and the workflow engine all funnel through here
+ * and the `job` row cannot tell them apart, so the caller has to say.
+ *
+ * Unset is reported as `unknown`, never as `erp`. The MCP tool and the
+ * workflow engine both reach this through `dispatch(call, context, inputs)`,
+ * which has nowhere to put an option, and an `erp` default would file
+ * automated job creation as human work — the one thing the field separates.
+ *
+ * Kept out of the options type literal on purpose: the MCP metadata generator
+ * parses that object textually and turns a JSDoc block above a property into a
+ * property name of its own, which then ships in the public tool schema.
+ */
 export async function insertJob(
   client: SupabaseClient<Database>,
   input: {
@@ -2746,6 +2819,7 @@ export async function insertJob(
     skipMethod?: boolean;
     skipRecalculate?: boolean;
     methodSource?: "item" | "quoteLine";
+    source?: JobSource;
   }
 ): Promise<{
   data: { id: string; jobId: string } | null;
@@ -2835,8 +2909,7 @@ export async function insertJob(
       input.companyId
     ));
 
-  const scrapQuantity =
-    scrapPercentage > 0 ? Math.ceil(input.quantity * scrapPercentage) : 0;
+  const scrapQuantity = scrapAllowance(input.quantity, scrapPercentage);
 
   const job = await client
     .from("job")
@@ -2874,6 +2947,21 @@ export async function insertJob(
   }
 
   const createdJobId = job.data.id;
+
+  trackWorkEvent("job_created", {
+    companyId: input.companyId,
+    userId: input.createdBy,
+    jobId: createdJobId,
+    itemId: input.itemId,
+    quantity: input.quantity,
+    scrapQuantity,
+    locationId: locationId ?? null,
+    salesOrderLineId: input.salesOrderLineId ?? null,
+    deadlineType,
+    // Narrowed, not trusted: this arrives from an MCP caller as an untyped
+    // schema field, so TypeScript is not a guard on it.
+    source: asJobSource(options?.source)
+  });
 
   if (!options?.skipMethod) {
     const methodSource =
@@ -6611,7 +6699,9 @@ export async function generateAssemblyStepsFromPlan(
         ok: false,
         reason: "steps-locked",
         modelUploadId,
-        message: `${locked.length} ${locked.length === 1 ? "step is" : "steps are"} manually authored or done — delete or reset them before regenerating`
+        message: `${locked.length} ${
+          locked.length === 1 ? "step is" : "steps are"
+        } manually authored or done — delete or reset them before regenerating`
       };
     }
     const removed = await client

@@ -1,5 +1,6 @@
 import { SUPABASE_URL } from "@carbon/auth";
 import type { Database, Json } from "@carbon/database";
+import { getCompanyTimeZone } from "@carbon/database";
 import type {
   DocumentBlock,
   DocumentSectionPlacement,
@@ -309,8 +310,11 @@ export async function getCurrentSequence(
   const { prefix, suffix, next, size } = sequence.data;
 
   const currentSequence = next.toString().padStart(size, "0");
-  const derivedPrefix = interpolateSequenceDate(prefix);
-  const derivedSuffix = interpolateSequenceDate(suffix);
+  // Same calendar as get_next_sequence (SQL): tokens roll over at the
+  // company's midnight, or the preview disagrees with the issued number.
+  const timezone = await getCompanyTimeZone(client, companyId);
+  const derivedPrefix = interpolateSequenceDate(prefix, timezone);
+  const derivedSuffix = interpolateSequenceDate(suffix, timezone);
 
   return {
     data: `${derivedPrefix}${currentSequence}${derivedSuffix}`,
@@ -945,25 +949,10 @@ export async function updateDigitalQuoteSetting(
     .eq("id", companyId);
 }
 
-export async function updateIntegrationMetadata(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  integrationId: string,
-  metadata: any,
-  updatedBy?: string
-) {
-  return client
-    .from("companyIntegration")
-    .update(
-      sanitize({
-        metadata,
-        updatedAt: new Date().toISOString(),
-        updatedBy
-      })
-    )
-    .eq("companyId", companyId)
-    .eq("id", integrationId);
-}
+// NOTE: updateIntegrationMetadata lives in settings.server.ts, NOT here. It needs
+// the service-role client for the Vault RPC, and this file is re-exported by the
+// client barrel (~/modules/settings) — a `@carbon/auth/client.server` import here
+// would pull the service-role client into the browser bundle (Vite blocks it).
 
 export async function updateAccountingEnabledSetting(
   client: SupabaseClient<Database>,
@@ -1468,6 +1457,28 @@ export async function updateDefaultSupplierCc(
   return client
     .from("companySettings")
     .update(sanitize({ defaultSupplierCc }))
+    .eq("id", companyId);
+}
+
+export async function updateRequireMfaSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  requireMfa: boolean
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ requireMfa }))
+    .eq("id", companyId);
+}
+
+export async function updateShowCurrencyTrailingZerosSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  showCurrencyTrailingZeros: boolean
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ showCurrencyTrailingZeros }))
     .eq("id", companyId);
 }
 

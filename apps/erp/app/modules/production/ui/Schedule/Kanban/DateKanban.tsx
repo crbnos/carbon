@@ -1,6 +1,12 @@
 import { getLogger } from "@carbon/logger";
-import { ClientOnly, toast } from "@carbon/react";
-import type { DragOverEvent, DragStartEvent } from "@dnd-kit/core";
+import { ClientOnly, cn, toast } from "@carbon/react";
+import type {
+  Active,
+  DragEndEvent,
+  DragOverEvent,
+  DragStartEvent,
+  Over
+} from "@dnd-kit/core";
 import {
   DndContext,
   DragOverlay,
@@ -11,46 +17,203 @@ import {
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useLingui } from "@lingui/react/macro";
-import { useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState
+} from "react";
 import { createPortal } from "react-dom";
 import { useFetchers, useSubmit } from "react-router";
 import { path } from "~/utils/path";
 import { BoardContainer, ColumnCard } from "./components/ColumnCard";
 import { JobCard } from "./components/JobCard";
 import { KanbanProvider } from "./context/KanbanContext";
+import { getDateOnly, getPendingDueDate } from "./date-utils";
+import {
+  comparePriorityThenId,
+  createDragOrigin,
+  type DragOrigin,
+  type DragPreview,
+  getColumnPlacement,
+  getItemPlacement,
+  isSamePlacement,
+  isSamePreview,
+  resolveInsertionMarker
+} from "./placement";
 import type { Column, DisplaySettings, JobItem, Progress } from "./types";
-import { hasDraggableData } from "./utils";
+import { hasDraggableData, kanbanCollisionDetection } from "./utils";
 
 const logger = getLogger("erp", "datekanban");
 
 type DateKanbanProps = {
   columns: Column[];
   items: JobItem[];
+  locationId: string;
   progressByItemId: Record<string, Progress>;
   tags: { name: string }[];
 } & DisplaySettings;
 
-function usePendingItems() {
+type DateDragOrigin = DragOrigin<JobItem> & {
+  dueDate: string | null | undefined;
+};
+
+type DateDragState = {
+  origin: DateDragOrigin;
+  preview: DragPreview | null;
+};
+
+const DateDragPreviewContext = createContext<DateDragState | null>(null);
+
+type DatePreviewJobCardProps = {
+  item: JobItem;
+  locationId: string;
+  isOverlay?: boolean;
+  progressByItemId: Record<string, Progress>;
+};
+
+function DatePreviewJobCard({
+  item,
+  locationId,
+  isOverlay,
+  progressByItemId
+}: DatePreviewJobCardProps) {
+  const dragState = useContext(DateDragPreviewContext);
+  const preview = dragState?.preview;
+  const marker =
+    preview?.targetType === "item" && preview.columnId === item.columnId
+      ? resolveInsertionMarker(preview.slot)
+      : null;
+  const showBefore = marker?.itemId === item.id && marker.position === "before";
+  const showAfter = marker?.itemId === item.id && marker.position === "after";
+
+  return (
+    <div className="relative max-w-[330px]">
+      {(showBefore || showAfter) && (
+        <div
+          aria-hidden
+          className={cn(
+            "pointer-events-none absolute inset-x-2 z-20 h-0.5 rounded-full bg-primary",
+            showBefore ? "-top-1" : "-bottom-1"
+          )}
+        />
+      )}
+      <JobCard
+        item={item}
+        locationId={locationId}
+        isOverlay={isOverlay}
+        progressByItemId={progressByItemId}
+      />
+    </div>
+  );
+}
+
+function isOriginItemDrag(active: Active, origin: DateDragOrigin) {
+  return (
+    hasDraggableData(active) &&
+    active.data.current?.type === "item" &&
+    String(active.id) === origin.item.id
+  );
+}
+
+function resolveDragPlacement(
+  origin: DateDragOrigin,
+  over: Over | null,
+  items: readonly JobItem[],
+  itemsById: ReadonlyMap<string, JobItem>,
+  columnsById: ReadonlyMap<string, Column>
+): DragPreview | null {
+  if (
+    !over ||
+    over.disabled ||
+    !hasDraggableData(over) ||
+    !itemsById.has(origin.item.id)
+  ) {
+    return null;
+  }
+
+  const overId = String(over.id);
+  if (overId === origin.item.id) {
+    return { ...origin.placement, targetType: "item" };
+  }
+
+  const overData = over.data.current;
+  if (overData?.type === "item") {
+    const overItem = itemsById.get(overId);
+    if (
+      !overItem ||
+      overData.item.id !== overId ||
+      overData.item.columnId !== overItem.columnId ||
+      !columnsById.has(overItem.columnId)
+    ) {
+      return null;
+    }
+
+    const placement = getItemPlacement(
+      origin,
+      items,
+      overItem.columnId,
+      overItem.id
+    );
+    return placement ? { ...placement, targetType: "item" } : null;
+  }
+
+  if (overData?.type === "column") {
+    if (
+      overData.column.id !== overId ||
+      !columnsById.has(overId) ||
+      overId === origin.placement.columnId
+    ) {
+      return null;
+    }
+
+    const placement = getColumnPlacement(origin, items, overId);
+    return placement ? { ...placement, targetType: "column" } : null;
+  }
+
+  return null;
+}
+
+function usePendingItems(locationId: string) {
   type PendingItem = ReturnType<typeof useFetchers>[number] & {
     formData: FormData;
   };
+  type PendingProjection = {
+    id: string;
+    priority: number;
+    columnId: string;
+    dueDate: string | null | undefined;
+  };
   return useFetchers()
     .filter((fetcher): fetcher is PendingItem => {
-      return fetcher.formAction === path.to.scheduleDatesUpdate;
+      return (
+        fetcher.formAction === path.to.scheduleDatesUpdate &&
+        fetcher.formData?.get("locationId") === locationId
+      );
     })
-    .map((fetcher) => {
+    .map((fetcher): PendingProjection => {
+      const persistenceColumnId = fetcher.formData.get("columnId");
       const optimisticColumnId = fetcher.formData.get("optimisticColumnId");
-      let columnId = optimisticColumnId
-        ? String(optimisticColumnId)
-        : String(fetcher.formData.get("columnId"));
-      let id = String(fetcher.formData.get("id"));
-      let priority = Number(fetcher.formData.get("priority"));
-      let item: { id: string; priority: number; columnId: string } = {
-        id,
+      const columnId =
+        typeof optimisticColumnId === "string" && optimisticColumnId.length > 0
+          ? optimisticColumnId
+          : typeof persistenceColumnId === "string"
+            ? persistenceColumnId
+            : "";
+      const id = fetcher.formData.get("id");
+      const priority = Number(fetcher.formData.get("priority"));
+
+      return {
+        id: typeof id === "string" ? id : "",
         priority,
-        columnId
+        columnId,
+        dueDate:
+          typeof persistenceColumnId === "string"
+            ? getPendingDueDate(persistenceColumnId)
+            : undefined
       };
-      return item;
     });
 }
 
@@ -92,12 +255,19 @@ function useDateUpdateFailureToast() {
 const DateKanban = ({
   columns,
   items: initialItems,
+  locationId,
   progressByItemId,
   tags,
   ...displaySettings
 }: DateKanbanProps) => {
   const submit = useSubmit();
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const DateCardComponent = useCallback(
+    (props: Omit<DatePreviewJobCardProps, "locationId">) => (
+      <DatePreviewJobCard {...props} locationId={locationId} />
+    ),
+    [locationId]
+  );
 
   // For date-based kanban, always use the column order from props (don't persist)
   const [columnOrder, setColumnOrder] = useState<string[]>(
@@ -113,22 +283,21 @@ const DateKanban = ({
     initialItems.map((item) => [item.id, item])
   );
 
-  const pendingItems = usePendingItems();
+  const pendingItems = usePendingItems(locationId);
   useDateUpdateFailureToast();
 
   // Merge pending items and existing items for optimistic updates
-  for (let pendingItem of pendingItems) {
-    let item = itemsById.get(pendingItem.id);
+  for (const pendingItem of pendingItems) {
+    const item = itemsById.get(pendingItem.id);
     if (item) {
       itemsById.set(pendingItem.id, { ...item, ...pendingItem });
     }
   }
 
-  const items = Array.from(itemsById.values()).sort(
-    (a, b) => a.priority - b.priority
-  );
-
-  const [activeItem, setActiveItem] = useState<JobItem | null>(null);
+  const baseItems = Array.from(itemsById.values()).sort(comparePriorityThenId);
+  const columnsMap = new Map(columns.map((column) => [column.id, column]));
+  const dragOriginRef = useRef<DateDragOrigin | null>(null);
+  const [dragState, setDragState] = useState<DateDragState | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -137,138 +306,122 @@ const DateKanban = ({
     })
   );
 
-  function onDragStart(event: DragStartEvent) {
-    if (!hasDraggableData(event.active)) return;
-    const data = event.active.data.current;
-
-    // Only handle item dragging, not column dragging (dates are fixed)
-    if (data?.type === "item") {
-      setActiveItem(data.item as JobItem);
-      return;
-    }
+  function clearDragState() {
+    dragOriginRef.current = null;
+    setDragState(null);
   }
 
-  function onDragEnd() {
-    setActiveItem(null);
+  function onDragStart(event: DragStartEvent) {
+    if (
+      !hasDraggableData(event.active) ||
+      event.active.data.current?.type !== "item"
+    ) {
+      clearDragState();
+      return;
+    }
+
+    const activeItem = itemsById.get(String(event.active.id));
+    if (!activeItem || !columnsMap.has(activeItem.columnId)) {
+      clearDragState();
+      return;
+    }
+
+    const placementOrigin = createDragOrigin(baseItems, activeItem);
+    if (!placementOrigin) {
+      clearDragState();
+      return;
+    }
+
+    const origin: DateDragOrigin = {
+      ...placementOrigin,
+      dueDate:
+        activeItem.dueDate === undefined
+          ? undefined
+          : getDateOnly(activeItem.dueDate)
+    };
+    dragOriginRef.current = origin;
+    setDragState({ origin, preview: null });
   }
 
   function onDragOver(event: DragOverEvent) {
-    const { active, over } = event;
-    if (!over) return;
+    const origin = dragOriginRef.current;
+    if (!origin) return;
 
-    const activeId = active.id;
-    const overId = over.id;
-
-    if (activeId === overId) return;
-
-    if (!hasDraggableData(active) || !hasDraggableData(over)) return;
-
-    const activeData = active.data.current;
-    const overData = over.data.current;
-
-    const isActiveAnItem = activeData?.type === "item";
-    const isOverAnItem = overData?.type === "item";
-
-    if (!isActiveAnItem) return;
-
-    const activeItem = itemsById.get(activeId.toString());
-    const overItem = itemsById.get(overId.toString());
-
-    // Dropping a job over another job
-    if (isActiveAnItem && isOverAnItem && activeItem && overItem) {
-      // Calculate priority
-      let priorityBefore = 0;
-      let priorityAfter = 0;
-
-      if (
-        activeItem.priority > overItem.priority ||
-        activeItem.columnId !== overItem.columnId
-      ) {
-        priorityAfter = overItem.priority;
-
-        for (let i = items.length - 1; i >= 0; i--) {
-          const item = items[i];
-          if (
-            item.columnId === overItem.columnId &&
-            item.priority < priorityAfter
-          ) {
-            priorityBefore = item.priority ?? 0;
-            break;
-          }
-        }
-      } else {
-        priorityBefore = overItem.priority;
-        priorityAfter =
-          items.find(
-            (item) =>
-              item.columnId === overItem.columnId &&
-              item.priority > priorityBefore
-          )?.priority ?? priorityBefore + 1;
-      }
-
-      const newPriority = (priorityBefore + priorityAfter) / 2;
-
-      // Submit update when moving to a different column (date)
-      if (activeItem.columnId !== overItem.columnId) {
-        submit(
-          {
-            id: activeItem.id,
-            columnId: overItem.columnId,
-            priority: newPriority
-          },
-          {
-            method: "post",
-            action: path.to.scheduleDatesUpdate,
-            navigate: false,
-            fetcherKey: `job:${activeItem.id}`
-          }
-        );
-        return;
-      }
-
-      // Update priority within the same column
-      if (activeItem && overItem) {
-        submit(
-          {
-            id: activeItem.id,
-            columnId: activeItem.columnId,
-            priority: newPriority
-          },
-          {
-            method: "post",
-            action: path.to.scheduleDatesUpdate,
-            navigate: false,
-            fetcherKey: `job:${activeItem.id}`
-          }
-        );
-      }
+    if (!isOriginItemDrag(event.active, origin)) {
+      setDragState((current) =>
+        current?.origin === origin && isSamePreview(current.preview, null)
+          ? current
+          : { origin, preview: null }
+      );
+      return;
     }
 
-    const isOverAColumn = overData?.type === "column";
+    const placement = resolveDragPlacement(
+      origin,
+      event.over,
+      baseItems,
+      itemsById,
+      columnsMap
+    );
+    const preview =
+      placement && !isSamePlacement(origin.placement, placement)
+        ? placement
+        : null;
 
-    // Dropping a job over a column
-    if (isActiveAnItem && isOverAColumn && activeItem) {
-      const newColumnId = overId as string;
-
-      if (activeItem.columnId !== newColumnId) {
-        submit(
-          {
-            id: activeItem.id,
-            columnId: newColumnId,
-            priority: activeItem.priority
-          },
-          {
-            method: "post",
-            action: path.to.scheduleDatesUpdate,
-            navigate: false,
-            fetcherKey: `job:${activeItem.id}`
-          }
-        );
-      }
-    }
+    setDragState((current) =>
+      current?.origin === origin && isSamePreview(current.preview, preview)
+        ? current
+        : { origin, preview }
+    );
   }
 
-  const columnsMap = new Map(columns.map((col) => [col.id, col]));
+  function onDragEnd(event: DragEndEvent) {
+    const origin = dragOriginRef.current;
+    const placement =
+      origin && isOriginItemDrag(event.active, origin)
+        ? resolveDragPlacement(
+            origin,
+            event.over,
+            baseItems,
+            itemsById,
+            columnsMap
+          )
+        : null;
+
+    if (
+      origin &&
+      origin.dueDate !== undefined &&
+      placement &&
+      !isSamePlacement(origin.placement, placement)
+    ) {
+      const isSameDisplayBucket =
+        placement.columnId === origin.placement.columnId;
+      submit(
+        {
+          id: origin.item.id,
+          locationId,
+          columnId: isSameDisplayBucket
+            ? (origin.dueDate ?? origin.placement.columnId)
+            : placement.columnId,
+          optimisticColumnId: placement.columnId,
+          priority: placement.priority
+        },
+        {
+          method: "post",
+          action: path.to.scheduleDatesUpdate,
+          navigate: false,
+          flushSync: true,
+          fetcherKey: `job:${origin.item.id}`
+        }
+      );
+    }
+
+    clearDragState();
+  }
+
+  function onDragCancel() {
+    clearDragState();
+  }
 
   const isInitialMount = useRef(true);
 
@@ -287,56 +440,82 @@ const DateKanban = ({
       tags={tags}
       columnIds={columns.map((col) => col.id)}
     >
-      <DndContext
-        sensors={sensors}
-        onDragStart={onDragStart}
-        onDragEnd={onDragEnd}
-        onDragOver={onDragOver}
-      >
-        <BoardContainer>
-          {columnOrder.map((colId) => {
-            const col = columnsMap.get(colId);
-            if (!col) return null;
-            return (
-              <ColumnCard
-                key={col.id}
-                column={col}
-                items={items.filter((item) => item.columnId === col.id)}
-                progressByItemId={progressByItemId}
-                isDateView={true}
-                disableColumnDrag={true}
-                CardComponent={JobCard as any}
-              />
-            );
-          })}
-        </BoardContainer>
+      <DateDragPreviewContext.Provider value={dragState}>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={kanbanCollisionDetection}
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
+          onDragOver={onDragOver}
+          onDragCancel={onDragCancel}
+        >
+          <BoardContainer>
+            {columnOrder.map((colId) => {
+              const col = columnsMap.get(colId);
+              if (!col) return null;
+              const columnItems = baseItems.filter(
+                (item) => item.columnId === col.id
+              );
+              const showColumnPreview =
+                dragState?.preview?.targetType === "column" &&
+                dragState.preview.columnId === col.id;
 
-        <ClientOnly fallback={null}>
-          {() =>
-            createPortal(
-              <DragOverlay>
-                {activeItem && (
-                  <JobCard
-                    item={{
-                      ...activeItem,
-                      status: progressByItemId[activeItem.id]?.active
-                        ? "In Progress"
-                        : activeItem.status,
-                      employeeIds: progressByItemId[activeItem.id]?.employees
-                        ? Array.from(progressByItemId[activeItem.id].employees!)
-                        : undefined,
-                      progress: progressByItemId[activeItem.id]?.progress ?? 0
-                    }}
-                    isOverlay
+              return (
+                <div key={col.id} className="relative flex flex-shrink-0">
+                  <ColumnCard
+                    column={col}
+                    items={columnItems}
                     progressByItemId={progressByItemId}
+                    isDateView={true}
+                    disableColumnDrag={true}
+                    CardComponent={DateCardComponent}
                   />
-                )}
-              </DragOverlay>,
-              document.body
-            )
-          }
-        </ClientOnly>
-      </DndContext>
+                  {showColumnPreview && (
+                    <div
+                      aria-hidden
+                      className="pointer-events-none absolute inset-1 z-20 ring-2 ring-inset ring-primary"
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </BoardContainer>
+
+          <ClientOnly fallback={null}>
+            {() =>
+              createPortal(
+                <DragOverlay>
+                  {dragState && (
+                    <JobCard
+                      item={{
+                        ...dragState.origin.item,
+                        status: progressByItemId[dragState.origin.item.id]
+                          ?.active
+                          ? "In Progress"
+                          : dragState.origin.item.status,
+                        employeeIds: progressByItemId[dragState.origin.item.id]
+                          ?.employees
+                          ? Array.from(
+                              progressByItemId[dragState.origin.item.id]
+                                .employees!
+                            )
+                          : undefined,
+                        progress:
+                          progressByItemId[dragState.origin.item.id]
+                            ?.progress ?? 0
+                      }}
+                      locationId={locationId}
+                      isOverlay
+                      progressByItemId={progressByItemId}
+                    />
+                  )}
+                </DragOverlay>,
+                document.body
+              )
+            }
+          </ClientOnly>
+        </DndContext>
+      </DateDragPreviewContext.Provider>
     </KanbanProvider>
   );
 };

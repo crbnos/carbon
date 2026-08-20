@@ -25,7 +25,6 @@ import {
 import {
   endOfMonth,
   endOfWeek,
-  getLocalTimeZone,
   now,
   parseDate,
   startOfMonth,
@@ -50,13 +49,15 @@ import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { useUrlParams } from "~/hooks";
 import { getJobsByDateRange, getUnscheduledJobs } from "~/modules/production";
+import { isDateColumnSentinel } from "~/modules/production/production.models";
 import type { Column, JobItem } from "~/modules/production/ui/Schedule";
 import type { DisplaySettings } from "~/modules/production/ui/Schedule/Kanban";
 import { DateKanban } from "~/modules/production/ui/Schedule/Kanban/DateKanban";
+import { comparePriorityThenId } from "~/modules/production/ui/Schedule/Kanban/placement";
 import { ScheduleNavigation } from "~/modules/production/ui/Schedule/Kanban/ScheuleNavigation";
-import { getLocationsList } from "~/modules/resources";
 import { getTagsList } from "~/modules/shared";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { resolveLocationId } from "~/modules/shared/location.server";
+import { getLocationTimeZone } from "~/modules/shared/timezone.server";
 import { usePeople } from "~/stores";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -83,11 +84,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const filterParam = searchParams.getAll("filter");
   const view = (searchParams.get("view") as ViewType) ?? "week";
   const dateParam = searchParams.get("date");
-
-  const timezone = getLocalTimeZone();
-  const currentDate = dateParam
-    ? parseDate(dateParam)
-    : toCalendarDate(now(timezone));
 
   let selectedSalesOrderIds: string[] = [];
   let selectedTags: string[] = [];
@@ -118,36 +114,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
   }
 
-  let locationId = searchParams.get("location");
+  const locationId = await resolveLocationId(client, request, {
+    searchParams,
+    userId,
+    companyId,
+    onDefaultsError: path.to.production,
+    onNoLocations: path.to.production
+  });
 
-  if (!locationId) {
-    const userDefaults = await getUserDefaults(client, userId, companyId);
-    if (userDefaults.error) {
-      throw redirect(
-        path.to.production,
-        await flash(
-          request,
-          error(userDefaults.error, "Failed to load default location")
-        )
-      );
-    }
-
-    locationId = userDefaults.data?.locationId ?? null;
-  }
-
-  if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
-    if (locations.error || !locations.data?.length) {
-      throw redirect(
-        path.to.production,
-        await flash(
-          request,
-          error(locations.error, "Failed to load any locations")
-        )
-      );
-    }
-    locationId = locations.data?.[0].id as string;
-  }
+  // The board's "today" and its week/month windows belong to the plant being
+  // scheduled, not the server — resolved after locationId settles.
+  const timezone = await getLocationTimeZone(client, locationId, companyId);
+  const currentDate = dateParam
+    ? parseDate(dateParam)
+    : toCalendarDate(now(timezone));
 
   // Calculate date range based on view
   let startDate: string;
@@ -496,7 +476,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     tags: tags.data ?? [],
     locationId,
     view,
-    currentDate: currentDate.toString()
+    currentDate: currentDate.toString(),
+    timezone
   };
 }
 
@@ -526,16 +507,15 @@ function DateKanbanSchedule() {
     tags,
     locationId,
     view,
-    currentDate
+    currentDate,
+    timezone
   } = useLoaderData<typeof loader>();
-
-  const timezone = getLocalTimeZone();
 
   // Reformat column titles using user locale
   const columns = useMemo(() => {
     return loaderColumns.map((col) => {
       // Skip non-date columns
-      if (["unscheduled", "next-week", "next-month"].includes(col.id)) {
+      if (isDateColumnSentinel(col.id)) {
         if (col.id === "next-month") {
           // Reformat the month name with locale
           const monthStart = startOfMonth(parseDate(currentDate));
@@ -597,7 +577,7 @@ function DateKanbanSchedule() {
   }, [initialItems]);
 
   const sortItems = useCallback((items: JobItem[]) => {
-    return [...items].sort((a, b) => a.priority - b.priority);
+    return [...items].sort(comparePriorityThenId);
   }, []);
 
   useEffect(() => {
@@ -652,25 +632,24 @@ function DateKanbanSchedule() {
 
   const getDateSpanLabel = useCallback(
     (date: typeof parsedDate, viewType: ViewType) => {
-      const tz = getLocalTimeZone();
       if (viewType === "week") {
         const weekStart = startOfWeek(date, "en-GB");
         const weekEnd = endOfWeek(date, "en-GB");
-        return `${weekStart.toDate(tz).toLocaleDateString(locale, {
+        return `${weekStart.toDate(timezone).toLocaleDateString(locale, {
           month: "short",
           day: "numeric"
-        })} - ${weekEnd.toDate(tz).toLocaleDateString(locale, {
+        })} - ${weekEnd.toDate(timezone).toLocaleDateString(locale, {
           month: "short",
           day: "numeric"
         })}`;
       } else {
-        return date.toDate(tz).toLocaleDateString(locale, {
+        return date.toDate(timezone).toLocaleDateString(locale, {
           month: "short",
           year: "numeric"
         });
       }
     },
-    [locale]
+    [locale, timezone]
   );
 
   const getSpanStartDate = useCallback(
@@ -885,6 +864,7 @@ function DateKanbanSchedule() {
           <DateKanban
             columns={columns}
             items={items}
+            locationId={locationId}
             progressByItemId={{}}
             tags={tags}
             showCustomer={displaySettings.showCustomer}

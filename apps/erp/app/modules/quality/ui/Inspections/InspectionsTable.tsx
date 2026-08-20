@@ -12,12 +12,13 @@ import {
   LuTruck
 } from "react-icons/lu";
 import {
+  DateTime,
   EmployeeAvatar,
   exportOnlyColumn,
   Hyperlink,
   Table
 } from "~/components";
-import { useDateFormatter, useUrlParams } from "~/hooks";
+import { useUrlParams } from "~/hooks";
 import {
   inspectionSourceDocuments,
   inspectionStatusType
@@ -46,7 +47,6 @@ function computeProgress(row: Inspection): {
 
 const InspectionsTable = memo(({ data, count }: InspectionsTableProps) => {
   const { t } = useLingui();
-  const { formatDate } = useDateFormatter();
   const [params] = useUrlParams();
   const [items] = useItems();
 
@@ -184,12 +184,13 @@ const InspectionsTable = memo(({ data, count }: InspectionsTableProps) => {
       {
         accessorKey: "createdAt",
         header: t`Received At`,
-        cell: ({ row }) =>
-          row.original.createdAt ? formatDate(row.original.createdAt) : "",
+        cell: ({ row }) => (
+          <DateTime value={row.original.createdAt} variant="date" />
+        ),
         meta: { icon: <LuCalendar /> }
       }
     ];
-  }, [items, t, params, formatDate]);
+  }, [items, t, params]);
 
   return (
     <Table<Inspection>

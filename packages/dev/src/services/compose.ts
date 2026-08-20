@@ -53,11 +53,17 @@ export type Container = {
 // Lifecycle
 // ---------------------------------------------------------------------------
 
-export async function bootStack(
+// Every profile `bootStack` can enable. Compose treats profile-gated services
+// as "not enabled" rather than orphans, so a `down` missing one silently
+// leaves those containers running. `stopStack`'s sweep backstops drift here.
+const COMPOSE_PROFILES = ["full", "chrome"] as const;
+
+// Exported for tests: the `docker compose … up -d` argv.
+export function buildUpArgs(
   root: string,
   slug: string,
   opts?: { minimal?: boolean; services?: string[]; chrome?: boolean }
-) {
+): string[] {
   const args = devArgs(root, slug, "--env-file", ".env.local");
   // When specific services are requested, don't activate profiles — compose
   // starts only the named services (+ dependencies) regardless of profiles.
@@ -66,7 +72,29 @@ export async function bootStack(
   if (!opts?.services && opts?.chrome) args.push("--profile", "chrome");
   args.push("up", "-d");
   if (opts?.services) args.push(...opts.services);
-  await execStrict("docker", args, root);
+  return args;
+}
+
+// Exported for tests. Enables every profile unconditionally — one that was
+// never booted matches nothing, while a missing one leaks containers.
+export function buildDownArgs(
+  root: string,
+  slug: string,
+  withVolumes: boolean
+): string[] {
+  const args = devArgs(root, slug, "--env-file", ".env.local");
+  for (const profile of COMPOSE_PROFILES) args.push("--profile", profile);
+  args.push("down", "--remove-orphans");
+  if (withVolumes) args.push("-v");
+  return args;
+}
+
+export async function bootStack(
+  root: string,
+  slug: string,
+  opts?: { minimal?: boolean; services?: string[]; chrome?: boolean }
+) {
+  await execStrict("docker", buildUpArgs(root, slug, opts), root);
 }
 
 // `docker compose restart` a subset of services. Used by the storage-stuck
@@ -177,25 +205,53 @@ export async function allImagesPresentLocally(
 // failures (missing .env.local, profile issues, renamed compose file), falls
 // back to raw `docker rm -f` via destroyProject so the stack is always torn
 // down even when compose can't parse the project to find its containers.
+// Keyed on containers actually remaining, not the exit code alone: compose
+// exits 0 after skipping services it had no profile for.
 export async function stopStack(
   root: string,
   slug: string,
   withVolumes: boolean
 ): Promise<number> {
-  const args = devArgs(
-    root,
-    slug,
-    "--env-file",
-    ".env.local",
-    "down",
-    "--remove-orphans"
-  );
-  if (withVolumes) args.push("-v");
-  const r = await execa("docker", args, { cwd: root, reject: false });
-  if (r.exitCode !== 0) {
-    await destroyProject(projectName(slug), withVolumes);
+  const r = await execa("docker", buildDownArgs(root, slug, withVolumes), {
+    cwd: root,
+    reject: false
+  });
+  const project = projectName(slug);
+  let remaining = await projectContainerIds(project);
+  if (r.exitCode !== 0 || remaining.length > 0) {
+    await destroyProject(project, withVolumes);
+    // destroyProject swallows docker errors — re-read rather than assume.
+    remaining = await projectContainerIds(project);
   }
-  return r.exitCode ?? 0;
+  return teardownExitCode(r.exitCode, remaining.length);
+}
+
+// Describes the end state, not the compose invocation: `down` uses this only
+// to warn that containers may still be running.
+export function teardownExitCode(
+  composeExit: number | undefined,
+  remaining: number
+): number {
+  return remaining > 0 ? composeExit || 1 : 0;
+}
+
+// Container ids for a compose project, by label — works with no compose file.
+async function projectContainerIds(project: string): Promise<string[]> {
+  const r = await execa(
+    "docker",
+    [
+      "ps",
+      "-a",
+      "-q",
+      "--filter",
+      `label=com.docker.compose.project=${project}`
+    ],
+    { reject: false }
+  );
+  return (r.stdout ?? "")
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
 // One redis per host, run directly via `docker run` (no compose file).
@@ -405,21 +461,7 @@ export async function dockerProjectStates(): Promise<Map<string, string>> {
 // false (plain `crbn down`), preserves the project's data volumes.
 export async function destroyProject(project: string, withVolumes = true) {
   // Find containers belonging to the project.
-  const ctr = await execa(
-    "docker",
-    [
-      "ps",
-      "-a",
-      "-q",
-      "--filter",
-      `label=com.docker.compose.project=${project}`
-    ],
-    { reject: false }
-  );
-  const ids = (ctr.stdout ?? "")
-    .split("\n")
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const ids = await projectContainerIds(project);
   if (ids.length > 0) {
     await execa("docker", ["rm", "-f", ...ids], {
       reject: false,

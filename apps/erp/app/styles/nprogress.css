@@ -4,7 +4,18 @@
 }
 
 #nprogress .bar {
-  background: #002aff99;
+  background-color: #002aff;
+  /* Tiled highlight sweeping forward, so the bar reads as moving even when a
+     loader stalls at one percentage. Tiles because NProgress translates .bar. */
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #7f9cffe6 50%,
+    transparent 100%
+  );
+  background-size: 200px 100%;
+  background-repeat: repeat-x;
+  animation: nprogress-shine 0.9s linear infinite;
 
   position: fixed;
   z-index: 1031;
@@ -12,5 +23,21 @@
   left: 0;
 
   width: 100%;
-  height: 2px;
+  height: 3px;
+}
+
+@keyframes nprogress-shine {
+  from {
+    background-position-x: 0;
+  }
+  to {
+    background-position-x: 200px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #nprogress .bar {
+    background-image: none;
+    animation: none;
+  }
 }

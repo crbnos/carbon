@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { PurchaseOrderEmail } from "@carbon/documents/email";
+import { getPurchaseOrderDisplayId } from "@carbon/documents/pdf";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
@@ -14,7 +15,7 @@ import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { getPaymentTermsList } from "~/modules/accounting";
+import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
 import { upsertDocument } from "~/modules/documents";
 import {
   getDefaultAttachmentsForPO,
@@ -62,9 +63,12 @@ export const handle: Handle = {
 export async function action(args: ActionFunctionArgs) {
   const { request, params } = args;
   assertIsPost(request);
-  const { userId, companyId } = await requirePermissions(request, {
-    update: "purchasing"
-  });
+  const { userId, companyId, companyGroupId } = await requirePermissions(
+    request,
+    {
+      update: "purchasing"
+    }
+  );
 
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
@@ -210,7 +214,7 @@ export async function action(args: ActionFunctionArgs) {
         if (pdf.headers.get("content-type") === "application/pdf") {
           const file = await pdf.arrayBuffer();
           fileName = stripSpecialCharacters(
-            `${purchaseOrder.data.purchaseOrderId} - ${new Date()
+            `${getPurchaseOrderDisplayId(purchaseOrder.data)} - ${new Date()
               .toISOString()
               .slice(0, -5)}.pdf`
           );
@@ -273,6 +277,15 @@ export async function action(args: ActionFunctionArgs) {
             getUser(serviceRole, userId)
           ]);
 
+          // Same decimals the PDF of this order uses.
+          const currencyRow = purchaseOrder.data.currencyCode
+            ? await getCurrencyByCode(
+                serviceRole,
+                companyGroupId,
+                purchaseOrder.data.currencyCode
+              )
+            : null;
+
           const supplierEmail = supplier?.data?.contact?.email;
           if (
             supplierEmail &&
@@ -284,6 +297,7 @@ export async function action(args: ActionFunctionArgs) {
             const emailTemplate = PurchaseOrderEmail({
               // @ts-expect-error TS2739 - TODO: fix type
               company: company.data,
+              currencyDecimals: currencyRow?.data?.decimalPlaces ?? null,
               locale: locales?.[0] ?? "en-US",
               purchaseOrder: purchaseOrder.data,
               purchaseOrderLines: purchaseOrderLines.data ?? [],
@@ -312,7 +326,7 @@ export async function action(args: ActionFunctionArgs) {
               to: [buyer.data.email, supplierEmail],
               cc: ccSelections?.length ? ccSelections : undefined,
               from: buyer.data.email,
-              subject: `Purchase Order ${purchaseOrder.data.purchaseOrderId} from ${company.data.name}`,
+              subject: `Purchase Order ${getPurchaseOrderDisplayId(purchaseOrder.data)} from ${company.data.name}`,
               html,
               text,
               attachments: signedUrlData?.signedUrl
@@ -370,10 +384,11 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "purchasing",
-    bypassRls: true
-  });
+  const { client, companyId, companyGroupId, userId } =
+    await requirePermissions(request, {
+      view: "purchasing",
+      bypassRls: true
+    });
 
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
@@ -476,7 +491,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     )
   );
   const supplierInteractionId = purchaseOrder.data?.supplierInteractionId;
-  const [defaultAttachments, adHocDocs] = await Promise.all([
+  const [defaultAttachments, adHocDocs, currency] = await Promise.all([
     getDefaultAttachmentsForPO(serviceRole, {
       companyId,
       supplierId: purchaseOrder.data?.supplierId ?? null,
@@ -488,7 +503,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           companyId,
           supplierInteractionId
         )
-      : Promise.resolve([])
+      : Promise.resolve([]),
+    purchaseOrder.data?.currencyCode
+      ? getCurrencyByCode(
+          serviceRole,
+          companyGroupId,
+          purchaseOrder.data.currencyCode
+        )
+      : null
   ]);
   const adHocAttachments = adHocDocs.map((d) => ({
     source: "po" as const,
@@ -504,6 +526,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     purchaseOrder: purchaseOrder.data,
     purchaseOrderDelivery: purchaseOrderDelivery.data,
+    currency: currency?.data ?? null,
     lines: lines.data ?? [],
     files: getSupplierInteractionDocuments(
       client,

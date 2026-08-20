@@ -1,18 +1,15 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import {
-  getLocalTimeZone,
-  now,
-  toCalendarDate,
-} from "npm:@internationalized/date";
 import { z } from "npm:zod@^3.24.1";
 
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 
 import { format } from "https://deno.land/std@0.205.0/datetime/format.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
+import { deriveRate } from "../shared/precision.ts";
 import { getRemainingQuantityToInvoice } from "../shared/short-close.ts";
 
 const pool = getConnectionPool(2);
@@ -112,6 +109,10 @@ const payloadValidator = z.discriminatedUnion("type", [
         supplierShippingCost: z.number(),
         supplierUnitPrice: z.number(),
         supplierTaxAmount: z.number(),
+        // Mirrors selectedLineSchema in purchasing.models.ts — a 0..1 fraction.
+        // Left optional so existing clients keep working; resolveTaxPercent
+        // derives it from the amount rather than storing 0 beside a real one.
+        taxPercent: z.number().min(0).max(1).optional().default(0),
         unitPrice: z.number(),
       })
     ),
@@ -129,6 +130,28 @@ const payloadValidator = z.discriminatedUnion("type", [
     userId: z.string(),
   }),
 ]);
+
+/**
+ * taxPercent and the tax amount are one value pair — a write that sets one sets
+ * both. The payload's rate is optional for client compatibility, so when a
+ * client sends a real amount without a rate, derive the rate once from the
+ * canonical denominator (unit price x quantity + shipping) instead of storing 0
+ * next to it, which the form would then treat as "no tax" and zero out.
+ */
+function resolveTaxPercent(line: {
+  taxPercent?: number;
+  supplierTaxAmount: number;
+  supplierUnitPrice: number;
+  quantity: number;
+  supplierShippingCost: number;
+}): number {
+  if (line.taxPercent) return line.taxPercent;
+  if (!line.supplierTaxAmount) return 0;
+  return deriveRate(
+    line.supplierTaxAmount,
+    line.supplierUnitPrice * line.quantity + line.supplierShippingCost
+  );
+}
 
 serve(async (req: Request) => {
   const preflight = corsPreflight(req);
@@ -371,7 +394,7 @@ serve(async (req: Request) => {
               locationId: purchaseOrderDelivery.data.locationId,
               paymentTermId: purchaseOrderPayment.data.paymentTermId,
               currencyCode: purchaseOrder.data.currencyCode ?? "USD",
-              dateIssued: new Date().toISOString().split("T")[0],
+              dateIssued: datetime.today(await getCompanyTimeZone(client, companyId)).toString(),
               exchangeRate: purchaseOrder.data.exchangeRate ?? 1,
               subtotal: uninvoicedSubtotal ?? 0,
               supplierInteractionId: purchaseOrder.data.supplierInteractionId,
@@ -424,6 +447,8 @@ serve(async (req: Request) => {
                 (line.supplierShippingCost ?? 0) * uninvoicedFraction(line),
               supplierTaxAmount:
                 (line.supplierTaxAmount ?? 0) * uninvoicedFraction(line),
+              // The rate is invariant under proration; only the amount scales
+              taxPercent: line.taxPercent ?? 0,
               purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
               inventoryUnitOfMeasureCode: line.inventoryUnitOfMeasureCode,
               conversionFactor: line.conversionFactor,
@@ -526,7 +551,7 @@ serve(async (req: Request) => {
 
         let insertedSalesOrderId = "";
         await db.transaction().execute(async (trx) => {
-          const today = format(new Date(), "yyyy-MM-dd");
+          const today = datetime.today(await getCompanyTimeZone(client, companyId)).toString();
           const salesOrderId = await getNextSequence(
             trx,
             "salesOrder",
@@ -864,7 +889,7 @@ serve(async (req: Request) => {
               locationId: salesOrderShipment.data.locationId,
               paymentTermId: salesOrderPayment.data.paymentTermId,
               currencyCode: salesOrder.data.currencyCode ?? "USD",
-              dateIssued: new Date().toISOString().split("T")[0],
+              dateIssued: datetime.today(await getCompanyTimeZone(client, companyId)).toString(),
               exchangeRate: salesOrder.data.exchangeRate ?? 1,
               subtotal: uninvoicedSubtotal ?? 0,
               opportunityId: salesOrder.data.opportunityId,
@@ -1147,9 +1172,9 @@ serve(async (req: Request) => {
                 customerLocationId: salesRfq.data?.customerLocationId,
                 customerReference: salesRfq.data?.customerReference,
                 locationId: salesRfq.data?.locationId,
-                expirationDate: toCalendarDate(
-                  now(getLocalTimeZone()).add({ days: 30 })
-                ).toString(),
+                expirationDate: datetime.today(
+                  await getCompanyTimeZone(client, companyId)
+                ).add({ days: 30 }).toString(),
                 salesPersonId: salesRfq.data?.salesPersonId ?? userId,
                 status: "Draft",
                 externalNotes: salesRfq.data?.externalNotes,
@@ -1453,7 +1478,7 @@ serve(async (req: Request) => {
               locationId: salesOrderShipment.data.locationId,
               paymentTermId: salesOrderPayment.data.paymentTermId,
               currencyCode: salesOrder.data.currencyCode ?? "USD",
-              dateIssued: new Date().toISOString().split("T")[0],
+              dateIssued: datetime.today(await getCompanyTimeZone(client, companyId)).toString(),
               exchangeRate: salesOrder.data.exchangeRate ?? 1,
               subtotal: uninvoicedSubtotal ?? 0,
               opportunityId: salesOrder.data.opportunityId,
@@ -1693,6 +1718,7 @@ serve(async (req: Request) => {
                   supplierShippingCost:
                     selectedLines![line.id!].supplierShippingCost,
                   supplierTaxAmount: selectedLines![line.id!].supplierTaxAmount,
+                  taxPercent: resolveTaxPercent(selectedLines![line.id!]),
                   sortOrder: line.sortOrder ?? 1,
                   createdBy: userId,
                   companyId,

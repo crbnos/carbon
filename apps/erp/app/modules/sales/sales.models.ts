@@ -67,7 +67,7 @@ export const customerLocationValidator = z.object({
 export const customerValidator = z.object({
   id: zfd.text(z.string().optional()),
   readableId: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
+  name: z.string().trim().min(1, { message: "Name is required" }),
   customerStatusId: zfd.text(z.string().optional()),
   customerTypeId: zfd.text(z.string().optional()),
   accountManagerId: zfd.text(z.string().optional()),
@@ -122,12 +122,12 @@ export const customerShippingValidator = z.object({
 
 export const customerStatusValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" })
+  name: z.string().trim().min(1, { message: "Name is required" })
 });
 
 export const customerTypeValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" })
+  name: z.string().trim().min(1, { message: "Name is required" })
 });
 
 export const externalQuoteValidator = z.discriminatedUnion("type", [
@@ -161,7 +161,7 @@ export const getMethodValidator = z.object({
 
 export const noQuoteReasonValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" })
+  name: z.string().trim().min(1, { message: "Name is required" })
 });
 
 export const customerPortalValidator = z.object({
@@ -234,7 +234,7 @@ export const pricingRuleAmountTypes = ["Percentage", "Fixed"] as const;
 export const pricingRuleValidator = z
   .object({
     id: zfd.text(z.string().optional()),
-    name: z.string().min(1, { message: "Name is required" }),
+    name: z.string().trim().min(1, { message: "Name is required" }),
     ruleType: z.enum(pricingRuleTypes),
     amountType: z.enum(pricingRuleAmountTypes),
     amount: zfd.numeric(z.number().min(0)),

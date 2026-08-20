@@ -1,5 +1,9 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { ensureFont, PurchaseOrderPDF } from "@carbon/documents/pdf";
+import {
+  ensureFont,
+  getPurchaseOrderDisplayId,
+  PurchaseOrderPDF
+} from "@carbon/documents/pdf";
 import {
   collectSectionIds,
   resolveTemplate,
@@ -11,7 +15,7 @@ import type { JSONContent } from "@carbon/react";
 import { getPreferenceHeaders } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
-import { getPaymentTermsList } from "~/modules/accounting";
+import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
 import {
   getPurchaseOrder,
   getPurchaseOrderLines,
@@ -30,9 +34,12 @@ import { getBase64ImageFromSupabase } from "~/modules/shared";
 const logger = getLogger("erp", "purchase-order", "pdf");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "purchasing"
-  });
+  const { client, companyId, companyGroupId } = await requirePermissions(
+    request,
+    {
+      view: "purchasing"
+    }
+  );
 
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
@@ -148,6 +155,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
   await ensureFont(resolved.settings.fontFamily);
 
+  // Settlement decimals from the document currency's row (authoritative over
+  // CLDR); null keeps the PDF's historical 2dp fallback.
+  const currencyRow = purchaseOrder.data?.currencyCode
+    ? await getCurrencyByCode(
+        client,
+        companyGroupId,
+        purchaseOrder.data.currencyCode
+      )
+    : null;
+  const currencyDecimals = currencyRow?.data?.decimalPlaces ?? null;
+
   const stream = await renderToStream(
     <PurchaseOrderPDF
       company={company.data as any}
@@ -158,6 +176,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           : null
       }
       locale={locale}
+      currencyDecimals={currencyDecimals}
       paymentTerms={paymentTerms.data ?? []}
       purchaseOrder={purchaseOrder.data}
       purchaseOrderLines={purchaseOrderLines.data ?? []}
@@ -182,7 +201,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const headers = new Headers({
     "Content-Type": "application/pdf",
-    "Content-Disposition": `inline; filename="${company.data.name} - ${purchaseOrder.data.purchaseOrderId}.pdf"`
+    "Content-Disposition": `inline; filename="${company.data.name} - ${getPurchaseOrderDisplayId(purchaseOrder.data)}.pdf"`
   });
   return new Response(new Uint8Array(body), { status: 200, headers });
 }

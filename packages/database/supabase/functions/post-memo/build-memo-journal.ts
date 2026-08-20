@@ -24,9 +24,8 @@
 // memo — a separate payment posting). Both legs use the same base amount, so the
 // entry balances exactly.
 
+import { assertBalanced, round } from "../shared/precision.ts";
 import { credit, debit } from "../lib/utils.ts";
-
-export const round4 = (n: number) => Math.round(n * 10000) / 10000;
 
 type AccountType = "asset" | "liability" | "equity" | "revenue" | "expense";
 
@@ -112,7 +111,7 @@ export function buildMemoJournal(
     );
   }
 
-  const magnitude = round4(Math.abs(amountBase));
+  const magnitude = round(Math.abs(amountBase));
   if (magnitude < 0.0001) {
     throw new Error("Memo amount must be greater than 0 to post");
   }
@@ -163,11 +162,14 @@ export function buildMemoJournal(
     direction === "Credit" ? "Credit memo" : "Debit memo"
   );
 
-  if (Math.abs(signedDebitTotal) > BALANCE_TOLERANCE) {
-    throw new Error(
-      `Memo journal does not balance (off by ${round4(signedDebitTotal)} in base currency); refusing to post`
-    );
-  }
+  // BALANCE_TOLERANCE is a business threshold (multi-currency memos carry
+  // sub-cent cross-rate residuals), NOT the float-noise default.
+  assertBalanced(
+    signedDebitTotal,
+    0,
+    BALANCE_TOLERANCE,
+    "Memo journal (base currency)"
+  );
 
   return { lines, signedDebitTotal };
 }

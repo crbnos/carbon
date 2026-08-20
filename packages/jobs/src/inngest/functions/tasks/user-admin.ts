@@ -2,7 +2,12 @@ import type { Result } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { deactivateUser } from "@carbon/auth/users.server";
 import { InviteEmail } from "@carbon/documents/email";
-import { CarbonEdition, getAppUrl, RESEND_DOMAIN } from "@carbon/env";
+import {
+  CarbonEdition,
+  CONTROLLED_ENVIRONMENT,
+  getAppUrl,
+  RESEND_DOMAIN
+} from "@carbon/env";
 import { sendEmail } from "@carbon/lib/resend.server";
 import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
 import { Edition } from "@carbon/utils";
@@ -28,7 +33,9 @@ export const userAdminFunction = inngest.createFunction(
           result = await deactivateUser(
             serviceRole,
             payload.id,
-            payload.companyId
+            payload.companyId,
+            payload.actorId,
+            payload.ip
           );
           if (result.success && CarbonEdition === Edition.Cloud) {
             await updateSubscriptionQuantityForCompany(payload.companyId);
@@ -106,7 +113,8 @@ export const userAdminFunction = inngest.createFunction(
                 companyName: company.data.name,
                 inviteLink: `${getAppUrl()}/invite/${refreshed.data.code}`,
                 ip,
-                location
+                location,
+                controlledEnvironment: CONTROLLED_ENVIRONMENT
               })
             )
           });

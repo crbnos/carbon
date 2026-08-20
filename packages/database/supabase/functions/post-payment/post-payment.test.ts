@@ -8,6 +8,7 @@ import {
   type BuildPaymentJournalInput,
   type PaymentJournalAccounts,
 } from "./build-payment-journal.ts";
+import { round } from "../shared/precision.ts";
 
 // Golden-master tests for the GL journal a payment posts. Each asserts the exact
 // natural-balance-signed `amount` on each line (asset/expense debits are +,
@@ -76,7 +77,6 @@ const line = <T extends { description: string }>(
   description: string
 ) => lines.find((l) => l.description === description);
 
-const round4 = (n: number) => Math.round(n * 10000) / 10000;
 
 // Magnitude posted to the control account for a specific invoice (the lines are
 // natural-balance signed, so take the absolute value to compare to the
@@ -528,14 +528,40 @@ Deno.test("applied exactly equal to cash emits no unapplied line", () => {
   assert(line(lines, "Accounts Receivable (credit applied)") === undefined);
 });
 
-Deno.test("sub-dust unapplied (< 0.0001) emits no on-account line", () => {
+// Anything the ledger can STORE has to be booked: the cash line already carries
+// the full amount, so a dropped residual would be stored out of balance. At scale
+// 5 that means 0.00005 gets its own on-account line; only float noise is dropped.
+Deno.test("storable unapplied dust still emits an on-account line", () => {
   const { lines, signedDebitTotal } = buildPaymentJournal(
     arBase({
       totalAmount: 100,
       applications: [
         {
           targetSalesInvoiceId: "si_1",
-          appliedAmount: 99.99995, // unapplied 0.00005 < threshold
+          appliedAmount: 99.99995, // unapplied 0.00005 — representable at scale 5
+          discountAmount: 0,
+          writeOffAmount: 0,
+          targetExchangeRate: 1,
+          sourceExchangeRate: 1,
+        },
+      ],
+    })
+  );
+  assertEquals(
+    line(lines, "Accounts Receivable (on-account credit)")?.amount,
+    -0.00005
+  );
+  assert(balanced(signedDebitTotal));
+});
+
+Deno.test("float-noise unapplied is dropped and the entry still balances", () => {
+  const { lines, signedDebitTotal } = buildPaymentJournal(
+    arBase({
+      totalAmount: 100,
+      applications: [
+        {
+          targetSalesInvoiceId: "si_1",
+          appliedAmount: 99.9999999, // below EPSILON — not storable
           discountAmount: 0,
           writeOffAmount: 0,
           targetExchangeRate: 1,
@@ -742,7 +768,7 @@ Deno.test("control posting ties out to subledger settled per invoice (AR & AP)",
     });
 
     apps.forEach((a, i) => {
-      const expected = round4((a.applied + a.discount + a.writeOff) * a.invRate);
+      const expected = round((a.applied + a.discount + a.writeOff) * a.invRate);
       assertEquals(controlMagnitudeFor(lines, `inv_${i}`), expected);
     });
     assert(balanced(signedDebitTotal));
@@ -800,7 +826,7 @@ Deno.test("matrix: every scenario balances with the correct FX side", () => {
             assert(line(lines, side) !== undefined, `missing ${side}`);
             assert(line(lines, wrong) === undefined, `unexpected ${wrong}`);
           }
-          assert(Math.abs(round4(totalFxImpact) - round4(expectedFx)) < 1e-9);
+          assert(Math.abs(round(totalFxImpact) - round(expectedFx)) < 1e-9);
         }
       }
     }

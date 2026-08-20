@@ -11,6 +11,29 @@ export function isInternalEmail(email: string | null | undefined): boolean {
   return INTERNAL_EMAIL_DOMAINS.some((domain) => normalized.endsWith(domain));
 }
 
+/**
+ * Whether this account is subject to the ITAR **entity** gate — the Carbon
+ * GovCloud Rider, which binds a customer's own organization.
+ *
+ * Carbon staff provision customer tenants, which makes them an admin there
+ * (`seed-company` gives the creating user the Admin employee type, so they hold
+ * `users_update`). That permission is what the entity screen keys on, so without
+ * this exemption the staff member who created the company is the one put in
+ * front of "accept on behalf of <customer>" — a document only the customer can
+ * sign. Staff are never a representative of the customer entity, so the screen
+ * is neither shown to them nor acceptable by them; the customer's own first
+ * admin binds the customer.
+ *
+ * Staff are still subject to the **user** gate: the U.S.-Person attestation is
+ * about the individual, so every account touching a controlled tenant makes it,
+ * per company, ours included.
+ */
+export function requiresItarEntityCertification(
+  email: string | null | undefined
+): boolean {
+  return !isInternalEmail(email);
+}
+
 export const FILE_SIZE_LIMIT_MB = {
   CAD_MODEL_UPLOAD: 2560, // 2.5 GB — matches temp-staging bucket cap
   DOCUMENT_UPLOAD: 50

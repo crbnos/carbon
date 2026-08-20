@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { datetime } from "@carbon/utils";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import type { AgingTotals, RecentPayment } from "~/modules/invoicing";
@@ -11,6 +12,7 @@ import {
   InvoicingDashboard
 } from "~/modules/invoicing";
 import { getCompanySettings } from "~/modules/settings";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const meta: MetaFunction = () => {
@@ -61,7 +63,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "invoicing"
   });
 
-  const asOfDate = new Date().toISOString().slice(0, 10);
+  const asOfDate = datetime
+    .today(await getCompanyTimeZone(client, companyId))
+    .toString();
   const { sorts, filters } = getGenericQueryFilters(new URLSearchParams());
 
   // GL tie-outs only mean something when journals are being posted — skip

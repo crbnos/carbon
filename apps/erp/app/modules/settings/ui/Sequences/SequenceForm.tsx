@@ -16,7 +16,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import type { z } from "zod";
 import { Hidden, Input, Number, Submit } from "~/components/Form";
-import { usePermissions } from "~/hooks";
+import { useCompanyTimeZone, usePermissions } from "~/hooks";
 import { sequenceValidator } from "~/modules/settings";
 import { path } from "~/utils/path";
 import { interpolateSequenceDate } from "~/utils/string";
@@ -38,9 +38,12 @@ const SequenceForm = ({ initialValues }: SequenceFormProps) => {
   const [next, setNext] = useState(initialValues.next ?? "1");
   const [size, setSize] = useState(initialValues.size ?? 5);
 
+  // Preview in the company timezone — the same calendar get_next_sequence
+  // issues numbers in — not the browser's.
+  const timezone = useCompanyTimeZone();
   const makePreview = () => {
-    const p = interpolateSequenceDate(prefix);
-    const s = interpolateSequenceDate(suffix);
+    const p = interpolateSequenceDate(prefix, timezone);
+    const s = interpolateSequenceDate(suffix, timezone);
 
     return `${p}${next.toString().padStart(size, "0")}${s}`;
   };
@@ -105,7 +108,6 @@ const SequenceForm = ({ initialValues }: SequenceFormProps) => {
                 <p className="text-muted-foreground text-sm">{`%{mm} = Month`}</p>
                 <p className="text-muted-foreground text-sm">{`%{dd} = Day`}</p>
                 <p className="text-muted-foreground text-sm">{`%{hh} = Hour`}</p>
-                <p className="text-muted-foreground text-sm">{`%{mm} = Minute`}</p>
                 <p className="text-muted-foreground text-sm">{`%{ss} = Second`}</p>
               </VStack>
             </VStack>

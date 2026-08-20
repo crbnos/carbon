@@ -469,6 +469,49 @@ function computeInjectAuth(
   return ["companyId"];
 }
 
+// Services that pick insert-vs-update this way are the only ones MCP can't infer.
+function usesCreatedByDiscriminator(
+  content: string,
+  funcName: string
+): boolean {
+  const regex = new RegExp(
+    `export\\s+(?:async\\s+)?function\\s+${funcName}\\s*\\(`
+  );
+  const match = regex.exec(content);
+  if (!match) return false;
+  const closeParen = findMatchingBrace(
+    content,
+    match.index + match[0].length - 1
+  );
+  const nextExport = content.indexOf("\nexport ", closeParen);
+  const body = content.substring(
+    closeParen,
+    nextExport === -1 ? content.length : nextExport
+  );
+  return stripComments(body).includes('"createdBy" in');
+}
+
+// The `:` guard keeps `https://` intact.
+function stripComments(source: string): string {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|[^:])\/\/.*$/gm, "$1");
+}
+
+function addOperationArg(schema: Record<string, unknown>): void {
+  const properties = (schema.properties ?? {}) as Record<string, unknown>;
+  properties._operation = {
+    type: "string",
+    enum: ["create", "update"],
+    description:
+      "Required. 'create' inserts a new record, 'update' modifies the existing record with this id.",
+  };
+  schema.properties = properties;
+  const required = ((schema.required as string[] | undefined) ?? []).slice();
+  if (!required.includes("_operation")) required.push("_operation");
+  schema.required = required;
+}
+
 function generateDescription(funcName: string): string {
   return funcName
     .replace(/([A-Z])/g, " $1")
@@ -568,6 +611,12 @@ function loadModelsContent(mod: string): string | null {
   if (fs.existsSync(modelsPath)) {
     return fs.readFileSync(modelsPath, "utf-8");
   }
+  // Fall back to the `.ee`-licensed variant (see root LICENSE) when a module
+  // keeps its single models file under that name.
+  const eeModelsPath = path.join(MODULES_DIR, mod, `${mod}.ee.models.ts`);
+  if (fs.existsSync(eeModelsPath)) {
+    return fs.readFileSync(eeModelsPath, "utf-8");
+  }
   // Try shared models for cross-module validators
   const sharedPath = path.join(MODULES_DIR, "shared", "index.ts");
   if (fs.existsSync(sharedPath)) {
@@ -582,10 +631,21 @@ export function generateToolMetadata(): void {
   const allTools: ToolMetadata[] = [];
 
   for (const mod of MODULE_LIST) {
-    const serviceFile = path.join(MODULES_DIR, mod, `${mod}.service.ts`);
+    let serviceFile = path.join(MODULES_DIR, mod, `${mod}.service.ts`);
     if (!fs.existsSync(serviceFile)) {
-      console.warn(`  ⚠ Service file not found: ${serviceFile}`);
-      continue;
+      // Fall back to the `.ee`-licensed variant (see root LICENSE) when a
+      // module keeps its single service file under that name (e.g.
+      // accounting.ee.service.ts).
+      const eeServiceFile = path.join(
+        MODULES_DIR,
+        mod,
+        `${mod}.ee.service.ts`
+      );
+      if (!fs.existsSync(eeServiceFile)) {
+        console.warn(`  ⚠ Service file not found: ${serviceFile}`);
+        continue;
+      }
+      serviceFile = eeServiceFile;
     }
 
     const content = fs.readFileSync(serviceFile, "utf-8");
@@ -606,6 +666,12 @@ export function generateToolMetadata(): void {
         DESCRIPTION_OVERRIDES[toolName] || generateDescription(func.name);
       const serviceParams = func.params.map((p) => p.name);
       const { schema, paramCount } = buildToolSchema(func, modelsContent);
+      if (
+        injectAuth.includes("createdBy") &&
+        usesCreatedByDiscriminator(content, func.name)
+      ) {
+        addOperationArg(schema);
+      }
 
       allTools.push({
         name: toolName,

@@ -1,4 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getQuoteDisplayId } from "@carbon/documents/utils";
 import { Input, ValidatedForm } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -34,12 +35,11 @@ import {
   useMode,
   VStack
 } from "@carbon/react";
-import { formatCityStatePostalCode, formatDate } from "@carbon/utils";
+import { formatCityStatePostalCode, moneyFormatOptions } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { motion } from "framer-motion";
-import MotionNumber from "motion-number";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
@@ -53,8 +53,15 @@ import {
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData, useParams } from "react-router";
-import { usePercentFormatter } from "~/hooks";
-import { getPaymentTermsList } from "~/modules/accounting";
+import { DateTime, MotionMoney } from "~/components";
+import {
+  CompanySettingsProvider,
+  CurrenciesProvider,
+  useCurrencyDecimals,
+  useCurrencyFormatter,
+  usePercentFormatter
+} from "~/hooks";
+import { getCurrenciesList, getPaymentTermsList } from "~/modules/accounting";
 import { getShippingMethodsList } from "~/modules/inventory";
 import type {
   QuotationLine,
@@ -145,6 +152,14 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     getOpportunity(serviceRole, quote.data.opportunityId)
   ]);
 
+  // Started before the conditional await below so this costs no extra round trip.
+  // The group's configured currency.decimalPlaces is authoritative over CLDR, and
+  // useCurrencies' own fetcher is permission-gated, so a public page has to carry
+  // the list itself or every amount here silently falls back to CLDR.
+  const currenciesPromise = company.data?.companyGroupId
+    ? getCurrenciesList(serviceRole, company.data.companyGroupId)
+    : null;
+
   let salesOrderLines: PostgrestResponse<SalesOrderLine> | null = null;
   if (
     opportunity.data?.salesOrders?.length &&
@@ -195,6 +210,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       quote: quote.data,
       company: company.data,
       companySettings: companySettings.data,
+      currencies: (await currenciesPromise)?.data ?? [],
       quoteLines:
         quoteLines.data?.map(({ internalNotes, ...line }) => ({
           ...line
@@ -232,12 +248,14 @@ const Header = ({
       <div>
         <CardTitle className="text-3xl">{company?.name ?? ""}</CardTitle>
         {quote?.quoteId && (
-          <p className="text-lg text-muted-foreground">{quote.quoteId}</p>
+          <p className="text-lg text-muted-foreground">
+            {getQuoteDisplayId(quote)}
+          </p>
         )}
         {quote?.expirationDate && (
           <p className="text-lg text-muted-foreground">
             <Trans>Expires</Trans>{" "}
-            {formatDate(quote.expirationDate, undefined, locale)}
+            <DateTime value={quote.expirationDate} variant="date" />
           </p>
         )}
       </div>
@@ -323,6 +341,8 @@ const LineItems = ({
   selectedLines: Record<string, SelectedLine>;
   setSelectedLines: Dispatch<SetStateAction<Record<string, SelectedLine>>>;
 }) => {
+  // Settlement money at the document currency's configured decimals.
+  const currencyDecimals = useCurrencyDecimals(currencyCode);
   const { company, quote, quoteLines, quoteLinePrices, thumbnails } =
     useLoaderData<typeof loader>().data!;
 
@@ -341,9 +361,17 @@ const LineItems = ({
         if (!line.id) {
           return acc;
         }
+        // Scope to the breaks the line actually offers. A removed break can
+        // leave its price row behind, and an orphan here becomes a selectable
+        // option the customer was never meant to see.
         acc[line.id!] =
           quoteLinePrices
-            ?.filter((p) => p.quoteLineId === line.id)
+            ?.filter(
+              (p) =>
+                p.quoteLineId === line.id &&
+                Array.isArray(line.quantity) &&
+                line.quantity.includes(p.quantity)
+            )
             .sort((a, b) => a.quantity - b.quantity) ?? [];
         return acc;
       }, {}) ?? {},
@@ -362,11 +390,7 @@ const LineItems = ({
   return (
     <VStack spacing={8} className="w-full">
       {quoteLines?.map((line) => {
-        const prices = quoteLinePrices
-          ?.filter((price) => price.quoteLineId === line.id)
-          .sort((a, b) => a.quantity - b.quantity);
-
-        if (!line || !prices || !line.id) {
+        if (!line || !line.id) {
           return null;
         }
 
@@ -399,8 +423,7 @@ const LineItems = ({
                   <div className="flex items-center gap-x-4 justify-between flex-grow">
                     <Heading>{line.itemReadableId}</Heading>
                     <HStack spacing={4}>
-                      <MotionNumber
-                        className="font-bold text-xl"
+                      <MotionMoney
                         value={
                           (selectedLines[line.id!]?.convertedNetUnitPrice ??
                             0) *
@@ -417,11 +440,8 @@ const LineItems = ({
                               0)) *
                             (selectedLines[line.id!]?.taxPercent ?? 0)
                         }
-                        format={{
-                          style: "currency",
-                          currency: currencyCode
-                        }}
-                        locales={locale}
+                        currency={currencyCode}
+                        decimalPlaces={currencyDecimals}
                       />
                       <motion.div
                         animate={{
@@ -500,6 +520,8 @@ const LinePricingOptions = ({
   selectedLine,
   setSelectedLines
 }: LinePricingOptionsProps) => {
+  // Settlement money at the document currency's configured decimals.
+  const currencyDecimals = useCurrencyDecimals(quoteCurrency);
   const percentFormatter = usePercentFormatter();
   const { quote } = useLoaderData<typeof loader>().data!;
 
@@ -576,11 +598,12 @@ const LinePricingOptions = ({
 
   const unitPriceformatter = useMemo(
     () =>
-      new Intl.NumberFormat(locale, {
-        style: "currency",
-        currency: quote.currencyCode ?? "USD",
-        maximumFractionDigits: line.unitPricePrecision ?? 2
-      }),
+      new Intl.NumberFormat(
+        locale,
+        moneyFormatOptions(line.unitPricePrecision ?? 2, {
+          currency: quote.currencyCode ?? "USD"
+        })
+      ),
     [locale, quote.currencyCode, line.unitPricePrecision]
   );
 
@@ -775,13 +798,13 @@ const LinePricingOptions = ({
                   <Trans>Extended Price</Trans>
                 </Td>
                 <Td className="text-right">
-                  <MotionNumber
+                  <MotionMoney
                     value={
                       (selectedLine.convertedUnitPrice ?? 0) *
                       selectedLine.quantity
                     }
-                    format={{ style: "currency", currency: quoteCurrency }}
-                    locales={locale}
+                    currency={quoteCurrency}
+                    decimalPlaces={currencyDecimals}
                   />
                 </Td>
               </Tr>
@@ -794,14 +817,14 @@ const LinePricingOptions = ({
                   </Td>
                   <Td className="text-right">
                     -
-                    <MotionNumber
+                    <MotionMoney
                       value={
                         (selectedLine.convertedUnitPrice ?? 0) *
                         selectedLine.quantity *
                         selectedLine.discountPercent
                       }
-                      format={{ style: "currency", currency: quoteCurrency }}
-                      locales={locale}
+                      currency={quoteCurrency}
+                      decimalPlaces={currencyDecimals}
                     />
                   </Td>
                 </Tr>
@@ -819,10 +842,10 @@ const LinePricingOptions = ({
                   >
                     <Td>{charge.name}</Td>
                     <Td className="text-right">
-                      <MotionNumber
+                      <MotionMoney
                         value={charge.amount}
-                        format={{ style: "currency", currency: quoteCurrency }}
-                        locales={locale}
+                        currency={quoteCurrency}
+                        decimalPlaces={currencyDecimals}
                       />
                     </Td>
                   </Tr>
@@ -833,18 +856,15 @@ const LinePricingOptions = ({
                   <Trans>Subtotal</Trans>
                 </Td>
                 <Td className="text-right">
-                  <MotionNumber
+                  <MotionMoney
                     value={
                       (selectedLine.convertedNetUnitPrice ?? 0) *
                         selectedLine.quantity +
                       selectedLine.convertedAddOn +
                       selectedLine.convertedShippingCost
                     }
-                    format={{
-                      style: "currency",
-                      currency: quoteCurrency
-                    }}
-                    locales={locale}
+                    currency={quoteCurrency}
+                    decimalPlaces={currencyDecimals}
                   />
                 </Td>
               </Tr>
@@ -855,7 +875,7 @@ const LinePricingOptions = ({
                   {percentFormatter.format(selectedLine.taxPercent)})
                 </Td>
                 <Td className="text-right">
-                  <MotionNumber
+                  <MotionMoney
                     value={
                       ((selectedLine.convertedNetUnitPrice ?? 0) *
                         selectedLine.quantity +
@@ -863,11 +883,8 @@ const LinePricingOptions = ({
                         selectedLine.convertedShippingCost) *
                       selectedLine.taxPercent
                     }
-                    format={{
-                      style: "currency",
-                      currency: quoteCurrency
-                    }}
-                    locales={locale}
+                    currency={quoteCurrency}
+                    decimalPlaces={currencyDecimals}
                   />
                 </Td>
               </Tr>
@@ -877,7 +894,7 @@ const LinePricingOptions = ({
                   <Trans>Total</Trans>
                 </Td>
                 <Td className="text-right">
-                  <MotionNumber
+                  <MotionMoney
                     value={
                       (selectedLine.convertedNetUnitPrice ?? 0) *
                         selectedLine.quantity +
@@ -889,11 +906,8 @@ const LinePricingOptions = ({
                         selectedLine.convertedShippingCost) *
                         selectedLine.taxPercent
                     }
-                    format={{
-                      style: "currency",
-                      currency: quoteCurrency
-                    }}
-                    locales={locale}
+                    currency={quoteCurrency}
+                    decimalPlaces={currencyDecimals}
                   />
                 </Td>
               </Tr>
@@ -942,14 +956,11 @@ const Quote = ({ data }: { data: QuoteData }) => {
   } = data;
   const { t } = useLingui();
   const { locale } = useLocale();
-  const formatter = useMemo(
-    () =>
-      new Intl.NumberFormat(locale, {
-        style: "currency",
-        currency: quote.currencyCode ?? "USD"
-      }),
-    [locale, quote.currencyCode]
-  );
+  const formatter = useCurrencyFormatter({
+    currency: quote.currencyCode ?? "USD"
+  });
+  // Settlement money at the document currency's configured decimals.
+  const currencyDecimals = useCurrencyDecimals(quote.currencyCode ?? "USD");
 
   const { id } = useParams();
   if (!id) throw new Error("Could not find external quote id");
@@ -1222,13 +1233,10 @@ const Quote = ({ data }: { data: QuoteData }) => {
               <span>
                 <Trans>Subtotal</Trans>:
               </span>
-              <MotionNumber
+              <MotionMoney
                 value={subtotal + totalDiscount}
-                format={{
-                  style: "currency",
-                  currency: quote.currencyCode ?? "USD"
-                }}
-                locales={locale}
+                currency={quote.currencyCode ?? "USD"}
+                decimalPlaces={currencyDecimals}
               />
             </HStack>
             {totalDiscount > 0 && (
@@ -1236,13 +1244,10 @@ const Quote = ({ data }: { data: QuoteData }) => {
                 <span>Discount:</span>
                 <span className="text-muted-foreground">
                   -
-                  <MotionNumber
+                  <MotionMoney
                     value={totalDiscount}
-                    format={{
-                      style: "currency",
-                      currency: quote.currencyCode ?? "USD"
-                    }}
-                    locales={locale}
+                    currency={quote.currencyCode ?? "USD"}
+                    decimalPlaces={currencyDecimals}
                   />
                 </span>
               </HStack>
@@ -1251,13 +1256,10 @@ const Quote = ({ data }: { data: QuoteData }) => {
               <span>
                 <Trans>Tax</Trans>:
               </span>
-              <MotionNumber
+              <MotionMoney
                 value={tax}
-                format={{
-                  style: "currency",
-                  currency: quote.currencyCode ?? "USD"
-                }}
-                locales={locale}
+                currency={quote.currencyCode ?? "USD"}
+                decimalPlaces={currencyDecimals}
               />
             </HStack>
             {convertedShippingCost > 0 && (
@@ -1265,13 +1267,10 @@ const Quote = ({ data }: { data: QuoteData }) => {
                 <span>
                   <Trans>Shipping</Trans>:
                 </span>
-                <MotionNumber
+                <MotionMoney
                   value={convertedShippingCost}
-                  format={{
-                    style: "currency",
-                    currency: quote.currencyCode ?? "USD"
-                  }}
-                  locales={locale}
+                  currency={quote.currencyCode ?? "USD"}
+                  decimalPlaces={currencyDecimals}
                 />
               </HStack>
             )}
@@ -1280,13 +1279,10 @@ const Quote = ({ data }: { data: QuoteData }) => {
               <span>
                 <Trans>Total</Trans>:
               </span>
-              <MotionNumber
+              <MotionMoney
                 value={total}
-                format={{
-                  style: "currency",
-                  currency: quote.currencyCode ?? "USD"
-                }}
-                locales={locale}
+                currency={quote.currencyCode ?? "USD"}
+                decimalPlaces={currencyDecimals}
               />
             </HStack>
           </VStack>
@@ -1348,8 +1344,8 @@ const Quote = ({ data }: { data: QuoteData }) => {
                 </ModalTitle>
                 <ModalDescription>
                   <Trans>
-                    Are you sure you want to accept quote {quote.quoteId} for{" "}
-                    {formatter.format(total)}?
+                    Are you sure you want to accept quote{" "}
+                    {getQuoteDisplayId(quote)} for {formatter.format(total)}?
                   </Trans>
                 </ModalDescription>
               </ModalHeader>
@@ -1597,7 +1593,16 @@ export default function ExternalQuote() {
   switch (state) {
     case QuoteState.Valid:
       if (data) {
-        return <Quote data={data as QuoteData} />;
+        // The authenticated route this would otherwise be read from isn't mounted
+        // here, so hand the loader's own copy down — otherwise the customer-facing
+        // quote ignores the company's currency display preferences.
+        return (
+          <CompanySettingsProvider value={data.companySettings ?? undefined}>
+            <CurrenciesProvider value={data.currencies ?? []}>
+              <Quote data={data as QuoteData} />
+            </CurrenciesProvider>
+          </CompanySettingsProvider>
+        );
       }
       return (
         <ErrorMessage

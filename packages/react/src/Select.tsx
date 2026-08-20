@@ -21,7 +21,7 @@ const SelectGroup = SelectPrimitive.Group;
 const SelectValue = SelectPrimitive.Value;
 
 const selectTriggerVariants = cva(
-  "bg-transparent text-foreground flex w-full items-center justify-between whitespace-nowrap rounded-md border border-input shadow-xs transition-[color,box-shadow] data-[placeholder]:text-muted-foreground outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>span]:line-clamp-1",
+  "bg-transparent text-foreground flex w-full items-center justify-between whitespace-nowrap rounded-md border border-input shadow-xs transition-[color,box-shadow] data-[placeholder]:text-muted-foreground outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>span]:min-w-0 [&>span]:truncate",
   {
     variants: {
       size: {
@@ -61,7 +61,7 @@ const SelectTrigger = forwardRef<
     {children}
     {!hideIcon && !inline && (
       <SelectPrimitive.Icon asChild>
-        <LuChevronsUpDown className="h-4 w-4 opacity-50" />
+        <LuChevronsUpDown className="h-4 w-4 flex-shrink-0 opacity-50" />
       </SelectPrimitive.Icon>
     )}
   </SelectPrimitive.Trigger>

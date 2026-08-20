@@ -1,7 +1,13 @@
-import { assertIsPost, error, success } from "@carbon/auth";
+import {
+  assertIsPost,
+  CONTROLLED_ENVIRONMENT,
+  error,
+  success
+} from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { enableAuditLog } from "@carbon/database/audit";
 import { validationError, validator } from "@carbon/form";
 import {
   Modal,
@@ -10,6 +16,7 @@ import {
   ModalHeader,
   ModalTitle
 } from "@carbon/react";
+import { isInternalEmail } from "@carbon/utils";
 import { getLocalTimeZone } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect, useNavigate } from "react-router";
@@ -26,9 +33,14 @@ import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId } = await requirePermissions(request, {
+  const { userId, email } = await requirePermissions(request, {
     create: "settings"
   });
+
+  // Multi-company management is gated to internal (Carbon) users for now.
+  if (!isInternalEmail(email)) {
+    throw redirect(path.to.settings);
+  }
 
   const formData = await request.formData();
   const validation = await validator(subsidiaryValidator).validate(formData);
@@ -78,11 +90,17 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  // Controlled environments (ITAR/CUI, NIST 800-171 3.3.1) capture audit from
+  // day one — enable it at company creation.
+  if (CONTROLLED_ENVIRONMENT) {
+    await enableAuditLog(client, companyId).catch(() => {});
+  }
+
   const locationInsert = await upsertLocation(client, {
     ...locationData,
     name: "Headquarters",
     companyId,
-    timezone: getLocalTimeZone(),
+    // timezone comes from locationData — HQ shares the company's timezone.
     createdBy: userId
   });
 
@@ -140,7 +158,8 @@ export default function NewSubsidiaryRoute() {
     stateProvince: "",
     postalCode: "",
     countryCode: "",
-    baseCurrencyCode: company?.baseCurrencyCode ?? "USD"
+    baseCurrencyCode: company?.baseCurrencyCode ?? "USD",
+    timezone: getLocalTimeZone()
   };
 
   return (

@@ -24,6 +24,7 @@ interface Props {
   inviteLink?: string;
   ip?: string;
   location?: string;
+  controlledEnvironment?: boolean;
 }
 
 export const InviteEmail = ({
@@ -34,7 +35,8 @@ export const InviteEmail = ({
   companyName = "Tombstone",
   inviteLink = "https://carbon.ms/invite/1234567890",
   ip = "38.38.38.38",
-  location = "Tombstone, AZ"
+  location = "Tombstone, AZ",
+  controlledEnvironment = false
 }: Props) => {
   const preview = <Preview>{`Join ${companyName} on Carbon`}</Preview>;
   const themeClasses = getEmailThemeClasses();
@@ -84,6 +86,16 @@ export const InviteEmail = ({
             ) has invited you to join <strong>{companyName}</strong> on{" "}
             <strong>Carbon</strong>.
           </Text>
+          {controlledEnvironment ? (
+            <Text
+              className={`text-[14px] leading-[24px] ${themeClasses.text}`}
+              style={{ color: lightStyles.text.color }}
+            >
+              This is an ITAR-controlled environment. Access is restricted to
+              U.S. Persons.
+            </Text>
+          ) : null}
+
           <Section className="mb-[42px] mt-[32px] text-center">
             <Button href={inviteLink}>Accept Invite</Button>
           </Section>

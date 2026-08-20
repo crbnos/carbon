@@ -36,7 +36,7 @@ import {
   LuStar,
   LuTruck
 } from "react-icons/lu";
-import { useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import { z } from "zod";
 import { Hyperlink, MethodIcon } from "~/components";
 import { Confirm } from "~/components/Modals";
@@ -46,6 +46,8 @@ import { getNextRevision } from "~/modules/items";
 import type { ItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { getReadableIdWithRevision } from "~/utils/string";
+import type { ChangeNoticeStatus as ChangeNoticeStatusType } from "../../types";
+import ChangeNoticeStatus from "../ChangeNotice/ChangeNoticeStatus";
 import {
   ItemChangeNoticeLock,
   useItemOpenChangeNotices
@@ -67,6 +69,7 @@ export function UsedInSkeleton() {
 export type UsedInKey =
   | Database["public"]["Enums"]["itemType"]
   | "assemblyInstructions"
+  | "changeNotices"
   | "inspections"
   | "issues"
   | "jobMaterials"
@@ -125,6 +128,7 @@ export type UsedInNode = {
     methodType?: string;
     revision?: string;
     version?: number;
+    status?: ChangeNoticeStatusType;
   }[];
 };
 
@@ -276,8 +280,8 @@ export function RevisionsItem({
   // Block manual revision creation while an open change notice owns this item —
   // the CO authors revisions. The button stays visible but disabled, with a
   // tooltip pointing at the change notice(s).
-  const openChangeNotices = useItemOpenChangeNotices(node.key, itemId);
-  const isChangeNoticeLocked = openChangeNotices.length > 0;
+  const { changeNotices: openChangeNotices, isLocked: isChangeNoticeLocked } =
+    useItemOpenChangeNotices(node.key, itemId);
 
   const [selectedRevision, setSelectedRevision] = useState<{
     id?: string;
@@ -324,6 +328,7 @@ export function RevisionsItem({
           (isChangeNoticeLocked ? (
             <ItemChangeNoticeLock
               changeNotices={openChangeNotices}
+              isLocked={isChangeNoticeLocked}
               className="absolute right-2 top-1.5"
             >
               <IconButton
@@ -531,59 +536,73 @@ export function UsedInItem({
               </div>
             </div>
           ) : (
-            filteredChildren.map((child, index) => (
-              <Hyperlink
-                key={index}
-                to={getUseInLink(child, node.key, itemReadableIdWithRevision)}
-                className="flex h-8 cursor-pointer items-center overflow-hidden rounded-sm px-1 gap-4 text-sm hover:bg-accent w-full font-medium whitespace-nowrap"
-              >
-                <LevelLine isSelected={false} className="mr-2" />
-                {child.methodType === "Shipment" ? (
-                  <LuTruck className="mr-2 text-indigo-600" />
-                ) : node.module === "quality" ? (
-                  <LuShieldX className="mr-2 text-red-600" />
-                ) : (
-                  <MethodIcon
-                    type={child.methodType ?? "Method"}
-                    className="mr-2"
-                  />
-                )}
-                <span className="truncate">{child.documentReadableId}</span>
-                {node.key === "jobMaterials" &&
-                  jobMaterialQuantities &&
-                  child.id in jobMaterialQuantities && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Badge variant="outline" className="ml-2">
-                          {jobMaterialQuantities[child.id]}
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        Estimated quantity required for this job material
-                      </TooltipContent>
-                    </Tooltip>
+            filteredChildren.map((child, index) => {
+              // Change notices skip Hyperlink's hover "Open" button — the status
+              // badge needs that room and the whole row already navigates.
+              const RowLink = node.key === "changeNotices" ? Link : Hyperlink;
+              return (
+                <RowLink
+                  key={index}
+                  to={getUseInLink(child, node.key, itemReadableIdWithRevision)}
+                  // Hyperlink wraps its children in a span; min-w-0 lets that span
+                  // shrink so the id truncates instead of pushing "Open" out of view.
+                  className="flex h-8 cursor-pointer items-center overflow-hidden rounded-sm px-1 gap-4 text-sm hover:bg-accent w-full font-medium whitespace-nowrap [&>span]:min-w-0"
+                >
+                  <LevelLine isSelected={false} className="mr-2 shrink-0" />
+                  {child.methodType === "Shipment" ? (
+                    <LuTruck className="mr-2 shrink-0 text-indigo-600" />
+                  ) : node.module === "quality" ? (
+                    <LuShieldX className="mr-2 shrink-0 text-red-600" />
+                  ) : (
+                    <MethodIcon
+                      type={child.methodType ?? "Method"}
+                      className="mr-2 shrink-0"
+                    />
                   )}
-                {node.key === "jobs" &&
-                  jobQuantities &&
-                  child.id in jobQuantities && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Badge variant="outline" className="ml-2">
-                          {jobQuantities[child.id]}
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        Production quantity for this job
-                      </TooltipContent>
-                    </Tooltip>
+                  <span className="truncate min-w-0">
+                    {child.documentReadableId}
+                  </span>
+                  {node.key === "jobMaterials" &&
+                    jobMaterialQuantities &&
+                    child.id in jobMaterialQuantities && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge variant="outline" className="ml-2 shrink-0">
+                            {jobMaterialQuantities[child.id]}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          Estimated quantity required for this job material
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  {node.key === "jobs" &&
+                    jobQuantities &&
+                    child.id in jobQuantities && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge variant="outline" className="ml-2 shrink-0">
+                            {jobQuantities[child.id]}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          Production quantity for this job
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  {node.key === "changeNotices" && child.status && (
+                    <div className="ml-2 shrink-0">
+                      <ChangeNoticeStatus status={child.status} />
+                    </div>
                   )}
-                {child.version && (
-                  <Badge variant="outline" className="ml-2">
-                    V{child.version}
-                  </Badge>
-                )}
-              </Hyperlink>
-            ))
+                  {child.version && (
+                    <Badge variant="outline" className="ml-2 shrink-0">
+                      V{child.version}
+                    </Badge>
+                  )}
+                </RowLink>
+              );
+            })
           )}
         </div>
       )}
@@ -599,6 +618,8 @@ function getUseInLink(
   switch (key) {
     case "assemblyInstructions":
       return path.to.assemblyInstruction(child.id);
+    case "changeNotices":
+      return path.to.changeNotice(child.documentId ?? child.id);
     case "Part":
       return path.to.partDetails(child.id);
     case "Material":
@@ -655,4 +676,26 @@ function getUseInLink(
     default:
       return "#";
   }
+}
+
+// Shared by four call sites (part/tool × tabbed/Buy branch) so the node shape can't drift.
+export function changeNoticesUsedInNode(
+  changeNotices: {
+    id: string;
+    changeOrderId: string;
+    status: ChangeNoticeStatusType;
+  }[],
+  name: string
+): UsedInNode {
+  return {
+    key: "changeNotices",
+    name,
+    module: "parts",
+    children: changeNotices.map((cn) => ({
+      id: cn.id,
+      documentId: cn.id,
+      documentReadableId: cn.changeOrderId,
+      status: cn.status
+    }))
+  };
 }

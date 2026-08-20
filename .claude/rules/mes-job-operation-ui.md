@@ -34,6 +34,28 @@ redirects kinds it does not serve (no loops).
   `path.to.endOperation(id)` (`/x/end/:operationId`); rework targets at
   `path.to.reworkTargets(id)`. Start/end routes write `productionEvent` /
   `productionQuantity` (end calls `finishJobOperation`).
+- **Scrap** (`.ai/specs/2026-08-06-scrap-unscrap-flow.md`): `x+/scrap.tsx` makes
+  ONE `issue` `jobOperationScrap` invoke (replacing the old
+  `insertScrapQuantity` + backflush pair) — it records the Scrap
+  `productionQuantity`, backflushes the unit's BOM, flips the selected serial to
+  `Scrapped`, **spawns the replacement serial** (returned as `newTrackedEntityId`
+  for client advancement), reopens the make method's Done ops, and posts
+  Dr `scrapAccount` / Cr WIP for the consumed-material cost. Scrapping a
+  **subcomponent** (serial/batch BOM part) goes through
+  `x+/entity+/$materialId.$trackedEntityId.scrap.tsx` → `issue`
+  `scrapTrackedEntity`, reached from a dedicated **Scrap tab** in the
+  `IssueMaterialModal` (`ScrapTab` lists the material's Available + Consumed
+  entities; each opens `ScrapEntityModal`). That case branches on entity
+  **state**, not `methodType`: an `Available` (picked/in-stock) part scraps from
+  stock (`Negative Adjmt`, Dr scrap / Cr inventory, `quantityIssued` untouched);
+  a `Consumed` part relieves WIP (Dr scrap / Cr WIP at the item's unit cost) and
+  **decrements `jobMaterial.quantityIssued`** so the requirement reopens for a
+  replacement. MTO make-replacement (reopen routing + spawn serial + rework row)
+  runs for either state. **The auto-Done predicate no longer counts
+  `quantityScrapped`** (`sync_update_job_operation_quantities`, `20260807090629`) —
+  scrap doesn't consume the good `targetQuantity`, so app-side remaining/Done
+  mirrors (`complete.tsx` `willBeFinished`, `InspectionView`/`quality.server`
+  `opRemaining`) also dropped the scrap term.
 - **`finishJobOperation`** (`operations.service.ts`) flips the op to `Done` (firing
   the `sync_finish_job_operation` trigger that completes the job to inventory when
   it's the last op). It then runs `returnPickedRemainders`: one `post-picking`
@@ -105,13 +127,20 @@ per-entity (`sourceDocument="Entity"`, `trackedEntityLabel*`). See
 
 ## Responsive / CSS gotchas
 
-- CSS vars: **`--controls-width: 240px`** (fixed, in `apps/mes/app/styles/tailwind.css`),
+- CSS vars: **`--controls-width: 220px`** (260px at xl, in `apps/mes/app/styles/tailwind.css`),
   `--controls-height` set inline from a computed `controlsHeight` memo, `--header-height`
-  from `@carbon/react`. The Details `ScrollArea` reserves right space with
-  `md:pr-[calc(var(--controls-width))]` and height
-  `calc(100dvh - var(--header-height)*2 - var(--controls-height) - 2rem)`.
-- Header detail metadata is `hidden md:flex` (so `Controls` shows it on mobile instead);
-  Materials "Source" column is `hidden lg:table-cell`; Procedure tab is `hidden lg:block`;
-  the `Controls` panel is inline on mobile, `md:absolute` top-right on desktop.
+  from `@carbon/react`. Details scrollport classes live **inline on the details
+  container in `JobOperation.tsx`** (no separate helper):
+  - **Below `lg`:** `h-auto` + page scroll — Controls/Times stack inline under content so
+    Files / Serial Numbers stay reachable (do **not** put a viewport-filling fixed height
+    here; that nested-scroll trap was #959).
+  - **`lg+`:** fixed height
+    `calc(100dvh - var(--header-height)*2 - var(--controls-height) - 2rem)` with
+    `lg:pr-[var(--controls-gutter)]` so absolute Controls/Times dock without overlap.
+- Root Tabs is `min-h-screen h-auto lg:h-screen` for the same reason.
+- Header detail metadata is `hidden lg:flex` (so `Controls` shows it on mobile instead);
+  Materials "Source" column is `hidden lg:table-cell`; Procedure steps list is
+  `hidden lg:block`; the `Controls` panel is inline on mobile, `lg:absolute` top-right
+  on desktop.
 
 <!-- UNVERIFIED: exact column set of jobOperation (status/duration fields) not fully audited here; check the live schema or 20240909194622_jobs.sql + later alters when relying on specific fields. -->

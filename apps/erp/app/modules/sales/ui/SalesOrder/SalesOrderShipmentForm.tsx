@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle
 } from "@carbon/react";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { useFetcher, useParams } from "react-router";
@@ -24,7 +25,12 @@ import {
   ShippingMethod,
   Submit
 } from "~/components/Form";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
+import {
+  useCurrencyDecimals,
+  usePermissions,
+  useRouteData,
+  useUser
+} from "~/hooks";
 import { incoterms } from "~/modules/shared";
 import type { action } from "~/routes/x+/sales-order+/$orderId.shipment";
 import { path } from "~/utils/path";
@@ -81,6 +87,9 @@ const SalesOrderShipmentForm = forwardRef<
   }>(path.to.salesOrder(orderId));
 
   const { company } = useUser();
+  const currencyDecimals = useCurrencyDecimals(
+    routeData?.salesOrder?.currencyCode ?? company?.baseCurrencyCode
+  );
   const isLocked = isSalesOrderLocked(routeData?.salesOrder?.status);
 
   const isCustomer = permissions.is("customer");
@@ -113,12 +122,11 @@ const SalesOrderShipmentForm = forwardRef<
               name="shippingCost"
               label={t`Shipping Cost`}
               minValue={0}
-              formatOptions={{
-                style: "currency",
-                currency:
-                  routeData?.salesOrder?.currencyCode ??
-                  company?.baseCurrencyCode
-              }}
+              formatOptions={INPUT_FORMAT.money(
+                routeData?.salesOrder?.currencyCode ??
+                  company?.baseCurrencyCode,
+                currencyDecimals
+              )}
               ref={shippingCostRef}
             />
             <Location

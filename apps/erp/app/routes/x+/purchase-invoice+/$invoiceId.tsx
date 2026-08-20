@@ -6,6 +6,7 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
+import { getCurrencyByCode } from "~/modules/accounting";
 import {
   getCompanyHasOpenCredits,
   getPurchaseInvoice,
@@ -31,9 +32,12 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "invoicing"
-  });
+  const { client, companyId, companyGroupId } = await requirePermissions(
+    request,
+    {
+      view: "invoicing"
+    }
+  );
 
   const { invoiceId } = params;
   if (!invoiceId) throw new Error("Could not find invoiceId");
@@ -55,21 +59,33 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const [supplier, interaction, files, orgHasCredits] = await Promise.all([
-    purchaseInvoice.data?.supplierId
-      ? getSupplier(client, purchaseInvoice.data.supplierId)
-      : null,
-    getSupplierInteraction(client, purchaseInvoice.data.supplierInteractionId!),
-    getSupplierInteractionDocuments(
-      client,
-      companyId,
-      purchaseInvoice.data.supplierInteractionId!
-    ),
-    getCompanyHasOpenCredits(client, companyId, "purchase")
-  ]);
+  const [supplier, interaction, files, orgHasCredits, currency] =
+    await Promise.all([
+      purchaseInvoice.data?.supplierId
+        ? getSupplier(client, purchaseInvoice.data.supplierId)
+        : null,
+      getSupplierInteraction(
+        client,
+        purchaseInvoice.data.supplierInteractionId!
+      ),
+      getSupplierInteractionDocuments(
+        client,
+        companyId,
+        purchaseInvoice.data.supplierInteractionId!
+      ),
+      getCompanyHasOpenCredits(client, companyId, "purchase"),
+      purchaseInvoice.data?.currencyCode
+        ? getCurrencyByCode(
+            client,
+            companyGroupId,
+            purchaseInvoice.data.currencyCode
+          )
+        : null
+    ]);
 
   return {
     purchaseInvoice: purchaseInvoice.data,
+    currency: currency?.data ?? null,
     purchaseInvoiceLines: purchaseInvoiceLines.data ?? [],
     purchaseInvoiceDelivery: purchaseInvoiceDelivery.data,
     files,

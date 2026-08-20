@@ -44,6 +44,8 @@ export interface SalesInvoiceData {
   /** Precomputed display helpers (built once in the driver). */
   currencyCode: string | null;
   numberFormatter: Intl.NumberFormat;
+  /** Unit-price COLUMN only — a rate, not a settlement amount. */
+  rateFormatter: Intl.NumberFormat;
   /** Merge-field values, keyed by token (e.g. `invoice.number`). */
   vars: Record<string, string>;
   /** Resolved header layout (from the global header section's config). */

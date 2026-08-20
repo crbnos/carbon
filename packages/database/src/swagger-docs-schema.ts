@@ -597,6 +597,276 @@ export default {
         tags: ["noQuoteReason"]
       }
     },
+    "/accountingSyncOperation": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.integration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.entityType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.entityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.direction"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.trigger"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.idempotencyKey"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.attemptCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.lastAttemptAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.completedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.errorCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.errorMessage"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.externalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.metadata"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/accountingSyncOperation"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["accountingSyncOperation"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.accountingSyncOperation"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["accountingSyncOperation"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.integration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.entityType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.entityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.direction"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.trigger"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.idempotencyKey"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.attemptCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.lastAttemptAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.completedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.errorCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.errorMessage"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.externalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.metadata"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["accountingSyncOperation"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.integration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.entityType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.entityId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.direction"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.trigger"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.idempotencyKey"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.attemptCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.lastAttemptAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.completedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.errorCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.errorMessage"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.externalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.metadata"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingSyncOperation.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.accountingSyncOperation"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["accountingSyncOperation"]
+      }
+    },
     "/service": {
       get: {
         parameters: [
@@ -2290,6 +2560,213 @@ export default {
           }
         },
         tags: ["assemblyInstructionStepSlide"]
+      }
+    },
+    "/intercompanyEliminationLine": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.intercompanyTransactionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.role"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.journalLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/intercompanyEliminationLine"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["intercompanyEliminationLine"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.intercompanyEliminationLine"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["intercompanyEliminationLine"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.intercompanyTransactionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.role"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.journalLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["intercompanyEliminationLine"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.intercompanyTransactionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.role"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.journalLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.quantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.intercompanyEliminationLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.intercompanyEliminationLine"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["intercompanyEliminationLine"]
       }
     },
     "/changeOrderType": {
@@ -8101,6 +8578,9 @@ export default {
             $ref: "#/parameters/rowFilter.journal.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.journal.eliminationKind"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -8214,6 +8694,9 @@ export default {
             $ref: "#/parameters/rowFilter.journal.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.journal.eliminationKind"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -8279,6 +8762,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.journal.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.journal.eliminationKind"
           },
           {
             $ref: "#/parameters/body.journal"
@@ -18477,93 +18963,6 @@ export default {
         tags: ["jobs"]
       }
     },
-    "/itemSerialSequences": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequences.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequences.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequences.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequences.prefix"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequences.suffix"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequences.next"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequences.size"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequences.step"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequences.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequences.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequences.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequences.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequences.itemReadableId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequences.itemName"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequences.itemTrackingType"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/order"
-          },
-          {
-            $ref: "#/parameters/range"
-          },
-          {
-            $ref: "#/parameters/rangeUnit"
-          },
-          {
-            $ref: "#/parameters/offset"
-          },
-          {
-            $ref: "#/parameters/limit"
-          },
-          {
-            $ref: "#/parameters/preferCount"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/itemSerialSequences"
-              },
-              type: "array"
-            }
-          },
-          "206": {
-            description: "Partial Content"
-          }
-        },
-        tags: ["itemSerialSequences"]
-      }
-    },
     "/department": {
       get: {
         parameters: [
@@ -22504,9 +22903,6 @@ export default {
             $ref: "#/parameters/rowFilter.location.tags"
           },
           {
-            $ref: "#/parameters/rowFilter.location.code"
-          },
-          {
             $ref: "#/parameters/select"
           },
           {
@@ -22620,9 +23016,6 @@ export default {
             $ref: "#/parameters/rowFilter.location.tags"
           },
           {
-            $ref: "#/parameters/rowFilter.location.code"
-          },
-          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -22688,9 +23081,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.location.tags"
-          },
-          {
-            $ref: "#/parameters/rowFilter.location.code"
           },
           {
             $ref: "#/parameters/body.location"
@@ -33202,9 +33592,6 @@ export default {
             $ref: "#/parameters/rowFilter.assemblyInstruction.updatedAt"
           },
           {
-            $ref: "#/parameters/rowFilter.assemblyInstruction.rootInstructionId"
-          },
-          {
             $ref: "#/parameters/select"
           },
           {
@@ -33312,9 +33699,6 @@ export default {
             $ref: "#/parameters/rowFilter.assemblyInstruction.updatedAt"
           },
           {
-            $ref: "#/parameters/rowFilter.assemblyInstruction.rootInstructionId"
-          },
-          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -33374,9 +33758,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.assemblyInstruction.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstruction.rootInstructionId"
           },
           {
             $ref: "#/parameters/body.assemblyInstruction"
@@ -45604,9 +45985,6 @@ export default {
             $ref: "#/parameters/rowFilter.pickingListLine.customFields"
           },
           {
-            $ref: "#/parameters/rowFilter.pickingListLine.quantityReturned"
-          },
-          {
             $ref: "#/parameters/select"
           },
           {
@@ -45720,9 +46098,6 @@ export default {
             $ref: "#/parameters/rowFilter.pickingListLine.customFields"
           },
           {
-            $ref: "#/parameters/rowFilter.pickingListLine.quantityReturned"
-          },
-          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -45788,9 +46163,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.pickingListLine.customFields"
-          },
-          {
-            $ref: "#/parameters/rowFilter.pickingListLine.quantityReturned"
           },
           {
             $ref: "#/parameters/body.pickingListLine"
@@ -59925,102 +60297,6 @@ export default {
         tags: ["ability"]
       }
     },
-    "/assemblyInstructions": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructions.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructions.name"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructions.modelUploadId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructions.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructions.assemblyPlanJobId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructions.status"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructions.version"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructions.publishedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructions.settings"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructions.rootInstructionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructions.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructions.customFields"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructions.tags"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructions.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructions.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructions.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructions.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.assemblyInstructions.versions"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/order"
-          },
-          {
-            $ref: "#/parameters/range"
-          },
-          {
-            $ref: "#/parameters/rangeUnit"
-          },
-          {
-            $ref: "#/parameters/offset"
-          },
-          {
-            $ref: "#/parameters/limit"
-          },
-          {
-            $ref: "#/parameters/preferCount"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/assemblyInstructions"
-              },
-              type: "array"
-            }
-          },
-          "206": {
-            description: "Partial Content"
-          }
-        },
-        tags: ["assemblyInstructions"]
-      }
-    },
     "/dimensionValues": {
       get: {
         parameters: [
@@ -63415,204 +63691,6 @@ export default {
           }
         },
         tags: ["nonConformanceActionProcess"]
-      }
-    },
-    "/itemSerialSequence": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.prefix"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.suffix"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.next"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.size"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.step"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.updatedAt"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/order"
-          },
-          {
-            $ref: "#/parameters/range"
-          },
-          {
-            $ref: "#/parameters/rangeUnit"
-          },
-          {
-            $ref: "#/parameters/offset"
-          },
-          {
-            $ref: "#/parameters/limit"
-          },
-          {
-            $ref: "#/parameters/preferCount"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/itemSerialSequence"
-              },
-              type: "array"
-            }
-          },
-          "206": {
-            description: "Partial Content"
-          }
-        },
-        tags: ["itemSerialSequence"]
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.itemSerialSequence"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/preferPost"
-          }
-        ],
-        responses: {
-          "201": {
-            description: "Created"
-          }
-        },
-        tags: ["itemSerialSequence"]
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.prefix"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.suffix"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.next"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.size"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.step"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.updatedAt"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["itemSerialSequence"]
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.prefix"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.suffix"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.next"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.size"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.step"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemSerialSequence.updatedAt"
-          },
-          {
-            $ref: "#/parameters/body.itemSerialSequence"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["itemSerialSequence"]
       }
     },
     "/batchProperty": {
@@ -83743,6 +83821,12 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.supplierQuoteNotificationGroup"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.maintenanceGenerateInAdvance"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.maintenanceAdvanceDays"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.maintenanceDispatchNotificationGroup"
           },
           {
@@ -83825,12 +83909,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.incompletePickingListPolicy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.includeMaterialsOnTraveler"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
             $ref: "#/parameters/select"
@@ -83937,6 +84015,12 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.supplierQuoteNotificationGroup"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.maintenanceGenerateInAdvance"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.maintenanceAdvanceDays"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.maintenanceDispatchNotificationGroup"
           },
           {
@@ -84019,12 +84103,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.incompletePickingListPolicy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.includeMaterialsOnTraveler"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -84085,6 +84163,12 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.supplierQuoteNotificationGroup"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.maintenanceGenerateInAdvance"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.maintenanceAdvanceDays"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.maintenanceDispatchNotificationGroup"
           },
           {
@@ -84167,12 +84251,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.incompletePickingListPolicy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.includeMaterialsOnTraveler"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -86038,6 +86116,47 @@ export default {
         tags: ["(rpc) sync_contact_to_parent"]
       }
     },
+    "/rpc/get_timezone_names": {
+      get: {
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_timezone_names"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_timezone_names"]
+      }
+    },
     "/rpc/sync_insert_quote_line_make_method": {
       post: {
         parameters: [
@@ -86446,6 +86565,34 @@ export default {
         tags: ["(rpc) sync_update_quote_exchange_rate"]
       }
     },
+    "/rpc/reconcile_item_stock_quantities": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) reconcile_item_stock_quantities"]
+      }
+    },
     "/rpc/delete_from_search_index": {
       post: {
         parameters: [
@@ -86525,6 +86672,28 @@ export default {
       }
     },
     "/rpc/get_permission_companies": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "claim",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_permission_companies"]
+      },
       post: {
         parameters: [
           {
@@ -87262,6 +87431,41 @@ export default {
         tags: ["(rpc) get_companies_with_permission"]
       }
     },
+    "/rpc/attach_audit_log_append_only": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_table_name: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table_name"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) attach_audit_log_append_only"]
+      }
+    },
     "/rpc/get_inventory_tie_out": {
       post: {
         parameters: [
@@ -87301,7 +87505,77 @@ export default {
         tags: ["(rpc) get_inventory_tie_out"]
       }
     },
+    "/rpc/users_with_verified_mfa": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) users_with_verified_mfa"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) users_with_verified_mfa"]
+      }
+    },
     "/rpc/get_companies_with_employee_role": {
+      get: {
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_companies_with_employee_role"]
+      },
       post: {
         parameters: [
           {
@@ -87368,6 +87642,61 @@ export default {
           }
         },
         tags: ["(rpc) _xid_machine_id"]
+      }
+    },
+    "/rpc/accountTreeBalancePeriodSeries": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_group_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_period_ends: {
+                  format: "date[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                p_start: {
+                  format: "date",
+                  type: "string"
+                }
+              },
+              required: [
+                "p_company_group_id",
+                "p_company_id",
+                "p_start",
+                "p_period_ends"
+              ],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) accountTreeBalancePeriodSeries"]
       }
     },
     "/rpc/jsonb_to_text_array": {
@@ -87605,6 +87934,28 @@ export default {
       }
     },
     "/rpc/has_any_company_permission": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "claim",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) has_any_company_permission"]
+      },
       post: {
         parameters: [
           {
@@ -87647,6 +87998,13 @@ export default {
             name: "args",
             required: true,
             schema: {
+              properties: {
+                company: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["company"],
               type: "object"
             }
           },
@@ -88296,6 +88654,63 @@ export default {
         tags: ["(rpc) get_item_quantities_by_tracking_id"]
       }
     },
+    "/rpc/company_today": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) company_today"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) company_today"]
+      }
+    },
     "/rpc/sync_update_customer_type_group": {
       post: {
         parameters: [
@@ -88339,6 +88754,52 @@ export default {
           }
         },
         tags: ["(rpc) sync_update_customer_type_group"]
+      }
+    },
+    "/rpc/attach_statement_handler": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              description:
+                "Attaches statement-level handler functions to a table, run with the transition tables batched_new / batched_old. The statement-level sibling of attach_event_trigger's row-level interceptors; does not register the table for PGMQ dispatch. Handlers must branch on TG_OP.",
+              properties: {
+                handler_functions: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                table_name_text: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["table_name_text"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        summary:
+          "Attaches statement-level handler functions to a table, run with the transition tables batched_new / batched_old. The statement-level sibling of attach_event_trigger's row-level interceptors; does not register the table for PGMQ dispatch. Handlers must branch on TG_OP.",
+        tags: ["(rpc) attach_statement_handler"]
       }
     },
     "/rpc/get_inventory_value_by_location": {
@@ -89390,6 +89851,51 @@ export default {
         tags: ["(rpc) get_part_details"]
       }
     },
+    "/rpc/sync_check_method_material_self_reference": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) sync_check_method_material_self_reference"]
+      }
+    },
     "/rpc/sync_update_job_material_make_method_item_id": {
       post: {
         parameters: [
@@ -89547,6 +90053,63 @@ export default {
           }
         },
         tags: ["(rpc) xid_pid"]
+      }
+    },
+    "/rpc/is_valid_timezone": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "tz",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) is_valid_timezone"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                tz: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["tz"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) is_valid_timezone"]
       }
     },
     "/rpc/upsert_to_search_index": {
@@ -89769,6 +90332,72 @@ export default {
         tags: ["(rpc) prevent_posted_sales_invoice_deletion"]
       }
     },
+    "/rpc/purchaseLineDimensionPivot": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_column_field: {
+                  format: "text",
+                  type: "string"
+                },
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_end: {
+                  format: "date",
+                  type: "string"
+                },
+                p_group_limit: {
+                  format: "integer",
+                  type: "integer"
+                },
+                p_period_ends: {
+                  format: "date[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                p_row_field_1: {
+                  format: "text",
+                  type: "string"
+                },
+                p_row_field_2: {
+                  format: "text",
+                  type: "string"
+                },
+                p_start: {
+                  format: "date",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id", "p_start", "p_end"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) purchaseLineDimensionPivot"]
+      }
+    },
     "/rpc/sync_create_make_method_related_records": {
       post: {
         parameters: [
@@ -89912,6 +90541,74 @@ export default {
           }
         },
         tags: ["(rpc) sync_create_item_related_records"]
+      }
+    },
+    "/rpc/location_today": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_location_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) location_today"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_location_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_location_id", "p_company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) location_today"]
       }
     },
     "/rpc/get_active_job_count": {
@@ -90886,6 +91583,125 @@ export default {
         tags: ["(rpc) sync_finish_job_operation"]
       }
     },
+    "/rpc/journalDimensionPivotLines": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_account_classes: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                p_account_ids: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                p_account_types: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                p_column_dimension: {
+                  format: "text",
+                  type: "string"
+                },
+                p_column_period_end: {
+                  format: "date",
+                  type: "string"
+                },
+                p_column_period_start: {
+                  format: "date",
+                  type: "string"
+                },
+                p_column_value: {
+                  format: "text",
+                  type: "string"
+                },
+                p_company_group_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_end: {
+                  format: "date",
+                  type: "string"
+                },
+                p_filter_account_ids: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                p_filters: {
+                  format: "jsonb"
+                },
+                p_line_limit: {
+                  format: "integer",
+                  type: "integer"
+                },
+                p_row_dimension_1: {
+                  format: "text",
+                  type: "string"
+                },
+                p_row_dimension_2: {
+                  format: "text",
+                  type: "string"
+                },
+                p_row_value_1: {
+                  format: "text",
+                  type: "string"
+                },
+                p_row_value_2: {
+                  format: "text",
+                  type: "string"
+                },
+                p_start: {
+                  format: "date",
+                  type: "string"
+                }
+              },
+              required: [
+                "p_company_group_id",
+                "p_company_id",
+                "p_start",
+                "p_end"
+              ],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) journalDimensionPivotLines"]
+      }
+    },
     "/rpc/get_ap_tie_out": {
       post: {
         parameters: [
@@ -91284,6 +92100,74 @@ export default {
         tags: ["(rpc) get_picking_schedule"]
       }
     },
+    "/rpc/item_ledger_on_hand_contribution": {
+      get: {
+        parameters: [
+          {
+            format: "numeric",
+            in: "query",
+            name: "quantity",
+            required: true,
+            type: "number"
+          },
+          {
+            format: '"trackedEntityStatus"',
+            in: "query",
+            name: "tracked_entity_status",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) item_ledger_on_hand_contribution"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                quantity: {
+                  format: "numeric",
+                  type: "number"
+                },
+                tracked_entity_status: {
+                  format: '"trackedEntityStatus"',
+                  type: "string"
+                }
+              },
+              required: ["quantity", "tracked_entity_status"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) item_ledger_on_hand_contribution"]
+      }
+    },
     "/rpc/sync_verify_integration": {
       post: {
         parameters: [
@@ -91411,6 +92295,51 @@ export default {
           }
         },
         tags: ["(rpc) get_assigned_job_operations"]
+      }
+    },
+    "/rpc/sync_check_job_material_self_reference": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) sync_check_job_material_self_reference"]
       }
     },
     "/rpc/xid_encode": {
@@ -91811,6 +92740,35 @@ export default {
       }
     },
     "/rpc/get_company_id_from_foreign_key": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "foreign_key",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "tbl",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_company_id_from_foreign_key"]
+      },
       post: {
         parameters: [
           {
@@ -92859,6 +93817,10 @@ export default {
                   format: "text",
                   type: "string"
                 },
+                p_regenerate: {
+                  format: "boolean",
+                  type: "boolean"
+                },
                 p_user_id: {
                   format: "text",
                   type: "string"
@@ -93413,6 +94375,35 @@ export default {
       }
     },
     "/rpc/has_role": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "required_role",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "company",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) has_role"]
+      },
       post: {
         parameters: [
           {
@@ -94391,6 +95382,51 @@ export default {
         tags: ["(rpc) findLowestCommonParent"]
       }
     },
+    "/rpc/sync_webhook_subscription": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) sync_webhook_subscription"]
+      }
+    },
     "/rpc/get_active_job_operations_by_employee": {
       post: {
         parameters: [
@@ -94816,6 +95852,85 @@ export default {
           }
         },
         tags: ["(rpc) sync_update_quote_line_make_method_item_id"]
+      }
+    },
+    "/rpc/purchaseLinePivotLines": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_column_field: {
+                  format: "text",
+                  type: "string"
+                },
+                p_column_period_end: {
+                  format: "date",
+                  type: "string"
+                },
+                p_column_period_start: {
+                  format: "date",
+                  type: "string"
+                },
+                p_column_value: {
+                  format: "text",
+                  type: "string"
+                },
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_end: {
+                  format: "date",
+                  type: "string"
+                },
+                p_line_limit: {
+                  format: "integer",
+                  type: "integer"
+                },
+                p_row_field_1: {
+                  format: "text",
+                  type: "string"
+                },
+                p_row_field_2: {
+                  format: "text",
+                  type: "string"
+                },
+                p_row_value_1: {
+                  format: "text",
+                  type: "string"
+                },
+                p_row_value_2: {
+                  format: "text",
+                  type: "string"
+                },
+                p_start: {
+                  format: "date",
+                  type: "string"
+                }
+              },
+              required: ["p_company_id", "p_start", "p_end"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) purchaseLinePivotLines"]
       }
     },
     "/rpc/update_receipt_line_batch_tracking": {
@@ -95387,6 +96502,35 @@ export default {
       }
     },
     "/rpc/get_claims": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "uid",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "company",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_claims"]
+      },
       post: {
         parameters: [
           {
@@ -95458,6 +96602,112 @@ export default {
           }
         },
         tags: ["(rpc) get_opportunity_with_related_records"]
+      }
+    },
+    "/rpc/journalDimensionPivot": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_account_classes: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                p_account_ids: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                p_account_types: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                p_column_dimension: {
+                  format: "text",
+                  type: "string"
+                },
+                p_company_group_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_end: {
+                  format: "date",
+                  type: "string"
+                },
+                p_filter_account_ids: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                p_filters: {
+                  format: "jsonb"
+                },
+                p_group_limit: {
+                  format: "integer",
+                  type: "integer"
+                },
+                p_period_ends: {
+                  format: "date[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                },
+                p_row_dimension_1: {
+                  format: "text",
+                  type: "string"
+                },
+                p_row_dimension_2: {
+                  format: "text",
+                  type: "string"
+                },
+                p_start: {
+                  format: "date",
+                  type: "string"
+                }
+              },
+              required: [
+                "p_company_group_id",
+                "p_company_id",
+                "p_start",
+                "p_end"
+              ],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) journalDimensionPivot"]
       }
     },
     "/rpc/getConsolidationRates": {
@@ -96020,6 +97270,123 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        }
+      },
+      type: "object"
+    },
+    accountingSyncOperation: {
+      required: [
+        "id",
+        "companyId",
+        "integration",
+        "entityType",
+        "entityId",
+        "direction",
+        "trigger",
+        "status",
+        "idempotencyKey",
+        "attemptCount",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('syncop'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        integration: {
+          format: "text",
+          type: "string"
+        },
+        entityType: {
+          format: "text",
+          type: "string"
+        },
+        entityId: {
+          format: "text",
+          type: "string"
+        },
+        direction: {
+          format: "text",
+          type: "string"
+        },
+        trigger: {
+          format: "text",
+          type: "string"
+        },
+        status: {
+          default: "Pending",
+          enum: [
+            "Pending",
+            "In Flight",
+            "Completed",
+            "Failed",
+            "Warning",
+            "Skipped"
+          ],
+          format: 'public."syncOperationStatus"',
+          type: "string"
+        },
+        idempotencyKey: {
+          format: "text",
+          type: "string"
+        },
+        attemptCount: {
+          default: 0,
+          format: "integer",
+          type: "integer"
+        },
+        lastAttemptAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        completedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        errorCode: {
+          format: "text",
+          type: "string"
+        },
+        errorMessage: {
+          format: "text",
+          type: "string"
+        },
+        externalId: {
+          format: "text",
+          type: "string"
+        },
+        metadata: {
+          format: "jsonb"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -96803,6 +98170,86 @@ export default {
             "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
           type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    intercompanyEliminationLine: {
+      required: [
+        "id",
+        "companyId",
+        "intercompanyTransactionId",
+        "role",
+        "journalLineId",
+        "accountId",
+        "amount",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('icel'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        intercompanyTransactionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `intercompanyTransaction.id`.<fk table='intercompanyTransaction' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        role: {
+          enum: ["Control", "Revenue", "COGS", "Capitalization"],
+          format: 'public."intercompanyEliminationRole"',
+          type: "string"
+        },
+        journalLineId: {
+          format: "text",
+          type: "string"
+        },
+        accountId: {
+          format: "text",
+          type: "string"
+        },
+        amount: {
+          format: "numeric",
+          type: "number"
+        },
+        itemId: {
+          format: "text",
+          type: "string"
+        },
+        quantity: {
+          format: "numeric",
+          type: "number"
         },
         createdBy: {
           description:
@@ -99583,6 +101030,13 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
+        },
+        eliminationKind: {
+          description:
+            "Classifies an elimination journal by the intercompany layer it removes (SAP posting-level analog); NULL for ordinary journals",
+          enum: ["IC Balance", "IC Revenue"],
+          format: 'public."eliminationKind"',
+          type: "string"
         }
       },
       type: "object"
@@ -101312,7 +102766,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -101361,7 +102815,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -104503,81 +105957,6 @@ export default {
       },
       type: "object"
     },
-    itemSerialSequences: {
-      properties: {
-        id: {
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string"
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        prefix: {
-          format: "text",
-          type: "string"
-        },
-        suffix: {
-          format: "text",
-          type: "string"
-        },
-        next: {
-          format: "integer",
-          type: "integer"
-        },
-        size: {
-          format: "integer",
-          type: "integer"
-        },
-        step: {
-          format: "integer",
-          type: "integer"
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        updatedAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        itemReadableId: {
-          format: "text",
-          type: "string"
-        },
-        itemName: {
-          format: "text",
-          type: "string"
-        },
-        itemTrackingType: {
-          enum: ["Inventory", "Non-Inventory", "Serial", "Batch"],
-          format: 'public."itemTrackingType"',
-          type: "string"
-        }
-      },
-      type: "object"
-    },
     department: {
       required: ["id", "name", "companyId", "createdBy", "createdAt"],
       properties: {
@@ -106373,10 +107752,6 @@ export default {
             type: "string"
           },
           type: "array"
-        },
-        code: {
-          format: "text",
-          type: "string"
         }
       },
       type: "object"
@@ -111498,12 +112873,6 @@ export default {
         },
         updatedAt: {
           format: "timestamp with time zone",
-          type: "string"
-        },
-        rootInstructionId: {
-          description:
-            "Note:\nThis is a Foreign Key to `assemblyInstruction.id`.<fk table='assemblyInstruction' column='id'/>",
-          format: "text",
           type: "string"
         }
       },
@@ -117460,8 +118829,7 @@ export default {
         "status",
         "companyId",
         "createdBy",
-        "createdAt",
-        "quantityReturned"
+        "createdAt"
       ],
       properties: {
         id: {
@@ -117560,11 +118928,6 @@ export default {
         },
         customFields: {
           format: "jsonb"
-        },
-        quantityReturned: {
-          default: 0,
-          format: "numeric",
-          type: "number"
         }
       },
       type: "object"
@@ -123901,99 +125264,6 @@ export default {
       },
       type: "object"
     },
-    assemblyInstructions: {
-      properties: {
-        id: {
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string"
-        },
-        name: {
-          format: "text",
-          type: "string"
-        },
-        modelUploadId: {
-          description:
-            "Note:\nThis is a Foreign Key to `modelUpload.id`.<fk table='modelUpload' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        assemblyPlanJobId: {
-          description:
-            "Note:\nThis is a Foreign Key to `assemblyPlanJob.id`.<fk table='assemblyPlanJob' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        status: {
-          enum: ["Draft", "Published", "Archived"],
-          format: 'public."assemblyInstructionStatus"',
-          type: "string"
-        },
-        version: {
-          format: "integer",
-          type: "integer"
-        },
-        publishedAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        settings: {
-          format: "jsonb"
-        },
-        rootInstructionId: {
-          description:
-            "Note:\nThis is a Foreign Key to `assemblyInstruction.id`.<fk table='assemblyInstruction' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        customFields: {
-          format: "jsonb"
-        },
-        tags: {
-          format: "text[]",
-          items: {
-            type: "string"
-          },
-          type: "array"
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        updatedAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        versions: {
-          format: "jsonb"
-        }
-      },
-      type: "object"
-    },
     dimensionValues: {
       properties: {
         dimensionId: {
@@ -125732,83 +127002,6 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
-          type: "string"
-        }
-      },
-      type: "object"
-    },
-    itemSerialSequence: {
-      required: [
-        "id",
-        "companyId",
-        "itemId",
-        "next",
-        "size",
-        "step",
-        "createdBy",
-        "createdAt"
-      ],
-      properties: {
-        id: {
-          default: "public.id('iss'::text)",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string"
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        prefix: {
-          format: "text",
-          type: "string"
-        },
-        suffix: {
-          format: "text",
-          type: "string"
-        },
-        next: {
-          default: 0,
-          format: "integer",
-          type: "integer"
-        },
-        size: {
-          default: 5,
-          format: "integer",
-          type: "integer"
-        },
-        step: {
-          default: 1,
-          format: "integer",
-          type: "integer"
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        updatedAt: {
-          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -135529,6 +136722,8 @@ export default {
         "gaugeCalibrationExpiredNotificationGroup",
         "purchasePriceUpdateTiming",
         "supplierQuoteNotificationGroup",
+        "maintenanceGenerateInAdvance",
+        "maintenanceAdvanceDays",
         "qualityIssueTarget",
         "consoleEnabled",
         "timeCardEnabled",
@@ -135543,9 +136738,7 @@ export default {
         "autoStartOperationTimer",
         "plmReleaseControl",
         "autoSelectMaterialWithoutPickingList",
-        "incompletePickingListPolicy",
-        "includeMaterialsOnTraveler",
-        "returnPickedMaterialTiming"
+        "incompletePickingListPolicy"
       ],
       properties: {
         id: {
@@ -135637,6 +136830,16 @@ export default {
             type: "string"
           },
           type: "array"
+        },
+        maintenanceGenerateInAdvance: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        maintenanceAdvanceDays: {
+          default: 3,
+          format: "integer",
+          type: "integer"
         },
         maintenanceDispatchNotificationGroup: {
           format: "text[]",
@@ -135779,16 +136982,6 @@ export default {
         },
         incompletePickingListPolicy: {
           default: "warn",
-          format: "text",
-          type: "string"
-        },
-        includeMaterialsOnTraveler: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
-        },
-        returnPickedMaterialTiming: {
-          default: "job",
           format: "text",
           type: "string"
         }
@@ -136711,6 +137904,135 @@ export default {
     },
     "rowFilter.noQuoteReason.customFields": {
       name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.accountingSyncOperation": {
+      name: "accountingSyncOperation",
+      description: "accountingSyncOperation",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/accountingSyncOperation"
+      }
+    },
+    "rowFilter.accountingSyncOperation.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.integration": {
+      name: "integration",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.entityType": {
+      name: "entityType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.entityId": {
+      name: "entityId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.direction": {
+      name: "direction",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.trigger": {
+      name: "trigger",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.idempotencyKey": {
+      name: "idempotencyKey",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.attemptCount": {
+      name: "attemptCount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.lastAttemptAt": {
+      name: "lastAttemptAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.completedAt": {
+      name: "completedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.errorCode": {
+      name: "errorCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.errorMessage": {
+      name: "errorMessage",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.externalId": {
+      name: "externalId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.metadata": {
+      name: "metadata",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingSyncOperation.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -137649,6 +138971,93 @@ export default {
       type: "string"
     },
     "rowFilter.assemblyInstructionStepSlide.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.intercompanyEliminationLine": {
+      name: "intercompanyEliminationLine",
+      description: "intercompanyEliminationLine",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/intercompanyEliminationLine"
+      }
+    },
+    "rowFilter.intercompanyEliminationLine.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.intercompanyEliminationLine.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.intercompanyEliminationLine.intercompanyTransactionId": {
+      name: "intercompanyTransactionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.intercompanyEliminationLine.role": {
+      name: "role",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.intercompanyEliminationLine.journalLineId": {
+      name: "journalLineId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.intercompanyEliminationLine.accountId": {
+      name: "accountId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.intercompanyEliminationLine.amount": {
+      name: "amount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.intercompanyEliminationLine.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.intercompanyEliminationLine.quantity": {
+      name: "quantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.intercompanyEliminationLine.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.intercompanyEliminationLine.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.intercompanyEliminationLine.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.intercompanyEliminationLine.updatedAt": {
       name: "updatedAt",
       required: false,
       in: "query",
@@ -140743,6 +142152,14 @@ export default {
     },
     "rowFilter.journal.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.journal.eliminationKind": {
+      name: "eliminationKind",
+      description:
+        "Classifies an elimination journal by the intercompany layer it removes (SAP posting-level analog); NULL for ordinary journals",
       required: false,
       in: "query",
       type: "string"
@@ -146276,105 +147693,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "body.itemSerialSequences": {
-      name: "itemSerialSequences",
-      description: "itemSerialSequences",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/itemSerialSequences"
-      }
-    },
-    "rowFilter.itemSerialSequences.id": {
-      name: "id",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSerialSequences.companyId": {
-      name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSerialSequences.itemId": {
-      name: "itemId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSerialSequences.prefix": {
-      name: "prefix",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSerialSequences.suffix": {
-      name: "suffix",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSerialSequences.next": {
-      name: "next",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSerialSequences.size": {
-      name: "size",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSerialSequences.step": {
-      name: "step",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSerialSequences.createdBy": {
-      name: "createdBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSerialSequences.createdAt": {
-      name: "createdAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSerialSequences.updatedBy": {
-      name: "updatedBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSerialSequences.updatedAt": {
-      name: "updatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSerialSequences.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSerialSequences.itemName": {
-      name: "itemName",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSerialSequences.itemTrackingType": {
-      name: "itemTrackingType",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "body.department": {
       name: "department",
       description: "department",
@@ -148348,12 +149666,6 @@ export default {
     },
     "rowFilter.location.tags": {
       name: "tags",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.location.code": {
-      name: "code",
       required: false,
       in: "query",
       type: "string"
@@ -154105,12 +155417,6 @@ export default {
     },
     "rowFilter.assemblyInstruction.updatedAt": {
       name: "updatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstruction.rootInstructionId": {
-      name: "rootInstructionId",
       required: false,
       in: "query",
       type: "string"
@@ -160764,12 +162070,6 @@ export default {
     },
     "rowFilter.pickingListLine.customFields": {
       name: "customFields",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.pickingListLine.quantityReturned": {
-      name: "quantityReturned",
       required: false,
       in: "query",
       type: "string"
@@ -167872,123 +169172,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "body.assemblyInstructions": {
-      name: "assemblyInstructions",
-      description: "assemblyInstructions",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/assemblyInstructions"
-      }
-    },
-    "rowFilter.assemblyInstructions.id": {
-      name: "id",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructions.name": {
-      name: "name",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructions.modelUploadId": {
-      name: "modelUploadId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructions.itemId": {
-      name: "itemId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructions.assemblyPlanJobId": {
-      name: "assemblyPlanJobId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructions.status": {
-      name: "status",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructions.version": {
-      name: "version",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructions.publishedAt": {
-      name: "publishedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructions.settings": {
-      name: "settings",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructions.rootInstructionId": {
-      name: "rootInstructionId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructions.companyId": {
-      name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructions.customFields": {
-      name: "customFields",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructions.tags": {
-      name: "tags",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructions.createdBy": {
-      name: "createdBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructions.createdAt": {
-      name: "createdAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructions.updatedBy": {
-      name: "updatedBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructions.updatedAt": {
-      name: "updatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.assemblyInstructions.versions": {
-      name: "versions",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "body.dimensionValues": {
       name: "dimensionValues",
       description: "dimensionValues",
@@ -169877,87 +171060,6 @@ export default {
     },
     "rowFilter.nonConformanceActionProcess.updatedBy": {
       name: "updatedBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "body.itemSerialSequence": {
-      name: "itemSerialSequence",
-      description: "itemSerialSequence",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/itemSerialSequence"
-      }
-    },
-    "rowFilter.itemSerialSequence.id": {
-      name: "id",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSerialSequence.companyId": {
-      name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSerialSequence.itemId": {
-      name: "itemId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSerialSequence.prefix": {
-      name: "prefix",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSerialSequence.suffix": {
-      name: "suffix",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSerialSequence.next": {
-      name: "next",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSerialSequence.size": {
-      name: "size",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSerialSequence.step": {
-      name: "step",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSerialSequence.createdBy": {
-      name: "createdBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSerialSequence.createdAt": {
-      name: "createdAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSerialSequence.updatedBy": {
-      name: "updatedBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.itemSerialSequence.updatedAt": {
-      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -180900,6 +182002,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.companySettings.maintenanceGenerateInAdvance": {
+      name: "maintenanceGenerateInAdvance",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.maintenanceAdvanceDays": {
+      name: "maintenanceAdvanceDays",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.companySettings.maintenanceDispatchNotificationGroup": {
       name: "maintenanceDispatchNotificationGroup",
       required: false,
@@ -181064,18 +182178,6 @@ export default {
     },
     "rowFilter.companySettings.incompletePickingListPolicy": {
       name: "incompletePickingListPolicy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.companySettings.includeMaterialsOnTraveler": {
-      name: "includeMaterialsOnTraveler",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.companySettings.returnPickedMaterialTiming": {
-      name: "returnPickedMaterialTiming",
       required: false,
       in: "query",
       type: "string"

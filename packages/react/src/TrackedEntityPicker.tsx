@@ -1,6 +1,7 @@
 "use client";
 
-import { useLingui } from "@lingui/react/macro";
+import { formatDate } from "@carbon/utils";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import {
   LuCheck,
@@ -12,6 +13,7 @@ import {
 import { Badge } from "./Badge";
 import { Button } from "./Button";
 import { Combobox } from "./Combobox";
+import { DateTime } from "./DateTime";
 import { HStack } from "./HStack";
 import { Input, InputGroup, InputRightElement } from "./Input";
 import {
@@ -361,18 +363,26 @@ function ExpiryBadge({
             {t`Expired`}
           </Badge>
         </TooltipTrigger>
-        <TooltipContent>{t`Expired ${date}`}</TooltipContent>
+        <TooltipContent>{t`Expired ${formatDate(date)}`}</TooltipContent>
       </Tooltip>
     );
   }
   if (state === "near") {
     return (
       <Badge variant="yellow" className="gap-1">
-        {t`Expires ${date}`}
+        <Trans>
+          Expires <DateTime value={date} variant="date" />
+        </Trans>
       </Badge>
     );
   }
-  return <span>{t`Expires ${date}`}</span>;
+  return (
+    <span>
+      <Trans>
+        Expires <DateTime value={date} variant="date" />
+      </Trans>
+    </span>
+  );
 }
 
 export default TrackedEntityPicker;

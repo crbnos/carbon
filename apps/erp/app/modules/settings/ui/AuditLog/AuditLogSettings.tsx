@@ -15,11 +15,13 @@ import { Trans } from "@lingui/react/macro";
 import { memo, useCallback } from "react";
 import { LuDownload } from "react-icons/lu";
 import { useFetcher } from "react-router";
-import { useDateFormatter } from "~/hooks";
+import { DateTime } from "~/components";
 
 type AuditLogSettingsProps = {
   enabled: boolean;
   archives: AuditLogArchive[];
+  /** Controlled (ITAR/CUI) environment: audit is required and cannot be disabled. */
+  controlled?: boolean;
 };
 
 function formatBytes(bytes: number): string {
@@ -31,8 +33,7 @@ function formatBytes(bytes: number): string {
 }
 
 const AuditLogSettings = memo(
-  ({ enabled, archives }: AuditLogSettingsProps) => {
-    const { formatDate } = useDateFormatter();
+  ({ enabled, archives, controlled }: AuditLogSettingsProps) => {
     const fetcher = useFetcher();
 
     const isToggling = fetcher.state !== "idle";
@@ -79,7 +80,12 @@ const AuditLogSettings = memo(
                   )}
                 </span>
                 <span className="text-sm text-muted-foreground">
-                  {enabled ? (
+                  {controlled ? (
+                    <Trans>
+                      Required in a controlled environment — audit logging
+                      cannot be turned off.
+                    </Trans>
+                  ) : enabled ? (
                     <Trans>
                       All changes to auditable entities are being recorded.
                     </Trans>
@@ -93,7 +99,7 @@ const AuditLogSettings = memo(
               <Switch
                 checked={enabled}
                 onCheckedChange={handleToggle}
-                disabled={isToggling}
+                disabled={isToggling || controlled}
               />
             </HStack>
           </CardContent>
@@ -122,8 +128,8 @@ const AuditLogSettings = memo(
                     >
                       <VStack className="items-start">
                         <span className="font-medium text-sm">
-                          {formatDate(archive.startDate)} -{" "}
-                          {formatDate(archive.endDate)}
+                          <DateTime value={archive.startDate} variant="date" />{" "}
+                          - <DateTime value={archive.endDate} variant="date" />
                         </span>
                         <span className="text-xs text-muted-foreground">
                           {archive.rowCount.toLocaleString()} records

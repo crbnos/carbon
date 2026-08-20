@@ -14,6 +14,7 @@ import {
   LuShoppingCart,
   LuTvMinimalPlay,
   LuUsers,
+  LuWorkflow,
   LuWrench
 } from "react-icons/lu";
 import type { Authenticated, NavItem } from "~/types";
@@ -144,6 +145,13 @@ function useModuleDefinitions(): ModuleDefinition[] {
       name: t`Users`,
       to: path.to.employeeAccounts,
       icon: LuShield
+    },
+    {
+      key: "workflows",
+      permission: "workflows",
+      name: t`Workflows`,
+      to: path.to.workflows,
+      icon: LuWorkflow
     }
   ];
 }

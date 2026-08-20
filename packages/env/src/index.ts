@@ -50,6 +50,7 @@ declare global {
       POSTHOG_API_HOST: string;
       POSTHOG_PROJECT_PUBLIC_KEY: string;
       QUICKBOOKS_CLIENT_SECRET: string;
+      QUICKBOOKS_ENVIRONMENT: string;
       QUICKBOOKS_WEBHOOK_SECRET: string;
       RESEND_API_KEY: string;
       RESEND_DOMAIN: string;
@@ -236,6 +237,16 @@ const itarEnvironment = getEnv("CONTROLLED_ENVIRONMENT", {
 
 export const CONTROLLED_ENVIRONMENT = parseBoolean(itarEnvironment, false);
 
+// Carbon GovCloud Rider metadata. These are the authoritative `docVersion` /
+// `docHash` stamped onto every ITAR certification, and the target of the
+// "View the full Rider" link. `ITAR_RIDER_SHA256` is the sha256 of the Rider PDF
+// served at `ITAR_RIDER_PDF_PATH` — recompute and update it whenever that PDF
+// changes so certifications stamp the exact document that was accepted.
+export const ITAR_RIDER_VERSION = "1.0";
+export const ITAR_RIDER_SHA256 =
+  "e5ec082dfa511561edd86043060b0eff82c019ff95dda2cc7a6d79eff9560874";
+export const ITAR_RIDER_PDF_PATH = "https://carbon.ms/itar-rider.pdf";
+
 export const ONSHAPE_CLIENT_ID = getEnv("ONSHAPE_CLIENT_ID", {
   isRequired: false
 });
@@ -264,6 +275,13 @@ export const QUICKBOOKS_CLIENT_SECRET = getEnv("QUICKBOOKS_CLIENT_SECRET", {
   isRequired: false,
   isSecret: true
 });
+
+/** Intuit environment: "sandbox" or "production" (default). */
+export const QUICKBOOKS_ENVIRONMENT =
+  getEnv("QUICKBOOKS_ENVIRONMENT", {
+    isRequired: false,
+    isSecret: false
+  }) ?? "production";
 
 export const QUICKBOOKS_WEBHOOK_SECRET = getEnv("QUICKBOOKS_WEBHOOK_SECRET", {
   isRequired: false,
@@ -353,6 +371,13 @@ export const REDIS_URL = getEnv("REDIS_URL", {
 });
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days;
 export const REFRESH_ACCESS_TOKEN_THRESHOLD = 60 * 10; // 10 minutes left before token expires
+// Session lock / termination (NIST 800-171 3.1.10 / 3.1.11). All in MILLISECONDS
+// (unlike SESSION_MAX_AGE above, which is seconds for the cookie maxAge). Enforced
+// only when CONTROLLED_ENVIRONMENT is true. Plain literals, matching SESSION_MAX_AGE
+// precedent (not env-overridable in v1).
+export const SESSION_IDLE_LOCK_MS = 15 * 60 * 1000; // 15 min — DISA App-Sec STIG web-app idle
+export const SESSION_ABSOLUTE_MAX_MS = 12 * 60 * 60 * 1000; // 12 h — absolute session cap
+export const SESSION_HEARTBEAT_MS = 60 * 1000; // client activity heartbeat throttle
 export const VERCEL_URL = getEnv("VERCEL_URL", { isSecret: false });
 
 export const XERO_CLIENT_ID = getEnv("XERO_CLIENT_ID", {

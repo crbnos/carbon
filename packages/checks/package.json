@@ -7,16 +7,18 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "baseline": "tsx src/scripts/generate-baseline.ts",
     "clean": "rimraf .turbo node_modules dist",
+    "clobbers": "tsx src/scripts/check-clobbers.ts",
+    "invariants": "tsx src/scripts/run-invariants.ts",
     "lint": "biome lint --write ",
     "test": "vitest run",
     "typecheck": "tsgo --noEmit",
-    "baseline": "tsx src/scripts/generate-baseline.ts",
-    "invariants": "tsx src/scripts/run-invariants.ts",
-    "clobbers": "tsx src/scripts/check-clobbers.ts"
+    "workflow-events": "tsx src/scripts/check-workflow-events.ts"
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
+    "@carbon/workflows": "workspace:*",
     "@types/node": "^22",
     "@types/pg": "8.15.6",
     "pg": "8.20.0",

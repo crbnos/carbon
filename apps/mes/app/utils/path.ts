@@ -161,6 +161,7 @@ export const path = {
     maintenanceEvent: `${x}/maintenance-event`,
     manualPrint: `${x}/print`,
     messagingNotify: `${x}/proxy/api/messaging/notify`,
+    mfa: "/mfa",
     newMaintenanceDispatch: `${x}/dispatch/new`,
     onboarding: `${ERP_URL}/onboarding`,
     operation: (id: string) => generatePath(`${x}/operation/${id}`),
@@ -185,8 +186,8 @@ export const path = {
       generatePath(`${x}/rework-targets/${operationId}`),
     root: "/",
     scrap: `${x}/scrap`,
-    scrapEntity: (operationId: string, id: string, parentId?: string) => {
-      const basePath = generatePath(`${x}/entity/${operationId}/${id}/scrap`);
+    scrapEntity: (materialId: string, id: string, parentId?: string) => {
+      const basePath = generatePath(`${x}/entity/${materialId}/${id}/scrap`);
       return parentId ? `${basePath}?parentId=${parentId}` : basePath;
     },
     scrapReasons: `${api}/scrap-reasons`,
