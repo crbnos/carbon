@@ -16929,6 +16929,9 @@ msgstr "What's out of scope"
 msgid "When"
 msgstr "When"
 
+msgid "When {name} changes"
+msgstr "When {name} changes"
+
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 

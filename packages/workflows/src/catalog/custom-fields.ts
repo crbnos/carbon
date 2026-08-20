@@ -135,6 +135,20 @@ export function customFieldEventId(entity: string, fieldId: string): string {
 const CUSTOM_FIELD_EVENT =
   /^([A-Za-z][A-Za-z0-9]*)\.customFields\.([^.]+)\.changed$/;
 
+/** The entity and property path a custom-field trigger id names, or undefined when the id
+ * is a shipped event. The label a customer sees is keyed by that property. */
+export function parseCustomFieldEventId(
+  id: string
+): { entity: string; property: string } | undefined {
+  const match = CUSTOM_FIELD_EVENT.exec(id);
+  if (match === null) return undefined;
+
+  const [, entity, fieldId] = match;
+  if (entity === undefined || fieldId === undefined) return undefined;
+
+  return { entity, property: `${CUSTOM_FIELD_PREFIX}${fieldId}` };
+}
+
 /**
  * Parses a custom-field event id into a synthetic `CatalogEvent`, deliberately parallel
  * to the generated `<entity>.<column>.changed`.
@@ -145,11 +159,10 @@ const CUSTOM_FIELD_EVENT =
  * `workflowTriggerEvent` join the matcher already does, not here.
  */
 export function resolveCustomFieldEvent(id: string): CatalogEvent | undefined {
-  const match = CUSTOM_FIELD_EVENT.exec(id);
-  if (match === null) return undefined;
+  const parsed = parseCustomFieldEventId(id);
+  if (parsed === undefined) return undefined;
 
-  const [, entity, fieldId] = match;
-  if (entity === undefined || fieldId === undefined) return undefined;
+  const { entity, property } = parsed;
   if (EXCLUDED_ENTITIES.has(entity)) return undefined;
 
   const entry = REGISTRY_ENTRIES[entity];
@@ -167,7 +180,7 @@ export function resolveCustomFieldEvent(id: string): CatalogEvent | undefined {
     match: {
       table: entry.table,
       operation: "UPDATE",
-      field: `${CUSTOM_FIELD_PREFIX}${fieldId}`
+      field: property
     }
   };
 }

@@ -16929,6 +16929,9 @@ msgstr "Ce qui n'est pas dans le périmètre"
 msgid "When"
 msgstr "Quand"
 
+msgid "When {name} changes"
+msgstr ""
+
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "Lorsque la durée de vie d'un produit fini est définie sur Calculée, choisissez les entrées consommées qui alimentent le calcul."
 

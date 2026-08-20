@@ -16929,6 +16929,9 @@ msgstr "Cosa non rientra nell'ambito"
 msgid "When"
 msgstr "Quando"
 
+msgid "When {name} changes"
+msgstr ""
+
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "Quando la durata di conservazione di un prodotto finito è impostata su Calcolata, scegli quali input consumati alimentano il calcolo."
 

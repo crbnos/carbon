@@ -16929,6 +16929,9 @@ msgstr "स्कोप से बाहर क्या है"
 msgid "When"
 msgstr "कब"
 
+msgid "When {name} changes"
+msgstr ""
+
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "जब किसी तैयार उत्पाद का शेल्फ जीवन Calculated पर सेट किया जाता है, तो चुनें कि कौन से उपभोग किए गए इनपुट गणना को खिलाते हैं।"
 

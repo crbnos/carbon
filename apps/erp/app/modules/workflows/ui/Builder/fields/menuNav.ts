@@ -34,6 +34,24 @@ export function rowsAt(
   return rows;
 }
 
+/** Every selectable item at or below `path`, in tree order. Search runs on this, so
+ * drilling into a record searches that record instead of every step in the workflow —
+ * the same field name usually exists under several of them. */
+export function itemsUnder(
+  tree: VariableTreeNode[],
+  path: string[]
+): VariableMenuItem[] {
+  const items: VariableMenuItem[] = [];
+  const walk = (nodes: VariableTreeNode[]) => {
+    for (const node of nodes) {
+      if (node.item) items.push(node.item);
+      if (node.children?.length) walk(node.children);
+    }
+  };
+  walk(rowsAt(tree, path));
+  return items;
+}
+
 type NavOptions = {
   /** True in the popover host, where Backspace on an empty query pops a level.
    * False in the editor host, where Backspace must delete the `{`. */

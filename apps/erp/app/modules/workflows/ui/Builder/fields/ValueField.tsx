@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useCustomFieldLabels } from "../catalog";
 import { useBuilderStoreApi } from "../context";
 import { pickControl } from "./control";
 import { Field } from "./Field";
@@ -26,6 +27,7 @@ export function ValueField({
   isReadOnly
 }: ValueFieldProps) {
   const store = useBuilderStoreApi();
+  const segmentLabels = useCustomFieldLabels();
   const [pickerOpen, setPickerOpen] = useState(false);
   const control = pickControl(type, value, choices);
   const acceptsFilter = pickAccepts(type, accepts);
@@ -97,6 +99,7 @@ export function ValueField({
                   <VariableChip
                     variable={ref}
                     nodeTitle={nodeTitle}
+                    segmentLabels={segmentLabels}
                     invalid={issue}
                     isReadOnly={isReadOnly}
                     onRemove={() => onChange(undefined)}

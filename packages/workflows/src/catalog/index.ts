@@ -19,6 +19,7 @@ export {
   customFieldEventId,
   EMPTY_OVERLAY,
   ENTITY_BY_TABLE,
+  parseCustomFieldEventId,
   resolveCustomFieldEvent
 } from "./custom-fields";
 export { REGISTRY_ENTRIES, WORKFLOW_ENTITY_REGISTRY } from "./entities";

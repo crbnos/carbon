@@ -16929,6 +16929,9 @@ msgstr "O que está fora do escopo"
 msgid "When"
 msgstr "Quando"
 
+msgid "When {name} changes"
+msgstr ""
+
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "Quando a vida útil de um produto acabado é definida como Calculada, escolha quais entradas consumidas alimentam o cálculo."
 

@@ -16929,6 +16929,9 @@ msgstr "Was ist nicht im Umfang enthalten"
 msgid "When"
 msgstr "Wann"
 
+msgid "When {name} changes"
+msgstr ""
+
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "Wenn die Haltbarkeit eines Fertigprodukts auf „Berechnet\" eingestellt ist, wählen Sie aus, welche verbrauchten Eingaben die Berechnung speisen."
 

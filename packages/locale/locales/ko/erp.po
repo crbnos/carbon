@@ -16929,6 +16929,9 @@ msgstr "범위에서 제외되는 것"
 msgid "When"
 msgstr "시점"
 
+msgid "When {name} changes"
+msgstr ""
+
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "완제품의 유효기간이 계산됨으로 설정된 경우, 계산에 반영할 소비 투입물을 선택하세요."
 

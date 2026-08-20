@@ -22,7 +22,6 @@ import {
 import { getTimezones } from "@carbon/utils";
 import type { Origin, Schedule } from "@carbon/workflows";
 import {
-  CUSTOM_FIELD_PREFIX,
   customFieldEventId,
   ENTITY_BY_TABLE,
   WORKFLOW_ENTITY_REGISTRY,
@@ -36,6 +35,7 @@ import { useCustomFieldsSchema } from "~/hooks/useCustomFieldsSchema";
 import {
   entityLabelKey,
   useWorkflowCatalog,
+  useWorkflowEventLabel,
   useWorkflowLabel
 } from "../../catalog";
 import { useBuilderStore } from "../../context";
@@ -97,9 +97,11 @@ type EventPickerProps = {
   onSelect: (id: string) => void;
   entityGroups: EntityGroup[];
   momentIds: string[];
-  /** Custom-field event id -> the customer's own field name, never translated. */
-  customLabels: Record<string, string>;
+  /** The company's custom-field event ids — the badge is the only thing that needs to
+   * tell them apart; their labels come from `eventLabel` like every other event's. */
+  customIds: Set<string>;
   label: (key: string) => string;
+  eventLabel: (id: string) => string;
   isReadOnly?: boolean;
 };
 
@@ -108,14 +110,15 @@ function EventPicker({
   onSelect,
   entityGroups,
   momentIds,
-  customLabels,
+  customIds,
   label,
+  eventLabel,
   isReadOnly
 }: EventPickerProps) {
   const { t } = useLingui();
   const [open, setOpen] = useState(false);
 
-  const summary = selected ? label(selected) : t`Select an event…`;
+  const summary = selected ? eventLabel(selected) : t`Select an event…`;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -150,44 +153,35 @@ function EventPicker({
                 key={entity}
                 heading={label(entityLabelKey(entity))}
               >
-                {ids.map((id) => {
-                  const custom = customLabels[id];
-                  return (
-                    <CommandItem
-                      key={id}
-                      // Search runs on `value`, so the visible label has to be in it —
-                      // the id alone is never what someone types, and never translated.
-                      value={
-                        custom === undefined
-                          ? `${id} ${label(id)}`
-                          : `${id} ${custom}`
-                      }
-                      disabled={isReadOnly}
-                      onSelect={() => {
-                        onSelect(id);
-                        setOpen(false);
-                      }}
-                    >
-                      <LuCheck
-                        className={cn(
-                          "mr-2 h-4 w-4 shrink-0",
-                          selected === id ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      {custom === undefined ? (
-                        label(id)
-                      ) : (
-                        <span className="truncate">
-                          {custom}
-                          {/* A custom field can share a name with a shipped column. */}
-                          <span className="ml-2 text-xs text-muted-foreground">
-                            <Trans>Custom field</Trans>
-                          </span>
+                {ids.map((id) => (
+                  <CommandItem
+                    key={id}
+                    // Search runs on `value`, so the visible label has to be in it —
+                    // the id alone is never what someone types, and never translated.
+                    value={`${id} ${eventLabel(id)}`}
+                    disabled={isReadOnly}
+                    onSelect={() => {
+                      onSelect(id);
+                      setOpen(false);
+                    }}
+                  >
+                    <LuCheck
+                      className={cn(
+                        "mr-2 h-4 w-4 shrink-0",
+                        selected === id ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    <span className="truncate">
+                      {eventLabel(id)}
+                      {/* A custom field can share a name with a shipped column. */}
+                      {customIds.has(id) && (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          <Trans>Custom field</Trans>
                         </span>
                       )}
-                    </CommandItem>
-                  );
-                })}
+                    </span>
+                  </CommandItem>
+                ))}
                 {entity === "item" && (
                   <p className="px-2 py-1.5 text-xs text-muted-foreground">
                     <Trans>
@@ -420,6 +414,7 @@ function ScheduleEditor({
 export function TriggerForm({ node, isReadOnly }: NodeFormProps<"trigger">) {
   const updateNodeData = useBuilderStore((s) => s.updateNodeData);
   const label = useWorkflowLabel();
+  const eventLabel = useWorkflowEventLabel();
   const catalog = useWorkflowCatalog();
   const customFields = useCustomFieldsSchema();
 
@@ -434,9 +429,8 @@ export function TriggerForm({ node, isReadOnly }: NodeFormProps<"trigger">) {
 
   // This company's custom-field triggers. `catalog.getEvent` is the single gate — it
   // owns the item exclusion and the reference-only-entity rule, so neither is restated.
-  const { customIds, customLabels } = useMemo(() => {
+  const customIds = useMemo(() => {
     const ids: Record<string, string[]> = {};
-    const labels: Record<string, string> = {};
 
     for (const [table, fields] of Object.entries(customFields)) {
       const entity = ENTITY_BY_TABLE[table];
@@ -446,16 +440,16 @@ export function TriggerForm({ node, isReadOnly }: NodeFormProps<"trigger">) {
         const id = customFieldEventId(entity, field.id);
         if (catalog.getEvent(id) === undefined) continue;
         (ids[entity] ??= []).push(id);
-        labels[id] =
-          catalog.getPropertyLabel(
-            entity,
-            `${CUSTOM_FIELD_PREFIX}${field.id}`
-          ) ?? field.name;
       }
     }
 
-    return { customIds: ids, customLabels: labels };
+    return ids;
   }, [customFields, catalog]);
+
+  const customIdSet = useMemo(
+    () => new Set(Object.values(customIds).flat()),
+    [customIds]
+  );
 
   const { entityGroups, momentIds } = useMemo(() => {
     const groupMap: Record<string, string[]> = {};
@@ -560,8 +554,9 @@ export function TriggerForm({ node, isReadOnly }: NodeFormProps<"trigger">) {
               onSelect={selectEvent}
               entityGroups={entityGroups}
               momentIds={momentIds}
-              customLabels={customLabels}
+              customIds={customIdSet}
               label={label}
+              eventLabel={eventLabel}
               isReadOnly={isReadOnly}
             />
           </div>

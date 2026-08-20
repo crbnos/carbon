@@ -6,6 +6,7 @@ import {
 import type { ValueOrRef, ValueType } from "@carbon/workflows";
 import { useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useRef } from "react";
+import { useCustomFieldLabels } from "../catalog";
 import { useBuilderStoreApi } from "../context";
 import { InlineVariableMenu } from "./InlineVariableMenu";
 import { publishVariableMenuData, retractVariableMenuData } from "./menuBridge";
@@ -69,6 +70,8 @@ export function InlineValueEditor({
   isReadOnly = false
 }: Props) {
   const { t } = useLingui();
+  // A custom field's path segment is its id; only this map knows what to call it.
+  const segmentLabels = useCustomFieldLabels();
   const store = useBuilderStoreApi();
   const getMenuData = useVariableMenuData(context, accepts, textOnly);
 
@@ -107,7 +110,7 @@ export function InlineValueEditor({
       onBlurCapture={() => {
         if (isReadOnly) return;
         onFocusChange?.(false);
-        const parts = toEditorParts(value, nodeName);
+        const parts = toEditorParts(value, nodeName, undefined, segmentLabels);
         const trimmed = withoutTrailingSpace(parts);
         // Same array back means nothing to trim; writing anyway dirties the workflow
         // on every focus change.
@@ -117,7 +120,7 @@ export function InlineValueEditor({
       }}
     >
       <VariableText
-        value={toEditorParts(value, nodeName, partIssues)}
+        value={toEditorParts(value, nodeName, partIssues, segmentLabels)}
         onChange={(next: VariableTextPart[]) =>
           onChange(fromEditorParts(next, { collapseSingleRef }))
         }
