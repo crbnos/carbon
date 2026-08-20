@@ -2,19 +2,26 @@ import type { Database } from "@carbon/database";
 import { MfaEnabledEmail, MfaRequiredEmail } from "@carbon/documents/email";
 import { batchTrigger, trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
+import { chunkArray } from "@carbon/utils";
 import { render } from "@react-email/components";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getUser } from "~/modules/users/users.server";
 import { ERP_URL, path } from "~/utils/path";
 
 const logger = getLogger("erp", "mfa-email");
 
-// Recipients per Inngest send. The announcement runs inside the request that
-// flipped the setting, so it can't be one round trip per employee; batching
-// keeps a 300-person company to a dozen sends while capping each request body
-// (a rendered email is ~20 KB) and limiting what a single failed send costs.
+// Recipients per Inngest send. `batchTrigger` has no size cap of its own, so
+// chunking is the caller's job — as it is for every other fan-out in the repo
+// (INSERT_CHUNK_SIZE, RECONCILE_BATCH_SIZE, …), each tuned to its own payload.
+// The announcement runs inside the request that flipped the setting, so it
+// can't be one round trip per employee; 25 keeps a 300-person company to a
+// dozen sends while capping each request body (a rendered email is ~20 KB) and
+// limiting what a single failed send costs.
 const EMAIL_BATCH_SIZE = 25;
 
-const securityUrl = () => `${ERP_URL}${path.to.accountSecurity}`;
+// No shared helper exists for "absolute URL from a path.to.* value" — inline
+// concatenation is the convention at every call site (~9 of this exact shape).
+const SECURITY_URL = `${ERP_URL}${path.to.accountSecurity}`;
 
 /**
  * Announce a newly-turned-on two-factor requirement to every active employee of
@@ -45,7 +52,7 @@ export async function sendMfaRequiredEmails(
     if (company.error) throw company.error;
     if (employees.error) throw employees.error;
 
-    const setupUrl = securityUrl();
+    const setupUrl = SECURITY_URL;
     const companyName = company.data.name;
     const subject = `Two-factor authentication is now required for ${companyName}`;
     const recipients = (employees.data ?? []).filter(
@@ -53,8 +60,7 @@ export async function sendMfaRequiredEmails(
         !!employee.email
     );
 
-    for (let i = 0; i < recipients.length; i += EMAIL_BATCH_SIZE) {
-      const batch = recipients.slice(i, i + EMAIL_BATCH_SIZE);
+    for (const batch of chunkArray(recipients, EMAIL_BATCH_SIZE)) {
       try {
         // The greeting is per-recipient, so each email is rendered separately.
         const items = await Promise.all(
@@ -109,18 +115,16 @@ export async function sendMfaEnabledEmail(
   userId: string
 ) {
   try {
-    const user = await serviceRole
-      .from("user")
-      .select("email, fullName")
-      .eq("id", userId)
-      .single();
+    // getUser also filters `active` — correct here, since the recipient just
+    // cleared requirePermissions to reach the verify route.
+    const user = await getUser(serviceRole, userId);
 
     if (user.error) throw user.error;
     if (!user.data.email) return;
 
     const email = MfaEnabledEmail({
       recipientName: user.data.fullName ?? undefined,
-      securityUrl: securityUrl()
+      securityUrl: SECURITY_URL
     });
 
     await trigger("send-email", {
