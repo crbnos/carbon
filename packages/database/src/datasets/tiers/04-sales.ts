@@ -30,7 +30,7 @@ export async function runTier4(ctx: Ctx): Promise<void> {
   const paymentTermId = ctx.refs.misc.paymentTermId;
   const shippingMethodId = need(
     ctx.refs.shippingMethods,
-    "UPS Ground",
+    ctx.dataset.foundation.defaultShippingMethod,
     "shipping method"
   );
 
