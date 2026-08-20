@@ -148,7 +148,10 @@ export default function OnboardingPlan() {
 
   return (
     <>
-      <div className="flex flex-col max-w-2xl w-full min-h-screen md:min-h-0">
+      {/* Not an OnboardingCard — a wide two-column grid rather than a form card —
+          but it caps and scrolls for the same reason. Mobile keeps min-h-screen
+          and scrolls the page instead. */}
+      <div className="flex flex-col max-w-2xl w-full min-h-screen md:min-h-0 md:max-h-full">
         <div className="sticky top-0 bg-background z-10 mb-4 rounded-lg">
           <CardHeader>
             <CardTitle>
@@ -160,7 +163,7 @@ export default function OnboardingPlan() {
           </CardHeader>
         </div>
 
-        <div className="flex-1">
+        <div className="flex-1 min-h-0 md:overflow-y-auto">
           <div
             className={cn(
               "grid gap-6",

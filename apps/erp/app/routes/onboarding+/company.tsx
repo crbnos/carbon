@@ -6,8 +6,6 @@ import { updateCompanySession } from "@carbon/auth/session.server";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
 import {
   Button,
-  Card,
-  CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -22,6 +20,11 @@ import {
   redirect,
   useLoaderData
 } from "react-router";
+import {
+  OnboardingCard,
+  OnboardingCardContent,
+  onboardingFormClassName
+} from "~/components";
 import {
   AddressAutocomplete,
   Currency,
@@ -131,16 +134,17 @@ export default function OnboardingCompany() {
   };
 
   return (
-    <Card className="max-w-lg">
+    <OnboardingCard>
       <ValidatedForm
         validator={addressValidator}
         defaultValues={initialValues}
         method="post"
+        className={onboardingFormClassName}
       >
         <CardHeader>
           <CardTitle>Now let's set up your company</CardTitle>
         </CardHeader>
-        <CardContent>
+        <OnboardingCardContent>
           <Hidden name="next" value={next} />
           <VStack spacing={4}>
             <Input autoFocus name="name" label="Company Name" />
@@ -149,7 +153,7 @@ export default function OnboardingCompany() {
             <Input name="website" label="Website" />
             <Currency name="baseCurrencyCode" label="Base Currency" />
           </VStack>
-        </CardContent>
+        </OnboardingCardContent>
 
         <CardFooter>
           <HStack>
@@ -168,6 +172,6 @@ export default function OnboardingCompany() {
           </HStack>
         </CardFooter>
       </ValidatedForm>
-    </Card>
+    </OnboardingCard>
   );
 }

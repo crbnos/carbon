@@ -7,8 +7,6 @@ import { datasetForIndustry } from "@carbon/database/datasets";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
 import {
   Button,
-  Card,
-  CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
@@ -39,6 +37,11 @@ import {
   useNavigation
 } from "react-router";
 import { z } from "zod";
+import {
+  OnboardingCard,
+  OnboardingCardContent,
+  onboardingFormClassName
+} from "~/components";
 import { Hidden, Submit } from "~/components/Form";
 import { useOnboarding } from "~/hooks";
 import {
@@ -286,15 +289,19 @@ export default function OnboardingIndustry() {
 
   if (step === "import-upload") {
     return (
-      <Card className="max-w-lg">
-        <Form method="post" encType="multipart/form-data">
+      <OnboardingCard>
+        <Form
+          method="post"
+          encType="multipart/form-data"
+          className={onboardingFormClassName}
+        >
           <CardHeader>
             <CardTitle>Restore from a backup</CardTitle>
             <CardDescription>
               Upload a Carbon backup and we'll set up your new company from it.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <OnboardingCardContent>
             <input type="hidden" name="next" value={next} />
             <input type="hidden" name="dataChoice" value="import" />
             <label
@@ -328,7 +335,7 @@ export default function OnboardingIndustry() {
                 onChange={(e) => setImportFile(e.target.files?.[0] ?? null)}
               />
             </label>
-          </CardContent>
+          </OnboardingCardContent>
           <CardFooter>
             <HStack>
               <Button
@@ -352,16 +359,17 @@ export default function OnboardingIndustry() {
             </HStack>
           </CardFooter>
         </Form>
-      </Card>
+      </OnboardingCard>
     );
   }
 
   return (
-    <Card className="max-w-lg">
+    <OnboardingCard>
       <ValidatedForm
         validator={onboardingIndustryValidator}
         defaultValues={initialValues}
         method="post"
+        className={onboardingFormClassName}
       >
         {step === "data-question" ? (
           <>
@@ -371,7 +379,7 @@ export default function OnboardingIndustry() {
                 Choose how to set up your new company.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <OnboardingCardContent>
               <Hidden name="next" value={next} />
               <Hidden name="dataChoice" value={dataChoice} />
               <ChoiceCardGroup
@@ -380,7 +388,7 @@ export default function OnboardingIndustry() {
                 onChange={setDataChoice}
                 options={dataChoiceOptions}
               />
-            </CardContent>
+            </OnboardingCardContent>
 
             <CardFooter>
               <HStack>
@@ -418,7 +426,7 @@ export default function OnboardingIndustry() {
                 We'll set up demo data to match your industry
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <OnboardingCardContent>
               <Hidden name="next" value={next} />
               <Hidden name="dataChoice" value="template" />
               <Hidden name="industryId" value={selectedIndustryId} />
@@ -427,7 +435,7 @@ export default function OnboardingIndustry() {
                 onChange={setSelectedIndustryId}
                 options={industryOptions}
               />
-            </CardContent>
+            </OnboardingCardContent>
 
             <CardFooter>
               <HStack>
@@ -445,6 +453,6 @@ export default function OnboardingIndustry() {
           </>
         )}
       </ValidatedForm>
-    </Card>
+    </OnboardingCard>
   );
 }
