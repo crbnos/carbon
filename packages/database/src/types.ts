@@ -10726,6 +10726,247 @@ export type Database = {
         }
         Relationships: []
       }
+      cxmlDocument: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          direction: Database["public"]["Enums"]["cxmlDocumentDirection"]
+          documentType: Database["public"]["Enums"]["cxmlDocumentType"]
+          externalId: string | null
+          id: string
+          integrationId: string
+          issues: Json
+          payload: Json
+          payloadId: string
+          purchaseOrderId: string | null
+          releasedAt: string | null
+          releasedBy: string | null
+          sourceDocument: string | null
+          sourceDocumentId: string | null
+          sourceDocumentReadableId: string | null
+          status: Database["public"]["Enums"]["cxmlDocumentStatus"]
+          supplierId: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          direction: Database["public"]["Enums"]["cxmlDocumentDirection"]
+          documentType: Database["public"]["Enums"]["cxmlDocumentType"]
+          externalId?: string | null
+          id?: string
+          integrationId: string
+          issues?: Json
+          payload: Json
+          payloadId: string
+          purchaseOrderId?: string | null
+          releasedAt?: string | null
+          releasedBy?: string | null
+          sourceDocument?: string | null
+          sourceDocumentId?: string | null
+          sourceDocumentReadableId?: string | null
+          status: Database["public"]["Enums"]["cxmlDocumentStatus"]
+          supplierId: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          direction?: Database["public"]["Enums"]["cxmlDocumentDirection"]
+          documentType?: Database["public"]["Enums"]["cxmlDocumentType"]
+          externalId?: string | null
+          id?: string
+          integrationId?: string
+          issues?: Json
+          payload?: Json
+          payloadId?: string
+          purchaseOrderId?: string | null
+          releasedAt?: string | null
+          releasedBy?: string | null
+          sourceDocument?: string | null
+          sourceDocumentId?: string | null
+          sourceDocumentReadableId?: string | null
+          status?: Database["public"]["Enums"]["cxmlDocumentStatus"]
+          supplierId?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cxmlDocument_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxmlDocument_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxmlDocument_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "cxmlDocument_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "cxmlDocument_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxmlDocument_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxmlDocument_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxmlDocument_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxmlDocument_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "cxmlDocument_integrationId_fkey"
+            columns: ["integrationId"]
+            isOneToOne: false
+            referencedRelation: "integration"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxmlDocument_integrationId_fkey"
+            columns: ["integrationId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxmlDocument_releasedBy_fkey"
+            columns: ["releasedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxmlDocument_releasedBy_fkey"
+            columns: ["releasedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxmlDocument_releasedBy_fkey"
+            columns: ["releasedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxmlDocument_releasedBy_fkey"
+            columns: ["releasedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxmlDocument_releasedBy_fkey"
+            columns: ["releasedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "cxmlDocument_supplierId_fkey"
+            columns: ["supplierId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderSuppliers"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "cxmlDocument_supplierId_fkey"
+            columns: ["supplierId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "supplier"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "cxmlDocument_supplierId_fkey"
+            columns: ["supplierId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "cxmlDocument_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxmlDocument_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxmlDocument_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxmlDocument_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cxmlDocument_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       demandActual: {
         Row: {
           actualQuantity: number
@@ -38115,6 +38356,188 @@ export type Database = {
           },
         ]
       }
+      punchoutSession: {
+        Row: {
+          buyerCookie: string
+          cart: Json | null
+          companyId: string
+          createdAt: string
+          createdBy: string
+          expiresAt: string
+          id: string
+          integrationId: string
+          purchaseOrderId: string | null
+          status: Database["public"]["Enums"]["punchoutSessionStatus"]
+          supplierId: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          buyerCookie: string
+          cart?: Json | null
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          expiresAt: string
+          id?: string
+          integrationId: string
+          purchaseOrderId?: string | null
+          status?: Database["public"]["Enums"]["punchoutSessionStatus"]
+          supplierId: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          buyerCookie?: string
+          cart?: Json | null
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          expiresAt?: string
+          id?: string
+          integrationId?: string
+          purchaseOrderId?: string | null
+          status?: Database["public"]["Enums"]["punchoutSessionStatus"]
+          supplierId?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "punchoutSession_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punchoutSession_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punchoutSession_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "punchoutSession_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "punchoutSession_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punchoutSession_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punchoutSession_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punchoutSession_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punchoutSession_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "punchoutSession_integrationId_fkey"
+            columns: ["integrationId"]
+            isOneToOne: false
+            referencedRelation: "integration"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punchoutSession_integrationId_fkey"
+            columns: ["integrationId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punchoutSession_supplierId_fkey"
+            columns: ["supplierId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderSuppliers"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "punchoutSession_supplierId_fkey"
+            columns: ["supplierId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "supplier"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "punchoutSession_supplierId_fkey"
+            columns: ["supplierId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "punchoutSession_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punchoutSession_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punchoutSession_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punchoutSession_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punchoutSession_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       purchaseInvoice: {
         Row: {
           assignee: string | null
@@ -39763,6 +40186,7 @@ export type Database = {
           sortOrder: number
           storageUnitId: string | null
           supplierExtendedPrice: number | null
+          supplierPartAuxiliaryId: string | null
           supplierPartId: string | null
           supplierShippingCost: number
           supplierTaxAmount: number
@@ -39815,6 +40239,7 @@ export type Database = {
           sortOrder?: number
           storageUnitId?: string | null
           supplierExtendedPrice?: number | null
+          supplierPartAuxiliaryId?: string | null
           supplierPartId?: string | null
           supplierShippingCost?: number
           supplierTaxAmount?: number
@@ -39867,6 +40292,7 @@ export type Database = {
           sortOrder?: number
           storageUnitId?: string | null
           supplierExtendedPrice?: number | null
+          supplierPartAuxiliaryId?: string | null
           supplierPartId?: string | null
           supplierShippingCost?: number
           supplierTaxAmount?: number
@@ -66860,14 +67286,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -68170,6 +68596,7 @@ export type Database = {
           sortOrder: number | null
           storageUnitId: string | null
           supplierExtendedPrice: number | null
+          supplierPartAuxiliaryId: string | null
           supplierPartId: string | null
           supplierPartIdFromSupplier: string | null
           supplierShippingCost: number | null
@@ -68506,14 +68933,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -71932,13 +72359,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
-            isOneToOne: false
-            referencedRelation: "country"
-            referencedColumns: ["alpha2"]
-          },
-          {
-            foreignKeyName: "address_countryCode_fkey"
             columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
@@ -71947,6 +72367,13 @@ export type Database = {
           {
             foreignKeyName: "address_countryCode_fkey"
             columns: ["invoiceCountryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["alpha2"]
+          },
+          {
+            foreignKeyName: "address_countryCode_fkey"
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -78562,6 +78989,21 @@ export type Database = {
         | "Indirect Cost"
         | "Variance"
         | "Total"
+      cxmlDocumentDirection: "Inbound" | "Outbound"
+      cxmlDocumentStatus:
+        | "Received"
+        | "Needs Review"
+        | "Posted"
+        | "Rejected"
+        | "Pending"
+        | "Sent"
+        | "Failed"
+      cxmlDocumentType:
+        | "Purchase Order"
+        | "Order Confirmation"
+        | "Ship Notice"
+        | "Invoice"
+        | "Credit Memo"
       deadlineType: "No Deadline" | "ASAP" | "Soft Deadline" | "Hard Deadline"
       demandForecastSourceType:
         | "Job Material"
@@ -78982,6 +79424,12 @@ export type Database = {
         | "Inspection"
       productionEventType: "Setup" | "Labor" | "Machine"
       productionQuantityType: "Rework" | "Scrap" | "Production"
+      punchoutSessionStatus:
+        | "Pending"
+        | "Returned"
+        | "Consumed"
+        | "Cancelled"
+        | "Expired"
       purchaseInvoiceStatus:
         | "Draft"
         | "Pending"
@@ -79940,6 +80388,23 @@ export const Constants = {
         "Variance",
         "Total",
       ],
+      cxmlDocumentDirection: ["Inbound", "Outbound"],
+      cxmlDocumentStatus: [
+        "Received",
+        "Needs Review",
+        "Posted",
+        "Rejected",
+        "Pending",
+        "Sent",
+        "Failed",
+      ],
+      cxmlDocumentType: [
+        "Purchase Order",
+        "Order Confirmation",
+        "Ship Notice",
+        "Invoice",
+        "Credit Memo",
+      ],
       deadlineType: ["No Deadline", "ASAP", "Soft Deadline", "Hard Deadline"],
       demandForecastSourceType: [
         "Job Material",
@@ -80399,6 +80864,13 @@ export const Constants = {
       ],
       productionEventType: ["Setup", "Labor", "Machine"],
       productionQuantityType: ["Rework", "Scrap", "Production"],
+      punchoutSessionStatus: [
+        "Pending",
+        "Returned",
+        "Consumed",
+        "Cancelled",
+        "Expired",
+      ],
       purchaseInvoiceStatus: [
         "Draft",
         "Pending",
