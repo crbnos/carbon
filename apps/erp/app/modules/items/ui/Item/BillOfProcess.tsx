@@ -890,16 +890,14 @@ const BillOfProcess = ({
         {isProductionRevision && (
           <ReleaseLockAlert isLocked={isReleaseLocked} className="mb-4" />
         )}
-        <div className="max-h-[60dvh] overflow-y-auto scrollbar-hide">
-          <SortableList
-            isReadOnly={isReadOnly}
-            items={items}
-            onReorder={onReorder}
-            onToggleItem={onToggleItem}
-            onRemoveItem={onRemoveItem}
-            renderItem={renderListItem}
-          />
-        </div>
+        <SortableList
+          isReadOnly={isReadOnly}
+          items={items}
+          onReorder={onReorder}
+          onToggleItem={onToggleItem}
+          onRemoveItem={onRemoveItem}
+          renderItem={renderListItem}
+        />
       </CardContent>
       {configuratorDisclosure.isOpen && configuration && (
         <ConfigurationEditor

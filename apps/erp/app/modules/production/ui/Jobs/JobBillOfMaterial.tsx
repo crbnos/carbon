@@ -570,15 +570,13 @@ const JobBillOfMaterial = ({
         </CardAction>
       </HStack>
       <CardContent>
-        <div className="max-h-[60dvh] overflow-y-auto scrollbar-hide">
-          <SortableList
-            items={items}
-            onReorder={onReorder}
-            onToggleItem={onToggleItem}
-            onRemoveItem={onRemoveItem}
-            renderItem={renderListItem}
-          />
-        </div>
+        <SortableList
+          items={items}
+          onReorder={onReorder}
+          onToggleItem={onToggleItem}
+          onRemoveItem={onRemoveItem}
+          renderItem={renderListItem}
+        />
       </CardContent>
     </Card>
   );
