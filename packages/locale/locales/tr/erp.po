@@ -1370,7 +1370,7 @@ msgid "Always"
 msgstr "Her zaman"
 
 msgid "Always sent — every notification shows in the bell menu."
-msgstr ""
+msgstr "Her zaman gönderilir — her bildirim çan menüsünde gösterilir."
 
 msgid "Always taken"
 msgstr "Her zaman alındı"
@@ -3406,7 +3406,7 @@ msgid "Connect Linear issue"
 msgstr "Linear sorununu bağla"
 
 msgid "Connect Slack under Settings → Integrations first."
-msgstr ""
+msgstr "Slack'i önce Ayarlar → İntegrasyonlar altında bağlayın."
 
 msgid "Connect the Otherwise handle to a node to run when no condition matches."
 msgstr "Hiçbir koşul eşleşmediğinde çalıştırılacak bir düğüme Aksi takdirde işlecini bağlayın."
@@ -4197,7 +4197,7 @@ msgid "Custom Fields"
 msgstr "Özel Alanlar"
 
 msgid "Custom fields are not available for items yet."
-msgstr ""
+msgstr "Özel alanlar henüz öğeler için kullanılabilir değildir."
 
 msgid "Custom SOW · we manage"
 msgstr "Özel SOW · biz yönetiriz"
@@ -5105,7 +5105,7 @@ msgid "Direct"
 msgstr "Doğrudan"
 
 msgid "Direct message to each recipient in your Slack workspace."
-msgstr ""
+msgstr "Slack çalışma alanınızdaki her alıcıya doğrudan mesaj."
 
 msgid "Direction"
 msgstr "Yön"
@@ -7599,7 +7599,7 @@ msgid "In the loop together"
 msgstr "Birlikte döngüde"
 
 msgid "In-app"
-msgstr ""
+msgstr "Uygulama içi"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "Uygulama içi bildirimler her zaman iletilir. Hangi konuların e-posta veya Slack aracılığıyla sizi ulaştıracağını seçin."
@@ -9280,7 +9280,7 @@ msgid "Need the right columns?"
 msgstr "Doğru sütunlara ihtiyacınız var mı?"
 
 msgid "Needs a Business or Partner plan."
-msgstr ""
+msgstr "Business veya Partner planı gereklidir."
 
 msgid "Needs fixing"
 msgstr "Onarılması gerekir"
@@ -9589,7 +9589,7 @@ msgid "New Unit of Measure"
 msgstr "Yeni Bir Ölçü Birimi"
 
 msgid "New version"
-msgstr ""
+msgstr "Yeni versiyon"
 
 msgid "New Version"
 msgstr "Yeni Sürüm"
@@ -10161,10 +10161,10 @@ msgid "Notification"
 msgstr "Bildirim"
 
 msgid "Notification type"
-msgstr ""
+msgstr "Bildirim türü"
 
 msgid "Notification Type"
-msgstr ""
+msgstr "Bildirim Türü"
 
 msgid "Notifications"
 msgstr "Bildirimler"
@@ -13359,7 +13359,7 @@ msgid "Sent complete date"
 msgstr "Gönderilen tamamlama tarihi"
 
 msgid "Sent to each recipient who has email notifications turned on."
-msgstr ""
+msgstr "E-posta bildirimleri açık olan her alıcıya gönderilir."
 
 msgid "Sequences"
 msgstr "Sıralamalar"
@@ -15559,16 +15559,16 @@ msgid "This version cannot be opened"
 msgstr "Bu sürüm açılamıyor"
 
 msgid "This version is live"
-msgstr ""
+msgstr "Bu versiyon yayında"
 
 msgid "This version is live, so it cannot be changed. You can still move steps around to tidy the layout."
-msgstr ""
+msgstr "Bu versiyon yayında olduğundan değiştirilemez. Düzeni düzenlemek için yine de adımları hareket ettirebilirsiniz."
 
 msgid "This version is live. Create a new version to edit."
 msgstr "Bu sürüm canlı. Düzenlemek için yeni bir sürüm oluşturun."
 
 msgid "This version is live. Create a new version to make changes. You can still move steps around to tidy the layout."
-msgstr ""
+msgstr "Bu versiyon yayında. Değişiklik yapmak için yeni bir versiyon oluşturun. Düzeni düzenlemek için yine de adımları hareket ettirebilirsiniz."
 
 msgid "This version's definition could not be read."
 msgstr "Bu sürümün tanımı okunamadı."
@@ -16954,7 +16954,7 @@ msgid "When"
 msgstr "Ne zaman"
 
 msgid "When {name} changes"
-msgstr ""
+msgstr "Ne zaman {name} değişir"
 
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "Bir bitmiş ürünün raf ömrü Hesaplanan olarak ayarlandığında, hesaplamaya hangi tüketilen girdilerin dahil edileceğini seçin."
@@ -17062,7 +17062,7 @@ msgid "When your fiscal and tax years start"
 msgstr "Mali ve vergi yıllarınız ne zaman başlar"
 
 msgid "Where a workflow notification is delivered — in-app is always sent, while email needs a Business or Partner plan and Slack needs your Slack workspace connected."
-msgstr ""
+msgstr "İş akışı bildiriminin nereye teslim edileceği — uygulama içi her zaman gönderilir, e-posta Business veya Partner planı gerektirir ve Slack, Slack çalışma alanınızın bağlı olması gerekir."
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "Bir operasyonun nerede çalıştırıldığı; işçilik ve teklif oranlarını taşır, genel giderler aralarındaki fark."

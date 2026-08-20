@@ -1370,7 +1370,7 @@ msgid "Always"
 msgstr "Siempre"
 
 msgid "Always sent — every notification shows in the bell menu."
-msgstr ""
+msgstr "Siempre enviado — cada notificación se muestra en el menú de campanilla."
 
 msgid "Always taken"
 msgstr "Siempre se toma"
@@ -3406,7 +3406,7 @@ msgid "Connect Linear issue"
 msgstr "Conectar problema de Linear"
 
 msgid "Connect Slack under Settings → Integrations first."
-msgstr ""
+msgstr "Conecta Slack en Configuración → Integraciones primero."
 
 msgid "Connect the Otherwise handle to a node to run when no condition matches."
 msgstr "Conecta el manejador Otherwise a un nodo para ejecutarlo cuando ninguna condición coincida."
@@ -4197,7 +4197,7 @@ msgid "Custom Fields"
 msgstr "Campos Personalizados"
 
 msgid "Custom fields are not available for items yet."
-msgstr ""
+msgstr "Los campos personalizados aún no están disponibles para artículos."
 
 msgid "Custom SOW · we manage"
 msgstr "SOW personalizado · nosotros gestionamos"
@@ -5105,7 +5105,7 @@ msgid "Direct"
 msgstr "Directo"
 
 msgid "Direct message to each recipient in your Slack workspace."
-msgstr ""
+msgstr "Mensaje directo a cada destinatario en tu espacio de trabajo de Slack."
 
 msgid "Direction"
 msgstr "Dirección"
@@ -7599,7 +7599,7 @@ msgid "In the loop together"
 msgstr "En el ciclo juntos"
 
 msgid "In-app"
-msgstr ""
+msgstr "En la aplicación"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "Las notificaciones en la aplicación siempre se entregan. Elija qué temas también le llegan por correo electrónico o Slack."
@@ -9280,7 +9280,7 @@ msgid "Need the right columns?"
 msgstr "¿Necesitas las columnas correctas?"
 
 msgid "Needs a Business or Partner plan."
-msgstr ""
+msgstr "Requiere un plan Business o Partner."
 
 msgid "Needs fixing"
 msgstr "Necesita reparación"
@@ -9589,7 +9589,7 @@ msgid "New Unit of Measure"
 msgstr "Nueva Unidad de Medida"
 
 msgid "New version"
-msgstr ""
+msgstr "Nueva versión"
 
 msgid "New Version"
 msgstr "Nueva Versión"
@@ -10161,10 +10161,10 @@ msgid "Notification"
 msgstr "Notificación"
 
 msgid "Notification type"
-msgstr ""
+msgstr "Tipo de notificación"
 
 msgid "Notification Type"
-msgstr ""
+msgstr "Tipo de Notificación"
 
 msgid "Notifications"
 msgstr "Notificaciones"
@@ -13359,7 +13359,7 @@ msgid "Sent complete date"
 msgstr "Fecha de envío completado"
 
 msgid "Sent to each recipient who has email notifications turned on."
-msgstr ""
+msgstr "Enviado a cada destinatario que tiene las notificaciones por correo electrónico activadas."
 
 msgid "Sequences"
 msgstr "Secuencias"
@@ -15559,16 +15559,16 @@ msgid "This version cannot be opened"
 msgstr "Esta versión no se puede abrir"
 
 msgid "This version is live"
-msgstr ""
+msgstr "Esta versión está en vivo"
 
 msgid "This version is live, so it cannot be changed. You can still move steps around to tidy the layout."
-msgstr ""
+msgstr "Esta versión está en vivo, por lo que no se puede cambiar. Aún puedes mover los pasos para ordenar el diseño."
 
 msgid "This version is live. Create a new version to edit."
 msgstr "Esta versión está activa. Crea una nueva versión para editar."
 
 msgid "This version is live. Create a new version to make changes. You can still move steps around to tidy the layout."
-msgstr ""
+msgstr "Esta versión está en vivo. Crea una nueva versión para hacer cambios. Aún puedes mover los pasos para ordenar el diseño."
 
 msgid "This version's definition could not be read."
 msgstr "La definición de esta versión no se pudo leer."
@@ -16954,7 +16954,7 @@ msgid "When"
 msgstr "Cuándo"
 
 msgid "When {name} changes"
-msgstr ""
+msgstr "Cuando {name} cambia"
 
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "Cuando la vida útil de un producto terminado se establece en Calculada, elige qué insumos consumidos alimentan el cálculo."
@@ -17062,7 +17062,7 @@ msgid "When your fiscal and tax years start"
 msgstr "Cuándo comienzan sus años fiscales y tributarios"
 
 msgid "Where a workflow notification is delivered — in-app is always sent, while email needs a Business or Partner plan and Slack needs your Slack workspace connected."
-msgstr ""
+msgstr "Dónde se entrega una notificación de flujo de trabajo — en la aplicación siempre se envía, mientras que el correo electrónico requiere un plan Business o Partner y Slack requiere que tu espacio de trabajo de Slack esté conectado."
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "Dónde se ejecuta una operación; lleva tasas de trabajo y cotización, con gastos generales la diferencia entre ellas."

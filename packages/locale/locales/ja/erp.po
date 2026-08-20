@@ -1370,7 +1370,7 @@ msgid "Always"
 msgstr "常に"
 
 msgid "Always sent — every notification shows in the bell menu."
-msgstr ""
+msgstr "常に送信 — すべての通知がベルメニューに表示されます。"
 
 msgid "Always taken"
 msgstr "常に取得"
@@ -3406,7 +3406,7 @@ msgid "Connect Linear issue"
 msgstr "Linear イシューを接続"
 
 msgid "Connect Slack under Settings → Integrations first."
-msgstr ""
+msgstr "最初に設定 → 統合でSlackを接続してください。"
 
 msgid "Connect the Otherwise handle to a node to run when no condition matches."
 msgstr "条件に一致しないときに実行するノードにOtherwiseハンドルを接続します。"
@@ -4197,7 +4197,7 @@ msgid "Custom Fields"
 msgstr "カスタムフィールド"
 
 msgid "Custom fields are not available for items yet."
-msgstr ""
+msgstr "カスタムフィールドはまだアイテムで利用できません。"
 
 msgid "Custom SOW · we manage"
 msgstr "カスタムSOW · 当社が管理"
@@ -5105,7 +5105,7 @@ msgid "Direct"
 msgstr "直接"
 
 msgid "Direct message to each recipient in your Slack workspace."
-msgstr ""
+msgstr "Slackワークスペース内の各受信者への直接メッセージ。"
 
 msgid "Direction"
 msgstr "方向"
@@ -7599,7 +7599,7 @@ msgid "In the loop together"
 msgstr "一緒にループの中にいる"
 
 msgid "In-app"
-msgstr ""
+msgstr "アプリ内"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "アプリ内通知は常に配信されます。どのトピックがメールまたはSlackでも届くかを選択してください。"
@@ -9280,7 +9280,7 @@ msgid "Need the right columns?"
 msgstr "正しい列が必要ですか？"
 
 msgid "Needs a Business or Partner plan."
-msgstr ""
+msgstr "ビジネスプランまたはパートナープランが必要です。"
 
 msgid "Needs fixing"
 msgstr "修理が必要です"
@@ -9589,7 +9589,7 @@ msgid "New Unit of Measure"
 msgstr "新しい測定単位"
 
 msgid "New version"
-msgstr ""
+msgstr "新しいバージョン"
 
 msgid "New Version"
 msgstr "新しいバージョン"
@@ -10161,10 +10161,10 @@ msgid "Notification"
 msgstr "通知"
 
 msgid "Notification type"
-msgstr ""
+msgstr "通知タイプ"
 
 msgid "Notification Type"
-msgstr ""
+msgstr "通知タイプ"
 
 msgid "Notifications"
 msgstr "通知"
@@ -13359,7 +13359,7 @@ msgid "Sent complete date"
 msgstr "送信完了日"
 
 msgid "Sent to each recipient who has email notifications turned on."
-msgstr ""
+msgstr "メール通知がオンになっている各受信者に送信されます。"
 
 msgid "Sequences"
 msgstr "シーケンス"
@@ -15559,16 +15559,16 @@ msgid "This version cannot be opened"
 msgstr "このバージョンは開くことができません"
 
 msgid "This version is live"
-msgstr ""
+msgstr "このバージョンはライブです"
 
 msgid "This version is live, so it cannot be changed. You can still move steps around to tidy the layout."
-msgstr ""
+msgstr "このバージョンはライブなので変更できません。レイアウトを整えるためにステップを移動することができます。"
 
 msgid "This version is live. Create a new version to edit."
 msgstr "このバージョンはライブです。編集するには新しいバージョンを作成してください。"
 
 msgid "This version is live. Create a new version to make changes. You can still move steps around to tidy the layout."
-msgstr ""
+msgstr "このバージョンはライブです。変更を加えるには新しいバージョンを作成してください。レイアウトを整えるためにステップを移動することができます。"
 
 msgid "This version's definition could not be read."
 msgstr "このバージョンの定義を読み取ることができませんでした。"
@@ -16954,7 +16954,7 @@ msgid "When"
 msgstr "いつ"
 
 msgid "When {name} changes"
-msgstr ""
+msgstr "{name}が変更されるとき"
 
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "完成品の賞味期限が「計算」に設定されている場合、計算に使用される消費入力を選択します。"
@@ -17062,7 +17062,7 @@ msgid "When your fiscal and tax years start"
 msgstr "会計年度および税務年度の開始時期"
 
 msgid "Where a workflow notification is delivered — in-app is always sent, while email needs a Business or Partner plan and Slack needs your Slack workspace connected."
-msgstr ""
+msgstr "ワークフロー通知が配信される場所 — アプリ内は常に送信されますが、メールはビジネスプランまたはパートナープランが必要で、Slackはワークスペースが接続されている必要があります。"
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "操作が実行される場所。労働と見積もりレート、オーバーヘッドはそれらの違いです。"

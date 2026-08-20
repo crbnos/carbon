@@ -1370,7 +1370,7 @@ msgid "Always"
 msgstr "항상"
 
 msgid "Always sent — every notification shows in the bell menu."
-msgstr ""
+msgstr "항상 전송됨 — 모든 알림이 벨 메뉴에 표시됩니다."
 
 msgid "Always taken"
 msgstr "항상 사용됨"
@@ -3406,7 +3406,7 @@ msgid "Connect Linear issue"
 msgstr "Linear 이슈 연결"
 
 msgid "Connect Slack under Settings → Integrations first."
-msgstr ""
+msgstr "먼저 설정 → 통합 아래에서 Slack을 연결하세요."
 
 msgid "Connect the Otherwise handle to a node to run when no condition matches."
 msgstr "조건이 일치하지 않을 때 실행할 노드에 Otherwise 핸들을 연결합니다."
@@ -4197,7 +4197,7 @@ msgid "Custom Fields"
 msgstr "사용자 정의 필드"
 
 msgid "Custom fields are not available for items yet."
-msgstr ""
+msgstr "사용자 정의 필드는 아직 항목에 사용할 수 없습니다."
 
 msgid "Custom SOW · we manage"
 msgstr "맞춤 SOW · 저희가 관리"
@@ -5105,7 +5105,7 @@ msgid "Direct"
 msgstr "직접"
 
 msgid "Direct message to each recipient in your Slack workspace."
-msgstr ""
+msgstr "Slack 작업 공간의 각 수신자에게 직접 메시지를 보냅니다."
 
 msgid "Direction"
 msgstr "방향"
@@ -7599,7 +7599,7 @@ msgid "In the loop together"
 msgstr "함께 정보 공유하기"
 
 msgid "In-app"
-msgstr ""
+msgstr "인앱"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "인앱 알림은 항상 전달됩니다. 이메일 또는 Slack으로도 전달받을 주제를 선택하세요."
@@ -9280,7 +9280,7 @@ msgid "Need the right columns?"
 msgstr "적절한 열이 필요하신가요?"
 
 msgid "Needs a Business or Partner plan."
-msgstr ""
+msgstr "Business 또는 Partner 요금제가 필요합니다."
 
 msgid "Needs fixing"
 msgstr "수정 필요"
@@ -9589,7 +9589,7 @@ msgid "New Unit of Measure"
 msgstr "새 측정 단위"
 
 msgid "New version"
-msgstr ""
+msgstr "새 버전"
 
 msgid "New Version"
 msgstr "새 버전"
@@ -10161,10 +10161,10 @@ msgid "Notification"
 msgstr "알림"
 
 msgid "Notification type"
-msgstr ""
+msgstr "알림 유형"
 
 msgid "Notification Type"
-msgstr ""
+msgstr "알림 유형"
 
 msgid "Notifications"
 msgstr "알림"
@@ -13359,7 +13359,7 @@ msgid "Sent complete date"
 msgstr "발송 완료 날짜"
 
 msgid "Sent to each recipient who has email notifications turned on."
-msgstr ""
+msgstr "이메일 알림이 켜져 있는 각 수신자에게 전송됩니다."
 
 msgid "Sequences"
 msgstr "시퀀스"
@@ -15559,16 +15559,16 @@ msgid "This version cannot be opened"
 msgstr "이 버전을 열 수 없습니다."
 
 msgid "This version is live"
-msgstr ""
+msgstr "이 버전은 활성화되어 있습니다"
 
 msgid "This version is live, so it cannot be changed. You can still move steps around to tidy the layout."
-msgstr ""
+msgstr "이 버전은 활성화되어 있어서 변경할 수 없습니다. 여전히 단계를 이동하여 레이아웃을 정리할 수 있습니다."
 
 msgid "This version is live. Create a new version to edit."
 msgstr "이 버전은 활성입니다. 편집할 새 버전을 만드십시오."
 
 msgid "This version is live. Create a new version to make changes. You can still move steps around to tidy the layout."
-msgstr ""
+msgstr "이 버전은 활성화되어 있습니다. 변경하려면 새 버전을 만드세요. 여전히 단계를 이동하여 레이아웃을 정리할 수 있습니다."
 
 msgid "This version's definition could not be read."
 msgstr "이 버전의 정의를 읽을 수 없습니다."
@@ -16954,7 +16954,7 @@ msgid "When"
 msgstr "시점"
 
 msgid "When {name} changes"
-msgstr ""
+msgstr "{name}이(가) 변경될 때"
 
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "완제품의 유효기간이 계산됨으로 설정된 경우, 계산에 반영할 소비 투입물을 선택하세요."
@@ -17062,7 +17062,7 @@ msgid "When your fiscal and tax years start"
 msgstr "회계연도 및 세무연도가 시작되는 시기"
 
 msgid "Where a workflow notification is delivered — in-app is always sent, while email needs a Business or Partner plan and Slack needs your Slack workspace connected."
-msgstr ""
+msgstr "워크플로우 알림이 전송되는 위치 — 인앱은 항상 전송되며, 이메일은 Business 또는 Partner 요금제가 필요하고 Slack은 Slack 작업 공간이 연결되어야 합니다."
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "공정작업이 실행되는 곳으로, 노무 및 견적 요율을 가지며 두 요율의 차이가 간접비입니다."
