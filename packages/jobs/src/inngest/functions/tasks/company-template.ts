@@ -97,10 +97,14 @@ async function writeTemplateMarker(
   const { companyId, userId, templateRunId, patch } = args;
   const existing = await readTemplateMarker(client, companyId);
   const metadata: TemplateMeta = {
-    templateRunId,
     status: "running",
     ...existing?.metadata,
-    ...patch
+    ...patch,
+    // LAST, unlike company-restore's copy of this: readRestoreMarker filters by
+    // restoreRunId so its stored id can never differ, but readTemplateMarker
+    // looks up by companyId alone. Merged earlier, a previous failed run's id
+    // would shadow this one's and the Keep/Revert buttons would post it.
+    templateRunId
   };
 
   const written = existing
@@ -211,7 +215,9 @@ export const companyTemplateFunction = inngest.createFunction(
         patch: {
           status: "running",
           datasetKey,
-          startedAt: datetime.timestamp()
+          startedAt: datetime.timestamp(),
+          // A retry, or a new run after a failed one, inherits that marker's error.
+          error: null
         }
       });
 
