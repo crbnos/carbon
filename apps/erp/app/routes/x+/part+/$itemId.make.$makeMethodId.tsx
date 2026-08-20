@@ -213,7 +213,7 @@ export default function PartMakeMethodPage() {
               metadata={{
                 itemId: model?.itemId ?? undefined
               }}
-              modelPath={model?.modelPath ?? null}
+              modelUpload={model ?? null}
               title={t`CAD Model`}
               uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
               viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"

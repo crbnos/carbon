@@ -328,7 +328,7 @@ export default function JobDetailsRoute() {
             jobId: jobData?.job?.id ?? undefined,
             itemId: jobData?.job?.itemId ?? undefined
           }}
-          modelPath={jobData?.job?.modelPath ?? null}
+          modelUpload={jobData?.job ?? null}
           title="CAD Model"
           uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
           viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"

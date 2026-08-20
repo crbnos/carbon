@@ -319,7 +319,7 @@ export default function AffectedItemDetail({
                 isDisabled ? <LockedHint reason={disabledReason} /> : undefined
               }
               metadata={{ itemId: partData.itemId }}
-              modelPath={partData.partSummary?.modelPath ?? null}
+              modelUpload={partData.partSummary ?? null}
               title={t`CAD Model`}
             />
           </>
