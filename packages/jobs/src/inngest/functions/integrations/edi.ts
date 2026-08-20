@@ -1,5 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
+import { resolveIntegrationSecrets } from "@carbon/ee";
 import type {
   EdiIssue,
   EdiOutboundPayload,
@@ -24,19 +25,30 @@ const SOURCE_DOCUMENT_LABEL: Record<string, string> = {
   salesInvoice: "Sales Invoice"
 };
 
-// Find the company's active EDI provider + credentials.
+// Find the company's active EDI provider + credentials. Secret material
+// (apiKey/webhookSecret) lives in Supabase Vault; merge it back so callers
+// read the same shape as before. Throws (fail-closed) when the vault read
+// fails — Inngest retries surface the misconfiguration instead of sending
+// with missing credentials.
 async function getActiveEdiProvider(client: ServiceClient, companyId: string) {
   for (const id of ediProviderIds) {
     const { data } = await client
       .from("companyIntegration")
-      .select("active, metadata")
+      .select("active, metadata, secretRef")
       .eq("id", id)
       .eq("companyId", companyId)
       .maybeSingle();
     if (data?.active) {
+      const resolved = await resolveIntegrationSecrets(
+        client,
+        companyId,
+        id,
+        data.metadata,
+        data.secretRef
+      );
       return {
         provider: getEdiProvider(id),
-        creds: data.metadata as unknown as EdiProviderCredentials
+        creds: resolved as unknown as EdiProviderCredentials
       };
     }
   }

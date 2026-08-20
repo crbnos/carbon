@@ -29,6 +29,7 @@ export const SECRET_KEYS: Record<string, string[]> = {
   xero: ["credentials.accessToken", "credentials.refreshToken"],
   quickbooks: ["credentials.accessToken", "credentials.refreshToken"],
   rillet: ["credentials.apiKey", "credentials.providerMetadata.webhookToken"],
+  orderful: ["apiKey", "webhookSecret"],
   "paperless-parts": ["apiKey", "secretKey"],
   resend: ["apiKey"],
   // email carries a secret in EITHER variant: Resend `apiKey` or SMTP `password`

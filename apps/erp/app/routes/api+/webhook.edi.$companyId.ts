@@ -1,4 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { resolveIntegrationSecrets } from "@carbon/ee";
 import type { EdiProviderCredentials } from "@carbon/ee/edi.server";
 import { ediProviderIds, getEdiProvider } from "@carbon/ee/edi.server";
 import { getLogger } from "@carbon/logger";
@@ -35,7 +36,25 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const integration = await getIntegration(serviceRole, id, companyId);
     if (integration.data?.active) {
       providerId = id;
-      creds = integration.data.metadata as unknown as EdiProviderCredentials;
+      try {
+        // Secret material (apiKey/webhookSecret) lives in Supabase Vault; merge
+        // it back so we read the same shape as before. serviceRole is required
+        // for the vault RPCs.
+        const resolved = await resolveIntegrationSecrets(
+          serviceRole,
+          companyId,
+          id,
+          integration.data.metadata,
+          integration.data.secretRef
+        );
+        creds = resolved as unknown as EdiProviderCredentials;
+      } catch (err) {
+        logger.error("EDI webhook: failed to resolve integration secrets", {
+          error: err
+        });
+        // Non-2xx → the provider redelivers once the secret is repaired.
+        return data({ success: false }, { status: 500 });
+      }
       break;
     }
   }
