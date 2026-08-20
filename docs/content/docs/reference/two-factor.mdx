@@ -43,7 +43,9 @@ Sessions that already existed before you enrolled don't get a free pass. Carbon 
 
 Open **Settings → System → Security** and find the **Two-Factor Authentication Enforcement** card. Turning the switch on means anyone opening that company has to have an authenticator set up. There's no grace period; it takes effect on their next page load.
 
-Flipping the switch on also emails every active employee of the company, so nobody's first warning is a locked screen. The message names the company, links straight to **Account → Security**, and tells people who already have an authenticator that nothing changes for them. It's sent once, on the off → on transition — toggling the switch back and forth doesn't mail everyone again, and turning enforcement *off* sends nothing.
+Flipping the switch on also emails every active employee of the company, so nobody's first warning is a locked screen. The message names the company, links straight to **Account → Security**, and tells people who already have an authenticator that nothing changes for them.
+
+It goes out on each off → on transition. Turning enforcement *off* sends nothing, and re-saving a setting that is already on sends nothing either. But if you disable enforcement and later switch it back on, everyone is emailed again — by that point they've been told the requirement was lifted, so they need telling that it's back.
 
 Someone without one sees a full-screen prompt instead of the app, with a **"Set up authenticator app"** button that runs the same QR-and-code flow as the account page. They can complete it right there. The only other thing on that screen is **"Sign out"** — there is no way past it.
 
