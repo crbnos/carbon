@@ -4,6 +4,7 @@ export const path = {
     authenticatedRoot: x,
     login: "/login",
     mfa: "/mfa",
+    unlock: "/unlock",
     refreshSession: "/refresh-session"
   }
 };

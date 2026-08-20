@@ -6948,6 +6948,7 @@ export type Database = {
           companyId: string
           id: string
           metadata: Json
+          secretRef: string | null
           updatedAt: string
           updatedBy: string | null
         }
@@ -6956,6 +6957,7 @@ export type Database = {
           companyId: string
           id: string
           metadata?: Json
+          secretRef?: string | null
           updatedAt?: string
           updatedBy?: string | null
         }
@@ -6964,6 +6966,7 @@ export type Database = {
           companyId?: string
           id?: string
           metadata?: Json
+          secretRef?: string | null
           updatedAt?: string
           updatedBy?: string | null
         }
@@ -18277,6 +18280,160 @@ export type Database = {
         }
         Relationships: []
       }
+      intercompanyEliminationLine: {
+        Row: {
+          accountId: string
+          amount: number
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          intercompanyTransactionId: string
+          itemId: string | null
+          journalLineId: string
+          quantity: number | null
+          role: Database["public"]["Enums"]["intercompanyEliminationRole"]
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          accountId: string
+          amount: number
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          intercompanyTransactionId: string
+          itemId?: string | null
+          journalLineId: string
+          quantity?: number | null
+          role: Database["public"]["Enums"]["intercompanyEliminationRole"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          accountId?: string
+          amount?: number
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          intercompanyTransactionId?: string
+          itemId?: string | null
+          journalLineId?: string
+          quantity?: number | null
+          role?: Database["public"]["Enums"]["intercompanyEliminationRole"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intercompanyEliminationLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyEliminationLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyEliminationLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "intercompanyEliminationLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "intercompanyEliminationLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyEliminationLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyEliminationLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyEliminationLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyEliminationLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "intercompanyEliminationLine_intercompanyTransactionId_fkey"
+            columns: ["intercompanyTransactionId"]
+            isOneToOne: false
+            referencedRelation: "intercompanyTransaction"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyEliminationLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyEliminationLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyEliminationLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyEliminationLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intercompanyEliminationLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       intercompanyTransaction: {
         Row: {
           amount: number
@@ -24488,6 +24645,7 @@ export type Database = {
           createdBy: string | null
           customFields: Json | null
           description: string | null
+          eliminationKind: Database["public"]["Enums"]["eliminationKind"] | null
           id: string
           journalEntryId: string
           postedAt: string | null
@@ -24510,6 +24668,9 @@ export type Database = {
           createdBy?: string | null
           customFields?: Json | null
           description?: string | null
+          eliminationKind?:
+            | Database["public"]["Enums"]["eliminationKind"]
+            | null
           id?: string
           journalEntryId: string
           postedAt?: string | null
@@ -24532,6 +24693,9 @@ export type Database = {
           createdBy?: string | null
           customFields?: Json | null
           description?: string | null
+          eliminationKind?:
+            | Database["public"]["Enums"]["eliminationKind"]
+            | null
           id?: string
           journalEntryId?: string
           postedAt?: string | null
@@ -66697,6 +66861,7 @@ export type Database = {
           {
             foreignKeyName: "partner_id_fkey"
             columns: ["supplierLocationId"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -68342,14 +68507,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -71768,7 +71933,7 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -72329,14 +72494,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -75697,6 +75862,10 @@ export type Database = {
           netChange: number
         }[]
       }
+      attach_audit_log_append_only: {
+        Args: { p_table_name: string }
+        Returns: undefined
+      }
       attach_event_trigger: {
         Args: {
           after_sync_functions?: string[]
@@ -75846,6 +76015,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      delete_integration_secret: {
+        Args: { p_company_id: string; p_integration_id: string }
+        Returns: undefined
+      }
       delete_old_audit_logs: {
         Args: { p_company_id: string; p_cutoff_date: string }
         Returns: number
@@ -75867,7 +76040,11 @@ export type Database = {
         Returns: string
       }
       generateEliminationEntries: {
-        Args: { p_company_group_id: string; p_user_id: string }
+        Args: {
+          p_company_group_id: string
+          p_regenerate?: boolean
+          p_user_id: string
+        }
         Returns: number
       }
       get_action_tasks_by_item_and_process: {
@@ -76363,6 +76540,10 @@ export type Database = {
           targetHasCompanyId: boolean
           targetTable: string
         }[]
+      }
+      get_integration_secret: {
+        Args: { p_company_id: string; p_integration_id: string }
+        Returns: Json
       }
       get_inventory_quantities: {
         Args: { company_id: string; item_id?: string; location_id: string }
@@ -77714,7 +77895,7 @@ export type Database = {
         Args: { p_company_id: string; p_entries: Json[] }
         Returns: number
       }
-      is_claims_admin: { Args: never; Returns: boolean }
+      is_claims_admin: { Args: { company: string }; Returns: boolean }
       is_last_job_operation: {
         Args: { operation_id: string }
         Returns: boolean
@@ -78292,6 +78473,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      upsert_integration_secret: {
+        Args: { p_company_id: string; p_integration_id: string; p_secret: Json }
+        Returns: string
+      }
       upsert_to_search_index: {
         Args: {
           p_company_id: string
@@ -78473,6 +78658,7 @@ export type Database = {
         | "Audio"
         | "Other"
         | "Model"
+      eliminationKind: "IC Balance" | "IC Revenue"
       employeeTypeSystemType: "Admin" | "Console Operator"
       externalLinkDocumentType:
         | "Quote"
@@ -78540,6 +78726,11 @@ export type Database = {
         | "Passed"
         | "Failed"
         | "Partial"
+      intercompanyEliminationRole:
+        | "Control"
+        | "Revenue"
+        | "COGS"
+        | "Capitalization"
       inventoryCountStatus: "Draft" | "Pending" | "Posted"
       itemCostingMethod: "Standard" | "Average" | "LIFO" | "FIFO"
       itemLedgerDocumentType:
@@ -79854,6 +80045,7 @@ export const Constants = {
         "Other",
         "Model",
       ],
+      eliminationKind: ["IC Balance", "IC Revenue"],
       employeeTypeSystemType: ["Admin", "Console Operator"],
       externalLinkDocumentType: [
         "Quote",
@@ -79927,6 +80119,12 @@ export const Constants = {
         "Passed",
         "Failed",
         "Partial",
+      ],
+      intercompanyEliminationRole: [
+        "Control",
+        "Revenue",
+        "COGS",
+        "Capitalization",
       ],
       inventoryCountStatus: ["Draft", "Pending", "Posted"],
       itemCostingMethod: ["Standard", "Average", "LIFO", "FIFO"],

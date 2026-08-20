@@ -425,6 +425,9 @@ msgstr "{0}의 PIN 입력"
 msgid "Enter the 6-digit code from your authenticator app"
 msgstr "인증 앱의 6자리 코드를 입력하세요"
 
+msgid "Enter the 6-digit code from your authenticator app to resume."
+msgstr "인증 앱에서 6자리 코드를 입력하여 계속하세요."
+
 msgid "Error"
 msgstr "오류"
 
@@ -926,6 +929,9 @@ msgstr "작업자 수행"
 msgid "Optional"
 msgstr "선택 사항"
 
+msgid "or"
+msgstr "또는"
+
 msgid "Overall result"
 msgstr "전체 결과"
 
@@ -946,6 +952,9 @@ msgstr "부분 처리"
 
 msgid "Passed Inspection"
 msgstr "검사 합격"
+
+msgid "Passkey unlock failed"
+msgstr "패스키 잠금 해제 실패"
 
 msgid "Pause"
 msgstr "일시정지"
@@ -1221,6 +1230,9 @@ msgstr "일련번호"
 msgid "Serial Numbers"
 msgstr "일련번호"
 
+msgid "Session locked"
+msgstr "세션이 잠겨 있음"
+
 msgid "Set Clock Out"
 msgstr "퇴근 처리"
 
@@ -1259,6 +1271,9 @@ msgstr "로그아웃"
 
 msgid "Sign Out"
 msgstr "로그아웃"
+
+msgid "Sign out instead"
+msgstr "대신 로그아웃"
 
 msgid "Signed in as {stationName}"
 msgstr "{stationName}(으)로 로그인됨"
@@ -1393,11 +1408,20 @@ msgstr "2단계 인증 필수"
 msgid "Type a message..."
 msgstr "메시지를 입력하세요..."
 
+msgid "Unable to unlock"
+msgstr "잠금을 해제할 수 없음"
+
 msgid "Unissued serial/batch materials"
 msgstr "출고되지 않은 일련번호/배치 자재"
 
 msgid "Unknown"
 msgstr "알 수 없음"
+
+msgid "Unlock"
+msgstr "잠금 해제"
+
+msgid "Unlock with passkey"
+msgstr "패스키로 잠금 해제"
 
 msgid "Unpick"
 msgstr "피킹 취소"
@@ -1475,3 +1499,6 @@ msgstr "{hoursElapsed}시간 동안 출근 상태입니다. 퇴근 처리를 잊
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "조직에서 인증 앱을 요구하고 있습니다. Carbon에서 설정한 후 여기로 돌아오세요."
+
+msgid "Your session was locked after inactivity."
+msgstr "세션이 비활성 후 잠겼습니다."

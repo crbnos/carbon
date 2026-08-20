@@ -7,12 +7,14 @@ import {
 } from "@carbon/react";
 import { useCompanyTimeZone, useLocationTimeZone } from "./useCompanyTimeZone";
 import { useDateFormatter } from "./useDateFormatter";
+import { useIdle } from "./useIdle";
 import { useRealtime } from "./useRealtime";
 import { useUser } from "./useUser";
 
 export {
   useCompanyTimeZone,
   useDateFormatter,
+  useIdle,
   useLocationTimeZone,
   useNanoStore,
   useOptimisticLocation,

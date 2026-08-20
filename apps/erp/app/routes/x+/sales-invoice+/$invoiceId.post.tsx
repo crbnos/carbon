@@ -6,6 +6,7 @@ import { SalesInvoiceEmail } from "@carbon/documents/email";
 import { createMappingService } from "@carbon/ee/accounting";
 import { validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { ConnectInvoiceLineInput } from "@carbon/stripe/connect.server";
@@ -598,6 +599,12 @@ export async function action(args: ActionFunctionArgs) {
     outputs: { salesInvoice: { id: invoiceId }, postedBy: { id: userId } },
     companyId,
     actorId: userId
+  });
+
+  trackWorkEvent("sales_invoice_posted", {
+    companyId,
+    userId,
+    salesInvoiceId: invoiceId
   });
 
   const acceptLanguage = request.headers.get("accept-language");

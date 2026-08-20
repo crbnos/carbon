@@ -635,6 +635,13 @@ export const intercompanyTransactionStatuses = [
   "Eliminated"
 ] as const;
 
+export const intercompanyEliminationRoles = [
+  "Control",
+  "Revenue",
+  "COGS",
+  "Capitalization"
+] as const;
+
 export const intercompanyTransactionValidator = z
   .object({
     sourceCompanyId: z

@@ -59,9 +59,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       const permission = claims.permissions[permissionModule];
       if (!permission) return false;
       // Check if user has view permission for this company
-      return (
-        permission.view.includes("0") || permission.view.includes(companyId)
-      );
+      return permission.view.includes(companyId);
     })
     .map(([entityType]) => entityType);
 

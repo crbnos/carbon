@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { getQuoteDisplayId } from "@carbon/documents/utils";
 import { ValidatedForm } from "@carbon/form";
 import {
   Alert,
@@ -170,7 +171,7 @@ const QuotationFinalizeModal = ({
           fetcher={fetcher}
         >
           <ModalHeader>
-            <ModalTitle>{`Finalize ${quote?.quoteId}`}</ModalTitle>
+            <ModalTitle>{`Finalize ${getQuoteDisplayId(quote)}`}</ModalTitle>
             <ModalDescription>
               <Trans>Are you sure you want to finalize the quote?</Trans>
             </ModalDescription>

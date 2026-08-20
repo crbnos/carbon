@@ -38,6 +38,7 @@ import MotionMoney from "./MotionMoney";
 import New from "./New";
 import PeriodSelector from "./PeriodSelector";
 import RealtimeDataProvider from "./RealtimeDataProvider";
+import { RevisionSuffix } from "./RevisionSuffix";
 import SearchFilter from "./SearchFilter";
 import { SearchLandingPage } from "./SearchLandingPage";
 import Select from "./Select";
@@ -83,6 +84,7 @@ export {
   PeriodSelector,
   PrintButton,
   RealtimeDataProvider,
+  RevisionSuffix,
   SearchFilter,
   SearchLandingPage,
   Select,

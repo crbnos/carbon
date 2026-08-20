@@ -1,6 +1,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
 import axios, { type AxiosInstance } from "axios";
+import { resolveIntegrationSecrets } from "../../integrations/secrets";
 import { getLinearIntegration } from "./service";
 import type { LinearIssue, LinearTeam, LinearUser } from "./types";
 import type { LinearWorkStateType } from "./utils";
@@ -30,7 +31,15 @@ export class LinearClient {
       throw new Error("Linear integration not found for company");
     }
 
-    const metadata = integration.metadata as { apiKey: string };
+    // Secret material lives in Supabase Vault; merge it back so we read the
+    // apiKey the same as before. Vault RPCs require the service-role client.
+    const metadata = (await resolveIntegrationSecrets(
+      serviceRole,
+      companyId,
+      "linear",
+      integration.metadata,
+      integration.secretRef
+    )) as { apiKey: string };
 
     return {
       Authorization: metadata.apiKey

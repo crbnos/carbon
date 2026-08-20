@@ -2,6 +2,7 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData } from "react-router";
 import {
@@ -36,7 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     create: "production"
   });
 
@@ -79,6 +80,29 @@ export async function action({ request, params }: ActionFunctionArgs) {
     ...d,
     companyId
   });
+
+  if (!insert.error && insert.data?.id) {
+    // Back-office entry, not the shop floor. The source property is what makes
+    // the MES-vs-ERP ratio readable — a clerk typing yesterday's paper
+    // traveller in here is a different fact from an operator on a station.
+    const common = {
+      companyId,
+      userId,
+      productionQuantityId: insert.data.id,
+      jobOperationId: d.jobOperationId,
+      quantity: d.quantity,
+      source: "erp" as const
+    };
+    if (d.type === "Scrap") {
+      trackWorkEvent("scrap_reported", {
+        ...common,
+        scrapReasonId: d.scrapReasonId ?? null
+      });
+    } else if (d.type === "Production") {
+      trackWorkEvent("production_quantity_reported", common);
+    }
+  }
+
   if (insert.error) {
     return data(
       {},

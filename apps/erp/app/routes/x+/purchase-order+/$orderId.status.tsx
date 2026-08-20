@@ -7,11 +7,14 @@ import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { runMRP } from "~/modules/production";
 import {
+  canCreatePurchaseOrderRevision,
   isPurchaseOrderLocked,
   purchaseOrderStatusType,
+  reopenPurchaseOrderAsRevision,
   updatePurchaseOrderStatus
 } from "~/modules/purchasing";
 import { canApproveRequest } from "~/modules/shared";
+import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 const logger = getLogger("erp", "orderid-status");
@@ -41,12 +44,37 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const currentPo = await viewClient
     .from("purchaseOrder")
-    .select("status")
+    .select("status, orderDate")
     .eq("id", id)
     .single();
 
   const currentStatus = currentPo.data?.status;
   const isCurrentlyLocked = isPurchaseOrderLocked(currentStatus);
+
+  // Explicit request only — a plain Reopen never bumps.
+  const createRevisionRequested =
+    status === "Draft" && formData.get("createRevision") === "true";
+
+  // Reject an ineligible revision BEFORE the Draft branch below cancels pending
+  // approvals: those side effects must not be applied for a request that is
+  // about to fail. reopenPurchaseOrderAsRevision re-checks the same conditions
+  // in SQL, so this is a pre-flight, not the authority.
+  if (
+    createRevisionRequested &&
+    !canCreatePurchaseOrderRevision({
+      newStatus: status,
+      currentStatus,
+      orderDate: currentPo.data?.orderDate
+    })
+  ) {
+    throw redirect(
+      requestReferrer(request) ?? path.to.purchaseOrder(id),
+      await flash(
+        request,
+        error(null, "Only a released purchase order can be revised")
+      )
+    );
+  }
 
   // Determine required permission:
   // - Reopening (Draft) from a locked status requires delete permission
@@ -155,6 +183,38 @@ export async function action({ request, params }: ActionFunctionArgs) {
           .eq("status", "Pending");
       }
     }
+  }
+
+  if (createRevisionRequested) {
+    let rowsUpdated = 0;
+    try {
+      rowsUpdated = await reopenPurchaseOrderAsRevision(getDatabaseClient(), {
+        id,
+        companyId,
+        updatedBy: userId
+      });
+    } catch (err) {
+      logger.error("Failed to create purchase order revision", { error: err });
+      throw redirect(
+        requestReferrer(request) ?? path.to.purchaseOrder(id),
+        await flash(request, error(err, "Failed to create revision"))
+      );
+    }
+
+    if (rowsUpdated === 0) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.purchaseOrder(id),
+        await flash(
+          request,
+          error(null, "Only a released purchase order can be revised")
+        )
+      );
+    }
+
+    throw redirect(
+      requestReferrer(request) ?? path.to.purchaseOrder(id),
+      await flash(request, success("Created a new purchase order revision"))
+    );
   }
 
   const update = await updatePurchaseOrderStatus(client, {

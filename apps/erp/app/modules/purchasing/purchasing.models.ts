@@ -631,3 +631,21 @@ export function isPurchaseOrderLocked(
     status as PurchaseOrderLockedStatus
   );
 }
+
+/**
+ * Whether a status change is ELIGIBLE to create a revision — the bump itself
+ * also requires the explicit `createRevision` flag. Only a released order
+ * qualifies: `orderDate` is set at finalize, so an order reopened from
+ * "Needs Approval" or closed straight from Draft never reached the supplier.
+ */
+export function canCreatePurchaseOrderRevision(transition: {
+  newStatus: (typeof purchaseOrderStatusType)[number];
+  currentStatus: string | null | undefined;
+  orderDate: string | null | undefined;
+}): boolean {
+  return (
+    transition.newStatus === "Draft" &&
+    isPurchaseOrderLocked(transition.currentStatus) &&
+    Boolean(transition.orderDate)
+  );
+}

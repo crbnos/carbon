@@ -19,7 +19,18 @@ export async function action({ request }: ActionFunctionArgs) {
     bypassRls: true
   });
 
-  const result = await generateEliminations(client, companyGroupId, userId);
+  // Regenerate reverses the group's existing eliminations (reversing entries,
+  // never deletes) and re-derives them from current capture + on-hand, so a
+  // correction can re-flow without manual surgery.
+  const formData = await request.formData();
+  const regenerate = formData.get("regenerate") === "true";
+
+  const result = await generateEliminations(
+    client,
+    companyGroupId,
+    userId,
+    regenerate
+  );
 
   if (result.error) {
     throw redirect(
@@ -33,6 +44,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
   throw redirect(
     `${path.to.intercompany}?${getParams(request)}`,
-    await flash(request, success("Elimination entries generated"))
+    await flash(
+      request,
+      success(
+        regenerate
+          ? "Elimination entries regenerated"
+          : "Elimination entries generated"
+      )
+    )
   );
 }

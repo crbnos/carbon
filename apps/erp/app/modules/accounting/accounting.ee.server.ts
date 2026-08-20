@@ -1,7 +1,103 @@
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { getNextSequence } from "@carbon/database/sequence";
+import type { ReportPeriodBucket } from "@carbon/utils";
 import { toStoredAmount } from "@carbon/utils";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  getAccountLedger,
+  getAccountLedgerSummary,
+  getConsolidatedBalances,
+  getConsolidatedPeriodSeries
+} from "./accounting.ee.service";
 import { acquisitionLines } from "./accounting.utils";
+
+// Report loaders consolidate a group the user is authorized for, but the
+// synthetic elimination entities are read via service role (no user is a member
+// of them — see the consolidation service). These thin wrappers own that
+// privileged-client decision in ONE server-only place so the loaders never
+// thread a `getCarbonServiceRole()` argument through their call sites. The RLS
+// `client` still reads every operating company; only elimination entities are
+// read privileged.
+export function getConsolidatedPeriodSeriesForReport(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  companyIds: string[],
+  targetCurrency: string,
+  args: { buckets: ReportPeriodBucket[]; includeCurrentYearEarnings?: boolean }
+) {
+  return getConsolidatedPeriodSeries(
+    client,
+    companyGroupId,
+    companyIds,
+    targetCurrency,
+    args,
+    getCarbonServiceRole()
+  );
+}
+
+export function getConsolidatedBalancesForReport(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  companyIds: string[],
+  targetCurrency: string,
+  periodEnd: string,
+  periodStart?: string
+) {
+  return getConsolidatedBalances(
+    client,
+    companyGroupId,
+    companyIds,
+    targetCurrency,
+    periodEnd,
+    periodStart,
+    getCarbonServiceRole()
+  );
+}
+
+// Consolidated account drill-down ("All Companies"). Reads via service role so
+// the synthetic elimination entities' journal lines (invisible to the user's
+// RLS session — no user is a member of them) appear in the ledger and the
+// summary ties to the consolidated report. Scoped to the group's own companies
+// so a service-role read cannot cross tenants.
+export async function getConsolidatedAccountLedger(
+  companyGroupId: string,
+  args: {
+    accountId: string;
+    startDate: string | null;
+    endDate: string | null;
+    limit: number;
+    offset: number;
+  }
+) {
+  const serviceRole = getCarbonServiceRole();
+  const { data: groupCompanies } = await serviceRole
+    .from("company")
+    .select("id")
+    .eq("companyGroupId", companyGroupId)
+    .eq("active", true);
+  const companyIds = (groupCompanies ?? []).map((c) => c.id);
+
+  const [ledger, summary] = await Promise.all([
+    getAccountLedger(serviceRole, {
+      accountId: args.accountId,
+      companyId: null,
+      companyIds,
+      startDate: args.startDate,
+      endDate: args.endDate,
+      limit: args.limit,
+      offset: args.offset
+    }),
+    getAccountLedgerSummary(serviceRole, companyGroupId, null, {
+      accountId: args.accountId,
+      startDate: args.startDate,
+      endDate: args.endDate
+    })
+  ]);
+
+  return { ledger, summary };
+}
 
 export async function postDisposal(
   db: Kysely<KyselyDatabase>,

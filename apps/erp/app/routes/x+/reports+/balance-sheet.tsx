@@ -16,10 +16,10 @@ import type { ChartPeriodSeries } from "~/modules/accounting";
 import {
   financialReportParamsValidator,
   getCompaniesInGroup,
-  getConsolidatedPeriodSeries,
   getFinancialStatementPeriodSeries,
   getFiscalYearSettings
 } from "~/modules/accounting";
+import { getConsolidatedPeriodSeriesForReport } from "~/modules/accounting/accounting.ee.server";
 import {
   exportPeriodReport,
   getPeriodColumnLabel,
@@ -120,12 +120,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
 
   if (isMultiCompany && parentCurrency) {
-    const consolidated = await getConsolidatedPeriodSeries(
+    const consolidated = await getConsolidatedPeriodSeriesForReport(
       client,
       companyGroupId,
       selectedCompanyIds,
       parentCurrency,
-      { buckets }
+      { buckets, includeCurrentYearEarnings: true }
     );
 
     const balanceSheetAccounts = consolidated.data.filter(

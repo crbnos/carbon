@@ -110,6 +110,10 @@ msgstr "{0} problèmes — non publié"
 msgid "{0} Processes"
 msgstr "{0} Processus"
 
+#. placeholder {0}: result.credentialName ?? "Passkey"
+msgid "{0} registered"
+msgstr "{0} enregistré"
+
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
 msgstr "{0} fournisseurs avec un solde"
@@ -189,6 +193,10 @@ msgstr "{name} supprimé"
 
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} pièces ignorées — rien à fabriquer"
+
+#. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
+msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
+msgstr "{orderLabel} sera rouvert pour modification en tant que révision {0}. Le document déjà envoyé au fournisseur reste inchangé jusqu'à ce que vous le finalisiez et le renvoiez."
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# phase restante} other {# phases restantes}}"
@@ -1065,6 +1073,9 @@ msgstr "Ajoutez des notes sur votre décision..."
 msgid "Add Approval Requirement"
 msgstr "Ajouter une exigence d'approbation"
 
+msgid "Add Authenticator App"
+msgstr "Ajouter une application d'authentification"
+
 msgid "Add Calibration Record"
 msgstr "Ajouter un enregistrement d'étalonnage"
 
@@ -1139,6 +1150,9 @@ msgstr "Ajouter un partenaire"
 
 msgid "Add parts"
 msgstr "Ajouter des pièces"
+
+msgid "Add Passkey"
+msgstr "Ajouter une clé d'accès"
 
 msgid "Add path"
 msgstr "Ajouter un chemin"
@@ -1688,7 +1702,7 @@ msgstr "Archivé"
 msgid "Archived Logs"
 msgstr "Journaux archivés"
 
-#. placeholder {0}: quote.quoteId
+#. placeholder {0}: getQuoteDisplayId(quote)
 #. placeholder {1}: formatter.format(total)
 msgid "Are you sure you want to accept quote {0} for {1}?"
 msgstr "Êtes-vous sûr de vouloir accepter le devis {0} pour {1} ?"
@@ -1707,9 +1721,8 @@ msgstr "Êtes-vous sûr de vouloir annuler {0} ? Il sera fermé et en lecture se
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "Êtes-vous sûr de vouloir annuler {0} ? Cela annulera également tous les devis fournisseurs associés."
 
-#. placeholder {0}: routeData?.purchaseOrder?.purchaseOrderId ?? "this purchase order"
-msgid "Are you sure you want to cancel {0}? This will close the order."
-msgstr "Êtes-vous sûr de vouloir annuler {0} ? Cela fermera la commande."
+msgid "Are you sure you want to cancel {orderLabel}? This will close the order."
+msgstr "Êtes-vous sûr de vouloir annuler {orderLabel} ? Cela fermera la commande."
 
 msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 msgstr "Êtes-vous sûr de vouloir annuler ce travail ? Il ne sera plus disponible sur l'atelier."
@@ -1765,14 +1778,17 @@ msgstr "Êtes-vous sûr de vouloir supprimer {0} de cette opération ? Cette act
 msgid "Are you sure you want to delete {0}?"
 msgstr "Êtes-vous sûr de vouloir supprimer {0} ?"
 
+#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
+#. placeholder {0}: getQuoteDisplayId( selectedQuotation )
 #. placeholder {0}: initialValues.memoId
-#. placeholder {0}: initialValues.paymentId
-#. placeholder {0}: pickingList.pickingListId
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "Êtes-vous sûr de vouloir supprimer {0} ? Cette action ne peut pas être annulée."
 
 msgid "Are you sure you want to delete {name}? This cannot be undone."
 msgstr "Êtes-vous sûr de vouloir supprimer {name} ? Cette action ne peut pas être annulée."
+
+msgid "Are you sure you want to delete {orderLabel}? This cannot be undone."
+msgstr "Êtes-vous sûr de vouloir supprimer {orderLabel} ? Cette action ne peut pas être annulée."
 
 #. placeholder {0}: activeView.name
 #. placeholder {0}: viewPendingDelete.name
@@ -1998,6 +2014,9 @@ msgstr "Êtes-vous sûr de vouloir supprimer cette carte kanban ? Cette action n
 
 msgid "Are you sure you want to delete this maintenance dispatch? This cannot be undone."
 msgstr "Êtes-vous sûr de vouloir supprimer cette demande de maintenance ? Cette action ne peut pas être annulée."
+
+msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
+msgstr "Êtes-vous sûr de vouloir supprimer cette clé d'accès ? Vous ne pourrez plus l'utiliser pour vous connecter."
 
 msgid "Are you sure you want to delete this quality document?"
 msgstr "Êtes-vous sûr de vouloir supprimer ce document de qualité ?"
@@ -2263,6 +2282,9 @@ msgstr "Journaux d'audit"
 
 msgid "Authentication Error"
 msgstr "Erreur d'authentification"
+
+msgid "Authenticator app"
+msgstr "Application d'authentification"
 
 msgid "Authenticator QR code"
 msgstr "Code QR de l'authentificateur"
@@ -2909,6 +2931,9 @@ msgstr "Types d'avis de modification"
 
 msgid "Change Notices"
 msgstr "Avis de modification"
+
+msgid "Change notices could not be loaded, so new versions and revisions are blocked. Reload to try again."
+msgstr "Les avis de modification n'ont pas pu être chargés, donc les nouvelles versions et révisions sont bloquées. Recharger pour réessayer."
 
 msgid "Change order"
 msgstr "Ordre de changement"
@@ -3892,6 +3917,9 @@ msgstr "Créer Kanban"
 msgid "Create new rule"
 msgstr "Créer une nouvelle règle"
 
+msgid "Create PO Revision"
+msgstr "Créer une révision de bon de commande"
+
 msgid "Create Production Event"
 msgstr "Créer un Événement de Production"
 
@@ -4772,6 +4800,12 @@ msgstr "Supprimer la pièce"
 msgid "Delete Partner"
 msgstr "Supprimer le partenaire"
 
+msgid "Delete passkey"
+msgstr "Supprimer la clé d'accès"
+
+msgid "Delete Passkey"
+msgstr "Supprimer la clé d'accès"
+
 msgid "Delete Payment"
 msgstr "Supprimer le paiement"
 
@@ -5580,6 +5614,9 @@ msgstr "Modifier la pièce"
 msgid "Edit Partner"
 msgstr "Modifier le partenaire"
 
+msgid "Edit Passkey"
+msgstr "Modifier la clé d'accès"
+
 msgid "Edit Payment"
 msgstr "Modifier le paiement"
 
@@ -5911,6 +5948,9 @@ msgstr "Entrez du texte…"
 
 msgid "Enter the 6-digit code from your authenticator app"
 msgstr "Entrez le code à 6 chiffres de votre application d'authentification"
+
+msgid "Enter the 6-digit code from your authenticator app to resume."
+msgstr "Entrez le code à 6 chiffres de votre application d'authentification pour continuer."
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Entrez la quantité que ce mouvement aurait dû avoir. Un mouvement opposé pour la différence est posté à côté de l'original, dans la période de l'original."
@@ -6455,6 +6495,9 @@ msgstr "Échec de la récupération des risques"
 msgid "Failed to fetch suggestions"
 msgstr "Impossible de récupérer les suggestions"
 
+msgid "Failed to get options"
+msgstr "Impossible d'obtenir les options"
+
 msgid "Failed to initialize Carbon client"
 msgstr "Impossible d'initialiser le client Carbon"
 
@@ -6524,6 +6567,9 @@ msgstr "Impossible de déplacer le compte : {0}"
 
 msgid "Failed to regenerate thumbnail"
 msgstr "Échec de la régénération de la miniature"
+
+msgid "Failed to register passkey"
+msgstr "Impossible d'enregistrer la clé d'accès"
 
 msgid "Failed to remove image: {errorMessage}"
 msgstr "Échec de la suppression de l'image : {errorMessage}"
@@ -8289,6 +8335,9 @@ msgstr "Dernière exécution"
 msgid "Last synced: <0/>"
 msgstr "Dernière synchronisation : <0/>"
 
+msgid "Last used"
+msgstr "Dernière utilisation"
+
 msgid "Latest operation end"
 msgstr "Fin de la dernière opération"
 
@@ -9144,6 +9193,9 @@ msgstr "Plus"
 msgid "More actions"
 msgstr "Plus d'actions"
 
+msgid "More information"
+msgstr "Plus d'informations"
+
 msgid "More options"
 msgstr "Plus d'options"
 
@@ -9858,6 +9910,9 @@ msgstr "Aucun ID de pièce"
 msgid "No parts"
 msgstr "Pas de pièces"
 
+msgid "No passkeys registered yet."
+msgstr "Aucune clé d'accès enregistrée pour le moment."
+
 msgid "No payables"
 msgstr "Aucun compte créditeur"
 
@@ -10459,8 +10514,14 @@ msgstr "Pages et sections optionnelles"
 msgid "Options"
 msgstr "Options"
 
+msgid "or"
+msgstr "ou"
+
 msgid "OR"
 msgstr "OU"
+
+msgid "Or enter this secret manually:"
+msgstr "Ou entrez ce secret manuellement :"
 
 msgid "Order"
 msgstr "Commande"
@@ -10727,6 +10788,18 @@ msgstr "Réussir"
 
 msgid "Passed"
 msgstr "Réussi"
+
+msgid "Passkey name"
+msgstr "Nom de la clé d'accès"
+
+msgid "Passkey unlock failed"
+msgstr "Impossible de déverrouiller avec la clé d'accès"
+
+msgid "Passkeys"
+msgstr "Clés d'accès"
+
+msgid "Passkeys are disabled"
+msgstr "Les clés d'accès sont désactivées"
 
 msgid "Path"
 msgstr "Chemin"
@@ -12023,6 +12096,9 @@ msgstr "Enregistré"
 msgid "Registered"
 msgstr "Point de Réapprovisionnement"
 
+msgid "Registration failed"
+msgstr "L'enregistrement a échoué"
+
 msgid "Registration Number"
 msgstr "Numéro d'enregistrement"
 
@@ -12099,6 +12175,9 @@ msgstr "Supprimer {0}"
 msgid "Remove {label}"
 msgstr "Supprimer {label}"
 
+msgid "Remove authenticator app"
+msgstr "Supprimer l'application d'authentification"
+
 msgid "Remove clause"
 msgstr "Supprimer la clause"
 
@@ -12146,6 +12225,9 @@ msgstr "Supprimez ce type de stockage de toutes les unités de stockage qui le r
 
 msgid "Remove tool"
 msgstr "Supprimer l'outil"
+
+msgid "Remove two-factor authentication"
+msgstr "Supprimer l'authentification à deux facteurs"
 
 msgid "Removed"
 msgstr "Supprimé"
@@ -12253,6 +12335,9 @@ msgstr "Demander l'approbation"
 msgid "Requested Date"
 msgstr "Date demandée"
 
+msgid "Require a 6-digit code from an authenticator app when signing in."
+msgstr "Exiger un code à 6 chiffres d'une application d'authentification lors de la connexion."
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Exigez une application d'authentification avant que quiconque ne puisse ouvrir cette entreprise. Leurs autres entreprises ne sont pas affectées. Visitez la <0>page des comptes d'employés</0> pour voir le statut de chaque personne."
 
@@ -12285,6 +12370,9 @@ msgstr "Actions Requises (par ordre)"
 
 msgid "Required Date"
 msgstr "Date requise"
+
+msgid "Required in a controlled environment — audit logging cannot be turned off."
+msgstr "Requis dans un environnement contrôlé — la journalisation d'audit ne peut pas être désactivée."
 
 msgid "Requirement"
 msgstr "Exigence"
@@ -12842,6 +12930,9 @@ msgstr "Scannez ou recherchez..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Scannez ou sélectionnez une entité suivie de ce lot pour l'ajouter comme colonne d'échantillon, puis enregistrez son résultat dans la grille."
 
+msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
+msgstr "Scannez ce code QR avec votre application d'authentification (par exemple Google Authenticator ou 1Password), puis entrez le code à 6 chiffres qu'elle affiche."
+
 msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
 msgstr "Scannez ceci avec votre application d'authentification, puis entrez le code à 6 chiffres qu'elle affiche."
 
@@ -13003,6 +13094,9 @@ msgstr "Secondes pour compléter"
 
 msgid "Seconds/Piece"
 msgstr "Secondes/Pièce"
+
+msgid "Secret copied to clipboard"
+msgstr "Secret copié dans le presse-papiers"
 
 msgid "Section"
 msgstr "Section"
@@ -13321,6 +13415,9 @@ msgstr "services"
 msgid "Services"
 msgstr "Services"
 
+msgid "Session locked"
+msgstr "Session verrouillée"
+
 msgid "Set a target"
 msgstr "Définir un objectif"
 
@@ -13356,6 +13453,9 @@ msgstr "Configurer l'application d'authentification"
 
 msgid "Set up the right way"
 msgstr "Configurer correctement"
+
+msgid "Set up two-factor authentication"
+msgstr "Configurer l'authentification à deux facteurs"
 
 msgid "Set up your company with a step-by-step implementation plan covering setup, data, training, and go-live."
 msgstr "Configurez votre entreprise avec un plan d'implémentation étape par étape couvrant la configuration, les données, la formation et la mise en production."
@@ -13632,6 +13732,9 @@ msgstr "Affiché en arrière-plan discret sur chaque page des PDF générés"
 msgid "Shown to the user when this rule fails."
 msgstr "Affiché à l'utilisateur lorsque cette règle échoue."
 
+msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
+msgstr "Connectez-vous avec la biométrie au lieu d'un lien magique. Les clés d'accès sont sécurisées par Face ID, Touch ID ou votre code PIN de l'appareil."
+
 msgid "Sign in with Email"
 msgstr "Se connecter avec Email"
 
@@ -13650,6 +13753,9 @@ msgstr "Se déconnecter"
 msgid "Sign Out"
 msgstr "Se déconnecter"
 
+msgid "Sign out instead"
+msgstr "Se déconnecter à la place"
+
 msgid "Sign-off review before moving to the next step"
 msgstr "Examen de validation avant de passer à l'étape suivante"
 
@@ -13664,6 +13770,9 @@ msgstr "Quantité signée — négative pour les mouvements sortants"
 
 msgid "Signing in also requires a one-time code from your authenticator app"
 msgstr "La connexion nécessite également un code à usage unique de votre application d'authentification"
+
+msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
+msgstr "La connexion ne nécessitera plus de code. Entrez le code à 6 chiffres actuel de votre application d'authentification pour confirmer."
 
 msgid "Sites & locations"
 msgstr "Sites et emplacements"
@@ -15414,6 +15523,9 @@ msgstr "Ce chemin décide seulement de ce qui s'exécute ensuite"
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "Cette période n'a aucune écriture de journal comptabilisée et peut être supprimée définitivement. Cela ne peut pas être annulé."
 
+msgid "this purchase order"
+msgstr "ce bon de commande"
+
 msgid "This Quarter"
 msgstr "Ce trimestre"
 
@@ -15863,8 +15975,17 @@ msgstr "Authentification à deux facteurs"
 msgid "Two-factor authentication"
 msgstr "Authentification à deux facteurs"
 
+msgid "Two-factor authentication disabled"
+msgstr "Authentification à deux facteurs désactivée"
+
+msgid "Two-factor authentication enabled"
+msgstr "Authentification à deux facteurs activée"
+
 msgid "Two-Factor Authentication Enforcement"
 msgstr "Application de l'authentification à deux facteurs"
+
+msgid "Two-factor authentication is not enabled."
+msgstr "L'authentification à deux facteurs n'est pas activée."
 
 msgid "Type"
 msgstr "Type"
@@ -15895,6 +16016,9 @@ msgstr "Types"
 
 msgid "U.S. Person Attestation"
 msgstr "Attestation de personne des États-Unis"
+
+msgid "Unable to unlock"
+msgstr "Impossible de déverrouiller"
 
 msgid "Unapplied"
 msgstr "Non appliqué"
@@ -15997,6 +16121,9 @@ msgstr "Dissocier la commande de la commande client ?"
 
 msgid "Unlock"
 msgstr "Déverrouiller"
+
+msgid "Unlock with passkey"
+msgstr "Déverrouiller avec une clé d'accès"
 
 msgid "Unmapped accounts"
 msgstr "Comptes non mappés"
@@ -17339,6 +17466,9 @@ msgstr "Votre équipe de projet"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Vos données réelles sont chargées et vous avez vérifié un échantillon et l'avez approuvé."
+
+msgid "Your session was locked after inactivity."
+msgstr "Votre session a été verrouillée suite à l'inactivité."
 
 msgid "Your source data is accessible and reasonably clean"
 msgstr "Vos données source sont accessibles et raisonnablement propres"

@@ -8,7 +8,7 @@ import {
   variableRefSchema
 } from "./types";
 
-export const CURRENT_DEFINITION_FORMAT_VERSION = 3;
+export const CURRENT_DEFINITION_FORMAT_VERSION = 4;
 
 /** Cap on the items one repeating step works through. */
 export const MAX_LIST_ITEMS = 100;
@@ -64,9 +64,9 @@ const conditionNode = z.object({
   })
 });
 
-const entityNode = z.object({
+const computeNode = z.object({
   ...nodeBase,
-  type: z.literal("entity"),
+  type: z.literal("compute"),
   data: z.object({
     operation: z.string(),
     inputs: z.record(valueOrRefSchema).default({})
@@ -106,7 +106,7 @@ const actionNode = z.object({
 export const nodeSchema = z.discriminatedUnion("type", [
   triggerNode,
   conditionNode,
-  entityNode,
+  computeNode,
   lookupNode,
   filterNode,
   actionNode
@@ -116,7 +116,7 @@ export type WorkflowNodeType = WorkflowNode["type"];
 
 export type TriggerNode = Extract<WorkflowNode, { type: "trigger" }>;
 export type ConditionNode = Extract<WorkflowNode, { type: "condition" }>;
-export type EntityNode = Extract<WorkflowNode, { type: "entity" }>;
+export type ComputeNode = Extract<WorkflowNode, { type: "compute" }>;
 export type LookupNode = Extract<WorkflowNode, { type: "lookup" }>;
 export type FilterNode = Extract<WorkflowNode, { type: "filter" }>;
 export type ActionNode = Extract<WorkflowNode, { type: "action" }>;

@@ -425,6 +425,9 @@ msgstr "{0} के लिए PIN दर्ज करें"
 msgid "Enter the 6-digit code from your authenticator app"
 msgstr "अपने ऑथेंटिकेटर ऐप से 6-अंकीय कोड दर्ज करें"
 
+msgid "Enter the 6-digit code from your authenticator app to resume."
+msgstr "अपने प्रमाणक ऐप्लिकेशन से 6-अंकीय कोड दर्ज करें जारी रखने के लिए।"
+
 msgid "Error"
 msgstr "त्रुटि"
 
@@ -926,6 +929,9 @@ msgstr "ऑपरेटर द्वारा निष्पादित"
 msgid "Optional"
 msgstr "वैकल्पिक"
 
+msgid "or"
+msgstr "या"
+
 msgid "Overall result"
 msgstr "समग्र परिणाम"
 
@@ -946,6 +952,9 @@ msgstr "आंशिक निपटान"
 
 msgid "Passed Inspection"
 msgstr "निरीक्षण पास किया"
+
+msgid "Passkey unlock failed"
+msgstr "पासकी अनलॉक विफल"
 
 msgid "Pause"
 msgstr "रोकें"
@@ -1221,6 +1230,9 @@ msgstr "सीरियल नंबर"
 msgid "Serial Numbers"
 msgstr "सीरियल नंबर"
 
+msgid "Session locked"
+msgstr "सत्र लॉक किया गया"
+
 msgid "Set Clock Out"
 msgstr "क्लॉक आउट सेट करें"
 
@@ -1259,6 +1271,9 @@ msgstr "साइन आउट करें"
 
 msgid "Sign Out"
 msgstr "साइन आउट"
+
+msgid "Sign out instead"
+msgstr "इसके बजाय साइन आउट करें"
 
 msgid "Signed in as {stationName}"
 msgstr "के रूप में साइन इन किया गया {stationName}"
@@ -1393,11 +1408,20 @@ msgstr "दो-फ़ैक्टर प्रमाणीकरण आवश्
 msgid "Type a message..."
 msgstr "एक संदेश लिखें..."
 
+msgid "Unable to unlock"
+msgstr "अनलॉक करने में असमर्थ"
+
 msgid "Unissued serial/batch materials"
 msgstr "अजारी सीरीज़/बैच सामग्री"
 
 msgid "Unknown"
 msgstr "अज्ञात"
+
+msgid "Unlock"
+msgstr "अनलॉक"
+
+msgid "Unlock with passkey"
+msgstr "पासकी से अनलॉक करें"
 
 msgid "Unpick"
 msgstr "अनपिक करें"
@@ -1475,3 +1499,6 @@ msgstr "आप {hoursElapsed} घंटे के लिए क्लॉक इ�
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "आपके संगठन को एक ऑथेंटिकेटर ऐप की आवश्यकता है। इसे Carbon में सेट अप करें, फिर यहाँ वापस आएं।"
+
+msgid "Your session was locked after inactivity."
+msgstr "आपका सत्र निष्क्रियता के बाद लॉक किया गया था।"
