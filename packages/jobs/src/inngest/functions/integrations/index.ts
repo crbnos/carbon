@@ -3,6 +3,10 @@ export { accountingConsolidationFunction } from "./accounting-consolidation";
 export { accountingOutboundSweepFunction } from "./accounting-outbound-sweep";
 export { accountingPullSweepFunction } from "./accounting-pull-sweep";
 export { accountingReconciliationFunction } from "./accounting-reconciliation";
+export {
+  ediReconcileAcksFunction,
+  ediSendDocumentFunction
+} from "./edi";
 export { jiraSyncFunction, syncIssueFromJiraSchema } from "./jira";
 export { linearSyncFunction, syncIssueFromLinearSchema } from "./linear";
 export { onshapeBackfillFunction } from "./onshape-backfill";

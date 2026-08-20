@@ -1,3 +1,4 @@
+import { Orderful } from "./edi/orderful/config";
 import { Email } from "./email/config";
 import { ExchangeRates } from "./exchange-rates/config";
 import { Jira } from "./jira/config";
@@ -35,6 +36,7 @@ export const integrations = [
   Jira,
   Linear,
   Onshape,
+  Orderful,
   PaperlessParts,
   QuickBooks,
   Rillet,

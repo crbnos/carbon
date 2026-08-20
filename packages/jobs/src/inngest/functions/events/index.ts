@@ -1,4 +1,5 @@
 export { auditFunction } from "./audit";
+export { ediEventFunction } from "./edi";
 export { embeddingFunction } from "./embedding";
 export { eventQueueFunction } from "./queue";
 export { searchFunction } from "./search";

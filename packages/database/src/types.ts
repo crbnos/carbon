@@ -12954,6 +12954,678 @@ export type Database = {
           },
         ]
       }
+      ediDocument: {
+        Row: {
+          acknowledgedAt: string | null
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customFields: Json | null
+          direction: Database["public"]["Enums"]["ediDocumentDirection"]
+          documentType: Database["public"]["Enums"]["ediDocumentType"]
+          externalId: string | null
+          id: string
+          issues: Json
+          partnerReference: string | null
+          payload: Json
+          releasedAt: string | null
+          releasedBy: string | null
+          sourceDocument: string | null
+          sourceDocumentId: string | null
+          sourceDocumentReadableId: string | null
+          status: Database["public"]["Enums"]["ediDocumentStatus"]
+          tradingPartnerId: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          acknowledgedAt?: string | null
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customFields?: Json | null
+          direction: Database["public"]["Enums"]["ediDocumentDirection"]
+          documentType: Database["public"]["Enums"]["ediDocumentType"]
+          externalId?: string | null
+          id?: string
+          issues?: Json
+          partnerReference?: string | null
+          payload: Json
+          releasedAt?: string | null
+          releasedBy?: string | null
+          sourceDocument?: string | null
+          sourceDocumentId?: string | null
+          sourceDocumentReadableId?: string | null
+          status: Database["public"]["Enums"]["ediDocumentStatus"]
+          tradingPartnerId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          acknowledgedAt?: string | null
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customFields?: Json | null
+          direction?: Database["public"]["Enums"]["ediDocumentDirection"]
+          documentType?: Database["public"]["Enums"]["ediDocumentType"]
+          externalId?: string | null
+          id?: string
+          issues?: Json
+          partnerReference?: string | null
+          payload?: Json
+          releasedAt?: string | null
+          releasedBy?: string | null
+          sourceDocument?: string | null
+          sourceDocumentId?: string | null
+          sourceDocumentReadableId?: string | null
+          status?: Database["public"]["Enums"]["ediDocumentStatus"]
+          tradingPartnerId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ediDocument_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediDocument_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediDocument_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "ediDocument_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "ediDocument_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediDocument_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediDocument_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediDocument_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediDocument_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "ediDocument_partner_fkey"
+            columns: ["tradingPartnerId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "ediTradingPartner"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "ediDocument_releasedBy_fkey"
+            columns: ["releasedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediDocument_releasedBy_fkey"
+            columns: ["releasedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediDocument_releasedBy_fkey"
+            columns: ["releasedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediDocument_releasedBy_fkey"
+            columns: ["releasedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediDocument_releasedBy_fkey"
+            columns: ["releasedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "ediDocument_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediDocument_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediDocument_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediDocument_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediDocument_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      ediTradingPartner: {
+        Row: {
+          active: boolean
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customerId: string
+          customFields: Json | null
+          externalId: string | null
+          id: string
+          priceTolerancePercent: number
+          releaseMode: Database["public"]["Enums"]["ediReleaseMode"]
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          active?: boolean
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customerId: string
+          customFields?: Json | null
+          externalId?: string | null
+          id?: string
+          priceTolerancePercent?: number
+          releaseMode?: Database["public"]["Enums"]["ediReleaseMode"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          active?: boolean
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customerId?: string
+          customFields?: Json | null
+          externalId?: string | null
+          id?: string
+          priceTolerancePercent?: number
+          releaseMode?: Database["public"]["Enums"]["ediReleaseMode"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ediTradingPartner_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartner_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartner_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "ediTradingPartner_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "ediTradingPartner_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartner_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartner_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartner_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartner_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "ediTradingPartner_customerId_fkey"
+            columns: ["customerId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "ediTradingPartner_customerId_fkey"
+            columns: ["customerId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "ediTradingPartner_customerId_fkey"
+            columns: ["customerId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderCustomers"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "ediTradingPartner_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartner_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartner_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartner_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartner_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      ediTradingPartnerDocument: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          direction: Database["public"]["Enums"]["ediDocumentDirection"]
+          documentType: Database["public"]["Enums"]["ediDocumentType"]
+          enabled: boolean
+          id: string
+          tradingPartnerId: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          direction: Database["public"]["Enums"]["ediDocumentDirection"]
+          documentType: Database["public"]["Enums"]["ediDocumentType"]
+          enabled?: boolean
+          id?: string
+          tradingPartnerId: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          direction?: Database["public"]["Enums"]["ediDocumentDirection"]
+          documentType?: Database["public"]["Enums"]["ediDocumentType"]
+          enabled?: boolean
+          id?: string
+          tradingPartnerId?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ediTradingPartnerDocument_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerDocument_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerDocument_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerDocument_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerDocument_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerDocument_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerDocument_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerDocument_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerDocument_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerDocument_partner_fkey"
+            columns: ["tradingPartnerId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "ediTradingPartner"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerDocument_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerDocument_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerDocument_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerDocument_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerDocument_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      ediTradingPartnerLocation: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customerLocationId: string
+          externalCode: string
+          id: string
+          tradingPartnerId: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customerLocationId: string
+          externalCode: string
+          id?: string
+          tradingPartnerId: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customerLocationId?: string
+          externalCode?: string
+          id?: string
+          tradingPartnerId?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ediTradingPartnerLocation_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerLocation_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerLocation_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerLocation_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerLocation_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerLocation_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerLocation_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerLocation_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerLocation_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerLocation_customerLocationId_fkey"
+            columns: ["customerLocationId"]
+            isOneToOne: false
+            referencedRelation: "customerLocation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerLocation_partner_fkey"
+            columns: ["tradingPartnerId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "ediTradingPartner"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerLocation_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerLocation_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerLocation_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerLocation_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ediTradingPartnerLocation_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       employee: {
         Row: {
           active: boolean
@@ -78657,6 +79329,22 @@ export type Database = {
         | "Audio"
         | "Other"
         | "Model"
+      ediDocumentDirection: "Inbound" | "Outbound"
+      ediDocumentStatus:
+        | "Received"
+        | "Needs Review"
+        | "Posted"
+        | "Rejected"
+        | "Pending"
+        | "Sent"
+        | "Acknowledged"
+        | "Failed"
+      ediDocumentType:
+        | "Purchase Order"
+        | "Purchase Order Acknowledgment"
+        | "Advance Ship Notice"
+        | "Invoice"
+      ediReleaseMode: "Automatic" | "Review"
       eliminationKind: "IC Balance" | "IC Revenue"
       employeeTypeSystemType: "Admin" | "Console Operator"
       externalLinkDocumentType:
@@ -80044,6 +80732,24 @@ export const Constants = {
         "Other",
         "Model",
       ],
+      ediDocumentDirection: ["Inbound", "Outbound"],
+      ediDocumentStatus: [
+        "Received",
+        "Needs Review",
+        "Posted",
+        "Rejected",
+        "Pending",
+        "Sent",
+        "Acknowledged",
+        "Failed",
+      ],
+      ediDocumentType: [
+        "Purchase Order",
+        "Purchase Order Acknowledgment",
+        "Advance Ship Notice",
+        "Invoice",
+      ],
+      ediReleaseMode: ["Automatic", "Review"],
       eliminationKind: ["IC Balance", "IC Revenue"],
       employeeTypeSystemType: ["Admin", "Console Operator"],
       externalLinkDocumentType: [

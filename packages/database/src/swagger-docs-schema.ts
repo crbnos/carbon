@@ -36504,6 +36504,285 @@ export default {
         tags: ["stockTransferLines"]
       }
     },
+    "/ediDocument": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.tradingPartnerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.direction"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.externalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.partnerReference"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.payload"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.issues"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.sourceDocument"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.sourceDocumentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.sourceDocumentReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.acknowledgedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.releasedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.releasedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.customFields"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/ediDocument"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["ediDocument"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.ediDocument"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["ediDocument"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.tradingPartnerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.direction"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.externalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.partnerReference"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.payload"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.issues"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.sourceDocument"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.sourceDocumentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.sourceDocumentReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.acknowledgedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.releasedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.releasedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.customFields"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["ediDocument"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.tradingPartnerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.direction"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.externalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.partnerReference"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.payload"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.issues"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.sourceDocument"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.sourceDocumentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.sourceDocumentReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.acknowledgedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.releasedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.releasedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediDocument.customFields"
+          },
+          {
+            $ref: "#/parameters/body.ediDocument"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["ediDocument"]
+      }
+    },
     "/accountDefault": {
       get: {
         parameters: [
@@ -43678,6 +43957,177 @@ export default {
           }
         },
         tags: ["purchaseInvoiceLine"]
+      }
+    },
+    "/ediTradingPartnerLocation": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerLocation.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerLocation.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerLocation.tradingPartnerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerLocation.externalCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerLocation.customerLocationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerLocation.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerLocation.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerLocation.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerLocation.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/ediTradingPartnerLocation"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["ediTradingPartnerLocation"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.ediTradingPartnerLocation"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["ediTradingPartnerLocation"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerLocation.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerLocation.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerLocation.tradingPartnerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerLocation.externalCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerLocation.customerLocationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerLocation.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerLocation.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerLocation.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerLocation.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["ediTradingPartnerLocation"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerLocation.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerLocation.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerLocation.tradingPartnerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerLocation.externalCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerLocation.customerLocationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerLocation.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerLocation.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerLocation.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerLocation.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.ediTradingPartnerLocation"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["ediTradingPartnerLocation"]
       }
     },
     "/materialForm": {
@@ -53301,6 +53751,204 @@ export default {
         tags: ["customer"]
       }
     },
+    "/ediTradingPartner": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.customerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.externalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.releaseMode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.priceTolerancePercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.customFields"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/ediTradingPartner"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["ediTradingPartner"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.ediTradingPartner"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["ediTradingPartner"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.customerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.externalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.releaseMode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.priceTolerancePercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.customFields"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["ediTradingPartner"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.customerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.externalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.releaseMode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.priceTolerancePercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartner.customFields"
+          },
+          {
+            $ref: "#/parameters/body.ediTradingPartner"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["ediTradingPartner"]
+      }
+    },
     "/purchaseOrder": {
       get: {
         parameters: [
@@ -61498,6 +62146,186 @@ export default {
           }
         },
         tags: ["qualityDocuments"]
+      }
+    },
+    "/ediTradingPartnerDocument": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.tradingPartnerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.direction"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.enabled"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/ediTradingPartnerDocument"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["ediTradingPartnerDocument"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.ediTradingPartnerDocument"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["ediTradingPartnerDocument"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.tradingPartnerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.direction"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.enabled"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["ediTradingPartnerDocument"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.tradingPartnerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.direction"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.enabled"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ediTradingPartnerDocument.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.ediTradingPartnerDocument"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["ediTradingPartnerDocument"]
       }
     },
     "/methodOperation": {
@@ -113311,6 +114139,131 @@ export default {
       },
       type: "object"
     },
+    ediDocument: {
+      required: [
+        "id",
+        "companyId",
+        "direction",
+        "documentType",
+        "status",
+        "payload",
+        "issues",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('edi'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        tradingPartnerId: {
+          format: "text",
+          type: "string"
+        },
+        direction: {
+          enum: ["Inbound", "Outbound"],
+          format: 'public."ediDocumentDirection"',
+          type: "string"
+        },
+        documentType: {
+          enum: [
+            "Purchase Order",
+            "Purchase Order Acknowledgment",
+            "Advance Ship Notice",
+            "Invoice"
+          ],
+          format: 'public."ediDocumentType"',
+          type: "string"
+        },
+        status: {
+          enum: [
+            "Received",
+            "Needs Review",
+            "Posted",
+            "Rejected",
+            "Pending",
+            "Sent",
+            "Acknowledged",
+            "Failed"
+          ],
+          format: 'public."ediDocumentStatus"',
+          type: "string"
+        },
+        externalId: {
+          format: "text",
+          type: "string"
+        },
+        partnerReference: {
+          format: "text",
+          type: "string"
+        },
+        payload: {
+          format: "jsonb"
+        },
+        issues: {
+          format: "jsonb"
+        },
+        sourceDocument: {
+          format: "text",
+          type: "string"
+        },
+        sourceDocumentId: {
+          format: "text",
+          type: "string"
+        },
+        sourceDocumentReadableId: {
+          format: "text",
+          type: "string"
+        },
+        acknowledgedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        releasedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        releasedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
+        }
+      },
+      type: "object"
+    },
     accountDefault: {
       required: [
         "companyId",
@@ -116737,6 +117690,67 @@ export default {
           default: 1,
           format: "double precision",
           type: "number"
+        }
+      },
+      type: "object"
+    },
+    ediTradingPartnerLocation: {
+      required: [
+        "id",
+        "companyId",
+        "tradingPartnerId",
+        "externalCode",
+        "customerLocationId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('editpl'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        tradingPartnerId: {
+          format: "text",
+          type: "string"
+        },
+        externalCode: {
+          format: "text",
+          type: "string"
+        },
+        customerLocationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customerLocation.id`.<fk table='customerLocation' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -120924,6 +121938,81 @@ export default {
           default: "",
           format: "text",
           type: "string"
+        }
+      },
+      type: "object"
+    },
+    ediTradingPartner: {
+      required: [
+        "id",
+        "companyId",
+        "customerId",
+        "active",
+        "releaseMode",
+        "priceTolerancePercent",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('editp'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        customerId: {
+          format: "text",
+          type: "string"
+        },
+        externalId: {
+          format: "text",
+          type: "string"
+        },
+        active: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        releaseMode: {
+          default: "Review",
+          enum: ["Automatic", "Review"],
+          format: 'public."ediReleaseMode"',
+          type: "string"
+        },
+        priceTolerancePercent: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
         }
       },
       type: "object"
@@ -125191,6 +126280,78 @@ export default {
             type: "string"
           },
           type: "array"
+        }
+      },
+      type: "object"
+    },
+    ediTradingPartnerDocument: {
+      required: [
+        "id",
+        "companyId",
+        "tradingPartnerId",
+        "documentType",
+        "direction",
+        "enabled",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('editpd'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        tradingPartnerId: {
+          format: "text",
+          type: "string"
+        },
+        documentType: {
+          enum: [
+            "Purchase Order",
+            "Purchase Order Acknowledgment",
+            "Advance Ship Notice",
+            "Invoice"
+          ],
+          format: 'public."ediDocumentType"',
+          type: "string"
+        },
+        direction: {
+          enum: ["Inbound", "Outbound"],
+          format: 'public."ediDocumentDirection"',
+          type: "string"
+        },
+        enabled: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -155691,6 +156852,141 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.ediDocument": {
+      name: "ediDocument",
+      description: "ediDocument",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/ediDocument"
+      }
+    },
+    "rowFilter.ediDocument.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediDocument.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediDocument.tradingPartnerId": {
+      name: "tradingPartnerId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediDocument.direction": {
+      name: "direction",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediDocument.documentType": {
+      name: "documentType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediDocument.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediDocument.externalId": {
+      name: "externalId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediDocument.partnerReference": {
+      name: "partnerReference",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediDocument.payload": {
+      name: "payload",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediDocument.issues": {
+      name: "issues",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediDocument.sourceDocument": {
+      name: "sourceDocument",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediDocument.sourceDocumentId": {
+      name: "sourceDocumentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediDocument.sourceDocumentReadableId": {
+      name: "sourceDocumentReadableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediDocument.acknowledgedAt": {
+      name: "acknowledgedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediDocument.releasedBy": {
+      name: "releasedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediDocument.releasedAt": {
+      name: "releasedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediDocument.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediDocument.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediDocument.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediDocument.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediDocument.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.accountDefault": {
       name: "accountDefault",
       description: "accountDefault",
@@ -159304,6 +160600,69 @@ export default {
     },
     "rowFilter.purchaseInvoiceLine.sortOrder": {
       name: "sortOrder",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.ediTradingPartnerLocation": {
+      name: "ediTradingPartnerLocation",
+      description: "ediTradingPartnerLocation",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/ediTradingPartnerLocation"
+      }
+    },
+    "rowFilter.ediTradingPartnerLocation.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartnerLocation.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartnerLocation.tradingPartnerId": {
+      name: "tradingPartnerId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartnerLocation.externalCode": {
+      name: "externalCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartnerLocation.customerLocationId": {
+      name: "customerLocationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartnerLocation.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartnerLocation.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartnerLocation.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartnerLocation.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -164015,6 +165374,87 @@ export default {
     },
     "rowFilter.customer.readableId": {
       name: "readableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.ediTradingPartner": {
+      name: "ediTradingPartner",
+      description: "ediTradingPartner",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/ediTradingPartner"
+      }
+    },
+    "rowFilter.ediTradingPartner.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartner.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartner.customerId": {
+      name: "customerId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartner.externalId": {
+      name: "externalId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartner.active": {
+      name: "active",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartner.releaseMode": {
+      name: "releaseMode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartner.priceTolerancePercent": {
+      name: "priceTolerancePercent",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartner.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartner.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartner.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartner.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartner.customFields": {
+      name: "customFields",
       required: false,
       in: "query",
       type: "string"
@@ -168901,6 +170341,75 @@ export default {
     },
     "rowFilter.qualityDocuments.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.ediTradingPartnerDocument": {
+      name: "ediTradingPartnerDocument",
+      description: "ediTradingPartnerDocument",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/ediTradingPartnerDocument"
+      }
+    },
+    "rowFilter.ediTradingPartnerDocument.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartnerDocument.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartnerDocument.tradingPartnerId": {
+      name: "tradingPartnerId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartnerDocument.documentType": {
+      name: "documentType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartnerDocument.direction": {
+      name: "direction",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartnerDocument.enabled": {
+      name: "enabled",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartnerDocument.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartnerDocument.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartnerDocument.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ediTradingPartnerDocument.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"

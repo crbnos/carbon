@@ -73,7 +73,8 @@ export const eventQueueFunction = inngest.createFunction(
             SYNC: [],
             SEARCH: [],
             AUDIT: [],
-            EMBEDDING: []
+            EMBEDDING: [],
+            EDI: []
           };
 
           // Unknown handler types are poison: pushing into a missing bucket
@@ -226,7 +227,23 @@ export const eventQueueFunction = inngest.createFunction(
         }
       }
 
-      // 9. Delete processed messages from PGMQ (archived poison ids are
+      // 9. Dispatch EDI (chunked)
+      if (grouped.EDI.length > 0) {
+        const records = grouped.EDI.map((job) => ({
+          event: job.message.event,
+          companyId: job.message.companyId
+        }));
+
+        const chunks = chunk(records, CHUNK_SIZE);
+        for (let i = 0; i < chunks.length; i++) {
+          await step.sendEvent(`dispatch-edi-${pass}-${i}`, {
+            name: "carbon/event-edi" as const,
+            data: { records: chunks[i] }
+          });
+        }
+      }
+
+      // 10. Delete processed messages from PGMQ (archived poison ids are
       // excluded — archive already dequeued them)
       if (allIds.length > 0) {
         await step.run(`delete-processed-${pass}`, async () => {

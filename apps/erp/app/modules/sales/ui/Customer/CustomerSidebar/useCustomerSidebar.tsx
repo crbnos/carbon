@@ -1,5 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import {
+  LuArrowRightLeft,
   LuBuilding,
   LuContact,
   LuCreditCard,
@@ -71,6 +72,12 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
       role: ["employee"],
       icon: <LuTruck />,
       shortcut: "Command+Shift+s"
+    },
+    {
+      name: t`EDI`,
+      to: path.to.customerEdi(customerId),
+      role: ["employee"],
+      icon: <LuArrowRightLeft />
     },
     {
       name: t`Risks`,

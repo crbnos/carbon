@@ -953,6 +953,9 @@ msgstr "蓄積期間:"
 msgid "Acknowledge & finish"
 msgstr "認めて完了"
 
+msgid "Acknowledged"
+msgstr "確認済み"
+
 msgid "Acknowledged itar"
 msgstr "ITAR確認済み"
 
@@ -1117,6 +1120,9 @@ msgstr "行を追加"
 
 msgid "Add Line Item"
 msgstr "ラインアイテムを追加"
+
+msgid "Add Mapping"
+msgstr "マッピングを追加"
 
 msgid "Add match"
 msgstr "マッチを追加"
@@ -2616,6 +2622,9 @@ msgstr "購入と製造"
 msgid "Buyer"
 msgstr "購入者"
 
+msgid "Buyer Part"
+msgstr "買い手部品"
+
 msgid "Buyer, Planner"
 msgstr "購買者、プランナー"
 
@@ -3289,6 +3298,9 @@ msgstr "デフォルトのエクイティと留保利益勘定を構成する"
 
 msgid "Configure defaults for the quality dashboard."
 msgstr "品質ダッシュボードのデフォルトを設定します。"
+
+msgid "Configure electronic data interchange with this trading partner"
+msgstr "このトレーディングパートナーと電子データ交換を設定"
 
 msgid "Configure Item"
 msgstr "アイテムを構成"
@@ -4761,6 +4773,9 @@ msgstr "行を削除"
 msgid "Delete Location"
 msgstr "ロケーションを削除"
 
+msgid "Delete location mapping"
+msgstr "位置マッピングを削除"
+
 msgid "Delete Material"
 msgstr "材料を削除"
 
@@ -5433,6 +5448,12 @@ msgstr "拡張が簡単"
 
 msgid "Economic Operators Registration and Identification number; required for goods crossing customs borders in the EU / UK."
 msgstr "経済オペレーターの登録と識別番号; EU/UKの税関境界線を超える商品に必要です。"
+
+msgid "EDI"
+msgstr "EDI"
+
+msgid "EDI Documents"
+msgstr "EDIドキュメント"
 
 msgid "Edit"
 msgstr "編集"
@@ -6122,6 +6143,9 @@ msgstr "スターターのすべての機能"
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "{PO_EMAIL_ATTACHMENT_LIMIT_MB} MB を超えています — 送信するには添付ファイルを削除してください。"
+
+msgid "Exchange documents with this trading partner"
+msgstr "このトレーディングパートナーとドキュメントを交換"
 
 msgid "Exchange rate"
 msgstr "為替レート"
@@ -8475,6 +8499,9 @@ msgstr "リンク済み問題"
 msgid "Linked PO"
 msgstr "リンク済みPO"
 
+msgid "Linked Record"
+msgstr "リンクされたレコード"
+
 msgid "List Options"
 msgstr "リストオプション"
 
@@ -8539,6 +8566,9 @@ msgstr "ロケーション"
 
 msgid "Location / Item"
 msgstr "場所 / 品目"
+
+msgid "Location Mapping"
+msgstr "位置マッピング"
 
 msgid "Location Name"
 msgstr "ロケーション名"
@@ -8781,6 +8811,9 @@ msgstr "メーカー部品番号"
 msgid "Manufacturing"
 msgstr "製造"
 
+msgid "Map"
+msgstr "マップ"
+
 msgid "Map accounts"
 msgstr "勘定をマップ"
 
@@ -8795,6 +8828,15 @@ msgstr "抽出行をマップ"
 
 msgid "Map Lines Now"
 msgstr "今すぐラインをマップ"
+
+msgid "Map partner ship-to codes to customer locations"
+msgstr "パートナーの配送先コードを顧客位置にマップ"
+
+msgid "Map to item"
+msgstr "アイテムにマップ"
+
+msgid "Map to location"
+msgstr "位置にマップ"
 
 msgid "Map your current process, systems, and data"
 msgstr "現在のプロセス、システム、データをマップする"
@@ -9272,6 +9314,9 @@ msgstr "ジョブが必要"
 
 msgid "Needs ordering"
 msgstr "発注が必要"
+
+msgid "Needs Review"
+msgstr "レビューが必要"
 
 msgid "Negative Adjustment"
 msgstr "負の調整"
@@ -9801,6 +9846,9 @@ msgstr "検査計画がありません"
 
 msgid "No issue types configured"
 msgstr "問題タイプが設定されていません"
+
+msgid "No issues"
+msgstr "問題なし"
 
 msgid "No items"
 msgstr "アイテムなし"
@@ -10747,6 +10795,12 @@ msgstr "部分"
 msgid "Partner"
 msgstr "パートナー"
 
+msgid "Partner Code"
+msgstr "パートナーコード"
+
+msgid "Partner Reference"
+msgstr "パートナー参照"
+
 msgid "Partners"
 msgstr "パートナー"
 
@@ -11257,6 +11311,9 @@ msgstr "価格リスト"
 msgid "Price override"
 msgstr "価格オーバーライド"
 
+msgid "Price Tolerance"
+msgstr "価格許容度"
+
 msgid "Prices"
 msgstr "価格"
 
@@ -11476,6 +11533,9 @@ msgstr "プロバイダアカウント"
 
 msgid "Provider option"
 msgstr "プロバイダーオプション"
+
+msgid "Provider Partner ID"
+msgstr "プロバイダーパートナーID"
 
 msgid "Public"
 msgstr "公開"
@@ -11843,6 +11903,9 @@ msgstr "原材料"
 msgid "Raw Materials (default)"
 msgstr "原材料（デフォルト）"
 
+msgid "Raw Payload"
+msgstr "生のペイロード"
+
 msgid "Re-date to first open day"
 msgstr "最初の営業日に再日付け"
 
@@ -12125,6 +12188,9 @@ msgstr "リリース管理"
 
 msgid "Release Job"
 msgstr "ジョブをリリース"
+
+msgid "Release Mode"
+msgstr "リリースモード"
 
 msgid "Released"
 msgstr "リリース済み"
@@ -12864,6 +12930,9 @@ msgstr "連絡先を保存"
 msgid "Save dimension settings"
 msgstr "ディメンション設定を保存"
 
+msgid "Save EDI settings before mapping locations"
+msgstr "位置マッピングの前にEDI設定を保存"
+
 msgid "Save Method"
 msgstr "メソッドを保存"
 
@@ -13327,6 +13396,9 @@ msgstr "不良ユニットをスクラップするのではなく、以前の操
 
 msgid "Sends this document for approval before it can go active."
 msgstr "このドキュメントを承認のために送信してから、アクティブにすることができます。"
+
+msgid "Sent"
+msgstr "送信済み"
 
 msgid "Sent complete date"
 msgstr "送信完了日"
@@ -16533,6 +16605,9 @@ msgstr "カスタムフィールドを表示"
 
 msgid "View Customers"
 msgstr "顧客を表示"
+
+msgid "View Document"
+msgstr "ドキュメントを表示"
 
 msgid "View Employees"
 msgstr "従業員を表示"

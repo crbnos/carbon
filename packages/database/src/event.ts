@@ -14,7 +14,8 @@ const HandlerTypeSchema = z.enum([
   "SYNC",
   "SEARCH",
   "AUDIT",
-  "EMBEDDING"
+  "EMBEDDING",
+  "EDI"
 ]);
 
 export const EventSchema = z.discriminatedUnion("operation", [

@@ -20,6 +20,7 @@ export { inngest } from "./client.ts";
 
 import {
   auditFunction,
+  ediEventFunction,
   embeddingFunction,
   eventQueueFunction,
   searchFunction,
@@ -34,6 +35,8 @@ import {
   accountingOutboundSweepFunction,
   accountingPullSweepFunction,
   accountingReconciliationFunction,
+  ediReconcileAcksFunction,
+  ediSendDocumentFunction,
   jiraSyncFunction,
   linearSyncFunction,
   onshapeBackfillFunction,
@@ -99,6 +102,7 @@ export const functions = [
   sendSlackFunction,
   // Event handlers
   auditFunction,
+  ediEventFunction,
   eventQueueFunction,
   searchFunction,
   syncFunction,
@@ -141,6 +145,8 @@ export const functions = [
   notificationPurgeFunction,
   workflowRunRetentionFunction,
   // Integrations
+  ediSendDocumentFunction,
+  ediReconcileAcksFunction,
   jiraSyncFunction,
   linearSyncFunction,
   paperlessPartsFunction,

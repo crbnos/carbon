@@ -12,6 +12,7 @@ Quotes (with cost rollup and pricing), sales orders, sales RFQs, customer manage
 - **Price Overrides** — customer-specific or type-specific price overrides with quantity breaks via `customerItemPriceOverride` / `customerItemPriceOverrideBreak`. Precedence: customer > customer-type > all-customers > base price.
 - **Sales Order** — confirmed order from a quote. Lines carry `methodType` (Make to Order, Make to Stock, etc.) that determines production handling.
 - **Sales RFQ** — inbound request from a customer, convertible to a quote via the `convert` edge function.
+- **EDI (sell-side)** — per-customer `ediTradingPartner` config drives inbound X12 850 → sales order and outbound 855/856/810. Inbound documents land in `ediDocument` (status lifecycle `Received → Needs Review → Posted / Rejected`), get resolved against `customerPartToItem` (buyer parts), `ediTradingPartnerLocation` (ship-to codes), and `resolvePrice` (price tolerance); clean docs on `releaseMode = 'Automatic'` auto-create the SO, otherwise they hold for review. Outbound docs (`Pending → Sent → Acknowledged / Failed`) are generated from the **actual posted record** by the `@carbon/jobs` `edi-send-document` job, triggered via the event system (new `EDI` handler type). Translation/connectivity is rented from a provider (Orderful adapter in `@carbon/ee/edi`); Carbon never parses X12. See `.ai/specs/2026-08-04-edi-support.md`.
 
 ## Safety
 
@@ -54,6 +55,10 @@ cd apps/erp && pnpm exec vitest run app/modules/sales
 | `pricingRule` | Company-scoped discount/markup rules |
 | `customerItemPriceOverride` / `customerItemPriceOverrideBreak` | Customer-specific price overrides with quantity breaks |
 | `noQuoteReason` | Why a quote line was declined |
+| `ediTradingPartner` | Per-customer EDI config (one per customer): `active`, `releaseMode`, `priceTolerancePercent`, provider `externalId` |
+| `ediTradingPartnerDocument` | Which EDI documents are enabled per partner (documentType + direction) |
+| `ediTradingPartnerLocation` | Buyer ship-to code → `customerLocation` cross-reference |
+| `ediDocument` | Staged EDI document (message-as-truth): `direction`, `documentType`, `status`, immutable `payload` JSONB, `issues` JSONB, link to source SO/shipment/invoice |
 
 ## Key Service Functions
 
@@ -69,6 +74,7 @@ cd apps/erp && pnpm exec vitest run app/modules/sales
 - `getCustomer(s)` / `getCustomerContacts` / `getCustomerLocations` — customer reads
 - `getPricingRules` / `createPricingRule` / `duplicatePricingRule` — rule management
 - `getOpportunity` / `getOpportunityDocuments` — deal tracking
+- **EDI**: `getEdiTradingPartner` / `upsertEdiTradingPartner` / `upsertEdiTradingPartnerDocuments` / `upsertEdiTradingPartnerLocation` / `deleteEdiTradingPartnerLocation` — trading-partner config; `ensureEdiEventSubscriptions` — idempotently creates the three outbound `EDI` event subscriptions when a partner is activated; `getEdiDocuments` / `getEdiDocument` — document queue reads; `processInboundEdiTransaction` — stage → resolve → auto-release/hold (called from `api+/webhook.edi.$companyId.ts`); `releaseEdiDocument` — re-resolve the stored payload and create the SO via `insertSalesOrder`/`insertSalesOrderLines`; `refreshEdiDocumentIssues` — re-run resolution after a cross-reference fix; `rejectEdiDocument`; `applyEdiAcknowledgment` — apply an inbound 997 to the matching outbound document. Never parse X12 here — the provider (`@carbon/ee/edi`) owns translation.
 
 ## Key Exports
 
