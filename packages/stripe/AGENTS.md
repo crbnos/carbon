@@ -81,6 +81,7 @@ pnpm --filter @carbon/stripe dev:stripe  # local Stripe listener (dev)
 - `packages/ee/src/plan.ts` + `plan.server.ts` — feature/plan gating (`FEATURE_PLANS`)
 - `apps/erp/app/routes/api+/webhook.stripe.ts` — platform webhook route
 - `apps/erp/app/routes/api+/webhook.stripe-connect.ts` — Connect webhook route
-- `apps/erp/app/modules/invoicing/invoicing.server.ts` —
-  `recordStripeConnectPayment`, the Connect payment → Carbon `payment` recorder
+- `packages/ee/src/stripe-connect/payment.server.ts` (exported as
+  `@carbon/ee/stripe-connect.server`) — `recordStripeConnectPayment`, the
+  Connect payment → Carbon `payment` recorder
 - `packages/database/supabase/migrations/*billing*.sql` — schema

@@ -218,7 +218,10 @@ export const salesInvoicePostValidator = z
     // Supplied only when the selected contact had no email on file.
     stripeContactEmail: zfd.text(
       z.string().email({ message: "Email is invalid" }).optional()
-    )
+    ),
+    // Supplied only when the invoice's own dateDue wouldn't survive
+    // clampDueDate (missing, past, or too far out) — see the post modal.
+    stripeDueDate: zfd.text(z.string().optional())
   })
   .refine(
     (data) =>

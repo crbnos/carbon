@@ -18,9 +18,13 @@ const stripeConnect = STRIPE_SECRET_KEY
 function deriveConnectAccountMetadata(account: Stripe.V2.Core.Account) {
   const capabilities = account.configuration?.merchant?.capabilities;
   const entries = account.requirements?.entries ?? [];
-  const requirementErrors = entries
-    .flatMap((entry) => entry.errors ?? [])
-    .map((requirementError) => requirementError.description);
+  const requirementErrors = [
+    ...new Set(
+      entries
+        .flatMap((entry) => entry.errors ?? [])
+        .map((requirementError) => requirementError.description)
+    )
+  ];
 
   return {
     chargesEnabled: capabilities?.card_payments?.status === "active",
@@ -68,40 +72,43 @@ export async function getOrCreateConnectAccount(
   }
 
   const comp = company.data;
-  const countryCode = comp.countryCode || "US";
-  const contactEmail = comp.email || userEmail;
 
   const account = await stripeConnect.v2.core.accounts.create({
-    contact_email: contactEmail,
+    contact_email: comp.email || undefined,
     display_name: comp.name,
     dashboard: STRIPE_CONNECT_ACCOUNT_CONFIG.dashboard,
     identity: {
-      country: countryCode,
+      country: comp.countryCode || undefined,
       entity_type: STRIPE_CONNECT_ACCOUNT_CONFIG.entityType,
       business_details: {
         registered_name: comp.name,
         phone: comp.phone || undefined,
-        address: {
-          line1: comp.addressLine1 || undefined,
-          line2: comp.addressLine2 || undefined,
-          city: comp.city || undefined,
-          state: comp.stateProvince || undefined,
-          postal_code: comp.postalCode || undefined,
-          country: countryCode
-        }
+        address: comp.countryCode
+          ? {
+              line1: comp.addressLine1 || undefined,
+              line2: comp.addressLine2 || undefined,
+              city: comp.city || undefined,
+              state: comp.stateProvince || undefined,
+              postal_code: comp.postalCode || undefined,
+              country: comp.countryCode
+            }
+          : undefined
       }
     },
     configuration: {
       merchant: {
-        // stripe_balance.payouts (which replaces v1's `transfers` capability) has no
-        // separate opt-in on Merchant configuration create — it activates once the
-        // merchant configuration itself is applied and verification requirements clear.
         capabilities: {
-          ach_debit_payments: { requested: true },
-          card_payments: { requested: true }
+          ach_debit_payments: {
+            requested:
+              STRIPE_CONNECT_ACCOUNT_CONFIG.capabilities["ach_debit_payments"]
+          },
+          card_payments: {
+            requested:
+              STRIPE_CONNECT_ACCOUNT_CONFIG.capabilities["card_payments"]
+          }
         },
         support: {
-          email: contactEmail,
+          email: comp.email || undefined,
           phone: comp.phone || undefined
         }
       }
@@ -122,7 +129,7 @@ export async function getOrCreateConnectAccount(
 
   stripeAccountId = account.id;
 
-  await client.from("companyIntegration").upsert({
+  const upsert = await client.from("companyIntegration").upsert({
     id: "stripe-connect",
     companyId,
     active: true,
@@ -132,6 +139,17 @@ export async function getOrCreateConnectAccount(
       ...deriveConnectAccountMetadata(account)
     }
   });
+
+  if (upsert.error) {
+    // The Stripe account already exists at this point — a swallowed error
+    // here would leave no `stripeAccountId` in `companyIntegration`, and the
+    // next call would find no existing row and create ANOTHER Stripe account
+    // for the same company. Throw so the caller (and its logs) can recover
+    // the orphaned account id rather than silently losing it.
+    throw new Error(
+      `Stripe Connect account ${stripeAccountId} was created but failed to save to companyIntegration: ${upsert.error.message}`
+    );
+  }
 
   return stripeAccountId;
 }
@@ -193,10 +211,6 @@ export async function createExpressDashboardLoginLink(
   if (!stripe) {
     throw new Error("Stripe secret key is not configured.");
   }
-
-  // Express Dashboard login links remain a v1 endpoint. Per Stripe's v2/v1
-  // interoperability model, v1 endpoints accept v2-created Account IDs directly, so
-  // this stays on the shared v1-pinned client rather than the Connect v2 client.
   const loginLink = await stripe.accounts.createLoginLink(stripeAccountId);
   return loginLink.url;
 }
@@ -409,8 +423,6 @@ export async function upsertConnectCustomer(
 
   const payload: Stripe.CustomerUpdateParams = {
     name: input.name,
-    // Stripe renders `name` in the dashboard but prefers `business_name` on
-    // invoice PDFs; Carbon has one company name for both.
     business_name: input.name,
     email: input.email,
     phone: input.phone,
@@ -430,6 +442,17 @@ export async function upsertConnectCustomer(
     return updated.id;
   }
 
+  // The idempotency key is scoped by this field — if it's ever missing, every
+  // customer created for the account collapses onto the SAME key, and Stripe
+  // returns the first-ever-created customer for every subsequent call,
+  // silently pointing every later invoice at the wrong Stripe customer.
+  const carbonCustomerId = input.metadata.carbon_customer_id;
+  if (!carbonCustomerId) {
+    throw new Error(
+      "ConnectCustomerInput.metadata.carbon_customer_id is required to create a Stripe customer."
+    );
+  }
+
   const created = await stripe.customers.create(
     {
       ...payload,
@@ -437,10 +460,7 @@ export async function upsertConnectCustomer(
     },
     {
       ...options,
-      // Posting an invoice is retryable from the UI, and a retry that got as
-      // far as creating the customer but not as far as writing the mapping row
-      // would otherwise leave a duplicate on the merchant's account.
-      idempotencyKey: `customer:${stripeAccountId}:${input.metadata.carbon_customer_id}`
+      idempotencyKey: `customer:${stripeAccountId}:${carbonCustomerId}`
     }
   );
 
@@ -656,7 +676,7 @@ export async function createAndSendConnectInvoice(
       : 0;
     const taxRates = percentage
       ? [await resolveConnectTaxRateId(stripeAccountId, percentage)]
-      : undefined;
+      : [];
 
     const base = {
       customer: stripeCustomerId,
@@ -738,18 +758,12 @@ export async function createAndSendConnectInvoice(
       customer: stripeCustomerId,
       currency,
       collection_method: "send_invoice",
-      // Stripe takes one or the other, and `due_date` is only valid under
-      // `send_invoice`. Prefer the real date: deriving a day count from
-      // dateDue − dateIssued loses the date Carbon actually posted.
       ...(params.dueDate
         ? { due_date: params.dueDate }
-        : { days_until_due: params.daysUntilDue ?? 30 }),
+        : params.daysUntilDue
+          ? { days_until_due: params.daysUntilDue }
+          : {}),
       ...(params.effectiveAt ? { effective_at: params.effectiveAt } : {}),
-      // Stripe assigns its own number when this is unset; passing Carbon's
-      // keeps one identifier across both systems on the PDF the customer sees.
-      // Stripe does not dedupe against numbers issued elsewhere — a second
-      // finalize under the same number is rejected at finalization, which is
-      // the correct outcome for a double-send.
       ...(params.invoiceNumber ? { number: params.invoiceNumber } : {}),
       ...(params.description ? { description: params.description } : {}),
       ...(params.footer ? { footer: params.footer } : {}),
@@ -790,6 +804,7 @@ export async function createAndSendConnectInvoice(
       `the Stripe invoice totals ${fromStripeAmount(draft.total ?? 0, currency)} ${currency.toUpperCase()} but the Carbon invoice totals ${expected.total} — refusing to send`
     );
   }
+  // TODO: Accounting journal entry for this?
   if (drift > 0) {
     log.warn("Stripe Connect invoice total differs from Carbon by rounding", {
       stripeAccountId,
@@ -798,9 +813,6 @@ export async function createAndSendConnectInvoice(
     });
   }
 
-  // Finalizing is what mints `hosted_invoice_url` and `invoice_pdf` — both are
-  // null on a draft. Sending is a separate step that only handles email
-  // delivery (and is a no-op for email in test mode).
   const finalized = await stripe.invoices.finalizeInvoice(
     invoice.id!,
     {},
@@ -864,13 +876,30 @@ export function constructConnectWebhookEvent({
 export type ConnectInvoicePaymentDetails = {
   /** Charge ids behind this invoice's payments, for traceability. */
   chargeIds: string[];
-  /** Stripe's processing fee, as a decimal amount in `feeCurrency`. */
+  /**
+   * Stripe's processing fee, as a decimal amount in `feeCurrency`. When Stripe
+   * settled the charge into a different currency than it was presented in,
+   * this is already converted back to the charge's own currency using the
+   * balance transaction's own `exchange_rate` — the same rate Stripe applied —
+   * so callers can book it directly against the invoice.
+   */
   feeAmount: number;
   /**
-   * Currency the fee was assessed in — the account's SETTLEMENT currency, which
-   * is not necessarily the invoice currency. Callers must compare before booking.
+   * Currency `feeAmount` is expressed in — the charge's own currency (which,
+   * for Stripe Invoicing, is always the invoice currency) whenever a rate was
+   * available to convert into it. Falls back to the account's raw SETTLEMENT
+   * currency only when Stripe settled into a different currency with no
+   * `exchange_rate` to convert by (should not happen, but Stripe doesn't
+   * guarantee it) — callers must compare this against the invoice currency
+   * before booking in that residual case.
    */
   feeCurrency: string | null;
+  /**
+   * Set only when Stripe settled this charge into a currency other than
+   * `feeCurrency` — the raw settlement currency, kept for audit/reconciliation
+   * traceability alongside the (possibly converted) `feeAmount` above.
+   */
+  settlementCurrency: string | null;
 };
 
 /**
@@ -892,7 +921,8 @@ export async function getConnectInvoicePaymentDetails(
   const empty: ConnectInvoicePaymentDetails = {
     chargeIds: [],
     feeAmount: 0,
-    feeCurrency: null
+    feeCurrency: null,
+    settlementCurrency: null
   };
 
   if (!stripe) return empty;
@@ -911,6 +941,7 @@ export async function getConnectInvoicePaymentDetails(
     const chargeIds: string[] = [];
     let feeMinor = 0;
     let feeCurrency: string | null = null;
+    let settlementCurrency: string | null = null;
 
     for (const payment of payments.data) {
       if (payment.status !== "paid") continue;
@@ -947,15 +978,40 @@ export async function getConnectInvoicePaymentDetails(
 
       const balanceTransaction = charge.balance_transaction;
       if (balanceTransaction && typeof balanceTransaction !== "string") {
-        feeMinor += balanceTransaction.fee;
-        feeCurrency = balanceTransaction.currency.toUpperCase();
+        const chargeCurrency = charge.currency.toUpperCase();
+        const txnCurrency = balanceTransaction.currency.toUpperCase();
+        if (txnCurrency !== chargeCurrency) settlementCurrency = txnCurrency;
+
+        if (
+          txnCurrency === chargeCurrency ||
+          !balanceTransaction.exchange_rate
+        ) {
+          // Same currency, or (rare) no rate to convert with — report the fee
+          // as Stripe assessed it. The caller compares feeCurrency against the
+          // invoice currency before booking.
+          feeMinor += balanceTransaction.fee;
+          feeCurrency = txnCurrency;
+        } else {
+          // Stripe settled this charge into a different currency than it was
+          // presented in (e.g. the connected account hasn't enabled the
+          // charge's currency as a settlement currency). Per Stripe's docs,
+          // balance_transaction.exchange_rate converts FROM the charge's own
+          // currency TO the settlement currency (chargeAmount × exchange_rate
+          // = settlementAmount) — the same rate Stripe actually applied, so
+          // divide it back out rather than reaching for an unrelated FX rate.
+          // feeCurrency becomes the charge's own currency, which for Stripe
+          // Invoicing is always the invoice currency.
+          feeMinor += balanceTransaction.fee / balanceTransaction.exchange_rate;
+          feeCurrency = chargeCurrency;
+        }
       }
     }
 
     return {
       chargeIds,
       feeAmount: feeCurrency ? fromStripeAmount(feeMinor, feeCurrency) : 0,
-      feeCurrency
+      feeCurrency,
+      settlementCurrency
     };
   } catch (err) {
     log.warn("Failed to resolve Stripe Connect invoice payment details", {

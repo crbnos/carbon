@@ -45,9 +45,6 @@ const events: Stripe.WebhookEndpointCreateParams.EnabledEvent[] = [
   "payment_intent.canceled",
 ];
 
-// Connected-account events are delivered only to an endpoint created with
-// `connect: true`, and that endpoint carries its own signing secret — hence a
-// second registration rather than more events on the platform endpoint.
 const connectEvents: Stripe.WebhookEndpointCreateParams.EnabledEvent[] = [
   "invoice.paid",
   "invoice.payment_succeeded",
@@ -76,8 +73,13 @@ async function registerWebhook({
   console.log(`🔄 Registering Stripe webhook for ${url}...`);
 
   try {
-    // First, list existing webhooks to avoid duplicates
-    const existingEndpoints = await stripe.webhookEndpoints.list();
+    // First, list existing webhooks to avoid duplicates. Stripe's default
+    // page size is 10 — without an explicit limit, an account with more than
+    // 10 webhooks would miss the existing endpoint here and create a
+    // duplicate on every run.
+    const existingEndpoints = await stripe.webhookEndpoints.list({
+      limit: 100,
+    });
 
     // Check if we already have a webhook for this URL
     const existingEndpoint = existingEndpoints.data.find(

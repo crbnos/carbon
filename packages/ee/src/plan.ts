@@ -26,9 +26,7 @@ export type Feature = keyof typeof FEATURE_PLANS;
  */
 export const INTEGRATION_WHITELIST = new Set<IntegrationID>([
   "email",
-  "exchange-rates-v1",
-  // TODO: follow up on business use case - whitelisted for dev testing so all plans can configure Stripe Connect
-  "stripe-connect"
+  "exchange-rates-v1"
 ]);
 
 export function isIntegrationWhitelisted(id: string) {

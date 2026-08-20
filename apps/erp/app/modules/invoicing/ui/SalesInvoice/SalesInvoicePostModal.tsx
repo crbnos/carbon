@@ -18,15 +18,18 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FetcherWithComponents } from "react-router";
 import { useFetcher } from "react-router";
 import {
   CustomerContact,
+  DatePicker,
   EmailRecipients,
   SelectControlled
 } from "~/components/Form";
+import { useCompanyToday } from "~/hooks";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import type { StripeCustomerResolution } from "~/modules/invoicing/stripe-customer.server";
 import { path } from "~/utils/path";
@@ -46,6 +49,7 @@ type SalesInvoicePostModalProps = {
   }[];
   customerId: string | null;
   customerContactId: string | null;
+  dateDue: string | null;
   defaultCc?: string[];
 };
 
@@ -57,6 +61,7 @@ const SalesInvoicePostModal = ({
   linesToShip,
   customerId,
   customerContactId,
+  dateDue,
   defaultCc = []
 }: SalesInvoicePostModalProps) => {
   const { t } = useLingui();
@@ -65,25 +70,45 @@ const SalesInvoicePostModal = ({
   const canEmail = integrations.has("email");
   const canStripe = integrations.has("stripe-connect");
 
+  // The invoice's own dateDue is a business date, so the "would this survive
+  // clampDueDate" check anchors on the company's calendar, not the browser's.
+  const companyToday = parseDate(useCompanyToday());
+  const minStripeDueDate = companyToday.add({ days: 1 });
+  const maxStripeDueDate = companyToday.add({ years: 5 });
+  const parsedDateDue = (() => {
+    if (!dateDue) return null;
+    try {
+      return parseDate(dateDue.slice(0, 10));
+    } catch {
+      return null;
+    }
+  })();
+  // Mirrors clampDueDate's server-side rule (missing, on/before today, or
+  // more than 5 years out) — if the invoice's own date wouldn't survive that
+  // clamp, ask the user for one instead of silently sending with none.
+  const needsStripeDueDate =
+    !parsedDateDue ||
+    parsedDateDue.compare(companyToday) <= 0 ||
+    parsedDateDue.compare(maxStripeDueDate) > 0;
+
   const [notificationType, setNotificationType] = useState<
     "Email" | "Stripe" | "None"
   >(canStripe ? "Stripe" : canEmail ? "Email" : "None");
 
   const [contactId, setContactId] = useState<string | null>(customerContactId);
-  // What the user is typing, vs. the address the resolution has actually been
-  // run against. Split so every keystroke doesn't hit Stripe — the committed
-  // value only moves on blur.
   const [stripeEmail, setStripeEmail] = useState("");
   const [committedEmail, setCommittedEmail] = useState<string | undefined>();
-
-  // Resolves the Carbon customer against the connected account so the user can
-  // see — and choose — what posting would do before it happens.
   const stripeCustomer = useFetcher<StripeCustomerResolution>();
   const isStripe = notificationType === "Stripe";
+  // The identity the current panel state must correspond to. Anything the
+  // fetcher still holds for a different key is stale.
+  const requestKey = `${contactId ?? ""}|${committedEmail ?? ""}`;
+  const loadedKeyRef = useRef<string | null>(null);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: `stripeCustomer` is a fresh object each render, so depending on it would re-run this effect forever.
   useEffect(() => {
     if (!isStripe || !contactId) return;
+    loadedKeyRef.current = requestKey;
     stripeCustomer.load(
       path.to.api.stripeConnectCustomer(invoiceId, contactId, committedEmail)
     );
@@ -100,7 +125,8 @@ const SalesInvoicePostModal = ({
   }, [fetcher.data?.success]);
 
   const resolution = stripeCustomer.data ?? null;
-  const isResolving = stripeCustomer.state !== "idle";
+  const isStale = loadedKeyRef.current !== requestKey;
+  const isResolving = stripeCustomer.state !== "idle" || isStale;
 
   // Nothing may be created on a merchant's Stripe account without a decision,
   // so the submit stays shut until the panel has produced one.
@@ -127,7 +153,11 @@ const SalesInvoicePostModal = ({
           defaultValues={{
             notification: notificationType,
             customerContact: customerContactId ?? undefined,
-            cc: defaultCc
+            cc: defaultCc,
+            stripeDueDate:
+              isStripe && needsStripeDueDate
+                ? companyToday.add({ days: 30 }).toString()
+                : undefined
           }}
           fetcher={fetcher}
         >
@@ -241,6 +271,16 @@ const SalesInvoicePostModal = ({
                     // have a customer under it, and linking beats duplicating.
                     if (email.includes("@")) setCommittedEmail(email);
                   }}
+                />
+              )}
+              {isStripe && needsStripeDueDate && (
+                <DatePicker
+                  name="stripeDueDate"
+                  label={t`Stripe Due Date`}
+                  helperText={t`This invoice has no usable due date — choose one for Stripe.`}
+                  minValue={minStripeDueDate}
+                  maxValue={maxStripeDueDate}
+                  isRequired
                 />
               )}
               {notificationType === "Email" && (

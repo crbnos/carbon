@@ -9,7 +9,7 @@ import { path } from "~/utils/path";
 
 const logger = getLogger("stripe-connect");
 
-export async function loader({ request }: LoaderFunctionArgs) {
+async function handle({ request }: { request: Request }) {
   const { client, companyId } = await requirePermissions(request, {
     update: "settings"
   });
@@ -76,6 +76,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 }
 
+export async function loader({ request }: LoaderFunctionArgs) {
+  return handle({ request });
+}
+
 export async function action({ request }: ActionFunctionArgs) {
-  return loader({ request } as any);
+  return handle({ request });
 }

@@ -12,7 +12,7 @@ import { path } from "~/utils/path";
 
 const logger = getLogger("stripe-connect");
 
-export async function loader({ request }: LoaderFunctionArgs) {
+async function handle({ request }: { request: Request }) {
   const { client, companyId, email } = await requirePermissions(request, {
     update: "settings"
   });
@@ -40,7 +40,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .eq("id", "stripe-connect")
       .eq("companyId", companyId)
       .maybeSingle();
-    await client.from("companyIntegration").upsert({
+    const upsert = await client.from("companyIntegration").upsert({
       id: "stripe-connect",
       companyId,
       active: true,
@@ -50,6 +50,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
         onboardingStarted: true // mark started on try
       }
     });
+
+    if (upsert.error) {
+      // Silent failure here leaves no `stripeAccountId` on the integration
+      // row — the callback would then throw "No Stripe Connect account
+      // found." Throw so this hits the catch below and surfaces to the user
+      // instead of onboarding silently against an unrecorded account.
+      throw new Error(
+        `Failed to save Stripe Connect account id: ${upsert.error.message}`
+      );
+    }
 
     if (
       request.headers.get("Accept")?.includes("application/json") ||
@@ -96,6 +106,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 }
 
+export async function loader({ request }: LoaderFunctionArgs) {
+  return handle({ request });
+}
+
 export async function action({ request }: ActionFunctionArgs) {
-  return loader({ request } as any);
+  return handle({ request });
 }

@@ -8,23 +8,34 @@
  * Per active Stripe Connect company:
  * 1. Read the sweep cursor from `metadata.settings.pullCursor`; default = the
  *    integration row's `updatedAt` (ensures we don't pull pre-install history).
- * 2. List all paid invoices from Stripe since the cursor.
+ * 2. List paid invoices from Stripe `created` at or after
+ *    `cursor - CURSOR_LOOKBACK_SECONDS`. The lookback re-scans a trailing
+ *    window on every run so an invoice CREATED before the cursor but PAID
+ *    after it is not permanently missed — `recordStripeConnectPayment` is
+ *    idempotent on the Stripe invoice id, so re-scanning is a no-op for
+ *    invoices already recorded.
  * 3. For each, call `recordStripeConnectPayment` — idempotent on the Stripe
  *    invoice id via the `externalIntegrationMapping` unique index.
- * 4. Advance the cursor to the latest `status_transitions.paid_at` seen only
- *    when all processing succeeded (Celigo cursor rule).
+ * 4. Advance the cursor to the latest `invoice.created` seen — the SAME field
+ *    the list query filters on — only when all processing succeeded (Celigo
+ *    cursor rule). Advancing on `status_transitions.paid_at` instead (a
+ *    different field than the query filter) is what caused the original miss.
  */
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { recordStripeConnectPayment } from "@carbon/ee/stripe-connect.server";
 import type { ConnectInvoice } from "@carbon/stripe/connect.server";
 import { stripe } from "@carbon/stripe/stripe.server";
 import { inngest } from "../../client";
+import {
+  nextPullCursor,
+  pullWindowStart
+} from "./stripe-connect-pull-sweep-cursor";
 
 const INTEGRATION_ID = "stripe-connect";
 
 export const stripeConnectPullSweepFunction = inngest.createFunction(
   { id: "stripe-connect-pull-sweep", retries: 2 },
-  { cron: "*/30 * * * *" }, // offset from the accounting pull sweep (*/30)
+  { cron: "15,45 * * * *" }, // offset from the accounting pull sweep (*/30)
   async ({ step, logger }) => {
     const client = getCarbonServiceRole();
 
@@ -107,7 +118,10 @@ export const stripeConnectPullSweepFunction = inngest.createFunction(
             };
           }
 
-          // Page through all paid invoices since the cursor.
+          // Page through all paid invoices created since the lookback window,
+          // not just since the raw cursor — see CURSOR_LOOKBACK_SECONDS above.
+          const queryFrom = pullWindowStart(since);
+
           type StripeInvoice = Awaited<
             ReturnType<typeof stripe.invoices.list>
           >["data"][number];
@@ -119,7 +133,7 @@ export const stripeConnectPullSweepFunction = inngest.createFunction(
             const page = await stripe.invoices.list(
               {
                 status: "paid",
-                created: { gte: since },
+                created: { gte: queryFrom },
                 limit: 100,
                 ...(startingAfter ? { starting_after: startingAfter } : {})
               },
@@ -149,7 +163,7 @@ export const stripeConnectPullSweepFunction = inngest.createFunction(
             return summary;
           }
 
-          let latestPaidAt: number | null = null;
+          let latestCreated: number | null = null;
           let anyError = false;
 
           for (const invoice of invoices) {
@@ -170,9 +184,10 @@ export const stripeConnectPullSweepFunction = inngest.createFunction(
                 );
               }
 
-              const paidAt = invoice.status_transitions?.paid_at;
-              if (paidAt && (latestPaidAt === null || paidAt > latestPaidAt)) {
-                latestPaidAt = paidAt;
+              // Advance on `created`, the same field the list query filters
+              // on — not `paid_at`, which is what let invoices slip through.
+              if (latestCreated === null || invoice.created > latestCreated) {
+                latestCreated = invoice.created;
               }
             } catch (err) {
               summary.errors++;
@@ -187,8 +202,8 @@ export const stripeConnectPullSweepFunction = inngest.createFunction(
           // Celigo cursor rule: only advance when all processing succeeded.
           // A partial error holds the cursor so the next run re-fetches the
           // same window, naturally retrying any failed invoice.
-          if (!anyError && latestPaidAt !== null && latestPaidAt > since) {
-            const newCursor = latestPaidAt + 1;
+          const newCursor = nextPullCursor(latestCreated, since, anyError);
+          if (newCursor !== null) {
             await storePullCursor(client, companyId, newCursor);
             summary.cursorAdvancedTo = newCursor;
           } else if (anyError) {

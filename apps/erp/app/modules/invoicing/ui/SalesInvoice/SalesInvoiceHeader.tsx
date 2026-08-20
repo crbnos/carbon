@@ -435,6 +435,7 @@ const SalesInvoiceHeader = () => {
           invoiceId={invoiceId}
           customerId={salesInvoice.invoiceCustomerId}
           customerContactId={salesInvoice.invoiceCustomerContactId}
+          dateDue={salesInvoice.dateDue}
           isOpen={postingModal.isOpen}
           onClose={postingModal.onClose}
           linesToShip={linesNotAssociatedWithSO}

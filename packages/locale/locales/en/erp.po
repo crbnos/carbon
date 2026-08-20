@@ -14036,6 +14036,9 @@ msgstr "Straight line"
 msgid "Stripe already has a customer with this email"
 msgstr "Stripe already has a customer with this email"
 
+msgid "Stripe Due Date"
+msgstr "Stripe Due Date"
+
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 msgstr "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 
@@ -15332,6 +15335,9 @@ msgstr "this inspection plan"
 #. placeholder {0}: company?.name ?? "Carbon"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
 msgstr "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
+
+msgid "This invoice has no usable due date — choose one for Stripe."
+msgstr "This invoice has no usable due date — choose one for Stripe."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."

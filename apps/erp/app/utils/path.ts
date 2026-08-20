@@ -270,6 +270,7 @@ export const path = {
           `${api}/stripe-connect/customer/${invoiceId}?${params.toString()}`
         );
       },
+      stripeConnectOnboard: `${api}/integrations/stripe-connect/connect`,
       supplierContacts: (id: string) =>
         generatePath(`${api}/purchasing/supplier-contacts/${id}`),
       supplierLocations: (id: string) =>

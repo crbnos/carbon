@@ -7,7 +7,6 @@ import {
 } from "@carbon/stripe/connect.server";
 import {
   getCustomer,
-  getCustomerContact,
   getCustomerLocation,
   getCustomerPayment,
   getCustomerTax
@@ -32,6 +31,13 @@ export type { StripeCustomerSources };
  * it explicitly through `customerPayment.invoiceCustomerLocationId`, which can
  * differ from the shipping location and can even belong to a different customer
  * (bill-to ≠ sold-to). Resolving it any other way bills the wrong address.
+ *
+ * `customerContactId` is scoped to `customerId = billingCustomerId` (not just
+ * `companyId`) — `customerContact` carries no `companyId` column of its own, and
+ * `billingCustomerId` is already validated against the invoice's `companyId` by
+ * `getBillingCustomerId`. Without this, a caller who knows a contact UUID from
+ * another tenant's customer could resolve that contact's email into this Stripe
+ * lookup.
  */
 export async function resolveStripeCustomerSources(
   serviceRole: ServiceRole,
@@ -40,7 +46,14 @@ export async function resolveStripeCustomerSources(
 ): Promise<StripeCustomerSources | null> {
   const [customer, contact, payment, customerTax] = await Promise.all([
     getCustomer(serviceRole, billingCustomerId),
-    getCustomerContact(serviceRole, customerContactId),
+    serviceRole
+      .from("customerContact")
+      .select(
+        "*, contact(id, firstName, lastName, email, mobilePhone, homePhone, workPhone, fax, title, notes)"
+      )
+      .eq("id", customerContactId)
+      .eq("customerId", billingCustomerId)
+      .single(),
     getCustomerPayment(serviceRole, billingCustomerId),
     getCustomerTax(serviceRole, billingCustomerId)
   ]);
@@ -105,7 +118,17 @@ function toSummary(customer: {
   };
 }
 
-/** The connected account this company bills through, or null if not set up. */
+/**
+ * The connected account this company bills through, or null if the
+ * integration is not set up or onboarding is not far enough along to accept
+ * charges yet.
+ *
+ * `active` alone is not enough to gate on: the connect callback sets it
+ * `true` as soon as a Stripe account exists, before onboarding (and
+ * `chargesEnabled`) is complete. Gating only on `active` let mid-onboarding
+ * companies see the Stripe send option, get their invoice Posted, and then
+ * fail the actual Stripe send.
+ */
 export async function getStripeConnectAccountId(
   serviceRole: ServiceRole,
   companyId: string
@@ -122,6 +145,8 @@ export async function getStripeConnectAccountId(
   const metadata = integration.data.metadata as
     | Record<string, unknown>
     | undefined;
+  if (metadata?.chargesEnabled !== true) return null;
+
   return (metadata?.stripeAccountId as string | undefined) ?? null;
 }
 

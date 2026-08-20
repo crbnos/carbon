@@ -16,7 +16,7 @@ import {
   fromStripeAmount,
   getConnectInvoicePaymentDetails
 } from "@carbon/stripe/connect.server";
-import { datetime, round, toStoredAmount } from "@carbon/utils";
+import { datetime } from "@carbon/utils";
 import { fromAbsolute, toCalendarDate } from "@internationalized/date";
 import { PostgresDriver } from "kysely";
 import { createMappingService } from "../accounting/index";
@@ -37,17 +37,22 @@ export type StripeConnectPaymentResult =
 
 /**
  * Record a Stripe Connect invoice payment against its originating Carbon sales
- * invoice: create a Receipt payment for the GROSS amount collected, settle it
- * against the invoice, post it, and book Stripe's processing fee as its own
- * journal entry.
+ * invoice: create a Receipt payment for the GROSS amount collected (what the
+ * customer was invoiced and paid), settle it against the invoice, and post it.
+ * Stripe's processing fee — withheld before the payout ever reaches the bank —
+ * rides along in the SAME journal entry `post-payment` builds: the bank line
+ * carries the net deposit and a fee expense line makes up the difference, so
+ * there is one entry per payment instead of a payment entry plus a follow-up
+ * fee entry.
  *
  * Idempotent on the Stripe invoice id — Stripe retries deliveries, and the
  * partial unique index on `externalIntegrationMapping` makes a concurrent
  * duplicate lose the race at the database rather than double-book cash.
  *
  * Throws on *fixable* configuration problems (missing bank account, missing
- * sequence) so the caller returns non-2xx and Stripe retries once the admin
- * has corrected it. Returns `skipped` for anything a retry could never fix.
+ * service-charge account, missing sequence) so the caller returns non-2xx and
+ * Stripe retries once the admin has corrected it. Returns `skipped` for
+ * anything a retry could never fix.
  */
 export async function recordStripeConnectPayment({
   companyId,
@@ -156,6 +161,68 @@ export async function recordStripeConnectPayment({
     );
   }
 
+  // Resolved BEFORE the payment is created (like bankAccount above) so a
+  // missing service-charge account throws before any row is written — a
+  // retry after the admin fixes it starts clean instead of leaving behind an
+  // orphaned Draft payment that the idempotency check (keyed on the external
+  // mapping, not the payment table) would never notice. Gated on
+  // accountingEnabled: `post-payment` only ever builds a GL journal (fee
+  // included) when accounting is on, so a company that hasn't configured a
+  // service-charge account because they don't use Carbon's accounting at all
+  // must not have Stripe payments start failing over it.
+  const feeDetails = await getConnectInvoicePaymentDetails(
+    stripeAccountId,
+    stripeInvoiceId
+  );
+  let journalFee:
+    | { amount: number; accountId: string; description: string }
+    | undefined;
+  if (feeDetails.feeAmount > 0) {
+    // Fees are assessed in the account's settlement currency, which needn't be
+    // the invoice currency. getConnectInvoicePaymentDetails already converts
+    // the fee back into the charge's own currency using Stripe's own
+    // balance-transaction exchange rate whenever one was available, so
+    // feeCurrency matches the invoice currency in the normal case. The only
+    // residual mismatch is the rare case where Stripe settled into a
+    // different currency with no rate to convert by — that's not a
+    // fixable-by-retry problem, so it warns and leaves it to manual
+    // reconciliation rather than throwing.
+    if (feeDetails.feeCurrency && feeDetails.feeCurrency !== currencyCode) {
+      logger.warn(
+        "Skipping Stripe fee journal line — no exchange rate was available to convert the fee into the invoice currency",
+        {
+          companyId,
+          stripeInvoiceId,
+          feeCurrency: feeDetails.feeCurrency,
+          settlementCurrency: feeDetails.settlementCurrency,
+          currencyCode
+        }
+      );
+    } else {
+      const companySettings = await serviceRole
+        .from("companySettings")
+        .select("accountingEnabled")
+        .eq("id", companyId)
+        .single();
+
+      if (companySettings.data?.accountingEnabled) {
+        const feeAccount =
+          (integrationMetadata.paymentFeeAccount as string | undefined) ||
+          accountDefaults.data?.serviceChargeAccount;
+        if (!feeAccount) {
+          throw new Error(
+            "No service charge account is configured for Stripe processing fees (set accountDefault.serviceChargeAccount or the integration's paymentFeeAccount)"
+          );
+        }
+        journalFee = {
+          amount: feeDetails.feeAmount,
+          accountId: feeAccount,
+          description: `Stripe processing fee — ${stripeInvoice.number ?? stripeInvoiceId}`
+        };
+      }
+    }
+  }
+
   const timezone = await getCompanyTimeZone(serviceRole, companyId);
   const paidAt = stripeInvoice.status_transitions?.paid_at;
   const paymentDate = (
@@ -203,11 +270,6 @@ export async function recordStripeConnectPayment({
 
   const paymentId = insert.data.id;
 
-  const feeDetails = await getConnectInvoicePaymentDetails(
-    stripeAccountId,
-    stripeInvoiceId
-  );
-
   // Claim the Stripe invoice for this payment BEFORE settling or posting.
   // A duplicate delivery racing us fails the unique index here, while the
   // payment it created is still an unsettled Draft that can be rolled back.
@@ -223,7 +285,8 @@ export async function recordStripeConnectPayment({
           stripeAccountId,
           chargeIds: feeDetails.chargeIds,
           feeAmount: feeDetails.feeAmount,
-          feeCurrency: feeDetails.feeCurrency
+          feeCurrency: feeDetails.feeCurrency,
+          settlementCurrency: feeDetails.settlementCurrency
         },
         createdBy: SYSTEM_USER
       }
@@ -311,7 +374,8 @@ export async function recordStripeConnectPayment({
       type: "post",
       paymentId,
       userId: SYSTEM_USER,
-      companyId
+      companyId,
+      fee: journalFee
     }
   });
 
@@ -327,267 +391,5 @@ export async function recordStripeConnectPayment({
     return { status: "recorded", paymentId };
   }
 
-  await bookStripeFee({
-    companyId,
-    paymentId,
-    postingDate: paymentDate,
-    currencyCode,
-    exchangeRate,
-    feeAccountOverride: integrationMetadata.paymentFeeAccount as
-      | string
-      | undefined,
-    feeDetails,
-    bankAccount,
-    reference: stripeInvoice.number ?? stripeInvoiceId
-  });
-
   return { status: "recorded", paymentId };
-}
-
-/**
- * Book Stripe's processing fee as a standalone journal entry: DR the service
- * charge account, CR the same bank account the receipt debited, so the bank
- * nets to what Stripe actually deposits while AR is still relieved at gross.
- *
- * Never throws — a fee we can't book is a reconciliation item, not a reason to
- * fail a payment that has already posted.
- */
-async function bookStripeFee({
-  companyId,
-  paymentId,
-  postingDate,
-  currencyCode,
-  exchangeRate,
-  feeAccountOverride,
-  feeDetails,
-  bankAccount,
-  reference
-}: {
-  companyId: string;
-  paymentId: string;
-  postingDate: string;
-  currencyCode: string;
-  exchangeRate: number;
-  feeAccountOverride: string | undefined;
-  feeDetails: Awaited<ReturnType<typeof getConnectInvoicePaymentDetails>>;
-  bankAccount: string;
-  reference: string;
-}): Promise<void> {
-  if (feeDetails.feeAmount <= 0) return;
-
-  const serviceRole = getCarbonServiceRole();
-
-  try {
-    // Fees are assessed in the account's settlement currency, which needn't be
-    // the invoice currency. Converting one to the other would need a second FX
-    // rate we don't have here, so book only the matching case and leave the
-    // rest to manual reconciliation.
-    if (feeDetails.feeCurrency && feeDetails.feeCurrency !== currencyCode) {
-      logger.warn(
-        "Skipping Stripe fee journal entry — fee currency differs from the invoice currency",
-        {
-          companyId,
-          paymentId,
-          feeCurrency: feeDetails.feeCurrency,
-          currencyCode
-        }
-      );
-      return;
-    }
-
-    const [settings, company, accountDefaults] = await Promise.all([
-      serviceRole
-        .from("companySettings")
-        .select("accountingEnabled")
-        .eq("id", companyId)
-        .single(),
-      serviceRole
-        .from("company")
-        .select("companyGroupId")
-        .eq("id", companyId)
-        .single(),
-      serviceRole
-        .from("accountDefault")
-        .select("serviceChargeAccount")
-        .eq("companyId", companyId)
-        .single()
-    ]);
-
-    if (!settings.data?.accountingEnabled) return;
-
-    const feeAccount =
-      feeAccountOverride || accountDefaults.data?.serviceChargeAccount;
-    if (!feeAccount) {
-      logger.warn(
-        "Skipping Stripe fee journal entry — no service charge account is configured",
-        { companyId, paymentId }
-      );
-      return;
-    }
-
-    const companyGroupId = company.data?.companyGroupId;
-    if (!companyGroupId) {
-      logger.warn(
-        "Skipping Stripe fee journal entry — company has no company group",
-        { companyId, paymentId }
-      );
-      return;
-    }
-
-    const feeInBaseCurrency = round(feeDetails.feeAmount * exchangeRate);
-
-    const nextSeq = await serviceRole.rpc("get_next_sequence", {
-      sequence_name: "journalEntry",
-      company_id: companyId
-    });
-    if (nextSeq.error || !nextSeq.data) {
-      logger.error("Failed to allocate a journal entry id for the Stripe fee", {
-        error: nextSeq.error,
-        companyId,
-        paymentId
-      });
-      return;
-    }
-
-    const description = `Stripe processing fee — ${reference}`;
-
-    // Resolve the accounting period for the posting date. If none exists yet
-    // (the month hasn't been opened) we skip the fee journal rather than
-    // creating a period here — the payment itself is already posted, and the
-    // fee can be reconciled manually or the period opened later.
-    const periodResult = await serviceRole
-      .from("accountingPeriod")
-      .select("id, closeStatus, status")
-      .eq("companyId", companyId)
-      .lte("startDate", postingDate)
-      .gte("endDate", postingDate)
-      .maybeSingle();
-
-    if (!periodResult.data) {
-      logger.warn(
-        "Skipping Stripe fee journal entry — no accounting period found for date",
-        { companyId, paymentId, postingDate }
-      );
-      return;
-    }
-
-    const closeStatus = (periodResult.data as { closeStatus?: string })
-      .closeStatus;
-    if (closeStatus === "Closed") {
-      logger.warn(
-        "Skipping Stripe fee journal entry — accounting period is closed",
-        { companyId, paymentId, postingDate }
-      );
-      return;
-    }
-
-    const journal = await serviceRole
-      .from("journal")
-      .insert([
-        {
-          journalEntryId: nextSeq.data,
-          description,
-          postingDate,
-          sourceType: "Payment" as const,
-          status: "Draft" as const,
-          companyId,
-          createdBy: SYSTEM_USER
-        }
-      ])
-      .select("id")
-      .single();
-
-    if (journal.error || !journal.data) {
-      logger.error("Failed to create the Stripe fee journal entry", {
-        error: journal.error,
-        companyId,
-        paymentId
-      });
-      return;
-    }
-
-    // For each line we need the account's class to compute the stored signed
-    // amount. DR fee account (Expense class → positive amount), CR bank account
-    // (Asset class → negative amount).
-    for (const line of [
-      { accountId: feeAccount, debit: feeInBaseCurrency, credit: 0 },
-      { accountId: bankAccount, debit: 0, credit: feeInBaseCurrency }
-    ]) {
-      const account = await serviceRole
-        .from("account")
-        .select("class")
-        .eq("id", line.accountId)
-        .single();
-
-      if (account.error || !account.data?.class) {
-        logger.error(
-          "Failed to resolve account class for Stripe fee journal line",
-          {
-            error: account.error,
-            accountId: line.accountId,
-            companyId,
-            paymentId
-          }
-        );
-        return;
-      }
-
-      const amount = toStoredAmount(
-        line.debit,
-        line.credit,
-        account.data.class as Parameters<typeof toStoredAmount>[2]
-      );
-
-      const inserted = await serviceRole
-        .from("journalLine")
-        .insert([
-          {
-            journalId: journal.data.id,
-            accountId: line.accountId,
-            description,
-            amount,
-            journalLineReference: crypto.randomUUID(),
-            companyId
-          }
-        ])
-        .select("id")
-        .single();
-
-      if (inserted.error) {
-        logger.error("Failed to add a line to the Stripe fee journal entry", {
-          error: inserted.error,
-          companyId,
-          paymentId
-        });
-        return;
-      }
-    }
-
-    const postedJournal = await serviceRole
-      .from("journal")
-      .update({
-        status: "Posted" as const,
-        postedAt: new Date().toISOString(),
-        postedBy: SYSTEM_USER,
-        accountingPeriodId: periodResult.data.id,
-        updatedBy: SYSTEM_USER
-      })
-      .eq("id", journal.data.id)
-      .select("id")
-      .single();
-
-    if (postedJournal.error) {
-      logger.error("Failed to post the Stripe fee journal entry", {
-        error: postedJournal.error,
-        companyId,
-        paymentId
-      });
-    }
-  } catch (err) {
-    logger.error("Unexpected failure booking the Stripe fee", {
-      error: err,
-      companyId,
-      paymentId
-    });
-  }
 }

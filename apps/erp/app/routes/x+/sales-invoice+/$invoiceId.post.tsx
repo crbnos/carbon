@@ -65,6 +65,11 @@ async function storeStripeInvoicePdf({
 }) {
   if (!invoicePdf) return;
 
+  // Storage layout is opportunity-scoped; without one this would write into a
+  // literal "opportunity/null/" folder. The PDF is still reachable via the
+  // Stripe hosted invoice URL, so skip the store rather than corrupt the path.
+  if (!opportunityId) return;
+
   const response = await fetch(invoicePdf);
   if (!response.ok) {
     throw new Error(
@@ -122,7 +127,7 @@ async function appendStripeLinkToNotes({
 
   const existing = await serviceRole
     .from("salesInvoice")
-    .select("externalNotes")
+    .select("internalNotes")
     .eq("id", invoiceId)
     .single();
 
@@ -130,7 +135,7 @@ async function appendStripeLinkToNotes({
     throw new Error("Failed to read invoice notes");
   }
 
-  const current = (existing.data?.externalNotes ?? {}) as {
+  const current = (existing.data?.internalNotes ?? {}) as {
     type?: string;
     content?: Json[];
   };
@@ -235,6 +240,23 @@ function toStripeEpochSeconds(
   );
 }
 
+const FIVE_YEARS_SECONDS = 5 * 365.25 * 24 * 60 * 60;
+
+function clampDueDate(epoch: number | undefined): number | undefined {
+  if (epoch === undefined) return undefined;
+  const now = Math.floor(Date.now() / 1000);
+  if (epoch < now || epoch > now + FIVE_YEARS_SECONDS) return undefined;
+  return epoch;
+}
+
+function clampEffectiveAt(epoch: number | undefined): number | undefined {
+  if (epoch === undefined) return undefined;
+  const now = Math.floor(Date.now() / 1000);
+  if (epoch > now) return now;
+  if (epoch < now - FIVE_YEARS_SECONDS) return undefined;
+  return epoch;
+}
+
 /**
  * Resolve the Stripe customer this invoice will be billed to, and link it.
  *
@@ -278,8 +300,6 @@ async function preflightStripeSend({
     return { ok: false, message: "the Stripe customer was not confirmed" };
   }
 
-  // Persist a typed-in email before resolving, so the contact is fixed at the
-  // source: the next invoice and the plain Email send both read `contact.email`.
   if (stripeContactEmail) {
     const contact = await getCustomerContact(serviceRole, customerContact);
     if (contact.data && !contact.data.contact?.email) {
@@ -403,8 +423,6 @@ async function preflightStripeSend({
     }
   }
 
-  // Idempotent upsert on (entityType, entityId, integration, companyId), so
-  // re-linking the already-linked customer is a no-op rather than a conflict.
   await mappingService.link(
     "customer",
     billingCustomerId,
@@ -447,8 +465,6 @@ export async function action(args: ActionFunctionArgs) {
 
   const serviceRole = getCarbonServiceRole();
 
-  // Validate before mutating anything — the form body is the only input that
-  // can reject the request outright.
   const validation = await validator(salesInvoicePostValidator).validate(
     await request.formData()
   );
@@ -466,21 +482,36 @@ export async function action(args: ActionFunctionArgs) {
     cc: ccSelections,
     stripeCustomerAction,
     stripeCustomerId,
-    stripeContactEmail
+    stripeContactEmail,
+    stripeDueDate
   } = validation.data;
 
   let stripeSendContext: StripeSendContext | null = null;
   if (notification === "Stripe") {
-    const preflight = await preflightStripeSend({
-      serviceRole,
-      companyId,
-      userId,
-      invoiceId,
-      customerContact,
-      stripeCustomerAction,
-      stripeCustomerId,
-      stripeContactEmail
-    });
+    // The invoice has not been posted yet at this point, so an uncaught
+    // Stripe API error here must not become a raw 500 — surface it the same
+    // way an ordinary preflight failure is surfaced.
+    let preflight: Awaited<ReturnType<typeof preflightStripeSend>>;
+    try {
+      preflight = await preflightStripeSend({
+        serviceRole,
+        companyId,
+        userId,
+        invoiceId,
+        customerContact,
+        stripeCustomerAction,
+        stripeCustomerId,
+        stripeContactEmail
+      });
+    } catch (err) {
+      logger.error("Stripe preflight failed", { error: err, invoiceId });
+      return {
+        success: false,
+        message: `Invoice not posted — ${
+          err instanceof Error ? err.message : "the Stripe preflight failed"
+        }`
+      };
+    }
 
     if (!preflight.ok) {
       return {
@@ -773,7 +804,10 @@ export async function action(args: ActionFunctionArgs) {
         };
       }
       break;
-    case "Stripe":
+    case "Stripe": {
+      let stripeInvoice: Awaited<
+        ReturnType<typeof createAndSendConnectInvoice>
+      >;
       try {
         if (!stripeSendContext) {
           return {
@@ -813,7 +847,7 @@ export async function action(args: ActionFunctionArgs) {
             }
           : undefined;
 
-        const stripeInvoice = await createAndSendConnectInvoice(
+        stripeInvoice = await createAndSendConnectInvoice(
           stripeAccountId,
           stripeCustomerId,
           {
@@ -823,13 +857,23 @@ export async function action(args: ActionFunctionArgs) {
             // tax — it is not one of the taxable per-line components.
             shippingCost: shipment.data?.shippingCost ?? 0,
             invoiceNumber: salesInvoice.data.invoiceId ?? undefined,
-            dueDate: toStripeEpochSeconds(salesInvoice.data.dateDue, timeZone),
-            effectiveAt: toStripeEpochSeconds(
-              salesInvoice.data.dateIssued ?? salesInvoice.data.postingDate,
-              timeZone
+            // stripeDueDate is the user-chosen override from the post modal,
+            // submitted only when the invoice's own dateDue wouldn't survive
+            // clampDueDate (missing, past, or too far out). Re-clamped here
+            // regardless of source — never trust client input for what
+            // reaches a merchant's live Stripe account.
+            dueDate: clampDueDate(
+              toStripeEpochSeconds(
+                stripeDueDate || salesInvoice.data.dateDue,
+                timeZone
+              )
             ),
-            // Only consulted when the invoice has no dateDue at all.
-            daysUntilDue: 30,
+            effectiveAt: clampEffectiveAt(
+              toStripeEpochSeconds(
+                salesInvoice.data.dateIssued ?? salesInvoice.data.postingDate,
+                timeZone
+              )
+            ),
             customFields: salesInvoice.data.customerReference
               ? [
                   {
@@ -866,7 +910,25 @@ export async function action(args: ActionFunctionArgs) {
             }
           }
         );
+      } catch (err) {
+        logger.error("Failed to send sales invoice via Stripe", {
+          error: err,
+          invoiceId
+        });
+        return {
+          success: false,
+          message: `Invoice posted, but failed to send via Stripe: ${
+            err instanceof Error ? err.message : "unknown error"
+          }`
+        };
+      }
 
+      // Best-effort cleanup — the Stripe invoice has already been created and
+      // sent to the customer at this point, so a failure here must not read
+      // as a failed send: that would prompt a retry and create a SECOND
+      // Stripe invoice. Log and move on; the hosted invoice URL and PDF are
+      // still reachable directly on Stripe if this drops.
+      try {
         await Promise.all([
           storeStripeInvoicePdf({
             serviceRole,
@@ -885,21 +947,16 @@ export async function action(args: ActionFunctionArgs) {
           })
         ]);
       } catch (err) {
-        logger.error("Failed to send sales invoice via Stripe", {
+        logger.error("Stripe invoice sent, but post-send cleanup failed", {
           error: err,
           invoiceId
         });
-        return {
-          success: false,
-          message: `Invoice posted, but failed to send via Stripe: ${
-            err instanceof Error ? err.message : "unknown error"
-          }`
-        };
       }
       return {
         success: true,
         message: "Invoice posted and sent via Stripe"
       };
+    }
     case undefined:
     case "None":
       break;

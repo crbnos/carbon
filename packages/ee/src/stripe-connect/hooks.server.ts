@@ -5,15 +5,12 @@ import { getConnectAccountStatus } from "@carbon/stripe/connect.server";
 // the "no account at all" case is already "inactive" for free via the
 // generic `!integration.active` check upstream in getIntegrationHealth.
 //
-// Three-way result:
-// - true: fully onboarded (charges + payouts both live).
-// - "inactive": account exists, onboarding just isn't finished yet, and
-//   Stripe hasn't flagged any actual problem — a completely normal
-//   mid-onboarding state. Reuses the same neutral bucket as "not installed"
-//   rather than reading as broken.
-// - false: Stripe reported real requirement errors on the account, or the
-//   account/API couldn't be reached at all — an actual problem worth the
-//   red badge.
+// Returns true only when the account is fully onboarded (charges + payouts
+// both live). Everything else — no account, Stripe API unreachable, real
+// requirement errors, or just a normal mid-onboarding account with no
+// requirement errors yet — returns false. Mid-onboarding isn't distinguished
+// from a real problem here; it reads as unhealthy (red badge) until
+// onboarding completes.
 export async function stripeConnectHealthcheck(
   companyId: string,
   metadata: Record<string, unknown>
@@ -35,16 +32,12 @@ export async function stripeConnectHealthcheck(
   return false;
 }
 
-export async function stripeConnectOnInstall(
-  companyId: string
-  // metadata: Record<string, unknown>
-): Promise<void> {
+export async function stripeConnectOnInstall(companyId: string): Promise<void> {
   return;
 }
 
 export async function stripeConnectOnUninstall(
   companyId: string
-  // metadata: Record<string, unknown>
 ): Promise<void> {
   return;
 }

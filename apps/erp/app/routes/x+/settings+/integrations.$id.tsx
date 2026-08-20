@@ -734,16 +734,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const accountDefaults = await client
       .from("accountDefault")
       .select(
-        `realizedExchangeGainAccount, realizedExchangeLossAccount, serviceChargeAccount`
+        `bankCashAccount, receivablesAccount, customerPaymentDiscountAccount, customerWriteOffAccount, realizedExchangeGainAccount, realizedExchangeLossAccount, serviceChargeAccount, roundingAccount`
       )
       .eq("companyId", companyId)
       .single();
 
     if (accountDefaults.data) {
       const accountIds = [
+        accountDefaults.data.bankCashAccount,
+        accountDefaults.data.receivablesAccount,
+        accountDefaults.data.customerPaymentDiscountAccount,
+        accountDefaults.data.customerWriteOffAccount,
         accountDefaults.data.realizedExchangeGainAccount,
         accountDefaults.data.realizedExchangeLossAccount,
-        accountDefaults.data.serviceChargeAccount
+        accountDefaults.data.serviceChargeAccount,
+        accountDefaults.data.roundingAccount
       ].filter(Boolean);
 
       if (accountIds.length > 0) {
@@ -761,9 +766,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         };
 
         flattenedMetadata.accountingAccounts = {
+          bankCash: fmt(accountDefaults.data.bankCashAccount),
+          receivables: fmt(accountDefaults.data.receivablesAccount),
+          customerPaymentDiscount: fmt(
+            accountDefaults.data.customerPaymentDiscountAccount
+          ),
+          customerWriteOff: fmt(accountDefaults.data.customerWriteOffAccount),
           fxGain: fmt(accountDefaults.data.realizedExchangeGainAccount),
           fxLoss: fmt(accountDefaults.data.realizedExchangeLossAccount),
-          serviceCharge: fmt(accountDefaults.data.serviceChargeAccount)
+          serviceCharge: fmt(accountDefaults.data.serviceChargeAccount),
+          rounding: fmt(accountDefaults.data.roundingAccount)
         };
       }
     }

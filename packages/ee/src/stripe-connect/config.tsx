@@ -39,7 +39,6 @@ export const StripeConnect = defineIntegration({
       type: "switch" as const,
       required: false,
       value: true
-      // visibleWhen: { field: }
     }
   ],
   actions: [
@@ -70,8 +69,7 @@ function ConnectStripeAccountButton({
       const data = await response.json();
 
       if (data?.redirectUrl) {
-        window.open(data.redirectUrl);
-        // , "_blank", "noopener,noreferrer");
+        window.open(data.redirectUrl, "_blank", "noopener,noreferrer");
         return;
       }
 
@@ -165,9 +163,14 @@ function StripeConnectStatus({
 
   const accountingAccounts = metadata?.accountingAccounts as
     | {
+        bankCash: string | null;
+        receivables: string | null;
+        customerPaymentDiscount: string | null;
+        customerWriteOff: string | null;
         fxGain: string | null;
         fxLoss: string | null;
         serviceCharge: string | null;
+        rounding: string | null;
       }
     | undefined;
 
@@ -258,6 +261,22 @@ function StripeConnectStatus({
           </p>
           <div className="flex flex-col divide-y divide-border/50">
             <AccountingAccountRow
+              label="Bank / Cash"
+              value={accountingAccounts.bankCash}
+            />
+            <AccountingAccountRow
+              label="Accounts Receivable"
+              value={accountingAccounts.receivables}
+            />
+            <AccountingAccountRow
+              label="Customer Payment Discount"
+              value={accountingAccounts.customerPaymentDiscount}
+            />
+            <AccountingAccountRow
+              label="Customer Write-Off (Bad Debt)"
+              value={accountingAccounts.customerWriteOff}
+            />
+            <AccountingAccountRow
               label="Realized FX Gain"
               value={accountingAccounts.fxGain}
             />
@@ -268,6 +287,10 @@ function StripeConnectStatus({
             <AccountingAccountRow
               label="Processing Fees"
               value={accountingAccounts.serviceCharge}
+            />
+            <AccountingAccountRow
+              label="Rounding"
+              value={accountingAccounts.rounding}
             />
           </div>
         </div>

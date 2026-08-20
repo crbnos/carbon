@@ -54,7 +54,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     if (statusParam === "refresh") {
       throw redirect(
-        "/api/integrations/stripe-connect/connect",
+        path.to.api.stripeConnectOnboard,
         await flash(
           request,
           error(
