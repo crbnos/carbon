@@ -982,26 +982,33 @@ export async function backflushUntrackedMaterialsOnStepRecord(
     const hasSplitQuantities = triggerStepIds.some(
       (id) => (quantities?.get(id) ?? null) !== null
     );
+    // Distinct units that recorded at least one owning step — the line-level
+    // requirement bound: a material can never owe more than units × per-unit.
+    const units = new Set<number>();
+    for (const id of triggerStepIds) {
+      for (const idx of unitsByStep.get(id) ?? []) units.add(idx);
+    }
     let target: number;
     if (hasSplitQuantities) {
       // The line is SPLIT across steps (5 screws at step 1, 5 at step 2): each
       // owning step consumes its own share as it is recorded, so the target is
       // the per-step sum. A link left without an explicit quantity falls back
-      // to the full per-unit quantity for its step.
-      target = triggerStepIds.reduce(
-        (sum, id) =>
-          sum +
-          (unitsByStep.get(id)?.size ?? 0) * (quantities?.get(id) ?? perUnit),
-        0
+      // to the full per-unit quantity for its step. The sum is capped at the
+      // line-level bound — the BOM line is the source of truth, so shares that
+      // over-allocate the line (2 + 10 on a 5-quantity line) must not issue
+      // more stock than the line requires.
+      target = Math.min(
+        triggerStepIds.reduce(
+          (sum, id) =>
+            sum +
+            (unitsByStep.get(id)?.size ?? 0) * (quantities?.get(id) ?? perUnit),
+          0
+        ),
+        units.size * perUnit
       );
     } else {
-      // Unsplit: distinct units that recorded at least one owning step — a unit
-      // that recorded several owning steps of the same material still counts
-      // once, so the requirement never multiplies.
-      const units = new Set<number>();
-      for (const id of triggerStepIds) {
-        for (const idx of unitsByStep.get(id) ?? []) units.add(idx);
-      }
+      // Unsplit: distinct units counted once, so the requirement never
+      // multiplies across a material's several owning steps.
       target = units.size * perUnit;
     }
     const delta = target - (material.quantityIssued ?? 0);
