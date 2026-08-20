@@ -43,6 +43,22 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   await assertMethodOperationIsDraft(client, step.data.operationId);
 
+  // A step's share can never exceed the BOM line quantity — the line is the
+  // source of truth for what the method requires.
+  if (linked && quantity !== null) {
+    const material = await client
+      .from("methodMaterial")
+      .select("quantity")
+      .eq("id", methodMaterialId)
+      .single();
+    if (material.error || !material.data) {
+      return data({ success: false }, { status: 404 });
+    }
+    if (material.data.quantity !== null && quantity > material.data.quantity) {
+      return data({ success: false }, { status: 400 });
+    }
+  }
+
   const result = await setMethodMaterialStepLink(client, {
     methodMaterialId,
     methodOperationStepId,

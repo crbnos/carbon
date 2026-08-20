@@ -50,6 +50,9 @@ function LinkedQuantity({
     <NumberField
       value={value}
       minValue={0}
+      // A step's share can never exceed the BOM line quantity — the line is
+      // the source of truth; entries above it clamp down on commit.
+      maxValue={item.quantity}
       step={INPUT_STEP.quantity}
       formatOptions={INPUT_FORMAT.quantity}
       isDisabled={isDisabled}

@@ -45,6 +45,22 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ success: false }, { status: 404 });
   }
 
+  // A step's share can never exceed the BOM line quantity — the line is the
+  // source of truth for what the job requires.
+  if (linked && quantity !== null) {
+    const material = await client
+      .from("jobMaterial")
+      .select("quantity")
+      .eq("id", jobMaterialId)
+      .single();
+    if (material.error || !material.data) {
+      return data({ success: false }, { status: 404 });
+    }
+    if (material.data.quantity !== null && quantity > material.data.quantity) {
+      return data({ success: false }, { status: 400 });
+    }
+  }
+
   const result = await setJobMaterialStepLink(client, {
     jobMaterialId,
     jobOperationStepId,
