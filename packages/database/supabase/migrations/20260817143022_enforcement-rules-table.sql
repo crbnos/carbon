@@ -1,10 +1,12 @@
--- Merge "storageRule" and "salesRule" into one "enforcementRule" table.
+-- One rule table for both families: storage rules (warehouse/MES surfaces) and
+-- sales rules (sales-document surfaces).
 --
--- Both families were already one engine (@carbon/utils rules.ts), one evaluator
--- shape (@carbon/ee/rules) and one violation modal; only the tables were split.
--- The split cost a duplicated schema, duplicated CRUD, and two surface enums.
--- This migration creates the merged schema; the sibling data migration moves the
--- rows and drops the old tables.
+-- The two families already share one engine (@carbon/utils rules.ts), one
+-- evaluator shape (@carbon/ee/rules) and one violation modal, and their schemas
+-- are all but identical — so they share the table too, discriminated by
+-- "family". This migration creates that schema; the sibling data migration moves
+-- the shipped storage rules onto it and drops their old tables. The sales family
+-- is built here directly and never had a table of its own.
 --
 -- The discriminator is "family". What used to be enforced by the column TYPE
 -- (a storage rule could not hold a sales surface because the array was typed
@@ -14,9 +16,9 @@
 
 CREATE TYPE "enforcementRuleFamily" AS ENUM ('storage', 'sales');
 
--- Union of the two retired enums. "transactionSurface" (11 warehouse/MES values)
--- and "salesRuleSurface" (2 sales-document values) are dropped by the data
--- migration once no column references them.
+-- Spans both families: the 11 warehouse/MES values inherited from the retired
+-- "transactionSurface" enum (dropped by the data migration once no column
+-- references it) plus the 2 sales-document values.
 CREATE TYPE "enforcementRuleSurface" AS ENUM (
   -- storage family
   'receipt',
@@ -135,8 +137,8 @@ FOR DELETE USING (
   ("family" = 'sales' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_delete'))::text[]))
 );
 
--- Item pins for BOTH families (absorbs storageRuleItemAssignment and
--- salesRuleAssignment). Kept as a real table with a real FK to "item" rather
+-- Item pins for BOTH families (absorbs storageRuleItemAssignment; the sales
+-- family writes here directly). Kept as a real table with a real FK to "item" rather
 -- than a polymorphic targetId, so ON DELETE CASCADE still cleans up pins when
 -- an item is deleted.
 CREATE TABLE "enforcementRuleItemAssignment" (
