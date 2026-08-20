@@ -33,7 +33,6 @@ export const integrations = [
   // Radan,
   Email,
   ExchangeRates,
-  StripeConnect,
   Jira,
   Linear,
   Onshape,
@@ -42,7 +41,8 @@ export const integrations = [
   Rillet,
   Sage,
   Slack,
-  Xero
+  Xero,
+  StripeConnect
 ];
 
 export type IntegrationID = (typeof integrations)[number]["id"];

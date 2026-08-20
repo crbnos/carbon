@@ -78,7 +78,7 @@ export async function getOrCreateConnectAccount(
     display_name: comp.name,
     dashboard: STRIPE_CONNECT_ACCOUNT_CONFIG.dashboard,
     identity: {
-      country: comp.countryCode || undefined,
+      country: comp.countryCode || "US",
       entity_type: STRIPE_CONNECT_ACCOUNT_CONFIG.entityType,
       business_details: {
         registered_name: comp.name,
@@ -100,11 +100,10 @@ export async function getOrCreateConnectAccount(
         capabilities: {
           ach_debit_payments: {
             requested:
-              STRIPE_CONNECT_ACCOUNT_CONFIG.capabilities["ach_debit_payments"]
+              STRIPE_CONNECT_ACCOUNT_CONFIG.capabilities.ach_debit_payments
           },
           card_payments: {
-            requested:
-              STRIPE_CONNECT_ACCOUNT_CONFIG.capabilities["card_payments"]
+            requested: STRIPE_CONNECT_ACCOUNT_CONFIG.capabilities.card_payments
           }
         },
         support: {
