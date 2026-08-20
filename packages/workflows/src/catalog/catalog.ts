@@ -33,6 +33,7 @@ const ENTITIES: Map<string, CatalogEntity> = new Map(
     if (entry?.permission !== undefined)
       base.permission = { module: entry.permission, action: "view" };
     if (entry?.describe !== undefined) base.descriptions = entry.describe;
+    if (entry?.display !== undefined) base.display = entry.display;
     return [name, base];
   })
 );

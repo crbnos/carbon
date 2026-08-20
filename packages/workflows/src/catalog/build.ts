@@ -57,6 +57,9 @@ export interface RegistryEntry {
   /** Plain-English explanation per column, surfaced as a tooltip in the variable picker.
    * Any column in the entity may have one; not restricted to watched or writable columns. */
   describe?: Record<string, string>;
+  /** Columns that spell this record's name, best first. Read at run time by the catalog,
+   * not by the generator, so adding one needs no regeneration. */
+  display?: readonly string[];
 }
 
 export interface MomentDeclarationLike {

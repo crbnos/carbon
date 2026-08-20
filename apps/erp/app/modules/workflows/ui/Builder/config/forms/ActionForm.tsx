@@ -325,19 +325,11 @@ export function ActionForm({
     return init;
   });
 
-  // Hidden inputs — members of requireOneOf groups that aren't active
-  const hiddenInputs = useMemo(() => {
-    const hidden = new Set<string>();
-    for (let i = 0; i < requireOneOf.length; i++) {
-      const group = requireOneOf[i];
-      if (!group) continue;
-      const active = groupSelections[i];
-      for (const name of group) {
-        if (name !== active) hidden.add(name);
-      }
-    }
-    return hidden;
-  }, [requireOneOf, groupSelections]);
+  // Each group's own block renders its active member, so the ordinary Inputs list skips them all.
+  const groupOwnedInputs = useMemo(
+    () => new Set((actionDef?.requireOneOf ?? []).flat()),
+    [actionDef]
+  );
 
   // The about inputs are handled by NotifyAboutField, skip them in the normal loop
   const isNotify = actionId === "notify";
@@ -479,11 +471,11 @@ export function ActionForm({
     if (!actionDef) return [];
     return Object.entries(actionDef.inputs)
       .filter(([name, inputDef]) => {
-        if (hiddenInputs.has(name) || skipInputs.has(name)) return false;
+        if (groupOwnedInputs.has(name) || skipInputs.has(name)) return false;
         return isMultiSelect(inputDef);
       })
       .map(([name]) => name);
-  }, [actionDef, hiddenInputs, skipInputs]);
+  }, [actionDef, groupOwnedInputs, skipInputs]);
 
   // Sort inputs: required first, then optional (preserving catalog order within each)
   const visibleInputNames = useMemo(() => {
@@ -491,14 +483,14 @@ export function ActionForm({
     const required: string[] = [];
     const optional: string[] = [];
     for (const [name, inputDef] of Object.entries(actionDef.inputs)) {
-      if (hiddenInputs.has(name) || skipInputs.has(name)) continue;
+      if (groupOwnedInputs.has(name) || skipInputs.has(name)) continue;
       if (modeInputNames.includes(name)) continue;
       if (!isGateOpen(inputDef.showWhen, inputs)) continue;
       if (inputDef.required) required.push(name);
       else optional.push(name);
     }
     return [...required, ...optional];
-  }, [actionDef, hiddenInputs, skipInputs, modeInputNames, inputs]);
+  }, [actionDef, groupOwnedInputs, skipInputs, modeInputNames, inputs]);
 
   // ── render ──────────────────────────────────────────────────────────────────
 

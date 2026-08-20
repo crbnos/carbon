@@ -91,6 +91,8 @@ export interface CatalogEntity {
   /** Plain-English per-column description, keyed by column name.
    * Only present for columns the registry explicitly describes. */
   descriptions?: Record<string, string>;
+  /** Columns that spell this record's name, best first — how it reads in prose. */
+  display?: readonly string[];
 }
 
 /** What the validator needs to look up, and nothing more. */
@@ -144,7 +146,8 @@ const FIXTURE_ENTITIES: CatalogEntity[] = [
       status: t.string,
       assignee: t.entity("user")
     },
-    permission: { module: "purchasing", action: "view" }
+    permission: { module: "purchasing", action: "view" },
+    display: ["purchaseOrderId"]
   },
   {
     name: "user",

@@ -61,7 +61,9 @@ describe("renderTemplate", () => {
     const ctx = createRuntimeContext({
       outputs: {
         n1: {
-          order: entityValue("purchaseOrder", "po1", { readableId: "PO-1042" })
+          order: entityValue("purchaseOrder", "po1", {
+            purchaseOrderId: "PO-1042"
+          })
         }
       }
     });
@@ -85,6 +87,39 @@ describe("renderTemplate", () => {
     });
   });
 
+  // A moment output, a created record and a foreign key all arrive as a bare id.
+  it("loads a record that carries no row to name it", async () => {
+    const ctx = createRuntimeContext({
+      rows: { "purchaseOrder:po1": { purchaseOrderId: "PO000123" } },
+      outputs: { n1: { order: entityValue("purchaseOrder", "po1") } }
+    });
+    const result = await renderTemplate(template(ref("order")), ctx);
+
+    expect(result).toEqual({
+      ok: true,
+      value: primitiveValue("string", "PO000123")
+    });
+  });
+
+  it("names a record by its declared display column, not another readable one", async () => {
+    const ctx = createRuntimeContext({
+      outputs: {
+        n1: {
+          order: entityValue("purchaseOrder", "po1", {
+            purchaseOrderId: "PO000123",
+            name: "Widgets restock"
+          })
+        }
+      }
+    });
+    const result = await renderTemplate(template(ref("order")), ctx);
+
+    expect(result).toEqual({
+      ok: true,
+      value: primitiveValue("string", "PO000123")
+    });
+  });
+
   it("fails the whole template when a part cannot be resolved", async () => {
     const ctx = createRuntimeContext();
     const result = await renderTemplate(
@@ -101,7 +136,7 @@ describe("renderTemplate", () => {
 
 describe("renderTemplate with a link resolver", () => {
   const order = () =>
-    entityValue("purchaseOrder", "po_1", { readableId: "PO000123" });
+    entityValue("purchaseOrder", "po_1", { purchaseOrderId: "PO000123" });
 
   it("leaves a record as its readable id when no resolver is supplied", async () => {
     const ctx = createRuntimeContext({

@@ -25,32 +25,66 @@ export async function resolveValue(
   return resolveRef(value, ctx);
 }
 
+/** All a SYNCHRONOUS reading of a record can offer: no catalog to ask which column names it,
+ * no loader to fetch one. `entityText` is what names a record properly. */
+const INLINE_ENTITY_COLUMNS = ["readableId", "name"];
+
+/** The first of `columns` this row holds a non-blank value for. */
+function pickDisplay(
+  row: Record<string, unknown> | null | undefined,
+  columns: readonly string[]
+): string | undefined {
+  if (row === null || row === undefined) return undefined;
+  for (const column of columns) {
+    const raw = row[column];
+    if (raw === null || raw === undefined) continue;
+    const text = String(raw).trim();
+    if (text !== "") return text;
+  }
+  return undefined;
+}
+
 /** How one resolved value reads inside a sentence. */
 export function renderValue(value: RuntimeValue): string {
   if (isNull(value)) return "";
   if (value.kind === "list") return value.items.map(renderValue).join(", ");
-  if (value.kind === "entity") {
-    const readable = value.row?.readableId ?? value.row?.name;
-    return readable === undefined || readable === null
-      ? value.id
-      : String(readable);
-  }
+  if (value.kind === "entity")
+    return pickDisplay(value.row, INLINE_ENTITY_COLUMNS) ?? value.id;
   // Rows have no reading as a sentence; nothing writes one into text.
   if (value.kind === "pairs") return "";
   return value.value === null ? "" : String(value.value);
 }
 
+/** How a record READS: the name a person would recognise it by — `SO000123`, not `so_x8f2`.
+ * The row is fetched when the value carries no snapshot, which is most of them: a moment
+ * output, a created record and a foreign key all arrive as a bare id. Reads go through the
+ * loader, so they are the owner's and cached for the run; an unreadable one falls back to
+ * the id rather than failing a message over a label. */
+async function entityText(
+  value: Extract<RuntimeValue, { kind: "entity" }>,
+  ctx: RuntimeContext
+): Promise<string> {
+  const columns = ctx.catalog.getEntity(value.of)?.display ?? [];
+  return (
+    pickDisplay(value.row, columns) ??
+    pickDisplay(await ctx.loader.load(value.of, value.id), columns) ??
+    value.id
+  );
+}
+
 /**
- * A record in prose reads as its id, and becomes a markdown link when the caller knows
- * where it lives. Every other value renders exactly as `renderValue` does.
+ * A record in prose reads as its name, and becomes a markdown link when the caller knows
+ * where it lives. Every other value renders exactly as `renderValue` does — a LIST of
+ * records never reaches here, because `rendersAsText` refuses one as a template part.
  */
-function renderPart(
+async function renderPart(
   value: RuntimeValue,
+  ctx: RuntimeContext,
   linkFor?: (of: string, id: string) => string | null
-): string {
-  const text = renderValue(value);
-  if (linkFor === undefined || value.kind !== "entity" || text === "")
-    return text;
+): Promise<string> {
+  if (value.kind !== "entity") return renderValue(value);
+  const text = await entityText(value, ctx);
+  if (linkFor === undefined || text === "") return text;
   const href = linkFor(value.of, value.id);
   return href === null ? text : `[${text}](${href})`;
 }
@@ -72,7 +106,7 @@ export async function renderTemplate(
         ? await resolveItem(part, ctx)
         : await resolveRef(part, ctx);
     if (!resolved.ok) return resolved;
-    pieces.push(renderPart(resolved.value, options?.linkFor));
+    pieces.push(await renderPart(resolved.value, ctx, options?.linkFor));
   }
   return { ok: true, value: primitiveValue("string", pieces.join("")) };
 }

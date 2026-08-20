@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { renderInlineLinks } from "./index";
+import { renderInlineLinks, renderSlackMrkdwn } from "./index";
 
 const ORIGIN = "https://app.carbon.ms";
 const HREF = `${ORIGIN}/api/link?event=workflow&documentId=so_1`;
@@ -58,5 +58,31 @@ describe("renderInlineLinks", () => {
   it("treats an unparseable origin as no origin at all", () => {
     const body = `Check [SO000123](${HREF})`;
     expect(renderInlineLinks(body, "")).toEqual([{ text: body }]);
+  });
+});
+
+describe("renderSlackMrkdwn", () => {
+  it("rewrites a Carbon link as Slack mrkdwn", () => {
+    expect(renderSlackMrkdwn(`Check [SO000123](${HREF})`, ORIGIN)).toBe(
+      `Check <${HREF}|SO000123>`
+    );
+  });
+
+  it("leaves a link on another host as literal text", () => {
+    const body = "[click](https://evil.example/steal)";
+    expect(renderSlackMrkdwn(body, ORIGIN)).toBe(
+      "[click](https://evil.example/steal)"
+    );
+  });
+
+  // `|` would terminate the label, and Slack reads bare `&`/`<`/`>` as markup.
+  it("escapes Slack's control characters in both a label and plain text", () => {
+    expect(renderSlackMrkdwn(`A & B <c> [x|y](${HREF})`, ORIGIN)).toBe(
+      `A &amp; B &lt;c&gt; <${HREF}|x¦y>`
+    );
+  });
+
+  it("returns an empty string for an empty message", () => {
+    expect(renderSlackMrkdwn("", ORIGIN)).toBe("");
   });
 });

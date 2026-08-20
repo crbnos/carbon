@@ -381,3 +381,26 @@ export function renderInlineLinks(
   if (index < text.length) segments.push({ text: text.slice(index) });
   return segments;
 }
+
+/** Slack mrkdwn requires `&`, `<` and `>` escaped in text; inside a `<url|label>` a literal
+ * `|` would also terminate the label, so it is swapped for a lookalike. */
+export function escapeSlackText(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\|/g, "¦");
+}
+
+/** The Slack rendition of the same `[label](url)` the in-app and email renderers handle —
+ * Slack spells a link `<url|label>`, so the markdown would otherwise be shown verbatim.
+ * Goes through `renderInlineLinks`, so it inherits that matcher's origin restriction. */
+export function renderSlackMrkdwn(text: string, origin: string): string {
+  return renderInlineLinks(text, origin)
+    .map((segment) =>
+      "href" in segment
+        ? `<${segment.href}|${escapeSlackText(segment.text)}>`
+        : escapeSlackText(segment.text)
+    )
+    .join("");
+}

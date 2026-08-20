@@ -190,7 +190,7 @@ describe("actionExecutor and linkify", () => {
       outputs: {
         trigger: {
           record: entityValue("purchaseOrder", "po_1", {
-            readableId: "PO000123"
+            purchaseOrderId: "PO000123"
           })
         }
       },
