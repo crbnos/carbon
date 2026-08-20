@@ -6349,7 +6349,7 @@ export async function syncAssemblyInstructionToOperation(
 
     const sourceMaterials = await trx
       .selectFrom("assemblyInstructionStepMaterial")
-      .select(["stepId", "itemId"])
+      .select(["stepId", "itemId", "quantity"])
       .where("companyId", "=", companyId)
       .where(
         "stepId",
@@ -6357,10 +6357,13 @@ export async function syncAssemblyInstructionToOperation(
         sourceSteps.map((step) => step.id)
       )
       .execute();
-    const materialsByStep = new Map<string, string[]>();
+    const materialsByStep = new Map<
+      string,
+      { itemId: string; quantity: number | null }[]
+    >();
     for (const material of sourceMaterials) {
       const list = materialsByStep.get(material.stepId) ?? [];
-      list.push(material.itemId);
+      list.push({ itemId: material.itemId, quantity: material.quantity });
       materialsByStep.set(material.stepId, list);
     }
 
@@ -6444,7 +6447,11 @@ export async function syncAssemblyInstructionToOperation(
     const syncedTargetIds: string[] = [];
     // source assembly step id → synced job step id, for slide/tool copying
     const targetIdBySource = new Map<string, string>();
-    const linkPairs: { materialId: string; stepId: string }[] = [];
+    const linkPairs: {
+      materialId: string;
+      stepId: string;
+      quantity: number | null;
+    }[] = [];
     let partsUnmatched = 0;
 
     for (const [index, source] of sourceSteps.entries()) {
@@ -6494,10 +6501,10 @@ export async function syncAssemblyInstructionToOperation(
       syncedTargetIds.push(targetStepId);
       targetIdBySource.set(source.id, targetStepId);
 
-      for (const itemId of materialsByStep.get(source.id) ?? []) {
+      for (const { itemId, quantity } of materialsByStep.get(source.id) ?? []) {
         const materialId = materialIdByItemId.get(itemId);
         if (materialId) {
-          linkPairs.push({ materialId, stepId: targetStepId });
+          linkPairs.push({ materialId, stepId: targetStepId, quantity });
         } else {
           partsUnmatched++;
         }
@@ -6525,7 +6532,8 @@ export async function syncAssemblyInstructionToOperation(
         .values(
           linkPairs.map((pair) => ({
             jobMaterialId: pair.materialId,
-            jobOperationStepId: pair.stepId
+            jobOperationStepId: pair.stepId,
+            quantity: pair.quantity
           }))
         )
         .execute();
