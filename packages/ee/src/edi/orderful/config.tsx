@@ -40,8 +40,11 @@ export const Orderful = defineIntegration({
     }
   ],
   schema: z.object({
-    apiKey: z.string().min(1, { message: "API Key is required" }),
-    webhookSecret: z.string().min(1, { message: "Webhook Secret is required" }),
+    // Empty means "keep the existing vaulted secret" (the field loads masked and
+    // is not sent to the browser). Presence is enforced at install-time in the
+    // settings action (FORM_SECRET_INTEGRATIONS).
+    apiKey: z.string(),
+    webhookSecret: z.string(),
     environment: z.enum(["sandbox", "production"]).optional()
   })
 });

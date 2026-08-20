@@ -1421,6 +1421,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // callback, so they are never blocked here.
   const FORM_SECRET_INTEGRATIONS = new Set([
     "linear",
+    "orderful",
     "paperless-parts",
     "email",
     "rillet"
