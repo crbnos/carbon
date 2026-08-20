@@ -1,5 +1,9 @@
 import type { TermId } from "@carbon/glossary";
-import type { EventMatch, RequiredPermission } from "../definition/catalog";
+import {
+  type EventMatch,
+  isMultiSelect,
+  type RequiredPermission
+} from "../definition/catalog";
 import { t, type ValueType } from "../definition/types";
 import type { ActionDeclarationLike } from "./actions";
 import type { OperationDeclarationLike } from "./operations";
@@ -72,7 +76,7 @@ export interface BuiltActionInput {
   required: boolean;
   choices?: readonly string[];
   /** What the builder seeds a new node with. Nothing reads it at run time. */
-  defaultValue?: string;
+  defaultValue?: string | readonly string[];
   template?: boolean;
   /** Prose a person reads: a record dropped in renders as a link when the caller
    * supplies a resolver. Not set on webhook bodies. */
@@ -372,13 +376,38 @@ export function validateCatalogInputs(
       ) {
         problems.push(`${id}.${input} is a template but is not a string.`);
       }
+      // A fixed set of values on a list is what MAKES it a multi-select (`isMultiSelect`),
+      // so a list of anything else has no reading in the builder.
       if (
-        spec.defaultValue !== undefined &&
         spec.choices !== undefined &&
-        !spec.choices.includes(spec.defaultValue)
+        spec.type.kind === "list" &&
+        !(spec.type.of.kind === "primitive" && spec.type.of.of === "string")
       ) {
         problems.push(
-          `${id}.${input} defaults to "${spec.defaultValue}", which is not one of its values.`
+          `${id}.${input} offers a fixed set of values but is not a list of text.`
+        );
+      }
+      if (spec.defaultValue !== undefined && spec.choices !== undefined) {
+        // One default or a set of them — a multi-select seeds several at once.
+        const defaults =
+          typeof spec.defaultValue === "string"
+            ? [spec.defaultValue]
+            : spec.defaultValue;
+        for (const value of defaults) {
+          if (spec.choices.includes(value)) continue;
+          problems.push(
+            `${id}.${input} defaults to "${value}", which is not one of its values.`
+          );
+        }
+      }
+      if (Array.isArray(spec.defaultValue) && spec.type.kind !== "list") {
+        problems.push(
+          `${id}.${input} defaults to a set of values but only holds one.`
+        );
+      }
+      if (typeof spec.defaultValue === "string" && spec.type.kind === "list") {
+        problems.push(
+          `${id}.${input} defaults to one value but holds a set of them.`
         );
       }
       const gate = spec.showWhen;
@@ -392,6 +421,11 @@ export function validateCatalogInputs(
           // A gate against an open set cannot be reasoned about at build time.
           problems.push(
             `${id}.${input} is gated on "${gate.input}", which has no fixed set of values.`
+          );
+        } else if (isMultiSelect(target)) {
+          // The gate reads one literal string; a set has no single value to match.
+          problems.push(
+            `${id}.${input} is gated on "${gate.input}", which holds a set of values.`
           );
         } else {
           for (const value of gate.equals) {

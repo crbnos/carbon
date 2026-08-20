@@ -352,18 +352,22 @@ function checkInputs(
       });
     }
 
-    if (
-      declaration.choices !== undefined &&
-      supplied.kind === "literal" &&
-      typeof supplied.value === "string" &&
-      !declaration.choices.includes(supplied.value)
-    ) {
-      issues.push({
-        code: "INCOMPLETE_CONFIG",
-        message: `"${supplied.value}" is not a valid ${name}.`,
-        nodeId: node.id,
-        field: `inputs.${name}`
-      });
+    if (declaration.choices !== undefined && supplied.kind === "literal") {
+      // A multi-select stores a list, so every member has to be checked — a single
+      // string test would wave the whole array through unread.
+      const picked = Array.isArray(supplied.value)
+        ? supplied.value
+        : [supplied.value];
+      for (const value of picked) {
+        if (typeof value !== "string") continue;
+        if (declaration.choices.includes(value)) continue;
+        issues.push({
+          code: "INCOMPLETE_CONFIG",
+          message: `"${value}" is not a valid ${name}.`,
+          nodeId: node.id,
+          field: `inputs.${name}`
+        });
+      }
     }
   }
 

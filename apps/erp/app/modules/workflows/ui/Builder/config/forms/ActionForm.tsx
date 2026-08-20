@@ -17,6 +17,7 @@ import {
 } from "@carbon/react";
 import type { ValueOrRef, ValueType, WorkflowCatalog } from "@carbon/workflows";
 import {
+  isMultiSelect,
   MAX_LIST_ITEMS,
   WORKFLOW_ACTION_CATALOG,
   WORKFLOW_ENTITY_REGISTRY
@@ -32,6 +33,8 @@ import {
   workflowFieldHelp
 } from "../../catalog";
 import { useBuilderStore } from "../../context";
+import { lockedChoices, useChoiceOptions } from "../../fields/choiceOptions";
+import { MultiChoiceField } from "../../fields/MultiChoiceField";
 import { PairsField } from "../../fields/PairsField";
 import { TemplateField } from "../../fields/TemplateField";
 import { ValueField } from "../../fields/ValueField";
@@ -276,6 +279,7 @@ export function ActionForm({
   const updateNodeData = useBuilderStore((s) => s.updateNodeData);
   const label = useWorkflowLabel();
   const catalog = useWorkflowCatalog();
+  const choiceOptions = useChoiceOptions();
 
   const { action: actionId, inputs } = node.data;
 
@@ -414,6 +418,24 @@ export function ActionForm({
       );
     }
 
+    if (isMultiSelect(inputDef)) {
+      return (
+        <MultiChoiceField
+          key={name}
+          label={fieldLabel}
+          helpTermId={inputHelp}
+          type={inputDef.type}
+          required={inputDef.required}
+          options={choiceOptions(inputDef.choices)}
+          locked={lockedChoices(inputDef.choices)}
+          value={inputs[name]}
+          onChange={(v) => handleInputChange(name, v)}
+          issue={fieldIssue}
+          isReadOnly={isReadOnly}
+        />
+      );
+    }
+
     if (inputDef.template) {
       return (
         <TemplateField
@@ -450,6 +472,19 @@ export function ActionForm({
     );
   }
 
+  /** Rendered directly under the action picker rather than with the rest: a multi-select
+   * qualifies the action itself (how a notification is delivered), so it belongs beside
+   * the action, not below the recipient and the message. */
+  const modeInputNames = useMemo(() => {
+    if (!actionDef) return [];
+    return Object.entries(actionDef.inputs)
+      .filter(([name, inputDef]) => {
+        if (hiddenInputs.has(name) || skipInputs.has(name)) return false;
+        return isMultiSelect(inputDef);
+      })
+      .map(([name]) => name);
+  }, [actionDef, hiddenInputs, skipInputs]);
+
   // Sort inputs: required first, then optional (preserving catalog order within each)
   const visibleInputNames = useMemo(() => {
     if (!actionDef) return [];
@@ -457,12 +492,13 @@ export function ActionForm({
     const optional: string[] = [];
     for (const [name, inputDef] of Object.entries(actionDef.inputs)) {
       if (hiddenInputs.has(name) || skipInputs.has(name)) continue;
+      if (modeInputNames.includes(name)) continue;
       if (!isGateOpen(inputDef.showWhen, inputs)) continue;
       if (inputDef.required) required.push(name);
       else optional.push(name);
     }
     return [...required, ...optional];
-  }, [actionDef, hiddenInputs, skipInputs, inputs]);
+  }, [actionDef, hiddenInputs, skipInputs, modeInputNames, inputs]);
 
   // ── render ──────────────────────────────────────────────────────────────────
 
@@ -484,6 +520,12 @@ export function ActionForm({
 
       {actionDef && (
         <>
+          {modeInputNames.length > 0 && (
+            <div className="space-y-3">
+              {modeInputNames.map((name) => renderInput(name))}
+            </div>
+          )}
+
           {/* requireOneOf group selectors */}
           {requireOneOf.map((group, i) => (
             <div key={i} className="space-y-1">

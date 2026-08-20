@@ -1369,6 +1369,9 @@ msgstr "अल्फा"
 msgid "Always"
 msgstr "हमेशा"
 
+msgid "Always sent — every notification shows in the bell menu."
+msgstr ""
+
 msgid "Always taken"
 msgstr "हमेशा लिया जाता है"
 
@@ -3402,6 +3405,9 @@ msgstr "Jira समस्या से कनेक्ट करें"
 msgid "Connect Linear issue"
 msgstr "Linear समस्या से कनेक्ट करें"
 
+msgid "Connect Slack under Settings → Integrations first."
+msgstr ""
+
 msgid "Connect the Otherwise handle to a node to run when no condition matches."
 msgstr "कोई शर्त मेल नहीं खाने पर चलाने के लिए हैंडल को एक नोड से कनेक्ट करें।"
 
@@ -5097,6 +5103,9 @@ msgstr "आयाम"
 
 msgid "Direct"
 msgstr "सीधा"
+
+msgid "Direct message to each recipient in your Slack workspace."
+msgstr ""
 
 msgid "Direction"
 msgstr "दिशा"
@@ -7589,6 +7598,9 @@ msgstr "केवल स्टॉक में"
 msgid "In the loop together"
 msgstr "एक साथ लूप में"
 
+msgid "In-app"
+msgstr ""
+
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "इन-ऐप नोटिफिकेशन हमेशा डिलीवर किए जाते हैं। चुनें कि कौन से विषय आपको ईमेल या Slack के माध्यम से भी पहुंचते हैं।"
 
@@ -9267,6 +9279,9 @@ msgstr "आवश्यकता की तारीख"
 msgid "Need the right columns?"
 msgstr "क्या आपको सही कॉलम चाहिए?"
 
+msgid "Needs a Business or Partner plan."
+msgstr ""
+
 msgid "Needs fixing"
 msgstr "मरम्मत की आवश्यकता है"
 
@@ -10144,6 +10159,12 @@ msgstr "अभी कुछ नहीं। एक स्टेप केवल 
 
 msgid "Notification"
 msgstr "सूचना"
+
+msgid "Notification type"
+msgstr ""
+
+msgid "Notification Type"
+msgstr ""
 
 msgid "Notifications"
 msgstr "सूचनाएं"
@@ -13336,6 +13357,9 @@ msgstr "यह दस्तावेज़ सक्रिय होने स�
 
 msgid "Sent complete date"
 msgstr "भेजे गए पूर्ण दिनांक"
+
+msgid "Sent to each recipient who has email notifications turned on."
+msgstr ""
 
 msgid "Sequences"
 msgstr "अनुक्रम"
@@ -17036,6 +17060,9 @@ msgstr "जब आप डिलीवरी के लिए प्रतिब�
 
 msgid "When your fiscal and tax years start"
 msgstr "जब आपका वित्तीय और कर वर्ष शुरू होता है"
+
+msgid "Where a workflow notification is delivered — in-app is always sent, while email needs a Business or Partner plan and Slack needs your Slack workspace connected."
+msgstr ""
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "जहां एक ऑपरेशन चलता है; श्रम और उद्धरण दरें ले जाता है, ओवरहेड उनके बीच अंतर के साथ।"

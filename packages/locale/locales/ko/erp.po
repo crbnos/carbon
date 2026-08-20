@@ -1369,6 +1369,9 @@ msgstr "알파"
 msgid "Always"
 msgstr "항상"
 
+msgid "Always sent — every notification shows in the bell menu."
+msgstr ""
+
 msgid "Always taken"
 msgstr "항상 사용됨"
 
@@ -3402,6 +3405,9 @@ msgstr "Jira 이슈 연결"
 msgid "Connect Linear issue"
 msgstr "Linear 이슈 연결"
 
+msgid "Connect Slack under Settings → Integrations first."
+msgstr ""
+
 msgid "Connect the Otherwise handle to a node to run when no condition matches."
 msgstr "조건이 일치하지 않을 때 실행할 노드에 Otherwise 핸들을 연결합니다."
 
@@ -5097,6 +5103,9 @@ msgstr "치수"
 
 msgid "Direct"
 msgstr "직접"
+
+msgid "Direct message to each recipient in your Slack workspace."
+msgstr ""
 
 msgid "Direction"
 msgstr "방향"
@@ -7589,6 +7598,9 @@ msgstr "재고만"
 msgid "In the loop together"
 msgstr "함께 정보 공유하기"
 
+msgid "In-app"
+msgstr ""
+
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "인앱 알림은 항상 전달됩니다. 이메일 또는 Slack으로도 전달받을 주제를 선택하세요."
 
@@ -9267,6 +9279,9 @@ msgstr "필요일"
 msgid "Need the right columns?"
 msgstr "적절한 열이 필요하신가요?"
 
+msgid "Needs a Business or Partner plan."
+msgstr ""
+
 msgid "Needs fixing"
 msgstr "수정 필요"
 
@@ -10144,6 +10159,12 @@ msgstr "아직 없습니다. 단계는 구성된 후에만 값을 제공합니�
 
 msgid "Notification"
 msgstr "알림"
+
+msgid "Notification type"
+msgstr ""
+
+msgid "Notification Type"
+msgstr ""
 
 msgid "Notifications"
 msgstr "알림"
@@ -13336,6 +13357,9 @@ msgstr "이 문서를 활성화하기 전에 승인을 위해 전송합니다."
 
 msgid "Sent complete date"
 msgstr "발송 완료 날짜"
+
+msgid "Sent to each recipient who has email notifications turned on."
+msgstr ""
 
 msgid "Sequences"
 msgstr "시퀀스"
@@ -17036,6 +17060,9 @@ msgstr "귀사가 납품하기로 약속한 시점으로, 계획에서는 이를
 
 msgid "When your fiscal and tax years start"
 msgstr "회계연도 및 세무연도가 시작되는 시기"
+
+msgid "Where a workflow notification is delivered — in-app is always sent, while email needs a Business or Partner plan and Slack needs your Slack workspace connected."
+msgstr ""
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "공정작업이 실행되는 곳으로, 노무 및 견적 요율을 가지며 두 요율의 차이가 간접비입니다."

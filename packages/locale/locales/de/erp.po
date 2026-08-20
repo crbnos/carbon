@@ -1369,6 +1369,9 @@ msgstr "Alpha"
 msgid "Always"
 msgstr "Immer"
 
+msgid "Always sent — every notification shows in the bell menu."
+msgstr ""
+
 msgid "Always taken"
 msgstr "Immer genommen"
 
@@ -3402,6 +3405,9 @@ msgstr "Jira-Problem verbinden"
 msgid "Connect Linear issue"
 msgstr "Linear-Problem verbinden"
 
+msgid "Connect Slack under Settings → Integrations first."
+msgstr ""
+
 msgid "Connect the Otherwise handle to a node to run when no condition matches."
 msgstr "Verbinden Sie das Otherwise-Handle mit einem Knoten, um auszuführen, wenn keine Bedingung erfüllt ist."
 
@@ -5097,6 +5103,9 @@ msgstr "Abmessungen"
 
 msgid "Direct"
 msgstr "Direkt"
+
+msgid "Direct message to each recipient in your Slack workspace."
+msgstr ""
 
 msgid "Direction"
 msgstr "Richtung"
@@ -7589,6 +7598,9 @@ msgstr "Nur auf Lager"
 msgid "In the loop together"
 msgstr "Im Prozess dabei"
 
+msgid "In-app"
+msgstr ""
+
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "In-App-Benachrichtigungen werden immer zugestellt. Wählen Sie, welche Themen Sie auch per E-Mail oder Slack erreichen."
 
@@ -9267,6 +9279,9 @@ msgstr "Benötigt bis"
 msgid "Need the right columns?"
 msgstr "Benötigen Sie die richtigen Spalten?"
 
+msgid "Needs a Business or Partner plan."
+msgstr ""
+
 msgid "Needs fixing"
 msgstr "Muss behoben werden"
 
@@ -10144,6 +10159,12 @@ msgstr "Noch nichts. Ein Schritt bietet Werte erst nach der Konfiguration an."
 
 msgid "Notification"
 msgstr "Benachrichtigung"
+
+msgid "Notification type"
+msgstr ""
+
+msgid "Notification Type"
+msgstr ""
 
 msgid "Notifications"
 msgstr "Benachrichtigungen"
@@ -13336,6 +13357,9 @@ msgstr "Sendet dieses Dokument zur Genehmigung, bevor es aktiv werden kann."
 
 msgid "Sent complete date"
 msgstr "Versanddatum abgeschlossen"
+
+msgid "Sent to each recipient who has email notifications turned on."
+msgstr ""
 
 msgid "Sequences"
 msgstr "Sequenzen"
@@ -17036,6 +17060,9 @@ msgstr "Wann Sie sich zur Lieferung verpflichtet haben; Planung behandelt dies a
 
 msgid "When your fiscal and tax years start"
 msgstr "Wenn Ihr Geschäftsjahr und Steuerjahr beginnen"
+
+msgid "Where a workflow notification is delivered — in-app is always sent, while email needs a Business or Partner plan and Slack needs your Slack workspace connected."
+msgstr ""
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "Wo ein Betrieb läuft; trägt Arbeits- und Angebotstarife, mit Overhead dem Unterschied zwischen ihnen."

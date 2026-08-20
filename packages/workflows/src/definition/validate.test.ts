@@ -876,6 +876,54 @@ describe("configuration", () => {
     expect(issues.filter((i) => i.code === "INCOMPLETE_CONFIG")).toEqual([]);
   });
 
+  it("reports INCOMPLETE_CONFIG for a member of a multi-select that is not offered", () => {
+    const definition = define(
+      [
+        trigger(),
+        action("a1", {
+          action: "alertSomeone",
+          inputs: {
+            role: literal("string", "Manager"),
+            channels: {
+              kind: "literal",
+              type: { kind: "list", of: { kind: "primitive", of: "string" } },
+              value: ["inApp", "carrier-pigeon"]
+            }
+          }
+        })
+      ],
+      [edge("e1", "trigger", "out", "a1")]
+    );
+    const issues = validateDefinition(definition, catalog);
+    expect(
+      issues.filter(
+        (i) => i.code === "INCOMPLETE_CONFIG" && i.field === "inputs.channels"
+      )
+    ).toHaveLength(1);
+  });
+
+  it("accepts a multi-select whose members are all offered", () => {
+    const definition = define(
+      [
+        trigger(),
+        action("a1", {
+          action: "alertSomeone",
+          inputs: {
+            role: literal("string", "Manager"),
+            channels: {
+              kind: "literal",
+              type: { kind: "list", of: { kind: "primitive", of: "string" } },
+              value: ["inApp", "slack"]
+            }
+          }
+        })
+      ],
+      [edge("e1", "trigger", "out", "a1")]
+    );
+    const issues = validateDefinition(definition, catalog);
+    expect(issues.filter((i) => i.code === "INCOMPLETE_CONFIG")).toEqual([]);
+  });
+
   it("does not check choices when the value is a ref", () => {
     const definition = define(
       [

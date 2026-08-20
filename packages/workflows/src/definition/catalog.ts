@@ -27,9 +27,9 @@ export interface CatalogInput {
   required: boolean;
   /** Allowed literal values, where the underlying column is an enum. */
   choices?: readonly string[];
-  /** What the builder seeds a new node with. Must be one of `choices` when both are set.
-   * Stored like any other value — nothing reads it at run time. */
-  defaultValue?: string;
+  /** What the builder seeds a new node with. Must be drawn from `choices` when both are
+   * set. Stored like any other value — nothing reads it at run time. */
+  defaultValue?: string | readonly string[];
   /** Prose that may interleave text and variables; the builder renders a chip editor. */
   template?: boolean;
   /** This input is prose a person reads, so a record dropped into it renders as a link
@@ -46,6 +46,23 @@ export interface CatalogInput {
    * values. Evaluated on literals only: a variable-valued gate cannot be read at build
    * time, so it opens rather than guessing and hiding the user's work. */
   showWhen?: { input: string; equals: readonly string[] };
+}
+
+/**
+ * Whether an input holds a SET of its `choices` rather than one of them — the builder
+ * renders a multi-select and stores a list literal. Derived rather than declared: a fixed
+ * set of values on a list of text has no other reading, and a hand-set flag could only
+ * ever disagree with the type it describes.
+ */
+export function isMultiSelect<
+  T extends { type: ValueType; choices?: readonly string[] }
+>(input: T): input is T & { choices: readonly string[] } {
+  return (
+    input.choices !== undefined &&
+    input.type.kind === "list" &&
+    input.type.of.kind === "primitive" &&
+    input.type.of.of === "string"
+  );
 }
 
 export interface CatalogAction {
@@ -199,6 +216,12 @@ const FIXTURE_ACTIONS: CatalogAction[] = [
         type: t.string,
         required: false,
         choices: ["Buyer", "Manager", "Admin"]
+      },
+      channels: {
+        type: t.list({ kind: "primitive", of: "string" }),
+        required: false,
+        choices: ["inApp", "email", "slack"],
+        defaultValue: ["inApp"]
       }
     },
     outputs: {},

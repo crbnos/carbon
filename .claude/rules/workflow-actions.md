@@ -199,6 +199,34 @@ rendered — nothing here reads a template. When the customer named no record, t
 **run** stands in as the notification's subject (`documentId: aboutId ?? runId`).
 `trigger` only queues, so the summary claims recipients, never delivery.
 
+### Channels
+
+`channels` is a multi-select catalog input — `t.list(t.string)` with
+`choices: ["inApp", "email", "slack"]` and `defaultValue: ["inApp", "email"]`.
+The executor keeps only the names that are real `NotificationDestination`s and
+passes them as `destinations`; an empty or absent value **omits the field**, so
+the notify job falls back to its default map for `NotificationEvent.Workflow`
+(in-app plus email) — which is what a node saved before this input existed means.
+
+Three things about it are load-bearing:
+
+- **In-app cannot be switched off.** `notify.ts` force-adds
+  `NotificationDestination.InApp` to every notification so the bell menu reflects
+  everything, product-wide. The builder therefore shows it ticked and disabled
+  rather than offering a switch that does nothing.
+- **The input is optional, not required**, precisely because in-app is locked on:
+  requiring it could only ever be satisfied trivially, and it would block publish
+  on notify nodes saved before the field existed in a picker where the author
+  cannot tick the one channel that is actually on.
+- **Availability is a build-time concern.** Email needs `EMAIL_NOTIFICATIONS`
+  (Business/Partner) and Slack needs the company's Slack integration active; the
+  job skips a channel it cannot use with a `console.warn` at most. The builder
+  disables the option and says why (`fields/choiceOptions.tsx`) — that is the only
+  place the author ever finds out. "Unavailable" only blocks ADDING a channel; one
+  already stored (the seeded `email` default on a company with no plan for it) stays
+  removable, or the author is looking at a channel they cannot clear. Only a `LOCKED`
+  choice is frozen. `fields/multiChoice.ts` `choiceState` owns that distinction.
+
 ## The webhook action
 
 `actions/webhook.ts`. Four inputs, `url` and `method` required:

@@ -1369,6 +1369,9 @@ msgstr "Alpha"
 msgid "Always"
 msgstr "Always"
 
+msgid "Always sent — every notification shows in the bell menu."
+msgstr "Always sent — every notification shows in the bell menu."
+
 msgid "Always taken"
 msgstr "Always taken"
 
@@ -3402,6 +3405,9 @@ msgstr "Connect Jira issue"
 msgid "Connect Linear issue"
 msgstr "Connect Linear issue"
 
+msgid "Connect Slack under Settings → Integrations first."
+msgstr "Connect Slack under Settings → Integrations first."
+
 msgid "Connect the Otherwise handle to a node to run when no condition matches."
 msgstr "Connect the Otherwise handle to a node to run when no condition matches."
 
@@ -5097,6 +5103,9 @@ msgstr "Dimensions"
 
 msgid "Direct"
 msgstr "Direct"
+
+msgid "Direct message to each recipient in your Slack workspace."
+msgstr "Direct message to each recipient in your Slack workspace."
 
 msgid "Direction"
 msgstr "Direction"
@@ -7589,6 +7598,9 @@ msgstr "In stock only"
 msgid "In the loop together"
 msgstr "In the loop together"
 
+msgid "In-app"
+msgstr "In-app"
+
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 
@@ -9267,6 +9279,9 @@ msgstr "Need by"
 msgid "Need the right columns?"
 msgstr "Need the right columns?"
 
+msgid "Needs a Business or Partner plan."
+msgstr "Needs a Business or Partner plan."
+
 msgid "Needs fixing"
 msgstr "Needs fixing"
 
@@ -10144,6 +10159,12 @@ msgstr "Nothing yet. A step only offers values once it is configured."
 
 msgid "Notification"
 msgstr "Notification"
+
+msgid "Notification type"
+msgstr "Notification type"
+
+msgid "Notification Type"
+msgstr "Notification Type"
 
 msgid "Notifications"
 msgstr "Notifications"
@@ -13336,6 +13357,9 @@ msgstr "Sends this document for approval before it can go active."
 
 msgid "Sent complete date"
 msgstr "Sent complete date"
+
+msgid "Sent to each recipient who has email notifications turned on."
+msgstr "Sent to each recipient who has email notifications turned on."
 
 msgid "Sequences"
 msgstr "Sequences"
@@ -17036,6 +17060,9 @@ msgstr "When you committed to deliver; planning treats this as the demand-due-da
 
 msgid "When your fiscal and tax years start"
 msgstr "When your fiscal and tax years start"
+
+msgid "Where a workflow notification is delivered — in-app is always sent, while email needs a Business or Partner plan and Slack needs your Slack workspace connected."
+msgstr "Where a workflow notification is delivered — in-app is always sent, while email needs a Business or Partner plan and Slack needs your Slack workspace connected."
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."

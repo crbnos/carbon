@@ -1369,6 +1369,9 @@ msgstr "Alpha"
 msgid "Always"
 msgstr "始终"
 
+msgid "Always sent — every notification shows in the bell menu."
+msgstr ""
+
 msgid "Always taken"
 msgstr "始终采取"
 
@@ -3402,6 +3405,9 @@ msgstr "连接 Jira 问题"
 msgid "Connect Linear issue"
 msgstr "连接 Linear 问题"
 
+msgid "Connect Slack under Settings → Integrations first."
+msgstr ""
+
 msgid "Connect the Otherwise handle to a node to run when no condition matches."
 msgstr "将 Otherwise 句柄连接到节点，以便在没有条件匹配时运行。"
 
@@ -5097,6 +5103,9 @@ msgstr "尺寸"
 
 msgid "Direct"
 msgstr "直接"
+
+msgid "Direct message to each recipient in your Slack workspace."
+msgstr ""
 
 msgid "Direction"
 msgstr "方向"
@@ -7589,6 +7598,9 @@ msgstr "仅库存"
 msgid "In the loop together"
 msgstr "一起保持沟通"
 
+msgid "In-app"
+msgstr ""
+
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "应用内通知始终会被传递。选择哪些主题也通过电子邮件或 Slack 发送给您。"
 
@@ -9267,6 +9279,9 @@ msgstr "需要日期"
 msgid "Need the right columns?"
 msgstr "需要正确的列吗？"
 
+msgid "Needs a Business or Partner plan."
+msgstr ""
+
 msgid "Needs fixing"
 msgstr "需要修复"
 
@@ -10144,6 +10159,12 @@ msgstr "暂无内容。步骤配置后才会提供值。"
 
 msgid "Notification"
 msgstr "通知"
+
+msgid "Notification type"
+msgstr ""
+
+msgid "Notification Type"
+msgstr ""
 
 msgid "Notifications"
 msgstr "通知"
@@ -13336,6 +13357,9 @@ msgstr "在文档激活前将其发送以供批准。"
 
 msgid "Sent complete date"
 msgstr "发送完成日期"
+
+msgid "Sent to each recipient who has email notifications turned on."
+msgstr ""
 
 msgid "Sequences"
 msgstr "序列"
@@ -17036,6 +17060,9 @@ msgstr "当您承诺交货时;计划将其视为履行的需求到期日期。"
 
 msgid "When your fiscal and tax years start"
 msgstr "您的会计年度和税务年度的开始时间"
+
+msgid "Where a workflow notification is delivered — in-app is always sent, while email needs a Business or Partner plan and Slack needs your Slack workspace connected."
+msgstr ""
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "操作执行的位置。carries劳动和报价费率,开销是它们之间的差异。"
