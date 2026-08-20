@@ -5,6 +5,7 @@ import type {
   ProductionData,
   ShiftEventSpec
 } from "../../types.ts";
+import { motorAssembly } from "./assembly.ts";
 
 export const JOBS: JobSpec[] = [
   {
@@ -187,6 +188,7 @@ export const GENEALOGY_ASSEMBLY: GenealogyAssemblySpec = {
 };
 
 export const motorProduction: ProductionData = {
+  assembly: motorAssembly,
   jobs: JOBS,
   shifts: SHIFTS,
   genealogyInputs: GENEALOGY_INPUTS,

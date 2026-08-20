@@ -572,8 +572,37 @@ export type GenealogyAssemblySpec = {
   };
 };
 
+export type AssemblyStepSpec = {
+  title: string;
+  /**
+   * graph.json node ids this step installs. They must exist in the bundled
+   * graph — a step naming an absent node renders but animates nothing.
+   */
+  componentNodeIds: string[];
+};
+
+export type AssemblySpec = {
+  /**
+   * File stem under `assets/<industryId>/models/`, resolving to `<model>.glb`
+   * plus its `<model>.graph.json` sidecar. Both ship with the app rather than
+   * living in storage — see assets.ts and assets/ATTRIBUTION.md.
+   */
+  model: string;
+  name: string;
+  /** ctx.refs.items key this assembly documents, when it maps to a seeded item. */
+  item?: string;
+  /** Component total from the bundled graph, mirrored onto modelUpload. */
+  componentCount: number;
+  steps: AssemblyStepSpec[];
+};
+
 export type ProductionData = {
   jobs: JobSpec[];
+  /**
+   * Animated 3D work instructions built on a bundled CAD assembly. Optional:
+   * a dataset with no industryId has nowhere to resolve the model from.
+   */
+  assembly?: AssemblySpec;
   /** Production-event blocks, indexed by operation position — not shift rows. */
   shifts: ShiftEventSpec[][];
   genealogyInputs: GenealogyInputSpec[];

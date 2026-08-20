@@ -218,6 +218,41 @@ Do NOT connect this to `TEMPLATE_ASSET_PREFIX` / `company-templates` in
 `packages/jobs/src/inngest/functions/tasks/company-backup.ts`. That is the dormant archive
 design described below and shares nothing with this path but a string.
 
+## CAD assemblies ship the same way
+
+Each industry also seeds ONE 3D assembly, so a demo company has something real to open in the
+viewer and step through in the assembler. It rides the exact mechanism the thumbnails do:
+`assets/<industryId>/models/<name>.glb` plus its `<name>.graph.json` sidecar are committed,
+`assets.ts` globs them alongside the SVGs, and `getDatasetAssetUrl` resolves the `_templates/`
+path before the storage proxy is ever reached. So there is **no bucket object, no upload, and no
+assembler run at seed time** — `seedAssembly` in `tiers/06-production.ts` writes a `modelUpload`
+row whose `modelPath`/`glbPath`/`graphPath` are those bundled paths, `processingStatus` already
+`Success`, then an `assemblyInstruction` + its `assemblyInstructionStep` rows, and finally points
+`item.modelUploadId` at it.
+
+The data is `ProductionData.assembly` (`AssemblySpec`), authored in `data/<key>/assembly.ts`. It
+is **optional** — a dataset with a null `industryId` has nowhere to resolve a model from and is
+skipped. A step's `componentNodeIds` are real node ids read out of that exact `graph.json`; they
+are the frozen join key between the graph, the GLB node extras and the step rows, so a step
+naming an absent node renders but animates nothing. Regenerate them from the graph rather than
+hand-editing, and never re-bake a model without re-deriving them — `nodeId` is a hash of the
+tessellation, so ANY change to the mesh (including a different `linearDeflection`) invalidates
+every id in the dataset.
+
+The `.glb` files are baked ONCE by running the upstream STEP through a locally-built
+`apps/assembler` (`POST /v1/convert` at `linearDeflection: 2.0`, `angularDeflection: 1.0` — the
+default 0.1 produces a 30 MB GLB where the coarse setting produces 2.7 MB, with no visible
+difference at demo scale). The STEP sources are deliberately NOT committed. Both the recipe and
+the upstream licenses live in `assets/ATTRIBUTION.md` and
+`.ai/plans/2026-08-20-demo-cad-models.md` — three of the four models are CC BY or CC0 and legally
+REQUIRE that attribution to survive redistribution, so that file is not optional documentation.
+
+Two things needed no change and should stay that way: `wipe.ts` discovers tables by their
+`companyId` column rather than a hard-coded list, so `modelUpload` and every `assembly*` table are
+already cleaned on re-apply (verified — applying a second dataset leaves exactly one model row);
+and because the artifacts are bundled rather than stored, a backup/restore or template revert
+carries the paths across intact with nothing to re-upload.
+
 ## Adding an industry
 
 1. `data/<key>/` — one file per slice, mirroring `data/robotics/` (the newest and closest

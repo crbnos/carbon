@@ -4,7 +4,58 @@ import {
   type JobOperationStatus
 } from "../helpers/job-method.ts";
 import { insertId, insertRow, need, nextSequence, rows } from "../sql.ts";
-import type { Ctx, ProductionData } from "../types.ts";
+import type { AssemblySpec, Ctx, ProductionData } from "../types.ts";
+
+/**
+ * Seeds an animated assembly instruction against a CAD model that ships with the
+ * app. The `_templates/` paths are resolved by getDatasetAssetUrl rather than the
+ * storage proxy, so there are no objects to upload and nothing to clean up — the
+ * modelUpload row is a pointer at a bundled file, and the assembler never runs.
+ */
+async function seedAssembly(ctx: Ctx, spec: AssemblySpec): Promise<void> {
+  const { industryId } = ctx.dataset;
+  if (!industryId) return;
+
+  const base = `_templates/${industryId}/models/${spec.model}`;
+  const modelUploadId = await insertId(ctx, "modelUpload", {
+    name: `${spec.name}.glb`,
+    // Already converted, so the source and the render artifact are the same file.
+    modelPath: `${base}.glb`,
+    glbPath: `${base}.glb`,
+    graphPath: `${base}.graph.json`,
+    componentCount: spec.componentCount,
+    processingStatus: "Success",
+    processedAt: resolveTimestamp(ctx.anchor, 0, "09:00")
+  });
+
+  const itemId = spec.item ? ctx.refs.items[spec.item]?.id : undefined;
+  const instructionId = await insertId(ctx, "assemblyInstruction", {
+    name: spec.name,
+    modelUploadId,
+    itemId: itemId ?? null,
+    status: "Published",
+    version: 1,
+    publishedAt: resolveTimestamp(ctx.anchor, 0, "09:00")
+  });
+
+  let sortOrder = 1;
+  for (const step of spec.steps) {
+    await insertRow(ctx, "assemblyInstructionStep", {
+      assemblyInstructionId: instructionId,
+      title: step.title,
+      instructionText: step.title,
+      componentNodeIds: step.componentNodeIds,
+      sortOrder: sortOrder++
+    });
+  }
+
+  if (itemId) {
+    await ctx.client.query(
+      `UPDATE "item" SET "modelUploadId" = $1 WHERE "id" = $2`,
+      [modelUploadId, itemId]
+    );
+  }
+}
 
 // A job's operations open in the state its own status implies — a Draft job's
 // work has not been handed to the floor, a released one's has.
@@ -29,6 +80,11 @@ export async function runTier6(ctx: Ctx): Promise<void> {
   const data = ctx.dataset.production;
   const { locationId } = ctx;
   const plantId = ctx.refs.locations.Plant ?? locationId;
+
+  if (data.assembly) {
+    ctx.log(`assembly ${data.assembly.name}`);
+    await seedAssembly(ctx, data.assembly);
+  }
 
   for (const spec of data.jobs) {
     ctx.log(`job ${spec.item} — ${spec.status}`);
