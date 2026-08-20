@@ -19,7 +19,6 @@ import {
   HStack,
   IconButton,
   Label,
-  ScrollArea,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -545,7 +544,7 @@ const BillOfMaterial = ({
         {isProductionRevision && (
           <ReleaseLockAlert isLocked={isReleaseLocked} className="mb-4" />
         )}
-        <ScrollArea type="auto" className="max-h-[60dvh]">
+        <div className="max-h-[60dvh] overflow-y-auto scrollbar-hide">
           <SortableList
             isReadOnly={isReadOnly}
             items={materials}
@@ -554,7 +553,7 @@ const BillOfMaterial = ({
             onRemoveItem={onRemoveItem}
             renderItem={renderListItem}
           />
-        </ScrollArea>
+        </div>
       </CardContent>
       {configuratorDisclosure.isOpen && configuration && (
         <ConfigurationEditor

@@ -1073,7 +1073,7 @@ const JobBillOfProcess = ({
         </CardAction>
       </HStack>
       <CardContent>
-        <ScrollArea type="auto" className="max-h-[60dvh]">
+        <div className="max-h-[60dvh] overflow-y-auto scrollbar-hide">
           <SortableList
             items={items}
             onReorder={onReorder}
@@ -1081,7 +1081,7 @@ const JobBillOfProcess = ({
             onRemoveItem={onRemoveItem}
             renderItem={renderListItem}
           />
-        </ScrollArea>
+        </div>
       </CardContent>
     </Card>
   );
@@ -1193,18 +1193,24 @@ function StepsForm({
   const draftFileInputRef = useRef<HTMLInputElement>(null);
   const draftModelInputRef = useRef<HTMLInputElement>(null);
 
-  // Parts (this operation's BOM materials) the operator can assign to a step. Parts picked
-  // while CREATING a step are buffered here and attached right after the step is created.
+  // Parts the operator can assign to a step. The whole bill of material is offered —
+  // the BOM is the source of truth, and a line needn't be assigned to this operation
+  // to be referenced by a step. Parts picked while CREATING a step are buffered here
+  // and attached right after the step is created.
   const operationParts = useMemo(
     () =>
-      (materials ?? [])
-        .filter((m) => m.jobOperationId === operationId)
-        .map((m) => ({
+      (materials ?? []).map((m) => {
+        const item = allItems.find((i) => i.id === m.itemId);
+        return {
           id: m.id,
-          name: m.description || m.itemId,
+          name: item?.readableIdWithRevision ?? m.description ?? m.itemId,
+          secondary: item
+            ? (m.description ?? item.name ?? undefined)
+            : undefined,
           quantity: m.quantity ?? 1
-        })),
-    [materials, operationId]
+        };
+      }),
+    [materials, allItems]
   );
   const [draftParts, setDraftParts] = useState<string[]>([]);
 
@@ -1689,27 +1695,30 @@ function StepsForm({
 
 // Parts assigned to an EXISTING job step — the step-side of the part↔step link. Toggles each
 // jobMaterialStep link immediately via the material route. Job-tier twin of StepParts.
+// Lists the method's whole bill of material — the BOM is the source of truth, and a
+// line needn't be assigned to this operation to be referenced by a step.
 function JobStepParts({
   step,
-  operationId,
   materials,
   isDisabled
 }: {
   step: JobOperationStep;
-  operationId: string;
   materials: JobMaterial[];
   isDisabled: boolean;
 }) {
   const { t } = useLingui();
   const fetcher = useFetcher();
+  const [allItems] = useItems();
 
-  const operationParts = (materials ?? [])
-    .filter((m) => m.jobOperationId === operationId)
-    .map((m) => ({
+  const operationParts = (materials ?? []).map((m) => {
+    const item = allItems.find((i) => i.id === m.itemId);
+    return {
       id: m.id,
-      name: m.description || m.itemId,
+      name: item?.readableIdWithRevision ?? m.description ?? m.itemId,
+      secondary: item ? (m.description ?? item.name ?? undefined) : undefined,
       quantity: m.quantity ?? 1
-    }));
+    };
+  });
 
   const linkedPartIds = (materials ?? [])
     .filter((m) =>
@@ -2183,7 +2192,6 @@ function StepsListItem({
             <JobStepSlides step={attribute} isDisabled={isDisabled} />
             <JobStepParts
               step={attribute}
-              operationId={operationId}
               materials={materials}
               isDisabled={isDisabled}
             />

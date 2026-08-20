@@ -19,7 +19,6 @@ import {
   HStack,
   IconButton,
   Label,
-  ScrollArea,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -548,7 +547,7 @@ const QuoteBillOfMaterial = ({
         </CardAction>
       </HStack>
       <CardContent>
-        <ScrollArea type="auto" className="max-h-[60dvh]">
+        <div className="max-h-[60dvh] overflow-y-auto scrollbar-hide">
           <SortableList
             items={items}
             onReorder={onReorder}
@@ -556,7 +555,7 @@ const QuoteBillOfMaterial = ({
             onRemoveItem={onRemoveItem}
             renderItem={renderListItem}
           />
-        </ScrollArea>
+        </div>
       </CardContent>
     </Card>
   );
