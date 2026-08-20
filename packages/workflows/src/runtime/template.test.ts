@@ -172,6 +172,30 @@ describe("renderTemplate with a link resolver", () => {
     });
   });
 
+  // A record name is customer data: it must not be able to choose where the link points.
+  it("cannot break out of the link label", async () => {
+    const ctx = createRuntimeContext({
+      outputs: {
+        n1: {
+          record: entityValue("purchaseOrder", "po_1", {
+            purchaseOrderId: "PO](https://erp.test/x/admin)"
+          })
+        }
+      }
+    });
+    const result = await renderTemplate(template(ref("record")), ctx, {
+      linkFor: () => "https://erp.test/link"
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      value: primitiveValue(
+        "string",
+        "[PO(https://erp.test/x/admin)](https://erp.test/link)"
+      )
+    });
+  });
+
   // An entity with no page in the app: the id still reads, it just is not clickable.
   it("falls back to the plain id when the resolver returns null", async () => {
     const ctx = createRuntimeContext({

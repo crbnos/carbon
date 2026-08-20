@@ -20,8 +20,10 @@ const positionsSchema = z.record(
 // apply here — a published workflow may still be tidied. The service writes positions
 // only, and only onto node ids that already exist, so this route cannot change what a
 // workflow does even when called by hand. `/save` stays locked.
-export async function action({ request }: ActionFunctionArgs) {
+export async function action({ params, request }: ActionFunctionArgs) {
   assertIsPost(request);
+  const { id } = params;
+  if (!id) throw new Error("Could not find id");
   const { client, companyId } = await requirePermissions(request, {
     update: "workflows"
   });
@@ -55,6 +57,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const update = await updateWorkflowNodePositions(client, {
     versionId: validation.data.versionId,
+    workflowId: id,
     companyId,
     positions: positions.data
   });

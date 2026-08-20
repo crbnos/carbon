@@ -429,9 +429,11 @@ export async function executeWorkflowRun(params: {
       .select("table, id, name, dataTypeId, listOptions, active")
       .eq("companyId", payload.companyId)
       .eq("active", true);
-    // A company with no custom fields and a refused read are the same answer here: the
-    // workflow runs against the shipped catalog alone.
-    return error || !data ? [] : data;
+    // A refused read is an empty set under RLS, not an error, so an error here is transient
+    // and worth the retry — swallowing it would silently run against the shipped catalog.
+    if (error)
+      throw new Error(`Could not read custom fields: ${error.message}`);
+    return data ?? [];
   });
 
   const catalog = createWorkflowCatalog(

@@ -86,7 +86,12 @@ async function renderPart(
   const text = await entityText(value, ctx);
   if (linkFor === undefined || text === "") return text;
   const href = linkFor(value.of, value.id);
-  return href === null ? text : `[${text}](${href})`;
+  if (href === null) return text;
+  // The link matcher's label cannot hold a `]` and honours no backslash escape, so a record
+  // named `PO](…)` would end the label early and pick the destination itself. Drop the
+  // brackets; a name that is nothing but brackets stays unlinked.
+  const label = text.replace(/[[\]]/g, "").trim();
+  return label === "" ? text : `[${label}](${href})`;
 }
 
 /** An unresolvable part fails the whole template; a blank would be a silent lie. */

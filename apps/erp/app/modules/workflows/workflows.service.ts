@@ -197,18 +197,23 @@ export async function updateWorkflowNodePositions(
   client: SupabaseClient<Database>,
   {
     versionId,
+    workflowId,
     companyId,
     positions
   }: {
     versionId: string;
+    workflowId: string;
     companyId: string;
     positions: Record<string, { x: number; y: number }>;
   }
 ) {
+  // Scoped to the workflow in the URL as well as the version in the body, so the two
+  // cannot disagree — otherwise the path segment is decorative.
   const version = await client
     .from("workflowVersion")
     .select("nodes")
     .eq("id", versionId)
+    .eq("workflowId", workflowId)
     .eq("companyId", companyId)
     .maybeSingle();
 
