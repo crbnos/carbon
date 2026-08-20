@@ -964,6 +964,7 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     deadlineType: { kind: "primitive", of: "string" },
     quantity: { kind: "primitive", of: "number" },
     scrapQuantity: { kind: "primitive", of: "number" },
+    productionQuantity: { kind: "primitive", of: "number" },
     quantityComplete: { kind: "primitive", of: "number" },
     quantityShipped: { kind: "primitive", of: "number" },
     quantityReceivedToInventory: { kind: "primitive", of: "number" },
@@ -985,8 +986,7 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     secondsToComplete: { kind: "primitive", of: "number" },
     startDate: { kind: "primitive", of: "date" },
     storageUnitId: { kind: "primitive", of: "string" },
-    priority: { kind: "primitive", of: "number" },
-    productionQuantity: { kind: "primitive", of: "number" }
+    priority: { kind: "primitive", of: "number" }
   },
   jobOperation: {
     id: { kind: "primitive", of: "string" },

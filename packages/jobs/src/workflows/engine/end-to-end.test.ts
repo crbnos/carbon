@@ -37,6 +37,15 @@ vi.mock("./owner", () => ({
   hasPermission: () => true
 }));
 vi.mock("../actions", () => ({ createWorkflowServices: vi.fn() }));
+// The real module pulls in the email templates and @carbon/env; the engine only wants a URL.
+vi.mock("../../inngest/functions/notifications/content", () => ({
+  buildNotificationLink: (
+    event: string,
+    documentId: string,
+    companyId: string
+  ) =>
+    `https://erp.test/api/link?event=${event}&documentId=${documentId}&companyId=${companyId}`
+}));
 
 const { executeWorkflowRun } = await import("./execute");
 const { loadRunContext } = await import("./log");
