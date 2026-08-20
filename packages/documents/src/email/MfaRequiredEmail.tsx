@@ -14,18 +14,24 @@ import { EmailThemeProvider, getEmailThemeClasses } from "./components/Theme";
 
 interface Props {
   recipientName?: string;
-  hubUrl: string;
+  companyName: string;
+  setupUrl: string;
 }
 
-export const ImplementationHubEmail = ({
+// Sent to every active employee of a company when an admin turns on the
+// two-factor requirement. It goes to people who already have an authenticator
+// app as well as those who don't — the copy covers both so enrollment status
+// never has to be resolved per recipient.
+export const MfaRequiredEmail = ({
   recipientName = "there",
-  hubUrl = "https://app.carbon.ms/x/get-started"
+  companyName,
+  setupUrl
 }: Props) => {
   const themeClasses = getEmailThemeClasses();
 
   return (
     <EmailThemeProvider
-      preview={<Preview>Your implementation hub is ready</Preview>}
+      preview={<Preview>Two-factor authentication is now required</Preview>}
       additionalHeadContent={<style>{notificationStyles}</style>}
     >
       <Body
@@ -45,13 +51,13 @@ export const ImplementationHubEmail = ({
             className={`text-[11px] leading-[16px] uppercase text-center font-medium m-0 mt-[40px] mb-[10px] nf-eyebrow ${themeClasses.mutedText}`}
             style={{ letterSpacing: "0.14em" }}
           >
-            Implementation Hub
+            Security
           </Text>
 
           <Heading
             className={`text-[26px] font-medium text-center tracking-tight p-0 mt-0 mb-[32px] mx-0 ${themeClasses.heading}`}
           >
-            Your implementation hub is ready
+            Two-factor authentication is now required
           </Heading>
 
           <Section>
@@ -86,8 +92,15 @@ export const ImplementationHubEmail = ({
                   <Text
                     className={`text-[15px] leading-[24px] m-0 ${themeClasses.text}`}
                   >
-                    Your company has been enrolled in the Implementation Hub.
-                    Open it to track onboarding tasks and get set up in Carbon.
+                    {companyName} now requires an authenticator app to sign in
+                    to Carbon. Set one up before your next sign-in — until you
+                    do, you won't be able to open {companyName} in Carbon.
+                  </Text>
+                  <Text
+                    className={`text-[15px] leading-[24px] m-0 mt-[12px] ${themeClasses.text}`}
+                  >
+                    Already using an authenticator app? You're all set, and
+                    nothing changes for you.
                   </Text>
                 </td>
               </tr>
@@ -96,7 +109,7 @@ export const ImplementationHubEmail = ({
 
           <Section className="text-center mb-[24px]">
             <Button
-              href={hubUrl}
+              href={setupUrl}
               className="nf-cta"
               style={{
                 backgroundColor: "#0e0e0e",
@@ -114,7 +127,7 @@ export const ImplementationHubEmail = ({
               }}
             >
               <span style={{ verticalAlign: "middle" }}>
-                Open Implementation Hub
+                Set up two-factor authentication
               </span>
             </Button>
           </Section>
@@ -124,10 +137,10 @@ export const ImplementationHubEmail = ({
           >
             Or open this link in your browser:{" "}
             <Link
-              href={hubUrl}
+              href={setupUrl}
               className={`${themeClasses.mutedText} underline nf-fallback`}
             >
-              {hubUrl}
+              {setupUrl}
             </Link>
           </Text>
         </Container>
@@ -136,4 +149,4 @@ export const ImplementationHubEmail = ({
   );
 };
 
-export default ImplementationHubEmail;
+export default MfaRequiredEmail;

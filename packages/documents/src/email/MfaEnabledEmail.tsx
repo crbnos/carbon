@@ -14,18 +14,24 @@ import { EmailThemeProvider, getEmailThemeClasses } from "./components/Theme";
 
 interface Props {
   recipientName?: string;
-  hubUrl: string;
+  securityUrl: string;
 }
 
-export const ImplementationHubEmail = ({
+// Sent to the person who just verified an authenticator app on their own
+// account. This is an account-security receipt, not a notification — it is the
+// only signal a user gets that someone enrolled a factor against their login,
+// so it is sent regardless of notification preferences.
+export const MfaEnabledEmail = ({
   recipientName = "there",
-  hubUrl = "https://app.carbon.ms/x/get-started"
+  securityUrl
 }: Props) => {
   const themeClasses = getEmailThemeClasses();
 
   return (
     <EmailThemeProvider
-      preview={<Preview>Your implementation hub is ready</Preview>}
+      preview={
+        <Preview>Two-factor authentication is on for your account</Preview>
+      }
       additionalHeadContent={<style>{notificationStyles}</style>}
     >
       <Body
@@ -45,13 +51,13 @@ export const ImplementationHubEmail = ({
             className={`text-[11px] leading-[16px] uppercase text-center font-medium m-0 mt-[40px] mb-[10px] nf-eyebrow ${themeClasses.mutedText}`}
             style={{ letterSpacing: "0.14em" }}
           >
-            Implementation Hub
+            Security
           </Text>
 
           <Heading
             className={`text-[26px] font-medium text-center tracking-tight p-0 mt-0 mb-[32px] mx-0 ${themeClasses.heading}`}
           >
-            Your implementation hub is ready
+            Two-factor authentication is on
           </Heading>
 
           <Section>
@@ -86,8 +92,15 @@ export const ImplementationHubEmail = ({
                   <Text
                     className={`text-[15px] leading-[24px] m-0 ${themeClasses.text}`}
                   >
-                    Your company has been enrolled in the Implementation Hub.
-                    Open it to track onboarding tasks and get set up in Carbon.
+                    An authenticator app was added to your Carbon account.
+                    You'll be asked for a 6-digit code the next time you sign
+                    in.
+                  </Text>
+                  <Text
+                    className={`text-[15px] leading-[24px] m-0 mt-[12px] ${themeClasses.text}`}
+                  >
+                    If this wasn't you, remove the authenticator app from your
+                    security settings and tell your administrator right away.
                   </Text>
                 </td>
               </tr>
@@ -96,7 +109,7 @@ export const ImplementationHubEmail = ({
 
           <Section className="text-center mb-[24px]">
             <Button
-              href={hubUrl}
+              href={securityUrl}
               className="nf-cta"
               style={{
                 backgroundColor: "#0e0e0e",
@@ -114,7 +127,7 @@ export const ImplementationHubEmail = ({
               }}
             >
               <span style={{ verticalAlign: "middle" }}>
-                Open Implementation Hub
+                Review security settings
               </span>
             </Button>
           </Section>
@@ -124,10 +137,10 @@ export const ImplementationHubEmail = ({
           >
             Or open this link in your browser:{" "}
             <Link
-              href={hubUrl}
+              href={securityUrl}
               className={`${themeClasses.mutedText} underline nf-fallback`}
             >
-              {hubUrl}
+              {securityUrl}
             </Link>
           </Text>
         </Container>
@@ -136,4 +149,4 @@ export const ImplementationHubEmail = ({
   );
 };
 
-export default ImplementationHubEmail;
+export default MfaEnabledEmail;
