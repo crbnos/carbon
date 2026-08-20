@@ -10,6 +10,25 @@
 -- than not having it. Anything schema-shaped that is discovered after a migration
 -- has been applied has to arrive as a new version.
 
+-- The index below is built against existing rows, and the very race it exists to
+-- close could already have left two live runs for one company on a database that
+-- ran this branch. A duplicate would fail the CREATE and, since the file is one
+-- transaction, roll back this migration and block every later one for that
+-- workspace. So settle the duplicates first: keep the newest live run per company
+-- and mark the rest failed, which is the same terminal state the start route
+-- writes when it cannot queue a job.
+UPDATE "onshapeSyncRun" AS "stale"
+SET "status" = 'failed',
+    "error" = COALESCE("stale"."error", 'Superseded by a newer run'),
+    "finishedAt" = COALESCE("stale"."finishedAt", NOW())
+WHERE "stale"."status" IN ('queued', 'running')
+  AND EXISTS (
+    SELECT 1 FROM "onshapeSyncRun" AS "newer"
+    WHERE "newer"."companyId" = "stale"."companyId"
+      AND "newer"."status" IN ('queued', 'running')
+      AND ("newer"."createdAt", "newer"."id") > ("stale"."createdAt", "stale"."id")
+  );
+
 -- One live run per company. The start route already reads the latest run and
 -- refuses with a 409, but a read-then-insert cannot exclude a start that lands
 -- between the two, and both would then spend Onshape quota on the same releases.
@@ -17,6 +36,18 @@
 -- documents; the route maps the resulting unique violation onto the same 409.
 CREATE UNIQUE INDEX "onshapeSyncRun_oneLivePerCompany_idx" ON "onshapeSyncRun" ("companyId")
   WHERE "status" IN ('queued', 'running');
+
+-- Retention has been pruning runs with no FK in place, so a sync-state row may
+-- already point at a run that is gone. Clear those before the constraint exists,
+-- or adding it fails on exactly the rows it is meant to govern.
+UPDATE "onshapeItemSyncState" AS "orphaned"
+SET "runId" = NULL
+WHERE "orphaned"."runId" IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM "onshapeSyncRun" AS "run"
+    WHERE "run"."id" = "orphaned"."runId"
+      AND "run"."companyId" = "orphaned"."companyId"
+  );
 
 -- Tenant-scoped attribution. SET NULL rather than CASCADE because runs are
 -- retention-pruned to the newest 50 per company and losing a run must never
@@ -68,3 +99,4 @@ LEFT JOIN "onshapeItemSyncState" "s"
   AND "s"."assetKind" = 'model'
 WHERE "eim"."integration" = 'onshapeData'
   AND "eim"."entityType" = 'item';
+

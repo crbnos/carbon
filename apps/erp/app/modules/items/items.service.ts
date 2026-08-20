@@ -8104,9 +8104,9 @@ export async function getOnshapeSyncRuns(
 }
 
 // Every part × asset the sync has touched, for the dashboard's Items tab. The
-// item's display fields come from a second bulk query rather than an embed:
-// `onshapeItemSyncState.itemId` has a single-column FK to `item` (no composite
-// tenant key), so the join stays explicit and companyId-scoped on both reads.
+// item's display fields come from a second bulk query rather than an embed, and
+// both reads are companyId-scoped: two flat queries keep the TS2589 "excessively
+// deep" budget that embeds through this view tend to blow.
 export async function getOnshapeSyncItemStates(
   client: SupabaseClient<Database>,
   companyId: string,

@@ -31,9 +31,11 @@ CREATE TABLE "onshapeItemSyncState" (
 
     PRIMARY KEY ("id", "companyId"),
     FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
-    -- intentionally a single-column FK: "item" has no (id, companyId) unique key,
-    -- and adding one to that production table was declined — cross-tenant
-    -- integrity relies on companyId scoping in every (service-role) write path
+    -- single-column here by an explicit decision: "item" had no (id, companyId)
+    -- unique key, and adding one to that table was declined at the time. That was
+    -- later reversed -- 20260819104520 adds the key and makes this FK composite --
+    -- but the reversal has a deploy cost, so it is a separate migration and this
+    -- is the record that the original call was deliberate
     FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE,
     CONSTRAINT "onshapeItemSyncState_itemId_assetKind_companyId_key" UNIQUE ("itemId", "assetKind", "companyId")
 );
