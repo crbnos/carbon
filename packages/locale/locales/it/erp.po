@@ -8108,6 +8108,9 @@ msgstr "Gli articoli all'interno di questa finestra ricevono un badge giallo."
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Articoli: anagrafica articoli, BOM, ciclo di lavorazione, modifiche ingegneristiche, CAD"
 
+msgid "Its design may change before the change notice is released."
+msgstr "La progettazione potrebbe cambiare prima che la notifica di modifica venga rilasciata."
+
 msgid "Job"
 msgstr "Lavoro"
 
@@ -10318,9 +10321,6 @@ msgstr "AR aperto"
 
 msgid "Open Audit Log"
 msgstr "Apri Registro di Audit"
-
-msgid "Open change notices affecting this part"
-msgstr "Apri gli avvisi di modifica che interessano questa parte"
 
 msgid "Open date"
 msgstr "Data di apertura"

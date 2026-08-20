@@ -8108,6 +8108,9 @@ msgstr "Itens dentro desta janela recebem um crachá amarelo."
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Itens: mestre de itens, BOMs, Bill of Process, alterações de engenharia, CAD"
 
+msgid "Its design may change before the change notice is released."
+msgstr "Seu design pode mudar antes da liberação do aviso de mudança."
+
 msgid "Job"
 msgstr "Trabalho"
 
@@ -10318,9 +10321,6 @@ msgstr "AR aberto"
 
 msgid "Open Audit Log"
 msgstr "Abrir Registro de Auditoria"
-
-msgid "Open change notices affecting this part"
-msgstr "Abrir avisos de mudança que afetam esta parte"
 
 msgid "Open date"
 msgstr "Data de abertura"

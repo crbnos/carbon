@@ -8108,6 +8108,9 @@ msgstr "Elementy w tym oknie otrzymują żółty znaczek."
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Pozycje: główny katalog pozycji, BOM, Bill of Process, zmiany inżynierskie, CAD"
 
+msgid "Its design may change before the change notice is released."
+msgstr "Jego projekt może się zmienić przed wydaniem powiadomienia o zmianach."
+
 msgid "Job"
 msgstr "Zadanie"
 
@@ -10318,9 +10321,6 @@ msgstr "Otwarte należności"
 
 msgid "Open Audit Log"
 msgstr "Otwórz dziennik audytu"
-
-msgid "Open change notices affecting this part"
-msgstr "Otwórz zgłoszenia zmian dotyczące tej części"
 
 msgid "Open date"
 msgstr "Data otwarcia"

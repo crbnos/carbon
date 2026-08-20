@@ -287,6 +287,24 @@ export default function PartDetailsRoute() {
 
   return (
     <VStack spacing={2} className="p-2">
+      {permissions.is("employee") &&
+        methodData &&
+        ["Make", "Buy and Make"].includes(
+          partData.partSummary?.replenishmentSystem ?? ""
+        ) && (
+          <Suspense fallback={<Menubar />}>
+            <Await resolve={partData?.makeMethods}>
+              {(makeMethods) => (
+                <MakeMethodTools
+                  itemId={methodData.makeMethod.itemId}
+                  makeMethods={makeMethods?.data ?? []}
+                  type="Part"
+                  currentMethodId={methodData.makeMethod.id}
+                />
+              )}
+            </Await>
+          </Suspense>
+        )}
       {permissions.is("employee") && (
         <ItemOpenChangeNoticeAlert changeNotices={changeNotices ?? []} />
       )}
@@ -296,18 +314,6 @@ export default function PartDetailsRoute() {
             partData.partSummary?.replenishmentSystem ?? ""
           ) && (
             <>
-              <Suspense fallback={<Menubar />}>
-                <Await resolve={partData?.makeMethods}>
-                  {(makeMethods) => (
-                    <MakeMethodTools
-                      itemId={methodData.makeMethod.itemId}
-                      makeMethods={makeMethods?.data ?? []}
-                      type="Part"
-                      currentMethodId={methodData.makeMethod.id}
-                    />
-                  )}
-                </Await>
-              </Suspense>
               {manufacturingInitialValues && (
                 <ItemManufacturingForm
                   key={itemId}

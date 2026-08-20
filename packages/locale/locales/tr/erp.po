@@ -8108,6 +8108,9 @@ msgstr "Bu aralıktaki ürünler sarı bir rozet alır."
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Öğeler: öğe ana verileri, BOM'lar, İşlem Şeması, mühendislik değişiklikleri, CAD"
 
+msgid "Its design may change before the change notice is released."
+msgstr "Tasarımı, değişim bildirimi yayınlanmadan önce değişebilir."
+
 msgid "Job"
 msgstr "İş"
 
@@ -10318,9 +10321,6 @@ msgstr "Açık AR"
 
 msgid "Open Audit Log"
 msgstr "Denetim Kaydını Aç"
-
-msgid "Open change notices affecting this part"
-msgstr "Bu parçayı etkileyen açık değişiklik bildirimlerini aç"
 
 msgid "Open date"
 msgstr "Açılış tarihi"

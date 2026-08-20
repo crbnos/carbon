@@ -8108,6 +8108,9 @@ msgstr "이 기간 내의 항목에는 노란색 배지가 표시됩니다."
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "품목: 품목 마스터, BOM, 공정(BOP), 설계 변경, CAD"
 
+msgid "Its design may change before the change notice is released."
+msgstr "변경 통지가 발행되기 전에 디자인이 변경될 수 있습니다."
+
 msgid "Job"
 msgstr "작업"
 
@@ -10318,9 +10321,6 @@ msgstr "미결 매출채권"
 
 msgid "Open Audit Log"
 msgstr "감사 로그 열기"
-
-msgid "Open change notices affecting this part"
-msgstr "이 부품에 영향을 주는 미완료 변경 공지 열기"
 
 msgid "Open date"
 msgstr "개설 날짜"

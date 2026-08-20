@@ -8108,6 +8108,9 @@ msgstr "このウィンドウ内のアイテムは黄色いバッジが表示さ
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "アイテム: アイテムマスター、BOM、プロセス仕様書、エンジニアリング変更、CAD"
 
+msgid "Its design may change before the change notice is released."
+msgstr "変更通知のリリース前に、そのデザインが変わる可能性があります。"
+
 msgid "Job"
 msgstr "ジョブ"
 
@@ -10318,9 +10321,6 @@ msgstr "未払い売掛金"
 
 msgid "Open Audit Log"
 msgstr "監査ログを開く"
-
-msgid "Open change notices affecting this part"
-msgstr "このパーツに影響する開いた変更通知を開く"
 
 msgid "Open date"
 msgstr "開始日"
