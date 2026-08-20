@@ -1,5 +1,6 @@
 import { CONTROLLED_ENVIRONMENT, error, success } from "@carbon/auth";
 import { deleteAuthAccount } from "@carbon/auth/auth.server";
+import { logPermissionChange } from "@carbon/auth/auth-events.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash, requireAuthSession } from "@carbon/auth/session.server";
 import {
@@ -1160,23 +1161,19 @@ export function makeCompanyPermissionsFromClaims(
         switch (action) {
           case "view":
             // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-            permissions[module]["view"] =
-              value.includes("0") || value.includes(companyId);
+            permissions[module]["view"] = value.includes(companyId);
             break;
           case "create":
             // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-            permissions[module]["create"] =
-              value.includes("0") || value.includes(companyId);
+            permissions[module]["create"] = value.includes(companyId);
             break;
           case "update":
             // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-            permissions[module]["update"] =
-              value.includes("0") || value.includes(companyId);
+            permissions[module]["update"] = value.includes(companyId);
             break;
           case "delete":
             // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-            permissions[module]["delete"] =
-              value.includes("0") || value.includes(companyId);
+            permissions[module]["delete"] = value.includes(companyId);
             break;
         }
       }
@@ -1275,18 +1272,10 @@ export function makeCompanyPermissionsFromEmployeeType(
       result[permission.module] = {
         name: permission.module.toLowerCase(),
         permission: {
-          view:
-            permission.view.includes("0") ||
-            permission.view.includes(companyId),
-          create:
-            permission.create.includes("0") ||
-            permission.create.includes(companyId),
-          update:
-            permission.update.includes("0") ||
-            permission.update.includes(companyId),
-          delete:
-            permission.delete.includes("0") ||
-            permission.delete.includes(companyId)
+          view: permission.view.includes(companyId),
+          create: permission.create.includes(companyId),
+          update: permission.update.includes(companyId),
+          delete: permission.delete.includes(companyId)
         }
       };
     }
@@ -1406,12 +1395,16 @@ export async function updateEmployee(
     id,
     employeeType,
     permissions,
-    companyId
+    companyId,
+    actorId,
+    ip
   }: {
     id: string;
     employeeType: string;
     permissions: Record<string, CompanyPermission>;
     companyId: string;
+    actorId?: string;
+    ip?: string;
   }
 ): Promise<Result> {
   const updateEmployeeEmployeeType = await client
@@ -1421,7 +1414,7 @@ export async function updateEmployee(
   if (updateEmployeeEmployeeType.error)
     return error(updateEmployeeEmployeeType.error, "Failed to update employee");
 
-  return updatePermissions(client, { id, permissions, companyId });
+  return updatePermissions(client, { id, permissions, companyId, actorId, ip });
 }
 
 export async function updatePermissions(
@@ -1430,15 +1423,19 @@ export async function updatePermissions(
     id,
     permissions,
     companyId,
-    addOnly = false
+    addOnly = false,
+    actorId,
+    ip
   }: {
     id: string;
     permissions: Record<string, CompanyPermission>;
     companyId: string;
     addOnly?: boolean;
+    actorId?: string;
+    ip?: string;
   }
 ): Promise<Result> {
-  if (await client.rpc("is_claims_admin")) {
+  if (await client.rpc("is_claims_admin", { company: companyId })) {
     const claims = await getClaims(client, id);
 
     if (claims.error) return error(claims.error, "Failed to get claims");
@@ -1452,6 +1449,10 @@ export async function updatePermissions(
     ) as Record<string, string[]>;
     // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
     delete updatedPermissions["role"];
+
+    // Snapshot the effective grant set BEFORE the in-place mutation below, so
+    // the audit event carries an honest before/after diff (NIST 3.3.1/3.3.2).
+    const beforePermissions = structuredClone(updatedPermissions);
 
     // add any missing claims to the current claims
     Object.keys(permissions).forEach((name) => {
@@ -1555,6 +1556,15 @@ export async function updatePermissions(
       });
     }
 
+    // The "0" global-company wildcard is retired (NIST 800-171 3.1.5). Strip it
+    // from every array so it can never be persisted to the authoritative table.
+    for (const key of Object.keys(updatedPermissions)) {
+      const value = updatedPermissions[key];
+      if (Array.isArray(value)) {
+        updatedPermissions[key] = value.filter((c: string) => c !== "0");
+      }
+    }
+
     const permissionsUpdate = await getCarbonServiceRole()
       .from("userPermission")
       .update({ permissions: updatedPermissions })
@@ -1563,6 +1573,17 @@ export async function updatePermissions(
       return error(permissionsUpdate.error, "Failed to update claims");
 
     await redis.del(getPermissionCacheKey(id));
+
+    // Audit the change (NIST 800-171 3.3.1/3.3.2): actor, target, before/after.
+    logPermissionChange({
+      actor: actorId,
+      targetUserId: id,
+      companyId,
+      ip,
+      before: beforePermissions,
+      after: updatedPermissions,
+      reason: addOnly ? "add" : "edit"
+    });
 
     return success("Permissions updated");
   } else {

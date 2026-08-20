@@ -233,6 +233,11 @@ export type Events = {
         { view: boolean; create: boolean; update: boolean; delete: boolean }
       >;
       companyId: string;
+      // The acting admin's userId — recorded as the actor on the audit event
+      // (NIST 800-171 3.3.1/3.3.2). Optional for backward-compatible replays.
+      actorId?: string;
+      // Source IP of the request that triggered the change (AU-3 source-of-event).
+      ip?: string;
     };
   };
 
@@ -262,6 +267,11 @@ export type Events = {
           id: string;
           type: "deactivate";
           companyId: string;
+          // The acting admin's userId — recorded as the actor on the audit
+          // event (NIST 800-171 3.3.1/3.3.2). Optional for replay safety.
+          actorId?: string;
+          // Source IP of the request that triggered the change (AU-3 source-of-event).
+          ip?: string;
         }
       | {
           id: string;
@@ -551,11 +561,14 @@ export type Events = {
     data: {
       companyId: string;
       provider: string;
+      syncType?: "webhook" | "scheduled" | "trigger";
       syncDirection: "push-to-accounting" | "pull-from-accounting" | "two-way";
       entities: Array<{
         entityType: string;
         entityId: string;
+        operation?: "create" | "update" | "delete" | "sync";
       }>;
+      metadata?: Record<string, unknown>;
     };
   };
 

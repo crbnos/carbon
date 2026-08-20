@@ -422,6 +422,12 @@ msgstr "संचालन समाप्त करें"
 msgid "Enter PIN for {0}"
 msgstr "{0} के लिए PIN दर्ज करें"
 
+msgid "Enter the 6-digit code from your authenticator app"
+msgstr "अपने ऑथेंटिकेटर ऐप से 6-अंकीय कोड दर्ज करें"
+
+msgid "Enter the 6-digit code from your authenticator app to resume."
+msgstr "अपने प्रमाणक ऐप्लिकेशन से 6-अंकीय कोड दर्ज करें जारी रखने के लिए।"
+
 msgid "Error"
 msgstr "त्रुटि"
 
@@ -923,6 +929,9 @@ msgstr "ऑपरेटर द्वारा निष्पादित"
 msgid "Optional"
 msgstr "वैकल्पिक"
 
+msgid "or"
+msgstr "या"
+
 msgid "Overall result"
 msgstr "समग्र परिणाम"
 
@@ -943,6 +952,9 @@ msgstr "आंशिक निपटान"
 
 msgid "Passed Inspection"
 msgstr "निरीक्षण पास किया"
+
+msgid "Passkey unlock failed"
+msgstr "पासकी अनलॉक विफल"
 
 msgid "Pause"
 msgstr "रोकें"
@@ -1218,11 +1230,17 @@ msgstr "सीरियल नंबर"
 msgid "Serial Numbers"
 msgstr "सीरियल नंबर"
 
+msgid "Session locked"
+msgstr "सत्र लॉक किया गया"
+
 msgid "Set Clock Out"
 msgstr "क्लॉक आउट सेट करें"
 
 msgid "Set clock-out time"
 msgstr "घड़ी बंद करने का समय सेट करें"
+
+msgid "Set up in Carbon"
+msgstr "Carbon में सेट अप करें"
 
 msgid "Setup"
 msgstr "सेटअप"
@@ -1248,8 +1266,14 @@ msgstr "Outlook के साथ साइन इन करें"
 msgid "Sign in with Passkey"
 msgstr "पासकी के साथ साइन इन करें"
 
+msgid "Sign out"
+msgstr "साइन आउट करें"
+
 msgid "Sign Out"
 msgstr "साइन आउट"
+
+msgid "Sign out instead"
+msgstr "इसके बजाय साइन आउट करें"
 
 msgid "Signed in as {stationName}"
 msgstr "के रूप में साइन इन किया गया {stationName}"
@@ -1375,14 +1399,29 @@ msgstr "ट्रैक की गई इकाई"
 msgid "Tracking"
 msgstr "ट्रैकिंग"
 
+msgid "Two-factor authentication"
+msgstr "दो-फ़ैक्टर प्रमाणीकरण"
+
+msgid "Two-factor authentication required"
+msgstr "दो-फ़ैक्टर प्रमाणीकरण आवश्यक है"
+
 msgid "Type a message..."
 msgstr "एक संदेश लिखें..."
+
+msgid "Unable to unlock"
+msgstr "अनलॉक करने में असमर्थ"
 
 msgid "Unissued serial/batch materials"
 msgstr "अजारी सीरीज़/बैच सामग्री"
 
 msgid "Unknown"
 msgstr "अज्ञात"
+
+msgid "Unlock"
+msgstr "अनलॉक"
+
+msgid "Unlock with passkey"
+msgstr "पासकी से अनलॉक करें"
 
 msgid "Unpick"
 msgstr "अनपिक करें"
@@ -1425,6 +1464,12 @@ msgstr "अपलोड किया गया: {0}"
 msgid "Uploading {0}"
 msgstr "अपलोड किया जा रहा है {0}"
 
+msgid "Use a different account"
+msgstr "एक अलग खाता उपयोग करें"
+
+msgid "Verify"
+msgstr "सत्यापित करें"
+
 msgid "View maintenance dispatch"
 msgstr "रखरखाव डिस्पैच देखें"
 
@@ -1451,3 +1496,9 @@ msgstr "आपने <0/> पर घड़ी शुरू की है। आ�
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "आप {hoursElapsed} घंटे के लिए क्लॉक इन हैं। क्या आप क्लॉक आउट करना भूल गए?"
+
+msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
+msgstr "आपके संगठन को एक ऑथेंटिकेटर ऐप की आवश्यकता है। इसे Carbon में सेट अप करें, फिर यहाँ वापस आएं।"
+
+msgid "Your session was locked after inactivity."
+msgstr "आपका सत्र निष्क्रियता के बाद लॉक किया गया था।"

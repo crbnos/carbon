@@ -16,6 +16,10 @@ export enum NotificationEvent {
   ChangeNoticeDone = "change-order-done",
   DigitalQuoteResponse = "digital-quote-response",
   GaugeCalibrationExpired = "gauge-calibration-expired",
+  // Accounting sync needs attention (failed sync operations); like Workflow,
+  // the text is carried on the payload — documentId is the provider id, not a
+  // readable document.
+  IntegrationSync = "integrationSync",
   JobAssignment = "job-assignment",
   JobCompleted = "job-completed",
   JobOperationAssignment = "job-operation-assignment",
@@ -166,6 +170,7 @@ export function getNotificationTopic(
     // No topic of its own: topicLabels in the account settings route is an
     // exhaustive Record<NotificationTopic, string>.
     case NotificationEvent.Workflow:
+    case NotificationEvent.IntegrationSync:
       return NotificationTopic.General;
     default:
       return NotificationTopic.General;
@@ -246,6 +251,8 @@ export function getNotificationEmailHeading(event: NotificationEvent): string {
       return "Change notice complete";
     case NotificationEvent.Workflow:
       return "Workflow";
+    case NotificationEvent.IntegrationSync:
+      return "Accounting sync needs attention";
     default:
       return "You have a new notification";
   }
@@ -279,6 +286,8 @@ export function getNotificationEmailCtaLabel(event: NotificationEvent): string {
       return "View response";
     case NotificationEvent.Workflow:
       return "View details";
+    case NotificationEvent.IntegrationSync:
+      return "View sync activity";
     default:
       return "View details";
   }

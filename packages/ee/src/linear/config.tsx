@@ -10,24 +10,26 @@ export const Linear = defineIntegration({
   category: "Project Management",
   logo: Logo,
   description:
-    "Linear is a project management software that allows you to create issues and track project progress seamlessly. With this integration, you can link issues from Carbon to Linear.",
-  shortDescription: "Sync issues from Carbon to Linear.",
+    "Linear is a project management software that allows you to create issues and track project progress seamlessly. With this integration, you can link issues and change notices from Carbon to Linear.",
+  shortDescription: "Sync issues and change notices from Carbon to Linear.",
   setupInstructions: SetupInstructions,
   images: [],
   settings: [
     {
       name: "apiKey",
       label: "API Key",
-      type: "text",
+      type: "secret",
       required: true,
       value: ""
     }
   ],
   schema: z.object({
+    // Empty means "keep the existing vaulted secret" (the field loads masked and
+    // is not sent to the browser). Presence is enforced at install-time in the
+    // settings action; a non-empty value must still be a valid Linear key.
     apiKey: z
       .string()
-      .min(1, { message: "API Key is required" })
-      .refine((val) => val.startsWith("lin_api"), {
+      .refine((val) => val === "" || val.startsWith("lin_api"), {
         message: "Linear API Key must start with 'lin_api'"
       })
   })

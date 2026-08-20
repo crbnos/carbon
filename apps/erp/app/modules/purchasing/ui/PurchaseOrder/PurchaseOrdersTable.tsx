@@ -39,6 +39,7 @@ import {
   Hyperlink,
   ItemThumbnail,
   New,
+  RevisionSuffix,
   SupplierAvatar,
   Table
 } from "~/components";
@@ -98,7 +99,10 @@ const PurchaseOrdersTable = memo(
                 type={row.original.itemType}
               />
               <Hyperlink to={path.to.purchaseOrderDetails(row.original.id!)}>
-                {row.original.purchaseOrderId}
+                <div className="flex justify-start items-center gap-0">
+                  <span>{row.original.purchaseOrderId}</span>
+                  <RevisionSuffix revisionId={row.original.revisionId} />
+                </div>
               </Hyperlink>
             </HStack>
           ),

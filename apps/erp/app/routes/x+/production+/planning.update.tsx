@@ -182,7 +182,7 @@ export async function action({ request }: ActionFunctionArgs) {
                   createdBy: userId,
                   unitOfMeasureCode: "EA"
                 },
-                { skipMethod: true, skipRecalculate: true }
+                { skipMethod: true, skipRecalculate: true, source: "mrp" }
               );
 
               if (createJob.error) {

@@ -20,6 +20,8 @@ import {
   LuMailCheck,
   LuPencil,
   LuShield,
+  LuShieldCheck,
+  LuShieldOff,
   LuToggleRight,
   LuUser,
   LuUserCheck
@@ -44,6 +46,7 @@ type EmployeesTableProps = {
   count: number;
   employeeTypes: ListItem[];
   unrevokedInviteEmails: string[];
+  mfaEnrolledUserIds: string[];
 };
 
 const defaultColumnVisibility = {
@@ -56,7 +59,8 @@ const EmployeesTable = memo(
     data,
     count,
     employeeTypes,
-    unrevokedInviteEmails
+    unrevokedInviteEmails,
+    mfaEnrolledUserIds
   }: EmployeesTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
@@ -77,6 +81,13 @@ const EmployeesTable = memo(
     const unrevokedInviteSet = useMemo(
       () => new Set(unrevokedInviteEmails),
       [unrevokedInviteEmails]
+    );
+
+    const requireMfa = settings.requireMfa === true;
+
+    const mfaEnrolledSet = useMemo(
+      () => new Set(mfaEnrolledUserIds),
+      [mfaEnrolledUserIds]
     );
 
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
@@ -189,6 +200,32 @@ const EmployeesTable = memo(
             icon: <LuUserCheck />
           }
         },
+        // Only meaningful once the company enforces it; otherwise the column
+        // is a wall of "Not set up" for a policy nobody opted into.
+        ...(requireMfa
+          ? ([
+              {
+                id: "mfa",
+                header: t`Two-Factor`,
+                cell: ({ row }) => {
+                  // Console operators cannot sign in, so 2FA is not applicable.
+                  if (row.original.email?.endsWith("@console.internal")) {
+                    return null;
+                  }
+                  return mfaEnrolledSet.has(row.original.id!) ? (
+                    <Badge variant="green">{t`Enabled`}</Badge>
+                  ) : (
+                    <Badge variant="secondary">{t`Not set up`}</Badge>
+                  );
+                },
+                meta: {
+                  icon: <LuShieldCheck />,
+                  exportValue: (row: (typeof data)[number]) =>
+                    mfaEnrolledSet.has(row.id!) ? "Enabled" : "Not set up"
+                }
+              }
+            ] as ColumnDef<(typeof data)[number]>[])
+          : []),
         {
           accessorKey: "active",
           header: t`Active`,
@@ -228,7 +265,7 @@ const EmployeesTable = memo(
           }
         }
       ];
-    }, [params]);
+    }, [params, mfaEnrolledSet, requireMfa]);
 
     const renderActions = useCallback(
       (selectedRows: typeof data) => {
@@ -349,6 +386,16 @@ const EmployeesTable = memo(
                     <Trans>Set Console PIN</Trans>
                   </MenuItem>
                 )}
+                <MenuItem
+                  onClick={() =>
+                    navigate(
+                      `${path.to.employeeResetMfa(row.id!)}?${params.toString()}`
+                    )
+                  }
+                >
+                  <MenuIcon icon={<LuShieldOff />} />
+                  <Trans>Reset Two-Factor Auth</Trans>
+                </MenuItem>
                 {!isSelf && (
                   <MenuItem
                     onClick={(e) => {

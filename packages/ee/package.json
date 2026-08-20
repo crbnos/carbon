@@ -5,6 +5,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./accounting": "./src/accounting/index.ts",
+    "./integrations/secrets": "./src/integrations/secrets.ts",
     "./action-task-entity": "./src/lib/actionTaskEntity.ts",
     "./storage-rules": "./src/storage-rules/index.ts",
     "./storage-rules.server": "./src/storage-rules/server.ts",
@@ -21,7 +22,8 @@
     "./slack.server": "./src/slack.server.ts",
     "./slack/messages": "./src/slack/lib/messages.ts",
     "./hooks.server": "./src/hooks.server.ts",
-    "./xero": "./src/accounting/providers/xero.ts",
+    "./quickbooks/hooks.server": "./src/quickbooks/hooks.server.ts",
+    "./rillet/hooks.server": "./src/rillet/hooks.server.ts",
     "./xero/hooks.server": "./src/xero/hooks.server.ts"
   },
   "private": true,
@@ -67,6 +69,8 @@
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
+    "@logtape/logtape": "catalog:",
+    "@logtape/testing": "catalog:",
     "@types/nodemailer": "6.4.21",
     "@types/react": "catalog:",
     "typescript": "catalog:",

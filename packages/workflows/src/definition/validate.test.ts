@@ -670,7 +670,7 @@ describe("configuration", () => {
         {
           id: "e1",
           name: "e1",
-          type: "entity",
+          type: "compute",
           position: { x: 0, y: 0 },
           data: { operation: "job.vibes", inputs: {} }
         }

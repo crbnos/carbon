@@ -1,5 +1,4 @@
 import type { Database, Json } from "@carbon/database";
-import type { periodCloseStatuses } from "./accounting.models";
 import type {
   getAccount,
   getAccountingPeriods,
@@ -17,7 +16,8 @@ import type {
   getPeriodCloseReadiness,
   getPurchaseLinePivotLines,
   getReportViews
-} from "./accounting.service";
+} from "./accounting.ee.service";
+import type { periodCloseStatuses } from "./accounting.models";
 
 export type Account = NonNullable<
   Awaited<ReturnType<typeof getAccount>>["data"]
@@ -510,7 +510,7 @@ import type {
   getFixedAssetClasses,
   getFixedAssetDisposal,
   getFixedAssets
-} from "./accounting.service";
+} from "./accounting.ee.service";
 
 export type FixedAssetClass = NonNullable<
   Awaited<ReturnType<typeof getFixedAssetClass>>["data"]

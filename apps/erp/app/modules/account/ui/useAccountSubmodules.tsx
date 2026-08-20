@@ -1,6 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import { CgProfile } from "react-icons/cg";
-import { LuBell } from "react-icons/lu";
+import { LuBell, LuShieldCheck } from "react-icons/lu";
 import type { RouteGroup } from "~/types";
 import { path } from "~/utils/path";
 
@@ -11,14 +11,19 @@ export default function useAccountSubmodules() {
       name: t`Account`,
       routes: [
         {
+          name: t`Notifications`,
+          to: path.to.notificationSettings,
+          icon: <LuBell />
+        },
+        {
           name: t`Profile`,
           to: path.to.profile,
           icon: <CgProfile />
         },
         {
-          name: t`Notifications`,
-          to: path.to.notificationSettings,
-          icon: <LuBell />
+          name: t`Security`,
+          to: path.to.accountSecurity,
+          icon: <LuShieldCheck />
         }
       ]
     }

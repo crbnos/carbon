@@ -4,6 +4,7 @@ import { useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
 import { useFetcher } from "react-router";
+import { RevisionSuffix } from "~/components";
 import { path } from "~/utils/path";
 import type { getQuoteLinesList } from "../../sales.service";
 
@@ -38,9 +39,7 @@ export function QuoteLineMethodForm() {
         label: (
           <div className="flex justify-start items-center gap-0">
             <span>{quote.quoteId}</span>
-            {(quote.revisionId ?? 0) > 0 && (
-              <span className="text-muted-foreground">-{quote.revisionId}</span>
-            )}
+            <RevisionSuffix revisionId={quote.revisionId} />
           </div>
         ),
         value: quote.id

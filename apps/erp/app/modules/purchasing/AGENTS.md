@@ -5,6 +5,7 @@ Purchase orders, supplier management, supplier quotes/interactions, RFQs, and pr
 ## Key Domain Concepts
 
 - **Purchase Order (PO)** — document sent to a supplier. Statuses: Draft → Needs Approval → To Review → To Receive → To Receive and Invoice → To Invoice → Completed. MUST use `closePurchaseOrder` to close manually.
+- **PO Revision** — `purchaseOrder.revisionId` counts amendments to a released order. Created ONLY when the header dropdown's "Create PO Revision" action posts `createRevision=true`; a plain Reopen never bumps. The write is `reopenPurchaseOrderAsRevision` (Kysely, `purchasing.service.ts`): a compare-and-swap that sets `revisionId = revisionId + 1` **in SQL** with the eligibility conditions (locked status + non-null `orderDate`) in the WHERE clause, so concurrent requests can't collide and an ineligible order matches 0 rows. `canCreatePurchaseOrderRevision` (`purchasing.models.ts`) is the matching pure predicate used to gate the menu item — keep the two in sync. Unlike quotes, a PO revision is in-place: no new row, receipts/invoices stay attached. Displayed as `PO000123-1` when > 0 via `getPurchaseOrderDisplayId` (`@carbon/documents/utils`) on the PDF, email, filenames, and UI; the two-tone in-app rendering uses `<RevisionSuffix>` (`~/components`).
 - **Supplier Interaction** — umbrella entity linking a supplier quote to RFQs, POs, and documents. A supplier quote always lives under an interaction.
 - **Supplier Quote** — vendor-side pricing with line-level price breaks (`supplierQuoteLinePrice`). Can be finalized (`finalizeSupplierQuote`) and converted to POs via the `convert` edge function.
 - **RFQ (Request for Quotation)** — solicits pricing from multiple suppliers. Links to supplier quotes via `purchasingRfqToSupplierQuote`. Statuses managed by `updatePurchasingRFQStatus`.
@@ -31,8 +32,10 @@ Purchase orders, supplier management, supplier quotes/interactions, RFQs, and pr
 ## Validation Commands
 
 ```bash
-pnpm --filter @carbon/erp typecheck
-pnpm --filter @carbon/erp test
+# The app's package name is "erp" — there is no "@carbon/erp" workspace.
+pnpm exec turbo run typecheck --filter=erp
+# apps/erp has no `test` script; run vitest from the app directory.
+cd apps/erp && pnpm exec vitest run app/modules/purchasing
 ```
 
 ## Key Data Model

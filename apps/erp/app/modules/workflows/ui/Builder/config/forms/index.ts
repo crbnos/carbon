@@ -6,8 +6,8 @@ import type {
 import type { ComponentType } from "react";
 import type { BuilderNode } from "../../../../types";
 import { ActionForm } from "./ActionForm";
+import { ComputeForm } from "./ComputeForm";
 import { ConditionForm } from "./ConditionForm";
-import { EntityForm } from "./EntityForm";
 import { FilterForm } from "./FilterForm";
 import { LookupForm } from "./LookupForm";
 import { TriggerForm } from "./TriggerForm";
@@ -29,7 +29,7 @@ export const NODE_FORMS: {
 } = {
   trigger: TriggerForm,
   condition: ConditionForm,
-  entity: EntityForm,
+  compute: ComputeForm,
   lookup: LookupForm,
   filter: FilterForm,
   action: ActionForm

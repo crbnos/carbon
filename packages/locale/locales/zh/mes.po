@@ -422,6 +422,12 @@ msgstr "结束工序"
 msgid "Enter PIN for {0}"
 msgstr "输入 {0} 的 PIN 码"
 
+msgid "Enter the 6-digit code from your authenticator app"
+msgstr "输入您的身份验证器应用中的6位代码"
+
+msgid "Enter the 6-digit code from your authenticator app to resume."
+msgstr "请输入身份验证器应用中的 6 位代码以继续。"
+
 msgid "Error"
 msgstr "错误"
 
@@ -923,6 +929,9 @@ msgstr "操作员执行"
 msgid "Optional"
 msgstr "可选"
 
+msgid "or"
+msgstr "或"
+
 msgid "Overall result"
 msgstr "总体结果"
 
@@ -943,6 +952,9 @@ msgstr "部分处置"
 
 msgid "Passed Inspection"
 msgstr "检验通过"
+
+msgid "Passkey unlock failed"
+msgstr "密钥解锁失败"
 
 msgid "Pause"
 msgstr "暂停"
@@ -1218,11 +1230,17 @@ msgstr "序列号"
 msgid "Serial Numbers"
 msgstr "序列号"
 
+msgid "Session locked"
+msgstr "会话已锁定"
+
 msgid "Set Clock Out"
 msgstr "设置下班时间"
 
 msgid "Set clock-out time"
 msgstr "设置下班打卡时间"
+
+msgid "Set up in Carbon"
+msgstr "在 Carbon 中设置"
 
 msgid "Setup"
 msgstr "设置"
@@ -1248,8 +1266,14 @@ msgstr "使用 Outlook 登录"
 msgid "Sign in with Passkey"
 msgstr "使用密钥登录"
 
+msgid "Sign out"
+msgstr "登出"
+
 msgid "Sign Out"
 msgstr "退出登录"
+
+msgid "Sign out instead"
+msgstr "改为登出"
 
 msgid "Signed in as {stationName}"
 msgstr "已登录为 {stationName}"
@@ -1375,14 +1399,29 @@ msgstr "跟踪实体"
 msgid "Tracking"
 msgstr "追踪"
 
+msgid "Two-factor authentication"
+msgstr "双因素认证"
+
+msgid "Two-factor authentication required"
+msgstr "需要双因素认证"
+
 msgid "Type a message..."
 msgstr "输入消息..."
+
+msgid "Unable to unlock"
+msgstr "无法解锁"
 
 msgid "Unissued serial/batch materials"
 msgstr "未发放的序列号/批次物料"
 
 msgid "Unknown"
 msgstr "未知"
+
+msgid "Unlock"
+msgstr "解锁"
+
+msgid "Unlock with passkey"
+msgstr "使用密钥解锁"
 
 msgid "Unpick"
 msgstr "取消拣选"
@@ -1425,6 +1464,12 @@ msgstr "已上传：{0}"
 msgid "Uploading {0}"
 msgstr "正在上传 {0}"
 
+msgid "Use a different account"
+msgstr "使用不同的帐户"
+
+msgid "Verify"
+msgstr "验证"
+
 msgid "View maintenance dispatch"
 msgstr "查看维护工单"
 
@@ -1451,3 +1496,9 @@ msgstr "您在 <0/> 打卡。您可以编辑下方的下班时间，或确认您
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "您已打卡上班 {hoursElapsed} 小时。您是否忘记打卡下班了？"
+
+msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
+msgstr "您的组织需要身份验证器应用。在 Carbon 中设置，然后返回此处。"
+
+msgid "Your session was locked after inactivity."
+msgstr "您的会话因不活动而被锁定。"

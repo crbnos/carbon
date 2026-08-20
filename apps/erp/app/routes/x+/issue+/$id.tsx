@@ -91,7 +91,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function IssueRoute() {
   const { t } = useLingui();
-  const { associations } = useLoaderData<typeof loader>();
+  const { associations, changeNotices } = useLoaderData<typeof loader>();
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
 
@@ -193,6 +193,21 @@ export default function IssueRoute() {
                           module: "quality",
                           children:
                             (resolvedAssociations as any).inspections ?? []
+                        },
+                        {
+                          key: "changeNotices",
+                          name: t`Change Notice`,
+                          pluralName: t`Change Notices`,
+                          module: "parts",
+                          readOnly: true,
+                          children: changeNotices.map((cn) => ({
+                            id: cn.id,
+                            documentId: cn.id,
+                            documentReadableId: cn.changeOrderId,
+                            documentLineId: "",
+                            type: "changeNotices",
+                            status: cn.status
+                          }))
                         }
                       ];
                       return (

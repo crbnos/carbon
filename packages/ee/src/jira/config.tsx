@@ -12,8 +12,9 @@ export const Jira = defineIntegration({
   category: "Project Management",
   logo: Logo,
   description:
-    "Jira is a project management and issue tracking tool by Atlassian. With this integration, you can link quality issues from Carbon to Jira for tracking and collaboration.",
-  shortDescription: "Sync quality issues from Carbon to Jira.",
+    "Jira is a project management and issue tracking tool by Atlassian. With this integration, you can link quality issues and change notices from Carbon to Jira for tracking and collaboration.",
+  shortDescription:
+    "Sync quality issues and change notices from Carbon to Jira.",
   setupInstructions: SetupInstructions,
   images: [],
   settings: [],

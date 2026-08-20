@@ -1047,8 +1047,7 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     longitude: { kind: "primitive", of: "number" },
     createdBy: { kind: "primitive", of: "string" },
     createdAt: { kind: "primitive", of: "date" },
-    tags: { kind: "list", of: { kind: "primitive", of: "string" } },
-    code: { kind: "primitive", of: "string" }
+    tags: { kind: "list", of: { kind: "primitive", of: "string" } }
   },
   nonConformance: {
     id: { kind: "primitive", of: "string" },

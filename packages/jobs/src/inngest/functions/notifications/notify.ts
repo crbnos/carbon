@@ -1,4 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { resolveIntegrationSecrets } from "@carbon/ee";
 import {
   type CompanyIntegration,
   notifyTaskAssigned
@@ -188,7 +189,10 @@ const defaultDestinations: Partial<
   [NotificationEvent.Workflow]: [
     NotificationDestination.InApp,
     NotificationDestination.Email
-  ]
+  ],
+  // In-app only: the outbound sweep re-fires while failures persist, and an
+  // email per sweep cycle would be noise.
+  [NotificationEvent.IntegrationSync]: [NotificationDestination.InApp]
 };
 
 export const notifyFunction = inngest.createFunction(
@@ -653,7 +657,7 @@ export const notifyFunction = inngest.createFunction(
         async () => {
           const { data: integration, error } = await client
             .from("companyIntegration")
-            .select("active, metadata")
+            .select("active, metadata, secretRef")
             .eq("companyId", payload.companyId)
             .eq("id", "slack")
             .maybeSingle();
@@ -664,9 +668,15 @@ export const notifyFunction = inngest.createFunction(
           }
           if (!integration?.active) return [];
 
-          const metadata = integration.metadata as {
-            access_token?: string;
-          } | null;
+          // Secret material (access_token) lives in Supabase Vault; merge it
+          // back so we read the same shape as before. `client` is service-role.
+          const metadata = (await resolveIntegrationSecrets(
+            client,
+            payload.companyId,
+            "slack",
+            integration.metadata,
+            integration.secretRef
+          )) as { access_token?: string } | null;
           const accessToken = metadata?.access_token;
           if (!accessToken) return [];
 

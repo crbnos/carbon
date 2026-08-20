@@ -5,7 +5,7 @@ description: How Carbon decides who can see and change what, from the module-act
 
 Everyone who works in Carbon signs in against one company, and Carbon decides what they can do from a set of small, explicit grants. A grant is a pair: a **module** (a slice of the app, like Sales or Inventory) and an **action** on it (view, create, update, or delete). Grant someone `sales_view` and they can read sales orders; grant `inventory_update` and they can edit inventory. Nothing is implied and nothing is global. A person with no grants can sign in and see nothing.
 
-You rarely set those grants one at a time. Each employee gets an **employee type** that carries a template of grants, and you tune the exceptions per person from there. This page is the map of that system, from the permission model at the bottom to the people at the top. For the individuals themselves see [people](/docs/reference/people); for programmatic access that uses the same model, see [API keys](/docs/reference/api-keys).
+You rarely set those grants one at a time. Each employee gets an **employee type** that carries a template of grants, and you tune the exceptions per person from there. This page is the map of that system, from the permission model at the bottom to the people at the top. For the individuals themselves see [people](/docs/reference/people); for programmatic access that uses the same model, see [API keys](/docs/reference/api-keys). Permissions decide what someone may do once they are in; for how they prove who they are on the way in, see [two-factor authentication](/docs/reference/two-factor).
 
 ## The module-action model
 

@@ -2,6 +2,8 @@ import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
+import type { JobSource } from "@carbon/lib/telemetry";
+import { asJobSource, trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
@@ -286,6 +288,24 @@ export async function convertSalesOrderLinesToJobs(
           );
           continue;
         }
+
+        // This function inserts into `job` itself rather than going through
+        // insertJob, so it inherits none of its instrumentation. Without this,
+        // "Create Jobs" on a sales order — the make-to-order path, and for some
+        // shops the only way jobs are ever raised — produced no job_created at
+        // all, and the account would read as not running production.
+        trackWorkEvent("job_created", {
+          companyId,
+          userId,
+          jobId: createJob.data.id,
+          itemId: data.itemId,
+          quantity: data.quantity,
+          scrapQuantity: data.scrapQuantity ?? 0,
+          locationId: locationId ?? null,
+          salesOrderLineId: line.id,
+          deadlineType: data.deadlineType ?? null,
+          source: "salesOrder"
+        });
 
         if (quoteId) {
           const upsertMethod = await client.functions.invoke("get-method", {
@@ -2424,6 +2444,14 @@ export async function updateJobStatus(
         companyId,
         actorId: updatedBy
       });
+      // Same guard as the moment above: a real transition, never a re-save.
+      trackWorkEvent("job_released", {
+        companyId,
+        userId: updatedBy,
+        jobId: id,
+        priorStatus: prior.data.status,
+        source: "erp"
+      });
     } else if (status === "Paused") {
       await raiseMoment("production.jobHeld", {
         outputs: { job: { id }, heldBy: { id: updatedBy } },
@@ -2746,6 +2774,20 @@ export async function upsertProductionQuantity(
   }
 }
 
+/**
+ * `options.source` is telemetry-only: which surface raised the job. Five
+ * routes, MRP, the MCP tools and the workflow engine all funnel through here
+ * and the `job` row cannot tell them apart, so the caller has to say.
+ *
+ * Unset is reported as `unknown`, never as `erp`. The MCP tool and the
+ * workflow engine both reach this through `dispatch(call, context, inputs)`,
+ * which has nowhere to put an option, and an `erp` default would file
+ * automated job creation as human work — the one thing the field separates.
+ *
+ * Kept out of the options type literal on purpose: the MCP metadata generator
+ * parses that object textually and turns a JSDoc block above a property into a
+ * property name of its own, which then ships in the public tool schema.
+ */
 export async function insertJob(
   client: SupabaseClient<Database>,
   input: {
@@ -2777,6 +2819,7 @@ export async function insertJob(
     skipMethod?: boolean;
     skipRecalculate?: boolean;
     methodSource?: "item" | "quoteLine";
+    source?: JobSource;
   }
 ): Promise<{
   data: { id: string; jobId: string } | null;
@@ -2904,6 +2947,21 @@ export async function insertJob(
   }
 
   const createdJobId = job.data.id;
+
+  trackWorkEvent("job_created", {
+    companyId: input.companyId,
+    userId: input.createdBy,
+    jobId: createdJobId,
+    itemId: input.itemId,
+    quantity: input.quantity,
+    scrapQuantity,
+    locationId: locationId ?? null,
+    salesOrderLineId: input.salesOrderLineId ?? null,
+    deadlineType,
+    // Narrowed, not trusted: this arrives from an MCP caller as an untyped
+    // schema field, so TypeScript is not a guard on it.
+    source: asJobSource(options?.source)
+  });
 
   if (!options?.skipMethod) {
     const methodSource =

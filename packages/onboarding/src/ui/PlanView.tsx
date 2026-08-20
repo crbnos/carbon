@@ -199,7 +199,7 @@ function PhaseCard({
 
   return (
     <Card id={planAnchorId(step.key)} className="overflow-hidden scroll-mt-6">
-      <CardHeader className="flex-row items-start gap-4 px-5 py-4 border-b border-border">
+      <CardHeader className="flex-row items-start gap-4 px-5 py-4">
         <span
           className={cn(
             "shrink-0 size-9 rounded-lg border flex items-center justify-center text-sm font-semibold tabular-nums",
@@ -232,7 +232,7 @@ function PhaseCard({
           </Badge>
         ) : null}
       </CardHeader>
-      <CardContent className="p-0 border-0">
+      <CardContent className="p-0">
         <div className="px-5 py-4">
           {step.desc ? (
             <p className="text-sm text-muted-foreground">{i18n._(step.desc)}</p>

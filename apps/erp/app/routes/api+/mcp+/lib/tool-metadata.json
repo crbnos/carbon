@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-17T13:41:47.764Z",
-  "totalTools": 1488,
+  "generated": "2026-08-20T12:11:05.401Z",
+  "totalTools": 1495,
   "modules": 15,
   "tools": [
     {
@@ -370,7 +370,7 @@
       "module": "accounting",
       "classification": "READ",
       "description": "get account ledger",
-      "paramCount": 5,
+      "paramCount": 6,
       "serviceParams": [
         "client",
         "args"
@@ -383,6 +383,12 @@
         "properties": {
           "accountId": {
             "type": "string"
+          },
+          "companyIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "startDate": {
             "type": [
@@ -610,13 +616,16 @@
       "module": "accounting",
       "classification": "READ",
       "description": "get consolidated period series",
-      "paramCount": 3,
+      "paramCount": 6,
       "serviceParams": [
         "client",
         "companyGroupId",
         "companyIds",
         "targetCurrency",
-        "args"
+        "args",
+        "// Privileged (service-role) client used ONLY to read elimination entities.\n  // Those are synthetic consolidation companies that no user is a member of",
+        "so\n  // their ledger is invisible to the RLS-scoped `client` and their reversing\n  // entries would silently drop out of the consolidation (intercompany balances\n  // never eliminate). The route already authorized the user for this group",
+        "and\n  // reads stay scoped to `companyGroupId`. Operating companies still read via the\n  // RLS `client`. Defaults to `client` (no elimination visibility) when omitted.\n  eliminationClient"
       ],
       "injectAuth": [
         "companyId"
@@ -639,17 +648,26 @@
               "buckets": {
                 "type": "array",
                 "items": {}
+              },
+              "includeCurrentYearEarnings": {
+                "type": "boolean"
               }
             },
             "required": [
               "buckets"
             ]
-          }
+          },
+          "// Privileged (service-role) client used ONLY to read elimination entities.\n  // Those are synthetic consolidation companies that no user is a member of": {},
+          "so\n  // their ledger is invisible to the RLS-scoped `client` and their reversing\n  // entries would silently drop out of the consolidation (intercompany balances\n  // never eliminate). The route already authorized the user for this group": {},
+          "and\n  // reads stay scoped to `companyGroupId`. Operating companies still read via the\n  // RLS `client`. Defaults to `client` (no elimination visibility) when omitted.\n  eliminationClient": {}
         },
         "required": [
           "companyIds",
           "targetCurrency",
-          "args"
+          "args",
+          "// Privileged (service-role) client used ONLY to read elimination entities.\n  // Those are synthetic consolidation companies that no user is a member of",
+          "so\n  // their ledger is invisible to the RLS-scoped `client` and their reversing\n  // entries would silently drop out of the consolidation (intercompany balances\n  // never eliminate). The route already authorized the user for this group",
+          "and\n  // reads stay scoped to `companyGroupId`. Operating companies still read via the\n  // RLS `client`. Defaults to `client` (no elimination visibility) when omitted.\n  eliminationClient"
         ]
       }
     },
@@ -1688,6 +1706,37 @@
         },
         "required": [
           "fiscalYear"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getPeriodExternalGlSyncReadiness",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get period external gl sync readiness",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "startDate",
+        "endDate"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "startDate": {
+            "type": "string"
+          },
+          "endDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "startDate",
+          "endDate"
         ]
       }
     },
@@ -2911,14 +2960,15 @@
       "module": "accounting",
       "classification": "READ",
       "description": "get consolidated balances",
-      "paramCount": 4,
+      "paramCount": 5,
       "serviceParams": [
         "client",
         "companyGroupId",
         "companyIds",
         "targetCurrency",
         "periodEnd",
-        "periodStart"
+        "periodStart",
+        "// Privileged (service-role) client used ONLY for elimination entities — see\n  // getConsolidatedPeriodSeries. Without it their reversing entries are hidden by\n  // RLS and intercompany balances never eliminate. Defaults to `client`.\n  eliminationClient"
       ],
       "injectAuth": [
         "companyId"
@@ -2940,12 +2990,14 @@
           },
           "periodStart": {
             "type": "string"
-          }
+          },
+          "// Privileged (service-role) client used ONLY for elimination entities — see\n  // getConsolidatedPeriodSeries. Without it their reversing entries are hidden by\n  // RLS and intercompany balances never eliminate. Defaults to `client`.\n  eliminationClient": {}
         },
         "required": [
           "companyIds",
           "targetCurrency",
-          "periodEnd"
+          "periodEnd",
+          "// Privileged (service-role) client used ONLY for elimination entities — see\n  // getConsolidatedPeriodSeries. Without it their reversing entries are hidden by\n  // RLS and intercompany balances never eliminate. Defaults to `client`.\n  eliminationClient"
         ]
       }
     },
@@ -3014,6 +3066,34 @@
       }
     },
     {
+      "name": "accounting_getIntercompanyEliminationLines",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get intercompany elimination lines",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "transactionIds"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "transactionIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "transactionIds"
+        ]
+      }
+    },
+    {
       "name": "accounting_runIntercompanyMatching",
       "module": "accounting",
       "classification": "WRITE",
@@ -3037,11 +3117,12 @@
       "module": "accounting",
       "classification": "WRITE",
       "description": "generate eliminations",
-      "paramCount": 0,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "companyGroupId",
-        "userId"
+        "userId",
+        "regenerate = false"
       ],
       "injectAuth": [
         "companyId",
@@ -3050,7 +3131,12 @@
       ],
       "schema": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "regenerate = false": {}
+        },
+        "required": [
+          "regenerate = false"
+        ]
       }
     },
     {
@@ -4141,6 +4227,104 @@
         },
         "required": [
           "data"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getJournalSyncCompleteness",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get journal sync completeness",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "/** companyIntegration id, e.g. \"xero\" | \"quickbooks\" | \"rillet\". */\n    integrationId": {
+            "type": "string"
+          },
+          "journals dated before this are out of scope. */\n    syncFromDate": {
+            "type": "string"
+          },
+          "/** Restrict to one accounting period (the close auto-check). */\n    accountingPeriodId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "/** companyIntegration id, e.g. \"xero\" | \"quickbooks\" | \"rillet\". */\n    integrationId",
+          "journals dated before this are out of scope. */\n    syncFromDate"
+        ]
+      }
+    },
+    {
+      "name": "accounting_getAccountingSyncTieOut",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get accounting sync tie out",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "integration": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {}
+          },
+          "accountingPeriodId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "accountId": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {}
+          }
+        }
+      }
+    },
+    {
+      "name": "accounting_getAccountingSyncTieOutCell",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get accounting sync tie out cell",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "cellId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "cellId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "cellId"
         ]
       }
     },
@@ -21756,7 +21940,8 @@
                   "item",
                   "quoteLine"
                 ]
-              }
+              },
+              "source": {}
             }
           }
         },
@@ -26749,6 +26934,31 @@
           "id",
           "status",
           "assignee"
+        ]
+      }
+    },
+    {
+      "name": "purchasing_reopenPurchaseOrderAsRevision",
+      "module": "purchasing",
+      "classification": "WRITE",
+      "description": "reopen purchase order as revision",
+      "paramCount": 1,
+      "serviceParams": [
+        "db",
+        "{\n    id,\n    companyId,\n    updatedBy\n  }"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
         ]
       }
     },
@@ -43695,37 +43905,6 @@
       }
     },
     {
-      "name": "settings_updateIntegrationMetadata",
-      "module": "settings",
-      "classification": "WRITE",
-      "description": "update integration metadata",
-      "paramCount": 2,
-      "serviceParams": [
-        "client",
-        "companyId",
-        "integrationId",
-        "metadata",
-        "updatedBy"
-      ],
-      "injectAuth": [
-        "companyId",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "integrationId": {
-            "type": "string"
-          },
-          "metadata": {}
-        },
-        "required": [
-          "integrationId",
-          "metadata"
-        ]
-      }
-    },
-    {
       "name": "settings_updateAccountingEnabledSetting",
       "module": "settings",
       "classification": "WRITE",
@@ -44573,6 +44752,33 @@
         },
         "required": [
           "defaultSupplierCc"
+        ]
+      }
+    },
+    {
+      "name": "settings_updateRequireMfaSetting",
+      "module": "settings",
+      "classification": "WRITE",
+      "description": "update require mfa setting",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "requireMfa"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "requireMfa": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "requireMfa"
         ]
       }
     },
@@ -46396,6 +46602,24 @@
       "module": "users",
       "classification": "READ",
       "description": "get unrevoked invite emails",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "users_getUsersWithVerifiedMfa",
+      "module": "users",
+      "classification": "READ",
+      "description": "get users with verified mfa",
       "paramCount": 0,
       "serviceParams": [
         "client",

@@ -422,6 +422,12 @@ msgstr "Finalizar operaciones"
 msgid "Enter PIN for {0}"
 msgstr "Ingrese el PIN para {0}"
 
+msgid "Enter the 6-digit code from your authenticator app"
+msgstr "Ingresa el código de 6 dígitos de tu aplicación de autenticación"
+
+msgid "Enter the 6-digit code from your authenticator app to resume."
+msgstr "Ingrese el código de 6 dígitos de su aplicación de autenticador para reanudar."
+
 msgid "Error"
 msgstr "Error"
 
@@ -923,6 +929,9 @@ msgstr "Realizado por operador"
 msgid "Optional"
 msgstr "Opcional"
 
+msgid "or"
+msgstr "o"
+
 msgid "Overall result"
 msgstr "Resultado general"
 
@@ -943,6 +952,9 @@ msgstr "Disposición Parcial"
 
 msgid "Passed Inspection"
 msgstr "Inspección aprobada"
+
+msgid "Passkey unlock failed"
+msgstr "Error al desbloquear con clave de acceso"
 
 msgid "Pause"
 msgstr "Pausar"
@@ -1218,11 +1230,17 @@ msgstr "Números de serie"
 msgid "Serial Numbers"
 msgstr "Números de serie"
 
+msgid "Session locked"
+msgstr "Sesión bloqueada"
+
 msgid "Set Clock Out"
 msgstr "Establecer salida"
 
 msgid "Set clock-out time"
 msgstr "Establecer hora de salida"
+
+msgid "Set up in Carbon"
+msgstr "Configurar en Carbon"
 
 msgid "Setup"
 msgstr "Preparación"
@@ -1248,8 +1266,14 @@ msgstr "Iniciar sesión con Outlook"
 msgid "Sign in with Passkey"
 msgstr "Iniciar sesión con Passkey"
 
+msgid "Sign out"
+msgstr "Cerrar sesión"
+
 msgid "Sign Out"
 msgstr "Cerrar sesión"
+
+msgid "Sign out instead"
+msgstr "Cerrar sesión en su lugar"
 
 msgid "Signed in as {stationName}"
 msgstr "Conectado como {stationName}"
@@ -1375,14 +1399,29 @@ msgstr "Entidad rastreada"
 msgid "Tracking"
 msgstr "Seguimiento"
 
+msgid "Two-factor authentication"
+msgstr "Autenticación de dos factores"
+
+msgid "Two-factor authentication required"
+msgstr "Se requiere autenticación de dos factores"
+
 msgid "Type a message..."
 msgstr "Escriba un mensaje..."
+
+msgid "Unable to unlock"
+msgstr "No se puede desbloquear"
 
 msgid "Unissued serial/batch materials"
 msgstr "Materiales de serie/lote no emitidos"
 
 msgid "Unknown"
 msgstr "Desconocido"
+
+msgid "Unlock"
+msgstr "Desbloquear"
+
+msgid "Unlock with passkey"
+msgstr "Desbloquear con clave de acceso"
 
 msgid "Unpick"
 msgstr "Descoger"
@@ -1425,6 +1464,12 @@ msgstr "Subido: {0}"
 msgid "Uploading {0}"
 msgstr "Subiendo {0}"
 
+msgid "Use a different account"
+msgstr "Usar una cuenta diferente"
+
+msgid "Verify"
+msgstr "Verificar"
+
 msgid "View maintenance dispatch"
 msgstr "Ver despacho de mantenimiento"
 
@@ -1451,3 +1496,9 @@ msgstr "Marcaste entrada a las <0/>. Puedes editar tu hora de salida a continuac
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Ha estado registrado durante {hoursElapsed} horas. ¿Olvidó registrar la salida?"
+
+msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
+msgstr "Tu organización requiere una aplicación de autenticación. Configúrala en Carbon y luego vuelve aquí."
+
+msgid "Your session was locked after inactivity."
+msgstr "Su sesión fue bloqueada después de la inactividad."

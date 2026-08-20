@@ -283,13 +283,18 @@ export class ExternalIntegrationMappingService {
   async touchLastSyncedAt(
     entityType: string,
     entityId: string,
-    integration: string
+    integration: string,
+    remoteUpdatedAt?: Date
   ): Promise<void> {
+    const now = new Date().toISOString();
     await this.db
       .updateTable("externalIntegrationMapping")
       .set({
-        lastSyncedAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        lastSyncedAt: now,
+        updatedAt: now,
+        ...(remoteUpdatedAt
+          ? { remoteUpdatedAt: remoteUpdatedAt.toISOString() }
+          : {})
       })
       .where("entityType", "=", entityType)
       .where("entityId", "=", entityId)

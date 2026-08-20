@@ -104,9 +104,14 @@ export function StepLinkEditor({
                         onSelect={() => onAdd(item.id)}
                         className="flex items-center justify-between gap-4"
                       >
-                        <span className="min-w-0 flex-1 truncate">
-                          {item.name}
-                        </span>
+                        <div className="flex min-w-0 flex-1 flex-col">
+                          <span className="truncate">{item.name}</span>
+                          {item.secondary && (
+                            <span className="truncate text-xs text-muted-foreground">
+                              {item.secondary}
+                            </span>
+                          )}
+                        </div>
                         <span className="shrink-0 text-xs text-muted-foreground">
                           ×{item.quantity}
                         </span>

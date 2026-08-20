@@ -33,6 +33,29 @@ RLS is permissive (`USING true WITH CHECK true`) — isolation is the table name
 at the app layer (`requirePermissions`). A separate `auditLogArchive` table tracks archive metadata
 (`archivePath`, `startDate`, `endDate`, `rowCount`, `sizeBytes`).
 
+## Append-only (NIST 800-171 3.3.8 / AU-9)
+
+Every `auditLog_{companyId}` table carries a `BEFORE UPDATE OR DELETE` trigger `append_only`
+(`prevent_audit_log_mutation()`, migration `20260818014100_audit-log-append-only.sql`). UPDATE is
+**always** rejected; DELETE is rejected unless the transaction has set the local flag
+`app.audit_archiving = 'on'`. Even a service-role client cannot rewrite or casually erase history —
+only the retention/archival path may delete. `delete_old_audit_logs` was forked to
+`set_config('app.audit_archiving','on',true)` before its purge, and `create_audit_log_table` was
+forked to attach the trigger to every new (and pre-existing) table via the idempotent helper
+`attach_audit_log_append_only(table)`. The DELETE branch of `prevent_audit_log_mutation` is what the
+`audit-archive` job relies on: it runs `delete_old_audit_logs`, so its per-day deletes carry the flag.
+
+## On-by-default in controlled environments (3.3.1)
+
+Audit is opt-in per company (`company.auditLogEnabled`), **except** under `CONTROLLED_ENVIRONMENT`
+(ITAR/CUI), where it is mandatory and non-disableable — mirroring the `requireMfa` gate:
+- Enabled at company creation: `company.new.tsx` + `companies.new.tsx` call `enableAuditLog` after
+  `seedCompany` when `CONTROLLED_ENVIRONMENT`.
+- The `audit-logs.tsx` loader enables it on demand for any controlled company not yet capturing
+  (covers companies that predate the flag), and returns `controlled: CONTROLLED_ENVIRONMENT`.
+- The `disable` action case refuses under `CONTROLLED_ENVIRONMENT`; `AuditLogSettings` receives
+  `controlled` and locks the toggle with an explanatory note.
+
 ## Config (`packages/database/src/audit.config.ts`)
 
 `auditConfig.entities` maps an **entity key** → `{ label, tables }`. Each table has a role:

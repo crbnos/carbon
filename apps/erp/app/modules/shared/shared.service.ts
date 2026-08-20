@@ -1,5 +1,6 @@
 import type { Database, Tables } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
 import { getPurchaseOrderStatus, supportedModelTypes } from "@carbon/utils";
 import type {
@@ -138,6 +139,24 @@ export async function approveRequest(
 
       return updatedApproval;
     });
+
+    // After the transaction, so a rollback emits nothing. The order became
+    // real here, not on the finalize route — that one stopped at the gate.
+    // Without this, every order a customer routes through an approval
+    // threshold is missing from "POs issued", and the shops that configure
+    // approval thresholds are the larger ones.
+    if (documentType === "purchaseOrder") {
+      trackWorkEvent(
+        "purchase_order_finalized",
+        {
+          companyId: approvalRequest.companyId,
+          userId,
+          purchaseOrderId: documentId,
+          stage: "committed"
+        },
+        { discriminator: "committed" }
+      );
+    }
 
     return { data: result, error: null };
   } catch (error) {
