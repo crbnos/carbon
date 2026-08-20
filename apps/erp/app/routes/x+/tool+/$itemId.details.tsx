@@ -291,6 +291,19 @@ export default function ToolDetailsRoute() {
             toolData.toolSummary?.replenishmentSystem ?? ""
           ) && (
             <>
+              <BillOfProcess
+                key={`bop:${itemId}`}
+                makeMethod={methodData.makeMethod}
+                // @ts-ignore
+                operations={methodData.methodOperations ?? []}
+                // @ts-ignore
+                materials={methodData.methodMaterials ?? []}
+                tags={tags}
+                revisionStatus={revisionStatus}
+                releaseControl={releaseControl}
+                isDisabled={!!draftLock}
+                disabledReason={lockReason}
+              />
               <BillOfMaterial
                 key={`bom:${itemId}`}
                 makeMethod={methodData.makeMethod}
@@ -299,17 +312,6 @@ export default function ToolDetailsRoute() {
                 // @ts-ignore
                 operations={methodData.methodOperations}
                 replenishmentSystem={toolData.toolSummary?.replenishmentSystem}
-                revisionStatus={revisionStatus}
-                releaseControl={releaseControl}
-                isDisabled={!!draftLock}
-                disabledReason={lockReason}
-              />
-              <BillOfProcess
-                key={`bop:${itemId}`}
-                makeMethod={methodData.makeMethod}
-                // @ts-ignore
-                operations={methodData.methodOperations ?? []}
-                tags={tags}
                 revisionStatus={revisionStatus}
                 releaseControl={releaseControl}
                 isDisabled={!!draftLock}

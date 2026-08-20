@@ -369,14 +369,6 @@ export default function QuoteLine() {
 
       {methodData && (
         <VStack spacing={2}>
-          <QuoteBillOfMaterial
-            key={`bom:${methodData.rootMethodId}`}
-            quoteMakeMethodId={methodData.rootMethodId}
-            // @ts-ignore
-            materials={methodData.methodMaterials}
-            // @ts-expect-error
-            operations={methodData.methodOperations}
-          />
           <QuoteBillOfProcess
             key={`bop:${methodData.rootMethodId}`}
             quoteMakeMethodId={methodData.rootMethodId}
@@ -384,6 +376,14 @@ export default function QuoteLine() {
             // @ts-expect-error
             operations={methodData.methodOperations}
             tags={methodData.tags ?? []}
+          />
+          <QuoteBillOfMaterial
+            key={`bom:${methodData.rootMethodId}`}
+            quoteMakeMethodId={methodData.rootMethodId}
+            // @ts-ignore
+            materials={methodData.methodMaterials}
+            // @ts-expect-error
+            operations={methodData.methodOperations}
           />
         </VStack>
       )}

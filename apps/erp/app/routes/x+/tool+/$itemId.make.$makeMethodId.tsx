@@ -145,16 +145,6 @@ export default function ToolMakeMethodPage() {
         </Await>
       </Suspense>
 
-      <BillOfMaterial
-        key={`bom:${makeMethodId}`}
-        makeMethod={makeMethod}
-        // @ts-expect-error TS2322 - TODO: fix type
-        materials={methodMaterials}
-        operations={methodOperations}
-        replenishmentSystem={toolData?.toolSummary?.replenishmentSystem}
-        revisionStatus={revisionStatus}
-        releaseControl={releaseControl}
-      />
       <BillOfProcess
         key={`bop:${makeMethodId}`}
         makeMethod={makeMethod}
@@ -162,6 +152,16 @@ export default function ToolMakeMethodPage() {
         // @ts-expect-error
         operations={methodOperations}
         tags={tags}
+        revisionStatus={revisionStatus}
+        releaseControl={releaseControl}
+      />
+      <BillOfMaterial
+        key={`bom:${makeMethodId}`}
+        makeMethod={makeMethod}
+        // @ts-expect-error TS2322 - TODO: fix type
+        materials={methodMaterials}
+        operations={methodOperations}
+        replenishmentSystem={toolData?.toolSummary?.replenishmentSystem}
         revisionStatus={revisionStatus}
         releaseControl={releaseControl}
       />

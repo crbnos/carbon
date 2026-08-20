@@ -128,14 +128,6 @@ export default function ServiceMakeMethodPage() {
         </Await>
       </Suspense>
 
-      <BillOfMaterial
-        key={`bom:${makeMethodId}`}
-        makeMethod={makeMethod}
-        // @ts-expect-error TS2322 - TODO: fix type
-        materials={methodMaterials}
-        operations={methodOperations}
-        replenishmentSystem={serviceData?.serviceSummary?.replenishmentSystem}
-      />
       <BillOfProcess
         key={`bop:${makeMethodId}`}
         makeMethod={makeMethod}
@@ -143,6 +135,14 @@ export default function ServiceMakeMethodPage() {
         // @ts-expect-error
         operations={methodOperations}
         tags={tags}
+      />
+      <BillOfMaterial
+        key={`bom:${makeMethodId}`}
+        makeMethod={makeMethod}
+        // @ts-expect-error TS2322 - TODO: fix type
+        materials={methodMaterials}
+        operations={methodOperations}
+        replenishmentSystem={serviceData?.serviceSummary?.replenishmentSystem}
       />
     </VStack>
   );

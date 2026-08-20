@@ -144,14 +144,6 @@ export default function JobMakeMethodRoute() {
       <VStack spacing={2} className="p-2">
         <JobMakeMethodTools makeMethod={makeMethod} />
 
-        <JobBillOfMaterial
-          key={`bom:${methodId}`}
-          jobMakeMethodId={methodId}
-          // @ts-expect-error TS2322 - TODO: fix type
-          materials={materials}
-          // @ts-expect-error
-          operations={operations}
-        />
         <JobBillOfProcess
           key={`bop:${methodId}`}
           jobMakeMethodId={methodId}
@@ -163,6 +155,14 @@ export default function JobMakeMethodRoute() {
           itemId={makeMethod.itemId}
           salesOrderLineId={job.salesOrderLineId ?? ""}
           customerId={job.customerId ?? ""}
+        />
+        <JobBillOfMaterial
+          key={`bom:${methodId}`}
+          jobMakeMethodId={methodId}
+          // @ts-expect-error TS2322 - TODO: fix type
+          materials={materials}
+          // @ts-expect-error
+          operations={operations}
         />
         <Suspense
           fallback={

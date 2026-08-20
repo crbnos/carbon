@@ -255,14 +255,6 @@ export default function JobDetailsRoute() {
 
         {methodId && (
           <>
-            <JobBillOfMaterial
-              key={`bom:${methodId}`}
-              jobMakeMethodId={methodId}
-              // @ts-ignore
-              materials={materials}
-              // @ts-ignore
-              operations={operations}
-            />
             <JobBillOfProcess
               key={`bop:${methodId}`}
               jobMakeMethodId={methodId}
@@ -275,6 +267,14 @@ export default function JobDetailsRoute() {
               itemId={makeMethod.itemId}
               salesOrderLineId={jobData?.job.salesOrderLineId ?? ""}
               customerId={jobData?.job.customerId ?? ""}
+            />
+            <JobBillOfMaterial
+              key={`bom:${methodId}`}
+              jobMakeMethodId={methodId}
+              // @ts-ignore
+              materials={materials}
+              // @ts-ignore
+              operations={operations}
             />
           </>
         )}

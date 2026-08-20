@@ -178,19 +178,6 @@ export default function PartMakeMethodPage() {
         </Await>
       </Suspense>
 
-      <BillOfMaterial
-        key={`bom:${makeMethodId}`}
-        makeMethod={makeMethod}
-        // @ts-expect-error TS2322 - TODO: fix type
-        materials={methodMaterials}
-        operations={methodOperations}
-        configurable={partManufacturing?.requiresConfiguration}
-        configurationRules={configurationRules}
-        parameters={configurationParametersAndGroups.parameters}
-        replenishmentSystem={partData?.partSummary?.replenishmentSystem}
-        revisionStatus={revisionStatus}
-        releaseControl={releaseControl}
-      />
       <BillOfProcess
         key={`bop:${makeMethodId}`}
         makeMethod={makeMethod}
@@ -201,6 +188,19 @@ export default function PartMakeMethodPage() {
         configurationRules={configurationRules}
         parameters={configurationParametersAndGroups.parameters}
         tags={tags}
+        revisionStatus={revisionStatus}
+        releaseControl={releaseControl}
+      />
+      <BillOfMaterial
+        key={`bom:${makeMethodId}`}
+        makeMethod={makeMethod}
+        // @ts-expect-error TS2322 - TODO: fix type
+        materials={methodMaterials}
+        operations={methodOperations}
+        configurable={partManufacturing?.requiresConfiguration}
+        configurationRules={configurationRules}
+        parameters={configurationParametersAndGroups.parameters}
+        replenishmentSystem={partData?.partSummary?.replenishmentSystem}
         revisionStatus={revisionStatus}
         releaseControl={releaseControl}
       />
