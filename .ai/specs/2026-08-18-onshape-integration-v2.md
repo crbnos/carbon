@@ -246,8 +246,11 @@ revert a migrated customer to legacy. Change it to merge into existing metadata.
 8. **Done** (2026-08-21). Release provenance — release name and notes into both
    the change notice and a delimited block in `item.notes`.
 9. **Done** (2026-08-21). Auto-create on release, as a per-company v2 toggle.
-10. **Next.** Create a part from Onshape inside the New Part form. Spec:
-   `.ai/specs/2026-08-20-onshape-create-part-from-new-part-form.md`.
+10. **Done** (2026-08-21). Create a part from Onshape inside the New Part form —
+   one submission creates the part, both mappings, the BOM import and the assets.
+   Spec: `.ai/specs/2026-08-20-onshape-create-part-from-new-part-form.md`.
+11. **Done** (2026-08-21). Replenishment seeded from Onshape's `Purchasing Level`,
+   one rule shared by the BOM import and the release mint.
 
 Also built, beyond the original list: unreleased-version syncing
 (`allowUnreleasedSync` gated everywhere, versions loader, refusals) and the
@@ -382,6 +385,9 @@ references resolve to more than one model).
 ## Open Questions
 
 **Onshape release name and release notes — where do they land in Carbon?**
+**RESOLVED 2026-08-21 — see the changelog.** Notes → the change notice's
+`reasonForChange`, provenance → `sourceType`/`sourceId`, plus a delimited block in
+`item.notes` on every item the integration touches. Original note follows.
 (Raised 2026-08-18, deferred.) Onshape's release package carries a name and
 free-text release notes, and both are engineering-meaningful. Today `releaseName`
 is only stashed in the revision mapping's metadata, and the release NOTES are not
@@ -422,7 +428,8 @@ Resolved during design:
 
 - **Translations.** 55 new English strings ship with empty `msgstr` in 12 locales. That matches
   upstream practice — `pnpm translate` needs an LLM key and is run as its own pass, not per PR.
-- **Drawing attachment.** Not built. The join is no longer the unknown — it is solved and verified
+- **Drawing attachment. BUILT 2026-08-21** (Phase 7) — the text below is the pre-build state.
+  Not built. The join is no longer the unknown — it is solved and verified
   (see the drawing section): `appelements/.../references` names the referenced element id directly.
   What remains is wrapping the endpoint, a resolver, and relaxing the webhook's part-number gate.
   Until then v2 refuses rather than guessing.
