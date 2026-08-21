@@ -9,15 +9,17 @@ every open stage — closes it, after which **Reopen** returns it to **"Draft"**
 
 ## The stages
 
-  - **Draft**: The change notice is being written. Pick affected items, set change types, and edit each draft method. Nothing is broadcast.
-  - **Start**: Work is underway. Advancing to Start broadcasts a notification to the team.
-  - **Engineering Complete**: The design edits are finished and ready for implementation review. Silent, no broadcast.
-  - **Implementation**: The release stage. The engineering content freezes here, and the **"Release"** action becomes available; it reviews every affected item's diff and applies the change. Advancing here broadcasts.
-  - **Done**: Released and locked. The change notice becomes a read-only historical record; broadcasts on entry.
+  - **Draft**: The change notice is being written. Pick affected items, set change types, and edit each draft method. No notification is sent.
+  - **Start**: Work is underway. Advancing to Start notifies the assignee and every action-task assignee.
+  - **Engineering Complete**: The design edits are finished and ready for implementation review. Silent, no notification.
+  - **Implementation**: The release stage. The engineering content freezes here, and the **"Release"** action becomes available; it reviews every affected item's diff and applies the change. Advancing here notifies.
+  - **Done**: Released and locked. The change notice becomes a read-only historical record; notifies on entry.
   - **Cancelled**: The off-ramp. The header's **"Cancel"** action closes the change notice from any open stage without releasing anything. Locked like **"Done"**, but reversible: **"Reopen"** returns it to **"Draft"**.
 
-The **"Start"**, **"Implementation"**, and **"Done"** transitions each notify the team; **"Engineering
-Complete"** is silent. Once a change notice reaches **"Done"** it is locked — every editor is read-only.
+The **"Start"**, **"Implementation"**, and **"Done"** transitions each notify the people on the change
+notice: the assignee, plus everyone assigned an action task. Whoever made the transition isn't notified of
+their own action, and a change notice with no assignee and no assigned tasks advances silently. **"Engineering
+Complete"** is silent for everyone. Once a change notice reaches **"Done"** it is locked — every editor is read-only.
 **"Cancelled"** is locked too, but not lost: cancelling keeps every affected item's draft, and **"Reopen"**
 takes the change notice back to **"Draft"** to pick up where it left off. Only **"Done"** is permanent.
 Deleting a change notice is the destructive path — that discards each affected item's draft and any new

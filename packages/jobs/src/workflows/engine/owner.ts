@@ -79,6 +79,5 @@ export function hasPermission(
 ): boolean {
   const granted = permissions[module]?.[action];
   if (!Array.isArray(granted)) return false;
-  // "0" is the wildcard for all companies.
-  return granted.includes("0") || granted.includes(companyId);
+  return granted.includes(companyId);
 }

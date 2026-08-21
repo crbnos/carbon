@@ -18,6 +18,7 @@ export const SAMPLE_PURCHASE_ORDER = {
   },
   purchaseOrder: {
     purchaseOrderId: "PO-001042",
+    revisionId: 0,
     currencyCode: "USD",
     orderDate: "2026-06-01",
     supplierReference: "Q-55120",

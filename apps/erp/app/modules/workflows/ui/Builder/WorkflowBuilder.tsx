@@ -20,6 +20,7 @@ import { NODE_DRAG_TYPE } from "./constants";
 import { useBuilderStore, useBuilderStoreApi } from "./context";
 import { edgeTypes } from "./edges/WorkflowEdge";
 import { canConnect } from "./graph";
+import { stopCanvasKeys } from "./NodeCard";
 import { NodePalette } from "./NodePalette";
 import { nodeTypes } from "./nodes";
 import { TestRunPanel } from "./TestRun/TestRunPanel";
@@ -54,7 +55,11 @@ export function WorkflowBuilder({
 
   const nodes = useBuilderStore((state) => state.nodes);
   const edges = useBuilderStore((state) => state.edges);
-  const isReadOnly = useBuilderStore((state) => state.isReadOnly);
+  const canChangeDefinition = useBuilderStore(
+    (state) => state.canChangeDefinition
+  );
+  const canMoveNodes = useBuilderStore((state) => state.canMoveNodes);
+  const isReadOnly = !canChangeDefinition;
   const showResults = useBuilderStore(
     (state) => state.testRunStatus === "running" || state.testRunResult !== null
   );
@@ -93,15 +98,16 @@ export function WorkflowBuilder({
   );
 
   // A field with focus owns its keys; the canvas must not steal Delete/arrows.
-  const onKeyDownCapture = useCallback((event: KeyboardEvent) => {
+  // Node cards stop these at their own body — this is the backstop for anything
+  // else in the canvas, and it leaves a bare pane's Delete alone.
+  const onKeyDown = useCallback((event: KeyboardEvent) => {
     const target = event.target as HTMLElement | null;
     if (!target) return;
-    if (target.closest(OVERLAY_SELECTOR)) {
-      event.stopPropagation();
-      return;
-    }
-    if (target.closest("input,textarea,select,[contenteditable=true]")) {
-      event.stopPropagation();
+    if (
+      target.closest(OVERLAY_SELECTOR) ||
+      target.closest("input,textarea,select,[contenteditable=true]")
+    ) {
+      stopCanvasKeys(event);
     }
   }, []);
 
@@ -126,7 +132,7 @@ export function WorkflowBuilder({
       <ResizablePanel id="canvas" order={2} defaultSize={62} minSize={30}>
         <div
           className="relative h-full"
-          onKeyDownCapture={onKeyDownCapture}
+          onKeyDown={onKeyDown}
           onDrop={onDrop}
           onDragOver={(event) => {
             event.preventDefault();
@@ -152,7 +158,7 @@ export function WorkflowBuilder({
               ? { defaultViewport: initialViewport }
               : { fitView: true })}
             onMoveEnd={onMoveEnd}
-            nodesDraggable={!isReadOnly}
+            nodesDraggable={canMoveNodes}
             nodesConnectable={!isReadOnly}
             elementsSelectable
             // Delete only. Backspace is too easy to hit by accident, and there
@@ -163,7 +169,7 @@ export function WorkflowBuilder({
             panOnScroll={panOnScroll}
             zoomOnScroll={!panOnScroll}
           >
-            <Background variant={BackgroundVariant.Dots} gap={16} />
+            <Background variant={BackgroundVariant.Dots} gap={24} size={1} />
             <BuilderControls
               panOnScroll={panOnScroll}
               onTogglePanOnScroll={togglePanOnScroll}

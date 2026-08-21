@@ -422,6 +422,12 @@ msgstr "End Operations"
 msgid "Enter PIN for {0}"
 msgstr "Enter PIN for {0}"
 
+msgid "Enter the 6-digit code from your authenticator app"
+msgstr "Enter the 6-digit code from your authenticator app"
+
+msgid "Enter the 6-digit code from your authenticator app to resume."
+msgstr "Enter the 6-digit code from your authenticator app to resume."
+
 msgid "Error"
 msgstr "Error"
 
@@ -923,6 +929,9 @@ msgstr "Operator Performed"
 msgid "Optional"
 msgstr "Optional"
 
+msgid "or"
+msgstr "or"
+
 msgid "Overall result"
 msgstr "Overall result"
 
@@ -943,6 +952,9 @@ msgstr "Partial Disposition"
 
 msgid "Passed Inspection"
 msgstr "Passed Inspection"
+
+msgid "Passkey unlock failed"
+msgstr "Passkey unlock failed"
 
 msgid "Pause"
 msgstr "Pause"
@@ -1218,11 +1230,17 @@ msgstr "Serial numbers"
 msgid "Serial Numbers"
 msgstr "Serial Numbers"
 
+msgid "Session locked"
+msgstr "Session locked"
+
 msgid "Set Clock Out"
 msgstr "Set Clock Out"
 
 msgid "Set clock-out time"
 msgstr "Set clock-out time"
+
+msgid "Set up in Carbon"
+msgstr "Set up in Carbon"
 
 msgid "Setup"
 msgstr "Setup"
@@ -1248,8 +1266,14 @@ msgstr "Sign in with Outlook"
 msgid "Sign in with Passkey"
 msgstr "Sign in with Passkey"
 
+msgid "Sign out"
+msgstr "Sign out"
+
 msgid "Sign Out"
 msgstr "Sign Out"
+
+msgid "Sign out instead"
+msgstr "Sign out instead"
 
 msgid "Signed in as {stationName}"
 msgstr "Signed in as {stationName}"
@@ -1375,14 +1399,29 @@ msgstr "Tracked Entity"
 msgid "Tracking"
 msgstr "Tracking"
 
+msgid "Two-factor authentication"
+msgstr "Two-factor authentication"
+
+msgid "Two-factor authentication required"
+msgstr "Two-factor authentication required"
+
 msgid "Type a message..."
 msgstr "Type a message..."
+
+msgid "Unable to unlock"
+msgstr "Unable to unlock"
 
 msgid "Unissued serial/batch materials"
 msgstr "Unissued serial/batch materials"
 
 msgid "Unknown"
 msgstr "Unknown"
+
+msgid "Unlock"
+msgstr "Unlock"
+
+msgid "Unlock with passkey"
+msgstr "Unlock with passkey"
 
 msgid "Unpick"
 msgstr "Unpick"
@@ -1425,6 +1464,12 @@ msgstr "Uploaded: {0}"
 msgid "Uploading {0}"
 msgstr "Uploading {0}"
 
+msgid "Use a different account"
+msgstr "Use a different account"
+
+msgid "Verify"
+msgstr "Verify"
+
 msgid "View maintenance dispatch"
 msgstr "View maintenance dispatch"
 
@@ -1451,3 +1496,9 @@ msgstr "You clocked in at <0/>. You can edit your clock-out time below or acknow
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
+
+msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
+msgstr "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
+
+msgid "Your session was locked after inactivity."
+msgstr "Your session was locked after inactivity."

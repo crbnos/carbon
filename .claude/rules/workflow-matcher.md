@@ -164,3 +164,17 @@ Kysely bypasses RLS. **The caller authorizes first** — phase 7's activation ro
   account's concurrency, not a per-`companyId`/per-`workflowId` cap. See `workflow-engine.md`.
 - Deploy-time drift checks live with `packages/checks`: the `workflow-trigger-event-drift`
   SQL invariant and `pnpm --filter @carbon/checks workflow-events`.
+
+## Custom-field trigger ids
+
+`computeEventIds` emits `<entity>.customFields.<fieldId>.changed` for every
+`customFields.<id>` key in the diff, on any table that maps to a triggerable entity. The id is
+**derived from the data, never looked up** — it is per company and the catalog is not — so the
+matcher stays company-blind and no company lookup enters the hot path. `catalog.getEvent(id)`
+is what decides whether the entity may carry one at all (`item` and reference-only entities
+cannot), so that rule lives in exactly one place. Custom-field ids are appended AFTER the
+generated `.changed` ids, keeping "first event id wins" picking the same winner as before for a
+workflow subscribed to both a column and a field on the same update.
+
+`deriveWorkflowSubscriptions` resolves through `getCatalogEvent` rather than indexing
+`WORKFLOW_EVENTS`, which is what gives a custom-field trigger its `UPDATE` subscription.

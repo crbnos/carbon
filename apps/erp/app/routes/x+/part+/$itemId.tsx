@@ -29,7 +29,6 @@ import { ResizablePanels } from "~/components/Layout";
 import { flattenTree } from "~/components/TreeView";
 import type { ItemFile, PartSummary } from "~/modules/items";
 import {
-  changeNoticeOpenStatuses,
   findChangeNoticesForItem,
   getItemFiles,
   getItemSupersededBy,
@@ -40,8 +39,10 @@ import {
   getPart,
   getPartUsedIn,
   getPickMethods,
-  getSupplierParts
+  getSupplierParts,
+  isChangeNoticeOpen
 } from "~/modules/items";
+import { getUnreleasedChangeOrderForItem } from "~/modules/items/items.server";
 import type { Method } from "~/modules/items/types";
 import {
   BoMActions,
@@ -49,7 +50,11 @@ import {
   SelectedItemProperties
 } from "~/modules/items/ui/Item";
 import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
-import { UsedInSkeleton, UsedInTree } from "~/modules/items/ui/Item/UsedIn";
+import {
+  changeNoticesUsedInNode,
+  UsedInSkeleton,
+  UsedInTree
+} from "~/modules/items/ui/Item/UsedIn";
 import { PartHeader, PartProperties } from "~/modules/items/ui/Parts";
 import { getTagsList } from "~/modules/shared";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
@@ -79,7 +84,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     tags,
     supersession,
     supersededBy,
-    openChangeNotices
+    allChangeNotices,
+    unreleasedChangeOrder
   ] = await Promise.all([
     getPart(client, itemId, companyId),
     getSupplierParts(client, itemId, companyId),
@@ -87,12 +93,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getTagsList(client, companyId, "part"),
     getItemSupersession(client, itemId, companyId),
     getItemSupersededBy(client, itemId, companyId),
-    // Locks manual version/revision creation while a CO owns this part
-    findChangeNoticesForItem(client, {
-      itemId,
-      companyId,
-      statuses: changeNoticeOpenStatuses
-    })
+    // Every CO, any status; the open subset (which locks manual version/revision
+    // creation) is derived below.
+    findChangeNoticesForItem(client, { itemId, companyId }),
+    // Locks the Active toggle while the change notice that minted this item is
+    // still open — release is what activates it.
+    getUnreleasedChangeOrderForItem(client, { itemId, companyId })
   ]);
 
   if (partSummary.data?.companyId !== companyId) {
@@ -108,6 +114,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       )
     );
   }
+
+  const changeNotices = allChangeNotices.data ?? [];
+  const openChangeNotices = changeNotices.filter((cn) =>
+    isChangeNoticeOpen(cn.status)
+  );
 
   const url = new URL(request.url);
   const requestedMethodId = url.searchParams.get("methodId");
@@ -159,7 +170,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     tags: tags.data ?? [],
     usedIn: getPartUsedIn(client, itemId, companyId),
     methodTree,
-    openChangeNotices: openChangeNotices.data ?? []
+    changeNotices,
+    openChangeNotices,
+    // Fail closed: a lookup we couldn't read can't prove the item is CO-free.
+    changeNoticesUnavailable: allChangeNotices.error !== null,
+    unreleasedChangeOrder
   };
 }
 
@@ -175,7 +190,7 @@ export default function PartRoute() {
 
   if (!partData) throw new Error("Could not find part data");
 
-  const { usedIn, methodTree } = useLoaderData<typeof loader>();
+  const { usedIn, methodTree, changeNotices } = useLoaderData<typeof loader>();
 
   const isManufactured = partData.partSummary?.replenishmentSystem !== "Buy";
 
@@ -385,6 +400,13 @@ export default function PartRoute() {
                                 children: inspections
                               });
 
+                              tree.push(
+                                changeNoticesUsedInNode(
+                                  changeNotices,
+                                  t`Change Notices`
+                                )
+                              );
+
                               return (
                                 <UsedInTree
                                   tree={tree}
@@ -551,6 +573,13 @@ export default function PartRoute() {
                               module: "quality",
                               children: inspections
                             });
+
+                            tree.push(
+                              changeNoticesUsedInNode(
+                                changeNotices,
+                                t`Change Notices`
+                              )
+                            );
 
                             return (
                               <UsedInTree

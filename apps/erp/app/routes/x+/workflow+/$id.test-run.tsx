@@ -189,7 +189,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (module !== undefined) {
     const claims = await getUserClaims(gate.userId, gate.companyId);
     const granted = claims.permissions[module]?.view ?? [];
-    if (!granted.includes("0") && !granted.includes(gate.companyId)) {
+    if (!granted.includes(gate.companyId)) {
       return refuse(noAccess(module), 403);
     }
   }

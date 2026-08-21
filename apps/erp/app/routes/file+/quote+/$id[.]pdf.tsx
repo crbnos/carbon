@@ -1,5 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { ensureFont, QuotePDF } from "@carbon/documents/pdf";
+import { ensureFont, getQuoteDisplayId, QuotePDF } from "@carbon/documents/pdf";
 import {
   collectSectionIds,
   resolveTemplate,
@@ -203,7 +203,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const headers = new Headers({
     "Content-Type": "application/pdf",
-    "Content-Disposition": `inline; filename="${company.data.name} - ${quote.data.quoteId}.pdf"`
+    "Content-Disposition": `inline; filename="${company.data.name} - ${getQuoteDisplayId(quote.data)}.pdf"`
   });
   return new Response(new Uint8Array(body), { status: 200, headers });
 }

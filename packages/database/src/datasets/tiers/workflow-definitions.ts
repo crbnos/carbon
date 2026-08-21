@@ -18,7 +18,7 @@ export const SEED_WORKFLOW_BUILDERS = {
   motor: buildMotorWorkflows
 };
 
-export const FORMAT_VERSION = 3;
+export const FORMAT_VERSION = 4;
 
 /** Mirrors each event's `match` block in the workflow catalog, spelled out here for the
  * same package-cycle reason. `null` is a business moment: it has no table to subscribe to. */

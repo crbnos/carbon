@@ -13,7 +13,7 @@ import {
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
-import { getCurrencyByCode } from "../accounting/accounting.service";
+import { getCurrencyByCode } from "../accounting/accounting.ee.service";
 import { getEmployeeJob } from "../people/people.service";
 import {
   getCustomerPayment,
@@ -41,14 +41,31 @@ const SALES_INVOICES_LIST_COLUMNS =
   "id,invoiceId,status,customerId,customerReference,invoiceCustomerId,postingDate,dateIssued,dateDue,datePaid,balance,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,invoiceTotal,paymentTermName" as const;
 
 /**
+ * The payment term an invoice falls back to when none is specified — Net 30,
+ * matching Stripe's default of 30 days until an invoice is due. Without it an
+ * invoice with no payment term carried no due date at all, so it could never
+ * read as overdue and never surfaced in AR/AP aging.
+ *
+ * Mirrors DEFAULT_PAYMENT_TERM in
+ * packages/database/supabase/functions/shared/calculate-due-date.ts — keep the
+ * two in sync.
+ */
+export const DEFAULT_PAYMENT_TERM: {
+  daysDue: number;
+  calculationMethod: Database["public"]["Enums"]["paymentTermCalculationMethod"];
+} = { daysDue: 30, calculationMethod: "Net" };
+
+/**
  * Compute an invoice's Due Date from its Issue Date and Payment Term.
- * Returns null when either input is missing, the payment term genuinely doesn't
- * exist for the company, or the stored date can't be parsed — callers fall back
- * to a plain field update in that case. A payment-term *query failure* is
- * different: it throws, so callers abort instead of writing the invoice with a
- * stale dateDue. The read is scoped by companyId for tenant isolation (defense
- * in depth alongside RLS) and uses maybeSingle so an absent row is data: null
- * (not an error) — keeping "missing" distinguishable from "failed".
+ * Returns null only when the issue date is missing or can't be parsed — callers
+ * fall back to a plain field update in that case. A missing payment term is NOT
+ * a missing due date: an unset paymentTermId, or one whose row genuinely
+ * doesn't exist for the company, falls back to DEFAULT_PAYMENT_TERM (Net 30).
+ * A payment-term *query failure* is different: it throws, so callers abort
+ * instead of writing the invoice with a stale dateDue. The read is scoped by
+ * companyId for tenant isolation (defense in depth alongside RLS) and uses
+ * maybeSingle so an absent row is data: null (not an error) — keeping "missing"
+ * distinguishable from "failed".
  *
  * The term's calculationMethod decides the anchor for daysDue:
  * - "Net": daysDue days after the issue date.
@@ -69,23 +86,25 @@ export async function computeInvoiceDateDue(
   }
 ): Promise<string | null> {
   const { dateIssued, paymentTermId, companyId } = args;
-  if (!dateIssued || !paymentTermId) return null;
+  if (!dateIssued) return null;
 
-  const paymentTerm = await client
-    .from("paymentTerm")
-    .select("daysDue, calculationMethod")
-    .eq("id", paymentTermId)
-    .eq("companyId", companyId)
-    .maybeSingle();
+  const paymentTerm = paymentTermId
+    ? await client
+        .from("paymentTerm")
+        .select("daysDue, calculationMethod")
+        .eq("id", paymentTermId)
+        .eq("companyId", companyId)
+        .maybeSingle()
+    : null;
 
-  if (paymentTerm.error) {
+  if (paymentTerm?.error) {
     throw new Error(
       `Failed to load payment term ${paymentTermId} while recomputing invoice due date: ${paymentTerm.error.message}`
     );
   }
-  if (!paymentTerm.data) return null;
 
-  const { daysDue, calculationMethod } = paymentTerm.data;
+  const { daysDue, calculationMethod } =
+    paymentTerm?.data ?? DEFAULT_PAYMENT_TERM;
 
   try {
     const issued = parseDate(dateIssued);

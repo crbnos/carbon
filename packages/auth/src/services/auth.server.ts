@@ -12,7 +12,9 @@ import { createHash } from "crypto";
 import { redirect } from "react-router";
 import {
   CarbonEdition,
+  CONTROLLED_ENVIRONMENT,
   REFRESH_ACCESS_TOKEN_THRESHOLD,
+  SESSION_IDLE_LOCK_MS,
   STRIPE_BYPASS_COMPANY_IDS,
   VERCEL_URL
 } from "../config/env";
@@ -22,6 +24,7 @@ import { getCarbonServiceRole } from "../lib/supabase/client.server";
 import type { AuthSession } from "../types";
 import { path } from "../utils/path";
 import { error } from "../utils/result";
+import { logAuthEvent } from "./auth-events.server";
 import { isCarbonOwnedCompany } from "./company.server";
 import {
   destroyAuthSession,
@@ -32,6 +35,8 @@ import { getCompaniesForUser } from "./users";
 import { getUserClaims } from "./users.server";
 
 const log = getLogger("auth");
+
+export { logAuthEvent } from "./auth-events.server";
 
 // Each matched loader used to build its own Supabase client for identical
 // credentials; `createClient` is not free and they are interchangeable.
@@ -126,10 +131,11 @@ function getCompanyIdFromAPIKey(apiKey: string) {
     .single();
 }
 
-function makeAuthSession(
+export function makeAuthSession(
   supabaseSession: SupabaseAuthSession | null,
   companyId: string,
-  companyGroupId: string
+  companyGroupId: string,
+  options?: { mfaVerified?: boolean }
 ): AuthSession | null {
   if (!supabaseSession) return null;
 
@@ -148,7 +154,13 @@ function makeAuthSession(
     email: supabaseSession.user.email,
     expiresIn:
       (supabaseSession.expires_in ?? 3000) - REFRESH_ACCESS_TOKEN_THRESHOLD,
-    expiresAt: supabaseSession.expires_at ?? -1
+    expiresAt: supabaseSession.expires_at ?? -1,
+    // Session-lock/termination clocks (NIST 3.1.10/3.1.11). Stamped at every mint
+    // AND on the refresh rebuild; refreshAuthSession then re-preserves the original
+    // createdAt/lastActiveAt so a silent token refresh never resets either clock.
+    createdAt: Date.now(),
+    lastActiveAt: Date.now(),
+    ...(options?.mfaVerified ? { mfaVerified: true } : {})
   };
 }
 
@@ -185,7 +197,12 @@ function getEffectiveUser(
   try {
     const pinIn = JSON.parse(pinRaw);
     const elapsed = Date.now() - pinIn.pinnedAt;
-    if (elapsed > 3600000) return sessionUserId;
+    // Console operator idle window. A controlled environment (ITAR/CUI, NIST
+    // 3.1.10) drops the operator to re-PIN after the standard idle-lock window
+    // instead of the default 1h — pinnedAt is refreshed on every shell
+    // navigation, so this is effectively an inactivity timeout.
+    const maxAge = CONTROLLED_ENVIRONMENT ? SESSION_IDLE_LOCK_MS : 3600000;
+    if (elapsed > maxAge) return sessionUserId;
     return pinIn.userId ?? sessionUserId;
   } catch {
     return sessionUserId;
@@ -358,11 +375,7 @@ export async function requirePermissions(
           myClaims.permissions[permission]?.[
             action as "view" | "create" | "update" | "delete"
           ];
-        return (
-          permissionForCompany?.includes("0") || // 0 is the wildcard for all companies
-          permissionForCompany?.includes(companyId) ||
-          false
-        );
+        return permissionForCompany?.includes(companyId) || false;
       } else if (Array.isArray(permission)) {
         return permission.every((p) => {
           const permissionForCompany =
@@ -378,6 +391,13 @@ export async function requirePermissions(
   );
 
   if (!hasRequiredPermissions) {
+    logAuthEvent("permission_denied", {
+      userId,
+      actor: email,
+      companyId,
+      ip: request.headers.get("x-forwarded-for") ?? undefined,
+      reason: JSON.stringify(requiredPermissions)
+    });
     if (myClaims.role === null) {
       throw redirect("/", await destroyAuthSession(request));
     }
@@ -459,10 +479,13 @@ export async function signInWithBypassEmail(
     .eq("id", companies?.[0] ?? "")
     .single();
 
+  // Local-dev shortcut only — never challenged, so mark it verified up front
+  // or the MFA re-check would bounce a bypass user who has a factor enrolled.
   return makeAuthSession(
     sessionData.session,
     companies?.[0] ?? "",
-    companyRecord?.companyGroupId ?? ""
+    companyRecord?.companyGroupId ?? "",
+    { mfaVerified: true }
   );
 }
 

@@ -20,6 +20,8 @@ import { DateTime } from "~/components";
 type AuditLogSettingsProps = {
   enabled: boolean;
   archives: AuditLogArchive[];
+  /** Controlled (ITAR/CUI) environment: audit is required and cannot be disabled. */
+  controlled?: boolean;
 };
 
 function formatBytes(bytes: number): string {
@@ -31,7 +33,7 @@ function formatBytes(bytes: number): string {
 }
 
 const AuditLogSettings = memo(
-  ({ enabled, archives }: AuditLogSettingsProps) => {
+  ({ enabled, archives, controlled }: AuditLogSettingsProps) => {
     const fetcher = useFetcher();
 
     const isToggling = fetcher.state !== "idle";
@@ -78,7 +80,12 @@ const AuditLogSettings = memo(
                   )}
                 </span>
                 <span className="text-sm text-muted-foreground">
-                  {enabled ? (
+                  {controlled ? (
+                    <Trans>
+                      Required in a controlled environment — audit logging
+                      cannot be turned off.
+                    </Trans>
+                  ) : enabled ? (
                     <Trans>
                       All changes to auditable entities are being recorded.
                     </Trans>
@@ -92,7 +99,7 @@ const AuditLogSettings = memo(
               <Switch
                 checked={enabled}
                 onCheckedChange={handleToggle}
-                disabled={isToggling}
+                disabled={isToggling || controlled}
               />
             </HStack>
           </CardContent>

@@ -47,6 +47,7 @@ export const eventQueueFunction = inngest.createFunction(
   { event: "carbon/event-queue.process" },
   async ({ step }) => {
     let routed = 0;
+    let poisonedTotal = 0;
     let lastPassFull = false;
 
     for (let pass = 0; pass < MAX_PASSES; pass++) {
@@ -54,9 +55,10 @@ export const eventQueueFunction = inngest.createFunction(
       type ReadQueueResult = {
         grouped: Record<HandlerType, QueueJob[]>;
         allIds: number[];
+        poisoned: number[];
       };
 
-      const { grouped, allIds } = (await step.run(
+      const { grouped, allIds, poisoned } = (await step.run(
         `read-queue-${pass}`,
         async () => {
           const pg = getJobDatabaseClient();
@@ -74,20 +76,49 @@ export const eventQueueFunction = inngest.createFunction(
             EMBEDDING: []
           };
 
+          // Unknown handler types are poison: pushing into a missing bucket
+          // would throw, crash-loop the drainer, and wedge ALL event
+          // processing. Collect them for archival to pgmq's dead-letter
+          // (pgmq.a_event_system) instead.
+          const poisoned: number[] = [];
+          const allIds: number[] = [];
           for (const job of jobs) {
-            grouped[job.message.handlerType].push(job);
+            const bucket = grouped[job.message.handlerType];
+            if (bucket) {
+              bucket.push(job);
+              allIds.push(job.msg_id);
+            } else {
+              console.error(
+                `event-queue: unknown handlerType "${job.message?.handlerType}" on msg_id ${job.msg_id}; archiving to dead-letter`
+              );
+              poisoned.push(job.msg_id);
+            }
           }
 
           return {
             grouped,
-            allIds: jobs.map((j) => j.msg_id)
+            allIds,
+            poisoned
           };
         }
       )) as ReadQueueResult;
 
-      if (allIds.length === 0) {
+      if (allIds.length === 0 && poisoned.length === 0) {
         lastPassFull = false;
         break;
+      }
+
+      // 2. Archive poisoned messages to pgmq's built-in dead-letter table
+      // (pgmq.a_event_system). Archiving dequeues, so these ids are already
+      // excluded from the delete-processed list below.
+      if (poisoned.length > 0) {
+        await step.run(`archive-poisoned-${pass}`, async () => {
+          const pg = getJobDatabaseClient();
+          await sql`SELECT pgmq.archive(${QUEUE_NAME}, ${poisoned}::bigint[])`.execute(
+            pg
+          );
+        });
+        poisonedTotal += poisoned.length;
       }
 
       // 3. Dispatch webhooks
@@ -195,16 +226,19 @@ export const eventQueueFunction = inngest.createFunction(
         }
       }
 
-      // 9. Delete processed messages from PGMQ
-      await step.run(`delete-processed-${pass}`, async () => {
-        const pg = getJobDatabaseClient();
-        await sql`SELECT pgmq.delete(${QUEUE_NAME}, id::bigint) FROM unnest(${allIds}::bigint[]) AS id`.execute(
-          pg
-        );
-      });
+      // 9. Delete processed messages from PGMQ (archived poison ids are
+      // excluded — archive already dequeued them)
+      if (allIds.length > 0) {
+        await step.run(`delete-processed-${pass}`, async () => {
+          const pg = getJobDatabaseClient();
+          await sql`SELECT pgmq.delete(${QUEUE_NAME}, id::bigint) FROM unnest(${allIds}::bigint[]) AS id`.execute(
+            pg
+          );
+        });
+      }
 
       routed += allIds.length;
-      lastPassFull = allIds.length === BATCH_SIZE;
+      lastPassFull = allIds.length + poisoned.length === BATCH_SIZE;
       if (!lastPassFull) {
         break;
       }
@@ -219,6 +253,6 @@ export const eventQueueFunction = inngest.createFunction(
       });
     }
 
-    return { routed };
+    return { routed, poisoned: poisonedTotal };
   }
 );

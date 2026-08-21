@@ -16,6 +16,10 @@ export enum NotificationEvent {
   ChangeNoticeDone = "change-order-done",
   DigitalQuoteResponse = "digital-quote-response",
   GaugeCalibrationExpired = "gauge-calibration-expired",
+  // Accounting sync needs attention (failed sync operations); like Workflow,
+  // the text is carried on the payload — documentId is the provider id, not a
+  // readable document.
+  IntegrationSync = "integrationSync",
   JobAssignment = "job-assignment",
   JobCompleted = "job-completed",
   JobOperationAssignment = "job-operation-assignment",
@@ -166,6 +170,7 @@ export function getNotificationTopic(
     // No topic of its own: topicLabels in the account settings route is an
     // exhaustive Record<NotificationTopic, string>.
     case NotificationEvent.Workflow:
+    case NotificationEvent.IntegrationSync:
       return NotificationTopic.General;
     default:
       return NotificationTopic.General;
@@ -246,6 +251,8 @@ export function getNotificationEmailHeading(event: NotificationEvent): string {
       return "Change notice complete";
     case NotificationEvent.Workflow:
       return "Workflow";
+    case NotificationEvent.IntegrationSync:
+      return "Accounting sync needs attention";
     default:
       return "You have a new notification";
   }
@@ -279,6 +286,8 @@ export function getNotificationEmailCtaLabel(event: NotificationEvent): string {
       return "View response";
     case NotificationEvent.Workflow:
       return "View details";
+    case NotificationEvent.IntegrationSync:
+      return "View sync activity";
     default:
       return "View details";
   }
@@ -316,4 +325,82 @@ export function getNotificationTopicPhrase(
     default:
       return `${count} unread ${plural}`;
   }
+}
+
+export type InlineLinkSegment =
+  | { text: string }
+  | { text: string; href: string };
+
+/**
+ * Deliberately strict: `[label](url)` where the url is an absolute https URL on the
+ * supplied origin. A relative path, another host, or a `javascript:` url is left as
+ * literal text.
+ *
+ * This is a security boundary, not a formatting nicety. A workflow's message body is
+ * customer-authored, so an unrestricted matcher would let its author choose where a
+ * notification the recipient trusts actually points.
+ */
+const INLINE_LINK = /\[([^\]\n]+)\]\((https:\/\/[^\s()]+)\)/g;
+
+export function renderInlineLinks(
+  text: string,
+  origin: string
+): InlineLinkSegment[] {
+  if (text === "") return [];
+
+  let allowed: URL;
+  try {
+    allowed = new URL(origin);
+  } catch {
+    return [{ text }];
+  }
+
+  const segments: InlineLinkSegment[] = [];
+  let index = 0;
+
+  for (const match of text.matchAll(INLINE_LINK)) {
+    const [whole, label, href] = match;
+    if (label === undefined || href === undefined) continue;
+
+    let parsed: URL;
+    try {
+      parsed = new URL(href);
+    } catch {
+      continue;
+    }
+    if (parsed.protocol !== "https:" || parsed.origin !== allowed.origin) {
+      continue;
+    }
+
+    const start = match.index ?? 0;
+    if (start > index) segments.push({ text: text.slice(index, start) });
+    segments.push({ text: label, href: parsed.toString() });
+    index = start + whole.length;
+  }
+
+  if (index < text.length) segments.push({ text: text.slice(index) });
+  return segments;
+}
+
+/** Slack mrkdwn requires `&`, `<` and `>` escaped in text; inside a `<url|label>` a literal
+ * `|` would also terminate the label, so it is swapped for a lookalike. */
+export function escapeSlackText(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\|/g, "¦");
+}
+
+/** The Slack rendition of the same `[label](url)` the in-app and email renderers handle —
+ * Slack spells a link `<url|label>`, so the markdown would otherwise be shown verbatim.
+ * Goes through `renderInlineLinks`, so it inherits that matcher's origin restriction. */
+export function renderSlackMrkdwn(text: string, origin: string): string {
+  return renderInlineLinks(text, origin)
+    .map((segment) =>
+      "href" in segment
+        ? `<${segment.href}|${escapeSlackText(segment.text)}>`
+        : escapeSlackText(segment.text)
+    )
+    .join("");
 }

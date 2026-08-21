@@ -30,8 +30,8 @@ describe("dev seed workflows", () => {
     const types = new Set(workflows.flatMap((w) => w.nodes.map((n) => n.type)));
     expect([...types].sort()).toEqual([
       "action",
+      "compute",
       "condition",
-      "entity",
       "filter",
       "lookup",
       "trigger"
@@ -40,7 +40,7 @@ describe("dev seed workflows", () => {
 
   it.each(everyDataset)("%s is a valid definition", (_name, workflow) => {
     const read = readWorkflowVersion({
-      formatVersion: 3,
+      formatVersion: 4,
       nodes: workflow.nodes,
       edges: workflow.edges
     });

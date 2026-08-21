@@ -33,9 +33,9 @@ packages/workflows/src/catalog/labels.generated.ts   COMMITTED  one msg`` per ev
 ```
 
 Today: 10 triggerable entities with 77 watched columns → 97 record events, plus 9 moments
-= **106 events**, plus property maps for 16 entities (the 10 triggerable ones and 6
-reference-only: `user`, `group`, `jobOperation`, `salesInvoice`, `purchaseInvoice`,
-`location`), plus **16 actions** and **15 operations**.
+= **106 events**, plus property maps for 17 entities (the 10 triggerable ones and 7
+reference-only: `user`, `group`, `jobOperation`, `nonConformanceType`, `salesInvoice`,
+`purchaseInvoice`, `location`), plus **16 actions** and **15 operations**.
 
 To add an entity, a moment, an action or an operation, edit the one hand-written file
 and run:
@@ -245,3 +245,32 @@ the `workflow-trigger-event-drift` SQL invariant and
   event id in the separate generated file, which also holds action and operation labels.
 - A hand-written action id that collides with a generated `<entity>.update` is a build error,
   not a silent overwrite.
+
+## Custom fields — the per-company overlay
+
+The catalog is build-time and global; a company's custom fields are runtime and per company,
+so they cannot be generated into `events.generated.ts`. Instead `catalog/custom-fields.ts`
+builds a `CatalogOverlay` from the company's `customField` rows, and
+`createWorkflowCatalog(overlay)` merges it — **generated first, overlay second**, so a real
+column always wins and a customer cannot shadow one.
+
+- The property path is ONE segment: the literal string `customFields.<fieldId>`, keyed by the
+  field's **id**, which is the key inside the JSONB blob. That keeps `walkPath` and the runtime
+  `walk` single-step, and matches the differ, which never emits the bare `customFields` key.
+- `custom-fields.ts` holds the ONLY `DataType → ValueType` map. List → `string` plus `choices`
+  from `listOptions`; User/Customer/Supplier → `t.entity(...)`; File → the stored path as a
+  string, not a link.
+- Trigger ids are `<entity>.customFields.<fieldId>.changed` and are **parsed, not looked up**:
+  `WORKFLOW_EVENTS` stays a closed, committed, drift-checked record. `getCatalogEvent(id)` is
+  the single lookup — the static map first, then `resolveCustomFieldEvent`. Every consumer goes
+  through it, including `sync.ts`'s `deriveWorkflowSubscriptions`.
+- `item` is excluded: its custom fields attach to the subtypes (`part`, `material`, `tool`, …)
+  while the catalog triggers on the shared `item` table. Reference-only entities are excluded
+  too — no `watch` block means no change events at all.
+- The matcher stays **company-blind**: `computeEventIds` derives the id from the
+  `customFields.<id>` diff key the nested differ already emits, and the existing
+  `workflowTriggerEvent` join does the filtering. No company lookup enters the hot path.
+- Writes go through the `workflow_merge_custom_fields` RPC (SECURITY INVOKER, `p_table`
+  validated against `customFieldTable`) so setting one field cannot erase the others.
+- The engine builds the overlay once per run in the `custom-fields` durable step, reading
+  `customField` through the **owner's** client like every other business read.

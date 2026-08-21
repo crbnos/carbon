@@ -19,6 +19,7 @@ import {
 import {
   Badge,
   Button,
+  cn,
   Drawer,
   DrawerBody,
   DrawerContent,
@@ -28,12 +29,17 @@ import {
   HStack,
   ScrollArea,
   Switch,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   toast,
   VStack
 } from "@carbon/react";
 import { SUPPORT_EMAIL } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useMemo, useState } from "react";
+import type { ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router";
 import { Processes } from "~/components/Form";
 import { MethodIcon, TrackingTypeIcon } from "~/components/Icons";
@@ -112,6 +118,23 @@ function GatedIntegrationActionButton({
 }
 
 /**
+ * Fills runtime placeholders in a setting's help text — the webhook host and
+ * company ID that only exist at render time. Lets a static config description
+ * (e.g. Rillet's webhook URL `https://<your-carbon-host>/api/webhook/rillet/<your company ID>`)
+ * render as a concrete, copy-pasteable URL.
+ */
+function fillSettingPlaceholders(
+  description: string | undefined,
+  host: string,
+  companyId: string
+): string | undefined {
+  if (!description) return description;
+  return description
+    .replaceAll("<your-carbon-host>", host || "<your-carbon-host>")
+    .replaceAll("<your company ID>", companyId);
+}
+
+/**
  * Helper to normalize option to consistent format
  */
 function normalizeOption(option: IntegrationSettingOption) {
@@ -185,6 +208,22 @@ function SettingFieldInner({ setting }: { setting: IntegrationSetting }) {
       );
 
     case "password":
+      return (
+        <div className="w-full">
+          <Password name={setting.name} label={setting.label} />
+          {setting.description && (
+            <p className="text-xs text-muted-foreground mt-1.5">
+              {setting.description}
+            </p>
+          )}
+        </div>
+      );
+
+    // A vault-backed credential. The stored secret is never sent to the
+    // browser, so the field loads empty: leaving it empty keeps the vaulted
+    // value, typing a new one replaces it. Rendered as a plain `Password`
+    // (which has its own show/hide toggle) — no separate "Reveal" affordance.
+    case "secret":
       return (
         <div className="w-full">
           <Password name={setting.name} label={setting.label} />
@@ -345,7 +384,7 @@ function SwitchField({ setting }: { setting: IntegrationSetting }) {
   const checked = value === true;
 
   return (
-    <div className="flex items-center justify-between gap-4 w-full py-2">
+    <div className="flex items-center justify-between gap-4 w-full p-3 border rounded-lg">
       <div className="flex flex-col flex-1">
         <span className="text-sm font-medium">{setting.label}</span>
         {setting.description && (
@@ -490,6 +529,23 @@ function SettingsGroup({
   );
 }
 
+/**
+ * An extra tab rendered next to the Settings form (e.g. the accounting
+ * Sync Activity inbox). Content is rendered outside the settings
+ * ValidatedForm, so tab content can safely contain its own forms.
+ */
+export type IntegrationFormTab = {
+  value: string;
+  label: ReactNode;
+  /**
+   * Render function receiving the shared tab bar, so each tab can render it
+   * at the top of its own body card (the white section) instead of the bar
+   * living in the gray header. The tab's content component renders `tabs` as
+   * the first child of its `DrawerBody`.
+   */
+  content: (tabs: ReactNode) => ReactNode;
+};
+
 interface IntegrationFormProps {
   metadata: Record<string, unknown>;
   installed: boolean;
@@ -499,13 +555,20 @@ interface IntegrationFormProps {
     string,
     Array<{ value: string; label: string; description?: string }>
   >;
+  /** Extra tabs after the Settings tab; when present the drawer widens and
+   * a tab bar renders under the header. */
+  tabs?: IntegrationFormTab[];
+  /** Initially-selected tab value (defaults to the Settings tab). */
+  defaultTab?: string;
 }
 
 export function IntegrationForm({
   installed,
   metadata,
   onClose,
-  dynamicOptions = {}
+  dynamicOptions = {},
+  tabs = [],
+  defaultTab
 }: IntegrationFormProps) {
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -513,16 +576,33 @@ export function IntegrationForm({
   const {
     company: { id: companyId }
   } = useUser();
+  // Host for filling webhook-URL placeholders in setting help text (client-only).
+  const webhookHost = typeof window !== "undefined" ? window.location.host : "";
 
   const { id: integrationId } = useParams();
+
+  // Controlled tab state seeded from (and following) the ?tab= deep link:
+  // links inside tab content (e.g. the QBD checklist's "Open Account
+  // Mapping") update the search param, and this effect switches the tab
+  // without a remount. Manual tab clicks don't write the URL.
+  const [activeTab, setActiveTab] = useState(defaultTab ?? "settings");
+  useEffect(() => {
+    if (defaultTab) setActiveTab(defaultTab);
+  }, [defaultTab]);
 
   const integration = integrationId
     ? availableIntegrations.find((i) => i.id === integrationId)
     : undefined;
 
-  // Extract connected organisation name from metadata (e.g. Xero tenant name)
-  const connectedOrgName = (metadata?.credentials as Record<string, unknown>)
-    ?.tenantName as string | undefined;
+  // Extract connected organisation name from metadata (e.g. Xero tenant
+  // name). New credentials keep provider fields under providerMetadata;
+  // legacy rows kept tenantName at the top level.
+  const credentialsRecord = metadata?.credentials as
+    | Record<string, unknown>
+    | undefined;
+  const connectedOrgName = ((
+    credentialsRecord?.providerMetadata as Record<string, unknown> | undefined
+  )?.tenantName ?? credentialsRecord?.tenantName) as string | undefined;
 
   // Group settings by their group property
   // Settings without a group appear first (ungrouped)
@@ -541,14 +621,21 @@ export function IntegrationForm({
       const ungrouped: IntegrationSetting[] = [];
       const grouped = new Map<string, IntegrationSetting[]>();
 
-      for (const baseSetting of integration.settings) {
-        // Merge dynamic options if available for this setting
-        const setting: IntegrationSetting = dynamicOptions[baseSetting.name]
-          ? {
-              ...baseSetting,
-              listOptions: dynamicOptions[baseSetting.name]
-            }
-          : (baseSetting as IntegrationSetting);
+      for (const rawSetting of integration.settings) {
+        const baseSetting = rawSetting as IntegrationSetting;
+        // Fill runtime placeholders (webhook host + company ID) in help text,
+        // then merge dynamic options if available for this setting.
+        const setting: IntegrationSetting = {
+          ...baseSetting,
+          description: fillSettingPlaceholders(
+            baseSetting.description,
+            webhookHost,
+            companyId
+          ),
+          ...(dynamicOptions[baseSetting.name]
+            ? { listOptions: dynamicOptions[baseSetting.name] }
+            : {})
+        };
 
         if (!setting.group) {
           ungrouped.push(setting);
@@ -573,7 +660,7 @@ export function IntegrationForm({
         groupNames: [...grouped.keys()],
         groupDescriptions: descriptions
       };
-    }, [integration, dynamicOptions]);
+    }, [integration, dynamicOptions, webhookHost, companyId]);
 
   const initialValues = useMemo(() => {
     if (!integration) return {};
@@ -600,6 +687,173 @@ export function IntegrationForm({
     return null;
   }
 
+  const hasTabs = tabs.length > 0;
+
+  const headerContent = (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center gap-3">
+        <div className="flex size-10 items-center justify-center rounded-lg border border-border bg-card p-1.5">
+          <integration.logo className="h-full w-auto" />
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <div className="flex items-center gap-2">
+            <Heading size="h3" className="truncate">
+              {integration.name}
+            </Heading>
+            {installed && <Badge variant="green">Installed</Badge>}
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Badge variant="secondary">{integration.category}</Badge>
+            <span aria-hidden>•</span>
+            <span>
+              <Trans>Published by Carbon</Trans>
+            </span>
+          </div>
+        </div>
+      </div>
+      {installed && connectedOrgName && (
+        <div className="text-sm text-muted-foreground">
+          <Trans>Connected to</Trans>{" "}
+          <span className="font-medium text-foreground">
+            {connectedOrgName}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+
+  // Shared tab bar, rendered at the top of each tab's body card (the white
+  // section) rather than in the gray header. Null when there are no tabs.
+  const tabBar = hasTabs ? (
+    <TabsList className="mb-3 self-start">
+      <TabsTrigger value="settings">
+        <Trans>Settings</Trans>
+      </TabsTrigger>
+      {tabs.map((tab) => (
+        <TabsTrigger key={tab.value} value={tab.value}>
+          {tab.label}
+        </TabsTrigger>
+      ))}
+    </TabsList>
+  ) : null;
+
+  const settingsForm = (
+    <ValidatedForm
+      validator={integration.schema}
+      method="post"
+      action={path.to.integration(integration.id)}
+      defaultValues={initialValues}
+      className="flex flex-col h-full"
+    >
+      {!hasTabs && <DrawerHeader>{headerContent}</DrawerHeader>}
+      <DrawerBody>
+        {tabBar}
+        <ScrollArea
+          className={cn(
+            "-mx-2 pb-8",
+            hasTabs ? "h-[calc(100dvh-320px)]" : "h-[calc(100dvh-240px)]"
+          )}
+        >
+          <VStack spacing={4} className="px-2">
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              {integration.description}
+            </p>
+
+            {/* @ts-expect-error TS2339 */}
+            {integration.setupInstructions && (
+              <div className="flex flex-col gap-2">
+                <div className="text-[0.6875rem] font-semibold uppercase tracking-wider text-foreground/70">
+                  <Trans>Setup instructions</Trans>
+                </div>
+                {/* @ts-expect-error TS2339 */}
+                <integration.setupInstructions companyId={companyId} />
+              </div>
+            )}
+
+            {/* Ungrouped settings appear first */}
+            {ungroupedSettings.length > 0 && (
+              <VStack spacing={4} className="w-full">
+                {ungroupedSettings.map((setting) => (
+                  <SettingField key={setting.name} setting={setting} />
+                ))}
+              </VStack>
+            )}
+
+            {/* Grouped settings in flat sections */}
+            {groupNames.map((groupName) => (
+              <ConditionalSettingsGroup
+                key={groupName}
+                name={groupName}
+                description={groupDescriptions.get(groupName)}
+                settings={groupedSettings.get(groupName) ?? []}
+              />
+            ))}
+
+            {installed && integrationActions.length > 0 && (
+              // `has-[button]` collapses the whole section (header included)
+              // when every gated action is hidden, so the toggle live-controls
+              // visibility without leaving an empty "Actions" header.
+              <div className="hidden has-[button]:flex w-full flex-col gap-3 border-t border-border pt-4">
+                <div className="text-[0.6875rem] font-semibold uppercase tracking-wider text-foreground/70">
+                  <Trans>Actions</Trans>
+                </div>
+                <VStack spacing={2} className="w-full">
+                  {integrationActions.map((action) =>
+                    action.enabledWhenSetting ? (
+                      <GatedIntegrationActionButton
+                        key={action.id}
+                        action={action}
+                        isDisabled={isDisabled}
+                      />
+                    ) : (
+                      <IntegrationActionButton
+                        key={action.id}
+                        action={action}
+                        isDisabled={isDisabled}
+                      />
+                    )
+                  )}
+                </VStack>
+              </div>
+            )}
+          </VStack>
+        </ScrollArea>
+        <div className="mt-2">
+          <p className="text-[0.6875rem] leading-relaxed text-muted-foreground">
+            Carbon Manufacturing Systems does not endorse any third-party
+            software.{" "}
+            <a
+              href={`mailto:${SUPPORT_EMAIL}`}
+              className="underline decoration-dotted underline-offset-2 hover:text-foreground"
+            >
+              Report integration
+            </a>
+            .
+          </p>
+        </div>
+      </DrawerBody>
+      <DrawerFooter>
+        <HStack>
+          {integration.settings.length > 0 ? (
+            installed ? (
+              <Submit isDisabled={isDisabled}>
+                <Trans>Update</Trans>
+              </Submit>
+            ) : (
+              <Submit isDisabled={isDisabled}>
+                <Trans>Install</Trans>
+              </Submit>
+            )
+          ) : null}
+
+          <Button variant="solid" onClick={onClose}>
+            <Trans>Close</Trans>
+          </Button>
+        </HStack>
+      </DrawerFooter>
+    </ValidatedForm>
+  );
+
   return (
     <Drawer
       open
@@ -607,146 +861,37 @@ export function IntegrationForm({
         if (!open) onClose();
       }}
     >
-      <DrawerContent>
-        <ValidatedForm
-          validator={integration.schema}
-          method="post"
-          action={path.to.integration(integration.id)}
-          defaultValues={initialValues}
-          className="flex flex-col h-full"
-        >
-          <DrawerHeader>
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-3">
-                <div className="flex size-10 items-center justify-center rounded-lg border border-border bg-card p-1.5">
-                  <integration.logo className="h-full w-auto" />
-                </div>
-                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <div className="flex items-center gap-2">
-                    <Heading size="h3" className="truncate">
-                      {integration.name}
-                    </Heading>
-                    {installed && <Badge variant="green">Installed</Badge>}
-                  </div>
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Badge variant="secondary">{integration.category}</Badge>
-                    <span aria-hidden>•</span>
-                    <span>
-                      <Trans>Published by Carbon</Trans>
-                    </span>
-                  </div>
-                </div>
-              </div>
-              {installed && connectedOrgName && (
-                <div className="text-sm text-muted-foreground">
-                  <Trans>Connected to</Trans>{" "}
-                  <span className="font-medium text-foreground">
-                    {connectedOrgName}
-                  </span>
-                </div>
-              )}
-            </div>
-          </DrawerHeader>
-          <DrawerBody>
-            <ScrollArea className="h-[calc(100dvh-240px)] -mx-2 pb-8">
-              <VStack spacing={4} className="px-2">
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                  {integration.description}
-                </p>
-
-                {/* @ts-expect-error TS2339 */}
-                {integration.setupInstructions && (
-                  <div className="flex flex-col gap-2">
-                    <div className="text-[0.6875rem] font-semibold uppercase tracking-wider text-foreground/70">
-                      <Trans>Setup instructions</Trans>
-                    </div>
-                    {/* @ts-expect-error TS2339 */}
-                    <integration.setupInstructions companyId={companyId} />
-                  </div>
-                )}
-
-                {/* Ungrouped settings appear first */}
-                {ungroupedSettings.length > 0 && (
-                  <VStack spacing={4} className="w-full">
-                    {ungroupedSettings.map((setting) => (
-                      <SettingField key={setting.name} setting={setting} />
-                    ))}
-                  </VStack>
-                )}
-
-                {/* Grouped settings in flat sections */}
-                {groupNames.map((groupName) => (
-                  <ConditionalSettingsGroup
-                    key={groupName}
-                    name={groupName}
-                    description={groupDescriptions.get(groupName)}
-                    settings={groupedSettings.get(groupName) ?? []}
-                  />
-                ))}
-
-                {installed && integrationActions.length > 0 && (
-                  // `has-[button]` collapses the whole section (header included)
-                  // when every gated action is hidden, so the toggle live-controls
-                  // visibility without leaving an empty "Actions" header.
-                  <div className="hidden has-[button]:flex w-full flex-col gap-3 border-t border-border pt-4">
-                    <div className="text-[0.6875rem] font-semibold uppercase tracking-wider text-foreground/70">
-                      <Trans>Actions</Trans>
-                    </div>
-                    <VStack spacing={2} className="w-full">
-                      {integrationActions.map((action) =>
-                        action.enabledWhenSetting ? (
-                          <GatedIntegrationActionButton
-                            key={action.id}
-                            action={action}
-                            isDisabled={isDisabled}
-                          />
-                        ) : (
-                          <IntegrationActionButton
-                            key={action.id}
-                            action={action}
-                            isDisabled={isDisabled}
-                          />
-                        )
-                      )}
-                    </VStack>
-                  </div>
-                )}
-              </VStack>
-            </ScrollArea>
-            <div className="mt-2">
-              <p className="text-[0.6875rem] leading-relaxed text-muted-foreground">
-                Carbon Manufacturing Systems does not endorse any third-party
-                software.{" "}
-                <a
-                  href={`mailto:${SUPPORT_EMAIL}`}
-                  className="underline decoration-dotted underline-offset-2 hover:text-foreground"
-                >
-                  Report integration
-                </a>
-                .
-              </p>
-            </div>
-          </DrawerBody>
-          <DrawerFooter>
-            <HStack>
-              {integration.settings.length > 0 ? (
-                installed ? (
-                  <Submit isDisabled={isDisabled}>
-                    <Trans>Update</Trans>
-                  </Submit>
-                ) : (
-                  <Submit isDisabled={isDisabled}>
-                    <Trans>Install</Trans>
-                  </Submit>
-                )
-              ) : null}
-
-              <Button variant="solid" onClick={onClose}>
-                <Trans>Close</Trans>
-              </Button>
-            </HStack>
-          </DrawerFooter>
-        </ValidatedForm>
+      <DrawerContent size={hasTabs ? "lg" : "md"}>
+        {hasTabs ? (
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="flex h-full min-h-0 flex-col"
+          >
+            <DrawerHeader>{headerContent}</DrawerHeader>
+            {/* Tab bar now lives inside each tab's body card (rendered by the
+                content via `tabBar`), so it sits on the white section. */}
+            <TabsContent
+              forceMount
+              value="settings"
+              className="min-h-0 flex-1 outline-none data-[state=inactive]:hidden"
+            >
+              {settingsForm}
+            </TabsContent>
+            {tabs.map((tab) => (
+              <TabsContent
+                forceMount
+                key={tab.value}
+                value={tab.value}
+                className="flex min-h-0 flex-1 flex-col overflow-hidden outline-none data-[state=inactive]:hidden"
+              >
+                {tab.content(tabBar)}
+              </TabsContent>
+            ))}
+          </Tabs>
+        ) : (
+          settingsForm
+        )}
       </DrawerContent>
     </Drawer>
   );

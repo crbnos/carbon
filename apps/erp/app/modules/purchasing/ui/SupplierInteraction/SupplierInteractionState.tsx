@@ -1,4 +1,8 @@
 import {
+  getPurchaseOrderDisplayId,
+  withRevisionSuffix
+} from "@carbon/documents/utils";
+import {
   Button,
   cn,
   DropdownMenu,
@@ -46,6 +50,20 @@ type SupplierInteractionStateProps = {
   // For use from quote view: sibling quotes (other quotes from same RFQ)
   siblingQuotes?: LinkedSupplierQuote[];
 };
+
+/** "Acme Tooling (SQ000012-1)", degrading to whichever half is known. */
+function buildSupplierQuoteLabel(
+  supplierName: string | undefined,
+  quoteDisplayId: string,
+  quoteId: string
+) {
+  if (supplierName) {
+    return quoteDisplayId
+      ? `${supplierName} (${quoteDisplayId})`
+      : supplierName;
+  }
+  return quoteDisplayId || `Quote ${quoteId}`;
+}
 
 function getSupplierInteractionIcon(state: string) {
   switch (state) {
@@ -195,23 +213,11 @@ const SupplierInteractionState = ({
 
                 return {
                   id: quote.id!,
-                  label: supplierName
-                    ? `${supplierName}${
-                        quote.supplierQuoteId
-                          ? ` (${quote.supplierQuoteId}${
-                              quote.revisionId && quote.revisionId > 0
-                                ? `-${quote.revisionId}`
-                                : ""
-                            })`
-                          : ""
-                      }`
-                    : quote.supplierQuoteId
-                      ? `${quote.supplierQuoteId}${
-                          quote.revisionId && quote.revisionId > 0
-                            ? `-${quote.revisionId}`
-                            : ""
-                        }`
-                      : `Quote ${quote.id}`,
+                  label: buildSupplierQuoteLabel(
+                    supplierName,
+                    withRevisionSuffix(quote.supplierQuoteId, quote.revisionId),
+                    quote.id!
+                  ),
                   path: path.to.supplierQuoteDetails(quote.id!)
                 };
               })
@@ -285,11 +291,7 @@ const SupplierInteractionState = ({
             const orderItems = orders.map((order) => ({
               id: order.id!,
               label: order.purchaseOrderId
-                ? `${order.purchaseOrderId}${
-                    order.revisionId && order.revisionId > 0
-                      ? `-${order.revisionId}`
-                      : ""
-                  }`
+                ? getPurchaseOrderDisplayId(order)
                 : `Order ${order.id}`,
               path: path.to.purchaseOrderDetails(order.id!)
             }));

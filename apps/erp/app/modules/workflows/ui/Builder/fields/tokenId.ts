@@ -54,18 +54,35 @@ export function decodeTokenId(id: string): RefPart | undefined {
   return undefined;
 }
 
-/** `Step › output › property` — display only, so it follows a rename. */
-export function refLabel(ref: RefPart, nodeName?: string): string {
-  if (ref.kind === "item") return ["Current item", ...ref.path].join(" › ");
+/** Path segments as the customer sees them. Only the segments the map names are replaced,
+ * so a shipped column keeps reading as itself. */
+export function namedPath(
+  path: string[],
+  segmentLabels?: Record<string, string>
+): string[] {
+  if (segmentLabels === undefined) return path;
+  return path.map((segment) => segmentLabels[segment] ?? segment);
+}
+
+/** `Step › output › property` — display only, so it follows a rename. `pathLabels` names
+ * the path segments as the customer sees them; the raw column names are the fallback. */
+export function refLabel(
+  ref: RefPart,
+  nodeName?: string,
+  pathLabels?: string[]
+): string {
+  const path = pathLabels ?? ref.path;
+  if (ref.kind === "item") return ["Current item", ...path].join(" › ");
   // Only a real name is titled; the id fallback is not a slug.
   const step = nodeName === undefined ? ref.nodeId : nodeNameLabel(nodeName);
-  return [step, outputLabel(ref.output), ...ref.path].join(" › ");
+  return [step, outputLabel(ref.output), ...path].join(" › ");
 }
 
 /** Just the last segment — what a chip shows when the full path will not fit. `refLabel`
  * stays the tooltip and the search text, so this is a short form, not a second source. */
-export function refLeafLabel(ref: RefPart): string {
-  const last = ref.path[ref.path.length - 1];
+export function refLeafLabel(ref: RefPart, pathLabels?: string[]): string {
+  const path = pathLabels ?? ref.path;
+  const last = path[path.length - 1];
   if (last !== undefined) return last;
   return ref.kind === "item" ? "Current item" : outputLabel(ref.output);
 }

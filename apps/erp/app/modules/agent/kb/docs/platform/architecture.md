@@ -28,13 +28,13 @@ about twenty-five shared libraries, built together by pnpm workspaces and
 Turborepo [[25]](#g25). Two of those applications are the products people log into, the
 ERP and the MES. Everything else exists to serve them.
 
-The centre of gravity is a single Postgres [[17]](#g17) database. Almost every arrow in
+The center of gravity is a single Postgres [[17]](#g17) database. Almost every arrow in
 this doc eventually points at it. Unusually for a web app, a lot of logic that you might
 expect to live in application code lives _inside_ the database instead: permissions,
 computed totals, and the "something changed" notifications. That is the single most
 important thing to understand about Carbon, and [Part 3](#part-3-layer-by-layer) explains why.
 
-Colour is used sparingly in these diagrams, and it means the same thing in all of them:
+Color is used sparingly in these diagrams, and it means the same thing in all of them:
 **blue** is our own apps, **pink** is stored state, **amber** is work that happens in the
 background. Everything else is left plain on purpose.
 
@@ -359,7 +359,7 @@ FOR SELECT USING (
 
 So if a query for another company's purchase orders reaches Postgres, it returns zero
 rows. The tenant boundary is enforced by the database, not by us remembering a `.eq()`.
-Service functions still filter by `companyId` anyway, as a second line of defence.
+Service functions still filter by `companyId` anyway, as a second line of defense.
 
 **The escape hatch.** Notice `bypassRls: true` in the Purchase Order action. RLS costs
 real query time on hot paths, so for trusted employee requests we hand back a service-role
@@ -407,7 +407,7 @@ return db.transaction().execute(async (trx) => {
 ```
 
 Three warnings. Kysely **throws** on failure rather than returning `{ error }`, so wrap it
-in `try/catch`. It applies **no** RLS, so authorise before you call it. And the pool it
+in `try/catch`. It applies **no** RLS, so authorize before you call it. And the pool it
 draws from is small (edge functions ask for exactly one connection,
 `getConnectionPool(1)`): if code inside a transaction reaches for a second connection from
 the same pool, that second request queues behind a transaction that cannot finish until it
@@ -622,7 +622,7 @@ refuses to start without it.
 | App         | What it is                                                                  | Dev port |
 | ----------- | --------------------------------------------------------------------------- | -------- |
 | `erp`       | The main product, and the host for all background jobs. By far the largest. | 3000     |
-| `mes`       | Shop floor: job operations, work centres, scheduling. Touch-first.          | 3001     |
+| `mes`       | Shop floor: job operations, work centers, scheduling. Touch-first.          | 3001     |
 | `academy`   | Training app for new Carbon users.                                          | 4111     |
 | `starter`   | A minimal example app showing auth + database + forms.                      | 4000     |
 | `assembler` | The Rust CAD/3D service.                                                    | varies   |
@@ -770,7 +770,7 @@ environment variables on the container.
 
 ### 7.5 Knowing what is happening
 
-Observability is deliberately thin. Logs go through LogTape: colour on a laptop, one JSON
+Observability is deliberately thin. Logs go through LogTape: color on a laptop, one JSON
 line per entry in production, with sensitive field names blanked out and a request id
 threaded through everything so one page load can be followed end to end. There is no log
 shipping of its own, so logs are whatever the platform collects: CloudWatch on AWS,

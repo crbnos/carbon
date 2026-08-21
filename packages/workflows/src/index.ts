@@ -13,7 +13,11 @@ export type {
   RequiredPermission,
   WorkflowCatalog
 } from "./definition/catalog";
-export { createFixtureCatalog, walkPath } from "./definition/catalog";
+export {
+  createFixtureCatalog,
+  isMultiSelect,
+  walkPath
+} from "./definition/catalog";
 export type { WorkflowIssue, WorkflowIssueCode } from "./definition/issues";
 export { REFERENCE_ISSUE_CODES } from "./definition/issues";
 export {
@@ -58,9 +62,9 @@ export {
 } from "./definition/schedule";
 export type {
   ActionNode,
+  ComputeNode,
   ConditionNode,
   ConditionPath,
-  EntityNode,
   FilterNode,
   LookupNode,
   Origin,
@@ -161,8 +165,8 @@ export type {
 export {
   actionExecutor,
   compare,
+  computeExecutor,
   conditionExecutor,
-  entityExecutor,
   entityValue,
   evaluateClauses,
   executorFor,

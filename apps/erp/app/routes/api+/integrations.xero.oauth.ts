@@ -54,7 +54,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       `${url.origin}/api/integrations/xero/oauth`
     );
 
-    if (!auth) {
+    if (!auth || auth.type !== "oauth2") {
       return data(
         { error: "Failed to exchange code for token" },
         { status: 500 }
@@ -174,10 +174,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
       // @ts-ignore
       metadata: {
         syncConfig: DEFAULT_SYNC_CONFIG,
+        // Provider-specific fields live under providerMetadata (new
+        // credential shape) — legacy rows are upgraded on read
         credentials: {
           ...auth,
-          tenantId,
-          tenantName: tenantName ?? undefined
+          providerMetadata: {
+            tenantId,
+            tenantName: tenantName ?? undefined
+          }
         }
       },
       updatedBy: userId,
@@ -203,9 +207,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
       );
     }
   } catch (err) {
-    logger.error("Xero OAuth Error", { error: err });
+    const detail = err instanceof Error ? err.message : String(err);
+    logger.error("Xero OAuth Error", { error: detail });
     return data(
-      { error: "Failed to exchange code for token" },
+      { error: "Failed to exchange code for token", detail },
       { status: 500 }
     );
   }

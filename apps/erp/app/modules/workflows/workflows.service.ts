@@ -184,6 +184,59 @@ export async function updateWorkflowDefinition(
     .eq("companyId", definition.companyId);
 }
 
+/**
+ * The one writer allowed on a live version. It reads the version's nodes and re-writes
+ * only `position`, only for node ids that already exist — `edges`, `data`, `expanded`,
+ * `name` and `type` are never touched, and an unknown id is ignored. The endpoint is
+ * therefore incapable of changing behaviour even when called by hand.
+ *
+ * No audit bump, for the same reason as the canvas state below: tidying a layout is not
+ * an edit, and stamping `updatedAt` would reorder the list on every drag.
+ */
+export async function updateWorkflowNodePositions(
+  client: SupabaseClient<Database>,
+  {
+    versionId,
+    workflowId,
+    companyId,
+    positions
+  }: {
+    versionId: string;
+    workflowId: string;
+    companyId: string;
+    positions: Record<string, { x: number; y: number }>;
+  }
+) {
+  // Scoped to the workflow in the URL as well as the version in the body, so the two
+  // cannot disagree — otherwise the path segment is decorative.
+  const version = await client
+    .from("workflowVersion")
+    .select("nodes")
+    .eq("id", versionId)
+    .eq("workflowId", workflowId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  if (version.error) return { data: null, error: version.error };
+  if (!version.data || !Array.isArray(version.data.nodes)) {
+    return { data: null, error: { message: "Version not found" } };
+  }
+
+  const nodes = (version.data.nodes as unknown[]).map((node) => {
+    const id = (node as { id?: unknown })?.id;
+    const position = typeof id === "string" ? positions[id] : undefined;
+    return position === undefined
+      ? node
+      : { ...(node as object), position: { x: position.x, y: position.y } };
+  });
+
+  return client
+    .from("workflowVersion")
+    .update({ nodes: nodes as unknown as Json })
+    .eq("id", versionId)
+    .eq("companyId", companyId);
+}
+
 // No audit bump: panning the canvas is not an edit to the workflow, and stamping
 // `updatedAt` here would reorder the list on every scroll.
 export async function updateWorkflowCanvasState(

@@ -34,6 +34,15 @@ if (POSTHOG_PROJECT_PUBLIC_KEY && !CONTROLLED_ENVIRONMENT) {
   });
 }
 
+// Fail-fast boot assertion (NIST 800-171 3.4.6): analytics must never be live in
+// a controlled environment. If a regression in the gate above lets posthog load,
+// refuse to boot rather than silently phone home about a U.S.-Persons-only system.
+if (CONTROLLED_ENVIRONMENT && posthog.__loaded) {
+  throw new Error(
+    "Analytics initialized in a controlled environment — refusing to boot"
+  );
+}
+
 startTransition(() => {
   hydrateRoot(document, <HydratedRouter />);
 });

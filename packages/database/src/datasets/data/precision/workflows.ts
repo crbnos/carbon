@@ -172,9 +172,9 @@ export function buildPrecisionWorkflows(refs: {
           data: { events: ["purchaseOrder.status.changed"], origin: "Both" }
         },
         {
-          id: "entity_total",
+          id: "compute_total",
           name: "order_total",
-          type: "entity",
+          type: "compute",
           position: { x: 480, y: 0 },
           expanded: true,
           data: {
@@ -196,7 +196,7 @@ export function buildPrecisionWorkflows(refs: {
                 combinator: "and",
                 clauses: [
                   {
-                    left: ref("entity_total", "result"),
+                    left: ref("compute_total", "result"),
                     operator: "gt",
                     right: literal(num, 10000)
                   }
@@ -233,8 +233,8 @@ export function buildPrecisionWorkflows(refs: {
         }
       ],
       edges: [
-        edge("edge_total", "trigger_po_status", "entity_total", "out"),
-        edge("edge_size", "entity_total", "condition_large", "out"),
+        edge("edge_total", "trigger_po_status", "compute_total", "out"),
+        edge("edge_size", "compute_total", "condition_large", "out"),
         edge("edge_flag", "condition_large", "action_flag", "path_large")
       ]
     },
