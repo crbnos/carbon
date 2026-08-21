@@ -240,6 +240,15 @@ export const sequences = [
     step: 1
   },
   {
+    table: "jobOperationBatch",
+    name: "Operation Batch",
+    prefix: "BAT",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
     table: "gauge",
     name: "Gauge",
     prefix: "G",

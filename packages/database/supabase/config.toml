@@ -219,6 +219,11 @@ enabled = true
 verify_jwt = true
 entrypoint = "./functions/post-nonconformance/index.ts"
 
+[functions.batch-operations]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/batch-operations/index.ts"
+
 
 [functions.transcription]
 enabled = true

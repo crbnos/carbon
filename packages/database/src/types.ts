@@ -22922,6 +22922,7 @@ export type Database = {
           inspectionDocumentId: string | null
           jobId: string
           jobMakeMethodId: string | null
+          jobOperationBatchId: string | null
           laborRate: number
           laborTime: number
           laborUnit: Database["public"]["Enums"]["factor"]
@@ -22971,6 +22972,7 @@ export type Database = {
           inspectionDocumentId?: string | null
           jobId: string
           jobMakeMethodId?: string | null
+          jobOperationBatchId?: string | null
           laborRate?: number
           laborTime?: number
           laborUnit?: Database["public"]["Enums"]["factor"]
@@ -23020,6 +23022,7 @@ export type Database = {
           inspectionDocumentId?: string | null
           jobId?: string
           jobMakeMethodId?: string | null
+          jobOperationBatchId?: string | null
           laborRate?: number
           laborTime?: number
           laborUnit?: Database["public"]["Enums"]["factor"]
@@ -23224,6 +23227,13 @@ export type Database = {
             referencedColumns: ["jobMakeMethodId"]
           },
           {
+            foreignKeyName: "jobOperation_jobOperationBatchId_fkey"
+            columns: ["jobOperationBatchId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationBatch"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
             foreignKeyName: "jobOperation_procedureId_fkey"
             columns: ["procedureId"]
             isOneToOne: false
@@ -23316,6 +23326,202 @@ export type Database = {
           },
           {
             foreignKeyName: "jobOperation_workCenterId_fkey"
+            columns: ["workCenterId"]
+            isOneToOne: false
+            referencedRelation: "workCentersWithBlockingStatus"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jobOperationBatch: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customFields: Json | null
+          id: string
+          locationId: string
+          notes: string | null
+          processId: string
+          readableId: string
+          status: Database["public"]["Enums"]["jobOperationBatchStatus"]
+          updatedAt: string | null
+          updatedBy: string | null
+          workCenterId: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customFields?: Json | null
+          id?: string
+          locationId: string
+          notes?: string | null
+          processId: string
+          readableId: string
+          status?: Database["public"]["Enums"]["jobOperationBatchStatus"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+          workCenterId?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customFields?: Json | null
+          id?: string
+          locationId?: string
+          notes?: string | null
+          processId?: string
+          readableId?: string
+          status?: Database["public"]["Enums"]["jobOperationBatchStatus"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+          workCenterId?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobOperationBatch_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_processId_fkey"
+            columns: ["processId"]
+            isOneToOne: false
+            referencedRelation: "process"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_processId_fkey"
+            columns: ["processId"]
+            isOneToOne: false
+            referencedRelation: "processes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_workCenterId_fkey"
+            columns: ["workCenterId"]
+            isOneToOne: false
+            referencedRelation: "riskRegisters"
+            referencedColumns: ["workCenterId"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_workCenterId_fkey"
+            columns: ["workCenterId"]
+            isOneToOne: false
+            referencedRelation: "workCenter"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_workCenterId_fkey"
+            columns: ["workCenterId"]
+            isOneToOne: false
+            referencedRelation: "workCenters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationBatch_workCenterId_fkey"
             columns: ["workCenterId"]
             isOneToOne: false
             referencedRelation: "workCentersWithBlockingStatus"
@@ -37421,6 +37627,7 @@ export type Database = {
       process: {
         Row: {
           active: boolean
+          batchable: boolean
           companyId: string
           completeAllOnScan: boolean
           createdAt: string
@@ -37436,6 +37643,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          batchable?: boolean
           companyId: string
           completeAllOnScan?: boolean
           createdAt?: string
@@ -37451,6 +37659,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          batchable?: boolean
           companyId?: string
           completeAllOnScan?: boolean
           createdAt?: string
@@ -37574,6 +37783,7 @@ export type Database = {
           employeeId: string | null
           endTime: string | null
           id: string
+          jobOperationBatchId: string | null
           jobOperationId: string
           notes: string | null
           postedToGL: boolean
@@ -37591,6 +37801,7 @@ export type Database = {
           employeeId?: string | null
           endTime?: string | null
           id?: string
+          jobOperationBatchId?: string | null
           jobOperationId: string
           notes?: string | null
           postedToGL?: boolean
@@ -37608,6 +37819,7 @@ export type Database = {
           employeeId?: string | null
           endTime?: string | null
           id?: string
+          jobOperationBatchId?: string | null
           jobOperationId?: string
           notes?: string | null
           postedToGL?: boolean
@@ -37715,6 +37927,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "productionEvent_jobOperationBatchId_fkey"
+            columns: ["jobOperationBatchId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationBatch"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "productionEvent_jobOperationId_fkey"
@@ -67195,6 +67414,7 @@ export type Database = {
       processes: {
         Row: {
           active: boolean | null
+          batchable: boolean | null
           companyId: string | null
           completeAllOnScan: boolean | null
           createdAt: string | null
@@ -75926,6 +76146,7 @@ export type Database = {
         Args: { location_id: string; work_center_ids: string[] }
         Returns: {
           assignee: string
+          batchReadableId: string
           customerName: string
           description: string
           id: string
@@ -75936,6 +76157,7 @@ export type Database = {
           jobDueDate: string
           jobId: string
           jobMakeMethodId: string
+          jobOperationBatchId: string
           jobReadableId: string
           jobStatus: Database["public"]["Enums"]["jobStatus"]
           laborTime: number
@@ -75949,6 +76171,7 @@ export type Database = {
           operationStatus: Database["public"]["Enums"]["jobOperationStatus"]
           parentMaterialId: string
           priority: number
+          processBatchable: boolean
           processId: string
           quantityComplete: number
           quantityReworked: number
@@ -76165,6 +76388,28 @@ export type Database = {
           storageUnitId: string
           storageUnitName: string
           trackedEntityId: string
+        }[]
+      }
+      get_batchable_operations: {
+        Args: { location_id: string; process_id: string }
+        Returns: {
+          batchReadableId: string
+          batchStatus: Database["public"]["Enums"]["jobOperationBatchStatus"]
+          batchWorkCenterId: string
+          companyId: string
+          description: string
+          id: string
+          itemDescription: string
+          itemReadableId: string
+          jobDueDate: string
+          jobId: string
+          jobOperationBatchId: string
+          jobReadableId: string
+          jobStatus: Database["public"]["Enums"]["jobStatus"]
+          materials: Json
+          operationQuantity: number
+          status: Database["public"]["Enums"]["jobOperationStatus"]
+          workCenterId: string
         }[]
       }
       get_claims: { Args: { company: string; uid: string }; Returns: Json }
@@ -78599,6 +78844,7 @@ export type Database = {
         | "Service"
         | "Consumable"
         | "Fixture"
+      jobOperationBatchStatus: "Active" | "Completing" | "Completed"
       jobOperationStatus:
         | "Canceled"
         | "Done"
@@ -79992,6 +80238,7 @@ export const Constants = {
         "Consumable",
         "Fixture",
       ],
+      jobOperationBatchStatus: ["Active", "Completing", "Completed"],
       jobOperationStatus: [
         "Canceled",
         "Done",
