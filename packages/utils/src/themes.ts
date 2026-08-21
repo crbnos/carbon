@@ -36,7 +36,7 @@ export const themes = [
       },
       dark: {
         // Vercel/Geist-inspired dark mode - pure black base
-        background: "0 14.3% 6.1%",
+        background: "0 6.8% 6.1%",
         foreground: "0 0% 93%",
         card: "0 10% 3.9%",
         "card-foreground": "0 0% 93%",
@@ -96,7 +96,7 @@ export const themes = [
         "success-foreground": "0 0% 98%"
       },
       dark: {
-        background: "20 14.3% 6.1%",
+        background: "20 6.8% 6.1%",
         foreground: "0 0% 98%",
         card: "0 10% 3.9%",
         "card-foreground": "0 0% 98%",
@@ -156,7 +156,7 @@ export const themes = [
         "success-foreground": "0 0% 98%"
       },
       dark: {
-        background: "0 14.3% 6.1%",
+        background: "0 6.8% 6.1%",
         foreground: "0 0% 98%",
         card: "0 10% 3.9%",
         "card-foreground": "0 0% 98%",
@@ -216,7 +216,7 @@ export const themes = [
         "success-foreground": "0 0% 98%"
       },
       dark: {
-        background: "20 14.3% 6.1%",
+        background: "20 6.8% 6.1%",
         foreground: "20 9.1% 97.8%",
         card: "20 10% 3.9%",
         "card-foreground": "60 9.1% 97.8%",
@@ -276,7 +276,7 @@ export const themes = [
         "success-foreground": "0 0% 98%"
       },
       dark: {
-        background: "61 14.3% 6.1%",
+        background: "61 6.8% 6.1%",
         foreground: "61 9.1% 97.8%",
         card: "61 10% 3.9%",
         "card-foreground": "61 9.1% 97.8%",
@@ -338,7 +338,7 @@ export const themes = [
         "success-foreground": "0 0% 98%"
       },
       dark: {
-        background: "171 14.3% 6.1%",
+        background: "171 6.8% 6.1%",
         foreground: "0 0% 95%",
         popover: "171 0% 9%",
         "popover-foreground": "171 0% 95%",
@@ -398,7 +398,7 @@ export const themes = [
         "success-foreground": "0 0% 98%"
       },
       dark: {
-        background: "220 14.3% 6.1%",
+        background: "220 6.8% 6.1%",
         foreground: "220 0% 95%",
         popover: "216 0% 9%",
         "popover-foreground": "220 0% 95%",
@@ -458,7 +458,7 @@ export const themes = [
         "success-foreground": "0 0% 98%"
       },
       dark: {
-        background: "263 41.4 3.1%",
+        background: "263 6.8% 3.1%",
         foreground: "263 20% 98%",
         card: "263 41.4 5%",
         "card-foreground": "210 20% 98%",
