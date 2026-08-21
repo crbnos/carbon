@@ -586,6 +586,15 @@ export type Events = {
     };
   };
 
+  // McMaster-Carr punchout: send a finalized PO as a cXML OrderRequest
+  "carbon/punchout.send-po": {
+    data: {
+      companyId: string;
+      purchaseOrderId: string;
+      userId: string;
+    };
+  };
+
   // Linear integration (full webhook payload)
   "carbon/linear-sync": {
     data: {

@@ -288,7 +288,7 @@ export const purchaseOrderPaymentValidator = z.object({
 
 export const purchaseOrderFinalizeValidator = z
   .object({
-    notification: z.enum(["Email", "None"]).optional(),
+    notification: z.enum(["Email", "cXML", "None"]).optional(),
     supplierContact: zfd.text(z.string().optional()),
     cc: z.array(z.string()).optional()
   })

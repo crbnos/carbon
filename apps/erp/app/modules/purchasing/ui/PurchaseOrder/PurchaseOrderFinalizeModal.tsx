@@ -50,8 +50,19 @@ const PurchaseOrderFinalizeModal = ({
   const integrations = useIntegrations();
   const canEmail = integrations.has("email");
 
+  const mcmasterSupplierId = (
+    integrations.list.find((i) => i.id === "mcmaster-carr")?.metadata as
+      | Record<string, unknown>
+      | null
+      | undefined
+  )?.supplierId as string | undefined;
+  const canPunchout =
+    integrations.has("mcmaster-carr") &&
+    !!purchaseOrder?.supplierId &&
+    mcmasterSupplierId === purchaseOrder.supplierId;
+
   const [notificationType, setNotificationType] = useState(
-    canEmail ? "Email" : "Download"
+    canPunchout ? "cXML" : canEmail ? "Email" : "None"
   );
 
   return (
@@ -70,7 +81,7 @@ const PurchaseOrderFinalizeModal = ({
           action={path.to.purchaseOrderFinalize(orderId)}
           onSubmit={onClose}
           defaultValues={{
-            notification: notificationType as "Email" | "None",
+            notification: notificationType as "Email" | "cXML" | "None",
             supplierContact: purchaseOrder?.supplierContactId ?? undefined,
             cc: defaultCc
           }}
@@ -88,7 +99,7 @@ const PurchaseOrderFinalizeModal = ({
           </ModalHeader>
           <ModalBody>
             <VStack spacing={4}>
-              {canEmail && (
+              {(canEmail || canPunchout) && (
                 <SelectControlled
                   label={t`Send Via`}
                   name="notification"
@@ -97,16 +108,36 @@ const PurchaseOrderFinalizeModal = ({
                       label: t`None`,
                       value: "None"
                     },
-                    {
-                      label: t`Email`,
-                      value: "Email"
-                    }
+                    ...(canEmail
+                      ? [
+                          {
+                            label: t`Email`,
+                            value: "Email"
+                          }
+                        ]
+                      : []),
+                    ...(canPunchout
+                      ? [
+                          {
+                            label: t`Send via cXML to McMaster-Carr`,
+                            value: "cXML"
+                          }
+                        ]
+                      : [])
                   ]}
                   value={notificationType}
                   onChange={(t) => {
                     if (t) setNotificationType(t.value);
                   }}
                 />
+              )}
+              {notificationType === "cXML" && (
+                <p className="text-xs text-muted-foreground">
+                  <Trans>
+                    McMaster-Carr ships same or next day — cancelling this PO in
+                    Carbon does not cancel the order.
+                  </Trans>
+                </p>
               )}
               {notificationType === "Email" && (
                 <>

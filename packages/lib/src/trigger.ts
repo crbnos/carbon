@@ -24,6 +24,7 @@ const taskToEvent = {
   "onshape-revision-sync": "carbon/onshape-revision-sync",
   "paperless-parts": "carbon/paperless-parts",
   "post-transactions": "carbon/post-transaction",
+  "punchout-send-po": "carbon/punchout.send-po",
   "print-job-deliver": "carbon/print-job-deliver",
   "print-job": "carbon/print-job",
   recalculate: "carbon/recalculate",

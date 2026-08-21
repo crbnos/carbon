@@ -444,6 +444,13 @@ export async function action(args: ActionFunctionArgs) {
       }
 
       break;
+    case "cXML":
+      await trigger("punchout-send-po", {
+        companyId,
+        purchaseOrderId: orderId,
+        userId
+      });
+      break;
     case undefined:
     case "None":
       break;
