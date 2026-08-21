@@ -32,7 +32,7 @@ import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import type { Workflow, WorkflowLastRun } from "../workflows.service";
 import { RunStatus } from "./Runs/RunStatus";
-import { WorkflowActiveSwitch } from "./WorkflowActiveSwitch";
+import { WorkflowActiveCheckbox } from "./WorkflowActiveCheckbox";
 import WorkflowForm from "./WorkflowForm";
 
 type WorkflowsTableProps = {
@@ -90,7 +90,7 @@ const WorkflowsTable = memo(
           accessorKey: "active",
           header: t`Active`,
           cell: ({ row }) => (
-            <WorkflowActiveSwitch
+            <WorkflowActiveCheckbox
               workflowId={row.original.id}
               active={row.original.active}
             />
