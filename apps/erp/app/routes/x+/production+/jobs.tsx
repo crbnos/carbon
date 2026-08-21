@@ -50,20 +50,49 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
+  // Which of this page's jobs have an operation in a live (Active/Completing)
+  // batch. The jobs view carries no batch column — batching is per-operation —
+  // so one secondary lookup builds jobId -> batch readableIds for the badge.
+  const jobIds = (jobs.data ?? []).map((j) => j.id!).filter(Boolean);
+  const batchedOps =
+    jobIds.length > 0
+      ? await client
+          .from("jobOperation")
+          .select("jobId, jobOperationBatch(id, readableId, status)")
+          .in("jobId", jobIds)
+          .eq("companyId", companyId)
+          .not("jobOperationBatchId", "is", null)
+      : { data: [], error: null };
+  const batchesByJobId: Record<string, string[]> = {};
+  for (const op of batchedOps.data ?? []) {
+    const batch = op.jobOperationBatch;
+    if (!batch || (batch.status !== "Active" && batch.status !== "Completing"))
+      continue;
+    if (!op.jobId || !batch.readableId) continue;
+    const list = (batchesByJobId[op.jobId] ??= []);
+    if (!list.includes(batch.readableId)) list.push(batch.readableId);
+  }
+
   return {
     count: jobs.count ?? 0,
     jobs: jobs.data ?? [],
+    batchesByJobId,
     locations: locations.data ?? [],
     tags: tags.data ?? []
   };
 }
 
 export default function JobsRoute() {
-  const { count, tags, jobs } = useLoaderData<typeof loader>();
+  const { count, tags, jobs, batchesByJobId } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <JobsTable data={jobs} count={count} tags={tags} />
+      <JobsTable
+        data={jobs}
+        count={count}
+        tags={tags}
+        batchesByJobId={batchesByJobId}
+      />
       <Outlet />
     </VStack>
   );

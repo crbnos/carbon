@@ -1484,6 +1484,9 @@ msgstr "Jednostka miary elementu uległa zmianie"
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "Operacja wykonana przez zewnętrznego dostawcę zamiast wewnętrznego centrum pracy, objęta zamówieniem zakupu podwykonawstwa."
 
+msgid "An operation on this job runs in this batch"
+msgstr ""
+
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "Pozycja operacji w kolejce jej centrum pracy — kolejność, w której hala podjmuje pracę — ustawiana poprzez zmianę porządku kart na tablicy Centrów pracy bez zmiany dat."
 
@@ -2465,6 +2468,9 @@ msgstr "Śledzenie partii"
 
 msgid "Batchable"
 msgstr "Zdatne do partii"
+
+msgid "Batches"
+msgstr ""
 
 msgid "Beginning"
 msgstr "Początek"

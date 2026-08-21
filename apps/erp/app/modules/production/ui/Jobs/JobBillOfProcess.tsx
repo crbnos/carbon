@@ -181,6 +181,13 @@ export type Operation = z.infer<typeof jobOperationValidator> & {
   tags: string[] | null;
   workInstruction: JSONContent | null;
   reworkId: string | null;
+  // Embedded by getJobOperationsByMethodId: which operation batch (if any)
+  // this operation runs in. Only Active/Completing render a badge.
+  jobOperationBatch?: {
+    id: string;
+    readableId: string | null;
+    status: string | null;
+  } | null;
 };
 
 type ItemWithData = Item & {
@@ -246,6 +253,20 @@ function makeItem(
             {operation.description}
           </h3>
           {operation.reworkId && <Badge variant="red">Rework</Badge>}
+          {operation.jobOperationBatch &&
+            (operation.jobOperationBatch.status === "Active" ||
+              operation.jobOperationBatch.status === "Completing") && (
+              <Badge
+                variant={
+                  operation.jobOperationBatch.status === "Completing"
+                    ? "yellow"
+                    : "secondary"
+                }
+                title={t`This operation runs as part of a batch`}
+              >
+                {operation.jobOperationBatch.readableId}
+              </Badge>
+            )}
         </HStack>
         {operation.operationType === "Outside Processing" && (
           <SupplierProcessPreview

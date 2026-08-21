@@ -29,6 +29,7 @@ import {
   LuCalendar,
   LuClock,
   LuHash,
+  LuLayers,
   LuMapPin,
   LuPencil,
   LuQrCode,
@@ -66,6 +67,10 @@ type JobsTableProps = {
   data: Job[];
   count: number;
   tags: { name: string }[];
+  // jobId -> readableIds of live (Active/Completing) operation batches the
+  // job has an operation in. Batching is per-operation, so this is the only
+  // job-level view of it.
+  batchesByJobId?: Record<string, string[]>;
 };
 
 const defaultColumnVisibility = {
@@ -138,7 +143,8 @@ function useReadableTrackedEntities(data: Job[], companyId: string) {
   return trackedEntities;
 }
 
-const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
+const JobsTable = memo((props: JobsTableProps) => {
+  const { data, count, tags, batchesByJobId = {} } = props;
   const navigate = useNavigate();
   const { t } = useLingui();
   const [params] = useUrlParams();
@@ -251,6 +257,37 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
           ) : null,
         meta: {
           icon: <LuQrCode />
+        }
+      },
+      {
+        id: "batches",
+        header: t`Batches`,
+        cell: ({ row }) => {
+          const batches = row.original.id
+            ? (batchesByJobId[row.original.id] ?? [])
+            : [];
+          if (batches.length === 0) return null;
+          return (
+            <HStack spacing={1}>
+              {batches.map((readableId) => (
+                <Badge
+                  key={readableId}
+                  variant="secondary"
+                  className="items-center gap-1"
+                  title={t`An operation on this job runs in this batch`}
+                >
+                  <LuLayers />
+                  {readableId}
+                </Badge>
+              ))}
+            </HStack>
+          );
+        },
+        meta: {
+          icon: <LuLayers />,
+          filterHeader: t`Batches`,
+          exportValue: (row: Job) =>
+            row.id ? (batchesByJobId[row.id] ?? []).join(", ") : null
         }
       },
       {
@@ -610,7 +647,7 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
       }
     ];
     return [...defaultColumns, ...customColumns];
-  }, [params, customColumns, trackedEntities]);
+  }, [params, customColumns, trackedEntities, batchesByJobId]);
 
   const fetcher = useFetcher<typeof action>();
   useEffect(() => {

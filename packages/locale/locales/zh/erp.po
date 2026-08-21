@@ -1484,6 +1484,9 @@ msgstr "项目的度量单位更改"
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "由外部供应商而不是内部工作中心执行的操作，由分包购买订单覆盖。"
 
+msgid "An operation on this job runs in this batch"
+msgstr ""
+
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "一个操作在其工作中心队列中的位置——车间拿起工作的顺序——通过在工作中心板上重新排序卡片来设置，无需更改任何日期。"
 
@@ -2465,6 +2468,9 @@ msgstr "批次追踪"
 
 msgid "Batchable"
 msgstr "可批量的"
+
+msgid "Batches"
+msgstr ""
 
 msgid "Beginning"
 msgstr "开始"

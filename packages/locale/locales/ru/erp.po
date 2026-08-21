@@ -1484,6 +1484,9 @@ msgstr "Единица измерения элемента изменяется"
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "Операция, выполняемая внешним поставщиком вместо внутреннего рабочего центра, охватываемая заказом на закупку с привлечением подрядчика."
 
+msgid "An operation on this job runs in this batch"
+msgstr ""
+
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "Положение операции в очереди её рабочего центра — порядок, в котором площадка берёт работу — устанавливается переупорядочением карточек на доске Рабочих центров без изменения дат."
 
@@ -2465,6 +2468,9 @@ msgstr "Отслеживание партий"
 
 msgid "Batchable"
 msgstr "Допускает группировку"
+
+msgid "Batches"
+msgstr ""
 
 msgid "Beginning"
 msgstr "Начало"

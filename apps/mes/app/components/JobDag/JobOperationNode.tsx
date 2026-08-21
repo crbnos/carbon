@@ -14,6 +14,8 @@ type JobOperationNodeData = {
   quantityReworked: number;
   quantityScrapped: number;
   isRework: boolean;
+  // Readable id of the live batch the operation runs in, or null.
+  batchReadableId?: string | null;
   direction: "LR" | "TB";
 };
 
@@ -64,6 +66,11 @@ function JobOperationNodeImpl({ data }: NodeProps) {
           {d.isRework && (
             <span className="shrink-0 text-[10px] font-semibold text-red-600 bg-red-100 rounded px-1">
               Rework
+            </span>
+          )}
+          {d.batchReadableId && (
+            <span className="shrink-0 text-[10px] font-semibold text-blue-600 bg-blue-100 rounded px-1">
+              {d.batchReadableId}
             </span>
           )}
         </div>

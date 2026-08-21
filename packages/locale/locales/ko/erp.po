@@ -1484,6 +1484,9 @@ msgstr "항목의 측정 단위가 변경됩니다"
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "사내 작업장이 아닌 외부 공급업체가 수행하는 공정작업으로, 외주 구매주문으로 처리됩니다."
 
+msgid "An operation on this job runs in this batch"
+msgstr ""
+
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "작업 센터의 작업 대기열에서 작업의 위치(현장이 작업을 선택하는 순서)로서, 날짜를 변경하지 않고 Work Centers 보드에서 카드를 재정렬하여 설정합니다."
 
@@ -2465,6 +2468,9 @@ msgstr "배치 추적"
 
 msgid "Batchable"
 msgstr "배치 가능한"
+
+msgid "Batches"
+msgstr ""
 
 msgid "Beginning"
 msgstr "시작"

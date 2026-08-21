@@ -1484,6 +1484,9 @@ msgstr "किसी आइटम की माप की इकाई बदल
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "एक आंतरिक कार्य केंद्र के बजाय बाहरी आपूर्तिकर्ता द्वारा किया गया ऑपरेशन, जिसे एक उप-अनुबंध खरीद आदेश द्वारा कवर किया जाता है।"
 
+msgid "An operation on this job runs in this batch"
+msgstr ""
+
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "एक ऑपरेशन की अपने कार्य केंद्र की कतार में स्थिति — वह क्रम जिससे मंजिल काम उठाती है — कार्य केंद्र बोर्ड पर कार्डों को पुनः सूचीबद्ध करके किसी भी तारीखों को बदले बिना सेट किया जाता है।"
 
@@ -2465,6 +2468,9 @@ msgstr "बैच ट्रैकिंग"
 
 msgid "Batchable"
 msgstr "बैच योग्य"
+
+msgid "Batches"
+msgstr ""
 
 msgid "Beginning"
 msgstr "आरंभ"

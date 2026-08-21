@@ -113,7 +113,9 @@ export async function getJobOperations(
 ) {
   return client
     .from("jobOperation")
-    .select("*, jobMakeMethod(parentMaterialId, item(readableIdWithRevision))")
+    .select(
+      "*, jobOperationBatch(readableId, status), jobMakeMethod(parentMaterialId, item(readableIdWithRevision))"
+    )
     .eq("jobId", jobId);
 }
 

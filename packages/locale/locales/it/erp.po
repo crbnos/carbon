@@ -1484,6 +1484,9 @@ msgstr "L'unità di misura di un elemento cambia"
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "Un'operazione effettuata da un fornitore esterno anziché da un centro di lavoro interno, coperta da un ordine di acquisto di subappalto."
 
+msgid "An operation on this job runs in this batch"
+msgstr ""
+
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "La posizione di un'operazione nella coda del suo centro di lavoro, l'ordine in cui il reparto raccoglie il lavoro, impostato riordinando le schede sulla bacheca Work Centers senza modificare alcuna data."
 
@@ -2465,6 +2468,9 @@ msgstr "Tracciamento Batch"
 
 msgid "Batchable"
 msgstr "Raggruppabile"
+
+msgid "Batches"
+msgstr ""
 
 msgid "Beginning"
 msgstr "Inizio"
