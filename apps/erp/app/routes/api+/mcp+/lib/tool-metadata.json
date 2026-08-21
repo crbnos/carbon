@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-18T19:07:39.197Z",
-  "totalTools": 1444,
+  "generated": "2026-08-21T01:53:38.815Z",
+  "totalTools": 1445,
   "modules": 15,
   "tools": [
     {
@@ -10365,6 +10365,72 @@
                   "type": "string"
                 }
               }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "invoicing_getCardTransaction",
+      "module": "invoicing",
+      "classification": "READ",
+      "description": "get card transaction",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "invoicing_getCardTransactions",
+      "module": "invoicing",
+      "classification": "READ",
+      "description": "get card transactions",
+      "paramCount": 5,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "type": {},
+              "status": {}
             }
           }
         }
@@ -42128,37 +42194,6 @@
           "digitalQuoteEnabled",
           "digitalQuoteNotificationGroup",
           "digitalQuoteIncludesPurchaseOrders"
-        ]
-      }
-    },
-    {
-      "name": "settings_updateIntegrationMetadata",
-      "module": "settings",
-      "classification": "WRITE",
-      "description": "update integration metadata",
-      "paramCount": 2,
-      "serviceParams": [
-        "client",
-        "companyId",
-        "integrationId",
-        "metadata",
-        "updatedBy"
-      ],
-      "injectAuth": [
-        "companyId",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "integrationId": {
-            "type": "string"
-          },
-          "metadata": {}
-        },
-        "required": [
-          "integrationId",
-          "metadata"
         ]
       }
     },
