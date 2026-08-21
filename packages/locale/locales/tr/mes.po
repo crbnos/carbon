@@ -130,8 +130,8 @@ msgstr "Başarısız birimleri tahsis et"
 msgid "Allocate units"
 msgstr "Birimleri tahsis et"
 
-msgid "An operation completed with 0 will be marked Done with no output. Use \"Not in this run\" if it was not part of this batch."
-msgstr ""
+msgid "An operation completed with 0 is marked Done with no output — exclude it instead if it was not part of this run."
+msgstr "0 ile tamamlanan bir operasyon üretim olmadan Tamamlandı olarak işaretlenir — bu çalıştırmanın parçası değilse hariç tutun."
 
 msgid "Are you sure you want to delete this step?"
 msgstr "Bu adımı silmek istediğinizden emin misiniz?"
@@ -454,7 +454,7 @@ msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot clo
 msgstr "Her birim için bir karar verildi: {passes} geçti ve {fails} başarısız oldu. Lot, her birim kendi sonucuna yönlendirilmek üzere kapanır."
 
 msgid "Excluded operations return to the schedule un-run — no time or quantity is recorded for them."
-msgstr ""
+msgstr "Hariç tutulan operasyonlar çalıştırılmadan çizelgeye döner — süre veya miktar kaydedilmez."
 
 msgid "Expand features table"
 msgstr "Özellikler tablosunu genişlet"
@@ -575,7 +575,7 @@ msgid "In Progress"
 msgstr "Devam Ediyor"
 
 msgid "Include in run"
-msgstr ""
+msgstr "Çalıştırmaya dahil et"
 
 msgid "Inspect Item"
 msgstr "Ürünü İncele"
@@ -897,7 +897,7 @@ msgid "None"
 msgstr "Hiçbiri"
 
 msgid "Not in this run"
-msgstr ""
+msgstr "Bu çalıştırmada değil"
 
 msgid "Notes"
 msgstr "Notlar"
@@ -1027,7 +1027,7 @@ msgid "Print"
 msgstr "Yazdır"
 
 msgid "Print load list"
-msgstr ""
+msgstr "Yükleme listesini yazdır"
 
 msgid "Printer Settings"
 msgstr "Yazıcı Ayarları"

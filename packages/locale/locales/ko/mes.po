@@ -130,8 +130,8 @@ msgstr "실패한 단위 할당"
 msgid "Allocate units"
 msgstr "단위 할당"
 
-msgid "An operation completed with 0 will be marked Done with no output. Use \"Not in this run\" if it was not part of this batch."
-msgstr ""
+msgid "An operation completed with 0 is marked Done with no output — exclude it instead if it was not part of this run."
+msgstr "0으로 완료된 공정은 산출 없이 완료로 표시됩니다 — 이번 실행에 포함되지 않았다면 제외하세요."
 
 msgid "Are you sure you want to delete this step?"
 msgstr "이 단계를 삭제하시겠습니까?"
@@ -454,7 +454,7 @@ msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot clo
 msgstr "모든 단위에 판정이 있습니다: {passes}개 합격 및 {fails}개 불합격. 로트는 각 단위가 자신의 결과로 라우팅되면서 종료됩니다."
 
 msgid "Excluded operations return to the schedule un-run — no time or quantity is recorded for them."
-msgstr ""
+msgstr "제외된 공정은 실행되지 않은 채 일정으로 돌아갑니다 — 시간과 수량이 기록되지 않습니다."
 
 msgid "Expand features table"
 msgstr "기능 테이블 확장"
@@ -575,7 +575,7 @@ msgid "In Progress"
 msgstr "진행 중"
 
 msgid "Include in run"
-msgstr ""
+msgstr "실행에 포함"
 
 msgid "Inspect Item"
 msgstr "항목 검사"
@@ -897,7 +897,7 @@ msgid "None"
 msgstr "없음"
 
 msgid "Not in this run"
-msgstr ""
+msgstr "이 실행에 없음"
 
 msgid "Notes"
 msgstr "메모"
@@ -1027,7 +1027,7 @@ msgid "Print"
 msgstr "인쇄"
 
 msgid "Print load list"
-msgstr ""
+msgstr "적재 목록 인쇄"
 
 msgid "Printer Settings"
 msgstr "프린터 설정"

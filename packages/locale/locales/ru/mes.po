@@ -130,8 +130,8 @@ msgstr "Распределить неудачные единицы"
 msgid "Allocate units"
 msgstr "Распределить единицы"
 
-msgid "An operation completed with 0 will be marked Done with no output. Use \"Not in this run\" if it was not part of this batch."
-msgstr ""
+msgid "An operation completed with 0 is marked Done with no output — exclude it instead if it was not part of this run."
+msgstr "Операция, завершённая с 0, будет отмечена как выполненная без выпуска — исключите её, если она не входила в этот запуск."
 
 msgid "Are you sure you want to delete this step?"
 msgstr "Вы уверены, что хотите удалить этот шаг?"
@@ -454,7 +454,7 @@ msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot clo
 msgstr "Каждый блок имеет вердикт: {passes} прошли и {fails} не прошли. Партия закрывается с маршрутизацией каждого блока к его собственному результату."
 
 msgid "Excluded operations return to the schedule un-run — no time or quantity is recorded for them."
-msgstr ""
+msgstr "Исключённые операции возвращаются в расписание невыполненными — время и количество не записываются."
 
 msgid "Expand features table"
 msgstr "Развернуть таблицу функций"
@@ -575,7 +575,7 @@ msgid "In Progress"
 msgstr "В работе"
 
 msgid "Include in run"
-msgstr ""
+msgstr "Включить в запуск"
 
 msgid "Inspect Item"
 msgstr "Проверить элемент"
@@ -897,7 +897,7 @@ msgid "None"
 msgstr "Нет"
 
 msgid "Not in this run"
-msgstr ""
+msgstr "Не в этом запуске"
 
 msgid "Notes"
 msgstr "Примечания"
@@ -1027,7 +1027,7 @@ msgid "Print"
 msgstr "Печать"
 
 msgid "Print load list"
-msgstr ""
+msgstr "Печать листа загрузки"
 
 msgid "Printer Settings"
 msgstr "Параметры принтера"

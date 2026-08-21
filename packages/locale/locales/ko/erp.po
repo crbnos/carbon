@@ -1485,7 +1485,7 @@ msgid "An operation done by an outside supplier rather than an in-house work cen
 msgstr "사내 작업장이 아닌 외부 공급업체가 수행하는 공정작업으로, 외주 구매주문으로 처리됩니다."
 
 msgid "An operation on this job runs in this batch"
-msgstr ""
+msgstr "이 작업의 공정이 이 배치에서 실행됩니다"
 
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "작업 센터의 작업 대기열에서 작업의 위치(현장이 작업을 선택하는 순서)로서, 날짜를 변경하지 않고 Work Centers 보드에서 카드를 재정렬하여 설정합니다."
@@ -2440,7 +2440,7 @@ msgstr "배치 {0} × {1}"
 #. placeholder {0}: group.length
 #. placeholder {1}: group[0].processName ?? group[0].description ?? ""
 msgid "Batch {0} × {1} across {columnCount} work centers"
-msgstr ""
+msgstr "작업장 {columnCount}곳에 걸친 {0} × {1} 배치"
 
 msgid "Batch / Serial"
 msgstr "배치/일련번호"
@@ -2470,7 +2470,7 @@ msgid "Batchable"
 msgstr "배치 가능한"
 
 msgid "Batches"
-msgstr ""
+msgstr "배치"
 
 msgid "Beginning"
 msgstr "시작"
@@ -5344,7 +5344,7 @@ msgid "Due date of the final job in the bulk batch; combined with Due Date of Fi
 msgstr "일괄 배치에서 마지막 작업의 기한일로, '첫 작업 기한일'과 함께 작업들을 균등하게 배치하는 데 사용됩니다."
 
 msgid "Due dates span {dueSpreadDays} days"
-msgstr ""
+msgstr "납기가 {dueSpreadDays}일에 걸쳐 있습니다"
 
 msgid "Due Days"
 msgstr "기한 일수"
@@ -8281,7 +8281,7 @@ msgid "Last 6 Months"
 msgstr "지난 6개월"
 
 msgid "Last Activity"
-msgstr ""
+msgstr "최근 활동"
 
 msgid "Last attempt"
 msgstr "마지막 시도"
@@ -10262,7 +10262,7 @@ msgid "One set of numbers"
 msgstr "하나의 번호 집합"
 
 msgid "One shared setup instead of one per operation"
-msgstr ""
+msgstr "공정마다가 아닌 한 번의 공용 셋업"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "작업 공정(BOP)의 한 단계로, 공정과 작업장을 지정하며 자체 셋업, 노무, 기계 시간 및 요율을 가집니다."
@@ -11276,7 +11276,7 @@ msgid "Print Label"
 msgstr "라벨 인쇄"
 
 msgid "Print load list"
-msgstr ""
+msgstr "적재 목록 인쇄"
 
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
@@ -13427,7 +13427,7 @@ msgstr "설정"
 #. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {1}: formatDurationMilliseconds(setupMax, { style: "short" })
 msgid "Setup {0} → {1}"
-msgstr ""
+msgstr "셋업 {0} → {1}"
 
 msgid "Setup & Controls"
 msgstr "설정 및 관리"
@@ -14620,7 +14620,7 @@ msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Onshape에서 인증이 거부되었습니다. 다시 연결해 보세요."
 
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
-msgstr ""
+msgstr "배치는 가장 급한 항목의 일정에 맞춰 실행되며 나머지는 앞당겨집니다"
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "전기된 모든 분개 라인을 계정별로 합산한 장부로, 회사에서 회계 기능이 활성화된 경우에만 기록됩니다."
@@ -16512,7 +16512,7 @@ msgid "View notes"
 msgstr "메모 보기"
 
 msgid "View on schedule board"
-msgstr ""
+msgstr "일정 보드에서 보기"
 
 msgid "View Open"
 msgstr "미결 보기"

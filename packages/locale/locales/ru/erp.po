@@ -1485,7 +1485,7 @@ msgid "An operation done by an outside supplier rather than an in-house work cen
 msgstr "Операция, выполняемая внешним поставщиком вместо внутреннего рабочего центра, охватываемая заказом на закупку с привлечением подрядчика."
 
 msgid "An operation on this job runs in this batch"
-msgstr ""
+msgstr "Операция этого задания входит в эту партию"
 
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "Положение операции в очереди её рабочего центра — порядок, в котором площадка берёт работу — устанавливается переупорядочением карточек на доске Рабочих центров без изменения дат."
@@ -2440,7 +2440,7 @@ msgstr "Партия {0} × {1}"
 #. placeholder {0}: group.length
 #. placeholder {1}: group[0].processName ?? group[0].description ?? ""
 msgid "Batch {0} × {1} across {columnCount} work centers"
-msgstr ""
+msgstr "Объединить {0} × {1} на {columnCount} рабочих центрах"
 
 msgid "Batch / Serial"
 msgstr "Партия / Серийный номер"
@@ -2470,7 +2470,7 @@ msgid "Batchable"
 msgstr "Допускает группировку"
 
 msgid "Batches"
-msgstr ""
+msgstr "Партии"
 
 msgid "Beginning"
 msgstr "Начало"
@@ -5344,7 +5344,7 @@ msgid "Due date of the final job in the bulk batch; combined with Due Date of Fi
 msgstr "Дата платежа последней работы в пакетной партии; объединяется с датой платежа первой работы для равномерного распределения работ."
 
 msgid "Due dates span {dueSpreadDays} days"
-msgstr ""
+msgstr "Разброс сроков — {dueSpreadDays} дней"
 
 msgid "Due Days"
 msgstr "Дни платежа"
@@ -8281,7 +8281,7 @@ msgid "Last 6 Months"
 msgstr "Последние 6 месяцев"
 
 msgid "Last Activity"
-msgstr ""
+msgstr "Последняя активность"
 
 msgid "Last attempt"
 msgstr "Последняя попытка"
@@ -10262,7 +10262,7 @@ msgid "One set of numbers"
 msgstr "Один набор цифр"
 
 msgid "One shared setup instead of one per operation"
-msgstr ""
+msgstr "Одна общая наладка вместо наладки на каждую операцию"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "Один шаг в маршрутизации задания, определяющий процесс и рабочий центр, и несущий собственное время настройки, труда и машины, а также ставки."
@@ -11276,7 +11276,7 @@ msgid "Print Label"
 msgstr "Печать этикетки"
 
 msgid "Print load list"
-msgstr ""
+msgstr "Печать листа загрузки"
 
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
@@ -13427,7 +13427,7 @@ msgstr "Настройка"
 #. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {1}: formatDurationMilliseconds(setupMax, { style: "short" })
 msgid "Setup {0} → {1}"
-msgstr ""
+msgstr "Наладка {0} → {1}"
 
 msgid "Setup & Controls"
 msgstr "Настройка и управление"
@@ -14620,7 +14620,7 @@ msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Авторизация была отклонена в Onshape. Повторите попытку подключения."
 
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
-msgstr ""
+msgstr "Партия выполняется по самому срочному элементу — остальные сдвигаются раньше"
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "Книга всех проведенных строк журнала, суммированные по счетам — записывается только при включенной учетной политике компании."
@@ -16512,7 +16512,7 @@ msgid "View notes"
 msgstr "Просмотр заметок"
 
 msgid "View on schedule board"
-msgstr ""
+msgstr "Открыть на доске расписания"
 
 msgid "View Open"
 msgstr "Просмотреть открытые"

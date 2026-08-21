@@ -103,10 +103,17 @@ In batch mode `JobOperation` derives `isBatched = !!batch`,
   `BatchCompleteModal` (per-member quantity/scrap rows, pre-filled
   `operationQuantity − quantityComplete`, controlled state because react-aria
   ignores RVF nested-array defaults; submit blocked while any batch timer is
-  open). Scrap / Rework / Finish are hidden in the actions sheet (per-op writes
-  would double-count a member); Maintenance + Quality Issue stay. The kanban
-  keyboard wedge is disabled (`active: !!kanban?.id && !isBatched`) — it completes
-  a single op, never a batched member.
+  open). Each row has a **"Not in this run"** toggle: an excluded member submits
+  `excluded="true"` (string flag, the `exclusive` idiom) and the edge fn detaches
+  it back to the schedule un-run inside the Phase-1 txn — no time slice, no
+  quantities, not Done. All-excluded is blocked; an included row at quantity 0
+  gets an amber warning (it still flips Done with no output). Scrap / Rework /
+  Finish are hidden in the actions sheet (per-op writes would double-count a
+  member); Maintenance + Quality Issue stay. The batch chip menu also offers
+  "Print load list" (`path.to.file.batchLoadList` → the ERP
+  `/file/batch/:id.pdf` route, `BatchLoadListPDF`). The kanban keyboard wedge is
+  disabled (`active: !!kanban?.id && !isBatched`) — it completes a single op,
+  never a batched member.
 
 ## Components
 

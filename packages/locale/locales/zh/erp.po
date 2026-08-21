@@ -1485,7 +1485,7 @@ msgid "An operation done by an outside supplier rather than an in-house work cen
 msgstr "由外部供应商而不是内部工作中心执行的操作，由分包购买订单覆盖。"
 
 msgid "An operation on this job runs in this batch"
-msgstr ""
+msgstr "此工作的一道工序在此批次中运行"
 
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "一个操作在其工作中心队列中的位置——车间拿起工作的顺序——通过在工作中心板上重新排序卡片来设置，无需更改任何日期。"
@@ -2440,7 +2440,7 @@ msgstr "批次 {0} × {1}"
 #. placeholder {0}: group.length
 #. placeholder {1}: group[0].processName ?? group[0].description ?? ""
 msgid "Batch {0} × {1} across {columnCount} work centers"
-msgstr ""
+msgstr "跨 {columnCount} 个工作中心批处理 {0} × {1}"
 
 msgid "Batch / Serial"
 msgstr "批次 / 序列号"
@@ -2470,7 +2470,7 @@ msgid "Batchable"
 msgstr "可批量的"
 
 msgid "Batches"
-msgstr ""
+msgstr "批次"
 
 msgid "Beginning"
 msgstr "开始"
@@ -5344,7 +5344,7 @@ msgid "Due date of the final job in the bulk batch; combined with Due Date of Fi
 msgstr "批量批次中最后一个工作的截止日期; 与第一个工作的截止日期相结合以均匀间隔工作。"
 
 msgid "Due dates span {dueSpreadDays} days"
-msgstr ""
+msgstr "交期跨度为 {dueSpreadDays} 天"
 
 msgid "Due Days"
 msgstr "到期天数"
@@ -8281,7 +8281,7 @@ msgid "Last 6 Months"
 msgstr "最近6个月"
 
 msgid "Last Activity"
-msgstr ""
+msgstr "最近活动"
 
 msgid "Last attempt"
 msgstr "上次尝试"
@@ -10262,7 +10262,7 @@ msgid "One set of numbers"
 msgstr "一套数字"
 
 msgid "One shared setup instead of one per operation"
-msgstr ""
+msgstr "共享一次设置，而非每道工序一次"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "工作路线中的一个步骤，命名流程和工作中心，并携带自己的设置、劳动和机器时间以及费率。"
@@ -11276,7 +11276,7 @@ msgid "Print Label"
 msgstr "打印标签"
 
 msgid "Print load list"
-msgstr ""
+msgstr "打印装载清单"
 
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
@@ -13427,7 +13427,7 @@ msgstr "设置"
 #. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {1}: formatDurationMilliseconds(setupMax, { style: "short" })
 msgid "Setup {0} → {1}"
-msgstr ""
+msgstr "设置 {0} → {1}"
 
 msgid "Setup & Controls"
 msgstr "设置和控制"
@@ -14620,7 +14620,7 @@ msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "授权在 Onshape 中被拒绝。请重新连接。"
 
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
-msgstr ""
+msgstr "批次按最紧急成员的时间运行——其余成员将被提前"
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "所有已记账的日记账行书，按账户汇总 - 仅在公司启用会计时编写。"
@@ -16512,7 +16512,7 @@ msgid "View notes"
 msgstr "查看备注"
 
 msgid "View on schedule board"
-msgstr ""
+msgstr "在排程看板中查看"
 
 msgid "View Open"
 msgstr "查看开放"

@@ -123,3 +123,23 @@ Full seed/cleanup SQL pattern is in the run log `.ai/runs/2026-08-21-job-operati
   open `{MES_URL}/x` first (never the raw IP).
 - Candidate shows "No material properties" → that op has no `jobMaterial` line, or the
   linked `material` row has no `materialSubstanceId`.
+
+### 8. UX round additions (2026-08-21)
+- Selection bar chips: select 2+ ops with setup times → green `Setup <sum> → <max>`
+  chip; select ops with due dates ≥7 days apart → amber `Due dates span N days`.
+- Cross-column banner: 2+ eligible same-process ops in DIFFERENT work-center
+  columns → floating top banner `Batch N × <process> across K work centers`;
+  click selects the group.
+- Completion exclusion: in the Complete Batch modal, the X toggle per row marks
+  "Not in this run" → on submit that op detaches (jobOperationBatchId NULL,
+  status unchanged, no productionQuantity) while the rest complete. Verify via
+  SQL. All-excluded is rejected by the edge fn; an included row at 0 shows an
+  amber warning.
+- Load sheet: `GET {ERP_URL}/file/batch/{batchId}.pdf` → 200 `application/pdf`
+  (menu: batch card "Print load list", MES batch chip menu, batches drawer).
+- Jobs table: a job with an op in an Active/Completing batch shows a `BAT…`
+  badge in the Batches column; job detail routing row and the MES job DAG node
+  show the same badge/chip.
+- Batches page: `/x/production/batches` (nav Production → Batches) lists
+  batches with status filter + member count/qty; row click opens the member
+  drawer with Print load list + View on schedule board.

@@ -262,7 +262,6 @@ function makeItem(
                     ? "yellow"
                     : "secondary"
                 }
-                title={t`This operation runs as part of a batch`}
               >
                 {operation.jobOperationBatch.readableId}
               </Badge>

@@ -537,3 +537,18 @@ through; `ProcessForm` gains the Boolean field (clone `completeAllOnScan`).
   redirect, chip, cross-member shared timer, deferred GL on stop, proportional
   slice completion (Labor 50→25/25, Machine 3→2/1 & 13→7/6), members Done + batch
   Completed, and the Completed batch reverting to a plain operation view.
+- 2026-08-21: **UX round** (Sid: "lets improve all of these things") — seven
+  improvements, all building ON existing surfaces: (1) setup-savings chip
+  (`Setup sum → max`) and (2) due-date-spread warning (≥7 days) in the
+  selection bar (context now stores the full selected operations); (3) a
+  floating banner for same-process opportunities spanning 2+ work-center
+  columns; (4) completion "not in this run" — a member can be excluded and
+  detaches back to the schedule un-run inside the Phase-1 txn (no quantities,
+  all-excluded rejected, resume drops applied exclusions and rejects new
+  ones), plus a zero-quantity warning; (5) printable batch load sheet
+  (`BatchLoadListPDF`, ERP `/file/batch/:id.pdf`, menu entries on the batch
+  card + MES batch chip); (6) live-batch badges on the jobs table (Batches
+  column), the JobBillOfProcess operation row, and the MES job DAG node;
+  (7) a Batches list page under Production (`/x/production/batches`) with
+  status filter, member stats, and a detail drawer. 15 new strings translated
+  across 12 locales.

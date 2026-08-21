@@ -1485,7 +1485,7 @@ msgid "An operation done by an outside supplier rather than an in-house work cen
 msgstr "Une opération effectuée par un fournisseur externe plutôt que par un centre de travail interne, couverte par une commande d'achat de sous-traitance."
 
 msgid "An operation on this job runs in this batch"
-msgstr ""
+msgstr "Une opération de cet OF s'exécute dans ce lot"
 
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "La position d'une opération dans la file d'attente de son centre de travail — l'ordre dans lequel l'atelier choisit le travail — défini en réorganisant les cartes sur le tableau des Centres de travail sans modifier les dates."
@@ -2440,7 +2440,7 @@ msgstr "Lot {0} × {1}"
 #. placeholder {0}: group.length
 #. placeholder {1}: group[0].processName ?? group[0].description ?? ""
 msgid "Batch {0} × {1} across {columnCount} work centers"
-msgstr ""
+msgstr "Regrouper {0} × {1} sur {columnCount} postes de charge"
 
 msgid "Batch / Serial"
 msgstr "Lot / Série"
@@ -2470,7 +2470,7 @@ msgid "Batchable"
 msgstr "Regroupable"
 
 msgid "Batches"
-msgstr ""
+msgstr "Lots"
 
 msgid "Beginning"
 msgstr "Début"
@@ -5344,7 +5344,7 @@ msgid "Due date of the final job in the bulk batch; combined with Due Date of Fi
 msgstr "Date d'échéance du travail final dans le lot; combinée avec la date d'échéance du premier travail pour espacer les travaux uniformément."
 
 msgid "Due dates span {dueSpreadDays} days"
-msgstr ""
+msgstr "Les échéances s'étalent sur {dueSpreadDays} jours"
 
 msgid "Due Days"
 msgstr "Jours d'Échéance"
@@ -8281,7 +8281,7 @@ msgid "Last 6 Months"
 msgstr "6 derniers mois"
 
 msgid "Last Activity"
-msgstr ""
+msgstr "Dernière activité"
 
 msgid "Last attempt"
 msgstr "Dernière tentative"
@@ -10262,7 +10262,7 @@ msgid "One set of numbers"
 msgstr "Un seul ensemble de chiffres"
 
 msgid "One shared setup instead of one per operation"
-msgstr ""
+msgstr "Un seul réglage partagé au lieu d'un par opération"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "Une étape de l'itinéraire d'une tâche, nommant un processus et un centre de travail et portant ses propres temps et taux de configuration, de travail et de machine."
@@ -11276,7 +11276,7 @@ msgid "Print Label"
 msgstr "Imprimer l'étiquette"
 
 msgid "Print load list"
-msgstr ""
+msgstr "Imprimer la liste de chargement"
 
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
@@ -13427,7 +13427,7 @@ msgstr "Configuration"
 #. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {1}: formatDurationMilliseconds(setupMax, { style: "short" })
 msgid "Setup {0} → {1}"
-msgstr ""
+msgstr "Réglage {0} → {1}"
 
 msgid "Setup & Controls"
 msgstr "Configuration et contrôles"
@@ -14620,7 +14620,7 @@ msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "L'autorisation a été refusée dans Onshape. Réessayez de vous connecter."
 
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
-msgstr ""
+msgstr "Le lot s'exécute au rythme de son membre le plus urgent — les autres sont avancés"
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "Le livre de toutes les lignes de journal enregistrées, sommées par compte – écrit seulement si la comptabilité est activée pour l'entreprise."
@@ -16512,7 +16512,7 @@ msgid "View notes"
 msgstr "Afficher les notes"
 
 msgid "View on schedule board"
-msgstr ""
+msgstr "Voir sur le tableau de planification"
 
 msgid "View Open"
 msgstr "Afficher les ouvertes"

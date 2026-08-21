@@ -1485,7 +1485,7 @@ msgid "An operation done by an outside supplier rather than an in-house work cen
 msgstr "एक आंतरिक कार्य केंद्र के बजाय बाहरी आपूर्तिकर्ता द्वारा किया गया ऑपरेशन, जिसे एक उप-अनुबंध खरीद आदेश द्वारा कवर किया जाता है।"
 
 msgid "An operation on this job runs in this batch"
-msgstr ""
+msgstr "इस जॉब की एक प्रक्रिया इस बैच में चल रही है"
 
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "एक ऑपरेशन की अपने कार्य केंद्र की कतार में स्थिति — वह क्रम जिससे मंजिल काम उठाती है — कार्य केंद्र बोर्ड पर कार्डों को पुनः सूचीबद्ध करके किसी भी तारीखों को बदले बिना सेट किया जाता है।"
@@ -2440,7 +2440,7 @@ msgstr "बैच {0} × {1}"
 #. placeholder {0}: group.length
 #. placeholder {1}: group[0].processName ?? group[0].description ?? ""
 msgid "Batch {0} × {1} across {columnCount} work centers"
-msgstr ""
+msgstr "{columnCount} कार्य केंद्रों में {0} × {1} बैच करें"
 
 msgid "Batch / Serial"
 msgstr "बैच / सीरीज़"
@@ -2470,7 +2470,7 @@ msgid "Batchable"
 msgstr "बैच योग्य"
 
 msgid "Batches"
-msgstr ""
+msgstr "बैच"
 
 msgid "Beginning"
 msgstr "आरंभ"
@@ -5344,7 +5344,7 @@ msgid "Due date of the final job in the bulk batch; combined with Due Date of Fi
 msgstr "बल्क बैच में अंतिम नौकरी की देय तारीख; नौकरियों को समान रूप से दूरी देने के लिए पहली नौकरी की देय तारीख के साथ मिलाया जाता है।"
 
 msgid "Due dates span {dueSpreadDays} days"
-msgstr ""
+msgstr "नियत तिथियाँ {dueSpreadDays} दिनों में फैली हैं"
 
 msgid "Due Days"
 msgstr "देय दिन"
@@ -8281,7 +8281,7 @@ msgid "Last 6 Months"
 msgstr "पिछले 6 महीने"
 
 msgid "Last Activity"
-msgstr ""
+msgstr "अंतिम गतिविधि"
 
 msgid "Last attempt"
 msgstr "अंतिम प्रयास"
@@ -10262,7 +10262,7 @@ msgid "One set of numbers"
 msgstr "एक ही संख्या का सेट"
 
 msgid "One shared setup instead of one per operation"
-msgstr ""
+msgstr "हर प्रक्रिया के बजाय एक साझा सेटअप"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "एक काम के मार्ग में एक कदम, एक प्रक्रिया और एक कार्य केंद्र का नाम देता है और अपने स्वयं के सेटअप, श्रम और मशीन समय और दरें लेता है।"
@@ -11276,7 +11276,7 @@ msgid "Print Label"
 msgstr "लेबल प्रिंट करें"
 
 msgid "Print load list"
-msgstr ""
+msgstr "लोड सूची प्रिंट करें"
 
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
@@ -13427,7 +13427,7 @@ msgstr "सेटअप"
 #. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {1}: formatDurationMilliseconds(setupMax, { style: "short" })
 msgid "Setup {0} → {1}"
-msgstr ""
+msgstr "सेटअप {0} → {1}"
 
 msgid "Setup & Controls"
 msgstr "सेटअप और नियंत्रण"
@@ -14620,7 +14620,7 @@ msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Onshape में प्राधिकरण अस्वीकार कर दिया गया। दोबारा कनेक्ट करने का प्रयास करें।"
 
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
-msgstr ""
+msgstr "बैच अपने सबसे जरूरी सदस्य के समय चलता है — बाकी पहले खींचे जाते हैं"
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "सभी पोस्ट की गई जर्नल पंक्तियों की पुस्तक, खाते द्वारा योग किया गया - केवल तभी लिखा जाता है जब कंपनी के लिए लेखांकन सक्षम हो।"
@@ -16512,7 +16512,7 @@ msgid "View notes"
 msgstr "नोट्स देखें"
 
 msgid "View on schedule board"
-msgstr ""
+msgstr "शेड्यूल बोर्ड पर देखें"
 
 msgid "View Open"
 msgstr "खुला देखें"

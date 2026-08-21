@@ -1485,7 +1485,7 @@ msgid "An operation done by an outside supplier rather than an in-house work cen
 msgstr "社内の作業センターではなく、外部の仕入先によって行われた操作。下請購買注文でカバーされます。"
 
 msgid "An operation on this job runs in this batch"
-msgstr ""
+msgstr "このジョブの工程がこのバッチで実行されます"
 
 msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
 msgstr "作業センターのキューの中での操作の位置。フロアが仕事を取り上げる順序。作業センター ボード上のカードを並べ替えることで設定され、日付は変更されません。"
@@ -2440,7 +2440,7 @@ msgstr "バッチ {0} × {1}"
 #. placeholder {0}: group.length
 #. placeholder {1}: group[0].processName ?? group[0].description ?? ""
 msgid "Batch {0} × {1} across {columnCount} work centers"
-msgstr ""
+msgstr "{columnCount} 個の作業区にまたがる {0} × {1} をバッチ化"
 
 msgid "Batch / Serial"
 msgstr "バッチ / シリアル"
@@ -2470,7 +2470,7 @@ msgid "Batchable"
 msgstr "バッチ可能"
 
 msgid "Batches"
-msgstr ""
+msgstr "バッチ"
 
 msgid "Beginning"
 msgstr "開始"
@@ -5344,7 +5344,7 @@ msgid "Due date of the final job in the bulk batch; combined with Due Date of Fi
 msgstr "バルク一括処理の最後のジョブの期日; 最初のジョブの期日と組み合わせてジョブを均等に間隔を置きます。"
 
 msgid "Due dates span {dueSpreadDays} days"
-msgstr ""
+msgstr "納期が {dueSpreadDays} 日間に分散しています"
 
 msgid "Due Days"
 msgstr "期日"
@@ -8281,7 +8281,7 @@ msgid "Last 6 Months"
 msgstr "過去6ヶ月"
 
 msgid "Last Activity"
-msgstr ""
+msgstr "最終更新"
 
 msgid "Last attempt"
 msgstr "最後の試行"
@@ -10262,7 +10262,7 @@ msgid "One set of numbers"
 msgstr "1つの数字セット"
 
 msgid "One shared setup instead of one per operation"
-msgstr ""
+msgstr "工程ごとではなく1回の段取りで共有"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "ジョブのルーティングの1つのステップであり、プロセスとワークセンターに名前を付け、独自のセットアップ、労働、機械の時間とレートを持ちます。"
@@ -11276,7 +11276,7 @@ msgid "Print Label"
 msgstr "ラベルを印刷"
 
 msgid "Print load list"
-msgstr ""
+msgstr "ロードリストを印刷"
 
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
@@ -13427,7 +13427,7 @@ msgstr "セットアップ"
 #. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {1}: formatDurationMilliseconds(setupMax, { style: "short" })
 msgid "Setup {0} → {1}"
-msgstr ""
+msgstr "段取り {0} → {1}"
 
 msgid "Setup & Controls"
 msgstr "セットアップとコントロール"
@@ -14620,7 +14620,7 @@ msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Onshape で認可が拒否されました。もう一度接続してください。"
 
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
-msgstr ""
+msgstr "バッチは最も急ぎのメンバーに合わせて実行され、他は前倒しになります"
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "投稿されたすべての仕訳行のブック（勘定ごとに合計）。会社で会計が有効な場合にのみ記入されます。"
@@ -16512,7 +16512,7 @@ msgid "View notes"
 msgstr "ノートを表示"
 
 msgid "View on schedule board"
-msgstr ""
+msgstr "スケジュールボードで表示"
 
 msgid "View Open"
 msgstr "開く"

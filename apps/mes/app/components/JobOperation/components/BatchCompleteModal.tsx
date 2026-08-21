@@ -205,9 +205,8 @@ export function BatchCompleteModal({
             {anyZeroIncluded && (
               <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
                 <Trans>
-                  An operation completed with 0 will be marked Done with no
-                  output. Use "Not in this run" if it was not part of this
-                  batch.
+                  An operation completed with 0 is marked Done with no output —
+                  exclude it instead if it was not part of this run.
                 </Trans>
               </p>
             )}

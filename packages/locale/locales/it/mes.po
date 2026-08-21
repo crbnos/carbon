@@ -130,8 +130,8 @@ msgstr "Allocare unità non conformi"
 msgid "Allocate units"
 msgstr "Assegna unità"
 
-msgid "An operation completed with 0 will be marked Done with no output. Use \"Not in this run\" if it was not part of this batch."
-msgstr ""
+msgid "An operation completed with 0 is marked Done with no output — exclude it instead if it was not part of this run."
+msgstr "Un'operazione completata con 0 viene segnata come Fatta senza produzione — escludila se non faceva parte di questa esecuzione."
 
 msgid "Are you sure you want to delete this step?"
 msgstr "Sei sicuro di voler eliminare questa fase?"
@@ -454,7 +454,7 @@ msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot clo
 msgstr "Ogni unità ha un verdetto: {passes} approvate e {fails} non approvate. Il lotto si chiude con ogni unità instradata al suo risultato."
 
 msgid "Excluded operations return to the schedule un-run — no time or quantity is recorded for them."
-msgstr ""
+msgstr "Le operazioni escluse tornano alla pianificazione senza essere eseguite — nessun tempo o quantità registrati."
 
 msgid "Expand features table"
 msgstr "Espandi tabella funzionalità"
@@ -575,7 +575,7 @@ msgid "In Progress"
 msgstr "In Corso"
 
 msgid "Include in run"
-msgstr ""
+msgstr "Includi nell'esecuzione"
 
 msgid "Inspect Item"
 msgstr "Ispeziona Articolo"
@@ -897,7 +897,7 @@ msgid "None"
 msgstr "Nessuno"
 
 msgid "Not in this run"
-msgstr ""
+msgstr "Non in questa esecuzione"
 
 msgid "Notes"
 msgstr "Note"
@@ -1027,7 +1027,7 @@ msgid "Print"
 msgstr "Stampa"
 
 msgid "Print load list"
-msgstr ""
+msgstr "Stampa lista di carico"
 
 msgid "Printer Settings"
 msgstr "Impostazioni Stampante"
