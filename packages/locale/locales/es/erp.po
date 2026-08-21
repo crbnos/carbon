@@ -155,6 +155,9 @@ msgstr "{chainLabel}. Considere apuntar esta pieza directamente al sucesor final
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# curso} other {# cursos}}"
 
+msgid "{count} selected"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} de {total} fases completadas"
 
@@ -2430,9 +2433,6 @@ msgstr "Número de lote"
 msgid "Batch Number"
 msgstr "Número de Lote"
 
-msgid "Batch planning"
-msgstr "Planificación de lotes"
-
 msgid "Batch Properties"
 msgstr "Propiedades de Lote"
 
@@ -2447,9 +2447,6 @@ msgstr "Seguimiento de Lotes"
 
 msgid "Batchable"
 msgstr "Agrupable"
-
-msgid "Batched"
-msgstr "Agrupado en lotes"
 
 msgid "Beginning"
 msgstr "Inicio"
@@ -3880,6 +3877,9 @@ msgstr "Crear y aprobar órdenes de compra"
 msgid "Create audit trail entries"
 msgstr "Crear entradas de pista de auditoría"
 
+msgid "Create batch"
+msgstr ""
+
 msgid "Create Change Notice"
 msgstr "Crear Aviso de Cambio"
 
@@ -5251,9 +5251,6 @@ msgstr "Arrastra y suelta un PDF de Orden de Compra aquí, o haz clic para selec
 
 msgid "Drag handle"
 msgstr "Controlador de arrastre"
-
-msgid "Drag here to start a new batch"
-msgstr "Arrastre aquí para iniciar un nuevo lote"
 
 msgid "Drag to place on drawing"
 msgstr "Arrastra para colocar en el dibujo"
@@ -9159,6 +9156,9 @@ msgstr "Mover"
 msgid "Move {accountName}"
 msgstr "Mover {accountName}"
 
+msgid "Move batch"
+msgstr ""
+
 msgid "Move entities"
 msgstr "Mover entidades"
 
@@ -9971,9 +9971,6 @@ msgstr "Sin herramientas para este paso"
 
 msgid "No transactions in this period"
 msgstr "No hay transacciones en este período"
-
-msgid "No unbatched operations match"
-msgstr "No coinciden operaciones no agrupadas"
 
 msgid "No unmapped accounts match a provider code"
 msgstr "Ninguna cuenta no asignada coincide con un código de proveedor"
@@ -10886,9 +10883,6 @@ msgstr "Impresoras físicas disponibles para asignación."
 
 msgid "Pick"
 msgstr "Seleccionar"
-
-msgid "Pick a batchable process to plan batches"
-msgstr "Seleccione un proceso agrupable para planificar lotes"
 
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Elige una dimensión Carbon y el destino del proveedor al que se publica. Crear automáticamente añade opciones de proveedor faltantes por nombre en el momento del envío."
@@ -13034,9 +13028,6 @@ msgstr "Seleccionar"
 msgid "Select a assignee"
 msgstr "Seleccionar un asignado"
 
-msgid "Select a batchable process"
-msgstr "Seleccione un proceso agrupable"
-
 msgid "Select a default approver"
 msgstr "Selecciona un aprobador predeterminado"
 
@@ -13148,6 +13139,9 @@ msgstr "Seleccionar Tipo de Empleado"
 
 msgid "Select field"
 msgstr "Seleccionar campo"
+
+msgid "Select for batch"
+msgstr ""
 
 msgid "Select Gauge"
 msgstr "Seleccionar Calibrador"

@@ -155,6 +155,9 @@ msgstr "{chainLabel}. 이 품목을 최종 후속 품목으로 직접 연결하�
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "교육과정 {count}개"
 
+msgid "{count} selected"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done}개 중 {total}개 단계 완료"
 
@@ -2430,9 +2433,6 @@ msgstr "배치 번호"
 msgid "Batch Number"
 msgstr "배치 번호"
 
-msgid "Batch planning"
-msgstr "배치 계획"
-
 msgid "Batch Properties"
 msgstr "배치 속성"
 
@@ -2447,9 +2447,6 @@ msgstr "배치 추적"
 
 msgid "Batchable"
 msgstr "배치 가능한"
-
-msgid "Batched"
-msgstr "배치됨"
 
 msgid "Beginning"
 msgstr "시작"
@@ -3880,6 +3877,9 @@ msgstr "구매주문 생성 및 승인"
 msgid "Create audit trail entries"
 msgstr "감사 추적 항목 생성"
 
+msgid "Create batch"
+msgstr ""
+
 msgid "Create Change Notice"
 msgstr "변경 공지 만들기"
 
@@ -5251,9 +5251,6 @@ msgstr "구매주문 PDF를 여기에 드래그 앤 드롭하거나 클릭하여
 
 msgid "Drag handle"
 msgstr "드래그 핸들"
-
-msgid "Drag here to start a new batch"
-msgstr "새 배치를 시작하려면 여기로 드래그하세요"
 
 msgid "Drag to place on drawing"
 msgstr "드래그하여 도면에 배치"
@@ -9159,6 +9156,9 @@ msgstr "이동"
 msgid "Move {accountName}"
 msgstr "{accountName} 이동"
 
+msgid "Move batch"
+msgstr ""
+
 msgid "Move entities"
 msgstr "개체 이동"
 
@@ -9971,9 +9971,6 @@ msgstr "이 단계에 도구 없음"
 
 msgid "No transactions in this period"
 msgstr "이 기간에 거래가 없습니다"
-
-msgid "No unbatched operations match"
-msgstr "일치하는 배치되지 않은 작업이 없습니다"
 
 msgid "No unmapped accounts match a provider code"
 msgstr "매핑되지 않은 계정이 공급자 코드와 일치하지 않음"
@@ -10886,9 +10883,6 @@ msgstr "배정 가능한 실물 프린터입니다."
 
 msgid "Pick"
 msgstr "피킹"
-
-msgid "Pick a batchable process to plan batches"
-msgstr "배치를 계획하려면 배치 가능한 프로세스를 선택하세요"
 
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Carbon 차원과 게시할 제공자 대상을 선택하세요. 자동 생성은 푸시 시간에 이름으로 누락된 제공자 옵션을 추가합니다."
@@ -13034,9 +13028,6 @@ msgstr "선택"
 msgid "Select a assignee"
 msgstr "담당자 선택"
 
-msgid "Select a batchable process"
-msgstr "배치 가능한 프로세스를 선택하세요"
-
 msgid "Select a default approver"
 msgstr "기본 승인자 선택"
 
@@ -13148,6 +13139,9 @@ msgstr "직원 유형 선택"
 
 msgid "Select field"
 msgstr "필드 선택"
+
+msgid "Select for batch"
+msgstr ""
 
 msgid "Select Gauge"
 msgstr "측정기 선택"

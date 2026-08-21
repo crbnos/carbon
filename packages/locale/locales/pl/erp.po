@@ -155,6 +155,9 @@ msgstr "{chainLabel}. Rozważ wskazanie tej części bezpośrednio na ostateczne
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# kurs} other {# kursy}}"
 
+msgid "{count} selected"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} z {total} faz ukończonych"
 
@@ -2430,9 +2433,6 @@ msgstr "Numer partii"
 msgid "Batch Number"
 msgstr "Numer partii"
 
-msgid "Batch planning"
-msgstr "Planowanie partii"
-
 msgid "Batch Properties"
 msgstr "Właściwości partii"
 
@@ -2447,9 +2447,6 @@ msgstr "Śledzenie partii"
 
 msgid "Batchable"
 msgstr "Zdatne do partii"
-
-msgid "Batched"
-msgstr "Pogrupowane w partie"
 
 msgid "Beginning"
 msgstr "Początek"
@@ -3880,6 +3877,9 @@ msgstr "Twórz i zatwierdzaj zamówienia zakupu"
 msgid "Create audit trail entries"
 msgstr "Utwórz wpisy dziennika audytu"
 
+msgid "Create batch"
+msgstr ""
+
 msgid "Create Change Notice"
 msgstr "Utwórz Zgłoszenie Zmian"
 
@@ -5251,9 +5251,6 @@ msgstr "Przeciągnij i upuść plik PDF zamówienia zakupu tutaj lub kliknij, ab
 
 msgid "Drag handle"
 msgstr "Uchwyt do przeciągania"
-
-msgid "Drag here to start a new batch"
-msgstr "Przeciągnij tutaj, aby rozpocząć nową partię"
 
 msgid "Drag to place on drawing"
 msgstr "Przeciągnij, aby umieścić na rysunku"
@@ -9159,6 +9156,9 @@ msgstr "Przenieś"
 msgid "Move {accountName}"
 msgstr "Przenieś {accountName}"
 
+msgid "Move batch"
+msgstr ""
+
 msgid "Move entities"
 msgstr "Przenieś jednostki"
 
@@ -9971,9 +9971,6 @@ msgstr "Brak narzędzi dla tego kroku"
 
 msgid "No transactions in this period"
 msgstr "Brak transakcji w tym okresie"
-
-msgid "No unbatched operations match"
-msgstr "Brak niegrupowanych operacji spełniających kryteria"
 
 msgid "No unmapped accounts match a provider code"
 msgstr "Żadne niezamapowane konta nie pasują do kodu dostawcy"
@@ -10886,9 +10883,6 @@ msgstr "Drukarki fizyczne dostępne do przypisania."
 
 msgid "Pick"
 msgstr "Wybierz"
-
-msgid "Pick a batchable process to plan batches"
-msgstr "Wybierz proces zdatny do partii, aby planować partie"
 
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Wybierz wymiar Carbon i cel dostawcy, do którego będzie wysyłany. Automatyczne tworzenie dodaje brakujące opcje dostawcy po nazwie podczas wysłania."
@@ -13034,9 +13028,6 @@ msgstr "Wybierz"
 msgid "Select a assignee"
 msgstr "Wybierz osobę przydzieloną"
 
-msgid "Select a batchable process"
-msgstr "Wybierz proces zdatny do partii"
-
 msgid "Select a default approver"
 msgstr "Wybierz domyślnego zatwierdzającego"
 
@@ -13148,6 +13139,9 @@ msgstr "Wybierz typ pracownika"
 
 msgid "Select field"
 msgstr "Wybierz pole"
+
+msgid "Select for batch"
+msgstr ""
 
 msgid "Select Gauge"
 msgstr "Wybierz Miernik"

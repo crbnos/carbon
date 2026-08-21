@@ -6,6 +6,7 @@ import {
   CardContent,
   CardFooter,
   CardHeader,
+  Checkbox,
   cn,
   DropdownMenu,
   DropdownMenuContent,
@@ -35,17 +36,15 @@ import {
   LuFlashlight,
   LuFlashlightOff,
   LuGripVertical,
-  LuLayers,
   LuPencil,
   LuPlay,
   LuSquareUser,
   LuTimer,
   LuTrash,
-  LuUsers,
-  LuX
+  LuUsers
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
-import { Link, useFetcher } from "react-router";
+import { Link } from "react-router";
 import { z } from "zod";
 import {
   Assignee,
@@ -59,8 +58,13 @@ import { useTags } from "~/hooks/useTags";
 import { getDeadlineIcon } from "~/modules/production/ui/Jobs/Deadline";
 import { JobOperationStatus } from "~/modules/production/ui/Jobs/JobOperationStatus";
 import { getPrivateUrl, path } from "~/utils/path";
+import {
+  isBatchableOperation,
+  useBatchSelection
+} from "../context/BatchSelectionContext";
 import { useKanban } from "../context/KanbanContext";
 import type { Item } from "../types";
+import { isBatchItem } from "../types";
 import { useScheduleToday } from "../useScheduleToday";
 
 interface Progress {
@@ -105,12 +109,27 @@ type ItemCardProps = {
   progressByItemId: Record<string, Progress>;
 };
 
-export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
+// Batch items render via BatchItemCard (an explicit variant); this guard keeps
+// the union out of the hook-bearing body so field access stays narrowed.
+export function ItemCard({ item, ...rest }: ItemCardProps) {
+  if (isBatchItem(item)) return null;
+  return <OperationCard item={item} {...rest} />;
+}
+
+function OperationCard({
+  item,
+  isOverlay,
+  progressByItemId
+}: {
+  item: Exclude<Item, { batchId: string }>;
+  isOverlay?: boolean;
+  progressByItemId: Record<string, Progress>;
+}) {
   const { t } = useLingui();
   const { formatRelativeTime } = useDateFormatter();
   const { displaySettings, selectedGroup, setSelectedGroup, tags } =
     useKanban();
-  const batchFetcher = useFetcher();
+  const batchSelection = useBatchSelection();
   const {
     setNodeRef,
     attributes,
@@ -130,6 +149,8 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
   });
 
   const isHighlighted = selectedGroup === item.jobReadableId;
+  const isSelectableForBatch = batchSelection?.isSelectable(item) ?? false;
+  const isSelectedForBatch = batchSelection?.selectedIds.has(item.id) ?? false;
   const scheduleToday = useScheduleToday();
 
   const style = {
@@ -155,13 +176,14 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
       ref={setNodeRef}
       style={style}
       className={cn(
-        "max-w-[330px]",
+        "group/card max-w-[330px]",
         cardVariants({
           dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
           // @ts-expect-error TS2322 - TODO: fix type
           status: status,
           highlighted: isHighlighted
-        })
+        }),
+        isSelectedForBatch && "ring-2 ring-primary"
       )}
     >
       <CardHeader className="flex flex-col justify-between relative gap-2">
@@ -180,6 +202,20 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
             </Link>
           </div>
           <HStack spacing={1} className="flex-shrink-0 -mr-2">
+            {(isSelectableForBatch || isSelectedForBatch) && (
+              <Checkbox
+                aria-label={t`Select for batch`}
+                checked={isSelectedForBatch}
+                onCheckedChange={() => {
+                  if (isBatchableOperation(item)) batchSelection?.toggle(item);
+                }}
+                className={cn(
+                  "mr-1",
+                  !isSelectedForBatch &&
+                    "opacity-0 group-hover/card:opacity-100 focus-visible:opacity-100"
+                )}
+              />
+            )}
             <IconButton
               aria-label={t`Move item`}
               icon={<LuGripVertical />}
@@ -226,36 +262,6 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
                     Open in MES
                   </a>
                 </DropdownMenuItem>
-                {"processBatchable" in item &&
-                  item.processBatchable &&
-                  !item.jobOperationBatchId && (
-                    <DropdownMenuItem asChild>
-                      <Link
-                        to={`${path.to.scheduleBatching}?process=${item.columnType}`}
-                      >
-                        <DropdownMenuIcon icon={<LuLayers />} />
-                        {t`Batch planning`}
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
-                {"jobOperationBatchId" in item && item.jobOperationBatchId && (
-                  <DropdownMenuItem
-                    destructive
-                    onClick={() => {
-                      const fd = new FormData();
-                      fd.set("intent", "remove");
-                      fd.set("batchId", item.jobOperationBatchId as string);
-                      fd.append("jobOperationIds", item.id);
-                      batchFetcher.submit(fd, {
-                        method: "post",
-                        action: path.to.scheduleBatchingUpdate
-                      });
-                    }}
-                  >
-                    <DropdownMenuIcon icon={<LuX />} />
-                    {t`Remove from batch`}
-                  </DropdownMenuItem>
-                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </HStack>
@@ -329,12 +335,18 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
           <LuCirclePlay className="text-muted-foreground" />
           <span className="text-sm line-clamp-1">{item.title}</span>
           {item.reworkId && <Badge variant="red">Rework</Badge>}
-          {"jobOperationBatchId" in item && item.jobOperationBatchId && (
-            <Badge variant="secondary">
-              {item.batchReadableId ?? t`Batched`}
-            </Badge>
-          )}
         </HStack>
+        {displaySettings.showMaterial &&
+          "materialChips" in item &&
+          (item.materialChips?.length ?? 0) > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {item.materialChips?.map((chip) => (
+                <Badge key={chip} variant="secondary" className="text-xs">
+                  {chip}
+                </Badge>
+              ))}
+            </div>
+          )}
         {displaySettings.showDescription && item.description && (
           <HStack className="justify-start space-x-2">
             <LuClipboardCheck className="text-muted-foreground" />
@@ -455,7 +467,7 @@ function JobOperationTags({
   operation,
   availableTags
 }: {
-  operation: Item;
+  operation: Exclude<Item, { batchId: string }>;
   availableTags: { name: string }[];
 }) {
   const { onUpdateTags } = useTags({ id: operation.id, table: "jobOperation" });

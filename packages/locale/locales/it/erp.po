@@ -155,6 +155,9 @@ msgstr "{chainLabel}. Considera di indirizzare direttamente questa parte al succ
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# corso} other {# corsi}}"
 
+msgid "{count} selected"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} di {total} fasi completate"
 
@@ -2430,9 +2433,6 @@ msgstr "Numero di lotto"
 msgid "Batch Number"
 msgstr "Numero Lotto"
 
-msgid "Batch planning"
-msgstr "Pianificazione batch"
-
 msgid "Batch Properties"
 msgstr "Proprietà Batch"
 
@@ -2447,9 +2447,6 @@ msgstr "Tracciamento Batch"
 
 msgid "Batchable"
 msgstr "Raggruppabile"
-
-msgid "Batched"
-msgstr "Raggruppato"
 
 msgid "Beginning"
 msgstr "Inizio"
@@ -3880,6 +3877,9 @@ msgstr "Creare e approvare ordini di acquisto"
 msgid "Create audit trail entries"
 msgstr "Crea voci di audit trail"
 
+msgid "Create batch"
+msgstr ""
+
 msgid "Create Change Notice"
 msgstr "Crea avviso di modifica"
 
@@ -5251,9 +5251,6 @@ msgstr "Trascina e rilascia un PDF di ordine di acquisto qui, oppure fai clic pe
 
 msgid "Drag handle"
 msgstr "Maniglia di trascinamento"
-
-msgid "Drag here to start a new batch"
-msgstr "Trascinare qui per avviare un nuovo batch"
 
 msgid "Drag to place on drawing"
 msgstr "Trascina per posizionare sul disegno"
@@ -9159,6 +9156,9 @@ msgstr "Sposta"
 msgid "Move {accountName}"
 msgstr "Sposta {accountName}"
 
+msgid "Move batch"
+msgstr ""
+
 msgid "Move entities"
 msgstr "Sposta entità"
 
@@ -9971,9 +9971,6 @@ msgstr "Nessuno strumento per questo passaggio"
 
 msgid "No transactions in this period"
 msgstr "Nessuna transazione in questo periodo"
-
-msgid "No unbatched operations match"
-msgstr "Nessuna operazione non raggruppata corrisponde"
 
 msgid "No unmapped accounts match a provider code"
 msgstr "Nessun conto non mappato corrisponde a un codice provider"
@@ -10886,9 +10883,6 @@ msgstr "Stampanti fisiche disponibili per l'assegnazione."
 
 msgid "Pick"
 msgstr "Preleva"
-
-msgid "Pick a batchable process to plan batches"
-msgstr "Selezionare un processo raggruppabile per pianificare i batch"
 
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Scegli una dimensione Carbon e il target provider su cui viene contabilizzato. La creazione automatica aggiunge le opzioni provider mancanti per nome al momento del push."
@@ -13034,9 +13028,6 @@ msgstr "Seleziona"
 msgid "Select a assignee"
 msgstr "Seleziona un assegnatario"
 
-msgid "Select a batchable process"
-msgstr "Selezionare un processo raggruppabile"
-
 msgid "Select a default approver"
 msgstr "Seleziona un approvatore predefinito"
 
@@ -13148,6 +13139,9 @@ msgstr "Seleziona Tipo di Dipendente"
 
 msgid "Select field"
 msgstr "Seleziona campo"
+
+msgid "Select for batch"
+msgstr ""
 
 msgid "Select Gauge"
 msgstr "Seleziona Calibro"

@@ -155,6 +155,9 @@ msgstr "{chainLabel}。考虑将此零件直接指向最终后继产品。"
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# 门课程} other {# 门课程}}"
 
+msgid "{count} selected"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} 个，共 {total} 个阶段已完成"
 
@@ -2430,9 +2433,6 @@ msgstr "批号"
 msgid "Batch Number"
 msgstr "批号"
 
-msgid "Batch planning"
-msgstr "批次计划"
-
 msgid "Batch Properties"
 msgstr "批量属性"
 
@@ -2447,9 +2447,6 @@ msgstr "批次追踪"
 
 msgid "Batchable"
 msgstr "可批量的"
-
-msgid "Batched"
-msgstr "已分批"
 
 msgid "Beginning"
 msgstr "开始"
@@ -3880,6 +3877,9 @@ msgstr "创建并批准采购订单"
 msgid "Create audit trail entries"
 msgstr "创建审计跟踪条目"
 
+msgid "Create batch"
+msgstr ""
+
 msgid "Create Change Notice"
 msgstr "创建更改单"
 
@@ -5251,9 +5251,6 @@ msgstr "将采购订单 PDF 拖放到此处，或点击选择文件"
 
 msgid "Drag handle"
 msgstr "拖动手柄"
-
-msgid "Drag here to start a new batch"
-msgstr "拖至此处开始新批次"
 
 msgid "Drag to place on drawing"
 msgstr "拖动以在图纸上放置"
@@ -9159,6 +9156,9 @@ msgstr "移动"
 msgid "Move {accountName}"
 msgstr "移动 {accountName}"
 
+msgid "Move batch"
+msgstr ""
+
 msgid "Move entities"
 msgstr "移动实体"
 
@@ -9971,9 +9971,6 @@ msgstr "此步骤没有工具"
 
 msgid "No transactions in this period"
 msgstr "此期间无交易"
-
-msgid "No unbatched operations match"
-msgstr "没有匹配的未分批操作"
 
 msgid "No unmapped accounts match a provider code"
 msgstr "没有未映射的账户与提供商代码匹配"
@@ -10886,9 +10883,6 @@ msgstr "可用于分配的物理打印机。"
 
 msgid "Pick"
 msgstr "拣选"
-
-msgid "Pick a batchable process to plan batches"
-msgstr "选择可批量的工序来规划批次"
 
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "选择一个 Carbon 维度和它发布到的提供商目标。自动创建在推送时按名称添加缺失的提供商选项。"
@@ -13034,9 +13028,6 @@ msgstr "选择"
 msgid "Select a assignee"
 msgstr "选择受理人"
 
-msgid "Select a batchable process"
-msgstr "选择可批量的工序"
-
 msgid "Select a default approver"
 msgstr "选择默认审批人"
 
@@ -13148,6 +13139,9 @@ msgstr "选择员工类型"
 
 msgid "Select field"
 msgstr "选择字段"
+
+msgid "Select for batch"
+msgstr ""
 
 msgid "Select Gauge"
 msgstr "选择量具"

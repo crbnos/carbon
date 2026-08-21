@@ -155,6 +155,9 @@ msgstr "{chainLabel}. Erwägen Sie, diesen Teil direkt auf den endgültigen Nach
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# Kurs} other {# Kurse}}"
 
+msgid "{count} selected"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} von {total} Phasen abgeschlossen"
 
@@ -2430,9 +2433,6 @@ msgstr "Chargennummer"
 msgid "Batch Number"
 msgstr "Chargennummer"
 
-msgid "Batch planning"
-msgstr "Batch-Planung"
-
 msgid "Batch Properties"
 msgstr "Batch-Eigenschaften"
 
@@ -2447,9 +2447,6 @@ msgstr "Chargenverfolgung"
 
 msgid "Batchable"
 msgstr "Batchbar"
-
-msgid "Batched"
-msgstr "Gebündelt"
 
 msgid "Beginning"
 msgstr "Anfang"
@@ -3880,6 +3877,9 @@ msgstr "Bestellungen erstellen und genehmigen"
 msgid "Create audit trail entries"
 msgstr "Audit-Trail-Einträge erstellen"
 
+msgid "Create batch"
+msgstr ""
+
 msgid "Create Change Notice"
 msgstr "Änderungsmitteilung erstellen"
 
@@ -5251,9 +5251,6 @@ msgstr "Ziehen Sie eine Bestellungs-PDF hierher, oder klicken Sie, um eine Datei
 
 msgid "Drag handle"
 msgstr "Ziehgriff"
-
-msgid "Drag here to start a new batch"
-msgstr "Hierher ziehen, um einen neuen Batch zu starten"
 
 msgid "Drag to place on drawing"
 msgstr "Auf Zeichnung platzieren durch Ziehen"
@@ -9159,6 +9156,9 @@ msgstr "Verschieben"
 msgid "Move {accountName}"
 msgstr "{accountName} verschieben"
 
+msgid "Move batch"
+msgstr ""
+
 msgid "Move entities"
 msgstr "Entitäten verschieben"
 
@@ -9971,9 +9971,6 @@ msgstr "Keine Werkzeuge für diesen Schritt"
 
 msgid "No transactions in this period"
 msgstr "Keine Transaktionen in diesem Zeitraum"
-
-msgid "No unbatched operations match"
-msgstr "Keine ungruppierten Operationen gefunden"
 
 msgid "No unmapped accounts match a provider code"
 msgstr "Keine nicht zugeordneten Konten entsprechen einem Provider-Code"
@@ -10886,9 +10883,6 @@ msgstr "Physische Drucker verfügbar zur Zuweisung."
 
 msgid "Pick"
 msgstr "Auswählen"
-
-msgid "Pick a batchable process to plan batches"
-msgstr "Wählen Sie einen batchbaren Prozess, um Batches zu planen"
 
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Wählen Sie eine Carbon-Dimension und das Provider-Ziel aus, auf das sie publiziert wird. Auto-create fügt beim Versenden fehlende Provider-Optionen nach Namen hinzu."
@@ -13034,9 +13028,6 @@ msgstr "Auswählen"
 msgid "Select a assignee"
 msgstr "Wählen Sie einen Bevollmächtigten"
 
-msgid "Select a batchable process"
-msgstr "Wählen Sie einen batchbaren Prozess"
-
 msgid "Select a default approver"
 msgstr "Wählen Sie einen Standard-Genehmiger"
 
@@ -13148,6 +13139,9 @@ msgstr "Mitarbeitertyp auswählen"
 
 msgid "Select field"
 msgstr "Feld auswählen"
+
+msgid "Select for batch"
+msgstr ""
 
 msgid "Select Gauge"
 msgstr "Messuhr auswählen"

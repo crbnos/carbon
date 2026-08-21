@@ -1,14 +1,15 @@
 # Job Operation Batching
 
 Last tested: 2026-08-21 (feat/job-operation-batching-v2)
-Routes: ERP `/x/resources/processes`, `/x/schedule/batching`; MES `/x/batch/$batchId`
+Routes: ERP `/x/resources/processes`, `/x/schedule/operations`; MES `/x/batch/$batchId`
 Edge fn: `batch-operations` (create/add/remove/update/dissolve/complete)
 
 ## Strategy
 
 Two verification paths — use both:
-- **UI (agent-browser)** for the process flag, the batch planning board (candidates,
-  material chips, facet filter), and the MES batch page render.
+- **UI (agent-browser)** for the process flag, the operations-board composition
+  (select checkboxes, BAT card collapse, material chips + facets), and the MES
+  batch page render.
 - **Edge fn (direct `curl` with the service-role key)** for all mutation/completion
   logic. @dnd-kit drag is unreliable to automate; the edge fn is the exact call the
   board/MES routes make, so invoking it + asserting DB state is the reliable proof.
@@ -40,14 +41,18 @@ Full seed/cleanup SQL pattern is in the run log `.ai/runs/2026-08-21-job-operati
   `requestSubmit` the drawer form (button "Save").
 - Verify DB: `select batchable from process where id=...` → `t`.
 
-### 2. Batch planning board (UI)
-- `/x/schedule/batching` → shows a batchable-process picker ("Select a batchable process").
-- Select the process → the OPERATIONS pane lists candidates; each shows its material
-  substance chip (or "No material properties" when the op has no BOM line), plus a
-  "Drag here to start a new batch" drop zone.
-- Click **Filter** → a **Substance** facet lists the seeded substances. Select one →
-  the candidate count narrows to only ops whose BOM matches (an active filter chip
-  "Substance is any of X" appears).
+### 2. Batch composition on the operations board (UI — redesigned 2026-08-21)
+- `/x/schedule/operations` → batchable, unstarted operations show a checkbox on
+  hover (top-right, before the grip). Checking one pins the process; a floating
+  bar appears ("N selected · Create batch · Clear").
+- "Create batch" submits to `batching.update` (intent=create) → the members
+  collapse into one `BAT` card in the batch's work-center column (member rows,
+  hover X to remove a member, menu: Open in MES / Dissolve batch).
+- Dragging the BAT card to another work-center column reassigns the batch work
+  center. A Completing batch card is read-only (yellow badge + MES retry link).
+- Click **Filter** → material facets (Substance/Grade/Dimension/Form/Finish)
+  appear when the board's ops have those properties; selecting one narrows the
+  cards. Material chips render on cards (display-settings "Material" toggle).
 
 ### 3. Candidate RPC guard (SQL)
 - `select ... from get_batchable_operations(location_id, process_id)` returns the
@@ -94,9 +99,8 @@ Full seed/cleanup SQL pattern is in the run log `.ai/runs/2026-08-21-job-operati
 
 ## Selector Notes
 - Process form Batchable field: `switch "Batchable"`.
-- Board process picker: the lone `combobox` on `/x/schedule/batching`; options are the
-  batchable processes.
-- Board filter: button "Filter" → substance facet options by name.
+- Board select checkbox: `checkbox "Select for batch"` on hover of a batchable card.
+- Board filter: button "Filter" → material facet options by name.
 
 ## Common Failures
 - Edge fn intermittently returns `{"error":"worker did not respond in time"}` /

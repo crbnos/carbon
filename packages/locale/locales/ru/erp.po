@@ -155,6 +155,9 @@ msgstr "{chainLabel}. Рассмотрите возможность указан
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# курс} other {# курсов}}"
 
+msgid "{count} selected"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} из {total} этапов завершено"
 
@@ -2430,9 +2433,6 @@ msgstr "Номер партии"
 msgid "Batch Number"
 msgstr "Номер партии"
 
-msgid "Batch planning"
-msgstr "Планирование партий"
-
 msgid "Batch Properties"
 msgstr "Свойства партии"
 
@@ -2447,9 +2447,6 @@ msgstr "Отслеживание партий"
 
 msgid "Batchable"
 msgstr "Допускает группировку"
-
-msgid "Batched"
-msgstr "Сгруппирован"
 
 msgid "Beginning"
 msgstr "Начало"
@@ -3880,6 +3877,9 @@ msgstr "Создавать и утверждать заказы на покуп�
 msgid "Create audit trail entries"
 msgstr "Создать записи в журнале аудита"
 
+msgid "Create batch"
+msgstr ""
+
 msgid "Create Change Notice"
 msgstr "Создать уведомление об изменении"
 
@@ -5251,9 +5251,6 @@ msgstr "Перетащите PDF-файл заказа на покупку сю�
 
 msgid "Drag handle"
 msgstr "Ручка перетаскивания"
-
-msgid "Drag here to start a new batch"
-msgstr "Перетащите сюда для начала новой партии"
 
 msgid "Drag to place on drawing"
 msgstr "Перетащите, чтобы разместить на чертеже"
@@ -9159,6 +9156,9 @@ msgstr "Переместить"
 msgid "Move {accountName}"
 msgstr "Переместить {accountName}"
 
+msgid "Move batch"
+msgstr ""
+
 msgid "Move entities"
 msgstr "Переместить сущности"
 
@@ -9971,9 +9971,6 @@ msgstr "Нет инструментов для этого шага"
 
 msgid "No transactions in this period"
 msgstr "Нет транзакций в этом периоде"
-
-msgid "No unbatched operations match"
-msgstr "Нет совпадающих несгруппированных операций"
 
 msgid "No unmapped accounts match a provider code"
 msgstr "Ни один несопоставленный счет не совпадает с кодом системы"
@@ -10886,9 +10883,6 @@ msgstr "Физические принтеры, доступные для наз�
 
 msgid "Pick"
 msgstr "Выбрать"
-
-msgid "Pick a batchable process to plan batches"
-msgstr "Выберите допускающий группировку процесс для планирования партий"
 
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Выберите размерность Carbon и цель провайдера, на которую она отправляется. Автоматическое создание добавляет отсутствующие параметры провайдера по имени во время отправки."
@@ -13034,9 +13028,6 @@ msgstr "Выбрать"
 msgid "Select a assignee"
 msgstr "Выберите исполнителя"
 
-msgid "Select a batchable process"
-msgstr "Выберите процесс, допускающий группировку"
-
 msgid "Select a default approver"
 msgstr "Выберите утверждающего по умолчанию"
 
@@ -13148,6 +13139,9 @@ msgstr "Выберите тип сотрудника"
 
 msgid "Select field"
 msgstr "Выберите поле"
+
+msgid "Select for batch"
+msgstr ""
 
 msgid "Select Gauge"
 msgstr "Выбрать датчик"

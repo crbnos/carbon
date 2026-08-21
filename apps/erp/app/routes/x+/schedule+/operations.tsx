@@ -49,11 +49,15 @@ import { useUrlParams, useUser } from "~/hooks";
 import { getActiveJobOperationsByLocation } from "~/modules/production";
 import type { Column, OperationItem } from "~/modules/production/ui/Schedule";
 import type {
+  BatchItem,
   DisplaySettings,
   Event,
+  Item,
   Progress
 } from "~/modules/production/ui/Schedule/Kanban";
-import { Kanban } from "~/modules/production/ui/Schedule/Kanban";
+import { isBatchItem, Kanban } from "~/modules/production/ui/Schedule/Kanban";
+import { BatchSelectionBar } from "~/modules/production/ui/Schedule/Kanban/components/BatchSelectionBar";
+import { BatchSelectionProvider } from "~/modules/production/ui/Schedule/Kanban/context/BatchSelectionContext";
 import { comparePriorityThenId } from "~/modules/production/ui/Schedule/Kanban/placement";
 import { ScheduleNavigation } from "~/modules/production/ui/Schedule/Kanban/ScheuleNavigation";
 import {
@@ -62,6 +66,7 @@ import {
 } from "~/modules/resources";
 import { getTagsList } from "~/modules/shared";
 import { resolveLocationId } from "~/modules/shared/location.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { usePeople } from "~/stores";
 import { makeDurations } from "~/utils/duration";
 import type { Handle } from "~/utils/handle";
@@ -89,10 +94,27 @@ export async function loader({ request }: LoaderFunctionArgs) {
   let selectedSalesOrderIds: string[] = [];
   let selectedTags: string[] = [];
   let selectedAssignee: string[] = [];
+  // Material-property facets (nesting compatibility): an operation matches if
+  // ANY of its BOM lines matches ALL active facets.
+  const selectedMaterialFacets: Record<string, string[]> = {};
+  const MATERIAL_FACET_KEYS = [
+    "substanceId",
+    "gradeId",
+    "dimensionId",
+    "formId",
+    "finishId"
+  ] as const;
 
   if (filterParam) {
     for (const filter of filterParam) {
       const [key, operator, value] = filter.split(":");
+      if (
+        (MATERIAL_FACET_KEYS as readonly string[]).includes(key) &&
+        (operator === "in" || operator === "eq")
+      ) {
+        selectedMaterialFacets[key] =
+          operator === "in" ? value.split(",") : [value];
+      }
       if (key === "workCenterId") {
         if (operator === "in") {
           selectedWorkCenterIds = value.split(",");
@@ -142,6 +164,113 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getTagsList(client, companyId, "operation")
   ]);
 
+  // BOM material properties for every listed operation — powers the material
+  // facets and the per-card chips. One Kysely join (id lists this size blow
+  // the PostgREST URL limit).
+  const opIds = (operations.data ?? []).map((op) => op.id);
+  type MaterialLine = {
+    substanceId: string | null;
+    gradeId: string | null;
+    dimensionId: string | null;
+    formId: string | null;
+    finishId: string | null;
+    chip: string;
+  };
+  const materialLinesByOp = new Map<string, MaterialLine[]>();
+  const facetOptions: Record<string, Map<string, string>> = {
+    substanceId: new Map(),
+    gradeId: new Map(),
+    dimensionId: new Map(),
+    formId: new Map(),
+    finishId: new Map()
+  };
+  if (opIds.length > 0) {
+    const db = getDatabaseClient();
+    const materialRows = await db
+      .selectFrom("jobMaterial as jm")
+      .innerJoin("item as i", "i.id", "jm.itemId")
+      .leftJoin("material as m", (join) =>
+        join
+          .onRef("m.id", "=", "i.readableId")
+          .onRef("m.companyId", "=", "i.companyId")
+      )
+      .leftJoin("materialSubstance as ms", "ms.id", "m.materialSubstanceId")
+      .leftJoin("materialGrade as mg", "mg.id", "m.gradeId")
+      .leftJoin("materialDimension as md", "md.id", "m.dimensionId")
+      .leftJoin("materialForm as mf", "mf.id", "m.materialFormId")
+      .leftJoin("materialFinish as mfin", "mfin.id", "m.finishId")
+      .select([
+        "jm.jobOperationId",
+        "m.materialSubstanceId as substanceId",
+        "ms.name as substanceName",
+        "m.gradeId",
+        "mg.name as gradeName",
+        "m.dimensionId",
+        "md.name as dimensionName",
+        "m.materialFormId as formId",
+        "mf.name as formName",
+        "m.finishId",
+        "mfin.name as finishName"
+      ])
+      .where("jm.jobOperationId", "in", opIds)
+      .where("jm.companyId", "=", companyId)
+      .execute();
+
+    for (const row of materialRows) {
+      if (!row.jobOperationId) continue;
+      const chip = [
+        row.substanceName,
+        row.gradeName,
+        row.dimensionName,
+        row.formName,
+        row.finishName
+      ]
+        .filter(Boolean)
+        .join(" ");
+      if (!chip) continue;
+      const line: MaterialLine = {
+        substanceId: row.substanceId,
+        gradeId: row.gradeId,
+        dimensionId: row.dimensionId,
+        formId: row.formId,
+        finishId: row.finishId,
+        chip
+      };
+      const lines = materialLinesByOp.get(row.jobOperationId);
+      if (lines) lines.push(line);
+      else materialLinesByOp.set(row.jobOperationId, [line]);
+
+      if (row.substanceId && row.substanceName)
+        facetOptions.substanceId.set(row.substanceId, row.substanceName);
+      if (row.gradeId && row.gradeName)
+        facetOptions.gradeId.set(row.gradeId, row.gradeName);
+      if (row.dimensionId && row.dimensionName)
+        facetOptions.dimensionId.set(row.dimensionId, row.dimensionName);
+      if (row.formId && row.formName)
+        facetOptions.formId.set(row.formId, row.formName);
+      if (row.finishId && row.finishName)
+        facetOptions.finishId.set(row.finishId, row.finishName);
+    }
+  }
+
+  // Batch headers for collapsed cards (status + authoritative work center).
+  const batchIds = [
+    ...new Set(
+      (operations.data ?? [])
+        .map((op) => op.jobOperationBatchId)
+        .filter((id): id is string => Boolean(id))
+    )
+  ];
+  const batchHeaders =
+    batchIds.length > 0
+      ? await client
+          .from("jobOperationBatch")
+          .select("id, readableId, status, workCenterId")
+          .in("id", batchIds)
+          .eq("companyId", companyId)
+      : { data: [] as never[], error: null };
+  const batchById = new Map((batchHeaders.data ?? []).map((b) => [b.id, b]));
+
   const activeWorkCenters = new Set();
 
   operations.data?.forEach((op) => {
@@ -183,6 +312,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
+  if (Object.keys(selectedMaterialFacets).length > 0) {
+    filteredOperations = filteredOperations.filter((op) => {
+      const lines = materialLinesByOp.get(op.id) ?? [];
+      return lines.some((line) =>
+        Object.entries(selectedMaterialFacets).every(([key, values]) => {
+          const id = line[key as keyof MaterialLine];
+          return typeof id === "string" && values.includes(id);
+        })
+      );
+    });
+  }
+
   if (search) {
     filteredOperations = filteredOperations.filter(
       (op) =>
@@ -210,6 +351,94 @@ export async function loader({ request }: LoaderFunctionArgs) {
       return true;
     }) ?? [];
 
+  const operationItems = (filteredOperations.map((op) => {
+    const operation = makeDurations(op);
+    return {
+      id: op.id,
+      columnId: op.workCenterId,
+      columnType: op.processId,
+      priority: op.priority,
+      title: op.jobReadableId,
+      link: op.parentMaterialId
+        ? path.to.jobMakeMethod(op.jobId, op.jobMakeMethodId)
+        : path.to.jobMethod(op.jobId, op.jobMakeMethodId),
+      subtitle: op.itemReadableId,
+      assignee: op.assignee,
+      tags: op.tags,
+      description: op.description,
+      dueDate: op.operationDueDate,
+      duration:
+        operation.setupDuration +
+        operation.laborDuration +
+        operation.machineDuration,
+      jobId: op.jobId,
+      jobReadableId: op.jobReadableId,
+      itemReadableId: op.itemReadableId,
+      itemDescription: op.itemDescription,
+      progress: 0,
+      deadlineType: op.jobDeadlineType,
+      customerId: op.jobCustomerId,
+      targetQuantity: op.targetQuantity,
+      quantity: op.operationQuantity,
+      quantityCompleted: op.quantityComplete,
+      quantityReworked: op.quantityReworked,
+      quantityScrapped: op.quantityScrapped,
+      reworkId: op.reworkId,
+      salesOrderReadableId: op.salesOrderReadableId,
+      salesOrderId: op.salesOrderId,
+      salesOrderLineId: op.salesOrderLineId,
+      status: op.operationStatus,
+      setupDuration: operation.setupDuration,
+      laborDuration: operation.laborDuration,
+      machineDuration: operation.machineDuration,
+      thumbnailPath: op.thumbnailPath,
+      processBatchable: op.processBatchable,
+      jobOperationBatchId: op.jobOperationBatchId,
+      batchReadableId: op.batchReadableId,
+      materialChips: [
+        ...new Set(
+          (materialLinesByOp.get(op.id) ?? []).map((line) => line.chip)
+        )
+      ]
+    };
+  }) ?? []) satisfies OperationItem[];
+
+  // Collapse batched operations into one card per batch (matching the MES
+  // board). Members of a live (Active/Completing) batch never render as
+  // individual cards; a batch whose header is missing or Completed falls back
+  // to individual cards.
+  const membersByBatch = new Map<string, OperationItem[]>();
+  const unbatchedItems: OperationItem[] = [];
+  for (const item of operationItems) {
+    const batch = item.jobOperationBatchId
+      ? batchById.get(item.jobOperationBatchId)
+      : undefined;
+    if (batch && (batch.status === "Active" || batch.status === "Completing")) {
+      const members = membersByBatch.get(batch.id);
+      if (members) members.push(item);
+      else membersByBatch.set(batch.id, [item]);
+    } else {
+      unbatchedItems.push(item);
+    }
+  }
+
+  const batchItems: BatchItem[] = [...membersByBatch.entries()].map(
+    ([batchId, members]) => {
+      const batch = batchById.get(batchId)!;
+      return {
+        id: `batch:${batchId}`,
+        batchId,
+        batchReadableId: batch.readableId,
+        batchStatus: batch.status as BatchItem["batchStatus"],
+        columnId: batch.workCenterId ?? members[0].columnId,
+        columnType: members[0].columnType,
+        priority: Math.min(...members.map((m) => m.priority)),
+        title: batch.readableId,
+        members
+      };
+    }
+  );
+
   return {
     columns: filteredWorkCenters
       .map((wc) => ({
@@ -222,52 +451,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
         blockingDispatchReadableId: wc.blockingDispatchReadableId ?? undefined
       }))
       .sort((a, b) => a.title.localeCompare(b.title)) satisfies Column[],
-    items: (filteredOperations.map((op) => {
-      const operation = makeDurations(op);
-      return {
-        id: op.id,
-        columnId: op.workCenterId,
-        columnType: op.processId,
-        priority: op.priority,
-        title: op.jobReadableId,
-        link: op.parentMaterialId
-          ? path.to.jobMakeMethod(op.jobId, op.jobMakeMethodId)
-          : path.to.jobMethod(op.jobId, op.jobMakeMethodId),
-        subtitle: op.itemReadableId,
-        assignee: op.assignee,
-        tags: op.tags,
-        description: op.description,
-        dueDate: op.operationDueDate,
-        duration:
-          operation.setupDuration +
-          operation.laborDuration +
-          operation.machineDuration,
-        jobId: op.jobId,
-        jobReadableId: op.jobReadableId,
-        itemReadableId: op.itemReadableId,
-        itemDescription: op.itemDescription,
-        progress: 0,
-        deadlineType: op.jobDeadlineType,
-        customerId: op.jobCustomerId,
-        targetQuantity: op.targetQuantity,
-        quantity: op.operationQuantity,
-        quantityCompleted: op.quantityComplete,
-        quantityReworked: op.quantityReworked,
-        quantityScrapped: op.quantityScrapped,
-        reworkId: op.reworkId,
-        salesOrderReadableId: op.salesOrderReadableId,
-        salesOrderId: op.salesOrderId,
-        salesOrderLineId: op.salesOrderLineId,
-        status: op.operationStatus,
-        setupDuration: operation.setupDuration,
-        laborDuration: operation.laborDuration,
-        machineDuration: operation.machineDuration,
-        thumbnailPath: op.thumbnailPath,
-        processBatchable: op.processBatchable,
-        jobOperationBatchId: op.jobOperationBatchId,
-        batchReadableId: op.batchReadableId
-      };
-    }) ?? []) satisfies OperationItem[],
+    items: [...unbatchedItems, ...batchItems] satisfies Item[],
+    materialFacetOptions: Object.fromEntries(
+      Object.entries(facetOptions).map(([key, map]) => [
+        key,
+        [...map.entries()].map(([id, name]) => ({ id, name }))
+      ])
+    ),
     processes: processes.data ?? [],
     salesOrders: Object.entries(
       filteredOperations?.reduce(
@@ -308,6 +498,7 @@ const defaultDisplaySettings: ScheduleDisplaySettings = {
   showDescription: true,
   showDueDate: true,
   showEmployee: true,
+  showMaterial: true,
   showProgress: true,
   showQuantity: true,
   showStatus: true,
@@ -321,6 +512,7 @@ function KanbanSchedule() {
   const {
     columns,
     items: initialItems,
+    materialFacetOptions,
     processes,
     salesOrders,
     availableTags,
@@ -330,7 +522,7 @@ function KanbanSchedule() {
 
   const locations = useLocations();
 
-  const [items, setItems] = useState<OperationItem[]>(initialItems);
+  const [items, setItems] = useState<Item[]>(initialItems);
   const [displaySettings, setDisplaySettings] = useLocalStorage(
     DISPLAY_SETTINGS_KEY,
     defaultDisplaySettings
@@ -344,7 +536,7 @@ function KanbanSchedule() {
     setItems(initialItems);
   }, [initialItems]);
 
-  const sortItems = useCallback((items: OperationItem[]) => {
+  const sortItems = useCallback((items: Item[]) => {
     return [...items].sort(comparePriorityThenId);
   }, []);
 
@@ -433,9 +625,43 @@ function KanbanSchedule() {
             value: tag
           }))
         }
-      }
+      },
+      // Material facets (nesting compatibility) — only the properties present
+      // on the current board's BOM lines are offered.
+      ...(
+        [
+          { accessorKey: "substanceId", header: "Substance" },
+          { accessorKey: "gradeId", header: "Grade" },
+          { accessorKey: "dimensionId", header: "Dimension" },
+          { accessorKey: "formId", header: "Form" },
+          { accessorKey: "finishId", header: "Finish" }
+        ] as const
+      )
+        .filter(
+          ({ accessorKey }) =>
+            (materialFacetOptions[accessorKey]?.length ?? 0) > 0
+        )
+        .map(({ accessorKey, header }) => ({
+          accessorKey,
+          header,
+          filter: {
+            type: "static" as const,
+            isArray: true,
+            options: (materialFacetOptions[accessorKey] ?? []).map((o) => ({
+              label: o.name,
+              value: o.id
+            }))
+          }
+        }))
     ];
-  }, [columns, processes, salesOrders, people, availableTags]);
+  }, [
+    columns,
+    processes,
+    salesOrders,
+    people,
+    availableTags,
+    materialFacetOptions
+  ]);
 
   return (
     <div className="flex flex-col h-full max-h-full  overflow-auto relative">
@@ -521,6 +747,7 @@ function KanbanSchedule() {
                     { key: "showCustomer", label: t`Customer` },
                     { key: "showDueDate", label: t`Due Date` },
                     { key: "showDuration", label: t`Duration` },
+                    { key: "showMaterial", label: t`Material` },
                     { key: "showProgress", label: t`Progress` },
                     { key: "showQuantity", label: t`Quantity` },
                     { key: "showStatus", label: t`Status` },
@@ -561,13 +788,16 @@ function KanbanSchedule() {
       <div className="flex flex-grow h-full items-stretch overflow-hidden relative">
         <div className="flex flex-1 min-h-0 w-full relative">
           {columns.length > 0 ? (
-            <Kanban
-              columns={visibleColumns}
-              items={items}
-              progressByItemId={progressByOperation}
-              tags={tags}
-              {...mergedDisplaySettings}
-            />
+            <BatchSelectionProvider>
+              <Kanban
+                columns={visibleColumns}
+                items={items}
+                progressByItemId={progressByOperation}
+                tags={tags}
+                {...mergedDisplaySettings}
+              />
+              <BatchSelectionBar locationId={locationId} />
+            </BatchSelectionProvider>
           ) : hasFilters ? (
             <div className="flex flex-col w-full h-full items-center justify-center gap-4">
               <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
@@ -616,9 +846,9 @@ export default function ScheduleRoute() {
 }
 
 function useProgressByOperation(
-  items: OperationItem[],
-  setItems: React.Dispatch<React.SetStateAction<OperationItem[]>>,
-  sortItems: (items: OperationItem[]) => OperationItem[]
+  items: Item[],
+  setItems: React.Dispatch<React.SetStateAction<Item[]>>,
+  sortItems: (items: Item[]) => Item[]
 ) {
   const {
     company: { id: companyId }
@@ -664,7 +894,10 @@ function useProgressByOperation(
   );
 
   useMount(() => {
-    getProductionEvents(items.map((item) => item.id));
+    // Only real operation ids — collapsed batch cards use synthetic ids.
+    getProductionEvents(
+      items.filter((item) => !isBatchItem(item)).map((item) => item.id)
+    );
   });
 
   const getProgress = useCallback(() => {
@@ -673,11 +906,18 @@ function useProgressByOperation(
 
     Object.entries(productionEventsByOperation).forEach(
       ([operationId, events]) => {
-        const operation = items.find((item) => item.id === operationId);
+        const found = items.find((item) => item.id === operationId);
+        const operation = found && !isBatchItem(found) ? found : undefined;
         const totalDuration =
-          (operation?.setupDuration ?? 0) +
-          (operation?.laborDuration ?? 0) +
-          (operation?.machineDuration ?? 0);
+          (operation && "setupDuration" in operation
+            ? (operation.setupDuration ?? 0)
+            : 0) +
+          (operation && "laborDuration" in operation
+            ? (operation.laborDuration ?? 0)
+            : 0) +
+          (operation && "machineDuration" in operation
+            ? (operation.machineDuration ?? 0)
+            : 0);
 
         let currentProgress = 0;
         let active = false;
@@ -740,15 +980,18 @@ function useProgressByOperation(
             event: "*",
             schema: "public",
             table: "jobOperation",
-            filter: `id=in.(${items.map((item) => item.id).join(",")})`
+            filter: `id=in.(${items
+              .filter((item) => !isBatchItem(item))
+              .map((item) => item.id)
+              .join(",")})`
           },
           (payload) => {
             switch (payload.eventType) {
               case "UPDATE": {
                 const { new: updated } = payload;
-                setItems((prevItems: OperationItem[]) =>
+                setItems((prevItems: Item[]) =>
                   sortItems(
-                    prevItems.map((item: OperationItem) => {
+                    prevItems.map((item: Item) => {
                       if (item.id === updated.id) {
                         return {
                           ...item,
@@ -764,11 +1007,9 @@ function useProgressByOperation(
               }
               case "DELETE": {
                 const { old: deleted } = payload;
-                setItems((prevItems: OperationItem[]) =>
+                setItems((prevItems: Item[]) =>
                   sortItems(
-                    prevItems.filter(
-                      (item: OperationItem) => item.id !== deleted.id
-                    )
+                    prevItems.filter((item: Item) => item.id !== deleted.id)
                   )
                 );
                 break;

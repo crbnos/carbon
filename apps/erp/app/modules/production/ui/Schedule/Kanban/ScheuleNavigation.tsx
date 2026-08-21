@@ -16,7 +16,6 @@ import {
   LuCalendarDays,
   LuChevronDown,
   LuCog,
-  LuLayers,
   LuList
 } from "react-icons/lu";
 import { useLocation, useNavigate } from "react-router";
@@ -27,7 +26,6 @@ export function ScheduleNavigation() {
   const navigate = useNavigate();
 
   const getCurrentView = () => {
-    if (location.pathname.includes(path.to.scheduleBatching)) return "batching";
     if (location.pathname.includes(path.to.scheduleOperation))
       return "operations";
     if (location.pathname.includes(path.to.scheduleDates)) {
@@ -46,8 +44,6 @@ export function ScheduleNavigation() {
     switch (option) {
       case "operations":
         return "Work Centers";
-      case "batching":
-        return "Batching";
       case "week":
         return "Week";
       case "month":
@@ -61,8 +57,6 @@ export function ScheduleNavigation() {
     switch (option) {
       case "operations":
         return <LuCog />;
-      case "batching":
-        return <LuLayers />;
       case "week":
         return <LuCalendarDays />;
       case "month":
@@ -78,9 +72,6 @@ export function ScheduleNavigation() {
     switch (view) {
       case "operations":
         navigate(path.to.scheduleOperation + "?" + searchParams.toString());
-        break;
-      case "batching":
-        navigate(path.to.scheduleBatching + "?" + searchParams.toString());
         break;
       case "week":
         searchParams.set("view", "week");
@@ -115,10 +106,6 @@ export function ScheduleNavigation() {
           <DropdownMenuRadioItem value="operations">
             <DropdownMenuIcon icon={getViewIcon("operations")} />
             {getViewLabel("operations")}
-          </DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="batching">
-            <DropdownMenuIcon icon={getViewIcon("batching")} />
-            {getViewLabel("batching")}
           </DropdownMenuRadioItem>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>

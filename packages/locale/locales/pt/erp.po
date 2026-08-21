@@ -155,6 +155,9 @@ msgstr "{chainLabel}. Considere apontar esta peça diretamente para o sucessor f
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# curso} other {# cursos}}"
 
+msgid "{count} selected"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} de {total} fases concluídas"
 
@@ -2430,9 +2433,6 @@ msgstr "Número de lote"
 msgid "Batch Number"
 msgstr "Número do Lote"
 
-msgid "Batch planning"
-msgstr "Planejamento de lotes"
-
 msgid "Batch Properties"
 msgstr "Propriedades em Lote"
 
@@ -2447,9 +2447,6 @@ msgstr "Rastreamento em Lote"
 
 msgid "Batchable"
 msgstr "Que pode ser agrupado em lotes"
-
-msgid "Batched"
-msgstr "Agrupado em lotes"
 
 msgid "Beginning"
 msgstr "Início"
@@ -3880,6 +3877,9 @@ msgstr "Criar e aprovar pedidos de compra"
 msgid "Create audit trail entries"
 msgstr "Criar entradas de trilha de auditoria"
 
+msgid "Create batch"
+msgstr ""
+
 msgid "Create Change Notice"
 msgstr "Criar Aviso de Mudança"
 
@@ -5251,9 +5251,6 @@ msgstr "Arraste e solte um PDF de Ordem de Compra aqui, ou clique para seleciona
 
 msgid "Drag handle"
 msgstr "Puxador de arrasto"
-
-msgid "Drag here to start a new batch"
-msgstr "Arraste para cá para iniciar um novo lote"
 
 msgid "Drag to place on drawing"
 msgstr "Arraste para colocar no desenho"
@@ -9159,6 +9156,9 @@ msgstr "Mover"
 msgid "Move {accountName}"
 msgstr "Mover {accountName}"
 
+msgid "Move batch"
+msgstr ""
+
 msgid "Move entities"
 msgstr "Mover entidades"
 
@@ -9971,9 +9971,6 @@ msgstr "Nenhuma ferramenta para esta etapa"
 
 msgid "No transactions in this period"
 msgstr "Nenhuma transação neste período"
-
-msgid "No unbatched operations match"
-msgstr "Nenhuma operação desagrupada corresponde"
 
 msgid "No unmapped accounts match a provider code"
 msgstr "Nenhuma conta não mapeada corresponde a um código de provedor"
@@ -10886,9 +10883,6 @@ msgstr "Impressoras físicas disponíveis para atribuição."
 
 msgid "Pick"
 msgstr "Selecionar"
-
-msgid "Pick a batchable process to plan batches"
-msgstr "Escolha um processo que possa ser agrupado em lotes para planejar lotes"
 
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Escolha uma dimensão Carbon e o alvo do provedor ao qual ela publica. Auto-create adiciona opções de provedor ausentes por nome no momento do push."
@@ -13034,9 +13028,6 @@ msgstr "Selecionar"
 msgid "Select a assignee"
 msgstr "Selecione um responsável"
 
-msgid "Select a batchable process"
-msgstr "Selecione um processo que possa ser agrupado em lotes"
-
 msgid "Select a default approver"
 msgstr "Selecione um aprovador padrão"
 
@@ -13148,6 +13139,9 @@ msgstr "Selecionar Tipo de Funcionário"
 
 msgid "Select field"
 msgstr "Selecionar campo"
+
+msgid "Select for batch"
+msgstr ""
 
 msgid "Select Gauge"
 msgstr "Selecionar Medidor"

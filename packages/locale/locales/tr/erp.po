@@ -155,6 +155,9 @@ msgstr "{chainLabel}. Bu parçayı doğrudan son halefine yönlendirmeyi düşü
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# kurs} other {# kurs}}"
 
+msgid "{count} selected"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} aşama tamamlandı"
 
@@ -2430,9 +2433,6 @@ msgstr "Lot numarası"
 msgid "Batch Number"
 msgstr "Lot Numarası"
 
-msgid "Batch planning"
-msgstr "Toplu İş Planlama"
-
 msgid "Batch Properties"
 msgstr "Toplu Özellikler"
 
@@ -2447,9 +2447,6 @@ msgstr "Lot Takibi"
 
 msgid "Batchable"
 msgstr "Toplu İşlemeye Uygun"
-
-msgid "Batched"
-msgstr "Toplu İşleme Alındı"
 
 msgid "Beginning"
 msgstr "Başlangıç"
@@ -3880,6 +3877,9 @@ msgstr "Satın alma siparişleri oluşturun ve onaylayın"
 msgid "Create audit trail entries"
 msgstr "Denetim izi girdileri oluştur"
 
+msgid "Create batch"
+msgstr ""
+
 msgid "Create Change Notice"
 msgstr "Değişiklik Bildirisi Oluştur"
 
@@ -5251,9 +5251,6 @@ msgstr "Satın Alma Siparişi PDF'ini buraya sürükleyip bırakın veya bir dos
 
 msgid "Drag handle"
 msgstr "Sürükle tutma"
-
-msgid "Drag here to start a new batch"
-msgstr "Yeni bir toplu iş başlatmak için buraya sürükleyin"
 
 msgid "Drag to place on drawing"
 msgstr "Çizime yerleştirmek için sürükleyin"
@@ -9159,6 +9156,9 @@ msgstr "Taşış"
 msgid "Move {accountName}"
 msgstr "{accountName} Taşı"
 
+msgid "Move batch"
+msgstr ""
+
 msgid "Move entities"
 msgstr "Varlıkları taşı"
 
@@ -9971,9 +9971,6 @@ msgstr "Bu adım için araç yok"
 
 msgid "No transactions in this period"
 msgstr "Bu dönemde işlem yok"
-
-msgid "No unbatched operations match"
-msgstr "Toplu İşe Alınmamış İşlem Yok"
 
 msgid "No unmapped accounts match a provider code"
 msgstr "Haritalanmamış hesaplar sağlayıcı kodundan herhangi biriyle uyuşmıyor"
@@ -10886,9 +10883,6 @@ msgstr "Atama için kullanılabilecek fiziksel yazıcılar."
 
 msgid "Pick"
 msgstr "Topla"
-
-msgid "Pick a batchable process to plan batches"
-msgstr "Toplu işleri planlamak için toplu işlemeye uygun bir işlem seçin"
 
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Bir Carbon boyutu ve gönderdiği sağlayıcı hedefini seçin. Otomatik oluştur, gönderim sırasında eksik sağlayıcı seçeneklerini ada göre ekler."
@@ -13034,9 +13028,6 @@ msgstr "Seç"
 msgid "Select a assignee"
 msgstr "Bir atanan seçin"
 
-msgid "Select a batchable process"
-msgstr "Toplu İşlemeye Uygun Bir İşlem Seçin"
-
 msgid "Select a default approver"
 msgstr "Varsayılan onaylayıcı seçin"
 
@@ -13148,6 +13139,9 @@ msgstr "Çalışan Türü Seçin"
 
 msgid "Select field"
 msgstr "Alan seçin"
+
+msgid "Select for batch"
+msgstr ""
 
 msgid "Select Gauge"
 msgstr "Kalıbrasyon Cihazı Seç"

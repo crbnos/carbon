@@ -291,3 +291,55 @@ All 13 tasks complete. Feature verified end-to-end: schema, edge-fn logic
 (create/add/remove/update/dissolve/complete/resume + all guards + proportional
 slicing + the resume quantity-contract), ERP board UI, and MES batch page.
 Nothing pushed. PR #1137 still to be closed by the user (blocked earlier).
+
+---
+
+## Post-plan redesign (user-directed): composition integrated into the operations board
+
+Sid: the separate Batching view felt bolted-on ("i thought it would be a bit
+more integrated with the current system"); option B chosen explicitly. Built
+with the Vercel skills loaded from `~/.agents/skills/vercel-*` (composition
+patterns: state in a provider, explicit variant components, no boolean-prop
+threading; react-best-practices: Set/Map selection state, functional updates,
+derived-during-render, no inline components).
+
+- REMOVED: `x/schedule/batching` route, `ui/Schedule/Batching/*`
+  (BatchingBoard/types/index), the schedule-nav "Batching" entry, the
+  `scheduleBatching` path. KEPT: `batching.update.tsx` action (every new
+  surface submits to it), `batch-operations` edge fn, MES (all unchanged).
+- NEW `Kanban/context/BatchSelectionContext.tsx`: `BatchSelectionProvider` +
+  null-safe `useBatchSelection` + `isBatchableOperation` guard. Selection is a
+  Map(id→processId); first pick pins the process (only same-process ops stay
+  selectable). ItemCard consumes it via context — zero new props.
+- NEW `Kanban/components/BatchItemCard.tsx`: explicit collapsed-batch card
+  (BAT badge, Completing badge, member rows with hover-remove, dissolve menu,
+  MES link; sortable disabled while Completing).
+- NEW `Kanban/components/BatchSelectionBar.tsx`: floating "N selected · Create
+  batch · Clear" bar → `batching.update` intent=create; toasts server
+  rejections; clears on success.
+- `Kanban/types.ts`: `BatchItem` variant + `isBatchItem` guard on the Item
+  union; `materialChips` on operation items; `showMaterial` display setting.
+- `Kanban.tsx`: card rendering + DragOverlay branch on `isBatchItem`; batch
+  drag-end submits work-center reassignment (intent=update) instead of the
+  operation move; `usePendingItems` also merges in-flight batch moves
+  (optimistic column). Within-column reorder of a batch card is a no-op
+  (member priorities own its position).
+- `ItemCard.tsx`: guard-wrapper + hook-bearing `OperationCard` inner (batch
+  never reaches it; rules-of-hooks safe); hover "Select for batch" checkbox +
+  selected ring; material chips row; removed the obsolete "Batch planning" /
+  "Remove from batch" menu items and the BAT badge (batched ops now collapse).
+- `operations.tsx` loader: one Kysely join pulls each op's BOM material
+  properties (PostgREST `.in()` URL-limit lesson) → per-card chips + facet
+  options + ANY-line-matches-ALL-facets filtering (substance/grade/dimension/
+  form/finish in the board's filter grammar); batch headers fetched and live
+  (Active/Completing) batches collapsed into `BatchItem`s (Completed/missing
+  headers fall back to individual cards). Component: provider + bar wrap,
+  facet filter defs, Material display toggle, Item-union type widening.
+- Browser-verified against the running stack (seeded, then cleaned): chips
+  render on cards; hover checkbox → "2 selected" bar → Create batch →
+  BAT000007 in DB with 2 members and ONE collapsed card with member rows;
+  Substance facet appears in the Filter menu (grade/dimension correctly absent
+  — no such properties in data); nav shows no Batching entry. DB restored
+  (0 seed rows, 0 batches, Machining batchable=false).
+- Docs synced: spec (decision rows + UI table + changelog), production
+  AGENTS.md, playbook. erp typecheck green.

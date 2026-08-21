@@ -1958,7 +1958,7 @@ export const path = {
     saveViewOrder: `${x}/shared/view/order`,
 
     saveViews: `${x}/shared/views`,
-    scheduleBatching: `${x}/schedule/batching`,
+
     scheduleBatchingUpdate: `${x}/schedule/batching/update`,
     scheduleDates: `${x}/schedule/dates`,
     scheduleDatesUpdate: `${x}/schedule/dates/update`,
