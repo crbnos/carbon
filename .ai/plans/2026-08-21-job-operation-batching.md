@@ -72,7 +72,7 @@ Open 39k-line PR, likely to merge first. Verified collisions (tip `f17db29ab`):
 - [x] Task 6: `batch-operations` edge function + resume quantity contract
 - [x] Task 7: ERP batch planning board + schedule integration
 - [x] Task 8: MES — kanban collapse, batch page, complete route
-- [ ] Task 9: Port and adapt the tests
+- [x] Task 9: Port and adapt the tests
 - [ ] Task 10: i18n extraction + translation fill
 - [ ] Task 11: AGENTS.md + spec changelog sync
 - [ ] Task 12: Full verification gate

@@ -183,4 +183,25 @@ Working-tree files to never touch: `apps/erp/app/routes/api+/mcp+/lib/tool-metad
   `operationQuantity` not `targetQuantity ??`; `NumberControlled`).
 - Verify: `pnpm exec turbo run typecheck --filter=mes` → exit 0; batch page
   `Cancelled`=0, `operationQuantity` pre-fill present, `Trans`=12. Banned: none.
-- Commit (also regenerates tool-metadata via the .service.ts hook): _pending_
+- Commit (also regenerates tool-metadata via the .service.ts hook): `ebe88e1ac`
+
+## Task 9: Port and adapt the tests
+
+- `batching-migration-guards.test.ts` (from `$SRC`): REWRITTEN for the single
+  consolidated migration — reads `20260821024449_...sql`, asserts SECURITY
+  INVOKER, the `NOT EXISTS productionEvent` guard, the lane branch
+  `IN ('Active', 'Completing')` (replacing the old `= 'Active'`), the 3-value
+  enum, and NO `Cancelled` in the enum. Dropped the obsolete ADD-VALUE test.
+- `batching-tenant-scope-and-fk-locks.test.ts` (from `$PR1137`): REWRITTEN — the
+  #1137 design (company_id RPC param, NOT VALID FKs + separate VALIDATE
+  migration, composite processId FK) does not match ours. Kept the PROTECTED
+  property (a batch + members can't cross tenants) asserted against OUR design:
+  SECURITY INVOKER scoping, composite membership tenant FKs
+  (`("jobOperationBatchId","companyId") → ("id","companyId")`), composite PK,
+  and the RLS policy set.
+- `models.batch.test.ts` (from `$SRC`): import matched our MES export as-is;
+  only the spec-path comment updated.
+- Verify: the 3 files run green — ERP 2 files/10 tests, MES 1 file/5 tests. Full
+  `pnpm run test` deferred to Task 12 (same gate; avoids running the whole suite
+  twice). Banned: none.
+- Commit: _pending_
