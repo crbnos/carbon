@@ -90,4 +90,24 @@ Working-tree files to never touch: `apps/erp/app/routes/api+/mcp+/lib/tool-metad
 - `upsertProcess` needed no change — typecheck confirms the validator spread
   carries the field.
 - Verify: `pnpm exec turbo run typecheck --filter=erp` → exit 0. Banned: none.
+- Commit: `29494e4ae`
+
+## Task 5: ERP production models + services
+
+- `production.models.ts`: applied clean (3-way). Batch status const, create +
+  update validators. EDIT: dropped `"Cancelled"` from the status const (locked
+  decision) → `["Active", "Completing", "Completed"]`. Spec-path comments →
+  2026-08-21. (No `completeJobOperationBatchValidator` here — the salvage puts
+  it in MES models, matching the spec; added in Task 8.)
+- `production.service.ts`: 3-way CONFLICTED — the salvage inserted the 4 batch
+  fns before `getJobMaterialPurchaseOrderLines`, but main's function at that
+  spot is now `getAssemblyInstruction`. Resolved by inserting the batch fns
+  (`getBatchableOperations`, `getBatchableProcesses`, `createJobOperationBatch`,
+  `updateJobOperationBatch`) BEFORE the `// --- Assembly Instructions ---`
+  section, keeping main's `getAssemblyInstruction` intact and dropping the
+  spurious `getJobMaterialPurchaseOrderLines` trailing context (that fn still
+  exists elsewhere on main — verified). Service uses the consolidated
+  `updateJobOperationBatch(type)` shape, not separate add/remove/dissolve
+  wrappers (code wins over the plan's naming — Task 7's board calls these).
+- Verify: `pnpm exec turbo run typecheck --filter=erp` → exit 0. Banned: none.
 - Commit: _pending_

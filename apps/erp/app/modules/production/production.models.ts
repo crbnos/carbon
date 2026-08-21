@@ -1032,6 +1032,34 @@ export const scheduleJobUpdateValidator = z.object({
   priority: schedulePriorityValidator
 });
 
+// Job operation batching — group N job operations on one batchable process into
+// one run. No maximum batch size (product decision). See
+// .ai/specs/2026-08-21-job-operation-batching.md.
+export const jobOperationBatchStatus = [
+  "Active",
+  "Completing",
+  "Completed"
+] as const;
+
+export const createJobOperationBatchValidator = z.object({
+  locationId: z.string().min(1, { message: "Location is required" }),
+  workCenterId: zfd.text(z.string().optional()),
+  // repeatable so a single submitted id still coerces to an array (RVF/zfd)
+  jobOperationIds: zfd.repeatable(
+    z
+      .array(z.string().min(1))
+      .min(1, { message: "Select at least one operation" })
+  )
+});
+
+export const updateJobOperationBatchValidator = z.object({
+  batchId: z.string().min(1, { message: "Batch is required" }),
+  intent: z.enum(["add", "remove", "update", "dissolve"]),
+  // repeatable so a single submitted id still coerces to an array (RVF/zfd)
+  jobOperationIds: zfd.repeatableOfType(z.string().min(1)).optional(),
+  workCenterId: zfd.text(z.string().optional())
+});
+
 export const scrapReasonValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().trim().min(1, { message: "Name is required" })

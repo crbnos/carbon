@@ -4345,6 +4345,65 @@ export async function triggerJobSchedule(
   return { success: true };
 }
 
+// --- Job operation batching (spec: .ai/specs/2026-08-21-job-operation-batching.md) ---
+// The batch detail view lives in MES (apps/mes/app/routes/x+/batch.$batchId.tsx);
+// ERP only lists candidates and mutates batches.
+
+export async function getBatchableOperations(
+  client: SupabaseClient<Database>,
+  args: { locationId: string; processId: string }
+) {
+  return client.rpc("get_batchable_operations", {
+    location_id: args.locationId,
+    process_id: args.processId
+  });
+}
+
+export async function getBatchableProcesses(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("process")
+    .select("id, name")
+    .eq("companyId", companyId)
+    .eq("batchable", true)
+    .eq("active", true)
+    .order("name");
+}
+
+export async function createJobOperationBatch(
+  client: SupabaseClient<Database>,
+  args: {
+    jobOperationIds: string[];
+    locationId: string;
+    workCenterId?: string | null;
+    companyId: string;
+    userId: string;
+  }
+) {
+  return client.functions.invoke("batch-operations", {
+    body: { type: "create", ...args }
+  });
+}
+
+export async function updateJobOperationBatch(
+  client: SupabaseClient<Database>,
+  args: {
+    type: "add" | "remove" | "update" | "dissolve";
+    batchId: string;
+    jobOperationIds?: string[];
+    workCenterId?: string | null;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { type, ...rest } = args;
+  return client.functions.invoke("batch-operations", {
+    body: { type, ...rest }
+  });
+}
+
 // --- Assembly Instructions ---------------------------------------------
 
 export async function getAssemblyInstruction(

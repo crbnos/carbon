@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-17T12:34:03.161Z",
-  "totalTools": 1442,
+  "generated": "2026-08-21T02:57:36.420Z",
+  "totalTools": 1446,
   "modules": 15,
   "tools": [
     {
@@ -23273,6 +23273,141 @@
           "jobId",
           "mode",
           "direction"
+        ]
+      }
+    },
+    {
+      "name": "production_getBatchableOperations",
+      "module": "production",
+      "classification": "READ",
+      "description": "get batchable operations",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "processId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "locationId",
+          "processId"
+        ]
+      }
+    },
+    {
+      "name": "production_getBatchableProcesses",
+      "module": "production",
+      "classification": "READ",
+      "description": "get batchable processes",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "production_createJobOperationBatch",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "create job operation batch",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "jobOperationIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "workCenterId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "jobOperationIds",
+          "locationId"
+        ]
+      }
+    },
+    {
+      "name": "production_updateJobOperationBatch",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "update job operation batch",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "add",
+              "remove",
+              "update",
+              "dissolve"
+            ]
+          },
+          "batchId": {
+            "type": "string"
+          },
+          "jobOperationIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "workCenterId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "batchId"
         ]
       }
     },
