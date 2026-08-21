@@ -141,7 +141,7 @@ export default function JobMakeMethodRoute() {
 
   return (
     <div className="h-full w-full items-start overflow-y-auto scrollbar-hide">
-      <VStack spacing={2} className="p-2">
+      <VStack spacing={4} className="p-4">
         <JobMakeMethodTools makeMethod={makeMethod} />
 
         <JobBillOfMaterial
