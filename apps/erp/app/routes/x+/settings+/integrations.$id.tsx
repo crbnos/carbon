@@ -63,7 +63,10 @@ import {
 // Deep service import (not the ~/modules/accounting barrel) to keep this
 // route's type graph light — see the TS2589 note in
 // ~/modules/settings/ui/Integrations/index.ts.
-import { getActiveDimensionsWithValues } from "~/modules/accounting/accounting.ee.service";
+import {
+  getAccountsList,
+  getActiveDimensionsWithValues
+} from "~/modules/accounting/accounting.ee.service";
 import {
   getIntegration,
   IntegrationForm,
@@ -165,6 +168,63 @@ function unfoldRilletCredentials(
       typeof providerMetadata.webhookToken === "string"
         ? providerMetadata.webhookToken
         : ""
+  };
+}
+
+/**
+ * Ramp authenticates with an OAuth client-credentials pair
+ * (clientId/clientSecret) entered flat on the standard install form. The
+ * engine reads credentials exclusively from `metadata.credentials`, so fold
+ * the flat form fields into the canonical client_credentials variant. The
+ * account-mapping and sync-toggle fields stay flat at the metadata root. Like
+ * Rillet, an empty clientSecret means "keep the existing vaulted value": the
+ * folded credentials carry an empty secret and splitSecrets' anti-overwrite
+ * (D4a) preserves what's in the vault; a non-empty value replaces it.
+ */
+function foldRampCredentials(
+  metadata: Record<string, unknown>
+): Record<string, unknown> {
+  const { clientId, clientSecret, environment, ...rest } = metadata;
+  if (typeof clientId !== "string" || clientId.length === 0) return metadata;
+
+  return {
+    ...rest,
+    credentials: {
+      type: "client_credentials",
+      clientId,
+      clientSecret: typeof clientSecret === "string" ? clientSecret : "",
+      environment: environment === "sandbox" ? "sandbox" : "production"
+    }
+  };
+}
+
+/**
+ * Inverse of `foldRampCredentials`: unfold the stored
+ * `metadata.credentials` back into the flat clientId/clientSecret/environment
+ * fields the settings form binds to, so the drawer prefills instead of showing
+ * blanks (which a re-save would then persist over the real stored connection).
+ * The clientSecret is vaulted and stripped from the plaintext metadata, so it
+ * reads back empty — the masked field left blank means "keep the vaulted value".
+ */
+function unfoldRampCredentials(
+  metadata: Record<string, unknown>
+): Record<string, unknown> {
+  const credentials = metadata.credentials as
+    | Record<string, unknown>
+    | undefined;
+  if (!credentials || credentials.type !== "client_credentials")
+    return metadata;
+
+  return {
+    ...metadata,
+    clientId:
+      typeof credentials.clientId === "string" ? credentials.clientId : "",
+    clientSecret:
+      typeof credentials.clientSecret === "string"
+        ? credentials.clientSecret
+        : "",
+    environment:
+      credentials.environment === "sandbox" ? "sandbox" : "production"
   };
 }
 
@@ -664,14 +724,43 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (integrationId === "rillet") {
     flattenedMetadata = unfoldRilletCredentials(flattenedMetadata);
   }
+  // Ramp keeps its client-credentials pair under metadata.credentials; unfold
+  // them into the flat form fields so the drawer prefills.
+  if (integrationId === "ramp") {
+    flattenedMetadata = unfoldRampCredentials(flattenedMetadata);
+  }
 
-  // Server-fetched options for "options"-type settings fields. No current
-  // integration config populates this, but IntegrationForm still accepts it
-  // generically for a future provider-fetched choice list.
+  // Server-fetched options for "options"-type settings fields. Ramp populates
+  // its Account-group selects from the chart of accounts below; IntegrationForm
+  // otherwise accepts this generically for a provider-fetched choice list.
   const dynamicOptions: Record<
     string,
     Array<{ value: string; label: string; description?: string }>
   > = {};
+
+  // Ramp's account-mapping fields choose from the company's leaf accounts,
+  // partitioned by account class. Options over CHOICE_CARD_MAX_OPTIONS render
+  // as a Select automatically.
+  if (integrationId === "ramp") {
+    const accountsResult = await getAccountsList(client, companyGroupId, {
+      isGroup: false
+    });
+    const accounts = accountsResult.data ?? [];
+    const optionsForClass = (
+      accountClass: Database["public"]["Enums"]["glAccountClass"]
+    ) =>
+      accounts
+        .filter((account) => account.class === accountClass)
+        .map((account) => ({
+          value: account.id,
+          label: `${account.number} ${account.name}`
+        }));
+    const assetOptions = optionsForClass("Asset");
+    dynamicOptions.cardLiabilityAccountId = optionsForClass("Liability");
+    dynamicOptions.statementBankAccountId = assetOptions;
+    dynamicOptions.cashbackIncomeAccountId = optionsForClass("Revenue");
+    dynamicOptions.reimbursementBankAccountId = assetOptions;
+  }
 
   // Provider chart of accounts for the Account Mapping tab. Xero manual
   // journals reference accounts by code, so only coded accounts are
@@ -1397,6 +1486,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (integrationId === "rillet") {
     metadata = foldRilletCredentials(metadata);
   }
+  if (integrationId === "ramp") {
+    metadata = foldRampCredentials(metadata);
+  }
 
   // Onshape asset sync needs the OAuth2Write scope (export jobs + webhook). A
   // connection authorized read-only can't run it, and a refresh can't widen the
@@ -1423,6 +1515,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     "linear",
     "paperless-parts",
     "email",
+    "ramp",
     "rillet"
   ]);
   if (FORM_SECRET_INTEGRATIONS.has(integrationId)) {
