@@ -36,7 +36,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     body: {
       type: "complete",
       batchId,
-      members: validation.data.members,
+      // An excluded ("not in this run") member detaches back to the schedule;
+      // its quantities are forced to 0 so a dimmed-but-stale input can never
+      // record output for an operation that was not run.
+      members: validation.data.members.map((m) => {
+        const excluded = m.excluded === "true";
+        return {
+          jobOperationId: m.jobOperationId,
+          quantity: excluded ? 0 : m.quantity,
+          scrapQuantity: excluded ? 0 : m.scrapQuantity,
+          excluded
+        };
+      }),
       companyId,
       userId
     }

@@ -234,7 +234,12 @@ export const completeJobOperationBatchValidator = z.object({
       z.object({
         jobOperationId: z.string().min(1),
         quantity: zfd.numeric(z.number().int().min(0)),
-        scrapQuantity: zfd.numeric(z.number().int().min(0).optional())
+        scrapQuantity: zfd.numeric(z.number().int().min(0).optional()),
+        // "Not in this run": the operation was not physically part of the
+        // batch run — it detaches back to the schedule instead of being
+        // marked Done. String flag (same idiom as productionEventValidator's
+        // `exclusive`); the route maps "true" to a boolean for the edge fn.
+        excluded: zfd.text(z.string().optional())
       })
     )
     .min(1)

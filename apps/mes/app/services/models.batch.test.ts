@@ -67,4 +67,24 @@ describe("completeJobOperationBatchValidator", () => {
     });
     expect(result.success).toBe(false);
   });
+
+  // "Not in this run" travels as a string flag from a Hidden input (the same
+  // idiom as productionEventValidator's `exclusive`); the route maps
+  // `excluded === "true"` to a boolean before invoking the edge fn. An empty
+  // string (row included) must parse as absent, not as a truthy flag.
+  it("parses the excluded string flag per member", () => {
+    const result = completeJobOperationBatchValidator.safeParse({
+      batchId: "bat_1",
+      members: [
+        { jobOperationId: "op_1", quantity: 5, excluded: "" },
+        { jobOperationId: "op_2", quantity: 0, excluded: "true" }
+      ]
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.members[0].excluded).toBeUndefined();
+      expect(result.data.members[1].excluded).toBe("true");
+    }
+  });
 });

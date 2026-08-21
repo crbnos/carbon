@@ -61,7 +61,10 @@ const payloadValidator = z.discriminatedUnion("type", [
         z.object({
           jobOperationId: z.string(),
           quantity: z.number().int().min(0),
-          scrapQuantity: z.number().int().min(0).optional()
+          scrapQuantity: z.number().int().min(0).optional(),
+          // "Not in this run": detach the member back to the schedule instead
+          // of completing it. Its quantities must be 0.
+          excluded: z.boolean().optional()
         })
       )
       .min(1),
@@ -150,11 +153,31 @@ async function completeBatch(
       jobOperationId: string;
       quantity: number;
       scrapQuantity?: number;
+      excluded?: boolean;
     }[];
   }
 ): Promise<Record<string, unknown>> {
-  const { companyId, userId, batchId, members } = args;
+  const { companyId, userId, batchId } = args;
+  // Partition "not in this run" members: they were never physically part of the
+  // batch run, so they detach back to the schedule un-run instead of completing.
+  // They may not carry quantities, and a batch cannot exclude everyone —
+  // dissolve exists for that.
+  const members = args.members.filter((m) => !m.excluded);
+  const excluded = args.members.filter((m) => m.excluded);
+  if (members.length === 0) {
+    throw new Error(
+      "Every operation is excluded — dissolve the batch instead of completing it"
+    );
+  }
+  for (const m of excluded) {
+    if (m.quantity > 0 || (m.scrapQuantity ?? 0) > 0) {
+      throw new Error(
+        `Excluded operation ${m.jobOperationId} cannot record quantities`
+      );
+    }
+  }
   const memberIds = members.map((m) => m.jobOperationId);
+  const excludedIds = excluded.map((m) => m.jobOperationId);
   const now = new Date().toISOString();
 
   // The per-member sliced events whose GL is posted AFTER the transaction commits.
@@ -187,11 +210,20 @@ async function completeBatch(
         .where("jobOperationBatchId", "=", batchId)
         .where("companyId", "=", companyId)
         .execute();
-      assertBatchCompletionMembership(
-        memberIds,
-        // deno-lint-ignore no-explicit-any
-        currentMembers.map((o: any) => o.id)
-      );
+      // deno-lint-ignore no-explicit-any
+      const currentIds = new Set(currentMembers.map((o: any) => o.id));
+      // An exclusion that phase 1 already applied is a stale-form resubmission
+      // and passes (the op is no longer a member). Excluding an op that IS still
+      // a member would rewrite phase 1's committed decision — reject it like a
+      // changed quantity.
+      const lateExclusion = excludedIds.find((id) => currentIds.has(id));
+      if (lateExclusion) {
+        throw new Error(
+          `Operation ${lateExclusion} was included when completion started — ` +
+            `retry with the recorded values; corrections happen after completion.`
+        );
+      }
+      assertBatchCompletionMembership(memberIds, [...currentIds]);
 
       // Resume contract: the payload must match what phase 1 already recorded —
       // an edited quantity on retry is rejected, never silently ignored and never
@@ -255,15 +287,37 @@ async function completeBatch(
     if (operations.length === 0) throw new Error("Batch not found or empty");
 
     // Reject dupes / unknown ids / omitted members — any would corrupt
-    // quantities or material issue.
+    // quantities or material issue. Included AND excluded together must cover
+    // the membership exactly; the excluded ones then detach below.
     assertBatchCompletionMembership(
-      memberIds,
+      [...memberIds, ...excludedIds],
       // deno-lint-ignore no-explicit-any
       operations.map((o: any) => o.id)
     );
 
+    // Detach "not in this run" members inside the same transaction: back to the
+    // schedule un-run — no time slice, no quantities, and phase 2's batch-wide
+    // Done flip no longer reaches them.
+    if (excludedIds.length > 0) {
+      const detached = await trx
+        .updateTable("jobOperation")
+        .set({ jobOperationBatchId: null, updatedBy: userId })
+        .where("id", "in", excludedIds)
+        .where("jobOperationBatchId", "=", batchId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (Number(detached?.numUpdatedRows ?? 0) !== excludedIds.length) {
+        throw new Error("Failed to detach excluded operations — retry");
+      }
+    }
+    const excludedIdSet = new Set(excludedIds);
+    const runOperations = operations.filter(
+      // deno-lint-ignore no-explicit-any
+      (o: any) => !excludedIdSet.has(o.id)
+    );
+
     // deno-lint-ignore no-explicit-any
-    const opById = new Map(operations.map((o: any) => [o.id, o]));
+    const opById = new Map(runOperations.map((o: any) => [o.id, o]));
 
     // Refuse to complete while a batch timer is still running — otherwise the
     // still-open aggregate event is silently dropped.
@@ -431,7 +485,12 @@ async function completeBatch(
     );
   }
 
-  return { completed: members.length, memberIds, eventIds: glEvents.map((e) => e.id) };
+  return {
+    completed: members.length,
+    excluded: excludedIds.length,
+    memberIds,
+    eventIds: glEvents.map((e) => e.id)
+  };
 }
 
 serve(async (req: Request) => {
