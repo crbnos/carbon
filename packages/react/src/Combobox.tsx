@@ -31,6 +31,8 @@ export type ComboboxProps = Omit<
     value: string;
     helper?: string;
     helperRight?: string;
+    /** Extra search text, matched but never rendered. */
+    keywords?: string;
   }[];
   isClearable?: boolean;
   isLoading?: boolean;
@@ -209,6 +211,15 @@ type VirtualizedCommandProps = {
   setOpen: (open: boolean) => void;
 };
 
+/** Treats `/`, `_` and `-` as spaces so "asia kolkata" matches "Asia/Kolkata". */
+function normalizeSearchText(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[/_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function VirtualizedCommand({
   options,
   value,
@@ -222,23 +233,34 @@ function VirtualizedCommand({
 
   const filteredOptions = useMemo(() => {
     if (!search) return options;
-    const query = search.toLowerCase();
-    // Rank word-boundary hits above mid-word substrings, then earlier hits
-    // first — searching "EST" should surface "(EST/EDT, …)" timezones before
-    // cities that merely contain "est" (Creston, Bucharest…). Stable sort, so
-    // equally-ranked options keep their original order.
+    const query = normalizeSearchText(search);
+    // Whole-word hits beat mid-word ones, then visible text beats hidden —
+    // otherwise "EST" leads with Creston and Bucharest, not the EST/EDT zones.
+    const wordStartAt = (text: string, index: number) =>
+      index === 0 || !/[a-z0-9]/.test(text.charAt(index - 1));
     const scored: { option: (typeof options)[number]; score: number }[] = [];
     for (const option of options) {
-      const text = (
+      const labelText = normalizeSearchText(
         typeof option.label === "string"
-          ? `${option.label} ${option.helper}`
+          ? option.label
           : reactNodeToString(option.label)
-      ).toLowerCase();
-      const index = text.indexOf(query);
-      if (index === -1) continue;
-      const atWordStart =
-        index === 0 || !/[a-z0-9]/.test(text.charAt(index - 1));
-      scored.push({ option, score: (atWordStart ? 0 : 100000) + index });
+      );
+      const labelIndex = labelText.indexOf(query);
+      if (labelIndex !== -1 && wordStartAt(labelText, labelIndex)) {
+        scored.push({ option, score: labelIndex });
+        continue;
+      }
+      const hiddenText = normalizeSearchText(
+        [option.helper, option.keywords].filter(Boolean).join(" ")
+      );
+      const hiddenIndex = hiddenText.indexOf(query);
+      if (hiddenIndex !== -1 && wordStartAt(hiddenText, hiddenIndex)) {
+        scored.push({ option, score: 200000 });
+      } else if (labelIndex !== -1) {
+        scored.push({ option, score: 300000 + labelIndex });
+      } else if (hiddenIndex !== -1) {
+        scored.push({ option, score: 400000 });
+      }
     }
     return scored.sort((a, b) => a.score - b.score).map((s) => s.option);
   }, [options, search]);

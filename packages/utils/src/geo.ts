@@ -37,6 +37,31 @@ const timeZoneNameOf = (
   return parts.find((p) => p.type === "timeZoneName")?.value ?? "";
 };
 
+const displayNameCache = new Map<string, string>();
+
+/**
+ * The colloquial name for a zone — "Eastern Time", "India Standard Time" — from
+ * CLDR. Returns "" when the runtime only offers a bare "GMT+05:30" fallback.
+ */
+export function getTimezoneDisplayName(zone: string): string {
+  const cached = displayNameCache.get(zone);
+  if (cached !== undefined) return cached;
+
+  let name = "";
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: zone,
+      timeZoneName: "longGeneric"
+    }).formatToParts(new Date());
+    const value = parts.find((p) => p.type === "timeZoneName")?.value ?? "";
+    if (!/^(GMT|UTC)([+-]|$)/.test(value)) name = value;
+  } catch {
+    // Unresolvable zone, or an ICU without `longGeneric`.
+  }
+  displayNameCache.set(zone, name);
+  return name;
+}
+
 const ABBREVIATION = /^[A-Za-z]{2,6}$/;
 const abbreviationCache = new Map<string, string[]>();
 
