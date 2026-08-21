@@ -1142,6 +1142,20 @@ export async function getProductionQuantitiesForJobOperation(
     .eq("jobOperationId", operationId);
 }
 
+// Every productionEvent tagged with the batch — a batch timer started from any
+// member's operation page is tagged with the batch id, not one member's
+// operationId, so a batched operation view reads the batch's events rather than
+// its own to show the shared running timer and progress.
+export async function getProductionEventsForBatch(
+  client: SupabaseClient<Database>,
+  batchId: string
+) {
+  return client
+    .from("productionEvent")
+    .select("*")
+    .eq("jobOperationBatchId", batchId);
+}
+
 export async function getToolsByOperationId(
   client: SupabaseClient<Database>,
   operationId: string

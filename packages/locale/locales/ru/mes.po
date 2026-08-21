@@ -25,9 +25,9 @@ msgstr "{0} Активных"
 msgid "{0} ago"
 msgstr "{0} назад"
 
-#. placeholder {0}: members.length
-msgid "{0} jobs · {totalQuantity}"
-msgstr "{0} работ · {totalQuantity}"
+#. placeholder {0}: (batch.operations ?? []).length
+msgid "{0} jobs"
+msgstr "{0} работ"
 
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
@@ -176,8 +176,8 @@ msgstr "Номер партии {0}"
 msgid "Batch number is required"
 msgstr "Номер партии обязателен"
 
-msgid "Batch time"
-msgstr "Время партии"
+msgid "Batched jobs"
+msgstr "Пакетные работы"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -1300,9 +1300,6 @@ msgstr "Использованные запасные части"
 msgid "Start"
 msgstr "Старт"
 
-msgid "Start batch timer"
-msgstr "Запустить таймер партии"
-
 msgid "Station User"
 msgstr "Пользователь станции"
 
@@ -1327,9 +1324,6 @@ msgstr "Шаги"
 
 msgid "Steps are missing"
 msgstr "Шаги не заполнены"
-
-msgid "Stop batch timer"
-msgstr "Остановить таймер партии"
 
 msgid "Stop the timer before completing the batch."
 msgstr "Остановите таймер перед завершением партии."

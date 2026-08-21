@@ -25,9 +25,9 @@ msgstr "{0} Activos"
 msgid "{0} ago"
 msgstr "hace {0}"
 
-#. placeholder {0}: members.length
-msgid "{0} jobs · {totalQuantity}"
-msgstr "{0} trabajos · {totalQuantity}"
+#. placeholder {0}: (batch.operations ?? []).length
+msgid "{0} jobs"
+msgstr "{0} trabajos"
 
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
@@ -176,8 +176,8 @@ msgstr "Número de lote {0}"
 msgid "Batch number is required"
 msgstr "El número de lote es obligatorio"
 
-msgid "Batch time"
-msgstr "Tiempo del lote"
+msgid "Batched jobs"
+msgstr "Trabajos agrupados"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -1300,9 +1300,6 @@ msgstr "Repuestos utilizados"
 msgid "Start"
 msgstr "Iniciar"
 
-msgid "Start batch timer"
-msgstr "Iniciar cronómetro del lote"
-
 msgid "Station User"
 msgstr "Usuario de estación"
 
@@ -1327,9 +1324,6 @@ msgstr "Pasos"
 
 msgid "Steps are missing"
 msgstr "Faltan pasos"
-
-msgid "Stop batch timer"
-msgstr "Detener cronómetro del lote"
 
 msgid "Stop the timer before completing the batch."
 msgstr "Detenga el cronómetro antes de completar el lote."

@@ -25,9 +25,9 @@ msgstr "{0} 활성"
 msgid "{0} ago"
 msgstr "{0} 전"
 
-#. placeholder {0}: members.length
-msgid "{0} jobs · {totalQuantity}"
-msgstr "{0}개 작업 · {totalQuantity}"
+#. placeholder {0}: (batch.operations ?? []).length
+msgid "{0} jobs"
+msgstr "{0}개 작업"
 
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
@@ -176,8 +176,8 @@ msgstr "배치 번호 {0}"
 msgid "Batch number is required"
 msgstr "배치 번호가 필요합니다"
 
-msgid "Batch time"
-msgstr "배치 시간"
+msgid "Batched jobs"
+msgstr "일괄 작업"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -1300,9 +1300,6 @@ msgstr "사용된 예비 부품"
 msgid "Start"
 msgstr "시작"
 
-msgid "Start batch timer"
-msgstr "배치 타이머 시작"
-
 msgid "Station User"
 msgstr "스테이션 사용자"
 
@@ -1327,9 +1324,6 @@ msgstr "단계"
 
 msgid "Steps are missing"
 msgstr "단계가 누락되었습니다"
-
-msgid "Stop batch timer"
-msgstr "배치 타이머 중지"
 
 msgid "Stop the timer before completing the batch."
 msgstr "배치를 완료하기 전에 타이머를 중지하세요."

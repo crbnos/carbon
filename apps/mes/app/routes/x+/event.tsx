@@ -103,14 +103,19 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
     if (endEvent.data && endEvent.data.length > 0) {
-      const serviceRole = await getCarbonServiceRole();
-      await serviceRole.functions.invoke("post-production-event", {
-        body: {
-          productionEventId: endEvent.data[0].id,
-          userId,
-          companyId
-        }
-      });
+      // Batch timers post cost at batch completion, when the aggregate event is
+      // sliced per member (batch-operations edge fn). Posting it here too would
+      // double-book the cost, so skip post-production-event for a batch event.
+      if (!endEvent.data[0].jobOperationBatchId) {
+        const serviceRole = await getCarbonServiceRole();
+        await serviceRole.functions.invoke("post-production-event", {
+          body: {
+            productionEventId: endEvent.data[0].id,
+            userId,
+            companyId
+          }
+        });
+      }
     }
     return data(
       endEvent.data,

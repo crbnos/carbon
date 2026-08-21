@@ -25,9 +25,9 @@ msgstr "{0} Aktywnych"
 msgid "{0} ago"
 msgstr "{0} temu"
 
-#. placeholder {0}: members.length
-msgid "{0} jobs · {totalQuantity}"
-msgstr "{0} zadań · {totalQuantity}"
+#. placeholder {0}: (batch.operations ?? []).length
+msgid "{0} jobs"
+msgstr "{0} zadań"
 
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
@@ -176,8 +176,8 @@ msgstr "Numer partii {0}"
 msgid "Batch number is required"
 msgstr "Numer partii jest wymagany"
 
-msgid "Batch time"
-msgstr "Czas partii"
+msgid "Batched jobs"
+msgstr "Zadania zgrupowane"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -1300,9 +1300,6 @@ msgstr "Użyte części zamienne"
 msgid "Start"
 msgstr "Start"
 
-msgid "Start batch timer"
-msgstr "Uruchom licznik partii"
-
 msgid "Station User"
 msgstr "Użytkownik stacji"
 
@@ -1327,9 +1324,6 @@ msgstr "Kroki"
 
 msgid "Steps are missing"
 msgstr "Brakuje kroków"
-
-msgid "Stop batch timer"
-msgstr "Zatrzymaj licznik partii"
 
 msgid "Stop the timer before completing the batch."
 msgstr "Zatrzymaj licznik przed ukończeniem partii."

@@ -163,7 +163,11 @@ export const productionEventValidator = z.object({
   // Assembly clocking is single-phase: when set, starting this work type ends
   // any other open work type for the operator on this operation (so Setup and
   // Labor can never run at once). Omitted by the operation view.
-  exclusive: zfd.text(z.string().optional())
+  exclusive: zfd.text(z.string().optional()),
+  // Tags the event as part of an operation batch; sliced per-member at
+  // completion. Cost posting is deferred to batch completion, so `event.tsx`
+  // skips post-production-event when this is set.
+  jobOperationBatchId: zfd.text(z.string().optional())
 });
 
 export const finishValidator = z.object({

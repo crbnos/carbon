@@ -223,6 +223,7 @@ export function StartStopButton({
   machineProductionEvent,
   isTrackedActivity,
   trackedEntityId,
+  batchId,
   ...props
 }: ComponentProps<"button"> & {
   eventType: (typeof productionEventType)[number];
@@ -233,6 +234,9 @@ export function StartStopButton({
   machineProductionEvent: ProductionEvent | undefined;
   isTrackedActivity: boolean;
   trackedEntityId: string | undefined;
+  // When set, the start/stop event is tagged as part of this batch — sliced per
+  // member at batch completion, and cost posting is deferred until then.
+  batchId?: string;
 }) {
   const fetcher = useFetcher<ProductionEvent>();
 
@@ -301,6 +305,7 @@ export function StartStopButton({
       {isTrackedActivity && (
         <Hidden name="trackedEntityId" value={trackedEntityId} />
       )}
+      {batchId && <Hidden name="jobOperationBatchId" value={batchId} />}
       <Hidden name="jobOperationId" value={operation.id} />
 
       <Hidden name="action" value={isActive ? "End" : "Start"} />

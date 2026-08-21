@@ -25,9 +25,9 @@ msgstr "{0} Aktif"
 msgid "{0} ago"
 msgstr "{0} önce"
 
-#. placeholder {0}: members.length
-msgid "{0} jobs · {totalQuantity}"
-msgstr "{0} iş · {totalQuantity}"
+#. placeholder {0}: (batch.operations ?? []).length
+msgid "{0} jobs"
+msgstr "{0} iş"
 
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
@@ -176,8 +176,8 @@ msgstr "Lot Numarası {0}"
 msgid "Batch number is required"
 msgstr "Lot numarası zorunludur"
 
-msgid "Batch time"
-msgstr "Parti süresi"
+msgid "Batched jobs"
+msgstr "Toplu işler"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -1300,9 +1300,6 @@ msgstr "Kullanılan Yedek Parçalar"
 msgid "Start"
 msgstr "Başlat"
 
-msgid "Start batch timer"
-msgstr "Parti zamanlayıcısını başlat"
-
 msgid "Station User"
 msgstr "İstasyon Kullanıcısı"
 
@@ -1327,9 +1324,6 @@ msgstr "Adımlar"
 
 msgid "Steps are missing"
 msgstr "Adımlar eksik"
-
-msgid "Stop batch timer"
-msgstr "Parti zamanlayıcısını durdur"
 
 msgid "Stop the timer before completing the batch."
 msgstr "Partiyi tamamlamadan önce zamanlayıcıyı durdurun."

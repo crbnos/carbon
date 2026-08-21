@@ -25,9 +25,9 @@ msgstr "{0} 个活跃"
 msgid "{0} ago"
 msgstr "{0} 前"
 
-#. placeholder {0}: members.length
-msgid "{0} jobs · {totalQuantity}"
-msgstr "{0} 个工作 · {totalQuantity}"
+#. placeholder {0}: (batch.operations ?? []).length
+msgid "{0} jobs"
+msgstr "{0} 个工作"
 
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
@@ -176,8 +176,8 @@ msgstr "批次号 {0}"
 msgid "Batch number is required"
 msgstr "批次号为必填项"
 
-msgid "Batch time"
-msgstr "批次时间"
+msgid "Batched jobs"
+msgstr "批量工作"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -1300,9 +1300,6 @@ msgstr "已使用备件"
 msgid "Start"
 msgstr "开始"
 
-msgid "Start batch timer"
-msgstr "启动批次计时器"
-
 msgid "Station User"
 msgstr "工位用户"
 
@@ -1327,9 +1324,6 @@ msgstr "步骤"
 
 msgid "Steps are missing"
 msgstr "缺少步骤"
-
-msgid "Stop batch timer"
-msgstr "停止批次计时器"
 
 msgid "Stop the timer before completing the batch."
 msgstr "完成批次前请先停止计时器。"

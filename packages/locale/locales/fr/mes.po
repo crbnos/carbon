@@ -25,9 +25,9 @@ msgstr "{0} Actif(s)"
 msgid "{0} ago"
 msgstr "il y a {0}"
 
-#. placeholder {0}: members.length
-msgid "{0} jobs · {totalQuantity}"
-msgstr "{0} tâches · {totalQuantity}"
+#. placeholder {0}: (batch.operations ?? []).length
+msgid "{0} jobs"
+msgstr "{0} emplois"
 
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
@@ -176,8 +176,8 @@ msgstr "Numéro de lot {0}"
 msgid "Batch number is required"
 msgstr "Le numéro de lot est requis"
 
-msgid "Batch time"
-msgstr "Temps du lot"
+msgid "Batched jobs"
+msgstr "Emplois groupés"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -1300,9 +1300,6 @@ msgstr "Pièces de rechange utilisées"
 msgid "Start"
 msgstr "Démarrer"
 
-msgid "Start batch timer"
-msgstr "Démarrer le chronomètre du lot"
-
 msgid "Station User"
 msgstr "Utilisateur du poste"
 
@@ -1327,9 +1324,6 @@ msgstr "Étapes"
 
 msgid "Steps are missing"
 msgstr "Des étapes sont manquantes"
-
-msgid "Stop batch timer"
-msgstr "Arrêter le chronomètre du lot"
 
 msgid "Stop the timer before completing the batch."
 msgstr "Arrêtez le chronomètre avant de terminer le lot."

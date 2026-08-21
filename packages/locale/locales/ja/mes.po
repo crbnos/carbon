@@ -25,9 +25,9 @@ msgstr "{0} アクティブ"
 msgid "{0} ago"
 msgstr "{0}前"
 
-#. placeholder {0}: members.length
-msgid "{0} jobs · {totalQuantity}"
-msgstr "{0} ジョブ · {totalQuantity}"
+#. placeholder {0}: (batch.operations ?? []).length
+msgid "{0} jobs"
+msgstr "{0} ジョブ"
 
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
@@ -176,8 +176,8 @@ msgstr "バッチ番号 {0}"
 msgid "Batch number is required"
 msgstr "バッチ番号は必須です"
 
-msgid "Batch time"
-msgstr "バッチ時間"
+msgid "Batched jobs"
+msgstr "バッチ処理されたジョブ"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -1300,9 +1300,6 @@ msgstr "使用済みスペアパーツ"
 msgid "Start"
 msgstr "開始"
 
-msgid "Start batch timer"
-msgstr "バッチタイマーを開始"
-
 msgid "Station User"
 msgstr "ステーションユーザー"
 
@@ -1327,9 +1324,6 @@ msgstr "ステップ"
 
 msgid "Steps are missing"
 msgstr "ステップが未記録です"
-
-msgid "Stop batch timer"
-msgstr "バッチタイマーを停止"
 
 msgid "Stop the timer before completing the batch."
 msgstr "バッチを完了する前にタイマーを停止してください。"

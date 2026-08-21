@@ -25,9 +25,9 @@ msgstr "{0} Active"
 msgid "{0} ago"
 msgstr "{0} ago"
 
-#. placeholder {0}: members.length
-msgid "{0} jobs · {totalQuantity}"
-msgstr "{0} jobs · {totalQuantity}"
+#. placeholder {0}: (batch.operations ?? []).length
+msgid "{0} jobs"
+msgstr "{0} jobs"
 
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
@@ -176,8 +176,8 @@ msgstr "Batch Number {0}"
 msgid "Batch number is required"
 msgstr "Batch number is required"
 
-msgid "Batch time"
-msgstr "Batch time"
+msgid "Batched jobs"
+msgstr "Batched jobs"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -1300,9 +1300,6 @@ msgstr "Spare Parts Used"
 msgid "Start"
 msgstr "Start"
 
-msgid "Start batch timer"
-msgstr "Start batch timer"
-
 msgid "Station User"
 msgstr "Station User"
 
@@ -1327,9 +1324,6 @@ msgstr "Steps"
 
 msgid "Steps are missing"
 msgstr "Steps are missing"
-
-msgid "Stop batch timer"
-msgstr "Stop batch timer"
 
 msgid "Stop the timer before completing the batch."
 msgstr "Stop the timer before completing the batch."

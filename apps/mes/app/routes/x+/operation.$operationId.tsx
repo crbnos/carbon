@@ -12,11 +12,13 @@ import {
   getJobMakeMethod,
   getJobMaterialsByOperationId,
   getJobMethodBomIdMap,
+  getJobOperationBatch,
   getJobOperationById,
   getJobOperationProcedure,
   getKanbanByJobId,
   getNextIncompleteSerialEntity,
   getNonConformanceActions,
+  getProductionEventsForBatch,
   getProductionEventsForJobOperation,
   getProductionQuantitiesForJobOperation,
   getThumbnailPathByItemId,
@@ -43,7 +45,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const serviceRole = await getCarbonServiceRole();
 
-  const [events, quantities, job, operation] = await Promise.all([
+  let [events, quantities, job, operation] = await Promise.all([
     getProductionEventsForJobOperation(serviceRole, {
       operationId,
       userId
@@ -83,6 +85,36 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
   if (resolveOperationView(op?.operationType) === "inspection") {
     throw redirect(path.to.inspection(operationId) + url.search);
+  }
+
+  // Batch membership. get_job_operation_by_id omits jobOperationBatchId, so read
+  // it directly. When the op belongs to a batch that is still Active/Completing,
+  // the operation view runs in batch mode: it shows the shared batch timer and
+  // completes the whole batch. A Completed batch was already re-sliced per member
+  // — it renders as a plain operation view.
+  const batchMembership = await serviceRole
+    .from("jobOperation")
+    .select("jobOperationBatchId")
+    .eq("id", operationId)
+    .single();
+  let batch: Awaited<ReturnType<typeof getJobOperationBatch>>["data"] | null =
+    null;
+  const batchId = batchMembership.data?.jobOperationBatchId ?? null;
+  if (batchId) {
+    const batchResult = await getJobOperationBatch(
+      serviceRole,
+      batchId,
+      companyId
+    );
+    if (
+      batchResult.data &&
+      (batchResult.data.status === "Active" ||
+        batchResult.data.status === "Completing")
+    ) {
+      batch = batchResult.data;
+      // Read the batch's events (all members' timers) instead of this op's.
+      events = await getProductionEventsForBatch(serviceRole, batchId);
+    }
   }
 
   const [
@@ -158,6 +190,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return {
+    batch,
     bomIdMap: Object.fromEntries(bomIdMap),
     events: events.data ?? [],
     quantities: (quantities.data ?? []).reduce(
@@ -218,6 +251,7 @@ export default function OperationRoute() {
   if (!operationId) throw new Error("Operation ID is required");
 
   const {
+    batch,
     events,
     expiredEntityPolicy,
     autoSelectMaterialWithoutPickingList,
@@ -238,6 +272,7 @@ export default function OperationRoute() {
   return (
     <JobOperation
       key={`job-operation-${operationId}`}
+      batch={batch}
       events={events}
       expiredEntityPolicy={expiredEntityPolicy}
       autoSelectMaterialWithoutPickingList={

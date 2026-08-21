@@ -2,6 +2,7 @@
 paths:
   - "apps/mes/app/components/JobOperation/**"
   - "apps/mes/app/routes/x+/operation.$operationId.tsx"
+  - "apps/mes/app/routes/x+/batch.$batchId.tsx"
 ---
 
 # MES Job Operation UI
@@ -66,6 +67,46 @@ redirects kinds it does not serve (no loops).
   warehouse source, booking `pickingListLine.quantityReturned`. The SQL trigger
   can't call edge functions, so this is orchestrated in TS. See
   `.ai/specs/2026-08-04-picked-material-return-timing.md`.
+
+## Batch mode (operation batching)
+
+There is **no separate batch page** — the operation view IS the batch UI. When an
+operation belongs to a batch that is still `Active`/`Completing`, the loader
+(`operation.$operationId.tsx`) reads `jobOperationBatch` (via
+`getJobOperationBatch`; the RPC `get_job_operation_by_id` omits
+`jobOperationBatchId`, so a direct one-column read detects membership), swaps the
+per-op events for the batch's events (`getProductionEventsForBatch`), and passes
+`batch` to `<JobOperation>`. A `Completed` batch was already re-sliced per member,
+so the loader passes `batch: null` and the page is a plain operation view.
+
+`batch.$batchId.tsx` is now a **loader-only redirect** to the first member's
+operation (`path.to.operation`). Legacy links keep working: the ERP board's "Open
+in MES" (`path.to.external.mesBatch`) and the MES kanban batch card
+(`path.to.batch`). Completion still POSTs to `batch.$batchId.complete.tsx`
+(unchanged) → `batch-operations` edge fn.
+
+In batch mode `JobOperation` derives `isBatched = !!batch`,
+`isCompleting = batch.status === "Completing"`, and:
+- **Shared timer** — `useOperation({ batchId })` subscribes the `productionEvent`
+  realtime filter to `jobOperationBatchId=eq.<id>` (all members' timers), and
+  `StartStopButton` renders `<Hidden name="jobOperationBatchId">` so the event is
+  tagged. `event.tsx`'s End branch **skips `post-production-event`** for a
+  batch-tagged event — cost posts once at batch completion when the aggregate
+  events are sliced per member. A timer started on any member is the same shared
+  timer on every member's page.
+- **Summed planned durations** — `displayOperation` sums each member's
+  `makeDurations` (with a `machineDuration = 1` fallback) so the `WorkTypeToggle`
+  and `Times` denominators read against the batch's total plan, not one member's.
+- **Batch chip** — a `DropdownMenu` in the info bar (`BAT… · N jobs`, yellow
+  `Completing` badge) lists members as `Link`s to hop between them.
+- **Completion** — the "Log Completed" button becomes "Complete Batch" and opens
+  `BatchCompleteModal` (per-member quantity/scrap rows, pre-filled
+  `operationQuantity − quantityComplete`, controlled state because react-aria
+  ignores RVF nested-array defaults; submit blocked while any batch timer is
+  open). Scrap / Rework / Finish are hidden in the actions sheet (per-op writes
+  would double-count a member); Maintenance + Quality Issue stay. The kanban
+  keyboard wedge is disabled (`active: !!kanban?.id && !isBatched`) — it completes
+  a single op, never a batched member.
 
 ## Components
 

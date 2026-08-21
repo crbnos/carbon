@@ -25,9 +25,9 @@ msgstr "{0} सक्रिय"
 msgid "{0} ago"
 msgstr "{0} पहले"
 
-#. placeholder {0}: members.length
-msgid "{0} jobs · {totalQuantity}"
-msgstr "{0} कार्य · {totalQuantity}"
+#. placeholder {0}: (batch.operations ?? []).length
+msgid "{0} jobs"
+msgstr "{0} नौकरियां"
 
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
@@ -176,8 +176,8 @@ msgstr "बैच नंबर {0}"
 msgid "Batch number is required"
 msgstr "बैच नंबर आवश्यक है"
 
-msgid "Batch time"
-msgstr "बैच समय"
+msgid "Batched jobs"
+msgstr "बैच की गई नौकरियां"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -1300,9 +1300,6 @@ msgstr "उपयोग किए गए स्पेयर पार्ट्�
 msgid "Start"
 msgstr "शुरू करें"
 
-msgid "Start batch timer"
-msgstr "बैच टाइमर शुरू करें"
-
 msgid "Station User"
 msgstr "स्टेशन उपयोगकर्ता"
 
@@ -1327,9 +1324,6 @@ msgstr "चरण"
 
 msgid "Steps are missing"
 msgstr "चरण गायब हैं"
-
-msgid "Stop batch timer"
-msgstr "बैच टाइमर रोकें"
 
 msgid "Stop the timer before completing the batch."
 msgstr "बैच पूर्ण करने से पहले टाइमर रोकें।"

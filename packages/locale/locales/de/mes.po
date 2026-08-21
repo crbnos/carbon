@@ -25,9 +25,9 @@ msgstr "{0} Aktiv"
 msgid "{0} ago"
 msgstr "vor {0}"
 
-#. placeholder {0}: members.length
-msgid "{0} jobs · {totalQuantity}"
-msgstr "{0} Aufträge · {totalQuantity}"
+#. placeholder {0}: (batch.operations ?? []).length
+msgid "{0} jobs"
+msgstr "{0} Aufträge"
 
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
@@ -176,8 +176,8 @@ msgstr "Chargennummer {0}"
 msgid "Batch number is required"
 msgstr "Chargennummer ist erforderlich"
 
-msgid "Batch time"
-msgstr "Chargenzeit"
+msgid "Batched jobs"
+msgstr "Gebündelte Aufträge"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -1300,9 +1300,6 @@ msgstr "Verwendete Ersatzteile"
 msgid "Start"
 msgstr "Start"
 
-msgid "Start batch timer"
-msgstr "Chargen-Timer starten"
-
 msgid "Station User"
 msgstr "Stationsbenutzer"
 
@@ -1327,9 +1324,6 @@ msgstr "Schritte"
 
 msgid "Steps are missing"
 msgstr "Schritte fehlen"
-
-msgid "Stop batch timer"
-msgstr "Chargen-Timer stoppen"
 
 msgid "Stop the timer before completing the batch."
 msgstr "Stoppen Sie den Timer, bevor Sie die Charge abschließen."

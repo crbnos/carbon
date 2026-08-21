@@ -389,7 +389,7 @@ through; `ProcessForm` gains the Boolean field (clone `completeAllOnScan`).
 | Processes table | `Batchable` boolean column/badge |
 | **Operations schedule board** (`x/schedule/operations` — composition integrated 2026-08-21) | Batchable, unstarted operations show a hover checkbox (selection lives in `BatchSelectionProvider`; the first pick pins the process, so only same-process ops stay selectable). A floating bar ("N selected · Create batch · Clear") submits to the `batching.update` action. Members of a live batch collapse into one **`BatchItemCard`** in the batch's work-center column: `BAT` badge, member count · summed qty, member rows with hover-remove, dissolve in the menu, "Open in MES". Dragging the batch card to another column reassigns the batch work center (edge fn writes it to every member); a `Completing` batch card is read-only (yellow badge, MES retry link). Material facets (substance/grade/dimension/form/finish) join the board's filter bar, and cards show material chips (display-setting toggle) |
 | MES kanban (`apps/mes/.../ItemCard.tsx` + operations loader) | Rows sharing `jobOperationBatchId` collapse to one card: member count, summed quantity, batch readableId; card links to the batch view |
-| MES batch view (`x/batch/$batchId` — rebuilt 2026-08-21 on the JobOperation scaffold) | Same chrome as the single-operation view: header with sidebar trigger + back-to-Schedule, info bar (batch id + status badge; process, work center, live elapsed, jobs · qty), content in standard Cards, and the docked **Controls** panel reusing the operation view's `WorkTypeToggle` (Setup/Labor/Machine — batch timers are now typed, summed member durations decide which types show) and the big round start/stop button, plus a Batch time readout. **Complete Batch** card: per-member produced quantity (pre-filled from `operationQuantity` less completed) + optional scrap; enabled for `Active`+`Completing`; submit relabeled "Retry Completion" while `Completing`; blocked while a timer runs. All strings `<Trans>`/`t` |
+| MES batch UI — **the operation view IS the batch UI** (folded in 2026-08-21; `x/batch/$batchId` is now a redirect) | Opening any member operation (`x/operation/$operationId`) runs the page in **batch mode** when its batch is `Active`/`Completing`: the loader reads `jobOperationBatch` (membership via a direct `jobOperationBatchId` read, since the RPC omits it) and swaps in the batch's events. A **batch chip** in the info bar (`BAT… · N jobs`, yellow `Completing` badge) lists members as links to hop between them. The shared **Start/Stop** timer tags its `productionEvent` with `jobOperationBatchId` (so any member's page drives the same timer) and `event.tsx` defers cost posting to completion. `WorkTypeToggle`/`Times` read summed member durations. **Complete Batch** replaces "Log Completed" and opens `BatchCompleteModal` (per-member produced quantity pre-filled from `operationQuantity` less completed + optional scrap; "Retry Completion" while `Completing`; blocked while a timer runs). Scrap/Rework/Finish hidden in batch mode. `x/batch/$batchId` redirects to the first member's operation so ERP-board and MES-kanban links keep working; completion still POSTs to `x/batch/$batchId/complete`. All strings `<Trans>`/`t` |
 | Job detail | Member operation shows the batch badge; estimates-vs-actuals needs **no math change** (per-member events) — optional "part of BAT…" badge only |
 
 ## Acceptance Criteria
@@ -522,3 +522,18 @@ through; `ProcessForm` gains the Boolean field (clone `completeAllOnScan`).
   `WorkTypeToggle`, `IconButtonWithTooltip`); batch timers are typed
   (Setup/Labor/Machine via the toggle; start action accepts `type`). Service
   select enriched (process + work center names, member time fields, event type).
+- 2026-08-21: **MES batch page folded INTO the operation view** (Sid: "build on
+  top of the exact same MES UI instead of adding new routes"). `x/batch/$batchId`
+  shrinks to a loader-only redirect to the first member's operation; the
+  operation view itself runs in batch mode when the op's batch is
+  `Active`/`Completing` (loader detects membership via a direct
+  `jobOperationBatchId` read + `getJobOperationBatch`, swaps in batch events via
+  `getProductionEventsForBatch`). Shared Start/Stop timer tags `productionEvent`
+  with `jobOperationBatchId` and `event.tsx` skips `post-production-event` for
+  batch events (cost posts once at completion); batch chip in the info bar hops
+  between members; `Complete Batch` opens `BatchCompleteModal`; Scrap/Rework/
+  Finish hidden in batch mode; keyboard wedge disabled for batched members.
+  Two new mes strings translated across 12 locales. Browser-verified end to end:
+  redirect, chip, cross-member shared timer, deferred GL on stop, proportional
+  slice completion (Labor 50→25/25, Machine 3→2/1 & 13→7/6), members Done + batch
+  Completed, and the Completed batch reverting to a plain operation view.

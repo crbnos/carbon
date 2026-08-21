@@ -1,7 +1,7 @@
 # Job Operation Batching
 
 Last tested: 2026-08-21 (feat/job-operation-batching-v2)
-Routes: ERP `/x/resources/processes`, `/x/schedule/operations`; MES `/x/batch/$batchId`
+Routes: ERP `/x/resources/processes`, `/x/schedule/operations`; MES `/x/operation/$operationId` (batch mode; `/x/batch/$batchId` redirects here)
 Edge fn: `batch-operations` (create/add/remove/update/dissolve/complete)
 
 ## Strategy
@@ -89,13 +89,27 @@ Full seed/cleanup SQL pattern is in the run log `.ai/runs/2026-08-21-job-operati
   NO duplicated productionQuantity/events, members Done, batch Completed.
 - `complete` again on the Completed batch → "This batch has already been completed".
 
-### 7. MES batch page (UI)
+### 7. MES batch mode — the operation view IS the batch UI
 - Establish the MES session first: open `{MES_URL}/x` (cookie is shared across the
   `*.dev` parent domain once ERP is authed; hitting the raw 127.0.0.1 URL breaks it).
-- `{MES_URL}/x/batch/{batchId}` → renders the status Badge (green Completed / yellow
-  Completing / secondary Active), "N jobs · Σqty", the member table, and the copy
-  "Time and cost split across jobs proportionally to quantity". Start/End timer shows
-  only for Active; the submit relabels "Retry Completion" while Completing.
+- `{MES_URL}/x/batch/{batchId}` **redirects** to the first member's operation
+  (`/x/operation/{firstMemberOpId}`). Legacy links still land somewhere useful.
+- On that operation page, batch mode is on while the batch is `Active`/`Completing`:
+  a **batch chip** (`BAT… · N jobs`, yellow `Completing` badge) in the info bar lists
+  members as links; the Start/Stop timer is shared (its `productionEvent` is tagged
+  `jobOperationBatchId`); "Log Completed" becomes **Complete Batch**, opening a modal
+  with per-member quantity/scrap rows.
+- DB-level checks (the harness can't reliably click the nested Radix tooltip buttons,
+  and its sandbox blocks programmatic `fetch` — use `requestSubmit` on an injected
+  form, or SQL, for the completion):
+  - Start form carries `input[name=jobOperationBatchId]`; starting a timer inserts an
+    open `productionEvent` with that batch id. Opening a DIFFERENT member's page shows
+    the same timer (its Start form reads `action=End` with the open event's id).
+  - Stopping closes the event with `postedToGL=false` and **no** journalLine — cost is
+    deferred to completion (`event.tsx` skips `post-production-event` for batch events).
+  - Completing (POST to `/x/batch/{batchId}/complete`) slices the aggregate events per
+    member ∝ operationQuantity (largest-remainder), records `productionQuantity`, flips
+    members `Done` + batch `Completed`. Reload the op page → chip gone (plain view).
 
 ## Selector Notes
 - Process form Batchable field: `switch "Batchable"`.

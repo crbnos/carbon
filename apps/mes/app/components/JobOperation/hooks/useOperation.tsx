@@ -34,6 +34,7 @@ export function useOperation({
   requiresSerialTracking,
   pauseInterval,
   procedure,
+  batchId,
   onAdvanceToUnit
 }: {
   operation: OperationWithDetails;
@@ -51,6 +52,10 @@ export function useOperation({
     attributes: JobOperationStep[];
     parameters: JobOperationParameter[];
   }>;
+  // In batch mode, subscribe to every productionEvent for the batch (all
+  // members' timers) rather than just this operation's, so the shared running
+  // timer stays live regardless of which member started it.
+  batchId?: string;
   // Auto-select the next serial unit (used on the first operation, where there
   // are no printed labels to scan yet). Provided by JobOperation.
   onAdvanceToUnit?: (entity: TrackedEntity) => void;
@@ -113,7 +118,7 @@ export function useOperation({
 
   useRealtimeChannel({
     topic: `job-operations:${operation.id}`,
-    dependencies: [operation.jobId],
+    dependencies: [operation.jobId, batchId],
     setup(channel) {
       return channel
         .on(
@@ -136,7 +141,9 @@ export function useOperation({
             event: "*",
             schema: "public",
             table: "productionEvent",
-            filter: `jobOperationId=eq.${operation.id}`
+            filter: batchId
+              ? `jobOperationBatchId=eq.${batchId}`
+              : `jobOperationId=eq.${operation.id}`
           },
           (payload) => {
             switch (payload.eventType) {
