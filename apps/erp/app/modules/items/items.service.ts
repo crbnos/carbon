@@ -1552,17 +1552,39 @@ export async function getMethodMaterials(
   return query;
 }
 
+// The step-link `quantity` column ships with this branch's migration, which only
+// runs on main — previews (and the prod window between app deploy and migration)
+// run this code against the pre-migration schema. PostgREST fails the WHOLE
+// select on an unknown embedded column, so fall back to the quantity-less query
+// instead of rendering an empty BOM. 42703 = Postgres undefined_column; PGRST204
+// = PostgREST's schema-cache miss for a written column.
+function isMissingQuantityColumn(
+  error: { code?: string; message?: string } | null
+) {
+  return error?.code === "42703" || error?.code === "PGRST204";
+}
+
 export async function getMethodMaterialsByMakeMethod(
   client: SupabaseClient<Database>,
   makeMethodId: string
 ) {
-  return client
+  const result = await client
     .from("methodMaterial")
     .select(
       "*, item(name, itemTrackingType, replenishmentSystem, defaultMethodType, sourcingType), methodMaterialStep(methodOperationStepId, quantity)"
     )
     .eq("makeMethodId", makeMethodId)
     .order("order", { ascending: true });
+  if (isMissingQuantityColumn(result.error)) {
+    return (await client
+      .from("methodMaterial")
+      .select(
+        "*, item(name, itemTrackingType, replenishmentSystem, defaultMethodType, sourcingType), methodMaterialStep(methodOperationStepId)"
+      )
+      .eq("makeMethodId", makeMethodId)
+      .order("order", { ascending: true })) as unknown as typeof result;
+  }
+  return result;
 }
 
 export async function getMethodOperations(
@@ -4177,10 +4199,17 @@ export async function duplicateMethodOperationStep(
   }
 
   // Copy step-scoped part/material links (same operation-level-vs-scoped semantics as tools).
-  const materialLinks = await client
+  // Pre-migration schema: no quantity column — copy the bare links instead.
+  let materialLinks = await client
     .from("methodMaterialStep")
     .select("methodMaterialId, quantity")
     .eq("methodOperationStepId", args.id);
+  if (isMissingQuantityColumn(materialLinks.error)) {
+    materialLinks = (await client
+      .from("methodMaterialStep")
+      .select("methodMaterialId")
+      .eq("methodOperationStepId", args.id)) as unknown as typeof materialLinks;
+  }
   if (materialLinks.error) {
     return { data: null, error: materialLinks.error };
   }
@@ -4189,7 +4218,7 @@ export async function duplicateMethodOperationStep(
       materialLinks.data.map((l) => ({
         methodMaterialId: l.methodMaterialId,
         methodOperationStepId: newStepId,
-        quantity: l.quantity
+        ...(l.quantity != null ? { quantity: l.quantity } : {})
       }))
     );
     if (materialLinkInsert.error) {
@@ -4297,26 +4326,35 @@ export async function replaceMethodMaterialSteps(
 ) {
   // Per-step quantities are edited from the step side; a BOM-side rewrite of the
   // step set must not wipe them, so carry each retained step's quantity across
-  // the delete-then-insert.
+  // the delete-then-insert. Pre-migration schema: quantities don't exist, so
+  // fall back to the bare link set.
+  let quantityByStepId = new Map<string, number | null>();
   const existing = await client
     .from("methodMaterialStep")
     .select("methodOperationStepId, quantity")
     .eq("methodMaterialId", methodMaterialId);
-  if (existing.error) return existing;
-  const quantityByStepId = new Map(
-    (existing.data ?? []).map((l) => [l.methodOperationStepId, l.quantity])
-  );
+  if (existing.error && !isMissingQuantityColumn(existing.error)) {
+    return existing;
+  }
+  if (!existing.error) {
+    quantityByStepId = new Map(
+      (existing.data ?? []).map((l) => [l.methodOperationStepId, l.quantity])
+    );
+  }
   const del = await client
     .from("methodMaterialStep")
     .delete()
     .eq("methodMaterialId", methodMaterialId);
   if (del.error || methodOperationStepIds.length === 0) return del;
   return client.from("methodMaterialStep").insert(
-    methodOperationStepIds.map((methodOperationStepId) => ({
-      methodMaterialId,
-      methodOperationStepId,
-      quantity: quantityByStepId.get(methodOperationStepId) ?? null
-    }))
+    methodOperationStepIds.map((methodOperationStepId) => {
+      const quantity = quantityByStepId.get(methodOperationStepId);
+      return {
+        methodMaterialId,
+        methodOperationStepId,
+        ...(quantity != null ? { quantity } : {})
+      };
+    })
   );
 }
 
@@ -4339,7 +4377,9 @@ export async function setMethodMaterialStepLink(
         {
           methodMaterialId: args.methodMaterialId,
           methodOperationStepId: args.methodOperationStepId,
-          quantity: args.quantity ?? null
+          // Omit the column when unset so the default link path still works
+          // against a pre-migration schema (see isMissingQuantityColumn).
+          ...(args.quantity != null ? { quantity: args.quantity } : {})
         }
       ],
       {

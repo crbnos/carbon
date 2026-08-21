@@ -2129,11 +2129,15 @@ function AttributesForm({
     if (!newStepId || draftParts.length === 0 || !carbon) return;
     let cancelled = false;
     (async () => {
+      // Omit the quantity column when unset so the default path still works
+      // against a pre-migration schema (the column only ships on main).
       const { error } = await carbon.from("methodMaterialStep").insert(
         draftParts.map((methodMaterialId) => ({
           methodMaterialId,
           methodOperationStepId: newStepId,
-          quantity: draftPartQuantities[methodMaterialId] ?? null
+          ...(draftPartQuantities[methodMaterialId] != null
+            ? { quantity: draftPartQuantities[methodMaterialId] }
+            : {})
         }))
       );
       if (cancelled) return;

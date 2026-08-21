@@ -1379,11 +1379,15 @@ function StepsForm({
     let cancelled = false;
     const batch = draftParts;
     (async () => {
+      // Omit the quantity column when unset so the default path still works
+      // against a pre-migration schema (the column only ships on main).
       const { error } = await carbon.from("jobMaterialStep").insert(
         batch.map((jobMaterialId) => ({
           jobMaterialId,
           jobOperationStepId: newStepId,
-          quantity: draftPartQuantities[jobMaterialId] ?? null
+          ...(draftPartQuantities[jobMaterialId] != null
+            ? { quantity: draftPartQuantities[jobMaterialId] }
+            : {})
         }))
       );
       if (cancelled) return;

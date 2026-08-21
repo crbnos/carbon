@@ -28,6 +28,17 @@ import type { BaseOperationWithDetails, Job, StorageItem } from "./types";
 
 const log = getLogger("mes", "operations");
 
+// The jobMaterialStep `quantity` column ships with a migration that only runs
+// on main — previews (and the prod window between app deploy and migration) run
+// this code against the pre-migration schema. PostgREST fails the whole select
+// on an unknown column, so callers fall back to the quantity-less query.
+// 42703 = Postgres undefined_column; PGRST204 = PostgREST schema-cache miss.
+function isMissingQuantityColumn(
+  error: { code?: string; message?: string } | null
+) {
+  return error?.code === "42703" || error?.code === "PGRST204";
+}
+
 export async function getOpenJobs(
   client: SupabaseClient<Database>,
   args: { companyId: string; locationId: string }
@@ -673,14 +684,24 @@ export async function getJobMaterialsByOperationId(
   // material applies to the whole operation (shown on every step); 1+ rows scope it to those
   // steps so the MES shows only the parts involved in the current step. Each link may carry
   // a per-step quantity (NULL = the full BOM line quantity), so a line split across steps
-  // shows the split share on each step.
-  const stepLinks = await client
+  // shows the split share on each step. The quantity column ships with this branch's
+  // migration (main-only), so fall back to the bare links against a pre-migration schema.
+  let stepLinks = await client
     .from("jobMaterialStep")
     .select("jobMaterialId, jobOperationStepId, quantity")
     .in(
       "jobMaterialId",
       (materials.data ?? []).map((m) => m.id ?? "")
     );
+  if (isMissingQuantityColumn(stepLinks.error)) {
+    stepLinks = (await client
+      .from("jobMaterialStep")
+      .select("jobMaterialId, jobOperationStepId")
+      .in(
+        "jobMaterialId",
+        (materials.data ?? []).map((m) => m.id ?? "")
+      )) as unknown as typeof stepLinks;
+  }
   const stepIdsByMaterialId = new Map<string, string[]>();
   const stepQuantitiesByMaterialId = new Map<
     string,
@@ -932,13 +953,23 @@ export async function backflushUntrackedMaterialsOnStepRecord(
 
   // Step ownership: materialId → the step ids it's assigned to (empty = loose),
   // plus each link's per-step quantity (NULL = the full BOM line quantity).
-  const stepLinks = await client
+  // Falls back to the bare links against a pre-migration schema.
+  let stepLinks = await client
     .from("jobMaterialStep")
     .select("jobMaterialId, jobOperationStepId, quantity")
     .in(
       "jobMaterialId",
       materials.data.map((m) => m.id)
     );
+  if (isMissingQuantityColumn(stepLinks.error)) {
+    stepLinks = (await client
+      .from("jobMaterialStep")
+      .select("jobMaterialId, jobOperationStepId")
+      .in(
+        "jobMaterialId",
+        materials.data.map((m) => m.id)
+      )) as unknown as typeof stepLinks;
+  }
   if (stepLinks.error) return { error: stepLinks.error };
   const ownedSteps = new Map<string, Set<string>>();
   const linkQuantities = new Map<string, Map<string, number | null>>();
