@@ -10,10 +10,21 @@ syncing missed payments via a background sweep.
   it is the single authority for writing Stripe payments into Carbon. Both the
   webhook handler and the pull sweep call it; adding a third call site MUST go
   through the same function.
-- **`recordStripeConnectPayment` is idempotent on Stripe invoice id** — the
-  partial unique index on `externalIntegrationMapping` (`INTEGRATION="stripe-connect"`,
-  `entityType="payment"`) ensures a duplicate delivery loses the race at the DB,
-  not in application code. Never guard with an ad-hoc SELECT before calling it.
+- **`recordStripeConnectPayment` is idempotent on Stripe invoice id, but NOT
+  limited to one payment per invoice** — a duplicate delivery of the SAME
+  `amount_paid` loses the race at the DB via the partial unique index on
+  `externalIntegrationMapping` (`INTEGRATION="stripe-connect"`,
+  `entityType="payment"`, `allowDuplicateExternalId=false`). A delivery with a
+  HIGHER cumulative `amount_paid` than what's already recorded (installment /
+  partial-payment invoices) instead records a new payment for just the delta,
+  linked with `allowDuplicateExternalId: true` — so one Stripe invoice can map
+  to several Carbon payments. Never guard with an ad-hoc SELECT before calling
+  it, and never assume `getByExternalId` (singular) sees every payment for an
+  invoice — use `mappingService.getAllByExternalId` for that.
+- **`voidStripeConnectPayment` reverses every non-Voided payment mapped to an
+  invoice** — it's a FULL reversal only (via `post-payment`'s `void` op,
+  which mirrors every journal line including the fee). There is no partial
+  reversal capability; a partial refund is logged, not acted on.
 - **All external-ID links go through `createMappingService` from `@carbon/ee/accounting`** —
   `mappingService.getByExternalId`, `mappingService.getEntityId`, `mappingService.link`.
   Do not add per-entity `externalId` columns.
@@ -59,7 +70,7 @@ pnpm --filter @carbon/ee test
 | Subpath | Provides |
 |---|---|
 | `@carbon/ee` (root) | `StripeConnect` integration definition, `StripeConnectSettingsSchema` |
-| `@carbon/ee/stripe-connect.server` | `recordStripeConnectPayment`, `StripeConnectPaymentResult` |
+| `@carbon/ee/stripe-connect.server` | `recordStripeConnectPayment`, `StripeConnectPaymentResult`, `voidStripeConnectPayment`, `StripeConnectVoidResult` |
 
 ## Key Functions
 
@@ -69,6 +80,23 @@ pnpm --filter @carbon/ee test
   `fee` field on `post-payment`), and writes to `externalIntegrationMapping`.
   Returns `{ status: "recorded" | "skipped" }`. Throws on fixable config errors
   (missing bank account, missing fee account, missing sequence) so Stripe retries.
+  Reconciles against every prior mapping for the invoice before doing anything:
+  a mapped payment still `Draft` (a prior delivery that inserted the payment +
+  mapping but crashed before settlement/posting) is RESUMED at its own already-
+  recorded amount; otherwise the delta between the invoice's current
+  `amount_paid` and the sum already recorded is what gets recorded (0 or
+  negative → skipped), with the processing fee prorated to that delta's share.
+  The realized settlement-date exchange rate (`getConnectInvoicePaymentDetails().exchangeRate`,
+  from Stripe's `balance_transaction.exchange_rate`) drives `invoiceSettlement.sourceExchangeRate`
+  and `payment.exchangeRate`; the invoice's own booked rate stays on
+  `targetExchangeRate` — this is what makes `totalFxImpact` in `post-payment`
+  non-zero for a real FX payment instead of structurally suppressed.
+- **`voidStripeConnectPayment`** (`payment.server.ts`) — reverses every
+  non-Voided payment mapped to a Stripe invoice via `post-payment`'s `void` op
+  (a full reversal that mirrors every journal line, fee included). Called on
+  `charge.refunded` (full only), `charge.dispute.closed` (status `lost`), and
+  `invoice.voided`. Returns `{ status: "voided", paymentIds } | { status: "skipped", reason }`;
+  throws on a `post-payment` failure so the webhook returns 500 and Stripe retries.
 - **`stripeConnectHealthcheck`** (`hooks.server.ts`) — called by the integration
   health system; returns `true` only when `chargesEnabled && payoutsEnabled` on
   the connected account. Returns `false` for missing accounts, Stripe errors,
@@ -91,9 +119,9 @@ pnpm --filter @carbon/ee test
 | `salesInvoices` | SELECT — look up the Carbon invoice by id |
 | `accountDefault` | SELECT — resolve GL accounts for bank, AR, service charge |
 | `companySettings` | SELECT — currency and payment sequence settings |
-| `payment` | INSERT (and DELETE on rollback within the same function) |
+| `payment` | INSERT (and DELETE on rollback within the same function), plus a SELECT across all mapped payments for the invoice to compute the resume/delta decision |
 | `invoiceSettlement` | DELETE + INSERT (Kysely transaction) — replace settlements |
-| `externalIntegrationMapping` | INSERT — idempotency record linking Stripe invoice to payment |
+| `externalIntegrationMapping` | SELECT (all mappings for the invoice) + INSERT — links a Stripe invoice to one or more payments |
 
 ## Cross-References
 
@@ -103,4 +131,7 @@ pnpm --filter @carbon/ee test
 - `packages/ee/AGENTS.md` — `createMappingService` pattern, `externalIntegrationMapping` table
 - `packages/jobs/src/inngest/functions/integrations/stripe-connect-pull-sweep.ts` — background
   sweep that calls `recordStripeConnectPayment` for invoices missed by webhooks
-- `apps/erp/app/routes/api+/webhook.stripe-connect.ts` — real-time webhook caller
+- `apps/erp/app/routes/api+/webhook.stripe-connect.ts` — real-time webhook caller;
+  also handles `charge.refunded`, `charge.dispute.closed`, `invoice.voided`
+  (→ `voidStripeConnectPayment`) and `account.updated` (→ refreshes
+  `chargesEnabled`/`payoutsEnabled`/requirement errors via `getConnectAccountStatus`)

@@ -836,6 +836,8 @@ export async function createAndSendConnectInvoice(
 // taking a direct dependency on the `stripe` package themselves.
 export type ConnectWebhookEvent = Stripe.Event;
 export type ConnectInvoice = Stripe.Invoice;
+export type ConnectCharge = Stripe.Charge;
+export type ConnectDispute = Stripe.Dispute;
 
 export function constructConnectWebhookEvent({
   body,
@@ -899,6 +901,15 @@ export type ConnectInvoicePaymentDetails = {
    * traceability alongside the (possibly converted) `feeAmount` above.
    */
   settlementCurrency: string | null;
+  /**
+   * The realized rate Stripe actually settled this payment's charge(s) at —
+   * `balance_transaction.exchange_rate`, converts FROM the charge's own
+   * currency TO the settlement currency — captured from the same balance
+   * transaction the fee conversion above already reads. `null` when no
+   * conversion happened (charge currency == settlement currency), in which
+   * case the caller should fall back to the invoice's own booked rate.
+   */
+  exchangeRate: number | null;
 };
 
 /**
@@ -921,7 +932,8 @@ export async function getConnectInvoicePaymentDetails(
     chargeIds: [],
     feeAmount: 0,
     feeCurrency: null,
-    settlementCurrency: null
+    settlementCurrency: null,
+    exchangeRate: null
   };
 
   if (!stripe) return empty;
@@ -941,6 +953,7 @@ export async function getConnectInvoicePaymentDetails(
     let feeMinor = 0;
     let feeCurrency: string | null = null;
     let settlementCurrency: string | null = null;
+    let exchangeRate: number | null = null;
 
     for (const payment of payments.data) {
       if (payment.status !== "paid") continue;
@@ -1002,6 +1015,7 @@ export async function getConnectInvoicePaymentDetails(
           // Invoicing is always the invoice currency.
           feeMinor += balanceTransaction.fee / balanceTransaction.exchange_rate;
           feeCurrency = chargeCurrency;
+          exchangeRate = balanceTransaction.exchange_rate;
         }
       }
     }
@@ -1010,7 +1024,8 @@ export async function getConnectInvoicePaymentDetails(
       chargeIds,
       feeAmount: feeCurrency ? fromStripeAmount(feeMinor, feeCurrency) : 0,
       feeCurrency,
-      settlementCurrency
+      settlementCurrency,
+      exchangeRate
     };
   } catch (err) {
     log.warn("Failed to resolve Stripe Connect invoice payment details", {

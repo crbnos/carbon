@@ -74,147 +74,171 @@ export const stripeConnectPullSweepFunction = inngest.createFunction(
     }> = [];
 
     for (const target of targets) {
-      const result = await step.run(
-        `stripe-connect-sweep-${target.companyId}`,
-        async () => {
-          const { companyId, metadata } = target;
+      let result: (typeof results)[number];
+      try {
+        result = await step.run(
+          `stripe-connect-sweep-${target.companyId}`,
+          async () => {
+            const { companyId, metadata } = target;
 
-          const stripeAccountId = (
-            metadata.settings as Record<string, unknown> | undefined
-          )?.stripeAccountId as string | undefined;
+            // stripeAccountId is written top-level on companyIntegration.metadata
+            // by getOrCreateConnectAccount/callback.ts — NOT nested under
+            // `settings`. Reading it nested here silently short-circuited every
+            // company forever; keep this read in sync with those writers.
+            const stripeAccountId = metadata.stripeAccountId as
+              | string
+              | undefined;
 
-          if (!stripeAccountId) {
-            return {
-              companyId,
-              invoicesFound: 0,
-              recorded: 0,
-              skipped: 0,
-              errors: 0,
-              cursorAdvancedTo: null,
-              skippedReason: "no stripeAccountId in metadata"
-            };
-          }
-
-          // Cursor is a Unix timestamp (seconds). Default = integration
-          // updatedAt so we don't reach back before install.
-          const settings = (metadata.settings ?? {}) as Record<string, unknown>;
-          const storedCursor = settings.pullCursor as number | undefined;
-          const fallbackCursor = target.updatedAt
-            ? Math.floor(new Date(target.updatedAt).getTime() / 1000)
-            : Math.floor(Date.now() / 1000) - 60 * 60 * 24 * 7; // 7 days max
-
-          const since = storedCursor ?? fallbackCursor;
-
-          if (!stripe) {
-            return {
-              companyId,
-              invoicesFound: 0,
-              recorded: 0,
-              skipped: 0,
-              errors: 0,
-              cursorAdvancedTo: null,
-              skippedReason:
-                "Stripe client not initialized (STRIPE_SECRET_KEY not set)"
-            };
-          }
-
-          // Page through all paid invoices created since the lookback window,
-          // not just since the raw cursor — see CURSOR_LOOKBACK_SECONDS above.
-          const queryFrom = pullWindowStart(since);
-
-          type StripeInvoice = Awaited<
-            ReturnType<typeof stripe.invoices.list>
-          >["data"][number];
-          const invoices: StripeInvoice[] = [];
-          let hasMore = true;
-          let startingAfter: string | undefined;
-
-          while (hasMore) {
-            const page = await stripe.invoices.list(
-              {
-                status: "paid",
-                created: { gte: queryFrom },
-                limit: 100,
-                ...(startingAfter ? { starting_after: startingAfter } : {})
-              },
-              { stripeAccount: stripeAccountId }
-            );
-
-            invoices.push(...page.data);
-            hasMore = page.has_more;
-            const last = page.data.at(-1);
-            if (last) {
-              startingAfter = last.id;
-            } else {
-              hasMore = false;
-            }
-          }
-
-          const summary = {
-            companyId,
-            invoicesFound: invoices.length,
-            recorded: 0,
-            skipped: 0,
-            errors: 0,
-            cursorAdvancedTo: null as number | null
-          };
-
-          if (invoices.length === 0) {
-            return summary;
-          }
-
-          let latestCreated: number | null = null;
-          let anyError = false;
-
-          for (const invoice of invoices) {
-            try {
-              const result = await recordStripeConnectPayment({
+            if (!stripeAccountId) {
+              return {
                 companyId,
-                stripeAccountId,
-                integrationMetadata: settings,
-                stripeInvoice: invoice as ConnectInvoice
-              });
+                invoicesFound: 0,
+                recorded: 0,
+                skipped: 0,
+                errors: 0,
+                cursorAdvancedTo: null,
+                skippedReason: "no stripeAccountId in metadata"
+              };
+            }
 
-              if (result.status === "recorded") {
-                summary.recorded++;
+            // Cursor is a Unix timestamp (seconds). Default = integration
+            // updatedAt so we don't reach back before install.
+            const settings = (metadata.settings ?? {}) as Record<
+              string,
+              unknown
+            >;
+            const storedCursor = settings.pullCursor as number | undefined;
+            const fallbackCursor = target.updatedAt
+              ? Math.floor(new Date(target.updatedAt).getTime() / 1000)
+              : Math.floor(Date.now() / 1000) - 60 * 60 * 24 * 7; // 7 days max
+
+            const since = storedCursor ?? fallbackCursor;
+
+            if (!stripe) {
+              return {
+                companyId,
+                invoicesFound: 0,
+                recorded: 0,
+                skipped: 0,
+                errors: 0,
+                cursorAdvancedTo: null,
+                skippedReason:
+                  "Stripe client not initialized (STRIPE_SECRET_KEY not set)"
+              };
+            }
+
+            // Page through all paid invoices created since the lookback window,
+            // not just since the raw cursor — see CURSOR_LOOKBACK_SECONDS above.
+            const queryFrom = pullWindowStart(since);
+
+            type StripeInvoice = Awaited<
+              ReturnType<typeof stripe.invoices.list>
+            >["data"][number];
+            const invoices: StripeInvoice[] = [];
+            let hasMore = true;
+            let startingAfter: string | undefined;
+
+            while (hasMore) {
+              const page = await stripe.invoices.list(
+                {
+                  status: "paid",
+                  created: { gte: queryFrom },
+                  limit: 100,
+                  ...(startingAfter ? { starting_after: startingAfter } : {})
+                },
+                { stripeAccount: stripeAccountId }
+              );
+
+              invoices.push(...page.data);
+              hasMore = page.has_more;
+              const last = page.data.at(-1);
+              if (last) {
+                startingAfter = last.id;
               } else {
-                summary.skipped++;
-                logger.info(
-                  `[stripe-connect-pull-sweep] ${companyId}: skipped ${invoice.id}: ${result.reason}`
+                hasMore = false;
+              }
+            }
+
+            const summary = {
+              companyId,
+              invoicesFound: invoices.length,
+              recorded: 0,
+              skipped: 0,
+              errors: 0,
+              cursorAdvancedTo: null as number | null
+            };
+
+            if (invoices.length === 0) {
+              return summary;
+            }
+
+            let latestCreated: number | null = null;
+            let anyError = false;
+
+            for (const invoice of invoices) {
+              try {
+                const result = await recordStripeConnectPayment({
+                  companyId,
+                  stripeAccountId,
+                  integrationMetadata: metadata,
+                  stripeInvoice: invoice as ConnectInvoice
+                });
+
+                if (result.status === "recorded") {
+                  summary.recorded++;
+                } else {
+                  summary.skipped++;
+                  logger.info(
+                    `[stripe-connect-pull-sweep] ${companyId}: skipped ${invoice.id}: ${result.reason}`
+                  );
+                }
+
+                // Advance on `created`, the same field the list query filters
+                // on — not `paid_at`, which is what let invoices slip through.
+                if (latestCreated === null || invoice.created > latestCreated) {
+                  latestCreated = invoice.created;
+                }
+              } catch (err) {
+                summary.errors++;
+                anyError = true;
+                logger.error(
+                  `[stripe-connect-pull-sweep] ${companyId}: error processing ${invoice.id}`,
+                  { error: err }
                 );
               }
+            }
 
-              // Advance on `created`, the same field the list query filters
-              // on — not `paid_at`, which is what let invoices slip through.
-              if (latestCreated === null || invoice.created > latestCreated) {
-                latestCreated = invoice.created;
-              }
-            } catch (err) {
-              summary.errors++;
-              anyError = true;
-              logger.error(
-                `[stripe-connect-pull-sweep] ${companyId}: error processing ${invoice.id}`,
-                { error: err }
+            // Celigo cursor rule: only advance when all processing succeeded.
+            // A partial error holds the cursor so the next run re-fetches the
+            // same window, naturally retrying any failed invoice.
+            const newCursor = nextPullCursor(latestCreated, since, anyError);
+            if (newCursor !== null) {
+              await storePullCursor(client, companyId, newCursor);
+              summary.cursorAdvancedTo = newCursor;
+            } else if (anyError) {
+              logger.warn(
+                `[stripe-connect-pull-sweep] ${companyId}: ${summary.errors} error(s); holding cursor at ${since} for retry`
               );
             }
-          }
 
-          // Celigo cursor rule: only advance when all processing succeeded.
-          // A partial error holds the cursor so the next run re-fetches the
-          // same window, naturally retrying any failed invoice.
-          const newCursor = nextPullCursor(latestCreated, since, anyError);
-          if (newCursor !== null) {
-            await storePullCursor(client, companyId, newCursor);
-            summary.cursorAdvancedTo = newCursor;
-          } else if (anyError) {
-            logger.warn(
-              `[stripe-connect-pull-sweep] ${companyId}: ${summary.errors} error(s); holding cursor at ${since} for retry`
-            );
+            return summary;
           }
-
-          return summary;
-        }
-      );
+        );
+      } catch (err) {
+        logger.error(
+          `[stripe-connect-pull-sweep] ${target.companyId}: sweep failed`,
+          { error: err }
+        );
+        result = {
+          companyId: target.companyId,
+          invoicesFound: 0,
+          recorded: 0,
+          skipped: 0,
+          errors: 1,
+          cursorAdvancedTo: null,
+          skippedReason: err instanceof Error ? err.message : String(err)
+        };
+      }
 
       results.push(result);
     }

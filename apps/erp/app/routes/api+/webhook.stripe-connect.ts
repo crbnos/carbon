@@ -11,24 +11,50 @@
  *   payment against the originating sales invoice, and book Stripe's fee.
  * - `invoice.payment_failed` / `invoice.marked_uncollectible` — logged only; no
  *   ledger change, since nothing was collected.
+ * - `charge.refunded` (full only), `charge.dispute.closed` (status "lost"),
+ *   `invoice.voided` — void the Carbon payment via `voidStripeConnectPayment`,
+ *   a full reversal. A PARTIAL refund has no safe automated GL treatment (no
+ *   partial-reversal journal capability exists) and is logged, not acted on.
+ * - `account.updated` — refresh `chargesEnabled`/`payoutsEnabled`/requirement
+ *   errors on the integration, the same way `callback.ts` does after
+ *   onboarding. NOTE: Carbon creates Connect accounts via Stripe's v2 Core
+ *   Accounts API, while this endpoint is a classic v1 webhook — whether
+ *   Stripe delivers a v1 `account.updated` for a v2-created account has not
+ *   been verified against a live test event; treat this case as best-effort
+ *   until confirmed.
  *
  * Anything else is acknowledged with 200 so Stripe stops retrying it. Non-2xx is
  * reserved for a failed signature check and for genuinely retryable failures.
  */
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { recordStripeConnectPayment } from "@carbon/ee/stripe-connect.server";
+import {
+  getStripeInvoiceIdForCharge,
+  recordStripeConnectPayment,
+  voidStripeConnectPayment
+} from "@carbon/ee/stripe-connect.server";
 import { getLogger } from "@carbon/logger";
-import type { ConnectInvoice } from "@carbon/stripe/connect.server";
-import { constructConnectWebhookEvent } from "@carbon/stripe/connect.server";
+import type {
+  ConnectCharge,
+  ConnectDispute,
+  ConnectInvoice
+} from "@carbon/stripe/connect.server";
+import {
+  constructConnectWebhookEvent,
+  getConnectAccountStatus
+} from "@carbon/stripe/connect.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { upsertCompanyIntegration } from "~/modules/settings/settings.server";
 
 export const config = {
   runtime: "nodejs"
 };
 
 const logger = getLogger("erp", "webhook", "stripe-connect");
+// Matches the SYSTEM_USER convention in payment.server.ts — this handler has
+// no real user, but upsertCompanyIntegration requires an updatedBy audit value.
+const SYSTEM_UPDATED_BY = "system";
 
 async function getCompanyForConnectAccount(stripeAccountId: string) {
   const serviceRole = getCarbonServiceRole();
@@ -148,6 +174,138 @@ export async function action({ request }: ActionFunctionArgs) {
           stripeInvoiceId: invoice.id,
           carbonInvoiceId: invoice.metadata?.carbonInvoiceId
         });
+        break;
+      }
+
+      case "invoice.voided": {
+        const invoice = event.data.object as ConnectInvoice;
+        const result = await voidStripeConnectPayment({
+          companyId: company.companyId,
+          stripeInvoiceId: invoice.id
+        });
+        logger.info("Stripe Connect invoice voided", {
+          eventId: event.id,
+          companyId: company.companyId,
+          stripeInvoiceId: invoice.id,
+          result
+        });
+        break;
+      }
+
+      case "charge.refunded": {
+        const charge = event.data.object as ConnectCharge;
+        // Stripe's pinned API version dropped Charge.invoice — resolve via
+        // Carbon's own mapping metadata instead (see
+        // getStripeInvoiceIdForCharge).
+        const stripeInvoiceId = await getStripeInvoiceIdForCharge(
+          company.companyId,
+          charge.id
+        );
+
+        if (!stripeInvoiceId) {
+          logger.warn("Refunded charge has no invoice to trace", {
+            eventId: event.id,
+            companyId: company.companyId,
+            chargeId: charge.id
+          });
+          break;
+        }
+
+        if (!charge.refunded) {
+          // Partial refund — Stripe only sets `refunded: true` once the FULL
+          // charge amount has been returned. There is no partial-reversal
+          // journal capability, so this is surfaced for manual handling
+          // rather than voiding the whole payment.
+          logger.warn(
+            "Partial Stripe Connect refund — no automated GL reversal, needs manual handling",
+            {
+              eventId: event.id,
+              companyId: company.companyId,
+              chargeId: charge.id,
+              stripeInvoiceId,
+              amountRefunded: charge.amount_refunded,
+              amountCaptured: charge.amount_captured
+            }
+          );
+          break;
+        }
+
+        const result = await voidStripeConnectPayment({
+          companyId: company.companyId,
+          stripeInvoiceId
+        });
+        logger.info("Stripe Connect payment voided for a full refund", {
+          eventId: event.id,
+          companyId: company.companyId,
+          stripeInvoiceId,
+          result
+        });
+        break;
+      }
+
+      case "charge.dispute.closed": {
+        const dispute = event.data.object as ConnectDispute;
+        if (dispute.status !== "lost") {
+          // won / warning_* / needs_response — no funds actually changed
+          // hands yet, nothing to reverse.
+          logger.info("Stripe Connect dispute closed without a loss", {
+            eventId: event.id,
+            companyId: company.companyId,
+            disputeId: dispute.id,
+            status: dispute.status
+          });
+          break;
+        }
+
+        const chargeId =
+          typeof dispute.charge === "string"
+            ? dispute.charge
+            : dispute.charge.id;
+        const stripeInvoiceId = await getStripeInvoiceIdForCharge(
+          company.companyId,
+          chargeId
+        );
+
+        if (!stripeInvoiceId) {
+          logger.warn("Lost dispute has no traceable invoice", {
+            eventId: event.id,
+            companyId: company.companyId,
+            disputeId: dispute.id,
+            chargeId
+          });
+          break;
+        }
+
+        const result = await voidStripeConnectPayment({
+          companyId: company.companyId,
+          stripeInvoiceId
+        });
+        logger.info("Stripe Connect payment voided for a lost dispute", {
+          eventId: event.id,
+          companyId: company.companyId,
+          stripeInvoiceId,
+          result
+        });
+        break;
+      }
+
+      case "account.updated": {
+        const accountStatus = await getConnectAccountStatus(event.account);
+        if (accountStatus) {
+          await upsertCompanyIntegration(getCarbonServiceRole(), {
+            id: "stripe-connect",
+            companyId: company.companyId,
+            active: true,
+            metadata: { ...company.metadata, ...accountStatus },
+            updatedBy: SYSTEM_UPDATED_BY
+          });
+          logger.info("Refreshed Stripe Connect account status", {
+            eventId: event.id,
+            companyId: company.companyId,
+            chargesEnabled: accountStatus.chargesEnabled,
+            payoutsEnabled: accountStatus.payoutsEnabled
+          });
+        }
         break;
       }
 

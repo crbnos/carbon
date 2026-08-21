@@ -415,11 +415,36 @@ async function preflightStripeSend({
             "this customer was just linked to a Stripe customer — reopen the dialog to confirm it"
         };
       }
-      resolvedCustomerId = await upsertConnectCustomer(
-        stripeAccountId,
-        null,
-        input
-      );
+      try {
+        resolvedCustomerId = await upsertConnectCustomer(
+          stripeAccountId,
+          null,
+          input
+        );
+      } catch (err) {
+        // A genuinely concurrent post for the same unlinked customer reuses
+        // the same idempotency key (upsertConnectCustomer scopes it by
+        // companyId+carbonCustomerId) — Stripe rejects the SECOND request
+        // in-flight with an idempotency_error rather than returning the
+        // first request's result. The winning request finishes and links
+        // its mapping shortly after, so re-resolve once instead of failing
+        // the whole send outright.
+        if ((err as { type?: string }).type !== "idempotency_error") {
+          throw err;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        const retried = await resolveStripeCustomer({
+          serviceRole,
+          companyId,
+          invoiceId,
+          customerContactId: customerContact,
+          emailOverride: stripeContactEmail
+        });
+        if (retried.resolution.state !== "linked") {
+          throw err;
+        }
+        resolvedCustomerId = retried.resolution.customer.id;
+      }
       break;
     }
   }
