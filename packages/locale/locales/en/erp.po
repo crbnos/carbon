@@ -1203,6 +1203,10 @@ msgstr "Add the next capability on the same system instead of buying another too
 msgid "Add Timecard"
 msgstr "Add Timecard"
 
+#. placeholder {0}: batch.batchReadableId
+msgid "Add to {0}"
+msgstr "Add to {0}"
+
 msgid "Add to stock for future use"
 msgstr "Add to stock for future use"
 
@@ -2420,6 +2424,11 @@ msgstr "Basic Information"
 
 msgid "Batch"
 msgstr "Batch"
+
+#. placeholder {0}: group.length
+#. placeholder {1}: group[0].processName ?? group[0].description ?? ""
+msgid "Batch {0} × {1}"
+msgstr "Batch {0} × {1}"
 
 msgid "Batch / Serial"
 msgstr "Batch / Serial"

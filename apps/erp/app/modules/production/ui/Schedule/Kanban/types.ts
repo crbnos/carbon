@@ -86,6 +86,7 @@ const operationItemValidator = baseItemValidator.extend({
   setupDuration: z.number().optional(),
   status: z.enum(jobOperationStatus).optional(),
   processBatchable: z.boolean().optional(),
+  processName: z.string().optional(),
   jobOperationBatchId: z.string().nullable().optional(),
   batchReadableId: z.string().nullable().optional(),
   // "Substance Grade Dimension" strings from the operation's BOM lines —

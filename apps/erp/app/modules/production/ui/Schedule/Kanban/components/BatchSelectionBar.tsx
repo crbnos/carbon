@@ -1,16 +1,24 @@
 import { Button, HStack, toast } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useRef } from "react";
-import { LuLayers, LuX } from "react-icons/lu";
+import { LuLayers, LuPlus, LuX } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { path } from "~/utils/path";
 import { useBatchSelection } from "../context/BatchSelectionContext";
+import type { BatchItem } from "../types";
 
 // Floating action bar that appears while operations are selected for
 // batching. Submits the same `batching.update` action the rest of the batch
 // lifecycle uses; the server's eligibility gate is the real validator, so any
-// rejection surfaces here as a toast.
-export function BatchSelectionBar({ locationId }: { locationId: string }) {
+// rejection surfaces here as a toast. When an Active batch on the selection's
+// process is already on the board, offers "Add to BAT…" beside "Create batch".
+export function BatchSelectionBar({
+  locationId,
+  batches
+}: {
+  locationId: string;
+  batches: BatchItem[];
+}) {
   const { t } = useLingui();
   const selection = useBatchSelection();
   const fetcher = useFetcher<{ success?: boolean; message?: string }>();
@@ -35,10 +43,14 @@ export function BatchSelectionBar({ locationId }: { locationId: string }) {
   const count = selection.selectedIds.size;
   const isSubmitting = fetcher.state !== "idle";
 
-  const createBatch = () => {
-    const fd = new FormData();
-    fd.set("intent", "create");
-    fd.set("locationId", locationId);
+  // Existing Active batches on the pinned process — targets for "Add to".
+  const targetBatches = batches.filter(
+    (batch) =>
+      batch.batchStatus === "Active" &&
+      batch.columnType === selection.selectedProcessId
+  );
+
+  const submitSelection = (fd: FormData) => {
     for (const id of selection.selectedIds) {
       fd.append("jobOperationIds", id);
     }
@@ -46,6 +58,20 @@ export function BatchSelectionBar({ locationId }: { locationId: string }) {
       method: "post",
       action: path.to.scheduleBatchingUpdate
     });
+  };
+
+  const createBatch = () => {
+    const fd = new FormData();
+    fd.set("intent", "create");
+    fd.set("locationId", locationId);
+    submitSelection(fd);
+  };
+
+  const addToBatch = (batchId: string) => {
+    const fd = new FormData();
+    fd.set("intent", "add");
+    fd.set("batchId", batchId);
+    submitSelection(fd);
   };
 
   return (
@@ -66,6 +92,18 @@ export function BatchSelectionBar({ locationId }: { locationId: string }) {
         >
           {t`Create batch`}
         </Button>
+        {targetBatches.slice(0, 2).map((batch) => (
+          <Button
+            key={batch.batchId}
+            size="sm"
+            variant="secondary"
+            leftIcon={<LuPlus />}
+            isDisabled={isSubmitting}
+            onClick={() => addToBatch(batch.batchId)}
+          >
+            {t`Add to ${batch.batchReadableId}`}
+          </Button>
+        ))}
         <Button
           size="sm"
           variant="ghost"

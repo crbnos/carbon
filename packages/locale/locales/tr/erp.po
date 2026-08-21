@@ -1203,6 +1203,10 @@ msgstr "Aynı sistem üzerinde bir sonraki özelliği ekleyin, başka bir araç 
 msgid "Add Timecard"
 msgstr "Zaman Kartı Ekle"
 
+#. placeholder {0}: batch.batchReadableId
+msgid "Add to {0}"
+msgstr ""
+
 msgid "Add to stock for future use"
 msgstr "Gelecekteki kullanım için stoğa ekle"
 
@@ -2420,6 +2424,11 @@ msgstr "Temel Bilgiler"
 
 msgid "Batch"
 msgstr "Parti"
+
+#. placeholder {0}: group.length
+#. placeholder {1}: group[0].processName ?? group[0].description ?? ""
+msgid "Batch {0} × {1}"
+msgstr ""
 
 msgid "Batch / Serial"
 msgstr "Parti / Seri"

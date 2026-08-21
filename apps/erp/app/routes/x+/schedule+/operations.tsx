@@ -164,6 +164,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getTagsList(client, companyId, "operation")
   ]);
 
+  const processNameById = new Map(
+    (processes.data ?? []).map((p) => [p.id, p.name])
+  );
+
   // BOM material properties for every listed operation — powers the material
   // facets and the per-card chips. One Kysely join (id lists this size blow
   // the PostgREST URL limit).
@@ -393,6 +397,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       machineDuration: operation.machineDuration,
       thumbnailPath: op.thumbnailPath,
       processBatchable: op.processBatchable,
+      processName: processNameById.get(op.processId),
       jobOperationBatchId: op.jobOperationBatchId,
       batchReadableId: op.batchReadableId,
       materialChips: [
@@ -418,7 +423,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
       if (members) members.push(item);
       else membersByBatch.set(batch.id, [item]);
     } else {
-      unbatchedItems.push(item);
+      // A batch id whose header is gone (or terminal) must not suppress the
+      // op's batchability — treat the op as unbatched.
+      unbatchedItems.push(
+        item.jobOperationBatchId
+          ? { ...item, jobOperationBatchId: null, batchReadableId: null }
+          : item
+      );
     }
   }
 
@@ -796,7 +807,10 @@ function KanbanSchedule() {
                 tags={tags}
                 {...mergedDisplaySettings}
               />
-              <BatchSelectionBar locationId={locationId} />
+              <BatchSelectionBar
+                locationId={locationId}
+                batches={items.filter(isBatchItem)}
+              />
             </BatchSelectionProvider>
           ) : hasFilters ? (
             <div className="flex flex-col w-full h-full items-center justify-center gap-4">

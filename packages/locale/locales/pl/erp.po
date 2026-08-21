@@ -1203,6 +1203,10 @@ msgstr "Dodaj następną funkcję w tym samym systemie zamiast kupować inne nar
 msgid "Add Timecard"
 msgstr "Dodaj kartę czasu pracy"
 
+#. placeholder {0}: batch.batchReadableId
+msgid "Add to {0}"
+msgstr ""
+
 msgid "Add to stock for future use"
 msgstr "Dodaj do zapasów do przyszłego użytku"
 
@@ -2420,6 +2424,11 @@ msgstr "Informacje podstawowe"
 
 msgid "Batch"
 msgstr "Partia"
+
+#. placeholder {0}: group.length
+#. placeholder {1}: group[0].processName ?? group[0].description ?? ""
+msgid "Batch {0} × {1}"
+msgstr ""
 
 msgid "Batch / Serial"
 msgstr "Partia / Numer seryjny"

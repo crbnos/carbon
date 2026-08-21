@@ -1203,6 +1203,10 @@ msgstr "다른 도구를 구매하는 대신 같은 시스템에 다음 기능�
 msgid "Add Timecard"
 msgstr "근무기록 추가"
 
+#. placeholder {0}: batch.batchReadableId
+msgid "Add to {0}"
+msgstr ""
+
 msgid "Add to stock for future use"
 msgstr "향후 사용을 위해 재고에 추가"
 
@@ -2420,6 +2424,11 @@ msgstr "기본 정보"
 
 msgid "Batch"
 msgstr "배치"
+
+#. placeholder {0}: group.length
+#. placeholder {1}: group[0].processName ?? group[0].description ?? ""
+msgid "Batch {0} × {1}"
+msgstr ""
 
 msgid "Batch / Serial"
 msgstr "배치/일련번호"

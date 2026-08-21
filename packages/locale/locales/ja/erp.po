@@ -1203,6 +1203,10 @@ msgstr "同じシステム上に次の機能を追加して、別のツールを
 msgid "Add Timecard"
 msgstr "タイムカードを追加"
 
+#. placeholder {0}: batch.batchReadableId
+msgid "Add to {0}"
+msgstr ""
+
 msgid "Add to stock for future use"
 msgstr "将来の使用のためにストックに追加"
 
@@ -2420,6 +2424,11 @@ msgstr "基本情報"
 
 msgid "Batch"
 msgstr "バッチ"
+
+#. placeholder {0}: group.length
+#. placeholder {1}: group[0].processName ?? group[0].description ?? ""
+msgid "Batch {0} × {1}"
+msgstr ""
 
 msgid "Batch / Serial"
 msgstr "バッチ / シリアル"

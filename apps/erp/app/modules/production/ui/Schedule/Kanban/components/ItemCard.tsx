@@ -25,7 +25,7 @@ import {
 } from "@carbon/utils";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { cva } from "class-variance-authority";
 import {
   LuCalendarDays,
@@ -203,18 +203,22 @@ function OperationCard({
           </div>
           <HStack spacing={1} className="flex-shrink-0 -mr-2">
             {(isSelectableForBatch || isSelectedForBatch) && (
-              <Checkbox
-                aria-label={t`Select for batch`}
-                checked={isSelectedForBatch}
-                onCheckedChange={() => {
-                  if (isBatchableOperation(item)) batchSelection?.toggle(item);
-                }}
-                className={cn(
-                  "mr-1",
-                  !isSelectedForBatch &&
-                    "opacity-0 group-hover/card:opacity-100 focus-visible:opacity-100"
-                )}
-              />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Checkbox
+                    aria-label={t`Select for batch`}
+                    checked={isSelectedForBatch}
+                    onCheckedChange={() => {
+                      if (isBatchableOperation(item))
+                        batchSelection?.toggle(item);
+                    }}
+                    className="mr-1"
+                  />
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  <Trans>Select for batch</Trans>
+                </TooltipContent>
+              </Tooltip>
             )}
             <IconButton
               aria-label={t`Move item`}

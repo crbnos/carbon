@@ -1203,6 +1203,10 @@ msgstr "Добавьте следующую возможность в ту же 
 msgid "Add Timecard"
 msgstr "Добавить табель учета рабочего времени"
 
+#. placeholder {0}: batch.batchReadableId
+msgid "Add to {0}"
+msgstr ""
+
 msgid "Add to stock for future use"
 msgstr "Добавить в запас для будущего использования"
 
@@ -2420,6 +2424,11 @@ msgstr "Основная информация"
 
 msgid "Batch"
 msgstr "Партия"
+
+#. placeholder {0}: group.length
+#. placeholder {1}: group[0].processName ?? group[0].description ?? ""
+msgid "Batch {0} × {1}"
+msgstr ""
 
 msgid "Batch / Serial"
 msgstr "Партия / Серийный номер"

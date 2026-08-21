@@ -35,6 +35,9 @@ interface BatchSelectionContextType {
   selectedProcessId: string | null;
   isSelectable: (item: Item) => boolean;
   toggle: (item: OperationItem) => void;
+  // Replace the selection with a whole opportunity group (the column-header
+  // "batch these" hint) — all items must share one process.
+  selectMany: (items: OperationItem[]) => void;
   clear: () => void;
 }
 
@@ -69,13 +72,30 @@ export function BatchSelectionProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const selectMany = useCallback((items: OperationItem[]) => {
+    setSelected(
+      new Map(
+        items
+          .filter(isBatchableOperation)
+          .map((item) => [item.id, item.columnType])
+      )
+    );
+  }, []);
+
   const clear = useCallback(() => setSelected(new Map()), []);
 
   const selectedIds = useMemo(() => new Set(selected.keys()), [selected]);
 
   const value = useMemo(
-    () => ({ selectedIds, selectedProcessId, isSelectable, toggle, clear }),
-    [selectedIds, selectedProcessId, isSelectable, toggle, clear]
+    () => ({
+      selectedIds,
+      selectedProcessId,
+      isSelectable,
+      toggle,
+      selectMany,
+      clear
+    }),
+    [selectedIds, selectedProcessId, isSelectable, toggle, selectMany, clear]
   );
 
   return (
