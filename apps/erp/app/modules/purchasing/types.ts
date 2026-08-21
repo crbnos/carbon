@@ -22,6 +22,8 @@ import type {
 
 export type PurchaseOrderAttachment = FileObject; // TODO: remove
 
+export type CxmlDocument = Database["public"]["Tables"]["cxmlDocument"]["Row"];
+
 // The `X`/`XListItem` pairs below are deliberately separate: `X` is the full
 // view row that detail screens read, `XListItem` is exactly what the list
 // query selects. Defining `X` from the list getter is what broke ~250 call

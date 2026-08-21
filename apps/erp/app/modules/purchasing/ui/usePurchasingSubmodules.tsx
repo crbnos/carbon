@@ -1,6 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import {
   LuContainer,
+  LuFileCode,
   LuFileText,
   LuLayoutList,
   LuPackageSearch,
@@ -44,6 +45,12 @@ export default function usePurchasingSubmodules() {
           to: path.to.purchaseOrders,
           icon: <LuLayoutList />,
           table: "purchaseOrder"
+        },
+        {
+          name: t`Documents`,
+          to: path.to.cxmlDocuments,
+          icon: <LuFileCode />,
+          table: "cxmlDocument"
         }
       ]
     },
