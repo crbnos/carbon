@@ -1,5 +1,3 @@
-import type { ComboboxFilter } from "@carbon/react";
-import { filterComboboxOptions } from "@carbon/react";
 import {
   getTimezoneAbbreviations,
   getTimezoneDisplayName,
@@ -20,26 +18,10 @@ type TimezoneProps = Omit<ComboboxProps, "options"> & {
 };
 
 /**
- * Zone ids are separator-heavy, so `/` and `_` fold to spaces and "asia
- * kolkata" finds "Asia/Kolkata". A `-` only separates two LETTERS
- * ("Port-au-Prince"): next to a digit it is a minus sign, and eating it made
- * "-05:30" match "+05:30" zones.
- */
-const foldZoneSeparators = (text: string) =>
-  text
-    .toLowerCase()
-    .replace(/[/_]+/g, " ")
-    .replace(/(?<=[a-z])-+(?=[a-z])/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-const filterTimezones: ComboboxFilter = (options, search) =>
-  filterComboboxOptions(options, search, foldZoneSeparators);
-
-/**
  * Timezone picker. One line per zone — "America/New York (GMT-04:00)". The
- * family name ("Eastern Time") and abbreviations (EST/EDT) go in `keywords`,
- * which the Combobox searches but never renders.
+ * family name ("Eastern Time"), the abbreviations (EST/EDT) and a
+ * separator-free spelling of the id ("Asia Kolkata", so a typed "asia kolkata"
+ * matches) go in `keywords`, which the Combobox searches but never renders.
  */
 const Timezone = ({ options, ...props }: TimezoneProps) => {
   const flatOptions = useMemo(() => {
@@ -58,6 +40,7 @@ const Timezone = ({ options, ...props }: TimezoneProps) => {
             }`,
             keywords: [
               option.value,
+              option.value.replace(/[/_]+/g, " "),
               getTimezoneDisplayName(option.value),
               abbreviations
             ]
@@ -69,7 +52,7 @@ const Timezone = ({ options, ...props }: TimezoneProps) => {
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [options]);
 
-  return <Combobox filter={filterTimezones} {...props} options={flatOptions} />;
+  return <Combobox {...props} options={flatOptions} />;
 };
 
 Timezone.displayName = "Timezone";

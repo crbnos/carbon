@@ -1,5 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { matchSorter, rankings } from "match-sorter";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { forwardRef, useMemo, useRef, useState } from "react";
 import { LuCheck, LuPlus, LuSettings2, LuX } from "react-icons/lu";
@@ -227,47 +228,38 @@ type VirtualizedCommandProps = {
   setOpen: (open: boolean) => void;
 };
 
-/** How option text and the query are folded before matching. */
-export type SearchNormalizer = (text: string) => string;
-
-const toComparable: SearchNormalizer = (text) => text.toLowerCase();
+const labelOf = (option: ComboboxOption) =>
+  typeof option.label === "string"
+    ? option.label
+    : reactNodeToString(option.label);
 
 /**
- * The default `ComboboxFilter`. Ranks hits that start a word above mid-word
- * substrings, then earlier hits first — searching "EST" surfaces EST/EDT
- * options before ones that merely contain "est" (Creston, Bucharest…). Stable
- * sort, so equally-ranked options keep their original order. Label, helper and
- * keywords are one string, so a query can span them ("PART-001 Suffix").
+ * The default `ComboboxFilter`: `match-sorter`, ranked equal → starts-with →
+ * word-starts-with → contains. The fields are ALSO offered as one joined key
+ * so a query can span them ("PART-001 Steel Bracket", where the label is the
+ * part number and the helper is its name).
  *
- * Exported with a `normalize` seam so a caller can fold separators (or
- * anything else) without reimplementing the ranking.
+ * Capped at CONTAINS deliberately — the looser acronym/fuzzy tiers matched 278
+ * of 419 timezones for "EST", which is a scroll-wall rather than a result set.
+ * A picker that wants typo tolerance can pass its own `filter`.
  */
 export function filterComboboxOptions(
   options: ComboboxOption[],
-  search: string,
-  normalize: SearchNormalizer = toComparable
+  search: string
 ): ComboboxOption[] {
   if (!search) return options;
-  const query = normalize(search);
-  const scored: { option: ComboboxOption; score: number }[] = [];
-  for (const option of options) {
-    const text = normalize(
-      [
-        typeof option.label === "string"
-          ? option.label
-          : reactNodeToString(option.label),
-        option.helper,
-        option.keywords
-      ]
-        .filter(Boolean)
-        .join(" ")
-    );
-    const index = text.indexOf(query);
-    if (index === -1) continue;
-    const atWordStart = index === 0 || !/[a-z0-9]/.test(text.charAt(index - 1));
-    scored.push({ option, score: (atWordStart ? 0 : 100000) + index });
-  }
-  return scored.sort((a, b) => a.score - b.score).map((s) => s.option);
+  return matchSorter(options, search, {
+    threshold: rankings.CONTAINS,
+    keys: [
+      labelOf,
+      (option) => option.helper ?? "",
+      (option) => option.keywords ?? "",
+      (option) =>
+        [labelOf(option), option.helper, option.keywords]
+          .filter(Boolean)
+          .join(" ")
+    ]
+  });
 }
 
 function VirtualizedCommand({
