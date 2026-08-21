@@ -19,6 +19,25 @@ import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { cn } from "./utils/cn";
 import { reactNodeToString } from "./utils/react";
 
+export type ComboboxOption = {
+  label: string | JSX.Element;
+  value: string;
+  helper?: string;
+  helperRight?: string;
+  /** Extra search text, matched but never rendered. */
+  keywords?: string;
+};
+
+/**
+ * Ranks `options` against what the user typed. Supply one to swap in a
+ * different strategy (fuzzy, server-side, domain-specific) for a single
+ * combobox; the default is `filterComboboxOptions`.
+ */
+export type ComboboxFilter = (
+  options: ComboboxOption[],
+  search: string
+) => ComboboxOption[];
+
 export type ComboboxProps = Omit<
   ComponentPropsWithoutRef<"button">,
   "onChange"
@@ -26,14 +45,8 @@ export type ComboboxProps = Omit<
   asButton?: boolean;
   size?: "sm" | "md" | "lg";
   value?: string;
-  options: {
-    label: string | JSX.Element;
-    value: string;
-    helper?: string;
-    helperRight?: string;
-    /** Extra search text, matched but never rendered. */
-    keywords?: string;
-  }[];
+  options: ComboboxOption[];
+  filter?: ComboboxFilter;
   isClearable?: boolean;
   isLoading?: boolean;
   isReadOnly?: boolean;
@@ -54,6 +67,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
       size,
       value,
       options,
+      filter,
       isClearable,
       isLoading,
       isReadOnly,
@@ -178,6 +192,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
             ) : (
               <VirtualizedCommand
                 options={options}
+                filter={filter}
                 value={value}
                 onChange={onChange}
                 itemHeight={itemHeight}
@@ -204,24 +219,67 @@ Combobox.displayName = "Combobox";
 export { Combobox };
 
 type VirtualizedCommandProps = {
-  options: ComboboxProps["options"];
+  options: ComboboxOption[];
+  filter?: ComboboxFilter;
   value?: string;
   onChange?: (selected: string) => void;
   itemHeight: number;
   setOpen: (open: boolean) => void;
 };
 
-/** Treats `/`, `_` and `-` as spaces so "asia kolkata" matches "Asia/Kolkata". */
+/**
+ * Treats `/`, `_` and `-` as spaces so "asia kolkata" matches "Asia/Kolkata"
+ * and "port au prince" matches "America/Port-au-Prince". A `-` only separates
+ * two LETTERS: a minus sign next to a digit is meaningful, and eating it made
+ * a search for "-05:30" match "+05:30" zones too.
+ */
 function normalizeSearchText(text: string): string {
   return text
     .toLowerCase()
-    .replace(/[/_-]+/g, " ")
+    .replace(/[/_]+/g, " ")
+    .replace(/(?<=[a-z])-+(?=[a-z])/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 
+/**
+ * The default `ComboboxFilter`. Ranks hits that start a word above mid-word
+ * substrings, then earlier hits first — searching "EST" should surface EST/EDT
+ * timezones before cities that merely contain "est" (Creston, Bucharest…).
+ * Stable sort, so equally-ranked options keep their original order. Label,
+ * helper and keywords are one string, so a query can span them
+ * ("PART-001 Suffix"). Exported so a custom filter can build on it.
+ */
+export function filterComboboxOptions(
+  options: ComboboxOption[],
+  search: string
+): ComboboxOption[] {
+  if (!search) return options;
+  const query = normalizeSearchText(search);
+  const scored: { option: ComboboxOption; score: number }[] = [];
+  for (const option of options) {
+    const text = normalizeSearchText(
+      [
+        typeof option.label === "string"
+          ? option.label
+          : reactNodeToString(option.label),
+        option.helper,
+        option.keywords
+      ]
+        .filter(Boolean)
+        .join(" ")
+    );
+    const index = text.indexOf(query);
+    if (index === -1) continue;
+    const atWordStart = index === 0 || !/[a-z0-9]/.test(text.charAt(index - 1));
+    scored.push({ option, score: (atWordStart ? 0 : 100000) + index });
+  }
+  return scored.sort((a, b) => a.score - b.score).map((s) => s.option);
+}
+
 function VirtualizedCommand({
   options,
+  filter = filterComboboxOptions,
   value,
   onChange,
   itemHeight,
@@ -231,41 +289,10 @@ function VirtualizedCommand({
   const [search, setSearch] = useState("");
   const parentRef = useRef<HTMLDivElement>(null);
 
-  const filteredOptions = useMemo(() => {
-    if (!search) return options;
-    const query = normalizeSearchText(search);
-    // Hits that START a word beat mid-word ones, then visible text beats
-    // hidden — otherwise "EST" leads with Creston and Bucharest, not the
-    // EST/EDT zones. Deliberately a prefix test, not a whole-word one: "abc"
-    // should still rank "ABC-123" highly.
-    const wordStartAt = (text: string, index: number) =>
-      index === 0 || !/[a-z0-9]/.test(text.charAt(index - 1));
-    const scored: { option: (typeof options)[number]; score: number }[] = [];
-    for (const option of options) {
-      const labelText = normalizeSearchText(
-        typeof option.label === "string"
-          ? option.label
-          : reactNodeToString(option.label)
-      );
-      const labelIndex = labelText.indexOf(query);
-      if (labelIndex !== -1 && wordStartAt(labelText, labelIndex)) {
-        scored.push({ option, score: labelIndex });
-        continue;
-      }
-      const hiddenText = normalizeSearchText(
-        [option.helper, option.keywords].filter(Boolean).join(" ")
-      );
-      const hiddenIndex = hiddenText.indexOf(query);
-      if (hiddenIndex !== -1 && wordStartAt(hiddenText, hiddenIndex)) {
-        scored.push({ option, score: 200000 });
-      } else if (labelIndex !== -1) {
-        scored.push({ option, score: 300000 + labelIndex });
-      } else if (hiddenIndex !== -1) {
-        scored.push({ option, score: 400000 });
-      }
-    }
-    return scored.sort((a, b) => a.score - b.score).map((s) => s.option);
-  }, [options, search]);
+  const filteredOptions = useMemo(
+    () => filter(options, search),
+    [options, search, filter]
+  );
 
   const virtualizer = useVirtualizer({
     count: filteredOptions.length,

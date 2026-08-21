@@ -25,9 +25,9 @@ type TimezoneProps = Omit<ComboboxProps, "options"> & {
 const Timezone = ({ options, ...props }: TimezoneProps) => {
   const flatOptions = useMemo(() => {
     const groups = options?.length ? options : getTimezones();
-    return groups.flatMap((group) =>
-      group.options
-        .map((option) => {
+    return groups
+      .flatMap((group) =>
+        group.options.map((option) => {
           const offset = /[+-]\d{2}:\d{2}/.exec(option.label)?.[0];
           const abbreviations = getTimezoneAbbreviations(option.value)
             .filter((a) => a !== option.value)
@@ -46,8 +46,8 @@ const Timezone = ({ options, ...props }: TimezoneProps) => {
               .join(" ")
           };
         })
-        .sort((a, b) => a.label.localeCompare(b.label))
-    );
+      )
+      .sort((a, b) => a.label.localeCompare(b.label));
   }, [options]);
 
   return <Combobox {...props} options={flatOptions} />;
