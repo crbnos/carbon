@@ -64,7 +64,7 @@ Open 39k-line PR, likely to merge first. Verified collisions (tip `f17db29ab`):
 
 ## Progress
 
-- [ ] Task 1: Port the batch-time-split util (+ tests + Deno mirror)
+- [x] Task 1: Port the batch-time-split util (+ tests + Deno mirror)
 - [ ] Task 2: Consolidated migration + sequence seed + config.toml
 - [ ] Task 3: Regenerate DB types
 - [ ] Task 4: Resources — process `batchable` flag end-to-end
