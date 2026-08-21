@@ -9,6 +9,7 @@ import {
   readReleasePackageNotes,
   writeOnshapeItemNotes
 } from "@carbon/ee/onshape";
+import { trigger } from "@carbon/lib/trigger";
 import { datetime, textToTiptap } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { RetryAfterError } from "inngest";
@@ -63,6 +64,10 @@ export type OnshapeReleaseImportSkipReason =
   | "revision-already-imported"
   | "no-dispatcher";
 
+/** Onshape's numeric element types, as the revisions API reports them. */
+const ONSHAPE_ELEMENT_TYPE_ASSEMBLY = 1;
+const ONSHAPE_ELEMENT_TYPE_DRAWING = 2;
+
 export interface OnshapeReleaseImportResult {
   imported: boolean;
   mode?: "changeNotice" | "revision";
@@ -73,6 +78,8 @@ export interface OnshapeReleaseImportResult {
   revision?: string;
   /** Prior open change notices already touching this item — permit-and-warn parity with the UI. */
   openNoticeCollisions?: OpenNotice[];
+  /** A BOM import was queued to fill in the new revision's structure. */
+  bomImportQueued?: boolean;
 }
 
 interface OpenNotice {
@@ -433,7 +440,7 @@ export async function runOnshapeReleaseImport(
   // Backstop for the receiver's filter: a drawing resolves to the SAME Carbon
   // item as the model it documents, so it must never claim a release or become a
   // second affected item.
-  if (payload.elementType === 2) {
+  if (payload.elementType === ONSHAPE_ELEMENT_TYPE_DRAWING) {
     return { imported: false, skippedReason: "drawing-element" };
   }
 
@@ -691,6 +698,8 @@ export async function runOnshapeReleaseImport(
   );
 
   let newItemId: string | undefined;
+  /** The new revision's own draft method — where its structure has to land. */
+  let draftMakeMethodId: string | undefined;
   if (!added.ok) {
     // UNIQUE (changeOrderId, itemId): this element is already on the notice —
     // our own retry, or two released elements resolving to one Carbon item.
@@ -717,6 +726,9 @@ export async function runOnshapeReleaseImport(
     // silently never runs and the draft revision stays a byte-for-byte copy of
     // its base, which is exactly the "No changes yet." empty diff.
     const affectedItemId = String(added.data.id ?? "");
+    draftMakeMethodId = added.data.draftMakeMethodId
+      ? String(added.data.draftMakeMethodId)
+      : undefined;
     if (affectedItemId) {
       const affectedRow = await carbon
         .from("changeOrderAffectedItem")
@@ -749,6 +761,57 @@ export async function runOnshapeReleaseImport(
     });
   }
 
+  // STRUCTURE. Without this the draft revision inherits its base revision's
+  // method verbatim: `addChangeNoticeAffectedItem` copies the method, and
+  // nothing here ever re-reads Onshape's BOM — so a release that changed a
+  // quantity produced a change notice showing the OLD quantities, while the
+  // geometry on the same item updated correctly. Reproduced live 2026-08-21:
+  // RD-410 C→D with PK-410 and MC-101 both bumped 1→2 yielded a draft D whose
+  // BOM still read 1 and 1. Geometry moving while structure did not is exactly
+  // the "the sync half-works" complaint the v2 pipeline exists to answer.
+  //
+  // Assemblies only — a part studio body has no bill of materials, and the
+  // import's first act would be to fail resolving one.
+  //
+  // v2 ONLY (`writeProvenance`), for the same reason the provenance writes are
+  // gated: a legacy company must keep the byte-identical behaviour it has now.
+  //
+  // Dispatched rather than awaited: the import is its own retrying,
+  // rate-limit-aware job, and a release must not fail because a BOM read hit a
+  // 429. The notice is already correct without it; this fills in its structure.
+  let bomImportQueued = false;
+  if (
+    payload.writeProvenance &&
+    draftMakeMethodId &&
+    payload.elementType === ONSHAPE_ELEMENT_TYPE_ASSEMBLY
+  ) {
+    try {
+      await trigger("onshape-bom-import", {
+        companyId: payload.companyId,
+        userId: payload.userId,
+        makeMethodId: draftMakeMethodId,
+        documentId: payload.documentId,
+        versionId: payload.versionId,
+        elementId: payload.elementId,
+        // The notice's own draft, addressed by id — see assertWritableMethod.
+        allowChangeNoticeDraft: true
+      });
+      bomImportQueued = true;
+    } catch (error) {
+      // Non-fatal by design: losing the structure refresh is worse than losing
+      // the whole notice, and the user can still import from the BoM explorer.
+      console.error(
+        "onshape-release-import: could not queue the BOM import for the new revision",
+        {
+          companyId: payload.companyId,
+          partNumber: payload.partNumber,
+          draftMakeMethodId,
+          error
+        }
+      );
+    }
+  }
+
   await recordMarkerProgress(carbon, {
     releaseId: payload.releaseId,
     companyId: payload.companyId,
@@ -767,7 +830,8 @@ export async function runOnshapeReleaseImport(
     newItemId,
     revision,
     openNoticeCollisions:
-      openNoticeCollisions.length > 0 ? openNoticeCollisions : undefined
+      openNoticeCollisions.length > 0 ? openNoticeCollisions : undefined,
+    bomImportQueued
   };
 }
 

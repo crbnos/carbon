@@ -8373,6 +8373,9 @@ msgstr "Последний запуск"
 msgid "Last synced: <0/>"
 msgstr "Последняя синхронизация: <0/>"
 
+msgid "Latest"
+msgstr ""
+
 msgid "Latest operation end"
 msgstr "Конец последней операции"
 
@@ -12586,6 +12589,9 @@ msgstr "Проверьте предложенные совпадения пер�
 
 msgid "Review the warnings below, then post the count to apply the adjustments."
 msgstr "Просмотрите предупреждения ниже, а затем опубликуйте подсчет для применения корректировок."
+
+msgid "revision"
+msgstr ""
 
 msgid "Revision"
 msgstr "Редакция"

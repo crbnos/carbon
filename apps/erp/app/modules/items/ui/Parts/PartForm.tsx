@@ -323,9 +323,19 @@ const PartForm = ({
     const seed = seedFromElementType(revision.elementType);
     setReplenishmentSystem(seed.replenishmentSystem);
     setDefaultMethodType(seed.defaultMethodType);
-    // A body has no bill of materials, so a stale tick from a previous
-    // assembly selection must not ride along.
-    setImportBom(false);
+    // DEFAULT ON for an assembly. Someone who reached this form has already
+    // said the part comes from Onshape, so its structure is the expected
+    // outcome rather than an opt-in — importing the geometry and leaving the
+    // BOM behind is the surprising half. Recomputed per selection, so a body
+    // (which has no bill of materials) and a permission-blocked user both fall
+    // back to off instead of inheriting a previous assembly's tick.
+    const bom = bomOptionState({
+      elementType: revision.elementType,
+      canCreate: permissions.can("create", "parts"),
+      canUpdate: permissions.can("update", "parts"),
+      canDelete: permissions.can("delete", "parts")
+    });
+    setImportBom(bom.offered && !bom.disabled);
   };
 
   const clearOnshapeSource = () => {

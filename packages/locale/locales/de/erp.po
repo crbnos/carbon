@@ -8373,6 +8373,9 @@ msgstr "Letzte Ausführung"
 msgid "Last synced: <0/>"
 msgstr "Zuletzt synchronisiert: <0/>"
 
+msgid "Latest"
+msgstr ""
+
 msgid "Latest operation end"
 msgstr "Ende der neuesten Operation"
 
@@ -12586,6 +12589,9 @@ msgstr "Überprüfen Sie die vorgeschlagenen Zuordnungen vor dem Anwenden. Dies 
 
 msgid "Review the warnings below, then post the count to apply the adjustments."
 msgstr "Überprüfen Sie die folgenden Warnungen und posten Sie dann die Anzahl, um die Anpassungen anzuwenden."
+
+msgid "revision"
+msgstr ""
 
 msgid "Revision"
 msgstr "Revision"

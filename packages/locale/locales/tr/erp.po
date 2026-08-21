@@ -8373,6 +8373,9 @@ msgstr "Son Çalıştırma"
 msgid "Last synced: <0/>"
 msgstr "Son senkronizasyon: <0/>"
 
+msgid "Latest"
+msgstr ""
+
 msgid "Latest operation end"
 msgstr "En son işlem sonu"
 
@@ -12586,6 +12589,9 @@ msgstr "Uygulamadan önce önerilen eşleşmeleri gözden geçirin. Bunlar en iy
 
 msgid "Review the warnings below, then post the count to apply the adjustments."
 msgstr "Aşağıdaki uyarıları gözden geçirin, ardından ayarlamaları uygulamak için sayımı gönderin."
+
+msgid "revision"
+msgstr ""
 
 msgid "Revision"
 msgstr "Revizyon"

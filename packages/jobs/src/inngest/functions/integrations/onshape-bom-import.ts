@@ -71,7 +71,8 @@ const PayloadSchema = z.object({
   makeMethodId: z.string(),
   documentId: z.string(),
   versionId: z.string(),
-  elementId: z.string()
+  elementId: z.string(),
+  allowChangeNoticeDraft: z.boolean().optional()
 });
 
 type Payload = z.infer<typeof PayloadSchema>;
@@ -81,15 +82,24 @@ type Carbon = ReturnType<typeof getCarbonServiceRole>;
 /**
  * The make method a BOM may be written into.
  *
- * Draft only, and never one owned by an open change notice. The legacy writer
- * resolves a method itself and lands in a change notice's staged BOM often
- * enough that release then ships whatever the import left — the CO draft is
- * numbered max+1, so an "newest Draft" lookup finds it.
+ * Draft only, and — unless the caller explicitly says otherwise — never one
+ * owned by an open change notice. The legacy writer resolves a method itself
+ * and lands in a change notice's staged BOM often enough that release then
+ * ships whatever the import left — the CO draft is numbered max+1, so a
+ * "newest Draft" lookup finds it.
+ *
+ * `allowChangeNoticeDraft` is the deliberate exception, and the distinction is
+ * ACCIDENTAL vs ADDRESSED. The guard protects a method nobody chose; the
+ * release importer names the notice's draft by id because that draft IS the
+ * release's content. Pre-populating it is the whole point of a release-driven
+ * change notice — without it the notice shows the PREVIOUS revision's
+ * structure, which is worse than showing none.
  */
 async function assertWritableMethod(
   carbon: Carbon,
   methodId: string,
-  companyId: string
+  companyId: string,
+  allowChangeNoticeDraft = false
 ) {
   const method = await carbon
     .from("makeMethod")
@@ -108,7 +118,7 @@ async function assertWritableMethod(
       `Onshape can only write into a Draft method; this one is ${method.data.status}. Create a new version first.`
     );
   }
-  if (method.data.changeOrderId) {
+  if (method.data.changeOrderId && !allowChangeNoticeDraft) {
     throw new Error(
       "This method belongs to an open change notice. Import into the item's own draft instead, so a release cannot ship what the import left."
     );
@@ -478,7 +488,8 @@ export const onshapeBomImportFunction = inngest.createFunction(
       const method = await assertWritableMethod(
         carbon,
         payload.makeMethodId,
-        payload.companyId
+        payload.companyId,
+        payload.allowChangeNoticeDraft
       );
 
       const connection = await getOnshapeClient(
@@ -576,7 +587,9 @@ export const onshapeBomImportFunction = inngest.createFunction(
         {
           readableId: string;
           replenishmentSystem: string;
-          defaultMethodType: string;
+          // Nullable in the schema, so nullable here — the correction pass
+          // compares it and must be able to see "not set" as its own case.
+          defaultMethodType: string | null;
         }
       >();
       // Chunked: PostgREST builds .in() into the URL, and a large assembly with
@@ -1045,10 +1058,15 @@ export const onshapeBomImportFunction = inngest.createFunction(
           companyId: payload.companyId,
           itemIds: correctionCandidates.map((candidate) => candidate.itemId)
         });
-        for (const mappingRow of provenanceRows) {
+        // readElementMappingsForItems returns a MAP keyed by itemId. Iterating
+        // it yields [itemId, row] pairs — reading `.metadata` off the pair
+        // silently produced undefined for every row, so the correction pass
+        // below saw no provenance at all and could never spare a user's own
+        // Buy/Make choice.
+        for (const [itemId, mappingRow] of provenanceRows) {
           const stored = mappingRow.metadata?.replenishment;
           if (stored?.source) {
-            provenanceByItem.set(mappingRow.itemId, {
+            provenanceByItem.set(itemId, {
               source: stored.source,
               seededSystem: stored.seededSystem
             });

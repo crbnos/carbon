@@ -8373,6 +8373,9 @@ msgstr "अंतिम रन"
 msgid "Last synced: <0/>"
 msgstr "अंतिम सिंक: <0/>"
 
+msgid "Latest"
+msgstr ""
+
 msgid "Latest operation end"
 msgstr "नवीनतम ऑपरेशन अंत"
 
@@ -12586,6 +12589,9 @@ msgstr "लागू करने से पहले सुझाए गए म
 
 msgid "Review the warnings below, then post the count to apply the adjustments."
 msgstr "नीचे दी गई चेतावनियों की समीक्षा करें, फिर समायोजन लागू करने के लिए गणना पोस्ट करें।"
+
+msgid "revision"
+msgstr ""
 
 msgid "Revision"
 msgstr "संस्करण"

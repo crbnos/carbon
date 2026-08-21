@@ -406,6 +406,20 @@ export class OnshapeClient {
     );
   }
 
+  // ONE released revision by its revisionId — the id the
+  // `onshape.revision.created` webhook carries.
+  //
+  // Needed because that payload does NOT carry the revision LETTER. Verified
+  // live 2026-08-21 against a real 9-element release: the delivery holds
+  // documentId, versionId, elementId, elementType, partNumber, releaseId and
+  // revisionId, and nothing else. The letter has to be looked up.
+  async getRevision(revisionId: string): Promise<OnshapeRevision> {
+    return this.request<OnshapeRevision>(
+      "GET",
+      `/api/v10/revisions/${encodeURIComponent(revisionId)}`
+    );
+  }
+
   // All released revisions for a company, paginated. No elementType filter
   // needed — returns every type (0/1/2). Optional `after` (ISO
   // date) returns only revisions released after it, enabling cheap incremental sync.

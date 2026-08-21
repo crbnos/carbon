@@ -563,11 +563,23 @@ export type Events = {
     data: {
       companyId: string;
       userId: string;
-      /** The make method the BOM is written into. Must be Draft and not CO-owned. */
+      /** The make method the BOM is written into. Must be Draft. */
       makeMethodId: string;
       documentId: string;
       versionId: string;
       elementId: string;
+      /**
+       * Permit writing into a method a change notice owns.
+       *
+       * Off by default, and set ONLY by the release importer. The guard exists
+       * because the LEGACY writer resolves a method itself and its "newest
+       * Draft" lookup lands in a change notice's staged BOM by accident. A
+       * caller that names the CO draft BY ID is the opposite case: for a
+       * release-driven notice, that draft is exactly where the release's
+       * structure belongs, and leaving it as a copy of the previous revision is
+       * the bug.
+       */
+      allowChangeNoticeDraft?: boolean;
     };
   };
   // v2 release handling: ONE job for the whole revision.created event, so the

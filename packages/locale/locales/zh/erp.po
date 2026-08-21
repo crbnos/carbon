@@ -8373,6 +8373,9 @@ msgstr "最后运行"
 msgid "Last synced: <0/>"
 msgstr "上次同步: <0/>"
 
+msgid "Latest"
+msgstr ""
+
 msgid "Latest operation end"
 msgstr "最新操作结束"
 
@@ -12586,6 +12589,9 @@ msgstr "在应用之前审查建议的匹配项。这些是最佳猜测 — 确�
 
 msgid "Review the warnings below, then post the count to apply the adjustments."
 msgstr "查看下面的警告，然后过账盘点以应用调整。"
+
+msgid "revision"
+msgstr ""
 
 msgid "Revision"
 msgstr "修订版"

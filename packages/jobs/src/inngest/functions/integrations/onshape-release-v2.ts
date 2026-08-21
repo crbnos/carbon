@@ -41,6 +41,7 @@ import { withRateLimitRetry } from "./onshape-backfill";
 import { pullOnshapeDrawingsForDocument } from "./onshape-drawings";
 import { mintDefaultsForRelease } from "./onshape-mint";
 import { runOnshapeReleaseImport } from "./onshape-release-import";
+import { resolveReleasedRevision } from "./onshape-release-revision";
 import { readOnshapePurchasingLevel } from "./onshape-replenishment";
 import { syncOnshapeDrawingAssetsToItem } from "./onshape-sync-element";
 import {
@@ -116,6 +117,26 @@ async function notifyOnshapeSkips(
   }
 }
 
+/**
+ * The released revision LETTER for this delivery.
+ *
+ * Onshape's webhook does NOT carry it — only `revisionId` — so it usually costs
+ * one lookup. See `onshape-release-revision.ts` for the captured payload and
+ * why the letter is never guessed at. Wrapped in `withRateLimitRetry` so a 429
+ * reschedules the run rather than silently reading as "no revision".
+ */
+function readReleasedRevision(
+  client: OnshapeClient,
+  payload: { revision?: string; revisionId?: string }
+): Promise<string> {
+  return resolveReleasedRevision(payload, (revisionId) =>
+    withRateLimitRetry(
+      () => client.getRevision(revisionId),
+      `revision ${revisionId}`
+    )
+  );
+}
+
 export const onshapeReleaseV2Function = inngest.createFunction(
   {
     id: "onshape-release-v2",
@@ -172,6 +193,14 @@ export const onshapeReleaseV2Function = inngest.createFunction(
           throw new Error(connection.error ?? "Onshape is not connected");
         }
 
+        // Narrowing the model's revision family needs the LETTER, which the
+        // webhook does not send. Without this the drawing branch resolved
+        // against "" and could only ever match a revision-'0' member.
+        const releasedRevision = await readReleasedRevision(
+          connection.client as OnshapeClient,
+          payload
+        );
+
         const resolved = await withRateLimitRetry(
           () =>
             resolveDrawingModelItem(
@@ -183,14 +212,16 @@ export const onshapeReleaseV2Function = inngest.createFunction(
                 wvm: "v",
                 wvmId: payload.versionId,
                 drawingElementId: payload.elementId,
-                releasedRevision: payload.revision ?? ""
+                releasedRevision
               }
             ),
           `drawing references for ${payload.partNumber}`
         );
 
         if (!resolved.ok) {
-          await notifyOnshapeSkips(payload, [resolved.message]);
+          await notifyOnshapeSkips({ ...payload, revision: releasedRevision }, [
+            resolved.message
+          ]);
           return {
             skipped: true as const,
             reason: resolved.reason,
@@ -212,8 +243,8 @@ export const onshapeReleaseV2Function = inngest.createFunction(
           .maybeSingle();
         const assetBaseName =
           target.data?.readableIdWithRevision ??
-          (payload.revision
-            ? `${payload.partNumber}.${payload.revision}`
+          (releasedRevision
+            ? `${payload.partNumber}.${releasedRevision}`
             : payload.partNumber);
 
         try {
@@ -238,7 +269,9 @@ export const onshapeReleaseV2Function = inngest.createFunction(
             error instanceof Error
               ? error.message
               : "Could not export this Onshape drawing.";
-          await notifyOnshapeSkips(payload, [message]);
+          await notifyOnshapeSkips({ ...payload, revision: releasedRevision }, [
+            message
+          ]);
           return {
             skipped: true as const,
             reason: "drawing-export-failed",
@@ -254,19 +287,6 @@ export const onshapeReleaseV2Function = inngest.createFunction(
     }
 
     return await step.run("handle-release", async () => {
-      const releasedRevision = payload.revision ?? "";
-
-      // A release ALWAYS names a revision. An empty one means the delivery was
-      // malformed or the field moved — and treating it as the initial revision
-      // would resolve the family to its revision-'0' member and stamp the
-      // released geometry onto the item that predates every release.
-      if (!releasedRevision) {
-        return {
-          skipped: true as const,
-          reason: "revision-missing-from-event"
-        };
-      }
-
       const connection = await getOnshapeClient(
         carbon,
         payload.companyId,
@@ -276,6 +296,22 @@ export const onshapeReleaseV2Function = inngest.createFunction(
         throw new Error(connection.error ?? "Onshape is not connected");
       }
       const client = connection.client;
+
+      // The letter, looked up from `revisionId` because the webhook does not
+      // send it. The client is built FIRST for exactly this reason.
+      const releasedRevision = await readReleasedRevision(client, payload);
+
+      // A release ALWAYS names a revision. Reaching here without one means both
+      // the event and the lookup came up empty — and treating that as the
+      // initial revision would resolve the family to its revision-'0' member
+      // and stamp the released geometry onto the item that predates every
+      // release.
+      if (!releasedRevision) {
+        return {
+          skipped: true as const,
+          reason: "revision-missing-from-event"
+        };
+      }
 
       // Recover the partId(s) the webhook cannot carry. A Part Studio release
       // fans out: N bodies behind one element id are N Carbon items.

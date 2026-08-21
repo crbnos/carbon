@@ -548,7 +548,12 @@ export async function action({ request }: ActionFunctionArgs) {
     message: importRefusal
       ? `${createdMessage}. ${importRefusal}`
       : importQueued
-        ? `${createdMessage}. The bill of materials is importing in the background.`
+        ? // Say the reload part out loud, the way the BoM explorer's import
+          // already does. `methodMaterial` is not in the realtime publication
+          // and nothing revalidates the route, so the header badge updates by
+          // polling while the bill of materials itself does not appear until
+          // the page is reloaded — which reads as a failed import.
+          `${createdMessage}. The bill of materials is importing in the background — reload the page in a moment to see it.`
         : createdMessage
   };
 }

@@ -8373,6 +8373,9 @@ msgstr "最終実行"
 msgid "Last synced: <0/>"
 msgstr "最後に同期: <0/>"
 
+msgid "Latest"
+msgstr ""
+
 msgid "Latest operation end"
 msgstr "最終操作終了"
 
@@ -12586,6 +12589,9 @@ msgstr "適用する前に提案されたマッチを確認します。これら
 
 msgid "Review the warnings below, then post the count to apply the adjustments."
 msgstr "下の警告を確認してから、カウントを投稿して調整を適用してください。"
+
+msgid "revision"
+msgstr ""
 
 msgid "Revision"
 msgstr "リビジョン"

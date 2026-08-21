@@ -160,8 +160,17 @@ export function describeOnshapeReplenishment(
 export function planReplenishmentCorrection(input: {
   /** What Onshape says NOW, from the BOM row or element/part metadata. */
   purchasingLevel?: string | null;
-  /** What Carbon currently holds on the item. */
-  current: { replenishmentSystem: string; defaultMethodType: string };
+  /**
+   * What Carbon currently holds on the item.
+   *
+   * `defaultMethodType` is nullable in the schema and is deliberately NOT read
+   * here — the Buy/Make answer is what a correction turns on, and the method
+   * type is derived from it rather than compared against it.
+   */
+  current: {
+    replenishmentSystem: string;
+    defaultMethodType?: string | null;
+  };
   /** The stored provenance, or null for an item that predates it. */
   provenance?: {
     source: "purchasing-level" | "structure" | "user";

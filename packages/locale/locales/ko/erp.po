@@ -8373,6 +8373,9 @@ msgstr "마지막 실행"
 msgid "Last synced: <0/>"
 msgstr "마지막 동기화: <0/>"
 
+msgid "Latest"
+msgstr ""
+
 msgid "Latest operation end"
 msgstr "최신 작업 종료"
 
@@ -12586,6 +12589,9 @@ msgstr "적용하기 전에 제안된 매칭을 검토하세요. 이는 최선�
 
 msgid "Review the warnings below, then post the count to apply the adjustments."
 msgstr "아래의 경고를 검토한 후 계산을 게시하여 조정을 적용하세요."
+
+msgid "revision"
+msgstr ""
 
 msgid "Revision"
 msgstr "리비전"

@@ -109,7 +109,7 @@ export const OnshapeRevisionPicker = ({
 
   const visible = useMemo(() => {
     const needle = search.trim().toLowerCase();
-    return revisions.filter((revision) => {
+    const matched = revisions.filter((revision) => {
       if (
         onlyElementType !== undefined &&
         revision.elementType !== onlyElementType
@@ -122,6 +122,37 @@ export const OnshapeRevisionPicker = ({
         revision.partNumber.toLowerCase().includes(needle) ||
         (revision.name ?? "").toLowerCase().includes(needle)
       );
+    });
+
+    // Onshape returns these grouped by RELEASE, so one part's revisions land
+    // pages apart and every row of a given release looks alike. Group by part
+    // number instead, newest revision first — the newest is what someone
+    // creating a part almost always wants, and the alternative is counting
+    // occurrences of an identical-looking row.
+    const sorted = [...matched].sort((a, b) => {
+      const byNumber = a.partNumber.localeCompare(b.partNumber, undefined, {
+        numeric: true,
+        sensitivity: "base"
+      });
+      if (byNumber !== 0) return byNumber;
+      return b.revision.localeCompare(a.revision, undefined, {
+        numeric: true,
+        sensitivity: "base"
+      });
+    });
+
+    // The first row of each part number is its newest revision, by the sort
+    // above. Flagged rather than left implicit: without it the only difference
+    // between three rows is a one-character badge.
+    const latest = new Set<string>();
+    for (const revision of sorted) {
+      if (!latest.has(revision.partNumber)) latest.add(revision.partNumber);
+    }
+    const seen = new Set<string>();
+    return sorted.map((revision) => {
+      const isLatest = !seen.has(revision.partNumber);
+      seen.add(revision.partNumber);
+      return { revision, isLatest };
     });
   }, [revisions, search, hideLinked, onlyElementType]);
 
@@ -146,8 +177,15 @@ export const OnshapeRevisionPicker = ({
           </HStack>
           <ModalDescription>{description}</ModalDescription>
         </ModalHeader>
-        <ModalBody>
-          <VStack spacing={4}>
+        {/* min-w-0 all the way down. ModalContent is a CSS GRID, and a grid
+            item's default `min-width: auto` lets it size the track to its own
+            max-content — so one 80-character Onshape part number widened the
+            track to 1012px inside a 576px dialog and every row, the search box
+            and the footer buttons rendered outside the panel. Filtering the
+            long row away made it snap back, which is what made it look like a
+            rendering glitch rather than a sizing rule. */}
+        <ModalBody className="min-w-0">
+          <VStack spacing={4} className="min-w-0">
             <div className="relative w-full">
               <LuSearch className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -190,32 +228,57 @@ export const OnshapeRevisionPicker = ({
             )}
 
             {!isLoading && !error && visible.length > 0 && (
-              <div className="max-h-[420px] w-full overflow-y-auto rounded-md border">
-                {visible.map((revision) => {
+              <div className="max-h-[420px] w-full min-w-0 overflow-y-auto overflow-x-hidden rounded-md border">
+                {visible.map(({ revision, isLatest }) => {
                   const isSelected =
                     selected?.externalId === revision.externalId &&
                     selected?.revision === revision.revision;
+                  const kind =
+                    revision.elementType === ELEMENT_TYPE_ASSEMBLY
+                      ? t`Assembly`
+                      : t`Part`;
                   return (
                     <button
                       type="button"
                       key={`${revision.externalId}:${revision.revision}`}
                       onClick={() => setSelected(revision)}
+                      aria-pressed={isSelected}
+                      // The revision letter is the ONLY thing separating three
+                      // otherwise identical rows, and a Badge renders it as bare
+                      // text with no role — so a screen reader could not tell
+                      // them apart at all. Name the row in full.
+                      aria-label={`${revision.partNumber} ${t`revision`} ${revision.revision}, ${kind}${
+                        revision.name ? `, ${revision.name}` : ""
+                      }`}
                       className={cn(
                         "flex w-full items-center justify-between gap-3 border-b px-3 py-2 text-left last:border-b-0 hover:bg-accent",
-                        isSelected && "bg-accent"
+                        // Selection has to be unmissable in a list of rows that
+                        // differ by one character. A faint fill was not.
+                        isSelected &&
+                          "bg-accent ring-2 ring-inset ring-primary hover:bg-accent"
                       )}
                     >
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
+                      {/* min-w-0 is load-bearing: without it a flex child
+                          refuses to shrink below its content, so `truncate` on
+                          the part number never engages and one long unbroken
+                          number (Onshape allows 80+ characters) widens the row
+                          past the dialog. */}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex min-w-0 items-center gap-2">
                           <span className="truncate font-medium">
                             {revision.partNumber}
                           </span>
-                          <Badge variant="secondary">{revision.revision}</Badge>
-                          <Badge variant="outline">
-                            {revision.elementType === ELEMENT_TYPE_ASSEMBLY
-                              ? t`Assembly`
-                              : t`Part`}
+                          <Badge variant="secondary" className="shrink-0">
+                            {revision.revision}
                           </Badge>
+                          <Badge variant="outline" className="shrink-0">
+                            {kind}
+                          </Badge>
+                          {isLatest && (
+                            <Badge variant="blue" className="shrink-0">
+                              <Trans>Latest</Trans>
+                            </Badge>
+                          )}
                         </div>
                         {revision.name && (
                           <p className="truncate text-xs text-muted-foreground">

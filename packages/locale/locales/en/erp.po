@@ -8373,6 +8373,9 @@ msgstr "Last Run"
 msgid "Last synced: <0/>"
 msgstr "Last synced: <0/>"
 
+msgid "Latest"
+msgstr "Latest"
+
 msgid "Latest operation end"
 msgstr "Latest operation end"
 
@@ -12586,6 +12589,9 @@ msgstr "Review the suggested matches before applying. These are a best guess —
 
 msgid "Review the warnings below, then post the count to apply the adjustments."
 msgstr "Review the warnings below, then post the count to apply the adjustments."
+
+msgid "revision"
+msgstr "revision"
 
 msgid "Revision"
 msgstr "Revision"
