@@ -962,6 +962,9 @@ msgstr "अधिग्रहण लागत"
 msgid "Acquisition Date"
 msgstr "अधिग्रहण तारीख"
 
+msgid "ACS URL"
+msgstr "ACS URL"
+
 msgid "Action"
 msgstr "कार्रवाई"
 
@@ -1409,6 +1412,9 @@ msgstr "एक स्वचालन जो आप कैनवास पर ब
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "एक इंजीनियरिंग परिवर्तन: प्रभावित आइटम जिनकी विधियों को ड्राफ्ट पर संशोधित किया गया है और एक साथ जारी किया गया है, जो वे संस्करणों को प्रतिस्थापित करते हैं।"
 
+msgid "An Enterprise sign-in method where everyone on a company's registered email domains authenticates through the company's own SAML identity provider instead of a magic link, so IT grants and revokes access centrally."
+msgstr "एक एंटरप्राइज साइन-इन विधि जहां कंपनी के पंजीकृत ईमेल डोमेन पर सभी कंपनी के अपने SAML आइडेंटिटी प्रदाता के माध्यम से प्रमाणिकरण करते हैं, मैजिक लिंक के बजाय, ताकि IT केंद्रीय रूप से एक्सेस देता और रद्द करता है।"
+
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "एक HTTPS अनुरोध जो कार्बन आपके सिस्टम को भेजता है जब एक वर्कफ़्लो उस चरण तक पहुंचता है, आपके द्वारा कॉन्फ़िगर किए गए किसी भी हेडर और बॉडी को ले जाता है।"
 
@@ -1742,6 +1748,9 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 #. placeholder {0}: routeData?.supplier?.name
 msgid "Are you sure you want to deactivate {0}?"
 msgstr "क्या आप सुनिश्चित हैं कि आप {0} को निष्क्रिय करना चाहते हैं?"
+
+msgid "Are you sure you want to deactivate SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
+msgstr "क्या आप SSO को निष्क्रिय करना सुनिश्चित हैं? आपके पंजीकृत डोमेन पर उपयोगकर्ता अब आपके आइडेंटिटी प्रदाता के माध्यम से साइन इन नहीं कर सकेंगे। यह पूर्ववत नहीं किया जा सकता।"
 
 #. placeholder {0}: selectedCategory?.name
 msgid "Are you sure you want to deactivate the {0} attribute category?"
@@ -2833,6 +2842,9 @@ msgstr "Carbon-only · इस ग्राहक के लिए वास्�
 msgid "Carbon-only · the customer sees this text, locked."
 msgstr "Carbon-only · ग्राहक यह पाठ देखता है, लॉक किया गया।"
 
+msgid "Carbon's default passwordless sign-in: an emailed one-time link that signs you in when opened, with no password to remember or leak."
+msgstr "Carbon की डिफ़ॉल्ट पासवर्ड रहित साइन-इन: एक ईमेल किया गया एकबारी लिंक जो खोलने पर आपको साइन इन कर देता है, याद रखने या लीक होने के लिए कोई पासवर्ड नहीं।"
+
 msgid "Carbon's name for a bill of material and bill of process (routing): the components plus the operations that make a part."
 msgstr "सामग्री की सूची और प्रक्रिया सूची (रूटिंग) के लिए कार्बन का नाम: घटक और संचालन जो एक हिस्सा बनाते हैं।"
 
@@ -3154,6 +3166,9 @@ msgstr "फ़िल्टर को संयोजित करें"
 msgid "Coming soon"
 msgstr "जल्द ही आ रहा है"
 
+msgid "Comma-separated list of email domains, e.g. example.com, example.org"
+msgstr "ईमेल डोमेन की अल्पविराम से अलग की गई सूची, उदा. example.com, example.org"
+
 msgid "comma-separated values"
 msgstr "अल्पविराम से अलग किए गए मान"
 
@@ -3408,8 +3423,14 @@ msgstr "कोई शर्त मेल नहीं खाने पर चल
 msgid "Connect the outside tools your company already runs on"
 msgstr "उन बाहरी उपकरणों को कनेक्ट करें जो आपकी कंपनी पहले से चला रही है"
 
+msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
+msgstr "अपने आइडेंटिटी प्रदाता को जोड़ें इसके मेटाडेटा URL या इसके कच्चे मेटाडेटा XML को पेस्ट करके — बिल्कुल दोनों में से एक।"
+
 msgid "Connected to"
 msgstr "को जोड़ा गया"
+
+msgid "Connection Status"
+msgstr "कनेक्शन स्थिति"
 
 msgid "Console Mode"
 msgstr "कंसोल मोड"
@@ -3479,6 +3500,9 @@ msgstr "सामग्री"
 
 msgid "Context"
 msgstr "संदर्भ"
+
+msgid "Continue with SSO"
+msgstr "SSO के साथ जारी रखें"
 
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "अचल संपत्तियों के कुल मूल्यह्रास के लिए विरोधी संपत्ति खाता"
@@ -3832,6 +3856,9 @@ msgstr "देश"
 
 msgid "Country code"
 msgstr "देश कोड"
+
+msgid "Covered Users"
+msgstr "कवर किए गए उपयोगकर्ता"
 
 msgid "Create"
 msgstr "बनाएं"
@@ -4470,6 +4497,9 @@ msgstr "कर्मचारियों को निष्क्रिय क
 
 msgid "Deactivate Process"
 msgstr "प्रक्रिया को निष्क्रिय करें"
+
+msgid "Deactivate Single Sign-On"
+msgstr "सिंगल साइन-ऑन को निष्क्रिय करें"
 
 msgid "Deactivate Supplier"
 msgstr "आपूर्तिकर्ता को निष्क्रिय करें"
@@ -5773,6 +5803,9 @@ msgstr "ईमेल"
 msgid "Email Address"
 msgstr "ईमेल पता"
 
+msgid "Email Domains"
+msgstr "ईमेल डोमेन"
+
 msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
 msgstr "ईमेल नोटिफिकेशन आपकी कंपनी की वर्तमान योजना में शामिल नहीं हैं; यदि वे सक्षम हैं तो ईमेल प्राथमिकताएं लागू होंगी।"
 
@@ -5942,6 +5975,9 @@ msgstr "पुनः शुरू करने के लिए अपने ऑ
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "वह मात्रा दर्ज करें जो यह आंदोलन होना चाहिए था। अंतर के लिए एक विपरीत आंदोलन मूल के बगल में, मूल की समय अवधि में पोस्ट किया जाता है।"
+
+msgid "Enter your email first"
+msgstr "पहले अपना ईमेल दर्ज करें"
 
 msgid "Entered At Receipt"
 msgstr "रसीद पर दर्ज"
@@ -7486,6 +7522,18 @@ msgstr "समरूपता कुंजी"
 msgid "Identifiers"
 msgstr "पहचानकर्ता"
 
+msgid "Identity Provider"
+msgstr "आइडेंटिटी प्रदाता"
+
+msgid "Identity provider (IdP)"
+msgstr "आइडेंटिटी प्रदाता (IdP)"
+
+msgid "IdP Metadata URL"
+msgstr "IdP मेटाडेटा URL"
+
+msgid "IdP Metadata XML"
+msgstr "IdP मेटाडेटा XML"
+
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "कच्चे माल के लिए आईडी और विवरण उत्पन्न किए जाते हैं।"
 
@@ -8672,6 +8720,9 @@ msgstr "MACRS अभिसम्मति"
 
 msgid "MACRS Property Class"
 msgstr "MACRS संपत्ति वर्ग"
+
+msgid "Magic link"
+msgstr "मैजिक लिंक"
 
 msgid "Maintain a single part and item master"
 msgstr "एक एकल भाग और आइटम मास्टर बनाए रखें"
@@ -10783,6 +10834,9 @@ msgstr "पासकीज़"
 msgid "Passkeys are disabled"
 msgstr "पासकीज़ अक्षम हैं"
 
+msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
+msgstr "मेटाडेटा XML को पेस्ट करें यदि आपका आइडेंटिटी प्रदाता मेटाडेटा URL प्रकाशित नहीं करता है"
+
 msgid "Path"
 msgstr "पथ"
 
@@ -11467,6 +11521,9 @@ msgstr "आपकी कंपनी के डेटा की सुरक्�
 
 msgid "Provide process knowledge and inputs"
 msgstr "प्रक्रिया ज्ञान और इनपुट प्रदान करें"
+
+msgid "Provide these URLs to your identity provider (Okta, Entra ID, Google Workspace, etc.) when registering Carbon as a SAML application."
+msgstr "Carbon को SAML एप्लिकेशन के रूप में पंजीकृत करते समय इन URLs को अपने आइडेंटिटी प्रदाता (Okta, Entra ID, Google Workspace, आदि) को प्रदान करें।"
 
 msgid "Provider"
 msgstr "प्रदाता"
@@ -12331,6 +12388,9 @@ msgstr "राशि सीमा के आधार पर क्रय आद
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "आपके वर्कफ़्लो में गुणवत्ता दस्तावेज़ों के लिए अनुमोदन की आवश्यकता है"
+
+msgid "Require SSO"
+msgstr "SSO की आवश्यकता है"
 
 msgid "Require two-factor authentication"
 msgstr "दो-कारक प्रमाणीकरण की आवश्यकता"
@@ -13388,6 +13448,9 @@ msgstr "सेवा विवरण"
 msgid "Service ID"
 msgstr "सेवा ID"
 
+msgid "Service Provider Details"
+msgstr "सेवा प्रदाता विवरण"
+
 msgid "services"
 msgstr "सेवाएं"
 
@@ -13753,6 +13816,12 @@ msgstr "साइन इन करने के लिए आपके प्र
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "साइन इन करने के लिए अब कोड की आवश्यकता नहीं होगी। पुष्टि करने के लिए अपने ऑथेंटिकेटर ऐप से वर्तमान 6-अंकीय कोड दर्ज करें।"
 
+msgid "Single Sign-On"
+msgstr "सिंगल साइन-ऑन"
+
+msgid "Single sign-on (SSO)"
+msgstr "सिंगल साइन-ऑन (SSO)"
+
 msgid "Sites & locations"
 msgstr "साइटें और स्थान"
 
@@ -13876,6 +13945,9 @@ msgstr "सोर्सिंग प्रकार"
 msgid "Sourcing Type"
 msgstr "सोर्सिंग प्रकार"
 
+msgid "SP Metadata URL"
+msgstr "SP मेटाडेटा URL"
+
 msgid "Spare Part Consumption"
 msgstr "स्पेयर पार्ट खपत"
 
@@ -13911,6 +13983,9 @@ msgstr "रसीद लाइन को विभाजित करें"
 
 msgid "Split shipment line"
 msgstr "शिपमेंट लाइन को विभाजित करें"
+
+msgid "SSO is not configured for your email domain."
+msgstr "आपके ईमेल डोमेन के लिए SSO कॉन्फ़िगर नहीं है।"
 
 msgid "Stand up hosting"
 msgstr "होस्टिंग सेट अप करें"
@@ -15168,6 +15243,9 @@ msgstr "भाग की संशोधन संख्या"
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "वह sales order line जिसे पूरा करने के लिए यह नौकरी बनाई गई थी, नौकरी को इसके पीछे की customer demand से जोड़ता है।"
 
+msgid "The SAML metadata URL published by your identity provider"
+msgstr "आपके आइडेंटिटी प्रदाता द्वारा प्रकाशित SAML मेटाडेटा URL"
+
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "अनुसूची का उपयोग इस संपत्ति की लागत को इसके उपयोगी जीवन पर फैलाने के लिए (सीधी पंक्ति, घटता शेष, उत्पादन की इकाइयां)।"
 
@@ -15257,6 +15335,9 @@ msgstr "आपूर्तिकर्ता जो इस RFQ को प्र�
 
 msgid "The surface finishes available on your materials"
 msgstr "आपकी सामग्रियों पर उपलब्ध सतह फिनिशिंग"
+
+msgid "The system a company uses to manage its people's logins — Okta, Entra ID, or Google Workspace — which vouches for who someone is when they sign in to Carbon via SSO."
+msgstr "एक प्रणाली जो कंपनी अपने लोगों के लॉगिन प्रबंधित करने के लिए उपयोग करती है — Okta, Entra ID, या Google Workspace — जो गारंटी देता है कि कोई SSO के माध्यम से Carbon में साइन इन करते समय कौन है।"
 
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "सिस्टम आपके कॉन्फ़िगर किए गए सिस्टम में हर इन-स्कोप स्वीकृति परीक्षा पास करता है, आपके डेटा के साथ; डेटा सत्यापित है; और आप साइन ऑफ करते हैं। फिर लाइव जाएं।"
@@ -15359,6 +15440,9 @@ msgstr "ये ईमेल पते सभी आपूर्तिकर्�
 
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "ये ईमेल पते सभी ग्राहकों को भेजे गए उद्धरण ईमेल पर स्वचालित रूप से CC किए जाएंगे।"
+
+msgid "These existing members are covered by your registered domains and will sign in with SSO automatically on their next login — no re-invite is needed. People not yet in the company still need an invite from the <0>employee accounts page</0>; invite emails for these domains route to SSO automatically."
+msgstr "ये मौजूदा सदस्य आपके पंजीकृत डोमेन द्वारा कवर किए गए हैं और अपने अगले लॉगिन पर SSO के साथ स्वचालित रूप से साइन इन करेंगे — कोई पुन: आमंत्रण की आवश्यकता नहीं है। जो लोग अभी तक कंपनी में नहीं हैं उन्हें <0>कर्मचारी खातों के पृष्ठ</0> से आमंत्रण की आवश्यकता है; इन डोमेन के लिए आमंत्रण ईमेल स्वचालित रूप से SSO को रूट करता है।"
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "इन आइटमों में अभी भी सामग्री चुनने के लिए है। अभी समाप्त करने से सूची को आंशिक चिह्नित किया जाता है।"
@@ -16374,8 +16458,14 @@ msgstr "इस दस्तावेज़ का नाम बदलने, उ
 msgid "Users can update this value for themselves"
 msgstr "उपयोगकर्ता स्वयं के लिए इस मान को अपडेट कर सकते हैं"
 
+msgid "Users on covered domains can sign in only with SSO; magic link, Google, and passkeys are refused."
+msgstr "कवर किए गए डोमेन पर उपयोगकर्ता केवल SSO के साथ साइन इन कर सकते हैं; मैजिक लिंक, Google, और passkeys को अस्वीकार कर दिया गया है।"
+
 msgid "Users to Update"
 msgstr "अपडेट करने के लिए उपयोगकर्ता"
+
+msgid "Users with these email domains sign in through your identity provider."
+msgstr "इन ईमेल डोमेन वाले उपयोगकर्ता आपके आइडेंटिटी प्रदाता के माध्यम से साइन इन करते हैं।"
 
 msgid "Valid From"
 msgstr "वैध से"

@@ -277,6 +277,9 @@ msgstr "Использовано"
 msgid "Consumed expired"
 msgstr "Потреблено истекшее"
 
+msgid "Continue with SSO"
+msgstr "Продолжить с SSO"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Стоимость незапланированного обслуживания за последние {0} дней"
@@ -427,6 +430,9 @@ msgstr "Введите 6-значный код из приложения аут�
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Введите 6-значный код из приложения аутентификатора для продолжения."
+
+msgid "Enter your email first"
+msgstr "Сначала введите свой адрес электронной почты"
 
 msgid "Error"
 msgstr "Ошибка"
@@ -1289,6 +1295,9 @@ msgstr "Запасные части"
 
 msgid "Spare Parts Used"
 msgstr "Использованные запасные части"
+
+msgid "SSO is not configured for your email domain."
+msgstr "SSO не настроен для вашего домена электронной почты."
 
 msgid "Start"
 msgstr "Старт"

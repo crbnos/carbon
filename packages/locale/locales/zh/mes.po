@@ -277,6 +277,9 @@ msgstr "已消耗"
 msgid "Consumed expired"
 msgstr "已消耗过期"
 
+msgid "Continue with SSO"
+msgstr "继续使用 SSO"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "过去 {0} 天的计划外维护成本"
@@ -427,6 +430,9 @@ msgstr "输入您的身份验证器应用中的6位代码"
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "请输入身份验证器应用中的 6 位代码以继续。"
+
+msgid "Enter your email first"
+msgstr "请先输入您的邮箱"
 
 msgid "Error"
 msgstr "错误"
@@ -1289,6 +1295,9 @@ msgstr "备件"
 
 msgid "Spare Parts Used"
 msgstr "已使用备件"
+
+msgid "SSO is not configured for your email domain."
+msgstr "您的邮箱域未配置 SSO"
 
 msgid "Start"
 msgstr "开始"

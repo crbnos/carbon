@@ -68,8 +68,12 @@ secret), `SUPABASE_JWT_SECRET` (optional), plus
 `INNGEST_SERVE_HOST`, `INNGEST_TLS_HOST`.
 
 **Auth / session** — `SESSION_SECRET` (required), `AUTH_PROVIDERS`
-(`email,google,azure,passkey`; gate via `isAuthProviderEnabled`),
+(`email,google,azure,passkey,sso`; gate via `isAuthProviderEnabled`),
 `CLOUDFLARE_TURNSTILE_SITE_KEY` / `_SECRET_KEY`, `RATE_LIMIT`.
+`SAML_ENABLED` / `SAML_PRIVATE_KEY` are NOT `@carbon/env` vars — they live in
+root `.env` and reach GoTrue via docker-compose substitution
+(`GOTRUE_SAML_*`); see the `crbn reload` lesson in `.ai/lessons.md` (reload
+does not read root `.env`, so a reload silently disables SAML).
 
 **Stripe** — `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` (both optional),
 `STRIPE_BYPASS_COMPANY_IDS`, `STRIPE_BYPASS_USER_IDS`.

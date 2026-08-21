@@ -277,6 +277,9 @@ msgstr "소비됨"
 msgid "Consumed expired"
 msgstr "만료 후 소모됨"
 
+msgid "Continue with SSO"
+msgstr "SSO로 계속하기"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "계획되지 않은 유지보수 비용, 최근 {0}일"
@@ -427,6 +430,9 @@ msgstr "인증 앱의 6자리 코드를 입력하세요"
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "인증 앱에서 6자리 코드를 입력하여 계속하세요."
+
+msgid "Enter your email first"
+msgstr "먼저 이메일을 입력하세요"
 
 msgid "Error"
 msgstr "오류"
@@ -1289,6 +1295,9 @@ msgstr "예비 부품"
 
 msgid "Spare Parts Used"
 msgstr "사용된 예비 부품"
+
+msgid "SSO is not configured for your email domain."
+msgstr "사용자 이메일 도메인에 대해 SSO가 설정되지 않았습니다."
 
 msgid "Start"
 msgstr "시작"

@@ -1,13 +1,13 @@
 import {
   CONTROLLED_ENVIRONMENT,
   error,
-  getAppUrl,
   RESEND_DOMAIN,
   success
 } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { getSsoAwareInviteLink } from "@carbon/auth/sso.server";
 import { InviteEmail } from "@carbon/documents/email";
 import { validationError, validator } from "@carbon/form";
 import { batchTrigger } from "@carbon/jobs";
@@ -98,6 +98,12 @@ export async function action({ request }: ActionFunctionArgs) {
       .eq("id", existingInvite.data.createdBy)
       .single();
 
+    const inviteLink = await getSsoAwareInviteLink(
+      serviceRole,
+      user.data.email,
+      refreshed.data.code
+    );
+
     await sendEmail({
       from: `Carbon <no-reply@${RESEND_DOMAIN}>`,
       to: user.data.email,
@@ -112,7 +118,7 @@ export async function action({ request }: ActionFunctionArgs) {
           email: user.data.email,
           name: user.data.fullName ?? "",
           companyName: company.data.name,
-          inviteLink: `${getAppUrl()}/invite/${refreshed.data.code}`,
+          inviteLink,
           ip,
           location,
           controlledEnvironment: CONTROLLED_ENVIRONMENT

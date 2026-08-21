@@ -962,6 +962,9 @@ msgstr "Первоначальная стоимость"
 msgid "Acquisition Date"
 msgstr "Дата приобретения"
 
+msgid "ACS URL"
+msgstr "URL ACS"
+
 msgid "Action"
 msgstr "Действие"
 
@@ -1409,6 +1412,9 @@ msgstr "Автоматизация, которую вы создаете на х
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "Инженерное изменение: затронутые элементы, методы которых пересмотрены в черновике и выпущены вместе, заменяя версии, которые они заменяют."
 
+msgid "An Enterprise sign-in method where everyone on a company's registered email domains authenticates through the company's own SAML identity provider instead of a magic link, so IT grants and revokes access centrally."
+msgstr "Метод входа для предприятия, при котором все сотрудники компании с зарегистрированными доменами электронной почты аутентифицируются через собственного поставщика удостоверений SAML компании вместо волшебной ссылки, поэтому IT централизованно предоставляет и отзывает доступ."
+
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "HTTPS-запрос, который Carbon отправляет в вашу систему, когда рабочий процесс достигает этого шага, с любыми заголовками и телом, которые вы настроили."
 
@@ -1742,6 +1748,9 @@ msgstr "Вы уверены, что хотите создать задания �
 #. placeholder {0}: routeData?.supplier?.name
 msgid "Are you sure you want to deactivate {0}?"
 msgstr "Вы уверены, что хотите деактивировать {0}?"
+
+msgid "Are you sure you want to deactivate SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
+msgstr "Вы уверены, что хотите деактивировать SSO? Пользователи из ваших зарегистрированных доменов больше не смогут входить через вашего поставщика удостоверений. Это действие нельзя отменить."
 
 #. placeholder {0}: selectedCategory?.name
 msgid "Are you sure you want to deactivate the {0} attribute category?"
@@ -2833,6 +2842,9 @@ msgstr "Только для Carbon · заполните реальные цел
 msgid "Carbon-only · the customer sees this text, locked."
 msgstr "Carbon-only · клиент видит этот текст, заблокирован."
 
+msgid "Carbon's default passwordless sign-in: an emailed one-time link that signs you in when opened, with no password to remember or leak."
+msgstr "Встроенный вход без пароля Carbon: ссылка однократного использования, отправляемая по электронной почте, которая подписывает вас при открытии без необходимости помнить или подвергать риску утечки пароль."
+
 msgid "Carbon's name for a bill of material and bill of process (routing): the components plus the operations that make a part."
 msgstr "Имя Carbon для спецификации материалов и спецификации процесса (маршрутизация): компоненты плюс операции, которые производят деталь."
 
@@ -3154,6 +3166,9 @@ msgstr "Объединить фильтры"
 msgid "Coming soon"
 msgstr "Скоро"
 
+msgid "Comma-separated list of email domains, e.g. example.com, example.org"
+msgstr "Разделённый запятыми список доменов электронной почты, например example.com, example.org"
+
 msgid "comma-separated values"
 msgstr "значения, разделённые запятыми"
 
@@ -3408,8 +3423,14 @@ msgstr "Подключите обработчик Otherwise к узлу для �
 msgid "Connect the outside tools your company already runs on"
 msgstr "Подключите внешние инструменты, которые уже использует ваша компания"
 
+msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
+msgstr "Подключите вашего поставщика удостоверений, вставив либо URL его метаданных, либо его необработанный XML-файл метаданных — ровно один из двух."
+
 msgid "Connected to"
 msgstr "Подключено к"
+
+msgid "Connection Status"
+msgstr "Статус подключения"
 
 msgid "Console Mode"
 msgstr "Режим консоли"
@@ -3479,6 +3500,9 @@ msgstr "Содержание"
 
 msgid "Context"
 msgstr "Контекст"
+
+msgid "Continue with SSO"
+msgstr "Продолжить с SSO"
 
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "Счет-контра активов для полного износа основных средств"
@@ -3832,6 +3856,9 @@ msgstr "Страна"
 
 msgid "Country code"
 msgstr "Код страны"
+
+msgid "Covered Users"
+msgstr "Охваченные пользователи"
 
 msgid "Create"
 msgstr "Создать"
@@ -4470,6 +4497,9 @@ msgstr "Деактивировать сотрудников"
 
 msgid "Deactivate Process"
 msgstr "Деактивировать процесс"
+
+msgid "Deactivate Single Sign-On"
+msgstr "Деактивировать Single Sign-On"
 
 msgid "Deactivate Supplier"
 msgstr "Деактивировать поставщика"
@@ -5773,6 +5803,9 @@ msgstr "Электронная почта"
 msgid "Email Address"
 msgstr "Адрес электронной почты"
 
+msgid "Email Domains"
+msgstr "Домены электронной почты"
+
 msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
 msgstr "Уведомления по электронной почте не включены в текущий план вашей компании; параметры электронной почты будут применены, если они включены."
 
@@ -5942,6 +5975,9 @@ msgstr "Введите 6-значный код из приложения-аут�
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Введите количество, которое должно было быть в этом движении. Противоположное движение для разницы размещается рядом с оригинальным в его временном периоде."
+
+msgid "Enter your email first"
+msgstr "Сначала введите свой адрес электронной почты"
 
 msgid "Entered At Receipt"
 msgstr "Введено при получении"
@@ -7486,6 +7522,18 @@ msgstr "Ключ идемпотентности"
 msgid "Identifiers"
 msgstr "Идентификаторы"
 
+msgid "Identity Provider"
+msgstr "Поставщик удостоверений"
+
+msgid "Identity provider (IdP)"
+msgstr "Поставщик удостоверений (IdP)"
+
+msgid "IdP Metadata URL"
+msgstr "URL метаданных IdP"
+
+msgid "IdP Metadata XML"
+msgstr "XML метаданных IdP"
+
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "Идентификаторы и описания генерируются для сырья."
 
@@ -8672,6 +8720,9 @@ msgstr "Соглашение MACRS"
 
 msgid "MACRS Property Class"
 msgstr "Класс имущества MACRS"
+
+msgid "Magic link"
+msgstr "Волшебная ссылка"
 
 msgid "Maintain a single part and item master"
 msgstr "Ведите единый реестр деталей и товаров"
@@ -10783,6 +10834,9 @@ msgstr "Ключи доступа"
 msgid "Passkeys are disabled"
 msgstr "Ключи доступа отключены"
 
+msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
+msgstr "Вставьте XML метаданных, если ваш поставщик удостоверений не публикует URL метаданных"
+
 msgid "Path"
 msgstr "Путь"
 
@@ -11467,6 +11521,9 @@ msgstr "Защищает данные вашей компании"
 
 msgid "Provide process knowledge and inputs"
 msgstr "Предоставить знания о процессе и входные данные"
+
+msgid "Provide these URLs to your identity provider (Okta, Entra ID, Google Workspace, etc.) when registering Carbon as a SAML application."
+msgstr "Предоставьте эти URL вашему поставщику удостоверений (Okta, Entra ID, Google Workspace и т. д.) при регистрации Carbon в качестве приложения SAML."
 
 msgid "Provider"
 msgstr "Система"
@@ -12331,6 +12388,9 @@ msgstr "Требовать утверждение для заказов на п�
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "Требуется одобрение для документов качества в вашем рабочем процессе"
+
+msgid "Require SSO"
+msgstr "Требовать SSO"
 
 msgid "Require two-factor authentication"
 msgstr "Требовать двухфакторную аутентификацию"
@@ -13388,6 +13448,9 @@ msgstr "Сведения об услуге"
 msgid "Service ID"
 msgstr "ID обслуживания"
 
+msgid "Service Provider Details"
+msgstr "Детали поставщика услуг"
+
 msgid "services"
 msgstr "услуги"
 
@@ -13753,6 +13816,12 @@ msgstr "При входе также требуется одноразовый �
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "Вход больше не будет требовать кода. Введите текущий 6-значный код из приложения-аутентификатора для подтверждения."
 
+msgid "Single Sign-On"
+msgstr "Single Sign-On"
+
+msgid "Single sign-on (SSO)"
+msgstr "Single sign-on (SSO)"
+
 msgid "Sites & locations"
 msgstr "Объекты и местоположения"
 
@@ -13876,6 +13945,9 @@ msgstr "Тип источника"
 msgid "Sourcing Type"
 msgstr "Тип источника"
 
+msgid "SP Metadata URL"
+msgstr "URL метаданных SP"
+
 msgid "Spare Part Consumption"
 msgstr "Потребление запасных частей"
 
@@ -13911,6 +13983,9 @@ msgstr "Разделить строку приемки"
 
 msgid "Split shipment line"
 msgstr "Разделить строку отправки"
+
+msgid "SSO is not configured for your email domain."
+msgstr "SSO не настроен для вашего домена электронной почты."
 
 msgid "Stand up hosting"
 msgstr "Развернуть хостинг"
@@ -15168,6 +15243,9 @@ msgstr "Номер редакции детали"
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "Строка заказа на продажу, для которой была создана эта работа, связывая работу с потребностью клиента за ней."
 
+msgid "The SAML metadata URL published by your identity provider"
+msgstr "URL метаданных SAML, опубликованный вашим поставщиком удостоверений"
+
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "Метод амортизации, используемый для распределения стоимости этого актива в течение его полезного срока действия (прямолинейный, убывающий баланс, единицы производства)."
 
@@ -15257,6 +15335,9 @@ msgstr "Поставщики, получающие этот RFQ; каждый п
 
 msgid "The surface finishes available on your materials"
 msgstr "Доступные поверхностные покрытия ваших материалов"
+
+msgid "The system a company uses to manage its people's logins — Okta, Entra ID, or Google Workspace — which vouches for who someone is when they sign in to Carbon via SSO."
+msgstr "Система, которую компания использует для управления входами своих сотрудников — Okta, Entra ID или Google Workspace — которая подтверждает личность пользователя при входе в Carbon через SSO."
 
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "Система проходит все тесты приемки в области охвата в вашей настроенной системе с вашими данными; данные проверяются; и вы подписываете акт. Затем переход в боевую эксплуатацию."
@@ -15359,6 +15440,9 @@ msgstr "Эти адреса электронной почты будут авт�
 
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "Эти адреса электронной почты будут автоматически добавлены в копию на все письма с предложениями, отправляемые клиентам."
+
+msgid "These existing members are covered by your registered domains and will sign in with SSO automatically on their next login — no re-invite is needed. People not yet in the company still need an invite from the <0>employee accounts page</0>; invite emails for these domains route to SSO automatically."
+msgstr "Эти существующие члены охвачены вашими зарегистрированными доменами и будут входить с SSO автоматически при следующем входе — повторное приглашение не требуется. Люди, которые еще не находятся в компании, по-прежнему нуждаются в приглашении со <0>страницы учётных записей сотрудников</0>; письма приглашений для этих доменов автоматически направляются в SSO."
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "У этих товаров все еще есть материал для комплектации. Завершение сейчас отметит список как Частичный."
@@ -16374,8 +16458,14 @@ msgstr "Пользователи и группы, которым разреше�
 msgid "Users can update this value for themselves"
 msgstr "Пользователи могут обновлять это значение для себя"
 
+msgid "Users on covered domains can sign in only with SSO; magic link, Google, and passkeys are refused."
+msgstr "Пользователи охваченных доменов могут входить только с SSO; волшебная ссылка, Google и ключи доступа отклоняются."
+
 msgid "Users to Update"
 msgstr "Пользователи для обновления"
+
+msgid "Users with these email domains sign in through your identity provider."
+msgstr "Пользователи с этими доменами электронной почты входят через вашего поставщика удостоверений."
 
 msgid "Valid From"
 msgstr "Действительно с"

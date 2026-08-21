@@ -277,6 +277,9 @@ msgstr "Tüketildi"
 msgid "Consumed expired"
 msgstr "Tüketilmiş süre dolmuş"
 
+msgid "Continue with SSO"
+msgstr "SSO ile devam et"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Planlanmamış bakım maliyeti, son {0} gün"
@@ -427,6 +430,9 @@ msgstr "Kimlik doğrulama uygulamanızdan 6 haneli kodu girin"
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Devam etmek için kimlik doğrulama uygulamanızdan 6 haneli kodu girin."
+
+msgid "Enter your email first"
+msgstr "Önce e-postanızı girin"
 
 msgid "Error"
 msgstr "Hata"
@@ -1289,6 +1295,9 @@ msgstr "Yedek Parçalar"
 
 msgid "Spare Parts Used"
 msgstr "Kullanılan Yedek Parçalar"
+
+msgid "SSO is not configured for your email domain."
+msgstr "SSO, e-posta alan adınız için yapılandırılmadı."
 
 msgid "Start"
 msgstr "Başlat"

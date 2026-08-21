@@ -962,6 +962,9 @@ msgstr "取得原価"
 msgid "Acquisition Date"
 msgstr "取得日"
 
+msgid "ACS URL"
+msgstr "ACS URL"
+
 msgid "Action"
 msgstr "アクション"
 
@@ -1409,6 +1412,9 @@ msgstr "キャンバス上に構築するオートメーション：1つのト�
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "エンジニアリング変更：ドラフト上で方法が改訂され、一緒にリリースされる影響を受けるアイテム。それらが置き換える版に取って代わります。"
 
+msgid "An Enterprise sign-in method where everyone on a company's registered email domains authenticates through the company's own SAML identity provider instead of a magic link, so IT grants and revokes access centrally."
+msgstr "エンタープライズのサインイン方法。登録されたメールドメインのすべてのユーザーが、マジックリンクの代わりに企業独自のSAML IDプロバイダーを通じて認証され、ITが一元的にアクセスを付与・取り消しできます。"
+
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "ワークフローがそのステップに到達したときに、Carbonがあなたのシステムに送信するHTTPSリクエスト。設定したヘッダーと本文が含まれます。"
 
@@ -1742,6 +1748,9 @@ msgstr "このセールスオーダーのジョブを作成してもよろしい
 #. placeholder {0}: routeData?.supplier?.name
 msgid "Are you sure you want to deactivate {0}?"
 msgstr "{0}を非アクティブ化してもよろしいですか？"
+
+msgid "Are you sure you want to deactivate SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
+msgstr "SSOを無効化してもよろしいですか？登録されたドメインのユーザーはIDプロバイダーを通じてサインインできなくなります。この操作は取り消せません。"
 
 #. placeholder {0}: selectedCategory?.name
 msgid "Are you sure you want to deactivate the {0} attribute category?"
@@ -2833,6 +2842,9 @@ msgstr "Carbon専用 · このお客様の実際のターゲットを入力し�
 msgid "Carbon-only · the customer sees this text, locked."
 msgstr "Carbon専用 · 顧客はこのテキストを表示のみで見ることができます。"
 
+msgid "Carbon's default passwordless sign-in: an emailed one-time link that signs you in when opened, with no password to remember or leak."
+msgstr "Carbonのデフォルトのパスワードレスサインイン：メール送信された一度限りのリンクをクリックするだけでサインイン。パスワードを覚えたり漏らしたりする心配がありません。"
+
 msgid "Carbon's name for a bill of material and bill of process (routing): the components plus the operations that make a part."
 msgstr "材料表と処理リスト（ルーティング）のCarbonの名前：部品を製造するコンポーネントと操作。"
 
@@ -3154,6 +3166,9 @@ msgstr "フィルターを組み合わせる"
 msgid "Coming soon"
 msgstr "近日公開予定"
 
+msgid "Comma-separated list of email domains, e.g. example.com, example.org"
+msgstr "メールドメインのコンマ区切りリスト。例：example.com, example.org"
+
 msgid "comma-separated values"
 msgstr "カンマ区切りの値"
 
@@ -3408,8 +3423,14 @@ msgstr "条件に一致しないときに実行するノードにOtherwiseハン
 msgid "Connect the outside tools your company already runs on"
 msgstr "貴社が既に使用している外部ツールを接続する"
 
+msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
+msgstr "IDプロバイダーのメタデータURLまたは生のメタデータXMLを貼り付けて接続します。どちらか一つだけを入力してください。"
+
 msgid "Connected to"
 msgstr "接続先"
+
+msgid "Connection Status"
+msgstr "接続状態"
 
 msgid "Console Mode"
 msgstr "コンソールモード"
@@ -3479,6 +3500,9 @@ msgstr "コンテンツ"
 
 msgid "Context"
 msgstr "コンテキスト"
+
+msgid "Continue with SSO"
+msgstr "SSOで続ける"
 
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "固定資産の総減価償却費の逆資産勘定"
@@ -3832,6 +3856,9 @@ msgstr "国"
 
 msgid "Country code"
 msgstr "国コード"
+
+msgid "Covered Users"
+msgstr "対象ユーザー"
 
 msgid "Create"
 msgstr "作成"
@@ -4470,6 +4497,9 @@ msgstr "従業員を無効化"
 
 msgid "Deactivate Process"
 msgstr "プロセスを無効化"
+
+msgid "Deactivate Single Sign-On"
+msgstr "シングルサインオンを無効化"
 
 msgid "Deactivate Supplier"
 msgstr "サプライヤーを無効化"
@@ -5773,6 +5803,9 @@ msgstr "メール"
 msgid "Email Address"
 msgstr "メールアドレス"
 
+msgid "Email Domains"
+msgstr "メールドメイン"
+
 msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
 msgstr "メール通知はあなたの会社の現在のプランに含まれていません。メール設定が有効になっている場合は適用されます。"
 
@@ -5942,6 +5975,9 @@ msgstr "認証器アプリから6桁のコードを入力して再開します�
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "この移動がどの数量であるべきかを入力します。差分の反対の移動は、オリジナルの横に、オリジナルの期間に投稿されます。"
+
+msgid "Enter your email first"
+msgstr "まずメールアドレスを入力してください"
 
 msgid "Entered At Receipt"
 msgstr "受領時に入力"
@@ -7486,6 +7522,18 @@ msgstr "冪等性キー"
 msgid "Identifiers"
 msgstr "識別子"
 
+msgid "Identity Provider"
+msgstr "IDプロバイダー"
+
+msgid "Identity provider (IdP)"
+msgstr "IDプロバイダー（IdP）"
+
+msgid "IdP Metadata URL"
+msgstr "IdP メタデータURL"
+
+msgid "IdP Metadata XML"
+msgstr "IdP メタデータXML"
+
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "IDと説明は原材料に対して生成されます。"
 
@@ -8672,6 +8720,9 @@ msgstr "MACRS規約"
 
 msgid "MACRS Property Class"
 msgstr "MACRS資産クラス"
+
+msgid "Magic link"
+msgstr "マジックリンク"
 
 msgid "Maintain a single part and item master"
 msgstr "単一の部品とアイテムマスターを維持する"
@@ -10783,6 +10834,9 @@ msgstr "パスキー"
 msgid "Passkeys are disabled"
 msgstr "パスキーは無効です"
 
+msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
+msgstr "IDプロバイダーがメタデータURLを公開していない場合は、メタデータXMLを貼り付けてください"
+
 msgid "Path"
 msgstr "パス"
 
@@ -11467,6 +11521,9 @@ msgstr "会社データを保護します"
 
 msgid "Provide process knowledge and inputs"
 msgstr "プロセスの知識と入力を提供する"
+
+msgid "Provide these URLs to your identity provider (Okta, Entra ID, Google Workspace, etc.) when registering Carbon as a SAML application."
+msgstr "CarbonをSAMLアプリケーションとして登録する際に、これらのURLをIDプロバイダー（Okta、Entra ID、Google Workspaceなど）に提供してください。"
 
 msgid "Provider"
 msgstr "プロバイダー"
@@ -12331,6 +12388,9 @@ msgstr "金額閾値に基づいて購買注文の承認を要求する"
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "ワークフロー内の品質文書の承認が必要です"
+
+msgid "Require SSO"
+msgstr "SSOを必須にする"
 
 msgid "Require two-factor authentication"
 msgstr "2要素認証が必須"
@@ -13388,6 +13448,9 @@ msgstr "サービス詳細"
 msgid "Service ID"
 msgstr "サービスID"
 
+msgid "Service Provider Details"
+msgstr "サービスプロバイダーの詳細"
+
 msgid "services"
 msgstr "サービス"
 
@@ -13753,6 +13816,12 @@ msgstr "サインインには認証アプリからのワンタイムコードも
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "サインインにはコードが不要になります。確認するために、認証器アプリの現在の6桁のコードを入力します。"
 
+msgid "Single Sign-On"
+msgstr "シングルサインオン"
+
+msgid "Single sign-on (SSO)"
+msgstr "シングルサインオン（SSO）"
+
 msgid "Sites & locations"
 msgstr "サイトと場所"
 
@@ -13876,6 +13945,9 @@ msgstr "調達タイプ"
 msgid "Sourcing Type"
 msgstr "調達タイプ"
 
+msgid "SP Metadata URL"
+msgstr "SP メタデータURL"
+
 msgid "Spare Part Consumption"
 msgstr "予備部品消費"
 
@@ -13911,6 +13983,9 @@ msgstr "領収書行を分割"
 
 msgid "Split shipment line"
 msgstr "出荷ラインを分割"
+
+msgid "SSO is not configured for your email domain."
+msgstr "メールドメインのSSOが設定されていません。"
 
 msgid "Stand up hosting"
 msgstr "ホスティングをセットアップ"
@@ -15168,6 +15243,9 @@ msgstr "部品のリビジョン番号"
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "この仕事が供給するために作成された販売注文ラインで、仕事を背後にある顧客の需要に結びつけます。"
 
+msgid "The SAML metadata URL published by your identity provider"
+msgstr "IDプロバイダーが公開したSAMLメタデータURL"
+
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "このアセットの費用を耐用年数にわたって分散するために使用される償却方法（定額法、減額法、生産単位）。"
 
@@ -15257,6 +15335,9 @@ msgstr "このRFQを受け取るサプライヤー。各者はRFQ上の独自の
 
 msgid "The surface finishes available on your materials"
 msgstr "あなたの材料で利用可能な表面仕上げ"
+
+msgid "The system a company uses to manage its people's logins — Okta, Entra ID, or Google Workspace — which vouches for who someone is when they sign in to Carbon via SSO."
+msgstr "企業が従業員のログインを管理するシステム（Okta、Entra ID、Google Workspaceなど）。SSOを通じてCarbonにサインインする際に、ユーザーの身元を確認します。"
 
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "システムは、設定されたシステム内のすべてのスコープ内受け入れテストに合格し、データが検証され、サインオフされます。その後、本番環境に移行します。"
@@ -15359,6 +15440,9 @@ msgstr "これらのメールアドレスは、サプライヤーに送信され
 
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "これらのメールアドレスは、顧客に送信されるすべての見積メールに自動的にCC送信されます。"
+
+msgid "These existing members are covered by your registered domains and will sign in with SSO automatically on their next login — no re-invite is needed. People not yet in the company still need an invite from the <0>employee accounts page</0>; invite emails for these domains route to SSO automatically."
+msgstr "これらの既存メンバーは登録されたドメインに含まれており、次回のログイン時にSSOで自動的にサインインします。再招待は不要です。まだ企業に属していないユーザーは、<0>従業員アカウントページ</0>から招待を受け取る必要があります。これらのドメインの招待メールはSSOに自動的にルーティングされます。"
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "これらのアイテムはまだピッキングすべき材料があります。今完了するとリストが部分的になります。"
@@ -16374,8 +16458,14 @@ msgstr "このドキュメントの名前変更、差し替え、ラベル付け
 msgid "Users can update this value for themselves"
 msgstr "ユーザーは自分でこの値を更新できます"
 
+msgid "Users on covered domains can sign in only with SSO; magic link, Google, and passkeys are refused."
+msgstr "対象ドメインのユーザーはSSOでのみサインインできます。マジックリンク、Google、パスキーは使用できません。"
+
 msgid "Users to Update"
 msgstr "更新するユーザー"
+
+msgid "Users with these email domains sign in through your identity provider."
+msgstr "これらのメールドメインのユーザーはIDプロバイダーを通じてサインインします。"
 
 msgid "Valid From"
 msgstr "有効期間開始"

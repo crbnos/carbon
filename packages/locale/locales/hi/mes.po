@@ -277,6 +277,9 @@ msgstr "खपत"
 msgid "Consumed expired"
 msgstr "खपत की गई समाप्त"
 
+msgid "Continue with SSO"
+msgstr "SSO के साथ जारी रखें"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "अनियोजित रखरखाव की लागत, पिछले {0} दिन"
@@ -427,6 +430,9 @@ msgstr "अपने ऑथेंटिकेटर ऐप से 6-अंकी
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "अपने प्रमाणक ऐप्लिकेशन से 6-अंकीय कोड दर्ज करें जारी रखने के लिए।"
+
+msgid "Enter your email first"
+msgstr "पहले अपना ईमेल दर्ज करें"
 
 msgid "Error"
 msgstr "त्रुटि"
@@ -1289,6 +1295,9 @@ msgstr "स्पेयर पार्ट्स"
 
 msgid "Spare Parts Used"
 msgstr "उपयोग किए गए स्पेयर पार्ट्स"
+
+msgid "SSO is not configured for your email domain."
+msgstr "SSO आपके ईमेल डोमेन के लिए कॉन्फ़िगर नहीं है।"
 
 msgid "Start"
 msgstr "शुरू करें"

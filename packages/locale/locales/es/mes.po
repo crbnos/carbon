@@ -277,6 +277,9 @@ msgstr "Consumido"
 msgid "Consumed expired"
 msgstr "Consumido vencido"
 
+msgid "Continue with SSO"
+msgstr "Continuar con SSO"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Costo del mantenimiento no planificado, últimos {0} días"
@@ -427,6 +430,9 @@ msgstr "Ingresa el código de 6 dígitos de tu aplicación de autenticación"
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Ingrese el código de 6 dígitos de su aplicación de autenticador para reanudar."
+
+msgid "Enter your email first"
+msgstr "Ingresa tu correo electrónico primero"
 
 msgid "Error"
 msgstr "Error"
@@ -1289,6 +1295,9 @@ msgstr "Repuestos"
 
 msgid "Spare Parts Used"
 msgstr "Repuestos utilizados"
+
+msgid "SSO is not configured for your email domain."
+msgstr "SSO no está configurado para tu dominio de correo electrónico."
 
 msgid "Start"
 msgstr "Iniciar"

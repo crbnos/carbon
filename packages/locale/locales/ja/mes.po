@@ -277,6 +277,9 @@ msgstr "消費済み"
 msgid "Consumed expired"
 msgstr "消費期限切れ"
 
+msgid "Continue with SSO"
+msgstr "SSOで続ける"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "計画外メンテナンスのコスト（過去{0}日間）"
@@ -427,6 +430,9 @@ msgstr "認証器アプリから6桁のコードを入力してください"
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "認証アプリから6桁のコードを入力して再開してください。"
+
+msgid "Enter your email first"
+msgstr "先にメールアドレスを入力してください"
 
 msgid "Error"
 msgstr "エラー"
@@ -1289,6 +1295,9 @@ msgstr "スペアパーツ"
 
 msgid "Spare Parts Used"
 msgstr "使用済みスペアパーツ"
+
+msgid "SSO is not configured for your email domain."
+msgstr "メールドメインに対してSSOが設定されていません。"
 
 msgid "Start"
 msgstr "開始"

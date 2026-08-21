@@ -1092,3 +1092,13 @@ canvas hosting Radix popovers/selects.
 **Rule:** Any new row that reuses an existing readable id must qualify it (`Q000001-1`), and any insert into a table whose unique key can be orphaned by a delete needs `onConflict(...).doUpdateSet(...)` rather than a bare insert. When a user-facing action reports a generic failure, read the edge-runtime container log before theorising — the route's flash message hides the Postgres error code.
 
 **Applies to:** `packages/database/supabase/functions/get-method/index.ts` (`quoteToQuote`), `apps/erp/app/modules/sales/sales.service.ts` (`deleteQuote`), any insert into `externalLink`.
+
+## `crbn reload` does not load root `.env` — compose-substituted secrets silently reset
+
+**Context:** Enabling GoTrue SAML via `${SAML_ENABLED:-false}` / `${SAML_PRIVATE_KEY:-}` in docker-compose.dev.yml, values kept in root `.env`.
+
+**Problem:** `crbn reload <service>` invokes `docker compose up -d --force-recreate` with only `--env-file .env.local`. Root `.env` vars referenced by compose substitution resolve to their defaults, and — worse — recreating ANY service also reconciles other services whose definition changed, so a `crbn reload kong` recreated gotrue with SAML silently OFF even though the user's earlier `crbn up` had it on.
+
+**Rule:** When a compose service definition references root-`.env` variables, either export them in the shell before `crbn reload`, or run full `crbn up`. After any reload, verify the dependent feature's health endpoint (e.g. `curl .../sso/saml/metadata` → 200), not just container status.
+
+**Applies to:** packages/dev reload/compose commands; any GoTrue/Kong/storage env sourced from root `.env`.

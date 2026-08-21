@@ -66,6 +66,50 @@ export const apiKeyValidator = z.object({
   )
 });
 
+const ssoDomainRegex = /^[a-z0-9.-]+\.[a-z]{2,}$/;
+
+/**
+ * SAML SSO connection form. The IdP metadata comes in as EITHER a metadata URL
+ * or raw metadata XML (exactly one — GoTrue takes one or the other), and the
+ * email domains bound to the connection are typed as a comma-separated list
+ * that is normalized to a lowercase string array.
+ */
+export const ssoConnectionValidator = z
+  .object({
+    metadataUrl: zfd.text(
+      z.string().url({ message: "Must be a valid URL" }).optional()
+    ),
+    metadataXml: zfd.text(z.string().optional()),
+    domains: zfd
+      .text(z.string().min(1, { message: "At least one domain is required" }))
+      .transform((value) =>
+        value
+          .split(",")
+          .map((domain) => domain.trim().toLowerCase())
+          .filter((domain) => domain.length > 0)
+      )
+      .refine((domains) => domains.length > 0, {
+        message: "At least one domain is required"
+      })
+      .refine(
+        (domains) =>
+          domains.every(
+            (domain) => ssoDomainRegex.test(domain) && !domain.includes("@")
+          ),
+        {
+          message:
+            "Domains must be valid hostnames like example.com (no @ or spaces)"
+        }
+      )
+  })
+  .refine(
+    (input) => Boolean(input.metadataUrl) !== Boolean(input.metadataXml),
+    {
+      message: "Provide either a metadata URL or metadata XML (exactly one)",
+      path: ["metadataUrl"]
+    }
+  );
+
 const companyAddress = {
   name: z.string().trim().min(1, { message: "Name is required" }),
   addressLine1: z.string().min(1, { message: "Address is required" }),

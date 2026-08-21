@@ -13,11 +13,13 @@ import {
   sendMagicLink,
   verifyAuthSession
 } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   clearAuthCookies,
   flash,
   getAuthSession
 } from "@carbon/auth/session.server";
+import { isSsoRequiredForEmail } from "@carbon/auth/sso.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { Hidden, Input, Submit, ValidatedForm, validator } from "@carbon/form";
 import { AccountLockout, Ratelimit, redis } from "@carbon/kv";
@@ -40,7 +42,7 @@ import {
   startAuthentication
 } from "@simplewebauthn/browser";
 import { useRef, useState } from "react";
-import { LuCircleAlert, LuFingerprint } from "react-icons/lu";
+import { LuCircleAlert, LuFingerprint, LuKeyRound } from "react-icons/lu";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
@@ -64,6 +66,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const hasOutlookAuth = isAuthProviderEnabled("azure");
   const hasGoogleAuth = isAuthProviderEnabled("google");
   const hasPasskeyAuth = isAuthProviderEnabled("passkey");
+  const hasSsoAuth =
+    isAuthProviderEnabled("sso") && CarbonEdition === Edition.Enterprise;
 
   const authSession = await getAuthSession(request);
   if (authSession) {
@@ -72,12 +76,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
     const cookieHeaders = await clearAuthCookies(request);
     return data(
-      { hasOutlookAuth, hasGoogleAuth, hasPasskeyAuth },
+      { hasOutlookAuth, hasGoogleAuth, hasPasskeyAuth, hasSsoAuth },
       { headers: cookieHeaders }
     );
   }
 
-  return { hasOutlookAuth, hasGoogleAuth, hasPasskeyAuth };
+  return { hasOutlookAuth, hasGoogleAuth, hasPasskeyAuth, hasSsoAuth };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -142,6 +146,22 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  // Require-SSO gate: a covered + enforced domain may only authenticate via
+  // SSO — refuse the magic link here, server-side.
+  if (await isSsoRequiredForEmail(getCarbonServiceRole(), email)) {
+    const SSO_REQUIRED_MESSAGE =
+      'Your organization requires single sign-on. Use "Continue with SSO".';
+    logAuthEvent("login_failed", {
+      actor: email,
+      ip,
+      reason: "sso required for domain"
+    });
+    return data(
+      { success: false, message: SSO_REQUIRED_MESSAGE },
+      await flash(request, error(null, SSO_REQUIRED_MESSAGE))
+    );
+  }
+
   const user = await getUserByEmail(email);
 
   if (user.data && user.data.active) {
@@ -165,11 +185,12 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function LoginRoute() {
   const { t } = useLingui();
-  const { hasOutlookAuth, hasGoogleAuth, hasPasskeyAuth } =
+  const { hasOutlookAuth, hasGoogleAuth, hasPasskeyAuth, hasSsoAuth } =
     useLoaderData<typeof loader>();
 
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? undefined;
+  const emailParam = searchParams.get("email") ?? undefined;
 
   const fetcher = useFetcher<
     { success: true } | { success: false; message: string }
@@ -177,6 +198,8 @@ export default function LoginRoute() {
 
   const [passkeySupported, setPasskeySupported] = useState(false);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
+  const [ssoLoading, setSsoLoading] = useState(false);
+  const [ssoError, setSsoError] = useState<string | null>(null);
   const conditionalAbortRef = useRef<AbortController | null>(null);
 
   // Detect passkey support and start conditional UI (autofill) on mount
@@ -309,6 +332,62 @@ export default function LoginRoute() {
     }
   };
 
+  const onSignInWithSSO = async () => {
+    setSsoError(null);
+    const email =
+      document
+        .querySelector<HTMLInputElement>('input[name="email"]')
+        ?.value.trim()
+        .toLowerCase() ?? "";
+
+    if (!email) {
+      setSsoError(t`Enter your email first`);
+      return;
+    }
+
+    const domain = email.split("@")[1];
+    if (!domain) {
+      setSsoError(t`SSO is not configured for your email domain.`);
+      return;
+    }
+
+    setSsoLoading(true);
+    try {
+      const body = new FormData();
+      body.append("email", email);
+      const response = await fetch(path.to.api.ssoCheck, {
+        method: "POST",
+        body
+      });
+      const result = response.ok ? await response.json() : { enabled: false };
+
+      if (!result.enabled) {
+        setSsoError(t`SSO is not configured for your email domain.`);
+        return;
+      }
+
+      const { data, error } = await carbonClient.auth.signInWithSSO({
+        domain,
+        options: {
+          redirectTo: `${window.location.origin}/callback${
+            redirectTo ? `?redirectTo=${redirectTo}` : ""
+          }`
+        }
+      });
+
+      if (error) {
+        setSsoError(error.message);
+        return;
+      }
+
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } finally {
+      setSsoLoading(false);
+    }
+  };
+
   return (
     <>
       <div className="flex justify-center mb-8">
@@ -341,18 +420,24 @@ export default function LoginRoute() {
           <ValidatedForm
             fetcher={fetcher}
             validator={magicLinkValidator}
-            defaultValues={{ redirectTo }}
+            defaultValues={{ redirectTo, email: emailParam }}
             method="post"
           >
             <Hidden name="redirectTo" value={redirectTo} type="hidden" />
             <VStack spacing={2}>
-              {fetcher.data?.success === false && fetcher.data?.message && (
+              {((fetcher.data?.success === false && fetcher.data?.message) ||
+                ssoError) && (
                 <Alert variant="destructive">
                   <LuCircleAlert className="w-4 h-4" />
                   <AlertTitle>
                     <Trans>Authentication Error</Trans>
                   </AlertTitle>
-                  <AlertDescription>{fetcher.data?.message}</AlertDescription>
+                  <AlertDescription>
+                    {ssoError ??
+                      (fetcher.data?.success === false
+                        ? fetcher.data.message
+                        : null)}
+                  </AlertDescription>
                 </Alert>
               )}
 
@@ -398,7 +483,25 @@ export default function LoginRoute() {
                 </Button>
               )}
 
-              {(hasGoogleAuth || hasOutlookAuth || hasPasskeyAuth) && (
+              {hasSsoAuth && (
+                <Button
+                  type="button"
+                  size="lg"
+                  className="w-full"
+                  onClick={onSignInWithSSO}
+                  isDisabled={ssoLoading || fetcher.state !== "idle"}
+                  isLoading={ssoLoading}
+                  variant="secondary"
+                  leftIcon={<LuKeyRound className="size-4" />}
+                >
+                  <Trans>Continue with SSO</Trans>
+                </Button>
+              )}
+
+              {(hasGoogleAuth ||
+                hasOutlookAuth ||
+                hasPasskeyAuth ||
+                hasSsoAuth) && (
                 <div className="py-3 w-full">
                   <Separator />
                 </div>

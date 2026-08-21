@@ -41,6 +41,7 @@ pnpm --filter @carbon/auth test
 | `./company.server` | Company switching, `updateCompanySession` |
 | `./users.server` | `getUserClaims`, deactivation flows, cache invalidation |
 | `./passkey.server` | WebAuthn/passkey registration and authentication |
+| `./sso.server` | SAML SSO (Enterprise, self-hosted): GoTrue admin provider wrappers (`createGoTrueSsoProvider` / `update` / `delete` / `get`), `getSamlSpUrls`, session classification `getSsoProviderIdFromSession` (amr-based — use for enforcement) vs `getSsoProviderIdFromUser` (has-an-identity only), and the shared `ssoConnection` lookups (`getSsoConnectionByDomain` / `ByProviderId`, `isSsoRequiredForEmail`, `getSsoAwareInviteLink`) — the ONE copy used by ERP, MES, and jobs |
 | `./middleware/flash.server` | Flash message middleware |
 
 ## Cross-References

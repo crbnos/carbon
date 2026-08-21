@@ -1,11 +1,11 @@
 import type { Result } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getSsoAwareInviteLink } from "@carbon/auth/sso.server";
 import { deactivateUser } from "@carbon/auth/users.server";
 import { InviteEmail } from "@carbon/documents/email";
 import {
   CarbonEdition,
   CONTROLLED_ENVIRONMENT,
-  getAppUrl,
   RESEND_DOMAIN
 } from "@carbon/env";
 import { sendEmail } from "@carbon/lib/resend.server";
@@ -97,6 +97,12 @@ export const userAdminFunction = inngest.createFunction(
             .eq("id", existingInvite.data.createdBy)
             .single();
 
+          const inviteLink = await getSsoAwareInviteLink(
+            serviceRole,
+            user.data.email,
+            refreshed.data.code
+          );
+
           await sendEmail({
             from: `Carbon <no-reply@${RESEND_DOMAIN}>`,
             to: user.data.email,
@@ -111,7 +117,7 @@ export const userAdminFunction = inngest.createFunction(
                 email: user.data.email,
                 name: user.data.fullName ?? "",
                 companyName: company.data.name,
-                inviteLink: `${getAppUrl()}/invite/${refreshed.data.code}`,
+                inviteLink,
                 ip,
                 location,
                 controlledEnvironment: CONTROLLED_ENVIRONMENT
