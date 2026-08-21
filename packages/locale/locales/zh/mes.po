@@ -25,6 +25,10 @@ msgstr "{0} 个活跃"
 msgid "{0} ago"
 msgstr "{0} 前"
 
+#. placeholder {0}: members.length
+msgid "{0} jobs · {totalQuantity}"
+msgstr ""
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -62,6 +66,9 @@ msgstr "{fails} 个抽样失败已记录，将不会完成 — 请从操作菜�
 
 msgid "+{overflow} more"
 msgstr "还有 +{overflow} 个"
+
+msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
+msgstr ""
 
 msgid "About"
 msgstr "关于"
@@ -256,6 +263,9 @@ msgstr "完成"
 msgid "Complete All"
 msgstr "全部完成"
 
+msgid "Complete Batch"
+msgstr ""
+
 msgid "Complete passed"
 msgstr "完成已通过"
 
@@ -414,6 +424,9 @@ msgstr "电子邮箱"
 
 msgid "Empty work centers"
 msgstr "空的工作中心"
+
+msgid "End Batch"
+msgstr ""
 
 msgid "End Operations"
 msgstr "结束工序"
@@ -1074,6 +1087,9 @@ msgstr "重新打开子装配体并创建替换单元"
 msgid "Result"
 msgstr "结果"
 
+msgid "Retry Completion"
+msgstr ""
+
 msgid "Rework"
 msgstr "返工"
 
@@ -1278,6 +1294,9 @@ msgstr "已使用备件"
 msgid "Start"
 msgstr "开始"
 
+msgid "Start Batch"
+msgstr ""
+
 msgid "Station User"
 msgstr "工位用户"
 
@@ -1353,6 +1372,9 @@ msgstr "此单元将被永久报废，并将创建替换序列号。"
 
 msgid "Thumbnail"
 msgstr "缩略图"
+
+msgid "Time and cost split across jobs proportionally to quantity."
+msgstr ""
 
 msgid "Time Entries"
 msgstr "工时记录"

@@ -219,6 +219,23 @@ export const scrapTrackedEntityValidator = z.object({
   notes: zfd.text(z.string().optional())
 });
 
+// Complete a job operation batch: per-member produced quantity (pre-filled with the
+// operation quantity) + optional per-member scrap. quantity is int —
+// productionQuantity.quantity is INTEGER. See
+// .ai/specs/2026-08-21-job-operation-batching.md.
+export const completeJobOperationBatchValidator = z.object({
+  batchId: z.string().min(1, { message: "Batch is required" }),
+  members: z
+    .array(
+      z.object({
+        jobOperationId: z.string().min(1),
+        quantity: zfd.numeric(z.number().int().min(0)),
+        scrapQuantity: zfd.numeric(z.number().int().min(0).optional())
+      })
+    )
+    .min(1)
+});
+
 export const triggerReworkValidator = z.object({
   jobId: z.string().min(1),
   triggeredAtJobOperationId: z.string().min(1),

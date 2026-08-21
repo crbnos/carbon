@@ -25,6 +25,10 @@ msgstr "{0} Actif(s)"
 msgid "{0} ago"
 msgstr "il y a {0}"
 
+#. placeholder {0}: members.length
+msgid "{0} jobs · {totalQuantity}"
+msgstr ""
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -62,6 +66,9 @@ msgstr "{fails} défaut(s) échantillonné(s) enregistré(s) et ne seront PAS co
 
 msgid "+{overflow} more"
 msgstr "+{overflow} autres"
+
+msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
+msgstr ""
 
 msgid "About"
 msgstr "À propos"
@@ -256,6 +263,9 @@ msgstr "Terminé"
 msgid "Complete All"
 msgstr "Tout compléter"
 
+msgid "Complete Batch"
+msgstr ""
+
 msgid "Complete passed"
 msgstr "Terminer les réussis"
 
@@ -414,6 +424,9 @@ msgstr "Adresse e-mail"
 
 msgid "Empty work centers"
 msgstr "Centres de travail vides"
+
+msgid "End Batch"
+msgstr ""
 
 msgid "End Operations"
 msgstr "Arrêter les opérations"
@@ -1074,6 +1087,9 @@ msgstr "Rouvrir le sous-ensemble et créer une unité de remplacement"
 msgid "Result"
 msgstr "Résultat"
 
+msgid "Retry Completion"
+msgstr ""
+
 msgid "Rework"
 msgstr "Retouche"
 
@@ -1278,6 +1294,9 @@ msgstr "Pièces de rechange utilisées"
 msgid "Start"
 msgstr "Démarrer"
 
+msgid "Start Batch"
+msgstr ""
+
 msgid "Station User"
 msgstr "Utilisateur du poste"
 
@@ -1353,6 +1372,9 @@ msgstr "Cette unité sera définitivement mise au rebut et un nouveau numéro de
 
 msgid "Thumbnail"
 msgstr "Miniature"
+
+msgid "Time and cost split across jobs proportionally to quantity."
+msgstr ""
 
 msgid "Time Entries"
 msgstr "Saisies de temps"

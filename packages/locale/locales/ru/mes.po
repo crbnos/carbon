@@ -25,6 +25,10 @@ msgstr "{0} Активных"
 msgid "{0} ago"
 msgstr "{0} назад"
 
+#. placeholder {0}: members.length
+msgid "{0} jobs · {totalQuantity}"
+msgstr ""
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -62,6 +66,9 @@ msgstr "{fails} записанных отказов будут НЕ заверш
 
 msgid "+{overflow} more"
 msgstr "+{overflow} ещё"
+
+msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
+msgstr ""
 
 msgid "About"
 msgstr "О системе"
@@ -256,6 +263,9 @@ msgstr "Завершить"
 msgid "Complete All"
 msgstr "Завершить все"
 
+msgid "Complete Batch"
+msgstr ""
+
 msgid "Complete passed"
 msgstr "Завершить прошедшие"
 
@@ -414,6 +424,9 @@ msgstr "Электронная почта"
 
 msgid "Empty work centers"
 msgstr "Пустые рабочие центры"
+
+msgid "End Batch"
+msgstr ""
 
 msgid "End Operations"
 msgstr "Завершить операции"
@@ -1074,6 +1087,9 @@ msgstr "Снова открыть узел и создать сменный аг
 msgid "Result"
 msgstr "Результат"
 
+msgid "Retry Completion"
+msgstr ""
+
 msgid "Rework"
 msgstr "Переделка"
 
@@ -1278,6 +1294,9 @@ msgstr "Использованные запасные части"
 msgid "Start"
 msgstr "Старт"
 
+msgid "Start Batch"
+msgstr ""
+
 msgid "Station User"
 msgstr "Пользователь станции"
 
@@ -1353,6 +1372,9 @@ msgstr "Эта единица будет окончательно списана
 
 msgid "Thumbnail"
 msgstr "Миниатюра"
+
+msgid "Time and cost split across jobs proportionally to quantity."
+msgstr ""
 
 msgid "Time Entries"
 msgstr "Записи учёта времени"

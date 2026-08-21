@@ -163,4 +163,24 @@ Working-tree files to never touch: `apps/erp/app/routes/api+/mcp+/lib/tool-metad
     `CandidateCard`s (added a `draggable` prop that disables `useDraggable`).
 - Verify: `pnpm exec turbo run typecheck --filter=erp` → exit 0; `mesBatch`=1;
   `Completing` in BatchingBoard=9. Banned: none.
-- Commit: _pending_
+- Commit: `b98695d21`
+
+## Task 8: MES — kanban collapse, batch page, complete route
+
+- 2 new files copied from `$SRC`: `x+/batch.$batchId.tsx` (331 ln),
+  `x+/batch.$batchId.complete.tsx` (62 ln).
+- 6 modified: `Kanban/components/ItemCard.tsx`, `Kanban/types.ts`,
+  `operations.service.ts` applied clean; 3 CONFLICTED:
+  - `models.ts`: main added `scrapTrackedEntityValidator` where salvage added
+    `completeJobOperationBatchValidator` → kept both.
+  - `path.ts`: main added `picking*` entries where salvage added `batch`/
+    `batchComplete` → kept both.
+  - `operations.tsx`: main added `const log = getLogger("mes")` where salvage
+    added `collapseBatches()` → kept both (collapse call site at L269 applied
+    clean).
+- EDITS: removed the dead `isCancelled` branch from the batch page (enum has no
+  Cancelled); spec-path comments → 2026-08-21. Kept v1 bug fixes (pre-fill reads
+  `operationQuantity` not `targetQuantity ??`; `NumberControlled`).
+- Verify: `pnpm exec turbo run typecheck --filter=mes` → exit 0; batch page
+  `Cancelled`=0, `operationQuantity` pre-fill present, `Trans`=12. Banned: none.
+- Commit (also regenerates tool-metadata via the .service.ts hook): _pending_

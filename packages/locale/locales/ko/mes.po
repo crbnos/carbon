@@ -25,6 +25,10 @@ msgstr "{0} 활성"
 msgid "{0} ago"
 msgstr "{0} 전"
 
+#. placeholder {0}: members.length
+msgid "{0} jobs · {totalQuantity}"
+msgstr ""
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -62,6 +66,9 @@ msgstr "{fails}개의 샘플 불량이 기록되었으며 완료되지 않습니
 
 msgid "+{overflow} more"
 msgstr "+{overflow} 더 보기"
+
+msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
+msgstr ""
 
 msgid "About"
 msgstr "정보"
@@ -256,6 +263,9 @@ msgstr "완료"
 msgid "Complete All"
 msgstr "모두 완료"
 
+msgid "Complete Batch"
+msgstr ""
+
 msgid "Complete passed"
 msgstr "완료된 합격"
 
@@ -414,6 +424,9 @@ msgstr "이메일 주소"
 
 msgid "Empty work centers"
 msgstr "빈 작업장"
+
+msgid "End Batch"
+msgstr ""
 
 msgid "End Operations"
 msgstr "공정작업 종료"
@@ -1074,6 +1087,9 @@ msgstr "부분 조립품을 다시 열고 교체 단위를 생성합니다"
 msgid "Result"
 msgstr "결과"
 
+msgid "Retry Completion"
+msgstr ""
+
 msgid "Rework"
 msgstr "재작업"
 
@@ -1278,6 +1294,9 @@ msgstr "사용된 예비 부품"
 msgid "Start"
 msgstr "시작"
 
+msgid "Start Batch"
+msgstr ""
+
 msgid "Station User"
 msgstr "스테이션 사용자"
 
@@ -1353,6 +1372,9 @@ msgstr "이 단위는 영구적으로 폐기되며 교체 일련번호가 생성
 
 msgid "Thumbnail"
 msgstr "썸네일"
+
+msgid "Time and cost split across jobs proportionally to quantity."
+msgstr ""
 
 msgid "Time Entries"
 msgstr "시간 기록"

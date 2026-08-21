@@ -52,6 +52,34 @@ import { makeDurations } from "~/utils/durations";
 
 const log = getLogger("mes");
 
+// Collapse operations sharing a jobOperationBatchId into one card: keep the first
+// as the card, tag it with the member count and summed quantities.
+function collapseBatches(items: Item[]): Item[] {
+  const byBatch = new Map<string, Item[]>();
+  const result: Item[] = [];
+  for (const item of items) {
+    if (item.batchId) {
+      const arr = byBatch.get(item.batchId);
+      if (arr) arr.push(item);
+      else byBatch.set(item.batchId, [item]);
+    } else {
+      result.push(item);
+    }
+  }
+  for (const members of byBatch.values()) {
+    result.push({
+      ...members[0],
+      batchSize: members.length,
+      quantity: members.reduce((sum, m) => sum + (m.quantity ?? 0), 0),
+      targetQuantity: members.reduce(
+        (sum, m) => sum + (m.targetQuantity ?? 0),
+        0
+      )
+    });
+  }
+  return result;
+}
+
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {});
   const serviceRole = getCarbonServiceRole();
@@ -238,44 +266,48 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
           blockingDispatchReadableId: wc.blockingDispatchReadableId ?? undefined
         }))
         .sort((a, b) => a.title.localeCompare(b.title)) satisfies Column[],
-      items: (filteredOperations.map((op) => {
-        const operation = makeDurations(op);
-        return {
-          id: op.id,
-          assignee: op.assignee,
-          tags: op.tags,
-          columnId: op.workCenterId,
-          columnType: op.processId,
-          priority: op.priority,
-          title: op.jobReadableId,
-          subtitle: op.itemReadableId,
-          description: op.description,
-          dueDate: op.operationDueDate,
-          duration:
-            operation.setupDuration +
-            Math.max(operation.laborDuration, operation.machineDuration),
-          deadlineType: op.jobDeadlineType,
-          customerId: op.jobCustomerId,
-          operationQuantity: op.operationQuantity,
-          targetQuantity: op.targetQuantity ?? op.operationQuantity,
-          jobReadableId: op.jobReadableId,
-          itemReadableId: op.itemReadableId,
-          itemDescription: op.itemDescription,
-          salesOrderReadableId: op.salesOrderReadableId,
-          salesOrderId: op.salesOrderId,
-          salesOrderLineId: op.salesOrderLineId,
-          status: op.operationStatus,
-          thumbnailPath: op.thumbnailPath,
-          quantity: op.operationQuantity,
-          quantityCompleted: op.quantityComplete,
-          quantityReworked: op.quantityReworked,
-          quantityScrapped: op.quantityScrapped,
-          reworkId: op.reworkId,
-          setupDuration: operation.setupDuration,
-          laborDuration: operation.laborDuration,
-          machineDuration: operation.machineDuration
-        };
-      }) ?? []) satisfies Item[],
+      items: collapseBatches(
+        (filteredOperations.map((op) => {
+          const operation = makeDurations(op);
+          return {
+            id: op.id,
+            assignee: op.assignee,
+            tags: op.tags,
+            columnId: op.workCenterId,
+            columnType: op.processId,
+            priority: op.priority,
+            title: op.jobReadableId,
+            subtitle: op.itemReadableId,
+            description: op.description,
+            dueDate: op.operationDueDate,
+            duration:
+              operation.setupDuration +
+              Math.max(operation.laborDuration, operation.machineDuration),
+            deadlineType: op.jobDeadlineType,
+            customerId: op.jobCustomerId,
+            operationQuantity: op.operationQuantity,
+            targetQuantity: op.targetQuantity ?? op.operationQuantity,
+            jobReadableId: op.jobReadableId,
+            itemReadableId: op.itemReadableId,
+            itemDescription: op.itemDescription,
+            salesOrderReadableId: op.salesOrderReadableId,
+            salesOrderId: op.salesOrderId,
+            salesOrderLineId: op.salesOrderLineId,
+            status: op.operationStatus,
+            thumbnailPath: op.thumbnailPath,
+            quantity: op.operationQuantity,
+            quantityCompleted: op.quantityComplete,
+            quantityReworked: op.quantityReworked,
+            quantityScrapped: op.quantityScrapped,
+            reworkId: op.reworkId,
+            setupDuration: operation.setupDuration,
+            laborDuration: operation.laborDuration,
+            machineDuration: operation.machineDuration,
+            batchId: op.jobOperationBatchId,
+            batchReadableId: op.batchReadableId
+          };
+        }) ?? []) satisfies Item[]
+      ),
       processes: processes.data ?? [],
       workCenters: workCenters.data ?? [],
       customers: customers.data ?? [],

@@ -25,6 +25,10 @@ msgstr "{0} Active"
 msgid "{0} ago"
 msgstr "{0} ago"
 
+#. placeholder {0}: members.length
+msgid "{0} jobs · {totalQuantity}"
+msgstr "{0} jobs · {totalQuantity}"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -62,6 +66,9 @@ msgstr "{fails} sampled failure(s) are recorded and will NOT be completed — re
 
 msgid "+{overflow} more"
 msgstr "+{overflow} more"
+
+msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
+msgstr "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 
 msgid "About"
 msgstr "About"
@@ -256,6 +263,9 @@ msgstr "Complete"
 msgid "Complete All"
 msgstr "Complete All"
 
+msgid "Complete Batch"
+msgstr "Complete Batch"
+
 msgid "Complete passed"
 msgstr "Complete passed"
 
@@ -414,6 +424,9 @@ msgstr "Email Address"
 
 msgid "Empty work centers"
 msgstr "Empty work centers"
+
+msgid "End Batch"
+msgstr "End Batch"
 
 msgid "End Operations"
 msgstr "End Operations"
@@ -1074,6 +1087,9 @@ msgstr "Reopen the subassembly and create a replacement unit"
 msgid "Result"
 msgstr "Result"
 
+msgid "Retry Completion"
+msgstr "Retry Completion"
+
 msgid "Rework"
 msgstr "Rework"
 
@@ -1278,6 +1294,9 @@ msgstr "Spare Parts Used"
 msgid "Start"
 msgstr "Start"
 
+msgid "Start Batch"
+msgstr "Start Batch"
+
 msgid "Station User"
 msgstr "Station User"
 
@@ -1353,6 +1372,9 @@ msgstr "This unit will be permanently scrapped and a replacement serial number w
 
 msgid "Thumbnail"
 msgstr "Thumbnail"
+
+msgid "Time and cost split across jobs proportionally to quantity."
+msgstr "Time and cost split across jobs proportionally to quantity."
 
 msgid "Time Entries"
 msgstr "Time Entries"

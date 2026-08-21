@@ -43,6 +43,40 @@ export async function getOpenJobs(
     .order("jobId", { ascending: true });
 }
 
+export async function getJobOperationBatch(
+  client: SupabaseClient<Database>,
+  batchId: string,
+  companyId: string
+) {
+  const batch = await client
+    .from("jobOperationBatch")
+    .select("*")
+    .eq("id", batchId)
+    .eq("companyId", companyId)
+    .single();
+  if (batch.error) return batch;
+  const operations = await client
+    .from("jobOperation")
+    .select(
+      "id, description, operationQuantity, targetQuantity, quantityComplete, workCenterId, status, job(id, jobId, itemId, dueDate)"
+    )
+    .eq("jobOperationBatchId", batchId)
+    .eq("companyId", companyId);
+  const events = await client
+    .from("productionEvent")
+    .select("id, startTime, endTime")
+    .eq("jobOperationBatchId", batchId)
+    .eq("companyId", companyId);
+  return {
+    data: {
+      ...batch.data,
+      operations: operations.data ?? [],
+      events: events.data ?? []
+    },
+    error: operations.error ?? events.error
+  };
+}
+
 export async function getTrackedEntitiesByJobMakeMethodIds(
   client: SupabaseClient<Database>,
   jobMakeMethodIds: string[],
@@ -1729,6 +1763,8 @@ export async function startProductionEvent(
     employeeId: string;
     companyId: string;
     createdBy: string;
+    // Tags the event as part of an operation batch (sliced per-member at completion).
+    jobOperationBatchId?: string;
   },
   trackedEntityId: string | undefined,
   unitIndex?: number,

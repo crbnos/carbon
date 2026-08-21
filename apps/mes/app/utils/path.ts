@@ -45,6 +45,8 @@ export const path = {
     assembly: (id: string) => generatePath(`${x}/assembly/${id}`),
     assigned: `${x}/assigned`,
     authenticatedRoot: x,
+    batch: (id: string) => generatePath(`${x}/batch/${id}`),
+    batchComplete: (id: string) => generatePath(`${x}/batch/${id}/complete`),
     callback: "/callback",
     companySwitch: (companyId: string) =>
       generatePath(`${x}/company/switch/${companyId}`),

@@ -25,6 +25,10 @@ msgstr "{0} Aktiv"
 msgid "{0} ago"
 msgstr "vor {0}"
 
+#. placeholder {0}: members.length
+msgid "{0} jobs · {totalQuantity}"
+msgstr ""
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -62,6 +66,9 @@ msgstr "{fails} erfasste Fehler werden NICHT abgeschlossen – beheben Sie diese
 
 msgid "+{overflow} more"
 msgstr "+{overflow} weitere"
+
+msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
+msgstr ""
 
 msgid "About"
 msgstr "Über"
@@ -256,6 +263,9 @@ msgstr "Abschließen"
 msgid "Complete All"
 msgstr "Alles abschließen"
 
+msgid "Complete Batch"
+msgstr ""
+
 msgid "Complete passed"
 msgstr "Bestandene abgeschlossen"
 
@@ -414,6 +424,9 @@ msgstr "E-Mail-Adresse"
 
 msgid "Empty work centers"
 msgstr "Leere Arbeitszentren"
+
+msgid "End Batch"
+msgstr ""
 
 msgid "End Operations"
 msgstr "Arbeitsgänge beenden"
@@ -1074,6 +1087,9 @@ msgstr "Unterbaugruppe erneut öffnen und Ersatzeinheit erstellen"
 msgid "Result"
 msgstr "Ergebnis"
 
+msgid "Retry Completion"
+msgstr ""
+
 msgid "Rework"
 msgstr "Überarbeitung"
 
@@ -1278,6 +1294,9 @@ msgstr "Verwendete Ersatzteile"
 msgid "Start"
 msgstr "Start"
 
+msgid "Start Batch"
+msgstr ""
+
 msgid "Station User"
 msgstr "Stationsbenutzer"
 
@@ -1353,6 +1372,9 @@ msgstr "Diese Einheit wird endgültig verschrottet und es wird eine neue Serienn
 
 msgid "Thumbnail"
 msgstr "Vorschaubild"
+
+msgid "Time and cost split across jobs proportionally to quantity."
+msgstr ""
 
 msgid "Time Entries"
 msgstr "Zeiteinträge"

@@ -109,8 +109,12 @@ export function ItemCard({
     ? Array.from(progressByItemId[item.id].employees!)
     : undefined;
 
+  const isBatch = (item.batchSize ?? 0) > 1 && !!item.batchId;
+
   return (
-    <Link to={path.to.operation(item.id)}>
+    <Link
+      to={isBatch ? path.to.batch(item.batchId!) : path.to.operation(item.id)}
+    >
       <Card
         className={cn(
           "max-w-[330px]",
@@ -124,15 +128,19 @@ export function ItemCard({
             <div className="flex flex-col space-y-0 min-w-0">
               {item.itemReadableId && (
                 <span className="text-xs text-muted-foreground line-clamp-1">
-                  {item.itemReadableId}
+                  {isBatch ? item.batchReadableId : item.itemReadableId}
                 </span>
               )}
               <span className="mr-auto font-semibold line-clamp-2 leading-tight text-foreground">
-                {item.itemDescription || item.itemReadableId}
+                {isBatch
+                  ? `${item.batchSize} jobs batched`
+                  : item.itemDescription || item.itemReadableId}
               </span>
             </div>
             <Heading size="h4" className="text-foreground">
-              {item.targetQuantity}
+              {isBatch
+                ? `×${item.batchSize} · ${item.targetQuantity}`
+                : item.targetQuantity}
             </Heading>
           </div>
 
