@@ -219,6 +219,11 @@ enabled = true
 verify_jwt = true
 entrypoint = "./functions/post-nonconformance/index.ts"
 
+[functions.post-card-transaction]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/post-card-transaction/index.ts"
+
 
 [functions.transcription]
 enabled = true
