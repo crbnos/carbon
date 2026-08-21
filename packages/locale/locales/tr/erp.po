@@ -49,8 +49,8 @@ msgid "(excluded for this customer)"
 msgstr "(bu müşteri için hariç tutulmuş)"
 
 #. placeholder {0}: open.length
-msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
-msgstr "{0, plural, one {Bu parça 1 açık değişiklik bildirisinde yer alıyor} other {Bu parça # açık değişiklik bildirisinde yer alıyor}}"
+msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
+msgstr "{0, plural, one {Bu ürün 1 açık değişiklik bildirisinde yer alıyor} other {Bu ürün # açık değişiklik bildirisinde yer alıyor}}"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -1039,6 +1039,9 @@ msgstr "Bir yorum ekle..."
 
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "Miktar, fiyat, kargo, teslim süresi ve vergiyi geçersiz kılmak için özel bir fiyatlandırma satırı ekleyin"
+
+msgid "Add a materials section that lists each item on the bill of materials with its quantity."
+msgstr "Malzeme listesindeki her parçayı ve miktarını gösteren bir malzeme bölümü ekleyin."
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Etiketleri doğrudan yazdırmak için yazdırma ayarlarında bir yazıcı ekleyin."
@@ -2313,12 +2316,6 @@ msgstr "Otomatik oluşturulan QR kodu"
 msgid "Auto-numbering formats for orders, jobs, parts, and more"
 msgstr "Siparişler, işler, parçalar ve daha fazlası için otomatik numaralandırma formatları"
 
-msgid "Auto-start the operator's timer when they open an operation in the MES so time logs are captured from the start."
-msgstr "Operatörün bir işlemi MES'te açtığında zamanlayıcıyı otomatik olarak başlat, böylece zaman günlükleri baştan itibaren kaydedilsin."
-
-msgid "Auto-start timer on open"
-msgstr "Açıldığında zamanlayıcıyı otomatik olarak başlat"
-
 msgid "Auto-suggest purchases from demand and reorder points"
 msgstr "Talep ve yeniden sipariş noktalarından otomatik satın alma önerileri"
 
@@ -2998,6 +2995,9 @@ msgstr "Bir seri numarası seçin"
 msgid "Choose another file"
 msgstr "Başka bir dosya seç"
 
+msgid "Choose what appears on the printed job traveler."
+msgstr "Basılı iş talimatında neyin görüneceğini seçin."
+
 msgid "Choose your preferred language for the interface."
 msgstr "Arayüz için tercih ettiğiniz dili seçin."
 
@@ -3231,9 +3231,6 @@ msgstr "Tamamlanma tarihi"
 
 msgid "Completed Date"
 msgstr "Tamamlanma Tarihi"
-
-msgid "Completed Job Notifications"
-msgstr "Tamamlanan İş Bildirimleri"
 
 msgid "Completed Qty"
 msgstr "Tamamlanan Miktar"
@@ -3503,6 +3500,9 @@ msgstr "Yükleniciler"
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "Tasarım değişikliklerini revizyonlar / ECO'lar ile kontrol edin"
+
+msgid "Control how operators pick material and track time on the shop floor."
+msgstr "Operatörlerin malzeme nasıl seçtiğini ve atölye katında zamanı nasıl takip ettiğini kontrol edin."
 
 msgid "Controller, Accountant"
 msgstr "Kontrolör, Muhasebeci"
@@ -7619,17 +7619,11 @@ msgstr "Gelen Muhasebesi"
 msgid "Inbox"
 msgstr "Gelen Kutusu"
 
-msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
-msgstr "İş yolcu PDF'sine malzemeleri (malzeme listesi) bölümü, madde numaraları ve miktarlarıyla birlikte ekleyin."
-
 msgid "Include extra parts in shipment"
 msgstr "Fazla parçaları sevkiyata dahil et"
 
 msgid "Include Inactive"
 msgstr "Pasifleri Dahil Et"
-
-msgid "Include materials on traveler"
-msgstr "Yolcu üzerinde malzemeleri ekleyin"
 
 msgid "Included"
 msgstr "Dahil"
@@ -8123,6 +8117,9 @@ msgstr "Bu aralıktaki ürünler sarı bir rozet alır."
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Öğeler: öğe ana verileri, BOM'lar, İşlem Şeması, mühendislik değişiklikleri, CAD"
 
+msgid "Its design may change before the change notice is released."
+msgstr "Tasarımı, değişiklik bildirisi yayınlanmadan önce değişebilir."
+
 msgid "Job"
 msgstr "İş"
 
@@ -8156,11 +8153,8 @@ msgstr "İş Önceliği"
 msgid "Job readable"
 msgstr "İş okunabilir"
 
-msgid "Job Traveler Materials"
-msgstr "İş Yolcu Malzemeleri"
-
-msgid "Job traveler settings updated"
-msgstr "İş yolcu ayarları güncellendi"
+msgid "Job Traveler"
+msgstr "İş Talimatı"
 
 msgid "Jobs"
 msgstr "İşler"
@@ -8944,6 +8938,9 @@ msgstr "Malzeme Kimliği"
 msgid "Material IDs"
 msgstr "Malzeme Kimlikleri"
 
+msgid "Material is pre-selected"
+msgstr "Malzeme önceden seçilmiş"
+
 msgid "Material Properties"
 msgstr "Malzeme Özellikleri"
 
@@ -8985,6 +8982,12 @@ msgstr "Malzemeler"
 
 msgid "Materials"
 msgstr "Malzemeler"
+
+msgid "Materials are included"
+msgstr "Malzemeler dahil"
+
+msgid "Materials are not included"
+msgstr "Malzemeler dahil değil"
 
 msgid "Max Qty"
 msgstr "Maks. Miktar"
@@ -10346,9 +10349,6 @@ msgstr "Açık AR"
 msgid "Open Audit Log"
 msgstr "Denetim Kaydını Aç"
 
-msgid "Open change notices affecting this part"
-msgstr "Bu parçayı etkileyen açık değişiklik bildirimlerini aç"
-
 msgid "Open date"
 msgstr "Açılış tarihi"
 
@@ -10433,6 +10433,9 @@ msgstr "Açık"
 msgid "Opening"
 msgstr "Açılış"
 
+msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
+msgstr "Bir operasyonu açmak zamanlayıcısını başlatır, böylece zaman çalışma başladığı andan itibaren izlenir."
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Bu varlık Carbon'a eklenmeden önce zaten deftere geçirilmiş amortismanın açılış bakiyesi (yeni satın almalar için 0 kullanın)."
 
@@ -10462,9 +10465,6 @@ msgstr "İşlem miktarı"
 
 msgid "Operation supplier process"
 msgstr "İşlem tedarikçi süreci"
-
-msgid "Operation Timer"
-msgstr "İşlem Zamanlayıcısı"
 
 msgid "Operation type"
 msgstr "İşlem türü"
@@ -10501,6 +10501,12 @@ msgstr "Operatörler"
 
 msgid "Operators can use shared workstations with PIN authentication."
 msgstr "Operatörler, PIN kimlik doğrulaması ile ortak iş istasyonlarını kullanabilir."
+
+msgid "Operators start on the Scan tab"
+msgstr "Operatörler Tarama sekmesinde başlarlar"
+
+msgid "Operators start the timer themselves when they begin an operation."
+msgstr "Operatörler bir operasyona başladıklarında zamanlayıcıyı kendileri başlatırlar."
 
 msgid "Opportunity"
 msgstr "Fırsat"
@@ -11210,9 +11216,6 @@ msgstr "Potansiyel Veri Kaybı"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Son kullanma tarihi Sabit Süre olduğunda yeni bir ürün için önceden doldurulur."
-
-msgid "Pre-select material without a picking list"
-msgstr "Seçim listesi olmadan malzemeyi önceden seç"
 
 msgid "Preferred Supplier"
 msgstr "Tercih Edilen Tedarikçi"
@@ -15294,6 +15297,12 @@ msgstr "Sistem, yapılandırılmış sisteminizde kapsamdaki her kabul testini g
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "Satış RFQ'sunu, kendi alıntısını ve ortaya çıkan satış siparişini bağlayan iş parçacığı - bir birleştirme, kendi durumu olan bir belge değildir."
 
+msgid "The timer starts automatically"
+msgstr "Zamanlayıcı otomatik olarak başlar"
+
+msgid "The timer starts manually"
+msgstr "Zamanlayıcı manuel olarak başlar"
+
 msgid "The tooling and fixtures your operations rely on"
 msgstr "Operasyonlarınızın güvendiği takım tezgahları ve demirbaşlar"
 
@@ -15302,6 +15311,9 @@ msgstr "Bu toplu partide oluşturulan tüm işlerde yapılacak toplam; kaç iş 
 
 msgid "The traceable reference (e.g. NIST standard, master gauge serial) the calibration values were compared against."
 msgstr "Kalibrasyon değerlerinin karşılaştırıldığı izlenebilir referans (örneğin NIST standardı, ana ölçü seri numarası)."
+
+msgid "The traveler lists each item on the bill of materials with its quantity."
+msgstr "Talimat, malzeme listesindeki her parçayı ve miktarını listeler."
 
 msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
 msgstr "Tür, yeni çalışanın aldığı varsayılan izinleri kontrol eder; buradan seçmek, tür şablonundan izin matrisini önceden doldurur."
@@ -15869,6 +15881,9 @@ msgstr "Takip Edilen Varlık"
 
 msgid "Tracked entity ID is required but none was found"
 msgstr "Takip edilen varlık kimliği gerekli ancak hiçbiri bulunamadı"
+
+msgid "Tracked material is pre-selected by pick order (FEFO), even without a picking list."
+msgstr "Takip edilen malzeme, bir çekme listesi olmasa bile, çekme sırasına göre (FEFO) önceden seçilir."
 
 msgid "Tracking"
 msgstr "Takip"
@@ -16983,17 +16998,11 @@ msgstr "Etkinleştirildiğinde, bu kategorideki öznitelikler bir kişinin genel
 msgid "When on, employees can edit this attribute's value on their own profile; otherwise only admins can."
 msgstr "Etkinleştirildiğinde, çalışanlar bu özniteliğin değerini kendi profillerinde düzenleyebilir; aksi takdirde yalnızca yöneticiler bunu yapabilir."
 
-msgid "When on, opening an operation starts its timer automatically."
-msgstr "Açık olduğunda, bir işlemi açmak zamanlayıcıyı otomatik olarak başlatır."
-
 msgid "When on, pricing rules (volume discounts, promotions) still apply on top of this override; when off, this override is the final price."
 msgstr "Etkinleştirildiğinde, fiyatlandırma kuralları (hacim indirimler, promosyonlar) hala bu geçersiz kılmanın üstüne uygulanır; devre dışı bırakıldığında, bu geçersiz kılma nihai fiyattır."
 
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "Etkinleştirildiğinde, bu işlemin işlem barkodunu taramak, kalan tüm açık miktarı bir işlemde tamamlandı olarak bildirir; operatörler düzenli olarak kısmiları bildirdiğinde devre dışı bırakın."
-
-msgid "When on, the traveler PDF lists the job's required materials."
-msgstr "Açık olduğunda, yolcu PDF'si işin gerekli malzemelerini listeler."
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "Etkinleştirildiğinde, bu tarafın faturaları vergi hesaplamasını atlar; taraf, muafiyet sertifikasını güncel tutmaktan sorumludur."
@@ -17003,9 +17012,6 @@ msgstr "Etkinleştirildiğinde, bu fiyat geçersiz kılması eşleşen siparişl
 
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "Açıkken bu kural, türündeki her hedef için tetiklenir. Atama satırları yok sayılır ancak korunur."
-
-msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
-msgstr "Açık olduğunda, izlenen malzeme, seçim listesi olmasa bile seçim sırasına (FEFO) göre önceden seçilir. Kapalı olduğunda, operatörler Tarama sekmesinde başlar."
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Tedarikçi yanıtlarının ne zaman beklenmesi gerektiği; tedarikçiler RFQ portalında bu tarihi görür ve Carbon bundan sonra geç yanıtları kabul etmeyi durdurur (yapılandırılabilir)."
@@ -17219,6 +17225,9 @@ msgstr "Pencere:"
 
 msgid "WIP"
 msgstr "Yarı Mamul"
+
+msgid "Without a picking list, operators pick material from the Scan tab."
+msgstr "Çekme listesi olmadan, operatörler malzemeyi Tarama sekmesinden seçerler."
 
 #. placeholder {0}: quarter.start + 1
 #. placeholder {1}: quarter.end

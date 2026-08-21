@@ -49,8 +49,8 @@ msgid "(excluded for this customer)"
 msgstr "(excluido para este cliente)"
 
 #. placeholder {0}: open.length
-msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
-msgstr "{0, plural, one {Esta parte está en 1 aviso de cambio abierto} other {Esta parte está en # avisos de cambio abiertos}}"
+msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
+msgstr "{0, plural, one {Este artículo está en 1 aviso de cambio abierto} other {Este artículo está en # avisos de cambio abiertos}}"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -1039,6 +1039,9 @@ msgstr "Añade un comentario..."
 
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "Agregue una fila de precios personalizada para anular cantidad, precio, envío, tiempo de entrega e impuestos"
+
+msgid "Add a materials section that lists each item on the bill of materials with its quantity."
+msgstr "Añade una sección de materiales que liste cada artículo en la lista de materiales con su cantidad."
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Añade una impresora en la configuración de impresión para imprimir etiquetas directamente."
@@ -2313,12 +2316,6 @@ msgstr "Código QR generado automáticamente"
 msgid "Auto-numbering formats for orders, jobs, parts, and more"
 msgstr "Formatos de numeración automática para pedidos, trabajos, piezas y más"
 
-msgid "Auto-start the operator's timer when they open an operation in the MES so time logs are captured from the start."
-msgstr "Iniciar automáticamente el cronómetro del operario cuando abra una operación en el MES para que se capturen registros de tiempo desde el inicio."
-
-msgid "Auto-start timer on open"
-msgstr "Iniciar cronómetro automáticamente al abrir"
-
 msgid "Auto-suggest purchases from demand and reorder points"
 msgstr "Sugerir automáticamente compras según la demanda y puntos de reorden"
 
@@ -2998,6 +2995,9 @@ msgstr "Elige un número de serie"
 msgid "Choose another file"
 msgstr "Elegir otro archivo"
 
+msgid "Choose what appears on the printed job traveler."
+msgstr "Elige qué aparece en la hoja de ruta impresa."
+
 msgid "Choose your preferred language for the interface."
 msgstr "Elige tu idioma preferido para la interfaz."
 
@@ -3231,9 +3231,6 @@ msgstr "Fecha de finalización"
 
 msgid "Completed Date"
 msgstr "Fecha de Finalización"
-
-msgid "Completed Job Notifications"
-msgstr "Notificaciones de trabajos completados"
 
 msgid "Completed Qty"
 msgstr "Cantidad Completada"
@@ -3503,6 +3500,9 @@ msgstr "Contratistas"
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "Controlar cambios de diseño con revisiones / ECOs"
+
+msgid "Control how operators pick material and track time on the shop floor."
+msgstr "Controla cómo los operarios recogen material y registran el tiempo en el taller."
 
 msgid "Controller, Accountant"
 msgstr "Controlador, Contador"
@@ -7619,17 +7619,11 @@ msgstr "Inspección de entrada"
 msgid "Inbox"
 msgstr "Bandeja de entrada"
 
-msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
-msgstr "Incluir una sección de materiales (lista de materiales) en el PDF del viaje del trabajo con números de artículos y cantidades."
-
 msgid "Include extra parts in shipment"
 msgstr "Incluir piezas adicionales en el envío"
 
 msgid "Include Inactive"
 msgstr "Incluir Inactivos"
-
-msgid "Include materials on traveler"
-msgstr "Incluir materiales en el viaje"
 
 msgid "Included"
 msgstr "Incluido"
@@ -8123,6 +8117,9 @@ msgstr "Los artículos dentro de esta ventana obtienen una insignia amarilla."
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Artículos: maestro de artículos, BOMs, Bill of Process, cambios de ingeniería, CAD"
 
+msgid "Its design may change before the change notice is released."
+msgstr "Su diseño puede cambiar antes de que se libere el aviso de cambio."
+
 msgid "Job"
 msgstr "Trabajo"
 
@@ -8156,11 +8153,8 @@ msgstr "Prioridad del trabajo"
 msgid "Job readable"
 msgstr "Trabajo legible"
 
-msgid "Job Traveler Materials"
-msgstr "Materiales del Viaje del Trabajo"
-
-msgid "Job traveler settings updated"
-msgstr "Configuración del viaje del trabajo actualizada"
+msgid "Job Traveler"
+msgstr "Hoja de Ruta de Trabajo"
 
 msgid "Jobs"
 msgstr "Trabajos"
@@ -8944,6 +8938,9 @@ msgstr "ID de Material"
 msgid "Material IDs"
 msgstr "IDs de Material"
 
+msgid "Material is pre-selected"
+msgstr "El material está preseleccionado"
+
 msgid "Material Properties"
 msgstr "Propiedades del Material"
 
@@ -8985,6 +8982,12 @@ msgstr "Materiales"
 
 msgid "Materials"
 msgstr "Materiales"
+
+msgid "Materials are included"
+msgstr "Los materiales están incluidos"
+
+msgid "Materials are not included"
+msgstr "Los materiales no están incluidos"
 
 msgid "Max Qty"
 msgstr "Cant. Máx"
@@ -10346,9 +10349,6 @@ msgstr "AR abierto"
 msgid "Open Audit Log"
 msgstr "Abrir Registro de Auditoría"
 
-msgid "Open change notices affecting this part"
-msgstr "Abrir avisos de cambio que afecten esta parte"
-
 msgid "Open date"
 msgstr "Fecha de apertura"
 
@@ -10433,6 +10433,9 @@ msgstr "Abierto"
 msgid "Opening"
 msgstr "Apertura"
 
+msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
+msgstr "Abrir una operación inicia su cronómetro, por lo que el tiempo se registra desde el momento en que comienza el trabajo."
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Saldo de apertura de la depreciación ya contabilizada antes de que este activo se agregara a Carbon (use 0 para nuevas adquisiciones)."
 
@@ -10462,9 +10465,6 @@ msgstr "Cantidad de operación"
 
 msgid "Operation supplier process"
 msgstr "Proceso de proveedor de operación"
-
-msgid "Operation Timer"
-msgstr "Cronómetro de Operación"
 
 msgid "Operation type"
 msgstr "Tipo de operación"
@@ -10501,6 +10501,12 @@ msgstr "Operadores"
 
 msgid "Operators can use shared workstations with PIN authentication."
 msgstr "Los operadores pueden usar estaciones de trabajo compartidas con autenticación PIN."
+
+msgid "Operators start on the Scan tab"
+msgstr "Los operarios comienzan en la pestaña Escanear"
+
+msgid "Operators start the timer themselves when they begin an operation."
+msgstr "Los operarios inician el cronómetro ellos mismos cuando comienzan una operación."
 
 msgid "Opportunity"
 msgstr "Oportunidad"
@@ -11210,9 +11216,6 @@ msgstr "Pérdida potencial de datos"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Rellenado previamente para un nuevo artículo cuando la caducidad es Duración Fija."
-
-msgid "Pre-select material without a picking list"
-msgstr "Preseleccionar material sin una lista de recogida"
 
 msgid "Preferred Supplier"
 msgstr "Proveedor Preferido"
@@ -15294,6 +15297,12 @@ msgstr "El sistema pasa todas las pruebas de aceptación dentro del alcance en t
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "El hilo que vincula una RFQ de ventas, su cotización y la orden de venta resultante - una unión, no un documento con su propio estado."
 
+msgid "The timer starts automatically"
+msgstr "El cronómetro se inicia automáticamente"
+
+msgid "The timer starts manually"
+msgstr "El cronómetro se inicia manualmente"
+
 msgid "The tooling and fixtures your operations rely on"
 msgstr "Las herramientas y accesorios en los que dependen tus operaciones"
 
@@ -15302,6 +15311,9 @@ msgstr "El total a fabricar en todos los trabajos creados en este lote masivo; c
 
 msgid "The traceable reference (e.g. NIST standard, master gauge serial) the calibration values were compared against."
 msgstr "La referencia rastreable (por ejemplo, estándar NIST, número de serie de indicador maestro) contra la cual se compararon los valores de calibración."
+
+msgid "The traveler lists each item on the bill of materials with its quantity."
+msgstr "La hoja de ruta lista cada artículo en la lista de materiales con su cantidad."
 
 msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
 msgstr "El tipo controla qué permisos predeterminados recibe el nuevo empleado; seleccionarlo aquí completa previamente la matriz de permisos de la plantilla del tipo."
@@ -15869,6 +15881,9 @@ msgstr "Entidad Rastreada"
 
 msgid "Tracked entity ID is required but none was found"
 msgstr "El ID de entidad rastreada es obligatorio pero no se encontró ninguno"
+
+msgid "Tracked material is pre-selected by pick order (FEFO), even without a picking list."
+msgstr "El material rastreado está preseleccionado por orden de selección (FEFO), incluso sin una lista de selección."
 
 msgid "Tracking"
 msgstr "Seguimiento"
@@ -16983,17 +16998,11 @@ msgstr "Cuando está activado, los atributos en esta categoría aparecen en el p
 msgid "When on, employees can edit this attribute's value on their own profile; otherwise only admins can."
 msgstr "Cuando está activado, los empleados pueden editar el valor de este atributo en su propio perfil; de lo contrario, solo los administradores pueden hacerlo."
 
-msgid "When on, opening an operation starts its timer automatically."
-msgstr "Cuando está activado, abrir una operación inicia su cronómetro automáticamente."
-
 msgid "When on, pricing rules (volume discounts, promotions) still apply on top of this override; when off, this override is the final price."
 msgstr "Cuando está activado, las reglas de precios (descuentos por volumen, promociones) aún se aplican además de esta invalidación; cuando está desactivado, esta invalidación es el precio final."
 
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "Cuando está activado, escanear el código de barras de operación de este proceso reporta toda la cantidad abierta restante como completada en una acción; desactivar cuando los operadores informan habitualmente de cantidades parciales."
-
-msgid "When on, the traveler PDF lists the job's required materials."
-msgstr "Cuando está activado, el PDF del viaje lista los materiales requeridos del trabajo."
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "Cuando está activado, las facturas de esta parte omiten el cálculo de impuestos; la parte es responsable de mantener el certificado de exención actualizado."
@@ -17003,9 +17012,6 @@ msgstr "Cuando está activado, esta invalidación de precio se aplica a pedidos 
 
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "Cuando está activado, esta regla se dispara para cada objetivo de su tipo. Las filas de asignación se ignoran pero se conservan."
-
-msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
-msgstr "Cuando está activado, el material rastreado se preselecciona por orden de recogida (FEFO) incluso sin una lista de recogida. Cuando está desactivado, los operadores comienzan en la pestaña Escanear."
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Cuándo se espera que respondan los proveedores; los proveedores ven esta fecha en el portal RFQ y Carbon deja de aceptar respuestas tardías después de ella (configurable)."
@@ -17219,6 +17225,9 @@ msgstr "Ventana:"
 
 msgid "WIP"
 msgstr "WIP"
+
+msgid "Without a picking list, operators pick material from the Scan tab."
+msgstr "Sin una lista de selección, los operarios recogen material de la pestaña Escanear."
 
 #. placeholder {0}: quarter.start + 1
 #. placeholder {1}: quarter.end

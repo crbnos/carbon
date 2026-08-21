@@ -52,7 +52,7 @@ export default function ChangeNoticeDetailsRoute() {
   }));
 
   return (
-    <VStack spacing={2} className="p-2">
+    <VStack spacing={4} className="p-4">
       <ChangeNoticeStatusFlow status={changeNotice.status} />
       <ChangeNoticeChanges changes={changes} />
       <ChangeNoticeContent

@@ -49,8 +49,8 @@ msgid "(excluded for this customer)"
 msgstr "(이 고객에게는 제외됨)"
 
 #. placeholder {0}: open.length
-msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
-msgstr "{0, plural, one {이 부품은 1개의 미완료 변경 공지에 포함되어 있습니다} other {이 부품은 #개의 미완료 변경 공지에 포함되어 있습니다}}"
+msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
+msgstr "{0, plural, one {이 품목은 1개의 미완료 변경 공지에 포함되어 있습니다} other {이 품목은 #개의 미완료 변경 공지에 포함되어 있습니다}}"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -1039,6 +1039,9 @@ msgstr "댓글 추가..."
 
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "수량, 가격, 배송비, 리드타임, 세금을 재정의할 사용자 정의 가격 행을 추가하세요"
+
+msgid "Add a materials section that lists each item on the bill of materials with its quantity."
+msgstr "자재 섹션을 추가하여 자재 명세서의 각 항목과 수량을 나열합니다."
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "라벨을 직접 출력하려면 인쇄 설정에서 프린터를 추가하세요."
@@ -2313,12 +2316,6 @@ msgstr "자동 생성된 QR 코드"
 msgid "Auto-numbering formats for orders, jobs, parts, and more"
 msgstr "주문, 작업, 품목 등에 대한 자동 번호 매기기 형식"
 
-msgid "Auto-start the operator's timer when they open an operation in the MES so time logs are captured from the start."
-msgstr "운영자가 MES에서 작업을 열 때 타이머를 자동으로 시작하여 시간 로그가 처음부터 기록되도록 합니다."
-
-msgid "Auto-start timer on open"
-msgstr "열 때 타이머 자동 시작"
-
 msgid "Auto-suggest purchases from demand and reorder points"
 msgstr "수요와 재주문점을 기반으로 구매를 자동 제안"
 
@@ -2998,6 +2995,9 @@ msgstr "일련번호를 선택하세요"
 msgid "Choose another file"
 msgstr "다른 파일을 선택하세요"
 
+msgid "Choose what appears on the printed job traveler."
+msgstr "인쇄된 작업 일지에 표시할 내용을 선택합니다."
+
 msgid "Choose your preferred language for the interface."
 msgstr "인터페이스에 사용할 언어를 선택하세요."
 
@@ -3231,9 +3231,6 @@ msgstr "완료 날짜"
 
 msgid "Completed Date"
 msgstr "완료일"
-
-msgid "Completed Job Notifications"
-msgstr "작업 완료 알림"
 
 msgid "Completed Qty"
 msgstr "완료 수량"
@@ -3503,6 +3500,9 @@ msgstr "계약직"
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "리비전/ECO로 설계 변경을 관리하세요"
+
+msgid "Control how operators pick material and track time on the shop floor."
+msgstr "작업장에서 작업자가 자재를 선택하고 시간을 추적하는 방식을 제어합니다."
 
 msgid "Controller, Accountant"
 msgstr "컨트롤러, 회계 담당자"
@@ -7619,17 +7619,11 @@ msgstr "입고 검사"
 msgid "Inbox"
 msgstr "받은함"
 
-msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
-msgstr "작업 이동 PDF에 품목번호와 수량이 포함된 자재(부자재명세서) 섹션을 포함하세요."
-
 msgid "Include extra parts in shipment"
 msgstr "출하에 여분 부품 포함"
 
 msgid "Include Inactive"
 msgstr "비활성 포함"
-
-msgid "Include materials on traveler"
-msgstr "이동 시 자재 포함"
 
 msgid "Included"
 msgstr "포함됨"
@@ -8123,6 +8117,9 @@ msgstr "이 기간 내의 항목에는 노란색 배지가 표시됩니다."
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "품목: 품목 마스터, BOM, 공정(BOP), 설계 변경, CAD"
 
+msgid "Its design may change before the change notice is released."
+msgstr "변경 공지가 발행되기 전에 설계가 변경될 수 있습니다."
+
 msgid "Job"
 msgstr "작업"
 
@@ -8156,11 +8153,8 @@ msgstr "작업 우선순위"
 msgid "Job readable"
 msgstr "작업 가독성"
 
-msgid "Job Traveler Materials"
-msgstr "작업 이동 자재"
-
-msgid "Job traveler settings updated"
-msgstr "작업 이동 설정이 업데이트되었습니다"
+msgid "Job Traveler"
+msgstr "작업 일지"
 
 msgid "Jobs"
 msgstr "작업"
@@ -8944,6 +8938,9 @@ msgstr "자재 ID"
 msgid "Material IDs"
 msgstr "자재 ID"
 
+msgid "Material is pre-selected"
+msgstr "자재가 사전 선택됨"
+
 msgid "Material Properties"
 msgstr "자재 속성"
 
@@ -8985,6 +8982,12 @@ msgstr "자재"
 
 msgid "Materials"
 msgstr "자재"
+
+msgid "Materials are included"
+msgstr "자재 포함됨"
+
+msgid "Materials are not included"
+msgstr "자재 미포함"
 
 msgid "Max Qty"
 msgstr "최대 수량"
@@ -10346,9 +10349,6 @@ msgstr "미결 매출채권"
 msgid "Open Audit Log"
 msgstr "감사 로그 열기"
 
-msgid "Open change notices affecting this part"
-msgstr "이 부품에 영향을 주는 미완료 변경 공지 열기"
-
 msgid "Open date"
 msgstr "개설 날짜"
 
@@ -10433,6 +10433,9 @@ msgstr "열림"
 msgid "Opening"
 msgstr "기초"
 
+msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
+msgstr "작업을 열면 타이머가 시작되므로 작업이 시작되는 순간부터 시간이 추적됩니다."
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "이 자산이 Carbon에 등록되기 전에 이미 계상된 감가상각의 기초 잔액입니다(신규 취득 자산은 0을 사용하세요)."
 
@@ -10462,9 +10465,6 @@ msgstr "작업 수량"
 
 msgid "Operation supplier process"
 msgstr "작업 공급자 프로세스"
-
-msgid "Operation Timer"
-msgstr "작업 타이머"
 
 msgid "Operation type"
 msgstr "작업 유형"
@@ -10501,6 +10501,12 @@ msgstr "작업자"
 
 msgid "Operators can use shared workstations with PIN authentication."
 msgstr "작업자는 PIN 인증을 통해 공유 워크스테이션을 사용할 수 있습니다."
+
+msgid "Operators start on the Scan tab"
+msgstr "작업자가 스캔 탭에서 시작"
+
+msgid "Operators start the timer themselves when they begin an operation."
+msgstr "작업자가 작업을 시작할 때 직접 타이머를 시작합니다."
 
 msgid "Opportunity"
 msgstr "기회"
@@ -11210,9 +11216,6 @@ msgstr "데이터 손실 가능성"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "유효기한이 고정 기간일 때 새 품목에 자동으로 미리 입력됩니다."
-
-msgid "Pre-select material without a picking list"
-msgstr "선택 목록 없이 자재를 사전 선택"
 
 msgid "Preferred Supplier"
 msgstr "선호 공급업체"
@@ -15294,6 +15297,12 @@ msgstr "설정된 시스템에서 귀사 데이터로 범위 내 모든 인수 �
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "판매 RFQ, 해당 견적, 결과로 나온 판매주문을 연결하는 스레드입니다 — 자체 상태를 가진 문서가 아니라 연결 고리입니다."
 
+msgid "The timer starts automatically"
+msgstr "타이머가 자동으로 시작됨"
+
+msgid "The timer starts manually"
+msgstr "타이머가 수동으로 시작됨"
+
 msgid "The tooling and fixtures your operations rely on"
 msgstr "공정작업에 사용되는 공구 및 고정구"
 
@@ -15302,6 +15311,9 @@ msgstr "이 일괄 배치에서 생성되는 모든 작업에 걸쳐 제작할 �
 
 msgid "The traceable reference (e.g. NIST standard, master gauge serial) the calibration values were compared against."
 msgstr "교정 값을 비교한 대상이 되는 추적 가능한 기준(예: NIST 표준, 마스터 측정기 일련번호)입니다."
+
+msgid "The traveler lists each item on the bill of materials with its quantity."
+msgstr "일지는 자재 명세서의 각 항목과 수량을 나열합니다."
 
 msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
 msgstr "이 유형은 신규 직원이 받는 기본 권한을 결정합니다. 여기서 선택하면 해당 유형의 템플릿으로 권한 매트릭스가 미리 채워집니다."
@@ -15869,6 +15881,9 @@ msgstr "추적 개체"
 
 msgid "Tracked entity ID is required but none was found"
 msgstr "추적 개체 ID가 필요하지만 찾을 수 없습니다"
+
+msgid "Tracked material is pre-selected by pick order (FEFO), even without a picking list."
+msgstr "추적된 자재는 선택 주문(FEFO)에 따라 사전 선택되며, 피킹 목록이 없어도 됩니다."
 
 msgid "Tracking"
 msgstr "추적"
@@ -16983,17 +16998,11 @@ msgstr "켜면 이 카테고리의 속성이 사용자의 공개 프로필에 �
 msgid "When on, employees can edit this attribute's value on their own profile; otherwise only admins can."
 msgstr "켜면 직원이 자신의 프로필에서 이 속성 값을 직접 수정할 수 있습니다. 끄면 관리자만 수정할 수 있습니다."
 
-msgid "When on, opening an operation starts its timer automatically."
-msgstr "켜져 있을 때, 작업을 열면 타이머가 자동으로 시작됩니다."
-
 msgid "When on, pricing rules (volume discounts, promotions) still apply on top of this override; when off, this override is the final price."
 msgstr "켜면 가격 규칙(수량 할인, 프로모션)이 이 재정의 위에 계속 적용됩니다. 끄면 이 재정의가 최종 가격이 됩니다."
 
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "켜면 이 공정의 공정작업 바코드를 스캔할 때 남은 미완료 수량 전체가 한 번에 완료 처리됩니다. 작업자가 부분 완료를 자주 보고하는 경우에는 꺼두세요."
-
-msgid "When on, the traveler PDF lists the job's required materials."
-msgstr "활성화되면 이동 PDF는 작업의 필수 자재를 나열합니다."
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "켜면 이 거래처의 인보이스는 세금 계산을 건너뜁니다. 면세 증명서를 최신 상태로 유지하는 것은 해당 거래처의 책임입니다."
@@ -17003,9 +17012,6 @@ msgstr "켜면 이 가격 재정의가 일치하는 주문에 적용됩니다. �
 
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "켜면 이 규칙이 해당 유형의 모든 대상에 대해 적용됩니다. 배정 행은 무시되지만 보존됩니다."
-
-msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
-msgstr "켜짐 상태에서 추적된 자재는 선택 목록이 없어도 선택 순서(FEFO)에 따라 사전 선택됩니다. 꺼짐 상태에서 작업자는 스캔 탭에서 시작합니다."
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "공급업체 응답이 도착할 것으로 예상되는 시점입니다. 공급업체는 RFQ 포털에서 이 날짜를 확인하며, Carbon은 이 날짜 이후의 지연 응답을 받지 않습니다(설정 가능)."
@@ -17219,6 +17225,9 @@ msgstr "구간:"
 
 msgid "WIP"
 msgstr "재공품"
+
+msgid "Without a picking list, operators pick material from the Scan tab."
+msgstr "피킹 목록이 없으면 작업자가 스캔 탭에서 자재를 선택합니다."
 
 #. placeholder {0}: quarter.start + 1
 #. placeholder {1}: quarter.end

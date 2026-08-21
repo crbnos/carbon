@@ -49,8 +49,8 @@ msgid "(excluded for this customer)"
 msgstr "(исключено для этого клиента)"
 
 #. placeholder {0}: open.length
-msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
-msgstr "{0, plural, one {Эта деталь находится на 1 открытой уведомлении об изменении} other {Эта деталь находится на # открытых уведомлениях об изменении}}"
+msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
+msgstr "{0, plural, one {Этот товар находится в 1 открытом уведомлении об изменении} other {Этот товар находится в # открытых уведомлениях об изменении}}"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -1039,6 +1039,9 @@ msgstr "Добавить комментарий..."
 
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "Добавьте пользовательскую строку ценообразования для переопределения количества, цены, доставки, времени выполнения заказа и налога"
+
+msgid "Add a materials section that lists each item on the bill of materials with its quantity."
+msgstr "Добавить раздел материалов, в котором указывается каждый элемент спецификации материалов с его количеством."
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Добавьте принтер в параметры печати, чтобы печатать этикетки напрямую."
@@ -2313,12 +2316,6 @@ msgstr "Автоматически созданный QR-код"
 msgid "Auto-numbering formats for orders, jobs, parts, and more"
 msgstr "Форматы автонумерации для заказов, работ, деталей и многого другого"
 
-msgid "Auto-start the operator's timer when they open an operation in the MES so time logs are captured from the start."
-msgstr "Автоматически запускать таймер оператора при открытии операции в MES, чтобы логи времени записывались с начала."
-
-msgid "Auto-start timer on open"
-msgstr "Автоматически запустить таймер при открытии"
-
 msgid "Auto-suggest purchases from demand and reorder points"
 msgstr "Автоматически предлагать покупки на основе спроса и точек переупорядочения"
 
@@ -2998,6 +2995,9 @@ msgstr "Выберите серийный номер"
 msgid "Choose another file"
 msgstr "Выбрать другой файл"
 
+msgid "Choose what appears on the printed job traveler."
+msgstr "Выбрать, что отображается на распечатанном маршрутном листе работы."
+
 msgid "Choose your preferred language for the interface."
 msgstr "Выберите предпочитаемый язык для интерфейса."
 
@@ -3231,9 +3231,6 @@ msgstr "Дата завершения"
 
 msgid "Completed Date"
 msgstr "Дата завершения"
-
-msgid "Completed Job Notifications"
-msgstr "Завершенные уведомления о работах"
 
 msgid "Completed Qty"
 msgstr "Завершённое кол-во"
@@ -3503,6 +3500,9 @@ msgstr "Подрядчики"
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "Контролировать изменения конструкции с помощью редакций / ECO"
+
+msgid "Control how operators pick material and track time on the shop floor."
+msgstr "Контролировать, как операторы подбирают материал и отслеживают время на производственном полу."
 
 msgid "Controller, Accountant"
 msgstr "Контроллер, Бухгалтер"
@@ -7619,17 +7619,11 @@ msgstr "Входящая проверка"
 msgid "Inbox"
 msgstr "Входящие"
 
-msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
-msgstr "Включить раздел материалов (спецификация материалов) в PDF путевого листа задания с номерами товаров и количествами."
-
 msgid "Include extra parts in shipment"
 msgstr "Включить дополнительные детали в отправку"
 
 msgid "Include Inactive"
 msgstr "Включить неактивные"
-
-msgid "Include materials on traveler"
-msgstr "Включить материалы в путевой лист задания"
 
 msgid "Included"
 msgstr "Включено"
@@ -8123,6 +8117,9 @@ msgstr "Товары в этом диапазоне получают жёлты�
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Товары: справочник товаров, спецификации, технологические процессы, инженерные изменения, САПР"
 
+msgid "Its design may change before the change notice is released."
+msgstr "Конструкция может измениться до выпуска уведомления об изменении."
+
 msgid "Job"
 msgstr "Задание"
 
@@ -8156,11 +8153,8 @@ msgstr "Приоритет работы"
 msgid "Job readable"
 msgstr "Читаемая работа"
 
-msgid "Job Traveler Materials"
-msgstr "Материалы путевого листа задания"
-
-msgid "Job traveler settings updated"
-msgstr "Параметры путевого листа задания обновлены"
+msgid "Job Traveler"
+msgstr "Маршрутный лист работы"
 
 msgid "Jobs"
 msgstr "Работы"
@@ -8944,6 +8938,9 @@ msgstr "ID материала"
 msgid "Material IDs"
 msgstr "Идентификаторы материалов"
 
+msgid "Material is pre-selected"
+msgstr "Материал предварительно выбран"
+
 msgid "Material Properties"
 msgstr "Свойства материалов"
 
@@ -8985,6 +8982,12 @@ msgstr "Материалы"
 
 msgid "Materials"
 msgstr "Материалы"
+
+msgid "Materials are included"
+msgstr "Материалы включены"
+
+msgid "Materials are not included"
+msgstr "Материалы не включены"
 
 msgid "Max Qty"
 msgstr "Макс. кол-во"
@@ -10346,9 +10349,6 @@ msgstr "Открытая дебиторская задолженность"
 msgid "Open Audit Log"
 msgstr "Открыть журнал аудита"
 
-msgid "Open change notices affecting this part"
-msgstr "Открытые уведомления об изменении, влияющие на эту деталь"
-
 msgid "Open date"
 msgstr "Дата открытия"
 
@@ -10433,6 +10433,9 @@ msgstr "Открыт"
 msgid "Opening"
 msgstr "Открытие"
 
+msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
+msgstr "Открытие операции запускает её таймер, поэтому время отсчитывается с момента начала работы."
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Начальный баланс амортизации, уже учтенный до добавления этого актива в Carbon (используйте 0 для новых приобретений)."
 
@@ -10462,9 +10465,6 @@ msgstr "Количество операций"
 
 msgid "Operation supplier process"
 msgstr "Процесс поставщика операции"
-
-msgid "Operation Timer"
-msgstr "Таймер операции"
 
 msgid "Operation type"
 msgstr "Тип операции"
@@ -10501,6 +10501,12 @@ msgstr "Операторы"
 
 msgid "Operators can use shared workstations with PIN authentication."
 msgstr "Операторы могут использовать общие рабочие станции с аутентификацией по PIN."
+
+msgid "Operators start on the Scan tab"
+msgstr "Операторы начинают на вкладке Сканирование"
+
+msgid "Operators start the timer themselves when they begin an operation."
+msgstr "Операторы запускают таймер сами, когда они начинают операцию."
 
 msgid "Opportunity"
 msgstr "Возможность"
@@ -11210,9 +11216,6 @@ msgstr "Потенциальная потеря данных"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Предварительно заполняется для нового товара, когда срок действия установлен как Фиксированная продолжительность."
-
-msgid "Pre-select material without a picking list"
-msgstr "Предварительно выбрать материал без списка подбора"
 
 msgid "Preferred Supplier"
 msgstr "Предпочитаемый поставщик"
@@ -15294,6 +15297,12 @@ msgstr "Система проходит все тесты приемки в об
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "Цепочка, которая связывает RFQ продаж, его предложение и результирующий заказ на продажу — соединение, а не документ со своим статусом."
 
+msgid "The timer starts automatically"
+msgstr "Таймер запускается автоматически"
+
+msgid "The timer starts manually"
+msgstr "Таймер запускается вручную"
+
 msgid "The tooling and fixtures your operations rely on"
 msgstr "Инструменты и приспособления, на которые полагаются ваши операции"
 
@@ -15302,6 +15311,9 @@ msgstr "Общее количество для производства на в�
 
 msgid "The traceable reference (e.g. NIST standard, master gauge serial) the calibration values were compared against."
 msgstr "Отслеживаемая ссылка (например, стандарт NIST, серийный номер эталонного датчика), по которой сравнивались значения калибровки."
+
+msgid "The traveler lists each item on the bill of materials with its quantity."
+msgstr "Маршрутный лист содержит каждый элемент спецификации материалов с его количеством."
 
 msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
 msgstr "Тип управляет тем, какие разрешения по умолчанию получает новый сотрудник; выбор его здесь предварительно заполняет матрицу разрешений из шаблона типа."
@@ -15869,6 +15881,9 @@ msgstr "Отслеживаемая сущность"
 
 msgid "Tracked entity ID is required but none was found"
 msgstr "ID отслеживаемой сущности требуется, но ничего не найдено"
+
+msgid "Tracked material is pre-selected by pick order (FEFO), even without a picking list."
+msgstr "Отслеживаемый материал предварительно выбирается по порядку выборки (FEFO), даже без листа подбора."
 
 msgid "Tracking"
 msgstr "Отслеживание"
@@ -16983,17 +16998,11 @@ msgstr "Когда включено, атрибуты в этой категор
 msgid "When on, employees can edit this attribute's value on their own profile; otherwise only admins can."
 msgstr "Когда включено, сотрудники могут редактировать значение этого атрибута в своем профиле; в противном случае это могут делать только администраторы."
 
-msgid "When on, opening an operation starts its timer automatically."
-msgstr "Когда включено, открытие операции автоматически запускает ее таймер."
-
 msgid "When on, pricing rules (volume discounts, promotions) still apply on top of this override; when off, this override is the final price."
 msgstr "Когда включено, правила цены (скидки по объемам, акции) по-прежнему применяются сверх этого переопределения; когда отключено, это переопределение — финальная цена."
 
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "Когда включено, сканирование операционного штрих-кода этого процесса сообщает всю оставшуюся открытую количество как завершенную в одном действии; отключите, если операторы регулярно сообщают о частичных."
-
-msgid "When on, the traveler PDF lists the job's required materials."
-msgstr "Когда включено, PDF путевого листа задания отображает необходимые материалы задания."
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "Если включено, счета этой стороны пропускают расчет налога; сторона отвечает за актуальность сертификата об освобождении."
@@ -17003,9 +17012,6 @@ msgstr "Если включено, это переопределение цен�
 
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "Когда включено, это правило срабатывает для каждой цели его типа. Строки назначения игнорируются, но сохраняются."
-
-msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
-msgstr "Когда включено, отслеживаемый материал предварительно выбирается по порядку подбора (FEFO) даже без списка подбора. Когда отключено, операторы начинают со вкладки 'Сканирование'."
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Когда ожидается ответ поставщиков; поставщики видят эту дату на портале RFQ, и Carbon перестает принимать поздние ответы после нее (настраивается)."
@@ -17219,6 +17225,9 @@ msgstr "Окно:"
 
 msgid "WIP"
 msgstr "НЗП"
+
+msgid "Without a picking list, operators pick material from the Scan tab."
+msgstr "Без листа подбора операторы подбирают материал со вкладки Сканирование."
 
 #. placeholder {0}: quarter.start + 1
 #. placeholder {1}: quarter.end

@@ -17,7 +17,14 @@ import {
   getImplementationHub
 } from "@carbon/onboarding/server";
 import { OnboardingHubSummary } from "@carbon/onboarding/ui";
-import { Button, cn, useRouteData } from "@carbon/react";
+import {
+  Button,
+  Card,
+  CardContent,
+  cn,
+  HStack,
+  useRouteData
+} from "@carbon/react";
 import { isInternalEmail } from "@carbon/utils";
 import { getLocalTimeZone } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -149,33 +156,39 @@ export default function AppIndexRoute() {
             action={path.to.getStartedEnroll}
             className="mb-6"
           >
-            <div className="rounded-lg ring-2 ring-transparent bg-gradient-to-bl from-card/70 from-50% to-background/70 backdrop-blur-md shadow-button-base p-4 flex items-start gap-4">
-              <div className="shrink-0 p-2.5 rounded-lg border border-border">
-                <LuRocket className="text-xl" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xxs uppercase tracking-wide font-medium">
-                  <Trans>Get Started</Trans>
-                </div>
-                <div className="text-base font-semibold tracking-tight mt-0.5 text-balance">
-                  <Trans>Enroll this company in the Implementation Hub</Trans>
-                </div>
-                <p className="text-sm text-muted-foreground mt-1 text-pretty">
-                  <Trans>
-                    Set up your company with a step-by-step implementation plan
-                    covering setup, data, training, and go-live.
-                  </Trans>
-                </p>
-                <Button
-                  className="mt-4"
-                  type="submit"
-                  isLoading={enrollFetcher.state !== "idle"}
-                  isDisabled={enrollFetcher.state !== "idle"}
-                >
-                  <Trans>Enroll</Trans>
-                </Button>
-              </div>
-            </div>
+            <Card className="shadow-none">
+              <CardContent>
+                <HStack spacing={2} className="items-start">
+                  <div className="shrink-0 p-2.5 rounded-lg border border-border">
+                    <LuRocket className="text-xl" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xxs uppercase tracking-wide font-medium">
+                      <Trans>Get Started</Trans>
+                    </div>
+                    <div className="text-base font-semibold tracking-tight mt-0.5 text-balance">
+                      <Trans>
+                        Enroll this company in the Implementation Hub
+                      </Trans>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1 text-pretty">
+                      <Trans>
+                        Set up your company with a step-by-step implementation
+                        plan covering setup, data, training, and go-live.
+                      </Trans>
+                    </p>
+                    <Button
+                      className="mt-4"
+                      type="submit"
+                      isLoading={enrollFetcher.state !== "idle"}
+                      isDisabled={enrollFetcher.state !== "idle"}
+                    >
+                      <Trans>Enroll</Trans>
+                    </Button>
+                  </div>
+                </HStack>
+              </CardContent>
+            </Card>
           </enrollFetcher.Form>
         ) : null}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
