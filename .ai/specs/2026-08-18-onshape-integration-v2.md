@@ -768,3 +768,30 @@ twice as well.
   The SUB-ASSEMBLY row is the decisive one: structure calls an assembly Make, and Onshape
   overrode it. The part row is consistent but not decisive on its own, since structure
   reaches Buy for a part studio body anyway.
+- 2026-08-21: **Both part-number edge cases tested against real Onshape data, and the
+  replenishment correction rule built.** Two bodies in TB Test Bench were temporarily
+  renamed to `tb-901` (case twin of the existing `TB-901`) and `TB.906` (a dot inside the
+  number), a version was cut, and both were run through the release path and a BOM import.
+  Onshape was restored afterwards.
+  - **Dot: SAFE.** `TB.906` minted, `readableIdWithRevision` came out `TB.906` at the
+    initial revision and `TB.906.A` at a named one, and its GLTF attached as `TB.906.gltf`
+    on its own storage path. `fileExtension` uses `lastIndexOf(".")`, so a dotted stem
+    resolves correctly, and nothing in v2 parses `readableIdWithRevision` back apart —
+    only the LEGACY paths match on that column. The theoretical `TB.906` rev `A` vs `TB`
+    rev `900.A` ambiguity is unreachable because nobody types a dotted revision, and
+    nothing enforces that.
+  - **Case: a REAL silent duplicate.** Carbon ended up holding `TB-901` and `tb-901` as
+    two families, because `.eq("readableId", …)` is case-sensitive and no constraint
+    objects. Genuinely ambiguous — a company may have both — so v2 now creates the part
+    and NAMES the near-twin via a separate case-insensitive probe.
+  - **A worse bug surfaced on the way.** The release fan-out fell back to
+    `partIds = [null]` when Onshape reported no revision, which addresses the ELEMENT. For
+    a Part Studio that is not an item, so two different parts collapsed onto one Carbon
+    item and the second overwrote the first's geometry — with auto-create on, the bad
+    element-level mapping was minted permanently. Now refused with
+    `part-studio-body-unresolved`. Reachable in production via a failed or rate-limited
+    `getRevisions`, a null `onshapeCompanyId`, or a linked-document component.
+  - **Replenishment correction shipped** per the plan: the element mapping records the
+    provenance (`purchasing-level` | `structure` | `user`), a later BOM import corrects
+    only what Carbon itself guessed, and warns in every other case including items that
+    predate the record. Reported through a new `corrections` outcome channel.
