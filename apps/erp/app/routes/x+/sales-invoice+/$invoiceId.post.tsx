@@ -71,7 +71,9 @@ async function storeStripeInvoicePdf({
   // Stripe hosted invoice URL, so skip the store rather than corrupt the path.
   if (!opportunityId) return;
 
-  const response = await fetch(invoicePdf);
+  const response = await fetch(invoicePdf, {
+    signal: AbortSignal.timeout(15_000),
+  });
   if (!response.ok) {
     throw new Error(
       `Failed to download Stripe invoice PDF (${response.status})`
