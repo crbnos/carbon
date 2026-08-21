@@ -251,4 +251,17 @@ Working-tree files to never touch: `apps/erp/app/routes/api+/mcp+/lib/tool-metad
   Re-run: PASS (24/24 tasks).
 - `pnpm run build`: PASS (8/8; erp built in 21s).
 - banned-term grep: clean.
-- Commit (gate fixes): _pending_
+- Commit (gate fixes): `a5711de12`
+
+## Task 13: Browser verification via /test — BLOCKED (no running app stack)
+
+- The Supabase backend Docker stack IS up (postgres/kong/edge-runtime/postgrest/
+  gotrue/realtime containers running), but the ERP/MES **app dev servers are
+  not**: `https://erp.main.dev` returns HTTP 000 (unreachable); ports 3000/3001
+  not listening.
+- `/test` (and `/auth`) require the running app dev server. Per the executor
+  brief and repo convention ([[feedback_connect_running_dev_server]]), I must NOT
+  boot or restart the user's dev stack. → STOP and ask the user to bring the app
+  up (`crbn up --all`), then Task 13 can run.
+- All code is verified by the Task 12 gate (typecheck + unit tests + build +
+  conformance). Browser e2e is the only remaining step.
