@@ -177,7 +177,7 @@ msgid "Batch number is required"
 msgstr "बैच नंबर आवश्यक है"
 
 msgid "Batch time"
-msgstr ""
+msgstr "बैच समय"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -276,7 +276,7 @@ msgid "Completed"
 msgstr "पूर्ण"
 
 msgid "Completing"
-msgstr ""
+msgstr "पूर्ण हो रहा है"
 
 msgid "Connecting"
 msgstr "जुड़ रहा है"
@@ -928,7 +928,7 @@ msgid "Open Jobs"
 msgstr "खुली नौकरियां"
 
 msgid "Operation"
-msgstr ""
+msgstr "ऑपरेशन"
 
 msgid "Operations"
 msgstr "संचालन"
@@ -1301,7 +1301,7 @@ msgid "Start"
 msgstr "शुरू करें"
 
 msgid "Start batch timer"
-msgstr ""
+msgstr "बैच टाइमर शुरू करें"
 
 msgid "Station User"
 msgstr "स्टेशन उपयोगकर्ता"
@@ -1329,10 +1329,10 @@ msgid "Steps are missing"
 msgstr "चरण गायब हैं"
 
 msgid "Stop batch timer"
-msgstr ""
+msgstr "बैच टाइमर रोकें"
 
 msgid "Stop the timer before completing the batch."
-msgstr ""
+msgstr "बैच पूर्ण करने से पहले टाइमर रोकें।"
 
 msgid "Storage Unit"
 msgstr "भंडारण इकाई"

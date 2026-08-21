@@ -177,7 +177,7 @@ msgid "Batch number is required"
 msgstr "Номер партии обязателен"
 
 msgid "Batch time"
-msgstr ""
+msgstr "Время партии"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -276,7 +276,7 @@ msgid "Completed"
 msgstr "Завершено"
 
 msgid "Completing"
-msgstr ""
+msgstr "Завершение"
 
 msgid "Connecting"
 msgstr "Подключение"
@@ -928,7 +928,7 @@ msgid "Open Jobs"
 msgstr "Открытые задания"
 
 msgid "Operation"
-msgstr ""
+msgstr "Операция"
 
 msgid "Operations"
 msgstr "Операции"
@@ -1301,7 +1301,7 @@ msgid "Start"
 msgstr "Старт"
 
 msgid "Start batch timer"
-msgstr ""
+msgstr "Запустить таймер партии"
 
 msgid "Station User"
 msgstr "Пользователь станции"
@@ -1329,10 +1329,10 @@ msgid "Steps are missing"
 msgstr "Шаги не заполнены"
 
 msgid "Stop batch timer"
-msgstr ""
+msgstr "Остановить таймер партии"
 
 msgid "Stop the timer before completing the batch."
-msgstr ""
+msgstr "Остановите таймер перед завершением партии."
 
 msgid "Storage Unit"
 msgstr "Единица хранения"

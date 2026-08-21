@@ -177,7 +177,7 @@ msgid "Batch number is required"
 msgstr "Numer partii jest wymagany"
 
 msgid "Batch time"
-msgstr ""
+msgstr "Czas partii"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -276,7 +276,7 @@ msgid "Completed"
 msgstr "Ukończone"
 
 msgid "Completing"
-msgstr ""
+msgstr "Finalizowanie"
 
 msgid "Connecting"
 msgstr "Łączenie"
@@ -928,7 +928,7 @@ msgid "Open Jobs"
 msgstr "Otwarte Zadania"
 
 msgid "Operation"
-msgstr ""
+msgstr "Operacja"
 
 msgid "Operations"
 msgstr "Operacje"
@@ -1301,7 +1301,7 @@ msgid "Start"
 msgstr "Start"
 
 msgid "Start batch timer"
-msgstr ""
+msgstr "Uruchom licznik partii"
 
 msgid "Station User"
 msgstr "Użytkownik stacji"
@@ -1329,10 +1329,10 @@ msgid "Steps are missing"
 msgstr "Brakuje kroków"
 
 msgid "Stop batch timer"
-msgstr ""
+msgstr "Zatrzymaj licznik partii"
 
 msgid "Stop the timer before completing the batch."
-msgstr ""
+msgstr "Zatrzymaj licznik przed ukończeniem partii."
 
 msgid "Storage Unit"
 msgstr "Jednostka magazynowa"

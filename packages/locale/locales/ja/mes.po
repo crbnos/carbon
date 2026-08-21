@@ -177,7 +177,7 @@ msgid "Batch number is required"
 msgstr "バッチ番号は必須です"
 
 msgid "Batch time"
-msgstr ""
+msgstr "バッチ時間"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -276,7 +276,7 @@ msgid "Completed"
 msgstr "完了済み"
 
 msgid "Completing"
-msgstr ""
+msgstr "完了処理中"
 
 msgid "Connecting"
 msgstr "接続中"
@@ -928,7 +928,7 @@ msgid "Open Jobs"
 msgstr "オープンジョブ"
 
 msgid "Operation"
-msgstr ""
+msgstr "工程"
 
 msgid "Operations"
 msgstr "工程"
@@ -1301,7 +1301,7 @@ msgid "Start"
 msgstr "開始"
 
 msgid "Start batch timer"
-msgstr ""
+msgstr "バッチタイマーを開始"
 
 msgid "Station User"
 msgstr "ステーションユーザー"
@@ -1329,10 +1329,10 @@ msgid "Steps are missing"
 msgstr "ステップが未記録です"
 
 msgid "Stop batch timer"
-msgstr ""
+msgstr "バッチタイマーを停止"
 
 msgid "Stop the timer before completing the batch."
-msgstr ""
+msgstr "バッチを完了する前にタイマーを停止してください。"
 
 msgid "Storage Unit"
 msgstr "保管場所"

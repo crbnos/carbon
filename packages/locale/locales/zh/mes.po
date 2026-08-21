@@ -177,7 +177,7 @@ msgid "Batch number is required"
 msgstr "批次号为必填项"
 
 msgid "Batch time"
-msgstr ""
+msgstr "批次时间"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -276,7 +276,7 @@ msgid "Completed"
 msgstr "已完成"
 
 msgid "Completing"
-msgstr ""
+msgstr "完成中"
 
 msgid "Connecting"
 msgstr "连接中"
@@ -928,7 +928,7 @@ msgid "Open Jobs"
 msgstr "开放工作"
 
 msgid "Operation"
-msgstr ""
+msgstr "工序"
 
 msgid "Operations"
 msgstr "工序"
@@ -1301,7 +1301,7 @@ msgid "Start"
 msgstr "开始"
 
 msgid "Start batch timer"
-msgstr ""
+msgstr "启动批次计时器"
 
 msgid "Station User"
 msgstr "工位用户"
@@ -1329,10 +1329,10 @@ msgid "Steps are missing"
 msgstr "缺少步骤"
 
 msgid "Stop batch timer"
-msgstr ""
+msgstr "停止批次计时器"
 
 msgid "Stop the timer before completing the batch."
-msgstr ""
+msgstr "完成批次前请先停止计时器。"
 
 msgid "Storage Unit"
 msgstr "存储单位"

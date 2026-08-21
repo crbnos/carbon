@@ -177,7 +177,7 @@ msgid "Batch number is required"
 msgstr "Chargennummer ist erforderlich"
 
 msgid "Batch time"
-msgstr ""
+msgstr "Chargenzeit"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -276,7 +276,7 @@ msgid "Completed"
 msgstr "Abgeschlossen"
 
 msgid "Completing"
-msgstr ""
+msgstr "Abschluss läuft"
 
 msgid "Connecting"
 msgstr "Verbindung wird hergestellt"
@@ -928,7 +928,7 @@ msgid "Open Jobs"
 msgstr "Offene Aufträge"
 
 msgid "Operation"
-msgstr ""
+msgstr "Arbeitsgang"
 
 msgid "Operations"
 msgstr "Arbeitsgänge"
@@ -1301,7 +1301,7 @@ msgid "Start"
 msgstr "Start"
 
 msgid "Start batch timer"
-msgstr ""
+msgstr "Chargen-Timer starten"
 
 msgid "Station User"
 msgstr "Stationsbenutzer"
@@ -1329,10 +1329,10 @@ msgid "Steps are missing"
 msgstr "Schritte fehlen"
 
 msgid "Stop batch timer"
-msgstr ""
+msgstr "Chargen-Timer stoppen"
 
 msgid "Stop the timer before completing the batch."
-msgstr ""
+msgstr "Stoppen Sie den Timer, bevor Sie die Charge abschließen."
 
 msgid "Storage Unit"
 msgstr "Lagereinheit"

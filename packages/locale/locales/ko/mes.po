@@ -177,7 +177,7 @@ msgid "Batch number is required"
 msgstr "배치 번호가 필요합니다"
 
 msgid "Batch time"
-msgstr ""
+msgstr "배치 시간"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -276,7 +276,7 @@ msgid "Completed"
 msgstr "완료됨"
 
 msgid "Completing"
-msgstr ""
+msgstr "완료 처리 중"
 
 msgid "Connecting"
 msgstr "연결 중"
@@ -928,7 +928,7 @@ msgid "Open Jobs"
 msgstr "진행 중인 작업"
 
 msgid "Operation"
-msgstr ""
+msgstr "공정"
 
 msgid "Operations"
 msgstr "공정작업"
@@ -1301,7 +1301,7 @@ msgid "Start"
 msgstr "시작"
 
 msgid "Start batch timer"
-msgstr ""
+msgstr "배치 타이머 시작"
 
 msgid "Station User"
 msgstr "스테이션 사용자"
@@ -1329,10 +1329,10 @@ msgid "Steps are missing"
 msgstr "단계가 누락되었습니다"
 
 msgid "Stop batch timer"
-msgstr ""
+msgstr "배치 타이머 중지"
 
 msgid "Stop the timer before completing the batch."
-msgstr ""
+msgstr "배치를 완료하기 전에 타이머를 중지하세요."
 
 msgid "Storage Unit"
 msgstr "저장 단위"

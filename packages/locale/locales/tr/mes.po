@@ -177,7 +177,7 @@ msgid "Batch number is required"
 msgstr "Lot numarası zorunludur"
 
 msgid "Batch time"
-msgstr ""
+msgstr "Parti süresi"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -276,7 +276,7 @@ msgid "Completed"
 msgstr "Tamamlandı"
 
 msgid "Completing"
-msgstr ""
+msgstr "Tamamlanıyor"
 
 msgid "Connecting"
 msgstr "Bağlanıyor"
@@ -928,7 +928,7 @@ msgid "Open Jobs"
 msgstr "Açık İşler"
 
 msgid "Operation"
-msgstr ""
+msgstr "Operasyon"
 
 msgid "Operations"
 msgstr "Operasyonlar"
@@ -1301,7 +1301,7 @@ msgid "Start"
 msgstr "Başlat"
 
 msgid "Start batch timer"
-msgstr ""
+msgstr "Parti zamanlayıcısını başlat"
 
 msgid "Station User"
 msgstr "İstasyon Kullanıcısı"
@@ -1329,10 +1329,10 @@ msgid "Steps are missing"
 msgstr "Adımlar eksik"
 
 msgid "Stop batch timer"
-msgstr ""
+msgstr "Parti zamanlayıcısını durdur"
 
 msgid "Stop the timer before completing the batch."
-msgstr ""
+msgstr "Partiyi tamamlamadan önce zamanlayıcıyı durdurun."
 
 msgid "Storage Unit"
 msgstr "Depolama Birimi"

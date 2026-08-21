@@ -177,7 +177,7 @@ msgid "Batch number is required"
 msgstr "El número de lote es obligatorio"
 
 msgid "Batch time"
-msgstr ""
+msgstr "Tiempo del lote"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -276,7 +276,7 @@ msgid "Completed"
 msgstr "Completado"
 
 msgid "Completing"
-msgstr ""
+msgstr "Finalizando"
 
 msgid "Connecting"
 msgstr "Conectando"
@@ -928,7 +928,7 @@ msgid "Open Jobs"
 msgstr "Trabajos Abiertos"
 
 msgid "Operation"
-msgstr ""
+msgstr "Operación"
 
 msgid "Operations"
 msgstr "Operaciones"
@@ -1301,7 +1301,7 @@ msgid "Start"
 msgstr "Iniciar"
 
 msgid "Start batch timer"
-msgstr ""
+msgstr "Iniciar cronómetro del lote"
 
 msgid "Station User"
 msgstr "Usuario de estación"
@@ -1329,10 +1329,10 @@ msgid "Steps are missing"
 msgstr "Faltan pasos"
 
 msgid "Stop batch timer"
-msgstr ""
+msgstr "Detener cronómetro del lote"
 
 msgid "Stop the timer before completing the batch."
-msgstr ""
+msgstr "Detenga el cronómetro antes de completar el lote."
 
 msgid "Storage Unit"
 msgstr "Unidad de Almacenamiento"
