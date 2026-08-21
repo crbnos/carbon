@@ -262,7 +262,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
         setupDuration: operation.setupDuration,
         laborDuration: operation.laborDuration,
         machineDuration: operation.machineDuration,
-        thumbnailPath: op.thumbnailPath
+        thumbnailPath: op.thumbnailPath,
+        processBatchable: op.processBatchable,
+        jobOperationBatchId: op.jobOperationBatchId,
+        batchReadableId: op.batchReadableId
       };
     }) ?? []) satisfies OperationItem[],
     processes: processes.data ?? [],

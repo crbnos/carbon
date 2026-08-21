@@ -2430,6 +2430,9 @@ msgstr "Chargennummer"
 msgid "Batch Number"
 msgstr "Chargennummer"
 
+msgid "Batch planning"
+msgstr ""
+
 msgid "Batch Properties"
 msgstr "Batch-Eigenschaften"
 
@@ -2443,6 +2446,9 @@ msgid "Batch Tracking"
 msgstr "Chargenverfolgung"
 
 msgid "Batchable"
+msgstr ""
+
+msgid "Batched"
 msgstr ""
 
 msgid "Beginning"
@@ -3213,8 +3219,14 @@ msgstr "Abgeschlossene Auftragsbenachrichtigungen"
 msgid "Completed Qty"
 msgstr "Abgeschlossene Menge"
 
+msgid "Completing"
+msgstr ""
+
 msgid "Completion Barcode"
 msgstr "Fertigstellungs-Barcode"
+
+msgid "Completion in progress — retry in Shop Floor"
+msgstr ""
 
 msgid "Completion Time"
 msgstr "Abschlusszeit"
@@ -5152,6 +5164,9 @@ msgstr "Disposition"
 msgid "Dispositions"
 msgstr "Dispositionen"
 
+msgid "Dissolve batch"
+msgstr ""
+
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "Möchten Sie die aktuellen Berechtigungen des Benutzers mit den Standardberechtigungen für diesen Mitarbeitertyp überschreiben?"
 
@@ -5236,6 +5251,9 @@ msgstr "Ziehen Sie eine Bestellungs-PDF hierher, oder klicken Sie, um eine Datei
 
 msgid "Drag handle"
 msgstr "Ziehgriff"
+
+msgid "Drag here to start a new batch"
+msgstr ""
 
 msgid "Drag to place on drawing"
 msgstr "Auf Zeichnung platzieren durch Ziehen"
@@ -9954,6 +9972,9 @@ msgstr "Keine Werkzeuge für diesen Schritt"
 msgid "No transactions in this period"
 msgstr "Keine Transaktionen in diesem Zeitraum"
 
+msgid "No unbatched operations match"
+msgstr ""
+
 msgid "No unmapped accounts match a provider code"
 msgstr "Keine nicht zugeordneten Konten entsprechen einem Provider-Code"
 
@@ -10865,6 +10886,9 @@ msgstr "Physische Drucker verfügbar zur Zuweisung."
 
 msgid "Pick"
 msgstr "Auswählen"
+
+msgid "Pick a batchable process to plan batches"
+msgstr ""
 
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Wählen Sie eine Carbon-Dimension und das Provider-Ziel aus, auf das sie publiziert wird. Auto-create fügt beim Versenden fehlende Provider-Optionen nach Namen hinzu."
@@ -12099,6 +12123,9 @@ msgstr "Filter entfernen"
 msgid "Remove Filters"
 msgstr "Filter entfernen"
 
+msgid "Remove from batch"
+msgstr ""
+
 msgid "Remove from Price List"
 msgstr "Aus Preisliste entfernen"
 
@@ -13006,6 +13033,9 @@ msgstr "Auswählen"
 
 msgid "Select a assignee"
 msgstr "Wählen Sie einen Bevollmächtigten"
+
+msgid "Select a batchable process"
+msgstr ""
 
 msgid "Select a default approver"
 msgstr "Wählen Sie einen Standard-Genehmiger"

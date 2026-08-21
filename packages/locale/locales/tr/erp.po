@@ -2430,6 +2430,9 @@ msgstr "Lot numarası"
 msgid "Batch Number"
 msgstr "Lot Numarası"
 
+msgid "Batch planning"
+msgstr ""
+
 msgid "Batch Properties"
 msgstr "Toplu Özellikler"
 
@@ -2443,6 +2446,9 @@ msgid "Batch Tracking"
 msgstr "Lot Takibi"
 
 msgid "Batchable"
+msgstr ""
+
+msgid "Batched"
 msgstr ""
 
 msgid "Beginning"
@@ -3213,8 +3219,14 @@ msgstr "Tamamlanan İş Bildirimleri"
 msgid "Completed Qty"
 msgstr "Tamamlanan Miktar"
 
+msgid "Completing"
+msgstr ""
+
 msgid "Completion Barcode"
 msgstr "Tamamlama Barkodu"
+
+msgid "Completion in progress — retry in Shop Floor"
+msgstr ""
 
 msgid "Completion Time"
 msgstr "Tamamlama Süresi"
@@ -5152,6 +5164,9 @@ msgstr "Durum"
 msgid "Dispositions"
 msgstr "Durumlar"
 
+msgid "Dissolve batch"
+msgstr ""
+
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "Kullanıcının mevcut izinlerini bu çalışan türü için varsayılan izinlerle üzerine yazmak ister misiniz?"
 
@@ -5236,6 +5251,9 @@ msgstr "Satın Alma Siparişi PDF'ini buraya sürükleyip bırakın veya bir dos
 
 msgid "Drag handle"
 msgstr "Sürükle tutma"
+
+msgid "Drag here to start a new batch"
+msgstr ""
 
 msgid "Drag to place on drawing"
 msgstr "Çizime yerleştirmek için sürükleyin"
@@ -9954,6 +9972,9 @@ msgstr "Bu adım için araç yok"
 msgid "No transactions in this period"
 msgstr "Bu dönemde işlem yok"
 
+msgid "No unbatched operations match"
+msgstr ""
+
 msgid "No unmapped accounts match a provider code"
 msgstr "Haritalanmamış hesaplar sağlayıcı kodundan herhangi biriyle uyuşmıyor"
 
@@ -10865,6 +10886,9 @@ msgstr "Atama için kullanılabilecek fiziksel yazıcılar."
 
 msgid "Pick"
 msgstr "Topla"
+
+msgid "Pick a batchable process to plan batches"
+msgstr ""
 
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Bir Carbon boyutu ve gönderdiği sağlayıcı hedefini seçin. Otomatik oluştur, gönderim sırasında eksik sağlayıcı seçeneklerini ada göre ekler."
@@ -12099,6 +12123,9 @@ msgstr "Filtreyi kaldır"
 msgid "Remove Filters"
 msgstr "Filtreleri Kaldır"
 
+msgid "Remove from batch"
+msgstr ""
+
 msgid "Remove from Price List"
 msgstr "Fiyat Listesinden Kaldır"
 
@@ -13006,6 +13033,9 @@ msgstr "Seç"
 
 msgid "Select a assignee"
 msgstr "Bir atanan seçin"
+
+msgid "Select a batchable process"
+msgstr ""
 
 msgid "Select a default approver"
 msgstr "Varsayılan onaylayıcı seçin"

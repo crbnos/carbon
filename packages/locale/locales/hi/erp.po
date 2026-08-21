@@ -2430,6 +2430,9 @@ msgstr "बैच नंबर"
 msgid "Batch Number"
 msgstr "बैच नंबर"
 
+msgid "Batch planning"
+msgstr ""
+
 msgid "Batch Properties"
 msgstr "बैच प्रॉपर्टीज़"
 
@@ -2443,6 +2446,9 @@ msgid "Batch Tracking"
 msgstr "बैच ट्रैकिंग"
 
 msgid "Batchable"
+msgstr ""
+
+msgid "Batched"
 msgstr ""
 
 msgid "Beginning"
@@ -3213,8 +3219,14 @@ msgstr "पूर्ण किए गए कार्य सूचनाएं"
 msgid "Completed Qty"
 msgstr "पूर्ण मात्रा"
 
+msgid "Completing"
+msgstr ""
+
 msgid "Completion Barcode"
 msgstr "पूर्ण बारकोड"
+
+msgid "Completion in progress — retry in Shop Floor"
+msgstr ""
 
 msgid "Completion Time"
 msgstr "पूर्ण होने का समय"
@@ -5152,6 +5164,9 @@ msgstr "निपटान"
 msgid "Dispositions"
 msgstr "निपटान"
 
+msgid "Dissolve batch"
+msgstr ""
+
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "क्या आप उपयोगकर्ता की वर्तमान अनुमतियों को इस कर्मचारी प्रकार के लिए डिफ़ॉल्ट अनुमतियों से अधिलेखित करना चाहते हैं?"
 
@@ -5236,6 +5251,9 @@ msgstr "यहाँ एक खरीद आदेश PDF को ड्रैग
 
 msgid "Drag handle"
 msgstr "ड्रैग हैंडल"
+
+msgid "Drag here to start a new batch"
+msgstr ""
 
 msgid "Drag to place on drawing"
 msgstr "ड्राइंग पर रखने के लिए ड्रैग करें"
@@ -9954,6 +9972,9 @@ msgstr "इस कदम के लिए कोई उपकरण नहीं
 msgid "No transactions in this period"
 msgstr "इस अवधि में कोई लेनदेन नहीं"
 
+msgid "No unbatched operations match"
+msgstr ""
+
 msgid "No unmapped accounts match a provider code"
 msgstr "कोई भी अनमैप किया गया खाता प्रदाता कोड से मेल नहीं खाता"
 
@@ -10865,6 +10886,9 @@ msgstr "असाइनमेंट के लिए उपलब्ध भौ�
 
 msgid "Pick"
 msgstr "चुनें"
+
+msgid "Pick a batchable process to plan batches"
+msgstr ""
 
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "एक Carbon आयाम चुनें और प्रदाता लक्ष्य चुनें जहां यह पोस्ट करता है। स्वचालित-निर्माण पुश समय पर नाम से लापता प्रदाता विकल्प जोड़ता है।"
@@ -12099,6 +12123,9 @@ msgstr "फ़िल्टर हटाएं"
 msgid "Remove Filters"
 msgstr "फ़िल्टर हटाएं"
 
+msgid "Remove from batch"
+msgstr ""
+
 msgid "Remove from Price List"
 msgstr "मूल्य सूची से हटाएं"
 
@@ -13006,6 +13033,9 @@ msgstr "चुनें"
 
 msgid "Select a assignee"
 msgstr "एक असाइनी चुनें"
+
+msgid "Select a batchable process"
+msgstr ""
 
 msgid "Select a default approver"
 msgstr "एक डिफ़ॉल्ट अनुमोदक चुनें"

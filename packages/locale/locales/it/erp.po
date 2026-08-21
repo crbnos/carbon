@@ -2430,6 +2430,9 @@ msgstr "Numero di lotto"
 msgid "Batch Number"
 msgstr "Numero Lotto"
 
+msgid "Batch planning"
+msgstr ""
+
 msgid "Batch Properties"
 msgstr "Proprietà Batch"
 
@@ -2443,6 +2446,9 @@ msgid "Batch Tracking"
 msgstr "Tracciamento Batch"
 
 msgid "Batchable"
+msgstr ""
+
+msgid "Batched"
 msgstr ""
 
 msgid "Beginning"
@@ -3213,8 +3219,14 @@ msgstr "Notifiche Lavori Completati"
 msgid "Completed Qty"
 msgstr "Quantità Completata"
 
+msgid "Completing"
+msgstr ""
+
 msgid "Completion Barcode"
 msgstr "Codice a barre di completamento"
+
+msgid "Completion in progress — retry in Shop Floor"
+msgstr ""
 
 msgid "Completion Time"
 msgstr "Tempo di completamento"
@@ -5152,6 +5164,9 @@ msgstr "Disposizione"
 msgid "Dispositions"
 msgstr "Disposizioni"
 
+msgid "Dissolve batch"
+msgstr ""
+
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "Vuoi sovrascrivere i permessi attuali dell'utente con i permessi predefiniti per questo tipo di dipendente?"
 
@@ -5236,6 +5251,9 @@ msgstr "Trascina e rilascia un PDF di ordine di acquisto qui, oppure fai clic pe
 
 msgid "Drag handle"
 msgstr "Maniglia di trascinamento"
+
+msgid "Drag here to start a new batch"
+msgstr ""
 
 msgid "Drag to place on drawing"
 msgstr "Trascina per posizionare sul disegno"
@@ -9954,6 +9972,9 @@ msgstr "Nessuno strumento per questo passaggio"
 msgid "No transactions in this period"
 msgstr "Nessuna transazione in questo periodo"
 
+msgid "No unbatched operations match"
+msgstr ""
+
 msgid "No unmapped accounts match a provider code"
 msgstr "Nessun conto non mappato corrisponde a un codice provider"
 
@@ -10865,6 +10886,9 @@ msgstr "Stampanti fisiche disponibili per l'assegnazione."
 
 msgid "Pick"
 msgstr "Preleva"
+
+msgid "Pick a batchable process to plan batches"
+msgstr ""
 
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Scegli una dimensione Carbon e il target provider su cui viene contabilizzato. La creazione automatica aggiunge le opzioni provider mancanti per nome al momento del push."
@@ -12099,6 +12123,9 @@ msgstr "Rimuovi filtro"
 msgid "Remove Filters"
 msgstr "Rimuovi filtri"
 
+msgid "Remove from batch"
+msgstr ""
+
 msgid "Remove from Price List"
 msgstr "Rimuovi da Listino Prezzi"
 
@@ -13006,6 +13033,9 @@ msgstr "Seleziona"
 
 msgid "Select a assignee"
 msgstr "Seleziona un assegnatario"
+
+msgid "Select a batchable process"
+msgstr ""
 
 msgid "Select a default approver"
 msgstr "Seleziona un approvatore predefinito"

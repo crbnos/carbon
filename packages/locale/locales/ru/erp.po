@@ -2430,6 +2430,9 @@ msgstr "Номер партии"
 msgid "Batch Number"
 msgstr "Номер партии"
 
+msgid "Batch planning"
+msgstr ""
+
 msgid "Batch Properties"
 msgstr "Свойства партии"
 
@@ -2443,6 +2446,9 @@ msgid "Batch Tracking"
 msgstr "Отслеживание партий"
 
 msgid "Batchable"
+msgstr ""
+
+msgid "Batched"
 msgstr ""
 
 msgid "Beginning"
@@ -3213,8 +3219,14 @@ msgstr "Завершенные уведомления о работах"
 msgid "Completed Qty"
 msgstr "Завершённое кол-во"
 
+msgid "Completing"
+msgstr ""
+
 msgid "Completion Barcode"
 msgstr "Штрихкод завершения"
+
+msgid "Completion in progress — retry in Shop Floor"
+msgstr ""
 
 msgid "Completion Time"
 msgstr "Время завершения"
@@ -5152,6 +5164,9 @@ msgstr "Решение"
 msgid "Dispositions"
 msgstr "Решения"
 
+msgid "Dissolve batch"
+msgstr ""
+
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "Вы хотите перезаписать текущие разрешения пользователя разрешениями по умолчанию для этого типа сотрудника?"
 
@@ -5236,6 +5251,9 @@ msgstr "Перетащите PDF-файл заказа на покупку сю�
 
 msgid "Drag handle"
 msgstr "Ручка перетаскивания"
+
+msgid "Drag here to start a new batch"
+msgstr ""
 
 msgid "Drag to place on drawing"
 msgstr "Перетащите, чтобы разместить на чертеже"
@@ -9954,6 +9972,9 @@ msgstr "Нет инструментов для этого шага"
 msgid "No transactions in this period"
 msgstr "Нет транзакций в этом периоде"
 
+msgid "No unbatched operations match"
+msgstr ""
+
 msgid "No unmapped accounts match a provider code"
 msgstr "Ни один несопоставленный счет не совпадает с кодом системы"
 
@@ -10865,6 +10886,9 @@ msgstr "Физические принтеры, доступные для наз�
 
 msgid "Pick"
 msgstr "Выбрать"
+
+msgid "Pick a batchable process to plan batches"
+msgstr ""
 
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Выберите размерность Carbon и цель провайдера, на которую она отправляется. Автоматическое создание добавляет отсутствующие параметры провайдера по имени во время отправки."
@@ -12099,6 +12123,9 @@ msgstr "Удалить фильтр"
 msgid "Remove Filters"
 msgstr "Удалить фильтры"
 
+msgid "Remove from batch"
+msgstr ""
+
 msgid "Remove from Price List"
 msgstr "Удалить из прайс-листа"
 
@@ -13006,6 +13033,9 @@ msgstr "Выбрать"
 
 msgid "Select a assignee"
 msgstr "Выберите исполнителя"
+
+msgid "Select a batchable process"
+msgstr ""
 
 msgid "Select a default approver"
 msgstr "Выберите утверждающего по умолчанию"

@@ -141,4 +141,26 @@ Working-tree files to never touch: `apps/erp/app/routes/api+/mcp+/lib/tool-metad
   fails deno check identically. `deno check` is not authoritative for edge
   functions here (edge runtime doesn't type-check); Task 12's build is. Contract
   string `already recorded` present. Banned: none.
+- Commit: `dd5568eff`
+
+## Task 7: ERP batch planning board + schedule integration
+
+- 5 new files copied from `$SRC`: `Batching/{BatchingBoard.tsx,types.ts,index.ts}`,
+  `x+/schedule+/{batching.tsx,batching.update.tsx}`.
+- 5 modified files: `operations.tsx`, `ScheuleNavigation.tsx`, Kanban
+  `components/ItemCard.tsx`, Kanban `types.ts` applied clean; `path.ts`
+  CONFLICTED (main reordered the paths block; "theirs" re-added existing
+  entries) → resolved by inserting only the two new `scheduleBatching` /
+  `scheduleBatchingUpdate` paths near the existing `schedule*` entries.
+- NEW work (Completing read-only lanes + retry link):
+  - `path.ts`: added `external.mesBatch(id)` helper.
+  - `Batching/types.ts`: `batchStatus` on `BatchCandidate`, `status` on
+    `BatchLaneData`.
+  - `batching.tsx` loader: threads `batchStatus` into each lane.
+  - `BatchingBoard.tsx`: `isCompleting` gate — no droppable, yellow `Completing`
+    badge, hides work-center Combobox + dissolve, renders the "retry in Shop
+    Floor" external link to `mesBatch`, and passes `draggable={false}` to member
+    `CandidateCard`s (added a `draggable` prop that disables `useDraggable`).
+- Verify: `pnpm exec turbo run typecheck --filter=erp` → exit 0; `mesBatch`=1;
+  `Completing` in BatchingBoard=9. Banned: none.
 - Commit: _pending_

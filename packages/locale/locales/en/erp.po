@@ -2430,6 +2430,9 @@ msgstr "Batch number"
 msgid "Batch Number"
 msgstr "Batch Number"
 
+msgid "Batch planning"
+msgstr "Batch planning"
+
 msgid "Batch Properties"
 msgstr "Batch Properties"
 
@@ -2444,6 +2447,9 @@ msgstr "Batch Tracking"
 
 msgid "Batchable"
 msgstr "Batchable"
+
+msgid "Batched"
+msgstr "Batched"
 
 msgid "Beginning"
 msgstr "Beginning"
@@ -3213,8 +3219,14 @@ msgstr "Completed Job Notifications"
 msgid "Completed Qty"
 msgstr "Completed Qty"
 
+msgid "Completing"
+msgstr "Completing"
+
 msgid "Completion Barcode"
 msgstr "Completion Barcode"
+
+msgid "Completion in progress — retry in Shop Floor"
+msgstr "Completion in progress — retry in Shop Floor"
 
 msgid "Completion Time"
 msgstr "Completion Time"
@@ -5152,6 +5164,9 @@ msgstr "Disposition"
 msgid "Dispositions"
 msgstr "Dispositions"
 
+msgid "Dissolve batch"
+msgstr "Dissolve batch"
+
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 
@@ -5236,6 +5251,9 @@ msgstr "Drag and drop a Purchase Order PDF here, or click to select a file"
 
 msgid "Drag handle"
 msgstr "Drag handle"
+
+msgid "Drag here to start a new batch"
+msgstr "Drag here to start a new batch"
 
 msgid "Drag to place on drawing"
 msgstr "Drag to place on drawing"
@@ -9954,6 +9972,9 @@ msgstr "No tools for this step"
 msgid "No transactions in this period"
 msgstr "No transactions in this period"
 
+msgid "No unbatched operations match"
+msgstr "No unbatched operations match"
+
 msgid "No unmapped accounts match a provider code"
 msgstr "No unmapped accounts match a provider code"
 
@@ -10865,6 +10886,9 @@ msgstr "Physical printers available for assignment."
 
 msgid "Pick"
 msgstr "Pick"
+
+msgid "Pick a batchable process to plan batches"
+msgstr "Pick a batchable process to plan batches"
 
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
@@ -12099,6 +12123,9 @@ msgstr "Remove filter"
 msgid "Remove Filters"
 msgstr "Remove Filters"
 
+msgid "Remove from batch"
+msgstr "Remove from batch"
+
 msgid "Remove from Price List"
 msgstr "Remove from Price List"
 
@@ -13006,6 +13033,9 @@ msgstr "Select"
 
 msgid "Select a assignee"
 msgstr "Select a assignee"
+
+msgid "Select a batchable process"
+msgstr "Select a batchable process"
 
 msgid "Select a default approver"
 msgstr "Select a default approver"

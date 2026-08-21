@@ -2430,6 +2430,9 @@ msgstr "Numer partii"
 msgid "Batch Number"
 msgstr "Numer partii"
 
+msgid "Batch planning"
+msgstr ""
+
 msgid "Batch Properties"
 msgstr "Właściwości partii"
 
@@ -2443,6 +2446,9 @@ msgid "Batch Tracking"
 msgstr "Śledzenie partii"
 
 msgid "Batchable"
+msgstr ""
+
+msgid "Batched"
 msgstr ""
 
 msgid "Beginning"
@@ -3213,8 +3219,14 @@ msgstr "Ukończone powiadomienia o zadaniach"
 msgid "Completed Qty"
 msgstr "Ukończona Ilość"
 
+msgid "Completing"
+msgstr ""
+
 msgid "Completion Barcode"
 msgstr "Kod kreskowy ukończenia"
+
+msgid "Completion in progress — retry in Shop Floor"
+msgstr ""
 
 msgid "Completion Time"
 msgstr "Czas ukończenia"
@@ -5152,6 +5164,9 @@ msgstr "Dyspozycja"
 msgid "Dispositions"
 msgstr "Dyspozycje"
 
+msgid "Dissolve batch"
+msgstr ""
+
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "Czy chcesz zastąpić bieżące uprawnienia użytkownika domyślnymi uprawnieniami dla tego typu pracownika?"
 
@@ -5236,6 +5251,9 @@ msgstr "Przeciągnij i upuść plik PDF zamówienia zakupu tutaj lub kliknij, ab
 
 msgid "Drag handle"
 msgstr "Uchwyt do przeciągania"
+
+msgid "Drag here to start a new batch"
+msgstr ""
 
 msgid "Drag to place on drawing"
 msgstr "Przeciągnij, aby umieścić na rysunku"
@@ -9954,6 +9972,9 @@ msgstr "Brak narzędzi dla tego kroku"
 msgid "No transactions in this period"
 msgstr "Brak transakcji w tym okresie"
 
+msgid "No unbatched operations match"
+msgstr ""
+
 msgid "No unmapped accounts match a provider code"
 msgstr "Żadne niezamapowane konta nie pasują do kodu dostawcy"
 
@@ -10865,6 +10886,9 @@ msgstr "Drukarki fizyczne dostępne do przypisania."
 
 msgid "Pick"
 msgstr "Wybierz"
+
+msgid "Pick a batchable process to plan batches"
+msgstr ""
 
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Wybierz wymiar Carbon i cel dostawcy, do którego będzie wysyłany. Automatyczne tworzenie dodaje brakujące opcje dostawcy po nazwie podczas wysłania."
@@ -12099,6 +12123,9 @@ msgstr "Usuń filtr"
 msgid "Remove Filters"
 msgstr "Usuń filtry"
 
+msgid "Remove from batch"
+msgstr ""
+
 msgid "Remove from Price List"
 msgstr "Usuń z listy cen"
 
@@ -13006,6 +13033,9 @@ msgstr "Wybierz"
 
 msgid "Select a assignee"
 msgstr "Wybierz osobę przydzieloną"
+
+msgid "Select a batchable process"
+msgstr ""
 
 msgid "Select a default approver"
 msgstr "Wybierz domyślnego zatwierdzającego"

@@ -35,15 +35,17 @@ import {
   LuFlashlight,
   LuFlashlightOff,
   LuGripVertical,
+  LuLayers,
   LuPencil,
   LuPlay,
   LuSquareUser,
   LuTimer,
   LuTrash,
-  LuUsers
+  LuUsers,
+  LuX
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
-import { Link } from "react-router";
+import { Link, useFetcher } from "react-router";
 import { z } from "zod";
 import {
   Assignee,
@@ -108,6 +110,7 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
   const { formatRelativeTime } = useDateFormatter();
   const { displaySettings, selectedGroup, setSelectedGroup, tags } =
     useKanban();
+  const batchFetcher = useFetcher();
   const {
     setNodeRef,
     attributes,
@@ -223,6 +226,36 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
                     Open in MES
                   </a>
                 </DropdownMenuItem>
+                {"processBatchable" in item &&
+                  item.processBatchable &&
+                  !item.jobOperationBatchId && (
+                    <DropdownMenuItem asChild>
+                      <Link
+                        to={`${path.to.scheduleBatching}?process=${item.columnType}`}
+                      >
+                        <DropdownMenuIcon icon={<LuLayers />} />
+                        {t`Batch planning`}
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                {"jobOperationBatchId" in item && item.jobOperationBatchId && (
+                  <DropdownMenuItem
+                    destructive
+                    onClick={() => {
+                      const fd = new FormData();
+                      fd.set("intent", "remove");
+                      fd.set("batchId", item.jobOperationBatchId as string);
+                      fd.append("jobOperationIds", item.id);
+                      batchFetcher.submit(fd, {
+                        method: "post",
+                        action: path.to.scheduleBatchingUpdate
+                      });
+                    }}
+                  >
+                    <DropdownMenuIcon icon={<LuX />} />
+                    {t`Remove from batch`}
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </HStack>
@@ -296,6 +329,11 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
           <LuCirclePlay className="text-muted-foreground" />
           <span className="text-sm line-clamp-1">{item.title}</span>
           {item.reworkId && <Badge variant="red">Rework</Badge>}
+          {"jobOperationBatchId" in item && item.jobOperationBatchId && (
+            <Badge variant="secondary">
+              {item.batchReadableId ?? t`Batched`}
+            </Badge>
+          )}
         </HStack>
         {displaySettings.showDescription && item.description && (
           <HStack className="justify-start space-x-2">

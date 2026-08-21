@@ -2430,6 +2430,9 @@ msgstr "批号"
 msgid "Batch Number"
 msgstr "批号"
 
+msgid "Batch planning"
+msgstr ""
+
 msgid "Batch Properties"
 msgstr "批量属性"
 
@@ -2443,6 +2446,9 @@ msgid "Batch Tracking"
 msgstr "批次追踪"
 
 msgid "Batchable"
+msgstr ""
+
+msgid "Batched"
 msgstr ""
 
 msgid "Beginning"
@@ -3213,8 +3219,14 @@ msgstr "已完成的工作通知"
 msgid "Completed Qty"
 msgstr "已完成数量"
 
+msgid "Completing"
+msgstr ""
+
 msgid "Completion Barcode"
 msgstr "完成条码"
+
+msgid "Completion in progress — retry in Shop Floor"
+msgstr ""
 
 msgid "Completion Time"
 msgstr "完成时间"
@@ -5152,6 +5164,9 @@ msgstr "处置"
 msgid "Dispositions"
 msgstr "处置"
 
+msgid "Dissolve batch"
+msgstr ""
+
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "您想用此员工类型的默认权限覆盖该用户的当前权限吗？"
 
@@ -5236,6 +5251,9 @@ msgstr "将采购订单 PDF 拖放到此处，或点击选择文件"
 
 msgid "Drag handle"
 msgstr "拖动手柄"
+
+msgid "Drag here to start a new batch"
+msgstr ""
 
 msgid "Drag to place on drawing"
 msgstr "拖动以在图纸上放置"
@@ -9954,6 +9972,9 @@ msgstr "此步骤没有工具"
 msgid "No transactions in this period"
 msgstr "此期间无交易"
 
+msgid "No unbatched operations match"
+msgstr ""
+
 msgid "No unmapped accounts match a provider code"
 msgstr "没有未映射的账户与提供商代码匹配"
 
@@ -10865,6 +10886,9 @@ msgstr "可用于分配的物理打印机。"
 
 msgid "Pick"
 msgstr "拣选"
+
+msgid "Pick a batchable process to plan batches"
+msgstr ""
 
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "选择一个 Carbon 维度和它发布到的提供商目标。自动创建在推送时按名称添加缺失的提供商选项。"
@@ -12099,6 +12123,9 @@ msgstr "移除筛选"
 msgid "Remove Filters"
 msgstr "移除筛选"
 
+msgid "Remove from batch"
+msgstr ""
+
 msgid "Remove from Price List"
 msgstr "从价格列表中移除"
 
@@ -13006,6 +13033,9 @@ msgstr "选择"
 
 msgid "Select a assignee"
 msgstr "选择受理人"
+
+msgid "Select a batchable process"
+msgstr ""
 
 msgid "Select a default approver"
 msgstr "选择默认审批人"

@@ -2430,6 +2430,9 @@ msgstr "Número de lote"
 msgid "Batch Number"
 msgstr "Número do Lote"
 
+msgid "Batch planning"
+msgstr ""
+
 msgid "Batch Properties"
 msgstr "Propriedades em Lote"
 
@@ -2443,6 +2446,9 @@ msgid "Batch Tracking"
 msgstr "Rastreamento em Lote"
 
 msgid "Batchable"
+msgstr ""
+
+msgid "Batched"
 msgstr ""
 
 msgid "Beginning"
@@ -3213,8 +3219,14 @@ msgstr "Notificações de Trabalho Concluído"
 msgid "Completed Qty"
 msgstr "Qtd Concluída"
 
+msgid "Completing"
+msgstr ""
+
 msgid "Completion Barcode"
 msgstr "Código de Barras de Conclusão"
+
+msgid "Completion in progress — retry in Shop Floor"
+msgstr ""
 
 msgid "Completion Time"
 msgstr "Tempo de Conclusão"
@@ -5152,6 +5164,9 @@ msgstr "Disposição"
 msgid "Dispositions"
 msgstr "Disposições"
 
+msgid "Dissolve batch"
+msgstr ""
+
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "Deseja sobrescrever as permissões atuais do utilizador com as permissões padrão para este tipo de funcionário?"
 
@@ -5236,6 +5251,9 @@ msgstr "Arraste e solte um PDF de Ordem de Compra aqui, ou clique para seleciona
 
 msgid "Drag handle"
 msgstr "Puxador de arrasto"
+
+msgid "Drag here to start a new batch"
+msgstr ""
 
 msgid "Drag to place on drawing"
 msgstr "Arraste para colocar no desenho"
@@ -9954,6 +9972,9 @@ msgstr "Nenhuma ferramenta para esta etapa"
 msgid "No transactions in this period"
 msgstr "Nenhuma transação neste período"
 
+msgid "No unbatched operations match"
+msgstr ""
+
 msgid "No unmapped accounts match a provider code"
 msgstr "Nenhuma conta não mapeada corresponde a um código de provedor"
 
@@ -10865,6 +10886,9 @@ msgstr "Impressoras físicas disponíveis para atribuição."
 
 msgid "Pick"
 msgstr "Selecionar"
+
+msgid "Pick a batchable process to plan batches"
+msgstr ""
 
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Escolha uma dimensão Carbon e o alvo do provedor ao qual ela publica. Auto-create adiciona opções de provedor ausentes por nome no momento do push."
@@ -12099,6 +12123,9 @@ msgstr "Remover filtro"
 msgid "Remove Filters"
 msgstr "Remover Filtros"
 
+msgid "Remove from batch"
+msgstr ""
+
 msgid "Remove from Price List"
 msgstr "Remover da Lista de Preços"
 
@@ -13006,6 +13033,9 @@ msgstr "Selecionar"
 
 msgid "Select a assignee"
 msgstr "Selecione um responsável"
+
+msgid "Select a batchable process"
+msgstr ""
 
 msgid "Select a default approver"
 msgstr "Selecione um aprovador padrão"

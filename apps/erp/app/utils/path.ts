@@ -893,6 +893,7 @@ export const path = {
     executivePnl: `${x}/reports/executive-pnl`,
     external: {
       mes: MES_URL,
+      mesBatch: (id: string) => `${MES_URL}/x/batch/${id}`,
       mesJobOperation: (id: string) => `${MES_URL}/x/operation/${id}`,
       mesJobOperationComplete: (id: string) => `${MES_URL}/x/end/${id}`,
       mesJobOperationStart: (id: string, type: "Setup" | "Labor" | "Machine") =>
@@ -1957,6 +1958,8 @@ export const path = {
     saveViewOrder: `${x}/shared/view/order`,
 
     saveViews: `${x}/shared/views`,
+    scheduleBatching: `${x}/schedule/batching`,
+    scheduleBatchingUpdate: `${x}/schedule/batching/update`,
     scheduleDates: `${x}/schedule/dates`,
     scheduleDatesUpdate: `${x}/schedule/dates/update`,
     scheduleOperation: `${x}/schedule/operations`,

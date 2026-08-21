@@ -2430,6 +2430,9 @@ msgstr "배치 번호"
 msgid "Batch Number"
 msgstr "배치 번호"
 
+msgid "Batch planning"
+msgstr ""
+
 msgid "Batch Properties"
 msgstr "배치 속성"
 
@@ -2443,6 +2446,9 @@ msgid "Batch Tracking"
 msgstr "배치 추적"
 
 msgid "Batchable"
+msgstr ""
+
+msgid "Batched"
 msgstr ""
 
 msgid "Beginning"
@@ -3213,8 +3219,14 @@ msgstr "작업 완료 알림"
 msgid "Completed Qty"
 msgstr "완료 수량"
 
+msgid "Completing"
+msgstr ""
+
 msgid "Completion Barcode"
 msgstr "완료 바코드"
+
+msgid "Completion in progress — retry in Shop Floor"
+msgstr ""
 
 msgid "Completion Time"
 msgstr "완료 시간"
@@ -5152,6 +5164,9 @@ msgstr "처리"
 msgid "Dispositions"
 msgstr "처리"
 
+msgid "Dissolve batch"
+msgstr ""
+
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "이 직원 유형의 기본 권한으로 사용자의 현재 권한을 덮어쓰시겠습니까?"
 
@@ -5236,6 +5251,9 @@ msgstr "구매주문 PDF를 여기에 드래그 앤 드롭하거나 클릭하여
 
 msgid "Drag handle"
 msgstr "드래그 핸들"
+
+msgid "Drag here to start a new batch"
+msgstr ""
 
 msgid "Drag to place on drawing"
 msgstr "드래그하여 도면에 배치"
@@ -9954,6 +9972,9 @@ msgstr "이 단계에 도구 없음"
 msgid "No transactions in this period"
 msgstr "이 기간에 거래가 없습니다"
 
+msgid "No unbatched operations match"
+msgstr ""
+
 msgid "No unmapped accounts match a provider code"
 msgstr "매핑되지 않은 계정이 공급자 코드와 일치하지 않음"
 
@@ -10865,6 +10886,9 @@ msgstr "배정 가능한 실물 프린터입니다."
 
 msgid "Pick"
 msgstr "피킹"
+
+msgid "Pick a batchable process to plan batches"
+msgstr ""
 
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Carbon 차원과 게시할 제공자 대상을 선택하세요. 자동 생성은 푸시 시간에 이름으로 누락된 제공자 옵션을 추가합니다."
@@ -12099,6 +12123,9 @@ msgstr "필터 제거"
 msgid "Remove Filters"
 msgstr "필터 제거"
 
+msgid "Remove from batch"
+msgstr ""
+
 msgid "Remove from Price List"
 msgstr "가격표에서 제거"
 
@@ -13006,6 +13033,9 @@ msgstr "선택"
 
 msgid "Select a assignee"
 msgstr "담당자 선택"
+
+msgid "Select a batchable process"
+msgstr ""
 
 msgid "Select a default approver"
 msgstr "기본 승인자 선택"

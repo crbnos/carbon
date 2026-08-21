@@ -83,7 +83,10 @@ const operationItemValidator = baseItemValidator.extend({
   laborDuration: z.number().optional(),
   machineDuration: z.number().optional(),
   setupDuration: z.number().optional(),
-  status: z.enum(jobOperationStatus).optional()
+  status: z.enum(jobOperationStatus).optional(),
+  processBatchable: z.boolean().optional(),
+  jobOperationBatchId: z.string().nullable().optional(),
+  batchReadableId: z.string().nullable().optional()
 });
 
 // Job item with job-level status
