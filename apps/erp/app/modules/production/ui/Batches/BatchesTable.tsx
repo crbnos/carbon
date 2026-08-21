@@ -84,12 +84,12 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
         id: "workCenter",
         header: t`Work Center`,
         cell: ({ row }) => (
-          <Enumerable value={row.original.workCenter?.name ?? null} />
+          <Enumerable value={row.original.workCenterName ?? null} />
         ),
         meta: {
           icon: <LuFactory />,
           filterHeader: t`Work Center`,
-          exportValue: (row: JobOperationBatch) => row.workCenter?.name ?? null
+          exportValue: (row: JobOperationBatch) => row.workCenterName ?? null
         }
       },
       {

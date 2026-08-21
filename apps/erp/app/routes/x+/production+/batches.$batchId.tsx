@@ -85,9 +85,9 @@ export default function BatchRoute() {
                 {batch.process.name}
               </span>
             )}
-            {batch.workCenter?.name && (
+            {batch.workCenterName && (
               <span className="text-sm text-muted-foreground">
-                {batch.workCenter.name}
+                {batch.workCenterName}
               </span>
             )}
           </HStack>

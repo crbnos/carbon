@@ -4375,32 +4375,58 @@ export async function getJobOperationBatches(
 
 // Member count + summed quantity per batch, for the batches list. One query for
 // the page's batch ids, tallied in TS (the storage-rules count pattern — no
-// PostgREST aggregate embeds in this repo).
+// PostgREST aggregate embeds in this repo). Also derives the members' shared
+// work-center name: a batch created from the board carries no header work
+// center until it is dragged, but when every member sits on one work center
+// that IS the batch's work center — the board itself falls back the same way.
 export async function getJobOperationBatchMemberStats(
   client: SupabaseClient<Database>,
   companyId: string,
   batchIds: string[]
 ): Promise<{
-  data: Record<string, { memberCount: number; totalQuantity: number }>;
+  data: Record<
+    string,
+    {
+      memberCount: number;
+      totalQuantity: number;
+      workCenterName: string | null;
+    }
+  >;
   error: unknown;
 }> {
   if (batchIds.length === 0) return { data: {}, error: null };
   const result = await client
     .from("jobOperation")
-    .select("jobOperationBatchId, operationQuantity")
+    .select("jobOperationBatchId, operationQuantity, workCenter(name)")
     .in("jobOperationBatchId", batchIds)
     .eq("companyId", companyId);
   if (result.error) return { data: {}, error: result.error };
-  const stats: Record<string, { memberCount: number; totalQuantity: number }> =
-    {};
+  const stats: Record<
+    string,
+    {
+      memberCount: number;
+      totalQuantity: number;
+      workCenterName: string | null;
+    }
+  > = {};
+  const mixedWorkCenters = new Set<string>();
   for (const op of result.data ?? []) {
     if (!op.jobOperationBatchId) continue;
     const entry = (stats[op.jobOperationBatchId] ??= {
       memberCount: 0,
-      totalQuantity: 0
+      totalQuantity: 0,
+      workCenterName: null
     });
     entry.memberCount += 1;
     entry.totalQuantity += op.operationQuantity ?? 0;
+    const wcName = op.workCenter?.name ?? null;
+    if (mixedWorkCenters.has(op.jobOperationBatchId)) continue;
+    if (entry.memberCount === 1) {
+      entry.workCenterName = wcName;
+    } else if (entry.workCenterName !== wcName) {
+      entry.workCenterName = null;
+      mixedWorkCenters.add(op.jobOperationBatchId);
+    }
   }
   return { data: stats, error: null };
 }
@@ -4420,12 +4446,22 @@ export async function getJobOperationBatchWithMembers(
   const members = await client
     .from("jobOperation")
     .select(
-      "id, description, operationQuantity, quantityComplete, status, job(id, jobId), jobMakeMethod(item(readableIdWithRevision))"
+      "id, description, operationQuantity, quantityComplete, status, workCenter(name), job(id, jobId), jobMakeMethod(item(readableIdWithRevision))"
     )
     .eq("jobOperationBatchId", batchId)
     .eq("companyId", companyId);
+  // Header work center when assigned; else the members' shared one (a
+  // board-created batch has no header WC until its card is dragged).
+  const memberWorkCenters = new Set(
+    (members.data ?? []).map((m) => m.workCenter?.name).filter(Boolean)
+  );
+  const workCenterName =
+    batch.data.workCenter?.name ??
+    (memberWorkCenters.size === 1
+      ? ([...memberWorkCenters][0] as string)
+      : null);
   return {
-    data: { ...batch.data, members: members.data ?? [] },
+    data: { ...batch.data, workCenterName, members: members.data ?? [] },
     error: members.error
   };
 }

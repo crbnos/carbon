@@ -48,7 +48,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     batches: (batches.data ?? []).map((b) => ({
       ...b,
       memberCount: stats.data[b.id]?.memberCount ?? 0,
-      totalQuantity: stats.data[b.id]?.totalQuantity ?? 0
+      totalQuantity: stats.data[b.id]?.totalQuantity ?? 0,
+      // Header work center when assigned; else the members' shared one (the
+      // board's own fallback) — a board-created batch has no header WC until
+      // its card is dragged.
+      workCenterName:
+        b.workCenter?.name ?? stats.data[b.id]?.workCenterName ?? null
     }))
   };
 }

@@ -511,11 +511,25 @@ serve(async (req: Request) => {
     switch (payload.type) {
       case "create": {
         result = await db.transaction().execute(async (trx) => {
-          const { processId } = await assertEligible(
+          const { operations, processId } = await assertEligible(
             trx,
             companyId,
             payload.jobOperationIds
           );
+          // The board's "Create batch" sends no work center (assignment is a
+          // drag) — but when every member already sits on the same one, that IS
+          // the batch's work center; adopt it so the header isn't blank.
+          const memberWorkCenters = new Set(
+            operations
+              // deno-lint-ignore no-explicit-any
+              .map((o: any) => o.workCenterId)
+              .filter(Boolean)
+          );
+          const workCenterId =
+            payload.workCenterId ??
+            (memberWorkCenters.size === 1
+              ? ([...memberWorkCenters][0] as string)
+              : null);
           const readableId = await getNextSequence(
             trx,
             "jobOperationBatch",
@@ -527,7 +541,7 @@ serve(async (req: Request) => {
               readableId,
               companyId,
               processId,
-              workCenterId: payload.workCenterId ?? null,
+              workCenterId,
               locationId: payload.locationId,
               status: "Active",
               createdBy: userId

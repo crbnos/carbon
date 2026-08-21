@@ -39,7 +39,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     serviceRole
       .from("jobOperation")
       .select(
-        "id, description, operationQuantity, job(jobId), jobMakeMethod(item(readableIdWithRevision, name))"
+        "id, description, operationQuantity, workCenter(name), job(jobId), jobMakeMethod(item(readableIdWithRevision, name))"
       )
       .eq("jobOperationBatchId", id)
       .eq("companyId", companyId)
@@ -56,6 +56,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const { locale } = getPreferenceHeaders(request);
 
+  // Header work center when assigned; else the members' shared one (a
+  // board-created batch has no header WC until its card is dragged).
+  const memberWorkCenters = new Set(
+    (members.data ?? []).map((m) => m.workCenter?.name).filter(Boolean)
+  );
+  const workCenterName =
+    batch.data.workCenter?.name ??
+    (memberWorkCenters.size === 1
+      ? ([...memberWorkCenters][0] as string)
+      : null);
+
   const stream = await renderToStream(
     <BatchLoadListPDF
       // The documents Company type is the `companies` view row; getCompany
@@ -69,7 +80,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         createdAt: batch.data.createdAt
       }}
       processName={batch.data.process?.name ?? null}
-      workCenterName={batch.data.workCenter?.name ?? null}
+      workCenterName={workCenterName}
       members={(members.data ?? []).map(
         (m): BatchLoadListMember => ({
           id: m.id,

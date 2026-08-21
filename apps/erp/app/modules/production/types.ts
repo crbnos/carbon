@@ -202,6 +202,8 @@ export type JobOperationBatch = NonNullable<
   // Merged into the row by the batches loader (getJobOperationBatchMemberStats).
   memberCount?: number;
   totalQuantity?: number;
+  // Header work center, falling back to the members' shared one.
+  workCenterName?: string | null;
 };
 
 // --- Assembly Instructions ---------------------------------------------
