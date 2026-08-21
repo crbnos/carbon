@@ -7,6 +7,12 @@ import {
   quickbooksOnUninstall
 } from "./quickbooks/hooks.server";
 import {
+  rampHealthcheck,
+  rampOnInstall,
+  rampOnUninstall,
+  rampOnUpdate
+} from "./ramp/hooks.server";
+import {
   rilletHealthcheck,
   rilletOnInstall,
   rilletOnUninstall
@@ -56,6 +62,12 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
     onInstall: quickbooksOnInstall,
     onUpdate: quickbooksOnInstall,
     onUninstall: quickbooksOnUninstall
+  },
+  ramp: {
+    onInstall: rampOnInstall,
+    onUpdate: rampOnUpdate,
+    onUninstall: rampOnUninstall,
+    onHealthcheck: rampHealthcheck
   },
   rillet: {
     onHealthcheck: rilletHealthcheck,
