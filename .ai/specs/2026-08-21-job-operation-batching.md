@@ -1,6 +1,6 @@
 # Job Operation Batching (v2 — fresh build)
 
-> Status: in-design
+> Status: in-progress
 > Author: Claude (with Sid)
 > Date: 2026-08-21
 > Research: `.ai/research/job-operation-batching.md` (2026-07-03 survey — still current)
@@ -200,8 +200,10 @@ ALTER TABLE "process" ADD COLUMN "batchable" BOOLEAN NOT NULL DEFAULT false;
 -- Recreate the "processes" view from its NEWEST definition including the column.
 
 -- 2. The operation batch — 'Completing' is in the initial enum (fresh build:
---    no ADD VALUE follow-up migration needed)
-CREATE TYPE "jobOperationBatchStatus" AS ENUM ('Active', 'Completing', 'Completed', 'Cancelled');
+--    no ADD VALUE follow-up migration needed). No 'Cancelled': nothing ever set
+--    it in v1 (dissolve DELETES the row); add via ADD VALUE if a real cancel
+--    workflow ever exists.
+CREATE TYPE "jobOperationBatchStatus" AS ENUM ('Active', 'Completing', 'Completed');
 
 CREATE TABLE "jobOperationBatch" (
     "id" TEXT NOT NULL DEFAULT id(),
@@ -266,7 +268,8 @@ Also required (behavioral, not new tables):
   `jobMaterial.jobOperationId → item → material` (`material.id = item.readableId`)
   → the five property lookups. Operations whose BOM lines lack material rows
   return an empty array and group under "No material properties" in the UI. Also
-  returns current members of Active batches for the process (to render batch lanes).
+  returns current members of `Active` **and `Completing`** batches for the
+  process (to render batch lanes; `Completing` lanes are read-only — see UI).
 - After migration: `pnpm run generate:types` before typecheck.
 
 ## API / Service Changes
@@ -363,7 +366,7 @@ through; `ProcessForm` gains the Boolean field (clone `completeAllOnScan`).
 |---------|--------|
 | Process form (`resources/ui/Processes/ProcessForm.tsx`) | "Batchable" checkbox — "Multiple jobs can run on this process at the same time (laser table, furnace, plating bath)" |
 | Processes table | `Batchable` boolean column/badge |
-| **Batch planning board** (new: `x/schedule/batching`, salvage from v1) | Location + batchable-process pickers; left pane = filterable candidate operations (cards: job, item, quantity, due date, material chips), faceted URL-param filters on form/substance/grade/dimension/finish + search (clone the operations board's `Filter`/`ActiveFilters`/`useFilters` pattern; pickers reuse the existing material-lookup comboboxes); right pane = Active batch lanes (readableId, work center, members, summed qty) + "New batch" drop zone; `@dnd-kit` drag in/out; work-center assignment on the lane; dissolve action. Persists via fetcher to an action route calling the service wrappers |
+| **Batch planning board** (new: `x/schedule/batching`, salvage from v1) | Location + batchable-process pickers; left pane = filterable candidate operations (cards: job, item, quantity, due date, material chips), faceted URL-param filters on form/substance/grade/dimension/finish + search (clone the operations board's `Filter`/`ActiveFilters`/`useFilters` pattern; pickers reuse the existing material-lookup comboboxes); right pane = batch lanes (readableId, work center, members, summed qty) + "New batch" drop zone; `@dnd-kit` drag in/out; work-center assignment on the lane; dissolve action. `Active` lanes are full drag targets; **`Completing` lanes render read-only** — yellow badge, no drop targets, no dissolve, a link to the MES batch page ("completion in progress — retry there") — so a stuck completion is visible where planners look. Persists via fetcher to an action route calling the service wrappers |
 | Schedule board (`ui/Schedule/Kanban/ItemCard.tsx`) | Batched ops render a `BAT000001` badge; card menu gains "Batch planning" (nav, process pre-filtered) for batchable unbatched ops and "Remove from batch" (guarded) for batched ones |
 | MES kanban (`apps/mes/.../ItemCard.tsx` + operations loader) | Rows sharing `jobOperationBatchId` collapse to one card: member count, summed quantity, batch readableId; card links to the batch view |
 | MES batch view (new: `x/batch/$batchId`, status-aware from day one) | Status Badge (`secondary` Active / `yellow` Completing / `green` Completed); member table (job, item, quantity, due date, link to each member op); Start/Stop timers gated to `Active`, live elapsed timer (`formatDurationMilliseconds` tick); **Complete Batch** form: per-member produced quantity (pre-filled) + optional scrap, enabled for `Active`+`Completing`, submit relabeled "Retry Completion" while `Completing` with a short explanatory line; copy stating time splits proportionally to quantity; all strings `<Trans>`/`t` (extraction covers `mes.po`) |
@@ -399,7 +402,11 @@ through; `ProcessForm` gains the Boolean field (clone `completeAllOnScan`).
 | Planner batches metrically incompatible materials (filters are advisory) | Low | Deliberate (research: material match is workflow, not schema); chips make membership visible |
 | Terminology confusion with lot/batch tracking | Low | Naming decision documented; UI copy says "operation batch"; AGENTS.md and glossary spell out the distinction |
 
-## Resolved Questions (carried forward, all locked)
+## Open Questions
+
+> All resolved — no unanswered questions remain. Items without a date are
+> carried forward from the 2026-07-03 design sessions with Brad (locked);
+> dated items were resolved by Sid in the 2026-08-21 grill.
 
 - [x] **Weight basis for the proportional split?** Planned `operationQuantity`
   (share = member qty / Σ). Produced-actuals rejected (undefined mid-run,
@@ -422,6 +429,34 @@ through; `ProcessForm` gains the Boolean field (clone `completeAllOnScan`).
 - [x] **Completion failure semantics?** Durable `Completing` status + idempotent
   Phase 2; retry by re-invoking with the same payload. (Upgraded 2026-07-16 from
   the single-txn design after #1137 demonstrated the gap.)
+- [x] **Phase-2 failure mode: fail-fast or continue-and-collect?** — **Answer:
+  fail-fast** (Sid, 2026-08-21). Phase 2 stops at the first error (issue, Done
+  flip, or GL post), the batch stays `Completing`, and the error is returned
+  verbatim. No error aggregation, no continuing to later members. Resume makes
+  retries cheap: idempotency (backflush cap, already-`Done` skip, `postedToGL`
+  skip) means the retry fast-forwards past completed work and re-attempts only
+  the failed step onward.
+- [x] **Retry with changed quantities?** — **Answer: reject loudly** (Sid,
+  2026-08-21). The resume branch compares the submitted member quantities (and
+  scrap) against the `productionQuantity` rows Phase 1 already committed; any
+  mismatch errors with the recorded values named ("quantities were already
+  recorded as 5/20/10 — retry with those") instead of silently ignoring the
+  edit or rewriting committed rows. "Re-invoking with the same payload resumes"
+  is an enforced contract, not an assumption. Post-completion quantity
+  corrections are out of scope (existing per-op correction paths apply).
+- [x] **Keep the `Cancelled` enum value?** — **Answer: drop it** (Sid,
+  2026-08-21). Enum is `('Active', 'Completing', 'Completed')`. Nothing in v1
+  ever set `Cancelled` — dissolve deletes the batch row, which remains the only
+  "never mind" path (pre-start there is nothing worth keeping; post-start you
+  complete). Adding an enum value later is trivial (`ADD VALUE`), removing one
+  is nearly impossible — dead states also force unreachable UI branches. If a
+  real cancel workflow ever exists, it arrives with its own migration.
+- [x] **Does the planning board show `Completing` batches?** — **Answer: yes,
+  read-only** (Sid, 2026-08-21). The RPC returns `Active` + `Completing`
+  batches; `Completing` lanes render with the yellow badge, no drop targets,
+  no dissolve, and a link to the MES batch page. Durable `Completing` exists so
+  failures wait visibly for a human — hiding them from the planning surface
+  would undercut it. Drag/dissolve stay gated to `Active`.
 - [x] **Auto-suggest batches during planning/MRP?** Manual board only in v1;
   solver-style grouping is v2.
 - [x] **Capacity semantics (how much fits on the table/in the furnace)?** Out of
@@ -438,3 +473,13 @@ through; `ProcessForm` gains the Boolean field (clone `completeAllOnScan`).
   owns issue+Done+GL, shared `batch-time-split` util, RPC started-op guard,
   status-aware + i18n'd MES page. Prior branches demoted to salvage sources.
   Research file kept as-is (survey still current). Next step: `/plan`.
+- 2026-08-21: Grill session (Sid) — four design decisions locked and written to
+  Resolved Questions: Phase-2 fail-fast; resume rejects changed quantities
+  loudly; `Cancelled` dropped from the enum; `Completing` batches visible
+  read-only on the planning board (RPC returns Active + Completing).
+  Housekeeping: deleted redundant local `feat/job-operation-batching-v1` and
+  stale remote `job-operation-batching-spec`; PR #1137 to be closed as
+  superseded (branch kept for salvage); `feat/job-operation-batching` kept
+  until v2 merges, then deleted.
+- 2026-08-21: Finalized — every open question resolved (none outstanding),
+  status → in-progress. Ready for `/plan`.
