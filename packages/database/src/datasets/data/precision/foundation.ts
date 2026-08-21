@@ -462,7 +462,7 @@ export const PROCEDURES: ProcedureSpec[] = [
     versions: [
       {
         version: 1,
-        status: "Archived",
+        status: "Draft",
         steps: [
           {
             name: "Verify the first-operation part against the traveler",
@@ -481,7 +481,7 @@ export const PROCEDURES: ProcedureSpec[] = [
           }
         ]
       },
-      { version: 2, status: "Active", steps: PUMP_HOUSING_OP2_STEPS_V2 }
+      { version: 2, status: "Draft", steps: PUMP_HOUSING_OP2_STEPS_V2 }
     ]
   },
   {
@@ -492,7 +492,7 @@ export const PROCEDURES: ProcedureSpec[] = [
     versions: [
       {
         version: 1,
-        status: "Active",
+        status: "Draft",
         steps: [
           {
             name: "Stage the kit at the assembly bench",
@@ -541,7 +541,7 @@ export const PROCEDURES: ProcedureSpec[] = [
     versions: [
       {
         version: 1,
-        status: "Active",
+        status: "Draft",
         steps: [
           {
             name: "Load the print revision into the CMM program",

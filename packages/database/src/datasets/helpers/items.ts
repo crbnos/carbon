@@ -107,8 +107,9 @@ export async function createItem(ctx: Ctx, spec: ItemSpec): Promise<ItemRef> {
     );
   }
 
-  // For Part / Tool / Service the interceptor created a Draft makeMethod.
-  // Adopt it to Active for Make items.
+  // For Part / Tool / Service the interceptor created a Draft makeMethod. Leave
+  // it Draft — Active freezes the BOM and BOP, and a demo company should be able
+  // to edit them without first cutting a new version.
   let makeMethodId: string | null = null;
   if (["Part", "Tool", "Service"].includes(spec.type)) {
     const mmRow = await maybeOne<{ id: string }>(
@@ -121,13 +122,6 @@ export async function createItem(ctx: Ctx, spec: ItemSpec): Promise<ItemRef> {
         `Seed: no makeMethod created for item ${spec.readableId}`
       );
     makeMethodId = mmRow.id;
-
-    if (isMake) {
-      await client.query(
-        `UPDATE "makeMethod" SET status = 'Active', "updatedBy" = $2 WHERE id = $1`,
-        [makeMethodId, userId]
-      );
-    }
   }
 
   return {

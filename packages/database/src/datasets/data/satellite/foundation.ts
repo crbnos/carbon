@@ -426,7 +426,7 @@ export const PROCEDURES: ProcedureSpec[] = [
     versions: [
       {
         version: 1,
-        status: "Archived",
+        status: "Draft",
         steps: [
           {
             name: "Verify panel kit against the pick list",
@@ -444,7 +444,7 @@ export const PROCEDURES: ProcedureSpec[] = [
           }
         ]
       },
-      { version: 2, status: "Active", steps: STRUCTURAL_STEPS_V2 }
+      { version: 2, status: "Draft", steps: STRUCTURAL_STEPS_V2 }
     ]
   },
   {
@@ -455,7 +455,7 @@ export const PROCEDURES: ProcedureSpec[] = [
     versions: [
       {
         version: 1,
-        status: "Active",
+        status: "Draft",
         steps: [
           {
             name: "Stage subsystems in the clean room",
@@ -502,7 +502,7 @@ export const PROCEDURES: ProcedureSpec[] = [
     versions: [
       {
         version: 1,
-        status: "Active",
+        status: "Draft",
         steps: [
           {
             name: "Install harness and thermocouples",

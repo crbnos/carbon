@@ -33,9 +33,10 @@ async function seedAssembly(ctx: Ctx, spec: AssemblySpec): Promise<void> {
     name: spec.name,
     modelUploadId,
     itemId: itemId ?? null,
-    status: "Published",
+    // Draft, not Published: Published makes the 3D assembly editor read-only.
+    status: "Draft",
     version: 1,
-    publishedAt: resolveTimestamp(ctx.anchor, 0, "09:00")
+    publishedAt: null
   });
 
   let sortOrder = 1;

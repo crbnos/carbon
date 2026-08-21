@@ -452,7 +452,7 @@ export const PROCEDURES: ProcedureSpec[] = [
     versions: [
       {
         version: 1,
-        status: "Archived",
+        status: "Draft",
         steps: [
           {
             name: "Verify base kit against the pick list",
@@ -471,7 +471,7 @@ export const PROCEDURES: ProcedureSpec[] = [
           }
         ]
       },
-      { version: 2, status: "Active", steps: ARM_BASE_STEPS_V2 }
+      { version: 2, status: "Draft", steps: ARM_BASE_STEPS_V2 }
     ]
   },
   {
@@ -482,7 +482,7 @@ export const PROCEDURES: ProcedureSpec[] = [
     versions: [
       {
         version: 1,
-        status: "Active",
+        status: "Draft",
         steps: [
           {
             name: "Stage subassemblies at the integration cell",
@@ -529,7 +529,7 @@ export const PROCEDURES: ProcedureSpec[] = [
     versions: [
       {
         version: 1,
-        status: "Active",
+        status: "Draft",
         steps: [
           {
             name: "Connect the controller and safety loop",

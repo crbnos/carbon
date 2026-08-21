@@ -467,7 +467,7 @@ export const PROCEDURES: ProcedureSpec[] = [
     versions: [
       {
         version: 1,
-        status: "Archived",
+        status: "Draft",
         steps: [
           {
             name: "Verify slot liner installation",
@@ -485,7 +485,7 @@ export const PROCEDURES: ProcedureSpec[] = [
           }
         ]
       },
-      { version: 2, status: "Active", steps: STATOR_WINDING_STEPS_V2 }
+      { version: 2, status: "Draft", steps: STATOR_WINDING_STEPS_V2 }
     ]
   },
   {
@@ -496,7 +496,7 @@ export const PROCEDURES: ProcedureSpec[] = [
     versions: [
       {
         version: 1,
-        status: "Active",
+        status: "Draft",
         steps: [
           {
             name: "Measure bore diameter after impregnation",
@@ -531,7 +531,7 @@ export const PROCEDURES: ProcedureSpec[] = [
     versions: [
       {
         version: 1,
-        status: "Active",
+        status: "Draft",
         steps: [
           {
             name: "Mount rotor on the balancing mandrel",
@@ -571,7 +571,7 @@ export const PROCEDURES: ProcedureSpec[] = [
     versions: [
       {
         version: 1,
-        status: "Active",
+        status: "Draft",
         steps: [
           {
             name: "Verify lot certificate against the purchase order",
@@ -615,7 +615,7 @@ export const PROCEDURES: ProcedureSpec[] = [
     versions: [
       {
         version: 1,
-        status: "Active",
+        status: "Draft",
         steps: [
           {
             name: "Stage subassemblies at the bench",
@@ -655,7 +655,7 @@ export const PROCEDURES: ProcedureSpec[] = [
     versions: [
       {
         version: 1,
-        status: "Active",
+        status: "Draft",
         steps: [
           {
             name: "Couple the motor to the dyno",

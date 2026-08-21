@@ -395,11 +395,13 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   }
 
   // ── Procedures (shop-floor work instructions) ─────────────────────────────
-  // Two versions of the same name: the version menu groups on `name`, so V1
-  // Archived + V2 Active is what gives a procedure a readable history.
+  // Two versions of the same name: the version menu groups on `name`, so the
+  // second version is what gives a procedure a readable history. Every version
+  // seeds as Draft so a demo company can edit its steps without a new version.
   ctx.log("procedures");
   for (const spec of data.procedures) {
     const processId = need(ctx.refs.processes, spec.process, "process");
+    const latestVersion = Math.max(...spec.versions.map((v) => v.version));
     for (const version of spec.versions) {
       const procedureId = await insertId(ctx, "procedure", {
         name: spec.name,
@@ -408,7 +410,7 @@ export async function runTier1(ctx: Ctx): Promise<void> {
         status: version.status,
         content: RICH(spec.description)
       });
-      if (version.status === "Active") {
+      if (version.version === latestVersion) {
         ctx.refs.misc[`procedure:${spec.name}`] = procedureId;
       }
       for (const [index, step] of version.steps.entries()) {

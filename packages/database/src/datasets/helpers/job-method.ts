@@ -114,6 +114,8 @@ export async function copyMethodToJob(
   return result;
 }
 
+// Prefers Active, but the seeded methods are Draft so a demo can edit them —
+// fall back to the newest version rather than leaving the job without a method.
 async function activeMakeMethod(
   ctx: Ctx,
   itemId: string
@@ -121,8 +123,8 @@ async function activeMakeMethod(
   const row = await maybeOne<{ id: string }>(
     ctx.client,
     `SELECT id FROM "makeMethod"
-     WHERE "itemId" = $1 AND "companyId" = $2 AND status = 'Active'
-     ORDER BY version DESC
+     WHERE "itemId" = $1 AND "companyId" = $2
+     ORDER BY (status = 'Active') DESC, version DESC
      LIMIT 1`,
     [itemId, ctx.companyId]
   );
