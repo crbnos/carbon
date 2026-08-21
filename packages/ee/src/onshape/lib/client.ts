@@ -317,6 +317,33 @@ export class OnshapeClient {
   }
 
   /**
+   * ONE BODY's metadata properties.
+   *
+   * A Part Studio element holds many bodies, and a company property scoped to
+   * the Part category lives on the BODY, not on the element — verified live
+   * 2026-08-21: with "Purchasing Level" set on MC-101, the part-level read
+   * returns it and the ELEMENT-level read returns nothing at all. Anything
+   * reading a per-part property off a Part Studio has to come here.
+   */
+  async getPartMetadata(
+    documentId: string,
+    versionId: string,
+    elementId: string,
+    partId: string
+  ): Promise<{
+    properties?: Array<{
+      propertyId?: string;
+      name?: string;
+      value?: unknown;
+    }>;
+  }> {
+    return this.request(
+      "GET",
+      `/api/v10/metadata/d/${documentId}/v/${versionId}/e/${elementId}/p/${encodeURIComponent(partId)}`
+    );
+  }
+
+  /**
    * The elements an APPLICATION element references — for a drawing, the models
    * its views are taken from.
    *

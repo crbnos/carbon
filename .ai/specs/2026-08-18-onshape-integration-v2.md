@@ -743,3 +743,21 @@ twice as well.
   The test VALUES were cleared afterwards (SA-800 and RD-410 are genuinely assemblies with
   children; leaving them declared Purchased would be wrong data). The PROPERTY remains in
   place and ready to use.
+- 2026-08-21: **Part-level metadata gap found and fixed while demoing Purchasing Level.**
+  A company property scoped to the Part category lives on the BODY, not on the element.
+  Verified live: with `Purchasing Level` set on MC-101, the PART-level read returns
+  `"Purchased"` and the ELEMENT-level read returns nothing at all. The release job read the
+  element, so the feature was silently inert for every Part Studio part. Added
+  `OnshapeClient.getPartMetadata` and the release job now reads part level when the
+  fan-out has a `partId`, element level otherwise (assemblies).
+  The BOM path was already correct — its per-row `columns` carry the value; confirmed the
+  parser returns `Purchased` for MC-101's row and `null` for every other row.
+  **Demonstrated in the app**, three items created through real webhook deliveries:
+  | Onshape | declared | Carbon |
+  |---|---|---|
+  | sub-assembly SA-800 | `Purchased` | **Buy / Pull from Inventory** |
+  | part MC-101 (body) | `Purchased` | Buy / Pull from Inventory |
+  | assembly, no value | — | Make / Make to Order |
+  The SUB-ASSEMBLY row is the decisive one: structure calls an assembly Make, and Onshape
+  overrode it. The part row is consistent but not decisive on its own, since structure
+  reaches Buy for a part studio body anyway.

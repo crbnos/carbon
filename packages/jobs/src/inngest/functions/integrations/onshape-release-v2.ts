@@ -410,13 +410,25 @@ export const onshapeReleaseV2Function = inngest.createFunction(
           // created, it only costs the better answer.
           let purchasingLevel: string | null = null;
           try {
+            // PART level when this is a Part Studio body, element level
+            // otherwise. A company property scoped to the Part category lives
+            // on the BODY: with it set on one body, the element-level read
+            // returns nothing at all, so reading the element here would make
+            // the whole feature silently inert for every Part Studio part.
             const metadata = await withRateLimitRetry(
               () =>
-                client.getElementMetadata(
-                  payload.documentId,
-                  payload.versionId,
-                  payload.elementId
-                ),
+                partId
+                  ? client.getPartMetadata(
+                      payload.documentId,
+                      payload.versionId,
+                      payload.elementId,
+                      partId
+                    )
+                  : client.getElementMetadata(
+                      payload.documentId,
+                      payload.versionId,
+                      payload.elementId
+                    ),
               `metadata for ${payload.partNumber}`
             );
             const columns: Record<string, string> = {};
