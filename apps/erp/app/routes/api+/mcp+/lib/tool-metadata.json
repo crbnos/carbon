@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-21T03:19:08.000Z",
+  "generated": "2026-08-21T04:12:08.113Z",
   "totalTools": 1443,
   "modules": 15,
   "tools": [
@@ -15507,7 +15507,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "set method operation tool step link",
-      "paramCount": 3,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "args"
@@ -15519,7 +15519,10 @@
       "schema": {
         "type": "object",
         "properties": {
-          "methodOperationToolId": {
+          "operationId": {
+            "type": "string"
+          },
+          "toolId": {
             "type": "string"
           },
           "methodOperationStepId": {
@@ -15530,7 +15533,8 @@
           }
         },
         "required": [
-          "methodOperationToolId",
+          "operationId",
+          "toolId",
           "methodOperationStepId",
           "linked"
         ]
@@ -22399,7 +22403,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "set job operation tool step link",
-      "paramCount": 3,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "args"
@@ -22411,7 +22415,10 @@
       "schema": {
         "type": "object",
         "properties": {
-          "jobOperationToolId": {
+          "operationId": {
+            "type": "string"
+          },
+          "toolId": {
             "type": "string"
           },
           "jobOperationStepId": {
@@ -22422,7 +22429,8 @@
           }
         },
         "required": [
-          "jobOperationToolId",
+          "operationId",
+          "toolId",
           "jobOperationStepId",
           "linked"
         ]

@@ -4395,21 +4395,53 @@ export async function setMethodMaterialStepLink(
 }
 
 // Toggle a single tool↔step link from the STEP side (the step editor's Tools picker).
-// `linked` true = link the tool to the step, false = unlink. Idempotent on link. Twin of
-// setMethodMaterialStepLink.
+// Takes the tool ITEM id: the picker offers the whole tool library, and choosing a
+// tool implicitly ensures the operation-level tool row exists (quantity 1 — the same
+// row the operation's Tools tab would create) before linking it to the step. Unlink
+// removes only the step link; the operation tool row stays (the Tools tab owns it).
+// Twin of setMethodMaterialStepLink.
 export async function setMethodOperationToolStepLink(
   client: SupabaseClient<Database>,
   args: {
-    methodOperationToolId: string;
+    operationId: string;
+    toolId: string;
     methodOperationStepId: string;
     linked: boolean;
+    companyId: string;
+    createdBy: string;
   }
 ) {
+  const existingTool = await client
+    .from("methodOperationTool")
+    .select("id")
+    .eq("operationId", args.operationId)
+    .eq("toolId", args.toolId)
+    .order("createdAt", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (existingTool.error) return existingTool;
+  let methodOperationToolId = existingTool.data?.id;
+
   if (args.linked) {
+    if (!methodOperationToolId) {
+      const created = await client
+        .from("methodOperationTool")
+        .insert({
+          operationId: args.operationId,
+          toolId: args.toolId,
+          quantity: 1,
+          companyId: args.companyId,
+          createdBy: args.createdBy
+        })
+        .select("id")
+        .single();
+      if (created.error) return created;
+      methodOperationToolId = created.data.id;
+    }
     return client.from("methodOperationToolStep").upsert(
       [
         {
-          methodOperationToolId: args.methodOperationToolId,
+          methodOperationToolId,
           methodOperationStepId: args.methodOperationStepId
         }
       ],
@@ -4419,10 +4451,11 @@ export async function setMethodOperationToolStepLink(
       }
     );
   }
+  if (!methodOperationToolId) return { data: null, error: null };
   return client
     .from("methodOperationToolStep")
     .delete()
-    .eq("methodOperationToolId", args.methodOperationToolId)
+    .eq("methodOperationToolId", methodOperationToolId)
     .eq("methodOperationStepId", args.methodOperationStepId);
 }
 

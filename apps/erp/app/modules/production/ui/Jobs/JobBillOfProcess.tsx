@@ -1219,23 +1219,25 @@ function StepsForm({
     Record<string, number>
   >({});
 
-  // Tools (this operation's tools) the operator can assign to a step — the tool twin of
-  // operationParts/draftParts. Tools picked while CREATING a step are buffered here and
-  // attached right after the step is created (see the effect below).
+  // Tools the operator can assign to a step — the tool twin of operationParts/
+  // draftParts. The whole tool LIBRARY is offered (keyed by tool item id); the
+  // operation tool row is created server-side on attach when it doesn't exist
+  // yet. Tools picked while CREATING a step are buffered here and attached
+  // right after the step is created (see the effect below).
   const allTools = useTools();
-  const operationTools = useMemo(
-    () =>
-      (tools ?? []).map((tl) => {
-        const tool = allTools.find((x) => x.id === tl.toolId);
-        return {
-          id: tl.id ?? "",
-          name: tool?.readableIdWithRevision ?? tl.toolId ?? "",
-          secondary: tool?.name ?? undefined,
-          quantity: tl.quantity ?? 1
-        };
-      }),
-    [tools, allTools]
-  );
+  const operationTools = useMemo(() => {
+    const opToolByToolId = new Map(
+      (tools ?? []).flatMap((tl) =>
+        tl.toolId ? [[tl.toolId, tl] as const] : []
+      )
+    );
+    return allTools.map((tool) => ({
+      id: tool.id,
+      name: tool.readableIdWithRevision,
+      secondary: tool.name ?? undefined,
+      quantity: opToolByToolId.get(tool.id)?.quantity ?? 1
+    }));
+  }, [tools, allTools]);
   const [draftTools, setDraftTools] = useState<string[]>([]);
 
   const materialItemIds = useMemo(
@@ -1406,6 +1408,9 @@ function StepsForm({
   }, [fetcher.data]);
 
   // When the new step is created, attach any buffered tools, then revalidate + reset.
+  // Goes through the step-tool route (not a direct insert) because the buffer holds
+  // tool ITEM ids and the operation tool row may not exist yet — the route creates
+  // it before linking. Sequential so a repeated tool never races its own creation.
   // biome-ignore lint/correctness/useExhaustiveDependencies: keyed off the created step id
   useEffect(() => {
     const newStepId = (fetcher.data as { id?: string | null } | undefined)?.id;
@@ -1413,14 +1418,20 @@ function StepsForm({
     let cancelled = false;
     const batch = draftTools;
     (async () => {
-      const { error } = await carbon.from("jobOperationToolStep").insert(
-        batch.map((jobOperationToolId) => ({
-          jobOperationToolId,
-          jobOperationStepId: newStepId
-        }))
-      );
+      let failed = false;
+      for (const toolId of batch) {
+        const fd = new FormData();
+        fd.append("toolId", toolId);
+        fd.append("stepId", newStepId);
+        fd.append("linked", "true");
+        const res = await fetch(path.to.jobOperationStepTool, {
+          method: "POST",
+          body: fd
+        });
+        if (!res.ok) failed = true;
+      }
       if (cancelled) return;
-      if (error) {
+      if (failed) {
         toast.error(t`Failed to save tools`);
         return;
       }
@@ -1802,15 +1813,18 @@ function JobStepTools({
   const fetcher = useFetcher();
   const allTools = useTools();
 
-  const operationTools = (tools ?? []).map((tl) => {
-    const tool = allTools.find((x) => x.id === tl.toolId);
-    return {
-      id: tl.id ?? "",
-      name: tool?.readableIdWithRevision ?? tl.toolId ?? "",
-      secondary: tool?.name ?? undefined,
-      quantity: tl.quantity ?? 1
-    };
-  });
+  // The whole tool LIBRARY is offered (keyed by tool item id) — an operation
+  // needn't have a tool on its Tools tab first; picking one here creates the
+  // operation tool row (quantity 1) server-side before linking it to the step.
+  const opToolByToolId = new Map(
+    (tools ?? []).flatMap((tl) => (tl.toolId ? [[tl.toolId, tl] as const] : []))
+  );
+  const stepTools = allTools.map((tool) => ({
+    id: tool.id,
+    name: tool.readableIdWithRevision,
+    secondary: tool.name ?? undefined,
+    quantity: opToolByToolId.get(tool.id)?.quantity ?? 1
+  }));
 
   const linkedToolIds = (tools ?? [])
     .filter((tl) =>
@@ -1822,7 +1836,7 @@ function JobStepTools({
         ).map((s) => s.jobOperationStepId)
       ).some((stepId) => stepId === step.id)
     )
-    .map((tl) => tl.id ?? "");
+    .flatMap((tl) => (tl.toolId ? [tl.toolId] : []));
 
   const toggle = (toolId: string, linked: boolean) => {
     if (!step.id) return;
@@ -1844,7 +1858,7 @@ function JobStepTools({
       searchPlaceholder={t`Search tools...`}
       removeLabel={t`Remove tool`}
       icon={<LuHammer />}
-      items={operationTools}
+      items={stepTools}
       linkedIds={linkedToolIds}
       isDisabled={isDisabled}
       busy={fetcher.state !== "idle"}

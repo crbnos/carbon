@@ -3615,21 +3615,53 @@ export async function setJobMaterialStepLink(
 }
 
 // Toggle a single tool↔step link from the STEP side (the step editor's Tools picker).
-// `linked` true = link the tool to the step, false = unlink. Idempotent on link. Twin of
-// setJobMaterialStepLink.
+// Takes the tool ITEM id: the picker offers the whole tool library, and choosing a
+// tool implicitly ensures the operation-level tool row exists (quantity 1 — the same
+// row the operation's Tools tab would create) before linking it to the step. Unlink
+// removes only the step link; the operation tool row stays (the Tools tab owns it).
+// Twin of setJobMaterialStepLink.
 export async function setJobOperationToolStepLink(
   client: SupabaseClient<Database>,
   args: {
-    jobOperationToolId: string;
+    operationId: string;
+    toolId: string;
     jobOperationStepId: string;
     linked: boolean;
+    companyId: string;
+    createdBy: string;
   }
 ) {
+  const existingTool = await client
+    .from("jobOperationTool")
+    .select("id")
+    .eq("operationId", args.operationId)
+    .eq("toolId", args.toolId)
+    .order("createdAt", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (existingTool.error) return existingTool;
+  let jobOperationToolId = existingTool.data?.id;
+
   if (args.linked) {
+    if (!jobOperationToolId) {
+      const created = await client
+        .from("jobOperationTool")
+        .insert({
+          operationId: args.operationId,
+          toolId: args.toolId,
+          quantity: 1,
+          companyId: args.companyId,
+          createdBy: args.createdBy
+        })
+        .select("id")
+        .single();
+      if (created.error) return created;
+      jobOperationToolId = created.data.id;
+    }
     return client.from("jobOperationToolStep").upsert(
       [
         {
-          jobOperationToolId: args.jobOperationToolId,
+          jobOperationToolId,
           jobOperationStepId: args.jobOperationStepId
         }
       ],
@@ -3639,10 +3671,11 @@ export async function setJobOperationToolStepLink(
       }
     );
   }
+  if (!jobOperationToolId) return { data: null, error: null };
   return client
     .from("jobOperationToolStep")
     .delete()
-    .eq("jobOperationToolId", args.jobOperationToolId)
+    .eq("jobOperationToolId", jobOperationToolId)
     .eq("jobOperationStepId", args.jobOperationStepId);
 }
 
