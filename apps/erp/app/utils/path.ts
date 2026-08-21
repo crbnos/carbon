@@ -914,6 +914,7 @@ export const path = {
       generatePath(`${x}/resources/failure-modes/${id}`),
     failureModes: `${x}/resources/failure-modes`,
     file: {
+      batchLoadList: (id: string) => generatePath(`${file}/batch/${id}.pdf`),
       cadModel: (id: string) => generatePath(`${file}/model/${id}`),
       jobTraveler: (id: string) => generatePath(`${file}/traveler/${id}.pdf`),
       jobTravelerByJobId: (jobId: string) =>

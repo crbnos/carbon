@@ -85,6 +85,7 @@ import {
   LuHardHat,
   LuLayers,
   LuPackageCheck,
+  LuPrinter,
   LuQrCode,
   LuSquareUser,
   LuTimer,
@@ -694,6 +695,17 @@ export const JobOperation = ({
                     </DropdownMenuItem>
                   );
                 })}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <a
+                    href={path.to.file.batchLoadList(batch.id as string)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <DropdownMenuIcon icon={<LuPrinter />} />
+                    <Trans>Print load list</Trans>
+                  </a>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}

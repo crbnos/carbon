@@ -1,3 +1,5 @@
+import type { BatchLoadListMember } from "./BatchLoadListPDF";
+import { BatchLoadListPDF } from "./BatchLoadListPDF";
 import type { JobTravelerMaterial } from "./blocks/jobTraveler";
 import { Footer } from "./components";
 import { ensureFont, getSafeFontFamily, registerDocumentFonts } from "./fonts";
@@ -18,8 +20,9 @@ import StorageUnitLabelPDF from "./StorageUnitLabelPDF";
 import { SAMPLE_SALES_ORDER } from "./salesOrder.samples";
 import { SAMPLE_SALES_INVOICE } from "./samples";
 import { SAMPLE_TRACKING_LABEL } from "./trackingLabel.samples";
-export type { JobTravelerMaterial };
+export type { BatchLoadListMember, JobTravelerMaterial };
 export {
+  BatchLoadListPDF,
   DOCUMENT_PDFS,
   ensureFont,
   Footer,

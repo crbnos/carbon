@@ -30,6 +30,7 @@ import {
   LuGripVertical,
   LuLayers,
   LuPlay,
+  LuPrinter,
   LuSquareUser,
   LuTimer,
   LuTrash,
@@ -202,6 +203,16 @@ export function BatchItemCard({
                   <a href={path.to.external.mesBatch(item.batchId)}>
                     <DropdownMenuIcon icon={<LuPlay />} />
                     {t`Open in MES`}
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a
+                    href={path.to.file.batchLoadList(item.batchId)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <DropdownMenuIcon icon={<LuPrinter />} />
+                    {t`Print load list`}
                   </a>
                 </DropdownMenuItem>
                 {!isCompleting && (
