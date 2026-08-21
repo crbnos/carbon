@@ -1,5 +1,7 @@
 import type { Database } from "@carbon/database";
 import { activeJobStatuses, getCompanyTimeZone } from "@carbon/database";
+import type { WorkSource } from "@carbon/lib/telemetry";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
@@ -206,6 +208,40 @@ export async function finishJobOperation(
         companyId: args.companyId,
         actorId: args.userId
       });
+
+      // The status write above has no prior-status guard, so finishing an
+      // already-Done operation writes again. The idempotency key is the
+      // operation id, so the repeat collapses instead of counting twice.
+      trackWorkEvent("job_operation_finished", {
+        companyId: args.companyId,
+        userId: args.userId,
+        jobOperationId: args.jobOperationId,
+        jobId
+      });
+
+      // The only way to observe the automatic completion. When this was the
+      // last operation, sync_finish_job_operation has already flipped the job
+      // to Completed inside the same transaction as the status write above —
+      // in Postgres, with no application call site in any runtime. Reading the
+      // row back here is what closes the last link of the benchmark chain
+      // (created → released → started → reported → finished → completed).
+      // Keyed on jobId, so it collapses with the manual complete route rather
+      // than counting a second completion.
+      const completed = await client
+        .from("job")
+        .select("status")
+        .eq("id", jobId)
+        .eq("companyId", args.companyId)
+        .maybeSingle();
+
+      if (completed.data?.status === "Completed") {
+        trackWorkEvent("job_completed", {
+          companyId: args.companyId,
+          userId: args.userId,
+          jobId,
+          path: "auto"
+        });
+      }
     }
   }
 
@@ -1667,9 +1703,11 @@ export async function insertProductionQuantity(
     // index on inspectionSampleId is the double-count guard).
     inspectionId?: string;
     inspectionSampleId?: string;
-  }
+  },
+  /** Which surface posted it. Telemetry only — the row cannot tell. */
+  source: WorkSource = "mes"
 ) {
-  return client
+  const result = await client
     .from("productionQuantity")
     .insert(
       sanitize({
@@ -1678,6 +1716,20 @@ export async function insertProductionQuantity(
       })
     )
     .select("*");
+
+  const inserted = result.data?.[0];
+  if (inserted) {
+    trackWorkEvent("production_quantity_reported", {
+      companyId: data.companyId,
+      userId: data.createdBy,
+      productionQuantityId: inserted.id,
+      jobOperationId: data.jobOperationId,
+      quantity: data.quantity,
+      source
+    });
+  }
+
+  return result;
 }
 
 export async function insertScrapQuantity(
@@ -1809,7 +1861,9 @@ export async function startProductionEvent(
     createdBy: string;
   },
   trackedEntityId: string | undefined,
-  unitIndex?: number
+  unitIndex?: number,
+  /** `mes_qr` when the operator scanned a traveller rather than tapping a station. */
+  source: WorkSource = "mes"
 ) {
   if (trackedEntityId) {
     const activityId = nanoid();
@@ -1878,6 +1932,15 @@ export async function startProductionEvent(
       userId: data.createdBy
     });
 
+    trackWorkEvent("job_operation_started", {
+      companyId: data.companyId,
+      userId: data.createdBy,
+      productionEventId: eventInsert.data.id,
+      jobOperationId: data.jobOperationId,
+      eventType: data.type,
+      source
+    });
+
     return eventInsert;
   }
 
@@ -1891,6 +1954,18 @@ export async function startProductionEvent(
       jobOperationId: data.jobOperationId,
       userId: data.createdBy
     });
+
+    const inserted = eventInsert.data?.[0];
+    if (inserted) {
+      trackWorkEvent("job_operation_started", {
+        companyId: data.companyId,
+        userId: data.createdBy,
+        productionEventId: inserted.id,
+        jobOperationId: data.jobOperationId,
+        eventType: data.type,
+        source
+      });
+    }
   }
 
   return eventInsert;

@@ -49,8 +49,8 @@ msgid "(excluded for this customer)"
 msgstr "(已为此客户排除)"
 
 #. placeholder {0}: open.length
-msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
-msgstr "{0, plural, one {此零件包含在1个开放的更改单中} other {此零件包含在#个开放的更改单中}}"
+msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
+msgstr "{0, plural, one {此物品包含在1个未完成的更改单中} other {此物品包含在#个未完成的更改单中}}"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -109,6 +109,10 @@ msgstr "{0} 个问题 — 未发布"
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "{0} 个流程"
+
+#. placeholder {0}: result.credentialName ?? "Passkey"
+msgid "{0} registered"
+msgstr "{0} 已注册"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -222,6 +226,10 @@ msgstr "{name} 已删除"
 
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} 个零件已跳过 — 没有需要生产的"
+
+#. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
+msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
+msgstr "{orderLabel} 将被重新打开以作为修订版本 {0} 进行编辑。已发送给供应商的文件在您完成并重新发送订单前保持不变。"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# 个阶段剩余} other {# 个阶段剩余}}"
@@ -1087,6 +1095,9 @@ msgstr "添加评论..."
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "添加自定义定价行以覆盖数量、价格、运费、交货期和税费"
 
+msgid "Add a materials section that lists each item on the bill of materials with its quantity."
+msgstr "添加一个材料部分，列出物料清单上的每个项目及其数量。"
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "在打印设置中添加打印机以直接打印标签。"
 
@@ -1119,6 +1130,9 @@ msgstr "添加关于您的决定的任何备注..."
 
 msgid "Add Approval Requirement"
 msgstr "添加批准要求"
+
+msgid "Add Authenticator App"
+msgstr "添加身份验证器应用"
 
 msgid "Add Calibration Record"
 msgstr "添加校准记录"
@@ -1197,6 +1211,9 @@ msgstr "添加合作伙伴"
 
 msgid "Add parts"
 msgstr "添加零件"
+
+msgid "Add Passkey"
+msgstr "添加密钥"
 
 msgid "Add path"
 msgstr "添加路径"
@@ -1770,7 +1787,7 @@ msgstr "已归档"
 msgid "Archived Logs"
 msgstr "已归档日志"
 
-#. placeholder {0}: quote.quoteId
+#. placeholder {0}: getQuoteDisplayId(quote)
 #. placeholder {1}: formatter.format(total)
 msgid "Are you sure you want to accept quote {0} for {1}?"
 msgstr "你确定要接受报价 {0} 的 {1} 吗？"
@@ -1789,9 +1806,8 @@ msgstr "您确定要取消 {0} 吗?在您重新打开之前，它将被关闭并
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "您确定要取消 {0} 吗？这也将取消所有相关的供应商报价。"
 
-#. placeholder {0}: routeData?.purchaseOrder?.purchaseOrderId ?? "this purchase order"
-msgid "Are you sure you want to cancel {0}? This will close the order."
-msgstr "确定要取消{0}吗？这将关闭订单。"
+msgid "Are you sure you want to cancel {orderLabel}? This will close the order."
+msgstr "您确定要取消 {orderLabel} 吗？这将关闭订单。"
 
 msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 msgstr "你确定要取消此工作吗？它将不再在车间可用。"
@@ -1850,14 +1866,17 @@ msgstr "你确定要从此操作中删除 {0} 吗？此操作无法撤销。"
 msgid "Are you sure you want to delete {0}?"
 msgstr "你确定要删除 {0} 吗？"
 
+#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
+#. placeholder {0}: getQuoteDisplayId( selectedQuotation )
 #. placeholder {0}: initialValues.memoId
-#. placeholder {0}: initialValues.paymentId
-#. placeholder {0}: pickingList.pickingListId
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "您确定要删除 {0} 吗？此操作无法撤销。"
 
 msgid "Are you sure you want to delete {name}? This cannot be undone."
 msgstr "您确定要删除 {name} 吗？此操作无法撤销。"
+
+msgid "Are you sure you want to delete {orderLabel}? This cannot be undone."
+msgstr "您确定要删除 {orderLabel} 吗？此操作无法撤销。"
 
 #. placeholder {0}: activeView.name
 #. placeholder {0}: viewPendingDelete.name
@@ -2083,6 +2102,9 @@ msgstr "你确定要删除此看板卡吗？此操作无法撤销。"
 
 msgid "Are you sure you want to delete this maintenance dispatch? This cannot be undone."
 msgstr "您确定要删除此维护调度吗？此操作无法撤销。"
+
+msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
+msgstr "您确定要删除此密钥吗?您将无法再使用它登录。"
 
 msgid "Are you sure you want to delete this quality document?"
 msgstr "你确定要删除此质量文件吗？"
@@ -2358,6 +2380,9 @@ msgstr "审计日志"
 msgid "Authentication Error"
 msgstr "身份验证错误"
 
+msgid "Authenticator app"
+msgstr "身份验证器应用"
+
 msgid "Authenticator QR code"
 msgstr "身份验证器二维码"
 
@@ -2387,12 +2412,6 @@ msgstr "自动生成的二维码"
 
 msgid "Auto-numbering formats for orders, jobs, parts, and more"
 msgstr "订单、工作、零件等的自动编号格式"
-
-msgid "Auto-start the operator's timer when they open an operation in the MES so time logs are captured from the start."
-msgstr "当操作员在MES中打开操作时自动启动计时器，以便从一开始就捕获时间日志。"
-
-msgid "Auto-start timer on open"
-msgstr "打开时自动启动计时器"
 
 msgid "Auto-suggest purchases from demand and reorder points"
 msgstr "根据需求和重新订购点自动建议采购"
@@ -3046,6 +3065,9 @@ msgstr "更改单类型"
 msgid "Change Notices"
 msgstr "更改单"
 
+msgid "Change notices could not be loaded, so new versions and revisions are blocked. Reload to try again."
+msgstr "无法加载更改单，因此新版本和修订版本已被阻止。请重新加载以重试。"
+
 msgid "Change order"
 msgstr "变更单"
 
@@ -3111,6 +3133,12 @@ msgstr "选择序列号"
 
 msgid "Choose another file"
 msgstr "选择另一个文件"
+
+msgid "Choose what appears on the printed job traveler."
+msgstr "选择打印的工作单上显示的内容。"
+
+msgid "Choose your preferred language for the interface."
+msgstr "选择您偏好的界面语言。"
 
 msgid "Choose your style"
 msgstr "选择您的风格"
@@ -3342,9 +3370,6 @@ msgstr "完成日期"
 
 msgid "Completed Date"
 msgstr "完成日期"
-
-msgid "Completed Job Notifications"
-msgstr "已完成的工作通知"
 
 msgid "Completed Qty"
 msgstr "已完成数量"
@@ -3617,6 +3642,9 @@ msgstr "承包商"
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "控制设计变更与修订版本/工程变更单"
+
+msgid "Control how operators pick material and track time on the shop floor."
+msgstr "控制操作人员如何在车间选择材料并跟踪时间。"
 
 msgid "Controller, Accountant"
 msgstr "控制器，会计"
@@ -4036,6 +4064,9 @@ msgstr "创建看板"
 
 msgid "Create new rule"
 msgstr "创建新规则"
+
+msgid "Create PO Revision"
+msgstr "创建采购订单修订版本"
 
 msgid "Create Production Event"
 msgstr "创建生产事件"
@@ -4926,6 +4957,12 @@ msgstr "删除零件"
 msgid "Delete Partner"
 msgstr "删除合作伙伴"
 
+msgid "Delete passkey"
+msgstr "删除密钥"
+
+msgid "Delete Passkey"
+msgstr "删除密钥"
+
 msgid "Delete Payment"
 msgstr "删除付款"
 
@@ -5755,6 +5792,9 @@ msgstr "编辑零件"
 msgid "Edit Partner"
 msgstr "编辑合作伙伴"
 
+msgid "Edit Passkey"
+msgstr "编辑密钥"
+
 msgid "Edit Payment"
 msgstr "编辑付款"
 
@@ -6086,6 +6126,9 @@ msgstr "输入文本…"
 
 msgid "Enter the 6-digit code from your authenticator app"
 msgstr "输入来自您的身份验证器应用的6位数代码"
+
+msgid "Enter the 6-digit code from your authenticator app to resume."
+msgstr "输入您的身份验证器应用中的 6 位数字代码以继续。"
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "输入此移动应该的数量。差异的相反移动将在原始时期内的原始移动旁发布。"
@@ -6654,6 +6697,9 @@ msgstr "获取风险失败"
 msgid "Failed to fetch suggestions"
 msgstr "获取建议失败"
 
+msgid "Failed to get options"
+msgstr "获取选项失败"
+
 msgid "Failed to initialize Carbon client"
 msgstr "未能初始化 Carbon 客户端"
 
@@ -6726,6 +6772,9 @@ msgstr ""
 
 msgid "Failed to regenerate thumbnail"
 msgstr "未能重新生成缩略图"
+
+msgid "Failed to register passkey"
+msgstr "注册密钥失败"
 
 msgid "Failed to remove image: {errorMessage}"
 msgstr "删除图像失败：{errorMessage}"
@@ -7811,17 +7860,11 @@ msgstr "入站检验"
 msgid "Inbox"
 msgstr "收件箱"
 
-msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
-msgstr "在工作单据 PDF 中包含物料清单（BOM）部分，列出物料号和数量。"
-
 msgid "Include extra parts in shipment"
 msgstr "在发货中包含额外零件"
 
 msgid "Include Inactive"
 msgstr "包括不活跃"
-
-msgid "Include materials on traveler"
-msgstr "在工作单据上包含物料"
 
 msgid "Included"
 msgstr "已包含"
@@ -8315,6 +8358,9 @@ msgstr "此窗口内的项目会获得黄色徽章。"
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "项目：项目主数据、物料清单、工艺流程、工程变更、CAD"
 
+msgid "Its design may change before the change notice is released."
+msgstr "在更改单发布前，其设计可能会发生变化。"
+
 msgid "Job"
 msgstr "工作"
 
@@ -8348,11 +8394,8 @@ msgstr "工作优先级"
 msgid "Job readable"
 msgstr "工作可读性"
 
-msgid "Job Traveler Materials"
-msgstr "工作单据物料"
-
-msgid "Job traveler settings updated"
-msgstr "工作单据设置已更新"
+msgid "Job Traveler"
+msgstr "工作单"
 
 msgid "Jobs"
 msgstr "工作"
@@ -8532,6 +8575,8 @@ msgstr "最后培训"
 
 msgid "Last Training Date"
 msgstr "最后培训日期"
+msgid "Last used"
+msgstr "最后使用"
 
 msgid "Latest operation end"
 msgstr "最新操作结束"
@@ -9165,6 +9210,8 @@ msgstr "物料ID"
 
 msgid "Material Planning"
 msgstr "物料规划"
+msgid "Material is pre-selected"
+msgstr "材料已预先选择"
 
 msgid "Material Properties"
 msgstr "材料属性"
@@ -9210,6 +9257,11 @@ msgstr "材料"
 
 msgid "Matrix"
 msgstr "矩阵"
+msgid "Materials are included"
+msgstr "包含材料"
+
+msgid "Materials are not included"
+msgstr "不包含材料"
 
 msgid "Max Qty"
 msgstr "最大数量"
@@ -9426,6 +9478,8 @@ msgstr "更多操作"
 
 msgid "More hours than the shift has."
 msgstr "超过班次的小时数。"
+msgid "More information"
+msgstr "更多信息"
 
 msgid "More options"
 msgstr "更多选项"
@@ -10183,6 +10237,9 @@ msgstr "无零件ID"
 msgid "No parts"
 msgstr "没有零件"
 
+msgid "No passkeys registered yet."
+msgstr "尚未注册任何密钥。"
+
 msgid "No payables"
 msgstr "无应付款"
 
@@ -10635,9 +10692,6 @@ msgstr "未结应收"
 msgid "Open Audit Log"
 msgstr "打开审计日志"
 
-msgid "Open change notices affecting this part"
-msgstr "打开影响此零件的更改单"
-
 msgid "Open date"
 msgstr "开始日期"
 
@@ -10725,6 +10779,9 @@ msgstr "打开"
 msgid "Opening"
 msgstr "期初"
 
+msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
+msgstr "打开一个操作会启动其计时器，因此从工作开始时起就跟踪时间。"
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "在将此资产添加到Carbon之前已入账的折旧的期初余额（新购置的情况下使用0）。"
 
@@ -10757,9 +10814,6 @@ msgstr "操作数量"
 
 msgid "Operation supplier process"
 msgstr "操作供应商流程"
-
-msgid "Operation Timer"
-msgstr "操作计时器"
 
 msgid "Operation type"
 msgstr "操作类型"
@@ -10806,6 +10860,12 @@ msgstr "操作员"
 msgid "Operators can use shared workstations with PIN authentication."
 msgstr "操作员可以使用带有PIN身份验证的共享工作站。"
 
+msgid "Operators start on the Scan tab"
+msgstr "操作人员从扫描选项卡开始"
+
+msgid "Operators start the timer themselves when they begin an operation."
+msgstr "操作人员在开始一个操作时自己启动计时器。"
+
 msgid "Opportunity"
 msgstr "机会"
 
@@ -10827,8 +10887,14 @@ msgstr "可选页面和部分"
 msgid "Options"
 msgstr "选项"
 
+msgid "or"
+msgstr "或"
+
 msgid "OR"
 msgstr "或"
+
+msgid "Or enter this secret manually:"
+msgstr "或手动输入此密码:"
 
 msgid "Order"
 msgstr "订单"
@@ -11101,6 +11167,17 @@ msgstr "已通过"
 
 msgid "Past due"
 msgstr "逾期"
+msgid "Passkey name"
+msgstr "密钥名称"
+
+msgid "Passkey unlock failed"
+msgstr "密钥解锁失败"
+
+msgid "Passkeys"
+msgstr "密钥"
+
+msgid "Passkeys are disabled"
+msgstr "密钥已禁用"
 
 msgid "Path"
 msgstr "路径"
@@ -11502,9 +11579,6 @@ msgstr "潜在数据丢失"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "当过期时间设置为固定期限时，为新项目预填充。"
-
-msgid "Pre-select material without a picking list"
-msgstr "不带拣选单预先选择材料"
 
 msgid "Preferred Supplier"
 msgstr "首选供应商"
@@ -12444,6 +12518,9 @@ msgstr "已注册"
 msgid "Registered"
 msgstr "重新订购点"
 
+msgid "Registration failed"
+msgstr "注册失败"
+
 msgid "Registration Number"
 msgstr "注册号"
 
@@ -12520,6 +12597,9 @@ msgstr "删除 {0}"
 msgid "Remove {label}"
 msgstr "移除 {label}"
 
+msgid "Remove authenticator app"
+msgstr "移除身份验证器应用"
+
 msgid "Remove clause"
 msgstr "移除条款"
 
@@ -12576,6 +12656,9 @@ msgstr "从所有引用此存储类型的存储单元中移除它并将其删除
 
 msgid "Remove tool"
 msgstr "移除工具"
+
+msgid "Remove two-factor authentication"
+msgstr "移除双因素身份验证"
 
 msgid "Removed"
 msgstr "已移除"
@@ -12683,6 +12766,9 @@ msgstr "请求批准"
 msgid "Requested Date"
 msgstr "请求日期"
 
+msgid "Require a 6-digit code from an authenticator app when signing in."
+msgstr "登录时需要来自身份验证器应用的 6 位数字代码。"
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "在任何人打开此公司之前需要身份验证器应用。他们的其他公司不受影响。访问<0>员工账户页面</0>以查看每个人的状态。"
 
@@ -12718,6 +12804,9 @@ msgstr "必需的操作（按顺序）"
 
 msgid "Required Date"
 msgstr "所需日期"
+
+msgid "Required in a controlled environment — audit logging cannot be turned off."
+msgstr "在受控环境中需要 — 审计日志无法关闭。"
 
 msgid "Requirement"
 msgstr "需求"
@@ -13296,6 +13385,9 @@ msgstr "扫描或搜索..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "从此批次扫描或选择被追踪的实体以将其作为样本列添加，然后在网格中记录其结果。"
 
+msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
+msgstr "使用您的身份验证器应用(例如 Google Authenticator 或 1Password)扫描此 QR 码,然后输入它显示的 6 位数字代码。"
+
 msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
 msgstr "使用您的身份验证器应用扫描此内容，然后输入它显示的6位数代码。"
 
@@ -13469,6 +13561,9 @@ msgstr "完成秒数"
 
 msgid "Seconds/Piece"
 msgstr "秒/件"
+
+msgid "Secret copied to clipboard"
+msgstr "密码已复制到剪贴板"
 
 msgid "Section"
 msgstr "部分"
@@ -13793,6 +13888,9 @@ msgstr "服务"
 msgid "Services"
 msgstr "服务"
 
+msgid "Session locked"
+msgstr "会话已锁定"
+
 msgid "Set a target"
 msgstr "设置目标"
 
@@ -13828,6 +13926,9 @@ msgstr "设置身份验证器应用"
 
 msgid "Set up the right way"
 msgstr "以正确的方式设置"
+
+msgid "Set up two-factor authentication"
+msgstr "设置双因素身份验证"
 
 msgid "Set up your company with a step-by-step implementation plan covering setup, data, training, and go-live."
 msgstr "通过涵盖设置、数据、培训和上线的分步实施计划来设置您的公司。"
@@ -14107,6 +14208,9 @@ msgstr "作为淡色背景显示在每个生成的PDF页面后面"
 msgid "Shown to the user when this rule fails."
 msgstr "当此规则失败时向用户显示。"
 
+msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
+msgstr "使用生物识别而不是魔法链接登录。密钥由 Face ID、Touch ID 或您的设备 PIN 保护。"
+
 msgid "Sign in with Email"
 msgstr "用邮箱登录"
 
@@ -14125,6 +14229,9 @@ msgstr "登出"
 msgid "Sign Out"
 msgstr "登出"
 
+msgid "Sign out instead"
+msgstr "改为登出"
+
 msgid "Sign-off review before moving to the next step"
 msgstr "签署审查后再进行下一步"
 
@@ -14139,6 +14246,9 @@ msgstr "有符号数量 — 出站移动为负"
 
 msgid "Signing in also requires a one-time code from your authenticator app"
 msgstr "登录还需要来自您的身份验证器应用的一次性代码"
+
+msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
+msgstr "登录将不再需要代码。输入您的身份验证器应用中的当前 6 位数字代码以确认。"
 
 msgid "Sites & locations"
 msgstr "站点和位置"
@@ -15690,6 +15800,12 @@ msgstr "系统通过了您配置的系统中的所有范围内验收测试，使
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "链接销售RFQ、其报价和生成的销售订单的线程 - 连接，而不是具有自己状态的文档。"
 
+msgid "The timer starts automatically"
+msgstr "计时器自动启动"
+
+msgid "The timer starts manually"
+msgstr "计时器手动启动"
+
 msgid "The tooling and fixtures your operations rely on"
 msgstr "您的运营所依赖的工具和夹具"
 
@@ -15698,6 +15814,9 @@ msgstr "在此批量批次中创建的所有工作中要制造的总量；与每
 
 msgid "The traceable reference (e.g. NIST standard, master gauge serial) the calibration values were compared against."
 msgstr "对其进行校准值比较的可追踪参考（例如NIST标准，主测量仪序列号）。"
+
+msgid "The traveler lists each item on the bill of materials with its quantity."
+msgstr "工作单列出物料清单上的每个项目及其数量。"
 
 msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
 msgstr "类型控制新员工接收的默认权限；在此处选择它会从类型的模板预填充权限矩阵。"
@@ -15901,6 +16020,9 @@ msgstr "您的实现中心的此页面正在构建中。请从命令中心开始
 msgid "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
 msgstr "此零件在此位置有 {quantityOnHand} 件现货。\"无库存\"意味着它既不会被计划也不会被消耗。"
 
+msgid "This part is activated when change notice {activationLockId} is released."
+msgstr "此零件将在更改单 {activationLockId} 发布后激活。"
+
 msgid "This part is being phased out."
 msgstr "这个零件正在逐步淘汰。"
 
@@ -15915,6 +16037,9 @@ msgstr "此路径仅决定接下来运行什么"
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "此期间未过账任何日记账分录，可以永久删除。此操作无法撤销。"
+
+msgid "this purchase order"
+msgstr "此采购订单"
 
 msgid "This Quarter"
 msgstr "本季度"
@@ -15955,6 +16080,8 @@ msgstr "此供应商"
 
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "这将从今天的日程表中移除{employeeName}。再次保存以确认。"
+msgid "This tool is activated when change notice {activationLockId} is released."
+msgstr "此工具将在更改单 {activationLockId} 发布后激活。"
 
 msgid "This updates the theme for all users of the application"
 msgstr "这会更新应用程序所有用户的主题"
@@ -16293,6 +16420,9 @@ msgstr "追踪实体"
 msgid "Tracked entity ID is required but none was found"
 msgstr "已跟踪实体ID是必需的，但未找到"
 
+msgid "Tracked material is pre-selected by pick order (FEFO), even without a picking list."
+msgstr "追踪的材料按照提货顺序（FEFO）预先选择，即使没有提货单。"
+
 msgid "Tracking"
 msgstr "追踪"
 
@@ -16398,8 +16528,17 @@ msgstr "双因素"
 msgid "Two-factor authentication"
 msgstr "双因素认证"
 
+msgid "Two-factor authentication disabled"
+msgstr "双因素身份验证已禁用"
+
+msgid "Two-factor authentication enabled"
+msgstr "双因素身份验证已启用"
+
 msgid "Two-Factor Authentication Enforcement"
 msgstr "双因素认证强制执行"
+
+msgid "Two-factor authentication is not enabled."
+msgstr "双因素身份验证未启用。"
 
 msgid "Type"
 msgstr "类型"
@@ -16430,6 +16569,9 @@ msgstr "类型"
 
 msgid "U.S. Person Attestation"
 msgstr "美国人证明"
+
+msgid "Unable to unlock"
+msgstr "无法解锁"
 
 msgid "Unapplied"
 msgstr "未应用"
@@ -16532,6 +16674,9 @@ msgstr "从销售订单取消关联工作？"
 
 msgid "Unlock"
 msgstr "解锁"
+
+msgid "Unlock with passkey"
+msgstr "使用密钥解锁"
 
 msgid "Unmapped accounts"
 msgstr "未映射的账户"
@@ -17406,17 +17551,11 @@ msgstr "启用后,此类别中的属性会显示在人员的公开个人资料�
 msgid "When on, employees can edit this attribute's value on their own profile; otherwise only admins can."
 msgstr "启用后,员工可以在自己的个人资料中编辑此属性的值;否则,仅管理员可以这样做。"
 
-msgid "When on, opening an operation starts its timer automatically."
-msgstr "打开时，打开操作会自动启动其计时器。"
-
 msgid "When on, pricing rules (volume discounts, promotions) still apply on top of this override; when off, this override is the final price."
 msgstr "启用后,定价规则(批量折扣、促销)仍适用于此覆盖;禁用时,此覆盖是最终价格。"
 
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "启用后,扫描此流程的操作条形码会在一个操作中将所有剩余的未处理数量报告为已完成;当操作员定期报告部分时禁用。"
-
-msgid "When on, the traveler PDF lists the job's required materials."
-msgstr "启用后，工作单据 PDF 将列出工作所需的物料。"
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "启用后,该方的发票会跳过税计算;该方负责使豁免证书保持最新。"
@@ -17426,9 +17565,6 @@ msgstr "启用后,此价格覆盖适用于匹配的订单;禁用时,覆盖被保
 
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "启用时，此规则对其类型的每个目标都会触发。分配行被忽略但保留。"
-
-msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
-msgstr "启用时，即使没有拣选单，跟踪的材料也会根据拣选顺序（FEFO）预先选择。禁用时，操作员从扫描选项卡开始。"
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "何时预期供应商回复;供应商在RFQ门户上看到该日期,Carbon在之后停止接受迟到的回复(可配置)。"
@@ -17645,6 +17781,9 @@ msgstr "窗口："
 
 msgid "WIP"
 msgstr "在制品"
+
+msgid "Without a picking list, operators pick material from the Scan tab."
+msgstr "没有提货单，操作人员从扫描选项卡中选择材料。"
 
 #. placeholder {0}: quarter.start + 1
 #. placeholder {1}: quarter.end
@@ -17907,6 +18046,9 @@ msgstr "您的项目团队"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "您的真实数据已加载，您已检查样本并批准了它。"
+
+msgid "Your session was locked after inactivity."
+msgstr "您的会话因不活动而被锁定。"
 
 msgid "Your source data is accessible and reasonably clean"
 msgstr "您的源数据可访问且相对干净"

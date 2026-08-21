@@ -45,7 +45,8 @@
     "./template": "./src/template/index.ts",
     "./zpl": "./src/zpl/index.ts",
     "./qr": "./src/qr/qr-code.ts",
-    "./labels": "./src/labels/index.ts"
+    "./labels": "./src/labels/index.ts",
+    "./utils": "./src/utils/index.ts"
   },
   "private": true,
   "scripts": {

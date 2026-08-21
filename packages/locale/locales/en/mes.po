@@ -431,6 +431,9 @@ msgstr "Enter PIN for {0}"
 msgid "Enter the 6-digit code from your authenticator app"
 msgstr "Enter the 6-digit code from your authenticator app"
 
+msgid "Enter the 6-digit code from your authenticator app to resume."
+msgstr "Enter the 6-digit code from your authenticator app to resume."
+
 msgid "Error"
 msgstr "Error"
 
@@ -932,6 +935,9 @@ msgstr "Operator Performed"
 msgid "Optional"
 msgstr "Optional"
 
+msgid "or"
+msgstr "or"
+
 msgid "Overall result"
 msgstr "Overall result"
 
@@ -952,6 +958,9 @@ msgstr "Partial Disposition"
 
 msgid "Passed Inspection"
 msgstr "Passed Inspection"
+
+msgid "Passkey unlock failed"
+msgstr "Passkey unlock failed"
 
 msgid "Pause"
 msgstr "Pause"
@@ -1235,6 +1244,9 @@ msgstr "Serial numbers"
 msgid "Serial Numbers"
 msgstr "Serial Numbers"
 
+msgid "Session locked"
+msgstr "Session locked"
+
 msgid "Set Clock Out"
 msgstr "Set Clock Out"
 
@@ -1273,6 +1285,9 @@ msgstr "Sign out"
 
 msgid "Sign Out"
 msgstr "Sign Out"
+
+msgid "Sign out instead"
+msgstr "Sign out instead"
 
 msgid "Signed in as {stationName}"
 msgstr "Signed in as {stationName}"
@@ -1407,11 +1422,20 @@ msgstr "Two-factor authentication required"
 msgid "Type a message..."
 msgstr "Type a message..."
 
+msgid "Unable to unlock"
+msgstr "Unable to unlock"
+
 msgid "Unissued serial/batch materials"
 msgstr "Unissued serial/batch materials"
 
 msgid "Unknown"
 msgstr "Unknown"
+
+msgid "Unlock"
+msgstr "Unlock"
+
+msgid "Unlock with passkey"
+msgstr "Unlock with passkey"
 
 msgid "Unpick"
 msgstr "Unpick"
@@ -1493,3 +1517,5 @@ msgstr "Your organization requires an authenticator app. Set it up in Carbon, th
 #. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"
 msgstr "Your station: {0}"
+msgid "Your session was locked after inactivity."
+msgstr "Your session was locked after inactivity."

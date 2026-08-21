@@ -477,7 +477,7 @@ function checkTypes(
 /**
  * Layer 6, second half — a record dropped into a sentence has no reading, so it is
  * rejected here rather than silently flattened to an id at run time. This lives in
- * one place for every template: an action's message, an entity's field, a clause.
+ * one place for every template: an action's message, a compute step's input, a clause.
  */
 function checkTemplateParts(
   node: WorkflowNode,

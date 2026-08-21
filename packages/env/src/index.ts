@@ -371,6 +371,13 @@ export const REDIS_URL = getEnv("REDIS_URL", {
 });
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days;
 export const REFRESH_ACCESS_TOKEN_THRESHOLD = 60 * 10; // 10 minutes left before token expires
+// Session lock / termination (NIST 800-171 3.1.10 / 3.1.11). All in MILLISECONDS
+// (unlike SESSION_MAX_AGE above, which is seconds for the cookie maxAge). Enforced
+// only when CONTROLLED_ENVIRONMENT is true. Plain literals, matching SESSION_MAX_AGE
+// precedent (not env-overridable in v1).
+export const SESSION_IDLE_LOCK_MS = 15 * 60 * 1000; // 15 min — DISA App-Sec STIG web-app idle
+export const SESSION_ABSOLUTE_MAX_MS = 12 * 60 * 60 * 1000; // 12 h — absolute session cap
+export const SESSION_HEARTBEAT_MS = 60 * 1000; // client activity heartbeat throttle
 export const VERCEL_URL = getEnv("VERCEL_URL", { isSecret: false });
 
 export const XERO_CLIENT_ID = getEnv("XERO_CLIENT_ID", {

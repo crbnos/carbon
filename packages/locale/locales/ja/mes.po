@@ -431,6 +431,9 @@ msgstr "{0} のPINを入力"
 msgid "Enter the 6-digit code from your authenticator app"
 msgstr "認証器アプリから6桁のコードを入力してください"
 
+msgid "Enter the 6-digit code from your authenticator app to resume."
+msgstr "認証アプリから6桁のコードを入力して再開してください。"
+
 msgid "Error"
 msgstr "エラー"
 
@@ -932,6 +935,9 @@ msgstr "オペレーター実施"
 msgid "Optional"
 msgstr "オプション"
 
+msgid "or"
+msgstr "または"
+
 msgid "Overall result"
 msgstr "全体的な結果"
 
@@ -952,6 +958,9 @@ msgstr "部分的な処分"
 
 msgid "Passed Inspection"
 msgstr "検査合格"
+
+msgid "Passkey unlock failed"
+msgstr "パスキーのロック解除に失敗しました"
 
 msgid "Pause"
 msgstr "一時停止"
@@ -1235,6 +1244,9 @@ msgstr "シリアル番号"
 msgid "Serial Numbers"
 msgstr "シリアル番号"
 
+msgid "Session locked"
+msgstr "セッションがロックされています"
+
 msgid "Set Clock Out"
 msgstr "退勤時間を設定"
 
@@ -1273,6 +1285,9 @@ msgstr "サインアウト"
 
 msgid "Sign Out"
 msgstr "サインアウト"
+
+msgid "Sign out instead"
+msgstr "代わりにサインアウト"
 
 msgid "Signed in as {stationName}"
 msgstr "{stationName} としてサインイン中"
@@ -1407,11 +1422,20 @@ msgstr "二要素認証が必要です"
 msgid "Type a message..."
 msgstr "メッセージを入力..."
 
+msgid "Unable to unlock"
+msgstr "ロック解除できません"
+
 msgid "Unissued serial/batch materials"
 msgstr "未払出のシリアル/バッチ材料"
 
 msgid "Unknown"
 msgstr "不明"
+
+msgid "Unlock"
+msgstr "ロック解除"
+
+msgid "Unlock with passkey"
+msgstr "パスキーでロック解除"
 
 msgid "Unpick"
 msgstr "ピッキング解除"
@@ -1493,3 +1517,5 @@ msgstr "あなたの組織は認証器アプリが必要です。Carbonで設定
 #. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"
 msgstr "あなたのステーション: {0}"
+msgid "Your session was locked after inactivity."
+msgstr "非アクティブ後、セッションがロックされました。"

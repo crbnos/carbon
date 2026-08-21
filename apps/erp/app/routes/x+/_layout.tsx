@@ -4,7 +4,10 @@ import {
   CONTROLLED_ENVIRONMENT,
   getCarbon,
   getMESUrl,
-  ITAR_RIDER_PDF_PATH
+  ITAR_RIDER_PDF_PATH,
+  isAuthProviderEnabled,
+  SESSION_HEARTBEAT_MS,
+  SESSION_IDLE_LOCK_MS
 } from "@carbon/auth";
 import { getCompanyId, setCompanyId } from "@carbon/auth/company.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
@@ -54,9 +57,10 @@ import {
 import { RealtimeDataProvider } from "~/components";
 import { PrimaryNavigation, Topbar } from "~/components/Layout";
 import MfaEnrollmentRequired from "~/components/MfaEnrollmentRequired";
+import SessionLockOverlay from "~/components/SessionLockOverlay";
 import { TimeCardWarning } from "~/components/TimeCardWarning";
 import TrainingPanel from "~/components/TrainingPanel";
-import { usePermissions } from "~/hooks";
+import { useIdle, usePermissions } from "~/hooks";
 import { useTrainingPanel } from "~/hooks/useTrainingPanel";
 import { AgentRoot } from "~/modules/agent/ui/AgentRoot";
 import { getOpenClockEntry } from "~/modules/people";
@@ -291,6 +295,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
       required: mfaRequired && !mfaEnrolled,
       controlledEnvironment: CONTROLLED_ENVIRONMENT
     },
+    // Session lock/termination (NIST 3.1.10/3.1.11) — client idle UX config. The
+    // ERP shell already redirected any console session to MES above, so no console
+    // exemption is needed here. Server enforcement lives in requireAuthSession.
+    sessionTimeout: {
+      enabled: CONTROLLED_ENVIRONMENT,
+      idleMs: SESSION_IDLE_LOCK_MS,
+      heartbeatMs: SESSION_HEARTBEAT_MS,
+      // Offer passkey re-auth on the lock overlay when the provider is enabled;
+      // the /unlock action gates the actual credential, TOTP stays available.
+      hasPasskeyAuth: isAuthProviderEnabled("passkey")
+    },
     supplierApprovalRequired: isApprovalRequired(client, "supplier", companyId),
     openClockEntry: companySettings.data?.timeCardEnabled
       ? getOpenClockEntry(client, userId, companyId)
@@ -307,11 +322,21 @@ export default function AuthenticatedRoute() {
     openClockEntry,
     printerRoutes,
     itarCertification,
-    mfaEnrollment
+    mfaEnrollment,
+    sessionTimeout
   } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const permissions = usePermissions();
   const { isOpen, training, dismiss } = useTrainingPanel();
+
+  // Session lock (NIST 3.1.10) — client idle UX only; the server enforces in
+  // requireAuthSession. Inert unless CONTROLLED_ENVIRONMENT.
+  const { isIdle, resume } = useIdle({
+    enabled: sessionTimeout.enabled,
+    idleMs: sessionTimeout.idleMs,
+    heartbeatMs: sessionTimeout.heartbeatMs,
+    heartbeatUrl: "/api/session/heartbeat"
+  });
 
   useNProgress();
   useKeyboardWedge({
@@ -407,6 +432,14 @@ export default function AuthenticatedRoute() {
 
   return (
     <div className="h-[100dvh] flex flex-col">
+      {/* Idle lock conceals the app (3.1.10). Not shown over the ITAR/MFA gates —
+          the user has not fully entered the app there. */}
+      {isIdle && !itarScreen && !mfaScreen && (
+        <SessionLockOverlay
+          onUnlocked={resume}
+          hasPasskeyAuth={sessionTimeout.hasPasskeyAuth}
+        />
+      )}
       {(itarScreen ?? mfaScreen) ? (
         (itarScreen ?? mfaScreen)
       ) : (

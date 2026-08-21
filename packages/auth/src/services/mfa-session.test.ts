@@ -15,7 +15,10 @@ vi.mock("@carbon/kv", () => ({
 vi.mock("../config/env", () => ({
   DOMAIN: "localhost",
   CarbonEdition: "Community",
+  CONTROLLED_ENVIRONMENT: false,
   REFRESH_ACCESS_TOKEN_THRESHOLD: 60,
+  SESSION_ABSOLUTE_MAX_MS: 12 * 60 * 60 * 1000,
+  SESSION_IDLE_LOCK_MS: 15 * 60 * 1000,
   SESSION_KEY: "auth",
   SESSION_MAX_AGE: 60 * 60 * 24 * 7,
   SESSION_SECRET: "test-session-secret"
@@ -44,7 +47,8 @@ vi.mock("./auth.server", () => ({
         : null
   ),
   refreshAccessToken: vi.fn(),
-  verifyAuthSession: vi.fn().mockResolvedValue(true)
+  verifyAuthSession: vi.fn().mockResolvedValue(true),
+  logAuthEvent: vi.fn()
 }));
 
 vi.mock("./company.server", () => ({

@@ -1,6 +1,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
@@ -113,6 +114,27 @@ export async function action({ request, params }: ActionFunctionArgs) {
         request,
         error(update.error, "Failed to update picking list status")
       )
+    );
+  }
+
+  if (status === "Completed" || status === "Partial") {
+    // Partial is the interesting one: it means a line could not be filled,
+    // which is the material-availability half of job cycle time.
+    //
+    // The status is the discriminator, not just a property: a list goes
+    // Partial and later Completed, and both are real occurrences. Keyed on the
+    // list alone the second collapses into the first and the completion is
+    // lost, while re-saving the same status still de-duplicates.
+    trackWorkEvent(
+      "picking_list_completed",
+      {
+        companyId,
+        userId,
+        pickingListId: id,
+        finalStatus: status,
+        source: "erp"
+      },
+      { discriminator: status }
     );
   }
 

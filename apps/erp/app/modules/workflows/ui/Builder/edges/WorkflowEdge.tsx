@@ -62,9 +62,11 @@ function WorkflowEdgeImpl({
       />
       {!isReadOnly && (
         <EdgeLabelRenderer>
-          {/* The renderer's container is pointer-events:none, so the button opts back in. */}
+          {/* The renderer's container is pointer-events:none, so the button opts back in.
+              z above 1000, the z-index React Flow gives a selected node — otherwise a
+              node's port label paints over this button. */}
           <div
-            className="nodrag nopan pointer-events-auto absolute"
+            className="nodrag nopan pointer-events-auto absolute z-[1001]"
             style={{
               transform: `translate(-50%, -60%) translate(${labelX}px, ${labelY}px)`
             }}
@@ -79,8 +81,10 @@ function WorkflowEdgeImpl({
               // Opaque, because the edge runs underneath. `after:` widens the hit
               // box without growing the dot on the canvas.
               className={cn(
-                "!bg-card after:absolute after:-inset-2 after:content-['']",
-                armed && "border-destructive text-destructive"
+                "!bg-card hover:!bg-card after:absolute after:-inset-2 after:content-['']",
+                // The cursor is still on the button after the first click, so the
+                // hover color has to go red too or the armed state never shows.
+                armed && "text-destructive hover:text-destructive"
               )}
               onClick={(e) => {
                 e.stopPropagation();

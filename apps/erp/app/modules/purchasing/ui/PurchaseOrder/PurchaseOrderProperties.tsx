@@ -1,4 +1,5 @@
 import type { Json } from "@carbon/database";
+import { getPurchaseOrderDisplayId } from "@carbon/documents/utils";
 import { DatePicker, InputControlled, ValidatedForm } from "@carbon/form";
 import {
   Badge,
@@ -166,7 +167,7 @@ const PurchaseOrderProperties = () => {
                   className="p-1"
                   onClick={() =>
                     copyToClipboard(
-                      routeData?.purchaseOrder?.purchaseOrderId ?? ""
+                      getPurchaseOrderDisplayId(routeData?.purchaseOrder)
                     )
                   }
                 >
@@ -180,7 +181,7 @@ const PurchaseOrderProperties = () => {
           </HStack>
         </HStack>
         <span className="text-sm">
-          {routeData?.purchaseOrder?.purchaseOrderId}
+          {getPurchaseOrderDisplayId(routeData?.purchaseOrder)}
         </span>
       </VStack>
 

@@ -18,6 +18,7 @@ export const SAMPLE_QUOTE = {
   exchangeRate: 1,
   quote: {
     quoteId: "QUO-001042",
+    revisionId: 0,
     currencyCode: "USD",
     expirationDate: "2026-07-01",
     customerReference: "RFQ-88421",

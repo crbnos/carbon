@@ -82,7 +82,8 @@ export function SelectedItemProperties({
     files: filesPromise,
     supplierParts: d.supplierParts,
     pickMethods: d.pickMethods,
-    tags: d.tags
+    tags: d.tags,
+    unreleasedChangeOrder: d.unreleasedChangeOrder
   };
 
   switch (d.type) {

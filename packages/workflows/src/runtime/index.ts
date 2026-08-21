@@ -1,8 +1,8 @@
 export { actionExecutor } from "./action";
 export { itemKeyFor, planBatch } from "./batch";
 export { compare, evaluateClauses } from "./compare";
+export { computeExecutor } from "./compute";
 export { conditionExecutor, NO_BRANCH } from "./condition";
-export { entityExecutor } from "./entity";
 export { executorFor } from "./executors";
 export { filterExecutor, filterSummary } from "./filter";
 export { lookupExecutor } from "./lookup";

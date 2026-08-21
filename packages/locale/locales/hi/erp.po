@@ -49,8 +49,8 @@ msgid "(excluded for this customer)"
 msgstr "(इस ग्राहक के लिए बाहर रखा गया)"
 
 #. placeholder {0}: open.length
-msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
-msgstr "{0, plural, one {यह भाग 1 खुली परिवर्तन सूचना पर है} other {यह भाग # खुली परिवर्तन सूचनाओं पर है}}"
+msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
+msgstr "{0, plural, one {यह आइटम 1 खुली परिवर्तन सूचना पर है} other {यह आइटम # खुली परिवर्तन सूचनाओं पर है}}"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -109,6 +109,10 @@ msgstr "{0} समस्याएं — प्रकाशित नहीं"
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "{0} प्रक्रियाएं"
+
+#. placeholder {0}: result.credentialName ?? "Passkey"
+msgid "{0} registered"
+msgstr "{0} पंजीकृत"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -222,6 +226,10 @@ msgstr "{name} हटाया गया"
 
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} भाग छोड़ दिए गए — कुछ नहीं बनाना है"
+
+#. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
+msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
+msgstr "{orderLabel} को संपादन के लिए संशोधन {0} के रूप में फिर से खोला जाएगा। आपूर्तिकर्ता को भेजा गया दस्तावेज़ जब तक आप इसे अंतिम रूप देते हैं और आदेश को फिर से भेजते हैं तब तक अपरिवर्तित रहता है।"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# चरण बचा} other {# चरण बचे}}"
@@ -1087,6 +1095,9 @@ msgstr "एक टिप्पणी जोड़ें..."
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "मात्रा, मूल्य, शिपिंग, लीड समय और कर को ओवरराइड करने के लिए एक कस्टम मूल्य निर्धारण पंक्ति जोड़ें"
 
+msgid "Add a materials section that lists each item on the bill of materials with its quantity."
+msgstr "बिल ऑफ मेटेरियल्स पर प्रत्येक आइटम और उसकी मात्रा को सूचीबद्ध करने वाली एक सामग्री अनुभाग जोड़ें।"
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "प्रिंटिंग सेटिंग्स में एक प्रिंटर जोड़ें ताकि लेबल सीधे प्रिंट कर सकें।"
 
@@ -1119,6 +1130,9 @@ msgstr "अपने निर्णय के बारे में कोई 
 
 msgid "Add Approval Requirement"
 msgstr "अनुमोदन आवश्यकता जोड़ें"
+
+msgid "Add Authenticator App"
+msgstr "ऑथेंटिकेटर ऐप जोड़ें"
 
 msgid "Add Calibration Record"
 msgstr "कैलिब्रेशन रिकॉर्ड जोड़ें"
@@ -1197,6 +1211,9 @@ msgstr "पार्टनर जोड़ें"
 
 msgid "Add parts"
 msgstr "पुर्जे जोड़ें"
+
+msgid "Add Passkey"
+msgstr "पासकी जोड़ें"
 
 msgid "Add path"
 msgstr "पथ जोड़ें"
@@ -1770,7 +1787,7 @@ msgstr "संग्रहीत"
 msgid "Archived Logs"
 msgstr "संग्रहीत लॉग"
 
-#. placeholder {0}: quote.quoteId
+#. placeholder {0}: getQuoteDisplayId(quote)
 #. placeholder {1}: formatter.format(total)
 msgid "Are you sure you want to accept quote {0} for {1}?"
 msgstr "क्या आप सुनिश्चित हैं कि आप उद्धरण {0} को {1} के लिए स्वीकार करना चाहते हैं?"
@@ -1789,9 +1806,8 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "क्या आप सुनिश्चित हैं कि आप {0} को रद्द करना चाहते हैं? यह सभी संबंधित आपूर्तिकर्ता उद्धरणों को भी रद्द कर देगा।"
 
-#. placeholder {0}: routeData?.purchaseOrder?.purchaseOrderId ?? "this purchase order"
-msgid "Are you sure you want to cancel {0}? This will close the order."
-msgstr "क्या आप वाकई {0} रद्द करना चाहते हैं? इससे ऑर्डर बंद हो जाएगा।"
+msgid "Are you sure you want to cancel {orderLabel}? This will close the order."
+msgstr "क्या आप सुनिश्चित हैं कि आप {orderLabel} को रद्द करना चाहते हैं? यह आदेश को बंद कर देगा।"
 
 msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 msgstr "क्या आप सुनिश्चित हैं कि आप इस कार्य को रद्द करना चाहते हैं? यह अब शॉप फ्लोर पर उपलब्ध नहीं होगा।"
@@ -1850,14 +1866,17 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 msgid "Are you sure you want to delete {0}?"
 msgstr "क्या आप {0} को हटाना सुनिश्चित हैं?"
 
+#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
+#. placeholder {0}: getQuoteDisplayId( selectedQuotation )
 #. placeholder {0}: initialValues.memoId
-#. placeholder {0}: initialValues.paymentId
-#. placeholder {0}: pickingList.pickingListId
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "क्या आप सुनिश्चित हैं कि आप {0} को हटाना चाहते हैं? यह पूर्ववत नहीं किया जा सकता।"
 
 msgid "Are you sure you want to delete {name}? This cannot be undone."
 msgstr "क्या आप सुनिश्चित हैं कि आप {name} को हटाना चाहते हैं? यह पूर्ववत नहीं किया जा सकता।"
+
+msgid "Are you sure you want to delete {orderLabel}? This cannot be undone."
+msgstr "क्या आप सुनिश्चित हैं कि आप {orderLabel} को हटाना चाहते हैं? यह पूर्ववत नहीं किया जा सकता।"
 
 #. placeholder {0}: activeView.name
 #. placeholder {0}: viewPendingDelete.name
@@ -2083,6 +2102,9 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 
 msgid "Are you sure you want to delete this maintenance dispatch? This cannot be undone."
 msgstr "क्या आप सुनिश्चित हैं कि आप इस रखरखाव प्रेषण को हटाना चाहते हैं? यह पूर्ववत नहीं किया जा सकता।"
+
+msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
+msgstr "क्या आप वाकई इस पासकी को हटाना चाहते हैं? आप इसे फिर से साइन इन करने के लिए उपयोग नहीं कर पाएंगे।"
 
 msgid "Are you sure you want to delete this quality document?"
 msgstr "क्या आप सुनिश्चित हैं कि आप इस गुणवत्ता दस्तावेज़ को हटाना चाहते हैं?"
@@ -2358,6 +2380,9 @@ msgstr "ऑडिट लॉग्स"
 msgid "Authentication Error"
 msgstr "प्रमाणीकरण त्रुटि"
 
+msgid "Authenticator app"
+msgstr "ऑथेंटिकेटर ऐप"
+
 msgid "Authenticator QR code"
 msgstr "प्रमाणकर्ता QR कोड"
 
@@ -2387,12 +2412,6 @@ msgstr "स्वचालित रूप से उत्पन्न QR क�
 
 msgid "Auto-numbering formats for orders, jobs, parts, and more"
 msgstr "ऑर्डर, जॉब, पार्ट्स और अन्य के लिए ऑटो-नंबरिंग फॉर्मेट"
-
-msgid "Auto-start the operator's timer when they open an operation in the MES so time logs are captured from the start."
-msgstr "जब ऑपरेटर MES में एक ऑपरेशन खोलते हैं तो उनके टाइमर को स्वचालित रूप से शुरू करें ताकि समय लॉग शुरू से ही कैप्चर किए जाएं।"
-
-msgid "Auto-start timer on open"
-msgstr "खोलने पर टाइमर को स्वचालित रूप से शुरू करें"
 
 msgid "Auto-suggest purchases from demand and reorder points"
 msgstr "मांग और पुनः ऑर्डर बिंदुओं से स्वचालित रूप से खरीद सुझाएं"
@@ -3046,6 +3065,9 @@ msgstr "परिवर्तन सूचना प्रकार"
 msgid "Change Notices"
 msgstr "परिवर्तन सूचनाएं"
 
+msgid "Change notices could not be loaded, so new versions and revisions are blocked. Reload to try again."
+msgstr "परिवर्तन सूचनाएँ लोड नहीं की जा सकीं, इसलिए नए संस्करण और संशोधन अवरुद्ध हैं। फिर से प्रयास करने के लिए पुनः लोड करें।"
+
 msgid "Change order"
 msgstr "परिवर्तन आदेश"
 
@@ -3111,6 +3133,12 @@ msgstr "एक सीरियल नंबर चुनें"
 
 msgid "Choose another file"
 msgstr "दूसरी फ़ाइल चुनें"
+
+msgid "Choose what appears on the printed job traveler."
+msgstr "मुद्रित जॉब ट्रैवलर पर क्या दिखाई दे, इसे चुनें।"
+
+msgid "Choose your preferred language for the interface."
+msgstr "अपनी पसंद की भाषा इंटरफेस के लिए चुनें।"
 
 msgid "Choose your style"
 msgstr "अपनी शैली चुनें"
@@ -3342,9 +3370,6 @@ msgstr "पूर्ण तारीख"
 
 msgid "Completed Date"
 msgstr "पूर्ण तारीख"
-
-msgid "Completed Job Notifications"
-msgstr "पूर्ण किए गए कार्य सूचनाएं"
 
 msgid "Completed Qty"
 msgstr "पूर्ण मात्रा"
@@ -3617,6 +3642,9 @@ msgstr "ठेकेदार"
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "संशोधन / ECOs के साथ डिज़ाइन परिवर्तनों को नियंत्रित करें"
+
+msgid "Control how operators pick material and track time on the shop floor."
+msgstr "नियंत्रित करें कि ऑपरेटर शॉप फ्लोर पर सामग्री कैसे चुनते हैं और समय कैसे ट्रैक करते हैं।"
 
 msgid "Controller, Accountant"
 msgstr "नियंत्रक, लेखाकार"
@@ -4036,6 +4064,9 @@ msgstr "कनबन बनाएं"
 
 msgid "Create new rule"
 msgstr "नया नियम बनाएं"
+
+msgid "Create PO Revision"
+msgstr "PO संशोधन बनाएं"
 
 msgid "Create Production Event"
 msgstr "उत्पादन घटना बनाएं"
@@ -4926,6 +4957,12 @@ msgstr "भाग हटाएं"
 msgid "Delete Partner"
 msgstr "पार्टनर हटाएं"
 
+msgid "Delete passkey"
+msgstr "पासकी हटाएं"
+
+msgid "Delete Passkey"
+msgstr "पासकी हटाएं"
+
 msgid "Delete Payment"
 msgstr "भुगतान हटाएं"
 
@@ -5755,6 +5792,9 @@ msgstr "भाग संपादित करें"
 msgid "Edit Partner"
 msgstr "पार्टनर संपादित करें"
 
+msgid "Edit Passkey"
+msgstr "पासकी संपादित करें"
+
 msgid "Edit Payment"
 msgstr "भुगतान संपादित करें"
 
@@ -6086,6 +6126,9 @@ msgstr "पाठ दर्ज करें…"
 
 msgid "Enter the 6-digit code from your authenticator app"
 msgstr "अपने प्रमाणकर्ता ऐप से 6-अंकीय कोड दर्ज करें"
+
+msgid "Enter the 6-digit code from your authenticator app to resume."
+msgstr "पुनः शुरू करने के लिए अपने ऑथेंटिकेटर ऐप से 6-अंकीय कोड दर्ज करें।"
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "वह मात्रा दर्ज करें जो यह आंदोलन होना चाहिए था। अंतर के लिए एक विपरीत आंदोलन मूल के बगल में, मूल की समय अवधि में पोस्ट किया जाता है।"
@@ -6654,6 +6697,9 @@ msgstr "जोखिमों को प्राप्त करने मे�
 msgid "Failed to fetch suggestions"
 msgstr "सुझाव प्राप्त करने में विफल"
 
+msgid "Failed to get options"
+msgstr "विकल्पों को प्राप्त करने में विफल"
+
 msgid "Failed to initialize Carbon client"
 msgstr "Carbon क्लाइंट को इनिशियलाइज़ करने में विफल"
 
@@ -6726,6 +6772,9 @@ msgstr ""
 
 msgid "Failed to regenerate thumbnail"
 msgstr "थंबनेल को पुनः उत्पन्न करने में विफल"
+
+msgid "Failed to register passkey"
+msgstr "पासकी को पंजीकृत करने में विफल"
 
 msgid "Failed to remove image: {errorMessage}"
 msgstr "छवि हटाने में विफल: {errorMessage}"
@@ -7811,17 +7860,11 @@ msgstr "इनबाउंड निरीक्षण"
 msgid "Inbox"
 msgstr "इनबॉक्स"
 
-msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
-msgstr "जॉब ट्रैवलर PDF में आइटम नंबर और मात्राओं के साथ बिल ऑफ मटेरियल्स अनुभाग शामिल करें।"
-
 msgid "Include extra parts in shipment"
 msgstr "शिपमेंट में अतिरिक्त पार्ट्स शामिल करें"
 
 msgid "Include Inactive"
 msgstr "निष्क्रिय शामिल करें"
-
-msgid "Include materials on traveler"
-msgstr "जॉब ट्रैवलर में सामग्री शामिल करें"
 
 msgid "Included"
 msgstr "शामिल"
@@ -8315,6 +8358,9 @@ msgstr "इस विंडो के अंदर आइटम को एक �
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "आइटम: आइटम मास्टर, BOMs, बिल ऑफ प्रोसेस, इंजीनियरिंग परिवर्तन, CAD"
 
+msgid "Its design may change before the change notice is released."
+msgstr "इसकी डिजाइन परिवर्तन सूचना जारी होने से पहले बदल सकती है।"
+
 msgid "Job"
 msgstr "Job"
 
@@ -8348,11 +8394,8 @@ msgstr "नौकरी प्राथमिकता"
 msgid "Job readable"
 msgstr "नौकरी पठनीय"
 
-msgid "Job Traveler Materials"
-msgstr "जॉब ट्रैवलर सामग्री"
-
-msgid "Job traveler settings updated"
-msgstr "जॉब ट्रैवलर की सेटिंग्स अपडेट की गई हैं"
+msgid "Job Traveler"
+msgstr "जॉब ट्रैवलर"
 
 msgid "Jobs"
 msgstr "नौकरियां"
@@ -8532,6 +8575,8 @@ msgstr "अंतिम प्रशिक्षण"
 
 msgid "Last Training Date"
 msgstr "अंतिम प्रशिक्षण की तारीख"
+msgid "Last used"
+msgstr "अंतिम उपयोग"
 
 msgid "Latest operation end"
 msgstr "नवीनतम ऑपरेशन अंत"
@@ -9165,6 +9210,8 @@ msgstr "सामग्री आईडी"
 
 msgid "Material Planning"
 msgstr "सामग्री योजना"
+msgid "Material is pre-selected"
+msgstr "सामग्री पूर्व-चयनित है"
 
 msgid "Material Properties"
 msgstr "सामग्री गुण"
@@ -9210,6 +9257,11 @@ msgstr "सामग्री"
 
 msgid "Matrix"
 msgstr "मैट्रिक्स"
+msgid "Materials are included"
+msgstr "सामग्री शामिल है"
+
+msgid "Materials are not included"
+msgstr "सामग्री शामिल नहीं है"
 
 msgid "Max Qty"
 msgstr "अधिकतम मात्रा"
@@ -9426,6 +9478,8 @@ msgstr "अधिक क्रियाएं"
 
 msgid "More hours than the shift has."
 msgstr "शिफ्ट के पास जितने घंटे हैं उससे अधिक।"
+msgid "More information"
+msgstr "अधिक जानकारी"
 
 msgid "More options"
 msgstr "अधिक विकल्प"
@@ -10183,6 +10237,9 @@ msgstr "कोई भाग ID नहीं"
 msgid "No parts"
 msgstr "कोई पुर्जे नहीं"
 
+msgid "No passkeys registered yet."
+msgstr "अभी तक कोई पासकी पंजीकृत नहीं है।"
+
 msgid "No payables"
 msgstr "कोई देय नहीं"
 
@@ -10635,9 +10692,6 @@ msgstr "खुला AR"
 msgid "Open Audit Log"
 msgstr "ऑडिट लॉग खोलें"
 
-msgid "Open change notices affecting this part"
-msgstr "इस भाग को प्रभावित करने वाली परिवर्तन सूचनाएं खोलें"
-
 msgid "Open date"
 msgstr "खोलने की तारीख"
 
@@ -10725,6 +10779,9 @@ msgstr "खुला हुआ"
 msgid "Opening"
 msgstr "शुरुआती"
 
+msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
+msgstr "किसी ऑपरेशन को खोलने से इसका टाइमर शुरू हो जाता है, इसलिए काम शुरू होने के समय से समय ट्रैक किया जाता है।"
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "अवक्षयण का खाता खोलने के संतुलन को पहले ही बुक किया गया है इससे पहले कि यह संपत्ति Carbon में जोड़ी गई थी (नई खरीद के लिए 0 का उपयोग करें)।"
 
@@ -10757,9 +10814,6 @@ msgstr "ऑपरेशन मात्रा"
 
 msgid "Operation supplier process"
 msgstr "ऑपरेशन आपूर्तिकर्ता प्रक्रिया"
-
-msgid "Operation Timer"
-msgstr "ऑपरेशन टाइमर"
 
 msgid "Operation type"
 msgstr "ऑपरेशन प्रकार"
@@ -10806,6 +10860,12 @@ msgstr "ऑपरेटर"
 msgid "Operators can use shared workstations with PIN authentication."
 msgstr "ऑपरेटर PIN प्रमाणीकरण के साथ साझा वर्कस्टेशन का उपयोग कर सकते हैं।"
 
+msgid "Operators start on the Scan tab"
+msgstr "ऑपरेटर स्कैन टैब पर शुरू करते हैं"
+
+msgid "Operators start the timer themselves when they begin an operation."
+msgstr "ऑपरेटर जब कोई ऑपरेशन शुरू करते हैं तो टाइमर को स्वयं शुरू करते हैं।"
+
 msgid "Opportunity"
 msgstr "अवसर"
 
@@ -10827,8 +10887,14 @@ msgstr "वैकल्पिक पृष्ठ और अनुभाग"
 msgid "Options"
 msgstr "विकल्प"
 
+msgid "or"
+msgstr "या"
+
 msgid "OR"
 msgstr "या"
+
+msgid "Or enter this secret manually:"
+msgstr "या इस गुप्त को मैन्युअल रूप से दर्ज करें:"
 
 msgid "Order"
 msgstr "आदेश"
@@ -11101,6 +11167,17 @@ msgstr "पास किया गया"
 
 msgid "Past due"
 msgstr "अतिदेय"
+msgid "Passkey name"
+msgstr "पासकी का नाम"
+
+msgid "Passkey unlock failed"
+msgstr "पासकी अनलॉक विफल"
+
+msgid "Passkeys"
+msgstr "पासकीज़"
+
+msgid "Passkeys are disabled"
+msgstr "पासकीज़ अक्षम हैं"
 
 msgid "Path"
 msgstr "पथ"
@@ -11502,9 +11579,6 @@ msgstr "संभावित डेटा हानि"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "समाप्ति Fixed Duration होने पर नई वस्तु के लिए पूर्व-भरी हुई।"
-
-msgid "Pre-select material without a picking list"
-msgstr "पिकिंग सूची के बिना सामग्री पूर्व-चयन करें"
 
 msgid "Preferred Supplier"
 msgstr "पसंदीदा आपूर्तिकर्ता"
@@ -12444,6 +12518,9 @@ msgstr "पंजीकृत"
 msgid "Registered"
 msgstr "पुन: आदेश बिंदु"
 
+msgid "Registration failed"
+msgstr "पंजीकरण विफल"
+
 msgid "Registration Number"
 msgstr "पंजीकरण संख्या"
 
@@ -12520,6 +12597,9 @@ msgstr "{0} को हटाएं"
 msgid "Remove {label}"
 msgstr "हटाएँ {label}"
 
+msgid "Remove authenticator app"
+msgstr "ऑथेंटिकेटर ऐप हटाएं"
+
 msgid "Remove clause"
 msgstr "खंड हटाएं"
 
@@ -12576,6 +12656,9 @@ msgstr "इस स्टोरेज प्रकार को सभी सं�
 
 msgid "Remove tool"
 msgstr "उपकरण हटाएँ"
+
+msgid "Remove two-factor authentication"
+msgstr "दो-फ़ैक्टर प्रमाणीकरण हटाएं"
 
 msgid "Removed"
 msgstr "हटाया गया"
@@ -12683,6 +12766,9 @@ msgstr "अनुमोदन का अनुरोध करें"
 msgid "Requested Date"
 msgstr "अनुरोधित तारीख"
 
+msgid "Require a 6-digit code from an authenticator app when signing in."
+msgstr "साइन इन करते समय ऑथेंटिकेटर ऐप से 6-अंकीय कोड की आवश्यकता है।"
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "किसी को भी इस कंपनी को खोलने से पहले एक प्रमाणकर्ता ऐप की आवश्यकता है। उनकी अन्य कंपनियां प्रभावित नहीं हैं। प्रत्येक व्यक्ति की स्थिति देखने के लिए <0>कर्मचारी खातों पृष्ठ</0> पर जाएं।"
 
@@ -12718,6 +12804,9 @@ msgstr "आवश्यक क्रियाएं (क्रम में)"
 
 msgid "Required Date"
 msgstr "आवश्यक तारीख"
+
+msgid "Required in a controlled environment — audit logging cannot be turned off."
+msgstr "नियंत्रित वातावरण में आवश्यक — ऑडिट लॉगिंग को बंद नहीं किया जा सकता।"
 
 msgid "Requirement"
 msgstr "आवश्यकता"
@@ -13296,6 +13385,9 @@ msgstr "स्कैन या खोजें..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "इस लॉट से एक ट्रैक की गई इकाई को स्कैन या चुनें इसे एक नमूना कॉलम के रूप में जोड़ने के लिए, फिर ग्रिड में इसके परिणाम को रिकॉर्ड करें।"
 
+msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
+msgstr "अपने ऑथेंटिकेटर ऐप (जैसे Google Authenticator या 1Password) के साथ इस QR कोड को स्कैन करें, फिर यह जो 6-अंकीय कोड दिखाता है उसे दर्ज करें।"
+
 msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
 msgstr "अपने प्रमाणकर्ता ऐप से इसे स्कैन करें, फिर इसके द्वारा दिखाया गया 6-अंकीय कोड दर्ज करें।"
 
@@ -13469,6 +13561,9 @@ msgstr "पूरा करने के सेकंड"
 
 msgid "Seconds/Piece"
 msgstr "सेकंड/पीस"
+
+msgid "Secret copied to clipboard"
+msgstr "गुप्त क्लिपबोर्ड में कॉपी किया गया"
 
 msgid "Section"
 msgstr "अनुभाग"
@@ -13793,6 +13888,9 @@ msgstr "सेवाएं"
 msgid "Services"
 msgstr "सेवाएं"
 
+msgid "Session locked"
+msgstr "सत्र लॉक किया गया"
+
 msgid "Set a target"
 msgstr "लक्ष्य निर्धारित करें"
 
@@ -13828,6 +13926,9 @@ msgstr "प्रमाणकर्ता ऐप सेटअप करें"
 
 msgid "Set up the right way"
 msgstr "सही तरीके से सेटअप करें"
+
+msgid "Set up two-factor authentication"
+msgstr "दो-फ़ैक्टर प्रमाणीकरण सेट करें"
 
 msgid "Set up your company with a step-by-step implementation plan covering setup, data, training, and go-live."
 msgstr "सेटअप, डेटा, प्रशिक्षण और go-live को कवर करने वाली चरण-दर-चरण कार्यान्वयन योजना के साथ अपनी कंपनी सेट करें।"
@@ -14107,6 +14208,9 @@ msgstr "जनरेट की गई PDF के हर पेज के पी�
 msgid "Shown to the user when this rule fails."
 msgstr "जब यह नियम विफल हो तो उपयोगकर्ता को दिखाया जाता है।"
 
+msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
+msgstr "जादुई लिंक के बजाय बायोमेट्रिक्स के साथ साइन इन करें। पासकीज़ Face ID, Touch ID, या आपकी डिवाइस PIN द्वारा सुरक्षित हैं।"
+
 msgid "Sign in with Email"
 msgstr "ईमेल के साथ साइन इन करें"
 
@@ -14125,6 +14229,9 @@ msgstr "साइन आउट"
 msgid "Sign Out"
 msgstr "साइन आउट"
 
+msgid "Sign out instead"
+msgstr "बजाय इसके साइन आउट करें"
+
 msgid "Sign-off review before moving to the next step"
 msgstr "अगले चरण में जाने से पहले साइन-ऑफ समीक्षा"
 
@@ -14139,6 +14246,9 @@ msgstr "हस्ताक्षरित मात्रा — बाहरी
 
 msgid "Signing in also requires a one-time code from your authenticator app"
 msgstr "साइन इन करने के लिए आपके प्रमाणकर्ता ऐप से एक बार का कोड भी आवश्यक है"
+
+msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
+msgstr "साइन इन करने के लिए अब कोड की आवश्यकता नहीं होगी। पुष्टि करने के लिए अपने ऑथेंटिकेटर ऐप से वर्तमान 6-अंकीय कोड दर्ज करें।"
 
 msgid "Sites & locations"
 msgstr "साइटें और स्थान"
@@ -15690,6 +15800,12 @@ msgstr "सिस्टम आपके कॉन्फ़िगर किए �
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "धागा जो बिक्रय RFQ, इसकी उद्धरण, और परिणामी बिक्रय आदेश को जोड़ता है – एक जुड़ाव, अपनी स्थिति के साथ एक दस्तावेज़ नहीं।"
 
+msgid "The timer starts automatically"
+msgstr "टाइमर स्वचालित रूप से शुरू होता है"
+
+msgid "The timer starts manually"
+msgstr "टाइमर मैन्युअल रूप से शुरू होता है"
+
 msgid "The tooling and fixtures your operations rely on"
 msgstr "वह उपकरण और फिक्सचर जिन पर आपकी कार्यप्रणाली निर्भर करती है"
 
@@ -15698,6 +15814,9 @@ msgstr "इस बल्क बैच में बनाई गई सभी �
 
 msgid "The traceable reference (e.g. NIST standard, master gauge serial) the calibration values were compared against."
 msgstr "पता लगाने योग्य संदर्भ (उदाहरण के लिए, NIST मानक, मास्टर गेज सीरीज़ नंबर) जिसके विरुद्ध अंशांकन मान की तुलना की गई थी।"
+
+msgid "The traveler lists each item on the bill of materials with its quantity."
+msgstr "ट्रैवलर बिल ऑफ मेटेरियल्स पर प्रत्येक आइटम और उसकी मात्रा को सूचीबद्ध करता है।"
 
 msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
 msgstr "प्रकार नियंत्रित करता है कि नया कर्मचारी कौन सी डिफ़ॉल्ट अनुमतियां प्राप्त करता है; यहाँ इसे चुनने से प्रकार के टेम्पलेट से अनुमति मैट्रिक्स पूर्व-भर जाता है।"
@@ -15901,6 +16020,9 @@ msgstr "आपके Implementation Hub का यह पृष्ठ बना�
 msgid "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
 msgstr "यह पार्ट इस स्थान पर {quantityOnHand} की मात्रा में उपलब्ध है। No Stock का अर्थ है कि इसकी न तो योजना बनाई जाएगी और न ही इसका उपयोग किया जाएगा।"
 
+msgid "This part is activated when change notice {activationLockId} is released."
+msgstr "यह पार्ट तब सक्रिय होता है जब परिवर्तन सूचना {activationLockId} जारी की जाती है।"
+
 msgid "This part is being phased out."
 msgstr "यह पार्ट चरणबद्ध तरीके से बंद किया जा रहा है।"
 
@@ -15915,6 +16037,9 @@ msgstr "यह path केवल यह तय करता है कि आग
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "इस अवधि में कोई जर्नल प्रविष्टि पोस्ट नहीं की गई है और इसे स्थायी रूप से हटाया जा सकता है। इसे पूर्ववत नहीं किया जा सकता।"
+
+msgid "this purchase order"
+msgstr "यह क्रय आदेश"
 
 msgid "This Quarter"
 msgstr "इस त्रैमासिक"
@@ -15955,6 +16080,8 @@ msgstr "यह आपूर्तिकर्ता"
 
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "यह {employeeName} को इस दिन के लिए बोर्ड से हटाता है। पुष्टि करने के लिए फिर से सहेजें।"
+msgid "This tool is activated when change notice {activationLockId} is released."
+msgstr "यह उपकरण तब सक्रिय होता है जब परिवर्तन सूचना {activationLockId} जारी की जाती है।"
 
 msgid "This updates the theme for all users of the application"
 msgstr "यह एप्लिकेशन के सभी उपयोगकर्ताओं के लिए थीम को अपडेट करता है"
@@ -16293,6 +16420,9 @@ msgstr "ट्रैक किया गया इकाई"
 msgid "Tracked entity ID is required but none was found"
 msgstr "ट्रैक किया गया इकाई ID आवश्यक है लेकिन कोई नहीं मिला"
 
+msgid "Tracked material is pre-selected by pick order (FEFO), even without a picking list."
+msgstr "ट्रैक की गई सामग्री पिक ऑर्डर (FEFO) द्वारा पूर्व-चयनित है, यहां तक कि बिना पिकिंग लिस्ट के भी।"
+
 msgid "Tracking"
 msgstr "ट्रैकिंग"
 
@@ -16398,8 +16528,17 @@ msgstr "दो-कारक"
 msgid "Two-factor authentication"
 msgstr "दो-कारक प्रमाणीकरण"
 
+msgid "Two-factor authentication disabled"
+msgstr "दो-फ़ैक्टर प्रमाणीकरण अक्षम"
+
+msgid "Two-factor authentication enabled"
+msgstr "दो-फ़ैक्टर प्रमाणीकरण सक्षम"
+
 msgid "Two-Factor Authentication Enforcement"
 msgstr "दो-कारक प्रमाणीकरण प्रवर्तन"
+
+msgid "Two-factor authentication is not enabled."
+msgstr "दो-फ़ैक्टर प्रमाणीकरण सक्षम नहीं है।"
 
 msgid "Type"
 msgstr "प्रकार"
@@ -16430,6 +16569,9 @@ msgstr "प्रकार"
 
 msgid "U.S. Person Attestation"
 msgstr "U.S. व्यक्ति साक्ष्य"
+
+msgid "Unable to unlock"
+msgstr "अनलॉक करने में असमर्थ"
 
 msgid "Unapplied"
 msgstr "अप्रयुक्त"
@@ -16532,6 +16674,9 @@ msgstr "बिक्रय आदेश से नौकरी को अनल�
 
 msgid "Unlock"
 msgstr "अनलॉक करें"
+
+msgid "Unlock with passkey"
+msgstr "पासकी के साथ अनलॉक करें"
 
 msgid "Unmapped accounts"
 msgstr "असंबद्ध खाते"
@@ -17406,17 +17551,11 @@ msgstr "जब सक्षम हो, तो इस श्रेणी की �
 msgid "When on, employees can edit this attribute's value on their own profile; otherwise only admins can."
 msgstr "जब सक्षम हो, तो कर्मचारी अपनी स्वयं की प्रोफ़ाइल पर इस विशेषता का मान संपादित कर सकते हैं; अन्यथा केवल व्यवस्थापक ऐसा कर सकते हैं।"
 
-msgid "When on, opening an operation starts its timer automatically."
-msgstr "जब चालू हो, तो एक ऑपरेशन खोलने से इसका टाइमर स्वचालित रूप से शुरू हो जाता है।"
-
 msgid "When on, pricing rules (volume discounts, promotions) still apply on top of this override; when off, this override is the final price."
 msgstr "जब सक्षम हो, तो मूल्य निर्धारण नियम (वॉल्यूम डिस्काउंट, प्रचार) इस ओवरराइड के शीर्ष पर लागू होते रहते हैं; जब अक्षम हो, तो यह ओवरराइड अंतिम मूल्य है।"
 
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "जब सक्षम हो, तो इस प्रक्रिया की ऑपरेशन बारकोड स्कैन करने से सभी शेष खुली मात्रा एक कार्रवाई में पूर्ण के रूप में रिपोर्ट होती है; जब ऑपरेटर नियमित रूप से आंशिक रिपोर्ट करते हैं तो अक्षम करें।"
-
-msgid "When on, the traveler PDF lists the job's required materials."
-msgstr "चालू होने पर, जॉब ट्रैवलर PDF में जॉब की आवश्यक सामग्री सूचीबद्ध होती है।"
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "जब सक्षम हो, तो इस पक्ष के चालान कर गणना को छोड़ देते हैं; पक्ष छूट प्रमाणपत्र को वर्तमान रखने के लिए जिम्मेदार है।"
@@ -17426,9 +17565,6 @@ msgstr "जब सक्षम हो, तो यह मूल्य ओवर�
 
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "जब चालू हो, तो यह नियम अपने प्रकार के प्रत्येक लक्ष्य के लिए सक्रिय होता है। असाइनमेंट पंक्तियों को अनदेखा किया जाता है लेकिन संरक्षित रखा जाता है।"
-
-msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
-msgstr "जब चालू हो, तो ट्रैक की गई सामग्री को पिकिंग सूची के बिना भी पिक ऑर्डर (FEFO) द्वारा पूर्व-चयनित किया जाता है। जब बंद हो, तो ऑपरेटर स्कैन टैब पर शुरू करते हैं।"
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "जब आपूर्तिकर्ता प्रतिक्रिया की उम्मीद की जाती है; आपूर्तिकर्ता आरएफक्यू पोर्टल पर यह तारीख देखते हैं और कार्बन इसके बाद देर से प्रतिक्रिया स्वीकार नहीं करता है (कॉन्फ़िगर करने योग्य)।"
@@ -17645,6 +17781,9 @@ msgstr "विंडो:"
 
 msgid "WIP"
 msgstr "WIP"
+
+msgid "Without a picking list, operators pick material from the Scan tab."
+msgstr "बिना पिकिंग लिस्ट के, ऑपरेटर स्कैन टैब से सामग्री चुनते हैं।"
 
 #. placeholder {0}: quarter.start + 1
 #. placeholder {1}: quarter.end
@@ -17907,6 +18046,9 @@ msgstr "आपकी प्रोजेक्ट टीम"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "आपका वास्तविक डेटा लोड हो गया है और आपने एक नमूना जांचा है और इसे मंजूरी दे दी है।"
+
+msgid "Your session was locked after inactivity."
+msgstr "निष्क्रियता के बाद आपका सत्र लॉक कर दिया गया।"
 
 msgid "Your source data is accessible and reasonably clean"
 msgstr "आपका स्रोत डेटा सुलभ है और उचित रूप से स्वच्छ है"

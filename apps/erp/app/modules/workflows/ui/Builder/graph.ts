@@ -175,7 +175,7 @@ export function createNode(
           ]
         }
       };
-    case "entity":
+    case "compute":
       return {
         id,
         name,

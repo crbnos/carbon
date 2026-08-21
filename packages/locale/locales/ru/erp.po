@@ -49,8 +49,8 @@ msgid "(excluded for this customer)"
 msgstr "(исключено для этого клиента)"
 
 #. placeholder {0}: open.length
-msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
-msgstr "{0, plural, one {Эта деталь находится на 1 открытой уведомлении об изменении} other {Эта деталь находится на # открытых уведомлениях об изменении}}"
+msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
+msgstr "{0, plural, one {Этот товар находится в 1 открытом уведомлении об изменении} other {Этот товар находится в # открытых уведомлениях об изменении}}"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -109,6 +109,10 @@ msgstr "{0} проблем — не опубликовано"
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "{0} Процессов"
+
+#. placeholder {0}: result.credentialName ?? "Passkey"
+msgid "{0} registered"
+msgstr "{0} зарегистрирован"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -222,6 +226,10 @@ msgstr "{name} удален"
 
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} деталей пропущено — нечего делать"
+
+#. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
+msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
+msgstr "{orderLabel} будет переоткрыта для редактирования как редакция {0}. Документ, уже отправленный поставщику, остается без изменений, пока вы не завершите и не отправите заказ заново."
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# этап остался} other {# этапов осталось}}"
@@ -1087,6 +1095,9 @@ msgstr "Добавить комментарий..."
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "Добавьте пользовательскую строку ценообразования для переопределения количества, цены, доставки, времени выполнения заказа и налога"
 
+msgid "Add a materials section that lists each item on the bill of materials with its quantity."
+msgstr "Добавить раздел материалов, в котором указывается каждый элемент спецификации материалов с его количеством."
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Добавьте принтер в параметры печати, чтобы печатать этикетки напрямую."
 
@@ -1119,6 +1130,9 @@ msgstr "Добавьте любые заметки о вашем решении.
 
 msgid "Add Approval Requirement"
 msgstr "Добавить требование утверждения"
+
+msgid "Add Authenticator App"
+msgstr "Добавить приложение-аутентификатор"
 
 msgid "Add Calibration Record"
 msgstr "Добавить запись калибровки"
@@ -1197,6 +1211,9 @@ msgstr "Добавить партнера"
 
 msgid "Add parts"
 msgstr "Добавить детали"
+
+msgid "Add Passkey"
+msgstr "Добавить Passkey"
 
 msgid "Add path"
 msgstr "Добавить путь"
@@ -1770,7 +1787,7 @@ msgstr "Архивировано"
 msgid "Archived Logs"
 msgstr "Архивированные журналы"
 
-#. placeholder {0}: quote.quoteId
+#. placeholder {0}: getQuoteDisplayId(quote)
 #. placeholder {1}: formatter.format(total)
 msgid "Are you sure you want to accept quote {0} for {1}?"
 msgstr "Вы уверены, что хотите принять предложение {0} на сумму {1}?"
@@ -1789,9 +1806,8 @@ msgstr "Вы уверены, что хотите отменить {0}? Он бу
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "Вы уверены, что хотите отменить {0}? Это также отменит все связанные предложения поставщиков."
 
-#. placeholder {0}: routeData?.purchaseOrder?.purchaseOrderId ?? "this purchase order"
-msgid "Are you sure you want to cancel {0}? This will close the order."
-msgstr "Вы уверены, что хотите отменить {0}? Это закроет заказ."
+msgid "Are you sure you want to cancel {orderLabel}? This will close the order."
+msgstr "Вы уверены, что хотите отменить {orderLabel}? Это закроет заказ."
 
 msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 msgstr "Вы уверены, что хотите отменить эту работу? Она больше не будет доступна на производственном участке."
@@ -1850,14 +1866,17 @@ msgstr "Вы уверены, что хотите удалить {0} из это�
 msgid "Are you sure you want to delete {0}?"
 msgstr "Вы уверены, что хотите удалить {0}?"
 
+#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
+#. placeholder {0}: getQuoteDisplayId( selectedQuotation )
 #. placeholder {0}: initialValues.memoId
-#. placeholder {0}: initialValues.paymentId
-#. placeholder {0}: pickingList.pickingListId
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить {0}? Это действие невозможно отменить."
 
 msgid "Are you sure you want to delete {name}? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить {name}? Это действие невозможно отменить."
+
+msgid "Are you sure you want to delete {orderLabel}? This cannot be undone."
+msgstr "Вы уверены, что хотите удалить {orderLabel}? Это действие невозможно отменить."
 
 #. placeholder {0}: activeView.name
 #. placeholder {0}: viewPendingDelete.name
@@ -2083,6 +2102,9 @@ msgstr "Вы уверены, что хотите удалить эту карт�
 
 msgid "Are you sure you want to delete this maintenance dispatch? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить эту заявку на техническое обслуживание? Это действие невозможно отменить."
+
+msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
+msgstr "Вы уверены, что хотите удалить этот Passkey? Вы больше не сможете использовать его для входа."
 
 msgid "Are you sure you want to delete this quality document?"
 msgstr "Вы уверены, что хотите удалить этот документ качества?"
@@ -2358,6 +2380,9 @@ msgstr "Журналы аудита"
 msgid "Authentication Error"
 msgstr "Ошибка аутентификации"
 
+msgid "Authenticator app"
+msgstr "Приложение-аутентификатор"
+
 msgid "Authenticator QR code"
 msgstr "QR-код аутентификатора"
 
@@ -2387,12 +2412,6 @@ msgstr "Автоматически созданный QR-код"
 
 msgid "Auto-numbering formats for orders, jobs, parts, and more"
 msgstr "Форматы автонумерации для заказов, работ, деталей и многого другого"
-
-msgid "Auto-start the operator's timer when they open an operation in the MES so time logs are captured from the start."
-msgstr "Автоматически запускать таймер оператора при открытии операции в MES, чтобы логи времени записывались с начала."
-
-msgid "Auto-start timer on open"
-msgstr "Автоматически запустить таймер при открытии"
 
 msgid "Auto-suggest purchases from demand and reorder points"
 msgstr "Автоматически предлагать покупки на основе спроса и точек переупорядочения"
@@ -3046,6 +3065,9 @@ msgstr "Типы уведомлений об изменении"
 msgid "Change Notices"
 msgstr "Уведомления об изменении"
 
+msgid "Change notices could not be loaded, so new versions and revisions are blocked. Reload to try again."
+msgstr "Уведомления об изменении не удалось загрузить, поэтому новые версии и редакции заблокированы. Перезагрузите страницу, чтобы попробовать еще раз."
+
 msgid "Change order"
 msgstr "Изменение заказа"
 
@@ -3111,6 +3133,12 @@ msgstr "Выберите серийный номер"
 
 msgid "Choose another file"
 msgstr "Выбрать другой файл"
+
+msgid "Choose what appears on the printed job traveler."
+msgstr "Выбрать, что отображается на распечатанном маршрутном листе работы."
+
+msgid "Choose your preferred language for the interface."
+msgstr "Выберите предпочитаемый язык для интерфейса."
 
 msgid "Choose your style"
 msgstr "Выберите свой стиль"
@@ -3342,9 +3370,6 @@ msgstr "Дата завершения"
 
 msgid "Completed Date"
 msgstr "Дата завершения"
-
-msgid "Completed Job Notifications"
-msgstr "Завершенные уведомления о работах"
 
 msgid "Completed Qty"
 msgstr "Завершённое кол-во"
@@ -3617,6 +3642,9 @@ msgstr "Подрядчики"
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "Контролировать изменения конструкции с помощью редакций / ECO"
+
+msgid "Control how operators pick material and track time on the shop floor."
+msgstr "Контролировать, как операторы подбирают материал и отслеживают время на производственном полу."
 
 msgid "Controller, Accountant"
 msgstr "Контроллер, Бухгалтер"
@@ -4036,6 +4064,9 @@ msgstr "Создать Kanban"
 
 msgid "Create new rule"
 msgstr "Создать новое правило"
+
+msgid "Create PO Revision"
+msgstr "Создать редакцию заказа на покупку"
 
 msgid "Create Production Event"
 msgstr "Создать производственное событие"
@@ -4926,6 +4957,12 @@ msgstr "Удалить деталь"
 msgid "Delete Partner"
 msgstr "Удалить партнера"
 
+msgid "Delete passkey"
+msgstr "Удалить Passkey"
+
+msgid "Delete Passkey"
+msgstr "Удалить Passkey"
+
 msgid "Delete Payment"
 msgstr "Удалить платеж"
 
@@ -5755,6 +5792,9 @@ msgstr "Редактировать деталь"
 msgid "Edit Partner"
 msgstr "Редактировать партнера"
 
+msgid "Edit Passkey"
+msgstr "Редактировать Passkey"
+
 msgid "Edit Payment"
 msgstr "Редактировать платеж"
 
@@ -6086,6 +6126,9 @@ msgstr "Введите текст…"
 
 msgid "Enter the 6-digit code from your authenticator app"
 msgstr "Введите 6-значный код из приложения аутентификации"
+
+msgid "Enter the 6-digit code from your authenticator app to resume."
+msgstr "Введите 6-значный код из приложения-аутентификатора, чтобы продолжить."
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Введите количество, которое должно было быть в этом движении. Противоположное движение для разницы размещается рядом с оригинальным в его временном периоде."
@@ -6654,6 +6697,9 @@ msgstr "Ошибка при получении рисков"
 msgid "Failed to fetch suggestions"
 msgstr "Не удалось получить предложения"
 
+msgid "Failed to get options"
+msgstr "Не удалось получить параметры"
+
 msgid "Failed to initialize Carbon client"
 msgstr "Не удалось инициализировать клиент Carbon"
 
@@ -6726,6 +6772,9 @@ msgstr ""
 
 msgid "Failed to regenerate thumbnail"
 msgstr "Не удалось повторно создать миниатюру"
+
+msgid "Failed to register passkey"
+msgstr "Не удалось зарегистрировать Passkey"
 
 msgid "Failed to remove image: {errorMessage}"
 msgstr "Не удалось удалить изображение: {errorMessage}"
@@ -7811,17 +7860,11 @@ msgstr "Входящая проверка"
 msgid "Inbox"
 msgstr "Входящие"
 
-msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
-msgstr "Включить раздел материалов (спецификация материалов) в PDF путевого листа задания с номерами товаров и количествами."
-
 msgid "Include extra parts in shipment"
 msgstr "Включить дополнительные детали в отправку"
 
 msgid "Include Inactive"
 msgstr "Включить неактивные"
-
-msgid "Include materials on traveler"
-msgstr "Включить материалы в путевой лист задания"
 
 msgid "Included"
 msgstr "Включено"
@@ -8315,6 +8358,9 @@ msgstr "Товары в этом диапазоне получают жёлты�
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Товары: справочник товаров, спецификации, технологические процессы, инженерные изменения, САПР"
 
+msgid "Its design may change before the change notice is released."
+msgstr "Конструкция может измениться до выпуска уведомления об изменении."
+
 msgid "Job"
 msgstr "Задание"
 
@@ -8348,11 +8394,8 @@ msgstr "Приоритет работы"
 msgid "Job readable"
 msgstr "Читаемая работа"
 
-msgid "Job Traveler Materials"
-msgstr "Материалы путевого листа задания"
-
-msgid "Job traveler settings updated"
-msgstr "Параметры путевого листа задания обновлены"
+msgid "Job Traveler"
+msgstr "Маршрутный лист работы"
 
 msgid "Jobs"
 msgstr "Работы"
@@ -8532,6 +8575,8 @@ msgstr "Последнее обучение"
 
 msgid "Last Training Date"
 msgstr "Дата последнего обучения"
+msgid "Last used"
+msgstr "Последний раз использован"
 
 msgid "Latest operation end"
 msgstr "Конец последней операции"
@@ -9165,6 +9210,8 @@ msgstr "Идентификаторы материалов"
 
 msgid "Material Planning"
 msgstr "Планирование материалов"
+msgid "Material is pre-selected"
+msgstr "Материал предварительно выбран"
 
 msgid "Material Properties"
 msgstr "Свойства материалов"
@@ -9210,6 +9257,11 @@ msgstr "Материалы"
 
 msgid "Matrix"
 msgstr "Матрица"
+msgid "Materials are included"
+msgstr "Материалы включены"
+
+msgid "Materials are not included"
+msgstr "Материалы не включены"
 
 msgid "Max Qty"
 msgstr "Макс. кол-во"
@@ -9426,6 +9478,8 @@ msgstr "Ещё действия"
 
 msgid "More hours than the shift has."
 msgstr "Больше часов, чем в смене."
+msgid "More information"
+msgstr "Дополнительная информация"
 
 msgid "More options"
 msgstr "Ещё опции"
@@ -10183,6 +10237,9 @@ msgstr "Нет ID детали"
 msgid "No parts"
 msgstr "Нет деталей"
 
+msgid "No passkeys registered yet."
+msgstr "Ключи доступа еще не зарегистрированы."
+
 msgid "No payables"
 msgstr "Нет кредиторской задолженности"
 
@@ -10635,9 +10692,6 @@ msgstr "Открытая дебиторская задолженность"
 msgid "Open Audit Log"
 msgstr "Открыть журнал аудита"
 
-msgid "Open change notices affecting this part"
-msgstr "Открытые уведомления об изменении, влияющие на эту деталь"
-
 msgid "Open date"
 msgstr "Дата открытия"
 
@@ -10725,6 +10779,9 @@ msgstr "Открыт"
 msgid "Opening"
 msgstr "Открытие"
 
+msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
+msgstr "Открытие операции запускает её таймер, поэтому время отсчитывается с момента начала работы."
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Начальный баланс амортизации, уже учтенный до добавления этого актива в Carbon (используйте 0 для новых приобретений)."
 
@@ -10757,9 +10814,6 @@ msgstr "Количество операций"
 
 msgid "Operation supplier process"
 msgstr "Процесс поставщика операции"
-
-msgid "Operation Timer"
-msgstr "Таймер операции"
 
 msgid "Operation type"
 msgstr "Тип операции"
@@ -10806,6 +10860,12 @@ msgstr "Операторы"
 msgid "Operators can use shared workstations with PIN authentication."
 msgstr "Операторы могут использовать общие рабочие станции с аутентификацией по PIN."
 
+msgid "Operators start on the Scan tab"
+msgstr "Операторы начинают на вкладке Сканирование"
+
+msgid "Operators start the timer themselves when they begin an operation."
+msgstr "Операторы запускают таймер сами, когда они начинают операцию."
+
 msgid "Opportunity"
 msgstr "Возможность"
 
@@ -10827,8 +10887,14 @@ msgstr "Дополнительные страницы и разделы"
 msgid "Options"
 msgstr "Параметры"
 
+msgid "or"
+msgstr "или"
+
 msgid "OR"
 msgstr "ИЛИ"
+
+msgid "Or enter this secret manually:"
+msgstr "Или введите этот секрет вручную:"
 
 msgid "Order"
 msgstr "Заказ"
@@ -11101,6 +11167,17 @@ msgstr "Пройдено"
 
 msgid "Past due"
 msgstr "Просрочено"
+msgid "Passkey name"
+msgstr "Имя Passkey"
+
+msgid "Passkey unlock failed"
+msgstr "Не удалось разблокировать Passkey"
+
+msgid "Passkeys"
+msgstr "Ключи доступа"
+
+msgid "Passkeys are disabled"
+msgstr "Ключи доступа отключены"
 
 msgid "Path"
 msgstr "Путь"
@@ -11502,9 +11579,6 @@ msgstr "Потенциальная потеря данных"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Предварительно заполняется для нового товара, когда срок действия установлен как Фиксированная продолжительность."
-
-msgid "Pre-select material without a picking list"
-msgstr "Предварительно выбрать материал без списка подбора"
 
 msgid "Preferred Supplier"
 msgstr "Предпочитаемый поставщик"
@@ -12444,6 +12518,9 @@ msgstr "Зарегистрирован"
 msgid "Registered"
 msgstr "Точка переза́каза"
 
+msgid "Registration failed"
+msgstr "Регистрация не удалась"
+
 msgid "Registration Number"
 msgstr "Регистрационный номер"
 
@@ -12520,6 +12597,9 @@ msgstr "Удалить {0}"
 msgid "Remove {label}"
 msgstr "Удалить {label}"
 
+msgid "Remove authenticator app"
+msgstr "Удалить приложение-аутентификатор"
+
 msgid "Remove clause"
 msgstr "Удалить условие"
 
@@ -12576,6 +12656,9 @@ msgstr "Удалите этот тип хранилища из всех ссыл
 
 msgid "Remove tool"
 msgstr "Удалить инструмент"
+
+msgid "Remove two-factor authentication"
+msgstr "Удалить двухфакторную аутентификацию"
 
 msgid "Removed"
 msgstr "Удалено"
@@ -12683,6 +12766,9 @@ msgstr "Запросить одобрение"
 msgid "Requested Date"
 msgstr "Запрашиваемая дата"
 
+msgid "Require a 6-digit code from an authenticator app when signing in."
+msgstr "Требовать 6-значный код из приложения-аутентификатора при входе."
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Требуется приложение аутентификации перед доступом к этой компании. Другие компании пользователей не затронуты. Посетите <0>страницу учетных записей сотрудников</0>, чтобы увидеть статус каждого человека."
 
@@ -12718,6 +12804,9 @@ msgstr "Требуемые действия (по порядку)"
 
 msgid "Required Date"
 msgstr "Требуемая дата"
+
+msgid "Required in a controlled environment — audit logging cannot be turned off."
+msgstr "Требуется в контролируемой среде — ведение журнала аудита невозможно отключить."
 
 msgid "Requirement"
 msgstr "Требование"
@@ -13296,6 +13385,9 @@ msgstr "Сканировать или искать..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Отсканируйте или выберите отслеживаемую сущность из этой партии, чтобы добавить её в качестве столбца образца, затем запишите её результат в сетку."
 
+msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
+msgstr "Сканируйте этот QR-код с помощью приложения-аутентификатора (например, Google Authenticator или 1Password), а затем введите отображаемый 6-значный код."
+
 msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
 msgstr "Отсканируйте это в приложении аутентификации, а затем введите 6-значный код, который оно показывает."
 
@@ -13469,6 +13561,9 @@ msgstr "Секунды для завершения"
 
 msgid "Seconds/Piece"
 msgstr "Секунды/Деталь"
+
+msgid "Secret copied to clipboard"
+msgstr "Секрет скопирован в буфер обмена"
 
 msgid "Section"
 msgstr "Раздел"
@@ -13793,6 +13888,9 @@ msgstr "услуги"
 msgid "Services"
 msgstr "Услуги"
 
+msgid "Session locked"
+msgstr "Сеанс заблокирован"
+
 msgid "Set a target"
 msgstr "Установить цель"
 
@@ -13828,6 +13926,9 @@ msgstr "Установить приложение аутентификации"
 
 msgid "Set up the right way"
 msgstr "Правильная настройка"
+
+msgid "Set up two-factor authentication"
+msgstr "Установить двухфакторную аутентификацию"
 
 msgid "Set up your company with a step-by-step implementation plan covering setup, data, training, and go-live."
 msgstr "Настройте свою компанию с помощью пошагового плана внедрения, охватывающего настройку, данные, обучение и запуск в производство."
@@ -14107,6 +14208,9 @@ msgstr "Отображается как бледный фон на каждой 
 msgid "Shown to the user when this rule fails."
 msgstr "Показывается пользователю при ошибке этого правила."
 
+msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
+msgstr "Войдите с использованием биометрии вместо волшебной ссылки. Ключи доступа защищены Face ID, Touch ID или PIN-кодом вашего устройства."
+
 msgid "Sign in with Email"
 msgstr "Войти с помощью электронной почты"
 
@@ -14125,6 +14229,9 @@ msgstr "Выход"
 msgid "Sign Out"
 msgstr "Выход"
 
+msgid "Sign out instead"
+msgstr "Вместо этого выйти"
+
 msgid "Sign-off review before moving to the next step"
 msgstr "Утверждение перед переходом к следующему этапу"
 
@@ -14139,6 +14246,9 @@ msgstr "Подписанное количество — отрицательно
 
 msgid "Signing in also requires a one-time code from your authenticator app"
 msgstr "При входе также требуется одноразовый код из приложения аутентификации"
+
+msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
+msgstr "Вход больше не будет требовать кода. Введите текущий 6-значный код из приложения-аутентификатора для подтверждения."
 
 msgid "Sites & locations"
 msgstr "Объекты и местоположения"
@@ -15690,6 +15800,12 @@ msgstr "Система проходит все тесты приемки в об
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "Цепочка, которая связывает RFQ продаж, его предложение и результирующий заказ на продажу — соединение, а не документ со своим статусом."
 
+msgid "The timer starts automatically"
+msgstr "Таймер запускается автоматически"
+
+msgid "The timer starts manually"
+msgstr "Таймер запускается вручную"
+
 msgid "The tooling and fixtures your operations rely on"
 msgstr "Инструменты и приспособления, на которые полагаются ваши операции"
 
@@ -15698,6 +15814,9 @@ msgstr "Общее количество для производства на в�
 
 msgid "The traceable reference (e.g. NIST standard, master gauge serial) the calibration values were compared against."
 msgstr "Отслеживаемая ссылка (например, стандарт NIST, серийный номер эталонного датчика), по которой сравнивались значения калибровки."
+
+msgid "The traveler lists each item on the bill of materials with its quantity."
+msgstr "Маршрутный лист содержит каждый элемент спецификации материалов с его количеством."
 
 msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
 msgstr "Тип управляет тем, какие разрешения по умолчанию получает новый сотрудник; выбор его здесь предварительно заполняет матрицу разрешений из шаблона типа."
@@ -15901,6 +16020,9 @@ msgstr "Эта страница вашего Implementation Hub находитс
 msgid "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
 msgstr "Эта деталь имеет {quantityOnHand} на складе в этом месте. Режим \"No Stock\" означает, что она не будет ни планироваться, ни использоваться."
 
+msgid "This part is activated when change notice {activationLockId} is released."
+msgstr "Эта деталь будет активирована после выпуска уведомления об изменении {activationLockId}."
+
 msgid "This part is being phased out."
 msgstr "Эта деталь снимается с производства."
 
@@ -15915,6 +16037,9 @@ msgstr "Этот путь решает только, что будет запу�
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "В этот период не размещены записи журнала, и он может быть окончательно удален. Это действие нельзя отменить."
+
+msgid "this purchase order"
+msgstr "этот заказ на покупку"
 
 msgid "This Quarter"
 msgstr "Этот квартал"
@@ -15955,6 +16080,8 @@ msgstr "этот поставщик"
 
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "Это удаляет {employeeName} с доски на день. Сохраните еще раз для подтверждения."
+msgid "This tool is activated when change notice {activationLockId} is released."
+msgstr "Этот инструмент будет активирован после выпуска уведомления об изменении {activationLockId}."
 
 msgid "This updates the theme for all users of the application"
 msgstr "Это обновляет тему для всех пользователей приложения"
@@ -16293,6 +16420,9 @@ msgstr "Отслеживаемая сущность"
 msgid "Tracked entity ID is required but none was found"
 msgstr "ID отслеживаемой сущности требуется, но ничего не найдено"
 
+msgid "Tracked material is pre-selected by pick order (FEFO), even without a picking list."
+msgstr "Отслеживаемый материал предварительно выбирается по порядку выборки (FEFO), даже без листа подбора."
+
 msgid "Tracking"
 msgstr "Отслеживание"
 
@@ -16398,8 +16528,17 @@ msgstr "Двухфакторная аутентификация"
 msgid "Two-factor authentication"
 msgstr "Двухфакторная аутентификация"
 
+msgid "Two-factor authentication disabled"
+msgstr "Двухфакторная аутентификация отключена"
+
+msgid "Two-factor authentication enabled"
+msgstr "Двухфакторная аутентификация включена"
+
 msgid "Two-Factor Authentication Enforcement"
 msgstr "Требование двухфакторной аутентификации"
+
+msgid "Two-factor authentication is not enabled."
+msgstr "Двухфакторная аутентификация не включена."
 
 msgid "Type"
 msgstr "Тип"
@@ -16430,6 +16569,9 @@ msgstr "Типы"
 
 msgid "U.S. Person Attestation"
 msgstr "Удостоверение лица США"
+
+msgid "Unable to unlock"
+msgstr "Не удается разблокировать"
 
 msgid "Unapplied"
 msgstr "Неприменённые"
@@ -16532,6 +16674,9 @@ msgstr "Отменить связь задания с заказом на про
 
 msgid "Unlock"
 msgstr "Разблокировать"
+
+msgid "Unlock with passkey"
+msgstr "Разблокировка с помощью Passkey"
 
 msgid "Unmapped accounts"
 msgstr "Несопоставленные счета"
@@ -17406,17 +17551,11 @@ msgstr "Когда включено, атрибуты в этой категор
 msgid "When on, employees can edit this attribute's value on their own profile; otherwise only admins can."
 msgstr "Когда включено, сотрудники могут редактировать значение этого атрибута в своем профиле; в противном случае это могут делать только администраторы."
 
-msgid "When on, opening an operation starts its timer automatically."
-msgstr "Когда включено, открытие операции автоматически запускает ее таймер."
-
 msgid "When on, pricing rules (volume discounts, promotions) still apply on top of this override; when off, this override is the final price."
 msgstr "Когда включено, правила цены (скидки по объемам, акции) по-прежнему применяются сверх этого переопределения; когда отключено, это переопределение — финальная цена."
 
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "Когда включено, сканирование операционного штрих-кода этого процесса сообщает всю оставшуюся открытую количество как завершенную в одном действии; отключите, если операторы регулярно сообщают о частичных."
-
-msgid "When on, the traveler PDF lists the job's required materials."
-msgstr "Когда включено, PDF путевого листа задания отображает необходимые материалы задания."
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "Если включено, счета этой стороны пропускают расчет налога; сторона отвечает за актуальность сертификата об освобождении."
@@ -17426,9 +17565,6 @@ msgstr "Если включено, это переопределение цен�
 
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "Когда включено, это правило срабатывает для каждой цели его типа. Строки назначения игнорируются, но сохраняются."
-
-msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
-msgstr "Когда включено, отслеживаемый материал предварительно выбирается по порядку подбора (FEFO) даже без списка подбора. Когда отключено, операторы начинают со вкладки 'Сканирование'."
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Когда ожидается ответ поставщиков; поставщики видят эту дату на портале RFQ, и Carbon перестает принимать поздние ответы после нее (настраивается)."
@@ -17645,6 +17781,9 @@ msgstr "Окно:"
 
 msgid "WIP"
 msgstr "НЗП"
+
+msgid "Without a picking list, operators pick material from the Scan tab."
+msgstr "Без листа подбора операторы подбирают материал со вкладки Сканирование."
 
 #. placeholder {0}: quarter.start + 1
 #. placeholder {1}: quarter.end
@@ -17907,6 +18046,9 @@ msgstr "Ваша команда проекта"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Ваши реальные данные загружены, вы проверили образец и одобрили его."
+
+msgid "Your session was locked after inactivity."
+msgstr "Ваш сеанс был заблокирован из-за неактивности."
 
 msgid "Your source data is accessible and reasonably clean"
 msgstr "Ваши исходные данные доступны и находятся в приемлемом состоянии"

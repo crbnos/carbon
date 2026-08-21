@@ -49,8 +49,8 @@ msgid "(excluded for this customer)"
 msgstr "(このお客様では除外されています)"
 
 #. placeholder {0}: open.length
-msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
-msgstr "{0, plural, one {このパーツは1つの開いた変更通知に含まれています} other {このパーツは#つの開いた変更通知に含まれています}}"
+msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
+msgstr "{0, plural, one {このアイテムは1つの未完了の変更通知に含まれています} other {このアイテムは#つの未完了の変更通知に含まれています}}"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -109,6 +109,10 @@ msgstr "{0}個の問題 — 未発行"
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "{0}個のプロセス"
+
+#. placeholder {0}: result.credentialName ?? "Passkey"
+msgid "{0} registered"
+msgstr "{0}登録済み"
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -222,6 +226,10 @@ msgstr "{name}が削除されました"
 
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount}件のパーツをスキップしました — 製造する必要がありません"
+
+#. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
+msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
+msgstr "{orderLabel}はリビジョン{0}として編集のために再度開かれます。既にサプライヤーに送信したドキュメントは、確定して注文を再度送信するまで変更されません。"
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# フェーズ残り} other {# フェーズ残り}}"
@@ -1087,6 +1095,9 @@ msgstr "コメントを追加..."
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "数量、価格、送料、リードタイム、税金を上書きするカスタム価格行を追加します"
 
+msgid "Add a materials section that lists each item on the bill of materials with its quantity."
+msgstr "部品表の各項目とその数量をリストアップした材料セクションを追加します。"
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "プリンター設定にプリンターを追加して、ラベルを直接印刷します。"
 
@@ -1119,6 +1130,9 @@ msgstr "あなたの決定についてのメモを追加してください..."
 
 msgid "Add Approval Requirement"
 msgstr "承認要件を追加"
+
+msgid "Add Authenticator App"
+msgstr "認証器アプリを追加"
 
 msgid "Add Calibration Record"
 msgstr "キャリブレーション記録を追加"
@@ -1197,6 +1211,9 @@ msgstr "パートナーを追加"
 
 msgid "Add parts"
 msgstr "部品を追加"
+
+msgid "Add Passkey"
+msgstr "パスキーを追加"
 
 msgid "Add path"
 msgstr "パスを追加"
@@ -1770,7 +1787,7 @@ msgstr "アーカイブ済み"
 msgid "Archived Logs"
 msgstr "アーカイブされたログ"
 
-#. placeholder {0}: quote.quoteId
+#. placeholder {0}: getQuoteDisplayId(quote)
 #. placeholder {1}: formatter.format(total)
 msgid "Are you sure you want to accept quote {0} for {1}?"
 msgstr "本当に見積書 {0} を {1} で受け入れてもよろしいですか？"
@@ -1789,9 +1806,8 @@ msgstr "{0}をキャンセルしてもよろしいですか？閉じられて、
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
 msgstr "{0}をキャンセルしてもよろしいですか？これにより、関連するすべてのサプライヤー見積もりもキャンセルされます。"
 
-#. placeholder {0}: routeData?.purchaseOrder?.purchaseOrderId ?? "this purchase order"
-msgid "Are you sure you want to cancel {0}? This will close the order."
-msgstr "{0}をキャンセルしてもよろしいですか？注文が閉じられます。"
+msgid "Are you sure you want to cancel {orderLabel}? This will close the order."
+msgstr "{orderLabel}をキャンセルしてもよろしいですか？これにより注文が閉じられます。"
 
 msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 msgstr "このジョブをキャンセルしてもよろしいですか？ショップフロアで利用できなくなります。"
@@ -1850,14 +1866,17 @@ msgstr "{0}をこの操作から削除してもよろしいですか?これは�
 msgid "Are you sure you want to delete {0}?"
 msgstr "{0}を削除してもよろしいですか？"
 
+#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
+#. placeholder {0}: getQuoteDisplayId( selectedQuotation )
 #. placeholder {0}: initialValues.memoId
-#. placeholder {0}: initialValues.paymentId
-#. placeholder {0}: pickingList.pickingListId
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "本当に{0}を削除してもよろしいですか？この操作は取り消せません。"
 
 msgid "Are you sure you want to delete {name}? This cannot be undone."
 msgstr "本当に{name}を削除してもよろしいですか？この操作は取り消せません。"
+
+msgid "Are you sure you want to delete {orderLabel}? This cannot be undone."
+msgstr "本当に{orderLabel}を削除してもよろしいですか？この操作は取り消せません。"
 
 #. placeholder {0}: activeView.name
 #. placeholder {0}: viewPendingDelete.name
@@ -2083,6 +2102,9 @@ msgstr "このカンバンカードを削除してもよろしいですか？こ
 
 msgid "Are you sure you want to delete this maintenance dispatch? This cannot be undone."
 msgstr "このメンテナンスディスパッチを削除してもよろしいですか？この操作は取り消せません。"
+
+msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
+msgstr "このパスキーを削除してもよろしいですか？サインインに使用できなくなります。"
 
 msgid "Are you sure you want to delete this quality document?"
 msgstr "このクオリティドキュメントを削除してもよろしいですか？"
@@ -2358,6 +2380,9 @@ msgstr "監査ログ"
 msgid "Authentication Error"
 msgstr "認証エラー"
 
+msgid "Authenticator app"
+msgstr "認証器アプリ"
+
 msgid "Authenticator QR code"
 msgstr "認証器QRコード"
 
@@ -2387,12 +2412,6 @@ msgstr "自動生成されたQRコード"
 
 msgid "Auto-numbering formats for orders, jobs, parts, and more"
 msgstr "注文、ジョブ、部品などの自動採番形式"
-
-msgid "Auto-start the operator's timer when they open an operation in the MES so time logs are captured from the start."
-msgstr "オペレータがMESの操作を開くときに自動的にタイマーを開始し、時間ログが最初からキャプチャされるようにします。"
-
-msgid "Auto-start timer on open"
-msgstr "開くときにタイマーを自動開始"
 
 msgid "Auto-suggest purchases from demand and reorder points"
 msgstr "需要に基づいて購買を自動提案し、再注文ポイントを設定"
@@ -3046,6 +3065,9 @@ msgstr "変更通知タイプ"
 msgid "Change Notices"
 msgstr "変更通知"
 
+msgid "Change notices could not be loaded, so new versions and revisions are blocked. Reload to try again."
+msgstr "変更通知を読み込めませんでした。新しいバージョンとリビジョンはブロックされています。再度読み込んでください。"
+
 msgid "Change order"
 msgstr "変更注文"
 
@@ -3111,6 +3133,12 @@ msgstr "シリアル番号を選択"
 
 msgid "Choose another file"
 msgstr "別のファイルを選択"
+
+msgid "Choose what appears on the printed job traveler."
+msgstr "印刷されたジョブトラベラーに表示される内容を選択します。"
+
+msgid "Choose your preferred language for the interface."
+msgstr "インターフェースの言語を選択してください。"
 
 msgid "Choose your style"
 msgstr "あなたのスタイルを選択"
@@ -3342,9 +3370,6 @@ msgstr "完了日"
 
 msgid "Completed Date"
 msgstr "完了日"
-
-msgid "Completed Job Notifications"
-msgstr "完了したジョブ通知"
 
 msgid "Completed Qty"
 msgstr "完了数量"
@@ -3617,6 +3642,9 @@ msgstr "請負業者"
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "設計変更をリビジョン/ECOで管理"
+
+msgid "Control how operators pick material and track time on the shop floor."
+msgstr "オペレーターが材料をピックして、現場で時間を追跡する方法を制御します。"
 
 msgid "Controller, Accountant"
 msgstr "コントローラー、会計士"
@@ -4036,6 +4064,9 @@ msgstr "カンバンを作成"
 
 msgid "Create new rule"
 msgstr "新しいルールを作成"
+
+msgid "Create PO Revision"
+msgstr "発注書リビジョンを作成"
 
 msgid "Create Production Event"
 msgstr "生産イベントを作成"
@@ -4926,6 +4957,12 @@ msgstr "パーツを削除"
 msgid "Delete Partner"
 msgstr "パートナーを削除"
 
+msgid "Delete passkey"
+msgstr "パスキーを削除"
+
+msgid "Delete Passkey"
+msgstr "パスキーを削除"
+
 msgid "Delete Payment"
 msgstr "支払いを削除"
 
@@ -5755,6 +5792,9 @@ msgstr "パーツを編集"
 msgid "Edit Partner"
 msgstr "パートナーを編集"
 
+msgid "Edit Passkey"
+msgstr "パスキーを編集"
+
 msgid "Edit Payment"
 msgstr "支払いを編集"
 
@@ -6086,6 +6126,9 @@ msgstr "テキストを入力..."
 
 msgid "Enter the 6-digit code from your authenticator app"
 msgstr "認証アプリから6桁のコードを入力してください"
+
+msgid "Enter the 6-digit code from your authenticator app to resume."
+msgstr "認証器アプリから6桁のコードを入力して再開します。"
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "この移動がどの数量であるべきかを入力します。差分の反対の移動は、オリジナルの横に、オリジナルの期間に投稿されます。"
@@ -6654,6 +6697,9 @@ msgstr "リスクの取得に失敗しました"
 msgid "Failed to fetch suggestions"
 msgstr "提案の取得に失敗しました"
 
+msgid "Failed to get options"
+msgstr "オプションの取得に失敗しました"
+
 msgid "Failed to initialize Carbon client"
 msgstr "Carbonクライアントの初期化に失敗しました"
 
@@ -6726,6 +6772,9 @@ msgstr ""
 
 msgid "Failed to regenerate thumbnail"
 msgstr "サムネイルの再生成に失敗しました"
+
+msgid "Failed to register passkey"
+msgstr "パスキーの登録に失敗しました"
 
 msgid "Failed to remove image: {errorMessage}"
 msgstr "画像の削除に失敗しました: {errorMessage}"
@@ -7811,17 +7860,11 @@ msgstr "受入検査"
 msgid "Inbox"
 msgstr "受信トレイ"
 
-msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
-msgstr "ジョブトラベラーPDFに品目番号と数量を含む材料（部品表）セクションを含める。"
-
 msgid "Include extra parts in shipment"
 msgstr "出荷に追加部品を含める"
 
 msgid "Include Inactive"
 msgstr "非アクティブを含める"
-
-msgid "Include materials on traveler"
-msgstr "トラベラーに材料を含める"
 
 msgid "Included"
 msgstr "含まれています"
@@ -8315,6 +8358,9 @@ msgstr "このウィンドウ内のアイテムは黄色いバッジが表示さ
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "アイテム: アイテムマスター、BOM、プロセス仕様書、エンジニアリング変更、CAD"
 
+msgid "Its design may change before the change notice is released."
+msgstr "変更通知のリリース前に、そのデザインが変わる可能性があります。"
+
 msgid "Job"
 msgstr "ジョブ"
 
@@ -8348,11 +8394,8 @@ msgstr "ジョブ優先度"
 msgid "Job readable"
 msgstr "ジョブ読取可能"
 
-msgid "Job Traveler Materials"
-msgstr "ジョブトラベラーの材料"
-
-msgid "Job traveler settings updated"
-msgstr "ジョブトラベラーの設定が更新されました"
+msgid "Job Traveler"
+msgstr "ジョブトラベラー"
 
 msgid "Jobs"
 msgstr "ジョブ"
@@ -8532,6 +8575,8 @@ msgstr "最後のトレーニング"
 
 msgid "Last Training Date"
 msgstr "最後のトレーニング日付"
+msgid "Last used"
+msgstr "最後に使用"
 
 msgid "Latest operation end"
 msgstr "最終操作終了"
@@ -9165,6 +9210,8 @@ msgstr "材料ID"
 
 msgid "Material Planning"
 msgstr "材料計画"
+msgid "Material is pre-selected"
+msgstr "材料は事前に選択されています"
 
 msgid "Material Properties"
 msgstr "材料特性"
@@ -9210,6 +9257,11 @@ msgstr "材料"
 
 msgid "Matrix"
 msgstr "マトリックス"
+msgid "Materials are included"
+msgstr "材料が含まれています"
+
+msgid "Materials are not included"
+msgstr "材料は含まれていません"
 
 msgid "Max Qty"
 msgstr "最大数量"
@@ -9426,6 +9478,8 @@ msgstr "その他のアクション"
 
 msgid "More hours than the shift has."
 msgstr "シフトが持つ時間以上。"
+msgid "More information"
+msgstr "詳細情報"
 
 msgid "More options"
 msgstr "その他のオプション"
@@ -10183,6 +10237,9 @@ msgstr "パーツIDなし"
 msgid "No parts"
 msgstr "部品がありません"
 
+msgid "No passkeys registered yet."
+msgstr "まだパスキーは登録されていません。"
+
 msgid "No payables"
 msgstr "支払い義務なし"
 
@@ -10635,9 +10692,6 @@ msgstr "未払い売掛金"
 msgid "Open Audit Log"
 msgstr "監査ログを開く"
 
-msgid "Open change notices affecting this part"
-msgstr "このパーツに影響する開いた変更通知を開く"
-
 msgid "Open date"
 msgstr "開始日"
 
@@ -10725,6 +10779,9 @@ msgstr "開いている"
 msgid "Opening"
 msgstr "開始残高"
 
+msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
+msgstr "操作を開くとそのタイマーが開始され、作業開始時点から時間が追跡されます。"
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "このアセットがCarbonに追加される前に既に予約されていた減価償却の期首残高（新規取得の場合は0を使用してください）。"
 
@@ -10757,9 +10814,6 @@ msgstr "オペレーション数量"
 
 msgid "Operation supplier process"
 msgstr "オペレーションサプライヤープロセス"
-
-msgid "Operation Timer"
-msgstr "操作タイマー"
 
 msgid "Operation type"
 msgstr "オペレーション種類"
@@ -10806,6 +10860,12 @@ msgstr "オペレーター"
 msgid "Operators can use shared workstations with PIN authentication."
 msgstr "オペレーターはPIN認証を使用して共有ワークステーションを使用できます。"
 
+msgid "Operators start on the Scan tab"
+msgstr "オペレーターは「スキャン」タブで開始します"
+
+msgid "Operators start the timer themselves when they begin an operation."
+msgstr "オペレーターは操作を開始するときに自分でタイマーを開始します。"
+
 msgid "Opportunity"
 msgstr "機会"
 
@@ -10827,8 +10887,14 @@ msgstr "オプションページとセクション"
 msgid "Options"
 msgstr "オプション"
 
+msgid "or"
+msgstr "または"
+
 msgid "OR"
 msgstr "または"
+
+msgid "Or enter this secret manually:"
+msgstr "または、このシークレットを手動で入力します："
 
 msgid "Order"
 msgstr "注文"
@@ -11101,6 +11167,17 @@ msgstr "完了"
 
 msgid "Past due"
 msgstr "期限切れ"
+msgid "Passkey name"
+msgstr "パスキー名"
+
+msgid "Passkey unlock failed"
+msgstr "パスキーのロック解除に失敗しました"
+
+msgid "Passkeys"
+msgstr "パスキー"
+
+msgid "Passkeys are disabled"
+msgstr "パスキーは無効です"
 
 msgid "Path"
 msgstr "パス"
@@ -11502,9 +11579,6 @@ msgstr "潜在的データ損失"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "有効期限が固定期間の場合、新しい品目に対して事前入力されます。"
-
-msgid "Pre-select material without a picking list"
-msgstr "ピックリストなしで材料を事前選択"
 
 msgid "Preferred Supplier"
 msgstr "優先仕入先"
@@ -12444,6 +12518,9 @@ msgstr "登録済み"
 msgid "Registered"
 msgstr "再注文点"
 
+msgid "Registration failed"
+msgstr "登録に失敗しました"
+
 msgid "Registration Number"
 msgstr "登録番号"
 
@@ -12520,6 +12597,9 @@ msgstr "{0}を削除"
 msgid "Remove {label}"
 msgstr "{label}を削除"
 
+msgid "Remove authenticator app"
+msgstr "認証器アプリを削除"
+
 msgid "Remove clause"
 msgstr "句を削除"
 
@@ -12576,6 +12656,9 @@ msgstr "このストレージタイプをすべての参照ストレージユニ
 
 msgid "Remove tool"
 msgstr "ツールを削除"
+
+msgid "Remove two-factor authentication"
+msgstr "二要素認証を削除"
 
 msgid "Removed"
 msgstr "削除済み"
@@ -12683,6 +12766,9 @@ msgstr "承認をリクエスト"
 msgid "Requested Date"
 msgstr "リクエスト日"
 
+msgid "Require a 6-digit code from an authenticator app when signing in."
+msgstr "サインイン時に認証器アプリから6桁のコードが必要です。"
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "このコンパニーを開く前に認証アプリが必須になります。他のコンパニーには影響しません。<0>従業員アカウントページ</0>をご覧ください。"
 
@@ -12718,6 +12804,9 @@ msgstr "必要なアクション（順番に）"
 
 msgid "Required Date"
 msgstr "必須日付"
+
+msgid "Required in a controlled environment — audit logging cannot be turned off."
+msgstr "管理された環境では必須です。監査ログはオフにできません。"
 
 msgid "Requirement"
 msgstr "要件"
@@ -13296,6 +13385,9 @@ msgstr "スキャンまたは検索..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "このロットから追跡対象エンティティをスキャンまたは選択してサンプル列として追加し、グリッドにその結果を記録します。"
 
+msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
+msgstr "認証器アプリ（Google AuthenticatorまたはOne Passwordなど）でこのQRコードをスキャンしてから、表示される6桁のコードを入力します。"
+
 msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
 msgstr "認証アプリでスキャンして、表示される6桁のコードを入力してください。"
 
@@ -13469,6 +13561,9 @@ msgstr "完了までの秒数"
 
 msgid "Seconds/Piece"
 msgstr "秒/個"
+
+msgid "Secret copied to clipboard"
+msgstr "シークレットをクリップボードにコピーしました"
 
 msgid "Section"
 msgstr "セクション"
@@ -13793,6 +13888,9 @@ msgstr "サービス"
 msgid "Services"
 msgstr "サービス"
 
+msgid "Session locked"
+msgstr "セッションがロック中"
+
 msgid "Set a target"
 msgstr "ターゲットを設定"
 
@@ -13828,6 +13926,9 @@ msgstr "認証アプリをセットアップ"
 
 msgid "Set up the right way"
 msgstr "正しい方法でセットアップ"
+
+msgid "Set up two-factor authentication"
+msgstr "二要素認証を設定"
 
 msgid "Set up your company with a step-by-step implementation plan covering setup, data, training, and go-live."
 msgstr "セットアップ、データ、トレーニング、本番稼働をカバーするステップバイステップの実装プランで会社をセットアップします。"
@@ -14107,6 +14208,9 @@ msgstr "生成されたPDFの各ページの背景に薄く表示されます"
 msgid "Shown to the user when this rule fails."
 msgstr "このルールが失敗したときにユーザーに表示されます。"
 
+msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
+msgstr "マジックリンクの代わりに生体認証でサインインします。パスキーはFace ID、Touch ID、またはデバイスPINで保護されます。"
+
 msgid "Sign in with Email"
 msgstr "メールでサインイン"
 
@@ -14125,6 +14229,9 @@ msgstr "ログアウト"
 msgid "Sign Out"
 msgstr "サインアウト"
 
+msgid "Sign out instead"
+msgstr "代わりにサインアウト"
+
 msgid "Sign-off review before moving to the next step"
 msgstr "次のステップに進む前のサインオフレビュー"
 
@@ -14139,6 +14246,9 @@ msgstr "署名された数量 — アウトバウンド移動の場合は負数"
 
 msgid "Signing in also requires a one-time code from your authenticator app"
 msgstr "サインインには認証アプリからのワンタイムコードも必要です"
+
+msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
+msgstr "サインインにはコードが不要になります。確認するために、認証器アプリの現在の6桁のコードを入力します。"
 
 msgid "Sites & locations"
 msgstr "サイトと場所"
@@ -15690,6 +15800,12 @@ msgstr "システムは、設定されたシステム内のすべてのスコー
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "販売RFQ、その見積もり、および結果の販売注文をリンクするスレッド—結合であり、独自のステータスを持つドキュメントではありません。"
 
+msgid "The timer starts automatically"
+msgstr "タイマーが自動的に開始されます"
+
+msgid "The timer starts manually"
+msgstr "タイマーが手動で開始されます"
+
 msgid "The tooling and fixtures your operations rely on"
 msgstr "あなたの業務が依存する工具と治具"
 
@@ -15698,6 +15814,9 @@ msgstr "このバルク バッチで作成されたすべてのジョブで製�
 
 msgid "The traceable reference (e.g. NIST standard, master gauge serial) the calibration values were compared against."
 msgstr "キャリブレーション値が比較された追跡可能な参照（例：NIST標準、マスターゲージシリアル番号）。"
+
+msgid "The traveler lists each item on the bill of materials with its quantity."
+msgstr "トラベラーは部品表の各項目とその数量をリストアップします。"
 
 msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
 msgstr "タイプは新しい従業員が受け取るデフォルトの権限を制御します。ここで選択すると、タイプのテンプレートから権限マトリックスが事前に入力されます。"
@@ -15901,6 +16020,9 @@ msgstr "このページのImplementation Hubは現在構築中です。完成す
 msgid "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
 msgstr "このパーツはこの場所に{quantityOnHand}個あります。「在庫なし」は計画にも消費にも含まれないことを意味します。"
 
+msgid "This part is activated when change notice {activationLockId} is released."
+msgstr "この部品は、変更通知 {activationLockId} がリリースされると有効になります。"
+
 msgid "This part is being phased out."
 msgstr "このパーツは段階的に廃止されています。"
 
@@ -15915,6 +16037,9 @@ msgstr "このパスは次に何が実行されるかだけを決定します"
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "この期間には転記された仕訳がなく、永久に削除できます。この処理は取り消せません。"
+
+msgid "this purchase order"
+msgstr "この発注書"
 
 msgid "This Quarter"
 msgstr "今四半期"
@@ -15955,6 +16080,8 @@ msgstr "このサプライヤー"
 
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "これは{employeeName}をその日のボードから削除します。確認するために再度保存します。"
+msgid "This tool is activated when change notice {activationLockId} is released."
+msgstr "この工具は、変更通知 {activationLockId} がリリースされると有効になります。"
 
 msgid "This updates the theme for all users of the application"
 msgstr "これはアプリケーションのすべてのユーザーのテーマを更新します"
@@ -16293,6 +16420,9 @@ msgstr "追跡対象エンティティ"
 msgid "Tracked entity ID is required but none was found"
 msgstr "追跡対象エンティティIDが必要ですが、見つかりませんでした"
 
+msgid "Tracked material is pre-selected by pick order (FEFO), even without a picking list."
+msgstr "追跡される材料は、ピッキングリストがない場合でも、ピック順（FEFO）によって事前に選択されます。"
+
 msgid "Tracking"
 msgstr "追跡"
 
@@ -16398,8 +16528,17 @@ msgstr "2要素認証"
 msgid "Two-factor authentication"
 msgstr "2要素認証"
 
+msgid "Two-factor authentication disabled"
+msgstr "二要素認証が無効になりました"
+
+msgid "Two-factor authentication enabled"
+msgstr "二要素認証が有効になりました"
+
 msgid "Two-Factor Authentication Enforcement"
 msgstr "2要素認証の強制実行"
+
+msgid "Two-factor authentication is not enabled."
+msgstr "二要素認証は有効になっていません。"
 
 msgid "Type"
 msgstr "種類"
@@ -16430,6 +16569,9 @@ msgstr "タイプ"
 
 msgid "U.S. Person Attestation"
 msgstr "米国人証明"
+
+msgid "Unable to unlock"
+msgstr "ロック解除できません"
 
 msgid "Unapplied"
 msgstr "未適用"
@@ -16532,6 +16674,9 @@ msgstr "販売注文からジョブのリンクを解除しますか？"
 
 msgid "Unlock"
 msgstr "ロック解除"
+
+msgid "Unlock with passkey"
+msgstr "パスキーでロック解除"
 
 msgid "Unmapped accounts"
 msgstr "マップされていないアカウント"
@@ -17406,17 +17551,11 @@ msgstr "有効にすると、このカテゴリーの属性がユーザーの公
 msgid "When on, employees can edit this attribute's value on their own profile; otherwise only admins can."
 msgstr "有効にすると、従業員は自分のプロフィールでこのアトリビュートの値を編集できます。そうでない場合は、管理者のみが編集できます。"
 
-msgid "When on, opening an operation starts its timer automatically."
-msgstr "有効の場合、操作を開くとそのタイマーが自動的に開始されます。"
-
 msgid "When on, pricing rules (volume discounts, promotions) still apply on top of this override; when off, this override is the final price."
 msgstr "有効にすると、価格設定ルール(ボリュームディスカウント、プロモーション)がこのオーバーライドの上に引き続き適用されます。無効にすると、このオーバーライドが最終価格です。"
 
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "有効にすると、このプロセスの操作バーコードをスキャンすると、残りのすべての未処理数量が1つのアクションで完了としてレポートされます。オペレータが定期的に部分を報告する場合は無効にします。"
-
-msgid "When on, the traveler PDF lists the job's required materials."
-msgstr "有効にすると、トラベラーPDFにジョブで必要な材料が一覧表示されます。"
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "有効にすると、この当事者の請求書は税計算をスキップします。当事者は免税証明書を最新の状態に保つ責任があります。"
@@ -17426,9 +17565,6 @@ msgstr "有効にすると、この価格オーバーライドは一致する注
 
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "オンの場合、このルールはそのタイプのすべてのターゲットに対して発火します。割り当て行は無視されますが保持されます。"
-
-msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
-msgstr "オンの場合、追跡材料はピックリストがなくても、ピック順序（FEFO）で事前選択されます。オフの場合、オペレーターはスキャンタブで開始します。"
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "サプライヤーの応答が期待される場合。サプライヤーはRFQポータルでこの日付を確認でき、Carbonはその後の遅い応答を受け付けません(設定可能)。"
@@ -17645,6 +17781,9 @@ msgstr "ウィンドウ:"
 
 msgid "WIP"
 msgstr "仕掛品"
+
+msgid "Without a picking list, operators pick material from the Scan tab."
+msgstr "ピッキングリストがない場合、オペレーターは「スキャン」タブから材料をピックします。"
 
 #. placeholder {0}: quarter.start + 1
 #. placeholder {1}: quarter.end
@@ -17907,6 +18046,9 @@ msgstr "あなたのプロジェクトチーム"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "あなたの実際のデータが読み込まれ、サンプルを確認して承認しました。"
+
+msgid "Your session was locked after inactivity."
+msgstr "セッションは非アクティブ後にロックされました。"
 
 msgid "Your source data is accessible and reasonably clean"
 msgstr "あなたのソースデータはアクセス可能で、適切にクリーンです"

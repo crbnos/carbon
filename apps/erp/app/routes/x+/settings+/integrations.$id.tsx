@@ -44,6 +44,7 @@ import {
   getIntegrationServerHooks,
   onshapeConnectionHasWriteScope
 } from "@carbon/ee/hooks.server";
+import { getPath, SECRET_KEYS } from "@carbon/ee/integrations/secrets";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { requirePlan } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
@@ -1411,6 +1412,38 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const wasInstalled = existing.data?.active === true;
+
+  // Install-time secret presence. The config schemas now let an empty secret
+  // field mean "keep the existing vaulted value" (it loads masked, never sent to
+  // the browser). A FRESH install with no secret at all would leave the
+  // integration active but non-functional, so require one here. Scoped to
+  // form-entered secrets — OAuth providers get their credentials via the
+  // callback, so they are never blocked here.
+  const FORM_SECRET_INTEGRATIONS = new Set([
+    "linear",
+    "paperless-parts",
+    "email",
+    "rillet"
+  ]);
+  if (FORM_SECRET_INTEGRATIONS.has(integrationId)) {
+    const alreadyVaulted = existing.data?.secretRef != null;
+    const providedSecret = (SECRET_KEYS[integrationId] ?? []).some((p) => {
+      const v = getPath(metadata, p);
+      return typeof v === "string" && v.trim().length > 0;
+    });
+    if (!alreadyVaulted && !providedSecret) {
+      return data(
+        {},
+        await flash(
+          request,
+          error(
+            null,
+            `A credential is required to connect ${integration.name}.`
+          )
+        )
+      );
+    }
+  }
 
   const update = await upsertCompanyIntegration(client, {
     id: integrationId,

@@ -1,7 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getFunctionLogger } from "../logging.ts";
-import type { Kysely } from "kysely";
+import { sql, type Kysely } from "kysely";
+// DB comes from postgres/index.ts (a type-only alias), NOT ../database.ts —
+// database.ts pulls in the Deno-only postgres driver, which fails the Node
+// typecheck reached via src/scheduling.ts re-exporting this engine in-process.
 import type { DB } from "../postgres/index.ts";
+import { getFunctionLogger } from "../logging.ts";
 import type { Database } from "../types.ts";
 import {
   AssemblyHandler,
@@ -423,8 +426,19 @@ export class SchedulingEngine {
     // Dry-run (expedite what-if) computes the dependency graph in memory but
     // writes nothing. One transaction otherwise: a partial rebuild (edges
     // deleted but not re-inserted) would corrupt the graph for the next run.
+    //
+    // Rebuild atomically with a per-job advisory lock: two schedule runs for
+    // the same job can overlap (an Inngest retry racing a still-running
+    // invocation, or a direct functions.invoke alongside the queued one);
+    // interleaved delete/insert then violates jobOperationDependency_pk. The
+    // lock serializes the rebuild per job, and onConflict absorbs any edge that
+    // survives a race with trigger-rework's inserts.
     if (this.persist) {
       await this.db.transaction().execute(async (trx) => {
+        await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`schedule:dependencies:${this.jobId}`}, 0))`.execute(
+          trx
+        );
+
         let deleteQuery = trx
           .deleteFrom("jobOperationDependency")
           .where("jobId", "=", this.jobId);
@@ -441,20 +455,24 @@ export class SchedulingEngine {
           await trx
             .insertInto("jobOperationDependency")
             .values(records)
+            .onConflict((oc) =>
+              oc.columns(["operationId", "dependsOnId"]).doNothing()
+            )
             .execute();
         }
-
-        // Update operations with no dependencies to Ready status
-        for (const [opId, deps] of allDependencies) {
-          if (deps.size === 0) {
-            await trx
-              .updateTable("jobOperation")
-              .set({ status: "Ready" })
-              .where("id", "=", opId)
-              .execute();
-          }
-        }
       });
+
+      // Update operations with no dependencies to Ready status (outside the
+      // rebuild txn so the advisory lock is held only for the delete/insert).
+      for (const [opId, deps] of allDependencies) {
+        if (deps.size === 0) {
+          await this.db
+            .updateTable("jobOperation")
+            .set({ status: "Ready" })
+            .where("id", "=", opId)
+            .execute();
+        }
+      }
     }
 
     // Store dependencies for date calculation (non-rework edges rebuilt above)

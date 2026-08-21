@@ -43,7 +43,7 @@ describe("readWorkflowVersion", () => {
     if (!result.ok) return;
     expect(result.definition.nodes).toHaveLength(1);
     expect(result.definition.nodes[0]?.id).toBe("n1");
-    expect(result.definition.formatVersion).toBe(3);
+    expect(result.definition.formatVersion).toBe(4);
   });
 
   it("keeps nodes and edges apart", () => {
@@ -121,7 +121,7 @@ describe("readWorkflowVersion", () => {
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.definition.formatVersion).toBe(3);
+    expect(result.definition.formatVersion).toBe(4);
   });
 
   it("opens a v1 lookup as v2 with its old two-sided rules dropped", () => {
@@ -166,6 +166,54 @@ describe("readWorkflowVersion", () => {
     expect(lookup.data.returns).toBe("list");
   });
 
+  it("opens a v3 entity node as a compute node, keeping its stored name", () => {
+    const result = readWorkflowVersion({
+      formatVersion: 3,
+      nodes: [
+        { ...triggerNode, name: "trigger_0" },
+        {
+          id: "n2",
+          name: "entity_0",
+          type: "entity",
+          position: { x: 1, y: 1 },
+          data: { operation: "purchaseOrder.total", inputs: {} }
+        }
+      ],
+      edges: []
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const compute = result.definition.nodes[1];
+    expect(compute?.type).toBe("compute");
+    if (compute?.type !== "compute") return;
+    expect(compute.data.operation).toBe("purchaseOrder.total");
+    // The name is an identifier other nodes reference — renaming it would break them.
+    expect(compute.name).toBe("entity_0");
+  });
+
+  it("leaves a lookup node's `entity` field alone when renaming the node type", () => {
+    const result = readWorkflowVersion({
+      formatVersion: 3,
+      nodes: [
+        { ...triggerNode, name: "trigger_0" },
+        {
+          id: "n2",
+          name: "lookup_0",
+          type: "lookup",
+          position: { x: 1, y: 1 },
+          data: { entity: "purchaseOrder", returns: "one", match: [] }
+        }
+      ],
+      edges: []
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const lookup = result.definition.nodes[1];
+    expect(lookup?.type).toBe("lookup");
+    if (lookup?.type !== "lookup") return;
+    expect(lookup.data.entity).toBe("purchaseOrder");
+  });
+
   it("round-trips a definition already at the current version", () => {
     const row = { formatVersion: 2, nodes: [triggerNode], edges: [] };
     const once = readWorkflowVersion(row);
@@ -196,7 +244,7 @@ describe("readWorkflowVersion", () => {
 
     it("rejects a document written by a newer release rather than emptying it", () => {
       const result = readWorkflowVersion({
-        formatVersion: 4,
+        formatVersion: 5,
         nodes: [{ id: "n1", type: "brandNewKind", position: { x: 0, y: 0 } }],
         edges: []
       });
@@ -334,7 +382,7 @@ describe("readWorkflowVersion", () => {
       expect(first).toEqual(second);
     });
 
-    it("runs both migrations on a v1 document and ends at formatVersion 3", () => {
+    it("runs every migration on a v1 document and ends at formatVersion 4", () => {
       const result = readWorkflowVersion({
         formatVersion: 1,
         nodes: [triggerNode],
@@ -342,13 +390,13 @@ describe("readWorkflowVersion", () => {
       });
       expect(result.ok).toBe(true);
       if (!result.ok) return;
-      expect(result.definition.formatVersion).toBe(3);
+      expect(result.definition.formatVersion).toBe(4);
       expect(result.definition.nodes[0]?.name).toBe("trigger_0");
     });
 
-    it("rejects a document at formatVersion 4 as future-format", () => {
+    it("rejects a document at formatVersion 5 as future-format", () => {
       const result = readWorkflowVersion({
-        formatVersion: 4,
+        formatVersion: 5,
         nodes: [],
         edges: []
       });
