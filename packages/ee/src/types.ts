@@ -60,7 +60,9 @@ export type IntegrationSetting = {
     | "processes"
     | "options"
     | "cards"
-    | "array";
+    | "array"
+    | "supplier"
+    | "account";
   /** Options for 'options' type fields */
   listOptions?: IntegrationSettingOption[];
   /** Whether the field is required */

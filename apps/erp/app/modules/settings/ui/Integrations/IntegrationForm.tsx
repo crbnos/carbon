@@ -41,7 +41,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router";
-import { Processes } from "~/components/Form";
+import { Account, Processes, Supplier } from "~/components/Form";
 import { MethodIcon, TrackingTypeIcon } from "~/components/Icons";
 import { usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
@@ -259,6 +259,30 @@ function SettingFieldInner({ setting }: { setting: IntegrationSetting }) {
           <FormArray name={setting.name} label={setting.label} />
           {setting.description && (
             <p className="text-xs text-muted-foreground mt-1">
+              {setting.description}
+            </p>
+          )}
+        </div>
+      );
+
+    case "supplier":
+      return (
+        <div className="w-full">
+          <Supplier name={setting.name} label={setting.label} />
+          {setting.description && (
+            <p className="text-xs text-muted-foreground mt-1.5">
+              {setting.description}
+            </p>
+          )}
+        </div>
+      );
+
+    case "account":
+      return (
+        <div className="w-full">
+          <Account name={setting.name} label={setting.label} />
+          {setting.description && (
+            <p className="text-xs text-muted-foreground mt-1.5">
               {setting.description}
             </p>
           )}

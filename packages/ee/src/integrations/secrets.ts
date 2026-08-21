@@ -30,6 +30,7 @@ export const SECRET_KEYS: Record<string, string[]> = {
   quickbooks: ["credentials.accessToken", "credentials.refreshToken"],
   rillet: ["credentials.apiKey", "credentials.providerMetadata.webhookToken"],
   "paperless-parts": ["apiKey", "secretKey"],
+  "mcmaster-carr": ["sharedSecret", "inboundSharedSecret"],
   resend: ["apiKey"],
   // email carries a secret in EITHER variant: Resend `apiKey` or SMTP `password`
   // (top-level). splitSecrets omits whichever is absent for the active provider.
