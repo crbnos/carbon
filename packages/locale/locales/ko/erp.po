@@ -8280,6 +8280,9 @@ msgstr "언어"
 msgid "Last 6 Months"
 msgstr "지난 6개월"
 
+msgid "Last Activity"
+msgstr ""
+
 msgid "Last attempt"
 msgstr "마지막 시도"
 
@@ -16507,6 +16510,9 @@ msgstr "누락된 값 보기"
 
 msgid "View notes"
 msgstr "메모 보기"
+
+msgid "View on schedule board"
+msgstr ""
 
 msgid "View Open"
 msgstr "미결 보기"

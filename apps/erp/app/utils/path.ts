@@ -1623,6 +1623,9 @@ export const path = {
       theme: `${onboarding}/theme`,
       user: `${onboarding}/user`
     },
+    operationBatch: (id: string) =>
+      generatePath(`${x}/production/batches/${id}`),
+    operationBatches: `${x}/production/batches`,
     operator: (id: string) => generatePath(`${x}/users/operators/${id}`),
     operatorResetPin: (id: string) =>
       generatePath(`${x}/users/operators/reset-pin/${id}`),

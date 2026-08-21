@@ -4346,8 +4346,89 @@ export async function triggerJobSchedule(
 }
 
 // --- Job operation batching (spec: .ai/specs/2026-08-21-job-operation-batching.md) ---
-// The batch detail view lives in MES (apps/mes/app/routes/x+/batch.$batchId.tsx);
-// ERP only lists candidates and mutates batches.
+// Execution lives in MES (the operation view's batch mode); ERP composes
+// batches on the schedule board, mutates them via the batch-operations edge fn,
+// and lists past/active batches at /x/production/batches.
+
+export async function getJobOperationBatches(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("jobOperationBatch")
+    .select("*, process(name), workCenter(name)", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("readableId", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "createdAt", ascending: false }
+    ]);
+  }
+
+  return query;
+}
+
+// Member count + summed quantity per batch, for the batches list. One query for
+// the page's batch ids, tallied in TS (the storage-rules count pattern — no
+// PostgREST aggregate embeds in this repo).
+export async function getJobOperationBatchMemberStats(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  batchIds: string[]
+): Promise<{
+  data: Record<string, { memberCount: number; totalQuantity: number }>;
+  error: unknown;
+}> {
+  if (batchIds.length === 0) return { data: {}, error: null };
+  const result = await client
+    .from("jobOperation")
+    .select("jobOperationBatchId, operationQuantity")
+    .in("jobOperationBatchId", batchIds)
+    .eq("companyId", companyId);
+  if (result.error) return { data: {}, error: result.error };
+  const stats: Record<string, { memberCount: number; totalQuantity: number }> =
+    {};
+  for (const op of result.data ?? []) {
+    if (!op.jobOperationBatchId) continue;
+    const entry = (stats[op.jobOperationBatchId] ??= {
+      memberCount: 0,
+      totalQuantity: 0
+    });
+    entry.memberCount += 1;
+    entry.totalQuantity += op.operationQuantity ?? 0;
+  }
+  return { data: stats, error: null };
+}
+
+export async function getJobOperationBatchWithMembers(
+  client: SupabaseClient<Database>,
+  batchId: string,
+  companyId: string
+) {
+  const batch = await client
+    .from("jobOperationBatch")
+    .select("*, process(name), workCenter(name)")
+    .eq("id", batchId)
+    .eq("companyId", companyId)
+    .single();
+  if (batch.error) return batch;
+  const members = await client
+    .from("jobOperation")
+    .select(
+      "id, description, operationQuantity, quantityComplete, status, job(id, jobId), jobMakeMethod(item(readableIdWithRevision))"
+    )
+    .eq("jobOperationBatchId", batchId)
+    .eq("companyId", companyId);
+  return {
+    data: { ...batch.data, members: members.data ?? [] },
+    error: members.error
+  };
+}
 
 export async function getBatchableOperations(
   client: SupabaseClient<Database>,

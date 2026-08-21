@@ -8280,6 +8280,9 @@ msgstr "Język"
 msgid "Last 6 Months"
 msgstr "Ostatnie 6 miesięcy"
 
+msgid "Last Activity"
+msgstr ""
+
 msgid "Last attempt"
 msgstr "Ostatnia próba"
 
@@ -16507,6 +16510,9 @@ msgstr "Wyświetl brakujące wartości"
 
 msgid "View notes"
 msgstr "Wyświetl notatki"
+
+msgid "View on schedule board"
+msgstr ""
 
 msgid "View Open"
 msgstr "Wyświetl Otwarte"

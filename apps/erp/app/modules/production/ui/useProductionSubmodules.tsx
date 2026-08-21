@@ -3,6 +3,7 @@ import { IoBalloonOutline } from "react-icons/io5";
 import {
   LuChartLine,
   LuCirclePlay,
+  LuLayers,
   LuListChecks,
   LuSquareChartGantt,
   LuSquareKanban,
@@ -27,6 +28,12 @@ export default function useProductionSubmodules() {
           to: path.to.jobs,
           icon: <LuCirclePlay />,
           table: "job"
+        },
+        {
+          name: t`Batches`,
+          to: path.to.operationBatches,
+          icon: <LuLayers />,
+          table: "jobOperationBatch"
         }
       ]
     },

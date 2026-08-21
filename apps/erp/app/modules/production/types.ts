@@ -20,6 +20,7 @@ import type {
   getJobMakeMethodById,
   getJobMaterialsWithQuantityOnHand,
   getJobMethodTree,
+  getJobOperationBatches,
   getJobOperations,
   getJobPurchaseOrderLines,
   getMaintenanceDispatch,
@@ -194,6 +195,14 @@ export type ProductionPlanningItem = NonNullable<
 export type ScrapReason = NonNullable<
   Awaited<ReturnType<typeof getScrapReasons>>["data"]
 >[number];
+
+export type JobOperationBatch = NonNullable<
+  Awaited<ReturnType<typeof getJobOperationBatches>>["data"]
+>[number] & {
+  // Merged into the row by the batches loader (getJobOperationBatchMemberStats).
+  memberCount?: number;
+  totalQuantity?: number;
+};
 
 // --- Assembly Instructions ---------------------------------------------
 

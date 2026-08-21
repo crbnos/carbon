@@ -8280,6 +8280,9 @@ msgstr "语言"
 msgid "Last 6 Months"
 msgstr "最近6个月"
 
+msgid "Last Activity"
+msgstr ""
+
 msgid "Last attempt"
 msgstr "上次尝试"
 
@@ -16507,6 +16510,9 @@ msgstr "查看缺失值"
 
 msgid "View notes"
 msgstr "查看备注"
+
+msgid "View on schedule board"
+msgstr ""
 
 msgid "View Open"
 msgstr "查看开放"

@@ -8280,6 +8280,9 @@ msgstr "Dil"
 msgid "Last 6 Months"
 msgstr "Son 6 Ay"
 
+msgid "Last Activity"
+msgstr ""
+
 msgid "Last attempt"
 msgstr "Son deneme"
 
@@ -16507,6 +16510,9 @@ msgstr "Eksik değerleri görüntüle"
 
 msgid "View notes"
 msgstr "Notları görüntüle"
+
+msgid "View on schedule board"
+msgstr ""
 
 msgid "View Open"
 msgstr "Açık Gör"

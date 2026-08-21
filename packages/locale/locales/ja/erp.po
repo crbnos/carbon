@@ -8280,6 +8280,9 @@ msgstr "言語"
 msgid "Last 6 Months"
 msgstr "過去6ヶ月"
 
+msgid "Last Activity"
+msgstr ""
+
 msgid "Last attempt"
 msgstr "最後の試行"
 
@@ -16507,6 +16510,9 @@ msgstr "欠落値を表示"
 
 msgid "View notes"
 msgstr "ノートを表示"
+
+msgid "View on schedule board"
+msgstr ""
 
 msgid "View Open"
 msgstr "開く"

@@ -8280,6 +8280,9 @@ msgstr "भाषा"
 msgid "Last 6 Months"
 msgstr "पिछले 6 महीने"
 
+msgid "Last Activity"
+msgstr ""
+
 msgid "Last attempt"
 msgstr "अंतिम प्रयास"
 
@@ -16507,6 +16510,9 @@ msgstr "लापता मानों को देखें"
 
 msgid "View notes"
 msgstr "नोट्स देखें"
+
+msgid "View on schedule board"
+msgstr ""
 
 msgid "View Open"
 msgstr "खुला देखें"

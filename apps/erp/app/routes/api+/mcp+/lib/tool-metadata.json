@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-21T10:28:13.427Z",
-  "totalTools": 1446,
+  "generated": "2026-08-21T10:33:16.079Z",
+  "totalTools": 1449,
   "modules": 15,
   "tools": [
     {
@@ -23273,6 +23273,100 @@
           "jobId",
           "mode",
           "direction"
+        ]
+      }
+    },
+    {
+      "name": "production_getJobOperationBatches",
+      "module": "production",
+      "classification": "READ",
+      "description": "get job operation batches",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "production_getJobOperationBatchMemberStats",
+      "module": "production",
+      "classification": "READ",
+      "description": "get job operation batch member stats",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "batchIds"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "batchIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "batchIds"
+        ]
+      }
+    },
+    {
+      "name": "production_getJobOperationBatchWithMembers",
+      "module": "production",
+      "classification": "READ",
+      "description": "get job operation batch with members",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "batchId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "batchId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "batchId"
         ]
       }
     },
