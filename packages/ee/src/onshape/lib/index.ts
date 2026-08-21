@@ -2,6 +2,7 @@ export * from "./bom";
 export * from "./client";
 export * from "./data";
 export * from "./document.type";
+export * from "./drawing";
 export * from "./element.type";
 export * from "./legacy";
 export * from "./mapping";

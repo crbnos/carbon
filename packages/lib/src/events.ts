@@ -602,6 +602,11 @@ export type Events = {
       configuration?: string | null;
       /** Stable across runs — the model filename is the attach idempotency key. */
       assetBaseName: string;
+      /**
+       * The released revision letter. The element mapping spans every revision
+       * of a part, so the drawing pass needs this to pick the right member.
+       */
+      revision?: string | null;
     };
   };
   "carbon/onshape-release-import": {

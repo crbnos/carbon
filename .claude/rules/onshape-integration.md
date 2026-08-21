@@ -915,7 +915,7 @@ enum used only as a `getElements` filter.
 |---|---|---|---|---|
 | 0 | Part Studio | GLTF → `modelUpload` on the matched item | affected item / revision | per-BODY items, exported with `partIds` |
 | 1 | Assembly | GLTF → `modelUpload` on the matched item | affected item / revision | one item |
-| 2 | Drawing | PDF → a `document` on the MODEL item | **excluded** | **refused** |
+| 2 | Drawing | PDF → a `document` on the MODEL item | **excluded** | PDF → the model item, joined by element id |
 
 **Drawing rule (legacy).** A released drawing is its own `DRW-xxxx` element sharing
 the number of the model it documents. Its PDF attaches to the MODEL item
@@ -935,19 +935,86 @@ normal release — and deriving its change type from the `DRW-` readableId inste
 would mint a junk part. The receiver filters it and the job re-checks it as a
 backstop (`onshape-release-import.ts:413`).
 
-**v2 refuses drawings outright** (`onshape-release-v2.ts:105`,
-`v2.revisions.ts:128`, `lib/resolve.ts:61`) because the suffix heuristic is
-disproved on real data: RD-410, DRW-410 and PK-410 all reduce to `-410`, matching
-five items across two parts. Nothing is built, so a v2 company's drawing PDFs do
-not land anywhere.
+**v2 resolves drawings by ID** (Phase 7, shipped 2026-08-21). The suffix
+heuristic is disproved on real data — RD-410, DRW-410 and PK-410 all reduce to
+`-410`, matching five items across two parts — so v2 never uses it. It refuses
+only when the id lookup itself is ambiguous.
 
-**The join is solved but unbuilt** (verified live 2026-08-19).
-`GET /api/v10/appelements/d/{did}/{wvm}/{wvmid}/e/{eid}/references` returns the
-drawing's referenced elements; `{targetDocumentId}:{targetElementId}` is exactly
-`buildElementExternalId`'s format, so it is a primary-key lookup into
-`externalIntegrationMapping`. For the RD-410 drawing it returns the RD-410
-assembly plus the BOM element on the sheet — dedupe, drop non-model element
-types, one survivor. See `.ai/plans/2026-08-19-onshape-drawing-attachment.md`.
+`OnshapeClient.getAppElementReferences(documentId, wvm, wvmId, elementId)` wraps
+`GET /api/v10/appelements/d/{did}/{wvm}/{wvmid}/e/{eid}/references`.
+`{targetDocumentId}:{targetElementId}` is exactly `buildElementExternalId`'s
+format, so it is a primary-key lookup into `externalIntegrationMapping`.
+Verified live at BOTH workspace and version level (2026-08-21, identical
+payloads); version level is the one that matters, since every release path reads
+at `/v/{vid}/`. The endpoint 400s with "Element must be an application" on
+anything that is not a drawing.
+
+`lib/drawing.ts` owns the resolution, in two halves:
+
+- `chooseDrawingModelTarget(references, isModelElement, drawingElementId)` —
+  PURE and unit-pinned. Drops records missing either id, drops a self-reference,
+  drops non-model targets, dedupes on `{doc}:{el}`. Returns one / none / many.
+  `targetConfiguration` is deliberately NOT part of the key: the externalId
+  ignores the configuration, so splitting on it would manufacture an ambiguity
+  the mapping layer does not have.
+- `resolveDrawingModelItem(client, carbon, args)` — the async half. Element types
+  come from `listDocumentElements`, NOT from the reference record: every record
+  of both targets came back with `referenceType: 0` and every other
+  discriminating field null, so the record cannot tell a model from the
+  BILLOFMATERIALS element on the sheet. Drawings are identified by
+  `dataType === "onshape-app/drawing"` — passing `?elementType=DRAWING` returns
+  nothing, because the listing calls a drawing `APPLICATION`.
+
+Two narrowings that are easy to get wrong:
+
+- `readItemsForElementIncludingParts` (`mapping.ts`), not
+  `readItemIdsForElement`. A reference record carries NO partId, so an exact
+  externalId match finds zero rows for a drawing of a Part Studio body while N
+  rows shaped `{doc}:{el}:{partId}` exist.
+- Then `resolveBomRow` on the RELEASED REVISION. The element mapping is
+  revision-agnostic by construction, so attaching at the element puts revision
+  A's drawing on the item at revision C — the exact failure
+  `onshape-v2-assets.ts` was written to prevent.
+
+Refusal reasons: `drawing-references-no-model`, `drawing-references-many`,
+`drawing-model-unmapped`, `drawing-model-revision-missing`,
+`drawing-model-ambiguous`. The last is one element whose family has several
+members at one revision — a different problem from two target ELEMENTS, and it
+has its own reason so the message does not misdescribe it.
+
+**Three paths carry the drawing pass**, all through
+`pullOnshapeDrawingsForDocument` (`onshape-drawings.ts`):
+
+| Path | Direction | Where |
+|---|---|---|
+| `onshape-release-v2`, `elementType === 2` | drawing-first | its own `handle-drawing` step; never reaches `runOnshapeReleaseImport` |
+| `onshape-release-v2`, model release | model-first | after the asset attach, gated on `attachAssetsOnRelease` |
+| `onshape-v2-item-assets` (create + link) | model-first | after the model pull; this job also GAINED a notification, having previously returned refusals nobody read |
+| `onshape-bom-import` | model-first | once per document-version, after the asset loop; refusals are `warnings`, not `skipped` |
+
+**DIRECTION ASYMMETRY** is why model-first costs more: references runs drawing →
+model and Onshape has no inverse, so a model-first caller lists the document's
+elements and calls references on every drawing. 1 + N calls per document-version
+— hence grouping by `(documentId, versionId)` rather than per element.
+
+`syncOnshapeDrawingAssetsToItem` now takes an optional `client`. Building one per
+drawing is a refresh-token race (token refresh is an unlocked read-modify-write
+of the whole `metadata` column) and escapes the caller's rate-limit wrapper. Its
+filename also gained the drawing element id: the attach helper de-duplicates on
+the storage PATH, so two drawings of one model previously collapsed onto a single
+document row.
+
+**The webhook needs no change** — pinned by two tests in
+`webhook.onshape.$companyId.test.ts`. The v2 branch never filtered on
+elementType, so a drawing already dispatches `onshape-release-v2` carrying
+`elementType: 2`. Do NOT relax the partNumber gate: Onshape's release dialog
+makes a drawing's part number required and blocks the release without one, so
+that gate cannot fire for a genuinely released drawing.
+
+**Still unproven:** that the webhook really carries `elementType === 2` for a
+released drawing. No released drawing exists in the test account — the attempt is
+blocked on "Drawing has a pending update". The model-first paths depend on no
+webhook field and are exercisable without one.
 
 Two things to know. A drawing's `elementType` in the `/elements` listing is
 **`APPLICATION`, not `DRAWING`** — the references endpoint 400s on every other

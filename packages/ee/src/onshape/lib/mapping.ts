@@ -217,6 +217,75 @@ export async function readItemIdsForElement(
   return (result.data ?? []).map((row) => row.entityId);
 }
 
+/**
+ * LIKE metacharacters, escaped so a literal externalId cannot act as a pattern.
+ * externalIds are `encodeURIComponent` output, which legitimately contains `%`.
+ *
+ * Duplicated rather than imported: `packages/jobs` has the same two lines and
+ * `packages/ee` cannot depend on it.
+ */
+function escapeLikePattern(value: string): string {
+  return value.replace(/[\\%_]/g, (character) => `\\${character}`);
+}
+
+/**
+ * Every Carbon item mapped to an element — the element itself AND every
+ * part-level row beneath it.
+ *
+ * `readItemIdsForElement` matches the externalId EXACTLY, which is right when
+ * the caller knows the partId. A drawing's reference record carries no partId,
+ * so an exact match against `{doc}:{el}` finds nothing for a drawing of a Part
+ * Studio body, even though N rows shaped `{doc}:{el}:{partId}` exist. That
+ * would refuse a perfectly ordinary drawing as "references no model".
+ *
+ * Two queries unioned in JS rather than one PostgREST `.or()`: an externalId
+ * can contain `%`, which breaks `or`'s quoting and would act as a wildcard.
+ */
+export async function readItemsForElementIncludingParts(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; documentId: string; elementId: string }
+): Promise<Array<{ itemId: string; ref: OnshapeElementRef }>> {
+  const prefix = buildElementExternalId({
+    documentId: args.documentId,
+    elementId: args.elementId
+  });
+
+  const base = () =>
+    client
+      .from("externalIntegrationMapping")
+      .select("entityId, externalId")
+      .eq("integration", ONSHAPE_ELEMENT_INTEGRATION)
+      .eq("entityType", ONSHAPE_MAPPING_ENTITY_TYPE)
+      .eq("companyId", args.companyId);
+
+  const [exact, parts] = await Promise.all([
+    base().eq("externalId", prefix),
+    base().like("externalId", `${escapeLikePattern(prefix)}:%`)
+  ]);
+
+  // Same rule as readItemIdsForElement: a swallowed error reads as "nothing is
+  // mapped", which here means silently refusing to attach a drawing.
+  for (const result of [exact, parts]) {
+    if (result.error) {
+      throw new Error(
+        `Failed to read Onshape element mappings: ${result.error.message}`
+      );
+    }
+  }
+
+  const seen = new Set<string>();
+  const items: Array<{ itemId: string; ref: OnshapeElementRef }> = [];
+  for (const row of [...(exact.data ?? []), ...(parts.data ?? [])]) {
+    if (!row.externalId || seen.has(row.entityId)) continue;
+    const ref = parseElementExternalId(row.externalId);
+    // Skip malformed ids rather than half-matching, as readElementMappingsForItems does.
+    if (!ref) continue;
+    seen.add(row.entityId);
+    items.push({ itemId: row.entityId, ref });
+  }
+  return items;
+}
+
 /** The Carbon item for one specific released Onshape revision, if linked. */
 export async function readItemIdForRevision(
   client: SupabaseClient<Database>,

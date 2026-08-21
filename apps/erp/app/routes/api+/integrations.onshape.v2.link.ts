@@ -398,7 +398,10 @@ export async function action({ request }: ActionFunctionArgs) {
       partId: onshapeRevision.partId ?? null,
       assetBaseName: onshapeRevision.revision
         ? `${onshapeRevision.partNumber}.${onshapeRevision.revision}`
-        : onshapeRevision.partNumber
+        : onshapeRevision.partNumber,
+      // Lets the drawing pass pick the right family member — the element
+      // mapping spans every revision of the part.
+      revision: onshapeRevision.revision ?? null
     });
   } catch (error) {
     // The link is correct; a queue failure must not report it as broken.

@@ -106,6 +106,22 @@ export interface OnshapeReleasePackage {
   [key: string]: unknown;
 }
 
+// One record from an app element's reference list. A drawing is an APPLICATION
+// element, and its references name the model elements its views are taken from.
+//
+// Only three fields are worth typing. The other 24 the endpoint returns —
+// including `referenceType`, `partNumber`, `revision` and `partIdentity` — were
+// checked live on 2026-08-21 and are useless as discriminators: every record of
+// both targets came back with referenceType 0 and the rest null. Deciding which
+// target is a model therefore needs the document's element listing, not this
+// record.
+export interface OnshapeAppElementReference {
+  targetDocumentId?: string;
+  targetElementId?: string;
+  targetConfiguration?: string;
+  [key: string]: unknown;
+}
+
 // Typed API error so callers can detect rate limiting (status 429) and honor
 // Retry-After instead of hammering the quota.
 export class OnshapeApiError extends Error {
@@ -298,6 +314,40 @@ export class OnshapeClient {
       "GET",
       `/api/v10/metadata/d/${documentId}/v/${versionId}/e/${elementId}`
     );
+  }
+
+  /**
+   * The elements an APPLICATION element references — for a drawing, the models
+   * its views are taken from.
+   *
+   * This is the drawing-to-model join. `{targetDocumentId}:{targetElementId}`
+   * is exactly `buildElementExternalId`'s format, so it is a primary-key lookup
+   * into `externalIntegrationMapping` rather than the part-number suffix
+   * heuristic v1 used — which is disproved on real data, since RD-410, DRW-410
+   * and PK-410 all reduce to "-410".
+   *
+   * Verified live 2026-08-21 at BOTH workspace and VERSION level (200, nine
+   * records, two distinct targets, identical payloads). Version level is the
+   * one that matters: every release path reads at `/v/{vid}/`.
+   *
+   * 400s with "Element must be an application" on every other element type, so
+   * callers must pass a drawing.
+   */
+  async getAppElementReferences(
+    documentId: string,
+    wvm: "w" | "v" | "m",
+    wvmId: string,
+    elementId: string
+  ): Promise<OnshapeAppElementReference[]> {
+    const response = await this.request<
+      OnshapeAppElementReference[] | { items?: OnshapeAppElementReference[] }
+    >(
+      "GET",
+      `/api/v10/appelements/d/${documentId}/${wvm}/${wvmId}/e/${elementId}/references`
+    );
+    // The live probe returned a bare array; other v10 endpoints wrap in
+    // `items`. Normalise like getCompanies rather than assuming either.
+    return Array.isArray(response) ? response : (response?.items ?? []);
   }
 
   async getBillOfMaterials(

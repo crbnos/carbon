@@ -358,7 +358,10 @@ export async function action({ request }: ActionFunctionArgs) {
       // Stable across runs: the model filename is the attach idempotency key.
       assetBaseName: onshapeRevision.revision
         ? `${onshapeRevision.partNumber}.${onshapeRevision.revision}`
-        : onshapeRevision.partNumber
+        : onshapeRevision.partNumber,
+      // Lets the drawing pass pick the right family member — the element
+      // mapping spans every revision of the part.
+      revision: onshapeRevision.revision ?? null
     });
   } catch (error) {
     // The part and its link are correct; a queue failure must not undo them.

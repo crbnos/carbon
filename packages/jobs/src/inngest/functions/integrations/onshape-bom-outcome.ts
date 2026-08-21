@@ -13,6 +13,13 @@ export type OnshapeBomImportOutcome = {
   removed: number;
   assetsAttached: number;
   assetsSkipped: number;
+  /**
+   * Drawing PDFs attached to the items their models produced.
+   *
+   * Optional so an outcome built before Phase 7 still parses; absent reads as
+   * zero at every site.
+   */
+  drawingsAttached?: number;
   /** Rows Onshape sent that could not be read at all. */
   unreadableRows: number;
   /** Existing lines left untouched because their row was refused. */

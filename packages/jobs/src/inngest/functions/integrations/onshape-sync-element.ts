@@ -303,23 +303,45 @@ export interface SyncOnshapeDrawingInput {
   versionId: string; // the released version
   drawingElementId: string; // the released DRAWING element to export as PDF
   assetBaseName?: string; // filename base (e.g. the model's readableIdWithRevision)
+  /**
+   * The caller's Onshape client, when it has one.
+   *
+   * Building a fresh one per drawing is not free: `getOnshapeClient` does a
+   * read-modify-write of the whole `metadata` column on token refresh with no
+   * locking, so attaching K drawings in a loop is K refresh races. It also
+   * escapes whatever rate-limit wrapper the caller is running inside. Every v2
+   * caller already holds a client; the legacy caller passes nothing and is
+   * unchanged.
+   */
+  client?: OnshapeClient;
 }
 
 // Export ONE released Onshape DRAWING element as a PDF and attach it as a document
-// on the given Carbon item. Drawings are released as their own elements (DRW-xxxx,
-// elementType 2) separate from the model, so the caller resolves which item the
-// drawing belongs to (by shared part number) and passes it here. No model is
-// touched — only a PDF document is added/updated (idempotent via the attach
-// helper's replace-not-append rule).
+// on the given Carbon item. Drawings are released as their own elements
+// (elementType 2) separate from the model.
+//
+// The CALLER resolves which item the drawing belongs to. On v2 that is
+// `resolveDrawingModelItem`, an id lookup through the element mapping; the
+// legacy caller still matches by shared part number, which is the mechanism v2
+// exists to replace and is disproved on real data.
 export async function syncOnshapeDrawingAssetsToItem(
   carbon: CarbonClient,
   input: SyncOnshapeDrawingInput
 ): Promise<AttachOnshapeAssetsResult> {
-  const onshape = await getOnshapeClient(carbon, input.companyId, input.userId);
-  if (onshape.error || !onshape.client) {
-    throw new Error(`getOnshapeClient failed: ${onshape.error ?? "no client"}`);
+  let client = input.client;
+  if (!client) {
+    const onshape = await getOnshapeClient(
+      carbon,
+      input.companyId,
+      input.userId
+    );
+    if (onshape.error || !onshape.client) {
+      throw new Error(
+        `getOnshapeClient failed: ${onshape.error ?? "no client"}`
+      );
+    }
+    client = onshape.client;
   }
-  const client = onshape.client;
 
   const pdfTranslation = await client.createDrawingTranslation(
     input.documentId,
@@ -340,6 +362,16 @@ export async function syncOnshapeDrawingAssetsToItem(
     createdBy: input.userId,
     itemId: input.itemId,
     sourceDocument: input.sourceDocument,
-    documents: [{ fileName: `${baseName}.pdf`, bytes: pdfBytes }]
+    // The drawing element id is part of the filename because
+    // `attachOnshapeAssetsToItem` de-duplicates on the storage PATH: two
+    // drawings of one model would otherwise collapse onto a single document
+    // row, each run silently overwriting the other. Same shape the
+    // multi-drawing path above already uses.
+    documents: [
+      {
+        fileName: `${baseName}-${input.drawingElementId}.pdf`,
+        bytes: pdfBytes
+      }
+    ]
   });
 }

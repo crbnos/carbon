@@ -18,7 +18,7 @@
 // assumed to be a single item.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { OnshapeReleasePackage } from "@carbon/ee/onshape";
+import type { OnshapeClient, OnshapeReleasePackage } from "@carbon/ee/onshape";
 import {
   buildOnshapeItemNotesBlock,
   getOnshapeClient,
@@ -27,6 +27,7 @@ import {
   readReleasePackageName,
   readReleasePackageNotes,
   resolveBomRow,
+  resolveDrawingModelItem,
   writeElementMapping,
   writeOnshapeItemNotes,
   writeRevisionMapping
@@ -37,8 +38,13 @@ import { RetryAfterError } from "inngest";
 import { z } from "zod";
 import { inngest } from "../../client";
 import { withRateLimitRetry } from "./onshape-backfill";
+import { pullOnshapeDrawingsForDocument } from "./onshape-drawings";
 import { runOnshapeReleaseImport } from "./onshape-release-import";
-import { pullOnshapeAssetsForElement } from "./onshape-v2-assets";
+import { syncOnshapeDrawingAssetsToItem } from "./onshape-sync-element";
+import {
+  isTransientExportError,
+  pullOnshapeAssetsForElement
+} from "./onshape-v2-assets";
 
 const PayloadSchema = z.object({
   companyId: z.string(),
@@ -69,6 +75,43 @@ const ELEMENT_TYPE_DRAWING = 2;
 
 /** How many refusals to name in one notification before it stops reading. */
 const MAX_REPORTED_SKIPS = 5;
+
+/**
+ * Tell the user why something was refused.
+ *
+ * A release is webhook-driven: nobody is watching a screen when it runs, so a
+ * refusal recorded only in the Inngest return value reaches no one — the user
+ * finds out when a revision turns out to have no model, no drawing, or no
+ * change notice, with nothing anywhere saying why.
+ */
+async function notifyOnshapeSkips(
+  payload: {
+    companyId: string;
+    userId: string;
+    partNumber: string;
+    revision?: string;
+  },
+  reasons: string[]
+): Promise<void> {
+  if (reasons.length === 0) return;
+  if (!payload.userId || payload.userId === "system") return;
+  try {
+    await trigger("notify", {
+      event: NotificationEvent.IntegrationSync,
+      companyId: payload.companyId,
+      documentId: "onshape",
+      title:
+        `Onshape release ${payload.partNumber} ${payload.revision ?? ""} needs attention`.trim(),
+      body: reasons.slice(0, MAX_REPORTED_SKIPS).join("; "),
+      recipient: { type: "user", userId: payload.userId }
+    });
+  } catch (error) {
+    console.error(
+      `[ONSHAPE RELEASE V2] ${payload.companyId}: could not notify ${payload.userId}`,
+      error
+    );
+  }
+}
 
 export const onshapeReleaseV2Function = inngest.createFunction(
   {
@@ -103,13 +146,92 @@ export const onshapeReleaseV2Function = inngest.createFunction(
     }
 
     // A released DRAWING is its own element sharing the number of the model it
-    // documents; it is never its own Carbon item. v1 attaches its PDF by
-    // stripping the number to a shared suffix, which is disproved on real data
-    // (RD-410, DRW-410 and PK-410 all reduce to "-410", matching five items
-    // across two parts). Until a mapping-based mechanism exists, refuse rather
-    // than guess which item the PDF belongs to.
+    // documents; it is never its own Carbon item. So it takes its own branch and
+    // must NEVER reach runOnshapeReleaseImport — a drawing as a second affected
+    // item violates UNIQUE(changeOrderId, itemId) on the first import of an
+    // ordinary release, and deriving a change type from its readableId would
+    // mint a junk DRW-xxxx part.
+    //
+    // The join is an id lookup through the element mapping, not v1's part-number
+    // suffix match (which is disproved on real data: RD-410, DRW-410 and PK-410
+    // all reduce to "-410", matching five items across two parts).
     if (payload.elementType === ELEMENT_TYPE_DRAWING) {
-      return { skipped: true as const, reason: "drawing-element" };
+      if (!settings.attachAssetsOnRelease) {
+        return { skipped: true as const, reason: "drawing-assets-disabled" };
+      }
+      return await step.run("handle-drawing", async () => {
+        const connection = await getOnshapeClient(
+          carbon,
+          payload.companyId,
+          payload.userId
+        );
+        if (!connection.client) {
+          throw new Error(connection.error ?? "Onshape is not connected");
+        }
+
+        const resolved = await withRateLimitRetry(
+          () =>
+            resolveDrawingModelItem(
+              connection.client as OnshapeClient,
+              carbon,
+              {
+                companyId: payload.companyId,
+                documentId: payload.documentId,
+                wvm: "v",
+                wvmId: payload.versionId,
+                drawingElementId: payload.elementId,
+                releasedRevision: payload.revision ?? ""
+              }
+            ),
+          `drawing references for ${payload.partNumber}`
+        );
+
+        if (!resolved.ok) {
+          await notifyOnshapeSkips(payload, [resolved.message]);
+          return {
+            skipped: true as const,
+            reason: resolved.reason,
+            message: resolved.message
+          };
+        }
+
+        try {
+          await withRateLimitRetry(
+            () =>
+              syncOnshapeDrawingAssetsToItem(carbon, {
+                client: connection.client as OnshapeClient,
+                companyId: payload.companyId,
+                userId: payload.userId,
+                itemId: resolved.itemId,
+                sourceDocument: "Part",
+                documentId: payload.documentId,
+                versionId: payload.versionId,
+                drawingElementId: payload.elementId,
+                assetBaseName: payload.revision
+                  ? `${payload.partNumber}.${payload.revision}`
+                  : payload.partNumber
+              }),
+            `drawing PDF for ${payload.partNumber}`
+          );
+        } catch (error) {
+          if (isTransientExportError(error)) throw error;
+          const message =
+            error instanceof Error
+              ? error.message
+              : "Could not export this Onshape drawing.";
+          await notifyOnshapeSkips(payload, [message]);
+          return {
+            skipped: true as const,
+            reason: "drawing-export-failed",
+            message
+          };
+        }
+
+        return {
+          skipped: false as const,
+          drawingAttachedTo: resolved.itemId
+        };
+      });
     }
 
     return await step.run("handle-release", async () => {
@@ -465,33 +587,41 @@ export const onshapeReleaseV2Function = inngest.createFunction(
           for (const bad of pulled.skipped) {
             skipped.push({ partId, reason: bad.reason });
           }
+
+          // MODEL-FIRST: pick up this element's drawing without waiting for a
+          // separate drawing release event. Onshape has no inverse of the
+          // references endpoint, so this lists the document's drawings and
+          // keeps the ones pointing back at this item.
+          const drawings = await withRateLimitRetry(
+            () =>
+              pullOnshapeDrawingsForDocument(carbon, client, {
+                companyId: payload.companyId,
+                userId: payload.userId,
+                documentId: payload.documentId,
+                versionId: payload.versionId,
+                targets: [
+                  {
+                    elementId: payload.elementId,
+                    itemId: targetItemId as string,
+                    revision: releasedRevision,
+                    assetBaseName: releasedRevision
+                      ? `${payload.partNumber}.${releasedRevision}`
+                      : payload.partNumber
+                  }
+                ]
+              }),
+            `drawings for ${payload.partNumber}`
+          );
+          for (const bad of drawings.skipped) {
+            skipped.push({ partId, reason: bad.reason });
+          }
         }
       }
 
-      // A release is webhook-driven: nobody is watching a screen when it runs,
-      // so a refusal recorded only in the Inngest return value reaches no one.
-      // The user finds out when a revision turns out to have no model, or no
-      // change notice, with nothing anywhere saying why.
-      if (skipped.length > 0 && payload.userId && payload.userId !== "system") {
-        try {
-          await trigger("notify", {
-            event: NotificationEvent.IntegrationSync,
-            companyId: payload.companyId,
-            documentId: "onshape",
-            title: `Onshape release ${payload.partNumber} ${releasedRevision} needs attention`,
-            body: skipped
-              .slice(0, MAX_REPORTED_SKIPS)
-              .map((entry) => entry.reason)
-              .join("; "),
-            recipient: { type: "user", userId: payload.userId }
-          });
-        } catch (error) {
-          console.error(
-            `[ONSHAPE RELEASE V2] ${payload.companyId}: could not notify ${payload.userId}`,
-            error
-          );
-        }
-      }
+      await notifyOnshapeSkips(
+        { ...payload, revision: releasedRevision },
+        skipped.map((entry) => entry.reason)
+      );
 
       return {
         skipped: false as const,

@@ -240,8 +240,14 @@ revert a migrated customer to legacy. Change it to merge into existing metadata.
 4. **Done.** BOM import v2 — identity-retaining parser, Inngest writer, reconcile.
 5. **Done.** Asset pull for the whole imported tree, in the same job.
 6. **Done.** Webhook routing to the v2 pipeline, plus a v2 release job.
-7. **Next.** Drawing attachment — join verified 2026-08-19, nothing built. Plan:
+7. **Done** (2026-08-21). Drawing attachment — resolved by element id through
+   `appelements/.../references`, never by part number. Plan:
    `.ai/plans/2026-08-19-onshape-drawing-attachment.md`.
+8. **Done** (2026-08-21). Release provenance — release name and notes into both
+   the change notice and a delimited block in `item.notes`.
+9. **Next.** Auto-create on release, as a per-company v2 toggle.
+10. **Next.** Create a part from Onshape inside the New Part form. Spec:
+   `.ai/specs/2026-08-20-onshape-create-part-from-new-part-form.md`.
 
 Also built, beyond the original list: unreleased-version syncing
 (`allowUnreleasedSync` gated everywhere, versions loader, refusals) and the
@@ -272,9 +278,9 @@ migration warning on switching a company to v2.
       separately from its components, so it is not one of `parsed.rows`, and the one item the
       user is looking at was the only one in the tree never given geometry. Verified live —
       `RD-410.A.gltf` at 138667 bytes against the SA-800 subassembly's 78410.
-      Drawing PDFs are NOT attached — v1's suffix matching is disproved on real data
-      (see the drawing section above). The replacement mechanism is now settled and verified
-      (`appelements/.../references`), but not built; it is Phase 7.
+      Drawing PDFs ARE attached as of Phase 7 (2026-08-21), joined by element id
+      through `appelements/.../references` — never by v1's suffix matching, which is
+      disproved on real data (see the drawing section above).
 - [x] Two Onshape elements claiming one `readableId` are refused with both sources named —
       verified live: `EL-402.A` was refused while `EL-402.C` held the mapping, and the refusal
       names both. (The inverse — two legitimate REVISIONS of one part reading as a collision —
@@ -609,3 +615,19 @@ twice as well.
   item notes capture most of the value at a fraction of the cost, and the same data feeds a
   PDF later. Note `documentSourceType` has no change-order member, so a PDF could only attach
   to items, never to the notice.
+- 2026-08-21: **Phase 7 done.** Drawing attachment ships, resolved by element id.
+  `getAppElementReferences` on the client; `lib/drawing.ts` holds a pure
+  `chooseDrawingModelTarget` plus the async `resolveDrawingModelItem`;
+  `readItemsForElementIncludingParts` in `mapping.ts` fixes the partId blind spot
+  (a reference record carries no partId, so an exact externalId match finds
+  nothing for a drawing of a Part Studio body). The released revision then
+  narrows the family through `resolveBomRow`.
+  Verified live that version-level references work (the plan recorded this as
+  unverified) and that `referenceType` is useless as a discriminator — it is `0`
+  for the assembly and the BOM element alike, so the element listing is required.
+  Four call sites: the release job's drawing-first branch, its model-first pass,
+  `onshape-v2-item-assets` (create + link, which also gained the notification it
+  never had), and the BOM import once per document-version.
+  The webhook needed NO change, now pinned by two tests. Still unproven: that a
+  released drawing's webhook carries `elementType === 2` — no released drawing
+  exists, and the release is blocked on "Drawing has a pending update".

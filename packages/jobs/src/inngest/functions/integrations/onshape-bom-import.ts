@@ -49,6 +49,7 @@ import {
   countNeedingAttention,
   summarizeOutcomeForUser
 } from "./onshape-bom-outcome";
+import { pullOnshapeDrawingsForDocument } from "./onshape-drawings";
 import {
   groupAssetTargetsByElement,
   isTransientExportError,
@@ -1220,6 +1221,66 @@ export const onshapeBomImportFunction = inngest.createFunction(
               error instanceof Error ? error.message : "export failed"
             }`
           });
+        }
+      }
+
+      // Drawings for the whole tree, once per document-version.
+      //
+      // Grouped that way deliberately: Onshape has no inverse of the references
+      // endpoint, so finding a model's drawing means listing the document's
+      // elements and calling references on each drawing. Doing that per element
+      // group would repeat the entire enumeration for every subassembly in one
+      // document.
+      const drawingGroups = new Map<
+        string,
+        { documentId: string; versionId: string; targets: typeof assetRows }
+      >();
+      for (const row of assetRows) {
+        const key = `${row.documentId}:${row.versionId}`;
+        const group = drawingGroups.get(key);
+        if (group) group.targets.push(row);
+        else
+          drawingGroups.set(key, {
+            documentId: row.documentId,
+            versionId: row.versionId,
+            targets: [row]
+          });
+      }
+
+      for (const group of drawingGroups.values()) {
+        try {
+          const drawings = await withRateLimitRetry(
+            () =>
+              pullOnshapeDrawingsForDocument(carbon, connection.client, {
+                companyId: payload.companyId,
+                userId: payload.userId,
+                documentId: group.documentId,
+                versionId: group.versionId,
+                targets: group.targets.map((row) => ({
+                  elementId: row.elementId,
+                  itemId: row.itemId,
+                  assetBaseName: row.assetBaseName
+                }))
+              }),
+            `drawings for document ${group.documentId}`
+          );
+          outcome.drawingsAttached =
+            (outcome.drawingsAttached ?? 0) + drawings.attached.length;
+
+          // A drawing refusal is a WARNING, not a skip: nothing about the BOM
+          // itself was refused, and counting it as one would misreport an
+          // import that wrote every line it was asked to.
+          for (const skip of drawings.skipped) {
+            outcome.warnings.push(skip.reason);
+          }
+        } catch (error) {
+          if (error instanceof RetryAfterError) throw error;
+          if (isTransientExportError(error)) throw error;
+          outcome.warnings.push(
+            `Drawings not attached: ${
+              error instanceof Error ? error.message : "export failed"
+            }`
+          );
         }
       }
 

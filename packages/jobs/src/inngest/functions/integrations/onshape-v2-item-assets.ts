@@ -13,9 +13,11 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getOnshapeClient, getOnshapeV2Settings } from "@carbon/ee/onshape";
 import { trigger } from "@carbon/lib/trigger";
+import { NotificationEvent } from "@carbon/notifications";
 import { z } from "zod";
 import { inngest } from "../../client";
 import { withRateLimitRetry } from "./onshape-backfill";
+import { pullOnshapeDrawingsForDocument } from "./onshape-drawings";
 import { pullOnshapeAssetsForElement } from "./onshape-v2-assets";
 
 const PayloadSchema = z.object({
@@ -27,8 +29,13 @@ const PayloadSchema = z.object({
   elementId: z.string(),
   partId: z.string().nullable().optional(),
   configuration: z.string().nullable().optional(),
-  assetBaseName: z.string()
+  assetBaseName: z.string(),
+  /** The released revision, so a drawing lands on the right family member. */
+  revision: z.string().nullable().optional()
 });
+
+/** How many refusals to name in one notification before it stops reading. */
+const MAX_REPORTED_SKIPS = 5;
 
 export const onshapeV2ItemAssetsFunction = inngest.createFunction(
   {
@@ -94,10 +101,59 @@ export const onshapeV2ItemAssetsFunction = inngest.createFunction(
         });
       }
 
+      // The drawing, in the same run — same reasoning as the model above: an
+      // item created from Onshape should arrive complete rather than needing a
+      // second journey through a different surface.
+      const drawings = await withRateLimitRetry(
+        () =>
+          pullOnshapeDrawingsForDocument(carbon, connection.client, {
+            companyId: payload.companyId,
+            userId: payload.userId,
+            documentId: payload.documentId,
+            versionId: payload.versionId,
+            targets: [
+              {
+                elementId: payload.elementId,
+                itemId: payload.itemId,
+                revision: payload.revision ?? undefined,
+                assetBaseName: payload.assetBaseName
+              }
+            ]
+          }),
+        `drawings for item ${payload.itemId}`
+      );
+
+      // This job had NO reporting channel: it returned skippedTargets and
+      // nobody read them, so a refusal here died in the Inngest log. Create and
+      // link are user-initiated, so there is a real person to tell.
+      const reasons = [
+        ...pulled.skipped.map((entry) => entry.reason),
+        ...drawings.skipped.map((entry) => entry.reason)
+      ];
+      if (reasons.length > 0 && payload.userId && payload.userId !== "system") {
+        try {
+          await trigger("notify", {
+            event: NotificationEvent.IntegrationSync,
+            companyId: payload.companyId,
+            documentId: "onshape",
+            title: `Onshape sync for ${payload.assetBaseName} needs attention`,
+            body: reasons.slice(0, MAX_REPORTED_SKIPS).join("; "),
+            recipient: { type: "user", userId: payload.userId }
+          });
+        } catch (error) {
+          console.error(
+            `[ONSHAPE V2 ITEM ASSETS] ${payload.companyId}: could not notify ${payload.userId}`,
+            error
+          );
+        }
+      }
+
       return {
         skipped: false as const,
         attached: pulled.attached.length,
-        skippedTargets: pulled.skipped
+        drawingsAttached: drawings.attached.length,
+        skippedTargets: pulled.skipped,
+        skippedDrawings: drawings.skipped
       };
     });
   }

@@ -269,6 +269,35 @@ describe("onshape webhook receiver", () => {
 
       expect(dispatchedTasks()).toEqual([]);
     });
+
+    it("forwards a drawing to the v2 job, which owns the drawing policy", async () => {
+      // Phase 7's resolver lives in onshape-release-v2, so the receiver must
+      // NOT filter drawings out on the v2 pipeline the way it does on legacy.
+      // This is the test that says work item 3 needed no webhook change.
+      getIntegration.mockResolvedValue(integrationRow({ pipeline: "next" }));
+
+      const result = await run(makeRequest(releaseEvent({ elementType: 2 })));
+
+      expect(result).toEqual({ success: true });
+      expect(dispatchedTasks()).toEqual(["onshape-release-v2"]);
+      expect(vi.mocked(trigger).mock.calls[0]?.[1]).toMatchObject({
+        elementType: 2
+      });
+    });
+
+    it("still drops a drawing with no part number, on either pipeline", async () => {
+      // Onshape's release dialog makes a drawing's part number REQUIRED and
+      // blocks the release without one, so this gate cannot fire for a genuinely
+      // released drawing. Do not relax it on the old "a drawing has no part
+      // number" reasoning — that described an UNRELEASED drawing.
+      getIntegration.mockResolvedValue(integrationRow({ pipeline: "next" }));
+
+      await run(
+        makeRequest(releaseEvent({ elementType: 2, partNumber: undefined }))
+      );
+
+      expect(dispatchedTasks()).toEqual([]);
+    });
   });
 
   describe("other events", () => {
