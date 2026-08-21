@@ -101,6 +101,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | AI chat / SDK | `.claude/rules/chat-ai-sdk-info.md` |
 | In-app agent knowledge base (docs → agent) | `.claude/rules/agent-knowledge-base.md` |
 | **Integrations** | |
+| Ramp integration (card transactions, accounting-provider sync) | `.claude/rules/ramp-integration.md` |
 | Jira integration | `.claude/rules/jira-integration.md` |
 | Linear integration | `.claude/rules/linear-integration.md` |
 | Xero API / webhooks | `.claude/rules/xero-api-contact-structure.md` + `.claude/rules/xero-webhooks.md` |
