@@ -1043,3 +1043,23 @@ canvas hosting Radix popovers/selects.
 **Rule:** Generated content that is compared for idempotency must be a pure function of its SOURCE, carrying nothing that varies between runs. Sync times belong in metadata (`externalIntegrationMapping.lastSyncedAt`) and in `updatedAt`, not in content. Test it by asserting the rendered output contains no timestamp at all, rather than by building twice with one clock.
 
 **Applies to:** `packages/ee/src/onshape/lib/provenance.ts`, any generated document compared before writing.
+
+## A null fallback that addresses a CONTAINER instead of a member collapses records onto one
+
+**Context:** The Onshape v2 release job recovers the `partId` a webhook cannot carry by looking the release up in Onshape's revisions API. When that returned nothing it fell back to `partIds = [null]`, meaning "address the element itself". For an ASSEMBLY that is right — the element is the item. For a PART STUDIO it is not: a studio holds N bodies and is not an item at all.
+
+**Problem:** Every unresolvable release from one Part Studio therefore addressed the SAME mapping ref (`doc:element`, no partId). Observed live: one part's geometry silently overwrote another's on a single Carbon item, and with auto-create on, the bad element-level mapping was minted and made permanent. Nothing errored. The fallback looked like defensive coding and was the opposite — it turned "we don't know which one" into "they are all this one".
+
+**Rule:** A fallback that widens a specific identifier to its container is only safe when the container genuinely IS one record. When it isn't, refuse and say why — an unresolvable identity is not actionable, and inventing a shared one converts a recoverable gap into silent data corruption. Ask of every `?? null` on an id path: what does the NULL address, and can two different things reach it?
+
+**Applies to:** `packages/jobs/src/inngest/functions/integrations/onshape-release-v2.ts`, any partId/variant id fallback.
+
+## Postgres compares text case-sensitively, so "duplicate" part numbers are not duplicates
+
+**Context:** Carbon's `item.readableId` is plain text with the default deterministic collation, and `item_unique` is on the raw column. The Onshape BOM import probes for an existing family with `.eq("readableId", row.partNumber)`.
+
+**Problem:** With `TB-901` in Carbon and `tb-901` in Onshape, the probe matches nothing, no constraint objects, and a second family is created. Verified live: both exist, both look identical to a human skimming a parts list, and neither will ever reconcile with the other. The generated `readableIdWithRevision` differs too (`TB-901.A` vs `tb-901.A`), so nothing downstream catches it either. It is genuinely ambiguous — a company may really have both — so refusing is wrong.
+
+**Rule:** When an external system supplies an identifier that Carbon stores case-sensitively, probe case-insensitively as well and SAY what you found. Create the record, and name the near-twin in the outcome so a human can decide. Silence is the only wrong answer. Use `.ilike` with the LIKE metacharacters escaped — an identifier can legitimately contain `%` or `_`.
+
+**Applies to:** `packages/jobs/src/inngest/functions/integrations/onshape-bom-import.ts`, any external-id → `readableId` probe.

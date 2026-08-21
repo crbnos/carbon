@@ -148,6 +148,36 @@ export type OnshapeElementMappingMetadata = {
   lastSyncedAt?: string;
   /** A BOM import against this item — see `OnshapeBomImportMarker`. */
   bomImport?: OnshapeBomImportMarker;
+  /** Where this item's Buy/Make came from — see `OnshapeReplenishmentProvenance`. */
+  replenishment?: OnshapeReplenishmentProvenance;
+};
+
+/**
+ * WHERE an item's `replenishmentSystem` / `defaultMethodType` came from.
+ *
+ * Carbon seeds those two fields once, on create, and owns them thereafter —
+ * replenishment is a business decision, not a CAD fact, so no later sync
+ * overwrites it. That rule is right when a HUMAN chose the value and wrong when
+ * CARBON GUESSED it from the shape of the tree: a guess should lose to Onshape
+ * later stating the answer outright.
+ *
+ * Without this record the two cases are indistinguishable, so the only safe
+ * behaviour is to never correct anything. With it, a re-import can replace a
+ * `structure` guess and must still leave `user` and `purchasing-level` alone.
+ */
+export type OnshapeReplenishmentProvenance = {
+  /**
+   * `purchasing-level` — Onshape's own column said so.
+   * `structure`        — Carbon inferred it from children / element type.
+   * `user`             — a human chose it, or Carbon adopted their existing item.
+   */
+  source: "purchasing-level" | "structure" | "user";
+  /** What was seeded, so a later human edit is detectable. */
+  seededSystem: "Buy" | "Make";
+  seededMethodType: "Pull from Inventory" | "Make to Order";
+  /** The Purchasing Level value at seed time, when there was one. */
+  purchasingLevel?: string | null;
+  seededAt: string;
 };
 
 /**

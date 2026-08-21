@@ -73,6 +73,7 @@ const PayloadSchema = z.object({
   groupKey: z.string().optional()
 });
 
+const ELEMENT_TYPE_PART_STUDIO = 0;
 const ELEMENT_TYPE_DRAWING = 2;
 
 /** How many refusals to name in one notification before it stops reading. */
@@ -330,7 +331,34 @@ export const onshapeReleaseV2Function = inngest.createFunction(
           partIds.push(item.partId ?? null);
         }
       }
-      if (partIds.length === 0) partIds.push(null);
+      if (partIds.length === 0) {
+        // A PART STUDIO release whose body we cannot identify is NOT actionable.
+        //
+        // The element-level ref (`doc:element`, no partId) addresses the STUDIO,
+        // and a studio holds N bodies — it is not an item. Falling back to it
+        // makes every unresolvable release from one studio address the SAME
+        // ref, so they collapse onto one Carbon item: observed live, a second
+        // part's geometry silently overwriting the first's, and with
+        // auto-create on the bad mapping is minted and made permanent.
+        //
+        // Reachable in production even though a real release names a revision:
+        // a failed or rate-limited getRevisions, a null onshapeCompanyId, or a
+        // component pulled from a linked document all leave this list empty.
+        //
+        // An ASSEMBLY element IS one item, so a null partId is correct there.
+        if (payload.elementType === ELEMENT_TYPE_PART_STUDIO) {
+          const reason = `Onshape did not report which body of this part studio ${payload.partNumber} revision ${releasedRevision} refers to, so Carbon cannot tell which part it is.`;
+          await notifyOnshapeSkips({ ...payload, revision: releasedRevision }, [
+            reason
+          ]);
+          return {
+            skipped: true as const,
+            reason: "part-studio-body-unresolved",
+            message: reason
+          };
+        }
+        partIds.push(null);
+      }
 
       const attached: string[] = [];
       const imported: string[] = [];
@@ -497,7 +525,14 @@ export const onshapeReleaseV2Function = inngest.createFunction(
               versionId: payload.versionId,
               partNumber: payload.partNumber,
               fromUnreleasedVersion: false,
-              lastSyncedAt: new Date().toISOString()
+              lastSyncedAt: new Date().toISOString(),
+              replenishment: {
+                source: defaults.replenishmentSource,
+                seededSystem: defaults.replenishmentSystem,
+                seededMethodType: defaults.defaultMethodType,
+                purchasingLevel,
+                seededAt: new Date().toISOString()
+              }
             },
             createdBy: payload.userId
           });

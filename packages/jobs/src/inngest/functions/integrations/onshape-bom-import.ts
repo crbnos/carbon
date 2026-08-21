@@ -29,6 +29,7 @@ import {
   getOnshapeV2Settings,
   isInitialRevisionLabel,
   type OnshapeBomNode,
+  type OnshapeBomRow,
   parseOnshapeBom,
   patchElementMappingMetadata,
   readElementMappingsForItems,
@@ -51,7 +52,10 @@ import {
   summarizeOutcomeForUser
 } from "./onshape-bom-outcome";
 import { pullOnshapeDrawingsForDocument } from "./onshape-drawings";
+import { escapeLikePattern } from "./onshape-matching";
 import {
+  findCaseOnlyTwins,
+  planReplenishmentCorrection,
   readOnshapePurchasingLevel,
   resolveOnshapeReplenishment
 } from "./onshape-replenishment";
@@ -566,6 +570,15 @@ export const onshapeBomImportFunction = inngest.createFunction(
         new Set(Array.from(mappings.values()).flat())
       );
       const revisionById = new Map<string, string | null>();
+      /** Current Buy/Make per candidate, for the correction pass below. */
+      const replenishmentById = new Map<
+        string,
+        {
+          readableId: string;
+          replenishmentSystem: string;
+          defaultMethodType: string;
+        }
+      >();
       // Chunked: PostgREST builds .in() into the URL, and a large assembly with
       // several revisions per part produces enough ids to exceed the request
       // line — which fails as a malformed request, not as "too many ids".
@@ -573,7 +586,9 @@ export const onshapeBomImportFunction = inngest.createFunction(
       for (let i = 0; i < candidateIds.length; i += ID_CHUNK) {
         const items = await carbon
           .from("item")
-          .select("id, revision")
+          .select(
+            "id, revision, readableId, replenishmentSystem, defaultMethodType"
+          )
           .in("id", candidateIds.slice(i, i + ID_CHUNK))
           .eq("companyId", payload.companyId);
         if (items.error) {
@@ -583,11 +598,26 @@ export const onshapeBomImportFunction = inngest.createFunction(
         }
         for (const item of items.data ?? []) {
           revisionById.set(item.id, item.revision);
+          replenishmentById.set(item.id, {
+            readableId: item.readableId,
+            replenishmentSystem: item.replenishmentSystem,
+            defaultMethodType: item.defaultMethodType
+          });
         }
       }
 
       // itemId per BOM row, minting only genuinely-unknown parts.
       const itemIdByRow = new Map<string, string>();
+      /**
+       * Rows that resolved to an item Carbon ALREADY had. Onshape may since
+       * have declared a Purchasing Level that disagrees with what Carbon holds,
+       * and whether that is Carbon's own guess to correct or a human's decision
+       * to leave alone is decided by the stored provenance.
+       */
+      const correctionCandidates: Array<{
+        row: OnshapeBomRow;
+        itemId: string;
+      }> = [];
       // Components of rows the import REFUSED, keyed by the REFUSED ROW.
       // Their existing material lines must survive: "skipped" has to mean
       // untouched, not deleted.
@@ -685,6 +715,7 @@ export const onshapeBomImportFunction = inngest.createFunction(
         if (resolution.kind === "matched") {
           itemIdByRow.set(row.rowId, resolution.itemId);
           rememberAssetRow(row, resolution.itemId);
+          correctionCandidates.push({ row, itemId: resolution.itemId });
           continue;
         }
 
@@ -789,6 +820,42 @@ export const onshapeBomImportFunction = inngest.createFunction(
 
         // Genuinely unknown: mint it, then link it, so the next import
         // resolves it by id rather than rediscovering it.
+        const mintPurchasingLevel = readOnshapePurchasingLevel(row.columns);
+        const mintReplenishment = resolveOnshapeReplenishment({
+          purchasingLevel: mintPurchasingLevel,
+          hasChildren: rowIdsWithChildren.has(row.rowId)
+        });
+
+        // A number that differs from an existing Carbon part ONLY by case.
+        // Postgres compares readableId case-sensitively, so this mints a second
+        // family and no constraint objects — correct if the company really has
+        // both, a silent duplicate if somebody typed it inconsistently. Carbon
+        // cannot tell which, so it creates the part and says so.
+        // A SEPARATE, case-insensitive probe. The family query above is
+        // `.eq("readableId", ...)`, which by definition can never return a
+        // differently-cased twin — checking its rows would be dead code.
+        const twinProbe = await carbon
+          .from("item")
+          .select("readableId")
+          .ilike("readableId", escapeLikePattern(row.partNumber))
+          .eq("type", "Part")
+          .eq("companyId", payload.companyId);
+        if (twinProbe.error) {
+          throw new Error(
+            `Could not check for case variants of ${row.partNumber}: ${twinProbe.error.message}`
+          );
+        }
+        const caseTwins = findCaseOnlyTwins(
+          row.partNumber,
+          Array.from(
+            new Set(
+              (twinProbe.data ?? []).map(
+                (sibling: { readableId: string }) => sibling.readableId
+              )
+            )
+          )
+        );
+
         const created = await carbon
           .from("item")
           .insert({
@@ -813,14 +880,8 @@ export const onshapeBomImportFunction = inngest.createFunction(
             // transaction — and because `methodMaterial.methodType` is
             // denormalized from this column, the PARENT's line would read Pull
             // from Inventory and never explode.
-            ...(() => {
-              const { replenishmentSystem, defaultMethodType } =
-                resolveOnshapeReplenishment({
-                  purchasingLevel: readOnshapePurchasingLevel(row.columns),
-                  hasChildren: rowIdsWithChildren.has(row.rowId)
-                });
-              return { replenishmentSystem, defaultMethodType };
-            })(),
+            replenishmentSystem: mintReplenishment.replenishmentSystem,
+            defaultMethodType: mintReplenishment.defaultMethodType,
             itemTrackingType: "Inventory",
             unitOfMeasureCode: "EA",
             active: true,
@@ -921,10 +982,25 @@ export const onshapeBomImportFunction = inngest.createFunction(
             versionId: payload.versionId,
             partNumber: row.partNumber,
             fromUnreleasedVersion: !row.revision,
-            lastSyncedAt: new Date().toISOString()
+            lastSyncedAt: new Date().toISOString(),
+            // WHERE the Buy/Make came from, so a later import can correct its
+            // own guess without ever reverting a human's decision.
+            replenishment: {
+              source: mintReplenishment.source,
+              seededSystem: mintReplenishment.replenishmentSystem,
+              seededMethodType: mintReplenishment.defaultMethodType,
+              purchasingLevel: mintPurchasingLevel,
+              seededAt: new Date().toISOString()
+            }
           },
           createdBy: payload.userId
         });
+
+        if (caseTwins.length > 0) {
+          outcome.warnings.push(
+            `${row.partNumber} was created as a new part, but Carbon already has ${caseTwins.join(", ")}, which differs only by capitalisation. Check whether these are two parts or one typed two ways.`
+          );
+        }
 
         await writeBomRowProvenance(carbon, {
           companyId: payload.companyId,
@@ -949,6 +1025,78 @@ export const onshapeBomImportFunction = inngest.createFunction(
         revisionById.set(created.data.id, row.revision || "0");
 
         outcome.created++;
+      }
+
+      // CORRECT what Carbon guessed, WARN about what a human chose.
+      //
+      // Runs before reconcile because reconcileOne denormalizes `methodType`
+      // onto new methodMaterial rows from a live item read — correcting first
+      // means every line inserted this run picks up the corrected value with no
+      // second pass.
+      if (correctionCandidates.length > 0) {
+        const provenanceByItem = new Map<
+          string,
+          {
+            source: "purchasing-level" | "structure" | "user";
+            seededSystem?: string;
+          }
+        >();
+        const provenanceRows = await readElementMappingsForItems(carbon, {
+          companyId: payload.companyId,
+          itemIds: correctionCandidates.map((candidate) => candidate.itemId)
+        });
+        for (const mappingRow of provenanceRows) {
+          const stored = mappingRow.metadata?.replenishment;
+          if (stored?.source) {
+            provenanceByItem.set(mappingRow.itemId, {
+              source: stored.source,
+              seededSystem: stored.seededSystem
+            });
+          }
+        }
+
+        for (const candidate of correctionCandidates) {
+          const current = replenishmentById.get(candidate.itemId);
+          if (!current) continue;
+          const plan = planReplenishmentCorrection({
+            purchasingLevel: readOnshapePurchasingLevel(candidate.row.columns),
+            current,
+            provenance: provenanceByItem.get(candidate.itemId) ?? null
+          });
+          if (plan.action === "none") continue;
+
+          if (plan.action === "warn") {
+            outcome.warnings.push(`${current.readableId} ${plan.reason}`);
+            continue;
+          }
+
+          const corrected = await carbon
+            .from("item")
+            .update({
+              replenishmentSystem: plan.replenishmentSystem,
+              defaultMethodType: plan.defaultMethodType,
+              updatedBy: payload.userId
+            })
+            .eq("id", candidate.itemId)
+            .eq("companyId", payload.companyId);
+          if (corrected.error) {
+            // Non-fatal: the BOM itself is the job, and a failed correction is
+            // worth reporting rather than throwing the import away.
+            outcome.warnings.push(
+              `${current.readableId} could not be corrected to match its Onshape Purchasing Level: ${corrected.error.message}`
+            );
+            continue;
+          }
+
+          // Keep the in-memory copy honest — reconcile reads it below.
+          replenishmentById.set(candidate.itemId, {
+            ...current,
+            replenishmentSystem: plan.replenishmentSystem,
+            defaultMethodType: plan.defaultMethodType
+          });
+          outcome.corrections = outcome.corrections ?? [];
+          outcome.corrections.push(`${current.readableId} ${plan.reason}`);
+        }
       }
 
       // One read for the whole walk rather than one per node.

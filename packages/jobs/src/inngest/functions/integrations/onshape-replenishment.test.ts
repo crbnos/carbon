@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   describeOnshapeReplenishment,
+  findCaseOnlyTwins,
+  planReplenishmentCorrection,
   readOnshapePurchasingLevel,
   resolveOnshapeReplenishment
 } from "./onshape-replenishment";
@@ -176,5 +178,125 @@ describe("describeOnshapeReplenishment", () => {
     );
     expect(message).toContain("ASSUMED");
     expect(message).toContain("no bill of materials");
+  });
+});
+
+// The correction rule is where a wrong answer either reverts somebody's
+// deliberate decision or leaves Carbon permanently disagreeing with Onshape.
+// Both failures are silent, so every branch is pinned.
+
+describe("planReplenishmentCorrection", () => {
+  const buy = {
+    replenishmentSystem: "Buy",
+    defaultMethodType: "Pull from Inventory"
+  };
+  const make = {
+    replenishmentSystem: "Make",
+    defaultMethodType: "Make to Order"
+  };
+
+  it("does nothing when Onshape says nothing", () => {
+    expect(
+      planReplenishmentCorrection({
+        current: make,
+        provenance: { source: "structure", seededSystem: "Make" }
+      })
+    ).toEqual({ action: "none" });
+  });
+
+  it("does nothing when Onshape and Carbon already agree", () => {
+    expect(
+      planReplenishmentCorrection({
+        purchasingLevel: "Purchased",
+        current: buy,
+        provenance: { source: "structure", seededSystem: "Buy" }
+      })
+    ).toEqual({ action: "none" });
+  });
+
+  it("CORRECTS a value Carbon guessed from structure", () => {
+    const plan = planReplenishmentCorrection({
+      purchasingLevel: "Purchased",
+      current: make,
+      provenance: { source: "structure", seededSystem: "Make" }
+    });
+    expect(plan.action).toBe("correct");
+    if (plan.action !== "correct") throw new Error("unreachable");
+    expect(plan.replenishmentSystem).toBe("Buy");
+    expect(plan.defaultMethodType).toBe("Pull from Inventory");
+    expect(plan.reason).toContain("guessed");
+  });
+
+  it("only WARNS when a human chose the value", () => {
+    const plan = planReplenishmentCorrection({
+      purchasingLevel: "Purchased",
+      current: make,
+      provenance: { source: "user", seededSystem: "Make" }
+    });
+    expect(plan.action).toBe("warn");
+  });
+
+  it("only WARNS when Onshape itself seeded it and has since changed its mind", () => {
+    // Carbon did not guess here, so the earlier value was already authoritative.
+    // Silently flipping it would make a CAD edit rewrite Carbon with no record.
+    expect(
+      planReplenishmentCorrection({
+        purchasingLevel: "Purchased",
+        current: make,
+        provenance: { source: "purchasing-level", seededSystem: "Make" }
+      }).action
+    ).toBe("warn");
+  });
+
+  it("only WARNS when a human EDITED a value Carbon had guessed", () => {
+    // Provenance says structure, but the stored seed no longer matches what the
+    // item holds — somebody changed it deliberately after the fact.
+    expect(
+      planReplenishmentCorrection({
+        purchasingLevel: "Purchased",
+        current: make,
+        provenance: { source: "structure", seededSystem: "Buy" }
+      }).action
+    ).toBe("warn");
+  });
+
+  it("only WARNS for an item created before provenance was recorded", () => {
+    // The majority case on the day this ships. A null provenance could equally
+    // be a human's choice, so it must never be overwritten.
+    expect(
+      planReplenishmentCorrection({
+        purchasingLevel: "Purchased",
+        current: make
+      }).action
+    ).toBe("warn");
+    expect(
+      planReplenishmentCorrection({
+        purchasingLevel: "Purchased",
+        current: make,
+        provenance: null
+      }).action
+    ).toBe("warn");
+  });
+});
+
+describe("findCaseOnlyTwins", () => {
+  it("finds a part number differing only by case", () => {
+    // Verified live: Postgres compares readableId case-sensitively, so TB-901
+    // and tb-901 become two separate families with no constraint objecting.
+    expect(findCaseOnlyTwins("tb-901", ["TB-901", "TB-902", "TB-905"])).toEqual(
+      ["TB-901"]
+    );
+  });
+
+  it("ignores an exact match — that is the same part, not a twin", () => {
+    expect(findCaseOnlyTwins("TB-901", ["TB-901"])).toEqual([]);
+  });
+
+  it("returns nothing when the number is genuinely new", () => {
+    expect(findCaseOnlyTwins("TB-906", ["TB-901", "TB-905"])).toEqual([]);
+  });
+
+  it("ignores surrounding whitespace", () => {
+    expect(findCaseOnlyTwins(" TB-901 ", ["tb-901"])).toEqual(["tb-901"]);
   });
 });

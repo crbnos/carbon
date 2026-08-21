@@ -253,7 +253,13 @@ export async function action({ request }: ActionFunctionArgs) {
           versionId: input.versionId,
           partNumber: input.partNumber,
           fromUnreleasedVersion: !input.revision,
-          lastSyncedAt: new Date().toISOString()
+          lastSyncedAt: new Date().toISOString(),
+          // writeElementMapping is delete-then-insert of the WHOLE row, and
+          // this route rewrites the target's mapping on EVERY import — not only
+          // when it is unlinked. Carry the replenishment provenance forward or
+          // the first re-import erases how the item's Buy/Make was decided,
+          // which is exactly what a later correction needs to read.
+          replenishment: current?.metadata?.replenishment
         },
         createdBy: userId
       });

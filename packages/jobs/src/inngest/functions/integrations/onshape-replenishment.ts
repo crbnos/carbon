@@ -142,3 +142,85 @@ export function describeOnshapeReplenishment(
     ? `Carbon created ${partNumber} from an Onshape release and ASSUMED it is made in-house (${fields}), because Onshape does not say. It has no bill of materials yet — import one, or correct the replenishment if it is bought. Tracked in Inventory and measured in EA.`
     : `Carbon created ${partNumber} from an Onshape release and ASSUMED it is purchased (${fields}), because Onshape does not say. Correct the replenishment if it is made in-house. Tracked in Inventory and measured in EA.`;
 }
+
+/**
+ * Decide whether a LATER import may correct an item Carbon already has.
+ *
+ * The asymmetry this exists for: a value Carbon GUESSED from the shape of the
+ * tree should lose to Onshape later stating the answer outright, and a value a
+ * HUMAN chose must never be silently reverted by a CAD sync. Without the stored
+ * provenance the two are indistinguishable, which is why the rule until now was
+ * "seeded once, never touched".
+ *
+ * Items created BEFORE provenance was recorded have none. They are treated as
+ * `user` — the conservative reading, because a null could equally be a human's
+ * deliberate choice, and warning about a real disagreement costs nothing while
+ * overwriting one destroys a decision.
+ */
+export function planReplenishmentCorrection(input: {
+  /** What Onshape says NOW, from the BOM row or element/part metadata. */
+  purchasingLevel?: string | null;
+  /** What Carbon currently holds on the item. */
+  current: { replenishmentSystem: string; defaultMethodType: string };
+  /** The stored provenance, or null for an item that predates it. */
+  provenance?: {
+    source: "purchasing-level" | "structure" | "user";
+    seededSystem?: string;
+  } | null;
+}):
+  | { action: "none" }
+  | {
+      action: "correct";
+      replenishmentSystem: "Buy" | "Make";
+      defaultMethodType: "Pull from Inventory" | "Make to Order";
+      reason: string;
+    }
+  | { action: "warn"; reason: string } {
+  const declared = input.purchasingLevel?.trim();
+  if (!declared) return { action: "none" };
+
+  const wanted = resolveOnshapeReplenishment({ purchasingLevel: declared });
+  if (wanted.replenishmentSystem === input.current.replenishmentSystem) {
+    return { action: "none" };
+  }
+
+  // A human changed the value AFTER Carbon seeded it. Even a `structure`
+  // provenance is off limits once the stored seed no longer matches what the
+  // item holds — somebody edited it deliberately.
+  const edited =
+    input.provenance?.seededSystem !== undefined &&
+    input.provenance.seededSystem !== input.current.replenishmentSystem;
+
+  if (input.provenance?.source === "structure" && !edited) {
+    return {
+      action: "correct",
+      replenishmentSystem: wanted.replenishmentSystem,
+      defaultMethodType: wanted.defaultMethodType,
+      reason: `set to ${wanted.replenishmentSystem} / ${wanted.defaultMethodType} to match its Onshape Purchasing Level of "${declared}". Carbon had guessed ${input.current.replenishmentSystem} from the shape of the assembly.`
+    };
+  }
+
+  return {
+    action: "warn",
+    reason: `is ${input.current.replenishmentSystem} in Carbon but its Onshape Purchasing Level says "${declared}". Carbon did not change it, because that value was set here rather than guessed. Change it if Onshape is right.`
+  };
+}
+
+/**
+ * A part number that differs from an existing one ONLY by case.
+ *
+ * Postgres compares `readableId` case-sensitively, so `TB-901` and `tb-901` are
+ * two separate Carbon families and no constraint objects — verified live. That
+ * is correct if the company really does have both, and a silent duplicate if
+ * somebody typed it inconsistently in Onshape. Carbon cannot tell which, so it
+ * creates the part and SAYS so rather than refusing or merging.
+ */
+export function findCaseOnlyTwins(
+  partNumber: string,
+  existingReadableIds: string[]
+): string[] {
+  const lowered = partNumber.trim().toLowerCase();
+  return existingReadableIds.filter(
+    (id) => id !== partNumber && id.trim().toLowerCase() === lowered
+  );
+}

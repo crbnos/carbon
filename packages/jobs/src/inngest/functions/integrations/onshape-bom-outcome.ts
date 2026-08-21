@@ -20,6 +20,14 @@ export type OnshapeBomImportOutcome = {
    * zero at every site.
    */
   drawingsAttached?: number;
+  /**
+   * Items whose Buy/Make Carbon CHANGED to match Onshape's Purchasing Level.
+   *
+   * Separate from `warnings` because it is a different kind of news: Carbon
+   * altered planning-relevant data on a part the user did not ask it to touch.
+   * Optional, so an outcome shaped before this ships still parses.
+   */
+  corrections?: string[];
   /** Rows Onshape sent that could not be read at all. */
   unreadableRows: number;
   /** Existing lines left untouched because their row was refused. */
@@ -50,6 +58,7 @@ export function countNeedingAttention(
     outcome.skipped.length +
     outcome.unreadableRows +
     outcome.protectedLines +
+    (outcome.corrections?.length ?? 0) +
     outcome.warnings.length
   );
 }
