@@ -76,7 +76,7 @@ Open 39k-line PR, likely to merge first. Verified collisions (tip `f17db29ab`):
 - [x] Task 10: i18n extraction + translation fill
 - [x] Task 11: AGENTS.md + spec changelog sync
 - [x] Task 12: Full verification gate
-- [ ] Task 13: Browser verification via /test
+- [x] Task 13: Browser verification via /test
 
 ## Dependencies
 

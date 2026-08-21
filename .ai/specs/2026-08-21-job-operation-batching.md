@@ -501,5 +501,7 @@ through; `ProcessForm` gains the Boolean field (clone `completeAllOnScan`).
   two-phase completion + `batch-time-split` + tests from the prior branches and
   grafted the four grill deltas (3-value enum, Phase-2 fail-fast, resume
   quantity-contract rejection, read-only Completing lanes) onto them. ERP + MES
-  typecheck green, unit tests green, i18n filled across 12 locales. Browser e2e
-  (Task 13) pending a running dev stack.
+  typecheck green, unit tests green, i18n filled across 12 locales. Browser
+  e2e (Task 13) PASSED on 2026-08-21 against the running dev stack — all
+  acceptance criteria verified (flag, board, facet filter, RPC guard, membership
+  lifecycle, proportional completion, resume reject/accept, MES page).

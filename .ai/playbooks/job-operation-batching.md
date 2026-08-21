@@ -1,0 +1,107 @@
+# Job Operation Batching
+
+Last tested: 2026-08-21 (feat/job-operation-batching-v2)
+Routes: ERP `/x/resources/processes`, `/x/schedule/batching`; MES `/x/batch/$batchId`
+Edge fn: `batch-operations` (create/add/remove/update/dissolve/complete)
+
+## Strategy
+
+Two verification paths — use both:
+- **UI (agent-browser)** for the process flag, the batch planning board (candidates,
+  material chips, facet filter), and the MES batch page render.
+- **Edge fn (direct `curl` with the service-role key)** for all mutation/completion
+  logic. @dnd-kit drag is unreliable to automate; the edge fn is the exact call the
+  board/MES routes make, so invoking it + asserting DB state is the reliable proof.
+
+## Prerequisites / seeding
+
+Needs a batchable process, a location, and jobs whose operations sit on that process
+with BOM lines carrying material substances (for the facet-filter test). No fixtures
+ship with substances, so seed them. Seed with `SET LOCAL session_replication_role =
+replica` to bypass event interceptors. Gotchas learned:
+- `public.job` required cols: `jobId, itemId, unitOfMeasureCode, locationId, companyId,
+  createdBy` — NOT `schedule`/`command` (those are on `cron.job`; an unqualified
+  information_schema query matches the wrong table).
+- `materialSubstance` needs a `code` (NOT NULL).
+- `jobOperationDependency` has NO `id` column (PK is operationId+dependsOnId+jobId+companyId).
+- `jobMaterial` needs `description` (NOT NULL).
+- Material property chain: `jobMaterial.itemId → item → material` (material.id =
+  item.readableId) → `materialSubstanceId`. Set the substance on the `material` row.
+- Set job.status in ('Ready','In Progress','Paused') and jobOperation.status in
+  ('Todo','Ready','Waiting') or the RPC won't list them.
+
+Full seed/cleanup SQL pattern is in the run log `.ai/runs/2026-08-21-job-operation-batching.md`.
+
+## Steps
+
+### 1. Process Batchable flag (UI)
+- `/x/resources/processes` → confirm the **Batchable** column header renders.
+- Click a process → the form drawer has a **"Batchable"** switch. Toggle it, then
+  `requestSubmit` the drawer form (button "Save").
+- Verify DB: `select batchable from process where id=...` → `t`.
+
+### 2. Batch planning board (UI)
+- `/x/schedule/batching` → shows a batchable-process picker ("Select a batchable process").
+- Select the process → the OPERATIONS pane lists candidates; each shows its material
+  substance chip (or "No material properties" when the op has no BOM line), plus a
+  "Drag here to start a new batch" drop zone.
+- Click **Filter** → a **Substance** facet lists the seeded substances. Select one →
+  the candidate count narrows to only ops whose BOM matches (an active filter chip
+  "Substance is any of X" appears).
+
+### 3. Candidate RPC guard (SQL)
+- `select ... from get_batchable_operations(location_id, process_id)` returns the
+  unstarted/unbatched ops with a `materials` JSONB (substanceName etc.).
+- Insert a `productionEvent` on one candidate → it disappears from the RPC result
+  (the `NOT EXISTS productionEvent` guard). The edge fn also rejects create on it
+  ("... has already started").
+
+### 4. Membership lifecycle (edge fn)
+`POST {API}/functions/v1/batch-operations` with `Authorization: Bearer {SERVICE_ROLE}`
++ `apikey` header. Types:
+- `create` → `{success, id, readableId:"BAT00000N"}`, tags members, writes workCenterId.
+- `add` / `remove` (remove untags; removing last member dissolves).
+- `update` (workCenterId) → written to every member op.
+- `dissolve` → batch row deleted, members untagged.
+- Gate rejections: already-batched ("... is already in a batch"), started
+  ("... has already started").
+
+### 5. Completion — proportional slicing (edge fn + SQL)
+- Insert a batch-tagged `productionEvent` (start/end window) on the first member op.
+- `complete` with `members:[{jobOperationId,quantity}]`. Verify:
+  - per-member sliced events: `round(extract(epoch from endTime-startTime))` ∝
+    operationQuantity, summing to the recorded span (e.g. 4200s, qty 5/20/10 →
+    600/2400/1200s);
+  - `productionQuantity` Production rows = entered quantities;
+  - member ops → `Done`; downstream deps → `Ready`; batch → `Completed`.
+
+### 6. Resume (edge fn) — the key new behavior
+- Simulate a stuck Phase-1: set batch `status='Completing'`, insert per-member
+  `productionQuantity` + sliced `productionEvent`(postedToGL=false).
+- `complete` with a CHANGED quantity → rejected: "Quantities were already recorded
+  for this batch (opId: N produced / M scrap). Retry with the recorded values...".
+- `complete` with the SAME quantities → succeeds (resume), reuses the same event ids,
+  NO duplicated productionQuantity/events, members Done, batch Completed.
+- `complete` again on the Completed batch → "This batch has already been completed".
+
+### 7. MES batch page (UI)
+- Establish the MES session first: open `{MES_URL}/x` (cookie is shared across the
+  `*.dev` parent domain once ERP is authed; hitting the raw 127.0.0.1 URL breaks it).
+- `{MES_URL}/x/batch/{batchId}` → renders the status Badge (green Completed / yellow
+  Completing / secondary Active), "N jobs · Σqty", the member table, and the copy
+  "Time and cost split across jobs proportionally to quantity". Start/End timer shows
+  only for Active; the submit relabels "Retry Completion" while Completing.
+
+## Selector Notes
+- Process form Batchable field: `switch "Batchable"`.
+- Board process picker: the lone `combobox` on `/x/schedule/batching`; options are the
+  batchable processes.
+- Board filter: button "Filter" → substance facet options by name.
+
+## Common Failures
+- Edge fn intermittently returns `{"error":"worker did not respond in time"}` /
+  HTTP 000 on a cold edge-runtime — transient; retry.
+- MES page 404 / redirect to `127.0.0.1:.../login` → MES session not established;
+  open `{MES_URL}/x` first (never the raw IP).
+- Candidate shows "No material properties" → that op has no `jobMaterial` line, or the
+  linked `material` row has no `materialSubstanceId`.

@@ -253,15 +253,41 @@ Working-tree files to never touch: `apps/erp/app/routes/api+/mcp+/lib/tool-metad
 - banned-term grep: clean.
 - Commit (gate fixes): `a5711de12`
 
-## Task 13: Browser verification via /test — BLOCKED (no running app stack)
+## Task 13: Browser verification via /test — DONE (all ACs PASS)
 
-- The Supabase backend Docker stack IS up (postgres/kong/edge-runtime/postgrest/
-  gotrue/realtime containers running), but the ERP/MES **app dev servers are
-  not**: `https://erp.main.dev` returns HTTP 000 (unreachable); ports 3000/3001
-  not listening.
-- `/test` (and `/auth`) require the running app dev server. Per the executor
-  brief and repo convention ([[feedback_connect_running_dev_server]]), I must NOT
-  boot or restart the user's dev stack. → STOP and ask the user to bring the app
-  up (`crbn up --all`), then Task 13 can run.
-- All code is verified by the Task 12 gate (typecheck + unit tests + build +
-  conformance). Browser e2e is the only remaining step.
+User brought the full stack up (branch-infixed `*.job-operation-batching-v2.dev`).
+Verified UI via agent-browser + all mutation/completion logic via direct
+`batch-operations` edge-fn invocation (service-role) with DB assertions. Seeded 3
+jobs (Machining ops qty 5/20/10, steel/steel/aluminum BOM) via SQL, cleaned up
+after (DB confirmed back to original: 0 seed rows, 0 batches, Machining reverted
+to batchable=false). Playbook cached at `.ai/playbooks/job-operation-batching.md`.
+
+| AC | Test | Result |
+|----|------|--------|
+| Flag | Toggle Machining Batchable in the process form → table badge + `process.batchable=t` | **PASS** |
+| Board | `/x/schedule/batching` renders candidates, material chips ("SEED STEEL"), "New batch" drop zone | **PASS** |
+| Facet | Filter substance=Seed Steel → candidates narrow 3→1, aluminum/no-material dropped | **PASS** |
+| RPC guard | Start a timer on a candidate → drops from `get_batchable_operations`; edge fn rejects "has already started" | **PASS** |
+| Create | edge fn → BAT000001 Active, 3 members tagged, workCenter propagated to members | **PASS** |
+| Gate | already-batched op rejected "is already in a batch" | **PASS** |
+| Remove/Update/Dissolve | remove untags; update writes workCenter to member; dissolve deletes batch + untags | **PASS** |
+| **Completion** | 4200s batch event, qty 5/20/10 → slices **600/2400/1200s** (∝, sum exact); productionQuantity 5/20/10; members Done; downstream deps → Ready; batch Completed | **PASS** |
+| **Resume — reject** | Completing batch, retry with changed qty (18 vs 20) → rejected naming recorded values | **PASS** |
+| **Resume — same** | retry same qty → Completed, reuses same event ids, NO duplicated qty/events | **PASS** |
+| Double-complete | complete on Completed batch → "already been completed" | **PASS** |
+| MES page | `/x/batch/$id` renders status Badge (COMPLETED), "3 jobs · 35", member table, proportional-split copy | **PASS** |
+
+Notes: edge worker intermittently cold-times-out ("worker did not respond in
+time" / HTTP 000) — transient, retried. MES needs its session established via
+`{MES_URL}/x` first (shared `*.dev` cookie; the raw 127.0.0.1 URL bounces to
+login). GL posting not deep-verified (needs accounting config; out of scope per
+the plan) — completion Phase 2 ran issue+Done+GL without error.
+
+---
+
+## Outcome
+
+All 13 tasks complete. Feature verified end-to-end: schema, edge-fn logic
+(create/add/remove/update/dissolve/complete/resume + all guards + proportional
+slicing + the resume quantity-contract), ERP board UI, and MES batch page.
+Nothing pushed. PR #1137 still to be closed by the user (blocked earlier).
