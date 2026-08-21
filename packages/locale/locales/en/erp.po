@@ -2848,6 +2848,12 @@ msgstr "Carbon's shop-floor app where operators run operations, report quantitie
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 
+msgid "Card Holder"
+msgstr "Card Holder"
+
+msgid "Card Transactions"
+msgstr "Card Transactions"
+
 msgid "Cards"
 msgstr "Cards"
 
@@ -9025,6 +9031,9 @@ msgstr "Memo Date"
 msgid "Memo ID"
 msgstr "Memo ID"
 
+msgid "Merchant"
+msgstr "Merchant"
+
 msgid "MES"
 msgstr "MES"
 
@@ -9813,6 +9822,9 @@ msgstr "No jobs were created"
 
 msgid "No journal lines in scope for this period"
 msgstr "No journal lines in scope for this period"
+
+msgid "No lines"
+msgstr "No lines"
 
 msgid "No lines to map"
 msgstr "No lines to map"
@@ -11830,6 +11842,9 @@ msgstr "Raise it at the weekly status call"
 
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
+
+msgid "Ramp"
+msgstr "Ramp"
 
 msgid "Rate Limit"
 msgstr "Rate Limit"
@@ -15878,6 +15893,12 @@ msgstr "Training your team via the Academy and in-app guides"
 
 msgid "Trainings"
 msgstr "Trainings"
+
+msgid "Transaction Date"
+msgstr "Transaction Date"
+
+msgid "Transaction ID"
+msgstr "Transaction ID"
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "Transactions will create journal entries and update the general ledger."

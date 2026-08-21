@@ -2848,6 +2848,12 @@ msgstr "オペレーターが操作を実行し、数量をレポートし、材
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "部品番号を持つすべてのもの(部品、材料、工具、サービス、消耗品、または治具)のCarbonの単一レコードであり、ジョブ、方法、注文、および在庫がすべて指しています。"
 
+msgid "Card Holder"
+msgstr ""
+
+msgid "Card Transactions"
+msgstr ""
+
 msgid "Cards"
 msgstr "カード"
 
@@ -9025,6 +9031,9 @@ msgstr "メモ日付"
 msgid "Memo ID"
 msgstr "メモID"
 
+msgid "Merchant"
+msgstr ""
+
 msgid "MES"
 msgstr "MES"
 
@@ -9813,6 +9822,9 @@ msgstr "ジョブが作成されていません"
 
 msgid "No journal lines in scope for this period"
 msgstr "この期間のスコープ内にジャーナルラインがありません"
+
+msgid "No lines"
+msgstr ""
 
 msgid "No lines to map"
 msgstr "マップするラインがありません"
@@ -11830,6 +11842,9 @@ msgstr "週次ステータスコールで提起する"
 
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "早期に報告し、明確に報告してください。2週目に特定された問題は小さな修正で済みますが、本番リリース時の同じ問題は遅延につながります。"
+
+msgid "Ramp"
+msgstr ""
 
 msgid "Rate Limit"
 msgstr "レート制限"
@@ -15878,6 +15893,12 @@ msgstr "Academy とアプリ内ガイドを通じたチームのトレーニン�
 
 msgid "Trainings"
 msgstr "トレーニング"
+
+msgid "Transaction Date"
+msgstr ""
+
+msgid "Transaction ID"
+msgstr ""
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "トランザクションは仕訳帳エントリを作成し、総勘定元帳を更新します。"

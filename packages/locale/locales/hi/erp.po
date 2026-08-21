@@ -2848,6 +2848,12 @@ msgstr "कार्बन का शॉप-फ्लोर ऐप जहां 
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "कार्बन का किसी भी भाग संख्या वाली चीज के लिए एक एकल रिकॉर्ड — भाग, सामग्री, उपकरण, सेवा, खपत योग्य, या फिक्स्चर — जो नौकरियां, विधियां, आदेश, और इन्वेंटरी सभी इंगित करते हैं।"
 
+msgid "Card Holder"
+msgstr ""
+
+msgid "Card Transactions"
+msgstr ""
+
 msgid "Cards"
 msgstr "कार्ड"
 
@@ -9025,6 +9031,9 @@ msgstr "मेमो तारीख"
 msgid "Memo ID"
 msgstr "मेमो आईडी"
 
+msgid "Merchant"
+msgstr ""
+
 msgid "MES"
 msgstr "MES"
 
@@ -9813,6 +9822,9 @@ msgstr "कोई नौकरी नहीं बनाई गई"
 
 msgid "No journal lines in scope for this period"
 msgstr "इस अवधि के लिए दायरे में कोई जर्नल लाइन नहीं"
+
+msgid "No lines"
+msgstr ""
 
 msgid "No lines to map"
 msgstr "मैप करने के लिए कोई लाइनें नहीं"
@@ -11830,6 +11842,9 @@ msgstr "इसे साप्ताहिक स्थिति कॉल म�
 
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "इसे जल्दी उठाएं और स्पष्ट रूप से उठाएं। सप्ताह 2 में नामित समस्या एक छोटी सी मरम्मत है; go-live पर वही समस्या एक देरी है।"
+
+msgid "Ramp"
+msgstr ""
 
 msgid "Rate Limit"
 msgstr "दर सीमा"
@@ -15878,6 +15893,12 @@ msgstr "Academy और इन-ऐप गाइड के माध्यम स�
 
 msgid "Trainings"
 msgstr "प्रशिक्षण"
+
+msgid "Transaction Date"
+msgstr ""
+
+msgid "Transaction ID"
+msgstr ""
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "लेनदेन जर्नल प्रविष्टियां बनाएंगे और सामान्य खाता बही को अपडेट करेंगे।"

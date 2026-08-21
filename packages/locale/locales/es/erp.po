@@ -2848,6 +2848,12 @@ msgstr "La aplicación de taller de Carbon donde los operadores ejecutan operaci
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "El único registro de Carbon para cualquier cosa con un número de parte — Pieza, Material, Herramienta, Servicio, Consumible o Accesorio — al que apuntan los trabajos, métodos, pedidos e inventario."
 
+msgid "Card Holder"
+msgstr ""
+
+msgid "Card Transactions"
+msgstr ""
+
 msgid "Cards"
 msgstr "Tarjetas"
 
@@ -9025,6 +9031,9 @@ msgstr "Fecha del Memorándum"
 msgid "Memo ID"
 msgstr "ID de Memorándum"
 
+msgid "Merchant"
+msgstr ""
+
 msgid "MES"
 msgstr "MES"
 
@@ -9813,6 +9822,9 @@ msgstr "No se crearon trabajos"
 
 msgid "No journal lines in scope for this period"
 msgstr "Sin líneas de diario en alcance para este período"
+
+msgid "No lines"
+msgstr ""
 
 msgid "No lines to map"
 msgstr "Sin líneas para mapear"
@@ -11830,6 +11842,9 @@ msgstr "Plantéalo en la llamada de estado semanal"
 
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "plantéalo temprano y plantéalo claramente. Un problema identificado en la semana 2 es una corrección pequeña; el mismo problema en el lanzamiento es un retraso."
+
+msgid "Ramp"
+msgstr ""
 
 msgid "Rate Limit"
 msgstr "Límite de Velocidad"
@@ -15878,6 +15893,12 @@ msgstr "Capacitar a tu equipo a través de la Academia y guías en la aplicació
 
 msgid "Trainings"
 msgstr "Capacitaciones"
+
+msgid "Transaction Date"
+msgstr ""
+
+msgid "Transaction ID"
+msgstr ""
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "Las transacciones crearán asientos de diario y actualizarán el libro mayor."

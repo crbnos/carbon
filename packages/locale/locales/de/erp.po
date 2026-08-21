@@ -2848,6 +2848,12 @@ msgstr "Carbons Shop-Floor-App, in der Bediener Operationen durchführen, Mengen
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "Carbons einziger Datensatz für alles mit einer Teilenummer — Teil, Material, Werkzeug, Dienstleistung, Verbrauchsmaterial oder Vorrichtung — auf das Jobs, Methoden, Bestellungen und Inventar verweisen."
 
+msgid "Card Holder"
+msgstr ""
+
+msgid "Card Transactions"
+msgstr ""
+
 msgid "Cards"
 msgstr "Karten"
 
@@ -9025,6 +9031,9 @@ msgstr "Memo-Datum"
 msgid "Memo ID"
 msgstr "Memo-ID"
 
+msgid "Merchant"
+msgstr ""
+
 msgid "MES"
 msgstr "MES"
 
@@ -9813,6 +9822,9 @@ msgstr "Keine Aufträge wurden erstellt"
 
 msgid "No journal lines in scope for this period"
 msgstr "Keine Journalzeilen im Bereich für diesen Zeitraum"
+
+msgid "No lines"
+msgstr ""
 
 msgid "No lines to map"
 msgstr "Keine Zeilen zum Zuordnen"
@@ -11830,6 +11842,9 @@ msgstr "Bringen Sie es beim wöchentlichen Statusgespräch zur Sprache"
 
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "Sprechen Sie es früh an und sprechen Sie es deutlich an. Ein Problem, das in Woche 2 benannt wird, ist eine kleine Reparatur; das gleiche Problem beim Go-Live ist eine Verzögerung."
+
+msgid "Ramp"
+msgstr ""
 
 msgid "Rate Limit"
 msgstr "Ratenlimit"
@@ -15878,6 +15893,12 @@ msgstr "Schulung Ihres Teams über die Academy und In-App-Leitfäden"
 
 msgid "Trainings"
 msgstr "Schulungen"
+
+msgid "Transaction Date"
+msgstr ""
+
+msgid "Transaction ID"
+msgstr ""
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "Transaktionen erstellen Journaleinträge und aktualisieren das Hauptbuch."
