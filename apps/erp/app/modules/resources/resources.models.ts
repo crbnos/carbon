@@ -70,8 +70,7 @@ export const locationValidator = z
       .min(1, { message: "Timezone is required" })
       .refine(isValidTimeZone, { message: "Invalid timezone" }),
     latitude: zfd.numeric(z.number().optional()),
-    longitude: zfd.numeric(z.number().optional()),
-    requiresStaffing: zfd.checkbox()
+    longitude: zfd.numeric(z.number().optional())
   })
   .superRefine(({ latitude, longitude }, ctx) => {
     if ((latitude && !longitude) || (!latitude && longitude)) {

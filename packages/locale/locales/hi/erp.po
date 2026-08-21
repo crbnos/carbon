@@ -3137,9 +3137,6 @@ msgstr "दूसरी फ़ाइल चुनें"
 msgid "Choose what appears on the printed job traveler."
 msgstr "मुद्रित जॉब ट्रैवलर पर क्या दिखाई दे, इसे चुनें।"
 
-msgid "Choose your preferred language for the interface."
-msgstr "अपनी पसंद की भाषा इंटरफेस के लिए चुनें।"
-
 msgid "Choose your style"
 msgstr "अपनी शैली चुनें"
 
@@ -8575,6 +8572,7 @@ msgstr "अंतिम प्रशिक्षण"
 
 msgid "Last Training Date"
 msgstr "अंतिम प्रशिक्षण की तारीख"
+
 msgid "Last used"
 msgstr "अंतिम उपयोग"
 
@@ -9208,10 +9206,11 @@ msgstr "सामग्री ID"
 msgid "Material IDs"
 msgstr "सामग्री आईडी"
 
-msgid "Material Planning"
-msgstr "सामग्री योजना"
 msgid "Material is pre-selected"
 msgstr "सामग्री पूर्व-चयनित है"
+
+msgid "Material Planning"
+msgstr "सामग्री योजना"
 
 msgid "Material Properties"
 msgstr "सामग्री गुण"
@@ -9255,13 +9254,14 @@ msgstr "सामग्रियां"
 msgid "Materials"
 msgstr "सामग्री"
 
-msgid "Matrix"
-msgstr "मैट्रिक्स"
 msgid "Materials are included"
 msgstr "सामग्री शामिल है"
 
 msgid "Materials are not included"
 msgstr "सामग्री शामिल नहीं है"
+
+msgid "Matrix"
+msgstr "मैट्रिक्स"
 
 msgid "Max Qty"
 msgstr "अधिकतम मात्रा"
@@ -9478,6 +9478,7 @@ msgstr "अधिक क्रियाएं"
 
 msgid "More hours than the shift has."
 msgstr "शिफ्ट के पास जितने घंटे हैं उससे अधिक।"
+
 msgid "More information"
 msgstr "अधिक जानकारी"
 
@@ -10644,9 +10645,6 @@ msgstr "केवल खाली, खुली अवधियों को ह
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "केवल योग्य कर्मचारी ही इस प्रक्रिया के लिए अनुसूचित और चलाए जा सकते हैं"
 
-msgid "Only schedule operations where an operator is assigned on the manning board. Unstaffed work centers get no work — an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
-msgstr ""
-
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape ने कनेक्शन को अधिकृत किया, लेकिन उसे सहेजना विफल रहा। दोबारा कनेक्ट करने का प्रयास करें।"
 
@@ -11165,8 +11163,6 @@ msgstr "पास"
 msgid "Passed"
 msgstr "पास किया गया"
 
-msgid "Past due"
-msgstr "अतिदेय"
 msgid "Passkey name"
 msgstr "पासकी का नाम"
 
@@ -11178,6 +11174,9 @@ msgstr "पासकीज़"
 
 msgid "Passkeys are disabled"
 msgstr "पासकीज़ अक्षम हैं"
+
+msgid "Past due"
+msgstr "अतिदेय"
 
 msgid "Path"
 msgstr "पथ"
@@ -12769,6 +12768,9 @@ msgstr "अनुरोधित तारीख"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "साइन इन करते समय ऑथेंटिकेटर ऐप से 6-अंकीय कोड की आवश्यकता है।"
 
+msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
+msgstr ""
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "किसी को भी इस कंपनी को खोलने से पहले एक प्रमाणकर्ता ऐप की आवश्यकता है। उनकी अन्य कंपनियां प्रभावित नहीं हैं। प्रत्येक व्यक्ति की स्थिति देखने के लिए <0>कर्मचारी खातों पृष्ठ</0> पर जाएं।"
 
@@ -12780,9 +12782,6 @@ msgstr "राशि सीमा के आधार पर क्रय आद
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "आपके वर्कफ़्लो में गुणवत्ता दस्तावेज़ों के लिए अनुमोदन की आवश्यकता है"
-
-msgid "Require staffing to schedule"
-msgstr ""
 
 msgid "Require two-factor authentication"
 msgstr "दो-कारक प्रमाणीकरण की आवश्यकता"
@@ -14414,6 +14413,9 @@ msgstr "रसीद लाइन को विभाजित करें"
 
 msgid "Split shipment line"
 msgstr "शिपमेंट लाइन को विभाजित करें"
+
+msgid "Staffing optional"
+msgstr ""
 
 msgid "Staffing required"
 msgstr ""
@@ -16080,6 +16082,7 @@ msgstr "यह आपूर्तिकर्ता"
 
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "यह {employeeName} को इस दिन के लिए बोर्ड से हटाता है। पुष्टि करने के लिए फिर से सहेजें।"
+
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "यह उपकरण तब सक्रिय होता है जब परिवर्तन सूचना {activationLockId} जारी की जाती है।"
 

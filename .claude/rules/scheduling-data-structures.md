@@ -272,7 +272,7 @@ only; its output is read by nothing in the placement path (spec
   caused — the op landed on a future Saturday and fell out of the current-week view).
   Blank board => every qualified person is a floater => fallback unchanged.
 - **Require-staffing policy** (`location.requiresStaffing`, `20260820151847_location-requires-staffing.sql`;
-  per-location, default false; edited on the location form): when ON, the finite scheduler
+  per-location, default false; edited on the Production settings page): when ON, the finite scheduler
   places work ONLY where an operator is manned. `buildFiniteContext` reads it
   (`provider.getLocationRequiresStaffing`) + the set of lights-out stations
   (`provider.getAlwaysOnWorkCenterIds`) and puts `requiresStaffing` on the context +

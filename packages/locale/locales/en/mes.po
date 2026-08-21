@@ -1514,8 +1514,9 @@ msgstr "You've been clocked in for {hoursElapsed} hours. Did you forget to clock
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 
+msgid "Your session was locked after inactivity."
+msgstr "Your session was locked after inactivity."
+
 #. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"
 msgstr "Your station: {0}"
-msgid "Your session was locked after inactivity."
-msgstr "Your session was locked after inactivity."

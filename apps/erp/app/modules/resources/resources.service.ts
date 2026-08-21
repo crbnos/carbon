@@ -1394,17 +1394,13 @@ export async function upsertFailureMode(
 
 export async function upsertLocation(
   client: SupabaseClient<Database>,
-  location: // requiresStaffing is optional here so company/onboarding creation (which
-  // reuses the location shape without the field) can omit it — the DB column
-  // defaults to false. The location form always supplies it.
-    | (Omit<z.infer<typeof locationValidator>, "id" | "requiresStaffing"> & {
-        requiresStaffing?: boolean;
+  location:
+    | (Omit<z.infer<typeof locationValidator>, "id"> & {
         companyId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof locationValidator>, "id" | "requiresStaffing"> & {
-        requiresStaffing?: boolean;
+    | (Omit<z.infer<typeof locationValidator>, "id"> & {
         id: string;
         updatedBy: string;
         customFields?: Json;

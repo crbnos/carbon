@@ -3137,9 +3137,6 @@ msgstr "选择另一个文件"
 msgid "Choose what appears on the printed job traveler."
 msgstr "选择打印的工作单上显示的内容。"
 
-msgid "Choose your preferred language for the interface."
-msgstr "选择您偏好的界面语言。"
-
 msgid "Choose your style"
 msgstr "选择您的风格"
 
@@ -8575,6 +8572,7 @@ msgstr "最后培训"
 
 msgid "Last Training Date"
 msgstr "最后培训日期"
+
 msgid "Last used"
 msgstr "最后使用"
 
@@ -9208,10 +9206,11 @@ msgstr "物料ID"
 msgid "Material IDs"
 msgstr "物料ID"
 
-msgid "Material Planning"
-msgstr "物料规划"
 msgid "Material is pre-selected"
 msgstr "材料已预先选择"
+
+msgid "Material Planning"
+msgstr "物料规划"
 
 msgid "Material Properties"
 msgstr "材料属性"
@@ -9255,13 +9254,14 @@ msgstr "材料"
 msgid "Materials"
 msgstr "材料"
 
-msgid "Matrix"
-msgstr "矩阵"
 msgid "Materials are included"
 msgstr "包含材料"
 
 msgid "Materials are not included"
 msgstr "不包含材料"
+
+msgid "Matrix"
+msgstr "矩阵"
 
 msgid "Max Qty"
 msgstr "最大数量"
@@ -9478,6 +9478,7 @@ msgstr "更多操作"
 
 msgid "More hours than the shift has."
 msgstr "超过班次的小时数。"
+
 msgid "More information"
 msgstr "更多信息"
 
@@ -10644,9 +10645,6 @@ msgstr "仅可删除空白的开放期间。"
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "只有合格的员工才能被安排和运行此流程"
 
-msgid "Only schedule operations where an operator is assigned on the manning board. Unstaffed work centers get no work — an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
-msgstr ""
-
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape 已授权此连接，但保存失败。请重新连接。"
 
@@ -11165,8 +11163,6 @@ msgstr "通过"
 msgid "Passed"
 msgstr "已通过"
 
-msgid "Past due"
-msgstr "逾期"
 msgid "Passkey name"
 msgstr "密钥名称"
 
@@ -11178,6 +11174,9 @@ msgstr "密钥"
 
 msgid "Passkeys are disabled"
 msgstr "密钥已禁用"
+
+msgid "Past due"
+msgstr "逾期"
 
 msgid "Path"
 msgstr "路径"
@@ -12769,6 +12768,9 @@ msgstr "请求日期"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "登录时需要来自身份验证器应用的 6 位数字代码。"
 
+msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
+msgstr ""
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "在任何人打开此公司之前需要身份验证器应用。他们的其他公司不受影响。访问<0>员工账户页面</0>以查看每个人的状态。"
 
@@ -12780,9 +12782,6 @@ msgstr "根据金额阈值要求采购订单获得批准"
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "在您的工作流程中需要质量文件的批准"
-
-msgid "Require staffing to schedule"
-msgstr ""
 
 msgid "Require two-factor authentication"
 msgstr "需要双因素认证"
@@ -14414,6 +14413,9 @@ msgstr "拆分收据行"
 
 msgid "Split shipment line"
 msgstr "拆分发货行"
+
+msgid "Staffing optional"
+msgstr ""
 
 msgid "Staffing required"
 msgstr ""
@@ -16080,6 +16082,7 @@ msgstr "此供应商"
 
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "这将从今天的日程表中移除{employeeName}。再次保存以确认。"
+
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "此工具将在更改单 {activationLockId} 发布后激活。"
 

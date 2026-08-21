@@ -73,8 +73,7 @@ const Location = ({ inline = false, ...props }: LocationSelectProps) => {
             city: "",
             stateProvince: "",
             postalCode: "",
-            countryCode: company?.countryCode ?? "",
-            requiresStaffing: false
+            countryCode: company?.countryCode ?? ""
           }}
         />
       )}

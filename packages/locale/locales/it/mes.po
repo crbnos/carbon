@@ -1514,8 +1514,9 @@ msgstr "Sei timbrato in ingresso da {hoursElapsed} ore. Hai dimenticato di timbr
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "La tua organizzazione richiede un'app di autenticazione. Configurala in Carbon, quindi torna qui."
 
+msgid "Your session was locked after inactivity."
+msgstr "La tua sessione è stata bloccata a causa dell'inattività."
+
 #. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"
 msgstr "La tua stazione: {0}"
-msgid "Your session was locked after inactivity."
-msgstr "La tua sessione è stata bloccata a causa dell'inattività."

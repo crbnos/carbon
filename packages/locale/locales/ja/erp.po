@@ -3137,9 +3137,6 @@ msgstr "別のファイルを選択"
 msgid "Choose what appears on the printed job traveler."
 msgstr "印刷されたジョブトラベラーに表示される内容を選択します。"
 
-msgid "Choose your preferred language for the interface."
-msgstr "インターフェースの言語を選択してください。"
-
 msgid "Choose your style"
 msgstr "あなたのスタイルを選択"
 
@@ -8575,6 +8572,7 @@ msgstr "最後のトレーニング"
 
 msgid "Last Training Date"
 msgstr "最後のトレーニング日付"
+
 msgid "Last used"
 msgstr "最後に使用"
 
@@ -9208,10 +9206,11 @@ msgstr "材料ID"
 msgid "Material IDs"
 msgstr "材料ID"
 
-msgid "Material Planning"
-msgstr "材料計画"
 msgid "Material is pre-selected"
 msgstr "材料は事前に選択されています"
+
+msgid "Material Planning"
+msgstr "材料計画"
 
 msgid "Material Properties"
 msgstr "材料特性"
@@ -9255,13 +9254,14 @@ msgstr "材料"
 msgid "Materials"
 msgstr "材料"
 
-msgid "Matrix"
-msgstr "マトリックス"
 msgid "Materials are included"
 msgstr "材料が含まれています"
 
 msgid "Materials are not included"
 msgstr "材料は含まれていません"
+
+msgid "Matrix"
+msgstr "マトリックス"
 
 msgid "Max Qty"
 msgstr "最大数量"
@@ -9478,6 +9478,7 @@ msgstr "その他のアクション"
 
 msgid "More hours than the shift has."
 msgstr "シフトが持つ時間以上。"
+
 msgid "More information"
 msgstr "詳細情報"
 
@@ -10644,9 +10645,6 @@ msgstr "空のオープン期間のみ削除できます。"
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "資格のある従業員のみがこのプロセスをスケジュールして実行できます"
 
-msgid "Only schedule operations where an operator is assigned on the manning board. Unstaffed work centers get no work — an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
-msgstr ""
-
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape は接続を承認しましたが、保存に失敗しました。もう一度接続してください。"
 
@@ -11165,8 +11163,6 @@ msgstr "合格"
 msgid "Passed"
 msgstr "完了"
 
-msgid "Past due"
-msgstr "期限切れ"
 msgid "Passkey name"
 msgstr "パスキー名"
 
@@ -11178,6 +11174,9 @@ msgstr "パスキー"
 
 msgid "Passkeys are disabled"
 msgstr "パスキーは無効です"
+
+msgid "Past due"
+msgstr "期限切れ"
 
 msgid "Path"
 msgstr "パス"
@@ -12769,6 +12768,9 @@ msgstr "リクエスト日"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "サインイン時に認証器アプリから6桁のコードが必要です。"
 
+msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
+msgstr ""
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "このコンパニーを開く前に認証アプリが必須になります。他のコンパニーには影響しません。<0>従業員アカウントページ</0>をご覧ください。"
 
@@ -12780,9 +12782,6 @@ msgstr "金額閾値に基づいて購買注文の承認を要求する"
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "ワークフロー内の品質文書の承認が必要です"
-
-msgid "Require staffing to schedule"
-msgstr ""
 
 msgid "Require two-factor authentication"
 msgstr "2要素認証が必須"
@@ -14414,6 +14413,9 @@ msgstr "領収書行を分割"
 
 msgid "Split shipment line"
 msgstr "出荷ラインを分割"
+
+msgid "Staffing optional"
+msgstr ""
 
 msgid "Staffing required"
 msgstr ""
@@ -16080,6 +16082,7 @@ msgstr "このサプライヤー"
 
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "これは{employeeName}をその日のボードから削除します。確認するために再度保存します。"
+
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "この工具は、変更通知 {activationLockId} がリリースされると有効になります。"
 

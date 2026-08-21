@@ -3137,9 +3137,6 @@ msgstr "Wählen Sie eine andere Datei"
 msgid "Choose what appears on the printed job traveler."
 msgstr "Wählen Sie aus, was auf dem gedruckten Arbeitsbegleitzettel angezeigt wird."
 
-msgid "Choose your preferred language for the interface."
-msgstr "Wählen Sie Ihre bevorzugte Sprache für die Benutzeroberfläche."
-
 msgid "Choose your style"
 msgstr "Wählen Sie Ihren Stil"
 
@@ -8575,6 +8572,7 @@ msgstr "Letzte Schulung"
 
 msgid "Last Training Date"
 msgstr "Datum der letzten Schulung"
+
 msgid "Last used"
 msgstr "Zuletzt verwendet"
 
@@ -9208,10 +9206,11 @@ msgstr "Material-ID"
 msgid "Material IDs"
 msgstr "Material-IDs"
 
-msgid "Material Planning"
-msgstr "Materialplanung"
 msgid "Material is pre-selected"
 msgstr "Material ist vorausgewählt"
+
+msgid "Material Planning"
+msgstr "Materialplanung"
 
 msgid "Material Properties"
 msgstr "Materialeigenschaften"
@@ -9255,13 +9254,14 @@ msgstr "Materialien"
 msgid "Materials"
 msgstr "Materialien"
 
-msgid "Matrix"
-msgstr "Matrix"
 msgid "Materials are included"
 msgstr "Materialien sind enthalten"
 
 msgid "Materials are not included"
 msgstr "Materialien sind nicht enthalten"
+
+msgid "Matrix"
+msgstr "Matrix"
 
 msgid "Max Qty"
 msgstr "Max. Menge"
@@ -9478,6 +9478,7 @@ msgstr "Weitere Aktionen"
 
 msgid "More hours than the shift has."
 msgstr "Mehr Stunden als die Schicht hat."
+
 msgid "More information"
 msgstr "Weitere Informationen"
 
@@ -10644,9 +10645,6 @@ msgstr "Nur leere, offene Perioden können gelöscht werden."
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "Nur qualifizierte Mitarbeiter können für diesen Prozess eingeplant werden und diesen ausführen"
 
-msgid "Only schedule operations where an operator is assigned on the manning board. Unstaffed work centers get no work — an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
-msgstr ""
-
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape hat die Verbindung autorisiert, das Speichern ist jedoch fehlgeschlagen. Versuchen Sie die Verbindung erneut."
 
@@ -11165,8 +11163,6 @@ msgstr "Bestanden"
 msgid "Passed"
 msgstr "Bestanden"
 
-msgid "Past due"
-msgstr "Überfällig"
 msgid "Passkey name"
 msgstr "Passkey-Name"
 
@@ -11178,6 +11174,9 @@ msgstr "Passkeys"
 
 msgid "Passkeys are disabled"
 msgstr "Passkeys sind deaktiviert"
+
+msgid "Past due"
+msgstr "Überfällig"
 
 msgid "Path"
 msgstr "Pfad"
@@ -12769,6 +12768,9 @@ msgstr "Angeforderte Datum"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Erfordert einen 6-stelligen Code aus einer Authentifikator-App beim Anmelden."
 
+msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
+msgstr ""
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Erfordert eine Authentifizierungs-App, bevor jemand dieses Unternehmen öffnen kann. Ihre anderen Unternehmen sind nicht betroffen. Besuchen Sie die <0>Seite mit den Mitarbeiterkonten</0>, um den Status jeder Person zu sehen."
 
@@ -12780,9 +12782,6 @@ msgstr "Genehmigung für Bestellungen basierend auf Schwellenwertbeträgen erfor
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "Genehmigung für Qualitätsdokumente in Ihrem Workflow erforderlich"
-
-msgid "Require staffing to schedule"
-msgstr ""
 
 msgid "Require two-factor authentication"
 msgstr "Zwei-Faktor-Authentifizierung erforderlich"
@@ -14414,6 +14413,9 @@ msgstr "Beleg-Position aufteilen"
 
 msgid "Split shipment line"
 msgstr "Versandzeile teilen"
+
+msgid "Staffing optional"
+msgstr ""
 
 msgid "Staffing required"
 msgstr ""
@@ -16080,6 +16082,7 @@ msgstr "dieser Lieferant"
 
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "Dies entfernt {employeeName} für den Tag von der Tafel. Speichern Sie erneut, um zu bestätigen."
+
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "Dieses Werkzeug wird aktiviert, wenn die Änderungsmitteilung {activationLockId} freigegeben wird."
 

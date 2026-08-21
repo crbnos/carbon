@@ -1514,8 +1514,9 @@ msgstr "Вы на смене уже {hoursElapsed} часов. Вы забыли
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Ваша организация требует приложения аутентификатора. Настройте его в Carbon, а затем вернитесь сюда."
 
+msgid "Your session was locked after inactivity."
+msgstr "Ваш сеанс был заблокирован после неактивности."
+
 #. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"
 msgstr "Ваша станция: {0}"
-msgid "Your session was locked after inactivity."
-msgstr "Ваш сеанс был заблокирован после неактивности."

@@ -1514,8 +1514,9 @@ msgstr "Você está registrado há {hoursElapsed} horas. Esqueceu de registrar a
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Sua organização requer um aplicativo autenticador. Configure-o no Carbon e retorne aqui."
 
+msgid "Your session was locked after inactivity."
+msgstr "Sua sessão foi bloqueada após inatividade."
+
 #. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"
 msgstr "Sua estação: {0}"
-msgid "Your session was locked after inactivity."
-msgstr "Sua sessão foi bloqueada após inatividade."

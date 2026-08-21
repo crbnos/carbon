@@ -1514,8 +1514,9 @@ msgstr "Ne kadar süredir giriş yaptınız? Çıkış yapmayı unuttunuz mu?"
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Kuruluşunuz bir kimlik doğrulama uygulaması gerektirir. Bunu Carbon'da ayarlayın, ardından buraya geri dönün."
 
+msgid "Your session was locked after inactivity."
+msgstr "Oturumunuz hareketsizlik nedeniyle kilitlendi."
+
 #. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"
 msgstr "İstasyonunuz: {0}"
-msgid "Your session was locked after inactivity."
-msgstr "Oturumunuz hareketsizlik nedeniyle kilitlendi."

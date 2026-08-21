@@ -3137,9 +3137,6 @@ msgstr "Выбрать другой файл"
 msgid "Choose what appears on the printed job traveler."
 msgstr "Выбрать, что отображается на распечатанном маршрутном листе работы."
 
-msgid "Choose your preferred language for the interface."
-msgstr "Выберите предпочитаемый язык для интерфейса."
-
 msgid "Choose your style"
 msgstr "Выберите свой стиль"
 
@@ -8575,6 +8572,7 @@ msgstr "Последнее обучение"
 
 msgid "Last Training Date"
 msgstr "Дата последнего обучения"
+
 msgid "Last used"
 msgstr "Последний раз использован"
 
@@ -9208,10 +9206,11 @@ msgstr "ID материала"
 msgid "Material IDs"
 msgstr "Идентификаторы материалов"
 
-msgid "Material Planning"
-msgstr "Планирование материалов"
 msgid "Material is pre-selected"
 msgstr "Материал предварительно выбран"
+
+msgid "Material Planning"
+msgstr "Планирование материалов"
 
 msgid "Material Properties"
 msgstr "Свойства материалов"
@@ -9255,13 +9254,14 @@ msgstr "Материалы"
 msgid "Materials"
 msgstr "Материалы"
 
-msgid "Matrix"
-msgstr "Матрица"
 msgid "Materials are included"
 msgstr "Материалы включены"
 
 msgid "Materials are not included"
 msgstr "Материалы не включены"
+
+msgid "Matrix"
+msgstr "Матрица"
 
 msgid "Max Qty"
 msgstr "Макс. кол-во"
@@ -9478,6 +9478,7 @@ msgstr "Ещё действия"
 
 msgid "More hours than the shift has."
 msgstr "Больше часов, чем в смене."
+
 msgid "More information"
 msgstr "Дополнительная информация"
 
@@ -10644,9 +10645,6 @@ msgstr "Удалять можно только пустые открытые п�
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "Только квалифицированные сотрудники могут быть запланированы и выполнить этот процесс"
 
-msgid "Only schedule operations where an operator is assigned on the manning board. Unstaffed work centers get no work — an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
-msgstr ""
-
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape авторизовал подключение, но сохранить его не удалось. Повторите попытку подключения."
 
@@ -11165,8 +11163,6 @@ msgstr "Пройти"
 msgid "Passed"
 msgstr "Пройдено"
 
-msgid "Past due"
-msgstr "Просрочено"
 msgid "Passkey name"
 msgstr "Имя Passkey"
 
@@ -11178,6 +11174,9 @@ msgstr "Ключи доступа"
 
 msgid "Passkeys are disabled"
 msgstr "Ключи доступа отключены"
+
+msgid "Past due"
+msgstr "Просрочено"
 
 msgid "Path"
 msgstr "Путь"
@@ -12769,6 +12768,9 @@ msgstr "Запрашиваемая дата"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Требовать 6-значный код из приложения-аутентификатора при входе."
 
+msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
+msgstr ""
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Требуется приложение аутентификации перед доступом к этой компании. Другие компании пользователей не затронуты. Посетите <0>страницу учетных записей сотрудников</0>, чтобы увидеть статус каждого человека."
 
@@ -12780,9 +12782,6 @@ msgstr "Требовать утверждение для заказов на п�
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "Требуется одобрение для документов качества в вашем рабочем процессе"
-
-msgid "Require staffing to schedule"
-msgstr ""
 
 msgid "Require two-factor authentication"
 msgstr "Требовать двухфакторную аутентификацию"
@@ -14414,6 +14413,9 @@ msgstr "Разделить строку приемки"
 
 msgid "Split shipment line"
 msgstr "Разделить строку отправки"
+
+msgid "Staffing optional"
+msgstr ""
 
 msgid "Staffing required"
 msgstr ""
@@ -16080,6 +16082,7 @@ msgstr "этот поставщик"
 
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "Это удаляет {employeeName} с доски на день. Сохраните еще раз для подтверждения."
+
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "Этот инструмент будет активирован после выпуска уведомления об изменении {activationLockId}."
 

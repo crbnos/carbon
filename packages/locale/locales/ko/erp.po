@@ -3137,9 +3137,6 @@ msgstr "다른 파일을 선택하세요"
 msgid "Choose what appears on the printed job traveler."
 msgstr "인쇄된 작업 일지에 표시할 내용을 선택합니다."
 
-msgid "Choose your preferred language for the interface."
-msgstr "인터페이스에 사용할 언어를 선택하세요."
-
 msgid "Choose your style"
 msgstr "스타일을 선택하세요"
 
@@ -8575,6 +8572,7 @@ msgstr "마지막 교육"
 
 msgid "Last Training Date"
 msgstr "마지막 교육 날짜"
+
 msgid "Last used"
 msgstr "마지막 사용"
 
@@ -9208,10 +9206,11 @@ msgstr "자재 ID"
 msgid "Material IDs"
 msgstr "자재 ID"
 
-msgid "Material Planning"
-msgstr "물질 계획"
 msgid "Material is pre-selected"
 msgstr "자재가 사전 선택됨"
+
+msgid "Material Planning"
+msgstr "물질 계획"
 
 msgid "Material Properties"
 msgstr "자재 속성"
@@ -9255,13 +9254,14 @@ msgstr "자재"
 msgid "Materials"
 msgstr "자재"
 
-msgid "Matrix"
-msgstr "매트릭스"
 msgid "Materials are included"
 msgstr "자재 포함됨"
 
 msgid "Materials are not included"
 msgstr "자재 미포함"
+
+msgid "Matrix"
+msgstr "매트릭스"
 
 msgid "Max Qty"
 msgstr "최대 수량"
@@ -9478,6 +9478,7 @@ msgstr "추가 작업"
 
 msgid "More hours than the shift has."
 msgstr "교대보다 더 많은 시간."
+
 msgid "More information"
 msgstr "자세한 정보"
 
@@ -10644,9 +10645,6 @@ msgstr "비어있는 열린 기간만 삭제할 수 있습니다."
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "자격이 있는 직원만 이 프로세스를 예약하고 실행할 수 있습니다."
 
-msgid "Only schedule operations where an operator is assigned on the manning board. Unstaffed work centers get no work — an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
-msgstr ""
-
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape가 연결을 승인했지만 저장하지 못했습니다. 다시 연결해 보세요."
 
@@ -11165,8 +11163,6 @@ msgstr "합격"
 msgid "Passed"
 msgstr "합격됨"
 
-msgid "Past due"
-msgstr "기한 초과"
 msgid "Passkey name"
 msgstr "패스키 이름"
 
@@ -11178,6 +11174,9 @@ msgstr "패스키"
 
 msgid "Passkeys are disabled"
 msgstr "패스키가 비활성화되었습니다"
+
+msgid "Past due"
+msgstr "기한 초과"
 
 msgid "Path"
 msgstr "경로"
@@ -12769,6 +12768,9 @@ msgstr "요청일"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "로그인 시 인증 앱의 6자리 코드를 입력하세요."
 
+msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
+msgstr ""
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "이 회사를 열기 전에 인증자 앱을 요구합니다. 다른 회사는 영향을 받지 않습니다. <0>직원 계정 페이지</0>를 방문하여 각 사람의 상태를 확인하세요."
 
@@ -12780,9 +12782,6 @@ msgstr "금액 기준에 따라 구매주문에 승인 필요"
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "워크플로 내 품질 문서에 승인 필요"
-
-msgid "Require staffing to schedule"
-msgstr ""
 
 msgid "Require two-factor authentication"
 msgstr "2단계 인증 필수"
@@ -14414,6 +14413,9 @@ msgstr "입고 라인 분할"
 
 msgid "Split shipment line"
 msgstr "출하 라인 분할"
+
+msgid "Staffing optional"
+msgstr ""
 
 msgid "Staffing required"
 msgstr ""
@@ -16080,6 +16082,7 @@ msgstr "이 공급업체"
 
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "이것은 {employeeName}을 그 날의 보드에서 제거합니다. 확인하려면 다시 저장하세요."
+
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "이 공구는 변경 공지 {activationLockId}이(가) 릴리즈되면 활성화됩니다."
 

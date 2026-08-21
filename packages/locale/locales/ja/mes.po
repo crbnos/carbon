@@ -1514,8 +1514,9 @@ msgstr "{hoursElapsed} 時間出勤中です。退勤打刻を忘れていませ
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "あなたの組織は認証器アプリが必要です。Carbonで設定してから、ここに戻ってください。"
 
+msgid "Your session was locked after inactivity."
+msgstr "非アクティブ後、セッションがロックされました。"
+
 #. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"
 msgstr "あなたのステーション: {0}"
-msgid "Your session was locked after inactivity."
-msgstr "非アクティブ後、セッションがロックされました。"
