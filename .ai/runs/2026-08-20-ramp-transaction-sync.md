@@ -17,5 +17,19 @@
 - plan: DONE 2026-08-20 — .ai/plans/2026-08-20-ramp-transaction-sync.md (14 tasks). Precedent research via 3 Explore agents (ee integration shapes, jobs/webhook wiring, invoicing/DB). Spec amended (changelog): sweep-cursor outbound transport (SYNC handler is ProviderID-locked), payment-sibling single-column xid() PK, dynamicOptions account pickers, v1 dimensions = cost centers. Task 1 = sandbox endpoint verification (BLOCKED on user creds at execute time).
 - NEXT (awaiting approval): execute — 🛑 plan approval gate. Task 1 needs sandbox clientId/clientSecret from Brad.
 
+## Execute log
+- 2026-08-20 — executed via /execute. Tasks done in dependency order, each subagent-built then main-agent gated (scoped typecheck + package tests + biome + translations) and committed one-per-task.
+- Tasks 3, 4, 5 built first (stack-independent @carbon/ee). Then user booted the `brisbane` crbn stack → Task 2 migration applied (`crbn migrate` via `packages/dev/bin/crbn`, types regenerated). Then 6, 11 (parallel), 7+12 (parallel), 8→9→10 (sequential on ramp-sync.ts), 13.
+- Commits: 3 `431bc7b2c` · 4 `640b723aa` · 5 `cf748ff54` · docs `3addb2ad8` · 2 `427f73ebc` · **enum fixup `70090e0bc`** · 11 `1d53aaae8` · 6 `33918de68` · 7 `46237c45f` · 12 (UI+translations) · 8 `141c9d60c` · 9 `bffe690da` · 10 `aab50524b` · 13 `acfb42a8c1`.
+
+### Deviations / gap-fills (flagged)
+- **Enum fixup (`70090e0bc`)**: Task 2's `'Card Transaction'` journal enum value broke two exhaustive consumers (`POSTING_POLICY` in accounting-core; the `journalEntrySourceTypes` UI mirror). Fixed as internal-journal policy + credit-card icon. Task 2's verify block should have included an erp/ee typecheck.
+- **Task 8**: PO-line-amount reconciliation deferred — the Ramp `purchase_order_line_item_id` field is Task-1-gated and absent from the models; PO-derived amounts kept, header updated. `TODO(task-1)`.
+- **`// TODO(task-1)` markers** across families for unverified Ramp field names / sync_status / enum values (transaction amount minor-units, COST_CENTER selection type, bill/payment status strings, funding_method, remote_id-accepted-on-create, draft-bill body shape, submit-returns-id).
+- **GAP — webhook receiving route not built**: no `apps/erp/app/routes/api+/webhook.ramp.$companyId.ts`. `ensureRampWebhook` registers a webhook + `verifyRampWebhookSignature`/`completeWebhookVerification` exist, but no route receives POSTs. Inbound freshness = hourly `ramp-sweep` only. Flagged to user for decision (build vs sweep-only).
+- Stale `// TODO(task-7)` comment remains in `packages/ee/src/ramp/hooks.server.ts` (ramp-sync IS registered now) — minor cleanup pending.
+
 ## Outcome
-- (in progress)
+- Tasks 2–13 implemented + committed on `ramp-transaction-sync-integration` (~15 commits, all gated green: scoped typechecks, deno builder tests, ee ramp vitest 20 passing, 0 missing translations across 13 locales).
+- BLOCKED on user: Task 1 (sandbox endpoint verification) + Task 14 (browser verification) need Ramp sandbox `clientId`/`clientSecret`. Webhook-route gap awaiting user decision.
+- Remaining before PR: resolve webhook-route decision; /self-review; Task 1 + 14 when credentials available.

@@ -13,18 +13,18 @@ all endpoints under `/developer/v1/`. Auth v1 = OAuth client-credentials (token 
 
 ## Progress
 - [ ] Task 1: Verify Ramp sandbox endpoints and record findings
-- [ ] Task 2: Migration — integration row, enums, cardTransaction tables, sequences, RLS
+- [x] Task 2: Migration — integration row, enums, cardTransaction tables, sequences, RLS
 - [x] Task 3: Ramp API client, payload models, webhook signature verify (@carbon/ee)
 - [x] Task 4: Integration config, registration, secrets, settings-drawer wiring
 - [x] Task 5: Ramp service (connection, CoA/cost-center push, queues, confirms) + server hooks
-- [ ] Task 6: post-card-transaction edge function + pure journal builder + tests
-- [ ] Task 7: ramp-sync Inngest function (card family inbound) + ramp-sweep cron + registration
-- [ ] Task 8: Bills + bill-payments inbound
-- [ ] Task 9: Reimbursements + repayments inbound
-- [ ] Task 10: Outbound — PO push, invoice draft-bill push, archive-on-settlement
-- [ ] Task 11: Invoicing module models/service + path helpers
-- [ ] Task 12: UI — card transactions list/drawer, nav, invoice Ramp badge
-- [ ] Task 13: Docs + rule file
+- [x] Task 6: post-card-transaction edge function + pure journal builder + tests
+- [x] Task 7: ramp-sync Inngest function (card family inbound) + ramp-sweep cron + registration
+- [x] Task 8: Bills + bill-payments inbound
+- [x] Task 9: Reimbursements + repayments inbound
+- [x] Task 10: Outbound — PO push, invoice draft-bill push, archive-on-settlement
+- [x] Task 11: Invoicing module models/service + path helpers
+- [x] Task 12: UI — card transactions list/drawer, nav, invoice Ramp badge
+- [x] Task 13: Docs + rule file
 - [ ] Task 14: Browser verification (/test) with sandbox
 
 ## Dependencies
