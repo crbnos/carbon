@@ -64,7 +64,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger
 } from "./Collapsible";
-import type { ComboboxFilter, ComboboxOption, ComboboxProps } from "./Combobox";
+import type {
+  ComboboxFilter,
+  ComboboxOption,
+  ComboboxProps,
+  SearchNormalizer
+} from "./Combobox";
 import { Combobox, filterComboboxOptions } from "./Combobox";
 import {
   Command,
@@ -646,6 +651,7 @@ export type {
   ComboboxFilter,
   ComboboxOption,
   ComboboxProps,
+  SearchNormalizer,
   CreatableComboboxProps,
   CreatableMultiSelectProps,
   DateTimeProps,

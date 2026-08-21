@@ -1,3 +1,5 @@
+import type { ComboboxFilter } from "@carbon/react";
+import { filterComboboxOptions } from "@carbon/react";
 import {
   getTimezoneAbbreviations,
   getTimezoneDisplayName,
@@ -16,6 +18,23 @@ type TimezoneProps = Omit<ComboboxProps, "options"> & {
    */
   options?: TimezoneGroup[];
 };
+
+/**
+ * Zone ids are separator-heavy, so `/` and `_` fold to spaces and "asia
+ * kolkata" finds "Asia/Kolkata". A `-` only separates two LETTERS
+ * ("Port-au-Prince"): next to a digit it is a minus sign, and eating it made
+ * "-05:30" match "+05:30" zones.
+ */
+const foldZoneSeparators = (text: string) =>
+  text
+    .toLowerCase()
+    .replace(/[/_]+/g, " ")
+    .replace(/(?<=[a-z])-+(?=[a-z])/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const filterTimezones: ComboboxFilter = (options, search) =>
+  filterComboboxOptions(options, search, foldZoneSeparators);
 
 /**
  * Timezone picker. One line per zone — "America/New York (GMT-04:00)". The
@@ -50,7 +69,7 @@ const Timezone = ({ options, ...props }: TimezoneProps) => {
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [options]);
 
-  return <Combobox {...props} options={flatOptions} />;
+  return <Combobox filter={filterTimezones} {...props} options={flatOptions} />;
 };
 
 Timezone.displayName = "Timezone";

@@ -227,38 +227,31 @@ type VirtualizedCommandProps = {
   setOpen: (open: boolean) => void;
 };
 
-/**
- * Treats `/`, `_` and `-` as spaces so "asia kolkata" matches "Asia/Kolkata"
- * and "port au prince" matches "America/Port-au-Prince". A `-` only separates
- * two LETTERS: a minus sign next to a digit is meaningful, and eating it made
- * a search for "-05:30" match "+05:30" zones too.
- */
-function normalizeSearchText(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[/_]+/g, " ")
-    .replace(/(?<=[a-z])-+(?=[a-z])/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
+/** How option text and the query are folded before matching. */
+export type SearchNormalizer = (text: string) => string;
+
+const toComparable: SearchNormalizer = (text) => text.toLowerCase();
 
 /**
  * The default `ComboboxFilter`. Ranks hits that start a word above mid-word
- * substrings, then earlier hits first — searching "EST" should surface EST/EDT
- * timezones before cities that merely contain "est" (Creston, Bucharest…).
- * Stable sort, so equally-ranked options keep their original order. Label,
- * helper and keywords are one string, so a query can span them
- * ("PART-001 Suffix"). Exported so a custom filter can build on it.
+ * substrings, then earlier hits first — searching "EST" surfaces EST/EDT
+ * options before ones that merely contain "est" (Creston, Bucharest…). Stable
+ * sort, so equally-ranked options keep their original order. Label, helper and
+ * keywords are one string, so a query can span them ("PART-001 Suffix").
+ *
+ * Exported with a `normalize` seam so a caller can fold separators (or
+ * anything else) without reimplementing the ranking.
  */
 export function filterComboboxOptions(
   options: ComboboxOption[],
-  search: string
+  search: string,
+  normalize: SearchNormalizer = toComparable
 ): ComboboxOption[] {
   if (!search) return options;
-  const query = normalizeSearchText(search);
+  const query = normalize(search);
   const scored: { option: ComboboxOption; score: number }[] = [];
   for (const option of options) {
-    const text = normalizeSearchText(
+    const text = normalize(
       [
         typeof option.label === "string"
           ? option.label
