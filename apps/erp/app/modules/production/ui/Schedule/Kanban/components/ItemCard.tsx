@@ -58,6 +58,7 @@ import { useTags } from "~/hooks/useTags";
 import { getDeadlineIcon } from "~/modules/production/ui/Jobs/Deadline";
 import { JobOperationStatus } from "~/modules/production/ui/Jobs/JobOperationStatus";
 import { getPrivateUrl, path } from "~/utils/path";
+import { KANBAN_CARD_SHELL } from "../cardShell";
 import {
   isBatchableOperation,
   useBatchSelection
@@ -74,34 +75,31 @@ interface Progress {
   employees?: Set<string>;
 }
 
-const cardVariants = cva(
-  "bg-card hover:bg-muted/30 dark:border-none dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]",
-  {
-    variants: {
-      highlighted: {
-        true: "ring-2 ring-primary opacity-100",
-        false: ""
-      },
-      dragging: {
-        over: "ring-2 ring-primary opacity-30",
-        overlay: "ring-2 ring-primary hover:bg-muted"
-      },
-      status: {
-        "In Progress": "border-emerald-600/30",
-        Ready: "",
-        Done: "",
-        Paused: "",
-        Canceled: "border-red-500/30",
-        Cancelled: "border-red-500/30",
-        Waiting: "opacity-50",
-        Todo: "border-border"
-      }
+const cardVariants = cva(KANBAN_CARD_SHELL, {
+  variants: {
+    highlighted: {
+      true: "ring-2 ring-primary opacity-100",
+      false: ""
     },
-    defaultVariants: {
-      status: "Todo"
+    dragging: {
+      over: "ring-2 ring-primary opacity-30",
+      overlay: "ring-2 ring-primary hover:bg-muted"
+    },
+    status: {
+      "In Progress": "border-emerald-600/30",
+      Ready: "",
+      Done: "",
+      Paused: "",
+      Canceled: "border-red-500/30",
+      Cancelled: "border-red-500/30",
+      Waiting: "opacity-50",
+      Todo: "border-border"
     }
+  },
+  defaultVariants: {
+    status: "Todo"
   }
-);
+});
 
 type ItemCardProps = {
   item: Item;

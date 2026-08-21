@@ -64,6 +64,10 @@ msgstr "{0} temu"
 msgid "{0} cells with deltas"
 msgstr "{0} komórek z różnicami"
 
+#. placeholder {0}: distinctCustomers.length
+msgid "{0} customers"
+msgstr "{0} klientów"
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} klientów z saldem"

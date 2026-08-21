@@ -64,6 +64,10 @@ msgstr "{0} il y a"
 msgid "{0} cells with deltas"
 msgstr "{0} cellules avec écarts"
 
+#. placeholder {0}: distinctCustomers.length
+msgid "{0} customers"
+msgstr "{0} clients"
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} clients avec un solde"

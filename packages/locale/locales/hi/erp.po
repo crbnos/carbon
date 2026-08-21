@@ -64,6 +64,10 @@ msgstr "{0} पहले"
 msgid "{0} cells with deltas"
 msgstr "{0} अंतर वाली कोशिकाएँ"
 
+#. placeholder {0}: distinctCustomers.length
+msgid "{0} customers"
+msgstr "{0} ग्राहक"
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} ग्राहकों के साथ शेष"

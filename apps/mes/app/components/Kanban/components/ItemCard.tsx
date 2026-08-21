@@ -23,7 +23,6 @@ import {
   LuCalendarDays,
   LuCircleCheck,
   LuCirclePlay,
-  LuCircleX,
   LuClipboardCheck,
   LuSquareUser,
   LuTimer,
@@ -31,10 +30,7 @@ import {
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
 import { Link } from "react-router";
-import { AlmostDoneIcon } from "~/assets/icons/AlmostDoneIcon";
-import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
-import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
-import { DateTime } from "~/components";
+import { DateTime, OperationStatusIcon } from "~/components";
 import Avatar from "~/components/Avatar";
 import EmployeeAvatar from "~/components/EmployeeAvatar";
 import { DeadlineIcon } from "~/components/Icons";
@@ -229,7 +225,7 @@ export function ItemCard({
           )}
           {showStatus && status && (
             <HStack className="justify-start space-x-2">
-              {getStatusIcon(status)}
+              <OperationStatusIcon status={status} />
               <span className="text-sm">{status}</span>
             </HStack>
           )}
@@ -332,40 +328,5 @@ export function ItemCard({
         )}
       </Card>
     </Link>
-  );
-}
-
-function getStatusIcon(status: Item["status"] | "In Progress") {
-  const getIcon = () => {
-    switch (status) {
-      case "Ready":
-      case "Todo":
-        return <TodoStatusIcon className="text-foreground" />;
-      case "Waiting":
-      case "Canceled":
-        return <LuCircleX className="text-muted-foreground" />;
-      case "Done":
-        return <LuCircleCheck className="text-blue-600" />;
-      case "In Progress":
-        return <AlmostDoneIcon />;
-      case "Paused":
-        return <InProgressStatusIcon />;
-      default:
-        return null;
-    }
-  };
-
-  const icon = getIcon();
-  if (!icon) return null;
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className="inline-flex">{icon}</span>
-      </TooltipTrigger>
-      <TooltipContent>
-        <span>{status}</span>
-      </TooltipContent>
-    </Tooltip>
   );
 }

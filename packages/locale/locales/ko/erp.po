@@ -64,6 +64,10 @@ msgstr "{0} 전"
 msgid "{0} cells with deltas"
 msgstr "{0}개 셀에 변경사항 있음"
 
+#. placeholder {0}: distinctCustomers.length
+msgid "{0} customers"
+msgstr "고객 {0}명"
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "잔액이 있는 고객 {0}명"

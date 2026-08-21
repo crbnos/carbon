@@ -64,6 +64,10 @@ msgstr "{0} ago"
 msgid "{0} cells with deltas"
 msgstr "{0} cells with deltas"
 
+#. placeholder {0}: distinctCustomers.length
+msgid "{0} customers"
+msgstr "{0} customers"
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} customers with a balance"

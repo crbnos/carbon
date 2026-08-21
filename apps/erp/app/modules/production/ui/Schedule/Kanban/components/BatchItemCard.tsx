@@ -1,5 +1,6 @@
 import {
   Badge,
+  BarProgress,
   Card,
   CardContent,
   CardHeader,
@@ -10,27 +11,75 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   HStack,
-  IconButton
+  IconButton,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
 } from "@carbon/react";
+import {
+  convertDateStringToIsoString,
+  formatDurationMilliseconds
+} from "@carbon/utils";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useLingui } from "@lingui/react/macro";
 import {
+  LuCalendarDays,
+  LuCircleCheck,
   LuEllipsisVertical,
   LuGripVertical,
   LuLayers,
   LuPlay,
+  LuSquareUser,
+  LuTimer,
   LuTrash,
+  LuUsers,
   LuX
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
+import { CustomerAvatar, DateTime } from "~/components";
+import { useDateFormatter } from "~/hooks";
+import { getDeadlineIcon } from "~/modules/production/ui/Jobs/Deadline";
+import { JobOperationStatus } from "~/modules/production/ui/Jobs/JobOperationStatus";
 import { path } from "~/utils/path";
-import type { BatchItem } from "../types";
+import { KANBAN_CARD_SHELL } from "../cardShell";
+import { useKanban } from "../context/KanbanContext";
+import type { BatchItem, OperationItem } from "../types";
+import { useScheduleToday } from "../useScheduleToday";
 
-// The collapsed schedule-board card for an operation batch. An explicit
-// variant of the operation card, not ItemCard with flags: a batch has its own
-// anatomy (member rows, dissolve, MES link) and its own drag semantics
-// (dragging it to another column reassigns the batch work center).
+// The order a batch summary reports its members' statuses in: the most "live"
+// status wins, so a planner sees the batch is running the moment any member is.
+const STATUS_RANK: Record<string, number> = {
+  "In Progress": 6,
+  Paused: 5,
+  Ready: 4,
+  Todo: 3,
+  Waiting: 2,
+  Done: 1,
+  Canceled: 0
+};
+
+function rollupStatus(members: OperationItem[]): OperationItem["status"] {
+  let best: OperationItem["status"] | undefined;
+  let bestRank = -1;
+  for (const m of members) {
+    const s = m.status ?? "Todo";
+    const rank = STATUS_RANK[s] ?? 0;
+    if (rank > bestRank) {
+      bestRank = rank;
+      best = s;
+    }
+  }
+  return best ?? "Todo";
+}
+
+// The collapsed schedule-board card for an operation batch. An explicit variant
+// of the operation card, not ItemCard with flags: a batch has its own anatomy
+// (member rows, dissolve, MES link) and its own drag semantics (dragging it to
+// another column reassigns the batch work center). It builds ON the operation
+// card's information design — the same display-setting rows (status, progress,
+// due date, customer, duration, materials) rolled up across members — rather
+// than dropping them; the member list sits beneath that summary.
 export function BatchItemCard({
   item,
   isOverlay
@@ -39,6 +88,9 @@ export function BatchItemCard({
   isOverlay?: boolean;
 }) {
   const { t } = useLingui();
+  const { formatRelativeTime } = useDateFormatter();
+  const { displaySettings } = useKanban();
+  const scheduleToday = useScheduleToday();
   const fetcher = useFetcher();
   const isCompleting = item.batchStatus === "Completing";
   const {
@@ -60,7 +112,44 @@ export function BatchItemCard({
     transform: CSS.Translate.toString(transform)
   };
 
-  const totalQty = item.members.reduce((sum, m) => sum + (m.quantity ?? 0), 0);
+  const members = item.members;
+  const totalQty = members.reduce((sum, m) => sum + (m.quantity ?? 0), 0);
+
+  // Aggregations across the members — what the batch, as one run, amounts to.
+  const status = rollupStatus(members);
+  const totalTarget = members.reduce(
+    (sum, m) => sum + (m.targetQuantity ?? m.quantity ?? 0),
+    0
+  );
+  const totalCompleted = members.reduce(
+    (sum, m) => sum + (m.quantityCompleted ?? 0),
+    0
+  );
+  const totalReworked = members.reduce(
+    (sum, m) => sum + (m.quantityReworked ?? 0),
+    0
+  );
+  const totalScrapped = members.reduce(
+    (sum, m) => sum + (m.quantityScrapped ?? 0),
+    0
+  );
+  const totalDuration = members.reduce((sum, m) => sum + (m.duration ?? 0), 0);
+  // The earliest member due date is the batch's binding constraint.
+  const earliest = members.reduce<OperationItem | undefined>((acc, m) => {
+    if (!m.dueDate) return acc;
+    if (!acc?.dueDate || m.dueDate < acc.dueDate) return m;
+    return acc;
+  }, undefined);
+  const isOverdue =
+    earliest?.deadlineType !== "No Deadline" && earliest?.dueDate
+      ? earliest.dueDate < scheduleToday
+      : false;
+  const distinctCustomers = [
+    ...new Set(members.map((m) => m.customerId).filter(Boolean))
+  ] as string[];
+  const materialChips = [
+    ...new Set(members.flatMap((m) => m.materialChips ?? []))
+  ];
 
   const submitBatch = (fd: FormData) => {
     fetcher.submit(fd, {
@@ -74,7 +163,8 @@ export function BatchItemCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "max-w-[330px] bg-card hover:bg-muted/30 dark:border-none dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]",
+        "max-w-[330px]",
+        KANBAN_CARD_SHELL,
         isOverlay && "ring-2 ring-primary",
         isDragging && "ring-2 ring-primary opacity-30"
       )}
@@ -86,7 +176,7 @@ export function BatchItemCard({
             <Badge>{item.batchReadableId}</Badge>
             {isCompleting && <Badge variant="yellow">{t`Completing`}</Badge>}
             <span className="text-xs tabular-nums text-muted-foreground whitespace-nowrap">
-              {item.members.length} · {totalQty}
+              {members.length} · {totalQty}
             </span>
           </HStack>
           <HStack spacing={1} className="flex-shrink-0 -mr-2">
@@ -141,9 +231,106 @@ export function BatchItemCard({
             {t`Completion in progress — retry in Shop Floor`}
           </a>
         )}
+        {displaySettings.showProgress && totalTarget > 0 && (
+          <HStack>
+            <BarProgress
+              segments={[
+                { value: totalCompleted, className: "bg-emerald-500" },
+                { value: totalReworked, className: "bg-yellow-500" },
+                { value: totalScrapped, className: "bg-red-500" }
+              ]}
+              max={totalTarget || 1}
+              progress={
+                totalCompleted ? (totalCompleted / totalTarget) * 100 : 0
+              }
+            />
+            <LuCircleCheck className="text-muted-foreground w-4 h-4" />
+          </HStack>
+        )}
       </CardHeader>
-      <CardContent className="gap-1.5 text-left text-sm">
-        {item.members.map((m) => (
+      <CardContent className="gap-2 text-left text-sm">
+        {/* Aggregated summary rows — the operation card's information design,
+            carried onto the batch rather than dropped. */}
+        {displaySettings.showStatus && (
+          <HStack className="justify-start space-x-1.5">
+            <JobOperationStatus
+              operation={{
+                id: members[0].id,
+                status: status ?? "Todo",
+                jobId: members[0].jobId
+              }}
+              className="size-4 p-0 hover:bg-transparent"
+            />
+            <span className="text-sm">{status}</span>
+          </HStack>
+        )}
+        {displaySettings.showDuration && totalDuration > 0 && (
+          <HStack className="justify-start space-x-2">
+            <LuTimer className="text-muted-foreground" />
+            <span className="text-sm">
+              {formatDurationMilliseconds(totalDuration)}
+            </span>
+          </HStack>
+        )}
+        {displaySettings.showDueDate && earliest?.deadlineType && (
+          <HStack className="justify-start space-x-2">
+            {getDeadlineIcon(earliest.deadlineType)}
+            <Tooltip>
+              <TooltipTrigger>
+                <span
+                  className={cn("text-sm", isOverdue ? "text-red-500" : "")}
+                >
+                  {["ASAP", "No Deadline"].includes(earliest.deadlineType)
+                    ? earliest.deadlineType
+                    : earliest.dueDate
+                      ? `Due ${formatRelativeTime(
+                          convertDateStringToIsoString(earliest.dueDate)
+                        )}`
+                      : "–"}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                {earliest.deadlineType}
+              </TooltipContent>
+            </Tooltip>
+          </HStack>
+        )}
+        {displaySettings.showDueDate && earliest?.dueDate && (
+          <HStack className="justify-start space-x-2">
+            <LuCalendarDays />
+            <span className="text-sm">
+              <DateTime value={earliest.dueDate} variant="date" />
+            </span>
+          </HStack>
+        )}
+        {displaySettings.showCustomer && distinctCustomers.length > 0 && (
+          <HStack className="justify-start space-x-2">
+            <LuSquareUser className="text-muted-foreground" />
+            {distinctCustomers.length === 1 ? (
+              <CustomerAvatar customerId={distinctCustomers[0]} />
+            ) : (
+              <span className="text-sm text-muted-foreground">
+                {t`${distinctCustomers.length} customers`}
+              </span>
+            )}
+          </HStack>
+        )}
+        {displaySettings.showMaterial && materialChips.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {materialChips.map((chip) => (
+              <Badge key={chip} variant="secondary" className="text-xs">
+                {chip}
+              </Badge>
+            ))}
+          </div>
+        )}
+
+        {/* The member jobs in the batch — each still individually removable. */}
+        <div className="flex items-center gap-1.5 pt-1 text-xs text-muted-foreground">
+          <LuUsers className="size-3.5" />
+          <span>{t`Jobs`}</span>
+        </div>
+        {members.map((m) => (
           <div
             key={m.id}
             className="group flex items-center justify-between gap-2 rounded-md border border-border/60 px-2 py-1.5"

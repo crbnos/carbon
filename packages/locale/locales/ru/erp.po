@@ -64,6 +64,10 @@ msgstr "{0} назад"
 msgid "{0} cells with deltas"
 msgstr "{0} ячеек с разницами"
 
+#. placeholder {0}: distinctCustomers.length
+msgid "{0} customers"
+msgstr "{0} клиентов"
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} клиентов с остатком"
