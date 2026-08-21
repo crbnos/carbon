@@ -40,8 +40,8 @@ const timeZoneNameOf = (
 const displayNameCache = new Map<string, string>();
 
 /**
- * The colloquial name for a zone — "Eastern Time", "India Standard Time" — from
- * CLDR. Returns "" when the runtime only offers a bare "GMT+05:30" fallback.
+ * A zone's colloquial name ("Eastern Time"), from CLDR. Empty when the runtime
+ * only offers a bare "GMT+05:30", which the offset already covers.
  */
 export function getTimezoneDisplayName(zone: string): string {
   const cached = displayNameCache.get(zone);

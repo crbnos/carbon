@@ -18,10 +18,8 @@ type TimezoneProps = Omit<ComboboxProps, "options"> & {
 };
 
 /**
- * Timezone picker. One line per zone — "America/New York (GMT-04:00)". The
- * family name ("Eastern Time"), the abbreviations (EST/EDT) and a
- * separator-free spelling of the id ("Asia Kolkata", so a typed "asia kolkata"
- * matches) go in `keywords`, which the Combobox searches but never renders.
+ * One line per zone: "America/New York (GMT-04:00)". `keywords` is searched but
+ * never rendered, so "eastern time", "EST" and "asia kolkata" all find a zone.
  */
 const Timezone = ({ options, ...props }: TimezoneProps) => {
   const flatOptions = useMemo(() => {

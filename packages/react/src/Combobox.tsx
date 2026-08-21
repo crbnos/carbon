@@ -29,11 +29,7 @@ export type ComboboxOption = {
   keywords?: string;
 };
 
-/**
- * Ranks `options` against what the user typed. Supply one to swap in a
- * different strategy (fuzzy, server-side, domain-specific) for a single
- * combobox; the default is `filterComboboxOptions`.
- */
+/** Ranks options against the query. Defaults to `filterComboboxOptions`. */
 export type ComboboxFilter = (
   options: ComboboxOption[],
   search: string
@@ -234,14 +230,9 @@ const labelOf = (option: ComboboxOption) =>
     : reactNodeToString(option.label);
 
 /**
- * The default `ComboboxFilter`: `match-sorter`, ranked equal → starts-with →
- * word-starts-with → contains. The fields are ALSO offered as one joined key
- * so a query can span them ("PART-001 Steel Bracket", where the label is the
- * part number and the helper is its name).
- *
- * Capped at CONTAINS deliberately — the looser acronym/fuzzy tiers matched 278
- * of 419 timezones for "EST", which is a scroll-wall rather than a result set.
- * A picker that wants typo tolerance can pass its own `filter`.
+ * Default search. Capped at CONTAINS because match-sorter's fuzzy tier matched
+ * 278 of 419 timezones for "EST"; the joined key lets a query span fields
+ * ("PART-001 Steel Bracket"), which per-key matching alone misses.
  */
 export function filterComboboxOptions(
   options: ComboboxOption[],
