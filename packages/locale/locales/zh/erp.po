@@ -2849,10 +2849,10 @@ msgid "Carbon's single record for anything with a part number — Part, Material
 msgstr "Carbon 中单一记录任何带有零件号的内容——零件、材料、工具、服务、耗材或夹具——工作、方法、订单和库存都指向它。"
 
 msgid "Card Holder"
-msgstr ""
+msgstr "持卡人"
 
 msgid "Card Transactions"
-msgstr ""
+msgstr "卡交易"
 
 msgid "Cards"
 msgstr "卡片"
@@ -9032,7 +9032,7 @@ msgid "Memo ID"
 msgstr "备忘录 ID"
 
 msgid "Merchant"
-msgstr ""
+msgstr "商家"
 
 msgid "MES"
 msgstr "MES"
@@ -9824,7 +9824,7 @@ msgid "No journal lines in scope for this period"
 msgstr "本期范围内没有日记账行"
 
 msgid "No lines"
-msgstr ""
+msgstr "无行项"
 
 msgid "No lines to map"
 msgstr "没有行需要映射"
@@ -11844,7 +11844,7 @@ msgid "raise it early and raise it plainly. A problem named in week 2 is a small
 msgstr "尽早提出问题，直言不讳地提出。第2周发现的问题很容易修复；同样的问题在上线时就会导致延期。"
 
 msgid "Ramp"
-msgstr ""
+msgstr "Ramp"
 
 msgid "Rate Limit"
 msgstr "速率限制"
@@ -15895,10 +15895,10 @@ msgid "Trainings"
 msgstr "培训"
 
 msgid "Transaction Date"
-msgstr ""
+msgstr "交易日期"
 
 msgid "Transaction ID"
-msgstr ""
+msgstr "交易ID"
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "交易将创建日记账分录并更新总账。"

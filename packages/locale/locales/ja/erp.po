@@ -2849,10 +2849,10 @@ msgid "Carbon's single record for anything with a part number — Part, Material
 msgstr "部品番号を持つすべてのもの(部品、材料、工具、サービス、消耗品、または治具)のCarbonの単一レコードであり、ジョブ、方法、注文、および在庫がすべて指しています。"
 
 msgid "Card Holder"
-msgstr ""
+msgstr "カードホルダー"
 
 msgid "Card Transactions"
-msgstr ""
+msgstr "カード取引"
 
 msgid "Cards"
 msgstr "カード"
@@ -9032,7 +9032,7 @@ msgid "Memo ID"
 msgstr "メモID"
 
 msgid "Merchant"
-msgstr ""
+msgstr "マーチャント"
 
 msgid "MES"
 msgstr "MES"
@@ -9824,7 +9824,7 @@ msgid "No journal lines in scope for this period"
 msgstr "この期間のスコープ内にジャーナルラインがありません"
 
 msgid "No lines"
-msgstr ""
+msgstr "ラインなし"
 
 msgid "No lines to map"
 msgstr "マップするラインがありません"
@@ -11844,7 +11844,7 @@ msgid "raise it early and raise it plainly. A problem named in week 2 is a small
 msgstr "早期に報告し、明確に報告してください。2週目に特定された問題は小さな修正で済みますが、本番リリース時の同じ問題は遅延につながります。"
 
 msgid "Ramp"
-msgstr ""
+msgstr "Ramp"
 
 msgid "Rate Limit"
 msgstr "レート制限"
@@ -15895,10 +15895,10 @@ msgid "Trainings"
 msgstr "トレーニング"
 
 msgid "Transaction Date"
-msgstr ""
+msgstr "取引日付"
 
 msgid "Transaction ID"
-msgstr ""
+msgstr "取引ID"
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "トランザクションは仕訳帳エントリを作成し、総勘定元帳を更新します。"

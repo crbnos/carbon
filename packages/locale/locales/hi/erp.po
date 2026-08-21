@@ -2849,10 +2849,10 @@ msgid "Carbon's single record for anything with a part number — Part, Material
 msgstr "कार्बन का किसी भी भाग संख्या वाली चीज के लिए एक एकल रिकॉर्ड — भाग, सामग्री, उपकरण, सेवा, खपत योग्य, या फिक्स्चर — जो नौकरियां, विधियां, आदेश, और इन्वेंटरी सभी इंगित करते हैं।"
 
 msgid "Card Holder"
-msgstr ""
+msgstr "कार्ड धारक"
 
 msgid "Card Transactions"
-msgstr ""
+msgstr "कार्ड लेनदेन"
 
 msgid "Cards"
 msgstr "कार्ड"
@@ -9032,7 +9032,7 @@ msgid "Memo ID"
 msgstr "मेमो आईडी"
 
 msgid "Merchant"
-msgstr ""
+msgstr "व्यापारी"
 
 msgid "MES"
 msgstr "MES"
@@ -9824,7 +9824,7 @@ msgid "No journal lines in scope for this period"
 msgstr "इस अवधि के लिए दायरे में कोई जर्नल लाइन नहीं"
 
 msgid "No lines"
-msgstr ""
+msgstr "कोई पंक्तियाँ नहीं"
 
 msgid "No lines to map"
 msgstr "मैप करने के लिए कोई लाइनें नहीं"
@@ -11844,7 +11844,7 @@ msgid "raise it early and raise it plainly. A problem named in week 2 is a small
 msgstr "इसे जल्दी उठाएं और स्पष्ट रूप से उठाएं। सप्ताह 2 में नामित समस्या एक छोटी सी मरम्मत है; go-live पर वही समस्या एक देरी है।"
 
 msgid "Ramp"
-msgstr ""
+msgstr "रैम्प"
 
 msgid "Rate Limit"
 msgstr "दर सीमा"
@@ -15895,10 +15895,10 @@ msgid "Trainings"
 msgstr "प्रशिक्षण"
 
 msgid "Transaction Date"
-msgstr ""
+msgstr "लेनदेन की तारीख"
 
 msgid "Transaction ID"
-msgstr ""
+msgstr "लेनदेन आईडी"
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "लेनदेन जर्नल प्रविष्टियां बनाएंगे और सामान्य खाता बही को अपडेट करेंगे।"

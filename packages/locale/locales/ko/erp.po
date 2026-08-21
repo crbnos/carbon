@@ -2849,10 +2849,10 @@ msgid "Carbon's single record for anything with a part number — Part, Material
 msgstr "부품 번호가 있는 모든 것에 대한 Carbon의 단일 기록 — 부품, 자재, 공구, 서비스, 소모품 또는 고정물 — 작업, 방법, 주문 및 재고가 모두 가리키는 것입니다."
 
 msgid "Card Holder"
-msgstr ""
+msgstr "카드 소유자"
 
 msgid "Card Transactions"
-msgstr ""
+msgstr "카드 거래"
 
 msgid "Cards"
 msgstr "카드"
@@ -9032,7 +9032,7 @@ msgid "Memo ID"
 msgstr "메모 ID"
 
 msgid "Merchant"
-msgstr ""
+msgstr "가맹점"
 
 msgid "MES"
 msgstr "MES"
@@ -9824,7 +9824,7 @@ msgid "No journal lines in scope for this period"
 msgstr "이 기간에 대한 범위 내 분개선이 없습니다"
 
 msgid "No lines"
-msgstr ""
+msgstr "항목 없음"
 
 msgid "No lines to map"
 msgstr "매핑할 라인이 없습니다"
@@ -11844,7 +11844,7 @@ msgid "raise it early and raise it plainly. A problem named in week 2 is a small
 msgstr "문제는 일찍, 명확하게 제기하세요. 2주 차에 언급된 문제는 작은 수정이지만, 오픈 시점에 같은 문제가 나오면 지연으로 이어집니다."
 
 msgid "Ramp"
-msgstr ""
+msgstr "Ramp"
 
 msgid "Rate Limit"
 msgstr "요청 제한"
@@ -15895,10 +15895,10 @@ msgid "Trainings"
 msgstr "교육"
 
 msgid "Transaction Date"
-msgstr ""
+msgstr "거래 일자"
 
 msgid "Transaction ID"
-msgstr ""
+msgstr "거래 ID"
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "거래는 분개를 생성하고 총계정원장을 업데이트합니다."

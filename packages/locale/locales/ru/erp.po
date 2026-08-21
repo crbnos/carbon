@@ -2849,10 +2849,10 @@ msgid "Carbon's single record for anything with a part number — Part, Material
 msgstr "Единая запись Carbon для чего-либо с номером детали — Деталь, Материал, Инструмент, Услуга, Расходник или Приспособление — на которые указывают работы, методы, заказы и инвентарь."
 
 msgid "Card Holder"
-msgstr ""
+msgstr "Держатель карты"
 
 msgid "Card Transactions"
-msgstr ""
+msgstr "Транзакции карты"
 
 msgid "Cards"
 msgstr "Карточки"
@@ -9032,7 +9032,7 @@ msgid "Memo ID"
 msgstr "ID Памятки"
 
 msgid "Merchant"
-msgstr ""
+msgstr "Продавец"
 
 msgid "MES"
 msgstr "MES"
@@ -9824,7 +9824,7 @@ msgid "No journal lines in scope for this period"
 msgstr "Нет строк журнала в пределах этого периода"
 
 msgid "No lines"
-msgstr ""
+msgstr "Нет строк"
 
 msgid "No lines to map"
 msgstr "Нет строк для сопоставления"
@@ -11844,7 +11844,7 @@ msgid "raise it early and raise it plainly. A problem named in week 2 is a small
 msgstr "поднимайте проблемы рано и говорите о них прямо. Проблема, выявленная на 2-й неделе, — это небольшое исправление; та же проблема при запуске — это задержка."
 
 msgid "Ramp"
-msgstr ""
+msgstr "Ramp"
 
 msgid "Rate Limit"
 msgstr "Ограничение скорости"
@@ -15895,10 +15895,10 @@ msgid "Trainings"
 msgstr "Обучение"
 
 msgid "Transaction Date"
-msgstr ""
+msgstr "Дата транзакции"
 
 msgid "Transaction ID"
-msgstr ""
+msgstr "ID транзакции"
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "Транзакции создадут записи в журнале и обновят главную книгу."

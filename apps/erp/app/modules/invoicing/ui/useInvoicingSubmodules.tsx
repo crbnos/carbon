@@ -1,5 +1,10 @@
 import { useLingui } from "@lingui/react/macro";
-import { LuBanknote, LuCreditCard, LuReceiptText } from "react-icons/lu";
+import {
+  LuBanknote,
+  LuCreditCard,
+  LuReceipt,
+  LuReceiptText
+} from "react-icons/lu";
 import {
   BanknoteArrowDown,
   BanknoteArrowUp
@@ -67,6 +72,13 @@ export default function useInvoicingSubmodules() {
           to: path.to.memos,
           icon: <LuCreditCard />,
           table: "memo",
+          permission: "invoicing"
+        },
+        {
+          name: t`Card Transactions`,
+          to: path.to.cardTransactions,
+          icon: <LuReceipt />,
+          table: "cardTransaction",
           permission: "invoicing"
         }
       ]

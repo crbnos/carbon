@@ -2849,10 +2849,10 @@ msgid "Carbon's single record for anything with a part number — Part, Material
 msgstr "Carbons einziger Datensatz für alles mit einer Teilenummer — Teil, Material, Werkzeug, Dienstleistung, Verbrauchsmaterial oder Vorrichtung — auf das Jobs, Methoden, Bestellungen und Inventar verweisen."
 
 msgid "Card Holder"
-msgstr ""
+msgstr "Karteninhaber"
 
 msgid "Card Transactions"
-msgstr ""
+msgstr "Kartentransaktionen"
 
 msgid "Cards"
 msgstr "Karten"
@@ -9032,7 +9032,7 @@ msgid "Memo ID"
 msgstr "Memo-ID"
 
 msgid "Merchant"
-msgstr ""
+msgstr "Händler"
 
 msgid "MES"
 msgstr "MES"
@@ -9824,7 +9824,7 @@ msgid "No journal lines in scope for this period"
 msgstr "Keine Journalzeilen im Bereich für diesen Zeitraum"
 
 msgid "No lines"
-msgstr ""
+msgstr "Keine Zeilen"
 
 msgid "No lines to map"
 msgstr "Keine Zeilen zum Zuordnen"
@@ -11844,7 +11844,7 @@ msgid "raise it early and raise it plainly. A problem named in week 2 is a small
 msgstr "Sprechen Sie es früh an und sprechen Sie es deutlich an. Ein Problem, das in Woche 2 benannt wird, ist eine kleine Reparatur; das gleiche Problem beim Go-Live ist eine Verzögerung."
 
 msgid "Ramp"
-msgstr ""
+msgstr "Ramp"
 
 msgid "Rate Limit"
 msgstr "Ratenlimit"
@@ -15895,10 +15895,10 @@ msgid "Trainings"
 msgstr "Schulungen"
 
 msgid "Transaction Date"
-msgstr ""
+msgstr "Transaktionsdatum"
 
 msgid "Transaction ID"
-msgstr ""
+msgstr "Transaktions-ID"
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "Transaktionen erstellen Journaleinträge und aktualisieren das Hauptbuch."
