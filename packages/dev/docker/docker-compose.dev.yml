@@ -281,8 +281,12 @@ services:
     deploy:
       resources:
         limits:
-          memory: ${MEM_EDGE:-512m}
-          cpus: ${CPU_EDGE:-0.5}
+          # The edge runtime compiles each function's TS module graph on worker
+          # boot (kysely/zod graphs take real CPU) and runs every privileged
+          # business function. Starved of CPU, worker boot outlives the isolate
+          # CPU budget and requests hang mid-kill — give it app-tier resources.
+          memory: ${MEM_EDGE:-1g}
+          cpus: ${CPU_EDGE:-2}
     depends_on:
       postgres:
         condition: service_healthy
