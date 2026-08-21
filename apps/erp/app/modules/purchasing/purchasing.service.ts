@@ -3108,8 +3108,15 @@ export async function getPunchoutSession(
     .single();
 }
 
-// Service-role caller (the public return route) — the session row carries its
+// Service-role callers (the public return route) — the session row carries its
 // own companyId, so no caller-supplied scope is available.
+export async function getPunchoutSessionById(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("punchoutSession").select("*").eq("id", id).single();
+}
+
 export async function getPunchoutSessionByCookie(
   client: SupabaseClient<Database>,
   buyerCookie: string

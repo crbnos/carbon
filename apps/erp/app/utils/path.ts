@@ -196,6 +196,11 @@ export const path = {
       processes: `${api}/resources/processes`,
       productionKpi: (key: string) =>
         generatePath(`${api}/production/kpi/${key}`),
+      punchoutConsume: (id: string) =>
+        generatePath(`${api}/integrations/punchout/${id}/consume`),
+      punchoutStart: `${api}/integrations/punchout/start`,
+      punchoutStatus: (id: string) =>
+        generatePath(`${api}/integrations/punchout/${id}/status`),
       purchaseInvoice: (id: string) =>
         generatePath(`${api}/purchase-invoice/${id}`),
       purchasesReportLines: `${api}/accounting/purchase-lines`,
@@ -539,6 +544,8 @@ export const path = {
     customFields: `${x}/settings/custom-fields`,
     customFieldsTable: (table: string) =>
       generatePath(`${x}/settings/custom-fields/${table}`),
+    cxmlDocument: (id: string) => generatePath(`${x}/purchasing/cxml/${id}`),
+    cxmlDocuments: `${x}/purchasing/cxml`,
 
     deactivateUsers: `${x}/users/deactivate`,
     defaultRevision: (id: string) =>
