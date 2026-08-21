@@ -176,6 +176,9 @@ msgstr "배치 번호 {0}"
 msgid "Batch number is required"
 msgstr "배치 번호가 필요합니다"
 
+msgid "Batch time"
+msgstr ""
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "{0}에 의해 차단됨"
@@ -271,6 +274,9 @@ msgstr "완료된 합격"
 
 msgid "Completed"
 msgstr "완료됨"
+
+msgid "Completing"
+msgstr ""
 
 msgid "Connecting"
 msgstr "연결 중"
@@ -424,9 +430,6 @@ msgstr "이메일 주소"
 
 msgid "Empty work centers"
 msgstr "빈 작업장"
-
-msgid "End Batch"
-msgstr "배치 종료"
 
 msgid "End Operations"
 msgstr "공정작업 종료"
@@ -924,6 +927,9 @@ msgstr "MRB 처리를 위한 NCR 열기"
 msgid "Open Jobs"
 msgstr "진행 중인 작업"
 
+msgid "Operation"
+msgstr ""
+
 msgid "Operations"
 msgstr "공정작업"
 
@@ -1294,8 +1300,8 @@ msgstr "사용된 예비 부품"
 msgid "Start"
 msgstr "시작"
 
-msgid "Start Batch"
-msgstr "배치 시작"
+msgid "Start batch timer"
+msgstr ""
 
 msgid "Station User"
 msgstr "스테이션 사용자"
@@ -1321,6 +1327,12 @@ msgstr "단계"
 
 msgid "Steps are missing"
 msgstr "단계가 누락되었습니다"
+
+msgid "Stop batch timer"
+msgstr ""
+
+msgid "Stop the timer before completing the batch."
+msgstr ""
 
 msgid "Storage Unit"
 msgstr "저장 단위"

@@ -176,6 +176,9 @@ msgstr "Chargennummer {0}"
 msgid "Batch number is required"
 msgstr "Chargennummer ist erforderlich"
 
+msgid "Batch time"
+msgstr ""
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Blockiert durch {0}"
@@ -271,6 +274,9 @@ msgstr "Bestandene abgeschlossen"
 
 msgid "Completed"
 msgstr "Abgeschlossen"
+
+msgid "Completing"
+msgstr ""
 
 msgid "Connecting"
 msgstr "Verbindung wird hergestellt"
@@ -424,9 +430,6 @@ msgstr "E-Mail-Adresse"
 
 msgid "Empty work centers"
 msgstr "Leere Arbeitszentren"
-
-msgid "End Batch"
-msgstr "Charge beenden"
 
 msgid "End Operations"
 msgstr "Arbeitsgänge beenden"
@@ -924,6 +927,9 @@ msgstr "NCR für MRB-Disposition öffnen"
 msgid "Open Jobs"
 msgstr "Offene Aufträge"
 
+msgid "Operation"
+msgstr ""
+
 msgid "Operations"
 msgstr "Arbeitsgänge"
 
@@ -1294,8 +1300,8 @@ msgstr "Verwendete Ersatzteile"
 msgid "Start"
 msgstr "Start"
 
-msgid "Start Batch"
-msgstr "Charge starten"
+msgid "Start batch timer"
+msgstr ""
 
 msgid "Station User"
 msgstr "Stationsbenutzer"
@@ -1321,6 +1327,12 @@ msgstr "Schritte"
 
 msgid "Steps are missing"
 msgstr "Schritte fehlen"
+
+msgid "Stop batch timer"
+msgstr ""
+
+msgid "Stop the timer before completing the batch."
+msgstr ""
 
 msgid "Storage Unit"
 msgstr "Lagereinheit"

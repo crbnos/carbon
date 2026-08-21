@@ -176,6 +176,9 @@ msgstr "Numer partii {0}"
 msgid "Batch number is required"
 msgstr "Numer partii jest wymagany"
 
+msgid "Batch time"
+msgstr ""
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Zablokowane przez {0}"
@@ -271,6 +274,9 @@ msgstr "Ukończ przebieg"
 
 msgid "Completed"
 msgstr "Ukończone"
+
+msgid "Completing"
+msgstr ""
 
 msgid "Connecting"
 msgstr "Łączenie"
@@ -424,9 +430,6 @@ msgstr "Adres e-mail"
 
 msgid "Empty work centers"
 msgstr "Puste centra pracy"
-
-msgid "End Batch"
-msgstr "Zamknij partię"
 
 msgid "End Operations"
 msgstr "Zakończ operacje"
@@ -924,6 +927,9 @@ msgstr "Otwórz NCR dla dyspozycji MRB"
 msgid "Open Jobs"
 msgstr "Otwarte Zadania"
 
+msgid "Operation"
+msgstr ""
+
 msgid "Operations"
 msgstr "Operacje"
 
@@ -1294,8 +1300,8 @@ msgstr "Użyte części zamienne"
 msgid "Start"
 msgstr "Start"
 
-msgid "Start Batch"
-msgstr "Rozpocznij partię"
+msgid "Start batch timer"
+msgstr ""
 
 msgid "Station User"
 msgstr "Użytkownik stacji"
@@ -1321,6 +1327,12 @@ msgstr "Kroki"
 
 msgid "Steps are missing"
 msgstr "Brakuje kroków"
+
+msgid "Stop batch timer"
+msgstr ""
+
+msgid "Stop the timer before completing the batch."
+msgstr ""
 
 msgid "Storage Unit"
 msgstr "Jednostka magazynowa"

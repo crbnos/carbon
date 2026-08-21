@@ -176,6 +176,9 @@ msgstr "Numero Lotto {0}"
 msgid "Batch number is required"
 msgstr "Il numero di lotto è obbligatorio"
 
+msgid "Batch time"
+msgstr ""
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Bloccato da {0}"
@@ -271,6 +274,9 @@ msgstr "Completa passati"
 
 msgid "Completed"
 msgstr "Completato"
+
+msgid "Completing"
+msgstr ""
 
 msgid "Connecting"
 msgstr "Collegamento in corso"
@@ -424,9 +430,6 @@ msgstr "Indirizzo Email"
 
 msgid "Empty work centers"
 msgstr "Centri di lavoro vuoti"
-
-msgid "End Batch"
-msgstr "Termina Lotto"
 
 msgid "End Operations"
 msgstr "Termina Operazioni"
@@ -924,6 +927,9 @@ msgstr "Apri un NCR per la disposizione MRB"
 msgid "Open Jobs"
 msgstr "Lavori Aperti"
 
+msgid "Operation"
+msgstr ""
+
 msgid "Operations"
 msgstr "Operazioni"
 
@@ -1294,8 +1300,8 @@ msgstr "Ricambi Utilizzati"
 msgid "Start"
 msgstr "Avvia"
 
-msgid "Start Batch"
-msgstr "Avvia Lotto"
+msgid "Start batch timer"
+msgstr ""
 
 msgid "Station User"
 msgstr "Utente Stazione"
@@ -1321,6 +1327,12 @@ msgstr "Fasi"
 
 msgid "Steps are missing"
 msgstr "Fasi mancanti"
+
+msgid "Stop batch timer"
+msgstr ""
+
+msgid "Stop the timer before completing the batch."
+msgstr ""
 
 msgid "Storage Unit"
 msgstr "Unità di Stoccaggio"

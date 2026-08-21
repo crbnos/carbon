@@ -176,6 +176,9 @@ msgstr "Номер партии {0}"
 msgid "Batch number is required"
 msgstr "Номер партии обязателен"
 
+msgid "Batch time"
+msgstr ""
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Заблокировано {0}"
@@ -271,6 +274,9 @@ msgstr "Завершить прошедшие"
 
 msgid "Completed"
 msgstr "Завершено"
+
+msgid "Completing"
+msgstr ""
 
 msgid "Connecting"
 msgstr "Подключение"
@@ -424,9 +430,6 @@ msgstr "Электронная почта"
 
 msgid "Empty work centers"
 msgstr "Пустые рабочие центры"
-
-msgid "End Batch"
-msgstr "Закончить партию"
 
 msgid "End Operations"
 msgstr "Завершить операции"
@@ -924,6 +927,9 @@ msgstr "Открыть NCR для решения MRB"
 msgid "Open Jobs"
 msgstr "Открытые задания"
 
+msgid "Operation"
+msgstr ""
+
 msgid "Operations"
 msgstr "Операции"
 
@@ -1294,8 +1300,8 @@ msgstr "Использованные запасные части"
 msgid "Start"
 msgstr "Старт"
 
-msgid "Start Batch"
-msgstr "Начать партию"
+msgid "Start batch timer"
+msgstr ""
 
 msgid "Station User"
 msgstr "Пользователь станции"
@@ -1321,6 +1327,12 @@ msgstr "Шаги"
 
 msgid "Steps are missing"
 msgstr "Шаги не заполнены"
+
+msgid "Stop batch timer"
+msgstr ""
+
+msgid "Stop the timer before completing the batch."
+msgstr ""
 
 msgid "Storage Unit"
 msgstr "Единица хранения"

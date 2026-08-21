@@ -176,6 +176,9 @@ msgstr "バッチ番号 {0}"
 msgid "Batch number is required"
 msgstr "バッチ番号は必須です"
 
+msgid "Batch time"
+msgstr ""
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "{0} によりブロック中"
@@ -271,6 +274,9 @@ msgstr "完了済みを完了"
 
 msgid "Completed"
 msgstr "完了済み"
+
+msgid "Completing"
+msgstr ""
 
 msgid "Connecting"
 msgstr "接続中"
@@ -424,9 +430,6 @@ msgstr "メールアドレス"
 
 msgid "Empty work centers"
 msgstr "空の作業センター"
-
-msgid "End Batch"
-msgstr "バッチを終了"
 
 msgid "End Operations"
 msgstr "工程を終了"
@@ -924,6 +927,9 @@ msgstr "MRB処分用のNCRを開く"
 msgid "Open Jobs"
 msgstr "オープンジョブ"
 
+msgid "Operation"
+msgstr ""
+
 msgid "Operations"
 msgstr "工程"
 
@@ -1294,8 +1300,8 @@ msgstr "使用済みスペアパーツ"
 msgid "Start"
 msgstr "開始"
 
-msgid "Start Batch"
-msgstr "バッチを開始"
+msgid "Start batch timer"
+msgstr ""
 
 msgid "Station User"
 msgstr "ステーションユーザー"
@@ -1321,6 +1327,12 @@ msgstr "ステップ"
 
 msgid "Steps are missing"
 msgstr "ステップが未記録です"
+
+msgid "Stop batch timer"
+msgstr ""
+
+msgid "Stop the timer before completing the batch."
+msgstr ""
 
 msgid "Storage Unit"
 msgstr "保管場所"

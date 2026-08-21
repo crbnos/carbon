@@ -50,7 +50,7 @@ export async function getJobOperationBatch(
 ) {
   const batch = await client
     .from("jobOperationBatch")
-    .select("*")
+    .select("*, process(name), workCenter(name)")
     .eq("id", batchId)
     .eq("companyId", companyId)
     .single();
@@ -58,13 +58,13 @@ export async function getJobOperationBatch(
   const operations = await client
     .from("jobOperation")
     .select(
-      "id, description, operationQuantity, targetQuantity, quantityComplete, workCenterId, status, job(id, jobId, itemId, dueDate)"
+      "id, description, operationQuantity, targetQuantity, quantityComplete, workCenterId, status, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, job(id, jobId, itemId, dueDate)"
     )
     .eq("jobOperationBatchId", batchId)
     .eq("companyId", companyId);
   const events = await client
     .from("productionEvent")
-    .select("id, startTime, endTime")
+    .select("id, type, startTime, endTime, employeeId")
     .eq("jobOperationBatchId", batchId)
     .eq("companyId", companyId);
   return {

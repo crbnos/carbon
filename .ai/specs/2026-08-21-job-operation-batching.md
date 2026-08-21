@@ -389,7 +389,7 @@ through; `ProcessForm` gains the Boolean field (clone `completeAllOnScan`).
 | Processes table | `Batchable` boolean column/badge |
 | **Operations schedule board** (`x/schedule/operations` — composition integrated 2026-08-21) | Batchable, unstarted operations show a hover checkbox (selection lives in `BatchSelectionProvider`; the first pick pins the process, so only same-process ops stay selectable). A floating bar ("N selected · Create batch · Clear") submits to the `batching.update` action. Members of a live batch collapse into one **`BatchItemCard`** in the batch's work-center column: `BAT` badge, member count · summed qty, member rows with hover-remove, dissolve in the menu, "Open in MES". Dragging the batch card to another column reassigns the batch work center (edge fn writes it to every member); a `Completing` batch card is read-only (yellow badge, MES retry link). Material facets (substance/grade/dimension/form/finish) join the board's filter bar, and cards show material chips (display-setting toggle) |
 | MES kanban (`apps/mes/.../ItemCard.tsx` + operations loader) | Rows sharing `jobOperationBatchId` collapse to one card: member count, summed quantity, batch readableId; card links to the batch view |
-| MES batch view (new: `x/batch/$batchId`; status-aware from day one) | Status badge (`secondary` Active / `yellow` Completing / `green` Completed). Member table (job, item, quantity, due date, link to each member op). Start/Stop timers gated to `Active`; live elapsed timer (`formatDurationMilliseconds` tick). **Complete Batch** form: per-member produced quantity (pre-filled from `operationQuantity`) + optional scrap; enabled for `Active`+`Completing`; submit relabeled "Retry Completion" while `Completing` with a short explanatory line; copy stating time splits proportionally to quantity. All strings `<Trans>`/`t` (extraction covers `mes.po`) |
+| MES batch view (`x/batch/$batchId` — rebuilt 2026-08-21 on the JobOperation scaffold) | Same chrome as the single-operation view: header with sidebar trigger + back-to-Schedule, info bar (batch id + status badge; process, work center, live elapsed, jobs · qty), content in standard Cards, and the docked **Controls** panel reusing the operation view's `WorkTypeToggle` (Setup/Labor/Machine — batch timers are now typed, summed member durations decide which types show) and the big round start/stop button, plus a Batch time readout. **Complete Batch** card: per-member produced quantity (pre-filled from `operationQuantity` less completed) + optional scrap; enabled for `Active`+`Completing`; submit relabeled "Retry Completion" while `Completing`; blocked while a timer runs. All strings `<Trans>`/`t` |
 | Job detail | Member operation shows the batch badge; estimates-vs-actuals needs **no math change** (per-member events) — optional "part of BAT…" badge only |
 
 ## Acceptance Criteria
@@ -516,3 +516,9 @@ through; `ProcessForm` gains the Boolean field (clone `completeAllOnScan`).
   props threaded through the kanban), the batch card as an explicit variant
   component. The `batching.update` action route and the `batch-operations`
   edge fn are unchanged; MES is unchanged.
+- 2026-08-21: MES batch page rebuilt on the JobOperation scaffold (Sid: the
+  bare-card version "completely threw away the existing MES ui"). Header/info
+  bar/Controls dock now reuse the operation view's components (`Controls`,
+  `WorkTypeToggle`, `IconButtonWithTooltip`); batch timers are typed
+  (Setup/Labor/Machine via the toggle; start action accepts `type`). Service
+  select enriched (process + work center names, member time fields, event type).

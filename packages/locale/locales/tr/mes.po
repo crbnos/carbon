@@ -176,6 +176,9 @@ msgstr "Lot Numarası {0}"
 msgid "Batch number is required"
 msgstr "Lot numarası zorunludur"
 
+msgid "Batch time"
+msgstr ""
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Engelli edildi: {0}"
@@ -271,6 +274,9 @@ msgstr "Tamamlanan geçti"
 
 msgid "Completed"
 msgstr "Tamamlandı"
+
+msgid "Completing"
+msgstr ""
 
 msgid "Connecting"
 msgstr "Bağlanıyor"
@@ -424,9 +430,6 @@ msgstr "E-posta Adresi"
 
 msgid "Empty work centers"
 msgstr "Boş iş merkezleri"
-
-msgid "End Batch"
-msgstr "Partiyi Sonlandır"
 
 msgid "End Operations"
 msgstr "Operasyonları Sonlandır"
@@ -924,6 +927,9 @@ msgstr "MRB kararı için NCR aç"
 msgid "Open Jobs"
 msgstr "Açık İşler"
 
+msgid "Operation"
+msgstr ""
+
 msgid "Operations"
 msgstr "Operasyonlar"
 
@@ -1294,8 +1300,8 @@ msgstr "Kullanılan Yedek Parçalar"
 msgid "Start"
 msgstr "Başlat"
 
-msgid "Start Batch"
-msgstr "Partiyi Başlat"
+msgid "Start batch timer"
+msgstr ""
 
 msgid "Station User"
 msgstr "İstasyon Kullanıcısı"
@@ -1321,6 +1327,12 @@ msgstr "Adımlar"
 
 msgid "Steps are missing"
 msgstr "Adımlar eksik"
+
+msgid "Stop batch timer"
+msgstr ""
+
+msgid "Stop the timer before completing the batch."
+msgstr ""
 
 msgid "Storage Unit"
 msgstr "Depolama Birimi"

@@ -176,6 +176,9 @@ msgstr "批次号 {0}"
 msgid "Batch number is required"
 msgstr "批次号为必填项"
 
+msgid "Batch time"
+msgstr ""
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "被 {0} 阻塞"
@@ -271,6 +274,9 @@ msgstr "完成已通过"
 
 msgid "Completed"
 msgstr "已完成"
+
+msgid "Completing"
+msgstr ""
 
 msgid "Connecting"
 msgstr "连接中"
@@ -424,9 +430,6 @@ msgstr "电子邮箱"
 
 msgid "Empty work centers"
 msgstr "空的工作中心"
-
-msgid "End Batch"
-msgstr "结束批次"
 
 msgid "End Operations"
 msgstr "结束工序"
@@ -924,6 +927,9 @@ msgstr "为 MRB 处置打开 NCR"
 msgid "Open Jobs"
 msgstr "开放工作"
 
+msgid "Operation"
+msgstr ""
+
 msgid "Operations"
 msgstr "工序"
 
@@ -1294,8 +1300,8 @@ msgstr "已使用备件"
 msgid "Start"
 msgstr "开始"
 
-msgid "Start Batch"
-msgstr "开始批次"
+msgid "Start batch timer"
+msgstr ""
 
 msgid "Station User"
 msgstr "工位用户"
@@ -1321,6 +1327,12 @@ msgstr "步骤"
 
 msgid "Steps are missing"
 msgstr "缺少步骤"
+
+msgid "Stop batch timer"
+msgstr ""
+
+msgid "Stop the timer before completing the batch."
+msgstr ""
 
 msgid "Storage Unit"
 msgstr "存储单位"
