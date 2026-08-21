@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE cXML SYSTEM "http://xml.cXML.org/schemas/cXML/1.2.025/InvoiceDetail.dtd"[]>
+<cXML xml:lang="en-US" timestamp="2019-05-22T00:31:17-05:00" payloadID="883469201952203117">
+  <Header>
+    <From>
+      <Credential domain="DUNS">
+        <Identity>006931349</Identity>
+      </Credential>
+    </From>
+    <To>
+      <Credential domain="NetworkID">
+        <Identity>sample</Identity>
+      </Credential>
+    </To>
+    <Sender>
+      <Credential domain="DUNS">
+        <Identity>006931349</Identity>
+        <SharedSecret>shhhh</SharedSecret>
+      </Credential>
+      <UserAgent>McMaster-Carr Supply</UserAgent>
+    </Sender>
+  </Header>
+  <Request deploymentMode="production">
+    <InvoiceDetailRequest>
+      <InvoiceDetailRequestHeader invoiceID="123456789" purpose="standard" operation="new" invoiceDate="2019-05-22T00:31:17-05:00">
+        <InvoiceDetailHeaderIndicator />
+        <InvoiceDetailLineIndicator />
+        <InvoicePartner>
+          <Contact role="billTo" addressID="C100">
+            <Name xml:lang="en-US">Acme Inc</Name>
+            <PostalAddress>
+              <Street>123 Test St</Street>
+              <City>Boston</City>
+              <State>MA</State>
+              <PostalCode>01701</PostalCode>
+              <Country isoCountryCode="US">United States</Country>
+            </PostalAddress>
+          </Contact>
+        </InvoicePartner>
+        <InvoicePartner>
+          <Contact role="soldTo" addressID="C100">
+            <Name xml:lang="en-US">Acme Inc</Name>
+            <PostalAddress>
+              <Street>123 Test St</Street>
+              <City>Boston</City>
+              <State>MA</State>
+              <PostalCode>01701</PostalCode>
+              <Country isoCountryCode="US">United States</Country>
+            </PostalAddress>
+          </Contact>
+        </InvoicePartner>
+        <InvoicePartner>
+          <Contact role="remitTo" addressID="0002003659">
+            <Name xml:lang="en-US">MCMASTER-CARR SUPPLY CO.</Name>
+            <PostalAddress>
+              <DeliverTo>MCMASTER-CARR SUPPLY CO.</DeliverTo>
+              <Street>P O BOX 7690</Street>
+              <City>CHICAGO</City>
+              <State>IL</State>
+              <PostalCode>60680</PostalCode>
+              <Country isoCountryCode="US">United States</Country>
+            </PostalAddress>
+          </Contact>
+        </InvoicePartner>
+        <InvoicePartner>
+          <Contact role="from" addressID="">
+            <Name xml:lang="en-US">MCMASTER-CARR</Name>
+            <PostalAddress>
+              <DeliverTo>MCMASTER-CARR SUPPLY CO.</DeliverTo>
+              <Street>200 NEW CANTON WAY</Street>
+              <City>ROBBINSVILLE</City>
+              <State>NJ</State>
+              <PostalCode>08691</PostalCode>
+              <Country isoCountryCode="US">United States</Country>
+            </PostalAddress>
+          </Contact>
+        </InvoicePartner>
+        <InvoiceDetailShipping shippingDate="2019-05-21T00:00:00-05:00">
+          <Contact role="shipTo" addressID="TEST">
+            <Name xml:lang="en-US">Acme Inc</Name>
+            <PostalAddress>
+              <DeliverTo>Joe Smith</DeliverTo>
+              <Street>1 NEW YORK AVE</Street>
+              <City>New York</City>
+              <State>NY</State>
+              <PostalCode>12345</PostalCode>
+              <Country isoCountryCode="US">United States</Country>
+            </PostalAddress>
+          </Contact>
+          <Contact role="shipFrom" addressID="">
+            <Name xml:lang="en-US">MCMASTER-CARR</Name>
+            <PostalAddress>
+              <DeliverTo>MCMASTER-CARR SUPPLY CO.</DeliverTo>
+              <Street>200 NEW CANTON WAY</Street>
+              <City>ROBBINSVILLE</City>
+              <State>NJ</State>
+              <PostalCode>08691</PostalCode>
+              <Country isoCountryCode="US">United States</Country>
+            </PostalAddress>
+          </Contact>
+        </InvoiceDetailShipping>
+        <PaymentTerm payInNumberOfDays="30" />
+        <PaymentTerm payInNumberOfDays="10">
+          <Discount>
+            <DiscountPercent percent="2" />
+          </Discount>
+        </PaymentTerm>
+      </InvoiceDetailRequestHeader>
+      <InvoiceDetailOrder>
+        <InvoiceDetailOrderInfo>
+          <OrderReference orderDate="2019-05-21T00:00:00-05:00" orderID="SAMPLE">
+            <DocumentReference payloadID="1558446022088.603533123.000000648@dp7z5OZGkKBAo7E7OHfxzEtTRQo=" />
+          </OrderReference>
+        </InvoiceDetailOrderInfo>
+        <InvoiceDetailItem invoiceLineNumber="1" quantity="2">
+          <UnitOfMeasure>EA</UnitOfMeasure>
+          <UnitPrice>
+            <Money currency="USD">127.02</Money>
+          </UnitPrice>
+          <InvoiceDetailItemReference lineNumber="1">
+            <ItemID>
+              <SupplierPartID>3190K822</SupplierPartID>
+            </ItemID>
+            <Description xml:lang="en">Isopropyl Alcohol-99%, 5 Gallon Can</Description>
+          </InvoiceDetailItemReference>
+          <SubtotalAmount>
+            <Money currency="USD">254.04</Money>
+          </SubtotalAmount>
+        </InvoiceDetailItem>
+      </InvoiceDetailOrder>
+      <InvoiceDetailSummary>
+        <SubtotalAmount>
+          <Money currency="USD">254.04</Money>
+        </SubtotalAmount>
+        <Tax>
+          <Money currency="USD">15.88</Money>
+          <Description xml:lang="en">total tax</Description>
+        </Tax>
+        <SpecialHandlingAmount>
+          <Money currency="USD">0.00</Money>
+        </SpecialHandlingAmount>
+        <ShippingAmount>
+          <Money currency="USD">0.00</Money>
+        </ShippingAmount>
+        <GrossAmount>
+          <Money currency="USD">269.92</Money>
+        </GrossAmount>
+        <NetAmount>
+          <Money currency="USD">269.92</Money>
+        </NetAmount>
+        <DueAmount>
+          <Money currency="USD">269.92</Money>
+        </DueAmount>
+      </InvoiceDetailSummary>
+    </InvoiceDetailRequest>
+  </Request>
+</cXML>

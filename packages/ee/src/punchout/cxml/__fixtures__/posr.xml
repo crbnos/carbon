@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE cXML
+  SYSTEM "http://xml.cxml.org/schemas/cXML/1.2.019/cXML.dtd">
+<cXML timestamp="1999-03-12T18:39:09-08:00"
+      xml:lang="en"
+      payloadID="o4Q9Oj3b7VPpx+091/Br6SqV1pKvMY8eB52TrOdinOHlmfmqp0/A7Y7AtjzBl8h7">
+   <Header>
+      <From>
+         <Credential domain="NetworkID">
+            <Identity>acme</Identity>
+         </Credential>
+      </From>
+      <To>
+         <Credential domain="DUNS">
+            <Identity>006931349</Identity>
+         </Credential>
+      </To>
+      <Sender>
+         <Credential domain="NetworkID">
+            <Identity>acme</Identity>
+            <SharedSecret>mcmaster</SharedSecret>
+         </Credential>
+         <UserAgent>Workday</UserAgent>
+      </Sender>
+   </Header>
+   <Request deploymentMode="test">
+      <PunchOutSetupRequest operation="create">
+         <BuyerCookie>o4Q9Oj3b7VPpx+091/Br6SqV1pKvMY8eB52TrOdinOHlmfmqp0/A7Y7AtjzBl8h7</BuyerCookie>
+         <BrowserFormPost>
+            <URL>https://wd5-impl-enterprise-services1.workday.com/wpi4/ccx/PunchoutShoppingCartReturn-2018.29.12905</URL>
+         </BrowserFormPost>
+         <Contact addressID="b8c9a8b73db001a911624083efbe3f81">
+            <Name xml:lang="en">Sample, Tester L.</Name>
+            <PostalAddress>
+               <Street>Acme Labs 130</Street>
+               <City>Worcester</City>
+               <State>PA</State>
+               <PostalCode>01609</PostalCode>
+               <Country isoCountryCode="US">United States of America</Country>
+            </PostalAddress>
+         </Contact>
+         <SupplierSetup>
+            <URL>https://wwwqual.mcmaster.com/?publication=ecmrc</URL>
+         </SupplierSetup>
+         <ShipTo>
+            <Address isoCountryCode="US" addressID="b8c9a8b73db001a911624083efbe3f81">
+               <Name xml:lang="en">Acme Inc</Name>
+               <PostalAddress>
+                  <Street>Acme Labs 130</Street>
+                  <City>Worcester</City>
+                  <State>PA</State>
+                  <PostalCode>01609</PostalCode>
+                  <Country isoCountryCode="US">United States of America</Country>
+               </PostalAddress>
+            </Address>
+         </ShipTo>
+      </PunchOutSetupRequest>
+   </Request>
+</cXML>

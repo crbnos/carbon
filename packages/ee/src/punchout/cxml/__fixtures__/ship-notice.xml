@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE cXML SYSTEM "http://xml.cXML.org/schemas/cXML/1.2.025/Fulfill.dtd"[]>
+<cXML xml:lang="en-US" timestamp="2021-01-15T01:59:56-06:00" payloadID="146571202111515956">
+  <Header>
+    <From>
+      <Credential domain="DUNS">
+        <Identity>006931349</Identity>
+      </Credential>
+    </From>
+    <To>
+      <Credential domain="NetworkID">
+        <Identity>Sample</Identity>
+      </Credential>
+    </To>
+    <Sender>
+      <Credential domain="DUNS">
+        <Identity>006931349</Identity>
+        <SharedSecret>tester123</SharedSecret>
+      </Credential>
+      <UserAgent>McMaster-Carr Supply</UserAgent>
+    </Sender>
+  </Header>
+  <Request deploymentMode="production">
+    <ShipNoticeRequest>
+      <ShipNoticeHeader shipmentID="8490281" operation="new" shipmentType="actual" noticeDate="2021-01-15T01:59:56-06:00" shipmentDate="2021-01-13T00:00:00-06:00" deliveryDate="2021-01-14T00:00:00-06:00"></ShipNoticeHeader>
+      <ShipControl>
+        <CarrierIdentifier domain="CompanyName">UPS</CarrierIdentifier>
+        <ShipmentIdentifier>1Z602878787878787878</ShipmentIdentifier>
+        <Route method="motor"></Route>
+      </ShipControl>
+      <ShipNoticePortion>
+        <OrderReference orderDate="2021-01-14T00:00:00-06:00" orderID="4506600153">
+          <DocumentReference payloadID="" />
+        </OrderReference>
+        <ShipNoticeItem lineNumber="1" quantity="3">
+          <UnitOfMeasure>PK</UnitOfMeasure>
+        </ShipNoticeItem>
+      </ShipNoticePortion>
+    </ShipNoticeRequest>
+  </Request>
+</cXML>

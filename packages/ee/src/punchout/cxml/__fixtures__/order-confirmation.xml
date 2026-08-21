@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE cXML SYSTEM "http://xml.cXML.org/schemas/cXML/1.2.025/Fulfill.dtd"[]>
+<cXML xml:lang="en-US" timestamp="2018-07-11T08:40:02-05:00" payloadID="73017420187118402">
+  <Header>
+    <From>
+      <Credential domain="DUNS">
+        <Identity>006931349</Identity>
+      </Credential>
+    </From>
+    <To>
+      <Credential domain="NetworkID">
+        <Identity>tester</Identity>
+      </Credential>
+    </To>
+    <Sender>
+      <Credential domain="DUNS">
+        <Identity>006931349</Identity>
+        <SharedSecret>mcmaster</SharedSecret>
+      </Credential>
+      <UserAgent>McMaster-Carr Supply</UserAgent>
+    </Sender>
+  </Header>
+  <Request>
+    <ConfirmationRequest>
+      <ConfirmationHeader operation="new" type="accept" noticeDate="2018-07-11T08:40:02-05:00" confirmID="4122618">
+        <Total>
+          <Money currency="USD">$629.52</Money>
+        </Total>
+        <Contact role="shipTo" addressID="">
+          <Name xml:lang="en-US">Acme Testing</Name>
+          <PostalAddress>
+            <DeliverTo>Joe Smith</DeliverTo>
+            <Street>123 Test St</Street>
+            <City>Anywhere</City>
+            <State>PA</State>
+            <PostalCode>27709</PostalCode>
+            <Country isoCountryCode="US">United States</Country>
+          </PostalAddress>
+        </Contact>
+        <Contact role="shipFrom" addressID="">
+          <Name xml:lang="en-US">McMaster-Carr Supply Company</Name>
+          <PostalAddress>
+            <DeliverTo>McMaster-Carr Supply Company</DeliverTo>
+            <Street>1901 Riverside Pkwy.</Street>
+            <City>Douglasville</City>
+            <State>GA</State>
+            <PostalCode>30135-3150</PostalCode>
+            <Country isoCountryCode="US">United States</Country>
+          </PostalAddress>
+        </Contact>
+        <Comments xml:lang="en-CA"></Comments>
+      </ConfirmationHeader>
+      <OrderReference orderID="2951005347" orderDate="2018-07-10T14:01:22-07:00">
+        <DocumentReference payloadID="1531256489989.879996318.000000255@WTqUxTOrbMF+1/jhJknaY4q7MXg=" />
+      </OrderReference>
+      <ConfirmationItem lineNumber="1" quantity="22">
+        <UnitOfMeasure>EA</UnitOfMeasure>
+        <ConfirmationStatus type="accept" quantity="22" shipmentDate="2018-07-12T08:40:02-05:00" deliveryDate="2018-07-13T08:40:02-05:00">
+          <UnitOfMeasure>EA</UnitOfMeasure>
+        </ConfirmationStatus>
+      </ConfirmationItem>
+      <ConfirmationItem lineNumber="2" quantity="9">
+        <UnitOfMeasure>EA</UnitOfMeasure>
+        <ConfirmationStatus type="accept" quantity="9" shipmentDate="2018-07-12T08:40:02-05:00" deliveryDate="2018-07-13T08:40:02-05:00">
+          <UnitOfMeasure>EA</UnitOfMeasure>
+        </ConfirmationStatus>
+      </ConfirmationItem>
+      <ConfirmationItem lineNumber="3" quantity="1">
+        <UnitOfMeasure>EA</UnitOfMeasure>
+        <ConfirmationStatus type="accept" quantity="1" shipmentDate="2018-07-12T08:40:02-05:00" deliveryDate="2018-07-13T08:40:02-05:00">
+          <UnitOfMeasure>EA</UnitOfMeasure>
+        </ConfirmationStatus>
+      </ConfirmationItem>
+      <ConfirmationItem lineNumber="4" quantity="1">
+        <UnitOfMeasure>EA</UnitOfMeasure>
+        <ConfirmationStatus type="accept" quantity="1" shipmentDate="2018-07-12T08:40:02-05:00" deliveryDate="2018-07-13T08:40:02-05:00">
+          <UnitOfMeasure>EA</UnitOfMeasure>
+        </ConfirmationStatus>
+      </ConfirmationItem>
+    </ConfirmationRequest>
+  </Request>
+</cXML>

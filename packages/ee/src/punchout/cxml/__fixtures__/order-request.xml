@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<cXML timestamp="2018-06-13T09:32:11 -04:00" payloadID="1528896731509.622919671778933824@ms465.com" version="1.2.011">
+  <Header>
+    <From>
+      <Credential domain="NetworkID">
+        <Identity>tester</Identity>
+      </Credential>
+    </From>
+    <To>
+      <Credential domain="DUNS">
+        <Identity>006931349</Identity>
+      </Credential>
+    </To>
+    <Sender>
+      <Credential domain="NetworkID">
+        <Identity>tester</Identity>
+        <SharedSecret>mcmaster</SharedSecret>
+      </Credential>
+      <UserAgent>SciQuest</UserAgent>
+    </Sender>
+  </Header>
+  <Request deploymentMode="test">
+    <OrderRequest>
+      <OrderRequestHeader orderDate="2018-06-13T09:32:11-0400" orderID="PO-7098647" type="new">
+        <Total>
+          <Money currency="USD">5.63</Money>
+        </Total>
+        <ShipTo>
+          <Address isoCountryCode="US" addressID="3-159764">
+            <Name xml:lang="en-US">Acme Test</Name>
+            <PostalAddress name="default">
+              <DeliverTo>Joe Smith</DeliverTo>
+              <Street>123 Test St/</Street>
+              <Street>Receiving</Street>
+              <City>Anywhere</City>
+              <State>CT</State>
+              <PostalCode>06511</PostalCode>
+              <Country isoCountryCode="US">US</Country>
+            </PostalAddress>
+            <Email name="default" />
+            <Phone name="work">
+              <TelephoneNumber>
+                <CountryCode isoCountryCode="US" />
+                <AreaOrCityCode />
+                <Number />
+              </TelephoneNumber>
+            </Phone>
+            <Fax name="">
+              <TelephoneNumber>
+                <CountryCode isoCountryCode="" />
+                <AreaOrCityCode />
+                <Number />
+              </TelephoneNumber>
+            </Fax>
+          </Address>
+        </ShipTo>
+        <BillTo>
+          <Address isoCountryCode="" addressID="ACCOUNTS PAYABLE">
+            <Name xml:lang="en-US">Acme Test</Name>
+            <PostalAddress name="default">
+              <DeliverTo>Joe Smith</DeliverTo>
+              <Street>123 Test St</Street>
+              <City>Anywhere</City>
+              <State>PA</State>
+              <PostalCode>06520-8228</PostalCode>
+              <Country isoCountryCode="US">US</Country>
+            </PostalAddress>
+            <Email name="default" />
+            <Phone name="work">
+              <TelephoneNumber>
+                <CountryCode isoCountryCode="US" />
+                <AreaOrCityCode />
+                <Number />
+              </TelephoneNumber>
+            </Phone>
+            <Fax name="">
+              <TelephoneNumber>
+                <CountryCode isoCountryCode="" />
+                <AreaOrCityCode />
+                <Number />
+              </TelephoneNumber>
+            </Fax>
+          </Address>
+        </BillTo>
+        <Shipping>
+          <Money currency="" />
+          <Description xml:lang="en-US">Best Carrier-2-3 days</Description>
+        </Shipping>
+        <Tax>
+          <Money currency="USD">0.0000</Money>
+          <Description xml:lang="en-us">Not Taxable</Description>
+        </Tax>
+        <Contact role="user">
+          <Name xml:lang="en-US">Joe Smith</Name>
+          <PostalAddress name="">
+            <Street />
+            <City />
+            <Country isoCountryCode="" />
+          </PostalAddress>
+            </PostalAddress>
+            <Email name="default" preferredLang="en-US">jsmith@acme.com</Email>
+          <Phone name="">
+            <TelephoneNumber>
+              <CountryCode isoCountryCode="" />
+              <AreaOrCityCode />
+              <Number />
+            </TelephoneNumber>
+          </Phone>
+        </Contact>
+        <Comments>Best Carrier-2-3 days</Comments>
+      </OrderRequestHeader>
+      <ItemOut quantity="1" lineNumber="1">
+        <ItemID>
+          <SupplierPartID>6884A242</SupplierPartID>
+          <SupplierPartAuxiliaryID>2058175713947</SupplierPartAuxiliaryID>
+        </ItemID>
+        <ItemDetail>
+          <UnitPrice>
+            <Money currency="USD">5.63</Money>
+          </UnitPrice>
+          <Description xml:lang="en-US">3/32" Nosepiece for Cordless&amp;Vert Air-Powered Tool for Blind Rivets</Description>
+          <UnitOfMeasure>EA</UnitOfMeasure>
+          <Classification domain="UNSPSC">31000000</Classification>
+          <ManufacturerPartID />
+          <ManufacturerName />
+        </ItemDetail>
+      </ItemOut>
+    </OrderRequest>
+  </Request>
+</cXML>

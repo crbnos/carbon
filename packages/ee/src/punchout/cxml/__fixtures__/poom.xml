@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE cXML SYSTEM "http://xml.cxml.org/schemas/cXML/1.1.010/cXML.dtd">
+<cXML payloadID="2020-01-29T05:37:59-05:00@www.mcmaster.com"
+        timestamp="2018-01-29T05:37:59-05:00" version="1.1">
+        <Header>
+                <From>
+                        <Credential domain="DUNS">
+                                <Identity>006931349</Identity>
+                        </Credential>
+                </From>
+                <To>
+                        <Credential domain="NetworkID">
+                                <Identity>acme</Identity>
+                        </Credential>
+                </To>
+                <Sender>
+                        <Credential domain="DUNS">
+                                <Identity>006931349</Identity>
+                                <SharedSecret>password</SharedSecret>
+                        </Credential>
+                        <UserAgent>McMaster-Carr cXML V.1.1</UserAgent>
+                </Sender>
+        </Header>
+        <Message>
+                <PunchOutOrderMessage>
+                        <BuyerCookie>my72M1ntbyLaBsbThh0du14YcK1Me2Ww0.123456123456</BuyerCookie>
+                        <PunchOutOrderMessageHeader operationAllowed="edit">
+                                <Total>
+                                    <Money currency="USD">203.08</Money>
+                                </Total>
+                        </PunchOutOrderMessageHeader>
+                        <ItemIn quantity="1">
+                                <ItemID>
+                                    <SupplierPartID>3201T16</SupplierPartID>
+                                    <SupplierPartAuxiliaryID>8310486455458</SupplierPartAuxiliaryID>
+                                </ItemID>
+                                <ItemDetail>
+                                    <UnitPrice>
+                                    <Money currency="USD">0.9</Money>
+                                    </UnitPrice>
+                                    <Description xml:lang="en">Black-Oxide Steel U-Bolt 1/4&amp;quot;-20 Thrd Sz, 2&amp;quot; ID</Description>
+                                    <UnitOfMeasure>EA</UnitOfMeasure>
+                                    <Classification domain="UNSPSC">31161600</Classification>
+                                    <ManufacturerPartID>3201T16</ManufacturerPartID>
+                                    <ManufacturerName>unlisted</ManufacturerName>
+                                </ItemDetail>
+                        </ItemIn>
+                        <ItemIn quantity="1">
+                                <ItemID>
+                                    <SupplierPartID>57145K76</SupplierPartID>
+                                    <SupplierPartAuxiliaryID>8310486455458</SupplierPartAuxiliaryID>
+                                </ItemID>
+                                <ItemDetail>
+                                    <UnitPrice>
+                                    <Money currency="USD">18.18</Money>
+                                    </UnitPrice>
+                                    <Description xml:lang="en">Hinged Shaft Collar for 1&amp;quot; Diameter, Black-Oxide 1215 Carbon Steel</Description>
+                                    <UnitOfMeasure>EA</UnitOfMeasure>
+                                    <Classification domain="UNSPSC">23150000</Classification>
+                                    <ManufacturerPartID>57145K76</ManufacturerPartID>
+                                    <ManufacturerName>unlisted</ManufacturerName>
+                                </ItemDetail>
+                        </ItemIn>
+                        <ItemIn quantity="1">
+                                <ItemID>
+                                    <SupplierPartID>9691T713</SupplierPartID>
+                                    <SupplierPartAuxiliaryID>8310486455458</SupplierPartAuxiliaryID>
+                                </ItemID>
+                                <ItemDetail>
+                                    <UnitPrice>
+                                    <Money currency="USD">184</Money>
+                                    </UnitPrice>
+                                    <Description xml:lang="en">Leather Work Shoes Men'S Size 13</Description>
+                                    <UnitOfMeasure>PR</UnitOfMeasure>
+                                    <Classification domain="UNSPSC">46181600</Classification>
+                                    <ManufacturerPartID>9691T713</ManufacturerPartID>
+                                    <ManufacturerName>unlisted</ManufacturerName>
+                                </ItemDetail>
+                        </ItemIn>
+                </PunchOutOrderMessage>
+        </Message>
+</cXML>
