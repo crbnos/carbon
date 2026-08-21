@@ -2431,7 +2431,7 @@ msgid "Batch Number"
 msgstr "Lot Numarası"
 
 msgid "Batch planning"
-msgstr ""
+msgstr "Toplu İş Planlama"
 
 msgid "Batch Properties"
 msgstr "Toplu Özellikler"
@@ -2446,10 +2446,10 @@ msgid "Batch Tracking"
 msgstr "Lot Takibi"
 
 msgid "Batchable"
-msgstr ""
+msgstr "Toplu İşlemeye Uygun"
 
 msgid "Batched"
-msgstr ""
+msgstr "Toplu İşleme Alındı"
 
 msgid "Beginning"
 msgstr "Başlangıç"
@@ -3220,13 +3220,13 @@ msgid "Completed Qty"
 msgstr "Tamamlanan Miktar"
 
 msgid "Completing"
-msgstr ""
+msgstr "Tamamlanıyor"
 
 msgid "Completion Barcode"
 msgstr "Tamamlama Barkodu"
 
 msgid "Completion in progress — retry in Shop Floor"
-msgstr ""
+msgstr "Tamamlama devam ediyor — Shop Floor'da yeniden deneyin"
 
 msgid "Completion Time"
 msgstr "Tamamlama Süresi"
@@ -5165,7 +5165,7 @@ msgid "Dispositions"
 msgstr "Durumlar"
 
 msgid "Dissolve batch"
-msgstr ""
+msgstr "Toplu İşi Kaldır"
 
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "Kullanıcının mevcut izinlerini bu çalışan türü için varsayılan izinlerle üzerine yazmak ister misiniz?"
@@ -5253,7 +5253,7 @@ msgid "Drag handle"
 msgstr "Sürükle tutma"
 
 msgid "Drag here to start a new batch"
-msgstr ""
+msgstr "Yeni bir toplu iş başlatmak için buraya sürükleyin"
 
 msgid "Drag to place on drawing"
 msgstr "Çizime yerleştirmek için sürükleyin"
@@ -9201,7 +9201,7 @@ msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP otomatik olarak her 3 saatte bir çalışır, ancak buradan manuel olarak çalıştırabilirsiniz."
 
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
-msgstr ""
+msgstr "Bu işlem üzerinde birden fazla iş aynı anda çalışabilir — örn. lazer masası, fırın veya kaplama banyosu"
 
 msgid "Must be in the same location"
 msgstr "Aynı konumda olmalıdır"
@@ -9973,7 +9973,7 @@ msgid "No transactions in this period"
 msgstr "Bu dönemde işlem yok"
 
 msgid "No unbatched operations match"
-msgstr ""
+msgstr "Toplu İşe Alınmamış İşlem Yok"
 
 msgid "No unmapped accounts match a provider code"
 msgstr "Haritalanmamış hesaplar sağlayıcı kodundan herhangi biriyle uyuşmıyor"
@@ -10888,7 +10888,7 @@ msgid "Pick"
 msgstr "Topla"
 
 msgid "Pick a batchable process to plan batches"
-msgstr ""
+msgstr "Toplu işleri planlamak için toplu işlemeye uygun bir işlem seçin"
 
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Bir Carbon boyutu ve gönderdiği sağlayıcı hedefini seçin. Otomatik oluştur, gönderim sırasında eksik sağlayıcı seçeneklerini ada göre ekler."
@@ -12124,7 +12124,7 @@ msgid "Remove Filters"
 msgstr "Filtreleri Kaldır"
 
 msgid "Remove from batch"
-msgstr ""
+msgstr "Toplu İşten Kaldır"
 
 msgid "Remove from Price List"
 msgstr "Fiyat Listesinden Kaldır"
@@ -13035,7 +13035,7 @@ msgid "Select a assignee"
 msgstr "Bir atanan seçin"
 
 msgid "Select a batchable process"
-msgstr ""
+msgstr "Toplu İşlemeye Uygun Bir İşlem Seçin"
 
 msgid "Select a default approver"
 msgstr "Varsayılan onaylayıcı seçin"

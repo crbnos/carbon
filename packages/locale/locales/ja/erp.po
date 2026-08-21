@@ -2431,7 +2431,7 @@ msgid "Batch Number"
 msgstr "バッチ番号"
 
 msgid "Batch planning"
-msgstr ""
+msgstr "バッチ計画"
 
 msgid "Batch Properties"
 msgstr "バッチプロパティ"
@@ -2446,10 +2446,10 @@ msgid "Batch Tracking"
 msgstr "バッチ追跡"
 
 msgid "Batchable"
-msgstr ""
+msgstr "バッチ可能"
 
 msgid "Batched"
-msgstr ""
+msgstr "バッチ済み"
 
 msgid "Beginning"
 msgstr "開始"
@@ -3220,13 +3220,13 @@ msgid "Completed Qty"
 msgstr "完了数量"
 
 msgid "Completing"
-msgstr ""
+msgstr "完了中"
 
 msgid "Completion Barcode"
 msgstr "完了バーコード"
 
 msgid "Completion in progress — retry in Shop Floor"
-msgstr ""
+msgstr "完了進行中 — ショップフロアで再試行してください"
 
 msgid "Completion Time"
 msgstr "完了時間"
@@ -5165,7 +5165,7 @@ msgid "Dispositions"
 msgstr "処分"
 
 msgid "Dissolve batch"
-msgstr ""
+msgstr "バッチを解除"
 
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "このEmployee Typeのデフォルト権限でユーザーの現在の権限を上書きしますか?"
@@ -5253,7 +5253,7 @@ msgid "Drag handle"
 msgstr "ドラッグハンドル"
 
 msgid "Drag here to start a new batch"
-msgstr ""
+msgstr "ここにドラッグして新しいバッチを開始"
 
 msgid "Drag to place on drawing"
 msgstr "図面上に配置するためにドラッグしてください"
@@ -9201,7 +9201,7 @@ msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRPは3時間ごとに自動的に実行されますが、ここで手動で実行することもできます。"
 
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
-msgstr ""
+msgstr "複数のジョブがこのプロセスで同時に実行できます — 例：レーザーテーブル、炉、またはめっき槽"
 
 msgid "Must be in the same location"
 msgstr "同じ場所にある必要があります"
@@ -9973,7 +9973,7 @@ msgid "No transactions in this period"
 msgstr "この期間に取引がありません"
 
 msgid "No unbatched operations match"
-msgstr ""
+msgstr "バッチ処理されていない操作が一致しません"
 
 msgid "No unmapped accounts match a provider code"
 msgstr "マップされていない勘定科目でプロバイダーコードと一致するものがありません"
@@ -10888,7 +10888,7 @@ msgid "Pick"
 msgstr "ピック"
 
 msgid "Pick a batchable process to plan batches"
-msgstr ""
+msgstr "バッチを計画するため、バッチ可能なプロセスを選択してください"
 
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Carbonディメンションと、それを投稿するプロバイダーターゲットを選択します。自動作成は、プッシュ時に不足しているプロバイダーオプションを名前で追加します。"
@@ -12124,7 +12124,7 @@ msgid "Remove Filters"
 msgstr "フィルターを削除"
 
 msgid "Remove from batch"
-msgstr ""
+msgstr "バッチから削除"
 
 msgid "Remove from Price List"
 msgstr "価格リストから削除"
@@ -13035,7 +13035,7 @@ msgid "Select a assignee"
 msgstr "担当者を選択"
 
 msgid "Select a batchable process"
-msgstr ""
+msgstr "バッチ可能なプロセスを選択してください"
 
 msgid "Select a default approver"
 msgstr "デフォルト承認者を選択"

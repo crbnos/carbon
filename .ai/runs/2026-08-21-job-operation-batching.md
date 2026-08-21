@@ -204,4 +204,14 @@ Working-tree files to never touch: `apps/erp/app/routes/api+/mcp+/lib/tool-metad
 - Verify: the 3 files run green — ERP 2 files/10 tests, MES 1 file/5 tests. Full
   `pnpm run test` deferred to Task 12 (same gate; avoids running the whole suite
   twice). Banned: none.
+- Commit: `0d61eb840`
+
+## Task 10: i18n extraction + translation fill
+
+- `lingui:extract` → 228 missing across 12 locales (19 each: 12 new ERP strings
+  + 7 new MES strings). Ran `/translate` (Haiku subagents, 24 chunks).
+- Merge: 228 filled, 0 unmatched, 0 remaining. `linguito check` exits 0.
+- `lingui:clean` normalized headers. Verified only `msgstr` lines changed (no
+  `msgid` touched). 24 `.po` files updated (12 locales × erp/mes). Scratch
+  removed.
 - Commit: _pending_

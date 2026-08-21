@@ -27,7 +27,7 @@ msgstr "{0} fa"
 
 #. placeholder {0}: members.length
 msgid "{0} jobs · {totalQuantity}"
-msgstr ""
+msgstr "{0} lavori · {totalQuantity}"
 
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
@@ -68,7 +68,7 @@ msgid "+{overflow} more"
 msgstr "+{overflow} altri"
 
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
-msgstr ""
+msgstr "Un completamento precedente non è terminato. Riprovare riprende i passaggi rimanenti — le quantità non vengono conteggiate due volte."
 
 msgid "About"
 msgstr "Informazioni"
@@ -264,7 +264,7 @@ msgid "Complete All"
 msgstr "Completa tutto"
 
 msgid "Complete Batch"
-msgstr ""
+msgstr "Completa Lotto"
 
 msgid "Complete passed"
 msgstr "Completa passati"
@@ -426,7 +426,7 @@ msgid "Empty work centers"
 msgstr "Centri di lavoro vuoti"
 
 msgid "End Batch"
-msgstr ""
+msgstr "Termina Lotto"
 
 msgid "End Operations"
 msgstr "Termina Operazioni"
@@ -1088,7 +1088,7 @@ msgid "Result"
 msgstr "Risultato"
 
 msgid "Retry Completion"
-msgstr ""
+msgstr "Ritenta Completamento"
 
 msgid "Rework"
 msgstr "Rielaborazione"
@@ -1295,7 +1295,7 @@ msgid "Start"
 msgstr "Avvia"
 
 msgid "Start Batch"
-msgstr ""
+msgstr "Avvia Lotto"
 
 msgid "Station User"
 msgstr "Utente Stazione"
@@ -1374,7 +1374,7 @@ msgid "Thumbnail"
 msgstr "Miniatura"
 
 msgid "Time and cost split across jobs proportionally to quantity."
-msgstr ""
+msgstr "Tempo e costo suddivisi tra i lavori proporzionalmente alla quantità."
 
 msgid "Time Entries"
 msgstr "Registrazioni Orarie"

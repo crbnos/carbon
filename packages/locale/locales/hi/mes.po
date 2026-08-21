@@ -27,7 +27,7 @@ msgstr "{0} पहले"
 
 #. placeholder {0}: members.length
 msgid "{0} jobs · {totalQuantity}"
-msgstr ""
+msgstr "{0} कार्य · {totalQuantity}"
 
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
@@ -68,7 +68,7 @@ msgid "+{overflow} more"
 msgstr "+{overflow} अधिक"
 
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
-msgstr ""
+msgstr "एक पिछला समापन पूरा नहीं हुआ। पुनः प्रयास करने से शेष चरण जारी रहते हैं — मात्राएँ दोगुनी नहीं गिनी जाती हैं।"
 
 msgid "About"
 msgstr "के बारे में"
@@ -264,7 +264,7 @@ msgid "Complete All"
 msgstr "सभी को पूर्ण करें"
 
 msgid "Complete Batch"
-msgstr ""
+msgstr "बैच पूरा करें"
 
 msgid "Complete passed"
 msgstr "पूर्ण पास"
@@ -426,7 +426,7 @@ msgid "Empty work centers"
 msgstr "खाली कार्य केंद्र"
 
 msgid "End Batch"
-msgstr ""
+msgstr "बैच समाप्त करें"
 
 msgid "End Operations"
 msgstr "संचालन समाप्त करें"
@@ -1088,7 +1088,7 @@ msgid "Result"
 msgstr "परिणाम"
 
 msgid "Retry Completion"
-msgstr ""
+msgstr "समापन पुनः प्रयास करें"
 
 msgid "Rework"
 msgstr "रीवर्क"
@@ -1295,7 +1295,7 @@ msgid "Start"
 msgstr "शुरू करें"
 
 msgid "Start Batch"
-msgstr ""
+msgstr "बैच शुरू करें"
 
 msgid "Station User"
 msgstr "स्टेशन उपयोगकर्ता"
@@ -1374,7 +1374,7 @@ msgid "Thumbnail"
 msgstr "थंबनेल"
 
 msgid "Time and cost split across jobs proportionally to quantity."
-msgstr ""
+msgstr "समय और लागत को मात्रा के अनुपात में कार्यों में विभाजित किया जाता है।"
 
 msgid "Time Entries"
 msgstr "समय प्रविष्टियाँ"

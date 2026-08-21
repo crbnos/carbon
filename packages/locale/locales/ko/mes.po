@@ -27,7 +27,7 @@ msgstr "{0} 전"
 
 #. placeholder {0}: members.length
 msgid "{0} jobs · {totalQuantity}"
-msgstr ""
+msgstr "{0}개 작업 · {totalQuantity}"
 
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
@@ -68,7 +68,7 @@ msgid "+{overflow} more"
 msgstr "+{overflow} 더 보기"
 
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
-msgstr ""
+msgstr "이전 완료가 완료되지 않았습니다. 다시 시도하면 남은 단계가 재개되며 — 수량이 중복으로 계산되지 않습니다."
 
 msgid "About"
 msgstr "정보"
@@ -264,7 +264,7 @@ msgid "Complete All"
 msgstr "모두 완료"
 
 msgid "Complete Batch"
-msgstr ""
+msgstr "배치 완료"
 
 msgid "Complete passed"
 msgstr "완료된 합격"
@@ -426,7 +426,7 @@ msgid "Empty work centers"
 msgstr "빈 작업장"
 
 msgid "End Batch"
-msgstr ""
+msgstr "배치 종료"
 
 msgid "End Operations"
 msgstr "공정작업 종료"
@@ -1088,7 +1088,7 @@ msgid "Result"
 msgstr "결과"
 
 msgid "Retry Completion"
-msgstr ""
+msgstr "완료 다시 시도"
 
 msgid "Rework"
 msgstr "재작업"
@@ -1295,7 +1295,7 @@ msgid "Start"
 msgstr "시작"
 
 msgid "Start Batch"
-msgstr ""
+msgstr "배치 시작"
 
 msgid "Station User"
 msgstr "스테이션 사용자"
@@ -1374,7 +1374,7 @@ msgid "Thumbnail"
 msgstr "썸네일"
 
 msgid "Time and cost split across jobs proportionally to quantity."
-msgstr ""
+msgstr "시간과 비용은 수량에 비례하여 작업에 걸쳐 분할됩니다."
 
 msgid "Time Entries"
 msgstr "시간 기록"

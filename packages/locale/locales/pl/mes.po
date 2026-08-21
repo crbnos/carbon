@@ -27,7 +27,7 @@ msgstr "{0} temu"
 
 #. placeholder {0}: members.length
 msgid "{0} jobs · {totalQuantity}"
-msgstr ""
+msgstr "{0} zadań · {totalQuantity}"
 
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
@@ -68,7 +68,7 @@ msgid "+{overflow} more"
 msgstr "+{overflow} więcej"
 
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
-msgstr ""
+msgstr "Poprzednie zakończenie nie zostało ukończone. Ponowienie wznawia pozostałe kroki — ilości nie są liczone podwójnie."
 
 msgid "About"
 msgstr "O programie"
@@ -264,7 +264,7 @@ msgid "Complete All"
 msgstr "Uzupełnij wszystko"
 
 msgid "Complete Batch"
-msgstr ""
+msgstr "Zakończ partię"
 
 msgid "Complete passed"
 msgstr "Ukończ przebieg"
@@ -426,7 +426,7 @@ msgid "Empty work centers"
 msgstr "Puste centra pracy"
 
 msgid "End Batch"
-msgstr ""
+msgstr "Zamknij partię"
 
 msgid "End Operations"
 msgstr "Zakończ operacje"
@@ -1088,7 +1088,7 @@ msgid "Result"
 msgstr "Wynik"
 
 msgid "Retry Completion"
-msgstr ""
+msgstr "Ponów zakończenie"
 
 msgid "Rework"
 msgstr "Przeróbka"
@@ -1295,7 +1295,7 @@ msgid "Start"
 msgstr "Start"
 
 msgid "Start Batch"
-msgstr ""
+msgstr "Rozpocznij partię"
 
 msgid "Station User"
 msgstr "Użytkownik stacji"
@@ -1374,7 +1374,7 @@ msgid "Thumbnail"
 msgstr "Miniatura"
 
 msgid "Time and cost split across jobs proportionally to quantity."
-msgstr ""
+msgstr "Czas i koszt podzielone między zadania proporcjonalnie do ilości."
 
 msgid "Time Entries"
 msgstr "Wpisy czasu pracy"

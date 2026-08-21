@@ -2431,7 +2431,7 @@ msgid "Batch Number"
 msgstr "批号"
 
 msgid "Batch planning"
-msgstr ""
+msgstr "批次计划"
 
 msgid "Batch Properties"
 msgstr "批量属性"
@@ -2446,10 +2446,10 @@ msgid "Batch Tracking"
 msgstr "批次追踪"
 
 msgid "Batchable"
-msgstr ""
+msgstr "可批量的"
 
 msgid "Batched"
-msgstr ""
+msgstr "已分批"
 
 msgid "Beginning"
 msgstr "开始"
@@ -3220,13 +3220,13 @@ msgid "Completed Qty"
 msgstr "已完成数量"
 
 msgid "Completing"
-msgstr ""
+msgstr "完成中"
 
 msgid "Completion Barcode"
 msgstr "完成条码"
 
 msgid "Completion in progress — retry in Shop Floor"
-msgstr ""
+msgstr "完成进行中 — 请在生产车间重试"
 
 msgid "Completion Time"
 msgstr "完成时间"
@@ -5165,7 +5165,7 @@ msgid "Dispositions"
 msgstr "处置"
 
 msgid "Dissolve batch"
-msgstr ""
+msgstr "解散批次"
 
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "您想用此员工类型的默认权限覆盖该用户的当前权限吗？"
@@ -5253,7 +5253,7 @@ msgid "Drag handle"
 msgstr "拖动手柄"
 
 msgid "Drag here to start a new batch"
-msgstr ""
+msgstr "拖至此处开始新批次"
 
 msgid "Drag to place on drawing"
 msgstr "拖动以在图纸上放置"
@@ -9201,7 +9201,7 @@ msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP 每 3 小时自动运行一次，但您也可以在此手动运行。"
 
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
-msgstr ""
+msgstr "多个作业可以同时在此工序上运行 — 例如激光切割机、炉子或电镀槽"
 
 msgid "Must be in the same location"
 msgstr "必须在同一位置"
@@ -9973,7 +9973,7 @@ msgid "No transactions in this period"
 msgstr "此期间无交易"
 
 msgid "No unbatched operations match"
-msgstr ""
+msgstr "没有匹配的未分批操作"
 
 msgid "No unmapped accounts match a provider code"
 msgstr "没有未映射的账户与提供商代码匹配"
@@ -10888,7 +10888,7 @@ msgid "Pick"
 msgstr "拣选"
 
 msgid "Pick a batchable process to plan batches"
-msgstr ""
+msgstr "选择可批量的工序来规划批次"
 
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "选择一个 Carbon 维度和它发布到的提供商目标。自动创建在推送时按名称添加缺失的提供商选项。"
@@ -12124,7 +12124,7 @@ msgid "Remove Filters"
 msgstr "移除筛选"
 
 msgid "Remove from batch"
-msgstr ""
+msgstr "从批次中移除"
 
 msgid "Remove from Price List"
 msgstr "从价格列表中移除"
@@ -13035,7 +13035,7 @@ msgid "Select a assignee"
 msgstr "选择受理人"
 
 msgid "Select a batchable process"
-msgstr ""
+msgstr "选择可批量的工序"
 
 msgid "Select a default approver"
 msgstr "选择默认审批人"

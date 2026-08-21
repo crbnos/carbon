@@ -27,7 +27,7 @@ msgstr "{0} 前"
 
 #. placeholder {0}: members.length
 msgid "{0} jobs · {totalQuantity}"
-msgstr ""
+msgstr "{0} 个工作 · {totalQuantity}"
 
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
@@ -68,7 +68,7 @@ msgid "+{overflow} more"
 msgstr "还有 +{overflow} 个"
 
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
-msgstr ""
+msgstr "之前的完成未完成。重试会恢复剩余步骤 — 数量不会重复计数。"
 
 msgid "About"
 msgstr "关于"
@@ -264,7 +264,7 @@ msgid "Complete All"
 msgstr "全部完成"
 
 msgid "Complete Batch"
-msgstr ""
+msgstr "完成批次"
 
 msgid "Complete passed"
 msgstr "完成已通过"
@@ -426,7 +426,7 @@ msgid "Empty work centers"
 msgstr "空的工作中心"
 
 msgid "End Batch"
-msgstr ""
+msgstr "结束批次"
 
 msgid "End Operations"
 msgstr "结束工序"
@@ -1088,7 +1088,7 @@ msgid "Result"
 msgstr "结果"
 
 msgid "Retry Completion"
-msgstr ""
+msgstr "重试完成"
 
 msgid "Rework"
 msgstr "返工"
@@ -1295,7 +1295,7 @@ msgid "Start"
 msgstr "开始"
 
 msgid "Start Batch"
-msgstr ""
+msgstr "开始批次"
 
 msgid "Station User"
 msgstr "工位用户"
@@ -1374,7 +1374,7 @@ msgid "Thumbnail"
 msgstr "缩略图"
 
 msgid "Time and cost split across jobs proportionally to quantity."
-msgstr ""
+msgstr "时间和成本按数量比例分配到各个工作中。"
 
 msgid "Time Entries"
 msgstr "工时记录"

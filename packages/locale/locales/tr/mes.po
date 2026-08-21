@@ -27,7 +27,7 @@ msgstr "{0} önce"
 
 #. placeholder {0}: members.length
 msgid "{0} jobs · {totalQuantity}"
-msgstr ""
+msgstr "{0} iş · {totalQuantity}"
 
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
@@ -68,7 +68,7 @@ msgid "+{overflow} more"
 msgstr "+{overflow} daha fazla"
 
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
-msgstr ""
+msgstr "Önceki bir tamamlanma işlemi bitmedi. Yeniden deneme kalan adımları devam ettirir — miktarlar çifte sayılmaz."
 
 msgid "About"
 msgstr "Hakkında"
@@ -264,7 +264,7 @@ msgid "Complete All"
 msgstr "Tümünü Tamamla"
 
 msgid "Complete Batch"
-msgstr ""
+msgstr "Partiyi Tamamla"
 
 msgid "Complete passed"
 msgstr "Tamamlanan geçti"
@@ -426,7 +426,7 @@ msgid "Empty work centers"
 msgstr "Boş iş merkezleri"
 
 msgid "End Batch"
-msgstr ""
+msgstr "Partiyi Sonlandır"
 
 msgid "End Operations"
 msgstr "Operasyonları Sonlandır"
@@ -1088,7 +1088,7 @@ msgid "Result"
 msgstr "Sonuç"
 
 msgid "Retry Completion"
-msgstr ""
+msgstr "Tamamlanmayı Yeniden Dene"
 
 msgid "Rework"
 msgstr "Revizyon"
@@ -1295,7 +1295,7 @@ msgid "Start"
 msgstr "Başlat"
 
 msgid "Start Batch"
-msgstr ""
+msgstr "Partiyi Başlat"
 
 msgid "Station User"
 msgstr "İstasyon Kullanıcısı"
@@ -1374,7 +1374,7 @@ msgid "Thumbnail"
 msgstr "Küçük Resim"
 
 msgid "Time and cost split across jobs proportionally to quantity."
-msgstr ""
+msgstr "Zaman ve maliyet, miktara orantılı olarak işler arasında bölünür."
 
 msgid "Time Entries"
 msgstr "Zaman Girişleri"

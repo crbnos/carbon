@@ -2431,7 +2431,7 @@ msgid "Batch Number"
 msgstr "Номер партии"
 
 msgid "Batch planning"
-msgstr ""
+msgstr "Планирование партий"
 
 msgid "Batch Properties"
 msgstr "Свойства партии"
@@ -2446,10 +2446,10 @@ msgid "Batch Tracking"
 msgstr "Отслеживание партий"
 
 msgid "Batchable"
-msgstr ""
+msgstr "Допускает группировку"
 
 msgid "Batched"
-msgstr ""
+msgstr "Сгруппирован"
 
 msgid "Beginning"
 msgstr "Начало"
@@ -3220,13 +3220,13 @@ msgid "Completed Qty"
 msgstr "Завершённое кол-во"
 
 msgid "Completing"
-msgstr ""
+msgstr "Завершение"
 
 msgid "Completion Barcode"
 msgstr "Штрихкод завершения"
 
 msgid "Completion in progress — retry in Shop Floor"
-msgstr ""
+msgstr "Завершение в процессе — повторите попытку в цехе"
 
 msgid "Completion Time"
 msgstr "Время завершения"
@@ -5165,7 +5165,7 @@ msgid "Dispositions"
 msgstr "Решения"
 
 msgid "Dissolve batch"
-msgstr ""
+msgstr "Разбить партию"
 
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "Вы хотите перезаписать текущие разрешения пользователя разрешениями по умолчанию для этого типа сотрудника?"
@@ -5253,7 +5253,7 @@ msgid "Drag handle"
 msgstr "Ручка перетаскивания"
 
 msgid "Drag here to start a new batch"
-msgstr ""
+msgstr "Перетащите сюда для начала новой партии"
 
 msgid "Drag to place on drawing"
 msgstr "Перетащите, чтобы разместить на чертеже"
@@ -9201,7 +9201,7 @@ msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP запускается автоматически каждые 3 часа, но вы можете запустить его вручную здесь."
 
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
-msgstr ""
+msgstr "Несколько заданий могут выполняться на этом процессе одновременно — например, лазерный стол, печь или гальваническая ванна"
 
 msgid "Must be in the same location"
 msgstr "Должно быть в одном месте"
@@ -9973,7 +9973,7 @@ msgid "No transactions in this period"
 msgstr "Нет транзакций в этом периоде"
 
 msgid "No unbatched operations match"
-msgstr ""
+msgstr "Нет совпадающих несгруппированных операций"
 
 msgid "No unmapped accounts match a provider code"
 msgstr "Ни один несопоставленный счет не совпадает с кодом системы"
@@ -10888,7 +10888,7 @@ msgid "Pick"
 msgstr "Выбрать"
 
 msgid "Pick a batchable process to plan batches"
-msgstr ""
+msgstr "Выберите допускающий группировку процесс для планирования партий"
 
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Выберите размерность Carbon и цель провайдера, на которую она отправляется. Автоматическое создание добавляет отсутствующие параметры провайдера по имени во время отправки."
@@ -12124,7 +12124,7 @@ msgid "Remove Filters"
 msgstr "Удалить фильтры"
 
 msgid "Remove from batch"
-msgstr ""
+msgstr "Удалить из партии"
 
 msgid "Remove from Price List"
 msgstr "Удалить из прайс-листа"
@@ -13035,7 +13035,7 @@ msgid "Select a assignee"
 msgstr "Выберите исполнителя"
 
 msgid "Select a batchable process"
-msgstr ""
+msgstr "Выберите процесс, допускающий группировку"
 
 msgid "Select a default approver"
 msgstr "Выберите утверждающего по умолчанию"

@@ -27,7 +27,7 @@ msgstr "{0}前"
 
 #. placeholder {0}: members.length
 msgid "{0} jobs · {totalQuantity}"
-msgstr ""
+msgstr "{0} ジョブ · {totalQuantity}"
 
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
@@ -68,7 +68,7 @@ msgid "+{overflow} more"
 msgstr "+{overflow} その他"
 
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
-msgstr ""
+msgstr "前回の完了は終了しませんでした。再試行により残りのステップが再開されます。数量は二重計算されません。"
 
 msgid "About"
 msgstr "バージョン情報"
@@ -264,7 +264,7 @@ msgid "Complete All"
 msgstr "すべて完了"
 
 msgid "Complete Batch"
-msgstr ""
+msgstr "バッチを完了"
 
 msgid "Complete passed"
 msgstr "完了済みを完了"
@@ -426,7 +426,7 @@ msgid "Empty work centers"
 msgstr "空の作業センター"
 
 msgid "End Batch"
-msgstr ""
+msgstr "バッチを終了"
 
 msgid "End Operations"
 msgstr "工程を終了"
@@ -1088,7 +1088,7 @@ msgid "Result"
 msgstr "結果"
 
 msgid "Retry Completion"
-msgstr ""
+msgstr "完了を再試行"
 
 msgid "Rework"
 msgstr "リワーク"
@@ -1295,7 +1295,7 @@ msgid "Start"
 msgstr "開始"
 
 msgid "Start Batch"
-msgstr ""
+msgstr "バッチを開始"
 
 msgid "Station User"
 msgstr "ステーションユーザー"
@@ -1374,7 +1374,7 @@ msgid "Thumbnail"
 msgstr "サムネイル"
 
 msgid "Time and cost split across jobs proportionally to quantity."
-msgstr ""
+msgstr "時間とコストは数量に比例してジョブ全体に按分されます。"
 
 msgid "Time Entries"
 msgstr "タイムエントリー"

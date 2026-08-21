@@ -2431,7 +2431,7 @@ msgid "Batch Number"
 msgstr "Numero Lotto"
 
 msgid "Batch planning"
-msgstr ""
+msgstr "Pianificazione batch"
 
 msgid "Batch Properties"
 msgstr "Proprietà Batch"
@@ -2446,10 +2446,10 @@ msgid "Batch Tracking"
 msgstr "Tracciamento Batch"
 
 msgid "Batchable"
-msgstr ""
+msgstr "Raggruppabile"
 
 msgid "Batched"
-msgstr ""
+msgstr "Raggruppato"
 
 msgid "Beginning"
 msgstr "Inizio"
@@ -3220,13 +3220,13 @@ msgid "Completed Qty"
 msgstr "Quantità Completata"
 
 msgid "Completing"
-msgstr ""
+msgstr "Completamento in corso"
 
 msgid "Completion Barcode"
 msgstr "Codice a barre di completamento"
 
 msgid "Completion in progress — retry in Shop Floor"
-msgstr ""
+msgstr "Completamento in corso — riprova in Shop Floor"
 
 msgid "Completion Time"
 msgstr "Tempo di completamento"
@@ -5165,7 +5165,7 @@ msgid "Dispositions"
 msgstr "Disposizioni"
 
 msgid "Dissolve batch"
-msgstr ""
+msgstr "Elimina batch"
 
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "Vuoi sovrascrivere i permessi attuali dell'utente con i permessi predefiniti per questo tipo di dipendente?"
@@ -5253,7 +5253,7 @@ msgid "Drag handle"
 msgstr "Maniglia di trascinamento"
 
 msgid "Drag here to start a new batch"
-msgstr ""
+msgstr "Trascinare qui per avviare un nuovo batch"
 
 msgid "Drag to place on drawing"
 msgstr "Trascina per posizionare sul disegno"
@@ -9201,7 +9201,7 @@ msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP viene eseguito automaticamente ogni 3 ore, ma puoi eseguirlo manualmente qui."
 
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
-msgstr ""
+msgstr "Più lavori possono essere eseguiti su questo processo contemporaneamente — ad es. un tavolo laser, forno o vasca di placcatura"
 
 msgid "Must be in the same location"
 msgstr "Deve essere nella stessa posizione"
@@ -9973,7 +9973,7 @@ msgid "No transactions in this period"
 msgstr "Nessuna transazione in questo periodo"
 
 msgid "No unbatched operations match"
-msgstr ""
+msgstr "Nessuna operazione non raggruppata corrisponde"
 
 msgid "No unmapped accounts match a provider code"
 msgstr "Nessun conto non mappato corrisponde a un codice provider"
@@ -10888,7 +10888,7 @@ msgid "Pick"
 msgstr "Preleva"
 
 msgid "Pick a batchable process to plan batches"
-msgstr ""
+msgstr "Selezionare un processo raggruppabile per pianificare i batch"
 
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Scegli una dimensione Carbon e il target provider su cui viene contabilizzato. La creazione automatica aggiunge le opzioni provider mancanti per nome al momento del push."
@@ -12124,7 +12124,7 @@ msgid "Remove Filters"
 msgstr "Rimuovi filtri"
 
 msgid "Remove from batch"
-msgstr ""
+msgstr "Rimuovi dal batch"
 
 msgid "Remove from Price List"
 msgstr "Rimuovi da Listino Prezzi"
@@ -13035,7 +13035,7 @@ msgid "Select a assignee"
 msgstr "Seleziona un assegnatario"
 
 msgid "Select a batchable process"
-msgstr ""
+msgstr "Selezionare un processo raggruppabile"
 
 msgid "Select a default approver"
 msgstr "Seleziona un approvatore predefinito"

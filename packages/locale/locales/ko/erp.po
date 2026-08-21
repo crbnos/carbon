@@ -2431,7 +2431,7 @@ msgid "Batch Number"
 msgstr "배치 번호"
 
 msgid "Batch planning"
-msgstr ""
+msgstr "배치 계획"
 
 msgid "Batch Properties"
 msgstr "배치 속성"
@@ -2446,10 +2446,10 @@ msgid "Batch Tracking"
 msgstr "배치 추적"
 
 msgid "Batchable"
-msgstr ""
+msgstr "배치 가능한"
 
 msgid "Batched"
-msgstr ""
+msgstr "배치됨"
 
 msgid "Beginning"
 msgstr "시작"
@@ -3220,13 +3220,13 @@ msgid "Completed Qty"
 msgstr "완료 수량"
 
 msgid "Completing"
-msgstr ""
+msgstr "완료 중"
 
 msgid "Completion Barcode"
 msgstr "완료 바코드"
 
 msgid "Completion in progress — retry in Shop Floor"
-msgstr ""
+msgstr "완료 진행 중 — 작업 현장에서 다시 시도하세요"
 
 msgid "Completion Time"
 msgstr "완료 시간"
@@ -5165,7 +5165,7 @@ msgid "Dispositions"
 msgstr "처리"
 
 msgid "Dissolve batch"
-msgstr ""
+msgstr "배치 해제"
 
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "이 직원 유형의 기본 권한으로 사용자의 현재 권한을 덮어쓰시겠습니까?"
@@ -5253,7 +5253,7 @@ msgid "Drag handle"
 msgstr "드래그 핸들"
 
 msgid "Drag here to start a new batch"
-msgstr ""
+msgstr "새 배치를 시작하려면 여기로 드래그하세요"
 
 msgid "Drag to place on drawing"
 msgstr "드래그하여 도면에 배치"
@@ -9201,7 +9201,7 @@ msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP는 3시간마다 자동으로 실행되지만, 여기서 수동으로 실행할 수도 있습니다."
 
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
-msgstr ""
+msgstr "여러 작업이 이 프로세스에서 동시에 실행될 수 있습니다 — 예: 레이저 테이블, 용광로 또는 도금 욕조"
 
 msgid "Must be in the same location"
 msgstr "동일한 위치에 있어야 합니다"
@@ -9973,7 +9973,7 @@ msgid "No transactions in this period"
 msgstr "이 기간에 거래가 없습니다"
 
 msgid "No unbatched operations match"
-msgstr ""
+msgstr "일치하는 배치되지 않은 작업이 없습니다"
 
 msgid "No unmapped accounts match a provider code"
 msgstr "매핑되지 않은 계정이 공급자 코드와 일치하지 않음"
@@ -10888,7 +10888,7 @@ msgid "Pick"
 msgstr "피킹"
 
 msgid "Pick a batchable process to plan batches"
-msgstr ""
+msgstr "배치를 계획하려면 배치 가능한 프로세스를 선택하세요"
 
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Carbon 차원과 게시할 제공자 대상을 선택하세요. 자동 생성은 푸시 시간에 이름으로 누락된 제공자 옵션을 추가합니다."
@@ -12124,7 +12124,7 @@ msgid "Remove Filters"
 msgstr "필터 제거"
 
 msgid "Remove from batch"
-msgstr ""
+msgstr "배치에서 제거"
 
 msgid "Remove from Price List"
 msgstr "가격표에서 제거"
@@ -13035,7 +13035,7 @@ msgid "Select a assignee"
 msgstr "담당자 선택"
 
 msgid "Select a batchable process"
-msgstr ""
+msgstr "배치 가능한 프로세스를 선택하세요"
 
 msgid "Select a default approver"
 msgstr "기본 승인자 선택"

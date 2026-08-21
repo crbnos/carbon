@@ -2431,7 +2431,7 @@ msgid "Batch Number"
 msgstr "बैच नंबर"
 
 msgid "Batch planning"
-msgstr ""
+msgstr "बैच योजना"
 
 msgid "Batch Properties"
 msgstr "बैच प्रॉपर्टीज़"
@@ -2446,10 +2446,10 @@ msgid "Batch Tracking"
 msgstr "बैच ट्रैकिंग"
 
 msgid "Batchable"
-msgstr ""
+msgstr "बैच योग्य"
 
 msgid "Batched"
-msgstr ""
+msgstr "बैच किया गया"
 
 msgid "Beginning"
 msgstr "आरंभ"
@@ -3220,13 +3220,13 @@ msgid "Completed Qty"
 msgstr "पूर्ण मात्रा"
 
 msgid "Completing"
-msgstr ""
+msgstr "पूरा कर रहा है"
 
 msgid "Completion Barcode"
 msgstr "पूर्ण बारकोड"
 
 msgid "Completion in progress — retry in Shop Floor"
-msgstr ""
+msgstr "पूर्णता प्रगति में है — Shop Floor में फिर से प्रयास करें"
 
 msgid "Completion Time"
 msgstr "पूर्ण होने का समय"
@@ -5165,7 +5165,7 @@ msgid "Dispositions"
 msgstr "निपटान"
 
 msgid "Dissolve batch"
-msgstr ""
+msgstr "बैच को भंग करें"
 
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "क्या आप उपयोगकर्ता की वर्तमान अनुमतियों को इस कर्मचारी प्रकार के लिए डिफ़ॉल्ट अनुमतियों से अधिलेखित करना चाहते हैं?"
@@ -5253,7 +5253,7 @@ msgid "Drag handle"
 msgstr "ड्रैग हैंडल"
 
 msgid "Drag here to start a new batch"
-msgstr ""
+msgstr "नया बैच शुरू करने के लिए यहाँ खींचें"
 
 msgid "Drag to place on drawing"
 msgstr "ड्राइंग पर रखने के लिए ड्रैग करें"
@@ -9201,7 +9201,7 @@ msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP हर 3 घंटे में स्वचालित रूप से चलता है, लेकिन आप इसे यहां मैन्युअल रूप से चला सकते हैं।"
 
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
-msgstr ""
+msgstr "इस प्रक्रिया पर एक ही समय में कई नौकरियाँ चल सकती हैं — उदाहरण के लिए, लेजर टेबल, भट्टी, या चढ़ाने का स्नान"
 
 msgid "Must be in the same location"
 msgstr "एक ही स्थान में होना चाहिए"
@@ -9973,7 +9973,7 @@ msgid "No transactions in this period"
 msgstr "इस अवधि में कोई लेनदेन नहीं"
 
 msgid "No unbatched operations match"
-msgstr ""
+msgstr "कोई अनबैच किए गए ऑपरेशन मेल नहीं खाते"
 
 msgid "No unmapped accounts match a provider code"
 msgstr "कोई भी अनमैप किया गया खाता प्रदाता कोड से मेल नहीं खाता"
@@ -10888,7 +10888,7 @@ msgid "Pick"
 msgstr "चुनें"
 
 msgid "Pick a batchable process to plan batches"
-msgstr ""
+msgstr "बैच योजना बनाने के लिए एक बैच योग्य प्रक्रिया चुनें"
 
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "एक Carbon आयाम चुनें और प्रदाता लक्ष्य चुनें जहां यह पोस्ट करता है। स्वचालित-निर्माण पुश समय पर नाम से लापता प्रदाता विकल्प जोड़ता है।"
@@ -12124,7 +12124,7 @@ msgid "Remove Filters"
 msgstr "फ़िल्टर हटाएं"
 
 msgid "Remove from batch"
-msgstr ""
+msgstr "बैच से हटाएं"
 
 msgid "Remove from Price List"
 msgstr "मूल्य सूची से हटाएं"
@@ -13035,7 +13035,7 @@ msgid "Select a assignee"
 msgstr "एक असाइनी चुनें"
 
 msgid "Select a batchable process"
-msgstr ""
+msgstr "एक बैच योग्य प्रक्रिया चुनें"
 
 msgid "Select a default approver"
 msgstr "एक डिफ़ॉल्ट अनुमोदक चुनें"
