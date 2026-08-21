@@ -37,7 +37,9 @@ export type ReservationInterval = {
 };
 
 export type ResourceCapacityData = {
-  workCenter: { id: string };
+  /** `alwaysOn` = a lights-out (24×7 unattended) station; exempt from the
+   * require-staffing policy's machine-only-fallback removal. */
+  workCenter: { id: string; alwaysOn?: boolean };
   windows: CalendarWindow[]; // the scheduling horizon (always open)
   reservations: ReservationInterval[]; // other jobs + earlier ops this run
 };
@@ -227,8 +229,8 @@ function simulateAttended(args: {
   let incumbent: string | null = null;
 
   for (let i = 0; i < points.length - 1; i++) {
-    const stretchStart = points[i];
-    const stretchEnd = points[i + 1];
+    const stretchStart = points[i]!;
+    const stretchEnd = points[i + 1]!;
     if (stretchStart >= horizonMs) break;
 
     const available = members.filter((m) =>
@@ -268,7 +270,7 @@ function simulateAttended(args: {
     if (accumulatedMs >= attendedMs) {
       return {
         segments,
-        start: segments[0].startAt,
+        start: segments[0]!.startAt,
         attendedEnd: new Date(segEnd),
       };
     }
@@ -358,8 +360,8 @@ function simulateAttendedTeam(args: {
   };
 
   for (let i = 0; i < points.length - 1; i++) {
-    let cursor = points[i];
-    const stretchEnd = points[i + 1];
+    let cursor = points[i]!;
+    const stretchEnd = points[i + 1]!;
     if (cursor >= horizonMs) break;
 
     // Availability is constant within a stretch (all window/busy edges are
@@ -389,7 +391,7 @@ function simulateAttendedTeam(args: {
       if (setupDoneMs >= setupMs && laborDoneMs >= laborMs) {
         return {
           segments,
-          start: segments[0].startAt,
+          start: segments[0]!.startAt,
           attendedEnd: new Date(cursor),
           laborActiveWallMs,
         };

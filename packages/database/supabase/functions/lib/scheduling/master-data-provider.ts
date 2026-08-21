@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
-import type { DB } from "../database.ts";
+import type { DB } from "../postgres/index.ts";
 import { getJobMethodTree, type JobMethodTreeItem } from "../methods.ts";
 import type { Database } from "../types.ts";
 import { parseDate } from "@internationalized/date";
@@ -189,6 +189,10 @@ export interface MasterDataProvider {
     rangeStart: Date,
     rangeEnd: Date
   ): Promise<CalendarWindow[]>;
+  /** The location's `requiresStaffing` scheduling policy (default false). */
+  getLocationRequiresStaffing(locationId: string): Promise<boolean>;
+  /** The subset of the given work centers flagged `alwaysOn` (lights-out). */
+  getAlwaysOnWorkCenterIds(workCenterIds: string[]): Promise<Set<string>>;
   getPeopleAssignments(
     rangeStart: Date,
     rangeEnd: Date,
@@ -478,6 +482,9 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       ])
       .where("cr.companyId", "=", this.companyId)
       .where("cr.scenarioId", "is", null)
+      // Placeholder reservations are display-only markers for unplaceable ops —
+      // they must never hold capacity against other jobs or the next regen.
+      .where("cr.isPlaceholder", "is not", true)
       .where("cr.endAt", ">", fromDate.toISOString());
     // Exclude the whole batch: each engine run sees only non-batch reservations
     // plus the in-run placements of already-run batch jobs (no pre-clear step).
@@ -525,6 +532,37 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       }
     }
     return result;
+  }
+
+  getLocationRequiresStaffing(locationId: string): Promise<boolean> {
+    return this.cached(`locationRequiresStaffing:${locationId}`, async () => {
+      const row = await this.db
+        .selectFrom("location")
+        .select("requiresStaffing")
+        .where("id", "=", locationId)
+        .where("companyId", "=", this.companyId)
+        .executeTakeFirst();
+      return !!row?.requiresStaffing;
+    });
+  }
+
+  getAlwaysOnWorkCenterIds(workCenterIds: string[]): Promise<Set<string>> {
+    return this.cached(
+      `alwaysOnWorkCenters:${[...workCenterIds].sort().join(",")}`,
+      async () => {
+        const result = new Set<string>();
+        if (workCenterIds.length === 0) return result;
+        const rows = await this.db
+          .selectFrom("workCenter")
+          .select("id")
+          .where("id", "in", workCenterIds)
+          .where("companyId", "=", this.companyId)
+          .where("alwaysOn", "=", true)
+          .execute();
+        for (const r of rows) result.add(r.id);
+        return result;
+      }
+    );
   }
 
   async getProcessRequirements(

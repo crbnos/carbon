@@ -1,6 +1,6 @@
 import { Kysely } from "kysely";
 
-import { DB } from "../database.ts";
+import type { DB } from "../postgres/index.ts";
 import type { MasterDataProvider } from "./master-data-provider.ts";
 import { BaseOperation } from "./types.ts";
 

@@ -33,7 +33,6 @@ import {
   LuClipboardCheck,
   LuClock,
   LuClock3,
-  LuCog,
   LuContainer,
   LuCreditCard,
   LuExternalLink,
@@ -52,6 +51,7 @@ import {
   LuMapPin,
   LuPizza,
   LuQrCode,
+  LuRedoDot,
   LuRotateCcw,
   LuShoppingCart,
   LuSquare,
@@ -679,7 +679,7 @@ export const DimensionEntityTypeIcon = ({
     case "WorkCenter":
       return <LuLocateFixed className={className} />;
     case "Process":
-      return <LuCog className={className} />;
+      return <LuRedoDot className={className} />;
     case "ScrapReason":
       return <LuTriangleAlert className={className} />;
   }

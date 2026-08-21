@@ -114,6 +114,38 @@ export function buildPeopleByWorkCenter(
 }
 
 /**
+ * employeeId -> dateKey -> the set of work centers the person is assigned at
+ * that day. The manning board read: a person on the board that day is
+ * "committed" to those stations. Empty when the board is blank (no
+ * assignments in the horizon), which keeps blank-board scheduling identical to
+ * pre-people behavior. Derived from the same rows as buildPeopleByWorkCenter
+ * (absent people already removed by the caller).
+ */
+export function buildAssignmentsByEmployee(
+  peopleByWorkCenter: Map<string, Map<string, string[]>>
+): Map<string, Map<string, Set<string>>> {
+  const map = new Map<string, Map<string, Set<string>>>();
+  for (const [workCenterId, byDate] of peopleByWorkCenter) {
+    for (const [dateKey, employeeIds] of byDate) {
+      for (const employeeId of employeeIds) {
+        let byDateForEmployee = map.get(employeeId);
+        if (!byDateForEmployee) {
+          byDateForEmployee = new Map();
+          map.set(employeeId, byDateForEmployee);
+        }
+        let stations = byDateForEmployee.get(dateKey);
+        if (!stations) {
+          stations = new Set();
+          byDateForEmployee.set(dateKey, stations);
+        }
+        stations.add(workCenterId);
+      }
+    }
+  }
+  return map;
+}
+
+/**
  * absence rows -> employeeId -> Set of absent dateKeys.
  * v1: a shift-scoped absence counts as the whole day.
  */
@@ -133,6 +165,29 @@ export function buildAbsencesByEmployee(
 }
 
 /**
+ * Remove the parts of an availability-window list that fall on the given local
+ * dates. Empty `dates` returns the input untouched (byte-identical windows).
+ * The primitive behind both absence subtraction and the "committed elsewhere"
+ * clip in the any-qualified fallback.
+ */
+export function subtractDates(
+  windows: CalendarWindow[],
+  dates: Set<string>,
+  timeZone: string
+): CalendarWindow[] {
+  if (dates.size === 0) return windows;
+  const kept: DaySegment[] = [];
+  for (const window of windows) {
+    for (const segment of splitWindowByLocalDays(window, timeZone)) {
+      if (!dates.has(segment.dateKey)) {
+        kept.push(segment);
+      }
+    }
+  }
+  return mergeSegments(kept);
+}
+
+/**
  * Remove the parts of an employee's availability windows that fall on absent
  * dates. Empty `absentDates` returns the input untouched (empty-board /
  * no-absence guarantee: byte-identical windows).
@@ -142,16 +197,7 @@ export function subtractAbsences(
   absentDates: Set<string>,
   timeZone: string
 ): CalendarWindow[] {
-  if (absentDates.size === 0) return windows;
-  const kept: DaySegment[] = [];
-  for (const window of windows) {
-    for (const segment of splitWindowByLocalDays(window, timeZone)) {
-      if (!absentDates.has(segment.dateKey)) {
-        kept.push(segment);
-      }
-    }
-  }
-  return mergeSegments(kept);
+  return subtractDates(windows, absentDates, timeZone);
 }
 
 /**
@@ -244,7 +290,7 @@ export function extendWindowsByOvertime(
     const current = lastWindowIndexByDate.get(dateKey);
     if (
       current === undefined ||
-      window.end.getTime() > windows[current].end.getTime()
+      window.end.getTime() > windows[current]!.end.getTime()
     ) {
       lastWindowIndexByDate.set(dateKey, index);
     }
@@ -325,7 +371,7 @@ export function clipWindowsToStation(
     segments.sort((a, b) => a.start.getTime() - b.start.getTime());
     const dayRows = dayRowsByDate?.get(dateKey);
     const isWholeDay =
-      !dayRows || (dayRows.length === 1 && dayRows[0].hours === null);
+      !dayRows || (dayRows.length === 1 && dayRows[0]!.hours === null);
     if (isWholeDay) {
       kept.push(...segments);
       continue;

@@ -16,11 +16,11 @@ import {
   LuAward,
   LuBuilding2,
   LuCheck,
-  LuCog,
   LuFactory,
   LuPencil,
   LuPower,
   LuQrCode,
+  LuRedoDot,
   LuRuler,
   LuTrash,
   LuTriangleAlert,
@@ -92,7 +92,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
             </Hyperlink>
           ),
         meta: {
-          icon: <LuCog />
+          icon: <LuRedoDot />
         }
       },
       {

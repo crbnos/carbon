@@ -7,7 +7,7 @@ const HOUR = 3_600_000;
 function reservation(
   overrides: Partial<ResourceTimelineReservation>
 ): ResourceTimelineReservation {
-  return {
+  const merged: ResourceTimelineReservation = {
     id: "res-1",
     resourceKind: "WorkCenter",
     resourceId: "wc-1",
@@ -16,11 +16,18 @@ function reservation(
     endAt: "2026-07-14T10:00:00.000Z",
     jobId: "job-1",
     jobReadableId: "J000001",
+    operationId: "op-1",
     operationDescription: "CNC Route",
     hasConflict: false,
     conflictReason: null,
+    unschedulable: false,
     ...overrides
   };
+  // Each reservation is its own operation unless a test deliberately links a
+  // machine hold and an operator segment by passing the same operationId.
+  if (overrides.operationId === undefined)
+    merged.operationId = `op-${merged.id}`;
+  return merged;
 }
 
 describe("buildResourceTimeline", () => {
@@ -54,8 +61,8 @@ describe("buildResourceTimeline", () => {
 
     const child = result.events.find((e) => e.id === "res-2")!;
     expect(child.parentId).toBe(lane.id);
-    // Row is titled by the job id alone — the lane already names the process
-    expect(child.data.message).toBe("J000009");
+    // The operation node reads "{job} · {op}" under its station.
+    expect(child.data.message).toBe("J000009 · CNC Route");
     expect(child.data.offset).toBe(2 * HOUR);
     expect(child.data.duration).toBe(2 * HOUR);
   });
@@ -122,40 +129,77 @@ describe("buildResourceTimeline", () => {
     expect(laneIds).toEqual(["CNC Router", "Weld Cell 1", "Welding operators"]);
   });
 
-  it("named-operator (Employee) lanes render by person name between machines and pools", () => {
+  it("nests operators under the OPERATION they staffed (WC > Op > People)", () => {
     const result = buildResourceTimeline({
       reservations: [
+        // The Clean op runs on Timesaver (machine hold) …
         reservation({
-          id: "res-pool",
-          resourceKind: "OperatorPool",
-          resourceId: "ab-1",
-          resourceName: "Welding"
+          id: "res-machine",
+          resourceId: "wc-ts",
+          resourceName: "Timesaver",
+          operationId: "op-clean",
+          operationDescription: "Clean"
         }),
+        // … staffed by Brad (attended segment) — same operationId.
         reservation({
           id: "res-emp",
           resourceKind: "Employee",
           resourceId: "emp-1",
-          resourceName: "Sam Smith"
+          resourceName: "Brad Barbin",
+          operationId: "op-clean",
+          operationDescription: "Clean"
         }),
-        reservation({ id: "res-a" }) // CNC Router (WorkCenter)
+        reservation({ id: "res-a" }) // CNC Router (unrelated WorkCenter)
       ]
     });
 
-    const laneMessages = result.events
+    // Top-level lanes are WORK CENTERS only — no peer "Brad Barbin" row.
+    const topLevel = result.events
       .filter((e) => e.parentId === "resources-root")
       .map((e) => e.data.message);
-    // person lane keeps the raw name — no "operators" suffix
-    expect(laneMessages).toEqual([
-      "CNC Router",
-      "Sam Smith",
-      "Welding operators"
-    ]);
+    expect(topLevel).toEqual(["CNC Router", "Timesaver"]);
 
-    const personLane = result.events.find(
-      (e) => e.id === "lane:Employee:emp-1"
+    // Timesaver's child is the OPERATION node (the machine hold).
+    const timesaver = result.events.find(
+      (e) => e.id === "lane:WorkCenter:wc-ts"
     )!;
-    expect(personLane.data.style?.icon).toBe("wait");
-    expect(personLane.children).toEqual(["res-emp"]);
+    expect(timesaver.children).toEqual(["res-machine"]);
+    const op = result.events.find((e) => e.id === "res-machine")!;
+    expect(op.parentId).toBe(timesaver.id);
+    expect(op.data.message).toBe("J000001 · Clean");
+    expect(op.level).toBe(2);
+
+    // Brad's attended segment nests UNDER the operation (level 3), a person row.
+    expect(op.children).toEqual(["res-emp"]);
+    const brad = result.events.find((e) => e.id === "res-emp")!;
+    expect(brad.parentId).toBe("res-machine");
+    expect(brad.level).toBe(3);
+    expect(brad.data.message).toBe("Brad Barbin");
+    expect(brad.data.style?.icon).toBe("person");
+    // Depth-first: the operator segment immediately trails its operation node.
+    const ids = result.events.map((e) => e.id);
+    expect(ids.indexOf("res-emp")).toBe(ids.indexOf("res-machine") + 1);
+  });
+
+  it("falls back to a top-level operator lane when the op has no machine reservation", () => {
+    // An Employee reservation whose op has no WorkCenter reservation can't be
+    // located under a work center — its hours must not be dropped.
+    const result = buildResourceTimeline({
+      reservations: [
+        reservation({
+          id: "res-orphan",
+          resourceKind: "Employee",
+          resourceId: "emp-9",
+          resourceName: "Pat Lee",
+          operationId: "op-unmatched"
+        })
+      ]
+    });
+
+    const lane = result.events.find((e) => e.id === "lane:Employee:emp-9")!;
+    expect(lane.parentId).toBe("resources-root");
+    expect(lane.data.message).toBe("Pat Lee");
+    expect(lane.children).toEqual(["res-orphan"]);
   });
 
   it("keeps the events array depth-first so every subtree is contiguous", () => {
@@ -209,6 +253,29 @@ describe("buildResourceTimeline", () => {
     expect(result.detailsById["res-2"].conflictReason).toContain(
       "queued behind J000001"
     );
+  });
+
+  it("flags an unschedulable placeholder on the op row, its lane, and its detail", () => {
+    const result = buildResourceTimeline({
+      workCenters: [{ id: "wc-1", name: "CNC Router" }],
+      reservations: [
+        reservation({
+          id: "res-blocked",
+          hasConflict: true,
+          conflictReason: "No qualified operator for Timesaver",
+          unschedulable: true
+        })
+      ]
+    });
+
+    const child = result.events.find((e) => e.id === "res-blocked")!;
+    const lane = result.events.find((e) => e.id === "lane:WorkCenter:wc-1")!;
+    // Same red bar (isError), but the stronger "can't be scheduled" alert rides
+    // isUnschedulable on BOTH the op row and its work-center lane.
+    expect(child.data.isError).toBe(true);
+    expect(child.data.isUnschedulable).toBe(true);
+    expect(lane.data.isUnschedulable).toBe(true);
+    expect(result.detailsById["res-blocked"].unschedulable).toBe(true);
   });
 
   it("carries each reservation's owning job into its detail", () => {

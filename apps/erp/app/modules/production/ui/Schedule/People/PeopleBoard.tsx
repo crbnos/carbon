@@ -63,6 +63,8 @@ type PeopleBoardProps = {
     abilityId: string;
     expiresAt: string | null;
   }[];
+  /** employeeId → their qualified ability names, for the card badges */
+  employeeAbilityNames: Record<string, string[]>;
   shiftHoursById: Record<string, number>;
   employeeShiftHours: Record<string, number>;
   defaultShiftHours: number;
@@ -109,6 +111,7 @@ const PeopleBoard = ({
   requiredAbilities,
   requiredHoursByWorkCenter,
   employeeAbilities,
+  employeeAbilityNames,
   shiftHoursById,
   employeeShiftHours,
   defaultShiftHours,
@@ -250,6 +253,7 @@ const PeopleBoard = ({
       const dayEndTime = dayEndFor(employee.id, rows);
       // day-scoped note (setPeopleDay writes it to every row)
       const note = rows.find((row) => row.note)?.note ?? null;
+      const abilities = employeeAbilityNames[employee.id] ?? [];
 
       // Absent people always sit (grayed) at the bottom of Unassigned — their
       // assignment rows survive so clearing the absence restores the station.
@@ -260,6 +264,7 @@ const PeopleBoard = ({
           isAbsent: true,
           absenceId: absence.id,
           missingAbilities: [],
+          abilities,
           freeHours: null,
           displayHours: null,
           dayRows,
@@ -281,6 +286,7 @@ const PeopleBoard = ({
           isAbsent: false,
           absenceId: null,
           missingAbilities: missingAbilitiesFor(employee.id, row.workCenterId),
+          abilities,
           freeHours: null,
           displayHours: Math.round(effectiveHours(row) * 100) / 100,
           dayRows,
@@ -301,6 +307,7 @@ const PeopleBoard = ({
           isAbsent: false,
           absenceId: null,
           missingAbilities: [],
+          abilities,
           freeHours: null,
           displayHours: null,
           dayRows,
@@ -321,6 +328,7 @@ const PeopleBoard = ({
             isAbsent: false,
             absenceId: null,
             missingAbilities: [],
+            abilities,
             freeHours: Math.round(free * 100) / 100,
             displayHours: null,
             dayRows,
@@ -352,7 +360,8 @@ const PeopleBoard = ({
     employeeShiftEnd,
     defaultShiftStart,
     defaultShiftEnd,
-    shiftId
+    shiftId,
+    employeeAbilityNames
   ]);
 
   const submitIntent = (payload: Record<string, string>) => {

@@ -843,9 +843,6 @@ msgstr "capacidade"
 msgid "Ability"
 msgstr "Capacidade"
 
-msgid "Ability-gated work only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
-msgstr "Trabalho com capacidade restrita só funciona quando um operador qualificado está de turno; operadores atribuídos no quadro de pessoal moldam ainda mais a mão de obra disponível."
-
 msgid "About"
 msgstr "Sobre"
 
@@ -6724,6 +6721,9 @@ msgstr "Falha ao carregar entidades rastreadas"
 msgid "Failed to move account: {0}"
 msgstr "Falha ao mover conta: {0}"
 
+msgid "Failed to regenerate schedule"
+msgstr ""
+
 msgid "Failed to regenerate thumbnail"
 msgstr "Falha ao regenerar miniatura"
 
@@ -10587,6 +10587,9 @@ msgstr "Apenas períodos vazios e abertos podem ser deletados."
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "Apenas funcionários qualificados podem ser agendados e executar este processo"
 
+msgid "Only schedule operations where an operator is assigned on the manning board. Unstaffed work centers get no work — an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "O Onshape autorizou a conexão, mas não foi possível salvá-la. Tente conectar novamente."
 
@@ -12420,6 +12423,12 @@ msgstr "Atualizar"
 msgid "Refresh exchange rate"
 msgstr "Atualizar taxa de câmbio"
 
+msgid "Regenerate"
+msgstr ""
+
+msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
+msgstr ""
+
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "Regenerar miniatura do modelo 3D"
 
@@ -12685,6 +12694,9 @@ msgstr "Exigir aprovação para pedidos de compra com base em limites de valor"
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "Exigir aprovação para documentos de qualidade no seu fluxo de trabalho"
+
+msgid "Require staffing to schedule"
+msgstr ""
 
 msgid "Require two-factor authentication"
 msgstr "Requerer autenticação de dois fatores"
@@ -13301,6 +13313,9 @@ msgstr "Agendar trabalhos contra capacidade do centro de trabalho"
 
 msgid "Schedule Name"
 msgstr "Nome da Agenda"
+
+msgid "Schedule regenerated"
+msgstr ""
 
 msgid "Scheduled"
 msgstr "Agendado"
@@ -14289,6 +14304,9 @@ msgstr "Dividir linha de recebimento"
 
 msgid "Split shipment line"
 msgstr "Dividir linha de envio"
+
+msgid "Staffing required"
+msgstr ""
 
 msgid "Stand up hosting"
 msgstr "Configurar hospedagem"
@@ -15856,6 +15874,12 @@ msgstr "Este trabalho não estará mais disponível no chão de fábrica."
 msgid "This job's own required quantity for the material."
 msgstr "A quantidade própria exigida por este trabalho para o material."
 
+msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
+msgstr ""
+
+msgid "This location only schedules work where an operator is assigned on the manning board. With no one assigned here, work is not scheduled and shows as unschedulable."
+msgstr ""
+
 msgid "This lot is expired and can't be picked."
 msgstr "Este lote expirou e não pode ser selecionado."
 
@@ -15915,6 +15939,12 @@ msgstr "Esta ordem de venda tem trabalhos associados. Escolha o que fazer com el
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "Esta ordem de venda tem linhas que requerem a criação de trabalhos"
+
+msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
+msgstr ""
+
+msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
+msgstr ""
 
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."

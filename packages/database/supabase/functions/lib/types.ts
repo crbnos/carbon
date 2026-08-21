@@ -5127,6 +5127,7 @@ export type Database = {
           earliestStartAt: string | null
           endAt: string
           id: string
+          isPlaceholder: boolean
           jobId: string
           operationId: string
           resourceId: string
@@ -5145,6 +5146,7 @@ export type Database = {
           earliestStartAt?: string | null
           endAt: string
           id?: string
+          isPlaceholder?: boolean
           jobId: string
           operationId: string
           resourceId: string
@@ -5163,6 +5165,7 @@ export type Database = {
           earliestStartAt?: string | null
           endAt?: string
           id?: string
+          isPlaceholder?: boolean
           jobId?: string
           operationId?: string
           resourceId?: string
@@ -25631,6 +25634,7 @@ export type Database = {
           longitude: number | null
           name: string
           postalCode: string
+          requiresStaffing: boolean
           stateProvince: string | null
           tags: string[] | null
           timezone: string
@@ -25652,6 +25656,7 @@ export type Database = {
           longitude?: number | null
           name: string
           postalCode: string
+          requiresStaffing?: boolean
           stateProvince?: string | null
           tags?: string[] | null
           timezone: string
@@ -25673,6 +25678,7 @@ export type Database = {
           longitude?: number | null
           name?: string
           postalCode?: string
+          requiresStaffing?: boolean
           stateProvince?: string | null
           tags?: string[] | null
           timezone?: string

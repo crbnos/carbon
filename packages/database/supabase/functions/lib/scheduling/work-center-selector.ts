@@ -81,6 +81,24 @@ export type FiniteSchedulingContext = {
    */
   peopleByWorkCenter: Map<string, Map<string, string[]>>;
   /**
+   * Manning board, inverted: employeeId -> dateKey -> the stations the person
+   * is assigned at that day. A manned person is committed to those stations, so
+   * the any-qualified fallback relay excludes them from every OTHER station on
+   * those days (interpretation B — the board is a commitment, not a soft
+   * preference). Empty when the board is blank => fallback behaves exactly as
+   * before.
+   */
+  assignmentsByEmployee: Map<string, Map<string, Set<string>>>;
+  /**
+   * Per-location "Require staffing to schedule" policy (`location.requiresStaffing`).
+   * When true the finite scheduler places work ONLY where an operator is manned:
+   * the gated any-qualified floater fallback is disabled, and the ungated
+   * machine-only fallback is disabled EXCEPT on lights-out (`alwaysOn`) stations.
+   * An op with no manned coverage becomes an unschedulable placeholder. False =
+   * the fallbacks stay, i.e. the pre-setting behavior (byte-identical).
+   */
+  requiresStaffing: boolean;
+  /**
    * Split days: employeeId -> dateKey -> that day's station rows in order.
    * Each station's clip gets only its budgeted share of the person's day; a
    * sole whole-shift row keeps the full day (pre-split behavior).
@@ -185,7 +203,7 @@ function topologicalPlacementOrder<T extends { id: string; order?: number }>(
         let hi = ready.length;
         while (lo < hi) {
           const mid = (lo + hi) >> 1;
-          if (cmp(ready[mid], depOp) <= 0) lo = mid + 1;
+          if (cmp(ready[mid]!, depOp) <= 0) lo = mid + 1;
           else hi = mid;
         }
         ready.splice(lo, 0, depOp);
@@ -569,13 +587,36 @@ export class WorkCenterSelector {
                 }
               }
             }
+            if (!result && ctx.requiresStaffing) {
+              // Require-staffing policy: gated work runs ONLY where a qualified
+              // operator is manned. No floater fallback — if pass 1 (assigned +
+              // qualified) couldn't staff this station, the op doesn't place here;
+              // it stays a conflict and, if no candidate is staffed, an
+              // unschedulable placeholder on the Forecast.
+              if (!firstConflict) {
+                firstConflict = `No operator assigned for ${requirement.abilityName}`;
+              }
+              continue;
+            }
             if (!result) {
-              // Any-qualified relay: clip each member to the machine's hours so
-              // nobody is booked while the machine is closed.
-              const relayMembers = (members ?? []).map((m) => ({
-                employeeId: m.employeeId,
-                windows: intersectWindows(m.windows, capacity.windows),
-              }));
+              // Any-qualified relay (the soft fallback): clip each member to the
+              // machine's hours so nobody is booked while the machine is closed.
+              // The manning board is a COMMITMENT, not a soft preference: a person
+              // you have assigned ANYWHERE in the horizon is spoken for, so the
+              // fallback may only draw on true FLOATERS — qualified people with no
+              // board presence at all. This keeps a manned person from being
+              // pulled to a station they were never assigned to, AND stops the op
+              // from being shoved onto the unmanned days (nights/weekends) a
+              // per-date clip would leave open — if no floater can cover it the op
+              // honestly conflicts and surfaces on the Forecast as unschedulable.
+              // Blank board => every qualified person is a floater => identical to
+              // the pre-people fallback.
+              const relayMembers = (members ?? [])
+                .filter((m) => !ctx.assignmentsByEmployee.has(m.employeeId))
+                .map((m) => ({
+                  employeeId: m.employeeId,
+                  windows: intersectWindows(m.windows, capacity.windows),
+                }));
               const pass2 = allocateAttendedOperation({
                 attendedHours,
                 totalHours: durationHours,
@@ -637,6 +678,18 @@ export class WorkCenterSelector {
                   staffed = true;
                 }
               }
+            }
+            // Require-staffing policy: an unstaffed station runs NOTHING unless
+            // it is lights-out (`alwaysOn`) — a station configured to run
+            // unattended is exempt, so genuine lights-out machining still
+            // schedules. Otherwise, with no manned coverage the op stays a
+            // conflict and becomes an unschedulable placeholder.
+            const lightsOut = capacity.workCenter.alwaysOn === true;
+            if (!result && ctx.requiresStaffing && !lightsOut) {
+              if (!firstConflict) {
+                firstConflict = "No operator assigned";
+              }
+              continue;
             }
             if (!result) {
               const machineOnly = allocateOperation({
@@ -773,10 +826,39 @@ export class WorkCenterSelector {
             fallbackWc = wcId;
           }
         }
+        const conflictReason = firstConflict ?? "No feasible capacity slot";
+
+        // Emit a non-binding PLACEHOLDER reservation so the Forecast shows this
+        // unplaceable op instead of the job silently ending after its last
+        // placeable op. Pinned at the earliest it could START (after
+        // predecessors) for its work-content duration in calendar time — a
+        // marker of "where it would run once the conflict is resolved", never a
+        // real booking. Deliberately NOT pushed into capacity.reservations, and
+        // flagged isPlaceholder so getLiveReservations excludes it — it must not
+        // hold the machine against other jobs. Chaining placedEndByOperation
+        // still makes successors wait for it (they can't run before it does).
+        if (durationHours > 0 && fallbackWc) {
+          const placeholderEnd = new Date(
+            earliestMs + durationHours * 3_600_000
+          );
+          this.plannedReservations.push({
+            resourceKind: "WorkCenter",
+            resourceId: fallbackWc,
+            operationId: op.id,
+            startAt: earliestStart,
+            endAt: placeholderEnd,
+            earliestStartAt: earliestStart,
+            scheduleNote: conflictReason,
+            workHours: durationHours,
+            isPlaceholder: true,
+          });
+          placedEndByOperation.set(op.id, placeholderEnd);
+        }
+
         selections.set(op.id, {
           workCenterId: fallbackWc ?? op.workCenterId ?? null,
           priority: 0,
-          conflict: firstConflict ?? "No feasible capacity slot",
+          conflict: conflictReason,
         });
       }
     }

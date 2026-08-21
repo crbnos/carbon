@@ -57,7 +57,7 @@ Features:
 - [x] API
 - [x] Webhooks
 - [x] Accounting
-- [ ] Capacity Planning
+- [x] Capacity Planning
 - [ ] Simulation
 - [ ] [Full Roadmap](https://github.com/orgs/crbnos/projects/1/views/1)
 

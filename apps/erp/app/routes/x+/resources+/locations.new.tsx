@@ -84,7 +84,8 @@ export default function NewLocationRoute() {
     city: "",
     stateProvince: "",
     postalCode: "",
-    countryCode: company?.countryCode ?? ""
+    countryCode: company?.countryCode ?? "",
+    requiresStaffing: false
   };
 
   return <LocationForm initialValues={initialValues} onClose={onClose} />;

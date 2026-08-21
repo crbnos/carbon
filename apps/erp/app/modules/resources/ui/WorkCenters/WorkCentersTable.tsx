@@ -28,10 +28,10 @@ import {
   LuAlignLeft,
   LuBuilding2,
   LuCheck,
-  LuCog,
   LuDollarSign,
   LuLocateFixed,
   LuPencil,
+  LuRedoDot,
   LuTrash,
   LuTriangleAlert,
   LuUser
@@ -150,7 +150,7 @@ const WorkCentersTable = memo(
             </span>
           ),
           meta: {
-            icon: <LuCog />,
+            icon: <LuRedoDot />,
             filter: {
               type: "static",
               options: processes.map((process) => ({

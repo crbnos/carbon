@@ -50,6 +50,8 @@ type WeekCardItem = {
   days: number;
   /** distinct absence days this week */
   daysOff: number;
+  /** the person's qualified (non-expired) abilities — badged on the card */
+  abilities: string[];
 };
 
 type PeopleWeekBoardProps = {
@@ -62,6 +64,8 @@ type PeopleWeekBoardProps = {
   absences: { employeeId: string; date: string }[];
   /** each person's own shift — what new assignments get stamped with */
   employeeShiftId: Record<string, string>;
+  /** employeeId → their qualified ability names, for the card badges */
+  employeeAbilityNames: Record<string, string[]>;
 };
 
 function cardId(item: WeekCardItem) {
@@ -105,42 +109,56 @@ function WeekCard({
       {...(isOverlay ? {} : attributes)}
       {...(isOverlay ? {} : listeners)}
       className={cn(
-        "flex items-center justify-between gap-2 rounded-lg border bg-card p-3 dark:border-none dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]",
+        "flex flex-col gap-2 rounded-lg border bg-card p-3 dark:border-none dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]",
         !isDisabled && "cursor-grab",
         isDragging && !isOverlay && "border-dashed bg-muted",
         isOverlay &&
           "ring-2 ring-primary opacity-100 !bg-card shadow-lg cursor-grabbing"
       )}
     >
-      <div className="flex items-center gap-1.5 min-w-0">
-        {!isDisabled && (
-          <LuGripVertical className="h-4 w-4 flex-shrink-0 text-muted-foreground/50" />
-        )}
-        <EmployeeAvatar employeeId={item.employee.id} size="sm" />
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 min-w-0">
+          {!isDisabled && (
+            <LuGripVertical className="h-4 w-4 flex-shrink-0 text-muted-foreground/50" />
+          )}
+          <EmployeeAvatar employeeId={item.employee.id} size="sm" />
+        </div>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {item.workCenterId && (
+            <span className="inline-flex items-center rounded-md bg-blue-500/15 px-1.5 py-0.5 text-[11px] font-medium text-blue-700 dark:text-blue-400 tabular-nums">
+              <Trans>{item.days}d</Trans>
+            </span>
+          )}
+          {item.daysOff > 0 && (
+            <span className="inline-flex items-center rounded-md bg-red-500/15 px-1.5 py-0.5 text-[11px] font-medium text-red-700 dark:text-red-400 tabular-nums">
+              <Trans>{item.daysOff}d off</Trans>
+            </span>
+          )}
+          {item.workCenterId && !isDisabled && !isOverlay && (
+            <button
+              type="button"
+              aria-label="Remove"
+              className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-red-600 dark:hover:text-red-400"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => onRemove(item)}
+            >
+              <LuX className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
       </div>
-      <div className="flex items-center gap-1.5 flex-shrink-0">
-        {item.workCenterId && (
-          <span className="inline-flex items-center rounded-md bg-blue-500/15 px-1.5 py-0.5 text-[11px] font-medium text-blue-700 dark:text-blue-400 tabular-nums">
-            <Trans>{item.days}d</Trans>
-          </span>
-        )}
-        {item.daysOff > 0 && (
-          <span className="inline-flex items-center rounded-md bg-red-500/15 px-1.5 py-0.5 text-[11px] font-medium text-red-700 dark:text-red-400 tabular-nums">
-            <Trans>{item.daysOff}d off</Trans>
-          </span>
-        )}
-        {item.workCenterId && !isDisabled && !isOverlay && (
-          <button
-            type="button"
-            aria-label="Remove"
-            className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-red-600 dark:hover:text-red-400"
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => onRemove(item)}
-          >
-            <LuX className="h-3.5 w-3.5" />
-          </button>
-        )}
-      </div>
+      {item.abilities.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {item.abilities.map((ability) => (
+            <span
+              key={ability}
+              className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground"
+            >
+              {ability}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -241,7 +259,8 @@ const PeopleWeekBoard = ({
   workCenters,
   assignments,
   absences,
-  employeeShiftId
+  employeeShiftId,
+  employeeAbilityNames
 }: PeopleWeekBoardProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -294,12 +313,14 @@ const PeopleWeekBoard = ({
     for (const employee of employees) {
       const stations = byEmployeeStation.get(employee.id);
       const daysOff = daysOffByEmployee.get(employee.id)?.size ?? 0;
+      const abilities = employeeAbilityNames[employee.id] ?? [];
       if (!stations || stations.size === 0) {
         map.get(UNASSIGNED)!.push({
           employee,
           workCenterId: null,
           days: 0,
-          daysOff
+          daysOff,
+          abilities
         });
         continue;
       }
@@ -309,12 +330,19 @@ const PeopleWeekBoard = ({
           employee,
           workCenterId,
           days: days.size,
-          daysOff
+          daysOff,
+          abilities
         });
       }
     }
     return map;
-  }, [employees, workCenters, scopedAssignments, daysOffByEmployee]);
+  }, [
+    employees,
+    workCenters,
+    scopedAssignments,
+    daysOffByEmployee,
+    employeeAbilityNames
+  ]);
 
   const submitIntent = (payload: Record<string, string>) => {
     submit(payload, {

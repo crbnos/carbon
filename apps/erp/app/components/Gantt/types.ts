@@ -30,6 +30,13 @@ export type GanttEvent = {
      * work is genuinely still running and animates.
      */
     isEstimated?: boolean;
+    /**
+     * A placeholder for an operation the scheduler could NOT place (no qualified
+     * operator, no feasible slot). Set on the operation row AND its work-center
+     * lane (any unplaceable child). Renders a distinct "can't be scheduled" alert
+     * in the status column — a stronger signal than isError (a placed-but-late op).
+     */
+    isUnschedulable?: boolean;
     isCancelled: boolean;
     /**
      * Time spent waiting for capacity before the bar starts (queued at a

@@ -118,15 +118,27 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const requiresAbility = d.requiresAbility ?? false;
-  if (requiresAbility !== previouslyRequiredAbility && abilityId) {
-    await notifyScheduleInputsChanged(
-      companyId,
-      "ability",
-      requiresAbility
-        ? `Process "${d.name}" now requires an ability`
-        : `Process "${d.name}" no longer requires an ability`,
-      abilityId
-    );
+  if (requiresAbility !== previouslyRequiredAbility) {
+    // A requiresAbility flip changes the operator gate for every job with an
+    // unfinished operation on this process, so the schedule must be recomputed.
+    // Prefer the process's ability for precise scoping (the "ability" kind
+    // resolves ability → process → affected jobs); fall back to a company-wide
+    // mark when the ability can't be resolved, so the notify NEVER silently
+    // no-ops — that gap is why a requiresAbility change could leave the forecast
+    // stale.
+    const reason = requiresAbility
+      ? `Process "${d.name}" now requires an ability`
+      : `Process "${d.name}" no longer requires an ability`;
+    if (abilityId) {
+      await notifyScheduleInputsChanged(
+        companyId,
+        "ability",
+        reason,
+        abilityId
+      );
+    } else {
+      await notifyScheduleInputsChanged(companyId, "reorder", reason);
+    }
   }
 
   return modal ? createProcess : redirect(path.to.processes);

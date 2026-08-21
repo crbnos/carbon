@@ -1,9 +1,11 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { activeJobStatuses, fetchAllFromTable } from "@carbon/database";
+import { runLocationSchedule } from "@carbon/database/scheduling";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { NonRetriableError } from "inngest";
 import { z } from "zod";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 
 const log = getLogger("jobs", "schedule-replan");
@@ -302,18 +304,24 @@ export const scheduleReplanWaveFunction = inngest.createFunction(
     const results: LocationRegenResult[] = [];
     for (const locationId of locationIds) {
       const result = await step.run(`regen-${locationId}`, async () => {
-        const { data, error } = await serviceRole.functions.invoke("schedule", {
-          body: { locationId, companyId, userId: "system" }
-        });
-        if (error) {
+        // Regenerate the location IN-PROCESS (Node) — no edge cold-start or HTTP
+        // hop. Idempotent, so an Inngest retry just re-runs it.
+        try {
+          return await runLocationSchedule({
+            db: getJobDatabaseClient(),
+            client: serviceRole,
+            locationId,
+            companyId,
+            userId: "system"
+          });
+        } catch (err) {
           log.error("Location regen failed", {
             companyId,
             locationId,
-            error: error.message ?? String(error)
+            error: err instanceof Error ? err.message : String(err)
           });
           return null;
         }
-        return data as LocationRegenResult;
       });
       if (result) {
         results.push(result);

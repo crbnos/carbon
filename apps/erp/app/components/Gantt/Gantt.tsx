@@ -31,6 +31,7 @@ import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import {
+  LuBan,
   LuCalendarClock,
   LuChevronDown,
   LuChevronRight,
@@ -965,6 +966,22 @@ function NodeStatusIcon({ node }: { node: GanttEvent }) {
         </Paragraph>
         <GanttTaskStatusIcon status="CANCELED" className="size-4" />
       </>
+    );
+  }
+
+  if (node.data.isUnschedulable) {
+    return (
+      <StatusIconTooltip
+        label={
+          node.hasChildren ? (
+            <Trans>Has operations that can't be scheduled</Trans>
+          ) : (
+            <Trans>Can't be scheduled</Trans>
+          )
+        }
+      >
+        <LuBan className="size-4 text-red-500" />
+      </StatusIconTooltip>
     );
   }
 

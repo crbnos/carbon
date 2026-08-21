@@ -9,17 +9,32 @@ paths:
 # Production Scheduling: data structures + flow
 
 How job operations get sequenced onto work centers, scheduled with dates, and
-displayed. The **actual scheduling computation runs in a Supabase Deno edge
-function (`schedule`)** — not in MES, not in a DB function. The boards only read
-results and feed inputs. Migrations are timestamp-ordered; **newest wins** and
-these functions/columns have been revised many times — read the newest, not the
-first match.
+displayed. The scheduling engine lives in
+`packages/database/supabase/functions/lib/scheduling/` and now runs **IN-PROCESS
+in Node** — the ERP app (route actions, `production.service.ts`) and
+`@carbon/jobs` (the replan wave, the recalculate task) import
+`runLocationSchedule` / `runExpediteWhatIf` from **`@carbon/database/scheduling`**
+and execute it in-process, eliminating the edge cold-start + HTTP round-trip that
+made a regen take >2s on trivial data. The `schedule` Deno **edge function** still
+exists as a thin wrapper (auth/CORS → `runLocationSchedule`) for compatibility /
+self-hosted / any external caller, but the app/jobs no longer invoke it. Not MES,
+not a DB function. The boards only read results and feed inputs. Migrations are
+timestamp-ordered; **newest wins** and these functions/columns have been revised
+many times — read the newest, not the first match.
+
+Spec/plan: `.ai/specs/2026-08-19-schedule-in-process-node.md` +
+`.ai/plans/2026-08-19-schedule-in-process-node.md`.
 
 ## Where it lives
 
-- **Engine:** `packages/database/supabase/functions/schedule/index.ts` loads a
-  **whole LOCATION's** open jobs and runs `new SchedulingEngine(...).run()` once
-  per job in one deterministic forward pass (§ Engine pipeline). Modules in
+- **Orchestration:** `packages/database/supabase/functions/lib/scheduling/run-schedule.ts`
+  (`runLocationSchedule` / `runExpediteWhatIf`) loads a **whole LOCATION's** open
+  jobs and runs `new SchedulingEngine(...).run()` once per job in one
+  deterministic forward pass (§ Engine pipeline). BOTH the edge function
+  (`schedule/index.ts`, a thin wrapper) and the Node callers go through it — one
+  orchestration, zero drift. It is exported to Node via
+  `@carbon/database/scheduling` (same no-build `.ts` re-export bridge as the
+  availability-ladder helpers). Modules in
   `packages/database/supabase/functions/lib/scheduling/` (`scheduling-engine.ts`,
   `dependency-manager.ts`, `date-calculator.ts`, `need-by-calculator.ts`,
   `work-center-selector.ts`,
@@ -53,7 +68,10 @@ first match.
   is `position: sticky` — needs `min-w-max` on the shared `BoardContainer`
   row and `MeasuringStrategy.Always` on the DndContext; mutations via
   `people.update.tsx`, which fires
-  `notifyScheduleInputsChanged(companyId, "people", ..., workCenterId)`), a
+  `notifyScheduleInputsChanged(companyId, "people", ..., workCenterId)` — a MOVE
+  notifies BOTH the destination and the source work center (via
+  `movePeopleAssignment`'s `previousWorkCenterId`), so the station the person left
+  re-plans too instead of keeping a stale booking), a
   week **matrix** (`PeopleMatrix.tsx`: employee×day grid + assigned-vs-needed
   coverage as sub-tabs, department filter), and a week **capacity** board
   (`PeopleCapacity.tsx`). Capacity math: Demand = open `jobOperation` hours by
@@ -108,24 +126,54 @@ Two Inngest functions listen on that event
   `location` / `reorder` stamp company-wide). Recomputes nothing.
 - **WAVE** (`scheduleReplanWaveFunction`, **debounce 30s / timeout 10m**,
   concurrency 1 per company): loads the company's stale jobs, groups them by
-  **LOCATION**, and calls `serviceRole.functions.invoke("schedule", { locationId,
-  companyId, userId: "system" })` **once per location** — a whole-location regen.
+  **LOCATION**, and calls `runLocationSchedule({ db: getJobDatabaseClient(),
+  client: serviceRole, locationId, companyId, userId: "system" })` IN-PROCESS
+  **once per location** — a whole-location regen (was
+  `serviceRole.functions.invoke("schedule", …)`).
   Each engine run clears its own job's stale stamp (no wave-side flag-clearing).
   There is no pre-clear-reservations step, no batch slicing/chunking, and no
   chain-next-wave continuation. After the regens the wave sends one digest
   `carbon/notify` (`NotificationEvent.JobsProjectedLate`, `documentIds` = the
   newly-late job ids) **per assignee**; unassigned newly-late jobs are skipped in v1.
 
-`nightly-replan.ts` (cron `0 1 * * *`) is the time-passing backstop: it finds
-companies that still have schedule-outdated jobs and emits one
+`nightly-replan.ts` (cron `0 1 * * *`) is the time-passing backstop, and it now
+handles TWO staleness classes: (1) jobs still stamped schedule-outdated (the event
+path dropped them), AND (2) **aged schedules** — a `stamp-aged-schedules` step
+stamps any active job whose earliest open op `startDate` is before today (UTC-day
+threshold), because a forward plan anchored to an earlier day's `now` keeps
+DISPLAYING a past start until it re-anchors (placement itself always floors at
+`now` — it never schedules in the past). Both are then drained the same way: one
 `carbon/schedule.inputs.changed` (`kind: "reorder"`, `continuation: true`) per
-company; the wave fans that out to the affected locations.
+company; the wave fans that out to the affected locations. NOTE: in local dev the
+Inngest worker (`pnpm --filter @carbon/jobs dev:jobs`) must be running or none of
+the reactive/nightly replan fires — a common cause of "my schedule went stale" /
+"my `requiresAbility` change didn't reschedule" locally (the change IS wired:
+`processes.$processId.tsx` fires `notifyScheduleInputsChanged("ability", …, abilityId)`
+on any `requiresAbility` flip, and the MARK function scopes to that ability's
+process ops).
 
-Other direct `invoke("schedule", { locationId, companyId, userId })` callers all
-use the whole-location payload: `recalculateJobOperationDependencies`
-(`production.service.ts`, resolves the job's `locationId` first), `recalculate.ts`,
-`kanban.$id.tsx`, and `job/$jobId.status.tsx`. A `functions/reschedule/` dir exists
-but is legacy — the live invoke target is always `"schedule"`.
+**Terminal-job reservation cleanup** (`20260819050906_cleanup-reservations-on-terminal-job.sql`):
+an `AFTER UPDATE OF status ON "job"` trigger (`delete_capacity_reservations_on_terminal_job`,
+SECURITY DEFINER) deletes a job's live (`scenarioId IS NULL`) `capacityReservation`
+rows when it transitions to `Cancelled`/`Completed`/`Closed`. Reservations are a
+materialized output for active jobs only; before this, a cancelled/completed job's
+rows lingered as orphans (invisible to the forecast/capacity reads, which filter
+terminal jobs, but resurfacing as past-dated bars for any read that forgot the
+filter). The trigger is the one chokepoint every terminal path funnels through
+(the status route's `updateJobStatus`, and `complete_job_to_inventory` for
+Completed); SECURITY DEFINER because a cancel only holds `production_update` while
+the DELETE policy needs `production_delete`.
+
+Other whole-location regen callers now run `runLocationSchedule(...)` IN-PROCESS
+(no edge invoke): `recalculateJobOperationDependencies` (`production.service.ts`,
+resolves the job's `locationId` first — it dynamic-imports `@carbon/database/scheduling`
++ `@carbon/database/client` and uses a lazy Node pool, because `production.service.ts`
+is also client-bundled and must not STATICALLY pull `pg`/`.server` code),
+`recalculate.ts`, `kanban.$id.tsx`, and `job/$jobId.status.tsx` (the last two are
+route actions, which CAN import `@carbon/database/scheduling` + `~/services/database.server`
+directly since React Router strips their server code from the client bundle). The
+expedite what-if uses `runExpediteWhatIf`. A `functions/reschedule/` dir exists but
+is legacy.
 
 ## Engine pipeline (`scheduling-engine.ts` `run()`)
 
@@ -138,7 +186,7 @@ backward need-by pass (`computeNeedBys`, below) computes demand-anchored TARGETS
 only; its output is read by nothing in the placement path (spec
 `.ai/specs/2026-08-15-dual-dates-due-vs-projected.md`).
 
-- **Whole-location, deterministic run** (`schedule/index.ts`): one `now` is captured
+- **Whole-location, deterministic run** (`run-schedule.ts`, called by both the edge wrapper and the Node callers): one `now` is captured
   once and shared across every job in the batch. The location's open jobs
   (`Ready | In Progress | Paused`) are ordered **deadline class first**
   (`DEADLINE_PRIORITY`: ASAP → Hard Deadline → Soft Deadline → No Deadline), then
@@ -211,7 +259,33 @@ only; its output is read by nothing in the placement path (spec
   machine time never compressed. Machine calendars only *refine* the model: member
   windows are clipped to the machine windows via `intersectWindows`, and the unattended
   remainder accumulates on the machine windows via `addWorkingTime`. A blank people board
-  is byte-identical to pre-people behavior.
+  is byte-identical to pre-people behavior. **One deliberate change:** the gated
+  any-qualified fallback (pass 2 in `work-center-selector.ts`) now treats a manning
+  assignment as a whole-horizon COMMITMENT — the fallback relay may only draw on true
+  FLOATERS: qualified people with NO board assignment anywhere in the horizon
+  (`assignmentsByEmployee.has(id)`, built from `peopleByWorkCenter`; on the finite
+  context). A person manned ANYWHERE is spoken for and is never pulled to a station they
+  weren't assigned to. So moving your only qualified operator off a station makes that
+  station's op an in-window unschedulable **placeholder** (surfaced on the Forecast),
+  rather than double-booking the operator OR shoving the op onto the unmanned
+  nights/weekends a per-date clip would leave open (the bug an earlier per-date version
+  caused — the op landed on a future Saturday and fell out of the current-week view).
+  Blank board => every qualified person is a floater => fallback unchanged.
+- **Require-staffing policy** (`location.requiresStaffing`, `20260820151847_location-requires-staffing.sql`;
+  per-location, default false; edited on the location form): when ON, the finite scheduler
+  places work ONLY where an operator is manned. `buildFiniteContext` reads it
+  (`provider.getLocationRequiresStaffing`) + the set of lights-out stations
+  (`provider.getAlwaysOnWorkCenterIds`) and puts `requiresStaffing` on the context +
+  `alwaysOn` on each `capacity.workCenter`. Two gates in `work-center-selector.ts`: a
+  **gated** op's any-qualified floater fallback is skipped entirely (pass 1 assigned+qualified
+  only); an **ungated** op's machine-only fallback is skipped too — EXCEPT on `alwaysOn`
+  (lights-out) stations, which keep running unattended. An op with no manned coverage (and
+  not lights-out) becomes an unschedulable placeholder on the Forecast. This is exactly how
+  "route everything to the one staffed work center, nothing to the unstaffed ones during
+  staffed periods" falls out — an unstaffed non-lights-out station has no way to place, so
+  earliest-finish selection naturally routes to the staffed candidate. OFF => the fallbacks
+  stay (pre-setting behavior, byte-identical). "Staffing defined for a period" is derived
+  purely from manning-board presence — there is no separate resource-plan status entity.
 - **Remaining-work netting** (`duration-calculator.remainingFractions`): a started op
   reserves only the work left — labor + machine scaled by
   `(1 − quantityComplete/operationQuantity)` (clamped ≥ 0), setup counted done once any
@@ -278,6 +352,27 @@ per-op need-by targets are NOT a lateness input and NEVER set `hasConflict`; an 
 behind its target only gets the informational amber state). Conflicts
 surface; scheduling never hard-fails. The read RPCs roll it up per job with
 `BOOL_OR(...)` so the board shows a red flag.
+
+**Unplaceable ops leave a placeholder (`work-center-selector.ts` `best === null`
+branch).** An op that could not be placed at all (no qualified operator, no
+feasible slot, horizon-exhausted) has `hasConflict/conflictReason` stamped and a
+fallback work center — and now also emits a **non-binding placeholder**
+`capacityReservation` (`isPlaceholder = true`, `20260818044654_…`): pinned at the
+op's earliest start for its work-content duration in calendar time, on the
+fallback WC. It exists so the **Forecast** (which is 100% reservation-driven)
+shows the op instead of the job silently ending after its last placeable op, and
+so `job.projectedCompletionAt` extends to it and successors chain after it
+(`placedEndByOperation`). It is deliberately NOT added to the in-run
+`capacity.reservations` blocking set, and `getLiveReservations` filters
+`isPlaceholder IS NOT true`, so it never holds the machine against other jobs or
+the next regen. The Forecast surfaces it with a red "can't be scheduled" alert
+(`LuBan`) in the TREE status column — via `GanttEvent.data.isUnschedulable`, set
+on BOTH the work-center lane (any unplaceable child) and the operation row, so it
+reports at the work-center level AND per operation; clicking either row opens the
+detail sidebar ("Unschedulable" chip + reason + "where it would run"
+explanation). Plus a separate "{n} can't be scheduled" header count. (Placed-but
+-LATE ops keep a real reservation, show the generic `isError` triangle, and are
+the "conflict" count.)
 
 ## Read RPCs (display only; do not compute schedules)
 

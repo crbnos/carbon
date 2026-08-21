@@ -843,9 +843,6 @@ msgstr "capacité"
 msgid "Ability"
 msgstr "Capacité"
 
-msgid "Ability-gated work only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
-msgstr "Le travail assorti de restrictions d'aptitude s'exécute uniquement lorsqu'un opérateur qualifié est en poste ; les opérateurs assignés au tableau d'effectifs façonnent davantage la main-d'œuvre disponible."
-
 msgid "About"
 msgstr "À propos"
 
@@ -6724,6 +6721,9 @@ msgstr "Impossible de charger les entités suivies"
 msgid "Failed to move account: {0}"
 msgstr "Impossible de déplacer le compte : {0}"
 
+msgid "Failed to regenerate schedule"
+msgstr ""
+
 msgid "Failed to regenerate thumbnail"
 msgstr "Échec de la régénération de la miniature"
 
@@ -10587,6 +10587,9 @@ msgstr "Seules les périodes vides et ouvertes peuvent être supprimées."
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "Seuls les employés qualifiés peuvent être planifiés pour et exécuter ce processus"
 
+msgid "Only schedule operations where an operator is assigned on the manning board. Unstaffed work centers get no work — an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape a autorisé la connexion, mais son enregistrement a échoué. Réessayez de vous connecter."
 
@@ -12420,6 +12423,12 @@ msgstr "Actualiser"
 msgid "Refresh exchange rate"
 msgstr "Actualiser le taux de change"
 
+msgid "Regenerate"
+msgstr ""
+
+msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
+msgstr ""
+
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "Régénérer la miniature à partir du modèle 3D"
 
@@ -12685,6 +12694,9 @@ msgstr "Exiger une approbation pour les commandes d'achat en fonction des seuils
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "Exiger une approbation pour les documents de qualité dans votre flux de travail"
+
+msgid "Require staffing to schedule"
+msgstr ""
 
 msgid "Require two-factor authentication"
 msgstr "Exiger l'authentification à deux facteurs"
@@ -13301,6 +13313,9 @@ msgstr "Planifier les travaux en fonction de la capacité du centre de travail"
 
 msgid "Schedule Name"
 msgstr "Nom de l'horaire"
+
+msgid "Schedule regenerated"
+msgstr ""
 
 msgid "Scheduled"
 msgstr "Planifié"
@@ -14289,6 +14304,9 @@ msgstr "Diviser la ligne de reçu"
 
 msgid "Split shipment line"
 msgstr "Diviser la ligne d'expédition"
+
+msgid "Staffing required"
+msgstr ""
 
 msgid "Stand up hosting"
 msgstr "Mettre en place l'hébergement"
@@ -15856,6 +15874,12 @@ msgstr "Ce travail ne sera plus disponible sur l'atelier."
 msgid "This job's own required quantity for the material."
 msgstr "La quantité propre requise par cette tâche pour le matériau."
 
+msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
+msgstr ""
+
+msgid "This location only schedules work where an operator is assigned on the manning board. With no one assigned here, work is not scheduled and shows as unschedulable."
+msgstr ""
+
 msgid "This lot is expired and can't be picked."
 msgstr "Ce lot est expiré et ne peut pas être prélevé."
 
@@ -15915,6 +15939,12 @@ msgstr "Cette commande client a des tâches associées. Choisissez ce que vous s
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "Cette commande client contient des lignes qui nécessitent la création de tâches"
+
+msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
+msgstr ""
+
+msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
+msgstr ""
 
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."

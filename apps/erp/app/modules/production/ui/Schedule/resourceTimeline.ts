@@ -3,14 +3,23 @@ import type { TimelineNodeDetail } from "./timeline";
 
 /**
  * Pure mapping from cross-job capacity reservations to the Gantt's event
- * model, grouped by RESOURCE instead of by job: one lane per work center
- * (then per operator pool), one child row per reservation. This is how
- * cross-job contention on a machine becomes visible — the single-job view
- * can't show who else is queued on it.
+ * model, as a `Location > Work Center > Operation > People` tree. A staffed
+ * operation reserves TWO finite resources — the work center (machine hold, the
+ * op's full span including off-shift gaps) and the operator (only the attended
+ * segments) — so the engine writes two reservations for one op. The OPERATION is
+ * the anchor: its machine hold is the op node, and the operators who worked it
+ * nest beneath, recovered via the shared operationId:
  *
- * The Gantt renders strictly one bar per row, so lanes are parent rows and
- * each reservation is its own child row (same shape as the job view's
- * operation → reservation nesting).
+ *   Location
+ *   └─ Work Center
+ *      └─ Operation (machine hold — the op's full span)
+ *         └─ Person (attended segment — who worked it, and when)
+ *
+ * So the op appears once (not as separate machine + person peers), each station
+ * reads as "these ops run here, worked by these people", and a person on two
+ * stations appears under each op they staffed. A machine-only or unschedulable
+ * op simply has no people beneath it. The Gantt renders strictly one bar per
+ * row, so every node is its own row.
  */
 
 export type ResourceTimelineReservation = {
@@ -22,9 +31,21 @@ export type ResourceTimelineReservation = {
   endAt: string;
   jobId: string;
   jobReadableId: string;
+  /**
+   * The operation this reservation serves. The machine (WorkCenter) reservation
+   * and the operator (Employee) reservation for the same op share it — that's
+   * how an operator segment is re-homed under the work center of its op.
+   */
+  operationId: string;
   operationDescription: string | null;
   hasConflict: boolean;
   conflictReason: string | null;
+  /**
+   * Non-binding placeholder for an operation the scheduler could not place — its
+   * bar marks "where it would run" so the job doesn't silently end after its last
+   * placeable op. Rendered distinctly (blocked icon) and never holds capacity.
+   */
+  unschedulable: boolean;
   /** Engine's plain-words reason for the placement timing */
   scheduleNote?: string | null;
   /** Actual work content (hours) inside the interval, excluding pauses */
@@ -65,10 +86,23 @@ export type ResourceMaintenanceWindow = {
   endAt: string;
 };
 
+/**
+ * One operation at a work center: its machine hold (the WorkCenter reservation,
+ * the op's full span) and the operator segments worked on it (Employee
+ * reservations). The op is the anchor — the operators nest under it.
+ */
+type OpGroup = {
+  machine: ResourceTimelineReservation;
+  workers: ResourceTimelineReservation[];
+};
+
 type Lane = {
   id: string;
   resourceKind: "WorkCenter" | "OperatorPool" | "Employee";
   resourceName: string;
+  /** WorkCenter lanes: operationId → its machine hold + operator segments. */
+  ops: Map<string, OpGroup>;
+  /** Fallback lanes (legacy OperatorPool / orphan operator): their own bars. */
   reservations: ResourceTimelineReservation[];
   maintenance: ResourceMaintenanceWindow[];
 };
@@ -157,59 +191,114 @@ export function buildResourceTimeline(input: {
       : windowStart + 86_400_000;
   const totalDuration = Math.max(windowEnd - windowStart, 1);
 
-  // One lane per resource; work centers first, each group alphabetical. Seed a
-  // lane for every plant work center up front, then attach reservations —
-  // stations with no scheduled work keep an empty lane.
-  const laneByKey = new Map<string, Lane>();
-  for (const workCenter of workCenters) {
-    const key = `WorkCenter:${workCenter.id}`;
-    laneByKey.set(key, {
-      id: `lane:${key}`,
-      resourceKind: "WorkCenter",
-      resourceName: workCenter.name,
-      reservations: [],
-      maintenance: []
-    });
-  }
+  // Each operation's work center, recovered from its machine reservation — the
+  // key that re-homes an operator's segment under the op it staffed.
+  const opToWorkCenter = new Map<string, string>();
   for (const r of reservations) {
-    const key = `${r.resourceKind}:${r.resourceId}`;
-    let lane = laneByKey.get(key);
-    if (!lane) {
-      lane = {
-        id: `lane:${key}`,
-        resourceKind: r.resourceKind,
-        resourceName: r.resourceName,
-        reservations: [],
-        maintenance: []
-      };
-      laneByKey.set(key, lane);
+    if (r.resourceKind === "WorkCenter") {
+      opToWorkCenter.set(r.operationId, r.resourceId);
     }
-    lane.reservations.push(r);
   }
-  // Attach each outage to its work-center lane (seeding the lane if the plant
-  // list somehow missed it), so downtime draws on the machine it takes offline.
-  for (const m of maintenance) {
-    const key = `WorkCenter:${m.workCenterId}`;
-    let lane = laneByKey.get(key);
+
+  // Work-center lanes, seeded for every plant station so idle ones still show.
+  const wcLaneByKey = new Map<string, Lane>();
+  const getWcLane = (workCenterId: string, name?: string): Lane => {
+    const key = `WorkCenter:${workCenterId}`;
+    let lane = wcLaneByKey.get(key);
     if (!lane) {
       lane = {
         id: `lane:${key}`,
         resourceKind: "WorkCenter",
-        resourceName: "Work Center",
+        resourceName: name ?? "Work Center",
+        ops: new Map(),
         reservations: [],
         maintenance: []
       };
-      laneByKey.set(key, lane);
+      wcLaneByKey.set(key, lane);
+    } else if (name && lane.resourceName === "Work Center") {
+      lane.resourceName = name;
     }
-    lane.maintenance.push(m);
+    return lane;
+  };
+  for (const workCenter of workCenters) {
+    getWcLane(workCenter.id, workCenter.name);
   }
-  const kindRank = { WorkCenter: 0, Employee: 1, OperatorPool: 2 } as const;
-  const lanes = Array.from(laneByKey.values()).sort((a, b) => {
-    if (a.resourceKind !== b.resourceKind) {
-      return kindRank[a.resourceKind] - kindRank[b.resourceKind];
+
+  // Each machine hold defines an OPERATION node under its work-center lane.
+  for (const r of reservations) {
+    if (r.resourceKind === "WorkCenter") {
+      getWcLane(r.resourceId, r.resourceName).ops.set(r.operationId, {
+        machine: r,
+        workers: []
+      });
     }
-    return a.resourceName.localeCompare(b.resourceName);
-  });
+  }
+  // Maintenance outages — same lane as the machine they take offline.
+  for (const m of maintenance) {
+    getWcLane(m.workCenterId).maintenance.push(m);
+  }
+
+  // Operator segments nest under their OPERATION. An Employee reservation with
+  // no locatable machine reservation (should not happen — the op always has
+  // one) and legacy OperatorPool rows fall back to a top-level lane so their
+  // hours are never dropped.
+  const fallbackLaneByKey = new Map<string, Lane>();
+  const getFallbackLane = (
+    kind: "Employee" | "OperatorPool",
+    id: string,
+    name: string
+  ): Lane => {
+    const key = `${kind}:${id}`;
+    let lane = fallbackLaneByKey.get(key);
+    if (!lane) {
+      lane = {
+        id: `lane:${key}`,
+        resourceKind: kind,
+        resourceName: name,
+        ops: new Map(),
+        reservations: [],
+        maintenance: []
+      };
+      fallbackLaneByKey.set(key, lane);
+    }
+    return lane;
+  };
+  for (const r of reservations) {
+    if (r.resourceKind === "Employee") {
+      const workCenterId = opToWorkCenter.get(r.operationId);
+      const op = workCenterId
+        ? getWcLane(workCenterId).ops.get(r.operationId)
+        : undefined;
+      if (op) {
+        op.workers.push(r);
+      } else {
+        getFallbackLane(
+          "Employee",
+          r.resourceId,
+          r.resourceName
+        ).reservations.push(r);
+      }
+    } else if (r.resourceKind === "OperatorPool") {
+      getFallbackLane(
+        "OperatorPool",
+        r.resourceId,
+        r.resourceName
+      ).reservations.push(r);
+    }
+  }
+
+  // Work centers alpha, then fallback lanes (operators before legacy pools).
+  const kindRank = { WorkCenter: 0, Employee: 1, OperatorPool: 2 } as const;
+  const lanes = [
+    ...Array.from(wcLaneByKey.values()).sort((a, b) =>
+      a.resourceName.localeCompare(b.resourceName)
+    ),
+    ...Array.from(fallbackLaneByKey.values()).sort((a, b) =>
+      a.resourceKind !== b.resourceKind
+        ? kindRank[a.resourceKind] - kindRank[b.resourceKind]
+        : a.resourceName.localeCompare(b.resourceName)
+    )
+  ];
 
   const anyConflict = reservations.some((r) => r.hasConflict);
   // The root reads gray across the whole span and turns red ONLY over the
@@ -242,144 +331,119 @@ export function buildResourceTimeline(input: {
     approximate: false
   };
 
-  // Built depth-first (lane, then its reservations) — the TreeView renders
-  // the array as a pre-flattened depth-first list
-  for (const lane of lanes) {
-    const sorted = [...lane.reservations].sort(
-      (a, b) => Date.parse(a.startAt) - Date.parse(b.startAt)
-    );
-    const sortedMaintenance = [...lane.maintenance].sort(
-      (a, b) => Date.parse(a.startAt) - Date.parse(b.startAt)
-    );
-    // Lane span covers both reservations AND maintenance outages. An empty lane
-    // (no work, no downtime) collapses to the window start with zero duration —
-    // a labeled row with no bar. Spans are clipped to the window so an item
-    // straddling the edge draws to the boundary instead of overflowing the axis.
-    const laneStartCandidates = [
-      ...sorted.map((r) => Date.parse(r.startAt)),
-      ...sortedMaintenance.map((m) => Date.parse(m.startAt))
-    ];
-    const laneEndCandidates = [
-      ...sorted.map((r) => Date.parse(r.endAt)),
-      ...sortedMaintenance.map((m) => Date.parse(m.endAt))
-    ];
-    const laneStart =
-      laneStartCandidates.length > 0
-        ? clamp(Math.min(...laneStartCandidates), windowStart, windowEnd)
-        : windowStart;
-    const laneEnd =
-      laneEndCandidates.length > 0
-        ? clamp(Math.max(...laneEndCandidates), windowStart, windowEnd)
-        : windowStart;
-    const laneConflict = sorted.some((r) => r.hasConflict);
-    // Child rows (reservations + maintenance) are collected here, then sorted by
-    // start time so the lane reads top-to-bottom, first to last.
-    const laneChildEvents: GanttEvent[] = [];
-    const laneTitle =
-      lane.resourceKind === "OperatorPool"
-        ? `${lane.resourceName} operators` // legacy ability-pool rows
-        : lane.resourceName; // work center, or a named person (Employee)
+  const byStart = (
+    a: ResourceTimelineReservation,
+    b: ResourceTimelineReservation
+  ) => Date.parse(a.startAt) - Date.parse(b.startAt);
 
-    const laneEvent: GanttEvent = {
-      id: lane.id,
-      parentId: ROOT_ID,
+  const spanOf = (starts: number[], ends: number[]) => ({
+    start: starts.length
+      ? clamp(Math.min(...starts), windowStart, windowEnd)
+      : windowStart,
+    end: ends.length
+      ? clamp(Math.max(...ends), windowStart, windowEnd)
+      : windowStart
+  });
+
+  // A reservation → its Gantt bar (+ detail). Reused for operation nodes (the
+  // machine hold), operator segments, and legacy pool / orphan rows. The detail
+  // panel keeps the full "job · operation" label whatever the bar is titled.
+  const buildReservationBar = (
+    r: ResourceTimelineReservation,
+    parentId: string,
+    level: number,
+    opts?: { message?: string; icon?: string }
+  ): GanttEvent => {
+    const rawStart = Date.parse(r.startAt);
+    const rawEnd = Date.parse(r.endAt);
+    const barStart = clamp(rawStart, windowStart, windowEnd);
+    const barEnd = clamp(rawEnd, windowStart, windowEnd);
+    detailsById[r.id] = {
+      kind: "reservation",
+      title: r.operationDescription
+        ? `${r.jobReadableId} · ${r.operationDescription}`
+        : r.jobReadableId,
+      start: new Date(rawStart).toISOString(),
+      end: new Date(rawEnd).toISOString(),
+      durationMs: Math.max(rawEnd - rawStart, 0),
+      approximate: false,
+      resourceKind: r.resourceKind,
+      workCenterName: r.resourceKind === "WorkCenter" ? r.resourceName : null,
+      employeeName: r.resourceKind === "Employee" ? r.resourceName : null,
+      conflictReason: r.hasConflict ? r.conflictReason : null,
+      unschedulable: r.unschedulable,
+      scheduleNote: r.scheduleNote ?? null,
+      workMs: r.workHours ? r.workHours * 3_600_000 : undefined,
+      jobId: r.jobId,
+      jobReadableId: r.jobReadableId
+    };
+    return {
+      id: r.id,
+      parentId,
       children: [],
       hasChildren: false,
-      level: 1,
+      level,
       data: {
-        duration: Math.max(laneEnd - laneStart, 0),
-        offset: laneStart - windowStart,
-        message: laneTitle,
+        duration: Math.max(barEnd - barStart, 0),
+        offset: barStart - windowStart,
+        message: opts?.message ?? r.jobReadableId,
         isRoot: false,
-        isError: laneConflict,
+        isError: r.hasConflict,
+        // An unplaceable op's placeholder reads distinctly from a placed-but-late
+        // op: same red bar (isError), but a "can't be scheduled" alert in the
+        // status column instead of the generic conflict triangle.
+        isUnschedulable: r.unschedulable,
         isPartial: false,
         isCancelled: false,
+        // Always TRACE: only TRACE nodes render as duration bars.
         level: "TRACE" as GanttEvent["data"]["level"],
-        style: {
-          icon: lane.resourceKind === "WorkCenter" ? "workCenter" : "wait",
-          variant: "primary"
-        }
+        style: { icon: opts?.icon ?? "operation", variant: "primary" }
       }
     };
-    root.children.push(lane.id);
-    root.hasChildren = true;
-    events.push(laneEvent);
-    detailsById[lane.id] = {
-      kind: "resource",
-      title: laneTitle,
-      start: new Date(laneStart).toISOString(),
-      end: new Date(laneEnd).toISOString(),
-      durationMs: Math.max(laneEnd - laneStart, 0),
-      approximate: false,
-      resourceKind: lane.resourceKind
-    };
+  };
 
-    for (const r of sorted) {
-      const rawStart = Date.parse(r.startAt);
-      const rawEnd = Date.parse(r.endAt);
-      // Bar geometry is clipped to the window; the detail panel keeps the real
-      // reservation times below.
-      const barStart = clamp(rawStart, windowStart, windowEnd);
-      const barEnd = clamp(rawEnd, windowStart, windowEnd);
-      // The row is titled by the job id alone — the parent lane already names
-      // the work center / process, so repeating it here is noise. The detail
-      // panel keeps the full "job · operation" label.
-      const title = r.operationDescription
-        ? `${r.jobReadableId} · ${r.operationDescription}`
-        : r.jobReadableId;
-      const isError = r.hasConflict;
-
-      laneChildEvents.push({
-        id: r.id,
-        parentId: lane.id,
-        children: [],
-        hasChildren: false,
-        level: 2,
-        data: {
-          duration: Math.max(barEnd - barStart, 0),
-          offset: barStart - windowStart,
-          message: r.jobReadableId,
-          isRoot: false,
-          isError,
-          isPartial: false,
-          isCancelled: false,
-          // Always TRACE: only TRACE nodes render as duration bars; the
-          // conflict signal rides on isError (red bar + triangle icon)
-          level: "TRACE" as GanttEvent["data"]["level"],
-          style: {
-            icon: "operation",
-            variant: "primary"
-          }
-        }
+  // Built depth-first (lane → operation nodes → their operator segments) — the
+  // TreeView renders the array as a pre-flattened depth-first list.
+  for (const lane of lanes) {
+    // Operation nodes (the machine hold) with operator segments nested under
+    // each. The op is the anchor bar; a machine-only or unschedulable op simply
+    // has no operators beneath it. Titled "{job} · {op}" so the op reads clearly
+    // under its station.
+    const opNodes = [...lane.ops.values()]
+      .sort((a, b) => byStart(a.machine, b.machine))
+      .map((op) => {
+        const node = buildReservationBar(op.machine, lane.id, 2, {
+          message: op.machine.operationDescription
+            ? `${op.machine.jobReadableId} · ${op.machine.operationDescription}`
+            : op.machine.jobReadableId
+        });
+        const workerBars = [...op.workers].sort(byStart).map((w) =>
+          buildReservationBar(w, op.machine.id, 3, {
+            message: w.resourceName,
+            icon: "person"
+          })
+        );
+        node.children = workerBars.map((b) => b.id);
+        node.hasChildren = workerBars.length > 0;
+        return { node, workerBars };
       });
-      detailsById[r.id] = {
-        kind: "reservation",
-        title,
-        start: new Date(rawStart).toISOString(),
-        end: new Date(rawEnd).toISOString(),
-        durationMs: Math.max(rawEnd - rawStart, 0),
-        approximate: false,
-        resourceKind: r.resourceKind,
-        workCenterName: r.resourceKind === "WorkCenter" ? r.resourceName : null,
-        conflictReason: r.hasConflict ? r.conflictReason : null,
-        scheduleNote: r.scheduleNote ?? null,
-        workMs: r.workHours ? r.workHours * 3_600_000 : undefined,
-        jobId: r.jobId,
-        jobReadableId: r.jobReadableId
-      };
-    }
 
-    // Maintenance outages — amber "downtime" bars on the same lane. The
-    // scheduler already keeps jobs out of these windows, so they slot into the
-    // gap; drawing them makes the machine's downtime explicit.
-    for (const m of sortedMaintenance) {
+    // Fallback-lane direct bars (orphan operator / legacy pool).
+    const directBars = [...lane.reservations]
+      .sort(byStart)
+      .map((r) => buildReservationBar(r, lane.id, 2));
+
+    // Maintenance outages — amber "downtime" bars on the machine's lane.
+    const maintenanceBars: GanttEvent[] = [];
+    for (const m of [...lane.maintenance].sort(
+      (a, b) => Date.parse(a.startAt) - Date.parse(b.startAt)
+    )) {
       const rawStart = Date.parse(m.startAt);
       const rawEnd = Date.parse(m.endAt);
       const barStart = clamp(rawStart, windowStart, windowEnd);
       const barEnd = clamp(rawEnd, windowStart, windowEnd);
-      if (barEnd <= barStart) continue; // outage falls entirely outside the view
-
-      laneChildEvents.push({
+      if (barEnd <= barStart) continue; // outage entirely outside the view
+      maintenanceBars.push({
         id: m.id,
         parentId: lane.id,
         children: [],
@@ -408,12 +472,80 @@ export function buildResourceTimeline(input: {
       };
     }
 
-    // Interleave reservations and maintenance by start (offset) so the lane
-    // reads first-to-last, top-to-bottom; emit the children in that order.
-    laneChildEvents.sort((a, b) => a.data.offset - b.data.offset);
-    laneEvent.children = laneChildEvents.map((event) => event.id);
-    laneEvent.hasChildren = laneChildEvents.length > 0;
-    events.push(...laneChildEvents);
+    // Level-2 children interleave by start: operation nodes, fallback bars,
+    // maintenance. Each operation's operator segments trail it (below).
+    const level2 = [
+      ...opNodes.map((o) => o.node),
+      ...directBars,
+      ...maintenanceBars
+    ].sort((a, b) => a.data.offset - b.data.offset);
+    const workerBarsByOp = new Map(
+      opNodes.map((o) => [o.node.id, o.workerBars])
+    );
+
+    // Lane span + conflict rollups cover every op (machine + operator segments)
+    // and fallback bar. Placeholders are machine-side only, so the stronger
+    // "can't be scheduled" rollup keys off the operation nodes.
+    const opMachines = [...lane.ops.values()].map((o) => o.machine);
+    const opWorkers = [...lane.ops.values()].flatMap((o) => o.workers);
+    const rollupRes = [...opMachines, ...opWorkers, ...lane.reservations];
+    const laneSpan = spanOf(
+      [
+        ...rollupRes.map((r) => Date.parse(r.startAt)),
+        ...lane.maintenance.map((m) => Date.parse(m.startAt))
+      ],
+      [
+        ...rollupRes.map((r) => Date.parse(r.endAt)),
+        ...lane.maintenance.map((m) => Date.parse(m.endAt))
+      ]
+    );
+    const laneTitle =
+      lane.resourceKind === "OperatorPool"
+        ? `${lane.resourceName} operators` // legacy ability-pool rows
+        : lane.resourceName;
+    const laneIcon =
+      lane.resourceKind === "WorkCenter"
+        ? "workCenter"
+        : lane.resourceKind === "Employee"
+          ? "person"
+          : "wait";
+
+    const laneEvent: GanttEvent = {
+      id: lane.id,
+      parentId: ROOT_ID,
+      children: level2.map((e) => e.id),
+      hasChildren: level2.length > 0,
+      level: 1,
+      data: {
+        duration: Math.max(laneSpan.end - laneSpan.start, 0),
+        offset: laneSpan.start - windowStart,
+        message: laneTitle,
+        isRoot: false,
+        isError: rollupRes.some((r) => r.hasConflict),
+        isUnschedulable: opMachines.some((r) => r.unschedulable),
+        isPartial: false,
+        isCancelled: false,
+        level: "TRACE" as GanttEvent["data"]["level"],
+        style: { icon: laneIcon, variant: "primary" }
+      }
+    };
+    root.children.push(lane.id);
+    root.hasChildren = true;
+    detailsById[lane.id] = {
+      kind: "resource",
+      title: laneTitle,
+      start: new Date(laneSpan.start).toISOString(),
+      end: new Date(laneSpan.end).toISOString(),
+      durationMs: Math.max(laneSpan.end - laneSpan.start, 0),
+      approximate: false,
+      resourceKind: lane.resourceKind
+    };
+    events.push(laneEvent);
+    // Depth-first: each level-2 node, immediately followed by an operation
+    // node's operator segments (fallback bars / maintenance have none).
+    for (const node of level2) {
+      events.push(node, ...(workerBarsByOp.get(node.id) ?? []));
+    }
   }
 
   return {

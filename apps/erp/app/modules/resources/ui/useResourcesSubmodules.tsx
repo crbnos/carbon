@@ -4,11 +4,11 @@ import {
   LuCalendarClock,
   LuCircleAlert,
   LuClipboardCheck,
-  LuCog,
   LuGraduationCap,
   LuLocateFixed,
   LuMailbox,
   LuMapPin,
+  LuRedoDot,
   LuWrench
 } from "react-icons/lu";
 import { useSavedViews } from "~/hooks/useSavedViews";
@@ -54,7 +54,7 @@ export default function useResourcesSubmodules() {
         {
           name: t`Processes`,
           to: path.to.processes,
-          icon: <LuCog />,
+          icon: <LuRedoDot />,
           table: "process"
         },
         {

@@ -15,8 +15,8 @@ import {
   LuCalendar,
   LuCalendarDays,
   LuChevronDown,
-  LuCog,
-  LuList
+  LuList,
+  LuRedoDot
 } from "react-icons/lu";
 import { useLocation, useNavigate } from "react-router";
 import { path } from "~/utils/path";
@@ -56,7 +56,7 @@ export function ScheduleNavigation() {
   const getViewIcon = (option: string) => {
     switch (option) {
       case "operations":
-        return <LuCog />;
+        return <LuRedoDot />;
       case "week":
         return <LuCalendarDays />;
       case "month":

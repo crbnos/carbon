@@ -843,9 +843,6 @@ msgstr "能力"
 msgid "Ability"
 msgstr "能力"
 
-msgid "Ability-gated work only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
-msgstr "能力ゲート化されたジョブは、適格なオペレーターがシフト中の場合のみ実行されます。人員配置ボードに割り当てられたオペレーターが、利用可能な労働力をさらに形作ります。"
-
 msgid "About"
 msgstr "について"
 
@@ -6724,6 +6721,9 @@ msgstr "追跡対象エンティティの読み込みに失敗しました"
 msgid "Failed to move account: {0}"
 msgstr "勘定科目の移動に失敗しました: {0}"
 
+msgid "Failed to regenerate schedule"
+msgstr ""
+
 msgid "Failed to regenerate thumbnail"
 msgstr "サムネイルの再生成に失敗しました"
 
@@ -10587,6 +10587,9 @@ msgstr "空のオープン期間のみ削除できます。"
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "資格のある従業員のみがこのプロセスをスケジュールして実行できます"
 
+msgid "Only schedule operations where an operator is assigned on the manning board. Unstaffed work centers get no work — an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape は接続を承認しましたが、保存に失敗しました。もう一度接続してください。"
 
@@ -12420,6 +12423,12 @@ msgstr "更新"
 msgid "Refresh exchange rate"
 msgstr "為替レートを更新"
 
+msgid "Regenerate"
+msgstr ""
+
+msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
+msgstr ""
+
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "3Dモデルからサムネイルを再生成"
 
@@ -12685,6 +12694,9 @@ msgstr "金額閾値に基づいて購買注文の承認を要求する"
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "ワークフロー内の品質文書の承認が必要です"
+
+msgid "Require staffing to schedule"
+msgstr ""
 
 msgid "Require two-factor authentication"
 msgstr "2要素認証が必須"
@@ -13301,6 +13313,9 @@ msgstr "ワークセンター容量に対してジョブをスケジュール"
 
 msgid "Schedule Name"
 msgstr "スケジュール名"
+
+msgid "Schedule regenerated"
+msgstr ""
 
 msgid "Scheduled"
 msgstr "スケジュール済み"
@@ -14289,6 +14304,9 @@ msgstr "領収書行を分割"
 
 msgid "Split shipment line"
 msgstr "出荷ラインを分割"
+
+msgid "Staffing required"
+msgstr ""
 
 msgid "Stand up hosting"
 msgstr "ホスティングをセットアップ"
@@ -15856,6 +15874,12 @@ msgstr "このジョブはショップフロアで利用できなくなります
 msgid "This job's own required quantity for the material."
 msgstr "この材料に対するこのジョブ自体の必要数量。"
 
+msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
+msgstr ""
+
+msgid "This location only schedules work where an operator is assigned on the manning board. With no one assigned here, work is not scheduled and shows as unschedulable."
+msgstr ""
+
 msgid "This lot is expired and can't be picked."
 msgstr "このロットは期限切れであり、ピックできません。"
 
@@ -15915,6 +15939,12 @@ msgstr "この販売注文には関連するジョブがあります。それら
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "この販売注文には、ジョブを作成する必要があるラインがあります"
+
+msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
+msgstr ""
+
+msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
+msgstr ""
 
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."

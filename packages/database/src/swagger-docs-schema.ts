@@ -23230,6 +23230,9 @@ export default {
             $ref: "#/parameters/rowFilter.location.code"
           },
           {
+            $ref: "#/parameters/rowFilter.location.requiresStaffing"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -23346,6 +23349,9 @@ export default {
             $ref: "#/parameters/rowFilter.location.code"
           },
           {
+            $ref: "#/parameters/rowFilter.location.requiresStaffing"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -23414,6 +23420,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.location.code"
+          },
+          {
+            $ref: "#/parameters/rowFilter.location.requiresStaffing"
           },
           {
             $ref: "#/parameters/body.location"
@@ -86737,6 +86746,9 @@ export default {
             $ref: "#/parameters/rowFilter.capacityReservation.workHours"
           },
           {
+            $ref: "#/parameters/rowFilter.capacityReservation.isPlaceholder"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -86844,6 +86856,9 @@ export default {
             $ref: "#/parameters/rowFilter.capacityReservation.workHours"
           },
           {
+            $ref: "#/parameters/rowFilter.capacityReservation.isPlaceholder"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -86903,6 +86918,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.capacityReservation.workHours"
+          },
+          {
+            $ref: "#/parameters/rowFilter.capacityReservation.isPlaceholder"
           },
           {
             $ref: "#/parameters/body.capacityReservation"
@@ -110346,7 +110364,8 @@ export default {
         "timezone",
         "companyId",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "requiresStaffing"
       ],
       properties: {
         id: {
@@ -110431,6 +110450,11 @@ export default {
         code: {
           format: "text",
           type: "string"
+        },
+        requiresStaffing: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -140624,7 +140648,8 @@ export default {
         "startAt",
         "endAt",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "isPlaceholder"
       ],
       properties: {
         id: {
@@ -140710,6 +140735,13 @@ export default {
             "Actual work content (hours) inside this reservation; endAt - startAt minus off-shift pauses. Null on legacy rows and manual pins.",
           format: "numeric",
           type: "number"
+        },
+        isPlaceholder: {
+          default: false,
+          description:
+            "true = a non-binding placeholder for an operation the scheduler could not place. Shown on the Forecast (flagged) but excluded from capacity so it never blocks other jobs.",
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -153632,6 +153664,12 @@ export default {
     },
     "rowFilter.location.code": {
       name: "code",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.location.requiresStaffing": {
+      name: "requiresStaffing",
       required: false,
       in: "query",
       type: "string"
@@ -187325,6 +187363,14 @@ export default {
       name: "workHours",
       description:
         "Actual work content (hours) inside this reservation; endAt - startAt minus off-shift pauses. Null on legacy rows and manual pins.",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.capacityReservation.isPlaceholder": {
+      name: "isPlaceholder",
+      description:
+        "true = a non-binding placeholder for an operation the scheduler could not place. Shown on the Forecast (flagged) but excluded from capacity so it never blocks other jobs.",
       required: false,
       in: "query",
       type: "string"

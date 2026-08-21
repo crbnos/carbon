@@ -21,10 +21,10 @@ import { isInternalEmail } from "@carbon/utils";
 import { type ReactNode, useState } from "react";
 import {
   LuBot,
-  LuCog,
   LuDatabase,
   LuFactory,
   LuFileX,
+  LuRedoDot,
   LuUpload,
   LuWrench
 } from "react-icons/lu";
@@ -70,7 +70,7 @@ const onboardingIndustryValidator = z
  *  table carries an `iconName` that maps here. */
 const INDUSTRY_ICONS: Record<string, ReactNode> = {
   bot: <LuBot className="h-5 w-5" />,
-  cog: <LuCog className="h-5 w-5" />,
+  cog: <LuRedoDot className="h-5 w-5" />,
   wrench: <LuWrench className="h-5 w-5" />
 };
 

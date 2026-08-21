@@ -180,14 +180,14 @@ export function buildOperationDependencies(
   // Calculate adjusted order for "With Previous" operations
   const adjustedOrders = new Map<string, number>();
   for (let i = 0; i < sorted.length; i++) {
-    const op = sorted[i];
+    const op = sorted[i]!;
     if (!op.id) continue;
 
     if (op.operationOrder === "With Previous" && i > 0) {
       // Find the first operation before this that is NOT "With Previous"
       let adjustedOrder = i;
       for (let j = i - 1; j >= 0; j--) {
-        if (sorted[j].operationOrder !== "With Previous") {
+        if (sorted[j]!.operationOrder !== "With Previous") {
           adjustedOrder = j + 1;
           break;
         }
@@ -213,8 +213,8 @@ export function buildOperationDependencies(
   // Create dependencies between sequential groups
   const orderKeys = [...operationsByOrder.keys()].sort((a, b) => a - b);
   for (let i = 1; i < orderKeys.length; i++) {
-    const currentOrderOps = operationsByOrder.get(orderKeys[i])!;
-    const previousOrderOps = operationsByOrder.get(orderKeys[i - 1])!;
+    const currentOrderOps = operationsByOrder.get(orderKeys[i]!)!;
+    const previousOrderOps = operationsByOrder.get(orderKeys[i - 1]!)!;
 
     // Each operation in current group depends on all operations in previous group
     for (const opId of currentOrderOps) {

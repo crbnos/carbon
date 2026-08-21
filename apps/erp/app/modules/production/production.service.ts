@@ -966,10 +966,30 @@ export async function getJob(client: SupabaseClient<Database>, id: string) {
   return client.from("jobs").select("*").eq("id", id).single();
 }
 
+// Lazy Node Kysely handle for the IN-PROCESS scheduling engine. Built through a
+// dynamic import so this module — which is ALSO bundled for the browser (it is
+// imported by client components via the module barrel) — never STATICALLY pulls
+// in `pg` or a `.server` module. Same tactic as notifyScheduleInputsChanged's
+// `await import("@carbon/jobs")` below. A modest dedicated pool: a regen uses one
+// connection at a time (sequential per job).
+let schedulingDbPromise: Promise<Kysely<KyselyDatabase>> | undefined;
+function getSchedulingDb(): Promise<Kysely<KyselyDatabase>> {
+  if (!schedulingDbPromise) {
+    schedulingDbPromise = (async () => {
+      const { getPostgresClient, getPostgresConnectionPool } = await import(
+        "@carbon/database/client"
+      );
+      const { PostgresDriver } = await import("kysely");
+      return getPostgresClient(getPostgresConnectionPool(5), PostgresDriver);
+    })();
+  }
+  return schedulingDbPromise;
+}
+
 // Read-only "best case" what-if: runs the job first in its location's schedule
-// via the `schedule` edge function (persists nothing) and returns the projected
-// completion + bottleneck cause. Returns null when the job isn't in the
-// schedulable set (e.g. not Ready/In Progress/Paused).
+// IN-PROCESS (persists nothing) and returns the projected completion +
+// bottleneck cause. Returns null when the job isn't in the schedulable set
+// (e.g. not Ready/In Progress/Paused).
 export async function getJobExpediteForecast(
   client: SupabaseClient<Database>,
   jobId: string,
@@ -983,34 +1003,36 @@ export async function getJobExpediteForecast(
     .eq("companyId", companyId)
     .single();
 
-  if (jobError || !job) {
+  if (jobError || !job?.locationId) {
     return { data: null, error: jobError };
   }
 
-  const { data: response, error } = await client.functions.invoke<{
-    expedite: {
-      jobId: string;
-      projectedCompletionAt: string | null;
-      cause: string | null;
-    } | null;
-  }>("schedule", {
-    body: {
+  // Simulate-only what-if, run IN-PROCESS (Node) — persists nothing.
+  try {
+    const { runExpediteWhatIf } = await import("@carbon/database/scheduling");
+    const expedite = await runExpediteWhatIf({
+      db: await getSchedulingDb(),
+      client,
       locationId: job.locationId,
       companyId,
       userId,
       expediteJobId: jobId
-    }
-  });
-
-  return {
-    data: response?.expedite
-      ? {
-          projectedCompletionAt: response.expedite.projectedCompletionAt,
-          cause: response.expedite.cause
-        }
-      : null,
-    error
-  };
+    });
+    return {
+      data: expedite
+        ? {
+            projectedCompletionAt: expedite.projectedCompletionAt,
+            cause: expedite.cause
+          }
+        : null,
+      error: null
+    };
+  } catch (err) {
+    return {
+      data: null,
+      error: err instanceof Error ? err : new Error("Failed to expedite")
+    };
+  }
 }
 
 export async function getJobByOperationId(
@@ -1081,7 +1103,7 @@ export async function getCapacityReservationsForResources(
   let query = client
     .from("capacityReservation")
     .select(
-      `id, operationId, jobId, resourceKind, resourceId, startAt, endAt, scheduleNote, workHours,
+      `id, operationId, jobId, resourceKind, resourceId, startAt, endAt, scheduleNote, workHours, isPlaceholder,
        job!inner(jobId, status, dueDate, locationId),
        jobOperation(description, hasConflict, conflictReason)`
     )
@@ -2469,13 +2491,26 @@ export async function recalculateJobOperationDependencies(
   if (error || !job?.locationId) {
     return { data: null, error: error ?? new Error("Job has no location") };
   }
-  return client.functions.invoke("schedule", {
-    body: {
+  // Regenerate the whole location IN-PROCESS (Node) instead of round-tripping to
+  // the `schedule` edge function — no cold start, no HTTP hop. The caller's
+  // client reads the (same-company) master data; writes go through the Node
+  // Kysely pool.
+  try {
+    const { runLocationSchedule } = await import("@carbon/database/scheduling");
+    const data = await runLocationSchedule({
+      db: await getSchedulingDb(),
+      client,
       locationId: job.locationId,
       companyId: params.companyId,
       userId: params.userId
-    }
-  });
+    });
+    return { data, error: null };
+  } catch (err) {
+    return {
+      data: null,
+      error: err instanceof Error ? err : new Error("Failed to reschedule")
+    };
+  }
 }
 export async function recalculateJobRequirements(
   client: SupabaseClient<Database>,
@@ -4630,6 +4665,9 @@ export async function getWorkCenterReservationsRange(
         .eq("companyId", companyId)
         .eq("resourceKind", "WorkCenter")
         .is("scenarioId", null)
+        // Placeholders mark unplaceable ops — not real bookings, so they must
+        // not inflate the Capacity view's Scheduled load.
+        .eq("isPlaceholder", false)
         .lt("startAt", args.endAt)
         .gt("endAt", args.startAt)
         .not("job.status", "in", '("Cancelled","Completed","Closed")')
@@ -4725,10 +4763,11 @@ export async function getActiveEmployeeAbilities(
   companyId: string
 ) {
   // Qualification is presence-based: any employeeAbility row counts (subject
-  // only to expiry, applied by the caller).
+  // only to expiry, applied by the caller). The ability name rides along so the
+  // people board can badge each person with what they can do.
   return client
     .from("employeeAbility")
-    .select("employeeId, abilityId, expiresAt")
+    .select("employeeId, abilityId, expiresAt, ability(name)")
     .eq("companyId", companyId);
 }
 
@@ -4933,16 +4972,21 @@ export async function movePeopleAssignment(
         .where("id", "=", source.id)
         .where("companyId", "=", args.companyId)
         .execute();
-      return { id: target.id, workCenterId: args.workCenterId };
+      return {
+        id: target.id,
+        workCenterId: args.workCenterId,
+        previousWorkCenterId: source.workCenterId
+      };
     }
 
-    return trx
+    const moved = await trx
       .updateTable("peopleAssignment")
       .set({ workCenterId: args.workCenterId })
       .where("id", "=", source.id)
       .where("companyId", "=", args.companyId)
       .returning(["id", "workCenterId"])
       .executeTakeFirstOrThrow();
+    return { ...moved, previousWorkCenterId: source.workCenterId };
   });
 }
 

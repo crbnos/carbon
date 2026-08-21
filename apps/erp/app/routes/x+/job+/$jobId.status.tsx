@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { runLocationSchedule } from "@carbon/database/scheduling";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -11,6 +12,7 @@ import {
   runMRP,
   updateJobStatus
 } from "~/modules/production";
+import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 const logger = getLogger("erp", "jobid-status");
@@ -106,13 +108,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
         .select("locationId")
         .eq("id", id)
         .single();
-      const [scheduler] = await Promise.all([
-        serviceRole.functions.invoke("schedule", {
-          body: {
-            locationId: jobLocation?.locationId,
-            companyId,
-            userId
-          }
+      if (!jobLocation?.locationId) {
+        throw new Error("Job has no location to schedule");
+      }
+      // Regenerate the whole location IN-PROCESS (Node) — no edge cold-start or
+      // HTTP hop. Throws on failure (caught below), in parallel with PO creation.
+      await Promise.all([
+        runLocationSchedule({
+          db: getDatabaseClient(),
+          client: serviceRole,
+          locationId: jobLocation.locationId,
+          companyId,
+          userId
         }),
         serviceRole.functions.invoke("create", {
           body: {
@@ -124,13 +131,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
           }
         })
       ]);
-
-      if (scheduler.error) {
-        throw redirect(
-          requestReferrer(request) ?? path.to.job(id),
-          await flash(request, error(scheduler.error, "Failed to schedule job"))
-        );
-      }
 
       if (status === "Ready") {
         await client

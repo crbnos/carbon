@@ -1,7 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import {
   LuBuilding,
-  LuCog,
   LuContact,
   LuCreditCard,
   LuFiles,
@@ -9,6 +8,7 @@ import {
   LuMapPin,
   LuPackageSearch,
   LuReceipt,
+  LuRedoDot,
   LuShieldAlert,
   LuTruck
 } from "react-icons/lu";
@@ -76,7 +76,7 @@ export function useSupplierSidebar({ contacts, locations }: Props) {
       name: t`Processes`,
       to: path.to.supplierProcesses(supplierId),
       role: ["employee"],
-      icon: <LuCog />,
+      icon: <LuRedoDot />,
       shortcut: "Command+Shift+r"
     },
     {

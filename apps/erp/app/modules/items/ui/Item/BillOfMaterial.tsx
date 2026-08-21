@@ -39,12 +39,12 @@ import {
   LuArrowLeft,
   LuChevronDown,
   LuChevronRight,
-  LuCog,
   LuExternalLink,
   LuGitPullRequest,
   LuGitPullRequestCreate,
   LuGitPullRequestCreateArrow,
   LuLock,
+  LuRedoDot,
   LuSquareFunction,
   LuTruck
 } from "react-icons/lu";
@@ -1065,7 +1065,7 @@ function MaterialForm({
                 methodOperations.length > 0 ? "secondary" : "destructive"
               }
             >
-              <LuCog className="size-3 mr-1" />
+              <LuRedoDot className="size-3 mr-1" />
               {itemData.methodOperationId
                 ? methodOperations.find(
                     (o) => o.id === itemData.methodOperationId

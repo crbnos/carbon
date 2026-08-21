@@ -234,6 +234,10 @@ export const path = {
       salesOrders: `${api}/sales/orders`,
       salesResolvePrice: `${api}/sales/resolve-price`,
       salesRfq: (id: string) => generatePath(`${api}/sales-rfq/${id}`),
+      schedule: (locationId?: string) =>
+        generatePath(
+          `${api}/schedule${locationId ? `?location=${locationId}` : ""}`
+        ),
       scrapReasons: `${api}/production/scrap-reasons`,
       search: `${api}/search`,
       seedQualityDocuments: `${api}/quality/documents/seed`,

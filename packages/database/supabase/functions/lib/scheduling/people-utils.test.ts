@@ -5,6 +5,7 @@ import {
 import type { CalendarWindow } from "./calendar-utils.ts";
 import {
   buildAbsencesByEmployee,
+  buildAssignmentsByEmployee,
   buildPeopleBudgets,
   buildPeopleByWorkCenter,
   buildOvertimeByEmployee,
@@ -13,6 +14,7 @@ import {
   dateKeyInTimeZone,
   extendWindowsByOvertime,
   subtractAbsences,
+  subtractDates,
 } from "./people-utils.ts";
 
 const TZ = "America/Chicago"; // UTC-6 (CST) / UTC-5 (CDT)
@@ -297,4 +299,42 @@ Deno.test("clipWindowsToStation without budget rows behaves like clipWindowsToDa
     winTimes(result),
     winTimes(clipWindowsToDates(windows, new Set(["2026-01-16"]), TZ))
   );
+});
+
+Deno.test("subtractDates with an empty set returns the input untouched", () => {
+  const windows = [win(jan6amUTC(15, 14), jan6amUTC(15, 22))];
+  const result = subtractDates(windows, new Set(), TZ);
+  assertStrictEquals(result, windows); // same reference — byte-identical guarantee
+});
+
+Deno.test("buildAssignmentsByEmployee inverts the board to employee -> date -> stations", () => {
+  // wc1 has A+B on the 15th; wc2 has A on the 15th and 16th
+  const peopleByWorkCenter = buildPeopleByWorkCenter([
+    { workCenterId: "wc1", employeeId: "A", date: "2026-01-15", shiftId: null },
+    { workCenterId: "wc1", employeeId: "B", date: "2026-01-15", shiftId: null },
+    { workCenterId: "wc2", employeeId: "A", date: "2026-01-15", shiftId: null },
+    { workCenterId: "wc2", employeeId: "A", date: "2026-01-16", shiftId: null },
+  ]);
+  const assignments = buildAssignmentsByEmployee(peopleByWorkCenter);
+  assertEquals(
+    [...(assignments.get("A")?.get("2026-01-15") ?? [])].sort(),
+    ["wc1", "wc2"]
+  );
+  assertEquals([...(assignments.get("A")?.get("2026-01-16") ?? [])], ["wc2"]);
+  assertEquals([...(assignments.get("B")?.get("2026-01-15") ?? [])], ["wc1"]);
+});
+
+Deno.test("buildAssignmentsByEmployee marks who is on the board (spoken for)", () => {
+  // A person on the board at all is "managed"; one who isn't stays a floater.
+  const peopleByWorkCenter = buildPeopleByWorkCenter([
+    {
+      workCenterId: "wc-dmu",
+      employeeId: "brad",
+      date: "2026-01-15",
+      shiftId: null,
+    },
+  ]);
+  const assignments = buildAssignmentsByEmployee(peopleByWorkCenter);
+  assertEquals(assignments.has("brad"), true); // manned somewhere => not a floater
+  assertEquals(assignments.has("carol"), false); // never on the board => floater
 });

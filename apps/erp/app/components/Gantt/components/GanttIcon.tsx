@@ -10,6 +10,7 @@ import {
   LuLocateFixed,
   LuMapPin,
   LuSquare,
+  LuUser,
   LuWrench
 } from "react-icons/lu";
 import { AttemptIcon } from "~/assets/icons/AttemptIcon";
@@ -39,6 +40,8 @@ export function GanttIcon({ name, className }: TaskIconProps) {
       return (
         <LuLocateFixed className={cn(className, "text-muted-foreground")} />
       );
+    case "person":
+      return <LuUser className={cn(className, "text-muted-foreground")} />;
     case "maintenance":
       return <LuWrench className={cn(className, "text-amber-500")} />;
     case "timecard":

@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-18T04:01:09.020Z",
-  "totalTools": 1479,
+  "generated": "2026-08-21T02:58:30.836Z",
+  "totalTools": 1480,
   "modules": 15,
   "tools": [
     {
@@ -34452,6 +34452,32 @@
           "employeeId",
           "period",
           "completedBy"
+        ]
+      }
+    },
+    {
+      "name": "resources_getTrainingGrantedAbilityId",
+      "module": "resources",
+      "classification": "READ",
+      "description": "get training granted ability id",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "trainingAssignmentId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "trainingAssignmentId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "trainingAssignmentId"
         ]
       }
     },

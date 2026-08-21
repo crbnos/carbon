@@ -843,9 +843,6 @@ msgstr "capacità"
 msgid "Ability"
 msgstr "Capacità"
 
-msgid "Ability-gated work only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
-msgstr "Il lavoro con gate di competenza viene eseguito solo quando un operatore qualificato è in turno; gli operatori assegnati sulla tavola organizzativa ulteriormente modellano il lavoro disponibile."
-
 msgid "About"
 msgstr "Informazioni"
 
@@ -6724,6 +6721,9 @@ msgstr "Impossibile caricare le entità tracciate"
 msgid "Failed to move account: {0}"
 msgstr "Impossibile spostare il conto: {0}"
 
+msgid "Failed to regenerate schedule"
+msgstr ""
+
 msgid "Failed to regenerate thumbnail"
 msgstr "Impossibile rigenerare l'anteprima"
 
@@ -10587,6 +10587,9 @@ msgstr "Solo i periodi aperti e vuoti possono essere eliminati."
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "Solo i dipendenti qualificati possono essere programmati e eseguire questo processo"
 
+msgid "Only schedule operations where an operator is assigned on the manning board. Unstaffed work centers get no work — an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape ha autorizzato la connessione, ma il salvataggio non è riuscito. Riprova a connetterti."
 
@@ -12420,6 +12423,12 @@ msgstr "Aggiorna"
 msgid "Refresh exchange rate"
 msgstr "Aggiorna tasso di cambio"
 
+msgid "Regenerate"
+msgstr ""
+
+msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
+msgstr ""
+
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "Rigenerare la miniatura dal modello 3D"
 
@@ -12685,6 +12694,9 @@ msgstr "Richiedi approvazione per gli ordini di acquisto in base alle soglie di 
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "Richiedi approvazione per i documenti di qualità nel tuo flusso di lavoro"
+
+msgid "Require staffing to schedule"
+msgstr ""
 
 msgid "Require two-factor authentication"
 msgstr "Richiedi autenticazione a due fattori"
@@ -13301,6 +13313,9 @@ msgstr "Pianifica i lavori in base alla capacità del centro di lavoro"
 
 msgid "Schedule Name"
 msgstr "Nome Pianificazione"
+
+msgid "Schedule regenerated"
+msgstr ""
 
 msgid "Scheduled"
 msgstr "Programmato"
@@ -14289,6 +14304,9 @@ msgstr "Dividi riga ricevuta"
 
 msgid "Split shipment line"
 msgstr "Dividi riga spedizione"
+
+msgid "Staffing required"
+msgstr ""
 
 msgid "Stand up hosting"
 msgstr "Configura l'hosting"
@@ -15856,6 +15874,12 @@ msgstr "Questo lavoro non sarà più disponibile in officina."
 msgid "This job's own required quantity for the material."
 msgstr "La quantità richiesta da questo lavoro per il materiale."
 
+msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
+msgstr ""
+
+msgid "This location only schedules work where an operator is assigned on the manning board. With no one assigned here, work is not scheduled and shows as unschedulable."
+msgstr ""
+
 msgid "This lot is expired and can't be picked."
 msgstr "Questo lotto è scaduto e non può essere prelevato."
 
@@ -15915,6 +15939,12 @@ msgstr "Questo ordine di vendita ha processi associati. Scegli cosa fare con lor
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "Questo ordine di vendita ha righe che richiedono la creazione di lavori"
+
+msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
+msgstr ""
+
+msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
+msgstr ""
 
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."

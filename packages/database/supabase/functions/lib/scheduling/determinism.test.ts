@@ -38,6 +38,7 @@ import type {
 } from "./master-data-provider.ts";
 import { calendarAdapters, computeNeedByDates } from "./need-by-calculator.ts";
 import type { PeopleDayRow } from "./people-utils.ts";
+import { buildAssignmentsByEmployee } from "./people-utils.ts";
 import type { ResourceCapacityData } from "./slot-allocator.ts";
 import type {
   JobOperationDependency,
@@ -275,6 +276,8 @@ function makeContext(): FiniteSchedulingContext {
     horizonDays: 365,
     windowsEnd,
     peopleByWorkCenter,
+    assignmentsByEmployee: buildAssignmentsByEmployee(peopleByWorkCenter),
+    requiresStaffing: false,
     peopleBudgets,
     windowsByEmployee,
     timeZone: "UTC",

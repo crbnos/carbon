@@ -16,6 +16,12 @@ export type WorkCenterAvailability = {
   tier: "alwaysOn" | "workCenterShift" | "locationShift" | "default";
   workCenterShifts: AvailabilityShift[];
   locationShifts: AvailabilityShift[];
+  /** A process on this station needs a qualified operator (`process.requiresAbility`). */
+  requiresQualifiedOperator: boolean;
+  /** Lights-out (`workCenter.alwaysOn`): runs unattended, exempt from staffing. */
+  lightsOut: boolean;
+  /** The location's "Require staffing to schedule" policy is on. */
+  locationRequiresStaffing: boolean;
 };
 
 type Rung = WorkCenterAvailability["tier"];
@@ -179,14 +185,47 @@ export function WorkCenterAvailabilityPopover({
                 </Trans>
               </li>
               <li className="text-pretty">
-                <Trans>
-                  Ability-gated work only runs while a qualified operator is on
-                  shift; operators assigned on the manning board further shape
-                  available labor.
-                </Trans>
+                {availability.requiresQualifiedOperator ? (
+                  <Trans>
+                    This station runs ability-gated work — it only runs while a
+                    qualified operator is on shift; operators assigned on the
+                    manning board further shape available labor.
+                  </Trans>
+                ) : (
+                  <Trans>
+                    This station runs work with no ability requirement;
+                    operators assigned on the manning board shape available
+                    labor.
+                  </Trans>
+                )}
               </li>
             </ul>
           </div>
+
+          {/* Staffing requirement — explains why an unstaffed station may show
+              no work when the location enforces staffing. */}
+          {availability.locationRequiresStaffing && (
+            <div className="flex flex-col gap-1 border-t border-border pt-2">
+              <div className="text-xs font-medium text-muted-foreground">
+                <Trans>Staffing required</Trans>
+              </div>
+              <p className="text-xs text-muted-foreground text-pretty">
+                {availability.lightsOut ? (
+                  <Trans>
+                    This location only schedules staffed work centers, but this
+                    is a lights-out (24×7) station — it is exempt and keeps
+                    running unattended.
+                  </Trans>
+                ) : (
+                  <Trans>
+                    This location only schedules work where an operator is
+                    assigned on the manning board. With no one assigned here,
+                    work is not scheduled and shows as unschedulable.
+                  </Trans>
+                )}
+              </p>
+            </div>
+          )}
         </div>
       </PopoverContent>
     </Popover>

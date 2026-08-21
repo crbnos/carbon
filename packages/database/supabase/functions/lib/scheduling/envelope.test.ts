@@ -99,6 +99,8 @@ function makeContext(): FiniteSchedulingContext {
     horizonDays: 365,
     windowsEnd,
     peopleByWorkCenter: new Map(),
+    assignmentsByEmployee: new Map(),
+    requiresStaffing: false,
     peopleBudgets: new Map(),
     windowsByEmployee: new Map(),
     timeZone: "UTC",

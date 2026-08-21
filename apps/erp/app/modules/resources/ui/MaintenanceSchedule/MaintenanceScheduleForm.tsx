@@ -199,6 +199,7 @@ const MaintenanceScheduleForm = ({
                   label={t`Estimated Duration (minutes)`}
                   termId="maintenance-schedule-estimated-duration"
                   minValue={0}
+                  isOptional={false}
                 />
                 <Boolean
                   name="takesWorkCenterOffline"

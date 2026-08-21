@@ -843,9 +843,6 @@ msgstr "возможность"
 msgid "Ability"
 msgstr "Способность"
 
-msgid "Ability-gated work only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
-msgstr "Работа с ограничением доступа выполняется только при наличии квалифицированного оператора на смене; операторы, назначенные на доске управления, дополнительно определяют доступную рабочую силу."
-
 msgid "About"
 msgstr "О программе"
 
@@ -6724,6 +6721,9 @@ msgstr "Не удалось загрузить отслеживаемые сущ
 msgid "Failed to move account: {0}"
 msgstr "Не удалось переместить счет: {0}"
 
+msgid "Failed to regenerate schedule"
+msgstr ""
+
 msgid "Failed to regenerate thumbnail"
 msgstr "Не удалось повторно создать миниатюру"
 
@@ -10587,6 +10587,9 @@ msgstr "Удалять можно только пустые открытые п�
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "Только квалифицированные сотрудники могут быть запланированы и выполнить этот процесс"
 
+msgid "Only schedule operations where an operator is assigned on the manning board. Unstaffed work centers get no work — an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape авторизовал подключение, но сохранить его не удалось. Повторите попытку подключения."
 
@@ -12420,6 +12423,12 @@ msgstr "Обновить"
 msgid "Refresh exchange rate"
 msgstr "Обновить курс обмена"
 
+msgid "Regenerate"
+msgstr ""
+
+msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
+msgstr ""
+
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "Восстановить миниатюру из 3D модели"
 
@@ -12685,6 +12694,9 @@ msgstr "Требовать утверждение для заказов на п�
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "Требуется одобрение для документов качества в вашем рабочем процессе"
+
+msgid "Require staffing to schedule"
+msgstr ""
 
 msgid "Require two-factor authentication"
 msgstr "Требовать двухфакторную аутентификацию"
@@ -13301,6 +13313,9 @@ msgstr "Планировать работы с учетом пропускной
 
 msgid "Schedule Name"
 msgstr "Имя расписания"
+
+msgid "Schedule regenerated"
+msgstr ""
 
 msgid "Scheduled"
 msgstr "Запланировано"
@@ -14289,6 +14304,9 @@ msgstr "Разделить строку приемки"
 
 msgid "Split shipment line"
 msgstr "Разделить строку отправки"
+
+msgid "Staffing required"
+msgstr ""
 
 msgid "Stand up hosting"
 msgstr "Развернуть хостинг"
@@ -15856,6 +15874,12 @@ msgstr "Эта работа больше не будет доступна на �
 msgid "This job's own required quantity for the material."
 msgstr "Собственное требуемое количество материала для этого задания."
 
+msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
+msgstr ""
+
+msgid "This location only schedules work where an operator is assigned on the manning board. With no one assigned here, work is not scheduled and shows as unschedulable."
+msgstr ""
+
 msgid "This lot is expired and can't be picked."
 msgstr "Эта партия истекла и не может быть выбрана."
 
@@ -15915,6 +15939,12 @@ msgstr "Этот заказ на продажу имеет связанные р
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "Этот заказ на продажу содержит строки, для которых необходимо создать задания"
+
+msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
+msgstr ""
+
+msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
+msgstr ""
 
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."

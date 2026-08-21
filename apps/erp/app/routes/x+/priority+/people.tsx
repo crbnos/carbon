@@ -134,10 +134,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     : "board";
 
   // horizon: the board assigns per day or per whole week; matrix/capacity
-  // always show the selected date's Monday-start week
+  // always show the selected date's Monday-start week. Week is the default —
+  // only an explicit ?range=day narrows the board to a single day.
   const rangeParam = searchParams.get("range");
   const range: "day" | "week" =
-    view === "board" && rangeParam !== "week" ? "day" : "week";
+    view === "board" && rangeParam === "day" ? "day" : "week";
 
   const weekStart = startOfWeek(parseDate(date), "en-GB"); // en-GB uses Monday as first day
   const weekDates = Array.from({ length: 7 }, (_, i) =>
@@ -421,6 +422,27 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
+  // Per-person ability names for the card badges: presence-based, non-expired
+  // (same expiry rule the board uses for qualification), deduped and sorted.
+  const employeeAbilityNames: Record<string, string[]> = {};
+  {
+    const byEmployee = new Map<string, Set<string>>();
+    for (const row of employeeAbilities.data ?? []) {
+      if (row.expiresAt && row.expiresAt.slice(0, 10) < date) continue;
+      const ability = Array.isArray(row.ability) ? row.ability[0] : row.ability;
+      const name = ability?.name;
+      if (!name) continue;
+      const set = byEmployee.get(row.employeeId) ?? new Set<string>();
+      set.add(name);
+      byEmployee.set(row.employeeId, set);
+    }
+    for (const [employeeId, names] of byEmployee) {
+      employeeAbilityNames[employeeId] = [...names].sort((a, b) =>
+        a.localeCompare(b)
+      );
+    }
+  }
+
   return {
     locationId,
     locationTimeZone: timezone,
@@ -458,6 +480,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     })),
     requiredAbilities: requiredAbilities.data ?? [],
     employeeAbilities: employeeAbilities.data ?? [],
+    employeeAbilityNames,
     shifts: shiftRows.map((shift) => ({ id: shift.id, name: shift.name })),
     shiftHoursById,
     shiftStartById,
@@ -496,6 +519,7 @@ export default function SchedulePeopleRoute() {
     workCenters,
     requiredAbilities,
     employeeAbilities,
+    employeeAbilityNames,
     shifts,
     shiftHoursById,
     shiftStartById,
@@ -661,6 +685,7 @@ export default function SchedulePeopleRoute() {
               assignments={matrixAssignments}
               absences={weekAbsences}
               employeeShiftId={employeeShiftId}
+              employeeAbilityNames={employeeAbilityNames}
             />
           ) : (
             <PeopleBoard
@@ -675,6 +700,7 @@ export default function SchedulePeopleRoute() {
               requiredAbilities={requiredAbilities}
               requiredHoursByWorkCenter={requiredHoursByWorkCenter}
               employeeAbilities={employeeAbilities}
+              employeeAbilityNames={employeeAbilityNames}
               shiftHoursById={shiftHoursById}
               employeeShiftHours={employeeShiftHours}
               defaultShiftHours={defaultShiftHours}

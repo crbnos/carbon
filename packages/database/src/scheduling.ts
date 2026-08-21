@@ -14,3 +14,15 @@ export {
   resolveWorkCenterWindows,
   type WorkCenterAvailabilityInput
 } from "../supabase/functions/lib/scheduling/machine-availability.ts";
+
+// Whole-location finite scheduling, run IN-PROCESS in Node (ERP app + jobs)
+// instead of round-tripping to the `schedule` edge function. Server-only — pulls
+// in the engine (pg/Kysely + @logtape), so import it from route actions,
+// `*.service.ts`, `*.server.ts`, or `@carbon/jobs` handlers, never client code.
+export {
+  type ExpediteWhatIfResult,
+  type LocationScheduleResult,
+  type NewlyLateJob,
+  runExpediteWhatIf,
+  runLocationSchedule
+} from "../supabase/functions/lib/scheduling/run-schedule.ts";

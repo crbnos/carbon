@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getFunctionLogger } from "../logging.ts";
 import type { Kysely } from "kysely";
-import type { DB } from "../database.ts";
+import type { DB } from "../postgres/index.ts";
 import type { Database } from "../types.ts";
 import {
   AssemblyHandler,
@@ -17,6 +17,7 @@ import {
 } from "./calendar-utils.ts";
 import {
   buildAbsencesByEmployee,
+  buildAssignmentsByEmployee,
   buildPeopleBudgets,
   buildPeopleByWorkCenter,
   buildOvertimeByEmployee,
@@ -224,10 +225,10 @@ export class SchedulingEngine {
       const operationsByJobMakeMethodId = this.operations.reduce<
         Record<string, BaseOperation[]>
       >((acc, op) => {
-        if (!acc[op.jobMakeMethodId]) {
-          acc[op.jobMakeMethodId] = [];
+        if (!acc[op.jobMakeMethodId!]) {
+          acc[op.jobMakeMethodId!] = [];
         }
-        acc[op.jobMakeMethodId].push(op);
+        acc[op.jobMakeMethodId!]!.push(op);
         return acc;
       }, {});
 
@@ -669,10 +670,19 @@ export class SchedulingEngine {
     // window for an alwaysOn machine). Reservations GATE placement (one op at a
     // time) and feed attribution. A WC with no resolved windows (e.g. deleted)
     // schedules nothing and surfaces a conflict.
+    // Require-staffing policy (per-location) + which stations are lights-out —
+    // both feed the selector's fallback gates. One cached read each per batch.
+    const [requiresStaffing, alwaysOnWorkCenterIds] = await Promise.all([
+      this.job?.locationId
+        ? this.provider.getLocationRequiresStaffing(this.job.locationId)
+        : Promise.resolve(false),
+      this.provider.getAlwaysOnWorkCenterIds(Array.from(workCenterIds)),
+    ]);
+
     const capacityByWorkCenter = new Map<string, ResourceCapacityData>();
     for (const wcId of workCenterIds) {
       capacityByWorkCenter.set(wcId, {
-        workCenter: { id: wcId },
+        workCenter: { id: wcId, alwaysOn: alwaysOnWorkCenterIds.has(wcId) },
         windows: workCenterAvailability.get(wcId) ?? [],
         reservations: liveReservations
           .filter(
@@ -752,6 +762,9 @@ export class SchedulingEngine {
       (row) => !absentByEmployee.get(row.employeeId)?.has(row.date)
     );
     const peopleByWorkCenter = buildPeopleByWorkCenter(presentPeopleRows);
+    // Inverted board (employee -> date -> stations) so the any-qualified
+    // fallback can tell a manned person is committed elsewhere that day.
+    const assignmentsByEmployee = buildAssignmentsByEmployee(peopleByWorkCenter);
 
     // Authorized overtime = a longer day: extend the person's last window on
     // each overtime date so the allocator can pack work into the extra hours
@@ -805,6 +818,8 @@ export class SchedulingEngine {
       employeesByAbility,
       reservationsByEmployee,
       peopleByWorkCenter,
+      assignmentsByEmployee,
+      requiresStaffing,
       peopleBudgets,
       windowsByEmployee,
       dependencies: this.dependencies,
@@ -1153,6 +1168,7 @@ export class SchedulingEngine {
               earliestStartAt: p.earliestStartAt?.toISOString() ?? null,
               scheduleNote: p.scheduleNote ?? null,
               workHours: p.workHours ?? null,
+              isPlaceholder: p.isPlaceholder ?? false,
               createdBy: this.userId,
             }))
           )

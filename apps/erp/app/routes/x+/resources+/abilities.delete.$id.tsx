@@ -5,6 +5,7 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
+import { notifyScheduleInputsChanged } from "~/modules/production";
 import { deleteAbility, getAbility } from "~/modules/resources";
 import { path } from "~/utils/path";
 
@@ -30,7 +31,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     delete: "resources"
   });
 
@@ -53,6 +54,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
       )
     );
   }
+
+  // Deactivating an ability un-gates any process that required it (the
+  // scheduler's process→ability join filters active = true), so the operator
+  // pools change — restamp affected jobs and let the wave regenerate.
+  await notifyScheduleInputsChanged(
+    companyId,
+    "ability",
+    "Ability deactivated",
+    id
+  );
 
   throw redirect(
     path.to.abilities,

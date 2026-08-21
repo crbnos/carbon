@@ -216,12 +216,25 @@ export async function action({ request }: ActionFunctionArgs) {
         companyId,
         workCenterId
       });
-      await notifyScheduleInputsChanged(
-        companyId,
-        "people",
-        "People assignment moved",
-        result.workCenterId
-      );
+      // Reschedule BOTH stations: the destination gains the person and the
+      // source loses them, so ops on the source work center must re-plan too
+      // (otherwise the source keeps showing a stale booking for the moved
+      // person). Dedup a same-station move.
+      const affectedWorkCenterIds = [
+        ...new Set(
+          [result.workCenterId, result.previousWorkCenterId].filter(
+            (id): id is string => Boolean(id)
+          )
+        )
+      ];
+      for (const affectedWorkCenterId of affectedWorkCenterIds) {
+        await notifyScheduleInputsChanged(
+          companyId,
+          "people",
+          "People assignment moved",
+          affectedWorkCenterId
+        );
+      }
       return { success: true };
     } catch (err) {
       return data(

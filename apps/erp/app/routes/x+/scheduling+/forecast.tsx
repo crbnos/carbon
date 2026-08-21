@@ -15,7 +15,7 @@ import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo } from "react";
-import { LuTriangleAlert } from "react-icons/lu";
+import { LuBan, LuTriangleAlert } from "react-icons/lu";
 import type { LoaderFunctionArgs, Location } from "react-router";
 import { useLoaderData } from "react-router";
 import { Empty } from "~/components";
@@ -151,13 +151,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getDepartmentsList(client, companyId),
     client
       .from("location")
-      .select("name")
+      .select("name, requiresStaffing")
       .eq("id", locationId)
       .eq("companyId", companyId)
       .single()
   ]);
 
   const locationName = locationResult.data?.name ?? undefined;
+  const locationRequiresStaffing =
+    locationResult.data?.requiresStaffing ?? false;
 
   const shifts = shiftsResult.data ?? [];
 
@@ -235,6 +237,26 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }));
   const departmentWorkCenterIds = new Set(plantWorkCenters.map((wc) => wc.id));
 
+  // Which stations host ABILITY-GATED work — a process on them requires a
+  // qualified operator (`process.requiresAbility`). Drives the popover's
+  // "requires a qualified operator" line and, with the location's require-
+  // staffing policy, explains why an unstaffed station schedules nothing.
+  const gatedWorkCenterIds = new Set<string>();
+  if (plantWorkCenters.length > 0) {
+    const gatedRows = await client
+      .from("workCenterProcess")
+      .select("workCenterId, process!inner(requiresAbility)")
+      .eq("companyId", companyId)
+      .in(
+        "workCenterId",
+        plantWorkCenters.map((wc) => wc.id)
+      );
+    for (const row of gatedRows.data ?? []) {
+      const process = row.process as { requiresAbility?: boolean } | null;
+      if (process?.requiresAbility) gatedWorkCenterIds.add(row.workCenterId);
+    }
+  }
+
   // Per-work-center availability tier for the tree's info popover — which rung
   // of the scheduler's ladder (lights-out → work-center shifts → location shifts
   // → default Mon–Fri 8h) actually sets this station's hours. Mirrors the
@@ -295,7 +317,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     workCenterAvailability[workCenterId] = {
       tier,
       workCenterShifts: workCenterShiftInfos,
-      locationShifts: locationShiftInfos
+      locationShifts: locationShiftInfos,
+      requiresQualifiedOperator: gatedWorkCenterIds.has(workCenterId),
+      lightsOut: !!workCenter.alwaysOn,
+      locationRequiresStaffing
     };
   }
 
@@ -376,9 +401,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
       endAt: r.endAt,
       jobId: r.jobId,
       jobReadableId: r.job?.jobId ?? r.jobId,
+      operationId: r.operationId,
       operationDescription: r.jobOperation?.description ?? null,
       hasConflict: r.jobOperation?.hasConflict ?? false,
       conflictReason: r.jobOperation?.conflictReason ?? null,
+      unschedulable: r.isPlaceholder ?? false,
       scheduleNote: r.scheduleNote,
       workHours: r.workHours
     })),
@@ -391,8 +418,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   const jobCount = new Set(rows.map((r) => r.jobId)).size;
+  // A placeholder reservation carries hasConflict too — split the two so the
+  // header reads "late placements" vs "can't be scheduled at all" distinctly
+  // instead of double-counting an unplaceable op as a generic conflict.
   const conflictCount = new Set(
-    rows.filter((r) => r.jobOperation?.hasConflict).map((r) => r.operationId)
+    rows
+      .filter((r) => r.jobOperation?.hasConflict && !r.isPlaceholder)
+      .map((r) => r.operationId)
+  ).size;
+  const unschedulableCount = new Set(
+    rows.filter((r) => r.isPlaceholder).map((r) => r.operationId)
   ).size;
 
   // Count every station shown, not just the ones carrying reservations —
@@ -417,6 +452,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     reservationCount: rows.length,
     jobCount,
     conflictCount,
+    unschedulableCount,
     trace:
       timeline.events.length > 1
         ? {
@@ -452,6 +488,7 @@ export default function ResourceGanttView() {
     reservationCount,
     jobCount,
     conflictCount,
+    unschedulableCount,
     trace,
     detailsById,
     workCenterAvailability
@@ -569,6 +606,21 @@ export default function ResourceGanttView() {
                             reservations · {jobCount} jobs
                           </Trans>
                         </span>
+                        {unschedulableCount > 0 && (
+                          <Badge
+                            variant="red"
+                            className="gap-1 whitespace-nowrap tabular-nums"
+                          >
+                            <LuBan className="size-3" />
+                            {unschedulableCount === 1 ? (
+                              <Trans>1 can't be scheduled</Trans>
+                            ) : (
+                              <Trans>
+                                {unschedulableCount} can't be scheduled
+                              </Trans>
+                            )}
+                          </Badge>
+                        )}
                         {conflictCount > 0 && (
                           <Badge
                             variant="red"

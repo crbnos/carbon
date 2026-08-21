@@ -99,6 +99,12 @@ export function TimelineDetail({
     detail.approximate &&
     !!detail.conflictReason;
 
+  // A placeholder reservation for an operation the scheduler could NOT place.
+  // Its window is a "where it would run" marker, not a real booking — show it
+  // date-only and explain, so it never reads as a committed capacity slot.
+  const isUnschedulablePlaceholder =
+    detail.kind === "reservation" && !!detail.unschedulable;
+
   const kindLabel: Record<TimelineNodeDetail["kind"], string> = {
     job: t`Job`,
     assembly: t`Assembly`,
@@ -124,7 +130,11 @@ export function TimelineDetail({
 
   // Real (booked) reservations get plant-clock times; approximate/placeholder
   // rows stay date-only.
-  const showTimes = !detail.approximate && !isUnscheduled && !!timeZone;
+  const showTimes =
+    !detail.approximate &&
+    !isUnscheduled &&
+    !isUnschedulablePlaceholder &&
+    !!timeZone;
 
   const renderInstant = (iso: string, isApproximate: boolean) => {
     if (showTimes && !isApproximate) {
@@ -152,17 +162,22 @@ export function TimelineDetail({
   };
 
   // Header status chip — mirrors the board legend so the panel reads at a glance.
-  const status: { tone: StatusTone; label: string } = detail.conflictReason
-    ? { tone: "conflict", label: t`Conflict` }
-    : isUnscheduled
-      ? { tone: "conflict", label: t`Unscheduled` }
-      : detail.approximate
-        ? { tone: "estimated", label: t`Estimated` }
-        : { tone: "scheduled", label: t`Scheduled` };
+  const status: { tone: StatusTone; label: string } = isUnschedulablePlaceholder
+    ? { tone: "conflict", label: t`Unschedulable` }
+    : detail.conflictReason
+      ? { tone: "conflict", label: t`Conflict` }
+      : isUnscheduled
+        ? { tone: "conflict", label: t`Unscheduled` }
+        : detail.approximate
+          ? { tone: "estimated", label: t`Estimated` }
+          : { tone: "scheduled", label: t`Scheduled` };
 
   // A zone-agnostic "starts in 3 days / 2 days ago" for booked rows.
   const relative =
-    !detail.approximate && !isUnscheduled && detail.start
+    !detail.approximate &&
+    !isUnscheduled &&
+    !isUnschedulablePlaceholder &&
+    detail.start
       ? formatRelativeTime(detail.start, locale)
       : null;
 
@@ -242,6 +257,16 @@ export function TimelineDetail({
               />
             </span>
           </div>
+        )}
+
+        {isUnschedulablePlaceholder && (
+          <p className="text-sm italic text-muted-foreground text-pretty">
+            <Trans>
+              This operation can't be scheduled yet — the bar marks where it
+              would run once the conflict is resolved. It isn't holding
+              capacity.
+            </Trans>
+          </p>
         )}
 
         {/* Why the row starts when it does — hidden when a conflict is shown,

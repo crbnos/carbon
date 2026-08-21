@@ -22,6 +22,12 @@ export type TimelineNodeDetail = {
   employeeName?: string | null;
   resourceKind?: "WorkCenter" | "OperatorPool" | "Employee";
   conflictReason?: string | null;
+  /**
+   * A placeholder reservation for an operation the scheduler could NOT place
+   * (no qualified operator, no feasible slot, horizon-exhausted). Its window is
+   * a "where it would run" marker, not a real booking, and it holds no capacity.
+   */
+  unschedulable?: boolean;
   /** Why the row starts when it does (queue, predecessor, operator) */
   scheduleNote?: string | null;
   /** Time spent waiting for capacity before the start */

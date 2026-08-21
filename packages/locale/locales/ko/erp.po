@@ -843,9 +843,6 @@ msgstr "역량"
 msgid "Ability"
 msgstr "능력"
 
-msgid "Ability-gated work only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
-msgstr "능력 제한이 있는 작업은 자격 있는 운영자가 근무할 때만 실행되며, 인력 배치 보드에 할당된 운영자가 사용 가능한 인력을 추가로 결정합니다."
-
 msgid "About"
 msgstr "정보"
 
@@ -6724,6 +6721,9 @@ msgstr "추적 개체를 불러오지 못했습니다"
 msgid "Failed to move account: {0}"
 msgstr "계정 이동 실패: {0}"
 
+msgid "Failed to regenerate schedule"
+msgstr ""
+
 msgid "Failed to regenerate thumbnail"
 msgstr "썸네일 재생성 실패"
 
@@ -10587,6 +10587,9 @@ msgstr "비어있는 열린 기간만 삭제할 수 있습니다."
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "자격이 있는 직원만 이 프로세스를 예약하고 실행할 수 있습니다."
 
+msgid "Only schedule operations where an operator is assigned on the manning board. Unstaffed work centers get no work — an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape가 연결을 승인했지만 저장하지 못했습니다. 다시 연결해 보세요."
 
@@ -12420,6 +12423,12 @@ msgstr "새로고침"
 msgid "Refresh exchange rate"
 msgstr "환율 새로고침"
 
+msgid "Regenerate"
+msgstr ""
+
+msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
+msgstr ""
+
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "3D 모델에서 썸네일 재생성"
 
@@ -12685,6 +12694,9 @@ msgstr "금액 기준에 따라 구매주문에 승인 필요"
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "워크플로 내 품질 문서에 승인 필요"
+
+msgid "Require staffing to schedule"
+msgstr ""
 
 msgid "Require two-factor authentication"
 msgstr "2단계 인증 필수"
@@ -13301,6 +13313,9 @@ msgstr "작업장 용량에 맞춰 작업 일정을 계획하세요"
 
 msgid "Schedule Name"
 msgstr "일정 이름"
+
+msgid "Schedule regenerated"
+msgstr ""
 
 msgid "Scheduled"
 msgstr "예정됨"
@@ -14289,6 +14304,9 @@ msgstr "입고 라인 분할"
 
 msgid "Split shipment line"
 msgstr "출하 라인 분할"
+
+msgid "Staffing required"
+msgstr ""
 
 msgid "Stand up hosting"
 msgstr "호스팅 구축"
@@ -15856,6 +15874,12 @@ msgstr "이 작업은 더 이상 현장에서 사용할 수 없게 됩니다."
 msgid "This job's own required quantity for the material."
 msgstr "이 작업 자체의 자재 소요 수량입니다."
 
+msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
+msgstr ""
+
+msgid "This location only schedules work where an operator is assigned on the manning board. With no one assigned here, work is not scheduled and shows as unschedulable."
+msgstr ""
+
 msgid "This lot is expired and can't be picked."
 msgstr "이 로트는 만료되어 피킹할 수 없습니다."
 
@@ -15915,6 +15939,12 @@ msgstr "이 판매주문에는 연결된 작업이 있습니다. 처리 방법�
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "이 판매주문에는 작업 생성이 필요한 라인이 있습니다"
+
+msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
+msgstr ""
+
+msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
+msgstr ""
 
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."

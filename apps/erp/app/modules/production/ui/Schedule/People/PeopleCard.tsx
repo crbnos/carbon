@@ -34,6 +34,8 @@ export type PeopleCardItem = {
   isAbsent: boolean;
   absenceId: string | null;
   missingAbilities: string[];
+  /** the person's qualified (non-expired) abilities — badged on the card */
+  abilities: string[];
   /** remaining unallocated hours (pool card of a partially-assigned person) */
   freeHours: number | null;
   /** hours this card occupies at its station (explicit or shift-derived) */
@@ -185,6 +187,20 @@ export function PeopleCard({
             <LuStickyNote className="h-3 w-3 flex-shrink-0" />
             <span className="truncate">{item.note}</span>
           </p>
+        )}
+        {/* what this person is qualified to do — an intrinsic property, so it
+            shows even when they're absent */}
+        {item.abilities.length > 0 && (
+          <div className="mt-1 flex flex-wrap gap-1">
+            {item.abilities.map((ability) => (
+              <span
+                key={ability}
+                className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground"
+              >
+                {ability}
+              </span>
+            ))}
+          </div>
         )}
       </div>
       <div className="ml-auto flex flex-shrink-0 items-center gap-1.5">

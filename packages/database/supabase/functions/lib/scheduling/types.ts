@@ -208,6 +208,15 @@ export type PlannedReservation = {
    * off-shift pauses. A 6h gated op can span 22h of wall clock.
    */
   workHours?: number | null;
+  /**
+   * true = a non-binding PLACEHOLDER for an operation the scheduler could not
+   * place (no qualified operator, no feasible slot, horizon-exhausted). It is
+   * persisted so the Forecast can show the op instead of the job silently
+   * ending after its last placeable op, but it is excluded from the live
+   * reservation snapshot (getLiveReservations) so it never holds capacity
+   * against other jobs. Placement never adds it to the in-run blocking set.
+   */
+  isPlaceholder?: boolean;
 };
 
 // ============================================================================

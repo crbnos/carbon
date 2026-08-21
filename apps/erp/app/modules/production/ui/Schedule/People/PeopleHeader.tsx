@@ -94,10 +94,11 @@ export function PeopleHeader({
     navigate(`?${newParams.toString()}`);
   };
 
-  // Day | Week horizon on the board (assign per day or per whole week)
+  // Day | Week horizon on the board (assign per day or per whole week). Week is
+  // the default, so only Day carries an explicit param.
   const setPeriod = (value: string) =>
     setParam((params) => {
-      if (value === "week") params.set("range", "week");
+      if (value === "day") params.set("range", "day");
       else params.delete("range");
     });
 

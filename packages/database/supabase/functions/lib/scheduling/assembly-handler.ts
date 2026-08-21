@@ -45,7 +45,7 @@ export class AssemblyHandler {
     }
 
     // Transform the tree to AssemblyNode structure
-    const rootItem = treeResult.data[0];
+    const rootItem = treeResult.data[0]!;
     return this.transformTreeItem(rootItem, operationsByMethod);
   }
 

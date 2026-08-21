@@ -47,8 +47,10 @@ import {
   useLoaderData,
   useSubmit
 } from "react-router";
+import { notifyScheduleInputsChanged } from "~/modules/production";
 import {
   getTrainingAssignmentForCompletion,
+  getTrainingGrantedAbilityId,
   insertTrainingCompletion
 } from "~/modules/resources";
 import type { TrainingQuestion } from "~/modules/resources/types";
@@ -268,6 +270,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
       completedBy: userId,
       createdBy: userId
     });
+
+    // Passing the training grants an ability (via the grant trigger) — restamp
+    // the scheduler for that ability's operator pool.
+    const grantedAbilityId = await getTrainingGrantedAbilityId(
+      serviceRole,
+      id,
+      assignment.companyId
+    );
+    if (grantedAbilityId) {
+      await notifyScheduleInputsChanged(
+        assignment.companyId,
+        "ability",
+        "Operator qualified via training",
+        grantedAbilityId
+      );
+    }
   }
 
   return {

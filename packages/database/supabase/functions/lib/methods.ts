@@ -60,9 +60,9 @@ function getJobMethodTreeArrayToTree(
       lookup[itemId] = { id: itemId, children: [] };
     }
 
-    lookup[itemId]["data"] = item;
+    lookup[itemId]!["data"] = item;
 
-    const treeItem = lookup[itemId];
+    const treeItem = lookup[itemId]!;
 
     if (parentId === parentMaterialId || parentId === undefined) {
       rootItems.push(treeItem);
@@ -72,7 +72,7 @@ function getJobMethodTreeArrayToTree(
         lookup[parentId] = { id: parentId, children: [] };
       }
 
-      lookup[parentId]["children"].push(treeItem);
+      lookup[parentId]!["children"].push(treeItem);
     }
   }
   return rootItems;
@@ -139,10 +139,10 @@ function getQuoteMethodTreeArrayToTree(
     if (!Object.prototype.hasOwnProperty.call(lookup, itemId)) {
       lookup[itemId] = { id: itemId, children: [], data: item };
     } else {
-      lookup[itemId].data = item;
+      lookup[itemId]!.data = item;
     }
 
-    const treeItem = lookup[itemId];
+    const treeItem = lookup[itemId]!;
 
     if (parentId === parentMaterialId || parentId === undefined) {
       rootItems.push(treeItem);
@@ -155,7 +155,7 @@ function getQuoteMethodTreeArrayToTree(
         };
       }
 
-      lookup[parentId].children.push(treeItem);
+      lookup[parentId]!.children.push(treeItem);
     }
   }
   return rootItems;
@@ -357,9 +357,9 @@ async function getSupplierPriceBreaksForItems(
     if (!result[sp.itemId]) {
       result[sp.itemId] = { priceBreaks: [], fallbackUnitPrice: null };
     }
-    const current = result[sp.itemId].fallbackUnitPrice;
+    const current = result[sp.itemId]!.fallbackUnitPrice;
     if (sp.unitPrice != null && (current === null || sp.unitPrice < current)) {
-      result[sp.itemId].fallbackUnitPrice = sp.unitPrice;
+      result[sp.itemId]!.fallbackUnitPrice = sp.unitPrice;
     }
   }
 

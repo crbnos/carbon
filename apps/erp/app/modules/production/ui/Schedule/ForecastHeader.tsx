@@ -12,7 +12,11 @@ import {
   IconButton,
   Popover,
   PopoverContent,
-  PopoverTrigger
+  PopoverTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  toast
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import {
@@ -23,15 +27,16 @@ import {
 } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   LuCalendarDays,
   LuCalendarRange,
   LuChevronDown,
   LuChevronLeft,
-  LuChevronRight
+  LuChevronRight,
+  LuRefreshCw
 } from "react-icons/lu";
-import { useNavigate, useSearchParams } from "react-router";
+import { useFetcher, useNavigate, useSearchParams } from "react-router";
 import { useLocations } from "~/components/Form/Location";
 import { path } from "~/utils/path";
 
@@ -66,6 +71,25 @@ export function ForecastHeader({
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const locations = useLocations();
+  const regenerateFetcher = useFetcher<{
+    success: boolean;
+    error: string | null;
+  }>();
+
+  // Surface the regen outcome — a failed regen is never silent, and a quick
+  // success confirms the board it repaints is fresh rather than empty-because-
+  // broken.
+  useEffect(() => {
+    if (regenerateFetcher.state !== "idle" || !regenerateFetcher.data) return;
+    if (regenerateFetcher.data.success) {
+      toast.success(t`Schedule regenerated`);
+    } else {
+      toast.error(
+        regenerateFetcher.data.error ?? t`Failed to regenerate schedule`
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [regenerateFetcher.state, regenerateFetcher.data]);
 
   const [dateOpen, setDateOpen] = useState(false);
   const parsedDate = parseDate(date);
@@ -221,6 +245,31 @@ export function ForecastHeader({
 
       <HStack className="flex-wrap gap-y-2">
         <HStack>
+          <regenerateFetcher.Form
+            method="post"
+            action={path.to.api.schedule(locationId)}
+          >
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <IconButton
+                  type="submit"
+                  variant="secondary"
+                  aria-label={t`Regenerate`}
+                  icon={<LuRefreshCw />}
+                  isDisabled={regenerateFetcher.state !== "idle"}
+                  isLoading={regenerateFetcher.state !== "idle"}
+                />
+              </TooltipTrigger>
+              <TooltipContent>
+                <Trans>
+                  Regenerate the schedule for this location now. It also runs
+                  automatically about 30 seconds after the last scheduling
+                  change (edits are batched, so several quick changes trigger a
+                  single regeneration).
+                </Trans>
+              </TooltipContent>
+            </Tooltip>
+          </regenerateFetcher.Form>
           <Button variant="secondary" onClick={goToToday}>
             <Trans>Today</Trans>
           </Button>

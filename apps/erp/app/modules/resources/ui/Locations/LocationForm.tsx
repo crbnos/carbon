@@ -18,6 +18,7 @@ import { useEffect } from "react";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
 import {
+  Boolean,
   CustomFormFields,
   Hidden,
   Input,
@@ -106,6 +107,11 @@ const LocationForm = ({
                 />
                 {/* <Number name="latitude" label="Latitude" minValue={-90} maxValue={90} />
               <Number name="longitude" label="Longitude" minVale={-180} maxValue={180} /> */}
+                <Boolean
+                  name="requiresStaffing"
+                  label={t`Require staffing to schedule`}
+                  description={t`Only schedule operations where an operator is assigned on the manning board. Unstaffed work centers get no work — an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt.`}
+                />
                 <CustomFormFields table="location" />
               </VStack>
             </ModalDrawerBody>

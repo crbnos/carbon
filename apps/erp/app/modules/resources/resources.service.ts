@@ -1148,6 +1148,34 @@ export async function insertTrainingCompletion(
     .single();
 }
 
+/**
+ * The ability a training assignment's training grants on completion, or null.
+ * Completing training upserts an `employeeAbility` via the
+ * `grant_ability_on_training_completion` trigger, so the caller can restamp the
+ * scheduler (`notifyScheduleInputsChanged`) for that ability's operator pool.
+ */
+export async function getTrainingGrantedAbilityId(
+  client: SupabaseClient<Database>,
+  trainingAssignmentId: string,
+  companyId: string
+): Promise<string | null> {
+  const assignment = await client
+    .from("trainingAssignment")
+    .select("trainingId")
+    .eq("id", trainingAssignmentId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (!assignment.data?.trainingId) return null;
+
+  const training = await client
+    .from("training")
+    .select("grantsAbilityId")
+    .eq("id", assignment.data.trainingId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  return training.data?.grantsAbilityId ?? null;
+}
+
 export async function updateAbility(
   client: SupabaseClient<Database>,
   id: string,
@@ -1366,13 +1394,17 @@ export async function upsertFailureMode(
 
 export async function upsertLocation(
   client: SupabaseClient<Database>,
-  location:
-    | (Omit<z.infer<typeof locationValidator>, "id"> & {
+  location: // requiresStaffing is optional here so company/onboarding creation (which
+  // reuses the location shape without the field) can omit it — the DB column
+  // defaults to false. The location form always supplies it.
+    | (Omit<z.infer<typeof locationValidator>, "id" | "requiresStaffing"> & {
+        requiresStaffing?: boolean;
         companyId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof locationValidator>, "id"> & {
+    | (Omit<z.infer<typeof locationValidator>, "id" | "requiresStaffing"> & {
+        requiresStaffing?: boolean;
         id: string;
         updatedBy: string;
         customFields?: Json;

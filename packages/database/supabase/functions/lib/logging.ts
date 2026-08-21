@@ -30,7 +30,18 @@ let configured = false;
 function ensureConfigured(): void {
   if (configured) return;
 
-  const raw = Deno.env.get("LOG_LEVEL")?.toLowerCase().trim();
+  // Dual-runtime: this module is imported by the scheduling engine, which now
+  // runs BOTH in the Deno edge runtime and in-process in Node (the app/jobs no
+  // longer round-trip to the `schedule` edge function). `Deno` is undefined in
+  // Node, so read the level from whichever env is present (mirrors the
+  // `typeof Deno` guard in postgres/index.ts).
+  const denoEnv = (globalThis as { Deno?: { env: { get(k: string): string | undefined } } })
+    .Deno?.env;
+  const rawLevel = denoEnv
+    ? denoEnv.get("LOG_LEVEL")
+    : (globalThis as { process?: { env?: Record<string, string | undefined> } })
+        .process?.env?.LOG_LEVEL;
+  const raw = rawLevel?.toLowerCase().trim();
   const level: Level =
     raw && (LOG_LEVELS as readonly string[]).includes(raw)
       ? (raw as Level)
