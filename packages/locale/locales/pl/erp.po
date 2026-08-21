@@ -2557,7 +2557,7 @@ msgid "Both"
 msgstr "Oba"
 
 msgid "Branch an editable copy of this version that you can change and publish."
-msgstr ""
+msgstr "Utwórz edytowalną kopię tej wersji, którą możesz zmienić i opublikować."
 
 msgid "Breadcrumb"
 msgstr "Nawigacja"
@@ -2569,7 +2569,7 @@ msgid "Browse library"
 msgstr "Przeglądaj bibliotekę"
 
 msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
-msgstr ""
+msgstr "Przeglądaj aktywną wersję tylko do odczytu. Możesz nadal zmienić kolejność kroków, aby posprzątać układ."
 
 msgid "Bucket"
 msgstr "Zasobnik"
@@ -3876,7 +3876,7 @@ msgid "Create a new production job to fulfill the sales order"
 msgstr "Utwórz nowe zadanie produkcyjne, aby zrealizować zamówienie sprzedaży"
 
 msgid "Create a new version"
-msgstr ""
+msgstr "Utwórz nową wersję"
 
 msgid "Create a purchase order"
 msgstr "Utwórz zamówienie zakupu"
@@ -11523,11 +11523,14 @@ msgstr "Opublikuj"
 msgid "Publish Version {0}?"
 msgstr "Opublikować wersję {0}?"
 
+msgid "Published"
+msgstr "Opublikowano"
+
 msgid "Published by Carbon"
 msgstr "Opublikowano przez Carbon"
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
-msgstr ""
+msgstr "Opublikowane wersje nie mogą być edytowane. Przeglądaj tylko do odczytu lub utwórz nową wersję, aby wprowadzić zmiany."
 
 msgid "Pull"
 msgstr "Pobierz"
@@ -16709,7 +16712,7 @@ msgid "View Suppliers"
 msgstr "Wyświetl dostawców"
 
 msgid "View the workflow"
-msgstr ""
+msgstr "Wyświetl przepływ pracy"
 
 msgid "View tie-out"
 msgstr "Wyświetl wyrównanie"

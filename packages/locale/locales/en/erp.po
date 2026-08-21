@@ -11523,6 +11523,9 @@ msgstr "Publish"
 msgid "Publish Version {0}?"
 msgstr "Publish Version {0}?"
 
+msgid "Published"
+msgstr "Published"
+
 msgid "Published by Carbon"
 msgstr "Published by Carbon"
 

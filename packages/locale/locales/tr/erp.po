@@ -2557,7 +2557,7 @@ msgid "Both"
 msgstr "Her ikisi"
 
 msgid "Branch an editable copy of this version that you can change and publish."
-msgstr ""
+msgstr "Bu sürümün düzenlenebilir bir kopyasını oluşturun, değiştirebilir ve yayınlayabilirsiniz."
 
 msgid "Breadcrumb"
 msgstr "Sayfa Yolu"
@@ -2569,7 +2569,7 @@ msgid "Browse library"
 msgstr "Kütüphaneyi göz at"
 
 msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
-msgstr ""
+msgstr "Canlı sürümü salt okunur şekilde inceleyin. Yine de adımları düzenlenecek şekilde yeniden düzenleyebilirsiniz."
 
 msgid "Bucket"
 msgstr "Kova"
@@ -3876,7 +3876,7 @@ msgid "Create a new production job to fulfill the sales order"
 msgstr "Satış siparişini yerine getirmek için yeni bir üretim işi oluşturun"
 
 msgid "Create a new version"
-msgstr ""
+msgstr "Yeni bir sürüm oluşturun"
 
 msgid "Create a purchase order"
 msgstr "Satın alma siparişi oluştur"
@@ -11523,11 +11523,14 @@ msgstr "Yayınla"
 msgid "Publish Version {0}?"
 msgstr "Sürüm {0} yayınlanmış mı?"
 
+msgid "Published"
+msgstr "Yayımlandı"
+
 msgid "Published by Carbon"
 msgstr "Carbon tarafından yayınlandı"
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
-msgstr ""
+msgstr "Yayımlanmış sürümler düzenlenemez. Salt okunur şekilde inceleyin veya değişiklik yapmak için yeni bir sürüm oluşturun."
 
 msgid "Pull"
 msgstr "Çek"
@@ -16709,7 +16712,7 @@ msgid "View Suppliers"
 msgstr "Tedarikçileri Görüntüle"
 
 msgid "View the workflow"
-msgstr ""
+msgstr "İş akışını görüntüle"
 
 msgid "View tie-out"
 msgstr "Uyumu Görüntüle"

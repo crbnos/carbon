@@ -2557,7 +2557,7 @@ msgid "Both"
 msgstr "両方"
 
 msgid "Branch an editable copy of this version that you can change and publish."
-msgstr ""
+msgstr "このバージョンの編集可能なコピーをブランチして、変更して公開できます。"
 
 msgid "Breadcrumb"
 msgstr "パンくずリスト"
@@ -2569,7 +2569,7 @@ msgid "Browse library"
 msgstr "ライブラリを参照"
 
 msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
-msgstr ""
+msgstr "ライブバージョンを読み取り専用で参照できます。ステップを並べ替えてレイアウトを整理することもできます。"
 
 msgid "Bucket"
 msgstr "バケット"
@@ -3876,7 +3876,7 @@ msgid "Create a new production job to fulfill the sales order"
 msgstr "販売注文を履行するための新しい生産ジョブを作成します"
 
 msgid "Create a new version"
-msgstr ""
+msgstr "新しいバージョンを作成"
 
 msgid "Create a purchase order"
 msgstr "購買注文を作成"
@@ -11523,11 +11523,14 @@ msgstr "公開"
 msgid "Publish Version {0}?"
 msgstr "バージョン{0}を公開しますか?"
 
+msgid "Published"
+msgstr "公開済み"
+
 msgid "Published by Carbon"
 msgstr "Carbonによって公開"
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
-msgstr ""
+msgstr "公開済みバージョンは編集できません。読み取り専用で参照するか、新しいバージョンをブランチして変更してください。"
 
 msgid "Pull"
 msgstr "プル"
@@ -16709,7 +16712,7 @@ msgid "View Suppliers"
 msgstr "サプライヤーを表示"
 
 msgid "View the workflow"
-msgstr ""
+msgstr "ワークフローを表示"
 
 msgid "View tie-out"
 msgstr "一致を表示"

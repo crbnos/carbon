@@ -3,7 +3,7 @@ import { fkDisplayRegistry } from "@carbon/database/audit.config";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
-import type { GenericQueryFilters } from "~/utils/query";
+import type { Filter, GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import type { workflowValidator } from "./workflows.models";
 
@@ -25,7 +25,25 @@ export async function getWorkflows(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
+    // "status" is a derived filter — Published means a live version is promoted
+    // (activeVersionId set), Draft means none. There is no status column, so
+    // translate it into an activeVersionId null test and keep it out of the
+    // generic column-filter pipeline (which can only emit eq/in/etc.).
+    const statusFilters: Filter[] = [];
+    const columnFilters: Filter[] = [];
+    for (const filter of args.filters ?? []) {
+      (filter.column === "status" ? statusFilters : columnFilters).push(filter);
+    }
+
+    for (const filter of statusFilters) {
+      if (filter.value === "Published") {
+        query = query.not("activeVersionId", "is", null);
+      } else if (filter.value === "Draft") {
+        query = query.is("activeVersionId", null);
+      }
+    }
+
+    query = setGenericQueryFilters(query, { ...args, filters: columnFilters }, [
       { column: "createdAt", ascending: false }
     ]);
   }
