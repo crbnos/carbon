@@ -49,8 +49,8 @@ msgid "(excluded for this customer)"
 msgstr "(excluded for this customer)"
 
 #. placeholder {0}: open.length
-msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
-msgstr "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
+msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
+msgstr "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -1042,6 +1042,9 @@ msgstr "Add a comment..."
 
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
+
+msgid "Add a materials section that lists each item on the bill of materials with its quantity."
+msgstr "Add a materials section that lists each item on the bill of materials with its quantity."
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Add a printer in the printing settings to print labels directly."
@@ -2313,12 +2316,6 @@ msgstr "Auto-generated QR Code"
 msgid "Auto-numbering formats for orders, jobs, parts, and more"
 msgstr "Auto-numbering formats for orders, jobs, parts, and more"
 
-msgid "Auto-start the operator's timer when they open an operation in the MES so time logs are captured from the start."
-msgstr "Auto-start the operator's timer when they open an operation in the MES so time logs are captured from the start."
-
-msgid "Auto-start timer on open"
-msgstr "Auto-start timer on open"
-
 msgid "Auto-suggest purchases from demand and reorder points"
 msgstr "Auto-suggest purchases from demand and reorder points"
 
@@ -3004,6 +3001,9 @@ msgstr "Choose a serial number"
 msgid "Choose another file"
 msgstr "Choose another file"
 
+msgid "Choose what appears on the printed job traveler."
+msgstr "Choose what appears on the printed job traveler."
+
 msgid "Choose your preferred language for the interface."
 msgstr "Choose your preferred language for the interface."
 
@@ -3237,9 +3237,6 @@ msgstr "Completed date"
 
 msgid "Completed Date"
 msgstr "Completed Date"
-
-msgid "Completed Job Notifications"
-msgstr "Completed Job Notifications"
 
 msgid "Completed Qty"
 msgstr "Completed Qty"
@@ -3506,6 +3503,9 @@ msgstr "Contractors"
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "Control design changes with revisions / ECOs"
+
+msgid "Control how operators pick material and track time on the shop floor."
+msgstr "Control how operators pick material and track time on the shop floor."
 
 msgid "Controller, Accountant"
 msgstr "Controller, Accountant"
@@ -7619,17 +7619,11 @@ msgstr "Inbound inspection"
 msgid "Inbox"
 msgstr "Inbox"
 
-msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
-msgstr "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
-
 msgid "Include extra parts in shipment"
 msgstr "Include extra parts in shipment"
 
 msgid "Include Inactive"
 msgstr "Include Inactive"
-
-msgid "Include materials on traveler"
-msgstr "Include materials on traveler"
 
 msgid "Included"
 msgstr "Included"
@@ -8123,6 +8117,9 @@ msgstr "Items inside this window get a yellow badge."
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 
+msgid "Its design may change before the change notice is released."
+msgstr "Its design may change before the change notice is released."
+
 msgid "Job"
 msgstr "Job"
 
@@ -8156,11 +8153,8 @@ msgstr "Job Priority"
 msgid "Job readable"
 msgstr "Job readable"
 
-msgid "Job Traveler Materials"
-msgstr "Job Traveler Materials"
-
-msgid "Job traveler settings updated"
-msgstr "Job traveler settings updated"
+msgid "Job Traveler"
+msgstr "Job Traveler"
 
 msgid "Jobs"
 msgstr "Jobs"
@@ -8947,6 +8941,9 @@ msgstr "Material ID"
 msgid "Material IDs"
 msgstr "Material IDs"
 
+msgid "Material is pre-selected"
+msgstr "Material is pre-selected"
+
 msgid "Material Properties"
 msgstr "Material Properties"
 
@@ -8988,6 +8985,12 @@ msgstr "materials"
 
 msgid "Materials"
 msgstr "Materials"
+
+msgid "Materials are included"
+msgstr "Materials are included"
+
+msgid "Materials are not included"
+msgstr "Materials are not included"
 
 msgid "Max Qty"
 msgstr "Max Qty"
@@ -10337,9 +10340,6 @@ msgstr "Open AR"
 msgid "Open Audit Log"
 msgstr "Open Audit Log"
 
-msgid "Open change notices affecting this part"
-msgstr "Open change notices affecting this part"
-
 msgid "Open date"
 msgstr "Open date"
 
@@ -10424,6 +10424,9 @@ msgstr "Opened"
 msgid "Opening"
 msgstr "Opening"
 
+msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
+msgstr "Opening an operation starts its timer, so time is tracked from the moment work begins."
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 
@@ -10453,9 +10456,6 @@ msgstr "Operation quantity"
 
 msgid "Operation supplier process"
 msgstr "Operation supplier process"
-
-msgid "Operation Timer"
-msgstr "Operation Timer"
 
 msgid "Operation type"
 msgstr "Operation type"
@@ -10492,6 +10492,12 @@ msgstr "Operators"
 
 msgid "Operators can use shared workstations with PIN authentication."
 msgstr "Operators can use shared workstations with PIN authentication."
+
+msgid "Operators start on the Scan tab"
+msgstr "Operators start on the Scan tab"
+
+msgid "Operators start the timer themselves when they begin an operation."
+msgstr "Operators start the timer themselves when they begin an operation."
 
 msgid "Opportunity"
 msgstr "Opportunity"
@@ -11201,9 +11207,6 @@ msgstr "Potential Data Loss"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Pre-filled for a new item when expiry is Fixed Duration."
-
-msgid "Pre-select material without a picking list"
-msgstr "Pre-select material without a picking list"
 
 msgid "Preferred Supplier"
 msgstr "Preferred Supplier"
@@ -15300,6 +15303,12 @@ msgstr "The system passes every in-scope acceptance test in your configured syst
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 
+msgid "The timer starts automatically"
+msgstr "The timer starts automatically"
+
+msgid "The timer starts manually"
+msgstr "The timer starts manually"
+
 msgid "The tooling and fixtures your operations rely on"
 msgstr "The tooling and fixtures your operations rely on"
 
@@ -15308,6 +15317,9 @@ msgstr "The total to make across all jobs created in this bulk batch; combined w
 
 msgid "The traceable reference (e.g. NIST standard, master gauge serial) the calibration values were compared against."
 msgstr "The traceable reference (e.g. NIST standard, master gauge serial) the calibration values were compared against."
+
+msgid "The traveler lists each item on the bill of materials with its quantity."
+msgstr "The traveler lists each item on the bill of materials with its quantity."
 
 msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
 msgstr "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
@@ -15508,6 +15520,9 @@ msgstr "This page of your Implementation Hub is being built. Start from the comm
 msgid "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
 msgstr "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
 
+msgid "This part is activated when change notice {activationLockId} is released."
+msgstr "This part is activated when change notice {activationLockId} is released."
+
 msgid "This part is being phased out."
 msgstr "This part is being phased out."
 
@@ -15556,6 +15571,9 @@ msgstr "This storage type is currently used by {usageCount} storage unit{0}."
 
 msgid "this supplier"
 msgstr "this supplier"
+
+msgid "This tool is activated when change notice {activationLockId} is released."
+msgstr "This tool is activated when change notice {activationLockId} is released."
 
 msgid "This updates the theme for all users of the application"
 msgstr "This updates the theme for all users of the application"
@@ -15869,6 +15887,9 @@ msgstr "Tracked Entity"
 
 msgid "Tracked entity ID is required but none was found"
 msgstr "Tracked entity ID is required but none was found"
+
+msgid "Tracked material is pre-selected by pick order (FEFO), even without a picking list."
+msgstr "Tracked material is pre-selected by pick order (FEFO), even without a picking list."
 
 msgid "Tracking"
 msgstr "Tracking"
@@ -16980,17 +17001,11 @@ msgstr "When on, attributes in this category show up on a person's public profil
 msgid "When on, employees can edit this attribute's value on their own profile; otherwise only admins can."
 msgstr "When on, employees can edit this attribute's value on their own profile; otherwise only admins can."
 
-msgid "When on, opening an operation starts its timer automatically."
-msgstr "When on, opening an operation starts its timer automatically."
-
 msgid "When on, pricing rules (volume discounts, promotions) still apply on top of this override; when off, this override is the final price."
 msgstr "When on, pricing rules (volume discounts, promotions) still apply on top of this override; when off, this override is the final price."
 
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
-
-msgid "When on, the traveler PDF lists the job's required materials."
-msgstr "When on, the traveler PDF lists the job's required materials."
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
@@ -17000,9 +17015,6 @@ msgstr "When on, this price override applies to matching orders; turning off wit
 
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
-
-msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
-msgstr "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
@@ -17213,6 +17225,9 @@ msgstr "Window:"
 
 msgid "WIP"
 msgstr "WIP"
+
+msgid "Without a picking list, operators pick material from the Scan tab."
+msgstr "Without a picking list, operators pick material from the Scan tab."
 
 #. placeholder {0}: quarter.start + 1
 #. placeholder {1}: quarter.end

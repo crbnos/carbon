@@ -70,7 +70,7 @@ export default function ConsumableDetailsRoute() {
   const permissions = usePermissions();
 
   return (
-    <VStack spacing={2} className="p-2">
+    <VStack spacing={4} className="p-4">
       <ItemNotes
         id={consumableData.consumableSummary?.id ?? null}
         title={consumableData.consumableSummary?.name ?? ""}

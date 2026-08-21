@@ -49,8 +49,8 @@ msgid "(excluded for this customer)"
 msgstr "(このお客様では除外されています)"
 
 #. placeholder {0}: open.length
-msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
-msgstr "{0, plural, one {このパーツは1つの開いた変更通知に含まれています} other {このパーツは#つの開いた変更通知に含まれています}}"
+msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
+msgstr "{0, plural, one {このアイテムは1つの未完了の変更通知に含まれています} other {このアイテムは#つの未完了の変更通知に含まれています}}"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -1042,6 +1042,9 @@ msgstr "コメントを追加..."
 
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "数量、価格、送料、リードタイム、税金を上書きするカスタム価格行を追加します"
+
+msgid "Add a materials section that lists each item on the bill of materials with its quantity."
+msgstr "部品表の各項目とその数量をリストアップした材料セクションを追加します。"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "プリンター設定にプリンターを追加して、ラベルを直接印刷します。"
@@ -2313,12 +2316,6 @@ msgstr "自動生成されたQRコード"
 msgid "Auto-numbering formats for orders, jobs, parts, and more"
 msgstr "注文、ジョブ、部品などの自動採番形式"
 
-msgid "Auto-start the operator's timer when they open an operation in the MES so time logs are captured from the start."
-msgstr "オペレータがMESの操作を開くときに自動的にタイマーを開始し、時間ログが最初からキャプチャされるようにします。"
-
-msgid "Auto-start timer on open"
-msgstr "開くときにタイマーを自動開始"
-
 msgid "Auto-suggest purchases from demand and reorder points"
 msgstr "需要に基づいて購買を自動提案し、再注文ポイントを設定"
 
@@ -3004,6 +3001,9 @@ msgstr "シリアル番号を選択"
 msgid "Choose another file"
 msgstr "別のファイルを選択"
 
+msgid "Choose what appears on the printed job traveler."
+msgstr "印刷されたジョブトラベラーに表示される内容を選択します。"
+
 msgid "Choose your preferred language for the interface."
 msgstr "インターフェースの言語を選択してください。"
 
@@ -3237,9 +3237,6 @@ msgstr "完了日"
 
 msgid "Completed Date"
 msgstr "完了日"
-
-msgid "Completed Job Notifications"
-msgstr "完了したジョブ通知"
 
 msgid "Completed Qty"
 msgstr "完了数量"
@@ -3506,6 +3503,9 @@ msgstr "請負業者"
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "設計変更をリビジョン/ECOで管理"
+
+msgid "Control how operators pick material and track time on the shop floor."
+msgstr "オペレーターが材料をピックして、現場で時間を追跡する方法を制御します。"
 
 msgid "Controller, Accountant"
 msgstr "コントローラー、会計士"
@@ -7619,17 +7619,11 @@ msgstr "受入検査"
 msgid "Inbox"
 msgstr "受信トレイ"
 
-msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
-msgstr "ジョブトラベラーPDFに品目番号と数量を含む材料（部品表）セクションを含める。"
-
 msgid "Include extra parts in shipment"
 msgstr "出荷に追加部品を含める"
 
 msgid "Include Inactive"
 msgstr "非アクティブを含める"
-
-msgid "Include materials on traveler"
-msgstr "トラベラーに材料を含める"
 
 msgid "Included"
 msgstr "含まれています"
@@ -8123,6 +8117,9 @@ msgstr "このウィンドウ内のアイテムは黄色いバッジが表示さ
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "アイテム: アイテムマスター、BOM、プロセス仕様書、エンジニアリング変更、CAD"
 
+msgid "Its design may change before the change notice is released."
+msgstr "変更通知のリリース前に、そのデザインが変わる可能性があります。"
+
 msgid "Job"
 msgstr "ジョブ"
 
@@ -8156,11 +8153,8 @@ msgstr "ジョブ優先度"
 msgid "Job readable"
 msgstr "ジョブ読取可能"
 
-msgid "Job Traveler Materials"
-msgstr "ジョブトラベラーの材料"
-
-msgid "Job traveler settings updated"
-msgstr "ジョブトラベラーの設定が更新されました"
+msgid "Job Traveler"
+msgstr "ジョブトラベラー"
 
 msgid "Jobs"
 msgstr "ジョブ"
@@ -8947,6 +8941,9 @@ msgstr "材料ID"
 msgid "Material IDs"
 msgstr "材料ID"
 
+msgid "Material is pre-selected"
+msgstr "材料は事前に選択されています"
+
 msgid "Material Properties"
 msgstr "材料特性"
 
@@ -8988,6 +8985,12 @@ msgstr "材料"
 
 msgid "Materials"
 msgstr "材料"
+
+msgid "Materials are included"
+msgstr "材料が含まれています"
+
+msgid "Materials are not included"
+msgstr "材料は含まれていません"
 
 msgid "Max Qty"
 msgstr "最大数量"
@@ -10337,9 +10340,6 @@ msgstr "未払い売掛金"
 msgid "Open Audit Log"
 msgstr "監査ログを開く"
 
-msgid "Open change notices affecting this part"
-msgstr "このパーツに影響する開いた変更通知を開く"
-
 msgid "Open date"
 msgstr "開始日"
 
@@ -10424,6 +10424,9 @@ msgstr "開いている"
 msgid "Opening"
 msgstr "開始残高"
 
+msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
+msgstr "操作を開くとそのタイマーが開始され、作業開始時点から時間が追跡されます。"
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "このアセットがCarbonに追加される前に既に予約されていた減価償却の期首残高（新規取得の場合は0を使用してください）。"
 
@@ -10453,9 +10456,6 @@ msgstr "オペレーション数量"
 
 msgid "Operation supplier process"
 msgstr "オペレーションサプライヤープロセス"
-
-msgid "Operation Timer"
-msgstr "操作タイマー"
 
 msgid "Operation type"
 msgstr "オペレーション種類"
@@ -10492,6 +10492,12 @@ msgstr "オペレーター"
 
 msgid "Operators can use shared workstations with PIN authentication."
 msgstr "オペレーターはPIN認証を使用して共有ワークステーションを使用できます。"
+
+msgid "Operators start on the Scan tab"
+msgstr "オペレーターは「スキャン」タブで開始します"
+
+msgid "Operators start the timer themselves when they begin an operation."
+msgstr "オペレーターは操作を開始するときに自分でタイマーを開始します。"
 
 msgid "Opportunity"
 msgstr "機会"
@@ -11201,9 +11207,6 @@ msgstr "潜在的データ損失"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "有効期限が固定期間の場合、新しい品目に対して事前入力されます。"
-
-msgid "Pre-select material without a picking list"
-msgstr "ピックリストなしで材料を事前選択"
 
 msgid "Preferred Supplier"
 msgstr "優先仕入先"
@@ -15300,6 +15303,12 @@ msgstr "システムは、設定されたシステム内のすべてのスコー
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "販売RFQ、その見積もり、および結果の販売注文をリンクするスレッド—結合であり、独自のステータスを持つドキュメントではありません。"
 
+msgid "The timer starts automatically"
+msgstr "タイマーが自動的に開始されます"
+
+msgid "The timer starts manually"
+msgstr "タイマーが手動で開始されます"
+
 msgid "The tooling and fixtures your operations rely on"
 msgstr "あなたの業務が依存する工具と治具"
 
@@ -15308,6 +15317,9 @@ msgstr "このバルク バッチで作成されたすべてのジョブで製�
 
 msgid "The traceable reference (e.g. NIST standard, master gauge serial) the calibration values were compared against."
 msgstr "キャリブレーション値が比較された追跡可能な参照（例：NIST標準、マスターゲージシリアル番号）。"
+
+msgid "The traveler lists each item on the bill of materials with its quantity."
+msgstr "トラベラーは部品表の各項目とその数量をリストアップします。"
 
 msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
 msgstr "タイプは新しい従業員が受け取るデフォルトの権限を制御します。ここで選択すると、タイプのテンプレートから権限マトリックスが事前に入力されます。"
@@ -15508,6 +15520,9 @@ msgstr "このページのImplementation Hubは現在構築中です。完成す
 msgid "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
 msgstr "このパーツはこの場所に{quantityOnHand}個あります。「在庫なし」は計画にも消費にも含まれないことを意味します。"
 
+msgid "This part is activated when change notice {activationLockId} is released."
+msgstr "この部品は、変更通知 {activationLockId} がリリースされると有効になります。"
+
 msgid "This part is being phased out."
 msgstr "このパーツは段階的に廃止されています。"
 
@@ -15556,6 +15571,9 @@ msgstr "このストレージタイプは現在{usageCount}個のストレージ
 
 msgid "this supplier"
 msgstr "このサプライヤー"
+
+msgid "This tool is activated when change notice {activationLockId} is released."
+msgstr "この工具は、変更通知 {activationLockId} がリリースされると有効になります。"
 
 msgid "This updates the theme for all users of the application"
 msgstr "これはアプリケーションのすべてのユーザーのテーマを更新します"
@@ -15869,6 +15887,9 @@ msgstr "追跡対象エンティティ"
 
 msgid "Tracked entity ID is required but none was found"
 msgstr "追跡対象エンティティIDが必要ですが、見つかりませんでした"
+
+msgid "Tracked material is pre-selected by pick order (FEFO), even without a picking list."
+msgstr "追跡される材料は、ピッキングリストがない場合でも、ピック順（FEFO）によって事前に選択されます。"
 
 msgid "Tracking"
 msgstr "追跡"
@@ -16980,17 +17001,11 @@ msgstr "有効にすると、このカテゴリーの属性がユーザーの公
 msgid "When on, employees can edit this attribute's value on their own profile; otherwise only admins can."
 msgstr "有効にすると、従業員は自分のプロフィールでこのアトリビュートの値を編集できます。そうでない場合は、管理者のみが編集できます。"
 
-msgid "When on, opening an operation starts its timer automatically."
-msgstr "有効の場合、操作を開くとそのタイマーが自動的に開始されます。"
-
 msgid "When on, pricing rules (volume discounts, promotions) still apply on top of this override; when off, this override is the final price."
 msgstr "有効にすると、価格設定ルール(ボリュームディスカウント、プロモーション)がこのオーバーライドの上に引き続き適用されます。無効にすると、このオーバーライドが最終価格です。"
 
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "有効にすると、このプロセスの操作バーコードをスキャンすると、残りのすべての未処理数量が1つのアクションで完了としてレポートされます。オペレータが定期的に部分を報告する場合は無効にします。"
-
-msgid "When on, the traveler PDF lists the job's required materials."
-msgstr "有効にすると、トラベラーPDFにジョブで必要な材料が一覧表示されます。"
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "有効にすると、この当事者の請求書は税計算をスキップします。当事者は免税証明書を最新の状態に保つ責任があります。"
@@ -17000,9 +17015,6 @@ msgstr "有効にすると、この価格オーバーライドは一致する注
 
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "オンの場合、このルールはそのタイプのすべてのターゲットに対して発火します。割り当て行は無視されますが保持されます。"
-
-msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
-msgstr "オンの場合、追跡材料はピックリストがなくても、ピック順序（FEFO）で事前選択されます。オフの場合、オペレーターはスキャンタブで開始します。"
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "サプライヤーの応答が期待される場合。サプライヤーはRFQポータルでこの日付を確認でき、Carbonはその後の遅い応答を受け付けません(設定可能)。"
@@ -17213,6 +17225,9 @@ msgstr "ウィンドウ:"
 
 msgid "WIP"
 msgstr "仕掛品"
+
+msgid "Without a picking list, operators pick material from the Scan tab."
+msgstr "ピッキングリストがない場合、オペレーターは「スキャン」タブから材料をピックします。"
 
 #. placeholder {0}: quarter.start + 1
 #. placeholder {1}: quarter.end

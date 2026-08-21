@@ -49,8 +49,8 @@ msgid "(excluded for this customer)"
 msgstr "(इस ग्राहक के लिए बाहर रखा गया)"
 
 #. placeholder {0}: open.length
-msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
-msgstr "{0, plural, one {यह भाग 1 खुली परिवर्तन सूचना पर है} other {यह भाग # खुली परिवर्तन सूचनाओं पर है}}"
+msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
+msgstr "{0, plural, one {यह आइटम 1 खुली परिवर्तन सूचना पर है} other {यह आइटम # खुली परिवर्तन सूचनाओं पर है}}"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -1042,6 +1042,9 @@ msgstr "एक टिप्पणी जोड़ें..."
 
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "मात्रा, मूल्य, शिपिंग, लीड समय और कर को ओवरराइड करने के लिए एक कस्टम मूल्य निर्धारण पंक्ति जोड़ें"
+
+msgid "Add a materials section that lists each item on the bill of materials with its quantity."
+msgstr "बिल ऑफ मेटेरियल्स पर प्रत्येक आइटम और उसकी मात्रा को सूचीबद्ध करने वाली एक सामग्री अनुभाग जोड़ें।"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "प्रिंटिंग सेटिंग्स में एक प्रिंटर जोड़ें ताकि लेबल सीधे प्रिंट कर सकें।"
@@ -2313,12 +2316,6 @@ msgstr "स्वचालित रूप से उत्पन्न QR क�
 msgid "Auto-numbering formats for orders, jobs, parts, and more"
 msgstr "ऑर्डर, जॉब, पार्ट्स और अन्य के लिए ऑटो-नंबरिंग फॉर्मेट"
 
-msgid "Auto-start the operator's timer when they open an operation in the MES so time logs are captured from the start."
-msgstr "जब ऑपरेटर MES में एक ऑपरेशन खोलते हैं तो उनके टाइमर को स्वचालित रूप से शुरू करें ताकि समय लॉग शुरू से ही कैप्चर किए जाएं।"
-
-msgid "Auto-start timer on open"
-msgstr "खोलने पर टाइमर को स्वचालित रूप से शुरू करें"
-
 msgid "Auto-suggest purchases from demand and reorder points"
 msgstr "मांग और पुनः ऑर्डर बिंदुओं से स्वचालित रूप से खरीद सुझाएं"
 
@@ -3004,6 +3001,9 @@ msgstr "एक सीरियल नंबर चुनें"
 msgid "Choose another file"
 msgstr "दूसरी फ़ाइल चुनें"
 
+msgid "Choose what appears on the printed job traveler."
+msgstr "मुद्रित जॉब ट्रैवलर पर क्या दिखाई दे, इसे चुनें।"
+
 msgid "Choose your preferred language for the interface."
 msgstr "अपनी पसंद की भाषा इंटरफेस के लिए चुनें।"
 
@@ -3237,9 +3237,6 @@ msgstr "पूर्ण तारीख"
 
 msgid "Completed Date"
 msgstr "पूर्ण तारीख"
-
-msgid "Completed Job Notifications"
-msgstr "पूर्ण किए गए कार्य सूचनाएं"
 
 msgid "Completed Qty"
 msgstr "पूर्ण मात्रा"
@@ -3506,6 +3503,9 @@ msgstr "ठेकेदार"
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "संशोधन / ECOs के साथ डिज़ाइन परिवर्तनों को नियंत्रित करें"
+
+msgid "Control how operators pick material and track time on the shop floor."
+msgstr "नियंत्रित करें कि ऑपरेटर शॉप फ्लोर पर सामग्री कैसे चुनते हैं और समय कैसे ट्रैक करते हैं।"
 
 msgid "Controller, Accountant"
 msgstr "नियंत्रक, लेखाकार"
@@ -7619,17 +7619,11 @@ msgstr "इनबाउंड निरीक्षण"
 msgid "Inbox"
 msgstr "इनबॉक्स"
 
-msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
-msgstr "जॉब ट्रैवलर PDF में आइटम नंबर और मात्राओं के साथ बिल ऑफ मटेरियल्स अनुभाग शामिल करें।"
-
 msgid "Include extra parts in shipment"
 msgstr "शिपमेंट में अतिरिक्त पार्ट्स शामिल करें"
 
 msgid "Include Inactive"
 msgstr "निष्क्रिय शामिल करें"
-
-msgid "Include materials on traveler"
-msgstr "जॉब ट्रैवलर में सामग्री शामिल करें"
 
 msgid "Included"
 msgstr "शामिल"
@@ -8123,6 +8117,9 @@ msgstr "इस विंडो के अंदर आइटम को एक �
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "आइटम: आइटम मास्टर, BOMs, बिल ऑफ प्रोसेस, इंजीनियरिंग परिवर्तन, CAD"
 
+msgid "Its design may change before the change notice is released."
+msgstr "इसकी डिजाइन परिवर्तन सूचना जारी होने से पहले बदल सकती है।"
+
 msgid "Job"
 msgstr "Job"
 
@@ -8156,11 +8153,8 @@ msgstr "नौकरी प्राथमिकता"
 msgid "Job readable"
 msgstr "नौकरी पठनीय"
 
-msgid "Job Traveler Materials"
-msgstr "जॉब ट्रैवलर सामग्री"
-
-msgid "Job traveler settings updated"
-msgstr "जॉब ट्रैवलर की सेटिंग्स अपडेट की गई हैं"
+msgid "Job Traveler"
+msgstr "जॉब ट्रैवलर"
 
 msgid "Jobs"
 msgstr "नौकरियां"
@@ -8947,6 +8941,9 @@ msgstr "सामग्री ID"
 msgid "Material IDs"
 msgstr "सामग्री आईडी"
 
+msgid "Material is pre-selected"
+msgstr "सामग्री पूर्व-चयनित है"
+
 msgid "Material Properties"
 msgstr "सामग्री गुण"
 
@@ -8988,6 +8985,12 @@ msgstr "सामग्रियां"
 
 msgid "Materials"
 msgstr "सामग्री"
+
+msgid "Materials are included"
+msgstr "सामग्री शामिल है"
+
+msgid "Materials are not included"
+msgstr "सामग्री शामिल नहीं है"
 
 msgid "Max Qty"
 msgstr "अधिकतम मात्रा"
@@ -10337,9 +10340,6 @@ msgstr "खुला AR"
 msgid "Open Audit Log"
 msgstr "ऑडिट लॉग खोलें"
 
-msgid "Open change notices affecting this part"
-msgstr "इस भाग को प्रभावित करने वाली परिवर्तन सूचनाएं खोलें"
-
 msgid "Open date"
 msgstr "खोलने की तारीख"
 
@@ -10424,6 +10424,9 @@ msgstr "खुला हुआ"
 msgid "Opening"
 msgstr "शुरुआती"
 
+msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
+msgstr "किसी ऑपरेशन को खोलने से इसका टाइमर शुरू हो जाता है, इसलिए काम शुरू होने के समय से समय ट्रैक किया जाता है।"
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "अवक्षयण का खाता खोलने के संतुलन को पहले ही बुक किया गया है इससे पहले कि यह संपत्ति Carbon में जोड़ी गई थी (नई खरीद के लिए 0 का उपयोग करें)।"
 
@@ -10453,9 +10456,6 @@ msgstr "ऑपरेशन मात्रा"
 
 msgid "Operation supplier process"
 msgstr "ऑपरेशन आपूर्तिकर्ता प्रक्रिया"
-
-msgid "Operation Timer"
-msgstr "ऑपरेशन टाइमर"
 
 msgid "Operation type"
 msgstr "ऑपरेशन प्रकार"
@@ -10492,6 +10492,12 @@ msgstr "ऑपरेटर"
 
 msgid "Operators can use shared workstations with PIN authentication."
 msgstr "ऑपरेटर PIN प्रमाणीकरण के साथ साझा वर्कस्टेशन का उपयोग कर सकते हैं।"
+
+msgid "Operators start on the Scan tab"
+msgstr "ऑपरेटर स्कैन टैब पर शुरू करते हैं"
+
+msgid "Operators start the timer themselves when they begin an operation."
+msgstr "ऑपरेटर जब कोई ऑपरेशन शुरू करते हैं तो टाइमर को स्वयं शुरू करते हैं।"
 
 msgid "Opportunity"
 msgstr "अवसर"
@@ -11201,9 +11207,6 @@ msgstr "संभावित डेटा हानि"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "समाप्ति Fixed Duration होने पर नई वस्तु के लिए पूर्व-भरी हुई।"
-
-msgid "Pre-select material without a picking list"
-msgstr "पिकिंग सूची के बिना सामग्री पूर्व-चयन करें"
 
 msgid "Preferred Supplier"
 msgstr "पसंदीदा आपूर्तिकर्ता"
@@ -15300,6 +15303,12 @@ msgstr "सिस्टम आपके कॉन्फ़िगर किए �
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "धागा जो बिक्रय RFQ, इसकी उद्धरण, और परिणामी बिक्रय आदेश को जोड़ता है – एक जुड़ाव, अपनी स्थिति के साथ एक दस्तावेज़ नहीं।"
 
+msgid "The timer starts automatically"
+msgstr "टाइमर स्वचालित रूप से शुरू होता है"
+
+msgid "The timer starts manually"
+msgstr "टाइमर मैन्युअल रूप से शुरू होता है"
+
 msgid "The tooling and fixtures your operations rely on"
 msgstr "वह उपकरण और फिक्सचर जिन पर आपकी कार्यप्रणाली निर्भर करती है"
 
@@ -15308,6 +15317,9 @@ msgstr "इस बल्क बैच में बनाई गई सभी �
 
 msgid "The traceable reference (e.g. NIST standard, master gauge serial) the calibration values were compared against."
 msgstr "पता लगाने योग्य संदर्भ (उदाहरण के लिए, NIST मानक, मास्टर गेज सीरीज़ नंबर) जिसके विरुद्ध अंशांकन मान की तुलना की गई थी।"
+
+msgid "The traveler lists each item on the bill of materials with its quantity."
+msgstr "ट्रैवलर बिल ऑफ मेटेरियल्स पर प्रत्येक आइटम और उसकी मात्रा को सूचीबद्ध करता है।"
 
 msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
 msgstr "प्रकार नियंत्रित करता है कि नया कर्मचारी कौन सी डिफ़ॉल्ट अनुमतियां प्राप्त करता है; यहाँ इसे चुनने से प्रकार के टेम्पलेट से अनुमति मैट्रिक्स पूर्व-भर जाता है।"
@@ -15508,6 +15520,9 @@ msgstr "आपके Implementation Hub का यह पृष्ठ बना�
 msgid "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
 msgstr "यह पार्ट इस स्थान पर {quantityOnHand} की मात्रा में उपलब्ध है। No Stock का अर्थ है कि इसकी न तो योजना बनाई जाएगी और न ही इसका उपयोग किया जाएगा।"
 
+msgid "This part is activated when change notice {activationLockId} is released."
+msgstr "यह पार्ट तब सक्रिय होता है जब परिवर्तन सूचना {activationLockId} जारी की जाती है।"
+
 msgid "This part is being phased out."
 msgstr "यह पार्ट चरणबद्ध तरीके से बंद किया जा रहा है।"
 
@@ -15556,6 +15571,9 @@ msgstr "यह स्टोरेज प्रकार वर्तमान �
 
 msgid "this supplier"
 msgstr "यह आपूर्तिकर्ता"
+
+msgid "This tool is activated when change notice {activationLockId} is released."
+msgstr "यह उपकरण तब सक्रिय होता है जब परिवर्तन सूचना {activationLockId} जारी की जाती है।"
 
 msgid "This updates the theme for all users of the application"
 msgstr "यह एप्लिकेशन के सभी उपयोगकर्ताओं के लिए थीम को अपडेट करता है"
@@ -15869,6 +15887,9 @@ msgstr "ट्रैक किया गया इकाई"
 
 msgid "Tracked entity ID is required but none was found"
 msgstr "ट्रैक किया गया इकाई ID आवश्यक है लेकिन कोई नहीं मिला"
+
+msgid "Tracked material is pre-selected by pick order (FEFO), even without a picking list."
+msgstr "ट्रैक की गई सामग्री पिक ऑर्डर (FEFO) द्वारा पूर्व-चयनित है, यहां तक कि बिना पिकिंग लिस्ट के भी।"
 
 msgid "Tracking"
 msgstr "ट्रैकिंग"
@@ -16980,17 +17001,11 @@ msgstr "जब सक्षम हो, तो इस श्रेणी की �
 msgid "When on, employees can edit this attribute's value on their own profile; otherwise only admins can."
 msgstr "जब सक्षम हो, तो कर्मचारी अपनी स्वयं की प्रोफ़ाइल पर इस विशेषता का मान संपादित कर सकते हैं; अन्यथा केवल व्यवस्थापक ऐसा कर सकते हैं।"
 
-msgid "When on, opening an operation starts its timer automatically."
-msgstr "जब चालू हो, तो एक ऑपरेशन खोलने से इसका टाइमर स्वचालित रूप से शुरू हो जाता है।"
-
 msgid "When on, pricing rules (volume discounts, promotions) still apply on top of this override; when off, this override is the final price."
 msgstr "जब सक्षम हो, तो मूल्य निर्धारण नियम (वॉल्यूम डिस्काउंट, प्रचार) इस ओवरराइड के शीर्ष पर लागू होते रहते हैं; जब अक्षम हो, तो यह ओवरराइड अंतिम मूल्य है।"
 
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "जब सक्षम हो, तो इस प्रक्रिया की ऑपरेशन बारकोड स्कैन करने से सभी शेष खुली मात्रा एक कार्रवाई में पूर्ण के रूप में रिपोर्ट होती है; जब ऑपरेटर नियमित रूप से आंशिक रिपोर्ट करते हैं तो अक्षम करें।"
-
-msgid "When on, the traveler PDF lists the job's required materials."
-msgstr "चालू होने पर, जॉब ट्रैवलर PDF में जॉब की आवश्यक सामग्री सूचीबद्ध होती है।"
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "जब सक्षम हो, तो इस पक्ष के चालान कर गणना को छोड़ देते हैं; पक्ष छूट प्रमाणपत्र को वर्तमान रखने के लिए जिम्मेदार है।"
@@ -17000,9 +17015,6 @@ msgstr "जब सक्षम हो, तो यह मूल्य ओवर�
 
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "जब चालू हो, तो यह नियम अपने प्रकार के प्रत्येक लक्ष्य के लिए सक्रिय होता है। असाइनमेंट पंक्तियों को अनदेखा किया जाता है लेकिन संरक्षित रखा जाता है।"
-
-msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
-msgstr "जब चालू हो, तो ट्रैक की गई सामग्री को पिकिंग सूची के बिना भी पिक ऑर्डर (FEFO) द्वारा पूर्व-चयनित किया जाता है। जब बंद हो, तो ऑपरेटर स्कैन टैब पर शुरू करते हैं।"
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "जब आपूर्तिकर्ता प्रतिक्रिया की उम्मीद की जाती है; आपूर्तिकर्ता आरएफक्यू पोर्टल पर यह तारीख देखते हैं और कार्बन इसके बाद देर से प्रतिक्रिया स्वीकार नहीं करता है (कॉन्फ़िगर करने योग्य)।"
@@ -17213,6 +17225,9 @@ msgstr "विंडो:"
 
 msgid "WIP"
 msgstr "WIP"
+
+msgid "Without a picking list, operators pick material from the Scan tab."
+msgstr "बिना पिकिंग लिस्ट के, ऑपरेटर स्कैन टैब से सामग्री चुनते हैं।"
 
 #. placeholder {0}: quarter.start + 1
 #. placeholder {1}: quarter.end
