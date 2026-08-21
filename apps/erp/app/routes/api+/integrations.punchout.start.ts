@@ -1,4 +1,4 @@
-import { assertIsPost } from "@carbon/auth";
+import { assertIsPost, getAppUrl } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { resolveIntegrationSecrets } from "@carbon/ee";
@@ -72,7 +72,9 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ error: "Failed to start punchout session" }, { status: 500 });
   }
 
-  const origin = new URL(request.url).origin;
+  // getAppUrl() is the public ERP origin (ERP_URL) — request.url resolves to the
+  // internal proxied host, which McMaster must never receive as the return URL.
+  const origin = getAppUrl();
   const returnUrl = `${origin}/api/punchout/${session.data.id}/return`;
 
   const user = await getUser(serviceRole, userId);

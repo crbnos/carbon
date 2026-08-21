@@ -1,3 +1,4 @@
+import { getAppUrl } from "@carbon/auth";
 import { buildCxmlResponse, parseCxmlEnvelope } from "@carbon/ee/punchout";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -110,7 +111,7 @@ export async function action({ request }: ActionFunctionArgs) {
     | undefined;
   const returnUrl = String(browserFormPost?.["URL"] ?? "");
 
-  const startPage = `${url.origin}/api/punchout/mock?cookie=${encodeURIComponent(
+  const startPage = `${getAppUrl()}/api/punchout/mock?cookie=${encodeURIComponent(
     buyerCookie
   )}&return=${encodeURIComponent(returnUrl)}`;
 
