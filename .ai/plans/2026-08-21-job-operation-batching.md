@@ -69,7 +69,7 @@ Open 39k-line PR, likely to merge first. Verified collisions (tip `f17db29ab`):
 - [x] Task 3: Regenerate DB types
 - [x] Task 4: Resources — process `batchable` flag end-to-end
 - [x] Task 5: ERP production models + services
-- [ ] Task 6: `batch-operations` edge function + resume quantity contract
+- [x] Task 6: `batch-operations` edge function + resume quantity contract
 - [ ] Task 7: ERP batch planning board + schedule integration
 - [ ] Task 8: MES — kanban collapse, batch page, complete route
 - [ ] Task 9: Port and adapt the tests
