@@ -575,6 +575,11 @@ export type GenealogyAssemblySpec = {
 export type AssemblyStepSpec = {
   title: string;
   /**
+   * The body an operator reads under the title. Falls back to the title, but
+   * write one — a step whose instruction repeats its own name reads as generated.
+   */
+  instruction?: string;
+  /**
    * graph.json node ids this step installs. They must exist in the bundled
    * graph — a step naming an absent node renders but animates nothing.
    */

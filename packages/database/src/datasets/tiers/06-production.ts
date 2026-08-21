@@ -43,7 +43,7 @@ async function seedAssembly(ctx: Ctx, spec: AssemblySpec): Promise<void> {
     await insertRow(ctx, "assemblyInstructionStep", {
       assemblyInstructionId: instructionId,
       title: step.title,
-      instructionText: step.title,
+      instructionText: step.instruction ?? step.title,
       componentNodeIds: step.componentNodeIds,
       sortOrder: sortOrder++
     });
