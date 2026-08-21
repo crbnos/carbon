@@ -249,7 +249,25 @@ export default function ToolDetailsRoute() {
     : null;
 
   return (
-    <VStack spacing={2} className="p-2">
+    <VStack spacing={4} className="p-4">
+      {permissions.is("employee") &&
+        methodData &&
+        ["Make", "Buy and Make"].includes(
+          toolData.toolSummary?.replenishmentSystem ?? ""
+        ) && (
+          <Suspense fallback={<Menubar />}>
+            <Await resolve={toolData?.makeMethods}>
+              {(makeMethods) => (
+                <MakeMethodTools
+                  itemId={methodData.makeMethod.itemId}
+                  makeMethods={makeMethods?.data ?? []}
+                  type="Tool"
+                  currentMethodId={methodData.makeMethod.id}
+                />
+              )}
+            </Await>
+          </Suspense>
+        )}
       {permissions.is("employee") && (
         <ItemOpenChangeNoticeAlert changeNotices={changeNotices ?? []} />
       )}
@@ -259,18 +277,6 @@ export default function ToolDetailsRoute() {
             toolData.toolSummary?.replenishmentSystem ?? ""
           ) && (
             <>
-              <Suspense fallback={<Menubar />}>
-                <Await resolve={toolData?.makeMethods}>
-                  {(makeMethods) => (
-                    <MakeMethodTools
-                      itemId={methodData.makeMethod.itemId}
-                      makeMethods={makeMethods?.data ?? []}
-                      type="Tool"
-                      currentMethodId={methodData.makeMethod.id}
-                    />
-                  )}
-                </Await>
-              </Suspense>
               {manufacturingInitialValues && (
                 <ItemManufacturingForm
                   key={itemId}

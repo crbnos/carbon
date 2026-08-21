@@ -99,7 +99,7 @@ export default function PartSalesRoute() {
   };
 
   return (
-    <VStack spacing={2} className="p-2">
+    <VStack spacing={4} className="p-4">
       <ItemSalePriceForm
         key={initialValues.itemId}
         initialValues={initialValues}

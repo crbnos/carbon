@@ -145,7 +145,7 @@ export default function ServiceDetailsRoute() {
   if (!serviceData) throw new Error("Could not find service data");
 
   return (
-    <VStack spacing={2} className="p-2">
+    <VStack spacing={4} className="p-4">
       {permissions.is("employee") && methodData && (
         <>
           <Suspense fallback={<Menubar />}>
