@@ -413,7 +413,7 @@ export async function getPurchaseOrderInvoicesByIds(
 ) {
   return client
     .from("purchaseInvoices")
-    .select("id, orderTotal, balance, status, currencyCode, exchangeRate")
+    .select("id, orderTotal, balance, status, currencyCode")
     .eq("companyId", companyId)
     .in("id", invoiceIds);
 }

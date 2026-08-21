@@ -458,7 +458,7 @@ export const INVOICE_DUST_THRESHOLD = 0.01;
 
 /**
  * Convert a company-base amount into document currency.
- * Invoice views sum `unitPrice` (base); `convertedUnitPrice = unitPrice * exchangeRate`.
+ * Sales views sum base `unitPrice`; `convertedUnitPrice = unitPrice * exchangeRate`.
  * Example: USD base 1000, EUR order, exchangeRate 0.9 → 900.
  */
 export function toDocumentCurrency(
@@ -467,6 +467,39 @@ export function toDocumentCurrency(
 ): number {
   const rate = Number(exchangeRate);
   return baseAmount * (Number.isFinite(rate) && rate !== 0 ? rate : 1);
+}
+
+/**
+ * Roll up one linked invoice for an order summary.
+ * Sales cards render in document currency (`convertToDocument: true`).
+ * PO cards format in company base (`convertToDocument: false`) because
+ * purchase `unitPrice` is already `supplierUnitPrice * exchangeRate`.
+ */
+export function invoiceSettlementDisplayAmounts(args: {
+  total: number;
+  balance: number | null | undefined;
+  exchangeRate?: number | null;
+  convertToDocument: boolean;
+}): {
+  invoicedAmount: number;
+  paidAmount: number;
+  balanceRemaining: number;
+} {
+  const rawTotal = args.total ?? 0;
+  const invoicedAmount = args.convertToDocument
+    ? toDocumentCurrency(rawTotal, args.exchangeRate)
+    : rawTotal;
+  const balanceRemaining = args.convertToDocument
+    ? toDocumentCurrency(
+        Math.max(0, Number(args.balance ?? rawTotal)),
+        args.exchangeRate
+      )
+    : Math.max(0, Number(args.balance ?? rawTotal));
+  return {
+    invoicedAmount,
+    paidAmount: Math.max(0, invoicedAmount - balanceRemaining),
+    balanceRemaining
+  };
 }
 
 // An invoice is payable when it's posted with an outstanding balance of at least
