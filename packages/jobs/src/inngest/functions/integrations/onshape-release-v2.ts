@@ -325,9 +325,28 @@ export const onshapeReleaseV2Function = inngest.createFunction(
             ),
           `revisions for ${payload.partNumber}`
         );
-        for (const item of revisions.items ?? []) {
-          if (item.elementId !== payload.elementId) continue;
-          if (item.revision !== releasedRevision) continue;
+        const candidates = revisions.items ?? [];
+
+        // FIRST by revisionId, which the webhook carries and which identifies
+        // this exact released revision on its own. Matching on
+        // elementId + revision letter alone fails for a component pulled from a
+        // LINKED document, whose revision entry names the SOURCE element rather
+        // than the one the event reports — and a failed match here is what
+        // sends a legitimate release into the refusal below.
+        const exact = payload.revisionId
+          ? candidates.filter((item) => item.id === payload.revisionId)
+          : [];
+
+        const matched =
+          exact.length > 0
+            ? exact
+            : candidates.filter(
+                (item) =>
+                  item.elementId === payload.elementId &&
+                  item.revision === releasedRevision
+              );
+
+        for (const item of matched) {
           partIds.push(item.partId ?? null);
         }
       }
@@ -347,7 +366,7 @@ export const onshapeReleaseV2Function = inngest.createFunction(
         //
         // An ASSEMBLY element IS one item, so a null partId is correct there.
         if (payload.elementType === ELEMENT_TYPE_PART_STUDIO) {
-          const reason = `Onshape did not report which body of this part studio ${payload.partNumber} revision ${releasedRevision} refers to, so Carbon cannot tell which part it is.`;
+          const reason = `Onshape did not report which body of this part studio ${payload.partNumber} revision ${releasedRevision} refers to, so Carbon cannot tell which part it is. Import the assembly's bill of materials instead — that route reads the body ids from the BOM and does not depend on this lookup.`;
           await notifyOnshapeSkips({ ...payload, revision: releasedRevision }, [
             reason
           ]);

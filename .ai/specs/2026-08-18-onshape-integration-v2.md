@@ -795,3 +795,26 @@ twice as well.
     provenance (`purchasing-level` | `structure` | `user`), a later BOM import corrects
     only what Carbon itself guessed, and warns in every other case including items that
     predate the record. Reported through a new `corrections` outcome channel.
+- 2026-08-21: **The Part Studio refusal does NOT block unreleased ingestion — checked, not
+  assumed.** Raul raised it as a risk because bringing unreleased parts and assemblies into
+  Carbon is a requirement. Three pieces of evidence:
+  - `onshape-release-v2` has exactly ONE trigger, inside the receiver's
+    `case "onshape.revision.created"`. That event only fires for something Onshape has
+    RELEASED, so an unreleased part never enters that job at all.
+  - Unreleased parts enter through the BOM import (`v2.import` → `onshape-bom-import`) and
+    the unreleased picker, both gated on `allowUnreleasedSync`. Those take their partIds
+    from the BOM RESPONSE, not from `getRevisions`, so the fallback the refusal replaced
+    was never on their path.
+  - Verified live: the BOM at unreleased version `9ddc075527fe2e83af4f4e12` returns real
+    partIds (`JHD`, `JID`, `JND`, `JJD`) with every row's revision empty, and importing it
+    into a fresh initial-revision host wrote its material lines normally. `TB-950`'s null
+    partId is a SUBASSEMBLY, where null is correct.
+  **What the concern did point at, and what changed.** The refusal could still fire for a
+  legitimately released part when the partId lookup failed for an unrelated reason — most
+  plausibly a component pulled from a LINKED document, whose revision entry names the
+  SOURCE element rather than the one the event reports. The fan-out now matches on the
+  webhook's `revisionId` FIRST, which identifies the released revision on its own and is
+  element-independent, and only falls back to elementId + revision letter. The refusal is
+  now a genuine last resort, and its message points at the BOM import, which does not
+  depend on that lookup. Regression-checked: a real released assembly still resolves and
+  attaches.
