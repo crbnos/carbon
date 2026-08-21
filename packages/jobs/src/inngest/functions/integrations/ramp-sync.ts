@@ -31,9 +31,14 @@ import {
   type RampCashback,
   type RampCurrencyAmount,
   type RampIntegrationMetadata,
+  type RampLineItem,
+  type RampReimbursement,
+  type RampRepayment,
   type RampTransaction,
   type RampTransfer,
-  resolveRampSupplier
+  resolveEmployeeSupplier,
+  resolveRampSupplier,
+  scaleRepaymentLines
 } from "@carbon/ee/ramp.server";
 import { getAppUrl } from "@carbon/env";
 import { trigger } from "@carbon/lib/trigger";
@@ -71,6 +76,28 @@ const CARD_PAYMENT_METHODS = new Set([
 /** Ramp bill status that means the bill has been fully paid. */
 // TODO(task-1): confirm Ramp's paid bill status string.
 const BILL_PAID_STATUS = "PAID";
+
+/**
+ * Reimbursement `state` values that mean Ramp itself paid out the employee — so
+ * Carbon posts the AP payment that closes the reimbursement invoice. An APPROVED
+ * (but not-yet-paid / manual-payout) reimbursement leaves the invoice Open.
+ */
+// TODO(task-1): confirm the reimbursement state that distinguishes Ramp-paid
+// from manual-payout (REIMBURSED vs APPROVED), and whether payment fields carry
+// the payout instant.
+const REIMBURSEMENT_PAID_STATES = new Set(["REIMBURSED", "PAID", "PAID_OUT"]);
+
+/** Repayment `status` that means the employee has actually repaid. */
+// TODO(task-1): confirm the repayment REPAID status string.
+const REPAYMENT_REPAID_STATUS = "REPAID";
+
+/**
+ * Repayment `funding_method` value that means the repayment was applied as a
+ * statement credit (offsetting the card liability) rather than deposited to the
+ * statement bank account.
+ */
+// TODO(task-1): confirm the repayment funding_method enum values.
+const REPAYMENT_STATEMENT_CREDIT_FUNDING = "STATEMENT_CREDIT";
 
 type SyncItem = { id: string; referenceId: string; deepLinkUrl?: string };
 type FailItem = { id: string; message: string };
@@ -972,6 +999,113 @@ async function syncBill(
 }
 
 /**
+ * Create a Draft AP `payment` + a single `invoiceSettlement` against a posted
+ * purchase invoice and post it through the `post-payment` edge function (reverts
+ * by deleting the draft rows on error). Shared by the bill-payments and
+ * reimbursement families so their payment shape can never drift. Returns the
+ * payment row id + readable id on success, or a failure message. The CALLER owns
+ * the `externalIntegrationMapping` link (its id space differs per family).
+ */
+async function createAndPostPayment(
+  ctx: Ctx,
+  args: {
+    supplierId: string | null;
+    invoiceRowId: string;
+    invoiceExchangeRate: number;
+    currencyCode: string;
+    amount: number;
+    paymentDate: string;
+    bankAccount: string;
+    memo: string;
+  }
+): Promise<
+  { paymentRowId: string; readablePaymentId: string } | { fail: string }
+> {
+  const seq = await ctx.client.rpc("get_next_sequence", {
+    sequence_name: "payment",
+    company_id: ctx.companyId
+  });
+  if (seq.error || !seq.data) {
+    return {
+      fail: `Failed to generate payment number: ${
+        seq.error?.message ?? "unknown error"
+      }`
+    };
+  }
+  const readablePaymentId = seq.data as string;
+
+  const paymentRow = await ctx.client
+    .from("payment")
+    .insert({
+      paymentId: readablePaymentId,
+      paymentType: "Disbursement",
+      status: "Draft",
+      supplierId: args.supplierId,
+      paymentDate: args.paymentDate,
+      postingDate: args.paymentDate,
+      currencyCode: args.currencyCode,
+      exchangeRate: args.invoiceExchangeRate,
+      totalAmount: args.amount,
+      bankAccount: args.bankAccount,
+      memo: args.memo,
+      companyId: ctx.companyId,
+      createdBy: "system"
+    })
+    .select("id")
+    .single();
+  if (paymentRow.error || !paymentRow.data) {
+    return {
+      fail: `Failed to create payment: ${
+        paymentRow.error?.message ?? "unknown error"
+      }`
+    };
+  }
+  const paymentRowId = paymentRow.data.id;
+
+  const settlement = await ctx.client.from("invoiceSettlement").insert({
+    paymentId: paymentRowId,
+    targetPurchaseInvoiceId: args.invoiceRowId,
+    appliedAmount: args.amount,
+    discountAmount: 0,
+    writeOffAmount: 0,
+    sourceExchangeRate: 1,
+    targetExchangeRate: args.invoiceExchangeRate,
+    appliedDate: args.paymentDate,
+    companyId: ctx.companyId,
+    createdBy: "system"
+  });
+  if (settlement.error) {
+    await ctx.client.from("payment").delete().eq("id", paymentRowId);
+    return {
+      fail: `Failed to create invoice settlement: ${settlement.error.message}`
+    };
+  }
+
+  const posted = await ctx.client.functions.invoke("post-payment", {
+    body: {
+      type: "post",
+      paymentId: paymentRowId,
+      userId: "system",
+      companyId: ctx.companyId
+    }
+  });
+  if (posted.error) {
+    await ctx.client
+      .from("invoiceSettlement")
+      .delete()
+      .eq("paymentId", paymentRowId);
+    await ctx.client.from("payment").delete().eq("id", paymentRowId);
+    const message =
+      posted.error instanceof Error
+        ? posted.error.message
+        : String(posted.error);
+    return { fail: message };
+  }
+
+  return { paymentRowId, readablePaymentId };
+}
+
+/**
  * Sync one Ramp bill's payment into Carbon as a posted AP `payment` +
  * `invoiceSettlement` that closes the bill's invoice. Returns `ok` (created +
  * posted), `skip` (card-paid, or already synced — confirm only), or `fail`.
@@ -1050,108 +1184,403 @@ async function syncBillPayment(
     };
   }
 
+  const invoiceExchangeRate = invoice.data.exchangeRate ?? 1;
+
+  const outcome = await createAndPostPayment(ctx, {
+    supplierId: invoice.data.supplierId,
+    invoiceRowId: invoiceId,
+    invoiceExchangeRate,
+    currencyCode,
+    amount,
+    paymentDate,
+    bankAccount: ctx.metadata.statementBankAccountId as string,
+    memo: `Ramp bill payment ${paymentRampId}`
+  });
+  if ("fail" in outcome) {
+    return { fail: { id: paymentRampId, message: outcome.fail } };
+  }
+
+  await ctx.mapping.link(
+    "payment",
+    outcome.paymentRowId,
+    "ramp",
+    paymentRampId,
+    {
+      createdBy: "system"
+    }
+  );
+
+  return {
+    ok: {
+      id: paymentRampId,
+      referenceId: outcome.readablePaymentId,
+      deepLinkUrl: invoiceDeepLinkUrl(invoiceId)
+    }
+  };
+}
+
+// /********************************************************\
+// *        Reimbursements (employee AP invoices)          *
+// \********************************************************/
+
+/**
+ * Extract the Ramp user a reimbursement belongs to. The `user` object shape is
+ * not yet confirmed against a live sandbox; falls back to the flat `user_id`.
+ */
+function extractRampUser(reimbursement: RampReimbursement): {
+  user_id: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+} | null {
+  // TODO(task-1): confirm the reimbursement.user object shape.
+  const user = reimbursement.user as
+    | {
+        id?: string;
+        user_id?: string;
+        first_name?: string | null;
+        last_name?: string | null;
+        email?: string | null;
+      }
+    | null
+    | undefined;
+  const userId = user?.user_id ?? user?.id ?? reimbursement.user_id ?? null;
+  if (!userId) return null;
+  return {
+    user_id: userId,
+    first_name: user?.first_name ?? null,
+    last_name: user?.last_name ?? null,
+    email: user?.email ?? null
+  };
+}
+
+/**
+ * Build G/L-coded invoice lines from an arbitrary Ramp line-item list (bills and
+ * reimbursements share the coding shape). Returns an error message when a line is
+ * uncoded or the coded account doesn't exist — the caller creates nothing then.
+ */
+async function buildGlLinesFromItems(
+  ctx: Ctx,
+  items: RampLineItem[],
+  currencyCode: string,
+  decimals: number,
+  uncoded: string
+): Promise<{ lines: BuiltInvoiceLine[] } | { error: string }> {
+  if (items.length === 0) {
+    return { error: "Reimbursement has no line items to post" };
+  }
+  const lines: BuiltInvoiceLine[] = [];
+  for (const item of items) {
+    const { accountId, costCenterId } = codeSelections(
+      item.accounting_field_selections
+    );
+    if (!accountId) return { error: uncoded };
+    const minor = toMinorUnits(item.amount);
+    const amount =
+      minor === null
+        ? 0
+        : fromMinorUnits(Math.abs(minor), currencyCode, decimals);
+    lines.push({
+      accountId,
+      costCenterId,
+      amount,
+      description: item.memo ?? null
+    });
+  }
+  const accountIds = [...new Set(lines.map((line) => line.accountId))];
+  const { data: accounts, error } = await ctx.client
+    .from("account")
+    .select("id")
+    .eq("companyId", ctx.companyId)
+    .in("id", accountIds);
+  if (error) return { error: `Failed to verify accounts: ${error.message}` };
+  const known = new Set((accounts ?? []).map((row) => row.id));
+  if (accountIds.some((id) => !known.has(id))) return { error: uncoded };
+  return { lines };
+}
+
+/**
+ * Sync one Ramp reimbursement into Carbon as a posted purchase invoice against an
+ * auto-created "Employee" supplier (Task 8's standalone-invoice shape). When the
+ * reimbursement was PAID by Ramp, also posts the AP payment that closes it; a
+ * manual-payout (APPROVED) reimbursement is left Open. The confirm/mapping id is
+ * the Ramp reimbursement id (reusing the `bill` entityType — distinct id space).
+ */
+async function syncReimbursement(
+  ctx: Ctx,
+  reimbursement: RampReimbursement
+): Promise<{ ok: SyncItem } | { fail: FailItem }> {
+  const rampUser = extractRampUser(reimbursement);
+  if (!rampUser) {
+    return {
+      fail: {
+        id: reimbursement.id,
+        message:
+          "Reimbursement has no user — cannot resolve an employee supplier"
+      }
+    };
+  }
+
+  let supplierId: string;
+  try {
+    supplierId = await resolveEmployeeSupplier(
+      ctx.client,
+      ctx.db,
+      ctx.companyId,
+      rampUser
+    );
+  } catch (supplierError) {
+    return {
+      fail: {
+        id: reimbursement.id,
+        message:
+          supplierError instanceof Error
+            ? supplierError.message
+            : String(supplierError)
+      }
+    };
+  }
+
+  const currencyCode = reimbursement.currency_code ?? ctx.baseCurrency;
+  const decimals = await getDecimals(ctx, currencyCode);
+
+  const built = await buildGlLinesFromItems(
+    ctx,
+    reimbursement.line_items ?? [],
+    currencyCode,
+    decimals,
+    "Reimbursement line is coded to an account Carbon doesn't recognize — recode it in Ramp"
+  );
+  if ("error" in built) {
+    return { fail: { id: reimbursement.id, message: built.error } };
+  }
+
+  const dateIssued = reimbursement.transaction_date?.slice(0, 10) ?? null;
+  const dateDue = reimbursement.approved_at?.slice(0, 10) ?? null;
+
+  const interaction = await ctx.client
+    .from("supplierInteraction")
+    .insert([{ companyId: ctx.companyId, supplierId }])
+    .select("id")
+    .single();
+  if (interaction.error || !interaction.data) {
+    return {
+      fail: {
+        id: reimbursement.id,
+        message: `Failed to create supplier interaction: ${
+          interaction.error?.message ?? "unknown error"
+        }`
+      }
+    };
+  }
+
   const seq = await ctx.client.rpc("get_next_sequence", {
-    sequence_name: "payment",
+    sequence_name: "purchaseInvoice",
     company_id: ctx.companyId
   });
   if (seq.error || !seq.data) {
     return {
       fail: {
-        id: paymentRampId,
-        message: `Failed to generate payment number: ${
+        id: reimbursement.id,
+        message: `Failed to generate invoice number: ${
           seq.error?.message ?? "unknown error"
         }`
       }
     };
   }
-  const readablePaymentId = seq.data as string;
-  const invoiceExchangeRate = invoice.data.exchangeRate ?? 1;
+  const readableId = seq.data as string;
 
-  const paymentRow = await ctx.client
-    .from("payment")
+  const header = await ctx.client
+    .from("purchaseInvoice")
     .insert({
-      paymentId: readablePaymentId,
-      paymentType: "Disbursement",
+      invoiceId: readableId,
       status: "Draft",
-      supplierId: invoice.data.supplierId,
-      paymentDate,
-      postingDate: paymentDate,
+      supplierId,
+      supplierReference: `RAMP-REIMB-${reimbursement.id}`,
       currencyCode,
-      exchangeRate: invoiceExchangeRate,
-      totalAmount: amount,
-      bankAccount: ctx.metadata.statementBankAccountId as string,
-      memo: `Ramp bill payment ${paymentRampId}`,
+      dateIssued,
+      dateDue,
+      supplierInteractionId: interaction.data.id,
       companyId: ctx.companyId,
       createdBy: "system"
     })
     .select("id")
     .single();
-  if (paymentRow.error || !paymentRow.data) {
+  if (header.error || !header.data) {
     return {
       fail: {
-        id: paymentRampId,
-        message: `Failed to create payment: ${
-          paymentRow.error?.message ?? "unknown error"
+        id: reimbursement.id,
+        message: `Failed to create purchase invoice: ${
+          header.error?.message ?? "unknown error"
         }`
       }
     };
   }
-  const paymentRowId = paymentRow.data.id;
+  const invoiceRowId = header.data.id;
 
-  const settlement = await ctx.client.from("invoiceSettlement").insert({
-    paymentId: paymentRowId,
-    targetPurchaseInvoiceId: invoiceId,
-    appliedAmount: amount,
-    discountAmount: 0,
-    writeOffAmount: 0,
-    sourceExchangeRate: 1,
-    targetExchangeRate: invoiceExchangeRate,
-    appliedDate: paymentDate,
+  const lineRows = built.lines.map((line, lineIndex) => ({
+    invoiceId: invoiceRowId,
+    invoiceLineType: "G/L Account" as const,
+    accountId: line.accountId,
+    costCenterId: line.costCenterId,
+    description: line.description,
+    quantity: 1,
+    unitPrice: line.amount,
+    exchangeRate: 1,
+    sortOrder: lineIndex + 1,
     companyId: ctx.companyId,
     createdBy: "system"
-  });
-  if (settlement.error) {
-    await ctx.client.from("payment").delete().eq("id", paymentRowId);
+  }));
+  const insertedLines = await ctx.client
+    .from("purchaseInvoiceLine")
+    .insert(lineRows);
+  if (insertedLines.error) {
+    await ctx.client.from("purchaseInvoice").delete().eq("id", invoiceRowId);
     return {
       fail: {
-        id: paymentRampId,
-        message: `Failed to create invoice settlement: ${settlement.error.message}`
+        id: reimbursement.id,
+        message: `Failed to create invoice lines: ${insertedLines.error.message}`
       }
     };
   }
 
-  const posted = await ctx.client.functions.invoke("post-payment", {
-    body: {
-      type: "post",
-      paymentId: paymentRowId,
-      userId: "system",
-      companyId: ctx.companyId
-    }
-  });
-  if (posted.error) {
-    await ctx.client
-      .from("invoiceSettlement")
-      .delete()
-      .eq("paymentId", paymentRowId);
-    await ctx.client.from("payment").delete().eq("id", paymentRowId);
-    const message =
-      posted.error instanceof Error
-        ? posted.error.message
-        : String(posted.error);
-    return { fail: { id: paymentRampId, message } };
+  const postOutcome = await postPurchaseInvoice(ctx, invoiceRowId);
+  if ("fail" in postOutcome) {
+    return { fail: { id: reimbursement.id, message: postOutcome.fail } };
   }
 
-  await ctx.mapping.link("payment", paymentRowId, "ramp", paymentRampId, {
+  // The reimbursement is now recorded — link the mapping BEFORE the (optional)
+  // payment so a later payment failure cannot cause a duplicate invoice on retry.
+  await ctx.mapping.link("bill", invoiceRowId, "ramp", reimbursement.id, {
     createdBy: "system"
   });
 
+  // Ramp-paid reimbursements post the AP payment that closes the invoice; a
+  // manual-payout (APPROVED) reimbursement is left Open for Carbon to pay.
+  const isRampPaid = reimbursement.state
+    ? REIMBURSEMENT_PAID_STATES.has(reimbursement.state)
+    : false;
+  if (isRampPaid) {
+    const bankAccount =
+      ctx.metadata.reimbursementBankAccountId ??
+      ctx.metadata.statementBankAccountId;
+    if (!bankAccount) {
+      console.error(
+        `[RAMP SYNC] ${ctx.companyId}: reimbursement ${reimbursement.id} is Ramp-paid but no reimbursement/statement bank account is configured — invoice left Open`
+      );
+    } else {
+      const minor = toMinorUnits(reimbursement.amount);
+      const amount =
+        minor === null
+          ? 0
+          : fromMinorUnits(Math.abs(minor), currencyCode, decimals);
+      const paymentDate = (
+        reimbursement.approved_at ?? reimbursement.transaction_date
+      )?.slice(0, 10);
+      if (amount > 0 && paymentDate) {
+        const paymentOutcome = await createAndPostPayment(ctx, {
+          supplierId,
+          invoiceRowId,
+          invoiceExchangeRate: 1,
+          currencyCode,
+          amount,
+          paymentDate,
+          bankAccount,
+          memo: `Ramp reimbursement ${reimbursement.id}`
+        });
+        if ("fail" in paymentOutcome) {
+          // Non-fatal: the expense (invoice) IS synced — leave it Open and log.
+          console.error(
+            `[RAMP SYNC] ${ctx.companyId}: reimbursement ${reimbursement.id} invoice posted but payment failed — ${paymentOutcome.fail}`
+          );
+        }
+      }
+    }
+  }
+
   return {
     ok: {
-      id: paymentRampId,
-      referenceId: readablePaymentId,
-      deepLinkUrl: invoiceDeepLinkUrl(invoiceId)
+      id: reimbursement.id,
+      referenceId: postOutcome.readableId,
+      deepLinkUrl: invoiceDeepLinkUrl(invoiceRowId)
     }
   };
+}
+
+// /********************************************************\
+// *              Repayments (Repayment cards)             *
+// \********************************************************/
+
+/** Subtract one second from an absolute-instant ISO string (timezone-agnostic). */
+function instantMinusOneSecond(iso: string): string {
+  const ms = Date.parse(iso);
+  if (Number.isNaN(ms)) return iso;
+  // Full-instant transform (not a calendar-day derivation) — allowed server-side.
+  return new Date(ms - 1000).toISOString();
+}
+
+/**
+ * Compute the next repayment cursor = `min(max(processed), min(failed) - 1s)`.
+ * A failed item pulls the cursor back before its own `repaid_at` so the next
+ * sweep re-lists it (only advance over provably-covered work). Returns `null`
+ * when nothing was seen.
+ */
+function computeRepaymentCursor(
+  processedRepaidAt: string[],
+  failedRepaidAt: string[]
+): string | null {
+  let candidate: string | null = null;
+  if (processedRepaidAt.length > 0) {
+    candidate = processedRepaidAt.reduce((max, cur) =>
+      Date.parse(cur) > Date.parse(max) ? cur : max
+    );
+  }
+  if (failedRepaidAt.length > 0) {
+    const minFailed = failedRepaidAt.reduce((min, cur) =>
+      Date.parse(cur) < Date.parse(min) ? cur : min
+    );
+    const cappedFailed = instantMinusOneSecond(minFailed);
+    if (
+      candidate === null ||
+      Date.parse(cappedFailed) < Date.parse(candidate)
+    ) {
+      candidate = cappedFailed;
+    }
+  }
+  return candidate;
+}
+
+/** Read-merge-write `metadata.cursors.repaymentsRepaidAt` on the integration row. */
+async function advanceRepaymentCursor(ctx: Ctx, next: string): Promise<void> {
+  const current = await ctx.client
+    .from("companyIntegration")
+    .select("metadata")
+    .eq("id", "ramp")
+    .eq("companyId", ctx.companyId)
+    .single();
+  if (current.error) {
+    console.error(
+      `[RAMP SYNC] ${ctx.companyId}: failed to read metadata for repayment cursor`,
+      current.error
+    );
+    return;
+  }
+  const metadata =
+    (current.data?.metadata as Record<string, unknown> | null) ?? {};
+  const cursors = (metadata.cursors as Record<string, unknown> | null) ?? {};
+  cursors.repaymentsRepaidAt = next;
+  metadata.cursors = cursors;
+  const updated = await ctx.client
+    .from("companyIntegration")
+    .update({ metadata: metadata as never })
+    .eq("id", "ramp")
+    .eq("companyId", ctx.companyId);
+  if (updated.error) {
+    console.error(
+      `[RAMP SYNC] ${ctx.companyId}: failed to persist repayment cursor`,
+      updated.error
+    );
+  }
 }
 
 export const rampSyncFunction = inngest.createFunction(
@@ -1180,7 +1609,7 @@ export const rampSyncFunction = inngest.createFunction(
       .single();
     const integrationRow = await client
       .from("companyIntegration")
-      .select("updatedBy")
+      .select("updatedBy, updatedAt")
       .eq("id", "ramp")
       .eq("companyId", companyId)
       .maybeSingle();
@@ -1645,14 +2074,276 @@ export const rampSyncFunction = inngest.createFunction(
       return result;
     });
 
-    // Tasks 9–10 add reimbursements / repayments / outbound step.run blocks here.
+    // ---- Reimbursements (employee AP invoices) ---------------------------
+    const reimbursementResult = await step.run(
+      "ramp-reimbursements",
+      async () => {
+        const result: FamilyResult = { created: 0, reconfirmed: 0, failed: 0 };
+        if (!metadata.sync.pullReimbursements) return result;
+
+        const successful: SyncItem[] = [];
+        const failed: FailItem[] = [];
+        let reconfirmed = 0;
+
+        try {
+          for await (const page of ramp.listReimbursements({
+            sync_status: "SYNC_READY"
+          })) {
+            for (const reimbursement of page as RampReimbursement[]) {
+              // Idempotency: already synced → reconfirm only (reuses `bill`).
+              const existing = await ctx.mapping.getEntityId(
+                "ramp",
+                reimbursement.id,
+                "bill"
+              );
+              if (existing) {
+                const info = await ctx.client
+                  .from("purchaseInvoice")
+                  .select("invoiceId")
+                  .eq("id", existing)
+                  .eq("companyId", companyId)
+                  .maybeSingle();
+                successful.push({
+                  id: reimbursement.id,
+                  referenceId: info.data?.invoiceId ?? existing,
+                  deepLinkUrl: invoiceDeepLinkUrl(existing)
+                });
+                reconfirmed += 1;
+                continue;
+              }
+
+              const outcome = await syncReimbursement(ctx, reimbursement);
+              if ("ok" in outcome) successful.push(outcome.ok);
+              else failed.push(outcome.fail);
+            }
+          }
+        } catch (familyError) {
+          console.error(
+            `[RAMP SYNC] ${companyId}: reimbursements drain failed`,
+            familyError
+          );
+        }
+
+        try {
+          await confirmSyncs(client, companyId, {
+            syncType: "REIMBURSEMENT_SYNC",
+            successful,
+            failed
+          });
+        } catch (confirmError) {
+          console.error(
+            `[RAMP SYNC] ${companyId}: REIMBURSEMENT_SYNC confirm failed`,
+            confirmError
+          );
+        }
+
+        result.created = successful.length - reconfirmed;
+        result.reconfirmed = reconfirmed;
+        result.failed = failed.length;
+        return result;
+      }
+    );
+
+    // ---- Repayments (Repayment card transactions) ------------------------
+    const repaymentResult = await step.run("ramp-repayments", async () => {
+      const result: FamilyResult = { created: 0, reconfirmed: 0, failed: 0 };
+      // Repayments ride the same expense-recording gate as reimbursements.
+      if (!metadata.sync.pullReimbursements) return result;
+      if (!cardLiabilityAccountId || !metadata.statementBankAccountId) {
+        return result;
+      }
+
+      // Cursor default: the integration's connect time (its row `updatedAt`).
+      const cursor =
+        metadata.cursors?.repaymentsRepaidAt ??
+        integrationRow.data?.updatedAt ??
+        undefined;
+
+      const processedRepaidAt: string[] = [];
+      const failedRepaidAt: string[] = [];
+      let created = 0;
+      let reconfirmed = 0;
+      let failed = 0;
+
+      try {
+        for await (const page of ramp.listRepayments(
+          cursor ? { from_repaid_at: cursor } : {}
+        )) {
+          for (const repayment of page as RampRepayment[]) {
+            if (repayment.status !== REPAYMENT_REPAID_STATUS) continue;
+            const repaidAt = repayment.repaid_at ?? null;
+
+            // Idempotency: already synced (no Ramp confirm exists — mapping is it).
+            const existing = await ctx.mapping.getEntityId(
+              "ramp",
+              `repayment:${repayment.id}`,
+              "cardTransaction"
+            );
+            if (existing) {
+              reconfirmed += 1;
+              if (repaidAt) processedRepaidAt.push(repaidAt);
+              continue;
+            }
+
+            // Resolve the ORIGINAL card transaction via its mapping.
+            const originalRampId = repayment.original_transaction_id;
+            if (!originalRampId) {
+              failed += 1;
+              if (repaidAt) failedRepaidAt.push(repaidAt);
+              console.error(
+                `[RAMP SYNC] ${companyId}: repayment ${repayment.id} has no original_transaction_id — skipped`
+              );
+              continue;
+            }
+            const originalEntityId = await ctx.mapping.getEntityId(
+              "ramp",
+              originalRampId,
+              "cardTransaction"
+            );
+            if (!originalEntityId) {
+              failed += 1;
+              if (repaidAt) failedRepaidAt.push(repaidAt);
+              console.error(
+                `[RAMP SYNC] ${companyId}: repayment ${repayment.id} original transaction ${originalRampId} is not synced yet — skipped`
+              );
+              continue;
+            }
+
+            const original = await ctx.client
+              .from("cardTransaction")
+              .select("amount, currencyCode")
+              .eq("id", originalEntityId)
+              .eq("companyId", companyId)
+              .maybeSingle();
+            if (!original.data) {
+              failed += 1;
+              if (repaidAt) failedRepaidAt.push(repaidAt);
+              console.error(
+                `[RAMP SYNC] ${companyId}: repayment ${repayment.id} original card transaction ${originalEntityId} no longer exists — skipped`
+              );
+              continue;
+            }
+            const originalLines = await ctx.client
+              .from("cardTransactionLine")
+              .select("accountId, amount, costCenterId, description")
+              .eq("cardTransactionId", originalEntityId)
+              .eq("companyId", companyId)
+              .order("sequence", { ascending: true });
+            if (originalLines.error) {
+              failed += 1;
+              if (repaidAt) failedRepaidAt.push(repaidAt);
+              console.error(
+                `[RAMP SYNC] ${companyId}: repayment ${repayment.id} failed to load original lines`,
+                originalLines.error
+              );
+              continue;
+            }
+
+            const currencyCode =
+              repayment.currency_code ??
+              original.data.currencyCode ??
+              ctx.baseCurrency;
+            const decimals = await getDecimals(ctx, currencyCode);
+            const minor = toMinorUnits(
+              repayment.repayment_amount ?? repayment.amount
+            );
+            const repaymentAmount =
+              minor === null
+                ? 0
+                : fromMinorUnits(Math.abs(minor), currencyCode, decimals);
+
+            const scaled = scaleRepaymentLines(
+              (originalLines.data ?? []).map((line) => ({
+                accountId: line.accountId,
+                amount: line.amount,
+                costCenterId: line.costCenterId,
+                description: line.description
+              })),
+              repaymentAmount,
+              original.data.amount,
+              decimals
+            );
+
+            // Funding: bank deposit → statement bank; statement credit → card
+            // liability. TODO(task-1): confirm the funding_method enum values.
+            const offsetAccountId =
+              repayment.funding_method === REPAYMENT_STATEMENT_CREDIT_FUNDING
+                ? cardLiabilityAccountId
+                : (metadata.statementBankAccountId as string);
+
+            const transactionDate = repaidAt?.slice(0, 10);
+            if (!transactionDate) {
+              failed += 1;
+              console.error(
+                `[RAMP SYNC] ${companyId}: repayment ${repayment.id} has no repaid_at — skipped`
+              );
+              continue;
+            }
+
+            const outcome = await createAndPostTransaction(ctx, {
+              rampId: `repayment:${repayment.id}`,
+              type: "Repayment",
+              amount: repaymentAmount,
+              currencyCode,
+              transactionDate,
+              postingDate: transactionDate,
+              cardAccountId: cardLiabilityAccountId,
+              offsetAccountId,
+              merchantName: null,
+              cardHolderName: null,
+              memo: `Ramp repayment ${repayment.id}`,
+              lines: scaled.map((line) => ({
+                accountId: line.accountId,
+                amount: line.amount,
+                costCenterId: line.costCenterId,
+                description: line.description
+              })),
+              receiptIds: [],
+              getReceipt: (id) => ramp.getReceipt(id)
+            });
+            if ("ok" in outcome) {
+              created += 1;
+              if (repaidAt) processedRepaidAt.push(repaidAt);
+            } else {
+              failed += 1;
+              if (repaidAt) failedRepaidAt.push(repaidAt);
+              console.error(
+                `[RAMP SYNC] ${companyId}: repayment ${repayment.id} failed — ${outcome.fail.message}`
+              );
+            }
+          }
+        }
+      } catch (familyError) {
+        console.error(
+          `[RAMP SYNC] ${companyId}: repayments drain failed`,
+          familyError
+        );
+      }
+
+      // Advance the cursor to min(max(processed), min(failed) - 1s) so failed
+      // items are re-listed next sweep (there is no Ramp confirm for repayments).
+      const nextCursor = computeRepaymentCursor(
+        processedRepaidAt,
+        failedRepaidAt
+      );
+      if (nextCursor) {
+        await advanceRepaymentCursor(ctx, nextCursor);
+      }
+
+      result.created = created;
+      result.reconfirmed = reconfirmed;
+      result.failed = failed;
+      return result;
+    });
 
     const totalFailed =
       cardResult.failed +
       transferResult.failed +
       cashbackResult.failed +
       billResult.failed +
-      billPaymentResult.failed;
+      billPaymentResult.failed +
+      reimbursementResult.failed +
+      repaymentResult.failed;
 
     if (totalFailed > 0) {
       await step.run("ramp-notify-failures", async () => {
@@ -1685,7 +2376,9 @@ export const rampSyncFunction = inngest.createFunction(
       transfers: transferResult,
       cashbacks: cashbackResult,
       bills: billResult,
-      billPayments: billPaymentResult
+      billPayments: billPaymentResult,
+      reimbursements: reimbursementResult,
+      repayments: repaymentResult
     };
   }
 );

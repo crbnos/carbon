@@ -1,8 +1,10 @@
+import { round } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
 import {
   chunk,
   RAMP_ACCOUNTS_BATCH_SIZE,
-  rampClassificationForClass
+  rampClassificationForClass,
+  scaleRepaymentLines
 } from "../service";
 
 describe("rampClassificationForClass", () => {
@@ -50,5 +52,30 @@ describe("chunk", () => {
   it("throws when the batch size is not positive", () => {
     expect(() => chunk([1], 0)).toThrow();
     expect(() => chunk([1], -1)).toThrow();
+  });
+});
+
+describe("scaleRepaymentLines", () => {
+  it("scales a 3-line original to a partial repayment, putting the rounding residual on the largest line so the sum equals the header exactly", () => {
+    const original = [
+      { accountId: "a", amount: 10 },
+      { accountId: "b", amount: 10 },
+      { accountId: "c", amount: 13.33 }
+    ];
+    // ratio = 11.11 / 33.33 ≈ 0.33333 → 3.33, 3.33, 4.44 (sum 11.10), residual
+    // 0.01 lands on the largest line (c → 4.45).
+    const scaled = scaleRepaymentLines(original, 11.11, 33.33, 2);
+
+    expect(scaled.map((line) => line.amount)).toEqual([3.33, 3.33, 4.45]);
+
+    const sum = round(
+      scaled.reduce((acc, line) => acc + line.amount, 0),
+      2
+    );
+    expect(sum).toBe(11.11);
+  });
+
+  it("returns an empty list for no original lines", () => {
+    expect(scaleRepaymentLines([], 5, 10, 2)).toEqual([]);
   });
 });

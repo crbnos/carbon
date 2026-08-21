@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { createMappingService } from "../../accounting/core/external-mapping";
@@ -496,4 +497,162 @@ export async function resolveRampSupplier(
   }
 
   return supplierId;
+}
+
+/**
+ * Resolve a Ramp USER (the employee a reimbursement/repayment belongs to) to a
+ * Carbon `supplier` id. Mapping-first on the `vendor` entityType keyed by the
+ * Ramp user id; else ensures an "Employee" `supplierType` exists (created once),
+ * auto-creates a supplier named `"<First> <Last> (<email>)"`, links the mapping,
+ * and returns the supplier id. Created rows are attributed to `"system"`.
+ *
+ * The `kyselyDb` handle is a PARAM so the calling job passes its own (the mapping
+ * service is Kysely-side). Modeled on {@link resolveRampSupplier}.
+ */
+export async function resolveEmployeeSupplier(
+  serviceRole: SupabaseClient<Database>,
+  kyselyDb: Kysely<KyselyDatabase>,
+  companyId: string,
+  rampUser: {
+    user_id: string;
+    first_name?: string | null;
+    last_name?: string | null;
+    email?: string | null;
+  }
+): Promise<string> {
+  const mapping = createMappingService(kyselyDb, companyId);
+
+  // 1. Mapping-first — a Ramp user reuses the `vendor` entityType id space.
+  const mapped = await mapping.getEntityId(RAMP, rampUser.user_id, "vendor");
+  if (mapped) return mapped;
+
+  // 2. Ensure the "Employee" supplier type exists (create once per company).
+  const existingType = await serviceRole
+    .from("supplierType")
+    .select("id")
+    .eq("companyId", companyId)
+    .eq("name", "Employee")
+    .maybeSingle();
+
+  let supplierTypeId = existingType.data?.id ?? null;
+  if (!supplierTypeId) {
+    const createdType = await serviceRole
+      .from("supplierType")
+      .insert([{ name: "Employee", companyId, createdBy: "system" }])
+      .select("id")
+      .single();
+    if (createdType.error || !createdType.data) {
+      throw new Error(
+        `Failed to create the Employee supplier type: ${
+          createdType.error?.message ?? "unknown error"
+        }`
+      );
+    }
+    supplierTypeId = createdType.data.id;
+  }
+
+  // 3. Build a human name: "<First> <Last> (<email>)", degrading gracefully.
+  const fullName = [rampUser.first_name, rampUser.last_name]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  const name = rampUser.email
+    ? fullName
+      ? `${fullName} (${rampUser.email})`
+      : rampUser.email
+    : fullName || rampUser.user_id;
+
+  const created = await serviceRole
+    .from("supplier")
+    .insert([{ name, supplierTypeId, companyId, createdBy: "system" }])
+    .select("id")
+    .single();
+  if (created.error || !created.data) {
+    throw new Error(
+      `Failed to create Ramp employee supplier "${name}": ${
+        created.error?.message ?? "unknown error"
+      }`
+    );
+  }
+  const supplierId = created.data.id;
+
+  await mapping.link("vendor", supplierId, RAMP, rampUser.user_id, {
+    createdBy: "system"
+  });
+
+  return supplierId;
+}
+
+// /********************************************************\
+// *              Repayment line scaling                   *
+// \********************************************************/
+
+/** A card-transaction line to be scaled for a partial repayment. */
+export type RepaymentLineInput = {
+  accountId: string;
+  amount: number;
+  costCenterId?: string | null;
+  description?: string | null;
+};
+
+export type ScaledRepaymentLine = {
+  accountId: string;
+  amount: number;
+  costCenterId: string | null;
+  description: string | null;
+};
+
+/**
+ * Scale a card transaction's original coding lines down to a (possibly partial)
+ * repayment. Each line is scaled by `repaymentAmount / originalAmount` and
+ * rounded at the currency's decimal places; the rounding residual is added to the
+ * LARGEST-magnitude line so the scaled lines sum EXACTLY to the (rounded)
+ * repayment amount — the invariant `post-card-transaction` asserts on the header.
+ *
+ * PURE + exported for unit testing. Uses the shared precision `round` (never a
+ * bare `toFixed`/`Math.round`). `originalAmount === 0` degrades to a zero ratio
+ * (the whole repayment lands as the residual on the first line) rather than
+ * dividing by zero.
+ */
+export function scaleRepaymentLines(
+  originalLines: RepaymentLineInput[],
+  repaymentAmount: number,
+  originalAmount: number,
+  decimals: number
+): ScaledRepaymentLine[] {
+  if (originalLines.length === 0) return [];
+
+  const ratio = originalAmount === 0 ? 0 : repaymentAmount / originalAmount;
+
+  const scaled: ScaledRepaymentLine[] = originalLines.map((line) => ({
+    accountId: line.accountId,
+    amount: round(line.amount * ratio, decimals),
+    costCenterId: line.costCenterId ?? null,
+    description: line.description ?? null
+  }));
+
+  const target = round(repaymentAmount, decimals);
+  const sum = round(
+    scaled.reduce((acc, line) => acc + line.amount, 0),
+    decimals
+  );
+  const residual = round(target - sum, decimals);
+
+  if (residual !== 0) {
+    let largest = 0;
+    let largestMagnitude = Math.abs(scaled[0]?.amount ?? 0);
+    for (let i = 1; i < scaled.length; i++) {
+      const magnitude = Math.abs(scaled[i]?.amount ?? 0);
+      if (magnitude > largestMagnitude) {
+        largest = i;
+        largestMagnitude = magnitude;
+      }
+    }
+    const largestLine = scaled[largest];
+    if (largestLine) {
+      largestLine.amount = round(largestLine.amount + residual, decimals);
+    }
+  }
+
+  return scaled;
 }
