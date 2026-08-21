@@ -66,12 +66,20 @@ async function getCompanyForConnectAccount(stripeAccountId: string) {
     .eq("metadata->>stripeAccountId", stripeAccountId)
     .maybeSingle();
 
-  if (integration.error || !integration.data) return null;
+  if (integration.error) {
+    // Includes the ambiguous case where more than one company claims this
+    // account, which maybeSingle() also reports as an error.
+    return { error: integration.error };
+  }
+  if (!integration.data) return { error: null, company: null };
 
   return {
-    companyId: integration.data.companyId,
-    active: integration.data.active,
-    metadata: (integration.data.metadata ?? {}) as Record<string, unknown>
+    error: null,
+    company: {
+      companyId: integration.data.companyId,
+      active: integration.data.active,
+      metadata: (integration.data.metadata ?? {}) as Record<string, unknown>
+    }
   };
 }
 
@@ -104,7 +112,17 @@ export async function action({ request }: ActionFunctionArgs) {
     return { success: true };
   }
 
-  const company = await getCompanyForConnectAccount(event.account);
+  const lookup = await getCompanyForConnectAccount(event.account);
+  if (lookup.error) {
+    logger.error("Failed to resolve the company for this Stripe account", {
+      error: lookup.error,
+      eventId: event.id,
+      stripeAccountId: event.account
+    });
+    return data({ error: "Company lookup failed" }, { status: 500 });
+  }
+
+  const company = lookup.company;
   if (!company) {
     logger.warn("No company is connected to this Stripe account", {
       type: event.type,

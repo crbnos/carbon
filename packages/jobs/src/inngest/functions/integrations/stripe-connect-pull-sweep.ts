@@ -25,6 +25,8 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { recordStripeConnectPayment } from "@carbon/ee/stripe-connect.server";
 import type { ConnectInvoice } from "@carbon/stripe/connect.server";
 import { stripe } from "@carbon/stripe/stripe.server";
+import { datetime } from "@carbon/utils";
+import { parseAbsolute } from "@internationalized/date";
 import { inngest } from "../../client";
 import {
   nextPullCursor,
@@ -109,8 +111,12 @@ export const stripeConnectPullSweepFunction = inngest.createFunction(
             >;
             const storedCursor = settings.pullCursor as number | undefined;
             const fallbackCursor = target.updatedAt
-              ? Math.floor(new Date(target.updatedAt).getTime() / 1000)
-              : Math.floor(Date.now() / 1000) - 60 * 60 * 24 * 7; // 7 days max
+              ? Math.floor(
+                  parseAbsolute(target.updatedAt, "UTC").toDate().getTime() /
+                    1000
+                )
+              : Math.floor(datetime.now("UTC").toDate().getTime() / 1000) -
+                60 * 60 * 24 * 7; // 7 days max
 
             const since = storedCursor ?? fallbackCursor;
 
@@ -187,6 +193,14 @@ export const stripeConnectPullSweepFunction = inngest.createFunction(
                 if (result.status === "recorded") {
                   summary.recorded++;
                 } else {
+                  if (
+                    result.reason.includes("could not be loaded") ||
+                    result.reason.includes("Could not verify prior") ||
+                    result.reason.includes("concurrently")
+                  ) {
+                    throw new Error(`Retryable skip: ${result.reason}`);
+                  }
+
                   summary.skipped++;
                   logger.info(
                     `[stripe-connect-pull-sweep] ${companyId}: skipped ${invoice.id}: ${result.reason}`

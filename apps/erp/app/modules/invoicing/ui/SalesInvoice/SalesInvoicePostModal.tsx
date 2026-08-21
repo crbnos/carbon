@@ -27,6 +27,7 @@ import {
   CustomerContact,
   DatePicker,
   EmailRecipients,
+  Hidden,
   SelectControlled
 } from "~/components/Form";
 import { useCompanyToday } from "~/hooks";
@@ -272,6 +273,9 @@ const SalesInvoicePostModal = ({
                     if (email.includes("@")) setCommittedEmail(email);
                   }}
                 />
+              )}
+              {isStripe && committedEmail && (
+                <Hidden name="stripeContactEmail" value={committedEmail} />
               )}
               {isStripe && needsStripeDueDate && (
                 <DatePicker

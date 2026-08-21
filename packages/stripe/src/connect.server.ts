@@ -42,7 +42,6 @@ export async function getOrCreateConnectAccount(
   if (!stripeConnect) {
     throw new Error("Stripe secret key is not configured.");
   }
-  // TODO: Should I also fetch stripe connect capability here?
   // 1. Check if company already has a companyIntegration row for stripe-connect
   const existingIntegration = await client
     .from("companyIntegration")
@@ -50,6 +49,12 @@ export async function getOrCreateConnectAccount(
     .eq("id", "stripe-connect")
     .eq("companyId", companyId)
     .maybeSingle();
+
+  if (existingIntegration.error) {
+    throw new Error(
+      `Failed to read the stripe-connect integration row: ${existingIntegration.error.message}`
+    );
+  }
 
   const existingMeta = existingIntegration.data?.metadata as
     | Record<string, unknown>

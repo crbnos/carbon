@@ -108,7 +108,6 @@ const StripeCustomerPanel = ({
             </AlertDescription>
           </Alert>
           <InputControlled
-            name="stripeContactEmail"
             label={t`Email`}
             value={email}
             onChange={onEmailChange}

@@ -116,11 +116,13 @@ async function storeStripeInvoicePdf({
 async function appendStripeLinkToNotes({
   serviceRole,
   invoiceId,
+  companyId,
   hostedInvoiceUrl,
   userId
 }: {
   serviceRole: ServiceRole;
   invoiceId: string;
+  companyId: string;
   hostedInvoiceUrl: string | null;
   userId: string;
 }) {
@@ -130,6 +132,7 @@ async function appendStripeLinkToNotes({
     .from("salesInvoice")
     .select("internalNotes")
     .eq("id", invoiceId)
+    .eq("companyId", companyId)
     .single();
 
   if (existing.error) {
@@ -167,7 +170,8 @@ async function appendStripeLinkToNotes({
       updatedBy: userId,
       updatedAt: datetime.timestamp()
     })
-    .eq("id", invoiceId);
+    .eq("id", invoiceId)
+    .eq("companyId", companyId);
 
   if (update.error) {
     throw new Error("Failed to write the Stripe payment link to invoice notes");
@@ -245,14 +249,16 @@ const FIVE_YEARS_SECONDS = 5 * 365.25 * 24 * 60 * 60;
 
 function clampDueDate(epoch: number | undefined): number | undefined {
   if (epoch === undefined) return undefined;
-  const now = Math.floor(Date.now() / 1000);
+  // Native .toDate().getTime() is required to get Unix epoch seconds for Stripe.
+  const now = Math.floor(datetime.now("UTC").toDate().getTime() / 1000);
   if (epoch < now || epoch > now + FIVE_YEARS_SECONDS) return undefined;
   return epoch;
 }
 
 function clampEffectiveAt(epoch: number | undefined): number | undefined {
   if (epoch === undefined) return undefined;
-  const now = Math.floor(Date.now() / 1000);
+  // Native .toDate().getTime() is required to get Unix epoch seconds for Stripe.
+  const now = Math.floor(datetime.now("UTC").toDate().getTime() / 1000);
   if (epoch > now) return now;
   if (epoch < now - FIVE_YEARS_SECONDS) return undefined;
   return epoch;
@@ -347,12 +353,16 @@ async function preflightStripeSend({
     return { ok: false, message: "the customer could not be loaded" };
   }
 
-  const lines = await getSalesInvoiceLines(serviceRole, invoiceId);
+  const [lines, shipment] = await Promise.all([
+    getSalesInvoiceLines(serviceRole, invoiceId),
+    getSalesInvoiceShipment(serviceRole, invoiceId)
+  ]);
 
   // The same arithmetic the send itself reconciles against, so an invoice that
   // is billable only through its surcharges isn't rejected here as empty.
   const { total } = expectedConnectInvoiceTotal({
-    lines: toStripeInvoiceLines(lines.data ?? [])
+    lines: toStripeInvoiceLines(lines.data ?? []),
+    shippingCost: shipment.data?.shippingCost ?? undefined
   });
   if (total <= 0) {
     return {
@@ -974,6 +984,7 @@ export async function action(args: ActionFunctionArgs) {
           appendStripeLinkToNotes({
             serviceRole,
             invoiceId,
+            companyId,
             hostedInvoiceUrl: stripeInvoice.hostedInvoiceUrl,
             userId
           })

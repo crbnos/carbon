@@ -41,11 +41,12 @@ export type { StripeCustomerSources };
  */
 export async function resolveStripeCustomerSources(
   serviceRole: ServiceRole,
+  companyId: string,
   billingCustomerId: string,
   customerContactId: string
 ): Promise<StripeCustomerSources | null> {
   const [customer, contact, payment, customerTax] = await Promise.all([
-    getCustomer(serviceRole, billingCustomerId),
+    getCustomer(serviceRole, billingCustomerId, companyId),
     serviceRole
       .from("customerContact")
       .select(
@@ -53,9 +54,10 @@ export async function resolveStripeCustomerSources(
       )
       .eq("id", customerContactId)
       .eq("customerId", billingCustomerId)
+      .eq("companyId", companyId)
       .single(),
-    getCustomerPayment(serviceRole, billingCustomerId),
-    getCustomerTax(serviceRole, billingCustomerId)
+    getCustomerPayment(serviceRole, billingCustomerId, companyId),
+    getCustomerTax(serviceRole, billingCustomerId, companyId)
   ]);
 
   if (!customer.data) return null;
@@ -65,7 +67,8 @@ export async function resolveStripeCustomerSources(
   // `country(alpha2, name)` instead and cannot supply Stripe's `address.country`.
   const billingLocationId = payment.data?.invoiceCustomerLocationId;
   const billingLocation = billingLocationId
-    ? (await getCustomerLocation(serviceRole, billingLocationId)).data
+    ? (await getCustomerLocation(serviceRole, billingLocationId, companyId))
+        .data
     : null;
 
   return {
@@ -233,6 +236,7 @@ export async function resolveStripeCustomer({
 
   const sources = await resolveStripeCustomerSources(
     serviceRole,
+    companyId,
     billingCustomerId,
     customerContactId
   );
