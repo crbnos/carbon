@@ -1124,6 +1124,9 @@ msgstr "Добавить позицию"
 msgid "Add match"
 msgstr "Добавить совпадение"
 
+msgid "Add New"
+msgstr ""
+
 msgid "Add Note"
 msgstr "Добавить примечание"
 
@@ -5264,6 +5267,9 @@ msgstr "Документы"
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "Documents отправляет счета-фактуры, счета и платежи в виде родных документов поставщика; их журналы записываются как покрытые документом. Он также получает платежи, записанные в поставщик, обратно в Carbon, закрывая соответствующую счет-фактуру или счет и публикуя журнал GL Carbon. Off записывает их как намеренно исключенные."
 
+msgid "Documents you open will show up here for quick access."
+msgstr ""
+
 msgid "Don't Cancel"
 msgstr "Не отменять"
 
@@ -5959,9 +5965,6 @@ msgstr "Контакт инженера"
 
 msgid "Enroll"
 msgstr "Зарегистрировать"
-
-msgid "Enroll this company in the Implementation Hub"
-msgstr "Зарегистрировать эту компанию в центре внедрения"
 
 msgid "Enter a batch number before setting the expiration date"
 msgstr "Введите номер партии перед установкой даты истечения"
@@ -7575,6 +7578,9 @@ msgstr "Имперская"
 
 msgid "Implementation"
 msgstr "Внедрение"
+
+msgid "Implementation Hub"
+msgstr ""
 
 msgid "Implementation Lead"
 msgstr "Руководитель внедрения"

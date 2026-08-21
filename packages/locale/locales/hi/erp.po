@@ -1124,6 +1124,9 @@ msgstr "लाइन आइटम जोड़ें"
 msgid "Add match"
 msgstr "मिलान जोड़ें"
 
+msgid "Add New"
+msgstr ""
+
 msgid "Add Note"
 msgstr "नोट जोड़ें"
 
@@ -5264,6 +5267,9 @@ msgstr "दस्तावेज़"
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "दस्तावेज़ चालान, बिल और भुगतान को मूल प्रदाता दस्तावेज़ के रूप में धकेलता है; उनकी पत्रिकाओं को दस्तावेज़ द्वारा कवर किए गए के रूप में दर्ज किया जाता है। यह प्रदाता में दर्ज भुगतान को वापस Carbon में खींचता है, मिलान वाले चालान या बिल को बंद करता है और एक Carbon GL पत्रिका पोस्ट करता है। बंद उन्हें जानबूझकर बाहर रखे गए के रूप में दर्ज करता है।"
 
+msgid "Documents you open will show up here for quick access."
+msgstr ""
+
 msgid "Don't Cancel"
 msgstr "रद्द न करें"
 
@@ -5959,9 +5965,6 @@ msgstr "इंजीनियरिंग संपर्क"
 
 msgid "Enroll"
 msgstr "नामांकन करें"
-
-msgid "Enroll this company in the Implementation Hub"
-msgstr "इस कंपनी को कार्यान्वयन हब में नामांकित करें"
 
 msgid "Enter a batch number before setting the expiration date"
 msgstr "समाप्ति तारीख सेट करने से पहले एक बैच नंबर दर्ज करें"
@@ -7575,6 +7578,9 @@ msgstr "इंपीरियल"
 
 msgid "Implementation"
 msgstr "कार्यान्वयन"
+
+msgid "Implementation Hub"
+msgstr ""
 
 msgid "Implementation Lead"
 msgstr "कार्यान्वयन नेता"

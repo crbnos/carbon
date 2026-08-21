@@ -1124,6 +1124,9 @@ msgstr "添加行项目"
 msgid "Add match"
 msgstr "添加匹配"
 
+msgid "Add New"
+msgstr ""
+
 msgid "Add Note"
 msgstr "添加备注"
 
@@ -5264,6 +5267,9 @@ msgstr "文档"
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "文档将发票、账单和付款推送为原生提供商文档；其日记被记录为由文档覆盖。它还将在提供商中记录的付款拉回到Carbon，关闭匹配的发票或账单并发布Carbon GL日记。关闭时将其记录为故意排除。"
 
+msgid "Documents you open will show up here for quick access."
+msgstr ""
+
 msgid "Don't Cancel"
 msgstr "不要取消"
 
@@ -5959,9 +5965,6 @@ msgstr "工程联系人"
 
 msgid "Enroll"
 msgstr "注册"
-
-msgid "Enroll this company in the Implementation Hub"
-msgstr "将此公司注册到实施中心"
 
 msgid "Enter a batch number before setting the expiration date"
 msgstr "在设置过期日期前请输入批号"
@@ -7575,6 +7578,9 @@ msgstr "英制"
 
 msgid "Implementation"
 msgstr "实施"
+
+msgid "Implementation Hub"
+msgstr ""
 
 msgid "Implementation Lead"
 msgstr "实施主管"

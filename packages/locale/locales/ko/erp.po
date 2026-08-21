@@ -1124,6 +1124,9 @@ msgstr "라인 항목 추가"
 msgid "Add match"
 msgstr "일치 추가"
 
+msgid "Add New"
+msgstr ""
+
 msgid "Add Note"
 msgstr "메모 추가"
 
@@ -5264,6 +5267,9 @@ msgstr "문서"
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "문서는 송장, 청구서 및 지불을 기본 공급자 문서로 푸시하고, 해당 분개는 문서에서 다룬 것으로 기록됩니다. 또한 공급자에 기록된 지불을 Carbon으로 다시 끌어와 일치하는 청구서 또는 송장을 마감하고 Carbon GL 분개를 게시합니다. Off는 이를 의도적으로 제외된 것으로 기록합니다."
 
+msgid "Documents you open will show up here for quick access."
+msgstr ""
+
 msgid "Don't Cancel"
 msgstr "취소하지 않음"
 
@@ -5959,9 +5965,6 @@ msgstr "엔지니어링 담당자"
 
 msgid "Enroll"
 msgstr "등록"
-
-msgid "Enroll this company in the Implementation Hub"
-msgstr "이 회사를 구현 허브에 등록"
 
 msgid "Enter a batch number before setting the expiration date"
 msgstr "유효기한을 설정하기 전에 배치 번호를 입력하세요"
@@ -7575,6 +7578,9 @@ msgstr "야드파운드법"
 
 msgid "Implementation"
 msgstr "구현"
+
+msgid "Implementation Hub"
+msgstr ""
 
 msgid "Implementation Lead"
 msgstr "구현 리드"

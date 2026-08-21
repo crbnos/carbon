@@ -1124,6 +1124,9 @@ msgstr "Satır Ekle"
 msgid "Add match"
 msgstr "Eşleştirme ekle"
 
+msgid "Add New"
+msgstr ""
+
 msgid "Add Note"
 msgstr "Not Ekle"
 
@@ -5264,6 +5267,9 @@ msgstr "Belgeler"
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "Documents faturaları, muhasebe faturalarını ve ödemeleri sağlayıcı belgesi olarak gönderir; muhasebe kayıtları belge tarafından kapsandığı şekilde kaydedilir. Ayrıca sağlayıcıda kaydedilen ödemeleri Carbon'a geri çekerek, eşleşen fatura veya muhasebe faturasını kapatır ve bir Carbon GL muhasebe kaydı oluşturur. Kapalı, bunları kasıtlı olarak hariç tutulmuş olarak kaydeder."
 
+msgid "Documents you open will show up here for quick access."
+msgstr ""
+
 msgid "Don't Cancel"
 msgstr "İptal Etme"
 
@@ -5959,9 +5965,6 @@ msgstr "Mühendislik İletişim Kişisi"
 
 msgid "Enroll"
 msgstr "Kaydol"
-
-msgid "Enroll this company in the Implementation Hub"
-msgstr "Bu şirketi Uygulama merkezine kaydedin"
 
 msgid "Enter a batch number before setting the expiration date"
 msgstr "Son kullanma tarihini ayarlamadan önce bir parti numarası girin"
@@ -7575,6 +7578,9 @@ msgstr "İmparatorluk"
 
 msgid "Implementation"
 msgstr "Uygulama"
+
+msgid "Implementation Hub"
+msgstr ""
 
 msgid "Implementation Lead"
 msgstr "Uygulama Müdürü"

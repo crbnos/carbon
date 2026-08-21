@@ -1124,6 +1124,9 @@ msgstr "ラインアイテムを追加"
 msgid "Add match"
 msgstr "マッチを追加"
 
+msgid "Add New"
+msgstr ""
+
 msgid "Add Note"
 msgstr "ノートを追加"
 
@@ -5264,6 +5267,9 @@ msgstr "ドキュメント"
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "ドキュメントは、請求書、帳票、支払いをネイティブプロバイダードキュメントとしてプッシュします。それらの仕訳はドキュメントでカバーされているものとして記録されます。また、プロバイダーで記録された支払いをCarbonに引き戻し、一致する請求書または帳票を閉じて、CarbonのGL仕訳を投稿します。Offはそれらを意図的に除外されたものとして記録します。"
 
+msgid "Documents you open will show up here for quick access."
+msgstr ""
+
 msgid "Don't Cancel"
 msgstr "キャンセルしない"
 
@@ -5959,9 +5965,6 @@ msgstr "エンジニアリング担当者"
 
 msgid "Enroll"
 msgstr "登録"
-
-msgid "Enroll this company in the Implementation Hub"
-msgstr "この会社を実装ハブに登録する"
 
 msgid "Enter a batch number before setting the expiration date"
 msgstr "有効期限を設定する前にバッチ番号を入力してください"
@@ -7575,6 +7578,9 @@ msgstr "インペリアル"
 
 msgid "Implementation"
 msgstr "実装"
+
+msgid "Implementation Hub"
+msgstr ""
 
 msgid "Implementation Lead"
 msgstr "実装リード"
