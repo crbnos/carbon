@@ -31,7 +31,7 @@ Global notes for every task:
 - [x] Task 10: cXML document queue UI (list + drawer + release/reject/resend)
 - [x] Task 11: Punchout entry-point UI (orders list button, waiting modal, PO append)
 - [x] Task 12: Dev-only mock supplier endpoint
-- [ ] Task 13: Docs sync (curated docs site page)
+- [x] Task 13: Docs sync (curated docs site page)
 - [x] Task 14: Browser verification via /test
 
 ## Dependencies
