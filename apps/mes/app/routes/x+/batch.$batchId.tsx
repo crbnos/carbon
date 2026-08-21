@@ -19,8 +19,7 @@ import {
   Tr,
   VStack
 } from "@carbon/react";
-import { formatDurationMilliseconds } from "@carbon/utils";
-import { getLocalTimeZone, now } from "@internationalized/date";
+import { datetime, formatDurationMilliseconds } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -84,7 +83,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         jobOperationId: firstMember.id,
         workCenterId: (batch.data.workCenterId ??
           firstMember.workCenterId) as string,
-        startTime: now(getLocalTimeZone()).toAbsoluteString(),
+        startTime: datetime.timestamp(),
         employeeId: userId,
         companyId,
         createdBy: userId,
@@ -105,7 +104,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const stop = await serviceRole
       .from("productionEvent")
       .update({
-        endTime: now(getLocalTimeZone()).toAbsoluteString(),
+        endTime: datetime.timestamp(),
         updatedBy: userId
       })
       .eq("jobOperationBatchId", batchId)

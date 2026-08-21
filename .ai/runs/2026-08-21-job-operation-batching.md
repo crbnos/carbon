@@ -227,4 +227,28 @@ Working-tree files to never touch: `apps/erp/app/routes/api+/mcp+/lib/tool-metad
   migration filename, salvage + grill-deltas summary, e2e pending).
 - Verify: `Cancelled` in production AGENTS.md appears only in Job-status lines +
   the batch paragraph's explicit "no Cancelled". Banned: none.
-- Commit: _pending_
+- Commit: `2adc33b8e`
+
+## Task 12: Full verification gate
+
+- `pnpm run generate:types`: **FAILED — needs cloud Supabase access (network
+  restricted here); it clobbered types.ts with 80706 deletions.** Restored both
+  types files from HEAD (they were already correctly regenerated from the LOCAL
+  DB via `pnpm db:migrate` in Task 3 and committed; typecheck validates them).
+  This step is un-runnable in this environment; not a code problem.
+- `pnpm run lint`: PASS (33/33 tasks; 64 pre-existing ARIA warnings, unrelated).
+- typecheck erp + mes + @carbon/utils: PASS (3/3).
+- `pnpm run test`: initially FAILED on `@carbon/checks#test` — 12 NEW conformance
+  violations in the salvaged code. Fixed:
+  - `no-local-timezone` ×2 in `batch.$batchId.tsx` action (`now(getLocalTimeZone())
+    .toAbsoluteString()` → `datetime.timestamp()`, the canonical MES pattern for
+    instant columns).
+  - `no-raw-rounding` ×10 in `batch-time-split.ts` (both copies): integer-second
+    largest-remainder time math = "relative-time math", the numeric-precision
+    rule's baseline class (not value-bearing decimal rounding). Regenerated the
+    conformance baseline (`pnpm --filter @carbon/checks baseline`) — diff added
+    ONLY those 10 time-math sites, nothing else.
+  Re-run: PASS (24/24 tasks).
+- `pnpm run build`: PASS (8/8; erp built in 21s).
+- banned-term grep: clean.
+- Commit (gate fixes): _pending_
