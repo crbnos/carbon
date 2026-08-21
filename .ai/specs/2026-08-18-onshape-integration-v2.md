@@ -719,3 +719,27 @@ twice as well.
   headers by the same name. Verified live instead: both structural fallbacks (assembly →
   Make / Make to Order, part studio body → Buy / Pull from Inventory) and that a failed
   metadata read does not stop the part being created.
+- 2026-08-21: **"Purchasing Level" created in Onshape and the whole path proven end to end.**
+  The caveat from the previous entry is closed — a custom property DOES come back from
+  `getElementMetadata` under its display name.
+  Created in Carbon company settings → Properties (`6a7b5c57fbca14e231f62cca`):
+  - name / display name **Purchasing Level**, id `6a882bf6d9b435cf25eebd37`
+  - type **Text**, publish state **Active**, editable in workspace AND version
+  - categories **Assembly** and **Part**
+  **Text, not List, deliberately.** A List property returns its DISPLAY LABEL in the BOM
+  but a numeric id in element metadata — `State` comes back `"Released"` in the BOM and
+  `2` in `getElementMetadata` on the same element. A List "Purchasing Level" would
+  therefore read as an id on the release path and never match `"Purchased"`. Text returns
+  the literal string on both. **If a customer defines theirs as a List, the release path
+  will not match it** — that is a real limitation to check on any account before relying
+  on it, and the reason it is called out here.
+  Verified live, with values set through `POST /api/v10/metadata/d/{did}/{wvm}/{wvmid}/e/{eid}`:
+  - **The release path**: SA-800 (an ASSEMBLY, which structure calls Make) declared
+    `Purchasing Level = "Purchased"` was auto-created as **Buy / Pull from Inventory**.
+    Onshape overrode the structural guess, which is the whole point of the precedence.
+  - **The BOM path**: the column now appears in the BOM response as header
+    `6a882bf6d9b435cf25eebd37`, and SA-800's row carries `"Purchased"` while unset rows
+    carry `null` — so `row.columns["Purchasing Level"]` resolves exactly as legacy reads it.
+  The test VALUES were cleared afterwards (SA-800 and RD-410 are genuinely assemblies with
+  children; leaving them declared Purchased would be wrong data). The PROPERTY remains in
+  place and ready to use.

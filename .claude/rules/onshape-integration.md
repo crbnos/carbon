@@ -1016,7 +1016,13 @@ Precedence:
    nor the 19 stock element metadata properties, and that the test company
    defines no custom properties at all. A company without it is the normal case.
    Read case- and whitespace-insensitively on the DISPLAY NAME, because a
-   company-defined column has no stable propertyId to key on. That is the same
+   company-defined column has no stable propertyId to key on.
+   **It must be a TEXT property, not a List.** A List returns its display LABEL
+   in the BOM but a numeric id in element metadata — `State` is `"Released"` in
+   the BOM and `2` in `getElementMetadata` on the same element — so a List
+   "Purchasing Level" would never match `"Purchased"` on the release path. The
+   one created in the Carbon test company (`6a882bf6d9b435cf25eebd37`, Assembly
+   + Part categories) is Text for this reason. That is the same
    fragility the BOM-column note describes, and it is what the spec's deferred
    "extensible custom-field mapping" question would fix.
    - BOM import: from `row.columns`, which `bom.ts` already keeps for exactly
