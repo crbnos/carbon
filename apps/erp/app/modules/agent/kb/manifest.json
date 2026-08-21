@@ -5,7 +5,12 @@
       "slug": "docs/building/local-development",
       "title": "Local development",
       "description": "Run the full Carbon stack locally with the crbn CLI, in isolated per-worktree environments.",
-      "keywords": ["local", "development", "docs", "building"],
+      "keywords": [
+        "local",
+        "development",
+        "docs",
+        "building"
+      ],
       "headings": [
         "Setup",
         "Stack commands",
@@ -19,7 +24,11 @@
       "slug": "docs/building/webhooks",
       "title": "Webhooks",
       "description": "Get an HTTP callback when a Carbon record is created, changed, or deleted.",
-      "keywords": ["webhooks", "docs", "building"],
+      "keywords": [
+        "webhooks",
+        "docs",
+        "building"
+      ],
       "headings": [
         "Subscribable tables",
         "The payload",
@@ -32,21 +41,34 @@
       "slug": "docs/glossary",
       "title": "Glossary",
       "description": "Every Carbon term, defined and linked: the manufacturing and accounting vocabulary the rest of the docs lean on.",
-      "keywords": ["glossary", "docs"],
+      "keywords": [
+        "glossary",
+        "docs"
+      ],
       "headings": []
     },
     {
       "slug": "docs/index",
       "title": "Overview",
       "description": "Carbon is a manufacturing system: ERP for the office, MES for the floor. These are the technical docs.",
-      "keywords": ["overview", "docs", "index"],
-      "headings": ["How the docs are organized"]
+      "keywords": [
+        "overview",
+        "docs",
+        "index"
+      ],
+      "headings": [
+        "How the docs are organized"
+      ]
     },
     {
       "slug": "docs/integrations/accounting",
       "title": "Accounting",
       "description": "Mirror invoices, bills, and GL journals to Xero, QuickBooks, or Rillet, and keep exchange rates current.",
-      "keywords": ["accounting", "docs", "integrations"],
+      "keywords": [
+        "accounting",
+        "docs",
+        "integrations"
+      ],
       "headings": [
         "How the sync works",
         "Connect a ledger",
@@ -60,35 +82,67 @@
       "slug": "docs/integrations/assistant",
       "title": "Assistant",
       "description": "Bring the Carbon Assistant into Slack, with nonconformance notifications.",
-      "keywords": ["assistant", "docs", "integrations"],
-      "headings": ["Slack", "Related"]
+      "keywords": [
+        "assistant",
+        "docs",
+        "integrations"
+      ],
+      "headings": [
+        "Slack",
+        "Related"
+      ]
     },
     {
       "slug": "docs/integrations/cad",
       "title": "CAD",
       "description": "Sync CAD data from Onshape into Carbon.",
-      "keywords": ["cad", "docs", "integrations"],
-      "headings": ["Onshape", "Related"]
+      "keywords": [
+        "cad",
+        "docs",
+        "integrations"
+      ],
+      "headings": [
+        "Onshape",
+        "Related"
+      ]
     },
     {
       "slug": "docs/integrations/email",
       "title": "Email",
       "description": "Send outbound email through Carbon-managed Resend or your own SMTP server.",
-      "keywords": ["email", "docs", "integrations"],
-      "headings": ["Email"]
+      "keywords": [
+        "email",
+        "docs",
+        "integrations"
+      ],
+      "headings": [
+        "Email"
+      ]
     },
     {
       "slug": "docs/integrations/estimating",
       "title": "Estimating & quoting",
       "description": "Pull quotes and bills of material from Paperless Parts into Carbon.",
-      "keywords": ["estimating", "quoting", "docs", "integrations"],
-      "headings": ["Paperless Parts", "Related"]
+      "keywords": [
+        "estimating",
+        "quoting",
+        "docs",
+        "integrations"
+      ],
+      "headings": [
+        "Paperless Parts",
+        "Related"
+      ]
     },
     {
       "slug": "docs/integrations/index",
       "title": "Integrations",
       "description": "Connect Carbon to your accounting, CAD, project-management, estimating, and messaging tools.",
-      "keywords": ["integrations", "docs", "index"],
+      "keywords": [
+        "integrations",
+        "docs",
+        "index"
+      ],
       "headings": [
         "How a connection works",
         "What's available depends on your deployment",
@@ -100,14 +154,45 @@
       "slug": "docs/integrations/project-management",
       "title": "Project management",
       "description": "Link Carbon quality issues to Linear or Jira so engineering tracks them in their own tool.",
-      "keywords": ["project", "management", "docs", "integrations"],
-      "headings": ["Linear", "Jira", "Related"]
+      "keywords": [
+        "project",
+        "management",
+        "docs",
+        "integrations"
+      ],
+      "headings": [
+        "Linear",
+        "Jira",
+        "Related"
+      ]
+    },
+    {
+      "slug": "docs/integrations/purchasing",
+      "title": "Purchasing",
+      "description": "Shop the McMaster-Carr catalog with your account pricing and exchange cXML documents from Carbon.",
+      "keywords": [
+        "purchasing",
+        "docs",
+        "integrations"
+      ],
+      "headings": [
+        "McMaster-Carr",
+        "Set up the connection",
+        "Shop the catalog",
+        "Inbound documents",
+        "Send a purchase order",
+        "Related"
+      ]
     },
     {
       "slug": "docs/platform/architecture",
       "title": "Architecture",
       "description": "One journey from a button click, through the server, into Postgres, out to background jobs, and back to the screen.",
-      "keywords": ["architecture", "docs", "platform"],
+      "keywords": [
+        "architecture",
+        "docs",
+        "platform"
+      ],
       "headings": [
         "Part 1: The map",
         "Part 2: Follow one click all the way down",
@@ -139,7 +224,11 @@
       "slug": "docs/platform/backups",
       "title": "Backups",
       "description": "Snapshot a company's data and files, restore it in place with one-click revert, or stand up a new company from a demo template.",
-      "keywords": ["backups", "docs", "platform"],
+      "keywords": [
+        "backups",
+        "docs",
+        "platform"
+      ],
       "headings": [
         "What a backup contains",
         "Create a backup",
@@ -151,7 +240,11 @@
       "slug": "docs/platform/licensing",
       "title": "Licensing",
       "description": "Carbon is dual-licensed: AGPLv3 for the open core, a commercial license for Enterprise features and for production or hosted use.",
-      "keywords": ["licensing", "docs", "platform"],
+      "keywords": [
+        "licensing",
+        "docs",
+        "platform"
+      ],
       "headings": [
         "Editions",
         "How to buy",
@@ -167,8 +260,20 @@
       "slug": "docs/platform/self-hosting/aws-sst",
       "title": "AWS with SST",
       "description": "Deploy the Carbon stack to your own AWS account with SST: ECS Fargate, ECR, and a WAF.",
-      "keywords": ["aws", "with", "sst", "docs", "platform", "self", "hosting"],
-      "headings": ["What gets provisioned", "Prerequisites", "Deploy"]
+      "keywords": [
+        "aws",
+        "with",
+        "sst",
+        "docs",
+        "platform",
+        "self",
+        "hosting"
+      ],
+      "headings": [
+        "What gets provisioned",
+        "Prerequisites",
+        "Deploy"
+      ]
     },
     {
       "slug": "docs/platform/self-hosting/docker-caddy",
@@ -227,13 +332,20 @@
         "hosting",
         "index"
       ],
-      "headings": ["Recipes"]
+      "headings": [
+        "Recipes"
+      ]
     },
     {
       "slug": "docs/reference/account",
       "title": "Your account",
       "description": "Personal, self-service settings for profile, passkeys and two-factor, notification preferences, theme, and language, kept separate from the company-wide settings an admin controls.",
-      "keywords": ["your", "account", "docs", "reference"],
+      "keywords": [
+        "your",
+        "account",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Profile",
         "Signing in — passkeys and two-factor",
@@ -252,7 +364,13 @@
       "slug": "docs/reference/accounting",
       "title": "Accounting & the ledger",
       "description": "How operations become journal entries: accounts, periods, and the postings behind every flow.",
-      "keywords": ["accounting", "the", "ledger", "docs", "reference"],
+      "keywords": [
+        "accounting",
+        "the",
+        "ledger",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Accounting is a switch",
         "The journal",
@@ -275,7 +393,13 @@
       "slug": "docs/reference/agent",
       "title": "In-app assistant",
       "description": "A read-only chat assistant inside the ERP that answers questions about how Carbon works from the product documentation and points you to the right page.",
-      "keywords": ["in-app", "assistant", "docs", "reference", "agent"],
+      "keywords": [
+        "in-app",
+        "assistant",
+        "docs",
+        "reference",
+        "agent"
+      ],
       "headings": [
         "What it can do",
         "Where it appears",
@@ -294,7 +418,12 @@
       "slug": "docs/reference/api-keys",
       "title": "API keys",
       "description": "A scoped secret that lets an external system call the Carbon API on your behalf, with its own permissions and rate limit.",
-      "keywords": ["api", "keys", "docs", "reference"],
+      "keywords": [
+        "api",
+        "keys",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Creating a key",
         "How a key authenticates a request",
@@ -315,7 +444,11 @@
       "slug": "docs/reference/approvals",
       "title": "Approvals",
       "description": "Route purchase orders, quality documents, and suppliers for sign-off before they take effect, with amount-tiered approval rules.",
-      "keywords": ["approvals", "docs", "reference"],
+      "keywords": [
+        "approvals",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "What can be approved",
         "Approval rules",
@@ -328,7 +461,12 @@
       "slug": "docs/reference/audit-log",
       "title": "Audit log",
       "description": "A per-company change history for key business entities. What gets recorded, how to view and filter it, and how old entries are archived.",
-      "keywords": ["audit", "log", "docs", "reference"],
+      "keywords": [
+        "audit",
+        "log",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Turning it on",
         "What gets logged",
@@ -349,7 +487,13 @@
       "slug": "docs/reference/calibration",
       "title": "Gauges and calibration",
       "description": "Track measurement instruments, schedule their calibrations, and flag any gauge that falls out of calibration.",
-      "keywords": ["gauges", "and", "calibration", "docs", "reference"],
+      "keywords": [
+        "gauges",
+        "and",
+        "calibration",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "The gauge record",
         "The calibration schedule",
@@ -369,7 +513,13 @@
       "slug": "docs/reference/change-orders/change-types",
       "title": "Change types",
       "description": "Version, Revision, Replacement Part, and New Part — the per-affected-item choice that decides what you can edit and what release creates.",
-      "keywords": ["change", "types", "docs", "reference", "orders"],
+      "keywords": [
+        "change",
+        "types",
+        "docs",
+        "reference",
+        "orders"
+      ],
       "headings": [
         "The four types",
         "When to use which",
@@ -403,7 +553,14 @@
       "slug": "docs/reference/change-orders/index",
       "title": "Change notices",
       "description": "How Carbon drafts an engineering change against real methods, reviews it as a diff, and releases it so downstream planning supersedes the versions it replaces.",
-      "keywords": ["change", "notices", "docs", "reference", "orders", "index"],
+      "keywords": [
+        "change",
+        "notices",
+        "docs",
+        "reference",
+        "orders",
+        "index"
+      ],
       "headings": [
         "The affected item is the unit of work",
         "Find one in the list",
@@ -482,7 +639,12 @@
       "slug": "docs/reference/company-settings",
       "title": "Company settings",
       "description": "The company record, its feature toggles, base currency, logos, and tags — the company-wide configuration every module reads from.",
-      "keywords": ["company", "settings", "docs", "reference"],
+      "keywords": [
+        "company",
+        "settings",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "The company record",
         "Multiple companies",
@@ -505,7 +667,11 @@
       "slug": "docs/reference/configurator",
       "title": "Configurator",
       "description": "Turn one part number into a parametric family. Inputs drive rules that resolve the BOM, routing, and price per order.",
-      "keywords": ["configurator", "docs", "reference"],
+      "keywords": [
+        "configurator",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Parameters — the inputs",
         "Rules — deriving the method",
@@ -523,7 +689,12 @@
       "slug": "docs/reference/custom-fields",
       "title": "Custom fields",
       "description": "Company-defined extra fields that attach to core records like customers, parts, and orders.",
-      "keywords": ["custom", "fields", "docs", "reference"],
+      "keywords": [
+        "custom",
+        "fields",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "How a custom field is defined",
         "Data types",
@@ -543,7 +714,13 @@
       "slug": "docs/reference/dimensions",
       "title": "Dimensions & cost centers",
       "description": "Tag axes on journal lines that slice the general ledger without multiplying the chart of accounts.",
-      "keywords": ["dimensions", "cost", "centers", "docs", "reference"],
+      "keywords": [
+        "dimensions",
+        "cost",
+        "centers",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "What a dimension is",
         "How a value lands on a journal line",
@@ -563,7 +740,11 @@
       "slug": "docs/reference/documents",
       "title": "Documents",
       "description": "A shared file library with favorites, labels, search, and AI extraction that reads PDFs and fills a form for you.",
-      "keywords": ["documents", "docs", "reference"],
+      "keywords": [
+        "documents",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "The explorer",
         "Uploading",
@@ -587,7 +768,13 @@
       "slug": "docs/reference/financial-reports",
       "title": "Financial statement reports",
       "description": "The Balance Sheet, Income Statement, and Trial Balance built from posted journals by account class.",
-      "keywords": ["financial", "statement", "reports", "docs", "reference"],
+      "keywords": [
+        "financial",
+        "statement",
+        "reports",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "The three statements",
         "How a balance is built",
@@ -607,7 +794,12 @@
       "slug": "docs/reference/fixed-assets",
       "title": "Fixed assets",
       "description": "Capital equipment on the books: acquired, depreciated, and retired.",
-      "keywords": ["fixed", "assets", "docs", "reference"],
+      "keywords": [
+        "fixed",
+        "assets",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Lifecycle",
         "Acquiring",
@@ -624,7 +816,13 @@
       "slug": "docs/reference/forecast",
       "title": "Demand projections",
       "description": "Enter expected future demand for a make part, week by week, so planning orders ahead of the sales orders that haven't landed yet.",
-      "keywords": ["demand", "projections", "docs", "reference", "forecast"],
+      "keywords": [
+        "demand",
+        "projections",
+        "docs",
+        "reference",
+        "forecast"
+      ],
       "headings": [
         "What a projection is",
         "How you enter one",
@@ -643,7 +841,13 @@
       "slug": "docs/reference/import-export",
       "title": "Import and export",
       "description": "Bring records into Carbon from a CSV, and download any table's current view as a CSV.",
-      "keywords": ["import", "and", "export", "docs", "reference"],
+      "keywords": [
+        "import",
+        "and",
+        "export",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Exporting a table to CSV",
         "What you can import",
@@ -664,7 +868,13 @@
       "slug": "docs/reference/inspections",
       "title": "Inspections and sampling",
       "description": "How Carbon inspects received goods against AQL sampling plans, and how inspection templates and ballooned FAI drawings define what gets checked.",
-      "keywords": ["inspections", "and", "sampling", "docs", "reference"],
+      "keywords": [
+        "inspections",
+        "and",
+        "sampling",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "The inbound inspection lifecycle",
         "What triggers a lot",
@@ -691,7 +901,12 @@
       "slug": "docs/reference/intercompany",
       "title": "Intercompany accounting",
       "description": "Match a sale in one company against the purchase in its sibling, then eliminate the pair for consolidated reporting.",
-      "keywords": ["intercompany", "accounting", "docs", "reference"],
+      "keywords": [
+        "intercompany",
+        "accounting",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "What a transaction is",
         "Recording one by hand",
@@ -713,7 +928,12 @@
       "slug": "docs/reference/inventory",
       "title": "Inventory & locations",
       "description": "Where stock lives, how on-hand is tracked, and how it moves.",
-      "keywords": ["inventory", "locations", "docs", "reference"],
+      "keywords": [
+        "inventory",
+        "locations",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Locations and storage units",
         "On hand is a ledger",
@@ -736,7 +956,13 @@
       "slug": "docs/reference/inventory-count",
       "title": "Inventory counts",
       "description": "Count real stock against a frozen snapshot, review the variances, and post the differences as adjustments.",
-      "keywords": ["inventory", "counts", "docs", "reference", "count"],
+      "keywords": [
+        "inventory",
+        "counts",
+        "docs",
+        "reference",
+        "count"
+      ],
       "headings": [
         "The count lifecycle",
         "Creating a count",
@@ -758,7 +984,11 @@
       "slug": "docs/reference/invoices",
       "title": "Invoices",
       "description": "The billing documents — what you charge customers, and what suppliers charge you.",
-      "keywords": ["invoices", "docs", "reference"],
+      "keywords": [
+        "invoices",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Where they come from",
         "Status lifecycle",
@@ -785,7 +1015,12 @@
       "slug": "docs/reference/issues",
       "title": "Issues (non-conformances)",
       "description": "How Carbon logs a non-conformance, drives it through a configurable workflow of actions and approvals, and dispositions the affected material before closing.",
-      "keywords": ["issues", "(non-conformances)", "docs", "reference"],
+      "keywords": [
+        "issues",
+        "(non-conformances)",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "The lifecycle",
         "Header fields",
@@ -813,14 +1048,27 @@
       "slug": "docs/reference/items",
       "title": "Items",
       "description": "The master record for everything you make, buy, or stock: parts, materials, tools, and more.",
-      "keywords": ["items", "docs", "reference"],
-      "headings": ["Fields", "Tracking", "Revisions", "Related"]
+      "keywords": [
+        "items",
+        "docs",
+        "reference"
+      ],
+      "headings": [
+        "Fields",
+        "Tracking",
+        "Revisions",
+        "Related"
+      ]
     },
     {
       "slug": "docs/reference/jobs",
       "title": "Jobs",
       "description": "One run of production, covering a single item, a quantity to make, and its own copy of the method.",
-      "keywords": ["jobs", "docs", "reference"],
+      "keywords": [
+        "jobs",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Fields",
         "Status lifecycle",
@@ -843,7 +1091,11 @@
       "slug": "docs/reference/kanban",
       "title": "Kanban",
       "description": "Scan-based pull replenishment. A kanban card ties an item to a bin, and scanning it fires a purchase order or a job.",
-      "keywords": ["kanban", "docs", "reference"],
+      "keywords": [
+        "kanban",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "What a kanban holds",
         "The scan flow",
@@ -864,7 +1116,11 @@
       "slug": "docs/reference/maintenance",
       "title": "Maintenance",
       "description": "Keeping work centers running: reactive and preventive maintenance dispatches.",
-      "keywords": ["maintenance", "docs", "reference"],
+      "keywords": [
+        "maintenance",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Dispatches",
         "What it's against",
@@ -878,7 +1134,11 @@
       "slug": "docs/reference/materials",
       "title": "Materials",
       "description": "The property tables that give a material its identity — substance, form, dimension, finish, grade, and type.",
-      "keywords": ["materials", "docs", "reference"],
+      "keywords": [
+        "materials",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "The property tables",
         "Scope: system-wide or per company",
@@ -897,7 +1157,13 @@
       "slug": "docs/reference/mes",
       "title": "The MES app",
       "description": "The shop-floor surface where operators run operations, report quantities, issue material, and log their time.",
-      "keywords": ["the", "mes", "app", "docs", "reference"],
+      "keywords": [
+        "the",
+        "mes",
+        "app",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Getting onto the floor",
         "Console (shared-station) mode",
@@ -926,7 +1192,12 @@
       "slug": "docs/reference/methods",
       "title": "Methods & sourcing",
       "description": "How Carbon decides whether each part is made, bought, or pulled from stock, and how a job gets its own copy of the recipe.",
-      "keywords": ["methods", "sourcing", "docs", "reference"],
+      "keywords": [
+        "methods",
+        "sourcing",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Method type",
         "Method type vs replenishment system",
@@ -944,7 +1215,11 @@
       "slug": "docs/reference/notifications",
       "title": "Notifications",
       "description": "Assignments, approvals, expirations, and reminders reach the right people over in-app, email, and Slack, with per-user channel opt-outs by topic.",
-      "keywords": ["notifications", "docs", "reference"],
+      "keywords": [
+        "notifications",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "What raises a notification",
         "Topics",
@@ -966,7 +1241,13 @@
       "slug": "docs/reference/onboarding",
       "title": "Getting started",
       "description": "The first-run setup wizard that creates your company, and the Implementation Hub that guides a new company from an empty tenant to live on Carbon.",
-      "keywords": ["getting", "started", "docs", "reference", "onboarding"],
+      "keywords": [
+        "getting",
+        "started",
+        "docs",
+        "reference",
+        "onboarding"
+      ],
       "headings": [
         "The setup wizard",
         "What you don't choose during onboarding",
@@ -988,7 +1269,11 @@
       "slug": "docs/reference/payments",
       "title": "Payments",
       "description": "Cash receipts, disbursements, and credit or debit memos — the posted transactions that settle AR and AP.",
-      "keywords": ["payments", "docs", "reference"],
+      "keywords": [
+        "payments",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Payments",
         "Credit and debit memos",
@@ -1014,7 +1299,11 @@
       "slug": "docs/reference/people",
       "title": "People",
       "description": "The HR master data a company sets up — employees, departments, shifts, holidays, custom attributes, and time cards.",
-      "keywords": ["people", "docs", "reference"],
+      "keywords": [
+        "people",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Employees",
         "Departments",
@@ -1036,7 +1325,12 @@
       "slug": "docs/reference/period-close",
       "title": "Period close",
       "description": "Locking and closing a fiscal period: the close checklist, what a locked period stops, and how to reopen.",
-      "keywords": ["period", "close", "docs", "reference"],
+      "keywords": [
+        "period",
+        "close",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "The close lifecycle",
         "What a locked or closed period stops",
@@ -1062,7 +1356,13 @@
       "slug": "docs/reference/permissions",
       "title": "Permissions and access",
       "description": "How Carbon decides who can see and change what, from the module-action model to employee types, groups, invites, and shop-floor PIN accounts.",
-      "keywords": ["permissions", "and", "access", "docs", "reference"],
+      "keywords": [
+        "permissions",
+        "and",
+        "access",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "The module-action model",
         "Employee types",
@@ -1085,7 +1385,12 @@
       "slug": "docs/reference/picking",
       "title": "Picking lists",
       "description": "Staging a job's materials from the warehouse to the point of use, tracked line by line.",
-      "keywords": ["picking", "lists", "docs", "reference"],
+      "keywords": [
+        "picking",
+        "lists",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "What a picking list picks against",
         "Header and line status",
@@ -1106,7 +1411,12 @@
       "slug": "docs/reference/planning",
       "title": "Planning (MRP)",
       "description": "How demand turns into suggested jobs and purchase orders — and where that ends and scheduling begins.",
-      "keywords": ["planning", "(mrp)", "docs", "reference"],
+      "keywords": [
+        "planning",
+        "(mrp)",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Two stages",
         "What feeds it",
@@ -1125,7 +1435,14 @@
       "slug": "docs/reference/pricing",
       "title": "Pricing rules and overrides",
       "description": "How Carbon resolves the price on a line, from base price through overrides and rules.",
-      "keywords": ["pricing", "rules", "and", "overrides", "docs", "reference"],
+      "keywords": [
+        "pricing",
+        "rules",
+        "and",
+        "overrides",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Pricing rules",
         "Price overrides",
@@ -1148,7 +1465,12 @@
       "slug": "docs/reference/printing",
       "title": "Printing & labels",
       "description": "Printer routing, ZPL and PDF labels, and the print-job queue that turns a receipt or a finished job into a label on a shelf.",
-      "keywords": ["printing", "labels", "docs", "reference"],
+      "keywords": [
+        "printing",
+        "labels",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Two renderers, one queue",
         "Printer routes",
@@ -1174,7 +1496,12 @@
       "slug": "docs/reference/purchase-orders",
       "title": "Purchase orders",
       "description": "A commitment to a supplier: what to receive, and what you'll be billed for.",
-      "keywords": ["purchase", "orders", "docs", "reference"],
+      "keywords": [
+        "purchase",
+        "orders",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Line fields",
         "Types",
@@ -1195,7 +1522,11 @@
       "slug": "docs/reference/quality",
       "title": "Quality",
       "description": "Issues and corrective-action workflows, plus incoming inspection that gates received goods.",
-      "keywords": ["quality", "docs", "reference"],
+      "keywords": [
+        "quality",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Issues",
         "Workflows and actions",
@@ -1216,7 +1547,12 @@
       "slug": "docs/reference/quality-documents",
       "title": "Quality documents",
       "description": "Controlled SOPs and work instructions, versioned so a new revision supersedes the old one without deleting it.",
-      "keywords": ["quality", "documents", "docs", "reference"],
+      "keywords": [
+        "quality",
+        "documents",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "The lifecycle",
         "Versioning",
@@ -1238,7 +1574,11 @@
       "slug": "docs/reference/quotes",
       "title": "Quotes",
       "description": "A priced offer to a customer — the front of the sales flow.",
-      "keywords": ["quotes", "docs", "reference"],
+      "keywords": [
+        "quotes",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Fields",
         "Status lifecycle",
@@ -1255,7 +1595,11 @@
       "slug": "docs/reference/receipts",
       "title": "Receipts",
       "description": "Goods coming in: receiving against a purchase order and posting to inventory.",
-      "keywords": ["receipts", "docs", "reference"],
+      "keywords": [
+        "receipts",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Fields",
         "Status",
@@ -1274,14 +1618,29 @@
       "slug": "docs/reference/reordering",
       "title": "Reordering policy",
       "description": "How each part decides when and how much to replenish: the policy and the numbers that drive planning.",
-      "keywords": ["reordering", "policy", "docs", "reference"],
-      "headings": ["Policies", "Fields", "Related"]
+      "keywords": [
+        "reordering",
+        "policy",
+        "docs",
+        "reference"
+      ],
+      "headings": [
+        "Policies",
+        "Fields",
+        "Related"
+      ]
     },
     {
       "slug": "docs/reference/risks",
       "title": "Risk register",
       "description": "Track risks and opportunities against any entity, rated by severity and likelihood, and drive each to a resolution.",
-      "keywords": ["risk", "register", "docs", "reference", "risks"],
+      "keywords": [
+        "risk",
+        "register",
+        "docs",
+        "reference",
+        "risks"
+      ],
       "headings": [
         "What a risk entry holds",
         "Rating severity and likelihood",
@@ -1301,14 +1660,27 @@
       "slug": "docs/reference/routings",
       "title": "Routings",
       "description": "The ordered operations and work centers a part flows through to get made.",
-      "keywords": ["routings", "docs", "reference"],
-      "headings": ["Fields", "Per-revision routings", "Related"]
+      "keywords": [
+        "routings",
+        "docs",
+        "reference"
+      ],
+      "headings": [
+        "Fields",
+        "Per-revision routings",
+        "Related"
+      ]
     },
     {
       "slug": "docs/reference/sales-orders",
       "title": "Sales orders",
       "description": "A confirmed customer commitment: what to ship and invoice, tracked line by line.",
-      "keywords": ["sales", "orders", "docs", "reference"],
+      "keywords": [
+        "sales",
+        "orders",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Line fields",
         "Status",
@@ -1324,7 +1696,11 @@
       "slug": "docs/reference/scheduling",
       "title": "Scheduling",
       "description": "The board where jobs get dates and operations get a dispatch order, and the engine that computes both.",
-      "keywords": ["scheduling", "docs", "reference"],
+      "keywords": [
+        "scheduling",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "The two views drag differently",
         "The MES board is display only",
@@ -1346,7 +1722,13 @@
       "slug": "docs/reference/scrap",
       "title": "Scrap and unscrap",
       "description": "Writing off defective or lost material, and restoring it if the write-off was a mistake.",
-      "keywords": ["scrap", "and", "unscrap", "docs", "reference"],
+      "keywords": [
+        "scrap",
+        "and",
+        "unscrap",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Scrapping a unit on the floor",
         "Scrapping a subcomponent",
@@ -1360,7 +1742,12 @@
       "slug": "docs/reference/sequences",
       "title": "Numbering sequences",
       "description": "The per-company generator behind every readable document number — jobs, change notices, payments, and more.",
-      "keywords": ["numbering", "sequences", "docs", "reference"],
+      "keywords": [
+        "numbering",
+        "sequences",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "What a sequence is",
         "Fields",
@@ -1405,7 +1792,12 @@
       "slug": "docs/reference/shelf-life",
       "title": "Shelf life",
       "description": "How Carbon stamps expiration dates on tracked stock, and blocks consuming it once expired.",
-      "keywords": ["shelf", "life", "docs", "reference"],
+      "keywords": [
+        "shelf",
+        "life",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "How a date gets set: the three modes",
         "When the clock starts",
@@ -1424,7 +1816,11 @@
       "slug": "docs/reference/shipments",
       "title": "Shipments",
       "description": "Goods going out — one posting model serving sales orders, returns, and transfers.",
-      "keywords": ["shipments", "docs", "reference"],
+      "keywords": [
+        "shipments",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Fields",
         "Status",
@@ -1445,7 +1841,12 @@
       "slug": "docs/reference/storage-rules",
       "title": "Storage rules",
       "description": "Predicate guards that validate inventory transactions: block with an error, or warn and let the user continue.",
-      "keywords": ["storage", "rules", "docs", "reference"],
+      "keywords": [
+        "storage",
+        "rules",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "What a rule checks",
         "Operators",
@@ -1462,7 +1863,12 @@
       "slug": "docs/reference/supplier-quotes",
       "title": "Supplier quotes",
       "description": "A supplier's priced response to your RFQ, one per supplier, ready to convert into a purchase order.",
-      "keywords": ["supplier", "quotes", "docs", "reference"],
+      "keywords": [
+        "supplier",
+        "quotes",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Where a quote comes from",
         "Lines and pricing",
@@ -1481,7 +1887,13 @@
       "slug": "docs/reference/suppliers-and-customers",
       "title": "Suppliers & customers",
       "description": "The parties you buy from and sell to, and the ways their records differ.",
-      "keywords": ["suppliers", "customers", "docs", "reference", "and"],
+      "keywords": [
+        "suppliers",
+        "customers",
+        "docs",
+        "reference",
+        "and"
+      ],
       "headings": [
         "Suppliers",
         "Customers",
@@ -1496,7 +1908,11 @@
       "slug": "docs/reference/traceability",
       "title": "Traceability",
       "description": "Serial and batch tracking, and the genealogy that links what went into what.",
-      "keywords": ["traceability", "docs", "reference"],
+      "keywords": [
+        "traceability",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Tracked entities",
         "Where entities come from",
@@ -1509,7 +1925,11 @@
       "slug": "docs/reference/training",
       "title": "Training",
       "description": "Training programs, quiz questions, group assignments, per-period completion tracking, and the weekly reminder digest.",
-      "keywords": ["training", "docs", "reference"],
+      "keywords": [
+        "training",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "The training catalog",
         "Quiz questions",
@@ -1558,7 +1978,12 @@
       "slug": "docs/reference/work-centers",
       "title": "Work centers",
       "description": "Where operations run — the stations and machines, their rates, and the processes they perform.",
-      "keywords": ["work", "centers", "docs", "reference"],
+      "keywords": [
+        "work",
+        "centers",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "Fields",
         "Processes",
@@ -1571,7 +1996,12 @@
       "slug": "docs/reference/workflow-runs",
       "title": "Workflow runs",
       "description": "Every firing of a workflow is recorded step by step. What the run list and run detail show, what each status means, how repeating steps are summarised, and how long history is kept.",
-      "keywords": ["workflow", "runs", "docs", "reference"],
+      "keywords": [
+        "workflow",
+        "runs",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "The run list",
         "Inside a run",
@@ -1585,7 +2015,11 @@
       "slug": "docs/reference/workflows",
       "title": "Workflows",
       "description": "Build an automation on a canvas — one trigger, conditions, and steps that notify people, update records, or call an outside service. Triggers, values, publishing, and versions.",
-      "keywords": ["workflows", "docs", "reference"],
+      "keywords": [
+        "workflows",
+        "docs",
+        "reference"
+      ],
       "headings": [
         "What starts a workflow",
         "The steps you can add",
@@ -1599,7 +2033,12 @@
       "slug": "guides/build",
       "title": "Inside the build",
       "description": "How each satellite part is made or bought.",
-      "keywords": ["inside", "the", "build", "guides"],
+      "keywords": [
+        "inside",
+        "the",
+        "build",
+        "guides"
+      ],
       "headings": [
         "The bill of materials",
         "Method types",
@@ -1611,7 +2050,13 @@
       "slug": "guides/change-order",
       "title": "Revise a part",
       "description": "An engineering change, drafted against the real method, reviewed as a diff, and released so planning phases over on its own.",
-      "keywords": ["revise", "part", "guides", "change", "order"],
+      "keywords": [
+        "revise",
+        "part",
+        "guides",
+        "change",
+        "order"
+      ],
       "headings": [
         "Start with the parts, not the change",
         "Draft the change in place",
@@ -1623,21 +2068,46 @@
       "slug": "guides/fixed-assets-acquire",
       "title": "Acquire and depreciate",
       "description": "Put a machine on the books and write its value down over time.",
-      "keywords": ["acquire", "and", "depreciate", "guides", "fixed", "assets"],
-      "headings": ["Onto the books", "Depreciate it", "Two books at once"]
+      "keywords": [
+        "acquire",
+        "and",
+        "depreciate",
+        "guides",
+        "fixed",
+        "assets"
+      ],
+      "headings": [
+        "Onto the books",
+        "Depreciate it",
+        "Two books at once"
+      ]
     },
     {
       "slug": "guides/fixed-assets-sell",
       "title": "Sell or dispose",
       "description": "Two ways an asset leaves the books: sold to a buyer, or scrapped.",
-      "keywords": ["sell", "dispose", "guides", "fixed", "assets"],
-      "headings": ["Sell it", "Dispose it"]
+      "keywords": [
+        "sell",
+        "dispose",
+        "guides",
+        "fixed",
+        "assets"
+      ],
+      "headings": [
+        "Sell it",
+        "Dispose it"
+      ]
     },
     {
       "slug": "guides/floor",
       "title": "Run the floor",
       "description": "Work hits the floor; the floor reports back.",
-      "keywords": ["run", "the", "floor", "guides"],
+      "keywords": [
+        "run",
+        "the",
+        "floor",
+        "guides"
+      ],
       "headings": [
         "The schedule",
         "Operations & work centers",
@@ -1651,7 +2121,14 @@
       "slug": "guides/job-costing",
       "title": "How a job costs out",
       "description": "Where a job's cost comes from, and how it piles up in work-in-process.",
-      "keywords": ["how", "job", "costs", "out", "guides", "costing"],
+      "keywords": [
+        "how",
+        "job",
+        "costs",
+        "out",
+        "guides",
+        "costing"
+      ],
       "headings": [
         "Accounting is a switch",
         "Cost lands in WIP",
@@ -1663,7 +2140,14 @@
       "slug": "guides/job-finish-close",
       "title": "Finish, sell, close",
       "description": "WIP becomes finished goods, finished goods become COGS, and the job settles.",
-      "keywords": ["finish,", "sell,", "close", "guides", "job", "finish"],
+      "keywords": [
+        "finish,",
+        "sell,",
+        "close",
+        "guides",
+        "job",
+        "finish"
+      ],
       "headings": [
         "Finish into inventory",
         "Make-to-order still goes through stock",
@@ -1675,7 +2159,13 @@
       "slug": "guides/order",
       "title": "Start with the order",
       "description": "A 90-unit solar array wing order becomes real work.",
-      "keywords": ["start", "with", "the", "order", "guides"],
+      "keywords": [
+        "start",
+        "with",
+        "the",
+        "order",
+        "guides"
+      ],
       "headings": [
         "The sales order",
         "Batch it into jobs",
@@ -1709,7 +2199,11 @@
       "slug": "guides/plan",
       "title": "Plan ahead",
       "description": "Orders and forecast become jobs and POs.",
-      "keywords": ["plan", "ahead", "guides"],
+      "keywords": [
+        "plan",
+        "ahead",
+        "guides"
+      ],
       "headings": [
         "Demand forecasting",
         "Reordering policy",
@@ -1721,7 +2215,13 @@
       "slug": "guides/quote-to-cash",
       "title": "From quote to order",
       "description": "An RFQ becomes a quote; an accepted quote becomes a sales order.",
-      "keywords": ["from", "quote", "order", "guides", "cash"],
+      "keywords": [
+        "from",
+        "quote",
+        "order",
+        "guides",
+        "cash"
+      ],
       "headings": [
         "One opportunity, many documents",
         "Build the quote",
@@ -1734,7 +2234,14 @@
       "slug": "guides/receive-and-bill",
       "title": "Receive, match, bill",
       "description": "Goods come in, the supplier bill arrives, and Carbon reconciles the two.",
-      "keywords": ["receive,", "match,", "bill", "guides", "receive", "and"],
+      "keywords": [
+        "receive,",
+        "match,",
+        "bill",
+        "guides",
+        "receive",
+        "and"
+      ],
       "headings": [
         "The line keeps score",
         "Receive the goods",
@@ -1747,7 +2254,11 @@
       "slug": "guides/rfq-to-po",
       "title": "From RFQ to PO",
       "description": "Shop one item to many suppliers, then turn the winning quote into an order.",
-      "keywords": ["from", "rfq", "guides"],
+      "keywords": [
+        "from",
+        "rfq",
+        "guides"
+      ],
       "headings": [
         "One RFQ, many suppliers",
         "Suppliers quote back",
@@ -1759,7 +2270,12 @@
       "slug": "guides/ship",
       "title": "Quality, trace & ship",
       "description": "Prove it's right, ship it, close the books.",
-      "keywords": ["quality,", "trace", "ship", "guides"],
+      "keywords": [
+        "quality,",
+        "trace",
+        "ship",
+        "guides"
+      ],
       "headings": [
         "Raise an issue",
         "Workflows & actions",

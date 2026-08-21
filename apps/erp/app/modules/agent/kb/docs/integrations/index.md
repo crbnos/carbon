@@ -25,6 +25,7 @@ Connections are established one of three ways, depending on the app:
 | --- | --- | --- |
 | Provider settings | Email | Pick a provider and fill in its fields. |
 | API key | Linear, Paperless Parts, Exchange Rates | Paste a key (and any options). |
+| Punchout | McMaster-Carr | Paste the punchout and order URLs plus shared secrets from your onboarding packet. |
 | OAuth | Xero, Jira, Onshape, Slack | Authorize Carbon with the provider; tokens are stored for you. |
 
 Disconnecting an integration sets `active = false` but **keeps your stored credentials**. Reconnecting
@@ -42,6 +43,7 @@ configuration.
 ## Browse by category
 
   - Accounting Xero and automatic currency exchange rates.
+  - Purchasing Shop McMaster-Carr and exchange cXML purchase orders, confirmations, ship notices, and invoices.
   - Project management Push quality issues to Linear or Jira.
   - CAD Sync CAD data from Onshape.
   - Estimating & quoting Pull quotes and BOMs from Paperless Parts.
