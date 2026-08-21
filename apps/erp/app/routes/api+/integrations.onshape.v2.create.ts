@@ -2,12 +2,16 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
+  buildOnshapeItemNotesBlock,
   getOnshapeClient,
   getOnshapeV2Settings,
   readItemIdForRevision,
   readItemIdsForElement,
+  readReleasePackageName,
+  readReleasePackageNotes,
   resolveOnshapeRevision,
   writeElementMapping,
+  writeOnshapeItemNotes,
   writeRevisionMapping
 } from "@carbon/ee/onshape";
 import { validator } from "@carbon/form";
@@ -294,6 +298,45 @@ export async function action({ request }: ActionFunctionArgs) {
         error: recorded.error
       });
     }
+  }
+
+  // Provenance in the item's own notes, so someone reading the part two years
+  // from now can see which Onshape release produced it without opening the
+  // integration. `upsertPart` does not write notes, so this is its own narrow
+  // update — the same reason applyOnshapeAttributes and v2.link write their
+  // one column directly rather than through items_updateItem.
+  //
+  // Log-and-continue on failure: the part and both mappings are already correct,
+  // and a missing note must not undo them.
+  try {
+    const releasePackage = onshapeRevision.releaseId
+      ? await onshapeClient.getReleasePackage(onshapeRevision.releaseId)
+      : undefined;
+    await writeOnshapeItemNotes(serviceRole, {
+      companyId,
+      itemId,
+      userId,
+      block: buildOnshapeItemNotesBlock({
+        releaseName:
+          readReleasePackageName(releasePackage) ??
+          onshapeRevision.releaseName ??
+          null,
+        releaseNotes: readReleasePackageNotes(releasePackage),
+        partNumber: onshapeRevision.partNumber,
+        revision: onshapeRevision.revision,
+        documentId: onshapeRevision.documentId,
+        versionId: onshapeRevision.versionId,
+        elementId: onshapeRevision.elementId,
+        partId: onshapeRevision.partId ?? null,
+        releaseId: onshapeRevision.releaseId ?? null,
+        importedAt: new Date().toISOString()
+      })
+    });
+  } catch (error) {
+    logger.warn("Could not write Onshape provenance to item notes", {
+      itemId,
+      error
+    });
   }
 
   // Pull the geometry. The spec has create-from-Onshape doing this immediately,

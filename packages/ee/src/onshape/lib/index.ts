@@ -5,6 +5,8 @@ export * from "./document.type";
 export * from "./element.type";
 export * from "./legacy";
 export * from "./mapping";
+export * from "./provenance";
 export * from "./reconcile";
+export * from "./release";
 export * from "./resolve";
 export * from "./settings";

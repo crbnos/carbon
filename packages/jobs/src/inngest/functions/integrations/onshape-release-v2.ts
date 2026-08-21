@@ -18,16 +18,22 @@
 // assumed to be a single item.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import type { OnshapeReleasePackage } from "@carbon/ee/onshape";
 import {
+  buildOnshapeItemNotesBlock,
   getOnshapeClient,
   getOnshapeV2Settings,
   readItemIdsForElement,
+  readReleasePackageName,
+  readReleasePackageNotes,
   resolveBomRow,
   writeElementMapping,
+  writeOnshapeItemNotes,
   writeRevisionMapping
 } from "@carbon/ee/onshape";
 import { trigger } from "@carbon/lib/trigger";
 import { NotificationEvent } from "@carbon/notifications";
+import { RetryAfterError } from "inngest";
 import { z } from "zod";
 import { inngest } from "../../client";
 import { withRateLimitRetry } from "./onshape-backfill";
@@ -139,6 +145,33 @@ export const onshapeReleaseV2Function = inngest.createFunction(
           ? (companies[0]?.id ?? null)
           : null;
       }
+
+      // The release package — the ONLY source of the release name and notes.
+      // Fetched once per run and reused for every partId in the fan-out and by
+      // the importer, so a 7-body Part Studio release costs one call, not seven.
+      //
+      // Non-fatal: provenance is worth a call, never worth failing a release
+      // that has already produced correct items and geometry. A rate limit is
+      // the exception and is rethrown by withRateLimitRetry.
+      let releasePackage: OnshapeReleasePackage | undefined;
+      if (payload.releaseId) {
+        try {
+          releasePackage = await withRateLimitRetry(
+            () => client.getReleasePackage(payload.releaseId as string),
+            `release package ${payload.releaseId}`
+          );
+        } catch (error) {
+          if (error instanceof RetryAfterError) throw error;
+          console.warn(
+            `[ONSHAPE RELEASE V2] could not read release package ${payload.releaseId}`,
+            error
+          );
+        }
+      }
+
+      const releaseName =
+        readReleasePackageName(releasePackage) ?? payload.releaseName ?? null;
+      const releaseNotes = readReleasePackageNotes(releasePackage);
 
       const partIds: Array<string | null> = [];
       if (onshapeCompanyId) {
@@ -265,6 +298,11 @@ export const onshapeReleaseV2Function = inngest.createFunction(
               revision: releasedRevision,
               releaseName: payload.releaseName,
               onshapeCompanyId: onshapeCompanyId ?? undefined,
+              // Reuse the package this run already fetched, and let the
+              // importer write Onshape's own words rather than Carbon's
+              // provenance sentence. Legacy callers pass neither.
+              releasePackage,
+              writeProvenance: true,
               // The decision is ALREADY made, by v2's own settings. Letting the
               // importer re-read them would read the LEGACY keys, which a v2
               // company necessarily has off — so v2 release import would refuse
@@ -350,6 +388,40 @@ export const onshapeReleaseV2Function = inngest.createFunction(
             partId,
             reason: `Carbon has this part but not at revision ${releasedRevision || "(initial)"}, and release import is off.`
           });
+        }
+
+        // Provenance for EVERY item this release touched — including the
+        // matched-existing-revision case, which never reaches the importer and
+        // would otherwise be the one path that records nothing.
+        //
+        // Deliberately NOT inside the asset pull below: that is gated on
+        // attachAssetsOnRelease, and a company with assets off would then get
+        // no provenance either.
+        if (targetItemId) {
+          const notes = await writeOnshapeItemNotes(carbon, {
+            companyId: payload.companyId,
+            itemId: targetItemId,
+            userId: payload.userId,
+            block: buildOnshapeItemNotesBlock({
+              releaseName,
+              releaseNotes,
+              partNumber: payload.partNumber,
+              revision: releasedRevision,
+              documentId: payload.documentId,
+              versionId: payload.versionId,
+              elementId: payload.elementId,
+              partId,
+              releaseId: payload.releaseId,
+              importedAt: new Date().toISOString()
+            })
+          });
+          if (notes.orphanedStart) {
+            skipped.push({
+              partId,
+              reason:
+                "This item's notes carry an unterminated Onshape block, so the release details were appended instead of replacing it."
+            });
+          }
         }
 
         if (targetItemId && settings.attachAssetsOnRelease) {

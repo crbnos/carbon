@@ -24,6 +24,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   buildElementExternalId,
   buildOnshapeBomTree,
+  buildOnshapeItemNotesBlock,
   getOnshapeClient,
   getOnshapeV2Settings,
   isInitialRevisionLabel,
@@ -34,7 +35,8 @@ import {
   reconcileMethodMaterials,
   resolveBomRow,
   revisionsMatch,
-  writeElementMapping
+  writeElementMapping,
+  writeOnshapeItemNotes
 } from "@carbon/ee/onshape";
 import { trigger } from "@carbon/lib/trigger";
 import { NotificationEvent } from "@carbon/notifications";
@@ -231,7 +233,55 @@ async function adoptExistingItem(args: {
     createdBy: payload.userId
   });
 
+  await writeBomRowProvenance(carbon, {
+    companyId: payload.companyId,
+    userId: payload.userId,
+    versionId: payload.versionId,
+    itemId,
+    row
+  });
+
   return { kind: "adopted", itemId };
+}
+
+/**
+ * Provenance for an item a BOM import created or adopted.
+ *
+ * A BOM import has NO release — its payload is a document/version/element and
+ * its rows carry no releaseId, releaseName or notes. So this writes the
+ * IDENTITY half of the block only, through the same builder the release paths
+ * use rather than a second formatter that could drift from it.
+ */
+async function writeBomRowProvenance(
+  carbon: Carbon,
+  args: {
+    companyId: string;
+    userId: string;
+    versionId: string;
+    itemId: string;
+    row: {
+      partNumber: string;
+      revision?: string | null;
+      documentId: string;
+      elementId: string;
+      partId?: string | null;
+    };
+  }
+): Promise<void> {
+  await writeOnshapeItemNotes(carbon, {
+    companyId: args.companyId,
+    itemId: args.itemId,
+    userId: args.userId,
+    block: buildOnshapeItemNotesBlock({
+      partNumber: args.row.partNumber,
+      revision: args.row.revision || null,
+      documentId: args.row.documentId,
+      versionId: args.versionId,
+      elementId: args.row.elementId,
+      partId: args.row.partId ?? null,
+      importedAt: new Date().toISOString()
+    })
+  });
 }
 
 /** Reconcile one method's materials against the children Onshape reports. */
@@ -866,6 +916,14 @@ export const onshapeBomImportFunction = inngest.createFunction(
             lastSyncedAt: new Date().toISOString()
           },
           createdBy: payload.userId
+        });
+
+        await writeBomRowProvenance(carbon, {
+          companyId: payload.companyId,
+          userId: payload.userId,
+          versionId: payload.versionId,
+          itemId: created.data.id,
+          row
         });
 
         itemIdByRow.set(row.rowId, created.data.id);

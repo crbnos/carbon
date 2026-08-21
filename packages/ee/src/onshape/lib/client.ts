@@ -76,6 +76,36 @@ export interface OnshapeRevision {
   [key: string]: unknown;
 }
 
+// One entry of a release package's property list. Onshape identifies each
+// property by a stable `propertyId`; `name` is the LOCALIZED display label and
+// must never be used as a key — the same fragility already recorded for BOM
+// column headers.
+export interface OnshapeReleasePackageProperty {
+  propertyId?: string;
+  name?: string;
+  value?: unknown;
+  isApproverProperty?: boolean;
+  isNotifierProperty?: boolean;
+  [key: string]: unknown;
+}
+
+// A release package — the object a release event's `releaseId` names. Carries
+// the release NAME and NOTES, which appear in no webhook payload and in no
+// exported asset, plus the full membership of the release in `items`.
+export interface OnshapeReleasePackage {
+  id: string;
+  name?: string;
+  description?: string;
+  properties?: OnshapeReleasePackageProperty[];
+  items?: Array<Record<string, unknown>>;
+  workflow?: {
+    state?: { name?: string } & Record<string, unknown>;
+    currentStateDisplayName?: string;
+  } & Record<string, unknown>;
+  metadataState?: string;
+  [key: string]: unknown;
+}
+
 // Typed API error so callers can detect rate limiting (status 429) and honor
 // Retry-After instead of hammering the quota.
 export class OnshapeApiError extends Error {
@@ -341,6 +371,25 @@ export class OnshapeClient {
         unknown
       >
     >("GET", nextUrl);
+  }
+
+  // One release package by id. The webhook's `releaseId` IS the rpid — verified
+  // live 2026-08-21 against eff3a8e5ba701fc7bffb3191 ("TB-REL-001 Test Bench
+  // Erstfreigabe"): 200, ~71 KB.
+  //
+  // This is the ONLY source of the release name and release notes. Neither
+  // appears in the webhook envelope, in OnshapeRevision, or in any exported
+  // asset — Onshape publishes no release report, and the API has exactly three
+  // /releasepackages paths, none of which produce a file.
+  //
+  // Read its fields through lib/release.ts, not here: this class is transport.
+  async getReleasePackage(
+    releasePackageId: string
+  ): Promise<OnshapeReleasePackage> {
+    return this.request<OnshapeReleasePackage>(
+      "GET",
+      `/api/v10/releasepackages/${encodeURIComponent(releasePackageId)}`
+    );
   }
 
   // --- Release-asset export ---------------------------------------------------

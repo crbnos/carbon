@@ -1,8 +1,15 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
-import { getOnshapeClient } from "@carbon/ee/onshape";
-import { datetime } from "@carbon/utils";
+import type { OnshapeReleasePackage } from "@carbon/ee/onshape";
+import {
+  buildOnshapeItemNotesBlock,
+  getOnshapeClient,
+  readReleasePackageName,
+  readReleasePackageNotes,
+  writeOnshapeItemNotes
+} from "@carbon/ee/onshape";
+import { datetime, textToTiptap } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { RetryAfterError } from "inngest";
 import { z } from "zod";
@@ -401,6 +408,22 @@ export interface OnshapeReleaseImportInput {
    * imports anything.
    */
   gate?: { enabled: boolean; mode: "changeNotice" | "revision" };
+  /**
+   * The release package, already fetched by the v2 caller. Passed in rather
+   * than re-fetched: `onshape-release-v2` needs it too, and one release means
+   * one call however many elements fan out of it.
+   */
+  releasePackage?: OnshapeReleasePackage;
+  /**
+   * Write Onshape's own release name and notes into Carbon, and stamp the
+   * notice's source columns. V2 ONLY.
+   *
+   * Gated rather than unconditional because the branch's acceptance criterion
+   * is that a company with no `pipeline` key behaves exactly as today. Legacy
+   * callers pass neither this nor `releasePackage`, and take the byte-identical
+   * path they always did.
+   */
+  writeProvenance?: boolean;
 }
 
 export async function runOnshapeReleaseImport(
@@ -426,6 +449,25 @@ export async function runOnshapeReleaseImport(
     return { imported: false, skippedReason: "revision-not-found" };
   }
   const { revision, name: onshapeName } = released;
+
+  // v2 only. Built once and reused by both modes; `undefined` on legacy leaves
+  // applyOnshapeAttributes doing exactly what it did before.
+  const notesBlock = payload.writeProvenance
+    ? buildOnshapeItemNotesBlock({
+        releaseName:
+          readReleasePackageName(payload.releasePackage) ??
+          payload.releaseName ??
+          null,
+        releaseNotes: readReleasePackageNotes(payload.releasePackage),
+        partNumber: payload.partNumber,
+        revision,
+        documentId: payload.documentId,
+        versionId: payload.versionId,
+        elementId: payload.elementId,
+        releaseId: payload.releaseId,
+        importedAt: datetime.timestamp()
+      })
+    : undefined;
 
   const target = await resolveReleaseTarget(carbon, {
     companyId: payload.companyId,
@@ -507,7 +549,8 @@ export async function runOnshapeReleaseImport(
       companyId: payload.companyId,
       userId: payload.userId,
       name: sourceItem.name as string | null,
-      onshapeName
+      onshapeName,
+      notesBlock
     });
 
     return {
@@ -541,11 +584,23 @@ export async function runOnshapeReleaseImport(
 
   if (!changeNoticeId) {
     const timeZone = await getCompanyTimeZone(carbon, payload.companyId);
-    const releaseLabel = payload.releaseName?.trim() || payload.releaseId;
+    // The package is authoritative for its own name; the webhook's copy is a
+    // convenience field, and on a v2 run we already hold the package.
+    const releaseLabel =
+      (payload.writeProvenance
+        ? readReleasePackageName(payload.releasePackage)
+        : null) ??
+      payload.releaseName?.trim() ??
+      payload.releaseId;
     const inserted = unwrapDispatch(
       "items_insertChangeNotice",
       await dispatch("items_insertChangeNotice", context, {
         name: `Onshape release ${releaseLabel}`,
+        // Provenance as DATA rather than prose. Nothing renders these yet, but
+        // getChangeNotice selects * so a reader already receives them.
+        ...(payload.writeProvenance
+          ? { sourceType: "onshape", sourceId: payload.releaseId }
+          : {}),
         openDate: datetime.today(timeZone).toString(),
         type: "Engineering",
         // An auto-created Draft notifies nobody — changeNoticeNotifyStages
@@ -554,7 +609,7 @@ export async function runOnshapeReleaseImport(
         // .IntegrationSync is deliberately NOT used: it renders as "Accounting
         // sync needs attention".
         assignee: payload.userId,
-        reasonForChange: onshapeProvenance(payload, revision)
+        reasonForChange: reasonForChangeContent(payload, revision)
       })
     );
     if (!inserted.ok) {
@@ -687,7 +742,8 @@ export async function runOnshapeReleaseImport(
       companyId: payload.companyId,
       userId: payload.userId,
       name: sourceItem.name as string | null,
-      onshapeName
+      onshapeName,
+      notesBlock
     });
   }
 
@@ -711,6 +767,29 @@ export async function runOnshapeReleaseImport(
     openNoticeCollisions:
       openNoticeCollisions.length > 0 ? openNoticeCollisions : undefined
   };
+}
+
+/**
+ * What goes in `reasonForChange`.
+ *
+ * On v2 with a release package, this is ONSHAPE'S OWN NOTES — the text the
+ * releaser wrote to explain the change, which is exactly what the field means.
+ * Carbon's machine-generated provenance moves to `sourceType`/`sourceId`, two
+ * columns that have existed unused since the change-order migration.
+ *
+ * The fallback matters: a release with no notes must NOT produce an empty
+ * reason. An auto-created Draft whose reason is `{}` is a regression against
+ * today, not a neutral change, so the provenance sentences stay as the default.
+ */
+function reasonForChangeContent(
+  payload: OnshapeReleaseImportInput,
+  revision: string
+): Record<string, unknown> {
+  if (payload.writeProvenance) {
+    const notes = readReleasePackageNotes(payload.releasePackage);
+    if (notes) return textToTiptap(notes) as Record<string, unknown>;
+  }
+  return onshapeProvenance(payload, revision);
 }
 
 /**
@@ -750,9 +829,25 @@ async function applyOnshapeAttributes(
     userId: string;
     name: string | null;
     onshapeName?: string;
+    /** v2 only — the release provenance block for this item's notes. */
+    notesBlock?: ReturnType<typeof buildOnshapeItemNotesBlock>;
   }
 ): Promise<void> {
   if (!args.itemId) return;
+
+  // Provenance first, and independent of the name: an item whose Onshape name
+  // already matches Carbon's returns early below, and it still deserves to
+  // record which release produced it. writeOnshapeItemNotes is non-fatal by
+  // contract, so this cannot fail the import.
+  if (args.notesBlock) {
+    await writeOnshapeItemNotes(carbon, {
+      companyId: args.companyId,
+      itemId: args.itemId,
+      userId: args.userId,
+      block: args.notesBlock
+    });
+  }
+
   const name = args.onshapeName?.trim();
   if (!name || name === args.name) return;
 

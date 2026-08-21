@@ -3,15 +3,19 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   buildElementExternalId,
+  buildOnshapeItemNotesBlock,
   getOnshapeClient,
   getOnshapeV2Settings,
   parseElementExternalId,
   readElementMappingsForItems,
   readItemIdForRevision,
   readItemIdsForElement,
+  readReleasePackageName,
+  readReleasePackageNotes,
   resolveOnshapeRevision,
   revisionsMatch,
   writeElementMapping,
+  writeOnshapeItemNotes,
   writeRevisionMapping
 } from "@carbon/ee/onshape";
 import { validator } from "@carbon/form";
@@ -333,6 +337,41 @@ export async function action({ request }: ActionFunctionArgs) {
           : "Linked the part, but Carbon could not record which Onshape release it came from. Try linking again."
       };
     }
+  }
+
+  // Provenance in the item's notes. Unlike the NAME above, this needs no
+  // confirmOverwrite gate: the block is spliced between its own sentinels, so
+  // anything the user wrote is preserved by construction. Nothing is
+  // overwritten, so there is nothing to consent to.
+  try {
+    const releasePackage = onshapeRevision.releaseId
+      ? await onshapeClient.getReleasePackage(onshapeRevision.releaseId)
+      : undefined;
+    await writeOnshapeItemNotes(serviceRole, {
+      companyId,
+      itemId: input.itemId,
+      userId,
+      block: buildOnshapeItemNotesBlock({
+        releaseName:
+          readReleasePackageName(releasePackage) ??
+          onshapeRevision.releaseName ??
+          null,
+        releaseNotes: readReleasePackageNotes(releasePackage),
+        partNumber: onshapeRevision.partNumber,
+        revision: onshapeRevision.revision,
+        documentId: onshapeRevision.documentId,
+        versionId: onshapeRevision.versionId,
+        elementId: onshapeRevision.elementId,
+        partId: onshapeRevision.partId ?? null,
+        releaseId: onshapeRevision.releaseId ?? null,
+        importedAt: new Date().toISOString()
+      })
+    });
+  } catch (error) {
+    logger.warn("Could not write Onshape provenance to item notes on link", {
+      itemId: input.itemId,
+      error
+    });
   }
 
   // A part-number mismatch is legal now — the mapping is the join, the number

@@ -3,11 +3,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   buildElementExternalId,
+  buildOnshapeItemNotesBlock,
   getOnshapeClient,
   getOnshapeV2Settings,
   readElementMappingsForItems,
   resolveOnshapeRevision,
-  writeElementMapping
+  writeElementMapping,
+  writeOnshapeItemNotes
 } from "@carbon/ee/onshape";
 import { validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
@@ -263,6 +265,31 @@ export async function action({ request }: ActionFunctionArgs) {
         message: "Could not link this item to the Onshape assembly"
       };
     }
+  }
+
+  // Provenance for the TOP-LEVEL item. The job writes it for every row it
+  // mints or adopts, but the target item is linked HERE, not there, so this is
+  // the only place that can record it. Identity half only: a BOM import reads a
+  // version, and a version is not a release — it has no name and no notes.
+  try {
+    await writeOnshapeItemNotes(serviceRole, {
+      companyId,
+      itemId: method.data.itemId,
+      userId,
+      block: buildOnshapeItemNotesBlock({
+        partNumber: input.partNumber ?? null,
+        revision: input.revision || null,
+        documentId: input.documentId,
+        versionId: input.versionId,
+        elementId: input.elementId,
+        importedAt: new Date().toISOString()
+      })
+    });
+  } catch (error) {
+    logger.warn("Could not write Onshape provenance to the target item", {
+      itemId: method.data.itemId,
+      error
+    });
   }
 
   await trigger("onshape-bom-import", {

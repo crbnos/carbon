@@ -5266,6 +5266,16 @@ export async function insertChangeNotice(
     dueDate?: string;
     assignee?: string;
     customFields?: Json;
+    /**
+     * Where this notice came from, when something other than a human created
+     * it. `changeOrder.sourceType`/`sourceId` have existed since the change-order
+     * migration and were never written; the Onshape v2 release import is the
+     * first caller, using them to name the release package that produced the
+     * notice. That frees `reasonForChange` to carry the releaser's own words
+     * rather than a machine-generated provenance sentence.
+     */
+    sourceType?: string;
+    sourceId?: string;
   }
 ): Promise<{
   data: { id: string; changeNoticeId: string } | null;
@@ -5305,6 +5315,8 @@ export async function insertChangeNotice(
       dueDate: input.dueDate ?? null,
       assignee: input.assignee ?? null,
       customFields: input.customFields,
+      sourceType: input.sourceType ?? null,
+      sourceId: input.sourceId ?? null,
       companyId: input.companyId,
       createdBy: input.createdBy
     })

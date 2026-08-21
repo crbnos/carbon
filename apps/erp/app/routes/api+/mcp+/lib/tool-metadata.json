@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-16T23:17:39.255Z",
+  "generated": "2026-08-21T08:51:57.784Z",
   "totalTools": 1442,
   "modules": 15,
   "tools": [
@@ -16119,7 +16119,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "insert change notice",
-      "paramCount": 12,
+      "paramCount": 14,
       "serviceParams": [
         "client",
         "input"
@@ -16161,7 +16161,13 @@
           "assignee": {
             "type": "string"
           },
-          "customFields": {}
+          "customFields": {},
+          "the Onshape v2 release import is the\n     * first caller, using them to name the release package that produced the\n     * notice. That frees `reasonForChange` to carry the releaser's own words\n     * rather than a machine-generated provenance sentence.\n     */\n    sourceType": {
+            "type": "string"
+          },
+          "sourceId": {
+            "type": "string"
+          }
         },
         "required": [
           "name",
