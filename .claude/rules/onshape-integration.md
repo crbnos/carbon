@@ -120,6 +120,17 @@ maps an Onshape thing to a Carbon item must resolve in two steps.
   rewriting. It returns `{ ok } | { ok: false, conflict, error }` — a real
   conflict means two Carbon items claim one Onshape release and is reported, not
   swallowed.
+- `patchElementMappingMetadata` (service role) read-modify-writes `metadata` on an
+  EXISTING element row, returning false when there is none. It cannot reuse
+  `writeElementMapping`, which is delete-then-insert of the whole row and would
+  reset `createdBy`/`createdAt`. Its merge (`mergeElementMappingMetadata`, pure
+  and unit-pinned) is shallow except for `bomImport`: a patch naming `startedAt`
+  REPLACES the marker (a new run must not inherit the previous outcome), a patch
+  without one merges into it (the job stamping its own finish). The BOM-import
+  marker is written by the dispatching ROUTE — `v2.create`'s import branch and
+  `v2.import` — and closed by the job, which is safe because the job only ever
+  rewrites element mappings for rows it ADOPTS or MINTS, never for the top-level
+  item.
 - Every WRITE takes the SERVICE ROLE, and the parameter is named `serviceRole` to
   make a wrong client obvious at the call site (see the RLS note below).
 
@@ -846,7 +857,7 @@ All under `apps/erp/app/routes/api+/integrations.onshape.v2.*.ts`, paths in
 | `v2.versions` | loader | a document's versions, each marked `released` by joining against the company revisions sweep. Requires `allowUnreleasedSync`. Workspaces are deliberately never offered — the BOM, parts and translation endpoints all hardcode `/v/{versionId}`, so a workspace would 404 at BOM time rather than at pick time. Reports `truncated` (list) and `releasedUnknown` (badges) separately |
 | `v2.elements` | loader | the ASSEMBLIES in a version, each with its real Onshape PART NUMBER |
 | `v2.bom` | loader | the BOM preview: per row, `update` / `create-revision` / `create` / `ambiguous`, plus `skipped`/`orphaned` counts and a summary |
-| `v2.create` | action | create a Carbon part from a released revision |
+| `v2.create` | action | create a Carbon part from a released revision, from the whole New Part payload, and optionally queue its BOM import |
 | `v2.link` | action | link an EXISTING Carbon item to a released revision |
 | `v2.import` | action | validate, link the target item, and queue `onshape-bom-import` |
 
@@ -881,10 +892,34 @@ dropping it.
   the element mapping). Conflating them produces a message that is simply wrong: a
   company that has released A, B and C has three picker entries per part sharing
   one elementId.
-- `v2.create` takes `replenishmentSystem`, `itemTrackingType`, `unitOfMeasureCode`
-  and `defaultMethodType` from the FORM. Those are business decisions, not CAD
-  facts; the UI seeds them from the element type (Assembly → Make / Make to Order,
-  otherwise Buy / Pull from Inventory) and shows them for confirmation.
+- `v2.create` takes the WHOLE New Part payload from the form —
+  `partBaseValidator` minus `id`/`revision`/`name`/`readableId`/`modelUploadId`,
+  with the storage and shelf-life refines still applied, plus
+  `importBom: zfd.checkbox()`. Those three identity fields are OFF the schema
+  entirely rather than accepted and ignored, so a hand-posted number cannot be
+  persisted. The UI seeds replenishment from the element type (Assembly → Make /
+  Make to Order, otherwise Buy / Pull from Inventory) and shows it for
+  confirmation. `customFields: setCustomFields(formData)` comes along, as on the
+  ordinary new-part action.
+- `v2.create` RE-READS the created item by `(readableId, revision, companyId,
+  type)` instead of trusting what `upsertPart` returned. That function's insert
+  branch finishes with a lookup against the `parts` VIEW, which is
+  `DISTINCT ON (readableId, companyId)` ordered so a NAMED revision sorts first —
+  so creating `ABC` rev `0` beside an existing unlinked `ABC` rev `A` succeeds
+  and hands back rev A's id, and both mappings plus the asset pull would land on
+  the wrong item. When the re-read finds nothing the route refuses the LINK and
+  says so, rather than mapping a row it cannot identify.
+- `importBom` is refused outright when `elementType !== 1` (a Part Studio body has
+  no bill of materials) and soft-checked with `getUserClaims` for `update` +
+  `delete` on parts. NOT a second `requirePermissions`: that THROWS a redirect on
+  denial, so a create-only user would be bounced off the page and never get the
+  part. The import is the optional half; the part is not.
+- **Exactly one asset path runs per creation.** With `importBom` the route queues
+  `onshape-bom-import` against the item's auto-created Draft `makeMethod` and
+  SKIPS `onshape-v2-item-assets` — the import job pulls the top-level item's own
+  model itself, and running both double-exports one element against a
+  rate-limited API while `attachOnshapeAssetsToItem`'s compare-and-set files the
+  loser's model away as a document.
 - `v2.link` requires `confirmOverwrite` and is destructive by consent on the fields
   Onshape owns — currently the NAME only, written as a narrow two-column update
   rather than `items_updateItem` (which sanitises undefined keys to null and
@@ -912,8 +947,27 @@ dropping it.
 
 ## v2 UI
 
-- `PartsTable` — "From Onshape" button → `OnshapeCreatePart` → `OnshapeRevisionPicker`.
-- `PartHeader` — "Link to Onshape" menu item → `OnshapeLinkPart`.
+- `PartsTable` — "From Onshape" is a LINK to `${path.to.newPart}?source=onshape`,
+  not a modal. The `OnshapeCreatePart` modal it used to open was deleted: it
+  re-implemented three fields the New Part form already has and could not reach
+  the other twelve, and the two surfaces had already diverged on how they seeded
+  replenishment.
+- `PartForm` — owns the create-from-Onshape flow, behind an explicit
+  `withOnshapeSource` prop (never inferred from `type`: the three inline-create
+  callers in `components/Form/{Part,Item,Items}.tsx` read a PostgrestResponse
+  back and would break if this form could redirect them). Under a selection the
+  identity fields become `InputControlled … isReadOnly` — `isReadOnly`, because a
+  DISABLED input submits nothing and the client-side `partValidator` would fail
+  on `id`/`revision`/`name` first; and WITHOUT `isUppercase`, which would
+  re-create the lowercase-part-number defect v2 exists to fix. The dropzone is
+  hidden (the Onshape pull compare-and-sets `modelUploadId`), and the action
+  switches to `v2.create`.
+- `PartForm`'s two decisions are pure and unit-pinned in
+  `ui/Parts/onshapePartSource.ts`: `seedFromElementType` (assembly → Make / Make
+  to Order) and `bomOptionState` (offered only for `elementType === 1`, disabled
+  without create + update + delete on parts).
+- `PartHeader` — "Link to Onshape" menu item → `OnshapeLinkPart`, plus an
+  "Importing from Onshape…" badge driven by `useOnshapeImportStatus`.
 - `Item/BoMExplorer` — renders `OnshapeSync` (legacy) or `OnshapeBomImport` (v2),
   never both: showing both would let someone write string-matched items with no
   mapping while v2 is live, silently poisoning the migration.
@@ -927,7 +981,21 @@ dropping it.
   `v2.elements`, and shows the name only as a label.
 - `OnshapeBomImport` — preview-then-confirm; the preview says what will HAPPEN per
   row rather than just listing rows, and surfaces `skipped + orphaned` as dropped
-  rows so a partial BOM is never presented as the whole one.
+  rows so a partial BOM is never presented as the whole one. Still the surface for
+  an item that already exists; the New Part form deliberately shows no preview,
+  since the part does not exist yet and every row would preview against nothing.
+- `useOnshapeImportStatus` (`apps/erp/app/hooks/`) — reads
+  `metadata.bomImport` off the item's `onshapeElement` mapping and polls every
+  3 s while it is running. POLL ONLY: `externalIntegrationMapping` is not in the
+  `supabase_realtime` publication, so a push affordance would need a migration.
+  A `startedAt` older than 15 minutes with no `finishedAt` reads as UNKNOWN, not
+  as running — `onshape-bom-import` is `retries: 10` and a crashed run never
+  reaches its stamp.
+- The unreleased picker is deliberately NOT wired into the New Part form.
+  `onshapeV2CreateValidator.revision` is `z.string().min(1)` and
+  `OnshapeUnreleasedPicker` emits `revision: ''`, so it would fail validation
+  with nothing on screen to explain why. Creating from an unreleased version is
+  a separate branch nobody has written.
 
 ## elementType — the numeric one
 
@@ -1021,6 +1089,13 @@ model and Onshape has no inverse, so a model-first caller lists the document's
 elements and calls references on every drawing. 1 + N calls per document-version
 — hence grouping by `(documentId, versionId)` rather than per element.
 
+The document is named after the ITEM (`readableIdWithRevision`), never after the
+drawing's own part number, in BOTH the drawing-first and model-first paths. The
+PDF lives on the model item and the same drawing can arrive either way; naming it
+two ways files one drawing as two documents, since the attach helper
+de-duplicates on the storage path. Verified live: both paths produce exactly one
+row, `TB-900.A-<drawingElementId>.pdf`.
+
 `syncOnshapeDrawingAssetsToItem` now takes an optional `client`. Building one per
 drawing is a refresh-token race (token refresh is an unlocked read-modify-write
 of the whole `metadata` column) and escapes the caller's rate-limit wrapper. Its
@@ -1104,7 +1179,7 @@ Four `integration` values and five shapes, all on the one table
 | `item` | `onshape` | Carbon item id | null | — | legacy BOM sync picker state (`integrations.onshape.sync.ts:75`); read by `OnshapeSync.tsx:77` to restore the picker + `lastSyncedAt` |
 | `item` | `onshapeData` | Carbon item id | `readableIdWithRevision` | false | the `sync` edge function (lines 446, 601); read by `components/BoMExplorer/BoMExplorer.tsx:521` for the Onshape State badge |
 | `onshapeRelease` | `onshape` | `releaseId` | `releaseId` | — | the release-import claim (`onshape-release-import.ts:576`); metadata carries `changeNoticeId`, `claimedByMessageId`, `documentId`, `versionId`, `releaseName`, `importedAt`, `items[]`, `openNoticeCollisions?` |
-| `item` | `onshapeElement` | Carbon item id | `did:eid[:partId]` | **true** | v2 (`mapping.ts:303`); metadata carries `elementType`, `versionId`, `versionName`, `partNumber`, `fromUnreleasedVersion`, `lastSyncedAt` |
+| `item` | `onshapeElement` | Carbon item id | `did:eid[:partId]` | **true** | v2 (`mapping.ts`); metadata carries `elementType`, `versionId`, `versionName`, `partNumber`, `fromUnreleasedVersion`, `lastSyncedAt`, `bomImport` |
 | `item` | `onshapeRevision` | Carbon item id | Onshape `revisionId` | **false** | v2 (`mapping.ts:358`); metadata carries `revision`, `releaseId`, `releaseName`, `documentId`, `versionId`, `elementId`, `importedAt` |
 
 `UNIQUE (entityType, entityId, integration, companyId)` is what makes the release

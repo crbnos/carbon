@@ -30,6 +30,7 @@ import {
   isInitialRevisionLabel,
   type OnshapeBomNode,
   parseOnshapeBom,
+  patchElementMappingMetadata,
   readElementMappingsForItems,
   readItemIdsForElements,
   reconcileMethodMaterials,
@@ -279,8 +280,7 @@ async function writeBomRowProvenance(
       documentId: args.row.documentId,
       versionId: args.versionId,
       elementId: args.row.elementId,
-      partId: args.row.partId ?? null,
-      importedAt: new Date().toISOString()
+      partId: args.row.partId ?? null
     })
   });
 }
@@ -1298,6 +1298,50 @@ export const onshapeBomImportFunction = inngest.createFunction(
     // the BOM the user is looking at changes.
     const attentionCount = countNeedingAttention(result);
     const needsAttention = attentionCount > 0;
+
+    // Close the marker the dispatching route opened, so the part page can stop
+    // saying "importing" and say what happened instead.
+    //
+    // Idempotent: this function is `retries: 10`, so the step may run more than
+    // once and must write the same thing each time. A crashed run never reaches
+    // here at all, which is why the reader treats a stale `startedAt` with no
+    // `finishedAt` as unknown rather than as running.
+    await step.run("stamp-import-finished", async () => {
+      try {
+        // The make method is the only itemId this function is handed; the
+        // outcome carries counts, not identity.
+        const method = await carbon
+          .from("makeMethod")
+          .select("itemId")
+          .eq("id", payload.makeMethodId)
+          .eq("companyId", payload.companyId)
+          .maybeSingle();
+
+        if (!method.data?.itemId) return null;
+
+        await patchElementMappingMetadata(carbon, {
+          companyId: payload.companyId,
+          itemId: method.data.itemId,
+          patch: {
+            // No `startedAt`: the patch merges into the marker the dispatching
+            // route opened rather than replacing it. This execution has no
+            // business inventing a start time it did not choose.
+            bomImport: {
+              finishedAt: new Date().toISOString(),
+              attentionCount
+            }
+          }
+        });
+      } catch (error) {
+        // The BOM is already written. Losing the marker costs a badge, and a
+        // throw here would retry the whole import.
+        console.error(
+          `[ONSHAPE BOM IMPORT] ${payload.companyId}: could not stamp the import marker`,
+          error
+        );
+      }
+      return null;
+    });
 
     if (needsAttention && payload.userId && payload.userId !== "system") {
       await step.run("notify-outcome", async () => {

@@ -1410,6 +1410,9 @@ msgstr "An engineering change: the affected items whose methods are revised on a
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 
+msgid "An imported bill of materials only explodes under a Make part, so replenishment is set to Make / Make to Order."
+msgstr "An imported bill of materials only explodes under a Make part, so replenishment is set to Make / Make to Order."
+
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "An integration or a custom change — the small slice that's actually custom."
 
@@ -2485,6 +2488,12 @@ msgstr "Bill of materials"
 msgid "Bill of Materials"
 msgstr "Bill of Materials"
 
+msgid "Bill of materials imported"
+msgstr "Bill of materials imported"
+
+msgid "Bill of materials imported — check notifications"
+msgstr "Bill of materials imported — check notifications"
+
 msgid "Bill of Process"
 msgstr "Bill of Process"
 
@@ -2499,6 +2508,9 @@ msgstr "Billing Address"
 
 msgid "Bills of material"
 msgstr "Bills of material"
+
+msgid "Blank"
+msgstr "Blank"
 
 msgid "Blind Count"
 msgstr "Blind Count"
@@ -2825,6 +2837,9 @@ msgstr "Carbon only"
 msgid "Carbon Posted"
 msgstr "Carbon Posted"
 
+msgid "Carbon reads this assembly's bill of materials from Onshape and writes it into the part's draft method. The part is created either way."
+msgstr "Carbon reads this assembly's bill of materials from Onshape and writes it into the part's draft method. The part is created either way."
+
 msgid "Carbon value"
 msgstr "Carbon value"
 
@@ -2993,6 +3008,9 @@ msgstr "Choose a batch number"
 
 msgid "Choose a company"
 msgstr "Choose a company"
+
+msgid "Choose a revision"
+msgstr "Choose a revision"
 
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "Choose a row on the left to see where its stock can come from."
@@ -3924,9 +3942,6 @@ msgstr "Create Kanban"
 
 msgid "Create new rule"
 msgstr "Create new rule"
-
-msgid "Create part"
-msgstr "Create part"
 
 msgid "Create Production Event"
 msgstr "Create Production Event"
@@ -7566,8 +7581,17 @@ msgstr "Import results"
 msgid "Import started"
 msgstr "Import started"
 
+msgid "Import the bill of materials"
+msgstr "Import the bill of materials"
+
 msgid "Import your BOM"
 msgstr "Import your BOM"
+
+msgid "Importing a bill of materials creates and deletes parts, so it needs update and delete permission on parts. The part itself will still be created."
+msgstr "Importing a bill of materials creates and deletes parts, so it needs update and delete permission on parts. The part itself will still be created."
+
+msgid "Importing from Onshape…"
+msgstr "Importing from Onshape…"
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -11006,6 +11030,9 @@ msgstr "Pick a record type…"
 
 msgid "Pick a released revision. Carbon creates the part with Onshape's number and revision, linked by a hidden id so the two stay connected even if the number changes."
 msgstr "Pick a released revision. Carbon creates the part with Onshape's number and revision, linked by a hidden id so the two stay connected even if the number changes."
+
+msgid "Pick a released revision. Only released revisions can be imported — Onshape stamps a revision on release."
+msgstr "Pick a released revision. Only released revisions can be imported — Onshape stamps a revision on release."
 
 msgid "Pick a value from an earlier step"
 msgstr "Pick a value from an earlier step"
@@ -15109,8 +15136,8 @@ msgstr "The part is manufactured as its own job when the parent that needs it is
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "The part is taken from existing stock when its parent is built — no new job or purchase order."
 
-msgid "The part number, revision and name come from Onshape and cannot be edited here. Choose how Carbon should treat this part — you can change it later on the part itself."
-msgstr "The part number, revision and name come from Onshape and cannot be edited here. Choose how Carbon should treat this part — you can change it later on the part itself."
+msgid "The part number, revision and name come from Onshape and cannot be edited here. Everything else is yours."
+msgstr "The part number, revision and name come from Onshape and cannot be edited here. Everything else is yours."
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "The people on the Carbon side who will run your implementation, and how to reach them."
@@ -16357,6 +16384,9 @@ msgstr "Use a different email"
 
 msgid "Use metric system for default material dimensions."
 msgstr "Use metric system for default material dimensions."
+
+msgid "Use this revision"
+msgstr "Use this revision"
 
 msgid "Used In"
 msgstr "Used In"

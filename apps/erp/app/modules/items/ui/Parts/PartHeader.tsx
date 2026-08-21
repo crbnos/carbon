@@ -1,5 +1,6 @@
 import { OnshapeLogo } from "@carbon/ee";
 import {
+  Badge,
   Copy,
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +11,7 @@ import {
   Heading,
   HStack,
   IconButton,
+  Spinner,
   Status,
   useDisclosure,
   VStack
@@ -26,6 +28,7 @@ import { DetailsTopbar } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { OnshapeLinkPart } from "~/components/OnshapeLinkPart";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { useOnshapeImportStatus } from "~/hooks/useOnshapeImportStatus";
 import { useOnshapePipeline } from "~/hooks/useOnshapePipeline";
 import { path } from "~/utils/path";
 import type { PartSummary } from "../../types";
@@ -67,6 +70,13 @@ const PartHeader = () => {
     routeData?.supersession?.supersessionMode
   );
 
+  // The BOM import is asynchronous: the create-from-Onshape form redirects to a
+  // part whose bill of materials lands seconds to minutes later, and the
+  // outcome only reaches the user as a notification when something needs
+  // attention. Without this a clean import is indistinguishable from one that
+  // never started.
+  const onshapeImport = useOnshapeImportStatus(itemId, onshapePipeline.isV2);
+
   return (
     <>
       <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border h-[50px] overflow-x-auto scrollbar-hide dark:border-none dark:shadow-[inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]">
@@ -83,6 +93,26 @@ const PartHeader = () => {
               <Status color={lifecycleStatus.color}>
                 {lifecycleStatus.label}
               </Status>
+            )}
+            {onshapeImport.running && (
+              <Badge variant="outline" className="gap-1.5 shrink-0">
+                <Spinner className="size-3" />
+                <Trans>Importing from Onshape…</Trans>
+              </Badge>
+            )}
+            {onshapeImport.justFinished && (
+              <Badge
+                variant={onshapeImport.attentionCount > 0 ? "yellow" : "green"}
+                className="shrink-0"
+              >
+                {onshapeImport.attentionCount > 0 ? (
+                  <Trans>
+                    Bill of materials imported — check notifications
+                  </Trans>
+                ) : (
+                  <Trans>Bill of materials imported</Trans>
+                )}
+              </Badge>
             )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

@@ -464,8 +464,7 @@ export async function runOnshapeReleaseImport(
         documentId: payload.documentId,
         versionId: payload.versionId,
         elementId: payload.elementId,
-        releaseId: payload.releaseId,
-        importedAt: datetime.timestamp()
+        releaseId: payload.releaseId
       })
     : undefined;
 
@@ -647,7 +646,6 @@ export async function runOnshapeReleaseImport(
           documentId: payload.documentId,
           versionId: payload.versionId,
           releaseName: payload.releaseName ?? null,
-          importedAt: datetime.timestamp(),
           items: []
         }
       })

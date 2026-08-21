@@ -1410,6 +1410,9 @@ msgstr "एक इंजीनियरिंग परिवर्तन: प�
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "एक HTTPS अनुरोध जो कार्बन आपके सिस्टम को भेजता है जब एक वर्कफ़्लो उस चरण तक पहुंचता है, आपके द्वारा कॉन्फ़िगर किए गए किसी भी हेडर और बॉडी को ले जाता है।"
 
+msgid "An imported bill of materials only explodes under a Make part, so replenishment is set to Make / Make to Order."
+msgstr ""
+
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "एक एकीकरण या एक कस्टम परिवर्तन — वह छोटा हिस्सा जो वास्तव में कस्टम है।"
 
@@ -2485,6 +2488,12 @@ msgstr "सामग्री की सूची"
 msgid "Bill of Materials"
 msgstr "सामग्री की सूची"
 
+msgid "Bill of materials imported"
+msgstr ""
+
+msgid "Bill of materials imported — check notifications"
+msgstr ""
+
 msgid "Bill of Process"
 msgstr "प्रक्रिया का विधेयक"
 
@@ -2499,6 +2508,9 @@ msgstr "बिलिंग पता"
 
 msgid "Bills of material"
 msgstr "सामग्री के बिल"
+
+msgid "Blank"
+msgstr ""
 
 msgid "Blind Count"
 msgstr "ब्लाइंड काउंट"
@@ -2825,6 +2837,9 @@ msgstr "केवल कार्बन"
 msgid "Carbon Posted"
 msgstr "Carbon पोस्ट किया गया"
 
+msgid "Carbon reads this assembly's bill of materials from Onshape and writes it into the part's draft method. The part is created either way."
+msgstr ""
+
 msgid "Carbon value"
 msgstr "Carbon मान"
 
@@ -2993,6 +3008,9 @@ msgstr "एक बैच नंबर चुनें"
 
 msgid "Choose a company"
 msgstr "कंपनी चुनें"
+
+msgid "Choose a revision"
+msgstr ""
 
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "यह देखने के लिए बाईं ओर की पंक्ति को चुनें कि इसका स्टॉक कहां से आ सकता है।"
@@ -3924,9 +3942,6 @@ msgstr "कनबन बनाएं"
 
 msgid "Create new rule"
 msgstr "नया नियम बनाएं"
-
-msgid "Create part"
-msgstr ""
 
 msgid "Create Production Event"
 msgstr "उत्पादन घटना बनाएं"
@@ -7566,8 +7581,17 @@ msgstr "आयात परिणाम"
 msgid "Import started"
 msgstr ""
 
+msgid "Import the bill of materials"
+msgstr ""
+
 msgid "Import your BOM"
 msgstr "अपना BOM आयात करें"
+
+msgid "Importing a bill of materials creates and deletes parts, so it needs update and delete permission on parts. The part itself will still be created."
+msgstr ""
+
+msgid "Importing from Onshape…"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -11005,6 +11029,9 @@ msgid "Pick a record type…"
 msgstr "एक रिकॉर्ड प्रकार चुनें…"
 
 msgid "Pick a released revision. Carbon creates the part with Onshape's number and revision, linked by a hidden id so the two stay connected even if the number changes."
+msgstr ""
+
+msgid "Pick a released revision. Only released revisions can be imported — Onshape stamps a revision on release."
 msgstr ""
 
 msgid "Pick a value from an earlier step"
@@ -15109,7 +15136,7 @@ msgstr "जब माता-पिता जो इसकी आवश्यक�
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "जब इसके माता-पिता को बनाया जाता है तब भाग मौजूदा स्टॉक से लिया जाता है - कोई नई नौकरी या खरीद आदेश नहीं।"
 
-msgid "The part number, revision and name come from Onshape and cannot be edited here. Choose how Carbon should treat this part — you can change it later on the part itself."
+msgid "The part number, revision and name come from Onshape and cannot be edited here. Everything else is yours."
 msgstr ""
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
@@ -16357,6 +16384,9 @@ msgstr "एक अलग ईमेल का उपयोग करें"
 
 msgid "Use metric system for default material dimensions."
 msgstr "डिफ़ॉल्ट सामग्री आयामों के लिए मीट्रिक सिस्टम का उपयोग करें।"
+
+msgid "Use this revision"
+msgstr ""
 
 msgid "Used In"
 msgstr "में उपयोग किया गया"

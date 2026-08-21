@@ -5,7 +5,7 @@ import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
+import { data, redirect, useSearchParams } from "react-router";
 import { partValidator, upsertPart } from "~/modules/items";
 import { PartForm } from "~/modules/items/ui/Parts";
 import { setCustomFields } from "~/utils/form";
@@ -69,6 +69,13 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function PartsNewRoute() {
+  // The Parts table's "From Onshape" button links here rather than opening a
+  // second modal — one form, one set of decisions. `PartForm` still gates the
+  // source on the v2 pipeline, so the parameter cannot conjure it on a legacy
+  // company.
+  const [searchParams] = useSearchParams();
+  const source = searchParams.get("source") === "onshape" ? "onshape" : "blank";
+
   const initialValues = {
     id: "",
     revision: "0",
@@ -86,7 +93,11 @@ export default function PartsNewRoute() {
 
   return (
     <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
-      <PartForm initialValues={initialValues} />
+      <PartForm
+        initialValues={initialValues}
+        withOnshapeSource
+        defaultSource={source}
+      />
     </div>
   );
 }

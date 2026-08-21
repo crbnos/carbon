@@ -12,8 +12,6 @@ import {
 // rather than trusted: replace only between the sentinels, never truncate, and
 // produce a byte-identical document when nothing about the release changed.
 
-const IMPORTED_AT = "2026-08-21T09:00:00.000Z";
-
 function block(overrides: Record<string, unknown> = {}) {
   return buildOnshapeItemNotesBlock({
     releaseName: "TB-REL-001 Test Bench Erstfreigabe",
@@ -24,7 +22,6 @@ function block(overrides: Record<string, unknown> = {}) {
     versionId: "ver-1",
     elementId: "el-1",
     releaseId: "rp-1",
-    importedAt: IMPORTED_AT,
     ...overrides
   });
 }
@@ -70,8 +67,31 @@ describe("buildOnshapeItemNotesBlock", () => {
     expect(lines).toContain("second line");
   });
 
-  it("is deterministic for the same input", () => {
+  it("carries nothing that varies between runs", () => {
+    // The block must be a pure function of the RELEASE. An earlier version
+    // rendered an "Imported:" timestamp, which made every webhook redelivery
+    // rewrite the item — an audit-log row and a customer webhook delivery for a
+    // note whose content had not changed. Caught in live testing, not here,
+    // because a unit test passes the same clock value twice.
     expect(JSON.stringify(block())).toBe(JSON.stringify(block()));
+    const rendered = JSON.stringify(block());
+    expect(rendered).not.toMatch(/\d{4}-\d{2}-\d{2}T/);
+  });
+
+  it("NEVER emits an empty text node", () => {
+    // ProseMirror text nodes cannot be empty and Node.fromJSON THROWS on one,
+    // which takes the whole editor down — the item's notes render as a blank
+    // box with no error anywhere. Shipped once: the "Release notes:" label
+    // emitted a paired empty value. Found in the browser, not here.
+    const walk = (nodes: TiptapNode[]): void => {
+      for (const node of nodes) {
+        if (node.type === "text") expect(node.text).toBeTruthy();
+        if (node.content) walk(node.content);
+      }
+    };
+    walk(block());
+    walk(block({ releaseNotes: null, releaseName: null, releaseId: null }));
+    walk(block({ partNumber: null, revision: null }));
   });
 });
 

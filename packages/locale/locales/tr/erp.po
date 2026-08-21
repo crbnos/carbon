@@ -1410,6 +1410,9 @@ msgstr "Bir mühendislik değişikliği: yöntemleri taslak üzerinde revize edi
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "Bir iş akışı bu adıma ulaştığında Carbon'un sisteminize gönderdiği bir https isteği, yapılandırdığınız başlıkları ve gövdeyi taşır."
 
+msgid "An imported bill of materials only explodes under a Make part, so replenishment is set to Make / Make to Order."
+msgstr ""
+
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "Bir entegrasyon veya özel bir değişiklik — aslında özel olan küçük dilim."
 
@@ -2485,6 +2488,12 @@ msgstr "Malzeme listesi"
 msgid "Bill of Materials"
 msgstr "Malzeme Listesi"
 
+msgid "Bill of materials imported"
+msgstr ""
+
+msgid "Bill of materials imported — check notifications"
+msgstr ""
+
 msgid "Bill of Process"
 msgstr "İş Akışı"
 
@@ -2499,6 +2508,9 @@ msgstr "Faturalama Adresi"
 
 msgid "Bills of material"
 msgstr "Malzeme Faturaları"
+
+msgid "Blank"
+msgstr ""
 
 msgid "Blind Count"
 msgstr "Kör Sayımı"
@@ -2825,6 +2837,9 @@ msgstr "Yalnızca Carbon"
 msgid "Carbon Posted"
 msgstr "Carbon Kaydedildi"
 
+msgid "Carbon reads this assembly's bill of materials from Onshape and writes it into the part's draft method. The part is created either way."
+msgstr ""
+
 msgid "Carbon value"
 msgstr "Carbon değeri"
 
@@ -2993,6 +3008,9 @@ msgstr "Bir parti numarası seçin"
 
 msgid "Choose a company"
 msgstr "Bir şirket seçin"
+
+msgid "Choose a revision"
+msgstr ""
 
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "Stokun nereden gelebileceğini görmek için sol taraftaki bir satırı seçin."
@@ -3924,9 +3942,6 @@ msgstr "Kanban Oluştur"
 
 msgid "Create new rule"
 msgstr "Yeni kural oluştur"
-
-msgid "Create part"
-msgstr ""
 
 msgid "Create Production Event"
 msgstr "Üretim Etkinliği Oluştur"
@@ -7566,8 +7581,17 @@ msgstr "İçe Aktarma Sonuçları"
 msgid "Import started"
 msgstr ""
 
+msgid "Import the bill of materials"
+msgstr ""
+
 msgid "Import your BOM"
 msgstr "BOM'unuzu İçe Aktarın"
+
+msgid "Importing a bill of materials creates and deletes parts, so it needs update and delete permission on parts. The part itself will still be created."
+msgstr ""
+
+msgid "Importing from Onshape…"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -11005,6 +11029,9 @@ msgid "Pick a record type…"
 msgstr "Bir kayıt türü seçin…"
 
 msgid "Pick a released revision. Carbon creates the part with Onshape's number and revision, linked by a hidden id so the two stay connected even if the number changes."
+msgstr ""
+
+msgid "Pick a released revision. Only released revisions can be imported — Onshape stamps a revision on release."
 msgstr ""
 
 msgid "Pick a value from an earlier step"
@@ -15109,7 +15136,7 @@ msgstr "Parça, ihtiyacı olan üst öğe inşa edildiğinde kendi işi olarak �
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "Parça, ebeveyninin inşa edildiğinde mevcut stoktan alınır - yeni iş veya satın alma siparişi yok."
 
-msgid "The part number, revision and name come from Onshape and cannot be edited here. Choose how Carbon should treat this part — you can change it later on the part itself."
+msgid "The part number, revision and name come from Onshape and cannot be edited here. Everything else is yours."
 msgstr ""
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
@@ -16357,6 +16384,9 @@ msgstr "Farklı bir e-posta kullan"
 
 msgid "Use metric system for default material dimensions."
 msgstr "Varsayılan malzeme boyutları için metrik sistemi kullanın."
+
+msgid "Use this revision"
+msgstr ""
 
 msgid "Used In"
 msgstr "Kullanıldığı Yer"

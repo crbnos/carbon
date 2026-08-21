@@ -1410,6 +1410,9 @@ msgstr "エンジニアリング変更：ドラフト上で方法が改訂され
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "ワークフローがそのステップに到達したときに、Carbonがあなたのシステムに送信するHTTPSリクエスト。設定したヘッダーと本文が含まれます。"
 
+msgid "An imported bill of materials only explodes under a Make part, so replenishment is set to Make / Make to Order."
+msgstr ""
+
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "統合またはカスタム変更 — 実際にカスタムである小さなスライス。"
 
@@ -2485,6 +2488,12 @@ msgstr "部品表"
 msgid "Bill of Materials"
 msgstr "部品表"
 
+msgid "Bill of materials imported"
+msgstr ""
+
+msgid "Bill of materials imported — check notifications"
+msgstr ""
+
 msgid "Bill of Process"
 msgstr "プロセスの部品表"
 
@@ -2499,6 +2508,9 @@ msgstr "請求先住所"
 
 msgid "Bills of material"
 msgstr "部品表"
+
+msgid "Blank"
+msgstr ""
 
 msgid "Blind Count"
 msgstr "ブラインドカウント"
@@ -2825,6 +2837,9 @@ msgstr "Carbonのみ"
 msgid "Carbon Posted"
 msgstr "カーボン転記済み"
 
+msgid "Carbon reads this assembly's bill of materials from Onshape and writes it into the part's draft method. The part is created either way."
+msgstr ""
+
 msgid "Carbon value"
 msgstr "Carbon値"
 
@@ -2993,6 +3008,9 @@ msgstr "バッチ番号を選択"
 
 msgid "Choose a company"
 msgstr "会社を選択"
+
+msgid "Choose a revision"
+msgstr ""
 
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "左側の行を選択して、在庫がどこから来るかを確認します。"
@@ -3924,9 +3942,6 @@ msgstr "カンバンを作成"
 
 msgid "Create new rule"
 msgstr "新しいルールを作成"
-
-msgid "Create part"
-msgstr ""
 
 msgid "Create Production Event"
 msgstr "生産イベントを作成"
@@ -7566,8 +7581,17 @@ msgstr "インポート結果"
 msgid "Import started"
 msgstr ""
 
+msgid "Import the bill of materials"
+msgstr ""
+
 msgid "Import your BOM"
 msgstr "BOMをインポート"
+
+msgid "Importing a bill of materials creates and deletes parts, so it needs update and delete permission on parts. The part itself will still be created."
+msgstr ""
+
+msgid "Importing from Onshape…"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -11005,6 +11029,9 @@ msgid "Pick a record type…"
 msgstr "レコード種類を選択..."
 
 msgid "Pick a released revision. Carbon creates the part with Onshape's number and revision, linked by a hidden id so the two stay connected even if the number changes."
+msgstr ""
+
+msgid "Pick a released revision. Only released revisions can be imported — Onshape stamps a revision on release."
 msgstr ""
 
 msgid "Pick a value from an earlier step"
@@ -15109,7 +15136,7 @@ msgstr "必要な親が構築される場合、部品は独自のジョブとし
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "親が構築される場合、既存の在庫から部品が取得されます—新しいジョブまたは購入注文はありません。"
 
-msgid "The part number, revision and name come from Onshape and cannot be edited here. Choose how Carbon should treat this part — you can change it later on the part itself."
+msgid "The part number, revision and name come from Onshape and cannot be edited here. Everything else is yours."
 msgstr ""
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
@@ -16357,6 +16384,9 @@ msgstr "別のメールアドレスを使用"
 
 msgid "Use metric system for default material dimensions."
 msgstr "デフォルトの材料寸法にメートル法を使用します。"
+
+msgid "Use this revision"
+msgstr ""
 
 msgid "Used In"
 msgstr "使用されている"

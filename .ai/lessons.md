@@ -1023,3 +1023,23 @@ canvas hosting Radix popovers/selects.
 **Rule:** Programmatic submits inside a `ValidatedForm` must pass a submitter: `form.requestSubmit(form.querySelector('button[type="submit"]'))`, which means the form needs a real submit button (good for accessibility anyway). Never use `form.submit()` in a React Router app. When a form renders errors from `fetcher.data`, verify the submit path actually reaches the fetcher — an unreachable error branch looks identical to "no errors happen".
 
 **Applies to:** `packages/form/src/components/InputOTP.tsx`, `packages/form/src/ValidatedForm.tsx`, any auto-submitting form field.
+
+## An empty tiptap text node renders the whole editor blank, with no error
+
+**Context:** The Onshape v2 release import writes a provenance block into `item.notes`. One line was a bold label with a deliberately empty value — `{ type: "text", marks: [{type:"bold"}], text: "Release notes: " }` followed by `{ type: "text", text: "" }`. The JSON was written correctly and read back correctly: 1294 bytes in `item.notes`, present in the `parts` view, returned by `get_part_details`. The part page rendered the Notes box completely empty, with nothing in the console and nothing in the server log.
+
+**Problem:** ProseMirror text nodes cannot be empty — `Node.fromJSON` throws on one — and a throw inside the document parse takes down the ENTIRE editor, not just the offending node. Every layer between the database and the screen reports success, so the defect is invisible to unit tests (the block was well-formed by every assertion written about it), to typechecking, and to any DB-level verification. Only opening the page shows it. `textToTiptap` (`packages/utils/src/tiptap.ts`) already knows this and emits a bare `{ type: "paragraph" }` for a blank line rather than a paragraph containing an empty text node.
+
+**Rule:** Never emit a text node whose `text` is empty. A label with no value is a paragraph containing only the label; a blank line is a bare paragraph with no `content`. When generating tiptap JSON programmatically, assert recursively in a unit test that no text node has falsy `text` — and always open the page, because every non-visual check passes.
+
+**Applies to:** `packages/ee/src/onshape/lib/provenance.ts`, `packages/utils/src/tiptap.ts`, anything writing `item.notes` / `changeOrder.reasonForChange` / any tiptap JSONB column.
+
+## Content that embeds the current time is never idempotent
+
+**Context:** The same Onshape provenance block rendered an `Imported: <ISO timestamp>` line. `writeOnshapeItemNotes` compares the freshly-built document against what is stored and skips the UPDATE when they match — a guard written specifically so webhook redeliveries and job retries write nothing.
+
+**Problem:** The timestamp made every build different, so the guard never fired. Every redelivery of the same release rewrote the row, producing an audit-log entry and a customer webhook delivery for a note whose meaning had not changed. The unit test asserting idempotency passed, because it built both documents with the same injected clock value — the fault only appears when the two builds happen at different real times, i.e. only in a live run.
+
+**Rule:** Generated content that is compared for idempotency must be a pure function of its SOURCE, carrying nothing that varies between runs. Sync times belong in metadata (`externalIntegrationMapping.lastSyncedAt`) and in `updatedAt`, not in content. Test it by asserting the rendered output contains no timestamp at all, rather than by building twice with one clock.
+
+**Applies to:** `packages/ee/src/onshape/lib/provenance.ts`, any generated document compared before writing.

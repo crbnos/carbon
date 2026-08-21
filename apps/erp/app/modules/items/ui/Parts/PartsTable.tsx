@@ -59,7 +59,6 @@ import {
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
-import { OnshapeCreatePart } from "~/components/OnshapeCreatePart";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useOnshapePipeline } from "~/hooks/useOnshapePipeline";
@@ -84,7 +83,6 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
   const navigate = useNavigate();
   const permissions = usePermissions();
   const onshapePipeline = useOnshapePipeline();
-  const onshapeCreate = useDisclosure();
 
   const translateReplenishment = useCallback(
     (v: string) =>
@@ -677,12 +675,17 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
                 </Link>
               </Button>
               {onshapePipeline.isV2 && (
+                // A shortcut INTO the New Part form, not a second surface. The
+                // modal that used to live here re-implemented three of the
+                // form's fields and could not reach the other twelve.
                 <Button
                   variant="secondary"
                   leftIcon={<OnshapeLogo className="h-4 w-auto" />}
-                  onClick={onshapeCreate.onOpen}
+                  asChild
                 >
-                  <Trans>From Onshape</Trans>
+                  <Link to={`${path.to.newPart}?source=onshape`}>
+                    <Trans>From Onshape</Trans>
+                  </Link>
                 </Button>
               )}
               <New label={t`Part`} to={path.to.newPart} />
@@ -696,12 +699,6 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
         withSavedView
         withSelectableRows
       />
-      {onshapePipeline.isV2 && onshapeCreate.isOpen && (
-        <OnshapeCreatePart
-          isOpen={onshapeCreate.isOpen}
-          onClose={onshapeCreate.onClose}
-        />
-      )}
       {selectedItem && selectedItem.id && (
         <ConfirmDelete
           action={path.to.deleteItem(selectedItem.id!)}

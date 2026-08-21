@@ -168,3 +168,43 @@ API's encoding, a different API.
 
 **Still open:** whether the webhook carries `elementType === 2` for a released drawing. Needs a
 real drawing release, which remains blocked on "Drawing has a pending update".
+
+## VERIFIED END-TO-END, 2026-08-21 — the blocker is gone
+
+The "Blocked: the drawing will not release" section above is **stale**. A drawing
+has since been released:
+
+    TB-900-DRW  revision A  elementType 2
+    document 997fcd04b96765675348a2d8 / version 7f8df6f93a0410cb38b85db5
+    element  048841a06015cccd275a71ef
+    release  eb2d54b6ecfef166ef54b271 ("test release name")
+
+**The last open question is answered: the revisions API reports `elementType: 2`
+for a released drawing**, exactly the numeric scheme `resolve.ts` and
+`onshape-release-v2.ts` assume. The `APPLICATION` label is the `/elements`
+listing's separate string encoding, as recorded.
+
+Fired that identity at the local receiver as a real `onshape.revision.created`
+delivery. Result:
+
+    document row: TB-900-DRW.A-048841a06015cccd275a71ef.pdf
+    attached to:  item_HDPsKuNTqZU1uUYTMqJeig  (TB-900, revision A)
+
+That is the MODEL item at the released revision — resolved through
+`appelements/.../references` → element listing → element mapping → `resolveBomRow`.
+No `TB-900-DRW` item was minted, and no change notice was created for the
+drawing. The filename carries the drawing element id, so a second drawing of the
+same model cannot overwrite the first.
+
+Also verified in the same pass (15/15 live checks, harness preserved at
+`onshape-integration/scripts/onshape-live-verification.test.ts` in the project
+directory — it is deliberately NOT in the repo, since it needs live credentials
+and would fail in CI):
+
+- version-level references return the same nine records as workspace level;
+- the drawing is found by `dataType`, and the BOM element is dropped, leaving
+  exactly one model target;
+- the prefix mapping reader finds nine PART-LEVEL rows an exact externalId match
+  would have missed — the partId blind spot is real and closed;
+- a revision Carbon does not hold is REFUSED (`drawing-model-revision-missing`)
+  rather than mis-attached to whatever revision happened to be mapped.

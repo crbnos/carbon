@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildElementExternalId,
   isSameElementRef,
+  mergeElementMappingMetadata,
   parseElementExternalId
 } from "./mapping";
 
@@ -167,5 +168,112 @@ describe("isSameElementRef", () => {
         { documentId: "d2", elementId: "e4" }
       )
     ).toBe(false);
+  });
+});
+
+// The metadata patch is how an in-flight BOM import becomes visible on the
+// item. Two executions write it — the route that dispatches the job, and the
+// job itself — so what the merge keeps and what it replaces is the contract
+// between them.
+
+describe("mergeElementMappingMetadata", () => {
+  it("keeps the fields the patch does not name", () => {
+    expect(
+      mergeElementMappingMetadata(
+        { partNumber: "RD-410", versionId: "v1", elementType: 1 },
+        { lastSyncedAt: "2026-08-21T10:00:00.000Z" }
+      )
+    ).toEqual({
+      partNumber: "RD-410",
+      versionId: "v1",
+      elementType: 1,
+      lastSyncedAt: "2026-08-21T10:00:00.000Z"
+    });
+  });
+
+  it("overwrites a field the patch does name", () => {
+    expect(
+      mergeElementMappingMetadata({ versionId: "v1" }, { versionId: "v2" })
+        .versionId
+    ).toBe("v2");
+  });
+
+  it("treats an absent row's metadata as empty", () => {
+    expect(
+      mergeElementMappingMetadata(null, {
+        bomImport: { startedAt: "2026-08-21T10:00:00.000Z" }
+      })
+    ).toEqual({ bomImport: { startedAt: "2026-08-21T10:00:00.000Z" } });
+  });
+
+  it("MERGES bomImport rather than replacing it", () => {
+    // The job stamps the finish from a separate execution and has no reason to
+    // re-supply the start time. Replacing would leave an import that finished
+    // without ever having started.
+    expect(
+      mergeElementMappingMetadata(
+        { bomImport: { startedAt: "2026-08-21T10:00:00.000Z" } },
+        {
+          bomImport: {
+            finishedAt: "2026-08-21T10:02:00.000Z",
+            attentionCount: 2
+          }
+        }
+      ).bomImport
+    ).toEqual({
+      startedAt: "2026-08-21T10:00:00.000Z",
+      finishedAt: "2026-08-21T10:02:00.000Z",
+      attentionCount: 2
+    });
+  });
+
+  it("REPLACES the marker when the patch names a new start", () => {
+    // Re-dispatching stamps a NEW startedAt; the stale finishedAt must go with
+    // it or the badge reads the old run's outcome as this one's.
+    expect(
+      mergeElementMappingMetadata(
+        {
+          bomImport: {
+            startedAt: "2026-08-21T10:00:00.000Z",
+            finishedAt: "2026-08-21T10:02:00.000Z",
+            attentionCount: 2
+          }
+        },
+        { bomImport: { startedAt: "2026-08-21T11:00:00.000Z" } }
+      ).bomImport
+    ).toEqual({ startedAt: "2026-08-21T11:00:00.000Z" });
+  });
+
+  it("drops a finish stamp with no marker to attach it to", () => {
+    // An import that finished without ever having started is not a state the
+    // badge can read, so it is not written.
+    expect(
+      mergeElementMappingMetadata(
+        { partNumber: "RD-410" },
+        { bomImport: { finishedAt: "2026-08-21T10:02:00.000Z" } }
+      )
+    ).toEqual({ partNumber: "RD-410" });
+  });
+
+  it("leaves an existing marker alone when the patch does not name one", () => {
+    expect(
+      mergeElementMappingMetadata(
+        { bomImport: { startedAt: "2026-08-21T10:00:00.000Z" } },
+        { versionId: "v2" }
+      )
+    ).toEqual({
+      versionId: "v2",
+      bomImport: { startedAt: "2026-08-21T10:00:00.000Z" }
+    });
+  });
+
+  it("does not mutate the metadata it was given", () => {
+    const current = { bomImport: { startedAt: "2026-08-21T10:00:00.000Z" } };
+    mergeElementMappingMetadata(current, {
+      bomImport: { finishedAt: "2026-08-21T10:02:00.000Z" }
+    });
+    expect(current.bomImport).toEqual({
+      startedAt: "2026-08-21T10:00:00.000Z"
+    });
   });
 });

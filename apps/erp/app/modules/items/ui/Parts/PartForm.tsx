@@ -1,8 +1,10 @@
 import { useCarbon } from "@carbon/auth";
+import { OnshapeLogo } from "@carbon/ee";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
   cn,
+  HStack,
   Loading,
   ModalCard,
   ModalCardBody,
@@ -28,10 +30,11 @@ import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import { useDropzone } from "react-dropzone";
 import { LuCloudUpload } from "react-icons/lu";
-import { useFetcher } from "react-router";
+import { useFetcher, useNavigate } from "react-router";
 import type { z } from "zod";
 import { TrackingTypeIcon } from "~/components";
 import {
+  Boolean,
   CustomFormFields,
   DefaultMethodType,
   Hidden,
@@ -40,12 +43,15 @@ import {
   ItemPostingGroup,
   Number,
   Select,
+  SelectControlled,
   Submit,
   TextArea,
   UnitOfMeasure
 } from "~/components/Form";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ModelUploadProgress } from "~/components/ModelUploadProgress";
+import type { OnshapeSelection } from "~/components/OnshapeRevisionPicker";
+import { OnshapeRevisionPicker } from "~/components/OnshapeRevisionPicker";
 import {
   useCurrencyDecimals,
   useModelUpload,
@@ -53,6 +59,7 @@ import {
   usePermissions,
   useUser
 } from "~/hooks";
+import { useOnshapePipeline } from "~/hooks/useOnshapePipeline";
 import { path } from "~/utils/path";
 import {
   itemReplenishmentSystems,
@@ -60,11 +67,40 @@ import {
   partValidator
 } from "../../items.models";
 import ItemStorageFields from "../Item/ItemStorageFields";
+import { bomOptionState, seedFromElementType } from "./onshapePartSource";
+
+/**
+ * The two shapes an action can answer this form with.
+ *
+ * The ordinary new-part action returns a PostgrestResponse; `v2.create` returns
+ * `{ success, itemId, message }`. The three inline-create callers
+ * (`components/Form/Part.tsx`, `Item.tsx`, `Items.tsx`) read `data.data.id` off
+ * the first shape, which is why the Onshape source is behind an explicit prop
+ * rather than inferred from `type === "card"`.
+ */
+type PartFormActionData =
+  | PostgrestResponse<{ id: string }>
+  | {
+      success: boolean;
+      itemId?: string;
+      message?: string;
+      importQueued?: boolean;
+    };
 
 type PartFormProps = {
   initialValues: z.infer<typeof partValidator> & { tags?: string[] };
   type?: "card" | "modal";
   onClose?: () => void;
+  /**
+   * Offer "From Onshape" as a source for this part.
+   *
+   * Opt-in, never inferred: the inline-create callers above submit to the
+   * ordinary action and read a PostgrestResponse back, and would silently break
+   * if this form could ever redirect them somewhere else.
+   */
+  withOnshapeSource?: boolean;
+  /** Open the Onshape picker on mount (the Parts table's shortcut link). */
+  defaultSource?: "blank" | "onshape";
 };
 
 const SIZE_LIMIT = getFileSizeLimit("CAD_MODEL_UPLOAD");
@@ -73,13 +109,26 @@ function startsWithLetter(value: string) {
   return /^[A-Za-z]/.test(value);
 }
 
-const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
+function isPostgrestResponse(
+  data: PartFormActionData
+): data is PostgrestResponse<{ id: string }> {
+  return !("success" in data);
+}
+
+const PartForm = ({
+  initialValues,
+  type = "card",
+  onClose,
+  withOnshapeSource = false,
+  defaultSource = "blank"
+}: PartFormProps) => {
   const { t } = useLingui();
   const { company } = useUser();
+  const navigate = useNavigate();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
   const currencyDecimals = useCurrencyDecimals(baseCurrency);
 
-  const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
+  const fetcher = useFetcher<PartFormActionData>();
 
   const [modelUploadId, setModelUploadId] = useState<string | null>(null);
   const [modelIsUploading, setModelIsUploading] = useState(false);
@@ -89,6 +138,28 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
   const {
     company: { id: companyId }
   } = useUser();
+
+  const isEditing = !!initialValues.id;
+  const permissions = usePermissions();
+  const onshapePipeline = useOnshapePipeline();
+
+  // Presentation only. `v2.create` re-reads the pipeline setting server-side and
+  // refuses when it is not v2, so this hiding the toggle is never what keeps v2
+  // off a legacy company.
+  const canUseOnshapeSource =
+    withOnshapeSource && onshapePipeline.isV2 && !isEditing;
+
+  const [source, setSource] = useState<"blank" | "onshape">(
+    canUseOnshapeSource && defaultSource === "onshape" ? "onshape" : "blank"
+  );
+  const [pickerOpen, setPickerOpen] = useState(
+    canUseOnshapeSource && defaultSource === "onshape"
+  );
+  const [selection, setSelection] = useState<OnshapeSelection | null>(null);
+  const [importBom, setImportBom] = useState(false);
+
+  const isFromOnshape = canUseOnshapeSource && source === "onshape";
+  const hasOnshapeSelection = isFromOnshape && selection !== null;
 
   const modelUpload = async (file: File) => {
     if (!carbon) return;
@@ -165,19 +236,34 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
   });
 
   useEffect(() => {
+    if (!fetcher.data) return;
+
+    // `v2.create` answers with its own shape, not a PostgrestResponse, and it
+    // answers on the page flow as well as the modal one — so this branch cannot
+    // sit behind the `type === "modal"` guard below.
+    if (!isPostgrestResponse(fetcher.data)) {
+      if (fetcher.state !== "idle") return;
+      const result = fetcher.data;
+      if (result.success && result.itemId) {
+        toast.success(result.message ?? t`Created part from Onshape`);
+        navigate(path.to.part(result.itemId));
+      } else if (!result.success) {
+        toast.error(result.message ?? t`Could not create the part`);
+      }
+      return;
+    }
+
     if (type !== "modal") return;
 
-    if (fetcher.state === "loading" && fetcher.data?.data) {
+    if (fetcher.state === "loading" && fetcher.data.data) {
       onClose?.();
       toast.success(t`Created part`);
-    } else if (fetcher.state === "idle" && fetcher.data?.error) {
+    } else if (fetcher.state === "idle" && fetcher.data.error) {
       toast.error(t`Failed to create part: ${fetcher.data.error.message}`);
     }
-  }, [fetcher.data, fetcher.state, onClose, type, t]);
+  }, [fetcher.data, fetcher.state, onClose, type, t, navigate]);
 
   const { id, onIdChange, loading } = useNextItemId("Part");
-  const permissions = usePermissions();
-  const isEditing = !!initialValues.id;
 
   const translateItemTrackingType = (v: string) =>
     v === "Inventory"
@@ -219,12 +305,63 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
       value: itemReplenishmentSystem
     })) ?? [];
 
+  const bomOption = selection
+    ? bomOptionState({
+        elementType: selection.elementType,
+        canCreate: permissions.can("create", "parts"),
+        canUpdate: permissions.can("update", "parts"),
+        canDelete: permissions.can("delete", "parts")
+      })
+    : { offered: false, disabled: true, reason: null };
+
+  const onOnshapeSelect = (revision: OnshapeSelection) => {
+    setSelection(revision);
+    setPickerOpen(false);
+    // Onshape supplies the identity; it says nothing about how Carbon should
+    // treat the part. Seed from what the element IS, then show it for
+    // confirmation — the same rule the release mint and the BOM import use.
+    const seed = seedFromElementType(revision.elementType);
+    setReplenishmentSystem(seed.replenishmentSystem);
+    setDefaultMethodType(seed.defaultMethodType);
+    // A body has no bill of materials, so a stale tick from a previous
+    // assembly selection must not ride along.
+    setImportBom(false);
+  };
+
+  const clearOnshapeSource = () => {
+    setSelection(null);
+    setImportBom(false);
+    setPickerOpen(false);
+    setSource("blank");
+  };
+
+  const onImportBomChange = (checked: boolean) => {
+    setImportBom(checked);
+    if (checked) {
+      // A BOM under a Buy part is a trap, not a preference:
+      // `methodMaterial.methodType` is denormalized from the component's
+      // `defaultMethodType`, and `get_method_tree` only resolves a sub-method
+      // for "Pull from Inventory" or an explicit `materialMakeMethodId`. A Buy
+      // parent would own a sub-tree that never explodes.
+      setReplenishmentSystem("Make");
+      setDefaultMethodType("Make to Order");
+    }
+  };
+
+  const identityLocked = hasOnshapeSelection;
+
   return (
     <ModalCardProvider type={type}>
       <ModalCard onClose={onClose}>
         <ModalCardContent>
           <ValidatedForm
-            action={isEditing ? undefined : path.to.newPart}
+            action={
+              identityLocked
+                ? path.to.api.onShapeV2Create
+                : isEditing
+                  ? undefined
+                  : path.to.newPart
+            }
             method="post"
             validator={partValidator}
             defaultValues={initialValues}
@@ -256,6 +393,111 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
               {!isEditing && replenishmentSystem === "Buy" && (
                 <Hidden name="lotSize" value={initialValues.lotSize} />
               )}
+              {hasOnshapeSelection && selection && (
+                <>
+                  {/* Identity, for the server to re-resolve against Onshape.
+                      `revision` is NOT repeated here — the read-only input
+                      below carries it, and two entries under one name would
+                      arrive as an array. */}
+                  <Hidden name="partNumber" value={selection.partNumber} />
+                  <Hidden
+                    name="elementType"
+                    value={String(selection.elementType)}
+                  />
+                  <Hidden name="documentId" value={selection.documentId} />
+                  <Hidden name="versionId" value={selection.versionId} />
+                  <Hidden name="elementId" value={selection.elementId} />
+                  <Hidden name="partId" value={selection.partId ?? ""} />
+                  <Hidden
+                    name="revisionId"
+                    value={selection.revisionId ?? ""}
+                  />
+                </>
+              )}
+
+              {canUseOnshapeSource && (
+                <div className="mb-4 w-full rounded-md border border-border p-3">
+                  <VStack spacing={2}>
+                    <HStack className="w-full items-center justify-between gap-2">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        <Trans>Source</Trans>
+                      </span>
+                      <HStack spacing={2}>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={source === "blank" ? "primary" : "secondary"}
+                          onClick={clearOnshapeSource}
+                        >
+                          <Trans>Blank</Trans>
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={
+                            source === "onshape" ? "primary" : "secondary"
+                          }
+                          leftIcon={<OnshapeLogo className="h-3.5 w-auto" />}
+                          onClick={() => {
+                            setSource("onshape");
+                            if (!selection) setPickerOpen(true);
+                          }}
+                        >
+                          <Trans>From Onshape</Trans>
+                        </Button>
+                      </HStack>
+                    </HStack>
+
+                    {isFromOnshape && (
+                      <HStack className="w-full items-center justify-between gap-2">
+                        <p className="text-sm">
+                          {selection ? (
+                            <>
+                              <span className="font-medium">
+                                {selection.partNumber}
+                              </span>{" "}
+                              <span className="text-muted-foreground">
+                                {selection.revision}
+                                {selection.name ? ` · ${selection.name}` : ""}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-muted-foreground">
+                              <Trans>
+                                Pick a released revision. Only released
+                                revisions can be imported — Onshape stamps a
+                                revision on release.
+                              </Trans>
+                            </span>
+                          )}
+                        </p>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => setPickerOpen(true)}
+                        >
+                          {selection ? (
+                            <Trans>Change</Trans>
+                          ) : (
+                            <Trans>Choose a revision</Trans>
+                          )}
+                        </Button>
+                      </HStack>
+                    )}
+
+                    {hasOnshapeSelection && (
+                      <p className="w-full text-xs text-muted-foreground">
+                        <Trans>
+                          The part number, revision and name come from Onshape
+                          and cannot be edited here. Everything else is yours.
+                        </Trans>
+                      </p>
+                    )}
+                  </VStack>
+                </div>
+              )}
+
               <div
                 className={cn(
                   "grid w-full gap-x-8 gap-y-4",
@@ -266,6 +508,20 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
               >
                 {isEditing ? (
                   <Input name="id" label={t`Part ID`} isReadOnly />
+                ) : identityLocked && selection ? (
+                  // isReadOnly, NOT isDisabled: a disabled input submits
+                  // nothing, and `partValidator` would then fail on id/revision/
+                  // name before the request was ever made.
+                  //
+                  // And no isUppercase: uppercasing a controlled value is
+                  // exactly the defect the Onshape source exists to fix — a
+                  // lowercase Onshape part number the form cannot express.
+                  <InputControlled
+                    name="id"
+                    label={t`Part ID`}
+                    value={selection.partNumber}
+                    isReadOnly
+                  />
                 ) : (
                   <InputControlled
                     name="id"
@@ -281,23 +537,45 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                     isUppercase
                   />
                 )}
-                <Input
-                  name="revision"
-                  label={t`Revision`}
-                  isReadOnly={isEditing}
-                />
+                {identityLocked && selection ? (
+                  // `Input` is uncontrolled off the form's defaultValues, so a
+                  // selection made after mount cannot reach it.
+                  <InputControlled
+                    name="revision"
+                    label={t`Revision`}
+                    value={selection.revision}
+                    isReadOnly
+                  />
+                ) : (
+                  <Input
+                    name="revision"
+                    label={t`Revision`}
+                    isReadOnly={isEditing}
+                  />
+                )}
 
-                <Input
-                  name="name"
-                  label={t`Short Description`}
-                  characterLimit={40}
-                />
+                {identityLocked && selection ? (
+                  <InputControlled
+                    name="name"
+                    label={t`Short Description`}
+                    value={selection.name ?? selection.partNumber}
+                    isReadOnly
+                  />
+                ) : (
+                  <Input
+                    name="name"
+                    label={t`Short Description`}
+                    characterLimit={40}
+                  />
+                )}
 
-                <Select
+                <SelectControlled
                   name="replenishmentSystem"
                   label={t`Replenishment System`}
                   termId="replenishment-system"
                   options={itemReplenishmentSystemOptions}
+                  value={replenishmentSystem}
+                  isReadOnly={importBom}
                   onChange={(newValue) => {
                     setReplenishmentSystem(newValue?.value ?? "Buy");
                     if (newValue?.value === "Buy") {
@@ -319,6 +597,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                   termId="item-default-method-type"
                   replenishmentSystem={replenishmentSystem}
                   value={defaultMethodType}
+                  isReadOnly={importBom}
                   onChange={(newValue) =>
                     setDefaultMethodType(
                       newValue?.value ?? "Pull from Inventory"
@@ -361,58 +640,104 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
 
                 <CustomFormFields table="part" tags={initialValues.tags} />
               </div>
+
+              {hasOnshapeSelection && bomOption.offered && (
+                <div className="mt-4 w-full">
+                  <Boolean
+                    name="importBom"
+                    label={t`Import the bill of materials`}
+                    value={importBom}
+                    isDisabled={bomOption.disabled}
+                    onChange={onImportBomChange}
+                    description={
+                      bomOption.disabled ? undefined : (
+                        <Trans>
+                          Carbon reads this assembly's bill of materials from
+                          Onshape and writes it into the part's draft method.
+                          The part is created either way.
+                        </Trans>
+                      )
+                    }
+                  />
+                  {bomOption.reason === "missing-permissions" && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      <Trans>
+                        Importing a bill of materials creates and deletes parts,
+                        so it needs update and delete permission on parts. The
+                        part itself will still be created.
+                      </Trans>
+                    </p>
+                  )}
+                  {importBom && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      <Trans>
+                        An imported bill of materials only explodes under a Make
+                        part, so replenishment is set to Make / Make to Order.
+                      </Trans>
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="mt-4 w-full">
                 <TextArea name="description" label={t`Long Description`} />
               </div>
-              <VStack spacing={2} className="mt-4 w-full">
-                <label
-                  htmlFor="model-upload"
-                  className="text-xs font-medium text-muted-foreground"
-                >
-                  <Trans>CAD Model</Trans>
-                </label>
-                <div
-                  {...getRootProps()}
-                  className={`w-full border-2 border-dashed rounded-md p-6 text-center hover:border-primary hover:bg-primary/10 cursor-pointer ${
-                    isDragActive
-                      ? "border-primary bg-primary/10"
-                      : "border-muted"
-                  }`}
-                >
-                  <input id="model-upload" {...getInputProps()} />
-                  {upload !== null ? (
-                    <ModelUploadProgress
-                      percent={upload.percent}
-                      uploaded={upload.uploaded}
-                      total={upload.total}
-                    />
-                  ) : modelFile ? (
-                    <>
-                      <p className="text-sm font-semibold text-card-foreground">
-                        {modelFile.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground group-hover:text-foreground">
-                        {convertKbToString(Math.ceil(modelFile.size / 1024))}
-                      </p>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="mt-2"
-                        onClick={removeModel}
-                      >
-                        <Trans>Remove</Trans>
-                      </Button>
-                    </>
-                  ) : (
-                    <Loading isLoading={modelIsUploading}>
-                      <LuCloudUpload className="mx-auto h-12 w-12 text-muted-foreground group-hover:text-primary-foreground" />
-                      <p className="text-xs text-muted-foreground group-hover:text-foreground">
-                        {t`Supports ${supportedModelTypes.join(", ")} files`}
-                      </p>
-                    </Loading>
-                  )}
-                </div>
-              </VStack>
+              {/* The dropzone is hidden under an Onshape selection:
+                  `attachOnshapeAssetsToItem` compare-and-sets
+                  `item.modelUploadId` against the model it read at start, so a
+                  hand-uploaded model is overwritten by the Onshape pull and
+                  filed away as a document. */}
+              {!hasOnshapeSelection && (
+                <VStack spacing={2} className="mt-4 w-full">
+                  <label
+                    htmlFor="model-upload"
+                    className="text-xs font-medium text-muted-foreground"
+                  >
+                    <Trans>CAD Model</Trans>
+                  </label>
+                  <div
+                    {...getRootProps()}
+                    className={`w-full border-2 border-dashed rounded-md p-6 text-center hover:border-primary hover:bg-primary/10 cursor-pointer ${
+                      isDragActive
+                        ? "border-primary bg-primary/10"
+                        : "border-muted"
+                    }`}
+                  >
+                    <input id="model-upload" {...getInputProps()} />
+                    {upload !== null ? (
+                      <ModelUploadProgress
+                        percent={upload.percent}
+                        uploaded={upload.uploaded}
+                        total={upload.total}
+                      />
+                    ) : modelFile ? (
+                      <>
+                        <p className="text-sm font-semibold text-card-foreground">
+                          {modelFile.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground group-hover:text-foreground">
+                          {convertKbToString(Math.ceil(modelFile.size / 1024))}
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="mt-2"
+                          onClick={removeModel}
+                        >
+                          <Trans>Remove</Trans>
+                        </Button>
+                      </>
+                    ) : (
+                      <Loading isLoading={modelIsUploading}>
+                        <LuCloudUpload className="mx-auto h-12 w-12 text-muted-foreground group-hover:text-primary-foreground" />
+                        <p className="text-xs text-muted-foreground group-hover:text-foreground">
+                          {t`Supports ${supportedModelTypes.join(", ")} files`}
+                        </p>
+                      </Loading>
+                    )}
+                  </div>
+                </VStack>
+              )}
             </ModalCardBody>
             <ModalCardFooter>
               <Submit
@@ -420,7 +745,11 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                 isDisabled={
                   isEditing
                     ? !permissions.can("update", "parts")
-                    : !permissions.can("create", "parts")
+                    : !permissions.can("create", "parts") ||
+                      // Chose Onshape but never picked anything: submitting
+                      // would post the blank identity to a route that refuses
+                      // it, with nothing on screen to explain why.
+                      (isFromOnshape && !selection)
                 }
               >
                 <Trans>Save</Trans>
@@ -429,6 +758,22 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
           </ValidatedForm>
         </ModalCardContent>
       </ModalCard>
+      {canUseOnshapeSource && (
+        <OnshapeRevisionPicker
+          isOpen={pickerOpen}
+          onClose={() => {
+            setPickerOpen(false);
+            // Backing out without ever picking leaves the form on its blank
+            // source rather than in a half-chosen state it cannot submit.
+            if (!selection) setSource("blank");
+          }}
+          hideLinked
+          title={t`New part from Onshape`}
+          description={t`Pick a released revision. Carbon creates the part with Onshape's number and revision, linked by a hidden id so the two stay connected even if the number changes.`}
+          confirmLabel={t`Use this revision`}
+          onSelect={onOnshapeSelect}
+        />
+      )}
     </ModalCardProvider>
   );
 };

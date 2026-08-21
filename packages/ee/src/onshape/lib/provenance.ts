@@ -56,28 +56,39 @@ export interface OnshapeItemNotesBlockInput {
   elementId?: string | null;
   partId?: string | null;
   releaseId?: string | null;
-  /** ISO instant. Passed in rather than read from the clock so this is pure. */
-  importedAt: string;
 }
 
 function paragraph(text: string): TiptapNode {
   return { type: "paragraph", content: [{ type: "text", text }] };
 }
 
-function labelled(label: string, value: string): TiptapNode {
-  return {
-    type: "paragraph",
-    content: [
-      { type: "text", marks: [{ type: "bold" }], text: `${label}: ` },
-      { type: "text", text: value }
-    ]
-  };
+/**
+ * A bold label with its value.
+ *
+ * An EMPTY value emits the label alone. ProseMirror text nodes cannot be empty
+ * — `Node.fromJSON` throws on one — and a thrown node takes the WHOLE editor
+ * down, so a single `{ type: "text", text: "" }` renders the item's notes as a
+ * blank box with no error anywhere. The same rule `textToTiptap` follows when
+ * it emits a bare paragraph for a blank line.
+ */
+function labelled(label: string, value?: string): TiptapNode {
+  const content: TiptapNode[] = [
+    { type: "text", marks: [{ type: "bold" }], text: `${label}: ` }
+  ];
+  if (value) content.push({ type: "text", text: value });
+  return { type: "paragraph", content };
 }
 
 /**
- * The block's nodes, WITHOUT surrounding document. Deterministic: the same
- * input always produces a byte-identical result, which is what makes the write
- * idempotent across webhook redeliveries and job retries.
+ * The block's nodes, WITHOUT surrounding document.
+ *
+ * A pure function of the RELEASE, carrying nothing that varies between runs.
+ * That is what makes the write idempotent across webhook redeliveries and job
+ * retries — and it is not theoretical: an earlier version rendered an
+ * "Imported:" timestamp, which made every redelivery rewrite the item, firing
+ * an audit-log row and a customer webhook for a note whose content had not
+ * changed. The sync time already lives in the element mapping's `lastSyncedAt`
+ * and in `item.updatedAt`; it does not belong in content.
  */
 export function buildOnshapeItemNotesBlock(
   input: OnshapeItemNotesBlockInput
@@ -91,7 +102,7 @@ export function buildOnshapeItemNotesBlock(
   if (input.revision) body.push(labelled("Revision", input.revision));
 
   if (input.releaseNotes) {
-    body.push(labelled("Release notes", ""));
+    body.push(labelled("Release notes"));
     // Onshape's notes are plain text with newlines; textToTiptap turns each
     // line into its own paragraph, which is what the editor schema wants.
     body.push(...(textToTiptap(input.releaseNotes).content as TiptapNode[]));
@@ -104,8 +115,6 @@ export function buildOnshapeItemNotesBlock(
   if (input.partId) identity.push(`part ${input.partId}`);
   if (input.releaseId) identity.push(`release ${input.releaseId}`);
   if (identity.length > 0) body.push(labelled("Onshape", identity.join(" · ")));
-
-  body.push(labelled("Imported", input.importedAt));
 
   return [
     paragraph(ONSHAPE_NOTES_BLOCK_START),

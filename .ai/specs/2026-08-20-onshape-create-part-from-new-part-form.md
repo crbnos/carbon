@@ -1,6 +1,6 @@
 # Create a part from Onshape in the New Part form
 
-> Status: draft — scoped 2026-08-20, not started
+> Status: implemented 2026-08-21 — unit-verified; browser verification still outstanding
 > Author: Raul Soonawala
 > Date: 2026-08-20
 
@@ -114,10 +114,55 @@ normal.
 
 ## Acceptance Criteria
 
-- [ ] With v2 enabled, New Part offers an Onshape source; with legacy or no integration, it does not
-- [ ] Selecting a released revision locks number, revision and name, and leaves every other field editable
-- [ ] Submitting creates the part, both mappings, and (for an assembly with the box ticked) queues the BOM import in one action
-- [ ] A create-only user sees the BOM option disabled with a reason, and the part still creates
-- [ ] Exactly one asset path runs per creation — never both
-- [ ] The created part shows that an import is running, and says so when it finishes
-- [ ] An element already linked to another Carbon item is refused at SELECTION time, not after the form is filled in
+- [x] With v2 enabled, New Part offers an Onshape source; with legacy or no integration, it does not
+      — `PartForm` gates the toggle on `withOnshapeSource && useOnshapePipeline().isV2`, and
+      `v2.create` re-reads the setting server-side and refuses when it is not v2
+      (`v2.create.test.ts`, "refuses a company that is not on the v2 pipeline")
+- [x] Selecting a released revision locks number, revision and name, and leaves every other field editable
+      — the three become `InputControlled … isReadOnly` (not `isDisabled`, which would submit
+      nothing) fed from the selection; every other field is the ordinary New Part field, and
+      `v2.create.test.ts` proves description, posting group, batch size and custom fields reach
+      `upsertPart`. **Not browser-verified.**
+- [x] Submitting creates the part, both mappings, and (for an assembly with the box ticked) queues the BOM import in one action
+      — one action, no client-side chaining; the import is dispatched against the Draft,
+      CO-free `makeMethod` the item insert trigger creates
+      (`v2.create.test.ts`, "queues the import against the item's Draft, CO-free make method")
+- [x] A create-only user sees the BOM option disabled with a reason, and the part still creates
+      — `bomOptionState` disables the checkbox client-side (unit-tested), and the server soft-checks
+      with `getUserClaims` rather than `requirePermissions`, which THROWS a redirect
+      (`v2.create.test.ts`, "still creates the part for a create-only user, and names what is missing")
+- [x] Exactly one asset path runs per creation — never both
+      (`v2.create.test.ts`, "never queues both asset paths" and "pulls the assets itself when no
+      BOM import was asked for")
+- [x] The created part shows that an import is running, and says so when it finishes
+      — `metadata.bomImport` on the element mapping, opened by the dispatching route and closed by
+      the job, read by `useOnshapeImportStatus` and rendered as a badge in `PartHeader`.
+      **The badge itself is not browser-verified.**
+- [x] An element already linked to another Carbon item is refused at SELECTION time, not after the form is filled in
+      — the picker is mounted with `hideLinked`, which both filters linked rows out of the list and
+      refuses one at confirm time (`OnshapeRevisionPicker.tsx`). `v2.create` still refuses an
+      already-mapped element before `upsertPart` as the backstop
+      (`v2.create.test.ts`, "refuses an already-mapped element before creating anything").
+
+### Still open
+
+- Browser verification on a v2 company: picker → locked fields → submit → redirect → badge, and
+  the Inngest dev UI showing exactly ONE of the two asset events.
+- Translations. 55 new English strings already ship with empty `msgstr` in 12 locales and this
+  cycle adds more; `pnpm translate` was deliberately not run.
+
+## Implementation notes
+
+Two things the design did not anticipate, both found in the code:
+
+- **`upsertPart` can return the wrong item id.** Its insert branch finishes with a lookup against
+  the `parts` VIEW, which is `DISTINCT ON (readableId, companyId)` ordered so a NAMED revision
+  sorts first, while `item_unique` is `(readableId, revision, companyId, type)`. Creating `ABC`
+  rev `0` beside an existing unlinked `ABC` rev `A` therefore succeeds and hands back rev A's id —
+  and both mappings plus the asset pull would land on the wrong item. `v2.create` now re-reads by
+  the full key and refuses to link when it cannot confirm the row. This was live before this
+  change; the New Part form widens the exposure because the user now picks an arbitrary Onshape
+  part from a list.
+- **`partValidator` is a `ZodEffects`**, so it has no `.omit()`. `items.models.ts` now exports the
+  pre-refine `partBaseValidator` and `applyStorageAndShelfLifeRefines` so this route can take the
+  same field set minus the three Onshape owns, with the same business refines on top.

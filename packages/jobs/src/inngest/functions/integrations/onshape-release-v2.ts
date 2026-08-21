@@ -196,6 +196,24 @@ export const onshapeReleaseV2Function = inngest.createFunction(
           };
         }
 
+        // Name the document after the ITEM, not after the drawing's own part
+        // number. The PDF lives on the model item, and the same drawing can
+        // arrive either as its own release (this branch) or through a model
+        // release's drawing pass — naming it two ways would file the same
+        // drawing as two documents on one item, since the attach helper
+        // de-duplicates on the storage path.
+        const target = await carbon
+          .from("item")
+          .select("readableIdWithRevision")
+          .eq("id", resolved.itemId)
+          .eq("companyId", payload.companyId)
+          .maybeSingle();
+        const assetBaseName =
+          target.data?.readableIdWithRevision ??
+          (payload.revision
+            ? `${payload.partNumber}.${payload.revision}`
+            : payload.partNumber);
+
         try {
           await withRateLimitRetry(
             () =>
@@ -208,9 +226,7 @@ export const onshapeReleaseV2Function = inngest.createFunction(
                 documentId: payload.documentId,
                 versionId: payload.versionId,
                 drawingElementId: payload.elementId,
-                assetBaseName: payload.revision
-                  ? `${payload.partNumber}.${payload.revision}`
-                  : payload.partNumber
+                assetBaseName
               }),
             `drawing PDF for ${payload.partNumber}`
           );
@@ -447,8 +463,7 @@ export const onshapeReleaseV2Function = inngest.createFunction(
                 elementId: payload.elementId,
                 revision: releasedRevision,
                 releaseId: payload.releaseId,
-                releaseName: payload.releaseName,
-                importedAt: new Date().toISOString()
+                releaseName: payload.releaseName
               },
               createdBy: payload.userId
             });
@@ -603,8 +618,7 @@ export const onshapeReleaseV2Function = inngest.createFunction(
                       elementId: payload.elementId,
                       revision: releasedRevision,
                       releaseId: payload.releaseId,
-                      releaseName: payload.releaseName,
-                      importedAt: new Date().toISOString()
+                      releaseName: payload.releaseName
                     },
                     createdBy: payload.userId
                   });
@@ -659,8 +673,7 @@ export const onshapeReleaseV2Function = inngest.createFunction(
               versionId: payload.versionId,
               elementId: payload.elementId,
               partId,
-              releaseId: payload.releaseId,
-              importedAt: new Date().toISOString()
+              releaseId: payload.releaseId
             })
           });
           if (notes.orphanedStart) {

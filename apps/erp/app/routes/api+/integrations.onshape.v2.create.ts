@@ -1,10 +1,12 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getUserClaims } from "@carbon/auth/users.server";
 import {
   buildOnshapeItemNotesBlock,
   getOnshapeClient,
   getOnshapeV2Settings,
+  patchElementMappingMetadata,
   readItemIdForRevision,
   readItemIdsForElement,
   readReleasePackageName,
@@ -21,19 +23,25 @@ import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
-  itemReplenishmentSystems,
-  itemTrackingTypes,
+  applyStorageAndShelfLifeRefines,
+  getMakeMethods,
+  partBaseValidator,
   upsertPart
 } from "~/modules/items";
+import { setCustomFields } from "~/utils/form";
 
 const logger = getLogger("erp", "integrations-onshape-v2-create");
+
+/** 0 Part Studio body, 1 Assembly, 2 Drawing. */
+const ELEMENT_TYPE_ASSEMBLY = 1;
 
 // The Onshape half of this payload is IDENTITY ONLY. Nothing the client sends
 // about the part itself (its number, revision or name) is persisted — those are
 // taken from Onshape's own response after the selection is verified, so a
 // hand-posted form cannot mint an item under an arbitrary part number and stamp
-// it with a mapping it never earned.
-export const onshapeV2CreateValidator = z.object({
+// it with a mapping it never earned. `id`, `revision` and `name` are therefore
+// OFF this schema entirely rather than accepted and ignored.
+const onshapeIdentity = z.object({
   partNumber: z.string().min(1, { message: "Part number is required" }),
   revision: z.string().min(1, { message: "Revision is required" }),
   elementType: zfd.numeric(z.number()),
@@ -42,17 +50,36 @@ export const onshapeV2CreateValidator = z.object({
   elementId: z.string().min(1),
   partId: zfd.text(z.string().optional()),
   revisionId: zfd.text(z.string().optional()),
-  // Carbon-owned. Seeded by the picker, chosen by the user, never by Onshape:
-  // these are business decisions, not CAD facts.
-  replenishmentSystem: z.enum(itemReplenishmentSystems),
-  itemTrackingType: z.enum(itemTrackingTypes),
-  unitOfMeasureCode: z.string().min(1),
-  defaultMethodType: z.enum([
-    "Make to Order",
-    "Purchase to Order",
-    "Pull from Inventory"
-  ])
+  /**
+   * Also import this assembly's bill of materials, in the same action.
+   *
+   * Chaining the two routes from the browser was the tempting shape and is
+   * wrong: a tab closed between them leaves a linked part with no BOM and
+   * nothing recording that one was wanted.
+   */
+  importBom: zfd.checkbox()
 });
+
+/**
+ * The whole New Part form, minus what Onshape owns.
+ *
+ * `PartForm` already collects posting group, storage, shelf life, description,
+ * unit cost, batch size, tags and custom fields — the four fields the old
+ * modal collected were never the problem, the twelve it could not reach were.
+ * The storage/shelf-life refines come along so this route enforces the same
+ * business rules the ordinary create route does.
+ */
+export const onshapeV2CreateValidator = applyStorageAndShelfLifeRefines(
+  partBaseValidator
+    .omit({
+      id: true,
+      revision: true,
+      name: true,
+      readableId: true,
+      modelUploadId: true
+    })
+    .merge(onshapeIdentity)
+);
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -71,6 +98,17 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const input = validation.data;
+
+  // A Part Studio body has no bill of materials. The form does not offer the
+  // option for one, so this can only be a hand-posted request — refuse it here
+  // rather than queue a job whose first act is to fail.
+  if (input.importBom && input.elementType !== ELEMENT_TYPE_ASSEMBLY) {
+    return {
+      success: false,
+      message:
+        "Only an Onshape assembly has a bill of materials to import. Create the part without it."
+    };
+  }
 
   const serviceRole = getCarbonServiceRole();
   // The gate is company CONFIGURATION, not user data. Reading it with the
@@ -199,22 +237,33 @@ export async function action({ request }: ActionFunctionArgs) {
   // Everything below comes from Onshape's response, never from the form.
   const onshapeRevision = resolved.revision;
 
+  const {
+    partNumber: _partNumber,
+    revision: _revision,
+    elementType: _elementType,
+    documentId: _documentId,
+    versionId: _versionId,
+    elementId: _elementId,
+    partId: _partId,
+    revisionId: _revisionId,
+    importBom,
+    ...carbonFields
+  } = input;
+
+  const createdRevision = onshapeRevision.revision || "0";
+
   const created = await upsertPart(client, {
+    // Everything Onshape owns comes from Onshape's own response, never from the
+    // form — the form's copies are read-only decoration.
+    ...carbonFields,
     id: onshapeRevision.partNumber,
-    revision: onshapeRevision.revision,
+    revision: createdRevision,
     name: onshapeRevision.name ?? onshapeRevision.partNumber,
-    description: "",
-    replenishmentSystem: input.replenishmentSystem,
-    defaultMethodType: input.defaultMethodType,
-    itemTrackingType: input.itemTrackingType,
-    unitOfMeasureCode: input.unitOfMeasureCode,
-    // Required by partValidator. `active` is NOT on the validator — upsertPart
-    // hardcodes active: true on insert.
-    shelfLifeCalculateFromBom: false,
-    unitCost: 0,
-    lotSize: 0,
     companyId,
-    createdBy: userId
+    createdBy: userId,
+    // `custom-*` keys are read straight off the FormData, exactly as the
+    // ordinary new-part action does.
+    customFields: setCustomFields(formData)
   });
 
   if (created.error || !created.data?.id) {
@@ -230,7 +279,35 @@ export async function action({ request }: ActionFunctionArgs) {
     };
   }
 
-  const itemId = created.data.id;
+  // Re-read the row by its FULL key instead of trusting what upsertPart handed
+  // back. Its insert branch finishes with a lookup against the `parts` VIEW,
+  // which is DISTINCT ON (readableId, companyId) ordered so a NAMED revision
+  // sorts first — so creating ABC rev "0" next to an existing unlinked ABC
+  // rev "A" succeeds and returns rev A's id. Both mappings and the asset pull
+  // would then land on the wrong item, permanently.
+  const confirmed = await client
+    .from("item")
+    .select("id")
+    .eq("readableId", onshapeRevision.partNumber)
+    .eq("revision", createdRevision)
+    .eq("companyId", companyId)
+    .eq("type", "Part")
+    .maybeSingle();
+
+  if (confirmed.error || !confirmed.data?.id) {
+    logger.error("Created a part but could not confirm which row it is", {
+      error: confirmed.error,
+      readableId: onshapeRevision.partNumber,
+      revision: createdRevision
+    });
+    return {
+      success: false,
+      message:
+        "The part was created but Carbon could not confirm which row it is, so it was not linked to Onshape. Open the part and use Link to Onshape."
+    };
+  }
+
+  const itemId = confirmed.data.id;
 
   // The item exists; the link is what makes it an ONSHAPE item. A failure here
   // leaves an ordinary unlinked part rather than a wrong link, which is the
@@ -284,8 +361,7 @@ export async function action({ request }: ActionFunctionArgs) {
         releaseName: onshapeRevision.releaseName,
         documentId: onshapeRevision.documentId,
         versionId: onshapeRevision.versionId,
-        elementId: onshapeRevision.elementId,
-        importedAt: new Date().toISOString()
+        elementId: onshapeRevision.elementId
       },
       createdBy: userId
     });
@@ -328,8 +404,7 @@ export async function action({ request }: ActionFunctionArgs) {
         versionId: onshapeRevision.versionId,
         elementId: onshapeRevision.elementId,
         partId: onshapeRevision.partId ?? null,
-        releaseId: onshapeRevision.releaseId ?? null,
-        importedAt: new Date().toISOString()
+        releaseId: onshapeRevision.releaseId ?? null
       })
     });
   } catch (error) {
@@ -339,6 +414,93 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
+  // The bill of materials, when it was asked for.
+  //
+  // ONE action rather than the browser chaining create → import: a tab closed
+  // between two requests leaves a linked part with no BOM and nothing recording
+  // that one was wanted. The `makeMethodId` the import needs already exists —
+  // every item insert of type Part fires
+  // `sync_create_make_method_related_records`, which inserts a Draft method.
+  let importQueued = false;
+  let importRefusal: string | null = null;
+
+  if (importBom) {
+    // A SOFT permission check, not a second `requirePermissions`.
+    //
+    // `requirePermissions` THROWS a redirect on denial, so declaring
+    // update + delete on this route would bounce a create-only user off the
+    // page entirely — and the part they asked for would never be made. The
+    // import is the optional half; the part is not.
+    const claims = await getUserClaims(userId, companyId);
+    const granted = (action: "create" | "update" | "delete") => {
+      const forCompany = claims.permissions.parts?.[action] ?? [];
+      return forCompany.includes("0") || forCompany.includes(companyId);
+    };
+
+    if (!granted("update") || !granted("delete")) {
+      // The job mints parts and DELETES material lines, which is why it needs
+      // more than `create`. Name what is missing rather than failing silently.
+      importRefusal =
+        "The part was created, but importing its bill of materials needs update and delete permission on parts.";
+    } else {
+      const methods = await getMakeMethods(client, itemId, companyId);
+      const draft = (methods.data ?? []).find(
+        (method) => method.status === "Draft" && !method.changeOrderId
+      );
+
+      if (!draft) {
+        importRefusal =
+          "The part was created, but Carbon could not find its draft method to import the bill of materials into. Open the part and import from its BoM explorer.";
+      } else {
+        try {
+          // Mark the import in flight BEFORE dispatching, and on the mapping
+          // this route just wrote — the job never rewrites the TOP-LEVEL item's
+          // element mapping (it only writes them for rows it adopts or mints),
+          // so this marker survives the run and the job stamps its finish onto
+          // the same object.
+          await patchElementMappingMetadata(serviceRole, {
+            companyId,
+            itemId,
+            patch: {
+              bomImport: {
+                startedAt: new Date().toISOString(),
+                // A re-import must not inherit the previous run's outcome.
+                finishedAt: undefined,
+                attentionCount: undefined
+              }
+            }
+          });
+        } catch (error) {
+          // The marker is an affordance, not the import. Losing it costs the
+          // badge, not the bill of materials.
+          logger.warn("Could not mark the Onshape BOM import as started", {
+            error,
+            itemId
+          });
+        }
+
+        try {
+          await trigger("onshape-bom-import", {
+            companyId,
+            userId,
+            makeMethodId: draft.id,
+            documentId: onshapeRevision.documentId,
+            versionId: onshapeRevision.versionId,
+            elementId: onshapeRevision.elementId
+          });
+          importQueued = true;
+        } catch (error) {
+          logger.error("Could not queue the Onshape BOM import", {
+            error,
+            itemId
+          });
+          importRefusal =
+            "The part was created, but the bill of materials import could not be started. Import it from the part's BoM explorer.";
+        }
+      }
+    }
+  }
+
   // Pull the geometry. The spec has create-from-Onshape doing this immediately,
   // and without it an item created from a released revision arrives with no
   // model while the SAME part imported through a BOM arrives with one — the
@@ -346,33 +508,47 @@ export async function action({ request }: ActionFunctionArgs) {
   //
   // Queued rather than awaited: an export is a translate-poll-download round
   // trip against Onshape, which is minutes in the worst case and rate-limitable.
-  try {
-    await trigger("onshape-v2-item-assets", {
-      companyId,
-      userId,
-      itemId,
-      documentId: onshapeRevision.documentId,
-      versionId: onshapeRevision.versionId,
-      elementId: onshapeRevision.elementId,
-      partId: onshapeRevision.partId ?? null,
-      // Stable across runs: the model filename is the attach idempotency key.
-      assetBaseName: onshapeRevision.revision
-        ? `${onshapeRevision.partNumber}.${onshapeRevision.revision}`
-        : onshapeRevision.partNumber,
-      // Lets the drawing pass pick the right family member — the element
-      // mapping spans every revision of the part.
-      revision: onshapeRevision.revision ?? null
-    });
-  } catch (error) {
-    // The part and its link are correct; a queue failure must not undo them.
-    logger.error("Could not queue the Onshape asset pull", { error, itemId });
+  //
+  // EXACTLY ONE asset path runs. The BOM import pulls the top-level item's own
+  // model itself, and running both double-exports the same element against a
+  // rate-limited API — worse, `attachOnshapeAssetsToItem` compare-and-sets
+  // `item.modelUploadId`, so the loser files its model away as a document.
+  if (!importQueued) {
+    try {
+      await trigger("onshape-v2-item-assets", {
+        companyId,
+        userId,
+        itemId,
+        documentId: onshapeRevision.documentId,
+        versionId: onshapeRevision.versionId,
+        elementId: onshapeRevision.elementId,
+        partId: onshapeRevision.partId ?? null,
+        // Stable across runs: the model filename is the attach idempotency key.
+        assetBaseName: onshapeRevision.revision
+          ? `${onshapeRevision.partNumber}.${onshapeRevision.revision}`
+          : onshapeRevision.partNumber,
+        // Lets the drawing pass pick the right family member — the element
+        // mapping spans every revision of the part.
+        revision: onshapeRevision.revision ?? null
+      });
+    } catch (error) {
+      // The part and its link are correct; a queue failure must not undo them.
+      logger.error("Could not queue the Onshape asset pull", { error, itemId });
+    }
   }
+
+  const createdMessage = `Created ${onshapeRevision.partNumber} revision ${onshapeRevision.revision} from Onshape`;
 
   return {
     success: true,
     itemId,
     readableId: onshapeRevision.partNumber,
     revision: onshapeRevision.revision,
-    message: `Created ${onshapeRevision.partNumber} revision ${onshapeRevision.revision} from Onshape`
+    importQueued,
+    message: importRefusal
+      ? `${createdMessage}. ${importRefusal}`
+      : importQueued
+        ? `${createdMessage}. The bill of materials is importing in the background.`
+        : createdMessage
   };
 }

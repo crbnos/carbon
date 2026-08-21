@@ -651,3 +651,45 @@ twice as well.
   The mint probes the readableId family first and refuses a number already taken by
   an unmapped item, since `item_unique` cannot catch a same-family duplicate.
   Migration `20260821120000_onshape-auto-create-jsonschema.sql` declares the key.
+- 2026-08-21: **Live verification of Phases 7, 9 and 10 on the local stack against the
+  real Onshape account.** 15/15 library checks plus real webhook deliveries through the
+  receiver and the job.
+  - **Phase 7 is proven with a REAL released drawing.** The plan's "the drawing will not
+    release" blocker is stale: `TB-900-DRW` revision A exists, and the revisions API
+    reports `elementType: 2` for it — the last open question. A real delivery attached
+    `TB-900-DRW.A-048841a06015cccd275a71ef.pdf` to `item_HDPsKuNTqZU1uUYTMqJeig`
+    (TB-900 revision A), the MODEL item. No DRW item was minted; no change notice was
+    created for the drawing.
+  - **Phase 9 works, and live testing found a defect the unit tests could not.** The
+    block rendered an `Imported:` timestamp, so every webhook redelivery rewrote the
+    item — an audit-log row and a customer webhook delivery for a note whose content had
+    not changed. A unit test passes the same clock value twice and cannot see it. The
+    field is removed; the block is now a pure function of the release, the sync time
+    already lives in the mapping's `lastSyncedAt` and in `item.updatedAt`, and a
+    redelivery is now byte-identical and writes nothing. Confirmed by two deliveries of
+    the same release.
+    The real German release notes came through intact end to end.
+  - **Phase 10 verified on all three paths.** Auto-create ON minted the part with the
+    assembly defaults (Make / Make to Order / Inventory / EA), its mandatory `part` row,
+    both mappings and its provenance block. The family probe REFUSED a number already
+    held by an unmapped item rather than minting a second family member with no lineage.
+    Auto-create OFF preserved today's refusal message verbatim.
+  - Not exercisable on this install: the refusal NOTIFICATION, because the integration's
+    `updatedBy` is literally `"system"` and the notify path skips that by design.
+- 2026-08-21: **Change-notice half of Phase 9 verified live.** A release naming a revision
+  Carbon does not hold (MC-101 rev B, release `next-release-v1`) produced `CN-000010`:
+  `name` = "Onshape release next-release-v1", `sourceType` = `onshape`, `sourceId` =
+  `83334b23e3a44dadd8f0625f`, and `reasonForChange` carrying Onshape's own words —
+  "These are release notes for v1 next release" — as tiptap rich text. The two
+  previously-unused `changeOrder` columns are now written, and by nothing else.
+  Re-firing a release whose revision Carbon already holds returns
+  `revision-already-imported` and creates no second notice.
+  **Legacy is provably untouched:** `writeProvenance` is passed by the v2 job alone, the
+  legacy release-import job passes neither it nor a release package, and
+  `onshape-backfill`, `onshape-revision-sync` and `onshape-attach` contain zero
+  provenance writes.
+  **Drawing document naming was corrected during verification.** Drawing-first named the
+  PDF after the DRAWING's part number and model-first after the MODEL's, so one drawing
+  became two document rows on one item depending on which event arrived. Both now name it
+  after the item's `readableIdWithRevision`; verified live that the two paths converge on
+  a single row.

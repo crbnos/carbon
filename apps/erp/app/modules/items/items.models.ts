@@ -233,7 +233,7 @@ export const itemValidator = z.object({
 // Common storage / shelf-life refines. Shared across all item-type
 // validators. Default Storage Unit is optional for every type - users can
 // set it later via the pickMethod UI once they know where the item lives.
-const applyStorageAndShelfLifeRefines = <T extends z.AnyZodObject>(
+export const applyStorageAndShelfLifeRefines = <T extends z.AnyZodObject>(
   schema: T
 ) => {
   const refined: z.ZodEffects<z.ZodTypeAny, z.infer<T>, z.input<T>> = schema
@@ -818,16 +818,20 @@ export const materialTypeValidator = z.object({
   code: z.string().trim().min(1, { message: "Code is required" }).max(10)
 });
 
-export const partValidator = applyStorageAndShelfLifeRefines(
-  itemValidator.merge(
-    z.object({
-      id: z.string().min(1, { message: "Part ID is required" }).max(255),
-      revision: z.string().min(1, { message: "Revision is required" }),
-      modelUploadId: zfd.text(z.string().optional()),
-      lotSize: zfd.numeric(z.number().min(0).optional())
-    })
-  )
+// The part's fields BEFORE the storage/shelf-life refines are applied. Exported
+// because `partValidator` is a ZodEffects and therefore has no `.omit()`: the
+// Onshape create route needs the same field set minus the three Onshape owns
+// (id, revision, name) and still wants the refines on top of what is left.
+export const partBaseValidator = itemValidator.merge(
+  z.object({
+    id: z.string().min(1, { message: "Part ID is required" }).max(255),
+    revision: z.string().min(1, { message: "Revision is required" }),
+    modelUploadId: zfd.text(z.string().optional()),
+    lotSize: zfd.numeric(z.number().min(0).optional())
+  })
 );
+
+export const partValidator = applyStorageAndShelfLifeRefines(partBaseValidator);
 
 // Tracked-entity pick order surfaced on the item's per-location Inventory
 // card. 'Default' = the picker's smart order (expiring soonest, then oldest).

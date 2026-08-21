@@ -146,7 +146,39 @@ export type OnshapeElementMappingMetadata = {
   /** True when the last sync came from a version that was never released. */
   fromUnreleasedVersion?: boolean;
   lastSyncedAt?: string;
+  /** A BOM import against this item — see `OnshapeBomImportMarker`. */
+  bomImport?: OnshapeBomImportMarker;
 };
+
+/**
+ * A BOM import in flight against an item, or the one that just finished.
+ *
+ * The import is an Inngest job, so the form that started it redirects to a part
+ * whose bill of materials lands seconds to minutes later. Without a marker a
+ * clean import is indistinguishable from one that never started, because the
+ * outcome only reaches the user as a notification when something needs
+ * attention.
+ *
+ * `startedAt` is stamped by whoever DISPATCHES the job; `finishedAt` and
+ * `attentionCount` by the job itself, from a different execution. A crashed run
+ * never reaches its stamp, so a reader must treat a stale `startedAt` with no
+ * `finishedAt` as unknown rather than as running forever.
+ */
+export type OnshapeBomImportMarker = {
+  startedAt: string;
+  finishedAt?: string;
+  attentionCount?: number;
+};
+
+/**
+ * A partial patch over element-mapping metadata.
+ *
+ * `bomImport` is a PARTIAL marker so the job can stamp a finish without
+ * re-supplying a start time it did not choose.
+ */
+export type OnshapeElementMappingMetadataPatch = Partial<
+  Omit<OnshapeElementMappingMetadata, "bomImport">
+> & { bomImport?: Partial<OnshapeBomImportMarker> };
 
 /** Metadata stored on the `onshapeRevision` row. */
 export type OnshapeRevisionMappingMetadata = {
@@ -159,6 +191,52 @@ export type OnshapeRevisionMappingMetadata = {
   elementId?: string;
   importedAt?: string;
 };
+
+/**
+ * Merge a partial metadata patch over the metadata already on the row.
+ *
+ * Shallow, with ONE exception: `bomImport` is merged rather than replaced. The
+ * route that dispatches the import writes `startedAt`; the job writes
+ * `finishedAt` and `attentionCount` from a separate execution and has no reason
+ * to re-supply a timestamp it did not choose. Replacing the whole sub-object
+ * would drop the start time and leave a finished import that never started.
+ *
+ * Pure, so the merge semantics are unit-pinned without a database client.
+ */
+export function mergeElementMappingMetadata(
+  current: OnshapeElementMappingMetadata | null | undefined,
+  patch: OnshapeElementMappingMetadataPatch
+): OnshapeElementMappingMetadata {
+  const base = current ?? {};
+  const merged: OnshapeElementMappingMetadata = {
+    ...base,
+    ...patch,
+    bomImport: base.bomImport
+  };
+
+  if (patch.bomImport) {
+    if (patch.bomImport.startedAt) {
+      // A patch that names a START is a NEW run, and replaces the marker
+      // outright. Merging would leave the previous run's `finishedAt` and
+      // `attentionCount` attached to an import that has only just begun — the
+      // badge would read the old outcome as this one's.
+      merged.bomImport = {
+        ...patch.bomImport,
+        startedAt: patch.bomImport.startedAt
+      };
+    } else if (base.bomImport) {
+      // No start named: this is the job stamping its own finish onto the marker
+      // the dispatching route opened.
+      merged.bomImport = { ...base.bomImport, ...patch.bomImport };
+    }
+    // A finish with no start and nothing to merge into is dropped: a marker
+    // without a `startedAt` describes an import that never began.
+  }
+
+  if (merged.bomImport === undefined) delete merged.bomImport;
+
+  return merged;
+}
 
 // ---------------------------------------------------------------------------
 // Data access
@@ -540,4 +618,65 @@ export async function readItemIdsForElements(
   }
 
   return byExternalId;
+}
+
+/**
+ * Patch the metadata on an item's EXISTING `onshapeElement` row.
+ *
+ * Not `writeElementMapping`: that is delete-then-insert of the whole row, so
+ * using it to record a marker would reset `createdBy`/`createdAt` and rewrite
+ * the externalId from whatever the caller happened to pass.
+ *
+ * The service role is required. RLS on this table has SELECT and INSERT
+ * policies only, so a user-scoped UPDATE matches zero rows and returns
+ * `{ data: [], error: null }` — no error, no signal, and a marker that silently
+ * never lands.
+ *
+ * Returns false when the item has no element mapping. That is a real state (the
+ * link write failed, or the item was never linked) and not an error: there is
+ * nothing to annotate, and inventing a row here would claim a link that does
+ * not exist.
+ */
+export async function patchElementMappingMetadata(
+  serviceRole: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    itemId: string;
+    patch: OnshapeElementMappingMetadataPatch;
+  }
+): Promise<boolean> {
+  const existing = await serviceRole
+    .from("externalIntegrationMapping")
+    .select("id, metadata")
+    .eq("integration", ONSHAPE_ELEMENT_INTEGRATION)
+    .eq("entityType", ONSHAPE_MAPPING_ENTITY_TYPE)
+    .eq("entityId", args.itemId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+
+  if (existing.error) {
+    throw new Error(
+      `Failed to read Onshape element mapping: ${existing.error.message}`
+    );
+  }
+  if (!existing.data) return false;
+
+  const merged = mergeElementMappingMetadata(
+    (existing.data.metadata ?? {}) as OnshapeElementMappingMetadata,
+    args.patch
+  );
+
+  const updated = await serviceRole
+    .from("externalIntegrationMapping")
+    .update({ metadata: merged })
+    .eq("id", existing.data.id)
+    .eq("companyId", args.companyId);
+
+  if (updated.error) {
+    throw new Error(
+      `Failed to patch Onshape element mapping: ${updated.error.message}`
+    );
+  }
+
+  return true;
 }

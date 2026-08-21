@@ -312,8 +312,7 @@ export async function action({ request }: ActionFunctionArgs) {
         releaseName: onshapeRevision.releaseName,
         documentId: onshapeRevision.documentId,
         versionId: onshapeRevision.versionId,
-        elementId: onshapeRevision.elementId,
-        importedAt: new Date().toISOString()
+        elementId: onshapeRevision.elementId
       },
       createdBy: userId
     });
@@ -363,8 +362,7 @@ export async function action({ request }: ActionFunctionArgs) {
         versionId: onshapeRevision.versionId,
         elementId: onshapeRevision.elementId,
         partId: onshapeRevision.partId ?? null,
-        releaseId: onshapeRevision.releaseId ?? null,
-        importedAt: new Date().toISOString()
+        releaseId: onshapeRevision.releaseId ?? null
       })
     });
   } catch (error) {

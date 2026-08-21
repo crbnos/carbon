@@ -6,6 +6,7 @@ import {
   buildOnshapeItemNotesBlock,
   getOnshapeClient,
   getOnshapeV2Settings,
+  patchElementMappingMetadata,
   readElementMappingsForItems,
   resolveOnshapeRevision,
   writeElementMapping,
@@ -281,14 +282,30 @@ export async function action({ request }: ActionFunctionArgs) {
         revision: input.revision || null,
         documentId: input.documentId,
         versionId: input.versionId,
-        elementId: input.elementId,
-        importedAt: new Date().toISOString()
+        elementId: input.elementId
       })
     });
   } catch (error) {
     logger.warn("Could not write Onshape provenance to the target item", {
       itemId: method.data.itemId,
       error
+    });
+  }
+
+  // Mark the import in flight, so the item says so while the job runs. The
+  // same marker the create-from-Onshape flow opens, stamped from the same
+  // place relative to the mapping write — the job closes both.
+  try {
+    await patchElementMappingMetadata(serviceRole, {
+      companyId,
+      itemId: method.data.itemId,
+      patch: { bomImport: { startedAt: new Date().toISOString() } }
+    });
+  } catch (error) {
+    // An affordance, not the import. Losing it costs the badge, not the BOM.
+    logger.warn("Could not mark the Onshape BOM import as started", {
+      error,
+      itemId: method.data.itemId
     });
   }
 
