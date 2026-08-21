@@ -70,6 +70,7 @@ function collapseBatches(items: Item[]): Item[] {
     result.push({
       ...members[0],
       batchSize: members.length,
+      batchJobReadableIds: members.map((m) => m.title).filter(Boolean),
       quantity: members.reduce((sum, m) => sum + (m.quantity ?? 0), 0),
       targetQuantity: members.reduce(
         (sum, m) => sum + (m.targetQuantity ?? 0),

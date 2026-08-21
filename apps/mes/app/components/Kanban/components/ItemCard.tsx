@@ -213,7 +213,11 @@ export function ItemCard({
           )}
           <HStack className="justify-start space-x-2">
             <LuCirclePlay className="text-muted-foreground" />
-            <span className="text-sm line-clamp-1">{item.title}</span>
+            <span className="text-sm line-clamp-1">
+              {isBatch && item.batchJobReadableIds?.length
+                ? item.batchJobReadableIds.join(", ")
+                : item.title}
+            </span>
             {item.reworkId && <Badge variant="red">Rework</Badge>}
           </HStack>
 

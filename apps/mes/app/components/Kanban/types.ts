@@ -70,7 +70,10 @@ const itemValidator = z.object({
   thumbnailPath: z.string().optional(),
   batchId: z.string().nullable().optional(),
   batchReadableId: z.string().nullable().optional(),
-  batchSize: z.number().optional()
+  batchSize: z.number().optional(),
+  // The member jobs' readable ids, in collapse order — shown on the collapsed
+  // batch card so it names every job in the batch, not just the first member.
+  batchJobReadableIds: z.array(z.string()).optional()
 });
 
 export type Item = z.infer<typeof itemValidator>;
