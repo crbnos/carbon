@@ -234,8 +234,10 @@ function VirtualizedCommand({
   const filteredOptions = useMemo(() => {
     if (!search) return options;
     const query = normalizeSearchText(search);
-    // Whole-word hits beat mid-word ones, then visible text beats hidden —
-    // otherwise "EST" leads with Creston and Bucharest, not the EST/EDT zones.
+    // Hits that START a word beat mid-word ones, then visible text beats
+    // hidden — otherwise "EST" leads with Creston and Bucharest, not the
+    // EST/EDT zones. Deliberately a prefix test, not a whole-word one: "abc"
+    // should still rank "ABC-123" highly.
     const wordStartAt = (text: string, index: number) =>
       index === 0 || !/[a-z0-9]/.test(text.charAt(index - 1));
     const scored: { option: (typeof options)[number]; score: number }[] = [];
