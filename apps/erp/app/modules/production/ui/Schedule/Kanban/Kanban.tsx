@@ -1,4 +1,4 @@
-import { ClientOnly, cn } from "@carbon/react";
+import { ClientOnly, cn, toast } from "@carbon/react";
 import type {
   Active,
   Announcements,
@@ -189,6 +189,42 @@ const Kanban = ({
   ...displaySettings
 }: KanbanProps) => {
   const submit = useSubmit();
+
+  // Surface a failed batch work-center reassignment (drag). The optimistic move
+  // snaps back on revalidation, so without this the rejection would be silent —
+  // the create/add path toasts via its own fetcher; this covers the drag path
+  // (intent="update"), which submits through useSubmit and has no result reader.
+  // A fetcher's formData is cleared once it goes idle, so capture the intent
+  // while it is still submitting and read the result on idle.
+  const batchUpdateFetchers = useFetchers();
+  const pendingBatchIntent = useRef<Map<string, string>>(new Map());
+  const toastedBatchUpdates = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    for (const f of batchUpdateFetchers) {
+      if (f.state !== "idle") {
+        const intent = f.formData?.get("intent");
+        if (
+          f.formAction === path.to.scheduleBatchingUpdate &&
+          typeof intent === "string"
+        ) {
+          pendingBatchIntent.current.set(f.key, intent);
+        }
+        toastedBatchUpdates.current.delete(f.key);
+        continue;
+      }
+      if (pendingBatchIntent.current.get(f.key) !== "update") continue;
+      const result = f.data as
+        | { success?: boolean; message?: string }
+        | undefined;
+      if (result === undefined) continue;
+      if (result.success === false && !toastedBatchUpdates.current.has(f.key)) {
+        toastedBatchUpdates.current.add(f.key);
+        toast.error(result.message ?? "Failed to move batch");
+      }
+      pendingBatchIntent.current.delete(f.key);
+    }
+  }, [batchUpdateFetchers]);
+
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [columnOrder, setColumnOrder] = useState<string[]>(() => {
     // Get stored column order from localStorage

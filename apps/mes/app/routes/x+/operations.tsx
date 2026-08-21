@@ -58,7 +58,10 @@ function collapseBatches(items: Item[]): Item[] {
   const byBatch = new Map<string, Item[]>();
   const result: Item[] = [];
   for (const item of items) {
-    if (item.batchId) {
+    // Require a resolvable batch (readableId comes from the join to
+    // jobOperationBatch): a stale batchId whose header is gone must not suppress
+    // the op — render it as an individual card, mirroring the ERP board.
+    if (item.batchId && item.batchReadableId) {
       const arr = byBatch.get(item.batchId);
       if (arr) arr.push(item);
       else byBatch.set(item.batchId, [item]);

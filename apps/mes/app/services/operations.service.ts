@@ -50,21 +50,24 @@ export async function getJobOperationBatch(
 ) {
   const batch = await client
     .from("jobOperationBatch")
-    .select("*, process(name), workCenter(name)")
+    .select("*")
     .eq("id", batchId)
     .eq("companyId", companyId)
     .single();
   if (batch.error) return batch;
+  // Only what the operation view's batch mode consumes: member planned times
+  // (summed into the work-type toggle), completion pre-fill quantities, and the
+  // member's job id for the chip / completion table.
   const operations = await client
     .from("jobOperation")
     .select(
-      "id, description, operationQuantity, targetQuantity, quantityComplete, workCenterId, status, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, job(id, jobId, itemId, dueDate)"
+      "id, description, operationQuantity, quantityComplete, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, job(jobId)"
     )
     .eq("jobOperationBatchId", batchId)
     .eq("companyId", companyId);
   const events = await client
     .from("productionEvent")
-    .select("id, type, startTime, endTime, employeeId")
+    .select("id, type, startTime, endTime")
     .eq("jobOperationBatchId", batchId)
     .eq("companyId", companyId);
   return {

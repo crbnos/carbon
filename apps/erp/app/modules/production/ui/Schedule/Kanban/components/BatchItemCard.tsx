@@ -37,10 +37,9 @@ import {
   LuX
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
-import { CustomerAvatar, DateTime } from "~/components";
+import { CustomerAvatar, DateTime, OperationStatusIcon } from "~/components";
 import { useDateFormatter } from "~/hooks";
 import { getDeadlineIcon } from "~/modules/production/ui/Jobs/Deadline";
-import { JobOperationStatus } from "~/modules/production/ui/Jobs/JobOperationStatus";
 import { path } from "~/utils/path";
 import { KANBAN_CARD_SHELL } from "../cardShell";
 import { useKanban } from "../context/KanbanContext";
@@ -252,15 +251,10 @@ export function BatchItemCard({
         {/* Aggregated summary rows — the operation card's information design,
             carried onto the batch rather than dropped. */}
         {displaySettings.showStatus && (
-          <HStack className="justify-start space-x-1.5">
-            <JobOperationStatus
-              operation={{
-                id: members[0].id,
-                status: status ?? "Todo",
-                jobId: members[0].jobId
-              }}
-              className="size-4 p-0 hover:bg-transparent"
-            />
+          <HStack className="justify-start space-x-2">
+            {/* Read-only: a batch has N members, so the status is a rolled-up
+                summary, not an editable per-operation control. */}
+            <OperationStatusIcon status={status ?? "Todo"} className="size-4" />
             <span className="text-sm">{status}</span>
           </HStack>
         )}

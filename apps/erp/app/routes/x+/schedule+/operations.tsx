@@ -355,7 +355,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
       return true;
     }) ?? [];
 
-  const operationItems = (filteredOperations.map((op) => {
+  // Map EVERY op (not just the filtered ones) so a batch card can render its
+  // full membership. Member-level filters (material / tags / assignee / sales
+  // order) can match only some of a batch's members; collapsing from the
+  // filtered subset would misreport the member count, `priority` (min over the
+  // subset), and aggregated chips while the card still reassigns/dissolves the
+  // whole batch. So filtering decides which batches APPEAR; the members always
+  // come from the full set.
+  const allOperationItems = ((operations.data ?? []).map((op) => {
     const operation = makeDurations(op);
     return {
       id: op.id,
@@ -408,23 +415,38 @@ export async function loader({ request }: LoaderFunctionArgs) {
     };
   }) ?? []) satisfies OperationItem[];
 
-  // Collapse batched operations into one card per batch (matching the MES
-  // board). Members of a live (Active/Completing) batch never render as
-  // individual cards; a batch whose header is missing or Completed falls back
-  // to individual cards.
-  const membersByBatch = new Map<string, OperationItem[]>();
-  const unbatchedItems: OperationItem[] = [];
-  for (const item of operationItems) {
+  const filteredIds = new Set(filteredOperations.map((op) => op.id));
+
+  const isLiveBatch = (item: OperationItem) => {
     const batch = item.jobOperationBatchId
       ? batchById.get(item.jobOperationBatchId)
       : undefined;
-    if (batch && (batch.status === "Active" || batch.status === "Completing")) {
-      const members = membersByBatch.get(batch.id);
-      if (members) members.push(item);
-      else membersByBatch.set(batch.id, [item]);
+    return batch && (batch.status === "Active" || batch.status === "Completing")
+      ? batch
+      : undefined;
+  };
+
+  // Full membership per live (Active/Completing) batch, from the UNFILTERED set.
+  const membersByBatch = new Map<string, OperationItem[]>();
+  for (const item of allOperationItems) {
+    const batch = isLiveBatch(item);
+    if (!batch) continue;
+    const members = membersByBatch.get(batch.id);
+    if (members) members.push(item);
+    else membersByBatch.set(batch.id, [item]);
+  }
+
+  // A batch card appears when at least one member survives filtering; it then
+  // renders ALL its members. Non-batch ops render individually when filtered in;
+  // an op whose batch header is missing/terminal is treated as unbatched.
+  const survivingBatchIds = new Set<string>();
+  const unbatchedItems: OperationItem[] = [];
+  for (const item of allOperationItems) {
+    if (!filteredIds.has(item.id)) continue;
+    const batch = isLiveBatch(item);
+    if (batch) {
+      survivingBatchIds.add(batch.id);
     } else {
-      // A batch id whose header is gone (or terminal) must not suppress the
-      // op's batchability — treat the op as unbatched.
       unbatchedItems.push(
         item.jobOperationBatchId
           ? { ...item, jobOperationBatchId: null, batchReadableId: null }
@@ -433,10 +455,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
   }
 
-  const batchItems: BatchItem[] = [...membersByBatch.entries()].map(
-    ([batchId, members]) => {
-      const batch = batchById.get(batchId)!;
-      return {
+  const batchItems: BatchItem[] = [...survivingBatchIds].flatMap((batchId) => {
+    const batch = batchById.get(batchId);
+    const members = membersByBatch.get(batchId) ?? [];
+    if (!batch || members.length === 0) return [];
+    return [
+      {
         id: `batch:${batchId}`,
         batchId,
         batchReadableId: batch.readableId,
@@ -446,9 +470,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
         priority: Math.min(...members.map((m) => m.priority)),
         title: batch.readableId,
         members
-      };
-    }
-  );
+      } satisfies BatchItem
+    ];
+  });
 
   return {
     columns: filteredWorkCenters

@@ -4,7 +4,9 @@ import { type DB, getConnectionPool, getDatabaseClient } from "../lib/database.t
 import { corsHeaders } from "../lib/headers.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import {
+  assertAllOperationsClaimed,
   assertBatchCompletionMembership,
+  assertBatchWorkCenterMutable,
   buildBatchCompletionPlan,
   planBatchCompletion
 } from "../shared/batch-time-split.ts";
@@ -90,6 +92,7 @@ async function assertEligible(
     .selectFrom("process")
     .select(["id", "batchable"])
     .where("id", "=", processId)
+    .where("companyId", "=", companyId)
     .executeTakeFirst();
   if (!process?.batchable) {
     throw new Error("The process is not batchable");
@@ -109,6 +112,7 @@ async function assertEligible(
     .selectFrom("productionEvent")
     .select("id")
     .where("jobOperationId", "in", jobOperationIds)
+    .where("companyId", "=", companyId)
     .limit(1)
     .execute();
   if (events.length > 0) {
@@ -173,6 +177,22 @@ async function completeBatch(
     const phase = planBatchCompletion(batch.status);
 
     if (phase === "resume") {
+      // The payload must cover EXACTLY the batch's membership — phase 2 flips
+      // every member Done batch-wide but issues materials only for the submitted
+      // members, so a short payload would strand an omitted member Done with
+      // unissued BOM. Re-assert membership on resume just as the slice path does.
+      const currentMembers = await trx
+        .selectFrom("jobOperation")
+        .select("id")
+        .where("jobOperationBatchId", "=", batchId)
+        .where("companyId", "=", companyId)
+        .execute();
+      assertBatchCompletionMembership(
+        memberIds,
+        // deno-lint-ignore no-explicit-any
+        currentMembers.map((o: any) => o.id)
+      );
+
       // Resume contract: the payload must match what phase 1 already recorded —
       // an edited quantity on retry is rejected, never silently ignored and never
       // rewritten (phase 1's slices/quantities are already committed). Batch
@@ -461,11 +481,21 @@ serve(async (req: Request) => {
             updatedBy: userId
           };
           if (payload.workCenterId) memberUpdate.workCenterId = payload.workCenterId;
-          await trx
+          // Claim only ops still unbatched (IS NULL) and in this company: two
+          // concurrent creates sharing an op both pass assertEligible's read, so
+          // the IS NULL predicate + row-count assert is what actually serializes
+          // the claim (assertEligible is not FOR UPDATE).
+          const claimed = await trx
             .updateTable("jobOperation")
             .set(memberUpdate)
             .where("id", "in", payload.jobOperationIds)
-            .execute();
+            .where("companyId", "=", companyId)
+            .where("jobOperationBatchId", "is", null)
+            .executeTakeFirst();
+          assertAllOperationsClaimed(
+            payload.jobOperationIds,
+            Number(claimed?.numUpdatedRows ?? 0)
+          );
           return batch;
         });
         break;
@@ -486,6 +516,7 @@ serve(async (req: Request) => {
             .selectFrom("productionEvent")
             .select("id")
             .where("jobOperationBatchId", "=", payload.batchId)
+            .where("companyId", "=", companyId)
             .limit(1)
             .execute();
           if (batchEvents.length > 0) {
@@ -504,11 +535,17 @@ serve(async (req: Request) => {
             updatedBy: userId
           };
           if (batch.workCenterId) memberUpdate.workCenterId = batch.workCenterId;
-          await trx
+          const claimed = await trx
             .updateTable("jobOperation")
             .set(memberUpdate)
             .where("id", "in", payload.jobOperationIds)
-            .execute();
+            .where("companyId", "=", companyId)
+            .where("jobOperationBatchId", "is", null)
+            .executeTakeFirst();
+          assertAllOperationsClaimed(
+            payload.jobOperationIds,
+            Number(claimed?.numUpdatedRows ?? 0)
+          );
           return { added: payload.jobOperationIds.length };
         });
         break;
@@ -520,6 +557,7 @@ serve(async (req: Request) => {
             .selectFrom("productionEvent")
             .select("id")
             .where("jobOperationBatchId", "=", payload.batchId)
+            .where("companyId", "=", companyId)
             .limit(1)
             .execute();
           if (batchEvents.length > 0) {
@@ -532,12 +570,14 @@ serve(async (req: Request) => {
             .set({ jobOperationBatchId: null, updatedBy: userId })
             .where("id", "in", payload.jobOperationIds)
             .where("jobOperationBatchId", "=", payload.batchId)
+            .where("companyId", "=", companyId)
             .execute();
 
           const remaining = await trx
             .selectFrom("jobOperation")
             .select("id")
             .where("jobOperationBatchId", "=", payload.batchId)
+            .where("companyId", "=", companyId)
             .limit(1)
             .execute();
           if (remaining.length === 0) {
@@ -556,6 +596,30 @@ serve(async (req: Request) => {
       case "update": {
         const nextWorkCenterId = payload.workCenterId ?? null;
         result = await db.transaction().execute(async (trx) => {
+          const batch = await trx
+            .selectFrom("jobOperationBatch")
+            .select("status")
+            .where("id", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst();
+          if (!batch) throw new Error("Batch not found");
+          // A Completed/Completing batch's events are already attributed to a
+          // machine — re-pointing the work center would rewrite that history.
+          assertBatchWorkCenterMutable(batch.status);
+          // And once any production event exists, production has started against
+          // the current work center, so the reassignment is no longer safe.
+          const batchEvents = await trx
+            .selectFrom("productionEvent")
+            .select("id")
+            .where("jobOperationBatchId", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .limit(1)
+            .execute();
+          if (batchEvents.length > 0) {
+            throw new Error(
+              "Cannot change the work center: production has been recorded."
+            );
+          }
           await trx
             .updateTable("jobOperationBatch")
             .set({
@@ -571,6 +635,7 @@ serve(async (req: Request) => {
               .updateTable("jobOperation")
               .set({ workCenterId: nextWorkCenterId, updatedBy: userId })
               .where("jobOperationBatchId", "=", payload.batchId)
+              .where("companyId", "=", companyId)
               .execute();
           }
           return { updated: true };
@@ -584,6 +649,7 @@ serve(async (req: Request) => {
             .selectFrom("productionEvent")
             .select("id")
             .where("jobOperationBatchId", "=", payload.batchId)
+            .where("companyId", "=", companyId)
             .limit(1)
             .execute();
           if (batchEvents.length > 0) {
@@ -595,6 +661,7 @@ serve(async (req: Request) => {
             .updateTable("jobOperation")
             .set({ jobOperationBatchId: null, updatedBy: userId })
             .where("jobOperationBatchId", "=", payload.batchId)
+            .where("companyId", "=", companyId)
             .returning("id")
             .execute();
           await trx

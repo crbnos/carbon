@@ -240,9 +240,9 @@ export function assertAllOperationsClaimed(
 }
 
 /**
- * Guard for mutating a batch's work center. A Completed or Cancelled batch is
- * terminal: its recorded production events are already attributed to a machine,
- * so re-pointing the work center would rewrite history. Only an Active batch may
+ * Guard for mutating a batch's work center. A Completing or Completed batch's
+ * recorded production events are already attributed to a machine, so re-pointing
+ * the work center would rewrite history. Only an Active batch may
  * be re-pointed — and the call site additionally blocks the change once any
  * production event exists (production has started). Pure; the production-event
  * check remains at the DB layer. Keep in sync with packages/utils/src/batch-time-split.ts.
