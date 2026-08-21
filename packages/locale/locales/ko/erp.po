@@ -2442,6 +2442,9 @@ msgstr "배치 추적"
 msgid "Batch Tracking"
 msgstr "배치 추적"
 
+msgid "Batchable"
+msgstr ""
+
 msgid "Beginning"
 msgstr "시작"
 
@@ -9178,6 +9181,9 @@ msgstr "MRP(계획)"
 
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP는 3시간마다 자동으로 실행되지만, 여기서 수동으로 실행할 수도 있습니다."
+
+msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
+msgstr ""
 
 msgid "Must be in the same location"
 msgstr "동일한 위치에 있어야 합니다"

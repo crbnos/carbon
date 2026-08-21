@@ -77,4 +77,17 @@ Working-tree files to never touch: `apps/erp/app/routes/api+/mcp+/lib/tool-metad
   FK-swap, which the rule forbids.
 - Verify: `jobOperationBatchStatus: "Active" | "Completing" | "Completed"`
   present, no `Cancelled` in that enum; 42 `jobOperationBatch` refs in types.ts.
+  Confirmed `HEAD~1..HEAD` has 0 `CountryCode` changes (no churn committed).
+- Commit (Tasks 2+3): `ac3032254`
+
+## Task 4: Resources — process `batchable` flag end-to-end
+
+- 7 files ported via 3-way (all clean, no conflicts): `resources.models.ts`
+  (`batchable: zfd.checkbox()`), `ProcessForm.tsx` (Boolean field), 
+  `ProcessesTable.tsx` (Batchable column + `LuLayers`/`Checkbox`),
+  `processes.$processId.tsx` + `processes.new.tsx` (pass-through),
+  `Form/Process.tsx` + `Form/Processes.tsx` (initialValues).
+- `upsertProcess` needed no change — typecheck confirms the validator spread
+  carries the field.
+- Verify: `pnpm exec turbo run typecheck --filter=erp` → exit 0. Banned: none.
 - Commit: _pending_

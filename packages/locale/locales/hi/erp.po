@@ -2442,6 +2442,9 @@ msgstr "बैच ट्रैकिंग"
 msgid "Batch Tracking"
 msgstr "बैच ट्रैकिंग"
 
+msgid "Batchable"
+msgstr ""
+
 msgid "Beginning"
 msgstr "आरंभ"
 
@@ -9178,6 +9181,9 @@ msgstr "MRP (योजना)"
 
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP हर 3 घंटे में स्वचालित रूप से चलता है, लेकिन आप इसे यहां मैन्युअल रूप से चला सकते हैं।"
+
+msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
+msgstr ""
 
 msgid "Must be in the same location"
 msgstr "एक ही स्थान में होना चाहिए"

@@ -100,7 +100,8 @@ export default function ProcessRoute() {
     // @ts-ignore
     suppliers: (process.suppliers ?? []).map((s) => s.id) ?? [],
     ...getCustomFields(process.customFields),
-    completeAllOnScan: process.completeAllOnScan ?? false
+    completeAllOnScan: process.completeAllOnScan ?? false,
+    batchable: process.batchable ?? false
   };
 
   return <ProcessForm initialValues={initialValues} onClose={onClose} />;

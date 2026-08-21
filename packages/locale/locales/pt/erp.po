@@ -2442,6 +2442,9 @@ msgstr "Rastreamento de lote"
 msgid "Batch Tracking"
 msgstr "Rastreamento em Lote"
 
+msgid "Batchable"
+msgstr ""
+
 msgid "Beginning"
 msgstr "Início"
 
@@ -9178,6 +9181,9 @@ msgstr "MRP (planejamento)"
 
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP é executado automaticamente a cada 3 horas, mas você pode executá-lo manualmente aqui."
+
+msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
+msgstr ""
 
 msgid "Must be in the same location"
 msgstr "Deve estar no mesmo local"

@@ -153,6 +153,11 @@ const ProcessForm = ({
                   termId="process-complete-all-on-scan"
                   bordered
                 />
+                <Boolean
+                  name="batchable"
+                  label={t`Batchable`}
+                  description={t`Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath`}
+                />
                 <CustomFormFields table="process" />
               </VStack>
             </ModalDrawerBody>

@@ -67,7 +67,7 @@ Open 39k-line PR, likely to merge first. Verified collisions (tip `f17db29ab`):
 - [x] Task 1: Port the batch-time-split util (+ tests + Deno mirror)
 - [x] Task 2: Consolidated migration + sequence seed + config.toml
 - [x] Task 3: Regenerate DB types
-- [ ] Task 4: Resources — process `batchable` flag end-to-end
+- [x] Task 4: Resources — process `batchable` flag end-to-end
 - [ ] Task 5: ERP production models + services
 - [ ] Task 6: `batch-operations` edge function + resume quantity contract
 - [ ] Task 7: ERP batch planning board + schedule integration

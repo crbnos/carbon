@@ -306,7 +306,8 @@ export const processValidator = z
     workCenters: z
       .array(z.string().min(1, { message: "Invalid work center" }))
       .optional(),
-    completeAllOnScan: zfd.checkbox()
+    completeAllOnScan: zfd.checkbox(),
+    batchable: zfd.checkbox()
   })
   .refine((data) => {
     if (data.processType !== "Outside Processing" && !data.workCenters) {
