@@ -166,3 +166,36 @@ Two things the design did not anticipate, both found in the code:
 - **`partValidator` is a `ZodEffects`**, so it has no `.omit()`. `items.models.ts` now exports the
   pre-refine `partBaseValidator` and `applyStorageAndShelfLifeRefines` so this route can take the
   same field set minus the three Onshape owns, with the same business refines on top.
+
+## Browser verification, 2026-08-21
+
+Run on the local stack against the real Onshape account, covering the two
+criteria the unit tests cannot reach.
+
+**Criterion 2 — selection locks number, revision and name; everything else
+editable. MET.** "From Onshape" on the Parts table now routes to
+`/x/part/new?source=onshape` and opens the picker (the modal is gone). Selecting
+SA-800 revision C renders the form with a Blank | From Onshape source toggle,
+the selection and a Change link, and the sentence "The part number, revision and
+name come from Onshape and cannot be edited here. Everything else is yours."
+Part ID `SA-800`, Revision `C` and Short Description are greyed and read-only;
+Replenishment is seeded **Make / Make to Order** from the assembly element type;
+Tracking Type, Unit of Measure, Item Group, Batch Size, Default Storage Unit and
+Long Description are all editable, and the "Import the bill of materials" toggle
+is present with its explanation.
+
+Note for anyone repeating this: the picker legitimately shows NOTHING on this
+install, because `hideLinked` is element-level and every released revision in
+the test company is already linked. One element mapping was removed temporarily
+to produce an unlinked entry, the form was inspected, nothing was submitted, and
+the mapping was restored.
+
+**Criterion 6 — the in-progress affordance. MET.** With a `bomImport.startedAt`
+marker on the element mapping, the part header renders a spinner and
+"IMPORTING FROM ONSHAPE…"; adding `finishedAt` switches it to a green
+"BILL OF MATERIALS IMPORTED". Both states confirmed on RD-410.A; the marker was
+removed afterwards.
+
+Still not exercised end-to-end: an actual create-and-import submission, which
+needs a released Onshape element no Carbon item is linked to. None exists in the
+test company.
