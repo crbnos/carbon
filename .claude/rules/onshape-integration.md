@@ -218,7 +218,7 @@ the element's NAME. See the v2 elements route below.
   The settings save forces BOTH legacy toggles back off and tells the user to
   reconnect (`integrations.$id.tsx:1411-1419`, message at 1506).
 
-## Settings — eight keys
+## Settings — nine keys
 
 Declared in `config.tsx:44-206`, validated by `onshapeSettingsSchema`
 (`lib/settings.ts:152`). `SwitchField` posts the literal strings
@@ -241,6 +241,7 @@ it branches on pipeline.
 | `attachAssetsOnRelease` | switch, `true` | Onshape v2 | whether `onshape-release-v2` pulls the model on a release. It does NOT gate the BOM import or the create/link flows — those always pull, which is what the setting's own description promises |
 | `releaseImportV2` | options, `"changeNotice"` | Onshape v2 | `off` / `changeNotice` / `revision` — what v2 does with the engineering data in a release |
 | `allowUnreleasedSync` | switch, `false` | Onshape v2 | the unreleased picker, the v2 versions route, and the v2 BOM preview/import's released-only refusal |
+| `createItemsOnRelease` | switch, `false` | Onshape v2 | whether a released element with NO linked Carbon item is created rather than refused. Read strictly `=== true` — copying `attachAssetsOnRelease`'s `!== false` would start minting parts for every existing v2 install on deploy |
 
 - The three legacy keys are IGNORED while v2 is selected, and the group
   description says so (`config.tsx:18-21`). The webhook enforces it; the form
@@ -581,8 +582,31 @@ exist until the import creates it, so a parallel asset job resolves
   merely lack geometry: it would silently display the PREVIOUS revision's,
   presented as the released one. Without the link, v2 stays blind to what it just
   created.
-- v2 NEVER mints a part from a release (line 178): "No Carbon item is linked to
-  this Onshape part" is a reported skip.
+- v2 mints a part from a release ONLY when `createItemsOnRelease` is on.
+  Off (the default) keeps the reported skip, "No Carbon item is linked to this
+  Onshape part". On, the job:
+  - probes the readableId FAMILY first and refuses if the number is taken by an
+    unmapped item. `claimants.length === 0` means no MAPPING exists, not that
+    the number is free — every item the LEGACY pipeline created is exactly that,
+    and `item_unique` is on the RAW revision column with NULL distinct, so
+    inserting `'A'` against an existing `''`/NULL row raises no conflict and
+    produces a second family member with no lineage;
+  - takes its four guessed fields from `mintDefaultsForRelease`
+    (`onshape-mint.ts`), a pure unit-pinned function: assembly (elementType 1) →
+    Make / Make to Order, part studio body (0) → Buy / Pull from Inventory, plus
+    Inventory tracking and EA. This is the SAME answer the BOM import derives
+    from having children, reached from the element type — one rule, so the same
+    part cannot classify differently depending on which door it came through;
+  - inserts `item` directly and then the MANDATORY `part` row (the `parts` view
+    inner-joins it, so an item without one is invisible), writes both mappings,
+    and lets the normal provenance + asset flow run on the new item;
+  - NEVER routes a fresh mint through `runOnshapeReleaseImport` — a creation is
+    not a change;
+  - reports every creation in the notification, naming what was assumed. An
+    assembly minted Make arrives with an empty Draft make method, so planning
+    briefly sees something buildable out of nothing; the release path carries
+    geometry, not structure, and reporting is the mitigation rather than a
+    cleverer guess.
 - Assets run last, gated on `attachAssetsOnRelease`, through
   `pullOnshapeAssetsForElement` inside `withRateLimitRetry`, each attach followed
   by `trigger("model-optimize", …)`.

@@ -476,11 +476,15 @@ export async function runOnshapeReleaseImport(
   });
 
   if (target.kind === "not-found") {
-    // A release of a part Carbon has never seen is a CREATION, not a change.
-    // Minting it here would land it with Carbon's defaults (Inventory / Make),
-    // which poisons MRP for purchased leaf parts — the same defect the BOM
-    // import path already has. Deferred deliberately; the BOM import wizard is
-    // the supported way to bring a new part in.
+    // A release of a part Carbon has never seen is a CREATION, not a change, so
+    // it never becomes a change notice. Minting it here would land it with
+    // Carbon's blanket defaults (Inventory / Make), which poisons MRP for
+    // purchased leaf parts.
+    //
+    // v2 does now mint, but in the RELEASE JOB and behind the
+    // `createItemsOnRelease` toggle, using the element type to reach the same
+    // Make/Buy answer the BOM import derives from having children
+    // (`onshape-mint.ts`). It deliberately does not route through here.
     return { imported: false, skippedReason: "no-matching-item", revision };
   }
 

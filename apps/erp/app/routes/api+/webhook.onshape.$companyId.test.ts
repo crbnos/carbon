@@ -162,6 +162,43 @@ describe("onshape webhook receiver", () => {
       expect(dispatchedTasks()).toEqual([]);
     });
 
+    it("counts auto-create as a consumer in its own right", async () => {
+      // Auto-create has to reach all three gates — this bail, the dispatch
+      // condition, and webhookWanted on save. Missing any one of them makes the
+      // toggle a silent no-op: the subscription is deleted and no event ever
+      // arrives, while the settings drawer looks correct.
+      getIntegration.mockResolvedValue(
+        integrationRow({
+          pipeline: "next",
+          attachAssetsOnRelease: false,
+          releaseImportV2: "off",
+          createItemsOnRelease: true
+        })
+      );
+
+      const result = await run(makeRequest(releaseEvent()));
+
+      expect(result).toEqual({ success: true });
+      expect(dispatchedTasks()).toEqual(["onshape-release-v2"]);
+    });
+
+    it("does not treat a non-true createItemsOnRelease as a consumer", async () => {
+      getIntegration.mockResolvedValue(
+        integrationRow({
+          pipeline: "next",
+          attachAssetsOnRelease: false,
+          releaseImportV2: "off",
+          createItemsOnRelease: "true"
+        })
+      );
+
+      // The stored value is a BOOLEAN by the time it reaches the receiver — the
+      // form's string is coerced by the zod schema on save. A string here means
+      // a hand-edited row, and the receiver reads strictly.
+      await run(makeRequest(releaseEvent()));
+      expect(dispatchedTasks()).toEqual([]);
+    });
+
     it('is unaffected by a pipeline value that is not exactly "next"', async () => {
       getIntegration.mockResolvedValue(
         integrationRow({ pipeline: "Next", assetSyncEnabled: true })

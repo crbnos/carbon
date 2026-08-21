@@ -39,6 +39,7 @@ import { z } from "zod";
 import { inngest } from "../../client";
 import { withRateLimitRetry } from "./onshape-backfill";
 import { pullOnshapeDrawingsForDocument } from "./onshape-drawings";
+import { mintDefaultsForRelease } from "./onshape-mint";
 import { runOnshapeReleaseImport } from "./onshape-release-import";
 import { syncOnshapeDrawingAssetsToItem } from "./onshape-sync-element";
 import {
@@ -316,6 +317,8 @@ export const onshapeReleaseV2Function = inngest.createFunction(
 
       const attached: string[] = [];
       const imported: string[] = [];
+      /** What Carbon ASSUMED about each part it minted, in the user's words. */
+      const created: string[] = [];
       const skipped: Array<{ partId: string | null; reason: string }> = [];
 
       for (const partId of partIds) {
@@ -325,28 +328,146 @@ export const onshapeReleaseV2Function = inngest.createFunction(
           partId
         };
 
+        // Set only when auto-create mints a part on this iteration. It short-
+        // circuits the resolution below, which would otherwise re-read an
+        // element mapping that describes the item we just made.
+        let mintedItemId: string | null = null;
+
         const claimants = await readItemIdsForElement(carbon, {
           companyId: payload.companyId,
           ref
         });
 
         if (claimants.length === 0) {
-          // v2 never mints a part from a release. Creating items is the BOM
-          // import's and the create flow's job, where a human chose the
-          // replenishment and tracking a release cannot tell us.
-          skipped.push({
-            partId,
-            reason:
-              "No Carbon item is linked to this Onshape part. Link it, or import its assembly, first."
+          if (!settings.createItemsOnRelease) {
+            // The default. Creating items is the BOM import's and the create
+            // flow's job, where a human chose the replenishment and tracking a
+            // release cannot tell us.
+            skipped.push({
+              partId,
+              reason:
+                "No Carbon item is linked to this Onshape part. Link it, or import its assembly, first."
+            });
+            continue;
+          }
+
+          // AUTO-CREATE. The company has accepted that Carbon will guess the
+          // fields a release cannot carry, and be told what it guessed.
+          //
+          // No mapping exists — but that does NOT mean the part number is free.
+          // An unmapped Carbon item at the same readableId is invisible to
+          // readItemIdsForElement, and every item the LEGACY pipeline created is
+          // exactly that. item_unique is on the RAW revision column and Postgres
+          // treats NULL as distinct, so inserting 'A' against an existing '' or
+          // NULL row raises no conflict and silently produces a second family
+          // member with no lineage. Probe the family by number first, the same
+          // way the BOM import does.
+          const siblings = await carbon
+            .from("item")
+            .select("id, revision")
+            .eq("readableId", payload.partNumber)
+            .eq("type", "Part")
+            .eq("companyId", payload.companyId);
+          if (siblings.error) {
+            throw new Error(
+              `Could not check for existing parts numbered ${payload.partNumber}: ${siblings.error.message}`
+            );
+          }
+
+          if ((siblings.data ?? []).length > 0) {
+            skipped.push({
+              partId,
+              reason: `Carbon already has a part numbered ${payload.partNumber} that is not linked to Onshape. Link it instead, so its revisions stay one family.`
+            });
+            continue;
+          }
+
+          const defaults = mintDefaultsForRelease({
+            elementType: payload.elementType,
+            partNumber: payload.partNumber
           });
-          continue;
+
+          const minted = await carbon
+            .from("item")
+            .insert({
+              readableId: payload.partNumber,
+              revision: releasedRevision,
+              name: payload.partNumber,
+              type: "Part",
+              replenishmentSystem: defaults.replenishmentSystem,
+              defaultMethodType: defaults.defaultMethodType,
+              itemTrackingType: defaults.itemTrackingType,
+              unitOfMeasureCode: defaults.unitOfMeasureCode,
+              active: true,
+              companyId: payload.companyId,
+              createdBy: payload.userId
+            })
+            .select("id")
+            .single();
+
+          if (minted.error || !minted.data) {
+            throw new Error(
+              `Could not create ${payload.partNumber} from the Onshape release: ${minted.error?.message ?? "no row returned"}`
+            );
+          }
+
+          // MANDATORY. The `parts` view inner-joins `part`, so an item with no
+          // part row is invisible everywhere in the app.
+          const partRow = await carbon.from("part").upsert({
+            id: payload.partNumber,
+            companyId: payload.companyId,
+            createdBy: payload.userId
+          });
+          if (partRow.error) {
+            throw new Error(
+              `Created ${payload.partNumber} but failed to write its part row: ${partRow.error.message}`
+            );
+          }
+
+          await writeElementMapping(carbon, {
+            companyId: payload.companyId,
+            itemId: minted.data.id,
+            ref,
+            metadata: {
+              versionId: payload.versionId,
+              partNumber: payload.partNumber,
+              fromUnreleasedVersion: false,
+              lastSyncedAt: new Date().toISOString()
+            },
+            createdBy: payload.userId
+          });
+          if (payload.revisionId) {
+            await writeRevisionMapping(carbon, {
+              companyId: payload.companyId,
+              itemId: minted.data.id,
+              revisionId: payload.revisionId,
+              metadata: {
+                documentId: payload.documentId,
+                versionId: payload.versionId,
+                elementId: payload.elementId,
+                revision: releasedRevision,
+                releaseId: payload.releaseId,
+                releaseName: payload.releaseName,
+                importedAt: new Date().toISOString()
+              },
+              createdBy: payload.userId
+            });
+          }
+
+          created.push(defaults.assumption);
+          // Carry on into the normal flow: provenance and geometry both land on
+          // the item just created, and a creation is NOT a change, so it must
+          // never reach runOnshapeReleaseImport.
+          mintedItemId = minted.data.id;
         }
 
-        const items = await carbon
-          .from("item")
-          .select("id, readableId, revision")
-          .in("id", claimants)
-          .eq("companyId", payload.companyId);
+        const items = mintedItemId
+          ? { data: [], error: null }
+          : await carbon
+              .from("item")
+              .select("id, readableId, revision")
+              .in("id", claimants)
+              .eq("companyId", payload.companyId);
         if (items.error) {
           throw new Error(
             `Failed to read linked items: ${items.error.message}`
@@ -356,7 +477,7 @@ export const onshapeReleaseV2Function = inngest.createFunction(
         // Existence-checked: entityId has no FK to item, so a deleted item
         // leaves its mapping behind and would otherwise read as revision null.
         const live = items.data ?? [];
-        if (live.length === 0) {
+        if (!mintedItemId && live.length === 0) {
           skipped.push({
             partId,
             reason:
@@ -371,9 +492,14 @@ export const onshapeReleaseV2Function = inngest.createFunction(
         );
 
         let targetItemId: string | null =
-          resolution.kind === "matched" ? resolution.itemId : null;
+          mintedItemId ??
+          (resolution.kind === "matched" ? resolution.itemId : null);
 
-        if (!targetItemId && settings.releaseImportV2 !== "off") {
+        if (
+          !mintedItemId &&
+          !targetItemId &&
+          settings.releaseImportV2 !== "off"
+        ) {
           // The release is NEW to Carbon. The family is known from the
           // mapping, so the importer is given that family's own readableId
           // rather than Onshape's part number — the join stays id-derived even
@@ -618,15 +744,20 @@ export const onshapeReleaseV2Function = inngest.createFunction(
         }
       }
 
-      await notifyOnshapeSkips(
-        { ...payload, revision: releasedRevision },
-        skipped.map((entry) => entry.reason)
-      );
+      // Creations are reported alongside refusals, not instead of them. A
+      // release that mints 12 parts with nobody watching and says nothing is
+      // the failure mode auto-create introduces; naming what was assumed is the
+      // only mitigation for guessing at all.
+      await notifyOnshapeSkips({ ...payload, revision: releasedRevision }, [
+        ...created,
+        ...skipped.map((entry) => entry.reason)
+      ]);
 
       return {
         skipped: false as const,
         attachedCount: attached.length,
         importedCount: imported.length,
+        createdCount: created.length,
         skippedDetails: skipped
       };
     });

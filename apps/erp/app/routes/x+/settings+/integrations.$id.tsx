@@ -1520,7 +1520,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const onshapeMetadata = metadata as Record<string, unknown>;
     const onshapeV2 = parseOnshapeV2Settings(onshapeMetadata, { active: true });
     const webhookWanted = onshapeV2.isV2
-      ? onshapeV2.attachAssetsOnRelease || onshapeV2.releaseImportV2 !== "off"
+      ? onshapeV2.attachAssetsOnRelease ||
+        onshapeV2.releaseImportV2 !== "off" ||
+        // Auto-create is a consumer too. Without it here, a company that turns
+        // auto-create on and everything else off has its webhook subscription
+        // DELETED on save and then receives no events at all — while the save
+        // flashes success.
+        onshapeV2.createItemsOnRelease
       : onshapeMetadata.assetSyncEnabled === true ||
         onshapeMetadata.releaseImportEnabled === true;
     const webhookResult = await ensureOnshapeReleaseWebhook(

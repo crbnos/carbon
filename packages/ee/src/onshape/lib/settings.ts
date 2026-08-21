@@ -29,6 +29,15 @@ export interface OnshapeV2Settings {
   attachAssetsOnRelease: boolean;
   releaseImportV2: OnshapeReleaseImportV2Mode;
   allowUnreleasedSync: boolean;
+  /**
+   * Create the Carbon part when a release names an element nothing is linked to.
+   *
+   * OFF (the default, and today's behaviour) refuses with "Link it, or import
+   * its assembly, first." A release carries geometry, not structure, and it
+   * cannot tell Carbon whether the part is bought or made — so turning this on
+   * accepts that Carbon will GUESS those fields and say so.
+   */
+  createItemsOnRelease: boolean;
   /** Cached Onshape tenant id, when the connection has resolved one. */
   onshapeCompanyId: string | null;
   /**
@@ -47,7 +56,10 @@ const DEFAULTS: Omit<
   pipeline: "legacy",
   attachAssetsOnRelease: true,
   releaseImportV2: "changeNotice",
-  allowUnreleasedSync: false
+  allowUnreleasedSync: false,
+  // FALSE, not true. Copying attachAssetsOnRelease's "absent means on" reading
+  // would start minting parts for every existing v2 install on deploy, unasked.
+  createItemsOnRelease: false
 };
 
 // The settings form posts "true"/"false" as strings and zod coerces them before
@@ -101,6 +113,10 @@ export function parseOnshapeV2Settings(
     allowUnreleasedSync: readBoolean(
       record.allowUnreleasedSync,
       DEFAULTS.allowUnreleasedSync
+    ),
+    createItemsOnRelease: readBoolean(
+      record.createItemsOnRelease,
+      DEFAULTS.createItemsOnRelease
     ),
     onshapeCompanyId:
       typeof record.onshapeCompanyId === "string" && record.onshapeCompanyId
@@ -195,6 +211,14 @@ export const onshapeSettingsSchema = z.object({
     .optional(),
   releaseImportV2: z.enum(["off", "changeNotice", "revision"]).optional(),
   allowUnreleasedSync: z
+    .preprocess((value) => {
+      if (typeof value === "boolean") return value;
+      if (value === "true") return true;
+      if (value === "false") return false;
+      return value;
+    }, z.boolean())
+    .optional(),
+  createItemsOnRelease: z
     .preprocess((value) => {
       if (typeof value === "boolean") return value;
       if (value === "true") return true;

@@ -75,6 +75,32 @@ describe("parseOnshapeV2Settings — v2 setting values", () => {
     expect(result.attachAssetsOnRelease).toBe(true);
     expect(result.releaseImportV2).toBe("changeNotice");
     expect(result.allowUnreleasedSync).toBe(false);
+    // FALSE by default, unlike attachAssetsOnRelease. An existing v2 install
+    // must not start minting parts the day this ships.
+    expect(result.createItemsOnRelease).toBe(false);
+  });
+
+  it("only enables auto-create on an explicit true", () => {
+    for (const value of [undefined, null, "", "yes", 1, "TRUE"]) {
+      expect(
+        parseOnshapeV2Settings(
+          { pipeline: "next", createItemsOnRelease: value },
+          { active: true }
+        ).createItemsOnRelease
+      ).toBe(false);
+    }
+    expect(
+      parseOnshapeV2Settings(
+        { pipeline: "next", createItemsOnRelease: "true" },
+        { active: true }
+      ).createItemsOnRelease
+    ).toBe(true);
+    expect(
+      parseOnshapeV2Settings(
+        { pipeline: "next", createItemsOnRelease: true },
+        { active: true }
+      ).createItemsOnRelease
+    ).toBe(true);
   });
 
   it('accepts booleans and the form\'s "true"/"false" strings alike', () => {
@@ -164,6 +190,7 @@ describe("onshapeSettingsSchema", () => {
     expect("attachAssetsOnRelease" in parsed).toBe(false);
     expect("releaseImportV2" in parsed).toBe(false);
     expect("allowUnreleasedSync" in parsed).toBe(false);
+    expect("createItemsOnRelease" in parsed).toBe(false);
     // ...so the merge keeps whatever was stored for them.
     expect({ releaseImportV2: "revision", ...parsed }.releaseImportV2).toBe(
       "revision"

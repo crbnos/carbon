@@ -245,7 +245,7 @@ revert a migrated customer to legacy. Change it to merge into existing metadata.
    `.ai/plans/2026-08-19-onshape-drawing-attachment.md`.
 8. **Done** (2026-08-21). Release provenance — release name and notes into both
    the change notice and a delimited block in `item.notes`.
-9. **Next.** Auto-create on release, as a per-company v2 toggle.
+9. **Done** (2026-08-21). Auto-create on release, as a per-company v2 toggle.
 10. **Next.** Create a part from Onshape inside the New Part form. Spec:
    `.ai/specs/2026-08-20-onshape-create-part-from-new-part-form.md`.
 
@@ -631,3 +631,23 @@ twice as well.
   The webhook needed NO change, now pinned by two tests. Still unproven: that a
   released drawing's webhook carries `elementType === 2` — no released drawing
   exists, and the release is blocked on "Drawing has a pending update".
+- 2026-08-21: **Phase 9 done.** `createItemsOnRelease`, a v2 switch, default OFF and
+  read strictly `=== true`. The three gates that would have made it a silent no-op are
+  closed and pinned by tests: the receiver's early bail, its v2 dispatch condition,
+  and `webhookWanted` on save (which would otherwise DELETE the subscription of a
+  company that enabled auto-create and nothing else).
+  **The replenishment rule** — the only contestable part — is
+  `mintDefaultsForRelease` in `packages/jobs/.../onshape-mint.ts`: assembly →
+  Make / Make to Order, part studio body → Buy / Pull from Inventory, plus Inventory
+  tracking and EA. Chosen because it is the SAME answer the BOM import already
+  derives from having children, reached from `elementType`, so one part cannot
+  classify two ways depending on which door it came through. Its known cost is
+  stated rather than hidden: an assembly minted Make has an empty Draft make method,
+  so planning briefly sees something buildable out of nothing. There is no option
+  that avoids both that and the purchased-leaf failure without also importing the
+  BOM, so the mitigation is REPORTING — every creation is named in the notification
+  with what Carbon assumed. **Raul has not signed off on this rule; it is the
+  default I took to keep moving.**
+  The mint probes the readableId family first and refuses a number already taken by
+  an unmapped item, since `item_unique` cannot catch a same-family duplicate.
+  Migration `20260821120000_onshape-auto-create-jsonschema.sql` declares the key.

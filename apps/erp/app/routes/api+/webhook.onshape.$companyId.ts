@@ -17,6 +17,9 @@ import { getIntegration } from "../../modules/settings";
 //                        ▼
 //     onshape.revision.created ──▶ trigger("onshape-revision-sync")   [assetSyncEnabled]
 //                              ──▶ trigger("onshape-release-import")  [releaseImportEnabled]
+//                              ──▶ trigger("onshape-release-v2")      [v2: attachAssets |
+//                                                                      releaseImportV2 |
+//                                                                      createItemsOnRelease]
 //     everything else          ──▶ ack 200 (logged, no dispatch)
 //
 // AUTH: signature verification is OPT-IN per company. With no
@@ -185,12 +188,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
       "changeNotice")
     : "off";
   const v2ReleaseImportEnabled = isV2 && v2ReleaseImportMode !== "off";
+  // Strict `=== true`, matching allowUnreleasedSync and NOT
+  // attachAssetsOnRelease's `!== false`: an absent key must read as off, or
+  // every existing v2 install starts minting parts on deploy.
+  const v2CreateItems =
+    isV2 && integrationMetadata.createItemsOnRelease === true;
 
   if (
     !assetSyncEnabled &&
     !releaseImportEnabled &&
     !v2AttachAssets &&
-    !v2ReleaseImportEnabled
+    !v2ReleaseImportEnabled &&
+    !v2CreateItems
   ) {
     console.log("Onshape webhook: no consumer enabled; ignoring event", {
       companyId,
@@ -323,7 +332,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         // that creates the item it needs to attach to. The job owns the policy
         // (which consumers are on, what to do with a drawing) so the receiver
         // stays a router.
-        if (v2AttachAssets || v2ReleaseImportEnabled) {
+        if (v2AttachAssets || v2ReleaseImportEnabled || v2CreateItems) {
           await trigger("onshape-release-v2", {
             companyId,
             userId: installerUserId,

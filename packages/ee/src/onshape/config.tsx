@@ -181,6 +181,17 @@ export const Onshape = defineIntegration({
       group: "Onshape v2",
       visibleWhen: { field: "pipeline", equals: "next" }
     },
+    {
+      name: "createItemsOnRelease",
+      label: "Create the part when a release names one Carbon does not have",
+      description:
+        "Off by default: a released element with no linked Carbon part is refused, and someone links it or imports its assembly. Turned on, Carbon creates the part instead — but a release carries geometry, not structure, so Carbon has to GUESS the fields Onshape says nothing about. An assembly is created as Make / Make to Order, a part studio body as Buy / Pull from Inventory, tracked in Inventory and measured in EA. Every creation is reported so you can correct it.",
+      type: "switch",
+      required: false,
+      value: false,
+      group: "Onshape v2",
+      visibleWhen: { field: "pipeline", equals: "next" }
+    },
     // --- Both -------------------------------------------------------------
     {
       name: "webhookSigningSecret",
