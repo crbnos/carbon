@@ -1351,6 +1351,9 @@ msgstr "모든 공급업체"
 msgid "All Time"
 msgstr "전체 기간"
 
+msgid "All tools"
+msgstr "모든 도구"
+
 msgid "All Types"
 msgstr "모든 유형"
 
@@ -10228,6 +10231,9 @@ msgstr "판매주문에서"
 
 msgid "On Storage Unit"
 msgstr "저장 단위에서"
+
+msgid "On this operation"
+msgstr "이 작업 시"
 
 msgid "On-account credit available"
 msgstr "사용 가능한 외상 크레딧"

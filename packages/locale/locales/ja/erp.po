@@ -1351,6 +1351,9 @@ msgstr "すべてのサプライヤー"
 msgid "All Time"
 msgstr "すべての期間"
 
+msgid "All tools"
+msgstr "すべてのツール"
+
 msgid "All Types"
 msgstr "すべてのタイプ"
 
@@ -10228,6 +10231,9 @@ msgstr "販売注文中"
 
 msgid "On Storage Unit"
 msgstr "保管ユニット上"
+
+msgid "On this operation"
+msgstr "この操作で"
 
 msgid "On-account credit available"
 msgstr "掛け売掛金利用可能"

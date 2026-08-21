@@ -1351,6 +1351,9 @@ msgstr "Tutti i fornitori"
 msgid "All Time"
 msgstr "Tutto il tempo"
 
+msgid "All tools"
+msgstr "Tutti gli strumenti"
+
 msgid "All Types"
 msgstr "Tutti i tipi"
 
@@ -10228,6 +10231,9 @@ msgstr "Su Ordine di Vendita"
 
 msgid "On Storage Unit"
 msgstr "Su Unità di Stoccaggio"
+
+msgid "On this operation"
+msgstr "Su questa operazione"
 
 msgid "On-account credit available"
 msgstr "Credito a conto disponibile"

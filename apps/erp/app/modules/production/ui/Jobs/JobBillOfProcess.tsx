@@ -1235,7 +1235,8 @@ function StepsForm({
       id: tool.id,
       name: tool.readableIdWithRevision,
       secondary: tool.name ?? undefined,
-      quantity: opToolByToolId.get(tool.id)?.quantity ?? 1
+      quantity: opToolByToolId.get(tool.id)?.quantity ?? 1,
+      primary: opToolByToolId.has(tool.id)
     }));
   }, [tools, allTools]);
   const [draftTools, setDraftTools] = useState<string[]>([]);
@@ -1654,6 +1655,8 @@ function StepsForm({
                 icon={<LuHammer />}
                 items={operationTools}
                 linkedIds={draftTools}
+                primaryGroupLabel={t`On this operation`}
+                secondaryGroupLabel={t`All tools`}
                 isDisabled={isDisabled}
                 onAdd={(toolId) =>
                   setDraftTools((prev) =>
@@ -1823,7 +1826,8 @@ function JobStepTools({
     id: tool.id,
     name: tool.readableIdWithRevision,
     secondary: tool.name ?? undefined,
-    quantity: opToolByToolId.get(tool.id)?.quantity ?? 1
+    quantity: opToolByToolId.get(tool.id)?.quantity ?? 1,
+    primary: opToolByToolId.has(tool.id)
   }));
 
   const linkedToolIds = (tools ?? [])
@@ -1859,6 +1863,8 @@ function JobStepTools({
       removeLabel={t`Remove tool`}
       icon={<LuHammer />}
       items={stepTools}
+      primaryGroupLabel={t`On this operation`}
+      secondaryGroupLabel={t`All tools`}
       linkedIds={linkedToolIds}
       isDisabled={isDisabled}
       busy={fetcher.state !== "idle"}

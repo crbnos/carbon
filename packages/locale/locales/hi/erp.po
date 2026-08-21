@@ -1351,6 +1351,9 @@ msgstr "सभी आपूर्तिकर्ता"
 msgid "All Time"
 msgstr "सभी समय"
 
+msgid "All tools"
+msgstr "सभी उपकरण"
+
 msgid "All Types"
 msgstr "सभी प्रकार"
 
@@ -10228,6 +10231,9 @@ msgstr "बिक्रय आदेश पर"
 
 msgid "On Storage Unit"
 msgstr "स्टोरेज यूनिट पर"
+
+msgid "On this operation"
+msgstr "इस ऑपरेशन पर"
 
 msgid "On-account credit available"
 msgstr "खाते पर उपलब्ध क्रेडिट"

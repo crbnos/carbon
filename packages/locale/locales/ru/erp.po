@@ -1351,6 +1351,9 @@ msgstr "Все поставщики"
 msgid "All Time"
 msgstr "Все время"
 
+msgid "All tools"
+msgstr "Все инструменты"
+
 msgid "All Types"
 msgstr "Все типы"
 
@@ -10228,6 +10231,9 @@ msgstr "На заказе продажи"
 
 msgid "On Storage Unit"
 msgstr "На складском отделении"
+
+msgid "On this operation"
+msgstr "На эту операцию"
 
 msgid "On-account credit available"
 msgstr "Доступный кредит на счете"

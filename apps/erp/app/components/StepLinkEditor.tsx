@@ -29,6 +29,9 @@ export type StepLinkItem = {
   // Per-step share of the BOM line (parts only). null/undefined = the full line
   // quantity. Editable when the caller supplies onQuantityChange.
   linkedQuantity?: number | null;
+  // Curated items (e.g. tools already on the operation) group FIRST in the
+  // picker, under primaryGroupLabel, so they aren't buried in the full library.
+  primary?: boolean;
 };
 
 // Compact per-step quantity editor on a linked row. Commits on blur/Enter via
@@ -69,6 +72,35 @@ function LinkedQuantity({
   );
 }
 
+// One selectable row in the picker popover, shared by both groups.
+function StepLinkOption({
+  item,
+  onAdd
+}: {
+  item: StepLinkItem;
+  onAdd: (id: string) => void;
+}) {
+  return (
+    <CommandItem
+      value={`${item.name} ${item.secondary ?? ""} ${item.id}`}
+      onSelect={() => onAdd(item.id)}
+      className="flex items-center justify-between gap-4"
+    >
+      <div className="flex min-w-0 flex-1 flex-col">
+        <span className="truncate">{item.name}</span>
+        {item.secondary && (
+          <span className="truncate text-xs text-muted-foreground">
+            {item.secondary}
+          </span>
+        )}
+      </div>
+      <span className="shrink-0 text-xs text-muted-foreground">
+        ×{item.quantity}
+      </span>
+    </CommandItem>
+  );
+}
+
 // Step-side link picker: assign an operation's BOM parts OR tools to a step (the inverse of the
 // old BOM/tool "Steps" picker). Presentational — the caller owns the linked set and persists
 // changes (immediately via a route for saved steps, or a draft buffer for a step being created).
@@ -87,7 +119,9 @@ export function StepLinkEditor({
   busy,
   onAdd,
   onRemove,
-  onQuantityChange
+  onQuantityChange,
+  primaryGroupLabel,
+  secondaryGroupLabel
 }: {
   label: string;
   addLabel: string;
@@ -106,6 +140,11 @@ export function StepLinkEditor({
   // the full BOM line quantity) instead of the static ×N badge — so one line's
   // quantity can be split across steps (5 screws here, 5 on the next step).
   onQuantityChange?: (id: string, quantity: number) => void;
+  // Group headings when items mix a curated set (`primary`) with the full
+  // library — e.g. "On this operation" over the operation's tools, "All tools"
+  // over the rest. Only rendered when at least one available item is primary.
+  primaryGroupLabel?: string;
+  secondaryGroupLabel?: string;
 }) {
   const { t } = useLingui();
   const [open, setOpen] = useState(false);
@@ -113,6 +152,8 @@ export function StepLinkEditor({
   const linkedSet = new Set(linkedIds);
   const linked = items.filter((p) => linkedSet.has(p.id));
   const available = items.filter((p) => !linkedSet.has(p.id));
+  const availablePrimary = available.filter((p) => p.primary);
+  const availableRest = available.filter((p) => !p.primary);
 
   if (isDisabled && linked.length === 0) return null;
 
@@ -145,26 +186,26 @@ export function StepLinkEditor({
                 <CommandInput placeholder={searchPlaceholder} />
                 <CommandList>
                   <CommandEmpty>{t`No results`}</CommandEmpty>
-                  <CommandGroup>
-                    {available.map((item) => (
-                      <CommandItem
-                        key={item.id}
-                        value={`${item.name} ${item.secondary ?? ""} ${item.id}`}
-                        onSelect={() => onAdd(item.id)}
-                        className="flex items-center justify-between gap-4"
-                      >
-                        <div className="flex min-w-0 flex-1 flex-col">
-                          <span className="truncate">{item.name}</span>
-                          {item.secondary && (
-                            <span className="truncate text-xs text-muted-foreground">
-                              {item.secondary}
-                            </span>
-                          )}
-                        </div>
-                        <span className="shrink-0 text-xs text-muted-foreground">
-                          ×{item.quantity}
-                        </span>
-                      </CommandItem>
+                  {availablePrimary.length > 0 && (
+                    <CommandGroup heading={primaryGroupLabel}>
+                      {availablePrimary.map((item) => (
+                        <StepLinkOption
+                          key={item.id}
+                          item={item}
+                          onAdd={onAdd}
+                        />
+                      ))}
+                    </CommandGroup>
+                  )}
+                  <CommandGroup
+                    heading={
+                      availablePrimary.length > 0
+                        ? secondaryGroupLabel
+                        : undefined
+                    }
+                  >
+                    {availableRest.map((item) => (
+                      <StepLinkOption key={item.id} item={item} onAdd={onAdd} />
                     ))}
                   </CommandGroup>
                 </CommandList>

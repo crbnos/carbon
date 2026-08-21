@@ -1351,6 +1351,9 @@ msgstr "Alle Lieferanten"
 msgid "All Time"
 msgstr "Gesamter Zeitraum"
 
+msgid "All tools"
+msgstr "Alle Werkzeuge"
+
 msgid "All Types"
 msgstr "Alle Typen"
 
@@ -10228,6 +10231,9 @@ msgstr "In Verkaufsauftrag"
 
 msgid "On Storage Unit"
 msgstr "Auf Lagereinheit"
+
+msgid "On this operation"
+msgstr "Bei diesem Arbeitsgang"
 
 msgid "On-account credit available"
 msgstr "Verfügbarer Kontokorrentkreditrahmen"

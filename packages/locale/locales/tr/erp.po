@@ -1351,6 +1351,9 @@ msgstr "Tüm Tedarikçiler"
 msgid "All Time"
 msgstr "Her Zaman"
 
+msgid "All tools"
+msgstr "Tüm araçlar"
+
 msgid "All Types"
 msgstr "Tüm Türler"
 
@@ -10228,6 +10231,9 @@ msgstr "Satış Siparişi'nde"
 
 msgid "On Storage Unit"
 msgstr "Depolizdeki"
+
+msgid "On this operation"
+msgstr "Bu operasyonda"
 
 msgid "On-account credit available"
 msgstr "Hesapta mevcut kredi"
