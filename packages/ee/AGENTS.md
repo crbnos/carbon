@@ -39,7 +39,8 @@ pnpm --filter @carbon/ee typecheck   # tsgo --noEmit
 - **Tie-out remote reads**: `accounting/core/remote-journal.ts` `fetchRemoteJournalTotals()` — provider-agnostic debit-signed per-account journal totals for the reconciliation tie-out
 - **Dependency sync**: transaction syncers use `ensureDependencySynced()` for JIT deps (e.g. push customer before invoice)
 - **Integration pattern**: `defineIntegration()` → config with id, name, settings, OAuth, actions
-- **Exports**: `./accounting`, `./plan`, `./plan.server`, `./exchange-rates.server`, `./slack.server`, `./hooks.server`, `./jira`, `./linear`, `./rillet/hooks.server`, `./xero/hooks.server`, etc.
+- **Exports**: `./accounting`, `./plan`, `./plan.server`, `./exchange-rates.server`, `./slack.server`, `./hooks.server`, `./jira`, `./linear`, `./rillet/hooks.server`, `./xero/hooks.server`, `./punchout`, etc.
+- **Punchout (cXML)**: `./punchout` is the supplier-neutral cXML core (`src/punchout/`) — isomorphic types + `fast-xml-parser`-backed parse/build (`parseCxmlEnvelope`, `parsePunchOutOrderMessage`, `parseConfirmationRequest`/`ShipNotice`/`InvoiceDetail`, `buildPunchOutSetupRequest`/`buildOrderRequest`/`buildCxmlResponse`, `parseCxmlMoney`) + the pure `resolveCartLines`. Backs the `mcmaster-carr` integration (`src/mcmaster-carr/config.tsx`); a second punchout supplier is a new config + seed, not new protocol code. `SECRET_KEYS["mcmaster-carr"] = ["sharedSecret", "inboundSharedSecret"]`.
 
 ## Cross-References
 

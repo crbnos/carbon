@@ -11,6 +11,7 @@ Purchase orders, supplier management, supplier quotes/interactions, RFQs, and pr
 - **RFQ (Request for Quotation)** — solicits pricing from multiple suppliers. Links to supplier quotes via `purchasingRfqToSupplierQuote`. Statuses managed by `updatePurchasingRFQStatus`.
 - **Conversion Factor** — when a supplier's UoM differs from stocking UoM, `conversionFactor` on `purchaseOrderLine` scales quantities at receipt: `inventoryQty = purchaseQty × conversionFactor`. See `.claude/rules/purchasing-conversion-factors.md`.
 - **Purchasing Planning** — MRP-driven planned orders surfaced via `getPurchasingPlanning` (calls `get_purchasing_planning` RPC).
+- **Punchout / cXML (McMaster-Carr)** — supplier-neutral cXML core in `packages/ee/src/punchout/` (parse/build/resolve, isomorphic); the `mcmaster-carr` integration is `packages/ee/src/mcmaster-carr/config.tsx`. A `punchoutSession` holds a shopping session (random `buyerCookie`, 2h expiry, guarded status transitions); shopping returns the cart to a **draft PO** (`consumePunchoutCart` → `resolveCartLines`: `supplierPart` match → Part line, else G/L Account line vs the configured default expense account; the opaque `purchaseOrderLine.supplierPartAuxiliaryId` rides each line). A `cxmlDocument` is the in/out document queue (dedup on `companyId,integrationId,direction,documentType,payloadId`). Inbound confirmations/ship notices auto-apply (`applyCxmlConfirmation`/`applyCxmlShipNotice`); invoices/credit memos stage `Needs Review` and `releaseCxmlInvoice` builds a draft purchase invoice (never auto-posted). Outbound: the finalize "cXML" option triggers the `punchout-send-po` Inngest job (`packages/jobs/.../integrations/punchout.ts`). Routes under `api+/integrations.punchout.*` (start/status/consume, `purchasing_*`), the public cookie-less `api+/punchout.$sessionId.return`, and the secret-verified `api+/webhook.mcmaster-carr.$companyId`. UI: Purchasing → Documents (`x+/purchasing+/cxml*`) + the `PunchoutShopButton`.
 
 ## Safety
 
@@ -52,6 +53,8 @@ cd apps/erp && pnpm exec vitest run app/modules/purchasing
 | `supplierQuote` / `supplierQuoteLine` / `supplierQuoteLinePrice` | Vendor pricing at quantity breaks |
 | `purchasingRfq` / `purchasingRfqLine` / `purchasingRfqSupplier` | RFQ header, lines, and invited suppliers |
 | `terms` | Payment/delivery terms reference data |
+| `punchoutSession` | McMaster-Carr punchout shopping session (buyerCookie, cart JSONB, status, 2h expiry) |
+| `cxmlDocument` | cXML document queue (in/out PO, confirmation, ship notice, invoice, credit memo) with dedup + issues |
 
 ## Key Service Functions
 
@@ -67,6 +70,9 @@ cd apps/erp && pnpm exec vitest run app/modules/purchasing
 - `getPurchasingRFQ` / `getPurchasingRFQs` / `upsertPurchasingRFQ` — RFQ management
 - `getSupplierQuotesForComparison` — side-by-side quote comparison
 - `getDefaultAttachmentsForPO` — default document attachments for PO creation
+- `createPunchoutSession` / `updatePunchoutSession` / `consumePunchoutCart` — punchout session lifecycle + cart → draft PO
+- `insertCxmlDocument` / `getCxmlDocuments` / `updateCxmlDocumentStatus` / `rejectCxmlDocument` — cXML document queue
+- `applyCxmlConfirmation` / `applyCxmlShipNotice` / `releaseCxmlInvoice` — inbound document effects
 
 ## Key Exports
 
