@@ -2568,6 +2568,9 @@ msgstr "账册锁定日期（手动）"
 msgid "Both"
 msgstr "两者"
 
+msgid "Branch an editable copy of this version that you can change and publish."
+msgstr "创建此版本的可编辑副本，您可以对其进行更改和发布。"
+
 msgid "Breadcrumb"
 msgstr "面包屑"
 
@@ -2576,6 +2579,9 @@ msgstr "导入您的零件、物料清单、工艺流程和成本——使用 Ca
 
 msgid "Browse library"
 msgstr "浏览库"
+
+msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
+msgstr "以只读方式浏览实时版本。您仍然可以重新排列步骤以整理布局。"
 
 msgid "Bucket"
 msgstr "存储桶"
@@ -3883,6 +3889,9 @@ msgstr "创建新的维护派工单以跟踪设备维修和维护活动"
 
 msgid "Create a new production job to fulfill the sales order"
 msgstr "创建新的生产工作以完成销售订单"
+
+msgid "Create a new version"
+msgstr "创建新版本"
 
 msgid "Create a purchase order"
 msgstr "创建采购订单"
@@ -9624,9 +9633,6 @@ msgstr "新转移行"
 msgid "New Unit of Measure"
 msgstr "新计量单位"
 
-msgid "New version"
-msgstr "新版本"
-
 msgid "New Version"
 msgstr "新版本"
 
@@ -11550,8 +11556,14 @@ msgstr "发布"
 msgid "Publish Version {0}?"
 msgstr "发布版本{0}?"
 
+msgid "Published"
+msgstr "已发布"
+
 msgid "Published by Carbon"
 msgstr "由 Carbon 发布"
+
+msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
+msgstr "已发布的版本无法编辑。以只读方式浏览，或创建新版本以进行更改。"
 
 msgid "Pull"
 msgstr "拉取"
@@ -15645,14 +15657,8 @@ msgstr "无法打开此版本"
 msgid "This version is live"
 msgstr "此版本已上线"
 
-msgid "This version is live, so it cannot be changed. You can still move steps around to tidy the layout."
-msgstr "此版本已上线，因此无法更改。您仍然可以移动步骤来整理布局。"
-
 msgid "This version is live. Create a new version to edit."
 msgstr "此版本处于实时状态。创建新版本进行编辑。"
-
-msgid "This version is live. Create a new version to make changes. You can still move steps around to tidy the layout."
-msgstr "此版本已上线。创建新版本以进行更改。您仍然可以移动步骤来整理布局。"
 
 msgid "This version's definition could not be read."
 msgstr "无法读取此版本的定义。"
@@ -16773,6 +16779,9 @@ msgstr "查看建议"
 
 msgid "View Suppliers"
 msgstr "查看供应商"
+
+msgid "View the workflow"
+msgstr "查看工作流"
 
 msgid "View tie-out"
 msgstr "查看对账"

@@ -2568,6 +2568,9 @@ msgstr "Books lock date (manual)"
 msgid "Both"
 msgstr "Both"
 
+msgid "Branch an editable copy of this version that you can change and publish."
+msgstr "Branch an editable copy of this version that you can change and publish."
+
 msgid "Breadcrumb"
 msgstr "Breadcrumb"
 
@@ -2576,6 +2579,9 @@ msgstr "Bring in your parts, BOMs, Bill of Process, and costing — with Carbon'
 
 msgid "Browse library"
 msgstr "Browse library"
+
+msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
+msgstr "Browse the live version read-only. You can still rearrange steps to tidy the layout."
 
 msgid "Bucket"
 msgstr "Bucket"
@@ -3883,6 +3889,9 @@ msgstr "Create a new maintenance dispatch to track equipment repairs and mainten
 
 msgid "Create a new production job to fulfill the sales order"
 msgstr "Create a new production job to fulfill the sales order"
+
+msgid "Create a new version"
+msgstr "Create a new version"
 
 msgid "Create a purchase order"
 msgstr "Create a purchase order"
@@ -9624,9 +9633,6 @@ msgstr "New Transfer Line"
 msgid "New Unit of Measure"
 msgstr "New Unit of Measure"
 
-msgid "New version"
-msgstr "New version"
-
 msgid "New Version"
 msgstr "New Version"
 
@@ -11550,8 +11556,14 @@ msgstr "Publish"
 msgid "Publish Version {0}?"
 msgstr "Publish Version {0}?"
 
+msgid "Published"
+msgstr "Published"
+
 msgid "Published by Carbon"
 msgstr "Published by Carbon"
+
+msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
+msgstr "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 
 msgid "Pull"
 msgstr "Pull"
@@ -15645,14 +15657,8 @@ msgstr "This version cannot be opened"
 msgid "This version is live"
 msgstr "This version is live"
 
-msgid "This version is live, so it cannot be changed. You can still move steps around to tidy the layout."
-msgstr "This version is live, so it cannot be changed. You can still move steps around to tidy the layout."
-
 msgid "This version is live. Create a new version to edit."
 msgstr "This version is live. Create a new version to edit."
-
-msgid "This version is live. Create a new version to make changes. You can still move steps around to tidy the layout."
-msgstr "This version is live. Create a new version to make changes. You can still move steps around to tidy the layout."
 
 msgid "This version's definition could not be read."
 msgstr "This version's definition could not be read."
@@ -16773,6 +16779,9 @@ msgstr "View Suggestion"
 
 msgid "View Suppliers"
 msgstr "View Suppliers"
+
+msgid "View the workflow"
+msgstr "View the workflow"
 
 msgid "View tie-out"
 msgstr "View tie-out"

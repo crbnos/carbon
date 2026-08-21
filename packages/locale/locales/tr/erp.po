@@ -2568,6 +2568,9 @@ msgstr "Defterlerin kilitlenme tarihi (manuel)"
 msgid "Both"
 msgstr "Her ikisi"
 
+msgid "Branch an editable copy of this version that you can change and publish."
+msgstr "Bu sürümün düzenlenebilir bir kopyasını oluşturun, değiştirebilir ve yayınlayabilirsiniz."
+
 msgid "Breadcrumb"
 msgstr "Sayfa Yolu"
 
@@ -2576,6 +2579,9 @@ msgstr "Parçalarınızı, BOM'larınızı, İşlem Faturasını ve maliyetlendi
 
 msgid "Browse library"
 msgstr "Kütüphaneyi göz at"
+
+msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
+msgstr "Canlı sürümü salt okunur şekilde inceleyin. Yine de adımları düzenlenecek şekilde yeniden düzenleyebilirsiniz."
 
 msgid "Bucket"
 msgstr "Kova"
@@ -3883,6 +3889,9 @@ msgstr "Ekipman onarımlarını ve bakım faaliyetlerini izlemek için yeni bir 
 
 msgid "Create a new production job to fulfill the sales order"
 msgstr "Satış siparişini yerine getirmek için yeni bir üretim işi oluşturun"
+
+msgid "Create a new version"
+msgstr "Yeni bir sürüm oluşturun"
 
 msgid "Create a purchase order"
 msgstr "Satın alma siparişi oluştur"
@@ -9624,9 +9633,6 @@ msgstr "Yeni Transfer Satırı"
 msgid "New Unit of Measure"
 msgstr "Yeni Bir Ölçü Birimi"
 
-msgid "New version"
-msgstr "Yeni versiyon"
-
 msgid "New Version"
 msgstr "Yeni Sürüm"
 
@@ -11550,8 +11556,14 @@ msgstr "Yayınla"
 msgid "Publish Version {0}?"
 msgstr "Sürüm {0} yayınlanmış mı?"
 
+msgid "Published"
+msgstr "Yayımlandı"
+
 msgid "Published by Carbon"
 msgstr "Carbon tarafından yayınlandı"
+
+msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
+msgstr "Yayımlanmış sürümler düzenlenemez. Salt okunur şekilde inceleyin veya değişiklik yapmak için yeni bir sürüm oluşturun."
 
 msgid "Pull"
 msgstr "Çek"
@@ -15645,14 +15657,8 @@ msgstr "Bu sürüm açılamıyor"
 msgid "This version is live"
 msgstr "Bu versiyon yayında"
 
-msgid "This version is live, so it cannot be changed. You can still move steps around to tidy the layout."
-msgstr "Bu versiyon yayında olduğundan değiştirilemez. Düzeni düzenlemek için yine de adımları hareket ettirebilirsiniz."
-
 msgid "This version is live. Create a new version to edit."
 msgstr "Bu sürüm canlı. Düzenlemek için yeni bir sürüm oluşturun."
-
-msgid "This version is live. Create a new version to make changes. You can still move steps around to tidy the layout."
-msgstr "Bu versiyon yayında. Değişiklik yapmak için yeni bir versiyon oluşturun. Düzeni düzenlemek için yine de adımları hareket ettirebilirsiniz."
 
 msgid "This version's definition could not be read."
 msgstr "Bu sürümün tanımı okunamadı."
@@ -16773,6 +16779,9 @@ msgstr "Öneri Görüntüle"
 
 msgid "View Suppliers"
 msgstr "Tedarikçileri Görüntüle"
+
+msgid "View the workflow"
+msgstr "İş akışını görüntüle"
 
 msgid "View tie-out"
 msgstr "Uyumu Görüntüle"

@@ -2568,6 +2568,9 @@ msgstr "Date de verrouillage des livres (manuel)"
 msgid "Both"
 msgstr "Les deux"
 
+msgid "Branch an editable copy of this version that you can change and publish."
+msgstr "Créer une copie modifiable de cette version que vous pouvez modifier et publier."
+
 msgid "Breadcrumb"
 msgstr "Fil d'Ariane"
 
@@ -2576,6 +2579,9 @@ msgstr "Importez vos pièces, nomenclatures, processus de fabrication et coûts 
 
 msgid "Browse library"
 msgstr "Parcourir la bibliothèque"
+
+msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
+msgstr "Parcourir la version active en lecture seule. Vous pouvez toujours réorganiser les étapes pour nettoyer la mise en page."
 
 msgid "Bucket"
 msgstr "Compartiment"
@@ -3883,6 +3889,9 @@ msgstr "Créer une nouvelle demande de maintenance pour suivre les réparations 
 
 msgid "Create a new production job to fulfill the sales order"
 msgstr "Créer une nouvelle tâche de production pour honorer la commande client"
+
+msgid "Create a new version"
+msgstr "Créer une nouvelle version"
 
 msgid "Create a purchase order"
 msgstr "Créer une commande d'achat"
@@ -9624,9 +9633,6 @@ msgstr "Nouvelle Ligne de Transfert"
 msgid "New Unit of Measure"
 msgstr "Nouvelle Unité de Mesure"
 
-msgid "New version"
-msgstr "Nouvelle version"
-
 msgid "New Version"
 msgstr "Nouvelle Version"
 
@@ -11550,8 +11556,14 @@ msgstr "Publier"
 msgid "Publish Version {0}?"
 msgstr "Publier la version {0} ?"
 
+msgid "Published"
+msgstr "Publié"
+
 msgid "Published by Carbon"
 msgstr "Publié par Carbon"
+
+msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
+msgstr "Les versions publiées ne peuvent pas être modifiées. Consultez en lecture seule, ou créez une branche d'une nouvelle version pour apporter des modifications."
 
 msgid "Pull"
 msgstr "Récupérer"
@@ -15645,14 +15657,8 @@ msgstr "Cette version ne peut pas être ouverte"
 msgid "This version is live"
 msgstr "Cette version est en direct"
 
-msgid "This version is live, so it cannot be changed. You can still move steps around to tidy the layout."
-msgstr "Cette version est en direct, elle ne peut donc pas être modifiée. Vous pouvez toujours déplacer les étapes pour organiser la mise en page."
-
 msgid "This version is live. Create a new version to edit."
 msgstr "Cette version est en direct. Créez une nouvelle version pour modifier."
-
-msgid "This version is live. Create a new version to make changes. You can still move steps around to tidy the layout."
-msgstr "Cette version est en direct. Créez une nouvelle version pour apporter des modifications. Vous pouvez toujours déplacer les étapes pour organiser la mise en page."
 
 msgid "This version's definition could not be read."
 msgstr "La définition de cette version n'a pas pu être lue."
@@ -16773,6 +16779,9 @@ msgstr "Afficher la suggestion"
 
 msgid "View Suppliers"
 msgstr "Afficher les fournisseurs"
+
+msgid "View the workflow"
+msgstr "Afficher le flux de travail"
 
 msgid "View tie-out"
 msgstr "Afficher le rapprochement"

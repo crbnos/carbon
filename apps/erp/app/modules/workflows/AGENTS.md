@@ -52,8 +52,8 @@ modules/workflows/
 ├── types.ts                # BuilderNode / BuilderEdge React Flow aliases
 ├── index.ts                # barrel (does NOT export workflows.server)
 └── ui/
-    ├── WorkflowsTable.tsx, WorkflowForm.tsx, WorkflowLockAlert.tsx,
-    │   WorkflowActiveSwitch.tsx, WorkflowsUpgradeOverlay.tsx
+    ├── WorkflowsTable.tsx, WorkflowForm.tsx, WorkflowLockModal.tsx,
+    │   WorkflowActiveSwitch.tsx, WorkflowActiveCheckbox.tsx, WorkflowsUpgradeOverlay.tsx
     ├── useWorkflowsSubmodules.tsx
     └── Builder/            # canvas, store, node cards, palette, versions, issues
 ```

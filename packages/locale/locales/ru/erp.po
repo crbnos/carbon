@@ -2568,6 +2568,9 @@ msgstr "Дата блокировки книг (вручную)"
 msgid "Both"
 msgstr "Оба"
 
+msgid "Branch an editable copy of this version that you can change and publish."
+msgstr "Создайте редактируемую копию этой версии, которую вы сможете изменить и опубликовать."
+
 msgid "Breadcrumb"
 msgstr "Навигационная цепочка"
 
@@ -2576,6 +2579,9 @@ msgstr "Импортируйте ваши детали, спецификации
 
 msgid "Browse library"
 msgstr "Обзор библиотеки"
+
+msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
+msgstr "Просмотрите активную версию в режиме только для чтения. Вы все еще можете переставлять шаги для улучшения расположения."
 
 msgid "Bucket"
 msgstr "Хранилище"
@@ -3883,6 +3889,9 @@ msgstr "Создайте новую заявку на техническое о�
 
 msgid "Create a new production job to fulfill the sales order"
 msgstr "Создайте новое производственное задание для выполнения заказа"
+
+msgid "Create a new version"
+msgstr "Создать новую версию"
 
 msgid "Create a purchase order"
 msgstr "Создать заказ на закупку"
@@ -9624,9 +9633,6 @@ msgstr "Новая строка передачи"
 msgid "New Unit of Measure"
 msgstr "Новая единица измерения"
 
-msgid "New version"
-msgstr "Новая версия"
-
 msgid "New Version"
 msgstr "Новая версия"
 
@@ -11550,8 +11556,14 @@ msgstr "Опубликовать"
 msgid "Publish Version {0}?"
 msgstr "Опубликовать версию {0}?"
 
+msgid "Published"
+msgstr "Опубликовано"
+
 msgid "Published by Carbon"
 msgstr "Опубликовано Carbon"
+
+msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
+msgstr "Опубликованные версии нельзя редактировать. Просмотрите их в режиме только для чтения или создайте ветвь новой версии для внесения изменений."
 
 msgid "Pull"
 msgstr "Получить"
@@ -15645,14 +15657,8 @@ msgstr "Эта версия не может быть открыта"
 msgid "This version is live"
 msgstr "Эта версия активна"
 
-msgid "This version is live, so it cannot be changed. You can still move steps around to tidy the layout."
-msgstr "Эта версия активна, поэтому её нельзя изменить. Вы по-прежнему можете перемещать шаги для упорядочивания макета."
-
 msgid "This version is live. Create a new version to edit."
 msgstr "Эта версия активна. Создайте новую версию для редактирования."
-
-msgid "This version is live. Create a new version to make changes. You can still move steps around to tidy the layout."
-msgstr "Эта версия активна. Создайте новую версию для внесения изменений. Вы по-прежнему можете перемещать шаги для упорядочивания макета."
 
 msgid "This version's definition could not be read."
 msgstr "Определение этой версии не удалось прочитать."
@@ -16773,6 +16779,9 @@ msgstr "Просмотр предложения"
 
 msgid "View Suppliers"
 msgstr "Просмотр поставщиков"
+
+msgid "View the workflow"
+msgstr "Просмотр рабочего процесса"
 
 msgid "View tie-out"
 msgstr "Просмотр согласования"

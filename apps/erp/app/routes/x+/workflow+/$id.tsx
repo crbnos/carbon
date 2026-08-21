@@ -35,7 +35,7 @@ import { IssuesPanel } from "~/modules/workflows/ui/Builder/IssuesPanel";
 import { LiveValidation } from "~/modules/workflows/ui/Builder/LiveValidation";
 import { TestRunDialog } from "~/modules/workflows/ui/Builder/TestRun/TestRunDialog";
 import { WorkflowBuilder } from "~/modules/workflows/ui/Builder/WorkflowBuilder";
-import WorkflowLockAlert from "~/modules/workflows/ui/WorkflowLockAlert";
+import WorkflowLockModal from "~/modules/workflows/ui/WorkflowLockModal";
 import type { Handle } from "~/utils/handle";
 import { detailBreadcrumb } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -164,8 +164,8 @@ export default function WorkflowBuilderRoute() {
     isVersionLocked
   } = useLoaderData<typeof loader>();
 
-  // Two reasons, two behaviours: a locked version still allows dragging, a missing
-  // permission does not — and the two want different copy in the banner.
+  // Two reasons, two behaviours: a locked version still allows dragging to tidy the
+  // layout, a missing permission does not.
   const canEdit = permissions.can("update", "workflows");
   const isOwner = workflow.ownerId === userId;
 
@@ -202,13 +202,8 @@ export default function WorkflowBuilderRoute() {
             versionId={versionId}
             onIssues={issuesDisclosure.onOpen}
           />
-          {isVersionLocked && (
-            <WorkflowLockAlert
-              workflowId={workflow.id}
-              versionId={versionId}
-              canCreateVersion={permissions.can("create", "workflows")}
-              className="mx-4 mt-3"
-            />
+          {isVersionLocked && permissions.can("create", "workflows") && (
+            <WorkflowLockModal workflowId={workflow.id} versionId={versionId} />
           )}
           <div className="relative flex flex-1 overflow-hidden">
             <WorkflowBuilder
