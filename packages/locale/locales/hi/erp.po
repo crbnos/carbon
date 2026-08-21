@@ -2556,6 +2556,9 @@ msgstr "पुस्तकें लॉक तारीख (मैनुअल)"
 msgid "Both"
 msgstr "दोनों"
 
+msgid "Branch an editable copy of this version that you can change and publish."
+msgstr ""
+
 msgid "Breadcrumb"
 msgstr "ब्रेडक्रम्ब"
 
@@ -2564,6 +2567,9 @@ msgstr "अपने पार्ट्स, BOMs, Bill of Process, और को
 
 msgid "Browse library"
 msgstr "लाइब्रेरी ब्राउज़ करें"
+
+msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
+msgstr ""
 
 msgid "Bucket"
 msgstr "बकेट"
@@ -3868,6 +3874,9 @@ msgstr "उपकरण मरम्मत और रखरखाव गति�
 
 msgid "Create a new production job to fulfill the sales order"
 msgstr "बिक्रय आदेश को पूरा करने के लिए एक नई उत्पादन नौकरी बनाएं"
+
+msgid "Create a new version"
+msgstr ""
 
 msgid "Create a purchase order"
 msgstr "एक खरीद आदेश बनाएँ"
@@ -9591,9 +9600,6 @@ msgstr "नई ट्रांसफर लाइन"
 msgid "New Unit of Measure"
 msgstr "नई माप की इकाई"
 
-msgid "New version"
-msgstr "नया संस्करण"
-
 msgid "New Version"
 msgstr "नया संस्करण"
 
@@ -11519,6 +11525,9 @@ msgstr "संस्करण {0} प्रकाशित करें?"
 
 msgid "Published by Carbon"
 msgstr "Carbon द्वारा प्रकाशित"
+
+msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
+msgstr ""
 
 msgid "Pull"
 msgstr "खींचें"
@@ -15579,14 +15588,8 @@ msgstr "यह version खोला नहीं जा सकता"
 msgid "This version is live"
 msgstr "यह संस्करण लाइव है"
 
-msgid "This version is live, so it cannot be changed. You can still move steps around to tidy the layout."
-msgstr "यह संस्करण लाइव है, इसलिए इसे बदला नहीं जा सकता। आप अभी भी लेआउट को सुव्यवस्थित करने के लिए चरणों को स्थानांतरित कर सकते हैं।"
-
 msgid "This version is live. Create a new version to edit."
 msgstr "यह version live है। संपादित करने के लिए एक नया version बनाएं।"
-
-msgid "This version is live. Create a new version to make changes. You can still move steps around to tidy the layout."
-msgstr "यह संस्करण लाइव है। परिवर्तन करने के लिए एक नया संस्करण बनाएं। आप अभी भी लेआउट को सुव्यवस्थित करने के लिए चरणों को स्थानांतरित कर सकते हैं।"
 
 msgid "This version's definition could not be read."
 msgstr "इस version की परिभाषा को पढ़ा नहीं जा सका।"
@@ -16704,6 +16707,9 @@ msgstr "सुझाव देखें"
 
 msgid "View Suppliers"
 msgstr "आपूर्तिकर्ताओं को देखें"
+
+msgid "View the workflow"
+msgstr ""
 
 msgid "View tie-out"
 msgstr "समंजन देखें"

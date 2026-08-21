@@ -2556,6 +2556,9 @@ msgstr "Data zablokowania ksiąg (ręczna)"
 msgid "Both"
 msgstr "Oba"
 
+msgid "Branch an editable copy of this version that you can change and publish."
+msgstr ""
+
 msgid "Breadcrumb"
 msgstr "Nawigacja"
 
@@ -2564,6 +2567,9 @@ msgstr "Zaimportuj swoje części, BOM-y, Bill of Process i wycenę — za pomoc
 
 msgid "Browse library"
 msgstr "Przeglądaj bibliotekę"
+
+msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
+msgstr ""
 
 msgid "Bucket"
 msgstr "Zasobnik"
@@ -3868,6 +3874,9 @@ msgstr "Utwórz nową dyspozycję konserwacji, aby śledzić naprawy sprzętu i 
 
 msgid "Create a new production job to fulfill the sales order"
 msgstr "Utwórz nowe zadanie produkcyjne, aby zrealizować zamówienie sprzedaży"
+
+msgid "Create a new version"
+msgstr ""
 
 msgid "Create a purchase order"
 msgstr "Utwórz zamówienie zakupu"
@@ -9591,9 +9600,6 @@ msgstr "Nowa linia transferu"
 msgid "New Unit of Measure"
 msgstr "Nowa jednostka miary"
 
-msgid "New version"
-msgstr "Nowa wersja"
-
 msgid "New Version"
 msgstr "Nowa wersja"
 
@@ -11519,6 +11525,9 @@ msgstr "Opublikować wersję {0}?"
 
 msgid "Published by Carbon"
 msgstr "Opublikowano przez Carbon"
+
+msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
+msgstr ""
 
 msgid "Pull"
 msgstr "Pobierz"
@@ -15579,14 +15588,8 @@ msgstr "Ta wersja nie może być otwarta"
 msgid "This version is live"
 msgstr "Ta wersja jest na żywo"
 
-msgid "This version is live, so it cannot be changed. You can still move steps around to tidy the layout."
-msgstr "Ta wersja jest na żywo, dlatego nie można jej zmienić. Możesz nadal przenosić kroki, aby uporządkować układ."
-
 msgid "This version is live. Create a new version to edit."
 msgstr "Ta wersja jest aktywna. Utwórz nową wersję do edycji."
-
-msgid "This version is live. Create a new version to make changes. You can still move steps around to tidy the layout."
-msgstr "Ta wersja jest na żywo. Utwórz nową wersję, aby wprowadzić zmiany. Możesz nadal przenosić kroki, aby uporządkować układ."
 
 msgid "This version's definition could not be read."
 msgstr "Definicję tej wersji nie można było odczytać."
@@ -16704,6 +16707,9 @@ msgstr "Wyświetl sugestię"
 
 msgid "View Suppliers"
 msgstr "Wyświetl dostawców"
+
+msgid "View the workflow"
+msgstr ""
 
 msgid "View tie-out"
 msgstr "Wyświetl wyrównanie"

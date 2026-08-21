@@ -2556,6 +2556,9 @@ msgstr "장부 잠금 날짜(수동)"
 msgid "Both"
 msgstr "모두"
 
+msgid "Branch an editable copy of this version that you can change and publish."
+msgstr ""
+
 msgid "Breadcrumb"
 msgstr "이동 경로"
 
@@ -2564,6 +2567,9 @@ msgstr "Carbon의 가져오기 도구, CSV, 또는 LLM의 도움으로 품목, B
 
 msgid "Browse library"
 msgstr "라이브러리 둘러보기"
+
+msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
+msgstr ""
 
 msgid "Bucket"
 msgstr "버킷"
@@ -3868,6 +3874,9 @@ msgstr "장비 수리 및 유지보수 활동을 추적할 새 유지보수 작�
 
 msgid "Create a new production job to fulfill the sales order"
 msgstr "판매주문을 이행할 새 생산 작업을 생성합니다"
+
+msgid "Create a new version"
+msgstr ""
 
 msgid "Create a purchase order"
 msgstr "구매 주문 생성"
@@ -9591,9 +9600,6 @@ msgstr "새 이동 라인"
 msgid "New Unit of Measure"
 msgstr "새 측정 단위"
 
-msgid "New version"
-msgstr "새 버전"
-
 msgid "New Version"
 msgstr "새 버전"
 
@@ -11519,6 +11525,9 @@ msgstr "버전 {0}을(를) 게시하시겠습니까?"
 
 msgid "Published by Carbon"
 msgstr "Carbon에서 게시함"
+
+msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
+msgstr ""
 
 msgid "Pull"
 msgstr "가져오기"
@@ -15579,14 +15588,8 @@ msgstr "이 버전을 열 수 없습니다."
 msgid "This version is live"
 msgstr "이 버전은 활성화되어 있습니다"
 
-msgid "This version is live, so it cannot be changed. You can still move steps around to tidy the layout."
-msgstr "이 버전은 활성화되어 있어서 변경할 수 없습니다. 여전히 단계를 이동하여 레이아웃을 정리할 수 있습니다."
-
 msgid "This version is live. Create a new version to edit."
 msgstr "이 버전은 활성입니다. 편집할 새 버전을 만드십시오."
-
-msgid "This version is live. Create a new version to make changes. You can still move steps around to tidy the layout."
-msgstr "이 버전은 활성화되어 있습니다. 변경하려면 새 버전을 만드세요. 여전히 단계를 이동하여 레이아웃을 정리할 수 있습니다."
 
 msgid "This version's definition could not be read."
 msgstr "이 버전의 정의를 읽을 수 없습니다."
@@ -16704,6 +16707,9 @@ msgstr "제안 보기"
 
 msgid "View Suppliers"
 msgstr "공급업체 보기"
+
+msgid "View the workflow"
+msgstr ""
 
 msgid "View tie-out"
 msgstr "일치 보기"

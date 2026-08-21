@@ -10,7 +10,7 @@ export const themes = [
     },
     cssVars: {
       light: {
-        background: "0 0% 100%",
+        background: "220 4% 97%",
         foreground: "220 10% 3.9%",
         card: "0 0% 100%",
         "card-foreground": "220 10% 3.9%",
@@ -71,7 +71,7 @@ export const themes = [
     },
     cssVars: {
       light: {
-        background: "0 0% 96%",
+        background: "0 4% 97%",
         foreground: "0 0% 3.9%",
         card: "0 0% 93%",
         "card-foreground": "0 0% 3.9%",
@@ -131,7 +131,7 @@ export const themes = [
     },
     cssVars: {
       light: {
-        background: "0 0% 100%",
+        background: "0 4% 97%",
         foreground: "0 0% 3.9%",
         card: "0 0% 100%",
         "card-foreground": "0 0% 3.9%",
@@ -191,7 +191,7 @@ export const themes = [
     },
     cssVars: {
       light: {
-        background: "0 0% 100%",
+        background: "17 4% 97%",
         foreground: "20 14.3% 4.1%",
         card: "0 0% 100%",
         "card-foreground": "20 14.3% 4.1%",
@@ -251,7 +251,7 @@ export const themes = [
     },
     cssVars: {
       light: {
-        background: "0 0% 100%",
+        background: "47.9 4% 97%",
         foreground: "20 14.3% 4.1%",
         card: "0 0% 100%",
         "card-foreground": "20 14.3% 4.1%",
@@ -313,7 +313,7 @@ export const themes = [
     },
     cssVars: {
       light: {
-        background: "0 0% 100%",
+        background: "171 4% 97%",
         foreground: "171 10% 3.9%",
         card: "0 0% 100%",
         "card-foreground": "171 10% 3.9%",
@@ -373,7 +373,7 @@ export const themes = [
     },
     cssVars: {
       light: {
-        background: "0 0% 100%",
+        background: "237 4% 97%",
         foreground: "237 98% 4.9%",
         card: "0 0% 100%",
         "card-foreground": "237 98% 4.9%",
@@ -433,7 +433,7 @@ export const themes = [
     },
     cssVars: {
       light: {
-        background: "0 0% 100%",
+        background: "238 4% 97%",
         foreground: "224 71.4% 4.1%",
         card: "0 0% 100%",
         "card-foreground": "224 71.4% 4.1%",

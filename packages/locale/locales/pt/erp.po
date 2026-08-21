@@ -2556,6 +2556,9 @@ msgstr "Data de bloqueio de livros (manual)"
 msgid "Both"
 msgstr "Ambos"
 
+msgid "Branch an editable copy of this version that you can change and publish."
+msgstr ""
+
 msgid "Breadcrumb"
 msgstr "Migalha de pão"
 
@@ -2564,6 +2567,9 @@ msgstr "Importe suas peças, BOMs, Bill of Process e custos — com as ferrament
 
 msgid "Browse library"
 msgstr "Procurar biblioteca"
+
+msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
+msgstr ""
 
 msgid "Bucket"
 msgstr "Bucket"
@@ -3868,6 +3874,9 @@ msgstr "Crie uma nova ordem de manutenção para rastrear reparos de equipamento
 
 msgid "Create a new production job to fulfill the sales order"
 msgstr "Criar um novo trabalho de produção para atender ao pedido de venda"
+
+msgid "Create a new version"
+msgstr ""
 
 msgid "Create a purchase order"
 msgstr "Criar uma ordem de compra"
@@ -9591,9 +9600,6 @@ msgstr "Nova Linha de Transferência"
 msgid "New Unit of Measure"
 msgstr "Nova Unidade de Medida"
 
-msgid "New version"
-msgstr "Nova versão"
-
 msgid "New Version"
 msgstr "Nova Versão"
 
@@ -11519,6 +11525,9 @@ msgstr "Publicar versão {0}?"
 
 msgid "Published by Carbon"
 msgstr "Publicado pela Carbon"
+
+msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
+msgstr ""
 
 msgid "Pull"
 msgstr "Puxar"
@@ -15579,14 +15588,8 @@ msgstr "Esta versão não pode ser aberta"
 msgid "This version is live"
 msgstr "Esta versão está ativa"
 
-msgid "This version is live, so it cannot be changed. You can still move steps around to tidy the layout."
-msgstr "Esta versão está ativa, portanto não pode ser alterada. Você ainda pode mover as etapas para organizar o layout."
-
 msgid "This version is live. Create a new version to edit."
 msgstr "Esta versão está ativa. Crie uma nova versão para editar."
-
-msgid "This version is live. Create a new version to make changes. You can still move steps around to tidy the layout."
-msgstr "Esta versão está ativa. Crie uma nova versão para fazer alterações. Você ainda pode mover as etapas para organizar o layout."
 
 msgid "This version's definition could not be read."
 msgstr "A definição desta versão não pôde ser lida."
@@ -16704,6 +16707,9 @@ msgstr "Ver Sugestão"
 
 msgid "View Suppliers"
 msgstr "Ver Fornecedores"
+
+msgid "View the workflow"
+msgstr ""
 
 msgid "View tie-out"
 msgstr "Visualizar reconciliação"
