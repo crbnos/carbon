@@ -214,4 +214,17 @@ Working-tree files to never touch: `apps/erp/app/routes/api+/mcp+/lib/tool-metad
 - `lingui:clean` normalized headers. Verified only `msgstr` lines changed (no
   `msgid` touched). 24 `.po` files updated (12 locales × erp/mes). Scratch
   removed.
+- Commit: `01b0c82ac`
+
+## Task 11: AGENTS.md + spec changelog sync
+
+- `production/AGENTS.md`: applied the salvage Operation Batch concept + data-model
+  + service-fn rows (3-way clean), then EDITED: dropped "(plus `Cancelled`)" →
+  "no `Cancelled` — dissolve deletes a pre-start batch instead", and added the
+  resume-contract sentence (a retry must resubmit the recorded quantities).
+- `resources/AGENTS.md`: applied the salvage `batchable` process note (clean).
+- Spec changelog: added the 2026-08-21 implementation entry (Tasks 1–11,
+  migration filename, salvage + grill-deltas summary, e2e pending).
+- Verify: `Cancelled` in production AGENTS.md appears only in Job-status lines +
+  the batch paragraph's explicit "no Cancelled". Banned: none.
 - Commit: _pending_

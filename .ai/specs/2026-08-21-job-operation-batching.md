@@ -496,3 +496,10 @@ through; `ProcessForm` gains the Boolean field (clone `completeAllOnScan`).
   integrated into the body (lifecycle, edge fn, board, enum) instead of
   appended; acceptance criteria extended (resume, changed-quantity rejection,
   double-complete). Status: in-progress, ready for `/plan`.
+- 2026-08-21: Implemented on `feat/job-operation-batching-v2` (plan Tasks 1–11),
+  migration `20260821024449_job-operation-batching.sql`. Salvaged the board/UX +
+  two-phase completion + `batch-time-split` + tests from the prior branches and
+  grafted the four grill deltas (3-value enum, Phase-2 fail-fast, resume
+  quantity-contract rejection, read-only Completing lanes) onto them. ERP + MES
+  typecheck green, unit tests green, i18n filled across 12 locales. Browser e2e
+  (Task 13) pending a running dev stack.
