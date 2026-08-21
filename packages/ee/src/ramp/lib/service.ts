@@ -4,7 +4,11 @@ import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { createMappingService } from "../../accounting/core/external-mapping";
+import {
+  createMappingService,
+  type ExternalIntegrationMapping,
+  type ExternalIntegrationMappingService
+} from "../../accounting/core/external-mapping";
 import {
   persistIntegrationSecrets,
   resolveIntegrationSecrets
@@ -12,6 +16,7 @@ import {
 import { buildRampIdempotencyKey, RampClient } from "./client";
 import {
   RampAccountingConnectionSchema,
+  type RampCursors,
   type RampIntegrationMetadata,
   RampIntegrationMetadataSchema
 } from "./models";
@@ -156,6 +161,27 @@ async function updateStoredRampMetadata(
       `Failed to update Ramp integration metadata: ${updated.error.message}`
     );
   }
+}
+
+/**
+ * Advance a single Ramp sync cursor (`metadata.cursors.<key>`) via the same
+ * read-merge-write against the secret-free metadata column as
+ * {@link updateStoredRampMetadata}, so no sibling cursor or config key — and no
+ * vaulted secret — is clobbered. The outbound push steps (Task 10) persist their
+ * `updatedAt` high-water marks through here; the repayment family (Task 9) writes
+ * `repaymentsRepaidAt` the same way inside the job.
+ */
+export async function advanceRampCursor(
+  serviceRole: SupabaseClient<Database>,
+  companyId: string,
+  key: keyof NonNullable<RampCursors>,
+  value: string
+): Promise<void> {
+  await updateStoredRampMetadata(serviceRole, companyId, (metadata) => {
+    const cursors = (metadata.cursors as Record<string, unknown> | null) ?? {};
+    cursors[key] = value;
+    metadata.cursors = cursors;
+  });
 }
 
 // /********************************************************\
@@ -655,4 +681,272 @@ export function scaleRepaymentLines(
   }
 
   return scaled;
+}
+
+// /********************************************************\
+// *          Outbound push (POs, draft bills)             *
+// \********************************************************/
+
+/** A Carbon purchase-order line, shaped for a Ramp PO push. */
+export type RampPurchaseOrderPushLine = {
+  id: string;
+  description: string | null;
+  quantity: number | null;
+  unitPrice: number | null;
+};
+
+/** The Carbon purchase order the job hands to {@link pushPurchaseOrder}. */
+export type RampPurchaseOrderPush = {
+  /** Carbon `purchaseOrder.id` (the mapping's entityId + the PO `remote_id`). */
+  id: string;
+  /** Human-readable `purchaseOrder.purchaseOrderId` → Ramp `purchase_order_number`. */
+  readableId: string;
+  status: Database["public"]["Enums"]["purchaseOrderStatus"];
+  supplier: { id: string; name: string | null };
+  /** `metadata.entityId` — Ramp `entity_id` when the company is multi-entity. */
+  entityId?: string;
+  lines: RampPurchaseOrderPushLine[];
+};
+
+/** A Carbon purchase-invoice line, shaped for a Ramp draft-bill push. */
+export type RampInvoicePushLine = {
+  description: string | null;
+  amount: number;
+};
+
+/** The Carbon purchase invoice the job hands to {@link pushInvoiceDraftBill}. */
+export type RampInvoicePush = {
+  /** Carbon `purchaseInvoice.id` (the mapping's entityId + the bill `remote_id`). */
+  id: string;
+  /** Human-readable `purchaseInvoice.invoiceId` (the fallback invoice number). */
+  readableId: string;
+  supplierReference: string | null;
+  currencyCode: string | null;
+  dateIssued: string | null;
+  dateDue: string | null;
+  lines: RampInvoicePushLine[];
+};
+
+/**
+ * Ensure a Ramp accounting vendor exists for a Carbon supplier — OUTBOUND
+ * direction, so the mapping is read Carbon→Ramp via `getExternalId("vendor", …)`
+ * (NOT the inbound `getEntityId`). Reuses an existing mapping (including one an
+ * inbound bill/reimbursement already linked); otherwise creates a Ramp vendor
+ * from the supplier name and links it (`allowDuplicateExternalId` default).
+ * Returns the Ramp vendor id, or `null` when the supplier has no usable name.
+ */
+async function ensureRampVendorForSupplier(
+  mapping: ExternalIntegrationMappingService,
+  client: RampClient,
+  supplier: { id: string; name: string | null }
+): Promise<string | null> {
+  const existing = await mapping.getExternalId("vendor", supplier.id, RAMP);
+  if (existing) return existing;
+
+  const name = (supplier.name ?? "").trim();
+  if (!name) return null;
+
+  // TODO(task-1): confirm the POST /accounting/vendors response shape (id field).
+  const created = (await client.createVendor({ name })) as {
+    id?: string;
+  } | null;
+  const rampVendorId = created?.id ?? null;
+  if (!rampVendorId) {
+    throw new Error(
+      `Ramp did not return a vendor id for supplier "${name}" (${supplier.id})`
+    );
+  }
+
+  await mapping.link("vendor", supplier.id, RAMP, rampVendorId, {
+    createdBy: "system"
+  });
+  return rampVendorId;
+}
+
+/**
+ * Push one Carbon purchase order to Ramp. Completed/Closed POs that already have
+ * a Ramp mapping are archived; every other (released) PO ensures its Ramp vendor,
+ * then either PATCHes an existing Ramp PO (field update only — change orders
+ * beyond a field PATCH are out of scope) or creates a new one carrying
+ * `remote_id: po.id` so Ramp's bill-matching flow can find the Carbon PO. The new
+ * Ramp PO id is linked under `("purchaseOrder", po.id, "ramp")`.
+ */
+export async function pushPurchaseOrder(
+  mapping: ExternalIntegrationMappingService,
+  client: RampClient,
+  po: RampPurchaseOrderPush
+): Promise<"created" | "patched" | "archived" | "skipped"> {
+  const existingRampPoId = await mapping.getExternalId(
+    "purchaseOrder",
+    po.id,
+    RAMP
+  );
+
+  // Completed / Closed POs with a mapping → archive; without one → nothing to do.
+  if (po.status === "Completed" || po.status === "Closed") {
+    if (existingRampPoId) {
+      await client.archivePurchaseOrder(existingRampPoId);
+      return "archived";
+    }
+    return "skipped";
+  }
+
+  const rampVendorId = await ensureRampVendorForSupplier(
+    mapping,
+    client,
+    po.supplier
+  );
+  if (!rampVendorId) {
+    throw new Error(
+      `Purchase order ${po.readableId} supplier has no name — cannot ensure a Ramp vendor`
+    );
+  }
+
+  const lineItems = po.lines.map((line) => ({
+    description: line.description ?? "",
+    quantity: line.quantity ?? 0,
+    unit_price: line.unitPrice ?? 0,
+    remote_id: line.id
+  }));
+
+  if (existingRampPoId) {
+    await client.patchPurchaseOrder(existingRampPoId, {
+      vendor_id: rampVendorId,
+      line_items: lineItems
+    });
+    return "patched";
+  }
+
+  // TODO(task-1): verify remote_id accepted on create (the matching flow depends
+  // on it — the plan says STOP if Ramp rejects it; unverifiable here, ASSUME accepted).
+  const created = (await client.createPurchaseOrder({
+    purchase_order_number: po.readableId,
+    vendor_id: rampVendorId,
+    ...(po.entityId ? { entity_id: po.entityId } : {}),
+    remote_id: po.id,
+    line_items: lineItems
+  })) as { id?: string } | null;
+  const rampPoId = created?.id ?? null;
+  if (!rampPoId) {
+    throw new Error(
+      `Ramp did not return a purchase order id for ${po.readableId}`
+    );
+  }
+
+  await mapping.link("purchaseOrder", po.id, RAMP, rampPoId, {
+    createdBy: "system"
+  });
+  return "created";
+}
+
+/**
+ * Push one posted Carbon purchase invoice to Ramp as a DRAFT bill, then SUBMIT it
+ * (draft + submit only — submit lands the bill in Ramp "Pending approval"; an
+ * auto-approved `POST /bills` is never used). Ensures the Ramp vendor, creates the
+ * draft with `remote_id: invoice.id`, best-effort attaches the invoice PDF when one
+ * exists in storage (silently skipped when absent), submits, and links
+ * `("bill", invoice.id, "ramp", <submitted id>)`.
+ *
+ * The CALLER filters candidates (no existing `("bill")` mapping in either
+ * direction, not an Employee-supplier reimbursement, view-status Open/Partially
+ * Paid). Returns `"pushed"` or `"skipped"` (vendor without a name).
+ */
+export async function pushInvoiceDraftBill(
+  serviceRole: SupabaseClient<Database>,
+  companyId: string,
+  mapping: ExternalIntegrationMappingService,
+  client: RampClient,
+  invoice: RampInvoicePush & { supplier: { id: string; name: string | null } }
+): Promise<"pushed" | "skipped"> {
+  const rampVendorId = await ensureRampVendorForSupplier(
+    mapping,
+    client,
+    invoice.supplier
+  );
+  if (!rampVendorId) return "skipped";
+
+  // Best-effort PDF attach: locate the invoice's PDF document, sign a short-lived
+  // URL. Skipped silently when the invoice has no PDF in storage.
+  let documentUrls: string[] | undefined;
+  const pdf = await serviceRole
+    .from("document")
+    .select("path")
+    .eq("companyId", companyId)
+    .eq("sourceDocumentId", invoice.id)
+    .eq("type", "PDF")
+    .order("createdAt", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (pdf.data?.path) {
+    const signed = await serviceRole.storage
+      .from("private")
+      .createSignedUrl(pdf.data.path, 3600);
+    if (signed.data?.signedUrl) documentUrls = [signed.data.signedUrl];
+  }
+
+  const invoiceNumber =
+    (invoice.supplierReference ?? "").trim() || invoice.readableId;
+
+  // TODO(task-1): confirm the POST /bills/drafts body — line_items shape (amount
+  // as minor units vs decimal, accounting_field_selections) and the PDF-attach
+  // field name (document_urls here is a placeholder).
+  const created = (await client.createDraftBill({
+    vendor_id: rampVendorId,
+    invoice_number: invoiceNumber,
+    ...(invoice.currencyCode ? { invoice_currency: invoice.currencyCode } : {}),
+    ...(invoice.dateIssued ? { issued_at: invoice.dateIssued } : {}),
+    ...(invoice.dateDue ? { due_at: invoice.dateDue } : {}),
+    remote_id: invoice.id,
+    ...(documentUrls ? { document_urls: documentUrls } : {}),
+    line_items: invoice.lines.map((line) => ({
+      memo: line.description ?? undefined,
+      amount: line.amount
+    }))
+  })) as { id?: string } | null;
+  const draftId = created?.id ?? null;
+  if (!draftId) {
+    throw new Error(
+      `Ramp did not return a draft-bill id for invoice ${invoice.readableId}`
+    );
+  }
+
+  // TODO(task-1): confirm whether submit returns the draft id or a promoted bill
+  // id; store WHICH id the submit returns (falls back to the draft id).
+  const submitted = (await client.submitDraftBill(draftId)) as {
+    id?: string;
+  } | null;
+  const billId = submitted?.id ?? draftId;
+
+  await mapping.link("bill", invoice.id, RAMP, billId, {
+    createdBy: "system"
+  });
+  return "pushed";
+}
+
+/**
+ * Archive a pushed Ramp bill once its Carbon invoice has settled (view-status
+ * Paid/Voided). Tolerates an already-archived/already-paid bill by logging, then
+ * stamps `archived: true` onto the mapping metadata (merging what is already
+ * there — e.g. `rampPaid`) via a `link(...)` upsert so the archive never re-fires.
+ * The CALLER decides which mappings are eligible (settled + not yet archived).
+ */
+export async function archiveRampBillForInvoice(
+  mapping: ExternalIntegrationMappingService,
+  client: RampClient,
+  mappingRow: ExternalIntegrationMapping
+): Promise<void> {
+  try {
+    await client.archiveBill(mappingRow.externalId);
+  } catch (archiveError) {
+    // Tolerate "already paid / already archived" — the goal is the stamped flag.
+    console.warn(
+      `[RAMP] failed to archive bill ${mappingRow.externalId} for invoice ${mappingRow.entityId} (tolerated)`,
+      archiveError
+    );
+  }
+
+  await mapping.link("bill", mappingRow.entityId, RAMP, mappingRow.externalId, {
+    createdBy: mappingRow.createdBy ?? "system",
+    metadata: { ...(mappingRow.metadata ?? {}), archived: true }
+  });
 }

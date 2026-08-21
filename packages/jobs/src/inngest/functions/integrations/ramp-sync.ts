@@ -23,9 +23,13 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { createMappingService } from "@carbon/ee/accounting";
 import {
+  advanceRampCursor,
+  archiveRampBillForInvoice,
   confirmSyncs,
   fromMinorUnits,
   getRampIntegration,
+  pushInvoiceDraftBill,
+  pushPurchaseOrder,
   type RampBill,
   type RampBillPayment,
   type RampCashback,
@@ -98,6 +102,29 @@ const REPAYMENT_REPAID_STATUS = "REPAID";
  */
 // TODO(task-1): confirm the repayment funding_method enum values.
 const REPAYMENT_STATEMENT_CREDIT_FUNDING = "STATEMENT_CREDIT";
+
+/** How many candidate PO / invoice rows the outbound step drains per run. */
+const OUTBOUND_PAGE_SIZE = 100;
+
+/**
+ * Purchase-order statuses eligible to push to Ramp — the complement of the ones
+ * the plan excludes (`Draft`, `Needs Approval`, `Rejected`, `Planned`). Completed
+ * and Closed are included so a mapped PO can be archived; released statuses push.
+ */
+const PO_PUSH_STATUSES: Database["public"]["Enums"]["purchaseOrderStatus"][] = [
+  "To Review",
+  "To Receive",
+  "To Receive and Invoice",
+  "To Invoice",
+  "Completed",
+  "Closed"
+];
+
+/** Purchase-invoice view-statuses eligible to push as a Ramp draft bill. */
+const INVOICE_PUSH_STATUSES = ["Open", "Partially Paid"];
+
+/** Purchase-invoice view-statuses that mean a pushed bill can be archived. */
+const INVOICE_SETTLED_STATUSES = new Set(["Paid", "Voided"]);
 
 type SyncItem = { id: string; referenceId: string; deepLinkUrl?: string };
 type FailItem = { id: string; message: string };
@@ -2336,6 +2363,322 @@ export const rampSyncFunction = inngest.createFunction(
       return result;
     });
 
+    // ---- Outbound (PO push, invoice draft-bill push, archive-on-settlement) --
+    const outboundResult = await step.run("ramp-outbound", async () => {
+      const result = {
+        purchaseOrders: { pushed: 0, archived: 0, failed: 0 },
+        invoices: { pushed: 0, failed: 0, archived: 0 }
+      };
+
+      // -- 1. Purchase-order push --------------------------------------------
+      if (metadata.sync.pushPurchaseOrders) {
+        try {
+          const cursor =
+            metadata.cursors?.purchaseOrderPushUpdatedAt ??
+            integrationRow.data?.updatedAt ??
+            undefined;
+
+          let poQuery = client
+            .from("purchaseOrder")
+            .select("id, purchaseOrderId, status, supplierId, updatedAt")
+            .eq("companyId", companyId)
+            .in("status", PO_PUSH_STATUSES)
+            .order("updatedAt", { ascending: true })
+            .limit(OUTBOUND_PAGE_SIZE);
+          if (cursor) poQuery = poQuery.gt("updatedAt", cursor);
+          const pos = await poQuery;
+          if (pos.error) throw pos.error;
+          const poRows = pos.data ?? [];
+
+          if (poRows.length > 0) {
+            // Batch the supplier names + lines (never a query per PO).
+            const supplierIds = [
+              ...new Set(poRows.map((row) => row.supplierId))
+            ];
+            const suppliers = await client
+              .from("supplier")
+              .select("id, name")
+              .eq("companyId", companyId)
+              .in("id", supplierIds);
+            const supplierById = new Map(
+              (suppliers.data ?? []).map((s) => [s.id, s.name])
+            );
+
+            const poIds = poRows.map((row) => row.id);
+            const lines = await client
+              .from("purchaseOrderLine")
+              .select(
+                "id, purchaseOrderId, description, purchaseQuantity, unitPrice, purchaseOrderLineType, sortOrder"
+              )
+              .eq("companyId", companyId)
+              .in("purchaseOrderId", poIds)
+              .neq("purchaseOrderLineType", "Comment")
+              .order("sortOrder", { ascending: true });
+            const linesByPo = new Map<
+              string,
+              Array<{
+                id: string;
+                description: string | null;
+                quantity: number | null;
+                unitPrice: number | null;
+              }>
+            >();
+            for (const line of lines.data ?? []) {
+              const list = linesByPo.get(line.purchaseOrderId) ?? [];
+              list.push({
+                id: line.id,
+                description: line.description,
+                quantity: line.purchaseQuantity,
+                unitPrice: line.unitPrice
+              });
+              linesByPo.set(line.purchaseOrderId, list);
+            }
+
+            const failedUpdatedAt: string[] = [];
+            const allUpdatedAt: string[] = [];
+            for (const row of poRows) {
+              if (row.updatedAt) allUpdatedAt.push(row.updatedAt);
+              try {
+                const action = await pushPurchaseOrder(ctx.mapping, ramp, {
+                  id: row.id,
+                  readableId: row.purchaseOrderId,
+                  status: row.status,
+                  supplier: {
+                    id: row.supplierId,
+                    name: supplierById.get(row.supplierId) ?? null
+                  },
+                  entityId: metadata.entityId,
+                  lines: linesByPo.get(row.id) ?? []
+                });
+                if (action === "archived") result.purchaseOrders.archived += 1;
+                else if (action === "created" || action === "patched")
+                  result.purchaseOrders.pushed += 1;
+              } catch (poError) {
+                result.purchaseOrders.failed += 1;
+                if (row.updatedAt) failedUpdatedAt.push(row.updatedAt);
+                console.error(
+                  `[RAMP SYNC] ${companyId}: purchase order ${row.purchaseOrderId} push failed`,
+                  poError
+                );
+              }
+            }
+
+            // Advance to max(processed); a failure holds the cursor back before
+            // its own updatedAt so the next sweep re-lists it (Task 9 shape).
+            const next = computeRepaymentCursor(allUpdatedAt, failedUpdatedAt);
+            if (next) {
+              await advanceRampCursor(
+                client,
+                companyId,
+                "purchaseOrderPushUpdatedAt",
+                next
+              );
+            }
+          }
+        } catch (familyError) {
+          console.error(
+            `[RAMP SYNC] ${companyId}: purchase-order push failed`,
+            familyError
+          );
+        }
+      }
+
+      // -- 2 + 3. Invoice draft-bill push & archive-on-settlement -------------
+      if (metadata.sync.pushInvoices) {
+        try {
+          // One scan of the `bill` mappings drives BOTH the push dedupe (skip an
+          // invoice already mapped in either direction — Task 8) and the archive.
+          const billMappings = await ctx.mapping.getAllByIntegration(
+            "ramp",
+            "bill"
+          );
+          const mappedInvoiceIds = new Set(billMappings.map((m) => m.entityId));
+
+          // 2. Push posted invoices that are still Open / Partially Paid.
+          const cursor =
+            metadata.cursors?.invoicePushUpdatedAt ??
+            integrationRow.data?.updatedAt ??
+            undefined;
+
+          let invQuery = client
+            .from("purchaseInvoices")
+            .select(
+              "id, invoiceId, supplierId, supplierReference, currencyCode, dateIssued, dateDue, updatedAt"
+            )
+            .eq("companyId", companyId)
+            .in("status", INVOICE_PUSH_STATUSES)
+            .order("updatedAt", { ascending: true })
+            .limit(OUTBOUND_PAGE_SIZE);
+          if (cursor) invQuery = invQuery.gt("updatedAt", cursor);
+          const invoices = await invQuery;
+          if (invoices.error) throw invoices.error;
+          const invRows = invoices.data ?? [];
+          // Advance past EVERY fetched row (mapped / employee / pushed alike);
+          // only a throw holds the cursor back.
+          const allUpdatedAt = invRows
+            .map((row) => row.updatedAt)
+            .filter((value): value is string => Boolean(value));
+          const failedUpdatedAt: string[] = [];
+
+          const candidates = invRows.filter(
+            (row) => row.id && !mappedInvoiceIds.has(row.id)
+          );
+
+          if (candidates.length > 0) {
+            const supplierIds = [
+              ...new Set(
+                candidates
+                  .map((row) => row.supplierId)
+                  .filter((id): id is string => Boolean(id))
+              )
+            ];
+            const suppliers = await client
+              .from("supplier")
+              .select("id, name, supplierTypeId")
+              .eq("companyId", companyId)
+              .in("id", supplierIds);
+            const supplierById = new Map(
+              (suppliers.data ?? []).map((s) => [s.id, s])
+            );
+
+            // Resolve which supplier types are "Employee" (reimbursement
+            // suppliers — their invoices never push).
+            const typeIds = [
+              ...new Set(
+                (suppliers.data ?? [])
+                  .map((s) => s.supplierTypeId)
+                  .filter((id): id is string => Boolean(id))
+              )
+            ];
+            const employeeTypeIds = new Set<string>();
+            if (typeIds.length > 0) {
+              const types = await client
+                .from("supplierType")
+                .select("id, name")
+                .eq("companyId", companyId)
+                .in("id", typeIds);
+              for (const type of types.data ?? []) {
+                if (type.name === "Employee") employeeTypeIds.add(type.id);
+              }
+            }
+
+            const invoiceIds = candidates
+              .map((row) => row.id)
+              .filter((id): id is string => Boolean(id));
+            const invLines = await client
+              .from("purchaseInvoiceLine")
+              .select("invoiceId, description, totalAmount, sortOrder")
+              .eq("companyId", companyId)
+              .in("invoiceId", invoiceIds)
+              .order("sortOrder", { ascending: true });
+            const linesByInvoice = new Map<
+              string,
+              Array<{ description: string | null; amount: number }>
+            >();
+            for (const line of invLines.data ?? []) {
+              const list = linesByInvoice.get(line.invoiceId) ?? [];
+              list.push({
+                description: line.description,
+                amount: line.totalAmount ?? 0
+              });
+              linesByInvoice.set(line.invoiceId, list);
+            }
+
+            for (const row of candidates) {
+              const invoiceRowId = row.id;
+              if (!invoiceRowId) continue;
+              const supplier = supplierById.get(row.supplierId ?? "");
+              // Employee-supplier reimbursements never push.
+              if (
+                supplier?.supplierTypeId &&
+                employeeTypeIds.has(supplier.supplierTypeId)
+              ) {
+                continue;
+              }
+              try {
+                const outcome = await pushInvoiceDraftBill(
+                  client,
+                  companyId,
+                  ctx.mapping,
+                  ramp,
+                  {
+                    id: invoiceRowId,
+                    readableId: row.invoiceId ?? invoiceRowId,
+                    supplierReference: row.supplierReference,
+                    currencyCode: row.currencyCode,
+                    dateIssued: row.dateIssued,
+                    dateDue: row.dateDue,
+                    supplier: {
+                      id: row.supplierId ?? "",
+                      name: supplier?.name ?? null
+                    },
+                    lines: linesByInvoice.get(invoiceRowId) ?? []
+                  }
+                );
+                if (outcome === "pushed") result.invoices.pushed += 1;
+              } catch (invoiceError) {
+                result.invoices.failed += 1;
+                if (row.updatedAt) failedUpdatedAt.push(row.updatedAt);
+                console.error(
+                  `[RAMP SYNC] ${companyId}: invoice ${
+                    row.invoiceId ?? invoiceRowId
+                  } push failed`,
+                  invoiceError
+                );
+              }
+            }
+          }
+
+          const next = computeRepaymentCursor(allUpdatedAt, failedUpdatedAt);
+          if (next) {
+            await advanceRampCursor(
+              client,
+              companyId,
+              "invoicePushUpdatedAt",
+              next
+            );
+          }
+
+          // 3. Archive-on-settlement: pushed bills whose invoice is now settled.
+          const notArchived = billMappings.filter((m) => {
+            const meta = (m.metadata ?? {}) as Record<string, unknown>;
+            return meta.archived !== true && meta.rampPaid !== true;
+          });
+          if (notArchived.length > 0) {
+            const settledIds = [...new Set(notArchived.map((m) => m.entityId))];
+            const statuses = await client
+              .from("purchaseInvoices")
+              .select("id, status")
+              .eq("companyId", companyId)
+              .in("id", settledIds);
+            const statusById = new Map(
+              (statuses.data ?? []).map((row) => [row.id, row.status])
+            );
+            for (const m of notArchived) {
+              const status = statusById.get(m.entityId);
+              if (!status || !INVOICE_SETTLED_STATUSES.has(status)) continue;
+              try {
+                await archiveRampBillForInvoice(ctx.mapping, ramp, m);
+                result.invoices.archived += 1;
+              } catch (archiveError) {
+                console.error(
+                  `[RAMP SYNC] ${companyId}: bill archive for invoice ${m.entityId} failed`,
+                  archiveError
+                );
+              }
+            }
+          }
+        } catch (familyError) {
+          console.error(
+            `[RAMP SYNC] ${companyId}: invoice push / archive failed`,
+            familyError
+          );
+        }
+      }
+
+      return result;
+    });
+
     const totalFailed =
       cardResult.failed +
       transferResult.failed +
@@ -2343,7 +2686,9 @@ export const rampSyncFunction = inngest.createFunction(
       billResult.failed +
       billPaymentResult.failed +
       reimbursementResult.failed +
-      repaymentResult.failed;
+      repaymentResult.failed +
+      outboundResult.purchaseOrders.failed +
+      outboundResult.invoices.failed;
 
     if (totalFailed > 0) {
       await step.run("ramp-notify-failures", async () => {
@@ -2378,7 +2723,8 @@ export const rampSyncFunction = inngest.createFunction(
       bills: billResult,
       billPayments: billPaymentResult,
       reimbursements: reimbursementResult,
-      repayments: repaymentResult
+      repayments: repaymentResult,
+      outbound: outboundResult
     };
   }
 );
