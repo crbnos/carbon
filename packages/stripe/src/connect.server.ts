@@ -34,10 +34,57 @@ function deriveConnectAccountMetadata(account: Stripe.V2.Core.Account) {
   };
 }
 
+/**
+ * Whether an error means a previously-created Connect account is no longer
+ * usable from the platform's side (disconnected or deleted directly in
+ * Stripe), as opposed to a transient failure (network, rate limit, outage).
+ *
+ * `resource_missing`/403/404 cover the account being gone outright. But an
+ * Express account the merchant disconnected via their Stripe dashboard keeps
+ * answering a bare `retrieve` — the "does not have access to account …
+ * (Application access may have been revoked)" error only surfaces on calls
+ * that need the deeper platform grant Stripe just pulled (an `include`d
+ * retrieve, `accountLinks.create`, …). Stripe doesn't give that case a
+ * distinct `code`, so match the message too. Re-creating on a transient
+ * error would leave the company with two live Connect accounts, so this
+ * stays narrow rather than treating every `invalid_request_error` as stale.
+ */
+export function isStaleConnectAccountError(err: unknown): boolean {
+  if (!(err instanceof Stripe.errors.StripeError)) return false;
+  if (err.code === "resource_missing") return true;
+  if (err.statusCode === 403 || err.statusCode === 404) return true;
+  return /does not have access to account|application access may have been revoked/i.test(
+    err.message ?? ""
+  );
+}
+
+/**
+ * Whether a previously-created Connect account is still usable from the
+ * platform's side. Mirrors `getConnectAccountStatus`'s `include`d retrieve
+ * (not a bare one) — that's the call shape that actually surfaces a revoked
+ * connection; see `isStaleConnectAccountError`.
+ */
+export async function isConnectAccountStillLinked(
+  stripeAccountId: string
+): Promise<boolean> {
+  if (!stripeConnect) return false;
+
+  try {
+    await stripeConnect.v2.core.accounts.retrieve(stripeAccountId, {
+      include: ["configuration.merchant", "requirements"]
+    });
+    return true;
+  } catch (err) {
+    if (isStaleConnectAccountError(err)) return false;
+    throw err;
+  }
+}
+
 export async function getOrCreateConnectAccount(
   client: SupabaseClient<Database>,
   companyId: string,
-  userEmail: string
+  userEmail: string,
+  options?: { forceNew?: boolean }
 ): Promise<string> {
   if (!stripeConnect) {
     throw new Error("Stripe secret key is not configured.");
@@ -59,10 +106,24 @@ export async function getOrCreateConnectAccount(
   const existingMeta = existingIntegration.data?.metadata as
     | Record<string, unknown>
     | undefined;
-  let stripeAccountId = existingMeta?.stripeAccountId as string | undefined;
+  // `forceNew` skips reuse entirely — used when a caller already proved the
+  // stored account is stale (e.g. `createConnectAccountLink` just failed
+  // with `isStaleConnectAccountError`) and a liveness re-check would be
+  // redundant.
+  let stripeAccountId = options?.forceNew
+    ? undefined
+    : (existingMeta?.stripeAccountId as string | undefined);
 
   if (stripeAccountId) {
-    return stripeAccountId;
+    if (await isConnectAccountStillLinked(stripeAccountId)) {
+      return stripeAccountId;
+    }
+
+    log.warn(
+      "Stripe Connect account is no longer linked (disconnected or deleted directly in Stripe); creating a new account",
+      { companyId, stripeAccountId }
+    );
+    stripeAccountId = undefined;
   }
 
   // 2. Fetch company details to pre-populate Stripe Connect onboarding form

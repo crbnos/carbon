@@ -4,7 +4,8 @@ import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import {
   createConnectAccountLink,
-  getOrCreateConnectAccount
+  getOrCreateConnectAccount,
+  isStaleConnectAccountError
 } from "@carbon/stripe/connect.server";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -22,17 +23,42 @@ async function handle({ request }: { request: Request }) {
   const refreshUrl = `${url.origin}/api/integrations/stripe-connect/callback?status=refresh`;
 
   try {
-    const stripeAccountId = await getOrCreateConnectAccount(
+    let stripeAccountId = await getOrCreateConnectAccount(
       client,
       companyId,
       email
     );
 
-    const onboardingUrl = await createConnectAccountLink(
-      stripeAccountId,
-      returnUrl,
-      refreshUrl
-    );
+    let onboardingUrl: string;
+    try {
+      onboardingUrl = await createConnectAccountLink(
+        stripeAccountId,
+        returnUrl,
+        refreshUrl
+      );
+    } catch (linkErr) {
+      if (!isStaleConnectAccountError(linkErr)) {
+        throw linkErr;
+      }
+
+      logger.warn(
+        "Stripe Connect account link failed against the stored account; creating a new account",
+        { companyId, stripeAccountId, error: linkErr }
+      );
+
+      stripeAccountId = await getOrCreateConnectAccount(
+        client,
+        companyId,
+        email,
+        { forceNew: true }
+      );
+
+      onboardingUrl = await createConnectAccountLink(
+        stripeAccountId,
+        returnUrl,
+        refreshUrl
+      );
+    }
 
     const existing = await client
       .from("companyIntegration")

@@ -14145,6 +14145,9 @@ msgstr "Speichern Sie eine feste Anzahl von Tagen für diesen Artikel. Das Ablau
 msgid "Straight line"
 msgstr "Linear"
 
+msgid "Stripe"
+msgstr ""
+
 msgid "Stripe already has a customer with this email"
 msgstr ""
 

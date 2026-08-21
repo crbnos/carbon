@@ -51,7 +51,10 @@ import { STRIPE_SECRET_KEY } from "@carbon/env";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { Badge } from "@carbon/react";
-import { getConnectAccountStatus } from "@carbon/stripe/connect.server";
+import {
+  getConnectAccountStatus,
+  isConnectAccountStillLinked
+} from "@carbon/stripe/connect.server";
 import { Trans } from "@lingui/react/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -718,12 +721,26 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // Refresh Stripe Connect's status from Stripe so the drawer shows live
     // onboarding progress rather than a possibly-stale stored snapshot.
     if (flattenedMetadata.stripeAccountId) {
+      const stripeAccountId = flattenedMetadata.stripeAccountId as string;
       try {
-        const freshStatus = await getConnectAccountStatus(
-          flattenedMetadata.stripeAccountId as string
-        );
-        if (freshStatus) {
-          Object.assign(flattenedMetadata, freshStatus);
+        if (await isConnectAccountStillLinked(stripeAccountId)) {
+          const freshStatus = await getConnectAccountStatus(stripeAccountId);
+          if (freshStatus) {
+            Object.assign(flattenedMetadata, freshStatus);
+          }
+        } else {
+          logger.warn(
+            "Stripe Connect account is no longer linked; hiding stale connection state",
+            { companyId, stripeAccountId }
+          );
+          delete flattenedMetadata.stripeAccountId;
+          delete flattenedMetadata.chargesEnabled;
+          delete flattenedMetadata.payoutsEnabled;
+          delete flattenedMetadata.detailsSubmitted;
+          delete flattenedMetadata.requirementErrors;
+          delete flattenedMetadata.email;
+          delete flattenedMetadata.displayName;
+          delete flattenedMetadata.onboardingStarted;
         }
       } catch (err) {
         logger.error("Failed to fetch Stripe Connect status for settings", {

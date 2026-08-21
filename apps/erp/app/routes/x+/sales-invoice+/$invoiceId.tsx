@@ -2,6 +2,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { createMappingService } from "@carbon/ee/accounting";
 import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -14,6 +15,7 @@ import {
   getSalesInvoiceLines,
   getSalesInvoiceShipment
 } from "~/modules/invoicing";
+import { STRIPE_CONNECT_INTEGRATION } from "~/modules/invoicing/stripe-customer.server";
 import SalesInvoiceExplorer from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceExplorer";
 import SalesInvoiceHeader from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceHeader";
 import SalesInvoiceProperties from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceProperties";
@@ -23,6 +25,7 @@ import {
   getOpportunityDocuments
 } from "~/modules/sales/sales.service";
 import { getCompanySettings } from "~/modules/settings";
+import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -85,6 +88,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ? customer.data.defaultCc
     : (companySettings.data?.defaultCustomerCc ?? []);
 
+  // Fetch Stripe invoice URL if this invoice was posted via Stripe
+  let stripeInvoiceUrl: string | null = null;
+  if (salesInvoice.data?.postingDate) {
+    const mappingService = createMappingService(getDatabaseClient(), companyId);
+    const mapping = await mappingService.getByEntity(
+      "salesInvoice",
+      invoiceId,
+      STRIPE_CONNECT_INTEGRATION
+    );
+    if (mapping?.metadata) {
+      const metadata = mapping.metadata as Record<string, unknown> | undefined;
+      stripeInvoiceUrl =
+        (metadata?.hostedInvoiceUrl as string | undefined) ?? null;
+    }
+  }
+
   return {
     salesInvoice: salesInvoice.data,
     currency: currency?.data ?? null,
@@ -98,7 +117,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     opportunity: opportunity?.data ?? null,
     customer: customer?.data ?? null,
     defaultCc,
-    orgHasCredits
+    orgHasCredits,
+    stripeInvoiceUrl
   };
 }
 

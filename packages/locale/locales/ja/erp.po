@@ -14145,6 +14145,9 @@ msgstr "このアイテムの固定日数を保存します。有効期限の開
 msgid "Straight line"
 msgstr "定額法"
 
+msgid "Stripe"
+msgstr ""
+
 msgid "Stripe already has a customer with this email"
 msgstr ""
 

@@ -223,7 +223,7 @@ function StripeConnectStatus({
           )}
           <div>
             <ConnectStripeAccountButton
-              label={hasIssue ? "Fix on Stripe" : "Finish Onboarding on Stripe"}
+              label={hasIssue ? "Fix on Stripe" : "Finish Onboarding"}
               onPlatformError={setPlatformError}
             />
           </div>

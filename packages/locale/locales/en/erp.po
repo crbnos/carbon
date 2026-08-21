@@ -14145,6 +14145,9 @@ msgstr "Store a fixed number of days on this item. Expiry start date is set on e
 msgid "Straight line"
 msgstr "Straight line"
 
+msgid "Stripe"
+msgstr "Stripe"
+
 msgid "Stripe already has a customer with this email"
 msgstr "Stripe already has a customer with this email"
 
