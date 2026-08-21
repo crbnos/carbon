@@ -460,7 +460,7 @@ export default function AuthenticatedRoute() {
                   <Topbar />
                   <div className="flex flex-1 h-[calc(100vh-49px)] relative">
                     <PrimaryNavigation />
-                    <main className="flex-1 overflow-y-auto scrollbar-hide border-l border-t bg-muted sm:rounded-tl-2xl relative z-10">
+                    <main className="flex-1 overflow-y-auto scrollbar-hide border-l border-t bg-card sm:rounded-tl-2xl relative z-10">
                       <Outlet />
                     </main>
                   </div>

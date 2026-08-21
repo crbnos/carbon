@@ -69,7 +69,7 @@ export default function MaterialDetailsRoute() {
   const permissions = usePermissions();
 
   return (
-    <VStack spacing={2} className="p-2">
+    <VStack spacing={4} className="p-4">
       <ItemNotes
         id={materialData.materialSummary?.id ?? null}
         title={materialData.materialSummary?.name ?? ""}

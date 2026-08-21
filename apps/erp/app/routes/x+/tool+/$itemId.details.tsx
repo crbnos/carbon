@@ -249,7 +249,7 @@ export default function ToolDetailsRoute() {
     : null;
 
   return (
-    <VStack spacing={2} className="p-2">
+    <VStack spacing={4} className="p-4">
       {permissions.is("employee") &&
         methodData &&
         ["Make", "Buy and Make"].includes(
