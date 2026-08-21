@@ -132,9 +132,11 @@ One export subpath, `./onshape` → `src/onshape/lib/index.ts`
 `@carbon/ee/hooks.server` (`packages/ee/src/hooks.server.ts:19`).
 
 - `config.tsx` — the `Onshape` descriptor via `defineIntegration` (id `onshape`,
-  category `CAD`, `active: !!ONSHAPE_CLIENT_ID`). Setting groups, eight settings,
-  the zod schema (`:190-242`), the backfill action (`:243-254`), and
-  `onClientInstall` (popup + `postMessage` `app_oauth_completed`, `:255`).
+  category `CAD`, `active: !!ONSHAPE_CLIENT_ID`). Setting groups (`:16`), eight
+  settings (`:44`), the backfill action (`:208`), and `onClientInstall` (popup +
+  `postMessage` `app_oauth_completed`, `:227`). The zod schema is NOT here — it
+  is `onshapeSettingsSchema` in `lib/settings.ts:152`, so it can be unit-tested
+  without the auth env `ONSHAPE_CLIENT_ID` drags in.
 - `lib/client.ts` — `OnshapeClient` + `getOnshapeClient(client, companyId, userId)`
   (`client.ts:615`). All calls go to `https://cad.onshape.com/api/v10/...`.
   `OnshapeApiError` carries `status` + `retryAfterSeconds`;
@@ -218,38 +220,61 @@ the element's NAME. See the v2 elements route below.
 
 ## Settings — eight keys
 
-Declared in `config.tsx:33-189`, validated by the zod schema at
-`config.tsx:190-242`. `SwitchField` posts the literal strings `"true"`/`"false"`,
-so every switch uses an explicit `z.preprocess` — `z.coerce.boolean()` would make
-`"false"` truthy.
+Declared in `config.tsx:44-206`, validated by `onshapeSettingsSchema`
+(`lib/settings.ts:152`). `SwitchField` posts the literal strings
+`"true"`/`"false"`, so every switch uses an explicit `z.preprocess` —
+`z.coerce.boolean()` would make `"false"` truthy.
+
+**The form shows one pipeline's settings at a time.** `pipeline` is the only
+ungrouped field and renders alone at the top; the Legacy pipeline group and the
+Onshape v2 group are each hidden wholesale by the other's selection. Only
+`webhookSigningSecret` is ungated — the receiver verifies the signature before
+it branches on pipeline.
 
 | Setting | Type / default | Group | Gates |
 |---|---|---|---|
 | `pipeline` | options, `"legacy"` | — | which implementation handles this company; `"next"` selects v2 |
-| `assetSyncEnabled` | switch, `false` | — | the `onshape-revision-sync` dispatch, the `onshape-backfill` job + route + the Backfill action's visibility (`enabledWhenSetting`, `config.tsx:252`) |
-| `releaseImportEnabled` | switch, `false` | Release import | the `onshape-release-import` dispatch and the job's own gate |
-| `releaseImportMode` | options, `"changeNotice"` | Release import | which branch legacy release import takes: `changeNotice` (reviewable) or `revision` (immediate) |
+| `assetSyncEnabled` | switch, `false` | Legacy pipeline | the `onshape-revision-sync` dispatch, the `onshape-backfill` job + route + the Backfill action's visibility (`config.tsx:221`) |
+| `releaseImportEnabled` | switch, `false` | Legacy pipeline | the `onshape-release-import` dispatch and the job's own gate |
+| `releaseImportMode` | options, `"changeNotice"` | Legacy pipeline | which branch legacy release import takes: `changeNotice` (reviewable) or `revision` (immediate) |
 | `webhookSigningSecret` | text, `""` | Security | opt-in HMAC verification in the receiver; empty = verification skipped |
 | `attachAssetsOnRelease` | switch, `true` | Onshape v2 | whether `onshape-release-v2` pulls the model on a release. It does NOT gate the BOM import or the create/link flows — those always pull, which is what the setting's own description promises |
 | `releaseImportV2` | options, `"changeNotice"` | Onshape v2 | `off` / `changeNotice` / `revision` — what v2 does with the engineering data in a release |
 | `allowUnreleasedSync` | switch, `false` | Onshape v2 | the unreleased picker, the v2 versions route, and the v2 BOM preview/import's released-only refusal |
 
-- The four legacy keys are IGNORED while v2 is selected, and the "Onshape v2"
-  group description says so (`config.tsx:18-21`). The webhook enforces it.
-- `releaseImportMode` is nested under its switch via
-  `visibleWhen: { field: "releaseImportEnabled", equals: "true" }` — the literal
-  string `"true"` is correct because `ConditionalSettingField` compares
-  `String(controlValue)` and a switch's control value is a boolean.
-- The three v2 settings gate on `pipeline` DIRECTLY, each with
-  `visibleWhen: { field: "pipeline", equals: "next" }`. No coercion is needed —
-  an options field's control value IS the string. They gate on `pipeline` rather
-  than on each other because `visibleWhen` resolves exactly one field with no
-  transitive nesting, and a hidden field still holds a control value: gating one
-  v2 field on another would render it while its parent was hidden. Same reason
-  `releaseImportV2` is one field with an `off` option instead of a switch plus a
-  nested mode.
-- A `visibleWhen`-hidden field is unmounted and posts NOTHING, which is why every
-  conditional key carries a `.default` rather than being bare/required.
+- The three legacy keys are IGNORED while v2 is selected, and the group
+  description says so (`config.tsx:18-21`). The webhook enforces it; the form
+  now also hides them, so the two pipelines' settings can never be read as one
+  list.
+- `visibleWhen` takes ONE condition or an ARRAY of them, all of which must hold
+  (`packages/ee/src/types.ts`). `IntegrationForm`'s `WhenVisible` evaluates one
+  condition per component instance and recurses for the rest — `useControlField`
+  is a hook, so one instance must read a fixed number of fields.
+- Every gated field leads its `visibleWhen` with `pipeline`
+  (`{ field: "pipeline", equals: "legacy" | "next" }`). No coercion is needed —
+  an options field's control value IS the string. Leading with it is required,
+  not stylistic: `ConditionalSettingsGroup` hides a group wholesale on the FIRST
+  condition its settings share, so a different lead would leave a group header
+  with nothing under it.
+- `releaseImportMode` is the one field with two gates — the pipeline, then
+  `{ field: "releaseImportEnabled", equals: "true" }`. The literal string
+  `"true"` is correct because the comparison is against `String(controlValue)`
+  and a switch's control value is a boolean. `releaseImportV2` needs no second
+  gate: it is one field with an `off` option rather than a switch plus a nested
+  mode.
+- A `visibleWhen`-hidden field is unmounted and posts NOTHING, so every gated
+  key is `.optional()`, NOT `.default()`. The save merges the parsed result over
+  the stored metadata (`{ ...existingMetadata, ...d }`), so a default on a
+  hidden key rewrites the OTHER pipeline's settings on every save — turning a
+  legacy company's asset sync off the first time it saved on v2, and back on,
+  unasked, on returning. Absent means "leave the stored value alone", and every
+  reader already treats an absent key as its own default. Pinned by
+  `lib/settings.test.ts`. `pipeline` is the one key that keeps a default: it is
+  never hidden.
+- The Backfill action carries the same `visibleWhen` shape (`config.tsx:221`),
+  gated on legacy AND `assetSyncEnabled`. Gating on the setting alone would show
+  it on a v2 company still carrying `assetSyncEnabled: true` from before the
+  switch — and the route refuses a v2 company outright.
 - `webhookSigningSecret` is declared `text`, NOT `password`/`secret`, matching the
   paperless-parts precedent. Both masked types render a `<Password>` input and
   nothing in `IntegrationForm` sets `autoComplete`, so a browser password manager

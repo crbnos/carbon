@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseOnshapeV2Settings } from "./settings";
+import { onshapeSettingsSchema, parseOnshapeV2Settings } from "./settings";
 
 // The entire safety argument for shipping v2 alongside the legacy integration
 // is that a legacy-shaped row resolves to isV2:false. These pin that, including
@@ -141,5 +141,62 @@ describe("parseOnshapeV2Settings — v2 setting values", () => {
         { active: true }
       ).onshapeCompanyId
     ).toBeNull();
+  });
+});
+
+// The settings form unmounts a `visibleWhen`-hidden field, so it posts NOTHING
+// for it. The save merges the parsed result over the stored metadata
+// (`{ ...existingMetadata, ...parsed }`), which means a schema DEFAULT on a
+// gated key silently rewrites the OTHER pipeline's settings on every save.
+// These pin the two halves of that: absent stays absent, present still parses.
+describe("onshapeSettingsSchema", () => {
+  const parse = (input: Record<string, unknown>) =>
+    onshapeSettingsSchema.parse(input) as Record<string, unknown>;
+
+  it("leaves the v2 keys absent when a legacy company saves", () => {
+    const parsed = parse({
+      pipeline: "legacy",
+      assetSyncEnabled: "true",
+      releaseImportEnabled: "false",
+      webhookSigningSecret: ""
+    });
+
+    expect("attachAssetsOnRelease" in parsed).toBe(false);
+    expect("releaseImportV2" in parsed).toBe(false);
+    expect("allowUnreleasedSync" in parsed).toBe(false);
+    // ...so the merge keeps whatever was stored for them.
+    expect({ releaseImportV2: "revision", ...parsed }.releaseImportV2).toBe(
+      "revision"
+    );
+  });
+
+  it("leaves the legacy keys absent when a v2 company saves", () => {
+    const parsed = parse({
+      pipeline: "next",
+      attachAssetsOnRelease: "false",
+      releaseImportV2: "off",
+      allowUnreleasedSync: "true",
+      webhookSigningSecret: ""
+    });
+
+    expect("assetSyncEnabled" in parsed).toBe(false);
+    expect("releaseImportEnabled" in parsed).toBe(false);
+    expect("releaseImportMode" in parsed).toBe(false);
+    // A company that had legacy asset sync on keeps it, dead but intact, and
+    // gets it back on switching pipelines rather than silently losing it.
+    expect({ assetSyncEnabled: true, ...parsed }.assetSyncEnabled).toBe(true);
+  });
+
+  it("still coerces the switch strings a visible field posts", () => {
+    expect(
+      parse({ pipeline: "legacy", assetSyncEnabled: "false" })
+    ).toMatchObject({ assetSyncEnabled: false });
+    expect(
+      parse({ pipeline: "next", allowUnreleasedSync: "true" })
+    ).toMatchObject({ allowUnreleasedSync: true });
+  });
+
+  it("defaults the pipeline itself, which is never hidden", () => {
+    expect(parse({}).pipeline).toBe("legacy");
   });
 });

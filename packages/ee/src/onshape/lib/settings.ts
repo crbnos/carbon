@@ -13,6 +13,7 @@
 
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { z } from "zod";
 
 export type OnshapePipeline = "legacy" | "next";
 
@@ -139,3 +140,66 @@ export async function getOnshapeV2Settings(
     active: integration.data.active === true
   });
 }
+
+/**
+ * The settings form's validator, and what the save merges over the stored
+ * `companyIntegration.metadata`.
+ *
+ * Lives here rather than in `config.tsx` so it can be exercised without the
+ * auth env that file pulls in through `ONSHAPE_CLIENT_ID` — same reason the
+ * pipeline resolver above is pure.
+ */
+export const onshapeSettingsSchema = z.object({
+  // Every v2 read site tests strict equality against the NEW value
+  // (pipeline === "next"), so an absent key means legacy by construction,
+  // not by falling through to this default. Existing companyIntegration rows
+  // have no `pipeline` key at all and are unaffected. Always visible, so it
+  // is the one settings key that keeps a default.
+  pipeline: z.enum(["legacy", "next"]).default("legacy"),
+  // SwitchField posts a literal "true"/"false" string; preprocess explicitly so
+  // unchecking sticks (z.coerce.boolean would treat "false" as truthy).
+  //
+  // OPTIONAL, not defaulted: these are hidden on a v2 company and post
+  // nothing there. A default would silently turn a legacy company's asset
+  // sync off the first time it saved while on v2 — and turn it back on,
+  // unasked, on returning to legacy. Absent leaves the stored value intact;
+  // the webhook receiver and both jobs read `=== true`, so absent is off.
+  assetSyncEnabled: z
+    .preprocess((value) => {
+      if (typeof value === "boolean") return value;
+      if (value === "true") return true;
+      if (value === "false") return false;
+      return value;
+    }, z.boolean())
+    .optional(),
+  releaseImportEnabled: z
+    .preprocess((value) => {
+      if (typeof value === "boolean") return value;
+      if (value === "true") return true;
+      if (value === "false") return false;
+      return value;
+    }, z.boolean())
+    .optional(),
+  releaseImportMode: z.enum(["changeNotice", "revision"]).optional(),
+  webhookSigningSecret: z.string().optional(),
+  // --- Onshape v2 -------------------------------------------------------
+  // Hidden on a legacy company, so optional for the same reason. Absence is
+  // already the parse default in getOnshapeV2Settings.
+  attachAssetsOnRelease: z
+    .preprocess((value) => {
+      if (typeof value === "boolean") return value;
+      if (value === "true") return true;
+      if (value === "false") return false;
+      return value;
+    }, z.boolean())
+    .optional(),
+  releaseImportV2: z.enum(["off", "changeNotice", "revision"]).optional(),
+  allowUnreleasedSync: z
+    .preprocess((value) => {
+      if (typeof value === "boolean") return value;
+      if (value === "true") return true;
+      if (value === "false") return false;
+      return value;
+    }, z.boolean())
+    .optional()
+});

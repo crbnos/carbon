@@ -1,7 +1,7 @@
 import { ONSHAPE_CLIENT_ID } from "@carbon/auth";
 import type { SVGProps } from "react";
-import { z } from "zod";
 import { defineIntegration } from "../fns";
+import { onshapeSettingsSchema } from "./lib/settings";
 
 export const Onshape = defineIntegration({
   name: "Onshape",
@@ -15,21 +15,32 @@ export const Onshape = defineIntegration({
   images: [],
   settingGroups: [
     {
-      name: "Onshape v2",
+      name: "Legacy pipeline",
       description:
-        "Settings for the rebuilt pipeline. Only apply when Pipeline is set to Onshape v2; the settings above are the legacy pipeline's and are ignored while v2 is selected."
+        "How the current integration behaves. It matches Carbon items to Onshape by part number. Hidden while Onshape v2 is selected — exactly one pipeline runs, so these do nothing there."
     },
     {
-      name: "Release import",
+      name: "Onshape v2",
       description:
-        "What Carbon does with the engineering data in an Onshape release. Independent of asset sync — either one on is enough to receive release webhooks."
+        "How the rebuilt pipeline behaves. It matches on a stable Onshape element id rather than a typed part number."
     },
     {
       name: "Security",
       description:
-        "Optional. Onshape signs each webhook with your Onshape company's signing key; set it here and Carbon rejects anything that does not verify."
+        "Optional, and applies to both pipelines. Onshape signs each webhook with your Onshape company's signing key; set it here and Carbon rejects anything that does not verify."
     }
   ],
+  // FORM SHAPE: `pipeline` is the only ungrouped field, so it renders alone at
+  // the top and each pipeline's own settings sit in a group gated on it. Every
+  // gated field therefore leads its `visibleWhen` with `pipeline` — the group
+  // is hidden wholesale on the FIRST condition its settings share, so leading
+  // with anything else would leave a group header with nothing under it.
+  //
+  // Every gated field is `.optional()` in the schema below rather than
+  // `.default()`: a hidden field is unmounted and posts NOTHING, so a default
+  // would rewrite the other pipeline's stored settings on every save. Absent
+  // means "leave the stored value alone", and every reader already treats an
+  // absent key as its own default.
   settings: [
     {
       name: "pipeline",
@@ -54,6 +65,7 @@ export const Onshape = defineIntegration({
       required: false,
       value: "legacy"
     },
+    // --- Legacy -----------------------------------------------------------
     {
       name: "assetSyncEnabled",
       label: "Sync released assets",
@@ -61,17 +73,20 @@ export const Onshape = defineIntegration({
         "Automatically pull released Onshape drawings and CAD models onto matching Carbon items (matched by part number). Off by default.",
       type: "switch",
       required: false,
-      value: false
+      value: false,
+      group: "Legacy pipeline",
+      visibleWhen: { field: "pipeline", equals: "legacy" }
     },
     {
       name: "releaseImportEnabled",
       label: "Import released revisions",
       description:
-        "Automatically bring an Onshape release into Carbon's engineering data, not just its files. Off by default.",
+        "Automatically bring an Onshape release into Carbon's engineering data, not just its files. Independent of asset sync — either one on is enough to receive release webhooks. Off by default.",
       type: "switch",
       required: false,
       value: false,
-      group: "Release import"
+      group: "Legacy pipeline",
+      visibleWhen: { field: "pipeline", equals: "legacy" }
     },
     {
       name: "releaseImportMode",
@@ -95,39 +110,20 @@ export const Onshape = defineIntegration({
       ],
       required: false,
       value: "changeNotice",
-      group: "Release import",
-      // ConditionalSettingField compares String(controlValue) — a switch's
-      // control value is a boolean, so the literal string "true" is correct.
-      visibleWhen: { field: "releaseImportEnabled", equals: "true" }
-    },
-    {
-      name: "webhookSigningSecret",
-      label: "Webhook signing secret",
-      description:
-        "Leave blank to accept unsigned webhooks (current behaviour). Onshape's signing keys are company-level, not per-webhook, so rotating one affects every consumer of that Onshape company. Stored as plaintext in the integration record, like the OAuth tokens.",
-      // Deliberately "text", not "password"/"secret", matching the
-      // paperless-parts "Webhook Signing Secret" precedent. Both masked types
-      // render a <Password> input and nothing in IntegrationForm sets
-      // autoComplete, so a browser password manager will silently autofill them
-      // — observed filling a saved password into this field on save, which would
-      // then make the receiver reject every genuine Onshape delivery. Masking
-      // buys little here (the value is plaintext JSON in the row either way);
-      // a silently wrong value costs webhook ingestion.
-      type: "text",
-      required: false,
-      value: "",
-      group: "Security"
+      group: "Legacy pipeline",
+      // Two gates: the pipeline (shared with the group) and then the toggle
+      // above. ConditionalSettingField compares String(controlValue) — a
+      // switch's control value is a boolean, so the literal string "true" is
+      // correct.
+      visibleWhen: [
+        { field: "pipeline", equals: "legacy" },
+        { field: "releaseImportEnabled", equals: "true" }
+      ]
     },
     // --- Onshape v2 -------------------------------------------------------
-    // All three are gated on pipeline === "next". ConditionalSettingField
-    // compares String(controlValue) against `equals`, and an options field's
-    // control value IS the string, so no coercion is needed here (unlike the
-    // switch-gated releaseImportMode above).
-    //
-    // Each gates on `pipeline` DIRECTLY rather than on a sibling: visibleWhen
-    // resolves exactly one field with no transitive nesting, and a hidden
-    // field still holds a control value — so gating one v2 field on another
-    // would render it while its parent was hidden.
+    // ConditionalSettingField compares String(controlValue) against `equals`,
+    // and an options field's control value IS the string, so no coercion is
+    // needed here (unlike the switch-gated releaseImportMode above).
     {
       name: "attachAssetsOnRelease",
       label: "Attach assets when a revision is released",
@@ -142,11 +138,10 @@ export const Onshape = defineIntegration({
     {
       name: "releaseImportV2",
       label: "When a revision is released",
-      // One field with an "off" option rather than a switch plus a nested mode:
-      // visibleWhen resolves a single field with no transitive nesting, and a
-      // hidden field still holds a control value, so a nested mode would render
-      // while its parent switch was hidden. Rationale belongs here, not in the
-      // customer-facing description below.
+      // One field with an "off" option rather than a switch plus a nested
+      // mode. The legacy pair above splits them because it shipped that way;
+      // a new field does not need the second control. Rationale belongs here,
+      // not in the customer-facing description below.
       description:
         "What Carbon does with the engineering data in an Onshape release, beyond attaching its files.",
       type: "options",
@@ -185,61 +180,31 @@ export const Onshape = defineIntegration({
       value: false,
       group: "Onshape v2",
       visibleWhen: { field: "pipeline", equals: "next" }
+    },
+    // --- Both -------------------------------------------------------------
+    {
+      name: "webhookSigningSecret",
+      label: "Webhook signing secret",
+      description:
+        "Leave blank to accept unsigned webhooks (current behaviour). Onshape's signing keys are company-level, not per-webhook, so rotating one affects every consumer of that Onshape company. Stored as plaintext in the integration record, like the OAuth tokens.",
+      // Deliberately "text", not "password"/"secret", matching the
+      // paperless-parts "Webhook Signing Secret" precedent. Both masked types
+      // render a <Password> input and nothing in IntegrationForm sets
+      // autoComplete, so a browser password manager will silently autofill them
+      // — observed filling a saved password into this field on save, which would
+      // then make the receiver reject every genuine Onshape delivery. Masking
+      // buys little here (the value is plaintext JSON in the row either way);
+      // a silently wrong value costs webhook ingestion.
+      //
+      // Ungated: the receiver verifies the signature before it branches on
+      // pipeline, so this applies to both.
+      type: "text",
+      required: false,
+      value: "",
+      group: "Security"
     }
   ],
-  schema: z.object({
-    // SwitchField posts a literal "true"/"false" string; preprocess explicitly so
-    // unchecking sticks (z.coerce.boolean would treat "false" as truthy).
-    assetSyncEnabled: z
-      .preprocess((value) => {
-        if (typeof value === "boolean") return value;
-        if (value === "true") return true;
-        if (value === "false") return false;
-        return value;
-      }, z.boolean())
-      .default(false),
-    releaseImportEnabled: z
-      .preprocess((value) => {
-        if (typeof value === "boolean") return value;
-        if (value === "true") return true;
-        if (value === "false") return false;
-        return value;
-      }, z.boolean())
-      .default(false),
-    // A visibleWhen-hidden field is unmounted and posts NOTHING, so absence has
-    // to be tolerated — hence the default rather than a bare enum.
-    releaseImportMode: z
-      .enum(["changeNotice", "revision"])
-      .default("changeNotice"),
-    webhookSigningSecret: z.string().optional(),
-    // --- Onshape v2 -------------------------------------------------------
-    // Every v2 read site tests strict equality against the NEW value
-    // (pipeline === "next"), so an absent key means legacy by construction,
-    // not by falling through to this default. Existing companyIntegration rows
-    // have no `pipeline` key at all and are unaffected.
-    pipeline: z.enum(["legacy", "next"]).default("legacy"),
-    // visibleWhen-hidden fields post NOTHING, so all three carry defaults
-    // rather than being bare/required — the same reason releaseImportMode does.
-    attachAssetsOnRelease: z
-      .preprocess((value) => {
-        if (typeof value === "boolean") return value;
-        if (value === "true") return true;
-        if (value === "false") return false;
-        return value;
-      }, z.boolean())
-      .default(true),
-    releaseImportV2: z
-      .enum(["off", "changeNotice", "revision"])
-      .default("changeNotice"),
-    allowUnreleasedSync: z
-      .preprocess((value) => {
-        if (typeof value === "boolean") return value;
-        if (value === "true") return true;
-        if (value === "false") return false;
-        return value;
-      }, z.boolean())
-      .default(false)
-  }),
+  schema: onshapeSettingsSchema,
   actions: [
     {
       id: "backfill",
@@ -247,9 +212,16 @@ export const Onshape = defineIntegration({
       description:
         "Pull released Onshape assets onto all matching Carbon items now (link-only). Requires asset sync enabled.",
       endpoint: "/api/integrations/onshape/backfill",
-      // Only shown once asset sync is enabled (the backfill route is gated on it
-      // too, so hide the button rather than show one that errors).
-      enabledWhenSetting: "assetSyncEnabled"
+      // Only shown on a legacy company with asset sync enabled. The route is
+      // gated on both too — it matches by readableIdWithRevision and refuses a
+      // v2 company outright — so hide the button rather than show one that
+      // errors. Gating on the setting alone would leave it visible on a v2
+      // company that still carries `assetSyncEnabled: true` from before the
+      // switch, since a hidden field keeps its stored value.
+      visibleWhen: [
+        { field: "pipeline", equals: "legacy" },
+        { field: "assetSyncEnabled", equals: "true" }
+      ]
     }
   ],
   onClientInstall: async () => {

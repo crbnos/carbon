@@ -6,10 +6,21 @@ export type IntegrationAction = {
   description: string;
   endpoint: string;
   /**
-   * Name of a boolean setting that must be enabled for this action to be shown.
-   * Omit to always show the action on an installed integration.
+   * Conditionally render this action only while the live form values match.
+   * Same shape and semantics as a setting's `visibleWhen`. Omit to always show
+   * the action on an installed integration.
    */
-  enabledWhenSetting?: string;
+  visibleWhen?: IntegrationSettingCondition | IntegrationSettingCondition[];
+};
+
+/**
+ * One "another field currently equals X" test. `equals` compares against the
+ * STRING form of the referenced field's control value, so a switch is matched
+ * with the literal "true"/"false".
+ */
+export type IntegrationSettingCondition = {
+  field: string;
+  equals: string | string[];
 };
 
 /**
@@ -70,8 +81,18 @@ export type IntegrationSetting = {
   /**
    * Conditionally render this field only when another field's value matches.
    * Used for provider-based form branching (e.g. show SMTP fields only when provider === "smtp").
+   *
+   * An ARRAY means every condition must hold (AND) — that is how a field nests
+   * under two gates at once, e.g. "the legacy pipeline is selected AND its
+   * release import is on". Put the outermost gate FIRST: a group is hidden
+   * wholesale when its settings share the first condition's field, so the
+   * shared gate has to lead.
+   *
+   * A hidden field is unmounted and posts NOTHING. Give any gated field an
+   * `.optional()` schema entry rather than a `.default()`, or every save while
+   * it is hidden rewrites the stored value with that default.
    */
-  visibleWhen?: { field: string; equals: string | string[] };
+  visibleWhen?: IntegrationSettingCondition | IntegrationSettingCondition[];
 };
 
 /**

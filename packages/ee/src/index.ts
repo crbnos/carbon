@@ -22,6 +22,7 @@ export type {
   IntegrationOptions,
   IntegrationServerHooks,
   IntegrationSetting,
+  IntegrationSettingCondition,
   IntegrationSettingGroup,
   IntegrationSettingOption,
   OAuthConfig,

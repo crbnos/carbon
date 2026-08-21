@@ -142,16 +142,42 @@ equality against the new value so an absent key means legacy **by construction**
 | `releaseImportV2` | options: `off` \| `changeNotice` \| `revision` | `changeNotice` | v2 webhook-driven revision import AND its mode, in one field. Nested under `next`. |
 | `allowUnreleasedSync` | switch | **off** | Whether the version picker offers never-released versions. |
 
-`releaseImportV2` collapses what the draft had as a switch plus a mode. `visibleWhen` resolves
-exactly one field with no transitive nesting, so a mode nested under a switch that is itself
-nested under `pipeline` would render whenever the switch was on — including on a legacy company.
-One enum with an `off` member has no such second level.
+`releaseImportV2` collapses what the draft had as a switch plus a mode, so v2 needs no second
+level of nesting at all.
 
-**The existing `assetSyncEnabled` / `releaseImportEnabled` / `releaseImportMode` /
-`webhookSigningSecret` settings stay top-level and unconditional.** They must not be nested under
-the selector: a `visibleWhen`-hidden field unmounts and posts nothing, and zod's `.default(false)`
-would then write `false` — silently disabling asset sync for a customer who had it on, the moment
-they save anything.
+### The form shows ONE pipeline's settings (revised 2026-08-19)
+
+The selector is the only ungrouped field. Each pipeline's settings sit in a group gated on it —
+Legacy pipeline (`assetSyncEnabled`, `releaseImportEnabled`, `releaseImportMode`, and the Backfill
+action) or Onshape v2 (the three above). Only `webhookSigningSecret` is ungated: the receiver
+verifies the signature before it branches on pipeline, so it applies to both.
+
+This reverses the original decision to leave the legacy keys top-level and unconditional. That
+decision was correct about the hazard and wrong about the remedy: a `visibleWhen`-hidden field
+unmounts and posts nothing, and the save merges the parsed result over the stored metadata
+(`{ ...existingMetadata, ...d }`), so a `.default(false)` on a hidden key WOULD silently disable a
+customer's asset sync the first time they saved on v2 — and re-enable it, unasked, on switching
+back. The fix is to drop the defaults, not to show both pipelines' settings at once: **every gated
+key is `.optional()`**, so an absent key means "leave the stored value alone" and every reader
+already treats it as its own default. `pipeline` keeps its default because it is never hidden.
+Pinned by `lib/settings.test.ts`.
+
+Two mechanism changes made this possible, both in `IntegrationForm`:
+
+- `visibleWhen` now takes one condition OR an array of them, all of which must hold. `WhenVisible`
+  evaluates one condition per component instance and recurses for the rest — `useControlField` is a
+  hook, so one instance must read a fixed number of fields. `releaseImportMode` is the only field
+  using it (pipeline, then its own switch).
+- Every gated field must LEAD its `visibleWhen` with `pipeline`: a group is hidden wholesale on the
+  first condition its settings share, so a different lead leaves a group header with nothing under
+  it.
+- Actions take `visibleWhen` too, replacing the single-boolean `enabledWhenSetting` (Onshape's
+  Backfill was its only consumer). Gating on the setting alone left the button visible on a v2
+  company still carrying `assetSyncEnabled: true` from before the switch, which the backfill route
+  refuses outright.
+
+The zod schema moved out of `config.tsx` to `onshapeSettingsSchema` in `lib/settings.ts`, so it can
+be unit-tested without the auth env `ONSHAPE_CLIENT_ID` pulls in.
 
 ## Data Model Changes
 
@@ -520,3 +546,66 @@ twice as well.
   `APPLICATION` vs `DRAWING` elementType discrepancy, and the webhook part-number gate that still
   blocks the release path. Scoped as Phase 7 —
   `.ai/plans/2026-08-19-onshape-drawing-attachment.md`.
+- 2026-08-19: Settings form split by pipeline — each pipeline's group is hidden by the other's
+  selection, every gated key became `.optional()` so a hidden field stops rewriting the other
+  pipeline's stored settings, `visibleWhen` gained multi-condition support, actions gained
+  `visibleWhen` in place of `enabledWhenSetting`, and the schema moved to `lib/settings.ts`.
+  Verified in the browser on the local stack. **Uncommitted on `feat/onshape-import-revisions`.**
+- 2026-08-21: Scope decisions taken with Raul, ahead of the Phase 7/8 build.
+  - **Part number and revision are Onshape's, and are not editable in Carbon.** `v2.create`'s
+    current behaviour is confirmed as intended, not provisional. A user who needs a different
+    number duplicates the item via Get Method into a part with no Onshape mapping, rather than
+    editing an Onshape-owned identity in place. The `readableId`-keyed family probe in release
+    import and BOM import therefore stays as-is.
+  - **Auto-create on release becomes a setting**, not a permanent refusal. A new v2 toggle
+    governs whether a released element with no linked Carbon item is created rather than skipped
+    with "Link it, or import its assembly, first." Off preserves today's behaviour. Still needs a
+    rule for the replenishment/tracking defaults that motivated the original refusal (a Buy leaf
+    part minted as Inventory/Make poisons MRP).
+  - **Translations: out of scope.** The 55 empty `msgstr` entries stay for upstream's own
+    `pnpm translate` pass.
+  - **Onshape configurations: out of scope.** The `buildElementExternalId` configuration gap is
+    not being closed in this cycle.
+  - **Release name and release notes: still open**, to be mapped per integration path in a
+    dedicated pass. Blocking fact found while scoping it: `OnshapeRevision` carries `releaseId`
+    and `releaseName` only — release NOTES appear in no payload the client reads, and
+    `OnshapeClient` has no release-package method. Capturing notes needs a new endpoint wrapper,
+    not just a destination decision.
+  - No PR until development and substantial testing are done.
+- 2026-08-21: Release name and notes — decided, and the release package probed live.
+  `GET /api/v10/releasepackages/{rpid}` returns 200; the webhook's `releaseId` IS the `rpid`.
+  Confirmed against `eff3a8e5ba701fc7bffb3191` ("TB-REL-001 Test Bench Erstfreigabe"):
+  - Release name — top-level `name`, property id `594964b7040fc85d2b418138`, plain string, 2–128 chars.
+  - Release notes — top-level `description`, property id `594964df040fc85d2b418144`, plain string,
+    max 10000 chars.
+  - A third field nobody had accounted for: `Comment`, property id `594964df040fc85d2b418145`,
+    max 8192 chars, plus `comments`/`parentComments` discussion arrays. Ignored by decision —
+    a discussion artifact, not engineering intent.
+  - `Approvers` (`59403fa4040fc83120937a90`, `isApproverProperty: true`) and `Observers`
+    (`59496726040fc85d2b4181bd`). **Empty on the test package** — the workflow had none
+    configured. Any approver-bearing output is only as good as the customer's release workflow.
+  - State lives at `workflow.state.name` / `metadataState` / `workflow.currentStateDisplayName`.
+  - Read both by `propertyId`, never by display name — display names are localizable, which is
+    the exact fragility already called out for BOM columns.
+  - `items[]` returns the release's FULL membership on the first call. The "no release-level
+    event" premise remains true of events, but membership no longer requires waiting for N
+    deliveries. Not acted on; recorded because it makes release-complete output feasible.
+  **Destinations (both, not either):**
+  - Change notice (per release): notes → `reasonForChange`, provenance moves to
+    `sourceType: "onshape"` + `sourceId: releaseId`. Verify `items_insertChangeNotice` accepts
+    those two params; if not, provenance goes to `description` and the rest is unchanged.
+  - Item (per item, every item the integration touches): a formatted block in `item.notes`.
+    `createRevision` does NOT copy `notes` — verified in `items.service.ts:197` — so a new
+    revision starts empty and release details never accumulate across revisions.
+    **Written as a DELIMITED block, replaced in place on every touch**, so anything a human
+    wrote above or below survives. Blind overwrite is not acceptable: `item.notes` is
+    user-editable. Formatting is available — the editor registers StarterKit plus Table,
+    TableRow, TableCell, TableHeader and TaskList.
+  Both are plain strings from Onshape and both destinations are tiptap JSON, so a shared
+  plain-text → doc-node helper is needed.
+  **Release-package PDF: evaluated and deliberately deferred.** Feasible and cheap — the
+  `@react-pdf/renderer` pipeline, job-side rendering, and `attachOnshapeAssetsToItem`
+  (arbitrary `{fileName, bytes}`, replace-not-append) all already exist. Not built because
+  item notes capture most of the value at a fraction of the cost, and the same data feeds a
+  PDF later. Note `documentSourceType` has no change-order member, so a PDF could only attach
+  to items, never to the notice.

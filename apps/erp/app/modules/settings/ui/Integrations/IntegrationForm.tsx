@@ -1,6 +1,7 @@
 import type {
   IntegrationAction,
   IntegrationSetting,
+  IntegrationSettingCondition,
   IntegrationSettingGroup,
   IntegrationSettingOption
 } from "@carbon/ee";
@@ -40,7 +41,7 @@ import {
 import { SUPPORT_EMAIL } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router";
 import { Processes } from "~/components/Form";
 import { MethodIcon, TrackingTypeIcon } from "~/components/Icons";
@@ -103,21 +104,6 @@ function IntegrationActionButton({
   );
 }
 
-// Wraps an action gated by a boolean setting (`enabledWhenSetting`), reading the
-// LIVE form value so it appears/disappears as the toggle changes — not only after
-// save. Renders nothing when the setting is off.
-function GatedIntegrationActionButton({
-  action,
-  isDisabled
-}: {
-  action: IntegrationAction;
-  isDisabled: boolean;
-}) {
-  const [value] = useControlField<boolean>(action.enabledWhenSetting as string);
-  if (value !== true) return null;
-  return <IntegrationActionButton action={action} isDisabled={isDisabled} />;
-}
-
 /**
  * Fills runtime placeholders in a setting's help text — the webhook host and
  * company ID that only exist at render time. Lets a static config description
@@ -146,21 +132,58 @@ function normalizeOption(option: IntegrationSettingOption) {
 }
 
 /**
- * Wrapper that hides a setting field when its `visibleWhen` condition
- * does not match the current value of the referenced field.
- *
- * Must be mounted as a dedicated component so `useControlField` is only
- * called when `visibleWhen` is defined (satisfies the rules of hooks).
+ * Normalizes a `visibleWhen` to a list of conditions, all of which must hold.
+ * A bare object is the one-condition case.
  */
-function ConditionalSettingField({ setting }: { setting: IntegrationSetting }) {
-  const condition = setting.visibleWhen!;
-  const [value] = useControlField<unknown>(condition.field);
+function conditionsOf(
+  visibleWhen:
+    | IntegrationSettingCondition
+    | IntegrationSettingCondition[]
+    | undefined
+): IntegrationSettingCondition[] {
+  if (!visibleWhen) return [];
+  return Array.isArray(visibleWhen) ? visibleWhen : [visibleWhen];
+}
+
+/** Does one condition hold for the live control value of its field? */
+function conditionMatches(
+  condition: IntegrationSettingCondition | undefined,
+  value: unknown
+): boolean {
+  if (!condition) return true;
   const current = value == null ? "" : String(value);
   const equals = Array.isArray(condition.equals)
     ? condition.equals
     : [condition.equals];
-  if (!equals.includes(current)) return null;
-  return <SettingFieldInner setting={setting} />;
+  return equals.includes(current);
+}
+
+/**
+ * Renders `children` only while every condition holds.
+ *
+ * Evaluates ONE condition and recurses for the rest rather than looping:
+ * `useControlField` is a hook, so a single component instance must read a
+ * fixed number of fields. Each nested instance reads exactly one, which is
+ * also what keeps a failing outer condition from subscribing to the inner
+ * field at all.
+ *
+ * Must be a dedicated component so the hook is only called when a condition
+ * exists (satisfies the rules of hooks).
+ */
+function WhenVisible({
+  conditions,
+  children
+}: {
+  conditions: IntegrationSettingCondition[];
+  children: ReactNode;
+}) {
+  const [condition, ...rest] = conditions;
+  const [value] = useControlField<unknown>(condition.field);
+  if (!conditionMatches(condition, value)) return null;
+  if (rest.length > 0) {
+    return <WhenVisible conditions={rest}>{children}</WhenVisible>;
+  }
+  return <>{children}</>;
 }
 
 /**
@@ -168,8 +191,13 @@ function ConditionalSettingField({ setting }: { setting: IntegrationSetting }) {
  * honouring any `visibleWhen` gating.
  */
 function SettingField({ setting }: { setting: IntegrationSetting }) {
-  if (setting.visibleWhen) {
-    return <ConditionalSettingField setting={setting} />;
+  const conditions = conditionsOf(setting.visibleWhen);
+  if (conditions.length > 0) {
+    return (
+      <WhenVisible conditions={conditions}>
+        <SettingFieldInner setting={setting} />
+      </WhenVisible>
+    );
   }
   return <SettingFieldInner setting={setting} />;
 }
@@ -450,8 +478,8 @@ const CHOICE_CARD_MAX_OPTIONS = 5;
 
 /**
  * Wrapper that hides an entire group when every setting in it is gated
- * by the same `visibleWhen` field and none of them are currently visible.
- * Only mounted when the group actually shares a single `visibleWhen` field.
+ * by the same LEADING `visibleWhen` field and none of them are currently
+ * visible. Only mounted when the group actually shares that field.
  */
 function GatedSettingsGroup({
   name,
@@ -465,12 +493,9 @@ function GatedSettingsGroup({
   controlledField: string;
 }) {
   const [value] = useControlField<unknown>(controlledField);
-  const current = value == null ? "" : String(value);
-  const anyVisible = settings.some((s) => {
-    const eq = s.visibleWhen!.equals;
-    const equals = Array.isArray(eq) ? eq : [eq];
-    return equals.includes(current);
-  });
+  const anyVisible = settings.some((s) =>
+    conditionMatches(conditionsOf(s.visibleWhen)[0], value)
+  );
   if (!anyVisible) return null;
   return (
     <SettingsGroup name={name} description={description} settings={settings} />
@@ -490,12 +515,13 @@ function ConditionalSettingsGroup({
   description?: string;
   settings: IntegrationSetting[];
 }) {
-  const firstCondition = settings[0]?.visibleWhen;
+  // The LEADING condition of each setting, so a field gated on two things
+  // (its group's gate, then a sibling toggle) still counts as sharing the
+  // group's gate.
+  const gateField = conditionsOf(settings[0]?.visibleWhen)[0]?.field;
   const sharesCondition =
-    firstCondition !== undefined &&
-    settings.every(
-      (s) => s.visibleWhen && s.visibleWhen.field === firstCondition.field
-    );
+    gateField !== undefined &&
+    settings.every((s) => conditionsOf(s.visibleWhen)[0]?.field === gateField);
 
   if (sharesCondition) {
     return (
@@ -503,7 +529,7 @@ function ConditionalSettingsGroup({
         name={name}
         description={description}
         settings={settings}
-        controlledField={firstCondition!.field}
+        controlledField={gateField}
       />
     );
   }
@@ -815,21 +841,24 @@ export function IntegrationForm({
                   <Trans>Actions</Trans>
                 </div>
                 <VStack spacing={2} className="w-full">
-                  {integrationActions.map((action) =>
-                    action.enabledWhenSetting ? (
-                      <GatedIntegrationActionButton
-                        key={action.id}
-                        action={action}
-                        isDisabled={isDisabled}
-                      />
-                    ) : (
+                  {integrationActions.map((action) => {
+                    const conditions = conditionsOf(action.visibleWhen);
+                    const button = (
                       <IntegrationActionButton
-                        key={action.id}
                         action={action}
                         isDisabled={isDisabled}
                       />
-                    )
-                  )}
+                    );
+                    // Reads the LIVE form values, so an action appears and
+                    // disappears with the toggles rather than only after save.
+                    return conditions.length > 0 ? (
+                      <WhenVisible key={action.id} conditions={conditions}>
+                        {button}
+                      </WhenVisible>
+                    ) : (
+                      <Fragment key={action.id}>{button}</Fragment>
+                    );
+                  })}
                 </VStack>
               </div>
             )}

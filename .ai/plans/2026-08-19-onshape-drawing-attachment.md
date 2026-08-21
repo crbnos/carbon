@@ -139,3 +139,32 @@ exists for `TB-900-DRW`.
 - Multi-model drawings beyond refusing them. A user-established mapping row for the drawing
   element is the fallback if refusing proves too blunt, but do not build it speculatively.
 - Onshape release notes and the 20 unread BOM columns — separate open questions in the spec.
+
+## Live probe, 2026-08-21 — two open questions closed
+
+**Version-level references WORKS.** The plan recorded `/v/{vid}/` as unverified because the
+drawing was absent from version `05ba9d4e8ffbcbc9cee29003`. Probed against a version that DOES
+contain it:
+
+    GET /api/v10/appelements/d/fd15a005d9711c2535b11835/v/7aee8286bc4bc3c03d764cb4
+        /e/3043b4598e6e8d07fa7f3e45/references   -> 200
+
+Nine records, two distinct targets — byte-identical to the workspace-level result:
+`71d063cabedf14392964ab6d` (the RD-410 assembly, x5) and `7eaf0733dba8077e29eef6d2` (the
+embedded BILLOFMATERIALS element, x4). Reproduced on a second version
+(`d2aff3a44349d31791ecd973`, "approver-less-release"). The earlier 404 was element-absence,
+not a version-level limitation. Since a release reads at a version, this was the question that
+mattered.
+
+**`referenceType` does NOT distinguish targets — the element listing IS required.** The record
+carries 27 fields including `referenceType`, which looked like a way to drop the BOM element
+without a second call. It is `0` for all nine records, on both targets. Every other
+discriminating field (`partNumber`, `revision`, `partIdentity`, `targetVersionId`) is `null`.
+So step 2.3 stands as written: resolve element types from the document's element listing.
+`GET /documents/d/{did}/v/{vid}/elements` returns `elementType` as a STRING enum —
+`PARTSTUDIO`, `ASSEMBLY`, `APPLICATION`, `BILLOFMATERIALS` — which is what separates the
+assembly from the BOM element. Do not reach for the numeric scheme here; that is the revisions
+API's encoding, a different API.
+
+**Still open:** whether the webhook carries `elementType === 2` for a released drawing. Needs a
+real drawing release, which remains blocked on "Drawing has a pending update".
