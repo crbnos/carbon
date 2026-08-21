@@ -1125,7 +1125,7 @@ msgid "Add match"
 msgstr "मिलान जोड़ें"
 
 msgid "Add New"
-msgstr ""
+msgstr "नया जोड़ें"
 
 msgid "Add Note"
 msgstr "नोट जोड़ें"
@@ -1243,7 +1243,7 @@ msgid "Added for this customer"
 msgstr "इस ग्राहक के लिए जोड़ा गया"
 
 msgid "Adding demo records"
-msgstr ""
+msgstr "डेमो रिकॉर्ड जोड़ रहे हैं"
 
 msgid "Adding..."
 msgstr "जोड़ा जा रहा है..."
@@ -1619,7 +1619,7 @@ msgid "Apply"
 msgstr "लागू करें"
 
 msgid "Apply a demo template"
-msgstr ""
+msgstr "डेमो टेम्पलेट लागू करें"
 
 msgid "Apply available credits"
 msgstr "उपलब्ध क्रेडिट लागू करें"
@@ -1649,10 +1649,10 @@ msgid "Apply to invoices"
 msgstr "चालानों पर लागू करें"
 
 msgid "Applying"
-msgstr ""
+msgstr "लागू कर रहे हैं"
 
 msgid "Applying demo data"
-msgstr ""
+msgstr "डेमो डेटा लागू कर रहे हैं"
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "{PO_EMAIL_ATTACHMENT_LIMIT_MB} MB सीमा के करीब पहुंच रहे हैं।"
@@ -3071,7 +3071,7 @@ msgid "Clearing account for goods received / invoice received matching"
 msgstr "माल की प्राप्ति / चालान प्राप्ति मिलान के लिए समाशोधन खाता"
 
 msgid "Clearing demo data"
-msgstr ""
+msgstr "डेमो डेटा साफ कर रहे हैं"
 
 msgid "Click again to disconnect"
 msgstr "डिस्कनेक्ट करने के लिए फिर से क्लिक करें"
@@ -5024,16 +5024,16 @@ msgid "Demand-Based"
 msgstr "मांग-आधारित"
 
 msgid "Demo data"
-msgstr ""
+msgstr "डेमो डेटा"
 
 msgid "Demo Data"
-msgstr ""
+msgstr "डेमो डेटा"
 
 msgid "Demo data applied"
-msgstr ""
+msgstr "डेमो डेटा लागू किया गया"
 
 msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
-msgstr ""
+msgstr "डेमो डेटा इस कंपनी पर लागू किया गया था। इसे रखें, या पूर्ववत् करके ठीक वही वापस करें जो पहले यहां था।"
 
 msgid "department"
 msgstr "विभाग"
@@ -5268,7 +5268,7 @@ msgid "Documents pushes invoices, bills and payments as native provider document
 msgstr "दस्तावेज़ चालान, बिल और भुगतान को मूल प्रदाता दस्तावेज़ के रूप में धकेलता है; उनकी पत्रिकाओं को दस्तावेज़ द्वारा कवर किए गए के रूप में दर्ज किया जाता है। यह प्रदाता में दर्ज भुगतान को वापस Carbon में खींचता है, मिलान वाले चालान या बिल को बंद करता है और एक Carbon GL पत्रिका पोस्ट करता है। बंद उन्हें जानबूझकर बाहर रखे गए के रूप में दर्ज करता है।"
 
 msgid "Documents you open will show up here for quick access."
-msgstr ""
+msgstr "जो दस्तावेज़ आप खोलेंगे वह तेज़ पहुंच के लिए यहां दिखाई देंगे।"
 
 msgid "Don't Cancel"
 msgstr "रद्द न करें"
@@ -6796,7 +6796,7 @@ msgid "Files attached here ride along on every purchase order email sent to this
 msgstr "यहां संलग्न की गई फाइलें इस आपूर्तिकर्ता को भेजे गए प्रत्येक क्रय आदेश ईमेल के साथ जाती हैं (कंपनी-व्यापी डिफ़ॉल्ट के अतिरिक्त)।"
 
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
-msgstr ""
+msgstr "इस कंपनी को एक यथार्थवादी उद्योग की कहानी से भरें ताकि हर स्क्रीन में कुछ न कुछ हो। आप पहले जो यहां था उसे वापस डाल सकते हैं।"
 
 msgid "Filter"
 msgstr "फ़िल्टर"
@@ -7580,7 +7580,7 @@ msgid "Implementation"
 msgstr "कार्यान्वयन"
 
 msgid "Implementation Hub"
-msgstr ""
+msgstr "कार्यान्वयन हब"
 
 msgid "Implementation Lead"
 msgstr "कार्यान्वयन नेता"
@@ -8248,7 +8248,7 @@ msgid "Kanbans"
 msgstr "कनबन्स"
 
 msgid "Keep"
-msgstr ""
+msgstr "रखें"
 
 msgid "Keep Current"
 msgstr "वर्तमान रखें"
@@ -11719,7 +11719,7 @@ msgid "Push to accounting"
 msgstr "लेखांकन को धकेलें"
 
 msgid "Putting your data back"
-msgstr ""
+msgstr "आपका डेटा वापस डाल रहे हैं"
 
 #. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
 msgid "QR Code to create a {0} for this kanban"
@@ -11964,7 +11964,7 @@ msgid "Ready for Quote"
 msgstr "उद्धरण के लिए तैयार"
 
 msgid "ready to keep or revert"
-msgstr ""
+msgstr "रखने या पूर्ववत् करने के लिए तैयार"
 
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "रीयल-टाइम इन्वेंटरी और शॉप-फ्लोर दृश्यमानता"
@@ -12366,7 +12366,7 @@ msgid "Replace PDF"
 msgstr "PDF को बदलें"
 
 msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
-msgstr ""
+msgstr "इस कंपनी के डेटा को डेमो डेटासेट से बदलें — पहले स्नैपशॉट लिया जाता है, ताकि आप पूर्ववत् कर सकें।"
 
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "पीडीएफ को बदलने से इस दस्तावेज़ पर सभी बैलून प्लेसमेंट हटा दिए जाएंगे। फीचर पंक्तियाँ और उनके मान बने रहते हैं; आप नई ड्राइंग पर फिर से बैलून रख सकते हैं।"
@@ -12523,7 +12523,7 @@ msgid "Restore tracked entities to available"
 msgstr "ट्रैक किए गए इकाइयों को उपलब्ध में पुनः स्थापित करें"
 
 msgid "Restoring files"
-msgstr ""
+msgstr "फ़ाइलें पुनः स्थापित कर रहे हैं"
 
 msgid "Result"
 msgstr "परिणाम"
@@ -12553,7 +12553,7 @@ msgid "Retry all"
 msgstr "सभी को पुनः प्रयास करें"
 
 msgid "Retry revert"
-msgstr ""
+msgstr "पूर्ववत् करने का पुन: प्रयास करें"
 
 msgid "Return Home"
 msgstr "घर लौटें"
@@ -12598,10 +12598,10 @@ msgid "Reversed"
 msgstr "उलट दिया गया"
 
 msgid "Revert"
-msgstr ""
+msgstr "पूर्ववत् करें"
 
 msgid "Reverting"
-msgstr ""
+msgstr "पूर्ववत् कर रहे हैं"
 
 msgid "Review"
 msgstr "समीक्षा"
@@ -12982,7 +12982,7 @@ msgid "Saved Views"
 msgstr "सहेजे गए दृश्य"
 
 msgid "Saving a copy of your current data"
-msgstr ""
+msgstr "आपके वर्तमान डेटा की प्रति सहेज रहे हैं"
 
 msgid "Saving..."
 msgstr "सहेज रहे हैं..."
@@ -14091,7 +14091,7 @@ msgid "Started"
 msgstr "शुरू किया गया"
 
 msgid "Starting…"
-msgstr ""
+msgstr "शुरू हो रहा है…"
 
 msgid "State / Province"
 msgstr "राज्य / प्रांत"
@@ -15542,7 +15542,7 @@ msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Pers
 msgstr "यह एक ITAR-नियंत्रित वातावरण है। पहुंच U.S. व्यक्तियों तक सीमित है।"
 
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
-msgstr ""
+msgstr "यह अपेक्षा से अधिक समय ले रहा है। यह अभी भी समाप्त हो सकता है — यदि नहीं होता, तो अपना डेटा वापस करने के लिए पूर्ववत् करने का पुन: प्रयास करें।"
 
 msgid "This is the month your fiscal year starts."
 msgstr "यह वह महीना है जब आपका वित्तीय वर्ष शुरू होता है।"
@@ -15648,7 +15648,7 @@ msgid "This user does not have two-factor authentication enabled."
 msgstr "इस उपयोगकर्ता के पास दो-कारक प्रमाणीकरण सक्षम नहीं है।"
 
 msgid "This usually takes a few seconds. You can leave the page — it keeps running."
-msgstr ""
+msgstr "यह आमतौर पर कुछ सेकंड लेता है। आप पृष्ठ को छोड़ सकते हैं — यह चलता रहेगा।"
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "यह संस्करण एक खुली <0>परिवर्तन सूचना</0> के अंतर्गत है। इसे वहाँ संपादित करें।"
@@ -16201,7 +16201,7 @@ msgid "Unknown"
 msgstr "अज्ञात"
 
 msgid "unknown error"
-msgstr ""
+msgstr "अज्ञात त्रुटि"
 
 msgid "unknown location"
 msgstr "अज्ञात स्थान"

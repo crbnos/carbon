@@ -1125,7 +1125,7 @@ msgid "Add match"
 msgstr "添加匹配"
 
 msgid "Add New"
-msgstr ""
+msgstr "添加新项"
 
 msgid "Add Note"
 msgstr "添加备注"
@@ -1243,7 +1243,7 @@ msgid "Added for this customer"
 msgstr "为此客户添加"
 
 msgid "Adding demo records"
-msgstr ""
+msgstr "正在添加演示记录"
 
 msgid "Adding..."
 msgstr "添加中..."
@@ -1619,7 +1619,7 @@ msgid "Apply"
 msgstr "应用"
 
 msgid "Apply a demo template"
-msgstr ""
+msgstr "应用演示模板"
 
 msgid "Apply available credits"
 msgstr "应用可用额度"
@@ -1649,10 +1649,10 @@ msgid "Apply to invoices"
 msgstr "应用于发票"
 
 msgid "Applying"
-msgstr ""
+msgstr "正在应用"
 
 msgid "Applying demo data"
-msgstr ""
+msgstr "正在应用演示数据"
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "接近 {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB 上限。"
@@ -3071,7 +3071,7 @@ msgid "Clearing account for goods received / invoice received matching"
 msgstr "商品收据/发票收据匹配的清算账户"
 
 msgid "Clearing demo data"
-msgstr ""
+msgstr "正在清除演示数据"
 
 msgid "Click again to disconnect"
 msgstr "再次单击以断开连接"
@@ -5024,16 +5024,16 @@ msgid "Demand-Based"
 msgstr "基于需求"
 
 msgid "Demo data"
-msgstr ""
+msgstr "演示数据"
 
 msgid "Demo Data"
-msgstr ""
+msgstr "演示数据"
 
 msgid "Demo data applied"
-msgstr ""
+msgstr "演示数据已应用"
 
 msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
-msgstr ""
+msgstr "演示数据已应用到此公司。保留它，或还原以恢复之前的确切内容。"
 
 msgid "department"
 msgstr "部门"
@@ -5268,7 +5268,7 @@ msgid "Documents pushes invoices, bills and payments as native provider document
 msgstr "文档将发票、账单和付款推送为原生提供商文档；其日记被记录为由文档覆盖。它还将在提供商中记录的付款拉回到Carbon，关闭匹配的发票或账单并发布Carbon GL日记。关闭时将其记录为故意排除。"
 
 msgid "Documents you open will show up here for quick access."
-msgstr ""
+msgstr "您打开的文档将显示在此处以便快速访问。"
 
 msgid "Don't Cancel"
 msgstr "不要取消"
@@ -6796,7 +6796,7 @@ msgid "Files attached here ride along on every purchase order email sent to this
 msgstr "此处附加的文件将随附在发送给此供应商的每份采购订单电子邮件中（除了公司范围的默认设置）。"
 
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
-msgstr ""
+msgstr "用逼真的行业故事填充此公司，使每个屏幕都有内容。您可以恢复之前的内容。"
 
 msgid "Filter"
 msgstr "筛选"
@@ -7580,7 +7580,7 @@ msgid "Implementation"
 msgstr "实施"
 
 msgid "Implementation Hub"
-msgstr ""
+msgstr "实施中心"
 
 msgid "Implementation Lead"
 msgstr "实施主管"
@@ -8248,7 +8248,7 @@ msgid "Kanbans"
 msgstr "看板"
 
 msgid "Keep"
-msgstr ""
+msgstr "保留"
 
 msgid "Keep Current"
 msgstr "保持当前"
@@ -11719,7 +11719,7 @@ msgid "Push to accounting"
 msgstr "推送到会计系统"
 
 msgid "Putting your data back"
-msgstr ""
+msgstr "正在恢复您的数据"
 
 #. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
 msgid "QR Code to create a {0} for this kanban"
@@ -11964,7 +11964,7 @@ msgid "Ready for Quote"
 msgstr "准备报价"
 
 msgid "ready to keep or revert"
-msgstr ""
+msgstr "准备好保留或还原"
 
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "实时库存和车间可见性"
@@ -12366,7 +12366,7 @@ msgid "Replace PDF"
 msgstr "替换 PDF"
 
 msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
-msgstr ""
+msgstr "用演示数据集替换此公司的数据——首先快照，以便您可以还原。"
 
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "替换 PDF 将删除此文档上的所有气球标注。功能行及其值保持不变；您可以在新绘图上重新放置气球。"
@@ -12523,7 +12523,7 @@ msgid "Restore tracked entities to available"
 msgstr "将跟踪的实体恢复为可用"
 
 msgid "Restoring files"
-msgstr ""
+msgstr "正在恢复文件"
 
 msgid "Result"
 msgstr "结果"
@@ -12553,7 +12553,7 @@ msgid "Retry all"
 msgstr "全部重试"
 
 msgid "Retry revert"
-msgstr ""
+msgstr "重试还原"
 
 msgid "Return Home"
 msgstr "返回首页"
@@ -12598,10 +12598,10 @@ msgid "Reversed"
 msgstr "已冲销"
 
 msgid "Revert"
-msgstr ""
+msgstr "还原"
 
 msgid "Reverting"
-msgstr ""
+msgstr "正在还原"
 
 msgid "Review"
 msgstr "查看"
@@ -12982,7 +12982,7 @@ msgid "Saved Views"
 msgstr "已保存视图"
 
 msgid "Saving a copy of your current data"
-msgstr ""
+msgstr "正在保存您当前数据的副本"
 
 msgid "Saving..."
 msgstr "保存中..."
@@ -14091,7 +14091,7 @@ msgid "Started"
 msgstr "开始于"
 
 msgid "Starting…"
-msgstr ""
+msgstr "正在启动…"
 
 msgid "State / Province"
 msgstr "州/省"
@@ -15542,7 +15542,7 @@ msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Pers
 msgstr "这是一个 ITAR 受控环境。访问仅限于美国人。"
 
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
-msgstr ""
+msgstr "这比预期花费的时间更长。它可能仍会完成——如果没有，请重试还原以恢复您的数据。"
 
 msgid "This is the month your fiscal year starts."
 msgstr "这是您的财政年度开始的月份。"
@@ -15648,7 +15648,7 @@ msgid "This user does not have two-factor authentication enabled."
 msgstr "此用户未启用双因素认证。"
 
 msgid "This usually takes a few seconds. You can leave the page — it keeps running."
-msgstr ""
+msgstr "这通常需要几秒钟。您可以离开页面——它会继续运行。"
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "此版本属于开放的<0>变更通知</0>。请在那里编辑。"
@@ -16201,7 +16201,7 @@ msgid "Unknown"
 msgstr "未知"
 
 msgid "unknown error"
-msgstr ""
+msgstr "未知错误"
 
 msgid "unknown location"
 msgstr "未知位置"

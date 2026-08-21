@@ -1125,7 +1125,7 @@ msgid "Add match"
 msgstr "Eşleştirme ekle"
 
 msgid "Add New"
-msgstr ""
+msgstr "Yeni Ekle"
 
 msgid "Add Note"
 msgstr "Not Ekle"
@@ -1243,7 +1243,7 @@ msgid "Added for this customer"
 msgstr "Bu müşteri için eklendi"
 
 msgid "Adding demo records"
-msgstr ""
+msgstr "Demo kayıtları ekleniyor"
 
 msgid "Adding..."
 msgstr "Ekleniyor..."
@@ -1619,7 +1619,7 @@ msgid "Apply"
 msgstr "Uygula"
 
 msgid "Apply a demo template"
-msgstr ""
+msgstr "Demo şablonu uygula"
 
 msgid "Apply available credits"
 msgstr "Mevcut kredileri uygula"
@@ -1649,10 +1649,10 @@ msgid "Apply to invoices"
 msgstr "Faturaları uygula"
 
 msgid "Applying"
-msgstr ""
+msgstr "Uygulanıyor"
 
 msgid "Applying demo data"
-msgstr ""
+msgstr "Demo verisi uygulanıyor"
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "Yaklaşan {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB sınırı."
@@ -3071,7 +3071,7 @@ msgid "Clearing account for goods received / invoice received matching"
 msgstr "Mal alımı / fatura alımı eşleştirmesi için mahsup hesabı"
 
 msgid "Clearing demo data"
-msgstr ""
+msgstr "Demo verisi temizleniyor"
 
 msgid "Click again to disconnect"
 msgstr "Bağlantıyı kesmek için yeniden tıklayın"
@@ -5024,16 +5024,16 @@ msgid "Demand-Based"
 msgstr "Talep Tabanlı"
 
 msgid "Demo data"
-msgstr ""
+msgstr "Demo verisi"
 
 msgid "Demo Data"
-msgstr ""
+msgstr "Demo Verisi"
 
 msgid "Demo data applied"
-msgstr ""
+msgstr "Demo verisi uygulandı"
 
 msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
-msgstr ""
+msgstr "Demo verisi bu şirkete uygulandı. Tutun veya önceki duruma geri döndürmek için geri al."
 
 msgid "department"
 msgstr "departman"
@@ -5268,7 +5268,7 @@ msgid "Documents pushes invoices, bills and payments as native provider document
 msgstr "Documents faturaları, muhasebe faturalarını ve ödemeleri sağlayıcı belgesi olarak gönderir; muhasebe kayıtları belge tarafından kapsandığı şekilde kaydedilir. Ayrıca sağlayıcıda kaydedilen ödemeleri Carbon'a geri çekerek, eşleşen fatura veya muhasebe faturasını kapatır ve bir Carbon GL muhasebe kaydı oluşturur. Kapalı, bunları kasıtlı olarak hariç tutulmuş olarak kaydeder."
 
 msgid "Documents you open will show up here for quick access."
-msgstr ""
+msgstr "Açtığınız belgeler hızlı erişim için burada görünecektir."
 
 msgid "Don't Cancel"
 msgstr "İptal Etme"
@@ -6796,7 +6796,7 @@ msgid "Files attached here ride along on every purchase order email sent to this
 msgstr "Buraya eklenen dosyalar, bu tedarikçiye gönderilen her satın alma siparişi e-postasında yer alır (şirket genelindeki varsayılanlara ek olarak)."
 
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
-msgstr ""
+msgstr "Bu şirketi gerçekçi bir endüstri hikayesiyle doldurun, böylece her ekran bir şey içerir. Önceki durumu geri getirebilirsiniz."
 
 msgid "Filter"
 msgstr "Filtre"
@@ -7580,7 +7580,7 @@ msgid "Implementation"
 msgstr "Uygulama"
 
 msgid "Implementation Hub"
-msgstr ""
+msgstr "Uygulama Merkezi"
 
 msgid "Implementation Lead"
 msgstr "Uygulama Müdürü"
@@ -8248,7 +8248,7 @@ msgid "Kanbans"
 msgstr "Kanbanlar"
 
 msgid "Keep"
-msgstr ""
+msgstr "Tut"
 
 msgid "Keep Current"
 msgstr "Mevcut Tut"
@@ -11719,7 +11719,7 @@ msgid "Push to accounting"
 msgstr "Muhasebede gönder"
 
 msgid "Putting your data back"
-msgstr ""
+msgstr "Verileriniz geri konuluyor"
 
 #. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
 msgid "QR Code to create a {0} for this kanban"
@@ -11964,7 +11964,7 @@ msgid "Ready for Quote"
 msgstr "Teklif İçin Hazır"
 
 msgid "ready to keep or revert"
-msgstr ""
+msgstr "tutmak veya geri almak için hazır"
 
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "Gerçek zamanlı envanter ve atölye tabanı görünürlüğü"
@@ -12366,7 +12366,7 @@ msgid "Replace PDF"
 msgstr "PDF'i Değiştir"
 
 msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
-msgstr ""
+msgstr "Bu şirketin verilerini bir demo veri seti ile değiştirin — önce anlık görüntü alınır, böylece geri alabilirsiniz."
 
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "PDF'i değiştirmek bu belgedeki tüm balon yerleşimlerini kaldırır. Özellik satırları ve değerleri kalır; yeni çizim üzerinde tekrar balon yerleştirebilirsiniz."
@@ -12523,7 +12523,7 @@ msgid "Restore tracked entities to available"
 msgstr "Takip edilen varlıkları kullanılabilir hale getir"
 
 msgid "Restoring files"
-msgstr ""
+msgstr "Dosyalar geri yükleniyor"
 
 msgid "Result"
 msgstr "Sonuç"
@@ -12553,7 +12553,7 @@ msgid "Retry all"
 msgstr "Tümünü yeniden dene"
 
 msgid "Retry revert"
-msgstr ""
+msgstr "Geri alma'yı tekrar dene"
 
 msgid "Return Home"
 msgstr "Ana Sayfaya Dön"
@@ -12598,10 +12598,10 @@ msgid "Reversed"
 msgstr "Ters Çevrilmiş"
 
 msgid "Revert"
-msgstr ""
+msgstr "Geri Al"
 
 msgid "Reverting"
-msgstr ""
+msgstr "Geri alınıyor"
 
 msgid "Review"
 msgstr "İncele"
@@ -12982,7 +12982,7 @@ msgid "Saved Views"
 msgstr "Kaydedilen Görünümler"
 
 msgid "Saving a copy of your current data"
-msgstr ""
+msgstr "Mevcut verilerinizin bir kopyası kaydediliyor"
 
 msgid "Saving..."
 msgstr "Kaydediliyor..."
@@ -14091,7 +14091,7 @@ msgid "Started"
 msgstr "Başlangıç"
 
 msgid "Starting…"
-msgstr ""
+msgstr "Başlanıyor…"
 
 msgid "State / Province"
 msgstr "Eyalet / İl"
@@ -15542,7 +15542,7 @@ msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Pers
 msgstr "Bu ITAR tarafından kontrol edilen bir ortamdır. Erişim yalnızca ABD vatandaşları ile sınırlıdır."
 
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
-msgstr ""
+msgstr "Bu beklenenden daha uzun sürüyor. Yine de bitebilir — olmazsa, verilerinizi geri koymak için geri alma işlemini tekrar deneyin."
 
 msgid "This is the month your fiscal year starts."
 msgstr "Bu, mali yılınızın başladığı aydır."
@@ -15648,7 +15648,7 @@ msgid "This user does not have two-factor authentication enabled."
 msgstr "Bu kullanıcının iki faktörlü kimlik doğrulaması etkin değildir."
 
 msgid "This usually takes a few seconds. You can leave the page — it keeps running."
-msgstr ""
+msgstr "Bu genellikle birkaç saniye sürer. Sayfayı terk edebilirsiniz — çalışmaya devam eder."
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "Bu sürüm açık bir <0>değişiklik bildirimine</0> aittir. Orada düzenleyin."
@@ -16201,7 +16201,7 @@ msgid "Unknown"
 msgstr "Bilinmeyen"
 
 msgid "unknown error"
-msgstr ""
+msgstr "bilinmeyen hata"
 
 msgid "unknown location"
 msgstr "bilinmeyen konum"

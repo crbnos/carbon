@@ -1125,7 +1125,7 @@ msgid "Add match"
 msgstr "マッチを追加"
 
 msgid "Add New"
-msgstr ""
+msgstr "新規追加"
 
 msgid "Add Note"
 msgstr "ノートを追加"
@@ -1243,7 +1243,7 @@ msgid "Added for this customer"
 msgstr "このカスタマー向けに追加"
 
 msgid "Adding demo records"
-msgstr ""
+msgstr "デモレコードを追加中"
 
 msgid "Adding..."
 msgstr "追加中..."
@@ -1619,7 +1619,7 @@ msgid "Apply"
 msgstr "適用"
 
 msgid "Apply a demo template"
-msgstr ""
+msgstr "デモテンプレートを適用"
 
 msgid "Apply available credits"
 msgstr "利用可能なクレジットを適用"
@@ -1649,10 +1649,10 @@ msgid "Apply to invoices"
 msgstr "請求書に適用"
 
 msgid "Applying"
-msgstr ""
+msgstr "適用中"
 
 msgid "Applying demo data"
-msgstr ""
+msgstr "デモデータを適用中"
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "{PO_EMAIL_ATTACHMENT_LIMIT_MB} MBの上限に近づいています。"
@@ -3071,7 +3071,7 @@ msgid "Clearing account for goods received / invoice received matching"
 msgstr "商品受領/請求書受領照合用相殺勘定"
 
 msgid "Clearing demo data"
-msgstr ""
+msgstr "デモデータをクリア中"
 
 msgid "Click again to disconnect"
 msgstr "再度クリックして切断"
@@ -5024,16 +5024,16 @@ msgid "Demand-Based"
 msgstr "需要ベース"
 
 msgid "Demo data"
-msgstr ""
+msgstr "デモデータ"
 
 msgid "Demo Data"
-msgstr ""
+msgstr "デモデータ"
 
 msgid "Demo data applied"
-msgstr ""
+msgstr "デモデータが適用されました"
 
 msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
-msgstr ""
+msgstr "このコンパニーにデモデータが適用されました。保持するか、以前の状態に戻してください。"
 
 msgid "department"
 msgstr "部門"
@@ -5268,7 +5268,7 @@ msgid "Documents pushes invoices, bills and payments as native provider document
 msgstr "ドキュメントは、請求書、帳票、支払いをネイティブプロバイダードキュメントとしてプッシュします。それらの仕訳はドキュメントでカバーされているものとして記録されます。また、プロバイダーで記録された支払いをCarbonに引き戻し、一致する請求書または帳票を閉じて、CarbonのGL仕訳を投稿します。Offはそれらを意図的に除外されたものとして記録します。"
 
 msgid "Documents you open will show up here for quick access."
-msgstr ""
+msgstr "開いたドキュメントはここに表示され、すぐにアクセスできます。"
 
 msgid "Don't Cancel"
 msgstr "キャンセルしない"
@@ -6796,7 +6796,7 @@ msgid "Files attached here ride along on every purchase order email sent to this
 msgstr "ここに添付されたファイルは、このサプライヤーに送信されるすべての発注メールに含まれます（会社全体のデフォルトに加えて）。"
 
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
-msgstr ""
+msgstr "現実的なインダストリストーリーでこのコンパニーを埋めて、すべての画面に何か表示されるようにしてください。以前の状態に戻すことができます。"
 
 msgid "Filter"
 msgstr "フィルター"
@@ -7580,7 +7580,7 @@ msgid "Implementation"
 msgstr "実装"
 
 msgid "Implementation Hub"
-msgstr ""
+msgstr "実装ハブ"
 
 msgid "Implementation Lead"
 msgstr "実装リード"
@@ -8248,7 +8248,7 @@ msgid "Kanbans"
 msgstr "カンバン"
 
 msgid "Keep"
-msgstr ""
+msgstr "保持"
 
 msgid "Keep Current"
 msgstr "現在の設定を保持"
@@ -11719,7 +11719,7 @@ msgid "Push to accounting"
 msgstr "会計にプッシュ"
 
 msgid "Putting your data back"
-msgstr ""
+msgstr "データを復元中"
 
 #. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
 msgid "QR Code to create a {0} for this kanban"
@@ -11964,7 +11964,7 @@ msgid "Ready for Quote"
 msgstr "見積もり準備完了"
 
 msgid "ready to keep or revert"
-msgstr ""
+msgstr "保持またはリバート可能"
 
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "リアルタイム在庫と工場フロアの可視性"
@@ -12366,7 +12366,7 @@ msgid "Replace PDF"
 msgstr "PDFを置き換える"
 
 msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
-msgstr ""
+msgstr "このコンパニーのデータをデモデータセットで置き換えます。最初にスナップショットを取得するため、リバートできます。"
 
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "PDFを置き換えると、このドキュメント上のすべてのバルーン配置が削除されます。機能行とその値は保持されます。新しい図面上に再度バルーンを配置できます。"
@@ -12523,7 +12523,7 @@ msgid "Restore tracked entities to available"
 msgstr "追跡対象エンティティを利用可能に復元"
 
 msgid "Restoring files"
-msgstr ""
+msgstr "ファイルを復元中"
 
 msgid "Result"
 msgstr "結果"
@@ -12553,7 +12553,7 @@ msgid "Retry all"
 msgstr "すべてを再試行"
 
 msgid "Retry revert"
-msgstr ""
+msgstr "リバートを再試行"
 
 msgid "Return Home"
 msgstr "ホームに戻る"
@@ -12598,10 +12598,10 @@ msgid "Reversed"
 msgstr "反転"
 
 msgid "Revert"
-msgstr ""
+msgstr "リバート"
 
 msgid "Reverting"
-msgstr ""
+msgstr "リバート中"
 
 msgid "Review"
 msgstr "確認"
@@ -12982,7 +12982,7 @@ msgid "Saved Views"
 msgstr "保存済みビュー"
 
 msgid "Saving a copy of your current data"
-msgstr ""
+msgstr "現在のデータのコピーを保存中"
 
 msgid "Saving..."
 msgstr "保存中..."
@@ -14091,7 +14091,7 @@ msgid "Started"
 msgstr "開始"
 
 msgid "Starting…"
-msgstr ""
+msgstr "開始中…"
 
 msgid "State / Province"
 msgstr "都道府県"
@@ -15542,7 +15542,7 @@ msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Pers
 msgstr "これはITAR管理環境です。アクセスは米国人に限定されています。"
 
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
-msgstr ""
+msgstr "予想より時間がかかっています。終了する可能性があります。終了しない場合は、リバートを再試行してデータを復元してください。"
 
 msgid "This is the month your fiscal year starts."
 msgstr "これはあなたの会計年度が始まる月です。"
@@ -15648,7 +15648,7 @@ msgid "This user does not have two-factor authentication enabled."
 msgstr "このユーザーは2要素認証が有効になっていません。"
 
 msgid "This usually takes a few seconds. You can leave the page — it keeps running."
-msgstr ""
+msgstr "これは通常数秒かかります。ページを離れることができます。実行され続けます。"
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "このバージョンはオープンな<0>変更通知</0>に属しています。そこで編集してください。"
@@ -16201,7 +16201,7 @@ msgid "Unknown"
 msgstr "不明"
 
 msgid "unknown error"
-msgstr ""
+msgstr "不明なエラー"
 
 msgid "unknown location"
 msgstr "不明な場所"

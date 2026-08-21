@@ -1125,7 +1125,7 @@ msgid "Add match"
 msgstr "일치 추가"
 
 msgid "Add New"
-msgstr ""
+msgstr "새로 추가"
 
 msgid "Add Note"
 msgstr "메모 추가"
@@ -1243,7 +1243,7 @@ msgid "Added for this customer"
 msgstr "이 고객을 위해 추가됨"
 
 msgid "Adding demo records"
-msgstr ""
+msgstr "데모 레코드 추가 중"
 
 msgid "Adding..."
 msgstr "추가 중..."
@@ -1619,7 +1619,7 @@ msgid "Apply"
 msgstr "적용"
 
 msgid "Apply a demo template"
-msgstr ""
+msgstr "데모 템플릿 적용"
 
 msgid "Apply available credits"
 msgstr "사용 가능한 크레딧 적용"
@@ -1649,10 +1649,10 @@ msgid "Apply to invoices"
 msgstr "인보이스에 적용"
 
 msgid "Applying"
-msgstr ""
+msgstr "적용 중"
 
 msgid "Applying demo data"
-msgstr ""
+msgstr "데모 데이터 적용 중"
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "{PO_EMAIL_ATTACHMENT_LIMIT_MB}MB 한도에 근접했습니다."
@@ -3071,7 +3071,7 @@ msgid "Clearing account for goods received / invoice received matching"
 msgstr "입고/인보이스 수취 매칭을 위한 경과 계정"
 
 msgid "Clearing demo data"
-msgstr ""
+msgstr "데모 데이터 삭제 중"
 
 msgid "Click again to disconnect"
 msgstr "다시 클릭하여 연결 해제"
@@ -5024,16 +5024,16 @@ msgid "Demand-Based"
 msgstr "수요 기반"
 
 msgid "Demo data"
-msgstr ""
+msgstr "데모 데이터"
 
 msgid "Demo Data"
-msgstr ""
+msgstr "데모 데이터"
 
 msgid "Demo data applied"
-msgstr ""
+msgstr "데모 데이터 적용됨"
 
 msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
-msgstr ""
+msgstr "데모 데이터가 이 회사에 적용되었습니다. 유지하거나 이전 상태로 복원할 수 있습니다."
 
 msgid "department"
 msgstr "부서"
@@ -5268,7 +5268,7 @@ msgid "Documents pushes invoices, bills and payments as native provider document
 msgstr "문서는 송장, 청구서 및 지불을 기본 공급자 문서로 푸시하고, 해당 분개는 문서에서 다룬 것으로 기록됩니다. 또한 공급자에 기록된 지불을 Carbon으로 다시 끌어와 일치하는 청구서 또는 송장을 마감하고 Carbon GL 분개를 게시합니다. Off는 이를 의도적으로 제외된 것으로 기록합니다."
 
 msgid "Documents you open will show up here for quick access."
-msgstr ""
+msgstr "열어본 문서는 빠른 접근을 위해 여기에 표시됩니다."
 
 msgid "Don't Cancel"
 msgstr "취소하지 않음"
@@ -6796,7 +6796,7 @@ msgid "Files attached here ride along on every purchase order email sent to this
 msgstr "여기에 첨부한 파일은 이 공급업체에 전송되는 모든 구매주문 이메일에 함께 전송됩니다(회사 전체 기본 첨부파일에 추가로)."
 
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
-msgstr ""
+msgstr "이 회사를 현실적인 산업 시나리오로 채워서 모든 화면에 데이터가 표시되도록 합니다. 이전 상태로 복원할 수 있습니다."
 
 msgid "Filter"
 msgstr "필터"
@@ -7580,7 +7580,7 @@ msgid "Implementation"
 msgstr "구현"
 
 msgid "Implementation Hub"
-msgstr ""
+msgstr "구현 허브"
 
 msgid "Implementation Lead"
 msgstr "구현 리드"
@@ -8248,7 +8248,7 @@ msgid "Kanbans"
 msgstr "칸반"
 
 msgid "Keep"
-msgstr ""
+msgstr "유지"
 
 msgid "Keep Current"
 msgstr "현재 값 유지"
@@ -11719,7 +11719,7 @@ msgid "Push to accounting"
 msgstr "회계로 푸시"
 
 msgid "Putting your data back"
-msgstr ""
+msgstr "데이터 복원 중"
 
 #. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
 msgid "QR Code to create a {0} for this kanban"
@@ -11964,7 +11964,7 @@ msgid "Ready for Quote"
 msgstr "견적 준비 완료"
 
 msgid "ready to keep or revert"
-msgstr ""
+msgstr "유지 또는 복원 준비 완료"
 
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "실시간 재고 및 현장 가시성"
@@ -12366,7 +12366,7 @@ msgid "Replace PDF"
 msgstr "PDF 교체"
 
 msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
-msgstr ""
+msgstr "이 회사의 데이터를 데모 데이터셋으로 교체합니다 — 먼저 스냅샷을 저장하여 나중에 복원할 수 있습니다."
 
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "PDF를 교체하면 이 문서의 모든 풍선 표시가 제거됩니다. 기능 행과 값은 유지되며, 새 도면에 풍선을 다시 배치할 수 있습니다."
@@ -12523,7 +12523,7 @@ msgid "Restore tracked entities to available"
 msgstr "추적 개체를 사용 가능 상태로 복원"
 
 msgid "Restoring files"
-msgstr ""
+msgstr "파일 복원 중"
 
 msgid "Result"
 msgstr "결과"
@@ -12553,7 +12553,7 @@ msgid "Retry all"
 msgstr "모두 다시 시도"
 
 msgid "Retry revert"
-msgstr ""
+msgstr "복원 재시도"
 
 msgid "Return Home"
 msgstr "홈으로 돌아가기"
@@ -12598,10 +12598,10 @@ msgid "Reversed"
 msgstr "역순됨"
 
 msgid "Revert"
-msgstr ""
+msgstr "복원"
 
 msgid "Reverting"
-msgstr ""
+msgstr "복원 중"
 
 msgid "Review"
 msgstr "검토"
@@ -12982,7 +12982,7 @@ msgid "Saved Views"
 msgstr "저장된 보기"
 
 msgid "Saving a copy of your current data"
-msgstr ""
+msgstr "현재 데이터의 사본 저장 중"
 
 msgid "Saving..."
 msgstr "저장 중..."
@@ -14091,7 +14091,7 @@ msgid "Started"
 msgstr "시작됨"
 
 msgid "Starting…"
-msgstr ""
+msgstr "시작 중…"
 
 msgid "State / Province"
 msgstr "주/도"
@@ -15542,7 +15542,7 @@ msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Pers
 msgstr "이것은 ITAR 통제 환경입니다. 접근은 미국인에게만 제한됩니다."
 
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
-msgstr ""
+msgstr "예상보다 오래 걸리고 있습니다. 계속 진행될 수 있습니다 — 진행되지 않으면 복원을 다시 시도하여 데이터를 복구하세요."
 
 msgid "This is the month your fiscal year starts."
 msgstr "회계연도가 시작되는 월입니다."
@@ -15648,7 +15648,7 @@ msgid "This user does not have two-factor authentication enabled."
 msgstr "이 사용자는 2단계 인증이 활성화되지 않았습니다."
 
 msgid "This usually takes a few seconds. You can leave the page — it keeps running."
-msgstr ""
+msgstr "일반적으로 몇 초가 걸립니다. 페이지를 나가도 계속 실행됩니다."
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "이 버전은 열려 있는 <0>변경 공지</0>에 속합니다. 거기서 편집하세요."
@@ -16201,7 +16201,7 @@ msgid "Unknown"
 msgstr "알 수 없음"
 
 msgid "unknown error"
-msgstr ""
+msgstr "알 수 없는 오류"
 
 msgid "unknown location"
 msgstr "알 수 없는 위치"

@@ -32,7 +32,13 @@ import { useLocale } from "@react-aria/i18n";
 import type { ComponentProps } from "react";
 import { useCallback } from "react";
 import type { IconType } from "react-icons";
-import { LuChevronDown, LuFileText, LuPlus, LuX } from "react-icons/lu";
+import {
+  LuChevronDown,
+  LuFileText,
+  LuPlus,
+  LuRocket,
+  LuX
+} from "react-icons/lu";
 import { RxMagnifyingGlass } from "react-icons/rx";
 import type { LoaderFunctionArgs } from "react-router";
 import { Link, redirect, useFetcher } from "react-router";
@@ -183,14 +189,17 @@ export default function AppIndexRoute() {
                         plan covering setup, data, training, and go-live.
                       </Trans>
                     </p>
-                    <Button
-                      className="mt-4"
-                      type="submit"
-                      isLoading={enrollFetcher.state !== "idle"}
-                      isDisabled={enrollFetcher.state !== "idle"}
-                    >
-                      <Trans>Enroll</Trans>
-                    </Button>
+                    <div>
+                      <Button
+                        className="mt-4"
+                        type="submit"
+                        rightIcon={<LuRocket />}
+                        isLoading={enrollFetcher.state !== "idle"}
+                        isDisabled={enrollFetcher.state !== "idle"}
+                      >
+                        <Trans>Enroll</Trans>
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               </enrollFetcher.Form>

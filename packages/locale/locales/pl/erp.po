@@ -1125,7 +1125,7 @@ msgid "Add match"
 msgstr "Dodaj dopasowanie"
 
 msgid "Add New"
-msgstr ""
+msgstr "Dodaj nowe"
 
 msgid "Add Note"
 msgstr "Dodaj notatkę"
@@ -1243,7 +1243,7 @@ msgid "Added for this customer"
 msgstr "Dodane dla tego klienta"
 
 msgid "Adding demo records"
-msgstr ""
+msgstr "Dodawanie przykładowych rekordów"
 
 msgid "Adding..."
 msgstr "Dodawanie..."
@@ -1619,7 +1619,7 @@ msgid "Apply"
 msgstr "Zastosuj"
 
 msgid "Apply a demo template"
-msgstr ""
+msgstr "Zastosuj szablon demonstracyjny"
 
 msgid "Apply available credits"
 msgstr "Zastosuj dostępne kredyty"
@@ -1649,10 +1649,10 @@ msgid "Apply to invoices"
 msgstr "Zastosuj do faktur"
 
 msgid "Applying"
-msgstr ""
+msgstr "Stosowanie"
 
 msgid "Applying demo data"
-msgstr ""
+msgstr "Stosowanie danych demonstracyjnych"
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "Zbliżanie się do limitu {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB."
@@ -3071,7 +3071,7 @@ msgid "Clearing account for goods received / invoice received matching"
 msgstr "Konto rozliczeniowe dla odboru towaru / dopasowania odboru faktury"
 
 msgid "Clearing demo data"
-msgstr ""
+msgstr "Czyszczenie danych demonstracyjnych"
 
 msgid "Click again to disconnect"
 msgstr "Kliknij ponownie, aby rozłączyć"
@@ -5024,16 +5024,16 @@ msgid "Demand-Based"
 msgstr "Oparte na popycie"
 
 msgid "Demo data"
-msgstr ""
+msgstr "Dane demonstracyjne"
 
 msgid "Demo Data"
-msgstr ""
+msgstr "Dane Demonstracyjne"
 
 msgid "Demo data applied"
-msgstr ""
+msgstr "Dane demonstracyjne zastosowane"
 
 msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
-msgstr ""
+msgstr "Dane demonstracyjne zostały zastosowane do tej firmy. Zachowaj je lub przywróć dokładnie to, co tu było wcześniej."
 
 msgid "department"
 msgstr "departament"
@@ -5268,7 +5268,7 @@ msgid "Documents pushes invoices, bills and payments as native provider document
 msgstr "Dokumenty wysyła faktury, rachunki i płatności jako dokumenty dostawcy; ich dzienniki są rejestrowane jako pokryte dokumentem. Pobiera również płatności zarejestrowane u dostawcy z powrotem do Carbon, zamykając pasującą fakturę lub rachunek i publikując dziennik GL Carbon. Off rejestruje je jako celowo wyłączone."
 
 msgid "Documents you open will show up here for quick access."
-msgstr ""
+msgstr "Dokumenty, które otworzysz, pojawią się tutaj w celu szybkiego dostępu."
 
 msgid "Don't Cancel"
 msgstr "Nie anuluj"
@@ -6796,7 +6796,7 @@ msgid "Files attached here ride along on every purchase order email sent to this
 msgstr "Pliki dołączone tutaj są wysyłane wraz z każdym emailem zamówienia zakupu wysłanym do tego dostawcy (dodatkowo do ustawień domyślnych całej firmy)."
 
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
-msgstr ""
+msgstr "Wypełnij tę firmę realistyczną historią branżową, aby każdy ekran zawierał coś interesującego. Możesz przywrócić to, co tu było wcześniej."
 
 msgid "Filter"
 msgstr "Filtr"
@@ -7580,7 +7580,7 @@ msgid "Implementation"
 msgstr "Wdrażanie"
 
 msgid "Implementation Hub"
-msgstr ""
+msgstr "Centrum wdrażania"
 
 msgid "Implementation Lead"
 msgstr "Lider Wdrażania"
@@ -8248,7 +8248,7 @@ msgid "Kanbans"
 msgstr "Kanbany"
 
 msgid "Keep"
-msgstr ""
+msgstr "Zachowaj"
 
 msgid "Keep Current"
 msgstr "Zachowaj bieżące"
@@ -11719,7 +11719,7 @@ msgid "Push to accounting"
 msgstr "Wyślij do systemu księgowego"
 
 msgid "Putting your data back"
-msgstr ""
+msgstr "Przywracanie twoich danych"
 
 #. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
 msgid "QR Code to create a {0} for this kanban"
@@ -11964,7 +11964,7 @@ msgid "Ready for Quote"
 msgstr "Gotowy do wyceny"
 
 msgid "ready to keep or revert"
-msgstr ""
+msgstr "gotowe do zachowania lub przywrócenia"
 
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "Widoczność zapasów i hali produkcyjnej w czasie rzeczywistym"
@@ -12366,7 +12366,7 @@ msgid "Replace PDF"
 msgstr "Zamień PDF"
 
 msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
-msgstr ""
+msgstr "Zastąp dane tej firmy zestawem danych demonstracyjnych — najpierw migawka, aby móc przywrócić."
 
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "Zastąpienie pliku PDF usuwa wszystkie umieszczenia balonów w tym dokumencie. Wiersze funkcji i ich wartości pozostają; możesz ponownie umieścić balony na nowym rysunku."
@@ -12523,7 +12523,7 @@ msgid "Restore tracked entities to available"
 msgstr "Przywróć śledzone jednostki do dostępnych"
 
 msgid "Restoring files"
-msgstr ""
+msgstr "Przywracanie plików"
 
 msgid "Result"
 msgstr "Wynik"
@@ -12553,7 +12553,7 @@ msgid "Retry all"
 msgstr "Ponów wszystko"
 
 msgid "Retry revert"
-msgstr ""
+msgstr "Ponów przywracanie"
 
 msgid "Return Home"
 msgstr "Wróć do domu"
@@ -12598,10 +12598,10 @@ msgid "Reversed"
 msgstr "Wycofane"
 
 msgid "Revert"
-msgstr ""
+msgstr "Przywróć"
 
 msgid "Reverting"
-msgstr ""
+msgstr "Przywracanie"
 
 msgid "Review"
 msgstr "Przegląd"
@@ -12982,7 +12982,7 @@ msgid "Saved Views"
 msgstr "Zapisane widoki"
 
 msgid "Saving a copy of your current data"
-msgstr ""
+msgstr "Zapisywanie kopii twoich bieżących danych"
 
 msgid "Saving..."
 msgstr "Zapisywanie..."
@@ -14091,7 +14091,7 @@ msgid "Started"
 msgstr "Rozpoczęto"
 
 msgid "Starting…"
-msgstr ""
+msgstr "Uruchamianie…"
 
 msgid "State / Province"
 msgstr "Stan / Prowincja"
@@ -15542,7 +15542,7 @@ msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Pers
 msgstr "To jest środowisko kontrolowane przez ITAR. Dostęp jest ograniczony do osób ze Stanów Zjednoczonych."
 
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
-msgstr ""
+msgstr "To trwa dłużej niż oczekiwano. Może się nadal zakończyć — jeśli nie, ponów przywracanie, aby przywrócić swoje dane."
 
 msgid "This is the month your fiscal year starts."
 msgstr "To jest miesiąc, w którym rozpoczyna się Twój rok obrachunkowy."
@@ -15648,7 +15648,7 @@ msgid "This user does not have two-factor authentication enabled."
 msgstr "Ten użytkownik nie ma włączonego uwierzytelniania dwuskładnikowego."
 
 msgid "This usually takes a few seconds. You can leave the page — it keeps running."
-msgstr ""
+msgstr "Zazwyczaj trwa to kilka sekund. Możesz opuścić stronę — nadal działa."
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "Ta wersja należy do otwartego <0>zmiany powiadomienia</0>. Edytuj tam."
@@ -16201,7 +16201,7 @@ msgid "Unknown"
 msgstr "Nieznany"
 
 msgid "unknown error"
-msgstr ""
+msgstr "nieznany błąd"
 
 msgid "unknown location"
 msgstr "nieznana lokalizacja"

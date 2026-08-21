@@ -1125,7 +1125,7 @@ msgid "Add match"
 msgstr "Добавить совпадение"
 
 msgid "Add New"
-msgstr ""
+msgstr "Добавить"
 
 msgid "Add Note"
 msgstr "Добавить примечание"
@@ -1243,7 +1243,7 @@ msgid "Added for this customer"
 msgstr "Добавлено для этого клиента"
 
 msgid "Adding demo records"
-msgstr ""
+msgstr "Добавление демо-записей"
 
 msgid "Adding..."
 msgstr "Добавление..."
@@ -1619,7 +1619,7 @@ msgid "Apply"
 msgstr "Применить"
 
 msgid "Apply a demo template"
-msgstr ""
+msgstr "Применить шаблон демо"
 
 msgid "Apply available credits"
 msgstr "Применить доступные кредиты"
@@ -1649,10 +1649,10 @@ msgid "Apply to invoices"
 msgstr "Применить к счетам"
 
 msgid "Applying"
-msgstr ""
+msgstr "Применение"
 
 msgid "Applying demo data"
-msgstr ""
+msgstr "Применение демо-данных"
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "Приближение к лимиту {PO_EMAIL_ATTACHMENT_LIMIT_MB} МБ."
@@ -3071,7 +3071,7 @@ msgid "Clearing account for goods received / invoice received matching"
 msgstr "Счет взаимного зачета для поступления товаров / сопоставления поступления счета"
 
 msgid "Clearing demo data"
-msgstr ""
+msgstr "Удаление демо-данных"
 
 msgid "Click again to disconnect"
 msgstr "Нажмите еще раз, чтобы отключить"
@@ -5024,16 +5024,16 @@ msgid "Demand-Based"
 msgstr "На основе спроса"
 
 msgid "Demo data"
-msgstr ""
+msgstr "Демо-данные"
 
 msgid "Demo Data"
-msgstr ""
+msgstr "Демо-данные"
 
 msgid "Demo data applied"
-msgstr ""
+msgstr "Демо-данные применены"
 
 msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
-msgstr ""
+msgstr "Демо-данные применены к этой компании. Сохраните их или восстановите, чтобы вернуть ровно то, что было раньше."
 
 msgid "department"
 msgstr "отдел"
@@ -5268,7 +5268,7 @@ msgid "Documents pushes invoices, bills and payments as native provider document
 msgstr "Documents отправляет счета-фактуры, счета и платежи в виде родных документов поставщика; их журналы записываются как покрытые документом. Он также получает платежи, записанные в поставщик, обратно в Carbon, закрывая соответствующую счет-фактуру или счет и публикуя журнал GL Carbon. Off записывает их как намеренно исключенные."
 
 msgid "Documents you open will show up here for quick access."
-msgstr ""
+msgstr "Открытые вами документы появятся здесь для быстрого доступа."
 
 msgid "Don't Cancel"
 msgstr "Не отменять"
@@ -6796,7 +6796,7 @@ msgid "Files attached here ride along on every purchase order email sent to this
 msgstr "Файлы, прикрепленные здесь, отправляются вместе с каждым письмом заказа на покупку, отправленным этому поставщику (в дополнение к общекорпоративным значениям по умолчанию)."
 
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
-msgstr ""
+msgstr "Заполните эту компанию реалистичной историей отрасли, чтобы на каждом экране было что-нибудь. Вы можете вернуть то, что было раньше."
 
 msgid "Filter"
 msgstr "Фильтр"
@@ -7580,7 +7580,7 @@ msgid "Implementation"
 msgstr "Внедрение"
 
 msgid "Implementation Hub"
-msgstr ""
+msgstr "Центр внедрения"
 
 msgid "Implementation Lead"
 msgstr "Руководитель внедрения"
@@ -8248,7 +8248,7 @@ msgid "Kanbans"
 msgstr "Канбаны"
 
 msgid "Keep"
-msgstr ""
+msgstr "Сохранить"
 
 msgid "Keep Current"
 msgstr "Сохранить текущие"
@@ -11719,7 +11719,7 @@ msgid "Push to accounting"
 msgstr "Отправить в учет"
 
 msgid "Putting your data back"
-msgstr ""
+msgstr "Восстановление ваших данных"
 
 #. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
 msgid "QR Code to create a {0} for this kanban"
@@ -11964,7 +11964,7 @@ msgid "Ready for Quote"
 msgstr "Готово к предложению"
 
 msgid "ready to keep or revert"
-msgstr ""
+msgstr "готово к сохранению или восстановлению"
 
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "Видимость запасов и производства в реальном времени"
@@ -12366,7 +12366,7 @@ msgid "Replace PDF"
 msgstr "Заменить PDF"
 
 msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
-msgstr ""
+msgstr "Замените данные этой компании набором демо-данных — сначала создан снимок, чтобы вы могли восстановить исходные данные."
 
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "Замена PDF удаляет все размещения выносок в этом документе. Строки функций и их значения остаются; вы можете снова разместить выноски на новом чертеже."
@@ -12523,7 +12523,7 @@ msgid "Restore tracked entities to available"
 msgstr "Восстановить отслеживаемые объекты в доступные"
 
 msgid "Restoring files"
-msgstr ""
+msgstr "Восстановление файлов"
 
 msgid "Result"
 msgstr "Результат"
@@ -12553,7 +12553,7 @@ msgid "Retry all"
 msgstr "Повторить все"
 
 msgid "Retry revert"
-msgstr ""
+msgstr "Повторить восстановление"
 
 msgid "Return Home"
 msgstr "Вернуться на главную"
@@ -12598,10 +12598,10 @@ msgid "Reversed"
 msgstr "Сторнировано"
 
 msgid "Revert"
-msgstr ""
+msgstr "Восстановить"
 
 msgid "Reverting"
-msgstr ""
+msgstr "Восстановление"
 
 msgid "Review"
 msgstr "Обзор"
@@ -12982,7 +12982,7 @@ msgid "Saved Views"
 msgstr "Сохраненные представления"
 
 msgid "Saving a copy of your current data"
-msgstr ""
+msgstr "Сохранение копии текущих данных"
 
 msgid "Saving..."
 msgstr "Сохранение..."
@@ -14091,7 +14091,7 @@ msgid "Started"
 msgstr "Начал"
 
 msgid "Starting…"
-msgstr ""
+msgstr "Начинаю…"
 
 msgid "State / Province"
 msgstr "Штат / Провинция"
@@ -15542,7 +15542,7 @@ msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Pers
 msgstr "Это среда, контролируемая ITAR. Доступ ограничен для лиц США."
 
 msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
-msgstr ""
+msgstr "Это занимает больше времени, чем ожидалось. Процесс может все еще завершиться — если нет, повторите восстановление, чтобы вернуть ваши данные."
 
 msgid "This is the month your fiscal year starts."
 msgstr "Это месяц, когда начинается ваш финансовый год."
@@ -15648,7 +15648,7 @@ msgid "This user does not have two-factor authentication enabled."
 msgstr "Этот пользователь не имеет включенную двухфакторную аутентификацию."
 
 msgid "This usually takes a few seconds. You can leave the page — it keeps running."
-msgstr ""
+msgstr "Обычно это занимает несколько секунд. Вы можете оставить страницу — она продолжит работу."
 
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "Эта версия принадлежит открытому <0>уведомлению об изменении</0>. Отредактируйте его там."
@@ -16201,7 +16201,7 @@ msgid "Unknown"
 msgstr "Неизвестно"
 
 msgid "unknown error"
-msgstr ""
+msgstr "неизвестная ошибка"
 
 msgid "unknown location"
 msgstr "неизвестное местоположение"
