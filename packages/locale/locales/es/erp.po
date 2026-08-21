@@ -49,8 +49,8 @@ msgid "(excluded for this customer)"
 msgstr "(excluido para este cliente)"
 
 #. placeholder {0}: open.length
-msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
-msgstr "{0, plural, one {Esta parte está en 1 aviso de cambio abierto} other {Esta parte está en # avisos de cambio abiertos}}"
+msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
+msgstr "{0, plural, one {Este artículo está en 1 aviso de cambio abierto} other {Este artículo está en # avisos de cambio abiertos}}"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -8102,6 +8102,9 @@ msgstr "Los artículos dentro de esta ventana obtienen una insignia amarilla."
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Artículos: maestro de artículos, BOMs, Bill of Process, cambios de ingeniería, CAD"
 
+msgid "Its design may change before the change notice is released."
+msgstr "Su diseño puede cambiar antes de que se libere el aviso de cambio."
+
 msgid "Job"
 msgstr "Trabajo"
 
@@ -10318,9 +10321,6 @@ msgstr "AR abierto"
 
 msgid "Open Audit Log"
 msgstr "Abrir Registro de Auditoría"
-
-msgid "Open change notices affecting this part"
-msgstr "Abrir avisos de cambio que afecten esta parte"
 
 msgid "Open date"
 msgstr "Fecha de apertura"

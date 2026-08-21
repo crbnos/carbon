@@ -49,8 +49,8 @@ msgid "(excluded for this customer)"
 msgstr "(इस ग्राहक के लिए बाहर रखा गया)"
 
 #. placeholder {0}: open.length
-msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
-msgstr "{0, plural, one {यह भाग 1 खुली परिवर्तन सूचना पर है} other {यह भाग # खुली परिवर्तन सूचनाओं पर है}}"
+msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
+msgstr "{0, plural, one {यह आइटम 1 खुली परिवर्तन सूचना पर है} other {यह आइटम # खुली परिवर्तन सूचनाओं पर है}}"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -8102,6 +8102,9 @@ msgstr "इस विंडो के अंदर आइटम को एक �
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "आइटम: आइटम मास्टर, BOMs, बिल ऑफ प्रोसेस, इंजीनियरिंग परिवर्तन, CAD"
 
+msgid "Its design may change before the change notice is released."
+msgstr "इसकी डिजाइन परिवर्तन सूचना जारी होने से पहले बदल सकती है।"
+
 msgid "Job"
 msgstr "Job"
 
@@ -10318,9 +10321,6 @@ msgstr "खुला AR"
 
 msgid "Open Audit Log"
 msgstr "ऑडिट लॉग खोलें"
-
-msgid "Open change notices affecting this part"
-msgstr "इस भाग को प्रभावित करने वाली परिवर्तन सूचनाएं खोलें"
 
 msgid "Open date"
 msgstr "खोलने की तारीख"

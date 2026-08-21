@@ -49,8 +49,8 @@ msgid "(excluded for this customer)"
 msgstr "(已为此客户排除)"
 
 #. placeholder {0}: open.length
-msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
-msgstr "{0, plural, one {此零件包含在1个开放的更改单中} other {此零件包含在#个开放的更改单中}}"
+msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
+msgstr "{0, plural, one {此物品包含在1个未完成的更改单中} other {此物品包含在#个未完成的更改单中}}"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -8102,6 +8102,9 @@ msgstr "此窗口内的项目会获得黄色徽章。"
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "项目：项目主数据、物料清单、工艺流程、工程变更、CAD"
 
+msgid "Its design may change before the change notice is released."
+msgstr "在更改单发布前，其设计可能会发生变化。"
+
 msgid "Job"
 msgstr "工作"
 
@@ -10318,9 +10321,6 @@ msgstr "未结应收"
 
 msgid "Open Audit Log"
 msgstr "打开审计日志"
-
-msgid "Open change notices affecting this part"
-msgstr "打开影响此零件的更改单"
 
 msgid "Open date"
 msgstr "开始日期"

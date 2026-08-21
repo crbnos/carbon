@@ -49,8 +49,8 @@ msgid "(excluded for this customer)"
 msgstr "(исключено для этого клиента)"
 
 #. placeholder {0}: open.length
-msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
-msgstr "{0, plural, one {Эта деталь находится на 1 открытой уведомлении об изменении} other {Эта деталь находится на # открытых уведомлениях об изменении}}"
+msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
+msgstr "{0, plural, one {Этот товар находится в 1 открытом уведомлении об изменении} other {Этот товар находится в # открытых уведомлениях об изменении}}"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -8102,6 +8102,9 @@ msgstr "Товары в этом диапазоне получают жёлты�
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Товары: справочник товаров, спецификации, технологические процессы, инженерные изменения, САПР"
 
+msgid "Its design may change before the change notice is released."
+msgstr "Конструкция может измениться до выпуска уведомления об изменении."
+
 msgid "Job"
 msgstr "Задание"
 
@@ -10318,9 +10321,6 @@ msgstr "Открытая дебиторская задолженность"
 
 msgid "Open Audit Log"
 msgstr "Открыть журнал аудита"
-
-msgid "Open change notices affecting this part"
-msgstr "Открытые уведомления об изменении, влияющие на эту деталь"
 
 msgid "Open date"
 msgstr "Дата открытия"

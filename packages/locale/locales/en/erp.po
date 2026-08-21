@@ -49,8 +49,8 @@ msgid "(excluded for this customer)"
 msgstr "(excluded for this customer)"
 
 #. placeholder {0}: open.length
-msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
-msgstr "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
+msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
+msgstr "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -8102,6 +8102,9 @@ msgstr "Items inside this window get a yellow badge."
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 
+msgid "Its design may change before the change notice is released."
+msgstr "Its design may change before the change notice is released."
+
 msgid "Job"
 msgstr "Job"
 
@@ -10318,9 +10321,6 @@ msgstr "Open AR"
 
 msgid "Open Audit Log"
 msgstr "Open Audit Log"
-
-msgid "Open change notices affecting this part"
-msgstr "Open change notices affecting this part"
 
 msgid "Open date"
 msgstr "Open date"
