@@ -602,12 +602,8 @@ exist until the import creates it, so a parallel asset job resolves
     and `item_unique` is on the RAW revision column with NULL distinct, so
     inserting `'A'` against an existing `''`/NULL row raises no conflict and
     produces a second family member with no lineage;
-  - takes its four guessed fields from `mintDefaultsForRelease`
-    (`onshape-mint.ts`), a pure unit-pinned function: assembly (elementType 1) →
-    Make / Make to Order, part studio body (0) → Buy / Pull from Inventory, plus
-    Inventory tracking and EA. This is the SAME answer the BOM import derives
-    from having children, reached from the element type — one rule, so the same
-    part cannot classify differently depending on which door it came through;
+  - takes its replenishment from `resolveOnshapeReplenishment`
+    (`onshape-replenishment.ts`) — see below — plus Inventory tracking and EA;
   - inserts `item` directly and then the MANDATORY `part` row (the `parts` view
     inner-joins it, so an item without one is invisible), writes both mappings,
     and lets the normal provenance + asset flow run on the new item;
@@ -996,6 +992,55 @@ dropping it.
   `OnshapeUnreleasedPicker` emits `revision: ''`, so it would fail validation
   with nothing on screen to explain why. Creating from an unreleased version is
   a separate branch nobody has written.
+
+## Buy vs Make — one rule, three sources
+
+`onshape-replenishment.ts` in `packages/jobs`. Both paths that CREATE a part use
+it, so the same part cannot classify two ways depending on whether it arrived
+through a BOM import or a release.
+
+It lives in `packages/jobs` and is env-free for the same reason
+`onshape-matching.ts` and `onshape-bom-outcome.ts` do: importing the
+`@carbon/ee/onshape` barrel pulls in `client.ts`, which boots `@carbon/env` and
+throws "INNGEST_SIGNING_KEY is not set" in a unit test. Both consumers are in
+this package anyway.
+
+Precedence:
+
+1. **Onshape's "Purchasing Level"** — `"Purchased"` → Buy / Pull from Inventory,
+   anything else in that column → Make / Make to Order. This is the column the
+   LEGACY integration reads (`integrations.onshape.d.$did.v.$vid.e.$eid.bom.ts`
+   :139,:148) and the only place an engineer STATES the intent rather than
+   implying it. **It is COMPANY-DEFINED, not a stock Onshape property** —
+   verified live 2026-08-21 that it appears in neither the 26 stock BOM columns
+   nor the 19 stock element metadata properties, and that the test company
+   defines no custom properties at all. A company without it is the normal case.
+   Read case- and whitespace-insensitively on the DISPLAY NAME, because a
+   company-defined column has no stable propertyId to key on. That is the same
+   fragility the BOM-column note describes, and it is what the spec's deferred
+   "extensible custom-field mapping" question would fix.
+   - BOM import: from `row.columns`, which `bom.ts` already keeps for exactly
+     this ("Every column, keyed by display name — for custom-field mapping
+     later").
+   - Release: from `getElementMetadata`, since a release carries no BOM. One
+     extra call, made only on the auto-create branch, and non-fatal.
+2. **Structure**, when the column is absent. A BOM row with children is made and
+   a leaf is bought; a released ASSEMBLY element is made and a part studio BODY
+   is bought. An unrecognised element type falls to Buy — the safer wrong
+   answer, since it does not claim Carbon can build something it has no method
+   for.
+
+**What it deliberately does NOT do is legacy's fallback.** Legacy's `else`
+branch calls every part Make when the column is absent — which is every company
+that has not defined one — and that poisons MRP for purchased leaf parts. It is
+recorded as a defect in `.ai/plans/2026-08-13-onshape-import-revisions.md`.
+Absent falls to STRUCTURE, never to a blanket answer.
+
+Per the spec's field-ownership rule this is **seeded once on create and Carbon's
+thereafter**: replenishment is a business decision, not a CAD fact, so no later
+sync overwrites it. `describeOnshapeReplenishment` names WHICH source decided,
+because "Onshape told us" and "we inferred it from the shape of the tree" earn
+very different trust from whoever reads the notification.
 
 ## elementType — the numeric one
 

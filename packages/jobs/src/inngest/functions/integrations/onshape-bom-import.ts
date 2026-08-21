@@ -52,6 +52,10 @@ import {
 } from "./onshape-bom-outcome";
 import { pullOnshapeDrawingsForDocument } from "./onshape-drawings";
 import {
+  readOnshapePurchasingLevel,
+  resolveOnshapeReplenishment
+} from "./onshape-replenishment";
+import {
   groupAssetTargetsByElement,
   isTransientExportError,
   pullOnshapeAssetsForElement
@@ -793,27 +797,30 @@ export const onshapeBomImportFunction = inngest.createFunction(
             name: row.name,
             description: row.description || null,
             type: "Part",
-            // Onshape's BOM says nothing reliable about how Carbon should buy
-            // or make a LEAF part, so those take Carbon's own defaults rather
-            // than a guess derived from a column that may not exist.
+            // Buy vs Make, through the one shared rule the release path also
+            // uses — so the same part cannot classify two ways depending on
+            // whether it arrived through a BOM import or a release.
             //
-            // A row with children is different in kind, and not a guess at all:
-            // this import is about to give it a make method and fill it with
-            // materials. Minting it as Buy / Pull from Inventory contradicts
-            // the tree being written in the same transaction — MRP would plan
-            // a purchase order for a subassembly Carbon knows how to build,
-            // and because `methodMaterial.methodType` is denormalized from
-            // this column, the PARENT's line would read Pull from Inventory
-            // and never explode. The nested BOM would exist and never plan.
-            ...(rowIdsWithChildren.has(row.rowId)
-              ? {
-                  replenishmentSystem: "Make" as const,
-                  defaultMethodType: "Make to Order" as const
-                }
-              : {
-                  replenishmentSystem: "Buy" as const,
-                  defaultMethodType: "Pull from Inventory" as const
-                }),
+            // Onshape's own "Purchasing Level" wins when the company defines
+            // it: that is the only place an engineer STATES the intent, and it
+            // is what the legacy integration reads. It is a company-defined
+            // column, absent in most accounts, which is why structure is the
+            // fallback rather than legacy's blanket "Make".
+            //
+            // Structure is not a guess for a row with children: this import is
+            // about to give it a make method and fill it with materials.
+            // Minting it Buy contradicts the tree being written in the same
+            // transaction — and because `methodMaterial.methodType` is
+            // denormalized from this column, the PARENT's line would read Pull
+            // from Inventory and never explode.
+            ...(() => {
+              const { replenishmentSystem, defaultMethodType } =
+                resolveOnshapeReplenishment({
+                  purchasingLevel: readOnshapePurchasingLevel(row.columns),
+                  hasChildren: rowIdsWithChildren.has(row.rowId)
+                });
+              return { replenishmentSystem, defaultMethodType };
+            })(),
             itemTrackingType: "Inventory",
             unitOfMeasureCode: "EA",
             active: true,

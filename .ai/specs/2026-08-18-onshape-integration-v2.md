@@ -693,3 +693,29 @@ twice as well.
   became two document rows on one item depending on which event arrived. Both now name it
   after the item's `readableIdWithRevision`; verified live that the two paths converge on
   a single row.
+- 2026-08-21: **Replenishment unified with the legacy integration's mapping, at Raul's
+  prompt.** The legacy BOM route reads an Onshape column, "Purchasing Level"
+  (`Purchased` → Buy, else Make), and the Field-ownership section above already named it
+  the right seed. Phase 10's first cut ignored it and inferred from `elementType`, and
+  the v2 BOM import inferred from having children — three rules for one decision.
+  Now one: `resolveOnshapeReplenishment` (`packages/jobs/.../onshape-replenishment.ts`),
+  used by BOTH the BOM import and the release mint.
+  - Purchasing Level wins when present, in both directions — a declared-Purchased
+    assembly is Buy, a declared-Manufactured leaf is Make.
+  - Absent falls to STRUCTURE (children / element type), NOT to legacy's blanket
+    "Make", which is the recorded MRP defect in the 2026-08-13 plan.
+  - Verified live that the column is **company-defined, not stock**: absent from the 26
+    stock BOM columns AND the 19 stock element metadata properties, and this company
+    defines no custom properties at all. So the legacy rule is INERT here and calls
+    everything Make — which is exactly the defect.
+  - The release path reads it from `getElementMetadata` (no BOM to read), one extra call
+    on the auto-create branch only, non-fatal.
+  - Matched on DISPLAY NAME, case- and whitespace-insensitively. A company-defined column
+    has no stable propertyId; this is the fragility the deferred "extensible custom-field
+    mapping" question would close.
+  **Not proven:** that a real custom "Purchasing Level" property comes back in
+  `getElementMetadata`'s `properties` array under its display name. No account available
+  that defines one. The BOM half is as proven as legacy's, since it reads the same
+  headers by the same name. Verified live instead: both structural fallbacks (assembly →
+  Make / Make to Order, part studio body → Buy / Pull from Inventory) and that a failed
+  metadata read does not stop the part being created.

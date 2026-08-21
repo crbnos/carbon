@@ -54,6 +54,40 @@ describe("mintDefaultsForRelease", () => {
     expect(defaults.unitOfMeasureCode).toBe("EA");
   });
 
+  it("follows Onshape's Purchasing Level over the element type", () => {
+    // The column the LEGACY integration reads. It is the only place an engineer
+    // states the intent rather than implying it, so it outranks the structural
+    // guess in both directions.
+    expect(
+      mintDefaultsForRelease({
+        elementType: 1,
+        partNumber: "RD-410",
+        purchasingLevel: "Purchased"
+      }).replenishmentSystem
+    ).toBe("Buy");
+    expect(
+      mintDefaultsForRelease({
+        elementType: 0,
+        partNumber: "EL-402",
+        purchasingLevel: "Manufactured"
+      }).replenishmentSystem
+    ).toBe("Make");
+  });
+
+  it("reports WHICH source decided it", () => {
+    expect(
+      mintDefaultsForRelease({
+        elementType: 1,
+        partNumber: "RD-410",
+        purchasingLevel: "Purchased"
+      }).replenishmentSource
+    ).toBe("purchasing-level");
+    expect(
+      mintDefaultsForRelease({ elementType: 1, partNumber: "RD-410" })
+        .replenishmentSource
+    ).toBe("structure");
+  });
+
   it("always names the part and what was assumed", () => {
     // The assumption is the mitigation for guessing at all — it has to be
     // readable and specific, because it is what a person acts on.

@@ -41,6 +41,7 @@ import { withRateLimitRetry } from "./onshape-backfill";
 import { pullOnshapeDrawingsForDocument } from "./onshape-drawings";
 import { mintDefaultsForRelease } from "./onshape-mint";
 import { runOnshapeReleaseImport } from "./onshape-release-import";
+import { readOnshapePurchasingLevel } from "./onshape-replenishment";
 import { syncOnshapeDrawingAssetsToItem } from "./onshape-sync-element";
 import {
   isTransientExportError,
@@ -398,9 +399,45 @@ export const onshapeReleaseV2Function = inngest.createFunction(
             continue;
           }
 
+          // Ask Onshape what it thinks this part is before guessing. The
+          // release carries no BOM, so "Purchasing Level" — the company-defined
+          // column the legacy integration reads — has to come from the
+          // element's metadata. Most companies do not define it, in which case
+          // this is one cheap call that returns nothing and the element type
+          // decides instead.
+          //
+          // Non-fatal: a failed metadata read must not stop a part being
+          // created, it only costs the better answer.
+          let purchasingLevel: string | null = null;
+          try {
+            const metadata = await withRateLimitRetry(
+              () =>
+                client.getElementMetadata(
+                  payload.documentId,
+                  payload.versionId,
+                  payload.elementId
+                ),
+              `metadata for ${payload.partNumber}`
+            );
+            const columns: Record<string, string> = {};
+            for (const property of metadata?.properties ?? []) {
+              if (typeof property?.name !== "string") continue;
+              if (typeof property?.value !== "string") continue;
+              columns[property.name] = property.value;
+            }
+            purchasingLevel = readOnshapePurchasingLevel(columns);
+          } catch (error) {
+            if (error instanceof RetryAfterError) throw error;
+            console.warn(
+              `[ONSHAPE RELEASE V2] could not read element metadata for ${payload.partNumber}`,
+              error
+            );
+          }
+
           const defaults = mintDefaultsForRelease({
             elementType: payload.elementType,
-            partNumber: payload.partNumber
+            partNumber: payload.partNumber,
+            purchasingLevel
           });
 
           const minted = await carbon
