@@ -1205,7 +1205,7 @@ msgstr "添加工时卡"
 
 #. placeholder {0}: batch.batchReadableId
 msgid "Add to {0}"
-msgstr ""
+msgstr "添加到 {0}"
 
 msgid "Add to stock for future use"
 msgstr "添加到库存以供将来使用"
@@ -2428,7 +2428,7 @@ msgstr "批次"
 #. placeholder {0}: group.length
 #. placeholder {1}: group[0].processName ?? group[0].description ?? ""
 msgid "Batch {0} × {1}"
-msgstr ""
+msgstr "批次 {0} × {1}"
 
 msgid "Batch / Serial"
 msgstr "批次 / 序列号"

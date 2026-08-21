@@ -1205,7 +1205,7 @@ msgstr "Aggiungi Scheda Orario"
 
 #. placeholder {0}: batch.batchReadableId
 msgid "Add to {0}"
-msgstr ""
+msgstr "Aggiungi a {0}"
 
 msgid "Add to stock for future use"
 msgstr "Aggiungi alle scorte per uso futuro"
@@ -2428,7 +2428,7 @@ msgstr "Lotto"
 #. placeholder {0}: group.length
 #. placeholder {1}: group[0].processName ?? group[0].description ?? ""
 msgid "Batch {0} × {1}"
-msgstr ""
+msgstr "Lotto {0} × {1}"
 
 msgid "Batch / Serial"
 msgstr "Lotto / Seriale"

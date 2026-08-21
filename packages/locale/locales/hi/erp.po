@@ -1205,7 +1205,7 @@ msgstr "टाइमकार्ड जोड़ें"
 
 #. placeholder {0}: batch.batchReadableId
 msgid "Add to {0}"
-msgstr ""
+msgstr "{0} में जोड़ें"
 
 msgid "Add to stock for future use"
 msgstr "भविष्य के उपयोग के लिए स्टॉक में जोड़ें"
@@ -2428,7 +2428,7 @@ msgstr "बैच"
 #. placeholder {0}: group.length
 #. placeholder {1}: group[0].processName ?? group[0].description ?? ""
 msgid "Batch {0} × {1}"
-msgstr ""
+msgstr "बैच {0} × {1}"
 
 msgid "Batch / Serial"
 msgstr "बैच / सीरीज़"

@@ -1205,7 +1205,7 @@ msgstr "Ajouter une feuille de temps"
 
 #. placeholder {0}: batch.batchReadableId
 msgid "Add to {0}"
-msgstr ""
+msgstr "Ajouter à {0}"
 
 msgid "Add to stock for future use"
 msgstr "Ajouter au stock pour utilisation future"
@@ -2428,7 +2428,7 @@ msgstr "Lot"
 #. placeholder {0}: group.length
 #. placeholder {1}: group[0].processName ?? group[0].description ?? ""
 msgid "Batch {0} × {1}"
-msgstr ""
+msgstr "Lot {0} × {1}"
 
 msgid "Batch / Serial"
 msgstr "Lot / Série"

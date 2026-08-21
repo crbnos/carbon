@@ -1205,7 +1205,7 @@ msgstr "タイムカードを追加"
 
 #. placeholder {0}: batch.batchReadableId
 msgid "Add to {0}"
-msgstr ""
+msgstr "{0}に追加"
 
 msgid "Add to stock for future use"
 msgstr "将来の使用のためにストックに追加"
@@ -2428,7 +2428,7 @@ msgstr "バッチ"
 #. placeholder {0}: group.length
 #. placeholder {1}: group[0].processName ?? group[0].description ?? ""
 msgid "Batch {0} × {1}"
-msgstr ""
+msgstr "バッチ {0} × {1}"
 
 msgid "Batch / Serial"
 msgstr "バッチ / シリアル"

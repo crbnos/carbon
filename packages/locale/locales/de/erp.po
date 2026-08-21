@@ -1205,7 +1205,7 @@ msgstr "Zeitkarte hinzufügen"
 
 #. placeholder {0}: batch.batchReadableId
 msgid "Add to {0}"
-msgstr ""
+msgstr "Zu {0} hinzufügen"
 
 msgid "Add to stock for future use"
 msgstr "Zum zukünftigen Gebrauch in den Bestand aufnehmen"
@@ -2428,7 +2428,7 @@ msgstr "Charge"
 #. placeholder {0}: group.length
 #. placeholder {1}: group[0].processName ?? group[0].description ?? ""
 msgid "Batch {0} × {1}"
-msgstr ""
+msgstr "Charge {0} × {1}"
 
 msgid "Batch / Serial"
 msgstr "Charge / Seriennummer"
