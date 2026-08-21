@@ -111,11 +111,11 @@ export const stripeConnectPullSweepFunction = inngest.createFunction(
             >;
             const storedCursor = settings.pullCursor as number | undefined;
             const fallbackCursor = target.updatedAt
-              ? Math.floor(
+              ? Math.trunc(
                   parseAbsolute(target.updatedAt, "UTC").toDate().getTime() /
                     1000
                 )
-              : Math.floor(datetime.now("UTC").toDate().getTime() / 1000) -
+              : Math.trunc(datetime.now("UTC").toDate().getTime() / 1000) -
                 60 * 60 * 24 * 7; // 7 days max
 
             const since = storedCursor ?? fallbackCursor;

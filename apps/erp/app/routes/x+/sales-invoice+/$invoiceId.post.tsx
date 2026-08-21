@@ -72,7 +72,7 @@ async function storeStripeInvoicePdf({
   if (!opportunityId) return;
 
   const response = await fetch(invoicePdf, {
-    signal: AbortSignal.timeout(15_000),
+    signal: AbortSignal.timeout(15_000)
   });
   if (!response.ok) {
     throw new Error(
@@ -240,7 +240,7 @@ function toStripeEpochSeconds(
   timeZone: string
 ): number | undefined {
   if (!date) return undefined;
-  return Math.floor(
+  return Math.trunc(
     toCalendarDateTime(parseDate(date), new Time(12))
       .toDate(timeZone)
       .getTime() / 1000
@@ -252,7 +252,7 @@ const FIVE_YEARS_SECONDS = 5 * 365.25 * 24 * 60 * 60;
 function clampDueDate(epoch: number | undefined): number | undefined {
   if (epoch === undefined) return undefined;
   // Native .toDate().getTime() is required to get Unix epoch seconds for Stripe.
-  const now = Math.floor(datetime.now("UTC").toDate().getTime() / 1000);
+  const now = Math.trunc(datetime.now("UTC").toDate().getTime() / 1000);
   if (epoch < now || epoch > now + FIVE_YEARS_SECONDS) return undefined;
   return epoch;
 }
@@ -260,7 +260,7 @@ function clampDueDate(epoch: number | undefined): number | undefined {
 function clampEffectiveAt(epoch: number | undefined): number | undefined {
   if (epoch === undefined) return undefined;
   // Native .toDate().getTime() is required to get Unix epoch seconds for Stripe.
-  const now = Math.floor(datetime.now("UTC").toDate().getTime() / 1000);
+  const now = Math.trunc(datetime.now("UTC").toDate().getTime() / 1000);
   if (epoch > now) return now;
   if (epoch < now - FIVE_YEARS_SECONDS) return undefined;
   return epoch;
