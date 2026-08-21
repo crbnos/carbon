@@ -1,8 +1,21 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import type {
+  CxmlConfirmationPayload,
+  CxmlInvoicePayload,
+  CxmlShipNoticePayload,
+  PunchoutCart
+} from "@carbon/ee/punchout";
+import { resolveCartLines } from "@carbon/ee/punchout";
 import { getLogger } from "@carbon/logger";
-import { datetime, getPurchaseOrderStatus } from "@carbon/utils";
+import {
+  datetime,
+  deriveRate,
+  getPurchaseOrderStatus,
+  taxableBase
+} from "@carbon/utils";
+import { now, parseAbsolute } from "@internationalized/date";
 import type {
   PostgrestResponse,
   PostgrestSingleResponse,
@@ -14,7 +27,12 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { getCurrencyByCode } from "../accounting/accounting.ee.service";
+import {
+  insertPurchaseInvoice,
+  upsertPurchaseInvoiceLine
+} from "../invoicing/invoicing.service";
 import type { PurchaseInvoice } from "../invoicing/types";
+import { getUnitOfMeasuresList } from "../items/items.service";
 import {
   canApproveRequest,
   getLatestApprovalRequestForDocument,
@@ -3013,4 +3031,760 @@ export async function getDefaultAttachmentsForPO(
       path: `${prefix}/${f.name}`
     }));
   });
+}
+
+// ---------------------------------------------------------------------------
+// Punchout sessions + cXML documents (McMaster-Carr integration)
+// ---------------------------------------------------------------------------
+
+type CxmlDocumentDirection =
+  Database["public"]["Enums"]["cxmlDocumentDirection"];
+type CxmlDocumentType = Database["public"]["Enums"]["cxmlDocumentType"];
+type CxmlDocumentStatus = Database["public"]["Enums"]["cxmlDocumentStatus"];
+type PunchoutSessionStatus =
+  Database["public"]["Enums"]["punchoutSessionStatus"];
+
+type ServiceResult<T> = { data: T | null; error: { message: string } | null };
+
+const PUNCHOUT_SESSION_TTL_HOURS = 2;
+
+// Guarded punchout-session transitions. A session is inert until an
+// authenticated user consumes it, so only these moves are legal.
+const PUNCHOUT_SESSION_TRANSITIONS: Record<
+  PunchoutSessionStatus,
+  PunchoutSessionStatus[]
+> = {
+  Pending: ["Returned", "Cancelled", "Expired"],
+  Returned: ["Consumed"],
+  Consumed: [],
+  Cancelled: [],
+  Expired: []
+};
+
+export async function createPunchoutSession(
+  client: SupabaseClient<Database>,
+  input: {
+    companyId: string;
+    integrationId: string;
+    supplierId: string;
+    purchaseOrderId?: string | null;
+    createdBy: string;
+  }
+) {
+  // Two concatenated UUIDs — unguessable correlation token, never used for auth.
+  const buyerCookie = `${crypto.randomUUID()}${crypto.randomUUID()}`.replace(
+    /-/g,
+    ""
+  );
+  const expiresAt = now("UTC")
+    .add({ hours: PUNCHOUT_SESSION_TTL_HOURS })
+    .toAbsoluteString();
+
+  return client
+    .from("punchoutSession")
+    .insert({
+      companyId: input.companyId,
+      integrationId: input.integrationId,
+      supplierId: input.supplierId,
+      purchaseOrderId: input.purchaseOrderId ?? null,
+      buyerCookie,
+      expiresAt,
+      createdBy: input.createdBy
+    })
+    .select("id, buyerCookie")
+    .single();
+}
+
+export async function getPunchoutSession(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("punchoutSession")
+    .select("*")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
+// Service-role caller (the public return route) — the session row carries its
+// own companyId, so no caller-supplied scope is available.
+export async function getPunchoutSessionByCookie(
+  client: SupabaseClient<Database>,
+  buyerCookie: string
+) {
+  return client
+    .from("punchoutSession")
+    .select("*")
+    .eq("buyerCookie", buyerCookie)
+    .single();
+}
+
+export async function updatePunchoutSession(
+  client: SupabaseClient<Database>,
+  input: {
+    id: string;
+    companyId: string;
+    status: PunchoutSessionStatus;
+    cart?: Json;
+    purchaseOrderId?: string | null;
+    updatedBy?: string | null;
+  }
+): Promise<ServiceResult<{ id: string; status: PunchoutSessionStatus }>> {
+  const existing = await client
+    .from("punchoutSession")
+    .select("status")
+    .eq("id", input.id)
+    .eq("companyId", input.companyId)
+    .single();
+  if (existing.error || !existing.data) {
+    return { data: null, error: { message: "Punchout session not found" } };
+  }
+
+  const current = existing.data.status as PunchoutSessionStatus;
+  if (!PUNCHOUT_SESSION_TRANSITIONS[current]?.includes(input.status)) {
+    return {
+      data: null,
+      error: {
+        message: `Cannot transition punchout session from ${current} to ${input.status}`
+      }
+    };
+  }
+
+  const update: Database["public"]["Tables"]["punchoutSession"]["Update"] = {
+    status: input.status,
+    updatedAt: datetime.timestamp()
+  };
+  if (input.cart !== undefined) update.cart = input.cart;
+  if (input.purchaseOrderId !== undefined)
+    update.purchaseOrderId = input.purchaseOrderId;
+  if (input.updatedBy) update.updatedBy = input.updatedBy;
+
+  const result = await client
+    .from("punchoutSession")
+    .update(update)
+    .eq("id", input.id)
+    .eq("companyId", input.companyId)
+    .select("id, status")
+    .single();
+  if (result.error || !result.data) {
+    return {
+      data: null,
+      error: { message: result.error?.message ?? "Failed to update session" }
+    };
+  }
+  return {
+    data: {
+      id: result.data.id,
+      status: result.data.status as PunchoutSessionStatus
+    },
+    error: null
+  };
+}
+
+/**
+ * Resolve a returned punchout cart into a draft purchase order (created fresh,
+ * or appended to the session's target draft PO). Marks the session Consumed.
+ */
+export async function consumePunchoutCart(
+  client: SupabaseClient<Database>,
+  input: {
+    sessionId: string;
+    companyId: string;
+    userId: string;
+    companyGroupId: string;
+  }
+): Promise<ServiceResult<{ purchaseOrderId: string; issues: string[] }>> {
+  const { sessionId, companyId, userId, companyGroupId } = input;
+
+  const sessionResult = await client
+    .from("punchoutSession")
+    .select("*")
+    .eq("id", sessionId)
+    .eq("companyId", companyId)
+    .single();
+  if (sessionResult.error || !sessionResult.data) {
+    return { data: null, error: { message: "Punchout session not found" } };
+  }
+  const session = sessionResult.data;
+
+  if (session.status !== "Returned") {
+    return {
+      data: null,
+      error: {
+        message: `Punchout session is ${session.status}, expected Returned`
+      }
+    };
+  }
+  if (parseAbsolute(session.expiresAt, "UTC").compare(now("UTC")) <= 0) {
+    return { data: null, error: { message: "Punchout session has expired" } };
+  }
+  if (!session.cart) {
+    return { data: null, error: { message: "Punchout session has no cart" } };
+  }
+  const cart = session.cart as unknown as PunchoutCart;
+
+  const integrationResult = await client
+    .from("companyIntegration")
+    .select("metadata")
+    .eq("companyId", companyId)
+    .eq("id", session.integrationId)
+    .single();
+  const metadata = (integrationResult.data?.metadata ?? {}) as Record<
+    string,
+    unknown
+  >;
+  const defaultExpenseAccountId =
+    typeof metadata.defaultExpenseAccountId === "string"
+      ? metadata.defaultExpenseAccountId
+      : "";
+  if (!defaultExpenseAccountId) {
+    return {
+      data: null,
+      error: {
+        message:
+          "McMaster-Carr integration has no default expense account configured"
+      }
+    };
+  }
+
+  // One query for the supplier's cross-references — never N+1 per cart line.
+  const supplierParts = await client
+    .from("supplierPart")
+    .select(
+      "supplierPartId, itemId, supplierUnitOfMeasureCode, conversionFactor"
+    )
+    .eq("companyId", companyId)
+    .eq("supplierId", session.supplierId)
+    .eq("active", true);
+
+  const uomResult = await getUnitOfMeasuresList(client, companyId);
+  const uomCodes = (uomResult.data ?? []).map((u) => u.code);
+
+  const resolved = resolveCartLines({
+    cart,
+    supplierParts: (supplierParts.data ?? [])
+      .filter((p): p is typeof p & { supplierPartId: string } =>
+        Boolean(p.supplierPartId)
+      )
+      .map((p) => ({
+        supplierPartId: p.supplierPartId,
+        itemId: p.itemId,
+        supplierUnitOfMeasureCode: p.supplierUnitOfMeasureCode,
+        conversionFactor: p.conversionFactor
+      })),
+    uomCodes,
+    defaultExpenseAccountId
+  });
+
+  // Create a fresh draft PO, or validate the append target.
+  let purchaseOrderId = session.purchaseOrderId;
+  let createdNewPo = false;
+  if (!purchaseOrderId) {
+    const poResult = await insertPurchaseOrder(client, {
+      supplierId: session.supplierId,
+      companyId,
+      companyGroupId,
+      createdBy: userId,
+      status: "Draft"
+    });
+    if (poResult.error || !poResult.data) {
+      return {
+        data: null,
+        error: {
+          message: poResult.error?.message ?? "Failed to create purchase order"
+        }
+      };
+    }
+    purchaseOrderId = poResult.data.id;
+    createdNewPo = true;
+  } else {
+    const existing = await client
+      .from("purchaseOrder")
+      .select("id, status, supplierId")
+      .eq("id", purchaseOrderId)
+      .eq("companyId", companyId)
+      .single();
+    if (existing.error || !existing.data) {
+      return {
+        data: null,
+        error: { message: "Target purchase order not found" }
+      };
+    }
+    if (existing.data.status !== "Draft") {
+      return {
+        data: null,
+        error: { message: "Can only add to a draft purchase order" }
+      };
+    }
+    if (existing.data.supplierId !== session.supplierId) {
+      return {
+        data: null,
+        error: {
+          message: "Purchase order supplier does not match McMaster-Carr"
+        }
+      };
+    }
+  }
+
+  const issues: string[] = [];
+  for (const line of resolved) {
+    const lineResult = await upsertPurchaseOrderLine(client, {
+      purchaseOrderId,
+      purchaseOrderLineType: line.purchaseOrderLineType,
+      itemId: line.itemId ?? undefined,
+      accountId: line.accountId ?? undefined,
+      description: line.description,
+      purchaseQuantity: line.purchaseQuantity,
+      supplierUnitPrice: line.supplierUnitPrice,
+      supplierPartId: line.supplierPartId,
+      supplierPartAuxiliaryId: line.supplierPartAuxiliaryId ?? undefined,
+      purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
+      inventoryUnitOfMeasureCode: line.inventoryUnitOfMeasureCode ?? undefined,
+      conversionFactor: line.conversionFactor,
+      supplierShippingCost: 0,
+      supplierTaxAmount: 0,
+      taxPercent: 0,
+      companyId,
+      createdBy: userId
+    });
+    if (lineResult.error) {
+      // Roll back a freshly-created PO so a partial cart never lingers.
+      if (createdNewPo) await deletePurchaseOrder(client, purchaseOrderId);
+      return { data: null, error: { message: lineResult.error.message } };
+    }
+    issues.push(...line.issues);
+  }
+
+  const consumed = await updatePunchoutSession(client, {
+    id: sessionId,
+    companyId,
+    status: "Consumed",
+    purchaseOrderId,
+    updatedBy: userId
+  });
+  if (consumed.error) {
+    return { data: null, error: consumed.error };
+  }
+
+  return { data: { purchaseOrderId, issues }, error: null };
+}
+
+export async function insertCxmlDocument(
+  client: SupabaseClient<Database>,
+  input: {
+    companyId: string;
+    integrationId: string;
+    supplierId: string;
+    direction: CxmlDocumentDirection;
+    documentType: CxmlDocumentType;
+    status: CxmlDocumentStatus;
+    payloadId: string;
+    externalId?: string | null;
+    payload: Json;
+    purchaseOrderId?: string | null;
+    createdBy: string;
+  }
+): Promise<
+  ServiceResult<Database["public"]["Tables"]["cxmlDocument"]["Row"]> & {
+    duplicate?: boolean;
+  }
+> {
+  const result = await client
+    .from("cxmlDocument")
+    .insert({
+      companyId: input.companyId,
+      integrationId: input.integrationId,
+      supplierId: input.supplierId,
+      direction: input.direction,
+      documentType: input.documentType,
+      status: input.status,
+      payloadId: input.payloadId,
+      externalId: input.externalId ?? null,
+      payload: input.payload,
+      purchaseOrderId: input.purchaseOrderId ?? null,
+      createdBy: input.createdBy
+    })
+    .select("*")
+    .single();
+
+  if (result.error) {
+    // Unique violation on the dedup index → return the existing row so inbound
+    // redelivery is idempotent.
+    if (result.error.code === "23505") {
+      const existing = await client
+        .from("cxmlDocument")
+        .select("*")
+        .eq("companyId", input.companyId)
+        .eq("integrationId", input.integrationId)
+        .eq("direction", input.direction)
+        .eq("documentType", input.documentType)
+        .eq("payloadId", input.payloadId)
+        .single();
+      if (existing.data) {
+        return { data: existing.data, error: null, duplicate: true };
+      }
+    }
+    return { data: null, error: { message: result.error.message } };
+  }
+  return { data: result.data, error: null, duplicate: false };
+}
+
+export async function getCxmlDocuments(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    status: string | null;
+    documentType: string | null;
+  }
+) {
+  let query = client
+    .from("cxmlDocument")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args.status) {
+    query = query.eq("status", args.status as CxmlDocumentStatus);
+  }
+  if (args.documentType) {
+    query = query.eq("documentType", args.documentType as CxmlDocumentType);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "createdAt", ascending: false }
+  ]);
+
+  return query;
+}
+
+export async function getCxmlDocument(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("cxmlDocument")
+    .select("*")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export async function rejectCxmlDocument(
+  client: SupabaseClient<Database>,
+  input: { id: string; companyId: string; userId: string }
+) {
+  return client
+    .from("cxmlDocument")
+    .update({
+      status: "Rejected",
+      updatedBy: input.userId,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", input.id)
+    .eq("companyId", input.companyId)
+    .select("id")
+    .single();
+}
+
+export async function updateCxmlDocumentStatus(
+  client: SupabaseClient<Database>,
+  input: {
+    id: string;
+    companyId: string;
+    status: CxmlDocumentStatus;
+    externalId?: string | null;
+    issues?: Json;
+    purchaseOrderId?: string | null;
+    sourceDocument?: string;
+    sourceDocumentId?: string;
+    sourceDocumentReadableId?: string;
+    releasedBy?: string;
+  }
+) {
+  const update: Database["public"]["Tables"]["cxmlDocument"]["Update"] = {
+    status: input.status,
+    updatedAt: datetime.timestamp()
+  };
+  if (input.externalId !== undefined) update.externalId = input.externalId;
+  if (input.issues !== undefined) update.issues = input.issues;
+  if (input.purchaseOrderId !== undefined)
+    update.purchaseOrderId = input.purchaseOrderId;
+  if (input.sourceDocument !== undefined)
+    update.sourceDocument = input.sourceDocument;
+  if (input.sourceDocumentId !== undefined)
+    update.sourceDocumentId = input.sourceDocumentId;
+  if (input.sourceDocumentReadableId !== undefined)
+    update.sourceDocumentReadableId = input.sourceDocumentReadableId;
+  if (input.releasedBy !== undefined) {
+    update.releasedBy = input.releasedBy;
+    update.releasedAt = datetime.timestamp();
+    update.updatedBy = input.releasedBy;
+  }
+
+  return client
+    .from("cxmlDocument")
+    .update(update)
+    .eq("id", input.id)
+    .eq("companyId", input.companyId)
+    .select("id")
+    .single();
+}
+
+// Find the PO an inbound document references: by our readable id first, then by
+// supplierReference (McMaster may echo its own order number).
+async function findPurchaseOrderForCxml(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  orderId: string | null
+): Promise<{ id: string; purchaseOrderId: string } | null> {
+  if (!orderId) return null;
+  const byReadable = await client
+    .from("purchaseOrder")
+    .select("id, purchaseOrderId")
+    .eq("companyId", companyId)
+    .eq("purchaseOrderId", orderId)
+    .maybeSingle();
+  if (byReadable.data) return byReadable.data;
+
+  const bySupplierRef = await client
+    .from("purchaseOrder")
+    .select("id, purchaseOrderId")
+    .eq("companyId", companyId)
+    .eq("supplierReference", orderId)
+    .maybeSingle();
+  return bySupplierRef.data ?? null;
+}
+
+export async function applyCxmlConfirmation(
+  client: SupabaseClient<Database>,
+  input: { companyId: string; payload: CxmlConfirmationPayload }
+): Promise<ServiceResult<{ purchaseOrderId: string }>> {
+  const { companyId, payload } = input;
+  const po = await findPurchaseOrderForCxml(client, companyId, payload.orderId);
+  if (!po) {
+    return {
+      data: null,
+      error: {
+        message: `No purchase order matches order id ${payload.orderId ?? "(none)"}`
+      }
+    };
+  }
+
+  const supplierReference = payload.supplierOrderId ?? payload.confirmId;
+  if (supplierReference) {
+    await client
+      .from("purchaseOrder")
+      .update({ supplierReference, updatedAt: datetime.timestamp() })
+      .eq("id", po.id)
+      .eq("companyId", companyId);
+  }
+
+  // Match confirmation lines to PO lines by ordinal (line number ↔ sort order).
+  const poLines = await client
+    .from("purchaseOrderLine")
+    .select("id")
+    .eq("purchaseOrderId", po.id)
+    .eq("companyId", companyId)
+    .order("sortOrder", { ascending: true });
+  const orderedLines = poLines.data ?? [];
+
+  for (const line of payload.lines) {
+    const target = orderedLines[line.lineNumber - 1];
+    if (target && line.deliveryDate) {
+      await client
+        .from("purchaseOrderLine")
+        .update({
+          promisedDate: line.deliveryDate.slice(0, 10),
+          updatedAt: datetime.timestamp()
+        })
+        .eq("id", target.id)
+        .eq("companyId", companyId);
+    }
+  }
+
+  const deliveryDates = payload.lines
+    .map((line) => line.deliveryDate)
+    .filter((d): d is string => Boolean(d))
+    .sort();
+  if (deliveryDates.length > 0) {
+    await client
+      .from("purchaseOrderDelivery")
+      .update({
+        receiptPromisedDate: deliveryDates[0]!.slice(0, 10),
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", po.id)
+      .eq("companyId", companyId);
+  }
+
+  return { data: { purchaseOrderId: po.id }, error: null };
+}
+
+export async function applyCxmlShipNotice(
+  client: SupabaseClient<Database>,
+  input: { companyId: string; payload: CxmlShipNoticePayload }
+): Promise<ServiceResult<{ purchaseOrderId: string }>> {
+  const { companyId, payload } = input;
+  const po = await findPurchaseOrderForCxml(client, companyId, payload.orderId);
+  if (!po) {
+    return {
+      data: null,
+      error: {
+        message: `No purchase order matches order id ${payload.orderId ?? "(none)"}`
+      }
+    };
+  }
+
+  if (payload.trackingNumber) {
+    // Last-wins on the single tracking column; every ASN stays in the queue.
+    await client
+      .from("purchaseOrderDelivery")
+      .update({
+        trackingNumber: payload.trackingNumber,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", po.id)
+      .eq("companyId", companyId);
+  }
+
+  return { data: { purchaseOrderId: po.id }, error: null };
+}
+
+/**
+ * Turn a staged Invoice / Credit Memo cXML document into a draft purchase
+ * invoice (never auto-posted). Lines match the PO by order line number; the
+ * whole-document tax lands on the first line as the derived rate half of the
+ * pair. Credit-memo quantities/amounts arrive negative and pass through.
+ */
+export async function releaseCxmlInvoice(
+  client: SupabaseClient<Database>,
+  input: {
+    id: string;
+    companyId: string;
+    userId: string;
+    companyGroupId: string;
+  }
+): Promise<
+  ServiceResult<{ purchaseInvoiceId: string; invoiceReadableId: string }>
+> {
+  const { id, companyId, userId, companyGroupId } = input;
+
+  const doc = await client
+    .from("cxmlDocument")
+    .select("*")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+  if (doc.error || !doc.data) {
+    return { data: null, error: { message: "cXML document not found" } };
+  }
+  if (
+    doc.data.documentType !== "Invoice" &&
+    doc.data.documentType !== "Credit Memo"
+  ) {
+    return { data: null, error: { message: "Document is not an invoice" } };
+  }
+  if (doc.data.status !== "Needs Review") {
+    return {
+      data: null,
+      error: {
+        message: `Document is ${doc.data.status}, expected Needs Review`
+      }
+    };
+  }
+  const payload = doc.data.payload as unknown as CxmlInvoicePayload;
+
+  const invoice = await insertPurchaseInvoice(client, {
+    supplierId: doc.data.supplierId,
+    companyId,
+    companyGroupId,
+    createdBy: userId,
+    supplierReference: payload.invoiceId,
+    dateIssued: payload.invoiceDate
+      ? payload.invoiceDate.slice(0, 10)
+      : undefined
+  });
+  if (invoice.error || !invoice.data) {
+    return {
+      data: null,
+      error: { message: invoice.error?.message ?? "Failed to create invoice" }
+    };
+  }
+
+  const poId = doc.data.purchaseOrderId;
+  let poLines: Array<{
+    id: string;
+    itemId: string | null;
+    locationId: string | null;
+  }> = [];
+  if (poId) {
+    const lines = await client
+      .from("purchaseOrderLine")
+      .select("id, itemId, locationId")
+      .eq("purchaseOrderId", poId)
+      .eq("companyId", companyId)
+      .order("sortOrder", { ascending: true });
+    poLines = lines.data ?? [];
+  }
+
+  const tax = payload.tax ?? 0;
+  for (let i = 0; i < payload.lines.length; i++) {
+    const cxmlLine = payload.lines[i]!;
+    const poLine = cxmlLine.orderLineNumber
+      ? poLines[cxmlLine.orderLineNumber - 1]
+      : undefined;
+
+    // Whole-document tax lands on the first line; the AMOUNT stays authoritative
+    // and the rate is derived and clamped into the 0..1 fraction.
+    const lineTax = i === 0 ? tax : 0;
+    const lineSubtotal = taxableBase(
+      cxmlLine.unitPrice || 0,
+      cxmlLine.quantity || 1,
+      0
+    );
+    const lineTaxPercent = lineSubtotal
+      ? Math.min(1, deriveRate(lineTax, lineSubtotal))
+      : 0;
+
+    const lineResult = await upsertPurchaseInvoiceLine(client, {
+      invoiceId: invoice.data.id,
+      invoiceLineType: poLine?.itemId ? "Part" : "Comment",
+      purchaseOrderId: poId ?? undefined,
+      purchaseOrderLineId: poLine?.id,
+      itemId: poLine?.itemId ?? undefined,
+      description:
+        cxmlLine.description ?? cxmlLine.supplierPartId ?? "Line Item",
+      quantity: cxmlLine.quantity || 0,
+      supplierUnitPrice: cxmlLine.unitPrice || 0,
+      supplierShippingCost: 0,
+      supplierTaxAmount: lineTax,
+      taxPercent: lineTaxPercent,
+      locationId: poLine?.locationId ?? undefined,
+      companyId,
+      createdBy: userId
+    });
+    if (lineResult.error) {
+      return { data: null, error: { message: lineResult.error.message } };
+    }
+  }
+
+  await updateCxmlDocumentStatus(client, {
+    id,
+    companyId,
+    status: "Posted",
+    sourceDocument: "Purchase Invoice",
+    sourceDocumentId: invoice.data.id,
+    sourceDocumentReadableId: invoice.data.invoiceId,
+    releasedBy: userId
+  });
+
+  return {
+    data: {
+      purchaseInvoiceId: invoice.data.id,
+      invoiceReadableId: invoice.data.invoiceId
+    },
+    error: null
+  };
 }

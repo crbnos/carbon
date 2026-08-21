@@ -231,6 +231,9 @@ export const purchaseOrderLineValidator = z
     requiredDate: zfd.text(z.string().optional()),
     storageUnitId: zfd.text(z.string().optional()),
     supplierPartId: zfd.text(z.string().optional()),
+    // Opaque punchout cross-reference, hidden from users; echoed byte-for-byte
+    // on the outbound cXML OrderRequest.
+    supplierPartAuxiliaryId: zfd.text(z.string().optional()),
     supplierShippingCost: zfd.numeric(z.number().optional()),
     supplierTaxAmount: zfd.numeric(z.number().optional()),
     supplierUnitPrice: zfd.numeric(z.number().optional()),
@@ -649,3 +652,40 @@ export function canCreatePurchaseOrderRevision(transition: {
     Boolean(transition.orderDate)
   );
 }
+
+// ---------------------------------------------------------------------------
+// Punchout / cXML documents (McMaster-Carr integration)
+// ---------------------------------------------------------------------------
+
+export const punchoutStartValidator = z.object({
+  purchaseOrderId: zfd.text(z.string().optional())
+});
+
+export const cxmlDocumentRejectValidator = z.object({
+  id: z.string()
+});
+
+/**
+ * Shape of `companyIntegration.metadata` for the `mcmaster-carr` integration
+ * (mirrors the config.tsx settings schema), plus the optional resolved secrets
+ * merged in by `resolveIntegrationSecrets`. Parsed by routes/jobs that read the
+ * integration so the metadata shape is validated in one place.
+ */
+export const mcmasterIntegrationMetadataValidator = z.object({
+  supplierId: z.string(),
+  environment: z.enum(["Test", "Production"]),
+  punchoutUrl: z.string(),
+  orderUrlTest: z.string(),
+  orderUrlProduction: z.string().optional().nullable(),
+  fromIdentity: z.string(),
+  fromDomain: z.string(),
+  toIdentity: z.string(),
+  toDomain: z.string(),
+  defaultExpenseAccountId: z.string(),
+  sharedSecret: z.string().optional().nullable(),
+  inboundSharedSecret: z.string().optional().nullable()
+});
+
+export type McmasterIntegrationMetadata = z.infer<
+  typeof mcmasterIntegrationMetadataValidator
+>;
