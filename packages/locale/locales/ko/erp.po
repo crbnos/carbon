@@ -156,7 +156,7 @@ msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "교육과정 {count}개"
 
 msgid "{count} selected"
-msgstr ""
+msgstr "{count}개 선택됨"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done}개 중 {total}개 단계 완료"
@@ -3878,7 +3878,7 @@ msgid "Create audit trail entries"
 msgstr "감사 추적 항목 생성"
 
 msgid "Create batch"
-msgstr ""
+msgstr "배치 생성"
 
 msgid "Create Change Notice"
 msgstr "변경 공지 만들기"
@@ -9157,7 +9157,7 @@ msgid "Move {accountName}"
 msgstr "{accountName} 이동"
 
 msgid "Move batch"
-msgstr ""
+msgstr "배치 이동"
 
 msgid "Move entities"
 msgstr "개체 이동"
@@ -13141,7 +13141,7 @@ msgid "Select field"
 msgstr "필드 선택"
 
 msgid "Select for batch"
-msgstr ""
+msgstr "배치용으로 선택"
 
 msgid "Select Gauge"
 msgstr "측정기 선택"

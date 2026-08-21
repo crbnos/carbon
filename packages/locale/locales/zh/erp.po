@@ -156,7 +156,7 @@ msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# 门课程} other {# 门课程}}"
 
 msgid "{count} selected"
-msgstr ""
+msgstr "{count} 已选中"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} 个，共 {total} 个阶段已完成"
@@ -3878,7 +3878,7 @@ msgid "Create audit trail entries"
 msgstr "创建审计跟踪条目"
 
 msgid "Create batch"
-msgstr ""
+msgstr "创建批次"
 
 msgid "Create Change Notice"
 msgstr "创建更改单"
@@ -9157,7 +9157,7 @@ msgid "Move {accountName}"
 msgstr "移动 {accountName}"
 
 msgid "Move batch"
-msgstr ""
+msgstr "移动批次"
 
 msgid "Move entities"
 msgstr "移动实体"
@@ -13141,7 +13141,7 @@ msgid "Select field"
 msgstr "选择字段"
 
 msgid "Select for batch"
-msgstr ""
+msgstr "选择用于批次化"
 
 msgid "Select Gauge"
 msgstr "选择量具"

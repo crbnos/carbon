@@ -156,7 +156,7 @@ msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# curso} other {# cursos}}"
 
 msgid "{count} selected"
-msgstr ""
+msgstr "{count} seleccionados"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} de {total} fases completadas"
@@ -3878,7 +3878,7 @@ msgid "Create audit trail entries"
 msgstr "Crear entradas de pista de auditoría"
 
 msgid "Create batch"
-msgstr ""
+msgstr "Crear lote"
 
 msgid "Create Change Notice"
 msgstr "Crear Aviso de Cambio"
@@ -9157,7 +9157,7 @@ msgid "Move {accountName}"
 msgstr "Mover {accountName}"
 
 msgid "Move batch"
-msgstr ""
+msgstr "Mover lote"
 
 msgid "Move entities"
 msgstr "Mover entidades"
@@ -13141,7 +13141,7 @@ msgid "Select field"
 msgstr "Seleccionar campo"
 
 msgid "Select for batch"
-msgstr ""
+msgstr "Seleccionar para lote"
 
 msgid "Select Gauge"
 msgstr "Seleccionar Calibrador"

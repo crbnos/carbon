@@ -156,7 +156,7 @@ msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# コース} other {# コース}}"
 
 msgid "{count} selected"
-msgstr ""
+msgstr "{count}が選択されました"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} フェーズ完了"
@@ -3878,7 +3878,7 @@ msgid "Create audit trail entries"
 msgstr "監査証跡エントリを作成"
 
 msgid "Create batch"
-msgstr ""
+msgstr "バッチを作成"
 
 msgid "Create Change Notice"
 msgstr "変更通知を作成"
@@ -9157,7 +9157,7 @@ msgid "Move {accountName}"
 msgstr "{accountName} を移動"
 
 msgid "Move batch"
-msgstr ""
+msgstr "バッチを移動"
 
 msgid "Move entities"
 msgstr "エンティティを移動"
@@ -13141,7 +13141,7 @@ msgid "Select field"
 msgstr "フィールドを選択"
 
 msgid "Select for batch"
-msgstr ""
+msgstr "バッチ用に選択"
 
 msgid "Select Gauge"
 msgstr "ゲージを選択"

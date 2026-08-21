@@ -156,7 +156,7 @@ msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# कोर्स} other {# कोर्स}}"
 
 msgid "{count} selected"
-msgstr ""
+msgstr "{count} चुने गए"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} में से {total} चरण पूर्ण"
@@ -3878,7 +3878,7 @@ msgid "Create audit trail entries"
 msgstr "ऑडिट ट्रेल प्रविष्टियां बनाएं"
 
 msgid "Create batch"
-msgstr ""
+msgstr "बैच बनाएं"
 
 msgid "Create Change Notice"
 msgstr "परिवर्तन सूचना बनाएं"
@@ -9157,7 +9157,7 @@ msgid "Move {accountName}"
 msgstr "{accountName} को स्थानांतरित करें"
 
 msgid "Move batch"
-msgstr ""
+msgstr "बैच स्थानांतरित करें"
 
 msgid "Move entities"
 msgstr "संस्थाओं को स्थानांतरित करें"
@@ -13141,7 +13141,7 @@ msgid "Select field"
 msgstr "फ़ील्ड चुनें"
 
 msgid "Select for batch"
-msgstr ""
+msgstr "बैच के लिए चुनें"
 
 msgid "Select Gauge"
 msgstr "गेज चुनें"

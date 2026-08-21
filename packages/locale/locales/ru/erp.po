@@ -156,7 +156,7 @@ msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# курс} other {# курсов}}"
 
 msgid "{count} selected"
-msgstr ""
+msgstr "{count} выбрано"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} из {total} этапов завершено"
@@ -3878,7 +3878,7 @@ msgid "Create audit trail entries"
 msgstr "Создать записи в журнале аудита"
 
 msgid "Create batch"
-msgstr ""
+msgstr "Создать партию"
 
 msgid "Create Change Notice"
 msgstr "Создать уведомление об изменении"
@@ -9157,7 +9157,7 @@ msgid "Move {accountName}"
 msgstr "Переместить {accountName}"
 
 msgid "Move batch"
-msgstr ""
+msgstr "Переместить партию"
 
 msgid "Move entities"
 msgstr "Переместить сущности"
@@ -13141,7 +13141,7 @@ msgid "Select field"
 msgstr "Выберите поле"
 
 msgid "Select for batch"
-msgstr ""
+msgstr "Выбрать для партии"
 
 msgid "Select Gauge"
 msgstr "Выбрать датчик"

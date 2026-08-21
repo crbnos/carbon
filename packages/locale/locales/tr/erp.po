@@ -156,7 +156,7 @@ msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# kurs} other {# kurs}}"
 
 msgid "{count} selected"
-msgstr ""
+msgstr "{count} seçildi"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} aşama tamamlandı"
@@ -3878,7 +3878,7 @@ msgid "Create audit trail entries"
 msgstr "Denetim izi girdileri oluştur"
 
 msgid "Create batch"
-msgstr ""
+msgstr "Parti oluştur"
 
 msgid "Create Change Notice"
 msgstr "Değişiklik Bildirisi Oluştur"
@@ -9157,7 +9157,7 @@ msgid "Move {accountName}"
 msgstr "{accountName} Taşı"
 
 msgid "Move batch"
-msgstr ""
+msgstr "Partiyi taşı"
 
 msgid "Move entities"
 msgstr "Varlıkları taşı"
@@ -13141,7 +13141,7 @@ msgid "Select field"
 msgstr "Alan seçin"
 
 msgid "Select for batch"
-msgstr ""
+msgstr "Parti için seç"
 
 msgid "Select Gauge"
 msgstr "Kalıbrasyon Cihazı Seç"
