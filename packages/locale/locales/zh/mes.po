@@ -130,6 +130,9 @@ msgstr "分配不合格单位"
 msgid "Allocate units"
 msgstr "分配单位"
 
+msgid "An operation completed with 0 will be marked Done with no output. Use \"Not in this run\" if it was not part of this batch."
+msgstr ""
+
 msgid "Are you sure you want to delete this step?"
 msgstr "确定要删除此步骤吗？"
 
@@ -450,6 +453,9 @@ msgstr "估计"
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "每个单位都有判定结果：{passes} 个合格，{fails} 个不合格。批次关闭，每个单位按其各自的结果进行处理。"
 
+msgid "Excluded operations return to the schedule un-run — no time or quantity is recorded for them."
+msgstr ""
+
 msgid "Expand features table"
 msgstr "展开功能表"
 
@@ -567,6 +573,9 @@ msgstr "在 {0}"
 
 msgid "In Progress"
 msgstr "进行中"
+
+msgid "Include in run"
+msgstr ""
 
 msgid "Inspect Item"
 msgstr "检验物品"
@@ -887,6 +896,9 @@ msgstr "无工作中心"
 msgid "None"
 msgstr "无"
 
+msgid "Not in this run"
+msgstr ""
+
 msgid "Notes"
 msgstr "备注"
 
@@ -1013,6 +1025,9 @@ msgstr "预防性"
 
 msgid "Print"
 msgstr "打印"
+
+msgid "Print load list"
+msgstr ""
 
 msgid "Printer Settings"
 msgstr "打印机设置"

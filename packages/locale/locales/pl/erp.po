@@ -2434,6 +2434,11 @@ msgstr "Partia"
 msgid "Batch {0} × {1}"
 msgstr "Partia {0} × {1}"
 
+#. placeholder {0}: group.length
+#. placeholder {1}: group[0].processName ?? group[0].description ?? ""
+msgid "Batch {0} × {1} across {columnCount} work centers"
+msgstr ""
+
 msgid "Batch / Serial"
 msgstr "Partia / Numer seryjny"
 
@@ -5331,6 +5336,9 @@ msgstr "Data wymagalności najwcześniejszego zadania w partii; późniejsze zad
 
 msgid "Due date of the final job in the bulk batch; combined with Due Date of First Job to space the jobs evenly."
 msgstr "Data wymagalności ostatniego zadania w partii; połączona z datą wymagalności pierwszego zadania, aby równomiernie rozłożyć zadania."
+
+msgid "Due dates span {dueSpreadDays} days"
+msgstr ""
 
 msgid "Due Days"
 msgstr "Dni Wymagalności"
@@ -10244,6 +10252,9 @@ msgstr "Jedna jednostka szeregowa lub jedna partia, którą Carbon śledzi indyw
 msgid "One set of numbers"
 msgstr "Jeden zestaw liczb"
 
+msgid "One shared setup instead of one per operation"
+msgstr ""
+
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "Jeden krok w trasie pracy, który wymienia proces i centrum pracy i nosi własne czasy i stawki instalacji, pracy i maszyny."
 
@@ -11254,6 +11265,9 @@ msgstr "Zadania drukowania"
 
 msgid "Print Label"
 msgstr "Drukuj etykietę"
+
+msgid "Print load list"
+msgstr ""
 
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
@@ -13401,6 +13415,11 @@ msgstr "Ustawienia"
 msgid "Setup"
 msgstr "Konfiguracja"
 
+#. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
+#. placeholder {1}: formatDurationMilliseconds(setupMax, { style: "short" })
+msgid "Setup {0} → {1}"
+msgstr ""
+
 msgid "Setup & Controls"
 msgstr "Konfiguracja i kontrole"
 
@@ -14590,6 +14609,9 @@ msgstr "Rejestr tylko dołączania każdego ruchu magazynowego; dostępna iloś�
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Autoryzacja została odrzucona w Onshape. Spróbuj połączyć się ponownie."
+
+msgid "The batch runs at its most urgent member's time — the others are pulled early"
+msgstr ""
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "Księga wszystkich zaksięgowanych wierszy pamiętnika, zsumowanych według konta – zapisywana tylko wtedy, gdy dla firmy jest włączona rachunkowość."

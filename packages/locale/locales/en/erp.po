@@ -2434,6 +2434,11 @@ msgstr "Batch"
 msgid "Batch {0} × {1}"
 msgstr "Batch {0} × {1}"
 
+#. placeholder {0}: group.length
+#. placeholder {1}: group[0].processName ?? group[0].description ?? ""
+msgid "Batch {0} × {1} across {columnCount} work centers"
+msgstr "Batch {0} × {1} across {columnCount} work centers"
+
 msgid "Batch / Serial"
 msgstr "Batch / Serial"
 
@@ -5331,6 +5336,9 @@ msgstr "Due date of the earliest job in the bulk batch; later jobs space evenly 
 
 msgid "Due date of the final job in the bulk batch; combined with Due Date of First Job to space the jobs evenly."
 msgstr "Due date of the final job in the bulk batch; combined with Due Date of First Job to space the jobs evenly."
+
+msgid "Due dates span {dueSpreadDays} days"
+msgstr "Due dates span {dueSpreadDays} days"
 
 msgid "Due Days"
 msgstr "Due Days"
@@ -10244,6 +10252,9 @@ msgstr "One serial unit or one batch that Carbon follows individually, carrying 
 msgid "One set of numbers"
 msgstr "One set of numbers"
 
+msgid "One shared setup instead of one per operation"
+msgstr "One shared setup instead of one per operation"
+
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 
@@ -11254,6 +11265,9 @@ msgstr "Print Jobs"
 
 msgid "Print Label"
 msgstr "Print Label"
+
+msgid "Print load list"
+msgstr "Print load list"
 
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
@@ -13401,6 +13415,11 @@ msgstr "Settings"
 msgid "Setup"
 msgstr "Setup"
 
+#. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
+#. placeholder {1}: formatDurationMilliseconds(setupMax, { style: "short" })
+msgid "Setup {0} → {1}"
+msgstr "Setup {0} → {1}"
+
 msgid "Setup & Controls"
 msgstr "Setup & Controls"
 
@@ -14590,6 +14609,9 @@ msgstr "The append-only record of every stock movement; on-hand is the sum of it
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "The authorization was refused in Onshape. Try connecting again."
+
+msgid "The batch runs at its most urgent member's time — the others are pulled early"
+msgstr "The batch runs at its most urgent member's time — the others are pulled early"
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."

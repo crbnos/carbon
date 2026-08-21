@@ -2434,6 +2434,11 @@ msgstr "배치"
 msgid "Batch {0} × {1}"
 msgstr "배치 {0} × {1}"
 
+#. placeholder {0}: group.length
+#. placeholder {1}: group[0].processName ?? group[0].description ?? ""
+msgid "Batch {0} × {1} across {columnCount} work centers"
+msgstr ""
+
 msgid "Batch / Serial"
 msgstr "배치/일련번호"
 
@@ -5331,6 +5336,9 @@ msgstr "일괄 배치에서 가장 이른 작업의 기한일로, 이후 작업�
 
 msgid "Due date of the final job in the bulk batch; combined with Due Date of First Job to space the jobs evenly."
 msgstr "일괄 배치에서 마지막 작업의 기한일로, '첫 작업 기한일'과 함께 작업들을 균등하게 배치하는 데 사용됩니다."
+
+msgid "Due dates span {dueSpreadDays} days"
+msgstr ""
 
 msgid "Due Days"
 msgstr "기한 일수"
@@ -10244,6 +10252,9 @@ msgstr "Carbon이 개별적으로 추적하는 하나의 일련번호 유닛 또
 msgid "One set of numbers"
 msgstr "하나의 번호 집합"
 
+msgid "One shared setup instead of one per operation"
+msgstr ""
+
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "작업 공정(BOP)의 한 단계로, 공정과 작업장을 지정하며 자체 셋업, 노무, 기계 시간 및 요율을 가집니다."
 
@@ -11254,6 +11265,9 @@ msgstr "인쇄 작업"
 
 msgid "Print Label"
 msgstr "라벨 인쇄"
+
+msgid "Print load list"
+msgstr ""
 
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
@@ -13401,6 +13415,11 @@ msgstr "설정"
 msgid "Setup"
 msgstr "설정"
 
+#. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
+#. placeholder {1}: formatDurationMilliseconds(setupMax, { style: "short" })
+msgid "Setup {0} → {1}"
+msgstr ""
+
 msgid "Setup & Controls"
 msgstr "설정 및 관리"
 
@@ -14590,6 +14609,9 @@ msgstr "모든 재고 이동을 추가 전용으로 기록한 원장으로, 보�
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Onshape에서 인증이 거부되었습니다. 다시 연결해 보세요."
+
+msgid "The batch runs at its most urgent member's time — the others are pulled early"
+msgstr ""
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "전기된 모든 분개 라인을 계정별로 합산한 장부로, 회사에서 회계 기능이 활성화된 경우에만 기록됩니다."

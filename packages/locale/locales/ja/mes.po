@@ -130,6 +130,9 @@ msgstr "不合格ユニットを割り当てる"
 msgid "Allocate units"
 msgstr "ユニットを割り当てる"
 
+msgid "An operation completed with 0 will be marked Done with no output. Use \"Not in this run\" if it was not part of this batch."
+msgstr ""
+
 msgid "Are you sure you want to delete this step?"
 msgstr "このステップを削除してもよろしいですか？"
 
@@ -450,6 +453,9 @@ msgstr "見積"
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "すべてのユニットに判定があります: {passes}件が合格し、{fails}件が不合格です。ロットは各ユニットが独自の結果にルーティングされて終了します。"
 
+msgid "Excluded operations return to the schedule un-run — no time or quantity is recorded for them."
+msgstr ""
+
 msgid "Expand features table"
 msgstr "機能テーブルを展開"
 
@@ -567,6 +573,9 @@ msgstr "{0}で"
 
 msgid "In Progress"
 msgstr "進行中"
+
+msgid "Include in run"
+msgstr ""
 
 msgid "Inspect Item"
 msgstr "アイテムを検査"
@@ -887,6 +896,9 @@ msgstr "ワークセンターがありません"
 msgid "None"
 msgstr "なし"
 
+msgid "Not in this run"
+msgstr ""
+
 msgid "Notes"
 msgstr "備考"
 
@@ -1013,6 +1025,9 @@ msgstr "予防保全"
 
 msgid "Print"
 msgstr "印刷"
+
+msgid "Print load list"
+msgstr ""
 
 msgid "Printer Settings"
 msgstr "プリンター設定"

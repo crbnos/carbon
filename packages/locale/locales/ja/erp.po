@@ -2434,6 +2434,11 @@ msgstr "バッチ"
 msgid "Batch {0} × {1}"
 msgstr "バッチ {0} × {1}"
 
+#. placeholder {0}: group.length
+#. placeholder {1}: group[0].processName ?? group[0].description ?? ""
+msgid "Batch {0} × {1} across {columnCount} work centers"
+msgstr ""
+
 msgid "Batch / Serial"
 msgstr "バッチ / シリアル"
 
@@ -5331,6 +5336,9 @@ msgstr "バルク一括処理の最初のジョブの期日; 後のジョブは�
 
 msgid "Due date of the final job in the bulk batch; combined with Due Date of First Job to space the jobs evenly."
 msgstr "バルク一括処理の最後のジョブの期日; 最初のジョブの期日と組み合わせてジョブを均等に間隔を置きます。"
+
+msgid "Due dates span {dueSpreadDays} days"
+msgstr ""
 
 msgid "Due Days"
 msgstr "期日"
@@ -10244,6 +10252,9 @@ msgstr "Carbonが個別に追跡する1つのシリアルユニットまたは1�
 msgid "One set of numbers"
 msgstr "1つの数字セット"
 
+msgid "One shared setup instead of one per operation"
+msgstr ""
+
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "ジョブのルーティングの1つのステップであり、プロセスとワークセンターに名前を付け、独自のセットアップ、労働、機械の時間とレートを持ちます。"
 
@@ -11254,6 +11265,9 @@ msgstr "印刷ジョブ"
 
 msgid "Print Label"
 msgstr "ラベルを印刷"
+
+msgid "Print load list"
+msgstr ""
 
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
@@ -13401,6 +13415,11 @@ msgstr "設定"
 msgid "Setup"
 msgstr "セットアップ"
 
+#. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
+#. placeholder {1}: formatDurationMilliseconds(setupMax, { style: "short" })
+msgid "Setup {0} → {1}"
+msgstr ""
+
 msgid "Setup & Controls"
 msgstr "セットアップとコントロール"
 
@@ -14590,6 +14609,9 @@ msgstr "すべての在庫移動の追加専用レコード。手持在庫はそ
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Onshape で認可が拒否されました。もう一度接続してください。"
+
+msgid "The batch runs at its most urgent member's time — the others are pulled early"
+msgstr ""
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "投稿されたすべての仕訳行のブック（勘定ごとに合計）。会社で会計が有効な場合にのみ記入されます。"

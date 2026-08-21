@@ -130,6 +130,9 @@ msgstr "Allouer les unités défaillantes"
 msgid "Allocate units"
 msgstr "Allouer les unités"
 
+msgid "An operation completed with 0 will be marked Done with no output. Use \"Not in this run\" if it was not part of this batch."
+msgstr ""
+
 msgid "Are you sure you want to delete this step?"
 msgstr "Êtes-vous sûr de vouloir supprimer cette étape ?"
 
@@ -450,6 +453,9 @@ msgstr "Estimé"
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "Chaque unité a un verdict : {passes} réussie(s) et {fails} échouée(s). Le lot se ferme avec chaque unité acheminée vers son propre résultat."
 
+msgid "Excluded operations return to the schedule un-run — no time or quantity is recorded for them."
+msgstr ""
+
 msgid "Expand features table"
 msgstr "Développer le tableau des caractéristiques"
 
@@ -567,6 +573,9 @@ msgstr "dans {0}"
 
 msgid "In Progress"
 msgstr "En cours"
+
+msgid "Include in run"
+msgstr ""
 
 msgid "Inspect Item"
 msgstr "Inspecter l'article"
@@ -887,6 +896,9 @@ msgstr "Aucun poste de travail n'existe"
 msgid "None"
 msgstr "Aucun"
 
+msgid "Not in this run"
+msgstr ""
+
 msgid "Notes"
 msgstr "Notes"
 
@@ -1013,6 +1025,9 @@ msgstr "Préventif"
 
 msgid "Print"
 msgstr "Imprimer"
+
+msgid "Print load list"
+msgstr ""
 
 msgid "Printer Settings"
 msgstr "Paramètres d'impression"

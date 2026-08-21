@@ -56,6 +56,7 @@ import type {
   Progress
 } from "~/modules/production/ui/Schedule/Kanban";
 import { isBatchItem, Kanban } from "~/modules/production/ui/Schedule/Kanban";
+import { BatchOpportunityBanner } from "~/modules/production/ui/Schedule/Kanban/components/BatchOpportunityBanner";
 import { BatchSelectionBar } from "~/modules/production/ui/Schedule/Kanban/components/BatchSelectionBar";
 import { BatchSelectionProvider } from "~/modules/production/ui/Schedule/Kanban/context/BatchSelectionContext";
 import { comparePriorityThenId } from "~/modules/production/ui/Schedule/Kanban/placement";
@@ -831,6 +832,7 @@ function KanbanSchedule() {
                 tags={tags}
                 {...mergedDisplaySettings}
               />
+              <BatchOpportunityBanner items={items} />
               <BatchSelectionBar
                 locationId={locationId}
                 batches={items.filter(isBatchItem)}

@@ -2434,6 +2434,11 @@ msgstr "Партия"
 msgid "Batch {0} × {1}"
 msgstr "Партия {0} × {1}"
 
+#. placeholder {0}: group.length
+#. placeholder {1}: group[0].processName ?? group[0].description ?? ""
+msgid "Batch {0} × {1} across {columnCount} work centers"
+msgstr ""
+
 msgid "Batch / Serial"
 msgstr "Партия / Серийный номер"
 
@@ -5331,6 +5336,9 @@ msgstr "Дата платежа самой ранней работы в паке
 
 msgid "Due date of the final job in the bulk batch; combined with Due Date of First Job to space the jobs evenly."
 msgstr "Дата платежа последней работы в пакетной партии; объединяется с датой платежа первой работы для равномерного распределения работ."
+
+msgid "Due dates span {dueSpreadDays} days"
+msgstr ""
 
 msgid "Due Days"
 msgstr "Дни платежа"
@@ -10244,6 +10252,9 @@ msgstr "Одна серийная единица или одна партия, �
 msgid "One set of numbers"
 msgstr "Один набор цифр"
 
+msgid "One shared setup instead of one per operation"
+msgstr ""
+
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "Один шаг в маршрутизации задания, определяющий процесс и рабочий центр, и несущий собственное время настройки, труда и машины, а также ставки."
 
@@ -11254,6 +11265,9 @@ msgstr "Задания печати"
 
 msgid "Print Label"
 msgstr "Печать этикетки"
+
+msgid "Print load list"
+msgstr ""
 
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
@@ -13401,6 +13415,11 @@ msgstr "Параметры"
 msgid "Setup"
 msgstr "Настройка"
 
+#. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
+#. placeholder {1}: formatDurationMilliseconds(setupMax, { style: "short" })
+msgid "Setup {0} → {1}"
+msgstr ""
+
 msgid "Setup & Controls"
 msgstr "Настройка и управление"
 
@@ -14590,6 +14609,9 @@ msgstr "Журнал доступного только для добавлени
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Авторизация была отклонена в Onshape. Повторите попытку подключения."
+
+msgid "The batch runs at its most urgent member's time — the others are pulled early"
+msgstr ""
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "Книга всех проведенных строк журнала, суммированные по счетам — записывается только при включенной учетной политике компании."

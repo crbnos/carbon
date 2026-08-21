@@ -130,6 +130,9 @@ msgstr "Przydziel jednostki z błędami"
 msgid "Allocate units"
 msgstr "Przydziel jednostki"
 
+msgid "An operation completed with 0 will be marked Done with no output. Use \"Not in this run\" if it was not part of this batch."
+msgstr ""
+
 msgid "Are you sure you want to delete this step?"
 msgstr "Czy na pewno chcesz usunąć ten krok?"
 
@@ -450,6 +453,9 @@ msgstr "Szacowane"
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "Każda jednostka ma werdykt: {passes} zdane i {fails} niezdane. Partia zamyka się, a każda jednostka trafia do swojego wyniku."
 
+msgid "Excluded operations return to the schedule un-run — no time or quantity is recorded for them."
+msgstr ""
+
 msgid "Expand features table"
 msgstr "Rozwiń tabelę funkcji"
 
@@ -567,6 +573,9 @@ msgstr "za {0}"
 
 msgid "In Progress"
 msgstr "W toku"
+
+msgid "Include in run"
+msgstr ""
 
 msgid "Inspect Item"
 msgstr "Zbadaj artykuł"
@@ -887,6 +896,9 @@ msgstr "Brak gniazd produkcyjnych"
 msgid "None"
 msgstr "Brak"
 
+msgid "Not in this run"
+msgstr ""
+
 msgid "Notes"
 msgstr "Notatki"
 
@@ -1013,6 +1025,9 @@ msgstr "Prewencyjne"
 
 msgid "Print"
 msgstr "Drukuj"
+
+msgid "Print load list"
+msgstr ""
 
 msgid "Printer Settings"
 msgstr "Ustawienia drukarki"

@@ -130,6 +130,9 @@ msgstr "विफल इकाइयों को आवंटित करे�
 msgid "Allocate units"
 msgstr "इकाइयों को आवंटित करें"
 
+msgid "An operation completed with 0 will be marked Done with no output. Use \"Not in this run\" if it was not part of this batch."
+msgstr ""
+
 msgid "Are you sure you want to delete this step?"
 msgstr "क्या आप सुनिश्चित हैं कि आप इस चरण को हटाना चाहते हैं?"
 
@@ -450,6 +453,9 @@ msgstr "अनुमानित"
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "हर इकाई का एक निर्णय है: {passes} पास और {fails} विफल। लॉट बंद हो जाता है और प्रत्येक इकाई अपने परिणाम के लिए रूट की जाती है।"
 
+msgid "Excluded operations return to the schedule un-run — no time or quantity is recorded for them."
+msgstr ""
+
 msgid "Expand features table"
 msgstr "फीचर्स टेबल को विस्तृत करें"
 
@@ -567,6 +573,9 @@ msgstr "{0} में"
 
 msgid "In Progress"
 msgstr "प्रगति में"
+
+msgid "Include in run"
+msgstr ""
 
 msgid "Inspect Item"
 msgstr "आइटम का निरीक्षण करें"
@@ -887,6 +896,9 @@ msgstr "कोई कार्य केंद्र मौजूद नही�
 msgid "None"
 msgstr "कोई नहीं"
 
+msgid "Not in this run"
+msgstr ""
+
 msgid "Notes"
 msgstr "नोट्स"
 
@@ -1013,6 +1025,9 @@ msgstr "निवारक"
 
 msgid "Print"
 msgstr "प्रिंट करें"
+
+msgid "Print load list"
+msgstr ""
 
 msgid "Printer Settings"
 msgstr "प्रिंटर सेटिंग्स"

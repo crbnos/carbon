@@ -29,6 +29,9 @@ export function isBatchableOperation(item: Item): item is OperationItem {
 // selection is stored (vercel-composition-patterns: state-context-interface).
 interface BatchSelectionContextType {
   selectedIds: ReadonlySet<string>;
+  // The selected operations themselves — the bar derives the setup-time saving
+  // and due-date spread from these.
+  selectedItems: OperationItem[];
   // Only operations sharing one process can share a batch. The first selection
   // pins the process; cards on other processes stop being selectable until the
   // selection is cleared.
@@ -46,11 +49,13 @@ const BatchSelectionContext = createContext<BatchSelectionContextType | null>(
 );
 
 export function BatchSelectionProvider({ children }: { children: ReactNode }) {
-  const [selected, setSelected] = useState<Map<string, string>>(new Map());
+  const [selected, setSelected] = useState<Map<string, OperationItem>>(
+    new Map()
+  );
 
   const selectedProcessId = useMemo(() => {
     const first = selected.values().next();
-    return first.done ? null : first.value;
+    return first.done ? null : first.value.columnType;
   }, [selected]);
 
   const isSelectable = useCallback(
@@ -67,35 +72,41 @@ export function BatchSelectionProvider({ children }: { children: ReactNode }) {
     setSelected((prev) => {
       const next = new Map(prev);
       if (next.has(item.id)) next.delete(item.id);
-      else next.set(item.id, item.columnType);
+      else next.set(item.id, item);
       return next;
     });
   }, []);
 
   const selectMany = useCallback((items: OperationItem[]) => {
     setSelected(
-      new Map(
-        items
-          .filter(isBatchableOperation)
-          .map((item) => [item.id, item.columnType])
-      )
+      new Map(items.filter(isBatchableOperation).map((item) => [item.id, item]))
     );
   }, []);
 
   const clear = useCallback(() => setSelected(new Map()), []);
 
   const selectedIds = useMemo(() => new Set(selected.keys()), [selected]);
+  const selectedItems = useMemo(() => [...selected.values()], [selected]);
 
   const value = useMemo(
     () => ({
       selectedIds,
+      selectedItems,
       selectedProcessId,
       isSelectable,
       toggle,
       selectMany,
       clear
     }),
-    [selectedIds, selectedProcessId, isSelectable, toggle, selectMany, clear]
+    [
+      selectedIds,
+      selectedItems,
+      selectedProcessId,
+      isSelectable,
+      toggle,
+      selectMany,
+      clear
+    ]
   );
 
   return (

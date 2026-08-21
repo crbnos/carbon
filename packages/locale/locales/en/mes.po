@@ -130,6 +130,9 @@ msgstr "Allocate failed units"
 msgid "Allocate units"
 msgstr "Allocate units"
 
+msgid "An operation completed with 0 will be marked Done with no output. Use \"Not in this run\" if it was not part of this batch."
+msgstr "An operation completed with 0 will be marked Done with no output. Use \"Not in this run\" if it was not part of this batch."
+
 msgid "Are you sure you want to delete this step?"
 msgstr "Are you sure you want to delete this step?"
 
@@ -450,6 +453,9 @@ msgstr "Estimated"
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 
+msgid "Excluded operations return to the schedule un-run — no time or quantity is recorded for them."
+msgstr "Excluded operations return to the schedule un-run — no time or quantity is recorded for them."
+
 msgid "Expand features table"
 msgstr "Expand features table"
 
@@ -567,6 +573,9 @@ msgstr "in {0}"
 
 msgid "In Progress"
 msgstr "In Progress"
+
+msgid "Include in run"
+msgstr "Include in run"
 
 msgid "Inspect Item"
 msgstr "Inspect Item"
@@ -887,6 +896,9 @@ msgstr "No work centers exist"
 msgid "None"
 msgstr "None"
 
+msgid "Not in this run"
+msgstr "Not in this run"
+
 msgid "Notes"
 msgstr "Notes"
 
@@ -1013,6 +1025,9 @@ msgstr "Preventive"
 
 msgid "Print"
 msgstr "Print"
+
+msgid "Print load list"
+msgstr "Print load list"
 
 msgid "Printer Settings"
 msgstr "Printer Settings"

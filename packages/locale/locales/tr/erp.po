@@ -2434,6 +2434,11 @@ msgstr "Parti"
 msgid "Batch {0} × {1}"
 msgstr "Parti {0} × {1}"
 
+#. placeholder {0}: group.length
+#. placeholder {1}: group[0].processName ?? group[0].description ?? ""
+msgid "Batch {0} × {1} across {columnCount} work centers"
+msgstr ""
+
 msgid "Batch / Serial"
 msgstr "Parti / Seri"
 
@@ -5331,6 +5336,9 @@ msgstr "Toplu batch'teki en erken işin son tarihi; daha sonraki işler bu tarih
 
 msgid "Due date of the final job in the bulk batch; combined with Due Date of First Job to space the jobs evenly."
 msgstr "Toplu batch'teki son işin son tarihi; işleri eşit şekilde aralıklandırmak için ilk işin son tarihi ile birleştirilir."
+
+msgid "Due dates span {dueSpreadDays} days"
+msgstr ""
 
 msgid "Due Days"
 msgstr "Vade Günleri"
@@ -10244,6 +10252,9 @@ msgstr "Carbon'un bireysel olarak takip ettiği bir seri birim veya bir batch, s
 msgid "One set of numbers"
 msgstr "Tek bir sayı seti"
 
+msgid "One shared setup instead of one per operation"
+msgstr ""
+
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "Bir işin yönlendirilmesinde bir adım, bir süreci ve bir iş merkezini adlandırır ve kendi kurulum, işçilik ve makine sürelerini ve oranlarını taşır."
 
@@ -11254,6 +11265,9 @@ msgstr "Yazdırma İşleri"
 
 msgid "Print Label"
 msgstr "Etiket Yazdır"
+
+msgid "Print load list"
+msgstr ""
 
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
@@ -13401,6 +13415,11 @@ msgstr "Ayarlar"
 msgid "Setup"
 msgstr "Kurulum"
 
+#. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
+#. placeholder {1}: formatDurationMilliseconds(setupMax, { style: "short" })
+msgid "Setup {0} → {1}"
+msgstr ""
+
 msgid "Setup & Controls"
 msgstr "Kurulum ve Kontroller"
 
@@ -14590,6 +14609,9 @@ msgstr "Her stok hareketinin yalnızca ekleme kaydı; eldeki tutar, imzalı gird
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Yetkilendirme Onshape'te reddedildi. Yeniden bağlanmayı deneyin."
+
+msgid "The batch runs at its most urgent member's time — the others are pulled early"
+msgstr ""
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "Tüm kaydedilen günlük satırlarının defteri, hesaba göre özetlenmiş — yalnızca şirket muhasebesi etkinleştirildiğinde yazılır."
