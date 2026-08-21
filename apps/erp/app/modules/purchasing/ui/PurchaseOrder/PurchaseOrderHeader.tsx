@@ -53,6 +53,7 @@ import {
   useSupplierApprovalRequired,
   useUser
 } from "~/hooks";
+import { useIntegrations } from "~/hooks/useIntegrations";
 import { ReceiptStatus } from "~/modules/inventory/ui/Receipts";
 import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import PurchaseInvoicingStatus from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicingStatus";
@@ -64,6 +65,7 @@ import {
   isPurchaseOrderLocked
 } from "../../purchasing.models";
 import type { PurchaseOrder, PurchaseOrderLine } from "../../types";
+import { PunchoutShopButton } from "../Punchout";
 import PurchaseOrderApprovalModal from "./PurchaseOrderApprovalModal";
 import PurchaseOrderFinalizeModal from "./PurchaseOrderFinalizeModal";
 import PurchasingStatus from "./PurchasingStatus";
@@ -126,6 +128,19 @@ const PurchaseOrderHeader = () => {
     throw new Error("Failed to load purchase order");
 
   const permissions = usePermissions();
+
+  const integrations = useIntegrations();
+  const mcmasterSupplierId = (
+    integrations.list.find((i) => i.id === "mcmaster-carr")?.metadata as
+      | Record<string, unknown>
+      | null
+      | undefined
+  )?.supplierId as string | undefined;
+  const canPunchoutAppend =
+    routeData?.purchaseOrder?.status === "Draft" &&
+    integrations.has("mcmaster-carr") &&
+    !!routeData?.purchaseOrder?.supplierId &&
+    mcmasterSupplierId === routeData?.purchaseOrder?.supplierId;
 
   const statusFetcher = useFetcher<{}>();
   const approvalFetcher = useFetcher<{}>();
@@ -320,6 +335,9 @@ const PurchaseOrderHeader = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
+            {canPunchoutAppend && (
+              <PunchoutShopButton purchaseOrderId={orderId} />
+            )}
             <SplitButton
               leftIcon={<LuCheckCheck />}
               isLoading={

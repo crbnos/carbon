@@ -49,11 +49,13 @@ import { useShippingMethod } from "~/components/Form/ShippingMethod";
 import { ConfirmDelete } from "~/components/Modals";
 import { useCurrencyFormatter, usePermissions, useRealtime } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
+import { useIntegrations } from "~/hooks/useIntegrations";
 import type { PurchaseOrderListItem } from "~/modules/purchasing";
 import { purchaseOrderStatusType } from "~/modules/purchasing";
 import type { action } from "~/routes/x+/purchase-order+/update";
 import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
+import { PunchoutShopButton } from "../Punchout";
 import PurchasingStatus from "./PurchasingStatus";
 import { usePurchaseOrder } from "./usePurchaseOrder";
 
@@ -68,6 +70,7 @@ const PurchaseOrdersTable = memo(
 
     const { t } = useLingui();
     const permissions = usePermissions();
+    const integrations = useIntegrations();
     const currencyFormatter = useCurrencyFormatter();
 
     const [selectedPurchaseOrder, setSelectedPurchaseOrder] =
@@ -505,7 +508,10 @@ const PurchaseOrdersTable = memo(
           }}
           primaryAction={
             permissions.can("create", "purchasing") && (
-              <New label={t`Purchase Order`} to={path.to.newPurchaseOrder} />
+              <HStack>
+                <New label={t`Purchase Order`} to={path.to.newPurchaseOrder} />
+                {integrations.has("mcmaster-carr") && <PunchoutShopButton />}
+              </HStack>
             )
           }
           renderContextMenu={renderContextMenu}
