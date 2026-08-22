@@ -265,8 +265,14 @@ export function buildCardTransactionJournal(
     }
   }
 
-  // Self-check: the entry must balance in true debit/credit space, or we refuse
-  // to post rather than write an unbalanced journal to the GL.
+  // Defensive backstop: assert the entry balances in true debit/credit space.
+  // By construction every branch pushes matched debit/credit legs (`pushLine`
+  // adds +m for a debit, −m for a credit), and the card/offset side accumulates
+  // the SAME rounded per-line magnitudes as the coding lines — so this holds by
+  // construction today and cannot fire. The real integrity guard is
+  // `requireLineSum` (the subledger must equal the header). This assert exists so
+  // a future edit that breaks the matched-legs invariant fails loudly here rather
+  // than writing an unbalanced journal to the GL.
   assertBalanced(signedDebitTotal, 0, BALANCE_TOLERANCE, "Card transaction journal");
 
   return { journalLines };

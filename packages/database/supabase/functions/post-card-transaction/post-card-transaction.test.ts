@@ -219,3 +219,81 @@ Deno.test("throws when the line sum does not equal the header amount", () => {
     "does not equal header amount"
   );
 });
+
+// ---------------------------------------------------------------------------
+// FX — exchangeRate ≠ 1 must scale BOTH sides to base currency, or the entry
+// silently posts foreign face value / unbalances. A regression that scaled only
+// the coding lines (or only the card side) fails here.
+// ---------------------------------------------------------------------------
+
+Deno.test("Charge at exchangeRate 2: both the lines AND the card credit scale to base", () => {
+  const { journalLines } = buildCardTransactionJournal(
+    base({
+      transaction: {
+        type: "Charge",
+        amount: 100,
+        cardAccountId: "card",
+        offsetAccountId: null,
+        currencyCode: "EUR",
+        exchangeRate: 2,
+      },
+      lines: [
+        { accountId: "exp1", amount: 60 },
+        { accountId: "exp2", amount: 40 },
+      ],
+    })
+  );
+
+  assertEquals(journalLines.length, 3);
+  assertEquals(line(journalLines, "exp1")!.amount, 120); // 60 × 2 → base debit
+  assertEquals(line(journalLines, "exp2")!.amount, 80); // 40 × 2 → base debit
+  assertEquals(line(journalLines, "card")!.amount, 200); // 100 × 2 → base credit
+  assert(Math.abs(debitCreditBalance(journalLines)) < 1e-9);
+});
+
+// ---------------------------------------------------------------------------
+// Split rounding — the card/offset side is the SUM of the rounded per-line
+// magnitudes, NOT round(total): three lines that each round down leave the card
+// side at 0.99999, and the entry still balances exactly. A regression computing
+// the card side from round(header) would post 1.0 here and this pins it.
+// ---------------------------------------------------------------------------
+
+Deno.test("Charge with three rounding lines: card side = Σ rounded lines, balances exactly", () => {
+  const accounts: Record<string, { class: GLAccountClass }> = {
+    card: { class: "Liability" },
+    exp1: { class: "Expense" },
+    exp2: { class: "Expense" },
+    exp3: { class: "Expense" },
+  };
+  const { journalLines } = buildCardTransactionJournal(
+    base({
+      transaction: {
+        type: "Charge",
+        amount: 1,
+        cardAccountId: "card",
+        offsetAccountId: null,
+        currencyCode: "USD",
+        exchangeRate: 1,
+      },
+      lines: [
+        { accountId: "exp1", amount: 0.333333 },
+        { accountId: "exp2", amount: 0.333333 },
+        { accountId: "exp3", amount: 0.333334 },
+      ],
+      accounts,
+    })
+  );
+
+  // Each line rounds to 0.33333 at internal scale; the card credit is their sum
+  // (0.99999), NOT round(header) = 1.0 — so the split balances exactly.
+  assertEquals(line(journalLines, "exp1")!.amount, 0.33333);
+  assertEquals(line(journalLines, "exp2")!.amount, 0.33333);
+  assertEquals(line(journalLines, "exp3")!.amount, 0.33333);
+  assertEquals(line(journalLines, "card")!.amount, 0.99999);
+  // Re-derive balance against this test's own account map.
+  const balance = journalLines.reduce((sum, l) => {
+    const cls = accounts[l.accountId].class;
+    return sum + (cls === "Expense" ? l.amount : -l.amount);
+  }, 0);
+  assert(Math.abs(balance) < 1e-9);
+});
