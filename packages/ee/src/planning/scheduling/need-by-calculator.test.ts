@@ -1,3 +1,8 @@
+import {
+  getDayOfWeek,
+  parseAbsolute,
+  parseDate
+} from "@internationalized/date";
 import { it } from "vitest";
 import { expandCalendar } from "./calendar-utils.ts";
 import { DependencyGraphImpl } from "./dependency-manager.ts";
@@ -48,7 +53,7 @@ function makeGraph(
 }
 
 const isWeekday = (isoDate: string): boolean => {
-  const weekday = new Date(`${isoDate}T00:00:00Z`).getUTCDay();
+  const weekday = getDayOfWeek(parseDate(isoDate), "en-US");
   return weekday !== 0 && weekday !== 6;
 };
 const monFri = (_workCenterId: string | null, isoDate: string) =>
@@ -254,7 +259,7 @@ it("calendar day lengths: a 16h work center halves the day count of an 8h one", 
 it("zero-hour days: a work center closed Fridays lands targets on Thursday", () => {
   const noFridays = (workCenterId: string | null, isoDate: string) => {
     if (!isWeekday(isoDate)) return false;
-    const weekday = new Date(`${isoDate}T00:00:00Z`).getUTCDay();
+    const weekday = getDayOfWeek(parseDate(isoDate), "en-US");
     return workCenterId === "wc-nofri" ? weekday !== 5 : true;
   };
   // Leaf on the Friday-closed center due Monday 2026-01-19: its 1-day start
@@ -303,8 +308,9 @@ it("manual pin: stored dueDate passes through unchanged and propagates upstream"
 // calendarAdapters — ladder windows -> hours-per-day + working-day test
 // ---------------------------------------------------------------------------
 
-const RANGE_START = new Date("2026-01-05T00:00:00Z"); // Monday
-const RANGE_END = new Date("2026-01-26T00:00:00Z");
+const utc = (iso: string) => parseAbsolute(iso, "UTC").toDate().getTime();
+const RANGE_START = utc("2026-01-05T00:00:00Z"); // Monday
+const RANGE_END = utc("2026-01-26T00:00:00Z");
 
 const weekdayShifts = (startTime: string, endTime: string, days: number[]) =>
   days.map((dayOfWeek) => ({ dayOfWeek, startTime, endTime }));

@@ -1,3 +1,4 @@
+import { fromAbsolute, parseAbsolute } from "@internationalized/date";
 import { it } from "vitest";
 import {
   countOverlaps,
@@ -7,7 +8,8 @@ import {
 } from "./calendar-utils.ts";
 import { assert, assertEquals } from "./test-helpers.ts";
 
-const utc = (iso: string) => new Date(iso);
+const utc = (iso: string) => parseAbsolute(iso, "UTC").toDate().getTime();
+const iso = (ms: number) => fromAbsolute(ms, "UTC").toAbsoluteString();
 
 // 2026-01-05 is a Monday
 const RANGE_START = utc("2026-01-05T00:00:00Z");
@@ -23,9 +25,9 @@ it("expandCalendar: weekly pattern produces one window per matching day", () => 
   const windows = expandCalendar(weekdayShifts, RANGE_START, RANGE_END);
 
   assertEquals(windows.length, 5); // Mon-Fri, weekend excluded
-  assertEquals(windows[0]?.start.toISOString(), "2026-01-05T08:00:00.000Z");
-  assertEquals(windows[0]?.end.toISOString(), "2026-01-05T16:00:00.000Z");
-  assertEquals(windows[4]?.start.toISOString(), "2026-01-09T08:00:00.000Z");
+  assertEquals(windows[0]?.start, utc("2026-01-05T08:00:00.000Z"));
+  assertEquals(windows[0]?.end, utc("2026-01-05T16:00:00.000Z"));
+  assertEquals(windows[4]?.start, utc("2026-01-09T08:00:00.000Z"));
 });
 
 it("expandCalendar: overlapping shift rows merge into one window", () => {
@@ -39,8 +41,8 @@ it("expandCalendar: overlapping shift rows merge into one window", () => {
   );
 
   assertEquals(windows.length, 1);
-  assertEquals(windows[0]?.start.toISOString(), "2026-01-05T08:00:00.000Z");
-  assertEquals(windows[0]?.end.toISOString(), "2026-01-05T16:00:00.000Z");
+  assertEquals(windows[0]?.start, utc("2026-01-05T08:00:00.000Z"));
+  assertEquals(windows[0]?.end, utc("2026-01-05T16:00:00.000Z"));
 });
 
 it("expandCalendar: overnight shift rolls into the next day", () => {
@@ -51,15 +53,15 @@ it("expandCalendar: overnight shift rolls into the next day", () => {
   );
 
   assertEquals(windows.length, 1);
-  assertEquals(windows[0]?.start.toISOString(), "2026-01-05T22:00:00.000Z");
-  assertEquals(windows[0]?.end.toISOString(), "2026-01-06T06:00:00.000Z");
+  assertEquals(windows[0]?.start, utc("2026-01-05T22:00:00.000Z"));
+  assertEquals(windows[0]?.end, utc("2026-01-06T06:00:00.000Z"));
 });
 
 it("expandCalendar: empty shifts => one 24x7 window (always available)", () => {
   const windows = expandCalendar([], RANGE_START, RANGE_END);
   assertEquals(windows.length, 1);
-  assertEquals(windows[0]?.start.toISOString(), RANGE_START.toISOString());
-  assertEquals(windows[0]?.end.toISOString(), RANGE_END.toISOString());
+  assertEquals(windows[0]?.start, RANGE_START);
+  assertEquals(windows[0]?.end, RANGE_END);
 });
 
 it("expandCalendar: timezone shifts resolve to correct UTC across DST", () => {
@@ -71,15 +73,11 @@ it("expandCalendar: timezone shifts resolve to correct UTC across DST", () => {
     "America/New_York"
   );
 
-  const thu = windows.find((w) =>
-    w.start.toISOString().startsWith("2026-03-05")
-  );
-  const tue = windows.find((w) =>
-    w.start.toISOString().startsWith("2026-03-10")
-  );
+  const thu = windows.find((w) => iso(w.start).startsWith("2026-03-05"));
+  const tue = windows.find((w) => iso(w.start).startsWith("2026-03-10"));
   assert(thu && tue);
-  assertEquals(thu.start.toISOString(), "2026-03-05T13:00:00.000Z"); // UTC-5
-  assertEquals(tue.start.toISOString(), "2026-03-10T12:00:00.000Z"); // UTC-4
+  assertEquals(thu.start, utc("2026-03-05T13:00:00.000Z")); // UTC-5
+  assertEquals(tue.start, utc("2026-03-10T12:00:00.000Z")); // UTC-4
 });
 
 it("unionWindows: merges member availability into disjoint windows", () => {
@@ -93,9 +91,9 @@ it("unionWindows: merges member availability into disjoint windows", () => {
 
   const union = unionWindows([a, b]);
   assertEquals(union.length, 2);
-  assertEquals(union[0]?.start.toISOString(), "2026-01-05T08:00:00.000Z");
-  assertEquals(union[0]?.end.toISOString(), "2026-01-05T16:00:00.000Z");
-  assertEquals(union[1]?.start.toISOString(), "2026-01-06T08:00:00.000Z");
+  assertEquals(union[0]?.start, utc("2026-01-05T08:00:00.000Z"));
+  assertEquals(union[0]?.end, utc("2026-01-05T16:00:00.000Z"));
+  assertEquals(union[1]?.start, utc("2026-01-06T08:00:00.000Z"));
 });
 
 it("countOverlaps: counts reservations overlapping the interval", () => {
@@ -148,8 +146,8 @@ it("findSlot: places at earliestStart when free", () => {
   });
 
   assert(slot);
-  assertEquals(slot.start.toISOString(), "2026-01-05T09:00:00.000Z");
-  assertEquals(slot.end.toISOString(), "2026-01-05T13:00:00.000Z");
+  assertEquals(slot.start, utc("2026-01-05T09:00:00.000Z"));
+  assertEquals(slot.end, utc("2026-01-05T13:00:00.000Z"));
 });
 
 it("findSlot: accumulates working time across windows (gap does not count)", () => {
@@ -162,8 +160,8 @@ it("findSlot: accumulates working time across windows (gap does not count)", () 
   });
 
   assert(slot);
-  assertEquals(slot.start.toISOString(), "2026-01-09T08:00:00.000Z");
-  assertEquals(slot.end.toISOString(), "2026-01-12T10:00:00.000Z");
+  assertEquals(slot.start, utc("2026-01-09T08:00:00.000Z"));
+  assertEquals(slot.end, utc("2026-01-12T10:00:00.000Z"));
 });
 
 it("findSlot: honors nextTryAfter rejection hints", () => {
@@ -173,13 +171,13 @@ it("findSlot: honors nextTryAfter rejection hints", () => {
     durationHours: 2,
     earliestStart: utc("2026-01-05T08:00:00Z"),
     isFree: (start) =>
-      start.getTime() < busyUntil.getTime()
+      start < busyUntil
         ? { free: false, nextTryAfter: busyUntil }
         : { free: true }
   });
 
   assert(slot);
-  assertEquals(slot.start.toISOString(), "2026-01-05T12:00:00.000Z");
+  assertEquals(slot.start, utc("2026-01-05T12:00:00.000Z"));
 });
 
 it("findSlot: returns null when the horizon is exhausted", () => {

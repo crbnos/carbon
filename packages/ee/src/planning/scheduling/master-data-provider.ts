@@ -8,7 +8,13 @@ import { parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
 import { type CalendarWindow, subtractIntervals } from "./calendar-utils.ts";
-import { businessDay, toIsoDate } from "./date-utils.ts";
+import {
+  businessDayFromMs,
+  msToInstantIso,
+  toInstantIso,
+  toInstantMs,
+  toIsoDate
+} from "./date-utils.ts";
 import {
   type LadderShiftRow,
   resolveLocationWindows,
@@ -26,15 +32,13 @@ import {
 // days in the plant's own timezone, padded one day each side so an overnight
 // shift row whose windows spill past its calendar day is never cut at the
 // range boundary.
-const peopleDateLowerBound = (instant: Date, timeZone: string) =>
-  parseDate(businessDay(instant.toISOString(), timeZone))
+const peopleDateLowerBound = (instant: number, timeZone: string) =>
+  parseDate(businessDayFromMs(instant, timeZone))
     .subtract({ days: 1 })
     .toString();
 
-const peopleDateUpperBound = (instant: Date, timeZone: string) =>
-  parseDate(businessDay(instant.toISOString(), timeZone))
-    .add({ days: 1 })
-    .toString();
+const peopleDateUpperBound = (instant: number, timeZone: string) =>
+  parseDate(businessDayFromMs(instant, timeZone)).add({ days: 1 }).toString();
 
 export type JobMaterialWithMakeMethod = {
   jobMaterialMakeMethodId: string | null;
@@ -89,8 +93,10 @@ export type LiveReservation = {
   /** "OperatorPool" is legacy — read-tolerated, never written anymore. */
   resourceKind: "WorkCenter" | "OperatorPool" | "Employee";
   resourceId: string;
-  startAt: Date;
-  endAt: Date;
+  /** epoch-ms */
+  startAt: number;
+  /** epoch-ms */
+  endAt: number;
   jobId: string;
   /** Human-readable job number (job."jobId", e.g. J000001) for conflict messages */
   readableJobId: string;
@@ -160,7 +166,7 @@ export interface MasterDataProvider {
 
   // ---- finite-capacity reads ----
   getLiveReservations(
-    fromDate: Date,
+    fromDate: number,
     excludeJobIds: string[]
   ): Promise<LiveReservation[]>;
   /** The subset of the given operation ids that have ≥1 production event
@@ -178,8 +184,8 @@ export interface MasterDataProvider {
    */
   getWorkCenterAvailability(
     workCenterIds: string[],
-    rangeStart: Date,
-    rangeEnd: Date
+    rangeStart: number,
+    rangeEnd: number
   ): Promise<Map<string, CalendarWindow[]>>;
   /**
    * A location's default calendar (rung 2/3) — the fallback availability for
@@ -187,21 +193,21 @@ export interface MasterDataProvider {
    */
   getLocationCalendarWindows(
     locationId: string,
-    rangeStart: Date,
-    rangeEnd: Date
+    rangeStart: number,
+    rangeEnd: number
   ): Promise<CalendarWindow[]>;
   /** The location's `requiresStaffing` scheduling policy (default false). */
   getLocationRequiresStaffing(locationId: string): Promise<boolean>;
   /** The subset of the given work centers flagged `alwaysOn` (lights-out). */
   getAlwaysOnWorkCenterIds(workCenterIds: string[]): Promise<Set<string>>;
   getPeopleAssignments(
-    rangeStart: Date,
-    rangeEnd: Date,
+    rangeStart: number,
+    rangeEnd: number,
     timeZone: string
   ): Promise<PeopleAssignmentRow[]>;
   getPeopleAbsences(
-    rangeStart: Date,
-    rangeEnd: Date,
+    rangeStart: number,
+    rangeEnd: number,
     timeZone: string
   ): Promise<PeopleAbsenceRow[]>;
 }
@@ -280,9 +286,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       projectedCompletionAt:
         job.projectedCompletionAt == null
           ? null
-          : new Date(
-              job.projectedCompletionAt as unknown as string
-            ).toISOString()
+          : toInstantIso(job.projectedCompletionAt as unknown as Date | string)
     };
   }
 
@@ -467,7 +471,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   }
 
   async getLiveReservations(
-    fromDate: Date,
+    fromDate: number,
     excludeJobIds: string[]
   ): Promise<LiveReservation[]> {
     let query = this.db
@@ -486,7 +490,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       // Placeholder reservations are display-only markers for unplaceable ops —
       // they must never hold capacity against other jobs or the next regen.
       .where("cr.isPlaceholder", "is not", true)
-      .where("cr.endAt", ">", fromDate.toISOString());
+      .where("cr.endAt", ">", msToInstantIso(fromDate));
     // Exclude the whole batch: each engine run sees only non-batch reservations
     // plus the in-run placements of already-run batch jobs (no pre-clear step).
     if (excludeJobIds.length > 0) {
@@ -503,8 +507,8 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
     return rows.map((r) => ({
       resourceKind: r.resourceKind as LiveReservation["resourceKind"],
       resourceId: r.resourceId,
-      startAt: new Date(r.startAt as unknown as string),
-      endAt: new Date(r.endAt as unknown as string),
+      startAt: toInstantMs(r.startAt as unknown as Date | string),
+      endAt: toInstantMs(r.endAt as unknown as Date | string),
       jobId: r.jobId,
       readableJobId: r.readableJobId
     }));
@@ -735,22 +739,22 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
 
   async getWorkCenterAvailability(
     workCenterIds: string[],
-    rangeStart: Date,
-    rangeEnd: Date
+    rangeStart: number,
+    rangeEnd: number
   ): Promise<Map<string, CalendarWindow[]>> {
     if (workCenterIds.length === 0) {
       return new Map();
     }
     return this.cached(
-      `workCenterAvailability:${[...workCenterIds].sort().join(",")}:${rangeStart.toISOString()}:${rangeEnd.toISOString()}`,
+      `workCenterAvailability:${[...workCenterIds].sort().join(",")}:${rangeStart}:${rangeEnd}`,
       () => this.loadWorkCenterAvailability(workCenterIds, rangeStart, rangeEnd)
     );
   }
 
   private async loadWorkCenterAvailability(
     workCenterIds: string[],
-    rangeStart: Date,
-    rangeEnd: Date
+    rangeStart: number,
+    rangeEnd: number
   ): Promise<Map<string, CalendarWindow[]>> {
     // a. work centers with their lights-out flag + location timezone
     const wcRows = await this.db
@@ -864,7 +868,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
    */
   private async loadDowntimeOutages(
     workCenterIds: string[],
-    rangeEnd: Date
+    rangeEnd: number
   ): Promise<Map<string, CalendarWindow[]>> {
     const outagesByWc = new Map<string, CalendarWindow[]>();
     if (workCenterIds.length === 0) return outagesByWc;
@@ -904,15 +908,15 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
     }
 
     const wcIdSet = new Set(workCenterIds);
-    const toDate = (v: unknown) => new Date(v as unknown as string);
+    const toMs = (v: unknown) => toInstantMs(v as unknown as Date | string);
     for (const d of dispatches) {
-      const start = toDate(
+      const start = toMs(
         d.actualStartTime ?? d.plannedStartTime ?? d.createdAt
       );
       const end = d.actualEndTime
-        ? toDate(d.actualEndTime)
+        ? toMs(d.actualEndTime)
         : d.plannedEndTime
-          ? toDate(d.plannedEndTime)
+          ? toMs(d.plannedEndTime)
           : rangeEnd; // no end estimate = down until further notice
       const affected = new Set<string>();
       if (d.workCenterId && wcIdSet.has(d.workCenterId)) {
@@ -932,19 +936,19 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
 
   async getLocationCalendarWindows(
     locationId: string,
-    rangeStart: Date,
-    rangeEnd: Date
+    rangeStart: number,
+    rangeEnd: number
   ): Promise<CalendarWindow[]> {
     return this.cached(
-      `locationCalendar:${locationId}:${rangeStart.toISOString()}:${rangeEnd.toISOString()}`,
+      `locationCalendar:${locationId}:${rangeStart}:${rangeEnd}`,
       () => this.loadLocationCalendarWindows(locationId, rangeStart, rangeEnd)
     );
   }
 
   private async loadLocationCalendarWindows(
     locationId: string,
-    rangeStart: Date,
-    rangeEnd: Date
+    rangeStart: number,
+    rangeEnd: number
   ): Promise<CalendarWindow[]> {
     const rows = await this.db
       .selectFrom("shift as s")
@@ -988,19 +992,19 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   }
 
   async getPeopleAssignments(
-    rangeStart: Date,
-    rangeEnd: Date,
+    rangeStart: number,
+    rangeEnd: number,
     timeZone: string
   ): Promise<PeopleAssignmentRow[]> {
     return this.cached(
-      `peopleAssignments:${rangeStart.toISOString()}:${rangeEnd.toISOString()}:${timeZone}`,
+      `peopleAssignments:${rangeStart}:${rangeEnd}:${timeZone}`,
       () => this.loadPeopleAssignments(rangeStart, rangeEnd, timeZone)
     );
   }
 
   private async loadPeopleAssignments(
-    rangeStart: Date,
-    rangeEnd: Date,
+    rangeStart: number,
+    rangeEnd: number,
     timeZone: string
   ): Promise<PeopleAssignmentRow[]> {
     const rows = await this.db
@@ -1039,19 +1043,19 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
   }
 
   async getPeopleAbsences(
-    rangeStart: Date,
-    rangeEnd: Date,
+    rangeStart: number,
+    rangeEnd: number,
     timeZone: string
   ): Promise<PeopleAbsenceRow[]> {
     return this.cached(
-      `peopleAbsences:${rangeStart.toISOString()}:${rangeEnd.toISOString()}:${timeZone}`,
+      `peopleAbsences:${rangeStart}:${rangeEnd}:${timeZone}`,
       () => this.loadPeopleAbsences(rangeStart, rangeEnd, timeZone)
     );
   }
 
   private async loadPeopleAbsences(
-    rangeStart: Date,
-    rangeEnd: Date,
+    rangeStart: number,
+    rangeEnd: number,
     timeZone: string
   ): Promise<PeopleAbsenceRow[]> {
     const rows = await this.db

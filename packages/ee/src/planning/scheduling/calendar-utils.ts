@@ -8,11 +8,18 @@
  * `alwaysOn` (lights-out) machine. People windows (`employeeShift` ⋈ `shift`)
  * refine the machine calendar for attended operations — a person can't run a
  * closed machine, so member windows are intersected with the machine's.
+ *
+ * Timeline instants (window bounds, slot ends, "now") are carried as
+ * epoch-milliseconds `number`s — timezone-agnostic absolute instants, per
+ * `.claude/rules/date-handling.md`. Calendar/wall-clock derivation goes through
+ * `@internationalized/date`.
  */
 
 import {
+  type CalendarDate,
   CalendarDateTime,
-  parseAbsolute,
+  fromAbsolute,
+  getDayOfWeek,
   toCalendarDate,
   toZoned
 } from "@internationalized/date";
@@ -25,8 +32,10 @@ export type CalendarShiftRow = {
 };
 
 export type CalendarWindow = {
-  start: Date;
-  end: Date;
+  /** epoch-ms */
+  start: number;
+  /** epoch-ms */
+  end: number;
 };
 
 /**
@@ -40,39 +49,24 @@ export const STOCK_WEEK_SHIFTS: CalendarShiftRow[] = [1, 2, 3, 4, 5].map(
   (dayOfWeek) => ({ dayOfWeek, startTime: "08:00", endTime: "16:00" })
 );
 
-/** Local calendar date (y/m/d) of a UTC instant in a timezone. */
-function localDateParts(
-  date: Date,
-  timeZone: string
-): { year: number; month: number; day: number } {
-  const local = toCalendarDate(parseAbsolute(date.toISOString(), timeZone));
-  return { year: local.year, month: local.month, day: local.day };
-}
-
 /**
- * Convert a local wall-clock time on a local calendar day to the UTC instant.
- * `dayDate` is UTC midnight representing the local calendar day (its UTC
- * y/m/d fields ARE the local date). `toZoned`'s default "compatible"
- * disambiguation handles DST: a time inside the spring-forward gap shifts to
- * the post-gap hour; a repeated fall-back time takes its first occurrence.
+ * Convert a local wall-clock time on a local calendar day to the UTC instant
+ * (epoch-ms). `toZoned`'s default "compatible" disambiguation handles DST: a
+ * time inside the spring-forward gap shifts to the post-gap hour; a repeated
+ * fall-back time takes its first occurrence.
  */
 export function shiftTimeToDate(
-  dayDate: Date,
+  day: CalendarDate,
   time: string,
   timezone: string
-): Date {
+): number {
   const [h, m, s] = time.split(":").map((v) => Number(v));
   return toZoned(
-    new CalendarDateTime(
-      dayDate.getUTCFullYear(),
-      dayDate.getUTCMonth() + 1,
-      dayDate.getUTCDate(),
-      h ?? 0,
-      m ?? 0,
-      s ?? 0
-    ),
+    new CalendarDateTime(day.year, day.month, day.day, h ?? 0, m ?? 0, s ?? 0),
     timezone
-  ).toDate();
+  )
+    .toDate()
+    .getTime();
 }
 
 /** Clip an interval to [rangeStart, rangeEnd); null if empty. */
@@ -95,12 +89,12 @@ function mergeIntervals(
   const result: CalendarWindow[] = [];
   for (const i of sorted) {
     const prev = result[result.length - 1];
-    if (prev && i.start <= prev.end.getTime()) {
-      if (i.end > prev.end.getTime()) {
-        prev.end = new Date(i.end);
+    if (prev && i.start <= prev.end) {
+      if (i.end > prev.end) {
+        prev.end = i.end;
       }
     } else {
-      result.push({ start: new Date(i.start), end: new Date(i.end) });
+      result.push({ start: i.start, end: i.end });
     }
   }
   return result;
@@ -116,53 +110,44 @@ function mergeIntervals(
  */
 export function expandCalendar(
   shifts: CalendarShiftRow[],
-  rangeStart: Date,
-  rangeEnd: Date,
+  rangeStart: number,
+  rangeEnd: number,
   timezone = "UTC"
 ): CalendarWindow[] {
-  const rangeStartMs = rangeStart.getTime();
-  const rangeEndMs = rangeEnd.getTime();
-  if (rangeEndMs <= rangeStartMs) {
+  if (rangeEnd <= rangeStart) {
     return [];
   }
 
   if (shifts.length === 0) {
-    return [{ start: new Date(rangeStartMs), end: new Date(rangeEndMs) }];
+    return [{ start: rangeStart, end: rangeEnd }];
   }
 
   // Iterate local calendar days covering the range (pad one day each side
   // so overnight shifts and tz offsets can't clip the boundary days).
   const intervals: { start: number; end: number }[] = [];
-  const startLocal = localDateParts(rangeStart, timezone);
-  let dayCursor = Date.UTC(
-    startLocal.year,
-    startLocal.month - 1,
-    startLocal.day
-  );
-  dayCursor -= DAY_MS;
-  const lastDay = rangeEndMs + DAY_MS;
+  const startLocal = toCalendarDate(fromAbsolute(rangeStart, timezone));
+  let dayCursor: CalendarDate = startLocal.subtract({ days: 1 });
+  const lastDay = rangeEnd + DAY_MS;
 
-  for (; dayCursor <= lastDay; dayCursor += DAY_MS) {
-    const dayDate = new Date(dayCursor);
-    const dow = dayDate.getUTCDay(); // weekday of the local calendar date
+  for (
+    ;
+    dayCursor.toDate("UTC").getTime() <= lastDay;
+    dayCursor = dayCursor.add({ days: 1 })
+  ) {
+    const dow = getDayOfWeek(dayCursor, "en-US"); // weekday of the local date
     for (const shift of shifts) {
       if (shift.dayOfWeek !== dow) continue;
-      const start = shiftTimeToDate(dayDate, shift.startTime, timezone);
-      let end = shiftTimeToDate(dayDate, shift.endTime, timezone);
-      if (end.getTime() <= start.getTime()) {
+      const start = shiftTimeToDate(dayCursor, shift.startTime, timezone);
+      let end = shiftTimeToDate(dayCursor, shift.endTime, timezone);
+      if (end <= start) {
         // overnight shift: ends the next local day
         end = shiftTimeToDate(
-          new Date(dayCursor + DAY_MS),
+          dayCursor.add({ days: 1 }),
           shift.endTime,
           timezone
         );
       }
-      const clipped = clip(
-        start.getTime(),
-        end.getTime(),
-        rangeStartMs,
-        rangeEndMs
-      );
+      const clipped = clip(start, end, rangeStart, rangeEnd);
       if (clipped) {
         intervals.push(clipped);
       }
@@ -182,7 +167,7 @@ export function unionWindows(
   const intervals: { start: number; end: number }[] = [];
   for (const list of windowLists) {
     for (const w of list) {
-      intervals.push({ start: w.start.getTime(), end: w.end.getTime() });
+      intervals.push({ start: w.start, end: w.end });
     }
   }
   return mergeIntervals(intervals);
@@ -205,13 +190,13 @@ export function intersectWindows(
   while (i < a.length && j < b.length) {
     const ai = a[i]!;
     const bj = b[j]!;
-    const start = Math.max(ai.start.getTime(), bj.start.getTime());
-    const end = Math.min(ai.end.getTime(), bj.end.getTime());
+    const start = Math.max(ai.start, bj.start);
+    const end = Math.min(ai.end, bj.end);
     if (end > start) {
-      result.push({ start: new Date(start), end: new Date(end) });
+      result.push({ start, end });
     }
     // advance whichever window ends first — the other may still overlap the next
-    if (ai.end.getTime() < bj.end.getTime()) {
+    if (ai.end < bj.end) {
       i++;
     } else {
       j++;
@@ -228,22 +213,21 @@ export function intersectWindows(
  * finishes exactly at the attended end.
  */
 export function addWorkingTime(
-  from: Date,
+  from: number,
   durationMs: number,
   windows: CalendarWindow[]
-): Date | null {
+): number | null {
   if (durationMs <= 0) {
-    return new Date(from.getTime());
+    return from;
   }
-  const fromMs = from.getTime();
   let remaining = durationMs;
   for (const w of windows) {
-    const we = w.end.getTime();
-    if (we <= fromMs) continue; // window entirely at/behind `from`
-    const segStart = Math.max(w.start.getTime(), fromMs);
+    const we = w.end;
+    if (we <= from) continue; // window entirely at/behind `from`
+    const segStart = Math.max(w.start, from);
     const available = we - segStart;
     if (available >= remaining) {
-      return new Date(segStart + remaining);
+      return segStart + remaining;
     }
     remaining -= available;
   }
@@ -262,17 +246,14 @@ export function subtractIntervals(
   outages: CalendarWindow[]
 ): CalendarWindow[] {
   if (outages.length === 0) {
-    return windows.map((w) => ({
-      start: new Date(w.start.getTime()),
-      end: new Date(w.end.getTime())
-    }));
+    return windows.map((w) => ({ start: w.start, end: w.end }));
   }
   const result: CalendarWindow[] = [];
   for (const w of windows) {
-    let segments = [{ start: w.start.getTime(), end: w.end.getTime() }];
+    let segments = [{ start: w.start, end: w.end }];
     for (const o of outages) {
-      const os = o.start.getTime();
-      const oe = o.end.getTime();
+      const os = o.start;
+      const oe = o.end;
       const next: { start: number; end: number }[] = [];
       for (const seg of segments) {
         if (oe <= seg.start || os >= seg.end) {
@@ -286,7 +267,7 @@ export function subtractIntervals(
     }
     for (const seg of segments) {
       if (seg.end > seg.start) {
-        result.push({ start: new Date(seg.start), end: new Date(seg.end) });
+        result.push({ start: seg.start, end: seg.end });
       }
     }
   }
@@ -296,7 +277,7 @@ export function subtractIntervals(
 /** Whether an instant falls inside any window. */
 export function coversInstant(windows: CalendarWindow[], at: number): boolean {
   for (const w of windows) {
-    if (w.start.getTime() <= at && w.end.getTime() > at) {
+    if (w.start <= at && w.end > at) {
       return true;
     }
   }
@@ -305,22 +286,20 @@ export function coversInstant(windows: CalendarWindow[], at: number): boolean {
 
 /** Count reservations overlapping [start, end). */
 export function countOverlaps(
-  reservations: { startAt: Date; endAt: Date }[],
-  start: Date,
-  end: Date
+  reservations: { startAt: number; endAt: number }[],
+  start: number,
+  end: number
 ): number {
-  const s = start.getTime();
-  const e = end.getTime();
   let count = 0;
   for (const r of reservations) {
-    if (r.startAt.getTime() < e && r.endAt.getTime() > s) {
+    if (r.startAt < end && r.endAt > start) {
       count++;
     }
   }
   return count;
 }
 
-export type SlotResult = { start: Date; end: Date } | null;
+export type SlotResult = { start: number; end: number } | null;
 
 /**
  * Find the earliest interval >= earliestStart inside `windows` that
@@ -333,8 +312,11 @@ export type SlotResult = { start: Date; end: Date } | null;
 export function findSlot(args: {
   windows: CalendarWindow[];
   durationHours: number;
-  earliestStart: Date;
-  isFree: (start: Date, end: Date) => { free: boolean; nextTryAfter?: Date };
+  earliestStart: number;
+  isFree: (
+    start: number,
+    end: number
+  ) => { free: boolean; nextTryAfter?: number };
 }): SlotResult {
   const { windows, durationHours, earliestStart, isFree } = args;
   if (windows.length === 0) {
@@ -342,16 +324,16 @@ export function findSlot(args: {
   }
 
   const durationMs = durationHours * HOUR_MS;
-  let candidate = earliestStart.getTime();
+  let candidate = earliestStart;
 
   // Cap iterations as a runaway guard; each iteration advances the candidate.
   for (let guard = 0; guard < 100_000; guard++) {
     // snap candidate into a window
-    const windowIndex = windows.findIndex((w) => w.end.getTime() > candidate);
+    const windowIndex = windows.findIndex((w) => w.end > candidate);
     if (windowIndex === -1) {
       return null; // horizon exhausted
     }
-    const startMs = Math.max(candidate, windows[windowIndex]!.start.getTime());
+    const startMs = Math.max(candidate, windows[windowIndex]!.start);
 
     // accumulate working time across windows from startMs
     let remaining = durationMs;
@@ -362,8 +344,8 @@ export function findSlot(args: {
         return null; // cannot fit before the end of the horizon
       }
       const wi = windows[i]!;
-      const from = i === windowIndex ? startMs : wi.start.getTime();
-      const available = wi.end.getTime() - from;
+      const from = i === windowIndex ? startMs : wi.start;
+      const available = wi.end - from;
       if (available >= remaining) {
         endMs = from + remaining;
         remaining = 0;
@@ -373,19 +355,15 @@ export function findSlot(args: {
       }
     }
 
-    const start = new Date(startMs);
-    const end = new Date(endMs);
-    const check = isFree(start, end);
+    const check = isFree(startMs, endMs);
     if (check.free) {
-      return { start, end };
+      return { start: startMs, end: endMs };
     }
 
     // advance: explicit hint, else the next window boundary
-    let next = check.nextTryAfter?.getTime() ?? null;
+    let next = check.nextTryAfter ?? null;
     if (next === null || next <= candidate) {
-      const nextBoundary = windows
-        .map((w) => w.start.getTime())
-        .find((b) => b > startMs);
+      const nextBoundary = windows.map((w) => w.start).find((b) => b > startMs);
       next = nextBoundary ?? null;
       if (next === null) {
         return null;

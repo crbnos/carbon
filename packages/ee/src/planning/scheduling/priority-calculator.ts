@@ -1,3 +1,5 @@
+import { parseDate } from "@internationalized/date";
+import { toInstantIso, toIsoDate } from "./date-utils.ts";
 import type {
   DeadlineType,
   OperationWithJobInfo,
@@ -35,10 +37,13 @@ export function sortOperationsByPriority<T extends OperationWithJobInfo>(
   operations: T[]
 ): T[] {
   return [...operations].sort((a, b) => {
-    // 1. Start date (earliest first, nulls last)
+    // 1. Start date (earliest first, nulls last). Date-only "YYYY-MM-DD"
+    // comparison via calendar dates (toIsoDate normalizes a pg DATE object or
+    // string first); only the sign matters to the sort.
     if (a.startDate && b.startDate) {
-      const dateCompare =
-        new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+      const dateCompare = parseDate(toIsoDate(a.startDate)!).compare(
+        parseDate(toIsoDate(b.startDate)!)
+      );
       if (dateCompare !== 0) return dateCompare;
     } else if (a.startDate) {
       return -1;
@@ -156,9 +161,7 @@ export function toOperationWithJobInfo(
     jobPriority,
     workCenterId: operation.workCenterId ?? null,
     durationHours: operation.durationHours ?? null,
-    createdAt: operation.createdAt
-      ? new Date(operation.createdAt).toISOString()
-      : null
+    createdAt: operation.createdAt ? toInstantIso(operation.createdAt) : null
   };
 }
 

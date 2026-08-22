@@ -7,7 +7,7 @@
  */
 import { parseDate } from "@internationalized/date";
 import type { CalendarWindow } from "./calendar-utils.ts";
-import { businessDay, HOUR_MS } from "./date-utils.ts";
+import { businessDayFromMs, HOUR_MS } from "./date-utils.ts";
 
 /** A manning-board row: person assigned at a work center for a date. */
 export type PeopleAssignmentRow = {
@@ -30,9 +30,9 @@ export type PeopleAbsenceRow = {
   shiftId: string | null;
 };
 
-/** Local calendar date (YYYY-MM-DD) of a UTC instant in a timezone. */
-export function dateKeyInTimeZone(instant: Date, timeZone: string): string {
-  return businessDay(instant.toISOString(), timeZone);
+/** Local calendar date (YYYY-MM-DD) of a UTC instant (epoch-ms) in a timezone. */
+export function dateKeyInTimeZone(instant: number, timeZone: string): string {
+  return businessDayFromMs(instant, timeZone);
 }
 
 /** dateKey + n days (pure calendar arithmetic). */
@@ -41,14 +41,15 @@ function addDaysToKey(dateKey: string, days: number): string {
 }
 
 /**
- * The UTC instant the local day starts on `dateKey` — CalendarDate.toDate(tz)
- * resolves a midnight skipped by DST to the day's true first instant.
+ * The UTC instant (epoch-ms) the local day starts on `dateKey` —
+ * CalendarDate.toDate(tz) resolves a midnight skipped by DST to the day's true
+ * first instant.
  */
-function zonedMidnight(dateKey: string, timeZone: string): Date {
-  return parseDate(dateKey).toDate(timeZone);
+function zonedMidnight(dateKey: string, timeZone: string): number {
+  return parseDate(dateKey).toDate(timeZone).getTime();
 }
 
-type DaySegment = { start: Date; end: Date; dateKey: string };
+type DaySegment = { start: number; end: number; dateKey: string };
 
 /** Split a window at local-midnight boundaries into per-day segments. */
 function splitWindowByLocalDays(
@@ -60,12 +61,11 @@ function splitWindowByLocalDays(
   // Guard against pathological loops on broken tz data: a window never spans
   // more than ~10 years of days in practice
   let guard = 0;
-  while (cursor.getTime() < window.end.getTime() && guard++ < 4000) {
+  while (cursor < window.end && guard++ < 4000) {
     const dateKey = dateKeyInTimeZone(cursor, timeZone);
     const nextMidnight = zonedMidnight(addDaysToKey(dateKey, 1), timeZone);
-    const segmentEnd =
-      nextMidnight.getTime() < window.end.getTime() ? nextMidnight : window.end;
-    if (segmentEnd.getTime() > cursor.getTime()) {
+    const segmentEnd = nextMidnight < window.end ? nextMidnight : window.end;
+    if (segmentEnd > cursor) {
       segments.push({ start: cursor, end: segmentEnd, dateKey });
     }
     cursor = segmentEnd;
@@ -78,7 +78,7 @@ function mergeSegments(segments: DaySegment[]): CalendarWindow[] {
   const result: CalendarWindow[] = [];
   for (const segment of segments) {
     const prev = result[result.length - 1];
-    if (prev && prev.end.getTime() === segment.start.getTime()) {
+    if (prev && prev.end === segment.start) {
       prev.end = segment.end;
     } else {
       result.push({ start: segment.start, end: segment.end });
@@ -252,12 +252,12 @@ export function buildOvertimeByEmployee(
 function normalizeWindows(windows: CalendarWindow[]): CalendarWindow[] {
   const sorted = windows
     .map((w) => ({ start: w.start, end: w.end }))
-    .sort((a, b) => a.start.getTime() - b.start.getTime());
+    .sort((a, b) => a.start - b.start);
   const out: CalendarWindow[] = [];
   for (const window of sorted) {
     const prev = out[out.length - 1];
-    if (prev && window.start.getTime() <= prev.end.getTime()) {
-      if (window.end.getTime() > prev.end.getTime()) prev.end = window.end;
+    if (prev && window.start <= prev.end) {
+      if (window.end > prev.end) prev.end = window.end;
     } else {
       out.push(window);
     }
@@ -282,15 +282,9 @@ export function extendWindowsByOvertime(
   // ending exactly at midnight counts toward the day before)
   const lastWindowIndexByDate = new Map<string, number>();
   windows.forEach((window, index) => {
-    const dateKey = dateKeyInTimeZone(
-      new Date(window.end.getTime() - 1),
-      timeZone
-    );
+    const dateKey = dateKeyInTimeZone(window.end - 1, timeZone);
     const current = lastWindowIndexByDate.get(dateKey);
-    if (
-      current === undefined ||
-      window.end.getTime() > windows[current]!.end.getTime()
-    ) {
+    if (current === undefined || window.end > windows[current]!.end) {
       lastWindowIndexByDate.set(dateKey, index);
     }
   });
@@ -300,7 +294,7 @@ export function extendWindowsByOvertime(
       if (hours > 0 && lastWindowIndexByDate.get(dateKey) === index) {
         return {
           start: window.start,
-          end: new Date(window.end.getTime() + hours * HOUR_MS)
+          end: window.end + hours * HOUR_MS
         };
       }
     }
@@ -367,7 +361,7 @@ export function clipWindowsToStation(
 
   const kept: DaySegment[] = [];
   for (const [dateKey, segments] of segmentsByDate) {
-    segments.sort((a, b) => a.start.getTime() - b.start.getTime());
+    segments.sort((a, b) => a.start - b.start);
     const dayRows = dayRowsByDate?.get(dateKey);
     const isWholeDay =
       !dayRows || (dayRows.length === 1 && dayRows[0]!.hours === null);
@@ -403,19 +397,19 @@ export function clipWindowsToStation(
     let toSkip = offsetMs;
     let toKeep = budgetMs === null ? Number.POSITIVE_INFINITY : budgetMs;
     for (const segment of segments) {
-      const lengthMs = segment.end.getTime() - segment.start.getTime();
+      const lengthMs = segment.end - segment.start;
       if (toSkip >= lengthMs) {
         toSkip -= lengthMs;
         continue;
       }
       if (toKeep <= 0) break;
-      const startMs = segment.start.getTime() + toSkip;
+      const startMs = segment.start + toSkip;
       toSkip = 0;
-      const takeMs = Math.min(segment.end.getTime() - startMs, toKeep);
+      const takeMs = Math.min(segment.end - startMs, toKeep);
       if (takeMs > 0) {
         kept.push({
-          start: new Date(startMs),
-          end: new Date(startMs + takeMs),
+          start: startMs,
+          end: startMs + takeMs,
           dateKey
         });
         toKeep -= takeMs;
@@ -423,6 +417,6 @@ export function clipWindowsToStation(
     }
   }
 
-  kept.sort((a, b) => a.start.getTime() - b.start.getTime());
+  kept.sort((a, b) => a.start - b.start);
   return mergeSegments(kept);
 }

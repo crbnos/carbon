@@ -24,9 +24,9 @@
  * `@internationalized/date` — never local-timezone JS Date semantics.
  */
 
-import { parseDate } from "@internationalized/date";
+import { getDayOfWeek, parseDate } from "@internationalized/date";
 import type { CalendarWindow } from "./calendar-utils.ts";
-import { businessDay, MINUTE_MS } from "./date-utils.ts";
+import { businessDayFromMs, MINUTE_MS } from "./date-utils.ts";
 import type { DependencyGraph, ScheduledOperation } from "./types.ts";
 
 /**
@@ -320,18 +320,18 @@ export function calendarAdapters(
   };
 
   const utcWeekday = (isoDate: string): number =>
-    new Date(`${isoDate}T00:00:00Z`).getUTCDay();
+    getDayOfWeek(parseDate(isoDate), "en-US");
 
   const buildProfile = (windows: CalendarWindow[]): CalendarProfile => {
     // Slice every window at local midnight boundaries and bucket the minutes
     // by the local calendar date they fall on (DST-correct via the tz).
     const minutesByDate = new Map<string, number>();
     for (const window of windows) {
-      let cursor = window.start.getTime();
-      const endMs = window.end.getTime();
+      let cursor = window.start;
+      const endMs = window.end;
       let guard = 0;
       while (cursor < endMs && guard++ < 100_000) {
-        const date = businessDay(new Date(cursor).toISOString(), timezone);
+        const date = businessDayFromMs(cursor, timezone);
         const nextMidnight = parseDate(date)
           .add({ days: 1 })
           .toDate(timezone)

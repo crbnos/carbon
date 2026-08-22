@@ -4,7 +4,11 @@ import {
   composeLateConflict,
   composePlacementNote
 } from "./conflict-messages.ts";
-import { businessDay } from "./date-utils.ts";
+import {
+  businessDayFromMs,
+  msToInstantIso,
+  toInstantMs
+} from "./date-utils.ts";
 import {
   calculateDurationBreakdown,
   calculateDurationHours,
@@ -64,15 +68,16 @@ export type FiniteSchedulingContext = {
    */
   reservationsByEmployee: Map<string, ReservationInterval[]>;
   dependencies: JobOperationDependency[];
-  now: Date;
+  /** epoch-ms */
+  now: number;
   horizonDays: number;
   /**
    * End of the precomputed availability windows (work-center + shift). The
    * per-op walk must not search past this: beyond it there are no windows,
    * so a feasible far-future placement would read as a spurious
-   * "no capacity" conflict.
+   * "no capacity" conflict. epoch-ms.
    */
-  windowsEnd: Date;
+  windowsEnd: number;
   /**
    * Manning board: workCenterId -> local dateKey (YYYY-MM-DD) -> employeeIds
    * assigned at that station that day. Absent people are already removed.
@@ -348,7 +353,7 @@ export class WorkCenterSelector {
       depsByOperation.set(d.operationId, list);
     }
 
-    const placedEndByOperation = new Map<string, Date>();
+    const placedEndByOperation = new Map<string, number>();
 
     // For inherited-delay conflict messages: name the predecessor that made
     // an operation start late
@@ -374,32 +379,32 @@ export class WorkCenterSelector {
           if (op.dueDate) {
             placedEndByOperation.set(
               op.id,
-              new Date(new Date(op.dueDate).getTime() + 24 * 3_600_000)
+              toInstantMs(op.dueDate) + 24 * 3_600_000
             );
           }
           continue;
         }
 
-        let earliestMs = ctx.now.getTime();
+        let earliestMs = ctx.now;
         if (op.startDate) {
-          earliestMs = Math.max(earliestMs, new Date(op.startDate).getTime());
+          earliestMs = Math.max(earliestMs, toInstantMs(op.startDate));
         }
         for (const depId of depsByOperation.get(op.id) ?? []) {
           const depEnd = placedEndByOperation.get(depId);
-          if (depEnd) {
-            earliestMs = Math.max(earliestMs, depEnd.getTime());
+          if (depEnd !== undefined) {
+            earliestMs = Math.max(earliestMs, depEnd);
           }
         }
-        const start = new Date(earliestMs);
+        const start = earliestMs;
         const outsideDurationHours =
           op.durationHours ??
           calculateDurationHours({ ...op, priority: op.priority ?? undefined });
         // Calendar time, not working time — the supplier's clock runs 24/7
-        const end = new Date(earliestMs + outsideDurationHours * 3_600_000);
+        const end = earliestMs + outsideDurationHours * 3_600_000;
         placedEndByOperation.set(op.id, end);
 
         let outsideConflict: string | null = null;
-        const outsideEndDate = businessDay(end.toISOString(), ctx.timeZone);
+        const outsideEndDate = businessDayFromMs(end, ctx.timeZone);
         if (jobDueDate && outsideEndDate > jobDueDate) {
           outsideConflict = composeLateConflict(outsideEndDate, jobDueDate, {
             kind: "outside-processing"
@@ -409,8 +414,8 @@ export class WorkCenterSelector {
         selections.set(op.id, {
           workCenterId: op.workCenterId ?? null,
           priority: 0,
-          placedStart: start.toISOString(),
-          placedEnd: end.toISOString(),
+          placedStart: msToInstantIso(start),
+          placedEnd: msToInstantIso(end),
           conflict: outsideConflict
         });
         continue;
@@ -473,23 +478,21 @@ export class WorkCenterSelector {
       // Track whether a predecessor's placement is the binding bound — a late
       // placement that never waited for its own resources inherited the delay
       // from that dep.
-      let earliestMs = ctx.now.getTime();
+      let earliestMs = ctx.now;
       let dominantDepId: string | null = null;
       for (const depId of depsByOperation.get(op.id) ?? []) {
         const depEnd = placedEndByOperation.get(depId);
-        if (depEnd && depEnd.getTime() > earliestMs) {
-          earliestMs = depEnd.getTime();
+        if (depEnd !== undefined && depEnd > earliestMs) {
+          earliestMs = depEnd;
           dominantDepId = depId;
         }
       }
-      const earliestStart = new Date(earliestMs);
+      const earliestStart = earliestMs;
       // Cap at the precomputed windows: walking past them finds nothing and
       // would flag feasible far-future ops as capacity conflicts
-      const horizonEnd = new Date(
-        Math.min(
-          earliestMs + ctx.horizonDays * 24 * 3_600_000,
-          ctx.windowsEnd.getTime()
-        )
+      const horizonEnd = Math.min(
+        earliestMs + ctx.horizonDays * 24 * 3_600_000,
+        ctx.windowsEnd
       );
 
       // The operation's requirement comes from its PROCESS (single ability)
@@ -717,7 +720,7 @@ export class WorkCenterSelector {
           }
 
           const reservedMs = capacity.reservations.reduce(
-            (sum, r) => sum + (r.endAt.getTime() - r.startAt.getTime()),
+            (sum, r) => sum + (r.endAt - r.startAt),
             0
           );
 
@@ -728,8 +731,8 @@ export class WorkCenterSelector {
           let better: boolean;
           if (!best) {
             better = true;
-          } else if (slot.end.getTime() !== best.slot.end.getTime()) {
-            better = slot.end.getTime() < best.slot.end.getTime();
+          } else if (slot.end !== best.slot.end) {
+            better = slot.end < best.slot.end;
           } else {
             const isCurrent = wcId === op.workCenterId;
             const bestIsCurrent = best.wcId === op.workCenterId;
@@ -751,7 +754,7 @@ export class WorkCenterSelector {
         // wait to the binding resource (machine queue vs operator pool) on
         // the chosen candidate's walk. Classified once; feeds the
         // always-stored placement note AND the late-only conflict message.
-        const waitedMs = slot.start.getTime() - earliestMs;
+        const waitedMs = slot.start - earliestMs;
         const cause = classifyLatePlacement({
           waitedMs,
           wait: slot.wait,
@@ -785,15 +788,14 @@ export class WorkCenterSelector {
             operationId: op.id,
             startAt: segment.startAt,
             endAt: segment.endAt,
-            workHours:
-              (segment.endAt.getTime() - segment.startAt.getTime()) / 3_600_000
+            workHours: (segment.endAt - segment.startAt) / 3_600_000
           });
         }
         placedEndByOperation.set(op.id, slot.end);
 
         // Late vs the JOB due date => surface as a conflict naming the cause
         let conflict: string | null = null;
-        const placedEndDate = businessDay(slot.end.toISOString(), ctx.timeZone);
+        const placedEndDate = businessDayFromMs(slot.end, ctx.timeZone);
         if (jobDueDate && placedEndDate > jobDueDate) {
           conflict = composeLateConflict(placedEndDate, jobDueDate, cause);
         }
@@ -801,8 +803,8 @@ export class WorkCenterSelector {
         selections.set(op.id, {
           workCenterId: wcId,
           priority: 0,
-          placedStart: slot.start.toISOString(),
-          placedEnd: slot.end.toISOString(),
+          placedStart: msToInstantIso(slot.start),
+          placedEnd: msToInstantIso(slot.end),
           conflict
         });
       } else {
@@ -815,7 +817,7 @@ export class WorkCenterSelector {
           const capacity = ctx.capacityByWorkCenter.get(wcId);
           if (!capacity) continue;
           const reservedMs = capacity.reservations.reduce(
-            (sum, r) => sum + (r.endAt.getTime() - r.startAt.getTime()),
+            (sum, r) => sum + (r.endAt - r.startAt),
             0
           );
           if (reservedMs < leastReserved) {
@@ -835,9 +837,7 @@ export class WorkCenterSelector {
         // hold the machine against other jobs. Chaining placedEndByOperation
         // still makes successors wait for it (they can't run before it does).
         if (durationHours > 0 && fallbackWc) {
-          const placeholderEnd = new Date(
-            earliestMs + durationHours * 3_600_000
-          );
+          const placeholderEnd = earliestMs + durationHours * 3_600_000;
           this.plannedReservations.push({
             resourceKind: "WorkCenter",
             resourceId: fallbackWc,
@@ -870,7 +870,7 @@ export class WorkCenterSelector {
    */
   private buildEligibleMembers(
     requirement: ProcessRequirement,
-    earliestStart: Date,
+    earliestStart: number,
     ctx: FiniteSchedulingContext
   ): EligibleMember[] {
     const employees = ctx.employeesByAbility.get(requirement.abilityId) ?? [];

@@ -1,3 +1,4 @@
+import { parseAbsolute } from "@internationalized/date";
 import { it } from "vitest";
 
 /**
@@ -23,6 +24,8 @@ import {
   type FiniteSchedulingContext,
   WorkCenterSelector
 } from "./work-center-selector.ts";
+
+const utc = (iso: string) => parseAbsolute(iso, "UTC").toDate().getTime();
 
 const JOB_COUNT = 200;
 const OPS_PER_JOB = 10;
@@ -77,17 +80,15 @@ function makeDependencies(): JobOperationDependency[] {
 }
 
 function makeContext(): FiniteSchedulingContext {
-  const now = new Date("2026-01-05T00:00:00.000Z");
-  const windowsEnd = new Date("2027-01-05T00:00:00.000Z");
+  const now = utc("2026-01-05T00:00:00.000Z");
+  const windowsEnd = utc("2027-01-05T00:00:00.000Z");
   const capacityByWorkCenter = new Map<string, ResourceCapacityData>();
   for (let w = 0; w < WORK_CENTER_COUNT; w++) {
     const id = `wc-${w}`;
     capacityByWorkCenter.set(id, {
       workCenter: { id },
       // alwaysOn / lights-out: one continuous window over the whole horizon.
-      windows: [
-        { start: new Date(now.getTime()), end: new Date(windowsEnd.getTime()) }
-      ],
+      windows: [{ start: now, end: windowsEnd }],
       reservations: []
     });
   }

@@ -1,3 +1,10 @@
+import {
+  fromAbsolute,
+  getDayOfWeek,
+  parseAbsolute,
+  parseDate,
+  toCalendarDate
+} from "@internationalized/date";
 import { it } from "vitest";
 
 /**
@@ -51,6 +58,9 @@ import {
   WorkCenterSelector
 } from "./work-center-selector.ts";
 
+const utc = (iso: string) => parseAbsolute(iso, "UTC").toDate().getTime();
+const iso = (ms: number) => fromAbsolute(ms, "UTC").toAbsoluteString();
+
 // A fixed clock on a Monday so weekday windows line up predictably.
 const NOW_ISO = "2026-01-05T00:00:00.000Z";
 const WINDOWS_END_ISO = "2026-08-01T00:00:00.000Z";
@@ -81,8 +91,8 @@ const PROCESS_BY_OP_INDEX = ["pA", "pB", "pC", "pD", "pE", "pC"] as const;
 const JOB_COUNT = 20;
 const OPS_PER_JOB = 6;
 
-function continuousWindow(start: Date, end: Date): CalendarWindow[] {
-  return [{ start: new Date(start.getTime()), end: new Date(end.getTime()) }];
+function continuousWindow(start: number, end: number): CalendarWindow[] {
+  return [{ start, end }];
 }
 
 function capacity(id: string, windows: CalendarWindow[]): ResourceCapacityData {
@@ -92,19 +102,12 @@ function capacity(id: string, windows: CalendarWindow[]): ResourceCapacityData {
 /** Weekday YYYY-MM-DD keys in [startKey, endKey], computed purely in UTC. */
 function weekdayKeysUTC(startKey: string, endKey: string): string[] {
   const keys: string[] = [];
-  const end = new Date(`${endKey}T00:00:00.000Z`).getTime();
-  for (
-    let t = new Date(`${startKey}T00:00:00.000Z`).getTime();
-    t <= end;
-    t += 24 * 60 * 60 * 1000
-  ) {
-    const d = new Date(t);
-    const dow = d.getUTCDay();
-    if (dow >= 1 && dow <= 5) {
-      const month = String(d.getUTCMonth() + 1).padStart(2, "0");
-      const day = String(d.getUTCDate()).padStart(2, "0");
-      keys.push(`${d.getUTCFullYear()}-${month}-${day}`);
-    }
+  let cursor = parseDate(startKey);
+  const end = parseDate(endKey);
+  while (cursor.compare(end) <= 0) {
+    const dow = getDayOfWeek(cursor, "en-US"); // 0=Sun..6=Sat
+    if (dow >= 1 && dow <= 5) keys.push(cursor.toString());
+    cursor = cursor.add({ days: 1 });
   }
   return keys;
 }
@@ -192,8 +195,8 @@ function makeOperations(): ScheduledOperation[] {
  * Fresh Date objects on every call — runs must never share state.
  */
 function makeWorkCenterWindows(): Map<string, CalendarWindow[]> {
-  const now = new Date(NOW_ISO);
-  const windowsEnd = new Date(WINDOWS_END_ISO);
+  const now = utc(NOW_ISO);
+  const windowsEnd = utc(WINDOWS_END_ISO);
   return new Map<string, CalendarWindow[]>([
     ["wc-always-1", continuousWindow(now, windowsEnd)],
     ["wc-always-2", continuousWindow(now, windowsEnd)],
@@ -205,8 +208,8 @@ function makeWorkCenterWindows(): Map<string, CalendarWindow[]> {
 }
 
 function makeContext(): FiniteSchedulingContext {
-  const now = new Date(NOW_ISO);
-  const windowsEnd = new Date(WINDOWS_END_ISO);
+  const now = utc(NOW_ISO);
+  const windowsEnd = utc(WINDOWS_END_ISO);
   const empWindows = () =>
     expandCalendar(STOCK_WEEK_SHIFTS, now, windowsEnd, "UTC");
   const manningDates = weekdayKeysUTC("2026-01-05", "2026-01-30");
@@ -329,8 +332,8 @@ function normalize(
       resourceKind: r.resourceKind,
       resourceId: r.resourceId,
       operationId: r.operationId,
-      startAt: r.startAt.toISOString(),
-      endAt: r.endAt.toISOString()
+      startAt: iso(r.startAt),
+      endAt: iso(r.endAt)
     }))
     .sort((a, b) => {
       const ka = sortKey(a);
@@ -351,9 +354,9 @@ function projectedCompletion(
   for (const r of reservations) {
     const jobId = OP_TO_JOB.get(r.operationId);
     if (!jobId) continue;
-    const iso = r.endAt.toISOString();
+    const isoStr = iso(r.endAt);
     const current = maxByJob.get(jobId);
-    if (!current || iso > current) maxByJob.set(jobId, iso);
+    if (!current || isoStr > current) maxByJob.set(jobId, isoStr);
   }
   return [...maxByJob.entries()].sort((a, b) =>
     a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0
@@ -408,8 +411,8 @@ function computeFixtureNeedBys(
   );
   const locationWindows = expandCalendar(
     STOCK_WEEK_SHIFTS,
-    new Date(NOW_ISO),
-    new Date(WINDOWS_END_ISO),
+    utc(NOW_ISO),
+    utc(WINDOWS_END_ISO),
     "UTC"
   );
   const { calendarHoursPerDay, workingDayTest } = calendarAdapters(
@@ -523,8 +526,8 @@ it("need-by maps are stable and capacity-invariant while placements move", async
     const cap = ctx.capacityByWorkCenter.get("wc-always-1");
     assert(cap, "fixture is missing wc-always-1 capacity");
     cap.reservations.push({
-      startAt: new Date("2026-01-05T00:00:00.000Z"),
-      endAt: new Date("2026-01-12T00:00:00.000Z"),
+      startAt: utc("2026-01-05T00:00:00.000Z"),
+      endAt: utc("2026-01-12T00:00:00.000Z"),
       readableJobId: "J-FOREIGN"
     });
   };
@@ -562,10 +565,13 @@ it("no placement falls on a weekend for a rung-3 work center", async () => {
   );
 
   for (const r of reservations) {
-    const startDow = r.startAt.getUTCDay();
+    const startDow = getDayOfWeek(
+      toCalendarDate(fromAbsolute(r.startAt, "UTC")),
+      "en-US"
+    );
     assert(
       startDow >= 1 && startDow <= 5,
-      `reservation for ${r.operationId} starts on weekend day ${startDow} (${r.startAt.toISOString()})`
+      `reservation for ${r.operationId} starts on weekend day ${startDow} (${iso(r.startAt)})`
     );
   }
 });

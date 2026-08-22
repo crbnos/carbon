@@ -1,3 +1,4 @@
+import { parseAbsolute } from "@internationalized/date";
 import { it } from "vitest";
 import { toIsoDate } from "./date-utils.ts";
 import {
@@ -6,7 +7,9 @@ import {
 } from "./operator-eligibility.ts";
 import { assert, assertEquals } from "./test-helpers.ts";
 
-const opStart = new Date("2026-07-17T08:00:00.000Z");
+const utc = (iso: string) => parseAbsolute(iso, "UTC").toDate().getTime();
+
+const opStart = utc("2026-07-17T08:00:00.000Z");
 
 function employee(
   overrides: Partial<QualifiedEmployee> = {}
@@ -57,7 +60,7 @@ it("expiry boundary respects the factory time zone", () => {
   };
   // 20:00 UTC on the 20th is already the 21st in India: the qualification
   // expiring on the 21st is expired-as-of-start there, but not in UTC.
-  const start = new Date("2026-07-20T20:00:00.000Z");
+  const start = utc("2026-07-20T20:00:00.000Z");
   assert(isEligibleOperator(employee, start, "UTC"));
   assert(!isEligibleOperator(employee, start, "Asia/Kolkata"));
 });

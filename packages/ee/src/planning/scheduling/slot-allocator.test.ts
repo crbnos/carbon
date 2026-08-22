@@ -1,3 +1,4 @@
+import { parseAbsolute } from "@internationalized/date";
 import { it } from "vitest";
 import { expandCalendar, intersectWindows } from "./calendar-utils.ts";
 import {
@@ -14,7 +15,7 @@ import {
 } from "./slot-allocator.ts";
 import { assert, assertEquals } from "./test-helpers.ts";
 
-const utc = (iso: string) => new Date(iso);
+const utc = (iso: string) => parseAbsolute(iso, "UTC").toDate().getTime();
 
 // 2026-01-05 is a Monday
 const RANGE_START = utc("2026-01-05T00:00:00Z");
@@ -75,12 +76,12 @@ it("work center capacity is 1 — ungated ops queue back to back", () => {
   }
 
   // One operation at a time: each op starts when the previous one ends
-  assertEquals(placed[0]?.start.toISOString(), "2026-01-05T08:00:00.000Z");
-  assertEquals(placed[0]?.end.toISOString(), "2026-01-05T12:00:00.000Z");
-  assertEquals(placed[1]?.start.toISOString(), "2026-01-05T12:00:00.000Z");
-  assertEquals(placed[1]?.end.toISOString(), "2026-01-05T16:00:00.000Z");
-  assertEquals(placed[2]?.start.toISOString(), "2026-01-05T16:00:00.000Z");
-  assertEquals(placed[2]?.end.toISOString(), "2026-01-05T20:00:00.000Z");
+  assertEquals(placed[0]?.start, utc("2026-01-05T08:00:00.000Z"));
+  assertEquals(placed[0]?.end, utc("2026-01-05T12:00:00.000Z"));
+  assertEquals(placed[1]?.start, utc("2026-01-05T12:00:00.000Z"));
+  assertEquals(placed[1]?.end, utc("2026-01-05T16:00:00.000Z"));
+  assertEquals(placed[2]?.start, utc("2026-01-05T16:00:00.000Z"));
+  assertEquals(placed[2]?.end, utc("2026-01-05T20:00:00.000Z"));
 
   // The first op didn't wait; the queued ones attribute their wait to the
   // machine, held by untagged (same-job in-run) reservations
@@ -110,7 +111,7 @@ it("an existing work-center reservation delays an ungated op until it ends", () 
     })
   );
 
-  assertEquals(slot.start.toISOString(), "2026-01-05T18:00:00.000Z");
+  assertEquals(slot.start, utc("2026-01-05T18:00:00.000Z"));
   assertEquals(slot.wait?.resource, "machine");
 });
 
@@ -135,8 +136,8 @@ it("machine nextTryAfter hops to the earliest overlapping reservation end", () =
     })
   );
 
-  assertEquals(slot.start.toISOString(), "2026-01-05T14:00:00.000Z");
-  assertEquals(slot.end.toISOString(), "2026-01-05T16:00:00.000Z");
+  assertEquals(slot.start, utc("2026-01-05T14:00:00.000Z"));
+  assertEquals(slot.end, utc("2026-01-05T16:00:00.000Z"));
 });
 
 it("conflict when the machine is booked through the horizon (ungated)", () => {
@@ -186,9 +187,9 @@ it("machine hours bound an ungated op: 10h on an 8h/day machine spans two days",
       capacity
     })
   );
-  assertEquals(slot.start.toISOString(), "2026-01-05T08:00:00.000Z");
+  assertEquals(slot.start, utc("2026-01-05T08:00:00.000Z"));
   // 8h Monday (08–16) + 2h Tuesday (08–10) — pauses overnight, never a weekend
-  assertEquals(slot.end.toISOString(), "2026-01-06T10:00:00.000Z");
+  assertEquals(slot.end, utc("2026-01-06T10:00:00.000Z"));
 });
 
 it("attended remainder accumulates on machine windows: 4h from 1h before close resumes next window", () => {
@@ -211,9 +212,9 @@ it("attended remainder accumulates on machine windows: 4h from 1h before close r
       busyByEmployee: new Map()
     })
   );
-  assertEquals(r.attendedEnd.toISOString(), "2026-01-05T15:00:00.000Z");
+  assertEquals(r.attendedEnd, utc("2026-01-05T15:00:00.000Z"));
   // 1h to close (16:00) + 3h into Tuesday's window (08:00–11:00)
-  assertEquals(r.end.toISOString(), "2026-01-06T11:00:00.000Z");
+  assertEquals(r.end, utc("2026-01-06T11:00:00.000Z"));
 });
 
 it("a 24×7 member clipped to an 8h machine window works only machine hours", () => {
@@ -238,17 +239,11 @@ it("a 24×7 member clipped to an 8h machine window works only machine hours", ()
   );
   // 8h Monday + 4h Tuesday — never overnight, despite the person being 24×7
   assertEquals(r.segments.length, 2);
-  assertEquals(
-    r.segments[0]?.startAt.toISOString(),
-    "2026-01-05T08:00:00.000Z"
-  );
-  assertEquals(r.segments[0]?.endAt.toISOString(), "2026-01-05T16:00:00.000Z");
-  assertEquals(
-    r.segments[1]?.startAt.toISOString(),
-    "2026-01-06T08:00:00.000Z"
-  );
-  assertEquals(r.segments[1]?.endAt.toISOString(), "2026-01-06T12:00:00.000Z");
-  assertEquals(r.attendedEnd.toISOString(), "2026-01-06T12:00:00.000Z");
+  assertEquals(r.segments[0]?.startAt, utc("2026-01-05T08:00:00.000Z"));
+  assertEquals(r.segments[0]?.endAt, utc("2026-01-05T16:00:00.000Z"));
+  assertEquals(r.segments[1]?.startAt, utc("2026-01-06T08:00:00.000Z"));
+  assertEquals(r.segments[1]?.endAt, utc("2026-01-06T12:00:00.000Z"));
+  assertEquals(r.attendedEnd, utc("2026-01-06T12:00:00.000Z"));
 });
 
 // --- attended windows, relay, lights-out (gated operations) -----------------
@@ -291,12 +286,12 @@ it("one person tends two machines — attended windows interleave, both run in p
 
   // Machine A runs 08:00-09:00; Sam is free from 08:05 so machine B runs
   // 08:05-09:05 — both machines live with one person
-  assertEquals(a.start.toISOString(), "2026-01-05T08:00:00.000Z");
-  assertEquals(a.attendedEnd.toISOString(), "2026-01-05T08:05:00.000Z");
-  assertEquals(a.end.toISOString(), "2026-01-05T09:00:00.000Z");
-  assertEquals(b.start.toISOString(), "2026-01-05T08:05:00.000Z");
-  assertEquals(b.attendedEnd.toISOString(), "2026-01-05T08:10:00.000Z");
-  assertEquals(b.end.toISOString(), "2026-01-05T09:05:00.000Z");
+  assertEquals(a.start, utc("2026-01-05T08:00:00.000Z"));
+  assertEquals(a.attendedEnd, utc("2026-01-05T08:05:00.000Z"));
+  assertEquals(a.end, utc("2026-01-05T09:00:00.000Z"));
+  assertEquals(b.start, utc("2026-01-05T08:05:00.000Z"));
+  assertEquals(b.attendedEnd, utc("2026-01-05T08:10:00.000Z"));
+  assertEquals(b.end, utc("2026-01-05T09:05:00.000Z"));
   assertEquals(b.segments, [
     {
       employeeId: "emp-sam",
@@ -340,7 +335,7 @@ it("relay: attended work hands off at the shift boundary", () => {
       endAt: utc("2026-01-05T20:00:00Z")
     }
   ]);
-  assertEquals(r.end.toISOString(), "2026-01-05T20:00:00.000Z");
+  assertEquals(r.end, utc("2026-01-05T20:00:00.000Z"));
 });
 
 it("pause: single person, attended work spans two shifts, machine held across the gap", () => {
@@ -372,8 +367,8 @@ it("pause: single person, attended work spans two shifts, machine held across th
       endAt: utc("2026-01-06T12:00:00Z")
     }
   ]);
-  assertEquals(r.end.toISOString(), "2026-01-06T12:00:00.000Z");
-  assertEquals(r.attendedEnd.toISOString(), r.end.toISOString());
+  assertEquals(r.end, utc("2026-01-06T12:00:00.000Z"));
+  assertEquals(r.attendedEnd, r.end);
 });
 
 it("lights-out: the unattended remainder runs on calendar time overnight", () => {
@@ -393,9 +388,9 @@ it("lights-out: the unattended remainder runs on calendar time overnight", () =>
     })
   );
 
-  assertEquals(r.start.toISOString(), "2026-01-05T15:00:00.000Z");
-  assertEquals(r.attendedEnd.toISOString(), "2026-01-05T15:05:00.000Z");
-  assertEquals(r.end.toISOString(), "2026-01-06T11:05:00.000Z");
+  assertEquals(r.start, utc("2026-01-05T15:00:00.000Z"));
+  assertEquals(r.attendedEnd, utc("2026-01-05T15:05:00.000Z"));
+  assertEquals(r.end, utc("2026-01-06T11:05:00.000Z"));
 });
 
 it("zero attended hours: no person booked, machine-only placement", () => {
@@ -412,8 +407,8 @@ it("zero attended hours: no person booked, machine-only placement", () => {
   );
 
   assertEquals(r.segments, []);
-  assertEquals(r.start.toISOString(), "2026-01-05T08:00:00.000Z");
-  assertEquals(r.end.toISOString(), "2026-01-05T10:00:00.000Z");
+  assertEquals(r.start, utc("2026-01-05T08:00:00.000Z"));
+  assertEquals(r.end, utc("2026-01-05T10:00:00.000Z"));
   assertEquals(r.wait, null);
 });
 
@@ -459,7 +454,7 @@ it("cross-ability double-booking: a person busy via another booking is unavailab
     })
   );
 
-  assertEquals(r.start.toISOString(), "2026-01-05T12:00:00.000Z");
+  assertEquals(r.start, utc("2026-01-05T12:00:00.000Z"));
   assertEquals(r.wait, {
     resource: "operator",
     blockers: "queued behind J000009 (1 op)",
@@ -488,7 +483,7 @@ it("machine busy blocks the attended start — attribution machine", () => {
     })
   );
 
-  assertEquals(r.start.toISOString(), "2026-01-05T10:00:00.000Z");
+  assertEquals(r.start, utc("2026-01-05T10:00:00.000Z"));
   assertEquals(r.wait, {
     resource: "machine",
     blockers: "queued behind J000009 (1 op)",
@@ -529,7 +524,7 @@ it("interleaving: machine frees first, operator binds last — attribution follo
     })
   );
 
-  assertEquals(r.start.toISOString(), "2026-01-05T13:00:00.000Z");
+  assertEquals(r.start, utc("2026-01-05T13:00:00.000Z"));
   assertEquals(r.wait, {
     resource: "operator",
     blockers: "queued behind J000010 (1 op)",
@@ -713,16 +708,16 @@ it("team: two members halve the labor, both booked on the same op", () => {
       team: { setupHours: 1, laborHours: 4, machineHours: 0 }
     })
   );
-  assertEquals(r.start.toISOString(), "2026-01-05T08:00:00.000Z");
-  assertEquals(r.attendedEnd.toISOString(), "2026-01-05T11:00:00.000Z");
-  assertEquals(r.end.toISOString(), "2026-01-05T11:00:00.000Z");
+  assertEquals(r.start, utc("2026-01-05T08:00:00.000Z"));
+  assertEquals(r.attendedEnd, utc("2026-01-05T11:00:00.000Z"));
+  assertEquals(r.end, utc("2026-01-05T11:00:00.000Z"));
   // One overlapping segment per person covering the whole attended span
   assertEquals(r.segments.length, 2);
   for (const employeeId of ["bob", "carol"]) {
     const seg = r.segments.find((s) => s.employeeId === employeeId);
     assert(seg, `${employeeId} booked`);
-    assertEquals(seg!.startAt.toISOString(), "2026-01-05T08:00:00.000Z");
-    assertEquals(seg!.endAt.toISOString(), "2026-01-05T11:00:00.000Z");
+    assertEquals(seg!.startAt, utc("2026-01-05T08:00:00.000Z"));
+    assertEquals(seg!.endAt, utc("2026-01-05T11:00:00.000Z"));
   }
 });
 
@@ -743,12 +738,9 @@ it("team: single member matches the legacy attended result", () => {
       team: { setupHours: 1, laborHours: 4, machineHours: 0 }
     })
   );
-  assertEquals(team.start.toISOString(), legacy.start.toISOString());
-  assertEquals(
-    team.attendedEnd.toISOString(),
-    legacy.attendedEnd.toISOString()
-  );
-  assertEquals(team.end.toISOString(), legacy.end.toISOString());
+  assertEquals(team.start, legacy.start);
+  assertEquals(team.attendedEnd, legacy.attendedEnd);
+  assertEquals(team.end, legacy.end);
   assertEquals(team.segments.length, 1);
   assertEquals(team.segments[0]?.employeeId, "bob");
 });
@@ -772,11 +764,11 @@ it("team: rate drops when a member's shift ends mid-op", () => {
       team: { setupHours: 0, laborHours: 6, machineHours: 0 }
     })
   );
-  assertEquals(r.attendedEnd.toISOString(), "2026-01-05T12:00:00.000Z");
+  assertEquals(r.attendedEnd, utc("2026-01-05T12:00:00.000Z"));
   const carol = r.segments.find((s) => s.employeeId === "carol");
-  assertEquals(carol!.endAt.toISOString(), "2026-01-05T10:00:00.000Z");
+  assertEquals(carol!.endAt, utc("2026-01-05T10:00:00.000Z"));
   const bob = r.segments.find((s) => s.employeeId === "bob");
-  assertEquals(bob!.endAt.toISOString(), "2026-01-05T12:00:00.000Z");
+  assertEquals(bob!.endAt, utc("2026-01-05T12:00:00.000Z"));
 });
 
 it("team: machine time is not compressed", () => {
@@ -796,8 +788,8 @@ it("team: machine time is not compressed", () => {
       team: { setupHours: 1, laborHours: 4, machineHours: 6 }
     })
   );
-  assertEquals(r.attendedEnd.toISOString(), "2026-01-05T11:00:00.000Z");
-  assertEquals(r.end.toISOString(), "2026-01-05T15:00:00.000Z");
+  assertEquals(r.attendedEnd, utc("2026-01-05T11:00:00.000Z"));
+  assertEquals(r.end, utc("2026-01-05T15:00:00.000Z"));
 });
 
 it("team: a busy member joins the op when they free up", () => {
@@ -827,7 +819,7 @@ it("team: a busy member joins the op when they free up", () => {
       team: { setupHours: 0, laborHours: 4, machineHours: 0 }
     })
   );
-  assertEquals(r.attendedEnd.toISOString(), "2026-01-05T10:30:00.000Z");
+  assertEquals(r.attendedEnd, utc("2026-01-05T10:30:00.000Z"));
   const carol = r.segments.find((s) => s.employeeId === "carol");
-  assertEquals(carol!.startAt.toISOString(), "2026-01-05T09:00:00.000Z");
+  assertEquals(carol!.startAt, utc("2026-01-05T09:00:00.000Z"));
 });

@@ -64,12 +64,12 @@ export function getForecastNonWorkingIntervals(args: {
   const working = resolveLocationWindows({
     timezone: timeZone,
     locationShiftRows,
-    rangeStart: new Date(windowStartMs),
-    rangeEnd: new Date(windowEndMs)
+    rangeStart: windowStartMs,
+    rangeEnd: windowEndMs
   });
 
   return subtractIntervals(
-    [{ start: new Date(windowStartMs), end: new Date(windowEndMs) }],
+    [{ start: windowStartMs, end: windowEndMs }],
     working
-  ).map((w) => ({ start: w.start.getTime(), end: w.end.getTime() }));
+  ).map((w) => ({ start: w.start, end: w.end }));
 }

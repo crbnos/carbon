@@ -4,6 +4,7 @@ import type { Database } from "@carbon/database";
 // typecheck reached via src/scheduling.ts re-exporting this engine in-process.
 import type { DB } from "@carbon/database/client";
 import {
+  datetime,
   getCompanyTimeZone,
   getLocationTimeZone
 } from "@carbon/database/datetime";
@@ -25,7 +26,13 @@ import {
   composeBehindTarget
 } from "./conflict-messages.ts";
 import { buildScheduledOperations } from "./date-calculator.ts";
-import { businessDay, toIsoDate } from "./date-utils.ts";
+import {
+  businessDay,
+  msToInstantIso,
+  toInstantIso,
+  toInstantMs,
+  toIsoDate
+} from "./date-utils.ts";
 import {
   buildOperationDependencies,
   DependencyGraphImpl,
@@ -103,8 +110,9 @@ export class SchedulingEngine {
    * across every job in a batch so the whole location schedules against one
    * clock (determinism: identical snapshot + identical now ⇒ identical
    * schedule). Never `Date.now()` inside the engine's placement path.
+   * epoch-ms.
    */
-  private now: Date;
+  private now: number;
   /** When false, run() simulates without writing anything (expedite what-if). */
   private persist: boolean;
   /**
@@ -141,8 +149,8 @@ export class SchedulingEngine {
     workCenterIds: Set<string>;
     workCenterAvailability: Map<string, CalendarWindow[]>;
     locationDefaultWindows: CalendarWindow[];
-    rangeStart: Date;
-    rangeEnd: Date;
+    rangeStart: number;
+    rangeEnd: number;
   } | null = null;
 
   private provider: MasterDataProvider;
@@ -152,8 +160,8 @@ export class SchedulingEngine {
       client: SupabaseClient<Database>;
       db: Kysely<DB>;
       provider?: MasterDataProvider;
-      /** Shared run clock; defaults to a fresh Date if omitted. */
-      now?: Date;
+      /** Shared run clock (epoch-ms); defaults to a fresh clock if omitted. */
+      now?: number;
       /** Simulate-only when false (no writes). Defaults to true. */
       persist?: boolean;
       /** Batch job ids to exclude from the reservation snapshot. */
@@ -165,7 +173,7 @@ export class SchedulingEngine {
     this.jobId = options.jobId;
     this.companyId = options.companyId;
     this.userId = options.userId;
-    this.now = options.now ?? new Date();
+    this.now = options.now ?? Date.now();
     this.persist = options.persist ?? true;
     this.excludeJobIds =
       options.excludeJobIds && options.excludeJobIds.length > 0
@@ -516,8 +524,8 @@ export class SchedulingEngine {
     workCenterIds: Set<string>;
     workCenterAvailability: Map<string, CalendarWindow[]>;
     locationDefaultWindows: CalendarWindow[];
-    rangeStart: Date;
-    rangeEnd: Date;
+    rangeStart: number;
+    rangeEnd: number;
   }> {
     if (this.availabilityWindows) {
       return this.availabilityWindows;
@@ -540,9 +548,7 @@ export class SchedulingEngine {
     }
 
     const rangeStart = this.now;
-    const rangeEnd = new Date(
-      this.now.getTime() + (SCHEDULING_HORIZON_DAYS + 7) * 24 * 3_600_000
-    );
+    const rangeEnd = this.now + (SCHEDULING_HORIZON_DAYS + 7) * 24 * 3_600_000;
 
     const [workCenterAvailability, locationDefaultWindows] = await Promise.all([
       this.provider.getWorkCenterAvailability(
@@ -561,7 +567,7 @@ export class SchedulingEngine {
           )
         : Promise.resolve<CalendarWindow[]>([
             { start: rangeStart, end: rangeEnd }
-          ])
+          ]) // rangeStart/rangeEnd are epoch-ms
     ]);
 
     this.availabilityWindows = {
@@ -817,7 +823,7 @@ export class SchedulingEngine {
     // replan (the reactive stale-wave refreshes everything).
     const reservationsByEmployee = new Map<
       string,
-      { startAt: Date; endAt: Date; readableJobId?: string }[]
+      { startAt: number; endAt: number; readableJobId?: string }[]
     >();
     for (const r of liveReservations) {
       if (r.resourceKind !== "Employee") continue;
@@ -894,13 +900,13 @@ export class SchedulingEngine {
       if (maxEndMs === null || ms > maxEndMs) maxEndMs = ms;
     };
     for (const selection of selections.values()) {
-      if (selection.placedEnd) bump(new Date(selection.placedEnd).getTime());
+      if (selection.placedEnd) bump(toInstantMs(selection.placedEnd));
     }
     for (const p of this.workCenterSelector.getPlannedReservations()) {
-      if (p.endAt.getTime() > p.startAt.getTime()) bump(p.endAt.getTime());
+      if (p.endAt > p.startAt) bump(p.endAt);
     }
     this.projectedCompletionAt =
-      maxEndMs === null ? null : new Date(maxEndMs).toISOString();
+      maxEndMs === null ? null : msToInstantIso(maxEndMs);
 
     // Recount conflicts — finite allocation may add or resolve them
     this.conflictsDetected = 0;
@@ -955,7 +961,7 @@ export class SchedulingEngine {
     // durationHours — without them every rule silently degrades to the
     // legacy tie-break chain
     const toIsoOrNull = (value: Date | string | null | undefined) =>
-      value ? new Date(value).toISOString() : null;
+      value ? toInstantIso(value) : null;
 
     // Start with operations from DB (other jobs at same work centers)
     const mergedOps: OperationWithJobInfo[] = allWcOps
@@ -1100,7 +1106,7 @@ export class SchedulingEngine {
     // which occupies no capacity and violates the endAt > startAt check.
     const planned = (
       this.workCenterSelector?.getPlannedReservations() ?? []
-    ).filter((p) => p.endAt.getTime() > p.startAt.getTime());
+    ).filter((p) => p.endAt > p.startAt);
 
     // Newly-late = the job WAS on time (or unforecast) and its new projected
     // business day now exceeds the due date. Edge-triggered by construction, so
@@ -1156,7 +1162,7 @@ export class SchedulingEngine {
             workCenterId,
             hasConflict: op.hasConflict,
             conflictReason: op.conflictReason,
-            updatedAt: new Date().toISOString(),
+            updatedAt: datetime.timestamp(),
             updatedBy: this.userId
           })
           .where("id", "=", op.id)
@@ -1182,9 +1188,12 @@ export class SchedulingEngine {
               operationId: p.operationId,
               jobId: this.jobId,
               companyId: this.companyId,
-              startAt: p.startAt.toISOString(),
-              endAt: p.endAt.toISOString(),
-              earliestStartAt: p.earliestStartAt?.toISOString() ?? null,
+              startAt: msToInstantIso(p.startAt),
+              endAt: msToInstantIso(p.endAt),
+              earliestStartAt:
+                p.earliestStartAt !== undefined
+                  ? msToInstantIso(p.earliestStartAt)
+                  : null,
               scheduleNote: p.scheduleNote ?? null,
               workHours: p.workHours ?? null,
               isPlaceholder: p.isPlaceholder ?? false,
@@ -1205,7 +1214,7 @@ export class SchedulingEngine {
           projectedCompletionAt: this.projectedCompletionAt,
           scheduleOutdatedReason: null,
           scheduleOutdatedAt: null,
-          updatedAt: new Date().toISOString(),
+          updatedAt: datetime.timestamp(),
           updatedBy: this.userId
         })
         .where("id", "=", this.jobId)

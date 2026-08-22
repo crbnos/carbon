@@ -189,14 +189,16 @@ export type PlannedReservation = {
   resourceKind: "WorkCenter" | "OperatorPool" | "Employee";
   resourceId: string; // workCenter.id, ability.id (legacy), or employee id
   operationId: string;
-  startAt: Date;
-  endAt: Date;
+  /** epoch-ms */
+  startAt: number;
+  /** epoch-ms */
+  endAt: number;
   /**
    * Earliest the operation could have started (dependencies + release date
    * honored); startAt - earliestStartAt is time spent waiting for capacity.
-   * Set on WorkCenter reservations from finite placement.
+   * Set on WorkCenter reservations from finite placement. epoch-ms.
    */
-  earliestStartAt?: Date;
+  earliestStartAt?: number;
   /**
    * Why the operation starts when it does, in plain words (e.g. queued behind
    * another job, waiting on a predecessor). Null when it started as early as

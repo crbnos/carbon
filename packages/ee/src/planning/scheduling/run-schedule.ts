@@ -2,6 +2,7 @@ import type { Database } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
+import { toInstantMs } from "./date-utils.ts";
 import { KyselyMasterDataProvider } from "./master-data-provider.ts";
 import { DEADLINE_PRIORITY } from "./priority-calculator.ts";
 import { SchedulingEngine } from "./scheduling-engine.ts";
@@ -52,7 +53,7 @@ const deadlineRank = (deadlineType: string | null | undefined): number =>
   DEADLINE_PRIORITY[deadlineType ?? "No Deadline"] ?? 3;
 
 const asMs = (value: unknown): number | null =>
-  value == null ? null : new Date(value as string).getTime();
+  value == null ? null : toInstantMs(value as Date | string);
 
 /**
  * The location's open jobs, ordered deadline class FIRST (so a no-due-date ASAP
@@ -107,7 +108,7 @@ export async function runLocationSchedule(
   const batch = await loadOrderedBatch(db, locationId, companyId);
 
   // ONE clock for the whole run → determinism across every job in the batch.
-  const now = new Date();
+  const now = Date.now();
   const provider = new KyselyMasterDataProvider(db, client, companyId, {
     // Share the company's STATIC master data (processes, work centers,
     // qualifications, shifts, machine calendars) across all jobs in the batch.
@@ -163,7 +164,7 @@ export async function runExpediteWhatIf(
   const batch = await loadOrderedBatch(db, locationId, companyId);
   if (!batch.includes(expediteJobId)) return null;
 
-  const now = new Date();
+  const now = Date.now();
   const provider = new KyselyMasterDataProvider(db, client, companyId, {
     cacheCompanyData: batch.length > 1
   });

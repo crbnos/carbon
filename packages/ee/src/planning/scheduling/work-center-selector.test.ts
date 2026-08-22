@@ -1,3 +1,4 @@
+import { parseAbsolute } from "@internationalized/date";
 import { it } from "vitest";
 import type { MasterDataProvider } from "./master-data-provider.ts";
 import {
@@ -12,6 +13,8 @@ import {
   hasPreassignedWorkCenter,
   WorkCenterSelector
 } from "./work-center-selector.ts";
+
+const utc = (iso: string) => parseAbsolute(iso, "UTC").toDate().getTime();
 
 function makeOp(
   overrides: Partial<ScheduledOperation> & { id: string }
@@ -71,8 +74,8 @@ it("applyWorkCenterSelections leaves ops untouched when selection has no WC", ()
 function makeContext(
   overrides: Partial<FiniteSchedulingContext> = {}
 ): FiniteSchedulingContext {
-  const now = new Date("2026-01-05T00:00:00.000Z"); // Monday
-  const windowsEnd = new Date("2026-02-05T00:00:00.000Z");
+  const now = utc("2026-01-05T00:00:00.000Z"); // Monday
+  const windowsEnd = utc("2026-02-05T00:00:00.000Z");
   return {
     capacityByWorkCenter: new Map([
       [
@@ -133,9 +136,7 @@ it("a half-complete op with a production event books half the hours", async () =
 
   const selection = selections.get("op-1");
   assert(selection?.placedStart && selection.placedEnd);
-  const spanMs =
-    new Date(selection.placedEnd).getTime() -
-    new Date(selection.placedStart).getTime();
+  const spanMs = utc(selection.placedEnd) - utc(selection.placedStart);
   assertEquals(spanMs, 2 * 60 * 60 * 1000); // 2h, not the full 4h
 
   const reservation = selector
@@ -169,17 +170,15 @@ it("an untouched op books the full standard hours", async () => {
   });
   const selection = selections.get("op-1");
   assert(selection?.placedStart && selection.placedEnd);
-  const spanMs =
-    new Date(selection.placedEnd).getTime() -
-    new Date(selection.placedStart).getTime();
+  const spanMs = utc(selection.placedEnd) - utc(selection.placedStart);
   assertEquals(spanMs, 4 * 60 * 60 * 1000); // full 4h
 });
 
 // --- load balancing across equivalent work centers --------------------------
 
 it("two identical not-started ops spread across equivalent work centers", async () => {
-  const now = new Date("2026-01-05T00:00:00.000Z"); // Monday
-  const windowsEnd = new Date("2026-02-05T00:00:00.000Z");
+  const now = utc("2026-01-05T00:00:00.000Z"); // Monday
+  const windowsEnd = utc("2026-02-05T00:00:00.000Z");
 
   // proc-1 runs on wc1 AND wc2 (interchangeable); both active at the location.
   const provider = {
@@ -246,8 +245,8 @@ it("two identical not-started ops spread across equivalent work centers", async 
 });
 
 it("a started op stays pinned to its work center (no rebalancing)", async () => {
-  const now = new Date("2026-01-05T00:00:00.000Z");
-  const windowsEnd = new Date("2026-02-05T00:00:00.000Z");
+  const now = utc("2026-01-05T00:00:00.000Z");
+  const windowsEnd = utc("2026-02-05T00:00:00.000Z");
   const provider = {
     getProcessesWithWorkCenters: async () => [
       { id: "proc-1", workCenters: ["wc1", "wc2"] }
@@ -267,7 +266,7 @@ it("a started op stays pinned to its work center (no rebalancing)", async () => 
             // wc1 is heavily loaded so an idle wc2 would finish sooner...
             windows: [{ start: now, end: windowsEnd }],
             reservations: [
-              { startAt: now, endAt: new Date("2026-01-10T00:00:00.000Z") }
+              { startAt: now, endAt: utc("2026-01-10T00:00:00.000Z") }
             ]
           }
         ],
@@ -338,8 +337,8 @@ it("a pinned op is placed like any other and keeps its due date (no frozen windo
     .getPlannedReservations()
     .filter((r) => r.operationId === "op-pin");
   assertEquals(reservations.length, 1);
-  assertEquals(reservations[0]?.startAt.toISOString(), selection.placedStart);
-  assertEquals(reservations[0]?.endAt.toISOString(), selection.placedEnd);
+  assertEquals(reservations[0]?.startAt, utc(selection.placedStart));
+  assertEquals(reservations[0]?.endAt, utc(selection.placedEnd));
 
   // Applying the selection records the forecast; the pinned dueDate survives.
   const applied = applyWorkCenterSelections(
@@ -401,8 +400,8 @@ it("an unplaceable gated op emits a non-binding placeholder reservation", async 
   assert(placeholder, "a placeholder reservation exists");
   assertEquals(placeholder.isPlaceholder, true);
   assertEquals(placeholder.resourceId, "wc1");
-  assertEquals(placeholder.startAt.toISOString(), "2026-01-05T00:00:00.000Z");
-  assertEquals(placeholder.endAt.toISOString(), "2026-01-05T04:00:00.000Z");
+  assertEquals(placeholder.startAt, utc("2026-01-05T00:00:00.000Z"));
+  assertEquals(placeholder.endAt, utc("2026-01-05T04:00:00.000Z"));
   assertEquals(placeholder.workHours, 4);
 
   // Crucially it holds NO capacity — the in-run blocking set stays empty so it
@@ -412,8 +411,8 @@ it("an unplaceable gated op emits a non-binding placeholder reservation", async 
 });
 
 it("a successor waits for an unplaceable predecessor's placeholder", async () => {
-  const now = new Date("2026-01-05T00:00:00.000Z");
-  const windowsEnd = new Date("2026-02-05T00:00:00.000Z");
+  const now = utc("2026-01-05T00:00:00.000Z");
+  const windowsEnd = utc("2026-02-05T00:00:00.000Z");
 
   const selector = new WorkCenterSelector(
     {} as unknown as MasterDataProvider,
@@ -494,8 +493,8 @@ it("a successor waits for an unplaceable predecessor's placeholder", async () =>
 
 /** A gated op on wc1 with the sole qualified operator manned at `mannedAt`. */
 function makeMannedElsewhereContext(mannedAt: string | null) {
-  const now = new Date("2026-01-05T00:00:00.000Z"); // Monday
-  const dayEnd = new Date("2026-01-06T00:00:00.000Z");
+  const now = utc("2026-01-05T00:00:00.000Z"); // Monday
+  const dayEnd = utc("2026-01-06T00:00:00.000Z");
   // brad is the ONLY person qualified for ab1, available only Jan 5.
   const bradWindows = [{ start: now, end: dayEnd }];
   const board = mannedAt
@@ -615,8 +614,8 @@ it("a managed person is not shoved onto an unmanned weekend to staff another sta
   // op then fell outside the current week and read as "missing" on the Forecast.
   // The board is a whole-horizon commitment: a person manned at DMU all week is
   // never a Timesaver floater, so Timesaver's op is an in-window placeholder.
-  const now = new Date("2026-01-05T00:00:00.000Z"); // Monday
-  const windowsEnd = new Date("2026-01-12T00:00:00.000Z"); // one week of windows
+  const now = utc("2026-01-05T00:00:00.000Z"); // Monday
+  const windowsEnd = utc("2026-01-12T00:00:00.000Z"); // one week of windows
   const bradWindows = [{ start: now, end: windowsEnd }]; // available all week
   const board = buildPeopleByWorkCenter(
     ["2026-01-05", "2026-01-06", "2026-01-07", "2026-01-08", "2026-01-09"].map(
@@ -738,9 +737,8 @@ it("a managed person is not shoved onto an unmanned weekend to staff another sta
   assert(placeholder, "Clean op emits an unschedulable placeholder");
   // ...pinned in-window (right after Weld), NOT shoved to the weekend...
   assert(
-    placeholder.startAt.getTime() <
-      new Date("2026-01-10T00:00:00.000Z").getTime(),
-    `placeholder must stay in-window, got ${placeholder.startAt.toISOString()}`
+    placeholder.startAt < utc("2026-01-10T00:00:00.000Z"),
+    `placeholder must stay in-window, got ${placeholder.startAt}`
   );
   // ...and Brad is NEVER booked onto Timesaver.
   assertEquals(
@@ -753,8 +751,8 @@ it("a managed person is not shoved onto an unmanned weekend to staff another sta
 
 /** A gated op on wc1 whose only qualified operator is an UNMANNED floater. */
 function makeStaffingCtx(requiresStaffing: boolean, overrides = {}) {
-  const now = new Date("2026-01-05T00:00:00.000Z");
-  const windowsEnd = new Date("2026-02-05T00:00:00.000Z");
+  const now = utc("2026-01-05T00:00:00.000Z");
+  const windowsEnd = utc("2026-02-05T00:00:00.000Z");
   const carolWindows = [{ start: now, end: windowsEnd }];
   return makeContext({
     requiresStaffing,
@@ -828,8 +826,8 @@ it("requiresStaffing ON: a gated op is NOT scheduled on an unmanned floater", as
 });
 
 async function placeUngatedStaffing(alwaysOn: boolean) {
-  const now = new Date("2026-01-05T00:00:00.000Z");
-  const windowsEnd = new Date("2026-02-05T00:00:00.000Z");
+  const now = utc("2026-01-05T00:00:00.000Z");
+  const windowsEnd = utc("2026-02-05T00:00:00.000Z");
   const selector = new WorkCenterSelector(
     {} as unknown as MasterDataProvider,
     "loc1"

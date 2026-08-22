@@ -24,6 +24,7 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
 import { z } from "zod";
+import { toIsoDate } from "../scheduling/date-utils.ts";
 
 const logger = getFunctionLogger("mrp");
 
@@ -1088,18 +1089,16 @@ async function getOrCreateDemandPeriods(
   if (existingPeriods.length === periods.length) {
     return existingPeriods.map((p) => ({
       id: p.id,
-      // @ts-ignore - we are getting Date objects here
-      startDate: parseDate(p.startDate.toISOString().split("T")[0]),
-      // @ts-ignore - we are getting Date objects here
-      endDate: parseDate(p.endDate.toISOString().split("T")[0]),
+      // pg returns DATE columns as JS Date objects; normalize to "YYYY-MM-DD"
+      startDate: parseDate(toIsoDate(p.startDate)!),
+      endDate: parseDate(toIsoDate(p.endDate)!),
       periodType: p.periodType,
       createdAt: p.createdAt
     }));
   }
 
   const existingPeriodMap = new Map(
-    // @ts-ignore - we are getting Date objects here
-    existingPeriods.map((p) => [p.startDate.toISOString().split("T")[0], p])
+    existingPeriods.map((p) => [toIsoDate(p.startDate)!, p])
   );
 
   const periodsToCreate = periods.filter(
@@ -1123,10 +1122,9 @@ async function getOrCreateDemandPeriods(
 
   return [...existingPeriods, ...created].map((p) => ({
     id: p.id,
-    // @ts-ignore - we are getting Date objects here
-    startDate: parseDate(p.startDate.toISOString().split("T")[0]),
-    // @ts-ignore - we are getting Date objects here
-    endDate: parseDate(p.endDate.toISOString().split("T")[0]),
+    // pg returns DATE columns as JS Date objects; normalize to "YYYY-MM-DD"
+    startDate: parseDate(toIsoDate(p.startDate)!),
+    endDate: parseDate(toIsoDate(p.endDate)!),
     periodType: p.periodType,
     createdAt: p.createdAt
   }));

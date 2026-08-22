@@ -44,8 +44,8 @@ export type WorkCenterAvailabilityInput = {
 /** Group ladder shift rows by their timezone, expand each group, union. */
 function expandLadderShifts(
   rows: LadderShiftRow[],
-  rangeStart: Date,
-  rangeEnd: Date
+  rangeStart: number,
+  rangeEnd: number
 ): CalendarWindow[] {
   const byTz = new Map<string, CalendarShiftRow[]>();
   for (const r of rows) {
@@ -67,15 +67,15 @@ function resolveOne(
   wc: WorkCenterAvailabilityInput,
   wcShifts: LadderShiftRow[],
   locationShifts: LadderShiftRow[],
-  rangeStart: Date,
-  rangeEnd: Date
+  rangeStart: number,
+  rangeEnd: number
 ): CalendarWindow[] {
   // rung 1a — lights-out: one continuous window
   if (wc.alwaysOn) {
     return [
       {
-        start: new Date(rangeStart.getTime()),
-        end: new Date(rangeEnd.getTime())
+        start: rangeStart,
+        end: rangeEnd
       }
     ];
   }
@@ -104,8 +104,8 @@ export function resolveWorkCenterWindows(args: {
   workCenters: WorkCenterAvailabilityInput[];
   workCenterShiftRows: (LadderShiftRow & { workCenterId: string })[];
   locationShiftRows: (LadderShiftRow & { locationId: string })[];
-  rangeStart: Date;
-  rangeEnd: Date;
+  rangeStart: number;
+  rangeEnd: number;
 }): Map<string, CalendarWindow[]> {
   const {
     workCenters,
@@ -154,8 +154,8 @@ export function resolveWorkCenterWindows(args: {
 export function resolveLocationWindows(args: {
   timezone: string;
   locationShiftRows: LadderShiftRow[];
-  rangeStart: Date;
-  rangeEnd: Date;
+  rangeStart: number;
+  rangeEnd: number;
 }): CalendarWindow[] {
   const { timezone, locationShiftRows, rangeStart, rangeEnd } = args;
   if (locationShiftRows.length > 0) {

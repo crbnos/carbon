@@ -12,6 +12,10 @@
  * the work pauses — the machine stays occupied — and resumes with the next
  * free qualified person. Pure given preloaded data: no DB access, fully
  * testable with fixtures.
+ *
+ * Timeline instants (starts, ends, reservation bounds, "now") are carried as
+ * epoch-milliseconds `number`s — timezone-agnostic absolute instants, per
+ * `.claude/rules/date-handling.md`.
  */
 
 import {
@@ -21,11 +25,13 @@ import {
   findSlot
 } from "./calendar-utils.ts";
 import type { WaitAttribution } from "./conflict-messages.ts";
-import { businessDay, HOUR_MS } from "./date-utils.ts";
+import { businessDayFromMs, HOUR_MS } from "./date-utils.ts";
 
 export type ReservationInterval = {
-  startAt: Date;
-  endAt: Date;
+  /** epoch-ms */
+  startAt: number;
+  /** epoch-ms */
+  endAt: number;
   /**
    * Readable job number (e.g. J000001) of the job holding this reservation.
    * Set on live rows loaded from the DB (other jobs); in-run pushes for the
@@ -52,24 +58,28 @@ export type EligibleMember = {
 /** One person's contiguous stretch of hands-on work on an operation. */
 export type AttendedSegment = {
   employeeId: string;
-  startAt: Date;
-  endAt: Date;
+  /** epoch-ms */
+  startAt: number;
+  /** epoch-ms */
+  endAt: number;
 };
 
 export type AllocationSuccess = {
-  start: Date;
-  end: Date;
+  /** epoch-ms */
+  start: number;
+  /** epoch-ms */
+  end: number;
   /** Why the start sits past `earliestStart`; null when nothing waited. */
   wait: WaitAttribution | null;
 };
 
 export type AttendedAllocationSuccess = {
-  /** First attended instant (op start; == earliest feasible when no wait). */
-  start: Date;
-  /** When hands-on work completes (== start when attendedHours is 0). */
-  attendedEnd: Date;
-  /** attendedEnd + the unattended remainder on calendar time. */
-  end: Date;
+  /** First attended instant (op start; == earliest feasible when no wait). epoch-ms */
+  start: number;
+  /** When hands-on work completes (== start when attendedHours is 0). epoch-ms */
+  attendedEnd: number;
+  /** attendedEnd + the unattended remainder on calendar time. epoch-ms */
+  end: number;
   /** Person-by-person booking of the attended window; empty when 0h. */
   segments: AttendedSegment[];
   wait: WaitAttribution | null;
@@ -94,17 +104,15 @@ export function isConflict(
  */
 export function formatBlockingJobs(
   reservations: ReservationInterval[],
-  from: Date,
-  to: Date
+  from: number,
+  to: number
 ): string | null {
-  const f = from.getTime();
-  const t = to.getTime();
-  if (t <= f) return null;
+  if (to <= from) return null;
 
   const opCountByJob = new Map<string, number>();
   for (const r of reservations) {
     if (!r.readableJobId) continue;
-    if (r.startAt.getTime() < t && r.endAt.getTime() > f) {
+    if (r.startAt < to && r.endAt > from) {
       opCountByJob.set(
         r.readableJobId,
         (opCountByJob.get(r.readableJobId) ?? 0) + 1
@@ -136,22 +144,20 @@ export function formatBlockingJobs(
  */
 function machineIsFree(
   capacity: ResourceCapacityData,
-  start: Date,
-  end: Date
-): { free: boolean; nextTryAfter?: Date } {
-  const s = start.getTime();
-  const e = end.getTime();
+  start: number,
+  end: number
+): { free: boolean; nextTryAfter?: number } {
   let earliestEnd: number | null = null;
   for (const r of capacity.reservations) {
-    if (r.startAt.getTime() < e && r.endAt.getTime() > s) {
-      const re = r.endAt.getTime();
+    if (r.startAt < end && r.endAt > start) {
+      const re = r.endAt;
       if (earliestEnd === null || re < earliestEnd) {
         earliestEnd = re;
       }
     }
   }
   if (earliestEnd !== null) {
-    return { free: false, nextTryAfter: new Date(earliestEnd) };
+    return { free: false, nextTryAfter: earliestEnd };
   }
   return { free: true };
 }
@@ -163,7 +169,7 @@ function memberAvailableAt(
   t: number
 ): boolean {
   if (!coversInstant(member.windows, t)) return false;
-  return !busy.some((r) => r.startAt.getTime() <= t && r.endAt.getTime() > t);
+  return !busy.some((r) => r.startAt <= t && r.endAt > t);
 }
 
 /**
@@ -176,28 +182,25 @@ function memberAvailableAt(
  * exhausts before the attended work completes.
  */
 function simulateAttended(args: {
-  from: Date;
+  from: number;
   attendedHours: number;
   members: EligibleMember[];
   busyByEmployee: Map<string, ReservationInterval[]>;
-  horizonEnd: Date;
-}): { segments: AttendedSegment[]; start: Date; attendedEnd: Date } | null {
+  horizonEnd: number;
+}): { segments: AttendedSegment[]; start: number; attendedEnd: number } | null {
   const { from, attendedHours, members, busyByEmployee, horizonEnd } = args;
   if (attendedHours <= 0) {
     return { segments: [], start: from, attendedEnd: from };
   }
 
-  const fromMs = from.getTime();
-  const horizonMs = horizonEnd.getTime();
+  const fromMs = from;
+  const horizonMs = horizonEnd;
   const busyOf = (id: string) => busyByEmployee.get(id) ?? [];
   const busyLoadMs = new Map<string, number>();
   for (const m of members) {
     busyLoadMs.set(
       m.employeeId,
-      busyOf(m.employeeId).reduce(
-        (sum, r) => sum + (r.endAt.getTime() - r.startAt.getTime()),
-        0
-      )
+      busyOf(m.employeeId).reduce((sum, r) => sum + (r.endAt - r.startAt), 0)
     );
   }
 
@@ -205,14 +208,14 @@ function simulateAttended(args: {
   const boundaries = new Set<number>([fromMs]);
   for (const m of members) {
     for (const w of m.windows) {
-      const ws = w.start.getTime();
-      const we = w.end.getTime();
+      const ws = w.start;
+      const we = w.end;
       if (ws > fromMs && ws < horizonMs) boundaries.add(ws);
       if (we > fromMs && we < horizonMs) boundaries.add(we);
     }
     for (const r of busyOf(m.employeeId)) {
-      const rs = r.startAt.getTime();
-      const re = r.endAt.getTime();
+      const rs = r.startAt;
+      const re = r.endAt;
       if (rs > fromMs && rs < horizonMs) boundaries.add(rs);
       if (re > fromMs && re < horizonMs) boundaries.add(re);
     }
@@ -256,14 +259,14 @@ function simulateAttended(args: {
     if (
       last &&
       last.employeeId === person.employeeId &&
-      last.endAt.getTime() === stretchStart
+      last.endAt === stretchStart
     ) {
-      last.endAt = new Date(segEnd);
+      last.endAt = segEnd;
     } else {
       segments.push({
         employeeId: person.employeeId,
-        startAt: new Date(stretchStart),
-        endAt: new Date(segEnd)
+        startAt: stretchStart,
+        endAt: segEnd
       });
     }
     accumulatedMs += takeMs;
@@ -273,7 +276,7 @@ function simulateAttended(args: {
       return {
         segments,
         start: segments[0]!.startAt,
-        attendedEnd: new Date(segEnd)
+        attendedEnd: segEnd
       };
     }
   }
@@ -292,16 +295,16 @@ function simulateAttended(args: {
  * simulateAttended (same rate, same bookings).
  */
 function simulateAttendedTeam(args: {
-  from: Date;
+  from: number;
   setupHours: number;
   laborHours: number;
   members: EligibleMember[];
   busyByEmployee: Map<string, ReservationInterval[]>;
-  horizonEnd: Date;
+  horizonEnd: number;
 }): {
   segments: AttendedSegment[];
-  start: Date;
-  attendedEnd: Date;
+  start: number;
+  attendedEnd: number;
   laborActiveWallMs: number;
 } | null {
   const { from, setupHours, laborHours, members, busyByEmployee, horizonEnd } =
@@ -317,22 +320,22 @@ function simulateAttendedTeam(args: {
     };
   }
 
-  const fromMs = from.getTime();
-  const horizonMs = horizonEnd.getTime();
+  const fromMs = from;
+  const horizonMs = horizonEnd;
   const busyOf = (id: string) => busyByEmployee.get(id) ?? [];
 
   // Availability change points: window and busy boundaries in (from, horizon)
   const boundaries = new Set<number>([fromMs]);
   for (const m of members) {
     for (const w of m.windows) {
-      const ws = w.start.getTime();
-      const we = w.end.getTime();
+      const ws = w.start;
+      const we = w.end;
       if (ws > fromMs && ws < horizonMs) boundaries.add(ws);
       if (we > fromMs && we < horizonMs) boundaries.add(we);
     }
     for (const r of busyOf(m.employeeId)) {
-      const rs = r.startAt.getTime();
-      const re = r.endAt.getTime();
+      const rs = r.startAt;
+      const re = r.endAt;
       if (rs > fromMs && rs < horizonMs) boundaries.add(rs);
       if (re > fromMs && re < horizonMs) boundaries.add(re);
     }
@@ -352,13 +355,13 @@ function simulateAttendedTeam(args: {
   ) => {
     for (const m of available) {
       const last = lastSegmentByEmployee.get(m.employeeId);
-      if (last && last.endAt.getTime() === startMs) {
-        last.endAt = new Date(endMs);
+      if (last && last.endAt === startMs) {
+        last.endAt = endMs;
       } else {
         const segment: AttendedSegment = {
           employeeId: m.employeeId,
-          startAt: new Date(startMs),
-          endAt: new Date(endMs)
+          startAt: startMs,
+          endAt: endMs
         };
         segments.push(segment);
         lastSegmentByEmployee.set(m.employeeId, segment);
@@ -399,7 +402,7 @@ function simulateAttendedTeam(args: {
         return {
           segments,
           start: segments[0]!.startAt,
-          attendedEnd: new Date(cursor),
+          attendedEnd: cursor,
           laborActiveWallMs
         };
       }
@@ -425,8 +428,8 @@ function simulateAttendedTeam(args: {
 export function allocateAttendedOperation(args: {
   attendedHours: number;
   totalHours: number; // >= attendedHours; remainder runs unattended
-  earliestStart: Date;
-  horizonEnd: Date; // never walk unbounded
+  earliestStart: number;
+  horizonEnd: number; // never walk unbounded
   capacity: ResourceCapacityData;
   members: EligibleMember[]; // eligibility already applied by the caller
   busyByEmployee: Map<string, ReservationInterval[]>;
@@ -461,12 +464,12 @@ export function allocateAttendedOperation(args: {
   const exhausted = {
     conflict:
       handsOnHours > 0
-        ? `No slot with both an open work center and a qualified operator available before ${businessDay(
-            horizonEnd.toISOString(),
+        ? `No slot with both an open work center and a qualified operator available before ${businessDayFromMs(
+            horizonEnd,
             timeZone
           )}`
-        : `No work center capacity available before ${businessDay(
-            horizonEnd.toISOString(),
+        : `No work center capacity available before ${businessDayFromMs(
+            horizonEnd,
             timeZone
           )}`
   };
@@ -475,13 +478,13 @@ export function allocateAttendedOperation(args: {
   let machineHopped = false;
 
   for (let guard = 0; guard < 100_000; guard++) {
-    if (cursor.getTime() >= horizonEnd.getTime()) {
+    if (cursor >= horizonEnd) {
       return exhausted; // machine hops walked past the horizon
     }
     let sim: {
       segments: AttendedSegment[];
-      start: Date;
-      attendedEnd: Date;
+      start: number;
+      attendedEnd: number;
     } | null;
     let laborActiveWallMs = 0;
     if (team) {
@@ -506,8 +509,8 @@ export function allocateAttendedOperation(args: {
     }
     if (!sim) {
       return {
-        conflict: `No qualified operator availability before ${businessDay(
-          horizonEnd.toISOString(),
+        conflict: `No qualified operator availability before ${businessDayFromMs(
+          horizonEnd,
           timeZone
         )}`
       };
@@ -523,7 +526,7 @@ export function allocateAttendedOperation(args: {
       ? Math.max(0, Math.round(team.machineHours * HOUR_MS) - laborActiveWallMs)
       : remainderMs;
     const end = addWorkingTime(sim.attendedEnd, unattendedMs, capacity.windows);
-    if (end === null || end.getTime() > horizonEnd.getTime()) {
+    if (end === null || end > horizonEnd) {
       return exhausted; // machine windows run out (or finish past the horizon)
     }
 
@@ -531,23 +534,18 @@ export function allocateAttendedOperation(args: {
     if (!machine.free) {
       machineHopped = true;
       const next = machine.nextTryAfter;
-      cursor =
-        next && next.getTime() > cursor.getTime()
-          ? next
-          : new Date(cursor.getTime() + 60_000); // defensive forward progress
+      cursor = next !== undefined && next > cursor ? next : cursor + 60_000; // defensive forward progress
       continue;
     }
 
-    const waitedMs = sim.start.getTime() - earliestStart.getTime();
+    const waitedMs = sim.start - earliestStart;
     let wait: WaitAttribution | null = null;
     if (waitedMs > 0) {
       // Last blocker wins: if people pushed the start past the final machine
       // hop (sim.start > cursor), the operator side was binding; otherwise
       // the machine queue was.
       const resource: "machine" | "operator" =
-        sim.start.getTime() > cursor.getTime() || !machineHopped
-          ? "operator"
-          : "machine";
+        sim.start > cursor || !machineHopped ? "operator" : "machine";
       const source =
         resource === "machine"
           ? capacity.reservations
@@ -557,9 +555,7 @@ export function allocateAttendedOperation(args: {
         blockers: formatBlockingJobs(source, earliestStart, sim.start),
         ownJobAhead: source.some(
           (r) =>
-            !r.readableJobId &&
-            r.startAt.getTime() < sim.start.getTime() &&
-            r.endAt.getTime() > earliestStart.getTime()
+            !r.readableJobId && r.startAt < sim.start && r.endAt > earliestStart
         )
       };
     }
@@ -582,8 +578,8 @@ export function allocateAttendedOperation(args: {
  */
 export function allocateOperation(args: {
   durationHours: number;
-  earliestStart: Date;
-  horizonEnd: Date; // never walk unbounded
+  earliestStart: number;
+  horizonEnd: number; // never walk unbounded
   capacity: ResourceCapacityData;
   /** IANA zone used to word dates in conflict messages (factory time) */
   timeZone?: string;
@@ -591,13 +587,11 @@ export function allocateOperation(args: {
   const { durationHours, earliestStart, horizonEnd, capacity } = args;
   const timeZone = args.timeZone ?? "UTC";
 
-  const windows = capacity.windows.filter(
-    (w) => w.start.getTime() < horizonEnd.getTime()
-  );
+  const windows = capacity.windows.filter((w) => w.start < horizonEnd);
   if (windows.length === 0) {
     return {
-      conflict: `No working time available at work center before ${businessDay(
-        horizonEnd.toISOString(),
+      conflict: `No working time available at work center before ${businessDayFromMs(
+        horizonEnd,
         timeZone
       )}`
     };
@@ -608,7 +602,7 @@ export function allocateOperation(args: {
     durationHours,
     earliestStart,
     isFree: (start, end) => {
-      if (end.getTime() > horizonEnd.getTime()) {
+      if (end > horizonEnd) {
         return { free: false }; // past the horizon; findSlot will exhaust
       }
       return machineIsFree(capacity, start, end);
@@ -617,14 +611,14 @@ export function allocateOperation(args: {
 
   if (!slot) {
     return {
-      conflict: `No work center capacity available before ${businessDay(
-        horizonEnd.toISOString(),
+      conflict: `No work center capacity available before ${businessDayFromMs(
+        horizonEnd,
         timeZone
       )}`
     };
   }
 
-  const waitedMs = slot.start.getTime() - earliestStart.getTime();
+  const waitedMs = slot.start - earliestStart;
   let wait: WaitAttribution | null = null;
   if (waitedMs > 0) {
     wait = {
@@ -636,9 +630,7 @@ export function allocateOperation(args: {
       ),
       ownJobAhead: capacity.reservations.some(
         (r) =>
-          !r.readableJobId &&
-          r.startAt.getTime() < slot.start.getTime() &&
-          r.endAt.getTime() > earliestStart.getTime()
+          !r.readableJobId && r.startAt < slot.start && r.endAt > earliestStart
       )
     };
   }

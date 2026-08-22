@@ -1,3 +1,4 @@
+import { CalendarDateTime } from "@internationalized/date";
 import { it } from "vitest";
 import type { CalendarWindow } from "./calendar-utils.ts";
 import {
@@ -19,12 +20,12 @@ const TZ = "America/Chicago"; // UTC-6 (CST) / UTC-5 (CDT)
 
 // January (CST, UTC-6): local midnight = 06:00Z
 const jan6amUTC = (day: number, hour = 0) =>
-  new Date(Date.UTC(2026, 0, day, hour));
+  new CalendarDateTime(2026, 1, day, hour).toDate("UTC").getTime();
 
-const win = (start: Date, end: Date): CalendarWindow => ({ start, end });
+const win = (start: number, end: number): CalendarWindow => ({ start, end });
 
 const winTimes = (windows: CalendarWindow[]) =>
-  windows.map((w) => [w.start.toISOString(), w.end.toISOString()]);
+  windows.map((w) => [w.start, w.end]);
 
 it("dateKeyInTimeZone crosses midnight in the local zone, not UTC", () => {
   // 2026-01-15T05:59Z is still Jan 14 in Chicago (23:59 CST)
@@ -46,9 +47,7 @@ it("subtractAbsences removes exactly the absent local day", () => {
     win(jan6amUTC(16, 14), jan6amUTC(16, 22))
   ];
   const result = subtractAbsences(windows, new Set(["2026-01-15"]), TZ);
-  assertEquals(winTimes(result), [
-    [jan6amUTC(16, 14).toISOString(), jan6amUTC(16, 22).toISOString()]
-  ]);
+  assertEquals(winTimes(result), [[jan6amUTC(16, 14), jan6amUTC(16, 22)]]);
 });
 
 it("subtractAbsences splits a multi-day window at local midnight", () => {
@@ -57,8 +56,8 @@ it("subtractAbsences splits a multi-day window at local midnight", () => {
   const result = subtractAbsences(windows, new Set(["2026-01-16"]), TZ);
   // Local midnights are at 06:00Z: keep [15@12Z, 16@06Z) and [17@06Z, 17@12Z)
   assertEquals(winTimes(result), [
-    [jan6amUTC(15, 12).toISOString(), jan6amUTC(16, 6).toISOString()],
-    [jan6amUTC(17, 6).toISOString(), jan6amUTC(17, 12).toISOString()]
+    [jan6amUTC(15, 12), jan6amUTC(16, 6)],
+    [jan6amUTC(17, 6), jan6amUTC(17, 12)]
   ]);
 });
 
@@ -68,9 +67,7 @@ it("clipWindowsToDates keeps only the assigned dates", () => {
     win(jan6amUTC(16, 14), jan6amUTC(16, 22))
   ];
   const result = clipWindowsToDates(windows, new Set(["2026-01-16"]), TZ);
-  assertEquals(winTimes(result), [
-    [jan6amUTC(16, 14).toISOString(), jan6amUTC(16, 22).toISOString()]
-  ]);
+  assertEquals(winTimes(result), [[jan6amUTC(16, 14), jan6amUTC(16, 22)]]);
   assertEquals(clipWindowsToDates(windows, new Set(), TZ), []);
 });
 
@@ -193,11 +190,11 @@ it("extendWindowsByOvertime lengthens the right day's last window", () => {
     TZ
   );
   assertEquals(winTimes(result), [
-    [jan6amUTC(15, 14).toISOString(), jan6amUTC(16, 0).toISOString()],
-    [jan6amUTC(16, 14).toISOString(), jan6amUTC(16, 22).toISOString()]
+    [jan6amUTC(15, 14), jan6amUTC(16, 0)],
+    [jan6amUTC(16, 14), jan6amUTC(16, 22)]
   ]);
   // input untouched
-  assertEquals(windows[0]?.end.toISOString(), jan6amUTC(15, 22).toISOString());
+  assertEquals(windows[0]?.end, jan6amUTC(15, 22));
 });
 
 it("extendWindowsByOvertime merges when the extension reaches the next window", () => {
@@ -212,8 +209,8 @@ it("extendWindowsByOvertime merges when the extension reaches the next window", 
     TZ
   );
   assertEquals(winTimes(result), [
-    [jan6amUTC(15, 14).toISOString(), jan6amUTC(15, 22).toISOString()],
-    [jan6amUTC(15, 23).toISOString(), jan6amUTC(16, 6).toISOString()]
+    [jan6amUTC(15, 14), jan6amUTC(15, 22)],
+    [jan6amUTC(15, 23), jan6amUTC(16, 6)]
   ]);
 });
 
@@ -271,9 +268,7 @@ it("clipWindowsToStation with a sole whole-shift row keeps the full day", () => 
     budgets,
     TZ
   );
-  assertEquals(winTimes(result), [
-    [jan6amUTC(15, 14).toISOString(), jan6amUTC(15, 22).toISOString()]
-  ]);
+  assertEquals(winTimes(result), [[jan6amUTC(15, 14), jan6amUTC(15, 22)]]);
 });
 
 it("clipWindowsToStation deals a split day out sequentially", () => {
@@ -292,12 +287,12 @@ it("clipWindowsToStation deals a split day out sequentially", () => {
   // first row: the first 3 attended hours
   assertEquals(
     winTimes(clipWindowsToStation(windows, "wc1", dates, budgets, TZ)),
-    [[jan6amUTC(15, 14).toISOString(), jan6amUTC(15, 17).toISOString()]]
+    [[jan6amUTC(15, 14), jan6amUTC(15, 17)]]
   );
   // second row: the following 5
   assertEquals(
     winTimes(clipWindowsToStation(windows, "wc2", dates, budgets, TZ)),
-    [[jan6amUTC(15, 17).toISOString(), jan6amUTC(15, 22).toISOString()]]
+    [[jan6amUTC(15, 17), jan6amUTC(15, 22)]]
   );
 });
 
@@ -319,11 +314,11 @@ it("clipWindowsToStation walks attended time across gaps (split shift)", () => {
   const dates = new Set(["2026-01-15"]);
   assertEquals(
     winTimes(clipWindowsToStation(windows, "wc1", dates, budgets, TZ)),
-    [[jan6amUTC(15, 14).toISOString(), jan6amUTC(15, 18).toISOString()]]
+    [[jan6amUTC(15, 14), jan6amUTC(15, 18)]]
   );
   assertEquals(
     winTimes(clipWindowsToStation(windows, "wc2", dates, budgets, TZ)),
-    [[jan6amUTC(15, 19).toISOString(), jan6amUTC(15, 23).toISOString()]]
+    [[jan6amUTC(15, 19), jan6amUTC(15, 23)]]
   );
 });
 
