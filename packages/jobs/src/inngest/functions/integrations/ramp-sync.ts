@@ -144,6 +144,7 @@ type Ctx = {
   baseCurrency: string;
   companyGroupId: string | null;
   decimalsCache: Map<string, number>;
+  exchangeRateCache: Map<string, number>;
 };
 
 /**
@@ -204,6 +205,35 @@ async function getDecimals(ctx: Ctx, currencyCode: string): Promise<number> {
   }
   ctx.decimalsCache.set(currencyCode, decimals);
   return decimals;
+}
+
+/**
+ * Resolve the exchange rate (transaction currency -> company base currency) for a
+ * card transaction. Base currency is 1; otherwise the company's stored
+ * `currency.exchangeRate` (the same current rate every Carbon document uses — see
+ * the quote sync in `paperless-parts.ts`). A non-base transaction with no known
+ * rate falls back to 1 rather than blocking the sync.
+ */
+async function getExchangeRate(
+  ctx: Ctx,
+  currencyCode: string
+): Promise<number> {
+  if (currencyCode === ctx.baseCurrency) return 1;
+  const cached = ctx.exchangeRateCache.get(currencyCode);
+  if (cached !== undefined) return cached;
+
+  let rate = 1;
+  if (ctx.companyGroupId) {
+    const { data } = await ctx.client
+      .from("currency")
+      .select("exchangeRate")
+      .eq("companyGroupId", ctx.companyGroupId)
+      .eq("code", currencyCode)
+      .maybeSingle();
+    if (data?.exchangeRate != null) rate = data.exchangeRate;
+  }
+  ctx.exchangeRateCache.set(currencyCode, rate);
+  return rate;
 }
 
 function extension(fileName: string): string {
@@ -416,6 +446,8 @@ async function createAndPostTransaction(
   }
   const readableId = seq.data as string;
 
+  const exchangeRate = await getExchangeRate(ctx, args.currencyCode);
+
   const header = await ctx.client
     .from("cardTransaction")
     .insert({
@@ -431,6 +463,7 @@ async function createAndPostTransaction(
       transactionDate: args.transactionDate,
       postingDate: args.postingDate,
       currencyCode: args.currencyCode,
+      exchangeRate,
       amount: args.amount,
       companyId: ctx.companyId,
       createdBy: "system"
@@ -467,7 +500,8 @@ async function createAndPostTransaction(
       await ctx.client
         .from("cardTransaction")
         .delete()
-        .eq("id", cardTransactionId);
+        .eq("id", cardTransactionId)
+        .eq("companyId", ctx.companyId);
       return {
         fail: {
           id: args.rampId,
@@ -489,7 +523,8 @@ async function createAndPostTransaction(
     await ctx.client
       .from("cardTransaction")
       .delete()
-      .eq("id", cardTransactionId);
+      .eq("id", cardTransactionId)
+      .eq("companyId", ctx.companyId);
     const message =
       posted.error instanceof Error
         ? posted.error.message
@@ -536,6 +571,32 @@ async function reconfirmMapped(
     id: m.rampId,
     referenceId: readableById.get(m.entityId) ?? m.entityId,
     deepLinkUrl: url
+  }));
+}
+
+/**
+ * Look up readable ids for already-mapped Ramp bills/reimbursements (one query,
+ * mirroring `reconfirmMapped` for the `purchaseInvoice` id space). The deep link
+ * is per-invoice, so it is built from each entity id.
+ */
+async function reconfirmMappedInvoices(
+  ctx: Ctx,
+  mapped: Array<{ rampId: string; entityId: string }>
+): Promise<SyncItem[]> {
+  if (mapped.length === 0) return [];
+  const entityIds = [...new Set(mapped.map((m) => m.entityId))];
+  const { data } = await ctx.client
+    .from("purchaseInvoice")
+    .select("id, invoiceId")
+    .eq("companyId", ctx.companyId)
+    .in("id", entityIds);
+  const readableById = new Map(
+    (data ?? []).map((row) => [row.id, row.invoiceId])
+  );
+  return mapped.map((m) => ({
+    id: m.rampId,
+    referenceId: readableById.get(m.entityId) ?? m.entityId,
+    deepLinkUrl: invoiceDeepLinkUrl(m.entityId)
   }));
 }
 
@@ -646,7 +707,8 @@ async function postPurchaseInvoice(
   const pending = await ctx.client
     .from("purchaseInvoice")
     .update({ status: "Pending" })
-    .eq("id", invoiceRowId);
+    .eq("id", invoiceRowId)
+    .eq("companyId", ctx.companyId);
   if (pending.error) {
     return { fail: `Failed to set invoice pending: ${pending.error.message}` };
   }
@@ -662,7 +724,8 @@ async function postPurchaseInvoice(
     await ctx.client
       .from("purchaseInvoice")
       .update({ status: "Draft" })
-      .eq("id", invoiceRowId);
+      .eq("id", invoiceRowId)
+      .eq("companyId", ctx.companyId);
     const message =
       posted.error instanceof Error
         ? posted.error.message
@@ -815,7 +878,11 @@ async function syncBill(
 
   const invoiceNumber = (bill.invoice_number ?? "").trim();
 
-  // Duplicate guard: same supplier + supplierReference already invoiced.
+  // Duplicate guard: same supplier + supplierReference already invoiced. Only a
+  // NON-Draft (actually posted/posting) invoice counts as an already-synced
+  // duplicate — a stuck Draft left behind by a prior failed post must NOT be
+  // treated as synced, or we would confirm the bill to Ramp while the invoice
+  // never reaches the GL.
   if (invoiceNumber) {
     const dup = await ctx.client
       .from("purchaseInvoice")
@@ -823,6 +890,7 @@ async function syncBill(
       .eq("companyId", ctx.companyId)
       .eq("supplierId", supplierId)
       .eq("supplierReference", invoiceNumber)
+      .neq("status", "Draft")
       .limit(1)
       .maybeSingle();
     if (dup.data) {
@@ -862,30 +930,64 @@ async function syncBill(
   let invoiceRowId: string;
 
   if (carbonPoId) {
-    const converted = await ctx.client.functions.invoke<{ id: string }>(
-      "convert",
-      {
-        body: {
-          type: "purchaseOrderToPurchaseInvoice",
-          id: carbonPoId,
-          companyId: ctx.companyId,
-          userId: "system"
-        }
-      }
-    );
-    if (converted.error || !converted.data?.id) {
-      const message =
-        converted.error instanceof Error
-          ? converted.error.message
-          : String(converted.error ?? "convert returned no invoice id");
-      return {
-        fail: {
-          id: bill.id,
-          message: `Failed to convert purchase order to invoice: ${message}`
-        }
-      };
+    // Retry guard: a prior sweep may have converted this PO into a Draft invoice
+    // but crashed/failed before posting AND before writing the `bill` mapping.
+    // Re-converting would create a SECOND invoice from the same PO (the `convert`
+    // edge fn does not dedupe — it supports partial invoicing). Reuse the existing
+    // unposted invoice instead. Linkage is `purchaseInvoiceLine.purchaseOrderId`.
+    const candidateLines = await ctx.client
+      .from("purchaseInvoiceLine")
+      .select("invoiceId")
+      .eq("companyId", ctx.companyId)
+      .eq("purchaseOrderId", carbonPoId);
+    const candidateInvoiceIds = [
+      ...new Set(
+        (candidateLines.data ?? [])
+          .map((row) => row.invoiceId)
+          .filter((id): id is string => Boolean(id))
+      )
+    ];
+    let reuseInvoiceId: string | null = null;
+    if (candidateInvoiceIds.length > 0) {
+      const draft = await ctx.client
+        .from("purchaseInvoice")
+        .select("id")
+        .eq("companyId", ctx.companyId)
+        .in("id", candidateInvoiceIds)
+        .eq("status", "Draft")
+        .limit(1)
+        .maybeSingle();
+      reuseInvoiceId = draft.data?.id ?? null;
     }
-    invoiceRowId = converted.data.id;
+
+    if (reuseInvoiceId) {
+      invoiceRowId = reuseInvoiceId;
+    } else {
+      const converted = await ctx.client.functions.invoke<{ id: string }>(
+        "convert",
+        {
+          body: {
+            type: "purchaseOrderToPurchaseInvoice",
+            id: carbonPoId,
+            companyId: ctx.companyId,
+            userId: "system"
+          }
+        }
+      );
+      if (converted.error || !converted.data?.id) {
+        const message =
+          converted.error instanceof Error
+            ? converted.error.message
+            : String(converted.error ?? "convert returned no invoice id");
+        return {
+          fail: {
+            id: bill.id,
+            message: `Failed to convert purchase order to invoice: ${message}`
+          }
+        };
+      }
+      invoiceRowId = converted.data.id;
+    }
 
     // Multi-PO bills post against the first mapped PO only (v1 out of scope).
     const memo =
@@ -992,7 +1094,11 @@ async function syncBill(
       .insert(lineRows);
     if (insertedLines.error) {
       // FK is ON DELETE CASCADE — deleting the header removes partial lines.
-      await ctx.client.from("purchaseInvoice").delete().eq("id", invoiceRowId);
+      await ctx.client
+        .from("purchaseInvoice")
+        .delete()
+        .eq("id", invoiceRowId)
+        .eq("companyId", ctx.companyId);
       return {
         fail: {
           id: bill.id,
@@ -1102,7 +1208,11 @@ async function createAndPostPayment(
     createdBy: "system"
   });
   if (settlement.error) {
-    await ctx.client.from("payment").delete().eq("id", paymentRowId);
+    await ctx.client
+      .from("payment")
+      .delete()
+      .eq("id", paymentRowId)
+      .eq("companyId", ctx.companyId);
     return {
       fail: `Failed to create invoice settlement: ${settlement.error.message}`
     };
@@ -1120,8 +1230,13 @@ async function createAndPostPayment(
     await ctx.client
       .from("invoiceSettlement")
       .delete()
-      .eq("paymentId", paymentRowId);
-    await ctx.client.from("payment").delete().eq("id", paymentRowId);
+      .eq("paymentId", paymentRowId)
+      .eq("companyId", ctx.companyId);
+    await ctx.client
+      .from("payment")
+      .delete()
+      .eq("id", paymentRowId)
+      .eq("companyId", ctx.companyId);
     const message =
       posted.error instanceof Error
         ? posted.error.message
@@ -1462,7 +1577,11 @@ async function syncReimbursement(
     .from("purchaseInvoiceLine")
     .insert(lineRows);
   if (insertedLines.error) {
-    await ctx.client.from("purchaseInvoice").delete().eq("id", invoiceRowId);
+    await ctx.client
+      .from("purchaseInvoice")
+      .delete()
+      .eq("id", invoiceRowId)
+      .eq("companyId", ctx.companyId);
     return {
       fail: {
         id: reimbursement.id,
@@ -1650,7 +1769,8 @@ export const rampSyncFunction = inngest.createFunction(
       metadata,
       baseCurrency: company.data?.baseCurrencyCode ?? "USD",
       companyGroupId: company.data?.companyGroupId ?? null,
-      decimalsCache: new Map()
+      decimalsCache: new Map(),
+      exchangeRateCache: new Map()
     };
 
     const cardLiabilityAccountId = metadata.cardLiabilityAccountId;
@@ -1969,6 +2089,7 @@ export const rampSyncFunction = inngest.createFunction(
 
       const successful: SyncItem[] = [];
       const failed: FailItem[] = [];
+      const mapped: Array<{ rampId: string; entityId: string }> = [];
       let reconfirmed = 0;
 
       try {
@@ -1984,18 +2105,8 @@ export const rampSyncFunction = inngest.createFunction(
               "bill"
             );
             if (existing) {
-              const info = await ctx.client
-                .from("purchaseInvoice")
-                .select("invoiceId")
-                .eq("id", existing)
-                .eq("companyId", companyId)
-                .maybeSingle();
-              successful.push({
-                id: bill.id,
-                referenceId: info.data?.invoiceId ?? existing,
-                deepLinkUrl: invoiceDeepLinkUrl(existing)
-              });
-              reconfirmed += 1;
+              // Batched reconfirm after the drain (one query, not one per bill).
+              mapped.push({ rampId: bill.id, entityId: existing });
               continue;
             }
 
@@ -2016,6 +2127,9 @@ export const rampSyncFunction = inngest.createFunction(
           familyError
         );
       }
+
+      successful.push(...(await reconfirmMappedInvoices(ctx, mapped)));
+      reconfirmed += mapped.length;
 
       try {
         await confirmSyncs(client, companyId, {
@@ -2110,6 +2224,7 @@ export const rampSyncFunction = inngest.createFunction(
 
         const successful: SyncItem[] = [];
         const failed: FailItem[] = [];
+        const mapped: Array<{ rampId: string; entityId: string }> = [];
         let reconfirmed = 0;
 
         try {
@@ -2124,18 +2239,8 @@ export const rampSyncFunction = inngest.createFunction(
                 "bill"
               );
               if (existing) {
-                const info = await ctx.client
-                  .from("purchaseInvoice")
-                  .select("invoiceId")
-                  .eq("id", existing)
-                  .eq("companyId", companyId)
-                  .maybeSingle();
-                successful.push({
-                  id: reimbursement.id,
-                  referenceId: info.data?.invoiceId ?? existing,
-                  deepLinkUrl: invoiceDeepLinkUrl(existing)
-                });
-                reconfirmed += 1;
+                // Batched reconfirm after the drain (one query, not one per item).
+                mapped.push({ rampId: reimbursement.id, entityId: existing });
                 continue;
               }
 
@@ -2150,6 +2255,9 @@ export const rampSyncFunction = inngest.createFunction(
             familyError
           );
         }
+
+        successful.push(...(await reconfirmMappedInvoices(ctx, mapped)));
+        reconfirmed += mapped.length;
 
         try {
           await confirmSyncs(client, companyId, {
