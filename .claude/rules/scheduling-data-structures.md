@@ -1,6 +1,6 @@
 ---
 paths:
-  - "packages/database/supabase/functions/lib/scheduling/**"
+  - "packages/ee/src/planning/scheduling/**"
   - "apps/erp/app/routes/x+/priority+/**"
   - "apps/mes/app/routes/x+/operations.tsx"
   - "packages/database/supabase/migrations/*schedul*.sql"
@@ -10,14 +10,14 @@ paths:
 
 How job operations get sequenced onto work centers, scheduled with dates, and
 displayed. The scheduling engine lives in
-`packages/database/supabase/functions/lib/scheduling/` and now runs **IN-PROCESS
-in Node** — the ERP app (route actions, `production.service.ts`) and
-`@carbon/jobs` (the replan wave, the recalculate task) import
-`runLocationSchedule` / `runExpediteWhatIf` from **`@carbon/database/scheduling`**
-and execute it in-process, eliminating the edge cold-start + HTTP round-trip that
-made a regen take >2s on trivial data. The `schedule` Deno **edge function** still
-exists as a thin wrapper (auth/CORS → `runLocationSchedule`) for compatibility /
-self-hosted / any external caller, but the app/jobs no longer invoke it. Not MES,
+`packages/ee/src/planning/scheduling/` (relocated from the Supabase edge runtime)
+and runs **IN-PROCESS in Node** — the ERP app (route actions,
+`production.service.ts`) and `@carbon/jobs` (the replan wave, the recalculate
+task) import `runLocationSchedule` / `runExpediteWhatIf` from
+**`@carbon/ee/planning`** and execute it in-process, eliminating the edge
+cold-start + HTTP round-trip that made a regen take >2s on trivial data. The
+`schedule` Deno **edge function** was **DELETED** — there is no remaining edge
+wrapper; every caller goes through the in-process engine. Not MES,
 not a DB function. The boards only read results and feed inputs. Migrations are
 timestamp-ordered; **newest wins** and these functions/columns have been revised
 many times — read the newest, not the first match.
@@ -27,15 +27,15 @@ Spec/plan: `.ai/specs/2026-08-19-schedule-in-process-node.md` +
 
 ## Where it lives
 
-- **Orchestration:** `packages/database/supabase/functions/lib/scheduling/run-schedule.ts`
+- **Orchestration:** `packages/ee/src/planning/scheduling/run-schedule.ts`
   (`runLocationSchedule` / `runExpediteWhatIf`) loads a **whole LOCATION's** open
   jobs and runs `new SchedulingEngine(...).run()` once per job in one
-  deterministic forward pass (§ Engine pipeline). BOTH the edge function
-  (`schedule/index.ts`, a thin wrapper) and the Node callers go through it — one
-  orchestration, zero drift. It is exported to Node via
-  `@carbon/database/scheduling` (same no-build `.ts` re-export bridge as the
-  availability-ladder helpers). Modules in
-  `packages/database/supabase/functions/lib/scheduling/` (`scheduling-engine.ts`,
+  deterministic forward pass (§ Engine pipeline). Every Node caller goes through
+  it — one orchestration, zero drift. It is exported via
+  `@carbon/ee/planning`; its shared edge-lib deps are reached through the
+  `@carbon/database` subpath barrels (types → `@carbon/database`, postgres →
+  `@carbon/database/client`). Modules in
+  `packages/ee/src/planning/scheduling/` (`scheduling-engine.ts`,
   `dependency-manager.ts`, `date-calculator.ts`, `need-by-calculator.ts`,
   `work-center-selector.ts`,
   `apply-work-center-selections.ts`, `priority-calculator.ts`, `material-manager.ts`,
@@ -49,9 +49,9 @@ Spec/plan: `.ai/specs/2026-08-19-schedule-in-process-node.md` +
   has been deleted. `machine-availability.ts` / `calendar-utils.ts` /
   `slot-allocator.ts` / `apply-work-center-selections.ts` / `duration-calculator.ts` /
   `date-utils.ts` / `operator-eligibility.ts` / `people-utils.ts` /
-  `need-by-calculator.ts` are pure and have Deno
-  tests (`deno test lib/scheduling/` from the functions dir), alongside the
-  determinism + envelope suites. `date-utils.toIsoDate`
+  `need-by-calculator.ts` are pure and have unit
+  tests (`pnpm --filter @carbon/ee test`, vitest — colocated `*.test.ts`),
+  alongside the determinism + envelope suites. `date-utils.toIsoDate`
   normalizes pg DATE columns (JS Date at local midnight) to "YYYY-MM-DD" —
   required before any lexicographic date comparison (operator expiry).
 - **ERP authoring boards** (`apps/erp/app/routes/x+/priority+/`): `operations.tsx`
@@ -166,11 +166,11 @@ the DELETE policy needs `production_delete`.
 
 Other whole-location regen callers now run `runLocationSchedule(...)` IN-PROCESS
 (no edge invoke): `recalculateJobOperationDependencies` (`production.service.ts`,
-resolves the job's `locationId` first — it dynamic-imports `@carbon/database/scheduling`
-+ `@carbon/database/client` and uses a lazy Node pool, because `production.service.ts`
-is also client-bundled and must not STATICALLY pull `pg`/`.server` code),
-`recalculate.ts`, `kanban.$id.tsx`, and `job/$jobId.status.tsx` (the last two are
-route actions, which CAN import `@carbon/database/scheduling` + `~/services/database.server`
+resolves the job's `locationId` first — it dynamic-imports `@carbon/ee/planning`
++ `@carbon/database/client` (via `getSchedulingDb`) and uses a lazy Node pool, because
+`production.service.ts` is also client-bundled and must not STATICALLY pull `pg`/`.server`
+code), `recalculate.ts`, `kanban.$id.tsx`, and `job/$jobId.status.tsx` (the last two are
+route actions, which CAN import `@carbon/ee/planning` + `~/services/database.server`
 directly since React Router strips their server code from the client bundle). The
 expedite what-if uses `runExpediteWhatIf`. A `functions/reschedule/` dir exists but
 is legacy.
@@ -186,7 +186,7 @@ backward need-by pass (`computeNeedBys`, below) computes demand-anchored TARGETS
 only; its output is read by nothing in the placement path (spec
 `.ai/specs/2026-08-15-dual-dates-due-vs-projected.md`).
 
-- **Whole-location, deterministic run** (`run-schedule.ts`, called by both the edge wrapper and the Node callers): one `now` is captured
+- **Whole-location, deterministic run** (`run-schedule.ts`, called by every Node caller): one `now` is captured
   once and shared across every job in the batch. The location's open jobs
   (`Ready | In Progress | Paused`) are ordered **deadline class first**
   (`DEADLINE_PRIORITY`: ASAP → Hard Deadline → Soft Deadline → No Deadline), then
@@ -432,7 +432,7 @@ capacity-planning migration and drive the dates board's forecast/stale surfaces.
 - `methodOperationOrder`: `'After Previous' | 'With Previous'` (`20240619095417_methods.sql`).
 - `jobOperationStatus`: `Canceled | Done | In Progress | Paused | Ready | Todo | Waiting`.
 - `deadlineType`: `No Deadline | ASAP | Soft Deadline | Hard Deadline`.
-- Engine types (`functions/lib/scheduling/types.ts`): `enum SchedulingStrategy
+- Engine types (`packages/ee/src/planning/scheduling/types.ts`): `enum SchedulingStrategy
   { PriorityLeastTime, LeastTime, Random }`. The `SchedulingDirection` /
   `SchedulingMode` types and the `initial`/`reschedule`/`backward`/`forward` plumbing
   are **deleted** — one uniform forward-ASAP rule.
