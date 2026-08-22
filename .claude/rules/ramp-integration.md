@@ -6,6 +6,7 @@ paths:
   - packages/database/supabase/functions/post-card-transaction/**
   - apps/erp/app/modules/invoicing/ui/CardTransaction/**
   - apps/erp/app/routes/x+/invoicing+/card-transactions*.tsx
+  - apps/erp/app/routes/api+/webhook.ramp.$companyId.ts
 ---
 
 # Ramp Integration
@@ -39,7 +40,7 @@ providers, which own the data and mirror it out.
   `cashbackIncomeAccountId`, `reimbursementBankAccountId` optional), and five sync
   toggles (`pullTransactions`, `pullBills`, `pullReimbursements`, `pushPurchaseOrders`,
   `pushInvoices`, all default `"true"`). Renders `SetupInstructions` with the webhook URL
-  `${origin}/api/webhook/ramp/${companyId}` — **see the Webhook caveat below.**
+  `${origin}/api/webhook/ramp/${companyId}` — **see "The webhook route" below.**
 - **Client** — `lib/client.ts`: `RampClient` over the Ramp Developer API v1. Host is
   `https://api.ramp.com` (production) or `https://demo-api.ramp.com` (sandbox), chosen
   from `credentials.environment`. `client_credentials` grant mints/caches a bearer token
@@ -68,7 +69,7 @@ providers, which own the data and mirror it out.
   helpers `rampClassificationForClass` and `chunk`.
 - **Webhook signature** — `lib/webhook.ts`: `verifyRampWebhookSignature({signature, body,
   secret})` — HMAC-SHA256 over the RAW body, base64, constant-time compare, fail-closed.
-  **Not yet wired to any route** (see caveat).
+  Consumed by the webhook route (see "The webhook route" below).
 - **Hooks** — `hooks.server.ts`: `rampOnInstall` / `rampOnUpdate` / `rampOnUninstall` /
   `rampHealthcheck`, registered in `packages/ee/src/hooks.server.ts` under `ramp`. Cloned
   from the Rillet hook shape.
@@ -283,15 +284,24 @@ account is **always booked as a LIABILITY** (a credit card is money owed). The f
   `CardTransactionsTable.tsx`, `CardTransactionStatus.tsx`, `index.ts`. Service:
   `getCardTransaction` / `getCardTransactions` in `invoicing.service.ts`.
 
+## The webhook route
+
+`apps/erp/app/routes/api+/webhook.ramp.$companyId.ts` (`runtime: "nodejs"` for the
+constant-time HMAC) is what Ramp POSTs to. A delivery is a **nudge, not data**: after
+verification it fires the same `trigger("ramp-sync", { reason: "webhook" })` the sweep
+fires, so the sync body re-derives everything and a lost delivery is only latency. Flow:
+`getRampIntegration` (404 when not installed/active; resolves the vaulted `webhookSecret`)
+→ **challenge handshake** (a `challenge` in the body or `?challenge=`, handled BEFORE
+signature since a verification probe may be unsigned — calls `completeWebhookVerification`
+AND echoes `{ challenge }`) → **signature verify** (`x-ramp-signature` header +
+`verifyRampWebhookSignature`, fail-closed 401 without a stored secret or valid signature) →
+parse `RampWebhookEventSchema` (unrecognized events acked, never rejected) →
+`trigger("ramp-sync")`. The exact Ramp header name, signing encoding, and challenge shape
+are `// TODO(task-1)` (sandbox-unverified defaults). The **hourly `ramp-sweep` remains the
+correctness guarantee**; the webhook is latency only.
+
 ## Caveats & not-yet-built
 
-- **The webhook route does NOT exist yet.** `config.tsx` advertises
-  `/api/webhook/ramp/${companyId}` and `ensureRampWebhook` registers it with Ramp, and
-  `verifyRampWebhookSignature` + `completeWebhookVerification` are implemented — but there
-  is **no `apps/erp/app/routes/api+/webhook.ramp.$companyId.ts`** consuming them. Inbound
-  freshness today rests entirely on the **hourly `ramp-sweep`**, not on webhook pushes.
-  <!-- UNVERIFIED: whether the webhook route is a deliberate later task or an oversight —
-       the code registers the webhook but nothing receives it. -->
 - **One active connection per company.** The metadata carries a single `connectionId` /
   `webhookId`; `ensureRampConnection` creates one connection (`remote_provider_name:
   "Carbon"`) and reuses it — there is no multi-connection support.

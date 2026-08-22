@@ -49,12 +49,12 @@ async function convergeRamp(
   await ensureRampWebhook(serviceRole, companyId, getAppUrl());
 
   if (opts.fireInitialSync) {
-    // TODO(task-7): the `ramp-sync` task / `carbon/ramp-sync` event is registered
-    // in Task 7. `@carbon/jobs` is deliberately NOT an `@carbon/ee` dependency
-    // (jobs -> ee, never the reverse), so this resolves lazily at runtime through
-    // the app that owns both packages. The non-literal specifier keeps TS from
-    // resolving/type-checking a module ee cannot see, and the cast covers the
-    // not-yet-registered task name.
+    // `@carbon/jobs` is deliberately NOT an `@carbon/ee` dependency (jobs -> ee,
+    // never the reverse), so the `ramp-sync` task — registered in
+    // packages/jobs/src/inngest/index.ts + packages/lib/src/trigger.ts — is
+    // reached via a lazy runtime import resolved through the app that owns both
+    // packages. The non-literal specifier keeps TS from resolving/type-checking a
+    // module ee cannot see.
     const jobsModule = "@carbon/jobs";
     const jobs = (await import(jobsModule)) as {
       trigger: (
