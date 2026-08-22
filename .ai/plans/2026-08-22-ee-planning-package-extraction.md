@@ -35,13 +35,13 @@ report rather than improvising logic.
 | Deno import in moved file | Symbols | Repoint to |
 |---|---|---|
 | `../types.ts` | `type Database` | `@carbon/database` |
-| `../postgres/index.ts` | `type DB` (and client fns in run-mrp) | `@carbon/database/client` |
+| `../postgres/index.ts` | `type DB` (and client fns in mrp) | `@carbon/database/client` |
 | `../methods.ts` | `getJobMethodTree`, `type JobMethodTreeItem` | `@carbon/database/methods` (NEW) |
 | `../datetime.ts` | `datetime`, `getCompanyTimeZone`, `getLocationTimeZone` | `@carbon/database/datetime` (NEW) |
 | `../logging.ts` | `getFunctionLogger` | `@carbon/database/logging` (NEW) |
-| `../mrp-engine.ts` | `explodeBom`, `makeKey`, … (run-mrp only) | `@carbon/database/mrp-engine` (NEW) |
-| `../fetch-all.ts` | `fetchAll` (run-mrp only) | `@carbon/database/fetch-all` (NEW) |
-| `../supersession-pick.ts` | `buildSupersessionRedirectMap` (run-mrp only) | `@carbon/database/supersession-pick` (NEW) |
+| `../mrp-engine.ts` | `explodeBom`, `makeKey`, … (mrp only) | `@carbon/database/mrp-engine` (NEW) |
+| `../fetch-all.ts` | `fetchAll` (mrp only) | `@carbon/database/fetch-all` (NEW) |
+| `../supersession-pick.ts` | `buildSupersessionRedirectMap` (mrp only) | `@carbon/database/supersession-pick` (NEW) |
 
 `./`-relative imports inside `scheduling/**` are unchanged (they move together).
 
@@ -50,7 +50,7 @@ report rather than improvising logic.
 - [x] Task 2: Scaffold `packages/ee/src/planning/` + `./planning` export
 - [x] Task 3: Move `scheduling/**` source into the package and repoint external imports
 - [x] Task 4: Convert the 13 scheduling Deno tests to vitest (165 tests pass)
-- [x] Task 5: Extract MRP orchestration into `planning/mrp/run-mrp.ts`
+- [x] Task 5: Extract MRP orchestration into `planning/mrp/mrp.ts`
 - [x] Task 6: Wire `planning/index.ts` exports; typecheck + test the package (721 tests)
 - [x] Task 7: Repoint the 8 `@carbon/database/scheduling` call sites
 - [x] Task 8: Repoint MRP callers in-process; rename `forecastCalendar.server.ts`
@@ -240,15 +240,15 @@ byte-identical.
 
 ---
 
-## Task 5: Extract MRP orchestration into `planning/mrp/run-mrp.ts`
+## Task 5: Extract MRP orchestration into `planning/mrp/mrp.ts`
 
 **Depends on:** 1, 2
 **Files:**
-- Create: `packages/ee/src/planning/mrp/run-mrp.ts`
+- Create: `packages/ee/src/planning/mrp/mrp.ts`
 - Copy from (source): `packages/database/supabase/functions/mrp/index.ts` (the body)
 
 **Steps:**
-1. Copy `mrp/index.ts` into `planning/mrp/run-mrp.ts`. Then transform:
+1. Copy `mrp/index.ts` into `planning/mrp/mrp.ts`. Then transform:
    - Remove `import { serve } from "https://deno.land/std.../server.ts";` and the
      entire `serve(async (req) => { ... })` wrapper, the OPTIONS/CORS handling,
      `corsPreflight/errorResponse/jsonResponse` (drop `../lib/response.ts`), and
@@ -315,7 +315,7 @@ write batching. Do not delete `functions/mrp/` yet (Task 9).
      runExpediteWhatIf,
      runLocationSchedule
    } from "./scheduling/run-schedule.ts";
-   export { runMrp, type MrpPayload, type MrpResult } from "./mrp/run-mrp.ts";
+   export { runMrp, type MrpPayload, type MrpResult } from "./mrp/mrp.ts";
    ```
 
 **Verify:**
@@ -471,7 +471,7 @@ pnpm --filter @carbon/checks test
 **Files (Modify):**
 - `docs/content/docs/reference/forecast.mdx` — replace
   `packages/database/supabase/functions/mrp/index.ts:NNN` citations with the new
-  `packages/ee/src/planning/mrp/run-mrp.ts` locations (and note MRP now runs
+  `packages/ee/src/planning/mrp/mrp.ts` locations (and note MRP now runs
   in-process in Node, not as an edge function)
 - `.claude/rules/mrp-system.md` — MRP is no longer a Deno edge function; document
   the in-process `runMrp` from `@carbon/ee/planning`, injected client + Kysely db,

@@ -12,7 +12,7 @@ paths:
 MRP nets demand against supply per item/location/period and projects on-hand
 forward so users can create planned purchase orders (purchasing) and jobs
 (production). It runs **IN-PROCESS in Node** via `runMrp` (exported from
-`@carbon/ee/planning`, source `packages/ee/src/planning/mrp/run-mrp.ts`), driven
+`@carbon/ee/planning`, source `packages/ee/src/planning/mrp/mrp.ts`), driven
 either by an **Inngest** scheduled cron or a manual route POST — NOT a Supabase
 edge function (the old `mrp` Deno function and its `config.toml` entry were
 DELETED), and NOT Trigger.dev. `runMrp(client, db, payload)` takes an injected
@@ -39,7 +39,7 @@ Phase-7 write) and throws on failure.
    preserves the `{ data, error }` shape (catching the throw). The planning tables
    submit to this via `path.to.api.mrp(locationId)`.
 
-3. **In-process engine** — `packages/ee/src/planning/mrp/run-mrp.ts`
+3. **In-process engine** — `packages/ee/src/planning/mrp/mrp.ts`
    (`runMrp(client, db, payload)`, Node, ~1130 lines). Reads go through the
    injected service-role Supabase client (PostgREST); the atomic Phase-7 write
    goes through the injected Kysely handle. Payload validator accepts
