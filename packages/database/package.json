@@ -29,7 +29,6 @@
     "./quality": "./src/quality.ts",
     "./ratelimit": "./src/ratelimit.ts",
     "./sampling": "./src/sampling.ts",
-    "./scheduling": "./src/scheduling.ts",
     "./sequence": "./src/sequence.ts",
     "./seed-workflows": "./src/datasets/tiers/workflow-definitions.ts",
     "./audit": "./src/audit.ts",
