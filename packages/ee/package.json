@@ -5,6 +5,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./accounting": "./src/accounting/index.ts",
+    "./planning": "./src/planning/index.ts",
     "./integrations/secrets": "./src/integrations/secrets.ts",
     "./action-task-entity": "./src/lib/actionTaskEntity.ts",
     "./storage-rules": "./src/storage-rules/index.ts",
