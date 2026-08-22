@@ -57,8 +57,8 @@ report rather than improvising logic.
 - [x] Task 9: Delete edge functions, `config.toml` entry, and the scheduling bridge
 - [x] Task 10: Verify conformance (@carbon/checks) — baseline refreshed, 69 tests pass
 - [x] Task 11: Update the 6 documentation targets (docs build passes)
-- [~] Task 12: Verification — per-package typecheck green (ee/database/jobs/erp), ee+checks tests green, generate:types no-op (no schema touched). Combined build + repo-wide test BLOCKED by host load avg ~329 (env, not code).
-- [ ] Task 13: Behavior-equivalence + browser verification — BLOCKED (stack can't boot under host load; determinism/envelope suites already green as the schedule-equivalence proof).
+- [x] Task 12: Verification — per-package typecheck green (ee/database/jobs/erp), lint 33/33, ee(721)+scheduling(165)+checks(69) tests green, `pnpm run build` 8/8 green (erp bundles @carbon/ee/planning), generate:types no-op.
+- [~] Task 13: Behavior-equivalence + browser verification — DEFERRED. Host recovered (load ~5) but the ERP dev server is down (persistent 502; crashed during the load spike). Needs a `crbn up` restart the user can supervise. Schedule equivalence is already proven by the 165 determinism/envelope tests; the open item is the MRP output-diff (run MRP on a seeded company, diff demandForecast/demandForecastSource/demandActual/supplyActual vs origin) + a browser smoke of the forecast/People/planning pages (the full build already compiled+bundled every route).
 
 ## Dependencies
 - Task 1 → 3, 5 (barrels must exist before moved files import them)
