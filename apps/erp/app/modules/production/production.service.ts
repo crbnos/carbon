@@ -1029,7 +1029,7 @@ export async function getJobExpediteForecast(
 
   // Simulate-only what-if, run IN-PROCESS (Node) — persists nothing.
   try {
-    const { runExpediteWhatIf } = await import("@carbon/database/scheduling");
+    const { runExpediteWhatIf } = await import("@carbon/ee/planning");
     const expedite = await runExpediteWhatIf({
       db: await getSchedulingDb(),
       client,
@@ -2540,7 +2540,7 @@ export async function recalculateJobOperationDependencies(
   // client reads the (same-company) master data; writes go through the Node
   // Kysely pool.
   try {
-    const { runLocationSchedule } = await import("@carbon/database/scheduling");
+    const { runLocationSchedule } = await import("@carbon/ee/planning");
     const data = await runLocationSchedule({
       db: await getSchedulingDb(),
       client,

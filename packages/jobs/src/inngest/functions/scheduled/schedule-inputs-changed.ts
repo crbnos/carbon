@@ -1,6 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { activeJobStatuses, fetchAllFromTable } from "@carbon/database";
-import { runLocationSchedule } from "@carbon/database/scheduling";
+import { runLocationSchedule } from "@carbon/ee/planning";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { NonRetriableError } from "inngest";
