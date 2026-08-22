@@ -29,7 +29,14 @@
 - **GAP — webhook receiving route not built**: no `apps/erp/app/routes/api+/webhook.ramp.$companyId.ts`. `ensureRampWebhook` registers a webhook + `verifyRampWebhookSignature`/`completeWebhookVerification` exist, but no route receives POSTs. Inbound freshness = hourly `ramp-sweep` only. Flagged to user for decision (build vs sweep-only).
 - Stale `// TODO(task-7)` comment remains in `packages/ee/src/ramp/hooks.server.ts` (ramp-sync IS registered now) — minor cleanup pending.
 
+## Feature-complete pass (2026-08-22)
+- **Webhook route built** (`5f3bf72df6`): `apps/erp/app/routes/api+/webhook.ramp.$companyId.ts` — closes the plan gap (route now receives Ramp POSTs, verifies signature, answers the challenge, triggers ramp-sync). Sweep remains the correctness path. Stale `TODO(task-7)` in hooks.server.ts removed; rule updated.
+- **/self-review** run (4 parallel reviewers over the ~9.7k-line diff). Findings fixed:
+  - `fa02fefd0c` — **cardTransactionLine RLS shadowing** (Must-fix): unqualified `"cardTransactionId"` in the Draft-parent EXISTS bound to `cardTransaction`'s own same-named column → always-false → all RLS'd line writes denied. Fix-forward migration `20260822154812`. + FX!=1 and split-rounding journal tests, assertBalanced comment corrected.
+  - `16d36618e8` — **ramp-sync tenancy + financial correctness**: companyId scoping on 11 service-role writes; stuck-Draft false-confirm (`.neq status Draft` on the dup guard); `cardTransaction.exchangeRate` set from stored currency rate (was defaulting to 1 → foreign face value in base GL); PO-convert dedupe on retry; N+1 reconfirm batched.
+- Residual (documented, not blocking): webhook challenge one-call amplification + no replay check (idempotent/`concurrency:1` mitigated); post→link atomicity window (mapping-idempotent, narrow); cursor lost-update (bounded); outbound create-response parse + bill/PO line-amount units are `TODO(task-1)` sandbox-gated; ramp-sync is 2730 lines (extraction is a follow-up).
+
 ## Outcome
-- Tasks 2–13 implemented + committed on `ramp-transaction-sync-integration` (~15 commits, all gated green: scoped typechecks, deno builder tests, ee ramp vitest 20 passing, 0 missing translations across 13 locales).
-- BLOCKED on user: Task 1 (sandbox endpoint verification) + Task 14 (browser verification) need Ramp sandbox `clientId`/`clientSecret`. Webhook-route gap awaiting user decision.
-- Remaining before PR: resolve webhook-route decision; /self-review; Task 1 + 14 when credentials available.
+- **Feature code-complete** on `ramp-transaction-sync-integration` (~19 commits). All gates green: scoped typechecks (ee/jobs/erp), deno builder tests (8), ee ramp vitest (20), 0 missing translations (13 locales), self-review Must-fixes + high-value Risks fixed.
+- BLOCKED on user for the two verification tasks only: Task 1 (live sandbox endpoint probe — resolves the `TODO(task-1)` field-name assumptions) + Task 14 (browser verification) need Ramp sandbox `clientId`/`clientSecret` (and a stable local stack; brisbane Postgres was flapping during this pass).
+- Ready for PR (draft until sandbox verification lands).
