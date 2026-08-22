@@ -1,4 +1,4 @@
-import type { JobMethodTreeItem } from "../methods.ts";
+import type { JobMethodTreeItem } from "@carbon/database/methods";
 import type { MasterDataProvider } from "./master-data-provider.ts";
 import type { AssemblyNode, BaseOperation } from "./types.ts";
 
@@ -66,7 +66,7 @@ export class AssemblyHandler {
       operations: operationsByMethod.get(jobMakeMethodId) ?? [],
       children: item.children.map((child) =>
         this.transformTreeItem(child, operationsByMethod)
-      ),
+      )
     };
   }
 
@@ -184,7 +184,7 @@ export function buildMakeMethodDependencies(
   function traverse(node: AssemblyNode, parentMethodId: string | null) {
     dependencies.push({
       id: node.jobMakeMethodId,
-      parentId: parentMethodId,
+      parentId: parentMethodId
     });
 
     for (const child of node.children) {

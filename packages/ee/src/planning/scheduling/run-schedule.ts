@@ -1,7 +1,7 @@
+import type { Database } from "@carbon/database";
+import type { DB } from "@carbon/database/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
-import type { DB } from "../postgres/index.ts";
-import type { Database } from "../types.ts";
 import { KyselyMasterDataProvider } from "./master-data-provider.ts";
 import { DEADLINE_PRIORITY } from "./priority-calculator.ts";
 import { SchedulingEngine } from "./scheduling-engine.ts";
@@ -111,7 +111,7 @@ export async function runLocationSchedule(
   const provider = new KyselyMasterDataProvider(db, client, companyId, {
     // Share the company's STATIC master data (processes, work centers,
     // qualifications, shifts, machine calendars) across all jobs in the batch.
-    cacheCompanyData: batch.length > 1,
+    cacheCompanyData: batch.length > 1
   });
 
   let conflictsDetected = 0;
@@ -128,7 +128,7 @@ export async function runLocationSchedule(
       userId,
       now,
       persist: true,
-      excludeJobIds: batch.slice(i),
+      excludeJobIds: batch.slice(i)
     });
     const result = await engine.run();
     conflictsDetected += result.conflictsDetected;
@@ -137,7 +137,7 @@ export async function runLocationSchedule(
         jobId: id,
         readableJobId: engine.getReadableJobId(),
         assignee: engine.getAssignee(),
-        projectedCompletionAt: engine.getProjectedCompletionAt(),
+        projectedCompletionAt: engine.getProjectedCompletionAt()
       });
     }
   }
@@ -146,7 +146,7 @@ export async function runLocationSchedule(
     locationId,
     jobsScheduled: batch.length,
     conflictsDetected,
-    newlyLate,
+    newlyLate
   };
 }
 
@@ -165,7 +165,7 @@ export async function runExpediteWhatIf(
 
   const now = new Date();
   const provider = new KyselyMasterDataProvider(db, client, companyId, {
-    cacheCompanyData: batch.length > 1,
+    cacheCompanyData: batch.length > 1
   });
 
   const engine = new SchedulingEngine({
@@ -177,13 +177,13 @@ export async function runExpediteWhatIf(
     userId,
     now,
     persist: false,
-    excludeJobIds: batch,
+    excludeJobIds: batch
   });
   await engine.run();
 
   return {
     jobId: expediteJobId,
     projectedCompletionAt: engine.getProjectedCompletionAt(),
-    cause: engine.getCause(),
+    cause: engine.getCause()
   };
 }

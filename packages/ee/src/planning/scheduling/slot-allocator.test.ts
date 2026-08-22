@@ -1,20 +1,18 @@
-import {
-  assert,
-  assertEquals,
-} from "https://deno.land/std@0.175.0/testing/asserts.ts";
+import { it } from "vitest";
 import { expandCalendar, intersectWindows } from "./calendar-utils.ts";
 import {
   type AllocationResult,
   type AllocationSuccess,
+  type AttendedAllocationSuccess,
   allocateAttendedOperation,
   allocateOperation,
-  type AttendedAllocationSuccess,
   type EligibleMember,
   formatBlockingJobs,
   isConflict,
   type ReservationInterval,
-  type ResourceCapacityData,
+  type ResourceCapacityData
 } from "./slot-allocator.ts";
+import { assert, assertEquals } from "./test-helpers.ts";
 
 const utc = (iso: string) => new Date(iso);
 
@@ -26,7 +24,7 @@ const HORIZON = utc("2026-01-19T00:00:00Z");
 const weekdayShifts = [1, 2, 3, 4, 5].map((dayOfWeek) => ({
   dayOfWeek,
   startTime: "08:00",
-  endTime: "16:00",
+  endTime: "16:00"
 }));
 const weekdayWindows = expandCalendar(weekdayShifts, RANGE_START, HORIZON);
 const alwaysOpen = [{ start: RANGE_START, end: HORIZON }];
@@ -37,7 +35,7 @@ function makeCapacity(
   return {
     workCenter: { id: "wc1" },
     windows: alwaysOpen,
-    reservations,
+    reservations
   };
 }
 
@@ -59,7 +57,7 @@ function expectAttended(
 
 // --- machine gating (ungated operations) ------------------------------------
 
-Deno.test("work center capacity is 1 — ungated ops queue back to back", () => {
+it("work center capacity is 1 — ungated ops queue back to back", () => {
   const capacity = makeCapacity();
   const placed: AllocationSuccess[] = [];
 
@@ -69,7 +67,7 @@ Deno.test("work center capacity is 1 — ungated ops queue back to back", () => 
         durationHours: 4,
         earliestStart: utc("2026-01-05T08:00:00Z"),
         horizonEnd: HORIZON,
-        capacity,
+        capacity
       })
     );
     placed.push(slot);
@@ -77,30 +75,30 @@ Deno.test("work center capacity is 1 — ungated ops queue back to back", () => 
   }
 
   // One operation at a time: each op starts when the previous one ends
-  assertEquals(placed[0].start.toISOString(), "2026-01-05T08:00:00.000Z");
-  assertEquals(placed[0].end.toISOString(), "2026-01-05T12:00:00.000Z");
-  assertEquals(placed[1].start.toISOString(), "2026-01-05T12:00:00.000Z");
-  assertEquals(placed[1].end.toISOString(), "2026-01-05T16:00:00.000Z");
-  assertEquals(placed[2].start.toISOString(), "2026-01-05T16:00:00.000Z");
-  assertEquals(placed[2].end.toISOString(), "2026-01-05T20:00:00.000Z");
+  assertEquals(placed[0]?.start.toISOString(), "2026-01-05T08:00:00.000Z");
+  assertEquals(placed[0]?.end.toISOString(), "2026-01-05T12:00:00.000Z");
+  assertEquals(placed[1]?.start.toISOString(), "2026-01-05T12:00:00.000Z");
+  assertEquals(placed[1]?.end.toISOString(), "2026-01-05T16:00:00.000Z");
+  assertEquals(placed[2]?.start.toISOString(), "2026-01-05T16:00:00.000Z");
+  assertEquals(placed[2]?.end.toISOString(), "2026-01-05T20:00:00.000Z");
 
   // The first op didn't wait; the queued ones attribute their wait to the
   // machine, held by untagged (same-job in-run) reservations
-  assertEquals(placed[0].wait, null);
-  assertEquals(placed[1].wait, {
+  assertEquals(placed[0]?.wait, null);
+  assertEquals(placed[1]?.wait, {
     resource: "machine",
     blockers: null,
-    ownJobAhead: true,
+    ownJobAhead: true
   });
-  assertEquals(placed[2].wait?.resource, "machine");
+  assertEquals(placed[2]?.wait?.resource, "machine");
 });
 
-Deno.test("an existing work-center reservation delays an ungated op until it ends", () => {
+it("an existing work-center reservation delays an ungated op until it ends", () => {
   const capacity = makeCapacity([
     {
       startAt: utc("2026-01-05T06:00:00Z"),
-      endAt: utc("2026-01-05T18:00:00Z"),
-    },
+      endAt: utc("2026-01-05T18:00:00Z")
+    }
   ]);
 
   const slot = expectSlot(
@@ -108,7 +106,7 @@ Deno.test("an existing work-center reservation delays an ungated op until it end
       durationHours: 2,
       earliestStart: utc("2026-01-05T08:00:00Z"),
       horizonEnd: HORIZON,
-      capacity,
+      capacity
     })
   );
 
@@ -116,16 +114,16 @@ Deno.test("an existing work-center reservation delays an ungated op until it end
   assertEquals(slot.wait?.resource, "machine");
 });
 
-Deno.test("machine nextTryAfter hops to the earliest overlapping reservation end", () => {
+it("machine nextTryAfter hops to the earliest overlapping reservation end", () => {
   const capacity = makeCapacity([
     {
       startAt: utc("2026-01-05T08:00:00Z"),
-      endAt: utc("2026-01-05T10:00:00Z"),
+      endAt: utc("2026-01-05T10:00:00Z")
     },
     {
       startAt: utc("2026-01-05T09:00:00Z"),
-      endAt: utc("2026-01-05T14:00:00Z"),
-    },
+      endAt: utc("2026-01-05T14:00:00Z")
+    }
   ]);
 
   const slot = expectSlot(
@@ -133,7 +131,7 @@ Deno.test("machine nextTryAfter hops to the earliest overlapping reservation end
       durationHours: 2,
       earliestStart: utc("2026-01-05T08:00:00Z"),
       horizonEnd: HORIZON,
-      capacity,
+      capacity
     })
   );
 
@@ -141,16 +139,16 @@ Deno.test("machine nextTryAfter hops to the earliest overlapping reservation end
   assertEquals(slot.end.toISOString(), "2026-01-05T16:00:00.000Z");
 });
 
-Deno.test("conflict when the machine is booked through the horizon (ungated)", () => {
+it("conflict when the machine is booked through the horizon (ungated)", () => {
   const capacity = makeCapacity([
-    { startAt: RANGE_START, endAt: HORIZON, readableJobId: "J000009" },
+    { startAt: RANGE_START, endAt: HORIZON, readableJobId: "J000009" }
   ]);
 
   const result = allocateOperation({
     durationHours: 2,
     earliestStart: utc("2026-01-05T08:00:00Z"),
     horizonEnd: HORIZON,
-    capacity,
+    capacity
   });
 
   assert(isConflict(result));
@@ -160,12 +158,12 @@ Deno.test("conflict when the machine is booked through the horizon (ungated)", (
   );
 });
 
-Deno.test("conflict when the horizon is exhausted", () => {
+it("conflict when the horizon is exhausted", () => {
   const result = allocateOperation({
     durationHours: 24 * 30, // longer than the two-week horizon
     earliestStart: utc("2026-01-05T08:00:00Z"),
     horizonEnd: HORIZON,
-    capacity: makeCapacity(),
+    capacity: makeCapacity()
   });
 
   assert(isConflict(result));
@@ -173,19 +171,19 @@ Deno.test("conflict when the horizon is exhausted", () => {
 
 // --- machine hours bound placement (shift-bound work centers) ---------------
 
-Deno.test("machine hours bound an ungated op: 10h on an 8h/day machine spans two days", () => {
+it("machine hours bound an ungated op: 10h on an 8h/day machine spans two days", () => {
   // The work center is open Mon–Fri 08:00–16:00 (8h/day), not 24×7.
   const capacity: ResourceCapacityData = {
     workCenter: { id: "wc1" },
     windows: weekdayWindows,
-    reservations: [],
+    reservations: []
   };
   const slot = expectSlot(
     allocateOperation({
       durationHours: 10,
       earliestStart: utc("2026-01-05T08:00:00Z"),
       horizonEnd: HORIZON,
-      capacity,
+      capacity
     })
   );
   assertEquals(slot.start.toISOString(), "2026-01-05T08:00:00.000Z");
@@ -193,13 +191,13 @@ Deno.test("machine hours bound an ungated op: 10h on an 8h/day machine spans two
   assertEquals(slot.end.toISOString(), "2026-01-06T10:00:00.000Z");
 });
 
-Deno.test("attended remainder accumulates on machine windows: 4h from 1h before close resumes next window", () => {
+it("attended remainder accumulates on machine windows: 4h from 1h before close resumes next window", () => {
   // Machine open 08:00–16:00; a 4h unattended remainder starting at 15:00
   // (1h before close) finishes 3h into the next window.
   const capacity: ResourceCapacityData = {
     workCenter: { id: "wc1" },
     windows: weekdayWindows,
-    reservations: [],
+    reservations: []
   };
   const sam = member("emp-sam", weekdayWindows); // already machine-clipped
   const r = expectAttended(
@@ -210,7 +208,7 @@ Deno.test("attended remainder accumulates on machine windows: 4h from 1h before 
       horizonEnd: HORIZON,
       capacity,
       members: [sam],
-      busyByEmployee: new Map(),
+      busyByEmployee: new Map()
     })
   );
   assertEquals(r.attendedEnd.toISOString(), "2026-01-05T15:00:00.000Z");
@@ -218,11 +216,11 @@ Deno.test("attended remainder accumulates on machine windows: 4h from 1h before 
   assertEquals(r.end.toISOString(), "2026-01-06T11:00:00.000Z");
 });
 
-Deno.test("a 24×7 member clipped to an 8h machine window works only machine hours", () => {
+it("a 24×7 member clipped to an 8h machine window works only machine hours", () => {
   const capacity: ResourceCapacityData = {
     workCenter: { id: "wc1" },
     windows: weekdayWindows, // 8h/day
-    reservations: [],
+    reservations: []
   };
   // Person is available around the clock, but the selector clips them to the
   // machine's hours — a person can't run a closed machine.
@@ -235,21 +233,27 @@ Deno.test("a 24×7 member clipped to an 8h machine window works only machine hou
       horizonEnd: HORIZON,
       capacity,
       members: [member("emp-sam", clipped)],
-      busyByEmployee: new Map(),
+      busyByEmployee: new Map()
     })
   );
   // 8h Monday + 4h Tuesday — never overnight, despite the person being 24×7
   assertEquals(r.segments.length, 2);
-  assertEquals(r.segments[0].startAt.toISOString(), "2026-01-05T08:00:00.000Z");
-  assertEquals(r.segments[0].endAt.toISOString(), "2026-01-05T16:00:00.000Z");
-  assertEquals(r.segments[1].startAt.toISOString(), "2026-01-06T08:00:00.000Z");
-  assertEquals(r.segments[1].endAt.toISOString(), "2026-01-06T12:00:00.000Z");
+  assertEquals(
+    r.segments[0]?.startAt.toISOString(),
+    "2026-01-05T08:00:00.000Z"
+  );
+  assertEquals(r.segments[0]?.endAt.toISOString(), "2026-01-05T16:00:00.000Z");
+  assertEquals(
+    r.segments[1]?.startAt.toISOString(),
+    "2026-01-06T08:00:00.000Z"
+  );
+  assertEquals(r.segments[1]?.endAt.toISOString(), "2026-01-06T12:00:00.000Z");
   assertEquals(r.attendedEnd.toISOString(), "2026-01-06T12:00:00.000Z");
 });
 
 // --- attended windows, relay, lights-out (gated operations) -----------------
 
-Deno.test("one person tends two machines — attended windows interleave, both run in parallel", () => {
+it("one person tends two machines — attended windows interleave, both run in parallel", () => {
   const capacityA = makeCapacity();
   const capacityB = makeCapacity();
   const sam = member("emp-sam");
@@ -264,7 +268,7 @@ Deno.test("one person tends two machines — attended windows interleave, both r
       horizonEnd: HORIZON,
       capacity: capacityA,
       members: [sam],
-      busyByEmployee: busy,
+      busyByEmployee: busy
     })
   );
   capacityA.reservations.push({ startAt: a.start, endAt: a.end });
@@ -281,7 +285,7 @@ Deno.test("one person tends two machines — attended windows interleave, both r
       horizonEnd: HORIZON,
       capacity: capacityB,
       members: [sam],
-      busyByEmployee: busy,
+      busyByEmployee: busy
     })
   );
 
@@ -297,18 +301,18 @@ Deno.test("one person tends two machines — attended windows interleave, both r
     {
       employeeId: "emp-sam",
       startAt: utc("2026-01-05T08:05:00Z"),
-      endAt: utc("2026-01-05T08:10:00Z"),
-    },
+      endAt: utc("2026-01-05T08:10:00Z")
+    }
   ]);
   assertEquals(b.wait?.resource, "operator");
 });
 
-Deno.test("relay: attended work hands off at the shift boundary", () => {
+it("relay: attended work hands off at the shift boundary", () => {
   const sam = member("emp-sam", [
-    { start: utc("2026-01-05T08:00:00Z"), end: utc("2026-01-05T16:00:00Z") },
+    { start: utc("2026-01-05T08:00:00Z"), end: utc("2026-01-05T16:00:00Z") }
   ]);
   const dave = member("emp-dave", [
-    { start: utc("2026-01-05T16:00:00Z"), end: utc("2026-01-06T00:00:00Z") },
+    { start: utc("2026-01-05T16:00:00Z"), end: utc("2026-01-06T00:00:00Z") }
   ]);
 
   const r = expectAttended(
@@ -319,7 +323,7 @@ Deno.test("relay: attended work hands off at the shift boundary", () => {
       horizonEnd: HORIZON,
       capacity: makeCapacity(),
       members: [sam, dave],
-      busyByEmployee: new Map(),
+      busyByEmployee: new Map()
     })
   );
 
@@ -328,18 +332,18 @@ Deno.test("relay: attended work hands off at the shift boundary", () => {
     {
       employeeId: "emp-sam",
       startAt: utc("2026-01-05T08:00:00Z"),
-      endAt: utc("2026-01-05T16:00:00Z"),
+      endAt: utc("2026-01-05T16:00:00Z")
     },
     {
       employeeId: "emp-dave",
       startAt: utc("2026-01-05T16:00:00Z"),
-      endAt: utc("2026-01-05T20:00:00Z"),
-    },
+      endAt: utc("2026-01-05T20:00:00Z")
+    }
   ]);
   assertEquals(r.end.toISOString(), "2026-01-05T20:00:00.000Z");
 });
 
-Deno.test("pause: single person, attended work spans two shifts, machine held across the gap", () => {
+it("pause: single person, attended work spans two shifts, machine held across the gap", () => {
   const sam = member("emp-sam", weekdayWindows);
 
   const r = expectAttended(
@@ -350,7 +354,7 @@ Deno.test("pause: single person, attended work spans two shifts, machine held ac
       horizonEnd: HORIZON,
       capacity: makeCapacity(),
       members: [sam],
-      busyByEmployee: new Map(),
+      busyByEmployee: new Map()
     })
   );
 
@@ -360,19 +364,19 @@ Deno.test("pause: single person, attended work spans two shifts, machine held ac
     {
       employeeId: "emp-sam",
       startAt: utc("2026-01-05T08:00:00Z"),
-      endAt: utc("2026-01-05T16:00:00Z"),
+      endAt: utc("2026-01-05T16:00:00Z")
     },
     {
       employeeId: "emp-sam",
       startAt: utc("2026-01-06T08:00:00Z"),
-      endAt: utc("2026-01-06T12:00:00Z"),
-    },
+      endAt: utc("2026-01-06T12:00:00Z")
+    }
   ]);
   assertEquals(r.end.toISOString(), "2026-01-06T12:00:00.000Z");
   assertEquals(r.attendedEnd.toISOString(), r.end.toISOString());
 });
 
-Deno.test("lights-out: the unattended remainder runs on calendar time overnight", () => {
+it("lights-out: the unattended remainder runs on calendar time overnight", () => {
   const sam = member("emp-sam", weekdayWindows);
 
   // Loaded Mon 15:00 with 5 min labor; 20h machine run continues after
@@ -385,7 +389,7 @@ Deno.test("lights-out: the unattended remainder runs on calendar time overnight"
       horizonEnd: HORIZON,
       capacity: makeCapacity(),
       members: [sam],
-      busyByEmployee: new Map(),
+      busyByEmployee: new Map()
     })
   );
 
@@ -394,7 +398,7 @@ Deno.test("lights-out: the unattended remainder runs on calendar time overnight"
   assertEquals(r.end.toISOString(), "2026-01-06T11:05:00.000Z");
 });
 
-Deno.test("zero attended hours: no person booked, machine-only placement", () => {
+it("zero attended hours: no person booked, machine-only placement", () => {
   const r = expectAttended(
     allocateAttendedOperation({
       attendedHours: 0,
@@ -403,7 +407,7 @@ Deno.test("zero attended hours: no person booked, machine-only placement", () =>
       horizonEnd: HORIZON,
       capacity: makeCapacity(),
       members: [member("emp-sam", weekdayWindows)],
-      busyByEmployee: new Map(),
+      busyByEmployee: new Map()
     })
   );
 
@@ -413,7 +417,7 @@ Deno.test("zero attended hours: no person booked, machine-only placement", () =>
   assertEquals(r.wait, null);
 });
 
-Deno.test("no eligible people is an immediate conflict", () => {
+it("no eligible people is an immediate conflict", () => {
   const result = allocateAttendedOperation({
     attendedHours: 1,
     totalHours: 1,
@@ -421,14 +425,14 @@ Deno.test("no eligible people is an immediate conflict", () => {
     horizonEnd: HORIZON,
     capacity: makeCapacity(),
     members: [],
-    busyByEmployee: new Map(),
+    busyByEmployee: new Map()
   });
 
   assert(isConflict(result));
   assertEquals(result.conflict, "No qualified operator available");
 });
 
-Deno.test("cross-ability double-booking: a person busy via another booking is unavailable", () => {
+it("cross-ability double-booking: a person busy via another booking is unavailable", () => {
   const sam = member("emp-sam");
   const busy = new Map<string, ReservationInterval[]>([
     [
@@ -437,10 +441,10 @@ Deno.test("cross-ability double-booking: a person busy via another booking is un
         {
           startAt: utc("2026-01-05T08:00:00Z"),
           endAt: utc("2026-01-05T12:00:00Z"),
-          readableJobId: "J000009",
-        },
-      ],
-    ],
+          readableJobId: "J000009"
+        }
+      ]
+    ]
   ]);
 
   const r = expectAttended(
@@ -451,7 +455,7 @@ Deno.test("cross-ability double-booking: a person busy via another booking is un
       horizonEnd: HORIZON,
       capacity: makeCapacity(),
       members: [sam],
-      busyByEmployee: busy,
+      busyByEmployee: busy
     })
   );
 
@@ -459,17 +463,17 @@ Deno.test("cross-ability double-booking: a person busy via another booking is un
   assertEquals(r.wait, {
     resource: "operator",
     blockers: "queued behind J000009 (1 op)",
-    ownJobAhead: false,
+    ownJobAhead: false
   });
 });
 
-Deno.test("machine busy blocks the attended start — attribution machine", () => {
+it("machine busy blocks the attended start — attribution machine", () => {
   const capacity = makeCapacity([
     {
       startAt: utc("2026-01-05T08:00:00Z"),
       endAt: utc("2026-01-05T10:00:00Z"),
-      readableJobId: "J000009",
-    },
+      readableJobId: "J000009"
+    }
   ]);
 
   const r = expectAttended(
@@ -480,7 +484,7 @@ Deno.test("machine busy blocks the attended start — attribution machine", () =
       horizonEnd: HORIZON,
       capacity,
       members: [member("emp-sam")],
-      busyByEmployee: new Map(),
+      busyByEmployee: new Map()
     })
   );
 
@@ -488,17 +492,17 @@ Deno.test("machine busy blocks the attended start — attribution machine", () =
   assertEquals(r.wait, {
     resource: "machine",
     blockers: "queued behind J000009 (1 op)",
-    ownJobAhead: false,
+    ownJobAhead: false
   });
 });
 
-Deno.test("interleaving: machine frees first, operator binds last — attribution follows the last blocker", () => {
+it("interleaving: machine frees first, operator binds last — attribution follows the last blocker", () => {
   const capacity = makeCapacity([
     {
       startAt: utc("2026-01-05T08:00:00Z"),
       endAt: utc("2026-01-05T10:00:00Z"),
-      readableJobId: "J000009",
-    },
+      readableJobId: "J000009"
+    }
   ]);
   const busy = new Map<string, ReservationInterval[]>([
     [
@@ -507,10 +511,10 @@ Deno.test("interleaving: machine frees first, operator binds last — attributio
         {
           startAt: utc("2026-01-05T09:00:00Z"),
           endAt: utc("2026-01-05T13:00:00Z"),
-          readableJobId: "J000010",
-        },
-      ],
-    ],
+          readableJobId: "J000010"
+        }
+      ]
+    ]
   ]);
 
   const r = expectAttended(
@@ -521,7 +525,7 @@ Deno.test("interleaving: machine frees first, operator binds last — attributio
       horizonEnd: HORIZON,
       capacity,
       members: [member("emp-sam")],
-      busyByEmployee: busy,
+      busyByEmployee: busy
     })
   );
 
@@ -529,13 +533,13 @@ Deno.test("interleaving: machine frees first, operator binds last — attributio
   assertEquals(r.wait, {
     resource: "operator",
     blockers: "queued behind J000010 (1 op)",
-    ownJobAhead: false,
+    ownJobAhead: false
   });
 });
 
-Deno.test("attended op conflicts when the machine is booked through the horizon", () => {
+it("attended op conflicts when the machine is booked through the horizon", () => {
   const capacity = makeCapacity([
-    { startAt: RANGE_START, endAt: HORIZON, readableJobId: "J000009" },
+    { startAt: RANGE_START, endAt: HORIZON, readableJobId: "J000009" }
   ]);
 
   const result = allocateAttendedOperation({
@@ -545,7 +549,7 @@ Deno.test("attended op conflicts when the machine is booked through the horizon"
     horizonEnd: HORIZON,
     capacity,
     members: [member("emp-sam")],
-    busyByEmployee: new Map(),
+    busyByEmployee: new Map()
   });
 
   assert(isConflict(result));
@@ -555,7 +559,7 @@ Deno.test("attended op conflicts when the machine is booked through the horizon"
   );
 });
 
-Deno.test("least-loaded available person takes over when the incumbent is absent", () => {
+it("least-loaded available person takes over when the incumbent is absent", () => {
   // Two people around the clock; Alex already carries 4h of bookings, Zoe 0.
   // A fresh op should go to Zoe (least loaded), not Alex, not id-order.
   const alex = member("emp-alex");
@@ -567,10 +571,10 @@ Deno.test("least-loaded available person takes over when the incumbent is absent
         {
           startAt: utc("2026-01-05T00:00:00Z"),
           endAt: utc("2026-01-05T04:00:00Z"),
-          readableJobId: "J000001",
-        },
-      ],
-    ],
+          readableJobId: "J000001"
+        }
+      ]
+    ]
   ]);
 
   const r = expectAttended(
@@ -581,12 +585,12 @@ Deno.test("least-loaded available person takes over when the incumbent is absent
       horizonEnd: HORIZON,
       capacity: makeCapacity(),
       members: [alex, zoe],
-      busyByEmployee: busy,
+      busyByEmployee: busy
     })
   );
 
   assertEquals(r.segments.length, 1);
-  assertEquals(r.segments[0].employeeId, "emp-zoe");
+  assertEquals(r.segments[0]?.employeeId, "emp-zoe");
 });
 
 // --- formatBlockingJobs -----------------------------------------------------
@@ -599,12 +603,12 @@ function interval(
   return { startAt: utc(startIso), endAt: utc(endIso), readableJobId };
 }
 
-Deno.test("formatBlockingJobs groups by job and counts reservations", () => {
+it("formatBlockingJobs groups by job and counts reservations", () => {
   const reservations = [
     interval("2026-01-05T08:00:00Z", "2026-01-05T10:00:00Z", "J000001"),
     interval("2026-01-05T10:00:00Z", "2026-01-05T12:00:00Z", "J000001"),
     interval("2026-01-05T12:00:00Z", "2026-01-05T14:00:00Z", "J000001"),
-    interval("2026-01-05T14:00:00Z", "2026-01-05T16:00:00Z", "J000007"),
+    interval("2026-01-05T14:00:00Z", "2026-01-05T16:00:00Z", "J000007")
   ];
 
   assertEquals(
@@ -617,10 +621,10 @@ Deno.test("formatBlockingJobs groups by job and counts reservations", () => {
   );
 });
 
-Deno.test("formatBlockingJobs ignores untagged (own-job) intervals", () => {
+it("formatBlockingJobs ignores untagged (own-job) intervals", () => {
   const reservations = [
     interval("2026-01-05T08:00:00Z", "2026-01-05T12:00:00Z"), // own in-run push
-    interval("2026-01-05T12:00:00Z", "2026-01-05T14:00:00Z", "J000002"),
+    interval("2026-01-05T12:00:00Z", "2026-01-05T14:00:00Z", "J000002")
   ];
 
   assertEquals(
@@ -633,11 +637,11 @@ Deno.test("formatBlockingJobs ignores untagged (own-job) intervals", () => {
   );
 });
 
-Deno.test("formatBlockingJobs treats touching intervals as non-overlapping", () => {
+it("formatBlockingJobs treats touching intervals as non-overlapping", () => {
   const reservations = [
     // ends exactly at region start / starts exactly at region end
     interval("2026-01-05T06:00:00Z", "2026-01-05T08:00:00Z", "J000003"),
-    interval("2026-01-05T16:00:00Z", "2026-01-05T18:00:00Z", "J000004"),
+    interval("2026-01-05T16:00:00Z", "2026-01-05T18:00:00Z", "J000004")
   ];
 
   assertEquals(
@@ -650,9 +654,9 @@ Deno.test("formatBlockingJobs treats touching intervals as non-overlapping", () 
   );
 });
 
-Deno.test("formatBlockingJobs returns null for an empty region or no blockers", () => {
+it("formatBlockingJobs returns null for an empty region or no blockers", () => {
   const tagged = [
-    interval("2026-01-05T08:00:00Z", "2026-01-05T12:00:00Z", "J000005"),
+    interval("2026-01-05T08:00:00Z", "2026-01-05T12:00:00Z", "J000005")
   ];
   // zero-width region (op started exactly when it could have)
   assertEquals(
@@ -664,18 +668,22 @@ Deno.test("formatBlockingJobs returns null for an empty region or no blockers", 
     null
   );
   assertEquals(
-    formatBlockingJobs([], utc("2026-01-05T08:00:00Z"), utc("2026-01-06T00:00:00Z")),
+    formatBlockingJobs(
+      [],
+      utc("2026-01-05T08:00:00Z"),
+      utc("2026-01-06T00:00:00Z")
+    ),
     null
   );
 });
 
-Deno.test("formatBlockingJobs ranks by op count then job id, capping at 3", () => {
+it("formatBlockingJobs ranks by op count then job id, capping at 3", () => {
   const reservations = [
     interval("2026-01-05T08:00:00Z", "2026-01-05T09:00:00Z", "J000004"),
     interval("2026-01-05T09:00:00Z", "2026-01-05T10:00:00Z", "J000002"),
     interval("2026-01-05T10:00:00Z", "2026-01-05T11:00:00Z", "J000002"),
     interval("2026-01-05T11:00:00Z", "2026-01-05T12:00:00Z", "J000003"),
-    interval("2026-01-05T12:00:00Z", "2026-01-05T13:00:00Z", "J000001"),
+    interval("2026-01-05T12:00:00Z", "2026-01-05T13:00:00Z", "J000001")
   ];
 
   assertEquals(
@@ -690,7 +698,7 @@ Deno.test("formatBlockingJobs ranks by op count then job id, capping at 3", () =
 
 // --- people team mode (station people works the same op together) ---------------
 
-Deno.test("team: two members halve the labor, both booked on the same op", () => {
+it("team: two members halve the labor, both booked on the same op", () => {
   // setup 1h + labor 4h, machine 0. Two 24/7 members => setup 1h at 1x, then
   // labor 4h at 2x = 2h wall. Attended span 08:00-11:00; both booked 3h.
   const r = expectAttended(
@@ -702,7 +710,7 @@ Deno.test("team: two members halve the labor, both booked on the same op", () =>
       capacity: makeCapacity(),
       members: [member("bob"), member("carol")],
       busyByEmployee: new Map(),
-      team: { setupHours: 1, laborHours: 4, machineHours: 0 },
+      team: { setupHours: 1, laborHours: 4, machineHours: 0 }
     })
   );
   assertEquals(r.start.toISOString(), "2026-01-05T08:00:00.000Z");
@@ -718,7 +726,7 @@ Deno.test("team: two members halve the labor, both booked on the same op", () =>
   }
 });
 
-Deno.test("team: single member matches the legacy attended result", () => {
+it("team: single member matches the legacy attended result", () => {
   const argsBase = {
     attendedHours: 5,
     totalHours: 5,
@@ -726,28 +734,31 @@ Deno.test("team: single member matches the legacy attended result", () => {
     horizonEnd: HORIZON,
     capacity: makeCapacity(),
     members: [member("bob", weekdayWindows)],
-    busyByEmployee: new Map<string, ReservationInterval[]>(),
+    busyByEmployee: new Map<string, ReservationInterval[]>()
   };
   const legacy = expectAttended(allocateAttendedOperation(argsBase));
   const team = expectAttended(
     allocateAttendedOperation({
       ...argsBase,
-      team: { setupHours: 1, laborHours: 4, machineHours: 0 },
+      team: { setupHours: 1, laborHours: 4, machineHours: 0 }
     })
   );
   assertEquals(team.start.toISOString(), legacy.start.toISOString());
-  assertEquals(team.attendedEnd.toISOString(), legacy.attendedEnd.toISOString());
+  assertEquals(
+    team.attendedEnd.toISOString(),
+    legacy.attendedEnd.toISOString()
+  );
   assertEquals(team.end.toISOString(), legacy.end.toISOString());
   assertEquals(team.segments.length, 1);
-  assertEquals(team.segments[0].employeeId, "bob");
+  assertEquals(team.segments[0]?.employeeId, "bob");
 });
 
-Deno.test("team: rate drops when a member's shift ends mid-op", () => {
+it("team: rate drops when a member's shift ends mid-op", () => {
   // Bob 24/7, Carol only Mon 08:00-10:00. Setup 0, labor 6h.
   // 08:00-10:00 both present: 2h wall x2 = 4h labor done.
   // 10:00 on Bob alone: remaining 2h at 1x -> attended ends 12:00.
   const carolWindows = [
-    { start: utc("2026-01-05T08:00:00Z"), end: utc("2026-01-05T10:00:00Z") },
+    { start: utc("2026-01-05T08:00:00Z"), end: utc("2026-01-05T10:00:00Z") }
   ];
   const r = expectAttended(
     allocateAttendedOperation({
@@ -758,7 +769,7 @@ Deno.test("team: rate drops when a member's shift ends mid-op", () => {
       capacity: makeCapacity(),
       members: [member("bob"), member("carol", carolWindows)],
       busyByEmployee: new Map(),
-      team: { setupHours: 0, laborHours: 6, machineHours: 0 },
+      team: { setupHours: 0, laborHours: 6, machineHours: 0 }
     })
   );
   assertEquals(r.attendedEnd.toISOString(), "2026-01-05T12:00:00.000Z");
@@ -768,7 +779,7 @@ Deno.test("team: rate drops when a member's shift ends mid-op", () => {
   assertEquals(bob!.endAt.toISOString(), "2026-01-05T12:00:00.000Z");
 });
 
-Deno.test("team: machine time is not compressed", () => {
+it("team: machine time is not compressed", () => {
   // Setup 1h, labor 4h, machine 6h. Two members: attended = 1h + 2h = 3h
   // (ends 11:00). Machine ran concurrently for the 2h labor wall-clock;
   // remaining 4h unattended -> end 15:00. (Legacy would end at
@@ -782,22 +793,27 @@ Deno.test("team: machine time is not compressed", () => {
       capacity: makeCapacity(),
       members: [member("bob"), member("carol")],
       busyByEmployee: new Map(),
-      team: { setupHours: 1, laborHours: 4, machineHours: 6 },
+      team: { setupHours: 1, laborHours: 4, machineHours: 6 }
     })
   );
   assertEquals(r.attendedEnd.toISOString(), "2026-01-05T11:00:00.000Z");
   assertEquals(r.end.toISOString(), "2026-01-05T15:00:00.000Z");
 });
 
-Deno.test("team: a busy member joins the op when they free up", () => {
+it("team: a busy member joins the op when they free up", () => {
   // Carol busy 08:00-09:00 on another booking; labor 4h, no setup.
   // 08:00-09:00 Bob alone (1h done), 09:00 Carol joins: remaining 3h at 2x
   // -> +1.5h -> attended ends 10:30.
   const busy = new Map<string, ReservationInterval[]>([
     [
       "carol",
-      [{ startAt: utc("2026-01-05T08:00:00Z"), endAt: utc("2026-01-05T09:00:00Z") }],
-    ],
+      [
+        {
+          startAt: utc("2026-01-05T08:00:00Z"),
+          endAt: utc("2026-01-05T09:00:00Z")
+        }
+      ]
+    ]
   ]);
   const r = expectAttended(
     allocateAttendedOperation({
@@ -808,7 +824,7 @@ Deno.test("team: a busy member joins the op when they free up", () => {
       capacity: makeCapacity(),
       members: [member("bob"), member("carol")],
       busyByEmployee: busy,
-      team: { setupHours: 0, laborHours: 4, machineHours: 0 },
+      team: { setupHours: 0, laborHours: 4, machineHours: 0 }
     })
   );
   assertEquals(r.attendedEnd.toISOString(), "2026-01-05T10:30:00.000Z");

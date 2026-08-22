@@ -21,7 +21,7 @@ import {
   type CalendarWindow,
   expandCalendar,
   STOCK_WEEK_SHIFTS,
-  unionWindows,
+  unionWindows
 } from "./calendar-utils.ts";
 
 /** One weekday window of a shift, with the timezone it is expressed in. */
@@ -53,7 +53,7 @@ function expandLadderShifts(
     list.push({
       dayOfWeek: r.dayOfWeek,
       startTime: r.startTime,
-      endTime: r.endTime,
+      endTime: r.endTime
     });
     byTz.set(r.timezone, list);
   }
@@ -73,7 +73,10 @@ function resolveOne(
   // rung 1a — lights-out: one continuous window
   if (wc.alwaysOn) {
     return [
-      { start: new Date(rangeStart.getTime()), end: new Date(rangeEnd.getTime()) },
+      {
+        start: new Date(rangeStart.getTime()),
+        end: new Date(rangeEnd.getTime())
+      }
     ];
   }
   // rung 1b — explicit work-center shifts
@@ -104,8 +107,13 @@ export function resolveWorkCenterWindows(args: {
   rangeStart: Date;
   rangeEnd: Date;
 }): Map<string, CalendarWindow[]> {
-  const { workCenters, workCenterShiftRows, locationShiftRows, rangeStart, rangeEnd } =
-    args;
+  const {
+    workCenters,
+    workCenterShiftRows,
+    locationShiftRows,
+    rangeStart,
+    rangeEnd
+  } = args;
 
   const wcShiftsByWc = new Map<string, LadderShiftRow[]>();
   for (const r of workCenterShiftRows) {
@@ -123,7 +131,7 @@ export function resolveWorkCenterWindows(args: {
   const result = new Map<string, CalendarWindow[]>();
   for (const wc of workCenters) {
     const locShifts =
-      wc.locationId != null ? locShiftsByLoc.get(wc.locationId) ?? [] : [];
+      wc.locationId != null ? (locShiftsByLoc.get(wc.locationId) ?? []) : [];
     result.set(
       wc.id,
       resolveOne(
@@ -153,5 +161,10 @@ export function resolveLocationWindows(args: {
   if (locationShiftRows.length > 0) {
     return expandLadderShifts(locationShiftRows, rangeStart, rangeEnd);
   }
-  return expandCalendar(STOCK_WEEK_SHIFTS, rangeStart, rangeEnd, timezone || "UTC");
+  return expandCalendar(
+    STOCK_WEEK_SHIFTS,
+    rangeStart,
+    rangeEnd,
+    timezone || "UTC"
+  );
 }

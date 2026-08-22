@@ -1,9 +1,9 @@
-import type { Database } from "../types.ts";
+import type { Database } from "@carbon/database";
 import type {
   BaseOperation,
   DependencyGraph,
   DependencyNode,
-  JobOperationDependency,
+  JobOperationDependency
 } from "./types.ts";
 
 /**
@@ -32,7 +32,7 @@ export class DependencyGraphImpl implements DependencyGraph {
         this.nodes.set(op.id, {
           operationId: op.id,
           dependsOn: [],
-          requiredBy: [],
+          requiredBy: []
         });
       }
     }
@@ -247,7 +247,7 @@ export function dependenciesToRecords(
         jobId,
         operationId,
         dependsOnId,
-        companyId,
+        companyId
       });
     }
   }

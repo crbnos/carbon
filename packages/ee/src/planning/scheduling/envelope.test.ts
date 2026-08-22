@@ -1,3 +1,5 @@
+import { it } from "vitest";
+
 /**
  * Performance-envelope proof for the finite placement engine.
  *
@@ -13,13 +15,13 @@
  * even without --allow-env).
  */
 
-import { assert } from "https://deno.land/std@0.175.0/testing/asserts.ts";
 import type { MasterDataProvider } from "./master-data-provider.ts";
 import type { ResourceCapacityData } from "./slot-allocator.ts";
+import { assert } from "./test-helpers.ts";
 import type { JobOperationDependency, ScheduledOperation } from "./types.ts";
 import {
   type FiniteSchedulingContext,
-  WorkCenterSelector,
+  WorkCenterSelector
 } from "./work-center-selector.ts";
 
 const JOB_COUNT = 200;
@@ -53,7 +55,7 @@ function makeOperations(): ScheduledOperation[] {
         durationDays: 1,
         hasConflict: false,
         conflictReason: null,
-        status: "Ready",
+        status: "Ready"
       });
     }
   }
@@ -67,7 +69,7 @@ function makeDependencies(): JobOperationDependency[] {
       deps.push({
         operationId: `op-${j}-${k}`,
         dependsOnId: `op-${j}-${k - 1}`,
-        jobId: `job-${j}`,
+        jobId: `job-${j}`
       });
     }
   }
@@ -84,9 +86,9 @@ function makeContext(): FiniteSchedulingContext {
       workCenter: { id },
       // alwaysOn / lights-out: one continuous window over the whole horizon.
       windows: [
-        { start: new Date(now.getTime()), end: new Date(windowsEnd.getTime()) },
+        { start: new Date(now.getTime()), end: new Date(windowsEnd.getTime()) }
       ],
-      reservations: [],
+      reservations: []
     });
   }
   return {
@@ -104,48 +106,50 @@ function makeContext(): FiniteSchedulingContext {
     peopleBudgets: new Map(),
     windowsByEmployee: new Map(),
     timeZone: "UTC",
-    operationsWithEvents: new Set<string>(),
+    operationsWithEvents: new Set<string>()
   };
 }
 
-/** Read SKIP_ENVELOPE without throwing when --allow-env was not granted. */
+/** Read SKIP_ENVELOPE without depending on @types/node's process typings. */
 function skipEnvelope(): boolean {
   try {
-    return Deno.env.get("SKIP_ENVELOPE") === "1";
+    const env = (
+      globalThis as { process?: { env?: Record<string, string | undefined> } }
+    ).process?.env;
+    return env?.SKIP_ENVELOPE === "1";
   } catch {
     return false;
   }
 }
 
-Deno.test({
-  name: "places 2,000 operations within the < 10s performance envelope",
-  ignore: skipEnvelope(),
-  fn: async () => {
+it.skipIf(skipEnvelope())(
+  "places 2,000 operations within the < 10s performance envelope",
+  async () => {
     const operations = makeOperations();
     const selector = new WorkCenterSelector(
       {} as unknown as MasterDataProvider,
-      "loc1",
+      "loc1"
     );
     selector.setFiniteContext(makeContext());
 
     const startedAt = performance.now();
     const selections = await selector.selectWorkCentersForOperations(
       operations,
-      { jobDueDate: null },
+      { jobDueDate: null }
     );
     const elapsedMs = performance.now() - startedAt;
 
     console.log(
-      `[envelope] placed ${selections.size} operations across ${WORK_CENTER_COUNT} work centers in ${elapsedMs.toFixed(1)}ms`,
+      `[envelope] placed ${selections.size} operations across ${WORK_CENTER_COUNT} work centers in ${elapsedMs.toFixed(1)}ms`
     );
 
     assert(
       selections.size === operations.length,
-      `expected ${operations.length} selections, got ${selections.size}`,
+      `expected ${operations.length} selections, got ${selections.size}`
     );
     assert(
       elapsedMs < ENVELOPE_MS,
-      `placement took ${elapsedMs.toFixed(1)}ms, exceeding the ${ENVELOPE_MS}ms envelope`,
+      `placement took ${elapsedMs.toFixed(1)}ms, exceeding the ${ENVELOPE_MS}ms envelope`
     );
-  },
-});
+  }
+);

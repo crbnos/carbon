@@ -1,23 +1,25 @@
 import type {
   DeadlineType,
   OperationWithJobInfo,
-  ScheduledOperation,
+  ScheduledOperation
 } from "./types.ts";
 
 /**
  * Deadline type priority order (lower number = higher priority)
  */
 const DEADLINE_PRIORITY: Record<string, number> = {
-  "ASAP": 0,
+  ASAP: 0,
   "Hard Deadline": 1,
   "Soft Deadline": 2,
-  "No Deadline": 3,
+  "No Deadline": 3
 };
 
 /**
  * Get deadline priority value (for sorting)
  */
-function getDeadlinePriority(deadlineType: DeadlineType | string | null | undefined): number {
+function getDeadlinePriority(
+  deadlineType: DeadlineType | string | null | undefined
+): number {
   return DEADLINE_PRIORITY[deadlineType || "No Deadline"] ?? 3;
 }
 
@@ -91,9 +93,9 @@ export function calculateFractionalPriority(
 /**
  * Group operations by work center
  */
-export function groupOperationsByWorkCenter<T extends { workCenterId: string | null }>(
-  operations: T[]
-): Map<string | null, T[]> {
+export function groupOperationsByWorkCenter<
+  T extends { workCenterId: string | null }
+>(operations: T[]): Map<string | null, T[]> {
   const groups = new Map<string | null, T[]>();
 
   for (const op of operations) {
@@ -156,7 +158,7 @@ export function toOperationWithJobInfo(
     durationHours: operation.durationHours ?? null,
     createdAt: operation.createdAt
       ? new Date(operation.createdAt).toISOString()
-      : null,
+      : null
   };
 }
 
@@ -173,7 +175,7 @@ export function applyPriorities(
     const priority = priorities.get(opId) ?? op.priority;
     result.set(opId, {
       ...op,
-      priority,
+      priority
     });
   }
 

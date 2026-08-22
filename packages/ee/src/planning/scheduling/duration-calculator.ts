@@ -1,5 +1,5 @@
-import type { BaseOperation, FactorUnit } from "./types.ts";
 import { HOUR_MS, MINUTE_MS, SECOND_MS } from "./date-utils.ts";
+import type { BaseOperation, FactorUnit } from "./types.ts";
 
 const HOURS_PER_WORKDAY = 8;
 
@@ -206,7 +206,7 @@ export function calculateDurationBreakdown(operation: BaseOperation): {
     machineHours,
     totalHours,
     totalDays,
-    totalMs,
+    totalMs
   };
 }
 

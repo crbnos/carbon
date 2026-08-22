@@ -1,18 +1,16 @@
-import {
-  assert,
-  assertEquals,
-} from "https://deno.land/std@0.175.0/testing/asserts.ts";
-import type { ScheduledOperation } from "./types.ts";
+import { it } from "vitest";
 import type { MasterDataProvider } from "./master-data-provider.ts";
 import {
   buildAssignmentsByEmployee,
-  buildPeopleByWorkCenter,
+  buildPeopleByWorkCenter
 } from "./people-utils.ts";
+import { assert, assertEquals } from "./test-helpers.ts";
+import type { ScheduledOperation } from "./types.ts";
 import {
   applyWorkCenterSelections,
   type FiniteSchedulingContext,
   hasPreassignedWorkCenter,
-  WorkCenterSelector,
+  WorkCenterSelector
 } from "./work-center-selector.ts";
 
 function makeOp(
@@ -29,25 +27,25 @@ function makeOp(
     hasConflict: false,
     conflictReason: null,
     workCenterId: null,
-    ...overrides,
+    ...overrides
   };
 }
 
-Deno.test("hasPreassignedWorkCenter is true only for non-empty ids", () => {
+it("hasPreassignedWorkCenter is true only for non-empty ids", () => {
   assertEquals(hasPreassignedWorkCenter("wc-1"), true);
   assertEquals(hasPreassignedWorkCenter(null), false);
   assertEquals(hasPreassignedWorkCenter(undefined), false);
   assertEquals(hasPreassignedWorkCenter(""), false);
 });
 
-Deno.test("applyWorkCenterSelections does not overwrite pre-assigned work centers", () => {
+it("applyWorkCenterSelections does not overwrite pre-assigned work centers", () => {
   const ops = new Map<string, ScheduledOperation>([
     ["op-pre", makeOp({ id: "op-pre", workCenterId: "user-wc" })],
-    ["op-new", makeOp({ id: "op-new", workCenterId: null })],
+    ["op-new", makeOp({ id: "op-new", workCenterId: null })]
   ]);
   const selections = new Map([
     ["op-pre", { workCenterId: "auto-wc", priority: 0 }],
-    ["op-new", { workCenterId: "auto-wc", priority: 0 }],
+    ["op-new", { workCenterId: "auto-wc", priority: 0 }]
   ]);
 
   const result = applyWorkCenterSelections(ops, selections);
@@ -56,12 +54,12 @@ Deno.test("applyWorkCenterSelections does not overwrite pre-assigned work center
   assertEquals(result.get("op-new")?.workCenterId, "auto-wc");
 });
 
-Deno.test("applyWorkCenterSelections leaves ops untouched when selection has no WC", () => {
+it("applyWorkCenterSelections leaves ops untouched when selection has no WC", () => {
   const ops = new Map<string, ScheduledOperation>([
-    ["op-1", makeOp({ id: "op-1", workCenterId: null })],
+    ["op-1", makeOp({ id: "op-1", workCenterId: null })]
   ]);
   const selections = new Map([
-    ["op-1", { workCenterId: null, priority: 0, error: "no process" }],
+    ["op-1", { workCenterId: null, priority: 0, error: "no process" }]
   ]);
 
   const result = applyWorkCenterSelections(ops, selections);
@@ -83,9 +81,9 @@ function makeContext(
           workCenter: { id: "wc1" },
           // one continuous window (alwaysOn-equivalent) so hours == wall clock
           windows: [{ start: now, end: windowsEnd }],
-          reservations: [],
-        },
-      ],
+          reservations: []
+        }
+      ]
     ]),
     requirementByProcess: new Map(),
     employeesByAbility: new Map(),
@@ -101,11 +99,11 @@ function makeContext(
     windowsByEmployee: new Map(),
     timeZone: "UTC",
     operationsWithEvents: new Set<string>(),
-    ...overrides,
+    ...overrides
   };
 }
 
-Deno.test("a half-complete op with a production event books half the hours", async () => {
+it("a half-complete op with a production event books half the hours", async () => {
   // Ungated op, sticky on wc1: 4h of labor, 50% complete, setup already done
   // (production event) → nets to 2h. A full op would book 4h.
   const selector = new WorkCenterSelector(
@@ -126,11 +124,11 @@ Deno.test("a half-complete op with a production event books half the hours", asy
     laborUnit: "Total Hours",
     machineTime: 0,
     operationQuantity: 10,
-    quantityComplete: 5,
+    quantityComplete: 5
   });
 
   const selections = await selector.selectWorkCentersForOperations([op], {
-    jobDueDate: null,
+    jobDueDate: null
   });
 
   const selection = selections.get("op-1");
@@ -146,7 +144,7 @@ Deno.test("a half-complete op with a production event books half the hours", asy
   assertEquals(reservation?.workHours, 2);
 });
 
-Deno.test("an untouched op books the full standard hours", async () => {
+it("an untouched op books the full standard hours", async () => {
   const selector = new WorkCenterSelector(
     {} as unknown as MasterDataProvider,
     "loc1"
@@ -163,11 +161,11 @@ Deno.test("an untouched op books the full standard hours", async () => {
     laborUnit: "Total Hours",
     machineTime: 0,
     operationQuantity: 10,
-    quantityComplete: 0,
+    quantityComplete: 0
   });
 
   const selections = await selector.selectWorkCentersForOperations([op], {
-    jobDueDate: null,
+    jobDueDate: null
   });
   const selection = selections.get("op-1");
   assert(selection?.placedStart && selection.placedEnd);
@@ -179,16 +177,16 @@ Deno.test("an untouched op books the full standard hours", async () => {
 
 // --- load balancing across equivalent work centers --------------------------
 
-Deno.test("two identical not-started ops spread across equivalent work centers", async () => {
+it("two identical not-started ops spread across equivalent work centers", async () => {
   const now = new Date("2026-01-05T00:00:00.000Z"); // Monday
   const windowsEnd = new Date("2026-02-05T00:00:00.000Z");
 
   // proc-1 runs on wc1 AND wc2 (interchangeable); both active at the location.
   const provider = {
     getProcessesWithWorkCenters: async () => [
-      { id: "proc-1", workCenters: ["wc1", "wc2"] },
+      { id: "proc-1", workCenters: ["wc1", "wc2"] }
     ],
-    getActiveWorkCenters: async () => [{ id: "wc1" }, { id: "wc2" }],
+    getActiveWorkCenters: async () => [{ id: "wc1" }, { id: "wc2" }]
   } as unknown as MasterDataProvider;
 
   const selector = new WorkCenterSelector(provider, "loc1");
@@ -201,18 +199,18 @@ Deno.test("two identical not-started ops spread across equivalent work centers",
           {
             workCenter: { id: "wc1" },
             windows: [{ start: now, end: windowsEnd }],
-            reservations: [],
-          },
+            reservations: []
+          }
         ],
         [
           "wc2",
           {
             workCenter: { id: "wc2" },
             windows: [{ start: now, end: windowsEnd }],
-            reservations: [],
-          },
-        ],
-      ]),
+            reservations: []
+          }
+        ]
+      ])
     })
   );
 
@@ -226,32 +224,35 @@ Deno.test("two identical not-started ops spread across equivalent work centers",
     laborUnit: "Total Hours" as const,
     machineTime: 0,
     operationQuantity: 1,
-    quantityComplete: 0,
+    quantityComplete: 0
   };
   const ops = [
     makeOp({ id: "op-a", order: 1, ...opFields }),
-    makeOp({ id: "op-b", order: 2, ...opFields }),
+    makeOp({ id: "op-b", order: 2, ...opFields })
   ];
 
   const selections = await selector.selectWorkCentersForOperations(ops, {
-    jobDueDate: null,
+    jobDueDate: null
   });
 
   const a = selections.get("op-a")?.workCenterId;
   const b = selections.get("op-b")?.workCenterId;
   assert(a && b, "both ops were placed on a work center");
-  assert(a !== b, `expected the two ops to spread across centers; both got ${a}`);
+  assert(
+    a !== b,
+    `expected the two ops to spread across centers; both got ${a}`
+  );
   assertEquals(new Set([a, b]), new Set(["wc1", "wc2"]));
 });
 
-Deno.test("a started op stays pinned to its work center (no rebalancing)", async () => {
+it("a started op stays pinned to its work center (no rebalancing)", async () => {
   const now = new Date("2026-01-05T00:00:00.000Z");
   const windowsEnd = new Date("2026-02-05T00:00:00.000Z");
   const provider = {
     getProcessesWithWorkCenters: async () => [
-      { id: "proc-1", workCenters: ["wc1", "wc2"] },
+      { id: "proc-1", workCenters: ["wc1", "wc2"] }
     ],
-    getActiveWorkCenters: async () => [{ id: "wc1" }, { id: "wc2" }],
+    getActiveWorkCenters: async () => [{ id: "wc1" }, { id: "wc2" }]
   } as unknown as MasterDataProvider;
 
   const selector = new WorkCenterSelector(provider, "loc1");
@@ -266,19 +267,19 @@ Deno.test("a started op stays pinned to its work center (no rebalancing)", async
             // wc1 is heavily loaded so an idle wc2 would finish sooner...
             windows: [{ start: now, end: windowsEnd }],
             reservations: [
-              { startAt: now, endAt: new Date("2026-01-10T00:00:00.000Z") },
-            ],
-          },
+              { startAt: now, endAt: new Date("2026-01-10T00:00:00.000Z") }
+            ]
+          }
         ],
         [
           "wc2",
           {
             workCenter: { id: "wc2" },
             windows: [{ start: now, end: windowsEnd }],
-            reservations: [],
-          },
-        ],
-      ]),
+            reservations: []
+          }
+        ]
+      ])
     })
   );
 
@@ -286,18 +287,18 @@ Deno.test("a started op stays pinned to its work center (no rebalancing)", async
   const op = makeOp({
     id: "op-1",
     workCenterId: "wc1",
-    status: "In Progress",
+    status: "In Progress"
   });
 
   const selections = await selector.selectWorkCentersForOperations([op], {
-    jobDueDate: null,
+    jobDueDate: null
   });
   assertEquals(selections.get("op-1")?.workCenterId, "wc1");
 });
 
 // --- pinned (manually scheduled) ops: no frozen window ----------------------
 
-Deno.test("a pinned op is placed like any other and keeps its due date (no frozen window)", async () => {
+it("a pinned op is placed like any other and keeps its due date (no frozen window)", async () => {
   const selector = new WorkCenterSelector(
     {} as unknown as MasterDataProvider,
     "loc1"
@@ -317,11 +318,11 @@ Deno.test("a pinned op is placed like any other and keeps its due date (no froze
     laborUnit: "Total Hours",
     machineTime: 0,
     operationQuantity: 1,
-    quantityComplete: 0,
+    quantityComplete: 0
   });
 
   const selections = await selector.selectWorkCentersForOperations([op], {
-    jobDueDate: null,
+    jobDueDate: null
   });
   const selection = selections.get("op-pin");
   assert(
@@ -337,8 +338,8 @@ Deno.test("a pinned op is placed like any other and keeps its due date (no froze
     .getPlannedReservations()
     .filter((r) => r.operationId === "op-pin");
   assertEquals(reservations.length, 1);
-  assertEquals(reservations[0].startAt.toISOString(), selection.placedStart);
-  assertEquals(reservations[0].endAt.toISOString(), selection.placedEnd);
+  assertEquals(reservations[0]?.startAt.toISOString(), selection.placedStart);
+  assertEquals(reservations[0]?.endAt.toISOString(), selection.placedEnd);
 
   // Applying the selection records the forecast; the pinned dueDate survives.
   const applied = applyWorkCenterSelections(
@@ -352,7 +353,7 @@ Deno.test("a pinned op is placed like any other and keeps its due date (no froze
 
 // --- unplaceable ops: non-binding placeholder reservations ------------------
 
-Deno.test("an unplaceable gated op emits a non-binding placeholder reservation", async () => {
+it("an unplaceable gated op emits a non-binding placeholder reservation", async () => {
   const selector = new WorkCenterSelector(
     {} as unknown as MasterDataProvider,
     "loc1"
@@ -362,9 +363,9 @@ Deno.test("an unplaceable gated op emits a non-binding placeholder reservation",
   selector.setFiniteContext(
     makeContext({
       requirementByProcess: new Map([
-        ["proc-1", { abilityId: "ab1", abilityName: "Timesaver" }],
+        ["proc-1", { abilityId: "ab1", abilityName: "Timesaver" }]
       ]),
-      employeesByAbility: new Map(),
+      employeesByAbility: new Map()
     })
   );
 
@@ -378,11 +379,11 @@ Deno.test("an unplaceable gated op emits a non-binding placeholder reservation",
     laborUnit: "Total Hours",
     machineTime: 0,
     operationQuantity: 1,
-    quantityComplete: 0,
+    quantityComplete: 0
   });
 
   const selections = await selector.selectWorkCentersForOperations([op], {
-    jobDueDate: null,
+    jobDueDate: null
   });
 
   // Surfaced as a conflict, keeps a fallback work center, NO real placement.
@@ -410,7 +411,7 @@ Deno.test("an unplaceable gated op emits a non-binding placeholder reservation",
   assertEquals(capacity.reservations.length, 0);
 });
 
-Deno.test("a successor waits for an unplaceable predecessor's placeholder", async () => {
+it("a successor waits for an unplaceable predecessor's placeholder", async () => {
   const now = new Date("2026-01-05T00:00:00.000Z");
   const windowsEnd = new Date("2026-02-05T00:00:00.000Z");
 
@@ -426,24 +427,26 @@ Deno.test("a successor waits for an unplaceable predecessor's placeholder", asyn
           {
             workCenter: { id: "wc1" },
             windows: [{ start: now, end: windowsEnd }],
-            reservations: [],
-          },
+            reservations: []
+          }
         ],
         [
           "wc2",
           {
             workCenter: { id: "wc2" },
             windows: [{ start: now, end: windowsEnd }],
-            reservations: [],
-          },
-        ],
+            reservations: []
+          }
+        ]
       ]),
       // op-1's process is gated with nobody qualified; op-2's is ungated.
       requirementByProcess: new Map([
-        ["proc-1", { abilityId: "ab1", abilityName: "Timesaver" }],
+        ["proc-1", { abilityId: "ab1", abilityName: "Timesaver" }]
       ]),
       employeesByAbility: new Map(),
-      dependencies: [{ operationId: "op-2", dependsOnId: "op-1" }],
+      dependencies: [
+        { jobId: "job-1", operationId: "op-2", dependsOnId: "op-1" }
+      ]
     })
   );
 
@@ -458,7 +461,7 @@ Deno.test("a successor waits for an unplaceable predecessor's placeholder", asyn
     laborUnit: "Total Hours",
     machineTime: 0,
     operationQuantity: 1,
-    quantityComplete: 0,
+    quantityComplete: 0
   });
   const opSuccessor = makeOp({
     id: "op-2",
@@ -471,7 +474,7 @@ Deno.test("a successor waits for an unplaceable predecessor's placeholder", asyn
     laborUnit: "Total Hours",
     machineTime: 0,
     operationQuantity: 1,
-    quantityComplete: 0,
+    quantityComplete: 0
   });
 
   const selections = await selector.selectWorkCentersForOperations(
@@ -501,8 +504,8 @@ function makeMannedElsewhereContext(mannedAt: string | null) {
           workCenterId: mannedAt,
           employeeId: "brad",
           date: "2026-01-05",
-          shiftId: null,
-        },
+          shiftId: null
+        }
       ])
     : new Map<string, Map<string, string[]>>();
   return makeContext({
@@ -513,29 +516,29 @@ function makeMannedElsewhereContext(mannedAt: string | null) {
         {
           workCenter: { id: "wc1" },
           windows: [{ start: now, end: dayEnd }],
-          reservations: [],
-        },
-      ],
+          reservations: []
+        }
+      ]
     ]),
     requirementByProcess: new Map([
-      ["proc-1", { abilityId: "ab1", abilityName: "Weld" }],
+      ["proc-1", { abilityId: "ab1", abilityName: "Weld" }]
     ]),
     employeesByAbility: new Map([
-      ["ab1", [{ employeeId: "brad", expiresAt: null, windows: bradWindows }]],
+      ["ab1", [{ employeeId: "brad", expiresAt: null, windows: bradWindows }]]
     ]),
     windowsByEmployee: new Map([["brad", bradWindows]]),
     peopleByWorkCenter: board,
     assignmentsByEmployee: buildAssignmentsByEmployee(board),
-    requiresStaffing: false,
+    requiresStaffing: false
   });
 }
 
 async function placeGatedOpOnWc1(ctx: FiniteSchedulingContext) {
   const provider = {
     getProcessesWithWorkCenters: async () => [
-      { id: "proc-1", workCenters: ["wc1"] },
+      { id: "proc-1", workCenters: ["wc1"] }
     ],
-    getActiveWorkCenters: async () => [{ id: "wc1" }],
+    getActiveWorkCenters: async () => [{ id: "wc1" }]
   } as unknown as MasterDataProvider;
   const selector = new WorkCenterSelector(provider, "loc1");
   await selector.initialize();
@@ -551,15 +554,15 @@ async function placeGatedOpOnWc1(ctx: FiniteSchedulingContext) {
     laborUnit: "Total Hours",
     machineTime: 0,
     operationQuantity: 1,
-    quantityComplete: 0,
+    quantityComplete: 0
   });
   const selections = await selector.selectWorkCentersForOperations([op], {
-    jobDueDate: null,
+    jobDueDate: null
   });
   return { selection: selections.get("op-1"), selector };
 }
 
-Deno.test("a person on the board is not pulled to another station by the fallback", async () => {
+it("a person on the board is not pulled to another station by the fallback", async () => {
   // brad is manned at wc2 (Timesaver). He is the only welder, so wc1 (DMU 350)
   // would previously grab him via the any-qualified fallback — the reported
   // double-booking. Being on the board makes him spoken for, so wc1's gated op
@@ -568,7 +571,10 @@ Deno.test("a person on the board is not pulled to another station by the fallbac
     makeMannedElsewhereContext("wc2")
   );
 
-  assert(selection?.conflict, "the op surfaces a conflict rather than a placement");
+  assert(
+    selection?.conflict,
+    "the op surfaces a conflict rather than a placement"
+  );
   assertEquals(selection?.placedStart, undefined);
   const bradBookings = selector
     .getPlannedReservations()
@@ -586,7 +592,7 @@ Deno.test("a person on the board is not pulled to another station by the fallbac
   assertEquals(placeholder.resourceId, "wc1");
 });
 
-Deno.test("a genuinely-unassigned person still floats to another station's fallback", async () => {
+it("a genuinely-unassigned person still floats to another station's fallback", async () => {
   // Same op, but the board is blank: brad is a free floater, so the fallback
   // relay books him on wc1 exactly as before (the fix is scoped to committed
   // people only — blank board is unchanged).
@@ -602,7 +608,7 @@ Deno.test("a genuinely-unassigned person still floats to another station's fallb
   assertEquals(bradBookings.length, 1); // floater booked on wc1 as before
 });
 
-Deno.test("a managed person is not shoved onto an unmanned weekend to staff another station", async () => {
+it("a managed person is not shoved onto an unmanned weekend to staff another station", async () => {
   // Regression: a per-DATE commitment clip left the person free on the days they
   // were NOT manned (nights/weekends), so the fallback quietly scheduled the op
   // FAR in the future on one of those days and re-booked the person there — the
@@ -614,34 +620,61 @@ Deno.test("a managed person is not shoved onto an unmanned weekend to staff anot
   const bradWindows = [{ start: now, end: windowsEnd }]; // available all week
   const board = buildPeopleByWorkCenter(
     ["2026-01-05", "2026-01-06", "2026-01-07", "2026-01-08", "2026-01-09"].map(
-      (date) => ({ workCenterId: "wc-dmu", employeeId: "brad", date, shiftId: null })
+      (date) => ({
+        workCenterId: "wc-dmu",
+        employeeId: "brad",
+        date,
+        shiftId: null
+      })
     )
   );
 
   const provider = {
     getProcessesWithWorkCenters: async () => [
       { id: "proc-weld", workCenters: ["wc-dmu"] },
-      { id: "proc-clean", workCenters: ["wc-ts"] },
+      { id: "proc-clean", workCenters: ["wc-ts"] }
     ],
-    getActiveWorkCenters: async () => [{ id: "wc-dmu" }, { id: "wc-ts" }],
+    getActiveWorkCenters: async () => [{ id: "wc-dmu" }, { id: "wc-ts" }]
   } as unknown as MasterDataProvider;
   const selector = new WorkCenterSelector(provider, "loc1");
   await selector.initialize();
   selector.setFiniteContext({
     capacityByWorkCenter: new Map([
-      ["wc-dmu", { workCenter: { id: "wc-dmu" }, windows: [{ start: now, end: windowsEnd }], reservations: [] }],
-      ["wc-ts", { workCenter: { id: "wc-ts" }, windows: [{ start: now, end: windowsEnd }], reservations: [] }],
+      [
+        "wc-dmu",
+        {
+          workCenter: { id: "wc-dmu" },
+          windows: [{ start: now, end: windowsEnd }],
+          reservations: []
+        }
+      ],
+      [
+        "wc-ts",
+        {
+          workCenter: { id: "wc-ts" },
+          windows: [{ start: now, end: windowsEnd }],
+          reservations: []
+        }
+      ]
     ]),
     requirementByProcess: new Map([
       ["proc-weld", { abilityId: "ab-weld", abilityName: "Weld" }],
-      ["proc-clean", { abilityId: "ab-clean", abilityName: "Clean" }],
+      ["proc-clean", { abilityId: "ab-clean", abilityName: "Clean" }]
     ]),
     employeesByAbility: new Map([
-      ["ab-weld", [{ employeeId: "brad", expiresAt: null, windows: bradWindows }]],
-      ["ab-clean", [{ employeeId: "brad", expiresAt: null, windows: bradWindows }]],
+      [
+        "ab-weld",
+        [{ employeeId: "brad", expiresAt: null, windows: bradWindows }]
+      ],
+      [
+        "ab-clean",
+        [{ employeeId: "brad", expiresAt: null, windows: bradWindows }]
+      ]
     ]),
     reservationsByEmployee: new Map(),
-    dependencies: [{ jobId: "j1", operationId: "op-clean", dependsOnId: "op-weld" }],
+    dependencies: [
+      { jobId: "j1", operationId: "op-clean", dependsOnId: "op-weld" }
+    ],
     now,
     horizonDays: 365,
     windowsEnd,
@@ -651,7 +684,7 @@ Deno.test("a managed person is not shoved onto an unmanned weekend to staff anot
     peopleBudgets: new Map(),
     windowsByEmployee: new Map([["brad", bradWindows]]),
     timeZone: "UTC",
-    operationsWithEvents: new Set<string>(),
+    operationsWithEvents: new Set<string>()
   });
 
   const base = {
@@ -665,12 +698,28 @@ Deno.test("a managed person is not shoved onto an unmanned weekend to staff anot
     dueDate: null,
     hasConflict: false,
     conflictReason: null,
-    durationDays: 1,
+    durationDays: 1
   };
   const selections = await selector.selectWorkCentersForOperations(
     [
-      makeOp({ ...base, id: "op-weld", processId: "proc-weld", workCenterId: "wc-dmu", order: 1, laborTime: 4, durationHours: 4 }),
-      makeOp({ ...base, id: "op-clean", processId: "proc-clean", workCenterId: "wc-ts", order: 2, laborTime: 2, durationHours: 2 }),
+      makeOp({
+        ...base,
+        id: "op-weld",
+        processId: "proc-weld",
+        workCenterId: "wc-dmu",
+        order: 1,
+        laborTime: 4,
+        durationHours: 4
+      }),
+      makeOp({
+        ...base,
+        id: "op-clean",
+        processId: "proc-clean",
+        workCenterId: "wc-ts",
+        order: 2,
+        laborTime: 2,
+        durationHours: 2
+      })
     ],
     { jobDueDate: null }
   );
@@ -689,7 +738,8 @@ Deno.test("a managed person is not shoved onto an unmanned weekend to staff anot
   assert(placeholder, "Clean op emits an unschedulable placeholder");
   // ...pinned in-window (right after Weld), NOT shoved to the weekend...
   assert(
-    placeholder.startAt.getTime() < new Date("2026-01-10T00:00:00.000Z").getTime(),
+    placeholder.startAt.getTime() <
+      new Date("2026-01-10T00:00:00.000Z").getTime(),
     `placeholder must stay in-window, got ${placeholder.startAt.toISOString()}`
   );
   // ...and Brad is NEVER booked onto Timesaver.
@@ -709,25 +759,25 @@ function makeStaffingCtx(requiresStaffing: boolean, overrides = {}) {
   return makeContext({
     requiresStaffing,
     requirementByProcess: new Map([
-      ["proc-1", { abilityId: "ab1", abilityName: "Weld" }],
+      ["proc-1", { abilityId: "ab1", abilityName: "Weld" }]
     ]),
     employeesByAbility: new Map([
-      ["ab1", [{ employeeId: "carol", expiresAt: null, windows: carolWindows }]],
+      ["ab1", [{ employeeId: "carol", expiresAt: null, windows: carolWindows }]]
     ]),
     windowsByEmployee: new Map([["carol", carolWindows]]),
     // carol is a floater (not on the board), and nobody is manned at wc1
     peopleByWorkCenter: new Map(),
     assignmentsByEmployee: new Map(),
-    ...overrides,
+    ...overrides
   });
 }
 
 async function placeGatedStaffing(requiresStaffing: boolean) {
   const provider = {
     getProcessesWithWorkCenters: async () => [
-      { id: "proc-1", workCenters: ["wc1"] },
+      { id: "proc-1", workCenters: ["wc1"] }
     ],
-    getActiveWorkCenters: async () => [{ id: "wc1" }],
+    getActiveWorkCenters: async () => [{ id: "wc1" }]
   } as unknown as MasterDataProvider;
   const selector = new WorkCenterSelector(provider, "loc1");
   await selector.initialize();
@@ -743,15 +793,15 @@ async function placeGatedStaffing(requiresStaffing: boolean) {
     laborUnit: "Total Hours",
     machineTime: 0,
     operationQuantity: 1,
-    quantityComplete: 0,
+    quantityComplete: 0
   });
   const selections = await selector.selectWorkCentersForOperations([op], {
-    jobDueDate: null,
+    jobDueDate: null
   });
   return { selection: selections.get("op-1"), selector };
 }
 
-Deno.test("requiresStaffing OFF: a gated op still uses an unmanned floater (unchanged)", async () => {
+it("requiresStaffing OFF: a gated op still uses an unmanned floater (unchanged)", async () => {
   const { selection, selector } = await placeGatedStaffing(false);
   assertEquals(selection?.conflict ?? null, null);
   const carolBooked = selector
@@ -760,7 +810,7 @@ Deno.test("requiresStaffing OFF: a gated op still uses an unmanned floater (unch
   assert(carolBooked, "the floater staffs the op when the policy is off");
 });
 
-Deno.test("requiresStaffing ON: a gated op is NOT scheduled on an unmanned floater", async () => {
+it("requiresStaffing ON: a gated op is NOT scheduled on an unmanned floater", async () => {
   const { selection, selector } = await placeGatedStaffing(true);
   assert(selection?.conflict, "the op conflicts — no manned operator");
   assertEquals(selection?.placedStart, undefined);
@@ -771,7 +821,10 @@ Deno.test("requiresStaffing ON: a gated op is NOT scheduled on an unmanned float
   const placeholder = selector
     .getPlannedReservations()
     .find((r) => r.operationId === "op-1" && r.resourceKind === "WorkCenter");
-  assert(placeholder?.isPlaceholder, "op surfaces as an unschedulable placeholder");
+  assert(
+    placeholder?.isPlaceholder,
+    "op surfaces as an unschedulable placeholder"
+  );
 });
 
 async function placeUngatedStaffing(alwaysOn: boolean) {
@@ -791,10 +844,10 @@ async function placeUngatedStaffing(alwaysOn: boolean) {
           {
             workCenter: { id: "wc1", alwaysOn },
             windows: [{ start: now, end: windowsEnd }],
-            reservations: [],
-          },
-        ],
-      ]),
+            reservations: []
+          }
+        ]
+      ])
     })
   );
   const op = makeOp({
@@ -807,22 +860,28 @@ async function placeUngatedStaffing(alwaysOn: boolean) {
     laborUnit: "Total Hours",
     machineTime: 0,
     operationQuantity: 1,
-    quantityComplete: 0,
+    quantityComplete: 0
   });
   const selections = await selector.selectWorkCentersForOperations([op], {
-    jobDueDate: null,
+    jobDueDate: null
   });
   return selections.get("op-1");
 }
 
-Deno.test("requiresStaffing ON: an ungated op on an UNSTAFFED, non-lights-out station is unschedulable", async () => {
+it("requiresStaffing ON: an ungated op on an UNSTAFFED, non-lights-out station is unschedulable", async () => {
   const selection = await placeUngatedStaffing(false);
-  assert(selection?.conflict, "unstaffed non-alwaysOn station schedules nothing");
+  assert(
+    selection?.conflict,
+    "unstaffed non-alwaysOn station schedules nothing"
+  );
   assertEquals(selection?.placedStart, undefined);
 });
 
-Deno.test("requiresStaffing ON: a lights-out (alwaysOn) station still runs unattended", async () => {
+it("requiresStaffing ON: a lights-out (alwaysOn) station still runs unattended", async () => {
   const selection = await placeUngatedStaffing(true);
   assertEquals(selection?.conflict ?? null, null);
-  assert(selection?.placedStart, "lights-out machining is exempt and still schedules");
+  assert(
+    selection?.placedStart,
+    "lights-out machining is exempt and still schedules"
+  );
 });

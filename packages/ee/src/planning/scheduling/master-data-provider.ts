@@ -1,22 +1,25 @@
+import type { Database } from "@carbon/database";
+import type { DB } from "@carbon/database/client";
+import {
+  getJobMethodTree,
+  type JobMethodTreeItem
+} from "@carbon/database/methods";
+import { parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
-import type { DB } from "../postgres/index.ts";
-import { getJobMethodTree, type JobMethodTreeItem } from "../methods.ts";
-import type { Database } from "../types.ts";
-import { parseDate } from "@internationalized/date";
-import { businessDay, toIsoDate } from "./date-utils.ts";
 import { type CalendarWindow, subtractIntervals } from "./calendar-utils.ts";
+import { businessDay, toIsoDate } from "./date-utils.ts";
 import {
   type LadderShiftRow,
-  type WorkCenterAvailabilityInput,
   resolveLocationWindows,
   resolveWorkCenterWindows,
+  type WorkCenterAvailabilityInput
 } from "./machine-availability.ts";
 import {
-  capacityHoldingJobStatuses,
   type BaseOperation,
+  capacityHoldingJobStatuses,
   type Job,
-  type JobOperationDependency,
+  type JobOperationDependency
 } from "./types.ts";
 
 // peopleAssignment.date is a plant-calendar day — resolve the range instants to
@@ -167,9 +170,7 @@ export interface MasterDataProvider {
     processIds: string[]
   ): Promise<ProcessRequirementRow[]>;
   getQualifiedEmployees(abilityIds: string[]): Promise<QualifiedEmployeeRow[]>;
-  getEmployeeShiftWindows(
-    employeeIds: string[]
-  ): Promise<EmployeeShiftRow[]>;
+  getEmployeeShiftWindows(employeeIds: string[]): Promise<EmployeeShiftRow[]>;
   /**
    * Machine-availability ladder per work center: explicit workCenterShift rows
    * → the location's shifts → a stock Mon–Fri 08:00–16:00 week; or one open
@@ -263,7 +264,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
         "job.jobId as readableJobId",
         "job.assignee",
         "job.projectedCompletionAt",
-        "location.timezone",
+        "location.timezone"
       ])
       .where("job.id", "=", jobId)
       .where("job.companyId", "=", this.companyId)
@@ -279,7 +280,9 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       projectedCompletionAt:
         job.projectedCompletionAt == null
           ? null
-          : new Date(job.projectedCompletionAt as unknown as string).toISOString(),
+          : new Date(
+              job.projectedCompletionAt as unknown as string
+            ).toISOString()
     };
   }
 
@@ -309,7 +312,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
     return deps.map((d) => ({
       operationId: d.operationId,
       dependsOnId: d.dependsOnId,
-      jobId: d.jobId,
+      jobId: d.jobId
     }));
   }
 
@@ -328,7 +331,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       .where((eb) =>
         eb.or([
           eb("operationId", "in", reworkOpIds),
-          eb("dependsOnId", "in", reworkOpIds),
+          eb("dependsOnId", "in", reworkOpIds)
         ])
       )
       .execute();
@@ -336,7 +339,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
     return deps.map((d) => ({
       operationId: d.operationId,
       dependsOnId: d.dependsOnId,
-      jobId: d.jobId,
+      jobId: d.jobId
     }));
   }
 
@@ -408,9 +411,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       .execute();
   }
 
-  async getActiveWorkCenters(
-    locationId: string
-  ): Promise<ActiveWorkCenter[]> {
+  async getActiveWorkCenters(locationId: string): Promise<ActiveWorkCenter[]> {
     return this.cached(`activeWorkCenters:${locationId}`, () =>
       this.loadActiveWorkCenters(locationId)
     );
@@ -454,7 +455,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
         "jo.machineTime",
         "jo.machineUnit",
         "jo.operationQuantity",
-        "jo.operationLeadTime",
+        "jo.operationLeadTime"
       ])
       .where("jo.companyId", "=", this.companyId)
       .where("jo.workCenterId", "in", workCenterIds)
@@ -478,7 +479,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
         "cr.startAt",
         "cr.endAt",
         "cr.jobId",
-        "j.jobId as readableJobId",
+        "j.jobId as readableJobId"
       ])
       .where("cr.companyId", "=", this.companyId)
       .where("cr.scenarioId", "is", null)
@@ -505,13 +506,11 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       startAt: new Date(r.startAt as unknown as string),
       endAt: new Date(r.endAt as unknown as string),
       jobId: r.jobId,
-      readableJobId: r.readableJobId,
+      readableJobId: r.readableJobId
     }));
   }
 
-  async getOperationsWithEvents(
-    operationIds: string[]
-  ): Promise<Set<string>> {
+  async getOperationsWithEvents(operationIds: string[]): Promise<Set<string>> {
     const result = new Set<string>();
     if (operationIds.length === 0) {
       return result;
@@ -589,7 +588,11 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
           .on("a.companyId", "=", this.companyId)
           .on("a.active", "=", true)
       )
-      .select(["p.id as processId", "a.id as abilityId", "a.name as abilityName"])
+      .select([
+        "p.id as processId",
+        "a.id as abilityId",
+        "a.name as abilityName"
+      ])
       .where("p.id", "in", processIds)
       .where("p.companyId", "=", this.companyId)
       .where("p.requiresAbility", "=", true)
@@ -598,7 +601,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
     return rows.map((r) => ({
       processId: r.processId,
       abilityId: r.abilityId,
-      abilityName: r.abilityName,
+      abilityName: r.abilityName
     }));
   }
 
@@ -628,7 +631,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
     return rows.map((r) => ({
       abilityId: r.abilityId,
       employeeId: r.employeeId,
-      expiresAt: toIsoDate(r.expiresAt),
+      expiresAt: toIsoDate(r.expiresAt)
     }));
   }
 
@@ -663,7 +666,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
         "s.thursday",
         "s.friday",
         "s.saturday",
-        "l.timezone",
+        "l.timezone"
       ])
       .where("es.employeeId", "in", employeeIds)
       .where("es.companyId", "=", this.companyId)
@@ -679,7 +682,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
         r.wednesday,
         r.thursday,
         r.friday,
-        r.saturday,
+        r.saturday
       ];
       for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
         if (!days[dayOfWeek]) continue;
@@ -688,7 +691,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
           dayOfWeek,
           startTime: String(r.startTime),
           endTime: String(r.endTime),
-          timezone: r.timezone ?? "UTC",
+          timezone: r.timezone ?? "UTC"
         });
       }
     }
@@ -715,7 +718,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       row.wednesday,
       row.thursday,
       row.friday,
-      row.saturday,
+      row.saturday
     ];
     const out: LadderShiftRow[] = [];
     for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
@@ -724,7 +727,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
         dayOfWeek,
         startTime: String(row.startTime),
         endTime: String(row.endTime),
-        timezone: row.timezone ?? "UTC",
+        timezone: row.timezone ?? "UTC"
       });
     }
     return out;
@@ -761,7 +764,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       id: r.id,
       alwaysOn: !!r.alwaysOn,
       locationId: r.locationId ?? null,
-      timezone: r.timezone ?? "UTC",
+      timezone: r.timezone ?? "UTC"
     }));
 
     // b. explicit work-center shifts (rung 1)
@@ -780,14 +783,17 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
         "s.thursday",
         "s.friday",
         "s.saturday",
-        "l.timezone",
+        "l.timezone"
       ])
       .where("wcs.workCenterId", "in", workCenterIds)
       .where("wcs.companyId", "=", this.companyId)
       .where("s.active", "=", true)
       .execute();
     const workCenterShiftRows = wcShiftRaw.flatMap((r) =>
-      this.expandShiftDays(r).map((d) => ({ ...d, workCenterId: r.workCenterId }))
+      this.expandShiftDays(r).map((d) => ({
+        ...d,
+        workCenterId: r.workCenterId
+      }))
     );
 
     // c. the location's shifts (rung 2)
@@ -815,7 +821,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
               "s.thursday",
               "s.friday",
               "s.saturday",
-              "l.timezone",
+              "l.timezone"
             ])
             .where("s.locationId", "in", locationIds)
             .where("s.companyId", "=", this.companyId)
@@ -830,17 +836,14 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       workCenterShiftRows,
       locationShiftRows,
       rangeStart,
-      rangeEnd,
+      rangeEnd
     });
 
     // Machine downtime: subtract open maintenance dispatches flagged
     // takesWorkCenterOffline from the resolved windows (derived, not stored —
     // completing the dispatch restores the hours at the next regen). Even an
     // alwaysOn machine is subtracted: a broken lights-out machine is still down.
-    const outagesByWc = await this.loadDowntimeOutages(
-      workCenterIds,
-      rangeEnd
-    );
+    const outagesByWc = await this.loadDowntimeOutages(workCenterIds, rangeEnd);
     for (const [wcId, outages] of outagesByWc) {
       const windows = windowsMap.get(wcId);
       if (windows) {
@@ -875,7 +878,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
         "plannedEndTime",
         "actualStartTime",
         "actualEndTime",
-        "createdAt",
+        "createdAt"
       ])
       .where("companyId", "=", this.companyId)
       .where("takesWorkCenterOffline", "=", true)
@@ -956,7 +959,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
         "s.thursday",
         "s.friday",
         "s.saturday",
-        "l.timezone",
+        "l.timezone"
       ])
       .where("s.locationId", "=", locationId)
       .where("s.companyId", "=", this.companyId)
@@ -980,7 +983,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       timezone: timezone ?? "UTC",
       locationShiftRows,
       rangeStart,
-      rangeEnd,
+      rangeEnd
     });
   }
 
@@ -1008,7 +1011,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
         "ca.date",
         "ca.shiftId",
         "ca.overtimeHours",
-        "ca.hours",
+        "ca.hours"
       ])
       .where("ca.companyId", "=", this.companyId)
       .where("ca.date", ">=", peopleDateLowerBound(rangeStart, timeZone))
@@ -1022,15 +1025,15 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       const date = toIsoDate(r.date);
       return date
         ? [
-          {
-            workCenterId: r.workCenterId,
-            employeeId: r.employeeId,
-            date,
-            shiftId: r.shiftId,
-            overtimeHours: Number(r.overtimeHours ?? 0),
-            hours: r.hours == null ? null : Number(r.hours),
-          },
-        ]
+            {
+              workCenterId: r.workCenterId,
+              employeeId: r.employeeId,
+              date,
+              shiftId: r.shiftId,
+              overtimeHours: Number(r.overtimeHours ?? 0),
+              hours: r.hours == null ? null : Number(r.hours)
+            }
+          ]
         : [];
     });
   }
@@ -1063,12 +1066,12 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       const date = toIsoDate(r.date);
       return date
         ? [
-          {
-            employeeId: r.employeeId,
-            date,
-            shiftId: r.shiftId,
-          },
-        ]
+            {
+              employeeId: r.employeeId,
+              date,
+              shiftId: r.shiftId
+            }
+          ]
         : [];
     });
   }

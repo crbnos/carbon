@@ -1,8 +1,7 @@
-import { Kysely } from "kysely";
-
-import type { DB } from "../postgres/index.ts";
+import type { DB } from "@carbon/database/client";
+import type { Kysely } from "kysely";
 import type { MasterDataProvider } from "./master-data-provider.ts";
-import { BaseOperation } from "./types.ts";
+import type { BaseOperation } from "./types.ts";
 
 class MaterialManager {
   private db: Kysely<DB>;
@@ -28,7 +27,7 @@ class MaterialManager {
       if (material.id) {
         acc.push({
           id: material.id,
-          jobMakeMethodId: material.jobMakeMethodId,
+          jobMakeMethodId: material.jobMakeMethodId
         });
       }
       return acc;
@@ -53,7 +52,7 @@ class MaterialManager {
       if (firstOperation?.id) {
         updates.push({
           materialId: material.id,
-          operationId: firstOperation.id,
+          operationId: firstOperation.id
         });
       }
     }
@@ -63,7 +62,7 @@ class MaterialManager {
         await this.db
           .updateTable("jobMaterial")
           .set({
-            jobOperationId: update.operationId,
+            jobOperationId: update.operationId
           })
           .where("id", "=", update.materialId)
           .execute();

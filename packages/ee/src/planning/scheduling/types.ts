@@ -1,4 +1,4 @@
-import type { Database } from "../types.ts";
+import type { Database } from "@carbon/database";
 
 /**
  * Job statuses whose reservations hold finite capacity. Mirrors
@@ -12,7 +12,7 @@ import type { Database } from "../types.ts";
 export const capacityHoldingJobStatuses = [
   "Ready",
   "In Progress",
-  "Paused",
+  "Paused"
 ] as const satisfies readonly Database["public"]["Enums"]["jobStatus"][];
 
 export type DeadlineType = Database["public"]["Enums"]["deadlineType"];
@@ -105,7 +105,7 @@ export type Job = {
 export enum SchedulingStrategy {
   PriorityLeastTime,
   LeastTime,
-  Random,
+  Random
 }
 
 // ============================================================================

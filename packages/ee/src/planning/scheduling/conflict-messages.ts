@@ -72,21 +72,23 @@ export function classifyLatePlacement(args: {
   const { waitedMs, wait, dominantDep, staffed } = args;
   if (waitedMs > 0) {
     if (wait?.resource === "machine") {
-      if (wait.blockers) return { kind: "machine-queue", blockers: wait.blockers };
+      if (wait.blockers)
+        return { kind: "machine-queue", blockers: wait.blockers };
       if (wait.ownJobAhead) return { kind: "machine-own-job" };
       return { kind: "machine-wait" };
     }
     if (staffed) return { kind: "people-wait" };
     // Operator-bound wait — or a shift-gap snap (wait === null), which for a
     // gated op means nobody qualified was on shift in the gap
-    if (wait?.blockers) return { kind: "operator-queue", blockers: wait.blockers };
+    if (wait?.blockers)
+      return { kind: "operator-queue", blockers: wait.blockers };
     if (wait?.ownJobAhead) return { kind: "own-job-queue" };
     return { kind: "operator-wait" };
   }
   if (dominantDep) {
     return {
       kind: "inherited-delay",
-      predecessorDescription: dominantDep.description,
+      predecessorDescription: dominantDep.description
     };
   }
   return { kind: "no-runway" };

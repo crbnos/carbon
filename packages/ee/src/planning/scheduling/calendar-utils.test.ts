@@ -1,13 +1,11 @@
-import {
-  assert,
-  assertEquals,
-} from "https://deno.land/std@0.175.0/testing/asserts.ts";
+import { it } from "vitest";
 import {
   countOverlaps,
   expandCalendar,
   findSlot,
-  unionWindows,
+  unionWindows
 } from "./calendar-utils.ts";
+import { assert, assertEquals } from "./test-helpers.ts";
 
 const utc = (iso: string) => new Date(iso);
 
@@ -18,34 +16,34 @@ const RANGE_END = utc("2026-01-12T00:00:00Z");
 const weekdayShifts = [1, 2, 3, 4, 5].map((dayOfWeek) => ({
   dayOfWeek,
   startTime: "08:00",
-  endTime: "16:00",
+  endTime: "16:00"
 }));
 
-Deno.test("expandCalendar: weekly pattern produces one window per matching day", () => {
+it("expandCalendar: weekly pattern produces one window per matching day", () => {
   const windows = expandCalendar(weekdayShifts, RANGE_START, RANGE_END);
 
   assertEquals(windows.length, 5); // Mon-Fri, weekend excluded
-  assertEquals(windows[0].start.toISOString(), "2026-01-05T08:00:00.000Z");
-  assertEquals(windows[0].end.toISOString(), "2026-01-05T16:00:00.000Z");
-  assertEquals(windows[4].start.toISOString(), "2026-01-09T08:00:00.000Z");
+  assertEquals(windows[0]?.start.toISOString(), "2026-01-05T08:00:00.000Z");
+  assertEquals(windows[0]?.end.toISOString(), "2026-01-05T16:00:00.000Z");
+  assertEquals(windows[4]?.start.toISOString(), "2026-01-09T08:00:00.000Z");
 });
 
-Deno.test("expandCalendar: overlapping shift rows merge into one window", () => {
+it("expandCalendar: overlapping shift rows merge into one window", () => {
   const windows = expandCalendar(
     [
       { dayOfWeek: 1, startTime: "08:00", endTime: "12:00" },
-      { dayOfWeek: 1, startTime: "11:00", endTime: "16:00" },
+      { dayOfWeek: 1, startTime: "11:00", endTime: "16:00" }
     ],
     RANGE_START,
     RANGE_END
   );
 
   assertEquals(windows.length, 1);
-  assertEquals(windows[0].start.toISOString(), "2026-01-05T08:00:00.000Z");
-  assertEquals(windows[0].end.toISOString(), "2026-01-05T16:00:00.000Z");
+  assertEquals(windows[0]?.start.toISOString(), "2026-01-05T08:00:00.000Z");
+  assertEquals(windows[0]?.end.toISOString(), "2026-01-05T16:00:00.000Z");
 });
 
-Deno.test("expandCalendar: overnight shift rolls into the next day", () => {
+it("expandCalendar: overnight shift rolls into the next day", () => {
   const windows = expandCalendar(
     [{ dayOfWeek: 1, startTime: "22:00", endTime: "06:00" }],
     RANGE_START,
@@ -53,18 +51,18 @@ Deno.test("expandCalendar: overnight shift rolls into the next day", () => {
   );
 
   assertEquals(windows.length, 1);
-  assertEquals(windows[0].start.toISOString(), "2026-01-05T22:00:00.000Z");
-  assertEquals(windows[0].end.toISOString(), "2026-01-06T06:00:00.000Z");
+  assertEquals(windows[0]?.start.toISOString(), "2026-01-05T22:00:00.000Z");
+  assertEquals(windows[0]?.end.toISOString(), "2026-01-06T06:00:00.000Z");
 });
 
-Deno.test("expandCalendar: empty shifts => one 24x7 window (always available)", () => {
+it("expandCalendar: empty shifts => one 24x7 window (always available)", () => {
   const windows = expandCalendar([], RANGE_START, RANGE_END);
   assertEquals(windows.length, 1);
-  assertEquals(windows[0].start.toISOString(), RANGE_START.toISOString());
-  assertEquals(windows[0].end.toISOString(), RANGE_END.toISOString());
+  assertEquals(windows[0]?.start.toISOString(), RANGE_START.toISOString());
+  assertEquals(windows[0]?.end.toISOString(), RANGE_END.toISOString());
 });
 
-Deno.test("expandCalendar: timezone shifts resolve to correct UTC across DST", () => {
+it("expandCalendar: timezone shifts resolve to correct UTC across DST", () => {
   // US DST spring-forward 2026-03-08. New York is UTC-5 before, UTC-4 after.
   const windows = expandCalendar(
     weekdayShifts,
@@ -84,36 +82,36 @@ Deno.test("expandCalendar: timezone shifts resolve to correct UTC across DST", (
   assertEquals(tue.start.toISOString(), "2026-03-10T12:00:00.000Z"); // UTC-4
 });
 
-Deno.test("unionWindows: merges member availability into disjoint windows", () => {
+it("unionWindows: merges member availability into disjoint windows", () => {
   const a = [
-    { start: utc("2026-01-05T08:00:00Z"), end: utc("2026-01-05T12:00:00Z") },
+    { start: utc("2026-01-05T08:00:00Z"), end: utc("2026-01-05T12:00:00Z") }
   ];
   const b = [
     { start: utc("2026-01-05T10:00:00Z"), end: utc("2026-01-05T16:00:00Z") },
-    { start: utc("2026-01-06T08:00:00Z"), end: utc("2026-01-06T12:00:00Z") },
+    { start: utc("2026-01-06T08:00:00Z"), end: utc("2026-01-06T12:00:00Z") }
   ];
 
   const union = unionWindows([a, b]);
   assertEquals(union.length, 2);
-  assertEquals(union[0].start.toISOString(), "2026-01-05T08:00:00.000Z");
-  assertEquals(union[0].end.toISOString(), "2026-01-05T16:00:00.000Z");
-  assertEquals(union[1].start.toISOString(), "2026-01-06T08:00:00.000Z");
+  assertEquals(union[0]?.start.toISOString(), "2026-01-05T08:00:00.000Z");
+  assertEquals(union[0]?.end.toISOString(), "2026-01-05T16:00:00.000Z");
+  assertEquals(union[1]?.start.toISOString(), "2026-01-06T08:00:00.000Z");
 });
 
-Deno.test("countOverlaps: counts reservations overlapping the interval", () => {
+it("countOverlaps: counts reservations overlapping the interval", () => {
   const reservations = [
     {
       startAt: utc("2026-01-05T08:00:00Z"),
-      endAt: utc("2026-01-05T10:00:00Z"),
+      endAt: utc("2026-01-05T10:00:00Z")
     },
     {
       startAt: utc("2026-01-05T09:00:00Z"),
-      endAt: utc("2026-01-05T11:00:00Z"),
+      endAt: utc("2026-01-05T11:00:00Z")
     },
     {
       startAt: utc("2026-01-05T12:00:00Z"),
-      endAt: utc("2026-01-05T13:00:00Z"),
-    },
+      endAt: utc("2026-01-05T13:00:00Z")
+    }
   ];
 
   assertEquals(
@@ -141,12 +139,12 @@ const weekdayWindows = expandCalendar(
   utc("2026-01-19T00:00:00Z")
 );
 
-Deno.test("findSlot: places at earliestStart when free", () => {
+it("findSlot: places at earliestStart when free", () => {
   const slot = findSlot({
     windows: weekdayWindows,
     durationHours: 4,
     earliestStart: utc("2026-01-05T09:00:00Z"),
-    isFree: () => ({ free: true }),
+    isFree: () => ({ free: true })
   });
 
   assert(slot);
@@ -154,13 +152,13 @@ Deno.test("findSlot: places at earliestStart when free", () => {
   assertEquals(slot.end.toISOString(), "2026-01-05T13:00:00.000Z");
 });
 
-Deno.test("findSlot: accumulates working time across windows (gap does not count)", () => {
+it("findSlot: accumulates working time across windows (gap does not count)", () => {
   // 10h starting Fri 08:00: 8h Friday + 2h Monday (weekend is a gap)
   const slot = findSlot({
     windows: weekdayWindows,
     durationHours: 10,
     earliestStart: utc("2026-01-09T08:00:00Z"),
-    isFree: () => ({ free: true }),
+    isFree: () => ({ free: true })
   });
 
   assert(slot);
@@ -168,7 +166,7 @@ Deno.test("findSlot: accumulates working time across windows (gap does not count
   assertEquals(slot.end.toISOString(), "2026-01-12T10:00:00.000Z");
 });
 
-Deno.test("findSlot: honors nextTryAfter rejection hints", () => {
+it("findSlot: honors nextTryAfter rejection hints", () => {
   const busyUntil = utc("2026-01-05T12:00:00Z");
   const slot = findSlot({
     windows: weekdayWindows,
@@ -177,19 +175,19 @@ Deno.test("findSlot: honors nextTryAfter rejection hints", () => {
     isFree: (start) =>
       start.getTime() < busyUntil.getTime()
         ? { free: false, nextTryAfter: busyUntil }
-        : { free: true },
+        : { free: true }
   });
 
   assert(slot);
   assertEquals(slot.start.toISOString(), "2026-01-05T12:00:00.000Z");
 });
 
-Deno.test("findSlot: returns null when the horizon is exhausted", () => {
+it("findSlot: returns null when the horizon is exhausted", () => {
   const slot = findSlot({
     windows: weekdayWindows,
     durationHours: 500, // cannot fit in two weeks of 8h days
     earliestStart: utc("2026-01-05T08:00:00Z"),
-    isFree: () => ({ free: true }),
+    isFree: () => ({ free: true })
   });
 
   assertEquals(slot, null);

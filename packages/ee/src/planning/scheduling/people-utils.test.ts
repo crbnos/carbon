@@ -1,21 +1,19 @@
-import {
-  assertEquals,
-  assertStrictEquals,
-} from "https://deno.land/std@0.175.0/testing/asserts.ts";
+import { it } from "vitest";
 import type { CalendarWindow } from "./calendar-utils.ts";
 import {
   buildAbsencesByEmployee,
   buildAssignmentsByEmployee,
+  buildOvertimeByEmployee,
   buildPeopleBudgets,
   buildPeopleByWorkCenter,
-  buildOvertimeByEmployee,
   clipWindowsToDates,
   clipWindowsToStation,
   dateKeyInTimeZone,
   extendWindowsByOvertime,
   subtractAbsences,
-  subtractDates,
+  subtractDates
 } from "./people-utils.ts";
+import { assertEquals, assertStrictEquals } from "./test-helpers.ts";
 
 const TZ = "America/Chicago"; // UTC-6 (CST) / UTC-5 (CDT)
 
@@ -28,85 +26,118 @@ const win = (start: Date, end: Date): CalendarWindow => ({ start, end });
 const winTimes = (windows: CalendarWindow[]) =>
   windows.map((w) => [w.start.toISOString(), w.end.toISOString()]);
 
-Deno.test("dateKeyInTimeZone crosses midnight in the local zone, not UTC", () => {
+it("dateKeyInTimeZone crosses midnight in the local zone, not UTC", () => {
   // 2026-01-15T05:59Z is still Jan 14 in Chicago (23:59 CST)
   assertEquals(dateKeyInTimeZone(jan6amUTC(15, 5), TZ), "2026-01-14");
   // 2026-01-15T06:00Z is exactly local midnight Jan 15
   assertEquals(dateKeyInTimeZone(jan6amUTC(15, 6), TZ), "2026-01-15");
 });
 
-Deno.test("subtractAbsences with an empty set returns the input untouched", () => {
+it("subtractAbsences with an empty set returns the input untouched", () => {
   const windows = [win(jan6amUTC(15, 14), jan6amUTC(15, 22))];
   const result = subtractAbsences(windows, new Set(), TZ);
   assertStrictEquals(result, windows); // same reference — zero behavior change
 });
 
-Deno.test("subtractAbsences removes exactly the absent local day", () => {
+it("subtractAbsences removes exactly the absent local day", () => {
   // Two local 8h day-shifts (08:00-16:00 CST = 14:00-22:00Z), Jan 15 + Jan 16
   const windows = [
     win(jan6amUTC(15, 14), jan6amUTC(15, 22)),
-    win(jan6amUTC(16, 14), jan6amUTC(16, 22)),
+    win(jan6amUTC(16, 14), jan6amUTC(16, 22))
   ];
   const result = subtractAbsences(windows, new Set(["2026-01-15"]), TZ);
   assertEquals(winTimes(result), [
-    [jan6amUTC(16, 14).toISOString(), jan6amUTC(16, 22).toISOString()],
+    [jan6amUTC(16, 14).toISOString(), jan6amUTC(16, 22).toISOString()]
   ]);
 });
 
-Deno.test("subtractAbsences splits a multi-day window at local midnight", () => {
+it("subtractAbsences splits a multi-day window at local midnight", () => {
   // A window spanning Jan 15 12:00Z .. Jan 17 12:00Z; Jan 16 absent (local)
   const windows = [win(jan6amUTC(15, 12), jan6amUTC(17, 12))];
   const result = subtractAbsences(windows, new Set(["2026-01-16"]), TZ);
   // Local midnights are at 06:00Z: keep [15@12Z, 16@06Z) and [17@06Z, 17@12Z)
   assertEquals(winTimes(result), [
     [jan6amUTC(15, 12).toISOString(), jan6amUTC(16, 6).toISOString()],
-    [jan6amUTC(17, 6).toISOString(), jan6amUTC(17, 12).toISOString()],
+    [jan6amUTC(17, 6).toISOString(), jan6amUTC(17, 12).toISOString()]
   ]);
 });
 
-Deno.test("clipWindowsToDates keeps only the assigned dates", () => {
+it("clipWindowsToDates keeps only the assigned dates", () => {
   const windows = [
     win(jan6amUTC(15, 14), jan6amUTC(15, 22)),
-    win(jan6amUTC(16, 14), jan6amUTC(16, 22)),
+    win(jan6amUTC(16, 14), jan6amUTC(16, 22))
   ];
   const result = clipWindowsToDates(windows, new Set(["2026-01-16"]), TZ);
   assertEquals(winTimes(result), [
-    [jan6amUTC(16, 14).toISOString(), jan6amUTC(16, 22).toISOString()],
+    [jan6amUTC(16, 14).toISOString(), jan6amUTC(16, 22).toISOString()]
   ]);
   assertEquals(clipWindowsToDates(windows, new Set(), TZ), []);
 });
 
-Deno.test("buildPeopleByWorkCenter groups by work center and date, deduped", () => {
+it("buildPeopleByWorkCenter groups by work center and date, deduped", () => {
   const map = buildPeopleByWorkCenter([
-    { workCenterId: "wc1", employeeId: "e1", date: "2026-01-15", shiftId: null },
-    { workCenterId: "wc1", employeeId: "e2", date: "2026-01-15", shiftId: null },
-    { workCenterId: "wc1", employeeId: "e1", date: "2026-01-15", shiftId: "s1" },
-    { workCenterId: "wc2", employeeId: "e1", date: "2026-01-16", shiftId: null },
+    {
+      workCenterId: "wc1",
+      employeeId: "e1",
+      date: "2026-01-15",
+      shiftId: null
+    },
+    {
+      workCenterId: "wc1",
+      employeeId: "e2",
+      date: "2026-01-15",
+      shiftId: null
+    },
+    {
+      workCenterId: "wc1",
+      employeeId: "e1",
+      date: "2026-01-15",
+      shiftId: "s1"
+    },
+    { workCenterId: "wc2", employeeId: "e1", date: "2026-01-16", shiftId: null }
   ]);
   assertEquals(map.get("wc1")?.get("2026-01-15"), ["e1", "e2"]);
   assertEquals(map.get("wc2")?.get("2026-01-16"), ["e1"]);
   assertEquals(map.get("wc2")?.get("2026-01-15"), undefined);
 });
 
-Deno.test("buildAbsencesByEmployee collects dates per person", () => {
+it("buildAbsencesByEmployee collects dates per person", () => {
   const map = buildAbsencesByEmployee([
     { employeeId: "e1", date: "2026-01-15", shiftId: null },
     { employeeId: "e1", date: "2026-01-16", shiftId: "s1" },
-    { employeeId: "e2", date: "2026-01-15", shiftId: null },
+    { employeeId: "e2", date: "2026-01-15", shiftId: null }
   ]);
   assertEquals(map.get("e1"), new Set(["2026-01-15", "2026-01-16"]));
   assertEquals(map.get("e2"), new Set(["2026-01-15"]));
 });
 
-Deno.test("buildOvertimeByEmployee takes the day's max, never summing stations", () => {
+it("buildOvertimeByEmployee takes the day's max, never summing stations", () => {
   const map = buildOvertimeByEmployee([
     // prettier-ignore
-    { workCenterId: "wc1", employeeId: "e1", date: "2026-01-15", shiftId: null, overtimeHours: 2 },
+    {
+      workCenterId: "wc1",
+      employeeId: "e1",
+      date: "2026-01-15",
+      shiftId: null,
+      overtimeHours: 2
+    },
     // prettier-ignore
-    { workCenterId: "wc2", employeeId: "e1", date: "2026-01-15", shiftId: null, overtimeHours: 1 },
+    {
+      workCenterId: "wc2",
+      employeeId: "e1",
+      date: "2026-01-15",
+      shiftId: null,
+      overtimeHours: 1
+    },
     // prettier-ignore
-    { workCenterId: "wc1", employeeId: "e1", date: "2026-01-16", shiftId: null, overtimeHours: 0 },
-    { workCenterId: "wc1", employeeId: "e2", date: "2026-01-15", shiftId: null },
+    {
+      workCenterId: "wc1",
+      employeeId: "e1",
+      date: "2026-01-16",
+      shiftId: null,
+      overtimeHours: 0
+    },
+    { workCenterId: "wc1", employeeId: "e2", date: "2026-01-15", shiftId: null }
   ]);
   // overtime lengthens the DAY — splitting across stations must not multiply it
   assertEquals(map.get("e1")?.get("2026-01-15"), 2);
@@ -114,29 +145,47 @@ Deno.test("buildOvertimeByEmployee takes the day's max, never summing stations",
   assertEquals(map.get("e2"), undefined);
 });
 
-Deno.test("buildOvertimeByEmployee counts a day value stamped on every row once", () => {
+it("buildOvertimeByEmployee counts a day value stamped on every row once", () => {
   // exactly what setPeopleDay / setPeopleOvertimeBulk write: the same day value
   // on each of the day's station rows
   const map = buildOvertimeByEmployee([
     // prettier-ignore
-    { workCenterId: "wc1", employeeId: "e1", date: "2026-01-15", shiftId: null, overtimeHours: 2 },
+    {
+      workCenterId: "wc1",
+      employeeId: "e1",
+      date: "2026-01-15",
+      shiftId: null,
+      overtimeHours: 2
+    },
     // prettier-ignore
-    { workCenterId: "wc2", employeeId: "e1", date: "2026-01-15", shiftId: null, overtimeHours: 2 },
+    {
+      workCenterId: "wc2",
+      employeeId: "e1",
+      date: "2026-01-15",
+      shiftId: null,
+      overtimeHours: 2
+    },
     // prettier-ignore
-    { workCenterId: "wc3", employeeId: "e1", date: "2026-01-15", shiftId: null, overtimeHours: 2 },
+    {
+      workCenterId: "wc3",
+      employeeId: "e1",
+      date: "2026-01-15",
+      shiftId: null,
+      overtimeHours: 2
+    }
   ]);
   assertEquals(map.get("e1")?.get("2026-01-15"), 2);
 });
 
-Deno.test("extendWindowsByOvertime with no overtime returns the input untouched", () => {
+it("extendWindowsByOvertime with no overtime returns the input untouched", () => {
   const windows = [win(jan6amUTC(15, 14), jan6amUTC(15, 22))];
   assertStrictEquals(extendWindowsByOvertime(windows, new Map(), TZ), windows);
 });
 
-Deno.test("extendWindowsByOvertime lengthens the right day's last window", () => {
+it("extendWindowsByOvertime lengthens the right day's last window", () => {
   const windows = [
     win(jan6amUTC(15, 14), jan6amUTC(15, 22)), // Jan 15: 8am-4pm local
-    win(jan6amUTC(16, 14), jan6amUTC(16, 22)), // Jan 16
+    win(jan6amUTC(16, 14), jan6amUTC(16, 22)) // Jan 16
   ];
   const result = extendWindowsByOvertime(
     windows,
@@ -145,16 +194,16 @@ Deno.test("extendWindowsByOvertime lengthens the right day's last window", () =>
   );
   assertEquals(winTimes(result), [
     [jan6amUTC(15, 14).toISOString(), jan6amUTC(16, 0).toISOString()],
-    [jan6amUTC(16, 14).toISOString(), jan6amUTC(16, 22).toISOString()],
+    [jan6amUTC(16, 14).toISOString(), jan6amUTC(16, 22).toISOString()]
   ]);
   // input untouched
-  assertEquals(windows[0].end.toISOString(), jan6amUTC(15, 22).toISOString());
+  assertEquals(windows[0]?.end.toISOString(), jan6amUTC(15, 22).toISOString());
 });
 
-Deno.test("extendWindowsByOvertime merges when the extension reaches the next window", () => {
+it("extendWindowsByOvertime merges when the extension reaches the next window", () => {
   const windows = [
     win(jan6amUTC(15, 14), jan6amUTC(15, 22)),
-    win(jan6amUTC(15, 23), jan6amUTC(16, 2)), // evening stint same local day
+    win(jan6amUTC(15, 23), jan6amUTC(16, 2)) // evening stint same local day
   ];
   // +4h on the LAST Jan-15 window (ends 20:00 local) reaches past midnight
   const result = extendWindowsByOvertime(
@@ -164,11 +213,11 @@ Deno.test("extendWindowsByOvertime merges when the extension reaches the next wi
   );
   assertEquals(winTimes(result), [
     [jan6amUTC(15, 14).toISOString(), jan6amUTC(15, 22).toISOString()],
-    [jan6amUTC(15, 23).toISOString(), jan6amUTC(16, 6).toISOString()],
+    [jan6amUTC(15, 23).toISOString(), jan6amUTC(16, 6).toISOString()]
   ]);
 });
 
-Deno.test("extendWindowsByOvertime skips dates with no window", () => {
+it("extendWindowsByOvertime skips dates with no window", () => {
   const windows = [win(jan6amUTC(15, 14), jan6amUTC(15, 22))];
   const result = extendWindowsByOvertime(
     windows,
@@ -178,30 +227,42 @@ Deno.test("extendWindowsByOvertime skips dates with no window", () => {
   assertEquals(winTimes(result), winTimes(windows));
 });
 
-Deno.test("buildPeopleBudgets keeps day rows in input order", () => {
+it("buildPeopleBudgets keeps day rows in input order", () => {
   const map = buildPeopleBudgets([
     // prettier-ignore
-    { workCenterId: "wc1", employeeId: "e1", date: "2026-01-15", shiftId: null, hours: 3 },
+    {
+      workCenterId: "wc1",
+      employeeId: "e1",
+      date: "2026-01-15",
+      shiftId: null,
+      hours: 3
+    },
     // prettier-ignore
-    { workCenterId: "wc2", employeeId: "e1", date: "2026-01-15", shiftId: null, hours: 5 },
-    { workCenterId: "wc1", employeeId: "e1", date: "2026-01-16", shiftId: null },
+    {
+      workCenterId: "wc2",
+      employeeId: "e1",
+      date: "2026-01-15",
+      shiftId: null,
+      hours: 5
+    },
+    { workCenterId: "wc1", employeeId: "e1", date: "2026-01-16", shiftId: null }
   ]);
   assertEquals(map.get("e1")?.get("2026-01-15"), [
     { workCenterId: "wc1", hours: 3 },
-    { workCenterId: "wc2", hours: 5 },
+    { workCenterId: "wc2", hours: 5 }
   ]);
   assertEquals(map.get("e1")?.get("2026-01-16"), [
-    { workCenterId: "wc1", hours: null },
+    { workCenterId: "wc1", hours: null }
   ]);
 });
 
-Deno.test("clipWindowsToStation with a sole whole-shift row keeps the full day", () => {
+it("clipWindowsToStation with a sole whole-shift row keeps the full day", () => {
   const windows = [
     win(jan6amUTC(15, 14), jan6amUTC(15, 22)),
-    win(jan6amUTC(16, 14), jan6amUTC(16, 22)),
+    win(jan6amUTC(16, 14), jan6amUTC(16, 22))
   ];
   const budgets = new Map([
-    ["2026-01-15", [{ workCenterId: "wc1", hours: null }]],
+    ["2026-01-15", [{ workCenterId: "wc1", hours: null }]]
   ]);
   const result = clipWindowsToStation(
     windows,
@@ -211,11 +272,11 @@ Deno.test("clipWindowsToStation with a sole whole-shift row keeps the full day",
     TZ
   );
   assertEquals(winTimes(result), [
-    [jan6amUTC(15, 14).toISOString(), jan6amUTC(15, 22).toISOString()],
+    [jan6amUTC(15, 14).toISOString(), jan6amUTC(15, 22).toISOString()]
   ]);
 });
 
-Deno.test("clipWindowsToStation deals a split day out sequentially", () => {
+it("clipWindowsToStation deals a split day out sequentially", () => {
   // 8h day: 8am-4pm local (14:00Z-22:00Z)
   const windows = [win(jan6amUTC(15, 14), jan6amUTC(15, 22))];
   const budgets = new Map([
@@ -223,9 +284,9 @@ Deno.test("clipWindowsToStation deals a split day out sequentially", () => {
       "2026-01-15",
       [
         { workCenterId: "wc1", hours: 3 },
-        { workCenterId: "wc2", hours: 5 },
-      ],
-    ],
+        { workCenterId: "wc2", hours: 5 }
+      ]
+    ]
   ]);
   const dates = new Set(["2026-01-15"]);
   // first row: the first 3 attended hours
@@ -240,20 +301,20 @@ Deno.test("clipWindowsToStation deals a split day out sequentially", () => {
   );
 });
 
-Deno.test("clipWindowsToStation walks attended time across gaps (split shift)", () => {
+it("clipWindowsToStation walks attended time across gaps (split shift)", () => {
   // 8-12 and 13-17 local => 14:00Z-18:00Z and 19:00Z-23:00Z
   const windows = [
     win(jan6amUTC(15, 14), jan6amUTC(15, 18)),
-    win(jan6amUTC(15, 19), jan6amUTC(15, 23)),
+    win(jan6amUTC(15, 19), jan6amUTC(15, 23))
   ];
   const budgets = new Map([
     [
       "2026-01-15",
       [
         { workCenterId: "wc1", hours: 4 },
-        { workCenterId: "wc2", hours: 4 },
-      ],
-    ],
+        { workCenterId: "wc2", hours: 4 }
+      ]
+    ]
   ]);
   const dates = new Set(["2026-01-15"]);
   assertEquals(
@@ -266,16 +327,16 @@ Deno.test("clipWindowsToStation walks attended time across gaps (split shift)", 
   );
 });
 
-Deno.test("clipWindowsToStation gives nothing after an earlier whole-shift row", () => {
+it("clipWindowsToStation gives nothing after an earlier whole-shift row", () => {
   const windows = [win(jan6amUTC(15, 14), jan6amUTC(15, 22))];
   const budgets = new Map([
     [
       "2026-01-15",
       [
         { workCenterId: "wc1", hours: null },
-        { workCenterId: "wc2", hours: 4 },
-      ],
-    ],
+        { workCenterId: "wc2", hours: 4 }
+      ]
+    ]
   ]);
   assertEquals(
     clipWindowsToStation(windows, "wc2", new Set(["2026-01-15"]), budgets, TZ),
@@ -283,10 +344,10 @@ Deno.test("clipWindowsToStation gives nothing after an earlier whole-shift row",
   );
 });
 
-Deno.test("clipWindowsToStation without budget rows behaves like clipWindowsToDates", () => {
+it("clipWindowsToStation without budget rows behaves like clipWindowsToDates", () => {
   const windows = [
     win(jan6amUTC(15, 14), jan6amUTC(15, 22)),
-    win(jan6amUTC(16, 14), jan6amUTC(16, 22)),
+    win(jan6amUTC(16, 14), jan6amUTC(16, 22))
   ];
   const result = clipWindowsToStation(
     windows,
@@ -301,38 +362,38 @@ Deno.test("clipWindowsToStation without budget rows behaves like clipWindowsToDa
   );
 });
 
-Deno.test("subtractDates with an empty set returns the input untouched", () => {
+it("subtractDates with an empty set returns the input untouched", () => {
   const windows = [win(jan6amUTC(15, 14), jan6amUTC(15, 22))];
   const result = subtractDates(windows, new Set(), TZ);
   assertStrictEquals(result, windows); // same reference — byte-identical guarantee
 });
 
-Deno.test("buildAssignmentsByEmployee inverts the board to employee -> date -> stations", () => {
+it("buildAssignmentsByEmployee inverts the board to employee -> date -> stations", () => {
   // wc1 has A+B on the 15th; wc2 has A on the 15th and 16th
   const peopleByWorkCenter = buildPeopleByWorkCenter([
     { workCenterId: "wc1", employeeId: "A", date: "2026-01-15", shiftId: null },
     { workCenterId: "wc1", employeeId: "B", date: "2026-01-15", shiftId: null },
     { workCenterId: "wc2", employeeId: "A", date: "2026-01-15", shiftId: null },
-    { workCenterId: "wc2", employeeId: "A", date: "2026-01-16", shiftId: null },
+    { workCenterId: "wc2", employeeId: "A", date: "2026-01-16", shiftId: null }
   ]);
   const assignments = buildAssignmentsByEmployee(peopleByWorkCenter);
-  assertEquals(
-    [...(assignments.get("A")?.get("2026-01-15") ?? [])].sort(),
-    ["wc1", "wc2"]
-  );
+  assertEquals([...(assignments.get("A")?.get("2026-01-15") ?? [])].sort(), [
+    "wc1",
+    "wc2"
+  ]);
   assertEquals([...(assignments.get("A")?.get("2026-01-16") ?? [])], ["wc2"]);
   assertEquals([...(assignments.get("B")?.get("2026-01-15") ?? [])], ["wc1"]);
 });
 
-Deno.test("buildAssignmentsByEmployee marks who is on the board (spoken for)", () => {
+it("buildAssignmentsByEmployee marks who is on the board (spoken for)", () => {
   // A person on the board at all is "managed"; one who isn't stays a floater.
   const peopleByWorkCenter = buildPeopleByWorkCenter([
     {
       workCenterId: "wc-dmu",
       employeeId: "brad",
       date: "2026-01-15",
-      shiftId: null,
-    },
+      shiftId: null
+    }
   ]);
   const assignments = buildAssignmentsByEmployee(peopleByWorkCenter);
   assertEquals(assignments.has("brad"), true); // manned somewhere => not a floater

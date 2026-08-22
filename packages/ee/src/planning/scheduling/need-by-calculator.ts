@@ -187,7 +187,7 @@ export function computeNeedByDates(args: {
           dueDate,
           durationDaysFor(op),
           isWorkingDayFor(op.workCenterId)
-        ),
+        )
       };
     }
 
@@ -258,7 +258,7 @@ export function computeNeedByDates(args: {
         dueDate,
         durationDaysFor(op),
         isWorkingDayFor(op.workCenterId)
-      ),
+      )
     };
   };
 
@@ -393,7 +393,7 @@ export function calendarAdapters(
       const windows =
         workCenterId === null
           ? locationWindows
-          : windowsByWorkCenter.get(workCenterId) ?? locationWindows;
+          : (windowsByWorkCenter.get(workCenterId) ?? locationWindows);
       profile = buildProfile(windows);
       profiles.set(key, profile);
     }
@@ -406,6 +406,6 @@ export function calendarAdapters(
     workingDayTest: (workCenterId, isoDate) =>
       profileFor(workCenterId).openWeekdays[
         utcWeekday(isoDate.slice(0, 10))
-      ] === true,
+      ] === true
   };
 }

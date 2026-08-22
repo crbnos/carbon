@@ -1,56 +1,56 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { sql, type Kysely } from "kysely";
+import type { Database } from "@carbon/database";
 // DB comes from postgres/index.ts (a type-only alias), NOT ../database.ts —
 // database.ts pulls in the Deno-only postgres driver, which fails the Node
 // typecheck reached via src/scheduling.ts re-exporting this engine in-process.
-import type { DB } from "../postgres/index.ts";
-import { getFunctionLogger } from "../logging.ts";
-import type { Database } from "../types.ts";
+import type { DB } from "@carbon/database/client";
+import {
+  getCompanyTimeZone,
+  getLocationTimeZone
+} from "@carbon/database/datetime";
+import { getFunctionLogger } from "@carbon/database/logging";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { type Kysely, sql } from "kysely";
 import {
   AssemblyHandler,
-  buildMakeMethodDependencies,
+  buildMakeMethodDependencies
 } from "./assembly-handler.ts";
-import { getCompanyTimeZone, getLocationTimeZone } from "../datetime.ts";
-import { businessDay, toIsoDate } from "./date-utils.ts";
 import {
   type CalendarShiftRow,
   type CalendarWindow,
   expandCalendar,
-  unionWindows,
+  unionWindows
 } from "./calendar-utils.ts";
+import {
+  type BehindTargetOperation,
+  composeBehindTarget
+} from "./conflict-messages.ts";
+import { buildScheduledOperations } from "./date-calculator.ts";
+import { businessDay, toIsoDate } from "./date-utils.ts";
+import {
+  buildOperationDependencies,
+  DependencyGraphImpl,
+  dependenciesToRecords
+} from "./dependency-manager.ts";
+import { calculateDurationHours } from "./duration-calculator.ts";
+import {
+  KyselyMasterDataProvider,
+  type MasterDataProvider
+} from "./master-data-provider.ts";
+import { MaterialManager } from "./material-manager.ts";
+import { calendarAdapters, computeNeedByDates } from "./need-by-calculator.ts";
 import {
   buildAbsencesByEmployee,
   buildAssignmentsByEmployee,
+  buildOvertimeByEmployee,
   buildPeopleBudgets,
   buildPeopleByWorkCenter,
-  buildOvertimeByEmployee,
   extendWindowsByOvertime,
-  subtractAbsences,
+  subtractAbsences
 } from "./people-utils.ts";
-import {
-  type BehindTargetOperation,
-  composeBehindTarget,
-} from "./conflict-messages.ts";
-import { buildScheduledOperations } from "./date-calculator.ts";
-import { calculateDurationHours } from "./duration-calculator.ts";
-import {
-  buildOperationDependencies,
-  dependenciesToRecords,
-  DependencyGraphImpl,
-} from "./dependency-manager.ts";
-import {
-  calendarAdapters,
-  computeNeedByDates,
-} from "./need-by-calculator.ts";
-import {
-  KyselyMasterDataProvider,
-  type MasterDataProvider,
-} from "./master-data-provider.ts";
-import { MaterialManager } from "./material-manager.ts";
 import {
   applyPriorities,
   calculatePrioritiesByWorkCenter,
-  toOperationWithJobInfo,
+  toOperationWithJobInfo
 } from "./priority-calculator.ts";
 import type { ResourceCapacityData } from "./slot-allocator.ts";
 import type {
@@ -60,13 +60,13 @@ import type {
   OperationWithJobInfo,
   ScheduledOperation,
   SchedulingOptions,
-  SchedulingResult,
+  SchedulingResult
 } from "./types.ts";
 import {
   applyWorkCenterSelections,
   type FiniteSchedulingContext,
   type PoolEmployee,
-  WorkCenterSelector,
+  WorkCenterSelector
 } from "./work-center-selector.ts";
 
 const SCHEDULING_HORIZON_DAYS = 365;
@@ -263,7 +263,7 @@ export class SchedulingEngine {
         this.operations
           .map((op) => op.jobMakeMethodId)
           .filter((id): id is string => Boolean(id))
-      ),
+      )
     ];
     if (makeMethodIds.length === 0) return;
 
@@ -278,7 +278,7 @@ export class SchedulingEngine {
         makeMethods
           .map((m) => m.itemId)
           .filter((id): id is string => Boolean(id))
-      ),
+      )
     ];
     if (itemIds.length === 0) return;
 
@@ -315,7 +315,7 @@ export class SchedulingEngine {
   async createDependencies(): Promise<void> {
     // Load all operations for dependency building (not just active ones)
     const allOperations = await this.provider.getOperations(this.jobId, {
-      includeDone: true,
+      includeDone: true
     });
 
     // Build assembly tree
@@ -332,9 +332,8 @@ export class SchedulingEngine {
       this.assemblyHandler.getAllJobMakeMethodIds(assemblyTree);
 
     // Get job materials for linking
-    const jobMaterials = await this.provider.getMaterialsWithMakeMethod(
-      makeMethodIds
-    );
+    const jobMaterials =
+      await this.provider.getMaterialsWithMakeMethod(makeMethodIds);
 
     // Build map from make method to operation
     const jobMakeMethodToOperationId: Record<string, string | null> = {};
@@ -479,7 +478,7 @@ export class SchedulingEngine {
     this.dependencies = records.map((r) => ({
       operationId: r.operationId,
       dependsOnId: r.dependsOnId,
-      jobId: r.jobId,
+      jobId: r.jobId
     }));
 
     // Append rework dependency edges so rework ops are correctly scheduled
@@ -561,8 +560,8 @@ export class SchedulingEngine {
             rangeEnd
           )
         : Promise.resolve<CalendarWindow[]>([
-            { start: rangeStart, end: rangeEnd },
-          ]),
+            { start: rangeStart, end: rangeEnd }
+          ])
     ]);
 
     this.availabilityWindows = {
@@ -570,7 +569,7 @@ export class SchedulingEngine {
       workCenterAvailability,
       locationDefaultWindows,
       rangeStart,
-      rangeEnd,
+      rangeEnd
     };
     return this.availabilityWindows;
   }
@@ -604,7 +603,7 @@ export class SchedulingEngine {
       operations.map((op) => ({
         id: op.id,
         jobId: op.jobId,
-        processId: op.processId,
+        processId: op.processId
       })),
       this.dependencies
     );
@@ -618,7 +617,7 @@ export class SchedulingEngine {
       graph,
       jobDueDate: this.job?.dueDate ?? null,
       calendarHoursPerDay,
-      workingDayTest,
+      workingDayTest
     });
   }
 
@@ -648,7 +647,7 @@ export class SchedulingEngine {
       workCenterAvailability,
       locationDefaultWindows,
       rangeStart,
-      rangeEnd,
+      rangeEnd
     } = await this.loadAvailabilityWindows();
 
     const operationIds = operations
@@ -660,13 +659,13 @@ export class SchedulingEngine {
       processRequirements,
       peopleRows,
       absenceRows,
-      operationsWithEvents,
+      operationsWithEvents
     ] = await Promise.all([
       this.provider.getLiveReservations(now, this.excludeJobIds),
       this.provider.getProcessRequirements(processIds),
       this.provider.getPeopleAssignments(rangeStart, rangeEnd, this.timezone),
       this.provider.getPeopleAbsences(rangeStart, rangeEnd, this.timezone),
-      this.provider.getOperationsWithEvents(operationIds),
+      this.provider.getOperationsWithEvents(operationIds)
     ]);
 
     const abilityIds = Array.from(
@@ -678,7 +677,7 @@ export class SchedulingEngine {
     const employeeIds = Array.from(
       new Set([
         ...employees.map((e) => e.employeeId),
-        ...peopleRows.map((r) => r.employeeId),
+        ...peopleRows.map((r) => r.employeeId)
       ])
     );
     const shiftRows = await this.provider.getEmployeeShiftWindows(employeeIds);
@@ -694,7 +693,7 @@ export class SchedulingEngine {
       this.job?.locationId
         ? this.provider.getLocationRequiresStaffing(this.job.locationId)
         : Promise.resolve(false),
-      this.provider.getAlwaysOnWorkCenterIds(Array.from(workCenterIds)),
+      this.provider.getAlwaysOnWorkCenterIds(Array.from(workCenterIds))
     ]);
 
     const capacityByWorkCenter = new Map<string, ResourceCapacityData>();
@@ -709,15 +708,15 @@ export class SchedulingEngine {
           .map((r) => ({
             startAt: r.startAt,
             endAt: r.endAt,
-            readableJobId: r.readableJobId,
-          })),
+            readableJobId: r.readableJobId
+          }))
       });
     }
 
     const requirementByProcess = new Map(
       processRequirements.map((r) => [
         r.processId,
-        { abilityId: r.abilityId, abilityName: r.abilityName },
+        { abilityId: r.abilityId, abilityName: r.abilityName }
       ])
     );
 
@@ -738,7 +737,7 @@ export class SchedulingEngine {
       list.push({
         dayOfWeek: row.dayOfWeek,
         startTime: row.startTime,
-        endTime: row.endTime,
+        endTime: row.endTime
       });
       byTz.set(row.timezone, list);
     }
@@ -782,7 +781,8 @@ export class SchedulingEngine {
     const peopleByWorkCenter = buildPeopleByWorkCenter(presentPeopleRows);
     // Inverted board (employee -> date -> stations) so the any-qualified
     // fallback can tell a manned person is committed elsewhere that day.
-    const assignmentsByEmployee = buildAssignmentsByEmployee(peopleByWorkCenter);
+    const assignmentsByEmployee =
+      buildAssignmentsByEmployee(peopleByWorkCenter);
 
     // Authorized overtime = a longer day: extend the person's last window on
     // each overtime date so the allocator can pack work into the extra hours
@@ -806,7 +806,7 @@ export class SchedulingEngine {
       list.push({
         employeeId: e.employeeId,
         expiresAt: e.expiresAt,
-        windows: windowsByEmployee.get(e.employeeId) ?? locationDefaultWindows,
+        windows: windowsByEmployee.get(e.employeeId) ?? locationDefaultWindows
       });
       employeesByAbility.set(e.abilityId, list);
     }
@@ -825,7 +825,7 @@ export class SchedulingEngine {
       list.push({
         startAt: r.startAt,
         endAt: r.endAt,
-        readableJobId: r.readableJobId,
+        readableJobId: r.readableJobId
       });
       reservationsByEmployee.set(r.resourceId, list);
     }
@@ -845,7 +845,7 @@ export class SchedulingEngine {
       horizonDays: SCHEDULING_HORIZON_DAYS,
       windowsEnd: rangeEnd,
       timeZone,
-      operationsWithEvents,
+      operationsWithEvents
     };
   }
 
@@ -868,7 +868,7 @@ export class SchedulingEngine {
     const operations = Array.from(this.scheduledOperations.values());
     const selections =
       await this.workCenterSelector.selectWorkCentersForOperations(operations, {
-        jobDueDate: this.job?.dueDate ?? null,
+        jobDueDate: this.job?.dueDate ?? null
       });
 
     // Apply selections (placed timestamps → factory-day date columns)
@@ -945,9 +945,8 @@ export class SchedulingEngine {
 
     // Get all active operations at affected work centers from OTHER jobs
     // (current job's operations aren't in DB yet with their new work centers)
-    const allWcOps = await this.provider.getCrossJobOperationsAtWorkCenters(
-      workCenterIds
-    );
+    const allWcOps =
+      await this.provider.getCrossJobOperationsAtWorkCenters(workCenterIds);
 
     // Build a set of operation IDs from the database query
     const dbOpIds = new Set(allWcOps.map((op) => op.id).filter(Boolean));
@@ -975,7 +974,7 @@ export class SchedulingEngine {
             jobPriority: wcOp.jobPriority ?? 99,
             workCenterId: scheduled.workCenterId ?? null,
             durationHours: scheduled.durationHours ?? null,
-            createdAt: toIsoOrNull(wcOp.createdAt),
+            createdAt: toIsoOrNull(wcOp.createdAt)
           };
         }
         // Operation from another job - use DB data
@@ -996,9 +995,9 @@ export class SchedulingEngine {
             laborUnit: wcOp.laborUnit ?? undefined,
             machineTime: wcOp.machineTime ?? undefined,
             machineUnit: wcOp.machineUnit ?? undefined,
-            operationQuantity: wcOp.operationQuantity,
+            operationQuantity: wcOp.operationQuantity
           }),
-          createdAt: toIsoOrNull(wcOp.createdAt),
+          createdAt: toIsoOrNull(wcOp.createdAt)
         };
       });
 
@@ -1011,11 +1010,12 @@ export class SchedulingEngine {
           dueDate: op.dueDate ?? null,
           startDate: op.startDate ?? null,
           priority: op.priority,
-          deadlineType: op.deadlineType ?? this.job?.deadlineType ?? "No Deadline",
+          deadlineType:
+            op.deadlineType ?? this.job?.deadlineType ?? "No Deadline",
           jobPriority: this.job?.priority ?? 99,
           workCenterId: op.workCenterId,
           durationHours: op.durationHours ?? null,
-          createdAt: toIsoOrNull(op.createdAt),
+          createdAt: toIsoOrNull(op.createdAt)
         });
       }
     }
@@ -1036,7 +1036,7 @@ export class SchedulingEngine {
   async assignMaterials(): Promise<void> {
     // Load all operations (including Done) to find first ops correctly
     const allOperations = await this.provider.getOperations(this.jobId, {
-      includeDone: true,
+      includeDone: true
     });
 
     // Build assembly tree
@@ -1114,7 +1114,8 @@ export class SchedulingEngine {
       const priorBusinessDay = priorProjected
         ? businessDay(priorProjected, tz)
         : null;
-      const wasOnTime = priorBusinessDay === null || priorBusinessDay <= dueDate;
+      const wasOnTime =
+        priorBusinessDay === null || priorBusinessDay <= dueDate;
       this.newlyLate = wasOnTime && newBusinessDay > dueDate;
     } else {
       this.newlyLate = false;
@@ -1156,7 +1157,7 @@ export class SchedulingEngine {
             hasConflict: op.hasConflict,
             conflictReason: op.conflictReason,
             updatedAt: new Date().toISOString(),
-            updatedBy: this.userId,
+            updatedBy: this.userId
           })
           .where("id", "=", op.id)
           .execute();
@@ -1187,7 +1188,7 @@ export class SchedulingEngine {
               scheduleNote: p.scheduleNote ?? null,
               workHours: p.workHours ?? null,
               isPlaceholder: p.isPlaceholder ?? false,
-              createdBy: this.userId,
+              createdBy: this.userId
             }))
           )
           .execute();
@@ -1205,7 +1206,7 @@ export class SchedulingEngine {
           scheduleOutdatedReason: null,
           scheduleOutdatedAt: null,
           updatedAt: new Date().toISOString(),
-          updatedBy: this.userId,
+          updatedBy: this.userId
         })
         .where("id", "=", this.jobId)
         .where("companyId", "=", this.companyId)
@@ -1225,7 +1226,7 @@ export class SchedulingEngine {
       conflictsDetected: this.conflictsDetected,
       workCentersAffected: Array.from(this.affectedWorkCenters),
       assemblyDepth: this.assemblyDepth,
-      reservationsWritten: this.reservationsWritten,
+      reservationsWritten: this.reservationsWritten
     };
   }
 
@@ -1269,7 +1270,7 @@ export class SchedulingEngine {
       operations.push({
         description: op.description ?? null,
         needBy: this.needByByOperation.get(opId) ?? null,
-        projectedCompletionAt: op.projectedCompletionAt ?? null,
+        projectedCompletionAt: op.projectedCompletionAt ?? null
       });
     }
     return composeBehindTarget(operations, tz);

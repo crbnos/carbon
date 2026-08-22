@@ -18,11 +18,10 @@ import {
   addWorkingTime,
   type CalendarWindow,
   coversInstant,
-  findSlot,
+  findSlot
 } from "./calendar-utils.ts";
 import type { WaitAttribution } from "./conflict-messages.ts";
-import { HOUR_MS, businessDay } from "./date-utils.ts";
-
+import { businessDay, HOUR_MS } from "./date-utils.ts";
 
 export type ReservationInterval = {
   startAt: Date;
@@ -120,7 +119,9 @@ export function formatBlockingJobs(
   const MAX_JOBS = 3;
   const parts = ranked
     .slice(0, MAX_JOBS)
-    .map(([jobId, count]) => `${jobId} (${count} ${count === 1 ? "op" : "ops"})`);
+    .map(
+      ([jobId, count]) => `${jobId} (${count} ${count === 1 ? "op" : "ops"})`
+    );
   const overflow = ranked.length - MAX_JOBS;
   if (overflow > 0) {
     parts.push(`+${overflow} more`);
@@ -162,9 +163,7 @@ function memberAvailableAt(
   t: number
 ): boolean {
   if (!coversInstant(member.windows, t)) return false;
-  return !busy.some(
-    (r) => r.startAt.getTime() <= t && r.endAt.getTime() > t
-  );
+  return !busy.some((r) => r.startAt.getTime() <= t && r.endAt.getTime() > t);
 }
 
 /**
@@ -248,7 +247,10 @@ function simulateAttended(args: {
         return best;
       });
 
-    const takeMs = Math.min(stretchEnd - stretchStart, attendedMs - accumulatedMs);
+    const takeMs = Math.min(
+      stretchEnd - stretchStart,
+      attendedMs - accumulatedMs
+    );
     const segEnd = stretchStart + takeMs;
     const last = segments[segments.length - 1];
     if (
@@ -261,7 +263,7 @@ function simulateAttended(args: {
       segments.push({
         employeeId: person.employeeId,
         startAt: new Date(stretchStart),
-        endAt: new Date(segEnd),
+        endAt: new Date(segEnd)
       });
     }
     accumulatedMs += takeMs;
@@ -271,7 +273,7 @@ function simulateAttended(args: {
       return {
         segments,
         start: segments[0]!.startAt,
-        attendedEnd: new Date(segEnd),
+        attendedEnd: new Date(segEnd)
       };
     }
   }
@@ -307,7 +309,12 @@ function simulateAttendedTeam(args: {
   const setupMs = Math.round(setupHours * HOUR_MS);
   const laborMs = Math.round(laborHours * HOUR_MS);
   if (setupMs + laborMs <= 0) {
-    return { segments: [], start: from, attendedEnd: from, laborActiveWallMs: 0 };
+    return {
+      segments: [],
+      start: from,
+      attendedEnd: from,
+      laborActiveWallMs: 0
+    };
   }
 
   const fromMs = from.getTime();
@@ -351,7 +358,7 @@ function simulateAttendedTeam(args: {
         const segment: AttendedSegment = {
           employeeId: m.employeeId,
           startAt: new Date(startMs),
-          endAt: new Date(endMs),
+          endAt: new Date(endMs)
         };
         segments.push(segment);
         lastSegmentByEmployee.set(m.employeeId, segment);
@@ -393,7 +400,7 @@ function simulateAttendedTeam(args: {
           segments,
           start: segments[0]!.startAt,
           attendedEnd: new Date(cursor),
-          laborActiveWallMs,
+          laborActiveWallMs
         };
       }
     }
@@ -436,13 +443,11 @@ export function allocateAttendedOperation(args: {
     capacity,
     members,
     busyByEmployee,
-    team,
+    team
   } = args;
   const timeZone = args.timeZone ?? "UTC";
 
-  const handsOnHours = team
-    ? team.setupHours + team.laborHours
-    : attendedHours;
+  const handsOnHours = team ? team.setupHours + team.laborHours : attendedHours;
 
   // No eligible people can never free up — immediate skill conflict (the
   // selector normally pre-empts this with a message naming the ability)
@@ -450,16 +455,20 @@ export function allocateAttendedOperation(args: {
     return { conflict: "No qualified operator available" };
   }
 
-  const remainderMs = Math.round(Math.max(0, totalHours - attendedHours) * HOUR_MS);
+  const remainderMs = Math.round(
+    Math.max(0, totalHours - attendedHours) * HOUR_MS
+  );
   const exhausted = {
     conflict:
       handsOnHours > 0
-        ? `No slot with both an open work center and a qualified operator available before ${
-            businessDay(horizonEnd.toISOString(), timeZone)
-          }`
-        : `No work center capacity available before ${
-            businessDay(horizonEnd.toISOString(), timeZone)
-          }`,
+        ? `No slot with both an open work center and a qualified operator available before ${businessDay(
+            horizonEnd.toISOString(),
+            timeZone
+          )}`
+        : `No work center capacity available before ${businessDay(
+            horizonEnd.toISOString(),
+            timeZone
+          )}`
   };
 
   let cursor = earliestStart;
@@ -482,7 +491,7 @@ export function allocateAttendedOperation(args: {
         laborHours: team.laborHours,
         members,
         busyByEmployee,
-        horizonEnd,
+        horizonEnd
       });
       sim = teamSim;
       laborActiveWallMs = teamSim?.laborActiveWallMs ?? 0;
@@ -492,14 +501,15 @@ export function allocateAttendedOperation(args: {
         attendedHours,
         members,
         busyByEmployee,
-        horizonEnd,
+        horizonEnd
       });
     }
     if (!sim) {
       return {
-        conflict: `No qualified operator availability before ${
-          businessDay(horizonEnd.toISOString(), timeZone)
-        }`,
+        conflict: `No qualified operator availability before ${businessDay(
+          horizonEnd.toISOString(),
+          timeZone
+        )}`
       };
     }
 
@@ -550,7 +560,7 @@ export function allocateAttendedOperation(args: {
             !r.readableJobId &&
             r.startAt.getTime() < sim.start.getTime() &&
             r.endAt.getTime() > earliestStart.getTime()
-        ),
+        )
       };
     }
 
@@ -559,7 +569,7 @@ export function allocateAttendedOperation(args: {
       attendedEnd: sim.attendedEnd,
       end,
       segments: sim.segments,
-      wait,
+      wait
     };
   }
   return exhausted;
@@ -586,9 +596,10 @@ export function allocateOperation(args: {
   );
   if (windows.length === 0) {
     return {
-      conflict: `No working time available at work center before ${
-        businessDay(horizonEnd.toISOString(), timeZone)
-      }`,
+      conflict: `No working time available at work center before ${businessDay(
+        horizonEnd.toISOString(),
+        timeZone
+      )}`
     };
   }
 
@@ -601,14 +612,15 @@ export function allocateOperation(args: {
         return { free: false }; // past the horizon; findSlot will exhaust
       }
       return machineIsFree(capacity, start, end);
-    },
+    }
   });
 
   if (!slot) {
     return {
-      conflict: `No work center capacity available before ${
-        businessDay(horizonEnd.toISOString(), timeZone)
-      }`,
+      conflict: `No work center capacity available before ${businessDay(
+        horizonEnd.toISOString(),
+        timeZone
+      )}`
     };
   }
 
@@ -627,7 +639,7 @@ export function allocateOperation(args: {
           !r.readableJobId &&
           r.startAt.getTime() < slot.start.getTime() &&
           r.endAt.getTime() > earliestStart.getTime()
-      ),
+      )
     };
   }
 

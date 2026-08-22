@@ -1,27 +1,28 @@
-import { assertEquals } from "https://deno.land/std@0.175.0/testing/asserts.ts";
+import { it } from "vitest";
 import {
   classifyLatePlacement,
   composeBehindTarget,
   composeLateConflict,
   composePlacementNote,
-  formatWaitDuration,
+  formatWaitDuration
 } from "./conflict-messages.ts";
+import { assertEquals } from "./test-helpers.ts";
 
 const HOUR = 3_600_000;
 
-Deno.test("waited behind other jobs' operators → operator-queue naming the blockers", () => {
+it("waited behind other jobs' operators → operator-queue naming the blockers", () => {
   const cause = classifyLatePlacement({
     waitedMs: 30 * HOUR,
     wait: {
       resource: "operator",
       blockers: "queued behind J000009 (3 ops), J000010 (1 op)",
-      ownJobAhead: false,
+      ownJobAhead: false
     },
-    dominantDep: null,
+    dominantDep: null
   });
   assertEquals(cause, {
     kind: "operator-queue",
-    blockers: "queued behind J000009 (3 ops), J000010 (1 op)",
+    blockers: "queued behind J000009 (3 ops), J000010 (1 op)"
   });
   assertEquals(
     composeLateConflict("2026-07-20", "2026-07-17", cause),
@@ -29,19 +30,19 @@ Deno.test("waited behind other jobs' operators → operator-queue naming the blo
   );
 });
 
-Deno.test("waited behind other jobs on the machine → machine-queue naming the blockers", () => {
+it("waited behind other jobs on the machine → machine-queue naming the blockers", () => {
   const cause = classifyLatePlacement({
     waitedMs: 30 * HOUR,
     wait: {
       resource: "machine",
       blockers: "queued behind J000009 (1 op)",
-      ownJobAhead: false,
+      ownJobAhead: false
     },
-    dominantDep: null,
+    dominantDep: null
   });
   assertEquals(cause, {
     kind: "machine-queue",
-    blockers: "queued behind J000009 (1 op)",
+    blockers: "queued behind J000009 (1 op)"
   });
   assertEquals(
     composeLateConflict("2026-07-20", "2026-07-17", cause),
@@ -49,11 +50,11 @@ Deno.test("waited behind other jobs on the machine → machine-queue naming the 
   );
 });
 
-Deno.test("machine busy with this job's own operations → machine-own-job", () => {
+it("machine busy with this job's own operations → machine-own-job", () => {
   const cause = classifyLatePlacement({
     waitedMs: 8 * HOUR,
     wait: { resource: "machine", blockers: null, ownJobAhead: true },
-    dominantDep: null,
+    dominantDep: null
   });
   assertEquals(cause, { kind: "machine-own-job" });
   assertEquals(
@@ -62,11 +63,11 @@ Deno.test("machine busy with this job's own operations → machine-own-job", () 
   );
 });
 
-Deno.test("machine-bound wait with no attributable reservations → machine-wait", () => {
+it("machine-bound wait with no attributable reservations → machine-wait", () => {
   const cause = classifyLatePlacement({
     waitedMs: 2 * HOUR,
     wait: { resource: "machine", blockers: null, ownJobAhead: false },
-    dominantDep: null,
+    dominantDep: null
   });
   assertEquals(cause, { kind: "machine-wait" });
   assertEquals(
@@ -75,24 +76,24 @@ Deno.test("machine-bound wait with no attributable reservations → machine-wait
   );
 });
 
-Deno.test("blockers win over own-job queueing and a dominant dep", () => {
+it("blockers win over own-job queueing and a dominant dep", () => {
   const cause = classifyLatePlacement({
     waitedMs: HOUR,
     wait: {
       resource: "operator",
       blockers: "queued behind J000009 (1 op)",
-      ownJobAhead: true,
+      ownJobAhead: true
     },
-    dominantDep: { description: "Assembly" },
+    dominantDep: { description: "Assembly" }
   });
   assertEquals(cause.kind, "operator-queue");
 });
 
-Deno.test("waited behind this job's own operations → own-job-queue", () => {
+it("waited behind this job's own operations → own-job-queue", () => {
   const cause = classifyLatePlacement({
     waitedMs: 8 * HOUR,
     wait: { resource: "operator", blockers: null, ownJobAhead: true },
-    dominantDep: null,
+    dominantDep: null
   });
   assertEquals(cause, { kind: "own-job-queue" });
   assertEquals(
@@ -101,11 +102,11 @@ Deno.test("waited behind this job's own operations → own-job-queue", () => {
   );
 });
 
-Deno.test("waited with no blockers and no own ops → operator-wait", () => {
+it("waited with no blockers and no own ops → operator-wait", () => {
   const cause = classifyLatePlacement({
     waitedMs: 8 * HOUR,
     wait: { resource: "operator", blockers: null, ownJobAhead: false },
-    dominantDep: null,
+    dominantDep: null
   });
   assertEquals(cause, { kind: "operator-wait" });
   assertEquals(
@@ -114,24 +115,24 @@ Deno.test("waited with no blockers and no own ops → operator-wait", () => {
   );
 });
 
-Deno.test("shift-gap wait (null attribution) still classifies as operator-wait", () => {
+it("shift-gap wait (null attribution) still classifies as operator-wait", () => {
   const cause = classifyLatePlacement({
     waitedMs: 12 * HOUR,
     wait: null,
-    dominantDep: null,
+    dominantDep: null
   });
   assertEquals(cause, { kind: "operator-wait" });
 });
 
-Deno.test("no wait, dep-dominated → inherited delay naming the predecessor", () => {
+it("no wait, dep-dominated → inherited delay naming the predecessor", () => {
   const cause = classifyLatePlacement({
     waitedMs: 0,
     wait: null,
-    dominantDep: { description: "Battery Test" },
+    dominantDep: { description: "Battery Test" }
   });
   assertEquals(cause, {
     kind: "inherited-delay",
-    predecessorDescription: "Battery Test",
+    predecessorDescription: "Battery Test"
   });
   assertEquals(
     composeLateConflict("2026-07-20", "2026-07-17", cause),
@@ -139,21 +140,21 @@ Deno.test("no wait, dep-dominated → inherited delay naming the predecessor", (
   );
 });
 
-Deno.test("inherited delay without a predecessor description stays readable", () => {
+it("inherited delay without a predecessor description stays readable", () => {
   assertEquals(
     composeLateConflict("2026-07-20", "2026-07-17", {
       kind: "inherited-delay",
-      predecessorDescription: null,
+      predecessorDescription: null
     }),
     "Finishes 2026-07-20 but the job is due 2026-07-17 — starts late because it waits for an earlier operation earlier in this job; its own work center was free"
   );
 });
 
-Deno.test("no wait, no dominant dep → no runway before the due date", () => {
+it("no wait, no dominant dep → no runway before the due date", () => {
   const cause = classifyLatePlacement({
     waitedMs: 0,
     wait: null,
-    dominantDep: null,
+    dominantDep: null
   });
   assertEquals(cause, { kind: "no-runway" });
   assertEquals(
@@ -162,7 +163,7 @@ Deno.test("no wait, no dominant dep → no runway before the due date", () => {
   );
 });
 
-Deno.test("formatWaitDuration is coarse and human", () => {
+it("formatWaitDuration is coarse and human", () => {
   assertEquals(formatWaitDuration(45 * 60_000), "45m");
   assertEquals(formatWaitDuration(14 * HOUR), "14h");
   assertEquals(formatWaitDuration(14 * HOUR + 30 * 60_000), "14h 30m");
@@ -170,7 +171,7 @@ Deno.test("formatWaitDuration is coarse and human", () => {
   assertEquals(formatWaitDuration(48 * HOUR), "2d");
 });
 
-Deno.test("placement note: queued behind other jobs", () => {
+it("placement note: queued behind other jobs", () => {
   assertEquals(
     composePlacementNote(
       { kind: "operator-queue", blockers: "queued behind J000010 (2 ops)" },
@@ -180,7 +181,7 @@ Deno.test("placement note: queued behind other jobs", () => {
   );
 });
 
-Deno.test("placement note: queued at the work center", () => {
+it("placement note: queued at the work center", () => {
   assertEquals(
     composePlacementNote(
       { kind: "machine-queue", blockers: "queued behind J000009 (1 op)" },
@@ -198,7 +199,7 @@ Deno.test("placement note: queued at the work center", () => {
   );
 });
 
-Deno.test("placement note: own job ahead / operator wait", () => {
+it("placement note: own job ahead / operator wait", () => {
   assertEquals(
     composePlacementNote({ kind: "own-job-queue" }, 8 * HOUR),
     "Waited 8h for a qualified operator — busy with earlier operations in this job"
@@ -209,7 +210,7 @@ Deno.test("placement note: own job ahead / operator wait", () => {
   );
 });
 
-Deno.test("placement note: chained after a predecessor", () => {
+it("placement note: chained after a predecessor", () => {
   assertEquals(
     composePlacementNote(
       { kind: "inherited-delay", predecessorDescription: "Flash Firmware" },
@@ -226,26 +227,26 @@ Deno.test("placement note: chained after a predecessor", () => {
   );
 });
 
-Deno.test("placement note: null when the op started as early as it could", () => {
+it("placement note: null when the op started as early as it could", () => {
   assertEquals(composePlacementNote({ kind: "no-runway" }, 0), null);
   assertEquals(composePlacementNote({ kind: "outside-processing" }, 0), null);
 });
 
-Deno.test("outside processing message", () => {
+it("outside processing message", () => {
   assertEquals(
     composeLateConflict("2026-07-20", "2026-07-17", {
-      kind: "outside-processing",
+      kind: "outside-processing"
     }),
     "Finishes 2026-07-20 but the job is due 2026-07-17 — outside processing pushes it past the due date"
   );
 });
 
-Deno.test("people-manned wait classifies and words as the assigned people", () => {
+it("people-manned wait classifies and words as the assigned people", () => {
   const cause = classifyLatePlacement({
     waitedMs: 2 * HOUR,
     wait: { resource: "operator", blockers: null, ownJobAhead: false },
     dominantDep: null,
-    staffed: true,
+    staffed: true
   });
   assertEquals(cause, { kind: "people-wait" });
   assertEquals(
@@ -258,7 +259,7 @@ Deno.test("people-manned wait classifies and words as the assigned people", () =
   );
 });
 
-Deno.test("behind target: names the FIRST op past its need-by in the given order", () => {
+it("behind target: names the FIRST op past its need-by in the given order", () => {
   assertEquals(
     composeBehindTarget(
       [
@@ -266,20 +267,20 @@ Deno.test("behind target: names the FIRST op past its need-by in the given order
           // On target — projected day equals its need-by.
           description: "Cut Stock",
           needBy: "2026-07-15",
-          projectedCompletionAt: "2026-07-15T20:00:00.000Z",
+          projectedCompletionAt: "2026-07-15T20:00:00.000Z"
         },
         {
           // First behind target — this one is named.
           description: "Machining",
           needBy: "2026-07-16",
-          projectedCompletionAt: "2026-07-18T14:00:00.000Z",
+          projectedCompletionAt: "2026-07-18T14:00:00.000Z"
         },
         {
           // Also behind, but later in topological order — never reached.
           description: "Assembly",
           needBy: "2026-07-17",
-          projectedCompletionAt: "2026-07-20T14:00:00.000Z",
-        },
+          projectedCompletionAt: "2026-07-20T14:00:00.000Z"
+        }
       ],
       "UTC"
     ),
@@ -287,7 +288,7 @@ Deno.test("behind target: names the FIRST op past its need-by in the given order
   );
 });
 
-Deno.test("behind target: projected day is the FACTORY day, not UTC's", () => {
+it("behind target: projected day is the FACTORY day, not UTC's", () => {
   // 03:30 IST on the 17th is 22:00 UTC on the 16th — on target in UTC,
   // behind target on the factory calendar.
   assertEquals(
@@ -296,8 +297,8 @@ Deno.test("behind target: projected day is the FACTORY day, not UTC's", () => {
         {
           description: "Machining",
           needBy: "2026-07-16",
-          projectedCompletionAt: "2026-07-16T22:00:00.000Z",
-        },
+          projectedCompletionAt: "2026-07-16T22:00:00.000Z"
+        }
       ],
       "Asia/Kolkata"
     ),
@@ -305,20 +306,20 @@ Deno.test("behind target: projected day is the FACTORY day, not UTC's", () => {
   );
 });
 
-Deno.test("behind target: null when every op meets its target", () => {
+it("behind target: null when every op meets its target", () => {
   assertEquals(
     composeBehindTarget(
       [
         {
           description: "Cut Stock",
           needBy: "2026-07-15",
-          projectedCompletionAt: "2026-07-14T20:00:00.000Z",
+          projectedCompletionAt: "2026-07-14T20:00:00.000Z"
         },
         {
           description: "Assembly",
           needBy: "2026-07-17",
-          projectedCompletionAt: "2026-07-17T14:00:00.000Z",
-        },
+          projectedCompletionAt: "2026-07-17T14:00:00.000Z"
+        }
       ],
       "UTC"
     ),
@@ -326,7 +327,7 @@ Deno.test("behind target: null when every op meets its target", () => {
   );
 });
 
-Deno.test("behind target: ops with no need-by (or no placement) are skipped", () => {
+it("behind target: ops with no need-by (or no placement) are skipped", () => {
   // No due date on the job → every need-by is null → nothing to attribute.
   assertEquals(
     composeBehindTarget(
@@ -334,8 +335,8 @@ Deno.test("behind target: ops with no need-by (or no placement) are skipped", ()
         {
           description: "Cut Stock",
           needBy: null,
-          projectedCompletionAt: "2026-07-18T14:00:00.000Z",
-        },
+          projectedCompletionAt: "2026-07-18T14:00:00.000Z"
+        }
       ],
       "UTC"
     ),
@@ -349,18 +350,18 @@ Deno.test("behind target: ops with no need-by (or no placement) are skipped", ()
         {
           description: "Cut Stock",
           needBy: null,
-          projectedCompletionAt: "2026-07-18T14:00:00.000Z",
+          projectedCompletionAt: "2026-07-18T14:00:00.000Z"
         },
         {
           description: "Deburr",
           needBy: "2026-07-16",
-          projectedCompletionAt: null,
+          projectedCompletionAt: null
         },
         {
           description: "Machining",
           needBy: "2026-07-16",
-          projectedCompletionAt: "2026-07-18T14:00:00.000Z",
-        },
+          projectedCompletionAt: "2026-07-18T14:00:00.000Z"
+        }
       ],
       "UTC"
     ),
@@ -369,15 +370,15 @@ Deno.test("behind target: ops with no need-by (or no placement) are skipped", ()
   assertEquals(composeBehindTarget([], "UTC"), null);
 });
 
-Deno.test("behind target: a blank description stays readable", () => {
+it("behind target: a blank description stays readable", () => {
   assertEquals(
     composeBehindTarget(
       [
         {
           description: null,
           needBy: "2026-07-16",
-          projectedCompletionAt: "2026-07-18T14:00:00.000Z",
-        },
+          projectedCompletionAt: "2026-07-18T14:00:00.000Z"
+        }
       ],
       "UTC"
     ),
@@ -385,12 +386,12 @@ Deno.test("behind target: a blank description stays readable", () => {
   );
 });
 
-Deno.test("staffed never reclassifies a machine-bound wait", () => {
+it("staffed never reclassifies a machine-bound wait", () => {
   const cause = classifyLatePlacement({
     waitedMs: 2 * HOUR,
     wait: { resource: "machine", blockers: null, ownJobAhead: false },
     dominantDep: null,
-    staffed: true,
+    staffed: true
   });
   assertEquals(cause, { kind: "machine-wait" });
 });

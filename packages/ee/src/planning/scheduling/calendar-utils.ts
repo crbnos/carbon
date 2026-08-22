@@ -40,7 +40,6 @@ export const STOCK_WEEK_SHIFTS: CalendarShiftRow[] = [1, 2, 3, 4, 5].map(
   (dayOfWeek) => ({ dayOfWeek, startTime: "08:00", endTime: "16:00" })
 );
 
-
 /** Local calendar date (y/m/d) of a UTC instant in a timezone. */
 function localDateParts(
   date: Date,
@@ -177,7 +176,9 @@ export function expandCalendar(
  * Union several window lists (e.g. each pool member's availability) into one
  * disjoint sorted list: time where AT LEAST ONE member is available.
  */
-export function unionWindows(windowLists: CalendarWindow[][]): CalendarWindow[] {
+export function unionWindows(
+  windowLists: CalendarWindow[][]
+): CalendarWindow[] {
   const intervals: { start: number; end: number }[] = [];
   for (const list of windowLists) {
     for (const w of list) {
@@ -261,7 +262,10 @@ export function subtractIntervals(
   outages: CalendarWindow[]
 ): CalendarWindow[] {
   if (outages.length === 0) {
-    return windows.map((w) => ({ start: new Date(w.start.getTime()), end: new Date(w.end.getTime()) }));
+    return windows.map((w) => ({
+      start: new Date(w.start.getTime()),
+      end: new Date(w.end.getTime())
+    }));
   }
   const result: CalendarWindow[] = [];
   for (const w of windows) {

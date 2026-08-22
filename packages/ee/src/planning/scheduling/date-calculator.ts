@@ -1,7 +1,7 @@
 import { toIsoDate } from "./date-utils.ts";
 import {
   calculateDurationDays,
-  calculateDurationHours,
+  calculateDurationHours
 } from "./duration-calculator.ts";
 import type { BaseOperation, ScheduledOperation } from "./types.ts";
 
@@ -32,8 +32,7 @@ export function buildScheduledOperations(
     const durationDays = calculateDurationDays(op);
     const durationHours = calculateDurationHours(op);
     const pinned = !!op.manuallyScheduled;
-    const pinnedOutside =
-      pinned && op.operationType === "Outside Processing";
+    const pinnedOutside = pinned && op.operationType === "Outside Processing";
 
     scheduled.set(op.id, {
       ...op,
@@ -47,7 +46,7 @@ export function buildScheduledOperations(
       durationHours,
       durationDays,
       hasConflict: false,
-      conflictReason: null,
+      conflictReason: null
     });
   }
 

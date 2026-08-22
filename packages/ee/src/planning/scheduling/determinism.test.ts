@@ -1,3 +1,5 @@
+import { it } from "vitest";
+
 /**
  * Determinism proof for the finite placement engine.
  *
@@ -21,35 +23,32 @@
  */
 
 import {
-  assert,
-  assertEquals,
-} from "https://deno.land/std@0.175.0/testing/asserts.ts";
-import {
   type CalendarShiftRow,
   type CalendarWindow,
   expandCalendar,
-  STOCK_WEEK_SHIFTS,
+  STOCK_WEEK_SHIFTS
 } from "./calendar-utils.ts";
 import { DependencyGraphImpl } from "./dependency-manager.ts";
 import type {
   ActiveWorkCenter,
   MasterDataProvider,
-  ProcessWorkCenters,
+  ProcessWorkCenters
 } from "./master-data-provider.ts";
 import { calendarAdapters, computeNeedByDates } from "./need-by-calculator.ts";
 import type { PeopleDayRow } from "./people-utils.ts";
 import { buildAssignmentsByEmployee } from "./people-utils.ts";
 import type { ResourceCapacityData } from "./slot-allocator.ts";
+import { assert, assertEquals } from "./test-helpers.ts";
 import type {
   JobOperationDependency,
   PlannedReservation,
-  ScheduledOperation,
+  ScheduledOperation
 } from "./types.ts";
 import {
   type FiniteSchedulingContext,
   type PoolEmployee,
   type ProcessRequirement,
-  WorkCenterSelector,
+  WorkCenterSelector
 } from "./work-center-selector.ts";
 
 // A fixed clock on a Monday so weekday windows line up predictably.
@@ -62,17 +61,19 @@ const WORK_CENTERS = [
   "wc-rung3-a", // rung 3: stock Mon-Fri 08:00-16:00
   "wc-rung3-b", // rung 3
   "wc-rung2-a", // rung 2: location shifts 06:00-14:00 + 14:00-22:00 weekdays
-  "wc-rung2-b", // rung 2
+  "wc-rung2-b" // rung 2
 ] as const;
 
 // The rung-3 work center used by the weekend assertion.
 const RUNG3_WORK_CENTER = "wc-rung3-a";
 
 // Two weekday location shifts (availability-ladder rung 2).
-const RUNG2_SHIFTS: CalendarShiftRow[] = [1, 2, 3, 4, 5].flatMap((dayOfWeek) => [
-  { dayOfWeek, startTime: "06:00", endTime: "14:00" },
-  { dayOfWeek, startTime: "14:00", endTime: "22:00" },
-]);
+const RUNG2_SHIFTS: CalendarShiftRow[] = [1, 2, 3, 4, 5].flatMap(
+  (dayOfWeek) => [
+    { dayOfWeek, startTime: "06:00", endTime: "14:00" },
+    { dayOfWeek, startTime: "14:00", endTime: "22:00" }
+  ]
+);
 
 // op index within a job -> process. pA/pB are ability-gated; pC/pD/pE ungated.
 const PROCESS_BY_OP_INDEX = ["pA", "pB", "pC", "pD", "pE", "pC"] as const;
@@ -121,10 +122,10 @@ function makeProvider(): MasterDataProvider {
         { id: "pB", workCenters: ["wc-rung2-a", "wc-rung2-b"] },
         { id: "pC", workCenters: ["wc-always-1", "wc-always-2"] },
         { id: "pD", workCenters: ["wc-rung3-a", "wc-always-1"] },
-        { id: "pE", workCenters: ["wc-rung2-a", "wc-always-2"] },
+        { id: "pE", workCenters: ["wc-rung2-a", "wc-always-2"] }
       ]),
     getActiveWorkCenters: (locationId: string): Promise<ActiveWorkCenter[]> =>
-      Promise.resolve(WORK_CENTERS.map((id) => ({ id, locationId }))),
+      Promise.resolve(WORK_CENTERS.map((id) => ({ id, locationId })))
   } as unknown as MasterDataProvider;
 }
 
@@ -135,7 +136,7 @@ function makeDependencies(): JobOperationDependency[] {
       deps.push({
         operationId: `op-${j}-${k}`,
         dependsOnId: `op-${j}-${k - 1}`,
-        jobId: `job-${j}`,
+        jobId: `job-${j}`
       });
     }
   }
@@ -177,7 +178,7 @@ function makeOperations(): ScheduledOperation[] {
         durationDays: 1,
         hasConflict: false,
         conflictReason: null,
-        status: "Ready",
+        status: "Ready"
       });
     }
   }
@@ -199,7 +200,7 @@ function makeWorkCenterWindows(): Map<string, CalendarWindow[]> {
     ["wc-rung3-a", expandCalendar(STOCK_WEEK_SHIFTS, now, windowsEnd, "UTC")],
     ["wc-rung3-b", expandCalendar(STOCK_WEEK_SHIFTS, now, windowsEnd, "UTC")],
     ["wc-rung2-a", expandCalendar(RUNG2_SHIFTS, now, windowsEnd, "UTC")],
-    ["wc-rung2-b", expandCalendar(RUNG2_SHIFTS, now, windowsEnd, "UTC")],
+    ["wc-rung2-b", expandCalendar(RUNG2_SHIFTS, now, windowsEnd, "UTC")]
   ]);
 }
 
@@ -213,8 +214,8 @@ function makeContext(): FiniteSchedulingContext {
   const capacityByWorkCenter = new Map<string, ResourceCapacityData>(
     [...makeWorkCenterWindows()].map(([id, windows]) => [
       id,
-      capacity(id, windows),
-    ]),
+      capacity(id, windows)
+    ])
   );
 
   const employeesByAbility = new Map<string, PoolEmployee[]>([
@@ -222,28 +223,28 @@ function makeContext(): FiniteSchedulingContext {
       "ability-A",
       [
         { employeeId: "emp1", expiresAt: null, windows: empWindows() },
-        { employeeId: "emp2", expiresAt: null, windows: empWindows() },
-      ],
+        { employeeId: "emp2", expiresAt: null, windows: empWindows() }
+      ]
     ],
     [
       "ability-B",
       [
         { employeeId: "emp3", expiresAt: null, windows: empWindows() },
-        { employeeId: "emp4", expiresAt: null, windows: empWindows() },
-      ],
-    ],
+        { employeeId: "emp4", expiresAt: null, windows: empWindows() }
+      ]
+    ]
   ]);
 
   const requirementByProcess = new Map<string, ProcessRequirement>([
     ["pA", { abilityId: "ability-A", abilityName: "Welding" }],
-    ["pB", { abilityId: "ability-B", abilityName: "Machining" }],
+    ["pB", { abilityId: "ability-B", abilityName: "Machining" }]
   ]);
 
   const windowsByEmployee = new Map<string, CalendarWindow[]>([
     ["emp1", empWindows()],
     ["emp2", empWindows()],
     ["emp3", empWindows()],
-    ["emp4", empWindows()],
+    ["emp4", empWindows()]
   ]);
 
   // Manning board: emp1 mans wc-always-1 every January weekday. This exercises
@@ -251,8 +252,8 @@ function makeContext(): FiniteSchedulingContext {
   const peopleByWorkCenter = new Map<string, Map<string, string[]>>([
     [
       "wc-always-1",
-      new Map(manningDates.map((d): [string, string[]] => [d, ["emp1"]])),
-    ],
+      new Map(manningDates.map((d): [string, string[]] => [d, ["emp1"]]))
+    ]
   ]);
   const peopleBudgets = new Map<string, Map<string, PeopleDayRow[]>>([
     [
@@ -260,10 +261,10 @@ function makeContext(): FiniteSchedulingContext {
       new Map(
         manningDates.map((d): [string, PeopleDayRow[]] => [
           d,
-          [{ workCenterId: "wc-always-1", hours: null }],
-        ]),
-      ),
-    ],
+          [{ workCenterId: "wc-always-1", hours: null }]
+        ])
+      )
+    ]
   ]);
 
   return {
@@ -281,7 +282,7 @@ function makeContext(): FiniteSchedulingContext {
     peopleBudgets,
     windowsByEmployee,
     timeZone: "UTC",
-    operationsWithEvents: new Set<string>(),
+    operationsWithEvents: new Set<string>()
   };
 }
 
@@ -291,7 +292,7 @@ async function placeAll(
     jobDueDate?: string | null;
     /** Applied to a FRESH context before placement (e.g. add a reservation). */
     mutateContext?: (ctx: FiniteSchedulingContext) => void;
-  } = {},
+  } = {}
 ): Promise<PlannedReservation[]> {
   const selector = new WorkCenterSelector(makeProvider(), "loc1");
   await selector.initialize();
@@ -300,7 +301,7 @@ async function placeAll(
   selector.setFiniteContext(ctx);
   await selector.selectWorkCentersForOperations(
     overrides.operations ?? makeOperations(),
-    { jobDueDate: overrides.jobDueDate ?? null },
+    { jobDueDate: overrides.jobDueDate ?? null }
   );
   return selector.getPlannedReservations();
 }
@@ -320,14 +321,16 @@ function sortKey(r: NormalizedReservation): string {
 }
 
 /** Reservations as a stably-sorted multiset of their placement-defining fields. */
-function normalize(reservations: PlannedReservation[]): NormalizedReservation[] {
+function normalize(
+  reservations: PlannedReservation[]
+): NormalizedReservation[] {
   return reservations
     .map((r) => ({
       resourceKind: r.resourceKind,
       resourceId: r.resourceId,
       operationId: r.operationId,
       startAt: r.startAt.toISOString(),
-      endAt: r.endAt.toISOString(),
+      endAt: r.endAt.toISOString()
     }))
     .sort((a, b) => {
       const ka = sortKey(a);
@@ -337,12 +340,12 @@ function normalize(reservations: PlannedReservation[]): NormalizedReservation[] 
 }
 
 const OP_TO_JOB = new Map(
-  makeOperations().map((o): [string, string] => [o.id, o.jobId]),
+  makeOperations().map((o): [string, string] => [o.id, o.jobId])
 );
 
 /** Each job's projected completion = the latest reservation end over its ops. */
 function projectedCompletion(
-  reservations: PlannedReservation[],
+  reservations: PlannedReservation[]
 ): [string, string][] {
   const maxByJob = new Map<string, string>();
   for (const r of reservations) {
@@ -353,19 +356,19 @@ function projectedCompletion(
     if (!current || iso > current) maxByJob.set(jobId, iso);
   }
   return [...maxByJob.entries()].sort((a, b) =>
-    a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0,
+    a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0
   );
 }
 
 // --- tests -------------------------------------------------------------------
 
-Deno.test("two runs with identical inputs produce identical placements", async () => {
+it("two runs with identical inputs produce identical placements", async () => {
   const first = await placeAll();
   const second = await placeAll();
 
   assert(
     first.length > 0,
-    "expected the selector to place at least one reservation",
+    "expected the selector to place at least one reservation"
   );
 
   // Placements are identical as a multiset of (resource, operation, start, end).
@@ -398,21 +401,21 @@ const JOB_DUE_DATE = "2026-03-06";
 function computeFixtureNeedBys(
   ctx: FiniteSchedulingContext,
   jobDueDate: string | null,
-  operations: ScheduledOperation[] = makeOperations(),
+  operations: ScheduledOperation[] = makeOperations()
 ): Map<string, string | null> {
   const windowsByWorkCenter = new Map<string, CalendarWindow[]>(
-    [...ctx.capacityByWorkCenter].map(([id, cap]) => [id, cap.windows]),
+    [...ctx.capacityByWorkCenter].map(([id, cap]) => [id, cap.windows])
   );
   const locationWindows = expandCalendar(
     STOCK_WEEK_SHIFTS,
     new Date(NOW_ISO),
     new Date(WINDOWS_END_ISO),
-    "UTC",
+    "UTC"
   );
   const { calendarHoursPerDay, workingDayTest } = calendarAdapters(
     windowsByWorkCenter,
     locationWindows,
-    "UTC",
+    "UTC"
   );
 
   const dependencies = makeDependencies();
@@ -425,16 +428,16 @@ function computeFixtureNeedBys(
       jobOps.map((op) => ({
         id: op.id,
         jobId: op.jobId,
-        processId: op.processId,
+        processId: op.processId
       })),
-      jobDeps,
+      jobDeps
     );
     const needBys = computeNeedByDates({
       operations: jobOps,
       graph,
       jobDueDate,
       calendarHoursPerDay,
-      workingDayTest,
+      workingDayTest
     });
     for (const [operationId, needBy] of needBys) {
       result.set(operationId, needBy);
@@ -447,12 +450,12 @@ function computeFixtureNeedBys(
 function serializeNeedBys(needBys: Map<string, string | null>): string {
   return JSON.stringify(
     [...needBys.entries()].sort((a, b) =>
-      a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0,
-    ),
+      a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0
+    )
   );
 }
 
-Deno.test("targets never influence placement: identical with and without need-by dates", async () => {
+it("targets never influence placement: identical with and without need-by dates", async () => {
   // World A — the demand world: a real job due date, the backward pass run
   // over the fixture calendars, and its need-by targets stamped onto
   // `op.dueDate` exactly as a post-regen snapshot would carry them.
@@ -463,7 +466,7 @@ Deno.test("targets never influence placement: identical with and without need-by
   for (const [operationId, needBy] of needBys) {
     assert(
       needBy !== null && /^\d{4}-\d{2}-\d{2}$/.test(needBy),
-      `expected a computed need-by for ${operationId}, got ${needBy}`,
+      `expected a computed need-by for ${operationId}, got ${needBy}`
     );
   }
   // ...and each job's leaf op anchors on the job due date.
@@ -472,7 +475,7 @@ Deno.test("targets never influence placement: identical with and without need-by
   }
   const withTargets = makeOperations().map((op) => ({
     ...op,
-    dueDate: needBys.get(op.id) ?? null,
+    dueDate: needBys.get(op.id) ?? null
   }));
 
   // World B — the need-by map forced empty via the documented bypass: a null
@@ -484,16 +487,16 @@ Deno.test("targets never influence placement: identical with and without need-by
   }
   const withoutTargets = makeOperations().map((op) => ({
     ...op,
-    dueDate: bypassed.get(op.id) ?? null,
+    dueDate: bypassed.get(op.id) ?? null
   }));
 
   const placedWith = await placeAll({
     operations: withTargets,
-    jobDueDate: JOB_DUE_DATE,
+    jobDueDate: JOB_DUE_DATE
   });
   const placedWithout = await placeAll({
     operations: withoutTargets,
-    jobDueDate: null,
+    jobDueDate: null
   });
 
   assert(placedWith.length > 0, "expected placements in the demand world");
@@ -503,13 +506,13 @@ Deno.test("targets never influence placement: identical with and without need-by
   assertEquals(normalize(placedWith), normalize(placedWithout));
 });
 
-Deno.test("need-by maps are stable and capacity-invariant while placements move", async () => {
+it("need-by maps are stable and capacity-invariant while placements move", async () => {
   // Two identical worlds produce byte-identical need-by maps.
   const first = serializeNeedBys(
-    computeFixtureNeedBys(makeContext(), JOB_DUE_DATE),
+    computeFixtureNeedBys(makeContext(), JOB_DUE_DATE)
   );
   const second = serializeNeedBys(
-    computeFixtureNeedBys(makeContext(), JOB_DUE_DATE),
+    computeFixtureNeedBys(makeContext(), JOB_DUE_DATE)
   );
   assertEquals(first, second);
 
@@ -522,7 +525,7 @@ Deno.test("need-by maps are stable and capacity-invariant while placements move"
     cap.reservations.push({
       startAt: new Date("2026-01-05T00:00:00.000Z"),
       endAt: new Date("2026-01-12T00:00:00.000Z"),
-      readableJobId: "J-FOREIGN",
+      readableJobId: "J-FOREIGN"
     });
   };
 
@@ -533,7 +536,7 @@ Deno.test("need-by maps are stable and capacity-invariant while placements move"
   assert(
     JSON.stringify(normalize(baseline)) !==
       JSON.stringify(normalize(displaced)),
-    "expected the added reservation to move at least one placement",
+    "expected the added reservation to move at least one placement"
   );
 
   // ...while the need-by pass over the SAME mutated world stays
@@ -543,26 +546,26 @@ Deno.test("need-by maps are stable and capacity-invariant while placements move"
   const mutatedCtx = makeContext();
   blockWcAlways1(mutatedCtx);
   const afterCapacityChange = serializeNeedBys(
-    computeFixtureNeedBys(mutatedCtx, JOB_DUE_DATE),
+    computeFixtureNeedBys(mutatedCtx, JOB_DUE_DATE)
   );
   assertEquals(afterCapacityChange, first);
 });
 
-Deno.test("no placement falls on a weekend for a rung-3 work center", async () => {
+it("no placement falls on a weekend for a rung-3 work center", async () => {
   const reservations = (await placeAll()).filter(
-    (r) => r.resourceKind === "WorkCenter" && r.resourceId === RUNG3_WORK_CENTER,
+    (r) => r.resourceKind === "WorkCenter" && r.resourceId === RUNG3_WORK_CENTER
   );
 
   assert(
     reservations.length > 0,
-    `expected placements on rung-3 work center ${RUNG3_WORK_CENTER}`,
+    `expected placements on rung-3 work center ${RUNG3_WORK_CENTER}`
   );
 
   for (const r of reservations) {
     const startDow = r.startAt.getUTCDay();
     assert(
       startDow >= 1 && startDow <= 5,
-      `reservation for ${r.operationId} starts on weekend day ${startDow} (${r.startAt.toISOString()})`,
+      `reservation for ${r.operationId} starts on weekend day ${startDow} (${r.startAt.toISOString()})`
     );
   }
 });

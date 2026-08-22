@@ -1,36 +1,36 @@
-import {
-  calculateDurationBreakdown,
-  calculateDurationHours,
-  remainingFractions,
-} from "./duration-calculator.ts";
+import { type CalendarWindow, intersectWindows } from "./calendar-utils.ts";
 import {
   classifyLatePlacement,
   composeLateConflict,
-  composePlacementNote,
+  composePlacementNote
 } from "./conflict-messages.ts";
 import { businessDay } from "./date-utils.ts";
-import { type CalendarWindow, intersectWindows } from "./calendar-utils.ts";
-import type { PeopleDayRow } from "./people-utils.ts";
-import { clipWindowsToStation } from "./people-utils.ts";
+import {
+  calculateDurationBreakdown,
+  calculateDurationHours,
+  remainingFractions
+} from "./duration-calculator.ts";
 import type { MasterDataProvider } from "./master-data-provider.ts";
 import {
   isEligibleOperator,
-  type QualifiedEmployee,
+  type QualifiedEmployee
 } from "./operator-eligibility.ts";
+import type { PeopleDayRow } from "./people-utils.ts";
+import { clipWindowsToStation } from "./people-utils.ts";
 import {
+  type AttendedAllocationSuccess,
   allocateAttendedOperation,
   allocateOperation,
-  type AttendedAllocationSuccess,
   type EligibleMember,
   isConflict,
   type ReservationInterval,
-  type ResourceCapacityData,
+  type ResourceCapacityData
 } from "./slot-allocator.ts";
 import type {
   JobOperationDependency,
   PlannedReservation,
   ScheduledOperation,
-  WorkCenterSelection,
+  WorkCenterSelection
 } from "./types.ts";
 
 /** The single ability a process requires (resolved via process.requiresAbility). */
@@ -44,7 +44,7 @@ export type PoolEmployee = QualifiedEmployee & { windows: CalendarWindow[] };
 
 export {
   isEligibleOperator,
-  type QualifiedEmployee,
+  type QualifiedEmployee
 } from "./operator-eligibility.ts";
 
 /**
@@ -402,7 +402,7 @@ export class WorkCenterSelector {
         const outsideEndDate = businessDay(end.toISOString(), ctx.timeZone);
         if (jobDueDate && outsideEndDate > jobDueDate) {
           outsideConflict = composeLateConflict(outsideEndDate, jobDueDate, {
-            kind: "outside-processing",
+            kind: "outside-processing"
           });
         }
 
@@ -411,7 +411,7 @@ export class WorkCenterSelector {
           priority: 0,
           placedStart: start.toISOString(),
           placedEnd: end.toISOString(),
-          conflict: outsideConflict,
+          conflict: outsideConflict
         });
         continue;
       }
@@ -426,7 +426,7 @@ export class WorkCenterSelector {
         selections.set(op.id, {
           workCenterId: null,
           priority: 0,
-          error: "No process ID provided",
+          error: "No process ID provided"
         });
         continue;
       }
@@ -461,7 +461,7 @@ export class WorkCenterSelector {
         selections.set(op.id, {
           workCenterId: null,
           priority: 0,
-          error: `No work centers found for process ${op.processId}`,
+          error: `No work centers found for process ${op.processId}`
         });
         continue;
       }
@@ -493,8 +493,7 @@ export class WorkCenterSelector {
       );
 
       // The operation's requirement comes from its PROCESS (single ability)
-      const requirement =
-        ctx.requirementByProcess.get(op.processId) ?? null;
+      const requirement = ctx.requirementByProcess.get(op.processId) ?? null;
       const members = requirement
         ? this.buildEligibleMembers(requirement, earliestStart, ctx)
         : null;
@@ -509,7 +508,7 @@ export class WorkCenterSelector {
       );
       const breakdown = calculateDurationBreakdown({
         ...op,
-        priority: op.priority ?? undefined,
+        priority: op.priority ?? undefined
       });
       const setupHours = breakdown.setupHours * setupFrac;
       const laborHours = breakdown.laborHours * workFrac;
@@ -579,7 +578,7 @@ export class WorkCenterSelector {
                   members: peopleQualified,
                   busyByEmployee: ctx.reservationsByEmployee,
                   timeZone: ctx.timeZone,
-                  team: teamComponents,
+                  team: teamComponents
                 });
                 if (!isConflict(pass1)) {
                   result = pass1;
@@ -615,7 +614,7 @@ export class WorkCenterSelector {
                 .filter((m) => !ctx.assignmentsByEmployee.has(m.employeeId))
                 .map((m) => ({
                   employeeId: m.employeeId,
-                  windows: intersectWindows(m.windows, capacity.windows),
+                  windows: intersectWindows(m.windows, capacity.windows)
                 }));
               const pass2 = allocateAttendedOperation({
                 attendedHours,
@@ -625,7 +624,7 @@ export class WorkCenterSelector {
                 capacity,
                 members: relayMembers,
                 busyByEmployee: ctx.reservationsByEmployee,
-                timeZone: ctx.timeZone,
+                timeZone: ctx.timeZone
               });
               if (isConflict(pass2)) {
                 if (!firstConflict) {
@@ -671,7 +670,7 @@ export class WorkCenterSelector {
                   members: peopleMembers,
                   busyByEmployee: ctx.reservationsByEmployee,
                   timeZone: ctx.timeZone,
-                  team: teamComponents,
+                  team: teamComponents
                 });
                 if (!isConflict(manned)) {
                   result = manned;
@@ -697,7 +696,7 @@ export class WorkCenterSelector {
                 earliestStart,
                 horizonEnd,
                 capacity,
-                timeZone: ctx.timeZone,
+                timeZone: ctx.timeZone
               });
               if (isConflict(machineOnly)) {
                 if (!firstConflict) {
@@ -711,7 +710,7 @@ export class WorkCenterSelector {
                 attendedEnd: machineOnly.end,
                 end: machineOnly.end,
                 segments: [],
-                wait: machineOnly.wait,
+                wait: machineOnly.wait
               };
             }
             slot = result;
@@ -759,7 +758,7 @@ export class WorkCenterSelector {
           dominantDep: dominantDepId
             ? { description: descriptionById.get(dominantDepId) ?? null }
             : null,
-          staffed: best.staffed,
+          staffed: best.staffed
         });
 
         // Commit in-run so subsequent operations see this placement
@@ -772,13 +771,12 @@ export class WorkCenterSelector {
           endAt: slot.end,
           earliestStartAt: earliestStart,
           scheduleNote: composePlacementNote(cause, waitedMs),
-          workHours: durationHours,
+          workHours: durationHours
         });
         // Book the named people for their attended segments — in-run (so no
         // later op double-books them, on ANY ability) and persisted
         for (const segment of slot.segments) {
-          const list =
-            ctx.reservationsByEmployee.get(segment.employeeId) ?? [];
+          const list = ctx.reservationsByEmployee.get(segment.employeeId) ?? [];
           list.push({ startAt: segment.startAt, endAt: segment.endAt });
           ctx.reservationsByEmployee.set(segment.employeeId, list);
           this.plannedReservations.push({
@@ -788,8 +786,7 @@ export class WorkCenterSelector {
             startAt: segment.startAt,
             endAt: segment.endAt,
             workHours:
-              (segment.endAt.getTime() - segment.startAt.getTime()) /
-              3_600_000,
+              (segment.endAt.getTime() - segment.startAt.getTime()) / 3_600_000
           });
         }
         placedEndByOperation.set(op.id, slot.end);
@@ -806,7 +803,7 @@ export class WorkCenterSelector {
           priority: 0,
           placedStart: slot.start.toISOString(),
           placedEnd: slot.end.toISOString(),
-          conflict,
+          conflict
         });
       } else {
         // Every candidate conflicted (machine, skill, or shift coverage):
@@ -850,7 +847,7 @@ export class WorkCenterSelector {
             earliestStartAt: earliestStart,
             scheduleNote: conflictReason,
             workHours: durationHours,
-            isPlaceholder: true,
+            isPlaceholder: true
           });
           placedEndByOperation.set(op.id, placeholderEnd);
         }
@@ -858,7 +855,7 @@ export class WorkCenterSelector {
         selections.set(op.id, {
           workCenterId: fallbackWc ?? op.workCenterId ?? null,
           priority: 0,
-          conflict: conflictReason,
+          conflict: conflictReason
         });
       }
     }
@@ -885,5 +882,5 @@ export class WorkCenterSelector {
 
 export {
   applyWorkCenterSelections,
-  hasPreassignedWorkCenter,
+  hasPreassignedWorkCenter
 } from "./apply-work-center-selections.ts";

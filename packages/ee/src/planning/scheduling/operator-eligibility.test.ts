@@ -1,12 +1,10 @@
-import {
-  assert,
-  assertEquals,
-} from "https://deno.land/std@0.175.0/testing/asserts.ts";
+import { it } from "vitest";
 import { toIsoDate } from "./date-utils.ts";
 import {
   isEligibleOperator,
-  type QualifiedEmployee,
+  type QualifiedEmployee
 } from "./operator-eligibility.ts";
+import { assert, assertEquals } from "./test-helpers.ts";
 
 const opStart = new Date("2026-07-17T08:00:00.000Z");
 
@@ -16,30 +14,30 @@ function employee(
   return {
     employeeId: "emp-1",
     expiresAt: null,
-    ...overrides,
+    ...overrides
   };
 }
 
-Deno.test("expired-as-of-op-start is excluded from the pool", () => {
+it("expired-as-of-op-start is excluded from the pool", () => {
   const expired = employee({ expiresAt: "2026-07-07" });
   assertEquals(isEligibleOperator(expired, opStart), false);
 });
 
-Deno.test("expiring after the op start still counts", () => {
+it("expiring after the op start still counts", () => {
   const stillValid = employee({ expiresAt: "2026-07-20" });
   assertEquals(isEligibleOperator(stillValid, opStart), true);
 });
 
-Deno.test("expiring exactly on the op start date is excluded (strict >)", () => {
+it("expiring exactly on the op start date is excluded (strict >)", () => {
   const expiresToday = employee({ expiresAt: "2026-07-17" });
   assertEquals(isEligibleOperator(expiresToday, opStart), false);
 });
 
-Deno.test("null expiry never expires", () => {
+it("null expiry never expires", () => {
   assertEquals(isEligibleOperator(employee(), opStart), true);
 });
 
-Deno.test("regression: pg DATE object stringified via String() defeated the expiry check; toIsoDate restores it", () => {
+it("regression: pg DATE object stringified via String() defeated the expiry check; toIsoDate restores it", () => {
   const pgDateExpired = new Date(2026, 6, 7); // DATE '2026-07-07' as returned by pg
 
   // Pre-fix behavior: String(...) made the expired welder eligible
@@ -52,10 +50,10 @@ Deno.test("regression: pg DATE object stringified via String() defeated the expi
   assert(toIsoDate(pgDateExpired) === "2026-07-07");
 });
 
-Deno.test("expiry boundary respects the factory time zone", () => {
+it("expiry boundary respects the factory time zone", () => {
   const employee: QualifiedEmployee = {
     employeeId: "emp-1",
-    expiresAt: "2026-07-21",
+    expiresAt: "2026-07-21"
   };
   // 20:00 UTC on the 20th is already the 21st in India: the qualification
   // expiring on the 21st is expired-as-of-start there, but not in UTC.
