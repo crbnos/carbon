@@ -27,7 +27,7 @@ import {
   getCapacityReservationsForResources,
   getMaintenanceDowntimeForResources
 } from "~/modules/production";
-import { getForecastNonWorkingIntervals } from "~/modules/production/forecastCalendar.server";
+import { getForecastNonWorkingIntervals } from "~/modules/production/forecast.server";
 import type { ForecastRange } from "~/modules/production/ui/Schedule/ForecastHeader";
 import { ForecastHeader } from "~/modules/production/ui/Schedule/ForecastHeader";
 import {

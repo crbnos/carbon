@@ -2603,11 +2603,20 @@ export async function runMRP(
     userId: string;
   }
 ) {
-  return client.functions.invoke("mrp", {
-    body: {
-      ...params
-    }
-  });
+  // Run MRP IN-PROCESS (Node) instead of round-tripping to the `mrp` edge
+  // function — no cold start, no HTTP hop. The caller's service-role client does
+  // the PostgREST reads; the atomic Phase-7 write goes through the Node Kysely
+  // pool. Preserves the `{ data, error }` shape the caller (api+/mrp.ts) returns.
+  try {
+    const { runMrp } = await import("@carbon/ee/planning");
+    const data = await runMrp(client, await getSchedulingDb(), params);
+    return { data, error: null };
+  } catch (err) {
+    return {
+      data: null,
+      error: err instanceof Error ? err : new Error("Failed to run MRP")
+    };
+  }
 }
 
 export async function updateJobBatchNumber(

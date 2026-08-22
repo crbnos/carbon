@@ -1,4 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { runMrp } from "@carbon/ee/planning";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 
 export const mrpFunction = inngest.createFunction(
@@ -22,24 +24,19 @@ export const mrpFunction = inngest.createFunction(
 
       for (const company of companies.data) {
         try {
-          const result = await serviceRole.functions.invoke("mrp", {
-            body: {
-              type: "company",
-              id: company.id,
-              companyId: company.id,
-              userId: "system"
-            }
+          // Run MRP in-process (Node) instead of invoking the `mrp` edge
+          // function; runMrp throws on failure.
+          await runMrp(serviceRole, getJobDatabaseClient(), {
+            type: "company",
+            id: company.id,
+            companyId: company.id,
+            userId: "system"
           });
-
-          if (result.error) {
-            logger.error(`Failed to run MRP for company ${company.name}`, {
-              error: result.error
-            });
-          } else {
-            logger.info(`Successfully ran MRP for company ${company.name}`);
-          }
+          logger.info(`Successfully ran MRP for company ${company.name}`);
         } catch (error) {
-          logger.error("Unexpected error in MRP run task", { error });
+          logger.error(`Failed to run MRP for company ${company.name}`, {
+            error
+          });
         }
       }
     });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getForecastNonWorkingIntervals } from "./forecastCalendar.server";
+import { getForecastNonWorkingIntervals } from "./forecast.server";
 
 const iso = (s: string) => Date.parse(s);
 
