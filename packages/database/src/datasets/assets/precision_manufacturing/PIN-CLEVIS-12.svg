@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="zinc" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6e747a"/><stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/><stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="zincFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#6e747a"/><stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/><stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="holeWall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#20262a"/><stop offset="0.55" stop-color="#454c52"/>
+      <stop offset="1" stop-color="#14181b"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="512" cy="614" rx="446" ry="98" fill="url(#shadow)" transform="rotate(-16 512 614)"/>
+
+  <g transform="translate(524 518) rotate(-16)">
+    <!-- shank -->
+    <clipPath id="shankC"><path d="M-352 -80 L365 -80 Q425.8 0 365 80 L-352 80 Z"/></clipPath>
+    <path d="M-352 -80 L365 -80 Q425.8 0 365 80 L-352 80 Z" fill="url(#zinc)" stroke="#4b5156" stroke-width="2.5"/>
+    <g clip-path="url(#shankC)">
+      <!-- iridescent zinc bloom -->
+      <rect x="-360" y="-66" width="800" height="20" fill="#a9cbe8" opacity="0.30"/>
+      <rect x="-360" y="-30" width="800" height="12" fill="#ffffff" opacity="0.45"/>
+      <rect x="-360" y="34" width="800" height="16" fill="#d7c398" opacity="0.16"/>
+      <rect x="-360" y="58" width="800" height="14" fill="#3b4146" opacity="0.25"/>
+      <!-- faint drawn-bar lengthwise sheen -->
+      <g stroke="#ffffff" stroke-opacity="0.13" stroke-width="1.6" fill="none">
+        <path d="M-350 -52 L420 -52"/><path d="M-350 -12 L420 -12"/>
+        <path d="M-350 16 L420 16"/><path d="M-350 44 L420 44"/>
+      </g>
+    </g>
+
+    <!-- head-to-shank fillet -->
+    <path d="M-352 -80 Q-321.6 0 -352 80" fill="none" stroke="#3f454a" stroke-width="4" opacity="0.45"/>
+    <path d="M-338 -78 Q-307.6 0 -338 78" fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="4"/>
+
+    <!-- head barrel -->
+    <path d="M-385 -122 L-352 -122 Q-259.2 0 -352 122 L-385 122 Z" fill="url(#zinc)" stroke="#4b5156" stroke-width="2.5"/>
+    <!-- head outer flat face -->
+    <ellipse cx="-385" cy="0" rx="46.4" ry="122" fill="url(#zincFace)" stroke="#5c6367" stroke-width="2.5"/>
+    <ellipse cx="-385" cy="0" rx="39" ry="110" fill="none" stroke="#9aa2a8" stroke-width="2" opacity="0.85"/>
+    <g fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2">
+      <ellipse cx="-385" cy="0" rx="31" ry="88"/>
+      <ellipse cx="-385" cy="0" rx="22" ry="62"/>
+      <ellipse cx="-385" cy="0" rx="12" ry="34"/>
+    </g>
+
+    <!-- cross-drilled retaining-clip hole -->
+    <g transform="translate(268 -40)">
+      <ellipse cx="0" cy="0" rx="34" ry="23" fill="#8f979d" opacity="0.55"/>
+      <ellipse cx="0" cy="0" rx="30" ry="20" fill="url(#holeWall)" stroke="#3a4045" stroke-width="2"/>
+      <ellipse cx="0" cy="3" rx="22" ry="14" fill="#181c1f"/>
+      <path d="M-24 -8 Q0 -18 24 -8" fill="none" stroke="#ffffff" stroke-opacity="0.25" stroke-width="3"/>
+    </g>
+
+    <!-- turning witness ring behind the chamfer -->
+    <path d="M318 -80 Q348.4 0 318 80" fill="none" stroke="#4d5358" stroke-width="3.5" opacity="0.55"/>
+    <path d="M330 -80 Q360.4 0 330 80" fill="none" stroke="#ffffff" stroke-opacity="0.30" stroke-width="3"/>
+    <!-- chamfered free end -->
+    <path d="M348 -74 Q404.2 0 348 74" fill="none" stroke="#5a6166" stroke-width="4" opacity="0.75"/>
+    <path d="M365 -80 Q425.8 0 365 80" fill="none" stroke="#ffffff" stroke-opacity="0.30" stroke-width="4"/>
+  </g>
+</svg>

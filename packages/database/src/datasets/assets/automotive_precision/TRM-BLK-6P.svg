@@ -1,0 +1,281 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="thermo" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#2e2620"/>
+      <stop offset="0.2" stop-color="#5c4c3d"/>
+      <stop offset="0.45" stop-color="#7a6650"/>
+      <stop offset="0.72" stop-color="#4a3d31"/>
+      <stop offset="1" stop-color="#241d18"/>
+    </linearGradient>
+    <linearGradient id="thermoSide" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2e2620"/>
+      <stop offset="0.2" stop-color="#5c4c3d"/>
+      <stop offset="0.45" stop-color="#7a6650"/>
+      <stop offset="0.72" stop-color="#4a3d31"/>
+      <stop offset="1" stop-color="#241d18"/>
+    </linearGradient>
+    <linearGradient id="brass" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6b4a2c"/>
+      <stop offset="0.2" stop-color="#c08b52"/>
+      <stop offset="0.45" stop-color="#e0b077"/>
+      <stop offset="0.72" stop-color="#9a6f42"/>
+      <stop offset="1" stop-color="#5d3f26"/>
+    </linearGradient>
+    <linearGradient id="brassTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#6b4a2c"/>
+      <stop offset="0.2" stop-color="#c08b52"/>
+      <stop offset="0.45" stop-color="#e0b077"/>
+      <stop offset="0.72" stop-color="#9a6f42"/>
+      <stop offset="1" stop-color="#5d3f26"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="bodyTop">
+      <path d="M210 570 L726 570 L789 525 L273 525 Z"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="512" cy="780" rx="400" ry="76" fill="url(#shadow)"/>
+
+  <!-- flat mounting ears, one through hole each -->
+  <path d="M130 660 L210 660 L273 615 L193 615 Z" fill="url(#thermo)" stroke="#1b1611" stroke-width="2.5"/>
+  <path d="M130 660 L210 660 L210 720 L130 720 Z" fill="url(#thermoSide)" stroke="#1b1611" stroke-width="2.5"/>
+  <ellipse cx="235" cy="640.5" rx="26" ry="9.9" fill="#000000" opacity="0.22"/>
+  <ellipse cx="233" cy="637.5" rx="26" ry="9.9" fill="none" stroke="#7a6650" stroke-width="2.5" stroke-opacity="0.8"/>
+  <ellipse cx="233" cy="637.5" rx="19" ry="7.2" fill="#100d0a" stroke="#0a0806" stroke-width="2"/>
+  <path d="M214 637.5 Q233 628.5 252 637.5" fill="none" stroke="#a08a6c" stroke-opacity="0.5" stroke-width="2"/>
+  <path d="M726 660 L806 660 L869 615 L789 615 Z" fill="url(#thermo)" stroke="#1b1611" stroke-width="2.5"/>
+  <path d="M726 660 L806 660 L806 720 L726 720 Z" fill="url(#thermoSide)" stroke="#1b1611" stroke-width="2.5"/>
+  <ellipse cx="831" cy="640.5" rx="26" ry="9.9" fill="#000000" opacity="0.22"/>
+  <ellipse cx="829" cy="637.5" rx="26" ry="9.9" fill="none" stroke="#7a6650" stroke-width="2.5" stroke-opacity="0.8"/>
+  <ellipse cx="829" cy="637.5" rx="19" ry="7.2" fill="#100d0a" stroke="#0a0806" stroke-width="2"/>
+  <path d="M810 637.5 Q829 628.5 848 637.5" fill="none" stroke="#a08a6c" stroke-opacity="0.5" stroke-width="2"/>
+
+  <!-- low moulded body -->
+  <path d="M726 570 L789 525 L789 675 L726 720 Z" fill="url(#thermoSide)" stroke="#1b1611" stroke-width="2.5"/>
+  <path d="M726 570 L789 525 L789 675 L726 720 Z" fill="#000000" opacity="0.24"/>
+  <rect x="210" y="570" width="516" height="150" fill="url(#thermo)" stroke="#1b1611" stroke-width="2.5"/>
+  <path d="M210 648 L726 648" stroke="#c0a686" stroke-opacity="0.42" stroke-width="2.5"/>
+  <path d="M210 651.5 L726 651.5" stroke="#000000" stroke-opacity="0.3" stroke-width="2.5"/>
+  <rect x="216" y="582" width="504" height="14" fill="#ffffff" opacity="0.1"/>
+  <path d="M210 570 L726 570 L789 525 L273 525 Z" fill="url(#thermo)" stroke="#1b1611" stroke-width="2.5"/>
+  <g clip-path="url(#bodyTop)">
+    <path d="M210 560 L726 560 L789 525 L273 525 Z" fill="#ffffff" opacity="0.08"/>
+  </g>
+
+  <!-- six brass tunnel clamps, screws backed out to a common height -->
+  <path d="M288.5 528.5 L330.5 498.5 L330.5 532.5 L288.5 562.5 Z" fill="url(#brass)" stroke="#4b3320" stroke-width="2"/>
+  <path d="M288.5 528.5 L330.5 498.5 L330.5 532.5 L288.5 562.5 Z" fill="#000000" opacity="0.22"/>
+  <path d="M238.5 528.5 L288.5 528.5 L288.5 562.5 L238.5 562.5 Z" fill="url(#brass)" stroke="#4b3320" stroke-width="2"/>
+  <rect x="247.5" y="540.5" width="32" height="15" rx="3" fill="#241708" stroke="#3c2814" stroke-width="1.6"/>
+  <path d="M238.5 528.5 L288.5 528.5 L330.5 498.5 L280.5 498.5 Z" fill="url(#brassTop)" stroke="#4b3320" stroke-width="2"/>
+  <path d="M269.5 473.5 L269.5 513.5 Q284.5 524.9 299.5 513.5 L299.5 473.5 Z" fill="url(#brass)" stroke="#4b3320" stroke-width="1.8"/>
+  <g stroke="#5d3f26" stroke-width="2.2" opacity="0.8" fill="none">
+    <path d="M269.5 478.5 L299.5 474.5"/>
+    <path d="M269.5 485.5 L299.5 481.5"/>
+    <path d="M269.5 492.5 L299.5 488.5"/>
+    <path d="M269.5 499.5 L299.5 495.5"/>
+    <path d="M269.5 506.5 L299.5 502.5"/>
+    <path d="M269.5 513.5 L299.5 509.5"/>
+  </g>
+  <g stroke="#e8bd85" stroke-width="1.3" opacity="0.55" fill="none">
+    <path d="M269.5 481.5 L299.5 477.5"/>
+    <path d="M269.5 488.5 L299.5 484.5"/>
+    <path d="M269.5 495.5 L299.5 491.5"/>
+    <path d="M269.5 502.5 L299.5 498.5"/>
+    <path d="M269.5 509.5 L299.5 505.5"/>
+    <path d="M269.5 516.5 L299.5 512.5"/>
+  </g>
+  <path d="M259.5 449.5 L259.5 473.5 Q284.5 492.5 309.5 473.5 L309.5 449.5 Z" fill="url(#brass)" stroke="#4b3320" stroke-width="1.8"/>
+  <ellipse cx="284.5" cy="449.5" rx="25" ry="9.5" fill="url(#brassTop)" stroke="#4b3320" stroke-width="1.8"/>
+  <ellipse cx="284.5" cy="449.5" rx="20" ry="7.6" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.6"/>
+  <g transform="translate(284.5 449.5) scale(1 0.38)">
+    <rect x="-21" y="-9" width="42" height="18" rx="2" fill="#3a2612" stroke="#241708" stroke-width="2"/>
+    <rect x="-21" y="-9" width="42" height="6" fill="#000000" opacity="0.35"/>
+  </g>
+  <path d="M374.5 528.5 L416.5 498.5 L416.5 532.5 L374.5 562.5 Z" fill="url(#brass)" stroke="#4b3320" stroke-width="2"/>
+  <path d="M374.5 528.5 L416.5 498.5 L416.5 532.5 L374.5 562.5 Z" fill="#000000" opacity="0.22"/>
+  <path d="M324.5 528.5 L374.5 528.5 L374.5 562.5 L324.5 562.5 Z" fill="url(#brass)" stroke="#4b3320" stroke-width="2"/>
+  <rect x="333.5" y="540.5" width="32" height="15" rx="3" fill="#241708" stroke="#3c2814" stroke-width="1.6"/>
+  <path d="M324.5 528.5 L374.5 528.5 L416.5 498.5 L366.5 498.5 Z" fill="url(#brassTop)" stroke="#4b3320" stroke-width="2"/>
+  <path d="M355.5 473.5 L355.5 513.5 Q370.5 524.9 385.5 513.5 L385.5 473.5 Z" fill="url(#brass)" stroke="#4b3320" stroke-width="1.8"/>
+  <g stroke="#5d3f26" stroke-width="2.2" opacity="0.8" fill="none">
+    <path d="M355.5 478.5 L385.5 474.5"/>
+    <path d="M355.5 485.5 L385.5 481.5"/>
+    <path d="M355.5 492.5 L385.5 488.5"/>
+    <path d="M355.5 499.5 L385.5 495.5"/>
+    <path d="M355.5 506.5 L385.5 502.5"/>
+    <path d="M355.5 513.5 L385.5 509.5"/>
+  </g>
+  <g stroke="#e8bd85" stroke-width="1.3" opacity="0.55" fill="none">
+    <path d="M355.5 481.5 L385.5 477.5"/>
+    <path d="M355.5 488.5 L385.5 484.5"/>
+    <path d="M355.5 495.5 L385.5 491.5"/>
+    <path d="M355.5 502.5 L385.5 498.5"/>
+    <path d="M355.5 509.5 L385.5 505.5"/>
+    <path d="M355.5 516.5 L385.5 512.5"/>
+  </g>
+  <path d="M345.5 449.5 L345.5 473.5 Q370.5 492.5 395.5 473.5 L395.5 449.5 Z" fill="url(#brass)" stroke="#4b3320" stroke-width="1.8"/>
+  <ellipse cx="370.5" cy="449.5" rx="25" ry="9.5" fill="url(#brassTop)" stroke="#4b3320" stroke-width="1.8"/>
+  <ellipse cx="370.5" cy="449.5" rx="20" ry="7.6" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.6"/>
+  <g transform="translate(370.5 449.5) scale(1 0.38)">
+    <rect x="-21" y="-9" width="42" height="18" rx="2" fill="#3a2612" stroke="#241708" stroke-width="2"/>
+    <rect x="-21" y="-9" width="42" height="6" fill="#000000" opacity="0.35"/>
+  </g>
+  <path d="M460.5 528.5 L502.5 498.5 L502.5 532.5 L460.5 562.5 Z" fill="url(#brass)" stroke="#4b3320" stroke-width="2"/>
+  <path d="M460.5 528.5 L502.5 498.5 L502.5 532.5 L460.5 562.5 Z" fill="#000000" opacity="0.22"/>
+  <path d="M410.5 528.5 L460.5 528.5 L460.5 562.5 L410.5 562.5 Z" fill="url(#brass)" stroke="#4b3320" stroke-width="2"/>
+  <rect x="419.5" y="540.5" width="32" height="15" rx="3" fill="#241708" stroke="#3c2814" stroke-width="1.6"/>
+  <path d="M410.5 528.5 L460.5 528.5 L502.5 498.5 L452.5 498.5 Z" fill="url(#brassTop)" stroke="#4b3320" stroke-width="2"/>
+  <path d="M441.5 473.5 L441.5 513.5 Q456.5 524.9 471.5 513.5 L471.5 473.5 Z" fill="url(#brass)" stroke="#4b3320" stroke-width="1.8"/>
+  <g stroke="#5d3f26" stroke-width="2.2" opacity="0.8" fill="none">
+    <path d="M441.5 478.5 L471.5 474.5"/>
+    <path d="M441.5 485.5 L471.5 481.5"/>
+    <path d="M441.5 492.5 L471.5 488.5"/>
+    <path d="M441.5 499.5 L471.5 495.5"/>
+    <path d="M441.5 506.5 L471.5 502.5"/>
+    <path d="M441.5 513.5 L471.5 509.5"/>
+  </g>
+  <g stroke="#e8bd85" stroke-width="1.3" opacity="0.55" fill="none">
+    <path d="M441.5 481.5 L471.5 477.5"/>
+    <path d="M441.5 488.5 L471.5 484.5"/>
+    <path d="M441.5 495.5 L471.5 491.5"/>
+    <path d="M441.5 502.5 L471.5 498.5"/>
+    <path d="M441.5 509.5 L471.5 505.5"/>
+    <path d="M441.5 516.5 L471.5 512.5"/>
+  </g>
+  <path d="M431.5 449.5 L431.5 473.5 Q456.5 492.5 481.5 473.5 L481.5 449.5 Z" fill="url(#brass)" stroke="#4b3320" stroke-width="1.8"/>
+  <ellipse cx="456.5" cy="449.5" rx="25" ry="9.5" fill="url(#brassTop)" stroke="#4b3320" stroke-width="1.8"/>
+  <ellipse cx="456.5" cy="449.5" rx="20" ry="7.6" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.6"/>
+  <g transform="translate(456.5 449.5) scale(1 0.38)">
+    <rect x="-21" y="-9" width="42" height="18" rx="2" fill="#3a2612" stroke="#241708" stroke-width="2"/>
+    <rect x="-21" y="-9" width="42" height="6" fill="#000000" opacity="0.35"/>
+  </g>
+  <path d="M546.5 528.5 L588.5 498.5 L588.5 532.5 L546.5 562.5 Z" fill="url(#brass)" stroke="#4b3320" stroke-width="2"/>
+  <path d="M546.5 528.5 L588.5 498.5 L588.5 532.5 L546.5 562.5 Z" fill="#000000" opacity="0.22"/>
+  <path d="M496.5 528.5 L546.5 528.5 L546.5 562.5 L496.5 562.5 Z" fill="url(#brass)" stroke="#4b3320" stroke-width="2"/>
+  <rect x="505.5" y="540.5" width="32" height="15" rx="3" fill="#241708" stroke="#3c2814" stroke-width="1.6"/>
+  <path d="M496.5 528.5 L546.5 528.5 L588.5 498.5 L538.5 498.5 Z" fill="url(#brassTop)" stroke="#4b3320" stroke-width="2"/>
+  <path d="M527.5 473.5 L527.5 513.5 Q542.5 524.9 557.5 513.5 L557.5 473.5 Z" fill="url(#brass)" stroke="#4b3320" stroke-width="1.8"/>
+  <g stroke="#5d3f26" stroke-width="2.2" opacity="0.8" fill="none">
+    <path d="M527.5 478.5 L557.5 474.5"/>
+    <path d="M527.5 485.5 L557.5 481.5"/>
+    <path d="M527.5 492.5 L557.5 488.5"/>
+    <path d="M527.5 499.5 L557.5 495.5"/>
+    <path d="M527.5 506.5 L557.5 502.5"/>
+    <path d="M527.5 513.5 L557.5 509.5"/>
+  </g>
+  <g stroke="#e8bd85" stroke-width="1.3" opacity="0.55" fill="none">
+    <path d="M527.5 481.5 L557.5 477.5"/>
+    <path d="M527.5 488.5 L557.5 484.5"/>
+    <path d="M527.5 495.5 L557.5 491.5"/>
+    <path d="M527.5 502.5 L557.5 498.5"/>
+    <path d="M527.5 509.5 L557.5 505.5"/>
+    <path d="M527.5 516.5 L557.5 512.5"/>
+  </g>
+  <path d="M517.5 449.5 L517.5 473.5 Q542.5 492.5 567.5 473.5 L567.5 449.5 Z" fill="url(#brass)" stroke="#4b3320" stroke-width="1.8"/>
+  <ellipse cx="542.5" cy="449.5" rx="25" ry="9.5" fill="url(#brassTop)" stroke="#4b3320" stroke-width="1.8"/>
+  <ellipse cx="542.5" cy="449.5" rx="20" ry="7.6" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.6"/>
+  <g transform="translate(542.5 449.5) scale(1 0.38)">
+    <rect x="-21" y="-9" width="42" height="18" rx="2" fill="#3a2612" stroke="#241708" stroke-width="2"/>
+    <rect x="-21" y="-9" width="42" height="6" fill="#000000" opacity="0.35"/>
+  </g>
+  <path d="M632.5 528.5 L674.5 498.5 L674.5 532.5 L632.5 562.5 Z" fill="url(#brass)" stroke="#4b3320" stroke-width="2"/>
+  <path d="M632.5 528.5 L674.5 498.5 L674.5 532.5 L632.5 562.5 Z" fill="#000000" opacity="0.22"/>
+  <path d="M582.5 528.5 L632.5 528.5 L632.5 562.5 L582.5 562.5 Z" fill="url(#brass)" stroke="#4b3320" stroke-width="2"/>
+  <rect x="591.5" y="540.5" width="32" height="15" rx="3" fill="#241708" stroke="#3c2814" stroke-width="1.6"/>
+  <path d="M582.5 528.5 L632.5 528.5 L674.5 498.5 L624.5 498.5 Z" fill="url(#brassTop)" stroke="#4b3320" stroke-width="2"/>
+  <path d="M613.5 473.5 L613.5 513.5 Q628.5 524.9 643.5 513.5 L643.5 473.5 Z" fill="url(#brass)" stroke="#4b3320" stroke-width="1.8"/>
+  <g stroke="#5d3f26" stroke-width="2.2" opacity="0.8" fill="none">
+    <path d="M613.5 478.5 L643.5 474.5"/>
+    <path d="M613.5 485.5 L643.5 481.5"/>
+    <path d="M613.5 492.5 L643.5 488.5"/>
+    <path d="M613.5 499.5 L643.5 495.5"/>
+    <path d="M613.5 506.5 L643.5 502.5"/>
+    <path d="M613.5 513.5 L643.5 509.5"/>
+  </g>
+  <g stroke="#e8bd85" stroke-width="1.3" opacity="0.55" fill="none">
+    <path d="M613.5 481.5 L643.5 477.5"/>
+    <path d="M613.5 488.5 L643.5 484.5"/>
+    <path d="M613.5 495.5 L643.5 491.5"/>
+    <path d="M613.5 502.5 L643.5 498.5"/>
+    <path d="M613.5 509.5 L643.5 505.5"/>
+    <path d="M613.5 516.5 L643.5 512.5"/>
+  </g>
+  <path d="M603.5 449.5 L603.5 473.5 Q628.5 492.5 653.5 473.5 L653.5 449.5 Z" fill="url(#brass)" stroke="#4b3320" stroke-width="1.8"/>
+  <ellipse cx="628.5" cy="449.5" rx="25" ry="9.5" fill="url(#brassTop)" stroke="#4b3320" stroke-width="1.8"/>
+  <ellipse cx="628.5" cy="449.5" rx="20" ry="7.6" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.6"/>
+  <g transform="translate(628.5 449.5) scale(1 0.38)">
+    <rect x="-21" y="-9" width="42" height="18" rx="2" fill="#3a2612" stroke="#241708" stroke-width="2"/>
+    <rect x="-21" y="-9" width="42" height="6" fill="#000000" opacity="0.35"/>
+  </g>
+  <path d="M718.5 528.5 L760.5 498.5 L760.5 532.5 L718.5 562.5 Z" fill="url(#brass)" stroke="#4b3320" stroke-width="2"/>
+  <path d="M718.5 528.5 L760.5 498.5 L760.5 532.5 L718.5 562.5 Z" fill="#000000" opacity="0.22"/>
+  <path d="M668.5 528.5 L718.5 528.5 L718.5 562.5 L668.5 562.5 Z" fill="url(#brass)" stroke="#4b3320" stroke-width="2"/>
+  <rect x="677.5" y="540.5" width="32" height="15" rx="3" fill="#241708" stroke="#3c2814" stroke-width="1.6"/>
+  <path d="M668.5 528.5 L718.5 528.5 L760.5 498.5 L710.5 498.5 Z" fill="url(#brassTop)" stroke="#4b3320" stroke-width="2"/>
+  <path d="M699.5 473.5 L699.5 513.5 Q714.5 524.9 729.5 513.5 L729.5 473.5 Z" fill="url(#brass)" stroke="#4b3320" stroke-width="1.8"/>
+  <g stroke="#5d3f26" stroke-width="2.2" opacity="0.8" fill="none">
+    <path d="M699.5 478.5 L729.5 474.5"/>
+    <path d="M699.5 485.5 L729.5 481.5"/>
+    <path d="M699.5 492.5 L729.5 488.5"/>
+    <path d="M699.5 499.5 L729.5 495.5"/>
+    <path d="M699.5 506.5 L729.5 502.5"/>
+    <path d="M699.5 513.5 L729.5 509.5"/>
+  </g>
+  <g stroke="#e8bd85" stroke-width="1.3" opacity="0.55" fill="none">
+    <path d="M699.5 481.5 L729.5 477.5"/>
+    <path d="M699.5 488.5 L729.5 484.5"/>
+    <path d="M699.5 495.5 L729.5 491.5"/>
+    <path d="M699.5 502.5 L729.5 498.5"/>
+    <path d="M699.5 509.5 L729.5 505.5"/>
+    <path d="M699.5 516.5 L729.5 512.5"/>
+  </g>
+  <path d="M689.5 449.5 L689.5 473.5 Q714.5 492.5 739.5 473.5 L739.5 449.5 Z" fill="url(#brass)" stroke="#4b3320" stroke-width="1.8"/>
+  <ellipse cx="714.5" cy="449.5" rx="25" ry="9.5" fill="url(#brassTop)" stroke="#4b3320" stroke-width="1.8"/>
+  <ellipse cx="714.5" cy="449.5" rx="20" ry="7.6" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.6"/>
+  <g transform="translate(714.5 449.5) scale(1 0.38)">
+    <rect x="-21" y="-9" width="42" height="18" rx="2" fill="#3a2612" stroke="#241708" stroke-width="2"/>
+    <rect x="-21" y="-9" width="42" height="6" fill="#000000" opacity="0.35"/>
+  </g>
+
+  <!-- five raised barrier fins, tall and squared -->
+  <path d="M304 422 L367 377 L367 525 L304 570 Z" fill="url(#thermoSide)" stroke="#1b1611" stroke-width="2"/>
+  <path d="M304 422 L367 377 L367 525 L304 570 Z" fill="#000000" opacity="0.3"/>
+  <path d="M288 422 L304 422 L304 570 L288 570 Z" fill="url(#thermo)" stroke="#1b1611" stroke-width="2"/>
+  <path d="M288 422 L304 422 L367 377 L351 377 Z" fill="url(#thermo)" stroke="#1b1611" stroke-width="2"/>
+  <path d="M288 422 L304 422 L367 377 L351 377 Z" fill="#ffffff" opacity="0.12"/>
+  <path d="M296 428 L296 566" stroke="#c0a686" stroke-opacity="0.4" stroke-width="2"/>
+  <path d="M291.5 427 L291.5 566" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2.5"/>
+  <path d="M390 422 L453 377 L453 525 L390 570 Z" fill="url(#thermoSide)" stroke="#1b1611" stroke-width="2"/>
+  <path d="M390 422 L453 377 L453 525 L390 570 Z" fill="#000000" opacity="0.3"/>
+  <path d="M374 422 L390 422 L390 570 L374 570 Z" fill="url(#thermo)" stroke="#1b1611" stroke-width="2"/>
+  <path d="M374 422 L390 422 L453 377 L437 377 Z" fill="url(#thermo)" stroke="#1b1611" stroke-width="2"/>
+  <path d="M374 422 L390 422 L453 377 L437 377 Z" fill="#ffffff" opacity="0.12"/>
+  <path d="M382 428 L382 566" stroke="#c0a686" stroke-opacity="0.4" stroke-width="2"/>
+  <path d="M377.5 427 L377.5 566" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2.5"/>
+  <path d="M476 422 L539 377 L539 525 L476 570 Z" fill="url(#thermoSide)" stroke="#1b1611" stroke-width="2"/>
+  <path d="M476 422 L539 377 L539 525 L476 570 Z" fill="#000000" opacity="0.3"/>
+  <path d="M460 422 L476 422 L476 570 L460 570 Z" fill="url(#thermo)" stroke="#1b1611" stroke-width="2"/>
+  <path d="M460 422 L476 422 L539 377 L523 377 Z" fill="url(#thermo)" stroke="#1b1611" stroke-width="2"/>
+  <path d="M460 422 L476 422 L539 377 L523 377 Z" fill="#ffffff" opacity="0.12"/>
+  <path d="M468 428 L468 566" stroke="#c0a686" stroke-opacity="0.4" stroke-width="2"/>
+  <path d="M463.5 427 L463.5 566" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2.5"/>
+  <path d="M562 422 L625 377 L625 525 L562 570 Z" fill="url(#thermoSide)" stroke="#1b1611" stroke-width="2"/>
+  <path d="M562 422 L625 377 L625 525 L562 570 Z" fill="#000000" opacity="0.3"/>
+  <path d="M546 422 L562 422 L562 570 L546 570 Z" fill="url(#thermo)" stroke="#1b1611" stroke-width="2"/>
+  <path d="M546 422 L562 422 L625 377 L609 377 Z" fill="url(#thermo)" stroke="#1b1611" stroke-width="2"/>
+  <path d="M546 422 L562 422 L625 377 L609 377 Z" fill="#ffffff" opacity="0.12"/>
+  <path d="M554 428 L554 566" stroke="#c0a686" stroke-opacity="0.4" stroke-width="2"/>
+  <path d="M549.5 427 L549.5 566" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2.5"/>
+  <path d="M648 422 L711 377 L711 525 L648 570 Z" fill="url(#thermoSide)" stroke="#1b1611" stroke-width="2"/>
+  <path d="M648 422 L711 377 L711 525 L648 570 Z" fill="#000000" opacity="0.3"/>
+  <path d="M632 422 L648 422 L648 570 L632 570 Z" fill="url(#thermo)" stroke="#1b1611" stroke-width="2"/>
+  <path d="M632 422 L648 422 L711 377 L695 377 Z" fill="url(#thermo)" stroke="#1b1611" stroke-width="2"/>
+  <path d="M632 422 L648 422 L711 377 L695 377 Z" fill="#ffffff" opacity="0.12"/>
+  <path d="M640 428 L640 566" stroke="#c0a686" stroke-opacity="0.4" stroke-width="2"/>
+  <path d="M635.5 427 L635.5 566" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2.5"/>
+</svg>

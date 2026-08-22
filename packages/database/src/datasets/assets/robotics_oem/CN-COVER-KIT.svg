@@ -1,0 +1,213 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="cloth" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8a9298"/>
+      <stop offset="0.2" stop-color="#d5dce1"/>
+      <stop offset="0.45" stop-color="#f0f4f6"/>
+      <stop offset="0.72" stop-color="#b2bac0"/>
+      <stop offset="1" stop-color="#798187"/>
+    </linearGradient>
+    <linearGradient id="clothDim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7b8288"/>
+      <stop offset="0.2" stop-color="#bfc6cb"/>
+      <stop offset="0.45" stop-color="#dae0e4"/>
+      <stop offset="0.72" stop-color="#9ea6ac"/>
+      <stop offset="1" stop-color="#6a7278"/>
+    </linearGradient>
+    <linearGradient id="elastic" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#111315"/>
+      <stop offset="0.25" stop-color="#2c3033"/>
+      <stop offset="0.5" stop-color="#3b4044"/>
+      <stop offset="0.75" stop-color="#212528"/>
+      <stop offset="1" stop-color="#0d0f10"/>
+    </linearGradient>
+    <linearGradient id="cavity" x1="0.3" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#4d5459"/>
+      <stop offset="1" stop-color="#22262a"/>
+    </linearGradient>
+    <linearGradient id="slider" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5b6167"/>
+      <stop offset="0.14" stop-color="#dfe6ea"/>
+      <stop offset="0.34" stop-color="#ffffff"/>
+      <stop offset="0.6" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <pattern id="ripstop" width="26" height="26" patternUnits="userSpaceOnUse">
+      <path d="M0 0 L26 0 M0 0 L0 26" fill="none" stroke="#ffffff" stroke-opacity="0.20" stroke-width="2"/>
+      <path d="M13 0 L13 26 M0 13 L26 13" fill="none" stroke="#000000" stroke-opacity="0.06" stroke-width="1"/>
+    </pattern>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="500" cy="742" rx="412" ry="90" fill="url(#shadow)"/>
+
+  <!-- A : long tapered sleeve for a link -->
+  <g>
+    <path d="M176 302 C380 288 620 276 858 282 Q898 330 858 378 C620 400 380 452 176 442 Q124 372 176 302 Z"
+          fill="url(#cloth)" stroke="#606870" stroke-width="3"/>
+    <path d="M176 302 C380 288 620 276 858 282 Q898 330 858 378 C620 400 380 452 176 442 Q124 372 176 302 Z"
+          fill="url(#ripstop)"/>
+    <!-- soft folds along the sleeve -->
+    <g fill="none" stroke="#6f777d" stroke-width="3" opacity="0.4">
+      <path d="M300 296 C292 340 296 396 306 448"/>
+      <path d="M430 288 C424 334 428 388 438 436"/>
+      <path d="M560 282 C554 326 558 376 568 420"/>
+      <path d="M690 279 C686 320 690 364 698 404"/>
+    </g>
+    <g fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.35">
+      <path d="M310 296 C302 340 306 396 316 447"/>
+      <path d="M440 288 C434 334 438 388 448 435"/>
+      <path d="M570 282 C564 326 568 376 578 419"/>
+      <path d="M700 279 C696 320 700 364 708 403"/>
+    </g>
+    <!-- zip closure along the sleeve -->
+    <path d="M258 322 C450 306 650 296 818 302" fill="none" stroke="#33383c" stroke-width="16"/>
+    <path d="M258 322 C450 306 650 296 818 302" fill="none" stroke="#c3c9cd" stroke-width="10" stroke-dasharray="5 7"/>
+    <g fill="none" stroke="#5a6167" stroke-width="2" opacity="0.7">
+      <path d="M258 334 C450 318 650 308 818 314"/>
+      <path d="M258 310 C450 294 650 284 818 290"/>
+    </g>
+    <!-- slider and pull tab -->
+    <path d="M596 284 L640 282 L644 312 L600 314 Z" fill="url(#slider)" stroke="#4e5459" stroke-width="2"/>
+    <path d="M614 312 C612 336 606 350 600 364" fill="none" stroke="#9aa2a9" stroke-width="4"/>
+    <path d="M582 362 L618 360 L622 402 L586 404 Z" fill="#1c2023" stroke="#000000" stroke-width="2"/>
+    <ellipse cx="602" cy="374" rx="9" ry="7" fill="#3b4044"/>
+    <!-- reinforced double stitching -->
+    <g fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.5" stroke-dasharray="10 9">
+      <path d="M240 434 C420 442 640 396 848 372"/>
+      <path d="M240 424 C420 432 640 386 848 362"/>
+    </g>
+    <!-- elasticated cuff, wide end -->
+    <path d="M180 302 C204 299 224 299 238 301 Q214 372 238 443 C224 445 204 445 180 442 Q128 372 180 302 Z"
+          fill="url(#elastic)" stroke="#000000" stroke-width="2.5"/>
+    <g fill="none" stroke="#4a5055" stroke-width="2.5" opacity="0.6">
+      <path d="M194 300 Q170 372 194 444"/><path d="M210 299 Q186 372 210 445"/><path d="M226 300 Q202 372 226 444"/>
+    </g>
+    <ellipse cx="180" cy="372" rx="24" ry="66" fill="url(#cavity)" stroke="#000000" stroke-width="2"/>
+    <ellipse cx="184" cy="372" rx="15" ry="52" fill="#191d20" opacity="0.75"/>
+    <!-- elasticated cuff, narrow end -->
+    <path d="M812 281 C830 281 848 281 858 282 Q898 330 858 378 C848 379 830 380 812 381 Q838 330 812 281 Z"
+          fill="url(#elastic)" stroke="#000000" stroke-width="2.5"/>
+    <g fill="none" stroke="#4a5055" stroke-width="2.2" opacity="0.6">
+      <path d="M826 281 Q852 330 826 381"/><path d="M842 281 Q868 330 842 380"/>
+    </g>
+  </g>
+
+  <!-- C : short wide cuff for a joint -->
+  <g>
+    <path d="M616 416 L826 436 Q866 520 826 604 L616 600 Q584 508 616 416 Z"
+          fill="url(#clothDim)" stroke="#5c646b" stroke-width="3"/>
+    <path d="M616 416 L826 436 Q866 520 826 604 L616 600 Q584 508 616 416 Z" fill="url(#ripstop)"/>
+    <g fill="none" stroke="#727a80" stroke-width="3" opacity="0.45">
+      <path d="M676 422 Q650 510 676 599"/>
+      <path d="M736 428 Q712 514 736 601"/>
+      <path d="M786 432 Q762 516 786 602"/>
+    </g>
+    <g fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.35">
+      <path d="M684 423 Q658 510 684 599"/>
+      <path d="M744 429 Q720 514 744 601"/>
+    </g>
+    <!-- zip along the cuff -->
+    <path d="M646 424 C712 428 770 432 812 438" fill="none" stroke="#33383c" stroke-width="15"/>
+    <path d="M646 424 C712 428 770 432 812 438" fill="none" stroke="#c3c9cd" stroke-width="9" stroke-dasharray="5 7"/>
+    <path d="M746 424 L786 428 L784 456 L744 452 Z" fill="url(#slider)" stroke="#4e5459" stroke-width="2"/>
+    <path d="M762 454 C762 476 758 490 754 502" fill="none" stroke="#9aa2a9" stroke-width="4"/>
+    <path d="M736 500 L770 502 L768 540 L734 538 Z" fill="#1c2023" stroke="#000000" stroke-width="2"/>
+    <ellipse cx="752" cy="514" rx="8" ry="6" fill="#3b4044"/>
+    <!-- double stitched hem -->
+    <g fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.5" stroke-dasharray="9 8">
+      <path d="M628 588 C700 594 770 596 820 592"/>
+      <path d="M628 578 C700 584 770 586 820 582"/>
+    </g>
+    <!-- elasticated ends -->
+    <path d="M796 432 C810 434 820 435 826 436 Q866 520 826 604 C820 604 810 604 796 603 Q834 520 796 432 Z"
+          fill="url(#elastic)" stroke="#000000" stroke-width="2.5"/>
+    <path d="M616 416 C630 417 644 419 654 420 Q628 510 654 599 C644 600 630 600 616 600 Q584 508 616 416 Z"
+          fill="url(#elastic)" stroke="#000000" stroke-width="2.5"/>
+    <g fill="none" stroke="#4a5055" stroke-width="2.5" opacity="0.6">
+      <path d="M628 417 Q600 508 628 600"/><path d="M642 419 Q615 509 642 600"/>
+    </g>
+    <ellipse cx="618" cy="508" rx="30" ry="86" fill="url(#cavity)" stroke="#000000" stroke-width="2"/>
+    <ellipse cx="624" cy="508" rx="19" ry="70" fill="#191d20" opacity="0.7"/>
+    <path d="M612 448 Q596 508 612 568" fill="none" stroke="#8f979d" stroke-width="4" opacity="0.35"/>
+  </g>
+
+  <!-- B : bellows concertina section -->
+  <g>
+    <path d="M218 488 L500 512 Q540 582 500 652 L218 644 Q166 566 218 488 Z"
+          fill="url(#cloth)" stroke="#606870" stroke-width="3"/>
+    <path d="M218 488 L500 512 Q540 582 500 652 L218 644 Q166 566 218 488 Z" fill="url(#ripstop)"/>
+    <!-- concertina convolutions with sewn ring seams -->
+    <g fill="none">
+      <g stroke="#6b737a" stroke-width="9" opacity="0.55">
+        <path d="M258 491 Q238 568 258 645"/>
+        <path d="M300 495 Q280 570 300 646"/>
+        <path d="M342 499 Q322 573 342 648"/>
+        <path d="M384 502 Q364 575 384 649"/>
+        <path d="M426 506 Q406 578 426 650"/>
+        <path d="M468 509 Q448 580 468 651"/>
+      </g>
+      <g stroke="#f4f7f8" stroke-width="4" opacity="0.6">
+        <path d="M266 492 Q246 568 266 645"/>
+        <path d="M308 496 Q288 571 308 647"/>
+        <path d="M350 499 Q330 573 350 648"/>
+        <path d="M392 503 Q372 576 392 649"/>
+        <path d="M434 506 Q414 578 434 650"/>
+        <path d="M476 510 Q456 581 476 651"/>
+      </g>
+      <g stroke="#ffffff" stroke-width="2" opacity="0.55" stroke-dasharray="8 7">
+        <path d="M262 492 Q242 568 262 645"/>
+        <path d="M346 499 Q326 573 346 648"/>
+        <path d="M430 506 Q410 578 430 650"/>
+      </g>
+    </g>
+    <!-- elasticated open end -->
+    <path d="M218 488 C232 489 244 490 254 491 Q234 568 254 645 C244 645 232 645 218 644 Q166 566 218 488 Z"
+          fill="url(#elastic)" stroke="#000000" stroke-width="2.5"/>
+    <g fill="none" stroke="#4a5055" stroke-width="2.4" opacity="0.6">
+      <path d="M230 489 Q206 566 230 645"/><path d="M242 490 Q219 567 242 645"/>
+    </g>
+    <ellipse cx="220" cy="566" rx="22" ry="72" fill="url(#cavity)" stroke="#000000" stroke-width="2"/>
+    <ellipse cx="225" cy="566" rx="13" ry="57" fill="#191d20" opacity="0.72"/>
+    <!-- sewn ring seam at the far end -->
+    <path d="M486 511 Q526 582 486 652" fill="none" stroke="#5c646b" stroke-width="3" opacity="0.8"/>
+    <path d="M492 511 Q532 582 492 652" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.45" stroke-dasharray="9 8"/>
+  </g>
+
+  <!-- D : small wrist pouch -->
+  <g>
+    <path d="M336 704 C332 662 380 640 442 640 C506 640 550 664 550 706 C550 754 502 788 434 788 C368 788 340 750 336 704 Z"
+          fill="url(#clothDim)" stroke="#5c646b" stroke-width="3"/>
+    <path d="M336 704 C332 662 380 640 442 640 C506 640 550 664 550 706 C550 754 502 788 434 788 C368 788 340 750 336 704 Z"
+          fill="url(#ripstop)"/>
+    <g fill="none" stroke="#737b81" stroke-width="3" opacity="0.45">
+      <path d="M400 646 C388 692 392 742 410 782"/>
+      <path d="M466 644 C456 690 460 740 476 776"/>
+    </g>
+    <g fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.35">
+      <path d="M408 646 C396 692 400 742 418 781"/>
+      <path d="M474 645 C464 690 468 740 484 774"/>
+    </g>
+    <!-- zip over the top of the pouch -->
+    <path d="M372 664 C420 646 490 652 534 684" fill="none" stroke="#33383c" stroke-width="14"/>
+    <path d="M372 664 C420 646 490 652 534 684" fill="none" stroke="#c3c9cd" stroke-width="8" stroke-dasharray="4 6"/>
+    <path d="M486 654 L520 668 L508 692 L474 678 Z" fill="url(#slider)" stroke="#4e5459" stroke-width="2"/>
+    <path d="M492 690 C486 708 480 718 472 728" fill="none" stroke="#9aa2a9" stroke-width="4"/>
+    <path d="M448 724 L480 730 L472 762 L440 756 Z" fill="#1c2023" stroke="#000000" stroke-width="2"/>
+    <ellipse cx="460" cy="740" rx="8" ry="6" fill="#3b4044"/>
+    <!-- reinforced double stitched base seam -->
+    <g fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.5" stroke-dasharray="9 8">
+      <path d="M350 736 C392 774 486 776 540 730"/>
+      <path d="M348 726 C390 764 484 766 542 720"/>
+    </g>
+    <!-- elasticated opening -->
+    <path d="M336 704 C334 682 344 666 360 656 Q340 704 362 754 C346 744 338 726 336 704 Z"
+          fill="url(#elastic)" stroke="#000000" stroke-width="2.5"/>
+    <ellipse cx="348" cy="706" rx="18" ry="48" fill="url(#cavity)" stroke="#000000" stroke-width="2"/>
+    <ellipse cx="352" cy="706" rx="10" ry="36" fill="#191d20" opacity="0.7"/>
+  </g>
+</svg>

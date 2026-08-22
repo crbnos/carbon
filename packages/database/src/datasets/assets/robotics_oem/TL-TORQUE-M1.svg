@@ -1,0 +1,184 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="chromeH" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5b6167"/>
+      <stop offset="0.14" stop-color="#dfe6ea"/>
+      <stop offset="0.34" stop-color="#ffffff"/>
+      <stop offset="0.6" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <linearGradient id="chromeV" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5b6167"/>
+      <stop offset="0.14" stop-color="#dfe6ea"/>
+      <stop offset="0.34" stop-color="#ffffff"/>
+      <stop offset="0.6" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <linearGradient id="chromeFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#5b6167"/>
+      <stop offset="0.14" stop-color="#dfe6ea"/>
+      <stop offset="0.34" stop-color="#ffffff"/>
+      <stop offset="0.6" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <linearGradient id="steelFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="blackAnoH" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1c1f22"/>
+      <stop offset="0.2" stop-color="#43484d"/>
+      <stop offset="0.45" stop-color="#5a6167"/>
+      <stop offset="0.72" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="blackAnoV" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1c1f22"/>
+      <stop offset="0.2" stop-color="#43484d"/>
+      <stop offset="0.45" stop-color="#5a6167"/>
+      <stop offset="0.72" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="blackAnoFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#5a6167"/>
+      <stop offset="0.5" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="rubberH" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#111315"/>
+      <stop offset="0.25" stop-color="#2c3033"/>
+      <stop offset="0.5" stop-color="#3b4044"/>
+      <stop offset="0.75" stop-color="#212528"/>
+      <stop offset="1" stop-color="#0d0f10"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="gripClip"><rect x="556" y="358" width="282" height="76"/></clipPath>
+  </defs>
+
+  <ellipse cx="518" cy="432" rx="378" ry="42" fill="url(#shadow)"/>
+  <ellipse cx="250" cy="800" rx="62" ry="15" fill="url(#shadow)"/>
+  <ellipse cx="386" cy="806" rx="74" ry="17" fill="url(#shadow)"/>
+  <ellipse cx="540" cy="812" rx="86" ry="19" fill="url(#shadow)"/>
+  <ellipse cx="748" cy="846" rx="176" ry="38" fill="url(#shadow)"/>
+
+  <!-- ================= click-type torque wrench ================= -->
+  <!-- ratchet head, lying flat -->
+  <path d="M120 396 A76 29 0 0 0 272 396 L272 418 A76 29 0 0 1 120 418 Z" fill="url(#chromeV)" stroke="#42484d" stroke-width="2.5"/>
+  <ellipse cx="196" cy="396" rx="76" ry="29" fill="url(#chromeFace)" stroke="#4a5054" stroke-width="2.5"/>
+  <ellipse cx="196" cy="396" rx="66" ry="25" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="2"/>
+  <ellipse cx="196" cy="396" rx="52" ry="19.8" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2"/>
+  <!-- reversing lever -->
+  <ellipse cx="152" cy="392" rx="16" ry="6.1" fill="#33393d" stroke="#22282b" stroke-width="1.8"/>
+  <!-- square drive tang -->
+  <path d="M174 368 L218 368 L218 398 L174 398 Z" fill="url(#blackAnoFace)" stroke="#101315" stroke-width="2.2"/>
+  <path d="M218 368 L236 355 L236 385 L218 398 Z" fill="#22272b" stroke="#101315" stroke-width="2.2"/>
+  <path d="M174 368 L192 355 L236 355 L218 368 Z" fill="url(#chromeFace)" stroke="#3f4448" stroke-width="2.2"/>
+  <ellipse cx="205" cy="362" rx="6" ry="3.6" fill="#2b3135" opacity="0.9"/>
+
+  <!-- shaft -->
+  <path d="M262 376 L556 376 L556 416 L262 416 Z" fill="url(#chromeH)" stroke="#42484d" stroke-width="2.5"/>
+  <path d="M262 372 L282 372 L282 420 L262 420 Z" fill="url(#chromeH)" stroke="#42484d" stroke-width="2.5"/>
+  <!-- engraved torque scale on the shaft: ticks only -->
+  <g stroke="#5a6167" stroke-opacity="0.9" stroke-linecap="round">
+    <path d="M400 382 L400 396" stroke-width="3"/>
+    <path d="M424 384 L424 394" stroke-width="2"/>
+    <path d="M448 384 L448 394" stroke-width="2"/>
+    <path d="M472 382 L472 396" stroke-width="3"/>
+    <path d="M496 384 L496 394" stroke-width="2"/>
+    <path d="M520 384 L520 394" stroke-width="2"/>
+    <path d="M544 382 L544 396" stroke-width="3"/>
+    <path d="M300 384 L300 394" stroke-width="2"/>
+    <path d="M324 382 L324 396" stroke-width="3"/>
+    <path d="M348 384 L348 394" stroke-width="2"/>
+    <path d="M376 384 L376 394" stroke-width="2"/>
+  </g>
+  <path d="M268 386 L552 386" fill="none" stroke="#ffffff" stroke-opacity="0.45" stroke-width="5"/>
+
+  <!-- knurled grip -->
+  <path d="M556 358 L838 358 L838 434 L556 434 Z" fill="url(#chromeH)" stroke="#42484d" stroke-width="2.5"/>
+  <g clip-path="url(#gripClip)" fill="none" stroke-linecap="butt">
+    <path stroke="#5a6167" stroke-opacity="0.55" stroke-width="3" d="M470 358 L502 434 M488 358 L520 434 M506 358 L538 434 M524 358 L556 434 M542 358 L574 434 M560 358 L592 434 M578 358 L610 434 M596 358 L628 434 M614 358 L646 434 M632 358 L664 434 M650 358 L682 434 M668 358 L700 434 M686 358 L718 434 M704 358 L736 434 M722 358 L754 434 M740 358 L772 434 M758 358 L790 434 M776 358 L808 434 M794 358 L826 434 M812 358 L844 434 M830 358 L862 434 M848 358 L880 434"/>
+    <path stroke="#5a6167" stroke-opacity="0.55" stroke-width="3" d="M556 358 L524 434 M574 358 L542 434 M592 358 L560 434 M610 358 L578 434 M628 358 L596 434 M646 358 L614 434 M664 358 L632 434 M682 358 L650 434 M700 358 L668 434 M718 358 L686 434 M736 358 L704 434 M754 358 L722 434 M772 358 L740 434 M790 358 L758 434 M808 358 L776 434 M826 358 L794 434 M844 358 L812 434 M862 358 L830 434 M880 358 L848 434 M898 358 L866 434 M916 358 L884 434 M934 358 L902 434"/>
+    <path stroke="#f2f5f6" stroke-opacity="0.4" stroke-width="1.8" d="M474 358 L506 434 M492 358 L524 434 M510 358 L542 434 M528 358 L560 434 M546 358 L578 434 M564 358 L596 434 M582 358 L614 434 M600 358 L632 434 M618 358 L650 434 M636 358 L668 434 M654 358 L686 434 M672 358 L704 434 M690 358 L722 434 M708 358 L740 434 M726 358 L758 434 M744 358 L776 434 M762 358 L794 434 M780 358 L812 434 M798 358 L830 434 M816 358 L848 434 M834 358 L866 434 M852 358 L884 434"/>
+    <path stroke="#000000" stroke-opacity="0.22" stroke-width="18" d="M556 428 L838 428"/>
+    <path stroke="#ffffff" stroke-opacity="0.3" stroke-width="10" d="M556 368 L838 368"/>
+  </g>
+  <!-- collars either side of the grip -->
+  <path d="M550 356 L570 356 L570 436 L550 436 Z" fill="url(#chromeH)" stroke="#42484d" stroke-width="2.5"/>
+  <path d="M824 356 L844 356 L844 436 L824 436 Z" fill="url(#chromeH)" stroke="#42484d" stroke-width="2.5"/>
+  <!-- etched free-scale window -->
+  <rect x="596" y="372" width="148" height="34" rx="9" fill="#20252a" stroke="#12161a" stroke-width="3"/>
+  <rect x="604" y="379" width="132" height="20" rx="6" fill="#c8cfd4" opacity="0.85"/>
+  <g stroke="#4a5054" stroke-opacity="0.85" stroke-linecap="round">
+    <path d="M622 379 L622 399" stroke-width="2.6"/>
+    <path d="M648 381 L648 397" stroke-width="1.8"/>
+    <path d="M674 379 L674 399" stroke-width="2.6"/>
+    <path d="M700 381 L700 397" stroke-width="1.8"/>
+    <path d="M726 379 L726 399" stroke-width="2.6"/>
+  </g>
+  <path d="M670 368 L670 410" fill="none" stroke="#b23a2f" stroke-width="3" opacity="0.9"/>
+
+  <!-- black rubber end cap -->
+  <path d="M838 356 L880 356 A18 40 0 0 1 880 436 L838 436 Z" fill="url(#rubberH)" stroke="#0b0d0e" stroke-width="2.5"/>
+  <path d="M846 366 L880 366" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="6"/>
+  <path d="M856 356 L856 436" fill="none" stroke="#0b0d0e" stroke-opacity="0.6" stroke-width="3"/>
+  <path d="M868 356 L868 436" fill="none" stroke="#0b0d0e" stroke-opacity="0.6" stroke-width="3"/>
+
+  <!-- ================= hex bit sockets, ascending size ================= -->
+  <!-- socket 1 -->
+  <g>
+    <path d="M212 704 A38 14.4 0 0 0 288 704 L288 796 A38 14.4 0 0 1 212 796 Z" fill="url(#chromeV)" stroke="#42484d" stroke-width="2.5"/>
+    <path d="M212 716 A38 14.4 0 0 0 288 716" fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="2.5"/>
+    <path d="M212 764 A38 14.4 0 0 0 288 764" fill="none" stroke="#000000" stroke-opacity="0.22" stroke-width="3"/>
+    <ellipse cx="250" cy="704" rx="38" ry="14.4" fill="url(#chromeFace)" stroke="#4a5054" stroke-width="2.5"/>
+    <path d="M234 700 L234 656 A16 6 0 0 1 266 656 L266 700 Z" fill="url(#blackAnoV)" stroke="#101315" stroke-width="2.2"/>
+    <ellipse cx="250" cy="656" rx="16" ry="6" fill="url(#blackAnoFace)" stroke="#101315" stroke-width="2"/>
+    <path d="M241 654 L259 654" fill="none" stroke="#6c757c" stroke-opacity="0.7" stroke-width="2"/>
+  </g>
+  <!-- socket 2 -->
+  <g>
+    <path d="M340 676 A46 17.5 0 0 0 432 676 L432 800 A46 17.5 0 0 1 340 800 Z" fill="url(#chromeV)" stroke="#42484d" stroke-width="2.5"/>
+    <path d="M340 690 A46 17.5 0 0 0 432 690" fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="2.5"/>
+    <path d="M340 762 A46 17.5 0 0 0 432 762" fill="none" stroke="#000000" stroke-opacity="0.22" stroke-width="3"/>
+    <ellipse cx="386" cy="676" rx="46" ry="17.5" fill="url(#chromeFace)" stroke="#4a5054" stroke-width="2.5"/>
+    <path d="M366 672 L366 618 A20 7.6 0 0 1 406 618 L406 672 Z" fill="url(#blackAnoV)" stroke="#101315" stroke-width="2.2"/>
+    <ellipse cx="386" cy="618" rx="20" ry="7.6" fill="url(#blackAnoFace)" stroke="#101315" stroke-width="2"/>
+    <path d="M375 616 L397 616" fill="none" stroke="#6c757c" stroke-opacity="0.7" stroke-width="2"/>
+  </g>
+  <!-- socket 3 -->
+  <g>
+    <path d="M484 644 A56 21.3 0 0 0 596 644 L596 806 A56 21.3 0 0 1 484 806 Z" fill="url(#chromeV)" stroke="#42484d" stroke-width="2.5"/>
+    <path d="M484 660 A56 21.3 0 0 0 596 660" fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="2.5"/>
+    <path d="M484 762 A56 21.3 0 0 0 596 762" fill="none" stroke="#000000" stroke-opacity="0.22" stroke-width="3"/>
+    <ellipse cx="540" cy="644" rx="56" ry="21.3" fill="url(#chromeFace)" stroke="#4a5054" stroke-width="2.5"/>
+    <path d="M516 640 L516 574 A24 9.1 0 0 1 564 574 L564 640 Z" fill="url(#blackAnoV)" stroke="#101315" stroke-width="2.2"/>
+    <ellipse cx="540" cy="574" rx="24" ry="9.1" fill="url(#blackAnoFace)" stroke="#101315" stroke-width="2"/>
+    <path d="M527 572 L553 572" fill="none" stroke="#6c757c" stroke-opacity="0.7" stroke-width="2"/>
+  </g>
+
+  <!-- socket 4, lying on its side, hex broach toward the viewer -->
+  <g>
+    <path d="M628 742 L846 742 L846 842 L628 842 Z" fill="url(#chromeH)" stroke="#42484d" stroke-width="2.5"/>
+    <path d="M846 742 A20 50 0 0 1 846 842" fill="url(#chromeH)" stroke="#42484d" stroke-width="2.5"/>
+    <path d="M700 742 L700 842" fill="none" stroke="#000000" stroke-opacity="0.2" stroke-width="4"/>
+    <path d="M776 742 L776 842" fill="none" stroke="#000000" stroke-opacity="0.2" stroke-width="4"/>
+    <path d="M638 756 L840 756" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="9"/>
+    <path d="M638 830 L840 830" fill="none" stroke="#000000" stroke-opacity="0.2" stroke-width="8"/>
+    <!-- protruding black hex bit -->
+    <path d="M846 766 L892 774 L892 810 L846 818 Z" fill="url(#blackAnoH)" stroke="#101315" stroke-width="2.2"/>
+    <path d="M868 770 L868 814" fill="none" stroke="#6c757c" stroke-opacity="0.45" stroke-width="2.5"/>
+    <!-- broached end face -->
+    <ellipse cx="628" cy="792" rx="20" ry="50" fill="url(#steelFace)" stroke="#4a5054" stroke-width="2.5"/>
+    <ellipse cx="628" cy="792" rx="15" ry="40" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="2"/>
+    <polygon points="628,758 639,772 639,806 628,822 617,806 617,772" fill="#2b3135" stroke="#1c2124" stroke-width="2.2"/>
+    <polygon points="628,766 635,776 635,802 628,813 621,802 621,776" fill="#181d20" opacity="0.7"/>
+    <path d="M617 772 L628 758 L639 772" fill="none" stroke="#aab1b7" stroke-opacity="0.5" stroke-width="2.5"/>
+  </g>
+</svg>

@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="odBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="ringTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#eef1f3"/>
+      <stop offset="0.35" stop-color="#c3c9cd"/>
+      <stop offset="0.72" stop-color="#8f979d"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="chamfer" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8d959b"/>
+      <stop offset="0.24" stop-color="#ffffff"/>
+      <stop offset="0.5" stop-color="#e6ebee"/>
+      <stop offset="0.76" stop-color="#a2a9af"/>
+      <stop offset="1" stop-color="#565c62"/>
+    </linearGradient>
+    <linearGradient id="nitrile" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#2c3033"/>
+      <stop offset="0.25" stop-color="#3b4044"/>
+      <stop offset="0.5" stop-color="#2c3033"/>
+      <stop offset="0.75" stop-color="#1a1d20"/>
+      <stop offset="1" stop-color="#0d0f10"/>
+    </linearGradient>
+    <linearGradient id="shoulder" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#e9edef"/>
+      <stop offset="0.4" stop-color="#b6bdc3"/>
+      <stop offset="1" stop-color="#666c72"/>
+    </linearGradient>
+    <linearGradient id="boreWall" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#3f454a"/>
+      <stop offset="0.3" stop-color="#8d949a"/>
+      <stop offset="0.55" stop-color="#a9b0b6"/>
+      <stop offset="0.8" stop-color="#6b7278"/>
+      <stop offset="1" stop-color="#383d42"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="512" cy="742" rx="462" ry="102" fill="url(#shadow)"/>
+
+  <!-- wide heavy outer diameter -->
+  <path d="M110 400 A 402 153 0 0 0 914 400 L 914 600 A 402 153 0 0 1 110 600 Z"
+        fill="url(#odBarrel)" stroke="#464c51" stroke-width="3"/>
+  <!-- ground OD lay -->
+  <g stroke="#ffffff" stroke-opacity="0.13" stroke-width="2" fill="none">
+    <path d="M116 430 A 398 151 0 0 0 908 430"/>
+    <path d="M116 470 A 398 151 0 0 0 908 470"/>
+    <path d="M116 510 A 398 151 0 0 0 908 510"/>
+    <path d="M116 550 A 398 151 0 0 0 908 550"/>
+  </g>
+  <path d="M116 490 A 398 151 0 0 0 908 490" fill="none" stroke="#ffffff" stroke-opacity="0.24" stroke-width="14"/>
+  <!-- polished chamfers top and bottom of the OD -->
+  <path d="M110 400 A 402 153 0 0 0 914 400 L 914 424 A 402 153 0 0 1 110 424 Z"
+        fill="url(#chamfer)" stroke="#6b7278" stroke-width="1.5"/>
+  <path d="M110 576 A 402 153 0 0 0 914 576 L 914 600 A 402 153 0 0 1 110 600 Z"
+        fill="url(#chamfer)" fill-opacity="0.55" stroke="#4a5055" stroke-width="1.5"/>
+
+  <!-- thick outer ring top face -->
+  <path d="M110 400 A 402 153 0 0 1 914 400 L 856 400 A 344 131 0 0 0 168 400 Z"
+        fill="url(#ringTop)" stroke="#4d5359" stroke-width="2"/>
+  <path d="M110 400 A 402 153 0 0 0 914 400 L 856 400 A 344 131 0 0 1 168 400 Z"
+        fill="url(#ringTop)" stroke="#4d5359" stroke-width="2"/>
+  <g stroke="#ffffff" stroke-opacity="0.18" stroke-width="2" fill="none">
+    <ellipse cx="512" cy="400" rx="390" ry="148"/>
+    <ellipse cx="512" cy="400" rx="358" ry="136"/>
+  </g>
+
+  <!-- seal groove in the outer ring -->
+  <ellipse cx="512" cy="400" rx="344" ry="131" fill="#15181a" stroke="#3a3f43" stroke-width="2"/>
+  <path d="M168 400 A 344 131 0 0 0 856 400 L 856 416 A 344 131 0 0 1 168 416 Z" fill="#101214"/>
+
+  <!-- black nitrile contact seal -->
+  <ellipse cx="512" cy="414" rx="338" ry="129" fill="url(#nitrile)" stroke="#0b0d0e" stroke-width="3"/>
+  <!-- pressed retaining bead -->
+  <ellipse cx="512" cy="414" rx="318" ry="121" fill="none" stroke="#4a5054" stroke-opacity="0.55" stroke-width="7"/>
+  <ellipse cx="512" cy="411" rx="318" ry="121" fill="none" stroke="#767d83" stroke-opacity="0.30" stroke-width="2"/>
+  <!-- eight ball positions implied through the seal -->
+  <g fill="#6a7278" fill-opacity="0.07">
+    <ellipse cx="787" cy="414" rx="46" ry="30"/>
+    <ellipse cx="706.4" cy="488.2" rx="46" ry="30"/>
+    <ellipse cx="512" cy="519" rx="46" ry="30"/>
+    <ellipse cx="317.6" cy="488.2" rx="46" ry="30"/>
+    <ellipse cx="237" cy="414" rx="46" ry="30"/>
+    <ellipse cx="317.6" cy="339.8" rx="46" ry="30"/>
+    <ellipse cx="512" cy="309" rx="46" ry="30"/>
+    <ellipse cx="706.4" cy="339.8" rx="46" ry="30"/>
+  </g>
+  <!-- soft satin sheen across the seal -->
+  <path d="M250 350 A 338 129 0 0 1 720 330" fill="none" stroke="#aeb6bc" stroke-opacity="0.14" stroke-width="22"/>
+  <!-- seal lip riding the inner ring -->
+  <ellipse cx="512" cy="412" rx="222" ry="85" fill="none" stroke="#0a0c0d" stroke-width="10"/>
+  <ellipse cx="512" cy="409" rx="222" ry="85" fill="none" stroke="#828a90" stroke-opacity="0.28" stroke-width="2.5"/>
+
+  <!-- inner ring shoulder -->
+  <ellipse cx="512" cy="400" rx="205" ry="78" fill="url(#shoulder)" stroke="#565c62" stroke-width="2"/>
+  <g stroke="#ffffff" stroke-opacity="0.18" stroke-width="2" fill="none">
+    <ellipse cx="512" cy="400" rx="192" ry="73"/>
+    <ellipse cx="512" cy="400" rx="172" ry="65"/>
+  </g>
+
+  <!-- small bore -->
+  <ellipse cx="512" cy="400" rx="148" ry="56" fill="#20252a" stroke="#4d5359" stroke-width="2"/>
+  <path d="M364 400 A 148 56 0 0 1 660 400 L 660 600 A 148 56 0 0 0 364 600 Z" fill="url(#boreWall)"/>
+  <path d="M364 600 A 148 56 0 0 0 660 600 A 148 56 0 0 0 364 600 Z" fill="#171b1e"/>
+  <ellipse cx="512" cy="400" rx="148" ry="56" fill="none" stroke="#ffffff" stroke-opacity="0.30" stroke-width="3"/>
+  <path d="M400 590 A 148 56 0 0 0 624 590" fill="none" stroke="#121517" stroke-width="4" opacity="0.8"/>
+</svg>

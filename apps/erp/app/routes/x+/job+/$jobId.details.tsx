@@ -255,14 +255,6 @@ export default function JobDetailsRoute() {
 
         {methodId && (
           <>
-            <JobBillOfMaterial
-              key={`bom:${methodId}`}
-              jobMakeMethodId={methodId}
-              // @ts-ignore
-              materials={materials}
-              // @ts-ignore
-              operations={operations}
-            />
             <JobBillOfProcess
               key={`bop:${methodId}`}
               jobMakeMethodId={methodId}
@@ -275,6 +267,14 @@ export default function JobDetailsRoute() {
               itemId={makeMethod.itemId}
               salesOrderLineId={jobData?.job.salesOrderLineId ?? ""}
               customerId={jobData?.job.customerId ?? ""}
+            />
+            <JobBillOfMaterial
+              key={`bom:${methodId}`}
+              jobMakeMethodId={methodId}
+              // @ts-ignore
+              materials={materials}
+              // @ts-ignore
+              operations={operations}
             />
           </>
         )}
@@ -328,7 +328,7 @@ export default function JobDetailsRoute() {
             jobId: jobData?.job?.id ?? undefined,
             itemId: jobData?.job?.itemId ?? undefined
           }}
-          modelPath={jobData?.job?.modelPath ?? null}
+          modelUpload={jobData?.job ?? null}
           title="CAD Model"
           uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
           viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"

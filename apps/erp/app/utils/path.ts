@@ -1,4 +1,5 @@
 import { getAppUrl, getMESUrl, SUPABASE_URL } from "@carbon/auth";
+import { getDatasetAssetUrl } from "@carbon/database/dataset-assets";
 import { generatePath } from "react-router";
 
 const x = "/x"; // from ~/routes/x+ folder
@@ -857,8 +858,9 @@ export const path = {
     deleteWorkCenter: (id: string) =>
       generatePath(`${x}/resources/work-centers/delete/${id}`),
     demandProjection: (itemId: string, locationId: string) =>
-      generatePath(`${x}/production/demand-forecasts/${itemId}/${locationId}`),
-    demandProjections: `${x}/production/demand-forecasts`,
+      generatePath(`${x}/production/projections/${itemId}/${locationId}`),
+    demandProjections: `${x}/production/projections`,
+    demoData: `${x}/settings/demo-data`,
     department: (id: string) => generatePath(`${x}/people/departments/${id}`),
     departments: `${x}/people/departments`,
     depreciationRun: (id: string) =>
@@ -2189,6 +2191,8 @@ export const path = {
     workflowCanvas: (id: string) => generatePath(`${x}/workflow/${id}/canvas`),
     workflowDelete: (id: string) => generatePath(`${x}/workflows/delete/${id}`),
     workflowNew: `${x}/workflows/new`,
+    workflowPositions: (id: string) =>
+      generatePath(`${x}/workflow/${id}/positions`),
     workflowPublish: (id: string) =>
       generatePath(`${x}/workflow/${id}/publish`),
     workflowRename: (id: string) => generatePath(`${x}/workflows/${id}/rename`),
@@ -2227,7 +2231,9 @@ export const getParams = (request: Request) => {
 };
 
 export const getPrivateUrl = (path: string) => {
-  return `/file/preview/private/${path}`;
+  // Demo-template artwork ships with the app, so it never goes through the
+  // storage proxy. Anything else is a real tenant file.
+  return getDatasetAssetUrl(path) ?? `/file/preview/private/${path}`;
 };
 
 /** Raw model source for the viewer's WASM fallback tier — bucket varies by era

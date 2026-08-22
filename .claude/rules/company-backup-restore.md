@@ -86,7 +86,10 @@ The catalog is **schema-introspected**, not a hand-maintained list:
 - Storage path rewriting: `rewriteStoragePath` (swap `{sourceCompanyId}/` →
   `{targetCompanyId}/` + remapped id segments), `rewriteToTemplateAssetPath`
   (`{co}/…` → `_templates/{industryId}/…`). `STORAGE_PATH_COLUMNS` =
-  `modelPath`, `thumbnailPath`.
+  `thumbnailPath` ONLY. `modelPath` (raw CAD) is deliberately excluded — raw
+  models live in the transient `temp-staging` bucket, not `private`, so a backup
+  never carries them; a restored model keeps its thumbnail and regenerates its 3D
+  artifacts if the raw is re-uploaded.
 - Asset transport: `copyAssetsToBackup` (server-side `storage.copy`
   of `private/{companyId}/…` files into a backup's `.assets/` folder) and
   `restoreAssetsFromBackup` (copy them back to `private/`, rewriting paths +
@@ -185,6 +188,12 @@ State marker: a row on `externalIntegrationMapping`, `integration =
 snapshotPath, foreign, includeGroup }`. `revert` reads the marker and reloads
 `snapshotPath` (using `metadata.includeGroup`). Status is polled by the UI.
 
+**Second caller.** `wipeAndLoad`, `getCompanyGroupId` and `resolveRestoreScope`
+(the extracted `targetGroupId` + `includeGroup` rule) are **exported** and are
+also used by `company-template.ts`: applying a demo template from Settings
+snapshots with `buildCompanyBackup`, and reverting it wipes-and-loads that
+snapshot through exactly this path. See `onboarding-company-templates.md`.
+
 ### Known caveats in the committed code (not yet hardened)
 
 - **Storage restore is best-effort** — copy failures `console.warn` only; the
@@ -246,22 +255,44 @@ snapshotPath, foreign, includeGroup }`. `revert` reads the marker and reloads
 ## Onboarding seed
 
 `routes/onboarding+/industry.tsx` → `dataChoice: "template" | "import" | "none"`
-("Use a demo template" / "Restore from a backup" / "I don't need data"). A demo
-template is a committed data-only `.gz` at
-`packages/database/supabase/backups/<industryId>.carbon.json.gz` plus a sibling
-`<industryId>.assets/` folder of its storage files (one per `industry` row).
-`provisionCompanyData` (onboarding.server.ts) imports it on top of an
-identity-only seed, **referencing** the shared `_templates/<industryId>/` assets
-instead of copying files per company. No file → clean seed.
+("Use a demo template" / "Restore from a backup" / "I don't need data"). The whole
+step is internal-only (`isInternalEmail`); public signups create their company in the
+company step.
 
-## CI publish
+**`template` is NOT a backup import.** It runs the dev seed's own tier code against the
+new company, so the demo data has exactly one definition:
+`packages/database/src/datasets/` — `tiers/` holds the insertion logic, `data/<key>/`
+holds one industry story each (four today: `satellite`, `robotics`, `precision`, `motor`),
+and `applyDataset()` in `datasets/index.ts` is the shared entry point.
+`pnpm db:seed:dev --dataset <key>`, onboarding, and Settings → Demo Data are callers of
+that one function.
 
-`ci/src/upload-backup-templates.ts` — **manual, idempotent** (`--force` to
-overwrite). Uploads each committed `.gz` to every workspace's `company-templates`
-bucket and fans the files from the committed `<industryId>.assets/` folder into
-`private/_templates/<industryId>/` (assets live as real files in the sibling
-folder, not embedded in the gz). Run via the `Publish backup templates` workflow
-(`.github/workflows/publish-templates.yml`, `workflow_dispatch`) or
-`pnpm --filter ci ci:upload-backup-templates`. NOT run on every deploy (templates
-are large + change rarely). The script hardcodes the `_templates` and `.assets`
-literals — keep in sync with `TEMPLATE_ASSET_PREFIX` / `BACKUP_GZ_SUFFIX`.
+Flow: `provisionOnboardingCompany` (onboarding.server.ts) does a **full** clean
+`seedCompany` (the tiers' pre-flight needs a chart of accounts, a `location`, and
+`unitOfMeasure` code `EA`), creates the headquarters location and employee job, and
+**then** — deliberately last, because the pre-flight needs that location — triggers
+`carbon/company-template`. `packages/jobs/src/inngest/functions/tasks/company-template.ts`
+handles it: one `step.run`, concurrency 1 per company, a `getPostgresConnectionPool(2)`
+client (size 1 is the shared pool the event drainer uses), a refuse-if-`item`-rows-exist
+double-apply guard, and a marker on `externalIntegrationMapping`
+(`integration = "company-template"`) cleared on success and set `failed` on a throw.
+`applyDataset` wraps every tier in one transaction, so a failure leaves zero rows.
+
+`industry.id` → dataset is a code map (`datasetForIndustry`), not a column. All four
+industries have a dataset today; an industry without one is hidden from the onboarding
+picker rather than provisioning a clean company.
+
+**Dormant** (built, never wired, do not revive without revisiting
+`.ai/specs/implemented/2026-08-13-onboarding-company-templates.md`): the
+`company-templates` bucket, `TEMPLATE_BUCKET` / `TEMPLATE_ASSET_PREFIX`,
+`templateIndustryId` on `carbon/company-import`, `ci/src/upload-backup-templates.ts`, and
+`packages/database/supabase/backups/` (which now holds only a README saying so).
+
+## CI publish (dormant)
+
+`ci/src/upload-backup-templates.ts` is part of the dormant set above and publishes
+nothing today — onboarding templates never go through a storage bucket. It is described
+here only so the next reader knows what the script and the `Publish backup templates`
+workflow (`.github/workflows/publish-templates.yml`, `workflow_dispatch`) were for:
+a manual, idempotent upload of committed `.gz` archives and their sibling
+`<industryId>.assets/` folders into each workspace's `company-templates` bucket.

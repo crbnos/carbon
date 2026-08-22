@@ -505,7 +505,7 @@ msgstr "Bir işin durumu değiştirildi"
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "Bir liste {0} öğesine bağlandı, bu nedenle bu adım her öğe için bir kez çalışır ve sonuçların listesini döndürür."
 
-#. placeholder {0}: label( actionInputLabelKey(actionId, batch.input), batch.input )
+#. placeholder {0}: inputLabel(batch.input)
 msgid "A list is wired into {0}, so this step runs once for each item in it — up to {MAX_LIST_ITEMS}."
 msgstr "Bir liste {0} öğesine bağlandı, bu nedenle bu adım içindeki her öğe için bir kez çalışır — en fazla {MAX_LIST_ITEMS}."
 
@@ -1185,6 +1185,9 @@ msgstr "Satır Ekle"
 msgid "Add match"
 msgstr "Eşleştirme ekle"
 
+msgid "Add New"
+msgstr "Yeni Ekle"
+
 msgid "Add Note"
 msgstr "Not Ekle"
 
@@ -1302,6 +1305,9 @@ msgstr "Eklendi"
 
 msgid "Added for this customer"
 msgstr "Bu müşteri için eklendi"
+
+msgid "Adding demo records"
+msgstr "Demo kayıtları ekleniyor"
 
 msgid "Adding..."
 msgstr "Ekleniyor..."
@@ -1427,6 +1433,9 @@ msgstr "Tüm Tedarikçiler"
 msgid "All Time"
 msgstr "Her Zaman"
 
+msgid "All tools"
+msgstr "Tüm araçlar"
+
 msgid "All Types"
 msgstr "Tüm Türler"
 
@@ -1450,6 +1459,9 @@ msgstr "ayrıca {otherStationNames} adresinde"
 
 msgid "Always"
 msgstr "Her zaman"
+
+msgid "Always sent — every notification shows in the bell menu."
+msgstr "Her zaman gönderilir — her bildirim çan menüsünde gösterilir."
 
 msgid "Always taken"
 msgstr "Her zaman alındı"
@@ -1691,6 +1703,9 @@ msgstr "Kendi kuralı olmayan özelliklere ve bu plan bir muayene yaptırdığı
 msgid "Apply"
 msgstr "Uygula"
 
+msgid "Apply a demo template"
+msgstr "Demo şablonu uygula"
+
 msgid "Apply available credits"
 msgstr "Mevcut kredileri uygula"
 
@@ -1717,6 +1732,12 @@ msgstr "Faturaya uygula"
 
 msgid "Apply to invoices"
 msgstr "Faturaları uygula"
+
+msgid "Applying"
+msgstr "Uygulanıyor"
+
+msgid "Applying demo data"
+msgstr "Demo verisi uygulanıyor"
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "Yaklaşan {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB sınırı."
@@ -2685,6 +2706,8 @@ msgstr "Her ikisi"
 
 msgid "Bottleneck"
 msgstr "Darboğaz"
+msgid "Branch an editable copy of this version that you can change and publish."
+msgstr "Bu sürümün düzenlenebilir bir kopyasını oluşturun, değiştirebilir ve yayınlayabilirsiniz."
 
 msgid "Breadcrumb"
 msgstr "Sayfa Yolu"
@@ -2694,6 +2717,9 @@ msgstr "Parçalarınızı, BOM'larınızı, İşlem Faturasını ve maliyetlendi
 
 msgid "Browse library"
 msgstr "Kütüphaneyi göz at"
+
+msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
+msgstr "Canlı sürümü salt okunur şekilde inceleyin. Yine de adımları düzenlenecek şekilde yeniden düzenleyebilirsiniz."
 
 msgid "Bucket"
 msgstr "Kova"
@@ -3185,6 +3211,9 @@ msgstr "Mal alımı ve tedarikçi faturası arasındaki mahsup hesabı; her ikis
 msgid "Clearing account for goods received / invoice received matching"
 msgstr "Mal alımı / fatura alımı eşleştirmesi için mahsup hesabı"
 
+msgid "Clearing demo data"
+msgstr "Demo verisi temizleniyor"
+
 msgid "Click again to disconnect"
 msgstr "Bağlantıyı kesmek için yeniden tıklayın"
 
@@ -3543,6 +3572,9 @@ msgstr "Jira sorununu bağla"
 
 msgid "Connect Linear issue"
 msgstr "Linear sorununu bağla"
+
+msgid "Connect Slack under Settings → Integrations first."
+msgstr "Slack'i önce Ayarlar → İntegrasyonlar altında bağlayın."
 
 msgid "Connect the Otherwise handle to a node to run when no condition matches."
 msgstr "Hiçbir koşul eşleşmediğinde çalıştırılacak bir düğüme Aksi takdirde işlecini bağlayın."
@@ -4017,6 +4049,9 @@ msgstr "Ekipman onarımlarını ve bakım faaliyetlerini izlemek için yeni bir 
 msgid "Create a new production job to fulfill the sales order"
 msgstr "Satış siparişini yerine getirmek için yeni bir üretim işi oluşturun"
 
+msgid "Create a new version"
+msgstr "Yeni bir sürüm oluşturun"
+
 msgid "Create a purchase order"
 msgstr "Satın alma siparişi oluştur"
 
@@ -4343,6 +4378,9 @@ msgstr "Özel Alan"
 
 msgid "Custom Fields"
 msgstr "Özel Alanlar"
+
+msgid "Custom fields are not available for items yet."
+msgstr "Özel alanlar henüz öğeler için kullanılabilir değildir."
 
 msgid "Custom SOW · we manage"
 msgstr "Özel SOW · biz yönetiriz"
@@ -5153,6 +5191,18 @@ msgstr "Talep Tahmini"
 msgid "Demand-Based"
 msgstr "Talep Tabanlı"
 
+msgid "Demo data"
+msgstr "Demo verisi"
+
+msgid "Demo Data"
+msgstr "Demo Verisi"
+
+msgid "Demo data applied"
+msgstr "Demo verisi uygulandı"
+
+msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
+msgstr "Demo verisi bu şirkete uygulandı. Tutun veya önceki duruma geri döndürmek için geri al."
+
 msgid "department"
 msgstr "departman"
 
@@ -5260,6 +5310,9 @@ msgstr "Boyutlar"
 
 msgid "Direct"
 msgstr "Doğrudan"
+
+msgid "Direct message to each recipient in your Slack workspace."
+msgstr "Slack çalışma alanınızdaki her alıcıya doğrudan mesaj."
 
 msgid "Direction"
 msgstr "Yön"
@@ -5381,6 +5434,9 @@ msgstr "Belgeler"
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "Documents faturaları, muhasebe faturalarını ve ödemeleri sağlayıcı belgesi olarak gönderir; muhasebe kayıtları belge tarafından kapsandığı şekilde kaydedilir. Ayrıca sağlayıcıda kaydedilen ödemeleri Carbon'a geri çekerek, eşleşen fatura veya muhasebe faturasını kapatır ve bir Carbon GL muhasebe kaydı oluşturur. Kapalı, bunları kasıtlı olarak hariç tutulmuş olarak kaydeder."
+
+msgid "Documents you open will show up here for quick access."
+msgstr "Açtığınız belgeler hızlı erişim için burada görünecektir."
 
 msgid "Don't Cancel"
 msgstr "İptal Etme"
@@ -6098,9 +6154,6 @@ msgstr "Mühendislik İletişim Kişisi"
 
 msgid "Enroll"
 msgstr "Kaydol"
-
-msgid "Enroll this company in the Implementation Hub"
-msgstr "Bu şirketi Uygulama merkezine kaydedin"
 
 msgid "Enter a batch number before setting the expiration date"
 msgstr "Son kullanma tarihini ayarlamadan önce bir parti numarası girin"
@@ -6961,6 +7014,9 @@ msgstr "Buraya eklenen dosyalar varsayılan olarak her satın alma siparişi e-p
 msgid "Files attached here ride along on every purchase order email sent to this supplier (in addition to company-wide defaults)."
 msgstr "Buraya eklenen dosyalar, bu tedarikçiye gönderilen her satın alma siparişi e-postasında yer alır (şirket genelindeki varsayılanlara ek olarak)."
 
+msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
+msgstr "Bu şirketi gerçekçi bir endüstri hikayesiyle doldurun, böylece her ekran bir şey içerir. Önceki durumu geri getirebilirsiniz."
+
 msgid "Filter"
 msgstr "Filtre"
 
@@ -7775,6 +7831,9 @@ msgstr "İmparatorluk"
 msgid "Implementation"
 msgstr "Uygulama"
 
+msgid "Implementation Hub"
+msgstr "Uygulama Merkezi"
+
 msgid "Implementation Lead"
 msgstr "Uygulama Müdürü"
 
@@ -7838,6 +7897,8 @@ msgstr "Birlikte döngüde"
 
 msgid "In use"
 msgstr "Kullanımda"
+msgid "In-app"
+msgstr "Uygulama içi"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "Uygulama içi bildirimler her zaman iletilir. Hangi konuların e-posta veya Slack aracılığıyla sizi ulaştıracağını seçin."
@@ -8440,6 +8501,9 @@ msgstr "Kanban Çıktısı"
 msgid "Kanbans"
 msgstr "Kanbanlar"
 
+msgid "Keep"
+msgstr "Tut"
+
 msgid "Keep Current"
 msgstr "Mevcut Tut"
 
@@ -8743,8 +8807,8 @@ msgstr "Liste Seçenekleri"
 msgid "List Parameters"
 msgstr "Liste Parametreleri"
 
-#. placeholder {0}: label( actionInputLabelKey(actionId, batch.first), batch.first )
-#. placeholder {1}: label( actionInputLabelKey(actionId, batch.second), batch.second )
+#. placeholder {0}: inputLabel(batch.first)
+#. placeholder {1}: inputLabel(batch.second)
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
 msgstr "Listeler hem {0} hem de {1} öğelerine bağlıdır, bu nedenle bu adım hangisinin üzerinde tekrarlanacağını belirleyemez. Listeyi yalnızca birine bırakın."
 
@@ -9579,6 +9643,8 @@ msgstr "Doğru sütunlara ihtiyacınız var mı?"
 
 msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
 msgstr "Gerekli olan, o gün vadesi gelen iş saatleri {personDayHours}s'ye bölünmüş, yuvarlanmıştır — filtrelediğiniz vardiya veya bu konumdaki en yaygın vardiya uzunluğu."
+msgid "Needs a Business or Partner plan."
+msgstr "Business veya Partner planı gereklidir."
 
 msgid "Needs fixing"
 msgstr "Onarılması gerekir"
@@ -10500,6 +10566,12 @@ msgstr "Henüz hiçbir şey yok. Bir adım yalnızca yapılandırıldıktan sonr
 msgid "Notification"
 msgstr "Bildirim"
 
+msgid "Notification type"
+msgstr "Bildirim türü"
+
+msgid "Notification Type"
+msgstr "Bildirim Türü"
+
 msgid "Notifications"
 msgstr "Bildirimler"
 
@@ -10596,6 +10668,9 @@ msgstr "Satış Siparişi'nde"
 
 msgid "On Storage Unit"
 msgstr "Depolizdeki"
+
+msgid "On this operation"
+msgstr "Bu operasyonda"
 
 msgid "On-account credit available"
 msgstr "Hesapta mevcut kredi"
@@ -11905,8 +11980,14 @@ msgstr "Yayınla"
 msgid "Publish Version {0}?"
 msgstr "Sürüm {0} yayınlanmış mı?"
 
+msgid "Published"
+msgstr "Yayımlandı"
+
 msgid "Published by Carbon"
 msgstr "Carbon tarafından yayınlandı"
+
+msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
+msgstr "Yayımlanmış sürümler düzenlenemez. Salt okunur şekilde inceleyin veya değişiklik yapmak için yeni bir sürüm oluşturun."
 
 msgid "Pull"
 msgstr "Çek"
@@ -12054,6 +12135,9 @@ msgstr "Boyutu olmadan defterin gönder"
 
 msgid "Push to accounting"
 msgstr "Muhasebede gönder"
+
+msgid "Putting your data back"
+msgstr "Verileriniz geri konuluyor"
 
 #. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
 msgid "QR Code to create a {0} for this kanban"
@@ -12305,6 +12389,9 @@ msgstr "Hazır"
 
 msgid "Ready for Quote"
 msgstr "Teklif İçin Hazır"
+
+msgid "ready to keep or revert"
+msgstr "tutmak veya geri almak için hazır"
 
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "Gerçek zamanlı envanter ve atölye tabanı görünürlüğü"
@@ -12726,6 +12813,9 @@ msgstr "Mevcut fiyatlandırmayı kaynak değerlerle değiştir"
 msgid "Replace PDF"
 msgstr "PDF'i Değiştir"
 
+msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
+msgstr "Bu şirketin verilerini bir demo veri seti ile değiştirin — önce anlık görüntü alınır, böylece geri alabilirsiniz."
+
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "PDF'i değiştirmek bu belgedeki tüm balon yerleşimlerini kaldırır. Özellik satırları ve değerleri kalır; yeni çizim üzerinde tekrar balon yerleştirebilirsiniz."
 
@@ -12895,6 +12985,9 @@ msgstr "Bu varlığı çıkartıldığı depo ve maliyet için kullanılabilir s
 msgid "Restore tracked entities to available"
 msgstr "Takip edilen varlıkları kullanılabilir hale getir"
 
+msgid "Restoring files"
+msgstr "Dosyalar geri yükleniyor"
+
 msgid "Result"
 msgstr "Sonuç"
 
@@ -12921,6 +13014,9 @@ msgstr "Tekrar Dene"
 
 msgid "Retry all"
 msgstr "Tümünü yeniden dene"
+
+msgid "Retry revert"
+msgstr "Geri alma'yı tekrar dene"
 
 msgid "Return Home"
 msgstr "Ana Sayfaya Dön"
@@ -12963,6 +13059,12 @@ msgstr "İlgili günlük girişlerini tersine çevir"
 
 msgid "Reversed"
 msgstr "Ters Çevrilmiş"
+
+msgid "Revert"
+msgstr "Geri Al"
+
+msgid "Reverting"
+msgstr "Geri alınıyor"
 
 msgid "Review"
 msgstr "İncele"
@@ -13353,6 +13455,9 @@ msgstr "Kaydedildi"
 
 msgid "Saved Views"
 msgstr "Kaydedilen Görünümler"
+
+msgid "Saving a copy of your current data"
+msgstr "Mevcut verilerinizin bir kopyası kaydediliyor"
 
 msgid "Saving..."
 msgstr "Kaydediliyor..."
@@ -13820,6 +13925,9 @@ msgstr "Bu belge aktif hale gelmeden önce onay için gönderilir."
 
 msgid "Sent complete date"
 msgstr "Gönderilen tamamlama tarihi"
+
+msgid "Sent to each recipient who has email notifications turned on."
+msgstr "E-posta bildirimleri açık olan her alıcıya gönderilir."
 
 msgid "Sequences"
 msgstr "Sıralamalar"
@@ -14492,6 +14600,8 @@ msgstr "Başlangıç"
 
 msgid "Starts"
 msgstr "Başlar"
+msgid "Starting…"
+msgstr "Başlanıyor…"
 
 msgid "State / Province"
 msgstr "Eyalet / İl"
@@ -15971,6 +16081,9 @@ msgstr "Bu, web kancası için benzersiz bir tanımlayıcıdır"
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "Bu ITAR tarafından kontrol edilen bir ortamdır. Erişim yalnızca ABD vatandaşları ile sınırlıdır."
 
+msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
+msgstr "Bu beklenenden daha uzun sürüyor. Yine de bitebilir — olmazsa, verilerinizi geri koymak için geri alma işlemini tekrar deneyin."
+
 msgid "This is the month your fiscal year starts."
 msgstr "Bu, mali yılınızın başladığı aydır."
 
@@ -16092,6 +16205,9 @@ msgstr "Bu, uygulamanın tüm kullanıcıları için temayı günceller"
 msgid "This user does not have two-factor authentication enabled."
 msgstr "Bu kullanıcının iki faktörlü kimlik doğrulaması etkin değildir."
 
+msgid "This usually takes a few seconds. You can leave the page — it keeps running."
+msgstr "Bu genellikle birkaç saniye sürer. Sayfayı terk edebilirsiniz — çalışmaya devam eder."
+
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "Bu sürüm açık bir <0>değişiklik bildirimine</0> aittir. Orada düzenleyin."
 
@@ -16101,6 +16217,9 @@ msgstr "Bu sürüm değişiklik bildirimi <0>{0}</0> ile ilgilidir. Orada düzen
 
 msgid "This version cannot be opened"
 msgstr "Bu sürüm açılamıyor"
+
+msgid "This version is live"
+msgstr "Bu versiyon yayında"
 
 msgid "This version is live. Create a new version to edit."
 msgstr "Bu sürüm canlı. Düzenlemek için yeni bir sürüm oluşturun."
@@ -16662,6 +16781,9 @@ msgstr "Bir işlemde kurtarılamaz olarak raporlanan birimler, bir nedenle — y
 
 msgid "Unknown"
 msgstr "Bilinmeyen"
+
+msgid "unknown error"
+msgstr "bilinmeyen hata"
 
 msgid "unknown location"
 msgstr "bilinmeyen konum"
@@ -17255,6 +17377,9 @@ msgstr "Öneri Görüntüle"
 msgid "View Suppliers"
 msgstr "Tedarikçileri Görüntüle"
 
+msgid "View the workflow"
+msgstr "İş akışını görüntüle"
+
 msgid "View tie-out"
 msgstr "Uyumu Görüntüle"
 
@@ -17533,6 +17658,9 @@ msgstr "Kapsam dışında neler var"
 msgid "When"
 msgstr "Ne zaman"
 
+msgid "When {name} changes"
+msgstr "Ne zaman {name} değişir"
+
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "Bir bitmiş ürünün raf ömrü Hesaplanan olarak ayarlandığında, hesaplamaya hangi tüketilen girdilerin dahil edileceğini seçin."
 
@@ -17631,6 +17759,9 @@ msgstr "Teslim etmeyi taahhüt ettiğiniz zaman; planlama bunu karşılama için
 
 msgid "When your fiscal and tax years start"
 msgstr "Mali ve vergi yıllarınız ne zaman başlar"
+
+msgid "Where a workflow notification is delivered — in-app is always sent, while email needs a Business or Partner plan and Slack needs your Slack workspace connected."
+msgstr "İş akışı bildiriminin nereye teslim edileceği — uygulama içi her zaman gönderilir, e-posta Business veya Partner planı gerektirir ve Slack, Slack çalışma alanınızın bağlı olması gerekir."
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "Bir operasyonun nerede çalıştırıldığı; işçilik ve teklif oranlarını taşır, genel giderler aralarındaki fark."

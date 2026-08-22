@@ -342,26 +342,6 @@ export default function PartDetailsRoute() {
             partData.partSummary?.replenishmentSystem ?? ""
           ) && (
             <>
-              <BillOfMaterial
-                key={`bom:${itemId}`}
-                makeMethod={methodData.makeMethod}
-                // @ts-ignore
-                materials={methodData.methodMaterials ?? []}
-                // @ts-ignore
-                operations={methodData.methodOperations}
-                configurable={
-                  methodData.partManufacturing?.requiresConfiguration
-                }
-                configurationRules={methodData.configurationRules}
-                parameters={
-                  methodData.configurationParametersAndGroups.parameters
-                }
-                replenishmentSystem={partData.partSummary?.replenishmentSystem}
-                revisionStatus={revisionStatus}
-                releaseControl={releaseControl}
-                isDisabled={!!draftLock}
-                disabledReason={lockReason}
-              />
               <BillOfProcess
                 key={`bop:${itemId}`}
                 makeMethod={methodData.makeMethod}
@@ -377,6 +357,26 @@ export default function PartDetailsRoute() {
                   methodData.configurationParametersAndGroups.parameters
                 }
                 tags={tags}
+                revisionStatus={revisionStatus}
+                releaseControl={releaseControl}
+                isDisabled={!!draftLock}
+                disabledReason={lockReason}
+              />
+              <BillOfMaterial
+                key={`bom:${itemId}`}
+                makeMethod={methodData.makeMethod}
+                // @ts-ignore
+                materials={methodData.methodMaterials ?? []}
+                // @ts-ignore
+                operations={methodData.methodOperations}
+                configurable={
+                  methodData.partManufacturing?.requiresConfiguration
+                }
+                configurationRules={methodData.configurationRules}
+                parameters={
+                  methodData.configurationParametersAndGroups.parameters
+                }
+                replenishmentSystem={partData.partSummary?.replenishmentSystem}
                 revisionStatus={revisionStatus}
                 releaseControl={releaseControl}
                 isDisabled={!!draftLock}
@@ -411,7 +411,7 @@ export default function PartDetailsRoute() {
           <CadModel
             isReadOnly={!permissions.can("update", "parts") || !!draftLock}
             metadata={{ itemId }}
-            modelPath={partData?.partSummary?.modelPath ?? null}
+            modelUpload={partData?.partSummary ?? null}
             title={t`CAD Model`}
             titleExtras={lockHint}
           />

@@ -12,7 +12,8 @@ export function TemplateField({
   onChange,
   context,
   issue,
-  partIssues
+  partIssues,
+  isReadOnly
 }: ValueFieldProps) {
   return (
     <Field
@@ -35,6 +36,7 @@ export function TemplateField({
         multiline
         minRows={4}
         maxRows={12}
+        isReadOnly={isReadOnly}
       />
     </Field>
   );

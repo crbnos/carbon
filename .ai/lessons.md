@@ -1054,6 +1054,25 @@ canvas hosting Radix popovers/selects.
 
 **Applies to:** `packages/database/supabase/migrations/` views aggregating over joins (`salesOrders`, `purchaseOrders`, quotes/invoices list views); any SQL review touching `sum(DISTINCT`.
 
+## A globally-unique primary key means a fixed id literal collides across companies
+
+**Context:** The onboarding demo dataset hard-coded UUID literals as `externalLink.id` in two places so the public share URLs (`/share/quote/:id`, `/share/supplier-quote/:id`) would be stable for documentation screenshots. Seeding the first company worked; the second one onto the same database died with `duplicate key value violates unique constraint "externalLinks_pkey"`.
+
+**Problem:** Almost every Carbon table has the composite PK `("id","companyId")`, which makes a repeated `id` harmless across tenants — so a fixed literal *looks* safe by analogy. But a handful of tables are keyed on `id` alone: `externalLink` (`PRIMARY KEY ("id")`, `20241030005037_external-links.sql`) and `period` (`PRIMARY KEY ("id")`, no `companyId` column at all). For those, a literal is a database-wide singleton. The failure only appears on the *second* company, so it passes every single-company test and first surfaces in production or in a shared dev database.
+
+**Rule:** Never write a literal primary key in seed/fixture code — let the column's `id()`/`xid()` default mint it and read the value back (`insertId`). Before assuming a repeated id is tenant-safe, check the actual `PRIMARY KEY` in the migration, not the table-template convention. For a global table with no unique key to conflict against (`period`), a read-then-insert also needs `pg_advisory_xact_lock` or a unique index — two companies seeding concurrently will otherwise both insert, and the duplicates are visible to every tenant.
+
+**Applies to:** `packages/database/src/datasets/tiers/**`; any SQL/TS fixture that writes `externalLink`, `period`, or another `PRIMARY KEY ("id")` table; `.claude/rules/onboarding-company-templates.md`.
+
+## `account` is scoped by `companyGroupId`, not `companyId`
+
+**Context:** The dataset's accounting tier picked a GL account with `SELECT id FROM account WHERE class = 'Asset' ORDER BY number LIMIT 1` and posted the seeded journal lines against it. The tiers run on a raw `pg` client, which bypasses RLS entirely.
+
+**Problem:** `account` is one of the few business tables NOT keyed by `companyId` — it belongs to the company *group*, so there is no `companyId` predicate to add by reflex and an unscoped `LIMIT 1` silently reaches across tenants. With RLS off there is nothing else stopping it, so one company's journal lines can be posted to another tenant's chart of accounts. Adding `AND "companyId" = $1` would simply have failed with `column "companyId" does not exist`, which is what makes the omission easy to leave in.
+
+**Rule:** In any service-role or Kysely path, confirm which column actually scopes the table before writing the predicate — `companyId` for most, `companyGroupId` for `account` and its children. A `LIMIT 1` with no tenancy predicate in RLS-bypassing code is a cross-tenant bug even when it "works" locally, because a single-tenant dev database cannot show it.
+
+**Applies to:** `packages/database/src/datasets/tiers/09-accounting.ts`; any `account` lookup in `packages/jobs/**`, `supabase/functions/**`, or a Kysely transaction.
 ## Appending SQL to an already-applied migration silently does nothing
 
 **Context:** A migration adding `companySettings.requireMfa` was written and applied. Later, a `users_with_verified_mfa` RPC was appended to that SAME file and `pnpm db:migrate` was re-run. The function was never created. The employees page then showed "Not set up" for every user — including one with a verified factor — because the missing RPC returned an error that the loader discarded as an empty result.
@@ -1122,3 +1141,23 @@ canvas hosting Radix popovers/selects.
 **Rule:** Any new row that reuses an existing readable id must qualify it (`Q000001-1`), and any insert into a table whose unique key can be orphaned by a delete needs `onConflict(...).doUpdateSet(...)` rather than a bare insert. When a user-facing action reports a generic failure, read the edge-runtime container log before theorising — the route's flash message hides the Postgres error code.
 
 **Applies to:** `packages/database/supabase/functions/get-method/index.ts` (`quoteToQuote`), `apps/erp/app/modules/sales/sales.service.ts` (`deleteQuote`), any insert into `externalLink`.
+
+## Card lists never get their own scroll region — the page is the only scroll surface
+
+**Context:** The Bill of Material / Bill of Process cards were capped at `max-h-[60dvh]` with an internal ScrollArea (PR #1230) so long lists wouldn't grow the page unbounded. Brad asked for the scrollbars to be removed; hiding the bar but keeping the capped region was the wrong reading.
+
+**Problem:** A nested scroll region doesn't reduce scrolling — the same rows still have to be scrolled through — it just hijacks the wheel whenever the cursor crosses the card, so the user gets two scroll surfaces, scroll-trapping at the region's edges, and a janky feel. "Remove the scroll bars" meant remove the *scrolling*, not restyle the bar.
+
+**Rule:** Card lists (BoM, BoP, and anything similar) render at natural height; the page-level container is the only scroll surface. Don't add `max-h` + `overflow-y-auto` to a card's content to tame its length — if a long list is a problem, solve it with collapse/pagination/virtualization, never a nested scroll region.
+
+**Applies to:** `BillOfMaterial.tsx` / `BillOfProcess.tsx` (items), `JobBillOfMaterial.tsx` / `JobBillOfProcess.tsx`, `QuoteBillOfMaterial.tsx` / `QuoteBillOfProcess.tsx`, and any new card-embedded list in `apps/erp`.
+
+## A prefix short-circuit in the server entry outranks every route under it
+
+**Context:** `/.well-known/oauth-protected-resource` and `/.well-known/oauth-authorization-server` each have a route, and each returned an empty **204** in production instead of its JSON. The MCP endpoint hands clients the first of those URLs in its 401 `WWW-Authenticate` header (`api+/mcp+/_index.ts:63`), so OAuth discovery for the remote connector was dead.
+
+**Problem:** `apps/erp/server/app.ts` wrapped `createRequestHandler` with `if (pathname.startsWith("/.well-known/")) return new Response(null, { status: 204 })` — added to keep browser probes out of the dev logs, with the comment "no app route". That was true when it was written; three `.well-known` routes were added later and every one of them became unreachable, because the short-circuit runs BEFORE the router.
+
+**Rule:** A path check in the server entry silently outranks routing for everything under it. If you short-circuit a prefix, derive the exemptions from the build manifest (`build.routes`) rather than assuming the prefix stays route-free — a comment asserting "no app route" is a claim that rots the moment somebody adds one. Three false leads to skip next time this shape appears: it reproduces identically on Vercel AND `react-router-serve` (so it is not the platform); `/.foo` and `/.env` return normal 404s (so it is not dotfile handling); and `matchRoutes` against the full route table picks the RIGHT route and passes WITH the bug present (so a matcher test proves nothing). The tell was that percent-encoding the dot (`/%2Ewell-known/...`) returned `200 application/json` — `new URL().pathname` leaves the escape undecoded so `startsWith` missed, while the router decodes and matched.
+
+**Applies to:** `apps/erp/server/app.ts`, `apps/mes/server/*`, and any request-handler wrapper that inspects `pathname` before delegating.

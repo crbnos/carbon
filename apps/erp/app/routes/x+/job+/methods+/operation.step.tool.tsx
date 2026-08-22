@@ -6,18 +6,20 @@ import { data } from "react-router";
 import { setJobOperationToolStepLink } from "~/modules/production";
 
 // Toggle a tool↔step link from the step editor's "Tools" picker (job tier).
+// `toolId` is the tool ITEM id — the picker offers the whole tool library, and the
+// service ensures the operation-level tool row exists before linking.
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "production"
   });
 
   const formData = await request.formData();
-  const jobOperationToolId = String(formData.get("toolId") ?? "");
+  const toolId = String(formData.get("toolId") ?? "");
   const jobOperationStepId = String(formData.get("stepId") ?? "");
   const linked = formData.get("linked") === "true";
 
-  if (!jobOperationToolId || !jobOperationStepId) {
+  if (!toolId || !jobOperationStepId) {
     return data({ success: false }, { status: 400 });
   }
 
@@ -28,17 +30,20 @@ export async function action({ request }: ActionFunctionArgs) {
   // foreign step.
   const step = await client
     .from("jobOperationStep")
-    .select("id")
+    .select("id, operationId")
     .eq("id", jobOperationStepId)
     .single();
-  if (step.error || !step.data) {
+  if (step.error || !step.data?.operationId) {
     return data({ success: false }, { status: 404 });
   }
 
   const result = await setJobOperationToolStepLink(client, {
-    jobOperationToolId,
+    operationId: step.data.operationId,
+    toolId,
     jobOperationStepId,
-    linked
+    linked,
+    companyId,
+    createdBy: userId
   });
   if (result.error) {
     return data(

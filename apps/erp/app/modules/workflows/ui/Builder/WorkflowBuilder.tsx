@@ -55,7 +55,11 @@ export function WorkflowBuilder({
 
   const nodes = useBuilderStore((state) => state.nodes);
   const edges = useBuilderStore((state) => state.edges);
-  const isReadOnly = useBuilderStore((state) => state.isReadOnly);
+  const canChangeDefinition = useBuilderStore(
+    (state) => state.canChangeDefinition
+  );
+  const canMoveNodes = useBuilderStore((state) => state.canMoveNodes);
+  const isReadOnly = !canChangeDefinition;
   const showResults = useBuilderStore(
     (state) => state.testRunStatus === "running" || state.testRunResult !== null
   );
@@ -154,7 +158,7 @@ export function WorkflowBuilder({
               ? { defaultViewport: initialViewport }
               : { fitView: true })}
             onMoveEnd={onMoveEnd}
-            nodesDraggable={!isReadOnly}
+            nodesDraggable={canMoveNodes}
             nodesConnectable={!isReadOnly}
             elementsSelectable
             // Delete only. Backspace is too easy to hit by accident, and there
@@ -165,7 +169,7 @@ export function WorkflowBuilder({
             panOnScroll={panOnScroll}
             zoomOnScroll={!panOnScroll}
           >
-            <Background variant={BackgroundVariant.Dots} gap={16} />
+            <Background variant={BackgroundVariant.Dots} gap={24} size={1} />
             <BuilderControls
               panOnScroll={panOnScroll}
               onTogglePanOnScroll={togglePanOnScroll}

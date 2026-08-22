@@ -14,6 +14,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import {
+  LuBadgeCheck,
   LuCalendar,
   LuCirclePlus,
   LuHistory,
@@ -29,10 +30,11 @@ import { useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
+import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import type { Workflow, WorkflowLastRun } from "../workflows.service";
 import { RunStatus } from "./Runs/RunStatus";
-import { WorkflowActiveSwitch } from "./WorkflowActiveSwitch";
+import { WorkflowActiveCheckbox } from "./WorkflowActiveCheckbox";
 import WorkflowForm from "./WorkflowForm";
 
 type WorkflowsTableProps = {
@@ -47,6 +49,7 @@ const WorkflowsTable = memo(
     const navigate = useNavigate();
     const { t } = useLingui();
     const permissions = usePermissions();
+    const [people] = usePeople();
     const newDisclosure = useDisclosure();
     const renameDisclosure = useDisclosure();
     const deleteDisclosure = useDisclosure();
@@ -87,15 +90,49 @@ const WorkflowsTable = memo(
           meta: { icon: <LuText /> }
         },
         {
+          id: "status",
+          header: t`Status`,
+          cell: ({ row }) => {
+            const isPublished = Boolean(row.original.activeVersionId);
+            return isPublished ? (
+              <Badge variant="green">{t`Published`}</Badge>
+            ) : (
+              <Badge variant="gray">{t`Draft`}</Badge>
+            );
+          },
+          meta: {
+            icon: <LuBadgeCheck />,
+            filterHeader: t`Status`,
+            filter: {
+              type: "static",
+              options: [
+                { value: "Published", label: t`Published` },
+                { value: "Draft", label: t`Draft` }
+              ]
+            },
+            exportValue: (row: Workflow) =>
+              row.activeVersionId ? "Published" : "Draft"
+          }
+        },
+        {
           accessorKey: "active",
           header: t`Active`,
           cell: ({ row }) => (
-            <WorkflowActiveSwitch
+            <WorkflowActiveCheckbox
               workflowId={row.original.id}
               active={row.original.active}
             />
           ),
-          meta: { icon: <LuToggleLeft /> }
+          meta: {
+            icon: <LuToggleLeft />,
+            filter: {
+              type: "static",
+              options: [
+                { value: "true", label: t`Active` },
+                { value: "false", label: t`Inactive` }
+              ]
+            }
+          }
         },
         {
           accessorKey: "ownerId",
@@ -103,7 +140,16 @@ const WorkflowsTable = memo(
           cell: ({ row }) => (
             <EmployeeAvatar employeeId={row.original.ownerId} />
           ),
-          meta: { icon: <LuUser /> }
+          meta: {
+            icon: <LuUser />,
+            filter: {
+              type: "static",
+              options: people.map((employee) => ({
+                value: employee.id,
+                label: employee.name
+              }))
+            }
+          }
         },
         {
           accessorKey: "activeVersionId",
@@ -158,7 +204,7 @@ const WorkflowsTable = memo(
           meta: { icon: <LuCalendar /> }
         }
       ],
-      [t, versionNumbers, lastRuns]
+      [t, versionNumbers, lastRuns, people]
     );
 
     const renderContextMenu = useCallback(

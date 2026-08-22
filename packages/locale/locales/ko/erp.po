@@ -505,7 +505,7 @@ msgstr "작업의 상태가 변경됨"
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "목록이 {0}에 연결되어 있으므로 이 단계는 각 항목마다 한 번씩 실행되고 결과 목록을 반환합니다."
 
-#. placeholder {0}: label( actionInputLabelKey(actionId, batch.input), batch.input )
+#. placeholder {0}: inputLabel(batch.input)
 msgid "A list is wired into {0}, so this step runs once for each item in it — up to {MAX_LIST_ITEMS}."
 msgstr "목록이 {0}에 연결되어 있으므로 이 단계는 그 안의 각 항목마다 한 번씩 실행됩니다 — 최대 {MAX_LIST_ITEMS}개까지."
 
@@ -1185,6 +1185,9 @@ msgstr "라인 항목 추가"
 msgid "Add match"
 msgstr "일치 추가"
 
+msgid "Add New"
+msgstr "새로 추가"
+
 msgid "Add Note"
 msgstr "메모 추가"
 
@@ -1302,6 +1305,9 @@ msgstr "추가됨"
 
 msgid "Added for this customer"
 msgstr "이 고객을 위해 추가됨"
+
+msgid "Adding demo records"
+msgstr "데모 레코드 추가 중"
 
 msgid "Adding..."
 msgstr "추가 중..."
@@ -1427,6 +1433,9 @@ msgstr "모든 공급업체"
 msgid "All Time"
 msgstr "전체 기간"
 
+msgid "All tools"
+msgstr "모든 도구"
+
 msgid "All Types"
 msgstr "모든 유형"
 
@@ -1450,6 +1459,9 @@ msgstr "{otherStationNames}에서도"
 
 msgid "Always"
 msgstr "항상"
+
+msgid "Always sent — every notification shows in the bell menu."
+msgstr "항상 전송됨 — 모든 알림이 벨 메뉴에 표시됩니다."
 
 msgid "Always taken"
 msgstr "항상 사용됨"
@@ -1691,6 +1703,9 @@ msgstr "자신의 규칙이 없는 기능과 이 계획이 검사를 실행할 �
 msgid "Apply"
 msgstr "적용"
 
+msgid "Apply a demo template"
+msgstr "데모 템플릿 적용"
+
 msgid "Apply available credits"
 msgstr "사용 가능한 크레딧 적용"
 
@@ -1717,6 +1732,12 @@ msgstr "인보이스에 적용"
 
 msgid "Apply to invoices"
 msgstr "인보이스에 적용"
+
+msgid "Applying"
+msgstr "적용 중"
+
+msgid "Applying demo data"
+msgstr "데모 데이터 적용 중"
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "{PO_EMAIL_ATTACHMENT_LIMIT_MB}MB 한도에 근접했습니다."
@@ -2685,6 +2706,8 @@ msgstr "모두"
 
 msgid "Bottleneck"
 msgstr "병목"
+msgid "Branch an editable copy of this version that you can change and publish."
+msgstr "이 버전의 편집 가능한 복사본을 분기하여 변경 및 게시할 수 있습니다."
 
 msgid "Breadcrumb"
 msgstr "이동 경로"
@@ -2694,6 +2717,9 @@ msgstr "Carbon의 가져오기 도구, CSV, 또는 LLM의 도움으로 품목, B
 
 msgid "Browse library"
 msgstr "라이브러리 둘러보기"
+
+msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
+msgstr "라이브 버전을 읽기 전용으로 탐색하세요. 여전히 단계를 재정렬하여 레이아웃을 정리할 수 있습니다."
 
 msgid "Bucket"
 msgstr "버킷"
@@ -3185,6 +3211,9 @@ msgstr "입고와 공급업체 인보이스 사이의 경과 계정으로, 둘 �
 msgid "Clearing account for goods received / invoice received matching"
 msgstr "입고/인보이스 수취 매칭을 위한 경과 계정"
 
+msgid "Clearing demo data"
+msgstr "데모 데이터 삭제 중"
+
 msgid "Click again to disconnect"
 msgstr "다시 클릭하여 연결 해제"
 
@@ -3543,6 +3572,9 @@ msgstr "Jira 이슈 연결"
 
 msgid "Connect Linear issue"
 msgstr "Linear 이슈 연결"
+
+msgid "Connect Slack under Settings → Integrations first."
+msgstr "먼저 설정 → 통합 아래에서 Slack을 연결하세요."
 
 msgid "Connect the Otherwise handle to a node to run when no condition matches."
 msgstr "조건이 일치하지 않을 때 실행할 노드에 Otherwise 핸들을 연결합니다."
@@ -4017,6 +4049,9 @@ msgstr "장비 수리 및 유지보수 활동을 추적할 새 유지보수 작�
 msgid "Create a new production job to fulfill the sales order"
 msgstr "판매주문을 이행할 새 생산 작업을 생성합니다"
 
+msgid "Create a new version"
+msgstr "새 버전 만들기"
+
 msgid "Create a purchase order"
 msgstr "구매 주문 생성"
 
@@ -4343,6 +4378,9 @@ msgstr "사용자 정의 필드"
 
 msgid "Custom Fields"
 msgstr "사용자 정의 필드"
+
+msgid "Custom fields are not available for items yet."
+msgstr "사용자 정의 필드는 아직 항목에 사용할 수 없습니다."
 
 msgid "Custom SOW · we manage"
 msgstr "맞춤 SOW · 저희가 관리"
@@ -5153,6 +5191,18 @@ msgstr "수요 예측"
 msgid "Demand-Based"
 msgstr "수요 기반"
 
+msgid "Demo data"
+msgstr "데모 데이터"
+
+msgid "Demo Data"
+msgstr "데모 데이터"
+
+msgid "Demo data applied"
+msgstr "데모 데이터 적용됨"
+
+msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
+msgstr "데모 데이터가 이 회사에 적용되었습니다. 유지하거나 이전 상태로 복원할 수 있습니다."
+
 msgid "department"
 msgstr "부서"
 
@@ -5260,6 +5310,9 @@ msgstr "치수"
 
 msgid "Direct"
 msgstr "직접"
+
+msgid "Direct message to each recipient in your Slack workspace."
+msgstr "Slack 작업 공간의 각 수신자에게 직접 메시지를 보냅니다."
 
 msgid "Direction"
 msgstr "방향"
@@ -5381,6 +5434,9 @@ msgstr "문서"
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "문서는 송장, 청구서 및 지불을 기본 공급자 문서로 푸시하고, 해당 분개는 문서에서 다룬 것으로 기록됩니다. 또한 공급자에 기록된 지불을 Carbon으로 다시 끌어와 일치하는 청구서 또는 송장을 마감하고 Carbon GL 분개를 게시합니다. Off는 이를 의도적으로 제외된 것으로 기록합니다."
+
+msgid "Documents you open will show up here for quick access."
+msgstr "열어본 문서는 빠른 접근을 위해 여기에 표시됩니다."
 
 msgid "Don't Cancel"
 msgstr "취소하지 않음"
@@ -6098,9 +6154,6 @@ msgstr "엔지니어링 담당자"
 
 msgid "Enroll"
 msgstr "등록"
-
-msgid "Enroll this company in the Implementation Hub"
-msgstr "이 회사를 구현 허브에 등록"
 
 msgid "Enter a batch number before setting the expiration date"
 msgstr "유효기한을 설정하기 전에 배치 번호를 입력하세요"
@@ -6961,6 +7014,9 @@ msgstr "여기에 첨부한 파일은 기본적으로 모든 구매주문 이메
 msgid "Files attached here ride along on every purchase order email sent to this supplier (in addition to company-wide defaults)."
 msgstr "여기에 첨부한 파일은 이 공급업체에 전송되는 모든 구매주문 이메일에 함께 전송됩니다(회사 전체 기본 첨부파일에 추가로)."
 
+msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
+msgstr "이 회사를 현실적인 산업 시나리오로 채워서 모든 화면에 데이터가 표시되도록 합니다. 이전 상태로 복원할 수 있습니다."
+
 msgid "Filter"
 msgstr "필터"
 
@@ -7775,6 +7831,9 @@ msgstr "야드파운드법"
 msgid "Implementation"
 msgstr "구현"
 
+msgid "Implementation Hub"
+msgstr "구현 허브"
+
 msgid "Implementation Lead"
 msgstr "구현 리드"
 
@@ -7838,6 +7897,8 @@ msgstr "함께 정보 공유하기"
 
 msgid "In use"
 msgstr "사용 중"
+msgid "In-app"
+msgstr "인앱"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "인앱 알림은 항상 전달됩니다. 이메일 또는 Slack으로도 전달받을 주제를 선택하세요."
@@ -8440,6 +8501,9 @@ msgstr "칸반 산출물"
 msgid "Kanbans"
 msgstr "칸반"
 
+msgid "Keep"
+msgstr "유지"
+
 msgid "Keep Current"
 msgstr "현재 값 유지"
 
@@ -8743,8 +8807,8 @@ msgstr "목록 옵션"
 msgid "List Parameters"
 msgstr "목록 파라미터"
 
-#. placeholder {0}: label( actionInputLabelKey(actionId, batch.first), batch.first )
-#. placeholder {1}: label( actionInputLabelKey(actionId, batch.second), batch.second )
+#. placeholder {0}: inputLabel(batch.first)
+#. placeholder {1}: inputLabel(batch.second)
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
 msgstr "{0}과 {1} 모두에 목록이 연결되어 있어서 이 단계에서 어느 것을 반복할지 알 수 없습니다. 목록을 하나에만 남기세요."
 
@@ -9579,6 +9643,8 @@ msgstr "적절한 열이 필요하신가요?"
 
 msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
 msgstr "필요한 인력은 그 날의 작업 시간을 {personDayHours}h로 나눈 값을 올림한 것입니다. 필터링하는 교대 또는 이 위치에서 가장 일반적인 교대 길이입니다."
+msgid "Needs a Business or Partner plan."
+msgstr "Business 또는 Partner 요금제가 필요합니다."
 
 msgid "Needs fixing"
 msgstr "수정 필요"
@@ -10500,6 +10566,12 @@ msgstr "아직 없습니다. 단계는 구성된 후에만 값을 제공합니�
 msgid "Notification"
 msgstr "알림"
 
+msgid "Notification type"
+msgstr "알림 유형"
+
+msgid "Notification Type"
+msgstr "알림 유형"
+
 msgid "Notifications"
 msgstr "알림"
 
@@ -10596,6 +10668,9 @@ msgstr "판매주문에서"
 
 msgid "On Storage Unit"
 msgstr "저장 단위에서"
+
+msgid "On this operation"
+msgstr "이 작업 시"
 
 msgid "On-account credit available"
 msgstr "사용 가능한 외상 크레딧"
@@ -11905,8 +11980,14 @@ msgstr "게시"
 msgid "Publish Version {0}?"
 msgstr "버전 {0}을(를) 게시하시겠습니까?"
 
+msgid "Published"
+msgstr "게시됨"
+
 msgid "Published by Carbon"
 msgstr "Carbon에서 게시함"
+
+msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
+msgstr "게시된 버전은 편집할 수 없습니다. 읽기 전용으로 둘러보거나 새 버전을 분기하여 변경하세요."
 
 msgid "Pull"
 msgstr "가져오기"
@@ -12054,6 +12135,9 @@ msgstr "차원 없이 저널을 푸시합니다"
 
 msgid "Push to accounting"
 msgstr "회계로 푸시"
+
+msgid "Putting your data back"
+msgstr "데이터 복원 중"
 
 #. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
 msgid "QR Code to create a {0} for this kanban"
@@ -12305,6 +12389,9 @@ msgstr "준비됨"
 
 msgid "Ready for Quote"
 msgstr "견적 준비 완료"
+
+msgid "ready to keep or revert"
+msgstr "유지 또는 복원 준비 완료"
 
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "실시간 재고 및 현장 가시성"
@@ -12726,6 +12813,9 @@ msgstr "기존 가격을 원본 값으로 교체"
 msgid "Replace PDF"
 msgstr "PDF 교체"
 
+msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
+msgstr "이 회사의 데이터를 데모 데이터셋으로 교체합니다 — 먼저 스냅샷을 저장하여 나중에 복원할 수 있습니다."
+
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "PDF를 교체하면 이 문서의 모든 풍선 표시가 제거됩니다. 기능 행과 값은 유지되며, 새 도면에 풍선을 다시 배치할 수 있습니다."
 
@@ -12895,6 +12985,9 @@ msgstr "이 항목을 폐기 전 보관 위치 및 원가의 사용 가능한 �
 msgid "Restore tracked entities to available"
 msgstr "추적 개체를 사용 가능 상태로 복원"
 
+msgid "Restoring files"
+msgstr "파일 복원 중"
+
 msgid "Result"
 msgstr "결과"
 
@@ -12921,6 +13014,9 @@ msgstr "재시도"
 
 msgid "Retry all"
 msgstr "모두 다시 시도"
+
+msgid "Retry revert"
+msgstr "복원 재시도"
 
 msgid "Return Home"
 msgstr "홈으로 돌아가기"
@@ -12963,6 +13059,12 @@ msgstr "관련 분개 취소"
 
 msgid "Reversed"
 msgstr "역순됨"
+
+msgid "Revert"
+msgstr "복원"
+
+msgid "Reverting"
+msgstr "복원 중"
 
 msgid "Review"
 msgstr "검토"
@@ -13353,6 +13455,9 @@ msgstr "저장됨"
 
 msgid "Saved Views"
 msgstr "저장된 보기"
+
+msgid "Saving a copy of your current data"
+msgstr "현재 데이터의 사본 저장 중"
 
 msgid "Saving..."
 msgstr "저장 중..."
@@ -13820,6 +13925,9 @@ msgstr "이 문서를 활성화하기 전에 승인을 위해 전송합니다."
 
 msgid "Sent complete date"
 msgstr "발송 완료 날짜"
+
+msgid "Sent to each recipient who has email notifications turned on."
+msgstr "이메일 알림이 켜져 있는 각 수신자에게 전송됩니다."
 
 msgid "Sequences"
 msgstr "시퀀스"
@@ -14492,6 +14600,8 @@ msgstr "시작됨"
 
 msgid "Starts"
 msgstr "시작"
+msgid "Starting…"
+msgstr "시작 중…"
 
 msgid "State / Province"
 msgstr "주/도"
@@ -15971,6 +16081,9 @@ msgstr "웹훅의 고유 식별자입니다"
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "이것은 ITAR 통제 환경입니다. 접근은 미국인에게만 제한됩니다."
 
+msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
+msgstr "예상보다 오래 걸리고 있습니다. 계속 진행될 수 있습니다 — 진행되지 않으면 복원을 다시 시도하여 데이터를 복구하세요."
+
 msgid "This is the month your fiscal year starts."
 msgstr "회계연도가 시작되는 월입니다."
 
@@ -16092,6 +16205,9 @@ msgstr "이 설정은 애플리케이션의 모든 사용자에 대한 테마를
 msgid "This user does not have two-factor authentication enabled."
 msgstr "이 사용자는 2단계 인증이 활성화되지 않았습니다."
 
+msgid "This usually takes a few seconds. You can leave the page — it keeps running."
+msgstr "일반적으로 몇 초가 걸립니다. 페이지를 나가도 계속 실행됩니다."
+
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "이 버전은 열려 있는 <0>변경 공지</0>에 속합니다. 거기서 편집하세요."
 
@@ -16101,6 +16217,9 @@ msgstr "이 버전은 변경 공지 <0>{0}</0>에 속합니다. 거기서 편집
 
 msgid "This version cannot be opened"
 msgstr "이 버전을 열 수 없습니다."
+
+msgid "This version is live"
+msgstr "이 버전은 활성화되어 있습니다"
 
 msgid "This version is live. Create a new version to edit."
 msgstr "이 버전은 활성입니다. 편집할 새 버전을 만드십시오."
@@ -16662,6 +16781,9 @@ msgstr "공정작업에서 사유와 함께 회복 불가로 보고된 수량으
 
 msgid "Unknown"
 msgstr "알 수 없음"
+
+msgid "unknown error"
+msgstr "알 수 없는 오류"
 
 msgid "unknown location"
 msgstr "알 수 없는 위치"
@@ -17255,6 +17377,9 @@ msgstr "제안 보기"
 msgid "View Suppliers"
 msgstr "공급업체 보기"
 
+msgid "View the workflow"
+msgstr "워크플로우 보기"
+
 msgid "View tie-out"
 msgstr "일치 보기"
 
@@ -17533,6 +17658,9 @@ msgstr "범위에서 제외되는 것"
 msgid "When"
 msgstr "시점"
 
+msgid "When {name} changes"
+msgstr "{name}이(가) 변경될 때"
+
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "완제품의 유효기간이 계산됨으로 설정된 경우, 계산에 반영할 소비 투입물을 선택하세요."
 
@@ -17631,6 +17759,9 @@ msgstr "귀사가 납품하기로 약속한 시점으로, 계획에서는 이를
 
 msgid "When your fiscal and tax years start"
 msgstr "회계연도 및 세무연도가 시작되는 시기"
+
+msgid "Where a workflow notification is delivered — in-app is always sent, while email needs a Business or Partner plan and Slack needs your Slack workspace connected."
+msgstr "워크플로우 알림이 전송되는 위치 — 인앱은 항상 전송되며, 이메일은 Business 또는 Partner 요금제가 필요하고 Slack은 Slack 작업 공간이 연결되어야 합니다."
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "공정작업이 실행되는 곳으로, 노무 및 견적 요율을 가지며 두 요율의 차이가 간접비입니다."

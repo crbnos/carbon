@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="anoBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1c1f22"/>
+      <stop offset="0.2" stop-color="#43484d"/>
+      <stop offset="0.45" stop-color="#5a6167"/>
+      <stop offset="0.72" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="anoFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#5a6167"/>
+      <stop offset="0.2" stop-color="#43484d"/>
+      <stop offset="0.72" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#1c1f22"/>
+    </linearGradient>
+    <linearGradient id="anoFin" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2b3034"/>
+      <stop offset="0.4" stop-color="#5f666c"/>
+      <stop offset="1" stop-color="#1a1d20"/>
+    </linearGradient>
+    <linearGradient id="alBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7d848a"/>
+      <stop offset="0.2" stop-color="#ced5da"/>
+      <stop offset="0.45" stop-color="#e8edf0"/>
+      <stop offset="0.72" stop-color="#a9b1b7"/>
+      <stop offset="1" stop-color="#6b7278"/>
+    </linearGradient>
+    <linearGradient id="alFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#e8edf0"/>
+      <stop offset="0.35" stop-color="#ced5da"/>
+      <stop offset="0.75" stop-color="#a9b1b7"/>
+      <stop offset="1" stop-color="#7d848a"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="512" cy="762" rx="400" ry="88" fill="url(#shadow)"/>
+
+  <!-- LEFT END BELL, face up -->
+  <path d="M128 712 L128 738 Q252 801 376 738 L376 712 Z" fill="url(#anoBarrel)" stroke="#0f1214" stroke-width="3"/>
+  <ellipse cx="252" cy="712" rx="124" ry="47" fill="url(#anoFace)" stroke="#0f1214" stroke-width="3"/>
+  <ellipse cx="252" cy="712" rx="116" ry="44" fill="none" stroke="#7d858c" stroke-width="2" opacity="0.5"/>
+  <g fill="#23282c" stroke="#7d858c" stroke-width="2">
+    <ellipse cx="348" cy="727" rx="11" ry="4.5"/><ellipse cx="292" cy="749" rx="11" ry="4.5"/>
+    <ellipse cx="212" cy="749" rx="11" ry="4.5"/><ellipse cx="156" cy="727" rx="11" ry="4.5"/>
+    <ellipse cx="156" cy="697" rx="11" ry="4.5"/><ellipse cx="212" cy="675" rx="11" ry="4.5"/>
+    <ellipse cx="292" cy="675" rx="11" ry="4.5"/><ellipse cx="348" cy="697" rx="11" ry="4.5"/>
+  </g>
+  <ellipse cx="252" cy="710" rx="78" ry="30" fill="url(#alFace)" stroke="#5f666c" stroke-width="2.5"/>
+  <ellipse cx="252" cy="710" rx="70" ry="27" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.35"/>
+  <ellipse cx="252" cy="710" rx="58" ry="22" fill="#2b3034" stroke="#8f979d" stroke-width="2.5"/>
+  <ellipse cx="252" cy="710" rx="48" ry="18" fill="url(#alFace)" stroke="#5f666c" stroke-width="2"/>
+  <ellipse cx="252" cy="712" rx="34" ry="13" fill="#1b1e21" stroke="#9aa2a8" stroke-width="2.5"/>
+  <ellipse cx="252" cy="716" rx="27" ry="10" fill="#0f1113"/>
+
+  <!-- RIGHT END BELL, face up -->
+  <path d="M648 712 L648 738 Q772 801 896 738 L896 712 Z" fill="url(#anoBarrel)" stroke="#0f1214" stroke-width="3"/>
+  <ellipse cx="772" cy="712" rx="124" ry="47" fill="url(#anoFace)" stroke="#0f1214" stroke-width="3"/>
+  <ellipse cx="772" cy="712" rx="116" ry="44" fill="none" stroke="#7d858c" stroke-width="2" opacity="0.5"/>
+  <g fill="#23282c" stroke="#7d858c" stroke-width="2">
+    <ellipse cx="868" cy="727" rx="11" ry="4.5"/><ellipse cx="812" cy="749" rx="11" ry="4.5"/>
+    <ellipse cx="732" cy="749" rx="11" ry="4.5"/><ellipse cx="676" cy="727" rx="11" ry="4.5"/>
+    <ellipse cx="676" cy="697" rx="11" ry="4.5"/><ellipse cx="732" cy="675" rx="11" ry="4.5"/>
+    <ellipse cx="812" cy="675" rx="11" ry="4.5"/><ellipse cx="868" cy="697" rx="11" ry="4.5"/>
+  </g>
+  <ellipse cx="772" cy="710" rx="78" ry="30" fill="url(#alFace)" stroke="#5f666c" stroke-width="2.5"/>
+  <ellipse cx="772" cy="710" rx="70" ry="27" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.35"/>
+  <ellipse cx="772" cy="710" rx="58" ry="22" fill="#2b3034" stroke="#8f979d" stroke-width="2.5"/>
+  <ellipse cx="772" cy="710" rx="48" ry="18" fill="url(#alFace)" stroke="#5f666c" stroke-width="2"/>
+  <ellipse cx="772" cy="712" rx="34" ry="13" fill="#1b1e21" stroke="#9aa2a8" stroke-width="2.5"/>
+  <ellipse cx="772" cy="716" rx="27" ry="10" fill="#0f1113"/>
+
+  <!-- CENTRAL FINNED SHELL -->
+  <!-- side through-bolt bosses -->
+  <path d="M296 300 L296 660 Q316 672 336 660 L336 300 Q316 288 296 300 Z" fill="url(#anoBarrel)" stroke="#0f1214" stroke-width="2.5"/>
+  <path d="M688 300 L688 660 Q708 672 728 660 L728 300 Q708 288 688 300 Z" fill="url(#anoBarrel)" stroke="#0f1214" stroke-width="2.5"/>
+
+  <!-- barrel -->
+  <path d="M354 300 L354 660 Q512 720 670 660 L670 300 Z" fill="url(#anoBarrel)" stroke="#0f1214" stroke-width="3"/>
+
+  <!-- front longitudinal fins -->
+  <g fill="url(#anoFin)" stroke="#0f1214" stroke-width="2">
+    <path d="M706 310 L694 328 L694 688 L706 670 Z"/>
+    <path d="M666 346 L633 359 L633 719 L666 706 Z"/>
+    <path d="M585 369 L539 374 L539 734 L585 729 Z"/>
+    <path d="M485 374 L439 369 L439 729 L485 734 Z"/>
+    <path d="M391 359 L358 346 L358 706 L391 719 Z"/>
+    <path d="M330 328 L318 310 L318 670 L330 688 Z"/>
+  </g>
+  <g stroke="#9aa2a8" stroke-width="2.5" opacity="0.4" fill="none">
+    <path d="M700 320 L700 680"/><path d="M650 353 L650 713"/><path d="M562 372 L562 732"/>
+    <path d="M462 372 L462 732"/><path d="M374 353 L374 713"/><path d="M324 320 L324 680"/>
+  </g>
+
+  <!-- front through-bolt boss -->
+  <path d="M470 372 Q512 380 554 372 L554 732 Q512 740 470 732 Z" fill="url(#anoBarrel)" stroke="#0f1214" stroke-width="2.5"/>
+  <path d="M478 375 L478 735" stroke="#9aa2a8" stroke-width="3" opacity="0.35" fill="none"/>
+
+  <!-- shell top face -->
+  <ellipse cx="512" cy="300" rx="158" ry="60" fill="url(#anoFace)" stroke="#0f1214" stroke-width="3"/>
+
+  <!-- fin ends on the top face -->
+  <g fill="url(#anoFace)" stroke="#0f1214" stroke-width="2">
+    <path d="M706 310 L694 328 L651 323 L663 306 Z"/>
+    <path d="M666 346 L633 359 L601 347 L635 334 Z"/>
+    <path d="M585 369 L539 374 L528 357 L574 353 Z"/>
+    <path d="M485 374 L439 369 L450 353 L496 357 Z"/>
+    <path d="M391 359 L358 346 L389 334 L423 347 Z"/>
+    <path d="M330 328 L318 310 L361 306 L373 323 Z"/>
+    <path d="M318 290 L330 272 L373 277 L361 294 Z"/>
+    <path d="M358 254 L391 241 L423 253 L389 266 Z"/>
+    <path d="M439 231 L485 226 L496 243 L450 247 Z"/>
+    <path d="M539 226 L585 231 L574 247 L528 243 Z"/>
+    <path d="M633 241 L666 254 L635 266 L601 253 Z"/>
+    <path d="M694 272 L706 290 L663 294 L651 277 Z"/>
+  </g>
+  <g stroke="#9aa2a8" stroke-width="2" opacity="0.45" fill="none">
+    <path d="M700 314 L657 310"/><path d="M660 350 L618 338"/><path d="M572 370 L551 355"/>
+    <path d="M452 370 L473 355"/><path d="M364 350 L406 338"/><path d="M324 314 L367 310"/>
+    <path d="M324 286 L367 290"/><path d="M364 250 L406 262"/><path d="M462 229 L473 245"/>
+    <path d="M562 229 L551 245"/><path d="M660 250 L618 262"/><path d="M700 286 L657 290"/>
+  </g>
+
+  <!-- boss pads and bolt holes on the top face -->
+  <g>
+    <ellipse cx="512" cy="367" rx="38" ry="15" fill="url(#anoFace)" stroke="#0f1214" stroke-width="2.5"/>
+    <ellipse cx="688" cy="300" rx="38" ry="15" fill="url(#anoFace)" stroke="#0f1214" stroke-width="2.5"/>
+    <ellipse cx="336" cy="300" rx="38" ry="15" fill="url(#anoFace)" stroke="#0f1214" stroke-width="2.5"/>
+    <ellipse cx="512" cy="233" rx="38" ry="15" fill="url(#anoFace)" stroke="#0f1214" stroke-width="2.5"/>
+    <g fill="#1b1e21" stroke="#9aa2a8" stroke-width="2.5">
+      <ellipse cx="512" cy="367" rx="18" ry="7"/><ellipse cx="688" cy="300" rx="18" ry="7"/>
+      <ellipse cx="336" cy="300" rx="18" ry="7"/><ellipse cx="512" cy="233" rx="18" ry="7"/>
+    </g>
+  </g>
+
+  <!-- machined bore and register at the top of the shell -->
+  <ellipse cx="512" cy="300" rx="140" ry="53" fill="none" stroke="#7d858c" stroke-width="2" opacity="0.55"/>
+  <ellipse cx="512" cy="300" rx="122" ry="46" fill="url(#alFace)" stroke="#5f666c" stroke-width="2.5"/>
+  <ellipse cx="512" cy="300" rx="110" ry="42" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.3"/>
+  <ellipse cx="512" cy="302" rx="98" ry="37" fill="#202427" stroke="#9aa2a8" stroke-width="2.5"/>
+  <path d="M414 302 Q512 376 610 302 L610 340 Q512 414 414 340 Z" fill="#14171a"/>
+  <ellipse cx="512" cy="340" rx="98" ry="37" fill="#0f1113"/>
+</svg>

@@ -19,7 +19,6 @@ import {
   HStack,
   IconButton,
   Label,
-  ScrollArea,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -545,16 +544,14 @@ const BillOfMaterial = ({
         {isProductionRevision && (
           <ReleaseLockAlert isLocked={isReleaseLocked} className="mb-4" />
         )}
-        <ScrollArea type="auto" className="max-h-[60dvh]">
-          <SortableList
-            isReadOnly={isReadOnly}
-            items={materials}
-            onReorder={onReorder}
-            onToggleItem={onToggleItem}
-            onRemoveItem={onRemoveItem}
-            renderItem={renderListItem}
-          />
-        </ScrollArea>
+        <SortableList
+          isReadOnly={isReadOnly}
+          items={materials}
+          onReorder={onReorder}
+          onToggleItem={onToggleItem}
+          onRemoveItem={onRemoveItem}
+          renderItem={renderListItem}
+        />
       </CardContent>
       {configuratorDisclosure.isOpen && configuration && (
         <ConfigurationEditor

@@ -169,6 +169,15 @@ export default function ServiceDetailsRoute() {
           />
           {serviceData.serviceSummary?.replenishmentSystem === "Make" && (
             <>
+              <BillOfProcess
+                key={`bop:${itemId}`}
+                makeMethod={methodData.makeMethod}
+                // @ts-ignore
+                operations={methodData.methodOperations ?? []}
+                // @ts-ignore
+                materials={methodData.methodMaterials ?? []}
+                tags={tags}
+              />
               <BillOfMaterial
                 key={`bom:${itemId}`}
                 makeMethod={methodData.makeMethod}
@@ -179,13 +188,6 @@ export default function ServiceDetailsRoute() {
                 replenishmentSystem={
                   serviceData.serviceSummary?.replenishmentSystem
                 }
-              />
-              <BillOfProcess
-                key={`bop:${itemId}`}
-                makeMethod={methodData.makeMethod}
-                // @ts-ignore
-                operations={methodData.methodOperations ?? []}
-                tags={tags}
               />
             </>
           )}

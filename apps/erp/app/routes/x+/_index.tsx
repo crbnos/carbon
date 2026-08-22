@@ -17,28 +17,46 @@ import {
   getImplementationHub
 } from "@carbon/onboarding/server";
 import { OnboardingHubSummary } from "@carbon/onboarding/ui";
+import type { ShortcutDefinition } from "@carbon/react";
 import {
   Button,
   Card,
   CardContent,
-  cn,
-  HStack,
+  IconButton,
+  ShortcutKey,
   useRouteData
 } from "@carbon/react";
-import { isInternalEmail } from "@carbon/utils";
-import { getLocalTimeZone } from "@internationalized/date";
+import { formatRelativeTime, isInternalEmail } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { ComponentProps } from "react";
-import { useMemo } from "react";
-import { LuRocket } from "react-icons/lu";
+import { useCallback } from "react";
+import type { IconType } from "react-icons";
+import {
+  LuChevronDown,
+  LuFileText,
+  LuPlus,
+  LuRocket,
+  LuX
+} from "react-icons/lu";
+import { RxMagnifyingGlass } from "react-icons/rx";
 import type { LoaderFunctionArgs } from "react-router";
 import { Link, redirect, useFetcher } from "react-router";
-import { Greeting } from "~/components/Greeting";
-import { useModules, usePermissions, useUser } from "~/hooks";
+import CreateMenu from "~/components/Layout/Topbar/CreateMenu";
+import {
+  useAllModules,
+  useModules,
+  usePermissions,
+  useRecentlyViewed,
+  useUser
+} from "~/hooks";
 import { useHubDismissed } from "~/hooks/useHubDismissed";
+import type { RecentDocument } from "~/hooks/useRecentlyViewed";
+import { useUIStore } from "~/stores/ui";
 import type { Authenticated, NavItem } from "~/types";
 import { path } from "~/utils/path";
+
+const searchShortcut: ShortcutDefinition = { key: "K", modifiers: ["mod"] };
 
 // While a hub is active (not yet finished) it replaces the home page for
 // internal users, who land straight in it until every checkpoint is done.
@@ -106,17 +124,6 @@ function useImplementationSummary() {
 
 export default function AppIndexRoute() {
   const modules = useModules();
-  const { locale } = useLocale();
-  const date = new Date();
-
-  const formatter = useMemo(
-    () =>
-      new Intl.DateTimeFormat(locale, {
-        dateStyle: "full",
-        timeZone: getLocalTimeZone()
-      }),
-    [locale]
-  );
   const implementation = useImplementationSummary();
   const layout = useRouteData<{ implementationHub: unknown | null }>(
     path.to.authenticatedRoot
@@ -131,9 +138,22 @@ export default function AppIndexRoute() {
   return (
     <div className="relative w-full h-full overflow-hidden">
       <div className="relative z-10 p-8 w-full h-full overflow-y-auto">
-        <Greeting size="h3" />
-        <Subheading>{formatter.format(date)}</Subheading>
-        <Hr />
+        <div className="flex items-center gap-3 mb-8">
+          <SearchBar />
+          <CreateMenu
+            trigger={
+              <Button
+                size="md"
+                variant="secondary"
+                leftIcon={<LuPlus />}
+                rightIcon={<LuChevronDown />}
+                className="shrink-0"
+              >
+                <Trans>Add New</Trans>
+              </Button>
+            }
+          />
+        </div>
         {implementation ? (
           <OnboardingHubSummary
             label={implementation.label}
@@ -150,68 +170,179 @@ export default function AppIndexRoute() {
             }
           />
         ) : null}
-        {canEnroll ? (
-          <enrollFetcher.Form
-            method="post"
-            action={path.to.getStartedEnroll}
-            className="mb-6"
-          >
-            <Card className="shadow-none">
-              <CardContent>
-                <HStack spacing={2} className="items-start">
-                  <div className="shrink-0 p-2.5 rounded-lg border border-border">
-                    <LuRocket className="text-xl" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xxs uppercase tracking-wide font-medium">
-                      <Trans>Get Started</Trans>
-                    </div>
-                    <div className="text-base font-semibold tracking-tight mt-0.5 text-balance">
-                      <Trans>
-                        Enroll this company in the Implementation Hub
-                      </Trans>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1 text-pretty">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div className="lg:col-span-1 order-last lg:order-first">
+            {canEnroll ? (
+              <enrollFetcher.Form
+                method="post"
+                action={path.to.getStartedEnroll}
+                className="mb-6"
+              >
+                <SectionLabel>
+                  <Trans>Implementation Hub</Trans>
+                </SectionLabel>
+                <Card className="shadow-none">
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground text-pretty">
                       <Trans>
                         Set up your company with a step-by-step implementation
                         plan covering setup, data, training, and go-live.
                       </Trans>
                     </p>
-                    <Button
-                      className="mt-4"
-                      type="submit"
-                      isLoading={enrollFetcher.state !== "idle"}
-                      isDisabled={enrollFetcher.state !== "idle"}
-                    >
-                      <Trans>Enroll</Trans>
-                    </Button>
-                  </div>
-                </HStack>
-              </CardContent>
-            </Card>
-          </enrollFetcher.Form>
-        ) : null}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
-          {modules
-            .filter((mod) => mod.key !== "settings")
-            .map((module) => (
-              <ModuleCard key={module.key} module={module} />
-            ))}
+                    <div>
+                      <Button
+                        className="mt-4"
+                        type="submit"
+                        rightIcon={<LuRocket />}
+                        isLoading={enrollFetcher.state !== "idle"}
+                        isDisabled={enrollFetcher.state !== "idle"}
+                      >
+                        <Trans>Enroll</Trans>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </enrollFetcher.Form>
+            ) : null}
+            <RecentlyViewed />
+          </div>
+          <div className="lg:col-span-2">
+            <SectionLabel>
+              <Trans>Modules</Trans>
+            </SectionLabel>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {modules
+                .filter((mod) => mod.key !== "settings")
+                .map((module) => (
+                  <ModuleCard key={module.key} module={module} />
+                ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-const Hr = () => (
-  <hr className="h-px my-8 bg-black/10 border-0 dark:bg-white/10" />
+const SectionLabel = ({ children }: ComponentProps<"h2">) => (
+  <h2 className="text-base font-medium tracking-tight mb-3">{children}</h2>
 );
 
-const Subheading = ({ children, className }: ComponentProps<"p">) => (
-  <p className={cn("text-muted-foreground text-base font-light", className)}>
-    {children}
-  </p>
-);
+function SearchBar() {
+  const { t } = useLingui();
+  const openSearchModal = useUIStore((s) => s.openSearchModal);
+  return (
+    <button
+      type="button"
+      onClick={openSearchModal}
+      className="flex flex-1 items-center gap-2 h-9 px-3 rounded-md border border-border bg-card/70 backdrop-blur-md text-muted-foreground hover:border-foreground/20 transition-colors active:scale-[0.99]"
+    >
+      <RxMagnifyingGlass className="w-4 h-4 shrink-0" />
+      <span className="text-sm truncate">
+        {t`Search across your workspace...`}
+      </span>
+      <ShortcutKey
+        shortcut={searchShortcut}
+        variant="small"
+        className="ml-auto"
+      />
+    </button>
+  );
+}
+
+function RecentlyViewed() {
+  const { company } = useUser();
+  const { documents, remove } = useRecentlyViewed(company.id);
+  const modules = useAllModules();
+
+  // Resolve a document's `handle.module` to its module icon straight from the
+  // `useModules` registry — the single source of truth for module icons. Match
+  // on the module key OR the second segment of its URL, since item detail pages
+  // declare `module: "items"` while the registry keys that module `parts`
+  // (its URL is `/x/items/parts`). Nothing to keep in sync.
+  const iconForModule = useCallback(
+    (moduleKey: string): IconType => {
+      const module = modules.find(
+        (m) => m.key === moduleKey || m.to.split("/")[2] === moduleKey
+      );
+      return module?.icon ?? LuFileText;
+    },
+    [modules]
+  );
+
+  return (
+    <>
+      <SectionLabel>
+        <Trans>Recent</Trans>
+      </SectionLabel>
+      {documents.length === 0 ? (
+        <Card className="shadow-none">
+          <CardContent className="py-8 text-center">
+            <p className="text-sm text-muted-foreground text-pretty">
+              <Trans>
+                Documents you open will show up here for quick access.
+              </Trans>
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {documents.map((doc) => (
+            <RecentDocumentRow
+              key={doc.url}
+              doc={doc}
+              icon={iconForModule(doc.module)}
+              onRemove={() => remove(doc.url)}
+            />
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+const RecentDocumentRow = ({
+  doc,
+  icon: Icon,
+  onRemove
+}: {
+  doc: RecentDocument;
+  icon: IconType;
+  onRemove: () => void;
+}) => {
+  const { t } = useLingui();
+  const { locale } = useLocale();
+  return (
+    <div className="relative group">
+      <Link
+        to={doc.url}
+        prefetch="intent"
+        className="flex items-center gap-3 p-3 bg-card/70 backdrop-blur-md rounded-lg border border-border hover:bg-card/60 hover:border-foreground/20 transition-colors"
+      >
+        <div className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center bg-muted">
+          <Icon className="w-4 h-4 text-muted-foreground" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-medium tracking-tight truncate">
+            {doc.title}
+          </div>
+          <div className="text-xs text-muted-foreground truncate">
+            {doc.typeLabel ? `${doc.typeLabel} · ` : ""}
+            {formatRelativeTime(doc.viewedAt, locale)}
+          </div>
+        </div>
+      </Link>
+      <IconButton
+        aria-label={t`Remove`}
+        icon={<LuX />}
+        variant="ghost"
+        size="sm"
+        onClick={onRemove}
+        className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+      />
+    </div>
+  );
+};
 
 const ModuleCard = ({ module }: { module: Authenticated<NavItem> }) => (
   <Link

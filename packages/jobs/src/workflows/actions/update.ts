@@ -3,6 +3,7 @@ import { datetime } from "@carbon/utils";
 import {
   type ActionOutcome,
   type CatalogAction,
+  CUSTOM_FIELD_PREFIX,
   entityValue,
   REGISTRY_ENTRIES,
   type RuntimeValue
@@ -74,6 +75,8 @@ export async function runUpdateAction(params: {
   if (!found) return { ok: false, error: `That ${entity} could not be read.` };
 
   const fields: Record<string, unknown> = {};
+  // Keyed by custom field id — the key inside the JSONB blob, not the prefixed input name.
+  const customFields: Record<string, unknown> = {};
 
   for (const [column, value] of Object.entries(inputs)) {
     if (column === entity) continue;
@@ -93,12 +96,30 @@ export async function runUpdateAction(params: {
       return { ok: false, error: `"${String(raw)}" is not a valid ${column}.` };
     }
 
+    if (column.startsWith(CUSTOM_FIELD_PREFIX)) {
+      // The ERP's form layer writes every custom field as a FormData string, so the
+      // blob holds strings whatever the declared type. `fromColumn` coerces back by
+      // the DECLARED type on read, so a string here round-trips exactly.
+      customFields[column.slice(CUSTOM_FIELD_PREFIX.length)] =
+        raw === null ? null : String(raw);
+      continue;
+    }
+
     fields[column] = raw;
   }
 
   // The tenancy guarantee: a reference must belong to this company, whatever
   // supplied it. Skipping it would let a workflow point at another tenant's row.
-  for (const [column, raw] of Object.entries(fields)) {
+  // A User/Customer/Supplier custom field is a reference like any other.
+  const references: [string, unknown][] = [
+    ...Object.entries(fields),
+    ...Object.entries(customFields).map(
+      ([fieldId, raw]) =>
+        [`${CUSTOM_FIELD_PREFIX}${fieldId}`, raw] as [string, unknown]
+    )
+  ];
+
+  for (const [column, raw] of references) {
     if (raw === null) continue;
     const spec = action.inputs[column];
     const scope =
@@ -121,21 +142,38 @@ export async function runUpdateAction(params: {
     }
   }
 
-  const { error } = await client
-    .from(table)
-    .update({
-      ...fields,
-      updatedBy: ownerId,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", target.id)
-    .eq("companyId", companyId);
+  if (Object.keys(fields).length > 0) {
+    const { error } = await client
+      .from(table)
+      .update({
+        ...fields,
+        updatedBy: ownerId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", target.id)
+      .eq("companyId", companyId);
 
-  if (error) return { ok: false, error: error.message };
+    if (error) return { ok: false, error: error.message };
+  }
+
+  if (Object.keys(customFields).length > 0) {
+    // One statement, server-side `||` merge: setting one field must not erase the
+    // others, and a read-modify-write here would race a concurrent human edit.
+    const { error } = await client.rpc("workflow_merge_custom_fields", {
+      p_table: table,
+      p_id: target.id,
+      p_company_id: companyId,
+      p_values: customFields
+    });
+
+    if (error) return { ok: false, error: error.message };
+  }
 
   return {
     ok: true,
     outputs: { record: entityValue(entity, target.id) },
-    summary: `Updated ${Object.keys(fields).length} field(s).`
+    summary: `Updated ${
+      Object.keys(fields).length + Object.keys(customFields).length
+    } field(s).`
   };
 }

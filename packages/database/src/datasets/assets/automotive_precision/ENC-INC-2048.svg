@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="anodBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1c1f22"/>
+      <stop offset="0.2" stop-color="#43484d"/>
+      <stop offset="0.45" stop-color="#5a6167"/>
+      <stop offset="0.72" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="anodFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#5a6167"/>
+      <stop offset="0.3" stop-color="#43484d"/>
+      <stop offset="0.7" stop-color="#2a2e32"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="anodPad" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#666d73"/>
+      <stop offset="0.45" stop-color="#3c4145"/>
+      <stop offset="1" stop-color="#1b1e21"/>
+    </linearGradient>
+    <linearGradient id="alu" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#e8edf0"/>
+      <stop offset="0.3" stop-color="#ced5da"/>
+      <stop offset="0.68" stop-color="#a9b1b7"/>
+      <stop offset="1" stop-color="#6b7278"/>
+    </linearGradient>
+    <linearGradient id="aluBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7d848a"/>
+      <stop offset="0.2" stop-color="#ced5da"/>
+      <stop offset="0.45" stop-color="#e8edf0"/>
+      <stop offset="0.72" stop-color="#a9b1b7"/>
+      <stop offset="1" stop-color="#6b7278"/>
+    </linearGradient>
+    <linearGradient id="steelSm" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#eef1f3"/>
+      <stop offset="0.45" stop-color="#c3c9cd"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="cableJacket" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9aa1a7"/>
+      <stop offset="0.45" stop-color="#7b8288"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <linearGradient id="boot" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#111315"/>
+      <stop offset="0.25" stop-color="#2c3033"/>
+      <stop offset="0.5" stop-color="#3b4044"/>
+      <stop offset="0.75" stop-color="#212528"/>
+      <stop offset="1" stop-color="#0d0f10"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="470" cy="742" rx="356" ry="78" fill="url(#shadow)"/>
+  <ellipse cx="770" cy="726" rx="196" ry="43" fill="url(#shadow)"/>
+
+  <!-- cable coiled once beside the body -->
+  <g fill="none" stroke-linecap="round">
+    <path d="M772 550 C 872 546 906 636 848 698 C 800 748 704 750 672 700 C 648 662 682 618 748 616"
+          stroke="#31363a" stroke-width="42"/>
+    <path d="M772 550 C 872 546 906 636 848 698 C 800 748 704 750 672 700 C 648 662 682 618 748 616"
+          stroke="url(#cableJacket)" stroke-width="34"/>
+    <path d="M772 543 C 866 540 896 632 842 692 C 796 740 708 742 678 696 C 658 664 686 626 746 624"
+          stroke="#c2c9ce" stroke-opacity="0.30" stroke-width="8"/>
+  </g>
+  <!-- cut end: braided screen and coloured conductors -->
+  <g transform="translate(752 616) rotate(-8)">
+    <ellipse cx="0" cy="0" rx="11" ry="17" fill="#3d4348" stroke="#23272a" stroke-width="2"/>
+    <ellipse cx="1" cy="0" rx="7.5" ry="12.5" fill="#9a6f42"/>
+    <ellipse cx="1" cy="0" rx="5" ry="9" fill="#2b2f33"/>
+    <circle cx="1" cy="-4.5" r="2.6" fill="#b04a3a"/>
+    <circle cx="1" cy="1" r="2.6" fill="#3a6ea5"/>
+    <circle cx="1" cy="6.5" r="2.6" fill="#c9b45a"/>
+  </g>
+  <g stroke="#c08b52" stroke-width="2" fill="none" stroke-opacity="0.75">
+    <path d="M760 604 C 776 596 786 600 792 592"/>
+    <path d="M762 610 C 780 608 790 614 800 610"/>
+    <path d="M758 628 C 774 634 784 632 794 638"/>
+  </g>
+
+  <!-- moulded strain relief boot -->
+  <path d="M660 500 C 706 496 748 508 780 528 L 776 574 C 744 592 700 592 662 578 Z"
+        fill="url(#boot)" stroke="#0b0d0e" stroke-width="3"/>
+  <g stroke="#0d0f10" stroke-opacity="0.75" stroke-width="4" fill="none">
+    <path d="M690 500 C 692 534 692 560 690 586"/>
+    <path d="M718 505 C 720 536 720 560 718 588"/>
+    <path d="M746 514 C 748 540 748 562 746 586"/>
+  </g>
+  <path d="M676 512 C 720 508 754 520 776 536" fill="none" stroke="#7d858b" stroke-opacity="0.22" stroke-width="4"/>
+
+  <!-- encoder body -->
+  <path d="M155 350 A 270 103 0 0 0 695 350 L 695 650 A 270 103 0 0 1 155 650 Z"
+        fill="url(#anodBarrel)" stroke="#0f1113" stroke-width="3"/>
+  <!-- circumferential relief groove -->
+  <path d="M158 596 A 270 103 0 0 0 692 596" fill="none" stroke="#0d0f10" stroke-opacity="0.85" stroke-width="12"/>
+  <path d="M158 588 A 270 103 0 0 0 692 588" fill="none" stroke="#8a9299" stroke-opacity="0.18" stroke-width="3"/>
+  <!-- bottom chamfer -->
+  <path d="M162 634 A 270 103 0 0 0 688 634" fill="none" stroke="#6f767c" stroke-opacity="0.28" stroke-width="4"/>
+  <!-- barrel key light -->
+  <path d="M258 380 L 258 660" stroke="#c6ced4" stroke-opacity="0.13" stroke-width="46" fill="none"/>
+
+  <!-- mounting flange face -->
+  <ellipse cx="425" cy="350" rx="270" ry="103" fill="url(#anodFace)" stroke="#0f1113" stroke-width="3"/>
+  <ellipse cx="425" cy="350" rx="258" ry="98" fill="none" stroke="#8a9299" stroke-opacity="0.28" stroke-width="3"/>
+  <g stroke="#ffffff" stroke-opacity="0.13" stroke-width="2" fill="none">
+    <ellipse cx="425" cy="350" rx="240" ry="91"/>
+    <ellipse cx="425" cy="350" rx="216" ry="82"/>
+  </g>
+
+  <!-- three slotted clamp tabs on the bolt circle -->
+  <g>
+    <ellipse cx="425" cy="428" rx="60" ry="27" fill="url(#anodPad)" stroke="#0f1113" stroke-width="2"/>
+    <path d="M399 428 L 451 428" stroke="#0d0f10" stroke-width="19" stroke-linecap="round"/>
+    <ellipse cx="425" cy="426" rx="15" ry="12" fill="url(#steelSm)" stroke="#4d5359" stroke-width="1.5"/>
+    <ellipse cx="425" cy="426" rx="7" ry="5.5" fill="#2f353a"/>
+  </g>
+  <g>
+    <ellipse cx="252" cy="312" rx="60" ry="27" fill="url(#anodPad)" stroke="#0f1113" stroke-width="2"/>
+    <path d="M226 312 L 278 312" stroke="#0d0f10" stroke-width="19" stroke-linecap="round"/>
+    <ellipse cx="252" cy="310" rx="15" ry="12" fill="url(#steelSm)" stroke="#4d5359" stroke-width="1.5"/>
+    <ellipse cx="252" cy="310" rx="7" ry="5.5" fill="#2f353a"/>
+  </g>
+  <g>
+    <ellipse cx="598" cy="312" rx="60" ry="27" fill="url(#anodPad)" stroke="#0f1113" stroke-width="2"/>
+    <path d="M572 312 L 624 312" stroke="#0d0f10" stroke-width="19" stroke-linecap="round"/>
+    <ellipse cx="598" cy="310" rx="15" ry="12" fill="url(#steelSm)" stroke="#4d5359" stroke-width="1.5"/>
+    <ellipse cx="598" cy="310" rx="7" ry="5.5" fill="#2f353a"/>
+  </g>
+
+  <!-- precision register spigot, raised and machined bare -->
+  <path d="M260 318 A 165 63 0 0 0 590 318 L 590 350 A 165 63 0 0 1 260 350 Z"
+        fill="url(#aluBarrel)" stroke="#5d6368" stroke-width="2"/>
+  <ellipse cx="425" cy="318" rx="165" ry="63" fill="url(#alu)" stroke="#5d6368" stroke-width="2.5"/>
+  <ellipse cx="425" cy="318" rx="153" ry="58" fill="none" stroke="#ffffff" stroke-opacity="0.20" stroke-width="2"/>
+
+  <!-- stepped hollow bore -->
+  <path d="M293 318 A 132 50 0 0 0 557 318 L 557 340 A 132 50 0 0 1 293 340 Z" fill="#4b5055"/>
+  <ellipse cx="425" cy="336" rx="132" ry="50" fill="url(#alu)" stroke="#565c62" stroke-width="2"/>
+  <ellipse cx="425" cy="336" rx="120" ry="45" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2"/>
+  <path d="M321 336 A 104 40 0 0 0 529 336 L 529 360 A 104 40 0 0 1 321 360 Z" fill="#3a4045"/>
+  <ellipse cx="425" cy="356" rx="104" ry="40" fill="#2b3034" stroke="#4d5359" stroke-width="2"/>
+
+  <!-- short splined collar -->
+  <path d="M349 352 A 76 29 0 0 0 501 352 L 501 396 A 76 29 0 0 1 349 396 Z"
+        fill="url(#aluBarrel)" stroke="#4d5359" stroke-width="2"/>
+  <g stroke="#3f454a" stroke-opacity="0.7" stroke-width="3" fill="none">
+    <path d="M363 364 L 363 392"/><path d="M383 372 L 383 400"/>
+    <path d="M403 376 L 403 404"/><path d="M425 378 L 425 406"/>
+    <path d="M447 376 L 447 404"/><path d="M467 372 L 467 400"/>
+    <path d="M487 364 L 487 392"/>
+  </g>
+  <ellipse cx="425" cy="352" rx="76" ry="29" fill="url(#alu)" stroke="#4d5359" stroke-width="2"/>
+  <ellipse cx="425" cy="352" rx="48" ry="18" fill="#1c2023" stroke="#5d6368" stroke-width="2"/>
+  <path d="M377 352 A 48 18 0 0 1 473 352 L 473 392 A 48 18 0 0 0 377 392 Z" fill="#343a3f"/>
+
+  <!-- tiny clamping screw on the collar -->
+  <ellipse cx="463" cy="382" rx="16" ry="14" fill="url(#steelSm)" stroke="#4d5359" stroke-width="2"/>
+  <ellipse cx="463" cy="382" rx="7.5" ry="6.5" fill="#2f353a"/>
+</svg>

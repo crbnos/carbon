@@ -5,3 +5,8 @@
 .workflow-edge-animated {
   animation: edge-flow 1.2s linear infinite;
 }
+
+/* xyflow's default dot colour competes with the content. Scoped to this canvas. */
+.react-flow {
+  --xy-background-pattern-dots-color: hsl(var(--muted-foreground) / 0.25);
+}

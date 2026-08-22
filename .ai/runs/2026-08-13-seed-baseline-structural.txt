@@ -1,0 +1,4 @@
+methodMaterial|51|258.375
+methodOperation|33|263.75|0.00|0.00
+salesOrderLine|13|112.00000
+quoteLinePrice|8

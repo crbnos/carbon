@@ -13,7 +13,11 @@ export type {
   RequiredPermission,
   WorkflowCatalog
 } from "./definition/catalog";
-export { createFixtureCatalog, walkPath } from "./definition/catalog";
+export {
+  createFixtureCatalog,
+  isMultiSelect,
+  walkPath
+} from "./definition/catalog";
 export type { WorkflowIssue, WorkflowIssueCode } from "./definition/issues";
 export { REFERENCE_ISSUE_CODES } from "./definition/issues";
 export {

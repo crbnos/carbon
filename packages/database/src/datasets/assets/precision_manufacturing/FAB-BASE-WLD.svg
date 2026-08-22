@@ -1,0 +1,221 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="enamel" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#26292c"/>
+      <stop offset="0.22" stop-color="#4a4f54"/>
+      <stop offset="0.45" stop-color="#5e646a"/>
+      <stop offset="0.72" stop-color="#383c40"/>
+      <stop offset="1" stop-color="#1e2124"/>
+    </linearGradient>
+    <linearGradient id="enamelSide" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#26292c"/>
+      <stop offset="0.22" stop-color="#4a4f54"/>
+      <stop offset="0.45" stop-color="#5e646a"/>
+      <stop offset="0.72" stop-color="#383c40"/>
+      <stop offset="1" stop-color="#1e2124"/>
+    </linearGradient>
+    <linearGradient id="ssPad" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="ssPadSide" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="weldG" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#c6ccd0"/>
+      <stop offset="0.45" stop-color="#9aa1a7"/>
+      <stop offset="1" stop-color="#646a70"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- stacked-dime MIG bead, 135 long along +x, placed by translate/rotate/scale -->
+    <g id="bead">
+      <path d="M-4 0 H139" stroke="#3d4247" stroke-width="14" stroke-linecap="round" opacity="0.55"/>
+      <g fill="url(#weldG)" stroke="#565c62" stroke-width="1.2">
+        <ellipse cx="0" cy="0" rx="6.6" ry="5.4"/><ellipse cx="9" cy="0" rx="6.6" ry="5.4"/>
+        <ellipse cx="18" cy="0" rx="6.6" ry="5.4"/><ellipse cx="27" cy="0" rx="6.6" ry="5.4"/>
+        <ellipse cx="36" cy="0" rx="6.6" ry="5.4"/><ellipse cx="45" cy="0" rx="6.6" ry="5.4"/>
+        <ellipse cx="54" cy="0" rx="6.6" ry="5.4"/><ellipse cx="63" cy="0" rx="6.6" ry="5.4"/>
+        <ellipse cx="72" cy="0" rx="6.6" ry="5.4"/><ellipse cx="81" cy="0" rx="6.6" ry="5.4"/>
+        <ellipse cx="90" cy="0" rx="6.6" ry="5.4"/><ellipse cx="99" cy="0" rx="6.6" ry="5.4"/>
+        <ellipse cx="108" cy="0" rx="6.6" ry="5.4"/><ellipse cx="117" cy="0" rx="6.6" ry="5.4"/>
+        <ellipse cx="126" cy="0" rx="6.6" ry="5.4"/><ellipse cx="135" cy="0" rx="6.6" ry="5.4"/>
+      </g>
+      <g fill="#ffffff" fill-opacity="0.3">
+        <ellipse cx="-1.4" cy="-1.8" rx="3" ry="2"/><ellipse cx="7.6" cy="-1.8" rx="3" ry="2"/>
+        <ellipse cx="16.6" cy="-1.8" rx="3" ry="2"/><ellipse cx="25.6" cy="-1.8" rx="3" ry="2"/>
+        <ellipse cx="34.6" cy="-1.8" rx="3" ry="2"/><ellipse cx="43.6" cy="-1.8" rx="3" ry="2"/>
+        <ellipse cx="52.6" cy="-1.8" rx="3" ry="2"/><ellipse cx="61.6" cy="-1.8" rx="3" ry="2"/>
+        <ellipse cx="70.6" cy="-1.8" rx="3" ry="2"/><ellipse cx="79.6" cy="-1.8" rx="3" ry="2"/>
+        <ellipse cx="88.6" cy="-1.8" rx="3" ry="2"/><ellipse cx="97.6" cy="-1.8" rx="3" ry="2"/>
+        <ellipse cx="106.6" cy="-1.8" rx="3" ry="2"/><ellipse cx="115.6" cy="-1.8" rx="3" ry="2"/>
+        <ellipse cx="124.6" cy="-1.8" rx="3" ry="2"/><ellipse cx="133.6" cy="-1.8" rx="3" ry="2"/>
+      </g>
+    </g>
+
+    <!-- heat tint halo around a bead: straw inner, blue outer -->
+    <g id="tint">
+      <path d="M-6 0 H141" stroke="#6a7f9e" stroke-width="34" stroke-opacity="0.20" stroke-linecap="round"/>
+      <path d="M-6 0 H141" stroke="#9a7d4e" stroke-width="20" stroke-opacity="0.26" stroke-linecap="round"/>
+    </g>
+  </defs>
+
+  <g transform="translate(0 12)">
+    <ellipse cx="512" cy="612" rx="430" ry="95" fill="url(#shadow)" transform="rotate(-24 512 612)"/>
+
+    <!-- ================= corner legs ================= -->
+    <g stroke="#15181a" stroke-width="2.5">
+      <!-- back-left -->
+      <polygon points="409.3,432.2 463.1,432.2 463.1,498.2 409.3,498.2" fill="url(#enamelSide)"/>
+      <polygon points="463.1,432.2 485.8,416 485.8,482 463.1,498.2" fill="url(#enamelSide)"/>
+      <polygon points="463.1,432.2 485.8,416 485.8,482 463.1,498.2" fill="#000" fill-opacity="0.3" stroke="none"/>
+      <!-- back-right -->
+      <polygon points="785.5,432.2 839.3,432.2 839.3,498.2 785.5,498.2" fill="url(#enamelSide)"/>
+      <polygon points="839.3,432.2 862,416 862,482 839.3,498.2" fill="url(#enamelSide)"/>
+      <polygon points="839.3,432.2 862,416 862,482 839.3,498.2" fill="#000" fill-opacity="0.3" stroke="none"/>
+      <!-- front-left -->
+      <polygon points="160,610 213.8,610 213.8,676 160,676" fill="url(#enamelSide)"/>
+      <polygon points="213.8,610 236.4,593.8 236.4,659.8 213.8,676" fill="url(#enamelSide)"/>
+      <polygon points="213.8,610 236.4,593.8 236.4,659.8 213.8,676" fill="#000" fill-opacity="0.3" stroke="none"/>
+      <!-- front-right -->
+      <polygon points="536.3,610 590,610 590,676 536.3,676" fill="url(#enamelSide)"/>
+      <polygon points="590,610 612.7,593.8 612.7,659.8 590,676" fill="url(#enamelSide)"/>
+      <polygon points="590,610 612.7,593.8 612.7,659.8 590,676" fill="#000" fill-opacity="0.3" stroke="none"/>
+    </g>
+    <!-- leg-to-rail fillet beads -->
+    <g>
+      <use href="#tint" transform="translate(160 611) scale(0.4 0.5)"/>
+      <use href="#bead" transform="translate(161 611) scale(0.39 0.5)"/>
+      <use href="#tint" transform="translate(536.3 611) scale(0.4 0.5)"/>
+      <use href="#bead" transform="translate(537.3 611) scale(0.39 0.5)"/>
+      <use href="#tint" transform="translate(409.3 433.2) scale(0.4 0.5)"/>
+      <use href="#bead" transform="translate(410.3 433.2) scale(0.39 0.5)"/>
+      <use href="#tint" transform="translate(785.5 433.2) scale(0.4 0.5)"/>
+      <use href="#bead" transform="translate(786.5 433.2) scale(0.39 0.5)"/>
+    </g>
+
+    <!-- ============ inner walls of the open frame ============ -->
+    <polygon points="236.4,533.8 463.1,372.2 463.1,432.2 236.4,593.8" fill="url(#enamelSide)" stroke="#15181a" stroke-width="2.5"/>
+    <polygon points="236.4,533.8 463.1,372.2 463.1,432.2 236.4,593.8" fill="#000" fill-opacity="0.42"/>
+    <polygon points="463.1,372.2 785.6,372.2 785.6,432.2 463.1,432.2" fill="url(#enamelSide)" stroke="#15181a" stroke-width="2.5"/>
+    <polygon points="463.1,372.2 785.6,372.2 785.6,432.2 463.1,432.2" fill="#000" fill-opacity="0.5"/>
+
+    <!-- ============ cross member across the middle ============ -->
+    <polygon points="338.4,461.1 660.9,461.1 660.9,521.1 338.4,521.1" fill="url(#enamelSide)" stroke="#15181a" stroke-width="2.5"/>
+    <polygon points="338.4,461.1 660.9,461.1 660.9,521.1 338.4,521.1" fill="#000" fill-opacity="0.16"/>
+    <polygon points="338.4,461.1 660.9,461.1 683.6,444.9 361.1,444.9" fill="url(#enamel)" stroke="#15181a" stroke-width="2.5"/>
+    <path d="M361.1 449.5 L679 449.5" stroke="#ffffff" stroke-opacity="0.14" stroke-width="4"/>
+
+    <!-- ============ frame top face (ring) ============ -->
+    <path d="M160 550 L590 550 L862 356 L432 356 Z M236.4 533.8 L558.9 533.8 L785.6 372.2 L463.1 372.2 Z"
+          fill="url(#enamel)" fill-rule="evenodd" stroke="#15181a" stroke-width="2.5"/>
+    <!-- semi-gloss sheen on the top rails -->
+    <g stroke="#ffffff" stroke-opacity="0.13" stroke-width="5" fill="none">
+      <path d="M175 543 L575 543"/>
+      <path d="M247 528 L468 371"/>
+      <path d="M478 364 L840 364"/>
+    </g>
+    <g stroke="#000000" stroke-opacity="0.3" stroke-width="2" fill="none">
+      <path d="M236.4 533.8 L558.9 533.8"/>
+      <path d="M463.1 372.2 L785.6 372.2"/>
+    </g>
+
+    <!-- ============ outer walls ============ -->
+    <polygon points="160,550 590,550 590,610 160,610" fill="url(#enamelSide)" stroke="#15181a" stroke-width="2.5"/>
+    <path d="M164 557 L586 557" stroke="#ffffff" stroke-opacity="0.16" stroke-width="5"/>
+    <path d="M164 603 L586 603" stroke="#000000" stroke-opacity="0.28" stroke-width="4"/>
+    <polygon points="590,550 862,356 862,416 590,610" fill="url(#enamelSide)" stroke="#15181a" stroke-width="2.5"/>
+    <polygon points="590,550 862,356 862,416 590,610" fill="#000" fill-opacity="0.26"/>
+    <path d="M598 552 L858 366" stroke="#ffffff" stroke-opacity="0.12" stroke-width="4"/>
+
+    <!-- ============ corner miter weld beads on the top face ============ -->
+    <g>
+      <use href="#tint" transform="translate(160 550) rotate(-11.7) scale(0.58 0.42)"/>
+      <use href="#bead" transform="translate(160 550) rotate(-11.7) scale(0.58 0.42)"/>
+      <use href="#tint" transform="translate(590 550) rotate(207.3) scale(0.26 0.42)"/>
+      <use href="#bead" transform="translate(590 550) rotate(207.3) scale(0.26 0.42)"/>
+      <use href="#tint" transform="translate(862 356) rotate(168.3) scale(0.58 0.42)"/>
+      <use href="#bead" transform="translate(862 356) rotate(168.3) scale(0.58 0.42)"/>
+      <use href="#tint" transform="translate(432 356) rotate(27.3) scale(0.26 0.42)"/>
+      <use href="#bead" transform="translate(432 356) rotate(27.3) scale(0.26 0.42)"/>
+      <!-- corner beads carried down the outside faces -->
+      <use href="#tint" transform="translate(590 552) rotate(90) scale(0.42 0.42)"/>
+      <use href="#bead" transform="translate(590 552) rotate(90) scale(0.42 0.42)"/>
+      <use href="#tint" transform="translate(862 358) rotate(90) scale(0.42 0.42)"/>
+      <use href="#bead" transform="translate(862 358) rotate(90) scale(0.42 0.42)"/>
+    </g>
+
+    <!-- ============ cross-member joint beads ============ -->
+    <g>
+      <use href="#tint" transform="translate(338.4 461.1) rotate(-36) scale(0.2 0.44)"/>
+      <use href="#bead" transform="translate(338.4 461.1) rotate(-36) scale(0.2 0.44)"/>
+      <use href="#tint" transform="translate(340 462) rotate(90) scale(0.44 0.44)"/>
+      <use href="#bead" transform="translate(340 462) rotate(90) scale(0.44 0.44)"/>
+      <use href="#tint" transform="translate(660.9 461.1) rotate(-36) scale(0.2 0.44)"/>
+      <use href="#bead" transform="translate(660.9 461.1) rotate(-36) scale(0.2 0.44)"/>
+      <use href="#tint" transform="translate(659.4 462) rotate(90) scale(0.44 0.44)"/>
+      <use href="#bead" transform="translate(659.4 462) rotate(90) scale(0.44 0.44)"/>
+    </g>
+
+    <!-- ================= 316L mounting pads ================= -->
+    <!-- left pad -->
+    <g>
+      <polygon points="310.9,438.4 375.9,438.4 375.9,423.4 310.9,423.4" fill="url(#ssPadSide)" stroke="#4a5055" stroke-width="2.5"/>
+      <polygon points="375.9,438.4 407.7,415.8 407.7,400.8 375.9,423.4" fill="url(#ssPadSide)" stroke="#4a5055" stroke-width="2.5"/>
+      <polygon points="375.9,438.4 407.7,415.8 407.7,400.8 375.9,423.4" fill="#000" fill-opacity="0.22"/>
+      <polygon points="310.9,423.4 375.9,423.4 407.7,400.8 342.7,400.8" fill="url(#ssPad)" stroke="#4a5055" stroke-width="2.5"/>
+      <!-- ground bare-steel face -->
+      <g stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.6">
+        <path d="M317 419.4 L379 419.4"/><path d="M322 414.4 L384 414.4"/>
+        <path d="M327 409.4 L389 409.4"/><path d="M332 404.4 L394 404.4"/>
+      </g>
+      <!-- chamfer break -->
+      <polygon points="316,420.8 373,420.8 400,402 345,402" fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="2"/>
+      <!-- drilled for large socket screws -->
+      <g>
+        <ellipse cx="350.2" cy="418.6" rx="17" ry="6.5" fill="#9ba2a8" stroke="#5b6167" stroke-width="2"/>
+        <ellipse cx="350.2" cy="418.6" rx="11" ry="4.2" fill="#33383d"/>
+        <ellipse cx="368.4" cy="405.6" rx="17" ry="6.5" fill="#9ba2a8" stroke="#5b6167" stroke-width="2"/>
+        <ellipse cx="368.4" cy="405.6" rx="11" ry="4.2" fill="#33383d"/>
+      </g>
+      <!-- fillet weld all round the pad base -->
+      <use href="#tint" transform="translate(309 439.5) scale(0.5 0.34)"/>
+      <use href="#bead" transform="translate(310 439.5) scale(0.49 0.34)"/>
+      <use href="#tint" transform="translate(376.4 439) rotate(-35.4) scale(0.29 0.34)"/>
+      <use href="#bead" transform="translate(376.4 439) rotate(-35.4) scale(0.29 0.34)"/>
+    </g>
+    <!-- right pad -->
+    <g>
+      <polygon points="686.9,438.4 751.9,438.4 751.9,423.4 686.9,423.4" fill="url(#ssPadSide)" stroke="#4a5055" stroke-width="2.5"/>
+      <polygon points="751.9,438.4 783.7,415.8 783.7,400.8 751.9,423.4" fill="url(#ssPadSide)" stroke="#4a5055" stroke-width="2.5"/>
+      <polygon points="751.9,438.4 783.7,415.8 783.7,400.8 751.9,423.4" fill="#000" fill-opacity="0.22"/>
+      <polygon points="686.9,423.4 751.9,423.4 783.7,400.8 718.7,400.8" fill="url(#ssPad)" stroke="#4a5055" stroke-width="2.5"/>
+      <g stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.6">
+        <path d="M693 419.4 L755 419.4"/><path d="M698 414.4 L760 414.4"/>
+        <path d="M703 409.4 L765 409.4"/><path d="M708 404.4 L770 404.4"/>
+      </g>
+      <polygon points="692,420.8 749,420.8 776,402 721,402" fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="2"/>
+      <g>
+        <ellipse cx="726.2" cy="418.6" rx="17" ry="6.5" fill="#9ba2a8" stroke="#5b6167" stroke-width="2"/>
+        <ellipse cx="726.2" cy="418.6" rx="11" ry="4.2" fill="#33383d"/>
+        <ellipse cx="744.4" cy="405.6" rx="17" ry="6.5" fill="#9ba2a8" stroke="#5b6167" stroke-width="2"/>
+        <ellipse cx="744.4" cy="405.6" rx="11" ry="4.2" fill="#33383d"/>
+      </g>
+      <use href="#tint" transform="translate(685 439.5) scale(0.5 0.34)"/>
+      <use href="#bead" transform="translate(686 439.5) scale(0.49 0.34)"/>
+      <use href="#tint" transform="translate(752.4 439) rotate(-35.4) scale(0.29 0.34)"/>
+      <use href="#bead" transform="translate(752.4 439) rotate(-35.4) scale(0.29 0.34)"/>
+    </g>
+  </g>
+</svg>

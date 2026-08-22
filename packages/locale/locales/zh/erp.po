@@ -505,7 +505,7 @@ msgstr "任务的状态已变更"
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "列表被接入到 {0}，所以此步骤为每个项目运行一次并返回结果列表。"
 
-#. placeholder {0}: label( actionInputLabelKey(actionId, batch.input), batch.input )
+#. placeholder {0}: inputLabel(batch.input)
 msgid "A list is wired into {0}, so this step runs once for each item in it — up to {MAX_LIST_ITEMS}."
 msgstr "列表被接入到 {0}，所以此步骤为其中每个项目运行一次 — 最多 {MAX_LIST_ITEMS} 个。"
 
@@ -1185,6 +1185,9 @@ msgstr "添加行项目"
 msgid "Add match"
 msgstr "添加匹配"
 
+msgid "Add New"
+msgstr "添加新项"
+
 msgid "Add Note"
 msgstr "添加备注"
 
@@ -1302,6 +1305,9 @@ msgstr "已添加"
 
 msgid "Added for this customer"
 msgstr "为此客户添加"
+
+msgid "Adding demo records"
+msgstr "正在添加演示记录"
 
 msgid "Adding..."
 msgstr "添加中..."
@@ -1427,6 +1433,9 @@ msgstr "所有供应商"
 msgid "All Time"
 msgstr "所有时间"
 
+msgid "All tools"
+msgstr "所有工具"
+
 msgid "All Types"
 msgstr "所有类型"
 
@@ -1450,6 +1459,9 @@ msgstr "也在 {otherStationNames}"
 
 msgid "Always"
 msgstr "始终"
+
+msgid "Always sent — every notification shows in the bell menu."
+msgstr "始终发送 — 每个通知都显示在铃声菜单中。"
 
 msgid "Always taken"
 msgstr "始终采取"
@@ -1691,6 +1703,9 @@ msgstr "适用于没有自己规则的功能，以及当该计划驱动检验时
 msgid "Apply"
 msgstr "应用"
 
+msgid "Apply a demo template"
+msgstr "应用演示模板"
+
 msgid "Apply available credits"
 msgstr "应用可用额度"
 
@@ -1717,6 +1732,12 @@ msgstr "应用到发票"
 
 msgid "Apply to invoices"
 msgstr "应用于发票"
+
+msgid "Applying"
+msgstr "正在应用"
+
+msgid "Applying demo data"
+msgstr "正在应用演示数据"
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "接近 {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB 上限。"
@@ -2685,6 +2706,8 @@ msgstr "两者"
 
 msgid "Bottleneck"
 msgstr "瓶颈"
+msgid "Branch an editable copy of this version that you can change and publish."
+msgstr "创建此版本的可编辑副本，您可以对其进行更改和发布。"
 
 msgid "Breadcrumb"
 msgstr "面包屑"
@@ -2694,6 +2717,9 @@ msgstr "导入您的零件、物料清单、工艺流程和成本——使用 Ca
 
 msgid "Browse library"
 msgstr "浏览库"
+
+msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
+msgstr "以只读方式浏览实时版本。您仍然可以重新排列步骤以整理布局。"
 
 msgid "Bucket"
 msgstr "存储桶"
@@ -3185,6 +3211,9 @@ msgstr "商品收据和供应商发票之间的清算账户; 当两者都已过�
 msgid "Clearing account for goods received / invoice received matching"
 msgstr "商品收据/发票收据匹配的清算账户"
 
+msgid "Clearing demo data"
+msgstr "正在清除演示数据"
+
 msgid "Click again to disconnect"
 msgstr "再次单击以断开连接"
 
@@ -3543,6 +3572,9 @@ msgstr "连接 Jira 问题"
 
 msgid "Connect Linear issue"
 msgstr "连接 Linear 问题"
+
+msgid "Connect Slack under Settings → Integrations first."
+msgstr "先在设置 → 集成中连接 Slack。"
 
 msgid "Connect the Otherwise handle to a node to run when no condition matches."
 msgstr "将 Otherwise 句柄连接到节点，以便在没有条件匹配时运行。"
@@ -4017,6 +4049,9 @@ msgstr "创建新的维护派工单以跟踪设备维修和维护活动"
 msgid "Create a new production job to fulfill the sales order"
 msgstr "创建新的生产工作以完成销售订单"
 
+msgid "Create a new version"
+msgstr "创建新版本"
+
 msgid "Create a purchase order"
 msgstr "创建采购订单"
 
@@ -4343,6 +4378,9 @@ msgstr "自定义字段"
 
 msgid "Custom Fields"
 msgstr "自定义字段"
+
+msgid "Custom fields are not available for items yet."
+msgstr "自定义字段尚不适用于项目。"
 
 msgid "Custom SOW · we manage"
 msgstr "自定义 SOW · 我们管理"
@@ -5153,6 +5191,18 @@ msgstr "需求预测"
 msgid "Demand-Based"
 msgstr "基于需求"
 
+msgid "Demo data"
+msgstr "演示数据"
+
+msgid "Demo Data"
+msgstr "演示数据"
+
+msgid "Demo data applied"
+msgstr "演示数据已应用"
+
+msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
+msgstr "演示数据已应用到此公司。保留它，或还原以恢复之前的确切内容。"
+
 msgid "department"
 msgstr "部门"
 
@@ -5260,6 +5310,9 @@ msgstr "尺寸"
 
 msgid "Direct"
 msgstr "直接"
+
+msgid "Direct message to each recipient in your Slack workspace."
+msgstr "在您的 Slack 工作区中直接消息给每个收件人。"
 
 msgid "Direction"
 msgstr "方向"
@@ -5381,6 +5434,9 @@ msgstr "文档"
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "文档将发票、账单和付款推送为原生提供商文档；其日记被记录为由文档覆盖。它还将在提供商中记录的付款拉回到Carbon，关闭匹配的发票或账单并发布Carbon GL日记。关闭时将其记录为故意排除。"
+
+msgid "Documents you open will show up here for quick access."
+msgstr "您打开的文档将显示在此处以便快速访问。"
 
 msgid "Don't Cancel"
 msgstr "不要取消"
@@ -6098,9 +6154,6 @@ msgstr "工程联系人"
 
 msgid "Enroll"
 msgstr "注册"
-
-msgid "Enroll this company in the Implementation Hub"
-msgstr "将此公司注册到实施中心"
 
 msgid "Enter a batch number before setting the expiration date"
 msgstr "在设置过期日期前请输入批号"
@@ -6961,6 +7014,9 @@ msgstr "此处附加的文件将默认随每封采购订单电子邮件一起发
 msgid "Files attached here ride along on every purchase order email sent to this supplier (in addition to company-wide defaults)."
 msgstr "此处附加的文件将随附在发送给此供应商的每份采购订单电子邮件中（除了公司范围的默认设置）。"
 
+msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
+msgstr "用逼真的行业故事填充此公司，使每个屏幕都有内容。您可以恢复之前的内容。"
+
 msgid "Filter"
 msgstr "筛选"
 
@@ -7775,6 +7831,9 @@ msgstr "英制"
 msgid "Implementation"
 msgstr "实施"
 
+msgid "Implementation Hub"
+msgstr "实施中心"
+
 msgid "Implementation Lead"
 msgstr "实施主管"
 
@@ -7838,6 +7897,8 @@ msgstr "一起保持沟通"
 
 msgid "In use"
 msgstr "使用中"
+msgid "In-app"
+msgstr "应用内"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "应用内通知始终会被传递。选择哪些主题也通过电子邮件或 Slack 发送给您。"
@@ -8440,6 +8501,9 @@ msgstr "看板输出"
 msgid "Kanbans"
 msgstr "看板"
 
+msgid "Keep"
+msgstr "保留"
+
 msgid "Keep Current"
 msgstr "保持当前"
 
@@ -8743,8 +8807,8 @@ msgstr "列表选项"
 msgid "List Parameters"
 msgstr "列表参数"
 
-#. placeholder {0}: label( actionInputLabelKey(actionId, batch.first), batch.first )
-#. placeholder {1}: label( actionInputLabelKey(actionId, batch.second), batch.second )
+#. placeholder {0}: inputLabel(batch.first)
+#. placeholder {1}: inputLabel(batch.second)
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
 msgstr "列表同时连接到{0}和{1}，因此此步骤无法判断要在哪一个上重复。仅在其中一个上保留列表。"
 
@@ -9579,6 +9643,8 @@ msgstr "需要正确的列吗？"
 
 msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
 msgstr "需要的是该天的工作小时数除以 {personDayHours} 小时，向上舍入——您筛选的班次或此位置最常见的班次时长。"
+msgid "Needs a Business or Partner plan."
+msgstr "需要业务或合作伙伴计划。"
 
 msgid "Needs fixing"
 msgstr "需要修复"
@@ -10500,6 +10566,12 @@ msgstr "暂无内容。步骤配置后才会提供值。"
 msgid "Notification"
 msgstr "通知"
 
+msgid "Notification type"
+msgstr "通知类型"
+
+msgid "Notification Type"
+msgstr "通知类型"
+
 msgid "Notifications"
 msgstr "通知"
 
@@ -10596,6 +10668,9 @@ msgstr "在销售订单上"
 
 msgid "On Storage Unit"
 msgstr "在存储单元上"
+
+msgid "On this operation"
+msgstr "在此工序上"
 
 msgid "On-account credit available"
 msgstr "账户信用额度可用"
@@ -11905,8 +11980,14 @@ msgstr "发布"
 msgid "Publish Version {0}?"
 msgstr "发布版本{0}?"
 
+msgid "Published"
+msgstr "已发布"
+
 msgid "Published by Carbon"
 msgstr "由 Carbon 发布"
+
+msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
+msgstr "已发布的版本无法编辑。以只读方式浏览，或创建新版本以进行更改。"
 
 msgid "Pull"
 msgstr "拉取"
@@ -12054,6 +12135,9 @@ msgstr "推送不包含维度的日记账"
 
 msgid "Push to accounting"
 msgstr "推送到会计系统"
+
+msgid "Putting your data back"
+msgstr "正在恢复您的数据"
 
 #. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
 msgid "QR Code to create a {0} for this kanban"
@@ -12305,6 +12389,9 @@ msgstr "就绪"
 
 msgid "Ready for Quote"
 msgstr "准备报价"
+
+msgid "ready to keep or revert"
+msgstr "准备好保留或还原"
 
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "实时库存和车间可见性"
@@ -12726,6 +12813,9 @@ msgstr "用源值替换现有定价"
 msgid "Replace PDF"
 msgstr "替换 PDF"
 
+msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
+msgstr "用演示数据集替换此公司的数据——首先快照，以便您可以还原。"
+
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "替换 PDF 将删除此文档上的所有气球标注。功能行及其值保持不变；您可以在新绘图上重新放置气球。"
 
@@ -12895,6 +12985,9 @@ msgstr "将此实体恢复到报废时所在的仓位和成本的可用库存。
 msgid "Restore tracked entities to available"
 msgstr "将跟踪的实体恢复为可用"
 
+msgid "Restoring files"
+msgstr "正在恢复文件"
+
 msgid "Result"
 msgstr "结果"
 
@@ -12921,6 +13014,9 @@ msgstr "重试"
 
 msgid "Retry all"
 msgstr "全部重试"
+
+msgid "Retry revert"
+msgstr "重试还原"
 
 msgid "Return Home"
 msgstr "返回首页"
@@ -12963,6 +13059,12 @@ msgstr "反转相关日记账分录"
 
 msgid "Reversed"
 msgstr "已冲销"
+
+msgid "Revert"
+msgstr "还原"
+
+msgid "Reverting"
+msgstr "正在还原"
 
 msgid "Review"
 msgstr "查看"
@@ -13353,6 +13455,9 @@ msgstr "已保存"
 
 msgid "Saved Views"
 msgstr "已保存视图"
+
+msgid "Saving a copy of your current data"
+msgstr "正在保存您当前数据的副本"
 
 msgid "Saving..."
 msgstr "保存中..."
@@ -13820,6 +13925,9 @@ msgstr "在文档激活前将其发送以供批准。"
 
 msgid "Sent complete date"
 msgstr "发送完成日期"
+
+msgid "Sent to each recipient who has email notifications turned on."
+msgstr "发送给打开了电子邮件通知的每个收件人。"
 
 msgid "Sequences"
 msgstr "序列"
@@ -14492,6 +14600,8 @@ msgstr "开始于"
 
 msgid "Starts"
 msgstr "开始"
+msgid "Starting…"
+msgstr "正在启动…"
 
 msgid "State / Province"
 msgstr "州/省"
@@ -15971,6 +16081,9 @@ msgstr "这是webhook的唯一标识符"
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "这是一个 ITAR 受控环境。访问仅限于美国人。"
 
+msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
+msgstr "这比预期花费的时间更长。它可能仍会完成——如果没有，请重试还原以恢复您的数据。"
+
 msgid "This is the month your fiscal year starts."
 msgstr "这是您的财政年度开始的月份。"
 
@@ -16092,6 +16205,9 @@ msgstr "这会更新应用程序所有用户的主题"
 msgid "This user does not have two-factor authentication enabled."
 msgstr "此用户未启用双因素认证。"
 
+msgid "This usually takes a few seconds. You can leave the page — it keeps running."
+msgstr "这通常需要几秒钟。您可以离开页面——它会继续运行。"
+
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "此版本属于开放的<0>变更通知</0>。请在那里编辑。"
 
@@ -16101,6 +16217,9 @@ msgstr "此版本属于变更通知<0>{0}</0>。请在那里编辑。"
 
 msgid "This version cannot be opened"
 msgstr "无法打开此版本"
+
+msgid "This version is live"
+msgstr "此版本已上线"
 
 msgid "This version is live. Create a new version to edit."
 msgstr "此版本处于实时状态。创建新版本进行编辑。"
@@ -16662,6 +16781,9 @@ msgstr "在操作中报告为无法恢复的单位,带有原因 — 返工的替
 
 msgid "Unknown"
 msgstr "未知"
+
+msgid "unknown error"
+msgstr "未知错误"
 
 msgid "unknown location"
 msgstr "未知位置"
@@ -17255,6 +17377,9 @@ msgstr "查看建议"
 msgid "View Suppliers"
 msgstr "查看供应商"
 
+msgid "View the workflow"
+msgstr "查看工作流"
+
 msgid "View tie-out"
 msgstr "查看对账"
 
@@ -17533,6 +17658,9 @@ msgstr "超出范围的内容"
 msgid "When"
 msgstr "何时"
 
+msgid "When {name} changes"
+msgstr "当 {name} 更改时"
+
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "当成品的保质期设置为\"计算\"时，选择哪些消耗的投入物料用于计算。"
 
@@ -17631,6 +17759,9 @@ msgstr "当您承诺交货时;计划将其视为履行的需求到期日期。"
 
 msgid "When your fiscal and tax years start"
 msgstr "您的会计年度和税务年度的开始时间"
+
+msgid "Where a workflow notification is delivered — in-app is always sent, while email needs a Business or Partner plan and Slack needs your Slack workspace connected."
+msgstr "工作流通知的传送位置 — 应用内始终发送，电子邮件需要业务或合作伙伴计划，Slack 需要连接您的 Slack 工作区。"
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "操作执行的位置。carries劳动和报价费率,开销是它们之间的差异。"
