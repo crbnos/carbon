@@ -6,8 +6,6 @@ import { ValidatedForm, validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import {
   Button,
-  Card,
-  CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -18,6 +16,11 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { Link, redirect, useLoaderData } from "react-router";
 import type { z } from "zod";
+import {
+  OnboardingCard,
+  OnboardingCardContent,
+  onboardingFormClassName
+} from "~/components";
 import { Hidden, Input, Submit } from "~/components/Form";
 import { useOnboarding } from "~/hooks";
 import {
@@ -87,26 +90,27 @@ export default function OnboardingUser() {
   }
 
   return (
-    <Card className="max-w-lg">
+    <OnboardingCard>
       <ValidatedForm
         autoComplete="off"
         validator={onboardingUserValidator}
         defaultValues={initialValues}
         method="post"
+        className={onboardingFormClassName}
       >
         <CardHeader>
           <CardTitle>
             <Trans>Let's setup your account</Trans>
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <OnboardingCardContent>
           <Hidden name="next" value={next} />
           <VStack spacing={4}>
             <Input autoFocus name="firstName" label={t`First Name`} />
             <Input name="lastName" label={t`Last Name`} />
             {/* <TextArea name="about" label={t`About`} /> */}
           </VStack>
-        </CardContent>
+        </OnboardingCardContent>
         <CardFooter>
           <HStack>
             <Button
@@ -126,6 +130,6 @@ export default function OnboardingUser() {
           </HStack>
         </CardFooter>
       </ValidatedForm>
-    </Card>
+    </OnboardingCard>
   );
 }

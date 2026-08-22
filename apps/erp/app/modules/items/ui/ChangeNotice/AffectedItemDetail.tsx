@@ -248,6 +248,21 @@ export default function AffectedItemDetail({
       {showBomBop &&
         (affected.makeMethod ? (
           <>
+            <BillOfProcess
+              key={`bop:${affected.makeMethod.id}`}
+              makeMethod={affected.makeMethod}
+              materials={affected.methodMaterials}
+              // @ts-expect-error mapped loader shape (mirrors the part route)
+              operations={affected.methodOperations}
+              configurable={affected.configurable}
+              configurationRules={affected.configurationRules}
+              parameters={affected.parameters}
+              tags={affected.tags}
+              revisionStatus={affected.revisionStatus}
+              releaseControl={affected.releaseControl ?? undefined}
+              isDisabled={isDisabled}
+              disabledReason={disabledReason}
+            />
             <BillOfMaterial
               key={`bom:${affected.makeMethod.id}`}
               makeMethod={affected.makeMethod}
@@ -259,21 +274,6 @@ export default function AffectedItemDetail({
               configurationRules={affected.configurationRules}
               parameters={affected.parameters}
               replenishmentSystem={label?.replenishmentSystem ?? undefined}
-              revisionStatus={affected.revisionStatus}
-              releaseControl={affected.releaseControl ?? undefined}
-              isDisabled={isDisabled}
-              disabledReason={disabledReason}
-            />
-            <BillOfProcess
-              key={`bop:${affected.makeMethod.id}`}
-              makeMethod={affected.makeMethod}
-              materials={affected.methodMaterials}
-              // @ts-expect-error mapped loader shape (mirrors the part route)
-              operations={affected.methodOperations}
-              configurable={affected.configurable}
-              configurationRules={affected.configurationRules}
-              parameters={affected.parameters}
-              tags={affected.tags}
               revisionStatus={affected.revisionStatus}
               releaseControl={affected.releaseControl ?? undefined}
               isDisabled={isDisabled}
@@ -319,7 +319,7 @@ export default function AffectedItemDetail({
                 isDisabled ? <LockedHint reason={disabledReason} /> : undefined
               }
               metadata={{ itemId: partData.itemId }}
-              modelPath={partData.partSummary?.modelPath ?? null}
+              modelUpload={partData.partSummary ?? null}
               title={t`CAD Model`}
             />
           </>

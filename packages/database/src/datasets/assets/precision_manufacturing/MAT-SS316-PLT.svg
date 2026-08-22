@@ -1,0 +1,159 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="ssTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="ssEdge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#aab1b7"/>
+      <stop offset="0.35" stop-color="#6e747a"/>
+      <stop offset="1" stop-color="#4a5054"/>
+    </linearGradient>
+    <linearGradient id="ssSide" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#8b9298"/>
+      <stop offset="0.5" stop-color="#666c71"/>
+      <stop offset="1" stop-color="#4a5054"/>
+    </linearGradient>
+    <radialGradient id="cloudL" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="cloudD" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#3d474e" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#3d474e" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="heatTint" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#a8763a" stop-opacity="0.38"/>
+      <stop offset="0.6" stop-color="#6f6a7d" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#6f6a7d" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="topClip">
+      <polygon points="127,598 596,598 897,383 428,383"/>
+    </clipPath>
+    <clipPath id="frontClip">
+      <polygon points="127,598 596,598 596,616 127,616"/>
+    </clipPath>
+    <clipPath id="sideClip">
+      <polygon points="596,598 897,383 897,401 596,616"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="512" cy="556" rx="440" ry="97" fill="url(#shadow)"/>
+
+  <!-- sawn edge bands: thick, solid, rigid -->
+  <polygon points="127,598 596,598 596,616 127,616" fill="url(#ssEdge)" stroke="#3c4247" stroke-width="2.5"/>
+  <g clip-path="url(#frontClip)">
+    <g stroke="#22272b" stroke-opacity="0.35" stroke-width="1.6" fill="none">
+      <path d="M180 596 L180 620"/><path d="M244 596 L244 620"/><path d="M311 596 L311 620"/>
+      <path d="M366 596 L366 620"/><path d="M430 596 L430 620"/><path d="M498 596 L498 620"/><path d="M552 596 L552 620"/>
+    </g>
+    <rect x="127" y="598" width="469" height="4" fill="#dfe4e8" opacity="0.35"/>
+  </g>
+  <polygon points="596,598 897,383 897,401 596,616" fill="url(#ssSide)" stroke="#3c4247" stroke-width="2.5"/>
+  <g clip-path="url(#sideClip)">
+    <g stroke="#22272b" stroke-opacity="0.32" stroke-width="1.6" fill="none">
+      <path d="M660 560 L664 578"/><path d="M726 513 L730 531"/><path d="M792 466 L796 484"/><path d="M852 423 L856 441"/>
+    </g>
+    <ellipse cx="880" cy="396" rx="70" ry="42" fill="url(#heatTint)"/>
+  </g>
+
+  <!-- top face: cool brushed 2B -->
+  <polygon points="127,598 596,598 897,383 428,383" fill="url(#ssTop)" stroke="#3c4247" stroke-width="2.5"/>
+  <g clip-path="url(#topClip)">
+    <rect x="120" y="375" width="790" height="240" fill="#7c9ab4" opacity="0.14"/>
+      <path d="M-180 598 L121 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M-169 598 L132 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M-158 598 L143 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M-147 598 L154 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M-136 598 L165 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M-125 598 L176 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M-114 598 L187 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M-103 598 L198 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M-92 598 L209 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M-81 598 L220 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M-70 598 L231 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M-59 598 L242 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M-48 598 L253 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M-37 598 L264 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M-26 598 L275 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M-15 598 L286 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M-4 598 L297 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M7 598 L308 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M18 598 L319 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M29 598 L330 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M40 598 L341 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M51 598 L352 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M62 598 L363 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M73 598 L374 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M84 598 L385 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M95 598 L396 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M106 598 L407 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M117 598 L418 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M128 598 L429 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M139 598 L440 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M150 598 L451 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M161 598 L462 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M172 598 L473 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M183 598 L484 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M194 598 L495 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M205 598 L506 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M216 598 L517 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M227 598 L528 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M238 598 L539 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M249 598 L550 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M260 598 L561 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M271 598 L572 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M282 598 L583 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M293 598 L594 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M304 598 L605 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M315 598 L616 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M326 598 L627 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M337 598 L638 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M348 598 L649 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M359 598 L660 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M370 598 L671 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M381 598 L682 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M392 598 L693 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M403 598 L704 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M414 598 L715 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M425 598 L726 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M436 598 L737 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M447 598 L748 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M458 598 L759 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M469 598 L770 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M480 598 L781 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M491 598 L792 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M502 598 L803 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M513 598 L814 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M524 598 L825 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M535 598 L836 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M546 598 L847 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M557 598 L858 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M568 598 L869 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+      <path d="M579 598 L880 383" stroke="#3f464c" stroke-opacity="0.12" stroke-width="1.4"/>
+      <path d="M590 598 L891 383" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1.8"/>
+    <ellipse cx="330" cy="500" rx="230" ry="120" fill="url(#cloudL)"/>
+    <ellipse cx="700" cy="440" rx="190" ry="100" fill="url(#cloudD)"/>
+    <ellipse cx="520" cy="420" rx="150" ry="70" fill="url(#cloudL)"/>
+    <ellipse cx="230" cy="560" rx="140" ry="60" fill="url(#cloudD)"/>
+    <ellipse cx="820" cy="410" rx="120" ry="60" fill="url(#cloudL)"/>
+    <ellipse cx="860" cy="392" rx="90" ry="50" fill="url(#heatTint)"/>
+  </g>
+  <!-- cut-edge break lines just inside the rim -->
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.20" stroke-width="2">
+    <path d="M139 590 L594 590"/>
+    <path d="M602 592 L888 388"/>
+  </g>
+  <g fill="none" stroke="#454b50" stroke-opacity="0.45" stroke-width="1.8">
+    <path d="M136 583 L590 583"/>
+    <path d="M437 390 L884 390"/>
+  </g>
+</svg>

@@ -24,7 +24,6 @@ import {
   IconButton,
   Label,
   Loading,
-  ScrollArea,
   ToggleGroup,
   ToggleGroupItem,
   Tooltip,
@@ -833,15 +832,13 @@ const QuoteBillOfProcess = ({
         </CardAction>
       </HStack>
       <CardContent>
-        <ScrollArea type="auto" className="max-h-[60dvh]">
-          <SortableList
-            items={items}
-            onReorder={onReorder}
-            onToggleItem={onToggleItem}
-            onRemoveItem={onRemoveItem}
-            renderItem={renderListItem}
-          />
-        </ScrollArea>
+        <SortableList
+          items={items}
+          onReorder={onReorder}
+          onToggleItem={onToggleItem}
+          onRemoveItem={onRemoveItem}
+          renderItem={renderListItem}
+        />
       </CardContent>
     </Card>
   );

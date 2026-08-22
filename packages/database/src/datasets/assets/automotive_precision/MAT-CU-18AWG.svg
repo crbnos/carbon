@@ -1,0 +1,177 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="copper" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6d3a22"/>
+      <stop offset="0.2" stop-color="#c07a4d"/>
+      <stop offset="0.45" stop-color="#e0a071"/>
+      <stop offset="0.72" stop-color="#96593a"/>
+      <stop offset="1" stop-color="#5a2f1c"/>
+    </linearGradient>
+    <linearGradient id="copperTail" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c07a4d"/>
+      <stop offset="0.45" stop-color="#e0a071"/>
+      <stop offset="1" stop-color="#6d3a22"/>
+    </linearGradient>
+    <linearGradient id="flangeSide" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4b4f52"/>
+      <stop offset="0.22" stop-color="#787d81"/>
+      <stop offset="0.45" stop-color="#8d9296"/>
+      <stop offset="0.72" stop-color="#63686c"/>
+      <stop offset="1" stop-color="#414548"/>
+    </linearGradient>
+    <linearGradient id="flangeTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#8d9296"/>
+      <stop offset="0.45" stop-color="#787d81"/>
+      <stop offset="1" stop-color="#4b4f52"/>
+    </linearGradient>
+    <linearGradient id="flangeUnder" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#5b6064"/>
+      <stop offset="1" stop-color="#3d4144"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="barrelClip">
+      <path d="M290 292 L290 662 Q512 830 734 662 L734 292 Z"/>
+    </clipPath>
+    <clipPath id="topFaceClip">
+      <ellipse cx="512" cy="262" rx="290" ry="110"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="512" cy="792" rx="334" ry="74" fill="url(#shadow)"/>
+
+  <!-- lower flange: top face annulus, then the flange rim band -->
+  <ellipse cx="512" cy="662" rx="290" ry="110" fill="url(#flangeUnder)" stroke="#33373a" stroke-width="2.5"/>
+  <path d="M222 662 L222 692 Q512 912 802 692 L802 662 Z" fill="url(#flangeSide)" stroke="#33373a" stroke-width="2.5"/>
+  <path d="M232 686 Q512 892 792 686" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="3"/>
+
+  <!-- wound wire barrel -->
+  <g>
+    <path d="M290 292 L290 662 Q512 830 734 662 L734 292 Z" fill="url(#copper)"/>
+    <g clip-path="url(#barrelClip)">
+      <!-- traverse layer banding, slightly darker between layers -->
+      <g fill="#4e2818" opacity="0.16">
+        <rect x="286" y="292" width="18" height="440"/>
+        <rect x="386" y="292" width="10" height="440"/>
+        <rect x="520" y="292" width="10" height="440"/>
+        <rect x="638" y="292" width="14" height="440"/>
+        <rect x="716" y="292" width="22" height="440"/>
+      </g>
+      <!-- turn-by-turn winding, dark pass -->
+      <g fill="none" stroke="#7d3f22" stroke-width="3" opacity="0.55">
+        <path d="M290 300 Q512 468 734 300"/>
+        <path d="M290 312 Q512 480 734 312"/>
+        <path d="M290 324 Q512 492 734 324"/>
+        <path d="M290 336 Q512 504 734 336"/>
+        <path d="M290 348 Q512 516 734 348"/>
+        <path d="M290 360 Q512 528 734 360"/>
+        <path d="M290 372 Q512 540 734 372"/>
+        <path d="M290 384 Q512 552 734 384"/>
+        <path d="M290 396 Q512 564 734 396"/>
+        <path d="M290 408 Q512 576 734 408"/>
+        <path d="M290 420 Q512 588 734 420"/>
+        <path d="M290 432 Q512 600 734 432"/>
+        <path d="M290 444 Q512 612 734 444"/>
+        <path d="M290 456 Q512 624 734 456"/>
+        <path d="M290 468 Q512 636 734 468"/>
+        <path d="M290 480 Q512 648 734 480"/>
+        <path d="M290 492 Q512 660 734 492"/>
+        <path d="M290 504 Q512 672 734 504"/>
+        <path d="M290 516 Q512 684 734 516"/>
+        <path d="M290 528 Q512 696 734 528"/>
+        <path d="M290 540 Q512 708 734 540"/>
+        <path d="M290 552 Q512 720 734 552"/>
+        <path d="M290 564 Q512 732 734 564"/>
+        <path d="M290 576 Q512 744 734 576"/>
+        <path d="M290 588 Q512 756 734 588"/>
+        <path d="M290 600 Q512 768 734 600"/>
+        <path d="M290 612 Q512 780 734 612"/>
+        <path d="M290 624 Q512 792 734 624"/>
+        <path d="M290 636 Q512 804 734 636"/>
+        <path d="M290 648 Q512 816 734 648"/>
+      </g>
+      <!-- enamel sheen pass -->
+      <g fill="none" stroke="#f2c79c" stroke-width="2" opacity="0.34">
+        <path d="M290 306 Q512 474 734 306"/>
+        <path d="M290 330 Q512 498 734 330"/>
+        <path d="M290 354 Q512 522 734 354"/>
+        <path d="M290 378 Q512 546 734 378"/>
+        <path d="M290 402 Q512 570 734 402"/>
+        <path d="M290 426 Q512 594 734 426"/>
+        <path d="M290 450 Q512 618 734 450"/>
+        <path d="M290 474 Q512 642 734 474"/>
+        <path d="M290 498 Q512 666 734 498"/>
+        <path d="M290 522 Q512 690 734 522"/>
+        <path d="M290 546 Q512 714 734 546"/>
+        <path d="M290 570 Q512 738 734 570"/>
+        <path d="M290 594 Q512 762 734 594"/>
+        <path d="M290 618 Q512 786 734 618"/>
+        <path d="M290 642 Q512 810 734 642"/>
+      </g>
+    </g>
+    <path d="M290 292 L290 662 Q512 830 734 662 L734 292 Z" fill="none" stroke="#4a2515" stroke-width="2.5"/>
+  </g>
+
+  <!-- upper flange band -->
+  <path d="M222 262 L222 292 Q512 512 802 292 L802 262 Z" fill="url(#flangeSide)" stroke="#33373a" stroke-width="2.5"/>
+  <path d="M232 286 Q512 492 792 286" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="3"/>
+
+  <!-- upper flange top face -->
+  <ellipse cx="512" cy="262" rx="290" ry="110" fill="url(#flangeTop)" stroke="#33373a" stroke-width="2.5"/>
+  <g clip-path="url(#topFaceClip)">
+    <!-- radial moulded ribs -->
+    <g transform="translate(512 262) scale(1 0.3793)" stroke="#2f3336" stroke-width="9" stroke-opacity="0.55" fill="none">
+      <path d="M90 0 L278 0"/>
+      <path d="M77.9 45 L240.7 139"/>
+      <path d="M45 77.9 L139 240.7"/>
+      <path d="M0 90 L0 278"/>
+      <path d="M-45 77.9 L-139 240.7"/>
+      <path d="M-77.9 45 L-240.7 139"/>
+      <path d="M-90 0 L-278 0"/>
+      <path d="M-77.9 -45 L-240.7 -139"/>
+      <path d="M-45 -77.9 L-139 -240.7"/>
+      <path d="M0 -90 L0 -278"/>
+      <path d="M45 -77.9 L139 -240.7"/>
+      <path d="M77.9 -45 L240.7 -139"/>
+    </g>
+    <g transform="translate(512 262) scale(1 0.3793)" stroke="#a8aeb2" stroke-width="4" stroke-opacity="0.45" fill="none">
+      <path d="M96 -6 L278 -6"/>
+      <path d="M81 39 L242 133"/>
+      <path d="M47 72 L141 234"/>
+      <path d="M-6 90 L-6 278"/>
+      <path d="M-50 74 L-144 236"/>
+      <path d="M-82 41 L-244 135"/>
+      <path d="M-96 -6 L-278 -6"/>
+      <path d="M-82 -51 L-244 -145"/>
+      <path d="M-50 -84 L-144 -246"/>
+      <path d="M-6 -96 L-6 -278"/>
+      <path d="M41 -83 L135 -245"/>
+      <path d="M74 -50 L236 -144"/>
+    </g>
+  </g>
+  <!-- moulded boss and outer edge break -->
+  <ellipse cx="512" cy="262" rx="278" ry="105" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="3"/>
+  <ellipse cx="512" cy="262" rx="98" ry="37" fill="url(#flangeTop)" stroke="#33373a" stroke-width="2.5"/>
+  <ellipse cx="512" cy="262" rx="88" ry="33" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2.5"/>
+
+  <!-- keyed central bore -->
+  <ellipse cx="512" cy="264" rx="62" ry="24" fill="#23272a" stroke="#15181a" stroke-width="2.5"/>
+  <path d="M498 244 L526 244 L526 254 L498 254 Z" fill="#23272a" stroke="#15181a" stroke-width="2"/>
+  <path d="M462 268 Q512 292 562 268" fill="none" stroke="#5c6266" stroke-width="4" stroke-opacity="0.7"/>
+
+  <!-- escaping tail: one springy loop, stripped bright end -->
+  <g fill="none" stroke-linecap="round">
+    <path d="M790 244 C 866 226 890 172 846 146 C 800 120 742 152 758 198 C 768 226 806 236 830 220"
+          stroke="#4a2515" stroke-width="19"/>
+    <path d="M790 244 C 866 226 890 172 846 146 C 800 120 742 152 758 198 C 768 226 806 236 830 220"
+          stroke="url(#copperTail)" stroke-width="14"/>
+    <path d="M792 240 C 862 224 882 176 844 152 C 804 130 754 158 766 196"
+          stroke="#f0c096" stroke-width="3.5" stroke-opacity="0.55"/>
+  </g>
+  <!-- stripped cut end, bare copper -->
+  <path d="M824 214 L836 224" stroke="#e8b083" stroke-width="14" stroke-linecap="round"/>
+  <ellipse cx="836" cy="224" rx="7.5" ry="6" fill="#f4cfa8" stroke="#a06a44" stroke-width="1.5"/>
+</svg>

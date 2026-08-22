@@ -7,7 +7,21 @@ export {
   WORKFLOW_ACTION_CATALOG,
   WORKFLOW_OPERATION_CATALOG
 } from "./actions.generated";
-export { createWorkflowCatalog, getActionRoute } from "./catalog";
+export {
+  createWorkflowCatalog,
+  getActionRoute,
+  getCatalogEvent
+} from "./catalog";
+export type { CatalogOverlay, CustomFieldDef } from "./custom-fields";
+export {
+  buildCatalogOverlay,
+  CUSTOM_FIELD_PREFIX,
+  customFieldEventId,
+  EMPTY_OVERLAY,
+  ENTITY_BY_TABLE,
+  parseCustomFieldEventId,
+  resolveCustomFieldEvent
+} from "./custom-fields";
 export { REGISTRY_ENTRIES, WORKFLOW_ENTITY_REGISTRY } from "./entities";
 // `labels.generated` is not re-exported: `msg` is a build-time macro, so only a
 // Vite-built consumer may import it, via the `@carbon/workflows/labels` subpath.

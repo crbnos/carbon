@@ -33,6 +33,10 @@ import { usePermissions } from "./usePermissions";
 import { usePlanGate } from "./usePlanGate";
 import { useQuantityFormatter } from "./useQuantityFormatter";
 import { useRealtime } from "./useRealtime";
+import {
+  useRecentlyViewed,
+  useRecordRecentlyViewed
+} from "./useRecentlyViewed";
 import { useScrollPosition } from "./useScrollPosition";
 import { useScrollToHash } from "./useScrollToHash";
 import { useSettings } from "./useSettings";
@@ -71,6 +75,8 @@ export {
   usePrinting,
   useQuantityFormatter,
   useRealtime,
+  useRecentlyViewed,
+  useRecordRecentlyViewed,
   useRouteData,
   useScrollPosition,
   useScrollToHash,

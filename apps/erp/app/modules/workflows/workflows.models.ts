@@ -14,6 +14,12 @@ export const workflowDefinitionSaveValidator = z.object({
   formatVersion: zfd.numeric(z.number().int())
 });
 
+/** Layout only. The one payload a live version accepts — see `$id.positions.tsx`. */
+export const workflowNodePositionsValidator = z.object({
+  versionId: z.string().min(1, { message: "Version is required" }),
+  positions: z.string().min(1)
+});
+
 export const workflowTestRunValidator = z.object({
   /** The version the run is recorded against. The canvas can be a step ahead of it
    * — autosave is a second behind — but it is what a reader can open afterwards. */

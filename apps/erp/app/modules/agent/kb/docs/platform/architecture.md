@@ -630,33 +630,33 @@ refuses to start without it.
 
 **Libraries** (`packages/`). The ones you will actually touch are near the top:
 
-| Package         | What it does                                                            |
-| --------------- | ----------------------------------------------------------------------- |
-| `react`         | The design system. **Check here before writing any UI.**                |
-| `database`      | Generated types, migrations, edge functions, database clients.          |
-| `auth`          | Login, sessions, `requirePermissions`, API keys, permission caching.    |
-| `form`          | `ValidatedForm`, field components, zod helpers.                         |
-| `jobs`          | Every Inngest background function, plus the workflow runtime.           |
-| `lib`           | Shared server utilities: the Inngest client, `trigger()`, email, Slack. |
-| `utils`         | Pure helpers: dates, money, arrays, strings, BOM maths.                 |
-| `workflows`     | Customer workflow schema, validation and pure runtime. No I/O.          |
-| `documents`     | PDF generation, email templates, barcode and label rendering.           |
-| `locale`        | Lingui setup and language switching.                                    |
+| Package         | What it does                                                                             |
+| --------------- | ---------------------------------------------------------------------------------------- |
+| `react`         | The design system. **Check here before writing any UI.**                                 |
+| `database`      | Generated types, migrations, edge functions, database clients.                           |
+| `auth`          | Login, sessions, `requirePermissions`, API keys, permission caching.                     |
+| `form`          | `ValidatedForm`, field components, zod helpers.                                          |
+| `jobs`          | Every Inngest background function, plus the workflow runtime.                            |
+| `lib`           | Shared server utilities: the Inngest client, `trigger()`, email, Slack.                  |
+| `utils`         | Pure helpers: dates, money, arrays, strings, BOM maths.                                  |
+| `workflows`     | Customer workflow schema, validation and pure runtime. No I/O.                           |
+| `documents`     | PDF generation, email templates, barcode and label rendering.                            |
+| `locale`        | Lingui setup and language switching.                                                     |
 | `env`           | The one place `docs/platform/self-hosting/environment-variables` are read and validated. |
-| `logger`        | Structured logging, with request-id correlation.                        |
-| `notifications` | The notification event taxonomy (enums only).                           |
-| `printing`      | Printer registry, label queue, physical print delivery.                 |
-| `onboarding`    | New-company setup, the "Implementation Hub".                            |
-| `kv`            | Redis client plus rate limiting.                                        |
-| `stripe`        | Billing. Cloud edition only.                                            |
-| `ee`            | Enterprise-only code: Xero, Slack, Jira, Linear, Onshape, plan gating.  |
-| `viewer`        | 3D model and assembly-instruction rendering.                            |
-| `tiptap`        | Rich text editor.                                                       |
-| `dev`           | The `crbn` CLI that runs your local stack.                              |
-| `checks`        | Repo conformance rules enforced in CI.                                  |
-| `config`        | Shared tsconfig, Tailwind theme, vitest preset. No runtime code.        |
-| `glossary`      | Canonical manufacturing term definitions used in field help.            |
-| `harness`       | Internal AI-agent tooling. Not shipped.                                 |
+| `logger`        | Structured logging, with request-id correlation.                                         |
+| `notifications` | The notification event taxonomy (enums only).                                            |
+| `printing`      | Printer registry, label queue, physical print delivery.                                  |
+| `onboarding`    | New-company setup, the "Implementation Hub".                                             |
+| `kv`            | Redis client plus rate limiting.                                                         |
+| `stripe`        | Billing. Cloud edition only.                                                             |
+| `ee`            | Enterprise-only code: Xero, Slack, Jira, Linear, Onshape, plan gating.                   |
+| `viewer`        | 3D model and assembly-instruction rendering.                                             |
+| `tiptap`        | Rich text editor.                                                                        |
+| `dev`           | The `crbn` CLI that runs your local stack.                                               |
+| `checks`        | Repo conformance rules enforced in CI.                                                   |
+| `config`        | Shared tsconfig, Tailwind theme, vitest preset. No runtime code.                         |
+| `glossary`      | Canonical manufacturing term definitions used in field help.                             |
+| `harness`       | Internal AI-agent tooling. Not shipped.                                                  |
 
 **Inside an ERP module** (there are eighteen, under `apps/erp/app/modules/{module}/`):
 
@@ -692,16 +692,30 @@ slot inside it.
 
 ### 7.2 The cloud Carbon runs
 
-The ERP and MES are packaged as Docker images and run on ECS Fargate [[3]](#g3), which is
-Amazon running your container for you without any server to look after. Each service sits
-behind its own load balancer on port 3000, is checked for life at `/health`, and scales
-between one and ten copies on processor and memory pressure. All of that is described in
-`sst.config.ts` (SST [[23]](#g23) is infrastructure-as-code, where you write cloud
-resources in TypeScript instead of clicking in a console). The
-`docs/platform/self-hosting/aws-sst` recipe is the same stack, run by you.
+There are **two hosting paths, and both are live**: the shared cloud on Vercel, and
+dedicated per-customer installations on AWS.
 
-The part that surprises people: **this is not one big shared installation.** There is a
-`workspaces` table, and on every deploy `ci/src/deploy.ts` walks it and runs
+**The shared cloud runs on Vercel.** `app.carbon.ms` (ERP), `mes.carbon.ms` (MES),
+`learn.carbon.ms` (academy) and `docs.carbon.ms` all resolve to Vercel, as does a separate
+EU region (`app.eu.carbon.ms`, `mes.eu.carbon.ms`) served by its own pair of projects. Each
+React Router app opts in through its `react-router.config.ts`, which enables
+`vercelPreset()` from `@vercel/react-router` when the `VERCEL` environment variable is
+present and is a no-op everywhere else — so the same source builds for Vercel or for a
+container without a branch in the code. Deploys are driven by Vercel's own Git integration
+rather than by a workflow in this repository.
+
+**Dedicated installations run on AWS.** The ERP and MES are also packaged as Docker images
+that run on ECS Fargate [[3]](#g3), which is Amazon running your container for you without
+any server to look after. Each service sits behind its own load balancer on port 3000, is
+checked for life at `/health`, and scales between one and ten copies on processor and
+memory pressure. All of that is described in `sst.config.ts` (SST [[23]](#g23) is
+infrastructure-as-code, where you write cloud resources in TypeScript instead of clicking
+in a console). The `docs/platform/self-hosting/aws-sst` recipe is the same
+stack, run by you. `itar.carbon.ms` is one of these: it resolves to a load balancer in AWS
+GovCloud, not to Vercel.
+
+The part that surprises people: **that path is not one big shared installation.** There is
+a `workspaces` table, and on every deploy `ci/src/deploy.ts` walks it and runs
 `sst deploy --stage prod` once per row, each with that customer's own AWS account, region,
 domain, certificates, Supabase project and Redis. So Carbon separates customers twice
 over: by `companyId` on every row inside one installation ([Part 3](#part-3-layer-by-layer)), and by giving a
@@ -709,10 +723,10 @@ customer their own installation entirely. Adding a customer means adding a works
 A row missing a required field is skipped with a log line rather than failing the deploy,
 so a tenant can silently not deploy.
 
-Postgres is managed Supabase. There is nothing on Vercel despite some leftover Vercel
-packages. There is one Lambda: the Assembler ships as a single image that runs either as a
-Lambda function behind an API gateway (the default) or as a container, which is why 3D
-conversion can be turned on per customer without changing the main stack.
+Postgres is managed Supabase on both paths. There is one Lambda: the Assembler ships as a
+single image that runs either as a Lambda function behind an API gateway (the default) or
+as a container, which is why 3D conversion can be turned on per customer without changing
+the main stack.
 
 ### 7.3 On a customer's own server
 
@@ -731,15 +745,17 @@ sets `enterprise`.
 
 ### 7.4 How a merge becomes production
 
-Four GitHub Actions workflows, and they are deliberately independent of each other rather
-than one pipeline:
+The Vercel side deploys itself: pushing to `main` triggers a build in each Vercel project
+through its Git integration, with no workflow in this repository involved. Everything
+below is the AWS side — four GitHub Actions workflows, deliberately independent of each
+other rather than one pipeline:
 
-| Workflow | Fires when | What it does |
-| --- | --- | --- |
-| `check.yml` | every pull request | Biome, typecheck, tests, translation and workflow-catalog checks |
-| `deploy.yml` | merge to `main` touching `apps/erp`, `apps/mes` or `packages` | builds both images from the one root `Dockerfile`, pushes them to Amazon's image registry tagged with the commit, then fans out `sst deploy` per workspace |
-| `supabase.yml` | merge touching `packages/database/supabase` | applies migrations and deploys edge functions, per workspace |
-| `inngest.yml` | after `deploy.yml` succeeds | calls `PUT /api/inngest` on each app so Inngest learns the current list of jobs |
+| Workflow       | Fires when                                                    | What it does                                                                                                                                               |
+| -------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `check.yml`    | every pull request                                            | Biome, typecheck, tests, translation and workflow-catalog checks                                                                                           |
+| `deploy.yml`   | merge to `main` touching `apps/erp`, `apps/mes` or `packages` | builds both images from the one root `Dockerfile`, pushes them to Amazon's image registry tagged with the commit, then fans out `sst deploy` per workspace |
+| `supabase.yml` | merge touching `packages/database/supabase`                   | applies migrations and deploys edge functions, per workspace                                                                                               |
+| `inngest.yml`  | after `deploy.yml` succeeds                                   | calls `PUT /api/inngest` on each app so Inngest learns the current list of jobs                                                                            |
 
 Two consequences worth knowing. First, `check.yml` never builds the apps, so a pull
 request can go green and still break the image build on merge. Second, migrations and app

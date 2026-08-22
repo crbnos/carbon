@@ -3,7 +3,7 @@ import {
   FAILURE_HANDLE,
   SUCCESS_HANDLE
 } from "../definition/schema";
-import { resolveValue } from "./resolve";
+import { renderTemplate, resolveValue } from "./resolve";
 import type { NodeExecutor, RuntimeValue } from "./types";
 
 const GONE = "This step is no longer available.";
@@ -20,7 +20,12 @@ export const actionExecutor: NodeExecutor<ActionNode> = {
 
     const inputs: Record<string, RuntimeValue> = {};
     for (const [name, value] of Object.entries(node.data.inputs)) {
-      const resolved = await resolveValue(value, ctx);
+      // Only a catalog-declared prose input linkifies, and only when the engine
+      // supplied a resolver — a webhook body must stay plain text.
+      const resolved =
+        action.inputs[name]?.linkify === true && value.kind === "template"
+          ? await renderTemplate(value, ctx, { linkFor: ctx.linkFor })
+          : await resolveValue(value, ctx);
       if (!resolved.ok) return { status: "Skipped", reason: resolved.reason };
       // In a batch the one list input stands for the item this turn is on.
       inputs[name] =

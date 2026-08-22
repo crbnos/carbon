@@ -456,7 +456,7 @@ msgstr "Der Status eines Auftrags ändert sich"
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "Eine Liste ist mit {0} verbunden, sodass dieser Schritt einmal für jedes Element ausgeführt wird und eine Liste von Ergebnissen zurückgibt."
 
-#. placeholder {0}: label( actionInputLabelKey(actionId, batch.input), batch.input )
+#. placeholder {0}: inputLabel(batch.input)
 msgid "A list is wired into {0}, so this step runs once for each item in it — up to {MAX_LIST_ITEMS}."
 msgstr "Eine Liste ist mit {0} verbunden, sodass dieser Schritt für jedes Element darin einmal ausgeführt wird – bis zu {MAX_LIST_ITEMS}."
 
@@ -1127,6 +1127,9 @@ msgstr "Zeilenelement hinzufügen"
 msgid "Add match"
 msgstr "Übereinstimmung hinzufügen"
 
+msgid "Add New"
+msgstr "Neu hinzufügen"
+
 msgid "Add Note"
 msgstr "Notiz hinzufügen"
 
@@ -1241,6 +1244,9 @@ msgstr "Hinzugefügt"
 
 msgid "Added for this customer"
 msgstr "Für diesen Kunden hinzugefügt"
+
+msgid "Adding demo records"
+msgstr "Demo-Datensätze werden hinzugefügt"
 
 msgid "Adding..."
 msgstr "Wird hinzugefügt..."
@@ -1357,6 +1363,9 @@ msgstr "Alle Lieferanten"
 msgid "All Time"
 msgstr "Gesamter Zeitraum"
 
+msgid "All tools"
+msgstr "Alle Werkzeuge"
+
 msgid "All Types"
 msgstr "Alle Typen"
 
@@ -1374,6 +1383,9 @@ msgstr "Alpha"
 
 msgid "Always"
 msgstr "Immer"
+
+msgid "Always sent — every notification shows in the bell menu."
+msgstr "Immer versendet — jede Benachrichtigung wird im Glockenmenü angezeigt."
 
 msgid "Always taken"
 msgstr "Immer genommen"
@@ -1612,6 +1624,9 @@ msgstr "Gilt für Funktionen ohne eigene Regel und für die Charge, wenn dieser 
 msgid "Apply"
 msgstr "Anwenden"
 
+msgid "Apply a demo template"
+msgstr "Demo-Vorlage anwenden"
+
 msgid "Apply available credits"
 msgstr "Verfügbare Gutschriften anwenden"
 
@@ -1638,6 +1653,12 @@ msgstr "Auf Rechnung anwenden"
 
 msgid "Apply to invoices"
 msgstr "Auf Rechnungen anwenden"
+
+msgid "Applying"
+msgstr "Wird angewendet"
+
+msgid "Applying demo data"
+msgstr "Demo-Daten werden angewendet"
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "Nähert sich dem Limit von {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB."
@@ -2556,6 +2577,9 @@ msgstr "Büchersperrungsdatum (manuell)"
 msgid "Both"
 msgstr "Beide"
 
+msgid "Branch an editable copy of this version that you can change and publish."
+msgstr "Erstellen Sie einen bearbeitbaren Branch dieser Version, den Sie ändern und veröffentlichen können."
+
 msgid "Breadcrumb"
 msgstr "Breadcrumb-Navigation"
 
@@ -2564,6 +2588,9 @@ msgstr "Importieren Sie Ihre Teile, Stücklisten, Fertigungsprozesse und Kostenk
 
 msgid "Browse library"
 msgstr "Bibliothek durchsuchen"
+
+msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
+msgstr "Durchsuchen Sie die Live-Version schreibgeschützt. Sie können die Schritte trotzdem neu anordnen, um das Layout aufzuräumen."
 
 msgid "Bucket"
 msgstr "Bucket"
@@ -3055,6 +3082,9 @@ msgstr "Verrechnungskonto zwischen Wareneingang und Lieferantenrechnung; wird au
 msgid "Clearing account for goods received / invoice received matching"
 msgstr "Verrechnungskonto für Wareneingang / Rechnungseingang Abgleich"
 
+msgid "Clearing demo data"
+msgstr "Demo-Daten werden gelöscht"
+
 msgid "Click again to disconnect"
 msgstr "Klicken Sie erneut, um die Verbindung zu trennen"
 
@@ -3407,6 +3437,9 @@ msgstr "Jira-Problem verbinden"
 
 msgid "Connect Linear issue"
 msgstr "Linear-Problem verbinden"
+
+msgid "Connect Slack under Settings → Integrations first."
+msgstr "Verbinden Sie Slack zuerst unter Einstellungen → Integrationen."
 
 msgid "Connect the Otherwise handle to a node to run when no condition matches."
 msgstr "Verbinden Sie das Otherwise-Handle mit einem Knoten, um auszuführen, wenn keine Bedingung erfüllt ist."
@@ -3875,6 +3908,9 @@ msgstr "Erstellen Sie einen neuen Produktionsauftrag, um die Bestellung zu erfü
 msgid "Create a new Stripe customer instead"
 msgstr ""
 
+msgid "Create a new version"
+msgstr "Neue Version erstellen"
+
 msgid "Create a purchase order"
 msgstr "Bestellung erstellen"
 
@@ -4201,6 +4237,9 @@ msgstr "Benutzerdefiniertes Feld"
 
 msgid "Custom Fields"
 msgstr "Benutzerdefinierte Felder"
+
+msgid "Custom fields are not available for items yet."
+msgstr "Benutzerdefinierte Felder sind für Artikel noch nicht verfügbar."
 
 msgid "Custom SOW · we manage"
 msgstr "Benutzerdefiniertes SOW · wir verwalten"
@@ -4999,6 +5038,18 @@ msgstr "Nachfrageprojektionen"
 msgid "Demand-Based"
 msgstr "Nachfragebasiert"
 
+msgid "Demo data"
+msgstr "Demo-Daten"
+
+msgid "Demo Data"
+msgstr "Demo-Daten"
+
+msgid "Demo data applied"
+msgstr "Demo-Daten angewendet"
+
+msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
+msgstr "Demo-Daten wurden auf dieses Unternehmen angewendet. Behalten Sie diese, oder setzen Sie sie zurück, um genau das wiederherzustellen, was vorher hier war."
+
 msgid "department"
 msgstr "Abteilung"
 
@@ -5106,6 +5157,9 @@ msgstr "Abmessungen"
 
 msgid "Direct"
 msgstr "Direkt"
+
+msgid "Direct message to each recipient in your Slack workspace."
+msgstr "Direktnachricht an jeden Empfänger in Ihrem Slack-Arbeitsbereich."
 
 msgid "Direction"
 msgstr "Richtung"
@@ -5227,6 +5281,9 @@ msgstr "Dokumente"
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "Dokumente leitet Rechnungen, Eingangsrechnungen und Zahlungen als native Anbieterurkunden weiter; deren Journale werden als durch das Dokument abgedeckt erfasst. Es werden auch von dem Anbieter erfasste Zahlungen zurück in Carbon importiert, um die zugehörige Rechnung oder den Eingangsbeleg zu schließen und ein Carbon GL-Journal zu buchen. Aus erfasst sie als bewusst ausgeschlossen."
+
+msgid "Documents you open will show up here for quick access."
+msgstr "Dokumente, die Sie öffnen, werden hier zur schnellen Zugreifbarkeit angezeigt."
 
 msgid "Don't Cancel"
 msgstr "Nicht abbrechen"
@@ -5923,9 +5980,6 @@ msgstr "Technischer Kontakt"
 
 msgid "Enroll"
 msgstr "Registrieren"
-
-msgid "Enroll this company in the Implementation Hub"
-msgstr "Dieses Unternehmen im Implementierungs-Hub registrieren"
 
 msgid "Enter a batch number before setting the expiration date"
 msgstr "Geben Sie eine Chargennummer ein, bevor Sie das Ablaufdatum festlegen"
@@ -6759,6 +6813,9 @@ msgstr "Hier angehängte Dateien werden standardmäßig mit jeder Bestellanfrage
 msgid "Files attached here ride along on every purchase order email sent to this supplier (in addition to company-wide defaults)."
 msgstr "Hier angehängte Dateien werden mit jeder Bestellanfrage-E-Mail an diesen Lieferanten versendet (zusätzlich zu unternehmensweiten Standardeinstellungen)."
 
+msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
+msgstr "Füllen Sie dieses Unternehmen mit einer realistischen Branchengeschichte, damit jeder Bildschirm etwas hat. Sie können wiederherstellen, was vorher hier war."
+
 msgid "Filter"
 msgstr "Filter"
 
@@ -7540,6 +7597,9 @@ msgstr "Imperial"
 msgid "Implementation"
 msgstr "Implementierung"
 
+msgid "Implementation Hub"
+msgstr "Implementierungs-Hub"
+
 msgid "Implementation Lead"
 msgstr "Implementierungsleiter"
 
@@ -7600,6 +7660,9 @@ msgstr "Nur auf Lager"
 
 msgid "In the loop together"
 msgstr "Im Prozess dabei"
+
+msgid "In-app"
+msgstr "In-App"
 
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "In-App-Benachrichtigungen werden immer zugestellt. Wählen Sie, welche Themen Sie auch per E-Mail oder Slack erreichen."
@@ -8202,6 +8265,9 @@ msgstr "Kanban-Ausgabe"
 msgid "Kanbans"
 msgstr "Kanbans"
 
+msgid "Keep"
+msgstr "Behalten"
+
 msgid "Keep Current"
 msgstr "Aktuell behalten"
 
@@ -8493,8 +8559,8 @@ msgstr "Listenoptionen"
 msgid "List Parameters"
 msgstr "Listenparameter"
 
-#. placeholder {0}: label( actionInputLabelKey(actionId, batch.first), batch.first )
-#. placeholder {1}: label( actionInputLabelKey(actionId, batch.second), batch.second )
+#. placeholder {0}: inputLabel(batch.first)
+#. placeholder {1}: inputLabel(batch.second)
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
 msgstr "Listen sind an beide {0} und {1} angebunden, daher kann dieser Schritt nicht erkennen, welche wiederholt werden soll. Behalten Sie eine Liste nur auf einer von ihnen."
 
@@ -9284,6 +9350,9 @@ msgstr "Benötigt bis"
 
 msgid "Need the right columns?"
 msgstr "Benötigen Sie die richtigen Spalten?"
+
+msgid "Needs a Business or Partner plan."
+msgstr "Benötigt einen Business- oder Partner-Plan."
 
 msgid "Needs fixing"
 msgstr "Muss behoben werden"
@@ -10160,6 +10229,12 @@ msgstr "Noch nichts. Ein Schritt bietet Werte erst nach der Konfiguration an."
 msgid "Notification"
 msgstr "Benachrichtigung"
 
+msgid "Notification type"
+msgstr "Benachrichtigungstyp"
+
+msgid "Notification Type"
+msgstr "Benachrichtigungstyp"
+
 msgid "Notifications"
 msgstr "Benachrichtigungen"
 
@@ -10249,6 +10324,9 @@ msgstr "In Verkaufsauftrag"
 
 msgid "On Storage Unit"
 msgstr "Auf Lagereinheit"
+
+msgid "On this operation"
+msgstr "Bei diesem Arbeitsgang"
 
 msgid "On-account credit available"
 msgstr "Verfügbarer Kontokorrentkreditrahmen"
@@ -11508,8 +11586,14 @@ msgstr "Veröffentlichen"
 msgid "Publish Version {0}?"
 msgstr "Version {0} veröffentlichen?"
 
+msgid "Published"
+msgstr "Veröffentlicht"
+
 msgid "Published by Carbon"
 msgstr "Veröffentlicht von Carbon"
+
+msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
+msgstr "Veröffentlichte Versionen können nicht bearbeitet werden. Schauen Sie sich die Version schreibgeschützt an, oder erstellen Sie einen Branch einer neuen Version, um Änderungen vorzunehmen."
 
 msgid "Pull"
 msgstr "Abrufen"
@@ -11657,6 +11741,9 @@ msgstr "Publizieren Sie das Journal ohne die Dimension"
 
 msgid "Push to accounting"
 msgstr "Zur Buchhaltung senden"
+
+msgid "Putting your data back"
+msgstr "Ihre Daten werden wiederhergestellt"
 
 #. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
 msgid "QR Code to create a {0} for this kanban"
@@ -11899,6 +11986,9 @@ msgstr "Bereit"
 
 msgid "Ready for Quote"
 msgstr "Bereit für Angebot"
+
+msgid "ready to keep or revert"
+msgstr "bereit zum Behalten oder Zurücksetzen"
 
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "Echtzeit-Bestandsverwaltung und Shopfloor-Sichtbarkeit"
@@ -12299,6 +12389,9 @@ msgstr "Ersetzen Sie vorhandene Preise durch Quellwerte"
 msgid "Replace PDF"
 msgstr "PDF ersetzen"
 
+msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
+msgstr "Ersetzen Sie die Daten dieses Unternehmens durch einen Demo-Datensatz – zunächst ein Snapshot erstellt, damit Sie zurücksetzen können."
+
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "Das Ersetzen der PDF entfernt alle Ballonplatzierungen in diesem Dokument. Funktionszeilen und ihre Werte bleiben erhalten; Sie können Ballons auf der neuen Zeichnung erneut platzieren."
 
@@ -12453,6 +12546,9 @@ msgstr "Diese Entität zum verfügbaren Bestand in dem Behälter und den Kosten 
 msgid "Restore tracked entities to available"
 msgstr "Nachverfolgter Entitäten als verfügbar wiederherstellen"
 
+msgid "Restoring files"
+msgstr "Dateien werden wiederhergestellt"
+
 msgid "Result"
 msgstr "Ergebnis"
 
@@ -12479,6 +12575,9 @@ msgstr "Erneut versuchen"
 
 msgid "Retry all"
 msgstr "Alle erneut versuchen"
+
+msgid "Retry revert"
+msgstr "Zurücksetzen erneut versuchen"
 
 msgid "Return Home"
 msgstr "Zur Startseite zurück"
@@ -12524,6 +12623,12 @@ msgstr "Kehren Sie die zugehörigen Journaleinträge um"
 
 msgid "Reversed"
 msgstr "Rückgängig gemacht"
+
+msgid "Revert"
+msgstr "Zurücksetzen"
+
+msgid "Reverting"
+msgstr "Wird zurückgesetzt"
 
 msgid "Review"
 msgstr "Überprüfung"
@@ -12902,6 +13007,9 @@ msgstr "Gespeichert"
 
 msgid "Saved Views"
 msgstr "Gespeicherte Ansichten"
+
+msgid "Saving a copy of your current data"
+msgstr "Eine Kopie Ihrer aktuellen Daten wird gespeichert"
 
 msgid "Saving..."
 msgstr "Wird gespeichert..."
@@ -13354,6 +13462,9 @@ msgstr "Sendet dieses Dokument zur Genehmigung, bevor es aktiv werden kann."
 
 msgid "Sent complete date"
 msgstr "Versanddatum abgeschlossen"
+
+msgid "Sent to each recipient who has email notifications turned on."
+msgstr "Versendet an jeden Empfänger, der E-Mail-Benachrichtigungen aktiviert hat."
 
 msgid "Sequences"
 msgstr "Sequenzen"
@@ -14005,6 +14116,9 @@ msgstr "Beginnen Sie mit"
 
 msgid "Started"
 msgstr "Gestartet"
+
+msgid "Starting…"
+msgstr "Wird gestartet…"
 
 msgid "State / Province"
 msgstr "Bundesland / Provinz"
@@ -15481,6 +15595,9 @@ msgstr "Dies ist eine eindeutige Kennung für den Webhook"
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "Dies ist eine ITAR-kontrollierte Umgebung. Der Zugriff ist auf U.S. Personen beschränkt."
 
+msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
+msgstr "Dies dauert länger als erwartet. Es kann trotzdem noch beendet werden – wenn nicht, versuchen Sie das Zurücksetzen erneut, um Ihre Daten wiederherzustellen."
+
 msgid "This is the month your fiscal year starts."
 msgstr "Dies ist der Monat, in dem Ihr Geschäftsjahr beginnt."
 
@@ -15584,6 +15701,9 @@ msgstr "Dies aktualisiert das Design für alle Benutzer der Anwendung"
 msgid "This user does not have two-factor authentication enabled."
 msgstr "Dieser Benutzer hat keine Zwei-Faktor-Authentifizierung aktiviert."
 
+msgid "This usually takes a few seconds. You can leave the page — it keeps running."
+msgstr "Dies dauert normalerweise einige Sekunden. Sie können die Seite verlassen – es läuft weiter."
+
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "Diese Version gehört zu einer offenen <0>Änderungsmitteilung</0>. Bearbeiten Sie sie dort."
 
@@ -15593,6 +15713,9 @@ msgstr "Diese Version gehört zur Änderungsmitteilung <0>{0}</0>. Bearbeiten Si
 
 msgid "This version cannot be opened"
 msgstr "Diese Version kann nicht geöffnet werden"
+
+msgid "This version is live"
+msgstr "Diese Version ist live"
 
 msgid "This version is live. Create a new version to edit."
 msgstr "Diese Version ist aktiv. Erstellen Sie eine neue Version zum Bearbeiten."
@@ -16130,6 +16253,9 @@ msgstr "Einheiten, die bei einer Operation mit einem Grund als nicht behebbar ge
 
 msgid "Unknown"
 msgstr "Unbekannt"
+
+msgid "unknown error"
+msgstr "unbekannter Fehler"
 
 msgid "unknown location"
 msgstr "unbekannter Ort"
@@ -16714,6 +16840,9 @@ msgstr "Vorschlag anzeigen"
 msgid "View Suppliers"
 msgstr "Lieferanten anzeigen"
 
+msgid "View the workflow"
+msgstr "Workflow anzeigen"
+
 msgid "View tie-out"
 msgstr "Abgleich anzeigen"
 
@@ -16983,6 +17112,9 @@ msgstr "Was ist nicht im Umfang enthalten"
 msgid "When"
 msgstr "Wann"
 
+msgid "When {name} changes"
+msgstr "Wenn sich {name} ändert"
+
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "Wenn die Haltbarkeit eines Fertigprodukts auf „Berechnet\" eingestellt ist, wählen Sie aus, welche verbrauchten Eingaben die Berechnung speisen."
 
@@ -17078,6 +17210,9 @@ msgstr "Wann Sie sich zur Lieferung verpflichtet haben; Planung behandelt dies a
 
 msgid "When your fiscal and tax years start"
 msgstr "Wenn Ihr Geschäftsjahr und Steuerjahr beginnen"
+
+msgid "Where a workflow notification is delivered — in-app is always sent, while email needs a Business or Partner plan and Slack needs your Slack workspace connected."
+msgstr "Wohin eine Workflow-Benachrichtigung versendet wird – in-app wird immer versendet, während E-Mail einen Business- oder Partner-Plan benötigt und Slack Ihren Slack-Arbeitsbereich erfordert."
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "Wo ein Betrieb läuft; trägt Arbeits- und Angebotstarife, mit Overhead dem Unterschied zwischen ihnen."

@@ -1,0 +1,224 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="cellBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="cellTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#eef1f3"/>
+      <stop offset="0.5" stop-color="#c3c9cd"/>
+      <stop offset="1" stop-color="#83898f"/>
+    </linearGradient>
+    <linearGradient id="amber" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8a5a12"/>
+      <stop offset="0.3" stop-color="#c9903a"/>
+      <stop offset="0.55" stop-color="#e0b25f"/>
+      <stop offset="0.8" stop-color="#a06f22"/>
+      <stop offset="1" stop-color="#7a4e10"/>
+    </linearGradient>
+    <linearGradient id="blkBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1c1f22"/>
+      <stop offset="0.2" stop-color="#43484d"/>
+      <stop offset="0.45" stop-color="#5a6167"/>
+      <stop offset="0.72" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="blkFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#5a6167"/>
+      <stop offset="0.5" stop-color="#3b4045"/>
+      <stop offset="1" stop-color="#1c1f22"/>
+    </linearGradient>
+    <linearGradient id="blkSide" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#41464b"/>
+      <stop offset="0.55" stop-color="#26292c"/>
+      <stop offset="1" stop-color="#141719"/>
+    </linearGradient>
+    <linearGradient id="blkDeep" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#24282b"/>
+      <stop offset="1" stop-color="#0e1012"/>
+    </linearGradient>
+    <linearGradient id="busbar" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#e6ebee"/>
+      <stop offset="0.45" stop-color="#b9c0c6"/>
+      <stop offset="1" stop-color="#7c838a"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="512" cy="684" rx="440" ry="97" fill="url(#shadow)"/>
+
+  <!-- ===== rear rail of the open frame ===== -->
+  <path d="M286 380 L896 380 L896 560 L286 560 Z" fill="url(#blkDeep)" stroke="#0e1012" stroke-width="2.5"/>
+  <path d="M286 380 L896 380" stroke="#ffffff" stroke-opacity="0.12" stroke-width="3" fill="none"/>
+
+  <!-- ===== back row of cells ===== -->
+  <g>
+    <g id="bk">
+      <!-- cell 1 -->
+      <path d="M274 339 L274 560 L358 560 L358 339 Z" fill="url(#cellBarrel)"/>
+      <path d="M274 339 L274 405 Q316 429 358 405 L358 339 Z" fill="url(#amber)"/>
+      <ellipse cx="316" cy="339" rx="42" ry="16" fill="url(#cellTop)" stroke="#6a7076" stroke-width="2"/>
+      <ellipse cx="316" cy="339" rx="30" ry="11" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2"/>
+      <path d="M274 339 L274 560 M358 339 L358 560" stroke="#5d6368" stroke-width="2" fill="none"/>
+      <!-- cell 2 -->
+      <path d="M366 339 L366 560 L450 560 L450 339 Z" fill="url(#cellBarrel)"/>
+      <path d="M366 339 L366 405 Q408 429 450 405 L450 339 Z" fill="url(#amber)"/>
+      <ellipse cx="408" cy="339" rx="42" ry="16" fill="url(#cellTop)" stroke="#6a7076" stroke-width="2"/>
+      <ellipse cx="408" cy="339" rx="30" ry="11" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2"/>
+      <path d="M366 339 L366 560 M450 339 L450 560" stroke="#5d6368" stroke-width="2" fill="none"/>
+      <!-- cell 3 -->
+      <path d="M458 339 L458 560 L542 560 L542 339 Z" fill="url(#cellBarrel)"/>
+      <path d="M458 339 L458 405 Q500 429 542 405 L542 339 Z" fill="url(#amber)"/>
+      <ellipse cx="500" cy="339" rx="42" ry="16" fill="url(#cellTop)" stroke="#6a7076" stroke-width="2"/>
+      <ellipse cx="500" cy="339" rx="30" ry="11" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2"/>
+      <path d="M458 339 L458 560 M542 339 L542 560" stroke="#5d6368" stroke-width="2" fill="none"/>
+      <!-- cell 4 -->
+      <path d="M550 339 L550 560 L634 560 L634 339 Z" fill="url(#cellBarrel)"/>
+      <path d="M550 339 L550 405 Q592 429 634 405 L634 339 Z" fill="url(#amber)"/>
+      <ellipse cx="592" cy="339" rx="42" ry="16" fill="url(#cellTop)" stroke="#6a7076" stroke-width="2"/>
+      <ellipse cx="592" cy="339" rx="30" ry="11" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2"/>
+      <path d="M550 339 L550 560 M634 339 L634 560" stroke="#5d6368" stroke-width="2" fill="none"/>
+      <!-- cell 5 -->
+      <path d="M642 339 L642 560 L726 560 L726 339 Z" fill="url(#cellBarrel)"/>
+      <path d="M642 339 L642 405 Q684 429 726 405 L726 339 Z" fill="url(#amber)"/>
+      <ellipse cx="684" cy="339" rx="42" ry="16" fill="url(#cellTop)" stroke="#6a7076" stroke-width="2"/>
+      <ellipse cx="684" cy="339" rx="30" ry="11" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2"/>
+      <path d="M642 339 L642 560 M726 339 L726 560" stroke="#5d6368" stroke-width="2" fill="none"/>
+      <!-- cell 6 -->
+      <path d="M734 339 L734 560 L818 560 L818 339 Z" fill="url(#cellBarrel)"/>
+      <path d="M734 339 L734 405 Q776 429 818 405 L818 339 Z" fill="url(#amber)"/>
+      <ellipse cx="776" cy="339" rx="42" ry="16" fill="url(#cellTop)" stroke="#6a7076" stroke-width="2"/>
+      <ellipse cx="776" cy="339" rx="30" ry="11" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2"/>
+      <path d="M734 339 L734 560 M818 339 L818 560" stroke="#5d6368" stroke-width="2" fill="none"/>
+    </g>
+    <!-- rear nickel busbar -->
+    <path d="M286 327 L806 327 L806 339 L286 339 Z" fill="#8d949a"/>
+    <path d="M286 327 L806 327 L823 315 L303 315 Z" fill="url(#busbar)" stroke="#6a7076" stroke-width="2"/>
+    <g fill="#4a5055">
+      <circle cx="316" cy="322" r="4"/><circle cx="330" cy="322" r="4"/>
+      <circle cx="408" cy="322" r="4"/><circle cx="422" cy="322" r="4"/>
+      <circle cx="500" cy="322" r="4"/><circle cx="514" cy="322" r="4"/>
+      <circle cx="592" cy="322" r="4"/><circle cx="606" cy="322" r="4"/>
+      <circle cx="684" cy="322" r="4"/><circle cx="698" cy="322" r="4"/>
+      <circle cx="776" cy="322" r="4"/><circle cx="790" cy="322" r="4"/>
+    </g>
+  </g>
+
+  <!-- ===== front row of cells ===== -->
+  <g>
+    <!-- cell 1 -->
+    <path d="M206 389 L206 620 L290 620 L290 389 Z" fill="url(#cellBarrel)"/>
+    <path d="M206 389 L206 455 Q248 479 290 455 L290 389 Z" fill="url(#amber)"/>
+    <ellipse cx="248" cy="389" rx="42" ry="16" fill="url(#cellTop)" stroke="#6a7076" stroke-width="2"/>
+    <ellipse cx="248" cy="389" rx="30" ry="11" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2"/>
+    <path d="M206 389 L206 620 M290 389 L290 620" stroke="#5d6368" stroke-width="2" fill="none"/>
+    <!-- cell 2 -->
+    <path d="M298 389 L298 620 L382 620 L382 389 Z" fill="url(#cellBarrel)"/>
+    <path d="M298 389 L298 455 Q340 479 382 455 L382 389 Z" fill="url(#amber)"/>
+    <ellipse cx="340" cy="389" rx="42" ry="16" fill="url(#cellTop)" stroke="#6a7076" stroke-width="2"/>
+    <ellipse cx="340" cy="389" rx="30" ry="11" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2"/>
+    <path d="M298 389 L298 620 M382 389 L382 620" stroke="#5d6368" stroke-width="2" fill="none"/>
+    <!-- cell 3 -->
+    <path d="M390 389 L390 620 L474 620 L474 389 Z" fill="url(#cellBarrel)"/>
+    <path d="M390 389 L390 455 Q432 479 474 455 L474 389 Z" fill="url(#amber)"/>
+    <ellipse cx="432" cy="389" rx="42" ry="16" fill="url(#cellTop)" stroke="#6a7076" stroke-width="2"/>
+    <ellipse cx="432" cy="389" rx="30" ry="11" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2"/>
+    <path d="M390 389 L390 620 M474 389 L474 620" stroke="#5d6368" stroke-width="2" fill="none"/>
+    <!-- cell 4 -->
+    <path d="M482 389 L482 620 L566 620 L566 389 Z" fill="url(#cellBarrel)"/>
+    <path d="M482 389 L482 455 Q524 479 566 455 L566 389 Z" fill="url(#amber)"/>
+    <ellipse cx="524" cy="389" rx="42" ry="16" fill="url(#cellTop)" stroke="#6a7076" stroke-width="2"/>
+    <ellipse cx="524" cy="389" rx="30" ry="11" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2"/>
+    <path d="M482 389 L482 620 M566 389 L566 620" stroke="#5d6368" stroke-width="2" fill="none"/>
+    <!-- cell 5 -->
+    <path d="M574 389 L574 620 L658 620 L658 389 Z" fill="url(#cellBarrel)"/>
+    <path d="M574 389 L574 455 Q616 479 658 455 L658 389 Z" fill="url(#amber)"/>
+    <ellipse cx="616" cy="389" rx="42" ry="16" fill="url(#cellTop)" stroke="#6a7076" stroke-width="2"/>
+    <ellipse cx="616" cy="389" rx="30" ry="11" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2"/>
+    <path d="M574 389 L574 620 M658 389 L658 620" stroke="#5d6368" stroke-width="2" fill="none"/>
+    <!-- cell 6 -->
+    <path d="M666 389 L666 620 L750 620 L750 389 Z" fill="url(#cellBarrel)"/>
+    <path d="M666 389 L666 455 Q708 479 750 455 L750 389 Z" fill="url(#amber)"/>
+    <ellipse cx="708" cy="389" rx="42" ry="16" fill="url(#cellTop)" stroke="#6a7076" stroke-width="2"/>
+    <ellipse cx="708" cy="389" rx="30" ry="11" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2"/>
+    <path d="M666 389 L666 620 M750 389 L750 620" stroke="#5d6368" stroke-width="2" fill="none"/>
+    <!-- front nickel busbar -->
+    <path d="M218 377 L738 377 L738 389 L218 389 Z" fill="#8d949a"/>
+    <path d="M218 377 L738 377 L755 365 L235 365 Z" fill="url(#busbar)" stroke="#6a7076" stroke-width="2"/>
+    <g fill="#4a5055">
+      <circle cx="248" cy="372" r="4"/><circle cx="262" cy="372" r="4"/>
+      <circle cx="340" cy="372" r="4"/><circle cx="354" cy="372" r="4"/>
+      <circle cx="432" cy="372" r="4"/><circle cx="446" cy="372" r="4"/>
+      <circle cx="524" cy="372" r="4"/><circle cx="538" cy="372" r="4"/>
+      <circle cx="616" cy="372" r="4"/><circle cx="630" cy="372" r="4"/>
+      <circle cx="708" cy="372" r="4"/><circle cx="722" cy="372" r="4"/>
+    </g>
+  </g>
+
+  <!-- ===== front rail of the chassis ===== -->
+  <path d="M130 540 L740 540 L753 531 L143 531 Z" fill="url(#blkFace)" stroke="#0e1012" stroke-width="2"/>
+  <path d="M130 540 L740 540 L740 650 L130 650 Z" fill="url(#blkBarrel)" stroke="#0e1012" stroke-width="2.5"/>
+  <path d="M142 552 L728 552 L728 638 L142 638 Z" fill="none" stroke="#ffffff" stroke-opacity="0.13" stroke-width="2"/>
+  <!-- lightening cut-outs in the open frame rail -->
+  <g fill="#101315" opacity="0.85">
+    <rect x="196" y="568" width="96" height="54" rx="16"/>
+    <rect x="332" y="568" width="96" height="54" rx="16"/>
+    <rect x="468" y="568" width="96" height="54" rx="16"/>
+    <rect x="604" y="568" width="96" height="54" rx="16"/>
+  </g>
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2">
+    <rect x="196" y="568" width="96" height="54" rx="16"/>
+    <rect x="332" y="568" width="96" height="54" rx="16"/>
+    <rect x="468" y="568" width="96" height="54" rx="16"/>
+    <rect x="604" y="568" width="96" height="54" rx="16"/>
+  </g>
+
+  <!-- ===== left end wall (thin sliver) ===== -->
+  <path d="M130 420 L158 420 L314 308 L286 308 Z" fill="url(#blkFace)" stroke="#0e1012" stroke-width="2"/>
+  <path d="M130 420 L158 420 L158 540 L130 540 Z" fill="url(#blkSide)" stroke="#0e1012" stroke-width="2"/>
+
+  <!-- ===== right end wall ===== -->
+  <g>
+    <path d="M712 420 L740 420 L896 308 L868 308 Z" fill="url(#blkFace)" stroke="#0e1012" stroke-width="2"/>
+    <path d="M740 420 L896 308 L896 538 L740 650 Z" fill="url(#blkSide)" stroke="#0e1012" stroke-width="2.5"/>
+    <path d="M756 430 L882 340 L882 524 L756 616 Z" fill="none" stroke="#ffffff" stroke-opacity="0.13" stroke-width="2"/>
+    <!-- strain-relief grommet -->
+    <g transform="rotate(-36 828 438)">
+      <ellipse cx="828" cy="438" rx="34" ry="28" fill="#2a2d30" stroke="#0e1012" stroke-width="2.5"/>
+      <ellipse cx="828" cy="438" rx="22" ry="18" fill="#101315"/>
+      <path d="M806 430 A34 28 0 0 1 850 428" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="3"/>
+    </g>
+  </g>
+
+  <!-- ===== twisted red/black power pigtail ===== -->
+  <g fill="none" stroke-linecap="butt">
+    <path id="pig" d="M838 448 C888 494 900 556 872 612 C852 652 858 682 890 706"
+          stroke="#141618" stroke-width="26"/>
+    <path d="M838 448 C888 494 900 556 872 612 C852 652 858 682 890 706"
+          stroke="#a8332c" stroke-width="26" stroke-dasharray="26 26"/>
+    <path d="M838 448 C888 494 900 556 872 612 C852 652 858 682 890 706"
+          stroke="#ffffff" stroke-opacity="0.18" stroke-width="6" stroke-dasharray="14 38"/>
+  </g>
+
+  <!-- ===== mounting flange along the front long side ===== -->
+  <path d="M130 650 L740 650 L719 665 L109 665 Z" fill="url(#blkFace)" stroke="#0e1012" stroke-width="2"/>
+  <path d="M109 665 L719 665 L719 681 L109 681 Z" fill="url(#blkSide)" stroke="#0e1012" stroke-width="2"/>
+  <g>
+    <ellipse cx="188" cy="657" rx="25" ry="11" fill="#5f666b" opacity="0.75"/>
+    <ellipse cx="188" cy="657" rx="15" ry="6" fill="#0e1012"/>
+    <ellipse cx="348" cy="657" rx="25" ry="11" fill="#5f666b" opacity="0.75"/>
+    <ellipse cx="348" cy="657" rx="15" ry="6" fill="#0e1012"/>
+    <ellipse cx="508" cy="657" rx="25" ry="11" fill="#5f666b" opacity="0.75"/>
+    <ellipse cx="508" cy="657" rx="15" ry="6" fill="#0e1012"/>
+    <ellipse cx="668" cy="657" rx="25" ry="11" fill="#5f666b" opacity="0.75"/>
+    <ellipse cx="668" cy="657" rx="15" ry="6" fill="#0e1012"/>
+  </g>
+  <path d="M120 659 L730 659" stroke="#ffffff" stroke-opacity="0.12" stroke-width="2" fill="none"/>
+</svg>

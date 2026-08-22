@@ -113,6 +113,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Customer/supplier DB schema | `.claude/rules/customer-supplier-database-schema.md` |
 | User/employee/job relationships | `.claude/rules/user-employee-job-relationships.md` |
 | Company backup/restore | `.claude/rules/company-backup-restore.md` |
+| Onboarding demo templates / dev seed datasets | `.claude/rules/onboarding-company-templates.md` |
 | Environment configuration | `.claude/rules/environment-configuration.md` |
 | MCP tools reference | `.claude/rules/mcp-tools-reference.md` |
 | Adding a new module | `.ai/docs/module-conventions.md` |

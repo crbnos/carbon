@@ -3,7 +3,8 @@
     "@carbon/config": "workspace:*",
     "@types/node": "20.19.39",
     "sst": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "exports": {
     ".": "./src/index.ts"
@@ -14,6 +15,7 @@
     "clean": "rimraf .turbo node_modules dist",
     "dev": "tsup --watch",
     "lint": "biome lint --write ",
+    "test": "vitest run",
     "typecheck": "tsgo --noEmit"
   },
   "sideEffects": false,

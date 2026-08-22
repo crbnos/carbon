@@ -322,3 +322,33 @@ pnpm run check:workflow-catalog                    # the CI `catalog` job
 
 Changing `Operator` in `@carbon/utils` also needs
 `pnpm --filter @carbon/utils test` and `pnpm exec turbo run typecheck --filter=erp`.
+
+## Custom fields (round 2)
+
+`src/catalog/custom-fields.ts` is the per-company overlay. The catalog is build-time and
+global; custom fields are runtime and per company, so they are merged in rather than generated.
+
+- `buildCatalogOverlay(defs)` → `{ properties, labels, enums, actionInputs }`, keyed by the
+  ONE-segment property path `customFields.<fieldId>` (the field's id, which is the key inside
+  the JSONB blob). One segment keeps `walkPath` and the runtime `walk` single-step.
+- It holds the ONLY `DataType → ValueType` map. `item` and reference-only entities are excluded.
+- `createWorkflowCatalog(overlay?)` merges **generated first, overlay second** — a real column
+  always wins, and the shipped keys keep their order at the top of every picker.
+- `WorkflowCatalog` gained `getPropertyLabel(entity, property)` and
+  `getInputLabel(actionId, input)`. They return the customer's own field name, which is customer
+  data and is deliberately never translated.
+- `getCatalogEvent(id)` is the single event lookup: the committed map, then
+  `resolveCustomFieldEvent`, which PARSES `<entity>.customFields.<fieldId>.changed` into a
+  synthetic `CatalogEvent`. `WORKFLOW_EVENTS` stays closed and drift-checked. `sync.ts` uses it
+  too, which is what gives a custom-field trigger its `UPDATE` subscription.
+
+## `linkify` and `ctx.linkFor`
+
+`CatalogInput.linkify` marks an input as prose a person reads. `renderTemplate(template, ctx,
+{ linkFor })` wraps an entity part as `[readableId](url)`; `actionExecutor` passes the callback
+only for `linkify` inputs, so a webhook body still renders a bare readable id. This package
+constructs no URL — it is bundled for the browser with four runtime dependencies and cannot
+import `@carbon/env`; the engine supplies `ctx.linkFor`.
+
+`rendersAsText` now accepts a whole record (it prints as its readable id) and still refuses a
+LIST of records.

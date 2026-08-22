@@ -178,19 +178,6 @@ export default function PartMakeMethodPage() {
         </Await>
       </Suspense>
 
-      <BillOfMaterial
-        key={`bom:${makeMethodId}`}
-        makeMethod={makeMethod}
-        // @ts-expect-error TS2322 - TODO: fix type
-        materials={methodMaterials}
-        operations={methodOperations}
-        configurable={partManufacturing?.requiresConfiguration}
-        configurationRules={configurationRules}
-        parameters={configurationParametersAndGroups.parameters}
-        replenishmentSystem={partData?.partSummary?.replenishmentSystem}
-        revisionStatus={revisionStatus}
-        releaseControl={releaseControl}
-      />
       <BillOfProcess
         key={`bop:${makeMethodId}`}
         makeMethod={makeMethod}
@@ -204,6 +191,19 @@ export default function PartMakeMethodPage() {
         revisionStatus={revisionStatus}
         releaseControl={releaseControl}
       />
+      <BillOfMaterial
+        key={`bom:${makeMethodId}`}
+        makeMethod={makeMethod}
+        // @ts-expect-error TS2322 - TODO: fix type
+        materials={methodMaterials}
+        operations={methodOperations}
+        configurable={partManufacturing?.requiresConfiguration}
+        configurationRules={configurationRules}
+        parameters={configurationParametersAndGroups.parameters}
+        replenishmentSystem={partData?.partSummary?.replenishmentSystem}
+        revisionStatus={revisionStatus}
+        releaseControl={releaseControl}
+      />
       <Suspense fallback={null}>
         <Await resolve={loaderData.model}>
           {(model) => (
@@ -213,7 +213,7 @@ export default function PartMakeMethodPage() {
               metadata={{
                 itemId: model?.itemId ?? undefined
               }}
-              modelPath={model?.modelPath ?? null}
+              modelUpload={model ?? null}
               title={t`CAD Model`}
               uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
               viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
