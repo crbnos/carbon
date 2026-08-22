@@ -1,3 +1,4 @@
+import { STRIPE_CONNECT_ENABLED } from "@carbon/env";
 import { Badge, Button, toast } from "@carbon/react";
 import type { ComponentProps } from "react";
 import { useCallback, useState } from "react";
@@ -14,7 +15,12 @@ export const StripeConnectSettingsSchema = z.object({
 export const StripeConnect = defineIntegration({
   name: "Stripe Connect",
   id: "stripe-connect",
-  active: true,
+  // Only offered when the platform has a Stripe secret key configured — without
+  // it every Connect call throws and the pull-sweep backstop no-ops, so the
+  // whole feature is inert. Gated on the browser-safe STRIPE_CONNECT_ENABLED
+  // flag (never the secret itself), mirroring how OAuth integrations gate on
+  // their public clientId.
+  active: STRIPE_CONNECT_ENABLED,
   category: "Payments",
   logo: StripeLogo,
   description:

@@ -8,6 +8,7 @@ declare global {
       CARBON_EDITION: string;
       CARBON_API_URL: string;
       CARBON_SLACK_ENABLED: string;
+      STRIPE_CONNECT_ENABLED: string;
       CLOUDFLARE_TURNSTILE_SITE_KEY: string;
       CONTROLLED_ENVIRONMENT: string;
       ERP_URL: string;
@@ -349,6 +350,14 @@ export const SESSION_ERROR_KEY = "error";
 export const STRIPE_SECRET_KEY = getEnv("STRIPE_SECRET_KEY", {
   isRequired: false
 });
+// Browser-safe boolean signal for whether Stripe (and therefore the Stripe
+// Connect integration) is configured. STRIPE_SECRET_KEY is a secret, so it is
+// `""` in the browser — the integration's `active` gate must read this derived
+// flag instead, which crosses to the client via getBrowserEnv() the same way
+// CARBON_SLACK_ENABLED does. Only the boolean is exposed, never the key.
+export const STRIPE_CONNECT_ENABLED = isBrowser
+  ? window.env?.STRIPE_CONNECT_ENABLED === "true"
+  : Boolean(STRIPE_SECRET_KEY);
 export const STRIPE_WEBHOOK_SECRET = getEnv("STRIPE_WEBHOOK_SECRET", {
   isRequired: false
 });
@@ -516,6 +525,7 @@ export function getBrowserEnv() {
     CARBON_API_URL,
     CARBON_EDITION,
     CARBON_SLACK_ENABLED: CARBON_SLACK_ENABLED ? "true" : "",
+    STRIPE_CONNECT_ENABLED: STRIPE_CONNECT_ENABLED ? "true" : "",
     CLOUDFLARE_TURNSTILE_SITE_KEY,
     CONTROLLED_ENVIRONMENT,
     DEFAULT_LANGUAGE,
