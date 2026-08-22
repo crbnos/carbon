@@ -97,3 +97,47 @@ Release → "Release Job" confirm. Release itself triggers a schedule run.
   today runs away ~1 year per subtracted working day (MAX_CONSECUTIVE_CLOSED_DAYS cap in
   need-by-calculator.ts) — e.g. a first op showing "Aug 10, 2024". Known bug surfaced
   2026-08-18, not a test regression.
+
+## Require-staffing policy (per-location) — verified 2026-08-21
+
+Setting: **Settings → Production → Scheduling** card (`/x/settings/production`) lists
+the CURRENT company's locations, each with a "Require staffing" switch
+(company-scoped — a same-named location in another company is NOT shown). Backed by
+`location.requiresStaffing`, written service-role (settings admins lack resources_update).
+
+### Toggle it (Radix switch needs the full pointer sequence, not `.click()`)
+```
+sw = [...document.querySelectorAll('button[role=switch]')]  // Scheduling switches are the LAST N (one per location)
+// dispatch pointerdown/mousedown/pointerup/mouseup/click at the switch center
+```
+Verify: toast "Staffing requirement enabled/disabled" + DB `location.requiresStaffing`.
+
+### Verify on the forecast (force regen with the Regenerate button, don't wait 30s)
+- Regenerate = IconButton aria-label "Regenerate" inside a fetcher form → `form.requestSubmit(btn)`.
+- **ON**: an ungated op on a non-lights-out work center with NO manning on the placement
+  date becomes an unschedulable PLACEHOLDER (`capacityReservation.isPlaceholder=t`,
+  scheduleNote "No operator assigned"). Forecast header shows "N CAN'T BE SCHEDULED";
+  clicking the op row → detail sidebar "Unschedulable / No operator assigned / where it
+  would run".
+- **Lights-out exempt**: set a work center `alwaysOn=true` → its ops still place (ph=f)
+  while non-alwaysOn WCs' ops stay placeholders. (My Deno gate: `capacity.workCenter.alwaysOn`.)
+- **OFF**: regen → all ops place again (ph=f), header "no conflicts". Byte-identical to pre-setting.
+- WC popover ("How are these hours calculated?" info button) gained a line:
+  gated → "runs ability-gated work…", ungated → "runs work with no ability requirement…";
+  plus a "Staffing required" section only when the location's policy is ON.
+
+## KEY UX GOTCHA (not a logic bug, but reads as "empty/broken")
+The forecast opens on **today's Day view**. Forward-ASAP places Ready jobs at the next
+available shift — if today is Friday afternoon/weekend, work lands on **next Monday**, so
+the default view shows "0 resources · 0 reservations · 0 jobs" even though work IS
+scheduled. Navigate to the week that actually contains the placements
+(`?range=week&date=<placement date>`) to see it. Placeholders (unschedulable ops) pin at
+`now`, so they appear in the CURRENT week even when the real placements are a future week.
+
+## Test-data note (dev seed, company "Carbon Development" / Manufacturing Plant)
+- Jobs J000002 (Ready, 3 ops) + J000004 (Ready, 3 ops) at Manufacturing Plant; all ops
+  UNGATED (processes: Machining/Weld/Final assembly — requiresAbility=false). Only "Brake
+  Press" is gated, on "Press Brake - 700T" (no job op → the floater/double-booking edge
+  cases 1–2 aren't reproducible from seed; they're covered by the Deno suite).
+- Manning (`peopleAssignment`) is all PAST (Aug 10–14) at CNC Mill / Press Brake — does not
+  cover the Aug-24 placements, which is why require-staffing ON makes everything unschedulable.

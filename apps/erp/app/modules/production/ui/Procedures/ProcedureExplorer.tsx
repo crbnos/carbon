@@ -508,7 +508,7 @@ function ProcedureStepItem({
   return (
     <HStack
       className={cn(
-        "group w-full p-2 items-center hover:bg-accent/30 relative border-b bg-background"
+        "group w-full p-2 items-center hover:bg-accent/30 relative border-b bg-card"
       )}
     >
       <IconButton
@@ -634,7 +634,7 @@ function ProcedureParameterItem({
   return (
     <VStack
       spacing={0}
-      className="group w-full px-4 py-2 items-start hover:bg-accent/30 relative border-b bg-background"
+      className="group w-full px-4 py-2 items-start hover:bg-accent/30 relative border-b bg-card"
     >
       <HStack spacing={4}>
         <LuActivity className="flex-shrink-0" />

@@ -2706,6 +2706,7 @@ msgstr "모두"
 
 msgid "Bottleneck"
 msgstr "병목"
+
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "이 버전의 편집 가능한 복사본을 분기하여 변경 및 게시할 수 있습니다."
 
@@ -7459,6 +7460,9 @@ msgstr "{0}(으)로 이동"
 msgid "Go to implementation hub"
 msgstr "구축 허브로 이동"
 
+msgid "Go to that week"
+msgstr ""
+
 msgid "Go-Live"
 msgstr "도입"
 
@@ -7897,6 +7901,7 @@ msgstr "함께 정보 공유하기"
 
 msgid "In use"
 msgstr "사용 중"
+
 msgid "In-app"
 msgstr "인앱"
 
@@ -9643,6 +9648,7 @@ msgstr "적절한 열이 필요하신가요?"
 
 msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
 msgstr "필요한 인력은 그 날의 작업 시간을 {personDayHours}h로 나눈 값을 올림한 것입니다. 필터링하는 교대 또는 이 위치에서 가장 일반적인 교대 길이입니다."
+
 msgid "Needs a Business or Partner plan."
 msgstr "Business 또는 Partner 요금제가 필요합니다."
 
@@ -10214,6 +10220,9 @@ msgstr "품목 없음"
 msgid "No items have inventory activity here yet."
 msgstr "아직 여기에 재고 활동이 있는 항목이 없습니다."
 
+msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
+msgstr ""
+
 msgid "No jobs were created"
 msgstr "생성된 작업이 없음"
 
@@ -10378,6 +10387,9 @@ msgstr "행이 없습니다."
 
 msgid "No rules assigned"
 msgstr "배정된 규칙이 없습니다"
+
+msgid "No scheduled work in this window"
+msgstr ""
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "교대근무 구성 없음 — 월–금, 8시간 근무일 가정"
@@ -14598,10 +14610,11 @@ msgstr "…부터 시작"
 msgid "Started"
 msgstr "시작됨"
 
-msgid "Starts"
-msgstr "시작"
 msgid "Starting…"
 msgstr "시작 중…"
+
+msgid "Starts"
+msgstr "시작"
 
 msgid "State / Province"
 msgstr "주/도"
@@ -15647,6 +15660,10 @@ msgstr "게시하고 종료하는 월별 기간"
 msgid "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 msgstr "요청자가 의심하는 가장 유력한 고장 모드입니다. 기술자는 마감 시 이를 확인하거나 다른 것으로 교체하며, 예상과 실제의 차이는 신뢰성 보고서에 반영됩니다."
 
+#. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
+msgid "The most recent scheduled work at this location was {0}."
+msgstr ""
+
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "이 라인에서 협상된 단가입니다. 인라인 추적 아이콘을 통해 어떤 가격 규칙 또는 재정의로 이 값이 산출되었는지 확인할 수 있습니다."
 
@@ -15658,6 +15675,10 @@ msgstr "방법의 새 버전 번호"
 
 msgid "The new version number of the procedure"
 msgstr "절차의 새 버전 번호"
+
+#. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
+msgid "The next scheduled work at this location starts {0}."
+msgstr ""
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "선호 공급업체에 PO를 발주한 시점부터 재화가 입고장에 도착하기까지의 일수입니다. 계획은 이 기간만큼 수요를 앞당겨 계산합니다."

@@ -2706,6 +2706,7 @@ msgstr "दोनों"
 
 msgid "Bottleneck"
 msgstr "अड़चन"
+
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "इस संस्करण की एक संपादन योग्य प्रति शाखा करें जिसे आप बदल सकते हैं और प्रकाशित कर सकते हैं।"
 
@@ -7459,6 +7460,9 @@ msgstr "{0} पर जाएं"
 msgid "Go to implementation hub"
 msgstr "कार्यान्वयन हब पर जाएं"
 
+msgid "Go to that week"
+msgstr ""
+
 msgid "Go-Live"
 msgstr "गो-लाइव"
 
@@ -7897,6 +7901,7 @@ msgstr "एक साथ लूप में"
 
 msgid "In use"
 msgstr "उपयोग में"
+
 msgid "In-app"
 msgstr "ऐप में"
 
@@ -9643,6 +9648,7 @@ msgstr "क्या आपको सही कॉलम चाहिए?"
 
 msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
 msgstr "आवश्यक उस दिन के कारण काम के घंटे को {personDayHours}h से विभाजित किया जाता है, गोल किया जाता है — आप जिस शिफ्ट को फ़िल्टर कर रहे हैं, या इस स्थान पर सबसे सामान्य शिफ्ट की लंबाई।"
+
 msgid "Needs a Business or Partner plan."
 msgstr "एक बिजनेस या पार्टनर प्लान की आवश्यकता है।"
 
@@ -10214,6 +10220,9 @@ msgstr "कोई आइटम नहीं"
 msgid "No items have inventory activity here yet."
 msgstr "अभी तक यहाँ कोई आइटम इन्वेंटरी गतिविधि नहीं है।"
 
+msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
+msgstr ""
+
 msgid "No jobs were created"
 msgstr "कोई नौकरी नहीं बनाई गई"
 
@@ -10378,6 +10387,9 @@ msgstr "यहाँ कोई पंक्तियाँ नहीं है�
 
 msgid "No rules assigned"
 msgstr "कोई नियम असाइन नहीं किया गया"
+
+msgid "No scheduled work in this window"
+msgstr ""
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "कोई पारियाँ कॉन्फ़िगर नहीं — सोमवार–शुक्रवार, 8 घंटे की दिन मानी जा रही है"
@@ -14598,10 +14610,11 @@ msgstr "शुरुआत करें"
 msgid "Started"
 msgstr "शुरू किया गया"
 
-msgid "Starts"
-msgstr "शुरू होता है"
 msgid "Starting…"
 msgstr "शुरू हो रहा है…"
+
+msgid "Starts"
+msgstr "शुरू होता है"
 
 msgid "State / Province"
 msgstr "राज्य / प्रांत"
@@ -15647,6 +15660,10 @@ msgstr "मासिक अवधियाँ जिनमें आप पो�
 msgid "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 msgstr "सबसे संभावित विफलता मोड जिसे अनुरोधकर्ता संदेह करता है; तकनीशियन इसे बंद करते समय की पुष्टि या प्रतिस्थापन करता है, और संदेह और वास्तविक के बीच अंतर विश्वसनीयता रिपोर्ट करता है।"
 
+#. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
+msgid "The most recent scheduled work at this location was {0}."
+msgstr ""
+
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "इस लाइन पर प्रति यूनिट मूल्य; इनलाइन ट्रेस आइकन दिखाता है कि कौन सा मूल्य नियम या ओवरराइड इसे उत्पादित किया।"
 
@@ -15658,6 +15675,10 @@ msgstr "विधि का नया संस्करण संख्या"
 
 msgid "The new version number of the procedure"
 msgstr "प्रक्रिया की नई संस्करण संख्या"
+
+#. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
+msgid "The next scheduled work at this location starts {0}."
+msgstr ""
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "पसंदीदा आपूर्तिकर्ता के साथ एक PO देने और सामान डॉक पर पहुंचने के बीच दिनों की संख्या; योजना इस राशि से मांग को पीछे की ओर ऑफसेट करता है।"

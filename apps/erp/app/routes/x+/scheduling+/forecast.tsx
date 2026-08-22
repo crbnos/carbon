@@ -1,5 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { Badge, ClientOnly, cn, useDebounce } from "@carbon/react";
+import { Badge, Button, ClientOnly, cn, useDebounce } from "@carbon/react";
+import { datetime, formatDate } from "@carbon/utils";
 import type { CalendarDate } from "@internationalized/date";
 import {
   CalendarDateTime,
@@ -17,7 +18,7 @@ import { useLocale } from "@react-aria/i18n";
 import { useMemo } from "react";
 import { LuBan, LuTriangleAlert } from "react-icons/lu";
 import type { LoaderFunctionArgs, Location } from "react-router";
-import { useLoaderData } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
 import { Empty } from "~/components";
 import { Gantt } from "~/components/Gantt";
 import { useReplaceLocation } from "~/hooks/useReplaceLocation";
@@ -430,6 +431,43 @@ export async function loader({ request }: LoaderFunctionArgs) {
     rows.filter((r) => r.isPlaceholder).map((r) => r.operationId)
   ).size;
 
+  // When the visible window has NO work, the board reads as broken even though
+  // work may simply be scheduled another week (forward-ASAP places a Ready job
+  // at the next open shift). Find the nearest reservation OUTSIDE the window —
+  // future first, else past — so the empty state can point the user to it.
+  let nextScheduledDate: string | null = null;
+  let nextScheduledDirection: "future" | "past" | null = null;
+  if (rows.length === 0) {
+    const nearestReservation = async (
+      bound: "future" | "past"
+    ): Promise<string | null> => {
+      let query = client
+        .from("capacityReservation")
+        .select("startAt, job!inner(locationId, status)")
+        .eq("companyId", companyId)
+        .is("scenarioId", null)
+        .eq("job.locationId", locationId)
+        .not("job.status", "in", '("Cancelled","Completed","Closed")')
+        .limit(1);
+      query =
+        bound === "future"
+          ? query
+              .gte("startAt", new Date(windowEndMs).toISOString())
+              .order("startAt", { ascending: true })
+          : query
+              .lt("startAt", new Date(windowStartMs).toISOString())
+              .order("startAt", { ascending: false });
+      const result = await query;
+      return result.data?.[0]?.startAt ?? null;
+    };
+    const future = await nearestReservation("future");
+    const nearest = future ?? (await nearestReservation("past"));
+    if (nearest) {
+      nextScheduledDate = datetime.businessDay(nearest, timeZone).toString();
+      nextScheduledDirection = future ? "future" : "past";
+    }
+  }
+
   // Count every station shown, not just the ones carrying reservations —
   // include plant work centers, plus any resource a reservation references.
   const shownWorkCenterIds = new Set<string>([
@@ -453,6 +491,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     jobCount,
     conflictCount,
     unschedulableCount,
+    nextScheduledDate,
+    nextScheduledDirection,
     trace:
       timeline.events.length > 1
         ? {
@@ -489,12 +529,15 @@ export default function ResourceGanttView() {
     jobCount,
     conflictCount,
     unschedulableCount,
+    nextScheduledDate,
+    nextScheduledDirection,
     trace,
     detailsById,
     workCenterAvailability
   } = useLoaderData<typeof loader>();
 
   const { locale } = useLocale();
+  const navigate = useNavigate();
   const { location, replaceSearchParam } = useReplaceLocation();
   const selectedSpanId = getSpanId(location);
 
@@ -568,6 +611,58 @@ export default function ResourceGanttView() {
         departments={departments}
         shifts={shifts}
       />
+      {reservationCount === 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/40 px-4 py-2.5">
+          <div className="flex flex-col">
+            <span className="text-sm font-medium">
+              <Trans>No scheduled work in this window</Trans>
+            </span>
+            <span className="text-xs text-muted-foreground text-pretty">
+              {nextScheduledDate ? (
+                nextScheduledDirection === "future" ? (
+                  <Trans>
+                    The next scheduled work at this location starts{" "}
+                    {formatDate(
+                      nextScheduledDate,
+                      { weekday: "long", month: "short", day: "numeric" },
+                      locale
+                    )}
+                    .
+                  </Trans>
+                ) : (
+                  <Trans>
+                    The most recent scheduled work at this location was{" "}
+                    {formatDate(
+                      nextScheduledDate,
+                      { weekday: "long", month: "short", day: "numeric" },
+                      locale
+                    )}
+                    .
+                  </Trans>
+                )
+              ) : (
+                <Trans>
+                  No jobs are scheduled at this location yet — release a job to
+                  see work-center load.
+                </Trans>
+              )}
+            </span>
+          </div>
+          {nextScheduledDate && (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                const params = new URLSearchParams(location.search);
+                params.set("range", "week");
+                params.set("date", nextScheduledDate);
+                navigate(`?${params.toString()}`);
+              }}
+            >
+              <Trans>Go to that week</Trans>
+            </Button>
+          )}
+        </div>
+      )}
       {!trace ? (
         <div className="flex flex-1 items-center justify-center">
           <Empty>

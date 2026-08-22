@@ -963,7 +963,7 @@ function StepStatusControl({
         <button
           type="button"
           aria-label={`Step status: ${displayed}. Change status`}
-          className="inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md border border-border bg-background px-1.5 text-xs text-foreground shadow-button-base hover:bg-accent focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 active:scale-[0.98]"
+          className="inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md border border-border bg-card px-1.5 text-xs text-foreground shadow-button-base hover:bg-accent focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 active:scale-[0.98]"
           onClick={(e) => e.stopPropagation()}
         >
           <StepStatusDot status={displayed} />
@@ -1047,7 +1047,7 @@ function StepItem({
   return (
     <div
       className={cn(
-        "group relative flex w-full cursor-pointer select-none items-center gap-1.5 border-b border-border bg-background py-3 pl-1.5 pr-2.5 hover:bg-accent/30",
+        "group relative flex w-full cursor-pointer select-none items-center gap-1.5 border-b border-border bg-card py-3 pl-1.5 pr-2.5 hover:bg-accent/30",
         isSelected && "bg-accent/40 hover:bg-accent/40"
       )}
       onClick={onSelect}

@@ -2706,6 +2706,7 @@ msgstr "Оба"
 
 msgid "Bottleneck"
 msgstr "Узкое место"
+
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "Создайте редактируемую копию этой версии, которую вы сможете изменить и опубликовать."
 
@@ -7459,6 +7460,9 @@ msgstr "Перейти к {0}"
 msgid "Go to implementation hub"
 msgstr "Перейти в центр внедрения"
 
+msgid "Go to that week"
+msgstr ""
+
 msgid "Go-Live"
 msgstr "Запуск"
 
@@ -7897,6 +7901,7 @@ msgstr "В курсе дела вместе"
 
 msgid "In use"
 msgstr "В использовании"
+
 msgid "In-app"
 msgstr "В приложении"
 
@@ -9643,6 +9648,7 @@ msgstr "Нужны правильные столбцы?"
 
 msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
 msgstr "Необходимо - это рабочие часы, приходящиеся на день, делённые на {personDayHours}ч, округленные в большую сторону — смена, по которой вы фильтруете, или наиболее распространённая длина смены в этом месте."
+
 msgid "Needs a Business or Partner plan."
 msgstr "Требуется план Business или Partner."
 
@@ -10214,6 +10220,9 @@ msgstr "Нет позиций"
 msgid "No items have inventory activity here yet."
 msgstr "Здесь еще нет активности с товарами."
 
+msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
+msgstr ""
+
 msgid "No jobs were created"
 msgstr "Никаких заданий не было создано"
 
@@ -10378,6 +10387,9 @@ msgstr "Нет строк здесь."
 
 msgid "No rules assigned"
 msgstr "Нет назначенных правил"
+
+msgid "No scheduled work in this window"
+msgstr ""
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "Смены не настроены — предполагается Пн–Пт, 8ч дни"
@@ -14598,10 +14610,11 @@ msgstr "Начните с"
 msgid "Started"
 msgstr "Начал"
 
-msgid "Starts"
-msgstr "Начинается"
 msgid "Starting…"
 msgstr "Начинаю…"
+
+msgid "Starts"
+msgstr "Начинается"
 
 msgid "State / Province"
 msgstr "Штат / Провинция"
@@ -15647,6 +15660,10 @@ msgstr "Ежемесячные периоды, в которые вы разме
 msgid "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 msgstr "Наиболее вероятный режим отказа, который подозревает запросчик; техник подтверждает или заменяет это при закрытии, и разница между подозреваемым и фактическим питает отчеты надежности."
 
+#. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
+msgid "The most recent scheduled work at this location was {0}."
+msgstr ""
+
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "Согласованная цена за единицу на этой строке; встроенный значок трассировки показывает, какое правило цены или переопределение его произвело."
 
@@ -15658,6 +15675,10 @@ msgstr "Номер новой версии метода"
 
 msgid "The new version number of the procedure"
 msgstr "Новый номер версии процедуры"
+
+#. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
+msgid "The next scheduled work at this location starts {0}."
+msgstr ""
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "Количество дней между размещением заказа у предпочтительного поставщика и прибытием товара на причал; планирование компенсирует спрос на эту сумму в обратном направлении."

@@ -2706,6 +2706,7 @@ msgstr "Both"
 
 msgid "Bottleneck"
 msgstr "Bottleneck"
+
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "Branch an editable copy of this version that you can change and publish."
 
@@ -7459,6 +7460,9 @@ msgstr "Go to {0}"
 msgid "Go to implementation hub"
 msgstr "Go to implementation hub"
 
+msgid "Go to that week"
+msgstr "Go to that week"
+
 msgid "Go-Live"
 msgstr "Go-Live"
 
@@ -7897,6 +7901,7 @@ msgstr "In the loop together"
 
 msgid "In use"
 msgstr "In use"
+
 msgid "In-app"
 msgstr "In-app"
 
@@ -9643,6 +9648,7 @@ msgstr "Need the right columns?"
 
 msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
 msgstr "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
+
 msgid "Needs a Business or Partner plan."
 msgstr "Needs a Business or Partner plan."
 
@@ -10214,6 +10220,9 @@ msgstr "No items"
 msgid "No items have inventory activity here yet."
 msgstr "No items have inventory activity here yet."
 
+msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
+msgstr "No jobs are scheduled at this location yet — release a job to see work-center load."
+
 msgid "No jobs were created"
 msgstr "No jobs were created"
 
@@ -10378,6 +10387,9 @@ msgstr "No rows here."
 
 msgid "No rules assigned"
 msgstr "No rules assigned"
+
+msgid "No scheduled work in this window"
+msgstr "No scheduled work in this window"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "No shifts configured — assuming Mon–Fri, 8h days"
@@ -14598,10 +14610,11 @@ msgstr "Start with"
 msgid "Started"
 msgstr "Started"
 
-msgid "Starts"
-msgstr "Starts"
 msgid "Starting…"
 msgstr "Starting…"
+
+msgid "Starts"
+msgstr "Starts"
 
 msgid "State / Province"
 msgstr "State / Province"
@@ -15647,6 +15660,10 @@ msgstr "The monthly periods you post into and close"
 msgid "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 msgstr "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 
+#. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
+msgid "The most recent scheduled work at this location was {0}."
+msgstr "The most recent scheduled work at this location was {0}."
+
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 
@@ -15658,6 +15675,10 @@ msgstr "The new version number of the method"
 
 msgid "The new version number of the procedure"
 msgstr "The new version number of the procedure"
+
+#. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
+msgid "The next scheduled work at this location starts {0}."
+msgstr "The next scheduled work at this location starts {0}."
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."

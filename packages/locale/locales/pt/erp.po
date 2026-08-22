@@ -2706,6 +2706,7 @@ msgstr "Ambos"
 
 msgid "Bottleneck"
 msgstr "Gargalo"
+
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "Ramifique uma cópia editável desta versão que você pode alterar e publicar."
 
@@ -7459,6 +7460,9 @@ msgstr "Ir para {0}"
 msgid "Go to implementation hub"
 msgstr "Ir para o hub de implementação"
 
+msgid "Go to that week"
+msgstr ""
+
 msgid "Go-Live"
 msgstr "Go-Live"
 
@@ -7897,6 +7901,7 @@ msgstr "No circuito juntos"
 
 msgid "In use"
 msgstr "Em uso"
+
 msgid "In-app"
 msgstr "No aplicativo"
 
@@ -9643,6 +9648,7 @@ msgstr "Precisa das colunas certas?"
 
 msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
 msgstr "Necessário é as horas de trabalho devidas naquele dia divididas por {personDayHours}h, arredondadas para cima — o turno que você está filtrando ou o comprimento de turno mais comum neste local."
+
 msgid "Needs a Business or Partner plan."
 msgstr "Requer um plano Business ou Partner."
 
@@ -10214,6 +10220,9 @@ msgstr "Nenhum item"
 msgid "No items have inventory activity here yet."
 msgstr "Nenhum item teve atividade de inventário aqui ainda."
 
+msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
+msgstr ""
+
 msgid "No jobs were created"
 msgstr "Nenhum trabalho foi criado"
 
@@ -10378,6 +10387,9 @@ msgstr "Nenhuma linha aqui."
 
 msgid "No rules assigned"
 msgstr "Nenhuma regra atribuída"
+
+msgid "No scheduled work in this window"
+msgstr ""
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "Nenhum turno configurado — assumindo segunda–sexta, dias de 8h"
@@ -14598,10 +14610,11 @@ msgstr "Comece com"
 msgid "Started"
 msgstr "Iniciado"
 
-msgid "Starts"
-msgstr "Inicia"
 msgid "Starting…"
 msgstr "Iniciando…"
+
+msgid "Starts"
+msgstr "Inicia"
 
 msgid "State / Province"
 msgstr "Estado / Província"
@@ -15647,6 +15660,10 @@ msgstr "Os períodos mensais nos quais você lança e fecha"
 msgid "The most likely failure mode the requester suspects; the technician confirms or replaces this on close-out, and the difference between suspected and actual feeds reliability reports."
 msgstr "O modo de falha mais provável que o solicitante suspeita; o técnico confirma ou substitui ao fechar, e a diferença entre o suspeito e o real alimenta os relatórios de confiabilidade."
 
+#. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
+msgid "The most recent scheduled work at this location was {0}."
+msgstr ""
+
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "O preço negociado por unidade nesta linha; o ícone de rastreamento embutido mostra qual regra de preço ou anulação o produziu."
 
@@ -15658,6 +15675,10 @@ msgstr "O novo número de versão do método"
 
 msgid "The new version number of the procedure"
 msgstr "O novo número de versão do procedimento"
+
+#. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
+msgid "The next scheduled work at this location starts {0}."
+msgstr ""
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "O número de dias entre colocar uma PO com o fornecedor preferido e os bens chegarem no cais; o planejamento compensa a demanda para trás por esse valor."

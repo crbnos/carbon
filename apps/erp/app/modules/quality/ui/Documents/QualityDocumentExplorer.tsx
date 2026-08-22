@@ -337,7 +337,7 @@ function QualityDocumentStepItem({
   return (
     <HStack
       className={cn(
-        "group w-full p-2 items-center hover:bg-accent/30 relative border-b bg-background"
+        "group w-full p-2 items-center hover:bg-accent/30 relative border-b bg-card"
       )}
     >
       <IconButton
