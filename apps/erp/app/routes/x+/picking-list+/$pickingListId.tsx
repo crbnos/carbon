@@ -18,7 +18,8 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Picking List`, to: path.to.pickingLists },
     (data) => data?.pickingList?.pickingListId
-  )
+  ),
+  module: "inventory"
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

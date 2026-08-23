@@ -224,6 +224,9 @@ msgstr "{missingCount} नहीं मिली पत्रिकाएं औ
 msgid "{name} deleted"
 msgstr "{name} हटाया गया"
 
+msgid "{name} returns!"
+msgstr ""
+
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} भाग छोड़ दिए गए — कुछ नहीं बनाना है"
 
@@ -1188,9 +1191,6 @@ msgstr "लाइन आइटम जोड़ें"
 msgid "Add match"
 msgstr "मिलान जोड़ें"
 
-msgid "Add New"
-msgstr "नया जोड़ें"
-
 msgid "Add Note"
 msgstr "नोट जोड़ें"
 
@@ -1350,6 +1350,9 @@ msgstr "के बाद"
 
 msgid "After (calculation method)"
 msgstr "बाद में (गणना विधि)"
+
+msgid "Afternoon, {name}."
+msgstr ""
 
 msgid "Aging"
 msgstr "उम्र"
@@ -2761,6 +2764,9 @@ msgstr "बल्क आयात"
 msgid "Bulk Jobs"
 msgstr "बल्क जॉब्स"
 
+msgid "Burning the midnight oil."
+msgstr ""
+
 msgid "Business moment"
 msgstr "व्यावसायिक क्षण"
 
@@ -3735,6 +3741,12 @@ msgstr "एक आपूर्तिकर्ता की खरीद इक�
 
 msgid "Copied link to clipboard"
 msgstr "क्लिपबोर्ड में लिंक कॉपी किया गया"
+
+msgid "Copied setup prompt to your clipboard"
+msgstr ""
+
+msgid "Copies a setup prompt for your AI coding tool"
+msgstr ""
 
 msgid "Copy"
 msgstr "कॉपी करें"
@@ -4731,6 +4743,9 @@ msgstr "दशमलव स्थान"
 msgid "Declining balance"
 msgstr "घटती शेष राशि"
 
+msgid "Deep in the small hours, {name}."
+msgstr ""
+
 msgid "Default"
 msgstr "डिफ़ॉल्ट"
 
@@ -5454,6 +5469,9 @@ msgstr "जो दस्तावेज़ आप खोलेंगे वह �
 msgid "Don't Cancel"
 msgstr "रद्द न करें"
 
+msgid "Don't show this again"
+msgstr ""
+
 msgid "done"
 msgstr "पूर्ण"
 
@@ -5671,6 +5689,9 @@ msgstr "प्रत्येक, lb, ft…"
 
 msgid "Earliest operation start"
 msgstr "सबसे पहले संचालन शुरू"
+
+msgid "Early bird gets the worm."
+msgstr ""
 
 msgid "Easier to extend"
 msgstr "विस्तार करना आसान"
@@ -6345,6 +6366,9 @@ msgstr "अनुमान बनाम वास्तविक"
 
 msgid "Estimator"
 msgstr "अनुमानकर्ता"
+
+msgid "Evening, {name}."
+msgstr ""
 
 msgid "Event"
 msgstr "घटना"
@@ -7496,17 +7520,14 @@ msgstr "यदि प्रत्येक गेट समय पर क्ल�
 msgid "Going live on Carbon"
 msgstr "कार्बन पर लाइव जाना"
 
-#. placeholder {0}: user.firstName
-msgid "Good afternoon, {0}"
-msgstr "शुभ दोपहर, {0}"
+msgid "Good afternoon, {name}."
+msgstr ""
 
-#. placeholder {0}: user.firstName
-msgid "Good evening, {0}"
-msgstr "शुभ संध्या, {0}"
+msgid "Good evening, {name}."
+msgstr ""
 
-#. placeholder {0}: user.firstName
-msgid "Good morning, {0}"
-msgstr "शुभ प्रभात, {0}"
+msgid "Good morning, {name}."
+msgstr ""
 
 msgid "Google Places API key not configured"
 msgstr "Google Places API key कॉन्फ़िगर नहीं है"
@@ -7630,6 +7651,9 @@ msgstr "होम फोन"
 
 msgid "Hop {depth}"
 msgstr "हॉप {depth}"
+
+msgid "Hope the day's treating you well, {name}."
+msgstr ""
 
 msgid "Host, secure, and back up the platform"
 msgstr "प्लेटफॉर्म को होस्ट करें, सुरक्षित रखें और बैकअप लें"
@@ -8726,6 +8750,9 @@ msgstr "कम ओवरटाइम"
 msgid "Let's build something"
 msgstr "चलिए कुछ बनाते हैं"
 
+msgid "Let's make it a good one, {name}."
+msgstr ""
+
 msgid "Let's set up your new company"
 msgstr "आइए अपनी नई कंपनी सेट अप करें"
 
@@ -9575,6 +9602,9 @@ msgstr "अधिक विकल्प"
 msgid "More overtime"
 msgstr "अधिक ओवरटाइम"
 
+msgid "Morning, {name}."
+msgstr ""
+
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "अधिकांश चीजें यहां पकड़ी जाती हैं और हल की जाती हैं। इसे स्पष्ट रूप से नाम दें।"
 
@@ -10038,6 +10068,9 @@ msgstr "अगला सप्ताह"
 
 msgid "Next:"
 msgstr "अगला:"
+
+msgid "Nice and quiet at this hour."
+msgstr ""
 
 msgid "No"
 msgstr "नहीं"
@@ -10651,6 +10684,9 @@ msgstr "बंद — सिंक के बाहर संभाला गय
 msgid "Off — released revisions stay editable"
 msgstr "बंद — जारी किए गए संशोधन संपादन योग्य रहते हैं"
 
+msgid "Off to an early start, {name}."
+msgstr ""
+
 msgid "ok"
 msgstr "ठीक"
 
@@ -10725,6 +10761,9 @@ msgstr "खरीदे गए स्टॉक और घटकों का म
 
 msgid "On-time delivery"
 msgstr "समय पर डिलीवरी"
+
+msgid "Onboard your agent to Carbon"
+msgstr ""
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "एक वर्कफ़्लो का एक एक्सीक्यूशन, जो कदम दर कदम दर्ज किया जाता है, प्रत्येक कदम द्वारा उपयोग किए गए और उत्पन्न मूल्यों के साथ, वर्कफ़्लो के मालिक की अनुमतियों के साथ काम करते हुए।"
@@ -13185,6 +13224,9 @@ msgstr "Rider v{0}"
 msgid "Right item"
 msgstr "दाहिनी वस्तु"
 
+msgid "Rise and shine, {name}."
+msgstr ""
+
 msgid "Risk"
 msgstr "जोखिम"
 
@@ -14712,6 +14754,9 @@ msgstr "चरण विधानसभा निर्देश से वि�
 msgid "Steps are inherited from the inspection plan."
 msgstr "चरण निरीक्षण योजना से विरासत में मिले हैं।"
 
+msgid "Still at it, {name}."
+msgstr ""
+
 msgid "Stock movement corrected"
 msgstr "स्टॉक आंदोलन सही किया गया"
 
@@ -15732,6 +15777,9 @@ msgstr "प्रक्रिया की नई संस्करण सं�
 
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The next scheduled work at this location starts {0}."
+msgstr ""
+
+msgid "The night shift suits you, {name}."
 msgstr ""
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
@@ -16953,6 +17001,9 @@ msgstr "अप्रयुक्त सामग्री को वर्क �
 msgid "UoM"
 msgstr "UoM"
 
+msgid "Up with the sun."
+msgstr ""
+
 msgid "Update"
 msgstr "अपडेट करें"
 
@@ -17658,6 +17709,9 @@ msgstr "भारित औसत"
 msgid "Weighted average cost over last year calculated when the invoice is posted"
 msgstr "पिछले साल की भारित औसत लागत जो चालान पोस्ट किए जाने पर गणना की जाती है"
 
+msgid "Welcome back, {name}."
+msgstr ""
+
 msgid "Welcome to Carbon"
 msgstr "कार्बन में आपका स्वागत है"
 
@@ -17994,6 +18048,9 @@ msgstr "यह पंक्ति क्यों अस्वीकार क�
 msgid "Will remain as a comment line"
 msgstr "टिप्पणी पंक्ति के रूप में रहेगा"
 
+msgid "Winding down for the day, {name}."
+msgstr ""
+
 msgid "Window:"
 msgstr "विंडो:"
 
@@ -18086,11 +18143,17 @@ msgstr "वर्कफ़्लो रन"
 msgid "Workflows"
 msgstr "वर्कफ़्लो"
 
+msgid "Working late tonight, {name}."
+msgstr ""
+
 msgid "Working sessions on configuration and data"
 msgstr "कॉन्फ़िगरेशन और डेटा पर कार्य सत्र"
 
 msgid "Worst Performing Machines"
 msgstr "सबसे खराब प्रदर्शन करने वाली मशीनें"
+
+msgid "Wrapping up the day, {name}."
+msgstr ""
 
 msgid "Write-Down Account"
 msgstr "मूल्य ह्रास खाता"

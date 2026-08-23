@@ -224,6 +224,9 @@ msgstr "{missingCount}개 누락된 분개 및 {mismatchCount}개 일치하지 �
 msgid "{name} deleted"
 msgstr "{name} 삭제됨"
 
+msgid "{name} returns!"
+msgstr ""
+
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount}개 부품이 건너뜀 — 만들 것이 없음"
 
@@ -1188,9 +1191,6 @@ msgstr "라인 항목 추가"
 msgid "Add match"
 msgstr "일치 추가"
 
-msgid "Add New"
-msgstr "새로 추가"
-
 msgid "Add Note"
 msgstr "메모 추가"
 
@@ -1350,6 +1350,9 @@ msgstr "이후"
 
 msgid "After (calculation method)"
 msgstr "이후(계산 방법)"
+
+msgid "Afternoon, {name}."
+msgstr ""
 
 msgid "Aging"
 msgstr "연령 분석"
@@ -2761,6 +2764,9 @@ msgstr "일괄 가져오기"
 msgid "Bulk Jobs"
 msgstr "일괄 작업"
 
+msgid "Burning the midnight oil."
+msgstr ""
+
 msgid "Business moment"
 msgstr "비즈니스 순간"
 
@@ -3735,6 +3741,12 @@ msgstr "구매주문, 입고, 청구서 라인에서 공급업체의 구매 단�
 
 msgid "Copied link to clipboard"
 msgstr "링크가 클립보드에 복사됨"
+
+msgid "Copied setup prompt to your clipboard"
+msgstr ""
+
+msgid "Copies a setup prompt for your AI coding tool"
+msgstr ""
 
 msgid "Copy"
 msgstr "복사"
@@ -4731,6 +4743,9 @@ msgstr "소수 자릿수"
 msgid "Declining balance"
 msgstr "정률법"
 
+msgid "Deep in the small hours, {name}."
+msgstr ""
+
 msgid "Default"
 msgstr "기본값"
 
@@ -5454,6 +5469,9 @@ msgstr "열어본 문서는 빠른 접근을 위해 여기에 표시됩니다."
 msgid "Don't Cancel"
 msgstr "취소하지 않음"
 
+msgid "Don't show this again"
+msgstr ""
+
 msgid "done"
 msgstr "완료"
 
@@ -5671,6 +5689,9 @@ msgstr "개, lb, ft…"
 
 msgid "Earliest operation start"
 msgstr "최초 작업 시작"
+
+msgid "Early bird gets the worm."
+msgstr ""
 
 msgid "Easier to extend"
 msgstr "확장이 더 쉬움"
@@ -6345,6 +6366,9 @@ msgstr "예상 대비 실제"
 
 msgid "Estimator"
 msgstr "견적 담당자"
+
+msgid "Evening, {name}."
+msgstr ""
 
 msgid "Event"
 msgstr "이벤트"
@@ -7496,17 +7520,14 @@ msgstr "각 게이트가 일정대로 통과되면 도입 일정은 유지됩니
 msgid "Going live on Carbon"
 msgstr "Carbon 도입"
 
-#. placeholder {0}: user.firstName
-msgid "Good afternoon, {0}"
-msgstr "좋은 오후입니다, {0}님"
+msgid "Good afternoon, {name}."
+msgstr ""
 
-#. placeholder {0}: user.firstName
-msgid "Good evening, {0}"
-msgstr "좋은 저녁입니다, {0}님"
+msgid "Good evening, {name}."
+msgstr ""
 
-#. placeholder {0}: user.firstName
-msgid "Good morning, {0}"
-msgstr "좋은 아침입니다, {0}님"
+msgid "Good morning, {name}."
+msgstr ""
 
 msgid "Google Places API key not configured"
 msgstr "Google Places API 키가 설정되지 않았습니다"
@@ -7630,6 +7651,9 @@ msgstr "자택 전화번호"
 
 msgid "Hop {depth}"
 msgstr "홉 {depth}"
+
+msgid "Hope the day's treating you well, {name}."
+msgstr ""
 
 msgid "Host, secure, and back up the platform"
 msgstr "플랫폼 호스팅, 보안, 백업"
@@ -8726,6 +8750,9 @@ msgstr "초과 근무 감소"
 msgid "Let's build something"
 msgstr "무언가를 만들어봅시다"
 
+msgid "Let's make it a good one, {name}."
+msgstr ""
+
 msgid "Let's set up your new company"
 msgstr "새 회사를 설정해봅시다"
 
@@ -9575,6 +9602,9 @@ msgstr "추가 옵션"
 msgid "More overtime"
 msgstr "초과 근무 증가"
 
+msgid "Morning, {name}."
+msgstr ""
+
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "대부분의 문제는 여기서 발견되고 해결됩니다. 명확하게 이름을 붙이세요."
 
@@ -10038,6 +10068,9 @@ msgstr "다음 주"
 
 msgid "Next:"
 msgstr "다음:"
+
+msgid "Nice and quiet at this hour."
+msgstr ""
 
 msgid "No"
 msgstr "아니요"
@@ -10651,6 +10684,9 @@ msgstr "끔 — 동기화 외부에서 처리됨"
 msgid "Off — released revisions stay editable"
 msgstr "꺼짐 — 릴리스된 리비전은 편집 가능한 상태로 유지됨"
 
+msgid "Off to an early start, {name}."
+msgstr ""
+
 msgid "ok"
 msgstr "확인"
 
@@ -10725,6 +10761,9 @@ msgstr "구매한 재고 및 부품(구매품)의 현재 재고 가치"
 
 msgid "On-time delivery"
 msgstr "정시 납품"
+
+msgid "Onboard your agent to Carbon"
+msgstr ""
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "워크플로우의 한 번의 실행이 기록되며, 각 단계에서 사용하고 생성한 값과 함께 단계별로 기록되고, 워크플로우 소유자의 권한으로 전체적으로 작동합니다."
@@ -13185,6 +13224,9 @@ msgstr "Rider v{0}"
 msgid "Right item"
 msgstr "올바른 품목"
 
+msgid "Rise and shine, {name}."
+msgstr ""
+
 msgid "Risk"
 msgstr "리스크"
 
@@ -14712,6 +14754,9 @@ msgstr "단계는 조립 지시사항에서 상속됩니다."
 msgid "Steps are inherited from the inspection plan."
 msgstr "단계는 검사 계획에서 상속됩니다."
 
+msgid "Still at it, {name}."
+msgstr ""
+
 msgid "Stock movement corrected"
 msgstr "재고 이동 수정됨"
 
@@ -15732,6 +15777,9 @@ msgstr "절차의 새 버전 번호"
 
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The next scheduled work at this location starts {0}."
+msgstr ""
+
+msgid "The night shift suits you, {name}."
 msgstr ""
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
@@ -16953,6 +17001,9 @@ msgstr "작업장에서 창고로 반환된 미사용 선택 재료."
 msgid "UoM"
 msgstr "UoM"
 
+msgid "Up with the sun."
+msgstr ""
+
 msgid "Update"
 msgstr "업데이트"
 
@@ -17658,6 +17709,9 @@ msgstr "가중평균"
 msgid "Weighted average cost over last year calculated when the invoice is posted"
 msgstr "인보이스가 전기될 때 계산되는 지난 1년간의 가중평균원가"
 
+msgid "Welcome back, {name}."
+msgstr ""
+
 msgid "Welcome to Carbon"
 msgstr "Carbon에 오신 것을 환영합니다"
 
@@ -17994,6 +18048,9 @@ msgstr "이 라인이 거절되는 이유로, 인쇄용 견적서에 표시되�
 msgid "Will remain as a comment line"
 msgstr "댓글 라인으로 유지됩니다"
 
+msgid "Winding down for the day, {name}."
+msgstr ""
+
 msgid "Window:"
 msgstr "구간:"
 
@@ -18086,11 +18143,17 @@ msgstr "워크플로우 실행"
 msgid "Workflows"
 msgstr "워크플로우"
 
+msgid "Working late tonight, {name}."
+msgstr ""
+
 msgid "Working sessions on configuration and data"
 msgstr "설정 및 데이터에 대한 작업 세션"
 
 msgid "Worst Performing Machines"
 msgstr "성과가 가장 저조한 설비"
+
+msgid "Wrapping up the day, {name}."
+msgstr ""
 
 msgid "Write-Down Account"
 msgstr "평가감 계정"

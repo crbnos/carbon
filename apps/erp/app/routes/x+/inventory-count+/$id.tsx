@@ -27,7 +27,8 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Inventory Count`, to: path.to.inventoryCounts },
     (data) => data?.inventoryCount?.inventoryCountId
-  )
+  ),
+  module: "inventory"
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

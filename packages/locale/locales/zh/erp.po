@@ -224,6 +224,9 @@ msgstr "{missingCount} 份缺失日记账和 {mismatchCount} 个月不匹配"
 msgid "{name} deleted"
 msgstr "{name} 已删除"
 
+msgid "{name} returns!"
+msgstr ""
+
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} 个零件已跳过 — 没有需要生产的"
 
@@ -1188,9 +1191,6 @@ msgstr "添加行项目"
 msgid "Add match"
 msgstr "添加匹配"
 
-msgid "Add New"
-msgstr "添加新项"
-
 msgid "Add Note"
 msgstr "添加备注"
 
@@ -1350,6 +1350,9 @@ msgstr "之后"
 
 msgid "After (calculation method)"
 msgstr "之后（计算方法）"
+
+msgid "Afternoon, {name}."
+msgstr ""
 
 msgid "Aging"
 msgstr "账龄分析"
@@ -2761,6 +2764,9 @@ msgstr "批量导入"
 msgid "Bulk Jobs"
 msgstr "批量作业"
 
+msgid "Burning the midnight oil."
+msgstr ""
+
 msgid "Business moment"
 msgstr "业务时刻"
 
@@ -3735,6 +3741,12 @@ msgstr "将供应商的采购单位转换为采购订单、收据或发票行中
 
 msgid "Copied link to clipboard"
 msgstr "已复制链接到剪贴板"
+
+msgid "Copied setup prompt to your clipboard"
+msgstr ""
+
+msgid "Copies a setup prompt for your AI coding tool"
+msgstr ""
 
 msgid "Copy"
 msgstr "复制"
@@ -4731,6 +4743,9 @@ msgstr "小数位数"
 msgid "Declining balance"
 msgstr "递减余额"
 
+msgid "Deep in the small hours, {name}."
+msgstr ""
+
 msgid "Default"
 msgstr "默认"
 
@@ -5454,6 +5469,9 @@ msgstr "您打开的文档将显示在此处以便快速访问。"
 msgid "Don't Cancel"
 msgstr "不要取消"
 
+msgid "Don't show this again"
+msgstr ""
+
 msgid "done"
 msgstr "完成"
 
@@ -5671,6 +5689,9 @@ msgstr "每个、磅、英尺…"
 
 msgid "Earliest operation start"
 msgstr "最早操作开始"
+
+msgid "Early bird gets the worm."
+msgstr ""
 
 msgid "Easier to extend"
 msgstr "更容易扩展"
@@ -6345,6 +6366,9 @@ msgstr "估计值与实际值"
 
 msgid "Estimator"
 msgstr "估价员"
+
+msgid "Evening, {name}."
+msgstr ""
 
 msgid "Event"
 msgstr "事件"
@@ -7496,17 +7520,14 @@ msgstr "如果每个阶段都按时通过，上线时间表将保持不变"
 msgid "Going live on Carbon"
 msgstr "在 Carbon 上线"
 
-#. placeholder {0}: user.firstName
-msgid "Good afternoon, {0}"
-msgstr "下午好，{0}"
+msgid "Good afternoon, {name}."
+msgstr ""
 
-#. placeholder {0}: user.firstName
-msgid "Good evening, {0}"
-msgstr "晚上好，{0}"
+msgid "Good evening, {name}."
+msgstr ""
 
-#. placeholder {0}: user.firstName
-msgid "Good morning, {0}"
-msgstr "早上好，{0}"
+msgid "Good morning, {name}."
+msgstr ""
 
 msgid "Google Places API key not configured"
 msgstr "Google Places API 密钥未配置"
@@ -7630,6 +7651,9 @@ msgstr "家庭电话"
 
 msgid "Hop {depth}"
 msgstr "跳转 {depth}"
+
+msgid "Hope the day's treating you well, {name}."
+msgstr ""
 
 msgid "Host, secure, and back up the platform"
 msgstr "托管、保护和备份平台"
@@ -8726,6 +8750,9 @@ msgstr "较少加班"
 msgid "Let's build something"
 msgstr "让我们构建一些东西"
 
+msgid "Let's make it a good one, {name}."
+msgstr ""
+
 msgid "Let's set up your new company"
 msgstr "让我们为您设置新公司"
 
@@ -9575,6 +9602,9 @@ msgstr "更多选项"
 msgid "More overtime"
 msgstr "更多加班"
 
+msgid "Morning, {name}."
+msgstr ""
+
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "大多数问题在这里都会被发现和解决。直言不讳地说出来。"
 
@@ -10038,6 +10068,9 @@ msgstr "下一周"
 
 msgid "Next:"
 msgstr "下一步："
+
+msgid "Nice and quiet at this hour."
+msgstr ""
 
 msgid "No"
 msgstr "否"
@@ -10651,6 +10684,9 @@ msgstr "关闭 — 在同步外处理"
 msgid "Off — released revisions stay editable"
 msgstr "关闭 — 已发布的版本保持可编辑"
 
+msgid "Off to an early start, {name}."
+msgstr ""
+
 msgid "ok"
 msgstr "确定"
 
@@ -10725,6 +10761,9 @@ msgstr "采购的库存和组件（采购项）的现有价值"
 
 msgid "On-time delivery"
 msgstr "准时交付"
+
+msgid "Onboard your agent to Carbon"
+msgstr ""
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "工作流的一次执行，逐步记录每个步骤使用和生成的值，始终以工作流所有者的权限作用。"
@@ -13185,6 +13224,9 @@ msgstr "Rider v{0}"
 msgid "Right item"
 msgstr "右项"
 
+msgid "Rise and shine, {name}."
+msgstr ""
+
 msgid "Risk"
 msgstr "风险"
 
@@ -14712,6 +14754,9 @@ msgstr "步骤继承自装配说明。"
 msgid "Steps are inherited from the inspection plan."
 msgstr "步骤继承自检验计划。"
 
+msgid "Still at it, {name}."
+msgstr ""
+
 msgid "Stock movement corrected"
 msgstr "库存移动已修正"
 
@@ -15732,6 +15777,9 @@ msgstr "程序的新版本号"
 
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The next scheduled work at this location starts {0}."
+msgstr ""
+
+msgid "The night shift suits you, {name}."
 msgstr ""
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
@@ -16953,6 +17001,9 @@ msgstr "未使用的拣配物料从工作中心冲回仓库。"
 msgid "UoM"
 msgstr "计量单位"
 
+msgid "Up with the sun."
+msgstr ""
+
 msgid "Update"
 msgstr "更新"
 
@@ -17658,6 +17709,9 @@ msgstr "加权平均"
 msgid "Weighted average cost over last year calculated when the invoice is posted"
 msgstr "去年加权平均成本，在发票过账时计算"
 
+msgid "Welcome back, {name}."
+msgstr ""
+
 msgid "Welcome to Carbon"
 msgstr "欢迎来到 Carbon"
 
@@ -17994,6 +18048,9 @@ msgstr "该行被拒绝的原因;显示在可打印报价上,并为损益报告�
 msgid "Will remain as a comment line"
 msgstr "将保留为注释行"
 
+msgid "Winding down for the day, {name}."
+msgstr ""
+
 msgid "Window:"
 msgstr "窗口："
 
@@ -18086,11 +18143,17 @@ msgstr "工作流运行"
 msgid "Workflows"
 msgstr "工作流"
 
+msgid "Working late tonight, {name}."
+msgstr ""
+
 msgid "Working sessions on configuration and data"
 msgstr "配置和数据工作会议"
 
 msgid "Worst Performing Machines"
 msgstr "性能最差的机器"
+
+msgid "Wrapping up the day, {name}."
+msgstr ""
 
 msgid "Write-Down Account"
 msgstr "评估减少账户"

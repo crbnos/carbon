@@ -224,6 +224,9 @@ msgstr "{missingCount} periódicos faltando e {mismatchCount} meses não corresp
 msgid "{name} deleted"
 msgstr "{name} eliminado"
 
+msgid "{name} returns!"
+msgstr ""
+
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} peças ignoradas — nada para fabricar"
 
@@ -1188,9 +1191,6 @@ msgstr "Adicionar Item de Linha"
 msgid "Add match"
 msgstr "Adicionar correspondência"
 
-msgid "Add New"
-msgstr "Adicionar Novo"
-
 msgid "Add Note"
 msgstr "Adicionar Nota"
 
@@ -1350,6 +1350,9 @@ msgstr "Após"
 
 msgid "After (calculation method)"
 msgstr "Depois (método de cálculo)"
+
+msgid "Afternoon, {name}."
+msgstr ""
 
 msgid "Aging"
 msgstr "Envelhecimento"
@@ -2761,6 +2764,9 @@ msgstr "Importação em Massa"
 msgid "Bulk Jobs"
 msgstr "Trabalhos em Lote"
 
+msgid "Burning the midnight oil."
+msgstr ""
+
 msgid "Business moment"
 msgstr "Momento de negócio"
 
@@ -3735,6 +3741,12 @@ msgstr "Converte a unidade de compra de um fornecedor para sua unidade de invent
 
 msgid "Copied link to clipboard"
 msgstr "Link copiado para a área de transferência"
+
+msgid "Copied setup prompt to your clipboard"
+msgstr ""
+
+msgid "Copies a setup prompt for your AI coding tool"
+msgstr ""
 
 msgid "Copy"
 msgstr "Copiar"
@@ -4731,6 +4743,9 @@ msgstr "Casas Decimais"
 msgid "Declining balance"
 msgstr "Saldo Decrescente"
 
+msgid "Deep in the small hours, {name}."
+msgstr ""
+
 msgid "Default"
 msgstr "Padrão"
 
@@ -5454,6 +5469,9 @@ msgstr "Documentos que abrir aparecerão aqui para acesso rápido."
 msgid "Don't Cancel"
 msgstr "Não Cancelar"
 
+msgid "Don't show this again"
+msgstr ""
+
 msgid "done"
 msgstr "concluído"
 
@@ -5671,6 +5689,9 @@ msgstr "Cada, lb, ft…"
 
 msgid "Earliest operation start"
 msgstr "Início mais cedo da operação"
+
+msgid "Early bird gets the worm."
+msgstr ""
 
 msgid "Easier to extend"
 msgstr "Mais fácil de expandir"
@@ -6345,6 +6366,9 @@ msgstr "Estimativas vs Reais"
 
 msgid "Estimator"
 msgstr "Estimador"
+
+msgid "Evening, {name}."
+msgstr ""
 
 msgid "Event"
 msgstr "Evento"
@@ -7496,17 +7520,14 @@ msgstr "O cronograma de ativação é mantido se cada etapa for concluída confo
 msgid "Going live on Carbon"
 msgstr "Entrar em produção no Carbon"
 
-#. placeholder {0}: user.firstName
-msgid "Good afternoon, {0}"
-msgstr "Boa tarde, {0}"
+msgid "Good afternoon, {name}."
+msgstr ""
 
-#. placeholder {0}: user.firstName
-msgid "Good evening, {0}"
-msgstr "Boa noite, {0}"
+msgid "Good evening, {name}."
+msgstr ""
 
-#. placeholder {0}: user.firstName
-msgid "Good morning, {0}"
-msgstr "Bom dia, {0}"
+msgid "Good morning, {name}."
+msgstr ""
 
 msgid "Google Places API key not configured"
 msgstr "Chave da API do Google Places não configurada"
@@ -7630,6 +7651,9 @@ msgstr "Telefone Residencial"
 
 msgid "Hop {depth}"
 msgstr "Salto {depth}"
+
+msgid "Hope the day's treating you well, {name}."
+msgstr ""
 
 msgid "Host, secure, and back up the platform"
 msgstr "Hospedar, proteger e fazer backup da plataforma"
@@ -8726,6 +8750,9 @@ msgstr "Menos horas extras"
 msgid "Let's build something"
 msgstr "Vamos construir algo"
 
+msgid "Let's make it a good one, {name}."
+msgstr ""
+
 msgid "Let's set up your new company"
 msgstr "Vamos configurar sua nova empresa"
 
@@ -9575,6 +9602,9 @@ msgstr "Mais opções"
 msgid "More overtime"
 msgstr "Mais horas extras"
 
+msgid "Morning, {name}."
+msgstr ""
+
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "A maioria das coisas é detectada e resolvida aqui. Nomeie-a claramente."
 
@@ -10038,6 +10068,9 @@ msgstr "Próxima Semana"
 
 msgid "Next:"
 msgstr "Próximo:"
+
+msgid "Nice and quiet at this hour."
+msgstr ""
 
 msgid "No"
 msgstr "Não"
@@ -10651,6 +10684,9 @@ msgstr "Desativado — tratado fora da sincronização"
 msgid "Off — released revisions stay editable"
 msgstr "Desativado — revisões lançadas permanecem editáveis"
 
+msgid "Off to an early start, {name}."
+msgstr ""
+
 msgid "ok"
 msgstr "ok"
 
@@ -10725,6 +10761,9 @@ msgstr "Valor em mãos de estoque comprado e componentes (itens de compra)"
 
 msgid "On-time delivery"
 msgstr "Entrega no prazo"
+
+msgid "Onboard your agent to Carbon"
+msgstr ""
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Uma execução de um fluxo de trabalho, registrada passo a passo com os valores que cada passo usou e produziu, agindo em todo o tempo com as permissões do proprietário do fluxo de trabalho."
@@ -13185,6 +13224,9 @@ msgstr "Rider v{0}"
 msgid "Right item"
 msgstr "Item direito"
 
+msgid "Rise and shine, {name}."
+msgstr ""
+
 msgid "Risk"
 msgstr "Risco"
 
@@ -14712,6 +14754,9 @@ msgstr "Os passos são herdados da instrução de montagem."
 msgid "Steps are inherited from the inspection plan."
 msgstr "As etapas são herdadas do plano de inspeção."
 
+msgid "Still at it, {name}."
+msgstr ""
+
 msgid "Stock movement corrected"
 msgstr "Movimento de estoque corrigido"
 
@@ -15732,6 +15777,9 @@ msgstr "O novo número de versão do procedimento"
 
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The next scheduled work at this location starts {0}."
+msgstr ""
+
+msgid "The night shift suits you, {name}."
 msgstr ""
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
@@ -16953,6 +17001,9 @@ msgstr "Material coletado não utilizado devolvido do centro de trabalho para o 
 msgid "UoM"
 msgstr "UoM"
 
+msgid "Up with the sun."
+msgstr ""
+
 msgid "Update"
 msgstr "Atualizar"
 
@@ -17658,6 +17709,9 @@ msgstr "Média Ponderada"
 msgid "Weighted average cost over last year calculated when the invoice is posted"
 msgstr "Custo médio ponderado do último ano calculado quando a fatura é lançada"
 
+msgid "Welcome back, {name}."
+msgstr ""
+
 msgid "Welcome to Carbon"
 msgstr "Bem-vindo ao Carbon"
 
@@ -17994,6 +18048,9 @@ msgstr "Por que esta linha está sendo recusada; mostrado na cotação imprimív
 msgid "Will remain as a comment line"
 msgstr "Permanecerá como uma linha de comentário"
 
+msgid "Winding down for the day, {name}."
+msgstr ""
+
 msgid "Window:"
 msgstr "Janela:"
 
@@ -18086,11 +18143,17 @@ msgstr "Execução do fluxo de trabalho"
 msgid "Workflows"
 msgstr "Fluxos de trabalho"
 
+msgid "Working late tonight, {name}."
+msgstr ""
+
 msgid "Working sessions on configuration and data"
 msgstr "Sessões de trabalho sobre configuração e dados"
 
 msgid "Worst Performing Machines"
 msgstr "Máquinas com Pior Desempenho"
+
+msgid "Wrapping up the day, {name}."
+msgstr ""
 
 msgid "Write-Down Account"
 msgstr "Conta de Redução de Valor"

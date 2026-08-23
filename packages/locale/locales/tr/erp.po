@@ -224,6 +224,9 @@ msgstr "{missingCount} eksik yevmiye ve {mismatchCount} tutarları uyuşmazlığ
 msgid "{name} deleted"
 msgstr "{name} silindi"
 
+msgid "{name} returns!"
+msgstr ""
+
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} parça atlandı — yapılacak bir şey yok"
 
@@ -1188,9 +1191,6 @@ msgstr "Satır Ekle"
 msgid "Add match"
 msgstr "Eşleştirme ekle"
 
-msgid "Add New"
-msgstr "Yeni Ekle"
-
 msgid "Add Note"
 msgstr "Not Ekle"
 
@@ -1350,6 +1350,9 @@ msgstr "Sonra"
 
 msgid "After (calculation method)"
 msgstr "Sonra (hesaplama yöntemi)"
+
+msgid "Afternoon, {name}."
+msgstr ""
 
 msgid "Aging"
 msgstr "Yaşlandırma"
@@ -2761,6 +2764,9 @@ msgstr "Toplu İçe Aktarma"
 msgid "Bulk Jobs"
 msgstr "Toplu İşler"
 
+msgid "Burning the midnight oil."
+msgstr ""
+
 msgid "Business moment"
 msgstr "İş anı"
 
@@ -3735,6 +3741,12 @@ msgstr "Bir tedarikçinin satın alma birimini bir PO, makbuz veya fatura satır
 
 msgid "Copied link to clipboard"
 msgstr "Bağlantı panoya kopyalandı"
+
+msgid "Copied setup prompt to your clipboard"
+msgstr ""
+
+msgid "Copies a setup prompt for your AI coding tool"
+msgstr ""
 
 msgid "Copy"
 msgstr "Kopyala"
@@ -4731,6 +4743,9 @@ msgstr "Ondalık Basamaklar"
 msgid "Declining balance"
 msgstr "Azalan Bakiye"
 
+msgid "Deep in the small hours, {name}."
+msgstr ""
+
 msgid "Default"
 msgstr "Varsayılan"
 
@@ -5454,6 +5469,9 @@ msgstr "Açtığınız belgeler hızlı erişim için burada görünecektir."
 msgid "Don't Cancel"
 msgstr "İptal Etme"
 
+msgid "Don't show this again"
+msgstr ""
+
 msgid "done"
 msgstr "tamamlandı"
 
@@ -5671,6 +5689,9 @@ msgstr "Her, lb, ft…"
 
 msgid "Earliest operation start"
 msgstr "En erken operasyon başlangıcı"
+
+msgid "Early bird gets the worm."
+msgstr ""
 
 msgid "Easier to extend"
 msgstr "Genişletmesi daha kolay"
@@ -6345,6 +6366,9 @@ msgstr "Tahminler ve Gerçekleşenler"
 
 msgid "Estimator"
 msgstr "Tahminci"
+
+msgid "Evening, {name}."
+msgstr ""
 
 msgid "Event"
 msgstr "Etkinlik"
@@ -7496,17 +7520,14 @@ msgstr "Canlı yayına geçiş zamanlaması, her kapı zamanında açılırsa ge
 msgid "Going live on Carbon"
 msgstr "Carbon'da canlı yayına geçme"
 
-#. placeholder {0}: user.firstName
-msgid "Good afternoon, {0}"
-msgstr "İyi öğleden sonra, {0}"
+msgid "Good afternoon, {name}."
+msgstr ""
 
-#. placeholder {0}: user.firstName
-msgid "Good evening, {0}"
-msgstr "İyi akşamlar, {0}"
+msgid "Good evening, {name}."
+msgstr ""
 
-#. placeholder {0}: user.firstName
-msgid "Good morning, {0}"
-msgstr "Günaydın, {0}"
+msgid "Good morning, {name}."
+msgstr ""
 
 msgid "Google Places API key not configured"
 msgstr "Google Yerler API anahtarı yapılandırılmamış"
@@ -7630,6 +7651,9 @@ msgstr "Ev Telefonu"
 
 msgid "Hop {depth}"
 msgstr "Atlama {depth}"
+
+msgid "Hope the day's treating you well, {name}."
+msgstr ""
 
 msgid "Host, secure, and back up the platform"
 msgstr "Platformu barındırın, güvenli hale getirin ve yedekleyin"
@@ -8726,6 +8750,9 @@ msgstr "Daha az fazla mesai"
 msgid "Let's build something"
 msgstr "Bir şeyler inşa edelim"
 
+msgid "Let's make it a good one, {name}."
+msgstr ""
+
 msgid "Let's set up your new company"
 msgstr "Yeni şirketinizi kuralım"
 
@@ -9575,6 +9602,9 @@ msgstr "Daha fazla seçenek"
 msgid "More overtime"
 msgstr "Daha fazla fazla mesai"
 
+msgid "Morning, {name}."
+msgstr ""
+
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "Çoğu şey burada yakalanır ve çözülür. Açıkça adlandırın."
 
@@ -10038,6 +10068,9 @@ msgstr "Sonraki Hafta"
 
 msgid "Next:"
 msgstr "Sonraki:"
+
+msgid "Nice and quiet at this hour."
+msgstr ""
 
 msgid "No"
 msgstr "Hayır"
@@ -10651,6 +10684,9 @@ msgstr "Kapalı — senkronizasyon dışında işlenir"
 msgid "Off — released revisions stay editable"
 msgstr "Kapalı — yayınlanan revizyonlar düzenlenebilir kalır"
 
+msgid "Off to an early start, {name}."
+msgstr ""
+
 msgid "ok"
 msgstr "tamam"
 
@@ -10725,6 +10761,9 @@ msgstr "Satın alınan stok ve bileşenlerin (Satın alma ürünleri) eldeki de�
 
 msgid "On-time delivery"
 msgstr "Zamanında teslimat"
+
+msgid "Onboard your agent to Carbon"
+msgstr ""
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Bir iş akışının bir kez çalıştırılması, her adımın kullandığı ve ürettiği değerlerle adım adım kaydedilmiş, iş akışının sahibinin izinleriyle hareket eder."
@@ -13185,6 +13224,9 @@ msgstr "Rider v{0}"
 msgid "Right item"
 msgstr "Sağ öğe"
 
+msgid "Rise and shine, {name}."
+msgstr ""
+
 msgid "Risk"
 msgstr "Risk"
 
@@ -14712,6 +14754,9 @@ msgstr "Adımlar montaj talimatından devralınır."
 msgid "Steps are inherited from the inspection plan."
 msgstr "Adımlar muayene planından devralınır."
 
+msgid "Still at it, {name}."
+msgstr ""
+
 msgid "Stock movement corrected"
 msgstr "Stok hareketi düzeltildi"
 
@@ -15732,6 +15777,9 @@ msgstr "Prosedürün yeni sürüm numarası"
 
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The next scheduled work at this location starts {0}."
+msgstr ""
+
+msgid "The night shift suits you, {name}."
 msgstr ""
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
@@ -16953,6 +17001,9 @@ msgstr "İş merkezinden depoya geri gönderilen kullanılmayan alınan malzeme.
 msgid "UoM"
 msgstr "Birim"
 
+msgid "Up with the sun."
+msgstr ""
+
 msgid "Update"
 msgstr "Güncelle"
 
@@ -17658,6 +17709,9 @@ msgstr "Ağırlıklı Ortalama"
 msgid "Weighted average cost over last year calculated when the invoice is posted"
 msgstr "Faturanın işlendiği sırada hesaplanan ağırlıklı ortalama maliyet"
 
+msgid "Welcome back, {name}."
+msgstr ""
+
 msgid "Welcome to Carbon"
 msgstr "Carbon'a Hoş Geldiniz"
 
@@ -17994,6 +18048,9 @@ msgstr "Bu satırın neden reddedildiği; yazdırılabilir teklifte gösterilir 
 msgid "Will remain as a comment line"
 msgstr "Yorum satırı olarak kalacak"
 
+msgid "Winding down for the day, {name}."
+msgstr ""
+
 msgid "Window:"
 msgstr "Pencere:"
 
@@ -18086,11 +18143,17 @@ msgstr "İş akışı çalışması"
 msgid "Workflows"
 msgstr "İş akışları"
 
+msgid "Working late tonight, {name}."
+msgstr ""
+
 msgid "Working sessions on configuration and data"
 msgstr "Yapılandırma ve veri üzerinde çalışma oturumları"
 
 msgid "Worst Performing Machines"
 msgstr "En kötü performans gösteren makineler"
+
+msgid "Wrapping up the day, {name}."
+msgstr ""
 
 msgid "Write-Down Account"
 msgstr "Değer Düşüş Hesabı"

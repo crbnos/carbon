@@ -16,7 +16,8 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: "Journal Entries", to: path.to.accountingJournals },
     (data) => data?.journalEntry?.journalEntryId
-  )
+  ),
+  module: "accounting"
 };
 
 // Maps a journal's sourceType to the document it was posted from, so the

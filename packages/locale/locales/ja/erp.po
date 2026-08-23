@@ -224,6 +224,9 @@ msgstr "{missingCount}件のジャーナルが見つからず、{mismatchCount}�
 msgid "{name} deleted"
 msgstr "{name}が削除されました"
 
+msgid "{name} returns!"
+msgstr ""
+
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount}件のパーツをスキップしました — 製造する必要がありません"
 
@@ -1188,9 +1191,6 @@ msgstr "ラインアイテムを追加"
 msgid "Add match"
 msgstr "マッチを追加"
 
-msgid "Add New"
-msgstr "新規追加"
-
 msgid "Add Note"
 msgstr "ノートを追加"
 
@@ -1350,6 +1350,9 @@ msgstr "後"
 
 msgid "After (calculation method)"
 msgstr "後（計算方法）"
+
+msgid "Afternoon, {name}."
+msgstr ""
 
 msgid "Aging"
 msgstr "経過日数"
@@ -2761,6 +2764,9 @@ msgstr "一括インポート"
 msgid "Bulk Jobs"
 msgstr "一括ジョブ"
 
+msgid "Burning the midnight oil."
+msgstr ""
+
 msgid "Business moment"
 msgstr "ビジネスモーメント"
 
@@ -3735,6 +3741,12 @@ msgstr "サプライヤーの購入単位をPO、領収書、または請求書�
 
 msgid "Copied link to clipboard"
 msgstr "クリップボードにリンクをコピーしました"
+
+msgid "Copied setup prompt to your clipboard"
+msgstr ""
+
+msgid "Copies a setup prompt for your AI coding tool"
+msgstr ""
 
 msgid "Copy"
 msgstr "コピー"
@@ -4731,6 +4743,9 @@ msgstr "小数位数"
 msgid "Declining balance"
 msgstr "定率法"
 
+msgid "Deep in the small hours, {name}."
+msgstr ""
+
 msgid "Default"
 msgstr "デフォルト"
 
@@ -5454,6 +5469,9 @@ msgstr "開いたドキュメントはここに表示され、すぐにアクセ
 msgid "Don't Cancel"
 msgstr "キャンセルしない"
 
+msgid "Don't show this again"
+msgstr ""
+
 msgid "done"
 msgstr "完了"
 
@@ -5671,6 +5689,9 @@ msgstr "各、ポンド、フィート…"
 
 msgid "Earliest operation start"
 msgstr "最早操作開始"
+
+msgid "Early bird gets the worm."
+msgstr ""
 
 msgid "Easier to extend"
 msgstr "拡張が簡単"
@@ -6345,6 +6366,9 @@ msgstr "見積もり対実績"
 
 msgid "Estimator"
 msgstr "見積者"
+
+msgid "Evening, {name}."
+msgstr ""
 
 msgid "Event"
 msgstr "イベント"
@@ -7496,17 +7520,14 @@ msgstr "各ゲートがスケジュール通りにクリアされれば、本番
 msgid "Going live on Carbon"
 msgstr "Carbonで本番稼働"
 
-#. placeholder {0}: user.firstName
-msgid "Good afternoon, {0}"
-msgstr "こんにちは、{0}"
+msgid "Good afternoon, {name}."
+msgstr ""
 
-#. placeholder {0}: user.firstName
-msgid "Good evening, {0}"
-msgstr "おやすみなさい、{0}"
+msgid "Good evening, {name}."
+msgstr ""
 
-#. placeholder {0}: user.firstName
-msgid "Good morning, {0}"
-msgstr "おはようございます、{0}"
+msgid "Good morning, {name}."
+msgstr ""
 
 msgid "Google Places API key not configured"
 msgstr "Google Places APIキーが設定されていません"
@@ -7630,6 +7651,9 @@ msgstr "自宅電話"
 
 msgid "Hop {depth}"
 msgstr "ホップ {depth}"
+
+msgid "Hope the day's treating you well, {name}."
+msgstr ""
 
 msgid "Host, secure, and back up the platform"
 msgstr "プラットフォームをホストし、保護し、バックアップする"
@@ -8726,6 +8750,9 @@ msgstr "残業を減らす"
 msgid "Let's build something"
 msgstr "何か作ってみましょう"
 
+msgid "Let's make it a good one, {name}."
+msgstr ""
+
 msgid "Let's set up your new company"
 msgstr "新しい会社をセットアップしましょう"
 
@@ -9575,6 +9602,9 @@ msgstr "その他のオプション"
 msgid "More overtime"
 msgstr "残業を増やす"
 
+msgid "Morning, {name}."
+msgstr ""
+
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "ほとんどのことはここで発見され、解決されます。明確に名前を付けてください。"
 
@@ -10038,6 +10068,9 @@ msgstr "次週"
 
 msgid "Next:"
 msgstr "次:"
+
+msgid "Nice and quiet at this hour."
+msgstr ""
 
 msgid "No"
 msgstr "いいえ"
@@ -10651,6 +10684,9 @@ msgstr "オフ — 同期外で処理"
 msgid "Off — released revisions stay editable"
 msgstr "オフ - リリースされたリビジョンは編集可能なままです"
 
+msgid "Off to an early start, {name}."
+msgstr ""
+
 msgid "ok"
 msgstr "OK"
 
@@ -10725,6 +10761,9 @@ msgstr "購入在庫および部品（買入品目）の現在高価値"
 
 msgid "On-time delivery"
 msgstr "オンタイム配送"
+
+msgid "Onboard your agent to Carbon"
+msgstr ""
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "ワークフローの1回の実行。各ステップが使用および生成した値とともにステップバイステップで記録され、ワークフローの所有者のアクセス権で動作します。"
@@ -13185,6 +13224,9 @@ msgstr "Rider v{0}"
 msgid "Right item"
 msgstr "右側の項目"
 
+msgid "Rise and shine, {name}."
+msgstr ""
+
 msgid "Risk"
 msgstr "リスク"
 
@@ -14712,6 +14754,9 @@ msgstr "ステップは組立指示から継承されます。"
 msgid "Steps are inherited from the inspection plan."
 msgstr "ステップは検査計画から継承されます。"
 
+msgid "Still at it, {name}."
+msgstr ""
+
 msgid "Stock movement corrected"
 msgstr "在庫移動が訂正されました"
 
@@ -15732,6 +15777,9 @@ msgstr "手順の新しいバージョン番号"
 
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The next scheduled work at this location starts {0}."
+msgstr ""
+
+msgid "The night shift suits you, {name}."
 msgstr ""
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
@@ -16953,6 +17001,9 @@ msgstr "作業センターから倉庫に戻された未使用の仕分け材料
 msgid "UoM"
 msgstr "UoM"
 
+msgid "Up with the sun."
+msgstr ""
+
 msgid "Update"
 msgstr "更新"
 
@@ -17658,6 +17709,9 @@ msgstr "加重平均"
 msgid "Weighted average cost over last year calculated when the invoice is posted"
 msgstr "請求書が転記されるときに計算された過去1年間の加重平均コスト"
 
+msgid "Welcome back, {name}."
+msgstr ""
+
 msgid "Welcome to Carbon"
 msgstr "Carbonへようこそ"
 
@@ -17994,6 +18048,9 @@ msgstr "この行が拒否されている理由。印刷可能な見積もりに
 msgid "Will remain as a comment line"
 msgstr "コメント行として残ります"
 
+msgid "Winding down for the day, {name}."
+msgstr ""
+
 msgid "Window:"
 msgstr "ウィンドウ:"
 
@@ -18086,11 +18143,17 @@ msgstr "ワークフロー実行"
 msgid "Workflows"
 msgstr "ワークフロー"
 
+msgid "Working late tonight, {name}."
+msgstr ""
+
 msgid "Working sessions on configuration and data"
 msgstr "設定とデータに関するワーキングセッション"
 
 msgid "Worst Performing Machines"
 msgstr "最も性能が低い機械"
+
+msgid "Wrapping up the day, {name}."
+msgstr ""
 
 msgid "Write-Down Account"
 msgstr "評価減勘定"

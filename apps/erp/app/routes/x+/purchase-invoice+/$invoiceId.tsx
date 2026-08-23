@@ -28,7 +28,8 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Purchasing Invoices`, to: path.to.invoicingPurchasing },
     (data) => data?.purchaseInvoice?.invoiceId
-  )
+  ),
+  module: "invoicing"
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

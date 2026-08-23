@@ -22,7 +22,8 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Receipts`, to: path.to.receipts },
     (data) => data?.receipt?.receiptId
-  )
+  ),
+  module: "inventory"
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

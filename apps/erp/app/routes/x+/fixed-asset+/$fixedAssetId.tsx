@@ -61,7 +61,8 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Fixed Assets`, to: path.to.fixedAssets },
     (data) => data?.asset?.fixedAssetId
-  )
+  ),
+  module: "accounting"
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

@@ -224,6 +224,9 @@ msgstr "{missingCount} отсутствующих журналов и {mismatchC
 msgid "{name} deleted"
 msgstr "{name} удален"
 
+msgid "{name} returns!"
+msgstr ""
+
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} деталей пропущено — нечего делать"
 
@@ -1188,9 +1191,6 @@ msgstr "Добавить позицию"
 msgid "Add match"
 msgstr "Добавить совпадение"
 
-msgid "Add New"
-msgstr "Добавить"
-
 msgid "Add Note"
 msgstr "Добавить примечание"
 
@@ -1350,6 +1350,9 @@ msgstr "После"
 
 msgid "After (calculation method)"
 msgstr "После (способ расчета)"
+
+msgid "Afternoon, {name}."
+msgstr ""
 
 msgid "Aging"
 msgstr "Возраст"
@@ -2761,6 +2764,9 @@ msgstr "Массовый импорт"
 msgid "Bulk Jobs"
 msgstr "Массовые задания"
 
+msgid "Burning the midnight oil."
+msgstr ""
+
 msgid "Business moment"
 msgstr "Бизнес-момент"
 
@@ -3735,6 +3741,12 @@ msgstr "Преобразует единицу покупки поставщик�
 
 msgid "Copied link to clipboard"
 msgstr "Ссылка скопирована в буфер обмена"
+
+msgid "Copied setup prompt to your clipboard"
+msgstr ""
+
+msgid "Copies a setup prompt for your AI coding tool"
+msgstr ""
 
 msgid "Copy"
 msgstr "Копировать"
@@ -4731,6 +4743,9 @@ msgstr "Десятичные разряды"
 msgid "Declining balance"
 msgstr "Ускоренная амортизация"
 
+msgid "Deep in the small hours, {name}."
+msgstr ""
+
 msgid "Default"
 msgstr "По умолчанию"
 
@@ -5454,6 +5469,9 @@ msgstr "Открытые вами документы появятся здесь
 msgid "Don't Cancel"
 msgstr "Не отменять"
 
+msgid "Don't show this again"
+msgstr ""
+
 msgid "done"
 msgstr "готово"
 
@@ -5671,6 +5689,9 @@ msgstr "Каждый, фунт, фут…"
 
 msgid "Earliest operation start"
 msgstr "Самое раннее начало операции"
+
+msgid "Early bird gets the worm."
+msgstr ""
 
 msgid "Easier to extend"
 msgstr "Проще расширять"
@@ -6345,6 +6366,9 @@ msgstr "Оценки и фактические значения"
 
 msgid "Estimator"
 msgstr "Сметчик"
+
+msgid "Evening, {name}."
+msgstr ""
 
 msgid "Event"
 msgstr "Событие"
@@ -7496,17 +7520,14 @@ msgstr "Сроки запуска соблюдаются, если каждый 
 msgid "Going live on Carbon"
 msgstr "Запуск на Carbon"
 
-#. placeholder {0}: user.firstName
-msgid "Good afternoon, {0}"
-msgstr "Добрый день, {0}"
+msgid "Good afternoon, {name}."
+msgstr ""
 
-#. placeholder {0}: user.firstName
-msgid "Good evening, {0}"
-msgstr "Добрый вечер, {0}"
+msgid "Good evening, {name}."
+msgstr ""
 
-#. placeholder {0}: user.firstName
-msgid "Good morning, {0}"
-msgstr "Доброе утро, {0}"
+msgid "Good morning, {name}."
+msgstr ""
 
 msgid "Google Places API key not configured"
 msgstr "Ключ API Google Places не настроен"
@@ -7630,6 +7651,9 @@ msgstr "Домашний телефон"
 
 msgid "Hop {depth}"
 msgstr "Шаг {depth}"
+
+msgid "Hope the day's treating you well, {name}."
+msgstr ""
 
 msgid "Host, secure, and back up the platform"
 msgstr "Размещение, защита и резервное копирование платформы"
@@ -8726,6 +8750,9 @@ msgstr "Меньше переработки"
 msgid "Let's build something"
 msgstr "Давайте создадим что-то"
 
+msgid "Let's make it a good one, {name}."
+msgstr ""
+
 msgid "Let's set up your new company"
 msgstr "Давайте настроим вашу новую компанию"
 
@@ -9575,6 +9602,9 @@ msgstr "Ещё опции"
 msgid "More overtime"
 msgstr "Больше переработки"
 
+msgid "Morning, {name}."
+msgstr ""
+
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "Большинство проблем выявляются и решаются здесь. Называйте их четко."
 
@@ -10038,6 +10068,9 @@ msgstr "Следующая неделя"
 
 msgid "Next:"
 msgstr "Далее:"
+
+msgid "Nice and quiet at this hour."
+msgstr ""
 
 msgid "No"
 msgstr "Нет"
@@ -10651,6 +10684,9 @@ msgstr "Отключено — обработано вне синхрониза�
 msgid "Off — released revisions stay editable"
 msgstr "Выключено — выпущенные версии остаются редактируемыми"
 
+msgid "Off to an early start, {name}."
+msgstr ""
+
 msgid "ok"
 msgstr "хорошо"
 
@@ -10725,6 +10761,9 @@ msgstr "Текущая стоимость приобретённого запа�
 
 msgid "On-time delivery"
 msgstr "Своевременная доставка"
+
+msgid "Onboard your agent to Carbon"
+msgstr ""
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Один запуск рабочего процесса, записанный пошагово с значениями, которые каждый шаг использовал и создал, действуя с разрешениями владельца рабочего процесса."
@@ -13185,6 +13224,9 @@ msgstr "Rider v{0}"
 msgid "Right item"
 msgstr "Правый элемент"
 
+msgid "Rise and shine, {name}."
+msgstr ""
+
 msgid "Risk"
 msgstr "Риск"
 
@@ -14712,6 +14754,9 @@ msgstr "Этапы наследуются из инструкции по сбо�
 msgid "Steps are inherited from the inspection plan."
 msgstr "Этапы наследуются из плана контроля."
 
+msgid "Still at it, {name}."
+msgstr ""
+
 msgid "Stock movement corrected"
 msgstr "Движение запаса исправлено"
 
@@ -15732,6 +15777,9 @@ msgstr "Новый номер версии процедуры"
 
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The next scheduled work at this location starts {0}."
+msgstr ""
+
+msgid "The night shift suits you, {name}."
 msgstr ""
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
@@ -16953,6 +17001,9 @@ msgstr "Неиспользованный отобранный материал �
 msgid "UoM"
 msgstr "УИ"
 
+msgid "Up with the sun."
+msgstr ""
+
 msgid "Update"
 msgstr "Обновить"
 
@@ -17658,6 +17709,9 @@ msgstr "Средневзвешенное значение"
 msgid "Weighted average cost over last year calculated when the invoice is posted"
 msgstr "Средневзвешенная стоимость за последний год, рассчитанная при проводке счета"
 
+msgid "Welcome back, {name}."
+msgstr ""
+
 msgid "Welcome to Carbon"
 msgstr "Добро пожаловать в Carbon"
 
@@ -17994,6 +18048,9 @@ msgstr "Почему эта строка отклоняется; отображ�
 msgid "Will remain as a comment line"
 msgstr "Останется в виде строки комментария"
 
+msgid "Winding down for the day, {name}."
+msgstr ""
+
 msgid "Window:"
 msgstr "Окно:"
 
@@ -18086,11 +18143,17 @@ msgstr "Запуск рабочего процесса"
 msgid "Workflows"
 msgstr "Рабочие процессы"
 
+msgid "Working late tonight, {name}."
+msgstr ""
+
 msgid "Working sessions on configuration and data"
 msgstr "Рабочие сессии по конфигурации и данным"
 
 msgid "Worst Performing Machines"
 msgstr "Машины с наихудшей производительностью"
+
+msgid "Wrapping up the day, {name}."
+msgstr ""
 
 msgid "Write-Down Account"
 msgstr "Счет уменьшения стоимости"

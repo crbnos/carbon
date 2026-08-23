@@ -224,6 +224,9 @@ msgstr "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgid "{name} deleted"
 msgstr "{name} deleted"
 
+msgid "{name} returns!"
+msgstr "{name} returns!"
+
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} parts skipped — nothing to make"
 
@@ -1188,9 +1191,6 @@ msgstr "Add Line Item"
 msgid "Add match"
 msgstr "Add match"
 
-msgid "Add New"
-msgstr "Add New"
-
 msgid "Add Note"
 msgstr "Add Note"
 
@@ -1350,6 +1350,9 @@ msgstr "After"
 
 msgid "After (calculation method)"
 msgstr "After (calculation method)"
+
+msgid "Afternoon, {name}."
+msgstr "Afternoon, {name}."
 
 msgid "Aging"
 msgstr "Aging"
@@ -2761,6 +2764,9 @@ msgstr "Bulk Import"
 msgid "Bulk Jobs"
 msgstr "Bulk Jobs"
 
+msgid "Burning the midnight oil."
+msgstr "Burning the midnight oil."
+
 msgid "Business moment"
 msgstr "Business moment"
 
@@ -3735,6 +3741,12 @@ msgstr "Converts a supplier's purchase unit to your inventory unit on a PO, rece
 
 msgid "Copied link to clipboard"
 msgstr "Copied link to clipboard"
+
+msgid "Copied setup prompt to your clipboard"
+msgstr "Copied setup prompt to your clipboard"
+
+msgid "Copies a setup prompt for your AI coding tool"
+msgstr "Copies a setup prompt for your AI coding tool"
 
 msgid "Copy"
 msgstr "Copy"
@@ -4731,6 +4743,9 @@ msgstr "Decimal Places"
 msgid "Declining balance"
 msgstr "Declining balance"
 
+msgid "Deep in the small hours, {name}."
+msgstr "Deep in the small hours, {name}."
+
 msgid "Default"
 msgstr "Default"
 
@@ -5454,6 +5469,9 @@ msgstr "Documents you open will show up here for quick access."
 msgid "Don't Cancel"
 msgstr "Don't Cancel"
 
+msgid "Don't show this again"
+msgstr "Don't show this again"
+
 msgid "done"
 msgstr "done"
 
@@ -5671,6 +5689,9 @@ msgstr "Each, lb, ft…"
 
 msgid "Earliest operation start"
 msgstr "Earliest operation start"
+
+msgid "Early bird gets the worm."
+msgstr "Early bird gets the worm."
 
 msgid "Easier to extend"
 msgstr "Easier to extend"
@@ -6345,6 +6366,9 @@ msgstr "Estimates vs Actuals"
 
 msgid "Estimator"
 msgstr "Estimator"
+
+msgid "Evening, {name}."
+msgstr "Evening, {name}."
 
 msgid "Event"
 msgstr "Event"
@@ -7496,17 +7520,14 @@ msgstr "Go-live timing holds if each gate is cleared on schedule"
 msgid "Going live on Carbon"
 msgstr "Going live on Carbon"
 
-#. placeholder {0}: user.firstName
-msgid "Good afternoon, {0}"
-msgstr "Good afternoon, {0}"
+msgid "Good afternoon, {name}."
+msgstr "Good afternoon, {name}."
 
-#. placeholder {0}: user.firstName
-msgid "Good evening, {0}"
-msgstr "Good evening, {0}"
+msgid "Good evening, {name}."
+msgstr "Good evening, {name}."
 
-#. placeholder {0}: user.firstName
-msgid "Good morning, {0}"
-msgstr "Good morning, {0}"
+msgid "Good morning, {name}."
+msgstr "Good morning, {name}."
 
 msgid "Google Places API key not configured"
 msgstr "Google Places API key not configured"
@@ -7630,6 +7651,9 @@ msgstr "Home Phone"
 
 msgid "Hop {depth}"
 msgstr "Hop {depth}"
+
+msgid "Hope the day's treating you well, {name}."
+msgstr "Hope the day's treating you well, {name}."
 
 msgid "Host, secure, and back up the platform"
 msgstr "Host, secure, and back up the platform"
@@ -8726,6 +8750,9 @@ msgstr "Less overtime"
 msgid "Let's build something"
 msgstr "Let's build something"
 
+msgid "Let's make it a good one, {name}."
+msgstr "Let's make it a good one, {name}."
+
 msgid "Let's set up your new company"
 msgstr "Let's set up your new company"
 
@@ -9575,6 +9602,9 @@ msgstr "More options"
 msgid "More overtime"
 msgstr "More overtime"
 
+msgid "Morning, {name}."
+msgstr "Morning, {name}."
+
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "Most things get caught and resolved here. Name it plainly."
 
@@ -10038,6 +10068,9 @@ msgstr "Next Week"
 
 msgid "Next:"
 msgstr "Next:"
+
+msgid "Nice and quiet at this hour."
+msgstr "Nice and quiet at this hour."
 
 msgid "No"
 msgstr "No"
@@ -10651,6 +10684,9 @@ msgstr "Off — handled outside the sync"
 msgid "Off — released revisions stay editable"
 msgstr "Off — released revisions stay editable"
 
+msgid "Off to an early start, {name}."
+msgstr "Off to an early start, {name}."
+
 msgid "ok"
 msgstr "ok"
 
@@ -10725,6 +10761,9 @@ msgstr "On-hand value of purchased stock and components (Buy items)"
 
 msgid "On-time delivery"
 msgstr "On-time delivery"
+
+msgid "Onboard your agent to Carbon"
+msgstr "Onboard your agent to Carbon"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
@@ -13185,6 +13224,9 @@ msgstr "Rider v{0}"
 msgid "Right item"
 msgstr "Right item"
 
+msgid "Rise and shine, {name}."
+msgstr "Rise and shine, {name}."
+
 msgid "Risk"
 msgstr "Risk"
 
@@ -14712,6 +14754,9 @@ msgstr "Steps are inherited from the assembly instruction."
 msgid "Steps are inherited from the inspection plan."
 msgstr "Steps are inherited from the inspection plan."
 
+msgid "Still at it, {name}."
+msgstr "Still at it, {name}."
+
 msgid "Stock movement corrected"
 msgstr "Stock movement corrected"
 
@@ -15733,6 +15778,9 @@ msgstr "The new version number of the procedure"
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The next scheduled work at this location starts {0}."
 msgstr "The next scheduled work at this location starts {0}."
+
+msgid "The night shift suits you, {name}."
+msgstr "The night shift suits you, {name}."
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
@@ -16953,6 +17001,9 @@ msgstr "Unused picked material flushed back from the work center to the warehous
 msgid "UoM"
 msgstr "UoM"
 
+msgid "Up with the sun."
+msgstr "Up with the sun."
+
 msgid "Update"
 msgstr "Update"
 
@@ -17658,6 +17709,9 @@ msgstr "Weighted Average"
 msgid "Weighted average cost over last year calculated when the invoice is posted"
 msgstr "Weighted average cost over last year calculated when the invoice is posted"
 
+msgid "Welcome back, {name}."
+msgstr "Welcome back, {name}."
+
 msgid "Welcome to Carbon"
 msgstr "Welcome to Carbon"
 
@@ -17994,6 +18048,9 @@ msgstr "Why this line is being declined; surfaced on the printable quote and rec
 msgid "Will remain as a comment line"
 msgstr "Will remain as a comment line"
 
+msgid "Winding down for the day, {name}."
+msgstr "Winding down for the day, {name}."
+
 msgid "Window:"
 msgstr "Window:"
 
@@ -18086,11 +18143,17 @@ msgstr "Workflow run"
 msgid "Workflows"
 msgstr "Workflows"
 
+msgid "Working late tonight, {name}."
+msgstr "Working late tonight, {name}."
+
 msgid "Working sessions on configuration and data"
 msgstr "Working sessions on configuration and data"
 
 msgid "Worst Performing Machines"
 msgstr "Worst Performing Machines"
+
+msgid "Wrapping up the day, {name}."
+msgstr "Wrapping up the day, {name}."
 
 msgid "Write-Down Account"
 msgstr "Write-Down Account"
