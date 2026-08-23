@@ -286,9 +286,9 @@ function SearchBar() {
     <button
       type="button"
       onClick={openSearchModal}
-      className="group flex flex-1 h-11 p-1 rounded-lg border border-border bg-muted/80 transition-colors active:scale-[0.995]"
+      className="group flex flex-1 h-11 p-1 rounded-lg border border-border bg-card transition-colors active:scale-[0.995]"
     >
-      <div className="flex flex-1 items-center gap-2 px-3 rounded-sm border border-border bg-card text-muted-foreground transition-colors">
+      <div className="flex flex-1 items-center gap-2 px-3 rounded-sm border border-border bg-muted/30 text-muted-foreground transition-colors">
         <RxMagnifyingGlass className="w-4 h-4 shrink-0" />
         <span className="text-base truncate">{t`Search`}</span>
         <div className="ml-auto flex items-center gap-1">
