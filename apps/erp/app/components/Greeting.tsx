@@ -1,34 +1,91 @@
-import { Heading, useInterval } from "@carbon/react";
-import { getLocalTimeZone, now } from "@internationalized/date";
+import { Heading } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ComponentProps } from "react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useUser } from "~/hooks";
 
-export function Greeting(props: ComponentProps<typeof Heading>) {
+type GreetingProps = ComponentProps<typeof Heading> & {
+  /** Local hour (0–23) in the company timezone — picks the time-of-day pool. */
+  hour: number;
+  /** Minute-of-day seed — selects one line within the pool, deterministically. */
+  pick: number;
+};
+
+/**
+ * A time-aware but deliberately non-canned greeting. `hour` and `pick` come from
+ * the route loader (computed server-side in the company timezone), so SSR and
+ * hydration render the SAME line — no client randomness, no flash on refresh.
+ * `pick` is the minute-of-day: the same within a minute (a refresh doesn't
+ * change the line) but rotating each minute for variety. Lines are declarative
+ * (never a question) and only some include the name, so it reads like a person,
+ * not a template.
+ */
+export function Greeting({ hour, pick, ...props }: GreetingProps) {
   const { t } = useLingui();
   const user = useUser();
-  const [currentTime, setCurrentTime] = useState(() => now(getLocalTimeZone()));
-
-  useInterval(
-    () => {
-      setCurrentTime(now(getLocalTimeZone()));
-    },
-    60 * 60 * 1000
-  );
 
   const greeting = useMemo(() => {
-    if (currentTime.hour >= 3 && currentTime.hour < 12) {
-      return t`Good morning, ${user.firstName}`;
-    } else if (currentTime.hour >= 12 && currentTime.hour < 18) {
-      return t`Good afternoon, ${user.firstName}`;
-    } else {
-      return t`Good evening, ${user.firstName}`;
-    }
-  }, [currentTime.hour, t, user.firstName]);
+    const name = user.firstName;
+
+    // Hour buckets, each with its own pool. Lines mix time-specific flavor with
+    // generic "welcome back" beats — and a few drop the name entirely — so no
+    // bucket sounds one-note. Never phrased as a question.
+    const pool =
+      hour < 5
+        ? [
+            t`Burning the midnight oil.`,
+            t`The night shift suits you, ${name}.`,
+            t`Deep in the small hours, ${name}.`,
+            t`Nice and quiet at this hour.`,
+            t`Welcome back, ${name}.`
+          ]
+        : hour < 8
+          ? [
+              t`Rise and shine, ${name}.`,
+              t`Early bird gets the worm.`,
+              t`Off to an early start, ${name}.`,
+              t`Up with the sun.`,
+              t`Good morning, ${name}.`
+            ]
+          : hour < 12
+            ? [
+                t`Good morning, ${name}.`,
+                t`Morning, ${name}.`,
+                t`Welcome back, ${name}.`,
+                t`${name} returns!`,
+                t`Let's make it a good one, ${name}.`
+              ]
+            : hour < 17
+              ? [
+                  t`Good afternoon, ${name}.`,
+                  t`Afternoon, ${name}.`,
+                  t`Welcome back, ${name}.`,
+                  t`${name} returns!`,
+                  t`Hope the day's treating you well, ${name}.`
+                ]
+              : hour < 21
+                ? [
+                    t`Good evening, ${name}.`,
+                    t`Evening, ${name}.`,
+                    t`Welcome back, ${name}.`,
+                    t`Winding down for the day, ${name}.`,
+                    t`${name} returns!`
+                  ]
+                : [
+                    t`Working late tonight, ${name}.`,
+                    t`Still at it, ${name}.`,
+                    t`Welcome back, ${name}.`,
+                    t`Wrapping up the day, ${name}.`,
+                    t`Good evening, ${name}.`
+                  ];
+
+    // `* 7` (coprime with the pool size) spreads consecutive minutes across the
+    // pool so the line doesn't march through in order minute by minute.
+    return pool[(pick * 7) % pool.length];
+  }, [hour, pick, t, user.firstName]);
 
   return (
-    <Heading size="h3" {...props}>
+    <Heading size="display" {...props}>
       {greeting}
     </Heading>
   );
