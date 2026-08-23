@@ -536,6 +536,9 @@ msgstr "Новая редакция будет создана с использ�
 msgid "A new size will be created using a copy of the current size"
 msgstr "Новый размер будет создан с использованием копии текущего размера"
 
+msgid "A new Stripe customer will be created"
+msgstr ""
+
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "Неденежный документ, погашающий счёт-фактуру по счёту причин: кредит уменьшает сумму задолженности, дебет её увеличивает."
 
@@ -2932,6 +2935,9 @@ msgstr "Невозможно отправить — отправка содер�
 msgid "Cannot send RFQ"
 msgstr "Невозможно отправить РФП"
 
+msgid "Cannot send through Stripe"
+msgstr ""
+
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "Невозможно загрузить — взаимодействие с поставщиком еще не создано"
 
@@ -3139,6 +3145,9 @@ msgstr "Проверьте реестр товаров на наличие то�
 
 msgid "Check your email"
 msgstr "Проверьте вашу почту"
+
+msgid "Checking Stripe for this customer…"
+msgstr ""
 
 msgid "Checkpoint ·"
 msgstr "Контрольная точка ·"
@@ -4049,6 +4058,9 @@ msgstr "Создайте новую заявку на техническое о�
 
 msgid "Create a new production job to fulfill the sales order"
 msgstr "Создайте новое производственное задание для выполнения заказа"
+
+msgid "Create a new Stripe customer instead"
+msgstr ""
 
 msgid "Create a new version"
 msgstr "Создать новую версию"
@@ -6408,6 +6420,9 @@ msgstr "Существующие сопоставления. Выберите д
 
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Существующие отображения. Выберите другой вариант провайдера для переотображения."
+
+msgid "Existing Stripe customer"
+msgstr ""
 
 msgid "Expand"
 msgstr "Развернуть"
@@ -8791,6 +8806,9 @@ msgstr "Связать проблему Jira"
 
 msgid "Link Linear Issue"
 msgstr "Связать проблему Linear"
+
+msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
+msgstr ""
 
 msgid "Link to sales order line"
 msgstr "Связать со строкой заказа на продажу"
@@ -13060,6 +13078,9 @@ msgstr "Обратить все записи журнала и реестра з
 msgid "Reverse any item ledger entries from this invoice"
 msgstr "Отменить все записи реестра товаров из этого счета"
 
+msgid "Reverse charge"
+msgstr ""
+
 msgid "Reverse Charge Sales Tax"
 msgstr "Налог на продажи с обратным взиманием"
 
@@ -14758,6 +14779,21 @@ msgstr "Сохраняйте фиксированное количество д�
 msgid "Straight line"
 msgstr "Линейный"
 
+msgid "Stripe"
+msgstr ""
+
+msgid "Stripe already has a customer with this email"
+msgstr ""
+
+msgid "Stripe Due Date"
+msgstr ""
+
+msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
+msgstr ""
+
+msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
+msgstr ""
+
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Стиль вывода канбана для отображения в таблице Канбана"
 
@@ -15175,6 +15211,9 @@ msgstr "Налоговая амортизация"
 
 msgid "Tax Depreciation Method"
 msgstr "Метод налоговой амортизации"
+
+msgid "Tax exempt"
+msgstr ""
 
 msgid "Tax Exempt"
 msgstr "Налоговое освобождение"
@@ -16065,6 +16104,9 @@ msgstr "Это уведомление об изменении закрыто, п
 msgid "This completes the Discovery step."
 msgstr "Это завершает этап Discovery."
 
+msgid "This contact has no email address"
+msgstr ""
+
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Эта контрагент не имеет задолженности — платеж будет записан на счет."
 
@@ -16086,6 +16128,12 @@ msgstr "этот план проверки"
 #. placeholder {0}: company?.name ?? "Carbon"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
 msgstr "Это приглашение присоединиться к {0} истекло. Вы можете запросить новое приглашение, которое будет отправлено на вашу электронную почту."
+
+msgid "This invoice has no usable due date — choose one for Stripe."
+msgstr ""
+
+msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
+msgstr ""
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "Это контролируемая среда, поэтому требуется приложение аутентификации."

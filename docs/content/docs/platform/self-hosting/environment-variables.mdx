@@ -69,6 +69,7 @@ Sign-in bot protection uses Cloudflare Turnstile: `CLOUDFLARE_TURNSTILE_SITE_KEY
 <EnvVar name="RESEND_DOMAIN" type="string">Verified sending domain.</EnvVar>
 <EnvVar name="STRIPE_SECRET_KEY" type="string">Stripe secret key, Cloud / Enterprise billing.</EnvVar>
 <EnvVar name="STRIPE_WEBHOOK_SECRET" type="string">Verifies inbound Stripe webhooks.</EnvVar>
+<EnvVar name="STRIPE_CONNECT_WEBHOOK_SECRET" type="string">Verifies inbound Stripe Connect webhooks (connected-account events, signed with a separate secret).</EnvVar>
 </EnvVars>
 
 ## AI & analytics

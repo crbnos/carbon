@@ -47,9 +47,14 @@ import {
 import { getPath, SECRET_KEYS } from "@carbon/ee/integrations/secrets";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { requirePlan } from "@carbon/ee/plan.server";
+import { STRIPE_SECRET_KEY } from "@carbon/env";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { Badge } from "@carbon/react";
+import {
+  getConnectAccountStatus,
+  isConnectAccountStillLinked
+} from "@carbon/stripe/connect.server";
 import { Trans } from "@lingui/react/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -704,8 +709,93 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       logger.error("Failed to fetch Xero accounts for settings", {
         error: error
       });
-      // Continue without chart accounts — the Account Mapping tab renders
-      // with Carbon accounts only
+      // Continue without dynamic options - form will show empty selects
+    }
+  } else if (integrationId === "stripe-connect") {
+    // Whether the platform even has a Stripe secret key configured — cheap,
+    // synchronous, known without ever calling Stripe. Display-only: never
+    // part of the submitted form/schema, so merging it into metadata here
+    // doesn't risk it being written back to the DB on save.
+    flattenedMetadata.platformConfigured = !!STRIPE_SECRET_KEY;
+
+    // Refresh Stripe Connect's status from Stripe so the drawer shows live
+    // onboarding progress rather than a possibly-stale stored snapshot.
+    if (flattenedMetadata.stripeAccountId) {
+      const stripeAccountId = flattenedMetadata.stripeAccountId as string;
+      try {
+        if (await isConnectAccountStillLinked(stripeAccountId)) {
+          const freshStatus = await getConnectAccountStatus(stripeAccountId);
+          if (freshStatus) {
+            Object.assign(flattenedMetadata, freshStatus);
+          }
+        } else {
+          logger.warn(
+            "Stripe Connect account is no longer linked; hiding stale connection state",
+            { companyId, stripeAccountId }
+          );
+          delete flattenedMetadata.stripeAccountId;
+          delete flattenedMetadata.chargesEnabled;
+          delete flattenedMetadata.payoutsEnabled;
+          delete flattenedMetadata.detailsSubmitted;
+          delete flattenedMetadata.requirementErrors;
+          delete flattenedMetadata.email;
+          delete flattenedMetadata.displayName;
+          delete flattenedMetadata.onboardingStarted;
+        }
+      } catch (err) {
+        logger.error("Failed to fetch Stripe Connect status for settings", {
+          error: err
+        });
+      }
+    }
+
+    const accountDefaults = await client
+      .from("accountDefault")
+      .select(
+        `bankCashAccount, receivablesAccount, customerPaymentDiscountAccount, customerWriteOffAccount, realizedExchangeGainAccount, realizedExchangeLossAccount, serviceChargeAccount, roundingAccount`
+      )
+      .eq("companyId", companyId)
+      .single();
+
+    if (accountDefaults.data) {
+      const accountIds = [
+        accountDefaults.data.bankCashAccount,
+        accountDefaults.data.receivablesAccount,
+        accountDefaults.data.customerPaymentDiscountAccount,
+        accountDefaults.data.customerWriteOffAccount,
+        accountDefaults.data.realizedExchangeGainAccount,
+        accountDefaults.data.realizedExchangeLossAccount,
+        accountDefaults.data.serviceChargeAccount,
+        accountDefaults.data.roundingAccount
+      ].filter(Boolean);
+
+      if (accountIds.length > 0) {
+        const { data: accounts } = await client
+          .from("account")
+          .select("id, number, name")
+          .in("id", accountIds);
+
+        const byId = new Map((accounts ?? []).map((a) => [a.id, a]));
+
+        const fmt = (id: string | null) => {
+          if (!id) return null;
+          const a = byId.get(id);
+          return a ? (a.number ? `${a.number} — ${a.name}` : a.name) : null;
+        };
+
+        flattenedMetadata.accountingAccounts = {
+          bankCash: fmt(accountDefaults.data.bankCashAccount),
+          receivables: fmt(accountDefaults.data.receivablesAccount),
+          customerPaymentDiscount: fmt(
+            accountDefaults.data.customerPaymentDiscountAccount
+          ),
+          customerWriteOff: fmt(accountDefaults.data.customerWriteOffAccount),
+          fxGain: fmt(accountDefaults.data.realizedExchangeGainAccount),
+          fxLoss: fmt(accountDefaults.data.realizedExchangeLossAccount),
+          serviceCharge: fmt(accountDefaults.data.serviceChargeAccount),
+          rounding: fmt(accountDefaults.data.roundingAccount)
+        };
+      }
     }
   }
 

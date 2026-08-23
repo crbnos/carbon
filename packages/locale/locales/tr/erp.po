@@ -536,6 +536,9 @@ msgstr "Yeni bir revizyon, mevcut revizyonun bir kopyası kullanılarak oluştur
 msgid "A new size will be created using a copy of the current size"
 msgstr "Yeni bir boyut, mevcut boyutun bir kopyası kullanılarak oluşturulacaktır"
 
+msgid "A new Stripe customer will be created"
+msgstr ""
+
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "Bir faturayı bir sebep hesabına karşı ödeyen nakitsiz bir belge: alacak, borçlu olunan tutarı azaltır, borç artırır."
 
@@ -2932,6 +2935,9 @@ msgstr "Gönderilemiyor — gönderi süresi dolmuş takip edilen varlıklar iç
 msgid "Cannot send RFQ"
 msgstr "RFQ gönderilemiyor"
 
+msgid "Cannot send through Stripe"
+msgstr ""
+
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "Yüklenemiyor — tedarikçi etkileşimi henüz oluşturulmadı"
 
@@ -3139,6 +3145,9 @@ msgstr "Dönem sonunda negatif el altında miktarı olan herhangi bir madde içi
 
 msgid "Check your email"
 msgstr "E-postanızı kontrol edin"
+
+msgid "Checking Stripe for this customer…"
+msgstr ""
 
 msgid "Checkpoint ·"
 msgstr "Kontrol Noktası ·"
@@ -4049,6 +4058,9 @@ msgstr "Ekipman onarımlarını ve bakım faaliyetlerini izlemek için yeni bir 
 
 msgid "Create a new production job to fulfill the sales order"
 msgstr "Satış siparişini yerine getirmek için yeni bir üretim işi oluşturun"
+
+msgid "Create a new Stripe customer instead"
+msgstr ""
 
 msgid "Create a new version"
 msgstr "Yeni bir sürüm oluşturun"
@@ -6408,6 +6420,9 @@ msgstr "Mevcut haritalamalar. Yeniden haritalamak için farklı bir sağlayıcı
 
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Mevcut eşlemeler. Yeniden eşlemek için farklı bir sağlayıcı seçeneği seçin."
+
+msgid "Existing Stripe customer"
+msgstr ""
 
 msgid "Expand"
 msgstr "Genişlet"
@@ -8791,6 +8806,9 @@ msgstr "Jira Sorununu Bağla"
 
 msgid "Link Linear Issue"
 msgstr "Linear sorununu bağla"
+
+msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
+msgstr ""
 
 msgid "Link to sales order line"
 msgstr "Satış siparişi satırına bağla"
@@ -13060,6 +13078,9 @@ msgstr "Tüm günlük ve mali defter kayıtlarını tersine çevirir"
 msgid "Reverse any item ledger entries from this invoice"
 msgstr "Bu faturadaki herhangi bir kalem defteri girişini tersine çevirir"
 
+msgid "Reverse charge"
+msgstr ""
+
 msgid "Reverse Charge Sales Tax"
 msgstr "Ters yükleme satış vergisi"
 
@@ -14758,6 +14779,21 @@ msgstr "Bu öğeye sabit sayıda gün saklayın. Son kullanma tarihi, her parti 
 msgid "Straight line"
 msgstr "Doğrusal"
 
+msgid "Stripe"
+msgstr ""
+
+msgid "Stripe already has a customer with this email"
+msgstr ""
+
+msgid "Stripe Due Date"
+msgstr ""
+
+msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
+msgstr ""
+
+msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
+msgstr ""
+
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Kanban tablosunda gösterilecek kanban çıktısı stili"
 
@@ -15175,6 +15211,9 @@ msgstr "Vergi Amortisman"
 
 msgid "Tax Depreciation Method"
 msgstr "Vergi Amortisman Yöntemi"
+
+msgid "Tax exempt"
+msgstr ""
 
 msgid "Tax Exempt"
 msgstr "Vergi Muaf"
@@ -16065,6 +16104,9 @@ msgstr "Bu değişiklik bildirimi kapalı olduğundan, değişiklikleri salt oku
 msgid "This completes the Discovery step."
 msgstr "Bu, Keşif adımını tamamlar."
 
+msgid "This contact has no email address"
+msgstr ""
+
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Bu muhasebe ortağının ödenmemiş bir borcu yok — ödeme hesap üzerinde kaydedilecektir."
 
@@ -16086,6 +16128,12 @@ msgstr "bu muayene planı"
 #. placeholder {0}: company?.name ?? "Carbon"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
 msgstr "{0} kuruluşuna katılmak için gönderilen bu davet süresi dolmuştur. E-postanıza yeni bir davet gönderilmesini isteyebilirsiniz."
+
+msgid "This invoice has no usable due date — choose one for Stripe."
+msgstr ""
+
+msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
+msgstr ""
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "Bu kontrollü bir ortamdır, bu nedenle doğrulayıcı uygulaması gereklidir."

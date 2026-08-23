@@ -536,6 +536,9 @@ msgstr "Se creará una nueva revisión utilizando una copia de la revisión actu
 msgid "A new size will be created using a copy of the current size"
 msgstr "Se creará un nuevo tamaño utilizando una copia del tamaño actual"
 
+msgid "A new Stripe customer will be created"
+msgstr ""
+
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "Un documento sin efectivo que liquida una factura contra una cuenta de razón: un crédito reduce lo adeudado, un débito lo aumenta."
 
@@ -2932,6 +2935,9 @@ msgstr "No se puede publicar — el envío contiene entidades rastreadas vencida
 msgid "Cannot send RFQ"
 msgstr "No se puede enviar RFQ"
 
+msgid "Cannot send through Stripe"
+msgstr ""
+
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "No se puede cargar — la interacción con el proveedor aún no se ha creado"
 
@@ -3139,6 +3145,9 @@ msgstr "Revise el libro mayor de artículos para buscar artículos con cantidad 
 
 msgid "Check your email"
 msgstr "Revisa tu correo electrónico"
+
+msgid "Checking Stripe for this customer…"
+msgstr ""
 
 msgid "Checkpoint ·"
 msgstr "Punto de control ·"
@@ -4049,6 +4058,9 @@ msgstr "Crear un nuevo despacho de mantenimiento para rastrear reparaciones de e
 
 msgid "Create a new production job to fulfill the sales order"
 msgstr "Crear un nuevo trabajo de producción para cumplir con el pedido de venta"
+
+msgid "Create a new Stripe customer instead"
+msgstr ""
 
 msgid "Create a new version"
 msgstr "Crear una nueva versión"
@@ -6408,6 +6420,9 @@ msgstr "Asignaciones existentes. Selecciona una cuenta de proveedor diferente pa
 
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Mapeos existentes. Elige una opción de proveedor diferente para remapear."
+
+msgid "Existing Stripe customer"
+msgstr ""
 
 msgid "Expand"
 msgstr "Expandir"
@@ -8791,6 +8806,9 @@ msgstr "Vincular problema de Jira"
 
 msgid "Link Linear Issue"
 msgstr "Vincular problema de Linear"
+
+msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
+msgstr ""
 
 msgid "Link to sales order line"
 msgstr "Vincular a una línea de orden de venta"
@@ -13060,6 +13078,9 @@ msgstr "Revertir todos los asientos del diario y del libro mayor de costos"
 msgid "Reverse any item ledger entries from this invoice"
 msgstr "Revertir cualquier entrada del libro mayor de artículos de esta factura"
 
+msgid "Reverse charge"
+msgstr ""
+
 msgid "Reverse Charge Sales Tax"
 msgstr "Impuesto a las ventas de cargo inverso"
 
@@ -14758,6 +14779,21 @@ msgstr "Almacena un número fijo de días en este artículo. La fecha de inicio 
 msgid "Straight line"
 msgstr "Línea recta"
 
+msgid "Stripe"
+msgstr ""
+
+msgid "Stripe already has a customer with this email"
+msgstr ""
+
+msgid "Stripe Due Date"
+msgstr ""
+
+msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
+msgstr ""
+
+msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
+msgstr ""
+
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Estilo de salida de kanban para mostrar en la tabla Kanban"
 
@@ -15175,6 +15211,9 @@ msgstr "Depreciación Fiscal"
 
 msgid "Tax Depreciation Method"
 msgstr "Método de Depreciación Fiscal"
+
+msgid "Tax exempt"
+msgstr ""
 
 msgid "Tax Exempt"
 msgstr "Exento de Impuestos"
@@ -16065,6 +16104,9 @@ msgstr "Esta notificación de cambio está cerrada, por lo que sus cambios son d
 msgid "This completes the Discovery step."
 msgstr "Esto completa el paso de Descubrimiento."
 
+msgid "This contact has no email address"
+msgstr ""
+
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Este tercero no tiene nada pendiente — el pago se registrará en cuenta."
 
@@ -16086,6 +16128,12 @@ msgstr "este plan de inspección"
 #. placeholder {0}: company?.name ?? "Carbon"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
 msgstr "Esta invitación para unirse a {0} ha expirado. Puedes solicitar que se envíe una nueva invitación a tu correo electrónico."
+
+msgid "This invoice has no usable due date — choose one for Stripe."
+msgstr ""
+
+msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
+msgstr ""
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "Este es un entorno controlado, por lo que se requiere una aplicación autenticadora."

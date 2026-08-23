@@ -1142,6 +1142,16 @@ canvas hosting Radix popovers/selects.
 
 **Applies to:** `packages/database/supabase/functions/get-method/index.ts` (`quoteToQuote`), `apps/erp/app/modules/sales/sales.service.ts` (`deleteQuote`), any insert into `externalLink`.
 
+## An incremental pull-sweep cursor must advance on the SAME field the query filters on
+
+**Context:** The Stripe Connect payment pull sweep (`stripe-connect-pull-sweep.ts`) queried Stripe with `invoices.list({ status: "paid", created: { gte: since } })` but advanced the cursor to `latest status_transitions.paid_at + 1`. An invoice created before the cursor but paid after it (a normal case — invoices are created, then paid later) would never be returned by a future `created`-filtered query once the cursor passed its `paid_at`, so it was permanently skipped with no error, no log, and no retry.
+
+**Problem:** The query filters on one field (`created`) while the cursor tracks a different field (`paid_at`) that moves independently of it. Any record whose "when it changed" timestamp and "when it was created" timestamp can diverge — which is true of nearly all incremental-sync designs (a row's `updated_at` also isn't its `created_at`) — silently falls outside the next window once the cursor advances past its create time but the record itself hasn't changed since.
+
+**Rule:** An incremental cursor MUST advance on the exact field the list query filters on, never a related-but-different timestamp. When the two are genuinely different concerns (created vs. paid, created vs. updated), either filter on the field you actually care about, or carry a trailing lookback window (`pullWindowStart` re-scans `since - CURSOR_LOOKBACK_SECONDS`) so a bounded re-scan catches what a pure cursor would miss — cheap when the record-processing step is idempotent (here, `recordStripeConnectPayment` is idempotent on the Stripe invoice id via a partial unique index, so re-scanning already-recorded invoices is a free no-op). Extract cursor arithmetic into an import-light pure module (`stripe-connect-pull-sweep-cursor.ts`) so the regression is unit-testable without booting Stripe/Inngest/DB.
+
+**Applies to:** `packages/jobs/src/inngest/functions/integrations/*-pull-sweep.ts`, any incremental sync reading `since`/cursor state against an external API's list filter.
+
 ## Card lists never get their own scroll region — the page is the only scroll surface
 
 **Context:** The Bill of Material / Bill of Process cards were capped at `max-h-[60dvh]` with an internal ScrollArea (PR #1230) so long lists wouldn't grow the page unbounded. Brad asked for the scrollbars to be removed; hiding the bar but keeping the capped region was the wrong reading.
@@ -1161,3 +1171,13 @@ canvas hosting Radix popovers/selects.
 **Rule:** A path check in the server entry silently outranks routing for everything under it. If you short-circuit a prefix, derive the exemptions from the build manifest (`build.routes`) rather than assuming the prefix stays route-free — a comment asserting "no app route" is a claim that rots the moment somebody adds one. Three false leads to skip next time this shape appears: it reproduces identically on Vercel AND `react-router-serve` (so it is not the platform); `/.foo` and `/.env` return normal 404s (so it is not dotfile handling); and `matchRoutes` against the full route table picks the RIGHT route and passes WITH the bug present (so a matcher test proves nothing). The tell was that percent-encoding the dot (`/%2Ewell-known/...`) returned `200 application/json` — `new URL().pathname` leaves the escape undecoded so `startsWith` missed, while the router decodes and matched.
 
 **Applies to:** `apps/erp/server/app.ts`, `apps/mes/server/*`, and any request-handler wrapper that inspects `pathname` before delegating.
+
+## A browser-safe env flag isn't live until the root loader's hand-built `env` also carries it
+
+**Context:** The Stripe Connect integration card stayed "Coming soon" even with `STRIPE_SECRET_KEY` set server-side. `getBrowserEnv()` (`packages/env/src/index.ts`) already exposed `STRIPE_CONNECT_ENABLED` and the `Window.env` interface declared it, so it looked fully wired — but the browser gate `window.env?.STRIPE_CONNECT_ENABLED === "true"` still read `undefined`.
+
+**Problem:** `apps/erp/app/root.tsx`'s loader does NOT pass `getBrowserEnv()` through — it destructures specific keys and rebuilds an `env: { ... }` object by hand, and `window.env` is populated from THAT loader object on the normal render path (`const env = loaderData?.env ?? {}` → `<Document env={env}>`). The new flag was added to `getBrowserEnv()` but never added to the loader's manual list, so it was silently dropped client-side. (The ErrorBoundary path uses `getBrowserEnv()` directly, which masks the gap during casual reading.)
+
+**Rule:** Adding a browser-safe var is THREE edits, not one: the `getEnv` export, `getBrowserEnv()` + the `Window.env` interface, AND the consuming app's root-loader `env` object (destructure + literal) for every app that needs it client-side. The loader's hand-curated `env` is the real source of `window.env` on the happy path — a key present in `getBrowserEnv()` but absent there is `undefined` in the browser. When an env-driven feature is dark despite the server value being set, diff `getBrowserEnv()`'s keys against the loader's `env` object before touching anything else.
+
+**Applies to:** `apps/erp/app/root.tsx` (and `apps/mes/app/root.tsx`) loader `env` objects, `packages/env/src/index.ts` `getBrowserEnv()`, any `window.env`-gated integration/feature flag.

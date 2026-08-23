@@ -43,6 +43,7 @@ import {
   slackDocumentCreatedFunction,
   slackDocumentStatusUpdateFunction,
   slackDocumentTaskUpdateFunction,
+  stripeConnectPullSweepFunction,
   syncExternalAccountingFunction,
   timeCardAutoCloseFunction
 } from "./functions/integrations";
@@ -166,6 +167,7 @@ export const functions = [
   slackDocumentStatusUpdateFunction,
   slackDocumentTaskUpdateFunction,
   slackDocumentAssignmentUpdateFunction,
+  stripeConnectPullSweepFunction,
   timeCardAutoCloseFunction,
   // Document extraction
   extractDocumentFunction

@@ -2228,6 +2228,9 @@ importers:
       '@carbon/react':
         specifier: workspace:*
         version: link:../react
+      '@carbon/stripe':
+        specifier: workspace:*
+        version: link:../stripe
       '@carbon/utils':
         specifier: workspace:*
         version: link:../utils
@@ -3288,8 +3291,8 @@ importers:
         specifier: 'catalog:'
         version: 2.80.0
       stripe:
-        specifier: 18.5.0
-        version: 18.5.0(@types/node@20.19.39)
+        specifier: 22.4.0
+        version: 22.4.0(@types/node@20.19.39)
     devDependencies:
       '@carbon/config':
         specifier: workspace:*
@@ -15657,11 +15660,11 @@ packages:
     resolution: {integrity: sha512-4gB8na07fecVVkOI6Rs4e7T6NOTki5EmL7TUduTs6bu3EdnSycntVJ4re8kgZA+wx9IueI2Y11bfbgwtzuE0KQ==}
     engines: {node: '>=0.10.0'}
 
-  stripe@18.5.0:
-    resolution: {integrity: sha512-Hp+wFiEQtCB0LlNgcFh5uVyKznpDjzyUZ+CNVEf+I3fhlYvh7rZruIg+jOwzJRCpy0ZTPMjlzm7J2/M2N6d+DA==}
-    engines: {node: '>=12.*'}
+  stripe@22.4.0:
+    resolution: {integrity: sha512-LVJ+tcSYeqOSnXr3i+Kz2tZ7y0crLLdP2uwD/4wccrmEVyn0g/Heo0pF7as7rxS/sOjJzrb1lxgZY0Y0Dx1pSA==}
+    engines: {node: '>=18'}
     peerDependencies:
-      '@types/node': '>=12.x.x'
+      '@types/node': '>=18'
     peerDependenciesMeta:
       '@types/node':
         optional: true
@@ -30763,9 +30766,7 @@ snapshots:
 
   strip-json-comments@2.0.1: {}
 
-  stripe@18.5.0(@types/node@20.19.39):
-    dependencies:
-      qs: 6.15.1
+  stripe@22.4.0(@types/node@20.19.39):
     optionalDependencies:
       '@types/node': 20.19.39
 
