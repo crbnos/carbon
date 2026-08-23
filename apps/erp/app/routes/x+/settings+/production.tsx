@@ -292,7 +292,7 @@ export default function ProductionSettingsRoute() {
   }, [notificationsFetcher.data?.message, notificationsFetcher.data?.success]);
 
   return (
-    <ScrollArea className="w-full h-[calc(100dvh-49px)]">
+    <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height))]">
       <VStack
         spacing={4}
         className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"

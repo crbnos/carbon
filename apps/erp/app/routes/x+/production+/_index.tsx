@@ -943,7 +943,7 @@ function WorkCenterCards({
                 )}
               </CardFooter>
             ) : (
-              <CardFooter className="h-[49px]" />
+              <CardFooter className="h-[var(--topbar-height)]" />
             )}
           </Card>
         );

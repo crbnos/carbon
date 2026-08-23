@@ -134,7 +134,7 @@ export default function ReceiptRoute() {
   if (!receiptId) throw new Error("Could not find receiptId");
 
   return (
-    <div className="flex h-[calc(100dvh-49px)] overflow-y-auto scrollbar-hide w-full">
+    <div className="flex h-[calc(100dvh-var(--topbar-height))] overflow-y-auto scrollbar-hide w-full">
       <div className="h-full p-4 w-full max-w-5xl mx-auto">
         <div className="flex flex-col gap-2 pb-16 w-full">
           <Outlet />

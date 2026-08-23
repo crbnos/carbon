@@ -16,7 +16,7 @@ const Topbar = () => {
   const notificationsKey = `${user.id}:${user.company.id}`;
 
   return (
-    <div className="h-[49px] grid grid-cols-[1fr_auto] bg-background text-foreground px-4 top-0 sticky z-10 items-center">
+    <div className="h-[var(--topbar-height)] grid grid-cols-[1fr_auto] bg-background text-foreground px-4 top-0 sticky z-10 items-center">
       <div className="flex-1 hidden md:block">
         <Breadcrumbs />
       </div>

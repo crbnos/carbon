@@ -601,7 +601,7 @@ export default function ResourceGanttView() {
     : undefined;
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full bg-background">
+    <div className="flex flex-col h-[calc(100dvh-var(--topbar-height))] overflow-hidden w-full bg-background">
       <ForecastHeader
         range={range}
         date={date}
@@ -675,7 +675,7 @@ export default function ResourceGanttView() {
       ) : (
         <div
           className={cn(
-            "grid flex-1 min-h-0 grid-cols-1 overflow-hidden bg-background"
+            "grid flex-1 min-h-0 grid-cols-1 overflow-hidden bg-card"
           )}
         >
           <ClientOnly fallback={null}>

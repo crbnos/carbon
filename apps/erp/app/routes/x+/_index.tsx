@@ -24,6 +24,7 @@ import {
   CardContent,
   IconButton,
   ShortcutKey,
+  Skeleton,
   useRouteData
 } from "@carbon/react";
 import { formatRelativeTime, isInternalEmail } from "@carbon/utils";
@@ -252,7 +253,7 @@ function SearchBar() {
 
 function RecentlyViewed() {
   const { company } = useUser();
-  const { documents, remove } = useRecentlyViewed(company.id);
+  const { documents, remove, loading } = useRecentlyViewed(company.id);
   const modules = useAllModules();
 
   // Resolve a document's `handle.module` to its module icon straight from the
@@ -275,7 +276,13 @@ function RecentlyViewed() {
       <SectionLabel>
         <Trans>Recent</Trans>
       </SectionLabel>
-      {documents.length === 0 ? (
+      {loading ? (
+        <div className="flex flex-col gap-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <RecentDocumentSkeleton key={i} />
+          ))}
+        </div>
+      ) : documents.length === 0 ? (
         <Card className="shadow-none">
           <CardContent className="py-8 text-center">
             <p className="text-sm text-muted-foreground text-pretty">
@@ -300,6 +307,19 @@ function RecentlyViewed() {
     </>
   );
 }
+
+// Mirrors RecentDocumentRow's wrapper (p-3, gap-3, rounded-lg border) and its
+// w-9/h-9 rounded-lg icon so the skeleton has the exact same height and
+// roundness as a real row.
+const RecentDocumentSkeleton = () => (
+  <div className="flex items-center gap-3 p-3 rounded-lg border border-border">
+    <Skeleton className="shrink-0 w-9 h-9 rounded-lg" />
+    <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+      <Skeleton className="h-4 w-1/2" />
+      <Skeleton className="h-3 w-1/3" />
+    </div>
+  </div>
+);
 
 const RecentDocumentRow = ({
   doc,

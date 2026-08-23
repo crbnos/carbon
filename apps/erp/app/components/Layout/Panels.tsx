@@ -115,7 +115,7 @@ export function ResizablePanels({
       </ResizablePanel>
       <ResizableHandle withHandle />
       <ResizablePanel order={2} className="z-1 relative">
-        <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+        <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-hidden w-full">
           {content}
           {!isPropertiesCollapsed && properties}
         </div>

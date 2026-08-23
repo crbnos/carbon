@@ -27,7 +27,7 @@ export default function SettingsRoute() {
         <GroupedContentSidebar groups={groups} />
         <VStack
           spacing={0}
-          className="overflow-y-auto scrollbar-hide h-[calc(100dvh-49px)]"
+          className="overflow-y-auto scrollbar-hide h-[calc(100dvh-var(--topbar-height))]"
         >
           <Outlet />
         </VStack>

@@ -858,8 +858,8 @@ export const path = {
     deleteWorkCenter: (id: string) =>
       generatePath(`${x}/resources/work-centers/delete/${id}`),
     demandProjection: (itemId: string, locationId: string) =>
-      generatePath(`${x}/production/projections/${itemId}/${locationId}`),
-    demandProjections: `${x}/production/projections`,
+      generatePath(`${x}/production/demand-forecasts/${itemId}/${locationId}`),
+    demandProjections: `${x}/production/demand-forecasts`,
     demoData: `${x}/settings/demo-data`,
     department: (id: string) => generatePath(`${x}/people/departments/${id}`),
     departments: `${x}/people/departments`,
