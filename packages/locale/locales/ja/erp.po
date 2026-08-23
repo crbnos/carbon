@@ -11932,6 +11932,9 @@ msgstr "予定: {0}"
 msgid "Projected completion"
 msgstr "予測完了"
 
+msgid "Projected completion at"
+msgstr ""
+
 msgid "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
 msgstr "このジョブがその場所のスケジュールの最前にジャンプした場合の予測完了。何も保存されません。"
 
@@ -12416,6 +12419,9 @@ msgstr "ドキュメントを読み込み中..."
 
 msgid "Ready"
 msgstr "準備完了"
+
+msgid "Ready at"
+msgstr ""
 
 msgid "Ready for Quote"
 msgstr "見積もり準備完了"
@@ -12950,6 +12956,9 @@ msgstr "調整が必要"
 
 msgid "Requires Repair"
 msgstr "修理が必要"
+
+msgid "Requires staffing"
+msgstr ""
 
 msgid "Reserve floor"
 msgstr "予備床"
@@ -13542,6 +13551,12 @@ msgstr "ワークセンター容量に対してジョブをスケジュール"
 
 msgid "Schedule Name"
 msgstr "スケジュール名"
+
+msgid "Schedule outdated at"
+msgstr ""
+
+msgid "Schedule outdated reason"
+msgstr ""
 
 msgid "Schedule regenerated"
 msgstr ""

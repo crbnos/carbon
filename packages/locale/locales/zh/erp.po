@@ -11932,6 +11932,9 @@ msgstr "预计 {0}"
 msgid "Projected completion"
 msgstr "预计完成"
 
+msgid "Projected completion at"
+msgstr ""
+
 msgid "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
 msgstr "如果此任务跳到其位置计划的前面，则预计完成。不保存任何内容。"
 
@@ -12416,6 +12419,9 @@ msgstr "正在读取文档..."
 
 msgid "Ready"
 msgstr "就绪"
+
+msgid "Ready at"
+msgstr ""
 
 msgid "Ready for Quote"
 msgstr "准备报价"
@@ -12950,6 +12956,9 @@ msgstr "需要调整"
 
 msgid "Requires Repair"
 msgstr "需要维修"
+
+msgid "Requires staffing"
+msgstr ""
 
 msgid "Reserve floor"
 msgstr "储备下限"
@@ -13542,6 +13551,12 @@ msgstr "根据工作中心产能安排工作"
 
 msgid "Schedule Name"
 msgstr "计划名称"
+
+msgid "Schedule outdated at"
+msgstr ""
+
+msgid "Schedule outdated reason"
+msgstr ""
 
 msgid "Schedule regenerated"
 msgstr ""

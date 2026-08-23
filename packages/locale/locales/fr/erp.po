@@ -11932,6 +11932,9 @@ msgstr "Projeté {0}"
 msgid "Projected completion"
 msgstr "Achèvement projeté"
 
+msgid "Projected completion at"
+msgstr ""
+
 msgid "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
 msgstr "Achèvement projeté si ce travail saute au début du calendrier du site. Rien n'est enregistré."
 
@@ -12416,6 +12419,9 @@ msgstr "Lecture du document..."
 
 msgid "Ready"
 msgstr "Prêt"
+
+msgid "Ready at"
+msgstr ""
 
 msgid "Ready for Quote"
 msgstr "Prêt pour devis"
@@ -12950,6 +12956,9 @@ msgstr "Nécessite un ajustement"
 
 msgid "Requires Repair"
 msgstr "Nécessite une réparation"
+
+msgid "Requires staffing"
+msgstr ""
 
 msgid "Reserve floor"
 msgstr "Plancher de réserve"
@@ -13542,6 +13551,12 @@ msgstr "Planifier les travaux en fonction de la capacité du centre de travail"
 
 msgid "Schedule Name"
 msgstr "Nom de l'horaire"
+
+msgid "Schedule outdated at"
+msgstr ""
+
+msgid "Schedule outdated reason"
+msgstr ""
 
 msgid "Schedule regenerated"
 msgstr ""

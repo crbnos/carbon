@@ -11932,6 +11932,9 @@ msgstr "Planlanan {0}"
 msgid "Projected completion"
 msgstr "Öngörülen tamamlanma"
 
+msgid "Projected completion at"
+msgstr ""
+
 msgid "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
 msgstr "Bu iş konumunun planının başına geçerse öngörülen tamamlanma. Hiçbir şey kaydedilmez."
 
@@ -12416,6 +12419,9 @@ msgstr "Belge okunuyor..."
 
 msgid "Ready"
 msgstr "Hazır"
+
+msgid "Ready at"
+msgstr ""
 
 msgid "Ready for Quote"
 msgstr "Teklif İçin Hazır"
@@ -12950,6 +12956,9 @@ msgstr "Ayarlama Gerektirir"
 
 msgid "Requires Repair"
 msgstr "Onarım Gerektirir"
+
+msgid "Requires staffing"
+msgstr ""
 
 msgid "Reserve floor"
 msgstr "Rezerv tabanı"
@@ -13542,6 +13551,12 @@ msgstr "İşleri iş merkezi kapasitesine karşı planlayın"
 
 msgid "Schedule Name"
 msgstr "Planlama Adı"
+
+msgid "Schedule outdated at"
+msgstr ""
+
+msgid "Schedule outdated reason"
+msgstr ""
 
 msgid "Schedule regenerated"
 msgstr ""
