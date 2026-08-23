@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { useUser } from "~/hooks";
 
 type GreetingProps = ComponentProps<typeof Heading> & {
-  /** Local hour (0–23) in the company timezone — picks the time-of-day pool. */
+  /** Hour (0–23) in the company timezone — picks the time-of-day pool. */
   hour: number;
   /** Minute-of-day seed — selects one line within the pool, deterministically. */
   pick: number;
@@ -15,10 +15,11 @@ type GreetingProps = ComponentProps<typeof Heading> & {
  * A time-aware but deliberately non-canned greeting. `hour` and `pick` come from
  * the route loader (computed server-side in the company timezone), so SSR and
  * hydration render the SAME line — no client randomness, no flash on refresh.
- * `pick` is the minute-of-day: the same within a minute (a refresh doesn't
- * change the line) but rotating each minute for variety. Lines are declarative
- * (never a question) and only some include the name, so it reads like a person,
- * not a template.
+ * The greeting follows the company's working day (the app's canonical calendar),
+ * so ensure the company timezone is set correctly in settings. `pick` is the
+ * minute-of-day: the same within a minute (a refresh doesn't change the line)
+ * but rotating each minute for variety. Lines are declarative (never a question)
+ * and only some include the name, so it reads like a person, not a template.
  */
 export function Greeting({ hour, pick, ...props }: GreetingProps) {
   const { t } = useLingui();
@@ -31,7 +32,7 @@ export function Greeting({ hour, pick, ...props }: GreetingProps) {
     // generic "welcome back" beats — and a few drop the name entirely — so no
     // bucket sounds one-note. Never phrased as a question.
     const pool =
-      hour < 5
+      hour < 4
         ? [
             t`Burning the midnight oil.`,
             t`The night shift suits you, ${name}.`,
