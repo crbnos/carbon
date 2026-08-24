@@ -1,5 +1,6 @@
 import type { Database, Tables } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
 import { getPurchaseOrderStatus, supportedModelTypes } from "@carbon/utils";
 import type {
@@ -22,6 +23,7 @@ import type {
   ApprovalRequestForViewCheck,
   ApprovalRule,
   CreateApprovalRequestInput,
+  ItemModelUpload,
   UpsertApprovalRuleInput
 } from "./types";
 
@@ -138,6 +140,24 @@ export async function approveRequest(
 
       return updatedApproval;
     });
+
+    // After the transaction, so a rollback emits nothing. The order became
+    // real here, not on the finalize route — that one stopped at the gate.
+    // Without this, every order a customer routes through an approval
+    // threshold is missing from "POs issued", and the shops that configure
+    // approval thresholds are the larger ones.
+    if (documentType === "purchaseOrder") {
+      trackWorkEvent(
+        "purchase_order_finalized",
+        {
+          companyId: approvalRequest.companyId,
+          userId,
+          purchaseOrderId: documentId,
+          stage: "committed"
+        },
+        { discriminator: "committed" }
+      );
+    }
 
     return { data: result, error: null };
   } catch (error) {
@@ -803,42 +823,47 @@ export function getDocumentType(
   return "Other";
 }
 
+/**
+ * The item's CAD model in the same shape the line views expose it, so it drops
+ * straight into `<CadModel modelUpload={...} />`. Always the full shape — an item
+ * with no model is every field null, never a narrower branch.
+ */
 export async function getModelByItemId(
   client: SupabaseClient<Database>,
   itemId: string
-) {
+): Promise<ItemModelUpload> {
   const item = await client
     .from("item")
-    .select("id, type, modelUploadId")
+    .select("id, modelUploadId")
     .eq("id", itemId)
     .single();
 
-  if (!item.data || !item.data.modelUploadId) {
-    return {
-      itemId: item.data?.id ?? null,
-      type: item.data?.type ?? null,
-      modelPath: null
-    };
-  }
+  const noModel: ItemModelUpload = {
+    itemId: item.data?.id ?? null,
+    modelId: null,
+    modelName: null,
+    modelPath: null,
+    modelSize: null,
+    thumbnailPath: null
+  };
+
+  if (!item.data?.modelUploadId) return noModel;
 
   const model = await client
     .from("modelUpload")
-    .select("*")
+    .select("id, name, modelPath, size, thumbnailPath")
     .eq("id", item.data.modelUploadId)
     .maybeSingle();
 
-  if (!model.data) {
-    return {
-      itemId: item.data?.id ?? null,
-      type: item.data?.type ?? null,
-      modelSize: null
-    };
-  }
+  if (!model.data) return noModel;
 
   return {
-    itemId: item.data!.id,
-    type: item.data!.type,
-    ...model.data
+    itemId: item.data.id,
+    modelId: model.data.id,
+    modelName: model.data.name,
+    modelPath: model.data.modelPath,
+    modelSize: model.data.size,
+    thumbnailPath: model.data.thumbnailPath
   };
 }
 

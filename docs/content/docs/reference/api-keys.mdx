@@ -1,9 +1,9 @@
 ---
 title: API keys
-description: A scoped secret that lets an external system call the Carbon API on your behalf, with its own permissions and rate limit.
+description: A scoped secret that lets an external system call the Carbon API on your behalf, with its own permissions.
 ---
 
-An <Term id="api-key">API key</Term> is a secret string that authenticates programmatic calls to Carbon. Where a person signs in and Carbon reads their permissions from a session, a script sends its key on every request and Carbon reads the key's own permissions instead. A key belongs to one company, carries an explicit set of scopes, and has its own rate limit, so you can hand a partner or a job exactly the access it needs and nothing more.
+An <Term id="api-key">API key</Term> is a secret string that authenticates programmatic calls to Carbon. Where a person signs in and Carbon reads their permissions from a session, a script sends its key on every request and Carbon reads the key's own permissions instead. A key belongs to one company and carries an explicit set of scopes, so you can hand a partner or a job exactly the access it needs and nothing more.
 
 Create and manage keys under **Settings → API Keys**. Every key you see is listed by **Name**, a masked **Key** preview (only the last five characters, e.g. `crbn_•••abcde`), its **Scopes**, **Rate Limit**, who created it, and when it expires.
 
@@ -51,9 +51,13 @@ Because scopes are checked on every request against the key's own record, tighte
 
 ## Rate limiting
 
-Each key has its own limit. By default a key allows **1000 requests per hour**; both the count and the window (`1m`, `1h`, or `1d`) are stored on the key. Carbon counts each authenticated request against the current window and rejects anything over the limit with "Rate limit exceeded" until the window rolls over.
+Every key allows **60 requests per minute**. Carbon counts each authenticated request against the current window and rejects anything over the limit with "Rate limit exceeded" until the window rolls over.
 
-The limit is per key, not per company, so you can give a high-traffic integration a larger allowance and keep a throwaway key tight. Build your client to back off when it's throttled rather than hammering through the rejection.
+The limit is platform-controlled, not something you set: the key's form has no rate-limit field, and `insertApiKey`/`updateApiKey` strip the columns from whatever is submitted (`apps/erp/app/modules/settings/settings.service.ts:1282`). The **Rate Limit** column in the key list reports the limit in force; it is not an input.
+
+The limit is counted per key, not per company, so one integration burning its allowance does not throttle another.
+
+A rejected request comes back `429` with `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` and `Retry-After` (`packages/auth/src/services/auth.server.ts:255`). Read `Retry-After` and wait it out rather than hammering through the rejection.
 
 ## The REST and OpenAPI surface
 
@@ -92,7 +96,7 @@ The exact rejections an API key can return, and the one-time-secret gotcha.
 The call needs a `module_action` scope the key doesn't carry. Scopes are checked per request against the key's own record (`packages/database/supabase/functions/lib/supabase.ts:315`), not the creator's permissions — a key with no scopes can authenticate but read and write nothing. Add the exact `module_action` (e.g. `purchasing_update`) to the key in the permission matrix under **Settings → API Keys**. It takes effect immediately, no session to wait out.
 
 ### "Rate limit exceeded"
-The key exceeded its allowance for the current window (`supabase.ts:304`). A key defaults to 1000 requests per hour; both the count and the window (`1m`/`1h`/`1d`) are stored on the key. Wait for the window to roll over, or raise the limit on the key. Build your client to back off when throttled rather than retrying immediately.
+The key exceeded its allowance for the current window (`supabase.ts:304`). Every key allows 60 requests per minute, and the limit is platform-controlled — there is no field to raise it, and the API-key service strips the columns from any submitted value. The `429` carries `Retry-After` and `X-RateLimit-*` headers; wait out `Retry-After` rather than retrying immediately. If 60/minute is genuinely too tight for your integration, batch your reads (PostgREST `in.(...)` filters and embedded relations fetch in one call) or talk to us.
 
 ### "API key has expired"
 The key's `expiresAt` is in the past, so it's rejected before any work (`supabase.ts:293`). Create a new key (optionally with a later **Expires At**, or leave it blank to never expire) and swap it in — expiry can't be extended on a used key.

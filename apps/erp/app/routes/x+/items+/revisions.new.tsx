@@ -4,12 +4,13 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { revisionValidator } from "~/modules/items/items.models";
+import { requireItemChangeNoticeUnlocked } from "~/modules/items/items.server";
 import { createRevision, getItem } from "~/modules/items/items.service";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     create: "parts"
   });
 
@@ -25,6 +26,15 @@ export async function action({ request }: ActionFunctionArgs) {
       success: false,
       error: "Copy from ID is required for a new revision"
     };
+  }
+
+  const changeNoticeLock = await requireItemChangeNoticeUnlocked(client, {
+    itemId: validation.data.copyFromId,
+    companyId
+  });
+
+  if (changeNoticeLock) {
+    return { success: false, error: changeNoticeLock.error.message };
   }
 
   const currentItem = await getItem(client, validation.data.copyFromId);

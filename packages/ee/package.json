@@ -5,6 +5,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./accounting": "./src/accounting/index.ts",
+    "./integrations/secrets": "./src/integrations/secrets.ts",
     "./action-task-entity": "./src/lib/actionTaskEntity.ts",
     "./storage-rules": "./src/storage-rules/index.ts",
     "./storage-rules.server": "./src/storage-rules/server.ts",
@@ -23,7 +24,8 @@
     "./hooks.server": "./src/hooks.server.ts",
     "./quickbooks/hooks.server": "./src/quickbooks/hooks.server.ts",
     "./rillet/hooks.server": "./src/rillet/hooks.server.ts",
-    "./xero/hooks.server": "./src/xero/hooks.server.ts"
+    "./xero/hooks.server": "./src/xero/hooks.server.ts",
+    "./stripe-connect.server": "./src/stripe-connect/payment.server.ts"
   },
   "private": true,
   "scripts": {
@@ -42,6 +44,7 @@
     "@carbon/lib": "workspace:*",
     "@carbon/logger": "workspace:*",
     "@carbon/react": "workspace:*",
+    "@carbon/stripe": "workspace:*",
     "@carbon/utils": "workspace:*",
     "@internationalized/date": "catalog:",
     "@slack/bolt": "4.4.0",

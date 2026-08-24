@@ -13,7 +13,7 @@ import { getParams, path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "users"
   });
 
@@ -48,12 +48,16 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  const ip = request.headers.get("x-forwarded-for") ?? undefined;
+
   const batchPayload = userIds.map((id) => ({
     payload: {
       id,
       permissions,
       addOnly,
-      companyId
+      companyId,
+      actorId: userId,
+      ip
     }
   }));
 

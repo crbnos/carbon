@@ -7,7 +7,8 @@ const store = () =>
   createBuilderStore({
     nodes: [createNode("trigger", { x: 0, y: 0 })] as unknown as BuilderNode[],
     edges: [],
-    isReadOnly: false,
+    isVersionLocked: false,
+    canEdit: true,
     isOwner: true
   });
 

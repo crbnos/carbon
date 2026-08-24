@@ -11,11 +11,11 @@ import type { Chart } from "~/modules/accounting";
 import {
   financialReportParamsValidator,
   getCompaniesInGroup,
-  getConsolidatedBalances,
   getFinancialStatementBalances,
   getFiscalYearSettings,
   translateCompanyBalances
 } from "~/modules/accounting";
+import { getConsolidatedBalancesForReport } from "~/modules/accounting/accounting.ee.server";
 import {
   exportTrialBalance,
   ReportFilters,
@@ -87,7 +87,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const endDate = endDateParam ?? range.endDate;
 
   if (isMultiCompany && parentCurrency) {
-    const consolidated = await getConsolidatedBalances(
+    const consolidated = await getConsolidatedBalancesForReport(
       client,
       companyGroupId,
       selectedCompanyIds,

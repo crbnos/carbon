@@ -1,6 +1,6 @@
 import { referenceIssues } from "@carbon/workflows";
 import { useEffect } from "react";
-import { catalog } from "./catalog";
+import { useWorkflowCatalog } from "./catalog";
 import { useBuilderStore, useBuilderStoreApi } from "./context";
 import { fromReactFlow } from "./graph";
 import { batchPlansFor } from "./useDefinition";
@@ -15,6 +15,7 @@ const DEBOUNCE_MS = 250;
  */
 export function LiveValidation() {
   const store = useBuilderStoreApi();
+  const catalog = useWorkflowCatalog();
   const nodes = useBuilderStore((state) => state.nodes);
   const edges = useBuilderStore((state) => state.edges);
 
@@ -25,11 +26,11 @@ export function LiveValidation() {
       const definition = fromReactFlow(nodes, edges);
       const state = store.getState();
       state.setLiveIssues(referenceIssues(definition, catalog));
-      state.setBatchPlans(batchPlansFor(definition));
+      state.setBatchPlans(batchPlansFor(definition, catalog));
     }, DEBOUNCE_MS);
 
     return () => clearTimeout(timer);
-  }, [nodes, edges, store]);
+  }, [nodes, edges, store, catalog]);
 
   return null;
 }

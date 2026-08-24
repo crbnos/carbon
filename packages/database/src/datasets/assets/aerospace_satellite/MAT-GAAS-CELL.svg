@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="ar" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#140f2a"/>
+      <stop offset="0.28" stop-color="#241a4a"/>
+      <stop offset="0.5" stop-color="#33266b"/>
+      <stop offset="0.75" stop-color="#1c1440"/>
+      <stop offset="1" stop-color="#100c22"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="0.7">
+      <stop offset="0" stop-color="#7a4bd0" stop-opacity="0.16"/>
+      <stop offset="0.3" stop-color="#c04a9a" stop-opacity="0.13"/>
+      <stop offset="0.55" stop-color="#2e2f8a" stop-opacity="0.10"/>
+      <stop offset="0.78" stop-color="#c04a9a" stop-opacity="0.09"/>
+      <stop offset="1" stop-color="#5a3ba8" stop-opacity="0.14"/>
+    </linearGradient>
+    <linearGradient id="mirror" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.30"/>
+      <stop offset="0.45" stop-color="#ffffff" stop-opacity="0.07"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="silver" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="silverFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="substrate" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4b4f52"/>
+      <stop offset="0.22" stop-color="#787d81"/>
+      <stop offset="0.45" stop-color="#8d9296"/>
+      <stop offset="0.72" stop-color="#63686c"/>
+      <stop offset="1" stop-color="#414548"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="cellClip"><path d="M180.0 605.0 L580.0 605.0 L844.6 416.0 L810.0 395.0 L538.0 395.0 L444.6 416.0 Z"/></clipPath>
+  </defs>
+
+  <ellipse cx="512" cy="576" rx="382" ry="84" fill="url(#shadow)"/>
+
+  <!-- germanium substrate seen in section along the cut edges -->
+  <path d="M180.0 605.0 L580.0 605.0 L580.0 617.0 L180.0 617.0 Z" fill="url(#substrate)" stroke="#2f3437" stroke-width="2"/>
+  <path d="M580.0 605.0 L844.6 416.0 L844.6 428.0 L580.0 617.0 Z" fill="url(#substrate)" stroke="#2f3437" stroke-width="2"/>
+  <path d="M844.6 416.0 L810.0 395.0 L810.0 407.0 L844.6 428.0 Z" fill="url(#substrate)" stroke="#2f3437" stroke-width="2"/>
+
+  <!-- anti-reflective coated face -->
+  <path d="M180.0 605.0 L580.0 605.0 L844.6 416.0 L810.0 395.0 L538.0 395.0 L444.6 416.0 Z" fill="url(#ar)"/>
+  <g clip-path="url(#cellClip)">
+    <path d="M180.0 605.0 L580.0 605.0 L844.6 416.0 L810.0 395.0 L538.0 395.0 L444.6 416.0 Z" fill="url(#sheen)"/>
+    <path d="M174.7 594.5 L453.3 615.5 L409.9 426.5 Z" fill="url(#mirror)"/>
+    <path d="M516.2 542.0 L688.2 542.0 L782.3 474.8 L642.3 474.8 Z" fill="#ffffff" opacity="0.05"/>
+    <!-- fine silver gridline comb -->
+    <g stroke="#1a1330" stroke-opacity="0.55" stroke-width="5" fill="none" transform="translate(2 3)"><path d="M235.8 580.9 L491.6 398.1"/><path d="M251.2 580.9 L507.0 398.1"/><path d="M266.6 580.9 L522.4 398.1"/><path d="M282.0 580.9 L537.8 398.1"/><path d="M297.4 580.9 L553.2 398.1"/><path d="M312.8 580.9 L568.6 398.1"/><path d="M328.2 580.9 L584.0 398.1"/><path d="M343.6 580.9 L599.4 398.1"/><path d="M359.0 580.9 L614.8 398.1"/><path d="M374.4 580.9 L630.2 398.1"/><path d="M389.8 580.9 L645.6 398.1"/><path d="M405.2 580.9 L661.0 398.1"/><path d="M420.6 580.9 L676.4 398.1"/><path d="M436.0 580.9 L691.8 398.1"/><path d="M451.4 580.9 L707.2 398.1"/><path d="M466.8 580.9 L722.6 398.1"/><path d="M482.2 580.9 L738.0 398.1"/><path d="M497.6 580.9 L753.4 398.1"/><path d="M513.0 580.9 L768.8 398.1"/><path d="M528.4 580.9 L784.2 398.1"/><path d="M543.8 580.9 L799.6 398.1"/><path d="M559.2 580.9 L815.0 398.1"/><path d="M574.6 580.9 L830.4 398.1"/><path d="M590.0 580.9 L845.8 398.1"/></g>
+    <g stroke="#c8ced3" stroke-opacity="0.92" stroke-width="4" fill="none"><path d="M235.8 580.9 L491.6 398.1"/><path d="M251.2 580.9 L507.0 398.1"/><path d="M266.6 580.9 L522.4 398.1"/><path d="M282.0 580.9 L537.8 398.1"/><path d="M297.4 580.9 L553.2 398.1"/><path d="M312.8 580.9 L568.6 398.1"/><path d="M328.2 580.9 L584.0 398.1"/><path d="M343.6 580.9 L599.4 398.1"/><path d="M359.0 580.9 L614.8 398.1"/><path d="M374.4 580.9 L630.2 398.1"/><path d="M389.8 580.9 L645.6 398.1"/><path d="M405.2 580.9 L661.0 398.1"/><path d="M420.6 580.9 L676.4 398.1"/><path d="M436.0 580.9 L691.8 398.1"/><path d="M451.4 580.9 L707.2 398.1"/><path d="M466.8 580.9 L722.6 398.1"/><path d="M482.2 580.9 L738.0 398.1"/><path d="M497.6 580.9 L753.4 398.1"/><path d="M513.0 580.9 L768.8 398.1"/><path d="M528.4 580.9 L784.2 398.1"/><path d="M543.8 580.9 L799.6 398.1"/><path d="M559.2 580.9 L815.0 398.1"/><path d="M574.6 580.9 L830.4 398.1"/><path d="M590.0 580.9 L845.8 398.1"/></g>
+    <g stroke="#f4f7f8" stroke-opacity="0.55" stroke-width="1.4" fill="none" transform="translate(-1.2 -1.2)"><path d="M235.8 580.9 L491.6 398.1"/><path d="M251.2 580.9 L507.0 398.1"/><path d="M266.6 580.9 L522.4 398.1"/><path d="M282.0 580.9 L537.8 398.1"/><path d="M297.4 580.9 L553.2 398.1"/><path d="M312.8 580.9 L568.6 398.1"/><path d="M328.2 580.9 L584.0 398.1"/><path d="M343.6 580.9 L599.4 398.1"/><path d="M359.0 580.9 L614.8 398.1"/><path d="M374.4 580.9 L630.2 398.1"/><path d="M389.8 580.9 L645.6 398.1"/><path d="M405.2 580.9 L661.0 398.1"/><path d="M420.6 580.9 L676.4 398.1"/><path d="M436.0 580.9 L691.8 398.1"/><path d="M451.4 580.9 L707.2 398.1"/><path d="M466.8 580.9 L722.6 398.1"/><path d="M482.2 580.9 L738.0 398.1"/><path d="M497.6 580.9 L753.4 398.1"/><path d="M513.0 580.9 L768.8 398.1"/><path d="M528.4 580.9 L784.2 398.1"/><path d="M543.8 580.9 L799.6 398.1"/><path d="M559.2 580.9 L815.0 398.1"/><path d="M574.6 580.9 L830.4 398.1"/><path d="M590.0 580.9 L845.8 398.1"/></g>
+    <!-- wide collector busbar along the near edge -->
+    <path d="M191.9 600.8 L579.9 600.8 L602.8 584.4 L214.8 584.4 Z" fill="url(#silverFace)" stroke="#767d83" stroke-width="2"/>
+    <path d="M203.8 596.6 L579.8 596.6" stroke="#ffffff" stroke-opacity="0.55" stroke-width="3" fill="none"/>
+    <path d="M217.9 586.5 L593.9 586.5" stroke="#5d6368" stroke-opacity="0.7" stroke-width="2" fill="none"/>
+  </g>
+  <path d="M180.0 605.0 L580.0 605.0 L844.6 416.0 L810.0 395.0 L538.0 395.0 L444.6 416.0 Z" fill="none" stroke="#0a0716" stroke-width="3"/>
+
+  <!-- welded interconnect tabs folded up off the busbar -->
+  <g>
+    <path d="M280.3 597.6 L340.3 597.6 C335.4 560.8 351.0 534.8 357.5 508.0 L297.5 508.0 C291.0 534.8 275.4 560.8 280.3 597.6 Z" fill="url(#silver)" stroke="#5d6368" stroke-width="2.5"/>
+    <path d="M282.9 568.9 C290.7 568.9 329.9 568.9 342.9 568.9" fill="none" stroke="#ffffff" stroke-opacity="0.45" stroke-width="2.5"/>
+    <path d="M297.5 508.0 L357.5 508.0" fill="none" stroke="#eef1f3" stroke-opacity="0.6" stroke-width="2.5"/>
+    <g><ellipse cx="303.6" cy="592.4" rx="9" ry="5" fill="#9aa2a9" stroke="#6a7075" stroke-width="1.5"/><ellipse cx="302.6" cy="591.4" rx="5" ry="2.6" fill="#eef1f3" opacity="0.7"/><ellipse cx="331.6" cy="592.4" rx="9" ry="5" fill="#9aa2a9" stroke="#6a7075" stroke-width="1.5"/><ellipse cx="330.6" cy="591.4" rx="5" ry="2.6" fill="#eef1f3" opacity="0.7"/></g>
+  </g>
+  <g>
+    <path d="M448.3 597.6 L508.3 597.6 C503.4 560.8 519.0 534.8 525.5 508.0 L465.5 508.0 C459.0 534.8 443.4 560.8 448.3 597.6 Z" fill="url(#silver)" stroke="#5d6368" stroke-width="2.5"/>
+    <path d="M450.9 568.9 C458.7 568.9 497.9 568.9 510.9 568.9" fill="none" stroke="#ffffff" stroke-opacity="0.45" stroke-width="2.5"/>
+    <path d="M465.5 508.0 L525.5 508.0" fill="none" stroke="#eef1f3" stroke-opacity="0.6" stroke-width="2.5"/>
+    <g><ellipse cx="471.6" cy="592.4" rx="9" ry="5" fill="#9aa2a9" stroke="#6a7075" stroke-width="1.5"/><ellipse cx="470.6" cy="591.4" rx="5" ry="2.6" fill="#eef1f3" opacity="0.7"/><ellipse cx="499.6" cy="592.4" rx="9" ry="5" fill="#9aa2a9" stroke="#6a7075" stroke-width="1.5"/><ellipse cx="498.6" cy="591.4" rx="5" ry="2.6" fill="#eef1f3" opacity="0.7"/></g>
+  </g>
+</svg>

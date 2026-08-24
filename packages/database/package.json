@@ -18,20 +18,23 @@
   "exports": {
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
+    "./datasets": "./src/datasets/index.ts",
     "./event": "./src/event.ts",
     "./quality": "./src/quality.ts",
     "./ratelimit": "./src/ratelimit.ts",
     "./sampling": "./src/sampling.ts",
     "./sequence": "./src/sequence.ts",
-    "./seed-workflows": "./src/seed-dev/tiers/workflow-definitions.ts",
+    "./seed-workflows": "./src/datasets/tiers/workflow-definitions.ts",
     "./audit": "./src/audit.ts",
     "./audit.config": "./src/audit.config.ts",
     "./audit.types": "./src/audit.types.ts",
-    "./swagger-docs-schema": "./src/swagger-docs-schema.ts"
+    "./swagger-docs-schema": "./src/swagger-docs-schema.ts",
+    "./dataset-assets": "./src/datasets/assets.ts"
   },
   "private": true,
   "scripts": {
     "clean": "rimraf .turbo node_modules dist",
+    "db:check:datasets": "tsx src/check-datasets.ts",
     "db:function:new": "supabase functions new",
     "db:init": "supabase init",
     "db:migrate:new": "supabase migration new",

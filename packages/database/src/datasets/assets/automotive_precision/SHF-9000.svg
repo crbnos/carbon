@@ -1,0 +1,154 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="steelRoll" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a3733"/>
+      <stop offset="0.2" stop-color="#6a655e"/>
+      <stop offset="0.45" stop-color="#807a72"/>
+      <stop offset="0.72" stop-color="#55504a"/>
+      <stop offset="1" stop-color="#302d2a"/>
+    </linearGradient>
+    <linearGradient id="steelFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#807a72"/>
+      <stop offset="0.5" stop-color="#6a655e"/>
+      <stop offset="1" stop-color="#3a3733"/>
+    </linearGradient>
+    <linearGradient id="chromeRoll" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5b6167"/>
+      <stop offset="0.14" stop-color="#dfe6ea"/>
+      <stop offset="0.34" stop-color="#ffffff"/>
+      <stop offset="0.6" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <linearGradient id="chromeFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#dfe6ea"/>
+      <stop offset="0.5" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <linearGradient id="grooveRoll" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#211f1d"/>
+      <stop offset="0.25" stop-color="#4a463f"/>
+      <stop offset="0.5" stop-color="#57524b"/>
+      <stop offset="0.75" stop-color="#332f2c"/>
+      <stop offset="1" stop-color="#1b1917"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="clipA"><rect x="205" y="454" width="95" height="92"/></clipPath>
+    <clipPath id="clipC"><rect x="420" y="422" width="80" height="156"/></clipPath>
+    <clipPath id="clipD"><rect x="500" y="406" width="100" height="188"/></clipPath>
+    <clipPath id="clipCp"><rect x="600" y="422" width="74" height="156"/></clipPath>
+    <clipPath id="clipAp"><rect x="810" y="454" width="92" height="92"/></clipPath>
+    <clipPath id="clipB"><rect x="316" y="438" width="88" height="124"/></clipPath>
+    <clipPath id="clipBp"><rect x="690" y="438" width="104" height="124"/></clipPath>
+    <clipPath id="clipThread"><rect x="118" y="462" width="87" height="76"/></clipPath>
+  </defs>
+
+  <ellipse cx="512" cy="630" rx="400" ry="88" fill="url(#shadow)"/>
+
+  <g transform="rotate(-5 512 500)">
+    <!-- non-drive end, plain turned -->
+    <path d="M810 454 L900 454 Q928 500 900 546 L810 546 Z" fill="url(#steelRoll)" stroke="#241f1c" stroke-width="3"/>
+    <g clip-path="url(#clipAp)" stroke="#a29a90" stroke-width="1.8" opacity="0.3" fill="none">
+      <path d="M822 452 L812 548"/><path d="M840 452 L830 548"/><path d="M858 452 L848 548"/>
+      <path d="M876 452 L866 548"/><path d="M894 452 L884 548"/>
+    </g>
+    <ellipse cx="810" cy="500" rx="14" ry="46" fill="url(#steelFace)" stroke="#241f1c" stroke-width="2.5"/>
+
+    <!-- undercut relief groove -->
+    <path d="M794 460 L810 460 L810 540 L794 540 Z" fill="url(#grooveRoll)" stroke="#1b1917" stroke-width="2"/>
+    <ellipse cx="794" cy="500" rx="12" ry="40" fill="#2a2724" stroke="#1b1917" stroke-width="2"/>
+
+    <!-- ground bearing journal (non-drive) -->
+    <path d="M690 438 L794 438 L794 562 L690 562 Z" fill="url(#chromeRoll)" stroke="#3f4448" stroke-width="3"/>
+    <g clip-path="url(#clipBp)">
+      <rect x="690" y="438" width="16" height="124" fill="#2f3438" opacity="0.4"/>
+      <rect x="778" y="438" width="16" height="124" fill="#2f3438" opacity="0.4"/>
+      <path d="M690 466 L794 466" stroke="#ffffff" stroke-width="7" opacity="0.55"/>
+      <path d="M690 480 L794 480" stroke="#ffffff" stroke-width="3" opacity="0.3"/>
+      <path d="M690 542 L794 542" stroke="#20262a" stroke-width="6" opacity="0.4"/>
+    </g>
+    <ellipse cx="690" cy="500" rx="19" ry="62" fill="url(#chromeFace)" stroke="#3f4448" stroke-width="2.5"/>
+
+    <!-- relief groove -->
+    <path d="M674 446 L690 446 L690 554 L674 554 Z" fill="url(#grooveRoll)" stroke="#1b1917" stroke-width="2"/>
+    <ellipse cx="674" cy="500" rx="16" ry="54" fill="#2a2724" stroke="#1b1917" stroke-width="2"/>
+
+    <!-- turned step, non-drive side -->
+    <path d="M600 422 L674 422 L674 578 L600 578 Z" fill="url(#steelRoll)" stroke="#241f1c" stroke-width="3"/>
+    <g clip-path="url(#clipCp)" stroke="#a29a90" stroke-width="1.8" opacity="0.28" fill="none">
+      <path d="M612 420 L596 580"/><path d="M630 420 L614 580"/><path d="M648 420 L632 580"/>
+      <path d="M666 420 L650 580"/>
+    </g>
+    <ellipse cx="600" cy="500" rx="23" ry="78" fill="url(#steelFace)" stroke="#241f1c" stroke-width="2.5"/>
+
+    <!-- centre step, largest diameter -->
+    <path d="M500 406 L600 406 L600 594 L500 594 Z" fill="url(#steelRoll)" stroke="#241f1c" stroke-width="3"/>
+    <g clip-path="url(#clipD)" stroke="#a29a90" stroke-width="1.8" opacity="0.28" fill="none">
+      <path d="M512 404 L492 596"/><path d="M530 404 L510 596"/><path d="M548 404 L528 596"/>
+      <path d="M566 404 L546 596"/><path d="M584 404 L564 596"/>
+    </g>
+    <g clip-path="url(#clipD)" stroke="#3a3733" stroke-width="1.6" opacity="0.35" fill="none">
+      <path d="M521 404 L501 596"/><path d="M539 404 L519 596"/><path d="M557 404 L537 596"/>
+      <path d="M575 404 L555 596"/><path d="M593 404 L573 596"/>
+    </g>
+    <ellipse cx="500" cy="500" rx="28" ry="94" fill="url(#steelFace)" stroke="#241f1c" stroke-width="2.5"/>
+    <ellipse cx="500" cy="500" rx="22" ry="76" fill="none" stroke="#b2aaa0" stroke-width="2" opacity="0.3"/>
+
+    <!-- turned step, drive side -->
+    <path d="M420 422 L500 422 L500 578 L420 578 Z" fill="url(#steelRoll)" stroke="#241f1c" stroke-width="3"/>
+    <g clip-path="url(#clipC)" stroke="#a29a90" stroke-width="1.8" opacity="0.28" fill="none">
+      <path d="M432 420 L416 580"/><path d="M450 420 L434 580"/><path d="M468 420 L452 580"/>
+      <path d="M486 420 L470 580"/>
+    </g>
+    <ellipse cx="420" cy="500" rx="23" ry="78" fill="url(#steelFace)" stroke="#241f1c" stroke-width="2.5"/>
+
+    <!-- relief groove -->
+    <path d="M404 446 L420 446 L420 554 L404 554 Z" fill="url(#grooveRoll)" stroke="#1b1917" stroke-width="2"/>
+    <ellipse cx="404" cy="500" rx="16" ry="54" fill="#2a2724" stroke="#1b1917" stroke-width="2"/>
+
+    <!-- ground bearing journal (drive) -->
+    <path d="M316 438 L404 438 L404 562 L316 562 Z" fill="url(#chromeRoll)" stroke="#3f4448" stroke-width="3"/>
+    <g clip-path="url(#clipB)">
+      <rect x="316" y="438" width="16" height="124" fill="#2f3438" opacity="0.4"/>
+      <rect x="388" y="438" width="16" height="124" fill="#2f3438" opacity="0.4"/>
+      <path d="M316 466 L404 466" stroke="#ffffff" stroke-width="7" opacity="0.55"/>
+      <path d="M316 480 L404 480" stroke="#ffffff" stroke-width="3" opacity="0.3"/>
+      <path d="M316 542 L404 542" stroke="#20262a" stroke-width="6" opacity="0.4"/>
+    </g>
+    <ellipse cx="316" cy="500" rx="19" ry="62" fill="url(#chromeFace)" stroke="#3f4448" stroke-width="2.5"/>
+
+    <!-- relief groove -->
+    <path d="M300 466 L316 466 L316 534 L300 534 Z" fill="url(#grooveRoll)" stroke="#1b1917" stroke-width="2"/>
+    <ellipse cx="300" cy="500" rx="12" ry="34" fill="#2a2724" stroke="#1b1917" stroke-width="2"/>
+
+    <!-- keyed drive section -->
+    <path d="M205 454 L300 454 L300 546 L205 546 Z" fill="url(#steelRoll)" stroke="#241f1c" stroke-width="3"/>
+    <g clip-path="url(#clipA)" stroke="#a29a90" stroke-width="1.8" opacity="0.28" fill="none">
+      <path d="M217 452 L207 548"/><path d="M235 452 L225 548"/><path d="M253 452 L243 548"/>
+      <path d="M271 452 L261 548"/><path d="M289 452 L279 548"/>
+    </g>
+    <!-- milled keyway with radiused ends -->
+    <path d="M228 470 Q216 484 228 498 L275 498 Q287 484 275 470 Z" fill="#26221f" stroke="#7d766e" stroke-width="2.5"/>
+    <path d="M230 473 L273 473" stroke="#b2aaa0" stroke-width="2.5" opacity="0.55" fill="none"/>
+    <ellipse cx="205" cy="500" rx="14" ry="46" fill="url(#steelFace)" stroke="#241f1c" stroke-width="2.5"/>
+
+    <!-- chamfered thread and centre hole -->
+    <path d="M130 462 L205 462 L205 538 L130 538 Z" fill="url(#steelRoll)" stroke="#241f1c" stroke-width="3"/>
+    <g clip-path="url(#clipThread)" fill="none">
+      <g stroke="#8f8880" stroke-width="4" opacity="0.75">
+        <path d="M140 460 L130 540"/><path d="M153 460 L143 540"/><path d="M166 460 L156 540"/>
+        <path d="M179 460 L169 540"/><path d="M192 460 L182 540"/><path d="M205 460 L195 540"/>
+      </g>
+      <g stroke="#c6bfb6" stroke-width="2.5" opacity="0.5">
+        <path d="M145 460 L135 540"/><path d="M158 460 L148 540"/><path d="M171 460 L161 540"/>
+        <path d="M184 460 L174 540"/><path d="M197 460 L187 540"/>
+      </g>
+    </g>
+    <ellipse cx="130" cy="500" rx="12" ry="38" fill="url(#steelFace)" stroke="#241f1c" stroke-width="2.5"/>
+    <ellipse cx="130" cy="500" rx="9" ry="29" fill="none" stroke="#b2aaa0" stroke-width="2" opacity="0.5"/>
+    <ellipse cx="130" cy="500" rx="6" ry="18" fill="#23282c" stroke="#8f8880" stroke-width="2"/>
+  </g>
+</svg>

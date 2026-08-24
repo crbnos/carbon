@@ -33,7 +33,9 @@ export const userAdminFunction = inngest.createFunction(
           result = await deactivateUser(
             serviceRole,
             payload.id,
-            payload.companyId
+            payload.companyId,
+            payload.actorId,
+            payload.ip
           );
           if (result.success && CarbonEdition === Edition.Cloud) {
             await updateSubscriptionQuantityForCompany(payload.companyId);

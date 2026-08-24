@@ -49,7 +49,7 @@ const ModalContentVariants = cva(
     "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
     "data-[state=closed]:slide-out-to-left-[0%] data-[state=closed]:slide-out-to-top-[0%",
     "data-[state=open]:slide-in-from-left-[0%] data-[state=open]:slide-in-from-top-[0%]",
-    "sm:rounded-xl md:w-full",
+    "sm:rounded-2xl md:w-full",
     "bg-background focus-visible:outline-none focus-visible:ring-0",
     "dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]"
   ),
@@ -130,7 +130,7 @@ const ModalFooter = ({
 }: HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "flex flex-col-reverse sm:flex-row sm:justify-end gap-2 px-6 py-3 border-t border-border bg-muted/40 sm:rounded-b-xl",
+      "flex flex-col-reverse sm:flex-row sm:justify-end gap-2 px-6 py-3 border-t border-border bg-muted/40 sm:rounded-b-2xl",
       className
     )}
     {...props}

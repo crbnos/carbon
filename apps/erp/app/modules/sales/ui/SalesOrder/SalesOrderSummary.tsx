@@ -53,7 +53,8 @@ import {
   useCurrencyFormatter,
   usePercentFormatter,
   usePermissions,
-  useRouteData
+  useRouteData,
+  useUser
 } from "~/hooks";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { getPrivateUrl, path } from "~/utils/path";
@@ -91,9 +92,11 @@ const SalesOrderSummary = ({
   const salesOrderToJobsModal = useDisclosure();
 
   const { locale } = useLocale();
-  const formatter = useCurrencyFormatter({
-    currency: routeData?.salesOrder?.currencyCode ?? "USD"
-  });
+  const { company } = useUser();
+  const baseCurrency = company?.baseCurrencyCode ?? "USD";
+  // Base currency: this formats `line.unitPrice`, a base-currency column. The
+  // order-currency figure is `convertedUnitPrice`, rendered above the badge.
+  const formatter = useCurrencyFormatter({ currency: baseCurrency });
 
   const isEditable = !isSalesOrderLocked(routeData?.salesOrder?.status);
   // Settlement money at the document currency's configured decimals.

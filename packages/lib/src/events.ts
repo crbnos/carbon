@@ -187,6 +187,43 @@ export type Events = {
     };
   };
 
+  // Onboarding demo template — applies a shared dataset to a freshly created
+  // company by running the same tier code the dev seed runs. Not an import: no
+  // archive, no bucket. `datasetKey` is a plain string so @carbon/lib does not
+  // take a dependency on @carbon/database; the job validates it.
+  "carbon/company-template": {
+    data: {
+      companyId: string;
+      userId: string;
+      datasetKey: string;
+      templateRunId: string;
+      /**
+       * Snapshot the company before wiping, and leave the run parked on a
+       * keep/revert decision instead of clearing the marker. Onboarding and the
+       * Settings page both set this; absent means the legacy fire-and-forget
+       * behaviour.
+       */
+      snapshot?: boolean;
+    };
+  };
+
+  // Keep an applied demo template — drop the pre-apply snapshot and the marker.
+  "carbon/company-template-finalize": {
+    data: {
+      companyId: string;
+      templateRunId: string;
+    };
+  };
+
+  // Undo an applied demo template — wipe and reload the pre-apply snapshot.
+  "carbon/company-template-revert": {
+    data: {
+      companyId: string;
+      userId: string;
+      templateRunId: string;
+    };
+  };
+
   // In-place restore — replace a company's own data with one of its backups.
   // Three-step: snapshot current state to a hidden _pre-restore file, WIPE the
   // company's companyId-scoped data, then load the backup (ids preserved). A
@@ -233,6 +270,11 @@ export type Events = {
         { view: boolean; create: boolean; update: boolean; delete: boolean }
       >;
       companyId: string;
+      // The acting admin's userId — recorded as the actor on the audit event
+      // (NIST 800-171 3.3.1/3.3.2). Optional for backward-compatible replays.
+      actorId?: string;
+      // Source IP of the request that triggered the change (AU-3 source-of-event).
+      ip?: string;
     };
   };
 
@@ -262,6 +304,11 @@ export type Events = {
           id: string;
           type: "deactivate";
           companyId: string;
+          // The acting admin's userId — recorded as the actor on the audit
+          // event (NIST 800-171 3.3.1/3.3.2). Optional for replay safety.
+          actorId?: string;
+          // Source IP of the request that triggered the change (AU-3 source-of-event).
+          ip?: string;
         }
       | {
           id: string;

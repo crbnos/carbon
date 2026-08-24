@@ -293,7 +293,7 @@
     {
       "slug": "docs/reference/api-keys",
       "title": "API keys",
-      "description": "A scoped secret that lets an external system call the Carbon API on your behalf, with its own permissions and rate limit.",
+      "description": "A scoped secret that lets an external system call the Carbon API on your behalf, with its own permissions.",
       "keywords": ["api", "keys", "docs", "reference"],
       "headings": [
         "Creating a key",

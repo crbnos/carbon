@@ -40,6 +40,7 @@
     "ci:migrations": "pnpm --filter ci ci:migrations",
     "ci:deploy": "pnpm --filter ci ci:deploy",
     "clean": "turbo run clean && rimraf ./node_modules && rimraf ./pnpm-lock.yaml",
+    "db:check:datasets": "pnpm --filter @carbon/database db:check:datasets --",
     "db:function:new": "pnpm --filter @carbon/database db:function:new",
     "db:migrate": "crbn migrate",
     "db:migrate:new": "pnpm --filter @carbon/database db:migrate:new",

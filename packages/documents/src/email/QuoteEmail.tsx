@@ -12,6 +12,7 @@ import {
   Text
 } from "@react-email/components";
 import type { CompanySettings, Email } from "../types";
+import { getQuoteDisplayId } from "../utils/quote";
 import ExternalNotes from "./components/ExternalNotes";
 import {
   Button,
@@ -38,7 +39,9 @@ const QuoteEmail = ({
       ? `${getAppUrl()}/share/quote/${quote.externalLinkId}` // the VERCEL_URL variable was giving us a preview branch
       : undefined;
 
-  const preview = <Preview>{`${quote.quoteId} from ${company.name}`}</Preview>;
+  const preview = (
+    <Preview>{`${getQuoteDisplayId(quote)} from ${company.name}`}</Preview>
+  );
   const themeClasses = getEmailThemeClasses();
   const lightStyles = getEmailInlineStyles("light");
 
@@ -128,7 +131,7 @@ const QuoteEmail = ({
                       >
                         Quote ID
                       </Text>
-                      <Text>{quote.quoteId}</Text>
+                      <Text>{getQuoteDisplayId(quote)}</Text>
                     </Column>
                     <Column>
                       <Text

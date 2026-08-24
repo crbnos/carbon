@@ -107,7 +107,8 @@ export type AssemblyPlayerProps = {
   editMotion?: { stepId: string; motion: Motion } | null;
   /** Drag/insert/delete of a waypoint emits the new relative motion. */
   onMotionChange?: (stepId: string, motion: Motion) => void;
-  /** Initial render mode for future-step components */
+  /** Initial render mode for future-step components. Shared by step selection
+   * AND playback, so a ghosted default ghosts the animation too. */
   defaultFutureMode?: FutureComponentsMode;
   /** Picking components to add to a step: ghost every not-yet-installed part so
    * un-animated parts are visible and clickable (x-ray). */
@@ -186,7 +187,7 @@ export const AssemblyPlayer = forwardRef<
     readOnly = false,
     editMotion,
     onMotionChange,
-    defaultFutureMode = "ghost",
+    defaultFutureMode = "hidden",
     componentPickerActive = false,
     autoPlay = true,
     loop = false,
@@ -499,6 +500,7 @@ export const AssemblyPlayer = forwardRef<
               capturePoseRef={capturePoseRef}
               assemblyBounds={graphIndex?.graph.root.bbox ?? null}
               leafBounds={graphIndex?.leaves ?? null}
+              seatedBoundsById={graphIndex?.nodesById ?? null}
               segments={segments}
               startTimes={startTimes}
               playheadRef={playheadRef}
@@ -832,6 +834,7 @@ function AssemblyScene({
   capturePoseRef,
   assemblyBounds,
   leafBounds,
+  seatedBoundsById,
   segments,
   startTimes,
   playheadRef,
@@ -869,6 +872,15 @@ function AssemblyScene({
   leafBounds:
     | { nodeId: string; bbox: { min: number[]; max: number[] } }[]
     | null;
+  /**
+   * Seated bounds for EVERY node, assemblies included. Reading the box off the
+   * live Object3D instead gives the flown-out pose mid-animation, which frames a
+   * played step differently from a clicked one.
+   */
+  seatedBoundsById: ReadonlyMap<
+    string,
+    { bbox: { min: number[]; max: number[] } }
+  > | null;
   /** Timeline seconds per step */
   segments: number[];
   /** Timeline start (seconds) of each step */
@@ -1006,16 +1018,28 @@ function AssemblyScene({
     setDrillState(null);
   }, []);
 
-  /** nodeId → index of the first step that installs it */
+  /**
+   * nodeId → index of the first step that installs it, DESCENDANTS INCLUDED — a
+   * step naming a subassembly installs everything inside it. Map only the named
+   * node and its children read as "installed by no step", so the pass below hides
+   * the gearset inside an installed housing.
+   */
   const stepIndexByNode = useMemo(() => {
     const map = new Map<string, number>();
+    const claim = (nodeId: string, index: number) => {
+      if (!map.has(nodeId)) map.set(nodeId, index);
+    };
     steps.forEach((step, index) => {
       for (const nodeId of step.componentNodeIds) {
-        if (!map.has(nodeId)) map.set(nodeId, index);
+        claim(nodeId, index);
+        nodesById.get(nodeId)?.traverse((descendant) => {
+          const childId = descendant.userData?.nodeId;
+          if (typeof childId === "string") claim(childId, index);
+        });
       }
     });
     return map;
-  }, [steps]);
+  }, [steps, nodesById]);
 
   // --- Component visual states (visibility + material overrides) ---------------
 
@@ -1068,17 +1092,13 @@ function AssemblyScene({
       });
     };
 
-    // While the animation plays, later-step components stay hidden until their own
-    // step installs them, so playback reads as a real build-up rather than a
-    // ghosted preview. The future-components toggle still applies while paused.
-    // Component-picker mode overrides both: every not-yet-installed part ghosts
-    // (x-ray) so the user can see AND click the parts they want to add — a
-    // "hidden" future part is invisible and unpickable.
+    // The toggle applies whether or not the animation is running: selecting a
+    // step must show the SAME scene playback shows when it reaches that step.
+    // Component-picker mode is the one override — every not-yet-installed part
+    // ghosts (x-ray) so it stays visible and clickable, which "hidden" is not.
     const effectiveFutureMode: FutureComponentsMode = componentPickerActive
       ? "ghost"
-      : isPlaying
-        ? "hidden"
-        : futureMode;
+      : futureMode;
 
     for (const [nodeId, stepIndex] of stepIndexByNode) {
       const node = nodesById.get(nodeId);
@@ -1231,6 +1251,8 @@ function AssemblyScene({
   stepsLiveRef.current = steps;
   const startTimesLiveRef = useRef(startTimes);
   startTimesLiveRef.current = startTimes;
+  const segmentsLiveRef = useRef(segments);
+  segmentsLiveRef.current = segments;
   const clipKey = activeStep
     ? [
         activeStepIndex,
@@ -1261,7 +1283,22 @@ function AssemblyScene({
     if (isEditingActive) return;
 
     const clip = buildStepClip(step, nodesById);
-    if (!clip) return;
+    if (!clip) {
+      // Nothing to animate (motion "none"), but a static selection must still
+      // land on "step completed": the seated fade below reads this timer, and
+      // left at 0 it holds the step's components at opacity 0 — invisible.
+      if (seek === null && !isPlayingRef.current) {
+        const settled = Math.max(
+          segmentsLiveRef.current[activeStepIndex] ?? 0,
+          FADE_SECONDS
+        );
+        localElapsedRef.current = settled;
+        finishedRef.current = true;
+        playheadRef.current =
+          (startTimesLiveRef.current[activeStepIndex] ?? 0) + settled;
+      }
+      return;
+    }
 
     // Save seated transforms so we can restore them when the step changes
     const restore = step.componentNodeIds
@@ -1665,6 +1702,16 @@ function AssemblyScene({
 
     const componentBox = new Box3();
     for (const nodeId of step.componentNodeIds) {
+      const seated = seatedBoundsById?.get(nodeId);
+      if (seated) {
+        componentBox.expandByPoint(
+          new Vector3(...(seated.bbox.min as [number, number, number]))
+        );
+        componentBox.expandByPoint(
+          new Vector3(...(seated.bbox.max as [number, number, number]))
+        );
+        continue;
+      }
       const node = nodesById.get(nodeId);
       if (node) componentBox.expandByObject(node);
     }
@@ -1830,6 +1877,7 @@ function AssemblyScene({
     controls,
     getAssemblyBox,
     leafBounds,
+    seatedBoundsById,
     hiddenSet,
     stepIndexByNode,
     futureMode,

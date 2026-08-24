@@ -1,0 +1,179 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="shellBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#b9bec2"/>
+      <stop offset="0.2" stop-color="#eef1f3"/>
+      <stop offset="0.45" stop-color="#ffffff"/>
+      <stop offset="0.72" stop-color="#d3d8dc"/>
+      <stop offset="1" stop-color="#a8aeb3"/>
+    </linearGradient>
+    <linearGradient id="shellFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.45" stop-color="#e3e7ea"/>
+      <stop offset="1" stop-color="#a8aeb3"/>
+    </linearGradient>
+    <linearGradient id="charcoalBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#26292c"/>
+      <stop offset="0.22" stop-color="#4a4f54"/>
+      <stop offset="0.45" stop-color="#5e646a"/>
+      <stop offset="0.72" stop-color="#383c40"/>
+      <stop offset="1" stop-color="#1e2124"/>
+    </linearGradient>
+    <linearGradient id="charcoalFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#26292c"/>
+      <stop offset="0.22" stop-color="#4a4f54"/>
+      <stop offset="0.45" stop-color="#5e646a"/>
+      <stop offset="0.72" stop-color="#383c40"/>
+      <stop offset="1" stop-color="#1e2124"/>
+    </linearGradient>
+    <radialGradient id="turret" cx="0.36" cy="0.3" r="0.78">
+      <stop offset="0" stop-color="#6a7076"/>
+      <stop offset="0.4" stop-color="#4a4f54"/>
+      <stop offset="0.78" stop-color="#2b2f33"/>
+      <stop offset="1" stop-color="#1a1d20"/>
+    </radialGradient>
+    <radialGradient id="window" cx="0.34" cy="0.28" r="0.8">
+      <stop offset="0" stop-color="#a83c30"/>
+      <stop offset="0.45" stop-color="#701f19"/>
+      <stop offset="1" stop-color="#3a0e0b"/>
+    </radialGradient>
+    <linearGradient id="aluBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8a9298"/>
+      <stop offset="0.2" stop-color="#d5dce1"/>
+      <stop offset="0.45" stop-color="#f0f4f6"/>
+      <stop offset="0.72" stop-color="#b2bac0"/>
+      <stop offset="1" stop-color="#798187"/>
+    </linearGradient>
+    <linearGradient id="aluFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#8a9298"/>
+      <stop offset="0.2" stop-color="#d5dce1"/>
+      <stop offset="0.45" stop-color="#f0f4f6"/>
+      <stop offset="0.72" stop-color="#b2bac0"/>
+      <stop offset="1" stop-color="#798187"/>
+    </linearGradient>
+    <linearGradient id="blackAno" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#5a6167"/>
+      <stop offset="0.45" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="chromeFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#5b6167"/>
+      <stop offset="0.14" stop-color="#dfe6ea"/>
+      <stop offset="0.34" stop-color="#ffffff"/>
+      <stop offset="0.6" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="238" cy="850" rx="112" ry="25" fill="url(#shadow)"/>
+  <ellipse cx="582" cy="866" rx="120" ry="26" fill="url(#shadow)"/>
+  <ellipse cx="766" cy="704" rx="104" ry="23" fill="url(#shadow)"/>
+
+  <!-- ================= tripod: rear leg first ================= -->
+  <g>
+    <path d="M518 528 L654 624" fill="none" stroke="#6a7278" stroke-width="26" stroke-linecap="round"/>
+    <path d="M518 528 L654 624" fill="none" stroke="url(#aluBarrel)" stroke-width="21" stroke-linecap="round"/>
+    <path d="M646 618 L766 702" fill="none" stroke="#6a7278" stroke-width="18" stroke-linecap="round"/>
+    <path d="M646 618 L766 702" fill="none" stroke="url(#aluBarrel)" stroke-width="14" stroke-linecap="round"/>
+    <path d="M636 606 L668 628" fill="none" stroke="url(#blackAno)" stroke-width="26" stroke-linecap="round"/>
+    <path d="M676 622 L692 634" fill="none" stroke="#22272a" stroke-width="9" stroke-linecap="round"/>
+    <ellipse cx="768" cy="704" rx="18" ry="10" fill="#1c2023" stroke="#0f1214" stroke-width="2"/>
+  </g>
+  <!-- front-left leg -->
+  <g>
+    <path d="M474 538 L344 708" fill="none" stroke="#6a7278" stroke-width="28" stroke-linecap="round"/>
+    <path d="M474 538 L344 708" fill="none" stroke="url(#aluBarrel)" stroke-width="23" stroke-linecap="round"/>
+    <path d="M350 700 L238 848" fill="none" stroke="#6a7278" stroke-width="19" stroke-linecap="round"/>
+    <path d="M350 700 L238 848" fill="none" stroke="url(#aluBarrel)" stroke-width="15" stroke-linecap="round"/>
+    <path d="M358 688 L332 722" fill="none" stroke="url(#blackAno)" stroke-width="28" stroke-linecap="round"/>
+    <path d="M322 716 L308 734" fill="none" stroke="#22272a" stroke-width="9" stroke-linecap="round"/>
+    <ellipse cx="236" cy="850" rx="20" ry="11" fill="#1c2023" stroke="#0f1214" stroke-width="2"/>
+  </g>
+  <!-- front-right leg -->
+  <g>
+    <path d="M530 538 L559 717" fill="none" stroke="#6a7278" stroke-width="28" stroke-linecap="round"/>
+    <path d="M530 538 L559 717" fill="none" stroke="url(#aluBarrel)" stroke-width="23" stroke-linecap="round"/>
+    <path d="M557 706 L582 864" fill="none" stroke="#6a7278" stroke-width="19" stroke-linecap="round"/>
+    <path d="M557 706 L582 864" fill="none" stroke="url(#aluBarrel)" stroke-width="15" stroke-linecap="round"/>
+    <path d="M555 694 L562 736" fill="none" stroke="url(#blackAno)" stroke-width="28" stroke-linecap="round"/>
+    <path d="M568 728 L574 750" fill="none" stroke="#22272a" stroke-width="9" stroke-linecap="round"/>
+    <ellipse cx="582" cy="866" rx="20" ry="11" fill="#1c2023" stroke="#0f1214" stroke-width="2"/>
+  </g>
+  <!-- adjustable black spreader -->
+  <g>
+    <path d="M508 668 L356 693" fill="none" stroke="#12161a" stroke-width="15" stroke-linecap="round"/>
+    <path d="M508 668 L556 701" fill="none" stroke="#12161a" stroke-width="15" stroke-linecap="round"/>
+    <path d="M508 668 L642 615" fill="none" stroke="#12161a" stroke-width="15" stroke-linecap="round"/>
+    <path d="M508 668 L356 693" fill="none" stroke="url(#blackAno)" stroke-width="10" stroke-linecap="round"/>
+    <path d="M508 668 L556 701" fill="none" stroke="url(#blackAno)" stroke-width="10" stroke-linecap="round"/>
+    <path d="M508 668 L642 615" fill="none" stroke="url(#blackAno)" stroke-width="10" stroke-linecap="round"/>
+    <ellipse cx="508" cy="668" rx="24" ry="14" fill="url(#blackAno)" stroke="#0f1214" stroke-width="2.5"/>
+    <ellipse cx="502" cy="664" rx="8" ry="5" fill="#ffffff" opacity="0.2"/>
+    <ellipse cx="356" cy="693" rx="12" ry="8" fill="#22272a" stroke="#0f1214" stroke-width="2"/>
+    <ellipse cx="556" cy="701" rx="12" ry="8" fill="#22272a" stroke="#0f1214" stroke-width="2"/>
+    <ellipse cx="642" cy="615" rx="12" ry="8" fill="#22272a" stroke="#0f1214" stroke-width="2"/>
+  </g>
+
+  <!-- ================= tripod head plate and levelling screws ================= -->
+  <path d="M432 524 L568 524 L544 552 L456 552 Z" fill="url(#blackAno)" stroke="#0f1214" stroke-width="3"/>
+  <path d="M440 530 L560 530" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="4"/>
+  <g>
+    <path d="M436 490 L448 490 L448 526 L436 526 Z" fill="url(#aluFace)" stroke="#5c6367" stroke-width="2"/>
+    <ellipse cx="442" cy="530" rx="22" ry="9" fill="url(#chromeFace)" stroke="#454b4f" stroke-width="2"/>
+    <path d="M554 490 L566 490 L566 526 L554 526 Z" fill="url(#aluFace)" stroke="#5c6367" stroke-width="2"/>
+    <ellipse cx="560" cy="530" rx="22" ry="9" fill="url(#chromeFace)" stroke="#454b4f" stroke-width="2"/>
+    <path d="M494 500 L512 500 L512 542 L494 542 Z" fill="url(#aluFace)" stroke="#5c6367" stroke-width="2"/>
+    <ellipse cx="503" cy="546" rx="28" ry="11" fill="url(#chromeFace)" stroke="#454b4f" stroke-width="2.5"/>
+    <g stroke="#5a6167" stroke-opacity="0.6" stroke-width="2" fill="none">
+      <path d="M481 542 L481 550"/><path d="M492 539 L492 553"/><path d="M503 538 L503 554"/>
+      <path d="M514 539 L514 553"/><path d="M525 542 L525 550"/>
+    </g>
+  </g>
+
+  <!-- ================= instrument body ================= -->
+  <path d="M382 452 A118 45 0 0 0 618 452 L618 494 A118 45 0 0 1 382 494 Z" fill="url(#charcoalBarrel)" stroke="#161a1c" stroke-width="3"/>
+  <path d="M382 466 A118 45 0 0 0 618 466" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="3"/>
+  <path d="M382 404 A118 45 0 0 0 618 404 L618 456 A118 45 0 0 1 382 456 Z" fill="url(#charcoalBarrel)" stroke="#161a1c" stroke-width="3"/>
+  <path d="M382 416 A118 45 0 0 0 618 416" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="3"/>
+  <path d="M382 322 A118 45 0 0 0 618 322 L618 408 A118 45 0 0 1 382 408 Z" fill="url(#shellBarrel)" stroke="#7e858a" stroke-width="3"/>
+  <path d="M382 336 A118 45 0 0 0 618 336" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="4"/>
+  <path d="M382 396 A118 45 0 0 0 618 396" fill="none" stroke="#000000" stroke-opacity="0.12" stroke-width="4"/>
+  <ellipse cx="512" cy="322" rx="118" ry="45" fill="url(#shellFace)" stroke="#7e858a" stroke-width="2.5"/>
+  <!-- cable ports on the right rear flank -->
+  <ellipse cx="586" cy="372" rx="16" ry="17" fill="#22272a" stroke="#0f1214" stroke-width="2.5"/>
+  <ellipse cx="586" cy="372" rx="8" ry="9" fill="#4a4f54"/>
+  <ellipse cx="586" cy="416" rx="13" ry="14" fill="#22272a" stroke="#0f1214" stroke-width="2.5"/>
+  <ellipse cx="586" cy="416" rx="6" ry="7" fill="#4a4f54"/>
+  <path d="M414 358 L414 402" fill="none" stroke="#c8ced2" stroke-width="4" opacity="0.9"/>
+
+  <!-- carry handle at the rear -->
+  <path d="M394 350 C 386 244 638 244 630 350" fill="none" stroke="#0f1214" stroke-width="26" stroke-linecap="round"/>
+  <path d="M394 350 C 386 244 638 244 630 350" fill="none" stroke="url(#blackAno)" stroke-width="19" stroke-linecap="round"/>
+  <path d="M398 340 C 392 256 632 256 626 340" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- turret neck -->
+  <path d="M442 300 A70 27 0 0 0 582 300 L582 330 A70 27 0 0 1 442 330 Z" fill="url(#charcoalBarrel)" stroke="#161a1c" stroke-width="2.5"/>
+  <ellipse cx="512" cy="300" rx="70" ry="27" fill="url(#charcoalFace)" stroke="#161a1c" stroke-width="2.5"/>
+
+  <!-- ================= rotating spherical measurement turret ================= -->
+  <circle cx="512" cy="228" r="102" fill="url(#turret)" stroke="#141719" stroke-width="3"/>
+  <path d="M428.5 169.5 A102 102 0 0 1 538.4 129.5" fill="none" stroke="#ffffff" stroke-opacity="0.24" stroke-width="10"/>
+  <path d="M428.5 286.5 A102 102 0 0 0 570.5 311.5" fill="none" stroke="#000000" stroke-opacity="0.3" stroke-width="10"/>
+  <!-- rotation split line of the turret -->
+  <ellipse cx="512" cy="228" rx="102" ry="34" fill="none" stroke="#14171a" stroke-width="3" opacity="0.75"/>
+  <ellipse cx="512" cy="228" rx="98" ry="30" fill="none" stroke="#ffffff" stroke-opacity="0.12" stroke-width="2"/>
+  <!-- dark red tinted optical window -->
+  <ellipse cx="488" cy="222" rx="50" ry="60" fill="#101315" stroke="#0b0d0f" stroke-width="3"/>
+  <ellipse cx="488" cy="222" rx="42" ry="52" fill="url(#window)" stroke="#2a0a08" stroke-width="2.5"/>
+  <path d="M452.3 205.9 A38 47 0 0 1 481.4 175.7" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="9"/>
+  <ellipse cx="488" cy="222" rx="20" ry="25" fill="#3a0e0b" opacity="0.55"/>
+  <!-- small camera aperture -->
+  <ellipse cx="566" cy="252" rx="20" ry="22" fill="#22272a" stroke="#0f1214" stroke-width="2.5"/>
+  <ellipse cx="566" cy="252" rx="12" ry="14" fill="#0d0f10" stroke="#33383d" stroke-width="2"/>
+  <ellipse cx="561" cy="246" rx="4" ry="4.5" fill="#ffffff" opacity="0.35"/>
+</svg>

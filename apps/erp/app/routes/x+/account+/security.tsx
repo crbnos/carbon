@@ -32,6 +32,7 @@ import {
   VStack
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { startRegistration } from "@simplewebauthn/browser";
 import { useState } from "react";
 import {
@@ -143,6 +144,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function AccountSecurity() {
+  const { t } = useLingui();
   const { passkeys, totpFactors } = useLoaderData<typeof loader>();
   const deleteFetcher = useFetcher();
   const renameFetcher = useFetcher();
@@ -167,7 +169,7 @@ export default function AccountSecurity() {
     enrollAction: path.to.mfaEnroll,
     verifyAction: path.to.mfaVerify,
     onVerified: () => {
-      toast.success("Two-factor authentication enabled");
+      toast.success(t`Two-factor authentication enabled`);
       resetMfaEnrollment();
       revalidate();
     }
@@ -192,7 +194,7 @@ export default function AccountSecurity() {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.message ?? INVALID_CODE_MESSAGE);
       }
-      toast.success("Two-factor authentication disabled");
+      toast.success(t`Two-factor authentication disabled`);
       setRemoveFactor(null);
       setRemoveCode("");
       revalidate();
@@ -206,7 +208,7 @@ export default function AccountSecurity() {
 
   const onAddPasskey = async () => {
     if (!passkeysEnabled) {
-      toast.error("Passkeys are disabled");
+      toast.error(t`Passkeys are disabled`);
       return;
     }
     setRegistering(true);
@@ -215,7 +217,7 @@ export default function AccountSecurity() {
         method: "POST"
       });
 
-      if (!optRes.ok) throw new Error("Failed to get options");
+      if (!optRes.ok) throw new Error(t`Failed to get options`);
       const options = await optRes.json();
 
       const credential = await startRegistration({
@@ -230,15 +232,15 @@ export default function AccountSecurity() {
 
       if (!verifyRes.ok) {
         const body = await verifyRes.json().catch(() => ({}));
-        throw new Error(body.message ?? "Registration failed");
+        throw new Error(body.message ?? t`Registration failed`);
       }
 
       const result = await verifyRes.json();
-      toast.success(`${result.credentialName ?? "Passkey"} registered`);
+      toast.success(t`${result.credentialName ?? "Passkey"} registered`);
       revalidate();
     } catch (e: any) {
       if (e?.name !== "NotAllowedError" && e?.name !== "AbortError") {
-        toast.error(e.message ?? "Failed to register passkey");
+        toast.error(e.message ?? t`Failed to register passkey`);
       }
     } finally {
       setRegistering(false);
@@ -283,10 +285,14 @@ export default function AccountSecurity() {
           <CardHeader>
             <HStack className="justify-between">
               <div>
-                <CardTitle>Passkeys</CardTitle>
+                <CardTitle>
+                  <Trans>Passkeys</Trans>
+                </CardTitle>
                 <CardDescription>
-                  Sign in with biometrics instead of a magic link. Passkeys are
-                  secured by Face ID, Touch ID, or your device PIN.
+                  <Trans>
+                    Sign in with biometrics instead of a magic link. Passkeys
+                    are secured by Face ID, Touch ID, or your device PIN.
+                  </Trans>
                 </CardDescription>
               </div>
               <Button
@@ -297,38 +303,48 @@ export default function AccountSecurity() {
                 isLoading={registering}
                 leftIcon={<LuFingerprint className="size-4" />}
               >
-                Add Passkey
+                <Trans>Add Passkey</Trans>
               </Button>
             </HStack>
           </CardHeader>
           <CardContent>
             {passkeys.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                No passkeys registered yet.
+                <Trans>No passkeys registered yet.</Trans>
               </p>
             ) : (
-              <HStack spacing={2}>
+              <VStack spacing={2}>
                 {passkeys.map((pk) => (
                   <HStack
                     key={pk.id}
-                    className="justify-between p-3 rounded-md border border-border space-x-4 cursor-pointer hover:bg-muted/40 transition-colors"
+                    spacing={4}
+                    className="w-full justify-between p-3 rounded-lg border border-border cursor-pointer transition-colors hover:bg-muted/40"
                     onClick={() => openPasskeyDrawer(pk)}
                   >
-                    <HStack spacing={3} className="items-start">
-                      <LuFingerprint className="size-4 text-muted-foreground shrink-0 mt-1" />
-                      <VStack spacing={0}>
-                        <p className="text-sm font-medium">
+                    <HStack spacing={3} className="min-w-0">
+                      <span className="flex items-center justify-center size-9 rounded-lg bg-muted shrink-0">
+                        <LuFingerprint className="size-4 text-muted-foreground" />
+                      </span>
+                      <VStack spacing={0} className="min-w-0">
+                        <p className="text-sm font-medium truncate">
                           {pk.credentialName}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          Added <DateTime value={pk.createdAt} variant="date" />
+                          <Trans>Added</Trans>{" "}
+                          <DateTime value={pk.createdAt} variant="date" />
                           {pk.lastUsedAt && (
                             <>
-                              {" · "}Last used{" "}
+                              {" · "}
+                              <Trans>Last used</Trans>{" "}
                               <DateTime value={pk.lastUsedAt} variant="date" />
                             </>
                           )}
-                          {pk.backedUp && " · Synced"}
+                          {pk.backedUp && (
+                            <>
+                              {" · "}
+                              <Trans>Synced</Trans>
+                            </>
+                          )}
                         </p>
                       </VStack>
                     </HStack>
@@ -338,15 +354,15 @@ export default function AccountSecurity() {
                         e.stopPropagation();
                         setConfirmDeleteId(pk.id);
                       }}
-                      aria-label="Delete passkey"
+                      aria-label={t`Delete passkey`}
                       type="button"
                       variant="ghost"
                       icon={<LuTrash2 />}
-                      className="cursor-pointer"
+                      className="shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
                     />
                   </HStack>
                 ))}
-              </HStack>
+              </VStack>
             )}
           </CardContent>
         </Card>
@@ -356,10 +372,14 @@ export default function AccountSecurity() {
         <CardHeader>
           <HStack className="justify-between">
             <div>
-              <CardTitle>Two-factor authentication</CardTitle>
+              <CardTitle>
+                <Trans>Two-factor authentication</Trans>
+              </CardTitle>
               <CardDescription>
-                Require a 6-digit code from an authenticator app when signing
-                in.
+                <Trans>
+                  Require a 6-digit code from an authenticator app when signing
+                  in.
+                </Trans>
               </CardDescription>
             </div>
             <Button
@@ -370,30 +390,33 @@ export default function AccountSecurity() {
               isLoading={mfaStarting}
               leftIcon={<LuShieldCheck className="size-4" />}
             >
-              Add Authenticator App
+              <Trans>Add Authenticator App</Trans>
             </Button>
           </HStack>
         </CardHeader>
         <CardContent>
           {totpFactors.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              Two-factor authentication is not enabled.
+              <Trans>Two-factor authentication is not enabled.</Trans>
             </p>
           ) : (
-            <HStack spacing={2}>
+            <VStack spacing={2}>
               {totpFactors.map((factor) => (
                 <HStack
                   key={factor.id}
-                  className="justify-between p-3 rounded-md border border-border space-x-4"
+                  spacing={4}
+                  className="w-full justify-between p-3 rounded-lg border border-border"
                 >
-                  <HStack spacing={3} className="items-start">
-                    <LuShieldCheck className="size-4 text-muted-foreground shrink-0 mt-1" />
-                    <VStack spacing={0}>
-                      <p className="text-sm font-medium">
-                        {factor.friendlyName ?? "Authenticator app"}
+                  <HStack spacing={3} className="min-w-0">
+                    <span className="flex items-center justify-center size-9 rounded-lg bg-muted shrink-0">
+                      <LuShieldCheck className="size-4 text-muted-foreground" />
+                    </span>
+                    <VStack spacing={0} className="min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {factor.friendlyName ?? t`Authenticator app`}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Added{" "}
+                        <Trans>Added</Trans>{" "}
                         <DateTime value={factor.createdAt} variant="date" />
                       </p>
                     </VStack>
@@ -404,15 +427,15 @@ export default function AccountSecurity() {
                       setRemoveCode("");
                       setRemoveFactor(factor);
                     }}
-                    aria-label="Remove authenticator app"
+                    aria-label={t`Remove authenticator app`}
                     type="button"
                     variant="ghost"
                     icon={<LuTrash2 />}
-                    className="cursor-pointer"
+                    className="shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
                   />
                 </HStack>
               ))}
-            </HStack>
+            </VStack>
           )}
         </CardContent>
       </Card>
@@ -425,31 +448,35 @@ export default function AccountSecurity() {
       >
         <ModalContent size="small">
           <ModalHeader>
-            <ModalTitle>Set up two-factor authentication</ModalTitle>
+            <ModalTitle>
+              <Trans>Set up two-factor authentication</Trans>
+            </ModalTitle>
           </ModalHeader>
           <ModalBody>
             {mfaEnrollment && (
               <VStack spacing={4} className="w-full items-center">
                 <p className="text-sm text-muted-foreground">
-                  Scan this QR code with your authenticator app (e.g. Google
-                  Authenticator or 1Password), then enter the 6-digit code it
-                  shows.
+                  <Trans>
+                    Scan this QR code with your authenticator app (e.g. Google
+                    Authenticator or 1Password), then enter the 6-digit code it
+                    shows.
+                  </Trans>
                 </p>
                 <img
                   src={mfaEnrollment.qrCode}
-                  alt="Authenticator QR code"
+                  alt={t`Authenticator QR code`}
                   className="size-44 rounded-md bg-white p-2"
                 />
                 <VStack spacing={1} className="w-full items-center">
                   <p className="text-xs text-muted-foreground">
-                    Or enter this secret manually:
+                    <Trans>Or enter this secret manually:</Trans>
                   </p>
                   <button
                     type="button"
                     className="font-mono text-xs break-all text-center cursor-pointer hover:text-foreground text-muted-foreground"
                     onClick={() => {
                       navigator.clipboard.writeText(mfaEnrollment.secret);
-                      toast.success("Secret copied to clipboard");
+                      toast.success(t`Secret copied to clipboard`);
                     }}
                   >
                     {mfaEnrollment.secret}
@@ -459,7 +486,9 @@ export default function AccountSecurity() {
                 {mfaError && (
                   <Alert variant="destructive">
                     <LuCircleAlert className="w-4 h-4" />
-                    <AlertTitle>Verification failed</AlertTitle>
+                    <AlertTitle>
+                      <Trans>Verification failed</Trans>
+                    </AlertTitle>
                     <AlertDescription>{mfaError}</AlertDescription>
                   </Alert>
                 )}
@@ -472,7 +501,7 @@ export default function AccountSecurity() {
               variant="secondary"
               onClick={resetMfaEnrollment}
             >
-              Cancel
+              <Trans>Cancel</Trans>
             </Button>
             <Button
               type="button"
@@ -480,7 +509,7 @@ export default function AccountSecurity() {
               isDisabled={mfaCode.length !== 6 || mfaVerifying}
               isLoading={mfaVerifying}
             >
-              Verify
+              <Trans>Verify</Trans>
             </Button>
           </ModalFooter>
         </ModalContent>
@@ -497,13 +526,17 @@ export default function AccountSecurity() {
       >
         <ModalContent size="small">
           <ModalHeader>
-            <ModalTitle>Remove two-factor authentication</ModalTitle>
+            <ModalTitle>
+              <Trans>Remove two-factor authentication</Trans>
+            </ModalTitle>
           </ModalHeader>
           <ModalBody>
             <VStack spacing={4} className="w-full">
               <p className="text-sm text-muted-foreground">
-                Signing in will no longer require a code. Enter the current
-                6-digit code from your authenticator app to confirm.
+                <Trans>
+                  Signing in will no longer require a code. Enter the current
+                  6-digit code from your authenticator app to confirm.
+                </Trans>
               </p>
               <OtpInput
                 value={removeCode}
@@ -515,7 +548,9 @@ export default function AccountSecurity() {
               {removeError && (
                 <Alert variant="destructive">
                   <LuCircleAlert className="w-4 h-4" />
-                  <AlertTitle>Verification failed</AlertTitle>
+                  <AlertTitle>
+                    <Trans>Verification failed</Trans>
+                  </AlertTitle>
                   <AlertDescription>{removeError}</AlertDescription>
                 </Alert>
               )}
@@ -530,7 +565,7 @@ export default function AccountSecurity() {
                 setRemoveCode("");
               }}
             >
-              Cancel
+              <Trans>Cancel</Trans>
             </Button>
             <Button
               type="button"
@@ -539,7 +574,7 @@ export default function AccountSecurity() {
               isDisabled={removeCode.length !== 6 || removing}
               isLoading={removing}
             >
-              Remove
+              <Trans>Remove</Trans>
             </Button>
           </ModalFooter>
         </ModalContent>
@@ -553,22 +588,26 @@ export default function AccountSecurity() {
       >
         <ModalContent size="small">
           <ModalHeader>
-            <ModalTitle>Edit Passkey</ModalTitle>
+            <ModalTitle>
+              <Trans>Edit Passkey</Trans>
+            </ModalTitle>
           </ModalHeader>
           <ModalBody>
             <VStack spacing={4} className="w-full">
               <VStack className="w-full" spacing={0}>
-                <label className="text-sm font-medium mb-1 block">Name</label>
+                <label className="text-sm font-medium mb-1 block">
+                  <Trans>Name</Trans>
+                </label>
                 <Input
                   value={editedName}
                   onChange={(e) => setEditedName(e.target.value)}
-                  placeholder="Passkey name"
+                  placeholder={t`Passkey name`}
                 />
               </VStack>
               {selectedPasskey && (
                 <VStack spacing={1} className="w-full">
                   <p className="text-xs text-muted-foreground">
-                    Added{" "}
+                    <Trans>Added</Trans>{" "}
                     <DateTime
                       value={selectedPasskey.createdAt}
                       variant="date"
@@ -576,7 +615,7 @@ export default function AccountSecurity() {
                   </p>
                   {selectedPasskey.lastUsedAt && (
                     <p className="text-xs text-muted-foreground">
-                      Last used{" "}
+                      <Trans>Last used</Trans>{" "}
                       <DateTime
                         value={selectedPasskey.lastUsedAt}
                         variant="date"
@@ -584,7 +623,9 @@ export default function AccountSecurity() {
                     </p>
                   )}
                   {selectedPasskey.backedUp && (
-                    <p className="text-xs text-muted-foreground">Synced</p>
+                    <p className="text-xs text-muted-foreground">
+                      <Trans>Synced</Trans>
+                    </p>
                   )}
                 </VStack>
               )}
@@ -596,7 +637,7 @@ export default function AccountSecurity() {
               variant="secondary"
               onClick={closePasskeyDrawer}
             >
-              Cancel
+              <Trans>Cancel</Trans>
             </Button>
             <Button
               type="button"
@@ -606,7 +647,7 @@ export default function AccountSecurity() {
                 editedName === selectedPasskey?.credentialName
               }
             >
-              Save
+              <Trans>Save</Trans>
             </Button>
           </ModalFooter>
         </ModalContent>
@@ -620,11 +661,15 @@ export default function AccountSecurity() {
       >
         <ModalContent size="small">
           <ModalHeader>
-            <ModalTitle>Delete Passkey</ModalTitle>
+            <ModalTitle>
+              <Trans>Delete Passkey</Trans>
+            </ModalTitle>
           </ModalHeader>
           <ModalBody>
-            Are you sure you want to delete this passkey? You won't be able to
-            use it to sign in anymore.
+            <Trans>
+              Are you sure you want to delete this passkey? You won't be able to
+              use it to sign in anymore.
+            </Trans>
           </ModalBody>
           <ModalFooter>
             <Button
@@ -632,7 +677,7 @@ export default function AccountSecurity() {
               variant="secondary"
               onClick={() => setConfirmDeleteId(null)}
             >
-              Cancel
+              <Trans>Cancel</Trans>
             </Button>
             <Button
               type="button"
@@ -641,7 +686,7 @@ export default function AccountSecurity() {
               isLoading={deleteFetcher.state !== "idle"}
               isDisabled={deleteFetcher.state !== "idle"}
             >
-              Delete
+              <Trans>Delete</Trans>
             </Button>
           </ModalFooter>
         </ModalContent>

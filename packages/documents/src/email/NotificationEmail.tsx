@@ -1,3 +1,4 @@
+import { renderInlineLinks } from "@carbon/notifications";
 import {
   Body,
   Button,
@@ -12,8 +13,9 @@ import {
 import { Logo } from "./components/Logo";
 import { EmailThemeProvider, getEmailThemeClasses } from "./components/Theme";
 
-// Structurally compatible with `NotificationDetail` from `@carbon/notifications`
-// (kept local so the email package needn't depend on the notifications package).
+// Structurally compatible with `NotificationDetail` from `@carbon/notifications`,
+// which this file now also imports `renderInlineLinks` from — the parser must be the
+// same one the in-app bell uses, or a link that works in one place fails in the other.
 interface NotificationDetail {
   label: string;
   value: string;
@@ -31,6 +33,10 @@ interface Props {
   ctaLabel?: string;
   ctaUrl?: string;
   details?: NotificationDetail[];
+  // The ERP origin. A `[label](url)` in a detail value is rendered as a real anchor
+  // only when the url is an https url on THIS origin; without it every value stays
+  // literal text, which is the safe default for a customer-authored body.
+  erpUrl?: string;
   // When set, renders the "Manage notification settings" footer.
   settingsUrl?: string;
 }
@@ -193,6 +199,7 @@ export const NotificationEmail = ({
   ctaLabel = "View details",
   ctaUrl,
   details,
+  erpUrl,
   settingsUrl
 }: Props) => {
   const themeClasses = getEmailThemeClasses();
@@ -311,7 +318,26 @@ export const NotificationEmail = ({
                         <Text
                           className={`text-[13px] leading-[20px] m-0 font-medium ${themeClasses.text}`}
                         >
-                          {detail.value}
+                          {erpUrl
+                            ? renderInlineLinks(detail.value, erpUrl).map(
+                                (segment, i) =>
+                                  "href" in segment ? (
+                                    <Link
+                                      // Segments have no stable id; the value is
+                                      // re-rendered whole or not at all.
+                                      // biome-ignore lint/suspicious/noArrayIndexKey: no stable id
+                                      key={i}
+                                      href={segment.href}
+                                      style={{ color: "#2563eb" }}
+                                    >
+                                      {segment.text}
+                                    </Link>
+                                  ) : (
+                                    // biome-ignore lint/suspicious/noArrayIndexKey: no stable id
+                                    <span key={i}>{segment.text}</span>
+                                  )
+                              )
+                            : detail.value}
                         </Text>
                       </td>
                     </tr>

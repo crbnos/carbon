@@ -200,7 +200,9 @@ type JobMaterial = {
   description?: string | null;
   quantity?: number | null;
   jobOperationId?: string | null;
-  jobMaterialStep?: { jobOperationStepId: string }[] | null;
+  jobMaterialStep?:
+    | { jobOperationStepId: string; quantity?: number | null }[]
+    | null;
 };
 
 type JobBillOfProcessProps = {
@@ -1073,15 +1075,13 @@ const JobBillOfProcess = ({
         </CardAction>
       </HStack>
       <CardContent>
-        <ScrollArea type="auto" className="max-h-[60dvh]">
-          <SortableList
-            items={items}
-            onReorder={onReorder}
-            onToggleItem={onToggleItem}
-            onRemoveItem={onRemoveItem}
-            renderItem={renderListItem}
-          />
-        </ScrollArea>
+        <SortableList
+          items={items}
+          onReorder={onReorder}
+          onToggleItem={onToggleItem}
+          onRemoveItem={onRemoveItem}
+          renderItem={renderListItem}
+        />
       </CardContent>
     </Card>
   );
@@ -1193,38 +1193,52 @@ function StepsForm({
   const draftFileInputRef = useRef<HTMLInputElement>(null);
   const draftModelInputRef = useRef<HTMLInputElement>(null);
 
-  // Parts (this operation's BOM materials) the operator can assign to a step. Parts picked
-  // while CREATING a step are buffered here and attached right after the step is created.
+  // Parts the operator can assign to a step. The whole bill of material is offered —
+  // the BOM is the source of truth, and a line needn't be assigned to this operation
+  // to be referenced by a step. Parts picked while CREATING a step are buffered here
+  // and attached right after the step is created.
   const operationParts = useMemo(
     () =>
-      (materials ?? [])
-        .filter((m) => m.jobOperationId === operationId)
-        .map((m) => ({
-          id: m.id,
-          name: m.description || m.itemId,
-          quantity: m.quantity ?? 1
-        })),
-    [materials, operationId]
-  );
-  const [draftParts, setDraftParts] = useState<string[]>([]);
-
-  // Tools (this operation's tools) the operator can assign to a step — the tool twin of
-  // operationParts/draftParts. Tools picked while CREATING a step are buffered here and
-  // attached right after the step is created (see the effect below).
-  const allTools = useTools();
-  const operationTools = useMemo(
-    () =>
-      (tools ?? []).map((tl) => {
-        const tool = allTools.find((x) => x.id === tl.toolId);
+      (materials ?? []).map((m) => {
+        const item = allItems.find((i) => i.id === m.itemId);
         return {
-          id: tl.id ?? "",
-          name: tool?.readableIdWithRevision ?? tl.toolId ?? "",
-          secondary: tool?.name ?? undefined,
-          quantity: tl.quantity ?? 1
+          id: m.id,
+          name: item?.readableIdWithRevision ?? m.description ?? m.itemId,
+          secondary: item
+            ? (m.description ?? item.name ?? undefined)
+            : undefined,
+          quantity: m.quantity ?? 1
         };
       }),
-    [tools, allTools]
+    [materials, allItems]
   );
+  const [draftParts, setDraftParts] = useState<string[]>([]);
+  // Per-step share of each buffered part's BOM line (absent = the full line
+  // quantity), keyed by jobMaterial id; written with the links on step create.
+  const [draftPartQuantities, setDraftPartQuantities] = useState<
+    Record<string, number>
+  >({});
+
+  // Tools the operator can assign to a step — the tool twin of operationParts/
+  // draftParts. The whole tool LIBRARY is offered (keyed by tool item id); the
+  // operation tool row is created server-side on attach when it doesn't exist
+  // yet. Tools picked while CREATING a step are buffered here and attached
+  // right after the step is created (see the effect below).
+  const allTools = useTools();
+  const operationTools = useMemo(() => {
+    const opToolByToolId = new Map(
+      (tools ?? []).flatMap((tl) =>
+        tl.toolId ? [[tl.toolId, tl] as const] : []
+      )
+    );
+    return allTools.map((tool) => ({
+      id: tool.id,
+      name: tool.readableIdWithRevision,
+      secondary: tool.name ?? undefined,
+      quantity: opToolByToolId.get(tool.id)?.quantity ?? 1,
+      primary: opToolByToolId.has(tool.id)
+    }));
+  }, [tools, allTools]);
   const [draftTools, setDraftTools] = useState<string[]>([]);
 
   const materialItemIds = useMemo(
@@ -1368,10 +1382,15 @@ function StepsForm({
     let cancelled = false;
     const batch = draftParts;
     (async () => {
+      // Omit the quantity column when unset so the default path still works
+      // against a pre-migration schema (the column only ships on main).
       const { error } = await carbon.from("jobMaterialStep").insert(
         batch.map((jobMaterialId) => ({
           jobMaterialId,
-          jobOperationStepId: newStepId
+          jobOperationStepId: newStepId,
+          ...(draftPartQuantities[jobMaterialId] != null
+            ? { quantity: draftPartQuantities[jobMaterialId] }
+            : {})
         }))
       );
       if (cancelled) return;
@@ -1381,6 +1400,7 @@ function StepsForm({
       }
       const savedIds = new Set(batch);
       setDraftParts((prev) => prev.filter((id) => !savedIds.has(id)));
+      setDraftPartQuantities({});
       revalidator.revalidate();
     })();
     return () => {
@@ -1389,6 +1409,9 @@ function StepsForm({
   }, [fetcher.data]);
 
   // When the new step is created, attach any buffered tools, then revalidate + reset.
+  // Goes through the step-tool route (not a direct insert) because the buffer holds
+  // tool ITEM ids and the operation tool row may not exist yet — the route creates
+  // it before linking. Sequential so a repeated tool never races its own creation.
   // biome-ignore lint/correctness/useExhaustiveDependencies: keyed off the created step id
   useEffect(() => {
     const newStepId = (fetcher.data as { id?: string | null } | undefined)?.id;
@@ -1396,14 +1419,20 @@ function StepsForm({
     let cancelled = false;
     const batch = draftTools;
     (async () => {
-      const { error } = await carbon.from("jobOperationToolStep").insert(
-        batch.map((jobOperationToolId) => ({
-          jobOperationToolId,
-          jobOperationStepId: newStepId
-        }))
-      );
+      let failed = false;
+      for (const toolId of batch) {
+        const fd = new FormData();
+        fd.append("toolId", toolId);
+        fd.append("stepId", newStepId);
+        fd.append("linked", "true");
+        const res = await fetch(path.to.jobOperationStepTool, {
+          method: "POST",
+          body: fd
+        });
+        if (!res.ok) failed = true;
+      }
       if (cancelled) return;
-      if (error) {
+      if (failed) {
         toast.error(t`Failed to save tools`);
         return;
       }
@@ -1591,7 +1620,10 @@ function StepsForm({
                 emptyLabel={t`No parts`}
                 searchPlaceholder={t`Search parts...`}
                 removeLabel={t`Remove part`}
-                items={operationParts}
+                items={operationParts.map((p) => ({
+                  ...p,
+                  linkedQuantity: draftPartQuantities[p.id] ?? null
+                }))}
                 linkedIds={draftParts}
                 isDisabled={isDisabled}
                 onAdd={(partId) =>
@@ -1599,8 +1631,18 @@ function StepsForm({
                     prev.includes(partId) ? prev : [...prev, partId]
                   )
                 }
-                onRemove={(partId) =>
-                  setDraftParts((prev) => prev.filter((id) => id !== partId))
+                onRemove={(partId) => {
+                  setDraftParts((prev) => prev.filter((id) => id !== partId));
+                  setDraftPartQuantities((prev) => {
+                    const { [partId]: _removed, ...rest } = prev;
+                    return rest;
+                  });
+                }}
+                onQuantityChange={(partId, quantity) =>
+                  setDraftPartQuantities((prev) => ({
+                    ...prev,
+                    [partId]: quantity
+                  }))
                 }
               />
 
@@ -1613,6 +1655,8 @@ function StepsForm({
                 icon={<LuHammer />}
                 items={operationTools}
                 linkedIds={draftTools}
+                primaryGroupLabel={t`On this operation`}
+                secondaryGroupLabel={t`All tools`}
                 isDisabled={isDisabled}
                 onAdd={(toolId) =>
                   setDraftTools((prev) =>
@@ -1689,27 +1733,34 @@ function StepsForm({
 
 // Parts assigned to an EXISTING job step — the step-side of the part↔step link. Toggles each
 // jobMaterialStep link immediately via the material route. Job-tier twin of StepParts.
+// Lists the method's whole bill of material — the BOM is the source of truth, and a
+// line needn't be assigned to this operation to be referenced by a step.
 function JobStepParts({
   step,
-  operationId,
   materials,
   isDisabled
 }: {
   step: JobOperationStep;
-  operationId: string;
   materials: JobMaterial[];
   isDisabled: boolean;
 }) {
   const { t } = useLingui();
   const fetcher = useFetcher();
+  const [allItems] = useItems();
 
-  const operationParts = (materials ?? [])
-    .filter((m) => m.jobOperationId === operationId)
-    .map((m) => ({
+  const operationParts = (materials ?? []).map((m) => {
+    const item = allItems.find((i) => i.id === m.itemId);
+    const link = (m.jobMaterialStep ?? []).find(
+      (s) => s.jobOperationStepId === step.id
+    );
+    return {
       id: m.id,
-      name: m.description || m.itemId,
-      quantity: m.quantity ?? 1
-    }));
+      name: item?.readableIdWithRevision ?? m.description ?? m.itemId,
+      secondary: item ? (m.description ?? item.name ?? undefined) : undefined,
+      quantity: m.quantity ?? 1,
+      linkedQuantity: link?.quantity ?? null
+    };
+  });
 
   const linkedPartIds = (materials ?? [])
     .filter((m) =>
@@ -1717,12 +1768,15 @@ function JobStepParts({
     )
     .map((m) => m.id);
 
-  const toggle = (partId: string, linked: boolean) => {
+  const toggle = (partId: string, linked: boolean, quantity?: number) => {
     if (!step.id) return;
     const fd = new FormData();
     fd.append("materialId", partId);
     fd.append("stepId", step.id);
     fd.append("linked", String(linked));
+    if (linked && quantity !== undefined) {
+      fd.append("quantity", String(quantity));
+    }
     fetcher.submit(fd, {
       method: "post",
       action: path.to.jobOperationStepMaterial
@@ -1742,6 +1796,7 @@ function JobStepParts({
       busy={fetcher.state !== "idle"}
       onAdd={(id) => toggle(id, true)}
       onRemove={(id) => toggle(id, false)}
+      onQuantityChange={(id, quantity) => toggle(id, true, quantity)}
     />
   );
 }
@@ -1761,15 +1816,19 @@ function JobStepTools({
   const fetcher = useFetcher();
   const allTools = useTools();
 
-  const operationTools = (tools ?? []).map((tl) => {
-    const tool = allTools.find((x) => x.id === tl.toolId);
-    return {
-      id: tl.id ?? "",
-      name: tool?.readableIdWithRevision ?? tl.toolId ?? "",
-      secondary: tool?.name ?? undefined,
-      quantity: tl.quantity ?? 1
-    };
-  });
+  // The whole tool LIBRARY is offered (keyed by tool item id) — an operation
+  // needn't have a tool on its Tools tab first; picking one here creates the
+  // operation tool row (quantity 1) server-side before linking it to the step.
+  const opToolByToolId = new Map(
+    (tools ?? []).flatMap((tl) => (tl.toolId ? [[tl.toolId, tl] as const] : []))
+  );
+  const stepTools = allTools.map((tool) => ({
+    id: tool.id,
+    name: tool.readableIdWithRevision,
+    secondary: tool.name ?? undefined,
+    quantity: opToolByToolId.get(tool.id)?.quantity ?? 1,
+    primary: opToolByToolId.has(tool.id)
+  }));
 
   const linkedToolIds = (tools ?? [])
     .filter((tl) =>
@@ -1781,7 +1840,7 @@ function JobStepTools({
         ).map((s) => s.jobOperationStepId)
       ).some((stepId) => stepId === step.id)
     )
-    .map((tl) => tl.id ?? "");
+    .flatMap((tl) => (tl.toolId ? [tl.toolId] : []));
 
   const toggle = (toolId: string, linked: boolean) => {
     if (!step.id) return;
@@ -1803,7 +1862,9 @@ function JobStepTools({
       searchPlaceholder={t`Search tools...`}
       removeLabel={t`Remove tool`}
       icon={<LuHammer />}
-      items={operationTools}
+      items={stepTools}
+      primaryGroupLabel={t`On this operation`}
+      secondaryGroupLabel={t`All tools`}
       linkedIds={linkedToolIds}
       isDisabled={isDisabled}
       busy={fetcher.state !== "idle"}
@@ -2183,7 +2244,6 @@ function StepsListItem({
             <JobStepSlides step={attribute} isDisabled={isDisabled} />
             <JobStepParts
               step={attribute}
-              operationId={operationId}
               materials={materials}
               isDisabled={isDisabled}
             />

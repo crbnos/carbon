@@ -425,6 +425,9 @@ msgstr "输入 {0} 的 PIN 码"
 msgid "Enter the 6-digit code from your authenticator app"
 msgstr "输入您的身份验证器应用中的6位代码"
 
+msgid "Enter the 6-digit code from your authenticator app to resume."
+msgstr "请输入身份验证器应用中的 6 位代码以继续。"
+
 msgid "Error"
 msgstr "错误"
 
@@ -926,6 +929,9 @@ msgstr "操作员执行"
 msgid "Optional"
 msgstr "可选"
 
+msgid "or"
+msgstr "或"
+
 msgid "Overall result"
 msgstr "总体结果"
 
@@ -946,6 +952,9 @@ msgstr "部分处置"
 
 msgid "Passed Inspection"
 msgstr "检验通过"
+
+msgid "Passkey unlock failed"
+msgstr "密钥解锁失败"
 
 msgid "Pause"
 msgstr "暂停"
@@ -1221,6 +1230,9 @@ msgstr "序列号"
 msgid "Serial Numbers"
 msgstr "序列号"
 
+msgid "Session locked"
+msgstr "会话已锁定"
+
 msgid "Set Clock Out"
 msgstr "设置下班时间"
 
@@ -1259,6 +1271,9 @@ msgstr "登出"
 
 msgid "Sign Out"
 msgstr "退出登录"
+
+msgid "Sign out instead"
+msgstr "改为登出"
 
 msgid "Signed in as {stationName}"
 msgstr "已登录为 {stationName}"
@@ -1393,11 +1408,20 @@ msgstr "需要双因素认证"
 msgid "Type a message..."
 msgstr "输入消息..."
 
+msgid "Unable to unlock"
+msgstr "无法解锁"
+
 msgid "Unissued serial/batch materials"
 msgstr "未发放的序列号/批次物料"
 
 msgid "Unknown"
 msgstr "未知"
+
+msgid "Unlock"
+msgstr "解锁"
+
+msgid "Unlock with passkey"
+msgstr "使用密钥解锁"
 
 msgid "Unpick"
 msgstr "取消拣选"
@@ -1475,3 +1499,6 @@ msgstr "您已打卡上班 {hoursElapsed} 小时。您是否忘记打卡下班�
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "您的组织需要身份验证器应用。在 Carbon 中设置，然后返回此处。"
+
+msgid "Your session was locked after inactivity."
+msgstr "您的会话因不活动而被锁定。"

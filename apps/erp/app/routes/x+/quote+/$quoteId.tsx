@@ -247,7 +247,7 @@ export default function QuoteRoute() {
                 explorer={<QuoteExplorer methods={methods} />}
                 content={
                   <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-hide w-full">
-                    <VStack spacing={2} className="p-2">
+                    <VStack spacing={4} className="p-4">
                       <Outlet />
                     </VStack>
                   </div>

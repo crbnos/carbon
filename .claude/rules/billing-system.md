@@ -115,6 +115,9 @@ Env: `STRIPE_BYPASS_COMPANY_IDS`, `STRIPE_BYPASS_USER_IDS` (comma-separated, ser
 
 `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` (both optional — Cloud only),
 `STRIPE_BYPASS_COMPANY_IDS`, `STRIPE_BYPASS_USER_IDS`. Re-exported from `@carbon/auth`.
+`STRIPE_CONNECT_WEBHOOK_SECRET` also lives here but belongs to Stripe **Connect**
+(customer payments on connected accounts), not to Carbon's own billing — see
+`packages/stripe/src/connect.server.ts` and `webhook.stripe-connect.ts`.
 
 ## Gotchas
 

@@ -2,6 +2,10 @@ import type { Database } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import z from "zod";
+import {
+  persistIntegrationSecrets,
+  resolveIntegrationSecrets
+} from "../../integrations/secrets";
 import type { AccountingProvider } from "../providers";
 import { QboProvider } from "../providers/quickbooks-online";
 import { RilletProvider } from "../providers/rillet";
@@ -111,9 +115,21 @@ export const getAccountingIntegration = async <T extends ProviderID>(
     );
   }
 
-  const config = ProviderIntegrationMetadataSchema.safeParse(
-    integration.data.metadata
+  // Merge vaulted secret material (accessToken/refreshToken) back into the
+  // metadata before parsing, so provider construction reads credentials the same
+  // as before. The tenantId/realmId used by the `.or(...)` filter above are NOT
+  // secret and remain in the plaintext column, so that lookup is unaffected.
+  // Vault RPCs require the service-role client.
+  const { getCarbonServiceRole } = await import("@carbon/auth/client.server");
+  const resolvedMetadata = await resolveIntegrationSecrets(
+    getCarbonServiceRole(),
+    integration.data.companyId,
+    provider,
+    integration.data.metadata,
+    integration.data.secretRef
   );
+
+  const config = ProviderIntegrationMetadataSchema.safeParse(resolvedMetadata);
 
   if (!config.success) {
     logger.error("Invalid provider config", { error: config.error });
@@ -206,11 +222,21 @@ export function getProviderIntegration(
         }
       };
 
-      await client
-        .from("companyIntegration")
-        .update({ metadata: { ...config, credentials: update } as any })
-        .eq("companyId", companyId)
-        .eq("id", provider);
+      // Secret material is split out to Supabase Vault; only the non-secret
+      // config is written back to the metadata column. Vault RPCs require the
+      // service-role client.
+      const { getCarbonServiceRole } = await import(
+        "@carbon/auth/client.server"
+      );
+      await persistIntegrationSecrets(
+        getCarbonServiceRole(),
+        companyId,
+        provider,
+        {
+          ...config,
+          credentials: update
+        }
+      );
     } catch (error) {
       logger.error("Failed to update integration metadata", {
         provider,

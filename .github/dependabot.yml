@@ -1,0 +1,70 @@
+# Dependabot configuration for automated dependency updates.
+# Docs: https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# One npm entry with directory "/" covers the whole pnpm workspace via the
+# root pnpm-lock.yaml; one cargo entry likewise covers the Rust workspace via
+# Cargo.lock. Updates are grouped to keep PR volume manageable in this monorepo.
+version: 2
+updates:
+  # JavaScript/TypeScript — pnpm workspace (root lockfile covers all packages/apps)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+    groups:
+      dev-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+      production-minor-patch:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Rust — cargo workspace (root Cargo.lock covers all crates + assembler)
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+    groups:
+      cargo:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # GitHub Actions used by workflows in .github/workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+    groups:
+      github-actions:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Docker base images
+  - package-ecosystem: "docker"
+    directories:
+      - "/"
+      - "/apps/assembler"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"

@@ -8,7 +8,11 @@ import {
   magicLinkValidator,
   RATE_LIMIT
 } from "@carbon/auth";
-import { sendMagicLink, verifyAuthSession } from "@carbon/auth/auth.server";
+import {
+  logAuthEvent,
+  sendMagicLink,
+  verifyAuthSession
+} from "@carbon/auth/auth.server";
 import {
   clearAuthCookies,
   flash,
@@ -16,7 +20,7 @@ import {
 } from "@carbon/auth/session.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { Hidden, Input, Submit, ValidatedForm, validator } from "@carbon/form";
-import { Ratelimit, redis } from "@carbon/kv";
+import { AccountLockout, Ratelimit, redis } from "@carbon/kv";
 import {
   Alert,
   AlertDescription,
@@ -102,6 +106,42 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const { email } = validation.data;
+
+  // Per-account lockout (NIST 800-171 3.1.8) — layered ON TOP of the IP limit
+  // above, keyed by the normalized email. Rejects with a GENERIC message that
+  // never reveals whether the account exists (avoids user enumeration).
+  const lockout = new AccountLockout({ redis });
+  const LOCKED_MESSAGE =
+    "For your security, sign-in for this account is temporarily paused. Please try again later.";
+
+  const lockStatus = await lockout.status(email);
+  if (lockStatus.locked) {
+    logAuthEvent("login_locked", {
+      actor: email,
+      ip,
+      reason: "account temporarily locked",
+      retryAfterSeconds: lockStatus.retryAfterSeconds
+    });
+    return data(
+      { success: false, message: LOCKED_MESSAGE },
+      await flash(request, error(null, LOCKED_MESSAGE))
+    );
+  }
+
+  const attempt = await lockout.recordFailure(email);
+  if (attempt.locked) {
+    logAuthEvent("login_locked", {
+      actor: email,
+      ip,
+      reason: "account temporarily locked",
+      retryAfterSeconds: attempt.retryAfterSeconds
+    });
+    return data(
+      { success: false, message: LOCKED_MESSAGE },
+      await flash(request, error(null, LOCKED_MESSAGE))
+    );
+  }
+
   const user = await getUserByEmail(email);
 
   if (user.data && user.data.active) {
