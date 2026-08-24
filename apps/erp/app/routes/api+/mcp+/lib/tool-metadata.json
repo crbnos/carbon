@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-21T12:30:31.179Z",
+  "generated": "2026-08-24T08:45:28.804Z",
   "totalTools": 1449,
   "modules": 15,
   "tools": [
@@ -23422,7 +23422,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "create job operation batch",
-      "paramCount": 3,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "args"
@@ -23445,6 +23445,12 @@
             "type": "string"
           },
           "workCenterId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notes": {
             "type": [
               "string",
               "null"

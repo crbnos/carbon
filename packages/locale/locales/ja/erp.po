@@ -107,6 +107,10 @@ msgstr "{0}個の{maxSlots}プロバイダースロットが使用されてい�
 msgid "{0} operations · {1} parts"
 msgstr "{0}の作業 · {1}部品"
 
+#. placeholder {0}: selected.length
+msgid "{0} operations · {totalQuantity} parts"
+msgstr "{0}件の作業 · {totalQuantity}部品"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0}件の注文"
@@ -167,6 +171,9 @@ msgstr "{count, plural, one {# コース} other {# コース}}"
 msgid "{count} selected"
 msgstr "{count}が選択されました"
 
+msgid "{days}d"
+msgstr "{days}日"
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} フェーズ完了"
 
@@ -176,6 +183,9 @@ msgstr "{from}–{to} / {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}～{to}件 (合計{count}件の操作)"
 
+msgid "{hiddenCount} operations on this process are hidden — already started or in a batch"
+msgstr "{hiddenCount}件の作業は非表示です—既に開始されているか、バッチに含まれています"
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -183,6 +193,9 @@ msgstr "{inserted}件挿入、{updated}件更新、{0}件修正が必要、{1}�
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# 行} other {# 行}}"
+
+msgid "{load} in queue"
+msgstr "キューに{load}件"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB制限"
@@ -248,6 +261,10 @@ msgstr "↩ {0} は廃止された {1} からリダイレクトされました"
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>この商品の仕入先部品を追加</0>して、優先仕入先を設定してください。"
+
+#. placeholder {0}: formatDurationMilliseconds(estimateMs, { style: "short" })
+msgid "≈ {0}"
+msgstr "≈ {0}"
 
 msgid "0 operations"
 msgstr "0件の操作"
@@ -1224,6 +1241,7 @@ msgid "Add Timecard"
 msgstr "タイムカードを追加"
 
 #. placeholder {0}: batch.batchReadableId
+#. placeholder {0}: target.readableId
 msgid "Add to {0}"
 msgstr "{0}に追加"
 
@@ -7271,6 +7289,9 @@ msgstr "グループ"
 msgid "Group by"
 msgstr "グループ化"
 
+msgid "Group by material"
+msgstr "材料でグループ化"
+
 msgid "Group Members"
 msgstr "グループメンバー"
 
@@ -8508,6 +8529,9 @@ msgstr "リストオプション"
 
 msgid "List Parameters"
 msgstr "リストパラメータ"
+
+msgid "List view"
+msgstr "リスト表示"
 
 #. placeholder {0}: label( actionInputLabelKey(actionId, batch.first), batch.first )
 #. placeholder {1}: label( actionInputLabelKey(actionId, batch.second), batch.second )
@@ -10190,6 +10214,9 @@ msgstr "ここには検索とフィルタに一致するものがありません
 msgid "Nothing in the archive"
 msgstr "アーカイブに何もありません"
 
+msgid "Nothing selected yet"
+msgstr "まだ選択されていません"
+
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "まだ何もありません。ステップは構成されると値を提供します。"
 
@@ -10321,6 +10348,9 @@ msgstr "1つの数字セット"
 
 msgid "One shared setup instead of one per operation"
 msgstr "工程ごとではなく1回の段取りで共有"
+
+msgid "One shared setup plus the summed labor and machine time"
+msgstr "1つの共有セットアップと合計labor時間およびmachine時間"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "ジョブのルーティングの1つのステップであり、プロセスとワークセンターに名前を付け、独自のセットアップ、労働、機械の時間とレートを持ちます。"
@@ -12543,6 +12573,9 @@ msgstr "反転"
 msgid "Review"
 msgstr "確認"
 
+msgid "Review & create"
+msgstr "確認と作成"
+
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "各アイテムの変更をレビューしてから確認してください。リリースは取り消せません。"
 
@@ -12887,6 +12920,11 @@ msgstr "土曜日"
 
 msgid "Save"
 msgstr "保存"
+
+#. placeholder {0}: formatDurationMilliseconds(s.saving, { style: "short" })
+#. placeholder {0}: formatDurationMilliseconds(saving, { style: "short" })
+msgid "save {0}"
+msgstr "{0}を保存"
 
 msgid "Save & Close"
 msgstr "保存して閉じる"
@@ -13249,6 +13287,9 @@ msgstr "バッチ用に選択"
 msgid "Select Gauge"
 msgstr "ゲージを選択"
 
+msgid "Select group"
+msgstr "グループを選択"
+
 msgid "Select groups or individuals"
 msgstr "グループまたは個人を選択"
 
@@ -13271,6 +13312,9 @@ msgid "Select method..."
 msgstr "メソッドを選択..."
 
 msgid "Select operation"
+msgstr "作業を選択"
+
+msgid "Select operations"
 msgstr "作業を選択"
 
 msgid "Select Printer"
@@ -13494,7 +13538,6 @@ msgstr "設定"
 msgid "Setup"
 msgstr "セットアップ"
 
-#. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {1}: formatDurationMilliseconds(setupMax, { style: "short" })
 msgid "Setup {0} → {1}"

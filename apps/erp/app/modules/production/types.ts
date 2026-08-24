@@ -247,7 +247,12 @@ export type BatchCandidate = {
   // Enriched by the API route (absent on the raw RPC row).
   setupTime: number | null;
   setupUnit: string | null;
+  laborTime: number | null;
+  laborUnit: string | null;
+  machineTime: number | null;
+  machineUnit: string | null;
   dueDate: string | null;
+  thumbnailPath: string | null;
 };
 
 // --- Assembly Instructions ---------------------------------------------

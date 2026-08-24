@@ -107,6 +107,10 @@ msgstr "{0} में से {maxSlots} प्रदाता स्लॉट �
 msgid "{0} operations · {1} parts"
 msgstr "{0} ऑपरेशन · {1} पार्ट्स"
 
+#. placeholder {0}: selected.length
+msgid "{0} operations · {totalQuantity} parts"
+msgstr "{0} संचालन · {totalQuantity} भाग"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} ऑर्डर"
@@ -167,6 +171,9 @@ msgstr "{count, plural, one {# कोर्स} other {# कोर्स}}"
 msgid "{count} selected"
 msgstr "{count} चुने गए"
 
+msgid "{days}d"
+msgstr "{days}d"
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} में से {total} चरण पूर्ण"
 
@@ -176,6 +183,9 @@ msgstr "{from}–{to} में से {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} में से {count} परिचालन"
 
+msgid "{hiddenCount} operations on this process are hidden — already started or in a batch"
+msgstr "{hiddenCount} संचालन इस प्रक्रिया पर छुपे हुए हैं — पहले से शुरू या एक बैच में"
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -183,6 +193,9 @@ msgstr "{inserted} डाले गए, {updated} अपडेट किए ग�
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# लाइन} other {# लाइनें}}"
+
+msgid "{load} in queue"
+msgstr "{load} कतार में"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB सीमा"
@@ -248,6 +261,10 @@ msgstr "↩ {0} अप्रचलित {1} से पुनर्निर्�
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>इस आइटम के लिए एक आपूर्तिकर्ता भाग जोड़ें</0> एक पसंदीदा आपूर्तिकर्ता सेट करने के लिए।"
+
+#. placeholder {0}: formatDurationMilliseconds(estimateMs, { style: "short" })
+msgid "≈ {0}"
+msgstr "≈ {0}"
 
 msgid "0 operations"
 msgstr "0 परिचालन"
@@ -1224,6 +1241,7 @@ msgid "Add Timecard"
 msgstr "टाइमकार्ड जोड़ें"
 
 #. placeholder {0}: batch.batchReadableId
+#. placeholder {0}: target.readableId
 msgid "Add to {0}"
 msgstr "{0} में जोड़ें"
 
@@ -7271,6 +7289,9 @@ msgstr "समूह"
 msgid "Group by"
 msgstr "द्वारा समूह"
 
+msgid "Group by material"
+msgstr "सामग्री के अनुसार समूह बनाएं"
+
 msgid "Group Members"
 msgstr "समूह सदस्य"
 
@@ -8508,6 +8529,9 @@ msgstr "सूची विकल्प"
 
 msgid "List Parameters"
 msgstr "सूची पैरामीटर"
+
+msgid "List view"
+msgstr "सूची दृश्य"
 
 #. placeholder {0}: label( actionInputLabelKey(actionId, batch.first), batch.first )
 #. placeholder {1}: label( actionInputLabelKey(actionId, batch.second), batch.second )
@@ -10190,6 +10214,9 @@ msgstr "यहां आपकी खोज और फ़िल्टर से 
 msgid "Nothing in the archive"
 msgstr "आर्काइव में कुछ नहीं है"
 
+msgid "Nothing selected yet"
+msgstr "अभी कुछ नहीं चुना गया"
+
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "अभी कुछ नहीं। एक स्टेप केवल तभी मूल्य प्रदान करता है जब इसे कॉन्फ़िगर किया जाता है।"
 
@@ -10321,6 +10348,9 @@ msgstr "एक ही संख्या का सेट"
 
 msgid "One shared setup instead of one per operation"
 msgstr "हर प्रक्रिया के बजाय एक साझा सेटअप"
+
+msgid "One shared setup plus the summed labor and machine time"
+msgstr "एक साझा सेटअप जमा श्रम और मशीन समय के साथ"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "एक काम के मार्ग में एक कदम, एक प्रक्रिया और एक कार्य केंद्र का नाम देता है और अपने स्वयं के सेटअप, श्रम और मशीन समय और दरें लेता है।"
@@ -12543,6 +12573,9 @@ msgstr "उलट दिया गया"
 msgid "Review"
 msgstr "समीक्षा"
 
+msgid "Review & create"
+msgstr "समीक्षा और बनाएं"
+
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "प्रत्येक आइटम के परिवर्तनों की समीक्षा करें, फिर पुष्टि करें — जारी करना वापस नहीं किया जा सकता।"
 
@@ -12887,6 +12920,11 @@ msgstr "शनिवार"
 
 msgid "Save"
 msgstr "सहेजें"
+
+#. placeholder {0}: formatDurationMilliseconds(s.saving, { style: "short" })
+#. placeholder {0}: formatDurationMilliseconds(saving, { style: "short" })
+msgid "save {0}"
+msgstr "सहेजें {0}"
 
 msgid "Save & Close"
 msgstr "सहेजें और बंद करें"
@@ -13249,6 +13287,9 @@ msgstr "बैच के लिए चुनें"
 msgid "Select Gauge"
 msgstr "गेज चुनें"
 
+msgid "Select group"
+msgstr "समूह चुनें"
+
 msgid "Select groups or individuals"
 msgstr "समूह या व्यक्तियों का चयन करें"
 
@@ -13272,6 +13313,9 @@ msgstr "विधि का चयन करें..."
 
 msgid "Select operation"
 msgstr "ऑपरेशन चुनें"
+
+msgid "Select operations"
+msgstr "संचालन चुनें"
 
 msgid "Select Printer"
 msgstr "प्रिंटर चुनें"
@@ -13494,7 +13538,6 @@ msgstr "सेटिंग्स"
 msgid "Setup"
 msgstr "सेटअप"
 
-#. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {1}: formatDurationMilliseconds(setupMax, { style: "short" })
 msgid "Setup {0} → {1}"

@@ -30,6 +30,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const defaultLocationId =
     userDefaults.data?.locationId ?? locations.data?.[0]?.id ?? "";
 
+  // Deep-linkable scope (?location=&process=) — validated against the loaded
+  // lists so a stale link falls back silently instead of scoping to nothing.
+  const paramLocation = url.searchParams.get("location");
+  const paramProcess = url.searchParams.get("process");
+  const initialLocationId =
+    paramLocation && locations.data?.some((l) => l.id === paramLocation)
+      ? paramLocation
+      : null;
+  const initialProcessId =
+    paramProcess && processes.data?.some((p) => p.id === paramProcess)
+      ? paramProcess
+      : null;
+
   // Add-mode: pre-scope to an existing Active batch. A Completing/Completed
   // batch can't take members — bounce back to its drawer.
   let batch: {
@@ -91,19 +104,30 @@ export async function loader({ request }: LoaderFunctionArgs) {
       )
       .map((wc) => ({ id: wc.id, name: wc.name })),
     defaultLocationId,
+    initialLocationId,
+    initialProcessId,
     batch
   };
 }
 
 export default function NewBatchRoute() {
-  const { processes, locations, workCenters, defaultLocationId, batch } =
-    useLoaderData<typeof loader>();
+  const {
+    processes,
+    locations,
+    workCenters,
+    defaultLocationId,
+    initialLocationId,
+    initialProcessId,
+    batch
+  } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
   return (
     <BatchBuilder
       onClose={() => navigate(-1)}
       defaultLocationId={defaultLocationId}
+      initialLocationId={initialLocationId}
+      initialProcessId={initialProcessId}
       locations={locations}
       processes={processes}
       workCenters={workCenters}

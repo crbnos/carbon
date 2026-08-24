@@ -4495,6 +4495,7 @@ export async function createJobOperationBatch(
     jobOperationIds: string[];
     locationId: string;
     workCenterId?: string | null;
+    notes?: string | null;
     companyId: string;
     userId: string;
   }

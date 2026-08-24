@@ -107,6 +107,10 @@ msgstr "{0} / {maxSlots} 个提供商插槽已使用"
 msgid "{0} operations · {1} parts"
 msgstr "{0} 项操作 · {1} 部分"
 
+#. placeholder {0}: selected.length
+msgid "{0} operations · {totalQuantity} parts"
+msgstr "{0} 工序 · {totalQuantity} 零件"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} 个订单"
@@ -167,6 +171,9 @@ msgstr "{count, plural, one {# 门课程} other {# 门课程}}"
 msgid "{count} selected"
 msgstr "{count} 已选中"
 
+msgid "{days}d"
+msgstr "{days}天"
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} 个，共 {total} 个阶段已完成"
 
@@ -176,6 +183,9 @@ msgstr "{from}–{to} 共 {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} / {count} 条操作"
 
+msgid "{hiddenCount} operations on this process are hidden — already started or in a batch"
+msgstr "{hiddenCount} 个工序在此工序上被隐藏 — 已开始或在批次中"
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -183,6 +193,9 @@ msgstr "{inserted}条插入，{updated}条更新，{0}条需要修复，{1}条�
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# 行} other {# 行}}"
+
+msgid "{load} in queue"
+msgstr "{load} 在队列中"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 限制"
@@ -248,6 +261,10 @@ msgstr "↩ {0} 从已淘汰的 {1} 重定向"
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>为此项目添加供应商零件</0>以设置首选供应商。"
+
+#. placeholder {0}: formatDurationMilliseconds(estimateMs, { style: "short" })
+msgid "≈ {0}"
+msgstr "≈ {0}"
 
 msgid "0 operations"
 msgstr "0 条操作"
@@ -1224,6 +1241,7 @@ msgid "Add Timecard"
 msgstr "添加工时卡"
 
 #. placeholder {0}: batch.batchReadableId
+#. placeholder {0}: target.readableId
 msgid "Add to {0}"
 msgstr "添加到 {0}"
 
@@ -7271,6 +7289,9 @@ msgstr "组"
 msgid "Group by"
 msgstr "分组依据"
 
+msgid "Group by material"
+msgstr "按材料分组"
+
 msgid "Group Members"
 msgstr "群组成员"
 
@@ -8508,6 +8529,9 @@ msgstr "列表选项"
 
 msgid "List Parameters"
 msgstr "列表参数"
+
+msgid "List view"
+msgstr "列表视图"
 
 #. placeholder {0}: label( actionInputLabelKey(actionId, batch.first), batch.first )
 #. placeholder {1}: label( actionInputLabelKey(actionId, batch.second), batch.second )
@@ -10190,6 +10214,9 @@ msgstr "没有与您的搜索和过滤条件匹配的内容。"
 msgid "Nothing in the archive"
 msgstr "存档中没有任何内容"
 
+msgid "Nothing selected yet"
+msgstr "尚未选择任何内容"
+
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "暂无内容。步骤配置后才会提供值。"
 
@@ -10321,6 +10348,9 @@ msgstr "一套数字"
 
 msgid "One shared setup instead of one per operation"
 msgstr "共享一次设置，而非每道工序一次"
+
+msgid "One shared setup plus the summed labor and machine time"
+msgstr "一个共享设置加上汇总的劳动和机器时间"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "工作路线中的一个步骤，命名流程和工作中心，并携带自己的设置、劳动和机器时间以及费率。"
@@ -12543,6 +12573,9 @@ msgstr "已冲销"
 msgid "Review"
 msgstr "查看"
 
+msgid "Review & create"
+msgstr "查看和创建"
+
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "审查每个项目的更改，然后确认 — 发布无法撤销。"
 
@@ -12887,6 +12920,11 @@ msgstr "星期六"
 
 msgid "Save"
 msgstr "保存"
+
+#. placeholder {0}: formatDurationMilliseconds(s.saving, { style: "short" })
+#. placeholder {0}: formatDurationMilliseconds(saving, { style: "short" })
+msgid "save {0}"
+msgstr "保存 {0}"
 
 msgid "Save & Close"
 msgstr "保存并关闭"
@@ -13249,6 +13287,9 @@ msgstr "选择用于批次化"
 msgid "Select Gauge"
 msgstr "选择量具"
 
+msgid "Select group"
+msgstr "选择组"
+
 msgid "Select groups or individuals"
 msgstr "选择群组或个人"
 
@@ -13272,6 +13313,9 @@ msgstr "选择方法..."
 
 msgid "Select operation"
 msgstr "选择操作"
+
+msgid "Select operations"
+msgstr "选择工序"
 
 msgid "Select Printer"
 msgstr "选择打印机"
@@ -13494,7 +13538,6 @@ msgstr "设置"
 msgid "Setup"
 msgstr "设置"
 
-#. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {1}: formatDurationMilliseconds(setupMax, { style: "short" })
 msgid "Setup {0} → {1}"

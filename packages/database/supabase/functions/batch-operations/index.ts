@@ -23,6 +23,7 @@ const payloadValidator = z.discriminatedUnion("type", [
     jobOperationIds: z.array(z.string()).min(1),
     locationId: z.string(),
     workCenterId: z.string().optional().nullable(),
+    notes: z.string().optional().nullable(),
     companyId: z.string(),
     userId: z.string()
   }),
@@ -544,6 +545,7 @@ serve(async (req: Request) => {
               workCenterId,
               locationId: payload.locationId,
               status: "Active",
+              notes: payload.notes ?? null,
               createdBy: userId
             })
             .returning(["id", "readableId"])

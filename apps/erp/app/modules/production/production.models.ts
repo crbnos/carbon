@@ -1044,6 +1044,7 @@ export const jobOperationBatchStatus = [
 export const createJobOperationBatchValidator = z.object({
   locationId: z.string().min(1, { message: "Location is required" }),
   workCenterId: zfd.text(z.string().optional()),
+  notes: zfd.text(z.string().optional()),
   // repeatable so a single submitted id still coerces to an array (RVF/zfd)
   jobOperationIds: zfd.repeatable(
     z

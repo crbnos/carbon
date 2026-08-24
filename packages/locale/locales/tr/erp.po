@@ -107,6 +107,10 @@ msgstr "{0}/{maxSlots} sağlayıcı yuvası kullanıldı"
 msgid "{0} operations · {1} parts"
 msgstr "{0} operasyon · {1} parça"
 
+#. placeholder {0}: selected.length
+msgid "{0} operations · {totalQuantity} parts"
+msgstr "{0} operasyon · {totalQuantity} parça"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} sipariş"
@@ -167,6 +171,9 @@ msgstr "{count, plural, one {# kurs} other {# kurs}}"
 msgid "{count} selected"
 msgstr "{count} seçildi"
 
+msgid "{days}d"
+msgstr "{days}g"
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} aşama tamamlandı"
 
@@ -176,6 +183,9 @@ msgstr "{from}–{to} / {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} / {count} işlem"
 
+msgid "{hiddenCount} operations on this process are hidden — already started or in a batch"
+msgstr "{hiddenCount} operasyon bu proseste gizli — zaten başlatılmış veya bir toplu işte"
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -183,6 +193,9 @@ msgstr "{inserted} eklendi, {updated} güncellendi, {0} düzeltme gerekli, {1} a
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# satır} other {# satırlar}}"
+
+msgid "{load} in queue"
+msgstr "{load} kuyruğunda"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB sınırı"
@@ -248,6 +261,10 @@ msgstr "↩ {0} eski hale getirilen {1} kaynağından yönlendirildi"
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>Bu ürün için bir tedarikçi parçası ekleyin</0> tercih edilen tedarikçi ayarlamak için."
+
+#. placeholder {0}: formatDurationMilliseconds(estimateMs, { style: "short" })
+msgid "≈ {0}"
+msgstr "≈ {0}"
 
 msgid "0 operations"
 msgstr "0 işlem"
@@ -1224,6 +1241,7 @@ msgid "Add Timecard"
 msgstr "Zaman Kartı Ekle"
 
 #. placeholder {0}: batch.batchReadableId
+#. placeholder {0}: target.readableId
 msgid "Add to {0}"
 msgstr "{0} grubuna ekle"
 
@@ -7271,6 +7289,9 @@ msgstr "Grup"
 msgid "Group by"
 msgstr "Grupla"
 
+msgid "Group by material"
+msgstr "Malzemeye göre grupla"
+
 msgid "Group Members"
 msgstr "Üye Grupları"
 
@@ -8508,6 +8529,9 @@ msgstr "Liste Seçenekleri"
 
 msgid "List Parameters"
 msgstr "Liste Parametreleri"
+
+msgid "List view"
+msgstr "Liste görünümü"
 
 #. placeholder {0}: label( actionInputLabelKey(actionId, batch.first), batch.first )
 #. placeholder {1}: label( actionInputLabelKey(actionId, batch.second), batch.second )
@@ -10190,6 +10214,9 @@ msgstr "Burada arama ve filtrelerinizle eşleşen hiçbir şey yok."
 msgid "Nothing in the archive"
 msgstr "Arşivde hiçbir şey yok"
 
+msgid "Nothing selected yet"
+msgstr "Henüz hiçbir şey seçilmedi"
+
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Henüz hiçbir şey yok. Bir adım yalnızca yapılandırıldıktan sonra değerleri sunar."
 
@@ -10321,6 +10348,9 @@ msgstr "Tek bir sayı seti"
 
 msgid "One shared setup instead of one per operation"
 msgstr "Operasyon başına değil, tek ortak hazırlık"
+
+msgid "One shared setup plus the summed labor and machine time"
+msgstr "Bir ortak kurulum artı toplam işçilik ve makine süresi"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "Bir işin yönlendirilmesinde bir adım, bir süreci ve bir iş merkezini adlandırır ve kendi kurulum, işçilik ve makine sürelerini ve oranlarını taşır."
@@ -12543,6 +12573,9 @@ msgstr "Ters Çevrilmiş"
 msgid "Review"
 msgstr "İncele"
 
+msgid "Review & create"
+msgstr "İncele ve oluştur"
+
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Her ürünün değişikliklerini gözden geçirin, sonra onaylayın — yayınlama geri alınamaz."
 
@@ -12887,6 +12920,11 @@ msgstr "Cumartesi"
 
 msgid "Save"
 msgstr "Kaydet"
+
+#. placeholder {0}: formatDurationMilliseconds(s.saving, { style: "short" })
+#. placeholder {0}: formatDurationMilliseconds(saving, { style: "short" })
+msgid "save {0}"
+msgstr "{0} kaydet"
 
 msgid "Save & Close"
 msgstr "Kaydet ve Kapat"
@@ -13249,6 +13287,9 @@ msgstr "Parti için seç"
 msgid "Select Gauge"
 msgstr "Kalıbrasyon Cihazı Seç"
 
+msgid "Select group"
+msgstr "Grup seç"
+
 msgid "Select groups or individuals"
 msgstr "Grupları veya bireyleri seçin"
 
@@ -13272,6 +13313,9 @@ msgstr "Yöntem seçin..."
 
 msgid "Select operation"
 msgstr "Operasyonu seç"
+
+msgid "Select operations"
+msgstr "Operasyon seç"
 
 msgid "Select Printer"
 msgstr "Yazıcı Seçin"
@@ -13494,7 +13538,6 @@ msgstr "Ayarlar"
 msgid "Setup"
 msgstr "Kurulum"
 
-#. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {1}: formatDurationMilliseconds(setupMax, { style: "short" })
 msgid "Setup {0} → {1}"

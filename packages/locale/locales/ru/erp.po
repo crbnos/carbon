@@ -107,6 +107,10 @@ msgstr "{0} из {maxSlots} слотов провайдера используе
 msgid "{0} operations · {1} parts"
 msgstr "{0} операции · {1} деталей"
 
+#. placeholder {0}: selected.length
+msgid "{0} operations · {totalQuantity} parts"
+msgstr "{0} операций · {totalQuantity} деталей"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} заказов"
@@ -167,6 +171,9 @@ msgstr "{count, plural, one {# курс} other {# курсов}}"
 msgid "{count} selected"
 msgstr "{count} выбрано"
 
+msgid "{days}d"
+msgstr "{days}д"
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} из {total} этапов завершено"
 
@@ -176,6 +183,9 @@ msgstr "{from}–{to} из {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} из {count} операций"
 
+msgid "{hiddenCount} operations on this process are hidden — already started or in a batch"
+msgstr "{hiddenCount} операций этого процесса скрыты — уже запущены или в партии"
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -183,6 +193,9 @@ msgstr "{inserted} вставлено, {updated} обновлено, {0} тре�
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# строка} other {# строк}}"
+
+msgid "{load} in queue"
+msgstr "{load} в очереди"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}МБ максимум"
@@ -248,6 +261,10 @@ msgstr "↩ {0} перенаправлено из снятых с произво
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>Добавьте компонент поставщика</0> для этого товара, чтобы установить предпочтительного поставщика."
+
+#. placeholder {0}: formatDurationMilliseconds(estimateMs, { style: "short" })
+msgid "≈ {0}"
+msgstr "≈ {0}"
 
 msgid "0 operations"
 msgstr "0 операций"
@@ -1224,6 +1241,7 @@ msgid "Add Timecard"
 msgstr "Добавить табель учета рабочего времени"
 
 #. placeholder {0}: batch.batchReadableId
+#. placeholder {0}: target.readableId
 msgid "Add to {0}"
 msgstr "Добавить в {0}"
 
@@ -7271,6 +7289,9 @@ msgstr "Группа"
 msgid "Group by"
 msgstr "Группировать по"
 
+msgid "Group by material"
+msgstr "Группировать по материалу"
+
 msgid "Group Members"
 msgstr "Члены группы"
 
@@ -8508,6 +8529,9 @@ msgstr "Параметры списка"
 
 msgid "List Parameters"
 msgstr "Параметры списка"
+
+msgid "List view"
+msgstr "Вид списка"
 
 #. placeholder {0}: label( actionInputLabelKey(actionId, batch.first), batch.first )
 #. placeholder {1}: label( actionInputLabelKey(actionId, batch.second), batch.second )
@@ -10190,6 +10214,9 @@ msgstr "Ничего здесь не соответствует вашему п�
 msgid "Nothing in the archive"
 msgstr "Ничего в архиве"
 
+msgid "Nothing selected yet"
+msgstr "Ничего не выбрано"
+
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Пока ничего. Шаг предоставляет значения только после того, как он будет настроен."
 
@@ -10321,6 +10348,9 @@ msgstr "Один набор цифр"
 
 msgid "One shared setup instead of one per operation"
 msgstr "Одна общая наладка вместо наладки на каждую операцию"
+
+msgid "One shared setup plus the summed labor and machine time"
+msgstr "Одна общая подготовка плюс суммированное время труда и машинного времени"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "Один шаг в маршрутизации задания, определяющий процесс и рабочий центр, и несущий собственное время настройки, труда и машины, а также ставки."
@@ -12543,6 +12573,9 @@ msgstr "Сторнировано"
 msgid "Review"
 msgstr "Обзор"
 
+msgid "Review & create"
+msgstr "Просмотр и создание"
+
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Просмотрите изменения каждого элемента, затем подтвердите — выпуск нельзя отменить."
 
@@ -12887,6 +12920,11 @@ msgstr "Суббота"
 
 msgid "Save"
 msgstr "Сохранить"
+
+#. placeholder {0}: formatDurationMilliseconds(s.saving, { style: "short" })
+#. placeholder {0}: formatDurationMilliseconds(saving, { style: "short" })
+msgid "save {0}"
+msgstr "сохранение {0}"
 
 msgid "Save & Close"
 msgstr "Сохранить и закрыть"
@@ -13249,6 +13287,9 @@ msgstr "Выбрать для партии"
 msgid "Select Gauge"
 msgstr "Выбрать датчик"
 
+msgid "Select group"
+msgstr "Выберите группу"
+
 msgid "Select groups or individuals"
 msgstr "Выберите группы или отдельных лиц"
 
@@ -13272,6 +13313,9 @@ msgstr "Выберите метод..."
 
 msgid "Select operation"
 msgstr "Выбрать операцию"
+
+msgid "Select operations"
+msgstr "Выберите операции"
 
 msgid "Select Printer"
 msgstr "Выберите принтер"
@@ -13494,7 +13538,6 @@ msgstr "Параметры"
 msgid "Setup"
 msgstr "Настройка"
 
-#. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {1}: formatDurationMilliseconds(setupMax, { style: "short" })
 msgid "Setup {0} → {1}"

@@ -537,6 +537,21 @@ through; `ProcessForm` gains the Boolean field (clone `completeAllOnScan`).
   redirect, chip, cross-member shared timer, deferred GL on stop, proportional
   slice completion (Labor 50→25/25, Machine 3→2/1 & 13→7/6), members Done + batch
   Completed, and the Completed batch reverting to a plain operation view.
+- 2026-08-22: **Batch builder round 2** (Sid: eight guidance improvements + a
+  builder-UI redesign). Data: the candidates API now also returns labor/machine
+  times, item thumbnails, per-work-center queue load, and a hidden-ops count;
+  the edge fn's create payload gains an optional `notes`. Guidance: suggestions
+  ranked by setup time saved (emerald "save Xm" chips), footer "Add to BAT…"
+  targets when an Active same-process batch exists (no duplicate batches), WC
+  picker shows "N in queue", estimated batch run time (max setup + Σ labor + Σ
+  machine) in the review summary, a due-window quick filter (7/14/30d) with
+  due-date sorting, and a "N operations hidden — started or in a batch" hint.
+  UI: numbered step badges (Scope → Select → Review & create), item thumbnails
+  + selected-row highlight + full-cell checkbox hit areas + loading spinner in
+  the table view, and a second **group-by-material** view (signature sections
+  with per-group select-all and saving chips; suggestions strip is table-view
+  only). Scope is deep-linkable (`?location=&process=`) and remembered
+  (localStorage) along with the view choice. No migration; board unchanged.
 - 2026-08-22: **Batch builder** (Sid: create batches from the Batches page, not
   only the schedule board) — a SECOND composition surface, guided/filterable/
   searchable, keyed on BOM+BOP not just the process flag. A full-screen drawer
