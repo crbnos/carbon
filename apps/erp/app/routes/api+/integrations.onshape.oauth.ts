@@ -9,7 +9,6 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { Onshape } from "@carbon/ee";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import type { IntegrationErrorCode } from "~/modules/settings/integration-errors";
 import { integrationErrorSearch } from "~/modules/settings/integration-errors";
 import { upsertCompanyIntegration } from "~/modules/settings/settings.server";
@@ -35,6 +34,58 @@ function integrationsUrl(request: Request) {
 }
 
 /**
+ * Finish the popup handshake.
+ *
+ * Onshape reaches this loader inside the POPUP that `onClientInstall` opened,
+ * and that popup is listening for an `app_oauth_completed` message to reload the
+ * page behind it and close itself. Nothing ever sent that message: both exits
+ * were a bare `redirect`, so the popup simply navigated to the integrations page
+ * and sat there while the window behind it still showed an Install button on an
+ * integration that had just connected.
+ *
+ * On success, post the message the listener is waiting for. On failure, send the
+ * OPENER to the error URL — the toast copy lives on that page, and rendering it
+ * inside a popup the user then has to close by hand puts it where nobody is
+ * looking. Same origin, so navigating the opener is allowed.
+ *
+ * With no opener at all — the popup was blocked and `onClientInstall` fell back
+ * to a top-level navigation — redirect, so that path still lands somewhere.
+ */
+function popupHandoff(target: string, message: string, succeeded: boolean) {
+  const origin = new URL(target).origin;
+  return new Response(
+    `<!doctype html>
+<meta charset="utf-8">
+<title>Onshape</title>
+<script>
+  (function () {
+    var opener = window.opener;
+    if (opener && opener !== window) {
+      ${
+        succeeded
+          ? `opener.postMessage("app_oauth_completed", ${JSON.stringify(origin)});`
+          : `try { opener.location.replace(${JSON.stringify(target)}); } catch (e) {}`
+      }
+      window.close();
+    } else {
+      window.location.replace(${JSON.stringify(target)});
+    }
+  })();
+</script>
+<p>${message}</p>`,
+    { headers: { "content-type": "text/html; charset=utf-8" } }
+  );
+}
+
+function connectionCompleted(request: Request) {
+  return popupHandoff(
+    integrationsUrl(request),
+    "Onshape connected. You can close this window.",
+    true
+  );
+}
+
+/**
  * Onshape reaches this loader by redirecting the user's browser, so a failure has
  * to render as something they can act on. Returning `data({ error })` produced a
  * bare `{"error":"…"}` JSON document — dead end, no navigation, no next step. Send
@@ -45,8 +96,10 @@ function connectionFailed(
   request: Request,
   reason: IntegrationErrorCode<"onshape">
 ) {
-  return redirect(
-    `${integrationsUrl(request)}${integrationErrorSearch("onshape", reason)}`
+  return popupHandoff(
+    `${integrationsUrl(request)}${integrationErrorSearch("onshape", reason)}`,
+    "Onshape could not be connected.",
+    false
   );
 }
 
@@ -186,11 +239,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
 
     if (createdIntegration?.data?.metadata) {
-      // The release webhook is registered when the user enables asset sync (see
-      // the integration settings save + ensureOnshapeReleaseWebhook), not on
-      // connect — asset sync is off by default, so there's nothing to subscribe
-      // to yet at this point.
-      return redirect(integrationsUrl(request));
+      // The release webhook is registered by the settings save
+      // (ensureOnshapeReleaseWebhook), not here — connecting is not itself an
+      // opt-in to receiving releases.
+      return connectionCompleted(request);
     } else {
       logger.error("Failed to save Onshape integration", {
         createdIntegration

@@ -116,6 +116,9 @@ export const Onshape = defineIntegration({
     }
 
     const listener = (e: MessageEvent) => {
+      // Check the origin: without it, any window holding a handle on this one
+      // can trigger the reload by posting the string.
+      if (e.origin !== window.location.origin) return;
       if (e.data === "app_oauth_completed") {
         window.location.reload();
         window.removeEventListener("message", listener);
