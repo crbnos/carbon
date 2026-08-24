@@ -102,7 +102,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .filter((wc): wc is typeof wc & { id: string; name: string } =>
         Boolean(wc.id && wc.name)
       )
-      .map((wc) => ({ id: wc.id, name: wc.name })),
+      .map((wc) => ({
+        id: wc.id,
+        name: wc.name,
+        locationId: wc.locationId,
+        // Which processes this center can run (workCenterProcess links, from
+        // the view) — the builder's picker filters on the scoped process.
+        processes: (wc.processes as string[] | null) ?? []
+      })),
     defaultLocationId,
     initialLocationId,
     initialProcessId,

@@ -224,7 +224,12 @@ export function BatchBuilder({
   initialProcessId?: string | null;
   locations: { id: string; name: string }[];
   processes: { id: string; name: string }[];
-  workCenters: { id: string; name: string }[];
+  workCenters: {
+    id: string;
+    name: string;
+    locationId: string | null;
+    processes: string[];
+  }[];
   batch?: BatchBuilderBatch | null;
 }) {
   const { t } = useLingui();
@@ -587,20 +592,29 @@ export function BatchBuilder({
     () => processes.map((p) => ({ value: p.id, label: p.name })),
     [processes]
   );
-  const workCenterOptions = useMemo(
-    () =>
-      workCenters.map((wc) => {
-        const load = workCenterLoad[wc.id] ?? 0;
-        // `helper` renders under the label; Combobox only shows `helperRight`
-        // when `helper` is also present, so the queue depth goes in `helper`.
-        return {
-          value: wc.id,
-          label: wc.name,
-          ...(load > 0 ? { helper: t`${load} in queue` } : {})
-        };
-      }),
-    [workCenters, workCenterLoad, t]
-  );
+  // Only centers that can RUN the scoped process, at the batch's location —
+  // offering the paint booth for a welding batch is master-data nonsense. When
+  // a company never linked its work centers to processes, fall back to the
+  // location's centers rather than an empty picker.
+  const workCenterOptions = useMemo(() => {
+    const atLocation = workCenters.filter(
+      (wc) => !wc.locationId || wc.locationId === locationId
+    );
+    const forProcess = processId
+      ? atLocation.filter((wc) => wc.processes.includes(processId))
+      : atLocation;
+    const eligible = forProcess.length > 0 ? forProcess : atLocation;
+    return eligible.map((wc) => {
+      const load = workCenterLoad[wc.id] ?? 0;
+      // `helper` renders under the label; Combobox only shows `helperRight`
+      // when `helper` is also present, so the queue depth goes in `helper`.
+      return {
+        value: wc.id,
+        label: wc.name,
+        ...(load > 0 ? { helper: t`${load} in queue` } : {})
+      };
+    });
+  }, [workCenters, workCenterLoad, locationId, processId, t]);
 
   return (
     <Drawer
