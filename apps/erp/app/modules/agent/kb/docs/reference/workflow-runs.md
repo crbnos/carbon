@@ -44,7 +44,7 @@ If a condition matches none of its paths and has no **"Otherwise"**, that step *
   - **Succeeded**: Every step that ran finished without error.
   - **Failed**: At least one step failed, or the run was stopped by the 500-step ceiling.
   - **Blocked**: A loop guard stopped it before any step ran. The reason is on the run.
-  - **Skipped**: It never started — the workflow was switched off, or a scheduled run came due too late, or its previous run was still going.
+  - **Skipped**: It never started — the workflow was unpublished, or a scheduled run came due too late, or its previous run was still going.
 
 Individual steps use a shorter list: **Running**, **Succeeded**, **Failed**, **Skipped**. There is no blocked or queued step — those are decisions about the run as a whole.
 
