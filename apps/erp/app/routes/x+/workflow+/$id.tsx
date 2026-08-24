@@ -146,7 +146,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     definition: read.definition,
     failure: null,
     message: null,
-    isVersionLocked: versionId === workflow.activeVersionId
+    isVersionLocked: versionId === workflow.publishedVersionId
   };
 }
 

@@ -2589,8 +2589,8 @@ msgstr "अपने पार्ट्स, BOMs, Bill of Process, और को
 msgid "Browse library"
 msgstr "लाइब्रेरी ब्राउज़ करें"
 
-msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
-msgstr "लाइव संस्करण को केवल-पठन के लिए ब्राउज़ करें। आप अभी भी लेआउट को व्यवस्थित करने के लिए चरणों को पुनः व्यवस्थित कर सकते हैं।"
+msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
+msgstr ""
 
 msgid "Bucket"
 msgstr "बकेट"
@@ -8099,6 +8099,9 @@ msgstr "जारी तारीख"
 msgid "Issues"
 msgstr "समस्याएं"
 
+msgid "It will stop running until you publish a version again. Nothing is deleted."
+msgstr ""
+
 msgid "ITAR Certifications"
 msgstr "ITAR प्रमाणपत्र"
 
@@ -8564,17 +8567,11 @@ msgstr "सूची पैरामीटर"
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
 msgstr "सूचियां दोनों {0} और {1} में वायर्ड हैं, इसलिए यह चरण नहीं बता सकता कि किस पर दोहराना है। एक सूची को केवल एक पर छोड़ें।"
 
-msgid "Live"
-msgstr "लाइव"
-
 msgid "Live on Carbon"
 msgstr "Carbon पर लाइव"
 
 msgid "Live reloading"
 msgstr "लाइव रीलोडिंग"
-
-msgid "Live Version"
-msgstr "लाइव संस्करण"
 
 msgid "Load newer"
 msgstr "नया लोड करें"
@@ -11591,6 +11588,9 @@ msgstr "प्रकाशित"
 
 msgid "Published by Carbon"
 msgstr "Carbon द्वारा प्रकाशित"
+
+msgid "Published Version"
+msgstr ""
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "प्रकाशित संस्करणों को संपादित नहीं किया जा सकता। केवल-पठन के लिए देखें, या परिवर्तन करने के लिए एक नया संस्करण शाखा करें।"
@@ -15714,11 +15714,11 @@ msgstr "यह संस्करण परिवर्तन सूचना <0
 msgid "This version cannot be opened"
 msgstr "यह version खोला नहीं जा सकता"
 
-msgid "This version is live"
-msgstr "यह संस्करण लाइव है"
+msgid "This version is published"
+msgstr ""
 
-msgid "This version is live. Create a new version to edit."
-msgstr "यह version live है। संपादित करने के लिए एक नया version बनाएं।"
+msgid "This version is published. Create a new version to edit."
+msgstr ""
 
 msgid "This version's definition could not be read."
 msgstr "इस version की परिभाषा को पढ़ा नहीं जा सका।"
@@ -16305,6 +16305,12 @@ msgstr "{0} को अनपिन करें"
 msgid "Unposted Documents"
 msgstr "अपोस्ट किए गए दस्तावेज़"
 
+msgid "Unpublish"
+msgstr ""
+
+msgid "Unpublish {name}?"
+msgstr ""
+
 msgid "Unreceived POs"
 msgstr "अप्राप्त POs"
 
@@ -16662,9 +16668,9 @@ msgstr "अपनी ईमेल सत्यापित करें"
 msgid "Version"
 msgstr "संस्करण"
 
-#. placeholder {0}: live.versionNumber
-msgid "Version {0} is live now and will be replaced."
-msgstr "संस्करण {0} अब लाइव है और इसे बदल दिया जाएगा।"
+#. placeholder {0}: published.versionNumber
+msgid "Version {0} is published now and will be replaced."
+msgstr ""
 
 msgid "Version:"
 msgstr "संस्करण:"

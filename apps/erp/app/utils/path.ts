@@ -2198,7 +2198,8 @@ export const path = {
     workflows: `${x}/workflows`,
     workflowTestRun: (id: string) =>
       generatePath(`${x}/workflow/${id}/test-run`),
-    workflowToggle: (id: string) => generatePath(`${x}/workflow/${id}/toggle`),
+    workflowUnpublish: (id: string) =>
+      generatePath(`${x}/workflow/${id}/unpublish`),
     workflowVersionNew: (id: string) =>
       generatePath(`${x}/workflow/${id}/version/new`)
   }

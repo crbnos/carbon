@@ -2589,8 +2589,8 @@ msgstr "Importa i tuoi componenti, distinte base, ciclo di lavorazione e costi �
 msgid "Browse library"
 msgstr "Sfoglia libreria"
 
-msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
-msgstr "Sfoglia la versione live in sola lettura. Puoi comunque riorganizzare i passaggi per ordinare il layout."
+msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
+msgstr ""
 
 msgid "Bucket"
 msgstr "Bucket"
@@ -8099,6 +8099,9 @@ msgstr "Data di Emissione"
 msgid "Issues"
 msgstr "Problemi"
 
+msgid "It will stop running until you publish a version again. Nothing is deleted."
+msgstr ""
+
 msgid "ITAR Certifications"
 msgstr "Certificazioni ITAR"
 
@@ -8564,17 +8567,11 @@ msgstr "Parametri Elenco"
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
 msgstr "Gli elenchi sono collegati sia a {0} che a {1}, quindi questo passaggio non può dire quale ripetere. Lascia un elenco su uno solo di essi."
 
-msgid "Live"
-msgstr "In diretta"
-
 msgid "Live on Carbon"
 msgstr "Live su Carbon"
 
 msgid "Live reloading"
 msgstr "Ricaricamento in tempo reale"
-
-msgid "Live Version"
-msgstr "Versione in diretta"
 
 msgid "Load newer"
 msgstr "Carica più recenti"
@@ -11591,6 +11588,9 @@ msgstr "Pubblicato"
 
 msgid "Published by Carbon"
 msgstr "Pubblicato da Carbon"
+
+msgid "Published Version"
+msgstr ""
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "Le versioni pubblicate non possono essere modificate. Sfoglia in sola lettura o crea una nuova versione per apportare modifiche."
@@ -15714,11 +15714,11 @@ msgstr "Questa versione appartiene all'avviso di modifica <0>{0}</0>. Modificalo
 msgid "This version cannot be opened"
 msgstr "Questa versione non può essere aperta"
 
-msgid "This version is live"
-msgstr "Questa versione è in diretta"
+msgid "This version is published"
+msgstr ""
 
-msgid "This version is live. Create a new version to edit."
-msgstr "Questa versione è in tempo reale. Crea una nuova versione per modificare."
+msgid "This version is published. Create a new version to edit."
+msgstr ""
 
 msgid "This version's definition could not be read."
 msgstr "La definizione di questa versione non potrebbe essere letta."
@@ -16305,6 +16305,12 @@ msgstr "Rimuovi {0}"
 msgid "Unposted Documents"
 msgstr "Documenti Non Registrati"
 
+msgid "Unpublish"
+msgstr ""
+
+msgid "Unpublish {name}?"
+msgstr ""
+
 msgid "Unreceived POs"
 msgstr "PO non ricevuti"
 
@@ -16662,9 +16668,9 @@ msgstr "Verifica la tua email"
 msgid "Version"
 msgstr "Versione"
 
-#. placeholder {0}: live.versionNumber
-msgid "Version {0} is live now and will be replaced."
-msgstr "La versione {0} è ora live e sarà sostituita."
+#. placeholder {0}: published.versionNumber
+msgid "Version {0} is published now and will be replaced."
+msgstr ""
 
 msgid "Version:"
 msgstr "Versione:"

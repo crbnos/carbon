@@ -2589,8 +2589,8 @@ msgstr "Импортируйте ваши детали, спецификации
 msgid "Browse library"
 msgstr "Обзор библиотеки"
 
-msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
-msgstr "Просмотрите активную версию в режиме только для чтения. Вы все еще можете переставлять шаги для улучшения расположения."
+msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
+msgstr ""
 
 msgid "Bucket"
 msgstr "Хранилище"
@@ -8099,6 +8099,9 @@ msgstr "Дата выпуска"
 msgid "Issues"
 msgstr "Проблемы"
 
+msgid "It will stop running until you publish a version again. Nothing is deleted."
+msgstr ""
+
 msgid "ITAR Certifications"
 msgstr "Сертификации ITAR"
 
@@ -8564,17 +8567,11 @@ msgstr "Параметры списка"
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
 msgstr "Списки привязаны к обоим {0} и {1}, поэтому этот шаг не может определить, какой из них повторить. Оставьте список только в одном из них."
 
-msgid "Live"
-msgstr "Активный"
-
 msgid "Live on Carbon"
 msgstr "Работает на Carbon"
 
 msgid "Live reloading"
 msgstr "Живая перезагрузка"
-
-msgid "Live Version"
-msgstr "Активная версия"
 
 msgid "Load newer"
 msgstr "Загрузить новые"
@@ -11591,6 +11588,9 @@ msgstr "Опубликовано"
 
 msgid "Published by Carbon"
 msgstr "Опубликовано Carbon"
+
+msgid "Published Version"
+msgstr ""
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "Опубликованные версии нельзя редактировать. Просмотрите их в режиме только для чтения или создайте ветвь новой версии для внесения изменений."
@@ -15714,11 +15714,11 @@ msgstr "Эта версия принадлежит уведомлению об �
 msgid "This version cannot be opened"
 msgstr "Эта версия не может быть открыта"
 
-msgid "This version is live"
-msgstr "Эта версия активна"
+msgid "This version is published"
+msgstr ""
 
-msgid "This version is live. Create a new version to edit."
-msgstr "Эта версия активна. Создайте новую версию для редактирования."
+msgid "This version is published. Create a new version to edit."
+msgstr ""
 
 msgid "This version's definition could not be read."
 msgstr "Определение этой версии не удалось прочитать."
@@ -16305,6 +16305,12 @@ msgstr "Открепить {0}"
 msgid "Unposted Documents"
 msgstr "Неопубликованные документы"
 
+msgid "Unpublish"
+msgstr ""
+
+msgid "Unpublish {name}?"
+msgstr ""
+
 msgid "Unreceived POs"
 msgstr "Неполученные ПО"
 
@@ -16662,9 +16668,9 @@ msgstr "Подтвердите вашу электронную почту"
 msgid "Version"
 msgstr "Версия"
 
-#. placeholder {0}: live.versionNumber
-msgid "Version {0} is live now and will be replaced."
-msgstr "Версия {0} сейчас в эфире и будет заменена."
+#. placeholder {0}: published.versionNumber
+msgid "Version {0} is published now and will be replaced."
+msgstr ""
 
 msgid "Version:"
 msgstr "Версия:"

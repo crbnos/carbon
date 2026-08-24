@@ -34,15 +34,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   const rows = workflows.data ?? [];
-  const activeVersionIds = rows
-    .map((row) => row.activeVersionId)
+  const publishedVersionIds = rows
+    .map((row) => row.publishedVersionId)
     .filter((id): id is string => id !== null);
 
   const versionNumbers: Record<string, number> = {};
-  if (activeVersionIds.length) {
+  if (publishedVersionIds.length) {
     const versions = await getWorkflowVersionNumbers(
       client,
-      activeVersionIds,
+      publishedVersionIds,
       companyId
     );
     for (const version of versions.data ?? []) {

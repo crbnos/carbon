@@ -2589,8 +2589,8 @@ msgstr "パーツ、BOM、Bill of Process、原価計算をインポートして
 msgid "Browse library"
 msgstr "ライブラリを参照"
 
-msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
-msgstr "ライブバージョンを読み取り専用で参照できます。ステップを並べ替えてレイアウトを整理することもできます。"
+msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
+msgstr ""
 
 msgid "Bucket"
 msgstr "バケット"
@@ -8099,6 +8099,9 @@ msgstr "発行日"
 msgid "Issues"
 msgstr "問題"
 
+msgid "It will stop running until you publish a version again. Nothing is deleted."
+msgstr ""
+
 msgid "ITAR Certifications"
 msgstr "ITAR認定"
 
@@ -8564,17 +8567,11 @@ msgstr "リストパラメータ"
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
 msgstr "リストが{0}と{1}の両方に接続されています。そのため、このステップはどちらを繰り返すべきかを判断できません。リストはそのうちの1つにのみ残してください。"
 
-msgid "Live"
-msgstr "ライブ"
-
 msgid "Live on Carbon"
 msgstr "Carbonで稼働中"
 
 msgid "Live reloading"
 msgstr "ライブリロード中"
-
-msgid "Live Version"
-msgstr "ライブバージョン"
 
 msgid "Load newer"
 msgstr "新しいものを読み込む"
@@ -11591,6 +11588,9 @@ msgstr "公開済み"
 
 msgid "Published by Carbon"
 msgstr "Carbonによって公開"
+
+msgid "Published Version"
+msgstr ""
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "公開済みバージョンは編集できません。読み取り専用で参照するか、新しいバージョンをブランチして変更してください。"
@@ -15714,11 +15714,11 @@ msgstr "このバージョンは変更通知<0>{0}</0>に属しています。�
 msgid "This version cannot be opened"
 msgstr "このバージョンは開くことができません"
 
-msgid "This version is live"
-msgstr "このバージョンはライブです"
+msgid "This version is published"
+msgstr ""
 
-msgid "This version is live. Create a new version to edit."
-msgstr "このバージョンはライブです。編集するには新しいバージョンを作成してください。"
+msgid "This version is published. Create a new version to edit."
+msgstr ""
 
 msgid "This version's definition could not be read."
 msgstr "このバージョンの定義を読み取ることができませんでした。"
@@ -16305,6 +16305,12 @@ msgstr "{0}をピン留め解除"
 msgid "Unposted Documents"
 msgstr "未転記書類"
 
+msgid "Unpublish"
+msgstr ""
+
+msgid "Unpublish {name}?"
+msgstr ""
+
 msgid "Unreceived POs"
 msgstr "未受領PO"
 
@@ -16662,9 +16668,9 @@ msgstr "メールアドレスを確認"
 msgid "Version"
 msgstr "バージョン"
 
-#. placeholder {0}: live.versionNumber
-msgid "Version {0} is live now and will be replaced."
-msgstr "バージョン {0} は現在ライブであり、置き換えられます。"
+#. placeholder {0}: published.versionNumber
+msgid "Version {0} is published now and will be replaced."
+msgstr ""
 
 msgid "Version:"
 msgstr "バージョン:"

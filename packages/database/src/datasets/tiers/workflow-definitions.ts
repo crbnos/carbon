@@ -63,8 +63,8 @@ export type Edge = {
 export type SeedWorkflow = {
   name: string;
   description: string;
-  /** Only the simplest one ships on; the rest are there to read and switch on deliberately. */
-  active: boolean;
+  /** Only the simplest one ships published; the rest are there to read and publish deliberately. */
+  published: boolean;
   nodes: Node[];
   edges: Edge[];
 };

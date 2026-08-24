@@ -2589,8 +2589,8 @@ msgstr "导入您的零件、物料清单、工艺流程和成本——使用 Ca
 msgid "Browse library"
 msgstr "浏览库"
 
-msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
-msgstr "以只读方式浏览实时版本。您仍然可以重新排列步骤以整理布局。"
+msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
+msgstr ""
 
 msgid "Bucket"
 msgstr "存储桶"
@@ -8099,6 +8099,9 @@ msgstr "签发日期"
 msgid "Issues"
 msgstr "问题"
 
+msgid "It will stop running until you publish a version again. Nothing is deleted."
+msgstr ""
+
 msgid "ITAR Certifications"
 msgstr "ITAR 认证"
 
@@ -8564,17 +8567,11 @@ msgstr "列表参数"
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
 msgstr "列表同时连接到{0}和{1}，因此此步骤无法判断要在哪一个上重复。仅在其中一个上保留列表。"
 
-msgid "Live"
-msgstr "实时"
-
 msgid "Live on Carbon"
 msgstr "在 Carbon 上线"
 
 msgid "Live reloading"
 msgstr "实时重新加载"
-
-msgid "Live Version"
-msgstr "实时版本"
 
 msgid "Load newer"
 msgstr "加载更新"
@@ -11591,6 +11588,9 @@ msgstr "已发布"
 
 msgid "Published by Carbon"
 msgstr "由 Carbon 发布"
+
+msgid "Published Version"
+msgstr ""
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "已发布的版本无法编辑。以只读方式浏览，或创建新版本以进行更改。"
@@ -15714,11 +15714,11 @@ msgstr "此版本属于变更通知<0>{0}</0>。请在那里编辑。"
 msgid "This version cannot be opened"
 msgstr "无法打开此版本"
 
-msgid "This version is live"
-msgstr "此版本已上线"
+msgid "This version is published"
+msgstr ""
 
-msgid "This version is live. Create a new version to edit."
-msgstr "此版本处于实时状态。创建新版本进行编辑。"
+msgid "This version is published. Create a new version to edit."
+msgstr ""
 
 msgid "This version's definition could not be read."
 msgstr "无法读取此版本的定义。"
@@ -16305,6 +16305,12 @@ msgstr "取消固定{0}"
 msgid "Unposted Documents"
 msgstr "未过账单据"
 
+msgid "Unpublish"
+msgstr ""
+
+msgid "Unpublish {name}?"
+msgstr ""
+
 msgid "Unreceived POs"
 msgstr "未收到的采购订单"
 
@@ -16662,9 +16668,9 @@ msgstr "验证您的电子邮件"
 msgid "Version"
 msgstr "版本"
 
-#. placeholder {0}: live.versionNumber
-msgid "Version {0} is live now and will be replaced."
-msgstr "版本 {0} 现已上线，将被替换。"
+#. placeholder {0}: published.versionNumber
+msgid "Version {0} is published now and will be replaced."
+msgstr ""
 
 msgid "Version:"
 msgstr "版本："

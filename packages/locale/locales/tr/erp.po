@@ -2589,8 +2589,8 @@ msgstr "Parçalarınızı, BOM'larınızı, İşlem Faturasını ve maliyetlendi
 msgid "Browse library"
 msgstr "Kütüphaneyi göz at"
 
-msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
-msgstr "Canlı sürümü salt okunur şekilde inceleyin. Yine de adımları düzenlenecek şekilde yeniden düzenleyebilirsiniz."
+msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
+msgstr ""
 
 msgid "Bucket"
 msgstr "Kova"
@@ -8099,6 +8099,9 @@ msgstr "Düzenlenme Tarihi"
 msgid "Issues"
 msgstr "Sorunlar"
 
+msgid "It will stop running until you publish a version again. Nothing is deleted."
+msgstr ""
+
 msgid "ITAR Certifications"
 msgstr "ITAR Sertifikaları"
 
@@ -8564,17 +8567,11 @@ msgstr "Liste Parametreleri"
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
 msgstr "Listeler hem {0} hem de {1} öğelerine bağlıdır, bu nedenle bu adım hangisinin üzerinde tekrarlanacağını belirleyemez. Listeyi yalnızca birine bırakın."
 
-msgid "Live"
-msgstr "Canlı"
-
 msgid "Live on Carbon"
 msgstr "Carbon'da Canlı"
 
 msgid "Live reloading"
 msgstr "Canlı yeniden yükleniyor"
-
-msgid "Live Version"
-msgstr "Canlı Sürüm"
 
 msgid "Load newer"
 msgstr "Daha yenisini yükle"
@@ -11591,6 +11588,9 @@ msgstr "Yayımlandı"
 
 msgid "Published by Carbon"
 msgstr "Carbon tarafından yayınlandı"
+
+msgid "Published Version"
+msgstr ""
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "Yayımlanmış sürümler düzenlenemez. Salt okunur şekilde inceleyin veya değişiklik yapmak için yeni bir sürüm oluşturun."
@@ -15714,11 +15714,11 @@ msgstr "Bu sürüm değişiklik bildirimi <0>{0}</0> ile ilgilidir. Orada düzen
 msgid "This version cannot be opened"
 msgstr "Bu sürüm açılamıyor"
 
-msgid "This version is live"
-msgstr "Bu versiyon yayında"
+msgid "This version is published"
+msgstr ""
 
-msgid "This version is live. Create a new version to edit."
-msgstr "Bu sürüm canlı. Düzenlemek için yeni bir sürüm oluşturun."
+msgid "This version is published. Create a new version to edit."
+msgstr ""
 
 msgid "This version's definition could not be read."
 msgstr "Bu sürümün tanımı okunamadı."
@@ -16305,6 +16305,12 @@ msgstr "Sabitlemeyi Kaldır {0}"
 msgid "Unposted Documents"
 msgstr "Deftere Geçmemiş Belgeler"
 
+msgid "Unpublish"
+msgstr ""
+
+msgid "Unpublish {name}?"
+msgstr ""
+
 msgid "Unreceived POs"
 msgstr "Alınmamış PO'lar"
 
@@ -16662,9 +16668,9 @@ msgstr "E-posta adresinizi doğrulayın"
 msgid "Version"
 msgstr "Sürüm"
 
-#. placeholder {0}: live.versionNumber
-msgid "Version {0} is live now and will be replaced."
-msgstr "Sürüm {0} şimdi yayında ve değiştirilecektir."
+#. placeholder {0}: published.versionNumber
+msgid "Version {0} is published now and will be replaced."
+msgstr ""
 
 msgid "Version:"
 msgstr "Sürüm:"

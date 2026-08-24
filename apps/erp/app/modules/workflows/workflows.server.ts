@@ -20,22 +20,11 @@ import {
 const logger = getLogger("erp", "workflows");
 
 export const LOCKED_VERSION_MESSAGE =
-  "This version is live. Create a new version to make changes.";
-
-export function getWorkflowLockFlags({
-  versionId,
-  activeVersionId
-}: {
-  versionId: string;
-  activeVersionId: string | null;
-}) {
-  const isLive = activeVersionId !== null && versionId === activeVersionId;
-  return { isLive, isVersionLocked: isLive };
-}
+  "This version is published. Create a new version to make changes.";
 
 /**
- * The promoted version is read-only; every mutating route calls this. An id that
- * resolves to nothing returns `{ ok: true }` — it cannot be the active version —
+ * The published version is read-only; every mutating route calls this. An id that
+ * resolves to nothing returns `{ ok: true }` — it cannot be the published version —
  * matching `checkRevisionLock`'s unresolvable-is-unlocked rule.
  */
 export async function checkWorkflowVersionLock(
@@ -46,16 +35,11 @@ export async function checkWorkflowVersionLock(
   if (state.error || !state.data) return { ok: true };
 
   const workflow = state.data.workflow as {
-    activeVersionId: string | null;
+    publishedVersionId: string | null;
   } | null;
   if (!workflow) return { ok: true };
 
-  const { isVersionLocked } = getWorkflowLockFlags({
-    versionId,
-    activeVersionId: workflow.activeVersionId
-  });
-
-  return isVersionLocked
+  return versionId === workflow.publishedVersionId
     ? { ok: false, message: LOCKED_VERSION_MESSAGE }
     : { ok: true };
 }
@@ -74,7 +58,7 @@ const lockCompany: CompanyLock = (trx, companyId) =>
   sql`SELECT pg_advisory_xact_lock(hashtext(${companyId}))`.execute(trx);
 
 /**
- * Rewrites the workflow's trigger rows to match whatever is now promoted, and
+ * Rewrites the workflow's trigger rows to match whatever is now published, and
  * wakes the scheduler chain so a scheduled workflow starts within minutes rather
  * than waiting for the hourly backstop.
  *
@@ -136,8 +120,7 @@ export async function publishWorkflowVersion(
   const promoted = await client
     .from("workflow")
     .update({
-      activeVersionId: versionId,
-      active: true,
+      publishedVersionId: versionId,
       updatedBy: userId,
       updatedAt: datetime.timestamp()
     })
@@ -151,24 +134,28 @@ export async function publishWorkflowVersion(
   return syncAndWake(companyId, workflowId);
 }
 
-export async function setWorkflowActive(
+/**
+ * The inverse of {@link publishWorkflowVersion}, and the only way to switch a workflow off.
+ *
+ * Takes no boolean: publishing needs a version id and has to pass validation first, so the
+ * two directions cannot share one entry point.
+ */
+export async function unpublishWorkflow(
   client: SupabaseClient<Database>,
   {
     workflowId,
     companyId,
-    userId,
-    active
+    userId
   }: {
     workflowId: string;
     companyId: string;
     userId: string;
-    active: boolean;
   }
 ): Promise<WorkflowSyncResult> {
   const updated = await client
     .from("workflow")
     .update({
-      active,
+      publishedVersionId: null,
       updatedBy: userId,
       updatedAt: datetime.timestamp()
     })
@@ -179,7 +166,8 @@ export async function setWorkflowActive(
     return { ok: false, issues: [], message: updated.error.message };
   }
 
-  // Turning a workflow off must still sync — that is what deletes its trigger rows.
+  // Unpublishing must still sync — that is what deletes the trigger rows and clears
+  // nextRunAt, which is what actually stops the workflow firing.
   return syncAndWake(companyId, workflowId);
 }
 
@@ -194,7 +182,7 @@ export async function setWorkflowActive(
  *
  * Never throws: the row is already deleted, so failing here must not present the
  * delete as failed. The orphan is wasted work, not incorrect behaviour, and the
- * next publish or toggle in the company reconciles it away.
+ * next publish or unpublish in the company reconciles it away.
  */
 export async function syncAfterWorkflowDelete(
   companyId: string,

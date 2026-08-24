@@ -2589,8 +2589,8 @@ msgstr "Carbon의 가져오기 도구, CSV, 또는 LLM의 도움으로 품목, B
 msgid "Browse library"
 msgstr "라이브러리 둘러보기"
 
-msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
-msgstr "라이브 버전을 읽기 전용으로 탐색하세요. 여전히 단계를 재정렬하여 레이아웃을 정리할 수 있습니다."
+msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
+msgstr ""
 
 msgid "Bucket"
 msgstr "버킷"
@@ -8099,6 +8099,9 @@ msgstr "출고일"
 msgid "Issues"
 msgstr "이슈"
 
+msgid "It will stop running until you publish a version again. Nothing is deleted."
+msgstr ""
+
 msgid "ITAR Certifications"
 msgstr "ITAR 인증"
 
@@ -8564,17 +8567,11 @@ msgstr "목록 파라미터"
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
 msgstr "{0}과 {1} 모두에 목록이 연결되어 있어서 이 단계에서 어느 것을 반복할지 알 수 없습니다. 목록을 하나에만 남기세요."
 
-msgid "Live"
-msgstr "실시간"
-
 msgid "Live on Carbon"
 msgstr "Carbon 도입 완료"
 
 msgid "Live reloading"
 msgstr "실시간 새로고침"
-
-msgid "Live Version"
-msgstr "실시간 버전"
 
 msgid "Load newer"
 msgstr "최신 항목 불러오기"
@@ -11591,6 +11588,9 @@ msgstr "게시됨"
 
 msgid "Published by Carbon"
 msgstr "Carbon에서 게시함"
+
+msgid "Published Version"
+msgstr ""
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "게시된 버전은 편집할 수 없습니다. 읽기 전용으로 둘러보거나 새 버전을 분기하여 변경하세요."
@@ -15714,11 +15714,11 @@ msgstr "이 버전은 변경 공지 <0>{0}</0>에 속합니다. 거기서 편집
 msgid "This version cannot be opened"
 msgstr "이 버전을 열 수 없습니다."
 
-msgid "This version is live"
-msgstr "이 버전은 활성화되어 있습니다"
+msgid "This version is published"
+msgstr ""
 
-msgid "This version is live. Create a new version to edit."
-msgstr "이 버전은 활성입니다. 편집할 새 버전을 만드십시오."
+msgid "This version is published. Create a new version to edit."
+msgstr ""
 
 msgid "This version's definition could not be read."
 msgstr "이 버전의 정의를 읽을 수 없습니다."
@@ -16305,6 +16305,12 @@ msgstr "{0} 고정 해제"
 msgid "Unposted Documents"
 msgstr "미전기 문서"
 
+msgid "Unpublish"
+msgstr ""
+
+msgid "Unpublish {name}?"
+msgstr ""
+
 msgid "Unreceived POs"
 msgstr "미입고 구매주문"
 
@@ -16662,9 +16668,9 @@ msgstr "이메일을 인증하세요"
 msgid "Version"
 msgstr "버전"
 
-#. placeholder {0}: live.versionNumber
-msgid "Version {0} is live now and will be replaced."
-msgstr "버전 {0}이(가) 현재 라이브이며 대체될 예정입니다."
+#. placeholder {0}: published.versionNumber
+msgid "Version {0} is published now and will be replaced."
+msgstr ""
 
 msgid "Version:"
 msgstr "버전:"
