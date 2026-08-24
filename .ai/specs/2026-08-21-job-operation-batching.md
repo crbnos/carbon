@@ -537,6 +537,23 @@ through; `ProcessForm` gains the Boolean field (clone `completeAllOnScan`).
   redirect, chip, cross-member shared timer, deferred GL on stop, proportional
   slice completion (Labor 50→25/25, Machine 3→2/1 & 13→7/6), members Done + batch
   Completed, and the Completed batch reverting to a plain operation view.
+- 2026-08-22: **Batch builder** (Sid: create batches from the Batches page, not
+  only the schedule board) — a SECOND composition surface, guided/filterable/
+  searchable, keyed on BOM+BOP not just the process flag. A full-screen drawer
+  wizard (`ui/Batches/BatchBuilder.tsx`) launched from the Batches list
+  (`New Batch`) and an Active batch's drawer (`Add operations` → add-mode). It
+  revives the dead `get_batchable_operations` RPC (candidates + per-op BOM
+  material properties) via a new `api/production/batchable-operations` route
+  (enriched with each op's setup time/due date), then offers local search,
+  material facet filters (substance/grade/dimension/form/finish — ANY BOM line
+  matches ALL active facets), one-click suggested groups (candidates sharing a
+  material signature), and a live preview (setup-saving + due-spread chips +
+  a non-blocking "mixing materials" warning — material compatibility guides but
+  never blocks, keeping the locked decision). Submits `create`/`add` to the
+  unchanged `batching.update` action + `batch-operations` edge fn (the create
+  branch now also returns the new batch id so the wizard can navigate to it). No
+  migration, no MES change, no schedule-board change. 24 new strings translated
+  across 12 locales.
 - 2026-08-21: **UX round** (Sid: "lets improve all of these things") — seven
   improvements, all building ON existing surfaces: (1) setup-savings chip
   (`Setup sum → max`) and (2) due-date-spread warning (≥7 days) in the

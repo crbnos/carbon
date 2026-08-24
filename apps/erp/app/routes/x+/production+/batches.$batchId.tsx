@@ -20,7 +20,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuPrinter } from "react-icons/lu";
+import { LuPlus, LuPrinter } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Link, redirect, useLoaderData, useNavigate } from "react-router";
 import { DateTime } from "~/components";
@@ -155,6 +155,13 @@ export default function BatchRoute() {
                 {t`Print load list`}
               </a>
             </Button>
+            {batch.status === "Active" && (
+              <Button variant="secondary" leftIcon={<LuPlus />} asChild>
+                <Link to={`${path.to.newOperationBatch}?batchId=${batch.id}`}>
+                  {t`Add operations`}
+                </Link>
+              </Button>
+            )}
             {isLive && (
               <Button variant="secondary" asChild>
                 <Link to={path.to.scheduleOperation}>

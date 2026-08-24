@@ -102,6 +102,11 @@ msgstr "{0} of {1} posting accounts mapped"
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0} of {maxSlots} provider slots used"
 
+#. placeholder {0}: selected.length
+#. placeholder {1}: selected.reduce((s, c) => s + (c.operationQuantity ?? 0), 0)
+msgid "{0} operations · {1} parts"
+msgstr "{0} operations · {1} parts"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} orders"
@@ -1027,6 +1032,10 @@ msgstr "Actual time"
 msgid "Add"
 msgstr "Add"
 
+#. placeholder {0}: selected.length
+msgid "Add {0} operations"
+msgstr "Add {0} operations"
+
 msgid "Add & Issue"
 msgstr "Add & Issue"
 
@@ -1125,6 +1134,13 @@ msgstr "Add notes and documentation for this maintenance dispatch"
 
 msgid "Add Operation"
 msgstr "Add Operation"
+
+msgid "Add operations"
+msgstr "Add operations"
+
+#. placeholder {0}: batch.readableId
+msgid "Add operations to {0}"
+msgstr "Add operations to {0}"
 
 msgid "Add options above first"
 msgstr "Add options above first"
@@ -2469,6 +2485,9 @@ msgstr "Batch Tracking"
 msgid "Batchable"
 msgstr "Batchable"
 
+msgid "Batchable process"
+msgstr "Batchable process"
+
 msgid "Batches"
 msgstr "Batches"
 
@@ -2973,6 +2992,9 @@ msgstr "Chart of Accounts"
 msgid "Chat"
 msgstr "Chat"
 
+msgid "Check operations on the left to build the batch."
+msgstr "Check operations on the left to build the batch."
+
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 
@@ -2987,6 +3009,9 @@ msgstr "Checkpoints"
 
 msgid "Choose a batch number"
 msgstr "Choose a batch number"
+
+msgid "Choose a batchable process to see the operations that can run together."
+msgstr "Choose a batchable process to see the operations that can run together."
 
 msgid "Choose a company"
 msgstr "Choose a company"
@@ -3903,6 +3928,10 @@ msgstr "Create audit trail entries"
 
 msgid "Create batch"
 msgstr "Create batch"
+
+#. placeholder {0}: selected.length
+msgid "Create batch ({0})"
+msgstr "Create batch ({0})"
 
 msgid "Create Change Notice"
 msgstr "Create Change Notice"
@@ -9012,6 +9041,9 @@ msgstr "Medium"
 msgid "Meeting cadence"
 msgstr "Meeting cadence"
 
+msgid "Member"
+msgstr "Member"
+
 msgid "Members"
 msgstr "Members"
 
@@ -9116,6 +9148,11 @@ msgstr "Missing Shipping Costs"
 
 msgid "Missing Suppliers"
 msgstr "Missing Suppliers"
+
+#. placeholder {0}: signatures .slice(0, 3) .join( ", " )
+#. placeholder {1}: signatures.length > 3 ? "…" : ""
+msgid "Mixing materials: {0}{1}. Confirm they nest together on this run."
+msgstr "Mixing materials: {0}{1}. Confirm they nest together on this run."
 
 msgid "Mobile Phone"
 msgstr "Mobile Phone"
@@ -9319,6 +9356,9 @@ msgstr "New Attribute"
 
 msgid "New Attribute Category"
 msgstr "New Attribute Category"
+
+msgid "New Batch"
+msgstr "New Batch"
 
 msgid "New Change Notice"
 msgstr "New Change Notice"
@@ -9750,6 +9790,9 @@ msgstr "No due date"
 msgid "No editable properties for this item."
 msgstr "No editable properties for this item."
 
+msgid "No eligible operations"
+msgstr "No eligible operations"
+
 msgid "No employees assigned yet. Add groups to see status."
 msgstr "No employees assigned yet. Add groups to see status."
 
@@ -9843,6 +9886,12 @@ msgstr "No matches. Type to create one."
 msgid "No matching bins"
 msgstr "No matching bins"
 
+msgid "No matching operations"
+msgstr "No matching operations"
+
+msgid "No material properties"
+msgstr "No material properties"
+
 msgid "No new notifications"
 msgstr "No new notifications"
 
@@ -9863,6 +9912,9 @@ msgstr "No operations found."
 
 msgid "No operations require picking at this location"
 msgstr "No operations require picking at this location"
+
+msgid "No operations selected"
+msgstr "No operations selected"
 
 msgid "No operators."
 msgstr "No operators."
@@ -10008,6 +10060,9 @@ msgstr "No unmapped accounts match a provider code"
 msgid "No unmapped values match a provider option name"
 msgstr "No unmapped values match a provider option name"
 
+msgid "No unstarted, unbatched operations on this process at this location."
+msgstr "No unstarted, unbatched operations on this process at this location."
+
 msgid "No value needed"
 msgstr "No value needed"
 
@@ -10128,6 +10183,9 @@ msgstr "Nothing at this location matches \"{0}\"."
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Nothing else at this location has stock to pull from."
+
+msgid "Nothing here matches your search and filters."
+msgstr "Nothing here matches your search and filters."
 
 msgid "Nothing in the archive"
 msgstr "Nothing in the archive"
@@ -10917,6 +10975,9 @@ msgstr "Physical printers available for assignment."
 msgid "Pick"
 msgstr "Pick"
 
+msgid "Pick a batchable process, filter the eligible operations by their material, and select the ones to run together."
+msgstr "Pick a batchable process, filter the eligible operations by their material, and select the ones to run together."
+
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 
@@ -10931,6 +10992,9 @@ msgstr "Pick a date or leave blank to clear it."
 
 msgid "Pick a list variable…"
 msgstr "Pick a list variable…"
+
+msgid "Pick a process to start"
+msgstr "Pick a process to start"
 
 msgid "Pick a property"
 msgstr "Pick a property"
@@ -13007,6 +13071,9 @@ msgstr "Search items or bins"
 msgid "Search Job"
 msgstr "Search Job"
 
+msgid "Search jobs or items"
+msgstr "Search jobs or items"
+
 msgid "Search list variables…"
 msgstr "Search list variables…"
 
@@ -13202,6 +13269,9 @@ msgstr "Select items"
 
 msgid "Select method..."
 msgstr "Select method..."
+
+msgid "Select operation"
+msgstr "Select operation"
 
 msgid "Select Printer"
 msgstr "Select Printer"
@@ -13424,6 +13494,7 @@ msgstr "Settings"
 msgid "Setup"
 msgstr "Setup"
 
+#. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {1}: formatDurationMilliseconds(setupMax, { style: "short" })
 msgid "Setup {0} → {1}"
@@ -13663,6 +13734,10 @@ msgstr "Show Trailing Zeros"
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"
 msgstr "Showing {0} of {totalCount} — refine your search"
+
+#. placeholder {0}: visible.length
+msgid "Showing {0} of {totalFiltered} — refine your search"
+msgstr "Showing {0} of {totalFiltered} — refine your search"
 
 msgid "Showing in {parentCurrency}"
 msgstr "Showing in {parentCurrency}"
@@ -14172,6 +14247,9 @@ msgstr "Suggest mappings with AI"
 
 msgid "Suggest with AI"
 msgstr "Suggest with AI"
+
+msgid "Suggested"
+msgstr "Suggested"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Suggested orders you haven't placed yet."
@@ -17144,6 +17222,9 @@ msgstr "Work center"
 
 msgid "Work Center"
 msgstr "Work Center"
+
+msgid "Work center (optional)"
+msgstr "Work center (optional)"
 
 msgid "Work Center Utilization"
 msgstr "Work Center Utilization"

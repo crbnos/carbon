@@ -102,6 +102,11 @@ msgstr "{0} di {1} conti di registrazione mappati"
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0} di {maxSlots} slot provider utilizzati"
 
+#. placeholder {0}: selected.length
+#. placeholder {1}: selected.reduce((s, c) => s + (c.operationQuantity ?? 0), 0)
+msgid "{0} operations · {1} parts"
+msgstr "{0} operazioni · {1} pezzi"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} ordini"
@@ -1027,6 +1032,10 @@ msgstr "Tempo effettivo"
 msgid "Add"
 msgstr "Aggiungi"
 
+#. placeholder {0}: selected.length
+msgid "Add {0} operations"
+msgstr "Aggiungi {0} operazioni"
+
 msgid "Add & Issue"
 msgstr "Aggiungi e Emetti"
 
@@ -1125,6 +1134,13 @@ msgstr "Aggiungi note e documentazione per questo ordine di manutenzione"
 
 msgid "Add Operation"
 msgstr "Aggiungi Operazione"
+
+msgid "Add operations"
+msgstr "Aggiungi operazioni"
+
+#. placeholder {0}: batch.readableId
+msgid "Add operations to {0}"
+msgstr "Aggiungi operazioni a {0}"
 
 msgid "Add options above first"
 msgstr "Aggiungi prima le opzioni sopra"
@@ -2469,6 +2485,9 @@ msgstr "Tracciamento Batch"
 msgid "Batchable"
 msgstr "Raggruppabile"
 
+msgid "Batchable process"
+msgstr "Processo raggruppabile"
+
 msgid "Batches"
 msgstr "Lotti"
 
@@ -2973,6 +2992,9 @@ msgstr "Piano dei Conti"
 msgid "Chat"
 msgstr "Chat"
 
+msgid "Check operations on the left to build the batch."
+msgstr "Seleziona le operazioni a sinistra per creare il batch."
+
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Controlla il registro degli articoli per eventuali articoli con una quantità disponibile negativa alla fine del periodo — di solito una ricevuta mancante o una registrazione fuori ordine che distorce il valore dell'inventario e il costo dei beni venduti. Contrassegnalo come completato una volta rivisto, o salta con una motivazione."
 
@@ -2987,6 +3009,9 @@ msgstr "Checkpoint"
 
 msgid "Choose a batch number"
 msgstr "Scegli un numero di lotto"
+
+msgid "Choose a batchable process to see the operations that can run together."
+msgstr "Scegli un processo raggruppabile per vedere le operazioni che possono essere eseguite insieme."
 
 msgid "Choose a company"
 msgstr "Scegli un'azienda"
@@ -3903,6 +3928,10 @@ msgstr "Crea voci di audit trail"
 
 msgid "Create batch"
 msgstr "Crea lotto"
+
+#. placeholder {0}: selected.length
+msgid "Create batch ({0})"
+msgstr "Crea batch ({0})"
 
 msgid "Create Change Notice"
 msgstr "Crea avviso di modifica"
@@ -9012,6 +9041,9 @@ msgstr "Medio"
 msgid "Meeting cadence"
 msgstr "Cadenza di riunioni"
 
+msgid "Member"
+msgstr "Membro"
+
 msgid "Members"
 msgstr "Membri"
 
@@ -9116,6 +9148,11 @@ msgstr "Costi di spedizione mancanti"
 
 msgid "Missing Suppliers"
 msgstr "Fornitori Mancanti"
+
+#. placeholder {0}: signatures .slice(0, 3) .join( ", " )
+#. placeholder {1}: signatures.length > 3 ? "…" : ""
+msgid "Mixing materials: {0}{1}. Confirm they nest together on this run."
+msgstr "Mescolamento materiali: {0}{1}. Conferma che si adattino insieme in questa esecuzione."
 
 msgid "Mobile Phone"
 msgstr "Telefono Mobile"
@@ -9319,6 +9356,9 @@ msgstr "Nuovo Attributo"
 
 msgid "New Attribute Category"
 msgstr "Nuova Categoria Attributo"
+
+msgid "New Batch"
+msgstr "Nuovo Batch"
 
 msgid "New Change Notice"
 msgstr "Nuovo avviso di modifica"
@@ -9750,6 +9790,9 @@ msgstr "Nessuna data di scadenza"
 msgid "No editable properties for this item."
 msgstr "Nessuna proprietà modificabile per questo elemento."
 
+msgid "No eligible operations"
+msgstr "Nessuna operazione idonea"
+
 msgid "No employees assigned yet. Add groups to see status."
 msgstr "Nessun dipendente assegnato ancora. Aggiungi gruppi per visualizzare lo stato."
 
@@ -9843,6 +9886,12 @@ msgstr "Nessuna corrispondenza. Digita per crearne uno."
 msgid "No matching bins"
 msgstr "Nessun contenitore corrisponde"
 
+msgid "No matching operations"
+msgstr "Nessuna operazione corrispondente"
+
+msgid "No material properties"
+msgstr "Nessuna proprietà materiale"
+
 msgid "No new notifications"
 msgstr "Nessuna nuova notifica"
 
@@ -9863,6 +9912,9 @@ msgstr "Nessuna operazione trovata."
 
 msgid "No operations require picking at this location"
 msgstr "Nessuna operazione richiede il prelievo in questa posizione"
+
+msgid "No operations selected"
+msgstr "Nessuna operazione selezionata"
 
 msgid "No operators."
 msgstr "Nessun operatore."
@@ -10008,6 +10060,9 @@ msgstr "Nessun conto non mappato corrisponde a un codice provider"
 msgid "No unmapped values match a provider option name"
 msgstr "Nessun valore non mappato corrisponde al nome di un'opzione provider"
 
+msgid "No unstarted, unbatched operations on this process at this location."
+msgstr "Nessuna operazione non avviata e non raggruppata su questo processo in questa posizione."
+
 msgid "No value needed"
 msgstr "Nessun valore necessario"
 
@@ -10128,6 +10183,9 @@ msgstr "Nulla in questa posizione corrisponde a \"{0}\"."
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Niente altro in questa posizione ha stock da cui prelevare."
+
+msgid "Nothing here matches your search and filters."
+msgstr "Niente qui corrisponde alla tua ricerca e ai tuoi filtri."
 
 msgid "Nothing in the archive"
 msgstr "Niente nell'archivio"
@@ -10917,6 +10975,9 @@ msgstr "Stampanti fisiche disponibili per l'assegnazione."
 msgid "Pick"
 msgstr "Preleva"
 
+msgid "Pick a batchable process, filter the eligible operations by their material, and select the ones to run together."
+msgstr "Scegli un processo raggruppabile, filtra le operazioni idonee in base al loro materiale e seleziona quelle da eseguire insieme."
+
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Scegli una dimensione Carbon e il target provider su cui viene contabilizzato. La creazione automatica aggiunge le opzioni provider mancanti per nome al momento del push."
 
@@ -10931,6 +10992,9 @@ msgstr "Scegli una data o lascia vuoto per cancellarla."
 
 msgid "Pick a list variable…"
 msgstr "Scegli una variabile di elenco…"
+
+msgid "Pick a process to start"
+msgstr "Scegli un processo per iniziare"
 
 msgid "Pick a property"
 msgstr "Scegli una proprietà"
@@ -13007,6 +13071,9 @@ msgstr "Cerca articoli o contenitori"
 msgid "Search Job"
 msgstr "Cerca Job"
 
+msgid "Search jobs or items"
+msgstr "Cerca lavori o articoli"
+
 msgid "Search list variables…"
 msgstr "Cerca variabili di elenco..."
 
@@ -13202,6 +13269,9 @@ msgstr "Seleziona articoli"
 
 msgid "Select method..."
 msgstr "Seleziona metodo..."
+
+msgid "Select operation"
+msgstr "Seleziona operazione"
 
 msgid "Select Printer"
 msgstr "Seleziona Stampante"
@@ -13424,6 +13494,7 @@ msgstr "Impostazioni"
 msgid "Setup"
 msgstr "Configurazione"
 
+#. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {1}: formatDurationMilliseconds(setupMax, { style: "short" })
 msgid "Setup {0} → {1}"
@@ -13663,6 +13734,10 @@ msgstr "Mostra Zeri Finali"
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"
 msgstr "Mostrando {0} di {totalCount} — raffina la tua ricerca"
+
+#. placeholder {0}: visible.length
+msgid "Showing {0} of {totalFiltered} — refine your search"
+msgstr "Visualizzazione {0} di {totalFiltered} — perfeziona la ricerca"
 
 msgid "Showing in {parentCurrency}"
 msgstr "Visualizzazione in {parentCurrency}"
@@ -14172,6 +14247,9 @@ msgstr "Suggerisci mappature con l'IA"
 
 msgid "Suggest with AI"
 msgstr "Suggerisci con l'IA"
+
+msgid "Suggested"
+msgstr "Suggerito"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Ordini suggeriti che non hai ancora effettuato."
@@ -17144,6 +17222,9 @@ msgstr "Centro di Lavoro"
 
 msgid "Work Center"
 msgstr "Centro di Lavoro"
+
+msgid "Work center (optional)"
+msgstr "Centro di lavoro (opzionale)"
 
 msgid "Work Center Utilization"
 msgstr "Utilizzo Centro di Lavoro"

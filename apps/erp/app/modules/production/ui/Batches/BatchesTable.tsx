@@ -10,9 +10,11 @@ import {
   LuLoaderCircle,
   LuUsers
 } from "react-icons/lu";
-import { DateTime, Hyperlink, Table } from "~/components";
+import { DateTime, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
+import { path } from "~/utils/path";
 import type { JobOperationBatch } from "../../types";
 
 type BatchesTableProps = {
@@ -37,6 +39,7 @@ function BatchStatus({ status }: { status: string | null }) {
 
 const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
   const { t } = useLingui();
+  const permissions = usePermissions();
 
   const customColumns =
     useCustomColumns<JobOperationBatch>("jobOperationBatch");
@@ -144,6 +147,11 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
       data={data}
       columns={columns}
       count={count}
+      primaryAction={
+        permissions.can("create", "production") && (
+          <New label={t`Batch`} to={path.to.newOperationBatch} />
+        )
+      }
       title={t`Batches`}
     />
   );

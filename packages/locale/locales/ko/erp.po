@@ -102,6 +102,11 @@ msgstr "{0}개의 {1} 게시 계정 매핑됨"
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0}개 중 {maxSlots}개 제공자 슬롯 사용됨"
 
+#. placeholder {0}: selected.length
+#. placeholder {1}: selected.reduce((s, c) => s + (c.operationQuantity ?? 0), 0)
+msgid "{0} operations · {1} parts"
+msgstr "{0}개 작업 · {1}개 부품"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "주문 {0}건"
@@ -1027,6 +1032,10 @@ msgstr "실제 시간"
 msgid "Add"
 msgstr "추가"
 
+#. placeholder {0}: selected.length
+msgid "Add {0} operations"
+msgstr "{0}개 작업 추가"
+
 msgid "Add & Issue"
 msgstr "추가 및 출고"
 
@@ -1125,6 +1134,13 @@ msgstr "이 유지보수 작업지시에 대한 메모와 문서를 추가하세
 
 msgid "Add Operation"
 msgstr "공정작업 추가"
+
+msgid "Add operations"
+msgstr "작업 추가"
+
+#. placeholder {0}: batch.readableId
+msgid "Add operations to {0}"
+msgstr "{0}에 작업 추가"
 
 msgid "Add options above first"
 msgstr "먼저 위에서 옵션을 추가하세요"
@@ -2469,6 +2485,9 @@ msgstr "배치 추적"
 msgid "Batchable"
 msgstr "배치 가능한"
 
+msgid "Batchable process"
+msgstr "배치 가능한 공정"
+
 msgid "Batches"
 msgstr "배치"
 
@@ -2973,6 +2992,9 @@ msgstr "계정과목표"
 msgid "Chat"
 msgstr "채팅"
 
+msgid "Check operations on the left to build the batch."
+msgstr "배치를 구성하려면 왼쪽의 작업을 확인하세요."
+
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "기간 종료 시점의 음수 수량 보유 항목에 대해 항목 원장을 확인하십시오. 일반적으로 누락된 수령증이나 순서 대로 포기된 게시로 인해 재고 가치와 판매 원가가 왜곡됩니다. 검토 후 완료로 표시하거나 사유와 함께 건너뜁니다."
 
@@ -2987,6 +3009,9 @@ msgstr "체크포인트"
 
 msgid "Choose a batch number"
 msgstr "배치 번호를 선택하세요"
+
+msgid "Choose a batchable process to see the operations that can run together."
+msgstr "함께 실행할 수 있는 작업을 보려면 배치 가능한 공정을 선택하세요."
 
 msgid "Choose a company"
 msgstr "회사를 선택하세요"
@@ -3903,6 +3928,10 @@ msgstr "감사 추적 항목 생성"
 
 msgid "Create batch"
 msgstr "배치 생성"
+
+#. placeholder {0}: selected.length
+msgid "Create batch ({0})"
+msgstr "배치 생성 ({0})"
 
 msgid "Create Change Notice"
 msgstr "변경 공지 만들기"
@@ -9012,6 +9041,9 @@ msgstr "중간"
 msgid "Meeting cadence"
 msgstr "미팅 주기"
 
+msgid "Member"
+msgstr "구성원"
+
 msgid "Members"
 msgstr "구성원"
 
@@ -9116,6 +9148,11 @@ msgstr "누락된 배송비"
 
 msgid "Missing Suppliers"
 msgstr "누락된 공급업체"
+
+#. placeholder {0}: signatures .slice(0, 3) .join( ", " )
+#. placeholder {1}: signatures.length > 3 ? "…" : ""
+msgid "Mixing materials: {0}{1}. Confirm they nest together on this run."
+msgstr "혼합 재료: {0}{1}. 이 실행에서 함께 중첩되는지 확인하세요."
 
 msgid "Mobile Phone"
 msgstr "휴대전화"
@@ -9319,6 +9356,9 @@ msgstr "신규 속성"
 
 msgid "New Attribute Category"
 msgstr "신규 속성 카테고리"
+
+msgid "New Batch"
+msgstr "새 배치"
 
 msgid "New Change Notice"
 msgstr "새 변경 공지"
@@ -9750,6 +9790,9 @@ msgstr "마감일 없음"
 msgid "No editable properties for this item."
 msgstr "이 항목에 대한 편집 가능한 속성이 없습니다."
 
+msgid "No eligible operations"
+msgstr "적격 작업 없음"
+
 msgid "No employees assigned yet. Add groups to see status."
 msgstr "아직 배정된 직원이 없습니다. 그룹을 추가하면 상태를 확인할 수 있습니다."
 
@@ -9843,6 +9886,12 @@ msgstr "일치하는 항목 없음. 입력하여 새로 만드세요."
 msgid "No matching bins"
 msgstr "일치하는 빈이 없습니다"
 
+msgid "No matching operations"
+msgstr "일치하는 작업 없음"
+
+msgid "No material properties"
+msgstr "재료 속성 없음"
+
 msgid "No new notifications"
 msgstr "새 알림이 없습니다"
 
@@ -9863,6 +9912,9 @@ msgstr "작업을 찾을 수 없습니다."
 
 msgid "No operations require picking at this location"
 msgstr "이 위치에서 피킹이 필요한 공정작업이 없습니다"
+
+msgid "No operations selected"
+msgstr "선택된 작업 없음"
 
 msgid "No operators."
 msgstr "작업자가 없습니다."
@@ -10008,6 +10060,9 @@ msgstr "매핑되지 않은 계정이 공급자 코드와 일치하지 않음"
 msgid "No unmapped values match a provider option name"
 msgstr "제공자 옵션 이름과 일치하는 매핑되지 않은 값이 없습니다"
 
+msgid "No unstarted, unbatched operations on this process at this location."
+msgstr "이 위치의 이 공정에서 시작되지 않은 배치 처리되지 않은 작업이 없습니다."
+
 msgid "No value needed"
 msgstr "값이 필요하지 않습니다"
 
@@ -10128,6 +10183,9 @@ msgstr "이 위치에서 \"{0}\"와 일치하는 항목이 없습니다."
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "이 위치에는 더 이상 가져올 재고가 없습니다."
+
+msgid "Nothing here matches your search and filters."
+msgstr "검색 및 필터와 일치하는 항목이 없습니다."
 
 msgid "Nothing in the archive"
 msgstr "보관함이 비어 있습니다"
@@ -10917,6 +10975,9 @@ msgstr "배정 가능한 실물 프린터입니다."
 msgid "Pick"
 msgstr "피킹"
 
+msgid "Pick a batchable process, filter the eligible operations by their material, and select the ones to run together."
+msgstr "배치 가능한 공정을 선택하고, 적격 작업을 재료별로 필터링한 다음 함께 실행할 작업을 선택하세요."
+
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Carbon 차원과 게시할 제공자 대상을 선택하세요. 자동 생성은 푸시 시간에 이름으로 누락된 제공자 옵션을 추가합니다."
 
@@ -10931,6 +10992,9 @@ msgstr "날짜를 선택하거나 비워두어 지우세요."
 
 msgid "Pick a list variable…"
 msgstr "목록 변수 선택…"
+
+msgid "Pick a process to start"
+msgstr "시작할 공정을 선택하세요"
 
 msgid "Pick a property"
 msgstr "속성 선택"
@@ -13007,6 +13071,9 @@ msgstr "항목 또는 보관함 검색"
 msgid "Search Job"
 msgstr "작업 검색"
 
+msgid "Search jobs or items"
+msgstr "작업 또는 항목 검색"
+
 msgid "Search list variables…"
 msgstr "목록 변수 검색…"
 
@@ -13202,6 +13269,9 @@ msgstr "품목 선택"
 
 msgid "Select method..."
 msgstr "방법 선택..."
+
+msgid "Select operation"
+msgstr "작업 선택"
 
 msgid "Select Printer"
 msgstr "프린터 선택"
@@ -13424,6 +13494,7 @@ msgstr "설정"
 msgid "Setup"
 msgstr "설정"
 
+#. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {1}: formatDurationMilliseconds(setupMax, { style: "short" })
 msgid "Setup {0} → {1}"
@@ -13663,6 +13734,10 @@ msgstr "후행 0 표시"
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"
 msgstr "{0}개/총 {totalCount}개 표시 — 검색 범위 좁혀보기"
+
+#. placeholder {0}: visible.length
+msgid "Showing {0} of {totalFiltered} — refine your search"
+msgstr "{0}개 표시 (총 {totalFiltered}개) — 검색을 세밀하게 조정하세요"
 
 msgid "Showing in {parentCurrency}"
 msgstr "{parentCurrency}로 표시"
@@ -14172,6 +14247,9 @@ msgstr "AI로 매핑 제안"
 
 msgid "Suggest with AI"
 msgstr "AI로 제안"
+
+msgid "Suggested"
+msgstr "제안됨"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "아직 발주하지 않은 제안 주문입니다."
@@ -17144,6 +17222,9 @@ msgstr "작업장"
 
 msgid "Work Center"
 msgstr "작업장"
+
+msgid "Work center (optional)"
+msgstr "작업 센터 (선택사항)"
 
 msgid "Work Center Utilization"
 msgstr "작업장 가동률"

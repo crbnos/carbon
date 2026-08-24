@@ -102,6 +102,11 @@ msgstr "{0} में से {1} पोस्टिंग खातों को
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0} में से {maxSlots} प्रदाता स्लॉट उपयोग किए गए"
 
+#. placeholder {0}: selected.length
+#. placeholder {1}: selected.reduce((s, c) => s + (c.operationQuantity ?? 0), 0)
+msgid "{0} operations · {1} parts"
+msgstr "{0} ऑपरेशन · {1} पार्ट्स"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} ऑर्डर"
@@ -1027,6 +1032,10 @@ msgstr "वास्तविक समय"
 msgid "Add"
 msgstr "जोड़ें"
 
+#. placeholder {0}: selected.length
+msgid "Add {0} operations"
+msgstr "{0} ऑपरेशन जोड़ें"
+
 msgid "Add & Issue"
 msgstr "जोड़ें और जारी करें"
 
@@ -1125,6 +1134,13 @@ msgstr "इस रखरखाव डिस्पैच के लिए नो�
 
 msgid "Add Operation"
 msgstr "ऑपरेशन जोड़ें"
+
+msgid "Add operations"
+msgstr "ऑपरेशन जोड़ें"
+
+#. placeholder {0}: batch.readableId
+msgid "Add operations to {0}"
+msgstr "{0} में ऑपरेशन जोड़ें"
 
 msgid "Add options above first"
 msgstr "पहले ऊपर विकल्प जोड़ें"
@@ -2469,6 +2485,9 @@ msgstr "बैच ट्रैकिंग"
 msgid "Batchable"
 msgstr "बैच योग्य"
 
+msgid "Batchable process"
+msgstr "बैच योग्य प्रक्रिया"
+
 msgid "Batches"
 msgstr "बैच"
 
@@ -2973,6 +2992,9 @@ msgstr "खातों की सूची"
 msgid "Chat"
 msgstr "चैट"
 
+msgid "Check operations on the left to build the batch."
+msgstr "बैच बनाने के लिए बाईं ओर ऑपरेशन की जांच करें।"
+
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "अवधि के अंत तक नकारात्मक मौजूदा मात्रा वाली किसी भी वस्तु के लिए वस्तु खाता बही की जाँच करें — आमतौर पर एक लापता प्राप्ति या एक गलत-क्रम में पोस्टिंग जो इन्वेंटरी मूल्य और बेचे गए सामान की लागत को विकृत करती है। एक बार समीक्षा करने के बाद इसे पूर्ण चिह्नित करें, या एक कारण के साथ छोड़ दें।"
 
@@ -2987,6 +3009,9 @@ msgstr "चेकपॉइंट्स"
 
 msgid "Choose a batch number"
 msgstr "एक बैच नंबर चुनें"
+
+msgid "Choose a batchable process to see the operations that can run together."
+msgstr "एक साथ चल सकने वाले ऑपरेशन देखने के लिए एक बैच योग्य प्रक्रिया चुनें।"
 
 msgid "Choose a company"
 msgstr "कंपनी चुनें"
@@ -3903,6 +3928,10 @@ msgstr "ऑडिट ट्रेल प्रविष्टियां बन
 
 msgid "Create batch"
 msgstr "बैच बनाएं"
+
+#. placeholder {0}: selected.length
+msgid "Create batch ({0})"
+msgstr "बैच बनाएं ({0})"
 
 msgid "Create Change Notice"
 msgstr "परिवर्तन सूचना बनाएं"
@@ -9012,6 +9041,9 @@ msgstr "मध्यम"
 msgid "Meeting cadence"
 msgstr "मीटिंग कैडेंस"
 
+msgid "Member"
+msgstr "सदस्य"
+
 msgid "Members"
 msgstr "सदस्य"
 
@@ -9116,6 +9148,11 @@ msgstr "शिपिंग लागत अनुपलब्ध"
 
 msgid "Missing Suppliers"
 msgstr "आपूर्तिकर्ता गायब हैं"
+
+#. placeholder {0}: signatures .slice(0, 3) .join( ", " )
+#. placeholder {1}: signatures.length > 3 ? "…" : ""
+msgid "Mixing materials: {0}{1}. Confirm they nest together on this run."
+msgstr "सामग्री मिलाना: {0}{1}। पुष्टि करें कि वे इस रन पर एक साथ नेस्ट करते हैं।"
 
 msgid "Mobile Phone"
 msgstr "मोबाइल फोन"
@@ -9319,6 +9356,9 @@ msgstr "नई विशेषता"
 
 msgid "New Attribute Category"
 msgstr "नई विशेषता श्रेणी"
+
+msgid "New Batch"
+msgstr "नया बैच"
 
 msgid "New Change Notice"
 msgstr "नई परिवर्तन सूचना"
@@ -9750,6 +9790,9 @@ msgstr "कोई नियत तारीख नहीं"
 msgid "No editable properties for this item."
 msgstr "इस आइटम के लिए कोई संपादन योग्य गुण नहीं।"
 
+msgid "No eligible operations"
+msgstr "कोई पात्र ऑपरेशन नहीं"
+
 msgid "No employees assigned yet. Add groups to see status."
 msgstr "अभी तक कोई कर्मचारी असाइन नहीं किया गया है। स्थिति देखने के लिए समूह जोड़ें।"
 
@@ -9843,6 +9886,12 @@ msgstr "कोई मेल नहीं। एक बनाने के लि
 msgid "No matching bins"
 msgstr "कोई मिलान बिन नहीं"
 
+msgid "No matching operations"
+msgstr "कोई मेल खाने वाला ऑपरेशन नहीं"
+
+msgid "No material properties"
+msgstr "कोई सामग्री गुण नहीं"
+
 msgid "No new notifications"
 msgstr "कोई नई सूचनाएं नहीं"
 
@@ -9863,6 +9912,9 @@ msgstr "कोई ऑपरेशन नहीं मिला।"
 
 msgid "No operations require picking at this location"
 msgstr "इस स्थान पर कोई भी ऑपरेशन पिकिंग की आवश्यकता नहीं है"
+
+msgid "No operations selected"
+msgstr "कोई ऑपरेशन चयनित नहीं"
 
 msgid "No operators."
 msgstr "कोई ऑपरेटर नहीं।"
@@ -10008,6 +10060,9 @@ msgstr "कोई भी अनमैप किया गया खाता प
 msgid "No unmapped values match a provider option name"
 msgstr "कोई भी अनमैप्ड मान प्रदाता विकल्प नाम से मेल नहीं खाता"
 
+msgid "No unstarted, unbatched operations on this process at this location."
+msgstr "इस स्थान पर इस प्रक्रिया पर कोई अप्रारंभ, अनबैच्ड ऑपरेशन नहीं।"
+
 msgid "No value needed"
 msgstr "कोई मान आवश्यक नहीं"
 
@@ -10128,6 +10183,9 @@ msgstr "इस स्थान पर कुछ भी \"{0}\" से मेल 
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "इस स्थान पर कोई अन्य स्टॉक नहीं है जहां से खींचा जा सकता है।"
+
+msgid "Nothing here matches your search and filters."
+msgstr "यहां आपकी खोज और फ़िल्टर से कुछ भी मेल नहीं खाता।"
 
 msgid "Nothing in the archive"
 msgstr "आर्काइव में कुछ नहीं है"
@@ -10917,6 +10975,9 @@ msgstr "असाइनमेंट के लिए उपलब्ध भौ�
 msgid "Pick"
 msgstr "चुनें"
 
+msgid "Pick a batchable process, filter the eligible operations by their material, and select the ones to run together."
+msgstr "एक बैच योग्य प्रक्रिया चुनें, पात्र ऑपरेशन को उनकी सामग्री के अनुसार फ़िल्टर करें, और एक साथ चलाने के लिए उन्हें चुनें।"
+
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "एक Carbon आयाम चुनें और प्रदाता लक्ष्य चुनें जहां यह पोस्ट करता है। स्वचालित-निर्माण पुश समय पर नाम से लापता प्रदाता विकल्प जोड़ता है।"
 
@@ -10931,6 +10992,9 @@ msgstr "एक तारीख चुनें या इसे साफ कर
 
 msgid "Pick a list variable…"
 msgstr "एक लिस्ट वेरिएबल चुनें…"
+
+msgid "Pick a process to start"
+msgstr "शुरू करने के लिए एक प्रक्रिया चुनें"
 
 msgid "Pick a property"
 msgstr "एक प्रॉपर्टी चुनें"
@@ -13007,6 +13071,9 @@ msgstr "आइटम या बिन खोजें"
 msgid "Search Job"
 msgstr "Job खोजें"
 
+msgid "Search jobs or items"
+msgstr "नौकरियों या वस्तुओं की खोज करें"
+
 msgid "Search list variables…"
 msgstr "सूची चर खोजें…"
 
@@ -13202,6 +13269,9 @@ msgstr "आइटम चुनें"
 
 msgid "Select method..."
 msgstr "विधि का चयन करें..."
+
+msgid "Select operation"
+msgstr "ऑपरेशन चुनें"
 
 msgid "Select Printer"
 msgstr "प्रिंटर चुनें"
@@ -13424,6 +13494,7 @@ msgstr "सेटिंग्स"
 msgid "Setup"
 msgstr "सेटअप"
 
+#. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {1}: formatDurationMilliseconds(setupMax, { style: "short" })
 msgid "Setup {0} → {1}"
@@ -13663,6 +13734,10 @@ msgstr "अनुगामी शून्य दिखाएं"
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"
 msgstr "दिखा रहा है {0} का {totalCount} — अपनी खोज को परिष्कृत करें"
+
+#. placeholder {0}: visible.length
+msgid "Showing {0} of {totalFiltered} — refine your search"
+msgstr "{totalFiltered} में से {0} दिखा रहे हैं — अपनी खोज को परिष्कृत करें"
 
 msgid "Showing in {parentCurrency}"
 msgstr "में दिखाई दे रहा है {parentCurrency}"
@@ -14172,6 +14247,9 @@ msgstr "एआई के साथ मैपिंग सुझाएं"
 
 msgid "Suggest with AI"
 msgstr "एआई के साथ सुझाएं"
+
+msgid "Suggested"
+msgstr "सुझाए गए"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "सुझाए गए ऑर्डर जो आपने अभी तक नहीं दिए हैं।"
@@ -17144,6 +17222,9 @@ msgstr "कार्य केंद्र"
 
 msgid "Work Center"
 msgstr "कार्य केंद्र"
+
+msgid "Work center (optional)"
+msgstr "कार्य केंद्र (वैकल्पिक)"
 
 msgid "Work Center Utilization"
 msgstr "कार्य केंद्र उपयोग"

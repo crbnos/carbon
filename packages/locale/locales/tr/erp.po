@@ -102,6 +102,11 @@ msgstr "{0} / {1} deftere nakil hesapları eşlendi"
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0}/{maxSlots} sağlayıcı yuvası kullanıldı"
 
+#. placeholder {0}: selected.length
+#. placeholder {1}: selected.reduce((s, c) => s + (c.operationQuantity ?? 0), 0)
+msgid "{0} operations · {1} parts"
+msgstr "{0} operasyon · {1} parça"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} sipariş"
@@ -1027,6 +1032,10 @@ msgstr "Gerçek zaman"
 msgid "Add"
 msgstr "Ekle"
 
+#. placeholder {0}: selected.length
+msgid "Add {0} operations"
+msgstr "{0} operasyonu ekle"
+
 msgid "Add & Issue"
 msgstr "Ekle ve Çıkış Yap"
 
@@ -1125,6 +1134,13 @@ msgstr "Bu bakım sevkiyatı için notlar ve dokümantasyon ekleyin"
 
 msgid "Add Operation"
 msgstr "İşlem Ekle"
+
+msgid "Add operations"
+msgstr "Operasyon ekle"
+
+#. placeholder {0}: batch.readableId
+msgid "Add operations to {0}"
+msgstr "{0} için operasyon ekle"
 
 msgid "Add options above first"
 msgstr "Önce yukarıda seçenekler ekleyin"
@@ -2469,6 +2485,9 @@ msgstr "Lot Takibi"
 msgid "Batchable"
 msgstr "Toplu İşlemeye Uygun"
 
+msgid "Batchable process"
+msgstr "Toplu işlenebilir işlem"
+
 msgid "Batches"
 msgstr "Partiler"
 
@@ -2973,6 +2992,9 @@ msgstr "Hesap Planı"
 msgid "Chat"
 msgstr "Sohbet"
 
+msgid "Check operations on the left to build the batch."
+msgstr "Toplu işi oluşturmak için sol tarafta operasyonları kontrol edin."
+
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "Dönem sonunda negatif el altında miktarı olan herhangi bir madde için madde defterini kontrol edin — genellikle eksik bir makbuz veya envanter değerini ve satılan mal maliyetini bozacak düzensiz bir posting vardır. Gözden geçirildikten sonra tamamlandı olarak işaretleyin veya nedenli olarak atlayın."
 
@@ -2987,6 +3009,9 @@ msgstr "Kontrol Noktaları"
 
 msgid "Choose a batch number"
 msgstr "Bir parti numarası seçin"
+
+msgid "Choose a batchable process to see the operations that can run together."
+msgstr "Birlikte çalışabilecek operasyonları görmek için toplu işlenebilir bir işlem seçin."
 
 msgid "Choose a company"
 msgstr "Bir şirket seçin"
@@ -3903,6 +3928,10 @@ msgstr "Denetim izi girdileri oluştur"
 
 msgid "Create batch"
 msgstr "Parti oluştur"
+
+#. placeholder {0}: selected.length
+msgid "Create batch ({0})"
+msgstr "Toplu iş oluştur ({0})"
 
 msgid "Create Change Notice"
 msgstr "Değişiklik Bildirisi Oluştur"
@@ -9012,6 +9041,9 @@ msgstr "Orta"
 msgid "Meeting cadence"
 msgstr "Toplantı sıklığı"
 
+msgid "Member"
+msgstr "Üye"
+
 msgid "Members"
 msgstr "Üyeler"
 
@@ -9116,6 +9148,11 @@ msgstr "Kargo Maliyetleri Eksik"
 
 msgid "Missing Suppliers"
 msgstr "Tedarikçi Eksikleri"
+
+#. placeholder {0}: signatures .slice(0, 3) .join( ", " )
+#. placeholder {1}: signatures.length > 3 ? "…" : ""
+msgid "Mixing materials: {0}{1}. Confirm they nest together on this run."
+msgstr "Malzemeleri karıştırma: {0}{1}. Bu çalıştırmada birbirine uygun olduklarını doğrulayın."
 
 msgid "Mobile Phone"
 msgstr "Cep Telefonu"
@@ -9319,6 +9356,9 @@ msgstr "Yeni Öznitelik"
 
 msgid "New Attribute Category"
 msgstr "Yeni Öznitelik Kategorisi"
+
+msgid "New Batch"
+msgstr "Yeni Toplu İş"
 
 msgid "New Change Notice"
 msgstr "Yeni Değişiklik Bildirisi"
@@ -9750,6 +9790,9 @@ msgstr "Teslim tarihi yok"
 msgid "No editable properties for this item."
 msgstr "Bu öğe için düzenlenebilir özellik yok."
 
+msgid "No eligible operations"
+msgstr "Uygun operasyon yok"
+
 msgid "No employees assigned yet. Add groups to see status."
 msgstr "Henüz çalışan atanmadı. Durumu görmek için gruplar ekleyin."
 
@@ -9843,6 +9886,12 @@ msgstr "Eşleşme yok. Bir tane oluşturmak için yazın."
 msgid "No matching bins"
 msgstr "Eşleşen kutu yok"
 
+msgid "No matching operations"
+msgstr "Eşleşen operasyon yok"
+
+msgid "No material properties"
+msgstr "Malzeme özellikleri yok"
+
 msgid "No new notifications"
 msgstr "Yeni bildirim yok"
 
@@ -9863,6 +9912,9 @@ msgstr "İşlem bulunamadı."
 
 msgid "No operations require picking at this location"
 msgstr "Bu konumda toplama gerektiren işlem yok"
+
+msgid "No operations selected"
+msgstr "Seçilen operasyon yok"
 
 msgid "No operators."
 msgstr "Hiç operatör yok."
@@ -10008,6 +10060,9 @@ msgstr "Haritalanmamış hesaplar sağlayıcı kodundan herhangi biriyle uyuşm�
 msgid "No unmapped values match a provider option name"
 msgstr "Eşlenmemiş değerler hiçbir sağlayıcı seçeneğinin adıyla eşleşmiyor"
 
+msgid "No unstarted, unbatched operations on this process at this location."
+msgstr "Bu konumdaki bu işlemde başlatılmamış, toplu işe eklenmemiş operasyon yok."
+
 msgid "No value needed"
 msgstr "Değer gerekmiyor"
 
@@ -10128,6 +10183,9 @@ msgstr "Bu konumda \"{0}\" ile eşleşen hiçbir şey yok."
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Bu konumda çekilecek başka hiçbir stok yok."
+
+msgid "Nothing here matches your search and filters."
+msgstr "Burada arama ve filtrelerinizle eşleşen hiçbir şey yok."
 
 msgid "Nothing in the archive"
 msgstr "Arşivde hiçbir şey yok"
@@ -10917,6 +10975,9 @@ msgstr "Atama için kullanılabilecek fiziksel yazıcılar."
 msgid "Pick"
 msgstr "Topla"
 
+msgid "Pick a batchable process, filter the eligible operations by their material, and select the ones to run together."
+msgstr "Toplu işlenebilir bir işlem seçin, uygun operasyonları malzemelerine göre filtreleyin ve birlikte çalıştırmak istediğiniz olanları seçin."
+
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "Bir Carbon boyutu ve gönderdiği sağlayıcı hedefini seçin. Otomatik oluştur, gönderim sırasında eksik sağlayıcı seçeneklerini ada göre ekler."
 
@@ -10931,6 +10992,9 @@ msgstr "Bir tarih seçin veya temizlemek için boş bırakın."
 
 msgid "Pick a list variable…"
 msgstr "Bir liste değişkeni seçin…"
+
+msgid "Pick a process to start"
+msgstr "Başlatmak için bir işlem seçin"
 
 msgid "Pick a property"
 msgstr "Bir özellik seçin"
@@ -13007,6 +13071,9 @@ msgstr "Maddeleri veya depoları ara"
 msgid "Search Job"
 msgstr "İş Ara"
 
+msgid "Search jobs or items"
+msgstr "İşleri veya öğeleri ara"
+
 msgid "Search list variables…"
 msgstr "Liste değişkenlerini ara…"
 
@@ -13202,6 +13269,9 @@ msgstr "Öğeler seçin"
 
 msgid "Select method..."
 msgstr "Yöntem seçin..."
+
+msgid "Select operation"
+msgstr "Operasyonu seç"
 
 msgid "Select Printer"
 msgstr "Yazıcı Seçin"
@@ -13424,6 +13494,7 @@ msgstr "Ayarlar"
 msgid "Setup"
 msgstr "Kurulum"
 
+#. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {1}: formatDurationMilliseconds(setupMax, { style: "short" })
 msgid "Setup {0} → {1}"
@@ -13663,6 +13734,10 @@ msgstr "Sondaki Sıfırları Göster"
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"
 msgstr "{0} / {totalCount} gösteriliyor — aramanızı daraltın"
+
+#. placeholder {0}: visible.length
+msgid "Showing {0} of {totalFiltered} — refine your search"
+msgstr "{0} / {totalFiltered} gösteriliyor — aramanızı daraltın"
 
 msgid "Showing in {parentCurrency}"
 msgstr "{parentCurrency} cinsinden gösteriliyor"
@@ -14172,6 +14247,9 @@ msgstr "Yapay Zeka ile Eşlemeleri Öner"
 
 msgid "Suggest with AI"
 msgstr "Yapay Zeka ile Öner"
+
+msgid "Suggested"
+msgstr "Önerilen"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Henüz yerleştirmediğiniz önerilen siparişler."
@@ -17144,6 +17222,9 @@ msgstr "Çalışma Merkezi"
 
 msgid "Work Center"
 msgstr "İş Merkezi"
+
+msgid "Work center (optional)"
+msgstr "İş merkezi (isteğe bağlı)"
 
 msgid "Work Center Utilization"
 msgstr "İş Merkezi Kullanımı"

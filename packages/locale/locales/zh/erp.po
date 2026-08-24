@@ -102,6 +102,11 @@ msgstr "{0} / {1} 个过账科目已映射"
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0} / {maxSlots} 个提供商插槽已使用"
 
+#. placeholder {0}: selected.length
+#. placeholder {1}: selected.reduce((s, c) => s + (c.operationQuantity ?? 0), 0)
+msgid "{0} operations · {1} parts"
+msgstr "{0} 项操作 · {1} 部分"
+
 #. placeholder {0}: history.length
 msgid "{0} orders"
 msgstr "{0} 个订单"
@@ -1027,6 +1032,10 @@ msgstr "实际时间"
 msgid "Add"
 msgstr "添加"
 
+#. placeholder {0}: selected.length
+msgid "Add {0} operations"
+msgstr "添加 {0} 项操作"
+
 msgid "Add & Issue"
 msgstr "添加并发放"
 
@@ -1125,6 +1134,13 @@ msgstr "为此维护调度添加备注和文档"
 
 msgid "Add Operation"
 msgstr "添加操作"
+
+msgid "Add operations"
+msgstr "添加操作"
+
+#. placeholder {0}: batch.readableId
+msgid "Add operations to {0}"
+msgstr "向 {0} 添加操作"
 
 msgid "Add options above first"
 msgstr "先添加选项"
@@ -2469,6 +2485,9 @@ msgstr "批次追踪"
 msgid "Batchable"
 msgstr "可批量的"
 
+msgid "Batchable process"
+msgstr "可批处理的工序"
+
 msgid "Batches"
 msgstr "批次"
 
@@ -2973,6 +2992,9 @@ msgstr "会计科目表"
 msgid "Chat"
 msgstr "聊天"
 
+msgid "Check operations on the left to build the batch."
+msgstr "勾选左侧的操作以构建批次。"
+
 msgid "Check the item ledger for any items with a negative on-hand quantity as of period end — usually a missing receipt or an out-of-order posting that distorts inventory value and cost of goods sold. Mark it done once reviewed, or skip with a reason."
 msgstr "检查物料分类账中期末库存数量为负的任何物料——通常是缺少收货或发布顺序不对导致库存价值和销货成本失真。审查后标记为完成，或跳过并说明原因。"
 
@@ -2987,6 +3009,9 @@ msgstr "检查点"
 
 msgid "Choose a batch number"
 msgstr "选择批号"
+
+msgid "Choose a batchable process to see the operations that can run together."
+msgstr "选择可批处理的工序以查看可以一起运行的操作。"
 
 msgid "Choose a company"
 msgstr "选择公司"
@@ -3903,6 +3928,10 @@ msgstr "创建审计跟踪条目"
 
 msgid "Create batch"
 msgstr "创建批次"
+
+#. placeholder {0}: selected.length
+msgid "Create batch ({0})"
+msgstr "创建批次 ({0})"
 
 msgid "Create Change Notice"
 msgstr "创建更改单"
@@ -9012,6 +9041,9 @@ msgstr "中等"
 msgid "Meeting cadence"
 msgstr "会议节奏"
 
+msgid "Member"
+msgstr "成员"
+
 msgid "Members"
 msgstr "成员"
 
@@ -9116,6 +9148,11 @@ msgstr "缺少运费"
 
 msgid "Missing Suppliers"
 msgstr "缺少供应商"
+
+#. placeholder {0}: signatures .slice(0, 3) .join( ", " )
+#. placeholder {1}: signatures.length > 3 ? "…" : ""
+msgid "Mixing materials: {0}{1}. Confirm they nest together on this run."
+msgstr "混合材料：{0}{1}。确认它们在此运行中可以相互嵌套。"
 
 msgid "Mobile Phone"
 msgstr "手机"
@@ -9319,6 +9356,9 @@ msgstr "新属性"
 
 msgid "New Attribute Category"
 msgstr "新属性类别"
+
+msgid "New Batch"
+msgstr "新批次"
 
 msgid "New Change Notice"
 msgstr "新建更改单"
@@ -9750,6 +9790,9 @@ msgstr "无截止日期"
 msgid "No editable properties for this item."
 msgstr "此项目没有可编辑的属性。"
 
+msgid "No eligible operations"
+msgstr "没有符合条件的操作"
+
 msgid "No employees assigned yet. Add groups to see status."
 msgstr "还未分配员工。添加组以查看状态。"
 
@@ -9843,6 +9886,12 @@ msgstr "无匹配项。输入内容以创建一个。"
 msgid "No matching bins"
 msgstr "无匹配的箱子"
 
+msgid "No matching operations"
+msgstr "没有匹配的操作"
+
+msgid "No material properties"
+msgstr "没有材料属性"
+
 msgid "No new notifications"
 msgstr "没有新通知"
 
@@ -9863,6 +9912,9 @@ msgstr "未找到操作。"
 
 msgid "No operations require picking at this location"
 msgstr "此位置不需要进行任何操作拣选"
+
+msgid "No operations selected"
+msgstr "未选择操作"
 
 msgid "No operators."
 msgstr "没有运算符。"
@@ -10008,6 +10060,9 @@ msgstr "没有未映射的账户与提供商代码匹配"
 msgid "No unmapped values match a provider option name"
 msgstr "没有未映射的值与提供商选项名称匹配"
 
+msgid "No unstarted, unbatched operations on this process at this location."
+msgstr "此位置此工序上没有未开始、未批处理的操作。"
+
 msgid "No value needed"
 msgstr "不需要值"
 
@@ -10128,6 +10183,9 @@ msgstr "此位置处没有与\"{0}\"匹配的内容。"
 
 msgid "Nothing else at this location has stock to pull from."
 msgstr "此位置没有其他可提取的库存。"
+
+msgid "Nothing here matches your search and filters."
+msgstr "没有与您的搜索和过滤条件匹配的内容。"
 
 msgid "Nothing in the archive"
 msgstr "存档中没有任何内容"
@@ -10917,6 +10975,9 @@ msgstr "可用于分配的物理打印机。"
 msgid "Pick"
 msgstr "拣选"
 
+msgid "Pick a batchable process, filter the eligible operations by their material, and select the ones to run together."
+msgstr "选择可批处理的工序，按材料筛选符合条件的操作，然后选择要一起运行的操作。"
+
 msgid "Pick a Carbon dimension and the provider target it posts to. Auto-create adds missing provider options by name at push time."
 msgstr "选择一个 Carbon 维度和它发布到的提供商目标。自动创建在推送时按名称添加缺失的提供商选项。"
 
@@ -10931,6 +10992,9 @@ msgstr "选择日期或留空以清除。"
 
 msgid "Pick a list variable…"
 msgstr "选择列表变量…"
+
+msgid "Pick a process to start"
+msgstr "选择要开始的工序"
 
 msgid "Pick a property"
 msgstr "选择属性"
@@ -13007,6 +13071,9 @@ msgstr "搜索项目或位置"
 msgid "Search Job"
 msgstr "搜索任务"
 
+msgid "Search jobs or items"
+msgstr "搜索工单或物品"
+
 msgid "Search list variables…"
 msgstr "搜索列表变量…"
 
@@ -13202,6 +13269,9 @@ msgstr "选择项目"
 
 msgid "Select method..."
 msgstr "选择方法..."
+
+msgid "Select operation"
+msgstr "选择操作"
 
 msgid "Select Printer"
 msgstr "选择打印机"
@@ -13424,6 +13494,7 @@ msgstr "设置"
 msgid "Setup"
 msgstr "设置"
 
+#. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {0}: formatDurationMilliseconds(setupSum, { style: "short" })
 #. placeholder {1}: formatDurationMilliseconds(setupMax, { style: "short" })
 msgid "Setup {0} → {1}"
@@ -13663,6 +13734,10 @@ msgstr "显示尾随零"
 #. placeholder {0}: data.length
 msgid "Showing {0} of {totalCount} — refine your search"
 msgstr "显示 {0} 个，共 {totalCount} 个 — 优化搜索"
+
+#. placeholder {0}: visible.length
+msgid "Showing {0} of {totalFiltered} — refine your search"
+msgstr "显示 {0} / {totalFiltered} — 优化您的搜索"
 
 msgid "Showing in {parentCurrency}"
 msgstr "显示货币：{parentCurrency}"
@@ -14172,6 +14247,9 @@ msgstr "使用 AI 建议映射"
 
 msgid "Suggest with AI"
 msgstr "使用 AI 建议"
+
+msgid "Suggested"
+msgstr "建议的"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "您尚未下达的建议订单。"
@@ -17144,6 +17222,9 @@ msgstr "工作中心"
 
 msgid "Work Center"
 msgstr "工作中心"
+
+msgid "Work center (optional)"
+msgstr "工作中心（可选）"
 
 msgid "Work Center Utilization"
 msgstr "工作中心利用率"

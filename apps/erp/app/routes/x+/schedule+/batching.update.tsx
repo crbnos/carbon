@@ -44,7 +44,14 @@ export async function action({ request }: ActionFunctionArgs) {
         )
       };
     }
-    return { success: true };
+    // The edge fn returns { id, readableId }; the batch builder navigates to the
+    // created batch on success. Additive — the schedule board ignores them.
+    return {
+      success: true,
+      batchId: (result.data as { id?: string } | null)?.id ?? null,
+      readableId:
+        (result.data as { readableId?: string } | null)?.readableId ?? null
+    };
   }
 
   const validation = await validator(updateJobOperationBatchValidator).validate(
