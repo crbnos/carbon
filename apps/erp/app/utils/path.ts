@@ -179,12 +179,9 @@ export const path = {
         ),
       onShapeBom: `${api}/integrations/onshape/bom`,
       onShapeCreate: `${api}/integrations/onshape/create`,
-      onShapeDocuments: `${api}/integrations/onshape/documents`,
-      onShapeElements: `${api}/integrations/onshape/elements`,
       onShapeImport: `${api}/integrations/onshape/import`,
       onShapeLink: `${api}/integrations/onshape/link`,
       onShapeRevisions: `${api}/integrations/onshape/revisions`,
-      onShapeVersions: `${api}/integrations/onshape/versions`,
       outsideOperations: (jobId: string) =>
         generatePath(`${api}/production/outside-operations/${jobId}`),
       outstandingTrainings: `${api}/resources/trainings`,

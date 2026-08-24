@@ -15,8 +15,8 @@
 -- Data-only. No companyIntegration row is touched, and no onshape jsonschema has
 -- ever set `additionalProperties`, so a row still carrying the retired
 -- `assetSyncEnabled` / `releaseImportEnabled` / `releaseImportMode` /
--- `pipeline` keys continues to validate. Those keys are simply inert — nothing
--- reads them any more.
+-- `pipeline` / `allowUnreleasedSync` keys continues to validate. Those keys are
+-- simply inert — nothing reads them any more.
 UPDATE "integration"
 SET "jsonschema" = '{
   "type": "object",
@@ -42,9 +42,6 @@ SET "jsonschema" = '{
     "releaseImportMode": {
       "type": "string",
       "enum": ["off", "changeNotice", "revision"]
-    },
-    "allowUnreleasedSync": {
-      "type": "boolean"
     },
     "createItemsOnRelease": {
       "type": "boolean"

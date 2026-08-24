@@ -38,9 +38,8 @@ describe("parseOnshapeSettings", () => {
     expect(settings.active).toBe(true);
     expect(settings.attachAssetsOnRelease).toBe(true);
     expect(settings.releaseImportMode).toBe("changeNotice");
-    expect(settings.allowUnreleasedSync).toBe(false);
     // FALSE, not true. Copying attachAssetsOnRelease's "absent means on" reading
-    // would start minting parts for every v2 install on deploy, unasked.
+    // would start minting parts for every install on deploy, unasked.
     expect(settings.createItemsOnRelease).toBe(false);
   });
 
@@ -50,13 +49,11 @@ describe("parseOnshapeSettings", () => {
     const fromForm = parseOnshapeSettings(
       {
         attachAssetsOnRelease: "false",
-        allowUnreleasedSync: "true",
         createItemsOnRelease: "true"
       },
       { active: true }
     );
     expect(fromForm.attachAssetsOnRelease).toBe(false);
-    expect(fromForm.allowUnreleasedSync).toBe(true);
     expect(fromForm.createItemsOnRelease).toBe(true);
   });
 
@@ -139,12 +136,10 @@ describe("onshapeSettingsSchema", () => {
     expect(
       onshapeSettingsSchema.parse({
         attachAssetsOnRelease: "false",
-        allowUnreleasedSync: "true",
         createItemsOnRelease: "false"
       })
     ).toEqual({
       attachAssetsOnRelease: false,
-      allowUnreleasedSync: true,
       createItemsOnRelease: false
     });
   });

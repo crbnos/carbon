@@ -549,10 +549,10 @@ export const onshapeBomImportFunction = inngest.createFunction(
       // released assembly always has a part number (Onshape requires one to
       // release), so refusing on null cannot block a released import — while
       // an assembly with no part number assigned is exactly the shape this
-      // setting exists for.
-      if (!settings.allowUnreleasedSync && !parsed.topLevel?.revision) {
+      // refusal exists for.
+      if (!parsed.topLevel?.revision) {
         throw new Error(
-          "This Onshape version has never been released and the company only syncs released versions."
+          "This Onshape version has never been released, so there is no revision to import."
         );
       }
 

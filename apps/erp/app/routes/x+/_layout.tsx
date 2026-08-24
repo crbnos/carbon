@@ -280,23 +280,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // FAIL-OPEN: a field added to any integration's metadata tomorrow ships to
     // the browser by default. The settings page loads the full row itself when
     // it actually needs it.
-    integrations: (integrations.data ?? []).map((integration) => {
-      const metadata = (integration.metadata ?? {}) as Record<string, unknown>;
-      return {
-        id: integration.id,
-        active: integration.active,
-        companyId: integration.companyId,
-        updatedAt: integration.updatedAt,
-        updatedBy: integration.updatedBy,
-        // The only metadata any client-side consumer reads (useOnshape).
-        // A scalar, not a blob.
-        metadata: {
-          // Presentation only: whether to OFFER unreleased versions. Every
-          // route re-reads it server-side and refuses regardless.
-          allowUnreleasedSync: metadata.allowUnreleasedSync ?? null
-        }
-      };
-    }),
+    // No `metadata` at all. Every client-side consumer reads `active` and
+    // nothing else, and the moment one field is projected the next one is a
+    // one-line diff away from shipping provider configuration to the browser.
+    integrations: (integrations.data ?? []).map((integration) => ({
+      id: integration.id,
+      active: integration.active,
+      companyId: integration.companyId,
+      updatedAt: integration.updatedAt,
+      updatedBy: integration.updatedBy
+    })),
     groups: groups.data,
     permissions: claims?.permissions,
     plan: stripeCustomer?.planId,

@@ -58,15 +58,6 @@ export const Onshape = defineIntegration({
       value: "changeNotice"
     },
     {
-      name: "allowUnreleasedSync",
-      label: "Allow syncing unreleased versions",
-      description:
-        "Onshape stamps a revision only on release. An unreleased version therefore lands on Carbon's initial revision and carries no assets. Off by default so the version picker offers only released versions.",
-      type: "switch",
-      required: false,
-      value: false
-    },
-    {
       name: "createItemsOnRelease",
       label: "Create the part when a release names one Carbon does not have",
       description:

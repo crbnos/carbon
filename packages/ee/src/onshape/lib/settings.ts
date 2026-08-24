@@ -20,7 +20,6 @@ export interface OnshapeSettings {
   active: boolean;
   attachAssetsOnRelease: boolean;
   releaseImportMode: OnshapeReleaseImportMode;
-  allowUnreleasedSync: boolean;
   /**
    * Create the Carbon part when a release names an element nothing is linked to.
    *
@@ -46,7 +45,6 @@ const DEFAULTS: Omit<
 > = {
   attachAssetsOnRelease: true,
   releaseImportMode: "changeNotice",
-  allowUnreleasedSync: false,
   // FALSE, not true. Copying attachAssetsOnRelease's "absent means on" reading
   // would start minting parts for every existing install on deploy, unasked.
   createItemsOnRelease: false
@@ -90,10 +88,6 @@ export function parseOnshapeSettings(
       DEFAULTS.attachAssetsOnRelease
     ),
     releaseImportMode,
-    allowUnreleasedSync: readBoolean(
-      record.allowUnreleasedSync,
-      DEFAULTS.allowUnreleasedSync
-    ),
     createItemsOnRelease: readBoolean(
       record.createItemsOnRelease,
       DEFAULTS.createItemsOnRelease
@@ -172,14 +166,6 @@ export const onshapeSettingsSchema = z.object({
     }, z.boolean())
     .optional(),
   releaseImportMode: z.enum(["off", "changeNotice", "revision"]).optional(),
-  allowUnreleasedSync: z
-    .preprocess((value) => {
-      if (typeof value === "boolean") return value;
-      if (value === "true") return true;
-      if (value === "false") return false;
-      return value;
-    }, z.boolean())
-    .optional(),
   createItemsOnRelease: z
     .preprocess((value) => {
       if (typeof value === "boolean") return value;

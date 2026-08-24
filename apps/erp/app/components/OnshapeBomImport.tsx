@@ -20,13 +20,11 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { useFetcher } from "react-router";
-import { useOnshape } from "~/hooks/useOnshape";
 import type { loader as bomLoader } from "~/routes/api+/integrations.onshape.bom";
 import type { action as importAction } from "~/routes/api+/integrations.onshape.import";
 import { path } from "~/utils/path";
 import type { OnshapeSelection } from "./OnshapeRevisionPicker";
 import { OnshapeRevisionPicker } from "./OnshapeRevisionPicker";
-import { OnshapeUnreleasedPicker } from "./OnshapeUnreleasedPicker";
 
 const ELEMENT_TYPE_ASSEMBLY = 1;
 
@@ -55,11 +53,6 @@ export const OnshapeBomImport = ({
 }) => {
   const { t } = useLingui();
   const picker = useDisclosure();
-  const { allowUnreleasedSync } = useOnshape();
-  // Unreleased picking is a SECOND path, not a mode of the released picker:
-  // an unreleased version has no revision to select, so what the user chooses
-  // is a document version rather than a released revision.
-  const unreleasedPicker = useDisclosure();
   const [selection, setSelection] = useState<OnshapeSelection | null>(null);
 
   const preview = useFetcher<typeof bomLoader>();
@@ -112,29 +105,10 @@ export const OnshapeBomImport = ({
         >
           <Trans>Import from Onshape</Trans>
         </Button>
-        {allowUnreleasedSync && (
-          <Button
-            className="w-full"
-            variant="secondary"
-            isDisabled={isDisabled}
-            onClick={unreleasedPicker.onOpen}
-          >
-            <Trans>Import an unreleased version</Trans>
-          </Button>
-        )}
         {isDisabled && disabledReason && (
           <p className="text-xs text-muted-foreground">{disabledReason}</p>
         )}
       </div>
-
-      <OnshapeUnreleasedPicker
-        isOpen={unreleasedPicker.isOpen}
-        onClose={unreleasedPicker.onClose}
-        onSelect={(chosen) => {
-          setSelection(chosen);
-          unreleasedPicker.onClose();
-        }}
-      />
 
       {picker.isOpen && !selection && (
         <OnshapeRevisionPicker
@@ -163,9 +137,6 @@ export const OnshapeBomImport = ({
               <HStack className="items-center gap-2">
                 <OnshapeLogo className="h-5 w-auto" />
                 <ModalTitle>
-                  {/* An unreleased assembly can carry no Onshape part number,
-                      and its revision is empty by definition — without the
-                      name fallback the header renders as a single space. */}
                   {[selection.partNumber, selection.revision]
                     .filter(Boolean)
                     .join(" ") || selection.name}
