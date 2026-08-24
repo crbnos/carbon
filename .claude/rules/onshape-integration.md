@@ -5,8 +5,9 @@ paths:
   - apps/erp/app/routes/api+/integrations.onshape.*.ts
   - apps/erp/app/routes/api+/webhook.onshape.$companyId.ts
   - apps/erp/app/components/Onshape*.tsx
-  - apps/erp/app/hooks/useOnshapePipeline.ts
-  - packages/database/supabase/functions/sync/index.ts
+  - apps/erp/app/hooks/useOnshape.ts
+  - apps/erp/app/hooks/useOnshapeImportStatus.tsx
+  - apps/erp/app/modules/items/ui/Parts/onshapePartSource.ts
 ---
 
 # Onshape Integration
@@ -16,44 +17,23 @@ drawing PDFs onto items, released revisions into engineering data, and BOM
 import. Nothing is ever pushed back to Onshape except translation (export) jobs
 and webhook management.
 
-**TWO pipelines ship side by side on ONE integration.** Which one a company runs
-is `companyIntegration.metadata.pipeline`. They share the OAuth connection, the
-webhook subscription and the settings form; exactly one of them consumes an
-event. Existing companies have no `pipeline` key and are unaffected.
+**ONE integration, one pipeline.** The older part-number-matching pipeline is
+gone — its jobs, routes, settings, UI panel and the `pipeline` key that selected
+it were all deleted. Anything you find describing "legacy vs v2", an
+`onshape-v2` record, or `metadata.pipeline` is stale.
 
-| | Legacy (default) | v2 (`pipeline: "next"`) |
-|---|---|---|
-| Join | `item.readableIdWithRevision === partNumber[.revision]` | `externalIntegrationMapping` rows keyed by Onshape ids |
-| Surfaces | asset sync + backfill, release import, BOM sync panel | create part, link part, BOM import, release handling |
-| Writer | `sync` edge function (synchronous) + three Inngest jobs | three Inngest jobs |
-| Creates items? | BOM sync only | BOM import and the create route only |
+Two facts define everything else:
 
-## The `pipeline` key
+- **Carbon items are joined to Onshape by ID**, in hidden
+  `externalIntegrationMapping` rows — never by matching a part-number string
+  against `readableIdWithRevision`. A renamed part, a lowercase number, or two
+  parts sharing a number cannot silently merge or mismatch.
+- **Released revisions only.** Onshape stamps a revision on release and only on
+  release, and everything downstream is keyed on it. An unreleased version is
+  refused at the BOM preview, at the import route, and again in the job. There
+  is no setting for this.
 
-- `parseOnshapeV2Settings` / `getOnshapeV2Settings` (`lib/settings.ts:70`, `:118`).
-- **Strict equality against `"next"`** (`settings.ts:81-82`). An absent key, a
-  null, a legacy row or a typo all resolve to `legacy` — legacy BY CONSTRUCTION,
-  not by falling through to a default. Pinned by `settings.test.ts`.
-- `isV2 = active && pipeline === "next"`, so the gate fails closed on an
-  inactive or missing integration (`settings.ts:94`).
-- `readFailed` is the third state: a QUERY ERROR, distinct from "absent" and from
-  "legacy" (`settings.ts:129-133`). Every writer treats it as retryable — a
-  transient database error must never masquerade as an opt-out and turn a real
-  import into a silent no-op. Every v2 job throws on it; every v2 route answers
-  "try again", never "v2 is not enabled".
-- Every v2 job re-reads the gate on EVERY execution, outside its step, so
-  switching a company back to legacy kills an in-flight retry.
-- The browser copy is `useOnshapePipeline` (`apps/erp/app/hooks/useOnshapePipeline.ts`),
-  same strict equality. Presentation only — it decides what renders, never
-  whether a write is allowed.
-- `x+/_layout.tsx:271-292` PROJECTS the integrations list before returning it:
-  `{ id, active, companyId, updatedAt, updatedBy, metadata: { pipeline,
-  allowUnreleasedSync } }`. The raw view returns `metadata` verbatim, which holds
-  plaintext OAuth tokens and the webhook signing secret; returning it serialised
-  every connected integration's credentials into the HTML of every authenticated
-  page.
-
-## The v2 identity model
+## The identity model
 
 An Onshape element/part id identifies a thing ACROSS all its revisions; a Carbon
 `item` row IS one revision. That mismatch is the whole design.
@@ -88,15 +68,15 @@ columns on one row.
   and the row's own revision picks the member (`resolveBomRow`, `lib/bom.ts:347`).
   Observed live resolving a BOM line naming revision A to the item at revision C
   (`bom.ts:336-346`), and it is the same defect that would put revision A's
-  geometry on revision C's item (`onshape-v2-assets.ts:3-8`).
+  geometry on revision C's item (`onshape-assets.ts:3-8`).
 - The inverse is equally a bug: treating two revisions of one part as a
   COLLISION. `EL-402.A` and `EL-402.C` both claiming one element is correct, not
   a conflict — the link route only refuses a competing claim at the SAME revision
-  (`integrations.onshape.v2.link.ts:132-181`), and the create route distinguishes
+  (`integrations.onshape.link.ts:132-181`), and the create route distinguishes
   "this exact revision is already here" from "a different revision of this part
-  is already here" (`v2.create.ts:137-178`).
+  is already here" (`integrations.onshape.create.ts:137-178`).
 
-Both mistakes were made repeatedly during the rebuild. Any new v2 code path that
+Both mistakes were made repeatedly during the rebuild. Any new code path that
 maps an Onshape thing to a Carbon item must resolve in two steps.
 
 ### Data access (`lib/mapping.ts`)
@@ -127,8 +107,8 @@ maps an Onshape thing to a Carbon item must resolve in two steps.
   and unit-pinned) is shallow except for `bomImport`: a patch naming `startedAt`
   REPLACES the marker (a new run must not inherit the previous outcome), a patch
   without one merges into it (the job stamping its own finish). The BOM-import
-  marker is written by the dispatching ROUTE — `v2.create`'s import branch and
-  `v2.import` — and closed by the job, which is safe because the job only ever
+  marker is written by the dispatching ROUTE — `create`'s import branch and
+  `import` — and closed by the job, which is safe because the job only ever
   rewrites element mappings for rows it ADOPTS or MINTS, never for the top-level
   item.
 - Every WRITE takes the SERVICE ROLE, and the parameter is named `serviceRole` to
@@ -138,7 +118,7 @@ maps an Onshape thing to a Carbon item must resolve in two steps.
 
 One export subpath, `./onshape` → `src/onshape/lib/index.ts`
 (`packages/ee/package.json:17`); it re-exports `bom`, `client`, `data`,
-`document.type`, `element.type`, `legacy`, `mapping`, `reconcile`, `resolve`,
+`document.type`, `element.type`, `mapping`, `reconcile`, `replenishment`, `resolve`, `token`,
 `settings`. `hooks.server.ts` is NOT in that barrel — it is re-exported from
 `@carbon/ee/hooks.server` (`packages/ee/src/hooks.server.ts:19`).
 
@@ -152,10 +132,8 @@ One export subpath, `./onshape` → `src/onshape/lib/index.ts`
   (`client.ts:615`). All calls go to `https://cad.onshape.com/api/v10/...`.
   `OnshapeApiError` carries `status` + `retryAfterSeconds`;
   `OnshapeAssetTooLargeError` marks a permanently-unsyncable export.
-- `lib/settings.ts` — the pipeline resolver. Pure half (`parseOnshapeV2Settings`)
-  is unit-tested without a database, because the whole safety argument for
-  shipping alongside rests on it returning `isV2: false` for every legacy-shaped
-  row.
+- `lib/settings.ts` — the settings resolver plus `onshapeWebhookWanted`. Pure
+  half (`parseOnshapeSettings`) is unit-tested without a database.
 - `lib/mapping.ts` — the identity contract above. Pure half kept free of heavy
   imports (no auth/inngest/env at module load) so it stays testable.
 - `lib/bom.ts` — Onshape BOM response → rows with their CAD identity intact, the
@@ -163,9 +141,9 @@ One export subpath, `./onshape` → `src/onshape/lib/index.ts`
   8 rows, 26 headers).
 - `lib/reconcile.ts` — plans the change to one make method's material list.
 - `lib/resolve.ts` — re-resolves a client-supplied selection against Onshape.
-- `lib/legacy.ts` — counts items the legacy pipeline manages that v2 cannot see.
-- `lib/data.ts` — `onShapeDataValidator`, the BOM-row array the sync edge
-  function accepts (legacy only).
+- `lib/replenishment.ts` — Buy vs Make. Its own subpath; see that section.
+- `lib/token.ts` — `onshapeTokenExpiresAt`. Env-free so it is testable, which
+  `client.ts` is not.
 - `lib/element.type.ts` — `OnshapeElementType` (`ASSEMBLY`/`PARTSTUDIO`/`DRAWING`,
   the STRING enum used as a `getElements` query filter) and `OnshapeWVMType`
   (`w`/`v`/`m`). Not the same thing as the numeric `elementType` below.
@@ -189,7 +167,7 @@ Only two export formats are accepted: GLTF for models, PDF for drawings
 them. Every request carries a 60 s timeout (`client.ts:118`).
 
 `getElementMetadata` (`client.ts:256`) exists because `getElements` returns only
-the element's NAME. See the v2 elements route below.
+the element's NAME.
 
 ## OAuth install / connect
 
@@ -212,101 +190,88 @@ the element's NAME. See the v2 elements route below.
 - **A reconnect MERGES rather than replaces.** `upsertCompanyIntegration` upserts
   the object it is handed (`settings.server.ts:264`), so the callback reads the
   existing row first and spreads it (`oauth.ts:139-156`). Before that, a
-  reconnect wiped every saved setting — harmless-looking until the pipeline
-  selector, where it would silently move a migrated company back to legacy. The
+  reconnect wiped every saved setting the company had. The
   settings save merges the same way (`{ ...existingMetadata, ...formData }`,
   `integrations.$id.tsx:1399`); that merge is SHALLOW, which is why clearing the
   signing-secret field stores `""` rather than removing the key.
 - No webhook is registered on connect (`oauth.ts:176-181`) — every consumer is
   off by default, so there is nothing to subscribe for.
-- `expiresAt` is always written as now + 3600 s, both at the callback
-  (`oauth.ts:161`) and on refresh (`client.ts:666`), regardless of what Onshape
-  returned.
+- `expiresAt` is `onshapeTokenExpiresAt(expires_in)` at BOTH write sites — what
+  Onshape returned, minus a 120 s margin, falling back to an hour only when the
+  field is genuinely absent. Both sites used to hardcode now + 3600 s and discard
+  `expires_in`, so a shorter-lived token was believed valid long after Onshape
+  had stopped accepting it and no refresh was ever attempted. The margin is
+  separate and also load-bearing: expiry is checked at the START of a call, so a
+  token with four seconds left passes the check and dies in flight.
 - A connection authorized before `OAuth2Write` was requested holds a read-only
   token, and a refresh cannot widen it (the refresh grant sends no scope) — only a
   reconnect can. `onshapeConnectionHasWriteScope` reads the captured `scope` and
-  treats a missing field (legacy installs) as read-only (`hooks.server.ts:78`).
-  The settings save forces BOTH legacy toggles back off and tells the user to
-  reconnect (`integrations.$id.tsx:1411-1419`, message at 1506).
+  treats a missing field (installs predating it) as read-only. The settings save
+  forces the asset toggle back off and tells the user to reconnect.
 
-## Settings — nine keys
+## Settings — four keys
 
-Declared in `config.tsx:44-206`, validated by `onshapeSettingsSchema`
-(`lib/settings.ts:152`). `SwitchField` posts the literal strings
-`"true"`/`"false"`, so every switch uses an explicit `z.preprocess` —
-`z.coerce.boolean()` would make `"false"` truthy.
+Declared in `config.tsx`, validated by `onshapeSettingsSchema`
+(`lib/settings.ts`). `SwitchField` posts the literal strings `"true"`/`"false"`,
+so every switch uses an explicit `z.preprocess` — `z.coerce.boolean()` would
+make `"false"` truthy.
 
-**The form shows one pipeline's settings at a time.** `pipeline` is the only
-ungrouped field and renders alone at the top; the Legacy pipeline group and the
-Onshape v2 group are each hidden wholesale by the other's selection. Only
-`webhookSigningSecret` is ungated — the receiver verifies the signature before
-it branches on pipeline.
+Flat: no groups, no `visibleWhen`, nothing conditional. There is one
+implementation, so there is one list.
 
-| Setting | Type / default | Group | Gates |
-|---|---|---|---|
-| `pipeline` | options, `"legacy"` | — | which implementation handles this company; `"next"` selects v2 |
-| `assetSyncEnabled` | switch, `false` | Legacy pipeline | the `onshape-revision-sync` dispatch, the `onshape-backfill` job + route + the Backfill action's visibility (`config.tsx:221`) |
-| `releaseImportEnabled` | switch, `false` | Legacy pipeline | the `onshape-release-import` dispatch and the job's own gate |
-| `releaseImportMode` | options, `"changeNotice"` | Legacy pipeline | which branch legacy release import takes: `changeNotice` (reviewable) or `revision` (immediate) |
-| `webhookSigningSecret` | text, `""` | Security | opt-in HMAC verification in the receiver; empty = verification skipped |
-| `attachAssetsOnRelease` | switch, `true` | Onshape v2 | whether `onshape-release-v2` pulls the model on a release. It does NOT gate the BOM import or the create/link flows — those always pull, which is what the setting's own description promises |
-| `releaseImportV2` | options, `"changeNotice"` | Onshape v2 | `off` / `changeNotice` / `revision` — what v2 does with the engineering data in a release |
-| `allowUnreleasedSync` | switch, `false` | Onshape v2 | the unreleased picker, the v2 versions route, and the v2 BOM preview/import's released-only refusal |
-| `createItemsOnRelease` | switch, `false` | Onshape v2 | whether a released element with NO linked Carbon item is created rather than refused. Read strictly `=== true` — copying `attachAssetsOnRelease`'s `!== false` would start minting parts for every existing v2 install on deploy |
+| Setting | Type / default | Gates |
+|---|---|---|
+| `attachAssetsOnRelease` | switch, `true` | whether `onshape-release` pulls the model on a release. It does NOT gate the BOM import or the create/link flows — those always pull, which is what the setting's own description promises |
+| `releaseImportMode` | options, `"changeNotice"` | `off` / `changeNotice` / `revision` — what Carbon does with the engineering data in a release |
+| `createItemsOnRelease` | switch, `false` | whether a released element with NO linked Carbon item is created rather than refused. Read strictly `=== true` — copying `attachAssetsOnRelease`'s "absent means on" reading would start minting parts for every existing install on deploy |
+| `webhookSigningSecret` | text, `""` | opt-in HMAC verification in the receiver; empty = verification skipped. VAULTED, so it never reaches the metadata column |
 
-- The three legacy keys are IGNORED while v2 is selected, and the group
-  description says so (`config.tsx:18-21`). The webhook enforces it; the form
-  now also hides them, so the two pipelines' settings can never be read as one
-  list.
-- `visibleWhen` takes ONE condition or an ARRAY of them, all of which must hold
-  (`packages/ee/src/types.ts`). `IntegrationForm`'s `WhenVisible` evaluates one
-  condition per component instance and recurses for the rest — `useControlField`
-  is a hook, so one instance must read a fixed number of fields.
-- Every gated field leads its `visibleWhen` with `pipeline`
-  (`{ field: "pipeline", equals: "legacy" | "next" }`). No coercion is needed —
-  an options field's control value IS the string. Leading with it is required,
-  not stylistic: `ConditionalSettingsGroup` hides a group wholesale on the FIRST
-  condition its settings share, so a different lead would leave a group header
-  with nothing under it.
-- `releaseImportMode` is the one field with two gates — the pipeline, then
-  `{ field: "releaseImportEnabled", equals: "true" }`. The literal string
-  `"true"` is correct because the comparison is against `String(controlValue)`
-  and a switch's control value is a boolean. `releaseImportV2` needs no second
-  gate: it is one field with an `off` option rather than a switch plus a nested
-  mode.
-- A `visibleWhen`-hidden field is unmounted and posts NOTHING, so every gated
-  key is `.optional()`, NOT `.default()`. The save merges the parsed result over
-  the stored metadata (`{ ...existingMetadata, ...d }`), so a default on a
-  hidden key rewrites the OTHER pipeline's settings on every save — turning a
-  legacy company's asset sync off the first time it saved on v2, and back on,
-  unasked, on returning. Absent means "leave the stored value alone", and every
-  reader already treats an absent key as its own default. Pinned by
-  `lib/settings.test.ts`. `pipeline` is the one key that keeps a default: it is
-  never hidden.
-- The Backfill action carries the same `visibleWhen` shape (`config.tsx:221`),
-  gated on legacy AND `assetSyncEnabled`. Gating on the setting alone would show
-  it on a v2 company still carrying `assetSyncEnabled: true` from before the
-  switch — and the route refuses a v2 company outright.
+- Every key is `.optional()`, never `.default()`. The save merges the parsed
+  result over the stored metadata, so a default would rewrite a stored setting on
+  any save that did not render the field. Absent means "leave it alone"; the
+  parser supplies defaults on read, which is the only place they belong. Pinned
+  by `lib/settings.test.ts`.
 - `webhookSigningSecret` is declared `text`, NOT `password`/`secret`, matching the
   paperless-parts precedent. Both masked types render a `<Password>` input and
   nothing in `IntegrationForm` sets `autoComplete`, so a browser password manager
   silently autofills them — observed writing a saved password into this field on
   save, which would then make the receiver reject every genuine Onshape delivery.
-  Masking buys little here (the value is plaintext JSON in the row either way);
-  a silently wrong value costs webhook ingestion. Onshape's signing keys are
-  company-level, not per-webhook.
-- `parseOnshapeV2Settings` accepts booleans AND the form's `"true"`/`"false"`
+  Masking buys nothing now that the value is vaulted and never sent to the
+  browser; a silently wrong value costs webhook ingestion. Onshape's signing keys
+  are company-level, not per-webhook.
+- `parseOnshapeSettings` accepts booleans AND the form's `"true"`/`"false"`
   strings, and falls back to the DEFAULT for anything else — an unrecognised
-  value must never silently enable a behaviour (`settings.ts:56-61`).
+  value must never silently enable a behaviour.
+- `readFailed` is the third state, distinct from "absent" and "inactive": a QUERY
+  ERROR. Every writer treats it as retryable — a transient database error must
+  never masquerade as an opt-out and turn a real import into a silent no-op. Jobs
+  throw on it; routes answer "try again", never "Onshape is not connected".
+- Every job re-reads the gate on EVERY execution, outside its step, so
+  disconnecting Onshape kills an in-flight retry.
+- `x+/_layout.tsx` projects the integrations list to `{ id, active, companyId,
+  updatedAt, updatedBy }` — no `metadata` at all. The raw view returns metadata
+  verbatim, which holds provider configuration; returning it serialised that into
+  the HTML of every authenticated page. `useOnshape` reads `active` and nothing
+  else.
 
-Migration `20260818094500_onshape-v2-jsonschema.sql` declares `pipeline`,
-`attachAssetsOnRelease`, `releaseImportV2` and `allowUnreleasedSync` in the
-`onshape` row of `integration.jsonschema`, which `verify_integration()` validates
-`companyIntegration.metadata` against. It supersedes
-`20260817155435_onshape-release-import-jsonschema.sql` (which superseded
-`20260703165330_onshape-asset-sync-jsonschema.sql`). Data-only: `required` stays
-`["baseUrl", "credentials"]`, every settings key is optional, no row is touched,
-and an absent key is indistinguishable from the default at every read site.
+**There is no `allowUnreleasedSync`, and there never should be again.** Onshape
+stamps a revision only on release; an unreleased version has no revision to key
+on, no released asset to pull, and nothing stable to re-resolve against when it
+moves. `selectReleaseTarget` matches the revision letter against `item.revision`,
+`releaseKey` maps Onshape's number/revision 1:1 onto `readableIdWithRevision`,
+and `item_unique` is on the raw revision column. The refusal is unconditional in
+three places: the BOM preview route, the import route, and the job.
+
+Migration `20260824120000_onshape-element-id-join.sql` rewrites the `onshape`
+row's `integration.jsonschema` to these four keys, which
+`sync_verify_integration()` validates `companyIntegration.metadata` against when
+`active = TRUE`. `credentials.required` stays `["type"]` — the tokens live in
+Supabase Vault and are stripped from the column, so requiring them here would
+reject every write to an active row. Data-only, and no onshape jsonschema has
+ever set `additionalProperties`, so a row still carrying a retired key
+(`assetSyncEnabled`, `releaseImportEnabled`, `pipeline`, `allowUnreleasedSync`)
+continues to validate. Those keys are inert; nothing reads them.
+
 
 ## Webhook registration
 
@@ -327,16 +292,15 @@ and an absent key is indistinguishable from the default at every read site.
   target the same Onshape tenant (`resolveAndStoreOnshapeCompanyId`,
   `hooks.server.ts:31`; the jobs' copy is `resolveOnshapeCompanyId`,
   `onshape-backfill.ts:131`).
-- `ensureOnshapeReleaseWebhook(companyId, wanted)` (`hooks.server.ts:181`) is
-  register-or-deregister, called ONLY from the integration settings save
-  (`integrations.$id.tsx:1526`). **`wanted` is pipeline-aware**
-  (`integrations.$id.tsx:1520-1525`): on v2 it is
-  `attachAssetsOnRelease || releaseImportV2 !== "off"`, on legacy it is
-  `assetSyncEnabled || releaseImportEnabled`. Reading only the legacy flags would
-  DEREGISTER the subscription the moment someone switched to v2, silently, while
-  the save flashed success. The subscription is shared, so it exists while ANY
-  consumer is on and is deleted only when all are off. A failed registration
-  while `wanted` is a hard, flashed error; the settings are already saved by then.
+- `ensureOnshapeReleaseWebhook(companyId, wanted)` is register-or-deregister,
+  called ONLY from the integration settings save. `wanted` is
+  `onshapeWebhookWanted(settings)` — `attachAssetsOnRelease ||
+  releaseImportMode !== "off" || createItemsOnRelease`. All three, because ONE
+  subscription feeds every consumer: omitting `createItemsOnRelease` deletes the
+  subscription of a company that turned auto-create on and everything else off,
+  while flashing success. It exists while ANY consumer is on and is deleted only
+  when all are off. A failed registration while `wanted` is a hard, flashed
+  error; the settings are already saved by then.
 - `onshapeOnUninstall` deregisters on disconnect (`hooks.server.ts:192`).
 - Neither function throws; both return `{ ok } | { ok: false, error }`.
 - The background client is built for the integration's `updatedBy` (the installer),
@@ -350,17 +314,11 @@ and an absent key is indistinguishable from the default at every read site.
 1. `companyId` param present, else 400 (line 125).
 2. `getIntegration(serviceRole, "onshape", companyId)` — 400 on query error,
    missing row, or `active !== true` (lines 130-155).
-3. **Pipeline resolution** (line 169): `isV2 = metadata.pipeline === "next"`.
-4. **Consumer gate** (lines 175-200), BEFORE the body is read, so a company that
-   opted into nothing takes a byte-identical path to before any of this existed.
-   - Legacy consumers are `!isV2 && …=== true`. On a v2 company they are DEAD
-     whatever their stored values say — a company that migrated with them left on
-     would otherwise have both pipelines act on one release, producing duplicate
-     change notices and double the export calls.
-   - v2 consumers are read only when `isV2`: `attachAssetsOnRelease !== false`
-     (absent means on) and `releaseImportV2 !== "off"` (absent means
-     `changeNotice`).
-   - None enabled → log and ack `200`.
+3. **Consumer gate** — `onshapeWebhookWanted(parseOnshapeSettings(metadata))`,
+   BEFORE the body is read, so a company that has opted into nothing pays almost
+   nothing per delivery. Defense in depth: if a deregister failed when the
+   consumers were turned off, the subscription can linger, and dropping is the
+   right answer rather than dispatching. None enabled → log and ack `200`.
 5. `rawBody = await request.text()` — read ONCE as text (line 206), because HMAC
    needs the exact bytes Onshape signed; re-serializing a parsed object would not
    reproduce them.
@@ -386,17 +344,13 @@ and an absent key is indistinguishable from the default at every read site.
      `integration.data.updatedBy` (the acting user — the webhook itself is
      unauthenticated) plus `messageId`, `partNumber`, `documentId`, `versionId`,
      `elementId` and a numeric `elementType`, else warn and break (lines 288-303).
-     Then:
-     - `assetSyncEnabled` → `trigger("onshape-revision-sync", …)` (line 304).
-     - `isV2` → ONE `trigger("onshape-release", …)` carrying
-       `groupKey: releaseId ?? elementId` (lines 320-348), then **break** —
-       exclusive, never falling through to the legacy dispatches. One job for the
-       whole event because a separate asset job would race the import that
-       creates the item it needs to attach to; the job owns the policy so the
-       receiver stays a router.
-     - `releaseImportEnabled` (legacy only) → `trigger("onshape-release-import", …)`
-       (line 372), SKIPPING when `releaseId` is missing (line 354) and when
-       `elementType === 2` (drawings, line 359).
+     Then ONE `trigger("onshape-release", …)` carrying
+     `groupKey: releaseId ?? elementId`. One job for the whole event because a
+     separate asset job would race the import that creates the item it needs to
+     attach to; the job owns the policy (which consumers are on, what to do with
+     a drawing) so the receiver stays a router. The `groupKey` falls back to the
+     element so a releaseId-less delivery gets its own bucket rather than sharing
+     one with every other company's.
    - `onshape.workflow.transition` (line 390): deliberately nothing. The wrapper
      event is thin (a release-package objectId + a transition name); the
      per-element `revision.created` events are what Carbon acts on.
@@ -406,9 +360,13 @@ and an absent key is indistinguishable from the default at every read site.
     not retry-storm (line 402).
 
 Routing, gating and signature behaviour are pinned by
-`webhook.onshape.$companyId.test.ts`, including "dispatches ONLY the v2 job when
-the company is on the v2 pipeline" and "is unaffected by a pipeline value that is
-not exactly `next`".
+`webhook.onshape.$companyId.test.ts`.
+
+The signing secret is VAULTED, so the receiver resolves it through
+`resolveIntegrationSecrets` rather than reading `metadata`. A vault read that
+FAILS is not the same as "no secret configured" — we cannot tell whether this
+company requires a signature, so it answers `503` (Onshape retries) rather than
+processing unverified or dropping the event with a `200`.
 
 ## The Onshape jobs
 
@@ -417,158 +375,29 @@ and in the functions array at `packages/jobs/src/inngest/index.ts:156-160`.
 Events are declared in `packages/lib/src/events.ts:523-621`, task keys in
 `packages/lib/src/trigger.ts:23-28`. All of them run on the service role
 (`getCarbonServiceRole()`), so every query must carry `companyId` by hand.
+| Job | Retries | Idempotency | Concurrency key |
+|---|---|---|---|
+| `onshape-release` | 10 | `event.data.messageId` | `event.data.groupKey` |
+| `onshape-bom-import` | 10 | — | `event.data.companyId` |
+| `onshape-item-assets` | 10 | — | `event.data.itemId` |
 
-| Job | Pipeline | Retries | Idempotency | Concurrency key |
-|---|---|---|---|---|
-| `onshape-backfill` | legacy | 10 | — | `event.data.companyId` |
-| `onshape-revision-sync` | legacy | 3 | `event.data.messageId` | `event.data.elementId` |
-| `onshape-release-import` | legacy (also called INLINE by v2) | 3 | `event.data.messageId` | `event.data.releaseId` |
-| `onshape-release-v2` | v2 | 10 | `event.data.messageId` | `event.data.groupKey` |
-| `onshape-bom-import` | v2 | 10 | — | `event.data.companyId` |
-| `onshape-v2-item-assets` | v2 | 10 | — | `event.data.itemId` |
+Three jobs, and the older `onshape-backfill`, `onshape-revision-sync` and
+`onshape-release-import` are gone with the part-number join they were built on.
 
-### `onshape-backfill` (`onshape-backfill.ts:431`)
+### `onshape-release`
 
-- Gate: `isOnshapeAssetSyncEnabled` (line 112) — `active && assetSyncEnabled === true`
-  — checked OUTSIDE any step so flipping the toggle off kills an in-flight retry
-  (line 452). The route `integrations.onshape.backfill.ts` re-checks the same flag,
-  and **refuses outright when `metadata.pipeline === "next"`** (`backfill.ts:35-47`):
-  the backfill matches by `readableIdWithRevision`, which is exactly the
-  part-number join v2 exists to replace, and would attach geometry to whichever
-  revision happened to share a string.
-- Onshape-driven and call-light: page the company's revisions, match locally, and
-  spend export calls only on matches. Omit `after` for a full backfill; pass it for
-  an incremental reconcile.
-- Pagination follows Onshape's own `next` cursor, never an incremented offset —
-  Onshape caps `offset` at 100 (`client.ts:333`, used at `onshape-backfill.ts:212`).
-  `page.next` is authoritative for "more pages exist".
-- `isObsolete` revisions are dropped (line 224).
-- Resolution: models by one `.in("readableIdWithRevision", modelKeys)` query per
-  page (line 260); drawings per row by shared-number ILIKE (line 282). Already-synced
-  work is skipped without an Onshape call — models on `item.modelUploadId`, drawings
-  on `itemHasPdfDocument` (line 170).
-- Step granularity: one fast memoized step per page match, then ONE step per matched
-  export+attach (`sync-page-N-item-M`). An `OnshapeAssetTooLargeError` returns
-  `skippedTooLarge` instead of throwing (line 411). Five consecutive step failures
-  abort the run (`MAX_CONSECUTIVE_FAILURES`, line 79).
-- Fires `carbon/model-optimize` for every attached model and `carbon/model-thumbnail`
-  only when the Onshape-rendered thumbnail did not stick.
-
-### `onshape-revision-sync` (`onshape-revision-sync.ts:265`)
-
-- Same `isOnshapeAssetSyncEnabled` gate, outside the step (line 281).
-- LINK-ONLY: attaches to an item that already exists, never creates one.
-- Resolution: the webhook gives a `revisionId`, not the revision LETTER, so the
-  letter is re-resolved from `getRevisions(onshapeCompanyId, partNumber, elementType)`
-  preferring the entry matching this event's `versionId` AND `elementId`, falling
-  back to `versionId` alone (lines 90-104). Then
-  `item.readableIdWithRevision === releaseKey(partNumber, revision)`
-  (`.maybeSingle()`, line 193).
-- Skip reasons: `unknown-element`, `no-matching-item`, `ambiguous-item`,
-  `revision-not-found`, `asset-too-large` (permanent — a retry cannot shrink an
-  export).
-- The whole body is wrapped in `withRateLimitRetry`, which converts a 429 into an
-  Inngest `RetryAfterError` honoring `Retry-After` (default 60 s, clamped to 300 s)
-  — Inngest suspends the run instead of blocking the step
-  (`onshape-backfill.ts:87`).
-- The payload schema (line 252) does NOT include `releaseId`/`revision`, so zod
-  strips the two extra fields the receiver sends.
-
-### `onshape-release-import` (`onshape-release-import.ts:858`)
-
-The Inngest function is a thin wrapper; the work is `runOnshapeReleaseImport`
-(line 406), which the v2 release job calls DIRECTLY.
-
-- Gate: `getOnshapeReleaseImportSettings` (line 128) — `active && releaseImportEnabled === true`;
-  mode is `"revision"` only on that exact string, anything else falls back to
-  `changeNotice`. **A caller may pass `gate` instead** (line 403), which replaces
-  the settings read entirely. v2 does: a v2 company necessarily has the legacy
-  keys off, so without the override the v2 release import would refuse itself as
-  `disabled`.
-- Skip reasons (line 51): `disabled`, `drawing-element`, `revision-not-found`,
-  `no-matching-item`, `revision-already-imported`, `no-dispatcher`.
-- Resolution (`resolveReleaseTarget`, line 211) queries the `item` siblings of one
-  `readableId` and hands them to `selectReleaseTarget` (`onshape-matching.ts:74`),
-  a pure helper so the edge cases are unit-pinned:
-  - already-imported spans **every** sibling, active or not — an inactive draft
-    revision still occupies `item_unique (readableId, revision, companyId, type)`,
-    so ignoring it turns a re-release into a 23505 that rolls back the affected
-    row and leaves an empty notice;
-  - the SOURCE must be ACTIVE — an inactive sibling is a draft revision owned by
-    an open notice, and the affected-item picker filters inactive items out
-    entirely, so a human could not build on one either;
-  - ordering prefers NAMED revisions over the initial `''`/`'0'`, newest
-    `createdAt` first — the same preference as the `latest_items` CTE and the
-    legacy BOM route's fallback.
-- The family it resolves is `carbonReadableId ?? partNumber` (line 432). Legacy
-  passes neither and joins by number; v2 passes CARBON's readableId for the family
-  while `partNumber` stays ONSHAPE's, because that is what
-  `/revisions/companies/{id}/partnumber/{n}` is asked about.
-- The revision LETTER and the Onshape-side NAME come from `getRevisions`
-  (`resolveReleasedRevision`, line 253); on any non-rate-limit failure it falls
-  back to the letter from the webhook and imports without the name. A
-  `RetryAfterError` is rethrown so a rate limit stays a rate limit.
-- A part number Carbon has never seen is SKIPPED as `no-matching-item`, not minted
-  (line 436). Minting would land it with Carbon defaults (Inventory / Make) and
-  poison MRP for purchased leaf parts. Creating parts is the BOM import's and the
-  v2 create route's job.
-
-**`revision` mode** (line 473): one `items_createRevision` with the Onshape letter,
-`active: true`, no change notice. Additive, writes no supersession, reversible by
-deactivating the item — which is why it, and not an auto-applied change notice, is
-the "no review" option (`applyChangeNotice` drives four transitions to a terminal
-`Done`, is not one transaction, and `itemSupersession`'s PK is `("itemId")` alone,
-so a second release on the same predecessor would overwrite the first's successor
-pointer — lines 31-36).
-
-**`changeNotice` mode** (line 522): one Draft change notice per Onshape release, one
-affected item per released element, change type `Revision`, carrying Onshape's
-letter. A human drives the normal Draft → Start → Engineering Complete →
-Implementation → Done flow. The notice gets `assignee = payload.userId` (the
-installer) because a Draft notifies nobody — only Start/Implementation/Done have
-notification events. `reasonForChange` carries release provenance as tiptap JSON
-(`onshapeProvenance`, line 720) — it is a rich-text column, so a plain string
-would not render.
-
-**Grouping.** There is NO release-level Onshape event: a 9-element release arrives
-as 9 separate `onshape.revision.created` deliveries in nondeterministic order with
-no "release complete" signal. So `releaseId` is the grouping key and a marker row
-in `externalIntegrationMapping` is the CLAIM: the first element to insert it creates
-the notice; every sibling reads it and appends to the notice it names. Serialization
-comes from the concurrency key (`releaseId` on the legacy job, `groupKey` on the v2
-one). **No new table, no schema change.** The claim is inserted IMMEDIATELY after
-the notice, before any affected item, so a mid-run death retries into the existing
-notice (line 576); a `23505` on the claim means a sibling won, and the loser
-re-reads and adopts that notice (lines 598-617).
-
-**Two error layers.** `unwrapDispatch` (line 110): `result.success` only says the
-dispatch worked; the Supabase envelope inside carries its own error. Treating a
-failed write as success would poison the release's marker so it could never be
-retried.
-
-**Same-part parallel notices are PERMITTED**, matching the UI — the one-open-CO-per-part
-guard was dropped (`apps/erp/app/modules/items/AGENTS.md:89`). The UI also WARNS via
-`ItemOpenChangeNoticeAlert`, so the job records prior open notices in
-`metadata.openNoticeCollisions` (`findOpenNoticesForItem`, line 160;
-`recordMarkerProgress`, line 775). That lookup queries notice STATUS, not
-`item.active + changeOrderId` — `changeOrderId` survives release permanently and
-cancelling a notice is a bare status flip, so the item-row shape would report
-cancelled and released notices as in-flight forever.
-
-### `onshape-release-v2` (`onshape-release-v2.ts:67`)
-
-The whole `onshape.revision.created` event for a v2 company: attach the released
+The whole `onshape.revision.created` event: attach the released
 geometry, and bring the release into engineering data when configured to. Doing
 both here, in order, is the point — for a NEW revision the target item does not
 exist until the import creates it, so a parallel asset job resolves
 `revision-missing` and the model never lands.
 
-- Gate: `getOnshapeV2Settings`; `readFailed` throws, `!isV2` returns
-  `{ skipped: true, reason: "pipeline-not-v2" }` (lines 89-97).
+- Gate: `getOnshapeSettings`; `readFailed` throws, `!active` returns
+  `{ pipelineSkipped: true, reason: "integration-not-installed" }`.
 - `elementType === 2` returns `drawing-element` (line 105). v1 attaches a
   drawing's PDF by stripping the number to a shared suffix, which is disproved on
   real data — RD-410, DRW-410 and PK-410 all reduce to `-410`, matching five items
-  across two parts. Until a mapping-based mechanism exists, v2 refuses rather than
+  across two parts. Until a mapping-based mechanism exists, it refuses rather than
   guessing which item the PDF belongs to.
 - An empty `revision` returns `revision-missing-from-event` (line 116). A release
   ALWAYS names a revision; treating an empty one as the initial revision would
@@ -581,7 +410,7 @@ exist until the import creates it, so a parallel asset job resolves
 - Per partId: `readItemIdsForElement` → drop claimants whose `item` row did not
   come back (no FK, so a deleted item leaves its mapping behind) → `resolveBomRow`
   against the released revision. A match is the target.
-- No target and `releaseImportV2 !== "off"` → delegate to
+- No target and `releaseImportMode !== "off"` → delegate to
   `runOnshapeReleaseImport` with `gate: { enabled: true, mode }` (lines 245-279).
   The family's `readableId` is derived from the mapped items and must be
   unanimous; two different numbers behind one element is reported as ambiguous
@@ -591,9 +420,9 @@ exist until the import creates it, so a parallel asset job resolves
   re-resolve the attach never runs, and `items_createRevision` copies the source
   revision's `modelUploadId` and `thumbnailPath`, so the new revision would not
   merely lack geometry: it would silently display the PREVIOUS revision's,
-  presented as the released one. Without the link, v2 stays blind to what it just
+  presented as the released one. Without the link, Carbon stays blind to what it just
   created.
-- v2 mints a part from a release ONLY when `createItemsOnRelease` is on.
+- A part is minted from a release ONLY when `createItemsOnRelease` is on.
   Off (the default) keeps the reported skip, "No Carbon item is linked to this
   Onshape part". On, the job:
   - probes the readableId FAMILY first and refuses if the number is taken by an
@@ -623,7 +452,7 @@ exist until the import creates it, so a parallel asset job resolves
 
 ### `onshape-bom-import` (`onshape-bom-import.ts:383`)
 
-User-initiated from a specific make method. Replaces the legacy `sync` edge
+User-initiated from a specific make method. Replaces the older `sync` edge
 function path, which was synchronously awaited by the request, could not retry,
 could not report progress, and left a half-written item tree with nothing to
 resume from.
@@ -693,9 +522,9 @@ material list; create a revision of an existing part.
   has no Onshape back-pointer and Onshape's row ids are scoped to one response.
   Only `quantity` and `order` are written. `methodOperationId`, `scrapQuantity`,
   `kit`, `sourcingType`, `storageUnitIds`, `tags` and the row's
-  `methodMaterialStep` children survive because they are never named. The legacy
-  writer deletes every row and re-inserts, which is why "keep the BOP" is
-  impossible there.
+  `methodMaterialStep` children survive because they are never named. A writer
+  that deletes every row and re-inserts — as the older one did — makes "keep the
+  BOP" impossible.
   - `protectedItemIds` keeps a refused row's existing line: absent from `desired`,
     it would otherwise read as "Onshape dropped this" and be DELETED, which is the
     opposite of what the user was told. Protection is scoped PER ROW, not one flat
@@ -712,8 +541,8 @@ material list; create a revision of an existing part.
   the component.
 - Recursion only into children that resolved to a Carbon item AND have children of
   their own. A childless row is a leaf regardless of how Carbon classifies the
-  item — the legacy writer resolves a child method whenever the item is Make,
-  which empties a hand-built BOM on a part Onshape reports as a leaf.
+  item. Resolving a child method whenever the item is Make — as the older writer
+  did — empties a hand-built BOM on a part Onshape reports as a leaf.
 - The TOP-LEVEL item's own model is pulled explicitly (line 1022): Onshape returns
   the queried assembly separately from its components, so without this the one
   item the user is looking at is the only one in the tree with no geometry.
@@ -779,7 +608,7 @@ ONLY (`notify.ts:194`) and takes its title and body from the payload
 still the reason the release import notifies via the change notice's `assignee`
 instead of sending one of these.
 
-### `onshape-v2-item-assets` (`onshape-v2-item-assets.ts:33`)
+### `onshape-item-assets` (`onshape-item-assets.ts:33`)
 
 Pulls the model for ONE already-linked item. The create and link routes queue it;
 without it an item created from a released revision arrives with no geometry while
@@ -788,9 +617,9 @@ decided by which button was pressed. A job rather than inline work because an
 export is a translate-poll-download round trip: minutes in the worst case, and
 rate-limitable.
 
-### Shared v2 asset machinery
+### Shared asset machinery
 
-`onshape-v2-assets.ts` never answers "which Carbon item is this" — callers resolve
+`onshape-assets.ts` never answers "which Carbon item is this" — callers resolve
 and hand it an `itemId`.
 
 - `pullOnshapeAssetsForElement` (`:83`) exports and attaches in ONE call: a local
@@ -817,8 +646,7 @@ and hand it an `itemId`.
   element are two groups, because the configuration is part of the identity of what
   gets exported.
 - `exportOnshapeModelToDisk` (`onshape-sync-element.ts:126`) is the shared
-  exporter, taking `partIds` and `configuration`. Legacy callers omit both, so
-  their behaviour is unchanged. Omitting `configuration` exports the element's
+  exporter, taking `partIds` and `configuration`. Omitting `configuration` exports the element's
   DEFAULT, which for a configured part is a different shape from the one the BOM
   line names.
 - `attachOnshapeAssetsToItem` (`onshape-attach.ts:184`) now writes
@@ -827,52 +655,48 @@ and hand it an `itemId`.
   concurrent attach lose its model to an orphaned row. `eq(column, "")` does NOT
   match SQL NULL, so the no-prior-model case uses `.is(…, null)`.
 
-## The v2 routes
+## The routes
 
-All under `apps/erp/app/routes/api+/integrations.onshape.v2.*.ts`, paths in
-`utils/path.ts:189-195`. Shared shape:
+All under `apps/erp/app/routes/api+/integrations.onshape.*.ts`, paths in
+`utils/path.ts`. Shared shape:
 
 - Permission is on **parts**, not settings (`view` for loaders, `create`/`update`
-  for writes). The Onshape connection and the pipeline setting are then read with
-  the SERVICE ROLE. Under the legacy routes the connection is read with the user's
-  client, so those reads silently require `settings_view`, and the token refresh
-  they trigger silently fails without `settings_update`.
+  for writes). The Onshape connection and its settings are then read with the
+  SERVICE ROLE — reading them with the user's client silently requires
+  `settings_view` on top, and the token refresh it triggers silently fails
+  without `settings_update`.
 - `settings.readFailed` → "Could not read the Onshape settings just now. Try
   again." Wording a transient error as a configuration state sends the user to
   change a setting that was never wrong — and re-saving it re-registers the
   webhook.
-- `!settings.isV2` → refused.
+- `!settings.active` → refused.
 - `getOnshapeClient` is narrowed on `.client`, never on `.error`: the union is
   `{client, error: null} | {client: null, error: string}` and `""` is a valid
-  falsy error string, which is why the legacy routes carry a `@ts-expect-error`
-  there instead.
+  falsy error string.
 
 | Route | Verb | Does |
 |---|---|---|
-| `v2.revisions` | loader | every released revision in the Onshape company, drawings and obsoletes excluded, each with its `externalId` and a `linked` flag. Pages on Onshape's `next` cursor, `MAX_PAGES = 20`, and REPORTS `truncated` |
-| `v2.versions` | loader | a document's versions, each marked `released` by joining against the company revisions sweep. Requires `allowUnreleasedSync`. Workspaces are deliberately never offered — the BOM, parts and translation endpoints all hardcode `/v/{versionId}`, so a workspace would 404 at BOM time rather than at pick time. Reports `truncated` (list) and `releasedUnknown` (badges) separately |
-| `v2.elements` | loader | the ASSEMBLIES in a version, each with its real Onshape PART NUMBER |
-| `v2.bom` | loader | the BOM preview: per row, `update` / `create-revision` / `create` / `ambiguous`, plus `skipped`/`orphaned` counts and a summary |
-| `v2.create` | action | create a Carbon part from a released revision, from the whole New Part payload, and optionally queue its BOM import |
-| `v2.link` | action | link an EXISTING Carbon item to a released revision |
-| `v2.import` | action | validate, link the target item, and queue `onshape-bom-import` |
+| `revisions` | loader | every released revision in the Onshape company, drawings and obsoletes excluded, each with its `externalId` and a `linked` flag. Pages on Onshape's `next` cursor, `MAX_PAGES = 20`, and REPORTS `truncated` |
+| `replenishment` | loader | Buy or Make for ONE released element, from its Onshape "Purchasing Level" — see the Buy vs Make section. Answers the structural guess on any failure rather than erroring |
+| `bom` | loader | the BOM preview: per row, `update` / `create-revision` / `create` / `ambiguous`, plus `skipped`/`orphaned` counts and a summary |
+| `create` | action | create a Carbon part from a released revision, from the whole New Part payload, and queue its BOM import when the element is an assembly |
+| `link` | action | link an EXISTING Carbon item to a released revision |
+| `import` | action | validate, link the target item, and queue `onshape-bom-import` |
 
-### Why `v2.elements` exists
+There is no `documents` / `versions` / `elements` drill-down any more. Those
+three routes existed only to feed the unreleased-version picker; releasing is now
+the only way in, and the released picker reads the company revision catalog
+instead.
 
-An Onshape element's **NAME** and its **PART NUMBER** are different fields and
-diverge freely — an assembly named "RD-410 Wandleser RFID" can carry part number
-TB-900. `getElements` returns only the name. The part number is what becomes the
-Carbon item, so it is what the user has to be choosing and what has to travel with
-the selection; the legacy elements loader could only pass the name along as though
-it were the part number. The route reads it per element from
-`getElementMetadata`, preferring Onshape's stock property id
-`57f3fb8efa3416c06701d60f` over the localised name `"Part number"`
-(`v2.elements.ts:24`, `:42-52`). Metadata is one request per element, so the
-fan-out is capped at `MAX_ELEMENTS = 50` and reported as `truncated`; a failed
-metadata read logs and keeps the assembly with a thinner label rather than
-dropping it.
+Note for anyone re-adding an element listing: an Onshape element's **NAME** and
+its **PART NUMBER** are different fields and diverge freely — an assembly named
+"RD-410 Wandleser RFID" can carry part number TB-900. `getElements` returns only
+the name. The part number is what becomes the Carbon item, so it is what the user
+has to be choosing; read it from `getElementMetadata`, preferring Onshape's stock
+property id `57f3fb8efa3416c06701d60f` over the localised name `"Part number"`.
+Metadata is one request per element, so cap the fan-out and report it.
 
-### `v2.create` and `v2.link` refusals
+### `create` and `link` refusals
 
 - The Onshape half of the payload is IDENTITY ONLY. Nothing the client sends about
   the part itself is persisted: `resolveOnshapeRevision` (`lib/resolve.ts:57`)
@@ -882,22 +706,20 @@ dropping it.
   document/element had been swapped for another part's. Refusals:
   `drawing-element`, `revision-not-found`, `obsolete`, `lookup-failed`; a 429 is
   rethrown untouched.
-- `v2.create` refuses BEFORE creating anything if the CAD thing already has a
+- `create` refuses BEFORE creating anything if the CAD thing already has a
   Carbon item, and distinguishes "this exact revision is already in Carbon" (via
   the revision mapping) from "another revision of this part is already here" (via
   the element mapping). Conflating them produces a message that is simply wrong: a
   company that has released A, B and C has three picker entries per part sharing
   one elementId.
-- `v2.create` takes the WHOLE New Part payload from the form —
+- `create` takes the WHOLE New Part payload from the form —
   `partBaseValidator` minus `id`/`revision`/`name`/`readableId`/`modelUploadId`,
-  with the storage and shelf-life refines still applied, plus
-  `importBom: zfd.checkbox()`. Those three identity fields are OFF the schema
-  entirely rather than accepted and ignored, so a hand-posted number cannot be
-  persisted. The UI seeds replenishment from the element type (Assembly → Make /
-  Make to Order, otherwise Buy / Pull from Inventory) and shows it for
-  confirmation. `customFields: setCustomFields(formData)` comes along, as on the
-  ordinary new-part action.
-- `v2.create` RE-READS the created item by `(readableId, revision, companyId,
+  with the storage and shelf-life refines still applied. Those identity fields
+  are OFF the schema entirely rather than accepted and ignored, so a hand-posted
+  number cannot be persisted. `customFields: setCustomFields(formData)` comes
+  along, as on the ordinary new-part action. There is NO `importBom` on the
+  schema — see below.
+- `create` RE-READS the created item by `(readableId, revision, companyId,
   type)` instead of trusting what `upsertPart` returned. That function's insert
   branch finishes with a lookup against the `parts` VIEW, which is
   `DISTINCT ON (readableId, companyId)` ordered so a NAMED revision sorts first —
@@ -905,28 +727,36 @@ dropping it.
   and hands back rev A's id, and both mappings plus the asset pull would land on
   the wrong item. When the re-read finds nothing the route refuses the LINK and
   says so, rather than mapping a row it cannot identify.
-- `importBom` is refused outright when `elementType !== 1` (a Part Studio body has
-  no bill of materials) and soft-checked with `getUserClaims` for `update` +
-  `delete` on parts. NOT a second `requirePermissions`: that THROWS a redirect on
-  denial, so a create-only user would be bounced off the page and never get the
-  part. The import is the optional half; the part is not.
-- **Exactly one asset path runs per creation.** With `importBom` the route queues
-  `onshape-bom-import` against the item's auto-created Draft `makeMethod` and
-  SKIPS `onshape-v2-item-assets` — the import job pulls the top-level item's own
-  model itself, and running both double-exports one element against a
-  rate-limited API while `attachOnshapeAssetsToItem`'s compare-and-set files the
-  loser's model away as a document.
-- `v2.link` requires `confirmOverwrite` and is destructive by consent on the fields
+- **Whether to import the BOM is decided by the ROUTE**, from the element type
+  Onshape's own response carried — an assembly has a bill of materials, a Part
+  Studio body does not, and there is no third answer. The client does not send a
+  flag, so a hand-posted request can neither queue an import whose first act is
+  to fail nor skip a real assembly's structure. Permission is soft-checked with
+  `getUserClaims` for `update` + `delete` on parts; NOT a second
+  `requirePermissions`, which THROWS a redirect on denial and would bounce a
+  create-only user off the page without the part they asked for. That refusal
+  comes back on its own `notice` field, because the caller cannot otherwise tell
+  "refused" from "this element never had one" — both report
+  `importQueued: false`.
+- **Exactly one asset path runs per creation.** When the BOM is imported the
+  route queues `onshape-bom-import` against the item's auto-created Draft
+  `makeMethod` and SKIPS `onshape-item-assets` — the import job pulls the
+  top-level item's own model itself, and running both double-exports one element
+  against a rate-limited API while `attachOnshapeAssetsToItem`'s compare-and-set
+  files the loser's model away as a document. Whichever path runs, the route
+  opens the PROGRESS MARKER before dispatching, so the create modal has something
+  to wait on.
+- `link` requires `confirmOverwrite` and is destructive by consent on the fields
   Onshape owns — currently the NAME only, written as a narrow two-column update
   rather than `items_updateItem` (which sanitises undefined keys to null and
   requires fields this caller has no business supplying). The part NUMBER is never
   touched: once the mapping exists the number is a label, and rewriting
   `readableId` would break every document, PO and job that renders it. A
   `numberMismatch` is returned so the UI can say so.
-- `v2.link` reports a HALF-MADE link: if the element mapping is written and
+- `link` reports a HALF-MADE link: if the element mapping is written and
   `writeRevisionMapping` then fails, the user is told, because otherwise they are
   told the link is complete when its provenance half is missing.
-- `v2.import` requires `update` + `create` + `delete` on parts — the job mints
+- `import` requires `update` + `create` + `delete` on parts — the job mints
   parts and deletes material lines, so asking only for `update` let the route do
   more than the permission it checked. It re-checks the same four refusals the job
   makes (not Draft, CO-owned, unreleased-into-a-named-revision, PLM lock) so the
@@ -934,14 +764,14 @@ dropping it.
   declared `retries: 10`, so a deterministic refusal the route did not catch is
   retried eleven times and then dies in the job log while the user was told
   "Import started".
-- `v2.import` writes the target item's element mapping ITSELF, for every import,
+- `import` writes the target item's element mapping ITSELF, for every import,
   not only when a part number came along — an assembly with no Onshape part number
   is still importable, and gating the link on it left the top-level item the one
   thing in the tree joined by nothing. When a revision IS named it is verified
   through `resolveOnshapeRevision` first; a named revision with no part number is
   refused, since there is nothing to check the claim against.
 
-## v2 UI
+## The UI
 
 - `PartsTable` — "From Onshape" is a LINK to `${path.to.newPart}?source=onshape`,
   not a modal. The `OnshapeCreatePart` modal it used to open was deleted: it
@@ -951,59 +781,72 @@ dropping it.
 - `PartForm` — owns the create-from-Onshape flow, behind an explicit
   `withOnshapeSource` prop (never inferred from `type`: the three inline-create
   callers in `components/Form/{Part,Item,Items}.tsx` read a PostgrestResponse
-  back and would break if this form could redirect them). Under a selection the
-  identity fields become `InputControlled … isReadOnly` — `isReadOnly`, because a
-  DISABLED input submits nothing and the client-side `partValidator` would fail
-  on `id`/`revision`/`name` first; and WITHOUT `isUppercase`, which would
-  re-create the lowercase-part-number defect v2 exists to fix. The dropzone is
-  hidden (the Onshape pull compare-and-sets `modelUploadId`), and the action
-  switches to `v2.create`.
-- `PartForm`'s two decisions are pure and unit-pinned in
-  `ui/Parts/onshapePartSource.ts`: `seedFromElementType` (assembly → Make / Make
-  to Order) and `bomOptionState` (offered only for `elementType === 1`, disabled
-  without create + update + delete on parts).
-- `PartHeader` — "Link to Onshape" menu item → `OnshapeLinkPart`, plus an
-  "Importing from Onshape…" badge driven by `useOnshapeImportStatus`.
-- `Item/BoMExplorer` — renders `OnshapeSync` (legacy) or `OnshapeBomImport` (v2),
-  never both: showing both would let someone write string-matched items with no
-  mapping while v2 is live, silently poisoning the migration.
-- `OnshapeRevisionPicker` — the shared released-revision list. Loads on OPEN, not
-  on mount: the sweep costs real Onshape calls. `hideLinked` is true for creating
-  and false for linking. `onlyElementType: 1` for a BOM import, since a Part Studio
-  body has no bill of materials.
-- `OnshapeUnreleasedPicker` — a SECOND path, not a mode: an unreleased version has
-  no revision to select, so the user picks document → version → assembly. Offered
-  only when `allowUnreleasedSync`. It sends the element's PART NUMBER, from
-  `v2.elements`, and shows the name only as a label.
+  back and would break if this form could redirect them). The "From Onshape"
+  button is gated on `useOnshape().isConnected` alone. Choosing it renders
+  `OnshapeRevisionSearch` INLINE, in the modal the user is already filling in —
+  the old nested picker-modal hid the form behind a dialog opened to choose one
+  value.
+- **Exactly two fields are frozen under a selection: Part ID and Revision.** Both
+  as `InputControlled … isReadOnly` — `isReadOnly`, because a DISABLED input
+  submits nothing and the client-side `partValidator` would fail on them first;
+  and WITHOUT `isUppercase`, which would re-create the lowercase-part-number
+  defect the id join exists to fix. Everything else is the user's: Short
+  Description is SEEDED from Onshape and then editable (nothing resolves on
+  `item.name` and no job writes it back), and Replenishment / Method Type are
+  read-only ONLY while a bill of materials is being imported, with the reason on
+  screen. The dropzone stays hidden — the Onshape pull compare-and-sets
+  `modelUploadId`, so a hand-uploaded model loses the race and is filed away as a
+  document. The action switches to `create`.
+- `PartForm` seeds Buy/Make optimistically from `seedFromElementType`
+  (`ui/Parts/onshapePartSource.ts`, unit-pinned), then asks the `replenishment`
+  route and applies its answer — the two agree whenever the company has no
+  Purchasing Level column, which is most of them. The field names which source
+  decided, and a deliberate edit clears that claim.
+- **The create modal BLOCKS** on `OnshapeImportProgress` rather than navigating.
+  The route answers as soon as the ITEM exists; the BOM, models and drawings land
+  in a job, so opening the part on that response shows something unfinished. The
+  panel replaces the form (there is nothing left to edit), names the stage, and
+  opens the part when the run closes — with an escape offered throughout, an
+  explicit failure state, and an 8-second grace period for a marker that never
+  appears at all.
+- `PartHeader` — "Link to Onshape" menu item → `OnshapeLinkPart`, plus
+  importing / imported / did-not-finish badges driven by
+  `useOnshapeImportStatus`. For everyone who reaches the part some other way.
+- `Item/BoMExplorer` — renders `OnshapeBomImport`.
+- `OnshapeRevisionSearch` — the released-revision list: search box, grouped by
+  part number with the newest revision first and flagged `Latest`. Loads when the
+  caller says it is active, not on mount: the sweep costs real Onshape calls.
+- `OnshapeRevisionPicker` — a thin modal around that search, with a confirm step
+  and the already-linked refusal. Used by link and BOM import; the New Part form
+  embeds the search directly instead.
 - `OnshapeBomImport` — preview-then-confirm; the preview says what will HAPPEN per
   row rather than just listing rows, and surfaces `skipped + orphaned` as dropped
   rows so a partial BOM is never presented as the whole one. Still the surface for
   an item that already exists; the New Part form deliberately shows no preview,
   since the part does not exist yet and every row would preview against nothing.
-- `useOnshapeImportStatus` (`apps/erp/app/hooks/`) — reads
-  `metadata.bomImport` off the item's `onshapeElement` mapping and polls every
-  3 s while it is running. POLL ONLY: `externalIntegrationMapping` is not in the
+- `useOnshapeImportStatus` (`apps/erp/app/hooks/`) — reads `metadata.progress`
+  off the item's `onshapeElement` mapping and polls every 3 s while it is
+  running. POLL ONLY: `externalIntegrationMapping` is not in the
   `supabase_realtime` publication, so a push affordance would need a migration.
-  A `startedAt` older than 15 minutes with no `finishedAt` reads as UNKNOWN, not
-  as running — `onshape-bom-import` is `retries: 10` and a crashed run never
-  reaches its stamp.
-- The unreleased picker is deliberately NOT wired into the New Part form.
-  `onshapeV2CreateValidator.revision` is `z.string().min(1)` and
-  `OnshapeUnreleasedPicker` emits `revision: ''`, so it would fail validation
-  with nothing on screen to explain why. Creating from an unreleased version is
-  a separate branch nobody has written.
+  Its pure half is `onshapeImportStatus.ts`, separate so it can be unit-tested —
+  the hook pulls `@carbon/auth` and the glossary's Lingui macros, and what the
+  marker MEANS is now what a blocking dialog turns on.
 
 ## Buy vs Make — one rule, three sources
 
-`onshape-replenishment.ts` in `packages/jobs`. Both paths that CREATE a part use
-it, so the same part cannot classify two ways depending on whether it arrived
-through a BOM import or a release.
+`packages/ee/src/onshape/lib/replenishment.ts`, reached through its OWN subpath
+`@carbon/ee/onshape/replenishment`. Every path that creates or seeds a part uses
+it — the BOM import, the release mint, and the New Part form's `replenishment`
+route — so the same part cannot classify two ways depending on which button was
+pressed.
 
-It lives in `packages/jobs` and is env-free for the same reason
-`onshape-matching.ts` and `onshape-bom-outcome.ts` do: importing the
-`@carbon/ee/onshape` barrel pulls in `client.ts`, which boots `@carbon/env` and
-throws "INNGEST_SIGNING_KEY is not set" in a unit test. Both consumers are in
-this package anyway.
+The subpath is load-bearing: the `@carbon/ee/onshape` barrel pulls in
+`client.ts`, which boots `@carbon/env` and throws "INNGEST_SIGNING_KEY is not
+set" in a unit test. Importing it through the barrel breaks the jobs' tests.
+
+`readPurchasingLevelFromMetadata` flattens Onshape's `properties` array (what an
+ELEMENT or PART metadata read returns) before applying the column rule;
+`readOnshapePurchasingLevel` takes the flat column map a BOM row already carries.
 
 Precedence:
 
@@ -1036,11 +879,10 @@ Precedence:
    answer, since it does not claim Carbon can build something it has no method
    for.
 
-**What it deliberately does NOT do is legacy's fallback.** Legacy's `else`
-branch calls every part Make when the column is absent — which is every company
-that has not defined one — and that poisons MRP for purchased leaf parts. It is
-recorded as a defect in `.ai/plans/2026-08-13-onshape-import-revisions.md`.
-Absent falls to STRUCTURE, never to a blanket answer.
+**Absent falls to STRUCTURE, never to a blanket answer.** The older
+implementation's `else` branch called every part Make when the column was absent
+— which is every company that has not defined one — and that poisons MRP for
+purchased leaf parts.
 
 Per the spec's field-ownership rule this is **seeded once on create and Carbon's
 thereafter**: replenishment is a business decision, not a CAD fact, so no later
@@ -1054,13 +896,14 @@ The webhook and the revisions API use a NUMERIC `elementType`
 (`client.ts:60-66`); `OnshapeElementType` in `element.type.ts` is a separate STRING
 enum used only as a `getElements` filter.
 
-| Value | Element | Legacy asset sync | Legacy release import | v2 |
-|---|---|---|---|---|
-| 0 | Part Studio | GLTF → `modelUpload` on the matched item | affected item / revision | per-BODY items, exported with `partIds` |
-| 1 | Assembly | GLTF → `modelUpload` on the matched item | affected item / revision | one item |
-| 2 | Drawing | PDF → a `document` on the MODEL item | **excluded** | PDF → the model item, joined by element id |
+| Value | Element | What Carbon does |
+|---|---|---|
+| 0 | Part Studio | per-BODY items, exported with `partIds` |
+| 1 | Assembly | one item |
+| 2 | Drawing | PDF → the model item, joined by element id |
 
-**Drawing rule (legacy).** A released drawing is its own `DRW-xxxx` element sharing
+**Drawing rule (historical, kept for the reasoning).** A released drawing is its
+own `DRW-xxxx` element sharing
 the number of the model it documents. Its PDF attaches to the MODEL item
 (`PRT-xxxx`/`ASM-xxxx`) at the same revision and a `DRW-xxxx` item is NEVER created.
 Matching strips the leading letter prefix to a shared suffix
@@ -1078,9 +921,9 @@ normal release — and deriving its change type from the `DRW-` readableId inste
 would mint a junk part. The receiver filters it and the job re-checks it as a
 backstop (`onshape-release-import.ts:413`).
 
-**v2 resolves drawings by ID** (Phase 7, shipped 2026-08-21). The suffix
+**Drawings resolve by ID** (shipped 2026-08-21). The suffix
 heuristic is disproved on real data — RD-410, DRW-410 and PK-410 all reduce to
-`-410`, matching five items across two parts — so v2 never uses it. It refuses
+`-410`, matching five items across two parts — so it is never used. Carbon refuses
 only when the id lookup itself is ambiguous.
 
 `OnshapeClient.getAppElementReferences(documentId, wvm, wvmId, elementId)` wraps
@@ -1117,7 +960,7 @@ Two narrowings that are easy to get wrong:
 - Then `resolveBomRow` on the RELEASED REVISION. The element mapping is
   revision-agnostic by construction, so attaching at the element puts revision
   A's drawing on the item at revision C — the exact failure
-  `onshape-v2-assets.ts` was written to prevent.
+  `onshape-assets.ts` was written to prevent.
 
 Refusal reasons: `drawing-references-no-model`, `drawing-references-many`,
 `drawing-model-unmapped`, `drawing-model-revision-missing`,
@@ -1130,9 +973,9 @@ has its own reason so the message does not misdescribe it.
 
 | Path | Direction | Where |
 |---|---|---|
-| `onshape-release-v2`, `elementType === 2` | drawing-first | its own `handle-drawing` step; never reaches `runOnshapeReleaseImport` |
-| `onshape-release-v2`, model release | model-first | after the asset attach, gated on `attachAssetsOnRelease` |
-| `onshape-v2-item-assets` (create + link) | model-first | after the model pull; this job also GAINED a notification, having previously returned refusals nobody read |
+| `onshape-release`, `elementType === 2` | drawing-first | its own `handle-drawing` step; never reaches `runOnshapeReleaseImport` |
+| `onshape-release`, model release | model-first | after the asset attach, gated on `attachAssetsOnRelease` |
+| `onshape-item-assets` (create + link) | model-first | after the model pull; this job also GAINED a notification, having previously returned refusals nobody read |
 | `onshape-bom-import` | model-first | once per document-version, after the asset loop; refusals are `warnings`, not `skipped` |
 
 **DIRECTION ASYMMETRY** is why model-first costs more: references runs drawing →
@@ -1155,8 +998,8 @@ the storage PATH, so two drawings of one model previously collapsed onto a singl
 document row.
 
 **The webhook needs no change** — pinned by two tests in
-`webhook.onshape.$companyId.test.ts`. The v2 branch never filtered on
-elementType, so a drawing already dispatches `onshape-release-v2` carrying
+`webhook.onshape.$companyId.test.ts`. The receiver never filters on
+elementType, so a drawing dispatches `onshape-release` carrying
 `elementType: 2`. Do NOT relax the partNumber gate: Onshape's release dialog
 makes a drawing's part number required and blocks the release without one, so
 that gate cannot fire for a genuinely released drawing.
@@ -1176,50 +1019,6 @@ sound. And `webhook.onshape.$companyId.ts:292` refuses to dispatch without a
 release dialog makes the field required), so that gate likely never fires for a
 released drawing and should not be relaxed on the old reasoning.
 
-## Legacy BOM import path
-
-User-driven, separate from the webhook, and the legacy pipeline's only path that
-CREATES items.
-
-- UI: `apps/erp/app/components/OnshapeSync.tsx`, rendered from the item's BoM
-  explorer when `integrations.has("onshape")` AND the company is not on v2
-  (`modules/items/ui/Item/BoMExplorer.tsx:166`). Cascading document → version →
-  assembly combobox, then Load BOM, then Save.
-- `integrations.onshape.d.$did.v.$vid.elements.ts` filters to
-  `OnshapeElementType.ASSEMBLY` at a VERSION (`wvm: "v"`), so only assemblies are
-  offered. It returns Onshape's raw element list — names, no part numbers.
-- `integrations.onshape.d.$did.v.$vid.e.$eid.bom.ts` — the loader. Flattens
-  Onshape's `headers`/`rows` into named columns, unwrapping object-valued columns
-  via `displayName` (line 78), then resolves each row to a Carbon item by
-  `readableIdWithRevision` in one `.in()` query (line 111). Rows with no match
-  fall back to `Purchasing Level === "Purchased" ? Buy : Make` (lines 211-220).
-- **Known bug, fix NOT on this branch** (commit `20faf4496`, reverted here):
-  Onshape stamps revisions only on RELEASED versions, so a row from an unreleased
-  version carries an empty `Revision` and can only exact-match a revision-`0`
-  item. The sync therefore builds a complete parallel item tree at revision `''`
-  and repoints the parent's make method at it, orphaning the real revision's
-  children silently. `20faf4496` fixes it — a bare-revision row with no exact
-  match falls back to the LATEST existing revision of the same `readableId` — but
-  it changes a live legacy path, and the route and the edge function must deploy
-  together or an existing revision's BOM is wiped. It was pulled out of the v2
-  branch to ship as its own PR; the commit is still in this branch's history, so
-  `git cherry-pick 20faf4496` onto `main` reconstructs it. See
-  `.ai/reviews/2026-08-19-onshape-v2-legacy-impact.md`.
-- `integrations.onshape.sync.ts` — the action. Validates rows with
-  `onShapeDataValidator`, invokes the `sync` edge function with `type: "onshape"`,
-  then replaces the item's `entityType: item / integration: onshape` mapping row
-  (delete via service role, insert via the user client — the RLS note below).
-- `packages/database/supabase/functions/sync/index.ts` `case "onshape"` (line 175)
-  — the writer, inside one Kysely transaction. Finds or creates a Draft
-  `makeMethod` for the top level, DELETES and rebuilds `methodMaterial` (line 372),
-  and walks the BOM tree. A MATCHED item gets only `updatedBy`/`updatedAt`; its
-  `name` and `description` are left as Carbon has them. A NEW item is always
-  created as `type: "Part"`, `unitOfMeasureCode: "EA"`, `replenishmentSystem:
-  "Buy"`/`"Make"` with an empty make method — it never copies from an existing
-  sibling revision. `20faf4496` changes both of those (Onshape-owned fields
-  written on a match; a new item cloned from the latest sibling including its
-  `methodOperation` rows) and is reverted here — see the bullet above.
-
 ## `externalIntegrationMapping` usage
 
 Four `integration` values and five shapes, all on the one table
@@ -1227,48 +1026,26 @@ Four `integration` values and five shapes, all on the one table
 
 | `entityType` | `integration` | `entityId` | `externalId` | dup? | Written by |
 |---|---|---|---|---|---|
-| `item` | `onshape` | Carbon item id | null | — | legacy BOM sync picker state (`integrations.onshape.sync.ts:75`); read by `OnshapeSync.tsx:77` to restore the picker + `lastSyncedAt` |
-| `item` | `onshapeData` | Carbon item id | `readableIdWithRevision` | false | the `sync` edge function (lines 446, 601); read by `components/BoMExplorer/BoMExplorer.tsx:521` for the Onshape State badge |
-| `onshapeRelease` | `onshape` | `releaseId` | `releaseId` | — | the release-import claim (`onshape-release-import.ts:576`); metadata carries `changeNoticeId`, `claimedByMessageId`, `documentId`, `versionId`, `releaseName`, `importedAt`, `items[]`, `openNoticeCollisions?` |
-| `item` | `onshapeElement` | Carbon item id | `did:eid[:partId]` | **true** | v2 (`mapping.ts`); metadata carries `elementType`, `versionId`, `versionName`, `partNumber`, `fromUnreleasedVersion`, `lastSyncedAt`, `bomImport` |
-| `item` | `onshapeRevision` | Carbon item id | Onshape `revisionId` | **false** | v2 (`mapping.ts:358`); metadata carries `revision`, `releaseId`, `releaseName`, `documentId`, `versionId`, `elementId`, `importedAt` |
+| `onshapeRelease` | `onshape` | `releaseId` | `releaseId` | — | the release-import claim; metadata carries `changeNoticeId`, `claimedByMessageId`, `documentId`, `versionId`, `releaseName`, `importedAt`, `items[]`, `openNoticeCollisions?` |
+| `item` | `onshapeElement` | Carbon item id | `did:eid[:partId]` | **true** | (`mapping.ts`); metadata carries `elementType`, `versionId`, `versionName`, `partNumber`, `fromUnreleasedVersion`, `lastSyncedAt`, `progress`, `replenishment` |
+| `item` | `onshapeRevision` | Carbon item id | Onshape `revisionId` | **false** | (`mapping.ts`); metadata carries `revision`, `releaseId`, `releaseName`, `documentId`, `versionId`, `elementId`, `importedAt` |
 
 `UNIQUE (entityType, entityId, integration, companyId)` is what makes the release
 marker a claim and what makes the element link delete-then-insert. The partial
 `UNIQUE (integration, externalId, entityType, companyId) WHERE
-allowDuplicateExternalId = false` is what the `onshapeData` upserts conflict on and
-what enforces the 1:1 revision link.
+allowDuplicateExternalId = false` is what enforces the 1:1 revision link.
 
-The v2 mapping metadata is where the VOLATILE Onshape state lives, and keeping it
-there is what lets `item.revision` stay clean: an unreleased sync has no Onshape
-revision to record, so it targets Carbon's initial revision and sets
-`fromUnreleasedVersion` here rather than inventing a revision string that would
-leak into documents, POs, accounting sync and CSV exports.
+The mapping metadata is where the VOLATILE Onshape state lives, and keeping it
+there is what lets `item.revision` stay clean — a revision string invented in
+Carbon leaks into documents, POs, accounting sync and CSV exports.
+`fromUnreleasedVersion` survives on rows written before releases-only; nothing
+sets it now.
 
 **RLS: SELECT and INSERT policies only, no UPDATE and no DELETE**
 (`20260204001831_external-integration-mapping-rls.sql`). A PostgREST UPDATE from a
 user-scoped client matches zero rows and returns `{ data: [], error: null }` — no
 error, no signal. Every marker and mapping MUTATION therefore runs on the service
-role, and the legacy BOM sync route deletes the old mapping through
-`getCarbonServiceRole()`.
-
-## Migrating a company from legacy to v2
-
-- Items the legacy pipeline manages carry `onshapeData` / `onshape` mappings and no
-  `onshapeElement` one, so **v2 cannot see them at all** until someone links them.
-- `findUnlinkedLegacyOnshapeItems` (`lib/legacy.ts:47`) is that count. It filters
-  `entityType = "item"` (the `onshape` value is OVERLOADED — it also marks the
-  release claim, whose entityType is `onshapeRelease`), de-duplicates ids (one item
-  can legitimately carry both legacy rows), and resolves against `item` so mappings
-  orphaned by a deleted item drop out. PAGED at 1000: PostgREST caps an unbounded
-  select there and says nothing, and the warning's whole job is to state the size
-  of the work.
-- The settings save flashes it at the moment of the switch
-  (`integrations.$id.tsx:1534-1556`) — a successful save redirects and unmounts the
-  drawer, so the flash is what the user actually sees. A failed count logs and does
-  not fail the save.
-- The adoption path is `OnshapeLinkPart` → `v2.link`, per item.
-- The legacy backfill is refused on a v2 company (see `onshape-backfill` above).
+role.
 
 ## Gotchas
 
@@ -1279,7 +1056,7 @@ role, and the legacy BOM sync route deletes the old mapping through
   `releaseKey`/`getReadableIdWithRevision`/`isInitialRevisionLabel` mirror it. A
   numeric Onshape revision scheme is therefore ambiguous at revision `0`: it
   produces the same match key as an unrevised item while remaining a DISTINCT value
-  in `item.revision` and in `item_unique`. Every v2 comparison uses the RAW
+  in `item.revision` and in `item_unique`. Every comparison uses the RAW
   `revision` column, never the generated one.
 - **`item_unique` does not catch a same-family duplicate.** It is on the RAW
   revision column and Postgres treats NULL as distinct, so inserting `'0'` against
@@ -1294,14 +1071,19 @@ role, and the legacy BOM sync route deletes the old mapping through
   `items_addChangeNoticeAffectedItem` / `items_createRevision`.
 - **These jobs run on the service role — RLS gives no tenancy backstop.** Every
   `.from(...)` must carry `.eq("companyId", …)` by hand.
-- **`getOnshapeClient` does a read-modify-write of the whole `metadata` column on
-  token refresh** (`client.ts:657-673`): it reads `metadata`, spreads it, and writes
-  the merged object back. Two concurrent Onshape functions for one company each read
-  the pre-refresh metadata and each write their own tokens — last write wins, and
-  the loser's refresh token has already been consumed. A concurrent settings save
-  can also lose whatever the refresh wrote. There is no locking; the per-job
-  concurrency keys do not serialize ACROSS jobs. `onshape-bom-import`'s
+- **`getOnshapeClient` does a read-modify-write on token refresh**: it reads the
+  resolved credentials, spreads them, and hands the merged object to
+  `persistIntegrationSecrets`, which splits the tokens into the vault and the
+  rest into `metadata`. Two concurrent Onshape functions for one company each
+  read the pre-refresh state and each write their own tokens — last write wins,
+  and the loser's refresh token has already been consumed. There is no locking;
+  the per-job concurrency keys do not serialize ACROSS jobs. `onshape-bom-import`'s
   company-level key is partly there to serialize this within one import.
+- **`upsert_integration_secret` MERGES the vault bag rather than replacing it.**
+  It did not, and the settings save does not resolve vaulted secrets before
+  writing — so saving a webhook signing secret replaced the whole bag and wiped
+  the OAuth tokens. The same latent bug still exists for other providers that
+  vault more than one key.
 - **`createdBy` must be passed explicitly to `items_createRevision`.** Its service
   parameter is literally named `args`, and the MCP direct executor's
   `paramName === "args"` branch pushes the payload through WITHOUT
@@ -1321,7 +1103,7 @@ role, and the legacy BOM sync route deletes the old mapping through
 - **`applyOnshapeAttributes` is a narrow two-column `item` update, not
   `items_updateItem`** (`onshape-release-import.ts:745`): that service runs the
   payload through `sanitize()`, which turns a present-but-undefined key into null,
-  and its schema requires `name` + `replenishmentSystem`. `v2.link` writes the name
+  and its schema requires `name` + `replenishmentSystem`. `link` writes the name
   the same way for the same reason.
 - **The job's `CHANGE_NOTICE_OPEN_STATUSES` is a deliberate duplicate** of
   `changeNoticeOpenStatuses` in `apps/erp/app/modules/items/items.models.ts`
@@ -1337,5 +1119,11 @@ role, and the legacy BOM sync route deletes the old mapping through
   Draft change notices and the callback path is enumerable. Fail-open on an absent
   secret is what keeps existing customers byte-identical; a company that cares sets
   `webhookSigningSecret`.
-- **`state` on the OAuth callback is checked for presence only** (`oauth.ts:95`) —
-  it is not compared against anything stored.
+- **`state` on the OAuth callback is checked for presence only** — it is not
+  compared against anything stored. A CSRF gap, still open.
+- **The connect popup closes itself.** The callback returns an HTML document that
+  posts `app_oauth_completed` to the opener on success, or navigates the OPENER
+  to the error URL on failure (the toast copy lives on that page, and rendering
+  it inside a popup puts it where nobody is looking). With no opener at all — the
+  popup was blocked and `onClientInstall` fell back to a top-level navigation —
+  it redirects.

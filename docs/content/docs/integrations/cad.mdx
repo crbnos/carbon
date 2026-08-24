@@ -22,7 +22,7 @@ Connect to **Onshape** over **OAuth** to bring CAD data into Carbon. No keys to 
   <Step>
   ### Tokens stored
 
-  Carbon stores the connection, the access and refresh tokens, and can then pull from your Onshape documents.
+  Carbon stores the connection and your access and refresh tokens — encrypted, never shown again — and can then pull from your Onshape documents. The popup closes itself when it is done.
   </Step>
 </Steps>
 
@@ -31,49 +31,38 @@ Onshape only appears when its OAuth client is configured server-side (`ONSHAPE_C
 [Environment variables](/docs/platform/self-hosting/environment-variables).
 </Callout>
 
-## Two pipelines
+## How the link works
 
-Carbon has two Onshape implementations, and a company runs exactly one of them. **Pipeline** is where you
-choose.
+Carbon records which Onshape part an item came from and follows that link ever after. When you create a part
+from Onshape, link one you already have, or import an assembly's <Term id="bom">bill of materials</Term>,
+that link is written. The two numbers no longer have to agree, so renaming a part on either side keeps them
+connected, and nothing can attach to the wrong item because two numbers happened to look alike.
 
-**Legacy** is the default, and nothing changes for a company that never touches the setting. It reacts to
-releases in Onshape and finds the Carbon item by part number and revision.
+Parts that were never linked — hand-built ones, or anything an older version of this integration matched by
+number alone — are invisible to it. **"Link to Onshape"** on a part's menu adopts one.
 
-**Onshape v2** replaces that lookup with a link. When you create a part from Onshape, link one you already
-have, or import an assembly's <Term id="bom">bill of materials</Term>, Carbon records which Onshape part the item came from and
-follows that link ever after. The two numbers no longer have to agree, so renaming a part on either side
-keeps them connected, and nothing can attach to the wrong item because two numbers happened to look alike.
-
-<Callout type="warn" title="Switching to v2 leaves the items legacy brought in unlinked.">
-They were only ever matched by number, so they carry no link and v2 cannot see them. Saving the switch tells
-you how many are in that state, and **"Link to Onshape"** on a part's menu adopts one. While v2 is selected
-the legacy settings are ignored, so the two pipelines never act on the same release.
+<Callout type="note" title="Released revisions only.">
+Onshape stamps a revision when you release, and only then. Everything Carbon does with a part is keyed on
+that revision, so an unreleased version has nothing to match on and is refused. Release it in Onshape first.
 </Callout>
 
 ## Settings
 
 <FieldTable>
   <Field name="Connection">Established by OAuth — no keys to paste. Carbon stores the access and refresh tokens for you.</Field>
-  <Field name="Pipeline">**Legacy** (the default) or **Onshape v2**. Exactly one runs, and the other's settings do nothing.</Field>
-  <Field name="Sync released assets">Legacy. Off by default. When a part or assembly is released in Onshape, Carbon attaches its CAD model to the Carbon item carrying the same part number, and a released drawing's PDF to the item it documents. It never creates an item.</Field>
-  <Field name="Import released revisions">Legacy. Off by default. Brings an Onshape release into Carbon's engineering data rather than only its files. Turning it on reveals the mode below.</Field>
-  <Field name="How a release lands">Legacy. Either **Create a change notice** (the default) or **Create the revision directly**. See [Releases](#releases).</Field>
-  <Field name="Attach assets when a revision is released">Under **Onshape v2**, on by default. Pulls the 3D model onto the linked item when Onshape releases a revision, which is what covers releases nobody started from inside Carbon. It does not affect importing a bill of materials or creating an item from Onshape — those always bring their models.</Field>
-  <Field name="When a revision is released">Under **Onshape v2**. **Do nothing**, **Create a change notice** (the default), or **Create the revision directly**. See [Releases](#releases).</Field>
-  <Field name="Allow syncing unreleased versions">Under **Onshape v2**, off by default, so the pickers offer released revisions only. On, you also get **"Import an unreleased version"**. See [Unreleased versions](#unreleased-versions).</Field>
-  <Field name="Webhook signing secret">Optional, under **Security**, and it applies to both pipelines. Your Onshape company's webhook signing key. Set it and Carbon rejects any inbound webhook that does not verify against it.</Field>
+  <Field name="Attach assets when a revision is released">On by default. Pulls the 3D model onto the linked item when Onshape releases a revision, which is what covers releases nobody started from inside Carbon. It does not affect importing a bill of materials or creating an item from Onshape — those always bring their models.</Field>
+  <Field name="When a revision is released">**Do nothing**, **Create a change notice** (the default), or **Create the revision directly**. See [Releases](#releases).</Field>
+  <Field name="Create the part when a release names one Carbon does not have">Off by default, so a released part nothing is linked to is reported rather than created. On, Carbon creates it — but a release carries geometry, not structure, so Carbon has to assume the things Onshape does not state. Every creation is reported so you can correct it.</Field>
+  <Field name="Webhook signing secret">Optional. Your Onshape company's webhook signing key. Set it and Carbon rejects any inbound webhook that does not verify against it.</Field>
 </FieldTable>
 
-Carbon registers one Onshape webhook, and that single subscription feeds whichever pipeline is selected. One
-consumer being on is enough to receive release webhooks; the subscription is removed only once they are all
-off.
+Carbon registers one Onshape webhook, and that single subscription feeds all of the above. One of them being
+on is enough to receive release webhooks; the subscription is removed only once they are all off.
 
 <Callout type="warn" title="A read-only connection can't run any of this.">
 Registering the webhook is itself a write, so a connection authorized before Carbon asked for write access
-cannot sync anything. Refreshing a token can't widen its scope. On the legacy pipeline, enabling either
-setting on such a connection turns it back off and tells you to reconnect, rather than saving a switch that
-is on but does nothing. On v2 the save keeps your settings and reports that the release webhook could not be
-registered.
+cannot sync anything. Refreshing a token can't widen its scope. The save keeps your settings and reports that
+the release webhook could not be registered — reconnect to fix it.
 </Callout>
 
 <Callout type="note" title="Leaving the signing secret blank accepts unsigned webhooks.">
@@ -86,13 +75,36 @@ rotating one affects everything else consuming that Onshape company's webhooks.
 
 ## Working from Onshape
 
-On the **Onshape v2** pipeline, three places in the app reach into Onshape, and each one writes the link.
+Three places in the app reach into Onshape, and each one writes the link.
 
 | Where | What it does |
 | --- | --- |
-| **"From Onshape"** on the parts list | Creates a Carbon part from a released revision. Onshape supplies the number, revision and name; you choose <Term id="replenishment-system">replenishment</Term> and tracking, because those are business decisions no CAD file states. The 3D model follows on its own. |
-| **"Link to Onshape"** on a part's menu | Points a part you already have at an Onshape revision. This is how you adopt hand-built parts, and everything the legacy pipeline left unlinked. |
+| **"From Onshape"** on the parts list | Creates a Carbon part from a released revision, in the ordinary New Part form. See below. |
+| **"Link to Onshape"** on a part's menu | Points a part you already have at an Onshape revision. This is how you adopt hand-built parts, and anything that was never linked. |
 | **"Import from Onshape"** on a bill of materials | Reads a released assembly and writes it into that part's method. |
+
+### Creating a part from Onshape
+
+Choose **"From Onshape"** and search your released revisions without leaving the New Part form. Picking one
+fills the form in; you finish it like any other part.
+
+Only two fields are fixed: the **Part ID** and the **Revision** come from Onshape and cannot be edited. They
+are what future releases of this part are matched on, so a Carbon part numbered differently from the CAD it
+mirrors would stop receiving them. Everything else is yours, including the short description, which is seeded
+from Onshape and then editable.
+
+**Replenishment** and **Default Method Type** are filled in from Onshape's own **Purchasing Level** column
+when your company defines one, and guessed from the shape of the part when it does not — the field says
+which. Change either if the guess is wrong.
+
+If you picked an assembly, its bill of materials comes with it. That is not a choice: an assembly has one and
+a part studio body does not. Because a bill of materials only explodes under a part you make, replenishment is
+set to **Make** / <Term id="make-to-order">Make to Order</Term> and held there while the structure is being
+imported.
+
+Carbon then waits, and shows you what it is doing — reading the bill of materials, creating parts, pulling 3D
+models, attaching drawings — and opens the part only when it is finished, so what you land on is complete. You
+can leave early with **"Go to the part now"**; the rest keeps loading in the background.
 
 <Callout type="warn" title="Linking replaces what Onshape owns, and only that.">
 The item's name is replaced immediately, its bill of materials on the next import. Everything Onshape does not
@@ -138,19 +150,10 @@ into when it is not. An item whose revision is in **"Production"** is refused ou
 enforces PLM release control; raise a change notice instead.
 </Callout>
 
-### Unreleased versions
-
-With **Allow syncing unreleased versions** on, a second button appears: **"Import an unreleased version"**. It
-walks you through document, then version, then assembly, because an unreleased version is not listed
-company-wide the way a release is. Onshape stamps a revision only on release, so what you pick can land only
-on an item's initial revision, and a part Carbon already holds at a named revision is skipped. Models are
-still exported. Prefer a released revision wherever there is one.
-
 ## Releases
 
-Releasing in Onshape is what creates the matching revision in Carbon. Both pipelines offer the same two
-outcomes, on **How a release lands** for legacy and **When a revision is released** for v2, and v2 adds
-**Do nothing** for companies that want the models without the engineering change.
+Releasing in Onshape is what creates the matching revision in Carbon. **When a revision is released** decides
+what happens, and **Do nothing** is there for companies that want the models without the engineering change.
 
 | Mode | What Carbon does | Review step |
 | --- | --- | --- |
@@ -178,18 +181,17 @@ alongside it. Carbon allows parallel notices on one part, so review both before 
 ### What a release skips
 
 <Callout type="warn" title="A release never invents a part Carbon has not seen.">
-On **Onshape v2**, a release is applied to the item linked to that Onshape part. If nothing is linked, the
-release is reported and skipped: create the part with **"From Onshape"**, or import the assembly it belongs
-to, and release it again. The legacy pipeline refuses the same case for the same reason — a part minted from a
-webhook would land on Carbon's defaults for tracking and replenishment and mislead planning.
+A release is applied to the item linked to that Onshape part. If nothing is linked, the release is reported
+and skipped by default: create the part with **"From Onshape"**, or import the assembly it belongs to, and
+release it again. A part minted from a webhook lands on assumptions for tracking and replenishment that
+Onshape never stated, which is why turning that on is a deliberate choice — see **Create the part when a
+release names one Carbon does not have**.
 </Callout>
 
 <Callout type="warn" title="A released drawing is not a part.">
-Onshape releases a drawing as its own element sharing the number of the model it documents. On **Onshape v2**
-the drawing is skipped rather than guessed at, so a released drawing produces no item, no change notice line
-and no attachment. On legacy it is kept off the change notice for the same reason, and its PDF still reaches
-the item through asset sync. Either way, read a notice as the release's engineering changes, not as a complete
-manifest of what was released.
+Onshape releases a drawing as its own element sharing the number of the model it documents. It never becomes
+an item and never becomes a change notice line — its PDF attaches to the part it documents instead. Read a
+notice as the release's engineering changes, not as a complete manifest of what was released.
 </Callout>
 
 ## Related
