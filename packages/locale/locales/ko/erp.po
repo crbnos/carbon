@@ -60,6 +60,14 @@ msgstr "{0} 계정"
 msgid "{0} ago"
 msgstr "{0} 전"
 
+#. placeholder {0}: hidden.batched
+msgid "{0} already in a batch"
+msgstr "{0}은 이미 배치에 포함됨"
+
+#. placeholder {0}: hidden.started
+msgid "{0} already started"
+msgstr "{0}은 이미 시작됨"
+
 #. placeholder {0}: tieOut.deltaCellCount
 msgid "{0} cells with deltas"
 msgstr "{0}개 셀에 변경사항 있음"
@@ -102,6 +110,10 @@ msgstr "{0}개의 {1} 게시 계정 매핑됨"
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0}개 중 {maxSlots}개 제공자 슬롯 사용됨"
 
+#. placeholder {0}: hidden.unreleased
+msgid "{0} on jobs not yet released"
+msgstr "출시되지 않은 작업의 {0}"
+
 #. placeholder {0}: selected.length
 #. placeholder {1}: selected.reduce((s, c) => s + (c.operationQuantity ?? 0), 0)
 msgid "{0} operations · {1} parts"
@@ -110,6 +122,11 @@ msgstr "{0}개 작업 · {1}개 부품"
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0}개 작업 · {totalQuantity}개 부품"
+
+#. placeholder {0}: hidden.total
+#. placeholder {1}: hiddenParts.join(", ")
+msgid "{0} operations on this process are not listed: {1}"
+msgstr "이 프로세스에 나열되지 않은 {0}개 작업: {1}"
 
 #. placeholder {0}: history.length
 msgid "{0} orders"
@@ -182,9 +199,6 @@ msgstr "{count}개 중 {from}–{to}"
 
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} / {count}개 작업"
-
-msgid "{hiddenCount} operations on this process are hidden — already started or in a batch"
-msgstr "{hiddenCount}개 작업이 이 프로세스에서 숨겨져 있습니다 — 이미 시작되었거나 배치에 포함되어 있습니다"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length

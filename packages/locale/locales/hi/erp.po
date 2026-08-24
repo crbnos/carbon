@@ -60,6 +60,14 @@ msgstr "{0} खाते"
 msgid "{0} ago"
 msgstr "{0} पहले"
 
+#. placeholder {0}: hidden.batched
+msgid "{0} already in a batch"
+msgstr "{0} पहले से एक बैच में है"
+
+#. placeholder {0}: hidden.started
+msgid "{0} already started"
+msgstr "{0} पहले से शुरू हो गया है"
+
 #. placeholder {0}: tieOut.deltaCellCount
 msgid "{0} cells with deltas"
 msgstr "{0} अंतर वाली कोशिकाएँ"
@@ -102,6 +110,10 @@ msgstr "{0} में से {1} पोस्टिंग खातों को
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0} में से {maxSlots} प्रदाता स्लॉट उपयोग किए गए"
 
+#. placeholder {0}: hidden.unreleased
+msgid "{0} on jobs not yet released"
+msgstr "{0} जॉब्स पर अभी जारी नहीं किए गए"
+
 #. placeholder {0}: selected.length
 #. placeholder {1}: selected.reduce((s, c) => s + (c.operationQuantity ?? 0), 0)
 msgid "{0} operations · {1} parts"
@@ -110,6 +122,11 @@ msgstr "{0} ऑपरेशन · {1} पार्ट्स"
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} संचालन · {totalQuantity} भाग"
+
+#. placeholder {0}: hidden.total
+#. placeholder {1}: hiddenParts.join(", ")
+msgid "{0} operations on this process are not listed: {1}"
+msgstr "{0} इस प्रक्रिया पर संचालन सूचीबद्ध नहीं हैं: {1}"
 
 #. placeholder {0}: history.length
 msgid "{0} orders"
@@ -182,9 +199,6 @@ msgstr "{from}–{to} में से {count}"
 
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} में से {count} परिचालन"
-
-msgid "{hiddenCount} operations on this process are hidden — already started or in a batch"
-msgstr "{hiddenCount} संचालन इस प्रक्रिया पर छुपे हुए हैं — पहले से शुरू या एक बैच में"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length

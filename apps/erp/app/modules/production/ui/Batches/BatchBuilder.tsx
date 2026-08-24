@@ -188,10 +188,24 @@ type StoredScope = {
   view?: BuilderView;
 };
 
+type HiddenOps = {
+  total: number;
+  unreleased: number;
+  started: number;
+  batched: number;
+};
+
+const NO_HIDDEN_OPS: HiddenOps = {
+  total: 0,
+  unreleased: 0,
+  started: 0,
+  batched: 0
+};
+
 type CandidatesResponse = {
   candidates: BatchCandidate[];
   workCenterLoad: Record<string, number>;
-  hiddenCount: number;
+  hidden: HiddenOps;
 };
 
 export function BatchBuilder({
@@ -329,7 +343,20 @@ export function BatchBuilder({
     [candidatesFetcher.data]
   );
   const workCenterLoad = candidatesFetcher.data?.workCenterLoad ?? {};
-  const hiddenCount = candidatesFetcher.data?.hiddenCount ?? 0;
+  const hidden = candidatesFetcher.data?.hidden ?? NO_HIDDEN_OPS;
+
+  // "6 hidden" alone reads as a bug when the list is empty — name the reasons.
+  const hiddenParts = [
+    hidden.unreleased > 0
+      ? t`${hidden.unreleased} on jobs not yet released`
+      : null,
+    hidden.started > 0 ? t`${hidden.started} already started` : null,
+    hidden.batched > 0 ? t`${hidden.batched} already in a batch` : null
+  ].filter((p): p is string => Boolean(p));
+  const hiddenSummary =
+    hidden.total > 0 && hiddenParts.length > 0
+      ? t`${hidden.total} operations on this process are not listed: ${hiddenParts.join(", ")}`
+      : null;
 
   // Only unbatched operations are addable; rows in a batch feed the add-to
   // targets (Active) and add-mode's member list instead.
@@ -651,7 +678,7 @@ export function BatchBuilder({
                 onApplySuggestion={selectMany}
                 visible={visible}
                 totalFiltered={filtered.length}
-                hiddenCount={hiddenCount}
+                hiddenSummary={hiddenSummary}
                 selectedById={selectedById}
                 onToggle={toggle}
                 onSelectMany={selectMany}
@@ -872,7 +899,7 @@ function ComposePanel({
   onApplySuggestion,
   visible,
   totalFiltered,
-  hiddenCount,
+  hiddenSummary,
   selectedById,
   onToggle,
   onSelectMany,
@@ -895,7 +922,7 @@ function ComposePanel({
   onApplySuggestion: (members: BatchCandidate[]) => void;
   visible: BatchCandidate[];
   totalFiltered: number;
-  hiddenCount: number;
+  hiddenSummary: string | null;
   selectedById: Map<string, BatchCandidate>;
   onToggle: (c: BatchCandidate) => void;
   onSelectMany: (cs: BatchCandidate[]) => void;
@@ -1027,6 +1054,7 @@ function ComposePanel({
           isLoading={isLoading}
           isFiltered={isFiltered}
           visible={visible}
+          hiddenSummary={hiddenSummary}
           selectedById={selectedById}
           onToggle={onToggle}
           allVisibleSelected={allVisibleSelected}
@@ -1038,6 +1066,7 @@ function ComposePanel({
           isLoading={isLoading}
           isFiltered={isFiltered}
           visible={visible}
+          hiddenSummary={hiddenSummary}
           selectedById={selectedById}
           onToggle={onToggle}
           onSelectMany={onSelectMany}
@@ -1046,7 +1075,8 @@ function ComposePanel({
         />
       )}
 
-      {(totalFiltered > visible.length || hiddenCount > 0) && (
+      {(totalFiltered > visible.length ||
+        (hiddenSummary && visible.length > 0)) && (
         <div className="px-4 pb-3 w-full flex-shrink-0">
           {totalFiltered > visible.length && (
             <p className="text-xs text-muted-foreground">
@@ -1055,13 +1085,8 @@ function ComposePanel({
               </Trans>
             </p>
           )}
-          {hiddenCount > 0 && (
-            <p className="text-xs text-muted-foreground">
-              <Trans>
-                {hiddenCount} operations on this process are hidden — already
-                started or in a batch
-              </Trans>
-            </p>
+          {hiddenSummary && visible.length > 0 && (
+            <p className="text-xs text-muted-foreground">{hiddenSummary}</p>
           )}
         </div>
       )}
@@ -1073,6 +1098,7 @@ function CandidateTable({
   isLoading,
   isFiltered,
   visible,
+  hiddenSummary,
   selectedById,
   onToggle,
   allVisibleSelected,
@@ -1082,6 +1108,7 @@ function CandidateTable({
   isLoading: boolean;
   isFiltered: boolean;
   visible: BatchCandidate[];
+  hiddenSummary: string | null;
   selectedById: Map<string, BatchCandidate>;
   onToggle: (c: BatchCandidate) => void;
   allVisibleSelected: boolean;
@@ -1254,6 +1281,7 @@ function CandidateTable({
               icon={<LuPackageSearch className="h-6 w-6" />}
               title={t`No eligible operations`}
               hint={t`No unstarted, unbatched operations on this process at this location.`}
+              detail={hiddenSummary}
             />
           )
         }
@@ -1266,6 +1294,7 @@ function GroupedCandidateList({
   isLoading,
   isFiltered,
   visible,
+  hiddenSummary,
   selectedById,
   onToggle,
   onSelectMany,
@@ -1275,6 +1304,7 @@ function GroupedCandidateList({
   isLoading: boolean;
   isFiltered: boolean;
   visible: BatchCandidate[];
+  hiddenSummary: string | null;
   selectedById: Map<string, BatchCandidate>;
   onToggle: (c: BatchCandidate) => void;
   onSelectMany: (cs: BatchCandidate[]) => void;
@@ -1331,6 +1361,7 @@ function GroupedCandidateList({
         icon={<LuPackageSearch className="h-6 w-6" />}
         title={t`No eligible operations`}
         hint={t`No unstarted, unbatched operations on this process at this location.`}
+        detail={hiddenSummary}
       />
     );
   }
@@ -1722,11 +1753,13 @@ function ReviewPanel({
 function EmptyState({
   icon,
   title,
-  hint
+  hint,
+  detail
 }: {
   icon: React.ReactNode;
   title: string;
   hint?: string;
+  detail?: string | null;
 }) {
   return (
     <VStack
@@ -1742,6 +1775,11 @@ function EmptyState({
       {hint && (
         <span className="text-xs text-muted-foreground max-w-[32ch]">
           {hint}
+        </span>
+      )}
+      {detail && (
+        <span className="text-xs font-medium text-foreground max-w-[40ch]">
+          {detail}
         </span>
       )}
     </VStack>

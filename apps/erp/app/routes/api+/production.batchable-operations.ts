@@ -12,6 +12,20 @@ const ACTIVE_STATUSES = [
   "Paused"
 ] as const;
 
+// The RPC only offers operations on released jobs — mirror its predicate so the
+// hidden-op breakdown attributes the right reason.
+const RELEASED_JOB_STATUSES = ["Ready", "In Progress", "Paused"] as const;
+
+// What the builder tells the planner about ops the RPC excluded, per reason —
+// a bare count mislabeled "started or batched" when the real reason was an
+// unreleased (Draft/Planned) job, which is the common case.
+export type HiddenOps = {
+  total: number;
+  unreleased: number;
+  started: number;
+  batched: number;
+};
+
 // Candidate operations for the batch builder (the batches-page wizard). Wraps the
 // get_batchable_operations RPC — the same source the deleted schedule board used —
 // and enriches each row with the op's time fields + due date (for the wizard's
@@ -19,8 +33,8 @@ const ACTIVE_STATUSES = [
 // RPC omits. Rows carrying a jobOperationBatchId (Active/Completing lane members)
 // are kept; the builder partitions client-side (add-to-batch targets, add-mode).
 // Also returns workCenterLoad (active ops per WC at the location — the "N in
-// queue" helper on the WC picker) and hiddenCount (ops on this process the RPC
-// excluded: started or already batched).
+// queue" helper on the WC picker) and hidden (a per-reason breakdown of the ops
+// on this process the RPC excluded).
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "production",
@@ -30,18 +44,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const locationId = url.searchParams.get("location");
   const processId = url.searchParams.get("process");
+  const emptyHidden: HiddenOps = {
+    total: 0,
+    unreleased: 0,
+    started: 0,
+    batched: 0
+  };
   if (!locationId || !processId) {
     return Response.json(
       {
         candidates: [] as BatchCandidate[],
         workCenterLoad: {} as Record<string, number>,
-        hiddenCount: 0
+        hidden: emptyHidden
       },
       { status: 400 }
     );
   }
 
-  const [operations, activeOps, processOpsCount] = await Promise.all([
+  const [operations, activeOps, processOps] = await Promise.all([
     getBatchableOperations(client, { locationId, processId }),
     // Location-wide active ops with a work center → per-WC queue depth.
     client
@@ -51,11 +71,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .eq("job.locationId", locationId)
       .in("status", [...ACTIVE_STATUSES])
       .not("workCenterId", "is", null),
-    // All active-ish ops on this process at the location; the difference from
-    // the RPC's rows is what the builder hides (started / already batched).
+    // All active-ish ops on this process at the location, with what's needed to
+    // say WHY each one the RPC excluded is absent.
     client
       .from("jobOperation")
-      .select("id, job!inner(locationId)", { count: "exact", head: true })
+      .select("id, jobOperationBatchId, job!inner(locationId, status)")
       .eq("companyId", companyId)
       .eq("processId", processId)
       .eq("job.locationId", locationId)
@@ -70,10 +90,28 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const rows = (operations.data ?? []) as unknown as BatchCandidate[];
-  const hiddenCount = Math.max(0, (processOpsCount.count ?? 0) - rows.length);
+  const rpcIds = new Set(rows.map((r) => r.id));
+  const hidden = { ...emptyHidden };
+  for (const op of processOps.data ?? []) {
+    if (rpcIds.has(op.id)) continue;
+    hidden.total += 1;
+    if (
+      !(RELEASED_JOB_STATUSES as readonly string[]).includes(
+        op.job?.status ?? ""
+      )
+    ) {
+      hidden.unreleased += 1;
+    } else if (op.jobOperationBatchId) {
+      hidden.batched += 1;
+    } else {
+      // Released, unbatched, active-status — the only remaining exclusion is
+      // the RPC's started guard (recorded productionEvent or in-progress).
+      hidden.started += 1;
+    }
+  }
 
   if (operations.error || rows.length === 0) {
-    return { candidates: rows, workCenterLoad, hiddenCount };
+    return { candidates: rows, workCenterLoad, hidden };
   }
 
   // Enrich with the fields the RPC doesn't return but the wizard needs.
@@ -118,5 +156,5 @@ export async function loader({ request }: LoaderFunctionArgs) {
     };
   });
 
-  return { candidates, workCenterLoad, hiddenCount };
+  return { candidates, workCenterLoad, hidden };
 }

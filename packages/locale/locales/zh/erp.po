@@ -60,6 +60,14 @@ msgstr "{0} 个账户"
 msgid "{0} ago"
 msgstr "{0} 前"
 
+#. placeholder {0}: hidden.batched
+msgid "{0} already in a batch"
+msgstr "{0} 已在批次中"
+
+#. placeholder {0}: hidden.started
+msgid "{0} already started"
+msgstr "{0} 已启动"
+
 #. placeholder {0}: tieOut.deltaCellCount
 msgid "{0} cells with deltas"
 msgstr "{0} 个单元格有差异"
@@ -102,6 +110,10 @@ msgstr "{0} / {1} 个过账科目已映射"
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0} / {maxSlots} 个提供商插槽已使用"
 
+#. placeholder {0}: hidden.unreleased
+msgid "{0} on jobs not yet released"
+msgstr "{0} 个未发布工作单上的项"
+
 #. placeholder {0}: selected.length
 #. placeholder {1}: selected.reduce((s, c) => s + (c.operationQuantity ?? 0), 0)
 msgid "{0} operations · {1} parts"
@@ -110,6 +122,11 @@ msgstr "{0} 项操作 · {1} 部分"
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} 工序 · {totalQuantity} 零件"
+
+#. placeholder {0}: hidden.total
+#. placeholder {1}: hiddenParts.join(", ")
+msgid "{0} operations on this process are not listed: {1}"
+msgstr "{0} 个此工序的操作未列出：{1}"
 
 #. placeholder {0}: history.length
 msgid "{0} orders"
@@ -182,9 +199,6 @@ msgstr "{from}–{to} 共 {count}"
 
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} / {count} 条操作"
-
-msgid "{hiddenCount} operations on this process are hidden — already started or in a batch"
-msgstr "{hiddenCount} 个工序在此工序上被隐藏 — 已开始或在批次中"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length

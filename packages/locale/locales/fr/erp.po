@@ -60,6 +60,14 @@ msgstr "{0} comptes"
 msgid "{0} ago"
 msgstr "{0} il y a"
 
+#. placeholder {0}: hidden.batched
+msgid "{0} already in a batch"
+msgstr "{0} déjà dans un lot"
+
+#. placeholder {0}: hidden.started
+msgid "{0} already started"
+msgstr "{0} déjà commencé"
+
 #. placeholder {0}: tieOut.deltaCellCount
 msgid "{0} cells with deltas"
 msgstr "{0} cellules avec écarts"
@@ -102,6 +110,10 @@ msgstr "{0} sur {1} comptes de comptabilisation mappés"
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0} sur {maxSlots} emplacements de fournisseur utilisés"
 
+#. placeholder {0}: hidden.unreleased
+msgid "{0} on jobs not yet released"
+msgstr "{0} sur les travaux non encore libérés"
+
 #. placeholder {0}: selected.length
 #. placeholder {1}: selected.reduce((s, c) => s + (c.operationQuantity ?? 0), 0)
 msgid "{0} operations · {1} parts"
@@ -110,6 +122,11 @@ msgstr "{0} opérations · {1} pièces"
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} opérations · {totalQuantity} pièces"
+
+#. placeholder {0}: hidden.total
+#. placeholder {1}: hiddenParts.join(", ")
+msgid "{0} operations on this process are not listed: {1}"
+msgstr "{0} opérations sur ce processus ne sont pas listées : {1}"
 
 #. placeholder {0}: history.length
 msgid "{0} orders"
@@ -182,9 +199,6 @@ msgstr "{from}–{to} sur {count}"
 
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} sur {count} opérations"
-
-msgid "{hiddenCount} operations on this process are hidden — already started or in a batch"
-msgstr "{hiddenCount} opérations pour ce processus sont masquées — déjà commencées ou dans un lot"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
