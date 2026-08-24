@@ -11,17 +11,21 @@ msgstr ""
 "Last-Translator: \n"
 "Language-Team: \n"
 "Plural-Forms: \n"
+"POT-Creation-Date: \n"
 
 #. placeholder {0}: attribute.name
 #. placeholder {1}: activeStep + 1
+#: apps/mes/app/components/JobOperation/components/Step.tsx:542
 msgid "{0} - Set {1}"
 msgstr "{0} - {1} 설정"
 
 #. placeholder {0}: employeeIds.length
+#: apps/mes/app/components/Kanban/components/ItemCard.tsx:281
 msgid "{0} Active"
 msgstr "{0} 활성"
 
 #. placeholder {0}: precise?.text
+#: packages/react/src/DateTime.tsx:206
 msgid "{0} ago"
 msgstr "{0} 전"
 
@@ -29,207 +33,320 @@ msgstr "{0} 전"
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
 #. placeholder {1}: operation.targetQuantity
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:700
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:917
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:2028
 msgid "{0} of {1}"
 msgstr "{1} 중 {0}"
 
 #. placeholder {0}: attributes.filter((a) => a.jobOperationStepRecord.some( (r) => r.index === activeStep ) ).length
 #. placeholder {1}: attributes.length
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:940
 msgid "{0} of {1} complete"
 msgstr "{1} 중 {0} 완료"
 
 #. placeholder {0}: attributes.filter((a) => a.jobOperationStepRecord.some( (r) => r.index === activeStep ) ).length
 #. placeholder {1}: attributes.length
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:2052
 msgid "{0} of {1} completed"
 msgstr "{1} 중 {0} 완료됨"
 
 #. placeholder {0}: rows.length
+#: apps/mes/app/components/Display/QueueTable.tsx:47
 msgid "{0} queued"
 msgstr "{0} 대기 중"
 
 #. placeholder {0}: activeWork.length
+#: apps/mes/app/routes/display+/$workCenterId.work.tsx:75
 msgid "{0} running"
 msgstr "{0} 실행 중"
 
 #. placeholder {0}: item.quantityScrapped
+#: apps/mes/app/components/Kanban/components/ItemCard.tsx:300
 msgid "{0} Scrapped"
 msgstr "{0} 스크랩됨"
 
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:256
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions}개의 합격 단위가 완료됩니다."
 
+#: apps/mes/app/components/Inspection/InspectionView.tsx:1171
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails}개의 샘플 불량이 기록되었으며 완료되지 않습니다 — 작업 메뉴에서 해결하세요."
 
+#: apps/mes/app/components/Display/QueueTable.tsx:107
 msgid "+{overflow} more"
 msgstr "+{overflow} 더 보기"
 
+#: apps/mes/app/components/AppSidebar.tsx:598
 msgid "About"
 msgstr "정보"
 
+#: apps/mes/app/components/Inspection/InspectionView.tsx:682
 msgid "Accept"
 msgstr "수락"
 
+#: apps/mes/app/components/Inspection/InspectionView.tsx:1196
 msgid "Accept Lot"
 msgstr "로트 수락"
 
+#: apps/mes/app/components/Inspection/InspectionView.tsx:1158
 msgid "Accept lot?"
 msgstr "로트를 수락하시겠습니까?"
 
+#: apps/mes/app/components/AppSidebar.tsx:452
 msgid "Account Settings"
 msgstr "계정 설정"
 
+#: apps/mes/app/routes/x+/picking.$pickingListId.tsx:340
 msgid "Acknowledge & finish"
 msgstr "확인 및 완료"
 
+#: apps/mes/app/components/AppSidebar.tsx:204
+#: apps/mes/app/routes/x+/active.tsx:69
+#: apps/mes/app/routes/x+/dispatch.$dispatchId.tsx:417
+#: apps/mes/app/routes/x+/timecard.tsx:421
 msgid "Active"
 msgstr "활성"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1084
 msgid "Actual"
 msgstr "실제"
 
+#: apps/mes/app/routes/x+/dispatch.$dispatchId.tsx:439
 msgid "Add"
 msgstr "추가"
 
+#: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:668
 msgid "Add & Issue"
 msgstr "추가 및 출고"
 
+#: packages/printing/src/ui/LabelDownloadModal.tsx:113
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "라벨을 직접 출력하려면 인쇄 설정에서 프린터를 추가하세요."
 
+#: apps/mes/app/components/AdjustInventory.tsx:114
+#: apps/mes/app/components/AdjustInventory.tsx:119
+#: apps/mes/app/components/AdjustInventory.tsx:142
+#: apps/mes/app/components/AdjustInventory.tsx:195
 msgid "Add Inventory"
 msgstr "재고 추가"
 
+#: apps/mes/app/components/Inspection/InspectionView.tsx:640
+#: apps/mes/app/components/Inspection/InspectionView.tsx:1021
+#: apps/mes/app/components/Inspection/ScanInspectionSample.tsx:250
 msgid "Add Sample"
 msgstr "샘플 추가"
 
+#: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:303
 msgid "Add Spare Part"
 msgstr "예비 부품 추가"
 
+#: apps/mes/app/routes/x+/maintenance.tsx:417
 msgid "All"
 msgstr "전체"
 
+#: apps/mes/app/routes/display+/$workCenterId.maintenance.tsx:109
 msgid "All clear"
 msgstr "모두 정상"
 
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:306
 msgid "All rework"
 msgstr "모두 재작업"
 
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:298
 msgid "All scrap"
 msgstr "모두 폐기"
 
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:288
 msgid "Allocate failed units"
 msgstr "실패한 단위 할당"
 
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:286
 msgid "Allocate units"
 msgstr "단위 할당"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:2660
 msgid "Are you sure you want to delete this step?"
 msgstr "이 단계를 삭제하시겠습니까?"
 
+#: apps/mes/app/routes/x+/timecard.tsx:492
 msgid "Are you sure you want to delete this timecard? This cannot be undone."
 msgstr "이 근무기록을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
+#: apps/mes/app/components/EndShift.tsx:88
 msgid "Are you sure you want to end all production events? This will end all active operations without completing or finishing them."
 msgstr "모든 생산 이벤트를 종료하시겠습니까? 이 작업은 완료 처리 없이 모든 진행 중인 공정작업을 종료합니다."
 
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:118
 msgid "Are you sure you want to finish this operation? This will end all active production events for this operation."
 msgstr "이 공정작업을 완료하시겠습니까? 이 작업은 해당 공정작업의 모든 진행 중인 생산 이벤트를 종료합니다."
 
+#: packages/form/src/components/Submit.tsx:90
 msgid "Are you sure you want to leave this page?"
 msgstr "이 페이지를 나가시겠습니까?"
 
+#: apps/mes/app/components/AppSidebar.tsx:199
+#: apps/mes/app/routes/x+/maintenance.tsx:362
 msgid "Assigned"
 msgstr "배정됨"
 
+#: apps/mes/app/routes/x+/assigned.tsx:89
+#: apps/mes/app/routes/x+/maintenance.tsx:433
 msgid "Assigned to Me"
 msgstr "나에게 배정됨"
 
+#: apps/mes/app/routes/x+/jobs.tsx:154
+#: apps/mes/app/routes/x+/operations.tsx:411
 msgid "Assignee"
 msgstr "담당자"
 
+#: apps/mes/app/routes/_public+/login.tsx:353
+#: apps/mes/app/routes/_public+/mfa.tsx:184
 msgid "Authentication Error"
 msgstr "인증 오류"
 
+#: packages/react/src/TrackedEntityPicker.tsx:308
 msgid "available"
 msgstr "사용 가능"
 
+#: apps/mes/app/components/JobOperation/components/ScrapTab.tsx:63
 msgid "Available"
 msgstr "사용 가능"
 
+#: apps/mes/app/components/JobOperation/components/ReworkModal.tsx:280
 msgid "Batch"
 msgstr "배치"
 
+#: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:182
 msgid "Batch is not available"
 msgstr "배치를 사용할 수 없습니다"
 
 #. placeholder {0}: index + 1
+#: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:502
 msgid "Batch Number {0}"
 msgstr "배치 번호 {0}"
 
+#: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:175
 msgid "Batch number is required"
 msgstr "배치 번호가 필요합니다"
 
 #. placeholder {0}: column.blockingDispatchReadableId
+#: apps/mes/app/components/Kanban/components/ColumnCard.tsx:129
 msgid "Blocked by {0}"
 msgstr "{0}에 의해 차단됨"
 
+#: apps/mes/app/routes/x+/maintenance.tsx:441
 msgid "Blocking"
 msgstr "차단"
 
+#: apps/mes/app/routes/_public+/callback.tsx:178
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "걱정하지 마세요. 비밀번호 찾기를 통해 새 매직 링크를 요청할 수 있습니다."
 
+#: apps/mes/app/routes/_public+/login.tsx:432
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "로그인하면 <0>서비스 약관</0> 및 <1>개인정보 처리방침</1>에 동의하는 것으로 간주됩니다."
 
+#: apps/mes/app/routes/display+/$workCenterId.maintenance.tsx:171
 msgid "By?"
 msgstr "누가?"
 
+#: apps/mes/app/components/AdjustInventory.tsx:190
+#: apps/mes/app/components/EndShift.tsx:140
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:489
+#: apps/mes/app/components/Inspection/InspectionView.tsx:1181
+#: apps/mes/app/components/JobOperation/components/QualityIssueModal.tsx:116
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:343
+#: apps/mes/app/components/JobOperation/components/ReworkModal.tsx:324
+#: apps/mes/app/components/JobOperation/components/ScrapEntityModal.tsx:114
+#: apps/mes/app/components/JobOperation/components/SerialSelectorModal.tsx:156
+#: apps/mes/app/components/JobOperation/components/Step.tsx:660
+#: apps/mes/app/components/JobOperation/components/Step.tsx:709
+#: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:658
+#: apps/mes/app/components/ShortPickModal.tsx:85
+#: apps/mes/app/components/Suggestion.tsx:225
+#: apps/mes/app/routes/x+/timecard.tsx:403
+#: apps/mes/app/routes/x+/timecard.tsx:502
+#: packages/printing/src/ui/PrintButton.tsx:176
+#: packages/react/src/TrackedEntityPicker.tsx:341
 msgid "Cancel"
 msgstr "취소"
 
+#: apps/mes/app/components/PickingListStatus.tsx:38
+#: apps/mes/app/routes/x+/picking.$pickingListId.tsx:612
+#: apps/mes/app/routes/x+/picking.$pickingListId.tsx:617
 msgid "Cancelled"
 msgstr "취소됨"
 
+#: apps/mes/app/routes/_public+/login.tsx:317
+#: apps/mes/app/routes/_public+/login.tsx:322
+#: apps/mes/app/routes/_public+/mfa.tsx:160
+#: apps/mes/app/routes/_public+/mfa.tsx:165
+#: apps/mes/app/routes/_public+/unlock.tsx:399
+#: apps/mes/app/routes/_public+/unlock.tsx:404
 msgid "Carbon Logo"
 msgstr "Carbon 로고"
 
+#: apps/mes/app/routes/x+/operations.tsx:476
 msgid "Cards"
 msgstr "카드"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:527
 msgid "Chat"
 msgstr "채팅"
 
+#: apps/mes/app/routes/_public+/login.tsx:331
 msgid "Check your email"
 msgstr "이메일을 확인하세요"
 
+#: apps/mes/app/components/Suggestion.tsx:233
 msgid "Clear"
 msgstr "지우기"
 
+#: apps/mes/app/components/Filter/Filter.tsx:121
+#: apps/mes/app/routes/x+/operations.tsx:534
 msgid "Clear Filters"
 msgstr "필터 지우기"
 
+#: apps/mes/app/routes/x+/active.tsx:103
+#: apps/mes/app/routes/x+/assigned.tsx:137
+#: apps/mes/app/routes/x+/jobs.tsx:229
+#: apps/mes/app/routes/x+/maintenance.tsx:287
+#: apps/mes/app/routes/x+/recent.tsx:103
 msgid "Clear Search"
 msgstr "검색 지우기"
 
+#: apps/mes/app/components/TimeCardButton.tsx:90
+#: apps/mes/app/components/TimeCardButton.tsx:97
+#: apps/mes/app/routes/x+/timecard.tsx:247
+#: apps/mes/app/routes/x+/timecard.tsx:314
 msgid "Clock In"
 msgstr "출근"
 
+#: apps/mes/app/components/TimeCardButton.tsx:71
+#: apps/mes/app/components/TimeCardButton.tsx:78
+#: apps/mes/app/routes/x+/timecard.tsx:236
+#: apps/mes/app/routes/x+/timecard.tsx:317
 msgid "Clock Out"
 msgstr "퇴근"
 
+#: apps/mes/app/routes/x+/timecard.tsx:255
 msgid "Clocked in since <0/>"
 msgstr "<0/>부터 근무 중"
 
+#: apps/mes/app/components/Inspection/ScanInspectionSample.tsx:244
 msgid "Close"
 msgstr "닫기"
 
+#: apps/mes/app/components/Inspection/InspectionView.tsx:813
 msgid "Collapse features table"
 msgstr "기능 테이블 축소"
 
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
 #. placeholder {2}: columnOrder.length
+#: apps/mes/app/components/Kanban/Kanban.tsx:113
 msgid "Column {0} was dropped into position {1} of {2}"
 msgstr "열 {0}이(가) {2} 중 {1} 위치에 배치되었습니다"
 
@@ -237,1268 +354,1841 @@ msgstr "열 {0}이(가) {2} 중 {1} 위치에 배치되었습니다"
 #. placeholder {1}: over.data.current.column.title
 #. placeholder {2}: overIndex + 1
 #. placeholder {3}: columnOrder.length
+#: apps/mes/app/components/Kanban/Kanban.tsx:97
 msgid "Column {0} was moved over {1} at position {2} of {3}"
 msgstr "열 {0}이(가) {3} 중 {2} 위치에서 {1} 위로 이동되었습니다"
 
 #. placeholder {0}: column.title
+#: apps/mes/app/components/Kanban/components/ColumnCard.tsx:71
 msgid "Column: {0}"
 msgstr "열: {0}"
 
+#: apps/mes/app/routes/x+/operations.tsx:453
 msgid "Columns"
 msgstr "열"
 
+#: apps/mes/app/components/AppSidebar.tsx:460
+#: packages/react/src/DateTime.tsx:241
 msgid "Company"
 msgstr "회사"
 
+#: apps/mes/app/components/JobOperation/components/Step.tsx:249
 msgid "Complete"
 msgstr "완료"
 
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:288
 msgid "Complete All"
 msgstr "모두 완료"
 
+#: apps/mes/app/components/Inspection/InspectionView.tsx:1115
 msgid "Complete passed"
 msgstr "완료된 합격"
 
+#: apps/mes/app/components/Inspection/InspectionView.tsx:725
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:693
+#: apps/mes/app/components/PickingListStatus.tsx:26
 msgid "Completed"
 msgstr "완료됨"
 
+#: apps/mes/app/components/Display/DisplayFrame.tsx:125
 msgid "Connecting"
 msgstr "연결 중"
 
+#: apps/mes/app/components/AppSidebar.tsx:393
 msgid "Console"
 msgstr "콘솔"
 
+#: apps/mes/app/components/AppSidebar.tsx:565
 msgid "Console Mode"
 msgstr "콘솔 모드"
 
+#: apps/mes/app/components/JobOperation/components/ScrapTab.tsx:61
 msgid "Consumed"
 msgstr "소비됨"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1172
 msgid "Consumed expired"
 msgstr "만료 후 소모됨"
 
 #. placeholder {0}: board.unplannedCost.days
+#: apps/mes/app/routes/display+/$workCenterId.maintenance.tsx:156
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "계획되지 않은 유지보수 비용, 최근 {0}일"
 
 #. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
 #. placeholder {0}: search.trim() === "" ? label : search
+#: packages/react/src/CreateableCombobox.tsx:359
+#: packages/react/src/CreateableMultiSelect.tsx:343
 msgid "Create {0}"
 msgstr "{0} 생성"
 
+#: apps/mes/app/components/JobOperation/components/QualityIssueModal.tsx:119
 msgid "Create Issue"
 msgstr "이슈 생성"
 
+#: apps/mes/app/components/JobOperation/components/QualityIssueModal.tsx:78
 msgid "Create Quality Issue"
 msgstr "품질 이슈 생성"
 
+#: apps/mes/app/components/JobOperation/components/ReworkModal.tsx:184
+#: apps/mes/app/components/JobOperation/components/ReworkModal.tsx:335
 msgid "Create Rework"
 msgstr "재작업 생성"
 
+#: apps/mes/app/routes/display+/_index.tsx:121
+#: apps/mes/app/routes/display+/$workCenterId.work.tsx:70
 msgid "Current work"
 msgstr "현재 작업"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:2211
+#: apps/mes/app/routes/x+/operations.tsx:479
 msgid "Customer"
 msgstr "고객"
 
+#: apps/mes/app/components/AppSidebar.tsx:529
 msgid "Dark Mode"
 msgstr "다크 모드"
 
+#: apps/mes/app/routes/x+/timecard.tsx:311
 msgid "Date"
 msgstr "날짜"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:2238
+#: apps/mes/app/routes/x+/jobs.tsx:160
 msgid "Deadline"
 msgstr "마감일"
 
+#: packages/react/src/TrackedEntityPicker.tsx:62
 msgid "Default"
 msgstr "기본값"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1224
 msgid "Default Storage Unit"
 msgstr "기본 저장 단위"
 
+#: apps/mes/app/components/JobOperation/components/Step.tsx:719
+#: apps/mes/app/routes/x+/timecard.tsx:454
+#: apps/mes/app/routes/x+/timecard.tsx:514
 msgid "Delete"
 msgstr "삭제"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:2659
 msgid "Delete Step"
 msgstr "단계 삭제"
 
+#: apps/mes/app/routes/x+/timecard.tsx:485
 msgid "Delete Timecard (<0/>)"
 msgstr "타임카드 삭제 (<0/>)"
 
+#: apps/mes/app/components/JobOperation/components/QualityIssueModal.tsx:108
 msgid "Describe the problem..."
 msgstr "문제를 설명하세요..."
 
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:434
+#: apps/mes/app/components/JobOperation/components/ReworkModal.tsx:316
 msgid "Describe what needs to be reworked..."
 msgstr "재작업이 필요한 내용을 설명하세요..."
 
+#: apps/mes/app/components/JobOperation/components/QualityIssueModal.tsx:107
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:2225
+#: apps/mes/app/routes/x+/dispatch.$dispatchId.tsx:285
+#: apps/mes/app/routes/x+/operations.tsx:480
 msgid "Description"
 msgstr "설명"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:515
 msgid "Details"
 msgstr "상세 정보"
 
+#: apps/mes/app/routes/x+/dispatch.$dispatchId.tsx:225
 msgid "Dispatch not found"
 msgstr "작업지시를 찾을 수 없습니다"
 
+#: apps/mes/app/routes/x+/operations.tsx:447
 msgid "Display"
 msgstr "표시"
 
+#: apps/mes/app/components/AppSidebar.tsx:327
+#: apps/mes/app/components/AppSidebar.tsx:331
 msgid "Displays"
 msgstr "디스플레이"
 
+#: apps/mes/app/components/MaintenanceOeeImpact.tsx:28
+#: apps/mes/app/routes/x+/maintenance.tsx:373
 msgid "Down"
 msgstr "가동중단"
 
+#: apps/mes/app/routes/display+/$workCenterId.work.tsx:63
 msgid "Down for maintenance"
 msgstr "유지보수 중단됨"
 
 #. placeholder {0}: workCenter.blockingDispatchReadableId
+#: apps/mes/app/routes/display+/$workCenterId.work.tsx:62
 msgid "Down for maintenance · {0}"
 msgstr "유지보수 중단됨 · {0}"
 
+#: apps/mes/app/routes/display+/$workCenterId.maintenance.tsx:96
 msgid "Down for planned maintenance"
 msgstr "계획된 유지보수로 가동 중단"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1611
 msgid "Download"
 msgstr "다운로드"
 
+#: packages/printing/src/ui/LabelDownloadModal.tsx:100
 msgid "Download Labels"
 msgstr "라벨 다운로드"
 
+#: apps/mes/app/components/PickingListStatus.tsx:14
 msgid "Draft"
 msgstr "초안"
 
+#: apps/mes/app/components/FileDropzone.tsx:29
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "파일을 여기로 끌어다 놓거나 클릭하여 선택하세요"
 
+#: apps/mes/app/components/Inspection/InspectionView.tsx:779
 msgid "Drag to resize drawing and features"
 msgstr "그리기 및 기능 크기 조정하려면 드래그하세요"
 
 #. placeholder {0}: active.data.current?.type
+#: apps/mes/app/components/Kanban/Kanban.tsx:122
 msgid "Dragging {0} cancelled."
 msgstr "{0} 끌기가 취소되었습니다."
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:632
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:742
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:2257
+#: apps/mes/app/components/Kanban/components/ItemCard.tsx:246
+#: apps/mes/app/components/OperationsList.tsx:188
 msgid "Due {0}"
 msgstr "기한 {0}"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:721
+#: apps/mes/app/routes/x+/jobs.tsx:157
+#: apps/mes/app/routes/x+/operations.tsx:481
+#: apps/mes/app/routes/x+/picking._index.tsx:84
 msgid "Due Date"
 msgstr "기한일"
 
 #. placeholder {0}: board.dueSoon.days
+#: apps/mes/app/routes/display+/$workCenterId.maintenance.tsx:129
 msgid "Due in the next {0} days?"
 msgstr "다음 {0}일 내에 예정됨?"
 
+#: apps/mes/app/routes/display+/$workCenterId.maintenance.tsx:122
 msgid "Due today?"
 msgstr "오늘 예정됨?"
 
+#: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:180
 msgid "Duplicate batch number"
 msgstr "중복된 배치 번호"
 
+#: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:165
 msgid "Duplicate serial number"
 msgstr "중복된 일련번호"
 
+#: apps/mes/app/routes/x+/operations.tsx:482
+#: apps/mes/app/routes/x+/timecard.tsx:320
 msgid "Duration"
 msgstr "기간"
 
+#: apps/mes/app/routes/x+/timecard.tsx:442
 msgid "Edit"
 msgstr "수정"
 
+#: apps/mes/app/components/Display/ActiveWorkPanel.tsx:95
 msgid "Elapsed"
 msgstr "경과 시간"
 
+#: apps/mes/app/routes/_public+/login.tsx:410
 msgid "Email Address"
 msgstr "이메일 주소"
 
+#: apps/mes/app/routes/x+/operations.tsx:456
 msgid "Empty work centers"
 msgstr "빈 작업장"
 
+#: apps/mes/app/components/EndShift.tsx:71
+#: apps/mes/app/components/EndShift.tsx:74
+#: apps/mes/app/components/EndShift.tsx:85
+#: apps/mes/app/components/EndShift.tsx:148
 msgid "End Operations"
 msgstr "공정작업 종료"
 
 #. placeholder {0}: selectedPerson.name
+#: apps/mes/app/components/PinInOverlay.tsx:290
 msgid "Enter PIN for {0}"
 msgstr "{0}의 PIN 입력"
 
+#: apps/mes/app/routes/_public+/mfa.tsx:177
 msgid "Enter the 6-digit code from your authenticator app"
 msgstr "인증 앱의 6자리 코드를 입력하세요"
 
+#: apps/mes/app/components/SessionLockOverlay.tsx:188
+#: apps/mes/app/routes/_public+/unlock.tsx:463
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "인증 앱에서 6자리 코드를 입력하여 계속하세요."
 
+#: apps/mes/app/routes/_public+/callback.tsx:171
 msgid "Error"
 msgstr "오류"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1081
 msgid "Estimated"
 msgstr "예상"
 
+#: apps/mes/app/components/Inspection/InspectionView.tsx:919
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "모든 단위에 판정이 있습니다: {passes}개 합격 및 {fails}개 불합격. 로트는 각 단위가 자신의 결과로 라우팅되면서 종료됩니다."
 
+#: apps/mes/app/components/Inspection/InspectionView.tsx:814
 msgid "Expand features table"
 msgstr "기능 테이블 확장"
 
+#: packages/react/src/TrackedEntityPicker.tsx:363
 msgid "Expired"
 msgstr "만료됨"
 
 #. placeholder {0}: formatDate(date)
+#: packages/react/src/TrackedEntityPicker.tsx:366
 msgid "Expired {0}"
 msgstr "만료됨 {0}"
 
+#: packages/react/src/TrackedEntityPicker.tsx:373
+#: packages/react/src/TrackedEntityPicker.tsx:381
 msgid "Expires <0/>"
 msgstr "만료 <0/>"
 
+#: packages/react/src/TrackedEntityPicker.tsx:63
 msgid "Expiring first"
 msgstr "먼저 만료되는 순"
 
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:338
 msgid "Failed"
 msgstr "실패"
 
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:262
 msgid "Failed features"
 msgstr "실패한 기능"
 
+#: apps/mes/app/components/AdjustInventory.tsx:96
 msgid "Failed to complete inventory adjustment"
 msgstr "재고 조정을 완료하지 못했습니다"
 
+#: apps/mes/app/components/EndShift.tsx:47
 msgid "Failed to end operations"
 msgstr "공정작업을 종료하지 못했습니다"
 
+#: apps/mes/app/components/EndShift.tsx:63
 msgid "Failed to fetch active operations"
 msgstr "진행 중인 공정작업을 불러오지 못했습니다"
 
+#: apps/mes/app/components/AdjustInventory.tsx:65
 msgid "Failed to fetch storageUnits"
 msgstr "저장 단위를 불러오지 못했습니다"
 
+#: apps/mes/app/components/Inspection/InspectionMeasurementMatrix.tsx:256
 msgid "Failed to save measurement"
 msgstr "측정값 저장 실패"
 
+#: apps/mes/app/components/Inspection/InspectionMeasurementMatrix.tsx:307
 msgid "Failed to save result"
 msgstr "결과 저장 실패"
 
 #. placeholder {0}: fileUpload.name
+#: apps/mes/app/components/JobOperation/components/Step.tsx:493
 msgid "Failed to upload file: {0}"
 msgstr "파일을 업로드하지 못했습니다: {0}"
 
+#: apps/mes/app/components/Suggestion.tsx:102
 msgid "Failed to upload image"
 msgstr "이미지를 업로드하지 못했습니다"
 
+#: apps/mes/app/components/Inspection/InspectionMeasurementMatrix.tsx:390
 msgid "Feature"
 msgstr "기능"
 
+#: apps/mes/app/components/Inspection/InspectionView.tsx:805
 msgid "Features"
 msgstr "기능"
 
+#: apps/mes/app/components/Suggestion.tsx:88
 msgid "File size exceeds 10MB limit"
 msgstr "파일 크기가 10MB 제한을 초과했습니다"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1538
 msgid "Files"
 msgstr "파일"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1541
 msgid "Files related to the job and the opportunity line."
 msgstr "작업 및 기회 라인과 관련된 파일입니다."
 
+#: apps/mes/app/components/Filter/Filter.tsx:151
 msgid "Filter"
 msgstr "필터"
 
+#: apps/mes/app/routes/display+/_index.tsx:80
 msgid "Filter by location"
 msgstr "위치별 필터"
 
+#: apps/mes/app/components/Inspection/InspectionView.tsx:1004
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:132
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:2504
+#: apps/mes/app/routes/x+/picking.$pickingListId.tsx:256
 msgid "Finish"
 msgstr "마감"
 
 #. placeholder {0}: operation.itemReadableId
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:104
 msgid "Finish {0}"
 msgstr "{0} 완료"
 
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:132
 msgid "Finish Anyways"
 msgstr "그래도 완료"
 
+#: apps/mes/app/routes/x+/picking.$pickingListId.tsx:299
 msgid "Finish with material unpicked?"
 msgstr "미선택 재료가 있는 상태로 완료하시겠습니까?"
 
+#: apps/mes/app/components/TimeCardWarning.tsx:108
 msgid "Forgot to Clock Out?"
 msgstr "퇴근 체크를 잊으셨나요?"
 
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:425
+#: apps/mes/app/components/JobOperation/components/ReworkModal.tsx:202
 msgid "Go back to operation"
 msgstr "공정작업으로 돌아가기"
 
+#: apps/mes/app/components/ShortPickModal.tsx:67
 msgid "How many were actually picked?"
 msgstr "실제로 몇 개를 피킹했습니까?"
 
+#: apps/mes/app/routes/display+/$workCenterId.maintenance.tsx:118
+#: apps/mes/app/routes/display+/$workCenterId.maintenance.tsx:125
+#: apps/mes/app/routes/display+/$workCenterId.maintenance.tsx:132
 msgid "How many?"
 msgstr "몇 개?"
 
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:228
 msgid "I understand and want to complete without issuing"
 msgstr "이해했으며 출고 없이 완료하겠습니다"
 
+#: apps/mes/app/components/TimeCardWarning.tsx:141
 msgid "I'm Still Working"
 msgstr "아직 작업 중입니다"
 
+#: apps/mes/app/components/Suggestion.tsx:148
 msgid "Ideas, suggestions or problems?"
 msgstr "아이디어, 제안, 또는 문제가 있으신가요?"
 
+#: apps/mes/app/components/Display/ActiveWorkPanel.tsx:152
 msgid "Idle for"
 msgstr "유휴 상태"
 
+#: apps/mes/app/components/MaintenanceOeeImpact.tsx:48
+#: apps/mes/app/routes/x+/maintenance.tsx:375
 msgid "Impact"
 msgstr "영향"
 
+#: packages/printing/src/ui/LabelDownloadModal.tsx:135
 msgid "Imperial"
 msgstr "야드파운드법"
 
 #. placeholder {0}: precise?.text
+#: packages/react/src/DateTime.tsx:204
 msgid "in {0}"
 msgstr "{0} 후"
 
+#: apps/mes/app/components/PickingListStatus.tsx:20
+#: apps/mes/app/routes/x+/maintenance.tsx:363
 msgid "In Progress"
 msgstr "진행 중"
 
+#: apps/mes/app/components/Inspection/ScanInspectionSample.tsx:103
 msgid "Inspect Item"
 msgstr "항목 검사"
 
+#: apps/mes/app/components/Inspection/InspectionView.tsx:708
 msgid "inspected"
 msgstr "검사됨"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:524
 msgid "Instructions"
 msgstr "작업 지침"
 
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:240
 msgid "Insufficient quantity"
 msgstr "수량 부족"
 
+#: apps/mes/app/components/AdjustInventory.tsx:91
 msgid "Inventory adjustment completed"
 msgstr "재고 조정이 완료되었습니다"
 
+#: apps/mes/app/components/AppSidebar.tsx:285
 msgid "Inventory Adjustments"
 msgstr "재고 조정"
 
+#: apps/mes/app/components/Filter/ActiveFilters.tsx:139
 msgid "is"
 msgstr "같음"
 
+#: apps/mes/app/components/Filter/ActiveFilters.tsx:141
 msgid "is any of"
 msgstr "다음 중 하나임"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1306
 msgid "Issue"
 msgstr "이슈"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1040
 msgid "Issue Material"
 msgstr "자재 출고"
 
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:452
+#: apps/mes/app/components/JobOperation/components/QualityIssueModal.tsx:89
 msgid "Issue Type"
 msgstr "이슈 유형"
 
+#: apps/mes/app/components/JobOperation/components/IssueMaterialModal.tsx:1130
 msgid "Issued {issuedQuantity} of {lotLabel}"
 msgstr "{issuedQuantity}를 {lotLabel}에서 발급함"
 
+#: apps/mes/app/components/JobOperation/components/IssueMaterialModal.tsx:1129
 msgid "Issued {issuedQuantity} of {lotLabel} — {remainingQuantity} remains"
 msgstr "{issuedQuantity}를 {lotLabel}에서 발급함 — {remainingQuantity}가 남음"
 
+#: apps/mes/app/components/AdjustInventory.tsx:164
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:2188
+#: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:314
+#: apps/mes/app/routes/x+/jobs.tsx:145
 msgid "Item"
 msgstr "품목"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:569
 msgid "Item Master"
 msgstr "품목 마스터"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:2199
+#: apps/mes/app/routes/x+/jobs.tsx:142
 msgid "Job"
 msgstr "작업"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:560
 msgid "Job Details"
 msgstr "작업 상세정보"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:554
 msgid "Job Traveler"
 msgstr "작업 트래블러"
 
+#: apps/mes/app/components/AppSidebar.tsx:215
 msgid "Jobs"
 msgstr "작업"
 
+#: apps/mes/app/routes/x+/picking.$pickingListId.tsx:332
 msgid "Keep picking"
 msgstr "계속 선택"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1207
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1399
 msgid "Kit"
 msgstr "키트"
 
+#: apps/mes/app/components/JobOperation/components/Controls.tsx:188
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:2361
 msgid "Labor"
 msgstr "노무"
 
+#: apps/mes/app/routes/display+/$workCenterId.maintenance.tsx:169
 msgid "Last completed"
 msgstr "마지막 완료"
 
+#: packages/react/src/LabelWithHelp.tsx:86
 msgid "Learn more"
 msgstr "자세히 알아보기"
 
+#: packages/form/src/components/Submit.tsx:98
 msgid "Leave this page"
 msgstr "이 페이지 나가기"
 
+#: apps/mes/app/routes/_public+/_layout.tsx:31
 msgid "Let's build something"
 msgstr "무언가를 만들어봅시다"
 
+#: apps/mes/app/routes/x+/picking.$pickingListId.tsx:147
 msgid "lines"
 msgstr "라인"
 
+#: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:326
 msgid "Loading item details..."
 msgstr "품목 세부정보를 불러오는 중..."
 
+#: apps/mes/app/components/Filter/ActiveFilters.tsx:170
+#: apps/mes/app/components/Filter/Filter.tsx:167
 msgid "Loading..."
 msgstr "불러오는 중..."
 
+#: packages/react/src/DateTime.tsx:261
 msgid "Local"
 msgstr "로컬"
 
+#: apps/mes/app/components/AppSidebar.tsx:500
+#: apps/mes/app/routes/x+/picking._index.tsx:77
+#: packages/react/src/DateTime.tsx:251
 msgid "Location"
 msgstr "위치"
 
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:131
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:2303
 msgid "Log Completed"
 msgstr "완료 기록"
 
 #. placeholder {0}: operation.itemReadableId
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:103
 msgid "Log completed for {0}"
 msgstr "{0} 완료 기록"
 
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:130
 msgid "Log Rework"
 msgstr "재작업 기록"
 
 #. placeholder {0}: operation.itemReadableId
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:102
 msgid "Log rework for {0}"
 msgstr "{0} 재작업 기록"
 
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:129
 msgid "Log Scrap"
 msgstr "스크랩 기록"
 
 #. placeholder {0}: operation.itemReadableId
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:101
 msgid "Log scrap for {0}"
 msgstr "{0} 스크랩 기록"
 
+#: apps/mes/app/routes/_public+/callback.tsx:185
 msgid "Login"
 msgstr "로그인"
 
+#: apps/mes/app/components/Inspection/InspectionView.tsx:716
 msgid "Lot"
 msgstr "로트"
 
+#: apps/mes/app/components/JobOperation/components/Controls.tsx:204
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:2394
 msgid "Machine"
 msgstr "기계"
 
+#: apps/mes/app/routes/display+/$workCenterId.maintenance.tsx:136
 msgid "Machine down for maintenance now?"
 msgstr "현재 유지보수로 가동 중단?"
 
+#: apps/mes/app/components/AppSidebar.tsx:220
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:2522
+#: apps/mes/app/routes/display+/_index.tsx:116
+#: apps/mes/app/routes/display+/$workCenterId.maintenance.tsx:106
+#: apps/mes/app/routes/x+/maintenance.tsx:404
 msgid "Maintenance"
 msgstr "유지보수"
 
+#: apps/mes/app/routes/x+/dispatch.$dispatchId.tsx:551
 msgid "Maintenance Completed"
 msgstr "유지보수 완료"
 
+#: apps/mes/app/routes/display+/$workCenterId.maintenance.tsx:97
 msgid "Maintenance overdue"
 msgstr "기한이 지난 유지보수"
 
+#: apps/mes/app/components/JobOperation/components/ScrapEntityModal.tsx:104
 msgid "Make a replacement"
 msgstr "교체품 만들기"
 
+#: apps/mes/app/components/AdjustInventory.tsx:149
 msgid "Manually add items to inventory"
 msgstr "재고에 품목을 수동으로 추가"
 
+#: apps/mes/app/components/AdjustInventory.tsx:151
 msgid "Manually remove items from inventory"
 msgstr "재고에서 품목을 수동으로 제거"
 
+#: apps/mes/app/components/ShortPickModal.tsx:88
 msgid "Mark Short"
 msgstr "부족으로 표시"
 
+#: apps/mes/app/components/Filter/ActiveFilters.tsx:142
 msgid "matches"
 msgstr "일치"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1026
 msgid "Materials"
 msgstr "자재"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:901
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:2012
 msgid "Maximum number of records reached"
 msgstr "최대 레코드 수에 도달했습니다"
 
+#: packages/printing/src/ui/LabelDownloadModal.tsx:138
 msgid "Metric"
 msgstr "미터법"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:521
 msgid "Model"
 msgstr "모델"
 
+#: apps/mes/app/components/Inspection/InspectionView.tsx:687
 msgid "More actions"
 msgstr "더 많은 작업"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:2310
 msgid "More Actions"
 msgstr "추가 작업"
 
+#: apps/mes/app/routes/x+/timecard.tsx:432
 msgid "More options"
 msgstr "추가 옵션"
 
 #. placeholder {0}: column.title
+#: apps/mes/app/components/Kanban/components/ColumnCard.tsx:153
 msgid "Move column: {0}"
 msgstr "열 이동: {0}"
 
+#: apps/mes/app/components/JobOperation/components/Step.tsx:171
 msgid "Must be < {maxValue} {unitOfMeasureCode}"
 msgstr "{maxValue} {unitOfMeasureCode} 미만이어야 합니다"
 
+#: apps/mes/app/components/JobOperation/components/Step.tsx:169
 msgid "Must be > {minValue} {unitOfMeasureCode}"
 msgstr "{minValue} {unitOfMeasureCode} 초과여야 합니다"
 
+#: apps/mes/app/components/JobOperation/components/Step.tsx:167
 msgid "Must be between {minValue} and {maxValue} {unitOfMeasureCode}"
 msgstr "{minValue}에서 {maxValue} {unitOfMeasureCode} 사이여야 합니다"
 
+#: apps/mes/app/components/TimeCardButton.tsx:105
+#: apps/mes/app/components/TimeCardButton.tsx:115
+#: apps/mes/app/routes/x+/timecard.tsx:225
 msgid "My Hours"
 msgstr "내 근무 시간"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1555
 msgid "Name"
 msgstr "이름"
 
+#: packages/react/src/CreateableCombobox.tsx:279
+#: packages/react/src/CreateableMultiSelect.tsx:262
 msgid "New"
 msgstr "신규"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:912
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:2023
 msgid "New Record"
 msgstr "새 레코드"
 
+#: packages/react/src/TrackedEntityPicker.tsx:65
 msgid "Newest first"
 msgstr "최신순"
 
+#: apps/mes/app/routes/x+/timecard.tsx:290
+#: apps/mes/app/routes/x+/timecard.tsx:294
 msgid "Next"
 msgstr "다음"
 
+#: apps/mes/app/routes/display+/$workCenterId.maintenance.tsx:101
 msgid "No"
 msgstr "아니요"
 
+#: apps/mes/app/components/Display/ActiveWorkPanel.tsx:147
 msgid "No active job at this work center"
 msgstr "이 작업 센터에 활성 작업 없음"
 
+#: apps/mes/app/routes/x+/maintenance.tsx:479
 msgid "No active maintenance dispatches"
 msgstr "진행 중인 유지보수 작업지시가 없습니다"
 
+#: apps/mes/app/components/EndShift.tsx:102
+#: apps/mes/app/routes/x+/active.tsx:112
 msgid "No active operations"
 msgstr "진행 중인 공정작업이 없습니다"
 
+#: apps/mes/app/routes/display+/_index.tsx:97
 msgid "No active work centers at this location."
 msgstr "이 위치에 활성 작업 센터 없음."
 
+#: apps/mes/app/routes/x+/assigned.tsx:146
 msgid "No assigned operations"
 msgstr "배정된 공정작업이 없습니다"
 
+#: apps/mes/app/components/Filter/Filter.tsx:167
 msgid "No available filters"
 msgstr "사용 가능한 필터가 없습니다"
 
+#: apps/mes/app/components/JobOperation/components/SerialSelectorModal.tsx:77
 msgid "No available serial numbers found"
 msgstr "사용 가능한 일련번호를 찾을 수 없습니다"
 
+#: packages/react/src/TrackedEntityPicker.tsx:282
 msgid "No available tracked entities found"
 msgstr "사용 가능한 추적 개체가 없습니다"
 
+#: apps/mes/app/routes/x+/maintenance.tsx:519
 msgid "No dispatches assigned to you"
 msgstr "배정된 작업지시가 없습니다"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1570
 msgid "No files"
 msgstr "파일 없음"
 
+#: apps/mes/app/components/MaintenanceOeeImpact.tsx:58
+#: apps/mes/app/routes/x+/maintenance.tsx:258
+#: apps/mes/app/routes/x+/maintenance.tsx:376
 msgid "No Impact"
 msgstr "영향 없음"
 
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:474
 msgid "No issue types configured"
 msgstr "구성된 문제 유형이 없음"
 
+#: apps/mes/app/routes/x+/maintenance.tsx:499
 msgid "No maintenance scheduled for today"
 msgstr "오늘 예정된 유지보수가 없습니다"
 
+#: packages/react/src/CreateableMultiSelect.tsx:292
 msgid "No matches. Type to create one."
 msgstr "일치하는 항목이 없습니다. 입력하여 새로 만드세요."
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1096
 msgid "No materials"
 msgstr "자재 없음"
 
+#: apps/mes/app/routes/x+/jobs.tsx:238
 msgid "No open jobs"
 msgstr "진행 중인 작업이 없습니다"
 
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:321
 msgid "No open units to allocate"
 msgstr "할당할 열린 단위가 없습니다"
 
+#: apps/mes/app/components/PinInOverlay.tsx:223
 msgid "No operators"
 msgstr "작업자 없음"
 
+#: packages/react/src/Combobox.tsx:290
+#: packages/react/src/MultiSelect.tsx:237
 msgid "No option found."
 msgstr "옵션이 없습니다."
 
+#: apps/mes/app/components/Filter/ActiveFilters.tsx:170
 msgid "No options found."
 msgstr "옵션이 없습니다."
 
+#: apps/mes/app/routes/x+/picking._index.tsx:112
 msgid "No picking lists assigned"
 msgstr "배정된 피킹 목록이 없습니다"
 
+#: packages/printing/src/ui/LabelDownloadModal.tsx:108
 msgid "No printer configured"
 msgstr "설정된 프린터가 없습니다"
 
+#: apps/mes/app/routes/x+/recent.tsx:112
 msgid "No recent operations"
 msgstr "최근 공정작업이 없습니다"
 
+#: apps/mes/app/components/Inspection/ScanInspectionSample.tsx:194
 msgid "No remaining entities to inspect."
 msgstr "검사할 나머지 엔터티가 없습니다."
 
+#: apps/mes/app/components/PinInOverlay.tsx:223
+#: apps/mes/app/routes/x+/jobs.tsx:226
+#: apps/mes/app/routes/x+/operations.tsx:531
 msgid "No results"
 msgstr "결과 없음"
 
+#: apps/mes/app/routes/x+/active.tsx:100
+#: apps/mes/app/routes/x+/assigned.tsx:134
+#: apps/mes/app/routes/x+/recent.tsx:100
 msgid "No results exist"
 msgstr "결과가 없습니다"
 
+#: apps/mes/app/routes/x+/maintenance.tsx:475
+#: apps/mes/app/routes/x+/maintenance.tsx:494
+#: apps/mes/app/routes/x+/maintenance.tsx:515
+#: apps/mes/app/routes/x+/maintenance.tsx:534
 msgid "No results found"
 msgstr "결과가 없습니다"
 
+#: apps/mes/app/components/Inspection/InspectionMeasurementMatrix.tsx:378
 msgid "No samples required."
 msgstr "필요한 샘플이 없습니다."
 
+#: apps/mes/app/components/Kanban/components/ColumnCard.tsx:147
 msgid "No scheduled time"
 msgstr "예정된 시간 없음"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1756
 msgid "No serial numbers"
 msgstr "일련번호 없음"
 
+#: apps/mes/app/components/JobOperation/components/ReworkModal.tsx:241
 msgid "No serial numbers found"
 msgstr "일련번호를 찾을 수 없습니다"
 
+#: apps/mes/app/routes/x+/dispatch.$dispatchId.tsx:483
 msgid "No spare parts added yet"
 msgstr "아직 추가된 예비 부품이 없습니다"
 
+#: apps/mes/app/routes/x+/picking.$pickingListId.tsx:582
 msgid "No stock"
 msgstr "재고 없음"
 
+#: apps/mes/app/routes/x+/timecard.tsx:332
 msgid "No time entries for this week"
 msgstr "이번 주 시간 기록이 없습니다"
 
+#: apps/mes/app/routes/x+/picking.$pickingListId.tsx:586
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "이 품목에 대한 창고 재고 기록이 없습니다. 그래도 피킹할 수 있으며, 실사로 수량이 조정될 때까지 보유수량이 음수로 표시됩니다."
 
+#: apps/mes/app/routes/x+/maintenance.tsx:538
 msgid "No work centers are blocked"
 msgstr "차단된 작업장이 없습니다"
 
+#: apps/mes/app/routes/x+/operations.tsx:543
 msgid "No work centers exist"
 msgstr "존재하는 작업장이 없습니다"
 
+#: apps/mes/app/components/Display/ActiveWorkPanel.tsx:141
 msgid "None"
 msgstr "없음"
 
+#: apps/mes/app/components/Inspection/ScanInspectionSample.tsx:238
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:320
+#: apps/mes/app/components/JobOperation/components/ScrapEntityModal.tsx:109
 msgid "Notes"
 msgstr "메모"
 
+#: apps/mes/app/routes/display+/$workCenterId.work.tsx:64
 msgid "Nothing running"
 msgstr "실행 중인 것 없음"
 
+#: apps/mes/app/components/Display/QueueTable.tsx:59
 msgid "Nothing scheduled at this work center"
 msgstr "이 작업 센터에서 예정된 것 없음"
 
+#: apps/mes/app/components/JobOperation/components/ScrapTab.tsx:35
 msgid "Nothing to scrap"
 msgstr "폐기할 것이 없습니다"
 
+#: apps/mes/app/routes/x+/maintenance.tsx:369
 msgid "OEE Impact"
 msgstr "OEE 영향"
 
+#: apps/mes/app/components/MaintenanceSeverity.tsx:58
 msgid "OEM Required"
 msgstr "OEM 필요"
 
+#: packages/react/src/TrackedEntityPicker.tsx:64
 msgid "Oldest first"
 msgstr "오래된순"
 
 #. placeholder {0}: batch.quantity
+#: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:183
 msgid "Only {0} available"
 msgstr "{0}만 사용 가능"
 
+#: apps/mes/app/routes/_index.tsx:16
 msgid "Oops. You shouldn't see this page. Eventually it will be a landing page."
 msgstr "이런. 이 페이지가 보이면 안 됩니다. 나중에 랜딩 페이지가 될 예정입니다."
 
+#: apps/mes/app/routes/x+/maintenance.tsx:361
 msgid "Open"
 msgstr "열림"
 
+#: apps/mes/app/routes/display+/_index.tsx:65
 msgid "Open a display on the screen mounted at the work center and leave it running. Each board refreshes on its own."
 msgstr "작업 센터에 설치된 화면에 디스플레이를 열고 실행 중인 상태로 두십시오. 각 보드는 자동으로 새로고침됩니다."
 
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:445
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB 처리를 위한 NCR 열기"
 
+#: apps/mes/app/routes/x+/jobs.tsx:120
 msgid "Open Jobs"
 msgstr "진행 중인 작업"
 
+#: apps/mes/app/components/AppSidebar.tsx:239
 msgid "Operations"
 msgstr "공정작업"
 
+#: apps/mes/app/components/EndShift.tsx:43
 msgid "Operations ended"
 msgstr "공정작업 종료됨"
 
+#: apps/mes/app/components/Display/ActiveWorkPanel.tsx:72
 msgid "Operator"
 msgstr "작업자"
 
+#: apps/mes/app/components/MaintenanceSeverity.tsx:38
 msgid "Operator Performed"
 msgstr "작업자 수행"
 
+#: packages/react/src/Form/FormLabel.tsx:44
 msgid "Optional"
 msgstr "선택 사항"
 
+#: apps/mes/app/components/SessionLockOverlay.tsx:171
+#: apps/mes/app/routes/_public+/unlock.tsx:447
 msgid "or"
 msgstr "또는"
 
+#: apps/mes/app/components/Inspection/InspectionMeasurementMatrix.tsx:113
 msgid "Overall result"
 msgstr "전체 결과"
 
+#: apps/mes/app/routes/display+/$workCenterId.maintenance.tsx:114
 msgid "Overdue PMs?"
 msgstr "기한이 지난 PM?"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1931
 msgid "Parameters"
 msgstr "파라미터"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1075
 msgid "Part"
 msgstr "품목"
 
+#: apps/mes/app/components/Inspection/InspectionView.tsx:670
+#: apps/mes/app/components/PickingListStatus.tsx:32
 msgid "Partial"
 msgstr "부분"
 
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:204
 msgid "Partial Disposition"
 msgstr "부분 처리"
 
+#: apps/mes/app/components/JobOperation/components/Step.tsx:645
 msgid "Passed Inspection"
 msgstr "검사 합격"
 
+#: apps/mes/app/components/SessionLockOverlay.tsx:118
+#: apps/mes/app/routes/_public+/unlock.tsx:388
 msgid "Passkey unlock failed"
 msgstr "패스키 잠금 해제 실패"
 
+#: apps/mes/app/components/JobOperation/components/Controls.tsx:323
 msgid "Pause"
 msgstr "일시정지"
 
+#: apps/mes/app/routes/x+/picking.$pickingListId.tsx:707
+#: packages/react/src/TrackedEntityPicker.tsx:327
 msgid "Pick"
 msgstr "피킹"
 
+#: packages/react/src/TrackedEntityPicker.tsx:213
 msgid "Pick tracked item"
 msgstr "추적 품목 선택"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:213
 msgid "Picked"
 msgstr "피킹됨"
 
+#: apps/mes/app/components/ShortPickModal.tsx:75
 msgid "Picked quantity"
 msgstr "피킹 수량"
 
 #. placeholder {0}: startColumn?.title
 #. placeholder {1}: startIndex + 1
 #. placeholder {2}: columnOrder.length
+#: apps/mes/app/components/Kanban/Kanban.tsx:84
 msgid "Picked up Column {0} at position: {1} of {2}"
 msgstr "열 {0}을(를) 집었습니다 — 위치: {2}개 중 {1}번째"
 
+#: apps/mes/app/components/AppSidebar.tsx:226
+#: apps/mes/app/routes/x+/picking._index.tsx:42
 msgid "Picking"
 msgstr "피킹"
 
+#: apps/mes/app/components/PinInOverlay.tsx:357
 msgid "Pin Out"
 msgstr "PIN 로그아웃"
 
+#: apps/mes/app/components/MaintenanceOeeImpact.tsx:38
+#: apps/mes/app/routes/x+/maintenance.tsx:374
 msgid "Planned"
 msgstr "계획됨"
 
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:257
 msgid "Please record all steps for this operation before closing."
 msgstr "이 공정작업을 마감하기 전에 모든 단계를 기록하세요."
 
+#: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:191
 msgid "Please select an item"
 msgstr "품목을 선택하세요"
 
+#: apps/mes/app/routes/display+/$workCenterId.maintenance.tsx:98
 msgid "PM schedule lapsed"
 msgstr "PM 일정 만료됨"
 
+#: apps/mes/app/routes/x+/timecard.tsx:266
 msgid "Prev"
 msgstr "이전"
 
+#: apps/mes/app/components/MaintenanceSeverity.tsx:28
 msgid "Preventive"
 msgstr "예방"
 
+#: packages/printing/src/ui/PrintButton.tsx:121
+#: packages/printing/src/ui/PrintButton.tsx:173
 msgid "Print"
 msgstr "인쇄"
 
+#: packages/printing/src/ui/LabelDownloadModal.tsx:121
+#: packages/printing/src/ui/LabelDownloadModal.tsx:125
 msgid "Printer Settings"
 msgstr "프린터 설정"
 
+#: apps/mes/app/components/JobOperation/components/QualityIssueModal.tsx:98
+#: apps/mes/app/routes/x+/maintenance.tsx:345
 msgid "Priority"
 msgstr "우선순위"
 
+#: apps/mes/app/routes/x+/dispatch.$dispatchId.tsx:524
 msgid "Procedure"
 msgstr "절차"
 
+#: apps/mes/app/routes/x+/operations.tsx:383
 msgid "Process"
 msgstr "공정"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:990
 msgid "Process Parameters"
 msgstr "공정 파라미터"
 
+#: apps/mes/app/routes/x+/operations.tsx:384
 msgid "Processes"
 msgstr "공정"
 
+#: apps/mes/app/components/Display/ActiveWorkPanel.tsx:113
+#: apps/mes/app/components/Inspection/ScanInspectionSample.tsx:132
+#: apps/mes/app/routes/x+/operations.tsx:483
+#: apps/mes/app/routes/x+/picking._index.tsx:93
 msgid "Progress"
 msgstr "진행 상황"
 
+#: apps/mes/app/components/Inspection/InspectionView.tsx:1012
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:2539
 msgid "Quality Issue"
 msgstr "품질 이슈"
 
+#: apps/mes/app/components/JobOperation/components/QualityIssueModal.tsx:48
 msgid "Quality issue created"
 msgstr "품질 이슈가 생성되었습니다"
 
+#: apps/mes/app/components/AdjustInventory.tsx:170
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:268
+#: apps/mes/app/components/JobOperation/components/ReworkModal.tsx:293
+#: apps/mes/app/components/JobOperation/components/ReworkModal.tsx:304
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:2426
+#: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:336
+#: apps/mes/app/routes/x+/jobs.tsx:148
 msgid "Quantity"
 msgstr "수량"
 
+#: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:176
+#: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:258
 msgid "Quantity must be greater than 0"
 msgstr "수량은 0보다 커야 합니다"
 
+#: apps/mes/app/components/Display/QueueTable.tsx:49
 msgid "Queue empty"
 msgstr "대기열 비었음"
 
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:433
+#: apps/mes/app/components/JobOperation/components/ReworkModal.tsx:315
 msgid "Reason for rework"
 msgstr "재작업 사유"
 
+#: apps/mes/app/components/AppSidebar.tsx:210
+#: apps/mes/app/components/PinInOverlay.tsx:230
+#: apps/mes/app/routes/x+/recent.tsx:69
 msgid "Recent"
 msgstr "최근"
 
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:345
+#: apps/mes/app/components/JobOperation/components/Step.tsx:268
+#: apps/mes/app/components/JobOperation/components/Step.tsx:672
 msgid "Record"
 msgstr "기록"
 
 #. placeholder {0}: activeStep + 1
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:869
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1987
 msgid "Record {0}"
 msgstr "{0} 기록"
 
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:314
 msgid "Record only"
 msgstr "기록만"
 
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:504
 msgid "Record Partial"
 msgstr "부분 기록"
 
+#: apps/mes/app/components/Inspection/InspectionView.tsx:659
 msgid "Reject"
 msgstr "거부"
 
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:202
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:502
 msgid "Reject Lot"
 msgstr "로트 거부"
 
+#: apps/mes/app/components/JobOperation/components/Step.tsx:618
 msgid "Remove"
 msgstr "제거"
 
+#: apps/mes/app/components/Filter/ActiveFilters.tsx:200
+#: apps/mes/app/components/Filter/Filter.tsx:129
 msgid "Remove filter"
 msgstr "필터 제거"
 
+#: apps/mes/app/components/AdjustInventory.tsx:114
+#: apps/mes/app/components/AdjustInventory.tsx:119
+#: apps/mes/app/components/AdjustInventory.tsx:144
+#: apps/mes/app/components/AdjustInventory.tsx:197
 msgid "Remove Inventory"
 msgstr "재고 제거"
 
+#: apps/mes/app/routes/x+/dispatch.$dispatchId.tsx:468
 msgid "Remove part"
 msgstr "품목 제거"
 
+#: apps/mes/app/components/JobOperation/components/ScrapEntityModal.tsx:105
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "부분 조립품을 다시 열고 교체 단위를 생성합니다"
 
+#: apps/mes/app/components/Inspection/InspectionMeasurementMatrix.tsx:392
 msgid "Result"
 msgstr "결과"
 
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:347
+#: apps/mes/app/components/Inspection/InspectionView.tsx:727
+#: apps/mes/app/components/Inspection/InspectionView.tsx:996
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:2491
 msgid "Rework"
 msgstr "재작업"
 
+#: apps/mes/app/components/JobOperation/components/ReworkModal.tsx:110
 msgid "Rework created successfully"
 msgstr "재작업이 생성되었습니다"
 
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:393
 msgid "Rework quantity"
 msgstr "재작업 수량"
 
+#: apps/mes/app/routes/display+/$workCenterId.work.tsx:77
 msgid "Running"
 msgstr "실행 중"
 
+#: apps/mes/app/routes/x+/operations.tsx:485
 msgid "Sales Order"
 msgstr "판매주문"
 
+#: apps/mes/app/routes/x+/timecard.tsx:396
 msgid "Save"
 msgstr "저장"
 
+#: apps/mes/app/components/Inspection/ScanInspectionSample.tsx:146
+#: apps/mes/app/components/JobOperation/components/SerialSelectorModal.tsx:65
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1733
+#: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:364
+#: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:484
+#: apps/mes/app/routes/x+/picking.$pickingListId.tsx:672
+#: packages/react/src/TrackedEntityPicker.tsx:221
 msgid "Scan"
 msgstr "스캔"
 
+#: apps/mes/app/components/Inspection/InspectionMeasurementMatrix.tsx:377
 msgid "Scan a tracked entity to add the first sample column."
 msgstr "추적된 엔터티를 스캔하여 첫 번째 샘플 열을 추가하세요."
 
+#: apps/mes/app/components/JobOperation/components/SerialSelectorModal.tsx:122
 msgid "Scan or enter serial number"
 msgstr "일련번호를 스캔하거나 입력하세요"
 
+#: apps/mes/app/components/Inspection/ScanInspectionSample.tsx:158
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "추적된 엔터티 ID, 일련번호 또는 배치를 스캔하거나 입력하세요"
 
+#: packages/react/src/TrackedEntityPicker.tsx:235
 msgid "Scan or enter tracking number"
 msgstr "추적 번호를 스캔하거나 입력하세요"
 
+#: apps/mes/app/components/JobOperation/components/ReworkModal.tsx:235
 msgid "Scan or search serial number..."
 msgstr "일련번호를 스캔하거나 검색하세요..."
 
+#: apps/mes/app/components/Inspection/ScanInspectionSample.tsx:106
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "이 로트에서 추적된 엔터티를 스캔하거나 선택하여 샘플 열로 추가한 다음 그리드에 그 결과를 기록하세요."
 
+#: apps/mes/app/components/AppSidebar.tsx:194
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:509
+#: apps/mes/app/routes/x+/operations.tsx:429
 msgid "Schedule"
 msgstr "일정"
 
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:346
+#: apps/mes/app/components/Inspection/InspectionView.tsx:726
+#: apps/mes/app/components/Inspection/InspectionView.tsx:988
+#: apps/mes/app/components/JobOperation/components/ScrapEntityModal.tsx:123
+#: apps/mes/app/components/JobOperation/components/ScrapTab.tsx:73
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:2478
 msgid "Scrap"
 msgstr "스크랩"
 
+#: apps/mes/app/components/JobOperation/components/ScrapEntityModal.tsx:75
 msgid "Scrap {readableId}"
 msgstr "{readableId} 폐기"
 
+#: apps/mes/app/components/JobOperation/components/ScrapEntityModal.tsx:77
 msgid "Scrap material"
 msgstr "자재 폐기"
 
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:385
 msgid "Scrap quantity"
 msgstr "폐기 수량"
 
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:418
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:317
+#: apps/mes/app/components/JobOperation/components/ScrapEntityModal.tsx:98
+#: apps/mes/app/components/JobOperation/components/ScrapReason.tsx:20
 msgid "Scrap Reason"
 msgstr "스크랩 사유"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:710
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1792
 msgid "Scrapped"
 msgstr "스크랩됨"
 
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:300
 msgid "Scrapping serial {trackedEntityReadableId}"
 msgstr "일련번호 {trackedEntityReadableId} 폐기"
 
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:304
 msgid "Scrapping the selected serial"
 msgstr "선택한 일련번호 폐기"
 
+#: apps/mes/app/routes/x+/active.tsx:83
+#: apps/mes/app/routes/x+/assigned.tsx:103
+#: apps/mes/app/routes/x+/maintenance.tsx:453
+#: apps/mes/app/routes/x+/operations.tsx:436
+#: apps/mes/app/routes/x+/recent.tsx:83
 msgid "Search"
 msgstr "검색"
 
+#: apps/mes/app/routes/x+/jobs.tsx:132
 msgid "Search by job or item ID"
 msgstr "작업 또는 품목 ID로 검색"
 
+#: apps/mes/app/components/PinInOverlay.tsx:207
 msgid "Search operators..."
 msgstr "작업자 검색..."
 
+#: apps/mes/app/components/Filter/ActiveFilters.tsx:166
+#: apps/mes/app/components/Filter/Filter.tsx:163
+#: packages/react/src/Combobox.tsx:287
+#: packages/react/src/CreateableCombobox.tsx:299
+#: packages/react/src/CreateableMultiSelect.tsx:159
+#: packages/react/src/CreateableMultiSelect.tsx:282
+#: packages/react/src/MultiSelect.tsx:234
 msgid "Search..."
 msgstr "검색..."
 
+#: apps/mes/app/components/Inspection/ScanInspectionSample.tsx:150
+#: apps/mes/app/components/Inspection/ScanInspectionSample.tsx:225
+#: apps/mes/app/components/JobOperation/components/SerialSelectorModal.tsx:69
+#: apps/mes/app/components/JobOperation/components/SerialSelectorModal.tsx:107
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1834
+#: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:368
+#: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:488
+#: packages/react/src/Combobox.tsx:166
+#: packages/react/src/CreateableCombobox.tsx:162
+#: packages/react/src/MultiSelect.tsx:141
+#: packages/react/src/TrackedEntityPicker.tsx:225
 msgid "Select"
 msgstr "선택"
 
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:117
 msgid "Select a completion quantity"
 msgstr "완료 수량을 선택하세요"
 
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:116
 msgid "Select a rework quantity"
 msgstr "재작업 수량을 선택하세요"
 
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:115
 msgid "Select a scrap quantity and reason"
 msgstr "스크랩 수량과 사유를 선택하세요"
 
+#: apps/mes/app/components/JobOperation/components/SerialSelectorModal.tsx:55
 msgid "Select a serial number to continue with this operation"
 msgstr "이 공정작업을 계속하려면 일련번호를 선택하세요"
 
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:459
 msgid "Select an issue type"
 msgstr "문제 유형 선택"
 
+#: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:306
 msgid "Select an item and specify the quantity to issue"
 msgstr "품목을 선택하고 출고할 수량을 지정하세요"
 
+#: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:317
 msgid "Select an item..."
 msgstr "품목을 선택하세요..."
 
 #. placeholder {0}: index + 1
+#: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:592
 msgid "Select Batch {0}"
 msgstr "배치 {0} 선택"
 
+#: packages/printing/src/ui/PrintButton.tsx:130
 msgid "Select Printer"
 msgstr "프린터 선택"
 
 #. placeholder {0}: index + 1
+#: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:440
 msgid "Select Serial {0}"
 msgstr "일련번호 {0} 선택"
 
+#: apps/mes/app/components/JobOperation/components/SerialSelectorModal.tsx:52
 msgid "Select Serial Number"
 msgstr "일련번호 선택"
 
+#: apps/mes/app/components/JobOperation/components/ReworkModal.tsx:187
 msgid "Select the operation to go back to. All operations from that point to the current operation will be redone."
 msgstr "되돌아갈 공정작업을 선택하세요. 해당 시점부터 현재 공정작업까지 모두 다시 진행됩니다."
 
+#: apps/mes/app/components/Inspection/ScanInspectionSample.tsx:223
 msgid "Selected"
 msgstr "선택됨"
 
+#: apps/mes/app/components/JobOperation/components/Chat.tsx:223
+#: apps/mes/app/components/Suggestion.tsx:246
 msgid "Send"
 msgstr "전송"
 
+#: apps/mes/app/components/Suggestion.tsx:184
 msgid "Send to Carbon"
 msgstr "Carbon으로 보내기"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1743
 msgid "Serial"
 msgstr "일련번호"
 
 #. placeholder {0}: index + 1
+#: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:382
 msgid "Serial Number {0}"
 msgstr "일련번호 {0}"
 
+#: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:167
 msgid "Serial number is not available"
 msgstr "일련번호를 사용할 수 없습니다"
 
+#: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:161
 msgid "Serial number is required"
 msgstr "일련번호가 필요합니다"
 
+#: apps/mes/app/components/JobOperation/components/ReworkModal.tsx:224
 msgid "Serial numbers"
 msgstr "일련번호"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1711
 msgid "Serial Numbers"
 msgstr "일련번호"
 
+#: apps/mes/app/components/SessionLockOverlay.tsx:134
+#: apps/mes/app/routes/_public+/unlock.tsx:412
 msgid "Session locked"
 msgstr "세션이 잠겨 있음"
 
+#: apps/mes/app/components/TimeCardWarning.tsx:148
 msgid "Set Clock Out"
 msgstr "퇴근 처리"
 
+#: apps/mes/app/components/TimeCardWarning.tsx:129
 msgid "Set clock-out time"
 msgstr "퇴근 시간 설정"
 
+#: apps/mes/app/routes/x+/_layout.tsx:397
 msgid "Set up in Carbon"
 msgstr "Carbon에서 설정하기"
 
+#: apps/mes/app/components/JobOperation/components/Controls.tsx:172
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:2328
 msgid "Setup"
 msgstr "설정"
 
+#: apps/mes/app/routes/x+/picking.$pickingListId.tsx:319
 msgid "short"
 msgstr "부족"
 
+#: apps/mes/app/routes/x+/picking.$pickingListId.tsx:697
 msgid "Short"
 msgstr "짧게"
 
+#: apps/mes/app/components/ShortPickModal.tsx:65
 msgid "Short pick {itemName}"
 msgstr "{itemName} 부족 피킹"
 
+#: apps/mes/app/routes/_public+/login.tsx:422
 msgid "Sign in with Email"
 msgstr "이메일로 로그인"
 
+#: apps/mes/app/routes/_public+/login.tsx:369
 msgid "Sign in with Google"
 msgstr "Google로 로그인"
 
+#: apps/mes/app/routes/_public+/login.tsx:382
 msgid "Sign in with Outlook"
 msgstr "Outlook으로 로그인"
 
+#: apps/mes/app/routes/_public+/login.tsx:397
 msgid "Sign in with Passkey"
 msgstr "패스키로 로그인"
 
+#: apps/mes/app/routes/x+/_layout.tsx:407
 msgid "Sign out"
 msgstr "로그아웃"
 
+#: apps/mes/app/components/AppSidebar.tsx:606
 msgid "Sign Out"
 msgstr "로그아웃"
 
+#: apps/mes/app/components/SessionLockOverlay.tsx:214
+#: apps/mes/app/routes/_public+/unlock.tsx:487
 msgid "Sign out instead"
 msgstr "대신 로그아웃"
 
+#: apps/mes/app/components/AppSidebar.tsx:446
 msgid "Signed in as {stationName}"
 msgstr "{stationName}(으)로 로그인됨"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1558
 msgid "Size"
 msgstr "사이즈"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1078
 msgid "Source"
 msgstr "소스"
 
+#: apps/mes/app/routes/x+/dispatch.$dispatchId.tsx:432
 msgid "Spare Parts"
 msgstr "예비 부품"
 
+#: apps/mes/app/routes/x+/dispatch.$dispatchId.tsx:495
 msgid "Spare Parts Used"
 msgstr "사용된 예비 부품"
 
+#: apps/mes/app/components/JobOperation/components/Controls.tsx:336
+#: apps/mes/app/routes/x+/picking.$pickingListId.tsx:244
 msgid "Start"
 msgstr "시작"
 
+#: apps/mes/app/components/PinInOverlay.tsx:271
 msgid "Station User"
 msgstr "스테이션 사용자"
 
+#: apps/mes/app/components/AppSidebar.tsx:440
 msgid "Station: {stationName}"
 msgstr "스테이션: {stationName}"
 
 #. placeholder {0}: inspection.lotSize
+#: apps/mes/app/components/Inspection/InspectionView.tsx:901
 msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s). Route the units below to scrap or rework, or record the verdict only."
 msgstr "통계적 수용이 실패했으므로 {0}의 전체 로트는 부적합으로 간주됩니다(ISO 9001:2015 §8.7) — {passes}개의 샘플 합격 및 {fails}개의 불합격. 아래 단위를 스크랩 또는 재작업으로 라우팅하거나 판정만 기록하세요."
 
+#: apps/mes/app/routes/x+/jobs.tsx:163
+#: apps/mes/app/routes/x+/maintenance.tsx:356
+#: apps/mes/app/routes/x+/operations.tsx:484
 msgid "Status"
 msgstr "상태"
 
+#: apps/mes/app/routes/x+/maintenance.tsx:357
 msgid "Statuses"
 msgstr "상태"
 
+#: packages/form/src/components/Submit.tsx:95
 msgid "Stay on this page"
 msgstr "이 페이지에 머무르기"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:815
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:926
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1928
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:2038
 msgid "Steps"
 msgstr "단계"
 
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:254
 msgid "Steps are missing"
 msgstr "단계가 누락되었습니다"
 
+#: apps/mes/app/components/AdjustInventory.tsx:172
 msgid "Storage Unit"
 msgstr "저장 단위"
 
+#: apps/mes/app/components/Suggestion.tsx:172
 msgid "Submit anonymously"
 msgstr "익명으로 제출"
 
+#: apps/mes/app/components/Suggestion.tsx:122
+#: apps/mes/app/components/Suggestion.tsx:125
 msgid "Suggestion"
 msgstr "제안"
 
+#: apps/mes/app/components/MaintenanceSeverity.tsx:48
 msgid "Support Required"
 msgstr "지원 필요"
 
+#: apps/mes/app/components/AppSidebar.tsx:436
 msgid "Switch Operator"
 msgstr "작업자 전환"
 
+#: apps/mes/app/routes/x+/operations.tsx:400
 msgid "Tag"
 msgstr "태그"
 
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:243
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "이 공정작업의 완료 수량이 필요 수량 {targetQuantity}보다 적습니다."
 
+#: apps/mes/app/components/Inspection/InspectionView.tsx:1164
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "로트가 합격으로 표시되고 {remaining}개의 남은 단위가 이 작업에서 완료됩니다."
 
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:477
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "로트는 여전히 처리되지만 최소한 하나의 Issue Type이 구성될 때까지 NCR을 생성할 수 없습니다."
 
+#: apps/mes/app/components/JobOperation/components/ScrapTab.tsx:38
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "이 재료에 대해 사용 가능하거나 소비된 추적된 부품이 없습니다."
 
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:212
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "자재명세서(BOM)에 아직 완전히 출고되지 않은 일련번호 또는 배치 추적 자재가 있습니다. 출고하지 않고 완료하면 이력추적 기록이 부정확해질 수 있습니다."
 
+#: apps/mes/app/routes/x+/picking.$pickingListId.tsx:306
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "이 항목들은 아직 선택할 재료가 있습니다. 지금 완료하면 목록이 부분으로 표시됩니다."
 
+#: packages/react/src/TrackedEntityPicker.tsx:259
 msgid "This lot is expired and can't be picked."
 msgstr "이 로트는 만료되어 피킹할 수 없습니다."
 
+#: apps/mes/app/components/JobOperation/components/ScrapEntityModal.tsx:82
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "이 부품은 주문 제작되었습니다. 폐기하면 교체품을 만들기 위해 라우팅을 다시 열 수 있습니다."
 
+#: apps/mes/app/components/JobOperation/components/ScrapEntityModal.tsx:87
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "이 부품은 재고에서 폐기됩니다. 요구사항은 열려있으므로 교체품을 발급할 수 있습니다."
 
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:308
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "이 단위는 영구적으로 폐기되며 교체 일련번호가 생성됩니다."
 
+#: apps/mes/app/routes/x+/operations.tsx:486
 msgid "Thumbnail"
 msgstr "썸네일"
 
+#: apps/mes/app/routes/x+/dispatch.$dispatchId.tsx:386
 msgid "Time Entries"
 msgstr "시간 기록"
 
 #. placeholder {0}: formatDuration(totalDuration)
+#: apps/mes/app/routes/x+/dispatch.$dispatchId.tsx:307
 msgid "Time Worked: {0}"
 msgstr "작업 시간: {0}"
 
+#: apps/mes/app/routes/x+/maintenance.tsx:425
 msgid "Today"
 msgstr "오늘"
 
+#: apps/mes/app/components/AppSidebar.tsx:298
 msgid "Tools"
 msgstr "공구"
 
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:326
 msgid "Total Quantity"
 msgstr "총 수량"
 
 #. placeholder {0}: formatDuration(totalDuration)
+#: apps/mes/app/routes/x+/dispatch.$dispatchId.tsx:554
 msgid "Total time: {0}"
 msgstr "총 시간: {0}"
 
 #. placeholder {0}: formatTotalHours(entries)
+#: apps/mes/app/routes/x+/timecard.tsx:468
 msgid "Total: {0}"
 msgstr "합계: {0}"
 
+#: apps/mes/app/components/Inspection/ScanInspectionSample.tsx:175
 msgid "Tracked Entity"
 msgstr "추적된 엔터티"
 
+#: apps/mes/app/routes/x+/jobs.tsx:151
 msgid "Tracking"
 msgstr "추적"
 
+#: apps/mes/app/routes/_public+/mfa.tsx:174
 msgid "Two-factor authentication"
 msgstr "2단계 인증"
 
+#: apps/mes/app/routes/x+/_layout.tsx:387
 msgid "Two-factor authentication required"
 msgstr "2단계 인증 필수"
 
+#: apps/mes/app/components/JobOperation/components/Chat.tsx:212
 msgid "Type a message..."
 msgstr "메시지를 입력하세요..."
 
+#: apps/mes/app/components/SessionLockOverlay.tsx:146
+#: apps/mes/app/routes/_public+/unlock.tsx:422
 msgid "Unable to unlock"
 msgstr "잠금을 해제할 수 없음"
 
+#: apps/mes/app/components/JobOperation/components/QuantityModal.tsx:209
 msgid "Unissued serial/batch materials"
 msgstr "출고되지 않은 일련번호/배치 자재"
 
+#: apps/mes/app/routes/x+/dispatch.$dispatchId.tsx:265
 msgid "Unknown"
 msgstr "알 수 없음"
 
+#: apps/mes/app/components/SessionLockOverlay.tsx:201
+#: apps/mes/app/routes/_public+/unlock.tsx:475
 msgid "Unlock"
 msgstr "잠금 해제"
 
+#: apps/mes/app/components/SessionLockOverlay.tsx:163
+#: apps/mes/app/routes/_public+/unlock.tsx:439
 msgid "Unlock with passkey"
 msgstr "패스키로 잠금 해제"
 
+#: apps/mes/app/routes/x+/picking.$pickingListId.tsx:633
+#: apps/mes/app/routes/x+/picking.$pickingListId.tsx:647
+#: apps/mes/app/routes/x+/picking.$pickingListId.tsx:686
 msgid "Unpick"
 msgstr "피킹 취소"
 
 #. placeholder {0}: pickedLots[0].trackedEntity.readableId
+#: apps/mes/app/routes/x+/picking.$pickingListId.tsx:631
 msgid "Unpick {0}"
 msgstr "{0} 피킹 취소"
 
+#: apps/mes/app/routes/display+/$workCenterId.maintenance.tsx:95
 msgid "Unplanned downtime"
 msgstr "계획되지 않은 다운타임"
 
 #. placeholder {0}: board.unplannedCount.days
+#: apps/mes/app/routes/display+/$workCenterId.maintenance.tsx:147
 msgid "Unplanned maintenance items, last {0} days"
 msgstr "계획되지 않은 유지보수 항목, 최근 {0}일"
 
+#: packages/form/src/components/Submit.tsx:87
 msgid "Unsaved changes"
 msgstr "저장되지 않은 변경 사항"
 
+#: apps/mes/app/components/Display/QueueTable.tsx:43
 msgid "Up next"
 msgstr "다음"
 
+#: apps/mes/app/components/Inspection/DispositionModal.tsx:410
 msgid "Up to {maxAllocatable} unit(s) can be allocated; the rest is recorded without a posting."
 msgstr "최대 {maxAllocatable}개 단위까지 할당할 수 있으며, 나머지는 전기 없이 기록됩니다."
 
+#: apps/mes/app/components/JobOperation/components/Step.tsx:212
 msgid "Update"
 msgstr "업데이트"
 
 #. placeholder {0}: formatClock(lastUpdated)
+#: apps/mes/app/components/Display/DisplayFrame.tsx:123
 msgid "Updated {0}"
 msgstr "업데이트됨 {0}"
 
+#: apps/mes/app/components/TimeCardWarning.tsx:69
 msgid "Updated successfully"
 msgstr "성공적으로 업데이트되었습니다"
 
 #. placeholder {0}: fileUpload.name
+#: apps/mes/app/components/JobOperation/components/Step.tsx:496
 msgid "Uploaded: {0}"
 msgstr "업로드됨: {0}"
 
 #. placeholder {0}: fileUpload.name
+#: apps/mes/app/components/JobOperation/components/Step.tsx:478
 msgid "Uploading {0}"
 msgstr "{0} 업로드 중"
 
+#: apps/mes/app/routes/_public+/mfa.tsx:208
 msgid "Use a different account"
 msgstr "다른 계정 사용"
 
+#: apps/mes/app/routes/_public+/mfa.tsx:198
 msgid "Verify"
 msgstr "확인"
 
+#: apps/mes/app/components/Kanban/components/ColumnCard.tsx:137
 msgid "View maintenance dispatch"
 msgstr "유지보수 작업지시 보기"
 
+#: apps/mes/app/routes/_public+/login.tsx:334
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "계정에 로그인할 수 있는 매직 링크를 보내드렸습니다."
 
+#: packages/react/src/LabelWithHelp.tsx:53
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}란 무엇인가요?"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:1223
 msgid "WIP"
 msgstr "재공품"
 
+#: apps/mes/app/components/JobOperation/JobOperation.tsx:2168
+#: apps/mes/app/routes/x+/dispatch.$dispatchId.tsx:259
+#: apps/mes/app/routes/x+/maintenance.tsx:332
+#: apps/mes/app/routes/x+/operations.tsx:372
 msgid "Work Center"
 msgstr "작업장"
 
+#: apps/mes/app/routes/display+/_index.tsx:62
 msgid "Work Center Displays"
 msgstr "작업 센터 디스플레이"
 
+#: apps/mes/app/routes/display+/$workCenterId.maintenance.tsx:101
 msgid "Yes"
 msgstr "예"
 
+#: apps/mes/app/components/TimeCardWarning.tsx:120
 msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
 msgstr "<0/>에 근무를 시작했습니다. 아래에서 퇴근 시간을 편집하거나 현재 근무 중임을 확인할 수 있습니다."
 
+#: apps/mes/app/components/TimeCardWarning.tsx:111
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "{hoursElapsed}시간 동안 출근 상태입니다. 퇴근 처리를 잊으셨나요?"
 
+#: apps/mes/app/routes/x+/_layout.tsx:390
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "조직에서 인증 앱을 요구하고 있습니다. Carbon에서 설정한 후 여기로 돌아오세요."
 
+#: apps/mes/app/components/SessionLockOverlay.tsx:137
+#: apps/mes/app/routes/_public+/unlock.tsx:415
 msgid "Your session was locked after inactivity."
 msgstr "세션이 비활성 후 잠겼습니다."

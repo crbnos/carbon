@@ -59,8 +59,10 @@ export const onshapeV2ItemAssetsFunction = inngest.createFunction(
         "Could not read the Onshape integration settings; retrying."
       );
     }
-    if (!settings.isV2) {
-      return { skipped: true as const, reason: "pipeline-not-v2" };
+    // The `onshape-v2` record itself is the opt-in: an absent or inactive one
+    // means this company never installed v2. No pipeline field to read.
+    if (!settings.active) {
+      return { skipped: true as const, reason: "integration-not-installed" };
     }
 
     return await step.run("pull-assets", async () => {

@@ -3,6 +3,7 @@ import { ExchangeRates } from "./exchange-rates/config";
 import { Jira } from "./jira/config";
 import { Linear } from "./linear/config";
 import { Onshape } from "./onshape/config";
+import { OnshapeV2 } from "./onshape/config-v2";
 import { PaperlessParts } from "./paperless-parts/config";
 import { QuickBooks } from "./quickbooks/config";
 // import { Radan } from "./radan/config";
@@ -37,6 +38,7 @@ export const integrations = [
   Jira,
   Linear,
   Onshape,
+  OnshapeV2,
   PaperlessParts,
   QuickBooks,
   Rillet,
@@ -50,6 +52,7 @@ export type IntegrationID = (typeof integrations)[number]["id"];
 
 export { Jira } from "./jira/config";
 export { Logo as OnshapeLogo, Onshape } from "./onshape/config";
+export { OnshapeV2 } from "./onshape/config-v2";
 // TODO: export as @carbon/ee/paperless
 export { PaperlessPartsClient } from "./paperless-parts/lib/client";
 export { QuickBooks } from "./quickbooks/config";
