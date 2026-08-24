@@ -94,9 +94,15 @@ In batch mode `JobOperation` derives `isBatched = !!batch`,
   batch-tagged event — cost posts once at batch completion when the aggregate
   events are sliced per member. A timer started on any member is the same shared
   timer on every member's page.
-- **Summed planned durations** — `displayOperation` sums each member's
-  `makeDurations` (with a `machineDuration = 1` fallback) so the `WorkTypeToggle`
-  and `Times` denominators read against the batch's total plan, not one member's.
+- **Batch-total planned durations** — `displayOperation` aggregates the members'
+  `makeDurations` as ONE shared setup (the max — that is the point of batching)
+  plus summed labor/machine (with a `machineDuration = 1` fallback), and carries
+  the total as `duration`, so the info-bar duration, `WorkTypeToggle`, and
+  `Times` denominators read against the batch's total plan, not one member's.
+  The info-bar duration hides entirely when the plan is ≤1ms (no
+  "0 milliseconds"), and the per-piece header divides the shared elapsed time by
+  the members' summed `quantityComplete` — a quantity-weighted per-piece rate
+  consistent with the completion split's `operationQuantity` weights.
 - **Batch chip** — a `DropdownMenu` in the info bar (`BAT… · N jobs`, yellow
   `Completing` badge) lists members as `Link`s to hop between them.
 - **Completion** — the "Log Completed" button becomes "Complete Batch" and opens

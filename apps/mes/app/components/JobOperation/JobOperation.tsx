@@ -343,13 +343,14 @@ export const JobOperation = ({
   });
 
   // In batch mode the shared timer is judged against the batch's TOTAL plan:
-  // sum each member's planned setup/labor/machine durations. `displayOperation`
-  // feeds the work-type toggle, the Times denominators, and controlsHeight so a
-  // batch timer reads against the whole batch, not one member. A batch with no
-  // planned time anywhere still gets a Machine timer (fallback of 1).
+  // ONE shared setup (the largest member's — that is the point of batching) plus
+  // each member's labor/machine summed. `displayOperation` feeds the info-bar
+  // duration, the work-type toggle, the Times denominators, and controlsHeight
+  // so a batch timer reads against the whole batch, not one member. A batch
+  // with no planned time anywhere still gets a Machine timer (fallback of 1).
   const displayOperation = useMemo<OperationWithDetails>(() => {
     if (!batch) return operation;
-    const summed = (batch.operations ?? []).reduce(
+    const totals = (batch.operations ?? []).reduce(
       (acc, m) => {
         try {
           const d = makeDurations({
@@ -361,7 +362,7 @@ export const JobOperation = ({
             machineUnit: (m.machineUnit ?? "Minutes/Piece") as string,
             operationQuantity: m.operationQuantity
           });
-          acc.setupDuration += d.setupDuration;
+          acc.setupDuration = Math.max(acc.setupDuration, d.setupDuration);
           acc.laborDuration += d.laborDuration;
           acc.machineDuration += d.machineDuration;
         } catch {
@@ -372,13 +373,18 @@ export const JobOperation = ({
       { setupDuration: 0, laborDuration: 0, machineDuration: 0 }
     );
     if (
-      summed.setupDuration === 0 &&
-      summed.laborDuration === 0 &&
-      summed.machineDuration === 0
+      totals.setupDuration === 0 &&
+      totals.laborDuration === 0 &&
+      totals.machineDuration === 0
     ) {
-      summed.machineDuration = 1;
+      totals.machineDuration = 1;
     }
-    return { ...operation, ...summed };
+    return {
+      ...operation,
+      ...totals,
+      duration:
+        totals.setupDuration + totals.laborDuration + totals.machineDuration
+    };
   }, [batch, operation]);
 
   const controlsHeight = useMemo(() => {
@@ -741,14 +747,18 @@ export const JobOperation = ({
                 </span>
               </HStack>
             )}
-            {typeof operation.duration === "number" && (
-              <HStack className="min-w-0 shrink-0 justify-start space-x-2">
-                <LuTimer className="text-muted-foreground shrink-0" />
-                <span className="text-sm truncate tabular-nums">
-                  {formatDurationMilliseconds(operation.duration)}
-                </span>
-              </HStack>
-            )}
+            {/* Batch mode shows the batch's planned total (shared setup +
+                summed work); a zero plan renders nothing rather than
+                "0 milliseconds". */}
+            {typeof displayOperation.duration === "number" &&
+              displayOperation.duration > 1 && (
+                <HStack className="min-w-0 shrink-0 justify-start space-x-2">
+                  <LuTimer className="text-muted-foreground shrink-0" />
+                  <span className="text-sm truncate tabular-nums">
+                    {formatDurationMilliseconds(displayOperation.duration)}
+                  </span>
+                </HStack>
+              )}
             {operation.jobDeadlineType && (
               <HStack className="min-w-0 shrink-0 justify-start space-x-2">
                 <DeadlineIcon
@@ -829,7 +839,19 @@ export const JobOperation = ({
                     ((progress.setup ?? 0) +
                       (progress.labor ?? 0) +
                       (progress.machine ?? 0)) /
-                      Math.max(operation.quantityComplete, 1),
+                      // Batch mode: the timer is shared, so the per-piece rate
+                      // is elapsed over ALL members' completed parts — a
+                      // quantity-weighted average, matching how completion
+                      // slices the shared time (weight = operationQuantity).
+                      Math.max(
+                        batch
+                          ? (batch.operations ?? []).reduce(
+                              (sum, m) => sum + (m.quantityComplete ?? 0),
+                              0
+                            )
+                          : operation.quantityComplete,
+                        1
+                      ),
                     {
                       style: "short"
                     }
