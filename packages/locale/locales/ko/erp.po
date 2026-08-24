@@ -3918,6 +3918,11 @@ msgstr "영역을 분석할 수 없습니다: {0}"
 msgid "Could not build PDF. Try again."
 msgstr "PDF를 생성할 수 없습니다. 다시 시도하세요."
 
+#. placeholder {0}: d.failed.length
+#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+msgid "Could not dissolve {0}: {1} — production already recorded"
+msgstr "{0}을(를) 해제할 수 없습니다: {1} — 생산이 이미 기록됨"
+
 msgid "Could not prepare region image for analysis"
 msgstr "분석을 위한 영역 이미지를 준비할 수 없습니다"
 
@@ -5354,11 +5359,19 @@ msgstr "처리"
 msgid "Dissolve"
 msgstr "해체"
 
+#. placeholder {0}: active.length
+msgid "Dissolve {0} batches"
+msgstr "{0} 배치 해제"
+
 msgid "Dissolve batch"
 msgstr "배치 해제"
 
 msgid "Dissolve Batch"
 msgstr "배치 해체"
+
+#. placeholder {0}: d.dissolved
+msgid "Dissolved {0} batches"
+msgstr "{0} 배치 해제됨"
 
 #. placeholder {0}: batch.readableId
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."

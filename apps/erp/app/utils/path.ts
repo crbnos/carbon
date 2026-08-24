@@ -878,6 +878,7 @@ export const path = {
     depreciationRuns: `${x}/accounting/depreciation-runs`,
     dimension: (id: string) => generatePath(`${x}/accounting/dimensions/${id}`),
     dimensions: `${x}/accounting/dimensions`,
+    dissolveOperationBatches: `${x}/production/batches/dissolve`,
     document: (id: string) => generatePath(`${x}/documents/search/${id}`),
     documentFavorite: `${x}/documents/favorite`,
     documentRestore: (id: string) =>

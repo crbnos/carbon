@@ -537,6 +537,16 @@ through; `ProcessForm` gains the Boolean field (clone `completeAllOnScan`).
   redirect, chip, cross-member shared timer, deferred GL on stop, proportional
   slice completion (Labor 50→25/25, Machine 3→2/1 & 13→7/6), members Done + batch
   Completed, and the Completed batch reverting to a plain operation view.
+- 2026-08-24: **Bulk dissolve + red styling** (Sid: "not red — also no
+  checkboxes on rows"). The row context-menu "Dissolve Batch" and the drawer
+  button are now `destructive` (red). The batches table gained selectable rows
+  (`withSelectableRows` + `getRowId`) with a bulk "Dissolve N batches" action
+  (Active-only) posting the selected ids to a new `batches/dissolve` route —
+  one edge-fn dissolve per id, a toast summary of dissolved/failed, refused
+  (started) batches named in the failure toast while the rest dissolve.
+  Verified live: context-menu item computes `text-red-500`; bulk route returns
+  `{dissolved, failed}` correctly for both a clean throwaway batch and a
+  production-recorded batch (refused, untouched). 3 new strings, 12 locales.
 - 2026-08-24: **Delete from ERP** (Sid: "option to delete a batch") — a
   `batches/delete/:batchId` ConfirmDelete route wrapping the edge fn's existing
   `dissolve` intent (members return to the schedule un-run, row deleted; the

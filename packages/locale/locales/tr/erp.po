@@ -3918,6 +3918,11 @@ msgstr "Bölge analiz edilemedi: {0}"
 msgid "Could not build PDF. Try again."
 msgstr "PDF oluşturulamadı. Lütfen tekrar deneyin."
 
+#. placeholder {0}: d.failed.length
+#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+msgid "Could not dissolve {0}: {1} — production already recorded"
+msgstr "{0} çözülemedi: {1} — üretim zaten kaydedildi"
+
 msgid "Could not prepare region image for analysis"
 msgstr "Bölge görüntüsü analiz için hazırlanamadı"
 
@@ -5354,11 +5359,19 @@ msgstr "Durumlar"
 msgid "Dissolve"
 msgstr "Çöz"
 
+#. placeholder {0}: active.length
+msgid "Dissolve {0} batches"
+msgstr "{0} parti çöz"
+
 msgid "Dissolve batch"
 msgstr "Toplu İşi Kaldır"
 
 msgid "Dissolve Batch"
 msgstr "Toplu İşi Çöz"
+
+#. placeholder {0}: d.dissolved
+msgid "Dissolved {0} batches"
+msgstr "{0} parti çözüldü"
 
 #. placeholder {0}: batch.readableId
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."

@@ -3918,6 +3918,11 @@ msgstr "क्षेत्र का विश्लेषण नहीं क�
 msgid "Could not build PDF. Try again."
 msgstr "PDF नहीं बना सके। फिर से कोशिश करें।"
 
+#. placeholder {0}: d.failed.length
+#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+msgid "Could not dissolve {0}: {1} — production already recorded"
+msgstr "{0} को भंग नहीं कर सके: {1} — उत्पादन पहले से दर्ज है"
+
 msgid "Could not prepare region image for analysis"
 msgstr "विश्लेषण के लिए क्षेत्र छवि तैयार नहीं की जा सकी"
 
@@ -5354,11 +5359,19 @@ msgstr "निपटान"
 msgid "Dissolve"
 msgstr "भंग करना"
 
+#. placeholder {0}: active.length
+msgid "Dissolve {0} batches"
+msgstr "{0} बैच को भंग करें"
+
 msgid "Dissolve batch"
 msgstr "बैच को भंग करें"
 
 msgid "Dissolve Batch"
 msgstr "बैच भंग करना"
+
+#. placeholder {0}: d.dissolved
+msgid "Dissolved {0} batches"
+msgstr "{0} बैच भंग कर दिए गए"
 
 #. placeholder {0}: batch.readableId
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."

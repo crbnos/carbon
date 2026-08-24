@@ -1,7 +1,17 @@
-import { Badge, MenuIcon, MenuItem } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import {
+  Badge,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  MenuIcon,
+  MenuItem,
+  toast
+} from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useMemo } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   LuCalendar,
   LuEye,
@@ -12,7 +22,7 @@ import {
   LuTrash,
   LuUsers
 } from "react-icons/lu";
-import { useNavigate } from "react-router";
+import { useFetcher, useNavigate } from "react-router";
 import { DateTime, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions } from "~/hooks";
@@ -44,6 +54,7 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
+  const canUpdate = permissions.can("update", "production");
 
   // "Delete" is the edge fn's dissolve — only offered while the batch is
   // Active (a started batch must be completed; Completed batches are history).
@@ -55,9 +66,8 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
           {t`View Batch`}
         </MenuItem>
         <MenuItem
-          disabled={
-            row.status !== "Active" || !permissions.can("update", "production")
-          }
+          destructive
+          disabled={row.status !== "Active" || !canUpdate}
           onClick={() => navigate(path.to.deleteOperationBatch(row.id))}
         >
           <MenuIcon icon={<LuTrash />} />
@@ -65,7 +75,72 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
         </MenuItem>
       </>
     ),
-    [navigate, permissions, t]
+    [navigate, canUpdate, t]
+  );
+
+  // Bulk dissolve for the selected rows — Active batches only (a started batch
+  // must be completed, not dissolved). Submits the ids to the dissolve action;
+  // the fetcher revalidates the loader and we toast the summary.
+  const dissolveFetcher = useFetcher<{
+    success?: boolean;
+    message?: string;
+    dissolved?: number;
+    failed?: { readableId: string; message: string }[];
+  }>();
+  const wasDissolving = useRef(false);
+  useEffect(() => {
+    if (dissolveFetcher.state !== "idle") {
+      wasDissolving.current = true;
+      return;
+    }
+    if (!wasDissolving.current) return;
+    wasDissolving.current = false;
+    const d = dissolveFetcher.data;
+    if (!d) return;
+    if (d.success === false && d.message) {
+      toast.error(d.message);
+      return;
+    }
+    if (d.dissolved) toast.success(t`Dissolved ${d.dissolved} batches`);
+    if (d.failed?.length) {
+      toast.error(
+        t`Could not dissolve ${d.failed.length}: ${d.failed
+          .map((f) => f.readableId)
+          .join(", ")} — production already recorded`
+      );
+    }
+  }, [dissolveFetcher.state, dissolveFetcher.data, t]);
+
+  const renderActions = useCallback(
+    (selectedRows: JobOperationBatch[]) => {
+      const active = selectedRows.filter((r) => r.status === "Active");
+      return (
+        <DropdownMenuContent align="end" className="min-w-[220px]">
+          <DropdownMenuLabel>
+            <Trans>Actions</Trans>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            destructive
+            disabled={active.length === 0 || !canUpdate}
+            onClick={() =>
+              dissolveFetcher.submit(
+                { batchIds: active.map((r) => r.id) },
+                {
+                  method: "post",
+                  action: path.to.dissolveOperationBatches,
+                  encType: "application/json"
+                }
+              )
+            }
+          >
+            <DropdownMenuIcon icon={<LuTrash />} />
+            {t`Dissolve ${active.length} batches`}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      );
+    },
+    [canUpdate, dissolveFetcher, t]
   );
 
   const customColumns =
@@ -179,7 +254,10 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
           <New label={t`Batch`} to={path.to.newOperationBatch} />
         )
       }
+      renderActions={renderActions}
       renderContextMenu={renderContextMenu}
+      withSelectableRows={canUpdate}
+      getRowId={(row) => row.id}
       title={t`Batches`}
     />
   );

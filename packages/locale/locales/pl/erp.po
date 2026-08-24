@@ -3918,6 +3918,11 @@ msgstr "Nie można analizować regionu: {0}"
 msgid "Could not build PDF. Try again."
 msgstr "Nie można było zbudować pliku PDF. Spróbuj ponownie."
 
+#. placeholder {0}: d.failed.length
+#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+msgid "Could not dissolve {0}: {1} — production already recorded"
+msgstr "Nie można rozwiązać {0}: {1} — produkcja już zapisana"
+
 msgid "Could not prepare region image for analysis"
 msgstr "Nie można przygotować obrazu regionu do analizy"
 
@@ -5354,11 +5359,19 @@ msgstr "Dyspozycje"
 msgid "Dissolve"
 msgstr "Rozpuść"
 
+#. placeholder {0}: active.length
+msgid "Dissolve {0} batches"
+msgstr "Rozwiązać {0} partii"
+
 msgid "Dissolve batch"
 msgstr "Rozwiązać partię"
 
 msgid "Dissolve Batch"
 msgstr "Rozpuść partię"
+
+#. placeholder {0}: d.dissolved
+msgid "Dissolved {0} batches"
+msgstr "Rozwiązane {0} partii"
 
 #. placeholder {0}: batch.readableId
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
