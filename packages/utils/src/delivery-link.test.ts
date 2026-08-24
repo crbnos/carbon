@@ -61,4 +61,14 @@ describe("DeliveryLink registry and validation", () => {
       }).isValid
     ).toBe(false);
   });
+
+  it("allows a non-confirmed link to omit evidence references", () => {
+    expect(
+      validateDeliveryLink({
+        ...confirmedLink,
+        status: "inferred",
+        evidenceRefs: []
+      }).isValid
+    ).toBe(true);
+  });
 });
