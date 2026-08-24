@@ -440,6 +440,34 @@ Resolved during design:
 - **Case- and dot-collision part numbers are untested.** `TB-900` vs `tb-900`, and a part number
   that itself contains a dot, both land on `readableIdWithRevision`, whose separator is a dot.
   Non-ASCII and 82-character numbers ARE verified (see below).
+- **OPEN DEFECTS from the 2026-08-22 live run (revision E), causes verified in code 2026-08-24:**
+  - **Release-driven BOM import can write a partially-stale BOM.** The import is dispatched from
+    the assembly element's own run (`onshape-release-import.ts:789`) and resolves rows only through
+    the element mapping, so any child element processed after the assembly is refused
+    ("Carbon has this part but not at this revision") and its old line kept. Correct only when the
+    assembly's delivery is processed last. Worse than uniformly stale: a half-updated BOM reads as
+    synced. Fix direction: a release-level completion step (count processed elements against the
+    release package), noting drawings never touch the marker and refused elements return before
+    `recordMarkerProgress`; plus `RetryAfterError` in the BOM import while the release is
+    incomplete, so a dropped delivery degrades to a partial import instead of none.
+  - **No reconciliation of a release package against what landed.** 2 of 9 webhook deliveries
+    arrived in the run above; nothing in Carbon notices a missing element, so the loss is silent
+    and permanent. Whether the drop was upstream or in the receiver burst path is undetermined —
+    the receiver log for the missing messageIds is the discriminator.
+  - **Drawing pass runs once per element, not once per document version**
+    (`onshape-release-v2.ts:873` passes a single-element `targets` list), defeating
+    `pullOnshapeDrawingsForDocument`'s 1 + N design. Needs the same release-level step.
+  - **Per-element drawing noise.** The model-first pass resolves every drawing in the document
+    against the current element's released letter, and only `drawing-model-unmapped` is suppressed
+    — a drawing whose model is not (yet) at that revision is reported on every element's run.
+    Local fix: `OnshapeDrawingTarget.elementId` exists and is unused; filter drawings by target
+    element via `chooseDrawingModelTarget` before the family/revision narrowing.
+  - **Prior-model preserve fires on an inherited pointer.** `items_createRevision` /
+    `addChangeNoticeAffectedItem` copies `modelUploadId` to the new revision; the v2 attach then
+    preserves the predecessor's raw export as a document on the new item (`RD-410.C.GLTF` on
+    RD-410.D) — a full storage copy per item per release. Fix: skip preservation when the prior
+    `modelUploadId` is still referenced by another item.
+  - **No unit test covers `onshape-release-v2` itself** — only the pure helpers it calls.
 
 ## Live verification, 2026-08-19
 
@@ -818,3 +846,13 @@ twice as well.
   now a genuine last resort, and its message points at the BOM import, which does not
   depend on that lookup. Regression-checked: a real released assembly still resolves and
   attaches.
+- 2026-08-24: **The 2026-08-22 revision-E run's defects reviewed against the code; causes pinned.**
+  Recorded in Known gaps above: the release-driven BOM import's partial-staleness is an ordering
+  defect established from the dispatch site (not inferred); the drawing-pass noise is the
+  model-first filter running after revision narrowing instead of before it; the stale
+  `RD-410.C.GLTF` on RD-410.D is the attach's preserve path firing on a modelUploadId inherited
+  through createRevision, not a file copied with the method. Also noted: supersession
+  "Consume First" is the change-order column default, not a v2 choice — the v2-specific gap is that
+  revision mode writes no supersession at all; minted parts hardcode `EA`, which is FK-constrained
+  per company; the token refresh (pre-existing on main) has no early margin, pins expiresAt to
+  now+3600 ignoring `expires_in`, and is an unlocked read-modify-write of the integration metadata.
