@@ -117,10 +117,9 @@ export function validateDeliveryLink(
   if (!validStatus.has(link.status)) {
     errors.push("status is invalid");
   }
-  if (
-    link.status === "confirmed" &&
-    (!Array.isArray(link.evidenceRefs) || link.evidenceRefs.length === 0)
-  ) {
+  if (!Array.isArray(link.evidenceRefs)) {
+    errors.push("evidenceRefs is required");
+  } else if (link.status === "confirmed" && link.evidenceRefs.length === 0) {
     errors.push("evidenceRefs is required");
   }
   if (link.status === "confirmed" && link.authority === "factory-os") {

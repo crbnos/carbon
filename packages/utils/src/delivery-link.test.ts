@@ -71,4 +71,22 @@ describe("DeliveryLink registry and validation", () => {
       }).isValid
     ).toBe(true);
   });
+
+  it("rejects a non-confirmed link when evidenceRefs is missing or not an array", () => {
+    expect(
+      validateDeliveryLink({
+        ...(confirmedLink as Omit<DeliveryLink, "evidenceRefs">),
+        status: "unknown",
+        evidenceRefs: undefined as never
+      }).isValid
+    ).toBe(false);
+
+    expect(
+      validateDeliveryLink({
+        ...confirmedLink,
+        status: "conflict",
+        evidenceRefs: "sap:relationship:SO-10001-10:50001234" as never
+      }).isValid
+    ).toBe(false);
+  });
 });
