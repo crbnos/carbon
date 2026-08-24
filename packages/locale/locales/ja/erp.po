@@ -5251,8 +5251,18 @@ msgstr "処置"
 msgid "Dispositions"
 msgstr "処分"
 
+msgid "Dissolve"
+msgstr "解散"
+
 msgid "Dissolve batch"
 msgstr "バッチを解除"
+
+msgid "Dissolve Batch"
+msgstr "バッチを解散"
+
+#. placeholder {0}: batch.readableId
+msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
+msgstr "{0}を解散すると、その{memberCount}個の工程がスケジュールの未実行状態に戻り、バッチが削除されます。実績が記録されたバッチは代わりに完了する必要があります。"
 
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "このEmployee Typeのデフォルト権限でユーザーの現在の権限を上書きしますか?"
@@ -16617,6 +16627,9 @@ msgstr "添付ファイルを表示"
 
 msgid "View Attributes"
 msgstr "属性を表示"
+
+msgid "View Batch"
+msgstr "バッチを表示"
 
 msgid "View Certificate"
 msgstr "証明書を表示"

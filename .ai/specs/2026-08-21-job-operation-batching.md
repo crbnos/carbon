@@ -537,6 +537,15 @@ through; `ProcessForm` gains the Boolean field (clone `completeAllOnScan`).
   redirect, chip, cross-member shared timer, deferred GL on stop, proportional
   slice completion (Labor 50→25/25, Machine 3→2/1 & 13→7/6), members Done + batch
   Completed, and the Completed batch reverting to a plain operation view.
+- 2026-08-24: **Delete from ERP** (Sid: "option to delete a batch") — a
+  `batches/delete/:batchId` ConfirmDelete route wrapping the edge fn's existing
+  `dissolve` intent (members return to the schedule un-run, row deleted; the
+  server refusal for batches with recorded production surfaces as the flash).
+  Entry points: "Dissolve Batch" in the batches-table context menu (Active
+  rows, `production_update`) and a destructive Dissolve button on the detail
+  drawer. Verified live: refusal on a started batch (exact server message
+  toasted, batch untouched) and a clean dissolve (row deleted, member's
+  `jobOperationBatchId` nulled, "Batch dissolved" flash).
 - 2026-08-24: **Batch detail drawer** (Sid: "open the whole detail view" — the
   thin member-list drawer was nearly empty). `/x/production/batches/:batchId`
   now renders a full-size drawer (`BatchDetailDrawer`): header meta (status,

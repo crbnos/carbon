@@ -5251,8 +5251,18 @@ msgstr "Disposição"
 msgid "Dispositions"
 msgstr "Disposições"
 
+msgid "Dissolve"
+msgstr "Dissolver"
+
 msgid "Dissolve batch"
 msgstr "Dissolver lote"
+
+msgid "Dissolve Batch"
+msgstr "Dissolver Lote"
+
+#. placeholder {0}: batch.readableId
+msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
+msgstr "A dissolução de {0} retorna suas {memberCount} operações para o cronograma não executado e exclui o lote. Um lote com produção registrada deve ser concluído."
 
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "Deseja sobrescrever as permissões atuais do utilizador com as permissões padrão para este tipo de funcionário?"
@@ -16617,6 +16627,9 @@ msgstr "Ver Anexo"
 
 msgid "View Attributes"
 msgstr "Ver Atributos"
+
+msgid "View Batch"
+msgstr "Exibir Lote"
 
 msgid "View Certificate"
 msgstr "Exibir Certificado"

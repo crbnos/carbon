@@ -724,6 +724,8 @@ export const path = {
     deleteNoQuoteReason: (id: string) =>
       generatePath(`${x}/sales/no-quote-reasons/delete/${id}`),
     deleteNote: (id: string) => generatePath(`${x}/shared/notes/${id}/delete`),
+    deleteOperationBatch: (id: string) =>
+      generatePath(`${x}/production/batches/delete/${id}`),
     deletePartner: (id: string) =>
       generatePath(`${x}/resources/partners/delete/${id}`),
     deletePartSupplier: (itemId: string, id: string) =>

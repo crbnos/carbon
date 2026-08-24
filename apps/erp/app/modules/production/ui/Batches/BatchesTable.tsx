@@ -1,15 +1,18 @@
-import { Badge } from "@carbon/react";
+import { Badge, MenuIcon, MenuItem } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useMemo } from "react";
+import { memo, useCallback, useMemo } from "react";
 import {
   LuCalendar,
+  LuEye,
   LuFactory,
   LuHash,
   LuLayers,
   LuLoaderCircle,
+  LuTrash,
   LuUsers
 } from "react-icons/lu";
+import { useNavigate } from "react-router";
 import { DateTime, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions } from "~/hooks";
@@ -40,6 +43,30 @@ function BatchStatus({ status }: { status: string | null }) {
 const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
+  const navigate = useNavigate();
+
+  // "Delete" is the edge fn's dissolve — only offered while the batch is
+  // Active (a started batch must be completed; Completed batches are history).
+  const renderContextMenu = useCallback(
+    (row: JobOperationBatch) => (
+      <>
+        <MenuItem onClick={() => navigate(path.to.operationBatch(row.id))}>
+          <MenuIcon icon={<LuEye />} />
+          {t`View Batch`}
+        </MenuItem>
+        <MenuItem
+          disabled={
+            row.status !== "Active" || !permissions.can("update", "production")
+          }
+          onClick={() => navigate(path.to.deleteOperationBatch(row.id))}
+        >
+          <MenuIcon icon={<LuTrash />} />
+          {t`Dissolve Batch`}
+        </MenuItem>
+      </>
+    ),
+    [navigate, permissions, t]
+  );
 
   const customColumns =
     useCustomColumns<JobOperationBatch>("jobOperationBatch");
@@ -152,6 +179,7 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
           <New label={t`Batch`} to={path.to.newOperationBatch} />
         )
       }
+      renderContextMenu={renderContextMenu}
       title={t`Batches`}
     />
   );

@@ -5251,8 +5251,18 @@ msgstr "Durum"
 msgid "Dispositions"
 msgstr "Durumlar"
 
+msgid "Dissolve"
+msgstr "Çöz"
+
 msgid "Dissolve batch"
 msgstr "Toplu İşi Kaldır"
+
+msgid "Dissolve Batch"
+msgstr "Toplu İşi Çöz"
+
+#. placeholder {0}: batch.readableId
+msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
+msgstr "{0} çözüldüğünde, {memberCount} operasyonu zamanlamaya yürütülmemiş olarak geri verir ve toplu işi siler. Kaydedilmiş üretimi olan bir toplu iş yerine tamamlanmalıdır."
 
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "Kullanıcının mevcut izinlerini bu çalışan türü için varsayılan izinlerle üzerine yazmak ister misiniz?"
@@ -16617,6 +16627,9 @@ msgstr "Ek Dosya Görüntüle"
 
 msgid "View Attributes"
 msgstr "Öznitelikleri Görüntüle"
+
+msgid "View Batch"
+msgstr "Toplu İşi Görüntüle"
 
 msgid "View Certificate"
 msgstr "Sertifikayı Görüntüle"

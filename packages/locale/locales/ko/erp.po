@@ -5251,8 +5251,18 @@ msgstr "처리"
 msgid "Dispositions"
 msgstr "처리"
 
+msgid "Dissolve"
+msgstr "해체"
+
 msgid "Dissolve batch"
 msgstr "배치 해제"
+
+msgid "Dissolve Batch"
+msgstr "배치 해체"
+
+#. placeholder {0}: batch.readableId
+msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
+msgstr "{0} 배치를 해체하면 {memberCount}개의 작업이 미실행 상태로 일정표에 반환되며 배치가 삭제됩니다. 생산이 기록된 배치는 대신 완료해야 합니다."
 
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "이 직원 유형의 기본 권한으로 사용자의 현재 권한을 덮어쓰시겠습니까?"
@@ -16617,6 +16627,9 @@ msgstr "첨부파일 보기"
 
 msgid "View Attributes"
 msgstr "속성 보기"
+
+msgid "View Batch"
+msgstr "배치 보기"
 
 msgid "View Certificate"
 msgstr "인증서 보기"

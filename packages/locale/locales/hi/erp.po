@@ -5251,8 +5251,18 @@ msgstr "निपटान"
 msgid "Dispositions"
 msgstr "निपटान"
 
+msgid "Dissolve"
+msgstr "भंग करना"
+
 msgid "Dissolve batch"
 msgstr "बैच को भंग करें"
+
+msgid "Dissolve Batch"
+msgstr "बैच भंग करना"
+
+#. placeholder {0}: batch.readableId
+msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
+msgstr "{0} को भंग करने से इसके {memberCount} संचालन शेड्यूल से अप्रचलित रूप में वापस आ जाते हैं और बैच हटा दिया जाता है। रिकॉर्ड किए गए उत्पादन वाले बैच को इसके बजाय पूरा किया जाना चाहिए।"
 
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "क्या आप उपयोगकर्ता की वर्तमान अनुमतियों को इस कर्मचारी प्रकार के लिए डिफ़ॉल्ट अनुमतियों से अधिलेखित करना चाहते हैं?"
@@ -16617,6 +16627,9 @@ msgstr "संलग्नक देखें"
 
 msgid "View Attributes"
 msgstr "विशेषताएं देखें"
+
+msgid "View Batch"
+msgstr "बैच देखें"
 
 msgid "View Certificate"
 msgstr "प्रमाणपत्र देखें"

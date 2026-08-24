@@ -5251,8 +5251,18 @@ msgstr "Решение"
 msgid "Dispositions"
 msgstr "Решения"
 
+msgid "Dissolve"
+msgstr "Распустить"
+
 msgid "Dissolve batch"
 msgstr "Разбить партию"
+
+msgid "Dissolve Batch"
+msgstr "Распустить партию"
+
+#. placeholder {0}: batch.readableId
+msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
+msgstr "Распускание {0} возвращает его {memberCount} операций в расписание невыполненными и удаляет партию. Партию с записанным производством необходимо вместо этого завершить."
 
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "Вы хотите перезаписать текущие разрешения пользователя разрешениями по умолчанию для этого типа сотрудника?"
@@ -16617,6 +16627,9 @@ msgstr "Просмотреть вложение"
 
 msgid "View Attributes"
 msgstr "Просмотр атрибутов"
+
+msgid "View Batch"
+msgstr "Просмотр партии"
 
 msgid "View Certificate"
 msgstr "Просмотр сертификата"

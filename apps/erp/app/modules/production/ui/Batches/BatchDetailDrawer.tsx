@@ -31,7 +31,8 @@ import {
   LuPlus,
   LuPrinter,
   LuStickyNote,
-  LuTimer
+  LuTimer,
+  LuTrash
 } from "react-icons/lu";
 import { Link } from "react-router";
 import { DateTime, EmployeeAvatar, ItemThumbnail } from "~/components";
@@ -441,6 +442,13 @@ export function BatchDetailDrawer({
 
         <DrawerFooter className="flex-shrink-0 border-t bg-card sm:justify-end items-center">
           <HStack spacing={2}>
+            {batch.status === "Active" && (
+              <Button variant="destructive" leftIcon={<LuTrash />} asChild>
+                <Link to={path.to.deleteOperationBatch(batch.id)}>
+                  {t`Dissolve`}
+                </Link>
+              </Button>
+            )}
             <Button variant="secondary" leftIcon={<LuPrinter />} asChild>
               <a
                 href={path.to.file.batchLoadList(batch.id)}

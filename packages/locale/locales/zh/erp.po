@@ -5251,8 +5251,18 @@ msgstr "处置"
 msgid "Dispositions"
 msgstr "处置"
 
+msgid "Dissolve"
+msgstr "解散"
+
 msgid "Dissolve batch"
 msgstr "解散批次"
+
+msgid "Dissolve Batch"
+msgstr "解散批次"
+
+#. placeholder {0}: batch.readableId
+msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
+msgstr "解散{0}会将其{memberCount}个操作返回到未运行的计划中，并删除该批次。包含已记录生产的批次必须改为完成。"
 
 msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
 msgstr "您想用此员工类型的默认权限覆盖该用户的当前权限吗？"
@@ -16617,6 +16627,9 @@ msgstr "查看附件"
 
 msgid "View Attributes"
 msgstr "查看属性"
+
+msgid "View Batch"
+msgstr "查看批次"
 
 msgid "View Certificate"
 msgstr "查看证书"
