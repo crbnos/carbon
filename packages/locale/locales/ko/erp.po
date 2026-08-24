@@ -2525,12 +2525,6 @@ msgstr "자재명세서"
 msgid "Bill of Materials"
 msgstr "자재명세서"
 
-msgid "Bill of materials imported"
-msgstr ""
-
-msgid "Bill of materials imported — check notifications"
-msgstr ""
-
 msgid "Bill of Process"
 msgstr "공정(BOP)"
 
@@ -7681,6 +7675,12 @@ msgstr ""
 msgid "Import your BOM"
 msgstr "BOM 가져오기"
 
+msgid "Imported from Onshape"
+msgstr ""
+
+msgid "Imported from Onshape — check notifications"
+msgstr ""
+
 msgid "Importing a bill of materials creates and deletes parts, so it needs update and delete permission on parts. The part itself will still be created."
 msgstr ""
 
@@ -10486,6 +10486,9 @@ msgstr "Onshape가 연결을 거부했습니다"
 
 msgid "Onshape didn't return an authorization code"
 msgstr "Onshape가 인증 코드를 반환하지 않았습니다"
+
+msgid "Onshape import did not finish"
+msgstr ""
 
 msgid "Onshape isn't configured"
 msgstr "Onshape가 구성되지 않았습니다"

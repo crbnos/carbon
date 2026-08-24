@@ -11,7 +11,11 @@
 // case, and rate-limitable, which is exactly what a request must not be.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { getOnshapeClient, getOnshapeSettings } from "@carbon/ee/onshape";
+import {
+  getOnshapeClient,
+  getOnshapeSettings,
+  patchElementMappingMetadata
+} from "@carbon/ee/onshape";
 import { trigger } from "@carbon/lib/trigger";
 import { NotificationEvent } from "@carbon/notifications";
 import { z } from "zod";
@@ -44,28 +48,86 @@ export const onshapeItemAssetsFunction = inngest.createFunction(
     retries: 10,
     // One pull at a time per item: two would export the same geometry twice
     // and race on the modelUpload row.
-    concurrency: { key: "event.data.itemId", limit: 1 }
+    concurrency: { key: "event.data.itemId", limit: 1 },
+    /**
+     * Close the progress marker when every retry is spent — see the same
+     * handler on `onshape-bom-import`. A part created from a Part Studio body
+     * has no bill of materials, so THIS job is the only thing the create modal
+     * has to wait on, and a run that dies without an ending leaves it spinning
+     * until the staleness cap.
+     */
+    onFailure: async ({ event }) => {
+      const failed = event.data.event.data as {
+        companyId?: string;
+        itemId?: string;
+      };
+      if (!failed?.companyId || !failed?.itemId) return;
+
+      try {
+        await patchElementMappingMetadata(getCarbonServiceRole(), {
+          companyId: failed.companyId,
+          itemId: failed.itemId,
+          patch: {
+            progress: {
+              stage: undefined,
+              done: undefined,
+              total: undefined,
+              failedAt: new Date().toISOString(),
+              error: event.data.error.message
+            }
+          }
+        });
+      } catch (error) {
+        console.error(
+          `[ONSHAPE ITEM ASSETS] ${failed.companyId}: could not stamp the failure`,
+          error
+        );
+      }
+    }
   },
   { event: "carbon/onshape-item-assets" },
   async ({ event, step }) => {
     const payload = PayloadSchema.parse(event.data);
     const carbon = getCarbonServiceRole();
 
-    // Re-read every execution, so switching a company back to legacy also
-    // kills an in-flight retry.
+    // Re-read every execution, so disconnecting Onshape also kills an
+    // in-flight retry.
     const settings = await getOnshapeSettings(carbon, payload.companyId);
     if (settings.readFailed) {
       throw new Error(
         "Could not read the Onshape integration settings; retrying."
       );
     }
-    // The `onshape-v2` record itself is the opt-in: an absent or inactive one
-    // means this company never installed v2. No pipeline field to read.
+    // The `onshape` record itself is the opt-in: an absent or inactive one
+    // means this company never connected Onshape.
     if (!settings.active) {
       return { skipped: true as const, reason: "integration-not-installed" };
     }
 
-    return await step.run("pull-assets", async () => {
+    /**
+     * Move the progress marker on, for whoever is waiting on this item.
+     *
+     * Best-effort: a failed stamp costs the progress display, and throwing
+     * would retry the whole export to fix a label.
+     */
+    const stage = async (name: "assets" | "drawings") => {
+      try {
+        await patchElementMappingMetadata(carbon, {
+          companyId: payload.companyId,
+          itemId: payload.itemId,
+          patch: { progress: { stage: name } }
+        });
+      } catch (error) {
+        console.error(
+          `[ONSHAPE ITEM ASSETS] ${payload.companyId}: could not stamp stage ${name}`,
+          error
+        );
+      }
+    };
+
+    const result = await step.run("pull-assets", async () => {
+      await stage("assets");
+
       const connection = await getOnshapeClient(
         carbon,
         payload.companyId,
@@ -106,6 +168,8 @@ export const onshapeItemAssetsFunction = inngest.createFunction(
       // The drawing, in the same run — same reasoning as the model above: an
       // item created from Onshape should arrive complete rather than needing a
       // second journey through a different surface.
+      await stage("drawings");
+
       const drawings = await withRateLimitRetry(
         () =>
           pullOnshapeDrawingsForDocument(carbon, connection.client, {
@@ -144,7 +208,7 @@ export const onshapeItemAssetsFunction = inngest.createFunction(
           });
         } catch (error) {
           console.error(
-            `[ONSHAPE V2 ITEM ASSETS] ${payload.companyId}: could not notify ${payload.userId}`,
+            `[ONSHAPE ITEM ASSETS] ${payload.companyId}: could not notify ${payload.userId}`,
             error
           );
         }
@@ -158,5 +222,38 @@ export const onshapeItemAssetsFunction = inngest.createFunction(
         skippedDrawings: drawings.skipped
       };
     });
+
+    // Close the marker so whoever is blocking on this item can stop. Its own
+    // step, so a stamp that fails does not re-run the export it is reporting.
+    await step.run("stamp-assets-finished", async () => {
+      try {
+        await patchElementMappingMetadata(carbon, {
+          companyId: payload.companyId,
+          itemId: payload.itemId,
+          patch: {
+            // No `startedAt`: this merges into the marker the dispatching route
+            // opened rather than replacing it.
+            progress: {
+              stage: undefined,
+              done: undefined,
+              total: undefined,
+              finishedAt: new Date().toISOString(),
+              attentionCount:
+                result.skipped === false
+                  ? result.skippedTargets.length + result.skippedDrawings.length
+                  : 0
+            }
+          }
+        });
+      } catch (error) {
+        console.error(
+          `[ONSHAPE ITEM ASSETS] ${payload.companyId}: could not stamp the marker`,
+          error
+        );
+      }
+      return null;
+    });
+
+    return result;
   }
 );

@@ -146,8 +146,8 @@ export type OnshapeElementMappingMetadata = {
   /** True when the last sync came from a version that was never released. */
   fromUnreleasedVersion?: boolean;
   lastSyncedAt?: string;
-  /** A BOM import against this item — see `OnshapeBomImportMarker`. */
-  bomImport?: OnshapeBomImportMarker;
+  /** An import in flight against this item — see `OnshapeImportProgress`. */
+  progress?: OnshapeImportProgress;
   /** Where this item's Buy/Make came from — see `OnshapeReplenishmentProvenance`. */
   replenishment?: OnshapeReplenishmentProvenance;
 };
@@ -181,34 +181,70 @@ export type OnshapeReplenishmentProvenance = {
 };
 
 /**
- * A BOM import in flight against an item, or the one that just finished.
+ * What Carbon is still doing to an item after the request that created it
+ * returned.
  *
- * The import is an Inngest job, so the form that started it redirects to a part
- * whose bill of materials lands seconds to minutes later. Without a marker a
- * clean import is indistinguishable from one that never started, because the
- * outcome only reaches the user as a notification when something needs
- * attention.
+ * Creating a part from Onshape is a synchronous route that dispatches an
+ * Inngest job and answers immediately, so the bill of materials, the CAD model
+ * and the drawings land seconds to minutes after the user is looking at the
+ * part. This is what lets a UI wait for that rather than guess: the create
+ * modal blocks on it, and the part header reads it for a badge.
  *
- * `startedAt` is stamped by whoever DISPATCHES the job; `finishedAt` and
- * `attentionCount` by the job itself, from a different execution. A crashed run
- * never reaches its stamp, so a reader must treat a stale `startedAt` with no
- * `finishedAt` as unknown rather than as running forever.
+ * Written across THREE executions, which is what every field's optionality is
+ * about. `startedAt` is stamped by whoever DISPATCHES the job. `stage`/`done`/
+ * `total` are stamped by the running job at each boundary. `finishedAt` (or
+ * `failedAt`) is stamped by the job at the end.
+ *
+ * Both consumers write it — the BOM import and the asset-only pull. They answer
+ * the same question ("is this item still being built out from Onshape?") and a
+ * blocking UI cannot be asked to poll two different shapes to find out.
+ *
+ * A run that DIES never writes any ending. `retries: 10` means that is a real
+ * outcome and not a rare one, so a reader must treat a stale `startedAt` with
+ * no ending as UNKNOWN rather than as running forever — and a blocking UI must
+ * surface that rather than spin.
  */
-export type OnshapeBomImportMarker = {
+export type OnshapeImportProgress = {
   startedAt: string;
+  /** Which phase is running now. Absent before the job's first stamp. */
+  stage?: OnshapeImportStage;
+  /** Progress within `stage`, when the phase knows its own size. */
+  done?: number;
+  total?: number;
   finishedAt?: string;
+  /**
+   * The run failed in a way it could report. Distinct from a stale start with
+   * no ending, which is a run that died without getting the chance.
+   */
+  failedAt?: string;
+  /** Why it failed, for a user who is being told to stop waiting. */
+  error?: string;
   attentionCount?: number;
 };
 
 /**
+ * The phases a user waits through, in the order the job runs them.
+ *
+ * Deliberately coarse. These are labels on a progress panel, not a trace: a
+ * stage that does not map to something a person recognises ("resolving element
+ * mappings") tells them nothing they can act on.
+ */
+export type OnshapeImportStage =
+  | "reading"
+  | "parts"
+  | "materials"
+  | "assets"
+  | "drawings";
+
+/**
  * A partial patch over element-mapping metadata.
  *
- * `bomImport` is a PARTIAL marker so the job can stamp a finish without
- * re-supplying a start time it did not choose.
+ * `progress` is a PARTIAL marker so the job can stamp a stage or an ending
+ * without re-supplying a start time it did not choose.
  */
 export type OnshapeElementMappingMetadataPatch = Partial<
-  Omit<OnshapeElementMappingMetadata, "bomImport">
-> & { bomImport?: Partial<OnshapeBomImportMarker> };
+  Omit<OnshapeElementMappingMetadata, "progress">
+> & { progress?: Partial<OnshapeImportProgress> };
 
 /** Metadata stored on the `onshapeRevision` row. */
 export type OnshapeRevisionMappingMetadata = {
@@ -225,11 +261,11 @@ export type OnshapeRevisionMappingMetadata = {
 /**
  * Merge a partial metadata patch over the metadata already on the row.
  *
- * Shallow, with ONE exception: `bomImport` is merged rather than replaced. The
- * route that dispatches the import writes `startedAt`; the job writes
- * `finishedAt` and `attentionCount` from a separate execution and has no reason
- * to re-supply a timestamp it did not choose. Replacing the whole sub-object
- * would drop the start time and leave a finished import that never started.
+ * Shallow, with ONE exception: `progress` is merged rather than replaced. The
+ * route that dispatches the import writes `startedAt`; the job writes stages
+ * and then an ending from separate executions, and has no reason to re-supply a
+ * timestamp it did not choose. Replacing the whole sub-object would drop the
+ * start time and leave a finished import that never started.
  *
  * Pure, so the merge semantics are unit-pinned without a database client.
  */
@@ -241,29 +277,29 @@ export function mergeElementMappingMetadata(
   const merged: OnshapeElementMappingMetadata = {
     ...base,
     ...patch,
-    bomImport: base.bomImport
+    progress: base.progress
   };
 
-  if (patch.bomImport) {
-    if (patch.bomImport.startedAt) {
+  if (patch.progress) {
+    if (patch.progress.startedAt) {
       // A patch that names a START is a NEW run, and replaces the marker
-      // outright. Merging would leave the previous run's `finishedAt` and
-      // `attentionCount` attached to an import that has only just begun — the
-      // badge would read the old outcome as this one's.
-      merged.bomImport = {
-        ...patch.bomImport,
-        startedAt: patch.bomImport.startedAt
+      // outright. Merging would leave the previous run's ending and stage
+      // attached to an import that has only just begun — a blocking UI would
+      // read the old outcome as this one's and never wait at all.
+      merged.progress = {
+        ...patch.progress,
+        startedAt: patch.progress.startedAt
       };
-    } else if (base.bomImport) {
-      // No start named: this is the job stamping its own finish onto the marker
-      // the dispatching route opened.
-      merged.bomImport = { ...base.bomImport, ...patch.bomImport };
+    } else if (base.progress) {
+      // No start named: this is the job stamping a stage or an ending onto the
+      // marker the dispatching route opened.
+      merged.progress = { ...base.progress, ...patch.progress };
     }
-    // A finish with no start and nothing to merge into is dropped: a marker
+    // An ending with no start and nothing to merge into is dropped: a marker
     // without a `startedAt` describes an import that never began.
   }
 
-  if (merged.bomImport === undefined) delete merged.bomImport;
+  if (merged.progress === undefined) delete merged.progress;
 
   return merged;
 }

@@ -290,7 +290,9 @@ export async function action({ request }: ActionFunctionArgs) {
     await patchElementMappingMetadata(serviceRole, {
       companyId,
       itemId: method.data.itemId,
-      patch: { bomImport: { startedAt: new Date().toISOString() } }
+      patch: {
+        progress: { startedAt: new Date().toISOString(), stage: "reading" }
+      }
     });
   } catch (error) {
     // An affordance, not the import. Losing it costs the badge, not the BOM.

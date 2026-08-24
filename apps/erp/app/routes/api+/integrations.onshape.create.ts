@@ -462,10 +462,13 @@ export async function action({ request }: ActionFunctionArgs) {
             companyId,
             itemId,
             patch: {
-              bomImport: {
+              progress: {
                 startedAt: new Date().toISOString(),
+                stage: "reading",
                 // A re-import must not inherit the previous run's outcome.
                 finishedAt: undefined,
+                failedAt: undefined,
+                error: undefined,
                 attentionCount: undefined
               }
             }
@@ -514,6 +517,33 @@ export async function action({ request }: ActionFunctionArgs) {
   // rate-limited API — worse, `attachOnshapeAssetsToItem` compare-and-sets
   // `item.modelUploadId`, so the loser files its model away as a document.
   if (!importQueued) {
+    // Open the progress marker here too. A part created from a Part Studio body
+    // has no bill of materials, so this job is the ONLY thing the create modal
+    // can wait on — without a marker it would see nothing in flight and show
+    // the user a part whose geometry is still minutes away.
+    try {
+      await patchElementMappingMetadata(serviceRole, {
+        companyId,
+        itemId,
+        patch: {
+          progress: {
+            startedAt: new Date().toISOString(),
+            stage: "assets",
+            finishedAt: undefined,
+            failedAt: undefined,
+            error: undefined,
+            attentionCount: undefined
+          }
+        }
+      });
+    } catch (error) {
+      // The marker is an affordance, not the pull. Losing it costs the wait.
+      logger.warn("Could not mark the Onshape asset pull as started", {
+        error,
+        itemId
+      });
+    }
+
     try {
       await trigger("onshape-item-assets", {
         companyId,

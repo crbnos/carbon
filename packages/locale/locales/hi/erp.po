@@ -2525,12 +2525,6 @@ msgstr "सामग्री की सूची"
 msgid "Bill of Materials"
 msgstr "सामग्री की सूची"
 
-msgid "Bill of materials imported"
-msgstr ""
-
-msgid "Bill of materials imported — check notifications"
-msgstr ""
-
 msgid "Bill of Process"
 msgstr "प्रक्रिया का विधेयक"
 
@@ -7681,6 +7675,12 @@ msgstr ""
 msgid "Import your BOM"
 msgstr "अपना BOM आयात करें"
 
+msgid "Imported from Onshape"
+msgstr ""
+
+msgid "Imported from Onshape — check notifications"
+msgstr ""
+
 msgid "Importing a bill of materials creates and deletes parts, so it needs update and delete permission on parts. The part itself will still be created."
 msgstr ""
 
@@ -10486,6 +10486,9 @@ msgstr "Onshape ने कनेक्शन अस्वीकार कर द
 
 msgid "Onshape didn't return an authorization code"
 msgstr "Onshape ने प्राधिकरण कोड नहीं लौटाया"
+
+msgid "Onshape import did not finish"
+msgstr ""
 
 msgid "Onshape isn't configured"
 msgstr "Onshape कॉन्फ़िगर नहीं है"

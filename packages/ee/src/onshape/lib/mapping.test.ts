@@ -201,25 +201,25 @@ describe("mergeElementMappingMetadata", () => {
   it("treats an absent row's metadata as empty", () => {
     expect(
       mergeElementMappingMetadata(null, {
-        bomImport: { startedAt: "2026-08-21T10:00:00.000Z" }
+        progress: { startedAt: "2026-08-21T10:00:00.000Z" }
       })
-    ).toEqual({ bomImport: { startedAt: "2026-08-21T10:00:00.000Z" } });
+    ).toEqual({ progress: { startedAt: "2026-08-21T10:00:00.000Z" } });
   });
 
-  it("MERGES bomImport rather than replacing it", () => {
+  it("MERGES progress rather than replacing it", () => {
     // The job stamps the finish from a separate execution and has no reason to
     // re-supply the start time. Replacing would leave an import that finished
     // without ever having started.
     expect(
       mergeElementMappingMetadata(
-        { bomImport: { startedAt: "2026-08-21T10:00:00.000Z" } },
+        { progress: { startedAt: "2026-08-21T10:00:00.000Z" } },
         {
-          bomImport: {
+          progress: {
             finishedAt: "2026-08-21T10:02:00.000Z",
             attentionCount: 2
           }
         }
-      ).bomImport
+      ).progress
     ).toEqual({
       startedAt: "2026-08-21T10:00:00.000Z",
       finishedAt: "2026-08-21T10:02:00.000Z",
@@ -233,14 +233,14 @@ describe("mergeElementMappingMetadata", () => {
     expect(
       mergeElementMappingMetadata(
         {
-          bomImport: {
+          progress: {
             startedAt: "2026-08-21T10:00:00.000Z",
             finishedAt: "2026-08-21T10:02:00.000Z",
             attentionCount: 2
           }
         },
-        { bomImport: { startedAt: "2026-08-21T11:00:00.000Z" } }
-      ).bomImport
+        { progress: { startedAt: "2026-08-21T11:00:00.000Z" } }
+      ).progress
     ).toEqual({ startedAt: "2026-08-21T11:00:00.000Z" });
   });
 
@@ -250,7 +250,7 @@ describe("mergeElementMappingMetadata", () => {
     expect(
       mergeElementMappingMetadata(
         { partNumber: "RD-410" },
-        { bomImport: { finishedAt: "2026-08-21T10:02:00.000Z" } }
+        { progress: { finishedAt: "2026-08-21T10:02:00.000Z" } }
       )
     ).toEqual({ partNumber: "RD-410" });
   });
@@ -258,21 +258,21 @@ describe("mergeElementMappingMetadata", () => {
   it("leaves an existing marker alone when the patch does not name one", () => {
     expect(
       mergeElementMappingMetadata(
-        { bomImport: { startedAt: "2026-08-21T10:00:00.000Z" } },
+        { progress: { startedAt: "2026-08-21T10:00:00.000Z" } },
         { versionId: "v2" }
       )
     ).toEqual({
       versionId: "v2",
-      bomImport: { startedAt: "2026-08-21T10:00:00.000Z" }
+      progress: { startedAt: "2026-08-21T10:00:00.000Z" }
     });
   });
 
   it("does not mutate the metadata it was given", () => {
-    const current = { bomImport: { startedAt: "2026-08-21T10:00:00.000Z" } };
+    const current = { progress: { startedAt: "2026-08-21T10:00:00.000Z" } };
     mergeElementMappingMetadata(current, {
-      bomImport: { finishedAt: "2026-08-21T10:02:00.000Z" }
+      progress: { finishedAt: "2026-08-21T10:02:00.000Z" }
     });
-    expect(current.bomImport).toEqual({
+    expect(current.progress).toEqual({
       startedAt: "2026-08-21T10:00:00.000Z"
     });
   });

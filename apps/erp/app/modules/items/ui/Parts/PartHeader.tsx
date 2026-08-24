@@ -70,11 +70,12 @@ const PartHeader = () => {
     routeData?.supersession?.supersessionMode
   );
 
-  // The BOM import is asynchronous: the create-from-Onshape form redirects to a
-  // part whose bill of materials lands seconds to minutes later, and the
-  // outcome only reaches the user as a notification when something needs
-  // attention. Without this a clean import is indistinguishable from one that
-  // never started.
+  // Building a part out from Onshape is asynchronous: the bill of materials,
+  // the models and the drawings land seconds to minutes after the part exists,
+  // and the outcome only reaches the user as a notification when something
+  // needs attention. Without this a clean import is indistinguishable from one
+  // that never started. The create modal blocks on the same record; this is for
+  // everyone who arrives at the part some other way.
   const onshapeImport = useOnshapeImportStatus(itemId, onshape.isConnected);
 
   return (
@@ -106,12 +107,15 @@ const PartHeader = () => {
                 className="shrink-0"
               >
                 {onshapeImport.attentionCount > 0 ? (
-                  <Trans>
-                    Bill of materials imported — check notifications
-                  </Trans>
+                  <Trans>Imported from Onshape — check notifications</Trans>
                 ) : (
-                  <Trans>Bill of materials imported</Trans>
+                  <Trans>Imported from Onshape</Trans>
                 )}
+              </Badge>
+            )}
+            {onshapeImport.failed && (
+              <Badge variant="destructive" className="shrink-0">
+                <Trans>Onshape import did not finish</Trans>
               </Badge>
             )}
             <DropdownMenu>

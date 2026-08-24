@@ -2525,12 +2525,6 @@ msgstr "Bill of materials"
 msgid "Bill of Materials"
 msgstr "Bill of Materials"
 
-msgid "Bill of materials imported"
-msgstr "Bill of materials imported"
-
-msgid "Bill of materials imported — check notifications"
-msgstr "Bill of materials imported — check notifications"
-
 msgid "Bill of Process"
 msgstr "Bill of Process"
 
@@ -7681,6 +7675,12 @@ msgstr "Import the bill of materials"
 msgid "Import your BOM"
 msgstr "Import your BOM"
 
+msgid "Imported from Onshape"
+msgstr "Imported from Onshape"
+
+msgid "Imported from Onshape — check notifications"
+msgstr "Imported from Onshape — check notifications"
+
 msgid "Importing a bill of materials creates and deletes parts, so it needs update and delete permission on parts. The part itself will still be created."
 msgstr "Importing a bill of materials creates and deletes parts, so it needs update and delete permission on parts. The part itself will still be created."
 
@@ -10486,6 +10486,9 @@ msgstr "Onshape denied the connection"
 
 msgid "Onshape didn't return an authorization code"
 msgstr "Onshape didn't return an authorization code"
+
+msgid "Onshape import did not finish"
+msgstr "Onshape import did not finish"
 
 msgid "Onshape isn't configured"
 msgstr "Onshape isn't configured"

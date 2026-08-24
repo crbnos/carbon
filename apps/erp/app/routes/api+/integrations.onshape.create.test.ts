@@ -368,10 +368,10 @@ describe("v2.create — the bill of materials branch", () => {
     expect(patchElementMappingMetadata).toHaveBeenCalledTimes(1);
     const patch = patchElementMappingMetadata.mock.calls[0][1] as {
       itemId: string;
-      patch: { bomImport: { startedAt: string } };
+      patch: { progress: { startedAt: string } };
     };
     expect(patch.itemId).toBe(ITEM_ID);
-    expect(patch.patch.bomImport.startedAt).toEqual(expect.any(String));
+    expect(patch.patch.progress.startedAt).toEqual(expect.any(String));
   });
 
   it("still creates the part for a create-only user, and names what is missing", async () => {

@@ -1,70 +1,118 @@
 import { useCarbon } from "@carbon/auth";
+import type { OnshapeImportStage } from "@carbon/ee/onshape";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useUser } from "./useUser";
 
 const POLL_INTERVAL_MS = 3_000;
 
 /**
- * How long a start with no finish is believed.
+ * How long a start with no ending is believed.
  *
- * `onshape-bom-import` is declared `retries: 10` and a crashed run never
- * reaches its finish stamp, so a `startedAt` can outlive the job that wrote it.
- * Past the cap the item stops claiming to be importing rather than saying so
- * forever — the state is unknown, not running.
+ * `onshape-bom-import` is declared `retries: 10` and its `onFailure` handler
+ * stamps a failure — but a run killed outside that path (a deploy mid-run, an
+ * Inngest incident) reaches neither ending. Past the cap the item stops
+ * claiming to be importing: the state is UNKNOWN, not running. A blocking UI
+ * must say so rather than spin forever.
  */
 const STALE_AFTER_MS = 15 * 60 * 1000;
 
 /** How long the "finished" state is worth showing after the fact. */
 const FRESH_FINISH_MS = 60 * 1000;
 
-type BomImportMarker = {
+type ImportProgress = {
   startedAt?: string;
+  stage?: OnshapeImportStage;
+  done?: number;
+  total?: number;
   finishedAt?: string;
+  failedAt?: string;
+  error?: string;
   attentionCount?: number;
 };
 
 export type OnshapeImportStatus = {
-  /** A BOM import is believed to be running right now. */
+  /** An import is believed to be running right now. */
   running: boolean;
   /** It finished within the last minute — worth saying once. */
   justFinished: boolean;
+  /** It reported a failure, or outlived the staleness cap without an ending. */
+  failed: boolean;
+  /** Why it failed, when the run got far enough to say. */
+  error: string | null;
+  /**
+   * The run outlived the cap with no ending at all, as opposed to reporting a
+   * failure. Distinct because there is nothing to tell the user about the
+   * cause, and the work may in fact have completed.
+   */
+  stalled: boolean;
+  stage: OnshapeImportStage | null;
+  done: number | null;
+  total: number | null;
   attentionCount: number;
 };
 
-function readStatus(marker: BomImportMarker | null): OnshapeImportStatus {
-  const idle = { running: false, justFinished: false, attentionCount: 0 };
-  if (!marker?.startedAt) return idle;
+const IDLE: OnshapeImportStatus = {
+  running: false,
+  justFinished: false,
+  failed: false,
+  error: null,
+  stalled: false,
+  stage: null,
+  done: null,
+  total: null,
+  attentionCount: 0
+};
 
-  const startedAt = Date.parse(marker.startedAt);
-  if (!Number.isFinite(startedAt)) return idle;
+function readStatus(progress: ImportProgress | null): OnshapeImportStatus {
+  if (!progress?.startedAt) return IDLE;
 
-  if (!marker.finishedAt) {
-    return Date.now() - startedAt > STALE_AFTER_MS
-      ? idle
-      : { running: true, justFinished: false, attentionCount: 0 };
+  const startedAt = Date.parse(progress.startedAt);
+  if (!Number.isFinite(startedAt)) return IDLE;
+
+  // A reported failure wins over everything: the run said what happened, and
+  // that is the one thing worth showing.
+  if (progress.failedAt) {
+    return {
+      ...IDLE,
+      failed: true,
+      error: progress.error ?? null,
+      stage: progress.stage ?? null
+    };
   }
 
-  const finishedAt = Date.parse(marker.finishedAt);
+  if (!progress.finishedAt) {
+    if (Date.now() - startedAt > STALE_AFTER_MS) {
+      return { ...IDLE, failed: true, stalled: true };
+    }
+    return {
+      ...IDLE,
+      running: true,
+      stage: progress.stage ?? null,
+      done: typeof progress.done === "number" ? progress.done : null,
+      total: typeof progress.total === "number" ? progress.total : null
+    };
+  }
+
+  const finishedAt = Date.parse(progress.finishedAt);
   return {
-    running: false,
+    ...IDLE,
     justFinished:
       Number.isFinite(finishedAt) && Date.now() - finishedAt < FRESH_FINISH_MS,
-    attentionCount: marker.attentionCount ?? 0
+    attentionCount: progress.attentionCount ?? 0
   };
 }
 
 /**
- * Whether an Onshape BOM import is running against an item.
+ * Whether Carbon is still building an item out from Onshape.
  *
  * POLL ONLY, deliberately. `externalIntegrationMapping` is not in the
- * `supabase_realtime` publication and neither is `methodMaterial` — which is
- * why the import route's toast says "reload the page in a moment". Adding the
+ * `supabase_realtime` publication and neither is `methodMaterial`. Adding the
  * publication is a migration plus a new realtime surface for a row that carries
  * integration metadata, so this mirrors the polling half of
  * `useDocumentExtraction` and stops on a terminal state.
  *
- * The marker itself is written by whoever dispatched the job and closed by the
- * job; this hook only reads it.
+ * The marker is opened by whoever dispatched the job and closed by the job;
+ * this hook only reads it.
  */
 export function useOnshapeImportStatus(
   itemId: string | null,
@@ -72,7 +120,7 @@ export function useOnshapeImportStatus(
 ): OnshapeImportStatus {
   const { carbon } = useCarbon();
   const { company } = useUser();
-  const [marker, setMarker] = useState<BomImportMarker | null>(null);
+  const [progress, setProgress] = useState<ImportProgress | null>(null);
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearPoll = useCallback(() => {
@@ -82,7 +130,7 @@ export function useOnshapeImportStatus(
     }
   }, []);
 
-  const fetchMarker = useCallback(async () => {
+  const fetchProgress = useCallback(async () => {
     if (!itemId || !carbon || !enabled) return;
 
     // The SELECT policy on this table allows any employee in the company, so
@@ -97,25 +145,25 @@ export function useOnshapeImportStatus(
       .maybeSingle();
 
     const next =
-      (data?.metadata as { bomImport?: BomImportMarker } | null)?.bomImport ??
+      (data?.metadata as { progress?: ImportProgress } | null)?.progress ??
       null;
-    setMarker(next);
+    setProgress(next);
 
     clearPoll();
     if (readStatus(next).running) {
       pollTimerRef.current = setTimeout(() => {
         pollTimerRef.current = null;
-        void fetchMarker();
+        void fetchProgress();
       }, POLL_INTERVAL_MS);
     }
   }, [itemId, carbon, enabled, company.id, clearPoll]);
 
   useEffect(() => {
-    void fetchMarker();
+    void fetchProgress();
     return () => clearPoll();
-  }, [fetchMarker, clearPoll]);
+  }, [fetchProgress, clearPoll]);
 
-  return readStatus(marker);
+  return readStatus(progress);
 }
 
 export { readStatus as readOnshapeImportStatus, STALE_AFTER_MS };

@@ -2525,12 +2525,6 @@ msgstr "Malzeme listesi"
 msgid "Bill of Materials"
 msgstr "Malzeme Listesi"
 
-msgid "Bill of materials imported"
-msgstr ""
-
-msgid "Bill of materials imported — check notifications"
-msgstr ""
-
 msgid "Bill of Process"
 msgstr "İş Akışı"
 
@@ -7681,6 +7675,12 @@ msgstr ""
 msgid "Import your BOM"
 msgstr "BOM'unuzu İçe Aktarın"
 
+msgid "Imported from Onshape"
+msgstr ""
+
+msgid "Imported from Onshape — check notifications"
+msgstr ""
+
 msgid "Importing a bill of materials creates and deletes parts, so it needs update and delete permission on parts. The part itself will still be created."
 msgstr ""
 
@@ -10486,6 +10486,9 @@ msgstr "Onshape bağlantıyı reddetti"
 
 msgid "Onshape didn't return an authorization code"
 msgstr "Onshape bir yetkilendirme kodu döndürmedi"
+
+msgid "Onshape import did not finish"
+msgstr ""
 
 msgid "Onshape isn't configured"
 msgstr "Onshape yapılandırılmamış"

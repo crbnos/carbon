@@ -2525,12 +2525,6 @@ msgstr "物料清单"
 msgid "Bill of Materials"
 msgstr "物料清单"
 
-msgid "Bill of materials imported"
-msgstr ""
-
-msgid "Bill of materials imported — check notifications"
-msgstr ""
-
 msgid "Bill of Process"
 msgstr "工艺流程"
 
@@ -7681,6 +7675,12 @@ msgstr ""
 msgid "Import your BOM"
 msgstr "导入您的物料清单"
 
+msgid "Imported from Onshape"
+msgstr ""
+
+msgid "Imported from Onshape — check notifications"
+msgstr ""
+
 msgid "Importing a bill of materials creates and deletes parts, so it needs update and delete permission on parts. The part itself will still be created."
 msgstr ""
 
@@ -10486,6 +10486,9 @@ msgstr "Onshape 拒绝了连接"
 
 msgid "Onshape didn't return an authorization code"
 msgstr "Onshape 未返回授权代码"
+
+msgid "Onshape import did not finish"
+msgstr ""
 
 msgid "Onshape isn't configured"
 msgstr "尚未配置 Onshape"

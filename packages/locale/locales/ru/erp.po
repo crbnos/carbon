@@ -2525,12 +2525,6 @@ msgstr "Спецификация материалов"
 msgid "Bill of Materials"
 msgstr "Спецификация материалов"
 
-msgid "Bill of materials imported"
-msgstr ""
-
-msgid "Bill of materials imported — check notifications"
-msgstr ""
-
 msgid "Bill of Process"
 msgstr "Спецификация процесса"
 
@@ -7681,6 +7675,12 @@ msgstr ""
 msgid "Import your BOM"
 msgstr "Импортируйте вашу BOM"
 
+msgid "Imported from Onshape"
+msgstr ""
+
+msgid "Imported from Onshape — check notifications"
+msgstr ""
+
 msgid "Importing a bill of materials creates and deletes parts, so it needs update and delete permission on parts. The part itself will still be created."
 msgstr ""
 
@@ -10486,6 +10486,9 @@ msgstr "Onshape отклонил подключение"
 
 msgid "Onshape didn't return an authorization code"
 msgstr "Onshape не вернул код авторизации"
+
+msgid "Onshape import did not finish"
+msgstr ""
 
 msgid "Onshape isn't configured"
 msgstr "Onshape не настроен"

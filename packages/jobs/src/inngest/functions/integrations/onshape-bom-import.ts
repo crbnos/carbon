@@ -30,6 +30,7 @@ import {
   isInitialRevisionLabel,
   type OnshapeBomNode,
   type OnshapeBomRow,
+  type OnshapeImportStage,
   parseOnshapeBom,
   patchElementMappingMetadata,
   readElementMappingsForItems,
@@ -463,25 +464,74 @@ export const onshapeBomImportFunction = inngest.createFunction(
     //
     // It also serializes `getOnshapeClient`'s read-modify-write token refresh,
     // which two concurrent imports for one company would otherwise race.
-    concurrency: { key: "event.data.companyId", limit: 1 }
+    concurrency: { key: "event.data.companyId", limit: 1 },
+    /**
+     * Close the progress marker when every retry is spent.
+     *
+     * The create modal BLOCKS on this record, so a run that dies without an
+     * ending leaves the user watching a spinner until a 15-minute staleness cap
+     * expires — a wait that tells them nothing and ends by pretending the
+     * import was never running. Stamping the failure turns that into a sentence
+     * they can act on.
+     *
+     * `event.data.event.data` is the ORIGINAL event's payload: onFailure is
+     * invoked with a wrapper event carrying the failed run's own event inside.
+     */
+    onFailure: async ({ event }) => {
+      const failed = event.data.event.data as {
+        companyId?: string;
+        makeMethodId?: string;
+      };
+      if (!failed?.companyId || !failed?.makeMethodId) return;
+
+      const carbon = getCarbonServiceRole();
+      try {
+        const method = await carbon
+          .from("makeMethod")
+          .select("itemId")
+          .eq("id", failed.makeMethodId)
+          .eq("companyId", failed.companyId)
+          .maybeSingle();
+        if (!method.data?.itemId) return;
+
+        await patchElementMappingMetadata(carbon, {
+          companyId: failed.companyId,
+          itemId: method.data.itemId,
+          patch: {
+            progress: {
+              stage: undefined,
+              done: undefined,
+              total: undefined,
+              failedAt: new Date().toISOString(),
+              error: event.data.error.message
+            }
+          }
+        });
+      } catch (error) {
+        console.error(
+          `[ONSHAPE BOM IMPORT] ${failed.companyId}: could not stamp the failure`,
+          error
+        );
+      }
+    }
   },
   { event: "carbon/onshape-bom-import" },
   async ({ event, step }) => {
     const payload: Payload = PayloadSchema.parse(event.data);
     const carbon = getCarbonServiceRole();
 
-    // Re-read the gate every execution, so turning the pipeline back to legacy
-    // also kills an in-flight retry.
+    // Re-read the gate every execution, so disconnecting Onshape also kills an
+    // in-flight retry.
     const settings = await getOnshapeSettings(carbon, payload.companyId);
     if (settings.readFailed) {
-      // A transient database error must not masquerade as "this company is on
-      // legacy" — that would turn a real import into a silent no-op run.
+      // A transient database error must not masquerade as "this company is not
+      // connected" — that would turn a real import into a silent no-op run.
       throw new Error(
         "Could not read the Onshape integration settings; retrying."
       );
     }
-    // The `onshape-v2` record itself is the opt-in: an absent or inactive one
-    // means this company never installed v2. No pipeline field to read.
+    // The `onshape` record itself is the opt-in: an absent or inactive one
+    // means this company never connected Onshape.
     if (!settings.active) {
       return {
         pipelineSkipped: true as const,
@@ -496,6 +546,38 @@ export const onshapeBomImportFunction = inngest.createFunction(
         payload.companyId,
         payload.allowChangeNoticeDraft
       );
+
+      /**
+       * Move the progress marker on, for whoever is waiting on this item.
+       *
+       * The create modal BLOCKS on this record, so a stage that is never
+       * stamped is a user watching a panel that says nothing while the job
+       * works. Best-effort by design: a failed stamp costs the progress
+       * display, and throwing here would retry the whole import to fix a label.
+       */
+      const stage = async (
+        name: OnshapeImportStage,
+        counts?: { done: number; total: number }
+      ) => {
+        try {
+          await patchElementMappingMetadata(carbon, {
+            companyId: payload.companyId,
+            itemId: method.itemId,
+            patch: {
+              progress: {
+                stage: name,
+                done: counts?.done,
+                total: counts?.total
+              }
+            }
+          });
+        } catch (error) {
+          console.error(
+            `[ONSHAPE BOM IMPORT] ${payload.companyId}: could not stamp stage ${name}`,
+            error
+          );
+        }
+      };
 
       const connection = await getOnshapeClient(
         carbon,
@@ -623,6 +705,8 @@ export const onshapeBomImportFunction = inngest.createFunction(
           });
         }
       }
+
+      await stage("parts", { done: 0, total: parsed.rows.length });
 
       // itemId per BOM row, minting only genuinely-unknown parts.
       const itemIdByRow = new Map<string, string>();
@@ -1283,6 +1367,8 @@ export const onshapeBomImportFunction = inngest.createFunction(
         }
       };
 
+      await stage("materials");
+
       await reconcileNode(method.id, tree);
 
       // The item being imported INTO is not one of `parsed.rows`, so the child
@@ -1336,7 +1422,11 @@ export const onshapeBomImportFunction = inngest.createFunction(
           method.itemId
         );
       }
-      for (const group of groupAssetTargetsByElement(assetRows)) {
+      const assetGroups = groupAssetTargetsByElement(assetRows);
+      await stage("assets", { done: 0, total: assetGroups.length });
+
+      let assetGroupsDone = 0;
+      for (const group of assetGroups) {
         try {
           const pulled = await withRateLimitRetry(
             () =>
@@ -1400,6 +1490,12 @@ export const onshapeBomImportFunction = inngest.createFunction(
             }`
           });
         }
+
+        assetGroupsDone += 1;
+        await stage("assets", {
+          done: assetGroupsDone,
+          total: assetGroups.length
+        });
       }
 
       // Drawings for the whole tree, once per document-version.
@@ -1424,6 +1520,8 @@ export const onshapeBomImportFunction = inngest.createFunction(
             targets: [row]
           });
       }
+
+      await stage("drawings", { done: 0, total: drawingGroups.size });
 
       for (const group of drawingGroups.values()) {
         try {
@@ -1504,7 +1602,10 @@ export const onshapeBomImportFunction = inngest.createFunction(
             // No `startedAt`: the patch merges into the marker the dispatching
             // route opened rather than replacing it. This execution has no
             // business inventing a start time it did not choose.
-            bomImport: {
+            progress: {
+              stage: undefined,
+              done: undefined,
+              total: undefined,
               finishedAt: new Date().toISOString(),
               attentionCount
             }
