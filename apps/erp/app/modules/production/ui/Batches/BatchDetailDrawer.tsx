@@ -146,7 +146,7 @@ export function BatchDetailDrawer({
         if (!open) onClose();
       }}
     >
-      <DrawerContent size="full">
+      <DrawerContent size="full" position="bottom">
         <DrawerHeader className="px-6 flex-shrink-0">
           <DrawerTitle>{batch.readableId}</DrawerTitle>
           <HStack spacing={2} className="pt-1 flex-wrap">
