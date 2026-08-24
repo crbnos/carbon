@@ -135,6 +135,10 @@ msgstr "{0} problemas — não publicado"
 msgid "{0} Processes"
 msgstr "{0} Processos"
 
+#. placeholder {0}: member.quantityScrapped
+msgid "{0} scrapped"
+msgstr "{0} descartado"
+
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
 msgstr "{0} fornecedores com saldo"
@@ -9997,6 +10001,9 @@ msgstr "Sem contas a pagar"
 msgid "No payments yet."
 msgstr "Nenhum pagamento ainda."
 
+msgid "No planned or recorded time."
+msgstr "Nenhum tempo planejado ou registrado."
+
 msgid "No planning data"
 msgstr "Sem dados de planejamento"
 
@@ -10020,6 +10027,9 @@ msgstr "Nenhum processo selecionado"
 
 msgid "No production events recorded for this operation yet"
 msgstr "Ainda não há eventos de produção registados para esta operação"
+
+msgid "No production recorded yet."
+msgstr "Nenhuma produção registrada ainda."
 
 msgid "No purchases in this period"
 msgstr "Nenhuma compra neste período"
@@ -11472,6 +11482,9 @@ msgstr "Evento de produção"
 msgid "Production Event"
 msgstr "Evento de Produção"
 
+msgid "Production events"
+msgstr "Eventos de produção"
+
 msgid "Production Events"
 msgstr "Eventos de Produção"
 
@@ -12739,6 +12752,9 @@ msgstr "Regras que ajustam preços automaticamente por quantidade ou cliente"
 
 msgid "Rules that decide where each item gets stored"
 msgstr "Regras que decidem onde cada item é armazenado"
+
+msgid "Run"
+msgstr "Rodada"
 
 msgid "Run acceptance testing"
 msgstr "Executar testes de aceitação"
@@ -15727,6 +15743,9 @@ msgstr "Cartões de ponto estão desativados"
 
 msgid "Timecards are enabled"
 msgstr "Cartões de ponto estão ativados"
+
+msgid "Timer running"
+msgstr "Cronômetro em execução"
 
 msgid "Timezone"
 msgstr "Fuso Horário"

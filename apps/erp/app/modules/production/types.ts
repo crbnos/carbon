@@ -20,7 +20,9 @@ import type {
   getJobMakeMethodById,
   getJobMaterialsWithQuantityOnHand,
   getJobMethodTree,
+  getJobOperationBatchEvents,
   getJobOperationBatches,
+  getJobOperationBatchWithMembers,
   getJobOperations,
   getJobPurchaseOrderLines,
   getMaintenanceDispatch,
@@ -205,6 +207,14 @@ export type JobOperationBatch = NonNullable<
   // Header work center, falling back to the members' shared one.
   workCenterName?: string | null;
 };
+
+export type JobOperationBatchDetail = NonNullable<
+  Awaited<ReturnType<typeof getJobOperationBatchWithMembers>>["data"]
+>;
+
+export type JobOperationBatchEvent = NonNullable<
+  Awaited<ReturnType<typeof getJobOperationBatchEvents>>["data"]
+>[number];
 
 // Material properties of one BOM line, as returned by get_batchable_operations.
 export type BatchMaterial = {

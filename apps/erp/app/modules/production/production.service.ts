@@ -4438,7 +4438,7 @@ export async function getJobOperationBatchWithMembers(
 ) {
   const batch = await client
     .from("jobOperationBatch")
-    .select("*, process(name), workCenter(name)")
+    .select("*, process(name), workCenter(name), location(name)")
     .eq("id", batchId)
     .eq("companyId", companyId)
     .single();
@@ -4446,7 +4446,7 @@ export async function getJobOperationBatchWithMembers(
   const members = await client
     .from("jobOperation")
     .select(
-      "id, description, operationQuantity, quantityComplete, status, workCenter(name), job(id, jobId), jobMakeMethod(item(readableIdWithRevision))"
+      "id, description, operationQuantity, quantityComplete, quantityScrapped, status, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, workCenter(name), job(id, jobId), jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath))"
     )
     .eq("jobOperationBatchId", batchId)
     .eq("companyId", companyId);
@@ -4464,6 +4464,23 @@ export async function getJobOperationBatchWithMembers(
     data: { ...batch.data, workCenterName, members: members.data ?? [] },
     error: members.error
   };
+}
+
+// The batch's production events: the live aggregate run while Active, and the
+// per-member slices after completion (slices keep the jobOperationBatchId tag).
+export async function getJobOperationBatchEvents(
+  client: SupabaseClient<Database>,
+  batchId: string,
+  companyId: string
+) {
+  return client
+    .from("productionEvent")
+    .select(
+      "id, type, startTime, endTime, duration, employeeId, jobOperationId"
+    )
+    .eq("jobOperationBatchId", batchId)
+    .eq("companyId", companyId)
+    .order("startTime", { ascending: true });
 }
 
 export async function getBatchableOperations(

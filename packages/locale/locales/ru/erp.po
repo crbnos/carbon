@@ -135,6 +135,10 @@ msgstr "{0} проблем — не опубликовано"
 msgid "{0} Processes"
 msgstr "{0} Процессов"
 
+#. placeholder {0}: member.quantityScrapped
+msgid "{0} scrapped"
+msgstr "{0} брак"
+
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
 msgstr "{0} поставщиков с остатком"
@@ -9997,6 +10001,9 @@ msgstr "Нет кредиторской задолженности"
 msgid "No payments yet."
 msgstr "Платежей пока нет."
 
+msgid "No planned or recorded time."
+msgstr "Нет запланированного или записанного времени."
+
 msgid "No planning data"
 msgstr "Нет данных планирования"
 
@@ -10020,6 +10027,9 @@ msgstr "Процесс не выбран"
 
 msgid "No production events recorded for this operation yet"
 msgstr "Для этой операции еще не записано ни одного производственного события"
+
+msgid "No production recorded yet."
+msgstr "Производство еще не записано."
 
 msgid "No purchases in this period"
 msgstr "Нет покупок в этом периоде"
@@ -11472,6 +11482,9 @@ msgstr "Событие производства"
 msgid "Production Event"
 msgstr "Производственное событие"
 
+msgid "Production events"
+msgstr "События производства"
+
 msgid "Production Events"
 msgstr "События производства"
 
@@ -12739,6 +12752,9 @@ msgstr "Правила, которые автоматически коррект
 
 msgid "Rules that decide where each item gets stored"
 msgstr "Правила, определяющие, где хранится каждый товар"
+
+msgid "Run"
+msgstr "Запуск"
 
 msgid "Run acceptance testing"
 msgstr "Провести приемочное тестирование"
@@ -15727,6 +15743,9 @@ msgstr "Табели учета отключены"
 
 msgid "Timecards are enabled"
 msgstr "Табели учета рабочего времени включены"
+
+msgid "Timer running"
+msgstr "Таймер запущен"
 
 msgid "Timezone"
 msgstr "Часовой пояс"

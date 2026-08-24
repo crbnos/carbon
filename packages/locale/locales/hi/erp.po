@@ -135,6 +135,10 @@ msgstr "{0} समस्याएं — प्रकाशित नहीं"
 msgid "{0} Processes"
 msgstr "{0} प्रक्रियाएं"
 
+#. placeholder {0}: member.quantityScrapped
+msgid "{0} scrapped"
+msgstr "{0} स्क्रैप किया गया"
+
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
 msgstr "{0} आपूर्तिकर्ता शेष के साथ"
@@ -9997,6 +10001,9 @@ msgstr "कोई देय नहीं"
 msgid "No payments yet."
 msgstr "अभी तक कोई भुगतान नहीं।"
 
+msgid "No planned or recorded time."
+msgstr "कोई नियोजित या दर्ज समय नहीं।"
+
 msgid "No planning data"
 msgstr "कोई योजना डेटा नहीं"
 
@@ -10020,6 +10027,9 @@ msgstr "कोई प्रक्रिया चयनित नहीं ह�
 
 msgid "No production events recorded for this operation yet"
 msgstr "इस ऑपरेशन के लिए अभी तक कोई उत्पादन घटना रिकॉर्ड नहीं की गई है"
+
+msgid "No production recorded yet."
+msgstr "अभी तक कोई उत्पादन दर्ज नहीं किया गया।"
 
 msgid "No purchases in this period"
 msgstr "इस अवधि में कोई खरीद नहीं"
@@ -11472,6 +11482,9 @@ msgstr "उत्पादन घटना"
 msgid "Production Event"
 msgstr "उत्पादन घटना"
 
+msgid "Production events"
+msgstr "उत्पादन घटनाएँ"
+
 msgid "Production Events"
 msgstr "उत्पादन घटनाएं"
 
@@ -12739,6 +12752,9 @@ msgstr "नियम जो मात्रा या ग्राहक के 
 
 msgid "Rules that decide where each item gets stored"
 msgstr "नियम जो तय करते हैं कि प्रत्येक आइटम कहाँ संग्रहीत होता है"
+
+msgid "Run"
+msgstr "रन"
 
 msgid "Run acceptance testing"
 msgstr "स्वीकृति परीक्षण चलाएं"
@@ -15727,6 +15743,9 @@ msgstr "टाइमकार्ड अक्षम हैं"
 
 msgid "Timecards are enabled"
 msgstr "टाइमकार्ड सक्षम हैं"
+
+msgid "Timer running"
+msgstr "टाइमर चल रहा है"
 
 msgid "Timezone"
 msgstr "समय क्षेत्र"

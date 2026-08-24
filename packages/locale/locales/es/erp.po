@@ -135,6 +135,10 @@ msgstr "{0} problemas — no publicado"
 msgid "{0} Processes"
 msgstr "{0} Procesos"
 
+#. placeholder {0}: member.quantityScrapped
+msgid "{0} scrapped"
+msgstr "{0} desechado"
+
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
 msgstr "{0} proveedores con saldo"
@@ -9997,6 +10001,9 @@ msgstr "Sin cuentas por pagar"
 msgid "No payments yet."
 msgstr "Sin pagos aún."
 
+msgid "No planned or recorded time."
+msgstr "Sin tiempo planificado o registrado."
+
 msgid "No planning data"
 msgstr "Sin datos de planificación"
 
@@ -10020,6 +10027,9 @@ msgstr "Ningún proceso seleccionado"
 
 msgid "No production events recorded for this operation yet"
 msgstr "Aún no se han registrado eventos de producción para esta operación"
+
+msgid "No production recorded yet."
+msgstr "Sin producción registrada aún."
 
 msgid "No purchases in this period"
 msgstr "Sin compras en este período"
@@ -11472,6 +11482,9 @@ msgstr "Evento de producción"
 msgid "Production Event"
 msgstr "Evento de Producción"
 
+msgid "Production events"
+msgstr "Eventos de producción"
+
 msgid "Production Events"
 msgstr "Eventos de Producción"
 
@@ -12739,6 +12752,9 @@ msgstr "Reglas que ajustan precios automáticamente por cantidad o cliente"
 
 msgid "Rules that decide where each item gets stored"
 msgstr "Reglas que deciden dónde se almacena cada artículo"
+
+msgid "Run"
+msgstr "Ejecución"
 
 msgid "Run acceptance testing"
 msgstr "Ejecutar pruebas de aceptación"
@@ -15727,6 +15743,9 @@ msgstr "Las tarjetas de tiempo están deshabilitadas"
 
 msgid "Timecards are enabled"
 msgstr "Las tarjetas de tiempo están habilitadas"
+
+msgid "Timer running"
+msgstr "Temporizador en ejecución"
 
 msgid "Timezone"
 msgstr "Zona horaria"

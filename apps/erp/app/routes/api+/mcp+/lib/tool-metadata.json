@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-24T08:45:28.804Z",
-  "totalTools": 1449,
+  "generated": "2026-08-24T10:49:18.607Z",
+  "totalTools": 1450,
   "modules": 15,
   "tools": [
     {
@@ -23349,6 +23349,32 @@
       "module": "production",
       "classification": "READ",
       "description": "get job operation batch with members",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "batchId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "batchId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "batchId"
+        ]
+      }
+    },
+    {
+      "name": "production_getJobOperationBatchEvents",
+      "module": "production",
+      "classification": "READ",
+      "description": "get job operation batch events",
       "paramCount": 1,
       "serviceParams": [
         "client",

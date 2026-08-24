@@ -135,6 +135,10 @@ msgstr "{0} 个问题 — 未发布"
 msgid "{0} Processes"
 msgstr "{0} 个流程"
 
+#. placeholder {0}: member.quantityScrapped
+msgid "{0} scrapped"
+msgstr "{0} 报废"
+
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
 msgstr "{0}个有余额的供应商"
@@ -9997,6 +10001,9 @@ msgstr "无应付款"
 msgid "No payments yet."
 msgstr "还没有付款。"
 
+msgid "No planned or recorded time."
+msgstr "没有计划或记录的时间。"
+
 msgid "No planning data"
 msgstr "没有规划数据"
 
@@ -10020,6 +10027,9 @@ msgstr "未选择工艺"
 
 msgid "No production events recorded for this operation yet"
 msgstr "此操作尚未记录任何生产事件"
+
+msgid "No production recorded yet."
+msgstr "还没有生产记录。"
 
 msgid "No purchases in this period"
 msgstr "此期间无采购"
@@ -11472,6 +11482,9 @@ msgstr "生产事件"
 msgid "Production Event"
 msgstr "生产事件"
 
+msgid "Production events"
+msgstr "生产事件"
+
 msgid "Production Events"
 msgstr "生产事件"
 
@@ -12739,6 +12752,9 @@ msgstr "根据数量或客户自动调整价格的规则"
 
 msgid "Rules that decide where each item gets stored"
 msgstr "决定每个项目存储位置的规则"
+
+msgid "Run"
+msgstr "运行"
 
 msgid "Run acceptance testing"
 msgstr "运行验收测试"
@@ -15727,6 +15743,9 @@ msgstr "时间卡已禁用"
 
 msgid "Timecards are enabled"
 msgstr "时间卡已启用"
+
+msgid "Timer running"
+msgstr "计时器运行中"
 
 msgid "Timezone"
 msgstr "时区"

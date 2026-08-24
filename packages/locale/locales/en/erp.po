@@ -135,6 +135,10 @@ msgstr "{0} problems — not published"
 msgid "{0} Processes"
 msgstr "{0} Processes"
 
+#. placeholder {0}: member.quantityScrapped
+msgid "{0} scrapped"
+msgstr "{0} scrapped"
+
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
 msgstr "{0} suppliers with a balance"
@@ -9997,6 +10001,9 @@ msgstr "No payables"
 msgid "No payments yet."
 msgstr "No payments yet."
 
+msgid "No planned or recorded time."
+msgstr "No planned or recorded time."
+
 msgid "No planning data"
 msgstr "No planning data"
 
@@ -10020,6 +10027,9 @@ msgstr "No process selected"
 
 msgid "No production events recorded for this operation yet"
 msgstr "No production events recorded for this operation yet"
+
+msgid "No production recorded yet."
+msgstr "No production recorded yet."
 
 msgid "No purchases in this period"
 msgstr "No purchases in this period"
@@ -11472,6 +11482,9 @@ msgstr "Production event"
 msgid "Production Event"
 msgstr "Production Event"
 
+msgid "Production events"
+msgstr "Production events"
+
 msgid "Production Events"
 msgstr "Production Events"
 
@@ -12739,6 +12752,9 @@ msgstr "Rules that adjust prices automatically by quantity or customer"
 
 msgid "Rules that decide where each item gets stored"
 msgstr "Rules that decide where each item gets stored"
+
+msgid "Run"
+msgstr "Run"
 
 msgid "Run acceptance testing"
 msgstr "Run acceptance testing"
@@ -15727,6 +15743,9 @@ msgstr "Timecards are disabled"
 
 msgid "Timecards are enabled"
 msgstr "Timecards are enabled"
+
+msgid "Timer running"
+msgstr "Timer running"
 
 msgid "Timezone"
 msgstr "Timezone"

@@ -135,6 +135,10 @@ msgstr "{0}個の問題 — 未発行"
 msgid "{0} Processes"
 msgstr "{0}個のプロセス"
 
+#. placeholder {0}: member.quantityScrapped
+msgid "{0} scrapped"
+msgstr "{0}廃棄"
+
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
 msgstr "{0}件の残高のある仕入先"
@@ -9997,6 +10001,9 @@ msgstr "支払い義務なし"
 msgid "No payments yet."
 msgstr "まだ支払いはありません。"
 
+msgid "No planned or recorded time."
+msgstr "計画時間または記録時間がありません。"
+
 msgid "No planning data"
 msgstr "計画データなし"
 
@@ -10020,6 +10027,9 @@ msgstr "プロセスが選択されていません"
 
 msgid "No production events recorded for this operation yet"
 msgstr "この操作で記録された生産イベントはまだありません"
+
+msgid "No production recorded yet."
+msgstr "生産がまだ記録されていません。"
 
 msgid "No purchases in this period"
 msgstr "この期間に購入がありません"
@@ -11472,6 +11482,9 @@ msgstr "生産イベント"
 msgid "Production Event"
 msgstr "生産イベント"
 
+msgid "Production events"
+msgstr "生産イベント"
+
 msgid "Production Events"
 msgstr "本番イベント"
 
@@ -12739,6 +12752,9 @@ msgstr "数量または顧客に基づいて価格を自動的に調整するル
 
 msgid "Rules that decide where each item gets stored"
 msgstr "各アイテムがどこに保存されるかを決定するルール"
+
+msgid "Run"
+msgstr "実行"
 
 msgid "Run acceptance testing"
 msgstr "受け入れテストを実行する"
@@ -15727,6 +15743,9 @@ msgstr "タイムカードは無効です"
 
 msgid "Timecards are enabled"
 msgstr "タイムカードが有効です"
+
+msgid "Timer running"
+msgstr "タイマー実行中"
 
 msgid "Timezone"
 msgstr "タイムゾーン"

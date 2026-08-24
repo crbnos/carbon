@@ -135,6 +135,10 @@ msgstr "{0}개 문제 — 발행되지 않음"
 msgid "{0} Processes"
 msgstr "공정 {0}개"
 
+#. placeholder {0}: member.quantityScrapped
+msgid "{0} scrapped"
+msgstr "{0} 폐기됨"
+
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
 msgstr "잔액이 있는 공급업체 {0}곳"
@@ -9997,6 +10001,9 @@ msgstr "매입채무가 없습니다"
 msgid "No payments yet."
 msgstr "아직 결제가 없습니다."
 
+msgid "No planned or recorded time."
+msgstr "계획되거나 기록된 시간이 없습니다."
+
 msgid "No planning data"
 msgstr "계획 데이터가 없습니다"
 
@@ -10020,6 +10027,9 @@ msgstr "프로세스를 선택하지 않았습니다"
 
 msgid "No production events recorded for this operation yet"
 msgstr "이 공정작업에 대해 아직 기록된 생산 이벤트가 없습니다"
+
+msgid "No production recorded yet."
+msgstr "아직 기록된 생산이 없습니다."
 
 msgid "No purchases in this period"
 msgstr "이 기간에 구매가 없습니다"
@@ -11472,6 +11482,9 @@ msgstr "생산 이벤트"
 msgid "Production Event"
 msgstr "생산 이벤트"
 
+msgid "Production events"
+msgstr "생산 이벤트"
+
 msgid "Production Events"
 msgstr "생산 이벤트"
 
@@ -12739,6 +12752,9 @@ msgstr "수량이나 고객에 따라 가격을 자동으로 조정하는 규칙
 
 msgid "Rules that decide where each item gets stored"
 msgstr "각 품목의 보관 위치를 결정하는 규칙"
+
+msgid "Run"
+msgstr "실행"
 
 msgid "Run acceptance testing"
 msgstr "인수 테스트 실행"
@@ -15727,6 +15743,9 @@ msgstr "근무기록이 비활성화됨"
 
 msgid "Timecards are enabled"
 msgstr "근무기록이 활성화됨"
+
+msgid "Timer running"
+msgstr "타이머 실행 중"
 
 msgid "Timezone"
 msgstr "시간대"

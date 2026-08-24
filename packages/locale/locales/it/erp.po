@@ -135,6 +135,10 @@ msgstr "{0} problemi — non pubblicato"
 msgid "{0} Processes"
 msgstr "{0} Processi"
 
+#. placeholder {0}: member.quantityScrapped
+msgid "{0} scrapped"
+msgstr "{0} scartato"
+
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
 msgstr "{0} fornitori con un saldo"
@@ -9997,6 +10001,9 @@ msgstr "Nessun debito"
 msgid "No payments yet."
 msgstr "Nessun pagamento ancora."
 
+msgid "No planned or recorded time."
+msgstr "Nessun tempo pianificato o registrato."
+
 msgid "No planning data"
 msgstr "Nessun dato di pianificazione"
 
@@ -10020,6 +10027,9 @@ msgstr "Nessun processo selezionato"
 
 msgid "No production events recorded for this operation yet"
 msgstr "Nessun evento di produzione ancora registrato per questa operazione"
+
+msgid "No production recorded yet."
+msgstr "Nessuna produzione registrata ancora."
 
 msgid "No purchases in this period"
 msgstr "Nessun acquisto in questo periodo"
@@ -11472,6 +11482,9 @@ msgstr "Evento di produzione"
 msgid "Production Event"
 msgstr "Evento di Produzione"
 
+msgid "Production events"
+msgstr "Eventi di produzione"
+
 msgid "Production Events"
 msgstr "Eventi di Produzione"
 
@@ -12739,6 +12752,9 @@ msgstr "Regole che regolano i prezzi automaticamente in base alla quantità o al
 
 msgid "Rules that decide where each item gets stored"
 msgstr "Regole che decidono dove viene archiviato ogni articolo"
+
+msgid "Run"
+msgstr "Esecuzione"
 
 msgid "Run acceptance testing"
 msgstr "Esegui test di accettazione"
@@ -15727,6 +15743,9 @@ msgstr "I fogli di presenze sono disabilitati"
 
 msgid "Timecards are enabled"
 msgstr "I fogli di presenze sono abilitati"
+
+msgid "Timer running"
+msgstr "Timer in esecuzione"
 
 msgid "Timezone"
 msgstr "Fuso orario"

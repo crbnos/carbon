@@ -135,6 +135,10 @@ msgstr "{0} sorun — yayınlanmadı"
 msgid "{0} Processes"
 msgstr "{0} Süreçler"
 
+#. placeholder {0}: member.quantityScrapped
+msgid "{0} scrapped"
+msgstr "{0} hurdaya alındı"
+
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
 msgstr "{0} bakiyesi olan tedarikçi"
@@ -9997,6 +10001,9 @@ msgstr "Ödeme yükümlülüğü yok"
 msgid "No payments yet."
 msgstr "Henüz ödeme yok."
 
+msgid "No planned or recorded time."
+msgstr "Planlanan veya kaydedilen zaman yok."
+
 msgid "No planning data"
 msgstr "Planlama verisi yok"
 
@@ -10020,6 +10027,9 @@ msgstr "Hiçbir işlem seçilmedi"
 
 msgid "No production events recorded for this operation yet"
 msgstr "Bu işlem için henüz üretim etkinliği kaydedilmedi"
+
+msgid "No production recorded yet."
+msgstr "Henüz kayıtlı üretim yok."
 
 msgid "No purchases in this period"
 msgstr "Bu dönemde satın alma yok"
@@ -11472,6 +11482,9 @@ msgstr "Üretim olayı"
 msgid "Production Event"
 msgstr "Üretim Olayı"
 
+msgid "Production events"
+msgstr "Üretim etkinlikleri"
+
 msgid "Production Events"
 msgstr "Üretim Etkinlikleri"
 
@@ -12739,6 +12752,9 @@ msgstr "Fiyatları miktara veya müşteriye göre otomatik olarak ayarlayan kura
 
 msgid "Rules that decide where each item gets stored"
 msgstr "Her öğenin nereye depolanacağını belirleyen kurallar"
+
+msgid "Run"
+msgstr "Çalışma"
 
 msgid "Run acceptance testing"
 msgstr "Kabul testini çalıştır"
@@ -15727,6 +15743,9 @@ msgstr "Zaman kartları devre dışı"
 
 msgid "Timecards are enabled"
 msgstr "Zaman kartları etkinleştirilmiş"
+
+msgid "Timer running"
+msgstr "Zamanlayıcı çalışıyor"
 
 msgid "Timezone"
 msgstr "Saat Dilim"

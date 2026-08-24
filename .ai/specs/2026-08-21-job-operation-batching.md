@@ -537,6 +537,21 @@ through; `ProcessForm` gains the Boolean field (clone `completeAllOnScan`).
   redirect, chip, cross-member shared timer, deferred GL on stop, proportional
   slice completion (Labor 50→25/25, Machine 3→2/1 & 13→7/6), members Done + batch
   Completed, and the Completed batch reverting to a plain operation view.
+- 2026-08-24: **Batch detail drawer** (Sid: "open the whole detail view" — the
+  thin member-list drawer was nearly empty). `/x/production/batches/:batchId`
+  now renders a full-size drawer (`BatchDetailDrawer`): header meta (status,
+  process, work center, location, created date + creator avatar, notes), an
+  enriched member table (item thumbnails, completed/qty with scrap callout,
+  status badges, compacted cell padding so all columns fit), and a Run card —
+  per-type actual-vs-plan progress bars (plan = max member setup + Σ
+  labor/machine, the MES batch-mode semantics; actual from the batch's
+  production events incl. an open timer's accrued elapsed) with a pulsing
+  "Timer running" badge and the event history (employee avatar, relative start,
+  duration — completed batches list the per-member slices, which keep the batch
+  tag). New `getJobOperationBatchEvents` service fn; member select widened
+  (scrap qty, time fields, thumbnail); footer actions unchanged. Verified live:
+  plan 4h renders, MES-started shared timer shows running badge + accruing
+  actual, stopped event shows recorded duration. 6 new strings, 12 locales.
 - 2026-08-24: **Batch builder round 3** (Sid: "more flexible and BOM-aware"
   filtering + "polish up the UI, alignment"). Filtering: the fixed row of five
   property MultiSelects is replaced by a dynamic local-state "+ Filter" picker
