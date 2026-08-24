@@ -26,7 +26,6 @@ const taskToEvent = {
   "onshape-bom-import": "carbon/onshape-bom-import",
   "onshape-release": "carbon/onshape-release",
   "onshape-item-assets": "carbon/onshape-item-assets",
-  "onshape-release-import": "carbon/onshape-release-import",
   "paperless-parts": "carbon/paperless-parts",
   "post-transactions": "carbon/post-transaction",
   "print-job-deliver": "carbon/print-job-deliver",

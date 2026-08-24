@@ -8,7 +8,6 @@ export { linearSyncFunction, syncIssueFromLinearSchema } from "./linear";
 export { onshapeBomImportFunction } from "./onshape-bom-import";
 export { onshapeItemAssetsFunction } from "./onshape-item-assets";
 export { onshapeReleaseFunction } from "./onshape-release";
-export { onshapeReleaseImportFunction } from "./onshape-release-import";
 export { paperlessPartsFunction } from "./paperless-parts";
 export {
   slackDocumentAssignmentUpdateFunction,

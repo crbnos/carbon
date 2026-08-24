@@ -1,4 +1,3 @@
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
 import type { OnshapeReleasePackage } from "@carbon/ee/onshape";
@@ -13,9 +12,7 @@ import { trigger } from "@carbon/lib/trigger";
 import { datetime, textToTiptap } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { RetryAfterError } from "inngest";
-import { z } from "zod";
 import { getWorkflowDispatch } from "../../../workflows/actions/dispatcher";
-import { inngest } from "../../client";
 import { selectReleaseTarget } from "./onshape-matching";
 import { resolveOnshapeCompanyId, withRateLimitRetry } from "./onshape-shared";
 
@@ -996,54 +993,3 @@ async function recordMarkerProgress(
     });
   }
 }
-
-const OnshapeReleaseImportPayloadSchema = z.object({
-  companyId: z.string(),
-  userId: z.string(),
-  messageId: z.string(),
-  releaseId: z.string(),
-  partNumber: z.string(),
-  documentId: z.string(),
-  versionId: z.string(),
-  elementId: z.string(),
-  elementType: z.number(),
-  revisionId: z.string().optional(),
-  revision: z.string().optional(),
-  releaseName: z.string().optional(),
-  onshapeCompanyId: z.string().optional()
-});
-
-export const onshapeReleaseImportFunction = inngest.createFunction(
-  {
-    id: "onshape-release-import",
-    retries: 3,
-    idempotency: "event.data.messageId",
-    // Serialise per RELEASE, not per element: the claim-then-append pattern
-    // needs one writer at a time so two siblings cannot both create a notice.
-    concurrency: { key: "event.data.releaseId", limit: 1 }
-  },
-  { event: "carbon/onshape-release-import" },
-  async ({ event, step }) => {
-    const payload = OnshapeReleaseImportPayloadSchema.parse(event.data);
-    const carbon = getCarbonServiceRole();
-
-    const result = await step.run("import-release", () =>
-      // This Inngest function IS the legacy release-import consumer; v2 calls
-      // runOnshapeReleaseImport directly rather than through this event.
-      runOnshapeReleaseImport(carbon, {
-        ...payload
-      })
-    );
-
-    if (!result.imported) {
-      console.log("onshape-release-import: skipped", {
-        companyId: payload.companyId,
-        partNumber: payload.partNumber,
-        releaseId: payload.releaseId,
-        reason: result.skippedReason
-      });
-    }
-
-    return result;
-  }
-);

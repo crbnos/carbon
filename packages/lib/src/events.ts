@@ -635,22 +635,6 @@ export type Events = {
       revision?: string | null;
     };
   };
-  "carbon/onshape-release-import": {
-    data: {
-      companyId: string;
-      userId: string;
-      messageId: string; // Onshape webhook messageId — idempotency key
-      releaseId: string; // claim key: one change notice per releaseId
-      partNumber: string;
-      documentId: string;
-      versionId: string;
-      elementId: string;
-      elementType: number; // 0 = part studio, 1 = assembly, 2 = drawing
-      revisionId?: string;
-      revision?: string; // the revision LETTER (e.g. "A"), not revisionId
-      releaseName?: string;
-    };
-  };
 
   // Sync external accounting (accepts the full AccountingSyncSchema payload)
   "carbon/sync-external-accounting": {
