@@ -6523,7 +6523,7 @@ msgstr "부적합 특성"
 
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
-msgstr ""
+msgstr "행 추가 실패 — {0}개 중 {addedCount}개 행이 추가되었습니다"
 
 msgid "Failed to add lines"
 msgstr "라인 추가 실패"
@@ -6727,7 +6727,7 @@ msgid "Failed to load receipts"
 msgstr "입고를 불러오지 못했습니다"
 
 msgid "Failed to load return reasons"
-msgstr ""
+msgstr "반품 사유를 불러오지 못했습니다"
 
 msgid "Failed to load RMA lines"
 msgstr "RMA 라인 로드 실패"

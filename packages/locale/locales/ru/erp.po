@@ -6523,7 +6523,7 @@ msgstr "Отказавшие элементы"
 
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
-msgstr ""
+msgstr "Не удалось добавить строку — добавлено строк: {addedCount} из {0}"
 
 msgid "Failed to add lines"
 msgstr "Ошибка при добавлении строк"
@@ -6727,7 +6727,7 @@ msgid "Failed to load receipts"
 msgstr "Не удалось загрузить квитанции"
 
 msgid "Failed to load return reasons"
-msgstr ""
+msgstr "Не удалось загрузить причины возврата"
 
 msgid "Failed to load RMA lines"
 msgstr "Ошибка при загрузке строк RMA"

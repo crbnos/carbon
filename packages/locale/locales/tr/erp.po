@@ -6523,7 +6523,7 @@ msgstr "Başarısız özellikler"
 
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
-msgstr ""
+msgstr "Satır eklenemedi — {0} satırdan {addedCount} tanesi eklendi"
 
 msgid "Failed to add lines"
 msgstr "Satırlar ekleme başarısız oldu"
@@ -6727,7 +6727,7 @@ msgid "Failed to load receipts"
 msgstr "Makbuzu yüklenemedi"
 
 msgid "Failed to load return reasons"
-msgstr ""
+msgstr "İade nedenleri yüklenemedi"
 
 msgid "Failed to load RMA lines"
 msgstr "RMA satırlarını yükleme başarısız oldu"

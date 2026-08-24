@@ -6523,7 +6523,7 @@ msgstr "Recursos com falha"
 
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
-msgstr ""
+msgstr "Falha ao adicionar a linha — {addedCount} de {0} linhas foram adicionadas"
 
 msgid "Failed to add lines"
 msgstr "Falha ao adicionar linhas"
@@ -6727,7 +6727,7 @@ msgid "Failed to load receipts"
 msgstr "Falha ao carregar recebimentos"
 
 msgid "Failed to load return reasons"
-msgstr ""
+msgstr "Falha ao carregar os motivos de devolução"
 
 msgid "Failed to load RMA lines"
 msgstr "Falha ao carregar linhas de RMA"

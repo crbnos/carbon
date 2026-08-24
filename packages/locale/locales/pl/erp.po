@@ -6523,7 +6523,7 @@ msgstr "Cechy nie powiodły się"
 
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
-msgstr ""
+msgstr "Nie udało się dodać wiersza — dodano {addedCount} z {0} wierszy"
 
 msgid "Failed to add lines"
 msgstr "Nie udało się dodać wierszy"
@@ -6727,7 +6727,7 @@ msgid "Failed to load receipts"
 msgstr "Nie udało się załadować paragonów"
 
 msgid "Failed to load return reasons"
-msgstr ""
+msgstr "Nie udało się wczytać przyczyn zwrotu"
 
 msgid "Failed to load RMA lines"
 msgstr "Nie udało się załadować wierszy RMA"

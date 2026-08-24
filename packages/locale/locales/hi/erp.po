@@ -6523,7 +6523,7 @@ msgstr "विफल विशेषताएँ"
 
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
-msgstr ""
+msgstr "पंक्ति जोड़ने में विफल — {0} में से {addedCount} पंक्तियाँ जोड़ी गईं"
 
 msgid "Failed to add lines"
 msgstr "लाइनें जोड़ने में विफल"
@@ -6727,7 +6727,7 @@ msgid "Failed to load receipts"
 msgstr "रसीदें लोड करने में विफल"
 
 msgid "Failed to load return reasons"
-msgstr ""
+msgstr "वापसी के कारण लोड नहीं हो सके"
 
 msgid "Failed to load RMA lines"
 msgstr "RMA लाइनें लोड करने में विफल"

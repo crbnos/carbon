@@ -6523,7 +6523,7 @@ msgstr "Caratteristiche fallite"
 
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
-msgstr ""
+msgstr "Impossibile aggiungere la riga — aggiunte {addedCount} righe su {0}"
 
 msgid "Failed to add lines"
 msgstr "Impossibile aggiungere righe"
@@ -6727,7 +6727,7 @@ msgid "Failed to load receipts"
 msgstr "Impossibile caricare le ricevute"
 
 msgid "Failed to load return reasons"
-msgstr ""
+msgstr "Impossibile caricare i motivi di reso"
 
 msgid "Failed to load RMA lines"
 msgstr "Impossibile caricare righe RMA"
