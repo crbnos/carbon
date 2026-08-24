@@ -1,28 +1,25 @@
-// Onshape v2's settings, read from its OWN integration record.
+// The Onshape integration's settings.
 //
-// Before the split, "is this company on v2?" was a question about a key inside
-// the shipped `onshape` record's metadata (`pipeline === "next"`). It is now a
-// question about which record exists: an active `onshape-v2` row IS the opt-in.
-// There is no pipeline field, no strict-equality ceremony, and no way for a
-// legacy-shaped row to be mistaken for a v2 one — the two are different rows.
+// There is ONE Onshape integration. "Is this company on Onshape?" is simply
+// whether an active `onshape` row exists — no pipeline field, no mode key, and
+// no second record to disambiguate against.
 //
-// The gate still fails CLOSED. A missing row, an inactive one, or a query error
-// all resolve to `active: false`, because failing open would run v2 against a
-// company that never installed it.
+// The gate fails CLOSED. A missing row, an inactive one, or a query error all
+// resolve to `active: false`, because failing open would run an import against a
+// company that never connected.
 
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { ONSHAPE_V2_INTEGRATION_ID } from "./ids";
 
-/** What v2 does with the engineering data in an Onshape release. */
-export type OnshapeReleaseImportV2Mode = "off" | "changeNotice" | "revision";
+/** What Carbon does with the engineering data in an Onshape release. */
+export type OnshapeReleaseImportMode = "off" | "changeNotice" | "revision";
 
-export interface OnshapeV2Settings {
-  /** The `onshape-v2` record exists and is active — i.e. the company is on v2. */
+export interface OnshapeSettings {
+  /** The `onshape` record exists and is active — i.e. the company is connected. */
   active: boolean;
   attachAssetsOnRelease: boolean;
-  releaseImportV2: OnshapeReleaseImportV2Mode;
+  releaseImportMode: OnshapeReleaseImportMode;
   allowUnreleasedSync: boolean;
   /**
    * Create the Carbon part when a release names an element nothing is linked to.
@@ -32,26 +29,26 @@ export interface OnshapeV2Settings {
    * that Carbon will GUESS those fields, and say so in the run's report.
    */
   createItemsOnRelease: boolean;
-  /** Cached Onshape tenant id, when this record's connection has resolved one. */
+  /** Cached Onshape tenant id, when the connection has resolved one. */
   onshapeCompanyId: string | null;
   /**
    * The row could not be READ (query error), as opposed to being absent or
    * inactive. A caller that is about to WRITE must treat this as retryable
-   * rather than as "this company is not on v2" — a transient database error
+   * rather than as "this company is not connected" — a transient database error
    * would otherwise turn a real import into a silent no-op run.
    */
   readFailed: boolean;
 }
 
 const DEFAULTS: Omit<
-  OnshapeV2Settings,
+  OnshapeSettings,
   "active" | "onshapeCompanyId" | "readFailed"
 > = {
   attachAssetsOnRelease: true,
-  releaseImportV2: "changeNotice",
+  releaseImportMode: "changeNotice",
   allowUnreleasedSync: false,
   // FALSE, not true. Copying attachAssetsOnRelease's "absent means on" reading
-  // would start minting parts for every v2 install on deploy, unasked.
+  // would start minting parts for every existing install on deploy, unasked.
   createItemsOnRelease: false
 };
 
@@ -67,23 +64,23 @@ function readBoolean(value: unknown, fallback: boolean): boolean {
 }
 
 /**
- * Parse v2 settings out of an `onshape-v2` row's metadata blob. Pure, so it can
- * be unit-tested without a database.
+ * Parse the settings out of an `onshape` row's metadata blob. Pure, so it can be
+ * unit-tested without a database.
  */
-export function parseOnshapeV2Settings(
+export function parseOnshapeSettings(
   metadata: unknown,
   options: { active: boolean; readFailed?: boolean }
-): OnshapeV2Settings {
+): OnshapeSettings {
   const record =
     metadata && typeof metadata === "object"
       ? (metadata as Record<string, unknown>)
       : {};
 
-  const rawMode = record.releaseImportV2;
-  const releaseImportV2: OnshapeReleaseImportV2Mode =
+  const rawMode = record.releaseImportMode;
+  const releaseImportMode: OnshapeReleaseImportMode =
     rawMode === "off" || rawMode === "revision" || rawMode === "changeNotice"
       ? rawMode
-      : DEFAULTS.releaseImportV2;
+      : DEFAULTS.releaseImportMode;
 
   return {
     active: options.active,
@@ -92,7 +89,7 @@ export function parseOnshapeV2Settings(
       record.attachAssetsOnRelease,
       DEFAULTS.attachAssetsOnRelease
     ),
-    releaseImportV2,
+    releaseImportMode,
     allowUnreleasedSync: readBoolean(
       record.allowUnreleasedSync,
       DEFAULTS.allowUnreleasedSync
@@ -108,65 +105,50 @@ export function parseOnshapeV2Settings(
   };
 }
 
-/** Read a company's Onshape v2 settings from the `onshape-v2` record. */
-export async function getOnshapeV2Settings(
+/** Read a company's Onshape settings. */
+export async function getOnshapeSettings(
   client: SupabaseClient<Database>,
   companyId: string
-): Promise<OnshapeV2Settings> {
+): Promise<OnshapeSettings> {
   const integration = await client
     .from("companyIntegration")
     .select("active, metadata")
-    .eq("id", ONSHAPE_V2_INTEGRATION_ID)
+    .eq("id", "onshape")
     .eq("companyId", companyId)
     .maybeSingle();
 
   if (integration.error) {
     // Distinct from "no row": the gate still fails closed, but a caller that is
     // about to WRITE can tell a transient failure from a deliberate opt-out.
-    return parseOnshapeV2Settings(null, { active: false, readFailed: true });
+    return parseOnshapeSettings(null, { active: false, readFailed: true });
   }
   if (!integration.data) {
-    return parseOnshapeV2Settings(null, { active: false });
+    return parseOnshapeSettings(null, { active: false });
   }
 
-  return parseOnshapeV2Settings(integration.data.metadata, {
+  return parseOnshapeSettings(integration.data.metadata, {
     active: integration.data.active === true
   });
 }
 
 /**
- * Does this company want an Onshape webhook subscription for v2?
+ * Does this company want an Onshape webhook subscription?
  *
- * ONE subscription feeds every v2 consumer, so it must exist while ANY of them
+ * ONE subscription feeds every consumer, so it must exist while ANY of them
  * is on and be deregistered only when they are all off. `createItemsOnRelease`
  * is not optional here: omitting it deletes the subscription of a company that
  * turned auto-create on and everything else off, while flashing success.
  */
-export function v2WebhookWanted(settings: OnshapeV2Settings): boolean {
+export function onshapeWebhookWanted(settings: OnshapeSettings): boolean {
   return (
     settings.attachAssetsOnRelease ||
-    settings.releaseImportV2 !== "off" ||
+    settings.releaseImportMode !== "off" ||
     settings.createItemsOnRelease
   );
 }
 
 /**
- * Does this company want one for the LEGACY record? Reads the legacy metadata
- * shape directly — the two records' settings have nothing in common beyond the
- * fact that each drives one subscription.
- */
-export function legacyWebhookWanted(metadata: unknown): boolean {
-  const record =
-    metadata && typeof metadata === "object"
-      ? (metadata as Record<string, unknown>)
-      : {};
-  return (
-    record.assetSyncEnabled === true || record.releaseImportEnabled === true
-  );
-}
-
-/**
- * The v2 settings form's validator, and what the save merges over the stored
+ * The settings form's validator, and what the save merges over the stored
  * metadata.
  *
  * Lives here rather than in the config file so it can be exercised without the
@@ -178,7 +160,7 @@ export function legacyWebhookWanted(metadata: unknown): boolean {
  * the field. Absence means "leave it alone"; the parser above supplies the
  * defaults on read, which is the only place they belong.
  */
-export const onshapeV2SettingsSchema = z.object({
+export const onshapeSettingsSchema = z.object({
   // SwitchField posts a literal "true"/"false" string; preprocess explicitly so
   // unchecking sticks (z.coerce.boolean would treat "false" as truthy).
   attachAssetsOnRelease: z
@@ -189,7 +171,7 @@ export const onshapeV2SettingsSchema = z.object({
       return value;
     }, z.boolean())
     .optional(),
-  releaseImportV2: z.enum(["off", "changeNotice", "revision"]).optional(),
+  releaseImportMode: z.enum(["off", "changeNotice", "revision"]).optional(),
   allowUnreleasedSync: z
     .preprocess((value) => {
       if (typeof value === "boolean") return value;
@@ -206,7 +188,7 @@ export const onshapeV2SettingsSchema = z.object({
       return value;
     }, z.boolean())
     .optional(),
-  // Vaulted (SECRET_KEYS["onshape-v2"]), so it never reaches the metadata
+  // Vaulted (SECRET_KEYS["onshape"]), so it never reaches the metadata
   // column and the field always renders blank. An empty submission means "keep
   // the stored key" — splitSecrets drops an empty value rather than persisting
   // it — which is why this must stay optional and undefaulted.

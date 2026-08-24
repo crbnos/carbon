@@ -59,7 +59,7 @@ import {
   usePermissions,
   useUser
 } from "~/hooks";
-import { useOnshapePipeline } from "~/hooks/useOnshapePipeline";
+import { useOnshape } from "~/hooks/useOnshape";
 import { path } from "~/utils/path";
 import {
   itemReplenishmentSystems,
@@ -141,13 +141,13 @@ const PartForm = ({
 
   const isEditing = !!initialValues.id;
   const permissions = usePermissions();
-  const onshapePipeline = useOnshapePipeline();
+  const onshape = useOnshape();
 
   // Presentation only. `v2.create` re-reads the pipeline setting server-side and
   // refuses when it is not v2, so this hiding the toggle is never what keeps v2
   // off a legacy company.
   const canUseOnshapeSource =
-    withOnshapeSource && onshapePipeline.isV2 && !isEditing;
+    withOnshapeSource && onshape.isConnected && !isEditing;
 
   const [source, setSource] = useState<"blank" | "onshape">(
     canUseOnshapeSource && defaultSource === "onshape" ? "onshape" : "blank"

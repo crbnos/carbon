@@ -5,8 +5,7 @@ import { getUserClaims } from "@carbon/auth/users.server";
 import {
   buildOnshapeItemNotesBlock,
   getOnshapeClient,
-  getOnshapeV2Settings,
-  ONSHAPE_V2_INTEGRATION_ID,
+  getOnshapeSettings,
   patchElementMappingMetadata,
   readItemIdForRevision,
   readItemIdsForElement,
@@ -115,7 +114,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // The gate is company CONFIGURATION, not user data. Reading it with the
   // user's client silently requires settings_view on top of the parts
   // permission this route declares.
-  const settings = await getOnshapeV2Settings(serviceRole, companyId);
+  const settings = await getOnshapeSettings(serviceRole, companyId);
   // A failed READ is not an opt-out. Wording a transient error as a
   // configuration state sends the user to change a setting that was
   // never wrong — and re-saving it re-registers the release webhook.
@@ -132,12 +131,7 @@ export async function action({ request }: ActionFunctionArgs) {
     };
   }
 
-  const onshape = await getOnshapeClient(
-    serviceRole,
-    companyId,
-    userId,
-    ONSHAPE_V2_INTEGRATION_ID
-  );
+  const onshape = await getOnshapeClient(serviceRole, companyId, userId);
   // Narrow on the client rather than on `error` — "" is a valid falsy error
   // string in that union, so a truthiness check does not discriminate it.
   if (!onshape.client) {

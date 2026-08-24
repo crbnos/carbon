@@ -26,9 +26,8 @@ import {
   buildOnshapeBomTree,
   buildOnshapeItemNotesBlock,
   getOnshapeClient,
-  getOnshapeV2Settings,
+  getOnshapeSettings,
   isInitialRevisionLabel,
-  ONSHAPE_V2_INTEGRATION_ID,
   type OnshapeBomNode,
   type OnshapeBomRow,
   parseOnshapeBom,
@@ -46,7 +45,6 @@ import { NotificationEvent } from "@carbon/notifications";
 import { RetryAfterError } from "inngest";
 import { z } from "zod";
 import { inngest } from "../../client";
-import { withRateLimitRetry } from "./onshape-backfill";
 import type { OnshapeBomImportOutcome } from "./onshape-bom-outcome";
 import {
   countNeedingAttention,
@@ -60,6 +58,7 @@ import {
   readOnshapePurchasingLevel,
   resolveOnshapeReplenishment
 } from "./onshape-replenishment";
+import { withRateLimitRetry } from "./onshape-shared";
 import {
   groupAssetTargetsByElement,
   isTransientExportError,
@@ -473,7 +472,7 @@ export const onshapeBomImportFunction = inngest.createFunction(
 
     // Re-read the gate every execution, so turning the pipeline back to legacy
     // also kills an in-flight retry.
-    const settings = await getOnshapeV2Settings(carbon, payload.companyId);
+    const settings = await getOnshapeSettings(carbon, payload.companyId);
     if (settings.readFailed) {
       // A transient database error must not masquerade as "this company is on
       // legacy" — that would turn a real import into a silent no-op run.
@@ -501,8 +500,7 @@ export const onshapeBomImportFunction = inngest.createFunction(
       const connection = await getOnshapeClient(
         carbon,
         payload.companyId,
-        payload.userId,
-        ONSHAPE_V2_INTEGRATION_ID
+        payload.userId
       );
       if (!connection.client) {
         throw new Error(connection.error ?? "Onshape is not connected");
@@ -1432,7 +1430,6 @@ export const onshapeBomImportFunction = inngest.createFunction(
           const drawings = await withRateLimitRetry(
             () =>
               pullOnshapeDrawingsForDocument(carbon, connection.client, {
-                integrationId: ONSHAPE_V2_INTEGRATION_ID,
                 companyId: payload.companyId,
                 userId: payload.userId,
                 documentId: group.documentId,

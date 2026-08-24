@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
-  legacyWebhookWanted,
-  onshapeV2SettingsSchema,
-  parseOnshapeV2Settings,
-  v2WebhookWanted
-} from "./settings-v2";
+  onshapeSettingsSchema,
+  onshapeWebhookWanted,
+  parseOnshapeSettings
+} from "./settings";
 
 // Before the split these tests pinned that a legacy-shaped row resolved to
 // isV2:false — the whole safety argument for two pipelines in one record. That
@@ -13,12 +12,12 @@ import {
 // reading of the settings themselves, where a wrong default silently changes
 // behaviour on deploy.
 
-describe("parseOnshapeV2Settings", () => {
+describe("parseOnshapeSettings", () => {
   it("treats an absent, inactive, or unreadable record as not on v2", () => {
-    expect(parseOnshapeV2Settings(null, { active: false }).active).toBe(false);
-    expect(parseOnshapeV2Settings({}, { active: false }).active).toBe(false);
+    expect(parseOnshapeSettings(null, { active: false }).active).toBe(false);
+    expect(parseOnshapeSettings({}, { active: false }).active).toBe(false);
     expect(
-      parseOnshapeV2Settings(null, { active: false, readFailed: true }).active
+      parseOnshapeSettings(null, { active: false, readFailed: true }).active
     ).toBe(false);
   });
 
@@ -26,20 +25,19 @@ describe("parseOnshapeV2Settings", () => {
     // A caller about to WRITE must retry on readFailed rather than treat it as
     // "not on v2" — a transient database error would otherwise turn a real
     // import into a silent no-op run.
-    expect(parseOnshapeV2Settings(null, { active: false }).readFailed).toBe(
+    expect(parseOnshapeSettings(null, { active: false }).readFailed).toBe(
       false
     );
     expect(
-      parseOnshapeV2Settings(null, { active: false, readFailed: true })
-        .readFailed
+      parseOnshapeSettings(null, { active: false, readFailed: true }).readFailed
     ).toBe(true);
   });
 
   it("defaults an installed record to attach-assets on, change-notice, no minting", () => {
-    const settings = parseOnshapeV2Settings({}, { active: true });
+    const settings = parseOnshapeSettings({}, { active: true });
     expect(settings.active).toBe(true);
     expect(settings.attachAssetsOnRelease).toBe(true);
-    expect(settings.releaseImportV2).toBe("changeNotice");
+    expect(settings.releaseImportMode).toBe("changeNotice");
     expect(settings.allowUnreleasedSync).toBe(false);
     // FALSE, not true. Copying attachAssetsOnRelease's "absent means on" reading
     // would start minting parts for every v2 install on deploy, unasked.
@@ -49,7 +47,7 @@ describe("parseOnshapeV2Settings", () => {
   it("accepts the form's string booleans as well as real ones", () => {
     // A row can hold either shape: the form posts "true"/"false", but a
     // hand-edited row or an older build's write holds a real boolean.
-    const fromForm = parseOnshapeV2Settings(
+    const fromForm = parseOnshapeSettings(
       {
         attachAssetsOnRelease: "false",
         allowUnreleasedSync: "true",
@@ -63,95 +61,83 @@ describe("parseOnshapeV2Settings", () => {
   });
 
   it("falls back to the default for an unrecognised value, never to truthy", () => {
-    const settings = parseOnshapeV2Settings(
+    const settings = parseOnshapeSettings(
       {
         attachAssetsOnRelease: "yes",
         createItemsOnRelease: 1,
-        releaseImportV2: "sometimes"
+        releaseImportMode: "sometimes"
       },
       { active: true }
     );
     expect(settings.attachAssetsOnRelease).toBe(true);
     expect(settings.createItemsOnRelease).toBe(false);
-    expect(settings.releaseImportV2).toBe("changeNotice");
+    expect(settings.releaseImportMode).toBe("changeNotice");
   });
 
   it("reads the three real release modes", () => {
     for (const mode of ["off", "changeNotice", "revision"] as const) {
       expect(
-        parseOnshapeV2Settings({ releaseImportV2: mode }, { active: true })
-          .releaseImportV2
+        parseOnshapeSettings({ releaseImportMode: mode }, { active: true })
+          .releaseImportMode
       ).toBe(mode);
     }
   });
 
   it("only reports an onshapeCompanyId when one is really stored", () => {
-    expect(parseOnshapeV2Settings({}, { active: true }).onshapeCompanyId).toBe(
+    expect(parseOnshapeSettings({}, { active: true }).onshapeCompanyId).toBe(
       null
     );
     expect(
-      parseOnshapeV2Settings({ onshapeCompanyId: "" }, { active: true })
+      parseOnshapeSettings({ onshapeCompanyId: "" }, { active: true })
         .onshapeCompanyId
     ).toBe(null);
     expect(
-      parseOnshapeV2Settings({ onshapeCompanyId: "abc" }, { active: true })
+      parseOnshapeSettings({ onshapeCompanyId: "abc" }, { active: true })
         .onshapeCompanyId
     ).toBe("abc");
   });
 });
 
-describe("v2WebhookWanted", () => {
-  const base = parseOnshapeV2Settings(
-    { attachAssetsOnRelease: "false", releaseImportV2: "off" },
+describe("onshapeWebhookWanted", () => {
+  const base = parseOnshapeSettings(
+    { attachAssetsOnRelease: "false", releaseImportMode: "off" },
     { active: true }
   );
 
   it("is false only when every consumer is off", () => {
-    expect(v2WebhookWanted(base)).toBe(false);
+    expect(onshapeWebhookWanted(base)).toBe(false);
   });
 
   it("is true for each consumer on its own", () => {
-    expect(v2WebhookWanted({ ...base, attachAssetsOnRelease: true })).toBe(
+    expect(onshapeWebhookWanted({ ...base, attachAssetsOnRelease: true })).toBe(
       true
     );
-    expect(v2WebhookWanted({ ...base, releaseImportV2: "changeNotice" })).toBe(
-      true
-    );
-    expect(v2WebhookWanted({ ...base, releaseImportV2: "revision" })).toBe(
-      true
-    );
+    expect(
+      onshapeWebhookWanted({ ...base, releaseImportMode: "changeNotice" })
+    ).toBe(true);
+    expect(
+      onshapeWebhookWanted({ ...base, releaseImportMode: "revision" })
+    ).toBe(true);
     // Not optional: omitting this term deletes the subscription of a company
     // that turned auto-create on and everything else off, while flashing
     // success.
-    expect(v2WebhookWanted({ ...base, createItemsOnRelease: true })).toBe(true);
+    expect(onshapeWebhookWanted({ ...base, createItemsOnRelease: true })).toBe(
+      true
+    );
   });
 });
 
-describe("legacyWebhookWanted", () => {
-  it("reads only the legacy record's own toggles", () => {
-    expect(legacyWebhookWanted(null)).toBe(false);
-    expect(legacyWebhookWanted({})).toBe(false);
-    expect(legacyWebhookWanted({ assetSyncEnabled: true })).toBe(true);
-    expect(legacyWebhookWanted({ releaseImportEnabled: true })).toBe(true);
-    // Strict === true: a string "true" in the column is not a legacy shape the
-    // shipped integration ever writes, and the receiver reads it strictly too.
-    expect(legacyWebhookWanted({ assetSyncEnabled: "true" })).toBe(false);
-    // A v2 key on the legacy row means nothing.
-    expect(legacyWebhookWanted({ attachAssetsOnRelease: true })).toBe(false);
-  });
-});
-
-describe("onshapeV2SettingsSchema", () => {
+describe("onshapeSettingsSchema", () => {
   it("leaves every key absent when the form posts nothing", () => {
     // Every key is optional rather than defaulted. The save merges parsed values
     // over stored metadata, so a default would rewrite a stored setting on any
     // save that did not render the field.
-    expect(onshapeV2SettingsSchema.parse({})).toEqual({});
+    expect(onshapeSettingsSchema.parse({})).toEqual({});
   });
 
   it("coerces the switch strings the form actually posts", () => {
     expect(
-      onshapeV2SettingsSchema.parse({
+      onshapeSettingsSchema.parse({
         attachAssetsOnRelease: "false",
         allowUnreleasedSync: "true",
         createItemsOnRelease: "false"
@@ -167,16 +153,14 @@ describe("onshapeV2SettingsSchema", () => {
     // splitSecrets drops an empty value rather than persisting it, which is what
     // makes "leave the field blank to keep the stored key" work. The schema must
     // not reject or default it.
-    expect(onshapeV2SettingsSchema.parse({ webhookSigningSecret: "" })).toEqual(
-      {
-        webhookSigningSecret: ""
-      }
-    );
+    expect(onshapeSettingsSchema.parse({ webhookSigningSecret: "" })).toEqual({
+      webhookSigningSecret: ""
+    });
   });
 
   it("rejects a release mode it does not know", () => {
     expect(() =>
-      onshapeV2SettingsSchema.parse({ releaseImportV2: "sometimes" })
+      onshapeSettingsSchema.parse({ releaseImportMode: "sometimes" })
     ).toThrow();
   });
 });

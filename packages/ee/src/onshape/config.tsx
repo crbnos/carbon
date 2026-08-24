@@ -1,8 +1,12 @@
 import { ONSHAPE_CLIENT_ID } from "@carbon/auth";
 import type { SVGProps } from "react";
-import { z } from "zod";
 import { defineIntegration } from "../fns";
+import { onshapeSettingsSchema } from "./lib/settings";
 
+// The Onshape integration. Carbon items are joined to Onshape parts and
+// subassemblies by a stable ELEMENT ID held in hidden mapping rows, never by a
+// typed part number — so a renamed part, a lowercase number, or two parts
+// sharing a number cannot silently merge or mismatch.
 export const Onshape = defineIntegration({
   name: "Onshape",
   id: "onshape",
@@ -10,50 +14,84 @@ export const Onshape = defineIntegration({
   category: "CAD",
   logo: Logo,
   description:
-    "Onshape is a browser-based CAD/PLM software for modern engineering teams. This integration will sync data from Onshape to Carbon.",
-  shortDescription: "Sync data from Onshape to Carbon.",
+    "Onshape is a browser-based CAD/PLM platform for modern engineering teams. Create Carbon parts directly from an Onshape selection, import bills of materials together with their CAD models and drawings, and keep released revisions flowing into Carbon automatically.",
+  shortDescription: "Build Carbon items from Onshape, joined by id.",
   images: [],
   settings: [
     {
-      name: "assetSyncEnabled",
-      label: "Sync released assets",
+      name: "attachAssetsOnRelease",
+      label: "Attach assets when a revision is released",
       description:
-        "Automatically pull released Onshape drawings and CAD models onto matching Carbon items (matched by part number). Off by default.",
+        "Pull the 3D model and drawing PDF onto the linked Carbon item whenever Onshape releases a revision. This covers releases that happen without anyone in Carbon; importing a BOM or creating an item from Onshape always brings its assets regardless of this setting.",
+      type: "switch",
+      required: false,
+      value: true
+    },
+    {
+      name: "releaseImportMode",
+      label: "When a revision is released",
+      // One field with an "off" option rather than a switch plus a nested mode.
+      description:
+        "What Carbon does with the engineering data in an Onshape release, beyond attaching its files.",
+      type: "options",
+      listOptions: [
+        {
+          value: "off",
+          label: "Do nothing",
+          description:
+            "Ignore the release. Assets are still attached if the setting above is on."
+        },
+        {
+          value: "changeNotice",
+          label: "Create a change notice",
+          description:
+            "One Draft change notice per Onshape release, pre-populated with an affected item per released part, for a human to review and release."
+        },
+        {
+          value: "revision",
+          label: "Create the revision directly",
+          description:
+            "Create the new revision immediately, copying the previous revision's attributes and BOM. No review step."
+        }
+      ],
+      required: false,
+      value: "changeNotice"
+    },
+    {
+      name: "allowUnreleasedSync",
+      label: "Allow syncing unreleased versions",
+      description:
+        "Onshape stamps a revision only on release. An unreleased version therefore lands on Carbon's initial revision and carries no assets. Off by default so the version picker offers only released versions.",
       type: "switch",
       required: false,
       value: false
-    }
-  ],
-  schema: z.object({
-    // SwitchField posts a literal "true"/"false" string; preprocess explicitly so
-    // unchecking sticks (z.coerce.boolean would treat "false" as truthy).
-    assetSyncEnabled: z
-      .preprocess((value) => {
-        if (typeof value === "boolean") return value;
-        if (value === "true") return true;
-        if (value === "false") return false;
-        return value;
-      }, z.boolean())
-      .default(false)
-  }),
-  actions: [
+    },
     {
-      id: "backfill",
-      label: "Backfill released assets",
+      name: "createItemsOnRelease",
+      label: "Create the part when a release names one Carbon does not have",
       description:
-        "Pull released Onshape assets onto all matching Carbon items now (link-only). Requires asset sync enabled.",
-      endpoint: "/api/integrations/onshape/backfill",
-      // Only shown once asset sync is enabled (the backfill route is gated on it
-      // too, so hide the button rather than show one that errors).
-      //
-      // `visibleWhen` rather than main's `enabledWhenSetting`: the gate is
-      // identical, but the general condition form replaced the single-boolean
-      // one repo-wide. ConditionalSettingField compares String(controlValue),
-      // and a switch's control value is a boolean, so the literal "true" is
-      // correct here.
-      visibleWhen: { field: "assetSyncEnabled", equals: "true" }
+        "Off by default: a released element with no linked Carbon part is refused, and someone links it or imports its assembly. Turned on, Carbon creates the part instead — but a release carries geometry, not structure, so Carbon has to GUESS the fields Onshape says nothing about. An assembly is created as Make / Make to Order, a part studio body as Buy / Pull from Inventory, tracked in Inventory and measured in EA. Every creation is reported so you can correct it.",
+      type: "switch",
+      required: false,
+      value: false
+    },
+    {
+      name: "webhookSigningSecret",
+      label: "Webhook signing secret",
+      description:
+        "Leave blank to accept unsigned webhooks. Onshape's signing keys are company-level rather than per-webhook, so rotating one affects every consumer of that Onshape company. The key is encrypted at rest and never shown again — leave this blank on a later save to keep the stored one.",
+      // Deliberately "text", not "password"/"secret". Both masked types render a
+      // <Password> input, nothing in IntegrationForm sets autoComplete, and a
+      // browser password manager was observed autofilling a saved password into
+      // this field — which would then make the receiver reject every genuine
+      // Onshape delivery. Masking buys nothing now that the value is vaulted and
+      // never sent to the browser; a silently wrong value costs ingestion.
+      type: "text",
+      required: false,
+      value: ""
     }
   ],
+  schema: onshapeSettingsSchema,
   onClientInstall: async () => {
     const response = await fetch("/api/integrations/onshape/install").then(
       (res) => res.json()

@@ -28,8 +28,8 @@ import { DetailsTopbar } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { OnshapeLinkPart } from "~/components/OnshapeLinkPart";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { useOnshape } from "~/hooks/useOnshape";
 import { useOnshapeImportStatus } from "~/hooks/useOnshapeImportStatus";
-import { useOnshapePipeline } from "~/hooks/useOnshapePipeline";
 import { path } from "~/utils/path";
 import type { PartSummary } from "../../types";
 import { CreateChangeNoticeModal } from "../ChangeNotice";
@@ -46,7 +46,7 @@ const PartHeader = () => {
   const permissions = usePermissions();
   const deleteModal = useDisclosure();
   const changeNoticeModal = useDisclosure();
-  const onshapePipeline = useOnshapePipeline();
+  const onshape = useOnshape();
   const onshapeLinkModal = useDisclosure();
   const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
     entityType: "item",
@@ -75,7 +75,7 @@ const PartHeader = () => {
   // outcome only reaches the user as a notification when something needs
   // attention. Without this a clean import is indistinguishable from one that
   // never started.
-  const onshapeImport = useOnshapeImportStatus(itemId, onshapePipeline.isV2);
+  const onshapeImport = useOnshapeImportStatus(itemId, onshape.isConnected);
 
   return (
     <>
@@ -133,7 +133,7 @@ const PartHeader = () => {
                   <DropdownMenuIcon icon={<LuGitPullRequestArrow />} />
                   <Trans>Create Change Notice</Trans>
                 </DropdownMenuItem>
-                {onshapePipeline.isV2 && (
+                {onshape.isConnected && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -166,7 +166,7 @@ const PartHeader = () => {
         <VStack spacing={0} className="flex-shrink justify-center items-end">
           <DetailsTopbar links={links} />
         </VStack>
-        {onshapePipeline.isV2 && onshapeLinkModal.isOpen && (
+        {onshape.isConnected && onshapeLinkModal.isOpen && (
           <OnshapeLinkPart
             itemId={itemId}
             readableIdWithRevision={

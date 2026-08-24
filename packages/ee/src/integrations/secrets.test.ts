@@ -273,11 +273,11 @@ describe("SECRET_KEYS covers every integration that stores a credential", () => 
     expect(unclassified).toEqual([]);
   });
 
-  it("keeps onshape-v2 classified even though it shares a directory with onshape", () => {
-    // onshape-v2 lives in packages/ee/src/onshape/, so the scan above cannot see
-    // it as its own config. It is the id most likely to be forgotten and the one
-    // that would leak an OAuth grant, so pin it explicitly.
-    expect(SECRET_KEYS["onshape-v2"]).toEqual([
+  it("classifies the Onshape webhook signing secret, not just its OAuth grant", () => {
+    // The signing secret is a shared HMAC key: possession lets anyone forge a
+    // delivery the receiver accepts. It is easy to leave in plaintext because
+    // nothing fails if you do, so pin it.
+    expect(SECRET_KEYS.onshape).toEqual([
       "credentials.accessToken",
       "credentials.refreshToken",
       "webhookSigningSecret"
@@ -292,8 +292,8 @@ describe("SECRET_KEYS covers every integration that stores a credential", () => 
     }
   });
 
-  it("actually strips all three onshape-v2 secrets from the column", () => {
-    const { config, secrets } = splitSecrets("onshape-v2", {
+  it("actually strips all three Onshape secrets from the column", () => {
+    const { config, secrets } = splitSecrets("onshape", {
       baseUrl: "https://cad.onshape.com",
       credentials: {
         type: "oauth2",

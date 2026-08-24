@@ -152,7 +152,7 @@ describe("onshape webhook receiver", () => {
         integrationRow({
           pipeline: "next",
           attachAssetsOnRelease: false,
-          releaseImportV2: "off"
+          releaseImportMode: "off"
         })
       );
 
@@ -171,7 +171,7 @@ describe("onshape webhook receiver", () => {
         integrationRow({
           pipeline: "next",
           attachAssetsOnRelease: false,
-          releaseImportV2: "off",
+          releaseImportMode: "off",
           createItemsOnRelease: true
         })
       );
@@ -187,7 +187,7 @@ describe("onshape webhook receiver", () => {
         integrationRow({
           pipeline: "next",
           attachAssetsOnRelease: false,
-          releaseImportV2: "off",
+          releaseImportMode: "off",
           createItemsOnRelease: "true"
         })
       );

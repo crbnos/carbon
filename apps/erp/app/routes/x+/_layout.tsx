@@ -272,12 +272,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     companySettings: companySettings.data ?? null,
     customFields: customFields.data ?? [],
     defaults: defaults.data,
-    // PROJECTED, never the raw rows. `integrations` selects * from a view that
-    // returns companyIntegration.metadata verbatim — which holds plaintext
-    // OAuth access and refresh tokens and webhook signing secrets. Returning it
-    // here serialises every connected integration's credentials into the HTML
-    // of every authenticated page, reachable by any browser extension or XSS.
-    // The settings page loads the full row itself when it actually needs it.
+    // PROJECTED, never the raw rows. This selects * from companyIntegration,
+    // whose `metadata` is returned verbatim and holds provider configuration —
+    // and, for anything not yet classified in SECRET_KEYS, credentials too.
+    // Returning it here serialises that into the HTML of every authenticated
+    // page, reachable by any browser extension or XSS. The shape is also
+    // FAIL-OPEN: a field added to any integration's metadata tomorrow ships to
+    // the browser by default. The settings page loads the full row itself when
+    // it actually needs it.
     integrations: (integrations.data ?? []).map((integration) => {
       const metadata = (integration.metadata ?? {}) as Record<string, unknown>;
       return {
@@ -286,10 +288,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
         companyId: integration.companyId,
         updatedAt: integration.updatedAt,
         updatedBy: integration.updatedBy,
-        // The only metadata any client-side consumer reads: which Onshape
-        // pipeline the company runs (useOnshapePipeline). A scalar, not a blob.
+        // The only metadata any client-side consumer reads (useOnshape).
+        // A scalar, not a blob.
         metadata: {
-          pipeline: metadata.pipeline ?? null,
           // Presentation only: whether to OFFER unreleased versions. Every
           // route re-reads it server-side and refuses regardless.
           allowUnreleasedSync: metadata.allowUnreleasedSync ?? null

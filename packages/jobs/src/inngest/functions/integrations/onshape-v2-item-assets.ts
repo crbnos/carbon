@@ -11,17 +11,13 @@
 // case, and rate-limitable, which is exactly what a request must not be.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  getOnshapeClient,
-  getOnshapeV2Settings,
-  ONSHAPE_V2_INTEGRATION_ID
-} from "@carbon/ee/onshape";
+import { getOnshapeClient, getOnshapeSettings } from "@carbon/ee/onshape";
 import { trigger } from "@carbon/lib/trigger";
 import { NotificationEvent } from "@carbon/notifications";
 import { z } from "zod";
 import { inngest } from "../../client";
-import { withRateLimitRetry } from "./onshape-backfill";
 import { pullOnshapeDrawingsForDocument } from "./onshape-drawings";
+import { withRateLimitRetry } from "./onshape-shared";
 import { pullOnshapeAssetsForElement } from "./onshape-v2-assets";
 
 const PayloadSchema = z.object({
@@ -57,7 +53,7 @@ export const onshapeV2ItemAssetsFunction = inngest.createFunction(
 
     // Re-read every execution, so switching a company back to legacy also
     // kills an in-flight retry.
-    const settings = await getOnshapeV2Settings(carbon, payload.companyId);
+    const settings = await getOnshapeSettings(carbon, payload.companyId);
     if (settings.readFailed) {
       throw new Error(
         "Could not read the Onshape integration settings; retrying."
@@ -73,8 +69,7 @@ export const onshapeV2ItemAssetsFunction = inngest.createFunction(
       const connection = await getOnshapeClient(
         carbon,
         payload.companyId,
-        payload.userId,
-        ONSHAPE_V2_INTEGRATION_ID
+        payload.userId
       );
       if (!connection.client) {
         throw new Error(connection.error ?? "Onshape is not connected");
@@ -114,7 +109,6 @@ export const onshapeV2ItemAssetsFunction = inngest.createFunction(
       const drawings = await withRateLimitRetry(
         () =>
           pullOnshapeDrawingsForDocument(carbon, connection.client, {
-            integrationId: ONSHAPE_V2_INTEGRATION_ID,
             companyId: payload.companyId,
             userId: payload.userId,
             documentId: payload.documentId,

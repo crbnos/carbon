@@ -47,12 +47,8 @@ import {
 import { getPath, SECRET_KEYS } from "@carbon/ee/integrations/secrets";
 import {
   findUnlinkedLegacyOnshapeItems,
-  isOnshapeIntegrationId,
-  legacyWebhookWanted,
-  ONSHAPE_LEGACY_INTEGRATION_ID,
-  ONSHAPE_V2_INTEGRATION_ID,
-  parseOnshapeV2Settings,
-  v2WebhookWanted
+  onshapeWebhookWanted,
+  parseOnshapeSettings
 } from "@carbon/ee/onshape";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { requirePlan } from "@carbon/ee/plan.server";
@@ -1504,26 +1500,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // one of them ON, don't persist an on-but-non-functional toggle: force it back
   // off here and tell them to reconnect first (below). Leaving them off imposes
   // nothing.
+  // Every Onshape consumer needs the OAuth2Write scope — the webhook
+  // registration is itself a write, and asset export runs translation jobs. A
+  // connection authorized read-only cannot run any of them, and a refresh cannot
+  // widen the scope; only a reconnect can. So don't persist an
+  // on-but-non-functional toggle: force them back off and say what to do.
   const onshapeMetadataForScope = metadata as Record<string, unknown>;
-  const legacyActivatingWithoutWrite =
-    integrationId === ONSHAPE_LEGACY_INTEGRATION_ID &&
-    onshapeMetadataForScope.assetSyncEnabled === true &&
+  const onshapeActivatingWithoutWrite =
+    integrationId === "onshape" &&
+    onshapeWebhookWanted(parseOnshapeSettings(metadata, { active: true })) &&
     !onshapeConnectionHasWriteScope(existingMetadata);
-  if (legacyActivatingWithoutWrite) {
-    onshapeMetadataForScope.assetSyncEnabled = false;
-  }
-  // v2's own write-requiring consumers, on v2's own record and its own grant.
-  const v2ActivatingWithoutWrite =
-    integrationId === ONSHAPE_V2_INTEGRATION_ID &&
-    v2WebhookWanted(parseOnshapeV2Settings(metadata, { active: true })) &&
-    !onshapeConnectionHasWriteScope(existingMetadata);
-  if (v2ActivatingWithoutWrite) {
+  if (onshapeActivatingWithoutWrite) {
     onshapeMetadataForScope.attachAssetsOnRelease = false;
-    onshapeMetadataForScope.releaseImportV2 = "off";
+    onshapeMetadataForScope.releaseImportMode = "off";
     onshapeMetadataForScope.createItemsOnRelease = false;
   }
-  const onshapeActivatingWithoutWrite =
-    legacyActivatingWithoutWrite || v2ActivatingWithoutWrite;
 
   const wasInstalled = existing.data?.active === true;
 
@@ -1630,7 +1621,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // and need a reconnect, so surface a registration failure instead of flashing
   // success while the sync silently never fires. The settings themselves are
   // already saved either way.
-  if (isOnshapeIntegrationId(integrationId)) {
+  if (integrationId === "onshape") {
     // Read-only connection trying to turn asset sync or release import on: we
     // already forced the toggles back off above, so just tell them exactly what
     // to do. Explicit and scope-accurate — not inferred from a downstream
@@ -1653,12 +1644,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     // every consumer on that record, so it must exist while ANY of them is on
     // and be deregistered only when they are all off. The two records use
     // different callback paths, so neither can deregister the other's.
-    const isV2Record = integrationId === ONSHAPE_V2_INTEGRATION_ID;
-    const webhookWanted = isV2Record
-      ? v2WebhookWanted(parseOnshapeV2Settings(metadata, { active: true }))
-      : legacyWebhookWanted(metadata);
+    const webhookWanted = onshapeWebhookWanted(
+      parseOnshapeSettings(metadata, { active: true })
+    );
     const webhookResult = await ensureOnshapeReleaseWebhook(
-      integrationId,
       companyId,
       webhookWanted
     );
@@ -1667,7 +1656,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     // "onshapeElement" one, and v2 resolves only through the latter. Say so at
     // the moment of the switch — a successful save redirects and unmounts the
     // drawer, so the flash is what the user actually sees.
-    if (isV2Record && webhookResult.ok) {
+    if (webhookResult.ok) {
       try {
         const unlinked = await findUnlinkedLegacyOnshapeItems(client, {
           companyId,

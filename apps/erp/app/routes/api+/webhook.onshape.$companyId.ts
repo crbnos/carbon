@@ -18,7 +18,7 @@ import { getIntegration } from "../../modules/settings";
 //     onshape.revision.created ──▶ trigger("onshape-revision-sync")   [assetSyncEnabled]
 //                              ──▶ trigger("onshape-release-import")  [releaseImportEnabled]
 //                              ──▶ trigger("onshape-release-v2")      [v2: attachAssets |
-//                                                                      releaseImportV2 |
+//                                                                      releaseImportMode |
 //                                                                      createItemsOnRelease]
 //     everything else          ──▶ ack 200 (logged, no dispatch)
 //
@@ -184,7 +184,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const v2AttachAssets =
     isV2 && integrationMetadata.attachAssetsOnRelease !== false;
   const v2ReleaseImportMode = isV2
-    ? ((integrationMetadata.releaseImportV2 as string | undefined) ??
+    ? ((integrationMetadata.releaseImportMode as string | undefined) ??
       "changeNotice")
     : "off";
   const v2ReleaseImportEnabled = isV2 && v2ReleaseImportMode !== "off";

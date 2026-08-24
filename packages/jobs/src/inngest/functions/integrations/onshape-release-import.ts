@@ -1,14 +1,10 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
-import type {
-  OnshapeIntegrationId,
-  OnshapeReleasePackage
-} from "@carbon/ee/onshape";
+import type { OnshapeReleasePackage } from "@carbon/ee/onshape";
 import {
   buildOnshapeItemNotesBlock,
   getOnshapeClient,
-  ONSHAPE_LEGACY_INTEGRATION_ID,
   readReleasePackageName,
   readReleasePackageNotes,
   writeOnshapeItemNotes
@@ -20,11 +16,8 @@ import { RetryAfterError } from "inngest";
 import { z } from "zod";
 import { getWorkflowDispatch } from "../../../workflows/actions/dispatcher";
 import { inngest } from "../../client";
-import {
-  resolveOnshapeCompanyId,
-  withRateLimitRetry
-} from "./onshape-backfill";
 import { selectReleaseTarget } from "./onshape-matching";
+import { resolveOnshapeCompanyId, withRateLimitRetry } from "./onshape-shared";
 
 // Release import: an Onshape release becomes ENGINEERING DATA in Carbon, not
 // just attached files. Two modes, chosen per company in
@@ -278,8 +271,7 @@ async function resolveReleasedRevision(
     const onshape = await getOnshapeClient(
       carbon,
       payload.companyId,
-      payload.userId,
-      payload.integrationId
+      payload.userId
     );
     if (onshape.error || !onshape.client) {
       throw new Error(
@@ -290,7 +282,7 @@ async function resolveReleasedRevision(
 
     const onshapeCompanyId =
       payload.onshapeCompanyId ??
-      (await resolveOnshapeCompanyId(carbon, payload, payload.integrationId));
+      (await resolveOnshapeCompanyId(carbon, payload));
 
     const revisions = await withRateLimitRetry(
       () =>
@@ -398,7 +390,6 @@ export interface OnshapeReleaseImportInput {
    * caller that omitted it would authenticate against the legacy record's grant
    * and read the legacy tenant with nothing erroring.
    */
-  integrationId: OnshapeIntegrationId;
   messageId: string;
   releaseId: string;
   /** ONSHAPE's part number — what the revisions API is asked about. */
@@ -424,7 +415,7 @@ export interface OnshapeReleaseImportInput {
    * `releaseImportMode` keys, which a v2 company necessarily has off — the v2
    * setting group tells the user the legacy settings are ignored, and the
    * webhook kills the legacy consumers outright. Without this the v2 job
-   * delegates here and is refused as "disabled", so `releaseImportV2` never
+   * delegates here and is refused as "disabled", so `releaseImportMode` never
    * imports anything.
    */
   gate?: { enabled: boolean; mode: "changeNotice" | "revision" };
@@ -1047,8 +1038,7 @@ export const onshapeReleaseImportFunction = inngest.createFunction(
       // This Inngest function IS the legacy release-import consumer; v2 calls
       // runOnshapeReleaseImport directly rather than through this event.
       runOnshapeReleaseImport(carbon, {
-        ...payload,
-        integrationId: ONSHAPE_LEGACY_INTEGRATION_ID
+        ...payload
       })
     );
 

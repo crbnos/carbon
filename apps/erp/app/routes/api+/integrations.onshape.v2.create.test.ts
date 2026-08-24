@@ -62,7 +62,7 @@ vi.mock("@carbon/lib/trigger", () => ({
   trigger: (...args: unknown[]) => trigger(...args)
 }));
 
-const getOnshapeV2Settings = vi.fn();
+const getOnshapeSettings = vi.fn();
 const readItemIdsForElement = vi.fn();
 const readItemIdForRevision = vi.fn();
 const resolveOnshapeRevision = vi.fn();
@@ -75,7 +75,7 @@ vi.mock("@carbon/ee/onshape", () => ({
   // WHICH Onshape record to authenticate as, and a wrong value there is exactly
   // the bug the required parameter exists to catch.
   ONSHAPE_V2_INTEGRATION_ID: "onshape-v2",
-  getOnshapeV2Settings: (...args: unknown[]) => getOnshapeV2Settings(...args),
+  getOnshapeSettings: (...args: unknown[]) => getOnshapeSettings(...args),
   getOnshapeClient: async () => ({
     client: { getCompanies: async () => [{ id: "onshape-co" }] },
     error: null
@@ -193,7 +193,7 @@ beforeEach(() => {
     companyId: COMPANY_ID,
     userId: USER_ID
   });
-  getOnshapeV2Settings.mockResolvedValue({
+  getOnshapeSettings.mockResolvedValue({
     readFailed: false,
     // The onshape-v2 record exists and is active — which IS the opt-in now that
     // v2 has its own integration rather than a pipeline key.
@@ -426,7 +426,7 @@ describe("v2.create — the bill of materials branch", () => {
 
 describe("v2.create — the settings gate", () => {
   it("answers 'try again' on a failed settings READ, not 'v2 is off'", async () => {
-    getOnshapeV2Settings.mockResolvedValue({
+    getOnshapeSettings.mockResolvedValue({
       readFailed: true,
       active: false,
       onshapeCompanyId: null
@@ -443,7 +443,7 @@ describe("v2.create — the settings gate", () => {
   });
 
   it("refuses a company that has not connected the Onshape v2 integration", async () => {
-    getOnshapeV2Settings.mockResolvedValue({
+    getOnshapeSettings.mockResolvedValue({
       readFailed: false,
       active: false,
       onshapeCompanyId: null

@@ -4,8 +4,7 @@ import {
   buildElementExternalId,
   buildOnshapeBomTree,
   getOnshapeClient,
-  getOnshapeV2Settings,
-  ONSHAPE_V2_INTEGRATION_ID,
+  getOnshapeSettings,
   type OnshapeBomRow,
   parseOnshapeBom,
   readItemIdsForElements,
@@ -69,7 +68,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // The gate is company CONFIGURATION, not user data. Reading it with the
   // user's client silently requires settings_view on top of the parts
   // permission this route declares.
-  const settings = await getOnshapeV2Settings(serviceRole, companyId);
+  const settings = await getOnshapeSettings(serviceRole, companyId);
   // A failed READ is not an opt-out. Wording a transient error as a
   // configuration state sends the user to change a setting that was
   // never wrong — and re-saving it re-registers the release webhook.
@@ -86,12 +85,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     };
   }
 
-  const connection = await getOnshapeClient(
-    serviceRole,
-    companyId,
-    userId,
-    ONSHAPE_V2_INTEGRATION_ID
-  );
+  const connection = await getOnshapeClient(serviceRole, companyId, userId);
   if (!connection.client) {
     return {
       data: null,

@@ -2,11 +2,7 @@ import { mkdtemp, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Database } from "@carbon/database";
-import type {
-  OnshapeClient,
-  OnshapeIntegrationId,
-  OnshapeTranslation
-} from "@carbon/ee/onshape";
+import type { OnshapeClient, OnshapeTranslation } from "@carbon/ee/onshape";
 import { getOnshapeClient } from "@carbon/ee/onshape";
 import { getFileSizeLimit } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -42,7 +38,6 @@ export interface SyncOnshapeElementInput {
    * between the legacy asset sync and every v2 path, and the two records hold
    * separate grants against potentially different Onshape tenants.
    */
-  integrationId: OnshapeIntegrationId;
   itemId: string; // resolved Carbon item (caller guarantees it exists)
   sourceDocument: DocumentSourceType; // e.g. "Part"
   documentId: string;
@@ -224,12 +219,7 @@ export async function syncOnshapeElementAssetsToItem(
   carbon: CarbonClient,
   input: SyncOnshapeElementInput
 ): Promise<AttachOnshapeAssetsResult & { thumbnailAttached: boolean }> {
-  const onshape = await getOnshapeClient(
-    carbon,
-    input.companyId,
-    input.userId,
-    input.integrationId
-  );
+  const onshape = await getOnshapeClient(carbon, input.companyId, input.userId);
   if (onshape.error || !onshape.client) {
     throw new Error(`getOnshapeClient failed: ${onshape.error ?? "no client"}`);
   }
@@ -317,7 +307,6 @@ export interface SyncOnshapeDrawingInput {
    * between the legacy asset sync and every v2 path, and the two records hold
    * separate grants against potentially different Onshape tenants.
    */
-  integrationId: OnshapeIntegrationId;
   itemId: string; // resolved Carbon item (the model this drawing documents)
   sourceDocument: DocumentSourceType; // e.g. "Part"
   documentId: string;
@@ -354,8 +343,7 @@ export async function syncOnshapeDrawingAssetsToItem(
     const onshape = await getOnshapeClient(
       carbon,
       input.companyId,
-      input.userId,
-      input.integrationId
+      input.userId
     );
     if (onshape.error || !onshape.client) {
       throw new Error(

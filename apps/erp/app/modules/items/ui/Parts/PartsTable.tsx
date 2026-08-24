@@ -61,7 +61,7 @@ import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import { useOnshapePipeline } from "~/hooks/useOnshapePipeline";
+import { useOnshape } from "~/hooks/useOnshape";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
 import { usePeople } from "~/stores";
@@ -82,7 +82,7 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
-  const onshapePipeline = useOnshapePipeline();
+  const onshape = useOnshape();
 
   const translateReplenishment = useCallback(
     (v: string) =>
@@ -674,7 +674,7 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
                   <Trans>Item Groups</Trans>
                 </Link>
               </Button>
-              {onshapePipeline.isV2 && (
+              {onshape.isConnected && (
                 // A shortcut INTO the New Part form, not a second surface. The
                 // modal that used to live here re-implemented three of the
                 // form's fields and could not reach the other twelve.

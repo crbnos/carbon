@@ -2,8 +2,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   getOnshapeClient,
-  getOnshapeV2Settings,
-  ONSHAPE_V2_INTEGRATION_ID,
+  getOnshapeSettings,
   OnshapeElementType,
   OnshapeWVMType
 } from "@carbon/ee/onshape";
@@ -82,7 +81,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const serviceRole = getCarbonServiceRole();
   // Company configuration, read with the service role: the user's client would
   // silently require settings_view on top of the parts permission declared here.
-  const settings = await getOnshapeV2Settings(serviceRole, companyId);
+  const settings = await getOnshapeSettings(serviceRole, companyId);
   if (settings.readFailed) {
     return {
       data: null,
@@ -96,12 +95,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     };
   }
 
-  const connection = await getOnshapeClient(
-    serviceRole,
-    companyId,
-    userId,
-    ONSHAPE_V2_INTEGRATION_ID
-  );
+  const connection = await getOnshapeClient(serviceRole, companyId, userId);
   if (!connection.client) {
     return {
       data: null,

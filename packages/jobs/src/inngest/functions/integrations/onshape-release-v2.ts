@@ -22,8 +22,7 @@ import type { OnshapeClient, OnshapeReleasePackage } from "@carbon/ee/onshape";
 import {
   buildOnshapeItemNotesBlock,
   getOnshapeClient,
-  getOnshapeV2Settings,
-  ONSHAPE_V2_INTEGRATION_ID,
+  getOnshapeSettings,
   readItemIdsForElement,
   readReleasePackageName,
   readReleasePackageNotes,
@@ -38,12 +37,12 @@ import { NotificationEvent } from "@carbon/notifications";
 import { RetryAfterError } from "inngest";
 import { z } from "zod";
 import { inngest } from "../../client";
-import { withRateLimitRetry } from "./onshape-backfill";
 import { pullOnshapeDrawingsForDocument } from "./onshape-drawings";
 import { mintDefaultsForRelease } from "./onshape-mint";
 import { runOnshapeReleaseImport } from "./onshape-release-import";
 import { resolveReleasedRevision } from "./onshape-release-revision";
 import { readOnshapePurchasingLevel } from "./onshape-replenishment";
+import { withRateLimitRetry } from "./onshape-shared";
 import { syncOnshapeDrawingAssetsToItem } from "./onshape-sync-element";
 import {
   isTransientExportError,
@@ -160,7 +159,7 @@ export const onshapeReleaseV2Function = inngest.createFunction(
     const payload = PayloadSchema.parse(event.data);
     const carbon = getCarbonServiceRole();
 
-    const settings = await getOnshapeV2Settings(carbon, payload.companyId);
+    const settings = await getOnshapeSettings(carbon, payload.companyId);
     if (settings.readFailed) {
       throw new Error(
         "Could not read the Onshape integration settings; retrying."
@@ -190,8 +189,7 @@ export const onshapeReleaseV2Function = inngest.createFunction(
         const connection = await getOnshapeClient(
           carbon,
           payload.companyId,
-          payload.userId,
-          ONSHAPE_V2_INTEGRATION_ID
+          payload.userId
         );
         if (!connection.client) {
           throw new Error(connection.error ?? "Onshape is not connected");
@@ -255,7 +253,6 @@ export const onshapeReleaseV2Function = inngest.createFunction(
           await withRateLimitRetry(
             () =>
               syncOnshapeDrawingAssetsToItem(carbon, {
-                integrationId: ONSHAPE_V2_INTEGRATION_ID,
                 client: connection.client as OnshapeClient,
                 companyId: payload.companyId,
                 userId: payload.userId,
@@ -295,8 +292,7 @@ export const onshapeReleaseV2Function = inngest.createFunction(
       const connection = await getOnshapeClient(
         carbon,
         payload.companyId,
-        payload.userId,
-        ONSHAPE_V2_INTEGRATION_ID
+        payload.userId
       );
       if (!connection.client) {
         throw new Error(connection.error ?? "Onshape is not connected");
@@ -658,7 +654,7 @@ export const onshapeReleaseV2Function = inngest.createFunction(
         if (
           !mintedItemId &&
           !targetItemId &&
-          settings.releaseImportV2 !== "off"
+          settings.releaseImportMode !== "off"
         ) {
           // The release is NEW to Carbon. The family is known from the
           // mapping, so the importer is given that family's own readableId
@@ -689,7 +685,6 @@ export const onshapeReleaseV2Function = inngest.createFunction(
               userId: payload.userId,
               // v2's own record: this delegation shares the importer's body, not
               // the legacy record's grant.
-              integrationId: ONSHAPE_V2_INTEGRATION_ID,
               messageId: payload.messageId,
               releaseId: payload.releaseId,
               // ONSHAPE's number, because the importer feeds it to Onshape's
@@ -721,7 +716,7 @@ export const onshapeReleaseV2Function = inngest.createFunction(
               gate: {
                 enabled: true,
                 mode:
-                  settings.releaseImportV2 === "revision"
+                  settings.releaseImportMode === "revision"
                     ? "revision"
                     : "changeNotice"
               }
@@ -793,7 +788,7 @@ export const onshapeReleaseV2Function = inngest.createFunction(
         // Attach geometry to whichever item now represents this revision. A
         // still-missing target means the import was off or refused — reported,
         // not silently dropped.
-        if (!targetItemId && settings.releaseImportV2 === "off") {
+        if (!targetItemId && settings.releaseImportMode === "off") {
           skipped.push({
             partId,
             reason: `Carbon has this part but not at revision ${releasedRevision || "(initial)"}, and release import is off.`
@@ -882,7 +877,6 @@ export const onshapeReleaseV2Function = inngest.createFunction(
           const drawings = await withRateLimitRetry(
             () =>
               pullOnshapeDrawingsForDocument(carbon, client, {
-                integrationId: ONSHAPE_V2_INTEGRATION_ID,
                 companyId: payload.companyId,
                 userId: payload.userId,
                 documentId: payload.documentId,

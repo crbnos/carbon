@@ -5,8 +5,7 @@ import {
   buildElementExternalId,
   buildOnshapeItemNotesBlock,
   getOnshapeClient,
-  getOnshapeV2Settings,
-  ONSHAPE_V2_INTEGRATION_ID,
+  getOnshapeSettings,
   patchElementMappingMetadata,
   readElementMappingsForItems,
   resolveOnshapeRevision,
@@ -68,7 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // The gate is company CONFIGURATION, not user data. Reading it with the
   // user's client silently requires settings_view on top of the parts
   // permission this route declares.
-  const settings = await getOnshapeV2Settings(serviceRole, companyId);
+  const settings = await getOnshapeSettings(serviceRole, companyId);
   // A failed READ is not an opt-out. Wording a transient error as a
   // configuration state sends the user to change a setting that was
   // never wrong — and re-saving it re-registers the release webhook.
@@ -209,12 +208,7 @@ export async function action({ request }: ActionFunctionArgs) {
             "This selection names a revision but no part number, so Carbon cannot verify it against Onshape."
         };
       }
-      const onshape = await getOnshapeClient(
-        serviceRole,
-        companyId,
-        userId,
-        ONSHAPE_V2_INTEGRATION_ID
-      );
+      const onshape = await getOnshapeClient(serviceRole, companyId, userId);
       if (!onshape.client) {
         return {
           success: false,

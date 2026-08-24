@@ -20,7 +20,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { useFetcher } from "react-router";
-import { useOnshapePipeline } from "~/hooks/useOnshapePipeline";
+import { useOnshape } from "~/hooks/useOnshape";
 import type { loader as bomLoader } from "~/routes/api+/integrations.onshape.v2.bom";
 import type { action as importAction } from "~/routes/api+/integrations.onshape.v2.import";
 import { path } from "~/utils/path";
@@ -55,7 +55,7 @@ export const OnshapeBomImport = ({
 }) => {
   const { t } = useLingui();
   const picker = useDisclosure();
-  const { allowUnreleasedSync } = useOnshapePipeline();
+  const { allowUnreleasedSync } = useOnshape();
   // Unreleased picking is a SECOND path, not a mode of the released picker:
   // an unreleased version has no revision to select, so what the user chooses
   // is a document version rather than a released revision.
