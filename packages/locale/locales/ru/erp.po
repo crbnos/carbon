@@ -2280,6 +2280,9 @@ msgstr "При завершении операции"
 msgid "Attach File"
 msgstr "Прикрепить файл"
 
+msgid "Attaching drawings"
+msgstr ""
+
 msgid "Attachment"
 msgstr "Вложение"
 
@@ -2867,6 +2870,9 @@ msgstr "Только Carbon"
 
 msgid "Carbon Posted"
 msgstr "Carbon проведен"
+
+msgid "Carbon stopped hearing from it. The part was created — open it to see what landed, and import the bill of materials again from its BoM explorer if it is missing."
+msgstr ""
 
 msgid "Carbon value"
 msgstr "Значение Carbon"
@@ -4122,9 +4128,6 @@ msgstr "Создан тип несоответствия"
 msgid "Created part"
 msgstr "Часть создана"
 
-msgid "Created part from Onshape"
-msgstr ""
-
 msgid "Created payment term"
 msgstr "Условие оплаты создано"
 
@@ -4170,6 +4173,9 @@ msgstr "Создает 12 ежемесячных периодов для фин�
 
 msgid "Creating part..."
 msgstr "Создание детали..."
+
+msgid "Creating the part from Onshape"
+msgstr ""
 
 msgid "Credit"
 msgstr "Кредит"
@@ -6891,6 +6897,9 @@ msgstr "Готовая продукция"
 msgid "Finished Goods (default)"
 msgstr "Готовая продукция (по умолчанию)"
 
+msgid "Finished. Opening the part…"
+msgstr ""
+
 msgid "finishes"
 msgstr "Дополнительное вычитание в первый год, произведённое до начала обычного графика МАКРС."
 
@@ -7299,6 +7308,9 @@ msgstr "Перейти к {0}"
 
 msgid "Go to implementation hub"
 msgstr "Перейти в центр внедрения"
+
+msgid "Go to the part now"
+msgstr ""
 
 msgid "Go-Live"
 msgstr "Запуск"
@@ -9052,6 +9064,9 @@ msgstr "Сопоставлено"
 msgid "matches"
 msgstr "совпадает"
 
+msgid "Matching and creating parts"
+msgstr ""
+
 msgid "Matching Pairs"
 msgstr "Парные соответствия"
 
@@ -10592,6 +10607,9 @@ msgstr "Открытые запланированные"
 msgid "Open task details"
 msgstr "Открыть детали задачи"
 
+msgid "Open the part"
+msgstr ""
+
 msgid "Open the Setup Map"
 msgstr "Открыть карту настройки"
 
@@ -11721,6 +11739,9 @@ msgstr "Извлечение из инвентаря"
 msgid "Pull, map, and load your data"
 msgstr "Извлеките, сопоставьте и загрузите ваши данные"
 
+msgid "Pulling 3D models"
+msgstr ""
+
 msgid "Purchase & manufacture from MRP"
 msgstr "Закупка и производство из MRP"
 
@@ -12088,6 +12109,9 @@ msgstr "Читаемый ID"
 
 msgid "Readable id with revision"
 msgstr "Читаемый идентификатор с редакцией"
+
+msgid "Reading the bill of materials from Onshape"
+msgstr ""
 
 msgid "Reading the bill of materials…"
 msgstr ""
@@ -14240,6 +14264,9 @@ msgstr "Начните с"
 msgid "Started"
 msgstr "Начал"
 
+msgid "Starting"
+msgstr ""
+
 msgid "Starting…"
 msgstr "Начинаю…"
 
@@ -14275,6 +14302,10 @@ msgstr "Остаться на этой странице"
 
 msgid "Step"
 msgstr "Шаг"
+
+#. placeholder {0}: STAGE_ORDER.length
+msgid "Step {stepNumber} of {0}. The part already exists — this is Carbon filling it in."
+msgstr ""
 
 msgid "Step added"
 msgstr "Шаг добавлен"
@@ -15182,6 +15213,9 @@ msgstr "Немедленная задача несоответствия, кот
 msgid "The impact rating if the risk is realized (1 = negligible to 5 = catastrophic); paired with Likelihood to compute the risk score."
 msgstr "Оценка воздействия при реализации риска (1 = незначительно до 5 = катастрофически); в паре с Вероятностью для расчета оценки риска."
 
+msgid "The import did not finish"
+msgstr ""
+
 msgid "The inbound posting document that takes goods into stock (from a PO, transfer, or job output) and creates any tracked entities."
 msgstr "Входящий документ учета, который принимает товары на склад (из заказа на закупку, передачи или выхода работы) и создает отслеживаемые сущности."
 
@@ -15344,6 +15378,9 @@ msgstr "Внешние поставщики, выполняющие этот п�
 msgid "The parent-child chain of tracked entities — what a unit was built from and what it became."
 msgstr "Цепь родитель-потомок отслеживаемых объектов — из чего была построена единица и чем она стала."
 
+msgid "The part already exists — this is Carbon filling it in."
+msgstr ""
+
 msgid "The part is manufactured as its own job when the parent that needs it is built."
 msgstr "Деталь производится как собственное задание, когда производится родитель, который ее нужен."
 
@@ -15351,6 +15388,9 @@ msgid "The part is taken from existing stock when its parent is built — no new
 msgstr "Деталь берется из существующего запаса при построении ее родителя — нет нового задания или заказа на покупку."
 
 msgid "The part number and revision come from Onshape and cannot be edited — they are what future releases of this part are matched on. Everything else is yours."
+msgstr ""
+
+msgid "The part was created, but building it out from Onshape failed."
 msgstr ""
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
@@ -17606,6 +17646,9 @@ msgstr "Списание запасов, забракованных или во�
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "Снижение стоимости актива в течение его полезного использования — ежемесячный пакет, который вы создаете, проверяете как черновик, затем контируете."
+
+msgid "Writing the bill of materials"
+msgstr ""
 
 msgid "Year"
 msgstr "Год"

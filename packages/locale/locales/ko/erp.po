@@ -2280,6 +2280,9 @@ msgstr "작업 완료 시"
 msgid "Attach File"
 msgstr "파일 첨부"
 
+msgid "Attaching drawings"
+msgstr ""
+
 msgid "Attachment"
 msgstr "첨부파일"
 
@@ -2867,6 +2870,9 @@ msgstr "Carbon 전용"
 
 msgid "Carbon Posted"
 msgstr "Carbon 게시됨"
+
+msgid "Carbon stopped hearing from it. The part was created — open it to see what landed, and import the bill of materials again from its BoM explorer if it is missing."
+msgstr ""
 
 msgid "Carbon value"
 msgstr "Carbon 값"
@@ -4122,9 +4128,6 @@ msgstr "부적합 유형 생성됨"
 msgid "Created part"
 msgstr "품목 생성됨"
 
-msgid "Created part from Onshape"
-msgstr ""
-
 msgid "Created payment term"
 msgstr "결제조건 생성됨"
 
@@ -4170,6 +4173,9 @@ msgstr "회계연도의 12개월 기간을 생성합니다. 이미 존재하는 
 
 msgid "Creating part..."
 msgstr "품목 생성 중..."
+
+msgid "Creating the part from Onshape"
+msgstr ""
 
 msgid "Credit"
 msgstr "대변"
@@ -6891,6 +6897,9 @@ msgstr "완성품"
 msgid "Finished Goods (default)"
 msgstr "완성품 (기본값)"
 
+msgid "Finished. Opening the part…"
+msgstr ""
+
 msgid "finishes"
 msgstr "마감"
 
@@ -7299,6 +7308,9 @@ msgstr "{0}(으)로 이동"
 
 msgid "Go to implementation hub"
 msgstr "구축 허브로 이동"
+
+msgid "Go to the part now"
+msgstr ""
 
 msgid "Go-Live"
 msgstr "도입"
@@ -9052,6 +9064,9 @@ msgstr "일치함"
 msgid "matches"
 msgstr "일치"
 
+msgid "Matching and creating parts"
+msgstr ""
+
 msgid "Matching Pairs"
 msgstr "일치하는 쌍"
 
@@ -10592,6 +10607,9 @@ msgstr "미결 예약 정비"
 msgid "Open task details"
 msgstr "작업 세부정보 열기"
 
+msgid "Open the part"
+msgstr ""
+
 msgid "Open the Setup Map"
 msgstr "설정 맵 열기"
 
@@ -11721,6 +11739,9 @@ msgstr "재고에서 가져오기"
 msgid "Pull, map, and load your data"
 msgstr "데이터를 가져와서 매핑하고 로드하세요"
 
+msgid "Pulling 3D models"
+msgstr ""
+
 msgid "Purchase & manufacture from MRP"
 msgstr "MRP 기반 구매 및 제조"
 
@@ -12088,6 +12109,9 @@ msgstr "읽을 수 있는 ID"
 
 msgid "Readable id with revision"
 msgstr "개정판이 포함된 읽을 수 있는 ID"
+
+msgid "Reading the bill of materials from Onshape"
+msgstr ""
 
 msgid "Reading the bill of materials…"
 msgstr ""
@@ -14240,6 +14264,9 @@ msgstr "…부터 시작"
 msgid "Started"
 msgstr "시작됨"
 
+msgid "Starting"
+msgstr ""
+
 msgid "Starting…"
 msgstr "시작 중…"
 
@@ -14275,6 +14302,10 @@ msgstr "이 페이지에 머무르기"
 
 msgid "Step"
 msgstr "단계"
+
+#. placeholder {0}: STAGE_ORDER.length
+msgid "Step {stepNumber} of {0}. The part already exists — this is Carbon filling it in."
+msgstr ""
 
 msgid "Step added"
 msgstr "단계 추가됨"
@@ -15182,6 +15213,9 @@ msgstr "근본 원인이 파악되기 전에 영향을 받은 재고나 작업�
 msgid "The impact rating if the risk is realized (1 = negligible to 5 = catastrophic); paired with Likelihood to compute the risk score."
 msgstr "리스크가 발생했을 때의 영향도 등급(1=경미함 ~ 5=치명적)입니다. 발생 가능성과 결합하여 리스크 점수를 계산합니다."
 
+msgid "The import did not finish"
+msgstr ""
+
 msgid "The inbound posting document that takes goods into stock (from a PO, transfer, or job output) and creates any tracked entities."
 msgstr "재화를 재고로 입고시키는(PO, 이동, 작업 산출물로부터) 입고 전표로, 필요한 추적 개체를 생성합니다."
 
@@ -15344,6 +15378,9 @@ msgstr "이 공정을 수행하는 외주 공급업체입니다. 각 업체는 �
 msgid "The parent-child chain of tracked entities — what a unit was built from and what it became."
 msgstr "추적 개체의 상하위 연결 관계로, 해당 유닛이 무엇으로부터 만들어졌고 무엇이 되었는지를 나타냅니다."
 
+msgid "The part already exists — this is Carbon filling it in."
+msgstr ""
+
 msgid "The part is manufactured as its own job when the parent that needs it is built."
 msgstr "상위 품목이 제작될 때 이 품목은 별도의 작업으로 제조됩니다."
 
@@ -15351,6 +15388,9 @@ msgid "The part is taken from existing stock when its parent is built — no new
 msgstr "상위 품목이 제작될 때 이 품목은 기존 재고에서 가져옵니다 — 새 작업이나 구매주문이 생성되지 않습니다."
 
 msgid "The part number and revision come from Onshape and cannot be edited — they are what future releases of this part are matched on. Everything else is yours."
+msgstr ""
+
+msgid "The part was created, but building it out from Onshape failed."
 msgstr ""
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
@@ -17606,6 +17646,9 @@ msgstr "검사 거부 및 NCR 처리를 통해 폐기되거나 반품된 재고�
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "자산의 가치를 내용연수에 걸쳐 상각하는 것 — 매월 생성하여 초안으로 검토한 후 전기하는 배치 작업입니다."
+
+msgid "Writing the bill of materials"
+msgstr ""
 
 msgid "Year"
 msgstr "연도"

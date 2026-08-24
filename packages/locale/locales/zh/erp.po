@@ -2280,6 +2280,9 @@ msgstr "在操作完成时"
 msgid "Attach File"
 msgstr "附加文件"
 
+msgid "Attaching drawings"
+msgstr ""
+
 msgid "Attachment"
 msgstr "附件"
 
@@ -2867,6 +2870,9 @@ msgstr "仅限 Carbon"
 
 msgid "Carbon Posted"
 msgstr "Carbon 已记账"
+
+msgid "Carbon stopped hearing from it. The part was created — open it to see what landed, and import the bill of materials again from its BoM explorer if it is missing."
+msgstr ""
 
 msgid "Carbon value"
 msgstr "Carbon 值"
@@ -4122,9 +4128,6 @@ msgstr "已创建不符合项类型"
 msgid "Created part"
 msgstr "已创建零件"
 
-msgid "Created part from Onshape"
-msgstr ""
-
 msgid "Created payment term"
 msgstr "已创建付款条款"
 
@@ -4170,6 +4173,9 @@ msgstr "为会计年度创建12个月度期间。已存在的期间保持不变�
 
 msgid "Creating part..."
 msgstr "正在创建零件..."
+
+msgid "Creating the part from Onshape"
+msgstr ""
 
 msgid "Credit"
 msgstr "信用"
@@ -6891,6 +6897,9 @@ msgstr "成品"
 msgid "Finished Goods (default)"
 msgstr "成品（默认）"
 
+msgid "Finished. Opening the part…"
+msgstr ""
+
 msgid "finishes"
 msgstr "在常规MACRS计划开始之前采取的第一年额外扣除。"
 
@@ -7299,6 +7308,9 @@ msgstr "前往 {0}"
 
 msgid "Go to implementation hub"
 msgstr "前往实施中心"
+
+msgid "Go to the part now"
+msgstr ""
 
 msgid "Go-Live"
 msgstr "上线"
@@ -9052,6 +9064,9 @@ msgstr "已匹配"
 msgid "matches"
 msgstr "匹配"
 
+msgid "Matching and creating parts"
+msgstr ""
+
 msgid "Matching Pairs"
 msgstr "匹配对"
 
@@ -10592,6 +10607,9 @@ msgstr "开放计划"
 msgid "Open task details"
 msgstr "打开任务详情"
 
+msgid "Open the part"
+msgstr ""
+
 msgid "Open the Setup Map"
 msgstr "打开设置地图"
 
@@ -11721,6 +11739,9 @@ msgstr "从库存中提取"
 msgid "Pull, map, and load your data"
 msgstr "拉取、映射和加载您的数据"
 
+msgid "Pulling 3D models"
+msgstr ""
+
 msgid "Purchase & manufacture from MRP"
 msgstr "从 MRP 采购和制造"
 
@@ -12088,6 +12109,9 @@ msgstr "可读ID"
 
 msgid "Readable id with revision"
 msgstr "可读 ID（含版本）"
+
+msgid "Reading the bill of materials from Onshape"
+msgstr ""
 
 msgid "Reading the bill of materials…"
 msgstr ""
@@ -14240,6 +14264,9 @@ msgstr "从以下开始"
 msgid "Started"
 msgstr "开始于"
 
+msgid "Starting"
+msgstr ""
+
 msgid "Starting…"
 msgstr "正在启动…"
 
@@ -14275,6 +14302,10 @@ msgstr "留在此页面"
 
 msgid "Step"
 msgstr "步骤"
+
+#. placeholder {0}: STAGE_ORDER.length
+msgid "Step {stepNumber} of {0}. The part already exists — this is Carbon filling it in."
+msgstr ""
 
 msgid "Step added"
 msgstr "已添加步骤"
@@ -15182,6 +15213,9 @@ msgstr "根本原因已知之前，隔离受影响库存或作业的立即不符
 msgid "The impact rating if the risk is realized (1 = negligible to 5 = catastrophic); paired with Likelihood to compute the risk score."
 msgstr "如果风险实现，影响评级（1 =可忽视，5 =灾难性）；与可能性配对以计算风险评分。"
 
+msgid "The import did not finish"
+msgstr ""
+
 msgid "The inbound posting document that takes goods into stock (from a PO, transfer, or job output) and creates any tracked entities."
 msgstr "接收商品进入库存（从采购订单、转移或作业输出）并创建任何被追踪实体的入站过账文件。"
 
@@ -15344,6 +15378,9 @@ msgstr "执行此流程的外部供应商；每个人在供应商流程表单上
 msgid "The parent-child chain of tracked entities — what a unit was built from and what it became."
 msgstr "跟踪实体的父子链 - 一个单位从什么构成以及它变成了什么。"
 
+msgid "The part already exists — this is Carbon filling it in."
+msgstr ""
+
 msgid "The part is manufactured as its own job when the parent that needs it is built."
 msgstr "当需要该零件的父级被构造时，该零件被制造为其自己的工作。"
 
@@ -15351,6 +15388,9 @@ msgid "The part is taken from existing stock when its parent is built — no new
 msgstr "构建其父级时，从现有库存中获取该零件 - 无新工作或采购订单。"
 
 msgid "The part number and revision come from Onshape and cannot be edited — they are what future releases of this part are matched on. Everything else is yours."
+msgstr ""
+
+msgid "The part was created, but building it out from Onshape failed."
 msgstr ""
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
@@ -17606,6 +17646,9 @@ msgstr "通过检验拒绝和不符合项处置报废或退回的库存的报销
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "在资产的使用寿命期间降低其价值 — 您创建、作为草稿审阅然后过账的月度批次。"
+
+msgid "Writing the bill of materials"
+msgstr ""
 
 msgid "Year"
 msgstr "年份"

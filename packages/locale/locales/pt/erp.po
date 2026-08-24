@@ -2280,6 +2280,9 @@ msgstr "Na conclusão da operação"
 msgid "Attach File"
 msgstr "Anexar Arquivo"
 
+msgid "Attaching drawings"
+msgstr ""
+
 msgid "Attachment"
 msgstr "Anexo"
 
@@ -2867,6 +2870,9 @@ msgstr "Apenas Carbon"
 
 msgid "Carbon Posted"
 msgstr "Enviado para o Carbon"
+
+msgid "Carbon stopped hearing from it. The part was created — open it to see what landed, and import the bill of materials again from its BoM explorer if it is missing."
+msgstr ""
 
 msgid "Carbon value"
 msgstr "Valor Carbon"
@@ -4122,9 +4128,6 @@ msgstr "Tipo de não conformidade criado"
 msgid "Created part"
 msgstr "Parte criada"
 
-msgid "Created part from Onshape"
-msgstr ""
-
 msgid "Created payment term"
 msgstr "Termo de pagamento criado"
 
@@ -4170,6 +4173,9 @@ msgstr "Cria os 12 períodos mensais para um ano fiscal. Os períodos que já ex
 
 msgid "Creating part..."
 msgstr "Criando peça..."
+
+msgid "Creating the part from Onshape"
+msgstr ""
 
 msgid "Credit"
 msgstr "Crédito"
@@ -6891,6 +6897,9 @@ msgstr "Produtos Acabados"
 msgid "Finished Goods (default)"
 msgstr "Produtos Acabados (padrão)"
 
+msgid "Finished. Opening the part…"
+msgstr ""
+
 msgid "finishes"
 msgstr "Dedução adicional do primeiro ano tomada antes do cronograma MACRS regular começar."
 
@@ -7299,6 +7308,9 @@ msgstr "Ir para {0}"
 
 msgid "Go to implementation hub"
 msgstr "Ir para o hub de implementação"
+
+msgid "Go to the part now"
+msgstr ""
 
 msgid "Go-Live"
 msgstr "Go-Live"
@@ -9052,6 +9064,9 @@ msgstr "Correspondido"
 msgid "matches"
 msgstr "corresponde"
 
+msgid "Matching and creating parts"
+msgstr ""
+
 msgid "Matching Pairs"
 msgstr "Pares Correspondentes"
 
@@ -10592,6 +10607,9 @@ msgstr "Agendado Aberto"
 msgid "Open task details"
 msgstr "Abrir detalhes da tarefa"
 
+msgid "Open the part"
+msgstr ""
+
 msgid "Open the Setup Map"
 msgstr "Abrir o Mapa de Configuração"
 
@@ -11721,6 +11739,9 @@ msgstr "Retirar do Inventário"
 msgid "Pull, map, and load your data"
 msgstr "Extrair, mapear e carregar seus dados"
 
+msgid "Pulling 3D models"
+msgstr ""
+
 msgid "Purchase & manufacture from MRP"
 msgstr "Comprar e fabricar a partir do MRP"
 
@@ -12088,6 +12109,9 @@ msgstr "ID legível"
 
 msgid "Readable id with revision"
 msgstr "ID legível com revisão"
+
+msgid "Reading the bill of materials from Onshape"
+msgstr ""
 
 msgid "Reading the bill of materials…"
 msgstr ""
@@ -14240,6 +14264,9 @@ msgstr "Comece com"
 msgid "Started"
 msgstr "Iniciado"
 
+msgid "Starting"
+msgstr ""
+
 msgid "Starting…"
 msgstr "Iniciando…"
 
@@ -14275,6 +14302,10 @@ msgstr "Ficar nesta página"
 
 msgid "Step"
 msgstr "Etapa"
+
+#. placeholder {0}: STAGE_ORDER.length
+msgid "Step {stepNumber} of {0}. The part already exists — this is Carbon filling it in."
+msgstr ""
 
 msgid "Step added"
 msgstr "Passo adicionado"
@@ -15182,6 +15213,9 @@ msgstr "A tarefa imediata de não conformidade que coloca em quarentena o estoqu
 msgid "The impact rating if the risk is realized (1 = negligible to 5 = catastrophic); paired with Likelihood to compute the risk score."
 msgstr "A classificação de impacto se o risco for realizado (1 = negligenciável a 5 = catastrófico); emparelhado com Probabilidade para calcular a pontuação de risco."
 
+msgid "The import did not finish"
+msgstr ""
+
 msgid "The inbound posting document that takes goods into stock (from a PO, transfer, or job output) and creates any tracked entities."
 msgstr "O documento de postagem de entrada que recebe mercadorias em estoque (de uma PO, transferência ou saída de trabalho) e cria entidades rastreadas."
 
@@ -15344,6 +15378,9 @@ msgstr "Os fornecedores externos que realizam esse processo; cada um obtém uma 
 msgid "The parent-child chain of tracked entities — what a unit was built from and what it became."
 msgstr "A cadeia pai-filho de entidades rastreadas - a partir do que uma unidade foi construída e no que se tornou."
 
+msgid "The part already exists — this is Carbon filling it in."
+msgstr ""
+
 msgid "The part is manufactured as its own job when the parent that needs it is built."
 msgstr "A peça é fabricada como seu próprio trabalho quando o pai que a necessita é construído."
 
@@ -15351,6 +15388,9 @@ msgid "The part is taken from existing stock when its parent is built — no new
 msgstr "A peça é retirada do estoque existente quando seu pai é construído - nenhum novo trabalho ou pedido de compra."
 
 msgid "The part number and revision come from Onshape and cannot be edited — they are what future releases of this part are matched on. Everything else is yours."
+msgstr ""
+
+msgid "The part was created, but building it out from Onshape failed."
 msgstr ""
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
@@ -17606,6 +17646,9 @@ msgstr "Baixa de estoque sucatado ou devolvido por rejeições de inspeção e d
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "Reduzir o valor de um ativo ao longo de sua vida útil — um lote mensal que você cria, revisa como rascunho e depois contabiliza."
+
+msgid "Writing the bill of materials"
+msgstr ""
 
 msgid "Year"
 msgstr "Ano"

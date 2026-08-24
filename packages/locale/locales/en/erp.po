@@ -2280,6 +2280,9 @@ msgstr "At operation completion"
 msgid "Attach File"
 msgstr "Attach File"
 
+msgid "Attaching drawings"
+msgstr "Attaching drawings"
+
 msgid "Attachment"
 msgstr "Attachment"
 
@@ -2867,6 +2870,9 @@ msgstr "Carbon only"
 
 msgid "Carbon Posted"
 msgstr "Carbon Posted"
+
+msgid "Carbon stopped hearing from it. The part was created — open it to see what landed, and import the bill of materials again from its BoM explorer if it is missing."
+msgstr "Carbon stopped hearing from it. The part was created — open it to see what landed, and import the bill of materials again from its BoM explorer if it is missing."
 
 msgid "Carbon value"
 msgstr "Carbon value"
@@ -4122,9 +4128,6 @@ msgstr "Created non conformance type"
 msgid "Created part"
 msgstr "Created part"
 
-msgid "Created part from Onshape"
-msgstr "Created part from Onshape"
-
 msgid "Created payment term"
 msgstr "Created payment term"
 
@@ -4170,6 +4173,9 @@ msgstr "Creates the 12 monthly periods for a fiscal year. Periods that already e
 
 msgid "Creating part..."
 msgstr "Creating part..."
+
+msgid "Creating the part from Onshape"
+msgstr "Creating the part from Onshape"
 
 msgid "Credit"
 msgstr "Credit"
@@ -6891,6 +6897,9 @@ msgstr "Finished Goods"
 msgid "Finished Goods (default)"
 msgstr "Finished Goods (default)"
 
+msgid "Finished. Opening the part…"
+msgstr "Finished. Opening the part…"
+
 msgid "finishes"
 msgstr "finishes"
 
@@ -7299,6 +7308,9 @@ msgstr "Go to {0}"
 
 msgid "Go to implementation hub"
 msgstr "Go to implementation hub"
+
+msgid "Go to the part now"
+msgstr "Go to the part now"
 
 msgid "Go-Live"
 msgstr "Go-Live"
@@ -9052,6 +9064,9 @@ msgstr "Matched"
 msgid "matches"
 msgstr "matches"
 
+msgid "Matching and creating parts"
+msgstr "Matching and creating parts"
+
 msgid "Matching Pairs"
 msgstr "Matching Pairs"
 
@@ -10592,6 +10607,9 @@ msgstr "Open Scheduled"
 msgid "Open task details"
 msgstr "Open task details"
 
+msgid "Open the part"
+msgstr "Open the part"
+
 msgid "Open the Setup Map"
 msgstr "Open the Setup Map"
 
@@ -11721,6 +11739,9 @@ msgstr "Pull from Inventory"
 msgid "Pull, map, and load your data"
 msgstr "Pull, map, and load your data"
 
+msgid "Pulling 3D models"
+msgstr "Pulling 3D models"
+
 msgid "Purchase & manufacture from MRP"
 msgstr "Purchase & manufacture from MRP"
 
@@ -12088,6 +12109,9 @@ msgstr "Readable ID"
 
 msgid "Readable id with revision"
 msgstr "Readable id with revision"
+
+msgid "Reading the bill of materials from Onshape"
+msgstr "Reading the bill of materials from Onshape"
 
 msgid "Reading the bill of materials…"
 msgstr "Reading the bill of materials…"
@@ -14240,6 +14264,9 @@ msgstr "Start with"
 msgid "Started"
 msgstr "Started"
 
+msgid "Starting"
+msgstr "Starting"
+
 msgid "Starting…"
 msgstr "Starting…"
 
@@ -14275,6 +14302,10 @@ msgstr "Stay on this page"
 
 msgid "Step"
 msgstr "Step"
+
+#. placeholder {0}: STAGE_ORDER.length
+msgid "Step {stepNumber} of {0}. The part already exists — this is Carbon filling it in."
+msgstr "Step {stepNumber} of {0}. The part already exists — this is Carbon filling it in."
 
 msgid "Step added"
 msgstr "Step added"
@@ -15182,6 +15213,9 @@ msgstr "The immediate nonconformance task that quarantines affected stock or wor
 msgid "The impact rating if the risk is realized (1 = negligible to 5 = catastrophic); paired with Likelihood to compute the risk score."
 msgstr "The impact rating if the risk is realized (1 = negligible to 5 = catastrophic); paired with Likelihood to compute the risk score."
 
+msgid "The import did not finish"
+msgstr "The import did not finish"
+
 msgid "The inbound posting document that takes goods into stock (from a PO, transfer, or job output) and creates any tracked entities."
 msgstr "The inbound posting document that takes goods into stock (from a PO, transfer, or job output) and creates any tracked entities."
 
@@ -15344,6 +15378,9 @@ msgstr "The outside suppliers that perform this process; each gets a row of pric
 msgid "The parent-child chain of tracked entities — what a unit was built from and what it became."
 msgstr "The parent-child chain of tracked entities — what a unit was built from and what it became."
 
+msgid "The part already exists — this is Carbon filling it in."
+msgstr "The part already exists — this is Carbon filling it in."
+
 msgid "The part is manufactured as its own job when the parent that needs it is built."
 msgstr "The part is manufactured as its own job when the parent that needs it is built."
 
@@ -15352,6 +15389,9 @@ msgstr "The part is taken from existing stock when its parent is built — no ne
 
 msgid "The part number and revision come from Onshape and cannot be edited — they are what future releases of this part are matched on. Everything else is yours."
 msgstr "The part number and revision come from Onshape and cannot be edited — they are what future releases of this part are matched on. Everything else is yours."
+
+msgid "The part was created, but building it out from Onshape failed."
+msgstr "The part was created, but building it out from Onshape failed."
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "The people on the Carbon side who will run your implementation, and how to reach them."
@@ -17606,6 +17646,9 @@ msgstr "Write-off of stock scrapped or returned via inspection rejects and NCR d
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
+
+msgid "Writing the bill of materials"
+msgstr "Writing the bill of materials"
 
 msgid "Year"
 msgstr "Year"

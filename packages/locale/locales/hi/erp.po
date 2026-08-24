@@ -2280,6 +2280,9 @@ msgstr "ऑपरेशन पूरी होने पर"
 msgid "Attach File"
 msgstr "फ़ाइल संलग्न करें"
 
+msgid "Attaching drawings"
+msgstr ""
+
 msgid "Attachment"
 msgstr "संलग्नक"
 
@@ -2867,6 +2870,9 @@ msgstr "केवल कार्बन"
 
 msgid "Carbon Posted"
 msgstr "Carbon पोस्ट किया गया"
+
+msgid "Carbon stopped hearing from it. The part was created — open it to see what landed, and import the bill of materials again from its BoM explorer if it is missing."
+msgstr ""
 
 msgid "Carbon value"
 msgstr "Carbon मान"
@@ -4122,9 +4128,6 @@ msgstr "गैर अनुरूपता प्रकार बनाया �
 msgid "Created part"
 msgstr "भाग बनाया गया"
 
-msgid "Created part from Onshape"
-msgstr ""
-
 msgid "Created payment term"
 msgstr "भुगतान शर्त बनाई गई"
 
@@ -4170,6 +4173,9 @@ msgstr "एक वित्तीय वर्ष के लिए 12 मास�
 
 msgid "Creating part..."
 msgstr "भाग बनाया जा रहा है..."
+
+msgid "Creating the part from Onshape"
+msgstr ""
 
 msgid "Credit"
 msgstr "क्रेडिट"
@@ -6891,6 +6897,9 @@ msgstr "तैयार माल"
 msgid "Finished Goods (default)"
 msgstr "तैयार माल (डिफ़ॉल्ट)"
 
+msgid "Finished. Opening the part…"
+msgstr ""
+
 msgid "finishes"
 msgstr "नियमित MACRS अनुसूची शुरू होने से पहले लिया गया पहले वर्ष का अतिरिक्त कटौती।"
 
@@ -7299,6 +7308,9 @@ msgstr "{0} पर जाएं"
 
 msgid "Go to implementation hub"
 msgstr "कार्यान्वयन हब पर जाएं"
+
+msgid "Go to the part now"
+msgstr ""
 
 msgid "Go-Live"
 msgstr "गो-लाइव"
@@ -9052,6 +9064,9 @@ msgstr "मेल खाया"
 msgid "matches"
 msgstr "मेल खाता है"
 
+msgid "Matching and creating parts"
+msgstr ""
+
 msgid "Matching Pairs"
 msgstr "मिलान जोड़े"
 
@@ -10592,6 +10607,9 @@ msgstr "खुली अनुसूचित"
 msgid "Open task details"
 msgstr "कार्य विवरण खोलें"
 
+msgid "Open the part"
+msgstr ""
+
 msgid "Open the Setup Map"
 msgstr "सेटअप मैप खोलें"
 
@@ -11721,6 +11739,9 @@ msgstr "इन्वेंटरी से खींचें"
 msgid "Pull, map, and load your data"
 msgstr "अपना डेटा खींचें, मैप करें, और लोड करें"
 
+msgid "Pulling 3D models"
+msgstr ""
+
 msgid "Purchase & manufacture from MRP"
 msgstr "MRP से खरीद और निर्माण करें"
 
@@ -12088,6 +12109,9 @@ msgstr "पठनीय ID"
 
 msgid "Readable id with revision"
 msgstr "संशोधन के साथ पठनीय आईडी"
+
+msgid "Reading the bill of materials from Onshape"
+msgstr ""
 
 msgid "Reading the bill of materials…"
 msgstr ""
@@ -14240,6 +14264,9 @@ msgstr "शुरुआत करें"
 msgid "Started"
 msgstr "शुरू किया गया"
 
+msgid "Starting"
+msgstr ""
+
 msgid "Starting…"
 msgstr "शुरू हो रहा है…"
 
@@ -14275,6 +14302,10 @@ msgstr "इस पृष्ठ पर रहें"
 
 msgid "Step"
 msgstr "चरण"
+
+#. placeholder {0}: STAGE_ORDER.length
+msgid "Step {stepNumber} of {0}. The part already exists — this is Carbon filling it in."
+msgstr ""
 
 msgid "Step added"
 msgstr "चरण जोड़ा गया"
@@ -15182,6 +15213,9 @@ msgstr "तत्काल अनुरूपता कार्य जो प�
 msgid "The impact rating if the risk is realized (1 = negligible to 5 = catastrophic); paired with Likelihood to compute the risk score."
 msgstr "प्रभाव रेटिंग यदि जोखिम महसूस किया जाता है (1 = नगण्य से 5 = विनाशकारी); जोखिम स्कोर की गणना के लिए संभावना के साथ जोड़ी गई।"
 
+msgid "The import did not finish"
+msgstr ""
+
 msgid "The inbound posting document that takes goods into stock (from a PO, transfer, or job output) and creates any tracked entities."
 msgstr "आने वाली पोस्टिंग दस्तावेज जो माल को स्टॉक में लेता है (एक PO, स्थानांतरण, या कार्य आउटपुट से) और कोई भी ट्रैक किए गए संस्थाएं बनाता है।"
 
@@ -15344,6 +15378,9 @@ msgstr "बाहरी आपूर्तिकर्ता जो इस प�
 msgid "The parent-child chain of tracked entities — what a unit was built from and what it became."
 msgstr "ट्रैक किए गए इकाइयों की मातृ-बाल श्रृंखला - एक इकाई किस चीज़ से बनाई गई थी और यह क्या बन गई।"
 
+msgid "The part already exists — this is Carbon filling it in."
+msgstr ""
+
 msgid "The part is manufactured as its own job when the parent that needs it is built."
 msgstr "जब माता-पिता जो इसकी आवश्यकता है वह बनाया जाता है तब भाग अपनी स्वयं की नौकरी के रूप में निर्मित होता है।"
 
@@ -15351,6 +15388,9 @@ msgid "The part is taken from existing stock when its parent is built — no new
 msgstr "जब इसके माता-पिता को बनाया जाता है तब भाग मौजूदा स्टॉक से लिया जाता है - कोई नई नौकरी या खरीद आदेश नहीं।"
 
 msgid "The part number and revision come from Onshape and cannot be edited — they are what future releases of this part are matched on. Everything else is yours."
+msgstr ""
+
+msgid "The part was created, but building it out from Onshape failed."
 msgstr ""
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
@@ -17606,6 +17646,9 @@ msgstr "निरीक्षण अस्वीकृतियों और ए
 
 msgid "Writing an asset's value down over its life — a monthly batch you create, review as a draft, then post."
 msgstr "किसी संपत्ति के मूल्य को उसके जीवन काल में कम करना — एक मासिक बैच जो आप बनाते हैं, ड्राफ्ट के रूप में समीक्षा करते हैं, फिर पोस्ट करते हैं।"
+
+msgid "Writing the bill of materials"
+msgstr ""
 
 msgid "Year"
 msgstr "साल"

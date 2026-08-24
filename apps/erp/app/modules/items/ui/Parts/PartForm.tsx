@@ -49,6 +49,7 @@ import {
 } from "~/components/Form";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ModelUploadProgress } from "~/components/ModelUploadProgress";
+import { OnshapeImportProgress } from "~/components/OnshapeImportProgress";
 import type { OnshapeRevision as OnshapeSelection } from "~/components/OnshapeRevisionSearch";
 import { OnshapeRevisionSearch } from "~/components/OnshapeRevisionSearch";
 import {
@@ -83,7 +84,12 @@ type PartFormActionData =
   | {
       success: boolean;
       itemId?: string;
+      /** Onshape's own part number, as the route verified it. */
+      readableId?: string;
+      revision?: string;
       message?: string;
+      /** Something the user must be shown — see the create route. */
+      notice?: string | null;
       importQueued?: boolean;
     };
 
@@ -252,8 +258,17 @@ const PartForm = ({
       if (fetcher.state !== "idle") return;
       const result = fetcher.data;
       if (result.success && result.itemId) {
-        toast.success(result.message ?? t`Created part from Onshape`);
-        navigate(path.to.part(result.itemId));
+        // No toast and no navigation. The modal switches to the progress panel
+        // and waits — the whole point is that the part the user lands on is
+        // finished, and a success toast fired now would be reporting on work
+        // that has not happened yet.
+        setPendingImport({
+          itemId: result.itemId,
+          partNumber: result.readableId ?? selection?.partNumber ?? "",
+          revision: result.revision ?? selection?.revision ?? "",
+          isBody: (selection?.partId ?? null) !== null,
+          notice: result.notice ?? null
+        });
       } else if (!result.success) {
         toast.error(result.message ?? t`Could not create the part`);
       }
@@ -268,7 +283,7 @@ const PartForm = ({
     } else if (fetcher.state === "idle" && fetcher.data.error) {
       toast.error(t`Failed to create part: ${fetcher.data.error.message}`);
     }
-  }, [fetcher.data, fetcher.state, onClose, type, t, navigate]);
+  }, [fetcher.data, fetcher.state, onClose, type, t, selection]);
 
   const { id, onIdChange, loading } = useNextItemId("Part");
 
@@ -302,6 +317,22 @@ const PartForm = ({
   // never reaches it. Editable thereafter: nothing in the Onshape path resolves
   // on an item's name.
   const [name, setName] = useState<string>(initialValues.name ?? "");
+  /**
+   * The part that was just created, while Carbon is still building it out.
+   *
+   * Set instead of navigating. The create route answers as soon as the ITEM
+   * exists; its bill of materials, models and drawings land in a job seconds to
+   * minutes later, so navigating on that response drops the user onto a part
+   * with no structure and no geometry — which reads as a broken import rather
+   * than an unfinished one.
+   */
+  const [pendingImport, setPendingImport] = useState<{
+    itemId: string;
+    partNumber: string;
+    revision: string;
+    isBody: boolean;
+    notice: string | null;
+  } | null>(null);
   const itemReplenishmentSystemOptions =
     itemReplenishmentSystems.map((itemReplenishmentSystem) => ({
       label: (
@@ -424,6 +455,35 @@ const PartForm = ({
    * seeded from Onshape and then it is the user's, like every other field here.
    */
   const identityLocked = hasOnshapeSelection;
+
+  // The part exists; Carbon is still filling it in. The form is REPLACED rather
+  // than overlaid — there is nothing left to edit here, and leaving the fields
+  // behind a spinner invites someone to change one and expect it to matter.
+  if (pendingImport) {
+    return (
+      <ModalCardProvider type={type}>
+        <ModalCard onClose={onClose}>
+          <ModalCardContent>
+            <ModalCardHeader>
+              <ModalCardTitle>
+                <Trans>Creating the part from Onshape</Trans>
+              </ModalCardTitle>
+            </ModalCardHeader>
+            <ModalCardBody>
+              <OnshapeImportProgress
+                itemId={pendingImport.itemId}
+                partNumber={pendingImport.partNumber}
+                revision={pendingImport.revision}
+                isBody={pendingImport.isBody}
+                notice={pendingImport.notice}
+                onDone={() => navigate(path.to.part(pendingImport.itemId))}
+              />
+            </ModalCardBody>
+          </ModalCardContent>
+        </ModalCard>
+      </ModalCardProvider>
+    );
+  }
 
   return (
     <ModalCardProvider type={type}>

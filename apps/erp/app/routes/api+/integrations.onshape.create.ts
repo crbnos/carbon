@@ -573,15 +573,21 @@ export async function action({ request }: ActionFunctionArgs) {
     readableId: onshapeRevision.partNumber,
     revision: onshapeRevision.revision,
     importQueued,
+    // The caller WAITS on the progress marker rather than acting on this
+    // message — it holds the modal until the import closes and only then opens
+    // the part, so telling the user to reload would be describing a flow that
+    // no longer exists.
     message: importRefusal
       ? `${createdMessage}. ${importRefusal}`
-      : importQueued
-        ? // Say the reload part out loud, the way the BoM explorer's import
-          // already does. `methodMaterial` is not in the realtime publication
-          // and nothing revalidates the route, so the header badge updates by
-          // polling while the bill of materials itself does not appear until
-          // the page is reloaded — which reads as a failed import.
-          `${createdMessage}. The bill of materials is importing in the background — reload the page in a moment to see it.`
-        : createdMessage
+      : createdMessage,
+    /**
+     * The one thing the caller must SHOW rather than infer.
+     *
+     * Its own field, not a substring of `message`: "the bill of materials was
+     * refused" and "this element never had one" both come back with
+     * `importQueued: false`, and a caller cannot tell them apart without
+     * re-deriving the element type. Only the first is news.
+     */
+    notice: importRefusal
   };
 }
