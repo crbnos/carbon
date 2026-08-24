@@ -3,7 +3,7 @@
 - Status: **Ready to implement** (all design questions resolved)
 - Date: 2026-08-11
 - Research: `.ai/research/2026-08-11-item-rules.md`, `.ai/research/2026-08-12-item-rules-enforcement-surface.md`
-- Scope: Phase 1 (data model + engine extensions + admin UI + sales-line enforcement) · Phase 2 (notifications + acknowledgment evidence) · Phase 3 (enforcement completeness — terminal gates, unbypassable hard errors)
+- Scope: Phase 1 (data model + engine extensions + admin UI + sales-line enforcement) · Phase 2 (notifications + acknowledgment evidence) · Phase 3 (enforcement completeness — terminal gates through invoice post, unbypassable hard errors)
 
 ## Problem
 
@@ -12,11 +12,11 @@ Carbon cannot enforce commercial or compliance restrictions when an item is adde
 Two constraints shape the design:
 
 1. **One combined error interface.** All violations on a submission must resolve into a single dialog — never stacked modals, never one dialog per rule.
-2. **This is a compliance control, not a hint.** It has to hold at the points that matter, not only where the UI happens to call it.
+2. **This is a compliance control, not a hint.** It has to hold at the points that matter, not only where the UI happens to call it — including the paths that skip the normal flow. Carbon lets a user raise a sales invoice with no upstream quote or order at all, so a control that only guards the quote→order→shipment path can be walked around by invoicing the customer directly.
 
 ## Design in one paragraph
 
-Carbon already has a working predicate-rule engine behind **Storage Rules** (warehouse/MES transaction surfaces). Sales Rules is the *second family* of rules on that same engine, not a second engine. Both families share one condition-AST compiler, one evaluator shape, one violation modal, and — as of this work — **one table**, `enforcementRule`, discriminated by a `family` column. The sales family adds a customer context root, two sales-document surfaces, and a set of enforcement gates on the sales lifecycle.
+Carbon already has a working predicate-rule engine behind **Storage Rules** (warehouse/MES transaction surfaces). Sales Rules is the *second family* of rules on that same engine, not a second engine. Both families share one condition-AST compiler, one evaluator shape, one violation modal, and — as of this work — **one table**, `enforcementRule`, discriminated by a `family` column. The sales family adds a customer context root, three sales-document surfaces (quote line, sales order line, sales invoice line), and a set of enforcement gates on the sales lifecycle.
 
 ## Data model
 
@@ -33,7 +33,7 @@ CREATE TYPE "enforcementRuleSurface" AS ENUM (
   'receipt', 'shipment', 'stockTransfer', 'warehouseTransfer', 'inventoryAdjustment',
   'place', 'pick', 'operationStart', 'operationFinish', 'materialIssue', 'materialReceive',
   -- sales family (sales-document lines)
-  'quoteLine', 'salesOrderLine'
+  'quoteLine', 'salesOrderLine', 'salesInvoiceLine'
 );
 
 CREATE TYPE "enforcementRuleTargetType" AS ENUM ('item', 'workCenter');
@@ -76,7 +76,9 @@ CREATE TABLE "enforcementRule" (
     "family" <> 'storage' OR "surfaces" <@ ARRAY[/* the 11 transaction surfaces */]::"enforcementRuleSurface"[]
   ),
   CONSTRAINT "enforcementRule_sales_surfaces" CHECK (
-    "family" <> 'sales' OR "surfaces" <@ ARRAY['quoteLine','salesOrderLine']::"enforcementRuleSurface"[]
+    "family" <> 'sales' OR "surfaces" <@ ARRAY[
+      'quoteLine','salesOrderLine','salesInvoiceLine'
+    ]::"enforcementRuleSurface"[]
   ),
   CONSTRAINT "enforcementRule_sales_shape" CHECK (
     "family" <> 'sales' OR ("targetType" = 'item' AND "appliesToAll" = FALSE)
@@ -106,7 +108,7 @@ Because the item table is shared, **a pin alone does not tell you the family**. 
 
 Append-only override/block evidence, one row per deduped violation:
 
-`id`, `companyId`, `ruleId` (**soft reference, no FK**), `ruleName` (denormalized), `documentType` (`'quote'|'salesOrder'`), `documentId`, `documentLineId`, `itemId`, `severity`, `outcome` (`'blocked'|'acknowledged'`), `message`, audit columns.
+`id`, `companyId`, `ruleId` (**soft reference, no FK**), `ruleName` (denormalized), `documentType` (`'quote'|'salesOrder'|'salesInvoice'`), `documentId`, `documentLineId`, `itemId`, `severity`, `outcome` (`'blocked'|'acknowledged'`), `message`, audit columns.
 
 `ruleId` deliberately has no FK so a rule delete can neither cascade evidence away nor be blocked by it; the denormalized `ruleName` plus the verbatim rendered `message` keep each row self-contained. Retiring a rule that has fired should be a deactivation (`active = false`), but deletion stays available without audit loss.
 
@@ -146,7 +148,7 @@ The engine is family-neutral and lives in `packages/utils/src/rules.ts` (+ `rule
 - `ItemFilter` / `ruleAppliesToItem` / `toItemFilter` — the broadcast item-scoping matcher, shared by both families (`rule-filters.ts`).
 - Surface catalogs and per-surface context-availability maps for each family.
 
-Sales additions: a `customer` root on `RuleContext` (`{ id, typeId, statusId, location: { countryCode }, customFields }`), the two sales surfaces, and field-registry entries for **customer type**, **customer status**, and **ship-to country** (alpha-2, matching the app-wide convention) plus synthesized `customer.customFields.*`. Storage-rule behavior is unchanged.
+Sales additions: a `customer` root on `RuleContext` (`{ id, typeId, statusId, location: { countryCode }, customFields }`), the three sales surfaces, and field-registry entries for **customer type**, **customer status**, and **ship-to country** (alpha-2, matching the app-wide convention) plus synthesized `customer.customFields.*`. Storage-rule behavior is unchanged.
 
 TypeScript keeps the per-family surface unions independent of the DB enum, so the one engine can evaluate either family while each form still offers only its own surfaces.
 
@@ -189,6 +191,7 @@ A rule family is not its own ERP domain — it lives inside the domain module it
 - Sidebar: "Sales Rules" in the Sales → Configure group (`useSalesSubmodules`), beside Pricing Rules.
 - Part detail → Inventory tab: a "Sales rules" card beneath the storage-rules card, listing explicit + broadcast rules with assign/unassign.
 - Settings → Sales: a "Sales Rule Violations" notification-group card.
+- Sales invoice: the two line-write routes (`x+/sales-invoice+/$invoiceId.new.tsx`, `$invoiceId.$lineId.details.tsx`) and the post route (`$invoiceId.post.tsx`) gain the check; the post modal (`SalesInvoicePostModal`) gains the `acknowledged` field and the shared violation modal, which it does not have today.
 - Naming discipline: `salesRule*` / `storageRule*` for the family-specific pieces, `enforcementRule*` for the shared table and shared CRUD; never a bare `rule`. The configurator's `configurationRule*` is unrelated.
 
 ## Enforcement
@@ -216,6 +219,7 @@ Line-level checks are the right place for *feedback* and the wrong place for *th
 | Quote → order convert | `x+/quote+/$quoteId.convert.tsx` | gate in the route, before `convertQuoteToOrder`. Also the natural place to evaluate quantity rules — quote quantity is not meaningful until conversion |
 | RFQ → quote convert | `x+/sales-rfq+/$rfqId.convert.tsx` | same; evaluate the resulting quote lines' items |
 | Shipment post | `x+/shipment+/$shipmentId.post.tsx` | last physical checkpoint; catches orders confirmed before a rule existed. Add sales violations to the array the storage loop already builds |
+| **Sales invoice post** | `x+/sales-invoice+/$invoiceId.post.tsx` | the revenue checkpoint, and the only gate that covers an invoice raised with no upstream document — see below |
 
 Gating the two convert routes **in the route** is deliberate: it achieves the same protection as a Deno-side evaluator with none of the cost. The engine is portable, but the evaluator imports `companyHasPlan` → `@carbon/auth` (module-load `process.env`) → `react-router`, and CI runs zero `deno` invocations, so a Node/Deno divergence would be silent. Do not port the evaluator.
 
@@ -226,6 +230,78 @@ Gating the two convert routes **in the route** is deliberate: it achieves the sa
 **Drop-ship ship-to.** A drop shipment's real destination is `salesOrderShipment.customerLocationId`, not the header's. Resolve the effective ship-to — drop-ship location when present, else header — before evaluating, or a country rule clears orders that ship to the restricted country.
 
 **Supporting change.** `Violation` is `{ruleId, severity, message}` with no line reference. A document-level gate needs per-line attribution so the modal can group violations and deep-link to the offending line — extend it with `lineId` and key the modal by line.
+
+### Sales invoices — closing the "skip the order" bypass
+
+An invoice is where revenue is actually recognised, and Carbon lets you raise one
+**without any upstream document**: `x+/sales-invoice+/new.tsx` falls through to a
+blank form when no `?sourceDocument` is given, and lines are then added freely
+against it. Every other gate in this spec sits on the quote→order→shipment path,
+so a restricted item invoiced directly would reach revenue having passed nothing.
+
+**The invoice-line surface.** `salesInvoiceLine` joins `quoteLine` and
+`salesOrderLine`, with the same line-level check on the two write routes
+(`$invoiceId.new.tsx`, `$invoiceId.$lineId.details.tsx`) and a terminal gate at
+post.
+
+**Ship-to is the whole design problem, and it resolves cleanly.** A sales invoice
+has **no customer ship-to**. `salesInvoice.customerId` is NOT NULL, so customer
+type/status/custom fields resolve exactly as elsewhere — but the only customer
+address on the invoice is `invoiceCustomerLocationId`, which is the **bill-to**,
+and both `salesInvoice.locationId` and `salesInvoiceShipment.locationId` are
+*Carbon's own* warehouse locations, not customer addresses. So:
+
+- **Line came from a sales order** (`salesInvoiceLine.salesOrderId` /
+  `salesOrderLineId` are set — the convert path always populates them): resolve
+  the ship-to through `resolveSalesOrderShipTo`, exactly as the order gate does.
+  Drop-ship handling comes along for free, and re-evaluating here catches
+  staleness — a rule authored after the order was confirmed.
+- **Standalone line** (`salesOrderLineId IS NULL`): there is no ship-to to
+  resolve, and none may be invented. Pass `customerLocationId: null` and let the
+  engine's required-field semantics do their job — any rule referencing
+  `customer.location.countryCode` raises "Customer location is required" at that
+  rule's severity.
+
+That second case *is* the bypass fix, and it is the right shape rather than a
+consolation prize: an invoice raised with no order **cannot demonstrate where the
+goods went**, so a destination-restricted item does not quietly pass — it blocks
+(severity `error`) or demands an acknowledgment (`warn`), and either way the
+attempt lands in the evidence table. The bypass path carries strictly *less*
+information than the path it skips, so it fails closed instead of open. Rules
+that never mention the ship-to — customer status, customer type, item group —
+evaluate at full strength on a standalone invoice with no degradation.
+
+**Never substitute the bill-to for the ship-to.** `invoiceCustomerLocationId` is
+a different address and frequently a different country; using it would clear a
+rule that should have blocked. This is the same failure the drop-ship defect
+produced, and it is the one shortcut a future implementer is most likely to take.
+(Note `salesInvoiceLocations` looks like it offers a country: it joins
+`customerLocation` against *company*-location ids, so its `customerCountryCode`
+and `shipmentCountryCode` branches do not resolve for invoices created by either
+`insertSalesInvoice` or `convert`. Only its bill-to branch resolves. Do not read
+a ship-to from that view.)
+
+**Where the gate goes, and what it does not cover.** Posting is a Deno edge
+function (`post-sales-invoice`), so — per the same reasoning that keeps the
+convert gates in the route — the check goes in the **route action**
+(`$invoiceId.post.tsx`) *before* it invokes the function. Two implementation
+details that will bite otherwise: the route optimistically writes
+`status = 'Pending'` before invoking, so the gate must run **before** that write
+or a blocked post strands the invoice in `Pending`; and the customer email is
+sent later in the same action, after the edge function has committed, so a gate
+that runs first also prevents the email. A service-role caller invoking the edge
+function directly still bypasses this — the same residual hole the other gates
+have, and the same reason the error-severity backstop below matters.
+
+**Void is never gated.** Voiding is corrective; blocking it would trap a bad
+invoice in a posted state.
+
+**MCP and the unbypassable half.** The MCP backstop currently maps only
+`sales_upsertQuoteLine` and `sales_upsertSalesOrderLine` and returns null for
+everything else, so every invoicing tool is unchecked. Add
+`invoicing_upsertSalesInvoiceLine` → `salesInvoiceLine` to that map, and move the
+error-severity check into `upsertSalesInvoiceLine` itself so it holds for callers
+that never touch a route.
 
 ## Notifications + acknowledgment evidence (Phase 2)
 
@@ -239,11 +315,11 @@ Gating the two convert routes **in the route** is deliberate: it achieves the sa
 
 - **`acknowledged` is client-supplied.** It is read from FormData with no server-side record that a violation was displayed, so a crafted first submit can skip every `warn`. Errors are unaffected — they block unconditionally. Accepted for v1.
 - **The acknowledgment table has writers and no reader.** It is write-only audit until a surface is built for it.
-- **No invoice-post gate.** Services are `Non-Inventory` items that are never shipped, so a service-only order skips shipment entirely and goes straight to `To Invoice`. Deferred until a rule needs to apply to a service.
+- **Service-only orders skip the shipment checkpoint.** Services are `Non-Inventory` items that are never shipped, so a service-only order goes straight to `To Invoice`. The invoice-post gate now covers them, so this is no longer a hole — but it means the invoice gate, not shipment post, is the last checkpoint for a service.
 - **No nightly sweep.** Drafts are a scratchpad — users must be free to experiment, and the confirm gate catches it before it counts. Avoids a cron, a violation-state table, and notification-fatigue tuning.
 - **No Postgres trigger.** It could enforce only the error-severity subset (no warn/acknowledge, no interpolated messages), and plan gating has no DB precedent while `CarbonEdition`/`STRIPE_BYPASS_COMPANY_IDS` are invisible to Postgres. A second evaluator in a second language that disagrees with the first is worse than a known gap.
 - **No rule-impact preview** ("what does my new rule break?").
-- **Standalone sales invoices** (`x+/sales-invoice+/new.tsx` has a no-source-document branch with item-bearing lines) reach revenue with no upstream document. Recorded as a follow-up.
+- **A service-role caller invoking `post-sales-invoice` directly** bypasses the invoice gate, exactly as one invoking `convert` bypasses the conversion gates. The error-severity check inside `upsertSalesInvoiceLine` is what covers that path; there is no gate inside the edge function itself, because a second evaluator in Deno that disagrees with the first is worse than a known gap.
 
 ## Out of scope
 
@@ -253,6 +329,7 @@ Line-value (price/qty/date) context; purchasing surfaces / AVL; supersession fol
 
 - Update `apps/erp/app/modules/sales/AGENTS.md` and `apps/erp/app/modules/inventory/AGENTS.md` (shared table, family filtering, shared CRUD), plus `packages/{utils,ee}/AGENTS.md` and affected `.claude/rules` files.
 - Tests: context building (customer root, alpha-2 country), field-registry additions, evaluator happy path, required-field (missing ship-to), acknowledged flow, and **cross-family isolation** — a pin pointing at the other family's rule must never enter evaluation.
+- Invoice-specific tests: an order-derived invoice line resolves the ship-to through its source order (including drop-ship), and a **standalone** line with a country rule produces the required-field violation rather than passing. The second is the bypass this feature exists to close, so it should fail loudly if someone later "fixes" it by falling back to the bill-to.
 
 ## Verification
 
