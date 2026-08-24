@@ -1,4 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { resolveIntegrationSecrets } from "@carbon/ee/integrations/secrets";
+import { onshapeWebhookWanted, parseOnshapeSettings } from "@carbon/ee/onshape";
 import { trigger } from "@carbon/jobs";
 import crypto from "crypto";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -15,11 +17,7 @@ import { getIntegration } from "../../modules/settings";
 //                        │  verify HMAC when a signing secret is configured
 //                        │  validate minimal envelope, log the event
 //                        ▼
-//     onshape.revision.created ──▶ trigger("onshape-revision-sync")   [assetSyncEnabled]
-//                              ──▶ trigger("onshape-release-import")  [releaseImportEnabled]
-//                              ──▶ trigger("onshape-release")      [v2: attachAssets |
-//                                                                      releaseImportMode |
-//                                                                      createItemsOnRelease]
+//     onshape.revision.created ──▶ trigger("onshape-release")
 //     everything else          ──▶ ack 200 (logged, no dispatch)
 //
 // AUTH: signature verification is OPT-IN per company. With no
@@ -158,52 +156,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Defense-in-depth: only process events while at least one consumer is
-  // enabled. If a deregister failed when the toggles were turned off, the
+  // enabled. If a deregister failed when the consumers were turned off, the
   // subscription can linger — drop (ack 200 so Onshape doesn't retry) rather
-  // than dispatch. Both reads stay strict `!== true`, and this gate stays
-  // BEFORE the body is read, so a company that has opted into neither takes a
-  // byte-identical path to before release import existed.
-  const integrationMetadata = (integration.data.metadata ?? {}) as Record<
-    string,
-    unknown
-  >;
-  // Which pipeline this company runs. Strict equality against the NEW value, so
-  // an absent key — every existing install — is legacy by construction.
-  const isV2 = integrationMetadata.pipeline === "next";
+  // than dispatch. This gate stays BEFORE the body is read, so a company that
+  // has opted into nothing pays almost nothing per delivery.
+  const settings = parseOnshapeSettings(integration.data.metadata, {
+    active: true
+  });
 
-  // The legacy consumers. On a v2 company these are DEAD regardless of their
-  // stored values: a company that migrated with them left on would otherwise
-  // have both pipelines act on the same release, producing duplicate change
-  // notices and double the export calls. Exactly one pipeline runs.
-  const assetSyncEnabled =
-    !isV2 && integrationMetadata.assetSyncEnabled === true;
-  const releaseImportEnabled =
-    !isV2 && integrationMetadata.releaseImportEnabled === true;
-
-  // The v2 consumers, read only when v2 is selected.
-  const v2AttachAssets =
-    isV2 && integrationMetadata.attachAssetsOnRelease !== false;
-  const v2ReleaseImportMode = isV2
-    ? ((integrationMetadata.releaseImportMode as string | undefined) ??
-      "changeNotice")
-    : "off";
-  const v2ReleaseImportEnabled = isV2 && v2ReleaseImportMode !== "off";
-  // Strict `=== true`, matching allowUnreleasedSync and NOT
-  // attachAssetsOnRelease's `!== false`: an absent key must read as off, or
-  // every existing v2 install starts minting parts on deploy.
-  const v2CreateItems =
-    isV2 && integrationMetadata.createItemsOnRelease === true;
-
-  if (
-    !assetSyncEnabled &&
-    !releaseImportEnabled &&
-    !v2AttachAssets &&
-    !v2ReleaseImportEnabled &&
-    !v2CreateItems
-  ) {
+  if (!onshapeWebhookWanted(settings)) {
     console.log("Onshape webhook: no consumer enabled; ignoring event", {
-      companyId,
-      pipeline: isV2 ? "next" : "legacy"
+      companyId
     });
     return { success: true };
   }
@@ -218,13 +181,36 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return data({ success: false, error: "Unreadable body" }, { status: 400 });
   }
 
-  // Opt-in signature verification. An empty string counts as absent: the
-  // declared-settings merge is shallow, so clearing the field on a later save
-  // writes "" rather than removing the key.
-  const signingSecret =
-    typeof integrationMetadata.webhookSigningSecret === "string"
-      ? integrationMetadata.webhookSigningSecret.trim()
-      : "";
+  // Opt-in signature verification. The key is VAULTED, so it is not in the
+  // metadata column — reading it from there would find nothing and silently drop
+  // every company back to unsigned mode.
+  //
+  // A vault read that FAILS is not the same as "no secret configured": we cannot
+  // tell whether this company requires a signature, so refuse rather than
+  // process unverified. 503 makes Onshape retry; a 200 would drop the event.
+  let signingSecret = "";
+  try {
+    const resolved = (await resolveIntegrationSecrets(
+      serviceRole,
+      companyId,
+      "onshape",
+      integration.data.metadata,
+      integration.data.secretRef
+    )) as Record<string, unknown>;
+    signingSecret =
+      typeof resolved.webhookSigningSecret === "string"
+        ? resolved.webhookSigningSecret.trim()
+        : "";
+  } catch (secretError) {
+    console.error("Onshape webhook: could not resolve the signing secret", {
+      companyId,
+      secretError
+    });
+    return data(
+      { success: false, error: "Secret unavailable" },
+      { status: 503 }
+    );
+  }
   if (signingSecret) {
     const verified = verifyOnshapeSignature(request, rawBody, signingSecret);
     if (!verified.ok) {
@@ -292,7 +278,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       // released element's identity directly (documentId/versionId/elementId/
       // elementType/partNumber), so we dispatch the sync job to attach its CAD
       // model to the matching Carbon item. Idempotency is on messageId (see the
-      // onshape-revision-sync function). The acting user is the integration
+      // release job. The acting user is the integration
       // installer (the webhook itself is unauthenticated).
       const installerUserId = integration.data.updatedBy;
       if (
@@ -310,90 +296,29 @@ export async function action({ request, params }: ActionFunctionArgs) {
         );
         break;
       }
-      if (assetSyncEnabled) {
-        await trigger("onshape-revision-sync", {
-          companyId,
-          userId: installerUserId,
-          messageId,
-          partNumber,
-          documentId,
-          versionId,
-          elementId,
-          elementType,
-          revisionId,
-          releaseId,
-          revision
-        });
-      }
-
-      if (isV2) {
-        // ONE job for the whole event: v2 attaches assets and imports the
-        // release in order, because a separate asset job would race the import
-        // that creates the item it needs to attach to. The job owns the policy
-        // (which consumers are on, what to do with a drawing) so the receiver
-        // stays a router.
-        if (v2AttachAssets || v2ReleaseImportEnabled || v2CreateItems) {
-          await trigger("onshape-release", {
-            companyId,
-            userId: installerUserId,
-            messageId,
-            documentId,
-            versionId,
-            elementId,
-            elementType,
-            partNumber,
-            revisionId,
-            releaseId,
-            releaseName,
-            revision,
-            // Serialize the siblings of one release. Falling back to the
-            // element keeps a releaseId-less delivery in its own bucket
-            // instead of sharing one with every other company's.
-            groupKey: releaseId ?? elementId
-          });
-        }
-        // Exclusive: never fall through to the legacy dispatches.
-        break;
-      }
-
-      if (releaseImportEnabled) {
-        // releaseId is the claim key — one change notice per release package.
-        // Without it the siblings of a release cannot be grouped, so importing
-        // would produce one notice per element. Skip loudly rather than that.
-        if (!releaseId) {
-          console.warn(
-            "Onshape webhook: revision.created without releaseId; skipping release import",
-            { companyId, messageId, partNumber }
-          );
-        } else if (elementType === 2) {
-          // A released DRAWING is its own DRW-xxxx element that resolves to the
-          // SAME Carbon item as the model it documents (see the elementType-2
-          // branch of onshape-revision-sync). Importing it as a second affected
-          // item violates UNIQUE(changeOrderId, itemId) on the FIRST import of a
-          // normal release; deriving its change type from readableId instead
-          // mints a junk DRW-xxxx part. The drawing PDF still reaches the item
-          // through asset sync.
-          console.log(
-            "Onshape webhook: drawing element; skipping release import",
-            { companyId, messageId, partNumber }
-          );
-        } else {
-          await trigger("onshape-release-import", {
-            companyId,
-            userId: installerUserId,
-            messageId,
-            releaseId,
-            partNumber,
-            documentId,
-            versionId,
-            elementId,
-            elementType,
-            revisionId,
-            revision,
-            releaseName
-          });
-        }
-      }
+      // ONE job for the whole event: it attaches assets and imports the release
+      // in order, because a separate asset job would race the import that
+      // creates the item it needs to attach to. The job owns the policy (which
+      // consumers are on, what to do with a drawing) so the receiver stays a
+      // router.
+      await trigger("onshape-release", {
+        companyId,
+        userId: installerUserId,
+        messageId,
+        documentId,
+        versionId,
+        elementId,
+        elementType,
+        partNumber,
+        revisionId,
+        releaseId,
+        releaseName,
+        revision,
+        // Serialize the siblings of one release. Falling back to the element
+        // keeps a releaseId-less delivery in its own bucket instead of sharing
+        // one with every other company's.
+        groupKey: releaseId ?? elementId
+      });
       break;
     }
     case "onshape.workflow.transition":

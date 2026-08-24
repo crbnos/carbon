@@ -11,6 +11,24 @@ vi.mock("../../modules/settings", () => ({
   getIntegration: (...args: unknown[]) => getIntegration(...args)
 }));
 
+// The signing secret is vaulted, so the receiver resolves it rather than reading
+// the metadata column. The default mock returns the row's metadata unchanged —
+// which is the shape resolveIntegrationSecrets produces once the bag is merged
+// back in — so a test says "a secret is configured" by putting it in metadata.
+const resolveIntegrationSecrets = vi.fn(
+  async (
+    _client: unknown,
+    _companyId: string,
+    _integrationId: string,
+    metadata: unknown
+  ) => metadata
+);
+vi.mock("@carbon/ee/integrations/secrets", () => ({
+  resolveIntegrationSecrets: (...args: unknown[]) =>
+    // @ts-expect-error - test double
+    resolveIntegrationSecrets(...args)
+}));
+
 import { trigger } from "@carbon/jobs";
 import { action } from "./webhook.onshape.$companyId";
 
@@ -104,239 +122,158 @@ describe("onshape webhook receiver", () => {
     getIntegration.mockReset();
   });
 
-  describe("the enabled gate", () => {
-    it("acks and dispatches nothing when neither consumer is enabled", async () => {
-      getIntegration.mockResolvedValue(integrationRow({}));
-
-      const result = await run(makeRequest(releaseEvent()));
-
-      expect(result).toEqual({ success: true });
-      expect(dispatchedTasks()).toEqual([]);
-    });
-
-    it("dispatches ONLY the v2 job when the company is on the v2 pipeline", async () => {
-      // A company that migrated to v2 with the legacy toggles still on would
-      // otherwise have BOTH pipelines act on one release: duplicate change
-      // notices, and every export run twice. Exactly one pipeline runs.
+  describe("the consumer gate", () => {
+    it("acks and dispatches nothing when every consumer is off", async () => {
       getIntegration.mockResolvedValue(
         integrationRow({
-          pipeline: "next",
-          assetSyncEnabled: true,
-          releaseImportEnabled: true
-        })
-      );
-
-      const result = await run(makeRequest(releaseEvent()));
-
-      expect(result).toEqual({ success: true });
-      // Neither legacy job runs, whatever their stored toggles say.
-      expect(dispatchedTasks()).toEqual(["onshape-release"]);
-    });
-
-    it("does not drop a v2 company's event for want of the legacy flags", async () => {
-      // The either-flag gate reads only the LEGACY toggles, which a v2 company
-      // has off — so before pipeline routing existed, a v2 company's releases
-      // were discarded at the gate and nothing said so.
-      getIntegration.mockResolvedValue(integrationRow({ pipeline: "next" }));
-
-      const result = await run(makeRequest(releaseEvent()));
-
-      expect(result).toEqual({ success: true });
-      // Reaches the v2 job on the v2 defaults alone (attach on, import
-      // changeNotice) — the legacy toggles are irrelevant to it.
-      expect(dispatchedTasks()).toEqual(["onshape-release"]);
-    });
-
-    it("treats a v2 company with release import off as having no release consumer", async () => {
-      getIntegration.mockResolvedValue(
-        integrationRow({
-          pipeline: "next",
           attachAssetsOnRelease: false,
-          releaseImportMode: "off"
+          releaseImportMode: "off",
+          createItemsOnRelease: false
         })
       );
-
       const result = await run(makeRequest(releaseEvent()));
-
       expect(result).toEqual({ success: true });
       expect(dispatchedTasks()).toEqual([]);
+    });
+
+    it("dispatches the release job when assets alone are on", async () => {
+      getIntegration.mockResolvedValue(
+        integrationRow({
+          attachAssetsOnRelease: true,
+          releaseImportMode: "off",
+          createItemsOnRelease: false
+        })
+      );
+      await run(makeRequest(releaseEvent()));
+      expect(dispatchedTasks()).toEqual(["onshape-release"]);
+    });
+
+    it("dispatches on a bare connected row, where every default applies", async () => {
+      // attachAssetsOnRelease defaults ON and releaseImportMode defaults to
+      // changeNotice, so a row with no settings written yet is a live consumer.
+      getIntegration.mockResolvedValue(integrationRow({}));
+      await run(makeRequest(releaseEvent()));
+      expect(dispatchedTasks()).toEqual(["onshape-release"]);
     });
 
     it("counts auto-create as a consumer in its own right", async () => {
-      // Auto-create has to reach all three gates — this bail, the dispatch
-      // condition, and webhookWanted on save. Missing any one of them makes the
-      // toggle a silent no-op: the subscription is deleted and no event ever
-      // arrives, while the settings drawer looks correct.
+      // Without this term a company that turns auto-create on and everything
+      // else off receives no events at all.
       getIntegration.mockResolvedValue(
         integrationRow({
-          pipeline: "next",
           attachAssetsOnRelease: false,
           releaseImportMode: "off",
           createItemsOnRelease: true
         })
       );
-
-      const result = await run(makeRequest(releaseEvent()));
-
-      expect(result).toEqual({ success: true });
+      await run(makeRequest(releaseEvent()));
       expect(dispatchedTasks()).toEqual(["onshape-release"]);
     });
 
     it("does not treat a non-true createItemsOnRelease as a consumer", async () => {
       getIntegration.mockResolvedValue(
         integrationRow({
-          pipeline: "next",
           attachAssetsOnRelease: false,
           releaseImportMode: "off",
-          createItemsOnRelease: "true"
+          createItemsOnRelease: "yes"
         })
       );
-
-      // The stored value is a BOOLEAN by the time it reaches the receiver — the
-      // form's string is coerced by the zod schema on save. A string here means
-      // a hand-edited row, and the receiver reads strictly.
-      await run(makeRequest(releaseEvent()));
+      const result = await run(makeRequest(releaseEvent()));
+      expect(result).toEqual({ success: true });
       expect(dispatchedTasks()).toEqual([]);
     });
 
-    it('is unaffected by a pipeline value that is not exactly "next"', async () => {
-      getIntegration.mockResolvedValue(
-        integrationRow({ pipeline: "Next", assetSyncEnabled: true })
-      );
-
-      await run(makeRequest(releaseEvent()));
-
-      // Anything that is not exactly "next" is legacy, so legacy still runs.
-      expect(dispatchedTasks()).toEqual(["onshape-revision-sync"]);
-    });
-
-    it("dispatches only the asset sync when only asset sync is on", async () => {
-      getIntegration.mockResolvedValue(
-        integrationRow({ assetSyncEnabled: true })
-      );
-
-      await run(makeRequest(releaseEvent()));
-
-      expect(dispatchedTasks()).toEqual(["onshape-revision-sync"]);
-    });
-
-    it("dispatches only the release import when only release import is on", async () => {
-      getIntegration.mockResolvedValue(
-        integrationRow({ releaseImportEnabled: true })
-      );
-
-      await run(makeRequest(releaseEvent()));
-
-      expect(dispatchedTasks()).toEqual(["onshape-release-import"]);
-    });
-
-    it("dispatches both when both are on", async () => {
-      getIntegration.mockResolvedValue(
-        integrationRow({ assetSyncEnabled: true, releaseImportEnabled: true })
-      );
-
-      await run(makeRequest(releaseEvent()));
-
-      expect(dispatchedTasks()).toEqual([
-        "onshape-revision-sync",
-        "onshape-release-import"
-      ]);
-    });
-
     it("rejects an inactive integration before reading the body", async () => {
-      getIntegration.mockResolvedValue(
-        integrationRow({ releaseImportEnabled: true }, false)
-      );
-
-      const response = await run(makeRequest(releaseEvent()));
-
-      expect(statusOf(response)).toBe(400);
+      getIntegration.mockResolvedValue(integrationRow({}, false));
+      const result = await run(makeRequest(releaseEvent()));
+      expect(statusOf(result)).toBe(400);
       expect(dispatchedTasks()).toEqual([]);
     });
   });
 
   describe("release identity on the payload", () => {
     beforeEach(() => {
-      getIntegration.mockResolvedValue(
-        integrationRow({ assetSyncEnabled: true, releaseImportEnabled: true })
-      );
+      getIntegration.mockResolvedValue(integrationRow({}));
     });
 
-    it("forwards releaseId, revision and releaseName to the release import", async () => {
+    it("forwards the whole released identity to the release job", async () => {
       await run(makeRequest(releaseEvent()));
-
-      expect(payloadFor("onshape-release-import")).toMatchObject({
+      expect(payloadFor("onshape-release")).toMatchObject({
         companyId: COMPANY_ID,
         userId: INSTALLER,
         messageId: "msg-1",
+        partNumber: "PRT-1000",
+        documentId: "doc-1",
+        versionId: "ver-1",
+        elementId: "el-1",
+        elementType: 1,
         releaseId: "release-1",
         releaseName: "REL-001",
-        revision: "B",
-        partNumber: "PRT-1000"
-      });
-    });
-
-    it("also carries releaseId and revision on the asset sync payload", async () => {
-      await run(makeRequest(releaseEvent()));
-
-      expect(payloadFor("onshape-revision-sync")).toMatchObject({
-        releaseId: "release-1",
         revision: "B"
       });
     });
 
-    it("skips the release import without a releaseId but still syncs assets", async () => {
-      await run(makeRequest(releaseEvent({ releaseId: undefined })));
-
-      // releaseId is the claim key — without it the siblings of one release
-      // cannot be grouped, so importing would produce a notice per element.
-      expect(dispatchedTasks()).toEqual(["onshape-revision-sync"]);
-    });
-
-    it("excludes drawings from the release import but still syncs their assets", async () => {
-      await run(makeRequest(releaseEvent({ elementType: 2 })));
-
-      // A released drawing resolves to the SAME Carbon item as the model it
-      // documents, so importing it would violate UNIQUE(changeOrderId, itemId).
-      expect(dispatchedTasks()).toEqual(["onshape-revision-sync"]);
-    });
-
-    it("dispatches nothing when required identity fields are missing", async () => {
-      await run(makeRequest(releaseEvent({ partNumber: undefined })));
-
-      expect(dispatchedTasks()).toEqual([]);
-    });
-
-    it("forwards a drawing to the v2 job, which owns the drawing policy", async () => {
-      // The drawing resolver lives in onshape-release, so the receiver must
-      // NOT filter drawings out on the v2 pipeline the way it does on legacy.
-      // This is the test that says work item 3 needed no webhook change.
-      getIntegration.mockResolvedValue(integrationRow({ pipeline: "next" }));
-
-      const result = await run(makeRequest(releaseEvent({ elementType: 2 })));
-
-      expect(result).toEqual({ success: true });
-      expect(dispatchedTasks()).toEqual(["onshape-release"]);
-      expect(vi.mocked(trigger).mock.calls[0]?.[1]).toMatchObject({
-        elementType: 2
+    it("groups the siblings of one release on releaseId", async () => {
+      await run(makeRequest(releaseEvent()));
+      expect(payloadFor("onshape-release")).toMatchObject({
+        groupKey: "release-1"
       });
     });
 
-    it("still drops a drawing with no part number, on either pipeline", async () => {
-      // Onshape's release dialog makes a drawing's part number REQUIRED and
-      // blocks the release without one, so this gate cannot fire for a genuinely
-      // released drawing. Do not relax it on the old "a drawing has no part
-      // number" reasoning — that described an UNRELEASED drawing.
-      getIntegration.mockResolvedValue(integrationRow({ pipeline: "next" }));
+    it("falls back to the element when a delivery carries no releaseId", async () => {
+      // Its own bucket, rather than one shared with every other company's.
+      await run(makeRequest(releaseEvent({ releaseId: undefined })));
+      expect(payloadFor("onshape-release")).toMatchObject({
+        groupKey: "el-1"
+      });
+    });
 
-      await run(
-        makeRequest(releaseEvent({ elementType: 2, partNumber: undefined }))
+    it("forwards a drawing, which the job's own policy handles", async () => {
+      await run(makeRequest(releaseEvent({ elementType: 2 })));
+      expect(dispatchedTasks()).toEqual(["onshape-release"]);
+      expect(payloadFor("onshape-release")).toMatchObject({ elementType: 2 });
+    });
+
+    it("dispatches nothing when required identity fields are missing", async () => {
+      const result = await run(
+        makeRequest(releaseEvent({ elementId: undefined }))
       );
+      expect(result).toEqual({ success: true });
+      expect(dispatchedTasks()).toEqual([]);
+    });
 
+    it("drops a delivery with no part number", async () => {
+      const result = await run(
+        makeRequest(releaseEvent({ partNumber: undefined }))
+      );
+      expect(result).toEqual({ success: true });
       expect(dispatchedTasks()).toEqual([]);
     });
   });
 
+  describe("the vaulted signing secret", () => {
+    it("reads the secret from the vault, not from the metadata column", async () => {
+      // The column no longer holds it. If the receiver read metadata directly it
+      // would find nothing and silently drop to unsigned mode.
+      getIntegration.mockResolvedValue(integrationRow({}));
+      resolveIntegrationSecrets.mockResolvedValueOnce({
+        webhookSigningSecret: SECRET
+      });
+      const result = await run(makeRequest(releaseEvent()));
+      expect(statusOf(result)).toBe(401);
+      expect(dispatchedTasks()).toEqual([]);
+    });
+
+    it("refuses rather than processing unverified when the vault read fails", async () => {
+      // Distinct from "no secret configured": we cannot tell whether this
+      // company requires a signature, so 503 and let Onshape retry.
+      getIntegration.mockResolvedValue(integrationRow({}));
+      resolveIntegrationSecrets.mockRejectedValueOnce(new Error("vault down"));
+      const result = await run(makeRequest(releaseEvent()));
+      expect(statusOf(result)).toBe(503);
+      expect(dispatchedTasks()).toEqual([]);
+    });
+  });
   describe("other events", () => {
     beforeEach(() => {
       getIntegration.mockResolvedValue(
@@ -386,7 +323,7 @@ describe("onshape webhook receiver", () => {
       const result = await run(makeRequest(releaseEvent()));
 
       expect(result).toEqual({ success: true });
-      expect(dispatchedTasks()).toEqual(["onshape-release-import"]);
+      expect(dispatchedTasks()).toEqual(["onshape-release"]);
     });
 
     it("treats an empty secret as absent", async () => {
@@ -433,7 +370,7 @@ describe("onshape webhook receiver", () => {
       );
 
       expect(result).toEqual({ success: true });
-      expect(dispatchedTasks()).toEqual(["onshape-release-import"]);
+      expect(dispatchedTasks()).toEqual(["onshape-release"]);
     });
 
     it("accepts a valid secondary signature so key rotation is zero-downtime", async () => {
