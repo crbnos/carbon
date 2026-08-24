@@ -115,11 +115,6 @@ msgid "{0} on jobs not yet released"
 msgstr "{0} su lavori non ancora rilasciati"
 
 #. placeholder {0}: selected.length
-#. placeholder {1}: selected.reduce((s, c) => s + (c.operationQuantity ?? 0), 0)
-msgid "{0} operations · {1} parts"
-msgstr "{0} operazioni · {1} pezzi"
-
-#. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} operazioni · {totalQuantity} parti"
 
@@ -3084,6 +3079,9 @@ msgstr "Cancella"
 msgid "Clear due date"
 msgstr "Cancella data di scadenza"
 
+msgid "Clear filter"
+msgstr "Cancella filtro"
+
 msgid "Clear Filters"
 msgstr "Cancella Filtri"
 
@@ -5413,6 +5411,9 @@ msgstr "Giorni di Scadenza"
 msgid "Due Days after {selectedCalculationMethod}"
 msgstr "Giorni di scadenza dopo {selectedCalculationMethod}"
 
+msgid "Due within"
+msgstr "Scadenza entro"
+
 msgid "Duplicate"
 msgstr "Duplica"
 
@@ -6807,6 +6808,9 @@ msgstr "I file allegati qui vengono inclusi in ogni email di ordine d'acquisto i
 msgid "Filter"
 msgstr "Filtro"
 
+msgid "Filter by…"
+msgstr "Filtra per…"
+
 msgid "Finalize"
 msgstr "Finalizza"
 
@@ -6933,6 +6937,9 @@ msgstr "Metodo di previsione: <0>{0}</0>. Questa riga non è stata derivata da l
 
 msgid "Forgot to Clock Out?"
 msgstr "Hai dimenticato di timbrare l'uscita?"
+
+msgid "Form"
+msgstr "Modulo"
 
 msgid "Format"
 msgstr "Formato"
@@ -9927,8 +9934,8 @@ msgstr "Nessun contenitore corrisponde"
 msgid "No matching operations"
 msgstr "Nessuna operazione corrispondente"
 
-msgid "No material properties"
-msgstr "Nessuna proprietà materiale"
+msgid "No materials"
+msgstr "Nessun materiale"
 
 msgid "No new notifications"
 msgstr "Nessuna nuova notifica"

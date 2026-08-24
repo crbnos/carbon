@@ -115,11 +115,6 @@ msgid "{0} on jobs not yet released"
 msgstr "{0} в работах, которые еще не выпущены"
 
 #. placeholder {0}: selected.length
-#. placeholder {1}: selected.reduce((s, c) => s + (c.operationQuantity ?? 0), 0)
-msgid "{0} operations · {1} parts"
-msgstr "{0} операции · {1} деталей"
-
-#. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} операций · {totalQuantity} деталей"
 
@@ -3084,6 +3079,9 @@ msgstr "Очистить"
 msgid "Clear due date"
 msgstr "Очистить срок выполнения"
 
+msgid "Clear filter"
+msgstr "Очистить фильтр"
+
 msgid "Clear Filters"
 msgstr "Очистить фильтры"
 
@@ -5413,6 +5411,9 @@ msgstr "Дни платежа"
 msgid "Due Days after {selectedCalculationMethod}"
 msgstr "Дни оплаты после {selectedCalculationMethod}"
 
+msgid "Due within"
+msgstr "Срок в пределах"
+
 msgid "Duplicate"
 msgstr "Дублировать"
 
@@ -6807,6 +6808,9 @@ msgstr "Файлы, прикрепленные здесь, отправляют�
 msgid "Filter"
 msgstr "Фильтр"
 
+msgid "Filter by…"
+msgstr "Фильтровать по…"
+
 msgid "Finalize"
 msgstr "Завершить"
 
@@ -6933,6 +6937,9 @@ msgstr "Метод прогнозирования: <0>{0}</0>. Эта строк
 
 msgid "Forgot to Clock Out?"
 msgstr "Забыли отметить уход?"
+
+msgid "Form"
+msgstr "Форма"
 
 msgid "Format"
 msgstr "Формат"
@@ -9927,8 +9934,8 @@ msgstr "Нет подходящих ячеек"
 msgid "No matching operations"
 msgstr "Нет совпадающих операций"
 
-msgid "No material properties"
-msgstr "Нет свойств материала"
+msgid "No materials"
+msgstr "Нет материалов"
 
 msgid "No new notifications"
 msgstr "Нет новых уведомлений"

@@ -115,11 +115,6 @@ msgid "{0} on jobs not yet released"
 msgstr "{0} für noch nicht freigegebene Aufträge"
 
 #. placeholder {0}: selected.length
-#. placeholder {1}: selected.reduce((s, c) => s + (c.operationQuantity ?? 0), 0)
-msgid "{0} operations · {1} parts"
-msgstr "{0} Operationen · {1} Teile"
-
-#. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} Operationen · {totalQuantity} Teile"
 
@@ -3084,6 +3079,9 @@ msgstr "Löschen"
 msgid "Clear due date"
 msgstr "Fälligkeitsdatum löschen"
 
+msgid "Clear filter"
+msgstr "Filter löschen"
+
 msgid "Clear Filters"
 msgstr "Filter löschen"
 
@@ -5413,6 +5411,9 @@ msgstr "Fälligkeitstage"
 msgid "Due Days after {selectedCalculationMethod}"
 msgstr "Fälligkeitstage nach {selectedCalculationMethod}"
 
+msgid "Due within"
+msgstr "Fällig innerhalb"
+
 msgid "Duplicate"
 msgstr "Duplizieren"
 
@@ -6807,6 +6808,9 @@ msgstr "Hier angehängte Dateien werden mit jeder Bestellanfrage-E-Mail an diese
 msgid "Filter"
 msgstr "Filter"
 
+msgid "Filter by…"
+msgstr "Filtern nach…"
+
 msgid "Finalize"
 msgstr "Abschließen"
 
@@ -6933,6 +6937,9 @@ msgstr "Prognosemethode: <0>{0}</0>. Diese Zeile wurde nicht aus aktiven Aufträ
 
 msgid "Forgot to Clock Out?"
 msgstr "Vergessen auszustempeln?"
+
+msgid "Form"
+msgstr "Formular"
 
 msgid "Format"
 msgstr "Format"
@@ -9927,8 +9934,8 @@ msgstr "Keine übereinstimmenden Lagerfächer"
 msgid "No matching operations"
 msgstr "Keine passenden Operationen"
 
-msgid "No material properties"
-msgstr "Keine Materialeigenschaften"
+msgid "No materials"
+msgstr "Keine Materialien"
 
 msgid "No new notifications"
 msgstr "Keine neuen Benachrichtigungen"

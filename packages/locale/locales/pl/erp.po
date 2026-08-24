@@ -115,11 +115,6 @@ msgid "{0} on jobs not yet released"
 msgstr "{0} w zadaniach nie uwolnionych jeszcze"
 
 #. placeholder {0}: selected.length
-#. placeholder {1}: selected.reduce((s, c) => s + (c.operationQuantity ?? 0), 0)
-msgid "{0} operations · {1} parts"
-msgstr "{0} operacji · {1} części"
-
-#. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} operacji · {totalQuantity} części"
 
@@ -3084,6 +3079,9 @@ msgstr "Wyczysc"
 msgid "Clear due date"
 msgstr "Wyczyść datę terminu"
 
+msgid "Clear filter"
+msgstr "Wyczyść filtr"
+
 msgid "Clear Filters"
 msgstr "Wyczyść filtry"
 
@@ -5413,6 +5411,9 @@ msgstr "Dni Wymagalności"
 msgid "Due Days after {selectedCalculationMethod}"
 msgstr "Dni płatności po {selectedCalculationMethod}"
 
+msgid "Due within"
+msgstr "Termin w ciągu"
+
 msgid "Duplicate"
 msgstr "Duplikuj"
 
@@ -6807,6 +6808,9 @@ msgstr "Pliki dołączone tutaj są wysyłane wraz z każdym emailem zamówienia
 msgid "Filter"
 msgstr "Filtr"
 
+msgid "Filter by…"
+msgstr "Filtruj wg…"
+
 msgid "Finalize"
 msgstr "Sfinalizuj"
 
@@ -6933,6 +6937,9 @@ msgstr "Metoda prognozy: <0>{0}</0>. Ten wiersz nie pochodzi z aktywnych zadań,
 
 msgid "Forgot to Clock Out?"
 msgstr "Zapomniałeś wylogować się z zegara?"
+
+msgid "Form"
+msgstr "Formularz"
 
 msgid "Format"
 msgstr "Format"
@@ -9927,8 +9934,8 @@ msgstr "Brak pasujących pojemników"
 msgid "No matching operations"
 msgstr "Brak zgodnych operacji"
 
-msgid "No material properties"
-msgstr "Brak właściwości materiału"
+msgid "No materials"
+msgstr "Brak materiałów"
 
 msgid "No new notifications"
 msgstr "Brak nowych powiadomień"

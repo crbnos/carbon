@@ -115,11 +115,6 @@ msgid "{0} on jobs not yet released"
 msgstr "{0} जॉब्स पर अभी जारी नहीं किए गए"
 
 #. placeholder {0}: selected.length
-#. placeholder {1}: selected.reduce((s, c) => s + (c.operationQuantity ?? 0), 0)
-msgid "{0} operations · {1} parts"
-msgstr "{0} ऑपरेशन · {1} पार्ट्स"
-
-#. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} संचालन · {totalQuantity} भाग"
 
@@ -3084,6 +3079,9 @@ msgstr "साफ़ करें"
 msgid "Clear due date"
 msgstr "देय तारीख साफ़ करें"
 
+msgid "Clear filter"
+msgstr "फ़िल्टर साफ करें"
+
 msgid "Clear Filters"
 msgstr "फ़िल्टर साफ़ करें"
 
@@ -5413,6 +5411,9 @@ msgstr "देय दिन"
 msgid "Due Days after {selectedCalculationMethod}"
 msgstr "{selectedCalculationMethod} के बाद देय दिन"
 
+msgid "Due within"
+msgstr "के भीतर देय"
+
 msgid "Duplicate"
 msgstr "डुप्लिकेट"
 
@@ -6807,6 +6808,9 @@ msgstr "यहां संलग्न की गई फाइलें इस 
 msgid "Filter"
 msgstr "फ़िल्टर"
 
+msgid "Filter by…"
+msgstr "द्वारा फ़िल्टर करें…"
+
 msgid "Finalize"
 msgstr "अंतिम रूप दें"
 
@@ -6933,6 +6937,9 @@ msgstr "पूर्वानुमान विधि: <0>{0}</0>. यह प�
 
 msgid "Forgot to Clock Out?"
 msgstr "क्या आप क्लॉक आउट करना भूल गए?"
+
+msgid "Form"
+msgstr "फॉर्म"
 
 msgid "Format"
 msgstr "प्रारूप"
@@ -9927,8 +9934,8 @@ msgstr "कोई मिलान बिन नहीं"
 msgid "No matching operations"
 msgstr "कोई मेल खाने वाला ऑपरेशन नहीं"
 
-msgid "No material properties"
-msgstr "कोई सामग्री गुण नहीं"
+msgid "No materials"
+msgstr "कोई सामग्री नहीं"
 
 msgid "No new notifications"
 msgstr "कोई नई सूचनाएं नहीं"

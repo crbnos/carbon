@@ -115,11 +115,6 @@ msgid "{0} on jobs not yet released"
 msgstr "{0} on jobs not yet released"
 
 #. placeholder {0}: selected.length
-#. placeholder {1}: selected.reduce((s, c) => s + (c.operationQuantity ?? 0), 0)
-msgid "{0} operations · {1} parts"
-msgstr "{0} operations · {1} parts"
-
-#. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} operations · {totalQuantity} parts"
 
@@ -3084,6 +3079,9 @@ msgstr "Clear"
 msgid "Clear due date"
 msgstr "Clear due date"
 
+msgid "Clear filter"
+msgstr "Clear filter"
+
 msgid "Clear Filters"
 msgstr "Clear Filters"
 
@@ -5413,6 +5411,9 @@ msgstr "Due Days"
 msgid "Due Days after {selectedCalculationMethod}"
 msgstr "Due Days after {selectedCalculationMethod}"
 
+msgid "Due within"
+msgstr "Due within"
+
 msgid "Duplicate"
 msgstr "Duplicate"
 
@@ -6807,6 +6808,9 @@ msgstr "Files attached here ride along on every purchase order email sent to thi
 msgid "Filter"
 msgstr "Filter"
 
+msgid "Filter by…"
+msgstr "Filter by…"
+
 msgid "Finalize"
 msgstr "Finalize"
 
@@ -6933,6 +6937,9 @@ msgstr "Forecast method: <0>{0}</0>. This row was not derived from active jobs, 
 
 msgid "Forgot to Clock Out?"
 msgstr "Forgot to Clock Out?"
+
+msgid "Form"
+msgstr "Form"
 
 msgid "Format"
 msgstr "Format"
@@ -9927,8 +9934,8 @@ msgstr "No matching bins"
 msgid "No matching operations"
 msgstr "No matching operations"
 
-msgid "No material properties"
-msgstr "No material properties"
+msgid "No materials"
+msgstr "No materials"
 
 msgid "No new notifications"
 msgstr "No new notifications"

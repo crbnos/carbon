@@ -115,11 +115,6 @@ msgid "{0} on jobs not yet released"
 msgstr "출시되지 않은 작업의 {0}"
 
 #. placeholder {0}: selected.length
-#. placeholder {1}: selected.reduce((s, c) => s + (c.operationQuantity ?? 0), 0)
-msgid "{0} operations · {1} parts"
-msgstr "{0}개 작업 · {1}개 부품"
-
-#. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0}개 작업 · {totalQuantity}개 부품"
 
@@ -3084,6 +3079,9 @@ msgstr "지우기"
 msgid "Clear due date"
 msgstr "기한 지우기"
 
+msgid "Clear filter"
+msgstr "필터 지우기"
+
 msgid "Clear Filters"
 msgstr "필터 지우기"
 
@@ -5413,6 +5411,9 @@ msgstr "기한 일수"
 msgid "Due Days after {selectedCalculationMethod}"
 msgstr "{selectedCalculationMethod} 이후 기한 일수"
 
+msgid "Due within"
+msgstr "다음 기간 이내"
+
 msgid "Duplicate"
 msgstr "복제"
 
@@ -6807,6 +6808,9 @@ msgstr "여기에 첨부한 파일은 이 공급업체에 전송되는 모든 �
 msgid "Filter"
 msgstr "필터"
 
+msgid "Filter by…"
+msgstr "필터링…"
+
 msgid "Finalize"
 msgstr "확정"
 
@@ -6933,6 +6937,9 @@ msgstr "예측 방법: <0>{0}</0>. 이 행은 진행 중인 작업에서 파생�
 
 msgid "Forgot to Clock Out?"
 msgstr "퇴근 체크를 잊으셨나요?"
+
+msgid "Form"
+msgstr "양식"
 
 msgid "Format"
 msgstr "형식"
@@ -9927,8 +9934,8 @@ msgstr "일치하는 빈이 없습니다"
 msgid "No matching operations"
 msgstr "일치하는 작업 없음"
 
-msgid "No material properties"
-msgstr "재료 속성 없음"
+msgid "No materials"
+msgstr "자재 없음"
 
 msgid "No new notifications"
 msgstr "새 알림이 없습니다"

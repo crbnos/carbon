@@ -537,6 +537,26 @@ through; `ProcessForm` gains the Boolean field (clone `completeAllOnScan`).
   redirect, chip, cross-member shared timer, deferred GL on stop, proportional
   slice completion (Labor 50→25/25, Machine 3→2/1 & 13→7/6), members Done + batch
   Completed, and the Completed batch reverting to a plain operation view.
+- 2026-08-24: **Batch builder round 3** (Sid: "more flexible and BOM-aware"
+  filtering + "polish up the UI, alignment"). Filtering: the fixed row of five
+  property MultiSelects is replaced by a dynamic local-state "+ Filter" picker
+  over the dimensions the candidates' BOMs actually contain — including the
+  material ITEM itself — with removable/editable facet chips; a BOM line's
+  grouping signature (grouped view, suggestions, mixed-materials warning,
+  chips) now falls back to its material item's readable id when normalized
+  properties are absent, so property-less BOMs group by what they consume
+  instead of collapsing into "No material properties". Polish: shared Table
+  gained additive `withColumnOrdering`/`withCsvExport` opt-outs (default true;
+  the toolbar row collapses entirely when every control is off) so the builder
+  loses its floating Columns/CSV chrome; due-window filter is one bordered
+  segmented control; header/row checkboxes share identical wrapper geometry
+  (measured th↔td alignment in-browser); Qty right-aligned; material chips are
+  quiet outline badges; grouped view swapped Radix ScrollArea (its
+  display:table viewport let wide rows overflow the card) for native scroll,
+  aligned the group-header checkbox to the row checkbox column, and truncates
+  the right meta; footer no longer duplicates the review panel's summary.
+  Verified in-browser incl. a temporary BOM line attached to a test op
+  (Material facet chip filters; group titled by the item's readable id).
 - 2026-08-22: **Batch builder round 2** (Sid: eight guidance improvements + a
   builder-UI redesign). Data: the candidates API now also returns labor/machine
   times, item thumbnails, per-work-center queue load, and a hidden-ops count;

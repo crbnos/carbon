@@ -115,11 +115,6 @@ msgid "{0} on jobs not yet released"
 msgstr "{0}はまだリリースされていないジョブにあります"
 
 #. placeholder {0}: selected.length
-#. placeholder {1}: selected.reduce((s, c) => s + (c.operationQuantity ?? 0), 0)
-msgid "{0} operations · {1} parts"
-msgstr "{0}の作業 · {1}部品"
-
-#. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0}件の作業 · {totalQuantity}部品"
 
@@ -3084,6 +3079,9 @@ msgstr "クリア"
 msgid "Clear due date"
 msgstr "期限をクリア"
 
+msgid "Clear filter"
+msgstr "フィルターをクリア"
+
 msgid "Clear Filters"
 msgstr "フィルターをクリア"
 
@@ -5413,6 +5411,9 @@ msgstr "期日"
 msgid "Due Days after {selectedCalculationMethod}"
 msgstr "{selectedCalculationMethod}後の支払期日"
 
+msgid "Due within"
+msgstr "期限内"
+
 msgid "Duplicate"
 msgstr "複製"
 
@@ -6807,6 +6808,9 @@ msgstr "ここに添付されたファイルは、このサプライヤーに送
 msgid "Filter"
 msgstr "フィルター"
 
+msgid "Filter by…"
+msgstr "フィルター…"
+
 msgid "Finalize"
 msgstr "確定"
 
@@ -6933,6 +6937,9 @@ msgstr "予測方法: <0>{0}</0>。この行はアクティブなジョブから
 
 msgid "Forgot to Clock Out?"
 msgstr "時刻記録を忘れましたか？"
+
+msgid "Form"
+msgstr "フォーム"
 
 msgid "Format"
 msgstr "フォーマット"
@@ -9927,8 +9934,8 @@ msgstr "一致するビンがありません"
 msgid "No matching operations"
 msgstr "一致する作業がありません"
 
-msgid "No material properties"
-msgstr "材料特性がありません"
+msgid "No materials"
+msgstr "物料がありません"
 
 msgid "No new notifications"
 msgstr "新しい通知はありません"

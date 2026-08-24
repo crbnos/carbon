@@ -115,11 +115,6 @@ msgid "{0} on jobs not yet released"
 msgstr "{0} 个未发布工作单上的项"
 
 #. placeholder {0}: selected.length
-#. placeholder {1}: selected.reduce((s, c) => s + (c.operationQuantity ?? 0), 0)
-msgid "{0} operations · {1} parts"
-msgstr "{0} 项操作 · {1} 部分"
-
-#. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} 工序 · {totalQuantity} 零件"
 
@@ -3084,6 +3079,9 @@ msgstr "清除"
 msgid "Clear due date"
 msgstr "清除截止日期"
 
+msgid "Clear filter"
+msgstr "清除筛选条件"
+
 msgid "Clear Filters"
 msgstr "清除筛选"
 
@@ -5413,6 +5411,9 @@ msgstr "到期天数"
 msgid "Due Days after {selectedCalculationMethod}"
 msgstr "到期天数（{selectedCalculationMethod}之后）"
 
+msgid "Due within"
+msgstr "应收期限"
+
 msgid "Duplicate"
 msgstr "复制"
 
@@ -6807,6 +6808,9 @@ msgstr "此处附加的文件将随附在发送给此供应商的每份采购订
 msgid "Filter"
 msgstr "筛选"
 
+msgid "Filter by…"
+msgstr "按…筛选"
+
 msgid "Finalize"
 msgstr "完成"
 
@@ -6933,6 +6937,9 @@ msgstr "预测方法：<0>{0}</0>。此行不是从活跃工作派生的，因�
 
 msgid "Forgot to Clock Out?"
 msgstr "忘记打卡下班了？"
+
+msgid "Form"
+msgstr "表单"
 
 msgid "Format"
 msgstr "格式"
@@ -9927,8 +9934,8 @@ msgstr "无匹配的箱子"
 msgid "No matching operations"
 msgstr "没有匹配的操作"
 
-msgid "No material properties"
-msgstr "没有材料属性"
+msgid "No materials"
+msgstr "无物料"
 
 msgid "No new notifications"
 msgstr "没有新通知"

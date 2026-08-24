@@ -115,11 +115,6 @@ msgid "{0} on jobs not yet released"
 msgstr "{0} henüz serbest bırakılmayan işlerde"
 
 #. placeholder {0}: selected.length
-#. placeholder {1}: selected.reduce((s, c) => s + (c.operationQuantity ?? 0), 0)
-msgid "{0} operations · {1} parts"
-msgstr "{0} operasyon · {1} parça"
-
-#. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} operasyon · {totalQuantity} parça"
 
@@ -3084,6 +3079,9 @@ msgstr "Temizle"
 msgid "Clear due date"
 msgstr "Vade tarihini temizle"
 
+msgid "Clear filter"
+msgstr "Filtreyi temizle"
+
 msgid "Clear Filters"
 msgstr "Filtreleri Temizle"
 
@@ -5413,6 +5411,9 @@ msgstr "Vade Günleri"
 msgid "Due Days after {selectedCalculationMethod}"
 msgstr "Sonraki Gün Sayısı {selectedCalculationMethod} sonrası"
 
+msgid "Due within"
+msgstr "Süresi içinde"
+
 msgid "Duplicate"
 msgstr "Çoğalt"
 
@@ -6807,6 +6808,9 @@ msgstr "Buraya eklenen dosyalar, bu tedarikçiye gönderilen her satın alma sip
 msgid "Filter"
 msgstr "Filtre"
 
+msgid "Filter by…"
+msgstr "Filtrele…"
+
 msgid "Finalize"
 msgstr "Onayla"
 
@@ -6933,6 +6937,9 @@ msgstr "Tahmin yöntemi: <0>{0}</0>. Bu satır aktif işlerden türetilmediği i
 
 msgid "Forgot to Clock Out?"
 msgstr "Çıkış yapmayı unuttunuz mu?"
+
+msgid "Form"
+msgstr "Form"
 
 msgid "Format"
 msgstr "Biçim"
@@ -9927,8 +9934,8 @@ msgstr "Eşleşen kutu yok"
 msgid "No matching operations"
 msgstr "Eşleşen operasyon yok"
 
-msgid "No material properties"
-msgstr "Malzeme özellikleri yok"
+msgid "No materials"
+msgstr "Malzeme yok"
 
 msgid "No new notifications"
 msgstr "Yeni bildirim yok"

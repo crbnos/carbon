@@ -115,11 +115,6 @@ msgid "{0} on jobs not yet released"
 msgstr "{0} sur les travaux non encore libérés"
 
 #. placeholder {0}: selected.length
-#. placeholder {1}: selected.reduce((s, c) => s + (c.operationQuantity ?? 0), 0)
-msgid "{0} operations · {1} parts"
-msgstr "{0} opérations · {1} pièces"
-
-#. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
 msgstr "{0} opérations · {totalQuantity} pièces"
 
@@ -3084,6 +3079,9 @@ msgstr "Effacer"
 msgid "Clear due date"
 msgstr "Effacer la date d'échéance"
 
+msgid "Clear filter"
+msgstr "Effacer le filtre"
+
 msgid "Clear Filters"
 msgstr "Effacer les filtres"
 
@@ -5413,6 +5411,9 @@ msgstr "Jours d'Échéance"
 msgid "Due Days after {selectedCalculationMethod}"
 msgstr "Jours d'échéance après {selectedCalculationMethod}"
 
+msgid "Due within"
+msgstr "Échéance dans"
+
 msgid "Duplicate"
 msgstr "Dupliquer"
 
@@ -6807,6 +6808,9 @@ msgstr "Les fichiers joints ici sont inclus dans chaque email de bon de commande
 msgid "Filter"
 msgstr "Filtre"
 
+msgid "Filter by…"
+msgstr "Filtrer par…"
+
 msgid "Finalize"
 msgstr "Finaliser"
 
@@ -6933,6 +6937,9 @@ msgstr "Méthode de prévision : <0>{0}</0>. Cette ligne n'a pas été dérivée
 
 msgid "Forgot to Clock Out?"
 msgstr "Oublié de pointer la sortie ?"
+
+msgid "Form"
+msgstr "Formulaire"
 
 msgid "Format"
 msgstr "Format"
@@ -9927,8 +9934,8 @@ msgstr "Aucun bac correspondant"
 msgid "No matching operations"
 msgstr "Aucune opération correspondante"
 
-msgid "No material properties"
-msgstr "Aucune propriété matérielle"
+msgid "No materials"
+msgstr "Aucun matériau"
 
 msgid "No new notifications"
 msgstr "Aucune nouvelle notification"

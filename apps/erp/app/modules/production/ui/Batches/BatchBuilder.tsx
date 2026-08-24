@@ -3,6 +3,11 @@ import {
   Button,
   Checkbox,
   Combobox,
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
   Count,
   cn,
   Drawer,
@@ -13,14 +18,16 @@ import {
   DrawerTitle,
   Heading,
   HStack,
+  IconButton,
   Input,
   InputGroup,
   InputLeftElement,
-  MultiSelect,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-  ScrollArea,
   Spinner,
   toast,
   useLocalStorage,
@@ -37,6 +44,7 @@ import {
   LuLayers,
   LuLayoutGrid,
   LuList,
+  LuListFilter,
   LuPackageSearch,
   LuPlus,
   LuSearch,
@@ -60,24 +68,51 @@ const DUE_SPREAD_WARNING_DAYS = 7;
 
 const DUE_WINDOWS = [7, 14, 30] as const;
 
-const FACETS: { key: keyof BatchMaterial; header: string }[] = [
-  { key: "substanceId", header: "Substance" },
-  { key: "gradeId", header: "Grade" },
-  { key: "dimensionId", header: "Dimension" },
-  { key: "formId", header: "Form" },
-  { key: "finishId", header: "Finish" }
+// The five normalized material-property dimensions. The builder also derives a
+// `material` dimension (the BOM item itself) — see facetDimensions.
+const PROPERTY_FACETS: {
+  key: keyof BatchMaterial;
+  nameKey: keyof BatchMaterial;
+}[] = [
+  { key: "substanceId", nameKey: "substanceName" },
+  { key: "gradeId", nameKey: "gradeName" },
+  { key: "dimensionId", nameKey: "dimensionName" },
+  { key: "formId", nameKey: "formName" },
+  { key: "finishId", nameKey: "finishName" }
 ];
 
-const FACET_NAME: Record<string, keyof BatchMaterial> = {
-  substanceId: "substanceName",
-  gradeId: "gradeName",
-  dimensionId: "dimensionName",
-  formId: "formName",
-  finishId: "finishName"
+const MATERIAL_FACET_KEY = "material";
+
+type FacetDimension = {
+  key: string;
+  label: string;
+  options: { value: string; label: string }[];
 };
 
-// The material chips shown on a candidate row: one per distinct BOM-line
-// substance·grade·dimension·form·finish string.
+// Does one BOM line satisfy one facet dimension's selected values?
+function lineMatchesFacet(
+  line: BatchMaterial,
+  key: string,
+  values: string[]
+): boolean {
+  if (key === MATERIAL_FACET_KEY) {
+    return !!line.itemReadableId && values.includes(line.itemReadableId);
+  }
+  return values.includes(line[key as keyof BatchMaterial] as string);
+}
+
+// One BOM line's display/grouping string: the normalized properties when they
+// exist, else the material item itself — BOMs without normalized material
+// properties still group and read by what they actually consume.
+function lineSignature(line: BatchMaterial): string | null {
+  const props = [line.substanceName, line.gradeName, line.dimensionName]
+    .filter(Boolean)
+    .join(" · ");
+  return props || line.itemReadableId || null;
+}
+
+// The material chips shown on a candidate row: one per distinct BOM line —
+// property string when present, else the material item's readable id.
 function materialChips(candidate: BatchCandidate): string[] {
   const chips = new Set<string>();
   for (const m of candidate.materials ?? []) {
@@ -88,20 +123,19 @@ function materialChips(candidate: BatchCandidate): string[] {
       m.formName,
       m.finishName
     ].filter(Boolean);
-    if (parts.length) chips.add(parts.join(" "));
+    const chip = parts.length ? parts.join(" ") : m.itemReadableId;
+    if (chip) chips.add(chip);
   }
   return [...chips];
 }
 
 // A candidate's material signature: the sorted set of its BOM lines'
-// substance·grade·dimension strings. Two candidates with the same signature are
+// signatures (see lineSignature). Two candidates with the same signature are
 // nesting-compatible and can be grouped/suggested as a batch.
 function candidateSignature(candidate: BatchCandidate): string {
   const sigs = new Set<string>();
   for (const m of candidate.materials ?? []) {
-    const s = [m.substanceName, m.gradeName, m.dimensionName]
-      .filter(Boolean)
-      .join(" · ");
+    const s = lineSignature(m);
     if (s) sigs.add(s);
   }
   return [...sigs].sort().join(" + ");
@@ -392,27 +426,59 @@ export function BatchBuilder({
     );
   }, [allCandidates]);
 
-  const facetOptions = useMemo(() => {
-    return Object.fromEntries(
-      FACETS.map((f) => {
-        const nameKey = FACET_NAME[f.key];
-        const seen = new Map<string, string>();
-        for (const c of candidates) {
-          for (const m of c.materials ?? []) {
-            const id = m[f.key] as string | null;
-            const name = m[nameKey] as string | null;
-            if (id && name && !seen.has(id)) seen.set(id, name);
-          }
+  // Filterable dimensions derived from what the candidates' BOMs actually
+  // contain: the material items themselves plus whichever normalized
+  // properties are populated. A dimension with no values doesn't appear.
+  const facetDimensions = useMemo<FacetDimension[]>(() => {
+    const labels: Record<string, string> = {
+      [MATERIAL_FACET_KEY]: t`Material`,
+      substanceId: t`Substance`,
+      gradeId: t`Grade`,
+      dimensionId: t`Dimension`,
+      formId: t`Form`,
+      finishId: t`Finish`
+    };
+    const dims: FacetDimension[] = [];
+
+    const materialItems = new Map<string, string>();
+    for (const c of candidates) {
+      for (const m of c.materials ?? []) {
+        if (m.itemReadableId && !materialItems.has(m.itemReadableId)) {
+          materialItems.set(m.itemReadableId, m.itemReadableId);
         }
-        return [
-          f.key,
-          [...seen.entries()]
+      }
+    }
+    if (materialItems.size > 0) {
+      dims.push({
+        key: MATERIAL_FACET_KEY,
+        label: labels[MATERIAL_FACET_KEY],
+        options: [...materialItems.keys()]
+          .sort((a, b) => a.localeCompare(b))
+          .map((id) => ({ value: id, label: id }))
+      });
+    }
+
+    for (const f of PROPERTY_FACETS) {
+      const seen = new Map<string, string>();
+      for (const c of candidates) {
+        for (const m of c.materials ?? []) {
+          const id = m[f.key] as string | null;
+          const name = m[f.nameKey] as string | null;
+          if (id && name && !seen.has(id)) seen.set(id, name);
+        }
+      }
+      if (seen.size > 0) {
+        dims.push({
+          key: f.key,
+          label: labels[f.key],
+          options: [...seen.entries()]
             .map(([id, name]) => ({ value: id, label: name }))
             .sort((a, b) => a.label.localeCompare(b.label))
-        ];
-      })
-    ) as Record<string, { value: string; label: string }[]>;
-  }, [candidates]);
+        });
+      }
+    }
+    return dims;
+  }, [candidates, t]);
 
   const activeFacetKeys = useMemo(
     () => Object.keys(facets).filter((k) => (facets[k]?.length ?? 0) > 0),
@@ -431,9 +497,7 @@ export function BatchBuilder({
     const matches = candidates.filter((c) => {
       if (activeFacetKeys.length > 0) {
         const anyLineMatches = (c.materials ?? []).some((m) =>
-          activeFacetKeys.every((key) =>
-            facets[key].includes(m[key as keyof BatchMaterial] as string)
-          )
+          activeFacetKeys.every((key) => lineMatchesFacet(m, key, facets[key]))
         );
         if (!anyLineMatches) return false;
       }
@@ -682,7 +746,7 @@ export function BatchBuilder({
                 search={search}
                 onSearchChange={setSearch}
                 facets={facets}
-                facetOptions={facetOptions}
+                dimensions={facetDimensions}
                 onFacetChange={(key, values) =>
                   setFacets((prev) => ({ ...prev, [key]: values }))
                 }
@@ -718,18 +782,7 @@ export function BatchBuilder({
           }
         />
 
-        <DrawerFooter className="flex-shrink-0 border-t bg-card sm:justify-between items-center">
-          <span className="text-sm text-muted-foreground tabular-nums">
-            {selected.length === 0 ? (
-              <Trans>No operations selected</Trans>
-            ) : (
-              <Trans>
-                {selected.length} operations ·{" "}
-                {selected.reduce((s, c) => s + (c.operationQuantity ?? 0), 0)}{" "}
-                parts
-              </Trans>
-            )}
-          </span>
+        <DrawerFooter className="flex-shrink-0 border-t bg-card sm:justify-end items-center">
           <HStack spacing={2}>
             <Button
               variant="ghost"
@@ -885,7 +938,7 @@ function ScopeBar({
           placeholder={t`Location`}
         />
       </div>
-      <div className="w-[240px]">
+      <div className="w-[220px]">
         <Combobox
           size="sm"
           value={processId ?? ""}
@@ -898,6 +951,174 @@ function ScopeBar({
   );
 }
 
+// Checkbox list of one dimension's values — shared by the "+ Filter" picker's
+// second level and each active chip's edit popover.
+function FacetValueList({
+  dimension,
+  selected,
+  onChange
+}: {
+  dimension: FacetDimension;
+  selected: string[];
+  onChange: (values: string[]) => void;
+}) {
+  const { t } = useLingui();
+  return (
+    <Command>
+      <CommandInput placeholder={dimension.label} />
+      <CommandEmpty>{t`No results`}</CommandEmpty>
+      <CommandGroup className="max-h-[240px] overflow-auto">
+        {dimension.options.map((option) => {
+          const isChecked = selected.includes(option.value);
+          return (
+            <CommandItem
+              key={option.value}
+              value={option.label}
+              onSelect={() =>
+                onChange(
+                  isChecked
+                    ? selected.filter((v) => v !== option.value)
+                    : [...selected, option.value]
+                )
+              }
+            >
+              <HStack spacing={2} className="items-center">
+                <Checkbox
+                  checked={isChecked}
+                  className="pointer-events-none"
+                  tabIndex={-1}
+                />
+                <span className="truncate">{option.label}</span>
+              </HStack>
+            </CommandItem>
+          );
+        })}
+      </CommandGroup>
+    </Command>
+  );
+}
+
+// "+ Filter": pick a BOM dimension, then check values. Local-state twin of the
+// shared table filter (which is URL-param-driven and can't be reused here).
+function FacetPicker({
+  dimensions,
+  facets,
+  onFacetChange
+}: {
+  dimensions: FacetDimension[];
+  facets: Record<string, string[]>;
+  onFacetChange: (key: string, values: string[]) => void;
+}) {
+  const { t } = useLingui();
+  const [open, setOpen] = useState(false);
+  const [activeKey, setActiveKey] = useState<string | null>(null);
+  const active = dimensions.find((d) => d.key === activeKey) ?? null;
+
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) setActiveKey(null);
+      }}
+    >
+      <PopoverTrigger asChild>
+        <Button size="sm" variant="ghost" leftIcon={<LuListFilter />}>
+          {t`Filter`}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        className="w-[240px] p-0"
+        // Portaled outside the drawer — stop the scroll-lock's document
+        // listener from swallowing wheel events (see conventions-ui.md).
+        onWheel={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.stopPropagation()}
+      >
+        {active ? (
+          <FacetValueList
+            dimension={active}
+            selected={facets[active.key] ?? []}
+            onChange={(values) => onFacetChange(active.key, values)}
+          />
+        ) : (
+          <Command>
+            <CommandInput placeholder={t`Filter by…`} />
+            <CommandEmpty>{t`No results`}</CommandEmpty>
+            <CommandGroup>
+              {dimensions.map((d) => (
+                <CommandItem
+                  key={d.key}
+                  value={d.label}
+                  onSelect={() => setActiveKey(d.key)}
+                >
+                  {d.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </Command>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// An active facet as a removable, click-to-edit pill.
+function FacetChip({
+  dimension,
+  selected,
+  onChange
+}: {
+  dimension: FacetDimension;
+  selected: string[];
+  onChange: (values: string[]) => void;
+}) {
+  const { t } = useLingui();
+  const labels = selected
+    .map((v) => dimension.options.find((o) => o.value === v)?.label ?? v)
+    .join(", ");
+
+  return (
+    <HStack
+      spacing={0}
+      className="items-center gap-1 rounded-full border bg-card py-0.5 pl-2.5 pr-1 text-xs"
+    >
+      <Popover>
+        <PopoverTrigger asChild>
+          <button type="button" className="flex items-center gap-1 min-w-0">
+            <span className="text-muted-foreground flex-shrink-0">
+              {dimension.label}
+            </span>
+            <span className="max-w-[180px] truncate font-medium" title={labels}>
+              {labels}
+            </span>
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="start"
+          className="w-[240px] p-0"
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+        >
+          <FacetValueList
+            dimension={dimension}
+            selected={selected}
+            onChange={onChange}
+          />
+        </PopoverContent>
+      </Popover>
+      <IconButton
+        aria-label={t`Clear filter`}
+        variant="ghost"
+        size="sm"
+        className="size-5 min-w-0 rounded-full"
+        icon={<LuX className="size-3" />}
+        onClick={() => onChange([])}
+      />
+    </HStack>
+  );
+}
+
 function ComposePanel({
   view,
   onViewChange,
@@ -905,7 +1126,7 @@ function ComposePanel({
   search,
   onSearchChange,
   facets,
-  facetOptions,
+  dimensions,
   onFacetChange,
   dueWindow,
   onDueWindowChange,
@@ -928,7 +1149,7 @@ function ComposePanel({
   search: string;
   onSearchChange: (v: string) => void;
   facets: Record<string, string[]>;
-  facetOptions: Record<string, { value: string; label: string }[]>;
+  dimensions: FacetDimension[];
   onFacetChange: (key: string, values: string[]) => void;
   dueWindow: number | null;
   onDueWindowChange: (days: number | null) => void;
@@ -947,10 +1168,13 @@ function ComposePanel({
 }) {
   const { t } = useLingui();
 
+  const activeDimensions = dimensions.filter(
+    (d) => (facets[d.key]?.length ?? 0) > 0
+  );
   const isFiltered =
     search.trim().length > 0 ||
     dueWindow !== null ||
-    Object.values(facets).some((v) => v.length > 0);
+    activeDimensions.length > 0;
 
   return (
     <VStack spacing={0} className="h-full min-h-0 overflow-hidden bg-card">
@@ -985,8 +1209,8 @@ function ComposePanel({
         spacing={2}
         className="px-4 py-3 border-b w-full flex-shrink-0 items-stretch"
       >
-        <HStack spacing={2} className="flex-wrap items-center">
-          <InputGroup size="sm" className="w-[200px]">
+        <HStack spacing={2} className="flex-wrap items-center gap-y-2">
+          <InputGroup size="sm" className="w-[220px]">
             <InputLeftElement>
               <LuSearch className="text-muted-foreground w-3.5 h-3.5 mt-[-2px]" />
             </InputLeftElement>
@@ -997,11 +1221,16 @@ function ComposePanel({
               className="text-sm"
             />
           </InputGroup>
-          <HStack spacing={1} className="items-center">
-            <LuCalendarClock className="size-3.5 text-muted-foreground" />
+          <HStack
+            spacing={0}
+            className="items-center gap-0.5 rounded-md border p-0.5"
+            title={t`Due within`}
+          >
+            <LuCalendarClock className="size-3.5 text-muted-foreground mx-1.5 flex-shrink-0" />
             <Button
               size="sm"
               variant={dueWindow === null ? "secondary" : "ghost"}
+              className="h-7 px-2"
               onClick={() => onDueWindowChange(null)}
             >
               {t`All`}
@@ -1011,26 +1240,27 @@ function ComposePanel({
                 key={days}
                 size="sm"
                 variant={dueWindow === days ? "secondary" : "ghost"}
-                className="tabular-nums"
+                className="h-7 px-2 tabular-nums"
                 onClick={() => onDueWindowChange(days)}
               >
                 {t`${days}d`}
               </Button>
             ))}
           </HStack>
-          {FACETS.filter((f) => (facetOptions[f.key]?.length ?? 0) > 0).map(
-            (f) => (
-              <div key={f.key} className="w-[160px]">
-                <MultiSelect
-                  size="sm"
-                  value={facets[f.key] ?? []}
-                  options={facetOptions[f.key] ?? []}
-                  onChange={(values) => onFacetChange(f.key, values)}
-                  isClearable
-                  placeholder={f.header}
-                />
-              </div>
-            )
+          {activeDimensions.map((d) => (
+            <FacetChip
+              key={d.key}
+              dimension={d}
+              selected={facets[d.key] ?? []}
+              onChange={(values) => onFacetChange(d.key, values)}
+            />
+          ))}
+          {dimensions.length > 0 && (
+            <FacetPicker
+              dimensions={dimensions}
+              facets={facets}
+              onFacetChange={onFacetChange}
+            />
           )}
         </HStack>
         {view === "table" && suggestions.length > 0 && (
@@ -1136,19 +1366,22 @@ function CandidateTable({
     () => [
       {
         id: "select",
+        // Header and cell share the same wrapper geometry (p-3 -m-3 nets to
+        // zero) so the checkboxes sit in exactly the same column; the cell's
+        // padding is a real hit area, the header's is symmetry.
         header: () => (
-          <Checkbox
-            checked={allVisibleSelected}
-            onCheckedChange={onToggleAllVisible}
-            aria-label={t`Select all`}
-          />
+          <div className="flex items-center p-3 -m-3">
+            <Checkbox
+              checked={allVisibleSelected}
+              onCheckedChange={onToggleAllVisible}
+              aria-label={t`Select all`}
+            />
+          </div>
         ),
         cell: ({ row }) => (
-          // The whole cell toggles — a comfortable hit area instead of a 16px
-          // checkbox; the checkbox itself is presentational.
           <button
             type="button"
-            className="flex items-center justify-center cursor-pointer -m-2 p-3"
+            className="flex items-center cursor-pointer p-3 -m-3"
             onClick={() => onToggle(row.original)}
             aria-label={t`Select operation`}
           >
@@ -1197,11 +1430,11 @@ function CandidateTable({
       },
       {
         accessorKey: "operationQuantity",
-        header: t`Qty`,
+        header: () => <div className="w-full text-right">{t`Qty`}</div>,
         cell: ({ row }) => (
-          <span className="tabular-nums">
+          <div className="w-full text-right tabular-nums">
             {row.original.operationQuantity ?? 0}
-          </span>
+          </div>
         )
       },
       {
@@ -1234,14 +1467,19 @@ function CandidateTable({
           if (chips.length === 0)
             return (
               <span className="text-xs text-muted-foreground italic">
-                {t`No material properties`}
+                {t`No materials`}
               </span>
             );
           return (
-            <HStack spacing={1} className="flex-wrap">
+            <HStack spacing={1} className="flex-wrap gap-y-1">
               {chips.map((chip) => (
-                <Badge key={chip} variant="secondary">
-                  {chip}
+                <Badge
+                  key={chip}
+                  variant="outline"
+                  className="max-w-[200px] font-normal text-muted-foreground"
+                  title={chip}
+                >
+                  <span className="truncate">{chip}</span>
                 </Badge>
               ))}
             </HStack>
@@ -1272,6 +1510,8 @@ function CandidateTable({
         withSavedView={false}
         withSimpleSorting={false}
         withSidebarTrigger={false}
+        withColumnOrdering={false}
+        withCsvExport={false}
         sort={null}
         isFiltered={isFiltered}
         getRowClassName={(row) =>
@@ -1381,7 +1621,9 @@ function GroupedCandidateList({
   }
 
   return (
-    <ScrollArea className="flex-1 min-h-0 w-full">
+    // Native scroll, not ScrollArea — its display:table viewport wrapper sizes
+    // to content, letting wide rows overflow the panel instead of truncating.
+    <div className="flex-1 min-h-0 w-full overflow-y-auto">
       <VStack spacing={4} className="p-4">
         {sections.grouped.map((section) => (
           <CandidateGroup
@@ -1399,7 +1641,7 @@ function GroupedCandidateList({
         ))}
         {sections.ungrouped.length > 0 && (
           <CandidateGroup
-            title={t`No material properties`}
+            title={t`No materials`}
             saving={0}
             members={sections.ungrouped}
             selectedById={selectedById}
@@ -1412,7 +1654,7 @@ function GroupedCandidateList({
           />
         )}
       </VStack>
-    </ScrollArea>
+    </div>
   );
 }
 
@@ -1446,7 +1688,9 @@ function CandidateGroup({
 
   return (
     <VStack spacing={2} className="w-full">
-      <HStack spacing={2} className="w-full items-center">
+      {/* pl matches a row's border (1px) + padding (10px) so the group
+          checkbox sits in the same column as the row checkboxes. */}
+      <HStack spacing={3} className="w-full items-center pl-[11px]">
         <Checkbox
           checked={allSelected ? true : someSelected ? "indeterminate" : false}
           onCheckedChange={() =>
@@ -1454,24 +1698,27 @@ function CandidateGroup({
           }
           aria-label={t`Select group`}
         />
-        <span
-          className={cn(
-            "text-sm font-medium",
-            muted && "text-muted-foreground italic"
-          )}
-        >
-          {title}
-        </span>
-        <Count count={members.length} />
-        {saving > 0 && (
+        <HStack spacing={2} className="items-center min-w-0">
           <span
-            className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs tabular-nums text-emerald-600 dark:text-emerald-400"
-            title={t`One shared setup instead of one per operation`}
+            className={cn(
+              "text-sm font-medium truncate",
+              muted && "text-muted-foreground italic"
+            )}
+            title={title}
           >
-            <LuTimer className="size-3" />
-            {t`save ${formatDurationMilliseconds(saving, { style: "short" })}`}
+            {title}
           </span>
-        )}
+          <Count count={members.length} />
+          {saving > 0 && (
+            <span
+              className="flex flex-shrink-0 items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs tabular-nums text-emerald-600 dark:text-emerald-400"
+              title={t`One shared setup instead of one per operation`}
+            >
+              <LuTimer className="size-3" />
+              {t`save ${formatDurationMilliseconds(saving, { style: "short" })}`}
+            </span>
+          )}
+        </HStack>
       </HStack>
       <VStack spacing={1} className="w-full">
         {members.map((c) => {
@@ -1483,7 +1730,7 @@ function CandidateGroup({
               type="button"
               onClick={() => onToggle(c)}
               className={cn(
-                "w-full rounded-lg border p-2.5 text-left transition-colors cursor-pointer",
+                "w-full min-w-0 rounded-lg border p-2.5 text-left transition-colors cursor-pointer",
                 isSelected
                   ? "border-primary/40 bg-primary/5"
                   : "hover:bg-muted/40"
@@ -1492,7 +1739,7 @@ function CandidateGroup({
               <HStack spacing={3} className="w-full items-center">
                 <Checkbox
                   checked={isSelected}
-                  className="pointer-events-none"
+                  className="pointer-events-none flex-shrink-0"
                   tabIndex={-1}
                 />
                 <ItemThumbnail
@@ -1515,12 +1762,12 @@ function CandidateGroup({
                 </VStack>
                 <VStack
                   spacing={0}
-                  className="items-end flex-shrink-0 text-right"
+                  className="min-w-0 max-w-[45%] flex-shrink-0 items-end text-right"
                 >
                   <span className="text-sm tabular-nums">
                     {c.operationQuantity ?? 0}
                   </span>
-                  <span className="text-xs text-muted-foreground tabular-nums">
+                  <span className="max-w-full truncate text-xs text-muted-foreground tabular-nums">
                     {due ? formatDate(due, undefined, locale) : null}
                     {due && c.workCenterId ? " · " : null}
                     {c.workCenterId
@@ -1695,7 +1942,7 @@ function ReviewPanel({
         </VStack>
       )}
 
-      <ScrollArea className="flex-1 min-h-0 w-full">
+      <div className="flex-1 min-h-0 w-full overflow-y-auto">
         <VStack spacing={0} className="p-3">
           {isAddMode &&
             existingMembers.map((m) => (
@@ -1744,22 +1991,21 @@ function ReviewPanel({
                 </VStack>
               </HStack>
               <HStack spacing={2} className="flex-shrink-0">
-                <span className="text-xs tabular-nums text-muted-foreground">
+                <span className="min-w-[3ch] text-right text-xs tabular-nums text-muted-foreground">
                   {c.operationQuantity ?? 0}
                 </span>
-                <Button
+                <IconButton
+                  aria-label={t`Remove`}
                   variant="ghost"
                   size="sm"
+                  icon={<LuX />}
                   onClick={() => onRemove(c)}
-                  aria-label={t`Remove`}
-                >
-                  <LuX className="size-3.5" />
-                </Button>
+                />
               </HStack>
             </HStack>
           ))}
         </VStack>
-      </ScrollArea>
+      </div>
     </VStack>
   );
 }
@@ -1787,12 +2033,12 @@ function EmptyState({
         {title}
       </span>
       {hint && (
-        <span className="text-xs text-muted-foreground max-w-[32ch]">
+        <span className="text-xs text-muted-foreground max-w-[32ch] text-balance">
           {hint}
         </span>
       )}
       {detail && (
-        <span className="text-xs font-medium text-foreground max-w-[40ch]">
+        <span className="text-xs font-medium text-foreground max-w-[40ch] text-balance">
           {detail}
         </span>
       )}
