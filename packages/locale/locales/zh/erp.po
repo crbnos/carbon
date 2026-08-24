@@ -6521,8 +6521,9 @@ msgstr "失败"
 msgid "Failed features"
 msgstr "失效特性"
 
-msgid "Failed to add line"
-msgstr "添加行失败"
+#. placeholder {0}: rows.length
+msgid "Failed to add line — {addedCount} of {0} lines were added"
+msgstr ""
 
 msgid "Failed to add lines"
 msgstr "添加行失败"
@@ -6724,6 +6725,9 @@ msgstr "加载收据行失败"
 
 msgid "Failed to load receipts"
 msgstr "加载收据失败"
+
+msgid "Failed to load return reasons"
+msgstr ""
 
 msgid "Failed to load RMA lines"
 msgstr "加载 RMA 行失败"

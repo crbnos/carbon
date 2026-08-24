@@ -6521,8 +6521,9 @@ msgstr "Échoué"
 msgid "Failed features"
 msgstr "Caractéristiques échouées"
 
-msgid "Failed to add line"
-msgstr "Échec de l'ajout de la ligne"
+#. placeholder {0}: rows.length
+msgid "Failed to add line — {addedCount} of {0} lines were added"
+msgstr ""
 
 msgid "Failed to add lines"
 msgstr "Échec de l'ajout des lignes"
@@ -6724,6 +6725,9 @@ msgstr "Échec du chargement des lignes de réception"
 
 msgid "Failed to load receipts"
 msgstr "Impossible de charger les reçus"
+
+msgid "Failed to load return reasons"
+msgstr ""
 
 msgid "Failed to load RMA lines"
 msgstr "Échec du chargement des lignes RMA"

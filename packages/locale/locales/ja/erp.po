@@ -6521,8 +6521,9 @@ msgstr "失敗"
 msgid "Failed features"
 msgstr "失敗した機能"
 
-msgid "Failed to add line"
-msgstr "行を追加できませんでした"
+#. placeholder {0}: rows.length
+msgid "Failed to add line — {addedCount} of {0} lines were added"
+msgstr ""
 
 msgid "Failed to add lines"
 msgstr "行を追加できませんでした"
@@ -6724,6 +6725,9 @@ msgstr "領収書行の読み込みに失敗しました"
 
 msgid "Failed to load receipts"
 msgstr "領収書の読み込みに失敗しました"
+
+msgid "Failed to load return reasons"
+msgstr ""
 
 msgid "Failed to load RMA lines"
 msgstr "RMA行を読み込めませんでした"

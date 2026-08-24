@@ -91,6 +91,7 @@ const ReturnableReceiptLinesModal = ({
 
     setIsSubmitting(true);
     try {
+      let addedCount = 0;
       for (const row of rows) {
         const formData = new FormData();
         formData.append("purchaseReturnOrderId", orderId);
@@ -128,8 +129,11 @@ const ReturnableReceiptLinesModal = ({
           );
         })();
         if (!landedOnNewLine) {
-          throw new Error(t`Failed to add line`);
+          throw new Error(
+            t`Failed to add line — ${addedCount} of ${rows.length} lines were added`
+          );
         }
+        addedCount++;
       }
       toast.success(t`Added ${rows.length} lines`);
       revalidator.revalidate();

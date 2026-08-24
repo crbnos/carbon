@@ -6521,8 +6521,9 @@ msgstr "실패"
 msgid "Failed features"
 msgstr "부적합 특성"
 
-msgid "Failed to add line"
-msgstr "라인 추가 실패"
+#. placeholder {0}: rows.length
+msgid "Failed to add line — {addedCount} of {0} lines were added"
+msgstr ""
 
 msgid "Failed to add lines"
 msgstr "라인 추가 실패"
@@ -6724,6 +6725,9 @@ msgstr "입고 라인을 불러오지 못했습니다"
 
 msgid "Failed to load receipts"
 msgstr "입고를 불러오지 못했습니다"
+
+msgid "Failed to load return reasons"
+msgstr ""
 
 msgid "Failed to load RMA lines"
 msgstr "RMA 라인 로드 실패"

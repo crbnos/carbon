@@ -6521,8 +6521,9 @@ msgstr "Başarısız"
 msgid "Failed features"
 msgstr "Başarısız özellikler"
 
-msgid "Failed to add line"
-msgstr "Satır ekleme başarısız oldu"
+#. placeholder {0}: rows.length
+msgid "Failed to add line — {addedCount} of {0} lines were added"
+msgstr ""
 
 msgid "Failed to add lines"
 msgstr "Satırlar ekleme başarısız oldu"
@@ -6724,6 +6725,9 @@ msgstr "Makbuzu satırları yüklenemedi"
 
 msgid "Failed to load receipts"
 msgstr "Makbuzu yüklenemedi"
+
+msgid "Failed to load return reasons"
+msgstr ""
 
 msgid "Failed to load RMA lines"
 msgstr "RMA satırlarını yükleme başarısız oldu"

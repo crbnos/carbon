@@ -134,7 +134,13 @@ const SalesReturnOrderLineForm = ({
       .select("id, name")
       .eq("companyId", company.id)
       .order("name")
-      .then(({ data }) => setReasons(data ?? []));
+      .then(({ data, error }) => {
+        if (error) {
+          toast.error(t`Failed to load return reasons`);
+          return;
+        }
+        setReasons(data ?? []);
+      });
   });
 
   const onItemChange = async (itemId: string) => {

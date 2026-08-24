@@ -6521,8 +6521,9 @@ msgstr "Fehlgeschlagen"
 msgid "Failed features"
 msgstr "Fehlgeschlagene Merkmale"
 
-msgid "Failed to add line"
-msgstr "Fehler beim Hinzufügen der Zeile"
+#. placeholder {0}: rows.length
+msgid "Failed to add line — {addedCount} of {0} lines were added"
+msgstr ""
 
 msgid "Failed to add lines"
 msgstr "Fehler beim Hinzufügen von Zeilen"
@@ -6724,6 +6725,9 @@ msgstr "Fehler beim Laden von Belegzeilen"
 
 msgid "Failed to load receipts"
 msgstr "Fehler beim Laden von Quittungen"
+
+msgid "Failed to load return reasons"
+msgstr ""
 
 msgid "Failed to load RMA lines"
 msgstr "Fehler beim Laden der RMA-Zeilen"

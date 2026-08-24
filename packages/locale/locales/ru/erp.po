@@ -6521,8 +6521,9 @@ msgstr "Неудачно"
 msgid "Failed features"
 msgstr "Отказавшие элементы"
 
-msgid "Failed to add line"
-msgstr "Ошибка при добавлении строки"
+#. placeholder {0}: rows.length
+msgid "Failed to add line — {addedCount} of {0} lines were added"
+msgstr ""
 
 msgid "Failed to add lines"
 msgstr "Ошибка при добавлении строк"
@@ -6724,6 +6725,9 @@ msgstr "Не удалось загрузить строки квитанции"
 
 msgid "Failed to load receipts"
 msgstr "Не удалось загрузить квитанции"
+
+msgid "Failed to load return reasons"
+msgstr ""
 
 msgid "Failed to load RMA lines"
 msgstr "Ошибка при загрузке строк RMA"
