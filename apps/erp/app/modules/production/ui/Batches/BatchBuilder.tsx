@@ -687,7 +687,7 @@ export function BatchBuilder({
         if (!open) onClose();
       }}
     >
-      <DrawerContent size="full" position="bottom">
+      <DrawerContent size="full">
         <DrawerHeader className="px-4 flex-shrink-0">
           <DrawerTitle>
             {isAddMode ? (
