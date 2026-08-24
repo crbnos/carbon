@@ -24,7 +24,12 @@ import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
 import { Link, useParams } from "react-router";
-import { CustomerAvatar, DateTime, MotionMoney } from "~/components";
+import {
+  CustomerAvatar,
+  DateTime,
+  MotionMoney,
+  RevisionSuffix
+} from "~/components";
 import {
   useCurrencyDecimals,
   useCurrencyFormatter,
@@ -842,11 +847,7 @@ const QuoteSummary = ({
           <div className="flex flex-col gap-1">
             <CardTitle className="flex items-center gap-0">
               <span>{routeData?.quote.quoteId}</span>
-              {(routeData?.quote.revisionId ?? 0) > 0 && (
-                <span className="text-muted-foreground">
-                  -{routeData?.quote.revisionId}
-                </span>
-              )}
+              <RevisionSuffix revisionId={routeData?.quote.revisionId} />
             </CardTitle>
 
             <CardDescription>

@@ -1,5 +1,6 @@
 import swaggerDocsSchema from "@carbon/database/swagger-docs-schema";
 import { describe, expect, it } from "vitest";
+import type { ActionInputLike } from "./actions";
 import { WORKFLOW_ACTIONS } from "./actions";
 import type {
   MomentDeclarationLike,
@@ -603,6 +604,93 @@ describe("validateCatalogInputs", () => {
     expect(problems[0]).toMatch(/is a template but is not a string/);
   });
 
+  // Malformed on purpose — the point of each case is a declaration the check must refuse.
+  const multi = (input: Record<string, unknown>) =>
+    validateCatalogInputs(
+      registry,
+      {},
+      {
+        "order.archive": {
+          label: "Archive an order",
+          permission: { module: "purchasing", action: "update" },
+          call: "purchasing_archiveOrder",
+          inputs: {
+            channels: input as unknown as ActionInputLike
+          },
+          outputs: {},
+          batchable: false
+        }
+      },
+      {},
+      schema
+    );
+
+  const LIST_OF_TEXT = {
+    kind: "list",
+    of: { kind: "primitive", of: "string" }
+  } as const;
+
+  it("accepts a well-formed multi-select", () => {
+    expect(
+      multi({
+        type: LIST_OF_TEXT,
+        required: false,
+        label: "channels",
+        choices: ["inApp", "email"],
+        defaultValue: ["inApp"]
+      })
+    ).toEqual([]);
+  });
+
+  it("rejects a fixed set of values on a list of anything but text", () => {
+    const problems = multi({
+      type: { kind: "list", of: { kind: "primitive", of: "number" } },
+      required: false,
+      label: "channels",
+      choices: ["inApp"]
+    });
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toMatch(/is not a list of text/);
+  });
+
+  it("rejects a default that is not one of a multi-select's values", () => {
+    const problems = multi({
+      type: LIST_OF_TEXT,
+      required: false,
+      label: "channels",
+      choices: ["inApp", "email"],
+      defaultValue: ["inApp", "carrier-pigeon"]
+    });
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toMatch(/"carrier-pigeon", which is not one/);
+  });
+
+  it("rejects a single default on a multi-select", () => {
+    const problems = multi({
+      type: LIST_OF_TEXT,
+      required: false,
+      label: "channels",
+      choices: ["inApp", "email"],
+      defaultValue: "inApp"
+    });
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toMatch(/defaults to one value but holds a set/);
+  });
+
+  it("rejects a set of defaults on an input that holds one value", () => {
+    const problems = multi({
+      type: { kind: "primitive", of: "string" },
+      required: false,
+      label: "channels",
+      choices: ["inApp", "email"],
+      defaultValue: ["inApp"]
+    });
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toMatch(
+      /defaults to a set of values but only holds one/
+    );
+  });
+
   const gated = (
     showWhen: { input: string; equals: readonly string[] },
     methodChoices?: readonly string[]
@@ -680,9 +768,9 @@ describe("buildCatalog — the real hand-written inputs", () => {
     expect(Object.keys(built.actions)).toHaveLength(16);
     expect(Object.keys(built.operations)).toHaveLength(15);
     // 106 events + 16 actions + 15 operations + 17 entity labels + 95 column labels
-    // + 27 action input labels + 15 operation input labels
+    // + 28 action input labels + 15 operation input labels
     // + 44 generated update-action input labels (10 record inputs + 34 writable columns)
-    expect(Object.keys(built.labels)).toHaveLength(335);
+    expect(Object.keys(built.labels)).toHaveLength(336);
   });
 
   it("sets template: true on inputs marked as templates", () => {

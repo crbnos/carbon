@@ -1,0 +1,155 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="tubBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#a3a8ac"/>
+      <stop offset="0.2" stop-color="#e6eaec"/>
+      <stop offset="0.45" stop-color="#fbfcfc"/>
+      <stop offset="0.72" stop-color="#d0d5d8"/>
+      <stop offset="1" stop-color="#989da1"/>
+    </linearGradient>
+    <linearGradient id="tubFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#fbfcfc"/>
+      <stop offset="0.45" stop-color="#e4e8ea"/>
+      <stop offset="0.78" stop-color="#c3c8cb"/>
+      <stop offset="1" stop-color="#9ea3a7"/>
+    </linearGradient>
+    <linearGradient id="innerWall" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7f8488"/>
+      <stop offset="0.35" stop-color="#b9bec1"/>
+      <stop offset="0.7" stop-color="#9aa0a3"/>
+      <stop offset="1" stop-color="#70757a"/>
+    </linearGradient>
+    <linearGradient id="clearFluid" x1="0.15" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.72"/>
+      <stop offset="0.3" stop-color="#dde6ea" stop-opacity="0.58"/>
+      <stop offset="0.62" stop-color="#c4cfd5" stop-opacity="0.52"/>
+      <stop offset="1" stop-color="#9fadb5" stop-opacity="0.62"/>
+    </linearGradient>
+    <linearGradient id="glassBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.5"/>
+      <stop offset="0.17" stop-color="#ffffff" stop-opacity="0.12"/>
+      <stop offset="0.46" stop-color="#dfe6ea" stop-opacity="0.26"/>
+      <stop offset="0.75" stop-color="#ffffff" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.46"/>
+    </linearGradient>
+    <linearGradient id="alu" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7d848a"/>
+      <stop offset="0.2" stop-color="#ced5da"/>
+      <stop offset="0.45" stop-color="#e8edf0"/>
+      <stop offset="0.72" stop-color="#a9b1b7"/>
+      <stop offset="1" stop-color="#6b7278"/>
+    </linearGradient>
+    <linearGradient id="aluFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#e8edf0"/>
+      <stop offset="0.35" stop-color="#ced5da"/>
+      <stop offset="0.7" stop-color="#a9b1b7"/>
+      <stop offset="1" stop-color="#7d848a"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="tubMouth"><ellipse cx="360" cy="350" rx="156" ry="59"/></clipPath>
+    <clipPath id="bottleClip"><path d="M774 470 L774 690 A56 21 0 0 0 886 690 L886 470 Z"/></clipPath>
+    <clipPath id="plateClip"><ellipse cx="520" cy="792" rx="200" ry="76"/></clipPath>
+  </defs>
+
+  <ellipse cx="538" cy="790" rx="400" ry="88" fill="url(#shadow)"/>
+
+  <!-- pint tub of clear base compound, lid off -->
+  <path d="M190 350 L210 690 A150 57 0 0 0 510 690 L530 350 Z" fill="url(#tubBarrel)"/>
+  <g>
+    <path d="M214 620 A150 57 0 0 0 506 620" fill="none" stroke="#ffffff" stroke-opacity="0.30" stroke-width="4"/>
+    <path d="M212 660 A150 57 0 0 0 508 660" fill="none" stroke="#8f9498" stroke-opacity="0.35" stroke-width="3"/>
+    <path d="M240 360 L256 686" stroke="#ffffff" stroke-opacity="0.55" stroke-width="18" fill="none"/>
+    <path d="M222 360 L240 686" stroke="#ffffff" stroke-opacity="0.22" stroke-width="10" fill="none"/>
+    <path d="M470 360 L456 686" stroke="#ffffff" stroke-opacity="0.14" stroke-width="12" fill="none"/>
+  </g>
+  <path d="M190 350 L210 690 A150 57 0 0 0 510 690 L530 350" fill="none" stroke="#8a8f93" stroke-width="3"/>
+  <!-- rolled rim and the mouth -->
+  <ellipse cx="360" cy="350" rx="178" ry="68" fill="url(#tubFace)" stroke="#8a8f93" stroke-width="3"/>
+  <ellipse cx="360" cy="350" rx="167" ry="63" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="3"/>
+  <ellipse cx="360" cy="350" rx="156" ry="59" fill="url(#innerWall)" stroke="#767b7f" stroke-width="2"/>
+  <g clip-path="url(#tubMouth)">
+    <ellipse cx="360" cy="374" rx="150" ry="57" fill="#6e7377"/>
+    <ellipse cx="360" cy="392" rx="146" ry="55" fill="url(#clearFluid)"/>
+    <ellipse cx="360" cy="392" rx="146" ry="55" fill="none" stroke="#ffffff" stroke-opacity="0.45" stroke-width="3"/>
+    <path d="M244 372 A146 55 0 0 1 400 344" fill="none" stroke="#ffffff" stroke-opacity="0.65" stroke-width="6"/>
+    <ellipse cx="330" cy="402" rx="70" ry="20" fill="#ffffff" opacity="0.18"/>
+    <ellipse cx="300" cy="384" rx="11" ry="7" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="2"/>
+    <ellipse cx="404" cy="398" rx="8" ry="5" fill="none" stroke="#ffffff" stroke-opacity="0.45" stroke-width="2"/>
+  </g>
+
+  <!-- small clear glass bottle of curing agent -->
+  <g>
+    <path d="M774 470 L774 690 A56 21 0 0 0 886 690 L886 470 Z" fill="url(#glassBarrel)"/>
+    <g clip-path="url(#bottleClip)">
+      <path d="M774 560 L774 690 A56 21 0 0 0 886 690 L886 560 Z" fill="#c8d3d9" opacity="0.55"/>
+      <ellipse cx="830" cy="560" rx="56" ry="21" fill="#eef4f6" opacity="0.75"/>
+      <ellipse cx="830" cy="560" rx="56" ry="21" fill="none" stroke="#ffffff" stroke-opacity="0.7" stroke-width="3"/>
+      <path d="M774 676 A56 21 0 0 0 886 676" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="4"/>
+      <rect x="788" y="474" width="12" height="216" fill="#ffffff" opacity="0.45"/>
+      <rect x="866" y="474" width="7" height="216" fill="#ffffff" opacity="0.28"/>
+    </g>
+    <path d="M774 470 L774 690 A56 21 0 0 0 886 690 L886 470" fill="none" stroke="#aeb6bb" stroke-width="2.5"/>
+    <!-- shoulder and neck -->
+    <path d="M774 474 C774 440 800 430 808 424 L852 424 C860 430 886 440 886 474 Z" fill="url(#glassBarrel)" stroke="#aeb6bb" stroke-width="2.5"/>
+    <path d="M806 396 L806 426 A24 9 0 0 0 854 426 L854 396 Z" fill="url(#glassBarrel)" stroke="#aeb6bb" stroke-width="2.5"/>
+    <!-- blank white screw cap -->
+    <path d="M800 356 L800 396 A30 11 0 0 0 860 396 L860 356 Z" fill="url(#tubBarrel)"/>
+    <ellipse cx="830" cy="356" rx="30" ry="11" fill="url(#tubFace)" stroke="#8a8f93" stroke-width="2"/>
+    <path d="M800 356 L800 396 A30 11 0 0 0 860 396 L860 356" fill="none" stroke="#8a8f93" stroke-width="2"/>
+    <g stroke="#9ba0a4" stroke-opacity="0.75" stroke-width="2" fill="none">
+      <path d="M808 360 L808 394"/><path d="M820 362 L820 397"/>
+      <path d="M832 362 L832 398"/><path d="M844 361 L844 396"/>
+      <path d="M854 358 L854 392"/>
+    </g>
+    <path d="M782 486 C778 520 780 600 786 664" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="5"/>
+  </g>
+
+  <!-- the tub's lid, set down beside it -->
+  <g>
+    <path d="M445 700 L445 728 A175 66 0 0 0 795 728 L795 700 Z" fill="url(#tubBarrel)"/>
+    <ellipse cx="620" cy="700" rx="175" ry="66" fill="url(#tubFace)" stroke="#8a8f93" stroke-width="3"/>
+    <ellipse cx="620" cy="700" rx="158" ry="60" fill="none" stroke="#9ba0a4" stroke-opacity="0.8" stroke-width="3"/>
+    <ellipse cx="620" cy="702" rx="132" ry="50" fill="url(#tubFace)" stroke="#a5aaae" stroke-width="2"/>
+    <ellipse cx="620" cy="700" rx="112" ry="42" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="3"/>
+    <ellipse cx="620" cy="700" rx="70" ry="26" fill="none" stroke="#a8adb1" stroke-opacity="0.7" stroke-width="2"/>
+    <path d="M445 700 L445 728 A175 66 0 0 0 795 728 L795 700" fill="none" stroke="#83888c" stroke-width="2.5"/>
+    <path d="M470 720 A175 66 0 0 0 560 758" fill="none" stroke="#ffffff" stroke-opacity="0.45" stroke-width="4"/>
+  </g>
+
+  <!-- mixing plate with a poured ribbon of silicone -->
+  <g>
+    <path d="M320 792 L320 806 A200 76 0 0 0 720 806 L720 792 Z" fill="url(#alu)"/>
+    <ellipse cx="520" cy="792" rx="200" ry="76" fill="url(#aluFace)" stroke="#5f666c" stroke-width="3"/>
+    <g fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2">
+      <ellipse cx="520" cy="792" rx="184" ry="70"/>
+      <ellipse cx="520" cy="792" rx="150" ry="57"/>
+      <ellipse cx="520" cy="792" rx="112" ry="43"/>
+      <ellipse cx="520" cy="792" rx="70" ry="27"/>
+    </g>
+    <path d="M320 792 L320 806 A200 76 0 0 0 720 806 L720 792" fill="none" stroke="#5f666c" stroke-width="2.5"/>
+    <g clip-path="url(#plateClip)">
+      <!-- self-levelling pour, glossy and translucent -->
+      <path d="M392 786 C404 754 452 740 512 744 C566 748 600 764 646 760 C676 758 690 772 676 788 C654 812 596 826 534 824 C474 822 424 812 400 802 C388 797 386 792 392 786 Z"
+            fill="#000000" opacity="0.16" transform="translate(6 8)"/>
+      <path d="M392 786 C404 754 452 740 512 744 C566 748 600 764 646 760 C676 758 690 772 676 788 C654 812 596 826 534 824 C474 822 424 812 400 802 C388 797 386 792 392 786 Z"
+            fill="url(#clearFluid)" stroke="#ffffff" stroke-opacity="0.55" stroke-width="3"/>
+      <path d="M414 776 C430 758 470 750 512 754 C556 758 590 772 634 768" fill="none" stroke="#ffffff" stroke-opacity="0.7" stroke-width="7"/>
+      <path d="M420 800 C468 814 560 818 616 806" fill="none" stroke="#ffffff" stroke-opacity="0.25" stroke-width="5"/>
+      <g fill="none" stroke="#ffffff" stroke-opacity="0.6" stroke-width="2.5">
+        <ellipse cx="466" cy="782" rx="13" ry="9"/>
+        <ellipse cx="524" cy="796" rx="9" ry="6"/>
+        <ellipse cx="580" cy="778" rx="11" ry="8"/>
+        <ellipse cx="616" cy="794" rx="7" ry="5"/>
+        <ellipse cx="500" cy="766" rx="6" ry="4"/>
+      </g>
+      <g fill="#ffffff" opacity="0.5">
+        <ellipse cx="462" cy="779" rx="4" ry="3"/>
+        <ellipse cx="576" cy="775" rx="3.5" ry="2.5"/>
+      </g>
+    </g>
+  </g>
+</svg>

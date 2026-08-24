@@ -1115,6 +1115,10 @@ export const changeNoticeOpenStatuses: (typeof changeNoticeStatus)[number][] = [
   "Implementation"
 ];
 
+export function isChangeNoticeOpen(status: string | null | undefined): boolean {
+  return changeNoticeOpenStatuses.some((s) => s === status);
+}
+
 // Locked once closed — Done (released, part of the audit trail) or Cancelled
 // (abandoned). Reopen a Cancelled CO to Draft to edit it again.
 export function isChangeNoticeLocked(

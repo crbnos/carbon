@@ -99,9 +99,12 @@ export function describeValueType(
 }
 
 /** Matches the auto-generated names `nextNodeName` hands out (`action_0`, `trigger_1`).
- * A name the user never changed carries no meaning, so callers fall back instead. */
+ * A name the user never changed carries no meaning, so callers fall back instead.
+ * `entity` is the old spelling of `compute` and stays here forever: a node's name is an
+ * identifier other nodes reference, so the rename left already-saved `entity_0` names
+ * alone. Drop it and every one of them starts rendering as "Entity 0". */
 const DEFAULT_NODE_NAME =
-  /^(trigger|action|condition|entity|lookup|filter)_\d+$/;
+  /^(trigger|action|condition|compute|entity|lookup|filter)_\d+$/;
 
 export function isDefaultNodeName(name: string): boolean {
   return DEFAULT_NODE_NAME.test(name);

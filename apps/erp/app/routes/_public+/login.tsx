@@ -11,6 +11,7 @@ import {
   RATE_LIMIT
 } from "@carbon/auth";
 import {
+  logAuthEvent,
   sendMagicLink,
   signInWithBypassEmail,
   verifyAuthSession
@@ -24,7 +25,7 @@ import {
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { sendVerificationCode } from "@carbon/auth/verification.server";
 import { Hidden, Input, Submit, ValidatedForm, validator } from "@carbon/form";
-import { Ratelimit, redis } from "@carbon/kv";
+import { AccountLockout, Ratelimit, redis } from "@carbon/kv";
 import {
   Alert,
   AlertDescription,
@@ -101,6 +102,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { success } = await ratelimit.limit(ip);
 
   if (!success) {
+    logAuthEvent("login_rate_limited", { ip });
     return data(
       error(null, "Rate limit exceeded"),
       await flash(request, error(null, "Rate limit exceeded"))
@@ -116,6 +118,29 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const { email, turnstileToken } = validation.data;
+
+  // Per-account lockout (NIST 800-171 3.1.8) — layered ON TOP of the IP limit
+  // above. Keyed by the normalized email so an attacker rotating IPs, or
+  // hammering one account to spam magic links / probe existence, is bounded per
+  // account. The reply is deliberately GENERIC (never reveals whether the
+  // account exists) to avoid user enumeration.
+  const lockout = new AccountLockout({ redis });
+  const LOCKED_MESSAGE =
+    "For your security, sign-in for this account is temporarily paused. Please try again later.";
+
+  const lockStatus = await lockout.status(email);
+  if (lockStatus.locked) {
+    logAuthEvent("login_locked", {
+      actor: email,
+      ip,
+      reason: "account temporarily locked",
+      retryAfterSeconds: lockStatus.retryAfterSeconds
+    });
+    return data(
+      { success: false, message: LOCKED_MESSAGE },
+      await flash(request, error(null, LOCKED_MESSAGE))
+    );
+  }
 
   if (
     CarbonEdition === Edition.Cloud &&
@@ -148,6 +173,23 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
+  // Count this attempt against the account. If it tips the account past the
+  // window's allowance, an exponential-backoff lock engages now and we reject
+  // this request with the same generic message.
+  const attempt = await lockout.recordFailure(email);
+  if (attempt.locked) {
+    logAuthEvent("login_locked", {
+      actor: email,
+      ip,
+      reason: "account temporarily locked",
+      retryAfterSeconds: attempt.retryAfterSeconds
+    });
+    return data(
+      { success: false, message: LOCKED_MESSAGE },
+      await flash(request, error(null, LOCKED_MESSAGE))
+    );
+  }
+
   const user = await getUserByEmail(email);
 
   const devBypassEmail = process.env.DEV_BYPASS_EMAIL;
@@ -158,6 +200,9 @@ export async function action({ request }: ActionFunctionArgs) {
   ) {
     const authSession = await signInWithBypassEmail(email);
     if (authSession) {
+      // Genuine completed login — clear any accumulated lockout state.
+      await lockout.reset(email);
+      logAuthEvent("login_success", { actor: email, ip, method: "bypass" });
       const sessionCookie = await setAuthSession(request, { authSession });
       return redirect(path.to.authenticatedRoot, {
         headers: [["Set-Cookie", sessionCookie]]
@@ -169,13 +214,24 @@ export async function action({ request }: ActionFunctionArgs) {
     const magicLink = await sendMagicLink(email);
 
     if (magicLink.error) {
+      logAuthEvent("login_failed", {
+        actor: email,
+        ip,
+        reason: "magic link send failed"
+      });
       return data(
         error(magicLink, "Failed to send magic link"),
         await flash(request, error(magicLink, "Failed to send magic link"))
       );
     }
+    logAuthEvent("magic_link_sent", { actor: email, ip });
     return { success: true, mode: "login" };
   } else if (CarbonEdition === Edition.Enterprise) {
+    logAuthEvent("login_failed", {
+      actor: email,
+      ip,
+      reason: "user record not found"
+    });
     return data(
       { success: false, message: "User record not found" },
       await flash(request, error(null, "Failed to sign in"))

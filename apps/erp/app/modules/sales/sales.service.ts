@@ -26,6 +26,7 @@ import type {
 } from "../shared";
 import { normalizeOperationSourceIds } from "../shared";
 import {
+  getModelByItemId,
   lookupBuyPriceFromMap,
   upsertExternalLink
 } from "../shared/shared.service";
@@ -570,34 +571,42 @@ export async function getConfigurationParametersByQuoteLineId(
 
 export async function getCustomer(
   client: SupabaseClient<Database>,
-  customerId: string
+  customerId: string,
+  companyId?: string
 ) {
-  return client.from("customers").select("*").eq("id", customerId).single();
+  let query = client.from("customers").select("*").eq("id", customerId);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query.single();
 }
 
 export async function getCustomerContact(
   client: SupabaseClient<Database>,
-  customerContactId: string
+  customerContactId: string,
+  companyId?: string
 ) {
-  return client
+  let query = client
     .from("customerContact")
     .select(
       "*, contact(id, firstName, lastName, email, mobilePhone, homePhone, workPhone, fax, title, notes)"
     )
-    .eq("id", customerContactId)
-    .single();
+    .eq("id", customerContactId);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query.single();
 }
 
 export async function getCustomerContacts(
   client: SupabaseClient<Database>,
-  customerId: string
+  customerId: string,
+  companyId?: string
 ) {
-  return client
+  let query = client
     .from("customerContact")
     .select(
       "*, contact(id, fullName, firstName, lastName, email, mobilePhone, homePhone, workPhone, fax, title, notes), user(id, active)"
     )
     .eq("customerId", customerId);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query;
 }
 
 export async function getCustomerItemPriceOverride(
@@ -625,60 +634,71 @@ export async function getCustomerItemPriceOverride(
 
 export async function getCustomerLocation(
   client: SupabaseClient<Database>,
-  customerLocationId: string
+  customerLocationId: string,
+  companyId?: string
 ) {
-  return client
+  let query = client
     .from("customerLocation")
     .select(
       "*, address(id, addressLine1, addressLine2, city, stateProvince, countryCode, country(alpha2, name), postalCode)"
     )
-    .eq("id", customerLocationId)
-    .single();
+    .eq("id", customerLocationId);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query.single();
 }
 
 export async function getCustomerLocations(
   client: SupabaseClient<Database>,
-  customerId: string
+  customerId: string,
+  companyId?: string
 ) {
-  return client
+  let query = client
     .from("customerLocation")
     .select(
       "*, address(id, addressLine1, addressLine2, city, stateProvince, country(alpha2, name), postalCode)"
     )
     .eq("customerId", customerId);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query;
 }
 
 export async function getCustomerPayment(
   client: SupabaseClient<Database>,
-  customerId: string
+  customerId: string,
+  companyId?: string
 ) {
-  return client
+  let query = client
     .from("customerPayment")
     .select("*")
-    .eq("customerId", customerId)
-    .single();
+    .eq("customerId", customerId);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query.single();
 }
 
 export async function getCustomerShipping(
   client: SupabaseClient<Database>,
-  customerId: string
+  customerId: string,
+  companyId?: string
 ) {
-  return client
+  let query = client
     .from("customerShipping")
     .select("*")
-    .eq("customerId", customerId)
-    .single();
+    .eq("customerId", customerId);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query.single();
 }
 
 export async function getCustomerTax(
   client: SupabaseClient<Database>,
-  customerId: string
+  customerId: string,
+  companyId?: string
 ) {
-  return client
+  let query = client
     .from("customerTax")
     .select("*")
-    .eq("customerId", customerId)
-    .single();
+    .eq("customerId", customerId);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query.single();
 }
 
 export async function getCustomerTypeItemPriceOverride(
@@ -958,39 +978,7 @@ export async function getModelByQuoteLineId(
 
   if (!quoteLine.data) return null;
 
-  const item = await client
-    .from("item")
-    .select("id, type, modelUploadId")
-    .eq("id", quoteLine.data.itemId)
-    .single();
-
-  if (!item.data || !item.data.modelUploadId) {
-    return {
-      itemId: item.data?.id ?? null,
-      type: item.data?.type ?? null,
-      modelPath: null
-    };
-  }
-
-  const model = await client
-    .from("modelUpload")
-    .select("*")
-    .eq("id", item.data.modelUploadId)
-    .maybeSingle();
-
-  if (!model.data) {
-    return {
-      itemId: item.data?.id ?? null,
-      type: item.data?.type ?? null,
-      modelSize: null
-    };
-  }
-
-  return {
-    itemId: item.data!.id,
-    type: item.data!.type,
-    ...model.data
-  };
+  return getModelByItemId(client, quoteLine.data.itemId);
 }
 
 export async function getNoQuoteReasonsList(

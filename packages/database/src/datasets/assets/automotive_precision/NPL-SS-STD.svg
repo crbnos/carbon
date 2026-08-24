@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="plate" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="hole" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#2b3135"/>
+      <stop offset="1" stop-color="#565d63"/>
+    </linearGradient>
+    <clipPath id="faceClip">
+      <rect x="127" y="300" width="760" height="420" rx="30"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="512" cy="770" rx="400" ry="88" fill="url(#shadow)"/>
+
+  <!-- sheet thickness, seen from slightly above and to the right -->
+  <rect x="137" y="293" width="760" height="420" rx="30" fill="url(#edge)" stroke="#494f54" stroke-width="2.5"/>
+  <!-- blank stainless face: brushed the long way, no marking of any kind -->
+  <rect x="127" y="300" width="760" height="420" rx="30" fill="url(#plate)" stroke="#494f54" stroke-width="3"/>
+  <g clip-path="url(#faceClip)">
+    <g stroke="#ffffff" stroke-opacity="0.09" stroke-width="1.6" fill="none">
+      <path d="M127 305 L887 303.5"/>
+      <path d="M127 310 L887 308.5"/>
+      <path d="M127 320 L887 318.5"/>
+      <path d="M127 325 L887 323.5"/>
+      <path d="M127 335 L887 333.5"/>
+      <path d="M127 340 L887 338.5"/>
+      <path d="M127 350 L887 348.5"/>
+      <path d="M127 355 L887 353.5"/>
+      <path d="M127 365 L887 363.5"/>
+      <path d="M127 370 L887 368.5"/>
+      <path d="M127 380 L887 378.5"/>
+      <path d="M127 385 L887 383.5"/>
+      <path d="M127 395 L887 393.5"/>
+      <path d="M127 400 L887 398.5"/>
+      <path d="M127 410 L887 408.5"/>
+      <path d="M127 415 L887 413.5"/>
+      <path d="M127 425 L887 423.5"/>
+      <path d="M127 430 L887 428.5"/>
+      <path d="M127 440 L887 438.5"/>
+      <path d="M127 445 L887 443.5"/>
+      <path d="M127 455 L887 453.5"/>
+      <path d="M127 460 L887 458.5"/>
+      <path d="M127 470 L887 468.5"/>
+      <path d="M127 475 L887 473.5"/>
+      <path d="M127 485 L887 483.5"/>
+      <path d="M127 490 L887 488.5"/>
+      <path d="M127 500 L887 498.5"/>
+      <path d="M127 505 L887 503.5"/>
+      <path d="M127 515 L887 513.5"/>
+      <path d="M127 520 L887 518.5"/>
+      <path d="M127 530 L887 528.5"/>
+      <path d="M127 535 L887 533.5"/>
+      <path d="M127 545 L887 543.5"/>
+      <path d="M127 550 L887 548.5"/>
+      <path d="M127 560 L887 558.5"/>
+      <path d="M127 565 L887 563.5"/>
+      <path d="M127 575 L887 573.5"/>
+      <path d="M127 580 L887 578.5"/>
+      <path d="M127 590 L887 588.5"/>
+      <path d="M127 595 L887 593.5"/>
+      <path d="M127 605 L887 603.5"/>
+      <path d="M127 610 L887 608.5"/>
+      <path d="M127 620 L887 618.5"/>
+      <path d="M127 625 L887 623.5"/>
+      <path d="M127 635 L887 633.5"/>
+      <path d="M127 640 L887 638.5"/>
+      <path d="M127 650 L887 648.5"/>
+      <path d="M127 655 L887 653.5"/>
+      <path d="M127 665 L887 663.5"/>
+      <path d="M127 670 L887 668.5"/>
+      <path d="M127 680 L887 678.5"/>
+      <path d="M127 685 L887 683.5"/>
+      <path d="M127 695 L887 693.5"/>
+      <path d="M127 700 L887 698.5"/>
+      <path d="M127 710 L887 708.5"/>
+      <path d="M127 715 L887 713.5"/>
+    </g>
+    <g stroke="#3d4348" stroke-opacity="0.16" stroke-width="1.4" fill="none">
+      <path d="M127 308 L887 306.5"/>
+      <path d="M127 328 L887 326.5"/>
+      <path d="M127 348 L887 346.5"/>
+      <path d="M127 368 L887 366.5"/>
+      <path d="M127 388 L887 386.5"/>
+      <path d="M127 408 L887 406.5"/>
+      <path d="M127 428 L887 426.5"/>
+      <path d="M127 448 L887 446.5"/>
+      <path d="M127 468 L887 466.5"/>
+      <path d="M127 488 L887 486.5"/>
+      <path d="M127 508 L887 506.5"/>
+      <path d="M127 528 L887 526.5"/>
+      <path d="M127 548 L887 546.5"/>
+      <path d="M127 568 L887 566.5"/>
+      <path d="M127 588 L887 586.5"/>
+      <path d="M127 608 L887 606.5"/>
+      <path d="M127 628 L887 626.5"/>
+      <path d="M127 648 L887 646.5"/>
+      <path d="M127 668 L887 666.5"/>
+      <path d="M127 688 L887 686.5"/>
+      <path d="M127 708 L887 706.5"/>
+    </g>
+    <path d="M127 300 L427 300 L257 720 L127 720 Z" fill="#ffffff" opacity="0.07"/>
+  </g>
+
+  <rect x="135" y="308" width="744" height="404" rx="22" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="2.5"/>
+  <!-- shallow embossed border rib -->
+  <rect x="178" y="351" width="664" height="324" rx="22" fill="none" stroke="#000000" stroke-opacity="0.22" stroke-width="5"/>
+  <rect x="173" y="346" width="664" height="324" rx="22" fill="none" stroke="#ffffff" stroke-opacity="0.30" stroke-width="4"/>
+  <rect x="175" y="348" width="664" height="324" rx="22" fill="none" stroke="#8f979d" stroke-opacity="0.55" stroke-width="2"/>
+
+  <!-- four punched holes, rolled edge from the die -->
+  <g>
+    <circle cx="205" cy="378" r="29" fill="none" stroke="#000000" stroke-opacity="0.16" stroke-width="7"/>
+    <circle cx="203" cy="376" r="27" fill="none" stroke="#ffffff" stroke-opacity="0.26" stroke-width="4"/>
+    <circle cx="205" cy="378" r="20" fill="url(#hole)" stroke="#3a4045" stroke-width="2.5"/>
+    <circle cx="207" cy="380" r="14" fill="#3a4045" opacity="0.7"/>
+  </g>
+  <g>
+    <circle cx="809" cy="378" r="29" fill="none" stroke="#000000" stroke-opacity="0.16" stroke-width="7"/>
+    <circle cx="807" cy="376" r="27" fill="none" stroke="#ffffff" stroke-opacity="0.26" stroke-width="4"/>
+    <circle cx="809" cy="378" r="20" fill="url(#hole)" stroke="#3a4045" stroke-width="2.5"/>
+    <circle cx="811" cy="380" r="14" fill="#3a4045" opacity="0.7"/>
+  </g>
+  <g>
+    <circle cx="205" cy="642" r="29" fill="none" stroke="#000000" stroke-opacity="0.16" stroke-width="7"/>
+    <circle cx="203" cy="640" r="27" fill="none" stroke="#ffffff" stroke-opacity="0.26" stroke-width="4"/>
+    <circle cx="205" cy="642" r="20" fill="url(#hole)" stroke="#3a4045" stroke-width="2.5"/>
+    <circle cx="207" cy="644" r="14" fill="#3a4045" opacity="0.7"/>
+  </g>
+  <g>
+    <circle cx="809" cy="642" r="29" fill="none" stroke="#000000" stroke-opacity="0.16" stroke-width="7"/>
+    <circle cx="807" cy="640" r="27" fill="none" stroke="#ffffff" stroke-opacity="0.26" stroke-width="4"/>
+    <circle cx="809" cy="642" r="20" fill="url(#hole)" stroke="#3a4045" stroke-width="2.5"/>
+    <circle cx="811" cy="644" r="14" fill="#3a4045" opacity="0.7"/>
+  </g>
+</svg>

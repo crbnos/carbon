@@ -114,7 +114,7 @@ export default function ServiceMakeMethodPage() {
   }>(path.to.service(itemId));
 
   return (
-    <VStack spacing={2} className="p-2">
+    <VStack spacing={4} className="p-4">
       <Suspense fallback={<Menubar />}>
         <Await resolve={makeMethods}>
           {(makeMethods) => (
@@ -128,14 +128,6 @@ export default function ServiceMakeMethodPage() {
         </Await>
       </Suspense>
 
-      <BillOfMaterial
-        key={`bom:${makeMethodId}`}
-        makeMethod={makeMethod}
-        // @ts-expect-error TS2322 - TODO: fix type
-        materials={methodMaterials}
-        operations={methodOperations}
-        replenishmentSystem={serviceData?.serviceSummary?.replenishmentSystem}
-      />
       <BillOfProcess
         key={`bop:${makeMethodId}`}
         makeMethod={makeMethod}
@@ -143,6 +135,14 @@ export default function ServiceMakeMethodPage() {
         // @ts-expect-error
         operations={methodOperations}
         tags={tags}
+      />
+      <BillOfMaterial
+        key={`bom:${makeMethodId}`}
+        makeMethod={makeMethod}
+        // @ts-expect-error TS2322 - TODO: fix type
+        materials={methodMaterials}
+        operations={methodOperations}
+        replenishmentSystem={serviceData?.serviceSummary?.replenishmentSystem}
       />
     </VStack>
   );

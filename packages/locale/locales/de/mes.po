@@ -444,6 +444,9 @@ msgstr "PIN für {0} eingeben"
 msgid "Enter the 6-digit code from your authenticator app"
 msgstr "Geben Sie den 6-stelligen Code aus Ihrer Authentifizierungs-App ein"
 
+msgid "Enter the 6-digit code from your authenticator app to resume."
+msgstr "Geben Sie den 6-stelligen Code aus Ihrer Authenticator-App ein, um fortzufahren."
+
 msgid "Error"
 msgstr "Fehler"
 
@@ -957,6 +960,9 @@ msgstr "Vom Bediener durchgeführt"
 msgid "Optional"
 msgstr "Optional"
 
+msgid "or"
+msgstr "oder"
+
 msgid "Overall result"
 msgstr "Gesamtergebnis"
 
@@ -977,6 +983,9 @@ msgstr "Teilweise Disposition"
 
 msgid "Passed Inspection"
 msgstr "Prüfung bestanden"
+
+msgid "Passkey unlock failed"
+msgstr "Passkey-Entsperrung fehlgeschlagen"
 
 msgid "Pause"
 msgstr "Pause"
@@ -1258,6 +1267,9 @@ msgstr "Seriennummern"
 msgid "Serial Numbers"
 msgstr "Seriennummern"
 
+msgid "Session locked"
+msgstr "Sitzung gesperrt"
+
 msgid "Set Clock Out"
 msgstr "Ausstempelzeit setzen"
 
@@ -1296,6 +1308,9 @@ msgstr "Abmelden"
 
 msgid "Sign Out"
 msgstr "Abmelden"
+
+msgid "Sign out instead"
+msgstr "Stattdessen abmelden"
 
 msgid "Signed in as {stationName}"
 msgstr "Angemeldet als {stationName}"
@@ -1436,11 +1451,20 @@ msgstr "Zwei-Faktor-Authentifizierung erforderlich"
 msgid "Type a message..."
 msgstr "Nachricht eingeben..."
 
+msgid "Unable to unlock"
+msgstr "Entsperrung nicht möglich"
+
 msgid "Unissued serial/batch materials"
 msgstr "Nicht ausgegebene Serien-/Chargenmaterialien"
 
 msgid "Unknown"
 msgstr "Unbekannt"
+
+msgid "Unlock"
+msgstr "Entsperren"
+
+msgid "Unlock with passkey"
+msgstr "Mit Passkey entsperren"
 
 msgid "Unpick"
 msgstr "Entfernen"
@@ -1518,3 +1542,6 @@ msgstr "Sie sind seit {hoursElapsed} Stunden eingestempelt. Haben Sie vergessen 
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Ihre Organisation erfordert eine Authentifizierungs-App. Richten Sie sie in Carbon ein und kommen Sie dann hierher zurück."
+
+msgid "Your session was locked after inactivity."
+msgstr "Ihre Sitzung wurde nach Inaktivität gesperrt."

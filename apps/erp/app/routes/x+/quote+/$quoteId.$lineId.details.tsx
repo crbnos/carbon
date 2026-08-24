@@ -369,14 +369,6 @@ export default function QuoteLine() {
 
       {methodData && (
         <VStack spacing={2}>
-          <QuoteBillOfMaterial
-            key={`bom:${methodData.rootMethodId}`}
-            quoteMakeMethodId={methodData.rootMethodId}
-            // @ts-ignore
-            materials={methodData.methodMaterials}
-            // @ts-expect-error
-            operations={methodData.methodOperations}
-          />
           <QuoteBillOfProcess
             key={`bop:${methodData.rootMethodId}`}
             quoteMakeMethodId={methodData.rootMethodId}
@@ -384,6 +376,14 @@ export default function QuoteLine() {
             // @ts-expect-error
             operations={methodData.methodOperations}
             tags={methodData.tags ?? []}
+          />
+          <QuoteBillOfMaterial
+            key={`bom:${methodData.rootMethodId}`}
+            quoteMakeMethodId={methodData.rootMethodId}
+            // @ts-ignore
+            materials={methodData.methodMaterials}
+            // @ts-expect-error
+            operations={methodData.methodOperations}
           />
         </VStack>
       )}
@@ -459,7 +459,7 @@ export default function QuoteLine() {
                   quoteLineId: lineId ?? undefined,
                   itemId: model?.itemId ?? undefined
                 }}
-                modelPath={model?.modelPath ?? null}
+                modelUpload={model ?? null}
                 title={t`CAD Model`}
                 uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
                 viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
@@ -474,7 +474,7 @@ export default function QuoteLine() {
             quoteLineId: line.id ?? undefined,
             itemId: line.itemId ?? undefined
           }}
-          modelPath={line?.modelPath ?? null}
+          modelUpload={line ?? null}
           title="CAD Model"
           uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
           viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"

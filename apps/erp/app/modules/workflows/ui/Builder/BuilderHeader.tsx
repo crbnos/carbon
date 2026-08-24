@@ -136,7 +136,11 @@ export function BuilderHeader({
   const { t } = useLingui();
   const permissions = usePermissions();
   const store = useBuilderStoreApi();
-  const isReadOnly = useBuilderStore((state) => state.isReadOnly);
+  // The lock glyph means "this is the live version"; the tooltip below distinguishes
+  // that from simply lacking permission.
+  const isVersionLocked = useBuilderStore((state) => state.isVersionLocked);
+  const canEdit = useBuilderStore((state) => state.canEdit);
+  const isReadOnly = isVersionLocked || !canEdit;
 
   const publishFetcher = useFetcher<{
     ok?: boolean;

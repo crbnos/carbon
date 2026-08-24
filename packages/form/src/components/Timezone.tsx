@@ -1,5 +1,6 @@
 import {
   getTimezoneAbbreviations,
+  getTimezoneDisplayName,
   getTimezones,
   type TimezoneGroup
 } from "@carbon/utils";
@@ -17,30 +18,36 @@ type TimezoneProps = Omit<ComboboxProps, "options"> & {
 };
 
 /**
- * Searchable timezone picker. Options are flattened to full IANA names with
- * their colloquial abbreviations and current offset —
- * "America/Chicago (CST/CDT, -06:00)" — so search matches by city, region,
- * offset, or the abbreviation people actually type (CST, EST, IST, …). The
- * offset is relative to UTC by definition, so no "UTC" prefix.
+ * One line per zone: "America/New York (GMT-04:00)". `keywords` is searched but
+ * never rendered, so "eastern time", "EST" and "asia kolkata" all find a zone.
  */
 const Timezone = ({ options, ...props }: TimezoneProps) => {
   const flatOptions = useMemo(() => {
     const groups = options?.length ? options : getTimezones();
-    return groups.flatMap((group) =>
-      group.options.map((option) => {
-        const offset = /[+-]\d{2}:\d{2}/.exec(option.label)?.[0];
-        const abbreviations = getTimezoneAbbreviations(option.value)
-          .filter((a) => a !== option.value)
-          .join("/");
-        const detail = [abbreviations, offset].filter(Boolean).join(", ");
-        return {
-          value: option.value,
-          label: `${option.value.replace(/_/g, " ")}${
-            detail ? ` (${detail})` : ""
-          }`
-        };
-      })
-    );
+    return groups
+      .flatMap((group) =>
+        group.options.map((option) => {
+          const offset = /[+-]\d{2}:\d{2}/.exec(option.label)?.[0];
+          const abbreviations = getTimezoneAbbreviations(option.value)
+            .filter((a) => a !== option.value)
+            .join(" ");
+          return {
+            value: option.value,
+            label: `${option.value.replace(/_/g, " ")}${
+              offset ? ` (GMT${offset})` : ""
+            }`,
+            keywords: [
+              option.value,
+              option.value.replace(/[/_]+/g, " "),
+              getTimezoneDisplayName(option.value),
+              abbreviations
+            ]
+              .filter(Boolean)
+              .join(" ")
+          };
+        })
+      )
+      .sort((a, b) => a.label.localeCompare(b.label));
   }, [options]);
 
   return <Combobox {...props} options={flatOptions} />;

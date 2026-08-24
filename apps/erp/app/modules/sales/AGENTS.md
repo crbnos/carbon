@@ -6,6 +6,7 @@ Quotes (with cost rollup and pricing), sales orders, sales RFQs, customer manage
 
 - **Opportunity** — deal container linking RFQs, quotes, and sales orders for one customer engagement.
 - **Quote** — detailed cost estimate with line items, each having a make method (BOM + routing) and quantity-break pricing. Statuses: Draft → Pending → Sent → Ordered / Lost / Cancelled.
+- **Quote Revision** — `quote.revisionId`. Unlike a PO (amended in place), a quote revision is a **new `quote` row** created by `copyQuote` → the `get-method` edge function (`quoteToQuote`, `asRevision: true`), keeping the same `quoteId` with `revisionId = max + 1`, sharing the source `opportunityId`. Each revision gets its **own `externalLink`** row, whose `documentId` is revision-qualified (`Q000001-1`) because `externalLink` is UNIQUE on `(documentId, documentType, companyId)` — an unqualified id collides with the original's link. `deleteQuote` does not remove the link row, so that insert uses `onConflict … doUpdateSet` to reuse the orphan a deleted revision left behind. Displayed as `Q000001-1` when > 0 via `getQuoteDisplayId` (`@carbon/documents/utils`) on the PDF, email, share page, and filenames; two-tone in-app rendering uses `<RevisionSuffix>` (`~/components`).
 - **Quote Line Pricing** — per-quantity-break pricing. PK is `(quoteLineId, quantity)` — no `id` column. `discountPercent` is a **fraction 0–1** (not 0–100). Generated columns compute net/converted prices.
 - **Pricing Rules** — company-scoped Discount/Markup rules. Discounts are non-stacking (highest-priority wins); Markups stack and compound in priority order.
 - **Price Overrides** — customer-specific or type-specific price overrides with quantity breaks via `customerItemPriceOverride` / `customerItemPriceOverrideBreak`. Precedence: customer > customer-type > all-customers > base price.
@@ -33,8 +34,10 @@ Quotes (with cost rollup and pricing), sales orders, sales RFQs, customer manage
 ## Validation Commands
 
 ```bash
-pnpm --filter @carbon/erp typecheck
-pnpm --filter @carbon/erp test -- --testPathPattern=sales
+# The app's package name is "erp" — there is no "@carbon/erp" workspace.
+pnpm exec turbo run typecheck --filter=erp
+# apps/erp has no `test` script; run vitest from the app directory.
+cd apps/erp && pnpm exec vitest run app/modules/sales
 ```
 
 ## Key Data Model

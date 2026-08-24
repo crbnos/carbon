@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="odBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="ringTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#eef1f3"/>
+      <stop offset="0.35" stop-color="#c3c9cd"/>
+      <stop offset="0.72" stop-color="#8f979d"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="innerTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#e6eaed"/>
+      <stop offset="0.4" stop-color="#b6bdc3"/>
+      <stop offset="1" stop-color="#666c72"/>
+    </linearGradient>
+    <linearGradient id="cavity" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#4d5359"/>
+      <stop offset="0.45" stop-color="#31363b"/>
+      <stop offset="1" stop-color="#1d2124"/>
+    </linearGradient>
+    <linearGradient id="boreWall" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#3f454a"/>
+      <stop offset="0.3" stop-color="#8d949a"/>
+      <stop offset="0.55" stop-color="#a9b0b6"/>
+      <stop offset="0.8" stop-color="#6b7278"/>
+      <stop offset="1" stop-color="#383d42"/>
+    </linearGradient>
+    <radialGradient id="ballG" cx="0.34" cy="0.28" r="0.78">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.22" stop-color="#e3e9ed"/>
+      <stop offset="0.55" stop-color="#9aa2a9"/>
+      <stop offset="0.82" stop-color="#5b6167"/>
+      <stop offset="1" stop-color="#3c4247"/>
+    </radialGradient>
+    <linearGradient id="cageG" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#b8bfc4"/>
+      <stop offset="0.5" stop-color="#868d93"/>
+      <stop offset="1" stop-color="#565c62"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="512" cy="690" rx="462" ry="102" fill="url(#shadow)"/>
+
+  <!-- outer diameter barrel, narrow width -->
+  <path d="M110 449 A 402 153 0 0 0 914 449 L 914 549 A 402 153 0 0 1 110 549 Z"
+        fill="url(#odBarrel)" stroke="#464c51" stroke-width="3"/>
+  <path d="M110 449 A 402 153 0 0 0 914 449 L 914 549 A 402 153 0 0 1 110 549 Z"
+        fill="#3f6f9e" fill-opacity="0.16"/>
+  <!-- OD chamfer breaks -->
+  <path d="M120 462 A 392 149 0 0 0 904 462" fill="none" stroke="#ffffff" stroke-opacity="0.30" stroke-width="3"/>
+  <path d="M120 536 A 392 149 0 0 0 904 536" fill="none" stroke="#2f353a" stroke-opacity="0.35" stroke-width="3"/>
+  <path d="M116 500 A 398 151 0 0 0 908 500" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="10"/>
+
+  <!-- ball cavity, open on both faces -->
+  <path d="M150 449 A 362 138 0 0 0 874 449 A 362 138 0 0 0 150 449 Z" fill="url(#cavity)"/>
+  <ellipse cx="512" cy="449" rx="362" ry="138" fill="url(#cavity)" stroke="#2a2f33" stroke-width="2"/>
+  <!-- lapped raceway arcs -->
+  <g stroke="#ffffff" stroke-opacity="0.16" stroke-width="2" fill="none">
+    <ellipse cx="512" cy="452" rx="352" ry="134"/>
+    <ellipse cx="512" cy="454" rx="340" ry="129"/>
+    <ellipse cx="512" cy="456" rx="306" ry="117"/>
+  </g>
+  <!-- light oil sheen in the groove -->
+  <path d="M200 400 A 362 138 0 0 1 700 349" fill="none" stroke="#dfe9ef" stroke-opacity="0.20" stroke-width="9"/>
+
+  <!-- stamped ribbon cage -->
+  <ellipse cx="512" cy="479" rx="328" ry="125" fill="none" stroke="url(#cageG)" stroke-width="26" stroke-opacity="0.92"/>
+  <ellipse cx="512" cy="479" rx="328" ry="125" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="4"/>
+
+  <!-- far balls -->
+  <g stroke="#3c4247" stroke-width="2">
+    <circle cx="227.9" cy="416.5" r="34" fill="url(#ballG)"/>
+    <circle cx="399.8" cy="361.5" r="34" fill="url(#ballG)"/>
+    <circle cx="624.2" cy="361.5" r="34" fill="url(#ballG)"/>
+    <circle cx="796.1" cy="416.5" r="34" fill="url(#ballG)"/>
+  </g>
+
+  <!-- inner ring top face -->
+  <path d="M218 449 A 294 112 0 0 0 806 449 A 294 112 0 0 0 218 449 Z" fill="url(#innerTop)"/>
+  <ellipse cx="512" cy="449" rx="294" ry="112" fill="url(#innerTop)" stroke="#565c62" stroke-width="2"/>
+  <g stroke="#ffffff" stroke-opacity="0.18" stroke-width="2" fill="none">
+    <ellipse cx="512" cy="449" rx="282" ry="107"/>
+    <ellipse cx="512" cy="449" rx="264" ry="100"/>
+  </g>
+
+  <!-- bore -->
+  <ellipse cx="512" cy="449" rx="250" ry="95" fill="#20252a" stroke="#4d5359" stroke-width="2"/>
+  <path d="M262 449 A 250 95 0 0 1 762 449 L 762 549 A 250 95 0 0 0 262 549 Z" fill="url(#boreWall)"/>
+  <path d="M262 549 A 250 95 0 0 0 762 549 A 250 95 0 0 0 262 549 Z" fill="#171b1e"/>
+  <path d="M282 549 A 250 95 0 0 0 742 549" fill="none" stroke="#1a1e21" stroke-width="3" opacity="0.7"/>
+  <ellipse cx="512" cy="449" rx="250" ry="95" fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="3"/>
+
+  <!-- near balls -->
+  <g stroke="#3c4247" stroke-width="2">
+    <circle cx="188.9" cy="500.7" r="34" fill="url(#ballG)"/>
+    <circle cx="301.1" cy="574.8" r="34" fill="url(#ballG)"/>
+    <circle cx="512" cy="604" r="34" fill="url(#ballG)"/>
+    <circle cx="722.9" cy="574.8" r="34" fill="url(#ballG)"/>
+    <circle cx="835.1" cy="500.7" r="34" fill="url(#ballG)"/>
+  </g>
+
+  <!-- outer ring top face -->
+  <path d="M110 449 A 402 153 0 0 1 914 449 A 402 153 0 0 1 110 449 Z" fill="none"/>
+  <path d="M110 449 A 402 153 0 0 0 914 449 A 402 153 0 0 0 110 449 Z" fill="none"/>
+  <path d="M110 449 A 402 153 0 0 1 914 449 L 874 449 A 362 138 0 0 0 150 449 Z"
+        fill="url(#ringTop)" stroke="#4d5359" stroke-width="2"/>
+  <path d="M110 449 A 402 153 0 0 0 914 449 L 874 449 A 362 138 0 0 1 150 449 Z"
+        fill="url(#ringTop)" stroke="#4d5359" stroke-width="2"/>
+  <g stroke="#ffffff" stroke-opacity="0.18" stroke-width="2" fill="none">
+    <ellipse cx="512" cy="449" rx="392" ry="149"/>
+    <ellipse cx="512" cy="449" rx="372" ry="142"/>
+  </g>
+</svg>

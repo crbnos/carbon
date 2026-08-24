@@ -10,6 +10,7 @@ import {
   LuDatabase,
   LuFactory,
   LuFileText,
+  LuFlaskConical,
   LuHistory,
   LuImage,
   LuKey,
@@ -35,7 +36,10 @@ const internalOnlyRoutes = new Set<string>([path.to.companies]);
 
 // Internal-only in real deployments, but usable by anyone on a local dev stack —
 // mirrors `canAccessBackups`, which gates the route and the backup APIs.
-const localOrInternalRoutes = new Set<string>([path.to.backups]);
+const localOrInternalRoutes = new Set<string>([
+  path.to.backups,
+  path.to.demoData
+]);
 
 export default function useSettingsSubmodules() {
   const { t } = useLingui();
@@ -183,6 +187,12 @@ export default function useSettingsSubmodules() {
             to: path.to.customFields,
             role: "employee",
             icon: <LuLayoutDashboard />
+          },
+          {
+            name: t`Demo Data`,
+            to: path.to.demoData,
+            role: "employee",
+            icon: <LuFlaskConical />
           },
           {
             name: t`Integrations`,

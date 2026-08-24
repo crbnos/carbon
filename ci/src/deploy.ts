@@ -71,6 +71,7 @@ export type Workspace = {
   stripe_bypass_company_ids: string | null;
   stripe_secret_key: string | null;
   stripe_webhook_secret: string | null;
+  stripe_connect_webhook_secret: string | null;
   url_erp: string | null;
   url_mes: string | null;
   xero_client_id: string | null;
@@ -154,6 +155,7 @@ async function deploy(): Promise<void> {
         stripe_bypass_company_ids,
         stripe_secret_key,
         stripe_webhook_secret,
+        stripe_connect_webhook_secret,
         url_erp,
         url_mes,
         xero_client_id,
@@ -310,6 +312,8 @@ async function deploy(): Promise<void> {
           STRIPE_BYPASS_COMPANY_IDS: stripe_bypass_company_ids ?? undefined,
           STRIPE_SECRET_KEY: stripe_secret_key ?? undefined,
           STRIPE_WEBHOOK_SECRET: stripe_webhook_secret ?? undefined,
+          STRIPE_CONNECT_WEBHOOK_SECRET:
+            stripe_connect_webhook_secret ?? undefined,
           SUPABASE_ANON_KEY: anon_key,
           SUPABASE_DB_URL: database_connection_pooler_url,
           SUPABASE_JWT_SECRET: jwt_secret ?? undefined,

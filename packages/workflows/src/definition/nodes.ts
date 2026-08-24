@@ -3,9 +3,9 @@ import type { CatalogInput, WorkflowCatalog } from "./catalog";
 import type { WorkflowIssue } from "./issues";
 import {
   type ActionNode,
+  type ComputeNode,
   DEFAULT_HANDLE,
   DEFAULT_OUTPUT,
-  type EntityNode,
   FAILURE_HANDLE,
   type FilterNode,
   SUCCESS_HANDLE,
@@ -127,9 +127,9 @@ function filterLoopList(node: FilterNode, ctx: NodeContext): LoopList {
 }
 
 /** The first operation input wired to a list where the operation expects a single value.
- * When set, the entity node runs the operation once per list item and returns a list. */
-function entityBatchInput(
-  node: EntityNode,
+ * When set, the compute node runs the operation once per list item and returns a list. */
+function computeBatchInput(
+  node: ComputeNode,
   ctx: NodeContext
 ): string | undefined {
   const operation = ctx.catalog.getOperation(node.data.operation);
@@ -352,18 +352,22 @@ function checkInputs(
       });
     }
 
-    if (
-      declaration.choices !== undefined &&
-      supplied.kind === "literal" &&
-      typeof supplied.value === "string" &&
-      !declaration.choices.includes(supplied.value)
-    ) {
-      issues.push({
-        code: "INCOMPLETE_CONFIG",
-        message: `"${supplied.value}" is not a valid ${name}.`,
-        nodeId: node.id,
-        field: `inputs.${name}`
-      });
+    if (declaration.choices !== undefined && supplied.kind === "literal") {
+      // A multi-select stores a list, so every member has to be checked — a single
+      // string test would wave the whole array through unread.
+      const picked = Array.isArray(supplied.value)
+        ? supplied.value
+        : [supplied.value];
+      for (const value of picked) {
+        if (typeof value !== "string") continue;
+        if (declaration.choices.includes(value)) continue;
+        issues.push({
+          code: "INCOMPLETE_CONFIG",
+          message: `"${value}" is not a valid ${name}.`,
+          nodeId: node.id,
+          field: `inputs.${name}`
+        });
+      }
     }
   }
 
@@ -458,13 +462,13 @@ export const NODE_KINDS: {
     }
   },
 
-  entity: {
+  compute: {
     handles: () => [DEFAULT_HANDLE],
     values: (node) => inputValues(node.data.inputs),
     outputs: (node, ctx) => {
       const operation = ctx.catalog.getOperation(node.data.operation);
       if (operation === undefined) return undefined;
-      const batchInput = entityBatchInput(node, ctx);
+      const batchInput = computeBatchInput(node, ctx);
       if (batchInput !== undefined && operation.output.kind !== "list") {
         return {
           [DEFAULT_OUTPUT]: { kind: "list", of: operation.output as ScalarType }
@@ -475,7 +479,7 @@ export const NODE_KINDS: {
     loopList: (node, ctx) => {
       const operation = ctx.catalog.getOperation(node.data.operation);
       if (operation === undefined) return { failure: "unconfigured" };
-      const batchInput = entityBatchInput(node, ctx);
+      const batchInput = computeBatchInput(node, ctx);
       if (batchInput === undefined || operation.output.kind === "list")
         return undefined;
       return { type: { kind: "list", of: operation.output as ScalarType } };
@@ -485,7 +489,7 @@ export const NODE_KINDS: {
     checkTypes: (node, ctx) => {
       const operation = ctx.catalog.getOperation(node.data.operation);
       if (operation === undefined) return [];
-      const batchInput = entityBatchInput(node, ctx);
+      const batchInput = computeBatchInput(node, ctx);
       return checkInputs(
         node,
         node.data.inputs,

@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-24T10:49:18.607Z",
-  "totalTools": 1450,
+  "generated": "2026-08-24T11:23:37.877Z",
+  "totalTools": 1451,
   "modules": 15,
   "tools": [
     {
@@ -370,7 +370,7 @@
       "module": "accounting",
       "classification": "READ",
       "description": "get account ledger",
-      "paramCount": 5,
+      "paramCount": 6,
       "serviceParams": [
         "client",
         "args"
@@ -383,6 +383,12 @@
         "properties": {
           "accountId": {
             "type": "string"
+          },
+          "companyIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "startDate": {
             "type": [
@@ -610,13 +616,16 @@
       "module": "accounting",
       "classification": "READ",
       "description": "get consolidated period series",
-      "paramCount": 3,
+      "paramCount": 6,
       "serviceParams": [
         "client",
         "companyGroupId",
         "companyIds",
         "targetCurrency",
-        "args"
+        "args",
+        "// Privileged (service-role) client used ONLY to read elimination entities.\n  // Those are synthetic consolidation companies that no user is a member of",
+        "so\n  // their ledger is invisible to the RLS-scoped `client` and their reversing\n  // entries would silently drop out of the consolidation (intercompany balances\n  // never eliminate). The route already authorized the user for this group",
+        "and\n  // reads stay scoped to `companyGroupId`. Operating companies still read via the\n  // RLS `client`. Defaults to `client` (no elimination visibility) when omitted.\n  eliminationClient"
       ],
       "injectAuth": [
         "companyId"
@@ -639,17 +648,26 @@
               "buckets": {
                 "type": "array",
                 "items": {}
+              },
+              "includeCurrentYearEarnings": {
+                "type": "boolean"
               }
             },
             "required": [
               "buckets"
             ]
-          }
+          },
+          "// Privileged (service-role) client used ONLY to read elimination entities.\n  // Those are synthetic consolidation companies that no user is a member of": {},
+          "so\n  // their ledger is invisible to the RLS-scoped `client` and their reversing\n  // entries would silently drop out of the consolidation (intercompany balances\n  // never eliminate). The route already authorized the user for this group": {},
+          "and\n  // reads stay scoped to `companyGroupId`. Operating companies still read via the\n  // RLS `client`. Defaults to `client` (no elimination visibility) when omitted.\n  eliminationClient": {}
         },
         "required": [
           "companyIds",
           "targetCurrency",
-          "args"
+          "args",
+          "// Privileged (service-role) client used ONLY to read elimination entities.\n  // Those are synthetic consolidation companies that no user is a member of",
+          "so\n  // their ledger is invisible to the RLS-scoped `client` and their reversing\n  // entries would silently drop out of the consolidation (intercompany balances\n  // never eliminate). The route already authorized the user for this group",
+          "and\n  // reads stay scoped to `companyGroupId`. Operating companies still read via the\n  // RLS `client`. Defaults to `client` (no elimination visibility) when omitted.\n  eliminationClient"
         ]
       }
     },
@@ -2942,14 +2960,15 @@
       "module": "accounting",
       "classification": "READ",
       "description": "get consolidated balances",
-      "paramCount": 4,
+      "paramCount": 5,
       "serviceParams": [
         "client",
         "companyGroupId",
         "companyIds",
         "targetCurrency",
         "periodEnd",
-        "periodStart"
+        "periodStart",
+        "// Privileged (service-role) client used ONLY for elimination entities — see\n  // getConsolidatedPeriodSeries. Without it their reversing entries are hidden by\n  // RLS and intercompany balances never eliminate. Defaults to `client`.\n  eliminationClient"
       ],
       "injectAuth": [
         "companyId"
@@ -2971,12 +2990,14 @@
           },
           "periodStart": {
             "type": "string"
-          }
+          },
+          "// Privileged (service-role) client used ONLY for elimination entities — see\n  // getConsolidatedPeriodSeries. Without it their reversing entries are hidden by\n  // RLS and intercompany balances never eliminate. Defaults to `client`.\n  eliminationClient": {}
         },
         "required": [
           "companyIds",
           "targetCurrency",
-          "periodEnd"
+          "periodEnd",
+          "// Privileged (service-role) client used ONLY for elimination entities — see\n  // getConsolidatedPeriodSeries. Without it their reversing entries are hidden by\n  // RLS and intercompany balances never eliminate. Defaults to `client`.\n  eliminationClient"
         ]
       }
     },
@@ -3045,6 +3066,34 @@
       }
     },
     {
+      "name": "accounting_getIntercompanyEliminationLines",
+      "module": "accounting",
+      "classification": "READ",
+      "description": "get intercompany elimination lines",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "transactionIds"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "transactionIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "transactionIds"
+        ]
+      }
+    },
+    {
       "name": "accounting_runIntercompanyMatching",
       "module": "accounting",
       "classification": "WRITE",
@@ -3068,11 +3117,12 @@
       "module": "accounting",
       "classification": "WRITE",
       "description": "generate eliminations",
-      "paramCount": 0,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "companyGroupId",
-        "userId"
+        "userId",
+        "regenerate = false"
       ],
       "injectAuth": [
         "companyId",
@@ -3081,7 +3131,12 @@
       ],
       "schema": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "regenerate = false": {}
+        },
+        "required": [
+          "regenerate = false"
+        ]
       }
     },
     {
@@ -15412,7 +15467,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "set method material step link",
-      "paramCount": 3,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "args"
@@ -15432,6 +15487,12 @@
           },
           "linked": {
             "type": "boolean"
+          },
+          "quantity": {
+            "type": [
+              "number",
+              "null"
+            ]
           }
         },
         "required": [
@@ -15446,7 +15507,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "set method operation tool step link",
-      "paramCount": 3,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "args"
@@ -15458,7 +15519,10 @@
       "schema": {
         "type": "object",
         "properties": {
-          "methodOperationToolId": {
+          "operationId": {
+            "type": "string"
+          },
+          "toolId": {
             "type": "string"
           },
           "methodOperationStepId": {
@@ -15469,7 +15533,8 @@
           }
         },
         "required": [
-          "methodOperationToolId",
+          "operationId",
+          "toolId",
           "methodOperationStepId",
           "linked"
         ]
@@ -22298,7 +22363,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "set job material step link",
-      "paramCount": 3,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "args"
@@ -22318,6 +22383,12 @@
           },
           "linked": {
             "type": "boolean"
+          },
+          "quantity": {
+            "type": [
+              "number",
+              "null"
+            ]
           }
         },
         "required": [
@@ -22332,7 +22403,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "set job operation tool step link",
-      "paramCount": 3,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "args"
@@ -22344,7 +22415,10 @@
       "schema": {
         "type": "object",
         "properties": {
-          "jobOperationToolId": {
+          "operationId": {
+            "type": "string"
+          },
+          "toolId": {
             "type": "string"
           },
           "jobOperationStepId": {
@@ -22355,7 +22429,8 @@
           }
         },
         "required": [
-          "jobOperationToolId",
+          "operationId",
+          "toolId",
           "jobOperationStepId",
           "linked"
         ]
@@ -27140,6 +27215,31 @@
           "id",
           "status",
           "assignee"
+        ]
+      }
+    },
+    {
+      "name": "purchasing_reopenPurchaseOrderAsRevision",
+      "module": "purchasing",
+      "classification": "WRITE",
+      "description": "reopen purchase order as revision",
+      "paramCount": 1,
+      "serviceParams": [
+        "db",
+        "{\n    id,\n    companyId,\n    updatedBy\n  }"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
         ]
       }
     },
@@ -35463,7 +35563,8 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "customerId"
+        "customerId",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -35488,7 +35589,8 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "customerContactId"
+        "customerContactId",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -35513,7 +35615,8 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "customerId"
+        "customerId",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -35576,7 +35679,8 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "customerLocationId"
+        "customerLocationId",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -35601,7 +35705,8 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "customerId"
+        "customerId",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -35626,7 +35731,8 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "customerId"
+        "customerId",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -35651,7 +35757,8 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "customerId"
+        "customerId",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -35676,7 +35783,8 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "customerId"
+        "customerId",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -42309,37 +42417,6 @@
           "digitalQuoteEnabled",
           "digitalQuoteNotificationGroup",
           "digitalQuoteIncludesPurchaseOrders"
-        ]
-      }
-    },
-    {
-      "name": "settings_updateIntegrationMetadata",
-      "module": "settings",
-      "classification": "WRITE",
-      "description": "update integration metadata",
-      "paramCount": 2,
-      "serviceParams": [
-        "client",
-        "companyId",
-        "integrationId",
-        "metadata",
-        "updatedBy"
-      ],
-      "injectAuth": [
-        "companyId",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "integrationId": {
-            "type": "string"
-          },
-          "metadata": {}
-        },
-        "required": [
-          "integrationId",
-          "metadata"
         ]
       }
     },

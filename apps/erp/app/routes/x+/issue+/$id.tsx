@@ -91,7 +91,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function IssueRoute() {
   const { t } = useLingui();
-  const { associations } = useLoaderData<typeof loader>();
+  const { associations, changeNotices } = useLoaderData<typeof loader>();
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
 
@@ -178,6 +178,21 @@ export default function IssueRoute() {
                           module: "quality",
                           children:
                             (resolvedAssociations as any).inspections ?? []
+                        },
+                        {
+                          key: "changeNotices",
+                          name: t`Change Notice`,
+                          pluralName: t`Change Notices`,
+                          module: "parts",
+                          readOnly: true,
+                          children: changeNotices.map((cn) => ({
+                            id: cn.id,
+                            documentId: cn.id,
+                            documentReadableId: cn.changeOrderId,
+                            documentLineId: "",
+                            type: "changeNotices",
+                            status: cn.status
+                          }))
                         }
                       ];
                       return (
@@ -197,7 +212,7 @@ export default function IssueRoute() {
               }
               content={
                 <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
-                  <VStack spacing={2} className="p-2">
+                  <VStack spacing={4} className="p-4">
                     <Outlet />
                   </VStack>
                 </div>

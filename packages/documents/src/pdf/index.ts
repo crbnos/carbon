@@ -1,3 +1,5 @@
+import { getPurchaseOrderDisplayId } from "../utils/purchase-order";
+import { getQuoteDisplayId } from "../utils/quote";
 import type { BatchLoadListMember } from "./BatchLoadListPDF";
 import { BatchLoadListPDF } from "./BatchLoadListPDF";
 import type { JobTravelerMaterial } from "./blocks/jobTraveler";
@@ -26,6 +28,8 @@ export {
   DOCUMENT_PDFS,
   ensureFont,
   Footer,
+  getPurchaseOrderDisplayId,
+  getQuoteDisplayId,
   getSafeFontFamily,
   IssuePDF,
   JobTravelerPageContent,

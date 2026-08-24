@@ -3,7 +3,7 @@ import { fkDisplayRegistry } from "@carbon/database/audit.config";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
-import type { GenericQueryFilters } from "~/utils/query";
+import type { Filter, GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import type { workflowValidator } from "./workflows.models";
 
@@ -25,7 +25,25 @@ export async function getWorkflows(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
+    // "status" is a derived filter — Published means a live version is promoted
+    // (activeVersionId set), Draft means none. There is no status column, so
+    // translate it into an activeVersionId null test and keep it out of the
+    // generic column-filter pipeline (which can only emit eq/in/etc.).
+    const statusFilters: Filter[] = [];
+    const columnFilters: Filter[] = [];
+    for (const filter of args.filters ?? []) {
+      (filter.column === "status" ? statusFilters : columnFilters).push(filter);
+    }
+
+    for (const filter of statusFilters) {
+      if (filter.value === "Published") {
+        query = query.not("activeVersionId", "is", null);
+      } else if (filter.value === "Draft") {
+        query = query.is("activeVersionId", null);
+      }
+    }
+
+    query = setGenericQueryFilters(query, { ...args, filters: columnFilters }, [
       { column: "createdAt", ascending: false }
     ]);
   }
@@ -182,6 +200,59 @@ export async function updateWorkflowDefinition(
     })
     .eq("id", definition.versionId)
     .eq("companyId", definition.companyId);
+}
+
+/**
+ * The one writer allowed on a live version. It reads the version's nodes and re-writes
+ * only `position`, only for node ids that already exist — `edges`, `data`, `expanded`,
+ * `name` and `type` are never touched, and an unknown id is ignored. The endpoint is
+ * therefore incapable of changing behaviour even when called by hand.
+ *
+ * No audit bump, for the same reason as the canvas state below: tidying a layout is not
+ * an edit, and stamping `updatedAt` would reorder the list on every drag.
+ */
+export async function updateWorkflowNodePositions(
+  client: SupabaseClient<Database>,
+  {
+    versionId,
+    workflowId,
+    companyId,
+    positions
+  }: {
+    versionId: string;
+    workflowId: string;
+    companyId: string;
+    positions: Record<string, { x: number; y: number }>;
+  }
+) {
+  // Scoped to the workflow in the URL as well as the version in the body, so the two
+  // cannot disagree — otherwise the path segment is decorative.
+  const version = await client
+    .from("workflowVersion")
+    .select("nodes")
+    .eq("id", versionId)
+    .eq("workflowId", workflowId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  if (version.error) return { data: null, error: version.error };
+  if (!version.data || !Array.isArray(version.data.nodes)) {
+    return { data: null, error: { message: "Version not found" } };
+  }
+
+  const nodes = (version.data.nodes as unknown[]).map((node) => {
+    const id = (node as { id?: unknown })?.id;
+    const position = typeof id === "string" ? positions[id] : undefined;
+    return position === undefined
+      ? node
+      : { ...(node as object), position: { x: position.x, y: position.y } };
+  });
+
+  return client
+    .from("workflowVersion")
+    .update({ nodes: nodes as unknown as Json })
+    .eq("id", versionId)
+    .eq("companyId", companyId);
 }
 
 // No audit bump: panning the canvas is not an edit to the workflow, and stamping

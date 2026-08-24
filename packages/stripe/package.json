@@ -9,7 +9,7 @@
     "@carbon/logger": "workspace:*",
     "@carbon/utils": "workspace:*",
     "@supabase/supabase-js": "catalog:",
-    "stripe": "18.5.0"
+    "stripe": "22.4.0"
   },
   "type": "module",
   "devDependencies": {
@@ -24,7 +24,9 @@
     "zod": "catalog:"
   },
   "exports": {
-    "./stripe.server": "./src/stripe.server.ts"
+    "./stripe.server": "./src/stripe.server.ts",
+    "./connect.server": "./src/connect.server.ts",
+    "./connect.constants": "./src/connect.constants.ts"
   },
   "private": true,
   "scripts": {

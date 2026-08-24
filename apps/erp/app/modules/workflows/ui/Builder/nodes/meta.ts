@@ -3,8 +3,8 @@ import type { WorkflowNode, WorkflowNodeType } from "@carbon/workflows";
 import { WORKFLOW_LABELS } from "@carbon/workflows/labels";
 import type { IconType } from "react-icons";
 import {
+  LuCalculator,
   LuFilter,
-  LuPencilRuler,
   LuPlay,
   LuSearch,
   LuSplit,
@@ -101,16 +101,16 @@ export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
       return labelText(node.data.action) ?? node.data.action;
     }
   },
-  entity: {
-    name: "Record",
-    Icon: LuPencilRuler,
-    description: "Writes to a record in Carbon",
-    defaultTitle: "Create or update a record",
-    hasTarget: NODE_ACCEPTS_INCOMING.entity,
+  compute: {
+    name: "Compute",
+    Icon: LuCalculator,
+    description: "Works out a value from a record",
+    defaultTitle: "Compute a value",
+    hasTarget: NODE_ACCEPTS_INCOMING.compute,
     catalogId: (node) =>
-      node.type === "entity" ? node.data.operation || undefined : undefined,
+      node.type === "compute" ? node.data.operation || undefined : undefined,
     summary: (node) => {
-      if (node.type !== "entity" || !node.data.operation) return undefined;
+      if (node.type !== "compute" || !node.data.operation) return undefined;
       return labelText(node.data.operation) ?? node.data.operation;
     }
   },
@@ -155,7 +155,21 @@ export const NODE_KIND_ORDER: WorkflowNodeType[] = [
   "trigger",
   "condition",
   "action",
-  "entity",
+  "compute",
   "lookup",
   "filter"
 ];
+
+/** What a node type saved before a rename used to be called. A stored definition is
+ * migrated on read, but `workflowStepRun.nodeType` is a plain column: a run from before
+ * the rename keeps the old string forever, and without this its step row would show the
+ * raw word "entity" where every other row shows a kind. */
+const LEGACY_NODE_TYPES: Record<string, WorkflowNodeType> = {
+  entity: "compute"
+};
+
+/** The presentation for a node type read back from the database, old spellings included. */
+export function metaForNodeType(type: string): NodeKindMeta | undefined {
+  const current = LEGACY_NODE_TYPES[type] ?? (type as WorkflowNodeType);
+  return NODE_KIND_META[current];
+}

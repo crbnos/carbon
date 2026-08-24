@@ -141,17 +141,9 @@ export default function JobMakeMethodRoute() {
 
   return (
     <div className="h-full w-full items-start overflow-y-auto scrollbar-hide">
-      <VStack spacing={2} className="p-2">
+      <VStack spacing={4} className="p-4">
         <JobMakeMethodTools makeMethod={makeMethod} />
 
-        <JobBillOfMaterial
-          key={`bom:${methodId}`}
-          jobMakeMethodId={methodId}
-          // @ts-expect-error TS2322 - TODO: fix type
-          materials={materials}
-          // @ts-expect-error
-          operations={operations}
-        />
         <JobBillOfProcess
           key={`bop:${methodId}`}
           jobMakeMethodId={methodId}
@@ -163,6 +155,14 @@ export default function JobMakeMethodRoute() {
           itemId={makeMethod.itemId}
           salesOrderLineId={job.salesOrderLineId ?? ""}
           customerId={job.customerId ?? ""}
+        />
+        <JobBillOfMaterial
+          key={`bom:${methodId}`}
+          jobMakeMethodId={methodId}
+          // @ts-expect-error TS2322 - TODO: fix type
+          materials={materials}
+          // @ts-expect-error
+          operations={operations}
         />
         <Suspense
           fallback={
@@ -204,7 +204,7 @@ export default function JobMakeMethodRoute() {
                 metadata={{
                   itemId: model?.itemId ?? undefined
                 }}
-                modelPath={model?.modelPath ?? null}
+                modelUpload={model ?? null}
                 title="CAD Model"
                 uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
                 viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
