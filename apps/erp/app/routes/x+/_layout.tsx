@@ -197,7 +197,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     itarCertificationPromise
   ]);
 
-  if (!claims || user.error || !user.data || !groups.data) {
+  // Empty groups is a valid pre-onboarding state (a first-run user with no
+  // company yet has zero memberships → groups is []), NOT an auth failure —
+  // logging out here made the `requiresOnboarding` redirect below unreachable.
+  // Only a genuine RPC error (groups.error) logs out.
+  if (!claims || user.error || !user.data || groups.error) {
     throw await destroyAuthSession(request);
   }
 
@@ -273,7 +277,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     customFields: customFields.data ?? [],
     defaults: defaults.data,
     integrations: integrations.data ?? [],
-    groups: groups.data,
+    groups: groups.data ?? [],
     permissions: claims?.permissions,
     plan: stripeCustomer?.planId,
     role: claims?.role,

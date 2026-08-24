@@ -515,6 +515,9 @@ msgstr "Bitir {0}"
 msgid "Finish Anyways"
 msgstr "Yine de Bitir"
 
+msgid "Finish setting up your account"
+msgstr ""
+
 msgid "Finish with material unpicked?"
 msgstr "Malzeme seçilmeden bitir?"
 
@@ -523,6 +526,9 @@ msgstr "Çıkış yapmayı unuttunuz mu?"
 
 msgid "Go back to operation"
 msgstr "İşleme geri dön"
+
+msgid "Go to onboarding"
+msgstr ""
 
 msgid "How many were actually picked?"
 msgstr "Gerçekte kaç tane alındı?"
@@ -1496,6 +1502,9 @@ msgstr "Saat <0/>'te kaydedildiniz. Aşağıda çıkış saatinizi düzenleyebil
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Ne kadar süredir giriş yaptınız? Çıkış yapmayı unuttunuz mu?"
+
+msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
+msgstr ""
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Kuruluşunuz bir kimlik doğrulama uygulaması gerektirir. Bunu Carbon'da ayarlayın, ardından buraya geri dönün."
