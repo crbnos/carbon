@@ -13,6 +13,7 @@ import {
 } from "../../integrations/secrets";
 import type { OnshapeDocument } from "./document.type";
 import type { OnshapeElementType } from "./element.type";
+import { onshapeTokenExpiresAt } from "./token";
 
 const logger = getLogger("ee", "onshape");
 
@@ -730,6 +731,8 @@ export class OnshapeClient {
     access_token: string;
     refresh_token: string;
     token_type: string;
+    /** Seconds until the new access token expires. Onshape sends it; use it. */
+    expires_in?: number;
   }> {
     if (!ONSHAPE_CLIENT_ID || !ONSHAPE_CLIENT_SECRET) {
       throw new Error("Onshape OAuth not configured");
@@ -818,7 +821,7 @@ export async function getOnshapeClient(
           ...credentials,
           accessToken: refreshed.access_token,
           refreshToken: refreshed.refresh_token,
-          expiresAt: new Date(Date.now() + 3600 * 1000).toISOString()
+          expiresAt: onshapeTokenExpiresAt(refreshed.expires_in)
         }
       });
     } catch (error) {

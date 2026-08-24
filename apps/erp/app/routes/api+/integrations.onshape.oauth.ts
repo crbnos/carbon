@@ -7,6 +7,7 @@ import {
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { Onshape } from "@carbon/ee";
+import { onshapeTokenExpiresAt } from "@carbon/ee/onshape";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import type { IntegrationErrorCode } from "~/modules/settings/integration-errors";
@@ -223,7 +224,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
           type: "oauth2",
           accessToken: tokenData.access_token,
           refreshToken: tokenData.refresh_token,
-          expiresAt: new Date(Date.now() + 3600 * 1000).toISOString()
+          expiresAt: onshapeTokenExpiresAt(tokenData.expires_in)
         },
         // The scope actually granted by this authorization. Onshape returns it on
         // the token response; fall back to what we requested (install.ts always

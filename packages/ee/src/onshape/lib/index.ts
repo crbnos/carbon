@@ -10,3 +10,4 @@ export * from "./reconcile";
 export * from "./release";
 export * from "./resolve";
 export * from "./settings";
+export * from "./token";
