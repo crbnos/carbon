@@ -26,6 +26,19 @@ export const SECRET_KEYS: Record<string, string[]> = {
   slack: ["access_token"],
   jira: ["credentials.accessToken", "credentials.refreshToken"],
   onshape: ["credentials.accessToken", "credentials.refreshToken"],
+  // onshape-v2 is a separate integration record sharing only the OAuth
+  // application, so it holds its own grant and its own vault bag
+  // (integration:{companyId}:onshape-v2). webhookSigningSecret is a shared HMAC
+  // key — possession lets anyone forge a delivery the receiver accepts — so it
+  // is a secret here rather than plaintext in the metadata column, where it
+  // would also reach the browser via the settings drawer loader and sit in the
+  // Redis integrations cache. Not added to `onshape`: the legacy record is
+  // deliberately untouched by the v2 split.
+  "onshape-v2": [
+    "credentials.accessToken",
+    "credentials.refreshToken",
+    "webhookSigningSecret"
+  ],
   xero: ["credentials.accessToken", "credentials.refreshToken"],
   quickbooks: ["credentials.accessToken", "credentials.refreshToken"],
   rillet: ["credentials.apiKey", "credentials.providerMetadata.webhookToken"],

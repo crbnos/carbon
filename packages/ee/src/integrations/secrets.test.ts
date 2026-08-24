@@ -1,3 +1,5 @@
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import {
   deletePath,
@@ -5,6 +7,7 @@ import {
   IntegrationSecretUnavailableError,
   persistIntegrationSecrets,
   resolveIntegrationSecrets,
+  SECRET_KEYS,
   setPath,
   splitSecrets
 } from "./secrets";
@@ -217,5 +220,100 @@ describe("persistIntegrationSecrets", () => {
       })
     );
     expect(config).toEqual({ teamId: "team" });
+  });
+});
+
+describe("SECRET_KEYS covers every integration that stores a credential", () => {
+  // The failure this guards is silent and total: splitSecrets iterates
+  // `SECRET_KEYS[integrationId] ?? []`, so an id missing from the map has its
+  // secrets written to the plaintext `metadata` column — and
+  // resolveIntegrationSecrets reads them straight back, so the integration works
+  // perfectly while leaking. Nothing throws and no other test fails.
+  //
+  // The registry itself cannot be imported here (packages/ee/src/index.ts pulls
+  // in modules that require INNGEST_SIGNING_KEY and the rest of the server env),
+  // so the ids are read from the config sources instead.
+  const configDir = join(__dirname, "..");
+  const ids = readdirSync(configDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .flatMap((entry) => {
+      const config = join(configDir, entry.name, "config.tsx");
+      if (!existsSync(config)) return [];
+      // Top-level `id:` only — two-space indent. Action ids inside `actions: []`
+      // are nested deeper and must not be picked up.
+      return [
+        ...readFileSync(config, "utf8").matchAll(/^ {2}id: "([a-z0-9-]+)"/gm)
+      ].map((match) => match[1]!);
+    });
+
+  /**
+   * Integrations that genuinely hold no secret in `metadata`. Each needs a
+   * reason, so adding one here is a deliberate act rather than a way to silence
+   * the test.
+   */
+  const NO_SECRETS: Record<string, string> = {
+    "exchange-rates-v1": "apiKey is env-based, never in metadata",
+    "stripe-connect":
+      "holds only a Stripe account id; Stripe owns the credential",
+    radan: "file-drop integration, no credential",
+    sage: "not yet implemented — no credential stored"
+  };
+
+  it("finds the integration configs", () => {
+    // Guards the scan itself: if the layout changes and this returns nothing,
+    // every assertion below would pass vacuously.
+    expect(ids.length).toBeGreaterThanOrEqual(13);
+    expect(ids).toContain("onshape");
+  });
+
+  it("classifies every integration as secret-bearing or explicitly not", () => {
+    const unclassified = ids.filter(
+      (id) => !(id in SECRET_KEYS) && !(id in NO_SECRETS)
+    );
+    expect(unclassified).toEqual([]);
+  });
+
+  it("keeps onshape-v2 classified even though it shares a directory with onshape", () => {
+    // onshape-v2 lives in packages/ee/src/onshape/, so the scan above cannot see
+    // it as its own config. It is the id most likely to be forgotten and the one
+    // that would leak an OAuth grant, so pin it explicitly.
+    expect(SECRET_KEYS["onshape-v2"]).toEqual([
+      "credentials.accessToken",
+      "credentials.refreshToken",
+      "webhookSigningSecret"
+    ]);
+  });
+
+  it("never lists a refresh token without its access token", () => {
+    for (const [id, paths] of Object.entries(SECRET_KEYS)) {
+      if (paths.includes("credentials.refreshToken")) {
+        expect(paths, id).toContain("credentials.accessToken");
+      }
+    }
+  });
+
+  it("actually strips all three onshape-v2 secrets from the column", () => {
+    const { config, secrets } = splitSecrets("onshape-v2", {
+      baseUrl: "https://cad.onshape.com",
+      credentials: {
+        type: "oauth2",
+        accessToken: "at",
+        refreshToken: "rt",
+        expiresAt: "2026-08-24T00:00:00.000Z"
+      },
+      webhookSigningSecret: "shhh",
+      attachAssetsOnRelease: true
+    });
+
+    expect(secrets).toEqual({
+      "credentials.accessToken": "at",
+      "credentials.refreshToken": "rt",
+      webhookSigningSecret: "shhh"
+    });
+    expect(config).toEqual({
+      baseUrl: "https://cad.onshape.com",
+      credentials: { type: "oauth2", expiresAt: "2026-08-24T00:00:00.000Z" },
+      attachAssetsOnRelease: true
+    });
   });
 });
