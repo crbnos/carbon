@@ -180,9 +180,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getCompanies(client, userId),
     getEmployeeCompanies(client, userId),
     getStripeCustomerByCompanyId(companyId, userId),
-    // Plan gate reads the durable companyPlan mirror (same source the server
-    // enforcement reads) — NOT stripeCustomer.planId, whose Stripe/Redis cache
-    // can go stale and gate a customer whose plan is actually correct.
     getEffectivePlanId(client, companyId),
     getCustomFieldsSchemas(client, { companyId }),
     getCompanyIntegrations(client, companyId),
@@ -192,8 +189,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getUserClaims(userId, companyId),
     getUserGroups(client, userId),
     getUserDefaults(client, userId, companyId),
-    // Throws, unlike the {data, error} services around it — unguarded, a
-    // transient timeout on this flag 500s every page under /x.
     isAuditLogEnabled(client, companyId).catch(() => false),
     getModulePreferences(client, userId, companyId),
     getPrinterRoutes(client, companyId),
