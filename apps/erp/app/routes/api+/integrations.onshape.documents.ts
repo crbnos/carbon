@@ -1,5 +1,9 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getOnshapeClient } from "@carbon/ee/onshape";
+import {
+  getOnshapeClient,
+  isOnshapeIntegrationId,
+  ONSHAPE_LEGACY_INTEGRATION_ID
+} from "@carbon/ee/onshape";
 import { getLogger } from "@carbon/logger";
 import type {
   LoaderFunctionArgs,
@@ -15,7 +19,23 @@ export const shouldRevalidate: ShouldRevalidateFunction = () => {
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {});
 
-  const result = await getOnshapeClient(client, companyId, userId);
+  // Shared between the two Onshape records: the legacy BOM sync picker
+  // (OnshapeSync) and the v2 unreleased picker both list documents, and the two
+  // records hold different grants against potentially different Onshape
+  // tenants. The caller says which; the default keeps every existing legacy
+  // caller unchanged.
+  const requested = new URL(request.url).searchParams.get("integration");
+  const integrationId =
+    requested && isOnshapeIntegrationId(requested)
+      ? requested
+      : ONSHAPE_LEGACY_INTEGRATION_ID;
+
+  const result = await getOnshapeClient(
+    client,
+    companyId,
+    userId,
+    integrationId
+  );
 
   if (result.error) {
     return {

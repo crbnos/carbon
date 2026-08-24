@@ -13,7 +13,7 @@
 // repeat the whole enumeration for every element group.
 
 import type { Database } from "@carbon/database";
-import type { OnshapeClient } from "@carbon/ee/onshape";
+import type { OnshapeClient, OnshapeIntegrationId } from "@carbon/ee/onshape";
 import {
   listDocumentElements,
   OnshapeAssetTooLargeError,
@@ -54,6 +54,8 @@ export async function pullOnshapeDrawingsForDocument(
   args: {
     companyId: string;
     userId: string;
+    /** WHICH Onshape record this pass is running for. */
+    integrationId: OnshapeIntegrationId;
     documentId: string;
     versionId: string;
     targets: OnshapeDrawingTarget[];
@@ -113,6 +115,7 @@ export async function pullOnshapeDrawingsForDocument(
         client,
         companyId: args.companyId,
         userId: args.userId,
+        integrationId: args.integrationId,
         itemId: resolved.itemId,
         sourceDocument: "Part",
         documentId: args.documentId,

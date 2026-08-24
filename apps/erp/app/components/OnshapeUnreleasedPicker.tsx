@@ -68,7 +68,9 @@ export const OnshapeUnreleasedPicker = ({
   // biome-ignore lint/correctness/useExhaustiveDependencies: fetchers are new objects every render
   useEffect(() => {
     if (!isOpen) return;
-    documents.load(path.to.api.onShapeDocuments);
+    // The v2 record's own grant — the two Onshape records can be authorized by
+    // different Onshape logins against different tenants.
+    documents.load(`${path.to.api.onShapeDocuments}?integration=onshape-v2`);
   }, [isOpen]);
 
   const chooseDocument = (chosen: { id: string; name: string }) => {

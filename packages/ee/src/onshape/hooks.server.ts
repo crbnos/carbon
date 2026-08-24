@@ -1,26 +1,54 @@
 import { getAppUrl } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getOnshapeClient } from "./lib/client";
+import {
+  ONSHAPE_LEGACY_INTEGRATION_ID,
+  ONSHAPE_V2_INTEGRATION_ID,
+  type OnshapeIntegrationId,
+  onshapeWebhookPath
+} from "./lib/ids";
 
-// The release webhook's callback path for a company. We match/deregister by this
-// PATH (not the full URL) so a host change — localhost, a tunnel, or the prod
-// domain — still resolves this company's webhook(s).
-function callbackPath(companyId: string): string {
-  return `/api/webhook/onshape/${companyId}`;
+// The release webhook's callback path for a company, per integration. We
+// match/deregister by this PATH (not the full URL) so a host change — localhost,
+// a tunnel, or the prod domain — still resolves this company's webhook(s).
+// `onshapeWebhookPath` owns the two paths and why they cannot be substrings of
+// one another.
+
+/**
+ * Does this webhook's URL point at exactly this callback path?
+ *
+ * Compares the PATHNAME rather than asking whether the URL contains the path.
+ * `includes` was the previous test and it is the wrong shape of check: it makes
+ * any path that contains another one delete its neighbour's subscription. Host
+ * is still ignored, which is the documented behaviour that lets a tunnel and
+ * prod resolve the same company.
+ */
+function matchesCallback(webhookUrl: unknown, path: string): boolean {
+  if (typeof webhookUrl !== "string") return false;
+  try {
+    return new URL(webhookUrl).pathname.replace(/\/$/, "") === path;
+  } catch {
+    // Unparseable URL — fall back to the old behaviour rather than dropping a
+    // subscription we would otherwise have matched.
+    return webhookUrl.endsWith(path);
+  }
 }
 
 // Build an Onshape client for background webhook management. Reads the installer
 // (updatedBy) for token refresh/audit; falls back to "system".
-async function onshapeClientForCompany(companyId: string) {
+async function onshapeClientForCompany(
+  integrationId: OnshapeIntegrationId,
+  companyId: string
+) {
   const client = getCarbonServiceRole();
   const integration = await client
     .from("companyIntegration")
     .select("updatedBy")
-    .eq("id", "onshape")
+    .eq("id", integrationId)
     .eq("companyId", companyId)
     .maybeSingle();
   const userId = integration.data?.updatedBy ?? "system";
-  return getOnshapeClient(client, companyId, userId);
+  return getOnshapeClient(client, companyId, userId, integrationId);
 }
 
 // Resolve the Onshape company id to register the webhook under. Prefer the id
@@ -29,6 +57,7 @@ async function onshapeClientForCompany(companyId: string) {
 // @carbon/jobs) — targets the SAME Onshape tenant. Fall back to the first company
 // the token can see, persisting it for consistency. Returns null if none.
 async function resolveAndStoreOnshapeCompanyId(
+  integrationId: OnshapeIntegrationId,
   companyId: string,
   client: Awaited<ReturnType<typeof getOnshapeClient>>["client"]
 ): Promise<string | null> {
@@ -36,7 +65,7 @@ async function resolveAndStoreOnshapeCompanyId(
   const integration = await carbon
     .from("companyIntegration")
     .select("metadata")
-    .eq("id", "onshape")
+    .eq("id", integrationId)
     .eq("companyId", companyId)
     .maybeSingle();
   const metadata = (integration.data?.metadata ?? {}) as Record<
@@ -53,7 +82,7 @@ async function resolveAndStoreOnshapeCompanyId(
   const update = await carbon
     .from("companyIntegration")
     .update({ metadata: { ...metadata, onshapeCompanyId: resolved } })
-    .eq("id", "onshape")
+    .eq("id", integrationId)
     .eq("companyId", companyId);
   if (update.error) {
     // Non-fatal: we can still register with the resolved id; the jobs just fall
@@ -99,9 +128,10 @@ function webhookFailure(error: unknown): OnshapeWebhookResult {
 // granted before OAuth2Write was requested, which can't manage webhooks until
 // the user reconnects Onshape).
 export async function registerOnshapeWebhook(
+  integrationId: OnshapeIntegrationId,
   companyId: string
 ): Promise<OnshapeWebhookResult> {
-  const onshape = await onshapeClientForCompany(companyId);
+  const onshape = await onshapeClientForCompany(integrationId, companyId);
   if (onshape.error || !onshape.client) {
     console.error(
       "onshape: could not build client; skipping webhook registration",
@@ -109,15 +139,16 @@ export async function registerOnshapeWebhook(
     );
     return { ok: false, error: onshape.error ?? "no client" };
   }
-  const path = callbackPath(companyId);
+  const path = onshapeWebhookPath(integrationId, companyId);
   try {
     const existing = await onshape.client.getWebhooks();
-    const alreadyRegistered = (existing.items ?? []).some(
-      (webhook) => typeof webhook.url === "string" && webhook.url.includes(path)
+    const alreadyRegistered = (existing.items ?? []).some((webhook) =>
+      matchesCallback(webhook.url, path)
     );
     if (alreadyRegistered) return { ok: true };
 
     const onshapeCompanyId = await resolveAndStoreOnshapeCompanyId(
+      integrationId,
       companyId,
       onshape.client
     );
@@ -142,9 +173,10 @@ export async function registerOnshapeWebhook(
 
 // Delete Carbon's release webhook(s) for this company. Idempotent; never throws.
 export async function deregisterOnshapeWebhooks(
+  integrationId: OnshapeIntegrationId,
   companyId: string
 ): Promise<OnshapeWebhookResult> {
-  const onshape = await onshapeClientForCompany(companyId);
+  const onshape = await onshapeClientForCompany(integrationId, companyId);
   if (onshape.error || !onshape.client) {
     console.error(
       "onshape: could not build client; skipping webhook cleanup",
@@ -152,11 +184,11 @@ export async function deregisterOnshapeWebhooks(
     );
     return { ok: false, error: onshape.error ?? "no client" };
   }
-  const path = callbackPath(companyId);
+  const path = onshapeWebhookPath(integrationId, companyId);
   try {
     const webhooks = await onshape.client.getWebhooks();
-    const ours = (webhooks.items ?? []).filter(
-      (webhook) => typeof webhook.url === "string" && webhook.url.includes(path)
+    const ours = (webhooks.items ?? []).filter((webhook) =>
+      matchesCallback(webhook.url, path)
     );
     for (const webhook of ours) {
       await onshape.client.deleteWebhook(webhook.id);
@@ -171,24 +203,37 @@ export async function deregisterOnshapeWebhooks(
   }
 }
 
-// Keep the subscription in lockstep with the asset-sync toggle: it should exist
-// iff asset sync is enabled. Called from the integration settings save — the
-// universal hook point, since asset sync is off by default and every company
-// (new or already-connected) must enable it there. NOTE: connections authorized
-// before the OAuth2Write scope was requested hold Read-only tokens and will fail
-// here until the user reconnects Onshape — the settings save surfaces that
-// failure rather than swallowing it.
+// Keep this record's subscription in lockstep with its own consumers: it should
+// exist iff at least one of them is on. Called from the integration settings
+// save — the universal hook point, since every consumer is off by default and
+// every company (new or already-connected) must enable one there.
+//
+// Each record answers only for itself. The two use different callback paths, so
+// one record's registration and deregistration cannot touch the other's
+// subscription.
+//
+// NOTE: connections authorized before the OAuth2Write scope was requested hold
+// Read-only tokens and will fail here until the user reconnects Onshape — the
+// settings save surfaces that failure rather than swallowing it.
 export async function ensureOnshapeReleaseWebhook(
+  integrationId: OnshapeIntegrationId,
   companyId: string,
-  assetSyncEnabled: boolean
+  wanted: boolean
 ): Promise<OnshapeWebhookResult> {
-  if (assetSyncEnabled) {
-    return registerOnshapeWebhook(companyId);
+  if (wanted) {
+    return registerOnshapeWebhook(integrationId, companyId);
   }
-  return deregisterOnshapeWebhooks(companyId);
+  return deregisterOnshapeWebhooks(integrationId, companyId);
 }
 
-// Disconnect: remove the subscription so it doesn't keep firing at a dead callback.
+// Disconnect: remove the subscription so it doesn't keep firing at a dead
+// callback. Two closures rather than one parameterised function because
+// IntegrationServerHooks.onUninstall is typed `(companyId: string) => …` and the
+// registry looks it up by id with no way to pass a second argument.
 export async function onshapeOnUninstall(companyId: string): Promise<void> {
-  await deregisterOnshapeWebhooks(companyId);
+  await deregisterOnshapeWebhooks(ONSHAPE_LEGACY_INTEGRATION_ID, companyId);
+}
+
+export async function onshapeV2OnUninstall(companyId: string): Promise<void> {
+  await deregisterOnshapeWebhooks(ONSHAPE_V2_INTEGRATION_ID, companyId);
 }

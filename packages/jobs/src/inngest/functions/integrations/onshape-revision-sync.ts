@@ -2,6 +2,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import {
   getOnshapeClient,
+  ONSHAPE_LEGACY_INTEGRATION_ID,
   OnshapeAssetTooLargeError
 } from "@carbon/ee/onshape";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -74,7 +75,13 @@ export async function runOnshapeRevisionSync(
   carbon: CarbonClient,
   input: OnshapeRevisionSyncInput
 ): Promise<OnshapeRevisionSyncResult> {
-  const onshape = await getOnshapeClient(carbon, input.companyId, input.userId);
+  // Legacy asset sync, and only ever that.
+  const onshape = await getOnshapeClient(
+    carbon,
+    input.companyId,
+    input.userId,
+    ONSHAPE_LEGACY_INTEGRATION_ID
+  );
   if (onshape.error || !onshape.client) {
     throw new Error(
       `runOnshapeRevisionSync: getOnshapeClient failed: ${
@@ -85,7 +92,12 @@ export async function runOnshapeRevisionSync(
   const client = onshape.client;
 
   const onshapeCompanyId =
-    input.onshapeCompanyId ?? (await resolveOnshapeCompanyId(carbon, input));
+    input.onshapeCompanyId ??
+    (await resolveOnshapeCompanyId(
+      carbon,
+      input,
+      ONSHAPE_LEGACY_INTEGRATION_ID
+    ));
 
   // Resolve the revision LETTER for this released element. Prefer the revision
   // whose version + element match this event exactly; fall back to version match.
@@ -149,6 +161,7 @@ export async function runOnshapeRevisionSync(
     }
     try {
       const attached = await syncOnshapeDrawingAssetsToItem(carbon, {
+        integrationId: ONSHAPE_LEGACY_INTEGRATION_ID,
         companyId: input.companyId,
         userId: input.userId,
         itemId: target.id,
@@ -207,6 +220,7 @@ export async function runOnshapeRevisionSync(
   let attached: Awaited<ReturnType<typeof syncOnshapeElementAssetsToItem>>;
   try {
     attached = await syncOnshapeElementAssetsToItem(carbon, {
+      integrationId: ONSHAPE_LEGACY_INTEGRATION_ID,
       companyId: input.companyId,
       userId: input.userId,
       itemId: carbonItem.data.id,

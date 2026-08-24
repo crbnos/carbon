@@ -13,6 +13,7 @@ import {
 } from "../../integrations/secrets";
 import type { OnshapeDocument } from "./document.type";
 import type { OnshapeElementType } from "./element.type";
+import type { OnshapeIntegrationId } from "./ids";
 
 const logger = getLogger("ee", "onshape");
 
@@ -761,19 +762,30 @@ export class OnshapeClient {
 export async function getOnshapeClient(
   client: SupabaseClient<Database>,
   companyId: string,
-  userId: string
+  userId: string,
+  /**
+   * WHICH Onshape record to authenticate as. Required, deliberately: the two
+   * records hold separate grants and separate vault bags, so a call site that
+   * forgot this would silently authenticate against the other company's Onshape
+   * tenant and, on refresh, write its rotated tokens into the wrong row. Nothing
+   * would error. A required parameter turns every such site into a compiler
+   * error instead.
+   */
+  integrationId: OnshapeIntegrationId
 ): Promise<
   { client: OnshapeClient; error: null } | { client: null; error: string }
 > {
   const integration = await client
     .from("companyIntegration")
     .select("*")
-    .eq("id", "onshape")
+    .eq("id", integrationId)
     .eq("companyId", companyId)
     .maybeSingle();
 
   if (integration.error || !integration.data) {
-    return { client: null, error: "Onshape integration not found" };
+    // Name the record: a wrong-id bug is otherwise indistinguishable from a
+    // genuinely disconnected integration in the log.
+    return { client: null, error: `${integrationId} integration not found` };
   }
 
   // Secret material (accessToken/refreshToken) lives in Supabase Vault; merge it
@@ -784,14 +796,17 @@ export async function getOnshapeClient(
   const metadata = (await resolveIntegrationSecrets(
     serviceRole,
     companyId,
-    "onshape",
+    integrationId,
     integration.data.metadata,
     integration.data.secretRef
   )) as Record<string, any>;
   const credentials = metadata?.credentials;
 
   if (!credentials?.accessToken) {
-    return { client: null, error: "Onshape credentials not found" };
+    return {
+      client: null,
+      error: `${integrationId} credentials not found`
+    };
   }
 
   let accessToken = credentials.accessToken;
@@ -812,7 +827,7 @@ export async function getOnshapeClient(
 
       // Persist the new tokens. Secret material is split out to Supabase Vault;
       // only the non-secret config is written to the metadata column.
-      await persistIntegrationSecrets(serviceRole, companyId, "onshape", {
+      await persistIntegrationSecrets(serviceRole, companyId, integrationId, {
         ...metadata,
         credentials: {
           ...credentials,

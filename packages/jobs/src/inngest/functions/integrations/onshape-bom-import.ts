@@ -28,6 +28,7 @@ import {
   getOnshapeClient,
   getOnshapeV2Settings,
   isInitialRevisionLabel,
+  ONSHAPE_V2_INTEGRATION_ID,
   type OnshapeBomNode,
   type OnshapeBomRow,
   parseOnshapeBom,
@@ -500,7 +501,8 @@ export const onshapeBomImportFunction = inngest.createFunction(
       const connection = await getOnshapeClient(
         carbon,
         payload.companyId,
-        payload.userId
+        payload.userId,
+        ONSHAPE_V2_INTEGRATION_ID
       );
       if (!connection.client) {
         throw new Error(connection.error ?? "Onshape is not connected");
@@ -1430,6 +1432,7 @@ export const onshapeBomImportFunction = inngest.createFunction(
           const drawings = await withRateLimitRetry(
             () =>
               pullOnshapeDrawingsForDocument(carbon, connection.client, {
+                integrationId: ONSHAPE_V2_INTEGRATION_ID,
                 companyId: payload.companyId,
                 userId: payload.userId,
                 documentId: group.documentId,

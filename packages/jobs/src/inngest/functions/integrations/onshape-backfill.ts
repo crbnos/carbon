@@ -2,8 +2,10 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import {
   getOnshapeClient,
+  ONSHAPE_LEGACY_INTEGRATION_ID,
   OnshapeApiError,
-  OnshapeAssetTooLargeError
+  OnshapeAssetTooLargeError,
+  type OnshapeIntegrationId
 } from "@carbon/ee/onshape";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { RetryAfterError } from "inngest";
@@ -130,14 +132,21 @@ export async function isOnshapeAssetSyncEnabled(
 
 export async function resolveOnshapeCompanyId(
   carbon: CarbonClient,
-  input: Pick<OnshapeBackfillInput, "companyId" | "userId">
+  input: Pick<OnshapeBackfillInput, "companyId" | "userId">,
+  /**
+   * WHICH Onshape record's cached tenant id to read and write. The two records
+   * hold separate grants, and two grants can be authorized by two different
+   * Onshape logins with different company memberships — so the cache is per
+   * record, never shared. Required for the same reason getOnshapeClient's is.
+   */
+  integrationId: OnshapeIntegrationId
 ): Promise<string> {
   // Prefer the company id captured at connect (explicit + stable) over guessing
   // getCompanies()[0], which is ambiguous for multi-company Onshape accounts.
   const stored = await carbon
     .from("companyIntegration")
     .select("metadata")
-    .eq("id", "onshape")
+    .eq("id", integrationId)
     .eq("companyId", input.companyId)
     .maybeSingle();
   const storedCompanyId = (
@@ -147,7 +156,12 @@ export async function resolveOnshapeCompanyId(
     return storedCompanyId;
   }
 
-  const onshape = await getOnshapeClient(carbon, input.companyId, input.userId);
+  const onshape = await getOnshapeClient(
+    carbon,
+    input.companyId,
+    input.userId,
+    integrationId
+  );
   if (onshape.error || !onshape.client) {
     throw new Error(
       `resolveOnshapeCompanyId: getOnshapeClient failed: ${
@@ -192,7 +206,14 @@ export async function matchOnshapeBackfillPage(
 ): Promise<OnshapeBackfillPageResult> {
   const pageLimit = input.pageLimit ?? 50;
 
-  const onshape = await getOnshapeClient(carbon, input.companyId, input.userId);
+  // Backfill is a LEGACY-only path: it matches by readableIdWithRevision, the
+  // part-number join v2 exists to replace.
+  const onshape = await getOnshapeClient(
+    carbon,
+    input.companyId,
+    input.userId,
+    ONSHAPE_LEGACY_INTEGRATION_ID
+  );
   if (onshape.error || !onshape.client) {
     throw new Error(
       `matchOnshapeBackfillPage: getOnshapeClient failed: ${
@@ -370,6 +391,7 @@ export async function syncOnshapeBackfillWorkItem(
       const attached = await withRateLimitRetry(
         () =>
           syncOnshapeDrawingAssetsToItem(carbon, {
+            integrationId: ONSHAPE_LEGACY_INTEGRATION_ID,
             companyId: input.companyId,
             userId: input.userId,
             itemId: workItem.itemId,
@@ -387,6 +409,7 @@ export async function syncOnshapeBackfillWorkItem(
     const attached = await withRateLimitRetry(
       () =>
         syncOnshapeElementAssetsToItem(carbon, {
+          integrationId: ONSHAPE_LEGACY_INTEGRATION_ID,
           companyId: input.companyId,
           userId: input.userId,
           itemId: workItem.itemId,
@@ -459,7 +482,7 @@ export const onshapeBackfillFunction = inngest.createFunction(
     const onshapeCompanyId =
       payload.onshapeCompanyId ??
       (await step.run("resolve-onshape-company", () =>
-        resolveOnshapeCompanyId(carbon, payload)
+        resolveOnshapeCompanyId(carbon, payload, ONSHAPE_LEGACY_INTEGRATION_ID)
       ));
     const input = { ...payload, onshapeCompanyId };
 

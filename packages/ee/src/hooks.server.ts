@@ -1,7 +1,10 @@
 import { emailHealthcheck } from "./email/hooks.server";
 import { jiraHealthcheck } from "./jira/hooks.server";
 import { linearHealthcheck } from "./linear/hooks.server";
-import { onshapeOnUninstall } from "./onshape/hooks.server";
+import {
+  onshapeOnUninstall,
+  onshapeV2OnUninstall
+} from "./onshape/hooks.server";
 import {
   quickbooksOnInstall,
   quickbooksOnUninstall
@@ -52,6 +55,11 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
   },
   onshape: {
     onUninstall: onshapeOnUninstall
+  },
+  // Its own uninstall, so disconnecting one Onshape record cannot deregister the
+  // other's subscription.
+  "onshape-v2": {
+    onUninstall: onshapeV2OnUninstall
   },
   // The accounting providers' onUpdate re-runs the same subscription
   // convergence as onInstall: a settings save on an existing install

@@ -71,6 +71,10 @@ const writeRevisionMapping = vi.fn();
 const patchElementMappingMetadata = vi.fn();
 
 vi.mock("@carbon/ee/onshape", () => ({
+  // Real constant, not a stub: the route passes it to getOnshapeClient to say
+  // WHICH Onshape record to authenticate as, and a wrong value there is exactly
+  // the bug the required parameter exists to catch.
+  ONSHAPE_V2_INTEGRATION_ID: "onshape-v2",
   getOnshapeV2Settings: (...args: unknown[]) => getOnshapeV2Settings(...args),
   getOnshapeClient: async () => ({
     client: { getCompanies: async () => [{ id: "onshape-co" }] },
@@ -191,7 +195,9 @@ beforeEach(() => {
   });
   getOnshapeV2Settings.mockResolvedValue({
     readFailed: false,
-    isV2: true,
+    // The onshape-v2 record exists and is active — which IS the opt-in now that
+    // v2 has its own integration rather than a pipeline key.
+    active: true,
     onshapeCompanyId: "onshape-co"
   });
   readItemIdsForElement.mockResolvedValue([]);
@@ -422,7 +428,7 @@ describe("v2.create — the settings gate", () => {
   it("answers 'try again' on a failed settings READ, not 'v2 is off'", async () => {
     getOnshapeV2Settings.mockResolvedValue({
       readFailed: true,
-      isV2: false,
+      active: false,
       onshapeCompanyId: null
     });
 
@@ -436,10 +442,10 @@ describe("v2.create — the settings gate", () => {
     expect(upsertPart).not.toHaveBeenCalled();
   });
 
-  it("refuses a company that is not on the v2 pipeline", async () => {
+  it("refuses a company that has not connected the Onshape v2 integration", async () => {
     getOnshapeV2Settings.mockResolvedValue({
       readFailed: false,
-      isV2: false,
+      active: false,
       onshapeCompanyId: null
     });
 

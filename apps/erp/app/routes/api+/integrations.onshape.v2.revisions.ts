@@ -5,7 +5,8 @@ import {
   getOnshapeClient,
   getOnshapeV2Settings,
   ONSHAPE_ELEMENT_INTEGRATION,
-  ONSHAPE_MAPPING_ENTITY_TYPE
+  ONSHAPE_MAPPING_ENTITY_TYPE,
+  ONSHAPE_V2_INTEGRATION_ID
 } from "@carbon/ee/onshape";
 import { getLogger } from "@carbon/logger";
 import type {
@@ -79,14 +80,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
       error: "Could not read the Onshape settings just now. Try again."
     };
   }
-  if (!settings.isV2) {
+  if (!settings.active) {
     return {
       data: null,
-      error: "Onshape v2 is not enabled for this company"
+      error: "Onshape v2 is not connected for this company"
     };
   }
 
-  const result = await getOnshapeClient(serviceRole, companyId, userId);
+  const result = await getOnshapeClient(
+    serviceRole,
+    companyId,
+    userId,
+    ONSHAPE_V2_INTEGRATION_ID
+  );
   // Narrow on the CLIENT, not on `error`. getOnshapeClient's union is
   // `{client, error: null} | {client: null, error: string}`, and a truthiness
   // check cannot discriminate it because "" is a valid (falsy) error string —

@@ -23,6 +23,7 @@ import {
   buildOnshapeItemNotesBlock,
   getOnshapeClient,
   getOnshapeV2Settings,
+  ONSHAPE_V2_INTEGRATION_ID,
   readItemIdsForElement,
   readReleasePackageName,
   readReleasePackageNotes,
@@ -189,7 +190,8 @@ export const onshapeReleaseV2Function = inngest.createFunction(
         const connection = await getOnshapeClient(
           carbon,
           payload.companyId,
-          payload.userId
+          payload.userId,
+          ONSHAPE_V2_INTEGRATION_ID
         );
         if (!connection.client) {
           throw new Error(connection.error ?? "Onshape is not connected");
@@ -253,6 +255,7 @@ export const onshapeReleaseV2Function = inngest.createFunction(
           await withRateLimitRetry(
             () =>
               syncOnshapeDrawingAssetsToItem(carbon, {
+                integrationId: ONSHAPE_V2_INTEGRATION_ID,
                 client: connection.client as OnshapeClient,
                 companyId: payload.companyId,
                 userId: payload.userId,
@@ -292,7 +295,8 @@ export const onshapeReleaseV2Function = inngest.createFunction(
       const connection = await getOnshapeClient(
         carbon,
         payload.companyId,
-        payload.userId
+        payload.userId,
+        ONSHAPE_V2_INTEGRATION_ID
       );
       if (!connection.client) {
         throw new Error(connection.error ?? "Onshape is not connected");
@@ -683,6 +687,9 @@ export const onshapeReleaseV2Function = inngest.createFunction(
             const result = await runOnshapeReleaseImport(carbon, {
               companyId: payload.companyId,
               userId: payload.userId,
+              // v2's own record: this delegation shares the importer's body, not
+              // the legacy record's grant.
+              integrationId: ONSHAPE_V2_INTEGRATION_ID,
               messageId: payload.messageId,
               releaseId: payload.releaseId,
               // ONSHAPE's number, because the importer feeds it to Onshape's
@@ -875,6 +882,7 @@ export const onshapeReleaseV2Function = inngest.createFunction(
           const drawings = await withRateLimitRetry(
             () =>
               pullOnshapeDrawingsForDocument(carbon, client, {
+                integrationId: ONSHAPE_V2_INTEGRATION_ID,
                 companyId: payload.companyId,
                 userId: payload.userId,
                 documentId: payload.documentId,

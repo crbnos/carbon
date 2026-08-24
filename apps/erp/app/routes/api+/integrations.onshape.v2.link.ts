@@ -6,6 +6,7 @@ import {
   buildOnshapeItemNotesBlock,
   getOnshapeClient,
   getOnshapeV2Settings,
+  ONSHAPE_V2_INTEGRATION_ID,
   parseElementExternalId,
   readElementMappingsForItems,
   readItemIdForRevision,
@@ -84,10 +85,10 @@ export async function action({ request }: ActionFunctionArgs) {
       message: "Could not read the Onshape settings just now. Try again."
     };
   }
-  if (!settings.isV2) {
+  if (!settings.active) {
     return {
       success: false,
-      message: "Onshape v2 is not enabled for this company"
+      message: "Onshape v2 is not connected for this company"
     };
   }
 
@@ -195,7 +196,12 @@ export async function action({ request }: ActionFunctionArgs) {
     };
   }
 
-  const onshape = await getOnshapeClient(serviceRole, companyId, userId);
+  const onshape = await getOnshapeClient(
+    serviceRole,
+    companyId,
+    userId,
+    ONSHAPE_V2_INTEGRATION_ID
+  );
   // Narrow on the client rather than on `error` — "" is a valid falsy error
   // string in that union, so a truthiness check does not discriminate it.
   if (!onshape.client) {

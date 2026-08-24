@@ -3,6 +3,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   getOnshapeClient,
   getOnshapeV2Settings,
+  ONSHAPE_V2_INTEGRATION_ID,
   OnshapeElementType,
   OnshapeWVMType
 } from "@carbon/ee/onshape";
@@ -88,11 +89,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
       error: "Could not read the Onshape settings just now. Try again."
     };
   }
-  if (!settings.isV2) {
-    return { data: null, error: "Onshape v2 is not enabled for this company" };
+  if (!settings.active) {
+    return {
+      data: null,
+      error: "Onshape v2 is not connected for this company"
+    };
   }
 
-  const connection = await getOnshapeClient(serviceRole, companyId, userId);
+  const connection = await getOnshapeClient(
+    serviceRole,
+    companyId,
+    userId,
+    ONSHAPE_V2_INTEGRATION_ID
+  );
   if (!connection.client) {
     return {
       data: null,

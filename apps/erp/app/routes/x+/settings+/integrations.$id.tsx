@@ -47,7 +47,12 @@ import {
 import { getPath, SECRET_KEYS } from "@carbon/ee/integrations/secrets";
 import {
   findUnlinkedLegacyOnshapeItems,
-  parseOnshapeV2Settings
+  isOnshapeIntegrationId,
+  legacyWebhookWanted,
+  ONSHAPE_LEGACY_INTEGRATION_ID,
+  ONSHAPE_V2_INTEGRATION_ID,
+  parseOnshapeV2Settings,
+  v2WebhookWanted
 } from "@carbon/ee/onshape";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { requirePlan } from "@carbon/ee/plan.server";
@@ -1499,15 +1504,26 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // one of them ON, don't persist an on-but-non-functional toggle: force it back
   // off here and tell them to reconnect first (below). Leaving them off imposes
   // nothing.
-  const onshapeActivatingWithoutWrite =
-    integrationId === "onshape" &&
-    ((metadata as Record<string, unknown>).assetSyncEnabled === true ||
-      (metadata as Record<string, unknown>).releaseImportEnabled === true) &&
+  const onshapeMetadataForScope = metadata as Record<string, unknown>;
+  const legacyActivatingWithoutWrite =
+    integrationId === ONSHAPE_LEGACY_INTEGRATION_ID &&
+    onshapeMetadataForScope.assetSyncEnabled === true &&
     !onshapeConnectionHasWriteScope(existingMetadata);
-  if (onshapeActivatingWithoutWrite) {
-    (metadata as Record<string, unknown>).assetSyncEnabled = false;
-    (metadata as Record<string, unknown>).releaseImportEnabled = false;
+  if (legacyActivatingWithoutWrite) {
+    onshapeMetadataForScope.assetSyncEnabled = false;
   }
+  // v2's own write-requiring consumers, on v2's own record and its own grant.
+  const v2ActivatingWithoutWrite =
+    integrationId === ONSHAPE_V2_INTEGRATION_ID &&
+    v2WebhookWanted(parseOnshapeV2Settings(metadata, { active: true })) &&
+    !onshapeConnectionHasWriteScope(existingMetadata);
+  if (v2ActivatingWithoutWrite) {
+    onshapeMetadataForScope.attachAssetsOnRelease = false;
+    onshapeMetadataForScope.releaseImportV2 = "off";
+    onshapeMetadataForScope.createItemsOnRelease = false;
+  }
+  const onshapeActivatingWithoutWrite =
+    legacyActivatingWithoutWrite || v2ActivatingWithoutWrite;
 
   const wasInstalled = existing.data?.active === true;
 
@@ -1614,7 +1630,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // and need a reconnect, so surface a registration failure instead of flashing
   // success while the sync silently never fires. The settings themselves are
   // already saved either way.
-  if (integrationId === "onshape") {
+  if (isOnshapeIntegrationId(integrationId)) {
     // Read-only connection trying to turn asset sync or release import on: we
     // already forced the toggles back off above, so just tell them exactly what
     // to do. Explicit and scope-accurate — not inferred from a downstream
@@ -1633,26 +1649,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    // The subscription is shared: one Onshape webhook feeds both asset sync and
-    // release import, so it must be registered while EITHER is on and only
-    // deregistered when both are off.
-    //
-    // The v2 pipeline has its OWN consumers, and a company on v2 has the legacy
-    // toggles off — so reading only those would DEREGISTER the subscription the
-    // moment someone switched to v2, silently, while the save flashed success.
-    const onshapeMetadata = metadata as Record<string, unknown>;
-    const onshapeV2 = parseOnshapeV2Settings(onshapeMetadata, { active: true });
-    const webhookWanted = onshapeV2.isV2
-      ? onshapeV2.attachAssetsOnRelease ||
-        onshapeV2.releaseImportV2 !== "off" ||
-        // Auto-create is a consumer too. Without it here, a company that turns
-        // auto-create on and everything else off has its webhook subscription
-        // DELETED on save and then receives no events at all — while the save
-        // flashes success.
-        onshapeV2.createItemsOnRelease
-      : onshapeMetadata.assetSyncEnabled === true ||
-        onshapeMetadata.releaseImportEnabled === true;
+    // Each record answers for its OWN subscription. One Onshape webhook feeds
+    // every consumer on that record, so it must exist while ANY of them is on
+    // and be deregistered only when they are all off. The two records use
+    // different callback paths, so neither can deregister the other's.
+    const isV2Record = integrationId === ONSHAPE_V2_INTEGRATION_ID;
+    const webhookWanted = isV2Record
+      ? v2WebhookWanted(parseOnshapeV2Settings(metadata, { active: true }))
+      : legacyWebhookWanted(metadata);
     const webhookResult = await ensureOnshapeReleaseWebhook(
+      integrationId,
       companyId,
       webhookWanted
     );
@@ -1661,7 +1667,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     // "onshapeElement" one, and v2 resolves only through the latter. Say so at
     // the moment of the switch — a successful save redirects and unmounts the
     // drawer, so the flash is what the user actually sees.
-    if (onshapeV2.isV2 && webhookResult.ok) {
+    if (isV2Record && webhookResult.ok) {
       try {
         const unlinked = await findUnlinkedLegacyOnshapeItems(client, {
           companyId,

@@ -1,10 +1,14 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
-import type { OnshapeReleasePackage } from "@carbon/ee/onshape";
+import type {
+  OnshapeIntegrationId,
+  OnshapeReleasePackage
+} from "@carbon/ee/onshape";
 import {
   buildOnshapeItemNotesBlock,
   getOnshapeClient,
+  ONSHAPE_LEGACY_INTEGRATION_ID,
   readReleasePackageName,
   readReleasePackageNotes,
   writeOnshapeItemNotes
@@ -274,7 +278,8 @@ async function resolveReleasedRevision(
     const onshape = await getOnshapeClient(
       carbon,
       payload.companyId,
-      payload.userId
+      payload.userId,
+      payload.integrationId
     );
     if (onshape.error || !onshape.client) {
       throw new Error(
@@ -285,7 +290,7 @@ async function resolveReleasedRevision(
 
     const onshapeCompanyId =
       payload.onshapeCompanyId ??
-      (await resolveOnshapeCompanyId(carbon, payload));
+      (await resolveOnshapeCompanyId(carbon, payload, payload.integrationId));
 
     const revisions = await withRateLimitRetry(
       () =>
@@ -386,6 +391,14 @@ async function readReleaseMarker(
 export interface OnshapeReleaseImportInput {
   companyId: string;
   userId: string;
+  /**
+   * WHICH Onshape record this import is running for. This body is genuinely
+   * shared: the legacy `onshape-release-import` job calls it, and so does
+   * `onshape-release-v2` inline. Required rather than defaulted, because a v2
+   * caller that omitted it would authenticate against the legacy record's grant
+   * and read the legacy tenant with nothing erroring.
+   */
+  integrationId: OnshapeIntegrationId;
   messageId: string;
   releaseId: string;
   /** ONSHAPE's part number — what the revisions API is asked about. */
@@ -1031,7 +1044,12 @@ export const onshapeReleaseImportFunction = inngest.createFunction(
     const carbon = getCarbonServiceRole();
 
     const result = await step.run("import-release", () =>
-      runOnshapeReleaseImport(carbon, payload)
+      // This Inngest function IS the legacy release-import consumer; v2 calls
+      // runOnshapeReleaseImport directly rather than through this event.
+      runOnshapeReleaseImport(carbon, {
+        ...payload,
+        integrationId: ONSHAPE_LEGACY_INTEGRATION_ID
+      })
     );
 
     if (!result.imported) {

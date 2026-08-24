@@ -6,6 +6,7 @@ import {
   buildOnshapeItemNotesBlock,
   getOnshapeClient,
   getOnshapeV2Settings,
+  ONSHAPE_V2_INTEGRATION_ID,
   patchElementMappingMetadata,
   readElementMappingsForItems,
   resolveOnshapeRevision,
@@ -77,10 +78,10 @@ export async function action({ request }: ActionFunctionArgs) {
       message: "Could not read the Onshape settings just now. Try again."
     };
   }
-  if (!settings.isV2) {
+  if (!settings.active) {
     return {
       success: false,
-      message: "Onshape v2 is not enabled for this company"
+      message: "Onshape v2 is not connected for this company"
     };
   }
 
@@ -208,7 +209,12 @@ export async function action({ request }: ActionFunctionArgs) {
             "This selection names a revision but no part number, so Carbon cannot verify it against Onshape."
         };
       }
-      const onshape = await getOnshapeClient(serviceRole, companyId, userId);
+      const onshape = await getOnshapeClient(
+        serviceRole,
+        companyId,
+        userId,
+        ONSHAPE_V2_INTEGRATION_ID
+      );
       if (!onshape.client) {
         return {
           success: false,
