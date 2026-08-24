@@ -1190,7 +1190,7 @@ msgstr "Gerenciador de conta"
 msgid "Account Manager"
 msgstr "Gerente de Conta"
 
-#: apps/erp/app/routes/x+/settings+/integrations.$id.tsx:1740
+#: apps/erp/app/routes/x+/settings+/integrations.$id.tsx:1729
 msgid "Account Mapping"
 msgstr "Mapeamento de Contas"
 
@@ -1384,7 +1384,7 @@ msgstr "Tipos de Ação"
 #: apps/erp/app/modules/accounting/ui/CostCenters/CostCentersListView.tsx:134
 #: apps/erp/app/modules/inventory/ui/Inventory/InventoryStorageUnits.tsx:310
 #: apps/erp/app/modules/inventory/ui/Kanbans/KanbansTable.tsx:613
-#: apps/erp/app/modules/items/ui/Item/BoMExplorer.tsx:199
+#: apps/erp/app/modules/items/ui/Item/BoMExplorer.tsx:183
 #: apps/erp/app/modules/production/ui/InspectionDocument/InspectionDocumentEditor.tsx:2561
 #: apps/erp/app/modules/production/ui/Projection/DemandProjectionTable.tsx:152
 #: apps/erp/app/modules/quality/ui/Actions/ActionsTable.tsx:241
@@ -2297,7 +2297,7 @@ msgstr "A posição de uma operação na fila de seu centro de trabalho — a or
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "Ocorreu um erro inesperado ao conectar ao Onshape. Tente conectar novamente."
 
-#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:164
+#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:162
 msgid "An unreleased version carries no revision, so its parts can only land on Carbon's initial revision — a part Carbon already holds at a named revision will be skipped. Models are still exported from this version. Prefer a released revision where there is one."
 msgstr ""
 
@@ -3250,7 +3250,7 @@ msgid "Assemblies"
 msgstr "Montagens"
 
 #: apps/erp/app/components/OnshapeRevisionPicker.tsx:238
-#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:201
+#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:199
 msgid "Assembly"
 msgstr ""
 
@@ -3268,10 +3268,6 @@ msgstr "Instrução de Montagem"
 #: apps/erp/app/routes/x+/part+/$itemId.tsx:390
 msgid "Assembly Instructions"
 msgstr "Instruções de Montagem"
-
-#: apps/erp/app/components/OnshapeSync.tsx:300
-msgid "Assembly:"
-msgstr "Montagem:"
 
 #: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceLineForm.tsx:533
 #: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:487
@@ -3837,7 +3833,6 @@ msgstr "Lista de Materiais"
 msgid "Bill of materials"
 msgstr "Lista de materiais"
 
-#: apps/erp/app/components/OnshapeSync.tsx:401
 #: apps/erp/app/modules/items/ui/ChangeNotice/ChangeNoticeDiffViewer.tsx:701
 msgid "Bill of Materials"
 msgstr "Lista de Materiais"
@@ -3925,10 +3920,6 @@ msgstr "BoM"
 #: apps/erp/app/modules/sales/ui/Quotes/QuoteExplorer.tsx:641
 msgid "BoM + BoP"
 msgstr "BoM + BoP"
-
-#: apps/erp/app/components/OnshapeSync.tsx:232
-msgid "BOM synced successfully"
-msgstr "BOM sincronizado com sucesso"
 
 #: packages/onboarding/src/content/data.ts:67
 msgid "BOMs"
@@ -4224,7 +4215,7 @@ msgstr "Não é possível baixar este arquivo"
 #: apps/erp/app/components/Modals/ConfirmDelete/ConfirmDelete.tsx:62
 #: apps/erp/app/components/OnshapeBomImport.tsx:338
 #: apps/erp/app/components/OnshapeRevisionPicker.tsx:318
-#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:319
+#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:317
 #: apps/erp/app/components/Table/components/TableHeader.tsx:234
 #: apps/erp/app/modules/account/ui/UserAttributes/UserAttributesForm.tsx:196
 #: apps/erp/app/modules/account/ui/UserAttributes/UserAttributesForm.tsx:836
@@ -4584,11 +4575,11 @@ msgstr "Cliente Carbon não encontrado"
 msgid "Carbon column"
 msgstr "Coluna Carbon"
 
-#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:241
+#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:239
 msgid "Carbon could not read every part number from Onshape, so an assembly shown without one may in fact have one. Try again, or check it in Onshape before importing."
 msgstr ""
 
-#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:218
+#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:216
 msgid "Carbon could not read every release in this Onshape company, so a version marked Unreleased here may in fact be released. Check in Onshape before importing one."
 msgstr ""
 
@@ -8627,7 +8618,7 @@ msgstr "dimensões"
 #: apps/erp/app/modules/items/ui/useItemsSubmodules.tsx:92
 #: apps/erp/app/routes/x+/accounting+/dimensions.tsx:13
 #: apps/erp/app/routes/x+/items+/dimensions.tsx:19
-#: apps/erp/app/routes/x+/settings+/integrations.$id.tsx:1769
+#: apps/erp/app/routes/x+/settings+/integrations.$id.tsx:1758
 #: packages/onboarding/src/content/setup.ts:72
 #: packages/onboarding/src/content/setup.ts:310
 msgid "Dimensions"
@@ -8795,7 +8786,7 @@ msgstr "Documentação"
 msgid "Docs & videos"
 msgstr "Documentação e vídeos"
 
-#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:183
+#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:181
 #: apps/erp/app/modules/accounting/ui/Periods/PeriodCloseUnpostedDocumentsPopover.tsx:150
 #: apps/erp/app/modules/accounting/ui/Reports/PivotLinesDrawer.tsx:117
 #: apps/erp/app/modules/invoicing/ui/Memo/MemoApplicationsPanel.tsx:80
@@ -8821,10 +8812,6 @@ msgstr "Modelos de Documentos"
 #: apps/erp/app/modules/inventory/ui/StockMovements/StockMovementsTable.tsx:117
 msgid "Document Type"
 msgstr "Tipo de Documento"
-
-#: apps/erp/app/components/OnshapeSync.tsx:259
-msgid "Document:"
-msgstr "Documento:"
 
 #: apps/erp/app/hooks/useModules.tsx:60
 #: apps/erp/app/modules/documents/ui/Documents/DocumentsTable.tsx:499
@@ -10619,8 +10606,8 @@ msgstr "A expiração começa quando o processo selecionado inicia."
 msgid "Expiry trace"
 msgstr "Rastreamento de validade"
 
-#: apps/erp/app/modules/items/ui/Item/BoMExplorer.tsx:146
-#: apps/erp/app/modules/items/ui/Item/BoMExplorer.tsx:209
+#: apps/erp/app/modules/items/ui/Item/BoMExplorer.tsx:143
+#: apps/erp/app/modules/items/ui/Item/BoMExplorer.tsx:193
 #: apps/erp/app/modules/sales/ui/Quotes/QuoteExplorer.tsx:566
 msgid "Export"
 msgstr "Exportar"
@@ -10954,10 +10941,6 @@ msgstr "Falha ao carregar dados"
 msgid "Failed to load inbound inspections"
 msgstr "Falha ao carregar inspeções de entrada"
 
-#: apps/erp/app/components/OnshapeSync.tsx:73
-msgid "Failed to load item data"
-msgstr "Falha ao carregar dados do item"
-
 #: apps/erp/app/modules/inventory/ui/Kanbans/KanbanForm.tsx:93
 #: apps/erp/app/modules/items/ui/Item/BillOfMaterial.tsx:733
 #: apps/erp/app/modules/production/ui/Jobs/JobBillOfMaterial.tsx:727
@@ -11278,10 +11261,6 @@ msgstr "Taxas"
 #: packages/glossary/src/terms.ts:457
 msgid "FEFO (first-expiry-first-out)"
 msgstr "Acabamento"
-
-#: apps/erp/app/components/OnshapeSync.tsx:372
-msgid "Fetch"
-msgstr "Buscar"
 
 #: apps/erp/app/modules/storage-rules/ui/RuleBuilder.tsx:142
 msgid "Field"
@@ -12603,7 +12582,7 @@ msgid "Import a bill of materials"
 msgstr ""
 
 #: apps/erp/app/components/OnshapeBomImport.tsx:122
-#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:160
+#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:158
 msgid "Import an unreleased version"
 msgstr ""
 
@@ -14127,10 +14106,6 @@ msgstr "Último Trimestre"
 #: apps/erp/app/modules/workflows/ui/WorkflowsTable.tsx:193
 msgid "Last Run"
 msgstr "Última execução"
-
-#: apps/erp/app/components/OnshapeSync.tsx:353
-msgid "Last synced: <0/>"
-msgstr "Última sincronização: <0/>"
 
 #: apps/erp/app/routes/x+/account+/security.tsx:338
 #: apps/erp/app/routes/x+/account+/security.tsx:618
@@ -16860,11 +16835,7 @@ msgstr "Nenhuma hora extra agendada"
 msgid "No parent sources recorded yet. Click Recalculate on the planning page to refresh attribution."
 msgstr "Nenhuma fonte pai registrada ainda. Clique em Recalcular na página de planejamento para atualizar a atribuição."
 
-#: apps/erp/app/components/OnshapeSync.tsx:467
-msgid "No part ID"
-msgstr "Sem ID de peça"
-
-#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:291
+#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:289
 msgid "No part number"
 msgstr ""
 
@@ -17302,7 +17273,7 @@ msgstr "Nada mais neste local tem estoque para puxar."
 msgid "Nothing in the archive"
 msgstr "Nada no arquivo"
 
-#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:270
+#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:268
 msgid "Nothing to choose here."
 msgstr ""
 
@@ -17542,7 +17513,7 @@ msgstr "Apenas períodos vazios e abertos podem ser deletados."
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "O Onshape autorizou a conexão, mas não foi possível salvá-la. Tente conectar novamente."
 
-#: apps/erp/app/modules/items/ui/Item/BoMExplorer.tsx:182
+#: apps/erp/app/modules/items/ui/Item/BoMExplorer.tsx:166
 msgid "Onshape can only import into a Draft method. This one is {makeMethodStatus} — create a new version to import into."
 msgstr ""
 
@@ -19072,7 +19043,7 @@ msgstr "Lançado uma vez, corrigido 1 vez."
 msgid "Posted once, no corrections."
 msgstr "Lançado uma vez, sem correções."
 
-#: apps/erp/app/routes/x+/settings+/integrations.$id.tsx:1755
+#: apps/erp/app/routes/x+/settings+/integrations.$id.tsx:1744
 #: packages/glossary/src/terms.ts:270
 msgid "Posting"
 msgstr "Adiantamentos"
@@ -20763,7 +20734,6 @@ msgstr "Reduzido"
 msgid "Reference"
 msgstr "Referência"
 
-#: apps/erp/app/components/OnshapeSync.tsx:388
 #: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceProperties.tsx:450
 #: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceProperties.tsx:432
 #: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderProperties.tsx:460
@@ -20874,7 +20844,7 @@ msgstr "Controle de Lançamento"
 msgid "Release Job"
 msgstr "Liberar Trabalho"
 
-#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:304
+#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:302
 #: apps/erp/app/modules/inventory/ui/StockTransfers/StockTransferStatus.tsx:23
 msgid "Released"
 msgstr "Liberado"
@@ -22112,7 +22082,6 @@ msgstr "Sábado"
 #: apps/erp/app/components/Layout/Navigation/NavigationEditBar.tsx:41
 #: apps/erp/app/components/Layout/Topbar/Breadcrumbs.tsx:308
 #: apps/erp/app/components/LineReorder/ReorderEditBar.tsx:35
-#: apps/erp/app/components/OnshapeSync.tsx:409
 #: apps/erp/app/components/Table/components/TableHeader.tsx:237
 #: apps/erp/app/modules/account/ui/Personal/PersonalDataForm.tsx:24
 #: apps/erp/app/modules/account/ui/Profile/ProfileForm.tsx:72
@@ -23743,10 +23712,6 @@ msgstr "Mostrar resumo"
 msgid "Show Supplier IDs"
 msgstr "Mostrar IDs de Fornecedor"
 
-#: apps/erp/app/components/OnshapeSync.tsx:246
-msgid "Show sync options"
-msgstr "Mostrar opções de sincronização"
-
 #: apps/erp/app/routes/x+/settings+/accounting.tsx:304
 msgid "Show Trailing Zeros"
 msgstr "Mostrar Zeros Decimais"
@@ -23766,7 +23731,7 @@ msgstr "Exibindo em {parentCurrency}"
 msgid "Showing the first 500 lines"
 msgstr "Mostrando as primeiras 500 linhas"
 
-#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:229
+#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:227
 msgid "Showing the first assemblies only — this version has more than Carbon lists here."
 msgstr ""
 
@@ -23774,7 +23739,7 @@ msgstr ""
 msgid "Showing the most recent releases only — this Onshape company has more than this list can load at once. Search narrows what is shown here, not what was loaded."
 msgstr ""
 
-#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:252
+#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:250
 msgid "Showing the most recent versions only — this document has more than Carbon lists here."
 msgstr ""
 
@@ -25209,13 +25174,12 @@ msgstr "Mudar utilizadores e confirmar acesso"
 msgid "Switching the employee's type here doesn't change their existing permissions; the modal that follows asks whether to overwrite the current set with the new type's defaults."
 msgstr "Alterar o tipo de funcionário aqui não altera suas permissões existentes; a caixa de diálogo seguinte pergunta se deve substituir o conjunto atual pelos padrões do novo tipo."
 
-#: apps/erp/app/components/OnshapeSync.tsx:390
 #: apps/erp/app/routes/x+/accounting+/sync-tieout.$cellId.tsx:188
 msgid "Sync"
 msgstr "Sincronizar"
 
-#: apps/erp/app/routes/x+/settings+/integrations.$id.tsx:1793
-#: apps/erp/app/routes/x+/settings+/integrations.$id.tsx:1797
+#: apps/erp/app/routes/x+/settings+/integrations.$id.tsx:1782
+#: apps/erp/app/routes/x+/settings+/integrations.$id.tsx:1786
 msgid "Sync Activity"
 msgstr "Atividade de sincronização"
 
@@ -26870,7 +26834,7 @@ msgstr "Esta versão pertence ao aviso de alteração <0>{0}</0>. Edite-a lá."
 msgid "This version cannot be opened"
 msgstr "Esta versão não pode ser aberta"
 
-#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:268
+#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:266
 msgid "This version has no assemblies."
 msgstr ""
 
@@ -28017,7 +27981,7 @@ msgstr "Documentos Não Lançados"
 msgid "Unreceived POs"
 msgstr "POs não recebidas"
 
-#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:308
+#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:306
 msgid "Unreleased"
 msgstr ""
 
@@ -28619,7 +28583,7 @@ msgstr "Verificar se os saldos de inventário e financeiros conferem"
 msgid "Verify your email"
 msgstr "Verifique seu email"
 
-#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:193
+#: apps/erp/app/components/OnshapeUnreleasedPicker.tsx:191
 #: apps/erp/app/modules/production/ui/Jobs/JobMakeMethodTools.tsx:494
 #: apps/erp/app/modules/production/ui/Procedures/ProcedureForm.tsx:89
 #: apps/erp/app/modules/quality/ui/Documents/QualityDocumentForm.tsx:87
@@ -28633,10 +28597,6 @@ msgstr "Versão"
 #: apps/erp/app/modules/workflows/ui/Builder/BuilderHeader.tsx:252
 msgid "Version {0} is live now and will be replaced."
 msgstr "A versão {0} está ao vivo agora e será substituída."
-
-#: apps/erp/app/components/OnshapeSync.tsx:280
-msgid "Version:"
-msgstr "Versão:"
 
 #: apps/erp/app/components/VersionMenu.tsx:45
 #: apps/erp/app/modules/items/ui/Services/ServicesTable.tsx:471

@@ -6,9 +6,9 @@ export { accountingReconciliationFunction } from "./accounting-reconciliation";
 export { jiraSyncFunction, syncIssueFromJiraSchema } from "./jira";
 export { linearSyncFunction, syncIssueFromLinearSchema } from "./linear";
 export { onshapeBomImportFunction } from "./onshape-bom-import";
+export { onshapeItemAssetsFunction } from "./onshape-item-assets";
+export { onshapeReleaseFunction } from "./onshape-release";
 export { onshapeReleaseImportFunction } from "./onshape-release-import";
-export { onshapeReleaseV2Function } from "./onshape-release-v2";
-export { onshapeV2ItemAssetsFunction } from "./onshape-v2-item-assets";
 export { paperlessPartsFunction } from "./paperless-parts";
 export {
   slackDocumentAssignmentUpdateFunction,

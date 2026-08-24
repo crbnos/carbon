@@ -631,7 +631,7 @@ export type Events = {
   };
   // v2 release handling: ONE job for the whole revision.created event, so the
   // asset attach cannot race the import that creates the item it attaches to.
-  "carbon/onshape-release-v2": {
+  "carbon/onshape-release": {
     data: {
       companyId: string;
       userId: string;
@@ -649,7 +649,7 @@ export type Events = {
       groupKey: string;
     };
   };
-  "carbon/onshape-v2-item-assets": {
+  "carbon/onshape-item-assets": {
     data: {
       companyId: string;
       userId: string;

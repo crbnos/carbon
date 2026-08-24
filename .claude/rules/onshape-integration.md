@@ -388,7 +388,7 @@ and an absent key is indistinguishable from the default at every read site.
      `elementId` and a numeric `elementType`, else warn and break (lines 288-303).
      Then:
      - `assetSyncEnabled` → `trigger("onshape-revision-sync", …)` (line 304).
-     - `isV2` → ONE `trigger("onshape-release-v2", …)` carrying
+     - `isV2` → ONE `trigger("onshape-release", …)` carrying
        `groupKey: releaseId ?? elementId` (lines 320-348), then **break** —
        exclusive, never falling through to the legacy dispatches. One job for the
        whole event because a separate asset job would race the import that

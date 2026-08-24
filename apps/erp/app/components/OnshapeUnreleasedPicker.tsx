@@ -19,8 +19,8 @@ import { useEffect, useState } from "react";
 import { LuChevronRight, LuTriangleAlert } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import type { loader as documentsLoader } from "~/routes/api+/integrations.onshape.documents";
-import type { loader as elementsLoader } from "~/routes/api+/integrations.onshape.v2.elements";
-import type { loader as versionsLoader } from "~/routes/api+/integrations.onshape.v2.versions";
+import type { loader as elementsLoader } from "~/routes/api+/integrations.onshape.elements";
+import type { loader as versionsLoader } from "~/routes/api+/integrations.onshape.versions";
 import { path } from "~/utils/path";
 import type { OnshapeSelection } from "./OnshapeRevisionPicker";
 
@@ -76,7 +76,7 @@ export const OnshapeUnreleasedPicker = ({
     setVersion(null);
     setStep("version");
     versions.load(
-      `${path.to.api.onShapeV2Versions}?did=${encodeURIComponent(chosen.id)}`
+      `${path.to.api.onShapeVersions}?did=${encodeURIComponent(chosen.id)}`
     );
   };
 
@@ -85,7 +85,7 @@ export const OnshapeUnreleasedPicker = ({
     setVersion(chosen);
     setStep("element");
     elements.load(
-      `${path.to.api.onShapeV2Elements}?did=${encodeURIComponent(document.id)}&vid=${encodeURIComponent(chosen.id)}`
+      `${path.to.api.onShapeElements}?did=${encodeURIComponent(document.id)}&vid=${encodeURIComponent(chosen.id)}`
     );
   };
 

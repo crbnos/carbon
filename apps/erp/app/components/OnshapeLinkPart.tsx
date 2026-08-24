@@ -15,7 +15,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { useFetcher, useRevalidator } from "react-router";
-import type { action as linkAction } from "~/routes/api+/integrations.onshape.v2.link";
+import type { action as linkAction } from "~/routes/api+/integrations.onshape.link";
 import { path } from "~/utils/path";
 import type { OnshapeSelection } from "./OnshapeRevisionPicker";
 import { OnshapeRevisionPicker } from "./OnshapeRevisionPicker";
@@ -152,7 +152,7 @@ export const OnshapeLinkPart = ({
 
                   fetcher.submit(formData, {
                     method: "post",
-                    action: path.to.api.onShapeV2Link
+                    action: path.to.api.onShapeLink
                   });
                 }}
               >

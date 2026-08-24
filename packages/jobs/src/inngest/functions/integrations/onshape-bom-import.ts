@@ -45,6 +45,11 @@ import { NotificationEvent } from "@carbon/notifications";
 import { RetryAfterError } from "inngest";
 import { z } from "zod";
 import { inngest } from "../../client";
+import {
+  groupAssetTargetsByElement,
+  isTransientExportError,
+  pullOnshapeAssetsForElement
+} from "./onshape-assets";
 import type { OnshapeBomImportOutcome } from "./onshape-bom-outcome";
 import {
   countNeedingAttention,
@@ -59,11 +64,6 @@ import {
   resolveOnshapeReplenishment
 } from "./onshape-replenishment";
 import { withRateLimitRetry } from "./onshape-shared";
-import {
-  groupAssetTargetsByElement,
-  isTransientExportError,
-  pullOnshapeAssetsForElement
-} from "./onshape-v2-assets";
 
 const PayloadSchema = z.object({
   companyId: z.string(),

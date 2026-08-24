@@ -515,7 +515,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // `item.modelUploadId`, so the loser files its model away as a document.
   if (!importQueued) {
     try {
-      await trigger("onshape-v2-item-assets", {
+      await trigger("onshape-item-assets", {
         companyId,
         userId,
         itemId,

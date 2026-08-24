@@ -37,6 +37,10 @@ import { NotificationEvent } from "@carbon/notifications";
 import { RetryAfterError } from "inngest";
 import { z } from "zod";
 import { inngest } from "../../client";
+import {
+  isTransientExportError,
+  pullOnshapeAssetsForElement
+} from "./onshape-assets";
 import { pullOnshapeDrawingsForDocument } from "./onshape-drawings";
 import { mintDefaultsForRelease } from "./onshape-mint";
 import { runOnshapeReleaseImport } from "./onshape-release-import";
@@ -44,10 +48,6 @@ import { resolveReleasedRevision } from "./onshape-release-revision";
 import { readOnshapePurchasingLevel } from "./onshape-replenishment";
 import { withRateLimitRetry } from "./onshape-shared";
 import { syncOnshapeDrawingAssetsToItem } from "./onshape-sync-element";
-import {
-  isTransientExportError,
-  pullOnshapeAssetsForElement
-} from "./onshape-v2-assets";
 
 const PayloadSchema = z.object({
   companyId: z.string(),
@@ -137,9 +137,9 @@ function readReleasedRevision(
   );
 }
 
-export const onshapeReleaseV2Function = inngest.createFunction(
+export const onshapeReleaseFunction = inngest.createFunction(
   {
-    id: "onshape-release-v2",
+    id: "onshape-release",
     // Every 429 reschedule consumes a retry, and this job both exports and
     // imports.
     retries: 10,
@@ -154,7 +154,7 @@ export const onshapeReleaseV2Function = inngest.createFunction(
     // cannot collapse every company's releases into one bucket.
     concurrency: { key: "event.data.groupKey", limit: 1 }
   },
-  { event: "carbon/onshape-release-v2" },
+  { event: "carbon/onshape-release" },
   async ({ event, step }) => {
     const payload = PayloadSchema.parse(event.data);
     const carbon = getCarbonServiceRole();

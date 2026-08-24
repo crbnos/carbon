@@ -177,25 +177,14 @@ export const path = {
         generatePath(
           `${api}/mrp${locationId ? `?location=${locationId}` : ""}`
         ),
-      onShapeBom: (documentId: string, versionId: string, elementId: string) =>
-        generatePath(
-          `${api}/integrations/onshape/d/${documentId}/v/${versionId}/e/${elementId}/bom`
-        ),
+      onShapeBom: `${api}/integrations/onshape/bom`,
+      onShapeCreate: `${api}/integrations/onshape/create`,
       onShapeDocuments: `${api}/integrations/onshape/documents`,
-      onShapeElements: (documentId: string, versionId: string) =>
-        generatePath(
-          `${api}/integrations/onshape/d/${documentId}/v/${versionId}/elements`
-        ),
-      onShapeSync: `${api}/integrations/onshape/sync`,
-      onShapeV2Bom: `${api}/integrations/onshape/v2/bom`,
-      onShapeV2Create: `${api}/integrations/onshape/v2/create`,
-      onShapeV2Elements: `${api}/integrations/onshape/v2/elements`,
-      onShapeV2Import: `${api}/integrations/onshape/v2/import`,
-      onShapeV2Link: `${api}/integrations/onshape/v2/link`,
-      onShapeV2Revisions: `${api}/integrations/onshape/v2/revisions`,
-      onShapeV2Versions: `${api}/integrations/onshape/v2/versions`,
-      onShapeVersions: (documentId: string) =>
-        generatePath(`${api}/integrations/onshape/d/${documentId}/versions`),
+      onShapeElements: `${api}/integrations/onshape/elements`,
+      onShapeImport: `${api}/integrations/onshape/import`,
+      onShapeLink: `${api}/integrations/onshape/link`,
+      onShapeRevisions: `${api}/integrations/onshape/revisions`,
+      onShapeVersions: `${api}/integrations/onshape/versions`,
       outsideOperations: (jobId: string) =>
         generatePath(`${api}/production/outside-operations/${jobId}`),
       outstandingTrainings: `${api}/resources/trainings`,

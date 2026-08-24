@@ -16,9 +16,9 @@ import { trigger } from "@carbon/lib/trigger";
 import { NotificationEvent } from "@carbon/notifications";
 import { z } from "zod";
 import { inngest } from "../../client";
+import { pullOnshapeAssetsForElement } from "./onshape-assets";
 import { pullOnshapeDrawingsForDocument } from "./onshape-drawings";
 import { withRateLimitRetry } from "./onshape-shared";
-import { pullOnshapeAssetsForElement } from "./onshape-v2-assets";
 
 const PayloadSchema = z.object({
   companyId: z.string(),
@@ -37,16 +37,16 @@ const PayloadSchema = z.object({
 /** How many refusals to name in one notification before it stops reading. */
 const MAX_REPORTED_SKIPS = 5;
 
-export const onshapeV2ItemAssetsFunction = inngest.createFunction(
+export const onshapeItemAssetsFunction = inngest.createFunction(
   {
-    id: "onshape-v2-item-assets",
+    id: "onshape-item-assets",
     // Every 429 reschedule consumes one retry.
     retries: 10,
     // One pull at a time per item: two would export the same geometry twice
     // and race on the modelUpload row.
     concurrency: { key: "event.data.itemId", limit: 1 }
   },
-  { event: "carbon/onshape-v2-item-assets" },
+  { event: "carbon/onshape-item-assets" },
   async ({ event, step }) => {
     const payload = PayloadSchema.parse(event.data);
     const carbon = getCarbonServiceRole();

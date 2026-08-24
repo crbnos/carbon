@@ -20,8 +20,8 @@ import {
   resolveDrawingModelItem
 } from "@carbon/ee/onshape";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isTransientExportError } from "./onshape-assets";
 import { syncOnshapeDrawingAssetsToItem } from "./onshape-sync-element";
-import { isTransientExportError } from "./onshape-v2-assets";
 
 type Carbon = SupabaseClient<Database>;
 

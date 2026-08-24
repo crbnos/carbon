@@ -33,11 +33,6 @@ type DocumentSourceType = Database["public"]["Enums"]["documentSourceType"];
 export interface SyncOnshapeElementInput {
   companyId: string;
   userId: string; // Onshape integration installer (auth + audit)
-  /**
-   * WHICH Onshape record to authenticate as. Required: this exporter is shared
-   * between the legacy asset sync and every v2 path, and the two records hold
-   * separate grants against potentially different Onshape tenants.
-   */
   itemId: string; // resolved Carbon item (caller guarantees it exists)
   sourceDocument: DocumentSourceType; // e.g. "Part"
   documentId: string;
@@ -302,11 +297,6 @@ export async function syncOnshapeElementAssetsToItem(
 export interface SyncOnshapeDrawingInput {
   companyId: string;
   userId: string; // Onshape integration installer (auth + audit)
-  /**
-   * WHICH Onshape record to authenticate as. Required: this exporter is shared
-   * between the legacy asset sync and every v2 path, and the two records hold
-   * separate grants against potentially different Onshape tenants.
-   */
   itemId: string; // resolved Carbon item (the model this drawing documents)
   sourceDocument: DocumentSourceType; // e.g. "Part"
   documentId: string;

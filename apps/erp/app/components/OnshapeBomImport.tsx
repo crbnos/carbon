@@ -21,8 +21,8 @@ import { useEffect, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { useOnshape } from "~/hooks/useOnshape";
-import type { loader as bomLoader } from "~/routes/api+/integrations.onshape.v2.bom";
-import type { action as importAction } from "~/routes/api+/integrations.onshape.v2.import";
+import type { loader as bomLoader } from "~/routes/api+/integrations.onshape.bom";
+import type { action as importAction } from "~/routes/api+/integrations.onshape.import";
 import { path } from "~/utils/path";
 import type { OnshapeSelection } from "./OnshapeRevisionPicker";
 import { OnshapeRevisionPicker } from "./OnshapeRevisionPicker";
@@ -76,7 +76,7 @@ export const OnshapeBomImport = ({
       vid: selection.versionId,
       eid: selection.elementId
     });
-    preview.load(`${path.to.api.onShapeV2Bom}?${params}`);
+    preview.load(`${path.to.api.onShapeBom}?${params}`);
   }, [selection]);
 
   useEffect(() => {
@@ -359,7 +359,7 @@ export const OnshapeBomImport = ({
                     );
                     importer.submit(formData, {
                       method: "post",
-                      action: path.to.api.onShapeV2Import
+                      action: path.to.api.onShapeImport
                     });
                   }}
                 >

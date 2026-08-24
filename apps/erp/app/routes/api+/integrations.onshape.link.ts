@@ -386,7 +386,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // Queued rather than awaited: an export is a translate-poll-download round
   // trip against Onshape, minutes in the worst case and rate-limitable.
   try {
-    await trigger("onshape-v2-item-assets", {
+    await trigger("onshape-item-assets", {
       companyId,
       userId,
       itemId: input.itemId,

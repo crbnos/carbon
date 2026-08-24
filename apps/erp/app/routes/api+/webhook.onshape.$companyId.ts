@@ -17,7 +17,7 @@ import { getIntegration } from "../../modules/settings";
 //                        ▼
 //     onshape.revision.created ──▶ trigger("onshape-revision-sync")   [assetSyncEnabled]
 //                              ──▶ trigger("onshape-release-import")  [releaseImportEnabled]
-//                              ──▶ trigger("onshape-release-v2")      [v2: attachAssets |
+//                              ──▶ trigger("onshape-release")      [v2: attachAssets |
 //                                                                      releaseImportMode |
 //                                                                      createItemsOnRelease]
 //     everything else          ──▶ ack 200 (logged, no dispatch)
@@ -333,7 +333,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         // (which consumers are on, what to do with a drawing) so the receiver
         // stays a router.
         if (v2AttachAssets || v2ReleaseImportEnabled || v2CreateItems) {
-          await trigger("onshape-release-v2", {
+          await trigger("onshape-release", {
             companyId,
             userId: installerUserId,
             messageId,

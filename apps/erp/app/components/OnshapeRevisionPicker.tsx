@@ -20,7 +20,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useState } from "react";
 import { LuSearch, LuTriangleAlert } from "react-icons/lu";
 import { useFetcher } from "react-router";
-import type { loader as revisionsLoader } from "~/routes/api+/integrations.onshape.v2.revisions";
+import type { loader as revisionsLoader } from "~/routes/api+/integrations.onshape.revisions";
 import { path } from "~/utils/path";
 
 type Revision = {
@@ -96,7 +96,7 @@ export const OnshapeRevisionPicker = ({
   // it should not run for everyone who happens to render the parts list.
   useEffect(() => {
     if (isOpen && fetcher.state === "idle" && !fetcher.data) {
-      fetcher.load(path.to.api.onShapeV2Revisions);
+      fetcher.load(path.to.api.onShapeRevisions);
     }
   }, [isOpen, fetcher]);
 

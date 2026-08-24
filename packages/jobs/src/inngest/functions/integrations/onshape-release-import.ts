@@ -383,13 +383,6 @@ async function readReleaseMarker(
 export interface OnshapeReleaseImportInput {
   companyId: string;
   userId: string;
-  /**
-   * WHICH Onshape record this import is running for. This body is genuinely
-   * shared: the legacy `onshape-release-import` job calls it, and so does
-   * `onshape-release-v2` inline. Required rather than defaulted, because a v2
-   * caller that omitted it would authenticate against the legacy record's grant
-   * and read the legacy tenant with nothing erroring.
-   */
   messageId: string;
   releaseId: string;
   /** ONSHAPE's part number — what the revisions API is asked about. */
@@ -421,7 +414,7 @@ export interface OnshapeReleaseImportInput {
   gate?: { enabled: boolean; mode: "changeNotice" | "revision" };
   /**
    * The release package, already fetched by the v2 caller. Passed in rather
-   * than re-fetched: `onshape-release-v2` needs it too, and one release means
+   * than re-fetched: `onshape-release` needs it too, and one release means
    * one call however many elements fan out of it.
    */
   releasePackage?: OnshapeReleasePackage;

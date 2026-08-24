@@ -130,7 +130,7 @@ describe("onshape webhook receiver", () => {
 
       expect(result).toEqual({ success: true });
       // Neither legacy job runs, whatever their stored toggles say.
-      expect(dispatchedTasks()).toEqual(["onshape-release-v2"]);
+      expect(dispatchedTasks()).toEqual(["onshape-release"]);
     });
 
     it("does not drop a v2 company's event for want of the legacy flags", async () => {
@@ -144,7 +144,7 @@ describe("onshape webhook receiver", () => {
       expect(result).toEqual({ success: true });
       // Reaches the v2 job on the v2 defaults alone (attach on, import
       // changeNotice) — the legacy toggles are irrelevant to it.
-      expect(dispatchedTasks()).toEqual(["onshape-release-v2"]);
+      expect(dispatchedTasks()).toEqual(["onshape-release"]);
     });
 
     it("treats a v2 company with release import off as having no release consumer", async () => {
@@ -179,7 +179,7 @@ describe("onshape webhook receiver", () => {
       const result = await run(makeRequest(releaseEvent()));
 
       expect(result).toEqual({ success: true });
-      expect(dispatchedTasks()).toEqual(["onshape-release-v2"]);
+      expect(dispatchedTasks()).toEqual(["onshape-release"]);
     });
 
     it("does not treat a non-true createItemsOnRelease as a consumer", async () => {
@@ -308,7 +308,7 @@ describe("onshape webhook receiver", () => {
     });
 
     it("forwards a drawing to the v2 job, which owns the drawing policy", async () => {
-      // Phase 7's resolver lives in onshape-release-v2, so the receiver must
+      // The drawing resolver lives in onshape-release, so the receiver must
       // NOT filter drawings out on the v2 pipeline the way it does on legacy.
       // This is the test that says work item 3 needed no webhook change.
       getIntegration.mockResolvedValue(integrationRow({ pipeline: "next" }));
@@ -316,7 +316,7 @@ describe("onshape webhook receiver", () => {
       const result = await run(makeRequest(releaseEvent({ elementType: 2 })));
 
       expect(result).toEqual({ success: true });
-      expect(dispatchedTasks()).toEqual(["onshape-release-v2"]);
+      expect(dispatchedTasks()).toEqual(["onshape-release"]);
       expect(vi.mocked(trigger).mock.calls[0]?.[1]).toMatchObject({
         elementType: 2
       });

@@ -367,7 +367,7 @@ const PartForm = ({
           <ValidatedForm
             action={
               identityLocked
-                ? path.to.api.onShapeV2Create
+                ? path.to.api.onShapeCreate
                 : isEditing
                   ? undefined
                   : path.to.newPart

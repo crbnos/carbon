@@ -95,7 +95,7 @@ export async function pullOnshapeAssetsForElement(
   const result: OnshapeAssetPullResult = { attached: [], skipped: [] };
   if (args.targets.length === 0) return result;
 
-  const scratchDir = await mkdtemp(join(tmpdir(), "onshape-v2-assets-"));
+  const scratchDir = await mkdtemp(join(tmpdir(), "onshape-assets-"));
 
   // One render for the whole element, reused by every body in it. Best effort:
   // a missing thumbnail is cosmetic, and the model-thumbnail pipeline renders

@@ -108,7 +108,7 @@ vi.mock("~/modules/items", async () => {
   };
 });
 
-import { action } from "./integrations.onshape.v2.create";
+import { action } from "./integrations.onshape.create";
 
 const COMPANY_ID = "company-1";
 const USER_ID = "user-1";
@@ -160,7 +160,7 @@ function formData(overrides: Record<string, string> = {}) {
 }
 
 function request(form: FormData) {
-  return new Request("http://localhost/api/integrations/onshape/v2/create", {
+  return new Request("http://localhost/api/integrations/onshape/create", {
     method: "POST",
     body: form
   });
@@ -344,7 +344,7 @@ describe("v2.create — the bill of materials branch", () => {
       context: {}
     } as never);
 
-    expect(triggeredEvents()).not.toContain("onshape-v2-item-assets");
+    expect(triggeredEvents()).not.toContain("onshape-item-assets");
   });
 
   it("pulls the assets itself when no BOM import was asked for", async () => {
@@ -355,7 +355,7 @@ describe("v2.create — the bill of materials branch", () => {
     } as never);
 
     expect(result).toMatchObject({ success: true, importQueued: false });
-    expect(triggeredEvents()).toEqual(["onshape-v2-item-assets"]);
+    expect(triggeredEvents()).toEqual(["onshape-item-assets"]);
   });
 
   it("marks the import in flight so the item can say so", async () => {
@@ -390,7 +390,7 @@ describe("v2.create — the bill of materials branch", () => {
     expect((result as { message: string }).message).toMatch(
       /update and delete/i
     );
-    expect(triggeredEvents()).toEqual(["onshape-v2-item-assets"]);
+    expect(triggeredEvents()).toEqual(["onshape-item-assets"]);
   });
 
   it("refuses a BOM import for a Part Studio body", async () => {
@@ -420,7 +420,7 @@ describe("v2.create — the bill of materials branch", () => {
     } as never);
 
     expect(result).toMatchObject({ success: true, importQueued: false });
-    expect(triggeredEvents()).toEqual(["onshape-v2-item-assets"]);
+    expect(triggeredEvents()).toEqual(["onshape-item-assets"]);
   });
 });
 
