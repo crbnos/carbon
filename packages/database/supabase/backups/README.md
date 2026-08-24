@@ -1,50 +1,40 @@
-# Onboarding demo templates
+# Onboarding demo templates — this directory is unused
 
-Repo-committed company backups used as onboarding demo data. Each template is two
-things, named by `industryId` (which must match a row in the `industry` table —
-see the onboarding migration):
+This folder once held repo-committed company backups (`<industryId>.carbon.json.gz`
+plus a sibling `<industryId>.assets/` folder) that onboarding's "Use a demo template"
+choice was supposed to download and reseed-import. **That design was never finished**
+and has been replaced. The committed `robotics_oem.carbon.json.gz` was deleted in
+`d01f0357a`; nothing has read this directory since.
 
-- `<industryId>.carbon.json.gz` — the gz of `{ manifest, data }` (records only).
-- `<industryId>.assets/` — the template's storage files (3D models, thumbnails, …),
-  mirroring their source path (`{sourceCompanyId}/models/{id}.stl`). Omit the folder
-  if the template has no files.
+## What actually happens now
 
-> Generation 2: storage assets are real files in the `.assets/` folder, NOT
-> base64-embedded in the gz (which kept the gz small and bounded export memory).
+Onboarding's `template` choice runs the **dev seed's own tier code** against the newly
+created company — the same data, the same insertion logic, no archive in between. The
+data lives in exactly one place: `packages/database/src/datasets/`.
 
-These are published into every workspace by `ci/src/upload-backup-templates.ts`
-as a **manual** step — the `Publish backup templates` workflow
-(`.github/workflows/publish-templates.yml`, `workflow_dispatch`) or
-`pnpm --filter ci ci:upload-backup-templates` locally. It is **not** run on every
-deploy (templates change rarely and are large). It uploads the `.gz` to each
-workspace's private `company-templates` bucket and fans the files from
-`<industryId>.assets/` into the shared `_templates/<industryId>/` prefix of the
-`private` bucket. The publish is **idempotent** — anything that already exists is
-skipped; pass `--force` (workflow input `force: true`) to overwrite an updated
-template.
+- Data: `packages/database/src/datasets/data/<datasetKey>/` (`satellite`, `robotics`,
+  `precision` and `motor` ship today, one per onboarding industry)
+- Engine: `packages/database/src/datasets/tiers/` + `applyDataset()` in `index.ts`
+- Dev entry point: `pnpm db:seed:dev -- --email you@example.com --dataset satellite`
+- Onboarding entry point: `apps/erp/app/services/onboarding.server.ts` triggers
+  `carbon/company-template`, handled by
+  `packages/jobs/src/inngest/functions/tasks/company-template.ts`
+- An `industry` row is mapped to a dataset in code by `datasetForIndustry()`; an
+  industry with no dataset is hidden from the onboarding picker.
 
-Onboarding's "template" data choice downloads the matching `.gz` and
-reseed-imports it on top of an identity-only seed
-(`apps/erp/app/services/onboarding.server.ts`). The import **references** the
-shared `_templates/<industryId>/` assets instead of copying files into the new
-company's bucket — so onboard/revert cycles do no per-company file I/O. If no file
-exists for the chosen industry, onboarding falls back to a clean seed.
+See `.ai/specs/implemented/2026-08-13-onboarding-company-templates.md` and
+`.claude/rules/company-backup-restore.md`.
 
-## Authoring / refreshing a template
+## Dormant code this leaves behind
 
-1. Populate a company with the data you want as the demo set.
-2. Settings → Backups → Export (include files), which writes
-   `exports/<name>.carbon.json.gz` plus an `exports/<name>.assets/` folder to the
-   company's bucket.
-3. Download both. Commit the gz here as `<industryId>.carbon.json.gz` and the
-   asset files as `<industryId>.assets/<sourceCompanyId>/…`, overwriting the old
-   template.
+These exist but have no runtime consumer for onboarding templates. Do not wire them
+back up without revisiting the spec:
 
-## Versioning / backwards compatibility
+- the private `company-templates` storage bucket
+- `TEMPLATE_BUCKET` / `TEMPLATE_ASSET_PREFIX` in
+  `packages/jobs/src/inngest/functions/tasks/company-backup.ts`
+- `templateIndustryId` on the `carbon/company-import` event
+- `ci/src/upload-backup-templates.ts` and `.github/workflows/publish-templates.yml`
 
-Each backup carries a manifest `version` (`BACKUP_VERSION` in
-`packages/jobs/src/inngest/functions/tasks/company-backup.ts`). The importer
-rejects a file whose version no longer matches, and a structural guard
-(`assertBackupImportable`) independently rejects a file missing a now-required
-column. Bump `BACKUP_VERSION` only for a deliberate hard break, then re-export
-every template here.
+Backup **export/restore** for real customer companies is unaffected and still lives in
+`company-backup.ts` / `company-restore.ts`.

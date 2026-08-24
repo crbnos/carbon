@@ -184,7 +184,7 @@ export default async function AuthenticationPage() {
           cols="72px 1fr"
           cells={[
             <Code key="c">429</Code>,
-            "Rate limit exceeded — back off and retry per the X-RateLimit-* response headers."
+            "Rate limit exceeded — every key allows 60 requests per minute. Back off and retry per the X-RateLimit-* and Retry-After response headers."
           ]}
         />
       </Table>

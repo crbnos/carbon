@@ -7,7 +7,6 @@ import {
 } from "@carbon/react";
 import type { WorkflowNodeType } from "@carbon/workflows";
 import { FAILURE_HANDLE } from "@carbon/workflows";
-import { WORKFLOW_LABELS } from "@carbon/workflows/labels";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { NodeProps } from "@xyflow/react";
 import { useConnection } from "@xyflow/react";
@@ -20,6 +19,7 @@ import {
   LuTriangleAlert,
   LuX
 } from "react-icons/lu";
+import { useWorkflowEventLabel } from "../catalog";
 import type { AnyNodeForm } from "../config/forms/index";
 import { NODE_FORMS } from "../config/forms/index";
 import { InlineNodeName } from "../config/InlineNodeName";
@@ -46,7 +46,8 @@ import { NODE_KIND_META } from "./meta";
 // Every node kind renders through this one component; what differs between kinds
 // is data in `NODE_KIND_META`, not code.
 function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
-  const { i18n, t } = useLingui();
+  const { t } = useLingui();
+  const eventLabel = useWorkflowEventLabel();
   const node = asWorkflowNode(id, type as WorkflowNodeType, data);
   const meta = NODE_KIND_META[node.type];
 
@@ -63,7 +64,10 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
   const isConnected = useBuilderStore(selectIsConnected(id));
   const cardIssues = isConnected ? nodeIssues : [];
 
-  const isReadOnly = useBuilderStore((state) => state.isReadOnly);
+  const canChangeDefinition = useBuilderStore(
+    (state) => state.canChangeDefinition
+  );
+  const isReadOnly = !canChangeDefinition;
 
   const isOwner = useBuilderStore((state) => state.isOwner);
   const openTestRun = useBuilderStore((state) => state.openTestRun);
@@ -106,10 +110,9 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
   }, [armed]);
 
   const catalogId = meta.catalogId?.(node);
-  const label = catalogId
-    ? (WORKFLOW_LABELS[catalogId] && i18n._(WORKFLOW_LABELS[catalogId])) ||
-      catalogId
-    : undefined;
+  // Through the resolver, not `WORKFLOW_LABELS` directly: a custom-field trigger has no
+  // shipped label and would otherwise render its raw id on the card.
+  const label = catalogId ? eventLabel(catalogId, catalogId) : undefined;
 
   const summary = label ?? meta.summary?.(node);
 
@@ -225,7 +228,12 @@ function WorkflowNodeCardImpl({ id, type, data, selected }: NodeProps) {
       >
         {builderNode && (
           <div className="space-y-3">
-            <Form key={id} node={builderNode} issues={nodeIssues} />
+            <Form
+              key={id}
+              node={builderNode}
+              issues={nodeIssues}
+              isReadOnly={isReadOnly}
+            />
           </div>
         )}
         {hasFailureHandle && !hasFailureEdge && (

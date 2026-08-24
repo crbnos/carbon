@@ -1,0 +1,206 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="castTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#4b4f52"/>
+      <stop offset="0.22" stop-color="#787d81"/>
+      <stop offset="0.45" stop-color="#8d9296"/>
+      <stop offset="0.72" stop-color="#63686c"/>
+      <stop offset="1" stop-color="#414548"/>
+    </linearGradient>
+    <linearGradient id="castFront" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4b4f52"/>
+      <stop offset="0.22" stop-color="#787d81"/>
+      <stop offset="0.45" stop-color="#8d9296"/>
+      <stop offset="0.72" stop-color="#63686c"/>
+      <stop offset="1" stop-color="#414548"/>
+    </linearGradient>
+    <linearGradient id="castSide" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#63686c"/>
+      <stop offset="0.6" stop-color="#4b4f52"/>
+      <stop offset="1" stop-color="#383c3f"/>
+    </linearGradient>
+    <linearGradient id="enamel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#26292c"/>
+      <stop offset="0.22" stop-color="#4a4f54"/>
+      <stop offset="0.45" stop-color="#5e646a"/>
+      <stop offset="0.72" stop-color="#383c40"/>
+      <stop offset="1" stop-color="#1e2124"/>
+    </linearGradient>
+    <linearGradient id="enamelFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#5e646a"/>
+      <stop offset="0.5" stop-color="#4a4f54"/>
+      <stop offset="1" stop-color="#26292c"/>
+    </linearGradient>
+    <linearGradient id="brightBar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="brightFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#eef1f3"/>
+      <stop offset="0.5" stop-color="#c3c9cd"/>
+      <stop offset="1" stop-color="#8b9298"/>
+    </linearGradient>
+    <linearGradient id="spider" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a97e12"/>
+      <stop offset="0.22" stop-color="#e0b433"/>
+      <stop offset="0.45" stop-color="#f0cf6a"/>
+      <stop offset="0.72" stop-color="#c2952a"/>
+      <stop offset="1" stop-color="#8d6a10"/>
+    </linearGradient>
+    <linearGradient id="rubber" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#111315"/>
+      <stop offset="0.25" stop-color="#2c3033"/>
+      <stop offset="0.5" stop-color="#3b4044"/>
+      <stop offset="0.75" stop-color="#212528"/>
+      <stop offset="1" stop-color="#0d0f10"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="520" cy="842" rx="400" ry="88" fill="url(#shadow)"/>
+
+  <!-- rear levelling feet (behind the plate) -->
+  <g>
+    <rect x="234" y="700" width="32" height="82" fill="url(#enamel)"/>
+    <ellipse cx="250" cy="782" rx="30" ry="12" fill="#4a4f54" stroke="#1e2124" stroke-width="2"/>
+    <rect x="858" y="700" width="32" height="82" fill="url(#enamel)"/>
+    <ellipse cx="874" cy="782" rx="30" ry="12" fill="#4a4f54" stroke="#1e2124" stroke-width="2"/>
+  </g>
+
+  <!-- cast iron bed plate -->
+  <polygon points="132,760 826,760 910,700 216,700" fill="url(#castTop)" stroke="#2f3336" stroke-width="3"/>
+  <polygon points="826,760 910,700 910,750 826,810" fill="url(#castSide)" stroke="#2f3336" stroke-width="3"/>
+  <polygon points="132,760 826,760 826,810 132,810" fill="url(#castFront)" stroke="#2f3336" stroke-width="3"/>
+  <polyline points="140,754 818,754 900,696" fill="none" stroke="#a2a7ab" stroke-width="2.5" opacity="0.45"/>
+  <polyline points="138,804 820,804" fill="none" stroke="#000" stroke-opacity="0.45" stroke-width="3"/>
+
+  <!-- milled T-slots along the bed -->
+  <g>
+    <polygon points="153,738 847,738 847,752 153,752" fill="#22262a"/>
+    <polygon points="156,741 844,741 844,748 156,748" fill="#3d4347"/>
+    <polygon points="203,703 897,703 897,715 203,715" fill="#22262a"/>
+    <polygon points="206,706 894,706 894,712 206,712" fill="#3d4347"/>
+  </g>
+  <!-- machined pads -->
+  <g fill="#9aa0a4" opacity="0.35">
+    <polygon points="196,730 380,730 400,716 216,716"/>
+    <polygon points="452,730 580,730 600,716 472,716"/>
+    <polygon points="672,730 852,730 872,716 692,716"/>
+  </g>
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2">
+    <ellipse cx="300" cy="724" rx="90" ry="9"/>
+    <ellipse cx="530" cy="724" rx="66" ry="8"/>
+    <ellipse cx="770" cy="724" rx="90" ry="9"/>
+  </g>
+
+  <!-- front levelling feet -->
+  <g>
+    <rect x="150" y="806" width="34" height="34" fill="url(#enamel)"/>
+    <ellipse cx="167" cy="840" rx="32" ry="13" fill="#4a4f54" stroke="#1e2124" stroke-width="2"/>
+    <rect x="772" y="806" width="34" height="34" fill="url(#enamel)"/>
+    <ellipse cx="789" cy="840" rx="32" ry="13" fill="#4a4f54" stroke="#1e2124" stroke-width="2"/>
+  </g>
+
+  <!-- adjustable motor cradle -->
+  <g>
+    <rect x="182" y="700" width="196" height="32" fill="url(#enamelFace)" stroke="#1a1d20" stroke-width="2.5"/>
+    <g fill="#22262a">
+      <rect x="206" y="710" width="52" height="12" rx="6"/>
+      <rect x="304" y="710" width="52" height="12" rx="6"/>
+    </g>
+    <path d="M196 700 L196 620 Q196 566 250 552 L310 552 Q364 566 364 620 L364 700 Z" fill="url(#enamelFace)" stroke="#1a1d20" stroke-width="3"/>
+    <path d="M212 700 L212 622 Q212 588 246 578 L314 578 Q348 588 348 622 L348 700 Z" fill="#1e2124" opacity="0.55"/>
+    <!-- saddle seat holding the shaft stub -->
+    <path d="M212 616 A 68 68 0 0 1 348 616 L348 640 A 68 68 0 0 0 212 640 Z" fill="#33383d" stroke="#1a1d20" stroke-width="2"/>
+    <g fill="#5e646a">
+      <ellipse cx="228" cy="596" rx="12" ry="12"/>
+      <ellipse cx="332" cy="596" rx="12" ry="12"/>
+    </g>
+    <g fill="#22262a">
+      <ellipse cx="228" cy="596" rx="6" ry="6"/>
+      <ellipse cx="332" cy="596" rx="6" ry="6"/>
+    </g>
+    <g fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="2">
+      <path d="M204 660 L204 696"/><path d="M356 660 L356 696"/>
+    </g>
+  </g>
+
+  <!-- driveline shaft stub -->
+  <rect x="330" y="588" width="118" height="44" fill="url(#brightBar)"/>
+  <g stroke="#ffffff" stroke-opacity="0.28" stroke-width="2">
+    <path d="M340 598 L440 598"/><path d="M340 610 L440 610"/>
+  </g>
+
+  <!-- torque flange sensor + pedestal -->
+  <g>
+    <rect x="452" y="672" width="106" height="58" fill="url(#enamelFace)" stroke="#1a1d20" stroke-width="2.5"/>
+    <rect x="440" y="660" width="130" height="20" fill="#5e646a" stroke="#1a1d20" stroke-width="2"/>
+    <rect x="448" y="536" width="120" height="128" fill="url(#enamel)" stroke="#1a1d20" stroke-width="3"/>
+    <!-- flange faces -->
+    <rect x="436" y="524" width="24" height="152" fill="url(#brightBar)" stroke="#4b5156" stroke-width="2.5"/>
+    <rect x="556" y="524" width="24" height="152" fill="url(#brightBar)" stroke="#4b5156" stroke-width="2.5"/>
+    <ellipse cx="436" cy="600" rx="29" ry="76" fill="url(#brightFace)" stroke="#4b5156" stroke-width="2.5"/>
+    <ellipse cx="436" cy="600" rx="19" ry="50" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="2"/>
+    <g fill="#3a4045">
+      <ellipse cx="436" cy="545" rx="6" ry="9"/>
+      <ellipse cx="436" cy="655" rx="6" ry="9"/>
+      <ellipse cx="443" cy="600" rx="6" ry="9"/>
+    </g>
+    <g stroke="#ffffff" stroke-opacity="0.16" stroke-width="2" fill="none">
+      <path d="M462 556 L554 556"/><path d="M462 578 L554 578"/><path d="M462 600 L554 600"/>
+    </g>
+    <!-- cable gland on the sensor body -->
+    <rect x="486" y="502" width="42" height="36" fill="#4a4f54" stroke="#1a1d20" stroke-width="2"/>
+    <rect x="494" y="486" width="26" height="20" fill="#5e646a" stroke="#1a1d20" stroke-width="2"/>
+  </g>
+
+  <!-- three-piece jaw coupling with elastomer spider -->
+  <g>
+    <rect x="580" y="536" width="34" height="128" fill="url(#brightBar)" stroke="#4b5156" stroke-width="2.5"/>
+    <rect x="614" y="530" width="40" height="140" fill="url(#spider)" stroke="#8d6a10" stroke-width="2.5"/>
+    <g stroke="#8d6a10" stroke-width="2.5" opacity="0.7">
+      <path d="M614 566 L654 566"/><path d="M614 600 L654 600"/><path d="M614 634 L654 634"/>
+    </g>
+    <rect x="654" y="536" width="34" height="128" fill="url(#brightBar)" stroke="#4b5156" stroke-width="2.5"/>
+    <ellipse cx="580" cy="600" rx="24" ry="64" fill="url(#brightFace)" stroke="#4b5156" stroke-width="2.5"/>
+    <ellipse cx="580" cy="600" rx="14" ry="38" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="2"/>
+  </g>
+
+  <!-- eddy-current absorber : pedestal, drum, cooling fins -->
+  <g>
+    <rect x="690" y="672" width="160" height="58" fill="url(#enamelFace)" stroke="#1a1d20" stroke-width="2.5"/>
+    <rect x="676" y="654" width="190" height="24" fill="#5e646a" stroke="#1a1d20" stroke-width="2"/>
+    <rect x="688" y="516" width="180" height="188" fill="url(#enamel)" stroke="#1a1d20" stroke-width="3"/>
+    <ellipse cx="688" cy="610" rx="36" ry="94" fill="#33383d" stroke="#1a1d20" stroke-width="2.5"/>
+    <g>
+      <ellipse cx="704" cy="610" rx="47" ry="124" fill="url(#enamelFace)" stroke="#15181a" stroke-width="2.5"/>
+      <ellipse cx="730" cy="610" rx="47" ry="124" fill="url(#enamelFace)" stroke="#15181a" stroke-width="2.5"/>
+      <ellipse cx="756" cy="610" rx="47" ry="124" fill="url(#enamelFace)" stroke="#15181a" stroke-width="2.5"/>
+      <ellipse cx="782" cy="610" rx="47" ry="124" fill="url(#enamelFace)" stroke="#15181a" stroke-width="2.5"/>
+      <ellipse cx="808" cy="610" rx="47" ry="124" fill="url(#enamelFace)" stroke="#15181a" stroke-width="2.5"/>
+      <ellipse cx="834" cy="610" rx="47" ry="124" fill="url(#enamelFace)" stroke="#15181a" stroke-width="2.5"/>
+      <ellipse cx="858" cy="610" rx="47" ry="124" fill="url(#enamelFace)" stroke="#15181a" stroke-width="2.5"/>
+    </g>
+    <ellipse cx="858" cy="610" rx="34" ry="90" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2.5"/>
+    <ellipse cx="858" cy="610" rx="18" ry="48" fill="#33383d" stroke="#1a1d20" stroke-width="2"/>
+    <g fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2">
+      <path d="M700 520 L866 520"/><path d="M700 700 L866 700"/>
+    </g>
+  </g>
+
+  <!-- coiled sensor cable -->
+  <g fill="none" stroke="url(#rubber)" stroke-width="16" stroke-linecap="round">
+    <path d="M507 486 Q500 430 448 424 Q392 418 388 462 Q384 504 428 508 Q470 512 470 470"/>
+    <path d="M470 470 Q470 432 428 428"/>
+  </g>
+  <g fill="none" stroke="#3b4044" stroke-width="5" stroke-linecap="round" opacity="0.7">
+    <path d="M505 484 Q498 434 450 428"/>
+  </g>
+</svg>

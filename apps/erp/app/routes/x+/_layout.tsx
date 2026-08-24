@@ -60,7 +60,7 @@ import MfaEnrollmentRequired from "~/components/MfaEnrollmentRequired";
 import SessionLockOverlay from "~/components/SessionLockOverlay";
 import { TimeCardWarning } from "~/components/TimeCardWarning";
 import TrainingPanel from "~/components/TrainingPanel";
-import { useIdle, usePermissions } from "~/hooks";
+import { useIdle, usePermissions, useRecordRecentlyViewed } from "~/hooks";
 import { useTrainingPanel } from "~/hooks/useTrainingPanel";
 import { AgentRoot } from "~/modules/agent/ui/AgentRoot";
 import { getOpenClockEntry } from "~/modules/people";
@@ -357,6 +357,11 @@ export default function AuthenticatedRoute() {
   const companyId = company?.companyId;
   const companyName = company?.name;
 
+  // Record every detail document the user opens, for the home page's
+  // "Recently viewed" list. Reads the record's title from its breadcrumb handle,
+  // so no per-route wiring is needed.
+  useRecordRecentlyViewed(companyId);
+
   // Keyed on the identity rather than run once on mount: switching company
   // redirects back into x+/_layout without unmounting it, so a mount-only
   // effect would leave the previous company attached to every later event.
@@ -460,7 +465,7 @@ export default function AuthenticatedRoute() {
                   <Topbar />
                   <div className="flex flex-1 h-[calc(100vh-49px)] relative">
                     <PrimaryNavigation />
-                    <main className="flex-1 overflow-y-auto scrollbar-hide border-l border-t bg-muted sm:rounded-tl-2xl relative z-10">
+                    <main className="flex-1 overflow-y-auto scrollbar-hide border-l border-t bg-card sm:rounded-tl-2xl relative z-10">
                       <Outlet />
                     </main>
                   </div>

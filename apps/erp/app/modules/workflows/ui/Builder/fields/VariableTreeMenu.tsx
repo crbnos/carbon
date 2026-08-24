@@ -3,7 +3,13 @@ import { useLingui } from "@lingui/react/macro";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LuArrowLeft, LuChevronRight, LuInfo } from "react-icons/lu";
-import { INITIAL_NAV, type NavState, navigate, rowsAt } from "./menuNav";
+import {
+  INITIAL_NAV,
+  itemsUnder,
+  type NavState,
+  navigate,
+  rowsAt
+} from "./menuNav";
 import type { VariableMenuItem, VariableTreeNode } from "./variableMenu";
 
 const ITEM_HEIGHT = 44;
@@ -20,17 +26,30 @@ export type VariableTreeMenuProps = {
   /** Shown instead of the generic empty text when the tree is empty because the
    * field only accepts one type. */
   emptyReason?: string;
+  /** Renders a search box inside the menu. It is deliberately NOT focused on open —
+   * the caret stays in the field the user is writing in until they click into it.
+   * Omit where the host already owns one — the popover puts its field above this. */
+  onQueryChange?: (query: string) => void;
+  /** Escape typed in that search box. The editor host cannot hear it any other way:
+   * its own Escape handler only fires while the field, not the menu, has focus. */
+  onEscape?: () => void;
+  /** Focus left the search box for something outside the menu, with wherever it went.
+   * Only the host knows whether that ends the picker or is the field taking focus back. */
+  onSearchBlur?: (next: Element | null) => void;
 };
 
-/** One level of the variable tree at a time, with search that cuts across every level.
- * Every key is decided by `menuNav.ts`, so both hosts behave identically. */
+/** One level of the variable tree at a time, with search across every level below the
+ * open one. Every key is decided by `menuNav.ts`, so both hosts behave identically. */
 export function VariableTreeMenu({
   tree,
   flat,
   query,
   onSelect,
   backspacePops,
-  emptyReason
+  emptyReason,
+  onQueryChange,
+  onEscape,
+  onSearchBlur
 }: VariableTreeMenuProps) {
   const { t } = useLingui();
   const [nav, setNav] = useState<NavState>(INITIAL_NAV);
@@ -40,21 +59,32 @@ export function VariableTreeMenu({
   const needle = query.trim().toLowerCase();
   const searching = needle.length > 0;
 
-  // Search abandons the tree: matches come from every level, each row keeping the full
-  // `Step › output › property` label so the source is still obvious.
+  // Whatever is open is what gets searched: the flat index at the root, that record's
+  // own fields once drilled in. `flat` rather than `itemsUnder(tree, [])` at the root so
+  // a host that indexes more than the tree shows (the loop item) keeps searching it.
+  const scope = useMemo(
+    () => (nav.path.length === 0 ? flat : itemsUnder(tree, nav.path)),
+    [flat, tree, nav.path]
+  );
+
+  // Search abandons the tree: it matches every level in scope, on the whole breadcrumb,
+  // but each row shows only the variable's own name with the path underneath it.
   const searchRows = useMemo<VariableTreeNode[]>(
     () =>
       searching
-        ? flat
+        ? scope
             .filter((i) => i.label.toLowerCase().includes(needle))
             .map((i) => ({
               key: i.id,
-              label: i.label,
-              helper: i.helper,
+              label: i.leaf ?? i.label,
+              // The path, not the type: one field name can appear under several records,
+              // and with only the name shown those rows are indistinguishable.
+              helper: i.label,
+              fullPath: i.label,
               item: i
             }))
         : [],
-    [searching, needle, flat]
+    [searching, needle, scope]
   );
 
   // `nav.path` survives a search so clearing the query returns to the open level.
@@ -132,7 +162,25 @@ export function VariableTreeMenu({
       ref={rootRef}
       className="min-w-[280px] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md"
     >
-      {!searching && nav.path.length > 0 && (
+      {onQueryChange && (
+        <input
+          className="h-10 w-full border-b border-border bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground"
+          placeholder={t`Search variables…`}
+          value={query}
+          onChange={(event) => onQueryChange(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key !== "Escape") return;
+            event.preventDefault();
+            onEscape?.();
+          }}
+          // A row refuses focus on mousedown, so a blur here is always the menu being
+          // left — never a click inside it.
+          onBlur={(event) => onSearchBlur?.(event.relatedTarget)}
+        />
+      )}
+
+      {/* Shown while searching too — it is what the search is scoped to. */}
+      {nav.path.length > 0 && (
         <button
           type="button"
           className="flex w-full items-center gap-1.5 border-b border-border px-3 py-2 text-xs text-muted-foreground hover:text-foreground"
@@ -183,6 +231,9 @@ export function VariableTreeMenu({
                   role="option"
                   aria-selected={selected}
                   disabled={!usable}
+                  // The path on hover, as the native tooltip rather than a floating one:
+                  // a hoverable popup over the list eats the click that picks the row.
+                  title={row.fullPath}
                   className={cn(
                     "absolute left-0 top-0 flex w-full items-center gap-2 px-3 text-left text-sm",
                     // Reads as the focused row even though focus stays in the field.
@@ -194,6 +245,9 @@ export function VariableTreeMenu({
                     height: `${ITEM_HEIGHT}px`,
                     transform: `translateY(${virtualRow.start}px)`
                   }}
+                  // Never take focus: drilling into a row has to leave the caret where the
+                  // user is typing, whether that is the search box or the field itself.
+                  onMouseDown={(event) => event.preventDefault()}
                   // Click and Enter go through the same reducer so they cannot diverge.
                   onClick={() => {
                     setNav((n) => ({ ...n, index: virtualRow.index }));
@@ -215,7 +269,7 @@ export function VariableTreeMenu({
                   }
                 >
                   <span className="flex min-w-0 flex-1 flex-col">
-                    <span className="flex items-center gap-1 leading-tight">
+                    <span className="flex min-w-0 items-center gap-1 leading-tight">
                       <span className="truncate">{row.label}</span>
                       {row.description && (
                         <Tooltip>

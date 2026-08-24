@@ -11,6 +11,11 @@ import {
   rilletOnInstall,
   rilletOnUninstall
 } from "./rillet/hooks.server";
+import {
+  stripeConnectHealthcheck,
+  stripeConnectOnInstall,
+  stripeConnectOnUninstall
+} from "./stripe-connect/hooks.server";
 import type { IntegrationServerHooks } from "./types";
 
 // Onshape keeps its release webhook subscription in lockstep with the asset-sync
@@ -68,6 +73,11 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
     onInstall: xeroOnInstall,
     onUpdate: xeroOnInstall,
     onUninstall: xeroOnUninstall
+  },
+  "stripe-connect": {
+    onHealthcheck: stripeConnectHealthcheck,
+    onInstall: stripeConnectOnInstall,
+    onUninstall: stripeConnectOnUninstall
   }
 };
 

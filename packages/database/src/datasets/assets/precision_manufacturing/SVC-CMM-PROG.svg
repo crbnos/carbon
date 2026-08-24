@@ -1,0 +1,196 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="granFront" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#1c1f22"/>
+      <stop offset="0.2" stop-color="#43484d"/>
+      <stop offset="0.45" stop-color="#5a6167"/>
+      <stop offset="0.72" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="granTop" x1="0.1" y1="1" x2="0.92" y2="0">
+      <stop offset="0" stop-color="#191c1f"/>
+      <stop offset="0.3" stop-color="#33383d"/>
+      <stop offset="0.55" stop-color="#454b51"/>
+      <stop offset="0.8" stop-color="#282d31"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="granEnd" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2a2e32"/>
+      <stop offset="0.55" stop-color="#1d2124"/>
+      <stop offset="1" stop-color="#111315"/>
+    </linearGradient>
+    <linearGradient id="castFront" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#4b4f52"/>
+      <stop offset="0.22" stop-color="#787d81"/>
+      <stop offset="0.45" stop-color="#8d9296"/>
+      <stop offset="0.72" stop-color="#63686c"/>
+      <stop offset="1" stop-color="#414548"/>
+    </linearGradient>
+    <linearGradient id="castTop" x1="0.15" y1="1" x2="0.9" y2="0">
+      <stop offset="0" stop-color="#63686c"/>
+      <stop offset="0.35" stop-color="#8d9296"/>
+      <stop offset="0.7" stop-color="#a0a5a9"/>
+      <stop offset="1" stop-color="#6d7276"/>
+    </linearGradient>
+    <linearGradient id="castEnd" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5d6266"/>
+      <stop offset="0.5" stop-color="#4b5053"/>
+      <stop offset="1" stop-color="#383c3f"/>
+    </linearGradient>
+    <linearGradient id="wayTop" x1="0.15" y1="1" x2="0.9" y2="0">
+      <stop offset="0" stop-color="#8a9298"/>
+      <stop offset="0.2" stop-color="#d5dce1"/>
+      <stop offset="0.45" stop-color="#f0f4f6"/>
+      <stop offset="0.72" stop-color="#b2bac0"/>
+      <stop offset="1" stop-color="#798187"/>
+    </linearGradient>
+    <linearGradient id="quill" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8a9298"/>
+      <stop offset="0.2" stop-color="#d5dce1"/>
+      <stop offset="0.45" stop-color="#f0f4f6"/>
+      <stop offset="0.72" stop-color="#b2bac0"/>
+      <stop offset="1" stop-color="#798187"/>
+    </linearGradient>
+    <linearGradient id="stylus" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5b6167"/>
+      <stop offset="0.14" stop-color="#dfe6ea"/>
+      <stop offset="0.34" stop-color="#ffffff"/>
+      <stop offset="0.6" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <radialGradient id="ruby" cx="0.35" cy="0.3" r="0.75">
+      <stop offset="0" stop-color="#f3a79c"/>
+      <stop offset="0.35" stop-color="#c2402f"/>
+      <stop offset="1" stop-color="#66150f"/>
+    </radialGradient>
+    <clipPath id="granClip">
+      <path d="M130 700 L760 700 L902.8 598 L272.8 598 Z"/>
+    </clipPath>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="516" cy="770" rx="444" ry="98" fill="url(#shadow)"/>
+
+  <!-- ===== granite base plate ===== -->
+  <path d="M760 700 L902.8 598 L902.8 668 L760 770 Z" fill="url(#granEnd)" stroke="#0d0f11" stroke-width="2.5"/>
+  <path d="M130 700 L760 700 L902.8 598 L272.8 598 Z" fill="url(#granTop)" stroke="#0d0f11" stroke-width="2.5"/>
+
+  <!-- polished granite speckle + sheen -->
+  <g clip-path="url(#granClip)">
+    <g fill="#c8ced3" opacity="0.22">
+      <ellipse cx="216" cy="688" rx="5" ry="2.4"/><ellipse cx="318" cy="672" rx="4" ry="2"/>
+      <ellipse cx="404" cy="694" rx="6" ry="2.6"/><ellipse cx="486" cy="662" rx="4.5" ry="2.1"/>
+      <ellipse cx="560" cy="686" rx="5" ry="2.3"/><ellipse cx="642" cy="668" rx="4" ry="2"/>
+      <ellipse cx="726" cy="690" rx="5.5" ry="2.4"/><ellipse cx="806" cy="650" rx="4.5" ry="2.2"/>
+      <ellipse cx="348" cy="628" rx="5" ry="2.3"/><ellipse cx="452" cy="616" rx="4" ry="2"/>
+      <ellipse cx="548" cy="636" rx="5.5" ry="2.5"/><ellipse cx="646" cy="612" rx="4.5" ry="2.1"/>
+      <ellipse cx="742" cy="630" rx="5" ry="2.3"/><ellipse cx="840" cy="614" rx="4" ry="2"/>
+      <ellipse cx="264" cy="652" rx="4.5" ry="2.2"/><ellipse cx="370" cy="656" rx="5" ry="2.3"/>
+      <ellipse cx="602" cy="652" rx="4" ry="2"/><ellipse cx="690" cy="640" rx="5" ry="2.3"/>
+    </g>
+    <g fill="#6f767c" opacity="0.3">
+      <ellipse cx="252" cy="676" rx="7" ry="3"/><ellipse cx="466" cy="686" rx="8" ry="3.4"/>
+      <ellipse cx="682" cy="678" rx="7" ry="3"/><ellipse cx="400" cy="626" rx="7" ry="3"/>
+      <ellipse cx="612" cy="624" rx="8" ry="3.4"/><ellipse cx="796" cy="628" rx="7" ry="3"/>
+    </g>
+    <path d="M180 700 L620 700 L470 598 L310 598 Z" fill="#ffffff" opacity="0.05"/>
+  </g>
+
+  <!-- anodised guideways along the granite -->
+  <g>
+    <path d="M166 682 L758.2 682 L758.2 692 L166 692 Z" fill="url(#wayTop)" stroke="#5f666c" stroke-width="1.8"/>
+    <path d="M166 682 L758.2 682" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2"/>
+    <path d="M284.6 597 L876.8 597 L876.8 607 L284.6 607 Z" fill="url(#wayTop)" stroke="#5f666c" stroke-width="1.8"/>
+    <path d="M284.6 597 L876.8 597" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2"/>
+  </g>
+
+  <path d="M130 700 L760 700 L760 770 L130 770 Z" fill="url(#granFront)" stroke="#0d0f11" stroke-width="3"/>
+  <path d="M130 708 L760 708" fill="none" stroke="#8d959b" stroke-opacity="0.45" stroke-width="2.5"/>
+  <path d="M130 762 L760 762" fill="none" stroke="#000000" stroke-opacity="0.45" stroke-width="3"/>
+
+  <!-- ===== bridge columns ===== -->
+  <g>
+    <path d="M310.5 343.9 L310.5 643.9 L352.5 613.9 L352.5 313.9 Z" fill="url(#castEnd)" stroke="#2f3336" stroke-width="2.5"/>
+    <path d="M232.5 343.9 L310.5 343.9 L352.5 313.9 L274.5 313.9 Z" fill="url(#castTop)" stroke="#2f3336" stroke-width="2.5"/>
+    <path d="M232.5 343.9 L310.5 343.9 L310.5 643.9 L232.5 643.9 Z" fill="url(#castFront)" stroke="#2f3336" stroke-width="2.5"/>
+    <path d="M240 352 L304 352 L304 636 L240 636 Z" fill="none" stroke="#a4a9ad" stroke-opacity="0.4" stroke-width="2"/>
+    <!-- air-bearing pad foot -->
+    <path d="M222 600 L320 600 L362 570 L264 570 Z" fill="url(#castTop)" stroke="#2f3336" stroke-width="2"/>
+    <path d="M222 600 L320 600 L320 646 L222 646 Z" fill="url(#castFront)" stroke="#2f3336" stroke-width="2.5"/>
+    <path d="M320 600 L362 570 L362 616 L320 646 Z" fill="url(#castEnd)" stroke="#2f3336" stroke-width="2"/>
+    <path d="M226 636 L316 636" fill="none" stroke="#d5dce1" stroke-opacity="0.55" stroke-width="3"/>
+  </g>
+  <g>
+    <path d="M764.1 343.9 L764.1 643.9 L806.1 613.9 L806.1 313.9 Z" fill="url(#castEnd)" stroke="#2f3336" stroke-width="2.5"/>
+    <path d="M686.1 343.9 L764.1 343.9 L806.1 313.9 L728.1 313.9 Z" fill="url(#castTop)" stroke="#2f3336" stroke-width="2.5"/>
+    <path d="M686.1 343.9 L764.1 343.9 L764.1 643.9 L686.1 643.9 Z" fill="url(#castFront)" stroke="#2f3336" stroke-width="2.5"/>
+    <path d="M693 352 L757 352 L757 636 L693 636 Z" fill="none" stroke="#a4a9ad" stroke-opacity="0.4" stroke-width="2"/>
+    <path d="M675 600 L773 600 L815 570 L717 570 Z" fill="url(#castTop)" stroke="#2f3336" stroke-width="2"/>
+    <path d="M675 600 L773 600 L773 646 L675 646 Z" fill="url(#castFront)" stroke="#2f3336" stroke-width="2.5"/>
+    <path d="M773 600 L815 570 L815 616 L773 646 Z" fill="url(#castEnd)" stroke="#2f3336" stroke-width="2"/>
+    <path d="M679 636 L769 636" fill="none" stroke="#d5dce1" stroke-opacity="0.55" stroke-width="3"/>
+  </g>
+
+  <!-- ===== bridge beam ===== -->
+  <g>
+    <path d="M764.1 264 L764.1 344 L806.1 314 L806.1 234 Z" fill="url(#castEnd)" stroke="#2f3336" stroke-width="2.5"/>
+    <path d="M232.5 264 L764.1 264 L806.1 234 L274.5 234 Z" fill="url(#castTop)" stroke="#2f3336" stroke-width="2.5"/>
+    <path d="M232.5 264 L764.1 264 L764.1 344 L232.5 344 Z" fill="url(#castFront)" stroke="#2f3336" stroke-width="3"/>
+    <path d="M232.5 272 L764.1 272" fill="none" stroke="#a8adb1" stroke-opacity="0.45" stroke-width="2.5"/>
+    <path d="M232.5 337 L764.1 337" fill="none" stroke="#000000" stroke-opacity="0.35" stroke-width="3"/>
+    <!-- anodised X guideway along the beam face -->
+    <path d="M244 294 L754 294 L754 312 L244 312 Z" fill="url(#wayTop)" stroke="#5f666c" stroke-width="2"/>
+    <path d="M244 297 L754 297" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="2.5"/>
+    <path d="M244 308 L754 308" fill="none" stroke="#606870" stroke-opacity="0.6" stroke-width="2"/>
+    <!-- way strip on the beam top -->
+    <path d="M248 258 L760 258 L790 237 L278 237 Z" fill="url(#wayTop)" opacity="0.9" stroke="#5f666c" stroke-width="1.8"/>
+  </g>
+
+  <!-- ===== X carriage ===== -->
+  <g>
+    <path d="M585 250 L585 372 L627 342 L627 220 Z" fill="url(#castEnd)" stroke="#2f3336" stroke-width="2.5"/>
+    <path d="M455 250 L585 250 L627 220 L497 220 Z" fill="url(#castTop)" stroke="#2f3336" stroke-width="2.5"/>
+    <path d="M455 250 L585 250 L585 372 L455 372 Z" fill="url(#castFront)" stroke="#2f3336" stroke-width="3"/>
+    <path d="M462 258 L578 258 L578 364 L462 364 Z" fill="none" stroke="#a8adb1" stroke-opacity="0.4" stroke-width="2"/>
+    <g fill="#3d4245" stroke="#23272a" stroke-width="1.8">
+      <circle cx="480" cy="278" r="9"/><circle cx="560" cy="278" r="9"/>
+      <circle cx="480" cy="352" r="9"/><circle cx="560" cy="352" r="9"/>
+    </g>
+    <!-- air-bearing preload strip -->
+    <path d="M462 294 L578 294 L578 312 L462 312 Z" fill="#8d959b" opacity="0.5"/>
+  </g>
+
+  <!-- ===== quill ===== -->
+  <g>
+    <path d="M545 372 L561.8 360 L561.8 548 L545 560 Z" fill="#8a9298" stroke="#5f666c" stroke-width="2"/>
+    <path d="M495 372 L545 372 L561.8 360 L511.8 360 Z" fill="#d5dce1" stroke="#5f666c" stroke-width="2"/>
+    <path d="M495 372 L545 372 L545 560 L495 560 Z" fill="url(#quill)" stroke="#5f666c" stroke-width="2.5"/>
+    <g stroke="#ffffff" stroke-opacity="0.3" stroke-width="1.8" fill="none">
+      <path d="M503 376 L503 556"/><path d="M537 376 L537 556"/>
+    </g>
+    <g stroke="#6b7278" stroke-opacity="0.55" stroke-width="2" fill="none">
+      <path d="M495 420 L545 420"/><path d="M495 470 L545 470"/><path d="M495 518 L545 518"/>
+    </g>
+  </g>
+
+  <!-- ===== probe head + stylus + ruby ball ===== -->
+  <g>
+    <path d="M549 546 L565 536 L565 578 L549 588 Z" fill="#3a3f43" stroke="#22262a" stroke-width="2"/>
+    <path d="M487 546 L549 546 L565 536 L503 536 Z" fill="#5a6167" stroke="#22262a" stroke-width="2"/>
+    <path d="M487 546 L549 546 L549 588 L487 588 Z" fill="url(#castFront)" stroke="#22262a" stroke-width="2.5"/>
+    <path d="M492 552 L544 552" fill="none" stroke="#b6bbbf" stroke-opacity="0.5" stroke-width="2"/>
+    <!-- knuckle -->
+    <ellipse cx="518" cy="592" rx="20" ry="12" fill="#4a5055" stroke="#22262a" stroke-width="2"/>
+    <ellipse cx="518" cy="589" rx="13" ry="7" fill="#7d848a" opacity="0.7"/>
+    <!-- straight stylus shaft -->
+    <path d="M513 598 L523 598 L523 630 L513 630 Z" fill="url(#stylus)" stroke="#61686e" stroke-width="1.5"/>
+    <path d="M509 598 L527 598 L527 604 L509 604 Z" fill="#9aa2a9" stroke="#61686e" stroke-width="1.5"/>
+    <!-- ruby ball tip -->
+    <circle cx="518" cy="638" r="11" fill="url(#ruby)" stroke="#5a120d" stroke-width="1.5"/>
+    <circle cx="514.5" cy="634.5" r="3.4" fill="#ffd9d1" opacity="0.85"/>
+  </g>
+</svg>

@@ -21,12 +21,23 @@ import {
 } from "@carbon/react";
 import { getTimezones } from "@carbon/utils";
 import type { Origin, Schedule } from "@carbon/workflows";
-import { WORKFLOW_ENTITY_REGISTRY, WORKFLOW_EVENTS } from "@carbon/workflows";
+import {
+  customFieldEventId,
+  ENTITY_BY_TABLE,
+  WORKFLOW_ENTITY_REGISTRY,
+  WORKFLOW_EVENTS
+} from "@carbon/workflows";
 import { getLocalTimeZone } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import { LuCheck, LuChevronsUpDown } from "react-icons/lu";
-import { entityLabelKey, useWorkflowLabel } from "../../catalog";
+import { useCustomFieldsSchema } from "~/hooks/useCustomFieldsSchema";
+import {
+  entityLabelKey,
+  useWorkflowCatalog,
+  useWorkflowEventLabel,
+  useWorkflowLabel
+} from "../../catalog";
 import { useBuilderStore } from "../../context";
 import { FormStack, Section } from "../layout";
 import type { NodeFormProps } from "./index";
@@ -86,7 +97,12 @@ type EventPickerProps = {
   onSelect: (id: string) => void;
   entityGroups: EntityGroup[];
   momentIds: string[];
+  /** The company's custom-field event ids — the badge is the only thing that needs to
+   * tell them apart; their labels come from `eventLabel` like every other event's. */
+  customIds: Set<string>;
   label: (key: string) => string;
+  eventLabel: (id: string) => string;
+  isReadOnly?: boolean;
 };
 
 function EventPicker({
@@ -94,18 +110,22 @@ function EventPicker({
   onSelect,
   entityGroups,
   momentIds,
-  label
+  customIds,
+  label,
+  eventLabel,
+  isReadOnly
 }: EventPickerProps) {
   const { t } = useLingui();
   const [open, setOpen] = useState(false);
 
-  const summary = selected ? label(selected) : t`Select an event…`;
+  const summary = selected ? eventLabel(selected) : t`Select an event…`;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           type="button"
+          disabled={isReadOnly}
           className="flex w-full items-center justify-between rounded-md border bg-background px-3 py-2 text-sm hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <span
@@ -123,7 +143,7 @@ function EventPicker({
         onTouchMove={(e) => e.stopPropagation()}
       >
         <Command>
-          <CommandInput placeholder={t`Search events…`} />
+          <CommandInput placeholder={t`Search events…`} disabled={isReadOnly} />
           <CommandList className="max-h-64 overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
             <CommandEmpty>
               <Trans>No events found.</Trans>
@@ -138,7 +158,8 @@ function EventPicker({
                     key={id}
                     // Search runs on `value`, so the visible label has to be in it —
                     // the id alone is never what someone types, and never translated.
-                    value={`${id} ${label(id)}`}
+                    value={`${id} ${eventLabel(id)}`}
+                    disabled={isReadOnly}
                     onSelect={() => {
                       onSelect(id);
                       setOpen(false);
@@ -150,9 +171,24 @@ function EventPicker({
                         selected === id ? "opacity-100" : "opacity-0"
                       )}
                     />
-                    {label(id)}
+                    <span className="truncate">
+                      {eventLabel(id)}
+                      {/* A custom field can share a name with a shipped column. */}
+                      {customIds.has(id) && (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          <Trans>Custom field</Trans>
+                        </span>
+                      )}
+                    </span>
                   </CommandItem>
                 ))}
+                {entity === "item" && (
+                  <p className="px-2 py-1.5 text-xs text-muted-foreground">
+                    <Trans>
+                      Custom fields are not available for items yet.
+                    </Trans>
+                  </p>
+                )}
               </CommandGroup>
             ))}
             {momentIds.length > 0 && (
@@ -161,6 +197,7 @@ function EventPicker({
                   <CommandItem
                     key={id}
                     value={`${id} ${label(id)}`}
+                    disabled={isReadOnly}
                     onSelect={() => {
                       onSelect(id);
                       setOpen(false);
@@ -189,9 +226,14 @@ function EventPicker({
 type ScheduleEditorProps = {
   schedule: Schedule;
   onChange: (patch: Partial<Schedule>) => void;
+  isReadOnly?: boolean;
 };
 
-function ScheduleEditor({ schedule, onChange }: ScheduleEditorProps) {
+function ScheduleEditor({
+  schedule,
+  onChange,
+  isReadOnly
+}: ScheduleEditorProps) {
   const { t } = useLingui();
 
   const tz = resolveTimezone(schedule.tz);
@@ -206,8 +248,9 @@ function ScheduleEditor({ schedule, onChange }: ScheduleEditorProps) {
         <Select
           value={schedule.freq}
           onValueChange={(v) => onChange({ freq: v as Schedule["freq"] })}
+          disabled={isReadOnly}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full" disabled={isReadOnly}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -239,6 +282,7 @@ function ScheduleEditor({ schedule, onChange }: ScheduleEditorProps) {
                   type="button"
                   aria-pressed={active}
                   aria-label={day}
+                  disabled={isReadOnly}
                   className={cn(
                     "h-8 w-8 rounded-md text-xs font-medium transition-colors",
                     active
@@ -273,8 +317,9 @@ function ScheduleEditor({ schedule, onChange }: ScheduleEditorProps) {
             onValueChange={(v) =>
               onChange({ day: v === "last" ? "last" : Number(v) })
             }
+            disabled={isReadOnly}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full" disabled={isReadOnly}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -300,8 +345,9 @@ function ScheduleEditor({ schedule, onChange }: ScheduleEditorProps) {
           <Select
             value={String(schedule.hour)}
             onValueChange={(v) => onChange({ hour: Number(v) })}
+            disabled={isReadOnly}
           >
-            <SelectTrigger className="flex-1">
+            <SelectTrigger className="flex-1" disabled={isReadOnly}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -316,8 +362,9 @@ function ScheduleEditor({ schedule, onChange }: ScheduleEditorProps) {
           <Select
             value={String(schedule.minute)}
             onValueChange={(v) => onChange({ minute: Number(v) })}
+            disabled={isReadOnly}
           >
-            <SelectTrigger className="flex-1">
+            <SelectTrigger className="flex-1" disabled={isReadOnly}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -336,8 +383,12 @@ function ScheduleEditor({ schedule, onChange }: ScheduleEditorProps) {
         <Section>
           <Trans>Timezone</Trans>
         </Section>
-        <Select value={tz} onValueChange={(v) => onChange({ tz: v })}>
-          <SelectTrigger className="w-full">
+        <Select
+          value={tz}
+          onValueChange={(v) => onChange({ tz: v })}
+          disabled={isReadOnly}
+        >
+          <SelectTrigger className="w-full" disabled={isReadOnly}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -360,9 +411,12 @@ function ScheduleEditor({ schedule, onChange }: ScheduleEditorProps) {
 
 // ─── TriggerForm ─────────────────────────────────────────────────────────────
 
-export function TriggerForm({ node }: NodeFormProps<"trigger">) {
+export function TriggerForm({ node, isReadOnly }: NodeFormProps<"trigger">) {
   const updateNodeData = useBuilderStore((s) => s.updateNodeData);
   const label = useWorkflowLabel();
+  const eventLabel = useWorkflowEventLabel();
+  const catalog = useWorkflowCatalog();
+  const customFields = useCustomFieldsSchema();
 
   const { events, origin, schedule } = node.data;
   const isScheduleMode = !!schedule;
@@ -371,6 +425,30 @@ export function TriggerForm({ node }: NodeFormProps<"trigger">) {
   const registryEntities = useMemo(
     () => new Set(Object.keys(WORKFLOW_ENTITY_REGISTRY)),
     []
+  );
+
+  // This company's custom-field triggers. `catalog.getEvent` is the single gate — it
+  // owns the item exclusion and the reference-only-entity rule, so neither is restated.
+  const customIds = useMemo(() => {
+    const ids: Record<string, string[]> = {};
+
+    for (const [table, fields] of Object.entries(customFields)) {
+      const entity = ENTITY_BY_TABLE[table];
+      if (entity === undefined) continue;
+      for (const field of fields ?? []) {
+        if (!field.active) continue;
+        const id = customFieldEventId(entity, field.id);
+        if (catalog.getEvent(id) === undefined) continue;
+        (ids[entity] ??= []).push(id);
+      }
+    }
+
+    return ids;
+  }, [customFields, catalog]);
+
+  const customIdSet = useMemo(
+    () => new Set(Object.values(customIds).flat()),
+    [customIds]
   );
 
   const { entityGroups, momentIds } = useMemo(() => {
@@ -387,12 +465,17 @@ export function TriggerForm({ node }: NodeFormProps<"trigger">) {
       }
     }
 
+    // Custom fields go after the shipped triggers, so a familiar list stays familiar.
+    for (const [entity, ids] of Object.entries(customIds)) {
+      (groupMap[entity] ??= []).push(...ids);
+    }
+
     const entityGroups: EntityGroup[] = Object.entries(groupMap).map(
       ([entity, ids]) => ({ entity, ids })
     );
 
     return { entityGroups, momentIds: moments };
-  }, [registryEntities]);
+  }, [registryEntities, customIds]);
 
   // Mode switching
   function switchToEvents() {
@@ -439,11 +522,13 @@ export function TriggerForm({ node }: NodeFormProps<"trigger">) {
                 : "bg-background text-foreground hover:bg-muted"
             )}
             onClick={switchToEvents}
+            disabled={isReadOnly}
           >
             <Trans>Event</Trans>
           </button>
           <button
             type="button"
+            disabled={isReadOnly}
             className={cn(
               "flex-1 border-l px-3 py-2 text-sm transition-colors",
               isScheduleMode
@@ -469,7 +554,10 @@ export function TriggerForm({ node }: NodeFormProps<"trigger">) {
               onSelect={selectEvent}
               entityGroups={entityGroups}
               momentIds={momentIds}
+              customIds={customIdSet}
               label={label}
+              eventLabel={eventLabel}
+              isReadOnly={isReadOnly}
             />
           </div>
 
@@ -491,22 +579,26 @@ export function TriggerForm({ node }: NodeFormProps<"trigger">) {
               onValueChange={(v) => {
                 if (v) updateNodeData(node.id, { origin: v as Origin });
               }}
+              disabled={isReadOnly}
               className="justify-start"
             >
               <ToggleGroupItem
                 value={"Person" satisfies Origin}
+                disabled={isReadOnly}
                 className="text-xs"
               >
                 <Trans>Everything else</Trans>
               </ToggleGroupItem>
               <ToggleGroupItem
                 value={"Automation" satisfies Origin}
+                disabled={isReadOnly}
                 className="text-xs"
               >
                 <Trans>Workflows</Trans>
               </ToggleGroupItem>
               <ToggleGroupItem
                 value={"Both" satisfies Origin}
+                disabled={isReadOnly}
                 className="text-xs"
               >
                 <Trans>Both</Trans>
@@ -517,7 +609,11 @@ export function TriggerForm({ node }: NodeFormProps<"trigger">) {
       ) : (
         <>
           {schedule && (
-            <ScheduleEditor schedule={schedule} onChange={patchSchedule} />
+            <ScheduleEditor
+              schedule={schedule}
+              onChange={patchSchedule}
+              isReadOnly={isReadOnly}
+            />
           )}
         </>
       )}

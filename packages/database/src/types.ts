@@ -23040,14 +23040,17 @@ export type Database = {
         Row: {
           jobMaterialId: string
           jobOperationStepId: string
+          quantity: number | null
         }
         Insert: {
           jobMaterialId: string
           jobOperationStepId: string
+          quantity?: number | null
         }
         Update: {
           jobMaterialId?: string
           jobOperationStepId?: string
+          quantity?: number | null
         }
         Relationships: [
           {
@@ -29069,14 +29072,17 @@ export type Database = {
         Row: {
           methodMaterialId: string
           methodOperationStepId: string
+          quantity: number | null
         }
         Insert: {
           methodMaterialId: string
           methodOperationStepId: string
+          quantity?: number | null
         }
         Update: {
           methodMaterialId?: string
           methodOperationStepId?: string
+          quantity?: number | null
         }
         Relationships: [
           {
@@ -44488,14 +44494,17 @@ export type Database = {
       }
       quoteMaterialStep: {
         Row: {
+          quantity: number | null
           quoteMaterialId: string
           quoteOperationStepId: string
         }
         Insert: {
+          quantity?: number | null
           quoteMaterialId: string
           quoteOperationStepId: string
         }
         Update: {
+          quantity?: number | null
           quoteMaterialId?: string
           quoteOperationStepId?: string
         }
@@ -69138,14 +69147,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -74476,13 +74485,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
-            isOneToOne: false
-            referencedRelation: "country"
-            referencedColumns: ["alpha2"]
-          },
-          {
-            foreignKeyName: "address_countryCode_fkey"
             columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
@@ -74491,6 +74493,13 @@ export type Database = {
           {
             foreignKeyName: "address_countryCode_fkey"
             columns: ["invoiceCountryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["alpha2"]
+          },
+          {
+            foreignKeyName: "address_countryCode_fkey"
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -75037,14 +75046,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -81292,6 +81301,15 @@ export type Database = {
       }
       uuid_generate_v4: { Args: never; Returns: string }
       uuid_to_base58: { Args: { _uuid: string }; Returns: string }
+      workflow_merge_custom_fields: {
+        Args: {
+          p_company_id: string
+          p_id: string
+          p_table: string
+          p_values: Json
+        }
+        Returns: undefined
+      }
       xid: { Args: { _at?: string }; Returns: unknown }
       xid_counter: { Args: { _xid: unknown }; Returns: number }
       xid_decode: { Args: { _xid: unknown }; Returns: number[] }

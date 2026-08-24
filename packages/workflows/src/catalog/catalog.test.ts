@@ -3,8 +3,10 @@ import {
   type WorkflowDefinition,
   workflowDefinitionSchema
 } from "../definition/schema";
+import { t } from "../definition/types";
 import { validateDefinition } from "../definition/validate";
 import { createWorkflowCatalog, getActionRoute } from "./catalog";
+import { buildCatalogOverlay } from "./custom-fields";
 
 const catalog = createWorkflowCatalog();
 
@@ -252,5 +254,86 @@ describe("validateDefinition against the real catalog", () => {
     expect(
       validateDefinition(definition, catalog).map((i) => i.code)
     ).toContain("MULTIPLE_TRIGGER_EVENTS");
+  });
+});
+
+describe("the per-company overlay", () => {
+  const overlay = buildCatalogOverlay([
+    {
+      table: "salesOrder",
+      id: "cf_1",
+      name: "Rush Reason",
+      dataTypeId: 3,
+      listOptions: ["Low", "High"],
+      active: true
+    }
+  ]);
+
+  it("resolves a custom-field trigger through getEvent", () => {
+    const event = createWorkflowCatalog().getEvent(
+      "salesOrder.customFields.cf_1.changed"
+    );
+    expect(event?.match).toEqual({
+      table: "salesOrder",
+      operation: "UPDATE",
+      field: "customFields.cf_1"
+    });
+  });
+
+  it("adds the field to the entity's properties", () => {
+    const properties =
+      createWorkflowCatalog(overlay).getEntity("salesOrder")?.properties;
+    expect(properties?.["customFields.cf_1"]).toEqual(t.string);
+    // The shipped columns are still there.
+    expect(properties?.status).toBeDefined();
+  });
+
+  // A customer must not be able to shadow a real column.
+  it("lets a generated property win over an overlay one", () => {
+    const shadow = {
+      ...overlay,
+      properties: { salesOrder: { status: t.number } }
+    };
+    expect(
+      createWorkflowCatalog(shadow).getEntity("salesOrder")?.properties.status
+    ).toEqual(t.string);
+  });
+
+  it("returns the field's options from getEnum", () => {
+    expect(
+      createWorkflowCatalog(overlay).getEnum("salesOrder", "customFields.cf_1")
+    ).toEqual(["Low", "High"]);
+  });
+
+  it("adds the field to the entity's update action", () => {
+    const inputs =
+      createWorkflowCatalog(overlay).getAction("salesOrder.update")?.inputs;
+    expect(inputs?.["customFields.cf_1"]).toEqual({
+      type: t.string,
+      required: false,
+      choices: ["Low", "High"]
+    });
+    expect(inputs?.salesOrder).toBeDefined();
+  });
+
+  it("returns the customer's own name as the property label", () => {
+    const catalog = createWorkflowCatalog(overlay);
+    expect(catalog.getPropertyLabel("salesOrder", "customFields.cf_1")).toBe(
+      "Rush Reason"
+    );
+    expect(catalog.getPropertyLabel("salesOrder", "status")).toBeUndefined();
+    expect(
+      catalog.getInputLabel("salesOrder.update", "customFields.cf_1")
+    ).toBe("Rush Reason");
+  });
+
+  it("leaves a catalog built with no overlay untouched", () => {
+    const bare = createWorkflowCatalog();
+    expect(
+      bare.getEntity("salesOrder")?.properties["customFields.cf_1"]
+    ).toBeUndefined();
+    expect(
+      bare.getAction("salesOrder.update")?.inputs["customFields.cf_1"]
+    ).toBeUndefined();
   });
 });

@@ -13,22 +13,20 @@ import {
   HStack,
   Label,
   ScrollArea,
+  Separator,
   Switch,
   toast,
   VStack
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
-import { Boolean, Users } from "~/components/Form";
-import SettingsSectionHeader from "~/components/SettingsSectionHeader";
+import { Users } from "~/components/Form";
 import {
   getCompanySettings,
   jobCompletedValidator,
-  jobTravelerMaterialsValidator,
-  operationTimerValidator,
   updateAutoSelectMaterialWithoutPickingListSetting,
   updateIncludeMaterialsOnTravelerSetting
 } from "~/modules/settings";
@@ -91,44 +89,40 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (intent === "operationTimer") {
-    const validation = await validator(operationTimerValidator).validate(
-      formData
-    );
-
-    if (validation.error) {
-      return { success: false, message: "Invalid form data" };
-    }
+    const autoStartOperationTimer = formData.get("enabled") === "true";
 
     const update = await client
       .from("companySettings")
-      .update({
-        autoStartOperationTimer: validation.data.autoStartOperationTimer
-      })
+      .update({ autoStartOperationTimer })
       .eq("id", companyId);
 
     if (update.error) return { success: false, message: update.error.message };
 
-    return { success: true, message: "Operation timer settings updated" };
+    return {
+      success: true,
+      message: `Operation timer auto-start ${
+        autoStartOperationTimer ? "enabled" : "disabled"
+      }`
+    };
   }
 
   if (intent === "jobTravelerMaterials") {
-    const validation = await validator(jobTravelerMaterialsValidator).validate(
-      formData
-    );
-
-    if (validation.error) {
-      return { success: false, message: "Invalid form data" };
-    }
+    const includeMaterialsOnTraveler = formData.get("enabled") === "true";
 
     const update = await updateIncludeMaterialsOnTravelerSetting(
       client,
       companyId,
-      validation.data.includeMaterialsOnTraveler
+      includeMaterialsOnTraveler
     );
 
     if (update.error) return { success: false, message: update.error.message };
 
-    return { success: true };
+    return {
+      success: true,
+      message: `Traveler materials ${
+        includeMaterialsOnTraveler ? "enabled" : "disabled"
+      }`
+    };
   }
 
   if (intent === "autoSelectMaterialWithoutPickingListToggle") {
@@ -157,27 +151,49 @@ export default function ProductionSettingsRoute() {
   const { t } = useLingui();
   const { companySettings } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
-  const timerFetcher = useFetcher<typeof action>();
-  const travelerFetcher = useFetcher<typeof action>();
-  const toggleFetcher = useFetcher<typeof action>();
+  const notificationsFetcher = useFetcher<typeof action>();
 
-  const [
-    autoSelectMaterialWithoutPickingList,
-    setAutoSelectMaterialWithoutPickingList
-  ] = useState(companySettings.autoSelectMaterialWithoutPickingList ?? false);
+  const isToggling = fetcher.state !== "idle";
+
+  const includeMaterialsOnTraveler =
+    (companySettings as { includeMaterialsOnTraveler?: boolean | null })
+      .includeMaterialsOnTraveler ?? false;
+  const autoStartOperationTimer =
+    companySettings.autoStartOperationTimer ?? false;
+  const autoSelectMaterialWithoutPickingList =
+    companySettings.autoSelectMaterialWithoutPickingList ?? false;
+
+  const handleTravelerMaterialsToggle = useCallback(
+    (checked: boolean) => {
+      fetcher.submit(
+        { intent: "jobTravelerMaterials", enabled: String(checked) },
+        { method: "POST" }
+      );
+    },
+    [fetcher]
+  );
+
+  const handleOperationTimerToggle = useCallback(
+    (checked: boolean) => {
+      fetcher.submit(
+        { intent: "operationTimer", enabled: String(checked) },
+        { method: "POST" }
+      );
+    },
+    [fetcher]
+  );
 
   const handleAutoSelectMaterialToggle = useCallback(
     (checked: boolean) => {
-      setAutoSelectMaterialWithoutPickingList(checked);
-      toggleFetcher.submit(
+      fetcher.submit(
         {
           intent: "autoSelectMaterialWithoutPickingListToggle",
-          enabled: checked.toString()
+          enabled: String(checked)
         },
-        { method: "post" }
+        { method: "POST" }
       );
     },
-    [toggleFetcher]
+    [fetcher]
   );
 
   useEffect(() => {
@@ -191,37 +207,20 @@ export default function ProductionSettingsRoute() {
   }, [fetcher.data?.message, fetcher.data?.success]);
 
   useEffect(() => {
-    if (timerFetcher.data?.success === true && timerFetcher?.data?.message) {
-      toast.success(timerFetcher.data.message);
-    }
-
-    if (timerFetcher.data?.success === false && timerFetcher?.data?.message) {
-      toast.error(timerFetcher.data.message);
-    }
-  }, [timerFetcher.data?.message, timerFetcher.data?.success]);
-
-  useEffect(() => {
-    if (travelerFetcher.data?.success === true) {
-      toast.success(t`Job traveler settings updated`);
+    if (
+      notificationsFetcher.data?.success === true &&
+      notificationsFetcher?.data?.message
+    ) {
+      toast.success(notificationsFetcher.data.message);
     }
 
     if (
-      travelerFetcher.data?.success === false &&
-      travelerFetcher?.data?.message
+      notificationsFetcher.data?.success === false &&
+      notificationsFetcher?.data?.message
     ) {
-      toast.error(travelerFetcher.data.message);
+      toast.error(notificationsFetcher.data.message);
     }
-  }, [travelerFetcher.data, t]);
-
-  useEffect(() => {
-    if (toggleFetcher.data?.success === true && toggleFetcher?.data?.message) {
-      toast.success(toggleFetcher.data.message);
-    }
-
-    if (toggleFetcher.data?.success === false && toggleFetcher?.data?.message) {
-      toast.error(toggleFetcher.data.message);
-    }
-  }, [toggleFetcher.data?.message, toggleFetcher.data?.success]);
+  }, [notificationsFetcher.data?.message, notificationsFetcher.data?.success]);
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">
@@ -233,131 +232,126 @@ export default function ProductionSettingsRoute() {
           <Trans>Production</Trans>
         </Heading>
 
-        <SettingsSectionHeader>
-          <Trans>Documents</Trans>
-        </SettingsSectionHeader>
-
         <Card>
-          <ValidatedForm
-            method="post"
-            validator={jobTravelerMaterialsValidator}
-            defaultValues={{
-              includeMaterialsOnTraveler:
-                (
-                  companySettings as {
-                    includeMaterialsOnTraveler?: boolean | null;
-                  }
-                ).includeMaterialsOnTraveler ?? false
-            }}
-            fetcher={travelerFetcher}
-          >
-            <input type="hidden" name="intent" value="jobTravelerMaterials" />
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Trans>Job Traveler Materials</Trans>
-              </CardTitle>
-              <CardDescription>
-                <Trans>
-                  Include a materials (bill of materials) section on the job
-                  traveler PDF with item numbers and quantities.
-                </Trans>
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-8 max-w-[400px]">
-                <Boolean
-                  name="includeMaterialsOnTraveler"
-                  label={t`Include materials on traveler`}
-                  description={t`When on, the traveler PDF lists the job's required materials.`}
-                  bordered
-                />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Submit
-                isDisabled={travelerFetcher.state !== "idle"}
-                isLoading={travelerFetcher.state !== "idle"}
-              >
-                <Trans>Save</Trans>
-              </Submit>
-            </CardFooter>
-          </ValidatedForm>
-        </Card>
-
-        <SettingsSectionHeader>
-          <Trans>Shop Floor</Trans>
-        </SettingsSectionHeader>
-
-        <Card>
-          <ValidatedForm
-            method="post"
-            validator={operationTimerValidator}
-            defaultValues={{
-              autoStartOperationTimer:
-                companySettings.autoStartOperationTimer ?? false
-            }}
-            fetcher={timerFetcher}
-          >
-            <input type="hidden" name="intent" value="operationTimer" />
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Trans>Operation Timer</Trans>
-              </CardTitle>
-              <CardDescription>
-                <Trans>
-                  Auto-start the operator's timer when they open an operation in
-                  the MES so time logs are captured from the start.
-                </Trans>
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-8 max-w-[400px]">
-                <Boolean
-                  name="autoStartOperationTimer"
-                  label={t`Auto-start timer on open`}
-                  description={t`When on, opening an operation starts its timer automatically.`}
-                  bordered
-                />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Submit
-                isDisabled={timerFetcher.state !== "idle"}
-                isLoading={timerFetcher.state !== "idle"}
-              >
-                <Trans>Save</Trans>
-              </Submit>
-            </CardFooter>
-          </ValidatedForm>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Job Traveler</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>Choose what appears on the printed job traveler.</Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <HStack className="justify-between items-center">
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {includeMaterialsOnTraveler ? (
+                    <Trans>Materials are included</Trans>
+                  ) : (
+                    <Trans>Materials are not included</Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {includeMaterialsOnTraveler ? (
+                    <Trans>
+                      The traveler lists each item on the bill of materials with
+                      its quantity.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      Add a materials section that lists each item on the bill
+                      of materials with its quantity.
+                    </Trans>
+                  )}
+                </span>
+              </VStack>
+              <Switch
+                checked={includeMaterialsOnTraveler}
+                onCheckedChange={handleTravelerMaterialsToggle}
+                disabled={isToggling}
+              />
+            </HStack>
+          </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <HStack className="justify-between items-center">
-              <div>
-                <CardTitle>
-                  <Trans>Pre-select material without a picking list</Trans>
-                </CardTitle>
-                <CardDescription>
-                  <Trans>
-                    When on, tracked material is pre-selected by pick order
-                    (FEFO) even without a picking list. When off, operators
-                    start on the Scan tab.
-                  </Trans>
-                </CardDescription>
-              </div>
-              <Switch
-                checked={autoSelectMaterialWithoutPickingList}
-                onCheckedChange={handleAutoSelectMaterialToggle}
-                disabled={toggleFetcher.state !== "idle"}
-              />
-            </HStack>
+            <CardTitle>
+              <Trans>Shop Floor</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Control how operators pick material and track time on the shop
+                floor.
+              </Trans>
+            </CardDescription>
           </CardHeader>
-        </Card>
+          <CardContent>
+            <VStack spacing={4}>
+              <HStack className="justify-between items-center w-full">
+                <VStack className="items-start" spacing={1}>
+                  <span className="font-medium">
+                    {autoStartOperationTimer ? (
+                      <Trans>The timer starts automatically</Trans>
+                    ) : (
+                      <Trans>The timer starts manually</Trans>
+                    )}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {autoStartOperationTimer ? (
+                      <Trans>
+                        Opening an operation starts its timer, so time is
+                        tracked from the moment work begins.
+                      </Trans>
+                    ) : (
+                      <Trans>
+                        Operators start the timer themselves when they begin an
+                        operation.
+                      </Trans>
+                    )}
+                  </span>
+                </VStack>
+                <Switch
+                  checked={autoStartOperationTimer}
+                  onCheckedChange={handleOperationTimerToggle}
+                  disabled={isToggling}
+                />
+              </HStack>
 
-        <SettingsSectionHeader>
-          <Trans>Notifications</Trans>
-        </SettingsSectionHeader>
+              <Separator />
+
+              <HStack className="justify-between items-center w-full">
+                <VStack className="items-start" spacing={1}>
+                  <span className="font-medium">
+                    {autoSelectMaterialWithoutPickingList ? (
+                      <Trans>Material is pre-selected</Trans>
+                    ) : (
+                      <Trans>Operators start on the Scan tab</Trans>
+                    )}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {autoSelectMaterialWithoutPickingList ? (
+                      <Trans>
+                        Tracked material is pre-selected by pick order (FEFO),
+                        even without a picking list.
+                      </Trans>
+                    ) : (
+                      <Trans>
+                        Without a picking list, operators pick material from the
+                        Scan tab.
+                      </Trans>
+                    )}
+                  </span>
+                </VStack>
+                <Switch
+                  checked={autoSelectMaterialWithoutPickingList}
+                  onCheckedChange={handleAutoSelectMaterialToggle}
+                  disabled={isToggling}
+                />
+              </HStack>
+            </VStack>
+          </CardContent>
+        </Card>
 
         <Card>
           <ValidatedForm
@@ -369,12 +363,12 @@ export default function ProductionSettingsRoute() {
               salesJobCompletedNotificationGroup:
                 companySettings.salesJobCompletedNotificationGroup ?? []
             }}
-            fetcher={fetcher}
+            fetcher={notificationsFetcher}
           >
             <input type="hidden" name="intent" value="jobCompleted" />
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Trans>Completed Job Notifications</Trans>
+                <Trans>Notifications</Trans>
               </CardTitle>
               <CardDescription>
                 <Trans>
@@ -408,8 +402,8 @@ export default function ProductionSettingsRoute() {
             </CardContent>
             <CardFooter>
               <Submit
-                isDisabled={fetcher.state !== "idle"}
-                isLoading={fetcher.state !== "idle"}
+                isDisabled={notificationsFetcher.state !== "idle"}
+                isLoading={notificationsFetcher.state !== "idle"}
               >
                 <Trans>Save</Trans>
               </Submit>

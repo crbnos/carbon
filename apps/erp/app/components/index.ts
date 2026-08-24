@@ -36,6 +36,11 @@ import MetricCard from "./MetricCard";
 import { ModelOptimizedIndicator } from "./ModelOptimizedIndicator";
 import MotionMoney from "./MotionMoney";
 import New from "./New";
+import {
+  OnboardingCard,
+  OnboardingCardContent,
+  onboardingFormClassName
+} from "./OnboardingCard";
 import PeriodSelector from "./PeriodSelector";
 import RealtimeDataProvider from "./RealtimeDataProvider";
 import { RevisionSuffix } from "./RevisionSuffix";
@@ -79,6 +84,9 @@ export {
   MotionMoney,
   ModuleIcon,
   New,
+  OnboardingCard,
+  OnboardingCardContent,
+  onboardingFormClassName,
   OperationStatusIcon,
   OperationTypeIcon,
   PeriodSelector,

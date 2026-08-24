@@ -45,36 +45,61 @@ const events: Stripe.WebhookEndpointCreateParams.EnabledEvent[] = [
   "payment_intent.canceled",
 ];
 
+const connectEvents: Stripe.WebhookEndpointCreateParams.EnabledEvent[] = [
+  "invoice.paid",
+  "invoice.payment_succeeded",
+  "invoice.payment_failed",
+  "invoice.marked_uncollectible",
+];
+
 // const webhookUrl = `https://${VERCEL_URL}/api/webhook/stripe`;
 const webhookUrl = `${ERP_URL}/api/webhook/stripe`;
+const connectWebhookUrl = `${ERP_URL}/api/webhook/stripe-connect`;
 if (webhookUrl.includes("localhost")) {
   throw new Error("Cannot register webhook in local development mode");
 }
 
-async function registerWebhook() {
-  console.log(`🔄 Registering Stripe webhook for ${webhookUrl}...`);
+async function registerWebhook({
+  url,
+  enabledEvents,
+  connect,
+  secretEnvVar,
+}: {
+  url: string;
+  enabledEvents: Stripe.WebhookEndpointCreateParams.EnabledEvent[];
+  connect: boolean;
+  secretEnvVar: string;
+}) {
+  console.log(`🔄 Registering Stripe webhook for ${url}...`);
 
   try {
-    // First, list existing webhooks to avoid duplicates
-    const existingEndpoints = await stripe.webhookEndpoints.list();
+    // First, list existing webhooks to avoid duplicates. Stripe's default
+    // page size is 10 — without an explicit limit, an account with more than
+    // 10 webhooks would miss the existing endpoint here and create a
+    // duplicate on every run.
+    const existingEndpoints = await stripe.webhookEndpoints.list({
+      limit: 100,
+    });
 
     // Check if we already have a webhook for this URL
     const existingEndpoint = existingEndpoints.data.find(
-      (endpoint) => endpoint.url === webhookUrl
+      (endpoint) => endpoint.url === url
     );
 
     if (existingEndpoint) {
-      console.log(`ℹ️ Webhook already exists for ${webhookUrl}`);
+      console.log(`ℹ️ Webhook already exists for ${url}`);
       console.log(`ℹ️ Webhook ID: ${existingEndpoint.id}`);
       console.log(
         `ℹ️ Updating webhook to ensure it has the correct event types...`
       );
 
-      // Update the existing webhook with the current event types
+      // Update the existing webhook with the current event types. `connect` is
+      // fixed at creation and cannot be updated — recreate the endpoint if it
+      // needs to change.
       const updatedEndpoint = await stripe.webhookEndpoints.update(
         existingEndpoint.id,
         {
-          enabled_events: events,
+          enabled_events: enabledEvents,
         }
       );
 
@@ -84,8 +109,9 @@ async function registerWebhook() {
 
     // Create a new webhook endpoint
     const endpoint = await stripe.webhookEndpoints.create({
-      url: webhookUrl,
-      enabled_events: events,
+      url,
+      enabled_events: enabledEvents,
+      connect,
       description: `Webhook for ${VERCEL_URL}`,
     });
 
@@ -94,7 +120,7 @@ async function registerWebhook() {
     console.log(`ℹ️ Webhook Secret: ${endpoint.secret}`);
     console.log(`
 ⚠️ IMPORTANT: Add this webhook secret to your environment variables:
-STRIPE_WEBHOOK_SECRET=${endpoint.secret}
+${secretEnvVar}=${endpoint.secret}
 `);
 
     return endpoint;
@@ -104,11 +130,26 @@ STRIPE_WEBHOOK_SECRET=${endpoint.secret}
   }
 }
 
-registerWebhook()
+async function registerWebhooks() {
+  await registerWebhook({
+    url: webhookUrl,
+    enabledEvents: events,
+    connect: false,
+    secretEnvVar: "STRIPE_WEBHOOK_SECRET",
+  });
+  await registerWebhook({
+    url: connectWebhookUrl,
+    enabledEvents: connectEvents,
+    connect: true,
+    secretEnvVar: "STRIPE_CONNECT_WEBHOOK_SECRET",
+  });
+}
+
+registerWebhooks()
   .then(() => {
     console.log(`
-🎉 All done! Your Stripe webhook is now registered.
-📝 Remember to add the webhook secret to your Vercel environment variables.
+🎉 All done! Your Stripe webhooks are now registered.
+📝 Remember to add the webhook secrets to your Vercel environment variables.
 `);
   })
   .catch((error) => {

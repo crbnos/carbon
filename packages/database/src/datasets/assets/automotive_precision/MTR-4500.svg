@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="anod" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1c1f22"/>
+      <stop offset="0.2" stop-color="#43484d"/>
+      <stop offset="0.45" stop-color="#5a6167"/>
+      <stop offset="0.72" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="anodFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#1c1f22"/>
+      <stop offset="0.2" stop-color="#43484d"/>
+      <stop offset="0.45" stop-color="#5a6167"/>
+      <stop offset="0.72" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="anodDark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#15181a"/>
+      <stop offset="0.3" stop-color="#33383d"/>
+      <stop offset="0.6" stop-color="#43484d"/>
+      <stop offset="1" stop-color="#101214"/>
+    </linearGradient>
+    <linearGradient id="shaft" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="shaftFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#eef1f3"/>
+      <stop offset="0.5" stop-color="#c3c9cd"/>
+      <stop offset="1" stop-color="#8b9298"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="515" cy="670" rx="390" ry="86" fill="url(#shadow)"/>
+
+  <!-- short slender keyed output shaft -->
+  <rect x="798" y="473" width="50" height="64" fill="url(#shaft)"/>
+  <rect x="846" y="481" width="32" height="48" fill="url(#shaft)"/>
+  <rect x="848" y="488" width="28" height="9" fill="#2f353a"/>
+  <ellipse cx="878" cy="505" rx="9" ry="24" fill="url(#shaftFace)" stroke="#5d6368" stroke-width="2.5"/>
+  <ellipse cx="846" cy="505" rx="10" ry="24" fill="#9aa2a9" opacity="0.7"/>
+  <g stroke="#ffffff" stroke-opacity="0.3" stroke-width="2">
+    <path d="M802 484 L842 484"/><path d="M802 526 L842 526"/>
+  </g>
+
+  <!-- stepped front register -->
+  <rect x="768" y="413" width="34" height="184" fill="url(#anod)" stroke="#0f1113" stroke-width="2.5"/>
+  <ellipse cx="798" cy="505" rx="17" ry="92" fill="url(#shaftFace)" opacity="0.35"/>
+  <g stroke="#ffffff" stroke-opacity="0.22" stroke-width="2">
+    <path d="M772 432 L798 432"/><path d="M772 578 L798 578"/>
+  </g>
+
+  <!-- front end bell -->
+  <rect x="700" y="353" width="72" height="304" fill="url(#anod)" stroke="#0f1113" stroke-width="3"/>
+  <ellipse cx="772" cy="505" rx="24" ry="152" fill="url(#anodDark)" opacity="0.6"/>
+  <g stroke="#ffffff" stroke-opacity="0.16" stroke-width="2.5" fill="none">
+    <path d="M708 378 L766 378"/><path d="M708 634 L766 634"/>
+  </g>
+  <!-- four small socket head screws around the flange -->
+  <g>
+    <ellipse cx="762" cy="404" rx="9" ry="16" fill="#5a6167" stroke="#15181a" stroke-width="2"/>
+    <ellipse cx="762" cy="404" rx="5" ry="9" fill="#22262a"/>
+    <ellipse cx="762" cy="606" rx="9" ry="16" fill="#5a6167" stroke="#15181a" stroke-width="2"/>
+    <ellipse cx="762" cy="606" rx="5" ry="9" fill="#22262a"/>
+    <ellipse cx="722" cy="374" rx="9" ry="16" fill="#5a6167" stroke="#15181a" stroke-width="2"/>
+    <ellipse cx="722" cy="374" rx="5" ry="9" fill="#22262a"/>
+    <ellipse cx="722" cy="636" rx="9" ry="16" fill="#5a6167" stroke="#15181a" stroke-width="2"/>
+    <ellipse cx="722" cy="636" rx="5" ry="9" fill="#22262a"/>
+  </g>
+
+  <!-- slim finned barrel : eight shallow longitudinal fins -->
+  <rect x="250" y="350" width="454" height="310" fill="url(#anod)" stroke="#0f1113" stroke-width="3"/>
+  <g stroke="#0e1012" stroke-width="5" opacity="0.8" fill="none">
+    <path d="M250 362 L704 362"/><path d="M250 446 L704 446"/>
+    <path d="M250 564 L704 564"/><path d="M250 648 L704 648"/>
+  </g>
+  <g stroke="#ffffff" stroke-opacity="0.24" stroke-width="2.5" fill="none">
+    <path d="M250 368 L704 368"/><path d="M250 452 L704 452"/>
+    <path d="M250 570 L704 570"/><path d="M250 654 L704 654"/>
+  </g>
+  <g stroke="#6b7278" stroke-width="2" opacity="0.4" fill="none">
+    <path d="M250 404 L704 404"/><path d="M250 505 L704 505"/><path d="M250 606 L704 606"/>
+  </g>
+
+  <!-- plain domed rear end bell, no encoder -->
+  <path d="M256 350 Q175 350 175 505 Q175 660 256 660 Z" fill="url(#anodFace)" stroke="#0f1113" stroke-width="3"/>
+  <path d="M256 378 Q205 380 205 505 Q205 630 256 632" fill="none" stroke="#6b7278" stroke-width="2.5" opacity="0.55"/>
+  <path d="M256 416 Q232 420 232 505 Q232 590 256 594" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="2.5"/>
+  <ellipse cx="256" cy="505" rx="16" ry="155" fill="#0e1012" opacity="0.35"/>
+
+  <!-- low integral cover plate with a single side cable gland -->
+  <path d="M394 372 L394 336 Q394 316 418 316 L578 316 Q602 316 602 336 L602 372 Z" fill="url(#anodFace)" stroke="#0f1113" stroke-width="3"/>
+  <path d="M400 372 L400 340 Q400 324 420 324 L576 324 Q596 324 596 340 L596 372" fill="none" stroke="#6b7278" stroke-width="2" opacity="0.5"/>
+  <g fill="#3a4045">
+    <ellipse cx="418" cy="334" rx="9" ry="5"/>
+    <ellipse cx="578" cy="334" rx="9" ry="5"/>
+    <ellipse cx="418" cy="362" rx="9" ry="5"/>
+    <ellipse cx="578" cy="362" rx="9" ry="5"/>
+  </g>
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2">
+    <path d="M430 346 L566 346"/>
+  </g>
+  <rect x="598" y="330" width="26" height="34" fill="#4a5055" stroke="#15181a" stroke-width="2"/>
+  <rect x="622" y="336" width="28" height="22" fill="#5a6167" stroke="#15181a" stroke-width="2"/>
+  <ellipse cx="650" cy="347" rx="9" ry="11" fill="#22262a" stroke="#15181a" stroke-width="2"/>
+</svg>

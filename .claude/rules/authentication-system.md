@@ -109,6 +109,25 @@ Supabase's `auth.mfa_factors` — no app table.
   MFA is not gated, and the shell re-runs on company switch. Console sessions are
   exempt (a shared kiosk cannot complete a personal enrollment); MES has no
   enrollment UI so its gate links to ERP.
+- **Email**: `~/services/mfa-email.server.ts` owns both MFA emails
+  (`MfaRequiredEmail` / `MfaEnabledEmail` in `@carbon/documents/email`).
+  `sendMfaRequiredEmails` fires from the settings action on the **off → on
+  transition only** (it re-reads `companySettings.requireMfa` first — the Switch
+  re-submits on every flip), and batches active employees through
+  `batchTrigger("send-email", …)` 25 at a time. It is additionally skipped when
+  `CONTROLLED_ENVIRONMENT` — effective enforcement there is
+  `CONTROLLED_ENVIRONMENT || requireMfa` and NOTHING ever writes the column, so
+  it sits `false` while MFA is already mandatory; the column alone would read as
+  a fresh transition and announce a requirement that predates the deployment.
+  The Switch is `disabled` in that mode, but the action has no such guard, so
+  this cannot live in the UI. `sendMfaEnabledEmail` fires from
+  `api+/mfa.verify` — that route only ever verifies an ENROLLMENT (a login
+  challenge goes through `completeMfaChallenge` on `/mfa`), so reaching it means
+  a factor was just added. Both take a service-role client, and NEITHER goes
+  through `trigger("notify", …)`: security mail must not be silenced by a
+  `notificationPreference` opt-out or gated on the `EMAIL_NOTIFICATIONS` plan
+  feature. Both swallow their own errors — enrollment and the setting flip must
+  not fail because email did.
 - **Admin visibility**: the `users_with_verified_mfa(company_id)` RPC
   (SECURITY DEFINER — `auth.mfa_factors` is unreachable from the SECURITY_INVOKER
   `employees` view) backs the Two-Factor column on employee accounts. It returns

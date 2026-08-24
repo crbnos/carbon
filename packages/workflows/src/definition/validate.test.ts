@@ -475,7 +475,9 @@ describe("types", () => {
     expect(codesFound).toContain("TYPE_MISMATCH");
   });
 
-  it("reports TYPE_MISMATCH for a record written into a sentence", () => {
+  // A whole record reads as its readable id, which is what "…for PO000123" means, and
+  // is what a notification body turns into a link. A LIST of records still does not.
+  it("accepts a record written into a sentence", () => {
     const definition = define(
       [
         trigger(),
@@ -494,10 +496,7 @@ describe("types", () => {
       ],
       [edge("e1", "trigger", "out", "a1")]
     );
-    const issues = validateDefinition(definition, catalog);
-    expect(issues.map((i) => i.code)).toEqual(["TYPE_MISMATCH"]);
-    // The part index, so the builder can redden that one token and not the field.
-    expect(issues[0]?.field).toBe("title.parts.1");
+    expect(validateDefinition(definition, catalog)).toEqual([]);
   });
 
   it("accepts a property of that record in the same sentence", () => {
@@ -869,6 +868,54 @@ describe("configuration", () => {
         action("a1", {
           action: "alertSomeone",
           inputs: { role: literal("string", "Manager") }
+        })
+      ],
+      [edge("e1", "trigger", "out", "a1")]
+    );
+    const issues = validateDefinition(definition, catalog);
+    expect(issues.filter((i) => i.code === "INCOMPLETE_CONFIG")).toEqual([]);
+  });
+
+  it("reports INCOMPLETE_CONFIG for a member of a multi-select that is not offered", () => {
+    const definition = define(
+      [
+        trigger(),
+        action("a1", {
+          action: "alertSomeone",
+          inputs: {
+            role: literal("string", "Manager"),
+            channels: {
+              kind: "literal",
+              type: { kind: "list", of: { kind: "primitive", of: "string" } },
+              value: ["inApp", "carrier-pigeon"]
+            }
+          }
+        })
+      ],
+      [edge("e1", "trigger", "out", "a1")]
+    );
+    const issues = validateDefinition(definition, catalog);
+    expect(
+      issues.filter(
+        (i) => i.code === "INCOMPLETE_CONFIG" && i.field === "inputs.channels"
+      )
+    ).toHaveLength(1);
+  });
+
+  it("accepts a multi-select whose members are all offered", () => {
+    const definition = define(
+      [
+        trigger(),
+        action("a1", {
+          action: "alertSomeone",
+          inputs: {
+            role: literal("string", "Manager"),
+            channels: {
+              kind: "literal",
+              type: { kind: "list", of: { kind: "primitive", of: "string" } },
+              value: ["inApp", "slack"]
+            }
+          }
         })
       ],
       [edge("e1", "trigger", "out", "a1")]
@@ -1461,7 +1508,9 @@ describe("pairs and showWhen", () => {
     expect(issues[0]?.field).toBe("headers.entries.0");
   });
 
-  it("refuses a whole record as a row's value", () => {
+  // A record in a header reads as its readable id, same as anywhere else in text —
+  // and a webhook body gets no `linkFor`, so it stays a bare id with no markdown.
+  it("accepts a whole record as a row's value", () => {
     const issues = issuesFor({
       url: literal("https://example.com"),
       method: literal("GET"),
@@ -1480,9 +1529,7 @@ describe("pairs and showWhen", () => {
         ]
       }
     });
-    expect(issues[0]?.code).toBe("TYPE_MISMATCH");
-    expect(issues[0]?.field).toBe("headers.entries.0");
-    expect(issues[0]?.message).toMatch(/into text/);
+    expect(issues).toEqual([]);
   });
 
   it("leaves an already-published webhook with only url and body alone", () => {

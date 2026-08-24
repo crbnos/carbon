@@ -1,5 +1,5 @@
 "use client";
-import { NotificationEvent } from "@carbon/notifications";
+import { NotificationEvent, renderInlineLinks } from "@carbon/notifications";
 import {
   Badge,
   Button,
@@ -46,7 +46,7 @@ import {
   RiProgress4Line,
   RiProgress8Line
 } from "react-icons/ri";
-import { Link, useFetcher } from "react-router";
+import { Link, useFetcher, useNavigate } from "react-router";
 import { DateTime } from "~/components";
 import { useNotifications, useUser } from "~/hooks";
 import type { ApprovalDocumentType } from "~/modules/shared";
@@ -64,6 +64,24 @@ type OutstandingTraining = {
   status: "Pending" | "Overdue";
   currentPeriod: string | null;
 };
+
+// `payload.details` is written by the notify job but is not on the topbar
+// Notification type, which only declares the keys this menu always reads.
+function getNotificationBody(
+  payload: NotificationRecord["payload"],
+  event: NotificationEvent
+): string | undefined {
+  // Workflow is the only event whose body is authored text rather than a
+  // restatement of the description — every other event would render twice.
+  if (event !== NotificationEvent.Workflow) return undefined;
+  const details = (payload as { details?: { label: string; value: string }[] })
+    .details;
+  if (!Array.isArray(details)) return undefined;
+  const message = details.find((detail) => detail?.label === "Message")?.value;
+  return typeof message === "string" && message.length > 0
+    ? message
+    : undefined;
+}
 
 function EmptyState({ description }: { description: string }) {
   return (
@@ -122,6 +140,7 @@ function Notification({
   icon,
   to,
   description,
+  body,
   createdAt,
   markMessageAsRead,
   from,
@@ -130,6 +149,7 @@ function Notification({
   icon: React.ReactNode;
   to: string;
   description: string;
+  body?: string;
   createdAt: string;
   from?: string;
   markMessageAsRead?: () => void;
@@ -138,6 +158,7 @@ function Notification({
   const { id: userId } = useUser();
   const { t } = useLingui();
   const [people] = usePeople();
+  const navigate = useNavigate();
   let byUser = "";
   if (from) {
     if (from === userId) {
@@ -146,27 +167,84 @@ function Notification({
       byUser = people.find((p) => p.id === from)?.name ?? "";
     }
   }
+
+  const segments = body
+    ? renderInlineLinks(
+        body,
+        typeof window === "undefined" ? "" : window.location.origin
+      )
+    : null;
+
+  const content = (
+    <>
+      <div>
+        <div className="h-9 w-9 flex items-center justify-center gap-y-0 border rounded-full">
+          {icon}
+        </div>
+      </div>
+      <div>
+        <p className="text-sm">
+          {description} {byUser && <span>{t`by ${byUser}`}</span>}
+        </p>
+        {segments && segments.length > 0 && (
+          <p className="text-xs text-muted-foreground line-clamp-3">
+            {segments.map((segment, index) =>
+              "href" in segment ? (
+                <a
+                  key={`${index}:${segment.text}`}
+                  href={segment.href}
+                  className="underline underline-offset-2 hover:text-foreground"
+                  // `/api/link` switches the active company server-side before
+                  // redirecting, so this must be a full page load.
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {segment.text}
+                </a>
+              ) : (
+                <span key={`${index}:${segment.text}`}>{segment.text}</span>
+              )
+            )}
+          </p>
+        )}
+        <span className="text-xs text-muted-foreground">
+          <DateTime value={createdAt} variant="relative" />
+        </span>
+      </div>
+    </>
+  );
+
   return (
     <div className="flex items-between justify-between gap-x-4 px-3 py-3 hover:bg-secondary">
-      <Link
-        className="flex items-between justify-between gap-x-4 "
-        onClick={() => onClose()}
-        to={to}
-      >
-        <div>
-          <div className="h-9 w-9 flex items-center justify-center gap-y-0 border rounded-full">
-            {icon}
-          </div>
+      {segments ? (
+        // A body can contain anchors, and an <a> inside an <a> is invalid HTML —
+        // browsers unnest it, which would pull the link out of the row.
+        <div
+          role="link"
+          tabIndex={0}
+          className="flex items-between justify-between gap-x-4 cursor-pointer"
+          onClick={() => {
+            onClose();
+            navigate(to);
+          }}
+          onKeyDown={(e) => {
+            if (e.target !== e.currentTarget) return;
+            if (e.key !== "Enter" && e.key !== " ") return;
+            e.preventDefault();
+            onClose();
+            navigate(to);
+          }}
+        >
+          {content}
         </div>
-        <div>
-          <p className="text-sm">
-            {description} {byUser && <span>{t`by ${byUser}`}</span>}
-          </p>
-          <span className="text-xs text-muted-foreground">
-            <DateTime value={createdAt} variant="relative" />
-          </span>
-        </div>
-      </Link>
+      ) : (
+        <Link
+          className="flex items-between justify-between gap-x-4 "
+          onClick={() => onClose()}
+          to={to}
+        >
+          {content}
+        </Link>
+      )}
       {markMessageAsRead && (
         <div>
           <IconButton
@@ -191,6 +269,7 @@ function GenericNotification({
   id: string;
   createdAt: string;
   description: string;
+  body?: string;
   event: NotificationEvent;
   from?: string;
   documentType?: ApprovalDocumentType;
@@ -682,6 +761,7 @@ const Notifications = () => {
                         id={notification.payload.documentId as string}
                         createdAt={notification.createdAt}
                         description={notification.payload.description as string}
+                        body={getNotificationBody(notification.payload, event)}
                         event={event}
                         from={notification.payload.from as string | undefined}
                         documentType={
@@ -769,6 +849,7 @@ const Notifications = () => {
                         id={notification.payload.documentId as string}
                         createdAt={notification.createdAt}
                         description={notification.payload.description as string}
+                        body={getNotificationBody(notification.payload, event)}
                         event={event}
                         from={notification.payload.from as string | undefined}
                         documentType={

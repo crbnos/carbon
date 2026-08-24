@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="anoFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#8a9298"/>
+      <stop offset="0.2" stop-color="#d5dce1"/>
+      <stop offset="0.45" stop-color="#f0f4f6"/>
+      <stop offset="0.72" stop-color="#b2bac0"/>
+      <stop offset="1" stop-color="#798187"/>
+    </linearGradient>
+    <linearGradient id="anoBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8a9298"/>
+      <stop offset="0.2" stop-color="#d5dce1"/>
+      <stop offset="0.45" stop-color="#f0f4f6"/>
+      <stop offset="0.72" stop-color="#b2bac0"/>
+      <stop offset="1" stop-color="#798187"/>
+    </linearGradient>
+    <linearGradient id="anoTop" x1="0.15" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#e6ebee"/>
+      <stop offset="0.45" stop-color="#c4ccd2"/>
+      <stop offset="1" stop-color="#8b939a"/>
+    </linearGradient>
+    <linearGradient id="chrome2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5b6167"/>
+      <stop offset="0.14" stop-color="#dfe6ea"/>
+      <stop offset="0.34" stop-color="#ffffff"/>
+      <stop offset="0.6" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <linearGradient id="steel2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="rubber" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#111315"/>
+      <stop offset="0.25" stop-color="#2c3033"/>
+      <stop offset="0.5" stop-color="#3b4044"/>
+      <stop offset="0.75" stop-color="#212528"/>
+      <stop offset="1" stop-color="#0d0f10"/>
+    </linearGradient>
+    <linearGradient id="domeShade" x1="0.2" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#eef2f4"/>
+      <stop offset="0.35" stop-color="#c6ced4"/>
+      <stop offset="0.72" stop-color="#98a0a7"/>
+      <stop offset="1" stop-color="#6a7178"/>
+    </linearGradient>
+    <linearGradient id="sheen2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.3" stop-color="#ffffff" stop-opacity="0.28"/>
+      <stop offset="0.55" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="512" cy="862" rx="345" ry="76" fill="url(#shadow)"/>
+
+  <!-- pigtail cable + single compact connector, exiting the rear right flank -->
+  <g fill="none" stroke-linecap="round">
+    <path d="M690 596 C766 600 804 636 812 686" stroke="#0d0f10" stroke-width="34"/>
+    <path d="M690 596 C766 600 804 636 812 686" stroke="url(#rubber)" stroke-width="28"/>
+    <path d="M694 586 C762 590 796 622 804 668" stroke="#6c757b" stroke-opacity="0.5" stroke-width="6"/>
+  </g>
+  <g transform="translate(800 676) rotate(48)">
+    <path d="M-14 -30 L26 -30 L26 30 L-14 30 Z" fill="url(#rubber)" stroke="#0b0d0e" stroke-width="2.5"/>
+    <path d="M24 -34 L84 -34 L84 34 L24 34 Z" fill="url(#steel2)" stroke="#4e5459" stroke-width="2.5"/>
+    <g stroke="#5c6369" stroke-width="2.5" opacity="0.7">
+      <path d="M36 -33 L36 33"/><path d="M48 -34 L48 34"/><path d="M60 -34 L60 34"/><path d="M72 -33 L72 33"/>
+    </g>
+    <ellipse cx="84" cy="0" rx="13" ry="34" fill="#31373b" stroke="#5d6368" stroke-width="3"/>
+    <ellipse cx="84" cy="0" rx="7" ry="22" fill="#14171a"/>
+  </g>
+
+  <!-- smooth domed rear cap (behind body) -->
+  <path d="M349 706 L349 784 Q349 874 512 874 Q675 874 675 784 L675 706 Z"
+        fill="url(#domeShade)" stroke="#697077" stroke-width="3"/>
+  <path d="M675 706 L675 784 Q675 874 512 874 Q600 874 632 812 Q652 774 652 706 Z" fill="#000000" opacity="0.16"/>
+  <path d="M404 782 Q404 848 486 856" fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="9"/>
+  <path d="M349 764 Q512 800 675 764" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="3"/>
+
+  <!-- motor body: right side face -->
+  <path d="M619 394 L730 283 L730 653 L619 764 Z" fill="url(#anoFace)" stroke="#5f666c" stroke-width="3"/>
+  <path d="M619 394 L730 283 L730 653 L619 764 Z" fill="#000000" opacity="0.22"/>
+  <!-- motor body: front face -->
+  <path d="M249 394 L619 394 L619 764 L249 764 Z" fill="url(#anoFace)" stroke="#5f666c" stroke-width="3"/>
+  <rect x="249" y="394" width="370" height="370" fill="url(#sheen2)"/>
+  <g stroke="#5c6369" stroke-opacity="0.08" stroke-width="1.5" fill="none">
+    <path d="M300 396 L300 762"/><path d="M352 396 L352 762"/><path d="M404 396 L404 762"/>
+    <path d="M456 396 L456 762"/><path d="M508 396 L508 762"/><path d="M560 396 L560 762"/>
+  </g>
+  <path d="M249 750 L619 750 L619 764 L249 764 Z" fill="#000000" opacity="0.2"/>
+
+  <!-- mounting flange: right side face -->
+  <path d="M644 340 L835 203 L835 257 L644 394 Z" fill="url(#anoFace)" stroke="#5f666c" stroke-width="3"/>
+  <path d="M644 340 L835 203 L835 257 L644 394 Z" fill="#000000" opacity="0.24"/>
+  <!-- mounting flange: front face -->
+  <path d="M189 340 L644 340 L644 394 L189 394 Z" fill="url(#anoFace)" stroke="#5f666c" stroke-width="3"/>
+  <rect x="189" y="340" width="455" height="54" fill="url(#sheen2)"/>
+  <path d="M191 349 L642 349" stroke="#ffffff" stroke-opacity="0.3" stroke-width="2"/>
+  <!-- mounting flange: top face -->
+  <path d="M189 340 L380 203 L835 203 L644 340 Z" fill="url(#anoTop)" stroke="#5f666c" stroke-width="3"/>
+  <path d="M205 336 L387 205 L819 205 L637 336 Z" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="2"/>
+
+  <!-- four small corner holes -->
+  <g>
+    <ellipse cx="254" cy="326" rx="26" ry="10" fill="#ffffff" opacity="0.28"/>
+    <ellipse cx="254" cy="326" rx="18" ry="6.8" fill="#2f3539" stroke="#1f2427" stroke-width="2"/>
+    <ellipse cx="406" cy="217" rx="26" ry="10" fill="#ffffff" opacity="0.28"/>
+    <ellipse cx="406" cy="217" rx="18" ry="6.8" fill="#2f3539" stroke="#1f2427" stroke-width="2"/>
+    <ellipse cx="770" cy="217" rx="26" ry="10" fill="#ffffff" opacity="0.28"/>
+    <ellipse cx="770" cy="217" rx="18" ry="6.8" fill="#2f3539" stroke="#1f2427" stroke-width="2"/>
+    <ellipse cx="618" cy="326" rx="26" ry="10" fill="#ffffff" opacity="0.28"/>
+    <ellipse cx="618" cy="326" rx="18" ry="6.8" fill="#2f3539" stroke="#1f2427" stroke-width="2"/>
+  </g>
+
+  <!-- pilot boss -->
+  <ellipse cx="512" cy="272" rx="82" ry="31" fill="#5d6469" opacity="0.5"/>
+  <path d="M430 232 L430 272 Q512 322 594 272 L594 232 Z" fill="url(#anoBarrel)" stroke="#5f666c" stroke-width="2.5"/>
+  <ellipse cx="512" cy="232" rx="82" ry="31" fill="url(#anoTop)" stroke="#5f666c" stroke-width="2.5"/>
+  <ellipse cx="512" cy="232" rx="70" ry="26.6" fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="2"/>
+  <ellipse cx="512" cy="232" rx="56" ry="21.3" fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="2"/>
+  <ellipse cx="512" cy="232" rx="42" ry="16" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2"/>
+
+  <!-- slim polished output shaft -->
+  <ellipse cx="512" cy="232" rx="32" ry="12.2" fill="#5a6167" opacity="0.55"/>
+  <path d="M480 110 L480 232 Q512 246 544 232 L544 110 Q512 96 480 110 Z" fill="url(#chrome2)" stroke="#4e5459" stroke-width="2.5"/>
+  <ellipse cx="512" cy="110" rx="32" ry="12.2" fill="url(#anoTop)" stroke="#6b7278" stroke-width="2.5"/>
+  <ellipse cx="512" cy="110" rx="22" ry="8.4" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="2"/>
+  <!-- shallow keyway -->
+  <path d="M503 126 Q512 122 521 126 L521 190 Q512 195 503 190 Z" fill="#9aa2a9" stroke="#6b7278" stroke-width="2"/>
+  <path d="M503 126 Q512 122 521 126" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2"/>
+</svg>

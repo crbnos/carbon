@@ -5,6 +5,7 @@ import {
   success
 } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   Card,
@@ -24,6 +25,7 @@ import { data, Link, useFetcher } from "react-router";
 import { usePermissions } from "~/hooks";
 import { useSettings } from "~/hooks/useSettings";
 import { updateRequireMfaSetting } from "~/modules/settings";
+import { sendMfaRequiredEmails } from "~/services/mfa-email.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -48,6 +50,15 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
 
   const requireMfa = formData.get("enabled") === "true";
+
+  // Read the stored value first: the switch re-submits on every flip, and a
+  // toggle that lands on the value it already had must not re-announce.
+  const previous = await client
+    .from("companySettings")
+    .select("requireMfa")
+    .eq("id", companyId)
+    .single();
+
   const update = await updateRequireMfaSetting(client, companyId, requireMfa);
   if (update.error)
     return data(
@@ -57,6 +68,24 @@ export async function action({ request }: ActionFunctionArgs) {
         error(update.error, "Failed to update two-factor requirement")
       )
     );
+
+  // Only the off → on transition is news. If the prior read failed we don't
+  // know it was a transition, so we stay quiet rather than mailing the company.
+  //
+  // CONTROLLED_ENVIRONMENT is checked separately because effective enforcement
+  // is `CONTROLLED_ENVIRONMENT || requireMfa` (see the ERP/MES shell loaders),
+  // and nothing ever writes the column in such a deployment — it stays false
+  // while MFA is already mandatory. Without this guard the column would read as
+  // a fresh off → on and the company would be told a requirement "now" applies
+  // that has applied since the day it was deployed. Enforcement there is a
+  // deployment fact, not an event, so there is nothing to announce.
+  if (
+    !CONTROLLED_ENVIRONMENT &&
+    requireMfa &&
+    previous.data?.requireMfa === false
+  ) {
+    await sendMfaRequiredEmails(getCarbonServiceRole(), companyId);
+  }
 
   return data(
     {},

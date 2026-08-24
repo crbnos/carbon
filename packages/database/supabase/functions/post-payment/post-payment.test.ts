@@ -208,6 +208,63 @@ Deno.test("AP write-off: vendor write-off income credited (revenue)", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Processor fee — withheld at source (Stripe Connect), so it never touches the
+// bank line. One journal entry, not a payment entry plus a follow-up fee entry.
+// ---------------------------------------------------------------------------
+
+Deno.test("AR with processor fee: net bank + fee expense / gross receivables, balanced", () => {
+  const { lines, signedDebitTotal } = buildPaymentJournal(
+    arBase({
+      fee: { amount: 3, accountId: "servicecharge" },
+    })
+  );
+
+  assertEquals(lines.length, 3);
+  assertEquals(line(lines, "Bank / Cash")!.amount, 97); // (100 − 3) debit asset
+  const feeLine = line(lines, "Payment Processing Fee")!;
+  assertEquals(feeLine.accountId, "servicecharge");
+  assertEquals(feeLine.amount, 3); // debit expense
+  assertEquals(line(lines, "Accounts Receivable")!.amount, -100); // gross, unaffected by the fee
+  assert(balanced(signedDebitTotal));
+});
+
+Deno.test("AR with processor fee and custom description", () => {
+  const { lines } = buildPaymentJournal(
+    arBase({
+      fee: { amount: 3, accountId: "servicecharge", description: "Stripe processing fee — INV-1" },
+    })
+  );
+
+  assert(line(lines, "Stripe processing fee — INV-1") !== undefined);
+  assert(line(lines, "Payment Processing Fee") === undefined);
+});
+
+Deno.test("AR with processor fee and FX: fee stays gross-of-FX, entry still balances", () => {
+  const { lines, signedDebitTotal } = buildPaymentJournal(
+    arBase({
+      exchangeRate: 1.2,
+      fee: { amount: 3, accountId: "servicecharge" },
+      applications: [
+        {
+          targetSalesInvoiceId: "si_1",
+          appliedAmount: 100,
+          discountAmount: 0,
+          writeOffAmount: 0,
+          targetExchangeRate: 1.0,
+          sourceExchangeRate: 1.2,
+        },
+      ],
+    })
+  );
+
+  assertEquals(line(lines, "Bank / Cash")!.amount, 116.4); // (100 × 1.2) − (3 × 1.2)
+  assertEquals(line(lines, "Payment Processing Fee")!.amount, 3.6); // 3 × 1.2
+  assertEquals(line(lines, "Accounts Receivable")!.amount, -100); // 100 × 1.0
+  assert(line(lines, "Realized FX Gain") !== undefined); // unaffected by the fee
+  assert(balanced(signedDebitTotal));
+});
+
+// ---------------------------------------------------------------------------
 // Realized FX — the sign convention. These pin that AR collected high = gain,
 // AP paid high = LOSS (the case a reviewer mis-called as inverted).
 // ---------------------------------------------------------------------------

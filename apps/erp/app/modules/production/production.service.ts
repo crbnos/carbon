@@ -1528,15 +1528,39 @@ export async function getJobMaterial(
     .single();
 }
 
+// The step-link `quantity` column ships with this branch's migration, which only
+// runs on main — previews (and the prod window between app deploy and migration)
+// run this code against the pre-migration schema. PostgREST fails the WHOLE
+// select on an unknown embedded column, so fall back to the quantity-less query
+// instead of rendering an empty BOM. 42703 = Postgres undefined_column; PGRST204
+// = PostgREST's schema-cache miss for a written column.
+function isMissingQuantityColumn(
+  error: { code?: string; message?: string } | null
+) {
+  return error?.code === "42703" || error?.code === "PGRST204";
+}
+
 export async function getJobMaterialsByMethodId(
   client: SupabaseClient<Database>,
   jobMakeMethodId: string
 ) {
-  return client
+  const result = await client
     .from("jobMaterial")
-    .select("*, item(replenishmentSystem), jobMaterialStep(jobOperationStepId)")
+    .select(
+      "*, item(replenishmentSystem), jobMaterialStep(jobOperationStepId, quantity)"
+    )
     .eq("jobMakeMethodId", jobMakeMethodId)
     .order("order", { ascending: true });
+  if (isMissingQuantityColumn(result.error)) {
+    return (await client
+      .from("jobMaterial")
+      .select(
+        "*, item(replenishmentSystem), jobMaterialStep(jobOperationStepId)"
+      )
+      .eq("jobMakeMethodId", jobMakeMethodId)
+      .order("order", { ascending: true })) as unknown as typeof result;
+  }
+  return result;
 }
 
 export async function getJobOperation(
@@ -3392,10 +3416,17 @@ export async function duplicateJobOperationStep(
   }
 
   // Copy step-scoped part/material links (same operation-level-vs-scoped semantics as tools).
-  const materialLinks = await client
+  // Pre-migration schema: no quantity column — copy the bare links instead.
+  let materialLinks = await client
     .from("jobMaterialStep")
-    .select("jobMaterialId")
+    .select("jobMaterialId, quantity")
     .eq("jobOperationStepId", args.id);
+  if (isMissingQuantityColumn(materialLinks.error)) {
+    materialLinks = (await client
+      .from("jobMaterialStep")
+      .select("jobMaterialId")
+      .eq("jobOperationStepId", args.id)) as unknown as typeof materialLinks;
+  }
   if (materialLinks.error) {
     return { data: null, error: materialLinks.error };
   }
@@ -3403,7 +3434,8 @@ export async function duplicateJobOperationStep(
     const materialLinkInsert = await client.from("jobMaterialStep").insert(
       materialLinks.data.map((l) => ({
         jobMaterialId: l.jobMaterialId,
-        jobOperationStepId: newStepId
+        jobOperationStepId: newStepId,
+        ...(l.quantity != null ? { quantity: l.quantity } : {})
       }))
     );
     if (materialLinkInsert.error) {
@@ -3512,36 +3544,66 @@ export async function replaceJobMaterialSteps(
   jobMaterialId: string,
   jobOperationStepIds: string[]
 ) {
+  // Per-step quantities are edited from the step side; a BOM-side rewrite of the
+  // step set must not wipe them, so carry each retained step's quantity across
+  // the delete-then-insert. Pre-migration schema: quantities don't exist, so
+  // fall back to the bare link set.
+  let quantityByStepId = new Map<string, number | null>();
+  const existing = await client
+    .from("jobMaterialStep")
+    .select("jobOperationStepId, quantity")
+    .eq("jobMaterialId", jobMaterialId);
+  if (existing.error && !isMissingQuantityColumn(existing.error)) {
+    return existing;
+  }
+  if (!existing.error) {
+    quantityByStepId = new Map(
+      (existing.data ?? []).map((l) => [l.jobOperationStepId, l.quantity])
+    );
+  }
   const del = await client
     .from("jobMaterialStep")
     .delete()
     .eq("jobMaterialId", jobMaterialId);
   if (del.error || jobOperationStepIds.length === 0) return del;
   return client.from("jobMaterialStep").insert(
-    jobOperationStepIds.map((jobOperationStepId) => ({
-      jobMaterialId,
-      jobOperationStepId
-    }))
+    jobOperationStepIds.map((jobOperationStepId) => {
+      const quantity = quantityByStepId.get(jobOperationStepId);
+      return {
+        jobMaterialId,
+        jobOperationStepId,
+        ...(quantity != null ? { quantity } : {})
+      };
+    })
   );
 }
 
 // Toggle a single part↔step link from the STEP side (the step editor's Parts picker).
 // `linked` true = link the material to the step, false = unlink. Idempotent on link.
+// `quantity` is the per-step share of the BOM line (NULL = the full line quantity);
+// re-linking an existing link updates the quantity, so the same call edits a split.
 export async function setJobMaterialStepLink(
   client: SupabaseClient<Database>,
-  args: { jobMaterialId: string; jobOperationStepId: string; linked: boolean }
+  args: {
+    jobMaterialId: string;
+    jobOperationStepId: string;
+    linked: boolean;
+    quantity?: number | null;
+  }
 ) {
   if (args.linked) {
     return client.from("jobMaterialStep").upsert(
       [
         {
           jobMaterialId: args.jobMaterialId,
-          jobOperationStepId: args.jobOperationStepId
+          jobOperationStepId: args.jobOperationStepId,
+          // Omit the column when unset so the default link path still works
+          // against a pre-migration schema (see isMissingQuantityColumn).
+          ...(args.quantity != null ? { quantity: args.quantity } : {})
         }
       ],
       {
-        onConflict: "jobMaterialId,jobOperationStepId",
-        ignoreDuplicates: true
+        onConflict: "jobMaterialId,jobOperationStepId"
       }
     );
   }
@@ -3553,21 +3615,53 @@ export async function setJobMaterialStepLink(
 }
 
 // Toggle a single tool↔step link from the STEP side (the step editor's Tools picker).
-// `linked` true = link the tool to the step, false = unlink. Idempotent on link. Twin of
-// setJobMaterialStepLink.
+// Takes the tool ITEM id: the picker offers the whole tool library, and choosing a
+// tool implicitly ensures the operation-level tool row exists (quantity 1 — the same
+// row the operation's Tools tab would create) before linking it to the step. Unlink
+// removes only the step link; the operation tool row stays (the Tools tab owns it).
+// Twin of setJobMaterialStepLink.
 export async function setJobOperationToolStepLink(
   client: SupabaseClient<Database>,
   args: {
-    jobOperationToolId: string;
+    operationId: string;
+    toolId: string;
     jobOperationStepId: string;
     linked: boolean;
+    companyId: string;
+    createdBy: string;
   }
 ) {
+  const existingTool = await client
+    .from("jobOperationTool")
+    .select("id")
+    .eq("operationId", args.operationId)
+    .eq("toolId", args.toolId)
+    .order("createdAt", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (existingTool.error) return existingTool;
+  let jobOperationToolId = existingTool.data?.id;
+
   if (args.linked) {
+    if (!jobOperationToolId) {
+      const created = await client
+        .from("jobOperationTool")
+        .insert({
+          operationId: args.operationId,
+          toolId: args.toolId,
+          quantity: 1,
+          companyId: args.companyId,
+          createdBy: args.createdBy
+        })
+        .select("id")
+        .single();
+      if (created.error) return created;
+      jobOperationToolId = created.data.id;
+    }
     return client.from("jobOperationToolStep").upsert(
       [
         {
-          jobOperationToolId: args.jobOperationToolId,
+          jobOperationToolId,
           jobOperationStepId: args.jobOperationStepId
         }
       ],
@@ -3577,10 +3671,11 @@ export async function setJobOperationToolStepLink(
       }
     );
   }
+  if (!jobOperationToolId) return { data: null, error: null };
   return client
     .from("jobOperationToolStep")
     .delete()
-    .eq("jobOperationToolId", args.jobOperationToolId)
+    .eq("jobOperationToolId", jobOperationToolId)
     .eq("jobOperationStepId", args.jobOperationStepId);
 }
 
@@ -6327,7 +6422,7 @@ export async function syncAssemblyInstructionToOperation(
 
     const sourceMaterials = await trx
       .selectFrom("assemblyInstructionStepMaterial")
-      .select(["stepId", "itemId"])
+      .select(["stepId", "itemId", "quantity"])
       .where("companyId", "=", companyId)
       .where(
         "stepId",
@@ -6335,10 +6430,13 @@ export async function syncAssemblyInstructionToOperation(
         sourceSteps.map((step) => step.id)
       )
       .execute();
-    const materialsByStep = new Map<string, string[]>();
+    const materialsByStep = new Map<
+      string,
+      { itemId: string; quantity: number | null }[]
+    >();
     for (const material of sourceMaterials) {
       const list = materialsByStep.get(material.stepId) ?? [];
-      list.push(material.itemId);
+      list.push({ itemId: material.itemId, quantity: material.quantity });
       materialsByStep.set(material.stepId, list);
     }
 
@@ -6422,7 +6520,11 @@ export async function syncAssemblyInstructionToOperation(
     const syncedTargetIds: string[] = [];
     // source assembly step id → synced job step id, for slide/tool copying
     const targetIdBySource = new Map<string, string>();
-    const linkPairs: { materialId: string; stepId: string }[] = [];
+    const linkPairs: {
+      materialId: string;
+      stepId: string;
+      quantity: number | null;
+    }[] = [];
     let partsUnmatched = 0;
 
     for (const [index, source] of sourceSteps.entries()) {
@@ -6472,10 +6574,10 @@ export async function syncAssemblyInstructionToOperation(
       syncedTargetIds.push(targetStepId);
       targetIdBySource.set(source.id, targetStepId);
 
-      for (const itemId of materialsByStep.get(source.id) ?? []) {
+      for (const { itemId, quantity } of materialsByStep.get(source.id) ?? []) {
         const materialId = materialIdByItemId.get(itemId);
         if (materialId) {
-          linkPairs.push({ materialId, stepId: targetStepId });
+          linkPairs.push({ materialId, stepId: targetStepId, quantity });
         } else {
           partsUnmatched++;
         }
@@ -6503,7 +6605,8 @@ export async function syncAssemblyInstructionToOperation(
         .values(
           linkPairs.map((pair) => ({
             jobMaterialId: pair.materialId,
-            jobOperationStepId: pair.stepId
+            jobOperationStepId: pair.stepId,
+            quantity: pair.quantity
           }))
         )
         .execute();

@@ -25,7 +25,8 @@ export function PairsField({
   onChange,
   context,
   issue,
-  partIssues
+  partIssues,
+  isReadOnly
 }: ValueFieldProps) {
   const { t } = useLingui();
   const entries = entriesOf(value);
@@ -72,6 +73,7 @@ export function PairsField({
                   placeholder={t`Name`}
                   value={entry.name}
                   onChange={(e) => handleName(index, e.target.value)}
+                  isDisabled={isReadOnly}
                 />
                 <InlineValueEditor
                   textOnly
@@ -81,6 +83,7 @@ export function PairsField({
                   context={context}
                   placeholder={t`Value`}
                   hasIssue={!!rowIssue}
+                  isReadOnly={isReadOnly}
                 />
                 <IconButton
                   icon={<LuX />}
@@ -89,6 +92,7 @@ export function PairsField({
                   size="sm"
                   className="shrink-0"
                   onClick={() => handleRemove(index)}
+                  isDisabled={isReadOnly}
                 />
               </div>
               {rowIssue && (
@@ -104,6 +108,7 @@ export function PairsField({
             size="sm"
             leftIcon={<LuPlus />}
             onClick={handleAdd}
+            isDisabled={isReadOnly}
           >
             <Trans>Add header</Trans>
           </Button>
