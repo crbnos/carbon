@@ -17,6 +17,7 @@ import {
   updateCompanySession
 } from "@carbon/auth/session.server";
 import { isAuditLogEnabled } from "@carbon/database/audit";
+import { getEffectivePlanId } from "@carbon/ee/plan.server";
 import {
   detectImplementationSignals,
   getImplementationCheckStates,
@@ -159,6 +160,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     companies,
     employeeCompaniesResult,
     stripeCustomer,
+    plan,
     customFields,
     integrations,
     companySettings,
@@ -178,6 +180,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getCompanies(client, userId),
     getEmployeeCompanies(client, userId),
     getStripeCustomerByCompanyId(companyId, userId),
+    // Plan gate reads the durable companyPlan mirror (same source the server
+    // enforcement reads) — NOT stripeCustomer.planId, whose Stripe/Redis cache
+    // can go stale and gate a customer whose plan is actually correct.
+    getEffectivePlanId(client, companyId),
     getCustomFieldsSchemas(client, { companyId }),
     getCompanyIntegrations(client, companyId),
     getCompanySettings(client, companyId),
@@ -275,7 +281,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     integrations: integrations.data ?? [],
     groups: groups.data,
     permissions: claims?.permissions,
-    plan: stripeCustomer?.planId,
+    plan,
     role: claims?.role,
     user: user.data,
     modulePreferences: modulePreferences.data ?? [],
