@@ -19,6 +19,9 @@ msgstr "Dostawca to firma lub osoba, która sprzedaje Ci części lub usługi."
 msgid "— last checked {0}"
 msgstr "— ostatnia weryfikacja {0}"
 
+msgid "— or it would, but importing one creates and deletes parts, so it needs update and delete permission on parts. The part itself is still created, with its model."
+msgstr ""
+
 msgid ", {residual}% residual"
 msgstr ", {residual}% pozostałe"
 
@@ -1441,9 +1444,6 @@ msgstr "Zmiana inżynierska: elementy dotknięte zmianą, których metody zosta�
 
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "Żądanie https, które Carbon wysyła do Twojego systemu, gdy przepływ pracy osiągnie ten krok, zawierając nagłówki i treść, które skonfigurowałeś."
-
-msgid "An imported bill of materials only explodes under a Make part, so replenishment is set to Make / Make to Order."
-msgstr ""
 
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "Integracja lub zmiana niestandardowa — mała część, która jest faktycznie niestandardowa."
@@ -2868,14 +2868,14 @@ msgstr "Tylko Carbon"
 msgid "Carbon Posted"
 msgstr "Carbon Zaksięgowano"
 
-msgid "Carbon reads this assembly's bill of materials from Onshape and writes it into the part's draft method. The part is created either way."
-msgstr ""
-
 msgid "Carbon value"
 msgstr "Wartość Carbon"
 
 msgid "Carbon Value"
 msgstr "Wartość Carbon"
+
+msgid "Carbon will import the bill of materials"
+msgstr ""
 
 #. placeholder {0}: unmapped.length
 msgid "Carbon will use AI to guess a provider account for each of your {0} unmapped accounts. Suggestions are a starting point — you can review them before anything is saved."
@@ -2889,6 +2889,9 @@ msgstr "Tylko dla Carbon · wpisz rzeczywiste cele dla tego klienta. Widzi warto
 
 msgid "Carbon-only · the customer sees this text, locked."
 msgstr "Tylko dla Carbon · klient widzi ten tekst, zablokowany."
+
+msgid "Carbon's guess — Onshape does not say. Change it if it is wrong."
+msgstr ""
 
 msgid "Carbon's name for a bill of material and bill of process (routing): the components plus the operations that make a part."
 msgstr "Nazwa Carbon dla listy materiałów i listy procesów (routing): komponenty plus operacje, które wytwarzają część."
@@ -3045,9 +3048,6 @@ msgstr "Wybierz numer partii"
 
 msgid "Choose a company"
 msgstr "Wybierz firmę"
-
-msgid "Choose a revision"
-msgstr ""
 
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "Wybierz wiersz po lewej, aby zobaczyć, skąd może pochodzić jego zapas."
@@ -7041,6 +7041,9 @@ msgstr ""
 msgid "From Storage Unit"
 msgstr "Z jednostki magazynowej"
 
+msgid "From this part's Purchasing Level in Onshape."
+msgstr ""
+
 msgid "Fulfillment Location"
 msgstr "Lokalizacja Realizacji"
 
@@ -7669,9 +7672,6 @@ msgstr "Wyniki Importu"
 msgid "Import started"
 msgstr ""
 
-msgid "Import the bill of materials"
-msgstr ""
-
 msgid "Import your BOM"
 msgstr "Zaimportuj swoją BOM"
 
@@ -7679,9 +7679,6 @@ msgid "Imported from Onshape"
 msgstr ""
 
 msgid "Imported from Onshape — check notifications"
-msgstr ""
-
-msgid "Importing a bill of materials creates and deletes parts, so it needs update and delete permission on parts. The part itself will still be created."
 msgstr ""
 
 msgid "Importing from Onshape…"
@@ -9627,9 +9624,6 @@ msgstr "Nowy Właściciel"
 msgid "New Part"
 msgstr "Nowa Część"
 
-msgid "New part from Onshape"
-msgstr ""
-
 msgid "new parts"
 msgstr ""
 
@@ -11169,12 +11163,6 @@ msgstr "Najpierw wybierz właściwość"
 
 msgid "Pick a record type…"
 msgstr "Wybierz typ rekordu…"
-
-msgid "Pick a released revision. Carbon creates the part with Onshape's number and revision, linked by a hidden id so the two stay connected even if the number changes."
-msgstr ""
-
-msgid "Pick a released revision. Only released revisions can be imported — Onshape stamps a revision on release."
-msgstr ""
 
 msgid "Pick a value from an earlier step"
 msgstr "Wybierz wartość z wcześniejszego kroku"
@@ -15362,7 +15350,7 @@ msgstr "Część jest wytwarzana jako swoje własne zadanie, gdy rodzic, który 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "Część jest pobierana z istniejących zapasów, gdy jego rodzic jest zbudowany - bez nowego zadania lub zamówienia zakupu."
 
-msgid "The part number, revision and name come from Onshape and cannot be edited here. Everything else is yours."
+msgid "The part number and revision come from Onshape and cannot be edited — they are what future releases of this part are matched on. Everything else is yours."
 msgstr ""
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
@@ -15679,6 +15667,9 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "Te wpisy dziennika są wciąż w wersji roboczej, więc ich obciążenia i kredyty nie znajdują się w księdze w tym okresie. Opublikuj każdy lub przedatuj go na późniejszy otwarty okres."
 
 msgid "They have no part number, or no addressable source, or sit under a row that does. Give them a part number in Onshape to include them."
+msgstr ""
+
+msgid "This assembly's structure is read from Onshape and written into the part's draft method, along with the models and drawings for every part in it. Replenishment is set to Make / Make to Order because a bill of materials only explodes under a Make part."
 msgstr ""
 
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
@@ -16661,9 +16652,6 @@ msgstr "Użyj innego adresu e-mail"
 
 msgid "Use metric system for default material dimensions."
 msgstr "Użyj systemu metrycznego dla domyślnych wymiarów materiału."
-
-msgid "Use this revision"
-msgstr ""
 
 msgid "Used In"
 msgstr "Używane w"

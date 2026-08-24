@@ -30,7 +30,7 @@ import {
 } from "~/modules/items";
 import { setCustomFields } from "~/utils/form";
 
-const logger = getLogger("erp", "integrations-onshape-v2-create");
+const logger = getLogger("erp", "integrations-onshape-create");
 
 /** 0 Part Studio body, 1 Assembly, 2 Drawing. */
 const ELEMENT_TYPE_ASSEMBLY = 1;
@@ -49,15 +49,12 @@ const onshapeIdentity = z.object({
   versionId: z.string().min(1),
   elementId: z.string().min(1),
   partId: zfd.text(z.string().optional()),
-  revisionId: zfd.text(z.string().optional()),
-  /**
-   * Also import this assembly's bill of materials, in the same action.
-   *
-   * Chaining the two routes from the browser was the tempting shape and is
-   * wrong: a tab closed between them leaves a linked part with no BOM and
-   * nothing recording that one was wanted.
-   */
-  importBom: zfd.checkbox()
+  revisionId: zfd.text(z.string().optional())
+  // `importBom` is deliberately NOT here. Importing an assembly's structure is
+  // no longer a choice the form offers, so accepting a flag for it would mean
+  // trusting the browser for a decision the server can make correctly from the
+  // element type it has just VERIFIED against Onshape — and the client's
+  // element type is the one field a hand-posted request would lie about.
 });
 
 /**
@@ -99,17 +96,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const input = validation.data;
 
-  // A Part Studio body has no bill of materials. The form does not offer the
-  // option for one, so this can only be a hand-posted request — refuse it here
-  // rather than queue a job whose first act is to fail.
-  if (input.importBom && input.elementType !== ELEMENT_TYPE_ASSEMBLY) {
-    return {
-      success: false,
-      message:
-        "Only an Onshape assembly has a bill of materials to import. Create the part without it."
-    };
-  }
-
   const serviceRole = getCarbonServiceRole();
   // The gate is company CONFIGURATION, not user data. Reading it with the
   // user's client silently requires settings_view on top of the parts
@@ -127,7 +113,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!settings.active) {
     return {
       success: false,
-      message: "Onshape v2 is not connected for this company"
+      message: "Onshape is not connected for this company"
     };
   }
 
@@ -246,9 +232,21 @@ export async function action({ request }: ActionFunctionArgs) {
     elementId: _elementId,
     partId: _partId,
     revisionId: _revisionId,
-    importBom,
     ...carbonFields
   } = input;
+
+  // Whether to import the structure, decided HERE from the element Onshape
+  // itself confirmed. An assembly has a bill of materials and a Part Studio
+  // body does not — there is no third answer and nothing for a user to choose.
+  // Onshape's own answer when it gave one, the request's otherwise. They agree
+  // in practice — `resolveOnshapeRevision` looks the revision up BY element type
+  // — but reading the verified value first is what makes that a fact rather than
+  // an assumption.
+  const resolvedElementType =
+    typeof onshapeRevision.elementType === "number"
+      ? onshapeRevision.elementType
+      : input.elementType;
+  const importBom = resolvedElementType === ELEMENT_TYPE_ASSEMBLY;
 
   const createdRevision = onshapeRevision.revision || "0";
 

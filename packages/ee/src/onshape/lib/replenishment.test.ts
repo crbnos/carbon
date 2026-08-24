@@ -5,7 +5,7 @@ import {
   planReplenishmentCorrection,
   readOnshapePurchasingLevel,
   resolveOnshapeReplenishment
-} from "./onshape-replenishment";
+} from "./replenishment";
 
 // Buy-vs-Make is the field Onshape cannot supply from geometry and the one
 // Carbon most needs right: methodMaterial.methodType is denormalized from the

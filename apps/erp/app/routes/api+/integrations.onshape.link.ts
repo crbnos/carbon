@@ -25,7 +25,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 
-const logger = getLogger("erp", "integrations-onshape-v2-link");
+const logger = getLogger("erp", "integrations-onshape-link");
 
 // Linking an item that already exists is BOTH the adoption path for hand-built
 // items and the migration path off the legacy integration, where items were
@@ -87,7 +87,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!settings.active) {
     return {
       success: false,
-      message: "Onshape v2 is not connected for this company"
+      message: "Onshape is not connected for this company"
     };
   }
 

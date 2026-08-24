@@ -71,8 +71,8 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function PartsNewRoute() {
   // The Parts table's "From Onshape" button links here rather than opening a
   // second modal — one form, one set of decisions. `PartForm` still gates the
-  // source on the v2 pipeline, so the parameter cannot conjure it on a legacy
-  // company.
+  // source on the company being connected, so the parameter cannot conjure it
+  // on a company that never connected Onshape.
   const [searchParams] = useSearchParams();
   const source = searchParams.get("source") === "onshape" ? "onshape" : "blank";
 

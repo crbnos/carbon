@@ -1,4 +1,4 @@
-// Onshape v2 asset pull.
+// Onshape asset pull.
 //
 // Pulls the CAD model for items the v2 pipeline has already RESOLVED — this
 // module never answers "which Carbon item is this", because getting that wrong

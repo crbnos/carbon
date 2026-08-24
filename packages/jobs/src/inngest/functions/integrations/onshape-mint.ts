@@ -22,7 +22,7 @@
 import {
   describeOnshapeReplenishment,
   resolveOnshapeReplenishment
-} from "./onshape-replenishment";
+} from "@carbon/ee/onshape/replenishment";
 
 export interface OnshapeMintDefaults {
   replenishmentSystem: "Buy" | "Make";

@@ -34,7 +34,6 @@ import { useFetcher, useNavigate } from "react-router";
 import type { z } from "zod";
 import { TrackingTypeIcon } from "~/components";
 import {
-  Boolean,
   CustomFormFields,
   DefaultMethodType,
   Hidden,
@@ -50,8 +49,8 @@ import {
 } from "~/components/Form";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ModelUploadProgress } from "~/components/ModelUploadProgress";
-import type { OnshapeSelection } from "~/components/OnshapeRevisionPicker";
-import { OnshapeRevisionPicker } from "~/components/OnshapeRevisionPicker";
+import type { OnshapeRevision as OnshapeSelection } from "~/components/OnshapeRevisionSearch";
+import { OnshapeRevisionSearch } from "~/components/OnshapeRevisionSearch";
 import {
   useCurrencyDecimals,
   useModelUpload,
@@ -60,6 +59,7 @@ import {
   useUser
 } from "~/hooks";
 import { useOnshape } from "~/hooks/useOnshape";
+import type { loader as replenishmentLoader } from "~/routes/api+/integrations.onshape.replenishment";
 import { path } from "~/utils/path";
 import {
   itemReplenishmentSystems,
@@ -143,20 +143,27 @@ const PartForm = ({
   const permissions = usePermissions();
   const onshape = useOnshape();
 
-  // Presentation only. `v2.create` re-reads the pipeline setting server-side and
-  // refuses when it is not v2, so this hiding the toggle is never what keeps v2
-  // off a legacy company.
+  // Presentation only. The create route re-reads the connection server-side and
+  // refuses when the company has none, so hiding the button is never what keeps
+  // the Onshape source off a company that never connected.
   const canUseOnshapeSource =
     withOnshapeSource && onshape.isConnected && !isEditing;
 
   const [source, setSource] = useState<"blank" | "onshape">(
     canUseOnshapeSource && defaultSource === "onshape" ? "onshape" : "blank"
   );
-  const [pickerOpen, setPickerOpen] = useState(
-    canUseOnshapeSource && defaultSource === "onshape"
-  );
   const [selection, setSelection] = useState<OnshapeSelection | null>(null);
-  const [importBom, setImportBom] = useState(false);
+  /**
+   * Where the Buy/Make on screen came from, so the form can SAY so.
+   *
+   * `null` while the lookup is in flight. "purchasing-level" means Onshape's
+   * own column answered; "structure" means Carbon inferred it from the element
+   * type, which is a guess and is labelled as one.
+   */
+  const [replenishmentSource, setReplenishmentSource] = useState<
+    "purchasing-level" | "structure" | null
+  >(null);
+  const replenishmentFetcher = useFetcher<typeof replenishmentLoader>();
 
   const isFromOnshape = canUseOnshapeSource && source === "onshape";
   const hasOnshapeSelection = isFromOnshape && selection !== null;
@@ -290,6 +297,11 @@ const PartForm = ({
   const [defaultMethodType, setDefaultMethodType] = useState<string>(
     initialValues.defaultMethodType ?? "Pull from Inventory"
   );
+  // Controlled ONLY so an Onshape selection can seed it — an uncontrolled
+  // `Input` reads the form's defaultValues once and a pick made after mount
+  // never reaches it. Editable thereafter: nothing in the Onshape path resolves
+  // on an item's name.
+  const [name, setName] = useState<string>(initialValues.name ?? "");
   const itemReplenishmentSystemOptions =
     itemReplenishmentSystems.map((itemReplenishmentSystem) => ({
       label: (
@@ -305,6 +317,18 @@ const PartForm = ({
       value: itemReplenishmentSystem
     })) ?? [];
 
+  /**
+   * Whether this selection's bill of materials will be imported.
+   *
+   * No longer a choice. Someone who picked an Onshape assembly has already said
+   * the part comes from Onshape, and its structure is the expected outcome
+   * rather than an opt-in — importing the geometry and leaving the BOM behind
+   * was always the surprising half. What remains are the two cases where it
+   * CANNOT happen, and both are stated on the form rather than silently
+   * dropping the structure: a Part Studio body has no bill of materials, and
+   * the import mints parts and deletes material lines, so it needs update and
+   * delete on parts where creating needs only create.
+   */
   const bomOption = selection
     ? bomOptionState({
         elementType: selection.elementType,
@@ -314,50 +338,91 @@ const PartForm = ({
       })
     : { offered: false, disabled: true, reason: null };
 
+  const importBom = bomOption.offered && !bomOption.disabled;
+
   const onOnshapeSelect = (revision: OnshapeSelection) => {
     setSelection(revision);
-    setPickerOpen(false);
-    // Onshape supplies the identity; it says nothing about how Carbon should
-    // treat the part. Seed from what the element IS, then show it for
-    // confirmation — the same rule the release mint and the BOM import use.
+
+    // Seed IMMEDIATELY from the element's shape so the fields are never blank,
+    // then ask Onshape whether it has a better answer. `seedFromElementType` is
+    // the same structural rule `resolveOnshapeReplenishment` falls back to, so
+    // the optimistic value and the confirmed one agree whenever the company has
+    // no Purchasing Level column — which is most of them.
     const seed = seedFromElementType(revision.elementType);
     setReplenishmentSystem(seed.replenishmentSystem);
     setDefaultMethodType(seed.defaultMethodType);
-    // DEFAULT ON for an assembly. Someone who reached this form has already
-    // said the part comes from Onshape, so its structure is the expected
-    // outcome rather than an opt-in — importing the geometry and leaving the
-    // BOM behind is the surprising half. Recomputed per selection, so a body
-    // (which has no bill of materials) and a permission-blocked user both fall
-    // back to off instead of inheriting a previous assembly's tick.
-    const bom = bomOptionState({
-      elementType: revision.elementType,
-      canCreate: permissions.can("create", "parts"),
-      canUpdate: permissions.can("update", "parts"),
-      canDelete: permissions.can("delete", "parts")
+    setReplenishmentSource(null);
+    setName(revision.name ?? revision.partNumber);
+
+    const params = new URLSearchParams({
+      did: revision.documentId,
+      vid: revision.versionId,
+      eid: revision.elementId,
+      type: String(revision.elementType)
     });
-    setImportBom(bom.offered && !bom.disabled);
+    if (revision.partId) params.set("pid", revision.partId);
+    replenishmentFetcher.load(
+      `${path.to.api.onShapeReplenishment}?${params.toString()}`
+    );
   };
 
   const clearOnshapeSource = () => {
     setSelection(null);
-    setImportBom(false);
-    setPickerOpen(false);
+    setReplenishmentSource(null);
     setSource("blank");
   };
 
-  const onImportBomChange = (checked: boolean) => {
-    setImportBom(checked);
-    if (checked) {
-      // A BOM under a Buy part is a trap, not a preference:
-      // `methodMaterial.methodType` is denormalized from the component's
-      // `defaultMethodType`, and `get_method_tree` only resolves a sub-method
-      // for "Pull from Inventory" or an explicit `materialMakeMethodId`. A Buy
-      // parent would own a sub-tree that never explodes.
-      setReplenishmentSystem("Make");
-      setDefaultMethodType("Make to Order");
-    }
-  };
+  /**
+   * Apply what Onshape said, once it answers.
+   *
+   * Keyed on the fetcher's data rather than on the selection: the request is
+   * fired by the click handler above, and this is the only place its result can
+   * land. A BOM import overrides the answer regardless — see the effect below.
+   */
+  useEffect(() => {
+    const resolved = replenishmentFetcher.data?.data;
+    if (!resolved) return;
+    setReplenishmentSystem(resolved.replenishmentSystem);
+    setDefaultMethodType(resolved.defaultMethodType);
+    setReplenishmentSource(resolved.source);
+  }, [replenishmentFetcher.data]);
 
+  /**
+   * A BOM under a Buy part is a trap, not a preference.
+   *
+   * `methodMaterial.methodType` is denormalized from the component's
+   * `defaultMethodType`, and `get_method_tree` only resolves a sub-method for
+   * "Pull from Inventory" or an explicit `materialMakeMethodId` — so a Buy
+   * parent would own a sub-tree that never explodes. When the structure IS
+   * being imported the two fields are forced and locked, and the form says why.
+   */
+  useEffect(() => {
+    if (!importBom) return;
+    setReplenishmentSystem("Make");
+    setDefaultMethodType("Make to Order");
+  }, [importBom]);
+
+  /**
+   * What Onshape OWNS on a created part, and therefore what the form freezes.
+   *
+   * Exactly two fields, and only because something downstream breaks otherwise:
+   *
+   *  - REVISION. `selectReleaseTarget` matches Onshape's revision letter against
+   *    `item.revision`, `releaseKey` maps Onshape's number/revision 1:1 onto
+   *    `readableIdWithRevision`, and `item_unique` is on the raw revision
+   *    column. A hand-edited revision means the next release of that letter does
+   *    not find this item and either refuses or starts a second family.
+   *  - PART ID. The link itself would survive a divergence — resolution is by
+   *    element mapping — but the release job probes `readableId` against the
+   *    released part number before auto-creating, refuses a family whose members
+   *    carry different numbers, and `resolveOnshapeRevision` verifies the number
+   *    the user did not type.
+   *
+   * Short Description is NOT frozen, and used to be. Nothing resolves on it and
+   * neither job ever writes it back — the only two reads of `name` anywhere in
+   * the Onshape path are a message string and a different table's column. It is
+   * seeded from Onshape and then it is the user's, like every other field here.
+   */
   const identityLocked = hasOnshapeSelection;
 
   return (
@@ -448,59 +513,57 @@ const PartForm = ({
                             source === "onshape" ? "primary" : "secondary"
                           }
                           leftIcon={<OnshapeLogo className="h-3.5 w-auto" />}
-                          onClick={() => {
-                            setSource("onshape");
-                            if (!selection) setPickerOpen(true);
-                          }}
+                          onClick={() => setSource("onshape")}
                         >
                           <Trans>From Onshape</Trans>
                         </Button>
                       </HStack>
                     </HStack>
 
-                    {isFromOnshape && (
+                    {isFromOnshape && selection && (
                       <HStack className="w-full items-center justify-between gap-2">
-                        <p className="text-sm">
-                          {selection ? (
-                            <>
-                              <span className="font-medium">
-                                {selection.partNumber}
-                              </span>{" "}
-                              <span className="text-muted-foreground">
-                                {selection.revision}
-                                {selection.name ? ` · ${selection.name}` : ""}
-                              </span>
-                            </>
-                          ) : (
-                            <span className="text-muted-foreground">
-                              <Trans>
-                                Pick a released revision. Only released
-                                revisions can be imported — Onshape stamps a
-                                revision on release.
-                              </Trans>
-                            </span>
-                          )}
+                        <p className="min-w-0 text-sm">
+                          <span className="font-medium">
+                            {selection.partNumber}
+                          </span>{" "}
+                          <span className="text-muted-foreground">
+                            {selection.revision}
+                            {selection.name ? ` · ${selection.name}` : ""}
+                          </span>
                         </p>
                         <Button
                           type="button"
                           size="sm"
                           variant="secondary"
-                          onClick={() => setPickerOpen(true)}
+                          onClick={() => setSelection(null)}
                         >
-                          {selection ? (
-                            <Trans>Change</Trans>
-                          ) : (
-                            <Trans>Choose a revision</Trans>
-                          )}
+                          <Trans>Change</Trans>
                         </Button>
                       </HStack>
+                    )}
+
+                    {/* The search lives HERE rather than in a second modal.
+                        Stacking a dialog on top of the one being filled in, to
+                        choose one value, hid the form behind it — and the form
+                        is what the user came for. */}
+                    {isFromOnshape && !selection && (
+                      <div className="w-full min-w-0 pt-1">
+                        <OnshapeRevisionSearch
+                          isActive={isFromOnshape}
+                          selected={null}
+                          onSelect={onOnshapeSelect}
+                          hideLinked
+                          maxHeightClassName="max-h-[260px]"
+                        />
+                      </div>
                     )}
 
                     {hasOnshapeSelection && (
                       <p className="w-full text-xs text-muted-foreground">
                         <Trans>
-                          The part number, revision and name come from Onshape
-                          and cannot be edited here. Everything else is yours.
+                          The part number and revision come from Onshape and
+                          cannot be edited — they are what future releases of
+                          this part are matched on. Everything else is yours.
                         </Trans>
                       </p>
                     )}
@@ -565,11 +628,18 @@ const PartForm = ({
                 )}
 
                 {identityLocked && selection ? (
+                  // SEEDED from Onshape, not frozen to it. `InputControlled` so
+                  // a selection made after mount reaches the field at all —
+                  // `Input` is uncontrolled off the form's defaultValues — and
+                  // `key` so a NEW selection re-seeds it rather than leaving the
+                  // previous part's description behind.
                   <InputControlled
+                    key={selection.externalId}
                     name="name"
                     label={t`Short Description`}
-                    value={selection.name ?? selection.partNumber}
-                    isReadOnly
+                    value={name}
+                    onChange={setName}
+                    characterLimit={40}
                   />
                 ) : (
                   <Input
@@ -585,9 +655,22 @@ const PartForm = ({
                   termId="replenishment-system"
                   options={itemReplenishmentSystemOptions}
                   value={replenishmentSystem}
+                  // Read-only ONLY while a bill of materials is being imported,
+                  // and never because the part came from Onshape. Onshape SEEDS
+                  // this (see the helper text below); it does not own it.
                   isReadOnly={importBom}
+                  helperText={
+                    replenishmentSource === "purchasing-level"
+                      ? t`From this part's Purchasing Level in Onshape.`
+                      : replenishmentSource === "structure"
+                        ? t`Carbon's guess — Onshape does not say. Change it if it is wrong.`
+                        : undefined
+                  }
                   onChange={(newValue) => {
                     setReplenishmentSystem(newValue?.value ?? "Buy");
+                    // A deliberate edit is no longer Onshape's answer, and the
+                    // helper text must stop claiming it is.
+                    setReplenishmentSource(null);
                     if (newValue?.value === "Buy") {
                       setDefaultMethodType("Pull from Inventory");
                     } else {
@@ -652,37 +735,26 @@ const PartForm = ({
               </div>
 
               {hasOnshapeSelection && bomOption.offered && (
-                <div className="mt-4 w-full">
-                  <Boolean
-                    name="importBom"
-                    label={t`Import the bill of materials`}
-                    value={importBom}
-                    isDisabled={bomOption.disabled}
-                    onChange={onImportBomChange}
-                    description={
-                      bomOption.disabled ? undefined : (
-                        <Trans>
-                          Carbon reads this assembly's bill of materials from
-                          Onshape and writes it into the part's draft method.
-                          The part is created either way.
-                        </Trans>
-                      )
-                    }
-                  />
-                  {bomOption.reason === "missing-permissions" && (
+                <div className="mt-4 w-full rounded-md border border-border p-3">
+                  <p className="text-sm font-medium">
+                    <Trans>Carbon will import the bill of materials</Trans>
+                  </p>
+                  {bomOption.disabled ? (
                     <p className="mt-1 text-xs text-muted-foreground">
                       <Trans>
-                        Importing a bill of materials creates and deletes parts,
-                        so it needs update and delete permission on parts. The
-                        part itself will still be created.
+                        — or it would, but importing one creates and deletes
+                        parts, so it needs update and delete permission on
+                        parts. The part itself is still created, with its model.
                       </Trans>
                     </p>
-                  )}
-                  {importBom && (
+                  ) : (
                     <p className="mt-1 text-xs text-muted-foreground">
                       <Trans>
-                        An imported bill of materials only explodes under a Make
-                        part, so replenishment is set to Make / Make to Order.
+                        This assembly's structure is read from Onshape and
+                        written into the part's draft method, along with the
+                        models and drawings for every part in it. Replenishment
+                        is set to Make / Make to Order because a bill of
+                        materials only explodes under a Make part.
                       </Trans>
                     </p>
                   )}
@@ -768,22 +840,6 @@ const PartForm = ({
           </ValidatedForm>
         </ModalCardContent>
       </ModalCard>
-      {canUseOnshapeSource && (
-        <OnshapeRevisionPicker
-          isOpen={pickerOpen}
-          onClose={() => {
-            setPickerOpen(false);
-            // Backing out without ever picking leaves the form on its blank
-            // source rather than in a half-chosen state it cannot submit.
-            if (!selection) setSource("blank");
-          }}
-          hideLinked
-          title={t`New part from Onshape`}
-          description={t`Pick a released revision. Carbon creates the part with Onshape's number and revision, linked by a hidden id so the two stay connected even if the number changes.`}
-          confirmLabel={t`Use this revision`}
-          onSelect={onOnshapeSelect}
-        />
-      )}
     </ModalCardProvider>
   );
 };

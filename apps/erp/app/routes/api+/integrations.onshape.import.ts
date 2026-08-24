@@ -19,7 +19,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 
-const logger = getLogger("erp", "integrations-onshape-v2-import");
+const logger = getLogger("erp", "integrations-onshape-import");
 
 export const onshapeV2ImportValidator = z.object({
   makeMethodId: z.string().min(1),

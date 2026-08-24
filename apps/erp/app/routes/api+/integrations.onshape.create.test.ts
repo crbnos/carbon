@@ -71,10 +71,6 @@ const writeRevisionMapping = vi.fn();
 const patchElementMappingMetadata = vi.fn();
 
 vi.mock("@carbon/ee/onshape", () => ({
-  // Real constant, not a stub: the route passes it to getOnshapeClient to say
-  // WHICH Onshape record to authenticate as, and a wrong value there is exactly
-  // the bug the required parameter exists to catch.
-  ONSHAPE_V2_INTEGRATION_ID: "onshape-v2",
   getOnshapeSettings: (...args: unknown[]) => getOnshapeSettings(...args),
   getOnshapeClient: async () => ({
     client: { getCompanies: async () => [{ id: "onshape-co" }] },
@@ -202,10 +198,15 @@ beforeEach(() => {
   });
   readItemIdsForElement.mockResolvedValue([]);
   readItemIdForRevision.mockResolvedValue(null);
-  resolveOnshapeRevision.mockResolvedValue({
-    ok: true,
-    revision: ONSHAPE_REVISION
-  });
+  // Echo the requested element type, the way the real API does: revisions are
+  // looked up BY element type, so what comes back always carries the one that
+  // was asked for. A fixed value here would hide the route reading it.
+  resolveOnshapeRevision.mockImplementation(
+    async (_client: unknown, request: { elementType?: number }) => ({
+      ok: true,
+      revision: { ...ONSHAPE_REVISION, elementType: request?.elementType ?? 1 }
+    })
+  );
   upsertPart.mockResolvedValue({
     data: { id: "wrong-family-member" },
     error: null
@@ -228,7 +229,7 @@ beforeEach(() => {
   trigger.mockResolvedValue(undefined);
 });
 
-describe("v2.create — what gets persisted", () => {
+describe("create — what gets persisted", () => {
   it("takes id, revision and name from Onshape, never from the form", async () => {
     // The form posts RD-410; Onshape answers rd-410. Uppercasing a part number
     // the CAD system owns is the exact defect v2 exists to fix.
@@ -298,7 +299,7 @@ describe("v2.create — what gets persisted", () => {
   });
 });
 
-describe("v2.create — duplicate refusals", () => {
+describe("create — duplicate refusals", () => {
   it("refuses an already-mapped element before creating anything", async () => {
     readItemIdsForElement.mockResolvedValue(["item-existing"]);
 
@@ -314,10 +315,10 @@ describe("v2.create — duplicate refusals", () => {
   });
 });
 
-describe("v2.create — the bill of materials branch", () => {
+describe("create — the bill of materials branch", () => {
   it("queues the import against the item's Draft, CO-free make method", async () => {
     const result = await action({
-      request: request(formData({ importBom: "on" })),
+      request: request(formData()),
       params: {},
       context: {}
     } as never);
@@ -339,7 +340,7 @@ describe("v2.create — the bill of materials branch", () => {
     // double-exports one element against a rate-limited API, and the loser
     // files its model away as a document.
     await action({
-      request: request(formData({ importBom: "on" })),
+      request: request(formData()),
       params: {},
       context: {}
     } as never);
@@ -347,9 +348,9 @@ describe("v2.create — the bill of materials branch", () => {
     expect(triggeredEvents()).not.toContain("onshape-item-assets");
   });
 
-  it("pulls the assets itself when no BOM import was asked for", async () => {
+  it("pulls the assets itself for a Part Studio body, which has no BOM", async () => {
     const result = await action({
-      request: request(formData()),
+      request: request(formData({ elementType: "0" })),
       params: {},
       context: {}
     } as never);
@@ -360,7 +361,7 @@ describe("v2.create — the bill of materials branch", () => {
 
   it("marks the import in flight so the item can say so", async () => {
     await action({
-      request: request(formData({ importBom: "on" })),
+      request: request(formData()),
       params: {},
       context: {}
     } as never);
@@ -381,7 +382,7 @@ describe("v2.create — the bill of materials branch", () => {
     getUserClaims.mockResolvedValue(claims(["view", "create"]));
 
     const result = await action({
-      request: request(formData({ importBom: "on" })),
+      request: request(formData()),
       params: {},
       context: {}
     } as never);
@@ -393,18 +394,30 @@ describe("v2.create — the bill of materials branch", () => {
     expect(triggeredEvents()).toEqual(["onshape-item-assets"]);
   });
 
-  it("refuses a BOM import for a Part Studio body", async () => {
-    // A body has no bill of materials. The form does not offer the option, so
-    // this can only be a hand-posted request.
-    const result = await action({
+  it("ignores a hand-posted importBom flag in both directions", async () => {
+    // The element type decides, and it is re-read from Onshape's own response.
+    // A body asking for a BOM does not get one; an assembly refusing one still
+    // does. Trusting the flag would let a hand-posted request queue an import
+    // whose first act is to fail, or skip the structure of a real assembly.
+    const body = await action({
       request: request(formData({ importBom: "on", elementType: "0" })),
       params: {},
       context: {}
     } as never);
 
-    expect(result).toMatchObject({ success: false });
-    expect(upsertPart).not.toHaveBeenCalled();
-    expect(trigger).not.toHaveBeenCalled();
+    expect(body).toMatchObject({ success: true, importQueued: false });
+    expect(triggeredEvents()).toEqual(["onshape-item-assets"]);
+
+    trigger.mockClear();
+
+    const assembly = await action({
+      request: request(formData({ importBom: "" })),
+      params: {},
+      context: {}
+    } as never);
+
+    expect(assembly).toMatchObject({ success: true, importQueued: true });
+    expect(triggeredEvents()).toEqual(["onshape-bom-import"]);
   });
 
   it("falls back to the asset pull when there is no draft method to import into", async () => {
@@ -414,7 +427,7 @@ describe("v2.create — the bill of materials branch", () => {
     });
 
     const result = await action({
-      request: request(formData({ importBom: "on" })),
+      request: request(formData()),
       params: {},
       context: {}
     } as never);
@@ -424,7 +437,7 @@ describe("v2.create — the bill of materials branch", () => {
   });
 });
 
-describe("v2.create — the settings gate", () => {
+describe("create — the settings gate", () => {
   it("answers 'try again' on a failed settings READ, not 'v2 is off'", async () => {
     getOnshapeSettings.mockResolvedValue({
       readFailed: true,

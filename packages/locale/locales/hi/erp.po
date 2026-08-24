@@ -19,6 +19,9 @@ msgstr "एक आपूर्तिकर्ता एक व्यवसाय
 msgid "— last checked {0}"
 msgstr "— अंतिम जांच {0}"
 
+msgid "— or it would, but importing one creates and deletes parts, so it needs update and delete permission on parts. The part itself is still created, with its model."
+msgstr ""
+
 msgid ", {residual}% residual"
 msgstr ", {residual}% अवशेष"
 
@@ -1441,9 +1444,6 @@ msgstr "एक इंजीनियरिंग परिवर्तन: प�
 
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "एक HTTPS अनुरोध जो कार्बन आपके सिस्टम को भेजता है जब एक वर्कफ़्लो उस चरण तक पहुंचता है, आपके द्वारा कॉन्फ़िगर किए गए किसी भी हेडर और बॉडी को ले जाता है।"
-
-msgid "An imported bill of materials only explodes under a Make part, so replenishment is set to Make / Make to Order."
-msgstr ""
 
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "एक एकीकरण या एक कस्टम परिवर्तन — वह छोटा हिस्सा जो वास्तव में कस्टम है।"
@@ -2868,14 +2868,14 @@ msgstr "केवल कार्बन"
 msgid "Carbon Posted"
 msgstr "Carbon पोस्ट किया गया"
 
-msgid "Carbon reads this assembly's bill of materials from Onshape and writes it into the part's draft method. The part is created either way."
-msgstr ""
-
 msgid "Carbon value"
 msgstr "Carbon मान"
 
 msgid "Carbon Value"
 msgstr "कार्बन मान"
+
+msgid "Carbon will import the bill of materials"
+msgstr ""
 
 #. placeholder {0}: unmapped.length
 msgid "Carbon will use AI to guess a provider account for each of your {0} unmapped accounts. Suggestions are a starting point — you can review them before anything is saved."
@@ -2889,6 +2889,9 @@ msgstr "Carbon-only · इस ग्राहक के लिए वास्�
 
 msgid "Carbon-only · the customer sees this text, locked."
 msgstr "Carbon-only · ग्राहक यह पाठ देखता है, लॉक किया गया।"
+
+msgid "Carbon's guess — Onshape does not say. Change it if it is wrong."
+msgstr ""
 
 msgid "Carbon's name for a bill of material and bill of process (routing): the components plus the operations that make a part."
 msgstr "सामग्री की सूची और प्रक्रिया सूची (रूटिंग) के लिए कार्बन का नाम: घटक और संचालन जो एक हिस्सा बनाते हैं।"
@@ -3045,9 +3048,6 @@ msgstr "एक बैच नंबर चुनें"
 
 msgid "Choose a company"
 msgstr "कंपनी चुनें"
-
-msgid "Choose a revision"
-msgstr ""
 
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "यह देखने के लिए बाईं ओर की पंक्ति को चुनें कि इसका स्टॉक कहां से आ सकता है।"
@@ -7041,6 +7041,9 @@ msgstr ""
 msgid "From Storage Unit"
 msgstr "स्टोरेज यूनिट से"
 
+msgid "From this part's Purchasing Level in Onshape."
+msgstr ""
+
 msgid "Fulfillment Location"
 msgstr "पूरा करने का स्थान"
 
@@ -7669,9 +7672,6 @@ msgstr "आयात परिणाम"
 msgid "Import started"
 msgstr ""
 
-msgid "Import the bill of materials"
-msgstr ""
-
 msgid "Import your BOM"
 msgstr "अपना BOM आयात करें"
 
@@ -7679,9 +7679,6 @@ msgid "Imported from Onshape"
 msgstr ""
 
 msgid "Imported from Onshape — check notifications"
-msgstr ""
-
-msgid "Importing a bill of materials creates and deletes parts, so it needs update and delete permission on parts. The part itself will still be created."
 msgstr ""
 
 msgid "Importing from Onshape…"
@@ -9627,9 +9624,6 @@ msgstr "नया मालिक"
 msgid "New Part"
 msgstr "नया पार्ट"
 
-msgid "New part from Onshape"
-msgstr ""
-
 msgid "new parts"
 msgstr ""
 
@@ -11169,12 +11163,6 @@ msgstr "पहले एक प्रॉपर्टी चुनें"
 
 msgid "Pick a record type…"
 msgstr "एक रिकॉर्ड प्रकार चुनें…"
-
-msgid "Pick a released revision. Carbon creates the part with Onshape's number and revision, linked by a hidden id so the two stay connected even if the number changes."
-msgstr ""
-
-msgid "Pick a released revision. Only released revisions can be imported — Onshape stamps a revision on release."
-msgstr ""
 
 msgid "Pick a value from an earlier step"
 msgstr "पहले के स्टेप से एक मूल्य चुनें"
@@ -15362,7 +15350,7 @@ msgstr "जब माता-पिता जो इसकी आवश्यक�
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "जब इसके माता-पिता को बनाया जाता है तब भाग मौजूदा स्टॉक से लिया जाता है - कोई नई नौकरी या खरीद आदेश नहीं।"
 
-msgid "The part number, revision and name come from Onshape and cannot be edited here. Everything else is yours."
+msgid "The part number and revision come from Onshape and cannot be edited — they are what future releases of this part are matched on. Everything else is yours."
 msgstr ""
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
@@ -15679,6 +15667,9 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "ये जर्नल प्रविष्टियाँ अभी भी ड्राफ्ट हैं, इसलिए उनके डेबिट और क्रेडिट इस अवधि के लिए लेजर में नहीं हैं। प्रत्येक को पोस्ट करें, या इसे बाद की खुली अवधि में पुनः दिनांकित करें।"
 
 msgid "They have no part number, or no addressable source, or sit under a row that does. Give them a part number in Onshape to include them."
+msgstr ""
+
+msgid "This assembly's structure is read from Onshape and written into the part's draft method, along with the models and drawings for every part in it. Replenishment is set to Make / Make to Order because a bill of materials only explodes under a Make part."
 msgstr ""
 
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
@@ -16661,9 +16652,6 @@ msgstr "एक अलग ईमेल का उपयोग करें"
 
 msgid "Use metric system for default material dimensions."
 msgstr "डिफ़ॉल्ट सामग्री आयामों के लिए मीट्रिक सिस्टम का उपयोग करें।"
-
-msgid "Use this revision"
-msgstr ""
 
 msgid "Used In"
 msgstr "में उपयोग किया गया"

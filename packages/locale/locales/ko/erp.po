@@ -19,6 +19,9 @@ msgstr " 공급업체는 귀사에 부품이나 서비스를 판매하는 회사
 msgid "— last checked {0}"
 msgstr "— 마지막 확인 {0}"
 
+msgid "— or it would, but importing one creates and deletes parts, so it needs update and delete permission on parts. The part itself is still created, with its model."
+msgstr ""
+
 msgid ", {residual}% residual"
 msgstr ", {residual}% 잔존"
 
@@ -1441,9 +1444,6 @@ msgstr "엔지니어링 변경: 초안에서 방법이 수정되고 함께 릴�
 
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "워크플로우가 해당 단계에 도달할 때 Carbon이 귀사의 시스템으로 보내는 https 요청으로, 구성한 헤더 및 본문을 전달합니다."
-
-msgid "An imported bill of materials only explodes under a Make part, so replenishment is set to Make / Make to Order."
-msgstr ""
 
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "연동이나 커스텀 변경 — 실제로 커스텀인 작은 부분."
@@ -2868,14 +2868,14 @@ msgstr "Carbon 전용"
 msgid "Carbon Posted"
 msgstr "Carbon 게시됨"
 
-msgid "Carbon reads this assembly's bill of materials from Onshape and writes it into the part's draft method. The part is created either way."
-msgstr ""
-
 msgid "Carbon value"
 msgstr "Carbon 값"
 
 msgid "Carbon Value"
 msgstr "Carbon Value"
+
+msgid "Carbon will import the bill of materials"
+msgstr ""
 
 #. placeholder {0}: unmapped.length
 msgid "Carbon will use AI to guess a provider account for each of your {0} unmapped accounts. Suggestions are a starting point — you can review them before anything is saved."
@@ -2889,6 +2889,9 @@ msgstr "Carbon 전용 · 이 고객의 실제 목표값을 입력하세요. 고�
 
 msgid "Carbon-only · the customer sees this text, locked."
 msgstr "Carbon 전용 · 고객에게는 이 텍스트가 잠긴 상태로 표시됩니다."
+
+msgid "Carbon's guess — Onshape does not say. Change it if it is wrong."
+msgstr ""
 
 msgid "Carbon's name for a bill of material and bill of process (routing): the components plus the operations that make a part."
 msgstr "자재명세서(BOM)와 공정(BOP)을 아우르는 Carbon의 용어로, 품목을 만드는 구성품과 공정작업을 합친 것을 말합니다."
@@ -3045,9 +3048,6 @@ msgstr "배치 번호를 선택하세요"
 
 msgid "Choose a company"
 msgstr "회사를 선택하세요"
-
-msgid "Choose a revision"
-msgstr ""
 
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "왼쪽의 행을 선택하여 해당 재고가 어디서 올 수 있는지 확인하세요."
@@ -7041,6 +7041,9 @@ msgstr ""
 msgid "From Storage Unit"
 msgstr "출발 저장 단위"
 
+msgid "From this part's Purchasing Level in Onshape."
+msgstr ""
+
 msgid "Fulfillment Location"
 msgstr "이행 위치"
 
@@ -7669,9 +7672,6 @@ msgstr "가져오기 결과"
 msgid "Import started"
 msgstr ""
 
-msgid "Import the bill of materials"
-msgstr ""
-
 msgid "Import your BOM"
 msgstr "BOM 가져오기"
 
@@ -7679,9 +7679,6 @@ msgid "Imported from Onshape"
 msgstr ""
 
 msgid "Imported from Onshape — check notifications"
-msgstr ""
-
-msgid "Importing a bill of materials creates and deletes parts, so it needs update and delete permission on parts. The part itself will still be created."
 msgstr ""
 
 msgid "Importing from Onshape…"
@@ -9627,9 +9624,6 @@ msgstr "새 소유자"
 msgid "New Part"
 msgstr "새 품목"
 
-msgid "New part from Onshape"
-msgstr ""
-
 msgid "new parts"
 msgstr ""
 
@@ -11169,12 +11163,6 @@ msgstr "먼저 속성 선택"
 
 msgid "Pick a record type…"
 msgstr "레코드 유형 선택…"
-
-msgid "Pick a released revision. Carbon creates the part with Onshape's number and revision, linked by a hidden id so the two stay connected even if the number changes."
-msgstr ""
-
-msgid "Pick a released revision. Only released revisions can be imported — Onshape stamps a revision on release."
-msgstr ""
 
 msgid "Pick a value from an earlier step"
 msgstr "이전 단계에서 값 선택"
@@ -15362,7 +15350,7 @@ msgstr "상위 품목이 제작될 때 이 품목은 별도의 작업으로 제�
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "상위 품목이 제작될 때 이 품목은 기존 재고에서 가져옵니다 — 새 작업이나 구매주문이 생성되지 않습니다."
 
-msgid "The part number, revision and name come from Onshape and cannot be edited here. Everything else is yours."
+msgid "The part number and revision come from Onshape and cannot be edited — they are what future releases of this part are matched on. Everything else is yours."
 msgstr ""
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
@@ -15679,6 +15667,9 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "이 분개들은 아직 임시이므로 그 차변과 대변이 이 기간의 총계정원장에 없습니다. 각각을 전기하거나 나중의 개방된 기간으로 재날짜하세요."
 
 msgid "They have no part number, or no addressable source, or sit under a row that does. Give them a part number in Onshape to include them."
+msgstr ""
+
+msgid "This assembly's structure is read from Onshape and written into the part's draft method, along with the models and drawings for every part in it. Replenishment is set to Make / Make to Order because a bill of materials only explodes under a Make part."
 msgstr ""
 
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
@@ -16661,9 +16652,6 @@ msgstr "다른 이메일 사용"
 
 msgid "Use metric system for default material dimensions."
 msgstr "기본 자재 치수에 미터법을 사용합니다."
-
-msgid "Use this revision"
-msgstr ""
 
 msgid "Used In"
 msgstr "사용처"

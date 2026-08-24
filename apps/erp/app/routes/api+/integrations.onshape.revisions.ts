@@ -13,7 +13,7 @@ import type {
   ShouldRevalidateFunction
 } from "react-router";
 
-const logger = getLogger("erp", "integrations-onshape-v2-revisions");
+const logger = getLogger("erp", "integrations-onshape-revisions");
 
 export const shouldRevalidate: ShouldRevalidateFunction = () => {
   return false;
@@ -82,7 +82,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (!settings.active) {
     return {
       data: null,
-      error: "Onshape v2 is not connected for this company"
+      error: "Onshape is not connected for this company"
     };
   }
 

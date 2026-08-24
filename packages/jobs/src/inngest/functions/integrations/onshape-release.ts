@@ -1,4 +1,4 @@
-// Onshape v2 release handling.
+// Onshape release handling.
 //
 // One job for the whole `onshape.revision.created` event on a v2 company: it
 // attaches the released geometry and, when configured to, brings the release
@@ -32,6 +32,7 @@ import {
   writeOnshapeItemNotes,
   writeRevisionMapping
 } from "@carbon/ee/onshape";
+import { readPurchasingLevelFromMetadata } from "@carbon/ee/onshape/replenishment";
 import { trigger } from "@carbon/lib/trigger";
 import { NotificationEvent } from "@carbon/notifications";
 import { RetryAfterError } from "inngest";
@@ -45,7 +46,6 @@ import { pullOnshapeDrawingsForDocument } from "./onshape-drawings";
 import { mintDefaultsForRelease } from "./onshape-mint";
 import { runOnshapeReleaseImport } from "./onshape-release-import";
 import { resolveReleasedRevision } from "./onshape-release-revision";
-import { readOnshapePurchasingLevel } from "./onshape-replenishment";
 import { withRateLimitRetry } from "./onshape-shared";
 import { syncOnshapeDrawingAssetsToItem } from "./onshape-sync-element";
 
@@ -165,7 +165,7 @@ export const onshapeReleaseFunction = inngest.createFunction(
         "Could not read the Onshape integration settings; retrying."
       );
     }
-    // The `onshape-v2` record itself is the opt-in: an absent or inactive one
+    // The `onshape` record itself is the opt-in: an absent or inactive one
     // means this company never installed v2. No pipeline field to read.
     if (!settings.active) {
       return { skipped: true as const, reason: "integration-not-installed" };
@@ -516,17 +516,11 @@ export const onshapeReleaseFunction = inngest.createFunction(
                     ),
               `metadata for ${payload.partNumber}`
             );
-            const columns: Record<string, string> = {};
-            for (const property of metadata?.properties ?? []) {
-              if (typeof property?.name !== "string") continue;
-              if (typeof property?.value !== "string") continue;
-              columns[property.name] = property.value;
-            }
-            purchasingLevel = readOnshapePurchasingLevel(columns);
+            purchasingLevel = readPurchasingLevelFromMetadata(metadata);
           } catch (error) {
             if (error instanceof RetryAfterError) throw error;
             console.warn(
-              `[ONSHAPE RELEASE V2] could not read element metadata for ${payload.partNumber}`,
+              `[ONSHAPE RELEASE] could not read element metadata for ${payload.partNumber}`,
               error
             );
           }

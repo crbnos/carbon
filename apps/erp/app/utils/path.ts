@@ -181,6 +181,7 @@ export const path = {
       onShapeCreate: `${api}/integrations/onshape/create`,
       onShapeImport: `${api}/integrations/onshape/import`,
       onShapeLink: `${api}/integrations/onshape/link`,
+      onShapeReplenishment: `${api}/integrations/onshape/replenishment`,
       onShapeRevisions: `${api}/integrations/onshape/revisions`,
       outsideOperations: (jobId: string) =>
         generatePath(`${api}/production/outside-operations/${jobId}`),

@@ -1,4 +1,4 @@
-// Onshape v2 BOM import.
+// Onshape BOM import.
 //
 // Replaces the legacy path, which ran inside the `sync` Deno edge function and
 // was synchronously awaited by the request. That single choice is upstream of
@@ -41,6 +41,12 @@ import {
   writeElementMapping,
   writeOnshapeItemNotes
 } from "@carbon/ee/onshape";
+import {
+  findCaseOnlyTwins,
+  planReplenishmentCorrection,
+  readOnshapePurchasingLevel,
+  resolveOnshapeReplenishment
+} from "@carbon/ee/onshape/replenishment";
 import { trigger } from "@carbon/lib/trigger";
 import { NotificationEvent } from "@carbon/notifications";
 import { RetryAfterError } from "inngest";
@@ -58,12 +64,6 @@ import {
 } from "./onshape-bom-outcome";
 import { pullOnshapeDrawingsForDocument } from "./onshape-drawings";
 import { escapeLikePattern } from "./onshape-matching";
-import {
-  findCaseOnlyTwins,
-  planReplenishmentCorrection,
-  readOnshapePurchasingLevel,
-  resolveOnshapeReplenishment
-} from "./onshape-replenishment";
 import { withRateLimitRetry } from "./onshape-shared";
 
 const PayloadSchema = z.object({

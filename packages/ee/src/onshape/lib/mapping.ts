@@ -1,4 +1,4 @@
-// The Onshape v2 identity contract: how a Carbon item is joined to an Onshape
+// The Onshape identity contract: how a Carbon item is joined to an Onshape
 // part or subassembly WITHOUT part-number string matching.
 //
 // v1 matched on `item.readableIdWithRevision === partNumber[.revision]`. That

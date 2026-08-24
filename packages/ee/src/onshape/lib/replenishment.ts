@@ -1,10 +1,12 @@
 // Deciding whether a part Carbon is about to create is BOUGHT or MADE.
 //
-// Lives in packages/jobs rather than packages/ee, and is env-free, for the same
-// reason `onshape-matching.ts` and `onshape-bom-outcome.ts` do: importing the
-// `@carbon/ee/onshape` barrel pulls in `client.ts`, which boots `@carbon/env`
-// and throws "INNGEST_SIGNING_KEY is not set" in a unit test. Both consumers —
-// the BOM import and the release job — are in this package anyway.
+// Reached through its OWN subpath (`@carbon/ee/onshape/replenishment`), never
+// the `@carbon/ee/onshape` barrel — the barrel pulls in `client.ts`, which boots
+// `@carbon/env` and throws "INNGEST_SIGNING_KEY is not set" in a unit test.
+// Three consumers now: the BOM import, the release job, and the new-part form's
+// server route, which needs the SAME answer the jobs give. Seeding the form from
+// element type alone and letting the import correct it minutes later reads as
+// Carbon changing its mind about a field the user just watched it fill in.
 //
 // This is the one question Onshape cannot answer from geometry, and the one
 // Carbon most needs right: `methodMaterial.methodType` is denormalized from the
@@ -72,6 +74,32 @@ export function readOnshapePurchasingLevel(
     return typeof value === "string" && value.trim() ? value.trim() : null;
   }
   return null;
+}
+
+/**
+ * Read the Purchasing Level off an Onshape metadata response.
+ *
+ * Onshape returns metadata as a `properties` array of `{ name, value }`, not as
+ * the flat column map a BOM row carries — so every caller that asks an ELEMENT
+ * (rather than a BOM row) has to flatten it first. Doing that in one place is
+ * what keeps the release job, the BOM import and the new-part form answering
+ * the same question the same way.
+ *
+ * Non-string values are dropped rather than coerced: the column is free text in
+ * Onshape, and a number that stringifies to "0" would read as a real answer.
+ */
+export function readPurchasingLevelFromMetadata(
+  metadata: {
+    properties?: Array<{ name?: unknown; value?: unknown }> | null;
+  } | null
+): string | null {
+  const columns: Record<string, string> = {};
+  for (const property of metadata?.properties ?? []) {
+    if (typeof property?.name !== "string") continue;
+    if (typeof property?.value !== "string") continue;
+    columns[property.name] = property.value;
+  }
+  return readOnshapePurchasingLevel(columns);
 }
 
 const BUY: Pick<

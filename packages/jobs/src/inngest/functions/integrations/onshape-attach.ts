@@ -43,11 +43,11 @@ export interface AttachOnshapeAssetsInput {
    * What to do when another writer repointed `item.modelUploadId` between this
    * run's read and its write.
    *
-   * `"overwrite"` (the default) is the shipped behavior: the update is
-   * unconditional and last writer wins. `"refuse"` makes it a compare-and-set
-   * that throws so the step retries. Refusing is the better answer, but it is a
-   * new failure mode on a path legacy customers already use, so only the v2
-   * pipeline opts in — see .ai/reviews/2026-08-19-onshape-v2-legacy-impact.md.
+   * `"overwrite"` is the older behavior: the update is unconditional and last
+   * writer wins. `"refuse"` makes it a compare-and-set that throws so the step
+   * retries, which is the better answer and what every caller now passes — it
+   * stays a parameter because the two are a real choice and the default must
+   * not silently change what an unaware caller gets.
    */
   onConcurrentChange?: "overwrite" | "refuse";
 }

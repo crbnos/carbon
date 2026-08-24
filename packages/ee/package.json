@@ -16,6 +16,7 @@
     "./linear.server": "./src/linear/lib/index.server.ts",
     "./notifications": "./src/notifications/index.ts",
     "./onshape": "./src/onshape/lib/index.ts",
+    "./onshape/replenishment": "./src/onshape/lib/replenishment.ts",
     "./paperless-parts": "./src/paperless-parts/lib/index.ts",
     "./plan": "./src/plan.ts",
     "./plan.server": "./src/plan.server.ts",
