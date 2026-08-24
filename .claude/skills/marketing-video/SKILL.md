@@ -30,7 +30,7 @@ tokens + typography). Do not skip these; the defaults are wrong for this task.
 
 ## The pipeline
 
-```
+```text
 1 Ground   → pull REAL numbers from DB/source (never invent figures)
 2 Script   → cold-open → problem framing → recorded flow → payoff → close
 3 Prep     → fix demo data + settings so the recording is shootable
@@ -51,6 +51,10 @@ way to lose a technical audience. Before writing a word:
 
 - Query the demo company for the actual entities you'll show (customer, item,
   order, shipment, quantities, unit price).
+- **Confirm the data is demo/fictional (e.g. Northspoke Cycles) or cleared for
+  external use before it goes in a public video.** If it's real customer data
+  with no marketing approval, use a demo company or anonymise the names, ids,
+  and figures — the video ships outside the company.
 - For anything with an accounting claim, read the POSTED journal from the DB —
   do not compute it yourself. Postgres/edge-function math is the source of truth.
 
@@ -68,9 +72,13 @@ against them.
 
 ## Step 2: Write the script
 
-Save to `.ai/docs/{YYYY-MM-DD}-{feature}-video-script.md` **and commit it** — this
-tree has switched branches mid-session before and wiped untracked docs. A script
-that only exists untracked will not survive.
+Save to `.ai/docs/{YYYY-MM-DD}-{feature}-video-script.md` and **commit it** — this
+tree has switched branches mid-session before and wiped untracked docs; a script
+that only exists untracked will not survive. Stage just that one file with an
+explicit `git add` and a conventional `docs(...)` message (per the repo's
+commit convention — `/check-and-commit` is the code path, but its typecheck/
+test/build gates are noise for a lone markdown doc, so a scoped manual commit is
+the right call here).
 
 Five-act spine (the shape that reads as professional — see the reference videos
 in `references/story-structure.md`):
@@ -117,6 +125,11 @@ command. Re-verify state after they run it.
 
 Read `references/carbon-theme.md` first. Then:
 
+0. **Look for a clueprint before building bespoke.** Call
+   `find(type='clueprints', query='<the kind of video>')`. If a strong match
+   exists, build from it (its layout + voice patterns). Only compose from scratch
+   (steps 1+ below) when matches are weak — and then call `get_design_guide`
+   once before `create_project`. See `references/clueso-mcp.md`.
 1. `create_project`, title `Carbon — {Feature}`.
 2. `add_clips(kind='blank')` for every slide act (0, 1, 3-cards, 4). Leave a
    GAP in the numbering where the recorded phases will slot in.
@@ -145,10 +158,13 @@ For each recorded phase, in order:
    must read frames).
 3. **Verify with ffmpeg** before uploading:
    ```bash
-   ffprobe -v error -select_streams v:0 -show_entries stream=width,height,r_frame_rate -show_entries format=duration -of default=noprint_wrappers=1 <file>
-   ffprobe -v error -select_streams a -show_entries stream=codec_name -of csv=p=0 <file>   # empty = silent, good
-   ffmpeg -y -v error -i <file> -vf "fps=1/2,scale=640:-1,tile=4x4" -frames:v 1 <scratch>/sheet.png   # contact sheet
-   ffmpeg -y -v error -ss <t> -i <file> -frames:v 1 -vf "scale=1600:-1" <scratch>/frame.png           # full-res beat
+   ffprobe -v error -select_streams v:0 -show_entries stream=width,height,r_frame_rate -show_entries format=duration -of default=noprint_wrappers=1 "<file>"
+   ffprobe -v error -select_streams a -show_entries stream=codec_name -of csv=p=0 "<file>"   # empty = silent, good
+   # contact sheet — cover the WHOLE take, not just the first 32s. A 5x9 grid at one
+   # thumb / 4s spans 180s in a single sheet; for a longer take raise the fps divisor
+   # (fps=1/6 → 270s) and/or the tile so cells x interval >= the file's duration.
+   ffmpeg -y -v error -i "<file>" -vf "fps=1/4,scale=480:-1,tile=5x9" -frames:v 1 "<scratch>/sheet.png"
+   ffmpeg -y -v error -ss <t> -i "<file>" -frames:v 1 -vf "scale=1600:-1" "<scratch>/frame.png"   # full-res beat
    ```
    Read the frames. Confirm: right theme/mode, the key value legible, correct
    ids, no error toast, no competitor chrome (browser AI buttons, extensions),
@@ -188,8 +204,13 @@ Recording setup to hand the user every time:
   the end card.
 - **Retime after any VO regen:** a slide clip auto-fits to new audio; re-read
   `get_clip` durations and re-time its elements.
-- **Final pass:** render a frame from every clip; confirm no grain, no tofu, no
-  empty reveal, captions hug their text, ledger figures match the DB.
+- **Final pass — two different checks, don't conflate them.** On SLIDE clips,
+  `get_clip(render:{timestamp})` shows the real composited frame: confirm no
+  grain, no tofu, no empty reveal, ledger figures match the DB. On VIDEO clips,
+  render only proves the OVERLAYS (captions hug their text, correct position) —
+  the footage comes back flat white, so the recording itself was already verified
+  from the local file with ffmpeg in Step 5, and the user does the final
+  eyes-on scrub in the Clueso editor.
 
 ## Iterate
 
@@ -205,8 +226,9 @@ surfacing a real bug is a feature of this process, not a detour.
 - [ ] Every recorded phase verified against real frames + DB figures, then cut in.
 - [ ] One voice across all clips; music bed at 20–30% with `guide_end_time` at the
       true final length.
-- [ ] A rendered frame from every clip shows correct theme, legible values, no
-      grain/tofu/empty reveals.
+- [ ] Slide clips render clean (theme, legible values, no grain/tofu/empty
+      reveals); video-clip footage verified from the local file (ffmpeg) with only
+      overlays checked via render.
 - [ ] User has the Clueso project URL to export.
 
 ## Failure → action
