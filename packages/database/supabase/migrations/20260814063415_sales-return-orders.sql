@@ -205,7 +205,9 @@ CREATE TABLE IF NOT EXISTS "nonConformanceSalesReturnOrderLine" (
     "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
     "updatedAt" TIMESTAMP WITH TIME ZONE,
     "updatedBy" TEXT REFERENCES "user"("id"),
-    PRIMARY KEY ("id"),
+    PRIMARY KEY ("id", "companyId"),
+    -- nonConformance has a bare-id PK, so its FK above cannot be composite;
+    -- the app stamps companyId from the session on every insert.
     CONSTRAINT "nonConformanceSalesReturnOrderLine_salesReturnOrderLineId_fkey"
       FOREIGN KEY ("salesReturnOrderLineId", "companyId")
       REFERENCES "salesReturnOrderLine"("id", "companyId") ON DELETE CASCADE
@@ -287,7 +289,12 @@ UPDATE "accountDefault" ad
 SET "salesReturnsAccount" = (
   SELECT a.id FROM "account" a
     INNER JOIN "company" c ON c."companyGroupId" = a."companyGroupId"
-    WHERE c.id = ad."companyId" AND a.number = '4900' LIMIT 1
+    WHERE c.id = ad."companyId"
+      AND a.number = '4900'
+      -- a customized chart may use 4900 for something unrelated; then leave
+      -- NULL so the documented salesAccount fallback applies
+      AND a.name = 'Sales Returns'
+    LIMIT 1
 )
 WHERE ad."salesReturnsAccount" IS NULL;
 

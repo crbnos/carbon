@@ -59,6 +59,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : Promise.resolve({ data: [], error: null })
   ]);
 
+  if (line.data.salesReturnOrderId !== orderId) {
+    throw redirect(
+      path.to.salesReturnOrderDetails(orderId),
+      await flash(
+        request,
+        error(null, "This line does not belong to this return order")
+      )
+    );
+  }
+
   // Resolve readable ids for the linked source documents — one embedded
   // select per link, run in parallel.
   let shipmentReadableId: string | null = null;
@@ -71,6 +81,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         .from("shipmentLine")
         .select("shipment(shipmentId)")
         .eq("id", line.data.shipmentLineId)
+        .eq("companyId", companyId)
         .maybeSingle()
         .then((result) => {
           shipmentReadableId = result.data?.shipment?.shipmentId ?? null;
@@ -83,6 +94,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         .from("salesOrderLine")
         .select("salesOrder(salesOrderId)")
         .eq("id", line.data.salesOrderLineId)
+        .eq("companyId", companyId)
         .maybeSingle()
         .then((result) => {
           salesOrderReadableId = result.data?.salesOrder?.salesOrderId ?? null;
@@ -95,6 +107,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         .from("salesInvoiceLine")
         .select("salesInvoice(invoiceId)")
         .eq("id", line.data.salesInvoiceLineId)
+        .eq("companyId", companyId)
         .maybeSingle()
         .then((result) => {
           salesInvoiceReadableId = result.data?.salesInvoice?.invoiceId ?? null;

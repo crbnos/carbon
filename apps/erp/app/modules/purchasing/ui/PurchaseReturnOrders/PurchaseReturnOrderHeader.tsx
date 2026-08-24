@@ -25,7 +25,13 @@ import {
   LuTrash,
   LuTruck
 } from "react-icons/lu";
-import { Link, useFetcher, useParams, useSubmit } from "react-router";
+import {
+  Link,
+  useFetcher,
+  useNavigation,
+  useParams,
+  useSubmit
+} from "react-router";
 import { usePanels } from "~/components/Layout";
 import Confirm from "~/components/Modals/Confirm/Confirm";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
@@ -57,6 +63,8 @@ const PurchaseReturnOrderHeader = () => {
 
   const replacementFetcher = useFetcher<{ success: boolean }>();
   const submit = useSubmit();
+  const navigation = useNavigation();
+  const isCreatingDocument = navigation.state !== "idle";
 
   // Credit is capped at shipped quantity — the button is useless before
   // anything has been shipped back.
@@ -163,7 +171,9 @@ const PurchaseReturnOrderHeader = () => {
               <Button
                 variant={status === "Confirmed" ? "primary" : "secondary"}
                 leftIcon={<LuTruck />}
-                isDisabled={!permissions.can("create", "inventory")}
+                isDisabled={
+                  isCreatingDocument || !permissions.can("create", "inventory")
+                }
                 onClick={ship}
               >
                 <Trans>Ship</Trans>

@@ -115,7 +115,37 @@ export async function action({ request }: ActionFunctionArgs) {
     };
   }
 
-  // Clear stale shipment attrs from previously-assigned tracked entities for this line.
+  // Update the trackedEntity record using service role to bypass RLS
+  const updateResponse = await serviceRole
+    .from("trackedEntity")
+    .update({
+      attributes: newAttributes
+    })
+    .eq("id", trackedEntityId)
+    .eq("status", allowedStatus)
+    .select("id");
+
+  if (updateResponse.error) {
+    return data(
+      { success: false, error: updateResponse.error.message },
+      await flash(
+        request,
+        error(updateResponse.error, updateResponse.error.message)
+      )
+    );
+  }
+
+  // The status filter guards against a concurrent flip; zero matched rows is
+  // a conflict, not a success.
+  if (!updateResponse.data || updateResponse.data.length === 0) {
+    const message = `Tracked entity is no longer ${allowedStatus}`;
+    return data(
+      { success: false, error: message },
+      await flash(request, error(message))
+    );
+  }
+
+  // Only after the new assignment succeeds, clear stale shipment attrs
   // Batch: any prior entity on this line. Serial: only the entity at this index.
   let staleQuery = serviceRole
     .from("trackedEntity")
@@ -148,36 +178,6 @@ export async function action({ request }: ActionFunctionArgs) {
           .update({ attributes: cleaned })
           .eq("id", stale.id);
       })
-    );
-  }
-
-  // Update the trackedEntity record using service role to bypass RLS
-  const updateResponse = await serviceRole
-    .from("trackedEntity")
-    .update({
-      attributes: newAttributes
-    })
-    .eq("id", trackedEntityId)
-    .eq("status", allowedStatus)
-    .select("id");
-
-  if (updateResponse.error) {
-    return data(
-      { success: false, error: updateResponse.error.message },
-      await flash(
-        request,
-        error(updateResponse.error, updateResponse.error.message)
-      )
-    );
-  }
-
-  // The status filter guards against a concurrent flip; zero matched rows is
-  // a conflict, not a success.
-  if (!updateResponse.data || updateResponse.data.length === 0) {
-    const message = `Tracked entity is no longer ${allowedStatus}`;
-    return data(
-      { success: false, error: message },
-      await flash(request, error(message))
     );
   }
 

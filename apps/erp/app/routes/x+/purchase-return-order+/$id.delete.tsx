@@ -34,6 +34,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  if (lines.error) {
+    return data(
+      {},
+      await flash(
+        request,
+        error(lines.error, "Failed to load purchase return order lines")
+      )
+    );
+  }
+
   if (
     !["Draft", "Cancelled"].includes(purchaseReturnOrder.data?.status ?? "")
   ) {

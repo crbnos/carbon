@@ -625,12 +625,17 @@ export const PostingSyncSettingsSchema = z.preprocess(
       };
     }
 
-    // Always-on: the set of syncing journal types is defined by POSTING_POLICY
-    // (journal-represented, non-Manual), never by stored per-type enables.
+    // Always-on for the frozen v2 set: those types sync regardless of stored
+    // per-type enables. Types shipped defaultEnabled: false (the return
+    // journals) are the exception — posting.ts pushes them only when the
+    // stored config explicitly enables them, so they are excluded here unless
+    // enabled.
     const enabledJournalTypes = JOURNAL_ENTRY_SOURCE_TYPES.filter(
       (sourceType) =>
         POSTING_POLICY[sourceType].representation === "journal" &&
-        POSTING_POLICY[sourceType].syncable !== false
+        POSTING_POLICY[sourceType].syncable !== false &&
+        (POSTING_POLICY[sourceType].defaultEnabled !== false ||
+          sourceTypes[sourceType].enabled)
     );
     const consolidation: "individual" | "daily" =
       enabledJournalTypes.length > 0 &&

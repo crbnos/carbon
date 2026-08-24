@@ -68,7 +68,7 @@ msgstr "{0} celdas con diferencias"
 #. placeholder {1}: line.quantityCredited
 #. placeholder {2}: line.quantityShipped
 msgid "{0} creditable ({1} / {2} credited)"
-msgstr ""
+msgstr "{0} acreditable ({1} / {2} acreditado)"
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
@@ -119,7 +119,7 @@ msgstr "{0} Procesos"
 #. placeholder {0}: quantityFormatter(line.quantityReceived)
 #. placeholder {1}: quantityFormatter(line.quantityCredited)
 msgid "{0} received · {1} credited"
-msgstr ""
+msgstr "{0} recibido · {1} acreditado"
 
 #. placeholder {0}: result.credentialName ?? "Passkey"
 msgid "{0} registered"
@@ -12590,10 +12590,11 @@ msgstr "Reemplazar precios existentes con valores de origen"
 msgid "Replace PDF"
 msgstr "Reemplazar PDF"
 
-msgid "Replacement Order"
-msgstr "Orden de reemplazo"
 msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
 msgstr "Reemplaza los datos de esta empresa con un conjunto de datos de demostración, capturado primero para que puedas revertir."
+
+msgid "Replacement Order"
+msgstr "Orden de reemplazo"
 
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "Reemplazar el PDF elimina todas las ubicaciones de globos en este documento. Las filas de características y sus valores se mantienen; puede colocar globos nuevamente en el nuevo dibujo."
@@ -12748,7 +12749,7 @@ msgstr "Porcentaje de tarifa de reabastecimiento"
 
 #. placeholder {0}: percentFormatter.format( line.restockFeePercent )
 msgid "Restocking fee {0}"
-msgstr ""
+msgstr "Cargo por reposición {0}"
 
 msgid "Restore from Trash"
 msgstr "Restaurar desde la papelera"

@@ -17,7 +17,7 @@ import {
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFetcher, useParams } from "react-router";
 import { useCurrencyFormatter, usePercentFormatter } from "~/hooks";
 import type { loader as creditLoader } from "~/routes/x+/purchase-return-order+/$id.credit";
@@ -110,6 +110,20 @@ const PurchaseReturnOrderCreditModal = ({
 
   const isLoading = loadFetcher.state !== "idle" && !loadFetcher.data;
   const isSubmitting = submitFetcher.state !== "idle";
+
+  // The action redirects on success (fetcher.data stays undefined) and
+  // returns { success: false } on failure — close only on success.
+  const hasSubmitted = useRef(false);
+  useEffect(() => {
+    if (submitFetcher.state !== "idle") {
+      hasSubmitted.current = true;
+      return;
+    }
+    if (hasSubmitted.current && submitFetcher.data === undefined) {
+      hasSubmitted.current = false;
+      onClose();
+    }
+  }, [submitFetcher.state, submitFetcher.data, onClose]);
 
   return (
     <Modal

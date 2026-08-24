@@ -68,7 +68,7 @@ msgstr "{0} अंतर वाली कोशिकाएँ"
 #. placeholder {1}: line.quantityCredited
 #. placeholder {2}: line.quantityShipped
 msgid "{0} creditable ({1} / {2} credited)"
-msgstr ""
+msgstr "{0} क्रेडिट योग्य ({1} / {2} क्रेडिट किया गया)"
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
@@ -119,7 +119,7 @@ msgstr "{0} प्रक्रियाएं"
 #. placeholder {0}: quantityFormatter(line.quantityReceived)
 #. placeholder {1}: quantityFormatter(line.quantityCredited)
 msgid "{0} received · {1} credited"
-msgstr ""
+msgstr "{0} प्राप्त · {1} क्रेडिट किया गया"
 
 #. placeholder {0}: result.credentialName ?? "Passkey"
 msgid "{0} registered"
@@ -12590,10 +12590,11 @@ msgstr "मौजूदा मूल्य निर्धारण को स�
 msgid "Replace PDF"
 msgstr "PDF को बदलें"
 
-msgid "Replacement Order"
-msgstr "प्रतिस्थापन आदेश"
 msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
 msgstr "इस कंपनी के डेटा को डेमो डेटासेट से बदलें — पहले स्नैपशॉट लिया जाता है, ताकि आप पूर्ववत् कर सकें।"
+
+msgid "Replacement Order"
+msgstr "प्रतिस्थापन आदेश"
 
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "पीडीएफ को बदलने से इस दस्तावेज़ पर सभी बैलून प्लेसमेंट हटा दिए जाएंगे। फीचर पंक्तियाँ और उनके मान बने रहते हैं; आप नई ड्राइंग पर फिर से बैलून रख सकते हैं।"
@@ -12748,7 +12749,7 @@ msgstr "पुनः स्टॉक शुल्क प्रतिशत"
 
 #. placeholder {0}: percentFormatter.format( line.restockFeePercent )
 msgid "Restocking fee {0}"
-msgstr ""
+msgstr "पुनर्भंडारण शुल्क {0}"
 
 msgid "Restore from Trash"
 msgstr "ट्रैश से पुनः स्थापित करें"

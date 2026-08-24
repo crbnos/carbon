@@ -12590,10 +12590,11 @@ msgstr "Replace existing pricing with source values"
 msgid "Replace PDF"
 msgstr "Replace PDF"
 
-msgid "Replacement Order"
-msgstr "Replacement Order"
 msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
 msgstr "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
+
+msgid "Replacement Order"
+msgstr "Replacement Order"
 
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."

@@ -68,7 +68,7 @@ msgstr "{0} 个单元格有差异"
 #. placeholder {1}: line.quantityCredited
 #. placeholder {2}: line.quantityShipped
 msgid "{0} creditable ({1} / {2} credited)"
-msgstr ""
+msgstr "{0} 可开贷项（{1} / {2} 已开贷项）"
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
@@ -119,7 +119,7 @@ msgstr "{0} 个流程"
 #. placeholder {0}: quantityFormatter(line.quantityReceived)
 #. placeholder {1}: quantityFormatter(line.quantityCredited)
 msgid "{0} received · {1} credited"
-msgstr ""
+msgstr "{0} 已收货 · {1} 已开贷项"
 
 #. placeholder {0}: result.credentialName ?? "Passkey"
 msgid "{0} registered"
@@ -12590,10 +12590,11 @@ msgstr "用源值替换现有定价"
 msgid "Replace PDF"
 msgstr "替换 PDF"
 
-msgid "Replacement Order"
-msgstr "替换订单"
 msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
 msgstr "用演示数据集替换此公司的数据——首先快照，以便您可以还原。"
+
+msgid "Replacement Order"
+msgstr "替换订单"
 
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "替换 PDF 将删除此文档上的所有气球标注。功能行及其值保持不变；您可以在新绘图上重新放置气球。"
@@ -12748,7 +12749,7 @@ msgstr "补货费百分比"
 
 #. placeholder {0}: percentFormatter.format( line.restockFeePercent )
 msgid "Restocking fee {0}"
-msgstr ""
+msgstr "补货费 {0}"
 
 msgid "Restore from Trash"
 msgstr "从垃圾箱恢复"

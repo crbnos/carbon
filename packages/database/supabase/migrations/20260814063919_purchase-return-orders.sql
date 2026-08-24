@@ -182,7 +182,9 @@ CREATE TABLE IF NOT EXISTS "nonConformancePurchaseReturnOrderLine" (
     "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
     "updatedAt" TIMESTAMP WITH TIME ZONE,
     "updatedBy" TEXT REFERENCES "user"("id"),
-    PRIMARY KEY ("id"),
+    PRIMARY KEY ("id", "companyId"),
+    -- nonConformance has a bare-id PK, so its FK above cannot be composite;
+    -- the app stamps companyId from the session on every insert.
     CONSTRAINT "nonConformancePurchaseReturnOrderLine_lineId_fkey"
       FOREIGN KEY ("purchaseReturnOrderLineId", "companyId")
       REFERENCES "purchaseReturnOrderLine"("id", "companyId") ON DELETE CASCADE

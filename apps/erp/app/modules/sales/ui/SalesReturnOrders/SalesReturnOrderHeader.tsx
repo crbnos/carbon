@@ -26,7 +26,13 @@ import {
   LuTrash,
   LuTruck
 } from "react-icons/lu";
-import { Link, useFetcher, useParams, useSubmit } from "react-router";
+import {
+  Link,
+  useFetcher,
+  useNavigation,
+  useParams,
+  useSubmit
+} from "react-router";
 import { usePanels } from "~/components/Layout";
 import Confirm from "~/components/Modals/Confirm/Confirm";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
@@ -58,6 +64,8 @@ const SalesReturnOrderHeader = () => {
 
   const replacementFetcher = useFetcher<{ success: boolean }>();
   const submit = useSubmit();
+  const navigation = useNavigation();
+  const isCreatingDocument = navigation.state !== "idle";
 
   // Same pattern as the PO header's receive/ship: POST the source document to
   // the create route, which drafts the document and redirects into it.
@@ -173,7 +181,9 @@ const SalesReturnOrderHeader = () => {
               <Button
                 variant={status === "Confirmed" ? "primary" : "secondary"}
                 leftIcon={<LuPackageCheck />}
-                isDisabled={!permissions.can("create", "inventory")}
+                isDisabled={
+                  isCreatingDocument || !permissions.can("create", "inventory")
+                }
                 onClick={receive}
               >
                 <Trans>Receive</Trans>
@@ -187,7 +197,10 @@ const SalesReturnOrderHeader = () => {
                 <Button
                   variant="secondary"
                   leftIcon={<LuTruck />}
-                  isDisabled={!permissions.can("create", "inventory")}
+                  isDisabled={
+                    isCreatingDocument ||
+                    !permissions.can("create", "inventory")
+                  }
                   onClick={shipBack}
                 >
                   <Trans>Ship</Trans>

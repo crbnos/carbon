@@ -94,7 +94,7 @@ export function LineItemsBlock({
       {total > 0 && (
         <View style={tw("flex flex-row py-2 px-3 text-[9px]")}>
           <Text style={tw("w-[62%] text-right pr-3 text-gray-800 font-bold")}>
-            Total ({currencyCode})
+            {currencyCode ? `Total (${currencyCode})` : "Total"}
           </Text>
           <Text style={tw("w-[18%] text-center text-gray-800 font-bold")}>
             {numberFormatter.format(total)}

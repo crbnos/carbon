@@ -293,6 +293,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         .from("salesReturnOrder")
         .select("id, salesReturnOrderId")
         .eq("id", id)
+        .eq("companyId", companyId)
         .single();
       if (salesReturnOrder.error) {
         logger.error("Failed to create association", {
@@ -330,6 +331,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         .from("purchaseReturnOrder")
         .select("id, purchaseReturnOrderId")
         .eq("id", id)
+        .eq("companyId", companyId)
         .single();
       if (purchaseReturnOrder.error) {
         logger.error("Failed to create association", {

@@ -91,6 +91,18 @@ export async function action({ request }: ActionFunctionArgs) {
         .order("createdAt", { ascending: false })
         .limit(1)
         .maybeSingle();
+      if (existingDraftsalesReturnShipment.error) {
+        throw redirect(
+          path.to.salesReturnOrderDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              existingDraftsalesReturnShipment.error,
+              "Failed to check for an existing shipment"
+            )
+          )
+        );
+      }
       if (existingDraftsalesReturnShipment.data) {
         throw redirect(
           path.to.shipmentDetails(existingDraftsalesReturnShipment.data.id)
@@ -143,6 +155,18 @@ export async function action({ request }: ActionFunctionArgs) {
         .order("createdAt", { ascending: false })
         .limit(1)
         .maybeSingle();
+      if (existingDraftpurchaseReturnShipment.error) {
+        throw redirect(
+          path.to.purchaseReturnOrderDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              existingDraftpurchaseReturnShipment.error,
+              "Failed to check for an existing shipment"
+            )
+          )
+        );
+      }
       if (existingDraftpurchaseReturnShipment.data) {
         throw redirect(
           path.to.shipmentDetails(existingDraftpurchaseReturnShipment.data.id)

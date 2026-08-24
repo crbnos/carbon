@@ -68,7 +68,7 @@ msgstr "{0}個のデルタを持つセル"
 #. placeholder {1}: line.quantityCredited
 #. placeholder {2}: line.quantityShipped
 msgid "{0} creditable ({1} / {2} credited)"
-msgstr ""
+msgstr "{0} 返金可能（{1} / {2} 返金済み）"
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
@@ -119,7 +119,7 @@ msgstr "{0}個のプロセス"
 #. placeholder {0}: quantityFormatter(line.quantityReceived)
 #. placeholder {1}: quantityFormatter(line.quantityCredited)
 msgid "{0} received · {1} credited"
-msgstr ""
+msgstr "{0} 受領 · {1} 返金済み"
 
 #. placeholder {0}: result.credentialName ?? "Passkey"
 msgid "{0} registered"
@@ -12590,10 +12590,11 @@ msgstr "既存の価格を元の値に置き換える"
 msgid "Replace PDF"
 msgstr "PDFを置き換える"
 
-msgid "Replacement Order"
-msgstr "交換注文"
 msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
 msgstr "このコンパニーのデータをデモデータセットで置き換えます。最初にスナップショットを取得するため、リバートできます。"
+
+msgid "Replacement Order"
+msgstr "交換注文"
 
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "PDFを置き換えると、このドキュメント上のすべてのバルーン配置が削除されます。機能行とその値は保持されます。新しい図面上に再度バルーンを配置できます。"
@@ -12748,7 +12749,7 @@ msgstr "再在庫手数料率"
 
 #. placeholder {0}: percentFormatter.format( line.restockFeePercent )
 msgid "Restocking fee {0}"
-msgstr ""
+msgstr "返品手数料 {0}"
 
 msgid "Restore from Trash"
 msgstr "ゴミ箱から復元"

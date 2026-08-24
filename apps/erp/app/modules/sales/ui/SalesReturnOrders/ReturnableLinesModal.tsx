@@ -108,7 +108,22 @@ const ReturnableLinesModal = ({
           method: "POST",
           body: formData
         });
-        if (!response.ok && !response.redirected) {
+        // The action redirects to the NEW line's URL on success; a failure
+        // redirects back to the order's own /details (flash) or returns a
+        // validation payload — neither is visible to response.ok alone.
+        const landedOnNewLine = (() => {
+          if (!response.redirected) return false;
+          const segments = new URL(response.url).pathname
+            .split("/")
+            .filter(Boolean);
+          const orderIndex = segments.indexOf(orderId);
+          return (
+            orderIndex >= 0 &&
+            segments.length > orderIndex + 1 &&
+            segments[orderIndex + 1] !== "details"
+          );
+        })();
+        if (!landedOnNewLine) {
           throw new Error(t`Failed to add line`);
         }
       }

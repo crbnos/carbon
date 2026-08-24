@@ -68,7 +68,7 @@ msgstr "{0} ячеек с разницами"
 #. placeholder {1}: line.quantityCredited
 #. placeholder {2}: line.quantityShipped
 msgid "{0} creditable ({1} / {2} credited)"
-msgstr ""
+msgstr "{0} доступно для кредитования ({1} / {2} скредитовано)"
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
@@ -119,7 +119,7 @@ msgstr "{0} Процессов"
 #. placeholder {0}: quantityFormatter(line.quantityReceived)
 #. placeholder {1}: quantityFormatter(line.quantityCredited)
 msgid "{0} received · {1} credited"
-msgstr ""
+msgstr "{0} получено · {1} скредитовано"
 
 #. placeholder {0}: result.credentialName ?? "Passkey"
 msgid "{0} registered"
@@ -1267,7 +1267,7 @@ msgstr "Добавлено"
 
 #. placeholder {0}: rows.length
 msgid "Added {0} lines"
-msgstr "Добавлено {0} строк"
+msgstr "Добавлено строк: {0}"
 
 msgid "Added for this customer"
 msgstr "Добавлено для этого клиента"
@@ -8742,7 +8742,7 @@ msgid "Loading associated jobs..."
 msgstr "Загрузка связанных заданий..."
 
 msgid "Loading creditable lines..."
-msgstr "Загрузка кредитоспособных строк..."
+msgstr "Загрузка строк, доступных для кредитования..."
 
 msgid "Loading current quantity…"
 msgstr "Загрузка текущего количества…"
@@ -12590,10 +12590,11 @@ msgstr "Заменить существующие цены на значения
 msgid "Replace PDF"
 msgstr "Заменить PDF"
 
-msgid "Replacement Order"
-msgstr "Заказ на замену"
 msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
 msgstr "Замените данные этой компании набором демо-данных — сначала создан снимок, чтобы вы могли восстановить исходные данные."
+
+msgid "Replacement Order"
+msgstr "Заказ на замену"
 
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "Замена PDF удаляет все размещения выносок в этом документе. Строки функций и их значения остаются; вы можете снова разместить выноски на новом чертеже."
@@ -12748,7 +12749,7 @@ msgstr "Процент комиссии за пополнение запасов
 
 #. placeholder {0}: percentFormatter.format( line.restockFeePercent )
 msgid "Restocking fee {0}"
-msgstr ""
+msgstr "Комиссия за пополнение запасов: {0}"
 
 msgid "Restore from Trash"
 msgstr "Восстановить из корзины"
@@ -14692,7 +14693,7 @@ msgid "Supplier"
 msgstr "Поставщик"
 
 msgid "Supplier (optional — auto-resolved)"
-msgstr "Поставщик (опционально — разрешается автоматически)"
+msgstr "Поставщик (необязательно — определяется автоматически)"
 
 msgid "Supplier Accounts"
 msgstr "Учетные записи поставщиков"

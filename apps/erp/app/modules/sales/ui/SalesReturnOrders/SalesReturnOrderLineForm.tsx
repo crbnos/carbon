@@ -28,7 +28,7 @@ import {
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   LuCirclePlus,
   LuCircleStop,
@@ -141,6 +141,36 @@ const SalesReturnOrderLineForm = ({
     if (!itemId) return;
     if (!carbon || !company.id) return;
 
+    const customerId = routeData?.salesReturnOrder?.customerId;
+
+    // Manually added (blind) lines resolve their credit-basis price through
+    // the pricing engine — customer overrides, quantity breaks, and price
+    // rules included — matching the sales-order line form. Linked lines keep
+    // the source document's price and never pass through here.
+    const resolvedPrice = customerId
+      ? await (async () => {
+          try {
+            const response = await fetch(path.to.api.salesResolvePrice, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                customerId,
+                itemId,
+                quantity: globalThis.Number(initialValues.quantity) || 1
+              })
+            });
+            if (response.ok) {
+              const result = await response.json();
+              // the Number FORM COMPONENT import shadows the global here
+              return globalThis.Number(result.finalPrice);
+            }
+          } catch {
+            // fall through to the base price below
+          }
+          return null;
+        })()
+      : null;
+
     const [item, price] = await Promise.all([
       carbon
         .from("item")
@@ -150,12 +180,14 @@ const SalesReturnOrderLineForm = ({
         .eq("id", itemId)
         .eq("companyId", company.id)
         .single(),
-      carbon
-        .from("itemUnitSalePrice")
-        .select("unitSalePrice")
-        .eq("itemId", itemId)
-        .eq("companyId", company.id)
-        .maybeSingle()
+      resolvedPrice === null
+        ? carbon
+            .from("itemUnitSalePrice")
+            .select("unitSalePrice")
+            .eq("itemId", itemId)
+            .eq("companyId", company.id)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null })
     ]);
 
     if (item.error) {
@@ -167,7 +199,7 @@ const SalesReturnOrderLineForm = ({
       itemId,
       uom: item.data?.unitOfMeasureCode ?? "EA",
       trackingType: item.data?.itemTrackingType ?? "Inventory",
-      unitPrice: price.data?.unitSalePrice ?? 0
+      unitPrice: resolvedPrice ?? price.data?.unitSalePrice ?? 0
     });
   };
 
@@ -177,6 +209,14 @@ const SalesReturnOrderLineForm = ({
   const [disposition, setDisposition] = useState(
     (line?.disposition as string | undefined) ?? "Pending"
   );
+  // The disposition routes always redirect (success or flashed error), so the
+  // loader's revalidated value is the persisted truth — sync the select to it.
+  // A failed submit reverts; a successful one confirms the same value.
+  useEffect(() => {
+    if (dispositionFetcher.state === "idle" && line?.disposition) {
+      setDisposition(line.disposition as string);
+    }
+  }, [dispositionFetcher.state, line?.disposition]);
   const quantityReceived = line?.quantityReceived ?? 0;
 
   const onDispositionChange = (value: string) => {

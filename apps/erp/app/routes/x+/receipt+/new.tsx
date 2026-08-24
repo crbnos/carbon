@@ -67,6 +67,18 @@ export async function action({ request }: ActionFunctionArgs) {
         .order("createdAt", { ascending: false })
         .limit(1)
         .maybeSingle();
+      if (existingReturnReceipt.error) {
+        throw redirect(
+          path.to.salesReturnOrderDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              existingReturnReceipt.error,
+              "Failed to check for an existing receipt"
+            )
+          )
+        );
+      }
       if (existingReturnReceipt.data) {
         throw redirect(path.to.receiptDetails(existingReturnReceipt.data.id));
       }
