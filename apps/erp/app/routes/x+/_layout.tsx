@@ -17,7 +17,7 @@ import {
   updateCompanySession
 } from "@carbon/auth/session.server";
 import { isAuditLogEnabled } from "@carbon/database/audit";
-import { getEffectivePlanId } from "@carbon/ee/plan.server";
+import { getPlan } from "@carbon/ee/plan.server";
 import {
   detectImplementationSignals,
   getImplementationCheckStates,
@@ -180,7 +180,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getCompanies(client, userId),
     getEmployeeCompanies(client, userId),
     getStripeCustomerByCompanyId(companyId, userId),
-    getEffectivePlanId(client, companyId),
+    getPlan(client, companyId),
     getCustomFieldsSchemas(client, { companyId }),
     getCompanyIntegrations(client, companyId),
     getCompanySettings(client, companyId),

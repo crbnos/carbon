@@ -46,7 +46,7 @@ async function getCompanyPlan(
  * Precedence mirrors `companyHasPlan`: bypass → companyPlan → carbon-owned.
  * Returns `null` off Cloud (the client neutralizes gating there anyway).
  */
-export async function getEffectivePlanId(
+export async function getPlan(
   client: SupabaseClient<Database>,
   companyId: string
 ): Promise<string | null> {
