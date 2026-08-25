@@ -2,6 +2,10 @@ import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  evaluateLinesForSurface,
+  isBlocked
+} from "@carbon/ee/storage-rules.server";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import type { JobSource } from "@carbon/lib/telemetry";
 import { asJobSource, trackWorkEvent } from "@carbon/lib/telemetry";
@@ -7735,8 +7739,10 @@ export async function saveInspectionDocumentAtomic(
  * Issuing requires only an authenticated company user (matching the MES route), so no extra
  * permission gate is applied here.
  *
- * Note: the MES screen also evaluates work-center-scoped blocking rules before issuing; that
- * pre-check is not yet replicated on the MCP path (follow-up).
+ * Mirrors the MES screen's work-center blocking-rule pre-check: if the operation's work center has
+ * a `materialIssue` rule that blocks (any error-severity violation, or any violation when not
+ * acknowledged), the issue is refused rather than performed. Pass `acknowledged: true` to override
+ * non-error (warning) violations, as the MES screen's acknowledge step does.
  */
 export async function issueMaterial(
   client: SupabaseClient<Database>,
@@ -7749,8 +7755,49 @@ export async function issueMaterial(
     materialId?: string;
     jobOperationStepId?: string;
     adjustmentType?: string;
+    acknowledged?: boolean;
   }
 ) {
+  const { data: jobOp } = await client
+    .from("jobOperation")
+    .select("workCenterId")
+    .eq("id", args.operationId)
+    .maybeSingle();
+  const workCenterId = jobOp?.workCenterId;
+  if (workCenterId) {
+    const ruleEval = await evaluateLinesForSurface({
+      client,
+      companyId,
+      userId,
+      targetType: "workCenter",
+      surface: "materialIssue",
+      lines: [
+        {
+          lineId: args.operationId,
+          itemId: args.itemId,
+          workCenterId,
+          operation: {
+            id: args.operationId,
+            itemId: args.itemId,
+            quantity: args.quantity,
+            workInstructionId: null
+          },
+          quantity: args.quantity
+        }
+      ]
+    });
+    if (
+      ruleEval.violations.length > 0 &&
+      isBlocked(ruleEval.violations, args.acknowledged ?? false)
+    ) {
+      throw new Error(
+        `Material issue blocked by a work-center rule: ${ruleEval.violations
+          .map((v) => v.message)
+          .join("; ")}`
+      );
+    }
+  }
+
   return client.functions.invoke("issue", {
     body: {
       id: args.operationId,

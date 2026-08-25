@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-25T04:02:08.600Z",
+  "generated": "2026-08-25T04:04:40.993Z",
   "totalTools": 1447,
   "modules": 15,
   "tools": [
@@ -25274,7 +25274,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "issue material",
-      "paramCount": 6,
+      "paramCount": 7,
       "serviceParams": [
         "client",
         "companyId",
@@ -25304,6 +25304,9 @@
           },
           "adjustmentType": {
             "type": "string"
+          },
+          "acknowledged": {
+            "type": "boolean"
           }
         },
         "required": [
