@@ -3,7 +3,7 @@
 > Status: not started
 > Author: Raul Soonawala
 > Date: 2026-08-19
-> Spec: `.ai/specs/2026-08-18-onshape-integration-v2.md` — "Drawing attachment"
+> Spec: `.ai/specs/implemented/2026-08-18-onshape-integration-v2.md` — "Drawing attachment"
 
 ## TLDR
 

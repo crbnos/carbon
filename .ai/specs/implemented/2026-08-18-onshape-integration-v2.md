@@ -1,8 +1,33 @@
 # Onshape Integration v2
 
-> Status: in-progress
+> Status: implemented 2026-08-25 — shipped on `feat/onshape-v2-integration`.
+> Known gaps below are open and deliberately out of scope for that branch.
 > Author: Raul Soonawala
 > Date: 2026-08-18
+
+## What shipped, where it differs from this design
+
+Four things in the sections below describe a design that was superseded before the branch
+was finished. The code is the authority, and `.claude/rules/onshape-integration.md`
+describes it; this note exists so the divergences are not read as unimplemented work.
+
+- **There is no pipeline selector, and no second integration.** This spec proposed shipping
+  v2 alongside the part-number-matching pipeline, chosen by a `pipeline` setting on a shared
+  `onshape` record, with the old one remaining the default. What shipped is ONE integration:
+  the mapping-based pipeline replaced the old one in place, the `onshape-v2` record was
+  removed, and "v2" is gone from every name. A company that used the old pipeline keeps its
+  connection and its settings; the matching code that has no id to join on is deleted.
+- **Unreleased versions are not importable.** A setting to sync them was built and then
+  removed. Onshape stamps a revision only on release, so an unreleased version carries no
+  revision and no released assets — the identity this integration is built on does not exist
+  until release. Scoping to releases removed the setting, the toggle, and the second picker.
+- **The New Part form decides the BOM import itself.** The `importBom` checkbox is gone.
+  The server reads the selection's `elementType` and imports a bill of materials for an
+  assembly, never for a body — a Part Studio body has no BOM, so the choice was never real.
+- **The create modal blocks until the part is finished.** The original design navigated on
+  the create response and let the assets and BOM land behind the user. They now watch a
+  progress marker (`OnshapeImportProgress`) and open a part that is complete, with "Go to the
+  part now" available throughout.
 
 ## TLDR
 
@@ -248,7 +273,7 @@ revert a migrated customer to legacy. Change it to merge into existing metadata.
 9. **Done** (2026-08-21). Auto-create on release, as a per-company v2 toggle.
 10. **Done** (2026-08-21). Create a part from Onshape inside the New Part form —
    one submission creates the part, both mappings, the BOM import and the assets.
-   Spec: `.ai/specs/2026-08-20-onshape-create-part-from-new-part-form.md`.
+   Spec: `.ai/specs/implemented/2026-08-20-onshape-create-part-from-new-part-form.md`.
 11. **Done** (2026-08-21). Replenishment seeded from Onshape's `Purchasing Level`,
    one rule shared by the BOM import and the release mint.
 
@@ -571,6 +596,14 @@ twice as well.
 
 ## Changelog
 
+- 2026-08-25: **Scoped to releases only, and packaged for PR.** The unreleased-version setting
+  and its picker were removed; the `pipeline` selector and the `onshape-v2` record were removed
+  in favour of one integration; `importBom` moved from a client checkbox to a server decision on
+  `elementType`; the create modal became a blocking progress panel reading a
+  `metadata.progress` marker the jobs stamp; and the New Part form's Onshape branch became the
+  `useItemSources` registry, so a second CAD/PDM integration joins by adding a row. Only Part ID
+  and Revision are frozen under a selection — everything else, Short Description included, is
+  seeded and then editable. See "What shipped, where it differs from this design" above.
 - 2026-08-18: Created.
 - 2026-08-19: Round-2 audit findings fixed; per-item asset pull job added for the create and
   link flows; legacy backfill refused on a v2 company.

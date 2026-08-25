@@ -1,6 +1,9 @@
 # Create a part from Onshape in the New Part form
 
-> Status: implemented 2026-08-21 — unit-verified; browser verification still outstanding
+> Status: implemented 2026-08-25. Superseded in two places by the release-only scoping:
+> the `importBom` checkbox became a server decision on `elementType`, and the modal now
+> blocks on an import-progress marker instead of navigating on the create response.
+> See `.ai/specs/implemented/2026-08-18-onshape-integration-v2.md` — "What shipped".
 > Author: Raul Soonawala
 > Date: 2026-08-20
 
@@ -13,7 +16,8 @@ already exists), and the asset pull that each of them queues separately. The mec
 three already exists and is verified; what is missing is a single entry point that sequences them
 and a form that lets Onshape own the identity while Carbon's own fields are filled in normally.
 
-Prerequisite: Onshape v2 (`pipeline: "next"`). On a legacy company none of this renders.
+Prerequisite (as written): Onshape v2 (`pipeline: "next"`). There is no pipeline setting any
+more — the source picker renders whenever the company has Onshape connected.
 
 ## Problem Statement
 

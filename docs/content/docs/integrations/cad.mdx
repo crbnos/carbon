@@ -79,14 +79,18 @@ Three places in the app reach into Onshape, and each one writes the link.
 
 | Where | What it does |
 | --- | --- |
-| **"From Onshape"** on the parts list | Creates a Carbon part from a released revision, in the ordinary New Part form. See below. |
+| **The Onshape button** on the parts list | Creates a Carbon part from a released revision, in the ordinary New Part form. See below. |
 | **"Link to Onshape"** on a part's menu | Points a part you already have at an Onshape revision. This is how you adopt hand-built parts, and anything that was never linked. |
 | **"Import from Onshape"** on a bill of materials | Reads a released assembly and writes it into that part's method. |
 
 ### Creating a part from Onshape
 
-Choose **"From Onshape"** and search your released revisions without leaving the New Part form. Picking one
-fills the form in; you finish it like any other part.
+The New Part form has a **Create from** row listing every system you have connected. Choose Onshape and
+search your released revisions without leaving the form. Picking one fills the form in; you finish it like any
+other part. Choosing Onshape again returns you to a blank part.
+
+The button only appears once Onshape is connected, so a company that has not connected it sees the form
+exactly as before.
 
 Only two fields are fixed: the **Part ID** and the **Revision** come from Onshape and cannot be edited. They
 are what future releases of this part are matched on, so a Carbon part numbered differently from the CAD it
@@ -182,7 +186,7 @@ alongside it. Carbon allows parallel notices on one part, so review both before 
 
 <Callout type="warn" title="A release never invents a part Carbon has not seen.">
 A release is applied to the item linked to that Onshape part. If nothing is linked, the release is reported
-and skipped by default: create the part with **"From Onshape"**, or import the assembly it belongs to, and
+and skipped by default: create the part from Onshape, or import the assembly it belongs to, and
 release it again. A part minted from a webhook lands on assumptions for tracking and replenishment that
 Onshape never stated, which is why turning that on is a deliberate choice — see **Create the part when a
 release names one Carbon does not have**.

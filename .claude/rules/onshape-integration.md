@@ -6,6 +6,7 @@ paths:
   - apps/erp/app/routes/api+/webhook.onshape.$companyId.ts
   - apps/erp/app/components/Onshape*.tsx
   - apps/erp/app/hooks/useOnshape.ts
+  - apps/erp/app/hooks/useItemSources.ts
   - apps/erp/app/hooks/useOnshapeImportStatus.tsx
   - apps/erp/app/modules/items/ui/Parts/onshapePartSource.ts
 ---
@@ -773,19 +774,27 @@ Metadata is one request per element, so cap the fan-out and report it.
 
 ## The UI
 
-- `PartsTable` — "From Onshape" is a LINK to `${path.to.newPart}?source=onshape`,
-  not a modal. The `OnshapeCreatePart` modal it used to open was deleted: it
-  re-implemented three fields the New Part form already has and could not reach
-  the other twelve, and the two surfaces had already diverged on how they seeded
-  replenishment.
-- `PartForm` — owns the create-from-Onshape flow, behind an explicit
-  `withOnshapeSource` prop (never inferred from `type`: the three inline-create
+- `useItemSources` — the registry the source picker renders. One row per system
+  a part can be created FROM (`{ id, name, Wordmark }`), filtered by
+  `useIntegrations().has(id)`. Onshape is the only row today; a second CAD/PDM
+  integration joins the New Part form by adding one, not by branching the form.
+  The filter is presentation only — every create route re-reads the connection
+  server-side and refuses a company that never connected, so an empty list is
+  never what keeps a source off a company.
+- `PartsTable` — one wordmark button per connected source, each a LINK to
+  `${path.to.newPart}?source=<id>`, not a modal. The `OnshapeCreatePart` modal it
+  used to open was deleted: it re-implemented three fields the New Part form
+  already has and could not reach the other twelve, and the two surfaces had
+  already diverged on how they seeded replenishment.
+- `PartForm` — owns the create-from-a-source flow, behind an explicit
+  `withItemSources` prop (never inferred from `type`: the three inline-create
   callers in `components/Form/{Part,Item,Items}.tsx` read a PostgrestResponse
-  back and would break if this form could redirect them). The "From Onshape"
-  button is gated on `useOnshape().isConnected` alone. Choosing it renders
-  `OnshapeRevisionSearch` INLINE, in the modal the user is already filling in —
-  the old nested picker-modal hid the form behind a dialog opened to choose one
-  value.
+  back and would break if this form could redirect them). `defaultSourceId` opens
+  one on mount and is what `?source=` feeds. `source === null` is the blank part,
+  and clicking the picked wordmark a second time returns to it. Picking Onshape
+  renders `OnshapeRevisionSearch` INLINE, in the modal the user is already
+  filling in — the old nested picker-modal hid the form behind a dialog opened to
+  choose one value.
 - **Exactly two fields are frozen under a selection: Part ID and Revision.** Both
   as `InputControlled … isReadOnly` — `isReadOnly`, because a DISABLED input
   submits nothing and the client-side `partValidator` would fail on them first;
