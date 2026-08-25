@@ -53,6 +53,10 @@
 #   - Refuses to run if the worktree isn't registered in ~/.carbon/dev-ports.json.
 #
 set -euo pipefail
+# Private, unpredictable error-log path (a fixed /tmp name is symlink-attackable
+# and can be pre-created by another local user).
+RESTORE_LOG="$(mktemp "${TMPDIR:-/tmp}/restore-errors.XXXXXX.log")"
+RESTORE_INCOMPLETE=""
 ADMIN_EMAIL="${ADMIN_EMAIL:-}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-localpass}"
 SCRUB_EMAILS="${SCRUB_EMAILS:-}"
@@ -132,30 +136,47 @@ END \$\$;
 echo "▶ Restoring backup (this can take several minutes)"
 if head -c 5 "$BACKUP_FILE" | grep -q '^PGDMP'; then
   echo "  → custom-format archive detected, using pg_restore"
+  # `|| true`: pg_restore exits nonzero whenever ANY error occurred, including
+  # the expected 'already exists' noise, so its exit code cannot gate the script.
   pg_restore -h 127.0.0.1 -p "$PORT_DB" -U supabase_admin -d postgres \
     --no-owner --no-privileges \
-    "$BACKUP_FILE" 2> /tmp/restore-errors.log || true
+    "$BACKUP_FILE" 2> "$RESTORE_LOG" || true
+  restore_pipe=(0 0)
 else
   # Plain-text SQL: strip PG17 \restrict/\unrestrict so psql isn't sandboxed.
-  # `|| true` (matching the pg_restore branch): if the server drops the
+  # The pipeline must not run bare under `set -e`: if the server drops the
   # connection mid-restore (e.g. a crash on a schema-drifted COPY), psql exits
-  # 2 and `set -e` would otherwise kill the script HERE — silently skipping
-  # localization, the SCRUB_EMAILS scrub, and the admin grant, and leaving
-  # real production emails in the local DB with no warning.
-  sed -E '/^\\(restrict|unrestrict)([[:space:]]|$)/d' "$BACKUP_FILE" \
-    | $PSQL_SA -v ON_ERROR_STOP=0 2> /tmp/restore-errors.log || true
+  # 2 and the script would die HERE — silently skipping localization, the
+  # SCRUB_EMAILS scrub, and the admin grant, leaving real production emails in
+  # the local DB with no warning. But a blanket `|| true` would ALSO swallow an
+  # unreadable backup or a psql that never connected, so capture PIPESTATUS and
+  # sort the failure modes out below.
+  if sed -E '/^\\(restrict|unrestrict)([[:space:]]|$)/d' "$BACKUP_FILE" \
+    | $PSQL_SA -v ON_ERROR_STOP=0 2> "$RESTORE_LOG"; then
+    restore_pipe=(0 0)
+  else
+    restore_pipe=("${PIPESTATUS[@]}")
+  fi
 fi
-err_count=$(grep -ci '^\(pg_restore: \)\?error' /tmp/restore-errors.log || true)
-echo "  → /tmp/restore-errors.log ($err_count errors; most are harmless 'already exists' / role permission noise)"
-# If the connection died mid-restore, Docker restarts Postgres — but the steps
-# below (superuser re-grant, localization, email scrub) each need a live
-# connection. Say what happened, then wait for the server to come back rather
-# than failing them one by one; if it never returns, fail loudly instead of
-# ending the script with unscrubbed data on disk.
-if grep -qE 'server closed the connection|connection to server was lost' /tmp/restore-errors.log; then
+err_count=$(grep -ci '^\(pg_restore: \)\?error' "$RESTORE_LOG" || true)
+echo "  → $RESTORE_LOG ($err_count errors; most are harmless 'already exists' / role permission noise)"
+# Sort out how the restore ended. A dropped server connection is the one
+# failure we deliberately continue through (Docker restarts Postgres, and the
+# post-restore safety steps — localization, email scrub — must still run over
+# whatever data landed); the script then exits nonzero at the END. Note the
+# connection-loss check comes first: when psql dies mid-pipe, sed is killed by
+# SIGPIPE too, so its exit code is only meaningful when the connection held.
+if grep -qE 'server closed the connection|connection to server was lost' "$RESTORE_LOG"; then
+  RESTORE_INCOMPLETE=1
   echo "  ⚠ the server connection dropped during the restore — the restored data is"
-  echo "    likely INCOMPLETE (see /tmp/restore-errors.log). Waiting for Postgres to"
+  echo "    likely INCOMPLETE (see $RESTORE_LOG). Waiting for Postgres to"
   echo "    come back so the post-restore steps (email scrub, localization) still run."
+elif [[ "${restore_pipe[0]:-0}" -ne 0 ]]; then
+  echo "✗ Could not read the backup file (exit ${restore_pipe[0]}) — nothing was restored." >&2
+  exit 1
+elif [[ "${restore_pipe[1]:-0}" -ne 0 ]]; then
+  echo "✗ psql failed before the data load completed (exit ${restore_pipe[1]}) — see $RESTORE_LOG" >&2
+  exit 1
 fi
 for attempt in $(seq 1 30); do
   if $PSQL_PG -c 'SELECT 1' >/dev/null 2>&1; then
@@ -505,20 +526,71 @@ if [[ -n "$SCRUB_EMAILS" ]]; then
   "
   # The scrub was explicitly requested, so an incomplete one is a FAILURE, not
   # a table of numbers to eyeball. Only the preserved admin may remain (one row
-  # each in auth.users and public.user).
-  LEAKED=$($PSQL_PG -At -c "
-    SELECT (SELECT count(*) FROM auth.users      WHERE email IS NOT NULL AND email NOT LIKE '%@example.test')
-         + (SELECT count(*) FROM public.\"user\" WHERE email IS NOT NULL AND email NOT LIKE '%@example.test')
-         + (SELECT count(*) FROM public.company  WHERE email IS NOT NULL AND email NOT LIKE '%@example.test')
-         + (SELECT count(*) FROM public.contact  WHERE email IS NOT NULL AND email NOT LIKE '%@example.test');
-  ")
+  # each in auth.users and public.user). The assertion walks the SAME
+  # (table, column) mapping the scrub does — guarded by information_schema, so
+  # a dump predating one of the tables passes instead of erroring — and any
+  # column added to the scrub must be added here too.
+  LEAKED=$($PSQL_PG -Atq <<'SQL'
+CREATE TEMP TABLE _scrub_leaks(n BIGINT);
+DO $$
+DECLARE
+  r RECORD;
+  c BIGINT;
+  total BIGINT := 0;
+BEGIN
+  FOR r IN
+    SELECT * FROM (VALUES
+      ('auth',   'users',           'email'),
+      ('public', 'user',            'email'),
+      ('public', 'company',         'email'),
+      ('public', 'contact',         'email'),
+      ('public', 'invite',          'email'),
+      ('public', 'companySettings', 'accountsPayableEmail'),
+      ('public', 'companySettings', 'accountsReceivableEmail'),
+      ('public', 'companyAccountsPayableBillingAddress',    'email'),
+      ('public', 'companyAccountsReceivableBillingAddress', 'email'),
+      ('public', 'quote',           'digitalQuoteAcceptedByEmail'),
+      ('public', 'quote',           'digitalQuoteRejectedByEmail')
+    ) AS t(schema_name, table_name, column_name)
+  LOOP
+    IF EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = r.schema_name AND table_name = r.table_name
+        AND column_name = r.column_name
+    ) THEN
+      EXECUTE format(
+        'SELECT count(*) FROM %I.%I WHERE %I IS NOT NULL AND %I NOT LIKE %L',
+        r.schema_name, r.table_name, r.column_name, r.column_name, '%@example.test'
+      ) INTO c;
+      total := total + c;
+    END IF;
+  END LOOP;
+  INSERT INTO _scrub_leaks VALUES (total);
+END $$;
+SELECT n FROM _scrub_leaks;
+SQL
+  )
   ALLOWED=0
   [[ -n "$ADMIN_USER_ID" ]] && ALLOWED=2
-  if [[ "${LEAKED:-0}" -gt "$ALLOWED" ]]; then
-    echo "✗ SCRUB_EMAILS was set but $LEAKED real email addresses remain (see the" >&2
-    echo "  counts above). The restore may have failed partway — check" >&2
-    echo "  /tmp/restore-errors.log, then re-run this script." >&2
+  # An EMPTY result means the verification query itself failed — refuse rather
+  # than let a broken check read as a clean scrub.
+  if [[ -z "$LEAKED" ]]; then
+    echo "✗ The scrub verification query failed — treat the scrub as NOT verified." >&2
     exit 1
   fi
+  if [[ "$LEAKED" -gt "$ALLOWED" ]]; then
+    echo "✗ SCRUB_EMAILS was set but $LEAKED real email addresses remain (see the" >&2
+    echo "  counts above). The restore may have failed partway — check" >&2
+    echo "  $RESTORE_LOG, then re-run this script." >&2
+    exit 1
+  fi
+fi
+# An interrupted data load is a failed restore even though the safety steps
+# above ran — exit nonzero so callers (crbn restore, CI) see it.
+if [[ -n "$RESTORE_INCOMPLETE" ]]; then
+  echo "✗ The server connection dropped during the restore, so the data load is likely" >&2
+  echo "  incomplete. Localization and the email scrub DID run over what landed." >&2
+  echo "  Check $RESTORE_LOG, then re-run this script end-to-end." >&2
+  exit 1
 fi
 echo "✅ Done — Studio: http://127.0.0.1:$((PORT_DB+2))   (port_db+2 is the Studio port crbn assigned)"
