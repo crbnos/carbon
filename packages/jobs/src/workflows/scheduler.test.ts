@@ -122,7 +122,7 @@ describe("planClaims", () => {
     id,
     companyId: "cmp_1",
     ownerId: "usr_1",
-    activeVersionId: "wfv_1",
+    publishedVersionId: "wfv_1",
     nextRunAt: new Date("2026-08-01T09:00:00Z"),
     nodes
   });

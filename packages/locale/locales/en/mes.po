@@ -515,6 +515,9 @@ msgstr "Finish {0}"
 msgid "Finish Anyways"
 msgstr "Finish Anyways"
 
+msgid "Finish setting up your account"
+msgstr "Finish setting up your account"
+
 msgid "Finish with material unpicked?"
 msgstr "Finish with material unpicked?"
 
@@ -523,6 +526,9 @@ msgstr "Forgot to Clock Out?"
 
 msgid "Go back to operation"
 msgstr "Go back to operation"
+
+msgid "Go to onboarding"
+msgstr "Go to onboarding"
 
 msgid "How many were actually picked?"
 msgstr "How many were actually picked?"
@@ -1496,6 +1502,9 @@ msgstr "You clocked in at <0/>. You can edit your clock-out time below or acknow
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
+
+msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
+msgstr "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Your organization requires an authenticator app. Set it up in Carbon, then come back here."

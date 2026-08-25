@@ -174,6 +174,9 @@ msgstr "{from}–{to} / {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} / {count} işlem"
 
+msgid "{hiddenCount} more: {hiddenNames}"
+msgstr ""
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -2604,8 +2607,8 @@ msgstr "Parçalarınızı, BOM'larınızı, İşlem Faturasını ve maliyetlendi
 msgid "Browse library"
 msgstr "Kütüphaneyi göz at"
 
-msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
-msgstr "Canlı sürümü salt okunur şekilde inceleyin. Yine de adımları düzenlenecek şekilde yeniden düzenleyebilirsiniz."
+msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
+msgstr ""
 
 msgid "Bucket"
 msgstr "Kova"
@@ -8177,6 +8180,9 @@ msgstr "Düzenlenme Tarihi"
 msgid "Issues"
 msgstr "Sorunlar"
 
+msgid "It will stop running until you publish a version again. Nothing is deleted."
+msgstr ""
+
 msgid "ITAR Certifications"
 msgstr "ITAR Sertifikaları"
 
@@ -8536,6 +8542,9 @@ msgstr "Daha az manuel çalışma"
 msgid "Less manual work, fewer errors"
 msgstr "Daha az manuel çalışma, daha az hata"
 
+msgid "Let's Build"
+msgstr ""
+
 msgid "Let's build something"
 msgstr "Bir şeyler inşa edelim"
 
@@ -8654,17 +8663,11 @@ msgstr "Liste Parametreleri"
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
 msgstr "Listeler hem {0} hem de {1} öğelerine bağlıdır, bu nedenle bu adım hangisinin üzerinde tekrarlanacağını belirleyemez. Listeyi yalnızca birine bırakın."
 
-msgid "Live"
-msgstr "Canlı"
-
 msgid "Live on Carbon"
 msgstr "Carbon'da Canlı"
 
 msgid "Live reloading"
 msgstr "Canlı yeniden yükleniyor"
-
-msgid "Live Version"
-msgstr "Canlı Sürüm"
 
 msgid "Load newer"
 msgstr "Daha yenisini yükle"
@@ -8731,9 +8734,6 @@ msgstr "Kilitli"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "Dönemin kilitlenmesi, işletme belgelerine (makbuzlar, sevkiyatlar, faturalar) yönelik olarak salt okunur hale getirirken, amortisman ve elden çıkarma gibi muhasebe düzeltmelerine izin vermeye devam eder. Dönem kapatılmadan önce kilitlenmesi gerekir."
-
-msgid "Log In"
-msgstr "Oturum Aç"
 
 msgid "Log nonconformances and drive a CAPA"
 msgstr "Uygunsuzlukları kaydedin ve CAPA başlatın"
@@ -11721,6 +11721,9 @@ msgstr "Yayımlandı"
 msgid "Published by Carbon"
 msgstr "Carbon tarafından yayınlandı"
 
+msgid "Published Version"
+msgstr ""
+
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "Yayımlanmış sürümler düzenlenemez. Salt okunur şekilde inceleyin veya değişiklik yapmak için yeni bir sürüm oluşturun."
 
@@ -13990,6 +13993,9 @@ msgstr "Oluşturulan PDF'lerin her sayfasının arkasında soluk bir arka plan o
 msgid "Shown to the user when this rule fails."
 msgstr "Bu kural başarısız olduğunda kullanıcıya gösterilir."
 
+msgid "Sign in to Carbon"
+msgstr ""
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Sihirli bağlantı yerine biyometrik kimlik doğrulama ile oturum açın. Geçiş Anahtarları Face ID, Touch ID veya cihaz PIN'iniz tarafından korunur."
 
@@ -15892,11 +15898,11 @@ msgstr "Bu sürüm değişiklik bildirimi <0>{0}</0> ile ilgilidir. Orada düzen
 msgid "This version cannot be opened"
 msgstr "Bu sürüm açılamıyor"
 
-msgid "This version is live"
-msgstr "Bu versiyon yayında"
+msgid "This version is published"
+msgstr ""
 
-msgid "This version is live. Create a new version to edit."
-msgstr "Bu sürüm canlı. Düzenlemek için yeni bir sürüm oluşturun."
+msgid "This version is published. Create a new version to edit."
+msgstr ""
 
 msgid "This version's definition could not be read."
 msgstr "Bu sürümün tanımı okunamadı."
@@ -16486,6 +16492,12 @@ msgstr "Sabitlemeyi Kaldır {0}"
 msgid "Unposted Documents"
 msgstr "Deftere Geçmemiş Belgeler"
 
+msgid "Unpublish"
+msgstr ""
+
+msgid "Unpublish {name}?"
+msgstr ""
+
 msgid "Unreceived POs"
 msgstr "Alınmamış PO'lar"
 
@@ -16843,9 +16855,9 @@ msgstr "E-posta adresinizi doğrulayın"
 msgid "Version"
 msgstr "Sürüm"
 
-#. placeholder {0}: live.versionNumber
-msgid "Version {0} is live now and will be replaced."
-msgstr "Sürüm {0} şimdi yayında ve değiştirilecektir."
+#. placeholder {0}: published.versionNumber
+msgid "Version {0} is published now and will be replaced."
+msgstr ""
 
 msgid "Versions"
 msgstr "Sürümler"
@@ -17728,6 +17740,9 @@ msgstr "Bu partiyi aldınız"
 
 msgid "You're live on Carbon"
 msgstr "Carbon'da canlısınız"
+
+msgid "You're one step away from your workspace."
+msgstr ""
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "Carbon'ı kendiniz kendi hızınızda ayarlıyorsunuz"

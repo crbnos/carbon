@@ -174,6 +174,9 @@ msgstr "{from}–{to} of {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} of {count} operations"
 
+msgid "{hiddenCount} more: {hiddenNames}"
+msgstr "{hiddenCount} more: {hiddenNames}"
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -2604,8 +2607,8 @@ msgstr "Bring in your parts, BOMs, Bill of Process, and costing — with Carbon'
 msgid "Browse library"
 msgstr "Browse library"
 
-msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
-msgstr "Browse the live version read-only. You can still rearrange steps to tidy the layout."
+msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
+msgstr "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 
 msgid "Bucket"
 msgstr "Bucket"
@@ -8177,6 +8180,9 @@ msgstr "Issued Date"
 msgid "Issues"
 msgstr "Issues"
 
+msgid "It will stop running until you publish a version again. Nothing is deleted."
+msgstr "It will stop running until you publish a version again. Nothing is deleted."
+
 msgid "ITAR Certifications"
 msgstr "ITAR Certifications"
 
@@ -8536,6 +8542,9 @@ msgstr "Less manual work"
 msgid "Less manual work, fewer errors"
 msgstr "Less manual work, fewer errors"
 
+msgid "Let's Build"
+msgstr "Let's Build"
+
 msgid "Let's build something"
 msgstr "Let's build something"
 
@@ -8654,17 +8663,11 @@ msgstr "List Parameters"
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
 msgstr "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
 
-msgid "Live"
-msgstr "Live"
-
 msgid "Live on Carbon"
 msgstr "Live on Carbon"
 
 msgid "Live reloading"
 msgstr "Live reloading"
-
-msgid "Live Version"
-msgstr "Live Version"
 
 msgid "Load newer"
 msgstr "Load newer"
@@ -8731,9 +8734,6 @@ msgstr "Locked"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
-
-msgid "Log In"
-msgstr "Log In"
 
 msgid "Log nonconformances and drive a CAPA"
 msgstr "Log nonconformances and drive a CAPA"
@@ -11721,6 +11721,9 @@ msgstr "Published"
 msgid "Published by Carbon"
 msgstr "Published by Carbon"
 
+msgid "Published Version"
+msgstr "Published Version"
+
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 
@@ -13990,6 +13993,9 @@ msgstr "Shown as a faint background behind every page of generated PDFs"
 msgid "Shown to the user when this rule fails."
 msgstr "Shown to the user when this rule fails."
 
+msgid "Sign in to Carbon"
+msgstr "Sign in to Carbon"
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 
@@ -15892,11 +15898,11 @@ msgstr "This version belongs to change notice <0>{0}</0>. Edit it there."
 msgid "This version cannot be opened"
 msgstr "This version cannot be opened"
 
-msgid "This version is live"
-msgstr "This version is live"
+msgid "This version is published"
+msgstr "This version is published"
 
-msgid "This version is live. Create a new version to edit."
-msgstr "This version is live. Create a new version to edit."
+msgid "This version is published. Create a new version to edit."
+msgstr "This version is published. Create a new version to edit."
 
 msgid "This version's definition could not be read."
 msgstr "This version's definition could not be read."
@@ -16486,6 +16492,12 @@ msgstr "Unpin {0}"
 msgid "Unposted Documents"
 msgstr "Unposted Documents"
 
+msgid "Unpublish"
+msgstr "Unpublish"
+
+msgid "Unpublish {name}?"
+msgstr "Unpublish {name}?"
+
 msgid "Unreceived POs"
 msgstr "Unreceived POs"
 
@@ -16843,9 +16855,9 @@ msgstr "Verify your email"
 msgid "Version"
 msgstr "Version"
 
-#. placeholder {0}: live.versionNumber
-msgid "Version {0} is live now and will be replaced."
-msgstr "Version {0} is live now and will be replaced."
+#. placeholder {0}: published.versionNumber
+msgid "Version {0} is published now and will be replaced."
+msgstr "Version {0} is published now and will be replaced."
 
 msgid "Versions"
 msgstr "Versions"
@@ -17732,6 +17744,9 @@ msgstr "You received this lot"
 
 msgid "You're live on Carbon"
 msgstr "You're live on Carbon"
+
+msgid "You're one step away from your workspace."
+msgstr "You're one step away from your workspace."
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "You're setting Carbon up yourself, at your own pace"

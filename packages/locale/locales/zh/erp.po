@@ -174,6 +174,9 @@ msgstr "{from}–{to} 共 {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} / {count} 条操作"
 
+msgid "{hiddenCount} more: {hiddenNames}"
+msgstr ""
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -2604,8 +2607,8 @@ msgstr "导入您的零件、物料清单、工艺流程和成本——使用 Ca
 msgid "Browse library"
 msgstr "浏览库"
 
-msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
-msgstr "以只读方式浏览实时版本。您仍然可以重新排列步骤以整理布局。"
+msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
+msgstr ""
 
 msgid "Bucket"
 msgstr "存储桶"
@@ -8177,6 +8180,9 @@ msgstr "签发日期"
 msgid "Issues"
 msgstr "问题"
 
+msgid "It will stop running until you publish a version again. Nothing is deleted."
+msgstr ""
+
 msgid "ITAR Certifications"
 msgstr "ITAR 认证"
 
@@ -8536,6 +8542,9 @@ msgstr "更少的手动工作"
 msgid "Less manual work, fewer errors"
 msgstr "更少的手动工作，更少的错误"
 
+msgid "Let's Build"
+msgstr ""
+
 msgid "Let's build something"
 msgstr "让我们构建一些东西"
 
@@ -8654,17 +8663,11 @@ msgstr "列表参数"
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
 msgstr "列表同时连接到{0}和{1}，因此此步骤无法判断要在哪一个上重复。仅在其中一个上保留列表。"
 
-msgid "Live"
-msgstr "实时"
-
 msgid "Live on Carbon"
 msgstr "在 Carbon 上线"
 
 msgid "Live reloading"
 msgstr "实时重新加载"
-
-msgid "Live Version"
-msgstr "实时版本"
 
 msgid "Load newer"
 msgstr "加载更新"
@@ -8731,9 +8734,6 @@ msgstr "已锁定"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "锁定使期间对于业务单据（收据、装运、发票）为只读，同时仍允许进行折旧和处置等会计调整。期间在结束前必须被锁定。"
-
-msgid "Log In"
-msgstr "登录"
 
 msgid "Log nonconformances and drive a CAPA"
 msgstr "记录不符合项并推动纠正和预防措施"
@@ -11721,6 +11721,9 @@ msgstr "已发布"
 msgid "Published by Carbon"
 msgstr "由 Carbon 发布"
 
+msgid "Published Version"
+msgstr ""
+
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "已发布的版本无法编辑。以只读方式浏览，或创建新版本以进行更改。"
 
@@ -13990,6 +13993,9 @@ msgstr "作为淡色背景显示在每个生成的PDF页面后面"
 msgid "Shown to the user when this rule fails."
 msgstr "当此规则失败时向用户显示。"
 
+msgid "Sign in to Carbon"
+msgstr ""
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "使用生物识别而不是魔法链接登录。密钥由 Face ID、Touch ID 或您的设备 PIN 保护。"
 
@@ -15892,11 +15898,11 @@ msgstr "此版本属于变更通知<0>{0}</0>。请在那里编辑。"
 msgid "This version cannot be opened"
 msgstr "无法打开此版本"
 
-msgid "This version is live"
-msgstr "此版本已上线"
+msgid "This version is published"
+msgstr ""
 
-msgid "This version is live. Create a new version to edit."
-msgstr "此版本处于实时状态。创建新版本进行编辑。"
+msgid "This version is published. Create a new version to edit."
+msgstr ""
 
 msgid "This version's definition could not be read."
 msgstr "无法读取此版本的定义。"
@@ -16486,6 +16492,12 @@ msgstr "取消固定{0}"
 msgid "Unposted Documents"
 msgstr "未过账单据"
 
+msgid "Unpublish"
+msgstr ""
+
+msgid "Unpublish {name}?"
+msgstr ""
+
 msgid "Unreceived POs"
 msgstr "未收到的采购订单"
 
@@ -16843,9 +16855,9 @@ msgstr "验证您的电子邮件"
 msgid "Version"
 msgstr "版本"
 
-#. placeholder {0}: live.versionNumber
-msgid "Version {0} is live now and will be replaced."
-msgstr "版本 {0} 现已上线，将被替换。"
+#. placeholder {0}: published.versionNumber
+msgid "Version {0} is published now and will be replaced."
+msgstr ""
 
 msgid "Versions"
 msgstr "版本"
@@ -17728,6 +17740,9 @@ msgstr "你收到了这批货"
 
 msgid "You're live on Carbon"
 msgstr "您已在 Carbon 上线"
+
+msgid "You're one step away from your workspace."
+msgstr ""
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "您正在按照自己的节奏自行设置 Carbon"

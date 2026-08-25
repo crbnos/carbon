@@ -174,6 +174,9 @@ msgstr "{from}–{to} de {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} de {count} operaciones"
 
+msgid "{hiddenCount} more: {hiddenNames}"
+msgstr ""
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -2604,8 +2607,8 @@ msgstr "Importa tus piezas, BOMs, Bill of Process y costos — con las herramien
 msgid "Browse library"
 msgstr "Examinar biblioteca"
 
-msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
-msgstr "Examina la versión en directo en solo lectura. Aún puedes reorganizar los pasos para limpiar el diseño."
+msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
+msgstr ""
 
 msgid "Bucket"
 msgstr "Depósito"
@@ -8177,6 +8180,9 @@ msgstr "Fecha de Emisión"
 msgid "Issues"
 msgstr "Problemas"
 
+msgid "It will stop running until you publish a version again. Nothing is deleted."
+msgstr ""
+
 msgid "ITAR Certifications"
 msgstr "Certificaciones ITAR"
 
@@ -8536,6 +8542,9 @@ msgstr "Menos trabajo manual"
 msgid "Less manual work, fewer errors"
 msgstr "Menos trabajo manual, menos errores"
 
+msgid "Let's Build"
+msgstr ""
+
 msgid "Let's build something"
 msgstr "Construyamos algo"
 
@@ -8654,17 +8663,11 @@ msgstr "Parámetros de Lista"
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
 msgstr "Las listas están conectadas tanto a {0} como a {1}, por lo que este paso no puede determinar cuál repetir. Mantén una lista solo en una de ellas."
 
-msgid "Live"
-msgstr "Activo"
-
 msgid "Live on Carbon"
 msgstr "En vivo en Carbon"
 
 msgid "Live reloading"
 msgstr "Recarga en vivo"
-
-msgid "Live Version"
-msgstr "Versión activa"
 
 msgid "Load newer"
 msgstr "Cargar más recientes"
@@ -8731,9 +8734,6 @@ msgstr "Bloqueado"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "El bloqueo hace que el período sea de solo lectura para documentos operativos (recibos, envíos, facturas) mientras permite ajustes contables como depreciación y disposiciones. Un período debe bloquearse antes de poder cerrarse."
-
-msgid "Log In"
-msgstr "Iniciar sesión"
 
 msgid "Log nonconformances and drive a CAPA"
 msgstr "Registrar no conformidades e impulsar un CAPA"
@@ -11721,6 +11721,9 @@ msgstr "Publicado"
 msgid "Published by Carbon"
 msgstr "Publicado por Carbon"
 
+msgid "Published Version"
+msgstr ""
+
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "Las versiones publicadas no se pueden editar. Explora en solo lectura, o crea una nueva versión para hacer cambios."
 
@@ -13990,6 +13993,9 @@ msgstr "Se muestra como un fondo tenue detrás de cada página de los PDF genera
 msgid "Shown to the user when this rule fails."
 msgstr "Se muestra al usuario cuando esta regla falla."
 
+msgid "Sign in to Carbon"
+msgstr ""
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Inicie sesión con biometría en lugar de un enlace mágico. Las contraseñas de acceso están protegidas por Face ID, Touch ID o el PIN de su dispositivo."
 
@@ -15892,11 +15898,11 @@ msgstr "Esta versión pertenece al aviso de cambio <0>{0}</0>. Edítala allí."
 msgid "This version cannot be opened"
 msgstr "Esta versión no se puede abrir"
 
-msgid "This version is live"
-msgstr "Esta versión está en vivo"
+msgid "This version is published"
+msgstr ""
 
-msgid "This version is live. Create a new version to edit."
-msgstr "Esta versión está activa. Crea una nueva versión para editar."
+msgid "This version is published. Create a new version to edit."
+msgstr ""
 
 msgid "This version's definition could not be read."
 msgstr "La definición de esta versión no se pudo leer."
@@ -16486,6 +16492,12 @@ msgstr "Desfijar {0}"
 msgid "Unposted Documents"
 msgstr "Documentos No Contabilizados"
 
+msgid "Unpublish"
+msgstr ""
+
+msgid "Unpublish {name}?"
+msgstr ""
+
 msgid "Unreceived POs"
 msgstr "POs no recibidas"
 
@@ -16843,9 +16855,9 @@ msgstr "Verifica tu correo electrónico"
 msgid "Version"
 msgstr "Versión"
 
-#. placeholder {0}: live.versionNumber
-msgid "Version {0} is live now and will be replaced."
-msgstr "La versión {0} está activa ahora y será reemplazada."
+#. placeholder {0}: published.versionNumber
+msgid "Version {0} is published now and will be replaced."
+msgstr ""
 
 msgid "Versions"
 msgstr "Versiones"
@@ -17728,6 +17740,9 @@ msgstr "Recibiste este lote"
 
 msgid "You're live on Carbon"
 msgstr "Estás en vivo en Carbon"
+
+msgid "You're one step away from your workspace."
+msgstr ""
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "Estás configurando Carbon por tu cuenta, a tu propio ritmo"

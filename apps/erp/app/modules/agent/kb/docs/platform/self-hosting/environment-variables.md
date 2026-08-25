@@ -57,6 +57,7 @@ Resend API key for transactional email.
 Verified sending domain.
 Stripe secret key, Cloud / Enterprise billing.
 Verifies inbound Stripe webhooks.
+Verifies inbound Stripe Connect webhooks (connected-account events, signed with a separate secret).
 
 ## AI & analytics
 

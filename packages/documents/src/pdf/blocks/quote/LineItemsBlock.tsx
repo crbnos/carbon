@@ -190,9 +190,24 @@ export function LineItemsBlock({
                                   Tax & Fees
                                 </Text>
                                 {(price?.convertedShippingCost ?? 0) > 0 && (
-                                  <Text style={tw("text-[8px] text-gray-400")}>
-                                    - Shipping
-                                  </Text>
+                                  <View
+                                    style={tw("flex flex-row justify-between")}
+                                  >
+                                    <Text
+                                      style={tw(
+                                        "text-[8px] text-gray-400 flex-1 pr-2"
+                                      )}
+                                    >
+                                      - Shipping
+                                    </Text>
+                                    <Text
+                                      style={tw("text-[8px] text-gray-400")}
+                                    >
+                                      {numberFormatter.format(
+                                        price?.convertedShippingCost ?? 0
+                                      )}
+                                    </Text>
+                                  </View>
                                 )}
                                 {Object.values(additionalCharges)
                                   .filter(
@@ -203,18 +218,51 @@ export function LineItemsBlock({
                                   .sort((a, b) =>
                                     a.description.localeCompare(b.description)
                                   )
-                                  .map((charge) => (
+                                  .map((charge) => {
+                                    let chargeAmount =
+                                      charge.amounts?.[quantity] ?? 0;
+                                    if (shouldConvertCurrency)
+                                      chargeAmount *= exchangeRate;
+                                    return (
+                                      <View
+                                        key={charge.description}
+                                        style={tw(
+                                          "flex flex-row justify-between"
+                                        )}
+                                      >
+                                        <Text
+                                          style={tw(
+                                            "text-[8px] text-gray-400 flex-1 pr-2"
+                                          )}
+                                        >
+                                          - {charge.description}
+                                        </Text>
+                                        <Text
+                                          style={tw("text-[8px] text-gray-400")}
+                                        >
+                                          {numberFormatter.format(chargeAmount)}
+                                        </Text>
+                                      </View>
+                                    );
+                                  })}
+                                {taxPercent > 0 && (
+                                  <View
+                                    style={tw("flex flex-row justify-between")}
+                                  >
                                     <Text
-                                      key={charge.description}
+                                      style={tw(
+                                        "text-[8px] text-gray-400 flex-1 pr-2"
+                                      )}
+                                    >
+                                      - Tax ({formatPercent(taxPercent, locale)}
+                                      )
+                                    </Text>
+                                    <Text
                                       style={tw("text-[8px] text-gray-400")}
                                     >
-                                      - {charge.description}
+                                      {numberFormatter.format(taxAmount)}
                                     </Text>
-                                  ))}
-                                {taxPercent > 0 && (
-                                  <Text style={tw("text-[8px] text-gray-400")}>
-                                    - Tax ({formatPercent(taxPercent, locale)})
-                                  </Text>
+                                  </View>
                                 )}
                               </View>
                             )}

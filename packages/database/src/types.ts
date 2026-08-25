@@ -59171,8 +59171,6 @@ export type Database = {
       }
       workflow: {
         Row: {
-          active: boolean
-          activeVersionId: string | null
           canvasState: Json | null
           companyId: string
           createdAt: string
@@ -59182,12 +59180,11 @@ export type Database = {
           name: string
           nextRunAt: string | null
           ownerId: string
+          publishedVersionId: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
         Insert: {
-          active?: boolean
-          activeVersionId?: string | null
           canvasState?: Json | null
           companyId: string
           createdAt?: string
@@ -59197,12 +59194,11 @@ export type Database = {
           name: string
           nextRunAt?: string | null
           ownerId: string
+          publishedVersionId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
         Update: {
-          active?: boolean
-          activeVersionId?: string | null
           canvasState?: Json | null
           companyId?: string
           createdAt?: string
@@ -59212,17 +59208,11 @@ export type Database = {
           name?: string
           nextRunAt?: string | null
           ownerId?: string
+          publishedVersionId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "workflow_activeVersionId_fkey"
-            columns: ["activeVersionId", "companyId"]
-            isOneToOne: false
-            referencedRelation: "workflowVersion"
-            referencedColumns: ["id", "companyId"]
-          },
           {
             foreignKeyName: "workflow_companyId_fkey"
             columns: ["companyId"]
@@ -59320,6 +59310,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "workflow_publishedVersionId_fkey"
+            columns: ["publishedVersionId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "workflowVersion"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "workflow_updatedBy_fkey"
@@ -61156,6 +61153,7 @@ export type Database = {
             | Database["public"]["Enums"]["supersessionMode"]
             | null
           supplierIds: string | null
+          suppliers: string[] | null
           tags: string[] | null
           thumbnailPath: string | null
           unitOfMeasure: string | null
@@ -66060,6 +66058,7 @@ export type Database = {
             | Database["public"]["Enums"]["supersessionMode"]
             | null
           supplierIds: string | null
+          suppliers: string[] | null
           tags: string[] | null
           thumbnailPath: string | null
           unitOfMeasure: string | null
@@ -66952,6 +66951,7 @@ export type Database = {
             | Database["public"]["Enums"]["supersessionMode"]
             | null
           supplierIds: string | null
+          suppliers: string[] | null
           tags: string[] | null
           thumbnailPath: string | null
           unitOfMeasure: string | null
@@ -68515,14 +68515,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -71941,7 +71941,7 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -71955,7 +71955,7 @@ export type Database = {
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -72502,14 +72502,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -73320,6 +73320,7 @@ export type Database = {
           revision: string | null
           revisions: Json | null
           supplierIds: string | null
+          suppliers: string[] | null
           tags: string[] | null
           thumbnailPath: string | null
           unitOfMeasure: string | null
@@ -75201,6 +75202,7 @@ export type Database = {
             | Database["public"]["Enums"]["supersessionMode"]
             | null
           supplierIds: string | null
+          suppliers: string[] | null
           tags: string[] | null
           thumbnailPath: string | null
           unitOfMeasure: string | null
