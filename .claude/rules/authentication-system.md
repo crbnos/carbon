@@ -53,19 +53,26 @@ gated by `isAuthProviderEnabled(...)`.
 Routes live under `_public+/` (`login`, `callback`, `logout`, `magic-link`, `verify`,
 `invite.$code`, `refresh-session`). MES mirrors a subset under its own `_public+/`.
 
-## Enterprise SAML SSO (`sso.server.ts` + `ssoConnection`)
+## Enterprise SAML SSO (`@carbon/ee/sso.server` + `ssoConnection`)
 
-Self-hosted-only (direct `auth.identities` writes), Enterprise edition, gated by
-`sso` in `AUTH_PROVIDERS`. Design record: `.ai/specs/2026-08-21-enterprise-saml-sso.md`.
+Self-hosted-only (direct `auth.identities` writes). The whole feature lives in
+`packages/ee/src/sso/` behind **`isSsoEnabled()`** (`gate.ts`): Enterprise
+edition AND `sso` in `AUTH_PROVIDERS`. The connection lookups and admin
+mutations SELF-GATE on it (they answer "no connection" / refuse without
+querying), and every route entry point checks it too — login buttons, the
+`sso.check` endpoints, the settings action, and the callbacks' SSO branch
+(which then also skips the `admin.getUserById` call). `@carbon/auth` keeps only
+`AuthSession.ssoProviderId` + its preservation across refresh. Design record:
+`.ai/specs/2026-08-21-enterprise-saml-sso.md`.
 
-- **Provider management**: `packages/auth/src/services/sso.server.ts` wraps the GoTrue
+- **Provider management**: `packages/ee/src/sso/provider.server.ts` wraps the GoTrue
   admin SSO API (`create/update/delete/getGoTrueSsoProvider`, service-role key).
   `getSamlSpUrls()` returns the UN-prefixed `/sso/saml/{acs,metadata}` URLs — GoTrue
   self-declares its SP entityID/ACS from `API_EXTERNAL_URL` without `/auth/v1` and
   validates each assertion's `Destination` against that exact URL; Kong routes `/sso/`
   (`kong.yml` `auth-v1-sso`). Admin UX: Settings → Security (`x+/settings+/security.tsx`,
   action `x+/settings+/sso.tsx`) via `upsertSsoConnection` / `updateSsoRequireSso` /
-  `deactivateSsoConnection` in ERP `settings.server.ts`.
+  `deactivateSsoConnection` in `connections.server.ts`.
 - **`ssoConnection` table** (migration `20260820215433`; partial unique index also
   in `20260825185617` for pre-squash DBs) binds a provider to a company:
   `providerId` UNIQUE, `domains TEXT[]`, `metadataUrl` XOR `metadataXml` (CHECK),
@@ -89,7 +96,7 @@ Self-hosted-only (direct `auth.identities` writes), Enterprise edition, gated by
   under FOR UPDATE). No invite → rejected, orphan auth user deleted. MES defers first
   login to ERP.
 - **Require SSO** (`ssoConnection.requireSso`): `isSsoRequiredForEmail`
-  (`@carbon/auth/sso.server`, like all connection lookups —
+  (`connections.server.ts`, like all connection lookups —
   `getSsoConnectionByDomain` / `getSsoConnectionByProviderId` are the ONE copy
   shared by ERP, MES, and jobs) refuses non-SSO logins server-side at the login
   actions, the callbacks' non-SSO branch, and the passkey verify routes in both
@@ -101,9 +108,11 @@ Self-hosted-only (direct `auth.identities` writes), Enterprise edition, gated by
 - **Trigger**: `create_public_user()` SKIPS (inserts nothing) when the new auth user's
   email already belongs to a DIFFERENT `public."user"` row — the callback migration
   owns that case; inserting would FK/unique-crash GoTrue's signup transaction.
-- **Invites**: `getSsoAwareInviteLink` (`@carbon/auth/sso.server`; used by the ERP
+- **Invites**: `getSsoAwareInviteLink` (`connections.server.ts`; used by the ERP
   invite routes and jobs `user-admin.ts`) routes covered-domain invite emails to
   `/login?email=...` instead of `/invite/<code>`, so the IdP is never bypassed.
+  Employee invites outside the covered domains are refused up front
+  (`getSsoInviteDomainError` in ERP `users.server.ts` → `uncoveredSsoDomainError`).
 - **Config**: GoTrue SAML via `SAML_ENABLED` / `SAML_PRIVATE_KEY` in root `.env`
   (compose substitution → `GOTRUE_SAML_*`; `crbn reload` does not read root `.env` —
   see `.ai/lessons.md`).

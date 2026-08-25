@@ -2,15 +2,16 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import {
+  deactivateSsoConnection,
+  isSsoEnabled,
+  updateSsoRequireSso,
+  upsertSsoConnection
+} from "@carbon/ee/sso.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { ssoConnectionValidator } from "~/modules/settings";
-import {
-  deactivateSsoConnection,
-  updateSsoRequireSso,
-  upsertSsoConnection
-} from "~/modules/settings/settings.server";
 import { path } from "~/utils/path";
 
 // Action-only route — the SSO admin UI lives on the Security screen. A direct
@@ -24,6 +25,19 @@ export async function action({ request }: ActionFunctionArgs) {
   const { companyId, userId } = await requirePermissions(request, {
     update: "settings"
   });
+
+  // Defense in depth on top of the ee module's self-gating: a non-Enterprise
+  // deployment (or one without `sso` in AUTH_PROVIDERS) refuses the whole
+  // action even if a client posts to it directly.
+  if (!isSsoEnabled()) {
+    throw redirect(
+      path.to.security,
+      await flash(
+        request,
+        error(null, "Single sign-on requires Carbon Enterprise edition")
+      )
+    );
+  }
 
   const formData = await request.formData();
   const intent = formData.get("intent");

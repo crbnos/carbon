@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from "vitest";
 // Isolation mock — settings.models transitively imports @carbon/glossary,
 // whose Lingui `msg` macro calls only work under the app's vite macro
 // transform. The validator under test never touches glossary content.
-// (Mirrors users.sso.server.test.ts.)
 vi.mock("@carbon/glossary", () => ({
   getDefinitionText: vi.fn(),
   getEntry: vi.fn(),

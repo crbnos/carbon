@@ -1,14 +1,24 @@
 import type { User, UserIdentity } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
 
-// Isolation mocks — sso.server reads env constants and constructs a logger at
-// module load; stub them so the pure provider-extraction logic runs alone.
-// (Mirrors session-timeout.test.ts.)
-vi.mock("@carbon/env", () => ({
-  SUPABASE_URL: "http://localhost",
-  SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",
-  getAppUrl: () => "http://localhost:3000"
-}));
+// Isolation mocks — the SSO module reads env constants and constructs a logger
+// at module load; stub them so the pure logic runs alone. `enabled` makes the
+// isSsoEnabled() gate controllable per test (CarbonEdition stays Enterprise;
+// the AUTH_PROVIDERS half of the gate flips).
+const enabled = { sso: true };
+
+vi.mock("@carbon/env", async () => {
+  const { Edition } =
+    await vi.importActual<typeof import("@carbon/utils")>("@carbon/utils");
+  return {
+    SUPABASE_URL: "http://localhost",
+    SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",
+    getAppUrl: () => "http://localhost:3000",
+    CarbonEdition: Edition.Enterprise,
+    isAuthProviderEnabled: (provider: string) =>
+      provider === "sso" && enabled.sso
+  };
+});
 
 vi.mock("@carbon/logger", () => ({
   getLogger: () => ({
@@ -20,8 +30,10 @@ vi.mock("@carbon/logger", () => ({
 }));
 
 const { getSsoProviderIdFromSession, getSsoProviderIdFromUser } = await import(
-  "./sso.server"
+  "./session.server"
 );
+const { getSsoAwareInviteLink, isSsoRequiredForEmail, upsertSsoConnection } =
+  await import("./connections.server");
 
 function makeUser(overrides: {
   identityProviders?: string[];
@@ -130,10 +142,6 @@ describe("getSsoProviderIdFromSession", () => {
   });
 });
 
-const { getSsoAwareInviteLink, isSsoRequiredForEmail } = await import(
-  "./sso.server"
-);
-
 // Chainable supabase-client stub: every builder method records its args and
 // returns the builder; maybeSingle resolves the canned result. Enough surface
 // for the ssoConnection lookups without a real PostgREST client.
@@ -241,5 +249,37 @@ describe("isSsoRequiredForEmail", () => {
       true
     );
     expect(calls.contains?.[0]).toEqual(["domains", ["acme.com"]]);
+  });
+});
+
+describe("isSsoEnabled gate (AUTH_PROVIDERS half toggled off)", () => {
+  it("makes the lookups answer 'no connection' WITHOUT querying, and refuses admin mutations", async () => {
+    enabled.sso = false;
+    try {
+      const { client, calls } = makeSsoClient({
+        data: { requireSso: true },
+        error: null
+      });
+      await expect(
+        isSsoRequiredForEmail(client, "jane@acme.com")
+      ).resolves.toBe(false);
+      await expect(
+        getSsoAwareInviteLink(client, "jane@acme.com", "CODE123")
+      ).resolves.toBe("http://localhost:3000/invite/CODE123");
+      expect(calls.from).toBeUndefined();
+
+      const upsert = await upsertSsoConnection(client, {
+        companyId: "c1",
+        metadataUrl: "https://idp.example.com/metadata",
+        domains: ["acme.com"],
+        userId: "user_1"
+      });
+      expect(upsert.error).toBe(
+        "Single sign-on requires Carbon Enterprise edition"
+      );
+      expect(calls.from).toBeUndefined();
+    } finally {
+      enabled.sso = true;
+    }
   });
 });

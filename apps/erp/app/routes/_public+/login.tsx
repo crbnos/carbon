@@ -23,9 +23,9 @@ import {
   getAuthSession,
   setAuthSession
 } from "@carbon/auth/session.server";
-import { isSsoRequiredForEmail } from "@carbon/auth/sso.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { sendVerificationCode } from "@carbon/auth/verification.server";
+import { isSsoEnabled, isSsoRequiredForEmail } from "@carbon/ee/sso.server";
 import { Hidden, Input, Submit, ValidatedForm, validator } from "@carbon/form";
 import { AccountLockout, Ratelimit, redis } from "@carbon/kv";
 import {
@@ -74,8 +74,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const hasOutlookAuth = isAuthProviderEnabled("azure");
   const hasGoogleAuth = isAuthProviderEnabled("google");
   const hasPasskeyAuth = isAuthProviderEnabled("passkey");
-  const hasSsoAuth =
-    isAuthProviderEnabled("sso") && CarbonEdition === Edition.Enterprise;
+  const hasSsoAuth = isSsoEnabled();
 
   if (authSession) {
     if (await verifyAuthSession(authSession)) {

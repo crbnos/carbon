@@ -1,13 +1,16 @@
 import {
   assertIsPost,
-  CarbonEdition,
   CONTROLLED_ENVIRONMENT,
   error,
   success
 } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getSamlSpUrls } from "@carbon/auth/sso.server";
+import {
+  getSamlSpUrls,
+  getSsoConnection,
+  isSsoEnabled
+} from "@carbon/ee/sso.server";
 import { ValidatedForm } from "@carbon/form";
 import {
   Badge,
@@ -33,7 +36,6 @@ import {
   Switch,
   VStack
 } from "@carbon/react";
-import { Edition } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
@@ -41,13 +43,11 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, Link, redirect, useFetcher, useLoaderData } from "react-router";
 import { Hidden, Input, Submit, TextArea } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { useFlags } from "~/hooks/useFlags";
 import { useSettings } from "~/hooks/useSettings";
 import {
   ssoConnectionValidator,
   updateRequireMfaSetting
 } from "~/modules/settings";
-import { getSsoConnection } from "~/modules/settings/settings.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -68,8 +68,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // (kong.yml auth-v1-sso).
   const { acsUrl, metadataUrl } = getSamlSpUrls();
 
-  if (CarbonEdition !== Edition.Enterprise) {
+  // The whole SSO surface keys off isSsoEnabled() (Enterprise edition + `sso`
+  // in AUTH_PROVIDERS) — the component gates the section on this flag rather
+  // than on edition alone, so a deployment without the provider enabled never
+  // shows a setup form whose action would refuse.
+  const ssoEnabled = isSsoEnabled();
+  if (!ssoEnabled) {
     return {
+      ssoEnabled,
       connection: null,
       acsUrl,
       metadataUrl,
@@ -113,6 +119,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
+    ssoEnabled,
     connection: connection.data,
     acsUrl,
     metadataUrl,
@@ -152,7 +159,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function Security() {
-  const { connection, acsUrl, metadataUrl, coveredUsers } =
+  const { ssoEnabled, connection, acsUrl, metadataUrl, coveredUsers } =
     useLoaderData<typeof loader>();
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -160,7 +167,6 @@ export default function Security() {
   const mfaFetcher = useFetcher<{}>();
   const settings = useSettings();
   const requireMfa = settings.requireMfa === true;
-  const { isEnterprise } = useFlags();
   const [deactivateModalOpen, setDeactivateModalOpen] = useState(false);
   const deactivateFetcher = useFetcher<{}>();
   const requireSsoFetcher = useFetcher<{}>();
@@ -222,7 +228,7 @@ export default function Security() {
           </CardHeader>
         </Card>
 
-        {isEnterprise && (
+        {ssoEnabled && (
           <>
             <Heading size="h3">
               <Trans>Single Sign-On</Trans>

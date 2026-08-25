@@ -8,7 +8,7 @@ import {
   setAuthSession,
   setPendingMfaSession
 } from "@carbon/auth/session.server";
-import { isSsoRequiredForEmail } from "@carbon/auth/sso.server";
+import { isSsoRequiredForEmail } from "@carbon/ee/sso.server";
 import { AccountLockout, redis } from "@carbon/kv";
 import type { WebAuthnCredential } from "@simplewebauthn/browser";
 import type { ActionFunctionArgs } from "react-router";

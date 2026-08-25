@@ -17,12 +17,15 @@ import {
   setAuthSession,
   setPendingMfaSession
 } from "@carbon/auth/session.server";
+import { getUserByEmail } from "@carbon/auth/users.server";
 import {
   getSsoConnectionByProviderId,
   getSsoProviderIdFromSession,
-  isSsoRequiredForEmail
-} from "@carbon/auth/sso.server";
-import { getUserByEmail } from "@carbon/auth/users.server";
+  isSsoEnabled,
+  isSsoRequiredForEmail,
+  linkSsoIdentityToUser,
+  migrateUserToSso
+} from "@carbon/ee/sso.server";
 import { validator } from "@carbon/form";
 import { AccountLockout, redis } from "@carbon/kv";
 import {
@@ -44,10 +47,7 @@ import {
   useSearchParams
 } from "react-router";
 import { getCompanies, getEmployeeCompanies } from "~/modules/settings";
-import {
-  linkSsoIdentityToUser,
-  migrateUserToSso
-} from "~/modules/users/users.sso.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -107,11 +107,15 @@ export async function action({ request }: ActionFunctionArgs) {
   // provider → company binding and the asserted email's registered domain
   // BEFORE anything is attached — GoTrue's own checks are not trusted here —
   // then run the invite-first migration on a first login. Every non-SSO
-  // session falls through to the unchanged path below.
-  const authUser = await serviceRole.auth.admin.getUserById(userId);
-  const ssoProviderId = authUser.data?.user
-    ? getSsoProviderIdFromSession(authSession.accessToken, authUser.data.user)
-    : null;
+  // session falls through to the unchanged path below. Outside Enterprise the
+  // classification (and its admin API call) is skipped entirely.
+  let ssoProviderId: string | null = null;
+  if (isSsoEnabled()) {
+    const authUser = await serviceRole.auth.admin.getUserById(userId);
+    ssoProviderId = authUser.data?.user
+      ? getSsoProviderIdFromSession(authSession.accessToken, authUser.data.user)
+      : null;
+  }
 
   if (ssoProviderId) {
     const connection = await getSsoConnectionByProviderId(
@@ -177,7 +181,7 @@ export async function action({ request }: ActionFunctionArgs) {
     ).data;
 
     if (existingUser) {
-      const linked = await linkSsoIdentityToUser({
+      const linked = await linkSsoIdentityToUser(getDatabaseClient(), {
         fromUserId: userId,
         toUserId: existingUser.id
       });
@@ -277,12 +281,16 @@ export async function action({ request }: ActionFunctionArgs) {
         );
       }
 
-      const migration = await migrateUserToSso(serviceRole, {
-        newUserId: authSession.userId,
-        email: authSession.email,
-        companyId: ssoCompanyId,
-        invite: invite.data
-      });
+      const migration = await migrateUserToSso(
+        getDatabaseClient(),
+        serviceRole,
+        {
+          newUserId: authSession.userId,
+          email: authSession.email,
+          companyId: ssoCompanyId,
+          invite: invite.data
+        }
+      );
 
       if (migration.error) {
         return redirect(

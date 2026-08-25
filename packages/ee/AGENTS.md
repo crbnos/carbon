@@ -1,6 +1,6 @@
 # @carbon/ee
 
-Enterprise edition — integrations registry, accounting sync (Xero, QuickBooks Online, Rillet), plan gating, exchange rates, Slack, email, Jira, Linear, Onshape, and storage rules.
+Enterprise edition — integrations registry, accounting sync (Xero, QuickBooks Online, Rillet), plan gating, exchange rates, Slack, email, Jira, Linear, Onshape, storage rules, and SAML SSO.
 
 ## Always
 
@@ -39,7 +39,8 @@ pnpm --filter @carbon/ee typecheck   # tsgo --noEmit
 - **Tie-out remote reads**: `accounting/core/remote-journal.ts` `fetchRemoteJournalTotals()` — provider-agnostic debit-signed per-account journal totals for the reconciliation tie-out
 - **Dependency sync**: transaction syncers use `ensureDependencySynced()` for JIT deps (e.g. push customer before invoice)
 - **Integration pattern**: `defineIntegration()` → config with id, name, settings, OAuth, actions
-- **Exports**: `./accounting`, `./plan`, `./plan.server`, `./exchange-rates.server`, `./slack.server`, `./hooks.server`, `./jira`, `./linear`, `./rillet/hooks.server`, `./xero/hooks.server`, etc.
+- **SAML SSO** (`./sso.server`, `src/sso/`): `isSsoEnabled()` (`gate.ts` — Enterprise edition AND `sso` in `AUTH_PROVIDERS`) is the ONE flag; the connection lookups and admin mutations self-gate on it. `provider.server.ts` = GoTrue admin API wrappers + `getSamlSpUrls`; `connections.server.ts` = `ssoConnection` lookups, `isSsoRequiredForEmail`, `getSsoAwareInviteLink`, upsert/requireSso/deactivate mutations; `session.server.ts` = amr-based session classification (`getSsoProviderIdFromSession` for enforcement, never `getSsoProviderIdFromUser`); `provisioning.server.ts` = identity linking + invite-first migration (takes a `Kysely<KyselyDatabase>` param — callers pass their own db client). Full architecture: `.claude/rules/authentication-system.md` (Enterprise SAML SSO section)
+- **Exports**: `./accounting`, `./plan`, `./plan.server`, `./exchange-rates.server`, `./slack.server`, `./hooks.server`, `./sso.server`, `./jira`, `./linear`, `./rillet/hooks.server`, `./xero/hooks.server`, etc.
 
 ## Cross-References
 

@@ -1,6 +1,6 @@
-import { assertIsPost, isAuthProviderEnabled } from "@carbon/auth";
+import { assertIsPost } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { getSsoConnectionByDomain } from "@carbon/auth/sso.server";
+import { getSsoConnectionByDomain, isSsoEnabled } from "@carbon/ee/sso.server";
 import { Ratelimit, redis } from "@carbon/kv";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -11,7 +11,7 @@ import { data } from "react-router";
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
 
-  if (!isAuthProviderEnabled("sso")) {
+  if (!isSsoEnabled()) {
     return data({ enabled: false, required: false });
   }
 

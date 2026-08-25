@@ -15,12 +15,13 @@ import {
   setAuthSession,
   setPendingMfaSession
 } from "@carbon/auth/session.server";
+import { getUserByEmail } from "@carbon/auth/users.server";
 import {
   getSsoConnectionByProviderId,
   getSsoProviderIdFromSession,
+  isSsoEnabled,
   isSsoRequiredForEmail
-} from "@carbon/auth/sso.server";
-import { getUserByEmail } from "@carbon/auth/users.server";
+} from "@carbon/ee/sso.server";
 import { validator } from "@carbon/form";
 import { AccountLockout, redis } from "@carbon/kv";
 import {
@@ -89,10 +90,14 @@ export async function action({ request }: ActionFunctionArgs) {
   // Mirrors the ERP callback's enforcement (provider → company binding +
   // registered email domain), but MES runs no invite migration: a first SSO
   // login must happen in the ERP, which owns the invite-accept transaction.
-  const authUser = await serviceRole.auth.admin.getUserById(userId);
-  const ssoProviderId = authUser.data?.user
-    ? getSsoProviderIdFromSession(authSession.accessToken, authUser.data.user)
-    : null;
+  // Outside Enterprise the classification (and its admin API call) is skipped.
+  let ssoProviderId: string | null = null;
+  if (isSsoEnabled()) {
+    const authUser = await serviceRole.auth.admin.getUserById(userId);
+    ssoProviderId = authUser.data?.user
+      ? getSsoProviderIdFromSession(authSession.accessToken, authUser.data.user)
+      : null;
+  }
 
   if (ssoProviderId) {
     const connection = await getSsoConnectionByProviderId(

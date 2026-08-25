@@ -17,13 +17,15 @@ import { now, parseAbsolute } from "@internationalized/date";
 // per-request memoization.
 export { getUserClaims } from "@carbon/auth/users.server";
 
+import {
+  getSsoConnection,
+  uncoveredSsoDomainError
+} from "@carbon/ee/sso.server";
 import { getLogger } from "@carbon/logger";
-
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { redirect } from "react-router";
 import { getSupplierContact } from "~/modules/purchasing";
 import { getCustomerContact } from "~/modules/sales";
-import { getSsoConnection } from "~/modules/settings/settings.server";
 import type {
   CompanyPermission,
   EmployeeInsert,
@@ -34,7 +36,6 @@ import type {
   User
 } from "~/modules/users";
 import { getPermissionsByEmployeeType } from "~/modules/users";
-import { uncoveredSsoDomainError } from "~/modules/users/users.sso.server";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
 import { insertEmployeeJob } from "../people/people.service";

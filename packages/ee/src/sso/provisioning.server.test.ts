@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
-// Isolation mocks — users.sso.server's DB/redis/auth dependencies are stubbed
-// so the pure decision logic can be tested without dragging in the app's full
-// module graph. (Mirrors items.server.test.ts.)
+// Isolation mocks — provisioning's cache/redis/logger dependencies are stubbed
+// so the pure decision logic can be tested without dragging in the full module
+// graph. The Kysely db is a caller-supplied parameter and is not needed here.
 vi.mock("@carbon/auth", () => ({
   getPermissionCacheKey: vi.fn((id: string) => `permissions:${id}`)
 }));
@@ -24,12 +24,8 @@ vi.mock("@carbon/utils", () => ({
   datetime: { timestamp: vi.fn(() => "2026-01-01T00:00:00.000Z") }
 }));
 
-vi.mock("~/services/database.server", () => ({
-  getDatabaseClient: vi.fn()
-}));
-
 const { buildArchivedEmail, mergeInvitePermissions, uncoveredSsoDomainError } =
-  await import("./users.sso.server");
+  await import("./provisioning.server");
 
 describe("buildArchivedEmail", () => {
   it("is deterministic for the same inputs", () => {

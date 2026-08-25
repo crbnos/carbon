@@ -1,13 +1,14 @@
 import { getPermissionCacheKey } from "@carbon/auth";
 import type { Database } from "@carbon/database";
+import type { KyselyDatabase } from "@carbon/database/client";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Kysely } from "kysely";
 import { sql } from "kysely";
-import { getDatabaseClient } from "~/services/database.server";
 
-const logger = getLogger("erp", "users");
+const logger = getLogger("ee");
 
 /**
  * Move the SAML identity GoTrue created for a duplicate auth user onto the
@@ -28,15 +29,17 @@ const logger = getLogger("erp", "users");
  * the move itself fails, the next SSO login re-creates the duplicate and
  * retries — self-healing.
  */
-export async function linkSsoIdentityToUser({
-  fromUserId,
-  toUserId
-}: {
-  fromUserId: string;
-  toUserId: string;
-}): Promise<{ data: { moved: number } | null; error: string | null }> {
+export async function linkSsoIdentityToUser(
+  db: Kysely<KyselyDatabase>,
+  {
+    fromUserId,
+    toUserId
+  }: {
+    fromUserId: string;
+    toUserId: string;
+  }
+): Promise<{ data: { moved: number } | null; error: string | null }> {
   try {
-    const db = getDatabaseClient();
     const moved = await db.transaction().execute(async (trx) => {
       await sql`
         DELETE FROM auth.identities
@@ -80,7 +83,7 @@ export function buildArchivedEmail(oldUserId: string, email: string): string {
 
 /**
  * Merge invite grants into a user's existing permission set — the same
- * semantics as `setUserPermissions` in users.server.ts (arrays are
+ * semantics as `setUserPermissions` in the ERP users module (arrays are
  * concatenated per key; new keys are taken as-is).
  */
 export function mergeInvitePermissions(
@@ -89,11 +92,8 @@ export function mergeInvitePermissions(
 ): Record<string, string[]> {
   const merged = { ...current };
   Object.entries(granted).forEach(([key, value]) => {
-    if (key in merged) {
-      merged[key] = [...merged[key], ...value];
-    } else {
-      merged[key] = value;
-    }
+    const existing = merged[key];
+    merged[key] = existing ? [...existing, ...value] : value;
   });
   return merged;
 }
@@ -146,6 +146,7 @@ type MigrateUserToSsoResult = {
  * invalidation for the new user id.
  */
 export async function migrateUserToSso(
+  db: Kysely<KyselyDatabase>,
   serviceRole: SupabaseClient<Database>,
   {
     newUserId,
@@ -184,8 +185,6 @@ export async function migrateUserToSso(
         "An active account already owns this email and should have been linked automatically. Sign in with SSO again; contact your administrator if this persists."
     };
   }
-
-  const db = getDatabaseClient();
 
   let result: { alreadyAccepted: boolean };
 

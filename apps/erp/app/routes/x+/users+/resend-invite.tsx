@@ -7,8 +7,8 @@ import {
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { getSsoAwareInviteLink } from "@carbon/auth/sso.server";
 import { InviteEmail } from "@carbon/documents/email";
+import { getSsoAwareInviteLink } from "@carbon/ee/sso.server";
 import { validationError, validator } from "@carbon/form";
 import { batchTrigger } from "@carbon/jobs";
 import { sendEmail } from "@carbon/lib/resend.server";
