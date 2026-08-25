@@ -26,6 +26,12 @@ import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "plan");
 
+// Self-signup is limited to Starter. Higher tiers (Business, GovCloud) are
+// sales-assisted only — their cards render, but with a "Talk to Sales" CTA and
+// no self-checkout button. Keep this as the single source of truth for both the
+// server allow-list and the UI so the two can never disagree.
+const SELF_SIGNUP_PLAN_IDS = ["STARTER"];
+
 function usePlans() {
   const { t } = useLingui();
   return {
@@ -98,8 +104,7 @@ export async function action({ request }: ActionFunctionArgs) {
     throw new Error("Plan ID is required");
   }
 
-  const validPlanIds = ["STARTER", "BUSINESS", "GOVCLOUD"];
-  if (!validPlanIds.includes(planId) || planId.startsWith("PARTNER")) {
+  if (!SELF_SIGNUP_PLAN_IDS.includes(planId)) {
     throw new Error("Invalid plan ID");
   }
 
@@ -211,23 +216,29 @@ export default function OnboardingPlan() {
                     </CardContent>
                     <CardFooter>
                       <VStack className="w-full">
-                        <fetcher.Form method="post" className="w-full">
-                          <input type="hidden" name="planId" value={plan.id} />
-                          <Button
-                            className="w-full"
-                            variant="primary"
-                            type="submit"
-                            isDisabled={fetcher.state !== "idle"}
-                            isLoading={
-                              fetcher.state !== "idle" &&
-                              fetcher.formData?.get("planId") === plan.id
-                            }
-                          >
-                            {plan.stripeTrialPeriodDays > 0
-                              ? t`Start ${plan.stripeTrialPeriodDays} Day Free Trial`
-                              : t`Start Now`}
-                          </Button>
-                        </fetcher.Form>
+                        {SELF_SIGNUP_PLAN_IDS.includes(plan.id) ? (
+                          <fetcher.Form method="post" className="w-full">
+                            <input
+                              type="hidden"
+                              name="planId"
+                              value={plan.id}
+                            />
+                            <Button
+                              className="w-full"
+                              variant="primary"
+                              type="submit"
+                              isDisabled={fetcher.state !== "idle"}
+                              isLoading={
+                                fetcher.state !== "idle" &&
+                                fetcher.formData?.get("planId") === plan.id
+                              }
+                            >
+                              {plan.stripeTrialPeriodDays > 0
+                                ? t`Start ${plan.stripeTrialPeriodDays} Day Free Trial`
+                                : t`Start Now`}
+                            </Button>
+                          </fetcher.Form>
+                        ) : null}
 
                         {planDetails?.talkToSales ? (
                           <Button
