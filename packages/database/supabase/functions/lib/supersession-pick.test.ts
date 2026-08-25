@@ -180,9 +180,9 @@ Deno.test("drops a chain that terminates in a cycle", () => {
   assertEquals(map.has("C"), false);
 });
 
-// The collapse loop mutates the map while iterating a snapshot of its keys, so
-// an entry can be walked before or after the entry it points at has itself been
-// collapsed. Both orders must give the same answer.
+// The collapse walk reads the uncollapsed map and writes into a separate one, so
+// no entry can observe another's already-collapsed factor. Row order must not
+// change the answer — mutating in place is what made it order-dependent.
 Deno.test("chain collapse is independent of row order", () => {
   const rows = [
     row({ itemId: "A", successorItemId: "B", conversionFactor: 2 }),

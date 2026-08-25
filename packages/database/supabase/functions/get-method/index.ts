@@ -2106,8 +2106,14 @@ serve(async (req: Request) => {
                   supersession?.requiresSerialTracking ??
                   child.data.itemTrackingType === "Serial",
                 unitOfMeasureCode: child.data.unitOfMeasureCode,
-                unitCost:
-                  supersession?.unitCost ?? child.data.unitCost ?? 0,
+                // Branch on WHETHER a swap happened, not just on the successor
+                // having a cost. `supersession?.unitCost ?? child.data.unitCost`
+                // valued a successor row at the RETIRED part's cost whenever the
+                // successor had no itemCost row — a plausible number for the
+                // wrong item. 0 is at least visibly missing.
+                unitCost: supersession
+                  ? (supersession.unitCost ?? 0)
+                  : (child.data.unitCost ?? 0),
                 itemScrapPercentage,
                 substitutedFromItemId:
                   supersession?.substitutedFromItemId ?? null,

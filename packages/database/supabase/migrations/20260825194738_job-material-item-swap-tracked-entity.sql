@@ -49,12 +49,18 @@ BEGIN
     RETURN;
   END IF;
 
+  -- Both lookups are company-scoped: "item" is keyed ("id", "companyId") and
+  -- "activeMakeMethods" is per company, so matching on the item id alone could
+  -- read another tenant's row. Pre-existing in the definition this replaces.
   SELECT "readableIdWithRevision", "itemTrackingType"
     INTO v_item_readable_id, v_item_tracking_type
   FROM "item"
-  WHERE "id" = p_new->>'itemId';
+  WHERE "id" = p_new->>'itemId'
+    AND "companyId" = p_new->>'companyId';
 
-  SELECT "version" INTO v_version FROM "activeMakeMethods" WHERE "itemId" = p_new->>'itemId';
+  SELECT "version" INTO v_version FROM "activeMakeMethods"
+  WHERE "itemId" = p_new->>'itemId'
+    AND "companyId" = p_new->>'companyId';
 
   IF NOT EXISTS (
     SELECT 1 FROM "jobMakeMethod"

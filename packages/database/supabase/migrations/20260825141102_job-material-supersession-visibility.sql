@@ -13,10 +13,11 @@
 -- the column is NOT NULL), so a wrong value is permanent — and it was invisible
 -- in the product, which is how it stayed unnoticed.
 --
--- Return type changes, so this is DROP + CREATE, not CREATE OR REPLACE. Body is
--- otherwise byte-identical to the definition installed by
+-- Return type changes, so this is DROP + CREATE, not CREATE OR REPLACE. The body
+-- is otherwise unchanged from the definition installed by
 -- 20260708204214_partial-gr-visibility-and-short-close.sql; only the two columns
--- are added (RETURNS TABLE, the job_materials CTE, and the final SELECT).
+-- are added (RETURNS TABLE, the job_materials CTE, and the final SELECT), plus a
+-- pinned search_path on the SECURITY DEFINER declaration.
 
 DROP FUNCTION IF EXISTS get_job_quantity_on_hand;
 
@@ -24,6 +25,10 @@ CREATE OR REPLACE FUNCTION public.get_job_quantity_on_hand(job_id text, company_
  RETURNS TABLE(id text, "jobMaterialItemId" text, "jobMakeMethodId" text, "itemReadableId" text, name text, description text, "itemTrackingType" "itemTrackingType", "methodType" "methodType", type "itemType", "thumbnailPath" text, "unitOfMeasureCode" text, "quantityPerParent" numeric, "estimatedQuantity" numeric, "quantityIssued" numeric, "quantityOnHandInStorageUnit" numeric, "quantityOnHandNotInStorageUnit" numeric, "quantityOnSalesOrder" numeric, "quantityOnPurchaseOrder" numeric, "quantityOnProductionOrder" numeric, "quantityFromProductionOrderInStorageUnit" numeric, "quantityFromProductionOrderNotInStorageUnit" numeric, "quantityInTransitToStorageUnit" numeric, "storageUnitId" text, "storageUnitName" text, "itemScrapPercentage" numeric, "substitutedFromItemId" text)
  LANGUAGE plpgsql
  SECURITY DEFINER
+ -- SECURITY DEFINER runs as the owner and resolves unqualified names through the
+ -- CALLER's search_path, so pin it: a caller-created schema must not be able to
+ -- shadow the tables below. Every object this reads lives in public.
+ SET search_path = public, pg_temp
 AS $function$
   BEGIN
     RETURN QUERY
