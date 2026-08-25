@@ -53,6 +53,23 @@ export async function getAccount(client: SupabaseClient<Database>, id: string) {
   return client.from("user").select("*").eq("id", id).single();
 }
 
+/**
+ * Return the connected user's own profile (id, email, name). `userId` is injected by the MCP
+ * executor from the OAuth token, so this always resolves to the caller — it is the identity source
+ * an OS deployment can use for sign-in (a user who completed Carbon's OAuth has proven control of
+ * this account, so its email is a verified sign-in identity).
+ */
+export async function getCurrentUser(
+  client: SupabaseClient<Database>,
+  userId: string
+) {
+  return client
+    .from("user")
+    .select("id, email, firstName, lastName, fullName, avatarUrl")
+    .eq("id", userId)
+    .single();
+}
+
 export async function getAttributes(
   client: SupabaseClient<Database>,
   userId: string,

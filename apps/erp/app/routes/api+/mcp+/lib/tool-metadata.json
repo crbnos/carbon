@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-25T03:49:55.333Z",
-  "totalTools": 1446,
+  "generated": "2026-08-25T04:02:08.600Z",
+  "totalTools": 1447,
   "modules": 15,
   "tools": [
     {
@@ -111,6 +111,24 @@
         "required": [
           "id"
         ]
+      }
+    },
+    {
+      "name": "account_getCurrentUser",
+      "module": "account",
+      "classification": "READ",
+      "description": "get current user",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "userId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
       }
     },
     {
