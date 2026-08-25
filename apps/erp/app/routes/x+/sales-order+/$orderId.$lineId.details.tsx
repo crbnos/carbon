@@ -278,7 +278,7 @@ export default function EditSalesOrderLineRoute() {
           salesOrderLineId: line?.id ?? undefined,
           itemId: line?.itemId ?? undefined
         }}
-        modelPath={line?.modelPath ?? null}
+        modelUpload={line ?? null}
         title={t`CAD Model`}
         uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
         viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"

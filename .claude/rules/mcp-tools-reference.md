@@ -77,8 +77,11 @@ registered individually:
 
 `tool-metadata.json` is **generated**, never hand-edited. Run
 `npx tsx scripts/generate-mcp.ts`; it parses every `apps/erp/app/modules/*/*.service.ts`
-(falling back to the `.ee`-licensed `<module>.ee.service.ts` — e.g. `accounting`)
-and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
+(falling back to the `.ee`-licensed `<module>.ee.service.ts` — e.g. `accounting`),
+plus an optional server-only companion `<module>.mcp.server.ts` when present (for MCP
+functions that must import `*.server` modules — see the gotcha below — e.g.
+`production.mcp.server.ts`; `direct-executor.ts` merges its exports into the same module
+namespace), and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
 (`{ generated, totalTools, modules, tools }`). Each tool entry:
 `{ name, module, classification, description, paramCount, serviceParams, injectAuth, schema }`.
 
@@ -129,3 +132,13 @@ and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
   *different*, still-current concept — don't conflate them.
 - To block a tool from MCP, add its `<module>_<func>` name to
   `MCP_BLOCKED_TOOL_NAMES` and regenerate metadata.
+- **A `{module}.service.ts` must not import a `*.server` module** (`@carbon/auth/users.server`,
+  `@carbon/ee/storage-rules.server`, an app `*.server.ts`, …) — even via `await import(...)`.
+  The module barrel (`~/modules/{module}`) re-exports the service, and client components
+  value-import that barrel for validators/enums, so the service is in the **client** bundle;
+  React Router's `react-router:dot-server` plugin then fails the build with *"Server-only
+  module referenced by client"*. Put such MCP write functions in a server-only companion
+  `{module}.mcp.server.ts` instead (never re-exported by the barrel). The generator parses it
+  and `direct-executor.ts` spreads its exports into the module namespace, so the tool names and
+  metadata are identical to a service-file function. Precedent: `production.mcp.server.ts`
+  holds `issueMaterial` / `completeJob`.

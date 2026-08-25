@@ -16,8 +16,9 @@ Any term you might not know is marked with a number the first time it appears, l
 Postgres [[17]](#g17). The number links to a one-line definition in the [Glossary](#glossary) at the
 end. Nothing is assumed.
 
-The file paths, line numbers and counts throughout are accurate as of August 2026. They will drift as
-the repository moves; the ideas they illustrate outlast them.
+  The file paths, line numbers and counts throughout are accurate as of August
+  2026. They will drift as the repository moves; the ideas they illustrate
+  outlast them.
 
 ---
 
@@ -492,8 +493,7 @@ describing every table, view, function and enum. App code imports from it:
 
 ```ts
 import type { Database } from "@carbon/database";
-type PurchaseOrderRow =
-  Database["public"]["Tables"]["purchaseOrder"]["Row"];
+type PurchaseOrderRow = Database["public"]["Tables"]["purchaseOrder"]["Row"];
 ```
 
 **Run `pnpm run generate:types` after pulling migrations or writing one, before you
@@ -630,33 +630,33 @@ refuses to start without it.
 
 **Libraries** (`packages/`). The ones you will actually touch are near the top:
 
-| Package         | What it does                                                            |
-| --------------- | ----------------------------------------------------------------------- |
-| `react`         | The design system. **Check here before writing any UI.**                |
-| `database`      | Generated types, migrations, edge functions, database clients.          |
-| `auth`          | Login, sessions, `requirePermissions`, API keys, permission caching.    |
-| `form`          | `ValidatedForm`, field components, zod helpers.                         |
-| `jobs`          | Every Inngest background function, plus the workflow runtime.           |
-| `lib`           | Shared server utilities: the Inngest client, `trigger()`, email, Slack. |
-| `utils`         | Pure helpers: dates, money, arrays, strings, BOM maths.                 |
-| `workflows`     | Customer workflow schema, validation and pure runtime. No I/O.          |
-| `documents`     | PDF generation, email templates, barcode and label rendering.           |
-| `locale`        | Lingui setup and language switching.                                    |
+| Package         | What it does                                                                                                     |
+| --------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `react`         | The design system. **Check here before writing any UI.**                                                         |
+| `database`      | Generated types, migrations, edge functions, database clients.                                                   |
+| `auth`          | Login, sessions, `requirePermissions`, API keys, permission caching.                                             |
+| `form`          | `ValidatedForm`, field components, zod helpers.                                                                  |
+| `jobs`          | Every Inngest background function, plus the workflow runtime.                                                    |
+| `lib`           | Shared server utilities: the Inngest client, `trigger()`, email, Slack.                                          |
+| `utils`         | Pure helpers: dates, money, arrays, strings, BOM maths.                                                          |
+| `workflows`     | Customer workflow schema, validation and pure runtime. No I/O.                                                   |
+| `documents`     | PDF generation, email templates, barcode and label rendering.                                                    |
+| `locale`        | Lingui setup and language switching.                                                                             |
 | `env`           | The one place `docs/platform/self-hosting/environment-variables` are read and validated. |
-| `logger`        | Structured logging, with request-id correlation.                        |
-| `notifications` | The notification event taxonomy (enums only).                           |
-| `printing`      | Printer registry, label queue, physical print delivery.                 |
-| `onboarding`    | New-company setup, the "Implementation Hub".                            |
-| `kv`            | Redis client plus rate limiting.                                        |
-| `stripe`        | Billing. Cloud edition only.                                            |
-| `ee`            | Enterprise-only code: Xero, Slack, Jira, Linear, Onshape, plan gating.  |
-| `viewer`        | 3D model and assembly-instruction rendering.                            |
-| `tiptap`        | Rich text editor.                                                       |
-| `dev`           | The `crbn` CLI that runs your local stack.                              |
-| `checks`        | Repo conformance rules enforced in CI.                                  |
-| `config`        | Shared tsconfig, Tailwind theme, vitest preset. No runtime code.        |
-| `glossary`      | Canonical manufacturing term definitions used in field help.            |
-| `harness`       | Internal AI-agent tooling. Not shipped.                                 |
+| `logger`        | Structured logging, with request-id correlation.                                                                 |
+| `notifications` | The notification event taxonomy (enums only).                                                                    |
+| `printing`      | Printer registry, label queue, physical print delivery.                                                          |
+| `onboarding`    | New-company setup, the "Implementation Hub".                                                                     |
+| `kv`            | Redis client plus rate limiting.                                                                                 |
+| `stripe`        | Billing. Cloud edition only.                                                                                     |
+| `ee`            | Enterprise-only code: Xero, Slack, Jira, Linear, Onshape, plan gating.                                           |
+| `viewer`        | 3D model and assembly-instruction rendering.                                                                     |
+| `tiptap`        | Rich text editor.                                                                                                |
+| `dev`           | The `crbn` CLI that runs your local stack.                                                                       |
+| `checks`        | Repo conformance rules enforced in CI.                                                                           |
+| `config`        | Shared tsconfig, Tailwind theme, vitest preset. No runtime code.                                                 |
+| `glossary`      | Canonical manufacturing term definitions used in field help.                                                     |
+| `harness`       | Internal AI-agent tooling. Not shipped.                                                                          |
 
 **Inside an ERP module** (there are eighteen, under `apps/erp/app/modules/{module}/`):
 
@@ -692,16 +692,30 @@ slot inside it.
 
 ### 7.2 The cloud Carbon runs
 
-The ERP and MES are packaged as Docker images and run on ECS Fargate [[3]](#g3), which is
-Amazon running your container for you without any server to look after. Each service sits
-behind its own load balancer on port 3000, is checked for life at `/health`, and scales
-between one and ten copies on processor and memory pressure. All of that is described in
-`sst.config.ts` (SST [[23]](#g23) is infrastructure-as-code, where you write cloud
-resources in TypeScript instead of clicking in a console). The
-`docs/platform/self-hosting/aws-sst` recipe is the same stack, run by you.
+There are **two hosting paths, and both are live**: the shared cloud on Vercel, and
+dedicated per-customer installations on AWS.
 
-The part that surprises people: **this is not one big shared installation.** There is a
-`workspaces` table, and on every deploy `ci/src/deploy.ts` walks it and runs
+**The shared cloud runs on Vercel.** `app.carbon.ms` (ERP), `mes.carbon.ms` (MES),
+`learn.carbon.ms` (academy) and `docs.carbon.ms` all resolve to Vercel, as does a separate
+EU region (`app.eu.carbon.ms`, `mes.eu.carbon.ms`) served by its own pair of projects. Each
+React Router app opts in through its `react-router.config.ts`, which enables
+`vercelPreset()` from `@vercel/react-router` when the `VERCEL` environment variable is
+present and is a no-op everywhere else — so the same source builds for Vercel or for a
+container without a branch in the code. Deploys are driven by Vercel's own Git integration
+rather than by a workflow in this repository.
+
+**Dedicated installations run on AWS.** The ERP and MES are also packaged as Docker images
+that run on ECS Fargate [[3]](#g3), which is Amazon running your container for you without
+any server to look after. Each service sits behind its own load balancer on port 3000, is
+checked for life at `/health`, and scales between one and ten copies on processor and
+memory pressure. All of that is described in `sst.config.ts` (SST [[23]](#g23) is
+infrastructure-as-code, where you write cloud resources in TypeScript instead of clicking
+in a console). The `docs/platform/self-hosting/aws-sst` recipe is the same
+stack, run by you. `itar.carbon.ms` is one of these: it resolves to a load balancer in AWS
+GovCloud, not to Vercel.
+
+The part that surprises people: **that path is not one big shared installation.** There is
+a `workspaces` table, and on every deploy `ci/src/deploy.ts` walks it and runs
 `sst deploy --stage prod` once per row, each with that customer's own AWS account, region,
 domain, certificates, Supabase project and Redis. So Carbon separates customers twice
 over: by `companyId` on every row inside one installation ([Part 3](#part-3-layer-by-layer)), and by giving a
@@ -709,10 +723,10 @@ customer their own installation entirely. Adding a customer means adding a works
 A row missing a required field is skipped with a log line rather than failing the deploy,
 so a tenant can silently not deploy.
 
-Postgres is managed Supabase. There is nothing on Vercel despite some leftover Vercel
-packages. There is one Lambda: the Assembler ships as a single image that runs either as a
-Lambda function behind an API gateway (the default) or as a container, which is why 3D
-conversion can be turned on per customer without changing the main stack.
+Postgres is managed Supabase on both paths. There is one Lambda: the Assembler ships as a
+single image that runs either as a Lambda function behind an API gateway (the default) or
+as a container, which is why 3D conversion can be turned on per customer without changing
+the main stack.
 
 ### 7.3 On a customer's own server
 
@@ -731,15 +745,17 @@ sets `enterprise`.
 
 ### 7.4 How a merge becomes production
 
-Four GitHub Actions workflows, and they are deliberately independent of each other rather
-than one pipeline:
+The Vercel side deploys itself: pushing to `main` triggers a build in each Vercel project
+through its Git integration, with no workflow in this repository involved. Everything
+below is the AWS side — four GitHub Actions workflows, deliberately independent of each
+other rather than one pipeline:
 
-| Workflow | Fires when | What it does |
-| --- | --- | --- |
-| `check.yml` | every pull request | Biome, typecheck, tests, translation and workflow-catalog checks |
-| `deploy.yml` | merge to `main` touching `apps/erp`, `apps/mes` or `packages` | builds both images from the one root `Dockerfile`, pushes them to Amazon's image registry tagged with the commit, then fans out `sst deploy` per workspace |
-| `supabase.yml` | merge touching `packages/database/supabase` | applies migrations and deploys edge functions, per workspace |
-| `inngest.yml` | after `deploy.yml` succeeds | calls `PUT /api/inngest` on each app so Inngest learns the current list of jobs |
+| Workflow       | Fires when                                                    | What it does                                                                                                                                               |
+| -------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `check.yml`    | every pull request                                            | Biome, typecheck, tests, translation and workflow-catalog checks                                                                                           |
+| `deploy.yml`   | merge to `main` touching `apps/erp`, `apps/mes` or `packages` | builds both images from the one root `Dockerfile`, pushes them to Amazon's image registry tagged with the commit, then fans out `sst deploy` per workspace |
+| `supabase.yml` | merge touching `packages/database/supabase`                   | applies migrations and deploys edge functions, per workspace                                                                                               |
+| `inngest.yml`  | after `deploy.yml` succeeds                                   | calls `PUT /api/inngest` on each app so Inngest learns the current list of jobs                                                                            |
 
 Two consequences worth knowing. First, `check.yml` never builds the apps, so a pull
 request can go green and still break the image build on merge. Second, migrations and app
@@ -817,120 +833,126 @@ Typechecking the whole repo at once runs out of memory, so always use `--filter`
 Numbered so the body can point at them. Alphabetical.
 
 <a id="g1"></a>
-**1. Action:** the function a route file exports to handle a form submission. Runs on the
-server only, never shipped to the browser.
+**1. Action:** the function a route file exports to handle a form submission.
+Runs on the server only, never shipped to the browser.
 
 <a id="g2"></a>
-**2. Deno:** an alternative JavaScript runtime to Node.js. Our edge functions are written
-for it, which is why they use `https://` imports instead of `node_modules`.
+**2. Deno:** an alternative JavaScript runtime to Node.js. Our edge functions
+are written for it, which is why they use `https://` imports instead of
+`node_modules`.
 
 <a id="g3"></a>
-**3. ECS Fargate:** Amazon's service for running Docker containers without managing the
-servers underneath. The ERP and MES run here in production.
+**3. ECS Fargate:** Amazon's service for running Docker containers without
+managing the servers underneath. The ERP and MES run here in production.
 
 <a id="g4"></a>
-**4. Edge function:** a small server-side program deployed next to the database, called
-over HTTP and awaited like a normal function. Ours are written for Deno.
+**4. Edge function:** a small server-side program deployed next to the database,
+called over HTTP and awaited like a normal function. Ours are written for Deno.
 
 <a id="g5"></a>
-**5. Inngest:** the background job runner. Send it an event; it calls your function over
-HTTP and remembers each completed step, so a retry resumes rather than restarts.
+**5. Inngest:** the background job runner. Send it an event; it calls your
+function over HTTP and remembers each completed step, so a retry resumes rather
+than restarts.
 
 <a id="g6"></a>
-**6. Kysely:** a TypeScript SQL query builder. Unlike `supabase-js` it holds a real
-database connection, so it can run real transactions. It also bypasses RLS.
+**6. Kysely:** a TypeScript SQL query builder. Unlike `supabase-js` it holds a
+real database connection, so it can run real transactions. It also bypasses RLS.
 
 <a id="g7"></a>
-**7. Lingui:** the translation library. You mark strings in code; it extracts them into
-per-language files for translators.
+**7. Lingui:** the translation library. You mark strings in code; it extracts
+them into per-language files for translators.
 
 <a id="g8"></a>
-**8. Loader:** the function a route file exports to fetch the data its page needs. Runs
-on the server only.
+**8. Loader:** the function a route file exports to fetch the data its page
+needs. Runs on the server only.
 
 <a id="g9"></a>
-**9. Migration:** one timestamped SQL file describing a schema change. The full ordered
-set of them _is_ the schema; there is no separate schema file.
+**9. Migration:** one timestamped SQL file describing a schema change. The full
+ordered set of them _is_ the schema; there is no separate schema file.
 
 <a id="g10"></a>
-**10. Monorepo:** one Git repository holding several applications and shared libraries
-that are versioned and released together.
+**10. Monorepo:** one Git repository holding several applications and shared
+libraries that are versioned and released together.
 
 <a id="g11"></a>
-**11. MRP:** Material Requirements Planning. Works out what to buy and make, and when,
-given demand and current stock. Runs as an edge function.
+**11. MRP:** Material Requirements Planning. Works out what to buy and make, and
+when, given demand and current stock. Runs as an edge function.
 
 <a id="g12"></a>
-**12. Multi-tenancy:** one database and one running application serving many separate
-customer companies, with each company's data invisible to the others.
+**12. Multi-tenancy:** one database and one running application serving many
+separate customer companies, with each company's data invisible to the others.
 
 <a id="g13"></a>
-**13. nanostores:** a very small state library. We use it for reference lists (items,
-customers, suppliers) that many screens read and Realtime keeps fresh.
+**13. nanostores:** a very small state library. We use it for reference lists
+(items, customers, suppliers) that many screens read and Realtime keeps fresh.
 
 <a id="g14"></a>
-**14. pg_cron:** a Postgres extension that runs SQL on a schedule, inside the database.
-Used for cache refreshes and queue sweeping.
+**14. pg_cron:** a Postgres extension that runs SQL on a schedule, inside the
+database. Used for cache refreshes and queue sweeping.
 
 <a id="g15"></a>
-**15. pg_net:** a Postgres extension that lets the database make outbound HTTP calls. We
-use it for exactly one thing: pinging the event queue awake after a commit.
+**15. pg_net:** a Postgres extension that lets the database make outbound HTTP
+calls. We use it for exactly one thing: pinging the event queue awake after a
+commit.
 
 <a id="g16"></a>
-**16. PGMQ:** a message queue implemented in ordinary Postgres tables. Lets a database
-trigger enqueue work inside the same transaction as the write that caused it.
+**16. PGMQ:** a message queue implemented in ordinary Postgres tables. Lets a
+database trigger enqueue work inside the same transaction as the write that
+caused it.
 
 <a id="g17"></a>
-**17. Postgres:** the relational database everything in Carbon is built on. Version 15.
+**17. Postgres:** the relational database everything in Carbon is built on.
+Version 15.
 
 <a id="g18"></a>
-**18. PostgREST:** a service that exposes Postgres tables and views as a REST API. Every
-`client.from(...).select(...)` is a PostgREST call, not raw SQL.
+**18. PostgREST:** a service that exposes Postgres tables and views as a REST
+API. Every `client.from(...).select(...)` is a PostgREST call, not raw SQL.
 
 <a id="g19"></a>
-**19. Radix UI:** an unstyled, accessible React component library. Our design system adds
-Tailwind styling on top of it.
+**19. Radix UI:** an unstyled, accessible React component library. Our design
+system adds Tailwind styling on top of it.
 
 <a id="g20"></a>
 **20. RLS (Row Level Security):** a Postgres feature where a per-table rule is
-automatically added to every query. It is what keeps one company's data invisible to
-another.
+automatically added to every query. It is what keeps one company's data
+invisible to another.
 
 <a id="g21"></a>
-**21. RPC:** here, calling a function defined inside Postgres from application code, via
-`client.rpc("name", args)`.
+**21. RPC:** here, calling a function defined inside Postgres from application
+code, via `client.rpc("name", args)`.
 
 <a id="g22"></a>
 **22. Service role:** a database credential that bypasses all RLS. Powerful; use
 carefully.
 
 <a id="g23"></a>
-**23. SST:** infrastructure-as-code for AWS, written in TypeScript. `sst.config.ts`
-defines our production cluster.
+**23. SST:** infrastructure-as-code for AWS, written in TypeScript.
+`sst.config.ts` defines our production cluster.
 
 <a id="g24"></a>
-**24. Supabase:** an open-source bundle around Postgres: REST API, auth, storage,
-realtime and edge functions. We run its containers locally and use the managed version in
-production.
+**24. Supabase:** an open-source bundle around Postgres: REST API, auth,
+storage, realtime and edge functions. We run its containers locally and use the
+managed version in production.
 
 <a id="g25"></a>
-**25. Turborepo:** the build orchestrator that knows which packages depend on which, so
-`pnpm build` only rebuilds what changed.
+**25. Turborepo:** the build orchestrator that knows which packages depend on
+which, so `pnpm build` only rebuilds what changed.
 
 <a id="g26"></a>
-**26. View:** a saved query that behaves like a read-only table. Carbon writes to tables
-and reads from views; computed values like order totals live in the view.
+**26. View:** a saved query that behaves like a read-only table. Carbon writes
+to tables and reads from views; computed values like order totals live in the
+view.
 
 <a id="g27"></a>
 **27. Vite:** the build tool and dev server behind all our React apps.
 
 <a id="g28"></a>
-**28. zod:** a schema library. Describe data once, get validation and a TypeScript type
-from the same definition.
+**28. zod:** a schema library. Describe data once, get validation and a
+TypeScript type from the same definition.
 
 <a id="g29"></a>
-**29. zustand:** a small React state library. We use it only for throwaway UI state, like
-whether a modal is open.
+**29. zustand:** a small React state library. We use it only for throwaway UI
+state, like whether a modal is open.
 
 ---
 

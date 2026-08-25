@@ -119,12 +119,17 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   ]);
 
   if (user.error || !user.data) {
-    await destroyAuthSession(request);
+    throw await destroyAuthSession(request);
   }
 
   const company = companies.data?.find((c) => c.companyId === companyId);
   if (!company) {
-    throw redirect(path.to.accountSettings);
+    // A company-less authenticated user (e.g. an enterprise first-run user who
+    // hasn't onboarded) has no MES to enter — MES doesn't host onboarding.
+    // Send them to a terminal screen that links to ERP onboarding, not into
+    // accountSettings (an ERP /x route that would itself bounce a no-company
+    // user, i.e. a redirect loop).
+    throw redirect(path.to.setupRequired);
   }
 
   // Get the location and console state from middleware context

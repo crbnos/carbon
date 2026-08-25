@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="hdpe" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#b9bec2"/>
+      <stop offset="0.2" stop-color="#e7eaec"/>
+      <stop offset="0.45" stop-color="#f7f9fa"/>
+      <stop offset="0.72" stop-color="#ced4d8"/>
+      <stop offset="1" stop-color="#a4aaae"/>
+    </linearGradient>
+    <linearGradient id="hdpeTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#fbfcfc"/>
+      <stop offset="0.5" stop-color="#e4e8ea"/>
+      <stop offset="1" stop-color="#b3b9bd"/>
+    </linearGradient>
+    <linearGradient id="hdpeDim" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#a8aeb2"/>
+      <stop offset="0.2" stop-color="#d3d8db"/>
+      <stop offset="0.45" stop-color="#e6eaec"/>
+      <stop offset="0.72" stop-color="#bdc3c7"/>
+      <stop offset="1" stop-color="#969c9f"/>
+    </linearGradient>
+    <linearGradient id="paste" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#4b4f52"/>
+      <stop offset="0.22" stop-color="#787d81"/>
+      <stop offset="0.45" stop-color="#8d9296"/>
+      <stop offset="0.72" stop-color="#63686c"/>
+      <stop offset="1" stop-color="#414548"/>
+    </linearGradient>
+    <linearGradient id="inner" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#6f7478"/>
+      <stop offset="0.55" stop-color="#9aa0a4"/>
+      <stop offset="1" stop-color="#c6cbce"/>
+    </linearGradient>
+    <clipPath id="bore">
+      <ellipse cx="352" cy="410" rx="176" ry="67"/>
+    </clipPath>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="520" cy="682" rx="428" ry="94" fill="url(#shadow)"/>
+
+  <!-- squat wide jar body -->
+  <g>
+    <path d="M152 410 L152 630 Q352 706 552 630 L552 410 Z" fill="url(#hdpe)" stroke="#8b9195" stroke-width="2.5"/>
+    <!-- moulding rings -->
+    <g fill="none" stroke="#9aa0a4" stroke-width="3" opacity="0.7">
+      <path d="M152 480 Q352 632 552 480"/>
+      <path d="M152 525 Q352 677 552 525"/>
+      <path d="M152 570 Q352 722 552 570"/>
+    </g>
+    <g fill="none" stroke="#ffffff" stroke-width="2" opacity="0.55">
+      <path d="M152 486 Q352 638 552 486"/>
+      <path d="M152 531 Q352 683 552 531"/>
+      <path d="M152 576 Q352 728 552 576"/>
+    </g>
+    <!-- base standing ring -->
+    <path d="M170 620 Q352 690 534 620" fill="none" stroke="#8f9599" stroke-width="3" opacity="0.65"/>
+    <!-- plain tamper ring under the rim -->
+    <path d="M152 410 L152 438 Q352 592 552 438 L552 410 Z" fill="url(#hdpeDim)" stroke="#8b9195" stroke-width="2.5"/>
+    <path d="M152 424 Q352 578 552 424" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.5"/>
+  </g>
+
+  <!-- open mouth: rim, interior wall, level paste surface -->
+  <g>
+    <ellipse cx="352" cy="410" rx="200" ry="76" fill="url(#hdpeTop)" stroke="#9aa0a4" stroke-width="2.5"/>
+    <ellipse cx="352" cy="410" rx="188" ry="71.4" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.6"/>
+    <g clip-path="url(#bore)">
+      <ellipse cx="352" cy="410" rx="176" ry="67" fill="url(#inner)"/>
+      <ellipse cx="352" cy="440" rx="168" ry="64" fill="url(#paste)"/>
+      <!-- faint metallic sparkle -->
+      <g fill="#dfe5e9" opacity="0.55">
+        <circle cx="323" cy="462" r="1.6"/><circle cx="462" cy="461" r="2.4"/><circle cx="213" cy="410" r="2.0"/><circle cx="460" cy="450" r="1.6"/><circle cx="359" cy="487" r="1.6"/><circle cx="379" cy="420" r="2.0"/><circle cx="265" cy="404" r="1.6"/><circle cx="258" cy="421" r="2.0"/><circle cx="501" cy="457" r="2.4"/><circle cx="244" cy="463" r="2.4"/><circle cx="223" cy="420" r="1.6"/><circle cx="235" cy="415" r="2.4"/><circle cx="468" cy="471" r="1.6"/><circle cx="265" cy="409" r="2.8"/><circle cx="372" cy="397" r="2.8"/><circle cx="298" cy="464" r="2.0"/><circle cx="326" cy="410" r="2.4"/><circle cx="197" cy="431" r="2.8"/><circle cx="313" cy="502" r="1.6"/><circle cx="284" cy="438" r="2.4"/><circle cx="420" cy="477" r="1.6"/><circle cx="397" cy="436" r="2.4"/><circle cx="299" cy="472" r="2.8"/><circle cx="253" cy="419" r="1.6"/><circle cx="461" cy="425" r="1.6"/><circle cx="483" cy="460" r="2.8"/><circle cx="329" cy="479" r="2.4"/><circle cx="465" cy="446" r="2.0"/><circle cx="261" cy="411" r="2.0"/><circle cx="359" cy="417" r="2.0"/><circle cx="223" cy="477" r="2.8"/><circle cx="450" cy="461" r="2.4"/><circle cx="465" cy="401" r="2.4"/><circle cx="307" cy="379" r="2.8"/><circle cx="415" cy="433" r="2.0"/><circle cx="431" cy="482" r="1.6"/><circle cx="224" cy="445" r="2.4"/><circle cx="339" cy="464" r="2.4"/><circle cx="279" cy="417" r="2.0"/><circle cx="308" cy="397" r="1.6"/><circle cx="201" cy="456" r="2.8"/><circle cx="267" cy="464" r="2.8"/><circle cx="324" cy="428" r="1.6"/><circle cx="463" cy="436" r="1.6"/><circle cx="331" cy="452" r="1.6"/><circle cx="240" cy="421" r="2.4"/><circle cx="318" cy="429" r="2.0"/><circle cx="303" cy="424" r="2.4"/><circle cx="477" cy="426" r="2.8"/><circle cx="463" cy="481" r="2.8"/><circle cx="259" cy="444" r="2.0"/><circle cx="431" cy="462" r="2.4"/><circle cx="213" cy="447" r="1.6"/><circle cx="398" cy="500" r="2.4"/><circle cx="427" cy="478" r="1.6"/><circle cx="357" cy="405" r="1.6"/><circle cx="324" cy="409" r="2.4"/><circle cx="436" cy="419" r="2.0"/><circle cx="207" cy="429" r="2.4"/><circle cx="266" cy="402" r="2.0"/><circle cx="404" cy="386" r="2.0"/><circle cx="389" cy="483" r="1.6"/><circle cx="501" cy="436" r="2.8"/><circle cx="344" cy="493" r="2.4"/><circle cx="198" cy="460" r="2.4"/><circle cx="449" cy="429" r="2.0"/><circle cx="444" cy="466" r="2.4"/><circle cx="390" cy="488" r="1.6"/><circle cx="217" cy="447" r="1.6"/><circle cx="382" cy="421" r="2.8"/>
+      </g>
+      <!-- one slight tool sweep across the level surface -->
+      <path d="M204 424 Q352 386 500 428" fill="none" stroke="#31363a" stroke-width="9" opacity="0.4"/>
+      <path d="M204 432 Q352 394 500 436" fill="none" stroke="#b2b8bc" stroke-width="5" opacity="0.4"/>
+      <path d="M196 462 Q352 424 508 466" fill="none" stroke="#2c3134" stroke-width="6" opacity="0.22"/>
+      <!-- meniscus against the jar wall -->
+      <ellipse cx="352" cy="440" rx="168" ry="64" fill="none" stroke="#33383b" stroke-width="4" opacity="0.5"/>
+    </g>
+    <ellipse cx="352" cy="410" rx="176" ry="67" fill="none" stroke="#8b9195" stroke-width="2.5"/>
+  </g>
+
+  <!-- heavy screw lid set beside the jar -->
+  <g>
+    <path d="M568 582 L568 630 Q738 694.6 908 630 L908 582 Z" fill="url(#hdpe)" stroke="#8b9195" stroke-width="2.5"/>
+    <g stroke="#9aa0a4" stroke-width="3" opacity="0.6" fill="none">
+      <path d="M577 603 L577 651"/><path d="M587 612 L587 660"/><path d="M597 618 L597 666"/><path d="M607 623 L607 671"/><path d="M617 627 L617 675"/><path d="M627 631 L627 679"/><path d="M637 634 L637 682"/><path d="M647 637 L647 685"/><path d="M657 639 L657 687"/><path d="M667 641 L667 689"/><path d="M677 642 L677 690"/><path d="M687 644 L687 692"/><path d="M697 645 L697 693"/><path d="M707 646 L707 694"/><path d="M717 646 L717 694"/><path d="M727 646 L727 694"/><path d="M737 647 L737 695"/><path d="M747 647 L747 695"/><path d="M757 646 L757 694"/><path d="M767 646 L767 694"/><path d="M777 645 L777 693"/><path d="M787 644 L787 692"/><path d="M797 643 L797 691"/><path d="M807 641 L807 689"/><path d="M817 639 L817 687"/><path d="M827 637 L827 685"/><path d="M837 635 L837 683"/><path d="M847 632 L847 680"/><path d="M857 628 L857 676"/><path d="M867 624 L867 672"/><path d="M877 619 L877 667"/><path d="M887 613 L887 661"/><path d="M897 605 L897 653"/>
+    </g>
+    <ellipse cx="738" cy="582" rx="170" ry="64.6" fill="url(#hdpeTop)" stroke="#9aa0a4" stroke-width="2.5"/>
+    <ellipse cx="738" cy="582" rx="152" ry="57.8" fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.65"/>
+    <ellipse cx="738" cy="580" rx="118" ry="44.8" fill="url(#hdpeTop)" stroke="#b0b6ba" stroke-width="2"/>
+    <ellipse cx="738" cy="579" rx="96" ry="36.5" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.5"/>
+    <ellipse cx="738" cy="578" rx="52" ry="19.8" fill="none" stroke="#aeb4b8" stroke-width="2" opacity="0.7"/>
+  </g>
+</svg>

@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-18T19:07:39.197Z",
-  "totalTools": 1444,
+  "generated": "2026-08-25T22:48:12.270Z",
+  "totalTools": 1447,
   "modules": 15,
   "tools": [
     {
@@ -111,6 +111,24 @@
         "required": [
           "id"
         ]
+      }
+    },
+    {
+      "name": "account_getCurrentUser",
+      "module": "account",
+      "classification": "READ",
+      "description": "get current user",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "userId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
       }
     },
     {
@@ -15467,7 +15485,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "set method material step link",
-      "paramCount": 3,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "args"
@@ -15487,6 +15505,12 @@
           },
           "linked": {
             "type": "boolean"
+          },
+          "quantity": {
+            "type": [
+              "number",
+              "null"
+            ]
           }
         },
         "required": [
@@ -15501,7 +15525,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "set method operation tool step link",
-      "paramCount": 3,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "args"
@@ -15513,7 +15537,10 @@
       "schema": {
         "type": "object",
         "properties": {
-          "methodOperationToolId": {
+          "operationId": {
+            "type": "string"
+          },
+          "toolId": {
             "type": "string"
           },
           "methodOperationStepId": {
@@ -15524,7 +15551,8 @@
           }
         },
         "required": [
-          "methodOperationToolId",
+          "operationId",
+          "toolId",
           "methodOperationStepId",
           "linked"
         ]
@@ -22353,7 +22381,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "set job material step link",
-      "paramCount": 3,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "args"
@@ -22373,6 +22401,12 @@
           },
           "linked": {
             "type": "boolean"
+          },
+          "quantity": {
+            "type": [
+              "number",
+              "null"
+            ]
           }
         },
         "required": [
@@ -22387,7 +22421,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "set job operation tool step link",
-      "paramCount": 3,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "args"
@@ -22399,7 +22433,10 @@
       "schema": {
         "type": "object",
         "properties": {
-          "jobOperationToolId": {
+          "operationId": {
+            "type": "string"
+          },
+          "toolId": {
             "type": "string"
           },
           "jobOperationStepId": {
@@ -22410,7 +22447,8 @@
           }
         },
         "required": [
-          "jobOperationToolId",
+          "operationId",
+          "toolId",
           "jobOperationStepId",
           "linked"
         ]
@@ -23296,38 +23334,6 @@
         },
         "required": [
           "forecasts"
-        ]
-      }
-    },
-    {
-      "name": "production_triggerJobSchedule",
-      "module": "production",
-      "classification": "WRITE",
-      "description": "trigger job schedule",
-      "paramCount": 3,
-      "serviceParams": [
-        "jobId",
-        "companyId",
-        "userId",
-        "mode",
-        "direction"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "jobId": {
-            "type": "string"
-          },
-          "mode": {},
-          "direction": {}
-        },
-        "required": [
-          "jobId",
-          "mode",
-          "direction"
         ]
       }
     },
@@ -25228,6 +25234,162 @@
           "inspectionDocumentId",
           "features",
           "balloons"
+        ]
+      }
+    },
+    {
+      "name": "production_completeOperation",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "complete operation",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "userId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "operationId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "operationId",
+          "quantity"
+        ]
+      }
+    },
+    {
+      "name": "production_issueMaterial",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "issue material",
+      "paramCount": 7,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "userId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "operationId": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "materialId": {
+            "type": "string"
+          },
+          "jobOperationStepId": {
+            "type": "string"
+          },
+          "adjustmentType": {
+            "type": "string"
+          },
+          "acknowledged": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "operationId",
+          "itemId",
+          "quantity"
+        ]
+      }
+    },
+    {
+      "name": "production_completeJob",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "complete job",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "userId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "storageUnitId": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "jobId",
+          "quantity"
+        ]
+      }
+    },
+    {
+      "name": "production_scheduleJob",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "schedule job",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "userId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "initial",
+              "reschedule"
+            ]
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "backward",
+              "forward"
+            ]
+          }
+        },
+        "required": [
+          "jobId"
         ]
       }
     },
@@ -35282,7 +35444,8 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "customerId"
+        "customerId",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -35307,7 +35470,8 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "customerContactId"
+        "customerContactId",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -35332,7 +35496,8 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "customerId"
+        "customerId",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -35395,7 +35560,8 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "customerLocationId"
+        "customerLocationId",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -35420,7 +35586,8 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "customerId"
+        "customerId",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -35445,7 +35612,8 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "customerId"
+        "customerId",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -35470,7 +35638,8 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "customerId"
+        "customerId",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -35495,7 +35664,8 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
-        "customerId"
+        "customerId",
+        "companyId"
       ],
       "injectAuth": [
         "companyId"
@@ -42128,37 +42298,6 @@
           "digitalQuoteEnabled",
           "digitalQuoteNotificationGroup",
           "digitalQuoteIncludesPurchaseOrders"
-        ]
-      }
-    },
-    {
-      "name": "settings_updateIntegrationMetadata",
-      "module": "settings",
-      "classification": "WRITE",
-      "description": "update integration metadata",
-      "paramCount": 2,
-      "serviceParams": [
-        "client",
-        "companyId",
-        "integrationId",
-        "metadata",
-        "updatedBy"
-      ],
-      "injectAuth": [
-        "companyId",
-        "updatedBy"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "integrationId": {
-            "type": "string"
-          },
-          "metadata": {}
-        },
-        "required": [
-          "integrationId",
-          "metadata"
         ]
       }
     },

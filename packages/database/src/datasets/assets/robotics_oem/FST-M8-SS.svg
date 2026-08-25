@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="ssBarrel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="ssFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#e6eaec"/>
+      <stop offset="0.45" stop-color="#c2c9ce"/>
+      <stop offset="1" stop-color="#8b9399"/>
+    </linearGradient>
+    <linearGradient id="ssSocket" x1="0.3" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#3b4146"/>
+      <stop offset="1" stop-color="#6b7379"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="500" cy="688" rx="392" ry="86" fill="url(#shadow)"/>
+
+  <!-- two companion screws resting behind, softened -->
+  <g opacity="0.34">
+    <g transform="translate(470 342) rotate(-17) scale(0.74)">
+      <path d="M-350 -147 L-195 -147 L-195 147 L-350 147 Z" fill="url(#ssBarrel)"/>
+      <path d="M-195 -92 L330 -92 L330 92 L-195 92 Z" fill="url(#ssBarrel)"/>
+      <ellipse cx="-350" cy="0" rx="53" ry="147" fill="url(#ssFace)" stroke="#7f868c" stroke-width="3"/>
+      <g transform="translate(-350 0) scale(0.36 1)"><polygon points="0,-78 68,-39 68,39 0,78 -68,39 -68,-39" fill="url(#ssSocket)"/></g>
+      <ellipse cx="330" cy="0" rx="33" ry="92" fill="#aeb5bb" stroke="#767d83" stroke-width="3"/>
+      <g stroke="#7b8288" stroke-width="4" opacity="0.6" fill="none">
+        <path d="M-90 -92 L-68 92"/><path d="M-22 -92 L0 92"/><path d="M46 -92 L68 92"/>
+        <path d="M114 -92 L136 92"/><path d="M182 -92 L204 92"/><path d="M250 -92 L272 92"/>
+      </g>
+    </g>
+    <g transform="translate(596 300) rotate(-6) scale(0.68)">
+      <path d="M-350 -147 L-195 -147 L-195 147 L-350 147 Z" fill="url(#ssBarrel)"/>
+      <path d="M-195 -92 L330 -92 L330 92 L-195 92 Z" fill="url(#ssBarrel)"/>
+      <ellipse cx="-350" cy="0" rx="53" ry="147" fill="url(#ssFace)" stroke="#7f868c" stroke-width="3"/>
+      <g transform="translate(-350 0) scale(0.36 1)"><polygon points="0,-78 68,-39 68,39 0,78 -68,39 -68,-39" fill="url(#ssSocket)"/></g>
+      <ellipse cx="330" cy="0" rx="33" ry="92" fill="#aeb5bb" stroke="#767d83" stroke-width="3"/>
+      <g stroke="#7b8288" stroke-width="4" opacity="0.6" fill="none">
+        <path d="M-90 -92 L-68 92"/><path d="M-22 -92 L0 92"/><path d="M46 -92 L68 92"/>
+        <path d="M114 -92 L136 92"/><path d="M182 -92 L204 92"/><path d="M250 -92 L272 92"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- main M8 x 25 socket head cap screw, lying at a slight angle -->
+  <g transform="translate(512 500) rotate(-11)">
+    <!-- threaded shank + plain shoulder body -->
+    <path d="M-195 -92 L330 -92 L330 92 L-195 92 Z" fill="url(#ssBarrel)" stroke="#4f555a" stroke-width="2.5"/>
+    <!-- head barrel -->
+    <path d="M-350 -147 L-190 -147 L-190 147 L-350 147 Z" fill="url(#ssBarrel)" stroke="#4f555a" stroke-width="3"/>
+    <!-- head under-face against shoulder -->
+    <path d="M-190 -147 Q-158 -120 -190 -92 L-190 92 Q-158 120 -190 147 Z" fill="#8d959b" opacity="0.85"/>
+    <path d="M-190 -92 Q-172 0 -190 92" fill="none" stroke="#6d747a" stroke-width="3"/>
+
+    <!-- knurled circumference on the head -->
+    <g stroke="#5f666c" stroke-width="3" opacity="0.55" fill="none">
+      <path d="M-297 -12 L-190 -12"/><path d="M-298 -35 L-190 -35"/><path d="M-301 -58 L-190 -58"/>
+      <path d="M-306 -80 L-190 -80"/><path d="M-311 -100 L-190 -100"/><path d="M-318 -118 L-190 -118"/>
+      <path d="M-327 -132 L-190 -132"/><path d="M-338 -143 L-190 -143"/>
+      <path d="M-297 12 L-190 12"/><path d="M-298 35 L-190 35"/><path d="M-301 58 L-190 58"/>
+      <path d="M-306 80 L-190 80"/><path d="M-311 100 L-190 100"/><path d="M-318 118 L-190 118"/>
+      <path d="M-327 132 L-190 132"/><path d="M-338 143 L-190 143"/>
+    </g>
+    <g stroke="#f2f5f6" stroke-width="2" opacity="0.35" fill="none">
+      <path d="M-297 -24 L-190 -24"/><path d="M-299 -47 L-190 -47"/><path d="M-303 -69 L-190 -69"/>
+      <path d="M-308 -90 L-190 -90"/><path d="M-314 -109 L-190 -109"/><path d="M-322 -125 L-190 -125"/>
+      <path d="M-297 24 L-190 24"/><path d="M-299 47 L-190 47"/><path d="M-303 69 L-190 69"/>
+      <path d="M-308 90 L-190 90"/><path d="M-314 109 L-190 109"/><path d="M-322 125 L-190 125"/>
+    </g>
+
+    <!-- coarse rolled metric thread, dark pass then light pass -->
+    <g stroke="#767d83" stroke-width="5" opacity="0.8" fill="none">
+      <path d="M-104 -92 L-82 92"/><path d="M-70 -92 L-48 92"/><path d="M-36 -92 L-14 92"/>
+      <path d="M-2 -92 L20 92"/><path d="M32 -92 L54 92"/><path d="M66 -92 L88 92"/>
+      <path d="M100 -92 L122 92"/><path d="M134 -92 L156 92"/><path d="M168 -92 L190 92"/>
+      <path d="M202 -92 L224 92"/><path d="M236 -92 L258 92"/><path d="M270 -92 L292 92"/>
+      <path d="M304 -92 L326 92"/>
+    </g>
+    <g stroke="#f4f7f8" stroke-width="3" opacity="0.5" fill="none">
+      <path d="M-92 -92 L-70 92"/><path d="M-58 -92 L-36 92"/><path d="M-24 -92 L-2 92"/>
+      <path d="M10 -92 L32 92"/><path d="M44 -92 L66 92"/><path d="M78 -92 L100 92"/>
+      <path d="M112 -92 L134 92"/><path d="M146 -92 L168 92"/><path d="M180 -92 L202 92"/>
+      <path d="M214 -92 L236 92"/><path d="M248 -92 L270 92"/><path d="M282 -92 L304 92"/>
+    </g>
+    <!-- brushed lustre highlight along the upper barrel -->
+    <path d="M-186 -66 L318 -66" stroke="#ffffff" stroke-opacity="0.2" stroke-width="10" fill="none"/>
+    <path d="M-344 -110 L-196 -110" stroke="#ffffff" stroke-opacity="0.18" stroke-width="12" fill="none"/>
+
+    <!-- chamfered lead at the tip -->
+    <path d="M300 -92 L330 -74 L330 74 L300 92" fill="#b9c0c5" opacity="0.55"/>
+    <ellipse cx="330" cy="0" rx="33" ry="76" fill="#a7aeb4" stroke="#6d747a" stroke-width="3"/>
+    <ellipse cx="330" cy="0" rx="22" ry="56" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2.5"/>
+
+    <!-- head end face with deep hex socket -->
+    <ellipse cx="-350" cy="0" rx="53" ry="147" fill="url(#ssFace)" stroke="#7f868c" stroke-width="3"/>
+    <ellipse cx="-350" cy="0" rx="44" ry="136" fill="none" stroke="#9aa2a8" stroke-width="2.5" opacity="0.85"/>
+    <g transform="translate(-350 0) scale(0.36 1)">
+      <polygon points="0,-82 71,-41 71,41 0,82 -71,41 -71,-41" fill="url(#ssSocket)" stroke="#464c51" stroke-width="6"/>
+      <polygon points="0,-64 55,-32 55,32 0,64 -55,32 -55,-32" fill="#2c3236" opacity="0.6"/>
+    </g>
+  </g>
+</svg>

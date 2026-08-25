@@ -3,11 +3,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setCompanyId } from "@carbon/auth/company.server";
 import { updateCompanySession } from "@carbon/auth/session.server";
+import { datasetForIndustry } from "@carbon/database/datasets";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
 import {
   Button,
-  Card,
-  CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
@@ -25,6 +24,7 @@ import {
   LuDatabase,
   LuFactory,
   LuFileX,
+  LuSatellite,
   LuUpload,
   LuWrench
 } from "react-icons/lu";
@@ -37,6 +37,11 @@ import {
   useNavigation
 } from "react-router";
 import { z } from "zod";
+import {
+  OnboardingCard,
+  OnboardingCardContent,
+  onboardingFormClassName
+} from "~/components";
 import { Hidden, Submit } from "~/components/Form";
 import { useOnboarding } from "~/hooks";
 import {
@@ -71,6 +76,7 @@ const onboardingIndustryValidator = z
 const INDUSTRY_ICONS: Record<string, ReactNode> = {
   bot: <LuBot className="h-5 w-5" />,
   cog: <LuCog className="h-5 w-5" />,
+  satellite: <LuSatellite className="h-5 w-5" />,
   wrench: <LuWrench className="h-5 w-5" />
 };
 
@@ -95,7 +101,12 @@ export async function loader({ request }: ActionFunctionArgs) {
 
   const company = await getCompany(client, companyId);
   const draft = await getOnboardingDraft(request);
-  const industries = (await getIndustries(client)).data ?? [];
+  const allIndustries = (await getIndustries(client)).data ?? [];
+
+  // Only industries with a registered dataset can be offered under "Use a demo
+  // template" — the others would create a clean company while the card promises
+  // sample data, with nothing to tell the user which happened.
+  const industries = allIndustries.filter((i) => datasetForIndustry(i.id));
 
   if (company.error || !company.data) {
     return { company: null, draft, industries };
@@ -154,10 +165,27 @@ export async function action({ request }: ActionFunctionArgs) {
       ? backupFile
       : null;
 
+  // "Use a demo template" → the dataset registered for the chosen industry.
+  // The loader only offers industries that have one; refuse rather than fall
+  // through to a clean seed, which would look identical to a crashed job.
+  let template: string | null = null;
+  if (dataChoice === "template") {
+    const dataset = datasetForIndustry(companyData.industryId);
+    if (!dataset) {
+      return validationError({
+        fieldErrors: {
+          industryId: "No demo data is available for that industry yet"
+        }
+      });
+    }
+    template = dataset.key;
+  }
+
   const companyId = await provisionOnboardingCompany(serviceRole, client, {
     userId,
     companyData,
-    backup
+    backup,
+    template
   });
 
   const companyRecord = await serviceRole
@@ -196,8 +224,14 @@ export default function OnboardingIndustry() {
     return "data-question";
   };
 
+  // The loader already dropped industries with no dataset; if that leaves none,
+  // there is no demo template to offer at all.
+  const canUseTemplate = industries.length > 0;
+
   const [step, setStep] = useState<Step>(getInitialStep);
-  const [dataChoice, setDataChoice] = useState<DataChoice>("template");
+  const [dataChoice, setDataChoice] = useState<DataChoice>(
+    canUseTemplate ? "template" : "none"
+  );
   const [importFile, setImportFile] = useState<File | null>(null);
   const navigation = useNavigation();
   // Provisioning (unpack + seed + enqueue import) runs in the action and can take
@@ -228,13 +262,17 @@ export default function OnboardingIndustry() {
   };
 
   const dataChoiceOptions: ChoiceCardOption<DataChoice>[] = [
-    {
-      value: "template",
-      title: "Use a demo template",
-      description:
-        "We'll add sample customers, suppliers, parts and quotes to explore Carbon",
-      icon: <LuDatabase className="h-5 w-5" />
-    },
+    ...(canUseTemplate
+      ? [
+          {
+            value: "template" as const,
+            title: "Use a demo template",
+            description:
+              "We'll set up sample customers, suppliers, parts and orders — they appear shortly after you finish",
+            icon: <LuDatabase className="h-5 w-5" />
+          }
+        ]
+      : []),
     {
       value: "import" as const,
       title: "Restore from a backup",
@@ -251,15 +289,19 @@ export default function OnboardingIndustry() {
 
   if (step === "import-upload") {
     return (
-      <Card className="max-w-lg">
-        <Form method="post" encType="multipart/form-data">
+      <OnboardingCard>
+        <Form
+          method="post"
+          encType="multipart/form-data"
+          className={onboardingFormClassName}
+        >
           <CardHeader>
             <CardTitle>Restore from a backup</CardTitle>
             <CardDescription>
               Upload a Carbon backup and we'll set up your new company from it.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <OnboardingCardContent>
             <input type="hidden" name="next" value={next} />
             <input type="hidden" name="dataChoice" value="import" />
             <label
@@ -293,7 +335,7 @@ export default function OnboardingIndustry() {
                 onChange={(e) => setImportFile(e.target.files?.[0] ?? null)}
               />
             </label>
-          </CardContent>
+          </OnboardingCardContent>
           <CardFooter>
             <HStack>
               <Button
@@ -317,16 +359,17 @@ export default function OnboardingIndustry() {
             </HStack>
           </CardFooter>
         </Form>
-      </Card>
+      </OnboardingCard>
     );
   }
 
   return (
-    <Card className="max-w-lg">
+    <OnboardingCard>
       <ValidatedForm
         validator={onboardingIndustryValidator}
         defaultValues={initialValues}
         method="post"
+        className={onboardingFormClassName}
       >
         {step === "data-question" ? (
           <>
@@ -336,7 +379,7 @@ export default function OnboardingIndustry() {
                 Choose how to set up your new company.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <OnboardingCardContent>
               <Hidden name="next" value={next} />
               <Hidden name="dataChoice" value={dataChoice} />
               <ChoiceCardGroup
@@ -345,7 +388,7 @@ export default function OnboardingIndustry() {
                 onChange={setDataChoice}
                 options={dataChoiceOptions}
               />
-            </CardContent>
+            </OnboardingCardContent>
 
             <CardFooter>
               <HStack>
@@ -383,7 +426,7 @@ export default function OnboardingIndustry() {
                 We'll set up demo data to match your industry
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <OnboardingCardContent>
               <Hidden name="next" value={next} />
               <Hidden name="dataChoice" value="template" />
               <Hidden name="industryId" value={selectedIndustryId} />
@@ -392,7 +435,7 @@ export default function OnboardingIndustry() {
                 onChange={setSelectedIndustryId}
                 options={industryOptions}
               />
-            </CardContent>
+            </OnboardingCardContent>
 
             <CardFooter>
               <HStack>
@@ -410,6 +453,6 @@ export default function OnboardingIndustry() {
           </>
         )}
       </ValidatedForm>
-    </Card>
+    </OnboardingCard>
   );
 }

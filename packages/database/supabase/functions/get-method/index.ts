@@ -116,6 +116,26 @@ function remapStepIds(
   );
 }
 
+// Material twin of remapStepIds: get_method_tree aggregates methodMaterialStep as
+// {id, quantity} objects (quantity NULL = the step uses the full BOM line quantity).
+// Bare-string elements are tolerated for trees read before the aggregate changed.
+function remapStepLinks(
+  oldLinks:
+    | Array<string | { id?: string | null; quantity?: number | null } | null>
+    | null
+    | undefined,
+  stepMap: Record<string, string>,
+): { stepId: string; quantity: number | null }[] {
+  return (oldLinks ?? []).flatMap((link) => {
+    const id = typeof link === "string" ? link : link?.id;
+    const quantity =
+      typeof link === "object" && link !== null ? (link.quantity ?? null) : null;
+    return id && stepMap[id]
+      ? [{ stepId: stepMap[id], quantity: quantity === null ? null : Number(quantity) }]
+      : [];
+  });
+}
+
 const partsValidator = z.object({
   billOfMaterial: z.boolean().default(true),
   billOfProcess: z.boolean().default(true),
@@ -1336,11 +1356,17 @@ serve(async (req: Request) => {
                 jobMakeMethodId: parentJobMakeMethodId!,
                 jobOperationId:
                   methodOperationsToJobOperations[child.data.operationId],
-                // Transient (Phase 2, many-to-many): the part ↔ step links, remapped onto the
-                // job's steps. Stripped before insert; used to build jobMaterialStep rows.
-                __stepIds: remapStepIds(
-                  (child.data as { methodOperationStepIds?: string[] | null })
-                    .methodOperationStepIds,
+                // Transient (Phase 2, many-to-many): the part ↔ step links (with their
+                // per-step quantity), remapped onto the job's steps. Stripped before
+                // insert; used to build jobMaterialStep rows.
+                __stepLinks: remapStepLinks(
+                  (
+                    child.data as {
+                      methodOperationStepIds?:
+                        | Array<string | { id?: string | null; quantity?: number | null }>
+                        | null;
+                    }
+                  ).methodOperationStepIds,
                   methodStepsToJobSteps
                 ),
                 itemId,
@@ -1438,24 +1464,27 @@ serve(async (req: Request) => {
                 .insertInto("jobMaterial")
                 .values(
                   madeMaterialsWithIds.map((m) => {
-                    const { __stepIds, ...rest } = m as typeof m & {
-                      __stepIds?: string[];
+                    const { __stepLinks, ...rest } = m as typeof m & {
+                      __stepLinks?: { stepId: string; quantity: number | null }[];
                     };
                     return rest;
                   })
                 )
                 .execute();
 
-              // Part ↔ step links (Phase 2, many-to-many): the transient __stepIds carried the
-              // remapped job step ids; write them to jobMaterialStep now that the material id
-              // exists. No links = whole operation (shown on every step in the MES).
+              // Part ↔ step links (Phase 2, many-to-many): the transient __stepLinks carried
+              // the remapped job step ids + per-step quantity; write them to jobMaterialStep
+              // now that the material id exists. No links = whole operation (shown on every
+              // step in the MES).
               const madeStepRows = madeMaterialsWithIds.flatMap((m) =>
-                ((m as { __stepIds?: string[] }).__stepIds ?? []).map(
-                  (jobOperationStepId) => ({
-                    jobMaterialId: m.id,
-                    jobOperationStepId,
-                  })
-                )
+                (
+                  (m as { __stepLinks?: { stepId: string; quantity: number | null }[] })
+                    .__stepLinks ?? []
+                ).map((link) => ({
+                  jobMaterialId: m.id,
+                  jobOperationStepId: link.stepId,
+                  quantity: link.quantity,
+                }))
               );
               if (madeStepRows.length > 0) {
                 await trx
@@ -1512,7 +1541,7 @@ serve(async (req: Request) => {
 
             if (pickedOrBoughtMaterials.length > 0) {
               // Assign ids up front so part ↔ step links (Phase 2, many-to-many) can reference
-              // each row; strip the transient __stepIds before inserting the material.
+              // each row; strip the transient __stepLinks before inserting the material.
               const pickedWithIds = pickedOrBoughtMaterials.map((m) => ({
                 ...m,
                 id: (m as { id?: string }).id ?? nanoid(),
@@ -1521,8 +1550,8 @@ serve(async (req: Request) => {
                 .insertInto("jobMaterial")
                 .values(
                   pickedWithIds.map((m) => {
-                    const { __stepIds, ...rest } = m as typeof m & {
-                      __stepIds?: string[];
+                    const { __stepLinks, ...rest } = m as typeof m & {
+                      __stepLinks?: { stepId: string; quantity: number | null }[];
                     };
                     return rest;
                   })
@@ -1530,12 +1559,14 @@ serve(async (req: Request) => {
                 .execute();
 
               const pickedStepRows = pickedWithIds.flatMap((m) =>
-                ((m as { __stepIds?: string[] }).__stepIds ?? []).map(
-                  (jobOperationStepId) => ({
-                    jobMaterialId: m.id,
-                    jobOperationStepId,
-                  })
-                )
+                (
+                  (m as { __stepLinks?: { stepId: string; quantity: number | null }[] })
+                    .__stepLinks ?? []
+                ).map((link) => ({
+                  jobMaterialId: m.id,
+                  jobOperationStepId: link.stepId,
+                  quantity: link.quantity,
+                }))
               );
               if (pickedStepRows.length > 0) {
                 await trx
@@ -2010,11 +2041,17 @@ serve(async (req: Request) => {
                 jobMakeMethodId: parentJobMakeMethodId!,
                 jobOperationId:
                   methodOperationsToJobOperations[child.data.operationId],
-                // Transient (Phase 2, many-to-many): the part ↔ step links, remapped onto the
-                // job's steps. Stripped before insert; used to build jobMaterialStep rows.
-                __stepIds: remapStepIds(
-                  (child.data as { methodOperationStepIds?: string[] | null })
-                    .methodOperationStepIds,
+                // Transient (Phase 2, many-to-many): the part ↔ step links (with their
+                // per-step quantity), remapped onto the job's steps. Stripped before
+                // insert; used to build jobMaterialStep rows.
+                __stepLinks: remapStepLinks(
+                  (
+                    child.data as {
+                      methodOperationStepIds?:
+                        | Array<string | { id?: string | null; quantity?: number | null }>
+                        | null;
+                    }
+                  ).methodOperationStepIds,
                   methodStepsToJobSteps
                 ),
                 itemId: child.data.itemId,
@@ -2098,24 +2135,27 @@ serve(async (req: Request) => {
                 .insertInto("jobMaterial")
                 .values(
                   madeMaterialsWithIds.map((m) => {
-                    const { __stepIds, ...rest } = m as typeof m & {
-                      __stepIds?: string[];
+                    const { __stepLinks, ...rest } = m as typeof m & {
+                      __stepLinks?: { stepId: string; quantity: number | null }[];
                     };
                     return rest;
                   })
                 )
                 .execute();
 
-              // Part ↔ step links (Phase 2, many-to-many): the transient __stepIds carried the
-              // remapped job step ids; write them to jobMaterialStep now that the material id
-              // exists. No links = whole operation (shown on every step in the MES).
+              // Part ↔ step links (Phase 2, many-to-many): the transient __stepLinks carried
+              // the remapped job step ids + per-step quantity; write them to jobMaterialStep
+              // now that the material id exists. No links = whole operation (shown on every
+              // step in the MES).
               const madeStepRows = madeMaterialsWithIds.flatMap((m) =>
-                ((m as { __stepIds?: string[] }).__stepIds ?? []).map(
-                  (jobOperationStepId) => ({
-                    jobMaterialId: m.id,
-                    jobOperationStepId,
-                  })
-                )
+                (
+                  (m as { __stepLinks?: { stepId: string; quantity: number | null }[] })
+                    .__stepLinks ?? []
+                ).map((link) => ({
+                  jobMaterialId: m.id,
+                  jobOperationStepId: link.stepId,
+                  quantity: link.quantity,
+                }))
               );
               if (madeStepRows.length > 0) {
                 await trx
@@ -2175,7 +2215,7 @@ serve(async (req: Request) => {
 
             if (pickedOrBoughtMaterials.length > 0) {
               // Assign ids up front so part ↔ step links (Phase 2, many-to-many) can reference
-              // each row; strip the transient __stepIds before inserting the material.
+              // each row; strip the transient __stepLinks before inserting the material.
               const pickedWithIds = pickedOrBoughtMaterials.map((m) => ({
                 ...m,
                 id: (m as { id?: string }).id ?? nanoid(),
@@ -2184,8 +2224,8 @@ serve(async (req: Request) => {
                 .insertInto("jobMaterial")
                 .values(
                   pickedWithIds.map((m) => {
-                    const { __stepIds, ...rest } = m as typeof m & {
-                      __stepIds?: string[];
+                    const { __stepLinks, ...rest } = m as typeof m & {
+                      __stepLinks?: { stepId: string; quantity: number | null }[];
                     };
                     return rest;
                   })
@@ -2193,12 +2233,14 @@ serve(async (req: Request) => {
                 .execute();
 
               const pickedStepRows = pickedWithIds.flatMap((m) =>
-                ((m as { __stepIds?: string[] }).__stepIds ?? []).map(
-                  (jobOperationStepId) => ({
-                    jobMaterialId: m.id,
-                    jobOperationStepId,
-                  })
-                )
+                (
+                  (m as { __stepLinks?: { stepId: string; quantity: number | null }[] })
+                    .__stepLinks ?? []
+                ).map((link) => ({
+                  jobMaterialId: m.id,
+                  jobOperationStepId: link.stepId,
+                  quantity: link.quantity,
+                }))
               );
               if (pickedStepRows.length > 0) {
                 await trx
@@ -6887,7 +6929,7 @@ async function linkAssemblyStepMaterialsForJobOperations(
     );
     const stepMaterials = await client
       .from("assemblyInstructionStepMaterial")
-      .select("stepId, itemId")
+      .select("stepId, itemId, quantity")
       .in("stepId", sourceStepIds)
       .eq("companyId", companyId);
     if (stepMaterials.error || (stepMaterials.data ?? []).length === 0) {
@@ -6913,7 +6955,7 @@ async function linkAssemblyStepMaterialsForJobOperations(
         ? materialIdByItemId.get(link.itemId)
         : undefined;
       return jobOperationStepId && jobMaterialId
-        ? [{ jobMaterialId, jobOperationStepId }]
+        ? [{ jobMaterialId, jobOperationStepId, quantity: link.quantity ?? null }]
         : [];
     });
 

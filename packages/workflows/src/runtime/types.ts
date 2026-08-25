@@ -83,6 +83,10 @@ export interface RuntimeContext {
   /** Called as each input resolves, so a step can report the values it used even
    * when the work it hands them to throws. The engine supplies it; tests may omit it. */
   record?: (key: string, value: RuntimeValue) => void;
+  /** Turns a record into an absolute URL, for the inputs the catalog marks `linkify`.
+   * Supplied by the engine, which may read ERP_URL — this package never builds a URL,
+   * because it is bundled for the browser and has four runtime dependencies. */
+  linkFor?: (of: string, id: string) => string | null;
 }
 
 /** What a single clause resolved to. `null` values mean it could not be read. */

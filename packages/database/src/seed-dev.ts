@@ -1,32 +1,40 @@
 /**
  * Development seed script for Carbon.
  *
- * Fills one company with a small-satellite manufacturer's worth of realistic
- * data across the whole ERP — every list screen has rows, every detail screen
- * opens. Re-running wipes this company's business data and rebuilds it; the
- * company's reference/config data is preserved.
+ * Fills one company with an industry story's worth of realistic data across the
+ * whole ERP — every list screen has rows, every detail screen opens. The data and
+ * the insertion logic live in `src/datasets/`, shared with the onboarding demo
+ * template; this file is the dev-only wrapper that bootstraps and wipes.
+ * Re-running wipes this company's business data and rebuilds it; the company's
+ * reference/config data is preserved.
  *
  * An email that belongs to no company bootstraps a brand new user + company
  * first, which is what `crbn up` relies on for test@carbon.ms.
  *
  * Usage:
- *   pnpm run db:seed:dev -- --email your@email.com
+ *   pnpm run db:seed:dev -- --email your@email.com [--dataset satellite]
  */
 
 import process from "node:process";
 import { getPostgresConnectionPool } from "./client.ts";
-import { bootstrap, DEV_PASSWORD } from "./seed-dev/bootstrap.ts";
-import { loadEnv, parseSeedArgs } from "./seed-dev/cli.ts";
-import { ensureSequences, printSummary } from "./seed-dev/sql.ts";
-import { selectTiers } from "./seed-dev/tiers/index.ts";
-import { buildCtx, resolveCompany } from "./seed-dev/types.ts";
-import { wipeCompanyBusinessData } from "./seed-dev/wipe.ts";
+import { bootstrap, DEV_PASSWORD } from "./datasets/bootstrap.ts";
+import { loadEnv, parseSeedArgs } from "./datasets/cli.ts";
+import { applyDataset, datasetKeys, getDataset } from "./datasets/index.ts";
+import { printSummary } from "./datasets/sql.ts";
+import { resolveCompany, resolveCompanyTimeZone } from "./datasets/types.ts";
 
 loadEnv();
 
 async function main() {
-  const { email, tiers, skipWipe } = parseSeedArgs();
-  console.log(`\nSeeding development environment for: ${email}\n`);
+  const {
+    email,
+    dataset: datasetKey,
+    tiers,
+    skipWipe
+  } = parseSeedArgs(datasetKeys());
+  console.log(
+    `\nSeeding development environment for: ${email} (${datasetKey})\n`
+  );
 
   const pool = getPostgresConnectionPool(1);
   const client = await pool.connect();
@@ -40,44 +48,31 @@ async function main() {
     }
     const { companyId, userId } = resolved;
 
-    const ctx = await buildCtx(client, companyId, userId);
-    const selected = selectTiers(tiers);
+    const dataset = getDataset(datasetKey);
+    if (!dataset) throw new Error(`Seed: no such dataset: ${datasetKey}`);
 
-    await client.query("BEGIN");
-    try {
-      // Suppresses dispatch_event_batch (pgmq + pg_net). Sync interceptors
-      // still run, so the satellite rows we depend on are still created.
-      await client.query(`SET LOCAL "app.sync_in_progress" = 'true'`);
+    const timeZone = await resolveCompanyTimeZone(client, companyId);
 
-      // Must run before resetSequences, and before any nextSequence() call.
-      await ensureSequences(client, companyId);
+    if (skipWipe) console.log("Skipping wipe (--skip-wipe).");
 
-      // Dev/test convenience: enable accounting so posting flows create GL
-      // journals out of the box. Runs for pre-existing companies too (the
-      // bootstrap path also sets it for brand-new ones). Production keeps
-      // the column default (false) — this script is dev-seed only.
-      await client.query(
-        `UPDATE "companySettings" SET "accountingEnabled" = true WHERE id = $1`,
-        [companyId]
-      );
+    // Dev/test convenience: enable accounting so posting flows create GL
+    // journals out of the box. Runs for pre-existing companies too (the
+    // bootstrap path also sets it for brand-new ones). Production keeps
+    // the column default (false) — this script is dev-seed only.
+    await client.query(
+      `UPDATE "companySettings" SET "accountingEnabled" = true WHERE id = $1`,
+      [companyId]
+    );
 
-      if (skipWipe) {
-        console.log("Skipping wipe (--skip-wipe).");
-      } else {
-        console.log("Wiping existing business data...");
-        await wipeCompanyBusinessData(ctx);
-      }
-
-      for (const tier of selected) {
-        console.log(`Tier ${tier.n}: ${tier.name}`);
-        await tier.run(ctx);
-      }
-
-      await client.query("COMMIT");
-    } catch (err) {
-      await client.query("ROLLBACK");
-      throw err;
-    }
+    await applyDataset(client, {
+      companyId,
+      userId,
+      dataset,
+      timeZone,
+      tiers,
+      log: (message) => console.log(message),
+      wipeFirst: !skipWipe
+    });
 
     await printSummary(client, companyId);
     console.log(`

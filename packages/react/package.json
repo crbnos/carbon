@@ -87,7 +87,8 @@
     "sonner": "2.0.7",
     "tailwind-merge": "catalog:",
     "tailwindcss-animate": "catalog:",
-    "zustand": "catalog:"
+    "zustand": "catalog:",
+    "match-sorter": "catalog:"
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",

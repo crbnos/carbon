@@ -1,0 +1,825 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="mask" gradientUnits="userSpaceOnUse" x1="-80" y1="-50" x2="70" y2="50">
+      <stop offset="0" stop-color="#0f3b30"/>
+      <stop offset="0.25" stop-color="#1d5f4c"/>
+      <stop offset="0.5" stop-color="#27775f"/>
+      <stop offset="0.75" stop-color="#174e3f"/>
+      <stop offset="1" stop-color="#0c3028"/>
+    </linearGradient>
+    <linearGradient id="gold" gradientUnits="userSpaceOnUse" x1="-80" y1="-50" x2="70" y2="50">
+      <stop offset="0" stop-color="#7a5d19"/>
+      <stop offset="0.2" stop-color="#c9a445"/>
+      <stop offset="0.45" stop-color="#e8cd7c"/>
+      <stop offset="0.72" stop-color="#a8853a"/>
+      <stop offset="1" stop-color="#6a4f16"/>
+    </linearGradient>
+    <linearGradient id="laminate" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c3b585"/>
+      <stop offset="0.35" stop-color="#a2946a"/>
+      <stop offset="0.7" stop-color="#7c7150"/>
+      <stop offset="1" stop-color="#5c543c"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="clipBoard"><path d="M427.3 662.5 L906.6 588.9 L596.7 297.5 L117.4 371.1 Z"/></clipPath>
+  </defs>
+
+  <ellipse cx="512" cy="685" rx="454" ry="100" fill="url(#shadow)"/>
+
+  <!-- routed laminate edge (board thickness) -->
+  <path d="M117.4 371.1 L427.3 662.5 L906.6 588.9 L906.6 606.9 L427.3 680.5 L117.4 389.1 Z" fill="url(#laminate)" stroke="#4e472f" stroke-width="2"/>
+  <g stroke="#e0d3a4" stroke-opacity="0.35" stroke-width="1.6" fill="none">
+    <path d="M125.1 378.4 L125.1 396.4 M132.9 385.6 L132.9 403.6 M140.6 392.9 L140.6 410.9 M148.4 400.2 L148.4 418.2 M156.1 407.5 L156.1 425.5 M163.9 414.8 L163.9 432.8 M171.6 422.1 L171.6 440.1 M179.4 429.4 L179.4 447.4 M187.1 436.6 L187.1 454.6 M194.9 443.9 L194.9 461.9 M202.6 451.2 L202.6 469.2 M210.3 458.5 L210.3 476.5 M218.1 465.8 L218.1 483.8 M225.8 473.1 L225.8 491.1 M233.6 480.4 L233.6 498.4 M241.3 487.7 L241.3 505.7 M249.1 494.9 L249.1 512.9 M256.8 502.2 L256.8 520.2 M264.6 509.5 L264.6 527.5 M272.3 516.8 L272.3 534.8 M280.1 524.1 L280.1 542.1 M287.8 531.4 L287.8 549.4 M295.6 538.7 L295.6 556.7 M303.3 545.9 L303.3 563.9 M311.1 553.2 L311.1 571.2 M318.8 560.5 L318.8 578.5 M326.6 567.8 L326.6 585.8 M334.3 575.1 L334.3 593.1 M342.0 582.4 L342.0 600.4 M349.8 589.7 L349.8 607.7 M357.5 596.9 L357.5 614.9 M365.3 604.2 L365.3 622.2 M373.0 611.5 L373.0 629.5 M380.8 618.8 L380.8 636.8 M388.5 626.1 L388.5 644.1 M396.3 633.4 L396.3 651.4 M404.0 640.7 L404.0 658.7 M411.8 647.9 L411.8 665.9 M419.5 655.2 L419.5 673.2 M435.8 661.2 L435.8 679.2 M444.4 659.9 L444.4 677.9 M452.9 658.6 L452.9 676.6 M461.5 657.3 L461.5 675.3 M470.1 656.0 L470.1 674.0 M478.6 654.6 L478.6 672.6 M487.2 653.3 L487.2 671.3 M495.7 652.0 L495.7 670.0 M504.3 650.7 L504.3 668.7 M512.9 649.4 L512.9 667.4 M521.4 648.1 L521.4 666.1 M530.0 646.8 L530.0 664.8 M538.5 645.4 L538.5 663.4 M547.1 644.1 L547.1 662.1 M555.7 642.8 L555.7 660.8 M564.2 641.5 L564.2 659.5 M572.8 640.2 L572.8 658.2 M581.3 638.9 L581.3 656.9 M589.9 637.6 L589.9 655.6 M598.5 636.2 L598.5 654.2 M607.0 634.9 L607.0 652.9 M615.6 633.6 L615.6 651.6 M624.1 632.3 L624.1 650.3 M632.7 631.0 L632.7 649.0 M641.3 629.7 L641.3 647.7 M649.8 628.4 L649.8 646.4 M658.4 627.0 L658.4 645.0 M666.9 625.7 L666.9 643.7 M675.5 624.4 L675.5 642.4 M684.1 623.1 L684.1 641.1 M692.6 621.8 L692.6 639.8 M701.2 620.5 L701.2 638.5 M709.7 619.2 L709.7 637.2 M718.3 617.8 L718.3 635.8 M726.9 616.5 L726.9 634.5 M735.4 615.2 L735.4 633.2 M744.0 613.9 L744.0 631.9 M752.5 612.6 L752.5 630.6 M761.1 611.3 L761.1 629.3 M769.7 610.0 L769.7 628.0 M778.2 608.6 L778.2 626.6 M786.8 607.3 L786.8 625.3 M795.3 606.0 L795.3 624.0 M803.9 604.7 L803.9 622.7 M812.5 603.4 L812.5 621.4 M821.0 602.1 L821.0 620.1 M829.6 600.8 L829.6 618.8 M838.1 599.4 L838.1 617.4 M846.7 598.1 L846.7 616.1 M855.3 596.8 L855.3 614.8 M863.8 595.5 L863.8 613.5 M872.4 594.2 L872.4 612.2 M880.9 592.9 L880.9 610.9 M889.5 591.6 L889.5 609.6 M898.1 590.2 L898.1 608.2"/>
+  </g>
+
+  <!-- solder mask over glass epoxy -->
+  <path d="M427.3 662.5 L906.6 588.9 L596.7 297.5 L117.4 371.1 Z" fill="url(#mask)"/>
+
+  <g transform="matrix(1.9367 1.8215 -4.7935 0.7360 512.0 480.0)" clip-path="none">
+    <g stroke="#8fb3a2" stroke-opacity="0.16" stroke-width="0.45" fill="none">
+      <path d="M-80 -50 L-80 -44 M-80 44 L-80 50 M-77 -50 L-77 -44 M-77 44 L-77 50 M-74 -50 L-74 -44 M-74 44 L-74 50 M-71 -50 L-71 -44 M-71 44 L-71 50 M-68 -50 L-68 -44 M-68 44 L-68 50 M-65 -50 L-65 -44 M-65 44 L-65 50 M-62 -50 L-62 -44 M-62 44 L-62 50 M-59 -50 L-59 -44 M-59 44 L-59 50 M-56 -50 L-56 -44 M-56 44 L-56 50 M-53 -50 L-53 -44 M-53 44 L-53 50 M-50 -50 L-50 -44 M-50 44 L-50 50 M-47 -50 L-47 -44 M-47 44 L-47 50 M-44 -50 L-44 -44 M-44 44 L-44 50 M-41 -50 L-41 -44 M-41 44 L-41 50 M-38 -50 L-38 -44 M-38 44 L-38 50 M-35 -50 L-35 -44 M-35 44 L-35 50 M-32 -50 L-32 -44 M-32 44 L-32 50 M-29 -50 L-29 -44 M-29 44 L-29 50 M-26 -50 L-26 -44 M-26 44 L-26 50 M-23 -50 L-23 -44 M-23 44 L-23 50 M-20 -50 L-20 -44 M-20 44 L-20 50 M-17 -50 L-17 -44 M-17 44 L-17 50 M-14 -50 L-14 -44 M-14 44 L-14 50 M-11 -50 L-11 -44 M-11 44 L-11 50 M-8 -50 L-8 -44 M-8 44 L-8 50 M-5 -50 L-5 -44 M-5 44 L-5 50 M-2 -50 L-2 -44 M-2 44 L-2 50 M1 -50 L1 -44 M1 44 L1 50 M4 -50 L4 -44 M4 44 L4 50 M7 -50 L7 -44 M7 44 L7 50 M10 -50 L10 -44 M10 44 L10 50 M13 -50 L13 -44 M13 44 L13 50 M16 -50 L16 -44 M16 44 L16 50 M19 -50 L19 -44 M19 44 L19 50 M22 -50 L22 -44 M22 44 L22 50 M25 -50 L25 -44 M25 44 L25 50 M28 -50 L28 -44 M28 44 L28 50 M31 -50 L31 -44 M31 44 L31 50 M34 -50 L34 -44 M34 44 L34 50 M37 -50 L37 -44 M37 44 L37 50 M40 -50 L40 -44 M40 44 L40 50 M43 -50 L43 -44 M43 44 L43 50 M46 -50 L46 -44 M46 44 L46 50 M49 -50 L49 -44 M49 44 L49 50 M52 -50 L52 -44 M52 44 L52 50 M55 -50 L55 -44 M55 44 L55 50 M58 -50 L58 -44 M58 44 L58 50 M61 -50 L61 -44 M61 44 L61 50 M64 -50 L64 -44 M64 44 L64 50 M67 -50 L67 -44 M67 44 L67 50 M70 -50 L70 -44 M70 44 L70 50 M73 -50 L73 -44 M73 44 L73 50 M76 -50 L76 -44 M76 44 L76 50 M79 -50 L79 -44 M79 44 L79 50 M-80 -50 L-74 -50 M74 -50 L80 -50 M-80 -47 L-74 -47 M74 -47 L80 -47 M-80 -44 L-74 -44 M74 -44 L80 -44 M-80 -41 L-74 -41 M74 -41 L80 -41 M-80 -38 L-74 -38 M74 -38 L80 -38 M-80 -35 L-74 -35 M74 -35 L80 -35 M-80 -32 L-74 -32 M74 -32 L80 -32 M-80 -29 L-74 -29 M74 -29 L80 -29 M-80 -26 L-74 -26 M74 -26 L80 -26 M-80 -23 L-74 -23 M74 -23 L80 -23 M-80 -20 L-74 -20 M74 -20 L80 -20 M-80 -17 L-74 -17 M74 -17 L80 -17 M-80 -14 L-74 -14 M74 -14 L80 -14 M-80 -11 L-74 -11 M74 -11 L80 -11 M-80 -8 L-74 -8 M74 -8 L80 -8 M-80 -5 L-74 -5 M74 -5 L80 -5 M-80 -2 L-74 -2 M74 -2 L80 -2 M-80 1 L-74 1 M74 1 L80 1 M-80 4 L-74 4 M74 4 L80 4 M-80 7 L-74 7 M74 7 L80 7 M-80 10 L-74 10 M74 10 L80 10 M-80 13 L-74 13 M74 13 L80 13 M-80 16 L-74 16 M74 16 L80 16 M-80 19 L-74 19 M74 19 L80 19 M-80 22 L-74 22 M74 22 L80 22 M-80 25 L-74 25 M74 25 L80 25 M-80 28 L-74 28 M74 28 L80 28 M-80 31 L-74 31 M74 31 L80 31 M-80 34 L-74 34 M74 34 L80 34 M-80 37 L-74 37 M74 37 L80 37 M-80 40 L-74 40 M74 40 L80 40 M-80 43 L-74 43 M74 43 L80 43 M-80 46 L-74 46 M74 46 L80 46 M-80 49 L-74 49 M74 49 L80 49"/>
+    </g>
+    <g fill="url(#gold)">
+    <rect x="66.00" y="-46.00" width="13.00" height="3.00" fill="url(#gold)"/>
+    <rect x="66.00" y="-41.00" width="13.00" height="3.00" fill="url(#gold)"/>
+    <rect x="66.00" y="-36.00" width="13.00" height="3.00" fill="url(#gold)"/>
+    <rect x="66.00" y="-31.00" width="13.00" height="3.00" fill="url(#gold)"/>
+    <rect x="66.00" y="-26.00" width="13.00" height="3.00" fill="url(#gold)"/>
+    <rect x="66.00" y="-21.00" width="13.00" height="3.00" fill="url(#gold)"/>
+    <rect x="66.00" y="-16.00" width="13.00" height="3.00" fill="url(#gold)"/>
+    <rect x="66.00" y="-11.00" width="13.00" height="3.00" fill="url(#gold)"/>
+    <rect x="66.00" y="-6.00" width="13.00" height="3.00" fill="url(#gold)"/>
+    <rect x="66.00" y="-1.00" width="13.00" height="3.00" fill="url(#gold)"/>
+    <rect x="66.00" y="4.00" width="13.00" height="3.00" fill="url(#gold)"/>
+    <rect x="66.00" y="9.00" width="13.00" height="3.00" fill="url(#gold)"/>
+    <rect x="66.00" y="14.00" width="13.00" height="3.00" fill="url(#gold)"/>
+    <rect x="66.00" y="19.00" width="13.00" height="3.00" fill="url(#gold)"/>
+    <rect x="66.00" y="24.00" width="13.00" height="3.00" fill="url(#gold)"/>
+    <rect x="66.00" y="29.00" width="13.00" height="3.00" fill="url(#gold)"/>
+    <rect x="66.00" y="34.00" width="13.00" height="3.00" fill="url(#gold)"/>
+    <rect x="66.00" y="39.00" width="13.00" height="3.00" fill="url(#gold)"/>
+    <rect x="66.00" y="44.00" width="13.00" height="3.00" fill="url(#gold)"/>
+    </g>
+    <g fill="#ffffff" fill-opacity="0.18">
+    <rect x="66.00" y="-46.00" width="13.00" height="0.80" fill="#ffffff" fill-opacity="0.22"/>
+    <rect x="66.00" y="-41.00" width="13.00" height="0.80" fill="#ffffff" fill-opacity="0.22"/>
+    <rect x="66.00" y="-36.00" width="13.00" height="0.80" fill="#ffffff" fill-opacity="0.22"/>
+    <rect x="66.00" y="-31.00" width="13.00" height="0.80" fill="#ffffff" fill-opacity="0.22"/>
+    <rect x="66.00" y="-26.00" width="13.00" height="0.80" fill="#ffffff" fill-opacity="0.22"/>
+    <rect x="66.00" y="-21.00" width="13.00" height="0.80" fill="#ffffff" fill-opacity="0.22"/>
+    <rect x="66.00" y="-16.00" width="13.00" height="0.80" fill="#ffffff" fill-opacity="0.22"/>
+    <rect x="66.00" y="-11.00" width="13.00" height="0.80" fill="#ffffff" fill-opacity="0.22"/>
+    <rect x="66.00" y="-6.00" width="13.00" height="0.80" fill="#ffffff" fill-opacity="0.22"/>
+    <rect x="66.00" y="-1.00" width="13.00" height="0.80" fill="#ffffff" fill-opacity="0.22"/>
+    <rect x="66.00" y="4.00" width="13.00" height="0.80" fill="#ffffff" fill-opacity="0.22"/>
+    <rect x="66.00" y="9.00" width="13.00" height="0.80" fill="#ffffff" fill-opacity="0.22"/>
+    <rect x="66.00" y="14.00" width="13.00" height="0.80" fill="#ffffff" fill-opacity="0.22"/>
+    <rect x="66.00" y="19.00" width="13.00" height="0.80" fill="#ffffff" fill-opacity="0.22"/>
+    <rect x="66.00" y="24.00" width="13.00" height="0.80" fill="#ffffff" fill-opacity="0.22"/>
+    <rect x="66.00" y="29.00" width="13.00" height="0.80" fill="#ffffff" fill-opacity="0.22"/>
+    <rect x="66.00" y="34.00" width="13.00" height="0.80" fill="#ffffff" fill-opacity="0.22"/>
+    <rect x="66.00" y="39.00" width="13.00" height="0.80" fill="#ffffff" fill-opacity="0.22"/>
+    <rect x="66.00" y="44.00" width="13.00" height="0.80" fill="#ffffff" fill-opacity="0.22"/>
+    </g>
+    <!-- fine pitch quad footprints -->
+    <rect x="-51.45" y="-33.00" width="0.90" height="4.00" fill="url(#gold)"/>
+    <rect x="-51.45" y="-11.00" width="0.90" height="4.00" fill="url(#gold)"/>
+    <rect x="-53.00" y="-31.45" width="4.00" height="0.90" fill="url(#gold)"/>
+    <rect x="-31.00" y="-31.45" width="4.00" height="0.90" fill="url(#gold)"/>
+    <rect x="-49.45" y="-33.00" width="0.90" height="4.00" fill="url(#gold)"/>
+    <rect x="-49.45" y="-11.00" width="0.90" height="4.00" fill="url(#gold)"/>
+    <rect x="-53.00" y="-29.45" width="4.00" height="0.90" fill="url(#gold)"/>
+    <rect x="-31.00" y="-29.45" width="4.00" height="0.90" fill="url(#gold)"/>
+    <rect x="-47.45" y="-33.00" width="0.90" height="4.00" fill="url(#gold)"/>
+    <rect x="-47.45" y="-11.00" width="0.90" height="4.00" fill="url(#gold)"/>
+    <rect x="-53.00" y="-27.45" width="4.00" height="0.90" fill="url(#gold)"/>
+    <rect x="-31.00" y="-27.45" width="4.00" height="0.90" fill="url(#gold)"/>
+    <rect x="-45.45" y="-33.00" width="0.90" height="4.00" fill="url(#gold)"/>
+    <rect x="-45.45" y="-11.00" width="0.90" height="4.00" fill="url(#gold)"/>
+    <rect x="-53.00" y="-25.45" width="4.00" height="0.90" fill="url(#gold)"/>
+    <rect x="-31.00" y="-25.45" width="4.00" height="0.90" fill="url(#gold)"/>
+    <rect x="-43.45" y="-33.00" width="0.90" height="4.00" fill="url(#gold)"/>
+    <rect x="-43.45" y="-11.00" width="0.90" height="4.00" fill="url(#gold)"/>
+    <rect x="-53.00" y="-23.45" width="4.00" height="0.90" fill="url(#gold)"/>
+    <rect x="-31.00" y="-23.45" width="4.00" height="0.90" fill="url(#gold)"/>
+    <rect x="-41.45" y="-33.00" width="0.90" height="4.00" fill="url(#gold)"/>
+    <rect x="-41.45" y="-11.00" width="0.90" height="4.00" fill="url(#gold)"/>
+    <rect x="-53.00" y="-21.45" width="4.00" height="0.90" fill="url(#gold)"/>
+    <rect x="-31.00" y="-21.45" width="4.00" height="0.90" fill="url(#gold)"/>
+    <rect x="-39.45" y="-33.00" width="0.90" height="4.00" fill="url(#gold)"/>
+    <rect x="-39.45" y="-11.00" width="0.90" height="4.00" fill="url(#gold)"/>
+    <rect x="-53.00" y="-19.45" width="4.00" height="0.90" fill="url(#gold)"/>
+    <rect x="-31.00" y="-19.45" width="4.00" height="0.90" fill="url(#gold)"/>
+    <rect x="-37.45" y="-33.00" width="0.90" height="4.00" fill="url(#gold)"/>
+    <rect x="-37.45" y="-11.00" width="0.90" height="4.00" fill="url(#gold)"/>
+    <rect x="-53.00" y="-17.45" width="4.00" height="0.90" fill="url(#gold)"/>
+    <rect x="-31.00" y="-17.45" width="4.00" height="0.90" fill="url(#gold)"/>
+    <rect x="-35.45" y="-33.00" width="0.90" height="4.00" fill="url(#gold)"/>
+    <rect x="-35.45" y="-11.00" width="0.90" height="4.00" fill="url(#gold)"/>
+    <rect x="-53.00" y="-15.45" width="4.00" height="0.90" fill="url(#gold)"/>
+    <rect x="-31.00" y="-15.45" width="4.00" height="0.90" fill="url(#gold)"/>
+    <rect x="-33.45" y="-33.00" width="0.90" height="4.00" fill="url(#gold)"/>
+    <rect x="-33.45" y="-11.00" width="0.90" height="4.00" fill="url(#gold)"/>
+    <rect x="-53.00" y="-13.45" width="4.00" height="0.90" fill="url(#gold)"/>
+    <rect x="-31.00" y="-13.45" width="4.00" height="0.90" fill="url(#gold)"/>
+    <rect x="-31.45" y="-33.00" width="0.90" height="4.00" fill="url(#gold)"/>
+    <rect x="-31.45" y="-11.00" width="0.90" height="4.00" fill="url(#gold)"/>
+    <rect x="-53.00" y="-11.45" width="4.00" height="0.90" fill="url(#gold)"/>
+    <rect x="-31.00" y="-11.45" width="4.00" height="0.90" fill="url(#gold)"/>
+    <rect x="-29.45" y="-33.00" width="0.90" height="4.00" fill="url(#gold)"/>
+    <rect x="-29.45" y="-11.00" width="0.90" height="4.00" fill="url(#gold)"/>
+    <rect x="-53.00" y="-9.45" width="4.00" height="0.90" fill="url(#gold)"/>
+    <rect x="-31.00" y="-9.45" width="4.00" height="0.90" fill="url(#gold)"/>
+    <rect x="-2.45" y="11.60" width="0.90" height="3.40" fill="url(#gold)"/>
+    <rect x="-2.45" y="29.00" width="0.90" height="3.40" fill="url(#gold)"/>
+    <rect x="-4.40" y="13.55" width="3.40" height="0.90" fill="url(#gold)"/>
+    <rect x="13.00" y="13.55" width="3.40" height="0.90" fill="url(#gold)"/>
+    <rect x="-0.45" y="11.60" width="0.90" height="3.40" fill="url(#gold)"/>
+    <rect x="-0.45" y="29.00" width="0.90" height="3.40" fill="url(#gold)"/>
+    <rect x="-4.40" y="15.55" width="3.40" height="0.90" fill="url(#gold)"/>
+    <rect x="13.00" y="15.55" width="3.40" height="0.90" fill="url(#gold)"/>
+    <rect x="1.55" y="11.60" width="0.90" height="3.40" fill="url(#gold)"/>
+    <rect x="1.55" y="29.00" width="0.90" height="3.40" fill="url(#gold)"/>
+    <rect x="-4.40" y="17.55" width="3.40" height="0.90" fill="url(#gold)"/>
+    <rect x="13.00" y="17.55" width="3.40" height="0.90" fill="url(#gold)"/>
+    <rect x="3.55" y="11.60" width="0.90" height="3.40" fill="url(#gold)"/>
+    <rect x="3.55" y="29.00" width="0.90" height="3.40" fill="url(#gold)"/>
+    <rect x="-4.40" y="19.55" width="3.40" height="0.90" fill="url(#gold)"/>
+    <rect x="13.00" y="19.55" width="3.40" height="0.90" fill="url(#gold)"/>
+    <rect x="5.55" y="11.60" width="0.90" height="3.40" fill="url(#gold)"/>
+    <rect x="5.55" y="29.00" width="0.90" height="3.40" fill="url(#gold)"/>
+    <rect x="-4.40" y="21.55" width="3.40" height="0.90" fill="url(#gold)"/>
+    <rect x="13.00" y="21.55" width="3.40" height="0.90" fill="url(#gold)"/>
+    <rect x="7.55" y="11.60" width="0.90" height="3.40" fill="url(#gold)"/>
+    <rect x="7.55" y="29.00" width="0.90" height="3.40" fill="url(#gold)"/>
+    <rect x="-4.40" y="23.55" width="3.40" height="0.90" fill="url(#gold)"/>
+    <rect x="13.00" y="23.55" width="3.40" height="0.90" fill="url(#gold)"/>
+    <rect x="9.55" y="11.60" width="0.90" height="3.40" fill="url(#gold)"/>
+    <rect x="9.55" y="29.00" width="0.90" height="3.40" fill="url(#gold)"/>
+    <rect x="-4.40" y="25.55" width="3.40" height="0.90" fill="url(#gold)"/>
+    <rect x="13.00" y="25.55" width="3.40" height="0.90" fill="url(#gold)"/>
+    <rect x="11.55" y="11.60" width="0.90" height="3.40" fill="url(#gold)"/>
+    <rect x="11.55" y="29.00" width="0.90" height="3.40" fill="url(#gold)"/>
+    <rect x="-4.40" y="27.55" width="3.40" height="0.90" fill="url(#gold)"/>
+    <rect x="13.00" y="27.55" width="3.40" height="0.90" fill="url(#gold)"/>
+    <rect x="13.55" y="11.60" width="0.90" height="3.40" fill="url(#gold)"/>
+    <rect x="13.55" y="29.00" width="0.90" height="3.40" fill="url(#gold)"/>
+    <rect x="-4.40" y="29.55" width="3.40" height="0.90" fill="url(#gold)"/>
+    <rect x="13.00" y="29.55" width="3.40" height="0.90" fill="url(#gold)"/>
+    <rect x="33.30" y="-35.00" width="0.80" height="3.00" fill="url(#gold)"/>
+    <rect x="33.30" y="-20.00" width="0.80" height="3.00" fill="url(#gold)"/>
+    <rect x="31.00" y="-32.70" width="3.00" height="0.80" fill="url(#gold)"/>
+    <rect x="46.00" y="-32.70" width="3.00" height="0.80" fill="url(#gold)"/>
+    <rect x="35.10" y="-35.00" width="0.80" height="3.00" fill="url(#gold)"/>
+    <rect x="35.10" y="-20.00" width="0.80" height="3.00" fill="url(#gold)"/>
+    <rect x="31.00" y="-30.90" width="3.00" height="0.80" fill="url(#gold)"/>
+    <rect x="46.00" y="-30.90" width="3.00" height="0.80" fill="url(#gold)"/>
+    <rect x="36.90" y="-35.00" width="0.80" height="3.00" fill="url(#gold)"/>
+    <rect x="36.90" y="-20.00" width="0.80" height="3.00" fill="url(#gold)"/>
+    <rect x="31.00" y="-29.10" width="3.00" height="0.80" fill="url(#gold)"/>
+    <rect x="46.00" y="-29.10" width="3.00" height="0.80" fill="url(#gold)"/>
+    <rect x="38.70" y="-35.00" width="0.80" height="3.00" fill="url(#gold)"/>
+    <rect x="38.70" y="-20.00" width="0.80" height="3.00" fill="url(#gold)"/>
+    <rect x="31.00" y="-27.30" width="3.00" height="0.80" fill="url(#gold)"/>
+    <rect x="46.00" y="-27.30" width="3.00" height="0.80" fill="url(#gold)"/>
+    <rect x="40.50" y="-35.00" width="0.80" height="3.00" fill="url(#gold)"/>
+    <rect x="40.50" y="-20.00" width="0.80" height="3.00" fill="url(#gold)"/>
+    <rect x="31.00" y="-25.50" width="3.00" height="0.80" fill="url(#gold)"/>
+    <rect x="46.00" y="-25.50" width="3.00" height="0.80" fill="url(#gold)"/>
+    <rect x="42.30" y="-35.00" width="0.80" height="3.00" fill="url(#gold)"/>
+    <rect x="42.30" y="-20.00" width="0.80" height="3.00" fill="url(#gold)"/>
+    <rect x="31.00" y="-23.70" width="3.00" height="0.80" fill="url(#gold)"/>
+    <rect x="46.00" y="-23.70" width="3.00" height="0.80" fill="url(#gold)"/>
+    <rect x="44.10" y="-35.00" width="0.80" height="3.00" fill="url(#gold)"/>
+    <rect x="44.10" y="-20.00" width="0.80" height="3.00" fill="url(#gold)"/>
+    <rect x="31.00" y="-21.90" width="3.00" height="0.80" fill="url(#gold)"/>
+    <rect x="46.00" y="-21.90" width="3.00" height="0.80" fill="url(#gold)"/>
+    <rect x="45.90" y="-35.00" width="0.80" height="3.00" fill="url(#gold)"/>
+    <rect x="45.90" y="-20.00" width="0.80" height="3.00" fill="url(#gold)"/>
+    <rect x="31.00" y="-20.10" width="3.00" height="0.80" fill="url(#gold)"/>
+    <rect x="46.00" y="-20.10" width="3.00" height="0.80" fill="url(#gold)"/>
+    <!-- small outline footprints -->
+    <rect x="-16.20" y="-40.00" width="1.00" height="3.00" fill="url(#gold)"/>
+    <rect x="-16.20" y="-31.00" width="1.00" height="3.00" fill="url(#gold)"/>
+    <rect x="-14.00" y="-40.00" width="1.00" height="3.00" fill="url(#gold)"/>
+    <rect x="-14.00" y="-31.00" width="1.00" height="3.00" fill="url(#gold)"/>
+    <rect x="-11.80" y="-40.00" width="1.00" height="3.00" fill="url(#gold)"/>
+    <rect x="-11.80" y="-31.00" width="1.00" height="3.00" fill="url(#gold)"/>
+    <rect x="-9.60" y="-40.00" width="1.00" height="3.00" fill="url(#gold)"/>
+    <rect x="-9.60" y="-31.00" width="1.00" height="3.00" fill="url(#gold)"/>
+    <rect x="-7.40" y="-40.00" width="1.00" height="3.00" fill="url(#gold)"/>
+    <rect x="-7.40" y="-31.00" width="1.00" height="3.00" fill="url(#gold)"/>
+    <rect x="-5.20" y="-40.00" width="1.00" height="3.00" fill="url(#gold)"/>
+    <rect x="-5.20" y="-31.00" width="1.00" height="3.00" fill="url(#gold)"/>
+    <rect x="-3.00" y="-40.00" width="1.00" height="3.00" fill="url(#gold)"/>
+    <rect x="-3.00" y="-31.00" width="1.00" height="3.00" fill="url(#gold)"/>
+    <rect x="-0.80" y="-40.00" width="1.00" height="3.00" fill="url(#gold)"/>
+    <rect x="-0.80" y="-31.00" width="1.00" height="3.00" fill="url(#gold)"/>
+    <rect x="17.55" y="-11.20" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="17.55" y="-3.40" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="19.55" y="-11.20" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="19.55" y="-3.40" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="21.55" y="-11.20" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="21.55" y="-3.40" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="23.55" y="-11.20" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="23.55" y="-3.40" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="25.55" y="-11.20" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="25.55" y="-3.40" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="27.55" y="-11.20" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="27.55" y="-3.40" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="29.55" y="-11.20" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="29.55" y="-3.40" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-70.45" y="0.80" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-70.45" y="8.60" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-68.45" y="0.80" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-68.45" y="8.60" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-66.45" y="0.80" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-66.45" y="8.60" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-64.45" y="0.80" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-64.45" y="8.60" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-62.45" y="0.80" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-62.45" y="8.60" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-60.45" y="0.80" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-60.45" y="8.60" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-58.45" y="0.80" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-58.45" y="8.60" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-25.45" y="34.80" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-25.45" y="42.60" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-23.45" y="34.80" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-23.45" y="42.60" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-21.45" y="34.80" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-21.45" y="42.60" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-19.45" y="34.80" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-19.45" y="42.60" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-17.45" y="34.80" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-17.45" y="42.60" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-15.45" y="34.80" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-15.45" y="42.60" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-13.45" y="34.80" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-13.45" y="42.60" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-11.45" y="34.80" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-11.45" y="42.60" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-9.45" y="34.80" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-9.45" y="42.60" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-7.45" y="34.80" width="0.90" height="2.60" fill="url(#gold)"/>
+    <rect x="-7.45" y="42.60" width="0.90" height="2.60" fill="url(#gold)"/>
+    <!-- area array pad grid -->
+    <circle cx="41.60" cy="1.60" r="0.85" fill="url(#gold)"/>
+    <circle cx="41.60" cy="4.20" r="0.85" fill="url(#gold)"/>
+    <circle cx="41.60" cy="6.80" r="0.85" fill="url(#gold)"/>
+    <circle cx="41.60" cy="9.40" r="0.85" fill="url(#gold)"/>
+    <circle cx="41.60" cy="12.00" r="0.85" fill="url(#gold)"/>
+    <circle cx="41.60" cy="14.60" r="0.85" fill="url(#gold)"/>
+    <circle cx="41.60" cy="17.20" r="0.85" fill="url(#gold)"/>
+    <circle cx="41.60" cy="19.80" r="0.85" fill="url(#gold)"/>
+    <circle cx="41.60" cy="22.40" r="0.85" fill="url(#gold)"/>
+    <circle cx="44.20" cy="1.60" r="0.85" fill="url(#gold)"/>
+    <circle cx="44.20" cy="4.20" r="0.85" fill="url(#gold)"/>
+    <circle cx="44.20" cy="6.80" r="0.85" fill="url(#gold)"/>
+    <circle cx="44.20" cy="9.40" r="0.85" fill="url(#gold)"/>
+    <circle cx="44.20" cy="12.00" r="0.85" fill="url(#gold)"/>
+    <circle cx="44.20" cy="14.60" r="0.85" fill="url(#gold)"/>
+    <circle cx="44.20" cy="17.20" r="0.85" fill="url(#gold)"/>
+    <circle cx="44.20" cy="19.80" r="0.85" fill="url(#gold)"/>
+    <circle cx="44.20" cy="22.40" r="0.85" fill="url(#gold)"/>
+    <circle cx="46.80" cy="1.60" r="0.85" fill="url(#gold)"/>
+    <circle cx="46.80" cy="4.20" r="0.85" fill="url(#gold)"/>
+    <circle cx="46.80" cy="6.80" r="0.85" fill="url(#gold)"/>
+    <circle cx="46.80" cy="9.40" r="0.85" fill="url(#gold)"/>
+    <circle cx="46.80" cy="12.00" r="0.85" fill="url(#gold)"/>
+    <circle cx="46.80" cy="14.60" r="0.85" fill="url(#gold)"/>
+    <circle cx="46.80" cy="17.20" r="0.85" fill="url(#gold)"/>
+    <circle cx="46.80" cy="19.80" r="0.85" fill="url(#gold)"/>
+    <circle cx="46.80" cy="22.40" r="0.85" fill="url(#gold)"/>
+    <circle cx="49.40" cy="1.60" r="0.85" fill="url(#gold)"/>
+    <circle cx="49.40" cy="4.20" r="0.85" fill="url(#gold)"/>
+    <circle cx="49.40" cy="6.80" r="0.85" fill="url(#gold)"/>
+    <circle cx="49.40" cy="9.40" r="0.85" fill="url(#gold)"/>
+    <circle cx="49.40" cy="12.00" r="0.85" fill="url(#gold)"/>
+    <circle cx="49.40" cy="14.60" r="0.85" fill="url(#gold)"/>
+    <circle cx="49.40" cy="17.20" r="0.85" fill="url(#gold)"/>
+    <circle cx="49.40" cy="19.80" r="0.85" fill="url(#gold)"/>
+    <circle cx="49.40" cy="22.40" r="0.85" fill="url(#gold)"/>
+    <circle cx="52.00" cy="1.60" r="0.85" fill="url(#gold)"/>
+    <circle cx="52.00" cy="4.20" r="0.85" fill="url(#gold)"/>
+    <circle cx="52.00" cy="6.80" r="0.85" fill="url(#gold)"/>
+    <circle cx="52.00" cy="9.40" r="0.85" fill="url(#gold)"/>
+    <circle cx="52.00" cy="12.00" r="0.85" fill="url(#gold)"/>
+    <circle cx="52.00" cy="14.60" r="0.85" fill="url(#gold)"/>
+    <circle cx="52.00" cy="17.20" r="0.85" fill="url(#gold)"/>
+    <circle cx="52.00" cy="19.80" r="0.85" fill="url(#gold)"/>
+    <circle cx="52.00" cy="22.40" r="0.85" fill="url(#gold)"/>
+    <circle cx="54.60" cy="1.60" r="0.85" fill="url(#gold)"/>
+    <circle cx="54.60" cy="4.20" r="0.85" fill="url(#gold)"/>
+    <circle cx="54.60" cy="6.80" r="0.85" fill="url(#gold)"/>
+    <circle cx="54.60" cy="9.40" r="0.85" fill="url(#gold)"/>
+    <circle cx="54.60" cy="12.00" r="0.85" fill="url(#gold)"/>
+    <circle cx="54.60" cy="14.60" r="0.85" fill="url(#gold)"/>
+    <circle cx="54.60" cy="17.20" r="0.85" fill="url(#gold)"/>
+    <circle cx="54.60" cy="19.80" r="0.85" fill="url(#gold)"/>
+    <circle cx="54.60" cy="22.40" r="0.85" fill="url(#gold)"/>
+    <circle cx="57.20" cy="1.60" r="0.85" fill="url(#gold)"/>
+    <circle cx="57.20" cy="4.20" r="0.85" fill="url(#gold)"/>
+    <circle cx="57.20" cy="6.80" r="0.85" fill="url(#gold)"/>
+    <circle cx="57.20" cy="9.40" r="0.85" fill="url(#gold)"/>
+    <circle cx="57.20" cy="12.00" r="0.85" fill="url(#gold)"/>
+    <circle cx="57.20" cy="14.60" r="0.85" fill="url(#gold)"/>
+    <circle cx="57.20" cy="17.20" r="0.85" fill="url(#gold)"/>
+    <circle cx="57.20" cy="19.80" r="0.85" fill="url(#gold)"/>
+    <circle cx="57.20" cy="22.40" r="0.85" fill="url(#gold)"/>
+    <circle cx="59.80" cy="1.60" r="0.85" fill="url(#gold)"/>
+    <circle cx="59.80" cy="4.20" r="0.85" fill="url(#gold)"/>
+    <circle cx="59.80" cy="6.80" r="0.85" fill="url(#gold)"/>
+    <circle cx="59.80" cy="9.40" r="0.85" fill="url(#gold)"/>
+    <circle cx="59.80" cy="12.00" r="0.85" fill="url(#gold)"/>
+    <circle cx="59.80" cy="14.60" r="0.85" fill="url(#gold)"/>
+    <circle cx="59.80" cy="17.20" r="0.85" fill="url(#gold)"/>
+    <circle cx="59.80" cy="19.80" r="0.85" fill="url(#gold)"/>
+    <circle cx="59.80" cy="22.40" r="0.85" fill="url(#gold)"/>
+    <circle cx="62.40" cy="1.60" r="0.85" fill="url(#gold)"/>
+    <circle cx="62.40" cy="4.20" r="0.85" fill="url(#gold)"/>
+    <circle cx="62.40" cy="6.80" r="0.85" fill="url(#gold)"/>
+    <circle cx="62.40" cy="9.40" r="0.85" fill="url(#gold)"/>
+    <circle cx="62.40" cy="12.00" r="0.85" fill="url(#gold)"/>
+    <circle cx="62.40" cy="14.60" r="0.85" fill="url(#gold)"/>
+    <circle cx="62.40" cy="17.20" r="0.85" fill="url(#gold)"/>
+    <circle cx="62.40" cy="19.80" r="0.85" fill="url(#gold)"/>
+    <circle cx="62.40" cy="22.40" r="0.85" fill="url(#gold)"/>
+    <!-- discrete passive footprints -->
+    <rect x="-70.00" y="-38.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-68.00" y="-38.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-66.40" y="-38.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-64.40" y="-38.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-62.80" y="-38.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-60.80" y="-38.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-59.20" y="-38.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-57.20" y="-38.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-55.60" y="-38.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-53.60" y="-38.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-52.00" y="-38.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-50.00" y="-38.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-48.40" y="-38.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-46.40" y="-38.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-44.80" y="-38.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-42.80" y="-38.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-41.20" y="-38.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-39.20" y="-38.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-37.60" y="-38.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-35.60" y="-38.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-70.00" y="-30.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-68.00" y="-30.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-66.40" y="-30.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-64.40" y="-30.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-62.80" y="-30.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-60.80" y="-30.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-59.20" y="-30.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-57.20" y="-30.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-55.60" y="-30.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-53.60" y="-30.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-52.00" y="-30.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-50.00" y="-30.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-48.40" y="-30.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-46.40" y="-30.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-44.80" y="-30.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-42.80" y="-30.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-41.20" y="-30.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-39.20" y="-30.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-37.60" y="-30.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-35.60" y="-30.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-30.00" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-28.00" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-26.40" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-24.40" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-22.80" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-20.80" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-19.20" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-17.20" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-15.60" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-13.60" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-12.00" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-10.00" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-8.40" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-6.40" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-4.80" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-2.80" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-1.20" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="0.80" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="2.40" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="4.40" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="6.00" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="8.00" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="9.60" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="11.60" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="14.00" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="16.00" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="17.60" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="19.60" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="21.20" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="23.20" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="24.80" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="26.80" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="28.40" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="30.40" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="32.00" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="34.00" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="35.60" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="37.60" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="39.20" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="41.20" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="42.80" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="44.80" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="46.40" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="48.40" y="-44.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-60.00" y="26.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-58.00" y="26.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-56.40" y="26.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-54.40" y="26.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-52.80" y="26.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-50.80" y="26.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-49.20" y="26.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-47.20" y="26.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-45.60" y="26.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-43.60" y="26.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-42.00" y="26.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-40.00" y="26.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-38.40" y="26.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-36.40" y="26.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-34.80" y="26.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-32.80" y="26.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-31.20" y="26.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-29.20" y="26.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-27.60" y="26.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-25.60" y="26.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-24.00" y="26.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-22.00" y="26.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-20.40" y="26.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-18.40" y="26.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-60.00" y="34.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-58.00" y="34.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-56.40" y="34.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-54.40" y="34.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-52.80" y="34.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-50.80" y="34.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-49.20" y="34.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-47.20" y="34.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-45.60" y="34.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-43.60" y="34.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-42.00" y="34.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-40.00" y="34.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-38.40" y="34.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-36.40" y="34.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-34.80" y="34.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-32.80" y="34.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-31.20" y="34.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-29.20" y="34.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-27.60" y="34.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-25.60" y="34.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-24.00" y="34.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-22.00" y="34.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-20.40" y="34.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="-18.40" y="34.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="30.00" y="36.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="32.00" y="36.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="33.60" y="36.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="35.60" y="36.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="37.20" y="36.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="39.20" y="36.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="40.80" y="36.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="42.80" y="36.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="44.40" y="36.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="46.40" y="36.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="48.00" y="36.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="50.00" y="36.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="51.60" y="36.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="53.60" y="36.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="55.20" y="36.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="57.20" y="36.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="62.00" y="-40.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="64.00" y="-40.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="65.60" y="-40.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="67.60" y="-40.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="69.20" y="-40.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="71.20" y="-40.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="72.80" y="-40.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="74.80" y="-40.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="76.40" y="-40.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="78.40" y="-40.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="62.00" y="40.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="64.00" y="40.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="65.60" y="40.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="67.60" y="40.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="69.20" y="40.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="71.20" y="40.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="72.80" y="40.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="74.80" y="40.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="76.40" y="40.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <rect x="78.40" y="40.00" width="1.40" height="2.20" fill="url(#gold)"/>
+    <!-- plated through holes -->
+    <circle cx="-72.00" cy="-12.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-72.00" cy="-9.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-72.00" cy="-6.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-72.00" cy="-3.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-72.00" cy="0.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-72.00" cy="3.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-72.00" cy="6.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-72.00" cy="9.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-69.00" cy="-12.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-69.00" cy="-9.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-69.00" cy="-6.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-69.00" cy="-3.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-69.00" cy="0.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-69.00" cy="3.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-69.00" cy="6.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-69.00" cy="9.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-72.00" cy="-12.00" r="0.62" fill="#122a22"/>
+    <circle cx="-72.00" cy="-9.00" r="0.62" fill="#122a22"/>
+    <circle cx="-72.00" cy="-6.00" r="0.62" fill="#122a22"/>
+    <circle cx="-72.00" cy="-3.00" r="0.62" fill="#122a22"/>
+    <circle cx="-72.00" cy="0.00" r="0.62" fill="#122a22"/>
+    <circle cx="-72.00" cy="3.00" r="0.62" fill="#122a22"/>
+    <circle cx="-72.00" cy="6.00" r="0.62" fill="#122a22"/>
+    <circle cx="-72.00" cy="9.00" r="0.62" fill="#122a22"/>
+    <circle cx="-69.00" cy="-12.00" r="0.62" fill="#122a22"/>
+    <circle cx="-69.00" cy="-9.00" r="0.62" fill="#122a22"/>
+    <circle cx="-69.00" cy="-6.00" r="0.62" fill="#122a22"/>
+    <circle cx="-69.00" cy="-3.00" r="0.62" fill="#122a22"/>
+    <circle cx="-69.00" cy="0.00" r="0.62" fill="#122a22"/>
+    <circle cx="-69.00" cy="3.00" r="0.62" fill="#122a22"/>
+    <circle cx="-69.00" cy="6.00" r="0.62" fill="#122a22"/>
+    <circle cx="-69.00" cy="9.00" r="0.62" fill="#122a22"/>
+    <circle cx="-52.00" cy="30.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-52.00" cy="33.20" r="1.50" fill="url(#gold)"/>
+    <circle cx="-48.80" cy="30.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-48.80" cy="33.20" r="1.50" fill="url(#gold)"/>
+    <circle cx="-45.60" cy="30.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-45.60" cy="33.20" r="1.50" fill="url(#gold)"/>
+    <circle cx="-42.40" cy="30.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-42.40" cy="33.20" r="1.50" fill="url(#gold)"/>
+    <circle cx="-39.20" cy="30.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-39.20" cy="33.20" r="1.50" fill="url(#gold)"/>
+    <circle cx="-36.00" cy="30.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-36.00" cy="33.20" r="1.50" fill="url(#gold)"/>
+    <circle cx="-32.80" cy="30.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-32.80" cy="33.20" r="1.50" fill="url(#gold)"/>
+    <circle cx="-29.60" cy="30.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-29.60" cy="33.20" r="1.50" fill="url(#gold)"/>
+    <circle cx="-26.40" cy="30.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-26.40" cy="33.20" r="1.50" fill="url(#gold)"/>
+    <circle cx="-23.20" cy="30.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-23.20" cy="33.20" r="1.50" fill="url(#gold)"/>
+    <circle cx="-20.00" cy="30.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-20.00" cy="33.20" r="1.50" fill="url(#gold)"/>
+    <circle cx="-16.80" cy="30.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-16.80" cy="33.20" r="1.50" fill="url(#gold)"/>
+    <circle cx="-13.60" cy="30.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-13.60" cy="33.20" r="1.50" fill="url(#gold)"/>
+    <circle cx="-10.40" cy="30.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="-10.40" cy="33.20" r="1.50" fill="url(#gold)"/>
+    <circle cx="-52.00" cy="30.00" r="0.62" fill="#122a22"/>
+    <circle cx="-52.00" cy="33.20" r="0.62" fill="#122a22"/>
+    <circle cx="-48.80" cy="30.00" r="0.62" fill="#122a22"/>
+    <circle cx="-48.80" cy="33.20" r="0.62" fill="#122a22"/>
+    <circle cx="-45.60" cy="30.00" r="0.62" fill="#122a22"/>
+    <circle cx="-45.60" cy="33.20" r="0.62" fill="#122a22"/>
+    <circle cx="-42.40" cy="30.00" r="0.62" fill="#122a22"/>
+    <circle cx="-42.40" cy="33.20" r="0.62" fill="#122a22"/>
+    <circle cx="-39.20" cy="30.00" r="0.62" fill="#122a22"/>
+    <circle cx="-39.20" cy="33.20" r="0.62" fill="#122a22"/>
+    <circle cx="-36.00" cy="30.00" r="0.62" fill="#122a22"/>
+    <circle cx="-36.00" cy="33.20" r="0.62" fill="#122a22"/>
+    <circle cx="-32.80" cy="30.00" r="0.62" fill="#122a22"/>
+    <circle cx="-32.80" cy="33.20" r="0.62" fill="#122a22"/>
+    <circle cx="-29.60" cy="30.00" r="0.62" fill="#122a22"/>
+    <circle cx="-29.60" cy="33.20" r="0.62" fill="#122a22"/>
+    <circle cx="-26.40" cy="30.00" r="0.62" fill="#122a22"/>
+    <circle cx="-26.40" cy="33.20" r="0.62" fill="#122a22"/>
+    <circle cx="-23.20" cy="30.00" r="0.62" fill="#122a22"/>
+    <circle cx="-23.20" cy="33.20" r="0.62" fill="#122a22"/>
+    <circle cx="-20.00" cy="30.00" r="0.62" fill="#122a22"/>
+    <circle cx="-20.00" cy="33.20" r="0.62" fill="#122a22"/>
+    <circle cx="-16.80" cy="30.00" r="0.62" fill="#122a22"/>
+    <circle cx="-16.80" cy="33.20" r="0.62" fill="#122a22"/>
+    <circle cx="-13.60" cy="30.00" r="0.62" fill="#122a22"/>
+    <circle cx="-13.60" cy="33.20" r="0.62" fill="#122a22"/>
+    <circle cx="-10.40" cy="30.00" r="0.62" fill="#122a22"/>
+    <circle cx="-10.40" cy="33.20" r="0.62" fill="#122a22"/>
+    <circle cx="18.00" cy="-34.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="18.00" cy="-31.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="21.00" cy="-34.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="21.00" cy="-31.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="24.00" cy="-34.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="24.00" cy="-31.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="27.00" cy="-34.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="27.00" cy="-31.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="30.00" cy="-34.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="30.00" cy="-31.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="33.00" cy="-34.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="33.00" cy="-31.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="36.00" cy="-34.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="36.00" cy="-31.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="39.00" cy="-34.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="39.00" cy="-31.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="42.00" cy="-34.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="42.00" cy="-31.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="45.00" cy="-34.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="45.00" cy="-31.00" r="1.50" fill="url(#gold)"/>
+    <circle cx="18.00" cy="-34.00" r="0.62" fill="#122a22"/>
+    <circle cx="18.00" cy="-31.00" r="0.62" fill="#122a22"/>
+    <circle cx="21.00" cy="-34.00" r="0.62" fill="#122a22"/>
+    <circle cx="21.00" cy="-31.00" r="0.62" fill="#122a22"/>
+    <circle cx="24.00" cy="-34.00" r="0.62" fill="#122a22"/>
+    <circle cx="24.00" cy="-31.00" r="0.62" fill="#122a22"/>
+    <circle cx="27.00" cy="-34.00" r="0.62" fill="#122a22"/>
+    <circle cx="27.00" cy="-31.00" r="0.62" fill="#122a22"/>
+    <circle cx="30.00" cy="-34.00" r="0.62" fill="#122a22"/>
+    <circle cx="30.00" cy="-31.00" r="0.62" fill="#122a22"/>
+    <circle cx="33.00" cy="-34.00" r="0.62" fill="#122a22"/>
+    <circle cx="33.00" cy="-31.00" r="0.62" fill="#122a22"/>
+    <circle cx="36.00" cy="-34.00" r="0.62" fill="#122a22"/>
+    <circle cx="36.00" cy="-31.00" r="0.62" fill="#122a22"/>
+    <circle cx="39.00" cy="-34.00" r="0.62" fill="#122a22"/>
+    <circle cx="39.00" cy="-31.00" r="0.62" fill="#122a22"/>
+    <circle cx="42.00" cy="-34.00" r="0.62" fill="#122a22"/>
+    <circle cx="42.00" cy="-31.00" r="0.62" fill="#122a22"/>
+    <circle cx="45.00" cy="-34.00" r="0.62" fill="#122a22"/>
+    <circle cx="45.00" cy="-31.00" r="0.62" fill="#122a22"/>
+    <circle cx="-24.00" cy="4.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-24.00" cy="7.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-24.00" cy="10.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-21.00" cy="4.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-21.00" cy="7.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-21.00" cy="10.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-18.00" cy="4.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-18.00" cy="7.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-18.00" cy="10.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-15.00" cy="4.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-15.00" cy="7.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-15.00" cy="10.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-12.00" cy="4.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-12.00" cy="7.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-12.00" cy="10.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-9.00" cy="4.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-9.00" cy="7.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-9.00" cy="10.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-6.00" cy="4.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-6.00" cy="7.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-6.00" cy="10.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-3.00" cy="4.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-3.00" cy="7.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-3.00" cy="10.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="0.00" cy="4.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="0.00" cy="7.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="0.00" cy="10.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="3.00" cy="4.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="3.00" cy="7.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="3.00" cy="10.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="6.00" cy="4.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="6.00" cy="7.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="6.00" cy="10.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="9.00" cy="4.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="9.00" cy="7.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="9.00" cy="10.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-24.00" cy="4.00" r="0.50" fill="#122a22"/>
+    <circle cx="-24.00" cy="7.00" r="0.50" fill="#122a22"/>
+    <circle cx="-24.00" cy="10.00" r="0.50" fill="#122a22"/>
+    <circle cx="-21.00" cy="4.00" r="0.50" fill="#122a22"/>
+    <circle cx="-21.00" cy="7.00" r="0.50" fill="#122a22"/>
+    <circle cx="-21.00" cy="10.00" r="0.50" fill="#122a22"/>
+    <circle cx="-18.00" cy="4.00" r="0.50" fill="#122a22"/>
+    <circle cx="-18.00" cy="7.00" r="0.50" fill="#122a22"/>
+    <circle cx="-18.00" cy="10.00" r="0.50" fill="#122a22"/>
+    <circle cx="-15.00" cy="4.00" r="0.50" fill="#122a22"/>
+    <circle cx="-15.00" cy="7.00" r="0.50" fill="#122a22"/>
+    <circle cx="-15.00" cy="10.00" r="0.50" fill="#122a22"/>
+    <circle cx="-12.00" cy="4.00" r="0.50" fill="#122a22"/>
+    <circle cx="-12.00" cy="7.00" r="0.50" fill="#122a22"/>
+    <circle cx="-12.00" cy="10.00" r="0.50" fill="#122a22"/>
+    <circle cx="-9.00" cy="4.00" r="0.50" fill="#122a22"/>
+    <circle cx="-9.00" cy="7.00" r="0.50" fill="#122a22"/>
+    <circle cx="-9.00" cy="10.00" r="0.50" fill="#122a22"/>
+    <circle cx="-6.00" cy="4.00" r="0.50" fill="#122a22"/>
+    <circle cx="-6.00" cy="7.00" r="0.50" fill="#122a22"/>
+    <circle cx="-6.00" cy="10.00" r="0.50" fill="#122a22"/>
+    <circle cx="-3.00" cy="4.00" r="0.50" fill="#122a22"/>
+    <circle cx="-3.00" cy="7.00" r="0.50" fill="#122a22"/>
+    <circle cx="-3.00" cy="10.00" r="0.50" fill="#122a22"/>
+    <circle cx="0.00" cy="4.00" r="0.50" fill="#122a22"/>
+    <circle cx="0.00" cy="7.00" r="0.50" fill="#122a22"/>
+    <circle cx="0.00" cy="10.00" r="0.50" fill="#122a22"/>
+    <circle cx="3.00" cy="4.00" r="0.50" fill="#122a22"/>
+    <circle cx="3.00" cy="7.00" r="0.50" fill="#122a22"/>
+    <circle cx="3.00" cy="10.00" r="0.50" fill="#122a22"/>
+    <circle cx="6.00" cy="4.00" r="0.50" fill="#122a22"/>
+    <circle cx="6.00" cy="7.00" r="0.50" fill="#122a22"/>
+    <circle cx="6.00" cy="10.00" r="0.50" fill="#122a22"/>
+    <circle cx="9.00" cy="4.00" r="0.50" fill="#122a22"/>
+    <circle cx="9.00" cy="7.00" r="0.50" fill="#122a22"/>
+    <circle cx="9.00" cy="10.00" r="0.50" fill="#122a22"/>
+    <circle cx="58.00" cy="30.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="58.00" cy="33.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="58.00" cy="36.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="58.00" cy="39.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="61.00" cy="30.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="61.00" cy="33.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="61.00" cy="36.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="61.00" cy="39.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="64.00" cy="30.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="64.00" cy="33.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="64.00" cy="36.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="64.00" cy="39.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="67.00" cy="30.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="67.00" cy="33.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="67.00" cy="36.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="67.00" cy="39.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="70.00" cy="30.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="70.00" cy="33.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="70.00" cy="36.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="70.00" cy="39.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="73.00" cy="30.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="73.00" cy="33.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="73.00" cy="36.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="73.00" cy="39.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="58.00" cy="30.00" r="0.50" fill="#122a22"/>
+    <circle cx="58.00" cy="33.00" r="0.50" fill="#122a22"/>
+    <circle cx="58.00" cy="36.00" r="0.50" fill="#122a22"/>
+    <circle cx="58.00" cy="39.00" r="0.50" fill="#122a22"/>
+    <circle cx="61.00" cy="30.00" r="0.50" fill="#122a22"/>
+    <circle cx="61.00" cy="33.00" r="0.50" fill="#122a22"/>
+    <circle cx="61.00" cy="36.00" r="0.50" fill="#122a22"/>
+    <circle cx="61.00" cy="39.00" r="0.50" fill="#122a22"/>
+    <circle cx="64.00" cy="30.00" r="0.50" fill="#122a22"/>
+    <circle cx="64.00" cy="33.00" r="0.50" fill="#122a22"/>
+    <circle cx="64.00" cy="36.00" r="0.50" fill="#122a22"/>
+    <circle cx="64.00" cy="39.00" r="0.50" fill="#122a22"/>
+    <circle cx="67.00" cy="30.00" r="0.50" fill="#122a22"/>
+    <circle cx="67.00" cy="33.00" r="0.50" fill="#122a22"/>
+    <circle cx="67.00" cy="36.00" r="0.50" fill="#122a22"/>
+    <circle cx="67.00" cy="39.00" r="0.50" fill="#122a22"/>
+    <circle cx="70.00" cy="30.00" r="0.50" fill="#122a22"/>
+    <circle cx="70.00" cy="33.00" r="0.50" fill="#122a22"/>
+    <circle cx="70.00" cy="36.00" r="0.50" fill="#122a22"/>
+    <circle cx="70.00" cy="39.00" r="0.50" fill="#122a22"/>
+    <circle cx="73.00" cy="30.00" r="0.50" fill="#122a22"/>
+    <circle cx="73.00" cy="33.00" r="0.50" fill="#122a22"/>
+    <circle cx="73.00" cy="36.00" r="0.50" fill="#122a22"/>
+    <circle cx="73.00" cy="39.00" r="0.50" fill="#122a22"/>
+    <circle cx="-76.00" cy="42.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-76.00" cy="45.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-73.00" cy="42.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-73.00" cy="45.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-70.00" cy="42.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-70.00" cy="45.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-67.00" cy="42.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-67.00" cy="45.00" r="1.20" fill="url(#gold)"/>
+    <circle cx="-76.00" cy="42.00" r="0.50" fill="#122a22"/>
+    <circle cx="-76.00" cy="45.00" r="0.50" fill="#122a22"/>
+    <circle cx="-73.00" cy="42.00" r="0.50" fill="#122a22"/>
+    <circle cx="-73.00" cy="45.00" r="0.50" fill="#122a22"/>
+    <circle cx="-70.00" cy="42.00" r="0.50" fill="#122a22"/>
+    <circle cx="-70.00" cy="45.00" r="0.50" fill="#122a22"/>
+    <circle cx="-67.00" cy="42.00" r="0.50" fill="#122a22"/>
+    <circle cx="-67.00" cy="45.00" r="0.50" fill="#122a22"/>
+    <!-- corner mounting holes -->
+    <circle cx="-72.00" cy="-42.00" r="4.60" fill="url(#gold)"/>
+    <circle cx="-72.00" cy="-42.00" r="3.40" fill="#0a2620"/>
+    <circle cx="-72.00" cy="-42.00" r="2.90" fill="#08201b"/>
+    <circle cx="-72.00" cy="42.00" r="4.60" fill="url(#gold)"/>
+    <circle cx="-72.00" cy="42.00" r="3.40" fill="#0a2620"/>
+    <circle cx="-72.00" cy="42.00" r="2.90" fill="#08201b"/>
+    <circle cx="72.00" cy="-42.00" r="4.60" fill="url(#gold)"/>
+    <circle cx="72.00" cy="-42.00" r="3.40" fill="#0a2620"/>
+    <circle cx="72.00" cy="-42.00" r="2.90" fill="#08201b"/>
+    <circle cx="72.00" cy="42.00" r="4.60" fill="url(#gold)"/>
+    <circle cx="72.00" cy="42.00" r="3.40" fill="#0a2620"/>
+    <circle cx="72.00" cy="42.00" r="2.90" fill="#08201b"/>
+  </g>
+
+  <!-- mask sheen and edge highlight -->
+  <g clip-path="url(#clipBoard)">
+    <path d="M117.4 371.1 L596.7 297.5 L674.2 370.3 L194.9 443.9 Z" fill="#ffffff" fill-opacity="0.07"/>
+    <path d="M427.3 662.5 L906.6 588.9 L829.1 516.1 L349.8 589.7 Z" fill="#000000" fill-opacity="0.09"/>
+  </g>
+  <path d="M427.3 662.5 L906.6 588.9 L596.7 297.5 L117.4 371.1 Z" fill="none" stroke="#0a2a22" stroke-width="3"/>
+  <path d="M596.7 297.5 L117.4 371.1" stroke="#5f9a85" stroke-opacity="0.45" stroke-width="2.5" fill="none"/>
+
+  <!-- routed edge with breakaway mouse bite tabs -->
+  <g fill="url(#laminate)" stroke="#4e472f" stroke-width="1.5">
+    <ellipse cx="167.0" cy="417.7" rx="9" ry="5" transform="rotate(-8 167.0 417.7)"/>
+    <ellipse cx="247.5" cy="493.5" rx="9" ry="5" transform="rotate(-8 247.5 493.5)"/>
+    <ellipse cx="334.3" cy="575.1" rx="9" ry="5" transform="rotate(-8 334.3 575.1)"/>
+    <ellipse cx="396.3" cy="633.4" rx="9" ry="5" transform="rotate(-8 396.3 633.4)"/>
+    <ellipse cx="671.1" cy="367.4" rx="9" ry="5" transform="rotate(-8 671.1 367.4)"/>
+    <ellipse cx="767.2" cy="457.8" rx="9" ry="5" transform="rotate(-8 767.2 457.8)"/>
+    <ellipse cx="850.8" cy="536.5" rx="9" ry="5" transform="rotate(-8 850.8 536.5)"/>
+  </g>
+  <g fill="none" stroke="#6d6349" stroke-width="1.4" stroke-opacity="0.8">
+    <path d="M161.0 416.7 L173.0 416.7 M161.0 419.7 L173.0 419.7"/>
+    <path d="M241.5 492.5 L253.5 492.5 M241.5 495.5 L253.5 495.5"/>
+    <path d="M328.3 574.1 L340.3 574.1 M328.3 577.1 L340.3 577.1"/>
+    <path d="M390.3 632.4 L402.3 632.4 M390.3 635.4 L402.3 635.4"/>
+  </g>
+</svg>

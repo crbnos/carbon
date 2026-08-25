@@ -48,6 +48,7 @@ import {
   ItemThumbnail,
   MethodIcon,
   New,
+  SupplierAvatarGroup,
   Table,
   TrackingTypeIcon
 } from "~/components";
@@ -58,7 +59,7 @@ import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
-import { usePeople } from "~/stores";
+import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import { itemTrackingTypes } from "../../items.models";
 import type { ConsumableListItem } from "../../types";
@@ -101,6 +102,11 @@ const ConsumablesTable = memo(
     );
 
     const [people] = usePeople();
+    const [suppliers] = useSuppliers();
+    const supplierMap = useMemo(
+      () => new Map(suppliers.map((supplier) => [supplier.id, supplier.name])),
+      [suppliers]
+    );
     const itemPostingGroups = useItemPostingGroups();
     const customColumns = useCustomColumns<ConsumableListItem>("consumable");
 
@@ -301,6 +307,29 @@ const ConsumablesTable = memo(
           }
         },
         {
+          accessorKey: "suppliers",
+          header: t`Supplier`,
+          cell: ({ row }) => (
+            <SupplierAvatarGroup supplierIds={row.original.suppliers ?? []} />
+          ),
+          meta: {
+            filter: {
+              type: "static",
+              options: suppliers.map((supplier) => ({
+                value: supplier.id,
+                label: supplier.name
+              })),
+              isArray: true
+            },
+            icon: <LuTruck />,
+            exportValue: (row) =>
+              row.suppliers
+                ?.map((supplierId) => supplierMap.get(supplierId))
+                .filter(Boolean)
+                .join(", ") ?? null
+          }
+        },
+        {
           accessorKey: "active",
           header: t`Active`,
           cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
@@ -391,6 +420,8 @@ const ConsumablesTable = memo(
     }, [
       tags,
       people,
+      supplierMap,
+      suppliers,
       customColumns,
       itemPostingGroups,
       t,

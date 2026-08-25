@@ -1870,6 +1870,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterialStep.jobOperationStepId"
           },
           {
+            $ref: "#/parameters/rowFilter.jobMaterialStep.quantity"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -1935,6 +1938,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterialStep.jobOperationStepId"
           },
           {
+            $ref: "#/parameters/rowFilter.jobMaterialStep.quantity"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -1952,6 +1958,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobMaterialStep.jobOperationStepId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterialStep.quantity"
           },
           {
             $ref: "#/parameters/body.jobMaterialStep"
@@ -6106,10 +6115,7 @@ export default {
             $ref: "#/parameters/rowFilter.workflow.ownerId"
           },
           {
-            $ref: "#/parameters/rowFilter.workflow.active"
-          },
-          {
-            $ref: "#/parameters/rowFilter.workflow.activeVersionId"
+            $ref: "#/parameters/rowFilter.workflow.publishedVersionId"
           },
           {
             $ref: "#/parameters/rowFilter.workflow.nextRunAt"
@@ -6204,10 +6210,7 @@ export default {
             $ref: "#/parameters/rowFilter.workflow.ownerId"
           },
           {
-            $ref: "#/parameters/rowFilter.workflow.active"
-          },
-          {
-            $ref: "#/parameters/rowFilter.workflow.activeVersionId"
+            $ref: "#/parameters/rowFilter.workflow.publishedVersionId"
           },
           {
             $ref: "#/parameters/rowFilter.workflow.nextRunAt"
@@ -6256,10 +6259,7 @@ export default {
             $ref: "#/parameters/rowFilter.workflow.ownerId"
           },
           {
-            $ref: "#/parameters/rowFilter.workflow.active"
-          },
-          {
-            $ref: "#/parameters/rowFilter.workflow.activeVersionId"
+            $ref: "#/parameters/rowFilter.workflow.publishedVersionId"
           },
           {
             $ref: "#/parameters/rowFilter.workflow.nextRunAt"
@@ -10321,6 +10321,9 @@ export default {
             $ref: "#/parameters/rowFilter.methodMaterialStep.methodOperationStepId"
           },
           {
+            $ref: "#/parameters/rowFilter.methodMaterialStep.quantity"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -10386,6 +10389,9 @@ export default {
             $ref: "#/parameters/rowFilter.methodMaterialStep.methodOperationStepId"
           },
           {
+            $ref: "#/parameters/rowFilter.methodMaterialStep.quantity"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -10403,6 +10409,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.methodMaterialStep.methodOperationStepId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterialStep.quantity"
           },
           {
             $ref: "#/parameters/body.methodMaterialStep"
@@ -48853,6 +48862,9 @@ export default {
             $ref: "#/parameters/rowFilter.ssoConnection.active"
           },
           {
+            $ref: "#/parameters/rowFilter.ssoConnection.requireSso"
+          },
+          {
             $ref: "#/parameters/rowFilter.ssoConnection.createdBy"
           },
           {
@@ -48863,9 +48875,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.ssoConnection.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.ssoConnection.requireSso"
           },
           {
             $ref: "#/parameters/select"
@@ -48948,6 +48957,9 @@ export default {
             $ref: "#/parameters/rowFilter.ssoConnection.active"
           },
           {
+            $ref: "#/parameters/rowFilter.ssoConnection.requireSso"
+          },
+          {
             $ref: "#/parameters/rowFilter.ssoConnection.createdBy"
           },
           {
@@ -48958,9 +48970,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.ssoConnection.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.ssoConnection.requireSso"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -48997,6 +49006,9 @@ export default {
             $ref: "#/parameters/rowFilter.ssoConnection.active"
           },
           {
+            $ref: "#/parameters/rowFilter.ssoConnection.requireSso"
+          },
+          {
             $ref: "#/parameters/rowFilter.ssoConnection.createdBy"
           },
           {
@@ -49007,9 +49019,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.ssoConnection.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.ssoConnection.requireSso"
           },
           {
             $ref: "#/parameters/body.ssoConnection"
@@ -71575,6 +71584,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMaterialStep.quoteOperationStepId"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteMaterialStep.quantity"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -71640,6 +71652,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMaterialStep.quoteOperationStepId"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteMaterialStep.quantity"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -71657,6 +71672,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteMaterialStep.quoteOperationStepId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteMaterialStep.quantity"
           },
           {
             $ref: "#/parameters/body.quoteMaterialStep"
@@ -89013,6 +89031,52 @@ export default {
         tags: ["(rpc) sync_edit_document_transaction"]
       }
     },
+    "/rpc/workflow_merge_custom_fields": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                },
+                p_values: {
+                  format: "jsonb"
+                }
+              },
+              required: ["p_table", "p_id", "p_company_id", "p_values"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) workflow_merge_custom_fields"]
+      }
+    },
     "/rpc/get_jobs_by_date_range": {
       post: {
         parameters: [
@@ -99712,6 +99776,10 @@ export default {
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `jobOperationStep.id`.<fk table='jobOperationStep' column='id'/>",
           format: "text",
           type: "string"
+        },
+        quantity: {
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -101482,7 +101550,6 @@ export default {
         "companyId",
         "name",
         "ownerId",
-        "active",
         "createdBy",
         "createdAt"
       ],
@@ -101513,12 +101580,7 @@ export default {
           format: "text",
           type: "string"
         },
-        active: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
-        },
-        activeVersionId: {
+        publishedVersionId: {
           format: "text",
           type: "string"
         },
@@ -103571,6 +103633,10 @@ export default {
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `methodOperationStep.id`.<fk table='methodOperationStep' column='id'/>",
           format: "text",
           type: "string"
+        },
+        quantity: {
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -121933,9 +121999,9 @@ export default {
         "providerId",
         "domains",
         "active",
+        "requireSso",
         "createdBy",
-        "createdAt",
-        "requireSso"
+        "createdAt"
       ],
       properties: {
         id: {
@@ -121974,6 +122040,11 @@ export default {
           format: "boolean",
           type: "boolean"
         },
+        requireSso: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
         createdBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
@@ -121994,11 +122065,6 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
-        },
-        requireSso: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
         }
       },
       type: "object"
@@ -132517,6 +132583,10 @@ export default {
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `quoteOperationStep.id`.<fk table='quoteOperationStep' column='id'/>",
           format: "text",
           type: "string"
+        },
+        quantity: {
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -141346,6 +141416,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.jobMaterialStep.quantity": {
+      name: "quantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.consumables": {
       name: "consumables",
       description: "consumables",
@@ -143416,14 +143492,8 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.workflow.active": {
-      name: "active",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.workflow.activeVersionId": {
-      name: "activeVersionId",
+    "rowFilter.workflow.publishedVersionId": {
+      name: "publishedVersionId",
       required: false,
       in: "query",
       type: "string"
@@ -145703,6 +145773,12 @@ export default {
     },
     "rowFilter.methodMaterialStep.methodOperationStepId": {
       name: "methodOperationStepId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.methodMaterialStep.quantity": {
+      name: "quantity",
       required: false,
       in: "query",
       type: "string"
@@ -166237,6 +166313,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.ssoConnection.requireSso": {
+      name: "requireSso",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.ssoConnection.createdBy": {
       name: "createdBy",
       required: false,
@@ -166257,12 +166339,6 @@ export default {
     },
     "rowFilter.ssoConnection.updatedAt": {
       name: "updatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.ssoConnection.requireSso": {
-      name: "requireSso",
       required: false,
       in: "query",
       type: "string"
@@ -177971,6 +178047,12 @@ export default {
     },
     "rowFilter.quoteMaterialStep.quoteOperationStepId": {
       name: "quoteOperationStepId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.quoteMaterialStep.quantity": {
+      name: "quantity",
       required: false,
       in: "query",
       type: "string"

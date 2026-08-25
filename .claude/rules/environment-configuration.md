@@ -75,8 +75,11 @@ root `.env` and reach GoTrue via docker-compose substitution
 (`GOTRUE_SAML_*`); see the `crbn reload` lesson in `.ai/lessons.md` (reload
 does not read root `.env`, so a reload silently disables SAML).
 
-**Stripe** — `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` (both optional),
-`STRIPE_BYPASS_COMPANY_IDS`, `STRIPE_BYPASS_USER_IDS`.
+**Stripe** — `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
+`STRIPE_CONNECT_WEBHOOK_SECRET` (all optional), `STRIPE_BYPASS_COMPANY_IDS`,
+`STRIPE_BYPASS_USER_IDS`. The two webhook secrets are distinct: the platform
+endpoint (`/api/webhook/stripe`, billing) and the Connect endpoint
+(`/api/webhook/stripe-connect`, connected-account events) are signed separately.
 
 **Email** — `RESEND_API_KEY`, `RESEND_DOMAIN` (default `carbon.ms`),
 `DISABLE_RESEND` (short-circuits sends), optional `RESEND_AUDIENCE_ID`.

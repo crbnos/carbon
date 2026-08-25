@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="enamel" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#26292c"/>
+      <stop offset="0.22" stop-color="#4a4f54"/>
+      <stop offset="0.45" stop-color="#5e646a"/>
+      <stop offset="0.72" stop-color="#383c40"/>
+      <stop offset="1" stop-color="#1e2124"/>
+    </linearGradient>
+    <linearGradient id="enamelEnd" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3a3f44"/>
+      <stop offset="0.5" stop-color="#2b2f33"/>
+      <stop offset="1" stop-color="#1b1e21"/>
+    </linearGradient>
+    <linearGradient id="enamelTop" x1="0.15" y1="1" x2="0.9" y2="0">
+      <stop offset="0" stop-color="#383c40"/>
+      <stop offset="0.4" stop-color="#5e646a"/>
+      <stop offset="1" stop-color="#41464b"/>
+    </linearGradient>
+    <linearGradient id="ways" x1="0.15" y1="1" x2="0.9" y2="0">
+      <stop offset="0" stop-color="#8b9299"/>
+      <stop offset="0.22" stop-color="#c3c9cd"/>
+      <stop offset="0.5" stop-color="#eef1f3"/>
+      <stop offset="0.78" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#7d848a"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="plateFace" x1="0.1" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#dfe6ea"/>
+      <stop offset="0.45" stop-color="#aeb6bc"/>
+      <stop offset="1" stop-color="#767d83"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="500" cy="702" rx="446" ry="98" fill="url(#shadow)"/>
+
+  <!-- ===== base casting ===== -->
+  <path d="M800 560 L888 497 L888 637 L800 700 Z" fill="url(#enamelEnd)" stroke="#141719" stroke-width="2.5"/>
+  <!-- square drive socket on the end -->
+  <g transform="translate(846 578)">
+    <ellipse cx="0" cy="0" rx="40" ry="34" fill="#2a2e32" stroke="#15181a" stroke-width="2"/>
+    <ellipse cx="0" cy="0" rx="30" ry="25" fill="url(#steel)" stroke="#4b5157" stroke-width="2"/>
+    <polygon points="0,-15 15,-8 15,9 0,16 -15,9 -15,-8" fill="#1b1f22" stroke="#3d4348" stroke-width="2"/>
+  </g>
+
+  <!-- bed / ground ways (top face) -->
+  <path d="M150 560 L800 560 L888 497 L238 497 Z" fill="url(#ways)" stroke="#5c6268" stroke-width="2.5"/>
+  <!-- fine grinding striations along the ways -->
+  <g stroke="#ffffff" stroke-opacity="0.28" stroke-width="2" fill="none">
+    <path d="M164 552 L252 489"/><path d="M232 552 L320 489"/><path d="M300 552 L388 489"/>
+    <path d="M368 552 L456 489"/><path d="M436 552 L524 489"/><path d="M504 552 L592 489"/>
+    <path d="M572 552 L660 489"/><path d="M640 552 L728 489"/><path d="M708 552 L796 489"/>
+    <path d="M776 552 L864 489"/>
+  </g>
+  <g stroke="#5f666c" stroke-opacity="0.4" stroke-width="2" fill="none">
+    <path d="M162 536 L790 536"/>
+    <path d="M200 508 L840 508"/>
+  </g>
+  <!-- centre keyway slot down the bed -->
+  <path d="M226 534 L840 534 L846 530 L232 530 Z" fill="#3a4045" opacity="0.75"/>
+
+  <!-- body front face -->
+  <path d="M150 560 L800 560 L800 700 L150 700 Z" fill="url(#enamel)" stroke="#141719" stroke-width="3"/>
+  <path d="M150 570 L800 570" fill="none" stroke="#7d848a" stroke-opacity="0.45" stroke-width="2.5"/>
+  <path d="M150 690 L800 690" fill="none" stroke="#000000" stroke-opacity="0.4" stroke-width="3"/>
+  <!-- cast rib shading on the body -->
+  <g stroke="#000000" stroke-opacity="0.22" stroke-width="4" fill="none">
+    <path d="M330 574 L330 688"/><path d="M600 574 L600 688"/>
+  </g>
+  <g stroke="#ffffff" stroke-opacity="0.08" stroke-width="3" fill="none">
+    <path d="M338 574 L338 688"/><path d="M608 574 L608 688"/>
+  </g>
+  <!-- lead-screw bearing boss on the front -->
+  <ellipse cx="760" cy="630" rx="34" ry="34" fill="#31363a" stroke="#15181a" stroke-width="2"/>
+  <ellipse cx="760" cy="630" rx="20" ry="20" fill="#1c2023"/>
+
+  <!-- slotted mounting ears -->
+  <g>
+    <path d="M112 652 L152 652 L178 633 L138 633 Z" fill="url(#enamelTop)" stroke="#141719" stroke-width="2"/>
+    <path d="M112 652 L152 652 L152 702 L112 702 Z" fill="url(#enamel)" stroke="#141719" stroke-width="2.5"/>
+    <path d="M126 646 Q120 651 126 656 L156 634 Q162 629 156 624 Z" fill="#181b1e" stroke="#0e1012" stroke-width="1.5"/>
+    <path d="M126 646 Q120 651 126 656" fill="none" stroke="#7d848a" stroke-opacity="0.4" stroke-width="2"/>
+  </g>
+  <g>
+    <path d="M800 652 L846 652 L872 633 L826 633 Z" fill="url(#enamelTop)" stroke="#141719" stroke-width="2"/>
+    <path d="M800 652 L846 652 L846 702 L800 702 Z" fill="url(#enamel)" stroke="#141719" stroke-width="2.5"/>
+    <path d="M814 646 Q808 651 814 656 L846 633 Q852 628 846 623 Z" fill="#181b1e" stroke="#0e1012" stroke-width="1.5"/>
+    <path d="M814 646 Q808 651 814 656" fill="none" stroke="#7d848a" stroke-opacity="0.4" stroke-width="2"/>
+  </g>
+
+  <!-- ===== movable jaw (drawn first: further along, behind the fixed jaw's plate) ===== -->
+  <g>
+    <path d="M527 390 L527 560 L615.2 497 L615.2 327 Z" fill="url(#enamelEnd)" stroke="#141719" stroke-width="2.5"/>
+    <path d="M436 390 L527 390 L615.2 327 L524.2 327 Z" fill="url(#enamelTop)" stroke="#141719" stroke-width="2.5"/>
+    <path d="M436 390 L527 390 L527 560 L436 560 Z" fill="url(#enamel)" stroke="#141719" stroke-width="3"/>
+    <!-- jaw-plate cap visible along the leading top edge -->
+    <path d="M436 390 L462 390 L550.2 327 L524.2 327 Z" fill="url(#plateFace)" stroke="#6a7177" stroke-width="2"/>
+    <g stroke="#5e666c" stroke-opacity="0.7" stroke-width="1.8" fill="none">
+      <path d="M442 386 L530.2 323"/><path d="M450 392 L538.2 329"/><path d="M457 397 L545.2 334"/>
+    </g>
+    <!-- plate front sliver + retaining screws -->
+    <path d="M436 390 L448 390 L448 500 L436 500 Z" fill="url(#steel)" stroke="#6a7177" stroke-width="1.5"/>
+    <circle cx="480" cy="432" r="13" fill="#2a2e32" stroke="#14171a" stroke-width="2"/>
+    <circle cx="480" cy="432" r="7" fill="#171a1d"/>
+    <circle cx="480" cy="512" r="13" fill="#2a2e32" stroke="#14171a" stroke-width="2"/>
+    <circle cx="480" cy="512" r="7" fill="#171a1d"/>
+    <path d="M436 400 L527 400" fill="none" stroke="#7d848a" stroke-opacity="0.4" stroke-width="2"/>
+    <!-- slide shoe skirt riding the ways -->
+    <path d="M444 540 L519 540 L519 558 L444 558 Z" fill="#202427" opacity="0.85"/>
+  </g>
+
+  <!-- ===== fixed jaw at the left end ===== -->
+  <g>
+    <path d="M195.5 385 L286.5 385 L374.7 322 L283.7 322 Z" fill="url(#enamelTop)" stroke="#141719" stroke-width="2.5"/>
+    <path d="M195.5 385 L286.5 385 L286.5 560 L195.5 560 Z" fill="url(#enamel)" stroke="#141719" stroke-width="3"/>
+    <path d="M195.5 395 L286.5 395" fill="none" stroke="#7d848a" stroke-opacity="0.45" stroke-width="2.5"/>
+    <!-- hardened jaw plate on the working face -->
+    <path d="M286.5 385 L374.7 322 L374.7 452 L286.5 515 Z" fill="url(#plateFace)" stroke="#606870" stroke-width="2.5"/>
+    <g stroke="#5a6167" stroke-opacity="0.8" stroke-width="2" fill="none">
+      <path d="M286.5 400 L374.7 337"/><path d="M286.5 415 L374.7 352"/>
+      <path d="M286.5 430 L374.7 367"/><path d="M286.5 445 L374.7 382"/>
+      <path d="M286.5 460 L374.7 397"/><path d="M286.5 475 L374.7 412"/>
+      <path d="M286.5 490 L374.7 427"/>
+    </g>
+    <g stroke="#ffffff" stroke-opacity="0.4" stroke-width="1.6" fill="none">
+      <path d="M286.5 407 L374.7 344"/><path d="M286.5 422 L374.7 359"/>
+      <path d="M286.5 437 L374.7 374"/><path d="M286.5 452 L374.7 389"/>
+      <path d="M286.5 467 L374.7 404"/><path d="M286.5 482 L374.7 419"/>
+    </g>
+    <!-- plate top chamfer + front-edge sliver -->
+    <path d="M286.5 385 L374.7 322 L374.7 332 L286.5 395 Z" fill="#eef1f3" opacity="0.6"/>
+    <!-- countersunk plate screws seen through the working face -->
+    <ellipse cx="316" cy="418" rx="15" ry="13" fill="#3c4247" stroke="#20252a" stroke-width="2" transform="rotate(-36 316 418)"/>
+    <ellipse cx="316" cy="418" rx="8" ry="7" fill="#191d20" transform="rotate(-36 316 418)"/>
+    <ellipse cx="345" cy="470" rx="15" ry="13" fill="#3c4247" stroke="#20252a" stroke-width="2" transform="rotate(-36 345 470)"/>
+    <ellipse cx="345" cy="470" rx="8" ry="7" fill="#191d20" transform="rotate(-36 345 470)"/>
+    <!-- cast web shading on the fixed-jaw front -->
+    <path d="M204 404 L232 404 L214 552 L204 552 Z" fill="#ffffff" opacity="0.06"/>
+    <path d="M258 400 L278 400 L278 552 L258 552 Z" fill="#000000" opacity="0.18"/>
+  </g>
+</svg>

@@ -14,5 +14,6 @@ export {
   slackDocumentStatusUpdateFunction,
   slackDocumentTaskUpdateFunction
 } from "./slack-document-sync";
+export { stripeConnectPullSweepFunction } from "./stripe-connect-pull-sweep";
 export { syncExternalAccountingFunction } from "./sync-external-accounting";
 export { timeCardAutoCloseFunction } from "./timecard-auto-close";

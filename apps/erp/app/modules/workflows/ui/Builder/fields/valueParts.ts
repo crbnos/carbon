@@ -1,13 +1,15 @@
 import type { VariableTextPart } from "@carbon/react/VariableText";
 import type { TemplatePart, ValueOrRef } from "@carbon/workflows";
-import { decodeTokenId, encodeTokenId, refLabel } from "./tokenId";
+import { decodeTokenId, encodeTokenId, namedPath, refLabel } from "./tokenId";
 
 /** What the editor shows for a stored value. Labels are resolved here and nowhere else. */
 export function toEditorParts(
   value: ValueOrRef | undefined,
   nodeName: (id: string) => string | undefined,
   /** Keyed by position in a template's parts; a bare reference is position 0. */
-  partIssues?: Record<number, string>
+  partIssues?: Record<number, string>,
+  /** Path segment -> what the customer calls it. A custom field's segment is an id. */
+  segmentLabels?: Record<string, string>
 ): VariableTextPart[] {
   const token = (part: TemplatePart, index: number): VariableTextPart => {
     if (part.kind === "text") return { kind: "text", text: part.text };
@@ -16,7 +18,8 @@ export function toEditorParts(
       id: encodeTokenId(part),
       label: refLabel(
         part,
-        part.kind === "ref" ? nodeName(part.nodeId) : undefined
+        part.kind === "ref" ? nodeName(part.nodeId) : undefined,
+        namedPath(part.path, segmentLabels)
       ),
       invalid: partIssues?.[index] !== undefined
     };
