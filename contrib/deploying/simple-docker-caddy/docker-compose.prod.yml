@@ -258,6 +258,7 @@ services:
       - postgres_password
       - jwt_secret
       - smtp_password
+      - saml_private_key
     environment:
       GOTRUE_API_HOST: 0.0.0.0
       GOTRUE_API_PORT: "9999"
@@ -289,7 +290,10 @@ services:
       GOTRUE_EXTERNAL_AZURE_SECRET: ${SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_SECRET:-}
       GOTRUE_EXTERNAL_AZURE_REDIRECT_URI: ${SUPABASE_AUTH_EXTERNAL_AZURE_REDIRECT_URI:-}
       GOTRUE_SAML_ENABLED: ${SAML_ENABLED:-false}
-      GOTRUE_SAML_PRIVATE_KEY: ${SAML_PRIVATE_KEY:-}
+      # Swarm secret, not env interpolation — the SP private key must not be
+      # readable via `docker inspect`. Placeholder until SAML is enabled; set it
+      # with `deploy.sh secret saml_private_key "$(base64 -w0 < key.der)"`.
+      GOTRUE_SAML_PRIVATE_KEY: __SAML_PRIVATE_KEY__
       GOTRUE_MAILER_TEMPLATES_MAGIC_LINK: ${ERP_URL}/templates/magic-link.html
       GOTRUE_MAILER_TEMPLATES_INVITE: ${ERP_URL}/templates/invite.html
     volumes:
@@ -615,4 +619,6 @@ secrets:
   resend_api_key:
     external: true
   smtp_password:
+    external: true
+  saml_private_key:
     external: true

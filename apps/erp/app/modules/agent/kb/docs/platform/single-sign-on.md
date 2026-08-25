@@ -2,7 +2,7 @@
 
 > Route sign-in for your company's email domains through your own identity provider with enterprise SAML SSO.
 
-Single sign-on hands control of Carbon sign-in to your own identity provider — Okta, Entra ID, Google Workspace, or any SAML 2.0 IdP. You register your email domains once, and from then on your IT team grants and revokes access centrally: everyone on those domains signs in to both ERP and MES with **"Continue with SSO"** instead of a magic link.
+Single sign-on hands control of Carbon sign-in to your own identity provider — Okta, Entra ID, Google Workspace, or any SAML 2.0 IdP. You register your email domains once, and from then on your IT team grants and revokes access centrally: everyone on those domains can sign in to both ERP and MES with **"Continue with SSO"**. Registering alone doesn't take anything away — the magic link and other methods keep working until you turn on [Require SSO](#requiring-sso).
 
 ## Requirements
 
@@ -26,13 +26,13 @@ The whole exchange lives on one screen: **Settings** → **Security**, under the
 
 **Paste the IdP metadata back into Carbon.** In the **"Identity Provider"** card, provide either the **"IdP Metadata URL"** or the raw **"IdP Metadata XML"** — exactly one of the two — plus your **"Email Domains"**, then **"Save"**.
 
-**Confirm the connection.** The **"Connection Status"** card appears with an **"Active"** badge and one badge per registered domain. From here on, users on those domains can sign in through your IdP.
+**Confirm the connection.** After saving, the **"Identity Provider"** card gains a **"Require SSO"** switch and a **"Deactivate"** button — the sign that the connection is active. From here on, users on the registered domains can sign in through your IdP.
 
 - **IdP Metadata URL**: The SAML metadata URL published by your identity provider. Provide this *or* the XML, never both — the form rejects the submission with **"Provide either a metadata URL or metadata XML (exactly one)"**.
 - **IdP Metadata XML**: The raw metadata document, for IdPs that don't publish a metadata URL.
 - **Email Domains**: A comma-separated list of domains, e.g. `example.com, example.org`. Domains are lowercased and must be bare hostnames — no `@`, no spaces. A domain can belong to **one company only**: registering a domain another company already claimed fails with **"Domain example.com is already registered to another company"**.
 
-To turn SSO off, use the **"Deactivate"** button on the Connection Status card. It opens a **"Deactivate Single Sign-On"** confirmation warning that "Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone." — the provider registration is deleted outright, and re-enabling means saving the connection again.
+To turn SSO off, use the **"Deactivate"** button in the Identity Provider card. It opens a **"Deactivate Single Sign-On"** confirmation warning that "Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone." — the provider registration is deleted outright, and re-enabling means saving the connection again.
 
 ## How sign-in works
 
@@ -56,11 +56,11 @@ People who already sign in with a magic link or OAuth don't lose anything when S
 
 The first SSO sign-in quietly attaches the SAML identity to the existing account. Nothing changes for the user: it's the same account, the magic link keeps working, and no invite is needed, because an existing member is already authorized.
 
-The Security screen shows who this covers: once a connection is active, a **"Covered Users"** card lists every existing member whose email domain is registered with the connection — they sign in with SSO automatically on their next login, no re-invite needed. People not yet in the company still need an invite from the `docs/reference/people`; invite emails for these domains route to SSO automatically.
+Coverage follows the registered domains: every existing member whose email domain is registered with the connection signs in with SSO automatically on their next login, no re-invite needed. People not yet in the company still need an invite from the `docs/reference/people`; invite emails for these domains route to SSO automatically.
 
 ## Requiring SSO
 
-Once the connection works, you can make it the only way in. The **"Connection Status"** card carries a **"Require SSO"** switch: while it's on, anyone whose email domain is covered by the active connection can sign in **only** through your identity provider. Every other method is refused server-side — the magic-link form, Google and Outlook sign-in, and passkeys all answer with **"Your organization requires single sign-on. Use "Continue with SSO"."** and no session is created.
+Once the connection works, you can make it the only way in. The **"Identity Provider"** card carries a **"Require SSO"** switch: while it's on, anyone whose email domain is covered by the active connection can sign in **only** through your identity provider. Every other method is refused server-side — the magic-link form, Google and Outlook sign-in, and passkeys all answer with **"Your organization requires single sign-on. Use "Continue with SSO"."** and no session is created.
 
 The ordering protects you from locking yourself out: the switch exists only on an active connection, so the path is always *set up SSO, prove a sign-in works, enforce last*. Turning the switch off — or deactivating the connection — immediately restores the other sign-in methods for those domains.
 

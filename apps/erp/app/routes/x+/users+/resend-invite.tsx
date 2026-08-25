@@ -101,7 +101,8 @@ export async function action({ request }: ActionFunctionArgs) {
     const inviteLink = await getSsoAwareInviteLink(
       serviceRole,
       user.data.email,
-      refreshed.data.code
+      refreshed.data.code,
+      companyId
     );
 
     await sendEmail({

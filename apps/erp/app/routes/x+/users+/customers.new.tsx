@@ -82,7 +82,8 @@ export async function action({ request }: ActionFunctionArgs) {
   const inviteLink = await getSsoAwareInviteLink(
     getCarbonServiceRole(),
     result.email,
-    result.code
+    result.code,
+    companyId
   );
 
   await sendEmail({

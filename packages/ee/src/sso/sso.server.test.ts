@@ -161,33 +161,57 @@ function makeSsoClient(result: { data: unknown; error: unknown }) {
 
 describe("getSsoAwareInviteLink", () => {
   it("routes a covered-domain invite to the login page with the email prefilled", async () => {
-    const { client } = makeSsoClient({ data: { id: "sso_1" }, error: null });
+    const { client } = makeSsoClient({
+      data: { id: "sso_1", companyId: "company_1" },
+      error: null
+    });
     await expect(
-      getSsoAwareInviteLink(client, "jane@acme.com", "CODE123")
+      getSsoAwareInviteLink(client, "jane@acme.com", "CODE123", "company_1")
     ).resolves.toBe("http://localhost:3000/login?email=jane%40acme.com");
   });
 
   it("routes an uncovered-domain invite to the ordinary code link", async () => {
     const { client } = makeSsoClient({ data: null, error: null });
     await expect(
-      getSsoAwareInviteLink(client, "jane@other.com", "CODE123")
+      getSsoAwareInviteLink(client, "jane@other.com", "CODE123", "company_1")
+    ).resolves.toBe("http://localhost:3000/invite/CODE123");
+  });
+
+  it("uses the code link when ANOTHER company's connection covers the domain", async () => {
+    // The SSO callback consumes invites scoped to the connection's own
+    // company, so routing this company's invite through the other tenant's
+    // SSO login would strand it.
+    const { client } = makeSsoClient({
+      data: { id: "sso_1", companyId: "company_other" },
+      error: null
+    });
+    await expect(
+      getSsoAwareInviteLink(client, "jane@acme.com", "CODE123", "company_1")
     ).resolves.toBe("http://localhost:3000/invite/CODE123");
   });
 
   it("URL-encodes plus-addressed emails in the login link", async () => {
-    const { client } = makeSsoClient({ data: { id: "sso_1" }, error: null });
+    const { client } = makeSsoClient({
+      data: { id: "sso_1", companyId: "company_1" },
+      error: null
+    });
     await expect(
-      getSsoAwareInviteLink(client, "jane+test@acme.com", "CODE123")
+      getSsoAwareInviteLink(
+        client,
+        "jane+test@acme.com",
+        "CODE123",
+        "company_1"
+      )
     ).resolves.toBe("http://localhost:3000/login?email=jane%2Btest%40acme.com");
   });
 
   it("falls back to the code link without querying when the email has no domain", async () => {
     const { client, calls } = makeSsoClient({
-      data: { id: "sso_1" },
+      data: { id: "sso_1", companyId: "company_1" },
       error: null
     });
     await expect(
-      getSsoAwareInviteLink(client, "jane", "CODE123")
+      getSsoAwareInviteLink(client, "jane", "CODE123", "company_1")
     ).resolves.toBe("http://localhost:3000/invite/CODE123");
     expect(calls.from).toBeUndefined();
   });
@@ -264,7 +288,7 @@ describe("isSsoEnabled gate (AUTH_PROVIDERS half toggled off)", () => {
         isSsoRequiredForEmail(client, "jane@acme.com")
       ).resolves.toBe(false);
       await expect(
-        getSsoAwareInviteLink(client, "jane@acme.com", "CODE123")
+        getSsoAwareInviteLink(client, "jane@acme.com", "CODE123", "c1")
       ).resolves.toBe("http://localhost:3000/invite/CODE123");
       expect(calls.from).toBeUndefined();
 

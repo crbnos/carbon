@@ -77,20 +77,25 @@ export async function isSsoRequiredForEmail(
 }
 
 /**
- * SSO-aware invite link. When the invitee's email domain belongs to an active
- * SSO connection, the invite email points at the login page (prefilled email;
- * the SSO callback consumes the pending invite — the code is not needed in the
- * URL). Otherwise it points at the ordinary code-based invite route.
+ * SSO-aware invite link. When the invitee's email domain belongs to the
+ * INVITING company's active SSO connection, the invite email points at the
+ * login page (prefilled email; the SSO callback consumes the pending invite —
+ * the code is not needed in the URL). Otherwise it points at the ordinary
+ * code-based invite route. The companyId check matters when another company
+ * owns the domain: the callback consumes invites scoped to the connection's
+ * own company, so routing this company's invite through that SSO login would
+ * strand it — the code link is the one that works.
  */
 export async function getSsoAwareInviteLink(
   client: SupabaseClient<Database>,
   email: string,
-  code: string
+  code: string,
+  companyId: string
 ): Promise<string> {
   const domain = email.split("@")[1];
   if (domain) {
     const ssoConnection = await getSsoConnectionByDomain(client, domain);
-    if (ssoConnection.data) {
+    if (ssoConnection.data && ssoConnection.data.companyId === companyId) {
       return `${getAppUrl()}/login?email=${encodeURIComponent(email)}`;
     }
   }

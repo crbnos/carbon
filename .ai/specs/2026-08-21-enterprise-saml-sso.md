@@ -20,11 +20,11 @@ Concretely: Acme Corp (self-hosted Enterprise) wants `*@acme.com` users to authe
 Enable GoTrue's built-in SAML SP (`GOTRUE_SAML_ENABLED` + `GOTRUE_SAML_PRIVATE_KEY` — the same enable-the-primitive-then-wire-it pattern used for TOTP MFA). Carbon adds:
 
 1. **`ssoConnection` table** — the app-side record mapping a GoTrue SSO provider to a `companyId`, with its registered email domains. This is the tenant router and the security anchor (GoTrue providers are project-global; this table makes them company-scoped).
-2. **`@carbon/auth/sso.server`** — thin server-only wrappers over GoTrue's admin REST API (`/auth/v1/admin/sso/providers`) for provider create/update/delete, called with the service-role key.
+2. **`@carbon/auth/sso.server`** — thin server-only wrappers over GoTrue's admin REST API (`/auth/v1/admin/sso/providers`) for provider create/update/delete, called with the service-role key. *(Superseded: the SSO core now lives at `@carbon/ee/sso.server` behind the enterprise flag — see Changelog 2026-08-26.)*
 3. **Settings → SSO screen** (ERP, Enterprise-gated, `settings` permission) — admin enters IdP metadata URL/XML + domains; screen displays Carbon's ACS URL and SP metadata URL for the IdP side; registration + `ssoConnection` row written together.
 4. **Login button** (ERP + MES) — gated by `isAuthProviderEnabled("sso")` && Enterprise edition; takes the entered email, calls `carbonClient.auth.signInWithSSO({ domain })`, redirects to the returned IdP URL.
 5. **Callback SSO branch** — the existing `/callback` action detects an SSO session (JWT `sso_provider_id` claim) and enforces the provisioning policy + migration transaction (below) before minting the `carbon` cookie. Non-SSO logins are untouched.
-6. **First-SSO-login migration** — one Kysely transaction: accept pending invite (attach + permissions) → re-point assignable references from the old same-email account → deactivate the old account.
+6. **First-SSO-login migration** — one Kysely transaction: accept pending invite (attach + permissions). *(Superseded: the original re-point-references-and-deactivate design was replaced by **link-instead-of-archive** — an ACTIVE same-email account gets the SAML identity linked onto it and nothing is deactivated; only an INACTIVE holder's email is freed via `buildArchivedEmail`. See Changelog 2026-08-21 "Link-instead-of-archive".)*
 
 ### Design Decisions
 
@@ -66,6 +66,7 @@ CREATE TABLE "ssoConnection" (
     "metadataUrl" TEXT,                    -- one of metadataUrl/metadataXml set (IdP metadata is public, not secret)
     "metadataXml" TEXT,
     "active" BOOLEAN NOT NULL DEFAULT TRUE,
+    "requireSso" BOOLEAN NOT NULL DEFAULT FALSE,  -- per-connection enforcement toggle (Changelog 2026-08-21)
     -- Audit
     "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
     "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
@@ -94,7 +95,7 @@ Notes:
 - `createGoTrueSsoProvider({ metadataUrl?, metadataXml?, domains })` → `{ data: { id }, error }`
 - `updateGoTrueSsoProvider(providerId, { metadataUrl?, metadataXml?, domains })`
 - `deleteGoTrueSsoProvider(providerId)`
-- `getSsoProviderIdFromSession(user)` — extracts `sso_provider_id` from the Supabase user/JWT (`app_metadata`/AMR claim; exact location verified at implementation against GoTrue v2.189.0)
+- `getSsoProviderIdFromSession(accessToken, user)` — decodes the session's own access token and requires an `amr` entry with `method: "sso/saml"` before resolving the provider id from the identity list; fails CLOSED to the non-SSO path on an undecodable token or missing `amr`. *(The original user-identities-only contract was a misclassification bug — see Changelog 2026-08-21 "security fix, session classification". Lives in `@carbon/ee/sso.server` `session.server.ts`.)*
 
 **`apps/erp/app/modules/settings/settings.service.ts` / `settings.server.ts`:**
 - `getSsoConnection(client, companyId)` — the company's connection (0 or 1 in v1 UI; table supports N)
@@ -115,7 +116,7 @@ Notes:
 4. Else pending un-accepted `invite` matching email + `connection.companyId` → run the migration transaction (below) → proceed.
 5. Else → destroy session, delete the JIT-created membershipless auth user, flash "SSO sign-in succeeded but no invite exists for {email}. Contact your administrator."
 
-**Migration transaction** — `migrateUserToSso(trx, ...)` in the users module, called from callback step 4, single Kysely transaction:
+**Migration transaction** — `migrateUserToSso(trx, ...)`, called from callback step 4, single Kysely transaction. *(Steps 2a/2b below are superseded: linking runs FIRST for an active same-email holder, so reassignment/deactivation never happens; an inactive holder only has its email freed via `buildArchivedEmail`. Kept for history — see Changelog 2026-08-21 "Link-instead-of-archive". The code now lives in `@carbon/ee/sso.server` `provisioning.server.ts`.)*
 1. Accept the invite for the NEW auth user (reuse `acceptInvite` internals: activate + `addUserToCompany` + `setUserPermissions` + mark accepted).
 2. Find old ACTIVE user with same email attached to the same company, different id. If found:
    a. `reassignUserReferences(trx, { companyId, fromUserId: old, toUserId: new })` — explicit `{table, column}` list of assignee-type columns (enumerated at plan time). Audit columns (`createdBy`, `updatedBy`, ledger/audit tables) are excluded by policy.
@@ -149,7 +150,7 @@ Notes:
 - [ ] With `AUTH_PROVIDERS=...,sso` and Enterprise edition, the ERP and MES login pages show "Continue with SSO"; with either condition false, the button is absent and all existing login methods behave byte-identically.
 - [ ] Admin with `settings_update` registers an IdP via Settings → SSO using a metadata URL and domain `acme.com`; the screen then shows the ACS + SP metadata URLs and the active connection; a `ssoConnection` row and a GoTrue provider exist; registering `acme.com` under a second company fails with a clear error.
 - [ ] A user with a pending invite for `jane@acme.com` completes IdP login and lands authenticated in the correct company with exactly the invite's permissions; the invite is marked accepted.
-- [ ] First SSO login of a pre-existing `jane@acme.com`: her open assigned records (from the enumerated assignable columns) point at the new user id; her old account is deactivated (magic link login rejected, sessions revoked, permission cache invalidated); audit `createdBy` fields still reference the old id and render her name; all of this happens in one transaction (a forced mid-transaction failure leaves the old account fully intact and the invite unaccepted).
+- [ ] First SSO login of a pre-existing `jane@acme.com`: the SAML identity is linked onto her EXISTING account, nothing is deactivated, magic link keeps working, and both login methods hit one account. *(Original criterion — reassign references + deactivate old account — superseded by link-instead-of-archive; see Changelog 2026-08-21.)*
 - [ ] SSO login with no invite and no membership is rejected with "contact your administrator", no `userToCompany` row exists afterward, and the orphan auth user is removed; retrying after an invite is created succeeds.
 - [ ] A SAML assertion whose email domain is NOT in the provider's registered `ssoConnection.domains` is rejected at callback even when a matching invite exists in another company.
 - [ ] SSO session skips the TOTP challenge and the `requireMfa` blocking screen in every environment, including `CONTROLLED_ENVIRONMENT=true` (magic-link users are still challenged/gated).
@@ -176,7 +177,7 @@ Notes:
 - [x] Microsoft-tenant-only vs full SAML? — **Answer:** Full SAML, coexisting with the existing Google/Azure/magic-link/passkey methods; SSO activates per registered domain.
 - [x] Hosted or self-hosted first? — **Answer:** Self-hosted (GoTrue admin REST + service-role key; no Supabase plan dependency).
 - [x] Invite-first or JIT? — **Answer:** Invite-first for v1; JIT (with IdP group→role mapping) deferred as a future per-company toggle.
-- [x] Migration promise for existing users? — **Answer:** Re-invite contract; on first SSO login one atomic transaction attaches the new account, auto-re-points assignable references, and deactivates the old account; immutable audit history deliberately stays on the deactivated account. No id-remap in v1.
+- [x] Migration promise for existing users? — **Answer:** Re-invite contract; on first SSO login one atomic transaction attaches the new account, auto-re-points assignable references, and deactivates the old account; immutable audit history deliberately stays on the deactivated account. No id-remap in v1. *(Superseded by later user decision: link-instead-of-archive — the existing active account is linked, nothing is deactivated, and existing members need no re-invite — see Changelog.)*
 - [x] Edition gating? — **Answer:** Enterprise-only.
 - [x] MFA for SSO users? — **Answer:** Trust the IdP (skip Carbon TOTP + requireMfa screen), except `CONTROLLED_ENVIRONMENT=true` where forced TOTP remains. *(Superseded by later user decision: the controlled-environment exception is removed; the IdP is trusted unconditionally — see Changelog.)*
 - [x] Admin UX? — **Answer:** In-app Settings → SSO screen (self-serve), enabled by the self-hosted admin-API path.

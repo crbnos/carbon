@@ -169,7 +169,7 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} में से {count} परिचालन"
 
 msgid "{hiddenCount} more: {hiddenNames}"
-msgstr ""
+msgstr "{hiddenCount} अधिक: {hiddenNames}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -491,7 +491,7 @@ msgid "A new size will be created using a copy of the current size"
 msgstr "एक नया आकार वर्तमान आकार की प्रतिलिपि का उपयोग करके बनाया जाएगा"
 
 msgid "A new Stripe customer will be created"
-msgstr ""
+msgstr "एक नया Stripe ग्राहक बनाया जाएगा"
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "एक गैर-नकद दस्तावेज जो एक कारण खाते के विरुद्ध एक चालान को निपटाता है: एक क्रेडिट बकाया राशि को कम करता है, एक डेबिट इसे बढ़ाता है।"
@@ -1434,7 +1434,7 @@ msgid "An engineering change: the affected items whose methods are revised on a 
 msgstr "एक इंजीनियरिंग परिवर्तन: प्रभावित आइटम जिनकी विधियों को ड्राफ्ट पर संशोधित किया गया है और एक साथ जारी किया गया है, जो वे संस्करणों को प्रतिस्थापित करते हैं।"
 
 msgid "An Enterprise sign-in method where everyone on a company's registered email domains authenticates through the company's own SAML identity provider instead of a magic link, so IT grants and revokes access centrally."
-msgstr "एक एंटरप्राइज साइन-इन विधि जहां कंपनी के पंजीकृत ईमेल डोमेन पर सभी कंपनी के अपने SAML आइडेंटिटी प्रदाता के माध्यम से प्रमाणिकरण करते हैं, मैजिक लिंक के बजाय, ताकि IT केंद्रीय रूप से एक्सेस देता और रद्द करता है।"
+msgstr "एक एंटरप्राइज साइन-इन विधि जिसमें कंपनी के पंजीकृत ईमेल डोमेन के सभी उपयोगकर्ता मैजिक लिंक के बजाय कंपनी के अपने SAML आइडेंटिटी प्रदाता के माध्यम से प्रमाणीकरण करते हैं, ताकि IT केंद्रीय रूप से एक्सेस दे और रद्द कर सके।"
 
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "एक HTTPS अनुरोध जो कार्बन आपके सिस्टम को भेजता है जब एक वर्कफ़्लो उस चरण तक पहुंचता है, आपके द्वारा कॉन्फ़िगर किए गए किसी भी हेडर और बॉडी को ले जाता है।"
@@ -1780,7 +1780,7 @@ msgid "Are you sure you want to deactivate {0}?"
 msgstr "क्या आप सुनिश्चित हैं कि आप {0} को निष्क्रिय करना चाहते हैं?"
 
 msgid "Are you sure you want to deactivate SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
-msgstr "क्या आप SSO को निष्क्रिय करना सुनिश्चित हैं? आपके पंजीकृत डोमेन पर उपयोगकर्ता अब आपके आइडेंटिटी प्रदाता के माध्यम से साइन इन नहीं कर सकेंगे। यह पूर्ववत नहीं किया जा सकता।"
+msgstr "क्या आप वाकई SSO को निष्क्रिय करना चाहते हैं? आपके पंजीकृत डोमेन पर उपयोगकर्ता अब आपके आइडेंटिटी प्रदाता के माध्यम से साइन इन नहीं कर सकेंगे। यह पूर्ववत नहीं किया जा सकता।"
 
 #. placeholder {0}: selectedCategory?.name
 msgid "Are you sure you want to deactivate the {0} attribute category?"
@@ -2602,7 +2602,7 @@ msgid "Browse library"
 msgstr "लाइब्रेरी ब्राउज़ करें"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
-msgstr ""
+msgstr "प्रकाशित संस्करण को केवल-पढ़ने के लिए ब्राउज़ करें। आप अभी भी लेआउट को साफ करने के लिए चरणों को पुनर्व्यवस्थित कर सकते हैं।"
 
 msgid "Bucket"
 msgstr "बकेट"
@@ -2809,7 +2809,7 @@ msgid "Cannot send RFQ"
 msgstr "RFQ नहीं भेज सकते"
 
 msgid "Cannot send through Stripe"
-msgstr ""
+msgstr "Stripe के माध्यम से नहीं भेज सकते"
 
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "अपलोड नहीं कर सकते — आपूर्तिकर्ता इंटरैक्शन अभी तक बनाया नहीं गया"
@@ -2876,7 +2876,7 @@ msgid "Carbon-only · the customer sees this text, locked."
 msgstr "Carbon-only · ग्राहक यह पाठ देखता है, लॉक किया गया।"
 
 msgid "Carbon's default passwordless sign-in: an emailed one-time link that signs you in when opened, with no password to remember or leak."
-msgstr "Carbon की डिफ़ॉल्ट पासवर्ड रहित साइन-इन: एक ईमेल किया गया एकबारी लिंक जो खोलने पर आपको साइन इन कर देता है, याद रखने या लीक होने के लिए कोई पासवर्ड नहीं।"
+msgstr "Carbon की डिफ़ॉल्ट पासवर्ड रहित साइन-इन: ईमेल से भेजा गया एक बार इस्तेमाल होने वाला लिंक जो खोलने पर आपको साइन इन कर देता है, याद रखने या लीक होने के लिए कोई पासवर्ड नहीं।"
 
 msgid "Carbon's name for a bill of material and bill of process (routing): the components plus the operations that make a part."
 msgstr "सामग्री की सूची और प्रक्रिया सूची (रूटिंग) के लिए कार्बन का नाम: घटक और संचालन जो एक हिस्सा बनाते हैं।"
@@ -3020,7 +3020,7 @@ msgid "Check your email"
 msgstr "अपना ईमेल जांचें"
 
 msgid "Checking Stripe for this customer…"
-msgstr ""
+msgstr "इस ग्राहक के लिए Stripe की जांच की जा रही है…"
 
 msgid "Checkpoint ·"
 msgstr "चेकपॉइंट ·"
@@ -3466,7 +3466,7 @@ msgid "Connect the outside tools your company already runs on"
 msgstr "उन बाहरी उपकरणों को कनेक्ट करें जो आपकी कंपनी पहले से चला रही है"
 
 msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
-msgstr "अपने आइडेंटिटी प्रदाता को जोड़ें इसके मेटाडेटा URL या इसके कच्चे मेटाडेटा XML को पेस्ट करके — बिल्कुल दोनों में से एक।"
+msgstr "अपने आइडेंटिटी प्रदाता को जोड़ें इसके मेटाडेटा URL या इसके कच्चे मेटाडेटा XML को पेस्ट करके — इन दोनों में से केवल एक।"
 
 msgid "Connected to"
 msgstr "को जोड़ा गया"
@@ -3930,7 +3930,7 @@ msgid "Create a new production job to fulfill the sales order"
 msgstr "बिक्रय आदेश को पूरा करने के लिए एक नई उत्पादन नौकरी बनाएं"
 
 msgid "Create a new Stripe customer instead"
-msgstr ""
+msgstr "इसके बजाय एक नया Stripe ग्राहक बनाएं"
 
 msgid "Create a new version"
 msgstr "एक नया संस्करण बनाएं"
@@ -6256,7 +6256,7 @@ msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "मौजूदा मैपिंग। पुनः-मैप करने के लिए एक अलग प्रदाता विकल्प चुनें।"
 
 msgid "Existing Stripe customer"
-msgstr ""
+msgstr "मौजूदा Stripe ग्राहक"
 
 msgid "Expand"
 msgstr "विस्तार करें"
@@ -8145,7 +8145,7 @@ msgid "Issues"
 msgstr "समस्याएं"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
-msgstr ""
+msgstr "यह तब तक चलना बंद कर देगा जब तक आप फिर से एक संस्करण प्रकाशित नहीं करते। कुछ भी हटाया नहीं जाता है।"
 
 msgid "ITAR Certifications"
 msgstr "ITAR प्रमाणपत्र"
@@ -8507,7 +8507,7 @@ msgid "Less manual work, fewer errors"
 msgstr "कम मैनुअल काम, कम त्रुटियां"
 
 msgid "Let's Build"
-msgstr ""
+msgstr "चलिए बनाते हैं"
 
 msgid "Let's build something"
 msgstr "चलिए कुछ बनाते हैं"
@@ -8588,7 +8588,7 @@ msgid "Link Linear Issue"
 msgstr "Linear समस्या को लिंक करें"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
-msgstr ""
+msgstr "इस Carbon ग्राहक को उनमें से किसी एक से लिंक करें, या एक अलग Stripe ग्राहक बनाएं।"
 
 msgid "Link to sales order line"
 msgstr "बिक्रय आदेश पंक्ति से लिंक करें"
@@ -11644,7 +11644,7 @@ msgid "Published by Carbon"
 msgstr "Carbon द्वारा प्रकाशित"
 
 msgid "Published Version"
-msgstr ""
+msgstr "प्रकाशित संस्करण"
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "प्रकाशित संस्करणों को संपादित नहीं किया जा सकता। केवल-पठन के लिए देखें, या परिवर्तन करने के लिए एक नया संस्करण शाखा करें।"
@@ -12667,7 +12667,7 @@ msgid "Reverse any item ledger entries from this invoice"
 msgstr "इस चालान से किसी भी आइटम लेजर प्रविष्टियों को उलट दें"
 
 msgid "Reverse charge"
-msgstr ""
+msgstr "रिवर्स चार्ज"
 
 msgid "Reverse Charge Sales Tax"
 msgstr "रिवर्स चार्ज बिक्रय कर"
@@ -13907,7 +13907,7 @@ msgid "Shown to the user when this rule fails."
 msgstr "जब यह नियम विफल हो तो उपयोगकर्ता को दिखाया जाता है।"
 
 msgid "Sign in to Carbon"
-msgstr ""
+msgstr "Carbon में साइन इन करें"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "जादुई लिंक के बजाय बायोमेट्रिक्स के साथ साइन इन करें। पासकीज़ Face ID, Touch ID, या आपकी डिवाइस PIN द्वारा सुरक्षित हैं।"
@@ -14335,19 +14335,19 @@ msgid "Straight line"
 msgstr "सीधी रेखा"
 
 msgid "Stripe"
-msgstr ""
+msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr ""
+msgstr "Stripe के पास पहले से इस ईमेल के साथ एक ग्राहक है"
 
 msgid "Stripe Due Date"
-msgstr ""
+msgstr "Stripe देय तारीख"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr ""
+msgstr "Stripe ईमेल को ग्राहक को भेजता है, इसलिए एक पता आवश्यक है। यह Carbon में संपर्क को भी सहेजा जाएगा।"
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr ""
+msgstr "Stripe के पास इस Carbon ग्राहक के लिए अभी तक कोई ग्राहक नहीं है। पोस्टिंग आपके जुड़े खाते पर एक बनाएगी।"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Kanban तालिका में दिखाने के लिए kanban आउटपुट की शैली"
@@ -14762,7 +14762,7 @@ msgid "Tax Depreciation Method"
 msgstr "कर मूल्यह्रास पद्धति"
 
 msgid "Tax exempt"
-msgstr ""
+msgstr "कर मुक्त"
 
 msgid "Tax Exempt"
 msgstr "कर छूट"
@@ -15493,7 +15493,7 @@ msgid "The surface finishes available on your materials"
 msgstr "आपकी सामग्रियों पर उपलब्ध सतह फिनिशिंग"
 
 msgid "The system a company uses to manage its people's logins — Okta, Entra ID, or Google Workspace — which vouches for who someone is when they sign in to Carbon via SSO."
-msgstr "एक प्रणाली जो कंपनी अपने लोगों के लॉगिन प्रबंधित करने के लिए उपयोग करती है — Okta, Entra ID, या Google Workspace — जो गारंटी देता है कि कोई SSO के माध्यम से Carbon में साइन इन करते समय कौन है।"
+msgstr "वह प्रणाली जिसका उपयोग कंपनी अपने लोगों के लॉगिन प्रबंधित करने के लिए करती है — Okta, Entra ID, या Google Workspace — जो SSO के माध्यम से Carbon में साइन इन करते समय व्यक्ति की पहचान की पुष्टि करती है।"
 
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "सिस्टम आपके कॉन्फ़िगर किए गए सिस्टम में हर इन-स्कोप स्वीकृति परीक्षा पास करता है, आपके डेटा के साथ; डेटा सत्यापित है; और आप साइन ऑफ करते हैं। फिर लाइव जाएं।"
@@ -15628,7 +15628,7 @@ msgid "This completes the Discovery step."
 msgstr "यह Discovery चरण को पूरा करता है।"
 
 msgid "This contact has no email address"
-msgstr ""
+msgstr "इस संपर्क का कोई ईमेल पता नहीं है"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "यह प्रतिपक्ष के पास कुछ भी बकाया नहीं है — भुगतान खाते पर दर्ज किया जाएगा।"
@@ -15656,10 +15656,10 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "यह आमंत्रण {0} में शामिल होने के लिए समाप्त हो गया है। आप अपने ईमेल पर भेजने के लिए नया आमंत्रण का अनुरोध कर सकते हैं।"
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr ""
+msgstr "इस इनवॉयस के पास कोई उपयोगी देय तारीख नहीं है — Stripe के लिए एक चुनें।"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr ""
+msgstr "इस इनवॉयस को Stripe ग्राहक को बिल दिया जाएगा जो पहले से इस Carbon ग्राहक से जुड़ा है। इसके विवरण को बदलने के लिए, इसे Stripe डैशबोर्ड में संपादित करें।"
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "यह एक नियंत्रित वातावरण है, इसलिए एक प्रमाणकर्ता ऐप की आवश्यकता है।"
@@ -15796,10 +15796,10 @@ msgid "This version cannot be opened"
 msgstr "यह version खोला नहीं जा सकता"
 
 msgid "This version is published"
-msgstr ""
+msgstr "यह संस्करण प्रकाशित है"
 
 msgid "This version is published. Create a new version to edit."
-msgstr ""
+msgstr "यह संस्करण प्रकाशित है। संपादित करने के लिए एक नया संस्करण बनाएं।"
 
 msgid "This version's definition could not be read."
 msgstr "इस version की परिभाषा को पढ़ा नहीं जा सका।"
@@ -16387,10 +16387,10 @@ msgid "Unposted Documents"
 msgstr "अपोस्ट किए गए दस्तावेज़"
 
 msgid "Unpublish"
-msgstr ""
+msgstr "अप्रकाशित करें"
 
 msgid "Unpublish {name}?"
-msgstr ""
+msgstr "{name} को अप्रकाशित करें?"
 
 msgid "Unreceived POs"
 msgstr "अप्राप्त POs"
@@ -16651,7 +16651,7 @@ msgid "Users can update this value for themselves"
 msgstr "उपयोगकर्ता स्वयं के लिए इस मान को अपडेट कर सकते हैं"
 
 msgid "Users on covered domains can sign in only with SSO; magic link, Google, and passkeys are refused."
-msgstr "कवर किए गए डोमेन पर उपयोगकर्ता केवल SSO के साथ साइन इन कर सकते हैं; मैजिक लिंक, Google, और passkeys को अस्वीकार कर दिया गया है।"
+msgstr "कवर किए गए डोमेन पर उपयोगकर्ता केवल SSO के साथ साइन इन कर सकते हैं; मैजिक लिंक, Google, और पासकीज़ को अस्वीकार कर दिया जाता है।"
 
 msgid "Users to Update"
 msgstr "अपडेट करने के लिए उपयोगकर्ता"
@@ -16754,7 +16754,7 @@ msgstr "संस्करण"
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
-msgstr ""
+msgstr "संस्करण {0} अब प्रकाशित है और प्रतिस्थापित किया जाएगा।"
 
 msgid "Version:"
 msgstr "संस्करण:"
@@ -17639,7 +17639,7 @@ msgid "You're live on Carbon"
 msgstr "आप Carbon पर लाइव हैं"
 
 msgid "You're one step away from your workspace."
-msgstr ""
+msgstr "आप अपने कार्यक्षेत्र से एक कदम दूर हैं।"
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "आप Carbon को स्वयं सेट अप कर रहे हैं, अपनी गति से"

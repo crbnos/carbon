@@ -4,6 +4,17 @@
 **Research:** .ai/research/sso.md
 **Branch:** victoria
 
+> **HISTORICAL RECORD — several planned flows were later superseded.** This plan
+> describes what was built at execution time; the spec's Changelog is the source
+> of truth for the final design. In particular: the archival/reassignment flow
+> (Task 6) was replaced by **link-instead-of-archive** (nothing is deactivated;
+> `reassignUserReferences`/`REASSIGNABLE_USER_COLUMNS` were deleted as dead
+> code); the "Users to re-invite" card (Task 9 step 5) became "Covered Users"
+> and was later removed entirely (coverage is documented on the Identity
+> Provider card instead); and the controlled-environment TOTP exception
+> (Task 10) was removed — SSO sessions skip the MFA gate in EVERY environment.
+> Do not reintroduce these flows from this document.
+
 ## Progress
 - [x] Task 1: Migration — `ssoConnection` table + crash-free `create_public_user` (`20260820215433_sso-connection.sql`)
 - [x] Task 2: Apply migration + regenerate types (applied via `pnpm db:migrate`; ssoConnection in types.ts, 4 RLS policies confirmed in DB)
@@ -263,6 +274,8 @@ pnpm exec turbo run typecheck --filter=erp
 
 **Out of scope:** callback wiring (Task 7); no changes to `acceptInvite` itself; no reassignment of audit columns under any circumstance.
 
+> *(Superseded: this whole reassignment/deactivation design was later replaced by link-instead-of-archive; `reassignUserReferences` and `REASSIGNABLE_USER_COLUMNS` no longer exist. See the spec Changelog.)*
+
 ## Task 7: Callback SSO branch (ERP + MES)
 
 **Depends on:** Tasks 4, 5, 6
@@ -327,7 +340,7 @@ pnpm exec turbo run typecheck --filter=erp --filter=mes
    - `intent === "deactivate"` → `deactivateSsoConnection(...)` with the same flash/redirect pattern.
 3. Component: Card "Service provider details" with the two read-only URLs and copy buttons (grep `packages/react/src/` for an existing copy-button component — use `Copy` from `@carbon/react` if present; if no copy component exists, render the URLs in `<Input isReadOnly>` fields without a copy button — do not build a new component); Card "Identity provider" with the `ValidatedForm` (fields: `Input` name `metadataUrl`, `TextArea` name `metadataXml`, `Input` name `domains` comma-separated with helper text, `Submit`); when a connection exists show registered domains + active state + a deactivate button inside a confirm `Modal` (precedent: any settings delete modal, e.g. `api-keys.delete.$id.tsx`).
 4. Nav entry in `useSettingsSubmodules.tsx` System group: `{ name: t\`Single Sign-On\`, to: path.to.sso, role: "employee", icon: <LuKeyRound /> }` (import `LuKeyRound` from `react-icons/lu`). Nav has no per-edition flag — the route's loader redirect handles non-Enterprise access; ALSO hide the entry by adding it to the component's existing gating only if an edition gate exists in `isRouteVisible` — it does not, so instead conditionally include the route object using `useFlags().isEnterprise` (hook at `apps/erp/app/hooks/useFlags.tsx:15`) inside the `useSettingsSubmodules` body.
-5. The "Users to re-invite" migration-aid list from the spec: render a third Card listing active company users whose email domain ∈ `domains` (loader: query `employees` view via existing people/employees service — grep `getEmployees` in `apps/erp/app/modules/people` or `users` and reuse; select email + name only) with a note "These users will be migrated on their first SSO sign-in. Re-invite them to enable SSO access." and a Link to the existing employees page (`path.to.employeeAccounts` or equivalent — confirm the key exists in path.ts; bulk re-invite itself is the existing resend-invite flow, not rebuilt here).
+5. *(Superseded: this card shipped, was renamed "Covered Users", and was later removed entirely.)* The "Users to re-invite" migration-aid list from the spec: render a third Card listing active company users whose email domain ∈ `domains` (loader: query `employees` view via existing people/employees service — grep `getEmployees` in `apps/erp/app/modules/people` or `users` and reuse; select email + name only) with a note "These users will be migrated on their first SSO sign-in. Re-invite them to enable SSO access." and a Link to the existing employees page (`path.to.employeeAccounts` or equivalent — confirm the key exists in path.ts; bulk re-invite itself is the existing resend-invite flow, not rebuilt here).
 
 **Verify:**
 ```bash
@@ -346,7 +359,7 @@ pnpm exec turbo run typecheck --filter=erp
 
 **Steps:**
 1. Task 7 already mints SSO sessions with `mfaVerified: true` (non-controlled), which satisfies `requireAuthSession`'s re-check — no session.server.ts change needed. Verify this by reading `requireAuthSession`'s MFA bounce condition in `packages/auth/src/services/session.server.ts`; if it re-derives from `userHasVerifiedTotpFactor` REGARDLESS of `mfaVerified`, STOP and report.
-2. The `requireMfa` company-enforcement blocking screen: where the shell loader computes the gate (grep `requireMfa` in both `_layout.tsx` files), exempt sessions whose auth user is SSO-sourced when `!CONTROLLED_ENVIRONMENT`: the loader has the auth session — carry an `isSso` boolean on the `AuthSession` (add optional field `ssoProviderId?: string` to the `AuthSession` type in `packages/auth/src/types.ts` or wherever `AuthSession` is defined — grep `mfaVerified` in `packages/auth/src` to find it — set in Task 7's minting, preserved by `refreshAuthSession` exactly like `mfaVerified` — grep `mfaVerified` in `session.server.ts` and mirror every propagation site). Gate becomes: `requireMfa && !mfaVerified-satisfying-enrollment && !(authSession.ssoProviderId && !CONTROLLED_ENVIRONMENT)`.
+2. *(Superseded: the `!CONTROLLED_ENVIRONMENT` condition below was later removed — SSO sessions are exempt in every environment.)* The `requireMfa` company-enforcement blocking screen: where the shell loader computes the gate (grep `requireMfa` in both `_layout.tsx` files), exempt sessions whose auth user is SSO-sourced when `!CONTROLLED_ENVIRONMENT`: the loader has the auth session — carry an `isSso` boolean on the `AuthSession` (add optional field `ssoProviderId?: string` to the `AuthSession` type in `packages/auth/src/types.ts` or wherever `AuthSession` is defined — grep `mfaVerified` in `packages/auth/src` to find it — set in Task 7's minting, preserved by `refreshAuthSession` exactly like `mfaVerified` — grep `mfaVerified` in `session.server.ts` and mirror every propagation site). Gate becomes: `requireMfa && !mfaVerified-satisfying-enrollment && !(authSession.ssoProviderId && !CONTROLLED_ENVIRONMENT)`.
 
 **Verify:**
 ```bash

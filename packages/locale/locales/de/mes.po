@@ -522,7 +522,7 @@ msgid "Finish Anyways"
 msgstr "Trotzdem beenden"
 
 msgid "Finish setting up your account"
-msgstr ""
+msgstr "Richten Sie Ihr Konto fertig ein"
 
 msgid "Finish with material unpicked?"
 msgstr "Mit nicht gepicktem Material abschließen?"
@@ -534,7 +534,7 @@ msgid "Go back to operation"
 msgstr "Zurück zur Operation"
 
 msgid "Go to onboarding"
-msgstr ""
+msgstr "Gehen Sie zum Onboarding"
 
 msgid "How many were actually picked?"
 msgstr "Wie viele wurden tatsächlich gepickt?"
@@ -1513,7 +1513,7 @@ msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock 
 msgstr "Sie sind seit {hoursElapsed} Stunden eingestempelt. Haben Sie vergessen auszustempeln?"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
-msgstr ""
+msgstr "Ihr Konto ist noch nicht Teil eines Unternehmens. Schließen Sie das Onboarding im Carbon ERP ab, um fortzufahren."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Ihre Organisation erfordert eine Authentifizierungs-App. Richten Sie sie in Carbon ein und kommen Sie dann hierher zurück."
