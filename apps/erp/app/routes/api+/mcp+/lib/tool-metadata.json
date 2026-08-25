@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-25T14:49:54.249Z",
+  "generated": "2026-08-25T15:30:04.284Z",
   "totalTools": 1448,
   "modules": 15,
   "tools": [
@@ -25270,6 +25270,78 @@
       }
     },
     {
+      "name": "production_scheduleJob",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "schedule job",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "userId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "initial",
+              "reschedule"
+            ]
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "backward",
+              "forward"
+            ]
+          }
+        },
+        "required": [
+          "jobId"
+        ]
+      }
+    },
+    {
+      "name": "production_completeOperation",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "complete operation",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "userId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "operationId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "operationId",
+          "quantity"
+        ]
+      }
+    },
+    {
       "name": "production_issueMaterial",
       "module": "production",
       "classification": "WRITE",
@@ -25349,78 +25421,6 @@
         },
         "required": [
           "jobId",
-          "quantity"
-        ]
-      }
-    },
-    {
-      "name": "production_scheduleJob",
-      "module": "production",
-      "classification": "WRITE",
-      "description": "schedule job",
-      "paramCount": 3,
-      "serviceParams": [
-        "client",
-        "companyId",
-        "userId",
-        "args"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "jobId": {
-            "type": "string"
-          },
-          "mode": {
-            "type": "string",
-            "enum": [
-              "initial",
-              "reschedule"
-            ]
-          },
-          "direction": {
-            "type": "string",
-            "enum": [
-              "backward",
-              "forward"
-            ]
-          }
-        },
-        "required": [
-          "jobId"
-        ]
-      }
-    },
-    {
-      "name": "production_completeOperation",
-      "module": "production",
-      "classification": "WRITE",
-      "description": "complete operation",
-      "paramCount": 2,
-      "serviceParams": [
-        "client",
-        "companyId",
-        "userId",
-        "args"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "operationId": {
-            "type": "string"
-          },
-          "quantity": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "operationId",
           "quantity"
         ]
       }
