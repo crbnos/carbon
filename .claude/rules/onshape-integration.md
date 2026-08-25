@@ -451,6 +451,106 @@ exist until the import creates it, so a parallel asset job resolves
   recorded only in the Inngest return value reaches nobody, and the user finds out
   when a revision turns out to have no model and no change notice.
 
+### `onshape-release-import` (`onshape-release-import.ts`) — the change notice path
+
+Not an Inngest function. A library called by `onshape-release` once the release
+target is resolved, so it inherits that job's retries and its
+`groupKey`/`limit: 1` concurrency rather than racing itself.
+
+`releaseImportMode` picks between three behaviours:
+
+- `off` — nothing beyond the asset attach.
+- `changeNotice` (the default) — one Draft change notice per release PACKAGE,
+  one affected item per released element.
+- `revision` — `items_createRevision` immediately, the same call the manual
+  "New Revision" button makes. `createdBy` is passed EXPLICITLY: when a
+  service's parameter is literally named `args` (as `createRevision`'s is), the
+  MCP direct executor skips `enrichWithAuthContext`, so the declared
+  `injectAuth` never runs and the insert fails on `createdBy`'s NOT NULL. The
+  Onshape letter is passed explicitly too — `getNextRevision` returns its input
+  unchanged for anything that is not pure digits or one-to-two uppercase
+  letters, so a label like `A2` would be handed straight back and collide on
+  `item_unique`.
+
+**Nothing is auto-applied, on purpose.** `applyChangeNotice` drives four status
+transitions into a terminal `Done`, is not one transaction, and
+`itemSupersession`'s primary key is `("itemId")` alone — a second release
+against the same predecessor silently overwrites the first's successor pointer.
+Direct revision creation is additive, writes no supersession, and is reversible
+by deactivating the item.
+
+**Grouping: there is no release-level Onshape event.** A nine-element release
+arrives as nine separate `onshape.revision.created` deliveries, in
+nondeterministic order, with no completion signal. `releaseId` is the grouping
+key, and a marker row in `externalIntegrationMapping`
+(`entityType: "onshapeRelease"`, `externalId: releaseId`) is the claim:
+
+- The first element to insert the marker creates the notice; every sibling reads
+  the marker and appends to the notice it names.
+- The claim is written BEFORE the first affected item, so a run that dies
+  mid-way retries into its own notice instead of opening a second.
+- A `23505` on the claim means a sibling won — re-read the marker and adopt its
+  notice. A marker that names no notice is a hard error, not a fallback.
+- `recordMarkerProgress` appends each element's outcome, including any open
+  notices that already touched the item. Carbon permits parallel notices on one
+  part, and the UI warns via `ItemOpenChangeNoticeAlert`; a headless import has
+  no such surface, so the collisions go on the marker.
+
+What the notice carries:
+
+| Field | Value |
+| --- | --- |
+| `name` | `Onshape release {package name}` — read off the package, which is authoritative; the webhook's `releaseName` is a fallback, then `releaseId` |
+| `type` | `Engineering` |
+| `assignee` | `payload.userId`, i.e. `companyIntegration.updatedBy`. An auto-created Draft notifies NOBODY — `changeNoticeNotifyStages` (`items.models.ts`) is Start/Implementation/Done only — so the assignee is the only thing that puts it in a human's queue. `NotificationEvent.IntegrationSync` is deliberately not used; its fallback title reads "Accounting sync needs attention" |
+| `reasonForChange` | the release notes written in Onshape, as tiptap JSON. Falls back to the generated provenance sentences when the release has none: an empty reason is a regression against v1, not a neutral change |
+| `sourceType` / `sourceId` | `onshape` / the release id. Both columns have existed since the change-order migration and were never written by anything; this is the first caller, and using them is what frees `reasonForChange` for the releaser's own words |
+
+Affected items use `changeType: "Revision"` — `Version` would mean "same part
+number, structure differs", which needs a BOM comparison this does not do.
+
+**Two live-run defects the code now works around** (both reproduced 2026-08-21,
+both invisible in synthetic testing):
+
+- `addChangeNoticeAffectedItem` returns only `{ id, draftMakeMethodId }`; it
+  WRITES `newItemId` onto the affected-item row but does not return it. Read it
+  back, or `applyOnshapeAttributes` never runs and the draft revision stays a
+  byte-for-byte copy of its base — which is exactly the "No changes yet." empty
+  diff.
+- The affected item copies the base revision's method and nothing re-read
+  Onshape's BOM, so a release that changed a quantity produced a notice showing
+  the OLD quantities while the geometry on the same item updated correctly.
+  RD-410 C→D with PK-410 and MC-101 both bumped 1→2 yielded a draft D whose BOM
+  still read 1 and 1. The importer now dispatches `onshape-bom-import` into
+  `draftMakeMethodId` with `allowChangeNoticeDraft: true` — the ONLY caller
+  permitted to write into a method a change notice owns, which is why that
+  permission is an explicit flag and not a resolver heuristic. Assemblies only
+  (`elementType === 1`); a Part Studio body has no BOM. Dispatched rather than
+  awaited: losing the structure refresh is worse than losing the whole notice to
+  a 429.
+
+Skips, all idempotent by construction:
+
+- `no-matching-item` — a release naming a part Carbon has never seen is a
+  CREATION, not a change, and never becomes a notice. Minting here would land it
+  with blanket Inventory/Make defaults and poison MRP for purchased leaf parts;
+  `createItemsOnRelease` handles that case in `onshape-release` instead.
+- `revision-already-imported` — a redelivery, a retry, or a genuine re-release.
+  Skipping beats a `23505` on `item_unique`, which would roll back the affected
+  row and leave an EMPTY notice behind a marker claiming success.
+- `drawing-element`, `revision-not-found`, `disabled`, `no-dispatcher`.
+
+`unwrapDispatch` exists because a dispatched service call has TWO error layers:
+`result.success` only says the dispatch worked, and the Supabase envelope inside
+carries its own error. Treating a failed write as success poisons the release's
+idempotency marker so it can never be retried.
+
+Which revision letter a delivery is about lives in `onshape-release-revision.ts`
+— **the webhook does not carry the letter**, which was assumed for most of this
+integration's life. `revisionId` is carried and identifies the revision on its
+own (`GET /api/v10/revisions/{revisionId}`). Resolution is event first, API
+second, so a caller that already knows the letter pays for no call.
+
 ### `onshape-bom-import` (`onshape-bom-import.ts:383`)
 
 User-initiated from a specific make method. Replaces the older `sync` edge
