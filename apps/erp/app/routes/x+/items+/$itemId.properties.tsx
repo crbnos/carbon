@@ -20,6 +20,8 @@ import {
   getSupplierParts,
   getTool
 } from "~/modules/items";
+import type { UnreleasedChangeOrderItem } from "~/modules/items/items.server";
+import { getUnreleasedChangeOrderForItem } from "~/modules/items/items.server";
 import { getLocationsList } from "~/modules/resources";
 import { getTagsList } from "~/modules/shared";
 import type { ListItem } from "~/types";
@@ -31,6 +33,9 @@ type CommonFields = {
   files: ItemFile[];
   tags: { name: string }[];
   locations: ListItem[];
+  // Set while the change notice that minted this item is still open. Mirrors the
+  // part/tool routes so the properties panel locks the Active toggle here too.
+  unreleasedChangeOrder: UnreleasedChangeOrderItem | null;
 };
 
 export type ItemPropertiesResult = CommonFields &
@@ -76,7 +81,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     tags,
     makeMethods,
     files,
-    locations
+    locations,
+    unreleasedChangeOrder
   ] = await Promise.all([
     getSummary(client, itemId, companyId),
     getSupplierParts(client, itemId, companyId),
@@ -84,7 +90,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getTagsList(client, companyId, tagTable),
     needsMakeMethods ? getMakeMethods(client, itemId, companyId) : null,
     getItemFiles(client, itemId, companyId),
-    getLocationsList(client, companyId)
+    getLocationsList(client, companyId),
+    getUnreleasedChangeOrderForItem(client, { itemId, companyId })
   ]);
 
   if (!summary.data) {
@@ -104,7 +111,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     pickMethods: pickMethods.data ?? [],
     files,
     tags: tags.data ?? [],
-    locations: locations.data ?? []
+    locations: locations.data ?? [],
+    unreleasedChangeOrder
   };
 
   // Each branch casts summary.data to the correct type for the discriminated

@@ -7,6 +7,7 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { useUrlParams, useUser } from "~/hooks";
+import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.server";
 import { insertJob, jobValidator } from "~/modules/production";
 import { JobForm } from "~/modules/production/ui/Jobs";
 import type { MethodItemType } from "~/modules/shared";
@@ -45,14 +46,36 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  const result = await insertJob(getCarbonServiceRole(), {
-    ...data,
-    jobId: data.jobId || undefined,
-    configuration,
-    companyId,
-    createdBy: userId,
-    customFields: setCustomFields(formData)
-  });
+  // A job pulls the item's active make method, and for an item a change notice
+  // still holds that is the notice's un-approved draft BOM. Refuse the job until
+  // the notice releases. Checked here rather than only in the picker because this
+  // action is also reached by the API and the MCP tools.
+  if (data.itemId) {
+    const unreleasedIssue = await getUnreleasedChangeOrderIssue(
+      getCarbonServiceRole(),
+      { itemId: data.itemId, companyId }
+    );
+    if (unreleasedIssue) {
+      return validationError({
+        fieldErrors: {
+          itemId: `${unreleasedIssue} A job cannot be made for it.`
+        }
+      });
+    }
+  }
+
+  const result = await insertJob(
+    getCarbonServiceRole(),
+    {
+      ...data,
+      jobId: data.jobId || undefined,
+      configuration,
+      companyId,
+      createdBy: userId,
+      customFields: setCustomFields(formData)
+    },
+    { source: "erp" }
+  );
 
   if (result.error || !result.data) {
     throw redirect(

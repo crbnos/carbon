@@ -15,6 +15,7 @@ import type { Email } from "../types";
 import {
   getLineDescription,
   getLineDescriptionDetails,
+  getPurchaseOrderDisplayId,
   getTotal
 } from "../utils/purchase-order";
 import { getMoneyFormatter } from "../utils/shared";
@@ -71,7 +72,7 @@ const PurchaseOrderEmail = ({
     purchaseOrder.currencyCode ?? company.baseCurrencyCode ?? "USD"
   );
   const preview = (
-    <Preview>{`${purchaseOrder.purchaseOrderId} from ${company.name}`}</Preview>
+    <Preview>{`${getPurchaseOrderDisplayId(purchaseOrder)} from ${company.name}`}</Preview>
   );
   const themeClasses = getEmailThemeClasses();
   const lightStyles = getEmailInlineStyles("light");
@@ -159,7 +160,7 @@ const PurchaseOrderEmail = ({
                       >
                         Order ID
                       </Text>
-                      <Text>{purchaseOrder.purchaseOrderId}</Text>
+                      <Text>{getPurchaseOrderDisplayId(purchaseOrder)}</Text>
                     </Column>
                     <Column>
                       <Text

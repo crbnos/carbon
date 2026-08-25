@@ -1,7 +1,7 @@
 import { cn, IconButton } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { EdgeProps } from "@xyflow/react";
-import { EdgeLabelRenderer, getSmoothStepPath, useStore } from "@xyflow/react";
+import { EdgeLabelRenderer, getBezierPath, useStore } from "@xyflow/react";
 import { memo, useEffect, useState } from "react";
 import { LuX } from "react-icons/lu";
 import { useBuilderStore } from "../context";
@@ -25,7 +25,8 @@ function WorkflowEdgeImpl({
   const anySelected = useStore((s) => s.nodes.some((n) => n.selected));
   const highlighted = selected || isNodeSelected;
 
-  const isReadOnly = useBuilderStore((s) => s.isReadOnly);
+  const canChangeDefinition = useBuilderStore((s) => s.canChangeDefinition);
+  const isReadOnly = !canChangeDefinition;
   const onEdgesChange = useBuilderStore((s) => s.onEdgesChange);
   const [armed, setArmed] = useState(false);
 
@@ -37,14 +38,13 @@ function WorkflowEdgeImpl({
     return () => clearTimeout(timer);
   }, [armed]);
 
-  const [edgePath, labelX, labelY] = getSmoothStepPath({
+  const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
     sourcePosition,
     targetX,
     targetY,
-    targetPosition,
-    borderRadius: 12
+    targetPosition
   });
 
   return (
@@ -62,9 +62,11 @@ function WorkflowEdgeImpl({
       />
       {!isReadOnly && (
         <EdgeLabelRenderer>
-          {/* The renderer's container is pointer-events:none, so the button opts back in. */}
+          {/* The renderer's container is pointer-events:none, so the button opts back in.
+              z above 1000, the z-index React Flow gives a selected node — otherwise a
+              node's port label paints over this button. */}
           <div
-            className="nodrag nopan pointer-events-auto absolute"
+            className="nodrag nopan pointer-events-auto absolute z-[1001]"
             style={{
               transform: `translate(-50%, -60%) translate(${labelX}px, ${labelY}px)`
             }}
@@ -79,8 +81,10 @@ function WorkflowEdgeImpl({
               // Opaque, because the edge runs underneath. `after:` widens the hit
               // box without growing the dot on the canvas.
               className={cn(
-                "!bg-card after:absolute after:-inset-2 after:content-['']",
-                armed && "border-destructive text-destructive"
+                "!bg-card hover:!bg-card after:absolute after:-inset-2 after:content-['']",
+                // The cursor is still on the button after the first click, so the
+                // hover color has to go red too or the armed state never shows.
+                armed && "text-destructive hover:text-destructive"
               )}
               onClick={(e) => {
                 e.stopPropagation();

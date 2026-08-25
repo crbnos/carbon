@@ -5,7 +5,8 @@ import { z } from "zod";
 import { defineIntegration } from "../fns";
 
 const RilletSettingsSchema = z.object({
-  apiKey: z.string().min(1, { message: "API key is required" }),
+  // Empty means "keep the existing vaulted secret"; presence enforced at install.
+  apiKey: z.string(),
   environment: z.enum(["production", "sandbox"]).default("production"),
   subsidiaryId: z.string().optional(),
   webhookToken: z.string().optional()

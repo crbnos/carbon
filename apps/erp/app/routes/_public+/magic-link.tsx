@@ -1,5 +1,5 @@
 import { CONTROLLED_ENVIRONMENT, SUPABASE_URL } from "@carbon/auth";
-import { Button, Heading, VStack } from "@carbon/react";
+import { Button, Heading } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNavigate, useSearchParams } from "react-router";
 
@@ -33,19 +33,23 @@ export default function ConfirmMagicLink() {
         />
       </div>
       <div className="rounded-lg md:bg-card md:border md:border-border md:shadow-lg p-8 w-[380px]">
-        <VStack spacing={4} className="items-center justify-center">
-          <Heading size="h3">
-            <Trans>Let's build something</Trans> 🚀
+        <div className="flex flex-col items-center text-center">
+          <Heading size="h3" className="tracking-tight">
+            <Trans>Sign in to Carbon</Trans>
           </Heading>
+          <p className="mt-2 text-muted-foreground tracking-tight text-sm text-balance">
+            <Trans>You're one step away from your workspace.</Trans>
+          </p>
           <Button
             size="lg"
+            className="w-full mt-6"
             onClick={() => {
               window.location.href = getConfirmationURL(token);
             }}
           >
-            <Trans>Log In</Trans>
+            <Trans>Let's Build</Trans>
           </Button>
-        </VStack>
+        </div>
       </div>
     </>
   );

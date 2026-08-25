@@ -1,3 +1,4 @@
+import { getPurchaseOrderDisplayId } from "@carbon/documents/utils";
 import {
   Badge,
   Button,
@@ -30,6 +31,7 @@ import {
   LuEllipsisVertical,
   LuEye,
   LuFile,
+  LuGitBranchPlus,
   LuHandCoins,
   LuLoaderCircle,
   LuPanelLeft,
@@ -39,6 +41,7 @@ import {
   LuX
 } from "react-icons/lu";
 import { Link, useFetcher, useNavigation, useParams } from "react-router";
+import { RevisionSuffix } from "~/components";
 import type { ResolvedAttachmentItem } from "~/components/AttachmentsList";
 import { useAuditLog } from "~/components/AuditLog";
 import { usePanels } from "~/components/Layout";
@@ -56,7 +59,10 @@ import PurchaseInvoicingStatus from "~/modules/invoicing/ui/PurchaseInvoice/Purc
 import type { ApprovalDecision } from "~/modules/shared/types";
 import { useSuppliers } from "~/stores/suppliers";
 import { path } from "~/utils/path";
-import { isPurchaseOrderLocked } from "../../purchasing.models";
+import {
+  canCreatePurchaseOrderRevision,
+  isPurchaseOrderLocked
+} from "../../purchasing.models";
 import type { PurchaseOrder, PurchaseOrderLine } from "../../types";
 import PurchaseOrderApprovalModal from "./PurchaseOrderApprovalModal";
 import PurchaseOrderFinalizeModal from "./PurchaseOrderFinalizeModal";
@@ -156,10 +162,18 @@ const PurchaseOrderHeader = () => {
   const finalizeDisclosure = useDisclosure();
   const deleteModal = useDisclosure();
   const cancelModal = useDisclosure();
+  const createRevisionModal = useDisclosure();
   const [approvalDecision, setApprovalDecision] =
     useState<ApprovalDecision | null>(null);
 
   const relatedDocsErrorMessage = t`Couldn't load related documents. Refresh before creating a new one to avoid duplicates.`;
+
+  // Interpolated into translated confirmations, so the fallback has to be
+  // translated too — a raw English literal would render mid-sentence in every
+  // other locale.
+  const orderLabel =
+    getPurchaseOrderDisplayId(routeData?.purchaseOrder) ||
+    t`this purchase order`;
 
   const isOutsideProcessing =
     routeData?.purchaseOrder?.purchaseOrderType === "Outside Processing";
@@ -195,10 +209,15 @@ const PurchaseOrderHeader = () => {
             />
             <Link to={path.to.purchaseOrderDetails(orderId)}>
               <Heading size="h4" className="flex items-center gap-2">
-                {routeData?.purchaseOrder?.purchaseOrderId}
+                <span className="flex items-center gap-0">
+                  <span>{routeData?.purchaseOrder?.purchaseOrderId}</span>
+                  <RevisionSuffix
+                    revisionId={routeData?.purchaseOrder?.revisionId}
+                  />
+                </span>
               </Heading>
             </Link>
-            <Copy text={routeData?.purchaseOrder?.purchaseOrderId ?? ""} />
+            <Copy text={getPurchaseOrderDisplayId(routeData?.purchaseOrder)} />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <IconButton
@@ -232,6 +251,21 @@ const PurchaseOrderHeader = () => {
                 >
                   <DropdownMenuIcon icon={<LuLoaderCircle />} />
                   <Trans>Reopen</Trans>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={
+                    !canCreatePurchaseOrderRevision({
+                      newStatus: "Draft",
+                      currentStatus: routeData?.purchaseOrder?.status,
+                      orderDate: routeData?.purchaseOrder?.orderDate
+                    }) ||
+                    statusFetcher.state !== "idle" ||
+                    !permissions.can("delete", "purchasing")
+                  }
+                  onClick={createRevisionModal.onOpen}
+                >
+                  <DropdownMenuIcon icon={<LuGitBranchPlus />} />
+                  <Trans>Create PO Revision</Trans>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -625,8 +659,8 @@ const PurchaseOrderHeader = () => {
         <ConfirmDelete
           action={path.to.deletePurchaseOrder(orderId)}
           isOpen={deleteModal.isOpen}
-          name={routeData?.purchaseOrder?.purchaseOrderId ?? "purchase order"}
-          text={t`Are you sure you want to delete ${routeData?.purchaseOrder?.purchaseOrderId}? This cannot be undone.`}
+          name={orderLabel}
+          text={t`Are you sure you want to delete ${orderLabel}? This cannot be undone.`}
           onCancel={() => {
             deleteModal.onClose();
           }}
@@ -639,7 +673,7 @@ const PurchaseOrderHeader = () => {
         <Confirm
           action={path.to.purchaseOrderStatus(orderId)}
           title={t`Cancel Purchase Order`}
-          text={t`Are you sure you want to cancel ${routeData?.purchaseOrder?.purchaseOrderId ?? "this purchase order"}? This will close the order.`}
+          text={t`Are you sure you want to cancel ${orderLabel}? This will close the order.`}
           confirmText={t`Cancel Order`}
           confirmVariant="destructive"
           cancelText={t`Back`}
@@ -647,6 +681,21 @@ const PurchaseOrderHeader = () => {
           onSubmit={cancelModal.onClose}
         >
           <input type="hidden" name="status" value="Closed" />
+        </Confirm>
+      )}
+      {createRevisionModal.isOpen && (
+        <Confirm
+          action={path.to.purchaseOrderStatus(orderId)}
+          title={t`Create PO Revision`}
+          text={t`${orderLabel} will be reopened for editing as revision ${
+            (routeData?.purchaseOrder?.revisionId ?? 0) + 1
+          }. The document already sent to the supplier is unchanged until you finalize and resend the order.`}
+          confirmText={t`Create Revision`}
+          onCancel={createRevisionModal.onClose}
+          onSubmit={createRevisionModal.onClose}
+        >
+          <input type="hidden" name="status" value="Draft" />
+          <input type="hidden" name="createRevision" value="true" />
         </Confirm>
       )}
       {approvalDecision && routeData?.approvalRequest?.id && (

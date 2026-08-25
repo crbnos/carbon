@@ -178,7 +178,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       companyId,
       createdBy: userId
     },
-    trackedEntityId || undefined
+    trackedEntityId || undefined,
+    undefined,
+    "mes_qr"
   );
 
   if (startEvent.error) {

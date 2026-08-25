@@ -15,10 +15,10 @@ import { Outlet, redirect, useLoaderData } from "react-router";
 import {
   financialReportParamsValidator,
   getCompaniesInGroup,
-  getConsolidatedPeriodSeries,
   getFinancialStatementPeriodSeries,
   getFiscalYearSettings
 } from "~/modules/accounting";
+import { getConsolidatedPeriodSeriesForReport } from "~/modules/accounting/accounting.ee.server";
 import {
   exportPeriodReport,
   getPeriodColumnLabel,
@@ -99,7 +99,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
 
   if (isMultiCompany && parentCurrency) {
-    const consolidated = await getConsolidatedPeriodSeries(
+    const consolidated = await getConsolidatedPeriodSeriesForReport(
       client,
       companyGroupId,
       selectedCompanyIds,

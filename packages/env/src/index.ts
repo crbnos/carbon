@@ -8,6 +8,7 @@ declare global {
       CARBON_EDITION: string;
       CARBON_API_URL: string;
       CARBON_SLACK_ENABLED: string;
+      STRIPE_CONNECT_ENABLED: string;
       CLOUDFLARE_TURNSTILE_SITE_KEY: string;
       CONTROLLED_ENVIRONMENT: string;
       ERP_URL: string;
@@ -64,6 +65,7 @@ declare global {
       SLACK_STATE_SECRET: string;
       STRIPE_SECRET_KEY: string;
       STRIPE_WEBHOOK_SECRET: string;
+      STRIPE_CONNECT_WEBHOOK_SECRET: string;
       STRIPE_BYPASS_COMPANY_IDS: string;
       STRIPE_BYPASS_USER_IDS: string;
       GTM_URL: string;
@@ -348,9 +350,26 @@ export const SESSION_ERROR_KEY = "error";
 export const STRIPE_SECRET_KEY = getEnv("STRIPE_SECRET_KEY", {
   isRequired: false
 });
+// Browser-safe boolean signal for whether Stripe (and therefore the Stripe
+// Connect integration) is configured. STRIPE_SECRET_KEY is a secret, so it is
+// `""` in the browser — the integration's `active` gate must read this derived
+// flag instead, which crosses to the client via getBrowserEnv() the same way
+// CARBON_SLACK_ENABLED does. Only the boolean is exposed, never the key.
+export const STRIPE_CONNECT_ENABLED = isBrowser
+  ? window.env?.STRIPE_CONNECT_ENABLED === "true"
+  : Boolean(STRIPE_SECRET_KEY);
 export const STRIPE_WEBHOOK_SECRET = getEnv("STRIPE_WEBHOOK_SECRET", {
   isRequired: false
 });
+// Connect webhook endpoints (`connect: true`) are signed with their OWN secret,
+// distinct from the platform-account endpoint above — a Connect event verified
+// against STRIPE_WEBHOOK_SECRET fails signature validation.
+export const STRIPE_CONNECT_WEBHOOK_SECRET = getEnv(
+  "STRIPE_CONNECT_WEBHOOK_SECRET",
+  {
+    isRequired: false
+  }
+);
 export const STRIPE_BYPASS_COMPANY_IDS = getEnv("STRIPE_BYPASS_COMPANY_IDS", {
   isRequired: false
 });
@@ -371,6 +390,13 @@ export const REDIS_URL = getEnv("REDIS_URL", {
 });
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days;
 export const REFRESH_ACCESS_TOKEN_THRESHOLD = 60 * 10; // 10 minutes left before token expires
+// Session lock / termination (NIST 800-171 3.1.10 / 3.1.11). All in MILLISECONDS
+// (unlike SESSION_MAX_AGE above, which is seconds for the cookie maxAge). Enforced
+// only when CONTROLLED_ENVIRONMENT is true. Plain literals, matching SESSION_MAX_AGE
+// precedent (not env-overridable in v1).
+export const SESSION_IDLE_LOCK_MS = 15 * 60 * 1000; // 15 min — DISA App-Sec STIG web-app idle
+export const SESSION_ABSOLUTE_MAX_MS = 12 * 60 * 60 * 1000; // 12 h — absolute session cap
+export const SESSION_HEARTBEAT_MS = 60 * 1000; // client activity heartbeat throttle
 export const VERCEL_URL = getEnv("VERCEL_URL", { isSecret: false });
 
 export const XERO_CLIENT_ID = getEnv("XERO_CLIENT_ID", {
@@ -499,6 +525,7 @@ export function getBrowserEnv() {
     CARBON_API_URL,
     CARBON_EDITION,
     CARBON_SLACK_ENABLED: CARBON_SLACK_ENABLED ? "true" : "",
+    STRIPE_CONNECT_ENABLED: STRIPE_CONNECT_ENABLED ? "true" : "",
     CLOUDFLARE_TURNSTILE_SITE_KEY,
     CONTROLLED_ENVIRONMENT,
     DEFAULT_LANGUAGE,

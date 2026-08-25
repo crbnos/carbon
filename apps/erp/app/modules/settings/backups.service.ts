@@ -180,6 +180,39 @@ export async function getCompanyRestoreRuns(
   return { data: runs, error: null };
 }
 
+/**
+ * The one-per-company marker row for a long-running job, or null when none.
+ * Shared by the export and demo-template readers below: both are a single row
+ * keyed on `integration`, whose `metadata` JSON the job owns. `createdAt` comes
+ * back too, as the fallback for a marker written before its first heartbeat.
+ */
+async function readIntegrationMarker(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  integration: "company-export" | "company-template"
+): Promise<{
+  data: { meta: Record<string, unknown>; createdAt: string } | null;
+  error: Error | null;
+}> {
+  const marker = await client
+    .from("externalIntegrationMapping")
+    .select("metadata, createdAt")
+    .eq("integration", integration)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  if (marker.error) return { data: null, error: marker.error };
+  if (!marker.data) return { data: null, error: null };
+
+  return {
+    data: {
+      meta: (marker.data.metadata ?? {}) as Record<string, unknown>,
+      createdAt: marker.data.createdAt
+    },
+    error: null
+  };
+}
+
 export type CompanyExportRun = {
   status: "running" | "failed";
   progress: { phase: string; done: number; total: number } | null;
@@ -201,17 +234,14 @@ export async function getCompanyExportRun(
   data: CompanyExportRun | null;
   error: Error | null;
 }> {
-  const marker = await client
-    .from("externalIntegrationMapping")
-    .select("metadata, createdAt")
-    .eq("integration", "company-export")
-    .eq("companyId", companyId)
-    .maybeSingle();
+  const marker = await readIntegrationMarker(
+    client,
+    companyId,
+    "company-export"
+  );
+  if (marker.error || !marker.data) return { data: null, error: marker.error };
 
-  if (marker.error) return { data: null, error: marker.error };
-  if (!marker.data) return { data: null, error: null };
-
-  const meta = (marker.data.metadata ?? {}) as {
+  const meta = marker.data.meta as {
     status?: "running" | "failed";
     startedAt?: string;
     progress?: { phase: string; done: number; total: number };
@@ -223,6 +253,70 @@ export async function getCompanyExportRun(
       progress: meta.progress ?? null,
       startedAt: meta.startedAt ?? marker.data.createdAt,
       error: meta.error ?? null
+    },
+    error: null
+  };
+}
+
+export type CompanyTemplateRun = {
+  templateRunId: string;
+  status: "running" | "ready" | "failed" | "reverting";
+  datasetKey: string | null;
+  startedAt: string | null;
+  error: string | null;
+  /** Phase + done/total while the apply or revert is in flight. */
+  progress: { phase: string; done: number; total: number } | null;
+  /** Whether a pre-apply snapshot exists yet — the UI offers a revert retry on a
+   *  stalled run only when there is actually something to put back. */
+  hasSnapshot: boolean;
+};
+
+/**
+ * The current demo-template marker, or null when none. Written by the
+ * company-template job: absent = no demo data change is outstanding, "running" =
+ * in flight, "ready" = applied and waiting on a keep/revert decision,
+ * "reverting" = the undo is in flight, "failed" = it did not land and the user
+ * hasn't dismissed it yet.
+ *
+ * The metadata shape is typed here rather than imported from `@carbon/jobs` —
+ * the app must not pull job internals (and Node `Buffer` with them) into its
+ * bundle.
+ */
+export async function getCompanyTemplateRun(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<{
+  data: CompanyTemplateRun | null;
+  error: Error | null;
+}> {
+  const marker = await readIntegrationMarker(
+    client,
+    companyId,
+    "company-template"
+  );
+  if (marker.error || !marker.data) return { data: null, error: marker.error };
+
+  const meta = marker.data.meta as {
+    templateRunId?: string;
+    status?: "running" | "ready" | "failed" | "reverting";
+    datasetKey?: string;
+    startedAt?: string;
+    error?: string;
+    progress?: { phase: string; done: number; total: number } | null;
+    snapshotPath?: string;
+  };
+
+  // Only whether a snapshot EXISTS is projected, never where — the job owns its
+  // lifecycle end to end, and the client has no use for the location.
+  return {
+    data: {
+      templateRunId: meta.templateRunId ?? "",
+      status: meta.status ?? "running",
+      datasetKey: meta.datasetKey ?? null,
+      startedAt: meta.startedAt ?? marker.data.createdAt,
+      error: meta.error ?? null,
+      progress: meta.progress ?? null,
+      hasSnapshot: Boolean(meta.snapshotPath)
     },
     error: null
   };

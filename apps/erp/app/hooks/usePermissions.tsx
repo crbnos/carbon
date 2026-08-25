@@ -25,10 +25,7 @@ export function usePermissions() {
 
   const can = useCallback(
     (action: "view" | "create" | "update" | "delete", feature: string) => {
-      return (
-        data?.permissions[feature]?.[action].includes("0") ||
-        data?.permissions[feature]?.[action].includes(companyId)
-      );
+      return data?.permissions[feature]?.[action].includes(companyId);
     },
     [companyId, data?.permissions]
   );

@@ -27,6 +27,7 @@ DB types, Supabase/Kysely clients, audit config, event system types, rate limiti
 ```bash
 pnpm db:migrate          # Apply pending migrations + regenerate types
 pnpm db:types            # Regenerate types only
+pnpm db:check:datasets   # Dry-run every demo dataset against the schema (writes nothing)
 pnpm --filter @carbon/database typecheck
 ```
 
@@ -41,18 +42,42 @@ pnpm --filter @carbon/database typecheck
 | `./sampling` | Node-side re-export of `supabase/functions/shared/sampling-engine.ts` (Z1.4 / ISO 2859-1 resolvers) |
 | `./audit` | Audit-log functions (`getEntityAuditLog`, `enableAuditLog`, `syncAuditSubscriptions`, …); `auditConfig` + `AuditEntityType` come from the separate `./audit.config` subpath |
 | `./ratelimit` | `checkApiKeyRateLimit` (Postgres RPC wrapper) |
+| `./datasets` | `applyDataset(pgClient, { companyId, userId, dataset, timeZone, wipeFirst? })` — the one entry point that fills a company with an industry dataset, in a single transaction; `wipeFirst` clears prior business data inside that same transaction while preserving bootstrap config. Plus `DATASETS`, `getDataset`, `datasetKeys`, `datasetForIndustry`. Consumed by onboarding (`industry.tsx`) and the `company-template` Inngest job. See Dev Seed below |
+| `./seed-workflows` | `buildSeedWorkflows` — the seeded workflow definitions (`datasets/tiers/workflow-definitions.ts`) |
 | `.` (root, from `src/timezone.ts` + `src/utils.ts`) | `getCompanyTimeZone(db, companyId)` / `getLocationTimeZone(db, locationId, companyId)` — business-timezone resolvers, overloaded for Supabase client or Kysely handle (they throw on query failure rather than silently falling back); `AnyPostgresClient` + `isKysely` guard for writing such overloads. SQL siblings: `company_today(companyId)` / `location_today(locationId, companyId)` replace `CURRENT_DATE` for business dates in DB functions (SECURITY INVOKER — callers must be SECURITY DEFINER or service-role). ERP routes should prefer the Redis-cached wrappers in `~/modules/shared/timezone.server` |
 
 ## Dev Seed
 
-`pnpm db:seed:dev` runs `src/seed-dev/` — not a single script. `cli.ts` is the entry point,
-`bootstrap.ts` sets up the company, `wipe.ts` clears prior data, and the actual seeding is a
-**tiered** directory (`tiers/01-foundation.ts` … `tiers/12-planning.ts`) run in numeric order,
-because each tier depends on the ids the tiers before it created. Add new seed data to the tier
-that owns that module rather than creating a new top-level script — the ordering IS the contract.
+`src/datasets/` splits **data** from **engine**, and both the dev CLI and onboarding's
+`company-template` job go through the same `applyDataset()` entry point (`./datasets`).
+
+- **Data** — `data/<key>/`, one file per slice, pure TypeScript literals with no SQL and no
+  ids. Registered in `DATASETS` (`datasets/index.ts`). Four keys ship today, one per
+  onboarding industry: `satellite`, `robotics`, `precision`, `motor`. **New seed data goes
+  here**, not in a tier: the tiers are industry-agnostic shared code, and hard-coding one
+  industry's content into them breaks every other dataset.
+- **Engine** — `tiers/01-foundation.ts` … `tiers/12-planning.ts`, run in numeric order because
+  each tier depends on ids the earlier ones put in `ctx.refs`. The ordering IS the contract.
+  Change a tier only to support a new *shape* of data.
+
+Dates are signed day-offsets resolved against the company's today — never JS `Date`, never
+`CURRENT_DATE` in a tier's SQL. Primary keys must never be literals: several tables
+(`externalLink`, `period`) have globally-unique keys, so a fixed id collides on the second
+company seeded into the same database.
+
+`pnpm db:seed:dev` runs `src/seed-dev.ts` (the dev CLI); `cli.ts` parses its args,
+`bootstrap.ts` sets up the company and `wipe.ts` clears prior data. `cli.ts` and `bootstrap.ts`
+are dev-only. `wipe.ts` is reached from the shared engine via `applyDataset`'s `wipeFirst`
+option, which both the dev CLI and the `company-template` job use; it is not exported on its own.
+
+`pnpm db:check:datasets` (`src/check-datasets.ts` → `datasets/verify.ts`) catches schema drift:
+it applies every dataset to a scratch company inside a transaction it always rolls back, so it
+writes nothing. The pre-commit hook runs it on any `packages/database/**` change.
 
 Per-module seed scripts were folded into this structure: `seed-change-orders.ts` and its
 `db:seed:change-orders` script are gone, replaced by `tiers/08-change-orders.ts`.
+
+Full feature context: `.claude/rules/onboarding-company-templates.md`.
 
 ## Cross-References
 

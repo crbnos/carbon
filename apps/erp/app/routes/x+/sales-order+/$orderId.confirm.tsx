@@ -7,6 +7,7 @@ import {
   isBlocked
 } from "@carbon/ee/rules.server";
 import { validator } from "@carbon/form";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { datetime, getSalesOrderStatus } from "@carbon/utils";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs } from "react-router";
@@ -204,6 +205,17 @@ export async function action(args: ActionFunctionArgs) {
       id: orderId,
       companyId: companyId,
       userId: userId
+    });
+
+    // Below every early return above, so a failed email or a failed status
+    // write never counts as a confirmed order.
+    trackWorkEvent("sales_order_confirmed", {
+      companyId,
+      userId,
+      salesOrderId: orderId,
+      lineCount: orderLines.data?.length ?? 0,
+      derivedStatus: status,
+      emailed: notification === "Email"
     });
 
     return {

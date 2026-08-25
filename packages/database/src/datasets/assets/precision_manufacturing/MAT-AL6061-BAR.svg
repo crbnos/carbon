@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="alu" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7d848a"/><stop offset="0.2" stop-color="#ced5da"/>
+      <stop offset="0.45" stop-color="#e8edf0"/><stop offset="0.72" stop-color="#a9b1b7"/>
+      <stop offset="1" stop-color="#6b7278"/>
+    </linearGradient>
+    <linearGradient id="aluFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#7d848a"/><stop offset="0.2" stop-color="#ced5da"/>
+      <stop offset="0.45" stop-color="#e8edf0"/><stop offset="0.72" stop-color="#a9b1b7"/>
+      <stop offset="1" stop-color="#6b7278"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="512" cy="622" rx="452" ry="99" fill="url(#shadow)" transform="rotate(-11 512 622)"/>
+
+  <g transform="translate(516 505) rotate(-11)">
+    <!-- barrel -->
+    <clipPath id="barC"><path d="M-372 -96 L372 -96 Q445 0 372 96 L-372 96 Z"/></clipPath>
+    <path d="M-372 -96 L372 -96 Q445 0 372 96 L-372 96 Z" fill="url(#alu)" stroke="#5a6166" stroke-width="2.5"/>
+    <g clip-path="url(#barC)">
+      <!-- chalky mill-finish bloom: kills the specular, warms the grey -->
+      <rect x="-380" y="-100" width="840" height="200" fill="#d9d3c8" opacity="0.26"/>
+      <rect x="-380" y="-100" width="840" height="72" fill="#e6dccb" opacity="0.16"/>
+      <rect x="-380" y="48" width="840" height="56" fill="#6e7175" opacity="0.20"/>
+      <!-- extruded drag lines, lengthwise -->
+      <g stroke="#f2efe9" stroke-opacity="0.15" stroke-width="2" fill="none">
+        <path d="M-378 -78 L446 -78"/><path d="M-378 -54 L446 -54"/><path d="M-378 -26 L446 -26"/>
+        <path d="M-378 4 L446 4"/><path d="M-378 32 L446 32"/><path d="M-378 62 L446 62"/>
+      </g>
+      <g stroke="#70757a" stroke-opacity="0.20" stroke-width="1.6" fill="none">
+        <path d="M-378 -86 L446 -86"/><path d="M-378 -66 L446 -66"/><path d="M-378 -42 L446 -42"/>
+        <path d="M-378 -12 L446 -12"/><path d="M-378 18 L446 18"/><path d="M-378 46 L446 46"/>
+        <path d="M-378 76 L446 76"/><path d="M-378 88 L446 88"/>
+      </g>
+      <!-- dull patchy oxide bloom rather than reflection -->
+      <ellipse cx="-120" cy="-34" rx="150" ry="30" fill="#ffffff" opacity="0.07"/>
+      <ellipse cx="180" cy="18" rx="180" ry="34" fill="#8d9296" opacity="0.10"/>
+      <ellipse cx="60" cy="-70" rx="120" ry="20" fill="#efeae1" opacity="0.10"/>
+    </g>
+    <!-- far end break -->
+    <path d="M352 -90 Q420 0 352 90" fill="none" stroke="#5e656a" stroke-width="3" opacity="0.5"/>
+    <path d="M366 -94 Q436 0 366 94" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="3"/>
+
+    <!-- freshly sawn end face -->
+    <ellipse cx="-372" cy="0" rx="36.5" ry="96" fill="url(#aluFace)" stroke="#6b7277" stroke-width="2.5"/>
+    <clipPath id="faceC"><ellipse cx="-372" cy="0" rx="36.5" ry="96"/></clipPath>
+    <g clip-path="url(#faceC)">
+      <!-- bandsaw tooth scallops, blade travelling across the cut -->
+      <g fill="none" stroke="#7c8388" stroke-opacity="0.55" stroke-width="2.4">
+        <path d="M-410 -84 Q-372 -70 -334 -84"/><path d="M-410 -62 Q-372 -48 -334 -62"/>
+        <path d="M-410 -40 Q-372 -26 -334 -40"/><path d="M-410 -18 Q-372 -4 -334 -18"/>
+        <path d="M-410 4 Q-372 18 -334 4"/><path d="M-410 26 Q-372 40 -334 26"/>
+        <path d="M-410 48 Q-372 62 -334 48"/><path d="M-410 70 Q-372 84 -334 70"/>
+      </g>
+      <g fill="none" stroke="#ffffff" stroke-opacity="0.30" stroke-width="1.8">
+        <path d="M-410 -78 Q-372 -64 -334 -78"/><path d="M-410 -56 Q-372 -42 -334 -56"/>
+        <path d="M-410 -34 Q-372 -20 -334 -34"/><path d="M-410 -12 Q-372 2 -334 -12"/>
+        <path d="M-410 10 Q-372 24 -334 10"/><path d="M-410 32 Q-372 46 -334 32"/>
+        <path d="M-410 54 Q-372 68 -334 54"/><path d="M-410 76 Q-372 90 -334 76"/>
+      </g>
+      <rect x="-412" y="-98" width="24" height="200" fill="#5f666b" opacity="0.22"/>
+      <rect x="-346" y="-98" width="20" height="200" fill="#ffffff" opacity="0.10"/>
+    </g>
+    <!-- bright freshly sheared rim -->
+    <ellipse cx="-372" cy="0" rx="36.5" ry="96" fill="none" stroke="#f4f6f7" stroke-opacity="0.55" stroke-width="3"/>
+    <ellipse cx="-372" cy="0" rx="30" ry="82" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="2"/>
+    <!-- burr curl lifted off one edge -->
+    <path d="M-360 74 Q-338 96 -352 108 Q-368 100 -372 84 Z" fill="#dfe3e6" stroke="#798085" stroke-width="2"/>
+    <path d="M-362 80 Q-346 94 -354 102" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2"/>
+  </g>
+</svg>

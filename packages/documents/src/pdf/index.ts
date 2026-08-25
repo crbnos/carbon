@@ -1,3 +1,5 @@
+import { getPurchaseOrderDisplayId } from "../utils/purchase-order";
+import { getQuoteDisplayId } from "../utils/quote";
 import type { JobTravelerMaterial } from "./blocks/jobTraveler";
 import { Footer } from "./components";
 import { ensureFont, getSafeFontFamily, registerDocumentFonts } from "./fonts";
@@ -23,6 +25,8 @@ export {
   DOCUMENT_PDFS,
   ensureFont,
   Footer,
+  getPurchaseOrderDisplayId,
+  getQuoteDisplayId,
   getSafeFontFamily,
   IssuePDF,
   JobTravelerPageContent,

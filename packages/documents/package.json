@@ -3,6 +3,7 @@
   "dependencies": {
     "@bwip-js/node": "4.9.0",
     "@carbon/env": "workspace:*",
+    "@carbon/notifications": "workspace:*",
     "@carbon/react": "workspace:*",
     "@carbon/utils": "workspace:*",
     "@hookform/resolvers": "3.10.0",
@@ -45,7 +46,8 @@
     "./template": "./src/template/index.ts",
     "./zpl": "./src/zpl/index.ts",
     "./qr": "./src/qr/qr-code.ts",
-    "./labels": "./src/labels/index.ts"
+    "./labels": "./src/labels/index.ts",
+    "./utils": "./src/utils/index.ts"
   },
   "private": true,
   "scripts": {

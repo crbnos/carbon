@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import { withRevisionSuffix } from "@carbon/documents/utils";
 import type { JSONContent } from "@carbon/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
@@ -45,17 +46,34 @@ export interface PreviewEntity {
   label: string;
 }
 
-/** Document types that support previewing against a real record. */
+/**
+ * Document types that support previewing against a real record.
+ *
+ * `hasRevision` marks the types whose records are revised — two revisions share
+ * a readable id, so the picker must label them apart. It also gates selecting
+ * `revisionId`, which only some of these views carry. Sales orders are NOT
+ * revised (the column exists but nothing writes it), so they stay off.
+ */
 const LIST_CONFIG: Record<
   string,
-  { view: string; idColumn: string } | undefined
+  { view: string; idColumn: string; hasRevision?: boolean } | undefined
 > = {
   salesInvoice: { view: "salesInvoices", idColumn: "invoiceId" },
   salesOrder: { view: "salesOrders", idColumn: "salesOrderId" },
-  purchaseOrder: { view: "purchaseOrders", idColumn: "purchaseOrderId" },
-  quote: { view: "quotes", idColumn: "quoteId" },
+  purchaseOrder: {
+    view: "purchaseOrders",
+    idColumn: "purchaseOrderId",
+    hasRevision: true
+  },
+  quote: { view: "quotes", idColumn: "quoteId", hasRevision: true },
   stockTransfer: { view: "stockTransfer", idColumn: "stockTransferId" }
 };
+
+/** Shape `listPreviewEntities` reads back; `revisionId` only when requested. */
+type PreviewRow = {
+  id: string;
+  revisionId?: number | null;
+} & Record<string, string | number | null | undefined>;
 
 /** Recent records of a document type, to populate the preview record picker. */
 export async function listPreviewEntities(
@@ -68,15 +86,29 @@ export async function listPreviewEntities(
 
   const { data } = await client
     .from(cfg.view as never)
-    .select(`id, ${cfg.idColumn}`)
+    .select(
+      cfg.hasRevision
+        ? `id, ${cfg.idColumn}, revisionId`
+        : `id, ${cfg.idColumn}`
+    )
     .eq("companyId", companyId)
     .order("createdAt", { ascending: false })
     // Just the latest handful — the picker is for sampling, not browsing.
     .limit(6);
 
-  return ((data ?? []) as Record<string, string>[])
+  return ((data ?? []) as PreviewRow[])
     .filter((row) => row.id)
-    .map((row) => ({ id: row.id, label: row[cfg.idColumn] ?? row.id }));
+    .map((row) => {
+      const readableId = row[cfg.idColumn];
+      return {
+        id: row.id,
+        label:
+          withRevisionSuffix(
+            typeof readableId === "string" ? readableId : null,
+            row.revisionId
+          ) || row.id
+      };
+    });
 }
 
 const emptyThumbnails: Record<string, string | null> = {};

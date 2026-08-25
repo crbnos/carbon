@@ -145,7 +145,7 @@ export default function ServiceDetailsRoute() {
   if (!serviceData) throw new Error("Could not find service data");
 
   return (
-    <VStack spacing={2} className="p-2">
+    <VStack spacing={4} className="p-4">
       {permissions.is("employee") && methodData && (
         <>
           <Suspense fallback={<Menubar />}>
@@ -169,6 +169,15 @@ export default function ServiceDetailsRoute() {
           />
           {serviceData.serviceSummary?.replenishmentSystem === "Make" && (
             <>
+              <BillOfProcess
+                key={`bop:${itemId}`}
+                makeMethod={methodData.makeMethod}
+                // @ts-ignore
+                operations={methodData.methodOperations ?? []}
+                // @ts-ignore
+                materials={methodData.methodMaterials ?? []}
+                tags={tags}
+              />
               <BillOfMaterial
                 key={`bom:${itemId}`}
                 makeMethod={methodData.makeMethod}
@@ -179,13 +188,6 @@ export default function ServiceDetailsRoute() {
                 replenishmentSystem={
                   serviceData.serviceSummary?.replenishmentSystem
                 }
-              />
-              <BillOfProcess
-                key={`bop:${itemId}`}
-                makeMethod={methodData.makeMethod}
-                // @ts-ignore
-                operations={methodData.methodOperations ?? []}
-                tags={tags}
               />
             </>
           )}

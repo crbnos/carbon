@@ -425,6 +425,9 @@ msgstr "Enter PIN for {0}"
 msgid "Enter the 6-digit code from your authenticator app"
 msgstr "Enter the 6-digit code from your authenticator app"
 
+msgid "Enter the 6-digit code from your authenticator app to resume."
+msgstr "Enter the 6-digit code from your authenticator app to resume."
+
 msgid "Error"
 msgstr "Error"
 
@@ -512,6 +515,9 @@ msgstr "Finish {0}"
 msgid "Finish Anyways"
 msgstr "Finish Anyways"
 
+msgid "Finish setting up your account"
+msgstr "Finish setting up your account"
+
 msgid "Finish with material unpicked?"
 msgstr "Finish with material unpicked?"
 
@@ -520,6 +526,9 @@ msgstr "Forgot to Clock Out?"
 
 msgid "Go back to operation"
 msgstr "Go back to operation"
+
+msgid "Go to onboarding"
+msgstr "Go to onboarding"
 
 msgid "How many were actually picked?"
 msgstr "How many were actually picked?"
@@ -926,6 +935,9 @@ msgstr "Operator Performed"
 msgid "Optional"
 msgstr "Optional"
 
+msgid "or"
+msgstr "or"
+
 msgid "Overall result"
 msgstr "Overall result"
 
@@ -946,6 +958,9 @@ msgstr "Partial Disposition"
 
 msgid "Passed Inspection"
 msgstr "Passed Inspection"
+
+msgid "Passkey unlock failed"
+msgstr "Passkey unlock failed"
 
 msgid "Pause"
 msgstr "Pause"
@@ -1221,6 +1236,9 @@ msgstr "Serial numbers"
 msgid "Serial Numbers"
 msgstr "Serial Numbers"
 
+msgid "Session locked"
+msgstr "Session locked"
+
 msgid "Set Clock Out"
 msgstr "Set Clock Out"
 
@@ -1259,6 +1277,9 @@ msgstr "Sign out"
 
 msgid "Sign Out"
 msgstr "Sign Out"
+
+msgid "Sign out instead"
+msgstr "Sign out instead"
 
 msgid "Signed in as {stationName}"
 msgstr "Signed in as {stationName}"
@@ -1393,11 +1414,20 @@ msgstr "Two-factor authentication required"
 msgid "Type a message..."
 msgstr "Type a message..."
 
+msgid "Unable to unlock"
+msgstr "Unable to unlock"
+
 msgid "Unissued serial/batch materials"
 msgstr "Unissued serial/batch materials"
 
 msgid "Unknown"
 msgstr "Unknown"
+
+msgid "Unlock"
+msgstr "Unlock"
+
+msgid "Unlock with passkey"
+msgstr "Unlock with passkey"
 
 msgid "Unpick"
 msgstr "Unpick"
@@ -1473,5 +1503,11 @@ msgstr "You clocked in at <0/>. You can edit your clock-out time below or acknow
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 
+msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
+msgstr "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
+
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
+
+msgid "Your session was locked after inactivity."
+msgstr "Your session was locked after inactivity."

@@ -1,0 +1,166 @@
+
+> carbon@ db:seed:dev /Users/aashu/work/carbon/carbon-feat-onboarding-templates
+> pnpm --filter @carbon/database db:seed:dev -- -- --email test@carbon.ms
+
+
+> @carbon/database@0.0.0 db:seed:dev /Users/aashu/work/carbon/carbon-feat-onboarding-templates/packages/database
+> tsx src/seed-dev.ts -- -- --email test@carbon.ms
+
+
+Seeding development environment for: test@carbon.ms
+
+Wiping existing business data...
+Tier 1: Foundation
+  departments
+  shifts
+  abilities
+  processes
+  item posting groups
+  manufacturing location
+  warehouses
+  storage types + units
+  work centers
+  customer types
+  supplier types
+  shipping methods
+  shipping terms
+  customers
+  suppliers
+  supplier processes
+  contractors
+  printer routes
+  procedures
+  cost centers
+  no-quote reasons
+Tier 2: Item catalog + BOM/BOP
+  buy parts
+  materials
+  consumables
+  tools
+  services
+  make parts
+  BOMs and BOPs
+  supplier parts
+Tier 3: Inventory position
+  opening inventory balances
+  available lots and serials
+  kanban cards
+  inventory count (draft)
+Tier 4: Sales chain
+  company settings — digital quotes enabled
+  opportunity 1 — full chain (ORBSEC)
+  opportunity 2 — quote sent (NovaSat)
+  opportunity 3 — RFQ only (Apex)
+  opportunity 4 — confirmed SO (PolarView)
+  sales order — Confirmed (job planned)
+  sales order — Draft (job draft)
+  sales order — In Progress (job paused)
+  sales order — Completed (job completed)
+  sales order — Closed (job closed)
+  sales order — Cancelled (job cancelled)
+  sales order — To Ship and Invoice (NovaSat, staggered deliveries)
+    delivery 1 — promised 2026-09-04
+    delivery 2 — promised 2026-09-25
+    delivery 3 — promised 2026-10-16
+Tier 5: Purchasing chain
+  purchase order 1 — To Receive (PropTech)
+  purchase order 2 — To Invoice (SpaceGrade)
+  purchase order 3 — Draft (CelestialElex)
+  purchasing RFQ — Requested (3 suppliers)
+  supplier quote — CelestialElex (Active)
+  supplier quote — Deep Space RF (Active)
+  supplier quote — PropTech Solutions (Active)
+  purchase order 4 — To Receive and Invoice (from winning quote)
+Tier 6: Production
+  job SAT-1000 — In Progress
+    method: 28 operations, 40 materials, 11 levels
+  job SAT-1000 — Ready
+    method: 28 operations, 40 materials, 11 levels
+  job BUS-STR-001 — Planned
+    method: 4 operations, 5 materials, 1 levels
+  job EPS-001 — Draft
+    method: 8 operations, 10 materials, 3 levels
+  job ADCS-001 — Paused
+    method: 5 operations, 7 materials, 2 levels
+  job COMMS-001 — Completed
+    method: 4 operations, 5 materials, 2 levels
+  job PROP-001 — Closed
+    method: 2 operations, 4 materials, 1 levels
+  job HARNESS-001 — Cancelled
+    method: 2 operations, 2 materials, 1 levels
+  production events
+  as-built genealogy
+Tier 7: Quality
+  NCR 1 — In Progress
+  NCR 2 — Registered
+  NCR 1 — job operation association
+Tier 8: Change orders
+  change order 1 — Draft
+    SAT-1000 draft method v2
+  change order 2 — Implementation
+    EPS-001.A draft method
+    EPS-001.A draft edits (−1 line, +1 line, 2 modified)
+  change order 3 — Done
+Tier 9: Accounting + fixed assets
+  journal entry — already exists, skipping
+  fixed asset Clean Room HVAC System — Active
+  fixed asset Coordinate Measuring Machine — Active
+  fixed asset 5-Axis CNC Machining Center — Draft
+  fixed asset Delivery Van — Fully Depreciated
+  depreciation run — Draft
+Tier 10: Ops / misc
+  ops/misc — nothing to seed yet
+Tier 11: Workflows
+  workflow — Assign new sales orders
+  workflow — Escalate high-priority issues (off)
+  workflow — Flag large purchase orders (off)
+  workflow — Chase jobs that have not started producing (off)
+  workflow — Announce a released job (off)
+  workflow — Open an issue when a shipment is voided (off)
+  workflow — Tell an outside system a supplier was approved (off)
+  workflow subscriptions — salesOrder
+Tier 12: Planning prerequisites
+  itemPlanning — Buy items reorder policy
+  itemPlanning — Make items reorder policy
+  SO — open order for buy-item demand
+  period — weekly planning horizon
+  demandProjection — weekly forecast for make parts
+
+Seeded row counts
+-----------------
+  location                    2
+  process                     9
+  workCenter                  7
+  customer                    4
+  supplier                    7
+  item                       34
+  makeMethod                 27
+  methodMaterial             51
+  itemLedger                 19
+  opportunity                11
+  salesRfq                    2
+  quote                       3
+  salesOrder                 10
+  shipment                    1
+  salesInvoice                1
+  supplierInteraction         6
+  purchasingRfq               1
+  supplierQuote               3
+  purchaseOrder               4
+  receipt                     1
+  purchaseInvoice             1
+  job                         8
+  jobOperation               81
+  nonConformance              2
+  changeOrder                 3
+  fixedAsset                  4
+  workflow                    7
+
+========================================
+Dev environment seeded successfully!
+========================================
+
+  Email:      [redacted]
+  Password:   [redacted] (only set when the user was just created)
+  Company ID: [redacted]
+

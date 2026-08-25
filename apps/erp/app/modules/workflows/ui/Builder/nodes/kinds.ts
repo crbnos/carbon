@@ -9,7 +9,7 @@ export const NODE_CARD_WIDTH: Record<WorkflowNodeType, number> = {
   trigger: 360,
   condition: 612,
   action: 420,
-  entity: 420,
+  compute: 420,
   lookup: 500,
   filter: 500
 };
@@ -23,7 +23,7 @@ export const NODE_CARD_HEIGHT: Record<WorkflowNodeType, number> = {
   trigger: 180,
   condition: 320,
   action: 260,
-  entity: 260,
+  compute: 260,
   lookup: 280,
   filter: 280
 };
@@ -38,7 +38,7 @@ export const NODE_ACCEPTS_INCOMING: Record<WorkflowNodeType, boolean> = {
   trigger: false,
   condition: true,
   action: true,
-  entity: true,
+  compute: true,
   lookup: true,
   filter: true
 };

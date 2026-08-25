@@ -16,8 +16,19 @@ export async function action({ request }: ActionFunctionArgs) {
   const jobMaterialId = String(formData.get("materialId") ?? "");
   const jobOperationStepId = String(formData.get("stepId") ?? "");
   const linked = formData.get("linked") === "true";
+  // Per-step share of the BOM line; absent/blank = the full line quantity.
+  // Zero is refused — a step that uses none of a part should be unlinked.
+  const rawQuantity = formData.get("quantity");
+  const quantity =
+    rawQuantity === null || String(rawQuantity).trim() === ""
+      ? null
+      : Number(rawQuantity);
 
-  if (!jobMaterialId || !jobOperationStepId) {
+  if (
+    !jobMaterialId ||
+    !jobOperationStepId ||
+    (quantity !== null && (!Number.isFinite(quantity) || quantity <= 0))
+  ) {
     return data({ success: false }, { status: 400 });
   }
 
@@ -34,10 +45,27 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ success: false }, { status: 404 });
   }
 
+  // A step's share can never exceed the BOM line quantity — the line is the
+  // source of truth for what the job requires.
+  if (linked && quantity !== null) {
+    const material = await client
+      .from("jobMaterial")
+      .select("quantity")
+      .eq("id", jobMaterialId)
+      .single();
+    if (material.error || !material.data) {
+      return data({ success: false }, { status: 404 });
+    }
+    if (material.data.quantity !== null && quantity > material.data.quantity) {
+      return data({ success: false }, { status: 400 });
+    }
+  }
+
   const result = await setJobMaterialStepLink(client, {
     jobMaterialId,
     jobOperationStepId,
-    linked
+    linked,
+    quantity
   });
   if (result.error) {
     return data(

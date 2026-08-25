@@ -293,7 +293,7 @@
     {
       "slug": "docs/reference/api-keys",
       "title": "API keys",
-      "description": "A scoped secret that lets an external system call the Carbon API on your behalf, with its own permissions and rate limit.",
+      "description": "A scoped secret that lets an external system call the Carbon API on your behalf, with its own permissions.",
       "keywords": ["api", "keys", "docs", "reference"],
       "headings": [
         "Creating a key",
@@ -1551,6 +1551,7 @@
         "Someone is stuck on the setup screen and can't get in",
         "The Two-Factor column isn't in the employee list",
         "Turning enforcement on didn't prompt anyone",
+        "Nobody got the announcement email",
         "An admin can't turn enforcement off"
       ]
     },

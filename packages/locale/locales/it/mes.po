@@ -425,6 +425,9 @@ msgstr "Inserisci il PIN per {0}"
 msgid "Enter the 6-digit code from your authenticator app"
 msgstr "Inserisci il codice a 6 cifre dalla tua app di autenticazione"
 
+msgid "Enter the 6-digit code from your authenticator app to resume."
+msgstr "Inserisci il codice a 6 cifre dalla tua app di autenticazione per riprendere."
+
 msgid "Error"
 msgstr "Errore"
 
@@ -512,6 +515,9 @@ msgstr "Termina {0}"
 msgid "Finish Anyways"
 msgstr "Termina comunque"
 
+msgid "Finish setting up your account"
+msgstr ""
+
 msgid "Finish with material unpicked?"
 msgstr "Terminare con il materiale non prelevato?"
 
@@ -520,6 +526,9 @@ msgstr "Hai dimenticato di timbrare l'uscita?"
 
 msgid "Go back to operation"
 msgstr "Torna all'operazione"
+
+msgid "Go to onboarding"
+msgstr ""
 
 msgid "How many were actually picked?"
 msgstr "Quanti sono stati effettivamente prelevati?"
@@ -926,6 +935,9 @@ msgstr "Eseguito dall'Operatore"
 msgid "Optional"
 msgstr "Facoltativo"
 
+msgid "or"
+msgstr "o"
+
 msgid "Overall result"
 msgstr "Risultato complessivo"
 
@@ -946,6 +958,9 @@ msgstr "Disposizione Parziale"
 
 msgid "Passed Inspection"
 msgstr "Ispezione Superata"
+
+msgid "Passkey unlock failed"
+msgstr "Sblocco con passkey non riuscito"
 
 msgid "Pause"
 msgstr "Pausa"
@@ -1221,6 +1236,9 @@ msgstr "Numeri di serie"
 msgid "Serial Numbers"
 msgstr "Numeri di Serie"
 
+msgid "Session locked"
+msgstr "Sessione bloccata"
+
 msgid "Set Clock Out"
 msgstr "Imposta Uscita"
 
@@ -1259,6 +1277,9 @@ msgstr "Esci"
 
 msgid "Sign Out"
 msgstr "Esci"
+
+msgid "Sign out instead"
+msgstr "Esci invece"
 
 msgid "Signed in as {stationName}"
 msgstr "Connesso come {stationName}"
@@ -1393,11 +1414,20 @@ msgstr "Autenticazione a due fattori richiesta"
 msgid "Type a message..."
 msgstr "Scrivi un messaggio..."
 
+msgid "Unable to unlock"
+msgstr "Impossibile sbloccare"
+
 msgid "Unissued serial/batch materials"
 msgstr "Materiali seriali/lotto non prelevati"
 
 msgid "Unknown"
 msgstr "Sconosciuto"
+
+msgid "Unlock"
+msgstr "Sblocca"
+
+msgid "Unlock with passkey"
+msgstr "Sblocca con passkey"
 
 msgid "Unpick"
 msgstr "Annulla prelievo"
@@ -1473,5 +1503,11 @@ msgstr "Ti sei connesso a <0/>. Puoi modificare l'orario di disconnessione di se
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Sei timbrato in ingresso da {hoursElapsed} ore. Hai dimenticato di timbrare l'uscita?"
 
+msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
+msgstr ""
+
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "La tua organizzazione richiede un'app di autenticazione. Configurala in Carbon, quindi torna qui."
+
+msgid "Your session was locked after inactivity."
+msgstr "La tua sessione è stata bloccata a causa dell'inattività."

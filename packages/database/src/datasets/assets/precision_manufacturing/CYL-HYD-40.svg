@@ -1,0 +1,143 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="blue" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#153046"/><stop offset="0.22" stop-color="#2b5b80"/>
+      <stop offset="0.45" stop-color="#3a739e"/><stop offset="0.72" stop-color="#22496a"/>
+      <stop offset="1" stop-color="#112536"/>
+    </linearGradient>
+    <linearGradient id="blueFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#153046"/><stop offset="0.22" stop-color="#2b5b80"/>
+      <stop offset="0.45" stop-color="#3a739e"/><stop offset="0.72" stop-color="#22496a"/>
+      <stop offset="1" stop-color="#112536"/>
+    </linearGradient>
+    <linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5b6167"/><stop offset="0.14" stop-color="#dfe6ea"/>
+      <stop offset="0.34" stop-color="#ffffff"/><stop offset="0.6" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6e747a"/><stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/><stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="steelFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#6e747a"/><stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/><stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="500" cy="640" rx="462" ry="102" fill="url(#shadow)"/>
+
+  <!-- rear top tie rod -->
+  <g>
+    <rect x="200" y="376" width="340" height="22" rx="11" fill="url(#steel)" stroke="#4e5459" stroke-width="2"/>
+    <rect x="206" y="380" width="328" height="5" fill="#ffffff" opacity="0.4"/>
+  </g>
+
+  <!-- barrel -->
+  <g>
+    <rect x="200" y="420" width="340" height="200" fill="url(#blue)"/>
+    <rect x="200" y="420" width="340" height="200" fill="#08131c" opacity="0.34"/>
+    <rect x="200" y="436" width="340" height="16" fill="#8fc0e2" opacity="0.20"/>
+    <rect x="200" y="456" width="340" height="8" fill="#cfe4f4" opacity="0.16"/>
+    <rect x="200" y="592" width="340" height="20" fill="#050c12" opacity="0.35"/>
+    <rect x="200" y="420" width="340" height="200" fill="none" stroke="#0a1720" stroke-width="2.5"/>
+  </g>
+
+  <!-- port bosses on the top face, one near each cap -->
+  <g>
+    <ellipse cx="262" cy="424" rx="44" ry="17" fill="#0b1922" opacity="0.55"/>
+    <path d="M228 424 L228 376 L296 376 L296 424 Z" fill="url(#steel)" stroke="#4e5459" stroke-width="2"/>
+    <ellipse cx="262" cy="376" rx="34" ry="13" fill="url(#steelFace)" stroke="#5d6368" stroke-width="2"/>
+    <ellipse cx="262" cy="376" rx="27" ry="10.3" fill="none" stroke="#ffffff" stroke-opacity="0.20" stroke-width="2"/>
+    <ellipse cx="262" cy="376" rx="19" ry="7.2" fill="#2b3136" stroke="#565d63" stroke-width="2"/>
+    <ellipse cx="262" cy="378" rx="13" ry="4.9" fill="#14181b"/>
+  </g>
+  <g>
+    <ellipse cx="472" cy="424" rx="44" ry="17" fill="#0b1922" opacity="0.55"/>
+    <path d="M438 424 L438 376 L506 376 L506 424 Z" fill="url(#steel)" stroke="#4e5459" stroke-width="2"/>
+    <ellipse cx="472" cy="376" rx="34" ry="13" fill="url(#steelFace)" stroke="#5d6368" stroke-width="2"/>
+    <ellipse cx="472" cy="376" rx="27" ry="10.3" fill="none" stroke="#ffffff" stroke-opacity="0.20" stroke-width="2"/>
+    <ellipse cx="472" cy="376" rx="19" ry="7.2" fill="#2b3136" stroke="#565d63" stroke-width="2"/>
+    <ellipse cx="472" cy="378" rx="13" ry="4.9" fill="#14181b"/>
+  </g>
+
+  <!-- front tie rods -->
+  <g>
+    <rect x="200" y="411" width="340" height="22" rx="11" fill="url(#steel)" stroke="#4e5459" stroke-width="2"/>
+    <rect x="206" y="415" width="328" height="5" fill="#ffffff" opacity="0.45"/>
+    <rect x="200" y="607" width="340" height="22" rx="11" fill="url(#steel)" stroke="#4e5459" stroke-width="2"/>
+    <rect x="206" y="611" width="328" height="5" fill="#ffffff" opacity="0.35"/>
+  </g>
+
+  <!-- left (blind) end cap -->
+  <g>
+    <path d="M118 400 L200 400 L246 367 L164 367 Z" fill="url(#blueFace)"/>
+    <path d="M118 400 L200 400 L246 367 L164 367 Z" fill="#08131c" opacity="0.22"/>
+    <path d="M118 400 L200 400 L246 367 L164 367 Z" fill="none" stroke="#0a1720" stroke-width="2.5"/>
+    <rect x="118" y="400" width="82" height="240" fill="url(#blue)"/>
+    <rect x="118" y="400" width="82" height="240" fill="#08131c" opacity="0.34"/>
+    <rect x="122" y="412" width="74" height="10" fill="#8fc0e2" opacity="0.22"/>
+    <rect x="118" y="400" width="82" height="240" fill="none" stroke="#0a1720" stroke-width="2.5"/>
+    <rect x="128" y="412" width="62" height="216" fill="none" stroke="#7fb0d6" stroke-opacity="0.16" stroke-width="2"/>
+  </g>
+
+  <!-- right (gland) end cap -->
+  <g>
+    <path d="M540 400 L626 400 L672 367 L586 367 Z" fill="url(#blueFace)"/>
+    <path d="M540 400 L626 400 L672 367 L586 367 Z" fill="#08131c" opacity="0.22"/>
+    <path d="M540 400 L626 400 L672 367 L586 367 Z" fill="none" stroke="#0a1720" stroke-width="2.5"/>
+    <path d="M626 400 L672 367 L672 607 L626 640 Z" fill="url(#blue)"/>
+    <path d="M626 400 L672 367 L672 607 L626 640 Z" fill="#050d14" opacity="0.46"/>
+    <path d="M626 400 L672 367 L672 607 L626 640 Z" fill="none" stroke="#0a1720" stroke-width="2.5"/>
+    <rect x="540" y="400" width="86" height="240" fill="url(#blue)"/>
+    <rect x="540" y="400" width="86" height="240" fill="#08131c" opacity="0.34"/>
+    <rect x="544" y="412" width="78" height="10" fill="#8fc0e2" opacity="0.22"/>
+    <rect x="540" y="400" width="86" height="240" fill="none" stroke="#0a1720" stroke-width="2.5"/>
+    <rect x="550" y="412" width="66" height="216" fill="none" stroke="#7fb0d6" stroke-opacity="0.16" stroke-width="2"/>
+  </g>
+
+  <!-- gland collar -->
+  <g>
+    <path d="M666 464 L706 464 Q721 520 706 576 L666 576 Z" fill="url(#steel)" stroke="#4b5156" stroke-width="2.5"/>
+    <path d="M694 468 Q709 520 694 572" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="3"/>
+    <path d="M676 466 L676 574" stroke="#3f454a" stroke-opacity="0.5" stroke-width="3" fill="none"/>
+  </g>
+
+  <!-- mirror-polished chrome rod -->
+  <g>
+    <rect x="700" y="480" width="118" height="80" fill="url(#chrome)" stroke="#43484d" stroke-width="2.5"/>
+    <rect x="704" y="496" width="110" height="7" fill="#ffffff" opacity="0.75"/>
+    <rect x="704" y="540" width="110" height="5" fill="#2b3034" opacity="0.35"/>
+  </g>
+
+  <!-- male thread onto the rod eye -->
+  <g>
+    <rect x="812" y="486" width="34" height="68" fill="url(#steel)" stroke="#4b5156" stroke-width="2.5"/>
+    <g stroke="#5f666b" stroke-width="3.5" opacity="0.8" fill="none">
+      <path d="M812 498 L846 490"/><path d="M812 512 L846 504"/>
+      <path d="M812 526 L846 518"/><path d="M812 540 L846 532"/>
+    </g>
+    <g stroke="#f0f3f5" stroke-width="2" opacity="0.5" fill="none">
+      <path d="M812 505 L846 497"/><path d="M812 519 L846 511"/>
+      <path d="M812 533 L846 525"/><path d="M812 547 L846 539"/>
+    </g>
+  </g>
+
+  <!-- rod clevis eye -->
+  <g>
+    <path d="M840 478 L862 470 L862 570 L840 562 Z" fill="url(#steel)" stroke="#4b5156" stroke-width="2.5"/>
+    <circle cx="862" cy="520" r="50" fill="url(#steelFace)" stroke="#4b5156" stroke-width="2.5"/>
+    <circle cx="862" cy="520" r="41" fill="none" stroke="#ffffff" stroke-opacity="0.20" stroke-width="2"/>
+    <circle cx="862" cy="520" r="26" fill="#2f353a" stroke="#5c6368" stroke-width="2.5"/>
+    <circle cx="862" cy="520" r="20" fill="#171b1e"/>
+    <path d="M846 506 Q862 498 878 506" fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="3"/>
+    <path d="M828 486 Q818 520 828 554" fill="none" stroke="#3f454a" stroke-opacity="0.45" stroke-width="4"/>
+  </g>
+</svg>

@@ -1,0 +1,190 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="ss" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="ssFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#eef1f3"/>
+      <stop offset="0.5" stop-color="#c0c7cc"/>
+      <stop offset="1" stop-color="#8f979d"/>
+    </linearGradient>
+    <linearGradient id="chrome" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5b6167"/>
+      <stop offset="0.14" stop-color="#dfe6ea"/>
+      <stop offset="0.34" stop-color="#ffffff"/>
+      <stop offset="0.6" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <linearGradient id="zinc" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5b6167"/>
+      <stop offset="0.14" stop-color="#dae3ea"/>
+      <stop offset="0.34" stop-color="#f6fafd"/>
+      <stop offset="0.6" stop-color="#98a4ae"/>
+      <stop offset="1" stop-color="#4e565d"/>
+    </linearGradient>
+    <linearGradient id="nitrile" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#111315"/>
+      <stop offset="0.25" stop-color="#2c3033"/>
+      <stop offset="0.5" stop-color="#3b4044"/>
+      <stop offset="0.75" stop-color="#212528"/>
+      <stop offset="1" stop-color="#0d0f10"/>
+    </linearGradient>
+    <linearGradient id="spring" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1b3d6b"/>
+      <stop offset="0.2" stop-color="#2f5f9e"/>
+      <stop offset="0.42" stop-color="#5b90cd"/>
+      <stop offset="0.7" stop-color="#2b5788"/>
+      <stop offset="1" stop-color="#17324f"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- one turn of rectangular-wire die spring, drawn about x=0 -->
+    <g id="coil">
+      <path d="M-54 0 Q0 -41 54 0" fill="none" stroke="#15304f" stroke-width="11" stroke-linecap="round"/>
+      <path d="M-54 0 Q0 41 54 0 L54 13 Q0 54 -54 13 Z" fill="url(#spring)" stroke="#122a45" stroke-width="2"/>
+      <path d="M-49 1.5 Q0 37 49 1.5" fill="none" stroke="#a8c8ea" stroke-width="2.5" stroke-opacity="0.5"/>
+    </g>
+  </defs>
+
+  <ellipse cx="512" cy="816" rx="252" ry="55" fill="url(#shadow)"/>
+
+  <!-- ================= bottom end cap ================= -->
+  <path d="M312 605 L312 745 Q512 897 712 745 L712 605 Z" fill="url(#ss)" stroke="#4b5155" stroke-width="3"/>
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.17" stroke-width="2">
+    <path d="M312 640 Q512 792 712 640"/>
+    <path d="M312 676 Q512 828 712 676"/>
+    <path d="M312 712 Q512 864 712 712"/>
+  </g>
+  <g fill="none" stroke="#41474b" stroke-opacity="0.5" stroke-width="2">
+    <path d="M312 658 Q512 810 712 658"/>
+    <path d="M312 694 Q512 846 712 694"/>
+    <path d="M312 730 Q512 882 712 730"/>
+  </g>
+  <!-- top face of the bottom cap -->
+  <ellipse cx="512" cy="605" rx="200" ry="76" fill="url(#ssFace)" stroke="#7f868c" stroke-width="2.5"/>
+  <ellipse cx="512" cy="605" rx="188" ry="71" fill="none" stroke="#9aa2a8" stroke-width="2" opacity="0.85"/>
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2">
+    <ellipse cx="512" cy="605" rx="164" ry="62"/>
+    <ellipse cx="512" cy="605" rx="132" ry="50"/>
+    <ellipse cx="512" cy="605" rx="100" ry="38"/>
+  </g>
+  <!-- counterbore the stem lands in -->
+  <ellipse cx="512" cy="605" rx="74" ry="28" fill="#8f979d" stroke="#6b7278" stroke-width="2"/>
+  <ellipse cx="512" cy="605" rx="62" ry="23.5" fill="#5f666c"/>
+
+  <!-- ================= polished central stem ================= -->
+  <path d="M466 470 L466 606 L558 606 L558 470 Z" fill="url(#chrome)" stroke="#4b5155" stroke-width="2.5"/>
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="1.8">
+    <path d="M466 496 Q512 514 558 496"/>
+    <path d="M466 524 Q512 542 558 524"/>
+    <path d="M466 552 Q512 570 558 552"/>
+  </g>
+  <g fill="none" stroke="#3f4549" stroke-opacity="0.45" stroke-width="1.6">
+    <path d="M466 510 Q512 528 558 510"/>
+    <path d="M466 538 Q512 556 558 538"/>
+    <path d="M466 566 Q512 584 558 566"/>
+  </g>
+  <!-- nitrile O-ring seated in the lower cap joint groove -->
+  <path d="M454 578 Q512 622 570 578 L570 592 Q512 636 454 592 Z" fill="url(#nitrile)" stroke="#0a0c0d" stroke-width="2"/>
+  <path d="M459 582 Q512 620 565 582" fill="none" stroke="#8f979d" stroke-width="2.5" stroke-opacity="0.45"/>
+
+  <!-- ================= die springs flanking the stem ================= -->
+  <g transform="translate(386 0)">
+    <use href="#coil" transform="translate(0 470)"/>
+    <use href="#coil" transform="translate(0 494)"/>
+    <use href="#coil" transform="translate(0 518)"/>
+    <use href="#coil" transform="translate(0 542)"/>
+    <use href="#coil" transform="translate(0 566)"/>
+    <use href="#coil" transform="translate(0 590)"/>
+  </g>
+  <g transform="translate(638 0)">
+    <use href="#coil" transform="translate(0 470)"/>
+    <use href="#coil" transform="translate(0 494)"/>
+    <use href="#coil" transform="translate(0 518)"/>
+    <use href="#coil" transform="translate(0 542)"/>
+    <use href="#coil" transform="translate(0 566)"/>
+    <use href="#coil" transform="translate(0 590)"/>
+  </g>
+
+  <!-- ================= central body ================= -->
+  <path d="M372 298 L372 460 Q512 566 652 460 L652 298 Z" fill="url(#ss)" stroke="#4b5155" stroke-width="3"/>
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.17" stroke-width="2">
+    <path d="M372 404 Q512 510 652 404"/>
+    <path d="M372 428 Q512 534 652 428"/>
+  </g>
+  <g fill="none" stroke="#41474b" stroke-opacity="0.5" stroke-width="2">
+    <path d="M372 416 Q512 522 652 416"/>
+    <path d="M372 440 Q512 546 652 440"/>
+  </g>
+  <!-- chamfer at the body's lower edge -->
+  <path d="M372 448 Q512 554 652 448" fill="none" stroke="#e6ebee" stroke-opacity="0.45" stroke-width="3"/>
+
+  <!-- nitrile O-ring seated in the upper cap joint groove -->
+  <path d="M366 380 Q512 490 658 380 L658 396 Q512 506 366 396 Z" fill="url(#nitrile)" stroke="#0a0c0d" stroke-width="2"/>
+  <path d="M372 385 Q512 489 652 385" fill="none" stroke="#8f979d" stroke-width="3" stroke-opacity="0.45"/>
+
+  <!-- ================= top end cap ================= -->
+  <path d="M312 178 L312 298 Q512 450 712 298 L712 178 Z" fill="url(#ss)" stroke="#4b5155" stroke-width="3"/>
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.17" stroke-width="2">
+    <path d="M312 208 Q512 360 712 208"/>
+    <path d="M312 240 Q512 392 712 240"/>
+    <path d="M312 272 Q512 424 712 272"/>
+  </g>
+  <g fill="none" stroke="#41474b" stroke-opacity="0.5" stroke-width="2">
+    <path d="M312 224 Q512 376 712 224"/>
+    <path d="M312 256 Q512 408 712 256"/>
+    <path d="M312 288 Q512 440 712 288"/>
+  </g>
+  <!-- top face -->
+  <ellipse cx="512" cy="178" rx="200" ry="76" fill="url(#ssFace)" stroke="#7f868c" stroke-width="2.5"/>
+  <ellipse cx="512" cy="178" rx="188" ry="71" fill="none" stroke="#9aa2a8" stroke-width="2" opacity="0.85"/>
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2">
+    <ellipse cx="512" cy="178" rx="164" ry="62"/>
+    <ellipse cx="512" cy="178" rx="128" ry="48.6"/>
+    <ellipse cx="512" cy="178" rx="96" ry="36.5"/>
+  </g>
+  <!-- central port bored through the top cap -->
+  <ellipse cx="512" cy="178" rx="66" ry="25" fill="#8f979d" stroke="#6b7278" stroke-width="2"/>
+  <ellipse cx="512" cy="178" rx="54" ry="20.5" fill="#3a4045"/>
+  <ellipse cx="512" cy="182" rx="44" ry="16.5" fill="#2a2f33"/>
+  <!-- tie-down holes on the cap face -->
+  <g>
+    <g fill="#9ba2a8" stroke="#6b7278" stroke-width="2">
+      <ellipse cx="380" cy="188" rx="24" ry="9"/><ellipse cx="644" cy="188" rx="24" ry="9"/>
+      <ellipse cx="512" cy="126" rx="24" ry="9"/><ellipse cx="512" cy="230" rx="24" ry="9"/>
+    </g>
+    <g fill="#33383d">
+      <ellipse cx="380" cy="188" rx="15" ry="5.7"/><ellipse cx="644" cy="188" rx="15" ry="5.7"/>
+      <ellipse cx="512" cy="126" rx="15" ry="5.7"/><ellipse cx="512" cy="230" rx="15" ry="5.7"/>
+    </g>
+  </g>
+
+  <!-- ================= cross-drilled lug + zinc clevis pin ================= -->
+  <g>
+    <!-- lug boss on the front of the lower cap -->
+    <path d="M437 644 L437 716 Q512 748 587 716 L587 644 Q512 676 437 644 Z" fill="url(#ss)" stroke="#4b5155" stroke-width="3"/>
+    <path d="M441 651 Q512 682 583 651" fill="none" stroke="#ffffff" stroke-opacity="0.25" stroke-width="3"/>
+    <!-- clevis pin through the cross-drilled hole -->
+    <path d="M400 668 L624 668 L624 712 L400 712 Z" fill="url(#zinc)" stroke="#454d54" stroke-width="2.5"/>
+    <path d="M404 676 L620 676" stroke="#ffffff" stroke-opacity="0.45" stroke-width="4"/>
+    <path d="M404 704 L620 704" stroke="#2f363c" stroke-opacity="0.5" stroke-width="3"/>
+    <!-- pin ends: circles in a vertical plane read as narrow ellipses -->
+    <ellipse cx="400" cy="690" rx="10" ry="22" fill="#aeb8c0" stroke="#454d54" stroke-width="2.5"/>
+    <ellipse cx="400" cy="690" rx="5" ry="13" fill="#d8e0e6" opacity="0.6"/>
+    <ellipse cx="624" cy="690" rx="10" ry="22" fill="#c9d3da" stroke="#454d54" stroke-width="2.5"/>
+    <ellipse cx="624" cy="690" rx="5" ry="13" fill="#7d868d" opacity="0.5"/>
+    <!-- retaining cross-hole near the pin end -->
+    <ellipse cx="608" cy="690" rx="4" ry="9" fill="#33383d"/>
+    <!-- shoulder shadow where the pin enters the lug -->
+    <path d="M437 668 L437 712" stroke="#000000" stroke-opacity="0.25" stroke-width="6"/>
+    <path d="M587 668 L587 712" stroke="#000000" stroke-opacity="0.25" stroke-width="6"/>
+  </g>
+</svg>

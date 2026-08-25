@@ -8,6 +8,7 @@ import {
   resolveTemplate
 } from "../template";
 import type { AccountsPayableBillingAddress, PDF } from "../types";
+import { getPurchaseOrderDisplayId } from "../utils/purchase-order";
 import {
   getMoneyFormatter,
   getRateFormatter,
@@ -63,9 +64,10 @@ const PurchaseOrderPDF = ({
   // getRateFormatter. Totals/tax/shipping stay on numberFormatter.
   const rateFormatter = getRateFormatter(locale, currencyDecimals);
 
-  const headerTitle = purchaseOrder?.purchaseOrderId
-    ? `${title}: ${purchaseOrder.purchaseOrderId}`
-    : title;
+  const displayId = purchaseOrder
+    ? getPurchaseOrderDisplayId(purchaseOrder)
+    : "";
+  const headerTitle = displayId ? `${title}: ${displayId}` : title;
 
   const { blocks, theme, settings, headerSectionId, footerSectionId } =
     resolveTemplate("purchaseOrder", template);
@@ -138,7 +140,7 @@ const PurchaseOrderPDF = ({
         keywords: meta?.keywords ?? "purchase order",
         subject: meta?.subject ?? "Purchase Order"
       }}
-      footerDocumentId={purchaseOrder?.purchaseOrderId}
+      footerDocumentId={displayId || undefined}
       footerLabel={registration.label}
       showFooter={showFooter}
       showPageNumbers={settings.showPageNumbers}

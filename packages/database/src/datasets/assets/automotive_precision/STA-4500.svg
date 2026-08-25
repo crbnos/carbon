@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="blueBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#153046"/>
+      <stop offset="0.22" stop-color="#2b5b80"/>
+      <stop offset="0.45" stop-color="#3a739e"/>
+      <stop offset="0.72" stop-color="#22496a"/>
+      <stop offset="1" stop-color="#112536"/>
+    </linearGradient>
+    <linearGradient id="blueFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#3a739e"/>
+      <stop offset="0.45" stop-color="#2b5b80"/>
+      <stop offset="1" stop-color="#153046"/>
+    </linearGradient>
+    <linearGradient id="honeyBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#a06f22"/>
+      <stop offset="0.3" stop-color="#e0b25f"/>
+      <stop offset="0.55" stop-color="#e0b25f"/>
+      <stop offset="0.8" stop-color="#c9903a"/>
+      <stop offset="1" stop-color="#8a5a12"/>
+    </linearGradient>
+    <linearGradient id="honeyFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#e0b25f"/>
+      <stop offset="0.55" stop-color="#c9903a"/>
+      <stop offset="1" stop-color="#a06f22"/>
+    </linearGradient>
+    <linearGradient id="boreDark" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#2b3034"/>
+      <stop offset="0.55" stop-color="#171a1d"/>
+      <stop offset="1" stop-color="#0e1012"/>
+    </linearGradient>
+    <linearGradient id="leadIns" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3b4044"/>
+      <stop offset="0.35" stop-color="#22262a"/>
+      <stop offset="1" stop-color="#0d0f10"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="odClip">
+      <path d="M182 440 L182 560 Q512 727 842 560 L842 440 Q512 607 182 440 Z"/>
+    </clipPath>
+    <clipPath id="boreClip">
+      <ellipse cx="512" cy="412" rx="160" ry="61"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="512" cy="700" rx="380" ry="84" fill="url(#shadow)"/>
+
+  <!-- shallow end turns just showing under the stack -->
+  <path d="M216 566 Q512 720 808 566 Q512 690 216 566 Z" fill="url(#honeyBarrel)" stroke="#7a4e10" stroke-width="2.5"/>
+
+  <!-- shallow lamination stack -->
+  <path d="M182 440 L182 560 Q512 727 842 560 L842 440 Z" fill="url(#blueBarrel)" stroke="#0c1c29" stroke-width="3"/>
+  <g clip-path="url(#odClip)" fill="none">
+    <g stroke="#0d1e2c" stroke-width="2.2" opacity="0.5">
+      <path d="M182 458 Q512 625 842 458"/><path d="M182 478 Q512 645 842 478"/>
+      <path d="M182 498 Q512 665 842 498"/><path d="M182 518 Q512 685 842 518"/>
+      <path d="M182 538 Q512 705 842 538"/>
+    </g>
+    <g stroke="#79a6c8" stroke-width="1.5" opacity="0.3">
+      <path d="M182 468 Q512 635 842 468"/><path d="M182 488 Q512 655 842 488"/>
+      <path d="M182 508 Q512 675 842 508"/><path d="M182 528 Q512 695 842 528"/>
+      <path d="M182 548 Q512 715 842 548"/>
+    </g>
+  </g>
+
+  <!-- shallow keyway -->
+  <path d="M478 563 Q512 566 546 563 L546 684 Q512 687 478 684 Z" fill="#122b3e" stroke="#0b1a26" stroke-width="2"/>
+  <path d="M484 564 L484 685" stroke="#6f9cbe" stroke-width="3" opacity="0.4" fill="none"/>
+
+  <!-- stack top face -->
+  <ellipse cx="512" cy="440" rx="330" ry="125" fill="url(#blueFace)" stroke="#0c1c29" stroke-width="3"/>
+  <ellipse cx="512" cy="440" rx="318" ry="120" fill="none" stroke="#7fa8c6" stroke-width="2" opacity="0.35"/>
+  <ellipse cx="512" cy="440" rx="292" ry="111" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.16"/>
+  <ellipse cx="512" cy="440" rx="272" ry="103" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.13"/>
+
+  <!-- cream aramid slot liners at the tooth mouths -->
+  <ellipse cx="512" cy="440" rx="258" ry="98" fill="#ded2b4" stroke="#b3a483" stroke-width="2"/>
+  <g stroke="#9c8d6c" stroke-width="2" opacity="0.7" fill="none">
+    <path d="M259 428 L273 433"/><path d="M292 393 L304 400"/><path d="M348 366 L356 375"/>
+    <path d="M418 350 L422 361"/><path d="M470 344 L471 355"/><path d="M554 344 L553 355"/>
+    <path d="M606 350 L602 361"/><path d="M676 366 L668 375"/><path d="M732 393 L720 400"/>
+    <path d="M765 428 L751 433"/>
+    <path d="M259 452 L273 447"/><path d="M292 487 L304 480"/><path d="M348 514 L356 505"/>
+    <path d="M418 530 L422 519"/><path d="M470 536 L471 525"/><path d="M554 536 L553 525"/>
+    <path d="M606 530 L602 519"/><path d="M676 514 L668 505"/><path d="M732 487 L720 480"/>
+    <path d="M765 452 L751 447"/>
+  </g>
+
+  <!-- end turns barely proud of the stack -->
+  <path d="M267 412 L267 440 Q512 564 757 440 L757 412 Q512 536 267 412 Z" fill="url(#honeyBarrel)" stroke="#7a4e10" stroke-width="2.5"/>
+  <ellipse cx="512" cy="412" rx="245" ry="93" fill="url(#honeyFace)" stroke="#7a4e10" stroke-width="2.5"/>
+
+  <!-- thirty six individual coil ends, one per slot -->
+  <g stroke="#8a5a12" stroke-width="2.4" opacity="0.65" fill="none">
+    <path d="M756 420 L671 417"/> <path d="M749 436 L667 428"/> <path d="M734 451 L657 438"/> <path d="M713 465 L643 447"/> <path d="M685 478 L625 455"/> <path d="M653 488 L604 462"/>
+    <path d="M616 496 L580 467"/> <path d="M575 502 L553 471"/> <path d="M533 505 L526 473"/> <path d="M491 505 L498 473"/> <path d="M449 502 L471 471"/> <path d="M408 496 L444 467"/>
+    <path d="M371 488 L420 462"/> <path d="M339 478 L399 455"/> <path d="M311 465 L381 447"/> <path d="M290 451 L367 438"/> <path d="M275 436 L357 428"/> <path d="M268 420 L353 417"/>
+    <path d="M268 404 L353 407"/> <path d="M275 388 L357 396"/> <path d="M290 373 L367 386"/> <path d="M311 359 L381 377"/> <path d="M339 346 L399 369"/> <path d="M371 336 L420 362"/>
+    <path d="M408 328 L444 357"/> <path d="M449 322 L471 353"/> <path d="M491 319 L498 351"/> <path d="M533 319 L526 351"/> <path d="M575 322 L553 353"/> <path d="M616 328 L580 357"/>
+    <path d="M653 336 L604 362"/> <path d="M685 346 L625 369"/> <path d="M713 359 L643 377"/> <path d="M734 373 L657 386"/> <path d="M749 388 L667 396"/> <path d="M756 404 L671 407"/>
+  </g>
+  <ellipse cx="512" cy="412" rx="228" ry="87" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.13"/>
+  <ellipse cx="512" cy="412" rx="192" ry="73" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.1"/>
+
+  <!-- a few simple cross wraps instead of full lacing -->
+  <g stroke="#e2d5b2" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.9">
+    <path d="M700 462 L668 434"/><path d="M666 460 L702 436"/>
+    <path d="M540 505 L512 476"/><path d="M508 505 L540 476"/>
+    <path d="M356 434 L324 462"/><path d="M322 436 L358 460"/>
+    <path d="M512 348 L484 322"/><path d="M480 348 L512 322"/>
+  </g>
+
+  <!-- bore with tooth tips -->
+  <ellipse cx="512" cy="412" rx="160" ry="61" fill="url(#boreDark)" stroke="#7a4e10" stroke-width="2.5"/>
+  <g clip-path="url(#boreClip)">
+    <g stroke="#5b656d" stroke-width="2.6" opacity="0.85" fill="none">
+      <path d="M372 398 L372 424"/><path d="M400 382 L400 412"/><path d="M428 371 L428 403"/>
+      <path d="M456 363 L456 397"/><path d="M484 359 L484 393"/><path d="M512 357 L512 392"/>
+      <path d="M540 359 L540 393"/><path d="M568 363 L568 397"/><path d="M596 371 L596 403"/>
+      <path d="M624 382 L624 412"/><path d="M652 398 L652 424"/>
+    </g>
+    <ellipse cx="512" cy="458" rx="160" ry="61" fill="#0b0d0e" opacity="0.8"/>
+  </g>
+
+  <!-- three slim phase leads exiting close together -->
+  <g fill="none" stroke-linecap="round">
+    <path d="M700 452 C 764 470 812 508 846 560 C 862 586 868 610 868 632" stroke="#0d0f10" stroke-width="20" opacity="0.9"/>
+    <path d="M700 452 C 764 470 812 508 846 560 C 862 586 868 610 868 632" stroke="url(#leadIns)" stroke-width="15"/>
+    <path d="M690 464 C 754 484 800 522 834 574 C 850 600 856 622 856 644" stroke="#0d0f10" stroke-width="20" opacity="0.9"/>
+    <path d="M690 464 C 754 484 800 522 834 574 C 850 600 856 622 856 644" stroke="url(#leadIns)" stroke-width="15"/>
+    <path d="M678 475 C 742 496 788 534 822 586 C 838 612 844 634 844 656" stroke="#0d0f10" stroke-width="20" opacity="0.9"/>
+    <path d="M678 475 C 742 496 788 534 822 586 C 838 612 844 634 844 656" stroke="url(#leadIns)" stroke-width="15"/>
+    <path d="M704 456 C 764 474 810 510 844 562" stroke="#6d757b" stroke-width="3" opacity="0.4"/>
+  </g>
+  <path d="M804 528 L834 578" stroke="#e2d5b2" stroke-width="7" stroke-linecap="round" fill="none" opacity="0.9"/>
+</svg>

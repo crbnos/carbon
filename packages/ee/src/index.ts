@@ -9,6 +9,7 @@ import { QuickBooks } from "./quickbooks/config";
 import { Rillet } from "./rillet/config";
 import { Sage } from "./sage/config";
 import { Slack } from "./slack/config";
+import { StripeConnect } from "./stripe-connect/config";
 import type { QuickInstallConnector } from "./types";
 import { Xero } from "./xero/config";
 
@@ -40,7 +41,8 @@ export const integrations = [
   Rillet,
   Sage,
   Slack,
-  Xero
+  Xero,
+  StripeConnect
 ];
 
 export type IntegrationID = (typeof integrations)[number]["id"];
@@ -53,6 +55,7 @@ export { QuickBooks } from "./quickbooks/config";
 export { Rillet } from "./rillet/config";
 export { Slack } from "./slack/config";
 export * from "./slack/lib/messages";
+export { StripeConnect } from "./stripe-connect/config";
 export { Xero } from "./xero/config";
 
 /**
@@ -63,6 +66,14 @@ export { Xero } from "./xero/config";
 export const getIntegrationConfigById = (id: IntegrationID) => {
   return integrations.find((integration) => integration.id === id);
 };
+
+export {
+  IntegrationSecretUnavailableError,
+  persistIntegrationSecrets,
+  resolveIntegrationSecrets,
+  SECRET_KEYS,
+  splitSecrets
+} from "./integrations/secrets";
 
 /**
  * Quick-install connectors are external link-outs with no DB state.

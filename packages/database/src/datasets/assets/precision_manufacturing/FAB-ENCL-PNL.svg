@@ -1,0 +1,188 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="alFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#8a9298"/>
+      <stop offset="0.2" stop-color="#d5dce1"/>
+      <stop offset="0.45" stop-color="#f0f4f6"/>
+      <stop offset="0.72" stop-color="#b2bac0"/>
+      <stop offset="1" stop-color="#798187"/>
+    </linearGradient>
+    <linearGradient id="alFlange" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7d848a"/>
+      <stop offset="0.2" stop-color="#ced5da"/>
+      <stop offset="0.45" stop-color="#e8edf0"/>
+      <stop offset="0.72" stop-color="#a9b1b7"/>
+      <stop offset="1" stop-color="#6b7278"/>
+    </linearGradient>
+    <linearGradient id="alEdge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e4e9ec"/>
+      <stop offset="0.55" stop-color="#c0c7cc"/>
+      <stop offset="1" stop-color="#8b9298"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- ============ side panel, local 266 x 472, +y is up the panel ============ -->
+    <g id="sidePanel">
+      <rect x="0" y="0" width="266" height="472" fill="url(#alFace)" stroke="#6c7379" stroke-width="2.5"/>
+      <!-- brushed grain, running along the sheet -->
+      <g stroke="#ffffff" stroke-opacity="0.13" stroke-width="1.6">
+        <path d="M4 36 H262"/><path d="M4 68 H262"/><path d="M4 100 H262"/><path d="M4 132 H262"/>
+        <path d="M4 164 H262"/><path d="M4 196 H262"/><path d="M4 228 H262"/><path d="M4 260 H262"/>
+        <path d="M4 292 H262"/><path d="M4 324 H262"/><path d="M4 356 H262"/><path d="M4 388 H262"/>
+        <path d="M4 420 H262"/><path d="M4 452 H262"/>
+      </g>
+      <g stroke="#6f767c" stroke-opacity="0.16" stroke-width="1.2">
+        <path d="M4 52 H262"/><path d="M4 116 H262"/><path d="M4 180 H262"/><path d="M4 244 H262"/>
+        <path d="M4 308 H262"/><path d="M4 372 H262"/><path d="M4 436 H262"/>
+      </g>
+      <!-- 20mm return flanges bent along both long edges -->
+      <rect x="0" y="0" width="30" height="472" fill="url(#alFlange)" opacity="0.95"/>
+      <rect x="236" y="0" width="30" height="472" fill="url(#alFlange)" opacity="0.95"/>
+      <!-- crisp brake lines with the bend radius highlight -->
+      <path d="M30 0 V472" stroke="#5f666c" stroke-width="2.5"/>
+      <path d="M33.5 0 V472" stroke="#f2f6f8" stroke-width="2" stroke-opacity="0.65"/>
+      <path d="M236 0 V472" stroke="#5f666c" stroke-width="2.5"/>
+      <path d="M232.5 0 V472" stroke="#f2f6f8" stroke-width="2" stroke-opacity="0.5"/>
+      <!-- corner relief notches at the ends of each flange -->
+      <g fill="#4d545a" fill-opacity="0.85">
+        <rect x="0" y="0" width="30" height="16"/><rect x="0" y="456" width="30" height="16"/>
+        <rect x="236" y="0" width="30" height="16"/><rect x="236" y="456" width="30" height="16"/>
+      </g>
+      <!-- punched clearance holes down both flanges -->
+      <g>
+        <g fill="#3a4045" stroke="#e6ebee" stroke-opacity="0.45" stroke-width="2">
+          <circle cx="15" cy="64" r="7"/><circle cx="15" cy="168" r="7"/>
+          <circle cx="15" cy="272" r="7"/><circle cx="15" cy="376" r="7"/>
+          <circle cx="251" cy="64" r="7"/><circle cx="251" cy="168" r="7"/>
+          <circle cx="251" cy="272" r="7"/><circle cx="251" cy="376" r="7"/>
+        </g>
+      </g>
+      <!-- pressed-in threaded standoffs at the four corners -->
+      <g>
+        <g fill="#c8cfd4" stroke="#767d83" stroke-width="2">
+          <circle cx="60" cy="58" r="19"/><circle cx="206" cy="58" r="19"/>
+          <circle cx="60" cy="414" r="19"/><circle cx="206" cy="414" r="19"/>
+        </g>
+        <g fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="2">
+          <circle cx="60" cy="58" r="14"/><circle cx="206" cy="58" r="14"/>
+          <circle cx="60" cy="414" r="14"/><circle cx="206" cy="414" r="14"/>
+        </g>
+        <g fill="#2f353a">
+          <circle cx="60" cy="58" r="9"/><circle cx="206" cy="58" r="9"/>
+          <circle cx="60" cy="414" r="9"/><circle cx="206" cy="414" r="9"/>
+        </g>
+      </g>
+      <!-- punched clearance holes through the face -->
+      <g fill="#3a4045" stroke="#dfe5e9" stroke-opacity="0.4" stroke-width="2">
+        <circle cx="133" cy="120" r="10"/><circle cx="133" cy="236" r="10"/><circle cx="133" cy="352" r="10"/>
+      </g>
+      <!-- deburred sheared edge highlight -->
+      <path d="M2 470 H264" stroke="#ffffff" stroke-opacity="0.3" stroke-width="3"/>
+      <path d="M2 2 H264" stroke="#5b6268" stroke-opacity="0.5" stroke-width="3"/>
+    </g>
+  </defs>
+
+  <g transform="translate(10 -22)">
+    <ellipse cx="445" cy="748" rx="398" ry="86" fill="url(#shadow)" transform="rotate(-20 445 748)"/>
+
+    <!-- ===== D: small end panel (rearmost) ===== -->
+    <polygon points="686,430 836,375 854,382 704,437" fill="url(#alEdge)" stroke="#7c838a" stroke-width="2"/>
+    <g transform="matrix(0.9389 -0.3443 0.4230 -0.9063 560 700)">
+      <rect x="0" y="0" width="160" height="298" fill="url(#alFace)" stroke="#6c7379" stroke-width="2.5"/>
+      <g stroke="#ffffff" stroke-opacity="0.13" stroke-width="1.6">
+        <path d="M4 36 H156"/><path d="M4 72 H156"/><path d="M4 108 H156"/><path d="M4 144 H156"/>
+        <path d="M4 180 H156"/><path d="M4 216 H156"/><path d="M4 252 H156"/><path d="M4 288 H156"/>
+      </g>
+      <g stroke="#6f767c" stroke-opacity="0.16" stroke-width="1.2">
+        <path d="M4 54 H156"/><path d="M4 126 H156"/><path d="M4 198 H156"/><path d="M4 270 H156"/>
+      </g>
+      <rect x="0" y="0" width="26" height="298" fill="url(#alFlange)" opacity="0.95"/>
+      <path d="M26 0 V298" stroke="#5f666c" stroke-width="2.5"/>
+      <path d="M29.5 0 V298" stroke="#f2f6f8" stroke-width="2" stroke-opacity="0.6"/>
+      <g fill="#4d545a" fill-opacity="0.85">
+        <rect x="0" y="0" width="26" height="14"/><rect x="0" y="284" width="26" height="14"/>
+      </g>
+      <g fill="#3a4045" stroke="#e6ebee" stroke-opacity="0.45" stroke-width="2">
+        <circle cx="13" cy="60" r="6"/><circle cx="13" cy="150" r="6"/><circle cx="13" cy="240" r="6"/>
+      </g>
+      <g fill="#c8cfd4" stroke="#767d83" stroke-width="2">
+        <circle cx="56" cy="52" r="16"/><circle cx="126" cy="52" r="16"/>
+        <circle cx="56" cy="248" r="16"/><circle cx="126" cy="248" r="16"/>
+      </g>
+      <g fill="#2f353a">
+        <circle cx="56" cy="52" r="8"/><circle cx="126" cy="52" r="8"/>
+        <circle cx="56" cy="248" r="8"/><circle cx="126" cy="248" r="8"/>
+      </g>
+      <g fill="#3a4045" stroke="#dfe5e9" stroke-opacity="0.4" stroke-width="2">
+        <circle cx="92" cy="150" r="9"/>
+      </g>
+      <path d="M2 296 H158" stroke="#ffffff" stroke-opacity="0.3" stroke-width="3"/>
+    </g>
+
+    <!-- ===== C: narrower top panel with louvred vents ===== -->
+    <polygon points="524,392 712,323 730,330 542,399" fill="url(#alEdge)" stroke="#7c838a" stroke-width="2"/>
+    <g transform="matrix(0.9384 -0.3453 0.2775 -0.9607 420 752)">
+      <rect x="0" y="0" width="200" height="374" fill="url(#alFace)" stroke="#6c7379" stroke-width="2.5"/>
+      <g stroke="#ffffff" stroke-opacity="0.12" stroke-width="1.6">
+        <path d="M4 40 H196"/><path d="M4 80 H196"/><path d="M4 120 H196"/><path d="M4 160 H196"/>
+        <path d="M4 200 H196"/><path d="M4 240 H196"/><path d="M4 280 H196"/><path d="M4 320 H196"/>
+        <path d="M4 360 H196"/>
+      </g>
+      <rect x="0" y="0" width="26" height="374" fill="url(#alFlange)" opacity="0.95"/>
+      <rect x="174" y="0" width="26" height="374" fill="url(#alFlange)" opacity="0.95"/>
+      <path d="M26 0 V374" stroke="#5f666c" stroke-width="2.5"/>
+      <path d="M29.5 0 V374" stroke="#f2f6f8" stroke-width="2" stroke-opacity="0.6"/>
+      <path d="M174 0 V374" stroke="#5f666c" stroke-width="2.5"/>
+      <path d="M170.5 0 V374" stroke="#f2f6f8" stroke-width="2" stroke-opacity="0.45"/>
+      <g fill="#4d545a" fill-opacity="0.85">
+        <rect x="0" y="0" width="26" height="14"/><rect x="0" y="360" width="26" height="14"/>
+        <rect x="174" y="0" width="26" height="14"/><rect x="174" y="360" width="26" height="14"/>
+      </g>
+      <!-- louvred vent slot pattern, two columns of pressed louvres -->
+      <g>
+        <g fill="#2b3135" stroke="#565d63" stroke-width="1.5">
+          <rect x="44" y="96" width="52" height="13" rx="6"/><rect x="106" y="96" width="52" height="13" rx="6"/>
+          <rect x="44" y="130" width="52" height="13" rx="6"/><rect x="106" y="130" width="52" height="13" rx="6"/>
+          <rect x="44" y="164" width="52" height="13" rx="6"/><rect x="106" y="164" width="52" height="13" rx="6"/>
+          <rect x="44" y="198" width="52" height="13" rx="6"/><rect x="106" y="198" width="52" height="13" rx="6"/>
+          <rect x="44" y="232" width="52" height="13" rx="6"/><rect x="106" y="232" width="52" height="13" rx="6"/>
+          <rect x="44" y="266" width="52" height="13" rx="6"/><rect x="106" y="266" width="52" height="13" rx="6"/>
+        </g>
+        <!-- pressed lip catching the light under each louvre -->
+        <g stroke="#f4f7f9" stroke-opacity="0.62" stroke-width="2.5" fill="none">
+          <path d="M46 94 H94"/><path d="M108 94 H156"/>
+          <path d="M46 128 H94"/><path d="M108 128 H156"/>
+          <path d="M46 162 H94"/><path d="M108 162 H156"/>
+          <path d="M46 196 H94"/><path d="M108 196 H156"/>
+          <path d="M46 230 H94"/><path d="M108 230 H156"/>
+          <path d="M46 264 H94"/><path d="M108 264 H156"/>
+        </g>
+      </g>
+      <g fill="#c8cfd4" stroke="#767d83" stroke-width="2">
+        <circle cx="58" cy="48" r="17"/><circle cx="142" cy="48" r="17"/>
+        <circle cx="58" cy="326" r="17"/><circle cx="142" cy="326" r="17"/>
+      </g>
+      <g fill="#2f353a">
+        <circle cx="58" cy="48" r="8.5"/><circle cx="142" cy="48" r="8.5"/>
+        <circle cx="58" cy="326" r="8.5"/><circle cx="142" cy="326" r="8.5"/>
+      </g>
+      <g fill="#3a4045" stroke="#e6ebee" stroke-opacity="0.45" stroke-width="2">
+        <circle cx="13" cy="70" r="6"/><circle cx="13" cy="187" r="6"/><circle cx="13" cy="304" r="6"/>
+        <circle cx="187" cy="70" r="6"/><circle cx="187" cy="187" r="6"/><circle cx="187" cy="304" r="6"/>
+      </g>
+      <path d="M2 372 H198" stroke="#ffffff" stroke-opacity="0.3" stroke-width="3"/>
+    </g>
+
+    <!-- ===== B: large side panel ===== -->
+    <polygon points="353,336 603,244 621,251 371,343" fill="url(#alEdge)" stroke="#7c838a" stroke-width="2"/>
+    <use href="#sidePanel" transform="matrix(0.9384 -0.3453 0.1555 -0.9878 280 802)"/>
+
+    <!-- ===== A: large side panel, front of the fan ===== -->
+    <polygon points="194,380 444,288 462,295 212,387" fill="url(#alEdge)" stroke="#7c838a" stroke-width="2"/>
+    <use href="#sidePanel" transform="matrix(0.9384 -0.3453 0.0932 -0.9955 150 850)"/>
+  </g>
+</svg>

@@ -15,8 +15,9 @@ import {
   SelectTrigger,
   SelectValue
 } from "@carbon/react";
-import type { ValueOrRef, ValueType } from "@carbon/workflows";
+import type { ValueOrRef, ValueType, WorkflowCatalog } from "@carbon/workflows";
 import {
+  isMultiSelect,
   MAX_LIST_ITEMS,
   WORKFLOW_ACTION_CATALOG,
   WORKFLOW_ENTITY_REGISTRY
@@ -26,12 +27,14 @@ import { useMemo, useState } from "react";
 import { LuCheck, LuChevronsUpDown, LuListOrdered } from "react-icons/lu";
 import {
   actionInputLabelKey,
-  catalog,
   entityLabelKey,
+  useWorkflowCatalog,
   useWorkflowLabel,
   workflowFieldHelp
 } from "../../catalog";
 import { useBuilderStore } from "../../context";
+import { lockedChoices, useChoiceOptions } from "../../fields/choiceOptions";
+import { MultiChoiceField } from "../../fields/MultiChoiceField";
 import { PairsField } from "../../fields/PairsField";
 import { TemplateField } from "../../fields/TemplateField";
 import { ValueField } from "../../fields/ValueField";
@@ -62,7 +65,10 @@ function isGateOpen(gate: Gate, inputs: Record<string, ValueOrRef>): boolean {
   return gate.equals.includes(target.value);
 }
 
-function seededInputs(actionId: string): Record<string, ValueOrRef> {
+function seededInputs(
+  actionId: string,
+  catalog: WorkflowCatalog
+): Record<string, ValueOrRef> {
   const seeded: Record<string, ValueOrRef> = {};
   const def = catalog.getAction(actionId);
   for (const [name, input] of Object.entries(def?.inputs ?? {})) {
@@ -95,13 +101,15 @@ type ActionPickerProps = {
   onSelect: (id: string) => void;
   upstreamEntities: Set<string>;
   label: (key: string) => string;
+  isReadOnly?: boolean;
 };
 
 function ActionPicker({
   selected,
   onSelect,
   upstreamEntities,
-  label
+  label,
+  isReadOnly
 }: ActionPickerProps) {
   const { t } = useLingui();
   const [open, setOpen] = useState(false);
@@ -124,6 +132,7 @@ function ActionPicker({
       <PopoverTrigger asChild>
         <button
           type="button"
+          disabled={isReadOnly}
           className="flex w-full items-center justify-between rounded-md border bg-background px-3 py-2 text-sm hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <span
@@ -141,7 +150,10 @@ function ActionPicker({
         onTouchMove={(e) => e.stopPropagation()}
       >
         <Command>
-          <CommandInput placeholder={t`Search actions…`} />
+          <CommandInput
+            placeholder={t`Search actions…`}
+            disabled={isReadOnly}
+          />
           <CommandList className="max-h-64 overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
             <CommandEmpty>
               <Trans>No actions found.</Trans>
@@ -153,6 +165,7 @@ function ActionPicker({
                   <CommandItem
                     key={id}
                     value={`${id} ${label(id)}`}
+                    disabled={isReadOnly}
                     onSelect={() => {
                       onSelect(id);
                       setOpen(false);
@@ -184,6 +197,7 @@ type NotifyAboutFieldProps = {
   inputs: Record<string, ValueOrRef>;
   onInputChange: (name: string, value: ValueOrRef | undefined) => void;
   inLoop: boolean;
+  isReadOnly?: boolean;
 };
 
 /** The only hand-written field: notify names its subject in two loose strings because
@@ -192,7 +206,8 @@ function NotifyAboutField({
   nodeId,
   inputs,
   onInputChange,
-  inLoop
+  inLoop,
+  isReadOnly
 }: NotifyAboutFieldProps) {
   const { t } = useLingui();
   const label = useWorkflowLabel();
@@ -224,8 +239,12 @@ function NotifyAboutField({
       <label className="text-sm font-medium text-foreground">
         <Trans>About</Trans>
       </label>
-      <Select value={aboutType ?? ""} onValueChange={handleTypeChange}>
-        <SelectTrigger className="w-full">
+      <Select
+        value={aboutType ?? ""}
+        onValueChange={handleTypeChange}
+        disabled={isReadOnly}
+      >
+        <SelectTrigger className="w-full" disabled={isReadOnly}>
           <SelectValue placeholder={t`Pick a record type…`} />
         </SelectTrigger>
         <SelectContent>
@@ -243,6 +262,7 @@ function NotifyAboutField({
           value={aboutId}
           onChange={(v) => onInputChange("aboutId", v)}
           context={{ nodeId, inLoop }}
+          isReadOnly={isReadOnly}
         />
       )}
     </div>
@@ -251,13 +271,27 @@ function NotifyAboutField({
 
 // ── ActionForm ────────────────────────────────────────────────────────────────
 
-export function ActionForm({ node, issues }: NodeFormProps<"action">) {
+export function ActionForm({
+  node,
+  issues,
+  isReadOnly
+}: NodeFormProps<"action">) {
   const updateNodeData = useBuilderStore((s) => s.updateNodeData);
   const label = useWorkflowLabel();
+  const catalog = useWorkflowCatalog();
+  const choiceOptions = useChoiceOptions();
 
   const { action: actionId, inputs } = node.data;
 
   const actionDef = actionId ? catalog.getAction(actionId) : undefined;
+
+  // A custom-field input has no translated key — fall back to the customer's own name.
+  const inputLabel = (name: string) =>
+    label(
+      actionInputLabelKey(actionId, name),
+      catalog.getInputLabel(actionId, name) ?? name
+    );
+
   const batch = useActionBatchPlan(node.id, actionId, inputs);
   const isBatch = batch.kind === "repeats";
 
@@ -291,19 +325,11 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
     return init;
   });
 
-  // Hidden inputs — members of requireOneOf groups that aren't active
-  const hiddenInputs = useMemo(() => {
-    const hidden = new Set<string>();
-    for (let i = 0; i < requireOneOf.length; i++) {
-      const group = requireOneOf[i];
-      if (!group) continue;
-      const active = groupSelections[i];
-      for (const name of group) {
-        if (name !== active) hidden.add(name);
-      }
-    }
-    return hidden;
-  }, [requireOneOf, groupSelections]);
+  // Each group's own block renders its active member, so the ordinary Inputs list skips them all.
+  const groupOwnedInputs = useMemo(
+    () => new Set((actionDef?.requireOneOf ?? []).flat()),
+    [actionDef]
+  );
 
   // The about inputs are handled by NotifyAboutField, skip them in the normal loop
   const isNotify = actionId === "notify";
@@ -312,7 +338,7 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
   // ── event handlers ──────────────────────────────────────────────────────────
 
   function handleActionSelect(id: string) {
-    updateNodeData(node.id, { action: id, inputs: seededInputs(id) });
+    updateNodeData(node.id, { action: id, inputs: seededInputs(id, catalog) });
     // Reset group selections for the new action
     const newDef = catalog.getAction(id);
     const newGroups = newDef?.requireOneOf ?? [];
@@ -356,7 +382,7 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
     if (!inputDef) return null;
     // Also guarded in the list below; a requireOneOf member reaches here without it.
     if (!isGateOpen(inputDef.showWhen, inputs)) return null;
-    const inputLabel = label(actionInputLabelKey(actionId, name), name);
+    const fieldLabel = inputLabel(name);
     const inputHelp = workflowFieldHelp(actionInputLabelKey(actionId, name));
     const fieldContext = {
       nodeId: node.id,
@@ -370,7 +396,7 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
       return (
         <PairsField
           key={name}
-          label={inputLabel}
+          label={fieldLabel}
           helpTermId={inputHelp}
           type={inputDef.type}
           required={inputDef.required}
@@ -379,6 +405,25 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
           context={fieldContext}
           issue={fieldIssue}
           partIssues={rowIssuesForField(issues, name, `inputs.${name}`)}
+          isReadOnly={isReadOnly}
+        />
+      );
+    }
+
+    if (isMultiSelect(inputDef)) {
+      return (
+        <MultiChoiceField
+          key={name}
+          label={fieldLabel}
+          helpTermId={inputHelp}
+          type={inputDef.type}
+          required={inputDef.required}
+          options={choiceOptions(inputDef.choices)}
+          locked={lockedChoices(inputDef.choices)}
+          value={inputs[name]}
+          onChange={(v) => handleInputChange(name, v)}
+          issue={fieldIssue}
+          isReadOnly={isReadOnly}
         />
       );
     }
@@ -387,7 +432,7 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
       return (
         <TemplateField
           key={name}
-          label={inputLabel}
+          label={fieldLabel}
           helpTermId={inputHelp}
           type={inputDef.type}
           required={inputDef.required}
@@ -396,6 +441,7 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
           context={fieldContext}
           issue={fieldIssue}
           partIssues={fieldParts}
+          isReadOnly={isReadOnly}
         />
       );
     }
@@ -403,7 +449,7 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
     return (
       <ValueField
         key={name}
-        label={inputLabel}
+        label={fieldLabel}
         helpTermId={inputHelp}
         type={inputDef.type}
         required={inputDef.required}
@@ -413,9 +459,23 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
         context={fieldContext}
         issue={fieldIssue}
         partIssues={fieldParts}
+        isReadOnly={isReadOnly}
       />
     );
   }
+
+  /** Rendered directly under the action picker rather than with the rest: a multi-select
+   * qualifies the action itself (how a notification is delivered), so it belongs beside
+   * the action, not below the recipient and the message. */
+  const modeInputNames = useMemo(() => {
+    if (!actionDef) return [];
+    return Object.entries(actionDef.inputs)
+      .filter(([name, inputDef]) => {
+        if (groupOwnedInputs.has(name) || skipInputs.has(name)) return false;
+        return isMultiSelect(inputDef);
+      })
+      .map(([name]) => name);
+  }, [actionDef, groupOwnedInputs, skipInputs]);
 
   // Sort inputs: required first, then optional (preserving catalog order within each)
   const visibleInputNames = useMemo(() => {
@@ -423,13 +483,14 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
     const required: string[] = [];
     const optional: string[] = [];
     for (const [name, inputDef] of Object.entries(actionDef.inputs)) {
-      if (hiddenInputs.has(name) || skipInputs.has(name)) continue;
+      if (groupOwnedInputs.has(name) || skipInputs.has(name)) continue;
+      if (modeInputNames.includes(name)) continue;
       if (!isGateOpen(inputDef.showWhen, inputs)) continue;
       if (inputDef.required) required.push(name);
       else optional.push(name);
     }
     return [...required, ...optional];
-  }, [actionDef, hiddenInputs, skipInputs, inputs]);
+  }, [actionDef, groupOwnedInputs, skipInputs, modeInputNames, inputs]);
 
   // ── render ──────────────────────────────────────────────────────────────────
 
@@ -445,11 +506,18 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
           onSelect={handleActionSelect}
           upstreamEntities={upstreamEntities}
           label={label}
+          isReadOnly={isReadOnly}
         />
       </div>
 
       {actionDef && (
         <>
+          {modeInputNames.length > 0 && (
+            <div className="space-y-3">
+              {modeInputNames.map((name) => renderInput(name))}
+            </div>
+          )}
+
           {/* requireOneOf group selectors */}
           {requireOneOf.map((group, i) => (
             <div key={i} className="space-y-1">
@@ -461,6 +529,7 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
                   <button
                     key={name}
                     type="button"
+                    disabled={isReadOnly}
                     className={cn(
                       "flex-1 px-3 py-2 text-sm transition-colors",
                       groupSelections[i] === name
@@ -470,7 +539,7 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
                     )}
                     onClick={() => handleGroupSwitch(i, name)}
                   >
-                    {label(actionInputLabelKey(actionId, name), name)}
+                    {inputLabel(name)}
                   </button>
                 ))}
               </div>
@@ -502,6 +571,7 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
                 inputs={inputs}
                 onInputChange={handleInputChange}
                 inLoop={isBatch}
+                isReadOnly={isReadOnly}
               />
             </div>
           )}
@@ -513,13 +583,8 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
               <LuListOrdered className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
               <p className="text-muted-foreground">
                 <Trans>
-                  A list is wired into{" "}
-                  {label(
-                    actionInputLabelKey(actionId, batch.input),
-                    batch.input
-                  )}
-                  , so this step runs once for each item in it — up to{" "}
-                  {MAX_LIST_ITEMS}.
+                  A list is wired into {inputLabel(batch.input)}, so this step
+                  runs once for each item in it — up to {MAX_LIST_ITEMS}.
                 </Trans>
               </p>
             </div>
@@ -530,18 +595,9 @@ export function ActionForm({ node, issues }: NodeFormProps<"action">) {
               <LuListOrdered className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
               <p className="text-destructive">
                 <Trans>
-                  Lists are wired into both{" "}
-                  {label(
-                    actionInputLabelKey(actionId, batch.first),
-                    batch.first
-                  )}{" "}
-                  and{" "}
-                  {label(
-                    actionInputLabelKey(actionId, batch.second),
-                    batch.second
-                  )}
-                  , so this step cannot tell which one to repeat over. Leave a
-                  list on only one of them.
+                  Lists are wired into both {inputLabel(batch.first)} and{" "}
+                  {inputLabel(batch.second)}, so this step cannot tell which one
+                  to repeat over. Leave a list on only one of them.
                 </Trans>
               </p>
             </div>

@@ -17,6 +17,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   Tr,
+  TruncatedTooltipText,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -53,7 +54,8 @@ import {
   useCurrencyFormatter,
   usePercentFormatter,
   usePermissions,
-  useRouteData
+  useRouteData,
+  useUser
 } from "~/hooks";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { getPrivateUrl, path } from "~/utils/path";
@@ -91,9 +93,11 @@ const SalesOrderSummary = ({
   const salesOrderToJobsModal = useDisclosure();
 
   const { locale } = useLocale();
-  const formatter = useCurrencyFormatter({
-    currency: routeData?.salesOrder?.currencyCode ?? "USD"
-  });
+  const { company } = useUser();
+  const baseCurrency = company?.baseCurrencyCode ?? "USD";
+  // Base currency: this formats `line.unitPrice`, a base-currency column. The
+  // order-currency figure is `convertedUnitPrice`, rendered above the badge.
+  const formatter = useCurrencyFormatter({ currency: baseCurrency });
 
   const isEditable = !isSalesOrderLocked(routeData?.salesOrder?.status);
   // Settlement money at the document currency's configured decimals.
@@ -391,29 +395,28 @@ function LineItems({
               {line.thumbnailPath ? (
                 <img
                   alt={line.itemReadableId!}
-                  className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
+                  className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
                   src={getPrivateUrl(line.thumbnailPath)}
                 />
               ) : (
-                <div className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
+                <div className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
                   <LuImage className="w-16 h-16 text-muted-foreground" />
                 </div>
               )}
 
-              <VStack spacing={0} className="w-full">
+              <VStack spacing={0} className="flex-1 min-w-0">
                 <div
                   className="flex flex-col cursor-pointer w-full"
                   onClick={() => toggleOpen(line.id!)}
                 >
+                  {/* The text column must shrink (flex-1 min-w-0) or a long
+                      description shoves the totals out of the card, and its
+                      children need w-full because VStack is items-start, which
+                      sizes each child to its own content and leaves truncate
+                      inert no matter how narrow the column gets. */}
                   <div className="flex items-center justify-between w-full">
-                    <VStack
-                      spacing={0}
-                      className="flex-shrink-0 min-w-0 w-auto"
-                    >
-                      <HStack
-                        spacing={2}
-                        className="flex min-w-0 flex-shrink-0"
-                      >
+                    <VStack spacing={0} className="flex-1 min-w-0">
+                      <HStack spacing={2} className="flex min-w-0 w-full">
                         <Heading className="truncate">
                           {line.salesOrderLineType === "Fixed Asset"
                             ? (line as any).assetReadableId || "Fixed Asset"
@@ -430,9 +433,12 @@ function LineItems({
                           </Link>
                         </Button>
                       </HStack>
-                      <span className="text-muted-foreground text-sm truncate">
+                      <TruncatedTooltipText
+                        className="text-muted-foreground text-sm truncate w-full"
+                        tooltip={line.description}
+                      >
                         {line.description}
-                      </span>
+                      </TruncatedTooltipText>
                     </VStack>
                     <VStack
                       spacing={2}

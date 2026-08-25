@@ -949,25 +949,10 @@ export async function updateDigitalQuoteSetting(
     .eq("id", companyId);
 }
 
-export async function updateIntegrationMetadata(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  integrationId: string,
-  metadata: any,
-  updatedBy?: string
-) {
-  return client
-    .from("companyIntegration")
-    .update(
-      sanitize({
-        metadata,
-        updatedAt: new Date().toISOString(),
-        updatedBy
-      })
-    )
-    .eq("companyId", companyId)
-    .eq("id", integrationId);
-}
+// NOTE: updateIntegrationMetadata lives in settings.server.ts, NOT here. It needs
+// the service-role client for the Vault RPC, and this file is re-exported by the
+// client barrel (~/modules/settings) — a `@carbon/auth/client.server` import here
+// would pull the service-role client into the browser bundle (Vite blocks it).
 
 export async function updateAccountingEnabledSetting(
   client: SupabaseClient<Database>,

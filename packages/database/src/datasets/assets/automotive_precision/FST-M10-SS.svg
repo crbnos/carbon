@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="hexTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="collar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="shankClip">
+      <path d="M436 420 L436 786 L448 814 Q512 832 576 814 L588 786 L588 420 Z"/>
+    </clipPath>
+    <clipPath id="flat0">
+      <path d="M347 270 L429.5 324.3 L429.5 446.3 L347 392 Z"/>
+    </clipPath>
+    <clipPath id="flat1">
+      <path d="M429.5 324.3 L594.5 324.3 L594.5 446.3 L429.5 446.3 Z"/>
+    </clipPath>
+    <clipPath id="flat2">
+      <path d="M594.5 324.3 L677 270 L677 392 L594.5 446.3 Z"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="512" cy="862" rx="210" ry="46" fill="url(#shadow)"/>
+
+  <!-- thick shank, threaded almost up to the head -->
+  <path d="M436 420 L436 786 L448 814 Q512 832 576 814 L588 786 L588 420 Z" fill="url(#steel)"/>
+  <g clip-path="url(#shankClip)">
+    <g stroke="#7b8288" stroke-width="5" opacity="0.75" fill="none">
+      <path d="M436 546 L588 519"/>
+      <path d="M436 580 L588 553"/>
+      <path d="M436 614 L588 587"/>
+      <path d="M436 648 L588 621"/>
+      <path d="M436 682 L588 655"/>
+      <path d="M436 716 L588 689"/>
+      <path d="M436 750 L588 723"/>
+      <path d="M436 784 L588 757"/>
+    </g>
+    <g stroke="#f2f5f6" stroke-width="3" opacity="0.5" fill="none">
+      <path d="M436 560 L588 533"/>
+      <path d="M436 594 L588 567"/>
+      <path d="M436 628 L588 601"/>
+      <path d="M436 662 L588 635"/>
+      <path d="M436 696 L588 669"/>
+      <path d="M436 730 L588 703"/>
+      <path d="M436 764 L588 737"/>
+      <path d="M436 798 L588 771"/>
+    </g>
+    <path d="M436 786 Q512 804 588 786" fill="none" stroke="#525860" stroke-width="4.5" opacity="0.85"/>
+  </g>
+  <path d="M436 420 L436 786 L448 814 Q512 832 576 814 L588 786 L588 420 Z" fill="none" stroke="#4b5156" stroke-width="2.5"/>
+
+  <!-- integral washer-face collar -->
+  <path d="M372 438 L372 464 Q512 570.4 652 464 L652 438 Z" fill="url(#collar)" stroke="#4b5156" stroke-width="2.5"/>
+  <ellipse cx="512" cy="438" rx="140" ry="53.2" fill="url(#collar)" stroke="#4b5156" stroke-width="2.5"/>
+  <path d="M382 456 Q512 554.4 642 456" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="3"/>
+
+  <!-- hexagonal head: six flat wrench faces, three of them visible -->
+  <path d="M347 270 L429.5 324.3 L429.5 446.3 L347 392 Z" fill="url(#steel)"/>
+  <g clip-path="url(#flat0)" stroke="#ffffff" stroke-opacity="0.11" stroke-width="2" fill="none">
+    <path d="M355 210 L355 472"/>
+    <path d="M368 210 L368 472"/>
+    <path d="M381 210 L381 472"/>
+    <path d="M394 210 L394 472"/>
+    <path d="M407 210 L407 472"/>
+    <path d="M420 210 L420 472"/>
+  </g>
+  <path d="M429.5 324.3 L594.5 324.3 L594.5 446.3 L429.5 446.3 Z" fill="url(#steel)"/>
+  <path d="M429.5 324.3 L594.5 324.3 L594.5 446.3 L429.5 446.3 Z" fill="#000000" opacity="0.1"/>
+  <g clip-path="url(#flat1)" stroke="#ffffff" stroke-opacity="0.11" stroke-width="2" fill="none">
+    <path d="M437.5 210 L437.5 472"/>
+    <path d="M450.5 210 L450.5 472"/>
+    <path d="M463.5 210 L463.5 472"/>
+    <path d="M476.5 210 L476.5 472"/>
+    <path d="M489.5 210 L489.5 472"/>
+    <path d="M502.5 210 L502.5 472"/>
+    <path d="M515.5 210 L515.5 472"/>
+    <path d="M528.5 210 L528.5 472"/>
+    <path d="M541.5 210 L541.5 472"/>
+    <path d="M554.5 210 L554.5 472"/>
+    <path d="M567.5 210 L567.5 472"/>
+    <path d="M580.5 210 L580.5 472"/>
+  </g>
+  <path d="M594.5 324.3 L677 270 L677 392 L594.5 446.3 Z" fill="url(#steel)"/>
+  <path d="M594.5 324.3 L677 270 L677 392 L594.5 446.3 Z" fill="#000000" opacity="0.26"/>
+  <g clip-path="url(#flat2)" stroke="#ffffff" stroke-opacity="0.11" stroke-width="2" fill="none">
+    <path d="M602.5 210 L602.5 472"/>
+    <path d="M615.5 210 L615.5 472"/>
+    <path d="M628.5 210 L628.5 472"/>
+    <path d="M641.5 210 L641.5 472"/>
+    <path d="M654.5 210 L654.5 472"/>
+    <path d="M667.5 210 L667.5 472"/>
+  </g>
+  <path d="M347 270 L429.5 324.3 L594.5 324.3 L677 270 L677 392 L594.5 446.3 L429.5 446.3 L347 392 Z" fill="none" stroke="#4b5156" stroke-width="3"/>
+  <path d="M429.5 324.3 L429.5 446.3" stroke="#565c62" stroke-width="2.5" opacity="0.9" fill="none"/>
+  <path d="M594.5 324.3 L594.5 446.3" stroke="#565c62" stroke-width="2.5" opacity="0.9" fill="none"/>
+
+  <polygon points="677,270 594.5,324.3 429.5,324.3 347,270 429.5,215.7 594.5,215.7" fill="url(#hexTop)" stroke="#7f868c" stroke-width="2.5"/>
+  <!-- chamfered crown -->
+  <polygon points="657,270 584.5,317.72 439.5,317.72 367,270 439.5,222.28 584.5,222.28" fill="#ffffff" fill-opacity="0.09" stroke="#9aa2a8" stroke-width="2.5"/>
+  <g stroke="#ffffff" stroke-opacity="0.2" stroke-width="2.5" fill="none">
+    <path d="M672.05 270 L592.02 322.67"/>
+    <path d="M592.02 322.67 L431.98 322.67"/>
+    <path d="M431.98 322.67 L351.95 270"/>
+    <path d="M351.95 270 L431.98 217.33"/>
+    <path d="M431.98 217.33 L592.02 217.33"/>
+    <path d="M592.02 217.33 L672.05 270"/>
+  </g>
+  <g stroke="#ffffff" stroke-opacity="0.12" stroke-width="2" fill="none">
+    <path d="M392 234 L632 228"/>
+    <path d="M392 246 L632 240"/>
+    <path d="M392 258 L632 252"/>
+    <path d="M392 270 L632 264"/>
+    <path d="M392 282 L632 276"/>
+    <path d="M392 294 L632 288"/>
+    <path d="M392 306 L632 300"/>
+  </g>
+</svg>

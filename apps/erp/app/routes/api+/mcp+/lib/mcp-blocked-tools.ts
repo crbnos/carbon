@@ -12,6 +12,11 @@ export const MCP_BLOCKED_TOOL_NAMES: readonly string[] = [
   // no such payload field), so direct calls would only ever fail validation.
   "production_returnPickedRemaindersForOperation",
   "production_returnPickedRemaindersForJob",
+  // Ungated scheduling primitive: it fires the `schedule-job` Inngest event with
+  // no permission check of its own (every ERP route gates on `production` update
+  // before calling it). `production_scheduleJob` is the intended MCP entry point —
+  // it re-applies that gate — so the raw trigger must not be reachable via MCP.
+  "production_triggerJobSchedule",
   // Bulk sales-order line insert. It has no in-app caller — it is reachable
   // only through this executor, which exposes every named export of
   // sales.service.ts. It writes lines without the sales-rule evaluation the

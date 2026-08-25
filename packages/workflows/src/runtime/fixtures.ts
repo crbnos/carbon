@@ -32,6 +32,8 @@ export function createRuntimeContext(
     outputs?: Record<string, Record<string, RuntimeValue>>;
     item?: RuntimeValue;
     services?: Partial<WorkflowServices>;
+    /** Supplied by the engine in production; omit to render records as plain ids. */
+    linkFor?: (of: string, id: string) => string | null;
   } = {}
 ): RuntimeContext {
   return {
@@ -39,6 +41,7 @@ export function createRuntimeContext(
     loader: createFakeLoader(options.rows ?? {}),
     services: createFixtureServices(options.services),
     outputs: options.outputs ?? {},
-    item: options.item
+    item: options.item,
+    linkFor: options.linkFor
   };
 }

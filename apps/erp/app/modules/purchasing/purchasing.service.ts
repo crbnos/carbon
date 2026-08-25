@@ -41,10 +41,11 @@ import type {
   supplierTypeValidator,
   supplierValidator
 } from "./purchasing.models";
+import { PURCHASE_ORDER_LOCKED_STATUSES } from "./purchasing.models";
 import type { PurchaseOrder, PurchasingRFQ, SupplierQuote } from "./types";
 
 const PURCHASE_ORDERS_LIST_COLUMNS =
-  "id,purchaseOrderId,status,orderDate,supplierId,supplierReference,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,orderTotal,receivableQuantity,receivedQuantity,shippingMethodId,receiptRequestedDate,receiptPromisedDate,deliveryDate,dropShipment,paymentTermId,createdByFullName,assigneeFullName" as const;
+  "id,purchaseOrderId,revisionId,status,orderDate,supplierId,supplierReference,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,orderTotal,receivableQuantity,receivedQuantity,shippingMethodId,receiptRequestedDate,receiptPromisedDate,deliveryDate,dropShipment,paymentTermId,createdByFullName,assigneeFullName" as const;
 
 const logger = getLogger("erp", "purchasing-service");
 
@@ -1210,6 +1211,43 @@ export async function updatePurchaseOrderStatus(
   }
 ) {
   return client.from("purchaseOrder").update(update).eq("id", update.id);
+}
+
+/**
+ * Reopens a released purchase order to Draft as its next revision.
+ *
+ * Compare-and-swap: the increment and the eligibility conditions are both in
+ * SQL, so concurrent requests can't share a revision number and an ineligible
+ * order matches no rows. Returns rows updated — 0 means it was not eligible.
+ */
+export async function reopenPurchaseOrderAsRevision(
+  db: Kysely<KyselyDatabase>,
+  {
+    id,
+    companyId,
+    updatedBy
+  }: {
+    id: string;
+    companyId: string;
+    updatedBy: string;
+  }
+) {
+  const result = await db
+    .updateTable("purchaseOrder")
+    .set((eb) => ({
+      status: "Draft" as const,
+      assignee: null,
+      revisionId: eb("revisionId", "+", 1),
+      updatedBy,
+      updatedAt: datetime.timestamp()
+    }))
+    .where("id", "=", id)
+    .where("companyId", "=", companyId)
+    .where("status", "in", [...PURCHASE_ORDER_LOCKED_STATUSES])
+    .where("orderDate", "is not", null)
+    .executeTakeFirst();
+
+  return Number(result.numUpdatedRows ?? 0);
 }
 
 export async function updateSupplierAccounting(
