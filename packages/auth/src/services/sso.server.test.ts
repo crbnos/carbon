@@ -129,3 +129,117 @@ describe("getSsoProviderIdFromSession", () => {
     expect(getSsoProviderIdFromSession(token, user)).toBeNull();
   });
 });
+
+const { getSsoAwareInviteLink, isSsoRequiredForEmail } = await import(
+  "./sso.server"
+);
+
+// Chainable supabase-client stub: every builder method records its args and
+// returns the builder; maybeSingle resolves the canned result. Enough surface
+// for the ssoConnection lookups without a real PostgREST client.
+function makeSsoClient(result: { data: unknown; error: unknown }) {
+  const calls: Record<string, unknown[][]> = {};
+  // biome-ignore lint/suspicious/noExplicitAny: test stub
+  const builder: any = {};
+  for (const method of ["from", "select", "contains", "eq"]) {
+    builder[method] = (...args: unknown[]) => {
+      (calls[method] ??= []).push(args);
+      return builder;
+    };
+  }
+  builder.maybeSingle = async () => result;
+  return { client: builder, calls };
+}
+
+describe("getSsoAwareInviteLink", () => {
+  it("routes a covered-domain invite to the login page with the email prefilled", async () => {
+    const { client } = makeSsoClient({ data: { id: "sso_1" }, error: null });
+    await expect(
+      getSsoAwareInviteLink(client, "jane@acme.com", "CODE123")
+    ).resolves.toBe("http://localhost:3000/login?email=jane%40acme.com");
+  });
+
+  it("routes an uncovered-domain invite to the ordinary code link", async () => {
+    const { client } = makeSsoClient({ data: null, error: null });
+    await expect(
+      getSsoAwareInviteLink(client, "jane@other.com", "CODE123")
+    ).resolves.toBe("http://localhost:3000/invite/CODE123");
+  });
+
+  it("URL-encodes plus-addressed emails in the login link", async () => {
+    const { client } = makeSsoClient({ data: { id: "sso_1" }, error: null });
+    await expect(
+      getSsoAwareInviteLink(client, "jane+test@acme.com", "CODE123")
+    ).resolves.toBe("http://localhost:3000/login?email=jane%2Btest%40acme.com");
+  });
+
+  it("falls back to the code link without querying when the email has no domain", async () => {
+    const { client, calls } = makeSsoClient({
+      data: { id: "sso_1" },
+      error: null
+    });
+    await expect(
+      getSsoAwareInviteLink(client, "jane", "CODE123")
+    ).resolves.toBe("http://localhost:3000/invite/CODE123");
+    expect(calls.from).toBeUndefined();
+  });
+});
+
+describe("isSsoRequiredForEmail", () => {
+  it("is true only when the covering connection has requireSso on", async () => {
+    const { client } = makeSsoClient({
+      data: { requireSso: true },
+      error: null
+    });
+    await expect(isSsoRequiredForEmail(client, "jane@acme.com")).resolves.toBe(
+      true
+    );
+  });
+
+  it("is false for a covered connection with requireSso off", async () => {
+    const { client } = makeSsoClient({
+      data: { requireSso: false },
+      error: null
+    });
+    await expect(isSsoRequiredForEmail(client, "jane@acme.com")).resolves.toBe(
+      false
+    );
+  });
+
+  it("is false when no active connection covers the domain", async () => {
+    const { client } = makeSsoClient({ data: null, error: null });
+    await expect(isSsoRequiredForEmail(client, "jane@acme.com")).resolves.toBe(
+      false
+    );
+  });
+
+  it("fails open to false on a lookup error (the login refusal must not brick non-SSO tenants)", async () => {
+    const { client } = makeSsoClient({
+      data: null,
+      error: { message: "boom" }
+    });
+    await expect(isSsoRequiredForEmail(client, "jane@acme.com")).resolves.toBe(
+      false
+    );
+  });
+
+  it("is false without querying when the email has no domain", async () => {
+    const { client, calls } = makeSsoClient({
+      data: { requireSso: true },
+      error: null
+    });
+    await expect(isSsoRequiredForEmail(client, "jane")).resolves.toBe(false);
+    expect(calls.from).toBeUndefined();
+  });
+
+  it("matches the domain case-insensitively (lowercased before the array lookup)", async () => {
+    const { client, calls } = makeSsoClient({
+      data: { requireSso: true },
+      error: null
+    });
+    await expect(isSsoRequiredForEmail(client, "Jane@ACME.com")).resolves.toBe(
+      true
+    );
+    expect(calls.contains?.[0]).toEqual(["domains", ["acme.com"]]);
+  });
+});
