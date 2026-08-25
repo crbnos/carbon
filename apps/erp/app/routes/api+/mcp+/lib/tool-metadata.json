@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-25T04:04:40.993Z",
-  "totalTools": 1447,
+  "generated": "2026-08-25T04:10:11.045Z",
+  "totalTools": 1448,
   "modules": 15,
   "tools": [
     {
@@ -25383,6 +25383,37 @@
         },
         "required": [
           "jobId"
+        ]
+      }
+    },
+    {
+      "name": "production_completeOperation",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "complete operation",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "userId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "operationId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "operationId",
+          "quantity"
         ]
       }
     },
