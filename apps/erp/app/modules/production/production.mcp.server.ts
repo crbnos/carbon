@@ -5,6 +5,7 @@ import {
   isBlocked
 } from "@carbon/ee/storage-rules.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { triggerJobSchedule } from "./production.service";
 
 // MCP-exposed production writes that depend on server-only modules
 // (`@carbon/auth/users.server`, `@carbon/ee/storage-rules.server`). These CANNOT
@@ -14,6 +15,26 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 // `.server` reference reachable from it. This module is server-only (never
 // re-exported by the barrel) and is pulled into the MCP tool set by
 // `scripts/generate-mcp.ts` + `direct-executor.ts`, which run server-side only.
+
+/**
+ * Re-check a `production` permission for the connected user. The MCP executor injects
+ * companyId/userId from the OAuth token but performs no per-tool permission check, and some
+ * of these writes reach privileged paths (a SECURITY DEFINER RPC, an Inngest trigger) that
+ * bypass RLS — so the ERP route's permission gate is re-applied here. Honors the `"0"`
+ * all-companies wildcard, matching `requirePermissions`.
+ */
+async function assertProductionPermission(
+  userId: string,
+  companyId: string,
+  action: "create" | "update" | "delete",
+  message: string
+) {
+  const claims = await getUserClaims(userId, companyId);
+  const scoped = claims?.permissions?.production?.[action];
+  if (!scoped?.some((c) => c === companyId || c === "0")) {
+    throw new Error(message);
+  }
+}
 
 /**
  * Issue material to a job operation, enforcing work-center material-issue rules first.
@@ -116,12 +137,12 @@ export async function completeJob(
     locationId?: string;
   }
 ) {
-  const claims = await getUserClaims(userId, companyId);
-  if (!claims?.permissions?.production?.update?.includes(companyId)) {
-    throw new Error(
-      "You do not have permission to complete jobs to inventory (production update)."
-    );
-  }
+  await assertProductionPermission(
+    userId,
+    companyId,
+    "update",
+    "You do not have permission to complete jobs to inventory (production update)."
+  );
   return client.rpc("complete_job_to_inventory", {
     p_job_id: args.jobId,
     p_quantity_complete: args.quantity,
@@ -130,4 +151,47 @@ export async function completeJob(
     p_company_id: companyId,
     p_user_id: userId
   });
+}
+
+/**
+ * Schedule or reschedule a job's operations. Routes through `triggerJobSchedule` (the Inngest
+ * scheduling path) rather than invoking the `schedule` edge function directly, so the MCP entry
+ * point uses the same validated dispatch the rest of the app does. Invalid `mode`/`direction`
+ * strings are rejected up front rather than only at the edge function.
+ *
+ * `triggerJobSchedule` fires an Inngest event with no gate of its own — every ERP route that
+ * calls it does `requirePermissions({ update: "production" })` first — so the same
+ * `production` update gate is re-applied here (the MCP executor performs no per-tool check).
+ * `client` is unused (the work is an Inngest event) but MUST stay named `client` and first —
+ * the MCP executor injects it positionally by that exact name; renaming breaks the tool.
+ */
+export async function scheduleJob(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  userId: string,
+  args: {
+    jobId: string;
+    mode?: "initial" | "reschedule";
+    direction?: "backward" | "forward";
+  }
+) {
+  await assertProductionPermission(
+    userId,
+    companyId,
+    "update",
+    "You do not have permission to schedule jobs (production update)."
+  );
+  const mode = args.mode ?? "reschedule";
+  const direction = args.direction ?? "backward";
+  if (mode !== "initial" && mode !== "reschedule") {
+    throw new Error(
+      `Invalid schedule mode "${mode}". Expected "initial" or "reschedule".`
+    );
+  }
+  if (direction !== "backward" && direction !== "forward") {
+    throw new Error(
+      `Invalid schedule direction "${direction}". Expected "backward" or "forward".`
+    );
+  }
+  return triggerJobSchedule(args.jobId, companyId, userId, mode, direction);
 }

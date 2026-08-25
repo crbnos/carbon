@@ -7728,40 +7728,13 @@ export async function saveInspectionDocumentAtomic(
 // MCP executor), not from caller-supplied (falsifiable) fields. Exposed automatically by
 // scripts/generate-mcp.ts as production_issueMaterial / _completeJob / _scheduleJob.
 
-// `issueMaterial` and `completeJob` moved to `production.mcp.server.ts`: they depend on
-// server-only modules (`@carbon/ee/storage-rules.server`, `@carbon/auth/users.server`) that
-// cannot be referenced from this file, which is client-reachable via the module barrel.
+// `issueMaterial`, `completeJob`, and `scheduleJob` moved to `production.mcp.server.ts`: they
+// depend on server-only modules (`@carbon/ee/storage-rules.server`, `@carbon/auth/users.server`)
+// that cannot be referenced from this file, which is client-reachable via the module barrel.
 
-/**
- * Schedule or reschedule a job's operations. Routes through `triggerJobSchedule` (the Inngest
- * scheduling path) rather than invoking the `schedule` edge function directly, so the MCP entry
- * point uses the same validated dispatch the rest of the app does. Invalid `mode`/`direction`
- * strings are rejected here rather than only at the edge function.
- */
-export async function scheduleJob(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  userId: string,
-  args: {
-    jobId: string;
-    mode?: "initial" | "reschedule";
-    direction?: "backward" | "forward";
-  }
-) {
-  const mode = args.mode ?? "reschedule";
-  const direction = args.direction ?? "backward";
-  if (mode !== "initial" && mode !== "reschedule") {
-    throw new Error(
-      `Invalid schedule mode "${mode}". Expected "initial" or "reschedule".`
-    );
-  }
-  if (direction !== "backward" && direction !== "forward") {
-    throw new Error(
-      `Invalid schedule direction "${direction}". Expected "backward" or "forward".`
-    );
-  }
-  return triggerJobSchedule(args.jobId, companyId, userId, mode, direction);
-}
+// `scheduleJob` moved to `production.mcp.server.ts`: it re-checks the caller's `production`
+// update permission via `getUserClaims` (a server-only module) before firing the ungated
+// `triggerJobSchedule` Inngest event, and this file is client-reachable via the module barrel.
 
 /**
  * Complete a job operation by reporting produced quantity (non-tracked items). Re-orchestrates the
