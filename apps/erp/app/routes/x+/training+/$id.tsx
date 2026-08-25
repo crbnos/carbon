@@ -77,7 +77,7 @@ export default function TrainingRoute() {
             <ResizablePanels
               explorer={<TrainingExplorer key={`explorer-${id}`} />}
               content={
-                <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <TrainingEditor />
                   <Outlet />
                 </div>
