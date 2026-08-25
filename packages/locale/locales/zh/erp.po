@@ -3429,9 +3429,6 @@ msgstr "通过粘贴身份提供商的元数据 URL 或原始元数据 XML(两�
 msgid "Connected to"
 msgstr "连接到"
 
-msgid "Connection Status"
-msgstr "连接状态"
-
 msgid "Console Mode"
 msgstr "控制台模式"
 
@@ -3856,9 +3853,6 @@ msgstr "国家"
 
 msgid "Country code"
 msgstr "国家代码"
-
-msgid "Covered Users"
-msgstr "覆盖的用户"
 
 msgid "Create"
 msgstr "创建"
@@ -15441,9 +15435,6 @@ msgstr "这些电子邮件地址将自动抄送到发送给供应商的所有电
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "这些电子邮件地址将自动抄送到发送给客户的所有报价电子邮件中。"
 
-msgid "These existing members are covered by your registered domains and will sign in with SSO automatically on their next login — no re-invite is needed. People not yet in the company still need an invite from the <0>employee accounts page</0>; invite emails for these domains route to SSO automatically."
-msgstr "这些现有成员由您注册的域涵盖,下次登录时将自动使用 SSO 登录——无需重新邀请。尚未加入公司的人仍需要来自 <0>员工账户页面</0>的邀请;这些域的邀请电子邮件自动通过 SSO 路由。"
-
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "这些物料仍需领取。现在完成将标记列表为部分。"
 
@@ -16463,9 +16454,6 @@ msgstr "受覆盖域上的用户只能使用 SSO 登录;拒绝魔法链接、Goo
 
 msgid "Users to Update"
 msgstr "要更新的用户"
-
-msgid "Users with these email domains sign in through your identity provider."
-msgstr "具有这些电子邮件域的用户通过您的身份提供商登录。"
 
 msgid "Valid From"
 msgstr "有效期开始"

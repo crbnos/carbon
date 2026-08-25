@@ -3429,9 +3429,6 @@ msgstr "Conecte seu provedor de identidade colando seu URL de metadados ou seu X
 msgid "Connected to"
 msgstr "Conectado a"
 
-msgid "Connection Status"
-msgstr "Status da Conexão"
-
 msgid "Console Mode"
 msgstr "Modo Console"
 
@@ -3856,9 +3853,6 @@ msgstr "País"
 
 msgid "Country code"
 msgstr "Código do país"
-
-msgid "Covered Users"
-msgstr "Usuários Cobertos"
 
 msgid "Create"
 msgstr "Criar"
@@ -15441,9 +15435,6 @@ msgstr "Estes endereços de email serão automaticamente copiados em todos os em
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "Estes endereços de email serão automaticamente copiados em todos os emails de cotação enviados aos clientes."
 
-msgid "These existing members are covered by your registered domains and will sign in with SSO automatically on their next login — no re-invite is needed. People not yet in the company still need an invite from the <0>employee accounts page</0>; invite emails for these domains route to SSO automatically."
-msgstr "Esses membros existentes são cobertos por seus domínios registrados e farão login com SSO automaticamente em seu próximo login — nenhum novo convite é necessário. Pessoas ainda não na empresa ainda precisam de um convite de <0>página de contas de funcionários</0>; emails de convite para esses domínios são roteados para SSO automaticamente."
-
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Esses itens ainda têm material para coletar. Finalizar agora marca a lista como Parcial."
 
@@ -16463,9 +16454,6 @@ msgstr "Usuários em domínios cobertos podem fazer login apenas com SSO; link m
 
 msgid "Users to Update"
 msgstr "Utilizadores a Atualizar"
-
-msgid "Users with these email domains sign in through your identity provider."
-msgstr "Usuários com esses domínios de email fazem login através de seu provedor de identidade."
 
 msgid "Valid From"
 msgstr "Válido a partir de"

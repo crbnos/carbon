@@ -3429,9 +3429,6 @@ msgstr "Connect your identity provider by pasting either its metadata URL or its
 msgid "Connected to"
 msgstr "Connected to"
 
-msgid "Connection Status"
-msgstr "Connection Status"
-
 msgid "Console Mode"
 msgstr "Console Mode"
 
@@ -3856,9 +3853,6 @@ msgstr "Country"
 
 msgid "Country code"
 msgstr "Country code"
-
-msgid "Covered Users"
-msgstr "Covered Users"
 
 msgid "Create"
 msgstr "Create"
@@ -15441,9 +15435,6 @@ msgstr "These email addresses will be automatically CC'd on all emails sent to s
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "These email addresses will be automatically CC'd on all quote emails sent to customers."
 
-msgid "These existing members are covered by your registered domains and will sign in with SSO automatically on their next login — no re-invite is needed. People not yet in the company still need an invite from the <0>employee accounts page</0>; invite emails for these domains route to SSO automatically."
-msgstr "These existing members are covered by your registered domains and will sign in with SSO automatically on their next login — no re-invite is needed. People not yet in the company still need an invite from the <0>employee accounts page</0>; invite emails for these domains route to SSO automatically."
-
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "These items still have material to pick. Finishing now marks the list Partial."
 
@@ -16463,9 +16454,6 @@ msgstr "Users on covered domains can sign in only with SSO; magic link, Google, 
 
 msgid "Users to Update"
 msgstr "Users to Update"
-
-msgid "Users with these email domains sign in through your identity provider."
-msgstr "Users with these email domains sign in through your identity provider."
 
 msgid "Valid From"
 msgstr "Valid From"

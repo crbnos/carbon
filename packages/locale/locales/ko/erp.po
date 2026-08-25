@@ -3429,9 +3429,6 @@ msgstr "메타데이터 URL 또는 원본 메타데이터 XML 중 정확히 하�
 msgid "Connected to"
 msgstr "연결 대상"
 
-msgid "Connection Status"
-msgstr "연결 상태"
-
 msgid "Console Mode"
 msgstr "콘솔 모드"
 
@@ -3856,9 +3853,6 @@ msgstr "국가"
 
 msgid "Country code"
 msgstr "국가 코드"
-
-msgid "Covered Users"
-msgstr "포함된 사용자"
 
 msgid "Create"
 msgstr "생성"
@@ -15441,9 +15435,6 @@ msgstr "이 이메일 주소는 공급업체에 발송되는 모든 이메일(�
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "이 이메일 주소는 고객에게 발송되는 모든 견적 이메일에 자동으로 참조(CC)됩니다."
 
-msgid "These existing members are covered by your registered domains and will sign in with SSO automatically on their next login — no re-invite is needed. People not yet in the company still need an invite from the <0>employee accounts page</0>; invite emails for these domains route to SSO automatically."
-msgstr "이러한 기존 멤버는 등록된 도메인에 포함되며 다음 로그인 시 SSO를 사용하여 자동으로 로그인합니다. 다시 초대할 필요가 없습니다. 아직 회사에 가입하지 않은 사람은 <0>직원 계정 페이지</0>에서 초대를 받아야 하며, 이러한 도메인에 대한 초대 이메일은 SSO로 자동 라우팅됩니다."
-
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "이 항목들은 여전히 선택할 자재가 있습니다. 지금 완료하면 목록이 부분으로 표시됩니다."
 
@@ -16463,9 +16454,6 @@ msgstr "포함된 도메인의 사용자는 SSO로만 로그인할 수 있습니
 
 msgid "Users to Update"
 msgstr "업데이트할 사용자"
-
-msgid "Users with these email domains sign in through your identity provider."
-msgstr "이러한 이메일 도메인을 가진 사용자는 자격 증명 공급자를 통해 로그인합니다."
 
 msgid "Valid From"
 msgstr "유효 시작일"

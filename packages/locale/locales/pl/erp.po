@@ -3429,9 +3429,6 @@ msgstr "Połącz dostawcę tożsamości, wklejając adres URL jego metadanych lu
 msgid "Connected to"
 msgstr "Połączono z"
 
-msgid "Connection Status"
-msgstr "Stan połączenia"
-
 msgid "Console Mode"
 msgstr "Tryb konsoli"
 
@@ -3856,9 +3853,6 @@ msgstr "Kraj"
 
 msgid "Country code"
 msgstr "Kod kraju"
-
-msgid "Covered Users"
-msgstr "Objęci użytkownicy"
 
 msgid "Create"
 msgstr "Utwórz"
@@ -15441,9 +15435,6 @@ msgstr "Te adresy e-mail będą automatycznie dodawane w polu DW do wszystkich w
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "Te adresy e-mail będą automatycznie dodawane w polu DW do wszystkich wiadomości e-mail z ofertami wysyłanych do klientów."
 
-msgid "These existing members are covered by your registered domains and will sign in with SSO automatically on their next login — no re-invite is needed. People not yet in the company still need an invite from the <0>employee accounts page</0>; invite emails for these domains route to SSO automatically."
-msgstr "Ci istniejący członkowie są objęci Twoimi zarejestrowanymi domenami i będą logować się za pośrednictwem logowania jednokrotnego automatycznie przy następnym logowaniu — nie jest potrzebne ponowne zaproszenie. Osoby, które nie są jeszcze w firmie, nadal potrzebują zaproszenia ze strony <0>kont pracowników</0>; wiadomości e-mail z zaproszeniami dla tych domen kierują się automatycznie do logowania jednokrotnego."
-
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Te elementy mają jeszcze materiał do pobrania. Zakończenie teraz oznaczy listę jako Częściowa."
 
@@ -16463,9 +16454,6 @@ msgstr "Użytkownicy z objętych domen mogą logować się tylko za pośrednictw
 
 msgid "Users to Update"
 msgstr "Użytkownicy do aktualizacji"
-
-msgid "Users with these email domains sign in through your identity provider."
-msgstr "Użytkownicy z tymi domenami e-mail logują się za pośrednictwem dostawcy tożsamości."
 
 msgid "Valid From"
 msgstr "Ważne od"

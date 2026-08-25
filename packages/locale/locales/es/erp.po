@@ -3429,9 +3429,6 @@ msgstr "Conecte su proveedor de identidad pegando su URL de metadatos o su XML d
 msgid "Connected to"
 msgstr "Conectado a"
 
-msgid "Connection Status"
-msgstr "Estado de la conexión"
-
 msgid "Console Mode"
 msgstr "Modo de Consola"
 
@@ -3856,9 +3853,6 @@ msgstr "País"
 
 msgid "Country code"
 msgstr "Código de país"
-
-msgid "Covered Users"
-msgstr "Usuarios cubiertos"
 
 msgid "Create"
 msgstr "Crear"
@@ -15441,9 +15435,6 @@ msgstr "Estas direcciones de correo electrónico se copiarán automáticamente e
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "Estas direcciones de correo electrónico se copiarán automáticamente en todos los correos electrónicos de presupuestos enviados a los clientes."
 
-msgid "These existing members are covered by your registered domains and will sign in with SSO automatically on their next login — no re-invite is needed. People not yet in the company still need an invite from the <0>employee accounts page</0>; invite emails for these domains route to SSO automatically."
-msgstr "Estos miembros existentes están cubiertos por sus dominios registrados e iniciarán sesión con SSO automáticamente en su próximo inicio de sesión — no se necesita re-invitación. Las personas que aún no están en la empresa aún necesitan una invitación de la <0>página de cuentas de empleados</0>; los correos de invitación para estos dominios se enrutan a SSO automáticamente."
-
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Estos elementos aún tienen material para recoger. Finalizar ahora marca la lista como Parcial."
 
@@ -16463,9 +16454,6 @@ msgstr "Los usuarios en dominios cubiertos solo pueden iniciar sesión con SSO; 
 
 msgid "Users to Update"
 msgstr "Usuarios a Actualizar"
-
-msgid "Users with these email domains sign in through your identity provider."
-msgstr "Los usuarios con estos dominios de correo electrónico inician sesión a través de su proveedor de identidad."
 
 msgid "Valid From"
 msgstr "Válido desde"

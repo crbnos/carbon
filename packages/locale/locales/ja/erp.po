@@ -3429,9 +3429,6 @@ msgstr "IDプロバイダーのメタデータURLまたは生のメタデータX
 msgid "Connected to"
 msgstr "接続先"
 
-msgid "Connection Status"
-msgstr "接続状態"
-
 msgid "Console Mode"
 msgstr "コンソールモード"
 
@@ -3856,9 +3853,6 @@ msgstr "国"
 
 msgid "Country code"
 msgstr "国コード"
-
-msgid "Covered Users"
-msgstr "対象ユーザー"
 
 msgid "Create"
 msgstr "作成"
@@ -15441,9 +15435,6 @@ msgstr "これらのメールアドレスは、サプライヤーに送信され
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "これらのメールアドレスは、顧客に送信されるすべての見積メールに自動的にCC送信されます。"
 
-msgid "These existing members are covered by your registered domains and will sign in with SSO automatically on their next login — no re-invite is needed. People not yet in the company still need an invite from the <0>employee accounts page</0>; invite emails for these domains route to SSO automatically."
-msgstr "これらの既存メンバーは登録されたドメインに含まれており、次回のログイン時にSSOで自動的にサインインします。再招待は不要です。まだ企業に属していないユーザーは、<0>従業員アカウントページ</0>から招待を受け取る必要があります。これらのドメインの招待メールはSSOに自動的にルーティングされます。"
-
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "これらのアイテムはまだピッキングすべき材料があります。今完了するとリストが部分的になります。"
 
@@ -16463,9 +16454,6 @@ msgstr "対象ドメインのユーザーはSSOでのみサインインできま
 
 msgid "Users to Update"
 msgstr "更新するユーザー"
-
-msgid "Users with these email domains sign in through your identity provider."
-msgstr "これらのメールドメインのユーザーはIDプロバイダーを通じてサインインします。"
 
 msgid "Valid From"
 msgstr "有効期間開始"

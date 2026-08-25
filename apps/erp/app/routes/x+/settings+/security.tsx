@@ -13,7 +13,6 @@ import {
 } from "@carbon/ee/sso.server";
 import { ValidatedForm } from "@carbon/form";
 import {
-  Badge,
   Button,
   Card,
   CardContent,
@@ -38,7 +37,7 @@ import {
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, Link, redirect, useFetcher, useLoaderData } from "react-router";
 import { Hidden, Input, Submit, TextArea } from "~/components/Form";
@@ -78,8 +77,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       ssoEnabled,
       connection: null,
       acsUrl,
-      metadataUrl,
-      coveredUsers: [] as { id: string; name: string; email: string }[]
+      metadataUrl
     };
   }
 
@@ -94,36 +92,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
-  // Informational: active/invited employees whose email domain is bound to
-  // the connection. Existing members are linked automatically on their next
-  // SSO sign-in — no re-invite is needed. Filtered in the query (no row cap):
-  // `%@<domain>` is an exact-suffix match with a literal "@", so a covered
-  // example.com never pulls in sub.example.com, mirroring the callback's
-  // exact-domain check. The domain validator's [a-z0-9.-] charset means the
-  // pattern can't carry ilike wildcards or break the .or() separator.
-  let coveredUsers: { id: string; name: string; email: string }[] = [];
-  if (connection.data) {
-    const domains = connection.data.domains ?? [];
-    if (domains.length > 0) {
-      const covered = await client
-        .from("employees")
-        .select("id, name, email")
-        .eq("companyId", companyId)
-        .or(domains.map((domain) => `email.ilike.%@${domain}`).join(","));
-      coveredUsers = (covered.data ?? []).map((employee) => ({
-        id: employee.id ?? employee.email ?? "",
-        name: employee.name ?? employee.email ?? "",
-        email: employee.email ?? ""
-      }));
-    }
-  }
-
   return {
     ssoEnabled,
     connection: connection.data,
     acsUrl,
-    metadataUrl,
-    coveredUsers
+    metadataUrl
   };
 }
 
@@ -159,7 +132,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function Security() {
-  const { ssoEnabled, connection, acsUrl, metadataUrl, coveredUsers } =
+  const { ssoEnabled, connection, acsUrl, metadataUrl } =
     useLoaderData<typeof loader>();
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -170,6 +143,20 @@ export default function Security() {
   const [deactivateModalOpen, setDeactivateModalOpen] = useState(false);
   const deactivateFetcher = useFetcher<{}>();
   const requireSsoFetcher = useFetcher<{}>();
+  // The IdP form posts to the action-only /settings/sso route. Submitting
+  // through a fetcher keeps that off the navigation stack — a plain form
+  // submit is a pathname change, which Submit's unsaved-changes blocker
+  // intercepts as "leaving the page".
+  const connectionFetcher = useFetcher<{}>();
+
+  // A successful deactivation redirects and revalidates the loader, so the
+  // connection disappears — close the confirm modal with it instead of
+  // leaving it floating over the setup form. A failed deactivation returns
+  // data (connection still present), so the modal stays open with the error
+  // flash visible.
+  useEffect(() => {
+    if (!connection) setDeactivateModalOpen(false);
+  }, [connection]);
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">
@@ -276,6 +263,7 @@ export default function Security() {
               validator={ssoConnectionValidator}
               method="post"
               action={path.to.sso}
+              fetcher={connectionFetcher}
               defaultValues={{
                 metadataUrl: connection?.metadataUrl ?? "",
                 metadataXml: connection?.metadataXml ?? "",
@@ -316,125 +304,58 @@ export default function Security() {
                       label={t`Email Domains`}
                       helperText={t`Comma-separated list of email domains, e.g. example.com, example.org`}
                     />
+                    {connection && (
+                      <HStack className="w-full justify-between items-center">
+                        <div>
+                          <p className="text-sm font-medium">
+                            <Trans>Require SSO</Trans>
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            <Trans>
+                              Users on covered domains can sign in only with
+                              SSO; magic link, Google, and passkeys are refused.
+                            </Trans>
+                          </p>
+                        </div>
+                        {/* The connection loaded here is active by definition
+                            (getSsoConnection filters active = true), so the
+                            switch is enabled whenever a connection renders. */}
+                        <Switch
+                          checked={connection.requireSso === true}
+                          onCheckedChange={(checked) =>
+                            requireSsoFetcher.submit(
+                              {
+                                intent: "requireSso",
+                                enabled: String(checked)
+                              },
+                              { method: "post", action: path.to.sso }
+                            )
+                          }
+                          disabled={
+                            requireSsoFetcher.state !== "idle" || !canEdit
+                          }
+                          aria-label={t`Require SSO`}
+                        />
+                      </HStack>
+                    )}
                   </VStack>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="justify-between">
                   <Submit isDisabled={!canEdit}>
                     <Trans>Save</Trans>
                   </Submit>
+                  {connection && (
+                    <Button
+                      variant="destructive"
+                      isDisabled={!canEdit}
+                      onClick={() => setDeactivateModalOpen(true)}
+                    >
+                      <Trans>Deactivate</Trans>
+                    </Button>
+                  )}
                 </CardFooter>
               </Card>
             </ValidatedForm>
-
-            {connection && (
-              <Card>
-                <CardHeader>
-                  <HStack className="justify-between items-center">
-                    <div>
-                      <CardTitle>
-                        <Trans>Connection Status</Trans>
-                      </CardTitle>
-                      <CardDescription>
-                        <Trans>
-                          Users with these email domains sign in through your
-                          identity provider.
-                        </Trans>
-                      </CardDescription>
-                    </div>
-                    <Badge variant="green">
-                      <Trans>Active</Trans>
-                    </Badge>
-                  </HStack>
-                </CardHeader>
-                <CardContent>
-                  <VStack spacing={4}>
-                    <HStack className="flex-wrap gap-2">
-                      {(connection.domains ?? []).map((domain) => (
-                        <Badge key={domain} variant="secondary">
-                          {domain}
-                        </Badge>
-                      ))}
-                    </HStack>
-                    <HStack className="w-full justify-between items-center">
-                      <div>
-                        <p className="text-sm font-medium">
-                          <Trans>Require SSO</Trans>
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          <Trans>
-                            Users on covered domains can sign in only with SSO;
-                            magic link, Google, and passkeys are refused.
-                          </Trans>
-                        </p>
-                      </div>
-                      {/* The connection loaded here is active by definition
-                          (getSsoConnection filters active = true), so the
-                          switch is enabled whenever a connection renders. */}
-                      <Switch
-                        checked={connection.requireSso === true}
-                        onCheckedChange={(checked) =>
-                          requireSsoFetcher.submit(
-                            { intent: "requireSso", enabled: String(checked) },
-                            { method: "post", action: path.to.sso }
-                          )
-                        }
-                        disabled={
-                          requireSsoFetcher.state !== "idle" || !canEdit
-                        }
-                        aria-label={t`Require SSO`}
-                      />
-                    </HStack>
-                  </VStack>
-                </CardContent>
-                <CardFooter>
-                  <Button
-                    variant="destructive"
-                    isDisabled={!canEdit}
-                    onClick={() => setDeactivateModalOpen(true)}
-                  >
-                    <Trans>Deactivate</Trans>
-                  </Button>
-                </CardFooter>
-              </Card>
-            )}
-
-            {connection && coveredUsers.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>
-                    <Trans>Covered Users</Trans>
-                  </CardTitle>
-                  <CardDescription>
-                    <Trans>
-                      These existing members are covered by your registered
-                      domains and will sign in with SSO automatically on their
-                      next login — no re-invite is needed. People not yet in the
-                      company still need an invite from the{" "}
-                      <Link
-                        to={path.to.employeeAccounts}
-                        className="text-primary underline"
-                      >
-                        employee accounts page
-                      </Link>
-                      ; invite emails for these domains route to SSO
-                      automatically.
-                    </Trans>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <VStack spacing={2}>
-                    {coveredUsers.map((user) => (
-                      <HStack key={user.id} className="w-full justify-between">
-                        <span className="text-sm font-medium">{user.name}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {user.email}
-                        </span>
-                      </HStack>
-                    ))}
-                  </VStack>
-                </CardContent>
-              </Card>
-            )}
 
             {deactivateModalOpen && (
               <Modal

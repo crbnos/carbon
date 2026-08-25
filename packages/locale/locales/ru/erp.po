@@ -3429,9 +3429,6 @@ msgstr "Подключите вашего поставщика удостове�
 msgid "Connected to"
 msgstr "Подключено к"
 
-msgid "Connection Status"
-msgstr "Статус подключения"
-
 msgid "Console Mode"
 msgstr "Режим консоли"
 
@@ -3856,9 +3853,6 @@ msgstr "Страна"
 
 msgid "Country code"
 msgstr "Код страны"
-
-msgid "Covered Users"
-msgstr "Охваченные пользователи"
 
 msgid "Create"
 msgstr "Создать"
@@ -15441,9 +15435,6 @@ msgstr "Эти адреса электронной почты будут авт�
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "Эти адреса электронной почты будут автоматически добавлены в копию на все письма с предложениями, отправляемые клиентам."
 
-msgid "These existing members are covered by your registered domains and will sign in with SSO automatically on their next login — no re-invite is needed. People not yet in the company still need an invite from the <0>employee accounts page</0>; invite emails for these domains route to SSO automatically."
-msgstr "Эти существующие члены охвачены вашими зарегистрированными доменами и будут входить с SSO автоматически при следующем входе — повторное приглашение не требуется. Люди, которые еще не находятся в компании, по-прежнему нуждаются в приглашении со <0>страницы учётных записей сотрудников</0>; письма приглашений для этих доменов автоматически направляются в SSO."
-
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "У этих товаров все еще есть материал для комплектации. Завершение сейчас отметит список как Частичный."
 
@@ -16463,9 +16454,6 @@ msgstr "Пользователи охваченных доменов могут 
 
 msgid "Users to Update"
 msgstr "Пользователи для обновления"
-
-msgid "Users with these email domains sign in through your identity provider."
-msgstr "Пользователи с этими доменами электронной почты входят через вашего поставщика удостоверений."
 
 msgid "Valid From"
 msgstr "Действительно с"

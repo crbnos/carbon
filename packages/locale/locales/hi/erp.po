@@ -3429,9 +3429,6 @@ msgstr "अपने आइडेंटिटी प्रदाता को �
 msgid "Connected to"
 msgstr "को जोड़ा गया"
 
-msgid "Connection Status"
-msgstr "कनेक्शन स्थिति"
-
 msgid "Console Mode"
 msgstr "कंसोल मोड"
 
@@ -3856,9 +3853,6 @@ msgstr "देश"
 
 msgid "Country code"
 msgstr "देश कोड"
-
-msgid "Covered Users"
-msgstr "कवर किए गए उपयोगकर्ता"
 
 msgid "Create"
 msgstr "बनाएं"
@@ -15441,9 +15435,6 @@ msgstr "ये ईमेल पते सभी आपूर्तिकर्�
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "ये ईमेल पते सभी ग्राहकों को भेजे गए उद्धरण ईमेल पर स्वचालित रूप से CC किए जाएंगे।"
 
-msgid "These existing members are covered by your registered domains and will sign in with SSO automatically on their next login — no re-invite is needed. People not yet in the company still need an invite from the <0>employee accounts page</0>; invite emails for these domains route to SSO automatically."
-msgstr "ये मौजूदा सदस्य आपके पंजीकृत डोमेन द्वारा कवर किए गए हैं और अपने अगले लॉगिन पर SSO के साथ स्वचालित रूप से साइन इन करेंगे — कोई पुन: आमंत्रण की आवश्यकता नहीं है। जो लोग अभी तक कंपनी में नहीं हैं उन्हें <0>कर्मचारी खातों के पृष्ठ</0> से आमंत्रण की आवश्यकता है; इन डोमेन के लिए आमंत्रण ईमेल स्वचालित रूप से SSO को रूट करता है।"
-
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "इन आइटमों में अभी भी सामग्री चुनने के लिए है। अभी समाप्त करने से सूची को आंशिक चिह्नित किया जाता है।"
 
@@ -16463,9 +16454,6 @@ msgstr "कवर किए गए डोमेन पर उपयोगकर�
 
 msgid "Users to Update"
 msgstr "अपडेट करने के लिए उपयोगकर्ता"
-
-msgid "Users with these email domains sign in through your identity provider."
-msgstr "इन ईमेल डोमेन वाले उपयोगकर्ता आपके आइडेंटिटी प्रदाता के माध्यम से साइन इन करते हैं।"
 
 msgid "Valid From"
 msgstr "वैध से"

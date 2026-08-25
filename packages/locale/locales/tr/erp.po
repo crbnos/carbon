@@ -3429,9 +3429,6 @@ msgstr "Kimlik sağlayıcınızı, meta veri URL'sini veya ham meta veri XML'sin
 msgid "Connected to"
 msgstr "Bağlı"
 
-msgid "Connection Status"
-msgstr "Bağlantı Durumu"
-
 msgid "Console Mode"
 msgstr "Konsol Modu"
 
@@ -3856,9 +3853,6 @@ msgstr "Ülke"
 
 msgid "Country code"
 msgstr "Ülke kodu"
-
-msgid "Covered Users"
-msgstr "Kapsanan Kullanıcılar"
 
 msgid "Create"
 msgstr "Oluştur"
@@ -15441,9 +15435,6 @@ msgstr "Bu e-posta adresleri, tedarikçilere gönderilen tüm e-postalara (tekli
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "Bu e-posta adresleri, müşterilere gönderilen tüm teklif e-postalarına otomatik olarak CC'lenecektir."
 
-msgid "These existing members are covered by your registered domains and will sign in with SSO automatically on their next login — no re-invite is needed. People not yet in the company still need an invite from the <0>employee accounts page</0>; invite emails for these domains route to SSO automatically."
-msgstr "Bu mevcut üyeler kayıtlı alanlarınız tarafından kapsanır ve bir sonraki oturum açışlarında SSO ile otomatik olarak oturum açarlar — yeniden davet gerekmez. Henüz şirkette olmayan kişiler yine de <0>çalışan hesapları sayfasından</0> bir davet gerektirir; bu alanlar için davet e-postaları otomatik olarak SSO'ya yönlendirilir."
-
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Bu maddeler için hala seçilecek malzeme var. Şimdi bitirmek listeyi Kısmi olarak işaretler."
 
@@ -16463,9 +16454,6 @@ msgstr "Kapsanan alanlarındaki kullanıcılar yalnızca SSO ile oturum açabili
 
 msgid "Users to Update"
 msgstr "Güncellenecek Kullanıcılar"
-
-msgid "Users with these email domains sign in through your identity provider."
-msgstr "Bu e-posta etki alanlarına sahip kullanıcılar kimlik sağlayıcınız aracılığıyla oturum açarlar."
 
 msgid "Valid From"
 msgstr "Geçerli Tarih"

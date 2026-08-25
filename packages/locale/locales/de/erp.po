@@ -3429,9 +3429,6 @@ msgstr "Verbinden Sie Ihren Identitätsanbieter, indem Sie entweder seine Metada
 msgid "Connected to"
 msgstr "Verbunden mit"
 
-msgid "Connection Status"
-msgstr "Verbindungsstatus"
-
 msgid "Console Mode"
 msgstr "Konsolenmodus"
 
@@ -3856,9 +3853,6 @@ msgstr "Land"
 
 msgid "Country code"
 msgstr "Ländercode"
-
-msgid "Covered Users"
-msgstr "Abgedeckte Benutzer"
 
 msgid "Create"
 msgstr "Erstellen"
@@ -15441,9 +15435,6 @@ msgstr "Diese E-Mail-Adressen werden automatisch in CC auf alle an Lieferanten g
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "Diese E-Mail-Adressen werden automatisch in CC auf alle Angebots-E-Mails kopiert, die an Kunden versendet werden."
 
-msgid "These existing members are covered by your registered domains and will sign in with SSO automatically on their next login — no re-invite is needed. People not yet in the company still need an invite from the <0>employee accounts page</0>; invite emails for these domains route to SSO automatically."
-msgstr "Diese vorhandenen Mitglieder werden von Ihren registrierten Domänen abgedeckt und melden sich bei der nächsten Anmeldung automatisch mit SSO an – eine erneute Einladung ist nicht erforderlich. Personen, die noch nicht im Unternehmen sind, benötigen weiterhin eine Einladung von der <0>Seite für Mitarbeiterkonten</0>; Einladungs-E-Mails für diese Domänen werden automatisch über SSO weitergeleitet."
-
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Diese Artikel enthalten noch Material zum Kommissionieren. Das Beenden markiert die Liste als Teilweise."
 
@@ -16463,9 +16454,6 @@ msgstr "Benutzer in abgedeckten Domänen können sich nur mit SSO anmelden; Magi
 
 msgid "Users to Update"
 msgstr "Benutzer zum Aktualisieren"
-
-msgid "Users with these email domains sign in through your identity provider."
-msgstr "Benutzer mit diesen E-Mail-Domänen melden sich über Ihren Identitätsanbieter an."
 
 msgid "Valid From"
 msgstr "Gültig ab"

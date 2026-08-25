@@ -3429,9 +3429,6 @@ msgstr "Connectez votre fournisseur d'identité en collant soit son URL de méta
 msgid "Connected to"
 msgstr "Connecté à"
 
-msgid "Connection Status"
-msgstr "Statut de la connexion"
-
 msgid "Console Mode"
 msgstr "Mode Console"
 
@@ -3856,9 +3853,6 @@ msgstr "Pays"
 
 msgid "Country code"
 msgstr "Code pays"
-
-msgid "Covered Users"
-msgstr "Utilisateurs couverts"
 
 msgid "Create"
 msgstr "Créer"
@@ -15441,9 +15435,6 @@ msgstr "Ces adresses e-mail seront automatiquement mises en copie sur tous les e
 msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
 msgstr "Ces adresses e-mail seront automatiquement mises en copie sur tous les e-mails de devis envoyés aux clients."
 
-msgid "These existing members are covered by your registered domains and will sign in with SSO automatically on their next login — no re-invite is needed. People not yet in the company still need an invite from the <0>employee accounts page</0>; invite emails for these domains route to SSO automatically."
-msgstr "Ces membres existants sont couverts par vos domaines enregistrés et se connecteront avec SSO automatiquement à leur prochaine connexion — aucune réinvitation n'est nécessaire. Les personnes pas encore dans l'entreprise ont toujours besoin d'une invitation à partir de la <0>page des comptes d'employés</0> ; les e-mails d'invitation pour ces domaines sont acheminés automatiquement vers SSO."
-
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Ces articles ont toujours du matériel à prélever. Terminer maintenant marque la liste comme Partielle."
 
@@ -16463,9 +16454,6 @@ msgstr "Les utilisateurs des domaines couverts ne peuvent se connecter que via S
 
 msgid "Users to Update"
 msgstr "Utilisateurs à mettre à jour"
-
-msgid "Users with these email domains sign in through your identity provider."
-msgstr "Les utilisateurs avec ces domaines de messagerie se connectent via votre fournisseur d'identité."
 
 msgid "Valid From"
 msgstr "Valide à partir du"
