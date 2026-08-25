@@ -22,8 +22,10 @@
 #   ADMIN_PASSWORD  password to set on that account locally (default: localpass)
 #   SCRUB_EMAILS    set to any non-empty value to scrub every email address
 #                   (auth.users, auth.identities, public.user, company,
-#                   contact, invite, companySettings, quote) to @example.test
+#                   contact, invite, companySettings, the AP/AR billing
+#                   addresses, quote) to @example.test
 #                   so no production emails can be contacted from local.
+#                   The script FAILS (exit 1) if any non-admin email survives.
 #                   The ADMIN_EMAIL account is preserved so you can still log in.
 #   KEEP_STORAGE_OBJECTS
 #                   set to any non-empty value to KEEP the dump's
@@ -134,12 +136,39 @@ if head -c 5 "$BACKUP_FILE" | grep -q '^PGDMP'; then
     --no-owner --no-privileges \
     "$BACKUP_FILE" 2> /tmp/restore-errors.log || true
 else
-  # Plain-text SQL: strip PG17 \restrict/\unrestrict so psql isn't sandboxed
+  # Plain-text SQL: strip PG17 \restrict/\unrestrict so psql isn't sandboxed.
+  # `|| true` (matching the pg_restore branch): if the server drops the
+  # connection mid-restore (e.g. a crash on a schema-drifted COPY), psql exits
+  # 2 and `set -e` would otherwise kill the script HERE — silently skipping
+  # localization, the SCRUB_EMAILS scrub, and the admin grant, and leaving
+  # real production emails in the local DB with no warning.
   sed -E '/^\\(restrict|unrestrict)([[:space:]]|$)/d' "$BACKUP_FILE" \
-    | $PSQL_SA -v ON_ERROR_STOP=0 2> /tmp/restore-errors.log
+    | $PSQL_SA -v ON_ERROR_STOP=0 2> /tmp/restore-errors.log || true
 fi
 err_count=$(grep -ci '^\(pg_restore: \)\?error' /tmp/restore-errors.log || true)
 echo "  → /tmp/restore-errors.log ($err_count errors; most are harmless 'already exists' / role permission noise)"
+# If the connection died mid-restore, Docker restarts Postgres — but the steps
+# below (superuser re-grant, localization, email scrub) each need a live
+# connection. Say what happened, then wait for the server to come back rather
+# than failing them one by one; if it never returns, fail loudly instead of
+# ending the script with unscrubbed data on disk.
+if grep -qE 'server closed the connection|connection to server was lost' /tmp/restore-errors.log; then
+  echo "  ⚠ the server connection dropped during the restore — the restored data is"
+  echo "    likely INCOMPLETE (see /tmp/restore-errors.log). Waiting for Postgres to"
+  echo "    come back so the post-restore steps (email scrub, localization) still run."
+fi
+for attempt in $(seq 1 30); do
+  if $PSQL_PG -c 'SELECT 1' >/dev/null 2>&1; then
+    break
+  fi
+  if [[ "$attempt" -eq 30 ]]; then
+    echo "✗ Postgres did not come back after the restore. Nothing after the data load" >&2
+    echo "  has run — including the SCRUB_EMAILS scrub. Start the stack ('crbn up')" >&2
+    echo "  and re-run this script." >&2
+    exit 1
+  fi
+  sleep 2
+done
 # Reapply superuser to postgres (the dump's ALTER ROLE strips it).
 $PSQL_SA -c "ALTER ROLE postgres WITH SUPERUSER CREATEROLE CREATEDB LOGIN REPLICATION BYPASSRLS;" \
   >/dev/null 2>&1 || true
@@ -367,6 +396,8 @@ BEGIN
       ('public', 'invite',          'email',                       'inv_'),
       ('public', 'companySettings', 'accountsPayableEmail',        'ap_'),
       ('public', 'companySettings', 'accountsReceivableEmail',     'ar_'),
+      ('public', 'companyAccountsPayableBillingAddress',    'email', 'apb_'),
+      ('public', 'companyAccountsReceivableBillingAddress', 'email', 'arb_'),
       ('public', 'quote',           'digitalQuoteAcceptedByEmail', 'qa_'),
       ('public', 'quote',           'digitalQuoteRejectedByEmail', 'qr_')
     ) AS t(schema_name, table_name, column_name, prefix)
@@ -472,5 +503,22 @@ if [[ -n "$SCRUB_EMAILS" ]]; then
     UNION ALL SELECT 'public.company leaked', count(*) FROM public.company   WHERE email IS NOT NULL AND email NOT LIKE '%@example.test'
     UNION ALL SELECT 'public.contact leaked', count(*) FROM public.contact   WHERE email IS NOT NULL AND email NOT LIKE '%@example.test';
   "
+  # The scrub was explicitly requested, so an incomplete one is a FAILURE, not
+  # a table of numbers to eyeball. Only the preserved admin may remain (one row
+  # each in auth.users and public.user).
+  LEAKED=$($PSQL_PG -At -c "
+    SELECT (SELECT count(*) FROM auth.users      WHERE email IS NOT NULL AND email NOT LIKE '%@example.test')
+         + (SELECT count(*) FROM public.\"user\" WHERE email IS NOT NULL AND email NOT LIKE '%@example.test')
+         + (SELECT count(*) FROM public.company  WHERE email IS NOT NULL AND email NOT LIKE '%@example.test')
+         + (SELECT count(*) FROM public.contact  WHERE email IS NOT NULL AND email NOT LIKE '%@example.test');
+  ")
+  ALLOWED=0
+  [[ -n "$ADMIN_USER_ID" ]] && ALLOWED=2
+  if [[ "${LEAKED:-0}" -gt "$ALLOWED" ]]; then
+    echo "✗ SCRUB_EMAILS was set but $LEAKED real email addresses remain (see the" >&2
+    echo "  counts above). The restore may have failed partway — check" >&2
+    echo "  /tmp/restore-errors.log, then re-run this script." >&2
+    exit 1
+  fi
 fi
 echo "✅ Done — Studio: http://127.0.0.1:$((PORT_DB+2))   (port_db+2 is the Studio port crbn assigned)"
