@@ -1,3 +1,4 @@
+import { hasPermission } from "@carbon/auth";
 import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database } from "@carbon/database";
 import {
@@ -15,26 +16,11 @@ import { triggerJobSchedule } from "./production.service";
 // `.server` reference reachable from it. This module is server-only (never
 // re-exported by the barrel) and is pulled into the MCP tool set by
 // `scripts/generate-mcp.ts` + `direct-executor.ts`, which run server-side only.
-
-/**
- * Re-check a `production` permission for the connected user. The MCP executor injects
- * companyId/userId from the OAuth token but performs no per-tool permission check, and some
- * of these writes reach privileged paths (a SECURITY DEFINER RPC, an Inngest trigger) that
- * bypass RLS — so the ERP route's permission gate is re-applied here. Honors the `"0"`
- * all-companies wildcard, matching `requirePermissions`.
- */
-async function assertProductionPermission(
-  userId: string,
-  companyId: string,
-  action: "create" | "update" | "delete",
-  message: string
-) {
-  const claims = await getUserClaims(userId, companyId);
-  const scoped = claims?.permissions?.production?.[action];
-  if (!scoped?.some((c) => c === companyId || c === "0")) {
-    throw new Error(message);
-  }
-}
+//
+// The MCP executor injects companyId/userId from the OAuth token but performs no
+// per-tool permission check, and some of these writes reach privileged paths (a
+// SECURITY DEFINER RPC, an Inngest trigger) that bypass RLS — so the ERP route's
+// permission gate is re-applied inline via `hasPermission` on the caller's claims.
 
 /**
  * Issue material to a job operation, enforcing work-center material-issue rules first.
@@ -137,12 +123,12 @@ export async function completeJob(
     locationId?: string;
   }
 ) {
-  await assertProductionPermission(
-    userId,
-    companyId,
-    "update",
-    "You do not have permission to complete jobs to inventory (production update)."
-  );
+  const claims = await getUserClaims(userId, companyId);
+  if (!hasPermission(claims?.permissions, "production", "update", companyId)) {
+    throw new Error(
+      "You do not have permission to complete jobs to inventory (production update)."
+    );
+  }
   return client.rpc("complete_job_to_inventory", {
     p_job_id: args.jobId,
     p_quantity_complete: args.quantity,
@@ -175,12 +161,12 @@ export async function scheduleJob(
     direction?: "backward" | "forward";
   }
 ) {
-  await assertProductionPermission(
-    userId,
-    companyId,
-    "update",
-    "You do not have permission to schedule jobs (production update)."
-  );
+  const claims = await getUserClaims(userId, companyId);
+  if (!hasPermission(claims?.permissions, "production", "update", companyId)) {
+    throw new Error(
+      "You do not have permission to schedule jobs (production update)."
+    );
+  }
   const mode = args.mode ?? "reschedule";
   const direction = args.direction ?? "backward";
   if (mode !== "initial" && mode !== "reschedule") {
