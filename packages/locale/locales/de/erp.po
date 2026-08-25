@@ -168,6 +168,9 @@ msgstr "{from}–{to} von {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} von {count} Operationen"
 
+msgid "{hiddenCount} more: {hiddenNames}"
+msgstr ""
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -8461,6 +8464,9 @@ msgstr "Weniger manuelle Arbeit"
 msgid "Less manual work, fewer errors"
 msgstr "Weniger manuelle Arbeit, weniger Fehler"
 
+msgid "Let's Build"
+msgstr ""
+
 msgid "Let's build something"
 msgstr "Lassen Sie uns etwas bauen"
 
@@ -8635,9 +8641,6 @@ msgstr "Gesperrt"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "Das Sperren macht die Periode schreibgeschützt für operative Dokumente (Eingänge, Versände, Rechnungen), erlaubt aber weiterhin Buchhaltungsanpassungen wie Abschreibungen und Ausrangierungen. Eine Periode muss gesperrt werden, bevor sie geschlossen werden kann."
-
-msgid "Log In"
-msgstr "Anmelden"
 
 msgid "Log nonconformances and drive a CAPA"
 msgstr "Nichtkonformitäten protokollieren und CAPA einleiten"
@@ -13846,6 +13849,9 @@ msgstr "Wird als schwacher Hintergrund hinter jeder Seite generierter PDFs angez
 msgid "Shown to the user when this rule fails."
 msgstr "Wird dem Benutzer angezeigt, wenn diese Regel fehlschlägt."
 
+msgid "Sign in to Carbon"
+msgstr ""
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Melden Sie sich mit Biometrie statt mit einem Magic Link an. Passkeys sind durch Face ID, Touch ID oder Ihre Geräte-PIN gesichert."
 
@@ -17553,6 +17559,9 @@ msgstr "Sie haben dieses Los erhalten"
 
 msgid "You're live on Carbon"
 msgstr "Du bist live auf Carbon"
+
+msgid "You're one step away from your workspace."
+msgstr ""
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "Du richtest Carbon selbst ein, in deinem eigenen Tempo"

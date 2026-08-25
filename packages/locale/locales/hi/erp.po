@@ -168,6 +168,9 @@ msgstr "{from}–{to} में से {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} में से {count} परिचालन"
 
+msgid "{hiddenCount} more: {hiddenNames}"
+msgstr ""
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -8461,6 +8464,9 @@ msgstr "कम मैनुअल काम"
 msgid "Less manual work, fewer errors"
 msgstr "कम मैनुअल काम, कम त्रुटियां"
 
+msgid "Let's Build"
+msgstr ""
+
 msgid "Let's build something"
 msgstr "चलिए कुछ बनाते हैं"
 
@@ -8635,9 +8641,6 @@ msgstr "लॉक किया गया"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "लॉकिंग अवधि को परिचालन दस्तावेज़ों (रसीदें, शिपमेंट, चालान) के लिए केवल-पढ़ने योग्य बनाता है जबकि मूल्यह्रास और निस्तारण जैसे लेखा समायोजन की अनुमति देता है। अवधि को बंद किए जाने से पहले उसे लॉक किया जाना चाहिए।"
-
-msgid "Log In"
-msgstr "लॉग इन करें"
 
 msgid "Log nonconformances and drive a CAPA"
 msgstr "गैर-अनुरूपताओं को लॉग करें और CAPA चलाएं"
@@ -13846,6 +13849,9 @@ msgstr "जनरेट की गई PDF के हर पेज के पी�
 msgid "Shown to the user when this rule fails."
 msgstr "जब यह नियम विफल हो तो उपयोगकर्ता को दिखाया जाता है।"
 
+msgid "Sign in to Carbon"
+msgstr ""
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "जादुई लिंक के बजाय बायोमेट्रिक्स के साथ साइन इन करें। पासकीज़ Face ID, Touch ID, या आपकी डिवाइस PIN द्वारा सुरक्षित हैं।"
 
@@ -17553,6 +17559,9 @@ msgstr "आपने यह लॉट प्राप्त किया"
 
 msgid "You're live on Carbon"
 msgstr "आप Carbon पर लाइव हैं"
+
+msgid "You're one step away from your workspace."
+msgstr ""
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "आप Carbon को स्वयं सेट अप कर रहे हैं, अपनी गति से"

@@ -168,6 +168,9 @@ msgstr "{from}–{to} z {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} z {count} operacji"
 
+msgid "{hiddenCount} more: {hiddenNames}"
+msgstr ""
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -8461,6 +8464,9 @@ msgstr "Mniej pracy ręcznej"
 msgid "Less manual work, fewer errors"
 msgstr "Mniej pracy ręcznej, mniej błędów"
 
+msgid "Let's Build"
+msgstr ""
+
 msgid "Let's build something"
 msgstr "Zbudujmy coś"
 
@@ -8635,9 +8641,6 @@ msgstr "Zablokowany"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "Zablokowanie uczynia okres tylko do odczytu dla dokumentów operacyjnych (pokwitowania, przesyłki, faktury), jednocześnie umożliwiając korekty księgowe, takie jak amortyzacja i zbycie. Okres musi być zablokowany, zanim będzie można go zamknąć."
-
-msgid "Log In"
-msgstr "Zaloguj się"
 
 msgid "Log nonconformances and drive a CAPA"
 msgstr "Rejestruj niezgodności i prowadź CAPA"
@@ -13846,6 +13849,9 @@ msgstr "Wyświetlany jako delikatne tło za każdą stroną wygenerowanych plik�
 msgid "Shown to the user when this rule fails."
 msgstr "Wyświetlane użytkownikowi, gdy ta reguła się nie powiedzie."
 
+msgid "Sign in to Carbon"
+msgstr ""
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Zaloguj się za pomocą biometrii zamiast linku magicznego. Klucze dostępu są zabezpieczone za pomocą Face ID, Touch ID lub numeru PIN urządzenia."
 
@@ -17553,6 +17559,9 @@ msgstr "Otrzymałeś tę partię"
 
 msgid "You're live on Carbon"
 msgstr "Jesteś na żywo w Carbon"
+
+msgid "You're one step away from your workspace."
+msgstr ""
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "Samodzielnie konfigurujesz Carbon w swoim tempie"

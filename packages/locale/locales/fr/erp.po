@@ -168,6 +168,9 @@ msgstr "{from}–{to} sur {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} sur {count} opérations"
 
+msgid "{hiddenCount} more: {hiddenNames}"
+msgstr ""
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -8461,6 +8464,9 @@ msgstr "Moins de travail manuel"
 msgid "Less manual work, fewer errors"
 msgstr "Moins de travail manuel, moins d'erreurs"
 
+msgid "Let's Build"
+msgstr ""
+
 msgid "Let's build something"
 msgstr "Construisons quelque chose"
 
@@ -8635,9 +8641,6 @@ msgstr "Verrouillé"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "Le verrouillage rend la période en lecture seule pour les documents opérationnels (reçus, expéditions, factures) tout en permettant les ajustements comptables comme l'amortissement et les cessions. Une période doit être verrouillée avant de pouvoir être fermée."
-
-msgid "Log In"
-msgstr "Se connecter"
 
 msgid "Log nonconformances and drive a CAPA"
 msgstr "Enregistrer les non-conformités et piloter une CAPA"
@@ -13846,6 +13849,9 @@ msgstr "Affiché en arrière-plan discret sur chaque page des PDF générés"
 msgid "Shown to the user when this rule fails."
 msgstr "Affiché à l'utilisateur lorsque cette règle échoue."
 
+msgid "Sign in to Carbon"
+msgstr ""
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Connectez-vous avec la biométrie au lieu d'un lien magique. Les clés d'accès sont sécurisées par Face ID, Touch ID ou votre code PIN de l'appareil."
 
@@ -17553,6 +17559,9 @@ msgstr "Vous avez reçu ce lot"
 
 msgid "You're live on Carbon"
 msgstr "Vous êtes en direct sur Carbon"
+
+msgid "You're one step away from your workspace."
+msgstr ""
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "Vous configurez Carbon vous-même, à votre rythme"

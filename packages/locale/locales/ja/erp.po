@@ -168,6 +168,9 @@ msgstr "{from}–{to} / {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}～{to}件 (合計{count}件の操作)"
 
+msgid "{hiddenCount} more: {hiddenNames}"
+msgstr ""
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -8461,6 +8464,9 @@ msgstr "手作業を減らす"
 msgid "Less manual work, fewer errors"
 msgstr "手作業を減らし、エラーを削減"
 
+msgid "Let's Build"
+msgstr ""
+
 msgid "Let's build something"
 msgstr "何か作ってみましょう"
 
@@ -8635,9 +8641,6 @@ msgstr "ロック済み"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "ロックにより、当期は運用書類（受領書、出荷、請求書）に対して読み取り専用になりますが、減価償却や処分などの会計調整は引き続き可能です。期間は終了する前にロックする必要があります。"
-
-msgid "Log In"
-msgstr "ログイン"
 
 msgid "Log nonconformances and drive a CAPA"
 msgstr "不適合を記録し、是正予防処置を実施する"
@@ -13846,6 +13849,9 @@ msgstr "生成されたPDFの各ページの背景に薄く表示されます"
 msgid "Shown to the user when this rule fails."
 msgstr "このルールが失敗したときにユーザーに表示されます。"
 
+msgid "Sign in to Carbon"
+msgstr ""
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "マジックリンクの代わりに生体認証でサインインします。パスキーはFace ID、Touch ID、またはデバイスPINで保護されます。"
 
@@ -17553,6 +17559,9 @@ msgstr "このロットを受け取りました"
 
 msgid "You're live on Carbon"
 msgstr "Carbonで本番稼働中です"
+
+msgid "You're one step away from your workspace."
+msgstr ""
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "あなた自身のペースでCarbonをセットアップしています"

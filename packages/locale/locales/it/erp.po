@@ -168,6 +168,9 @@ msgstr "{from}–{to} di {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} di {count} operazioni"
 
+msgid "{hiddenCount} more: {hiddenNames}"
+msgstr ""
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -8461,6 +8464,9 @@ msgstr "Meno lavoro manuale"
 msgid "Less manual work, fewer errors"
 msgstr "Meno lavoro manuale, meno errori"
 
+msgid "Let's Build"
+msgstr ""
+
 msgid "Let's build something"
 msgstr "Costruiamo qualcosa"
 
@@ -8635,9 +8641,6 @@ msgstr "Bloccato"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "Il blocco rende il periodo di sola lettura per i documenti operativi (ricevute, spedizioni, fatture) mentre consente ancora aggiustamenti contabili come ammortamento e dismissioni. Un periodo deve essere bloccato prima di poter essere chiuso."
-
-msgid "Log In"
-msgstr "Accedi"
 
 msgid "Log nonconformances and drive a CAPA"
 msgstr "Registra non conformità e avvia una CAPA"
@@ -13846,6 +13849,9 @@ msgstr "Mostrato come sfondo tenue dietro ogni pagina dei PDF generati"
 msgid "Shown to the user when this rule fails."
 msgstr "Mostrato all'utente quando questa regola non riesce."
 
+msgid "Sign in to Carbon"
+msgstr ""
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Accedi con biometrica invece di un magic link. Le passkey sono protette da Face ID, Touch ID o dal PIN del tuo dispositivo."
 
@@ -17553,6 +17559,9 @@ msgstr "Hai ricevuto questo lotto"
 
 msgid "You're live on Carbon"
 msgstr "Sei live su Carbon"
+
+msgid "You're one step away from your workspace."
+msgstr ""
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "Stai configurando Carbon da solo, al tuo ritmo"

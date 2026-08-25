@@ -168,6 +168,9 @@ msgstr "{from}–{to} 共 {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} / {count} 条操作"
 
+msgid "{hiddenCount} more: {hiddenNames}"
+msgstr ""
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -8461,6 +8464,9 @@ msgstr "更少的手动工作"
 msgid "Less manual work, fewer errors"
 msgstr "更少的手动工作，更少的错误"
 
+msgid "Let's Build"
+msgstr ""
+
 msgid "Let's build something"
 msgstr "让我们构建一些东西"
 
@@ -8635,9 +8641,6 @@ msgstr "已锁定"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "锁定使期间对于业务单据（收据、装运、发票）为只读，同时仍允许进行折旧和处置等会计调整。期间在结束前必须被锁定。"
-
-msgid "Log In"
-msgstr "登录"
 
 msgid "Log nonconformances and drive a CAPA"
 msgstr "记录不符合项并推动纠正和预防措施"
@@ -13846,6 +13849,9 @@ msgstr "作为淡色背景显示在每个生成的PDF页面后面"
 msgid "Shown to the user when this rule fails."
 msgstr "当此规则失败时向用户显示。"
 
+msgid "Sign in to Carbon"
+msgstr ""
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "使用生物识别而不是魔法链接登录。密钥由 Face ID、Touch ID 或您的设备 PIN 保护。"
 
@@ -17553,6 +17559,9 @@ msgstr "你收到了这批货"
 
 msgid "You're live on Carbon"
 msgstr "您已在 Carbon 上线"
+
+msgid "You're one step away from your workspace."
+msgstr ""
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "您正在按照自己的节奏自行设置 Carbon"

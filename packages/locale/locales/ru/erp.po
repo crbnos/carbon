@@ -168,6 +168,9 @@ msgstr "{from}–{to} из {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} из {count} операций"
 
+msgid "{hiddenCount} more: {hiddenNames}"
+msgstr ""
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -8461,6 +8464,9 @@ msgstr "Меньше ручной работы"
 msgid "Less manual work, fewer errors"
 msgstr "Меньше ручной работы, меньше ошибок"
 
+msgid "Let's Build"
+msgstr ""
+
 msgid "Let's build something"
 msgstr "Давайте создадим что-то"
 
@@ -8635,9 +8641,6 @@ msgstr "Заблокирован"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "Блокировка делает период доступным только для чтения для операционных документов (приёмки, отгрузки, счета-фактуры), при этом по-прежнему позволяя учётные корректировки, такие как амортизация и выбытие. Период должен быть заблокирован перед его закрытием."
-
-msgid "Log In"
-msgstr "Войти"
 
 msgid "Log nonconformances and drive a CAPA"
 msgstr "Регистрируйте несоответствия и инициируйте CAPA"
@@ -13846,6 +13849,9 @@ msgstr "Отображается как бледный фон на каждой 
 msgid "Shown to the user when this rule fails."
 msgstr "Показывается пользователю при ошибке этого правила."
 
+msgid "Sign in to Carbon"
+msgstr ""
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Войдите с использованием биометрии вместо волшебной ссылки. Ключи доступа защищены Face ID, Touch ID или PIN-кодом вашего устройства."
 
@@ -17553,6 +17559,9 @@ msgstr "Вы получили эту партию"
 
 msgid "You're live on Carbon"
 msgstr "Вы работаете на Carbon"
+
+msgid "You're one step away from your workspace."
+msgstr ""
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "Вы самостоятельно настраиваете Carbon в удобном для вас темпе"

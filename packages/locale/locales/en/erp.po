@@ -168,6 +168,9 @@ msgstr "{from}–{to} of {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} of {count} operations"
 
+msgid "{hiddenCount} more: {hiddenNames}"
+msgstr "{hiddenCount} more: {hiddenNames}"
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -8461,6 +8464,9 @@ msgstr "Less manual work"
 msgid "Less manual work, fewer errors"
 msgstr "Less manual work, fewer errors"
 
+msgid "Let's Build"
+msgstr "Let's Build"
+
 msgid "Let's build something"
 msgstr "Let's build something"
 
@@ -8635,9 +8641,6 @@ msgstr "Locked"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
-
-msgid "Log In"
-msgstr "Log In"
 
 msgid "Log nonconformances and drive a CAPA"
 msgstr "Log nonconformances and drive a CAPA"
@@ -13846,6 +13849,9 @@ msgstr "Shown as a faint background behind every page of generated PDFs"
 msgid "Shown to the user when this rule fails."
 msgstr "Shown to the user when this rule fails."
 
+msgid "Sign in to Carbon"
+msgstr "Sign in to Carbon"
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 
@@ -17557,6 +17563,9 @@ msgstr "You received this lot"
 
 msgid "You're live on Carbon"
 msgstr "You're live on Carbon"
+
+msgid "You're one step away from your workspace."
+msgstr "You're one step away from your workspace."
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "You're setting Carbon up yourself, at your own pace"
