@@ -1,5 +1,6 @@
 import { assertIsPost, error, RATE_LIMIT, success } from "@carbon/auth";
 import { makeAuthSession, requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { verifyTotpChallenge } from "@carbon/auth/mfa.server";
 import {
   requireAuthSession,
@@ -8,6 +9,7 @@ import {
 import { Ratelimit, redis } from "@carbon/kv";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { sendMfaEnabledEmail } from "~/services/mfa-email.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -70,6 +72,15 @@ export async function action({ request }: ActionFunctionArgs) {
   const sessionCookie = await setAuthSession(request, {
     authSession: newAuthSession
   });
+
+  // This route only ever verifies an ENROLLMENT — a login challenge goes
+  // through completeMfaChallenge on /mfa — so reaching here means a factor was
+  // just added to this account. Send the receipt; it never throws.
+  await sendMfaEnabledEmail(
+    getCarbonServiceRole(),
+    authSession.companyId,
+    authSession.userId
+  );
 
   return data(success("Two-factor authentication enabled"), {
     headers: { "Set-Cookie": sessionCookie }

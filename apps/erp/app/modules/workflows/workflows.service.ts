@@ -15,7 +15,7 @@ export async function getWorkflows(
   let query = client
     .from("workflow")
     .select(
-      "id, name, description, ownerId, active, activeVersionId, createdAt, updatedAt",
+      "id, name, description, ownerId, publishedVersionId, createdAt, updatedAt",
       { count: "exact" }
     )
     .eq("companyId", companyId);
@@ -25,9 +25,9 @@ export async function getWorkflows(
   }
 
   if (args) {
-    // "status" is a derived filter — Published means a live version is promoted
-    // (activeVersionId set), Draft means none. There is no status column, so
-    // translate it into an activeVersionId null test and keep it out of the
+    // "status" is a derived filter — Published means a version is published
+    // (publishedVersionId set), Draft means none. There is no status column, so
+    // translate it into a publishedVersionId null test and keep it out of the
     // generic column-filter pipeline (which can only emit eq/in/etc.).
     const statusFilters: Filter[] = [];
     const columnFilters: Filter[] = [];
@@ -37,9 +37,9 @@ export async function getWorkflows(
 
     for (const filter of statusFilters) {
       if (filter.value === "Published") {
-        query = query.not("activeVersionId", "is", null);
+        query = query.not("publishedVersionId", "is", null);
       } else if (filter.value === "Draft") {
-        query = query.is("activeVersionId", null);
+        query = query.is("publishedVersionId", null);
       }
     }
 
@@ -59,7 +59,7 @@ export async function getWorkflow(
   return client
     .from("workflow")
     .select(
-      "id, name, description, ownerId, active, activeVersionId, nextRunAt, canvasState, createdAt, updatedAt"
+      "id, name, description, ownerId, publishedVersionId, nextRunAt, canvasState, createdAt, updatedAt"
     )
     .eq("id", id)
     .eq("companyId", companyId)
@@ -124,8 +124,7 @@ export async function insertWorkflow(
       description: workflow.description ?? null,
       companyId: workflow.companyId,
       ownerId: workflow.createdBy,
-      createdBy: workflow.createdBy,
-      active: false
+      createdBy: workflow.createdBy
     })
     .select("id")
     .single();
@@ -203,7 +202,7 @@ export async function updateWorkflowDefinition(
 }
 
 /**
- * The one writer allowed on a live version. It reads the version's nodes and re-writes
+ * The one writer allowed on a published version. It reads the version's nodes and re-writes
  * only `position`, only for node ids that already exist — `edges`, `data`, `expanded`,
  * `name` and `type` are never touched, and an unknown id is ignored. The endpoint is
  * therefore incapable of changing behaviour even when called by hand.
@@ -486,7 +485,7 @@ export async function getWorkflowVersionOwnership(
 ) {
   return client
     .from("workflowVersion")
-    .select("workflowId, workflow(activeVersionId)")
+    .select("workflowId, workflow(publishedVersionId)")
     .eq("id", versionId)
     .eq("companyId", companyId)
     .maybeSingle();

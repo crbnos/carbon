@@ -87,19 +87,19 @@ import {
 import type { InventoryItemType } from "./types";
 
 const PARTS_LIST_COLUMNS =
-  "active,defaultMethodType,description,itemTrackingType,name,replenishmentSystem,revision,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,revisions,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn" as const;
+  "active,defaultMethodType,description,itemTrackingType,name,replenishmentSystem,revision,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,revisions,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn,suppliers" as const;
 
 const MATERIALS_LIST_COLUMNS =
-  "active,defaultMethodType,description,itemTrackingType,name,unitOfMeasureCode,revision,readableId,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,unitOfMeasure,revisions,materialForm,materialSubstance,dimensions,finish,grade,materialType,materialSubstanceId,materialFormId,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn" as const;
+  "active,defaultMethodType,description,itemTrackingType,name,unitOfMeasureCode,revision,readableId,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,unitOfMeasure,revisions,materialForm,materialSubstance,dimensions,finish,grade,materialType,materialSubstanceId,materialFormId,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn,suppliers" as const;
 
 const TOOLS_LIST_COLUMNS =
-  "active,assignee,defaultMethodType,description,itemTrackingType,name,replenishmentSystem,revision,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,revisions,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn" as const;
+  "active,assignee,defaultMethodType,description,itemTrackingType,name,replenishmentSystem,revision,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,revisions,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn,suppliers" as const;
 
 const CONSUMABLES_LIST_COLUMNS =
-  "active,assignee,defaultMethodType,description,itemTrackingType,name,replenishmentSystem,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn" as const;
+  "active,assignee,defaultMethodType,description,itemTrackingType,name,replenishmentSystem,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn,suppliers" as const;
 
 const SERVICES_LIST_COLUMNS =
-  "active,defaultMethodType,description,name,replenishmentSystem,revision,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,revisions,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt" as const;
+  "active,defaultMethodType,description,name,replenishmentSystem,revision,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,revisions,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,suppliers" as const;
 
 const logger = getLogger("erp", "items");
 
@@ -556,7 +556,7 @@ export async function getConsumables(
   ]);
 
   if (args.supplierId) {
-    query = query.contains("supplierIds", [args.supplierId]);
+    query = query.contains("suppliers", [args.supplierId]);
   }
 
   query = setGenericQueryFilters(query, args, [
@@ -1254,7 +1254,7 @@ export async function getMaterials(
   ]);
 
   if (args.supplierId) {
-    query = query.contains("supplierIds", [args.supplierId]);
+    query = query.contains("suppliers", [args.supplierId]);
   }
 
   query = setGenericQueryFilters(query, args, [
@@ -1810,7 +1810,7 @@ export async function getParts(
   ]);
 
   if (args.supplierId) {
-    query = query.contains("supplierIds", [args.supplierId]);
+    query = query.contains("suppliers", [args.supplierId]);
   }
 
   query = setGenericQueryFilters(query, args, [
@@ -2063,7 +2063,7 @@ export async function getServices(
   }
 
   if (args.supplierId) {
-    query = query.contains("supplierIds", [args.supplierId]);
+    query = query.contains("suppliers", [args.supplierId]);
   }
 
   query = setGenericQueryFilters(query, args, [
@@ -2154,7 +2154,7 @@ export async function getTools(
   ]);
 
   if (args.supplierId) {
-    query = query.contains("supplierIds", [args.supplierId]);
+    query = query.contains("suppliers", [args.supplierId]);
   }
 
   query = setGenericQueryFilters(query, args, [

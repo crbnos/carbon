@@ -114,24 +114,52 @@ export function LineItemsBlock({
                       Tax & Fees
                     </Text>
                     {lineShippingCost > 0 && (
-                      <Text style={tw("text-[9px] text-gray-600")}>
-                        - Shipping
-                      </Text>
+                      <View style={tw("flex flex-row justify-between")}>
+                        <Text
+                          style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
+                        >
+                          - Shipping
+                        </Text>
+                        <Text style={tw("text-[9px] text-gray-600")}>
+                          {numberFormatter.format(lineShippingCost)}
+                        </Text>
+                      </View>
                     )}
                     {lineAddOnCost > 0 && (
-                      <Text style={tw("text-[9px] text-gray-600")}>
-                        - Add-On
-                      </Text>
+                      <View style={tw("flex flex-row justify-between")}>
+                        <Text
+                          style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
+                        >
+                          - Add-On
+                        </Text>
+                        <Text style={tw("text-[9px] text-gray-600")}>
+                          {numberFormatter.format(lineAddOnCost)}
+                        </Text>
+                      </View>
                     )}
                     {lineNonTaxableAddOnCost > 0 && (
-                      <Text style={tw("text-[9px] text-gray-600")}>
-                        - Non-Taxable Add-On
-                      </Text>
+                      <View style={tw("flex flex-row justify-between")}>
+                        <Text
+                          style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
+                        >
+                          - Non-Taxable Add-On
+                        </Text>
+                        <Text style={tw("text-[9px] text-gray-600")}>
+                          {numberFormatter.format(lineNonTaxableAddOnCost)}
+                        </Text>
+                      </View>
                     )}
                     {lineTaxPercent > 0 && (
-                      <Text style={tw("text-[9px] text-gray-600")}>
-                        - Tax ({formatPercent(lineTaxPercent, locale)})
-                      </Text>
+                      <View style={tw("flex flex-row justify-between")}>
+                        <Text
+                          style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
+                        >
+                          - Tax ({formatPercent(lineTaxPercent, locale)})
+                        </Text>
+                        <Text style={tw("text-[9px] text-gray-600")}>
+                          {numberFormatter.format(lineTaxAmount)}
+                        </Text>
+                      </View>
                     )}
                   </View>
                 )}

@@ -2,7 +2,7 @@ import { CarbonEdition, error, STRIPE_BYPASS_COMPANY_IDS } from "@carbon/auth";
 import { isCarbonOwnedCompany } from "@carbon/auth/company.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
-import { Edition, normalizePlanId, type Plan } from "@carbon/utils";
+import { Edition, normalizePlanId, Plan } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { redirect } from "react-router";
 import {
@@ -30,6 +30,41 @@ async function getCompanyPlan(
     .single();
 
   return normalizePlanId(data?.planId);
+}
+
+/**
+ * The plan id to feed CLIENT-SIDE gating (`usePlanGate` / `usePlan`). It reads
+ * the SAME durable source the server enforces here — `companyPlan` — plus the
+ * bypass/carbon-owned grants, so the UI can never disagree with enforcement.
+ *
+ * The old `/x` loader sourced this from the Stripe/Redis customer cache
+ * (`getStripeCustomerByCompanyId().planId`), which can go stale and gate a
+ * customer whose real plan is correct — e.g. a live Partner shown an "Upgrade to
+ * Business" overlay with their API keys hidden, while their keys still worked
+ * because the API auth path reads `companyPlan` directly.
+ *
+ * Precedence mirrors `companyHasPlan`: bypass → companyPlan → carbon-owned.
+ * Returns `null` off Cloud (the client neutralizes gating there anyway).
+ */
+export async function getPlan(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<string | null> {
+  if (CarbonEdition !== Edition.Cloud) return null;
+  if (isBypassCompany(companyId)) return Plan.Partner;
+
+  const { data } = await client
+    .from("companyPlan")
+    .select("planId")
+    .eq("id", companyId)
+    .single();
+
+  if (data?.planId) return data.planId;
+
+  // No durable plan row (never subscribed). Carbon-owned companies still get
+  // Business-tier access; everyone else resolves to Unknown → gated.
+  if (await isCarbonOwnedCompany(companyId)) return Plan.Business;
+  return null;
 }
 
 /** Self-hosted and bypass-listed companies always pass. */

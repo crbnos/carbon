@@ -17,11 +17,11 @@ import {
   LuBadgeCheck,
   LuCalendar,
   LuCirclePlus,
+  LuCircleStop,
   LuHistory,
   LuPencil,
   LuTag,
   LuText,
-  LuToggleLeft,
   LuTrash,
   LuUser,
   LuWorkflow
@@ -33,8 +33,8 @@ import { usePermissions } from "~/hooks";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import type { Workflow, WorkflowLastRun } from "../workflows.service";
+import { ConfirmUnpublishWorkflow } from "./ConfirmUnpublishWorkflow";
 import { RunStatus } from "./Runs/RunStatus";
-import { WorkflowActiveCheckbox } from "./WorkflowActiveCheckbox";
 import WorkflowForm from "./WorkflowForm";
 
 type WorkflowsTableProps = {
@@ -53,6 +53,7 @@ const WorkflowsTable = memo(
     const newDisclosure = useDisclosure();
     const renameDisclosure = useDisclosure();
     const deleteDisclosure = useDisclosure();
+    const unpublishDisclosure = useDisclosure();
     const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(
       null
     );
@@ -93,7 +94,7 @@ const WorkflowsTable = memo(
           id: "status",
           header: t`Status`,
           cell: ({ row }) => {
-            const isPublished = Boolean(row.original.activeVersionId);
+            const isPublished = Boolean(row.original.publishedVersionId);
             return isPublished ? (
               <Badge variant="green">{t`Published`}</Badge>
             ) : (
@@ -111,27 +112,7 @@ const WorkflowsTable = memo(
               ]
             },
             exportValue: (row: Workflow) =>
-              row.activeVersionId ? "Published" : "Draft"
-          }
-        },
-        {
-          accessorKey: "active",
-          header: t`Active`,
-          cell: ({ row }) => (
-            <WorkflowActiveCheckbox
-              workflowId={row.original.id}
-              active={row.original.active}
-            />
-          ),
-          meta: {
-            icon: <LuToggleLeft />,
-            filter: {
-              type: "static",
-              options: [
-                { value: "true", label: t`Active` },
-                { value: "false", label: t`Inactive` }
-              ]
-            }
+              row.publishedVersionId ? "Published" : "Draft"
           }
         },
         {
@@ -152,10 +133,10 @@ const WorkflowsTable = memo(
           }
         },
         {
-          accessorKey: "activeVersionId",
-          header: t`Live Version`,
+          accessorKey: "publishedVersionId",
+          header: t`Published Version`,
           cell: ({ row }) => {
-            const versionId = row.original.activeVersionId;
+            const versionId = row.original.publishedVersionId;
             const versionNumber = versionId
               ? versionNumbers[versionId]
               : undefined;
@@ -225,6 +206,18 @@ const WorkflowsTable = memo(
             {t`Rename Workflow`}
           </MenuItem>
           <MenuItem
+            disabled={
+              !permissions.can("update", "workflows") || !row.publishedVersionId
+            }
+            onClick={() => {
+              flushSync(() => setSelectedWorkflow(row));
+              unpublishDisclosure.onOpen();
+            }}
+          >
+            <MenuIcon icon={<LuCircleStop />} />
+            {t`Unpublish`}
+          </MenuItem>
+          <MenuItem
             destructive
             disabled={!permissions.can("delete", "workflows")}
             onClick={() => {
@@ -237,7 +230,14 @@ const WorkflowsTable = memo(
           </MenuItem>
         </>
       ),
-      [navigate, permissions, renameDisclosure, deleteDisclosure, t]
+      [
+        navigate,
+        permissions,
+        renameDisclosure,
+        unpublishDisclosure,
+        deleteDisclosure,
+        t
+      ]
     );
 
     return (
@@ -277,6 +277,16 @@ const WorkflowsTable = memo(
             onClose={() => {
               setSelectedWorkflow(null);
               renameDisclosure.onClose();
+            }}
+          />
+        )}
+        {unpublishDisclosure.isOpen && selectedWorkflow && (
+          <ConfirmUnpublishWorkflow
+            workflowId={selectedWorkflow.id}
+            name={selectedWorkflow.name}
+            onClose={() => {
+              setSelectedWorkflow(null);
+              unpublishDisclosure.onClose();
             }}
           />
         )}

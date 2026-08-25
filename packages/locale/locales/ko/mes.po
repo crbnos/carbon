@@ -515,6 +515,9 @@ msgstr "{0} 완료"
 msgid "Finish Anyways"
 msgstr "그래도 완료"
 
+msgid "Finish setting up your account"
+msgstr ""
+
 msgid "Finish with material unpicked?"
 msgstr "미선택 재료가 있는 상태로 완료하시겠습니까?"
 
@@ -523,6 +526,9 @@ msgstr "퇴근 체크를 잊으셨나요?"
 
 msgid "Go back to operation"
 msgstr "공정작업으로 돌아가기"
+
+msgid "Go to onboarding"
+msgstr ""
 
 msgid "How many were actually picked?"
 msgstr "실제로 몇 개를 피킹했습니까?"
@@ -1496,6 +1502,9 @@ msgstr "<0/>에 근무를 시작했습니다. 아래에서 퇴근 시간을 편�
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "{hoursElapsed}시간 동안 출근 상태입니다. 퇴근 처리를 잊으셨나요?"
+
+msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
+msgstr ""
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "조직에서 인증 앱을 요구하고 있습니다. Carbon에서 설정한 후 여기로 돌아오세요."

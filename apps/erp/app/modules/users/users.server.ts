@@ -729,7 +729,12 @@ export async function getUserGroups(
   client: SupabaseClient<Database>,
   userId: string
 ) {
-  return client.rpc("groups_for_user", { uid: userId });
+  // Normalize an empty result to [] (not null) — belt-and-suspenders with the
+  // groups_for_user COALESCE migration, so a user with no memberships is a
+  // well-formed empty array rather than a null the /x guard could mistake for
+  // an auth failure.
+  const result = await client.rpc("groups_for_user", { uid: userId });
+  return { ...result, data: result.data ?? [] };
 }
 
 export async function getUserDefaults(

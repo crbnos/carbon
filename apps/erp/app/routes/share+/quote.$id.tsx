@@ -30,6 +30,7 @@ import {
   Th,
   Thead,
   Tr,
+  TruncatedTooltipText,
   toast,
   useDisclosure,
   useMode,
@@ -406,23 +407,29 @@ const LineItems = ({
               {thumbnails[line.id!] ? (
                 <img
                   alt={line.itemReadableId!}
-                  className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
+                  className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
                   src={thumbnails[line.id!] ?? undefined}
                 />
               ) : (
-                <div className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
+                <div className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
                   <LuImage className="w-16 h-16 text-muted-foreground" />
                 </div>
               )}
 
-              <VStack spacing={0} className="w-full">
+              {/* flex-1 + min-w-0, not w-full: `width: 100%` on a flex item
+                  resolves against the row's full width and ignores the
+                  thumbnail beside it, pushing the description and price
+                  past the card edge. min-w-0 is what lets truncate bite. */}
+              <VStack spacing={0} className="flex-1 min-w-0">
                 <div
-                  className="flex flex-col cursor-pointer w-full"
+                  className="flex flex-col cursor-pointer w-full min-w-0"
                   onClick={() => toggleOpen(line.id!)}
                 >
-                  <div className="flex items-center gap-x-4 justify-between flex-grow">
-                    <Heading>{line.itemReadableId}</Heading>
-                    <HStack spacing={4}>
+                  <div className="flex items-center gap-x-4 justify-between flex-grow min-w-0">
+                    {/* min-w-0 so a long item id wraps inside the card
+                        instead of shoving the price out of it. */}
+                    <Heading className="min-w-0">{line.itemReadableId}</Heading>
+                    <HStack spacing={4} className="shrink-0">
                       <MotionMoney
                         value={
                           (selectedLines[line.id!]?.convertedNetUnitPrice ??
@@ -453,9 +460,12 @@ const LineItems = ({
                       </motion.div>
                     </HStack>
                   </div>
-                  <span className="text-muted-foreground text-base truncate">
+                  <TruncatedTooltipText
+                    className="text-muted-foreground text-base truncate"
+                    tooltip={line.description}
+                  >
                     {line.description}
-                  </span>
+                  </TruncatedTooltipText>
                   {Object.keys(line.externalNotes ?? {}).length > 0 && (
                     <div
                       className="prose dark:prose-invert mt-2 text-muted-foreground"
