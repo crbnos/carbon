@@ -7732,10 +7732,6 @@ export async function saveInspectionDocumentAtomic(
 // depend on server-only modules (`@carbon/ee/storage-rules.server`, `@carbon/auth/users.server`)
 // that cannot be referenced from this file, which is client-reachable via the module barrel.
 
-// `scheduleJob` moved to `production.mcp.server.ts`: it re-checks the caller's `production`
-// update permission via `getUserClaims` (a server-only module) before firing the ungated
-// `triggerJobSchedule` Inngest event, and this file is client-reachable via the module barrel.
-
 /**
  * Complete a job operation by reporting produced quantity (non-tracked items). Re-orchestrates the
  * MES material-complete flow's non-tracked path against the same entry points, so an MCP caller
