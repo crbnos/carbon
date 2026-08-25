@@ -1870,6 +1870,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterialStep.jobOperationStepId"
           },
           {
+            $ref: "#/parameters/rowFilter.jobMaterialStep.quantity"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -1935,6 +1938,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterialStep.jobOperationStepId"
           },
           {
+            $ref: "#/parameters/rowFilter.jobMaterialStep.quantity"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -1952,6 +1958,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobMaterialStep.jobOperationStepId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterialStep.quantity"
           },
           {
             $ref: "#/parameters/body.jobMaterialStep"
@@ -10321,6 +10330,9 @@ export default {
             $ref: "#/parameters/rowFilter.methodMaterialStep.methodOperationStepId"
           },
           {
+            $ref: "#/parameters/rowFilter.methodMaterialStep.quantity"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -10386,6 +10398,9 @@ export default {
             $ref: "#/parameters/rowFilter.methodMaterialStep.methodOperationStepId"
           },
           {
+            $ref: "#/parameters/rowFilter.methodMaterialStep.quantity"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -10403,6 +10418,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.methodMaterialStep.methodOperationStepId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterialStep.quantity"
           },
           {
             $ref: "#/parameters/body.methodMaterialStep"
@@ -16687,6 +16705,213 @@ export default {
           }
         },
         tags: ["openPurchaseOrderLines"]
+      }
+    },
+    "/jobOperationBatch": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.readableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.processId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/jobOperationBatch"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["jobOperationBatch"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.jobOperationBatch"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["jobOperationBatch"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.readableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.processId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["jobOperationBatch"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.readableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.processId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.jobOperationBatch"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["jobOperationBatch"]
       }
     },
     "/itemInspectionDocumentAssignment": {
@@ -24067,6 +24292,9 @@ export default {
             $ref: "#/parameters/rowFilter.process.active"
           },
           {
+            $ref: "#/parameters/rowFilter.process.batchable"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -24165,6 +24393,9 @@ export default {
             $ref: "#/parameters/rowFilter.process.active"
           },
           {
+            $ref: "#/parameters/rowFilter.process.batchable"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -24215,6 +24446,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.process.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.batchable"
           },
           {
             $ref: "#/parameters/body.process"
@@ -41482,6 +41716,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperation.jobOperationBatchId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -41682,6 +41919,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperation.jobOperationBatchId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -41834,6 +42074,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperation.jobOperationBatchId"
           },
           {
             $ref: "#/parameters/body.jobOperation"
@@ -66049,6 +66292,9 @@ export default {
             $ref: "#/parameters/rowFilter.processes.active"
           },
           {
+            $ref: "#/parameters/rowFilter.processes.batchable"
+          },
+          {
             $ref: "#/parameters/rowFilter.processes.workCenters"
           },
           {
@@ -71377,6 +71623,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMaterialStep.quoteOperationStepId"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteMaterialStep.quantity"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -71442,6 +71691,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMaterialStep.quoteOperationStepId"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteMaterialStep.quantity"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -71459,6 +71711,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteMaterialStep.quoteOperationStepId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteMaterialStep.quantity"
           },
           {
             $ref: "#/parameters/body.quoteMaterialStep"
@@ -80173,6 +80428,9 @@ export default {
             $ref: "#/parameters/rowFilter.productionEvent.postedToGL"
           },
           {
+            $ref: "#/parameters/rowFilter.productionEvent.jobOperationBatchId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -80277,6 +80535,9 @@ export default {
             $ref: "#/parameters/rowFilter.productionEvent.postedToGL"
           },
           {
+            $ref: "#/parameters/rowFilter.productionEvent.jobOperationBatchId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -80333,6 +80594,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.productionEvent.postedToGL"
+          },
+          {
+            $ref: "#/parameters/rowFilter.productionEvent.jobOperationBatchId"
           },
           {
             $ref: "#/parameters/body.productionEvent"
@@ -94166,6 +94430,74 @@ export default {
         tags: ["(rpc) get_ar_tie_out"]
       }
     },
+    "/rpc/get_batchable_operations": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "location_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "process_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_batchable_operations"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                location_id: {
+                  format: "text",
+                  type: "string"
+                },
+                process_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["location_id", "process_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_batchable_operations"]
+      }
+    },
     "/rpc/get_company_groups_for_root_permission": {
       post: {
         parameters: [
@@ -99560,6 +99892,10 @@ export default {
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `jobOperationStep.id`.<fk table='jobOperationStep' column='id'/>",
           format: "text",
           type: "string"
+        },
+        quantity: {
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -103419,6 +103755,10 @@ export default {
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `methodOperationStep.id`.<fk table='methodOperationStep' column='id'/>",
           format: "text",
           type: "string"
+        },
+        quantity: {
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -104720,7 +105060,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -104769,7 +105109,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -106487,6 +106827,89 @@ export default {
         leadTime: {
           format: "integer",
           type: "integer"
+        }
+      },
+      type: "object"
+    },
+    jobOperationBatch: {
+      required: [
+        "id",
+        "readableId",
+        "companyId",
+        "processId",
+        "locationId",
+        "status",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        readableId: {
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        processId: {
+          description:
+            "Note:\nThis is a Foreign Key to `process.id`.<fk table='process' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        workCenterId: {
+          description:
+            "Note:\nThis is a Foreign Key to `workCenter.id`.<fk table='workCenter' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        status: {
+          default: "Active",
+          enum: ["Active", "Completing", "Completed"],
+          format: 'public."jobOperationBatchStatus"',
+          type: "string"
+        },
+        notes: {
+          format: "text",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -110163,7 +110586,8 @@ export default {
         "createdAt",
         "processType",
         "completeAllOnScan",
-        "active"
+        "active",
+        "batchable"
       ],
       properties: {
         id: {
@@ -110243,6 +110667,11 @@ export default {
         },
         active: {
           default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        batchable: {
+          default: false,
           format: "boolean",
           type: "boolean"
         }
@@ -118561,6 +118990,10 @@ export default {
         inspectionDocumentId: {
           description:
             "Note:\nThis is a Foreign Key to `inspectionDocument.id`.<fk table='inspectionDocument' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        jobOperationBatchId: {
           format: "text",
           type: "string"
         }
@@ -129898,6 +130331,10 @@ export default {
           format: "boolean",
           type: "boolean"
         },
+        batchable: {
+          format: "boolean",
+          type: "boolean"
+        },
         workCenters: {
           format: "text[]",
           items: {
@@ -132288,6 +132725,10 @@ export default {
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `quoteOperationStep.id`.<fk table='quoteOperationStep' column='id'/>",
           format: "text",
           type: "string"
+        },
+        quantity: {
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -137095,6 +137536,10 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        jobOperationBatchId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -141113,6 +141558,12 @@ export default {
     },
     "rowFilter.jobMaterialStep.jobOperationStepId": {
       name: "jobOperationStepId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobMaterialStep.quantity": {
+      name: "quantity",
       required: false,
       in: "query",
       type: "string"
@@ -145478,6 +145929,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.methodMaterialStep.quantity": {
+      name: "quantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.inspectionSample": {
       name: "inspectionSample",
       description: "inspectionSample",
@@ -148951,6 +149408,93 @@ export default {
     },
     "rowFilter.openPurchaseOrderLines.leadTime": {
       name: "leadTime",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.jobOperationBatch": {
+      name: "jobOperationBatch",
+      description: "jobOperationBatch",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/jobOperationBatch"
+      }
+    },
+    "rowFilter.jobOperationBatch.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.readableId": {
+      name: "readableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.processId": {
+      name: "processId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.workCenterId": {
+      name: "workCenterId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.notes": {
+      name: "notes",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -153178,6 +153722,12 @@ export default {
     },
     "rowFilter.process.active": {
       name: "active",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.process.batchable": {
+      name: "batchable",
       required: false,
       in: "query",
       type: "string"
@@ -162257,6 +162807,12 @@ export default {
     },
     "rowFilter.jobOperation.inspectionDocumentId": {
       name: "inspectionDocumentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperation.jobOperationBatchId": {
+      name: "jobOperationBatchId",
       required: false,
       in: "query",
       type: "string"
@@ -174983,6 +175539,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.processes.batchable": {
+      name: "batchable",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.processes.workCenters": {
       name: "workCenters",
       required: false,
@@ -177661,6 +178223,12 @@ export default {
     },
     "rowFilter.quoteMaterialStep.quoteOperationStepId": {
       name: "quoteOperationStepId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.quoteMaterialStep.quantity": {
+      name: "quantity",
       required: false,
       in: "query",
       type: "string"
@@ -183127,6 +183695,12 @@ export default {
     },
     "rowFilter.productionEvent.postedToGL": {
       name: "postedToGL",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.productionEvent.jobOperationBatchId": {
+      name: "jobOperationBatchId",
       required: false,
       in: "query",
       type: "string"
