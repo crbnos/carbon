@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-25T04:20:27.696Z",
+  "generated": "2026-08-25T14:49:54.249Z",
   "totalTools": 1448,
   "modules": 15,
   "tools": [
@@ -25375,10 +25375,18 @@
             "type": "string"
           },
           "mode": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "initial",
+              "reschedule"
+            ]
           },
           "direction": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "backward",
+              "forward"
+            ]
           }
         },
         "required": [

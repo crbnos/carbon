@@ -7758,12 +7758,18 @@ export async function issueMaterial(
     acknowledged?: boolean;
   }
 ) {
-  const { data: jobOp } = await client
+  const { data: jobOp, error: jobOpError } = await client
     .from("jobOperation")
     .select("workCenterId")
     .eq("id", args.operationId)
+    .eq("companyId", companyId)
     .maybeSingle();
-  const workCenterId = jobOp?.workCenterId;
+  // Fail closed: a failed or empty lookup must not silently skip the work-center
+  // material-issue rule and let the `issue` edge function run unchecked.
+  if (jobOpError || !jobOp) {
+    throw new Error(`Job operation ${args.operationId} was not found.`);
+  }
+  const workCenterId = jobOp.workCenterId;
   if (workCenterId) {
     const ruleEval = await evaluateLinesForSurface({
       client,
@@ -7849,8 +7855,10 @@ export async function completeJob(
 }
 
 /**
- * Schedule or reschedule a job's operations. Wraps the `schedule` edge function (the same entry
- * point `recalculateJobOperationDependencies` uses).
+ * Schedule or reschedule a job's operations. Routes through `triggerJobSchedule` (the Inngest
+ * scheduling path) rather than invoking the `schedule` edge function directly, so the MCP entry
+ * point uses the same validated dispatch the rest of the app does. Invalid `mode`/`direction`
+ * strings are rejected here rather than only at the edge function.
  */
 export async function scheduleJob(
   client: SupabaseClient<Database>,
@@ -7858,19 +7866,23 @@ export async function scheduleJob(
   userId: string,
   args: {
     jobId: string;
-    mode?: string;
-    direction?: string;
+    mode?: "initial" | "reschedule";
+    direction?: "backward" | "forward";
   }
 ) {
-  return client.functions.invoke("schedule", {
-    body: {
-      jobId: args.jobId,
-      companyId,
-      userId,
-      mode: args.mode ?? "reschedule",
-      direction: args.direction ?? "backward"
-    }
-  });
+  const mode = args.mode ?? "reschedule";
+  const direction = args.direction ?? "backward";
+  if (mode !== "initial" && mode !== "reschedule") {
+    throw new Error(
+      `Invalid schedule mode "${mode}". Expected "initial" or "reschedule".`
+    );
+  }
+  if (direction !== "backward" && direction !== "forward") {
+    throw new Error(
+      `Invalid schedule direction "${direction}". Expected "backward" or "forward".`
+    );
+  }
+  return triggerJobSchedule(args.jobId, companyId, userId, mode, direction);
 }
 
 /**
@@ -7978,7 +7990,8 @@ export async function completeOperation(
     const finished = await client
       .from("jobOperation")
       .update({ status: "Done", updatedBy: userId })
-      .eq("id", args.operationId);
+      .eq("id", args.operationId)
+      .eq("companyId", companyId);
     if (finished.error) return { data: null, error: finished.error };
 
     // Post ended-but-unposted production events for GL absorption.
@@ -7986,6 +7999,7 @@ export async function completeOperation(
       .from("productionEvent")
       .select("id")
       .eq("jobOperationId", args.operationId)
+      .eq("companyId", companyId)
       .not("endTime", "is", null)
       .eq("postedToGL", false);
     if (unposted.data?.length) {
