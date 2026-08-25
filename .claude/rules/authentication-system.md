@@ -66,10 +66,13 @@ Self-hosted-only (direct `auth.identities` writes), Enterprise edition, gated by
   (`kong.yml` `auth-v1-sso`). Admin UX: Settings → Security (`x+/settings+/security.tsx`,
   action `x+/settings+/sso.tsx`) via `upsertSsoConnection` / `updateSsoRequireSso` /
   `deactivateSsoConnection` in ERP `settings.server.ts`.
-- **`ssoConnection` table** (migrations `20260820215433`, `20260821111133`) binds a
-  provider to a company: `providerId` UNIQUE, `domains TEXT[]`, `metadataUrl` XOR
-  `metadataXml` (CHECK), `active`, `requireSso`. GoTrue providers are project-global,
-  so the CALLBACK — not GoTrue — enforces provider → company + email-domain binding.
+- **`ssoConnection` table** (migration `20260820215433`; partial unique index also
+  in `20260825185617` for pre-squash DBs) binds a provider to a company:
+  `providerId` UNIQUE, `domains TEXT[]`, `metadataUrl` XOR `metadataXml` (CHECK),
+  `active`, `requireSso`, and at most ONE active row per company
+  (`ssoConnection_companyId_active_key` — readers use `.maybeSingle()`). GoTrue
+  providers are project-global, so the CALLBACK — not GoTrue — enforces
+  provider → company + email-domain binding.
 - **Session classification**: `getSsoProviderIdFromSession(accessToken, user)` requires
   an `amr` entry with `method: "sso/saml"` before resolving the provider id; fails
   CLOSED to the non-SSO path. `getSsoProviderIdFromUser` only answers "HAS an SSO

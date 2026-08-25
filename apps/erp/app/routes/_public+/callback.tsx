@@ -244,10 +244,17 @@ export async function action({ request }: ActionFunctionArgs) {
     const isMember = memberships.some((m) => m.companyId === ssoCompanyId);
 
     if (!isMember) {
+      // ilike for the case fold only (invite emails are stored as typed, the
+      // asserted email is lowercased) — escape LIKE metacharacters so %/_ in
+      // an address can never act as wildcards and match someone else's invite.
+      const inviteEmailPattern = authSession.email.replace(
+        /[\\%_]/g,
+        (match) => `\\${match}`
+      );
       const invite = await serviceRole
         .from("invite")
         .select("id, companyId, role, permissions")
-        .ilike("email", authSession.email)
+        .ilike("email", inviteEmailPattern)
         .eq("companyId", ssoCompanyId)
         .is("acceptedAt", null)
         .is("revokedAt", null)

@@ -2,6 +2,13 @@
 -- GoTrue's auth.sso_providers/auth.sso_domains drive the SAML handshake; this table
 -- is the tenant router and security anchor (providers are project-global in GoTrue,
 -- so the callback verifies providerId -> companyId + email-domain membership here).
+--
+-- "requireSso": when TRUE, users whose email domain is covered by this ACTIVE
+-- connection may only authenticate via SSO — magic link, Google/Azure OAuth, and
+-- passkeys are refused server-side at the login action, the callback, and the
+-- passkey verify routes (ERP + MES). Break-glass for self-hosted operators
+-- (documented in docs/content/docs/platform/single-sign-on.mdx):
+--   UPDATE "ssoConnection" SET "requireSso" = false WHERE "companyId" = '<id>';
 CREATE TABLE IF NOT EXISTS "ssoConnection" (
     "id" TEXT NOT NULL DEFAULT id('sso'),
     "companyId" TEXT NOT NULL,
@@ -10,6 +17,7 @@ CREATE TABLE IF NOT EXISTS "ssoConnection" (
     "metadataUrl" TEXT,
     "metadataXml" TEXT,
     "active" BOOLEAN NOT NULL DEFAULT TRUE,
+    "requireSso" BOOLEAN NOT NULL DEFAULT FALSE,
     "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
     "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     "updatedBy" TEXT REFERENCES "user"("id"),
@@ -24,6 +32,13 @@ CREATE INDEX IF NOT EXISTS "ssoConnection_companyId_idx" ON "ssoConnection" ("co
 CREATE INDEX IF NOT EXISTS "ssoConnection_createdBy_idx" ON "ssoConnection" ("createdBy");
 CREATE INDEX IF NOT EXISTS "ssoConnection_updatedBy_idx" ON "ssoConnection" ("updatedBy");
 CREATE INDEX IF NOT EXISTS "ssoConnection_domains_idx" ON "ssoConnection" USING GIN ("domains");
+
+-- One ACTIVE connection per company. Readers use .maybeSingle() (errors on two
+-- rows) and two concurrent upserts could otherwise both pass the app-side check;
+-- this makes the second insert fail loudly instead. Also lives in
+-- 20260826*_sso-connection-active-unique.sql (IF NOT EXISTS) for databases that
+-- applied the pre-squash version of this migration.
+CREATE UNIQUE INDEX IF NOT EXISTS "ssoConnection_companyId_active_key" ON "ssoConnection" ("companyId") WHERE "active" = TRUE;
 
 ALTER TABLE "ssoConnection" ENABLE ROW LEVEL SECURITY;
 
@@ -49,10 +64,12 @@ FOR DELETE USING (
 
 -- Crash-free public-user creation: an SSO signup whose email already belongs to a
 -- DIFFERENT public."user" row must not violate index_user_email_key inside GoTrue's
--- transaction (the SAML login would fail opaquely before app code runs). The row is
--- skipped here; the SSO callback's migration transaction owns creating it after
--- domain + invite verification. The existing row is never mutated from this trigger
--- (a rogue IdP must not be able to touch another account's row).
+-- transaction (the SAML login would fail opaquely before app code runs). The branch
+-- inserts NOTHING — not even the "userPermission" row, whose id has an FK to the
+-- "user" row this branch declines to create. The SSO callback's migration
+-- transaction owns creating both rows after domain + invite verification
+-- (users.sso.server.ts migrateUserToSso). The existing row is never mutated from
+-- this trigger (a rogue IdP must not be able to touch another account's row).
 CREATE OR REPLACE FUNCTION public.create_public_user()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -62,7 +79,6 @@ DECLARE
 BEGIN
   SELECT "id" INTO email_owner FROM public."user" WHERE "email" = NEW.email;
   IF email_owner IS NOT NULL AND email_owner <> NEW.id::text THEN
-    INSERT INTO public."userPermission" ("id") VALUES (NEW.id) ON CONFLICT DO NOTHING;
     RETURN NEW;
   END IF;
 
