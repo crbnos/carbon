@@ -659,12 +659,13 @@ export async function deactivateSsoConnection(
     return { data: null, error: "No active SSO connection found" };
   }
 
-  const removal = await deleteGoTrueSsoProvider(existing.data.providerId);
-  if (removal.error) {
-    return { data: null, error: removal.error };
-  }
-
-  return serviceRole
+  // Flip the row inactive BEFORE deleting the GoTrue provider. The reverse
+  // order has a lockout failure mode: provider deleted, row update fails →
+  // SAML is dead while the still-active row keeps enforcing Require SSO, and
+  // only manual SQL recovers. This order's failure modes are both safe — a
+  // failed row update touches nothing in GoTrue, and a failed provider delete
+  // is compensated below.
+  const update = await serviceRole
     .from("ssoConnection")
     .update({
       active: false,
@@ -675,6 +676,31 @@ export async function deactivateSsoConnection(
     .eq("companyId", args.companyId)
     .select("*")
     .single();
+  if (update.error) {
+    return update;
+  }
+
+  const removal = await deleteGoTrueSsoProvider(existing.data.providerId);
+  if (removal.error) {
+    // Compensate: restore the row so the admin sees "still active, try again"
+    // rather than an orphaned GoTrue provider squatting on the domains (GoTrue
+    // enforces domain uniqueness, so an orphan blocks re-creating the
+    // connection later). If this restore ALSO fails, the leftover state is
+    // "row inactive + provider alive" — the safe half: the callback rejects
+    // logins against an inactive connection and nobody is locked out.
+    await serviceRole
+      .from("ssoConnection")
+      .update({
+        active: true,
+        updatedBy: args.userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", existing.data.id)
+      .eq("companyId", args.companyId);
+    return { data: null, error: removal.error };
+  }
+
+  return update;
 }
 
 // Server-only (needs the service-role client for the Vault RPC). Lives here rather
