@@ -91,8 +91,16 @@ Server checks (`plan.server.ts`) read `companyPlan.planId` (`.eq("id", companyId
 - `companyHasPlan(client, companyId, spec)` → boolean.
 - `requirePlan({ request, client, companyId, redirectTo, message?, ...spec })` → throws a
   `redirect` with a flash error when the gate fails.
+- `getPlan(client, companyId)` → the raw plan id string the **client** gate
+  (`usePlan`) consumes, resolved from the SAME durable `companyPlan` mirror the two checks
+  above read (precedence bypass → `companyPlan` → carbon-owned; `null` off Cloud). The `/x`
+  loader calls this for its `plan` field. It exists so the UI gate can never disagree with
+  server enforcement — the loader previously sourced `plan` from `getStripeCustomerByCompanyId().planId`
+  (the Stripe/Redis cache), which could go stale and gate a customer whose real plan was
+  correct (a live Partner shown "Upgrade to Business", API keys hidden, while the API auth
+  path — reading `companyPlan` directly — still accepted the keys).
 
-**Both short-circuit `true`/return when `CarbonEdition !== Edition.Cloud` or the company is
+**All three short-circuit when `CarbonEdition !== Edition.Cloud` or the company is
 bypass-listed** — gating only bites on Cloud.
 
 `spec` is a `GateSpec`: either `{ feature: Feature }` or `{ plan: Plan | Plan[] }`.
@@ -100,7 +108,8 @@ bypass-listed** — gating only bites on Cloud.
 ## Frontend hooks (`packages/react/src/hooks/`)
 
 - `usePlan()` (`usePlan.tsx`) — reads `plan` from the `/x` route data and runs it through
-  `normalizePlanId`. The `/x` layout loader sources it from the Stripe customer's `planId`.
+  `normalizePlanId`. The `/x` layout loader sources it from `getPlan` (the durable
+  `companyPlan` mirror), NOT the Stripe customer cache — see Plan gating above.
 - `useEdition()` (`useEdition.tsx`) — reads `env.CARBON_EDITION` from root route data.
 - `usePlanGate` (client mirror of `FEATURE_PLANS`).
 

@@ -80,13 +80,14 @@ export async function runTier11(ctx: Ctx): Promise<void> {
     ownerId: userId,
     issueTypeId: issueType.id
   })) {
-    ctx.log(`workflow — ${workflow.name}${workflow.active ? "" : " (off)"}`);
+    ctx.log(
+      `workflow — ${workflow.name}${workflow.published ? "" : " (draft)"}`
+    );
 
     const workflowId = await insertId(ctx, "workflow", {
       name: workflow.name,
       description: workflow.description,
-      ownerId: userId,
-      active: workflow.active
+      ownerId: userId
     });
 
     const versionId = await insertId(ctx, "workflowVersion", {
@@ -97,16 +98,15 @@ export async function runTier11(ctx: Ctx): Promise<void> {
       edges: JSON.stringify(workflow.edges)
     });
 
-    // Set even when the workflow is off: deactivating in the app keeps the promoted
-    // version and only drops the trigger rows, so switching one on has to just work.
+    // The pointer IS the on/off switch, so an unpublished seeded workflow is a draft: no
+    // pointer, and no trigger rows either — exactly what `syncWorkflowTriggers` leaves
+    // behind when a user unpublishes one.
+    if (!workflow.published) continue;
+
     await ctx.client.query(
-      `UPDATE "workflow" SET "activeVersionId" = $1 WHERE "id" = $2 AND "companyId" = $3`,
+      `UPDATE "workflow" SET "publishedVersionId" = $1 WHERE "id" = $2 AND "companyId" = $3`,
       [versionId, workflowId, ctx.companyId]
     );
-
-    // Trigger rows are what make a workflow fire, so an inactive one gets none —
-    // the same thing `syncWorkflowTriggers` does when a user turns one off.
-    if (!workflow.active) continue;
 
     for (const row of triggerRowsFor(workflow.nodes)) {
       await insertRow(ctx, "workflowTriggerEvent", {

@@ -322,6 +322,11 @@ export const selectedLineSchema = z.object({
   supplierShippingCost: z.number(),
   supplierUnitPrice: z.number(),
   supplierTaxAmount: z.number(),
+  // The base-currency twin of supplierTaxAmount, matching the unitPrice /
+  // supplierUnitPrice and shippingCost / supplierShippingCost pairs above.
+  // Optional so the supplier portal and the to-order drawer keep working
+  // without it; only cross-supplier totals need a comparable tax figure.
+  taxAmount: z.number().optional().default(0),
   // Same 0..1 fraction contract as purchaseOrderLineValidator — the two feed the
   // same columns, so an unbounded rate here would bypass the form's bound.
   taxPercent: z.number().min(0).max(1).optional().default(0),

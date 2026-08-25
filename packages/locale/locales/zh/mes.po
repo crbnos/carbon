@@ -515,6 +515,9 @@ msgstr "完成 {0}"
 msgid "Finish Anyways"
 msgstr "仍然完成"
 
+msgid "Finish setting up your account"
+msgstr ""
+
 msgid "Finish with material unpicked?"
 msgstr "物料未拣选完毕，是否完成？"
 
@@ -523,6 +526,9 @@ msgstr "忘记打卡下班了？"
 
 msgid "Go back to operation"
 msgstr "返回操作"
+
+msgid "Go to onboarding"
+msgstr ""
 
 msgid "How many were actually picked?"
 msgstr "实际上捡了多少个？"
@@ -1496,6 +1502,9 @@ msgstr "您在 <0/> 打卡。您可以编辑下方的下班时间，或确认您
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "您已打卡上班 {hoursElapsed} 小时。您是否忘记打卡下班了？"
+
+msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
+msgstr ""
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "您的组织需要身份验证器应用。在 Carbon 中设置，然后返回此处。"

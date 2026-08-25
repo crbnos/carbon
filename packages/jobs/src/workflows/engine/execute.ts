@@ -69,7 +69,7 @@ export interface EngineLogger {
   error(message: string, ...rest: unknown[]): void;
 }
 
-const SWITCHED_OFF = "This workflow was switched off before the run started.";
+const UNPUBLISHED = "This workflow was unpublished before the run started.";
 const NO_PERMISSIONS =
   "The permissions for the owner of this workflow could not be read.";
 const NOT_AVAILABLE = "This kind of step is not available yet.";
@@ -375,12 +375,12 @@ export async function executeWorkflowRun(params: {
 
     const startedAt = datetime.timestamp();
 
-    if (!context.workflowActive) {
+    if (!context.workflowPublished) {
       await finishRun(db, {
         runId: payload.runId,
         companyId: payload.companyId,
         status: "Skipped",
-        statusReason: SWITCHED_OFF,
+        statusReason: UNPUBLISHED,
         startedAt
       });
       return { settled: "Skipped" as const };

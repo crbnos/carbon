@@ -299,9 +299,9 @@ every other check compares declared types only.
 
 ## The `workflowTriggerEvent` invariant
 
-A `workflowTriggerEvent` row exists **if and only if** the workflow is active, has a promoted
-version, and that version's trigger nodes list that event id. Promoting a version, editing the
-active version's trigger, and toggling `active` must all rewrite the workflow's rows —
+A `workflowTriggerEvent` row exists **if and only if** the workflow has a published version and
+that version's trigger nodes list that event id. Publishing a version, editing the published
+version's trigger, and unpublishing must all rewrite the workflow's rows —
 delete-then-insert **in the same transaction** as the change. If these drift, a workflow silently
 stops firing or fires when it should not.
 

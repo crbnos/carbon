@@ -515,6 +515,9 @@ msgstr "Terminer {0}"
 msgid "Finish Anyways"
 msgstr "Terminer quand même"
 
+msgid "Finish setting up your account"
+msgstr ""
+
 msgid "Finish with material unpicked?"
 msgstr "Terminer avec du matériel non prélevé?"
 
@@ -523,6 +526,9 @@ msgstr "Oubli de pointer la sortie ?"
 
 msgid "Go back to operation"
 msgstr "Revenir à l'opération"
+
+msgid "Go to onboarding"
+msgstr ""
 
 msgid "How many were actually picked?"
 msgstr "Combien ont réellement été prélevés ?"
@@ -1496,6 +1502,9 @@ msgstr "Vous avez pointé à <0/>. Vous pouvez modifier votre heure de départ c
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Vous êtes pointé depuis {hoursElapsed} heures. Avez-vous oublié de pointer la sortie ?"
+
+msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
+msgstr ""
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Votre organisation nécessite une application d'authentification. Configurez-la dans Carbon, puis revenez ici."

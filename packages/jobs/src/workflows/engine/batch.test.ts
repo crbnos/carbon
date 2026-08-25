@@ -184,7 +184,7 @@ beforeEach(() => {
       eventId: "job.status.changed",
       status: "Queued"
     },
-    workflowActive: true,
+    workflowPublished: true,
     companyGroupId: "cg1",
     version: definition
   });
