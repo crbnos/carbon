@@ -2543,9 +2543,6 @@ msgstr "Indirizzo di Fatturazione"
 msgid "Bills of material"
 msgstr "Distinte base"
 
-msgid "Blank"
-msgstr ""
-
 msgid "Blind Count"
 msgstr "Conteggio Cieco"
 
@@ -3988,6 +3985,9 @@ msgstr "Crea voci di audit trail"
 
 msgid "Create Change Notice"
 msgstr "Crea avviso di modifica"
+
+msgid "Create from"
+msgstr ""
 
 msgid "Create Issue"
 msgstr "Crea Problema"
@@ -7044,9 +7044,6 @@ msgstr ""
 msgid "from on-account credit"
 msgstr "dal credito a conto"
 
-msgid "From Onshape"
-msgstr ""
-
 msgid "From Storage Unit"
 msgstr "Da Unità di Stoccaggio"
 
@@ -9638,6 +9635,9 @@ msgstr "Nuovo Proprietario"
 
 msgid "New Part"
 msgstr "Nuova Parte"
+
+msgid "New part from {name}"
+msgstr ""
 
 msgid "new parts"
 msgstr ""

@@ -69,12 +69,12 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function PartsNewRoute() {
-  // The Parts table's "From Onshape" button links here rather than opening a
-  // second modal — one form, one set of decisions. `PartForm` still gates the
-  // source on the company being connected, so the parameter cannot conjure it
-  // on a company that never connected Onshape.
+  // `?source=<integration id>` opens that source's picker on arrival, for
+  // anything that wants to link straight into it. `PartForm` still gates the
+  // source on the company having connected it, so the parameter cannot conjure
+  // a source a company never connected.
   const [searchParams] = useSearchParams();
-  const source = searchParams.get("source") === "onshape" ? "onshape" : "blank";
+  const source = searchParams.get("source");
 
   const initialValues = {
     id: "",
@@ -95,8 +95,8 @@ export default function PartsNewRoute() {
     <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
       <PartForm
         initialValues={initialValues}
-        withOnshapeSource
-        defaultSource={source}
+        withItemSources
+        defaultSourceId={source}
       />
     </div>
   );

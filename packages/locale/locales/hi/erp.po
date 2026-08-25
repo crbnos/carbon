@@ -2543,9 +2543,6 @@ msgstr "बिलिंग पता"
 msgid "Bills of material"
 msgstr "सामग्री के बिल"
 
-msgid "Blank"
-msgstr ""
-
 msgid "Blind Count"
 msgstr "ब्लाइंड काउंट"
 
@@ -3988,6 +3985,9 @@ msgstr "ऑडिट ट्रेल प्रविष्टियां बन
 
 msgid "Create Change Notice"
 msgstr "परिवर्तन सूचना बनाएं"
+
+msgid "Create from"
+msgstr ""
 
 msgid "Create Issue"
 msgstr "समस्या बनाएं"
@@ -7044,9 +7044,6 @@ msgstr ""
 msgid "from on-account credit"
 msgstr "खाता-पर क्रेडिट से"
 
-msgid "From Onshape"
-msgstr ""
-
 msgid "From Storage Unit"
 msgstr "स्टोरेज यूनिट से"
 
@@ -9638,6 +9635,9 @@ msgstr "नया मालिक"
 
 msgid "New Part"
 msgstr "नया पार्ट"
+
+msgid "New part from {name}"
+msgstr ""
 
 msgid "new parts"
 msgstr ""

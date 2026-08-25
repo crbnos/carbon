@@ -2543,9 +2543,6 @@ msgstr "Адрес выставления счета"
 msgid "Bills of material"
 msgstr "Спецификации материалов"
 
-msgid "Blank"
-msgstr ""
-
 msgid "Blind Count"
 msgstr "Слепой подсчет"
 
@@ -3988,6 +3985,9 @@ msgstr "Создать записи в журнале аудита"
 
 msgid "Create Change Notice"
 msgstr "Создать уведомление об изменении"
+
+msgid "Create from"
+msgstr ""
 
 msgid "Create Issue"
 msgstr "Создать проблему"
@@ -7044,9 +7044,6 @@ msgstr ""
 msgid "from on-account credit"
 msgstr "со счета авансовых платежей"
 
-msgid "From Onshape"
-msgstr ""
-
 msgid "From Storage Unit"
 msgstr "Из хранилища"
 
@@ -9638,6 +9635,9 @@ msgstr "Новый владелец"
 
 msgid "New Part"
 msgstr "Новая деталь"
+
+msgid "New part from {name}"
+msgstr ""
 
 msgid "new parts"
 msgstr ""

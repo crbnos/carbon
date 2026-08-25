@@ -2543,9 +2543,6 @@ msgstr "Rechnungsadresse"
 msgid "Bills of material"
 msgstr "Stücklisten"
 
-msgid "Blank"
-msgstr ""
-
 msgid "Blind Count"
 msgstr "Blinde Inventur"
 
@@ -3988,6 +3985,9 @@ msgstr "Audit-Trail-Einträge erstellen"
 
 msgid "Create Change Notice"
 msgstr "Änderungsmitteilung erstellen"
+
+msgid "Create from"
+msgstr ""
 
 msgid "Create Issue"
 msgstr "Problem erstellen"
@@ -7044,9 +7044,6 @@ msgstr ""
 msgid "from on-account credit"
 msgstr "aus dem Gutschrift-Konto"
 
-msgid "From Onshape"
-msgstr ""
-
 msgid "From Storage Unit"
 msgstr "Von Lagereinheit"
 
@@ -9638,6 +9635,9 @@ msgstr "Neuer Eigentümer"
 
 msgid "New Part"
 msgstr "Neuer Teil"
+
+msgid "New part from {name}"
+msgstr ""
 
 msgid "new parts"
 msgstr ""

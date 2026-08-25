@@ -2543,9 +2543,6 @@ msgstr "Faturalama Adresi"
 msgid "Bills of material"
 msgstr "Malzeme Faturaları"
 
-msgid "Blank"
-msgstr ""
-
 msgid "Blind Count"
 msgstr "Kör Sayımı"
 
@@ -3988,6 +3985,9 @@ msgstr "Denetim izi girdileri oluştur"
 
 msgid "Create Change Notice"
 msgstr "Değişiklik Bildirisi Oluştur"
+
+msgid "Create from"
+msgstr ""
 
 msgid "Create Issue"
 msgstr "Sorun Oluştur"
@@ -7044,9 +7044,6 @@ msgstr ""
 msgid "from on-account credit"
 msgstr "hesap kredisinden"
 
-msgid "From Onshape"
-msgstr ""
-
 msgid "From Storage Unit"
 msgstr "Kaynak Depo Birimi"
 
@@ -9638,6 +9635,9 @@ msgstr "Yeni Sahip"
 
 msgid "New Part"
 msgstr "Yeni Ürün"
+
+msgid "New part from {name}"
+msgstr ""
 
 msgid "new parts"
 msgstr ""

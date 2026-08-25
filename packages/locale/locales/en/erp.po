@@ -2543,9 +2543,6 @@ msgstr "Billing Address"
 msgid "Bills of material"
 msgstr "Bills of material"
 
-msgid "Blank"
-msgstr "Blank"
-
 msgid "Blind Count"
 msgstr "Blind Count"
 
@@ -3988,6 +3985,9 @@ msgstr "Create audit trail entries"
 
 msgid "Create Change Notice"
 msgstr "Create Change Notice"
+
+msgid "Create from"
+msgstr "Create from"
 
 msgid "Create Issue"
 msgstr "Create Issue"
@@ -7044,9 +7044,6 @@ msgstr "From now on Carbon follows this Onshape part by a hidden id rather than 
 msgid "from on-account credit"
 msgstr "from on-account credit"
 
-msgid "From Onshape"
-msgstr "From Onshape"
-
 msgid "From Storage Unit"
 msgstr "From Storage Unit"
 
@@ -9638,6 +9635,9 @@ msgstr "New Owner"
 
 msgid "New Part"
 msgstr "New Part"
+
+msgid "New part from {name}"
+msgstr "New part from {name}"
 
 msgid "new parts"
 msgstr "new parts"

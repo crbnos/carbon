@@ -1,5 +1,4 @@
 import { useCarbon } from "@carbon/auth";
-import { OnshapeLogo } from "@carbon/ee";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -59,7 +58,7 @@ import {
   usePermissions,
   useUser
 } from "~/hooks";
-import { useOnshape } from "~/hooks/useOnshape";
+import { useItemSources } from "~/hooks/useItemSources";
 import type { loader as replenishmentLoader } from "~/routes/api+/integrations.onshape.replenishment";
 import { path } from "~/utils/path";
 import {
@@ -98,15 +97,16 @@ type PartFormProps = {
   type?: "card" | "modal";
   onClose?: () => void;
   /**
-   * Offer "From Onshape" as a source for this part.
+   * Offer the company's connected item sources (Onshape, and whatever joins
+   * `useItemSources` after it) as a way to seed this part.
    *
    * Opt-in, never inferred: the inline-create callers above submit to the
    * ordinary action and read a PostgrestResponse back, and would silently break
    * if this form could ever redirect them somewhere else.
    */
-  withOnshapeSource?: boolean;
-  /** Open the Onshape picker on mount (the Parts table's shortcut link). */
-  defaultSource?: "blank" | "onshape";
+  withItemSources?: boolean;
+  /** Open this source's picker on mount, when the company has it connected. */
+  defaultSourceId?: string | null;
 };
 
 const SIZE_LIMIT = getFileSizeLimit("CAD_MODEL_UPLOAD");
@@ -125,8 +125,8 @@ const PartForm = ({
   initialValues,
   type = "card",
   onClose,
-  withOnshapeSource = false,
-  defaultSource = "blank"
+  withItemSources = false,
+  defaultSourceId = null
 }: PartFormProps) => {
   const { t } = useLingui();
   const { company } = useUser();
@@ -147,16 +147,22 @@ const PartForm = ({
 
   const isEditing = !!initialValues.id;
   const permissions = usePermissions();
-  const onshape = useOnshape();
+  const connectedSources = useItemSources();
 
-  // Presentation only. The create route re-reads the connection server-side and
-  // refuses when the company has none, so hiding the button is never what keeps
-  // the Onshape source off a company that never connected.
-  const canUseOnshapeSource =
-    withOnshapeSource && onshape.isConnected && !isEditing;
+  // Presentation only. Every source's create route re-reads the connection
+  // server-side and refuses when the company has none, so an empty list hiding
+  // the picker is never what keeps a source off a company that never connected.
+  const sources = withItemSources && !isEditing ? connectedSources : [];
 
-  const [source, setSource] = useState<"blank" | "onshape">(
-    canUseOnshapeSource && defaultSource === "onshape" ? "onshape" : "blank"
+  // `null` is the blank part — the state the form is in before anyone picks a
+  // source, and the state a second click on the picked wordmark returns to.
+  //
+  // Seeded from `sources`, NOT from `connectedSources`: a form that is editing,
+  // or one whose caller never opted in, has no picker to show, and seeding a
+  // source it cannot display would leave it silently in a state the user has no
+  // control to leave.
+  const [source, setSource] = useState<string | null>(() =>
+    sources.some((s) => s.id === defaultSourceId) ? defaultSourceId : null
   );
   const [selection, setSelection] = useState<OnshapeSelection | null>(null);
   /**
@@ -171,7 +177,10 @@ const PartForm = ({
   >(null);
   const replenishmentFetcher = useFetcher<typeof replenishmentLoader>();
 
-  const isFromOnshape = canUseOnshapeSource && source === "onshape";
+  // Both halves, not just the id: `source` can only hold a source the picker
+  // offers, and the picker is gated, but the invariant is cheap to state and
+  // expensive to rediscover.
+  const isFromOnshape = sources.length > 0 && source === "onshape";
   const hasOnshapeSelection = isFromOnshape && selection !== null;
 
   const modelUpload = async (file: File) => {
@@ -397,10 +406,17 @@ const PartForm = ({
     );
   };
 
-  const clearOnshapeSource = () => {
+  /**
+   * Pick a source, or un-pick the picked one.
+   *
+   * Every switch drops the selection: a revision chosen in one system means
+   * nothing in the next, and carrying it across would leave the form claiming a
+   * part number no longer backed by anything.
+   */
+  const onSelectSource = (id: string) => {
     setSelection(null);
     setReplenishmentSource(null);
-    setSource("blank");
+    setSource((current) => (current === id ? null : id));
   };
 
   /**
@@ -550,34 +566,26 @@ const PartForm = ({
                 </>
               )}
 
-              {canUseOnshapeSource && (
+              {sources.length > 0 && (
                 <div className="mb-4 w-full rounded-md border border-border p-3">
                   <VStack spacing={2}>
-                    <HStack className="w-full items-center justify-between gap-2">
-                      <span className="text-xs font-medium text-muted-foreground">
-                        <Trans>Source</Trans>
-                      </span>
-                      <HStack spacing={2}>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      <Trans>Create from</Trans>
+                    </span>
+                    <HStack spacing={2} className="flex-wrap">
+                      {sources.map(({ id, name, Wordmark }) => (
                         <Button
+                          key={id}
                           type="button"
                           size="sm"
-                          variant={source === "blank" ? "primary" : "secondary"}
-                          onClick={clearOnshapeSource}
+                          variant={source === id ? "primary" : "secondary"}
+                          aria-pressed={source === id}
+                          aria-label={name}
+                          onClick={() => onSelectSource(id)}
                         >
-                          <Trans>Blank</Trans>
+                          <Wordmark className="h-3.5 w-auto" />
                         </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant={
-                            source === "onshape" ? "primary" : "secondary"
-                          }
-                          leftIcon={<OnshapeLogo className="h-3.5 w-auto" />}
-                          onClick={() => setSource("onshape")}
-                        >
-                          <Trans>From Onshape</Trans>
-                        </Button>
-                      </HStack>
+                      ))}
                     </HStack>
 
                     {isFromOnshape && selection && (

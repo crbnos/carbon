@@ -2543,9 +2543,6 @@ msgstr "청구지 주소"
 msgid "Bills of material"
 msgstr "자재명세서"
 
-msgid "Blank"
-msgstr ""
-
 msgid "Blind Count"
 msgstr "블라인드 실사"
 
@@ -3988,6 +3985,9 @@ msgstr "감사 추적 항목 생성"
 
 msgid "Create Change Notice"
 msgstr "변경 공지 만들기"
+
+msgid "Create from"
+msgstr ""
 
 msgid "Create Issue"
 msgstr "이슈 생성"
@@ -7044,9 +7044,6 @@ msgstr ""
 msgid "from on-account credit"
 msgstr "미수금 크레딧에서"
 
-msgid "From Onshape"
-msgstr ""
-
 msgid "From Storage Unit"
 msgstr "출발 저장 단위"
 
@@ -9638,6 +9635,9 @@ msgstr "새 소유자"
 
 msgid "New Part"
 msgstr "새 품목"
+
+msgid "New part from {name}"
+msgstr ""
 
 msgid "new parts"
 msgstr ""

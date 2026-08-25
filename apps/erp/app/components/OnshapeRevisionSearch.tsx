@@ -131,7 +131,13 @@ export const OnshapeRevisionSearch = ({
     });
   }, [revisions, search, hideLinked, onlyElementType]);
 
-  const isLoading = fetcher.state !== "idle";
+  // Three states, not two: nothing requested yet, in flight, and settled. A
+  // fetcher sits at `idle` with no data for the render BEFORE the effect above
+  // fires its load, so reading `state` alone called that first render "settled
+  // with no rows" and flashed the empty-state copy for a frame before the
+  // spinner replaced it.
+  const hasSettled = fetcher.data !== undefined;
+  const isLoading = fetcher.state !== "idle" || (isActive && !hasSettled);
 
   return (
     <VStack spacing={4} className="min-w-0">
@@ -162,7 +168,7 @@ export const OnshapeRevisionSearch = ({
         </HStack>
       )}
 
-      {!isLoading && !error && visible.length === 0 && (
+      {hasSettled && !isLoading && !error && visible.length === 0 && (
         <p className="py-8 text-center text-sm text-muted-foreground">
           {revisions.length === 0 ? (
             <Trans>

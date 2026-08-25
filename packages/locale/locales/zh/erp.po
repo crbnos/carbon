@@ -2543,9 +2543,6 @@ msgstr "账单地址"
 msgid "Bills of material"
 msgstr "物料清单"
 
-msgid "Blank"
-msgstr ""
-
 msgid "Blind Count"
 msgstr "盲点库存"
 
@@ -3988,6 +3985,9 @@ msgstr "创建审计跟踪条目"
 
 msgid "Create Change Notice"
 msgstr "创建更改单"
+
+msgid "Create from"
+msgstr ""
 
 msgid "Create Issue"
 msgstr "创建问题"
@@ -7044,9 +7044,6 @@ msgstr ""
 msgid "from on-account credit"
 msgstr "从应收账款信用额度"
 
-msgid "From Onshape"
-msgstr ""
-
 msgid "From Storage Unit"
 msgstr "从存储单位"
 
@@ -9638,6 +9635,9 @@ msgstr "新所有者"
 
 msgid "New Part"
 msgstr "新零件"
+
+msgid "New part from {name}"
+msgstr ""
 
 msgid "new parts"
 msgstr ""

@@ -2543,9 +2543,6 @@ msgstr "Endereço de Cobrança"
 msgid "Bills of material"
 msgstr "Listas de materiais"
 
-msgid "Blank"
-msgstr ""
-
 msgid "Blind Count"
 msgstr "Contagem Cega"
 
@@ -3988,6 +3985,9 @@ msgstr "Criar entradas de trilha de auditoria"
 
 msgid "Create Change Notice"
 msgstr "Criar Aviso de Mudança"
+
+msgid "Create from"
+msgstr ""
 
 msgid "Create Issue"
 msgstr "Criar Problema"
@@ -7044,9 +7044,6 @@ msgstr ""
 msgid "from on-account credit"
 msgstr "do crédito em conta"
 
-msgid "From Onshape"
-msgstr ""
-
 msgid "From Storage Unit"
 msgstr "Unidade de Armazenamento De"
 
@@ -9638,6 +9635,9 @@ msgstr "Novo Proprietário"
 
 msgid "New Part"
 msgstr "Nova Peça"
+
+msgid "New part from {name}"
+msgstr ""
 
 msgid "new parts"
 msgstr ""

@@ -2543,9 +2543,6 @@ msgstr "Adres rozliczeniowy"
 msgid "Bills of material"
 msgstr "Zestawienia materiałowe"
 
-msgid "Blank"
-msgstr ""
-
 msgid "Blind Count"
 msgstr "Niewidoczna inwentaryzacja"
 
@@ -3988,6 +3985,9 @@ msgstr "Utwórz wpisy dziennika audytu"
 
 msgid "Create Change Notice"
 msgstr "Utwórz Zgłoszenie Zmian"
+
+msgid "Create from"
+msgstr ""
 
 msgid "Create Issue"
 msgstr "Utwórz problem"
@@ -7044,9 +7044,6 @@ msgstr ""
 msgid "from on-account credit"
 msgstr "z kredytu na koncie"
 
-msgid "From Onshape"
-msgstr ""
-
 msgid "From Storage Unit"
 msgstr "Z jednostki magazynowej"
 
@@ -9638,6 +9635,9 @@ msgstr "Nowy Właściciel"
 
 msgid "New Part"
 msgstr "Nowa Część"
+
+msgid "New part from {name}"
+msgstr ""
 
 msgid "new parts"
 msgstr ""

@@ -1,4 +1,3 @@
-import { OnshapeLogo } from "@carbon/ee";
 import {
   Badge,
   Button,
@@ -61,7 +60,7 @@ import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import { useOnshape } from "~/hooks/useOnshape";
+import { useItemSources } from "~/hooks/useItemSources";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
 import { usePeople } from "~/stores";
@@ -82,7 +81,7 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
-  const onshape = useOnshape();
+  const sources = useItemSources();
 
   const translateReplenishment = useCallback(
     (v: string) =>
@@ -674,20 +673,21 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
                   <Trans>Item Groups</Trans>
                 </Link>
               </Button>
-              {onshape.isConnected && (
+              {sources.map(({ id, name, Wordmark }) => (
                 // A shortcut INTO the New Part form, not a second surface. The
                 // modal that used to live here re-implemented three of the
                 // form's fields and could not reach the other twelve.
                 <Button
+                  key={id}
                   variant="secondary"
-                  leftIcon={<OnshapeLogo className="h-4 w-auto" />}
+                  aria-label={t`New part from ${name}`}
                   asChild
                 >
-                  <Link to={`${path.to.newPart}?source=onshape`}>
-                    <Trans>From Onshape</Trans>
+                  <Link to={`${path.to.newPart}?source=${id}`}>
+                    <Wordmark className="h-4 w-auto" />
                   </Link>
                 </Button>
-              )}
+              ))}
               <New label={t`Part`} to={path.to.newPart} />
             </div>
           )

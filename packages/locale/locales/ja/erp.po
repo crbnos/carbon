@@ -2543,9 +2543,6 @@ msgstr "請求先住所"
 msgid "Bills of material"
 msgstr "部品表"
 
-msgid "Blank"
-msgstr ""
-
 msgid "Blind Count"
 msgstr "ブラインドカウント"
 
@@ -3988,6 +3985,9 @@ msgstr "監査証跡エントリを作成"
 
 msgid "Create Change Notice"
 msgstr "変更通知を作成"
+
+msgid "Create from"
+msgstr ""
 
 msgid "Create Issue"
 msgstr "問題を作成"
@@ -7044,9 +7044,6 @@ msgstr ""
 msgid "from on-account credit"
 msgstr "オンアカウントクレジットから"
 
-msgid "From Onshape"
-msgstr ""
-
 msgid "From Storage Unit"
 msgstr "保管場所から"
 
@@ -9638,6 +9635,9 @@ msgstr "新しいオーナー"
 
 msgid "New Part"
 msgstr "新しい部品"
+
+msgid "New part from {name}"
+msgstr ""
 
 msgid "new parts"
 msgstr ""
