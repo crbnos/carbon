@@ -441,7 +441,10 @@ function classifyFunction(
   name: string
 ): "READ" | "WRITE" | "DESTRUCTIVE" {
   if (/^delete/.test(name)) return "DESTRUCTIVE";
-  if (/^(get|list|fetch|search|find|count|check|is|has|compute)/.test(name))
+  // Require a camelCase boundary after the read prefix so a mutating name that merely starts with
+  // those letters is not misread as a reader — e.g. `issueMaterial` ("is"+lowercase) is a WRITE,
+  // while `isBlocked`/`getJob` ("is"/"get"+uppercase) stay READ.
+  if (/^(get|list|fetch|search|find|count|check|is|has|compute)(?![a-z])/.test(name))
     return "READ";
   return "WRITE";
 }

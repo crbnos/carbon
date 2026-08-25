@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-22T01:32:58.017Z",
-  "totalTools": 1443,
+  "generated": "2026-08-25T03:49:55.333Z",
+  "totalTools": 1446,
   "modules": 15,
   "tools": [
     {
@@ -25248,6 +25248,120 @@
           "inspectionDocumentId",
           "features",
           "balloons"
+        ]
+      }
+    },
+    {
+      "name": "production_issueMaterial",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "issue material",
+      "paramCount": 6,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "userId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "operationId": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "materialId": {
+            "type": "string"
+          },
+          "jobOperationStepId": {
+            "type": "string"
+          },
+          "adjustmentType": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "operationId",
+          "itemId",
+          "quantity"
+        ]
+      }
+    },
+    {
+      "name": "production_completeJob",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "complete job",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "userId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "storageUnitId": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "jobId",
+          "quantity"
+        ]
+      }
+    },
+    {
+      "name": "production_scheduleJob",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "schedule job",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "userId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string"
+          },
+          "direction": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "jobId"
         ]
       }
     },

@@ -1,3 +1,4 @@
+import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
@@ -7717,5 +7718,110 @@ export async function saveInspectionDocumentAtomic(
     p_default_page_height: args.defaultPageHeight ?? null,
     p_features: args.features,
     p_balloons: args.balloons
+  });
+}
+
+// ---------------------------------------------------------------------------
+// MES-core write entry points exposed to MCP (gatekeeper-carbon asks #1–#4).
+//
+// Each wraps the SAME edge function / RPC the MES/ERP UI uses, so an MCP caller drives
+// production as the connected user — companyId/userId come from the OAuth token (injected by the
+// MCP executor), not from caller-supplied (falsifiable) fields. Exposed automatically by
+// scripts/generate-mcp.ts as production_issueMaterial / _completeJob / _scheduleJob.
+
+/**
+ * Issue material to a job operation. Wraps the `issue` edge function (partToOperation) — the same
+ * transactional entry point the MES material-issue screen uses (inventory draw-down + WIP posting).
+ * Issuing requires only an authenticated company user (matching the MES route), so no extra
+ * permission gate is applied here.
+ *
+ * Note: the MES screen also evaluates work-center-scoped blocking rules before issuing; that
+ * pre-check is not yet replicated on the MCP path (follow-up).
+ */
+export async function issueMaterial(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  userId: string,
+  args: {
+    operationId: string;
+    itemId: string;
+    quantity: number;
+    materialId?: string;
+    jobOperationStepId?: string;
+    adjustmentType?: string;
+  }
+) {
+  return client.functions.invoke("issue", {
+    body: {
+      id: args.operationId,
+      type: "partToOperation",
+      itemId: args.itemId,
+      materialId: args.materialId,
+      jobOperationStepId: args.jobOperationStepId,
+      quantity: args.quantity,
+      adjustmentType: args.adjustmentType,
+      companyId,
+      userId
+    }
+  });
+}
+
+/**
+ * Complete a job to inventory (finished goods, backflush, cost rollup). Wraps the
+ * `complete_job_to_inventory` RPC — the same entry point the ERP job-complete route uses.
+ *
+ * The RPC is SECURITY DEFINER (bypasses RLS) and the MCP endpoint does not enforce per-tool
+ * claims, so the ERP route's `{ update: "production" }` gate is re-applied here to prevent an
+ * unprivileged MCP caller from completing jobs.
+ */
+export async function completeJob(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  userId: string,
+  args: {
+    jobId: string;
+    quantity: number;
+    storageUnitId?: string;
+    locationId?: string;
+  }
+) {
+  const claims = await getUserClaims(userId, companyId);
+  if (!claims?.permissions?.production?.update?.includes(companyId)) {
+    throw new Error(
+      "You do not have permission to complete jobs to inventory (production update)."
+    );
+  }
+  return client.rpc("complete_job_to_inventory", {
+    p_job_id: args.jobId,
+    p_quantity_complete: args.quantity,
+    p_storage_unit_id: args.storageUnitId ?? undefined,
+    p_location_id: args.locationId ?? undefined,
+    p_company_id: companyId,
+    p_user_id: userId
+  });
+}
+
+/**
+ * Schedule or reschedule a job's operations. Wraps the `schedule` edge function (the same entry
+ * point `recalculateJobOperationDependencies` uses).
+ */
+export async function scheduleJob(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  userId: string,
+  args: {
+    jobId: string;
+    mode?: string;
+    direction?: string;
+  }
+) {
+  return client.functions.invoke("schedule", {
+    body: {
+      jobId: args.jobId,
+      companyId,
+      userId,
+      mode: args.mode ?? "reschedule",
+      direction: args.direction ?? "backward"
+    }
   });
 }
