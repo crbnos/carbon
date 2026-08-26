@@ -55,6 +55,7 @@ import { months } from "~/modules/shared";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import type { BreadcrumbSegment, Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+import { isReportSourceComplete } from "~/utils/reportExport";
 import { revalidateIgnoringPivotDisplay } from "~/utils/revalidate";
 
 const breadcrumbByReportKey: Record<AnalyticsReportKey, MessageDescriptor> = {
@@ -207,20 +208,56 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : Promise.resolve({ data: [] as string[], error: null })
   ]);
 
-  const dimensions = dimensionsResult.data ?? [];
-  const savedViews = savedViewsResult.data ?? [];
+  const metadataError =
+    dimensionsResult.error ?? savedViewsResult.error ?? scrapAccounts.error;
+  if (
+    metadataError ||
+    dimensionsResult.data == null ||
+    savedViewsResult.data == null ||
+    scrapAccounts.data == null ||
+    !isReportSourceComplete(
+      dimensionsResult.data,
+      savedViewsResult.data,
+      scrapAccounts.data
+    )
+  ) {
+    throw redirect(
+      path.to.accounting,
+      await flash(
+        request,
+        error(metadataError, "Failed to load complete analytics metadata")
+      )
+    );
+  }
 
   // The account universe the per-report account filter narrows within. Scrap
   // resolves through the ids just fetched; class/type scopes query directly.
-  const scopeAccounts =
-    (
-      await getAccountsInScope(
-        client,
-        companyGroupId,
-        report.accountScope,
-        scrapAccounts.data ?? undefined
+  const scopeAccountsResult = await getAccountsInScope(
+    client,
+    companyGroupId,
+    report.accountScope,
+    scrapAccounts.data
+  );
+  if (
+    scopeAccountsResult.error ||
+    scopeAccountsResult.data == null ||
+    !isReportSourceComplete(scopeAccountsResult.data)
+  ) {
+    throw redirect(
+      path.to.accounting,
+      await flash(
+        request,
+        error(
+          scopeAccountsResult.error,
+          "Failed to load complete analytics metadata"
+        )
       )
-    ).data ?? [];
+    );
+  }
+
+  const dimensions = dimensionsResult.data;
+  const savedViews = savedViewsResult.data;
+  const scopeAccounts = scopeAccountsResult.data;
 
   // -- Resolve the pivot state --
   // Precedence: explicit URL pivot params > the selected saved view's config >

@@ -82,4 +82,34 @@ describe("resolveReportCompanies", () => {
       isComplete: false
     });
   });
+
+  it("resolves an explicit company only when it is in the complete source", () => {
+    expect(
+      resolveReportCompanies(
+        { data: companies, count: companies.length, error: null },
+        "company-2",
+        "company-1"
+      ).selectedCompanyIds
+    ).toEqual(["company-2"]);
+  });
+
+  it("fails closed for an explicit company outside the authorized source", () => {
+    expect(
+      resolveReportCompanies(
+        { data: companies, count: companies.length, error: null },
+        "company-other",
+        "company-1"
+      ).selectedCompanyIds
+    ).toBeNull();
+  });
+
+  it("fails closed for an explicit company when metadata is incomplete", () => {
+    expect(
+      resolveReportCompanies(
+        { data: companies, count: companies.length + 1, error: null },
+        "company-2",
+        "company-1"
+      ).selectedCompanyIds
+    ).toBeNull();
+  });
 });

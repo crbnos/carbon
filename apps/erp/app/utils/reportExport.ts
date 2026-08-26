@@ -30,6 +30,11 @@ export function resolveReportCompanies<T extends { id: string }>(
     source.count === companies.length &&
     companies.some((company) => company.id === currentCompanyId) &&
     isReportSourceComplete(source.data);
+  const explicitCompanyIsAvailable =
+    companiesParam != null &&
+    companiesParam !== "all" &&
+    isComplete &&
+    companies.some((company) => company.id === companiesParam);
 
   return {
     companies,
@@ -39,7 +44,9 @@ export function resolveReportCompanies<T extends { id: string }>(
           ? companies.map((company) => company.id)
           : null
         : companiesParam
-          ? [companiesParam]
+          ? explicitCompanyIsAvailable
+            ? [companiesParam]
+            : null
           : [currentCompanyId],
     isComplete
   };
