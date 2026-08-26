@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="s4140" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a3733"/>
+      <stop offset="0.2" stop-color="#6a655e"/>
+      <stop offset="0.45" stop-color="#807a72"/>
+      <stop offset="0.72" stop-color="#55504a"/>
+      <stop offset="1" stop-color="#302d2a"/>
+    </linearGradient>
+    <linearGradient id="s4140face" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#807a72"/>
+      <stop offset="0.35" stop-color="#6a655e"/>
+      <stop offset="0.75" stop-color="#4b4741"/>
+      <stop offset="1" stop-color="#302d2a"/>
+    </linearGradient>
+    <linearGradient id="straw" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#a06f22" stop-opacity="0"/>
+      <stop offset="0.35" stop-color="#c9903a" stop-opacity="0.42"/>
+      <stop offset="0.65" stop-color="#a06f22" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#8a5a12" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="440" cy="722" rx="345" ry="76" fill="url(#shadow)" transform="rotate(-16 440 722)"/>
+
+  <g transform="translate(512 500) rotate(-24)">
+
+    <!-- C: 20mm nose (far end) -->
+    <path d="M120 -54 L395 -54 A 18 54 0 0 1 395 54 L120 54 A 18 54 0 0 1 120 -54 Z"
+          fill="url(#s4140)" stroke="#24211f" stroke-width="3"/>
+
+    <!-- B: middle diameter -->
+    <path d="M-160 -70 L148 -70 A 24 70 0 0 1 148 70 L-160 70 A 24 70 0 0 1 -160 -70 Z"
+          fill="url(#s4140)" stroke="#24211f" stroke-width="3"/>
+
+    <!-- A: 32mm bearing journal -->
+    <path d="M-395 -88 L-140 -88 A 30 88 0 0 1 -140 88 L-395 88 A 30 88 0 0 1 -395 -88 Z"
+          fill="url(#s4140)" stroke="#24211f" stroke-width="3"/>
+
+    <!-- relief undercut at the A→B shoulder -->
+    <path d="M-146 -62 L-116 -62 A 21 62 0 0 1 -116 62 L-146 62 A 21 62 0 0 1 -146 -62 Z"
+          fill="#26231f"/>
+    <path d="M-116 -62 A 21 62 0 0 1 -116 62" fill="none" stroke="#8d877e" stroke-width="3" stroke-opacity="0.55"/>
+    <path d="M-146 -62 A 21 62 0 0 0 -146 62" fill="none" stroke="#151312" stroke-width="3"/>
+
+    <!-- relief undercut at the B→C shoulder -->
+    <path d="M114 -47 L142 -47 A 16 47 0 0 1 142 47 L114 47 A 16 47 0 0 1 114 -47 Z"
+          fill="#26231f"/>
+    <path d="M142 -47 A 16 47 0 0 1 142 47" fill="none" stroke="#8d877e" stroke-width="3" stroke-opacity="0.55"/>
+    <path d="M114 -47 A 16 47 0 0 0 114 47" fill="none" stroke="#151312" stroke-width="3"/>
+
+    <!-- faint straw temper band across the journal -->
+    <path d="M-330 -88 L-190 -88 L-190 88 L-330 88 Z" fill="url(#straw)"/>
+
+    <!-- oiled sheen along the barrels -->
+    <g fill="none" stroke="#ffffff" stroke-opacity="0.20" stroke-width="4">
+      <path d="M-380 -52 L-152 -52"/>
+      <path d="M-150 -42 L138 -42"/>
+      <path d="M132 -32 L382 -32"/>
+    </g>
+    <g fill="none" stroke="#ffffff" stroke-opacity="0.10" stroke-width="2">
+      <path d="M-380 -30 L-152 -30"/>
+      <path d="M-150 -24 L138 -24"/>
+      <path d="M132 -18 L382 -18"/>
+    </g>
+    <g fill="none" stroke="#1e1c1a" stroke-opacity="0.45" stroke-width="3">
+      <path d="M-380 62 L-152 62"/>
+      <path d="M-150 50 L138 50"/>
+      <path d="M132 38 L382 38"/>
+    </g>
+
+    <!-- rectangular keyway milled into the largest journal -->
+    <rect x="-345" y="-76" width="150" height="46" rx="20" fill="#1f1d1b" stroke="#0f0e0d" stroke-width="2"/>
+    <rect x="-338" y="-70" width="136" height="30" rx="14" fill="#4a463f"/>
+    <rect x="-338" y="-70" width="136" height="12" rx="6" fill="#151312" opacity="0.7"/>
+    <path d="M-345 -30 L-195 -30" fill="none" stroke="#9a938a" stroke-width="2.5" stroke-opacity="0.6"/>
+
+    <!-- two cross-drilled dowel pin holes near the far end -->
+    <g>
+      <ellipse cx="272" cy="-24" rx="15" ry="24" fill="#8d877e" opacity="0.55"/>
+      <ellipse cx="272" cy="-24" rx="11" ry="19" fill="#1c1a18"/>
+      <ellipse cx="340" cy="-24" rx="15" ry="24" fill="#8d877e" opacity="0.55"/>
+      <ellipse cx="340" cy="-24" rx="11" ry="19" fill="#1c1a18"/>
+    </g>
+
+    <!-- visible end face of the bearing journal + chamfer -->
+    <ellipse cx="-395" cy="0" rx="30" ry="88" fill="url(#s4140face)" stroke="#24211f" stroke-width="3"/>
+    <ellipse cx="-395" cy="0" rx="24" ry="76" fill="none" stroke="#9a938a" stroke-width="2.5" stroke-opacity="0.7"/>
+    <ellipse cx="-395" cy="0" rx="15" ry="48" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2"/>
+    <ellipse cx="-395" cy="0" rx="8" ry="26" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2"/>
+  </g>
+</svg>

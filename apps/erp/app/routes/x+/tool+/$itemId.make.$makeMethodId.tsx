@@ -131,7 +131,7 @@ export default function ToolMakeMethodPage() {
   }>(path.to.tool(itemId));
 
   return (
-    <VStack spacing={2} className="p-2">
+    <VStack spacing={4} className="p-4">
       <Suspense fallback={<Menubar />}>
         <Await resolve={makeMethods}>
           {(makeMethods) => (
@@ -145,16 +145,6 @@ export default function ToolMakeMethodPage() {
         </Await>
       </Suspense>
 
-      <BillOfMaterial
-        key={`bom:${makeMethodId}`}
-        makeMethod={makeMethod}
-        // @ts-expect-error TS2322 - TODO: fix type
-        materials={methodMaterials}
-        operations={methodOperations}
-        replenishmentSystem={toolData?.toolSummary?.replenishmentSystem}
-        revisionStatus={revisionStatus}
-        releaseControl={releaseControl}
-      />
       <BillOfProcess
         key={`bop:${makeMethodId}`}
         makeMethod={makeMethod}
@@ -162,6 +152,16 @@ export default function ToolMakeMethodPage() {
         // @ts-expect-error
         operations={methodOperations}
         tags={tags}
+        revisionStatus={revisionStatus}
+        releaseControl={releaseControl}
+      />
+      <BillOfMaterial
+        key={`bom:${makeMethodId}`}
+        makeMethod={makeMethod}
+        // @ts-expect-error TS2322 - TODO: fix type
+        materials={methodMaterials}
+        operations={methodOperations}
+        replenishmentSystem={toolData?.toolSummary?.replenishmentSystem}
         revisionStatus={revisionStatus}
         releaseControl={releaseControl}
       />
@@ -174,7 +174,7 @@ export default function ToolMakeMethodPage() {
               metadata={{
                 itemId: model?.itemId ?? undefined
               }}
-              modelPath={model?.modelPath ?? null}
+              modelUpload={model ?? null}
               title={t`CAD Model`}
               uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
               viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"

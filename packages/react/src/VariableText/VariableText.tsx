@@ -12,7 +12,7 @@ import {
   Placeholder,
   StarterKit
 } from "@carbon/tiptap";
-import type { RefObject } from "react";
+import type { CSSProperties, RefObject } from "react";
 import {
   forwardRef,
   useEffect,
@@ -51,6 +51,9 @@ export type VariableTextProps = {
   menuComponent?: MentionListComponent;
   /** Shortens the text drawn inside a token chip. The stored label is untouched. */
   renderTokenLabel?: (label: string) => string;
+  /** Renders the same value but refuses edits. The Tiptap shell stays, so the
+   * read-only rendition matches the editable one exactly. */
+  isReadOnly?: boolean;
 };
 
 export type VariableTextHandle = {
@@ -138,14 +141,15 @@ function contentKey(parts: VariableTextPart[]): string {
 // A char no keyboard produces, so the menu stays dormant when no trigger is given.
 const NO_TRIGGER = "\0";
 
-/** The editor shell, exported so a read-only rendition of the same value matches.
- * No `min-h-*`: the height range is computed from `minRows`/`maxRows` below.
- * `select-text` is load-bearing: React Flow puts `user-select: none` on every node,
- * and an inherited `none` stops a click placing the caret inside a contenteditable. */
+/** The editor shell, exported so a read-only rendition of the same value matches. It is
+ * chrome only — the padding and the height floor live on the contenteditable itself
+ * (`.variable-text-content`), so that element fills the box and a click anywhere in it
+ * places a caret. `select-text` is load-bearing: React Flow puts `user-select: none` on
+ * every node, and an inherited `none` stops a click placing the caret at all. */
 export const VARIABLE_TEXT_SHELL_CLASS =
-  "select-text cursor-text overflow-y-auto overscroll-contain break-words rounded-md border border-input bg-background px-3 py-2 text-sm";
+  "select-text cursor-text overflow-y-auto overscroll-contain break-words rounded-md border border-input bg-background text-sm";
 
-// A `text-sm` line box plus `py-2`, so one row is 2.5rem — the old fixed floor.
+// A `text-sm` line box plus the content's own padding, so one row is 2.5rem.
 const ROW_REM = 1.25;
 const PADDING_REM = 1.25;
 const heightFor = (rows: number) => `${rows * ROW_REM + PADDING_REM}rem`;
@@ -166,7 +170,8 @@ export const VariableText = forwardRef<VariableTextHandle, VariableTextProps>(
       maxRows = 5,
       minRows = 1,
       menuComponent,
-      renderTokenLabel
+      renderTokenLabel,
+      isReadOnly = false
     },
     ref
   ) {
@@ -249,6 +254,11 @@ export const VariableText = forwardRef<VariableTextHandle, VariableTextProps>(
       editor.commands.setContent(partsToDoc(valueRef.current), false);
     }, [key]);
 
+    // The editor is created once, so a lock that arrives later has to be applied here.
+    useEffect(() => {
+      editorRef.current?.setEditable(!isReadOnly);
+    }, [isReadOnly]);
+
     useImperativeHandle(ref, () => ({
       insertToken: (token) => {
         const editor = editorRef.current;
@@ -268,14 +278,18 @@ export const VariableText = forwardRef<VariableTextHandle, VariableTextProps>(
             `style` passthrough, and the row range has to be an inline height. */}
         <div
           className={cn(VARIABLE_TEXT_SHELL_CLASS, className)}
-          style={{
-            minHeight: heightFor(minRows),
-            maxHeight: heightFor(maxRows)
-          }}
+          style={
+            {
+              minHeight: heightFor(minRows),
+              maxHeight: heightFor(maxRows),
+              "--variable-text-content-min-height": heightFor(minRows)
+            } as CSSProperties
+          }
         >
           <EditorContent
             initialContent={initialContent}
             extensions={extensions}
+            editable={!isReadOnly}
             editorProps={{
               handleKeyDown(_view, event) {
                 // Never swallow the popup's Enter: ProseMirror consults these props
@@ -285,7 +299,7 @@ export const VariableText = forwardRef<VariableTextHandle, VariableTextProps>(
                 return false;
               },
               attributes: {
-                class: "focus:outline-none max-w-full"
+                class: "focus:outline-none max-w-full variable-text-content"
               }
             }}
             onCreate={({ editor }) => {

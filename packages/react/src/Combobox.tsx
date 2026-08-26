@@ -1,5 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { matchSorter, rankings } from "match-sorter";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { forwardRef, useMemo, useRef, useState } from "react";
 import { LuCheck, LuPlus, LuSettings2, LuX } from "react-icons/lu";
@@ -19,6 +20,21 @@ import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { cn } from "./utils/cn";
 import { reactNodeToString } from "./utils/react";
 
+export type ComboboxOption = {
+  label: string | JSX.Element;
+  value: string;
+  helper?: string;
+  helperRight?: string;
+  /** Extra search text, matched but never rendered. */
+  keywords?: string;
+};
+
+/** Ranks options against the query. Defaults to `filterComboboxOptions`. */
+export type ComboboxFilter = (
+  options: ComboboxOption[],
+  search: string
+) => ComboboxOption[];
+
 export type ComboboxProps = Omit<
   ComponentPropsWithoutRef<"button">,
   "onChange"
@@ -26,12 +42,8 @@ export type ComboboxProps = Omit<
   asButton?: boolean;
   size?: "sm" | "md" | "lg";
   value?: string;
-  options: {
-    label: string | JSX.Element;
-    value: string;
-    helper?: string;
-    helperRight?: string;
-  }[];
+  options: ComboboxOption[];
+  filter?: ComboboxFilter;
   isClearable?: boolean;
   isLoading?: boolean;
   isReadOnly?: boolean;
@@ -52,6 +64,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
       size,
       value,
       options,
+      filter,
       isClearable,
       isLoading,
       isReadOnly,
@@ -176,6 +189,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
             ) : (
               <VirtualizedCommand
                 options={options}
+                filter={filter}
                 value={value}
                 onChange={onChange}
                 itemHeight={itemHeight}
@@ -202,15 +216,46 @@ Combobox.displayName = "Combobox";
 export { Combobox };
 
 type VirtualizedCommandProps = {
-  options: ComboboxProps["options"];
+  options: ComboboxOption[];
+  filter?: ComboboxFilter;
   value?: string;
   onChange?: (selected: string) => void;
   itemHeight: number;
   setOpen: (open: boolean) => void;
 };
 
+const labelOf = (option: ComboboxOption) =>
+  typeof option.label === "string"
+    ? option.label
+    : reactNodeToString(option.label);
+
+/**
+ * Default search. Capped at CONTAINS because match-sorter's fuzzy tier matched
+ * 278 of 419 timezones for "EST"; the joined key lets a query span fields
+ * ("PART-001 Steel Bracket"), which per-key matching alone misses.
+ */
+export function filterComboboxOptions(
+  options: ComboboxOption[],
+  search: string
+): ComboboxOption[] {
+  if (!search) return options;
+  return matchSorter(options, search, {
+    threshold: rankings.CONTAINS,
+    keys: [
+      labelOf,
+      (option) => option.helper ?? "",
+      (option) => option.keywords ?? "",
+      (option) =>
+        [labelOf(option), option.helper, option.keywords]
+          .filter(Boolean)
+          .join(" ")
+    ]
+  });
+}
+
 function VirtualizedCommand({
   options,
+  filter = filterComboboxOptions,
   value,
   onChange,
   itemHeight,
@@ -220,28 +265,10 @@ function VirtualizedCommand({
   const [search, setSearch] = useState("");
   const parentRef = useRef<HTMLDivElement>(null);
 
-  const filteredOptions = useMemo(() => {
-    if (!search) return options;
-    const query = search.toLowerCase();
-    // Rank word-boundary hits above mid-word substrings, then earlier hits
-    // first — searching "EST" should surface "(EST/EDT, …)" timezones before
-    // cities that merely contain "est" (Creston, Bucharest…). Stable sort, so
-    // equally-ranked options keep their original order.
-    const scored: { option: (typeof options)[number]; score: number }[] = [];
-    for (const option of options) {
-      const text = (
-        typeof option.label === "string"
-          ? `${option.label} ${option.helper}`
-          : reactNodeToString(option.label)
-      ).toLowerCase();
-      const index = text.indexOf(query);
-      if (index === -1) continue;
-      const atWordStart =
-        index === 0 || !/[a-z0-9]/.test(text.charAt(index - 1));
-      scored.push({ option, score: (atWordStart ? 0 : 100000) + index });
-    }
-    return scored.sort((a, b) => a.score - b.score).map((s) => s.option);
-  }, [options, search]);
+  const filteredOptions = useMemo(
+    () => filter(options, search),
+    [options, search, filter]
+  );
 
   const virtualizer = useVirtualizer({
     count: filteredOptions.length,

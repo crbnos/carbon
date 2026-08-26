@@ -2241,6 +2241,7 @@ serve(async (req: Request) => {
 
       // Posting keeps the supplier's dateIssued, so only fill dateDue when it
       // is empty — a manually entered due date from the supplier's invoice wins.
+      // With no payment term the invoice still gets one, via Net 30.
       const paymentTerm =
         !purchaseInvoice.data?.dateDue && purchaseInvoice.data?.paymentTermId
           ? await trx
@@ -2250,9 +2251,12 @@ serve(async (req: Request) => {
               .where("companyId", "=", companyId)
               .executeTakeFirst()
           : undefined;
-      const dateDue = paymentTerm
-        ? calculateDueDate(purchaseInvoice.data?.dateIssued ?? today, paymentTerm)
-        : null;
+      const dateDue = purchaseInvoice.data?.dateDue
+        ? null
+        : calculateDueDate(
+            purchaseInvoice.data?.dateIssued ?? today,
+            paymentTerm
+          );
 
       await trx
         .updateTable("purchaseInvoice")

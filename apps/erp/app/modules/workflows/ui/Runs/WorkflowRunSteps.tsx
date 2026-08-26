@@ -10,7 +10,11 @@ import {
   operationInputLabelKey,
   outputLabel
 } from "../Builder/labelKeys";
-import { humanizeField, NODE_KIND_META } from "../Builder/nodes/meta";
+import {
+  humanizeField,
+  metaForNodeType,
+  NODE_KIND_META
+} from "../Builder/nodes/meta";
 import { ConditionDetail } from "./ConditionDetail";
 import { StepStatus } from "./RunStatus";
 import { ValueMap } from "./RuntimeValueView";
@@ -94,7 +98,7 @@ function stepInputView(input: unknown): { value: unknown; resolved: boolean } {
   return { value: input, resolved: false };
 }
 
-/** An action or record step names its inputs in the catalog ("Title", "Assignee");
+/** An action or compute step names its inputs in the catalog ("Title", "Assignee");
  * every other kind has no catalog entry, so its keys keep the humanised form. */
 function inputLabelResolver(
   node: WorkflowNode | undefined,
@@ -107,7 +111,7 @@ function inputLabelResolver(
     return (key) =>
       label(actionInputLabelKey(catalogId, key), humanizeField(key));
   }
-  if (node.type === "entity") {
+  if (node.type === "compute") {
     return (key) =>
       label(operationInputLabelKey(catalogId, key), humanizeField(key));
   }
@@ -283,7 +287,7 @@ function stepRowFromType(
   step: RunStepView,
   recordNames: Record<string, string>
 ) {
-  const meta = NODE_KIND_META[step.nodeType as keyof typeof NODE_KIND_META];
+  const meta = metaForNodeType(step.nodeType);
   const Icon = meta?.Icon;
   return (
     <StepRow

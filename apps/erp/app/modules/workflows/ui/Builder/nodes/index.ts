@@ -8,7 +8,7 @@ import { WorkflowNodeCard } from "./WorkflowNodeCard";
 export const nodeTypes: Record<WorkflowNodeType, ComponentType<NodeProps>> = {
   trigger: WorkflowNodeCard,
   condition: WorkflowNodeCard,
-  entity: WorkflowNodeCard,
+  compute: WorkflowNodeCard,
   lookup: WorkflowNodeCard,
   filter: WorkflowNodeCard,
   action: WorkflowNodeCard

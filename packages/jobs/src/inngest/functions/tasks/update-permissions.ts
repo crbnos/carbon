@@ -1,5 +1,6 @@
 import type { Result } from "@carbon/auth";
 import { error, getClaims, getPermissionCacheKey, success } from "@carbon/auth";
+import { logPermissionChange } from "@carbon/auth/auth-events.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { redis } from "@carbon/kv";
@@ -39,7 +40,9 @@ export async function updatePermissions(
     id,
     permissions,
     companyId,
-    addOnly = false
+    addOnly = false,
+    actorId,
+    ip
   }: {
     id: string;
     addOnly: boolean;
@@ -48,9 +51,11 @@ export async function updatePermissions(
       { view: boolean; create: boolean; update: boolean; delete: boolean }
     >;
     companyId: string;
+    actorId?: string;
+    ip?: string;
   }
 ): Promise<Result> {
-  if (await client.rpc("is_claims_admin")) {
+  if (await client.rpc("is_claims_admin", { company: companyId })) {
     const claims = await getClaims(client, id);
 
     if (claims.error) return error(claims.error, "Failed to get claims");
@@ -63,6 +68,11 @@ export async function updatePermissions(
         : claims.data
     ) as Record<string, string[]>;
     delete updatedPermissions.role;
+
+    // Snapshot the effective grant set BEFORE mutation — `updatedPermissions`
+    // is the same object reference we mutate in place below, so this must be a
+    // deep copy taken now to produce an honest before/after audit diff.
+    const beforePermissions = structuredClone(updatedPermissions);
 
     // add any missing claims to the current claims
     Object.keys(permissions).forEach((name) => {
@@ -166,6 +176,15 @@ export async function updatePermissions(
       });
     }
 
+    // The "0" global-company wildcard is retired (NIST 800-171 3.1.5). Strip it
+    // from every array so it can never be persisted to the authoritative table.
+    for (const key of Object.keys(updatedPermissions)) {
+      const value = updatedPermissions[key];
+      if (Array.isArray(value)) {
+        updatedPermissions[key] = value.filter((c: string) => c !== "0");
+      }
+    }
+
     const permissionsUpdate = await getCarbonServiceRole()
       .from("userPermission")
       .update({ permissions: updatedPermissions })
@@ -174,6 +193,17 @@ export async function updatePermissions(
       return error(permissionsUpdate.error, "Failed to update claims");
 
     await redis.del(getPermissionCacheKey(id));
+
+    // Audit the change (NIST 800-171 3.3.1/3.3.2): actor, target, before/after.
+    logPermissionChange({
+      actor: actorId,
+      targetUserId: id,
+      companyId,
+      ip,
+      before: beforePermissions,
+      after: updatedPermissions,
+      reason: addOnly ? "bulk-add" : "bulk-edit"
+    });
 
     return success("Permissions updated");
   } else {

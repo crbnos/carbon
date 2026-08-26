@@ -9,16 +9,20 @@ import {
 } from "~/modules/items";
 
 // Toggle a tool↔step link from the step editor's "Tools" picker (method/item tier).
+// `toolId` is the tool ITEM id — the picker offers the whole tool library, and the
+// service ensures the operation-level tool row exists before linking.
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, { update: "parts" });
+  const { client, companyId, userId } = await requirePermissions(request, {
+    update: "parts"
+  });
 
   const formData = await request.formData();
-  const methodOperationToolId = String(formData.get("toolId") ?? "");
+  const toolId = String(formData.get("toolId") ?? "");
   const methodOperationStepId = String(formData.get("stepId") ?? "");
   const linked = formData.get("linked") === "true";
 
-  if (!methodOperationToolId || !methodOperationStepId) {
+  if (!toolId || !methodOperationStepId) {
     return data({ success: false }, { status: 400 });
   }
 
@@ -33,9 +37,12 @@ export async function action({ request }: ActionFunctionArgs) {
   await assertMethodOperationIsDraft(client, step.data.operationId);
 
   const result = await setMethodOperationToolStepLink(client, {
-    methodOperationToolId,
+    operationId: step.data.operationId,
+    toolId,
     methodOperationStepId,
-    linked
+    linked,
+    companyId,
+    createdBy: userId
   });
   if (result.error) {
     return data(

@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { PurchaseOrderEmail } from "@carbon/documents/email";
+import { getPurchaseOrderDisplayId } from "@carbon/documents/pdf";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
@@ -237,7 +238,7 @@ export async function action(args: ActionFunctionArgs) {
 
     file = await pdf.arrayBuffer();
     fileName = stripSpecialCharacters(
-      `${purchaseOrder.data.purchaseOrderId} - ${new Date()
+      `${getPurchaseOrderDisplayId(purchaseOrder.data)} - ${new Date()
         .toISOString()
         .slice(0, -5)}.pdf`
     );
@@ -429,7 +430,7 @@ export async function action(args: ActionFunctionArgs) {
           to: [buyer.data.email, supplier.data.contact.email],
           cc: ccSelections?.length ? ccSelections : undefined,
           from: buyer.data.email,
-          subject: `Purchase Order ${purchaseOrder.data.purchaseOrderId} from ${company.data.name}`,
+          subject: `Purchase Order ${getPurchaseOrderDisplayId(purchaseOrder.data)} from ${company.data.name}`,
           html,
           text,
           attachments: attachments.length ? attachments : undefined,

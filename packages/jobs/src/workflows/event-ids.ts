@@ -1,5 +1,14 @@
-import { WORKFLOW_EVENTS } from "@carbon/workflows";
+import {
+  CUSTOM_FIELD_PREFIX,
+  createWorkflowCatalog,
+  customFieldEventId,
+  ENTITY_BY_TABLE,
+  WORKFLOW_EVENTS
+} from "@carbon/workflows";
 import { computeDiff } from "../inngest/functions/events/diff";
+
+// A facade over module-load maps; building it once here keeps the hot path allocation-free.
+const CATALOG = createWorkflowCatalog();
 
 type TableIndex = {
   created?: string;
@@ -54,5 +63,24 @@ export function computeEventIds(input: {
   for (const [field, id] of entry.changed) {
     if (field in diff) ids.push(id);
   }
+
+  // A custom field's event id is DERIVED from the diff key, never looked up: the id is
+  // per company and the catalog is not, so no company lookup enters the hot path. The
+  // existing workflowTriggerEvent join does the filtering it already did.
+  //
+  // Appended after the generated ids, so "one run per workflow per announcement, first
+  // id wins" picks the same winner it does today for a workflow watching both.
+  const entity = ENTITY_BY_TABLE[input.table];
+  if (entity !== undefined) {
+    for (const key of Object.keys(diff)) {
+      if (!key.startsWith(CUSTOM_FIELD_PREFIX)) continue;
+      const fieldId = key.slice(CUSTOM_FIELD_PREFIX.length);
+      if (fieldId === "") continue;
+      const id = customFieldEventId(entity, fieldId);
+      // The one place the item exclusion and the reference-only rule are decided.
+      if (CATALOG.getEvent(id) !== undefined) ids.push(id);
+    }
+  }
+
   return ids;
 }

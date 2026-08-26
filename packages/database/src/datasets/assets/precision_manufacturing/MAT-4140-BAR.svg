@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="alloyBarrel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a3733"/>
+      <stop offset="0.2" stop-color="#6a655e"/>
+      <stop offset="0.45" stop-color="#807a72"/>
+      <stop offset="0.72" stop-color="#55504a"/>
+      <stop offset="1" stop-color="#302d2a"/>
+    </linearGradient>
+    <linearGradient id="cutFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#4b4f52"/>
+      <stop offset="0.22" stop-color="#787d81"/>
+      <stop offset="0.45" stop-color="#8d9296"/>
+      <stop offset="0.72" stop-color="#63686c"/>
+      <stop offset="1" stop-color="#414548"/>
+    </linearGradient>
+    <radialGradient id="oilLight" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#cbc2b2" stop-opacity="0.34"/>
+      <stop offset="0.55" stop-color="#cbc2b2" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#cbc2b2" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="oilDark" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#1c1815" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#1c1815" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="alloyClip">
+      <path d="M-345 -145 L345 -145 Q455.2 0 345 145 L-345 145 Z"/>
+    </clipPath>
+    <clipPath id="alloyFaceClip">
+      <ellipse cx="-345" cy="0" rx="55.1" ry="145"/>
+    </clipPath>
+  </defs>
+
+  <g transform="translate(512 500) rotate(-6)">
+    <ellipse cx="0" cy="176" rx="415" ry="91" fill="url(#shadow)"/>
+
+    <!-- barrel -->
+    <path d="M-345 -145 L345 -145 Q455.2 0 345 145 L-345 145 Z" fill="url(#alloyBarrel)" stroke="#211e1b" stroke-width="3"/>
+    <g clip-path="url(#alloyClip)">
+      <!-- warm brownish oily cast -->
+      <rect x="-350" y="-150" width="810" height="300" fill="#6b4a2c" opacity="0.14"/>
+      <!-- soft broad oil-film reflections, never crisp -->
+      <ellipse cx="-140" cy="-72" rx="300" ry="66" fill="url(#oilLight)"/>
+      <ellipse cx="200" cy="-58" rx="220" ry="52" fill="url(#oilLight)"/>
+      <ellipse cx="-40" cy="118" rx="340" ry="58" fill="url(#oilDark)"/>
+      <ellipse cx="330" cy="20" rx="150" ry="130" fill="url(#oilDark)"/>
+      <!-- hot-rolled scale mottling -->
+      <g>
+        <ellipse cx="-27" cy="16" rx="32" ry="12" fill="#241d18" opacity="0.12"/><ellipse cx="-206" cy="3" rx="25" ry="11" fill="#241d18" opacity="0.09"/><ellipse cx="-269" cy="85" rx="27" ry="7" fill="#8a8175" opacity="0.16"/>
+        <ellipse cx="108" cy="32" rx="14" ry="3" fill="#241d18" opacity="0.07"/><ellipse cx="-203" cy="-71" rx="11" ry="4" fill="#241d18" opacity="0.14"/><ellipse cx="18" cy="39" rx="22" ry="9" fill="#241d18" opacity="0.09"/>
+        <ellipse cx="338" cy="137" rx="30" ry="13" fill="#241d18" opacity="0.08"/><ellipse cx="-136" cy="-119" rx="28" ry="10" fill="#8a8175" opacity="0.1"/><ellipse cx="312" cy="96" rx="10" ry="3" fill="#8a8175" opacity="0.11"/>
+        <ellipse cx="327" cy="-28" rx="12" ry="5" fill="#8a8175" opacity="0.09"/><ellipse cx="-272" cy="-46" rx="33" ry="15" fill="#241d18" opacity="0.08"/><ellipse cx="-262" cy="-121" rx="29" ry="9" fill="#8a8175" opacity="0.1"/>
+        <ellipse cx="-202" cy="64" rx="13" ry="5" fill="#241d18" opacity="0.1"/><ellipse cx="-187" cy="-64" rx="33" ry="15" fill="#241d18" opacity="0.15"/><ellipse cx="-189" cy="-29" rx="31" ry="13" fill="#241d18" opacity="0.16"/>
+        <ellipse cx="-187" cy="-67" rx="29" ry="9" fill="#241d18" opacity="0.07"/><ellipse cx="-270" cy="23" rx="16" ry="6" fill="#241d18" opacity="0.11"/><ellipse cx="313" cy="-4" rx="24" ry="11" fill="#241d18" opacity="0.08"/>
+        <ellipse cx="279" cy="88" rx="16" ry="5" fill="#8a8175" opacity="0.15"/><ellipse cx="-198" cy="124" rx="31" ry="12" fill="#241d18" opacity="0.07"/><ellipse cx="-304" cy="128" rx="16" ry="7" fill="#241d18" opacity="0.14"/>
+        <ellipse cx="70" cy="-57" rx="14" ry="6" fill="#241d18" opacity="0.08"/><ellipse cx="45" cy="97" rx="25" ry="8" fill="#8a8175" opacity="0.08"/><ellipse cx="-319" cy="-64" rx="21" ry="5" fill="#241d18" opacity="0.1"/>
+        <ellipse cx="53" cy="-102" rx="19" ry="9" fill="#8a8175" opacity="0.13"/><ellipse cx="133" cy="23" rx="13" ry="3" fill="#241d18" opacity="0.15"/><ellipse cx="140" cy="128" rx="11" ry="4" fill="#241d18" opacity="0.13"/>
+        <ellipse cx="-116" cy="138" rx="12" ry="5" fill="#8a8175" opacity="0.15"/><ellipse cx="164" cy="56" rx="29" ry="14" fill="#241d18" opacity="0.13"/><ellipse cx="274" cy="102" rx="20" ry="9" fill="#8a8175" opacity="0.12"/>
+        <ellipse cx="89" cy="-32" rx="24" ry="10" fill="#241d18" opacity="0.12"/><ellipse cx="336" cy="105" rx="27" ry="10" fill="#8a8175" opacity="0.12"/><ellipse cx="-35" cy="93" rx="12" ry="5" fill="#241d18" opacity="0.12"/>
+        <ellipse cx="-8" cy="-74" rx="27" ry="10" fill="#8a8175" opacity="0.15"/>
+      </g>
+      <!-- shallow longitudinal rolling seams -->
+      <g fill="none">
+        <path d="M-345 -96 L400 -96" stroke="#221e1a" stroke-opacity="0.45" stroke-width="2.4"/>
+        <path d="M-345 -92 L400 -92" stroke="#a49a8b" stroke-opacity="0.20" stroke-width="1.8"/>
+        <path d="M-345 -18 L410 -18" stroke="#221e1a" stroke-opacity="0.34" stroke-width="2"/>
+        <path d="M-345 -14 L410 -14" stroke="#a49a8b" stroke-opacity="0.16" stroke-width="1.6"/>
+        <path d="M-345 62 L405 62" stroke="#221e1a" stroke-opacity="0.40" stroke-width="2.2"/>
+        <path d="M-345 66 L405 66" stroke="#9a9082" stroke-opacity="0.14" stroke-width="1.6"/>
+        <path d="M-345 112 L390 112" stroke="#221e1a" stroke-opacity="0.30" stroke-width="1.8"/>
+      </g>
+    </g>
+    <!-- far end roll-off -->
+    <path d="M318 -138 Q423 0 318 138" fill="none" stroke="#221e1a" stroke-width="3" opacity="0.5"/>
+    <path d="M334 -142 Q440 0 334 142" fill="none" stroke="#b3a897" stroke-opacity="0.16" stroke-width="3"/>
+
+    <!-- sawn end face: bright ground grey, burred rim -->
+    <ellipse cx="-345" cy="0" rx="55.1" ry="145" fill="url(#cutFace)" stroke="#2a2724" stroke-width="3"/>
+    <g clip-path="url(#alloyFaceClip)">
+      <ellipse cx="-345" cy="0" rx="55.1" ry="145" fill="#9aa0a3" opacity="0.22"/>
+      <g fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2">
+        <ellipse cx="-341" cy="-8" rx="13" ry="34"/>
+        <ellipse cx="-341" cy="-8" rx="24" ry="63"/>
+        <ellipse cx="-341" cy="-8" rx="35" ry="92"/>
+        <ellipse cx="-341" cy="-8" rx="46" ry="121"/>
+      </g>
+      <g fill="none" stroke="#3f3b37" stroke-opacity="0.26" stroke-width="1.6">
+        <ellipse cx="-341" cy="-8" rx="18" ry="48"/>
+        <ellipse cx="-341" cy="-8" rx="30" ry="78"/>
+        <ellipse cx="-341" cy="-8" rx="41" ry="107"/>
+      </g>
+      <rect x="-402" y="-150" width="24" height="300" fill="#2a2724" opacity="0.30"/>
+      <rect x="-318" y="-150" width="16" height="300" fill="#ffffff" opacity="0.14"/>
+    </g>
+    <!-- burr ring at the sawn rim -->
+    <ellipse cx="-345" cy="0" rx="49" ry="130" fill="none" stroke="#57524c" stroke-width="3" opacity="0.75"/>
+    <ellipse cx="-345" cy="0" rx="52.5" ry="138" fill="none" stroke="#cfc7b8" stroke-opacity="0.22" stroke-width="2.4"/>
+  </g>
+</svg>

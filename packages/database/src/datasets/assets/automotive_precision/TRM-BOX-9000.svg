@@ -1,0 +1,217 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="anodBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1c1f22"/>
+      <stop offset="0.2" stop-color="#43484d"/>
+      <stop offset="0.45" stop-color="#5a6167"/>
+      <stop offset="0.72" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="anodFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#1c1f22"/>
+      <stop offset="0.2" stop-color="#43484d"/>
+      <stop offset="0.45" stop-color="#5a6167"/>
+      <stop offset="0.72" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="anodSide" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2a2e32"/><stop offset="1" stop-color="#14171a"/>
+    </linearGradient>
+    <linearGradient id="anodTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#61686e"/><stop offset="0.45" stop-color="#454a4f"/><stop offset="1" stop-color="#22262a"/>
+    </linearGradient>
+    <linearGradient id="cavBack" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1e21"/><stop offset="1" stop-color="#2f343a"/>
+    </linearGradient>
+    <linearGradient id="cavFloor" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#4a5055"/><stop offset="1" stop-color="#23272b"/>
+    </linearGradient>
+    <linearGradient id="blockG" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#26292c"/>
+      <stop offset="0.22" stop-color="#4a4f54"/>
+      <stop offset="0.45" stop-color="#5e646a"/>
+      <stop offset="0.72" stop-color="#383c40"/>
+      <stop offset="1" stop-color="#1e2124"/>
+    </linearGradient>
+    <linearGradient id="blockTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#5e646a"/><stop offset="0.5" stop-color="#3d4246"/><stop offset="1" stop-color="#1e2124"/>
+    </linearGradient>
+    <linearGradient id="brass" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#6b4a2c"/>
+      <stop offset="0.2" stop-color="#c08b52"/>
+      <stop offset="0.45" stop-color="#e0b077"/>
+      <stop offset="0.72" stop-color="#9a6f42"/>
+      <stop offset="1" stop-color="#5d3f26"/>
+    </linearGradient>
+    <linearGradient id="gasket" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#111315"/>
+      <stop offset="0.25" stop-color="#2c3033"/>
+      <stop offset="0.5" stop-color="#3b4044"/>
+      <stop offset="0.75" stop-color="#212528"/>
+      <stop offset="1" stop-color="#0d0f10"/>
+    </linearGradient>
+    <linearGradient id="steelSm" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#eef1f3"/>
+      <stop offset="0.45" stop-color="#c3c9cd"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+  <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+    <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+    <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+    <stop offset="1" stop-color="#000" stop-opacity="0"/>
+  </radialGradient>
+  </defs>
+
+  <ellipse cx="410" cy="764" rx="290" ry="64" fill="url(#shadow)"/>
+  <ellipse cx="776" cy="738" rx="128" ry="31" fill="url(#shadow)"/>
+
+  <!-- machined housing with a curved mounting foot underneath -->
+  <path d="M 120 430 L 560 430 L 560 758 Q 340 684 120 758 Z" fill="url(#anodBarrel)" stroke="#0d0f10" stroke-width="3"/>
+  <path d="M 560 430 L 677.6 346 L 677.6 674 L 560 758 Z" fill="url(#anodSide)" stroke="#0d0f10" stroke-width="3"/>
+  <path d="M 176 452 L 176 718" stroke="#c6ced4" stroke-opacity="0.10" stroke-width="52" fill="none"/>
+  <path d="M 129 439 L 129 732" stroke="#8a9299" stroke-opacity="0.22" stroke-width="2.5" fill="none"/>
+  <path d="M 551 439 L 551 748 Q 340 674 129 748" fill="none" stroke="#7d858b" stroke-opacity="0.26" stroke-width="3"/>
+  <ellipse cx="136" cy="752" rx="26" ry="9" fill="#101315" opacity="0.55"/>
+  <ellipse cx="544" cy="752" rx="26" ry="9" fill="#101315" opacity="0.55"/>
+
+  <!-- two threaded cable gland holes -->
+  <g>
+    <circle cx="215" cy="590" r="46" fill="none" stroke="#7d858b" stroke-opacity="0.22" stroke-width="3"/>
+    <circle cx="215" cy="590" r="38" fill="#1b1f22" stroke="#0d0f10" stroke-width="2.5"/>
+    <circle cx="215" cy="590" r="33" fill="none" stroke="#6d747a" stroke-opacity="0.45" stroke-width="2"/>
+    <circle cx="215" cy="590" r="28" fill="none" stroke="#6d747a" stroke-opacity="0.45" stroke-width="2"/>
+    <circle cx="215" cy="590" r="23" fill="none" stroke="#6d747a" stroke-opacity="0.45" stroke-width="2"/>
+    <circle cx="215" cy="590" r="18" fill="none" stroke="#6d747a" stroke-opacity="0.45" stroke-width="2"/>
+    <circle cx="215" cy="590" r="15" fill="#0b0d0e"/>
+    <path d="M 191 566 A 34 34 0 0 1 239 566" fill="none" stroke="#aab2b8" stroke-opacity="0.30" stroke-width="3"/>
+  </g>
+  <g>
+    <circle cx="335" cy="590" r="46" fill="none" stroke="#7d858b" stroke-opacity="0.22" stroke-width="3"/>
+    <circle cx="335" cy="590" r="38" fill="#1b1f22" stroke="#0d0f10" stroke-width="2.5"/>
+    <circle cx="335" cy="590" r="33" fill="none" stroke="#6d747a" stroke-opacity="0.45" stroke-width="2"/>
+    <circle cx="335" cy="590" r="28" fill="none" stroke="#6d747a" stroke-opacity="0.45" stroke-width="2"/>
+    <circle cx="335" cy="590" r="23" fill="none" stroke="#6d747a" stroke-opacity="0.45" stroke-width="2"/>
+    <circle cx="335" cy="590" r="18" fill="none" stroke="#6d747a" stroke-opacity="0.45" stroke-width="2"/>
+    <circle cx="335" cy="590" r="15" fill="#0b0d0e"/>
+    <path d="M 311 566 A 34 34 0 0 1 359 566" fill="none" stroke="#aab2b8" stroke-opacity="0.30" stroke-width="3"/>
+  </g>
+
+  <!-- shallow well inside the open rim -->
+  <polygon points="213.7,410.2 521.7,410.2 583.9,365.8 275.9,365.8" fill="url(#cavBack)"/>
+  <polyline points="213.7,410.2 275.9,365.8 583.9,365.8" fill="none" stroke="#0b0d0e" stroke-opacity="0.75" stroke-width="3"/>
+  <polyline points="213.7,410.2 521.7,410.2" fill="none" stroke="#7d858b" stroke-opacity="0.20" stroke-width="2" transform="translate(0 4)"/>
+
+  <!-- flange rim -->
+  <path fill-rule="evenodd" fill="url(#anodTop)" stroke="#0d0f10" stroke-width="3" d="M 120 430 L 560 430 L 677.6 346 L 237.6 346 Z M 213.7 410.2 L 521.7 410.2 L 583.9 365.8 L 275.9 365.8 Z"/>
+  <polygon points="132.8,427.3 554.8,427.3 664.8,348.7 242.8,348.7" fill="none" stroke="#8a9299" stroke-opacity="0.26" stroke-width="2"/>
+  <!-- milled groove + elastomer gasket -->
+  <path d="M 185.3 416.2 L 533.3 416.2 L 612.3 359.8 L 264.3 359.8 Z" fill="none" stroke="#0b0d0e" stroke-width="20" stroke-linejoin="round"/>
+  <path d="M 185.3 416.2 L 533.3 416.2 L 612.3 359.8 L 264.3 359.8 Z" fill="none" stroke="url(#gasket)" stroke-width="13" stroke-linejoin="round"/>
+  <path d="M 185.3 416.2 L 533.3 416.2 L 612.3 359.8 L 264.3 359.8 Z" fill="none" stroke="#5a6167" stroke-opacity="0.30" stroke-width="2.5" stroke-linejoin="round" transform="translate(-2 -3)"/>
+  <!-- six socket head cap screws -->
+  <g>
+    <ellipse cx="225.1" cy="424.8" rx="24" ry="9.5" fill="#0e1113" opacity="0.6"/>
+    <ellipse cx="225.1" cy="422.8" rx="22" ry="8.4" fill="url(#steelSm)" stroke="#4d5359" stroke-width="1.5"/>
+    <g transform="translate(225.1 422.8) scale(1 0.38)"><polygon points="0,-11 9.5,-5.5 9.5,5.5 0,11 -9.5,5.5 -9.5,-5.5" fill="#2f353a" stroke="#4a5055" stroke-width="1.5"/></g>
+  </g>
+  <g>
+    <ellipse cx="475.1" cy="424.8" rx="24" ry="9.5" fill="#0e1113" opacity="0.6"/>
+    <ellipse cx="475.1" cy="422.8" rx="22" ry="8.4" fill="url(#steelSm)" stroke="#4d5359" stroke-width="1.5"/>
+    <g transform="translate(475.1 422.8) scale(1 0.38)"><polygon points="0,-11 9.5,-5.5 9.5,5.5 0,11 -9.5,5.5 -9.5,-5.5" fill="#2f353a" stroke="#4a5055" stroke-width="1.5"/></g>
+  </g>
+  <g>
+    <ellipse cx="322.5" cy="355.2" rx="24" ry="9.5" fill="#0e1113" opacity="0.6"/>
+    <ellipse cx="322.5" cy="353.2" rx="22" ry="8.4" fill="url(#steelSm)" stroke="#4d5359" stroke-width="1.5"/>
+    <g transform="translate(322.5 353.2) scale(1 0.38)"><polygon points="0,-11 9.5,-5.5 9.5,5.5 0,11 -9.5,5.5 -9.5,-5.5" fill="#2f353a" stroke="#4a5055" stroke-width="1.5"/></g>
+  </g>
+  <g>
+    <ellipse cx="572.5" cy="355.2" rx="24" ry="9.5" fill="#0e1113" opacity="0.6"/>
+    <ellipse cx="572.5" cy="353.2" rx="22" ry="8.4" fill="url(#steelSm)" stroke="#4d5359" stroke-width="1.5"/>
+    <g transform="translate(572.5 353.2) scale(1 0.38)"><polygon points="0,-11 9.5,-5.5 9.5,5.5 0,11 -9.5,5.5 -9.5,-5.5" fill="#2f353a" stroke="#4a5055" stroke-width="1.5"/></g>
+  </g>
+  <g>
+    <ellipse cx="202.8" cy="390" rx="24" ry="9.5" fill="#0e1113" opacity="0.6"/>
+    <ellipse cx="202.8" cy="388" rx="22" ry="8.4" fill="url(#steelSm)" stroke="#4d5359" stroke-width="1.5"/>
+    <g transform="translate(202.8 388) scale(1 0.38)"><polygon points="0,-11 9.5,-5.5 9.5,5.5 0,11 -9.5,5.5 -9.5,-5.5" fill="#2f353a" stroke="#4a5055" stroke-width="1.5"/></g>
+  </g>
+  <g>
+    <ellipse cx="594.8" cy="390" rx="24" ry="9.5" fill="#0e1113" opacity="0.6"/>
+    <ellipse cx="594.8" cy="388" rx="22" ry="8.4" fill="url(#steelSm)" stroke="#4d5359" stroke-width="1.5"/>
+    <g transform="translate(594.8 388) scale(1 0.38)"><polygon points="0,-11 9.5,-5.5 9.5,5.5 0,11 -9.5,5.5 -9.5,-5.5" fill="#2f353a" stroke="#4a5055" stroke-width="1.5"/></g>
+  </g>
+
+  <!-- raised inner boss -->
+  <polygon points="256.3,395.2 504.3,395.2 504.3,411.2 256.3,411.2" fill="#1b1f22"/>
+  <polygon points="504.3,395.2 541.3,368.8 541.3,384.8 504.3,411.2" fill="#282d31"/>
+  <polygon points="256.3,395.2 504.3,395.2 541.3,368.8 293.3,368.8" fill="url(#anodTop)" stroke="#0d0f10" stroke-width="2.5"/>
+  <polygon points="256.3,395.2 504.3,395.2 541.3,368.8 293.3,368.8" fill="none" stroke="#8a9299" stroke-opacity="0.22" stroke-width="2" transform="translate(0 5)"/>
+
+  <!-- six-pole moulded terminal block -->
+  <polygon points="279,390.4 495,390.4 495,328.4 279,328.4" fill="url(#blockG)" stroke="#141719" stroke-width="2.5"/>
+  <polygon points="495,390.4 518.6,373.6 518.6,311.6 495,328.4" fill="#2b2f33" stroke="#141719" stroke-width="2.5"/>
+  <polygon points="279,328.4 495,328.4 518.6,311.6 302.6,311.6" fill="url(#blockTop)" stroke="#141719" stroke-width="2.5"/>
+  <path d="M 279 368.4 L 495 368.4" stroke="#0f1214" stroke-opacity="0.65" stroke-width="3" fill="none"/>
+  <path d="M 279 364.4 L 495 364.4" stroke="#6b7278" stroke-opacity="0.28" stroke-width="2" fill="none"/>
+  <g fill="none" stroke-linecap="round">
+    <path d="M 315 328.4 L 338.6 311.6" stroke="#666d73" stroke-opacity="0.5" stroke-width="5"/>
+    <path d="M 318 328.4 L 341.6 311.6" stroke="#0f1214" stroke-opacity="0.7" stroke-width="2"/>
+    <path d="M 351 328.4 L 374.6 311.6" stroke="#666d73" stroke-opacity="0.5" stroke-width="5"/>
+    <path d="M 354 328.4 L 377.6 311.6" stroke="#0f1214" stroke-opacity="0.7" stroke-width="2"/>
+    <path d="M 387 328.4 L 410.6 311.6" stroke="#666d73" stroke-opacity="0.5" stroke-width="5"/>
+    <path d="M 390 328.4 L 413.6 311.6" stroke="#0f1214" stroke-opacity="0.7" stroke-width="2"/>
+    <path d="M 423 328.4 L 446.6 311.6" stroke="#666d73" stroke-opacity="0.5" stroke-width="5"/>
+    <path d="M 426 328.4 L 449.6 311.6" stroke="#0f1214" stroke-opacity="0.7" stroke-width="2"/>
+    <path d="M 459 328.4 L 482.6 311.6" stroke="#666d73" stroke-opacity="0.5" stroke-width="5"/>
+    <path d="M 462 328.4 L 485.6 311.6" stroke="#0f1214" stroke-opacity="0.7" stroke-width="2"/>
+  </g>
+  <!-- six brass terminal screws -->
+  <g>
+    <ellipse cx="308.8" cy="323" rx="17" ry="7" fill="#15181a" opacity="0.6"/>
+    <ellipse cx="308.8" cy="320" rx="16" ry="6.2" fill="url(#brass)" stroke="#5d3f26" stroke-width="1.5"/>
+    <path d="M 298.8 320 L 318.8 320" stroke="#5d3f26" stroke-width="2.5"/>
+    <path d="M 296.8 319 A 12 4.6 0 0 1 320.8 319" fill="none" stroke="#e8cd7c" stroke-opacity="0.55" stroke-width="1.6"/>
+    <ellipse cx="344.8" cy="323" rx="17" ry="7" fill="#15181a" opacity="0.6"/>
+    <ellipse cx="344.8" cy="320" rx="16" ry="6.2" fill="url(#brass)" stroke="#5d3f26" stroke-width="1.5"/>
+    <path d="M 334.8 320 L 354.8 320" stroke="#5d3f26" stroke-width="2.5"/>
+    <path d="M 332.8 319 A 12 4.6 0 0 1 356.8 319" fill="none" stroke="#e8cd7c" stroke-opacity="0.55" stroke-width="1.6"/>
+    <ellipse cx="380.8" cy="323" rx="17" ry="7" fill="#15181a" opacity="0.6"/>
+    <ellipse cx="380.8" cy="320" rx="16" ry="6.2" fill="url(#brass)" stroke="#5d3f26" stroke-width="1.5"/>
+    <path d="M 370.8 320 L 390.8 320" stroke="#5d3f26" stroke-width="2.5"/>
+    <path d="M 368.8 319 A 12 4.6 0 0 1 392.8 319" fill="none" stroke="#e8cd7c" stroke-opacity="0.55" stroke-width="1.6"/>
+    <ellipse cx="416.8" cy="323" rx="17" ry="7" fill="#15181a" opacity="0.6"/>
+    <ellipse cx="416.8" cy="320" rx="16" ry="6.2" fill="url(#brass)" stroke="#5d3f26" stroke-width="1.5"/>
+    <path d="M 406.8 320 L 426.8 320" stroke="#5d3f26" stroke-width="2.5"/>
+    <path d="M 404.8 319 A 12 4.6 0 0 1 428.8 319" fill="none" stroke="#e8cd7c" stroke-opacity="0.55" stroke-width="1.6"/>
+    <ellipse cx="452.8" cy="323" rx="17" ry="7" fill="#15181a" opacity="0.6"/>
+    <ellipse cx="452.8" cy="320" rx="16" ry="6.2" fill="url(#brass)" stroke="#5d3f26" stroke-width="1.5"/>
+    <path d="M 442.8 320 L 462.8 320" stroke="#5d3f26" stroke-width="2.5"/>
+    <path d="M 440.8 319 A 12 4.6 0 0 1 464.8 319" fill="none" stroke="#e8cd7c" stroke-opacity="0.55" stroke-width="1.6"/>
+    <ellipse cx="488.8" cy="323" rx="17" ry="7" fill="#15181a" opacity="0.6"/>
+    <ellipse cx="488.8" cy="320" rx="16" ry="6.2" fill="url(#brass)" stroke="#5d3f26" stroke-width="1.5"/>
+    <path d="M 478.8 320 L 498.8 320" stroke="#5d3f26" stroke-width="2.5"/>
+    <path d="M 476.8 319 A 12 4.6 0 0 1 500.8 319" fill="none" stroke="#e8cd7c" stroke-opacity="0.55" stroke-width="1.6"/>
+  </g>
+
+  <!-- lid lifted off and set at an angle -->
+  <polygon points="664,690 856,728 862,748 670,710" fill="#101315" stroke="#0b0d0e" stroke-width="2.5"/>
+  <polygon points="856,728 898,502 912,508 870,734" fill="#1c2023" stroke="#0b0d0e" stroke-width="2.5"/>
+  <g transform="matrix(0.64 0.126667 0.14 -0.753333 664 690)">
+    <rect x="0" y="0" width="300" height="300" rx="16" fill="url(#anodTop)" stroke="#0d0f10" stroke-width="4"/>
+    <rect x="12" y="12" width="276" height="276" rx="12" fill="none" stroke="#8a9299" stroke-opacity="0.26" stroke-width="3"/>
+    <rect x="52" y="52" width="196" height="196" rx="10" fill="#2a2e32" stroke="#0f1113" stroke-width="3"/>
+    <rect x="55" y="55" width="196" height="196" rx="10" fill="none" stroke="#7d858b" stroke-opacity="0.20" stroke-width="2"/>
+    <path d="M 34 32 L 266 32" stroke="#c6ced4" stroke-opacity="0.12" stroke-width="20" fill="none"/>
+    <g><circle cx="60" cy="26" r="23" fill="none" stroke="#8a9299" stroke-opacity="0.24" stroke-width="3"/>
+      <circle cx="60" cy="26" r="15" fill="#14171a" stroke="#0b0d0e" stroke-width="2.5"/></g>
+    <g><circle cx="240" cy="26" r="23" fill="none" stroke="#8a9299" stroke-opacity="0.24" stroke-width="3"/>
+      <circle cx="240" cy="26" r="15" fill="#14171a" stroke="#0b0d0e" stroke-width="2.5"/></g>
+    <g><circle cx="60" cy="274" r="23" fill="none" stroke="#8a9299" stroke-opacity="0.24" stroke-width="3"/>
+      <circle cx="60" cy="274" r="15" fill="#14171a" stroke="#0b0d0e" stroke-width="2.5"/></g>
+    <g><circle cx="240" cy="274" r="23" fill="none" stroke="#8a9299" stroke-opacity="0.24" stroke-width="3"/>
+      <circle cx="240" cy="274" r="15" fill="#14171a" stroke="#0b0d0e" stroke-width="2.5"/></g>
+    <g><circle cx="24" cy="150" r="23" fill="none" stroke="#8a9299" stroke-opacity="0.24" stroke-width="3"/>
+      <circle cx="24" cy="150" r="15" fill="#14171a" stroke="#0b0d0e" stroke-width="2.5"/></g>
+    <g><circle cx="276" cy="150" r="23" fill="none" stroke="#8a9299" stroke-opacity="0.24" stroke-width="3"/>
+      <circle cx="276" cy="150" r="15" fill="#14171a" stroke="#0b0d0e" stroke-width="2.5"/></g>
+  </g>
+</svg>

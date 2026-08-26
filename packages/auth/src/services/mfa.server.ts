@@ -1,3 +1,4 @@
+import { CONTROLLED_ENVIRONMENT } from "@carbon/env";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { oncePerRead } from "@carbon/logger/middleware.server";
@@ -76,17 +77,24 @@ async function loadHasVerifiedTotpFactor(userId: string): Promise<boolean> {
     log.error("Failed to read MFA factor cache", { error: e });
   }
 
-  const { data, error } =
-    await getCarbonServiceRole().auth.admin.mfa.listFactors({ userId });
-
-  if (error || !data) {
-    log.error("Failed to list MFA factors", { userId, error });
-    return false;
+  let hasVerified: boolean;
+  try {
+    const { data, error } =
+      await getCarbonServiceRole().auth.admin.mfa.listFactors({ userId });
+    if (error || !data) {
+      throw error ?? new Error("No MFA factor data returned");
+    }
+    hasVerified = data.factors.some(
+      (factor) => factor.factor_type === "totp" && factor.status === "verified"
+    );
+  } catch (e) {
+    log.error("Failed to list MFA factors", { userId, error: e });
+    // Fail CLOSED under CONTROLLED_ENVIRONMENT (ITAR/CUI, NIST 800-171 3.5.3): a
+    // lookup blip must not let an enrolled user skip the MFA challenge. Outside a
+    // controlled environment fail OPEN, so a transient error can't lock out users
+    // who have no factor enrolled.
+    return CONTROLLED_ENVIRONMENT;
   }
-
-  const hasVerified = data.factors.some(
-    (factor) => factor.factor_type === "totp" && factor.status === "verified"
-  );
 
   try {
     await redis.set(

@@ -1,0 +1,188 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="castFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#4b4f52"/>
+      <stop offset="0.22" stop-color="#787d81"/>
+      <stop offset="0.45" stop-color="#8d9296"/>
+      <stop offset="0.72" stop-color="#63686c"/>
+      <stop offset="1" stop-color="#414548"/>
+    </linearGradient>
+    <linearGradient id="blackFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#1c1f22"/>
+      <stop offset="0.2" stop-color="#43484d"/>
+      <stop offset="0.45" stop-color="#5a6167"/>
+      <stop offset="0.72" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="blackBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1c1f22"/>
+      <stop offset="0.2" stop-color="#43484d"/>
+      <stop offset="0.45" stop-color="#5a6167"/>
+      <stop offset="0.72" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="steelFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="steelBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="chromeBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5b6167"/>
+      <stop offset="0.14" stop-color="#dfe6ea"/>
+      <stop offset="0.34" stop-color="#ffffff"/>
+      <stop offset="0.6" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <linearGradient id="amber" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#8a5a12"/>
+      <stop offset="0.3" stop-color="#c9903a"/>
+      <stop offset="0.55" stop-color="#e0b25f"/>
+      <stop offset="0.8" stop-color="#a06f22"/>
+      <stop offset="1" stop-color="#7a4e10"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="516" cy="784" rx="252" ry="55" fill="url(#shadow)"/>
+
+  <!-- body top face (back-most surface) -->
+  <path d="M269 330 L693 330 L756 285 L332 285 Z" fill="url(#castFace)" stroke="#34383b" stroke-width="2.5"/>
+  <path d="M269 330 L693 330 L756 285 L332 285 Z" fill="#ffffff" opacity="0.12"/>
+
+  <!-- stainless force sensor disc -->
+  <path d="M322 285 A190 72 0 0 0 702 285 L702 307 A190 72 0 0 1 322 307 Z" fill="url(#steelBarrel)" stroke="#4a5054" stroke-width="2.5"/>
+  <ellipse cx="512" cy="285" rx="190" ry="72" fill="url(#steelFace)" stroke="#4a5054" stroke-width="2.5"/>
+  <ellipse cx="512" cy="285" rx="176" ry="67" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="2"/>
+  <ellipse cx="512" cy="285" rx="163" ry="62" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="2"/>
+
+  <!-- dark charcoal mounting flange -->
+  <path d="M362 237 L362 285 A150 57 0 0 0 662 285 L662 237 Z" fill="url(#blackBarrel)" stroke="#101315" stroke-width="2.5"/>
+  <path d="M362 264 A150 57 0 0 0 662 264" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="2.5"/>
+  <ellipse cx="512" cy="237" rx="150" ry="57" fill="url(#blackFace)" stroke="#101315" stroke-width="2.5"/>
+  <ellipse cx="512" cy="237" rx="139" ry="53" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2"/>
+  <!-- bolt circle -->
+  <g>
+    <ellipse cx="622" cy="237" rx="15" ry="6" fill="#ffffff" opacity="0.16"/>
+    <ellipse cx="622" cy="237" rx="11" ry="4.2" fill="#22272a" stroke="#0f1214" stroke-width="1.6"/>
+    <ellipse cx="567" cy="273" rx="15" ry="6" fill="#ffffff" opacity="0.16"/>
+    <ellipse cx="567" cy="273" rx="11" ry="4.2" fill="#22272a" stroke="#0f1214" stroke-width="1.6"/>
+    <ellipse cx="457" cy="273" rx="15" ry="6" fill="#ffffff" opacity="0.16"/>
+    <ellipse cx="457" cy="273" rx="11" ry="4.2" fill="#22272a" stroke="#0f1214" stroke-width="1.6"/>
+    <ellipse cx="402" cy="237" rx="15" ry="6" fill="#ffffff" opacity="0.16"/>
+    <ellipse cx="402" cy="237" rx="11" ry="4.2" fill="#22272a" stroke="#0f1214" stroke-width="1.6"/>
+    <ellipse cx="457" cy="201" rx="15" ry="6" fill="#ffffff" opacity="0.16"/>
+    <ellipse cx="457" cy="201" rx="11" ry="4.2" fill="#22272a" stroke="#0f1214" stroke-width="1.6"/>
+    <ellipse cx="567" cy="201" rx="15" ry="6" fill="#ffffff" opacity="0.16"/>
+    <ellipse cx="567" cy="201" rx="11" ry="4.2" fill="#22272a" stroke="#0f1214" stroke-width="1.6"/>
+  </g>
+  <!-- centre pilot bore -->
+  <ellipse cx="512" cy="237" rx="52" ry="20" fill="#191d20" stroke="#0d1012" stroke-width="2"/>
+  <path d="M460 237 A52 20 0 0 1 564 237" fill="none" stroke="#8d9499" stroke-opacity="0.45" stroke-width="4"/>
+
+  <!-- body right side face -->
+  <path d="M693 330 L756 285 L756 515 L693 560 Z" fill="url(#castFace)" stroke="#34383b" stroke-width="2.5"/>
+  <path d="M693 330 L756 285 L756 515 L693 560 Z" fill="#000000" opacity="0.22"/>
+  <!-- rear connector port -->
+  <ellipse cx="726" cy="374" rx="29" ry="19" fill="#2a2e31" stroke="#15181a" stroke-width="2.5"/>
+  <ellipse cx="726" cy="374" rx="20" ry="13" fill="#14171a" stroke="#0d0f10" stroke-width="1.6"/>
+  <path d="M708 366 A29 19 0 0 1 744 366" fill="none" stroke="#9aa2a9" stroke-opacity="0.4" stroke-width="3"/>
+
+  <!-- body front face -->
+  <path d="M269 330 L693 330 L693 560 L269 560 Z" fill="url(#castFace)" stroke="#34383b" stroke-width="3"/>
+  <!-- chamfer break at the top edge -->
+  <path d="M277 339 L685 339" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="2.5"/>
+  <path d="M277 552 L685 552" fill="none" stroke="#000000" stroke-opacity="0.22" stroke-width="2.5"/>
+  <!-- milled surface lines -->
+  <g stroke="#ffffff" stroke-opacity="0.10" stroke-width="2" fill="none">
+    <path d="M290 356 L672 356"/><path d="M290 372 L672 372"/>
+    <path d="M290 388 L672 388"/><path d="M290 404 L672 404"/>
+    <path d="M290 480 L672 480"/><path d="M290 496 L672 496"/>
+    <path d="M290 512 L672 512"/>
+  </g>
+  <!-- amber identification stripe -->
+  <path d="M269 428 L693 428 L693 458 L269 458 Z" fill="url(#amber)"/>
+  <path d="M269 428 L693 428" fill="none" stroke="#f0cd8c" stroke-opacity="0.5" stroke-width="2"/>
+  <path d="M269 458 L693 458" fill="none" stroke="#5f3c0c" stroke-width="2"/>
+  <path d="M693 428 L756 383 L756 413 L693 458 Z" fill="url(#amber)" opacity="0.72"/>
+  <!-- two counterbored fixings on the front face -->
+  <g>
+    <ellipse cx="322" cy="502" rx="19" ry="19" fill="#ffffff" opacity="0.12"/>
+    <ellipse cx="322" cy="502" rx="13" ry="13" fill="#33393d" stroke="#22282b" stroke-width="2"/>
+    <ellipse cx="640" cy="502" rx="19" ry="19" fill="#ffffff" opacity="0.12"/>
+    <ellipse cx="640" cy="502" rx="13" ry="13" fill="#33393d" stroke="#22282b" stroke-width="2"/>
+  </g>
+
+  <!-- linear guide rail carrier -->
+  <path d="M677 552 L740 507 L740 583 L677 628 Z" fill="url(#blackFace)" stroke="#101315" stroke-width="2.5"/>
+  <path d="M677 552 L740 507 L740 583 L677 628 Z" fill="#000000" opacity="0.25"/>
+  <path d="M285 552 L677 552 L677 628 L285 628 Z" fill="url(#blackFace)" stroke="#101315" stroke-width="2.5"/>
+  <!-- exposed rail edges -->
+  <path d="M289 558 L673 558 L673 576 L289 576 Z" fill="url(#steelBarrel)" stroke="#4a5054" stroke-width="1.8"/>
+  <path d="M289 563 L673 563" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2"/>
+  <path d="M289 604 L673 604 L673 622 L289 622 Z" fill="url(#steelBarrel)" stroke="#4a5054" stroke-width="1.8"/>
+  <path d="M289 609 L673 609" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2"/>
+  <!-- slim central drive screw -->
+  <path d="M289 582 L673 582 L673 598 L289 598 Z" fill="url(#chromeBarrel)" stroke="#3f4448" stroke-width="1.6"/>
+  <g stroke="#525860" stroke-width="2.4" opacity="0.8" fill="none">
+    <path d="M300 598 L312 582"/><path d="M324 598 L336 582"/><path d="M348 598 L360 582"/>
+    <path d="M372 598 L384 582"/><path d="M396 598 L408 582"/><path d="M420 598 L432 582"/>
+    <path d="M444 598 L456 582"/><path d="M468 598 L480 582"/><path d="M492 598 L504 582"/>
+    <path d="M516 598 L528 582"/><path d="M540 598 L552 582"/><path d="M564 598 L576 582"/>
+    <path d="M588 598 L600 582"/><path d="M612 598 L624 582"/><path d="M636 598 L648 582"/>
+  </g>
+
+  <!-- left jaw: L block on its carriage -->
+  <path d="M312 566 L424 566 L462 539 L350 539 Z" fill="url(#blackFace)" stroke="#0f1214" stroke-width="2.5"/>
+  <path d="M312 566 L424 566 L462 539 L350 539 Z" fill="#ffffff" opacity="0.10"/>
+  <path d="M424 690 L464 690 L502 663 L462 663 Z" fill="url(#blackFace)" stroke="#0f1214" stroke-width="2.5"/>
+  <path d="M424 690 L464 690 L502 663 L462 663 Z" fill="#ffffff" opacity="0.10"/>
+  <path d="M424 566 L462 539 L462 663 L424 690 Z" fill="url(#blackFace)" stroke="#0f1214" stroke-width="2.5"/>
+  <path d="M424 566 L462 539 L462 663 L424 690 Z" fill="#000000" opacity="0.18"/>
+  <path d="M464 690 L502 663 L502 755 L464 782 Z" fill="url(#blackFace)" stroke="#0f1214" stroke-width="2.5"/>
+  <path d="M464 690 L502 663 L502 755 L464 782 Z" fill="#000000" opacity="0.18"/>
+  <path d="M312 566 L424 566 L424 690 L464 690 L464 782 L312 782 Z" fill="url(#blackFace)" stroke="#0f1214" stroke-width="3"/>
+  <path d="M320 574 L416 574 L416 698 L456 698 L456 774 L320 774 Z" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2"/>
+  <g>
+    <ellipse cx="352" cy="620" rx="18" ry="18" fill="#ffffff" opacity="0.14"/>
+    <ellipse cx="352" cy="620" rx="12" ry="12" fill="#1b1f21" stroke="#0d0f10" stroke-width="1.8"/>
+    <ellipse cx="352" cy="726" rx="18" ry="18" fill="#ffffff" opacity="0.14"/>
+    <ellipse cx="352" cy="726" rx="12" ry="12" fill="#1b1f21" stroke="#0d0f10" stroke-width="1.8"/>
+  </g>
+  <g stroke="#ffffff" stroke-opacity="0.09" stroke-width="2" fill="none">
+    <path d="M312 662 L424 662"/><path d="M312 676 L424 676"/>
+    <path d="M312 748 L464 748"/><path d="M312 762 L464 762"/>
+  </g>
+
+  <!-- right jaw: mirrored L block -->
+  <path d="M600 566 L712 566 L750 539 L638 539 Z" fill="url(#blackFace)" stroke="#0f1214" stroke-width="2.5"/>
+  <path d="M600 566 L712 566 L750 539 L638 539 Z" fill="#ffffff" opacity="0.10"/>
+  <path d="M560 690 L600 690 L638 663 L598 663 Z" fill="url(#blackFace)" stroke="#0f1214" stroke-width="2.5"/>
+  <path d="M560 690 L600 690 L638 663 L598 663 Z" fill="#ffffff" opacity="0.10"/>
+  <path d="M712 566 L750 539 L750 755 L712 782 Z" fill="url(#blackFace)" stroke="#0f1214" stroke-width="2.5"/>
+  <path d="M712 566 L750 539 L750 755 L712 782 Z" fill="#000000" opacity="0.22"/>
+  <path d="M712 566 L600 566 L600 690 L560 690 L560 782 L712 782 Z" fill="url(#blackFace)" stroke="#0f1214" stroke-width="3"/>
+  <path d="M704 574 L608 574 L608 698 L568 698 L568 774 L704 774 Z" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2"/>
+  <g>
+    <ellipse cx="666" cy="620" rx="18" ry="18" fill="#ffffff" opacity="0.14"/>
+    <ellipse cx="666" cy="620" rx="12" ry="12" fill="#1b1f21" stroke="#0d0f10" stroke-width="1.8"/>
+    <ellipse cx="666" cy="726" rx="18" ry="18" fill="#ffffff" opacity="0.14"/>
+    <ellipse cx="666" cy="726" rx="12" ry="12" fill="#1b1f21" stroke="#0d0f10" stroke-width="1.8"/>
+  </g>
+  <g stroke="#ffffff" stroke-opacity="0.09" stroke-width="2" fill="none">
+    <path d="M600 662 L712 662"/><path d="M600 676 L712 676"/>
+    <path d="M560 748 L712 748"/><path d="M560 762 L712 762"/>
+  </g>
+</svg>

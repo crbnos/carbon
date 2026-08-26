@@ -24,9 +24,11 @@ Specs: `.ai/specs/2026-07-30-workflows-foundation.md` (schema, validator, runtim
 - Upgrade an older stored shape only inside `migrateDefinition` in `src/definition/normalize.ts`.
   It is private and runs on the **raw JSON before** the current-schema parse — a document old
   enough to need upgrading cannot satisfy the current schema, so migrating after that parse could
-  never run. It carries one upgrade today: v1 → v2 resets a lookup node's `match` to `[]` because
-  its shape changed, which discards nothing (no v1 lookup could be activated).
-- Bump `CURRENT_DEFINITION_FORMAT_VERSION` (now **3**, in `src/definition/schema.ts`) when the
+  never run. It carries three upgrades today: v1 → v2 resets a lookup node's `match` to `[]` because
+  its shape changed (no v1 lookup could be activated); v2 → v3 backfills node `name`s from
+  the old `title`; v3 → v4 renames the `entity` node type to `compute`, leaving stored node
+  names alone — a name is an identifier other nodes reference.
+- Bump `CURRENT_DEFINITION_FORMAT_VERSION` (now **4**, in `src/definition/schema.ts`) when the
   stored shape changes, and add the upgrade to `migrateDefinition` in the same change.
 - Pass a `WorkflowCatalog` into `validateDefinition`. `createWorkflowCatalog()` in
   `src/catalog/catalog.ts` is the real one — events, entities, actions and operations behind one
@@ -107,7 +109,7 @@ src/runtime/
 ├── compare.ts   # operator semantics + clause evaluation
 ├── condition.ts # the Condition executor
 ├── filter.ts    # the Filter executor
-├── entity.ts    # the Entity executor — one catalog operation
+├── compute.ts   # the Compute executor — one catalog operation
 ├── lookup.ts    # the Lookup executor — one search
 ├── action.ts    # the Action executor — one item, never a loop
 ├── executors.ts # EXECUTORS: node kind -> executor. A kind with no entry refuses to run
@@ -297,9 +299,9 @@ every other check compares declared types only.
 
 ## The `workflowTriggerEvent` invariant
 
-A `workflowTriggerEvent` row exists **if and only if** the workflow is active, has a promoted
-version, and that version's trigger nodes list that event id. Promoting a version, editing the
-active version's trigger, and toggling `active` must all rewrite the workflow's rows —
+A `workflowTriggerEvent` row exists **if and only if** the workflow has a published version and
+that version's trigger nodes list that event id. Publishing a version, editing the published
+version's trigger, and unpublishing must all rewrite the workflow's rows —
 delete-then-insert **in the same transaction** as the change. If these drift, a workflow silently
 stops firing or fires when it should not.
 
@@ -320,3 +322,33 @@ pnpm run check:workflow-catalog                    # the CI `catalog` job
 
 Changing `Operator` in `@carbon/utils` also needs
 `pnpm --filter @carbon/utils test` and `pnpm exec turbo run typecheck --filter=erp`.
+
+## Custom fields (round 2)
+
+`src/catalog/custom-fields.ts` is the per-company overlay. The catalog is build-time and
+global; custom fields are runtime and per company, so they are merged in rather than generated.
+
+- `buildCatalogOverlay(defs)` → `{ properties, labels, enums, actionInputs }`, keyed by the
+  ONE-segment property path `customFields.<fieldId>` (the field's id, which is the key inside
+  the JSONB blob). One segment keeps `walkPath` and the runtime `walk` single-step.
+- It holds the ONLY `DataType → ValueType` map. `item` and reference-only entities are excluded.
+- `createWorkflowCatalog(overlay?)` merges **generated first, overlay second** — a real column
+  always wins, and the shipped keys keep their order at the top of every picker.
+- `WorkflowCatalog` gained `getPropertyLabel(entity, property)` and
+  `getInputLabel(actionId, input)`. They return the customer's own field name, which is customer
+  data and is deliberately never translated.
+- `getCatalogEvent(id)` is the single event lookup: the committed map, then
+  `resolveCustomFieldEvent`, which PARSES `<entity>.customFields.<fieldId>.changed` into a
+  synthetic `CatalogEvent`. `WORKFLOW_EVENTS` stays closed and drift-checked. `sync.ts` uses it
+  too, which is what gives a custom-field trigger its `UPDATE` subscription.
+
+## `linkify` and `ctx.linkFor`
+
+`CatalogInput.linkify` marks an input as prose a person reads. `renderTemplate(template, ctx,
+{ linkFor })` wraps an entity part as `[readableId](url)`; `actionExecutor` passes the callback
+only for `linkify` inputs, so a webhook body still renders a bare readable id. This package
+constructs no URL — it is bundled for the browser with four runtime dependencies and cannot
+import `@carbon/env`; the engine supplies `ctx.linkFor`.
+
+`rendersAsText` now accepts a whole record (it prints as its readable id) and still refuses a
+LIST of records.

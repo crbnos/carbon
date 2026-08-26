@@ -1,0 +1,166 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="goldBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7a5d19"/>
+      <stop offset="0.2" stop-color="#c9a445"/>
+      <stop offset="0.45" stop-color="#e8cd7c"/>
+      <stop offset="0.72" stop-color="#a8853a"/>
+      <stop offset="1" stop-color="#6a4f16"/>
+    </linearGradient>
+    <linearGradient id="goldLid" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#e8cd7c"/>
+      <stop offset="0.32" stop-color="#d3b25b"/>
+      <stop offset="0.62" stop-color="#b3913f"/>
+      <stop offset="1" stop-color="#7a5d19"/>
+    </linearGradient>
+    <linearGradient id="goldPocket" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#b8983f"/>
+      <stop offset="0.5" stop-color="#9c7d2f"/>
+      <stop offset="1" stop-color="#6a4f16"/>
+    </linearGradient>
+    <linearGradient id="goldSide" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#a8853a"/>
+      <stop offset="0.55" stop-color="#836620"/>
+      <stop offset="1" stop-color="#5c4413"/>
+    </linearGradient>
+    <linearGradient id="goldFlange" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#dcbf6c"/>
+      <stop offset="0.55" stop-color="#b3913f"/>
+      <stop offset="1" stop-color="#7a5d19"/>
+    </linearGradient>
+    <linearGradient id="chrome" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5b6167"/>
+      <stop offset="0.14" stop-color="#dfe6ea"/>
+      <stop offset="0.34" stop-color="#ffffff"/>
+      <stop offset="0.6" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <linearGradient id="blkFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#5a6167"/>
+      <stop offset="0.5" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="lidClip">
+      <path d="M148 498 L628 498 L876 321 L396 321 Z"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="512" cy="690" rx="440" ry="97" fill="url(#shadow)"/>
+
+  <!-- ===== left mounting flange ===== -->
+  <path d="M148 670 L114 670 L362 493 L396 493 Z" fill="url(#goldFlange)" stroke="#5c4413" stroke-width="2"/>
+  <path d="M148 670 L114 670 L114 686 L148 686 Z" fill="url(#goldSide)" stroke="#5c4413" stroke-width="2"/>
+  <g>
+    <ellipse cx="181" cy="614" rx="22" ry="13" transform="rotate(-35 181 614)" fill="#e2c884" opacity="0.8"/>
+    <ellipse cx="181" cy="614" rx="13" ry="8" transform="rotate(-35 181 614)" fill="#4a3a12"/>
+    <ellipse cx="255" cy="562" rx="22" ry="13" transform="rotate(-35 255 562)" fill="#e2c884" opacity="0.8"/>
+    <ellipse cx="255" cy="562" rx="13" ry="8" transform="rotate(-35 255 562)" fill="#4a3a12"/>
+    <ellipse cx="329" cy="509" rx="22" ry="13" transform="rotate(-35 329 509)" fill="#e2c884" opacity="0.8"/>
+    <ellipse cx="329" cy="509" rx="13" ry="8" transform="rotate(-35 329 509)" fill="#4a3a12"/>
+  </g>
+
+  <!-- ===== right mounting flange ===== -->
+  <path d="M628 670 L662 670 L910 493 L876 493 Z" fill="url(#goldFlange)" stroke="#5c4413" stroke-width="2"/>
+  <path d="M662 670 L910 493 L910 509 L662 686 Z" fill="url(#goldSide)" stroke="#5c4413" stroke-width="2"/>
+  <path d="M628 670 L662 670 L662 686 L628 686 Z" fill="url(#goldSide)" stroke="#5c4413" stroke-width="2"/>
+  <g>
+    <ellipse cx="695" cy="623" rx="22" ry="13" transform="rotate(-35 695 623)" fill="#e2c884" opacity="0.8"/>
+    <ellipse cx="695" cy="623" rx="13" ry="8" transform="rotate(-35 695 623)" fill="#4a3a12"/>
+    <ellipse cx="769" cy="570" rx="22" ry="13" transform="rotate(-35 769 570)" fill="#e2c884" opacity="0.8"/>
+    <ellipse cx="769" cy="570" rx="13" ry="8" transform="rotate(-35 769 570)" fill="#4a3a12"/>
+    <ellipse cx="843" cy="516" rx="22" ry="13" transform="rotate(-35 843 516)" fill="#e2c884" opacity="0.8"/>
+    <ellipse cx="843" cy="516" rx="13" ry="8" transform="rotate(-35 843 516)" fill="#4a3a12"/>
+  </g>
+
+  <!-- ===== billet housing: right side face ===== -->
+  <path d="M628 498 L876 321 L876 493 L628 670 Z" fill="url(#goldSide)" stroke="#5c4413" stroke-width="2.5"/>
+  <path d="M642 508 L866 348 L866 470 L642 646 Z" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2"/>
+
+  <!-- ===== machined pocketed lid ===== -->
+  <path d="M148 498 L628 498 L876 321 L396 321 Z" fill="url(#goldLid)" stroke="#5c4413" stroke-width="2.5"/>
+  <g clip-path="url(#lidClip)">
+    <!-- faint circular cutter swirls -->
+    <g fill="none" stroke="#ffffff" stroke-opacity="0.10" stroke-width="3">
+      <ellipse cx="300" cy="440" rx="150" ry="58" transform="rotate(-20 300 440)"/>
+      <ellipse cx="420" cy="400" rx="150" ry="58" transform="rotate(-20 420 400)"/>
+      <ellipse cx="540" cy="440" rx="150" ry="58" transform="rotate(-20 540 440)"/>
+      <ellipse cx="660" cy="400" rx="150" ry="58" transform="rotate(-20 660 400)"/>
+      <ellipse cx="780" cy="380" rx="150" ry="58" transform="rotate(-20 780 380)"/>
+      <ellipse cx="360" cy="360" rx="110" ry="42" transform="rotate(-20 360 360)"/>
+      <ellipse cx="600" cy="470" rx="110" ry="42" transform="rotate(-20 600 470)"/>
+    </g>
+    <g fill="none" stroke="#4c3a10" stroke-opacity="0.14" stroke-width="3">
+      <ellipse cx="300" cy="452" rx="150" ry="58" transform="rotate(-20 300 452)"/>
+      <ellipse cx="540" cy="452" rx="150" ry="58" transform="rotate(-20 540 452)"/>
+      <ellipse cx="780" cy="392" rx="150" ry="58" transform="rotate(-20 780 392)"/>
+    </g>
+  </g>
+  <!-- lid rim -->
+  <path d="M192 487 L614 487 L832 332 L410 332 Z" fill="none" stroke="#5c4413" stroke-width="2.5" opacity="0.8"/>
+  <path d="M192 487 L614 487 L832 332 L410 332 Z" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="2" transform="translate(0 -6)"/>
+  <!-- recessed pocket -->
+  <path d="M234 477 L601 477 L790 342 L423 342 Z" fill="url(#goldPocket)" stroke="#4c3a10" stroke-width="2.5"/>
+  <path d="M234 477 L601 477 L790 342 L423 342 Z" fill="none" stroke="#ffffff" stroke-opacity="0.12" stroke-width="2" transform="translate(4 4)"/>
+  <!-- pocket ribs -->
+  <path d="M356 477 L545 342" stroke="#dcbf6c" stroke-width="12" fill="none"/>
+  <path d="M356 477 L545 342" stroke="#f0dda2" stroke-opacity="0.5" stroke-width="4" fill="none"/>
+  <path d="M478 477 L667 342" stroke="#dcbf6c" stroke-width="12" fill="none"/>
+  <path d="M478 477 L667 342" stroke="#f0dda2" stroke-opacity="0.5" stroke-width="4" fill="none"/>
+  <!-- lid fasteners -->
+  <g>
+    <ellipse cx="212" cy="493" rx="16" ry="10" transform="rotate(-35 212 493)" fill="#4a3a12" opacity="0.7"/>
+    <ellipse cx="212" cy="493" rx="9" ry="6" transform="rotate(-35 212 493)" fill="#e2c884"/>
+    <ellipse cx="600" cy="493" rx="16" ry="10" transform="rotate(-35 600 493)" fill="#4a3a12" opacity="0.7"/>
+    <ellipse cx="600" cy="493" rx="9" ry="6" transform="rotate(-35 600 493)" fill="#e2c884"/>
+    <ellipse cx="424" cy="336" rx="16" ry="10" transform="rotate(-35 424 336)" fill="#4a3a12" opacity="0.7"/>
+    <ellipse cx="424" cy="336" rx="9" ry="6" transform="rotate(-35 424 336)" fill="#e2c884"/>
+    <ellipse cx="812" cy="336" rx="16" ry="10" transform="rotate(-35 812 336)" fill="#4a3a12" opacity="0.7"/>
+    <ellipse cx="812" cy="336" rx="9" ry="6" transform="rotate(-35 812 336)" fill="#e2c884"/>
+  </g>
+
+  <!-- ===== front face ===== -->
+  <path d="M148 498 L628 498 L628 670 L148 670 Z" fill="url(#goldBarrel)" stroke="#5c4413" stroke-width="2.5"/>
+  <!-- machined chamfer along the top edge -->
+  <path d="M148 508 L628 508" stroke="#f4e5ae" stroke-opacity="0.55" stroke-width="4" fill="none"/>
+  <path d="M148 516 L628 516" stroke="#5c4413" stroke-opacity="0.4" stroke-width="2" fill="none"/>
+  <path d="M148 660 L628 660" stroke="#5c4413" stroke-opacity="0.45" stroke-width="3" fill="none"/>
+
+  <!-- two SMA coaxial bulkheads -->
+  <g>
+    <polygon points="240,545 268,529 296,545 296,577 268,593 240,577" fill="url(#chrome)" stroke="#43484d" stroke-width="2"/>
+    <circle cx="268" cy="561" r="24" fill="url(#goldBarrel)" stroke="#5c4413" stroke-width="2"/>
+    <circle cx="268" cy="561" r="15" fill="#e8cd7c"/>
+    <circle cx="268" cy="561" r="10" fill="#efeade"/>
+    <circle cx="268" cy="561" r="3.5" fill="#c9a445"/>
+    <path d="M250 549 A24 24 0 0 1 284 546" fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="3"/>
+
+    <polygon points="352,545 380,529 408,545 408,577 380,593 352,577" fill="url(#chrome)" stroke="#43484d" stroke-width="2"/>
+    <circle cx="380" cy="561" r="24" fill="url(#goldBarrel)" stroke="#5c4413" stroke-width="2"/>
+    <circle cx="380" cy="561" r="15" fill="#e8cd7c"/>
+    <circle cx="380" cy="561" r="10" fill="#efeade"/>
+    <circle cx="380" cy="561" r="3.5" fill="#c9a445"/>
+    <path d="M362 549 A24 24 0 0 1 396 546" fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="3"/>
+  </g>
+
+  <!-- rectangular micro-D connector -->
+  <g>
+    <path d="M452 532 L580 532 L568 592 L464 592 Z" fill="url(#blkFace)" stroke="#101315" stroke-width="2.5"/>
+    <path d="M464 544 L568 544 L558 580 L474 580 Z" fill="url(#goldBarrel)" stroke="#5c4413" stroke-width="2"/>
+    <path d="M472 550 L560 550 L552 574 L480 574 Z" fill="#241f14"/>
+    <g fill="#e8cd7c" opacity="0.85">
+      <circle cx="486" cy="557" r="3.5"/><circle cx="502" cy="557" r="3.5"/><circle cx="518" cy="557" r="3.5"/>
+      <circle cx="534" cy="557" r="3.5"/><circle cx="548" cy="557" r="3.5"/>
+      <circle cx="494" cy="567" r="3.5"/><circle cx="510" cy="567" r="3.5"/><circle cx="526" cy="567" r="3.5"/>
+      <circle cx="540" cy="567" r="3.5"/>
+    </g>
+    <circle cx="440" cy="562" r="9" fill="#3a4045"/>
+    <circle cx="440" cy="560" r="5" fill="#8f979d"/>
+    <circle cx="592" cy="562" r="9" fill="#3a4045"/>
+    <circle cx="592" cy="560" r="5" fill="#8f979d"/>
+  </g>
+</svg>

@@ -6948,6 +6948,7 @@ export type Database = {
           companyId: string
           id: string
           metadata: Json
+          secretRef: string | null
           updatedAt: string
           updatedBy: string | null
         }
@@ -6956,6 +6957,7 @@ export type Database = {
           companyId: string
           id: string
           metadata?: Json
+          secretRef?: string | null
           updatedAt?: string
           updatedBy?: string | null
         }
@@ -6964,6 +6966,7 @@ export type Database = {
           companyId?: string
           id?: string
           metadata?: Json
+          secretRef?: string | null
           updatedAt?: string
           updatedBy?: string | null
         }
@@ -23020,14 +23023,17 @@ export type Database = {
         Row: {
           jobMaterialId: string
           jobOperationStepId: string
+          quantity: number | null
         }
         Insert: {
           jobMaterialId: string
           jobOperationStepId: string
+          quantity?: number | null
         }
         Update: {
           jobMaterialId?: string
           jobOperationStepId?: string
+          quantity?: number | null
         }
         Relationships: [
           {
@@ -29015,14 +29021,17 @@ export type Database = {
         Row: {
           methodMaterialId: string
           methodOperationStepId: string
+          quantity: number | null
         }
         Insert: {
           methodMaterialId: string
           methodOperationStepId: string
+          quantity?: number | null
         }
         Update: {
           methodMaterialId?: string
           methodOperationStepId?: string
+          quantity?: number | null
         }
         Relationships: [
           {
@@ -43222,14 +43231,17 @@ export type Database = {
       }
       quoteMaterialStep: {
         Row: {
+          quantity: number | null
           quoteMaterialId: string
           quoteOperationStepId: string
         }
         Insert: {
+          quantity?: number | null
           quoteMaterialId: string
           quoteOperationStepId: string
         }
         Update: {
+          quantity?: number | null
           quoteMaterialId?: string
           quoteOperationStepId?: string
         }
@@ -59159,8 +59171,6 @@ export type Database = {
       }
       workflow: {
         Row: {
-          active: boolean
-          activeVersionId: string | null
           canvasState: Json | null
           companyId: string
           createdAt: string
@@ -59170,12 +59180,11 @@ export type Database = {
           name: string
           nextRunAt: string | null
           ownerId: string
+          publishedVersionId: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
         Insert: {
-          active?: boolean
-          activeVersionId?: string | null
           canvasState?: Json | null
           companyId: string
           createdAt?: string
@@ -59185,12 +59194,11 @@ export type Database = {
           name: string
           nextRunAt?: string | null
           ownerId: string
+          publishedVersionId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
         Update: {
-          active?: boolean
-          activeVersionId?: string | null
           canvasState?: Json | null
           companyId?: string
           createdAt?: string
@@ -59200,17 +59208,11 @@ export type Database = {
           name?: string
           nextRunAt?: string | null
           ownerId?: string
+          publishedVersionId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "workflow_activeVersionId_fkey"
-            columns: ["activeVersionId", "companyId"]
-            isOneToOne: false
-            referencedRelation: "workflowVersion"
-            referencedColumns: ["id", "companyId"]
-          },
           {
             foreignKeyName: "workflow_companyId_fkey"
             columns: ["companyId"]
@@ -59308,6 +59310,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "workflow_publishedVersionId_fkey"
+            columns: ["publishedVersionId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "workflowVersion"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "workflow_updatedBy_fkey"
@@ -61144,6 +61153,7 @@ export type Database = {
             | Database["public"]["Enums"]["supersessionMode"]
             | null
           supplierIds: string | null
+          suppliers: string[] | null
           tags: string[] | null
           thumbnailPath: string | null
           unitOfMeasure: string | null
@@ -66048,6 +66058,7 @@ export type Database = {
             | Database["public"]["Enums"]["supersessionMode"]
             | null
           supplierIds: string | null
+          suppliers: string[] | null
           tags: string[] | null
           thumbnailPath: string | null
           unitOfMeasure: string | null
@@ -66857,14 +66868,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -66940,6 +66951,7 @@ export type Database = {
             | Database["public"]["Enums"]["supersessionMode"]
             | null
           supplierIds: string | null
+          suppliers: string[] | null
           tags: string[] | null
           thumbnailPath: string | null
           unitOfMeasure: string | null
@@ -68503,14 +68515,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -71936,14 +71948,14 @@ export type Database = {
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -73308,6 +73320,7 @@ export type Database = {
           revision: string | null
           revisions: Json | null
           supplierIds: string | null
+          suppliers: string[] | null
           tags: string[] | null
           thumbnailPath: string | null
           unitOfMeasure: string | null
@@ -75189,6 +75202,7 @@ export type Database = {
             | Database["public"]["Enums"]["supersessionMode"]
             | null
           supplierIds: string | null
+          suppliers: string[] | null
           tags: string[] | null
           thumbnailPath: string | null
           unitOfMeasure: string | null
@@ -75858,6 +75872,10 @@ export type Database = {
           netChange: number
         }[]
       }
+      attach_audit_log_append_only: {
+        Args: { p_table_name: string }
+        Returns: undefined
+      }
       attach_event_trigger: {
         Args: {
           after_sync_functions?: string[]
@@ -76005,6 +76023,10 @@ export type Database = {
           p_entity_id: string
           p_entity_type: string
         }
+        Returns: undefined
+      }
+      delete_integration_secret: {
+        Args: { p_company_id: string; p_integration_id: string }
         Returns: undefined
       }
       delete_old_audit_logs: {
@@ -76528,6 +76550,10 @@ export type Database = {
           targetHasCompanyId: boolean
           targetTable: string
         }[]
+      }
+      get_integration_secret: {
+        Args: { p_company_id: string; p_integration_id: string }
+        Returns: Json
       }
       get_inventory_quantities: {
         Args: { company_id: string; item_id?: string; location_id: string }
@@ -77881,7 +77907,7 @@ export type Database = {
         Args: { p_company_id: string; p_entries: Json[] }
         Returns: number
       }
-      is_claims_admin: { Args: never; Returns: boolean }
+      is_claims_admin: { Args: { company: string }; Returns: boolean }
       is_last_job_operation: {
         Args: { operation_id: string }
         Returns: boolean
@@ -78459,6 +78485,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      upsert_integration_secret: {
+        Args: { p_company_id: string; p_integration_id: string; p_secret: Json }
+        Returns: string
+      }
       upsert_to_search_index: {
         Args: {
           p_company_id: string
@@ -78481,6 +78511,15 @@ export type Database = {
       }
       uuid_generate_v4: { Args: never; Returns: string }
       uuid_to_base58: { Args: { _uuid: string }; Returns: string }
+      workflow_merge_custom_fields: {
+        Args: {
+          p_company_id: string
+          p_id: string
+          p_table: string
+          p_values: Json
+        }
+        Returns: undefined
+      }
       xid: { Args: { _at?: string }; Returns: unknown }
       xid_counter: { Args: { _xid: unknown }; Returns: number }
       xid_decode: { Args: { _xid: unknown }; Returns: number[] }

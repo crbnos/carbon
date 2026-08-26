@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="epoxyOuter" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#4a4f54"/>
+      <stop offset="0.22" stop-color="#3d4247"/>
+      <stop offset="0.45" stop-color="#33383d"/>
+      <stop offset="0.72" stop-color="#26292c"/>
+      <stop offset="1" stop-color="#1e2124"/>
+    </linearGradient>
+    <linearGradient id="epoxyInner" x1="0.2" y1="1" x2="0.85" y2="0">
+      <stop offset="0" stop-color="#1e2124"/>
+      <stop offset="0.35" stop-color="#2a2e32"/>
+      <stop offset="0.7" stop-color="#3a3f44"/>
+      <stop offset="1" stop-color="#22262a"/>
+    </linearGradient>
+    <linearGradient id="epoxyEnd" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#5e646a"/>
+      <stop offset="0.3" stop-color="#4a4f54"/>
+      <stop offset="0.7" stop-color="#383c40"/>
+      <stop offset="1" stop-color="#26292c"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="500" cy="762" rx="404" ry="89" fill="url(#shadow)"/>
+
+  <!-- far end cross-section -->
+  <path d="M311.7 227.0 A 310 310 0 1 0 894.3 227.0 L 845.4 244.8 A 258 258 0 1 1 360.6 244.8 Z"
+        fill="#15181a" stroke="#101214" stroke-width="2"/>
+
+  <!-- concave inner surface -->
+  <path d="M179.6 373.8 A 258 258 0 1 0 664.4 373.8 L 845.4 244.8 A 258 258 0 1 1 360.6 244.8 Z"
+        fill="url(#epoxyInner)" stroke="#141719" stroke-width="2"/>
+
+  <!-- convex outer surface -->
+  <path d="M130.7 356.0 A 310 310 0 1 0 713.3 356.0 L 894.3 227.0 A 310 310 0 1 1 311.7 227.0 Z"
+        fill="url(#epoxyOuter)" stroke="#141719" stroke-width="3"/>
+
+  <!-- shallow relief groove running the length of the convex face -->
+  <path d="M220.7 292 A 310 310 0 1 0 803.3 292" fill="none" stroke="#15181a" stroke-opacity="0.85" stroke-width="11"/>
+  <path d="M215.7 299 A 310 310 0 1 0 798.3 299" fill="none" stroke="#5a6167" stroke-opacity="0.30" stroke-width="3"/>
+
+  <!-- matte diffuse rollover, no specular -->
+  <path d="M160 330 A 310 310 0 1 0 743 330" fill="none" stroke="#7a8288" stroke-opacity="0.13" stroke-width="26"/>
+
+  <!-- faint orange-peel texture -->
+  <g fill="#8a9299" fill-opacity="0.07">
+    <ellipse cx="300" cy="600" rx="13" ry="9"/>
+    <ellipse cx="352" cy="668" rx="10" ry="7"/>
+    <ellipse cx="430" cy="700" rx="14" ry="9"/>
+    <ellipse cx="512" cy="686" rx="11" ry="8"/>
+    <ellipse cx="590" cy="640" rx="13" ry="9"/>
+    <ellipse cx="650" cy="572" rx="10" ry="7"/>
+    <ellipse cx="686" cy="486" rx="12" ry="8"/>
+    <ellipse cx="248" cy="512" rx="11" ry="8"/>
+    <ellipse cx="228" cy="430" rx="10" ry="7"/>
+    <ellipse cx="470" cy="612" rx="9" ry="7"/>
+    <ellipse cx="560" cy="716" rx="10" ry="7"/>
+    <ellipse cx="380" cy="560" rx="9" ry="6"/>
+  </g>
+  <g fill="#0f1113" fill-opacity="0.16">
+    <ellipse cx="326" cy="634" rx="9" ry="6"/>
+    <ellipse cx="470" cy="722" rx="11" ry="7"/>
+    <ellipse cx="618" cy="606" rx="9" ry="6"/>
+    <ellipse cx="262" cy="468" rx="8" ry="6"/>
+    <ellipse cx="700" cy="440" rx="8" ry="6"/>
+  </g>
+
+  <!-- near end cross-section, squared-off and unchamfered -->
+  <path d="M130.7 356.0 A 310 310 0 1 0 713.3 356.0 L 664.4 373.8 A 258 258 0 1 1 179.6 373.8 Z"
+        fill="url(#epoxyEnd)" stroke="#141719" stroke-width="3"/>
+  <path d="M139 360 A 302 302 0 1 0 706 360" fill="none" stroke="#ffffff" stroke-opacity="0.10" stroke-width="2"/>
+  <path d="M187 370 A 250 250 0 1 0 657 370" fill="none" stroke="#000000" stroke-opacity="0.30" stroke-width="2"/>
+
+  <!-- mould parting line along the near end -->
+  <path d="M135 366 A 306 306 0 1 0 709 366" fill="none" stroke="#6b7278" stroke-opacity="0.22" stroke-width="1.5"/>
+
+  <!-- coating pinhole at one corner -->
+  <circle cx="700" cy="368" r="6" fill="#0b0d0e"/>
+  <circle cx="698.5" cy="366" r="2.6" fill="#7d858b" fill-opacity="0.45"/>
+</svg>

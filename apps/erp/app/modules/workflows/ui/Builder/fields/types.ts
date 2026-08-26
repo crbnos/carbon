@@ -32,4 +32,6 @@ export type ValueFieldProps = {
   /** Per-variable messages, keyed by the variable's position in the value. Only the
    * broken one goes red; a sentence's other variables are left alone. */
   partIssues?: Record<number, string>;
+  /** The version is published: show the value, refuse every edit. */
+  isReadOnly?: boolean;
 };

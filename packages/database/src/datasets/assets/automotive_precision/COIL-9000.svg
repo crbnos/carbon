@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="copper" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6d3a22"/>
+      <stop offset="0.2" stop-color="#c07a4d"/>
+      <stop offset="0.45" stop-color="#e0a071"/>
+      <stop offset="0.72" stop-color="#96593a"/>
+      <stop offset="1" stop-color="#5a2f1c"/>
+    </linearGradient>
+    <linearGradient id="copperLead" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e0a071"/>
+      <stop offset="0.5" stop-color="#c07a4d"/>
+      <stop offset="1" stop-color="#6d3a22"/>
+    </linearGradient>
+    <linearGradient id="aramid" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#efe6cd"/>
+      <stop offset="0.4" stop-color="#ded2b4"/>
+      <stop offset="1" stop-color="#b3a483"/>
+    </linearGradient>
+    <linearGradient id="glassTape" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#f4f1e4"/>
+      <stop offset="0.5" stop-color="#ddd8c4"/>
+      <stop offset="1" stop-color="#b8b39e"/>
+    </linearGradient>
+    <linearGradient id="tinned" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#eef1f3"/>
+      <stop offset="0.4" stop-color="#c3c9cd"/>
+      <stop offset="1" stop-color="#6e747a"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+
+    <g id="coil">
+      <!-- wound loop body -->
+      <path d="M0 -230 L100 -128 L130 128 L0 230 L-130 128 L-100 -128 Z
+               M0 -186 L70 -110 L94 110 L0 186 L-94 110 L-70 -110 Z"
+            fill-rule="evenodd" fill="url(#copper)" stroke="#40200f" stroke-width="2.5"/>
+      <!-- tidy parallel turns -->
+      <g fill="none" stroke="#7a4025" stroke-width="2" opacity="0.55">
+        <path d="M0 -219 L93 -124 L121 124 L0 219 L-121 124 L-93 -124 Z"/>
+        <path d="M0 -208 L85 -119 L112 119 L0 208 L-112 119 L-85 -119 Z"/>
+        <path d="M0 -197 L78 -115 L103 115 L0 197 L-103 115 L-78 -115 Z"/>
+      </g>
+      <g fill="none" stroke="#f0bb8f" stroke-width="1.6" opacity="0.45">
+        <path d="M0 -213 L89 -121 L116 121 L0 213 L-116 121 L-89 -121 Z"/>
+        <path d="M0 -202 L81 -117 L107 117 L0 202 L-107 117 L-81 -117 Z"/>
+        <path d="M0 -191 L74 -112 L98 112 L0 191 L-98 112 L-74 -112 Z"/>
+      </g>
+      <!-- cream aramid sleeving on the slot sections -->
+      <path d="M108 -60 L124 80 L91 80 L75 -60 Z" fill="url(#aramid)" stroke="#9c8d6c" stroke-width="2"/>
+      <path d="M-108 -60 L-124 80 L-91 80 L-75 -60 Z" fill="url(#aramid)" stroke="#9c8d6c" stroke-width="2"/>
+      <g stroke="#a4967a" stroke-width="1.6" opacity="0.6" fill="none">
+        <path d="M78 -40 L110 -40"/><path d="M81 0 L114 0"/><path d="M85 42 L118 42"/>
+        <path d="M-78 -40 L-110 -40"/><path d="M-81 0 L-114 0"/><path d="M-85 42 L-118 42"/>
+      </g>
+      <!-- glass tape binding the end turn crossovers -->
+      <g fill="url(#glassTape)">
+        <path d="M-38 -154 L-25 -167 L-62 -204 L-75 -191 Z"/>
+        <path d="M38 -154 L25 -167 L62 -204 L75 -191 Z"/>
+        <path d="M-49 154 L-36 167 L-77 204 L-90 191 Z"/>
+        <path d="M49 154 L36 167 L77 204 L90 191 Z"/>
+      </g>
+      <g fill="none" stroke="#9a947f" stroke-width="1.6" opacity="0.8">
+        <path d="M-38 -154 L-25 -167 L-62 -204 L-75 -191 Z"/>
+        <path d="M38 -154 L25 -167 L62 -204 L75 -191 Z"/>
+        <path d="M-49 154 L-36 167 L-77 204 L-90 191 Z"/>
+        <path d="M49 154 L36 167 L77 204 L90 191 Z"/>
+      </g>
+      <!-- varnish sheen on the near face -->
+      <path d="M0 -222 L46 -172 L60 130 L0 176" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.16"/>
+    </g>
+
+    <g id="leadTail">
+      <path d="M126 118 C 168 138 190 168 180 200 C 174 218 160 228 146 230"
+            fill="none" stroke="#40200f" stroke-width="16" stroke-linecap="round"/>
+      <path d="M126 118 C 168 138 190 168 180 200 C 174 218 160 228 146 230"
+            fill="none" stroke="url(#copperLead)" stroke-width="11" stroke-linecap="round"/>
+      <path d="M172 208 C 166 222 158 229 146 231"
+            fill="none" stroke="#5b6167" stroke-width="15" stroke-linecap="round"/>
+      <path d="M172 208 C 166 222 158 229 146 231"
+            fill="none" stroke="url(#tinned)" stroke-width="10" stroke-linecap="round"/>
+    </g>
+  </defs>
+
+  <ellipse cx="512" cy="706" rx="390" ry="86" fill="url(#shadow)"/>
+
+  <!-- four formed coils, aligned apexes, overlapping to the left -->
+  <use href="#coil" x="710" y="500"/>
+  <use href="#leadTail" x="710" y="500"/>
+  <use href="#coil" x="578" y="500"/>
+  <use href="#coil" x="446" y="500"/>
+  <use href="#coil" x="314" y="500"/>
+  <g transform="translate(314 500) scale(-1 1)"><use href="#leadTail"/></g>
+</svg>

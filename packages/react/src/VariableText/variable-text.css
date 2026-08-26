@@ -1,3 +1,12 @@
+/* The editable element owns the whole box — its height floor (set by the shell as a custom
+   property) and its padding — so a click anywhere in the field reaches ProseMirror and
+   places a caret. `border-box` is what keeps the padding inside that floor. */
+.variable-text-content {
+  box-sizing: border-box;
+  min-height: var(--variable-text-content-min-height, 0);
+  padding: 0.5rem 0.75rem;
+}
+
 /* Tiptap's Placeholder extension only adds a class and a `data-placeholder` attribute —
    the visible text is this rule. It ships with the component because the app stylesheet
    that used to hold it (apps/erp/app/styles/prosemirror.css) is imported nowhere. */

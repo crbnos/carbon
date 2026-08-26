@@ -1870,6 +1870,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterialStep.jobOperationStepId"
           },
           {
+            $ref: "#/parameters/rowFilter.jobMaterialStep.quantity"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -1935,6 +1938,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterialStep.jobOperationStepId"
           },
           {
+            $ref: "#/parameters/rowFilter.jobMaterialStep.quantity"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -1952,6 +1958,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobMaterialStep.jobOperationStepId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterialStep.quantity"
           },
           {
             $ref: "#/parameters/body.jobMaterialStep"
@@ -2066,6 +2075,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.consumables.mpn"
+          },
+          {
+            $ref: "#/parameters/rowFilter.consumables.suppliers"
           },
           {
             $ref: "#/parameters/select"
@@ -6106,10 +6118,7 @@ export default {
             $ref: "#/parameters/rowFilter.workflow.ownerId"
           },
           {
-            $ref: "#/parameters/rowFilter.workflow.active"
-          },
-          {
-            $ref: "#/parameters/rowFilter.workflow.activeVersionId"
+            $ref: "#/parameters/rowFilter.workflow.publishedVersionId"
           },
           {
             $ref: "#/parameters/rowFilter.workflow.nextRunAt"
@@ -6204,10 +6213,7 @@ export default {
             $ref: "#/parameters/rowFilter.workflow.ownerId"
           },
           {
-            $ref: "#/parameters/rowFilter.workflow.active"
-          },
-          {
-            $ref: "#/parameters/rowFilter.workflow.activeVersionId"
+            $ref: "#/parameters/rowFilter.workflow.publishedVersionId"
           },
           {
             $ref: "#/parameters/rowFilter.workflow.nextRunAt"
@@ -6256,10 +6262,7 @@ export default {
             $ref: "#/parameters/rowFilter.workflow.ownerId"
           },
           {
-            $ref: "#/parameters/rowFilter.workflow.active"
-          },
-          {
-            $ref: "#/parameters/rowFilter.workflow.activeVersionId"
+            $ref: "#/parameters/rowFilter.workflow.publishedVersionId"
           },
           {
             $ref: "#/parameters/rowFilter.workflow.nextRunAt"
@@ -10321,6 +10324,9 @@ export default {
             $ref: "#/parameters/rowFilter.methodMaterialStep.methodOperationStepId"
           },
           {
+            $ref: "#/parameters/rowFilter.methodMaterialStep.quantity"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -10386,6 +10392,9 @@ export default {
             $ref: "#/parameters/rowFilter.methodMaterialStep.methodOperationStepId"
           },
           {
+            $ref: "#/parameters/rowFilter.methodMaterialStep.quantity"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -10403,6 +10412,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.methodMaterialStep.methodOperationStepId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterialStep.quantity"
           },
           {
             $ref: "#/parameters/body.methodMaterialStep"
@@ -30488,6 +30500,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.services.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.services.suppliers"
           },
           {
             $ref: "#/parameters/select"
@@ -51172,6 +51187,9 @@ export default {
             $ref: "#/parameters/rowFilter.companyIntegration.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.companyIntegration.secretRef"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -51249,6 +51267,9 @@ export default {
             $ref: "#/parameters/rowFilter.companyIntegration.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.companyIntegration.secretRef"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -51278,6 +51299,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companyIntegration.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companyIntegration.secretRef"
           },
           {
             $ref: "#/parameters/body.companyIntegration"
@@ -57631,6 +57655,9 @@ export default {
             $ref: "#/parameters/rowFilter.parts.mpn"
           },
           {
+            $ref: "#/parameters/rowFilter.parts.suppliers"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -58484,6 +58511,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.materials.mpn"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materials.suppliers"
           },
           {
             $ref: "#/parameters/select"
@@ -60827,6 +60857,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.tools.mpn"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tools.suppliers"
           },
           {
             $ref: "#/parameters/select"
@@ -71368,6 +71401,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMaterialStep.quoteOperationStepId"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteMaterialStep.quantity"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -71433,6 +71469,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMaterialStep.quoteOperationStepId"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteMaterialStep.quantity"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -71450,6 +71489,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteMaterialStep.quoteOperationStepId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteMaterialStep.quantity"
           },
           {
             $ref: "#/parameters/body.quoteMaterialStep"
@@ -87977,28 +88019,6 @@ export default {
       }
     },
     "/rpc/get_companies_with_employee_permission": {
-      get: {
-        parameters: [
-          {
-            format: "text",
-            in: "query",
-            name: "permission",
-            required: true,
-            type: "string"
-          }
-        ],
-        produces: [
-          "application/json",
-          "application/vnd.pgrst.object+json;nulls=stripped",
-          "application/vnd.pgrst.object+json"
-        ],
-        responses: {
-          "200": {
-            description: "OK"
-          }
-        },
-        tags: ["(rpc) get_companies_with_employee_permission"]
-      },
       post: {
         parameters: [
           {
@@ -88828,6 +88848,52 @@ export default {
         tags: ["(rpc) sync_edit_document_transaction"]
       }
     },
+    "/rpc/workflow_merge_custom_fields": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                },
+                p_values: {
+                  format: "jsonb"
+                }
+              },
+              required: ["p_table", "p_id", "p_company_id", "p_values"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) workflow_merge_custom_fields"]
+      }
+    },
     "/rpc/get_jobs_by_date_range": {
       post: {
         parameters: [
@@ -89143,6 +89209,41 @@ export default {
           }
         },
         tags: ["(rpc) get_companies_with_permission"]
+      }
+    },
+    "/rpc/attach_audit_log_append_only": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_table_name: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table_name"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) attach_audit_log_append_only"]
       }
     },
     "/rpc/get_inventory_tie_out": {
@@ -89677,6 +89778,13 @@ export default {
             name: "args",
             required: true,
             schema: {
+              properties: {
+                company: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["company"],
               type: "object"
             }
           },
@@ -99485,6 +99593,10 @@ export default {
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `jobOperationStep.id`.<fk table='jobOperationStep' column='id'/>",
           format: "text",
           type: "string"
+        },
+        quantity: {
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -99634,6 +99746,13 @@ export default {
         mpn: {
           format: "text",
           type: "string"
+        },
+        suppliers: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         }
       },
       type: "object"
@@ -101255,7 +101374,6 @@ export default {
         "companyId",
         "name",
         "ownerId",
-        "active",
         "createdBy",
         "createdAt"
       ],
@@ -101286,12 +101404,7 @@ export default {
           format: "text",
           type: "string"
         },
-        active: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
-        },
-        activeVersionId: {
+        publishedVersionId: {
           format: "text",
           type: "string"
         },
@@ -103344,6 +103457,10 @@ export default {
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `methodOperationStep.id`.<fk table='methodOperationStep' column='id'/>",
           format: "text",
           type: "string"
+        },
+        quantity: {
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -104645,7 +104762,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -104694,7 +104811,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -113025,6 +113142,13 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        suppliers: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         }
       },
       type: "object"
@@ -122686,6 +122810,10 @@ export default {
         updatedBy: {
           format: "text",
           type: "string"
+        },
+        secretRef: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -125620,6 +125748,13 @@ export default {
         mpn: {
           format: "text",
           type: "string"
+        },
+        suppliers: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         }
       },
       type: "object"
@@ -126085,6 +126220,13 @@ export default {
         mpn: {
           format: "text",
           type: "string"
+        },
+        suppliers: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         }
       },
       type: "object"
@@ -127289,6 +127431,13 @@ export default {
         mpn: {
           format: "text",
           type: "string"
+        },
+        suppliers: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         }
       },
       type: "object"
@@ -132209,6 +132358,10 @@ export default {
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `quoteOperationStep.id`.<fk table='quoteOperationStep' column='id'/>",
           format: "text",
           type: "string"
+        },
+        quantity: {
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -141038,6 +141191,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.jobMaterialStep.quantity": {
+      name: "quantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.consumables": {
       name: "consumables",
       description: "consumables",
@@ -141235,6 +141394,12 @@ export default {
     },
     "rowFilter.consumables.mpn": {
       name: "mpn",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.consumables.suppliers": {
+      name: "suppliers",
       required: false,
       in: "query",
       type: "string"
@@ -143108,14 +143273,8 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.workflow.active": {
-      name: "active",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.workflow.activeVersionId": {
-      name: "activeVersionId",
+    "rowFilter.workflow.publishedVersionId": {
+      name: "publishedVersionId",
       required: false,
       in: "query",
       type: "string"
@@ -145395,6 +145554,12 @@ export default {
     },
     "rowFilter.methodMaterialStep.methodOperationStepId": {
       name: "methodOperationStepId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.methodMaterialStep.quantity": {
+      name: "quantity",
       required: false,
       in: "query",
       type: "string"
@@ -156351,6 +156516,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.services.suppliers": {
+      name: "suppliers",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.unitOfMeasure": {
       name: "unitOfMeasure",
       description: "unitOfMeasure",
@@ -166961,6 +167132,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.companyIntegration.secretRef": {
+      name: "secretRef",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.storageRuleWorkCenterAssignment": {
       name: "storageRuleWorkCenterAssignment",
       description: "storageRuleWorkCenterAssignment",
@@ -170265,6 +170442,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.parts.suppliers": {
+      name: "suppliers",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.currency": {
       name: "currency",
       description: "currency",
@@ -170819,6 +171002,12 @@ export default {
     },
     "rowFilter.materials.mpn": {
       name: "mpn",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.materials.suppliers": {
+      name: "suppliers",
       required: false,
       in: "query",
       type: "string"
@@ -172114,6 +172303,12 @@ export default {
     },
     "rowFilter.tools.mpn": {
       name: "mpn",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.tools.suppliers": {
+      name: "suppliers",
       required: false,
       in: "query",
       type: "string"
@@ -177576,6 +177771,12 @@ export default {
     },
     "rowFilter.quoteMaterialStep.quoteOperationStepId": {
       name: "quoteOperationStepId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.quoteMaterialStep.quantity": {
+      name: "quantity",
       required: false,
       in: "query",
       type: "string"

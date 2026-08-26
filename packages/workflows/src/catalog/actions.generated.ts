@@ -132,6 +132,12 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
     inputs: {
       user: { type: { kind: "entity", of: "user" }, required: false },
       role: { type: { kind: "entity", of: "group" }, required: false },
+      channels: {
+        type: { kind: "list", of: { kind: "primitive", of: "string" } },
+        required: false,
+        choices: ["inApp", "email", "slack"],
+        defaultValue: ["inApp", "email"]
+      },
       subject: {
         type: { kind: "primitive", of: "string" },
         required: true,
@@ -140,7 +146,8 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
       message: {
         type: { kind: "primitive", of: "string" },
         required: false,
-        template: true
+        template: true,
+        linkify: true
       },
       aboutId: { type: { kind: "primitive", of: "string" }, required: false },
       aboutType: { type: { kind: "primitive", of: "string" }, required: false }

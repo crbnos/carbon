@@ -1,3 +1,4 @@
+import { getQuoteDisplayId, withRevisionSuffix } from "@carbon/documents/utils";
 import {
   Button,
   cn,
@@ -101,34 +102,22 @@ function getItems(opportunity: Opportunity, state: string) {
       return opportunity.salesRfqs.map((rfq) => ({
         id: rfq.id!,
         label: rfq.rfqId
-          ? `${rfq.rfqId}${
-              rfq.revisionId && rfq.revisionId > 0 ? `-${rfq.revisionId}` : ""
-            }`
+          ? withRevisionSuffix(rfq.rfqId, rfq.revisionId)
           : `RFQ ${rfq.id}`,
         path: path.to.salesRfqDetails(rfq.id!)
       }));
     case "Quote":
       return opportunity.quotes.map((quote) => ({
         id: quote.id!,
-        label: quote.quoteId
-          ? `${quote.quoteId}${
-              quote.revisionId && quote.revisionId > 0
-                ? `-${quote.revisionId}`
-                : ""
-            }`
-          : `Quote ${quote.id}`,
+        label: quote.quoteId ? getQuoteDisplayId(quote) : `Quote ${quote.id}`,
         path: path.to.quoteDetails(quote.id!)
       }));
     case "Order":
       return opportunity.salesOrders.map((order) => ({
         id: order.id!,
-        label: order.salesOrderId
-          ? `${order.salesOrderId}${
-              order.revisionId && order.revisionId > 0
-                ? `-${order.revisionId}`
-                : ""
-            }`
-          : `Order ${order.id}`,
+        // Sales orders are not revised — the column exists but nothing writes
+        // it, so this only ever renders the bare id.
+        label: order.salesOrderId ?? `Order ${order.id}`,
         path: path.to.salesOrderDetails(order.id!)
       }));
     default:

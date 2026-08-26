@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- hot-rolled / 4140: warm dark charcoal, rolled across a horizontal barrel -->
+    <linearGradient id="stlBarrel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a3733"/>
+      <stop offset="0.2" stop-color="#6a655e"/>
+      <stop offset="0.45" stop-color="#807a72"/>
+      <stop offset="0.72" stop-color="#55504a"/>
+      <stop offset="1" stop-color="#302d2a"/>
+    </linearGradient>
+    <linearGradient id="stlFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#807a72"/>
+      <stop offset="0.32" stop-color="#6a655e"/>
+      <stop offset="0.68" stop-color="#4b4741"/>
+      <stop offset="1" stop-color="#302d2a"/>
+    </linearGradient>
+    <linearGradient id="scale" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6b4a2c"/>
+      <stop offset="0.2" stop-color="#c08b52"/>
+      <stop offset="0.45" stop-color="#e0b077"/>
+      <stop offset="0.72" stop-color="#9a6f42"/>
+      <stop offset="1" stop-color="#5d3f26"/>
+    </linearGradient>
+    <linearGradient id="bore" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#55504a"/>
+      <stop offset="0.5" stop-color="#2a2724"/>
+      <stop offset="1" stop-color="#131211"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+    <filter id="softer" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="22"/>
+    </filter>
+    <clipPath id="stlBar">
+      <path d="M-320 -155 L320 -155 A59 155 0 0 1 320 155 L-320 155 A59 155 0 0 0 -320 -155 Z"/>
+    </clipPath>
+    <clipPath id="stlCut">
+      <ellipse cx="-320" cy="0" rx="59" ry="155"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="512" cy="656" rx="440" ry="96" fill="url(#shadow)" transform="rotate(7 512 656)"/>
+
+  <g transform="translate(512 500) rotate(7)">
+    <!-- barrel -->
+    <path d="M-320 -155 L320 -155 A59 155 0 0 1 320 155 L-320 155 A59 155 0 0 0 -320 -155 Z" fill="url(#stlBarrel)"/>
+    <g clip-path="url(#stlBar)">
+      <!-- patchy bronze-toned mill scale -->
+      <g filter="url(#soft)" opacity="0.42">
+        <ellipse cx="-150" cy="-58" rx="120" ry="52" fill="url(#scale)"/>
+        <ellipse cx="96" cy="66" rx="150" ry="48" fill="url(#scale)"/>
+        <ellipse cx="262" cy="-96" rx="82" ry="38" fill="url(#scale)"/>
+        <ellipse cx="-262" cy="96" rx="72" ry="34" fill="url(#scale)"/>
+      </g>
+      <g filter="url(#soft)" opacity="0.3">
+        <ellipse cx="-40" cy="120" rx="130" ry="34" fill="#241d18"/>
+        <ellipse cx="180" cy="-136" rx="110" ry="28" fill="#241d18"/>
+      </g>
+      <!-- shallow rust bloom near the lower edge -->
+      <g filter="url(#softer)" opacity="0.5">
+        <ellipse cx="150" cy="132" rx="106" ry="34" fill="#8b4a2b"/>
+        <ellipse cx="214" cy="146" rx="58" ry="20" fill="#a35a30"/>
+      </g>
+      <!-- faint spiral peeling marks from the peel-turned bar -->
+      <g stroke="#8b857b" stroke-opacity="0.28" stroke-width="3" fill="none">
+        <path d="M-330 -150 L-190 155"/>
+        <path d="M-210 -150 L-70 155"/>
+        <path d="M-90 -150 L50 155"/>
+        <path d="M30 -150 L170 155"/>
+        <path d="M150 -150 L290 155"/>
+        <path d="M270 -150 L340 6"/>
+      </g>
+      <g stroke="#2b2825" stroke-opacity="0.32" stroke-width="3" fill="none">
+        <path d="M-300 -150 L-160 155"/>
+        <path d="M-180 -150 L-40 155"/>
+        <path d="M-60 -150 L80 155"/>
+        <path d="M60 -150 L200 155"/>
+        <path d="M180 -150 L320 155"/>
+      </g>
+      <!-- preservative oil: wet sheen along the crown plus two slick blotches -->
+      <path d="M-320 -96 L340 -96 L340 -48 L-320 -48 Z" fill="#cfc9bf" opacity="0.2"/>
+      <path d="M-320 -80 L340 -80 L340 -62 L-320 -62 Z" fill="#ffffff" opacity="0.24"/>
+      <g filter="url(#soft)" opacity="0.3">
+        <ellipse cx="-140" cy="-18" rx="110" ry="26" fill="#e6e0d4"/>
+        <ellipse cx="176" cy="10" rx="86" ry="20" fill="#e6e0d4"/>
+      </g>
+      <path d="M-320 116 L340 116 L340 158 L-320 158 Z" fill="#1d1b19" opacity="0.4"/>
+    </g>
+    <path d="M-320 -155 L320 -155 A59 155 0 0 1 320 155 L-320 155 A59 155 0 0 0 -320 -155 Z"
+          fill="none" stroke="#231f1c" stroke-width="3"/>
+
+    <!-- far end: rough saw cut, torn burr lifting off the rim -->
+    <path d="M320 -155 A59 155 0 0 1 320 155" fill="none" stroke="#9b958b" stroke-width="4" stroke-opacity="0.45"/>
+    <path d="M375 34 C396 44 404 62 392 74 C380 84 366 76 366 62"
+          fill="#4a4540" stroke="#231f1c" stroke-width="2.5"/>
+    <path d="M370 -66 C388 -76 398 -66 392 -54 C386 -44 374 -46 372 -56"
+          fill="#514c46" stroke="#231f1c" stroke-width="2.5"/>
+
+    <!-- near end: squarely faced, centre-drilled -->
+    <ellipse cx="-320" cy="0" rx="59" ry="155" fill="url(#stlFace)" stroke="#231f1c" stroke-width="3"/>
+    <g clip-path="url(#stlCut)">
+      <!-- facing tool sweep across the cut -->
+      <g stroke="#9b958b" stroke-opacity="0.32" stroke-width="2.5" fill="none">
+        <path d="M-382 -126 Q-320 -118 -258 -128"/>
+        <path d="M-382 -92 Q-320 -84 -258 -94"/>
+        <path d="M-382 -58 Q-320 -50 -258 -60"/>
+        <path d="M-382 58 Q-320 66 -258 56"/>
+        <path d="M-382 92 Q-320 100 -258 90"/>
+        <path d="M-382 126 Q-320 134 -258 124"/>
+      </g>
+      <g stroke="#2b2825" stroke-opacity="0.4" stroke-width="2.5" fill="none">
+        <path d="M-382 -109 Q-320 -101 -258 -111"/>
+        <path d="M-382 -75 Q-320 -67 -258 -77"/>
+        <path d="M-382 75 Q-320 83 -258 73"/>
+        <path d="M-382 109 Q-320 117 -258 107"/>
+      </g>
+      <g filter="url(#soft)" opacity="0.3">
+        <ellipse cx="-338" cy="-84" rx="34" ry="60" fill="#ded8cc"/>
+      </g>
+    </g>
+    <!-- chamfer break on the faced edge -->
+    <ellipse cx="-320" cy="0" rx="59" ry="155" fill="none" stroke="#a49d92" stroke-width="3.5" stroke-opacity="0.45"/>
+    <ellipse cx="-320" cy="0" rx="50" ry="143" fill="none" stroke="#7d776f" stroke-width="3" stroke-opacity="0.6"/>
+    <!-- 60 degree centre drill: cone then pilot -->
+    <ellipse cx="-320" cy="0" rx="25" ry="66" fill="url(#bore)" stroke="#231f1c" stroke-width="2.5"/>
+    <path d="M-338 -46 A25 66 0 0 1 -338 46" fill="none" stroke="#9b958b" stroke-width="3" stroke-opacity="0.55"/>
+    <ellipse cx="-317" cy="0" rx="11" ry="30" fill="#101010"/>
+  </g>
+</svg>

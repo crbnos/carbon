@@ -99,7 +99,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "users"
   });
 
@@ -128,11 +128,15 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  const ip = request.headers.get("x-forwarded-for") ?? undefined;
+
   const result = await updateEmployee(client, {
     id,
     employeeType,
     permissions,
-    companyId
+    companyId,
+    actorId: userId,
+    ip
   });
 
   throw redirect(path.to.employeeAccounts, await flash(request, result));

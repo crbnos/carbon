@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="boardBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#b0ada7"/>
+      <stop offset="0.2" stop-color="#e9e7e2"/>
+      <stop offset="0.45" stop-color="#fbfaf7"/>
+      <stop offset="0.72" stop-color="#d5d2cc"/>
+      <stop offset="1" stop-color="#a4a19b"/>
+    </linearGradient>
+    <linearGradient id="boardFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#faf9f6"/>
+      <stop offset="0.5" stop-color="#dedbd5"/>
+      <stop offset="1" stop-color="#a9a69f"/>
+    </linearGradient>
+    <linearGradient id="steelBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="steelFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="rubberBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#111315"/>
+      <stop offset="0.25" stop-color="#2c3033"/>
+      <stop offset="0.5" stop-color="#3b4044"/>
+      <stop offset="0.75" stop-color="#212528"/>
+      <stop offset="1" stop-color="#0d0f10"/>
+    </linearGradient>
+    <linearGradient id="rubberFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#3b4044"/>
+      <stop offset="0.5" stop-color="#252a2d"/>
+      <stop offset="1" stop-color="#0f1113"/>
+    </linearGradient>
+    <linearGradient id="greaseBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e6f0da"/>
+      <stop offset="0.28" stop-color="#cfe0bd"/>
+      <stop offset="0.62" stop-color="#a8c191"/>
+      <stop offset="1" stop-color="#7f9a6b"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="430" cy="846" rx="152" ry="34" fill="url(#shadow)"/>
+  <ellipse cx="706" cy="852" rx="200" ry="44" fill="url(#shadow)"/>
+
+  <!-- ===== machined coupon the grease bead sits on ===== -->
+  <path d="M556 796 A150 57 0 0 0 856 796 L856 810 A150 57 0 0 1 556 810 Z" fill="url(#steelBarrel)" stroke="#4a5054" stroke-width="2.5"/>
+  <ellipse cx="706" cy="796" rx="150" ry="57" fill="url(#steelFace)" stroke="#565c61" stroke-width="2.5"/>
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.18">
+    <ellipse cx="706" cy="796" rx="138" ry="52.4" stroke-width="2"/>
+    <ellipse cx="706" cy="796" rx="112" ry="42.6" stroke-width="2"/>
+    <ellipse cx="706" cy="796" rx="82" ry="31.2" stroke-width="2"/>
+  </g>
+
+  <!-- ===== extruded grease bead: ridged nozzle profile, slumping tip ===== -->
+  <path d="M614 812 C 660 792 704 780 744 772 C 774 766 792 770 798 782" fill="none" stroke="#6f8a5c" stroke-opacity="0.35" stroke-width="52" stroke-linecap="round"/>
+  <path d="M606 806 C 652 782 700 770 744 762 C 776 756 796 760 800 774" fill="none" stroke="url(#greaseBody)" stroke-width="44" stroke-linecap="round"/>
+  <!-- longitudinal ridges left by the nozzle -->
+  <path d="M606 792 C 652 768 700 756 744 748 C 774 742 793 746 798 758" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="7" stroke-linecap="round"/>
+  <path d="M608 800 C 654 776 702 764 745 756 C 775 750 793 753 798 765" fill="none" stroke="#f2f7ea" stroke-opacity="0.35" stroke-width="3" stroke-linecap="round"/>
+  <path d="M606 814 C 652 790 700 778 744 770 C 774 764 794 768 799 780" fill="none" stroke="#5f7a4d" stroke-opacity="0.45" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M606 822 C 652 798 700 786 744 778 C 772 772 790 775 796 786" fill="none" stroke="#5a7349" stroke-opacity="0.35" stroke-width="3" stroke-linecap="round"/>
+  <!-- slumped foot where the bead has settled onto the flat -->
+  <ellipse cx="700" cy="828" rx="98" ry="15" fill="#7f9a6b" opacity="0.4"/>
+  <ellipse cx="800" cy="792" rx="26" ry="10" fill="#a8c191" opacity="0.75"/>
+
+  <!-- ===== cartridge: crimped metal base, blank board tube, crimped shoulder, nozzle ===== -->
+  <!-- crimped metal end cap -->
+  <path d="M330 758 L330 816 Q430 892 530 816 L530 758 Z" fill="url(#steelBarrel)" stroke="#4a5054" stroke-width="2.5"/>
+  <path d="M330 772 Q430 848 530 772" fill="none" stroke="#000000" stroke-opacity="0.22" stroke-width="4"/>
+  <path d="M330 784 Q430 860 530 784" fill="none" stroke="#ffffff" stroke-opacity="0.32" stroke-width="3"/>
+  <path d="M330 800 Q430 876 530 800" fill="none" stroke="#000000" stroke-opacity="0.18" stroke-width="3"/>
+
+  <!-- blank board body -->
+  <path d="M330 240 L330 760 Q430 836 530 760 L530 240 Z" fill="url(#boardBarrel)" stroke="#8d8a84" stroke-width="2.5"/>
+  <!-- spiral-wound seam -->
+  <path d="M330 700 L530 604" fill="none" stroke="#b9b6af" stroke-opacity="0.8" stroke-width="2.5"/>
+  <path d="M330 470 L530 374" fill="none" stroke="#b9b6af" stroke-opacity="0.7" stroke-width="2.5"/>
+  <path d="M330 705 L530 609" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="2"/>
+  <path d="M330 475 L530 379" fill="none" stroke="#ffffff" stroke-opacity="0.45" stroke-width="2"/>
+  <!-- board fibre sheen -->
+  <path d="M366 250 L366 748" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="10"/>
+  <path d="M508 250 L508 746" fill="none" stroke="#000000" stroke-opacity="0.1" stroke-width="14"/>
+  <!-- crimp of the board into the base cap -->
+  <path d="M330 754 Q430 830 530 754" fill="none" stroke="#8d8a84" stroke-opacity="0.7" stroke-width="3"/>
+
+  <!-- crimped metal shoulder -->
+  <path d="M330 200 L330 242 Q430 318 530 242 L530 200 Z" fill="url(#steelBarrel)" stroke="#4a5054" stroke-width="2.5"/>
+  <path d="M330 214 Q430 290 530 214" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="3"/>
+  <path d="M330 230 Q430 306 530 230" fill="none" stroke="#000000" stroke-opacity="0.2" stroke-width="3"/>
+  <ellipse cx="430" cy="200" rx="100" ry="38" fill="url(#steelFace)" stroke="#5c6267" stroke-width="2.5"/>
+  <ellipse cx="430" cy="200" rx="88" ry="33.4" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="2"/>
+  <ellipse cx="430" cy="200" rx="70" ry="26.6" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2"/>
+
+  <!-- plastic nozzle collar and cone -->
+  <path d="M376 186 L376 200 Q430 220 484 200 L484 186 Z" fill="url(#rubberBarrel)" stroke="#0c0e10" stroke-width="2"/>
+  <ellipse cx="430" cy="186" rx="54" ry="20.5" fill="url(#rubberFace)" stroke="#0c0e10" stroke-width="2"/>
+  <path d="M406 186 L414 122 Q430 112 446 122 L454 186 Q430 200 406 186 Z" fill="url(#rubberBarrel)" stroke="#0c0e10" stroke-width="2.5"/>
+  <path d="M418 182 L423 124" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="6"/>
+  <ellipse cx="430" cy="122" rx="16" ry="6" fill="#1b1f22" stroke="#0c0e10" stroke-width="2"/>
+  <!-- pull tab -->
+  <path d="M413 122 L413 100 Q430 88 447 100 L447 122 Q430 132 413 122 Z" fill="url(#rubberFace)" stroke="#0c0e10" stroke-width="2.5"/>
+  <ellipse cx="430" cy="106" rx="11" ry="7" fill="#0d0f10" stroke="#282d31" stroke-width="1.6"/>
+  <path d="M420 100 Q430 93 440 100" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="2.5"/>
+</svg>

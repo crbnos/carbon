@@ -5,13 +5,21 @@ import type {
   WritableColumnLike
 } from "./build";
 
-/** `watch`, `write`, and `describe` keys are bound to the entry's own table, so a renamed column fails to compile. */
+/** `watch`, `write`, `describe` and `display` keys are bound to the entry's own table, so a renamed column fails to compile. */
 interface EntityEntry<T extends TableName>
-  extends Omit<RegistryEntry, "table" | "watch" | "write" | "describe"> {
+  extends Omit<
+    RegistryEntry,
+    "table" | "watch" | "write" | "describe" | "display"
+  > {
   table: T;
   watch?: { [C in ColumnOf<T>]?: WatchedColumnLike };
   write?: { [C in ColumnOf<T>]?: WritableColumnLike };
   describe?: { [C in ColumnOf<T>]?: string };
+  /** Columns that spell this record's name, best first. Required, so a new entity cannot
+   * quietly render as a raw id in a customer's notification. Mirrors `fkDisplayRegistry` in
+   * `@carbon/database`, which cannot be imported here: it is a runtime value and this
+   * package is bundled for the browser. */
+  display: readonly ColumnOf<T>[];
 }
 
 /** Identity helper that infers `T` so `watch` keys get checked. */
@@ -21,6 +29,7 @@ export const WORKFLOW_ENTITY_REGISTRY = {
   purchaseOrder: entity({
     table: "purchaseOrder",
     label: "Purchase order",
+    display: ["purchaseOrderId"],
     help: "purchase-order",
     permission: "purchasing",
     watch: {
@@ -56,6 +65,7 @@ export const WORKFLOW_ENTITY_REGISTRY = {
   salesOrder: entity({
     table: "salesOrder",
     label: "Sales order",
+    display: ["salesOrderId"],
     help: "sales-order",
     permission: "sales",
     watch: {
@@ -91,6 +101,7 @@ export const WORKFLOW_ENTITY_REGISTRY = {
   job: entity({
     table: "job",
     label: "Job",
+    display: ["jobId"],
     help: "job",
     permission: "production",
     watch: {
@@ -124,6 +135,7 @@ export const WORKFLOW_ENTITY_REGISTRY = {
   item: entity({
     table: "item",
     label: "Item",
+    display: ["readableId", "name"],
     help: "item",
     permission: "parts",
     watch: {
@@ -155,6 +167,7 @@ export const WORKFLOW_ENTITY_REGISTRY = {
   receipt: entity({
     table: "receipt",
     label: "Receipt",
+    display: ["receiptId"],
     help: "receipt",
     permission: "inventory",
     watch: {
@@ -181,6 +194,7 @@ export const WORKFLOW_ENTITY_REGISTRY = {
   shipment: entity({
     table: "shipment",
     label: "Shipment",
+    display: ["shipmentId"],
     help: "shipment",
     permission: "inventory",
     watch: {
@@ -210,6 +224,7 @@ export const WORKFLOW_ENTITY_REGISTRY = {
   quote: entity({
     table: "quote",
     label: "Quote",
+    display: ["quoteId"],
     help: "quote",
     permission: "sales",
     watch: {
@@ -250,6 +265,7 @@ export const WORKFLOW_ENTITY_REGISTRY = {
   supplier: entity({
     table: "supplier",
     label: "Supplier",
+    display: ["name"],
     permission: "purchasing",
     watch: {
       supplierStatus: { label: "status" },
@@ -282,6 +298,7 @@ export const WORKFLOW_ENTITY_REGISTRY = {
   customer: entity({
     table: "customer",
     label: "Customer",
+    display: ["name"],
     permission: "sales",
     watch: {
       customerStatusId: { label: "status" },
@@ -314,6 +331,7 @@ export const WORKFLOW_ENTITY_REGISTRY = {
   nonConformance: entity({
     table: "nonConformance",
     label: "Issue",
+    display: ["nonConformanceId"],
     help: "nonconformance",
     permission: "quality",
     watch: {
@@ -352,37 +370,44 @@ export const WORKFLOW_ENTITY_REGISTRY = {
     table: "user",
     label: "User",
     article: "A",
-    permission: "users"
+    permission: "users",
+    display: ["fullName"]
   }),
   group: entity({
     table: "group",
     label: "Group",
-    permission: "users"
+    permission: "users",
+    display: ["name"]
   }),
   jobOperation: entity({
     table: "jobOperation",
     label: "Job operation",
-    permission: "production"
+    permission: "production",
+    display: ["description"]
   }),
   nonConformanceType: entity({
     table: "nonConformanceType",
     label: "Issue type",
-    permission: "quality"
+    permission: "quality",
+    display: ["name"]
   }),
   salesInvoice: entity({
     table: "salesInvoice",
     label: "Sales invoice",
-    permission: "invoicing"
+    permission: "invoicing",
+    display: ["invoiceId"]
   }),
   purchaseInvoice: entity({
     table: "purchaseInvoice",
     label: "Purchase invoice",
-    permission: "invoicing"
+    permission: "invoicing",
+    display: ["invoiceId"]
   }),
   location: entity({
     table: "location",
     label: "Location",
-    permission: "resources"
+    permission: "resources",
+    display: ["name"]
   })
 } as const;
 

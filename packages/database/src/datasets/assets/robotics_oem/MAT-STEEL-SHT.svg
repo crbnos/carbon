@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="face" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="faceB" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#63696f"/>
+      <stop offset="0.18" stop-color="#aeb5ba"/>
+      <stop offset="0.42" stop-color="#d7dde0"/>
+      <stop offset="0.7" stop-color="#98a0a6"/>
+      <stop offset="1" stop-color="#53595e"/>
+    </linearGradient>
+    <linearGradient id="faceA" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#585e64"/>
+      <stop offset="0.18" stop-color="#9aa1a7"/>
+      <stop offset="0.42" stop-color="#c2c9cd"/>
+      <stop offset="0.7" stop-color="#878f95"/>
+      <stop offset="1" stop-color="#4a5055"/>
+    </linearGradient>
+    <linearGradient id="cut" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4f5459"/>
+      <stop offset="0.18" stop-color="#868d93"/>
+      <stop offset="0.45" stop-color="#a2a9ae"/>
+      <stop offset="0.74" stop-color="#767d83"/>
+      <stop offset="1" stop-color="#454a4f"/>
+    </linearGradient>
+    <linearGradient id="oil" x1="0.1" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.34" stop-color="#dfe9f2" stop-opacity="0.32"/>
+      <stop offset="0.52" stop-color="#ffffff" stop-opacity="0.42"/>
+      <stop offset="0.72" stop-color="#b9c6d2" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="500" cy="636" rx="430" ry="95" fill="url(#shadow)"/>
+
+  <!-- bottom sheet -->
+  <g>
+    <polygon points="218.1,497.8 132.5,621.6 805.9,582.2 805.9,606.2 132.5,645.6 218.1,521.8"
+             fill="url(#cut)" stroke="#3c4145" stroke-width="2.5" stroke-linejoin="round"/>
+    <polygon points="132.5,621.6 805.9,582.2 891.5,458.4 218.1,497.8"
+             fill="url(#faceA)" stroke="#3f4448" stroke-width="2.5" stroke-linejoin="round"/>
+    <polygon points="132.5,621.6 805.9,582.2 891.5,458.4 218.1,497.8" fill="url(#oil)"/>
+    <g stroke="#ffffff" stroke-opacity="0.10" stroke-width="2" fill="none">
+      <path d="M142 608 L815 568"/><path d="M152 594 L825 555"/><path d="M161 580 L834 541"/><path d="M171 567 L844 527"/><path d="M180 553 L853 513"/><path d="M190 539 L863 500"/><path d="M199 525 L872 486"/><path d="M209 512 L882 472"/>
+    </g>
+    <!-- shear burr highlight on long front edge -->
+    <path d="M134 618 L804 579" stroke="#e2e8ec" stroke-opacity="0.4" stroke-width="3" fill="none"/>
+  </g>
+
+  <!-- middle sheet -->
+  <g>
+    <polygon points="200.7,479.3 146.6,601.0 827.3,548.7 827.3,572.7 146.6,625.0 200.7,503.3"
+             fill="url(#cut)" stroke="#3c4145" stroke-width="2.5" stroke-linejoin="round"/>
+    <polygon points="146.6,601.0 827.3,548.7 881.4,427.0 200.7,479.3"
+             fill="url(#faceB)" stroke="#3f4448" stroke-width="2.5" stroke-linejoin="round"/>
+    <polygon points="146.6,601.0 827.3,548.7 881.4,427.0 200.7,479.3" fill="url(#oil)"/>
+    <g stroke="#ffffff" stroke-opacity="0.11" stroke-width="2" fill="none">
+      <path d="M153 587 L833 535"/><path d="M159 574 L839 522"/><path d="M165 560 L845 508"/><path d="M171 547 L851 495"/><path d="M177 533 L857 481"/><path d="M183 520 L863 468"/><path d="M189 506 L869 454"/><path d="M195 493 L875 441"/>
+    </g>
+    <path d="M148 597 L826 545" stroke="#e2e8ec" stroke-opacity="0.4" stroke-width="3" fill="none"/>
+  </g>
+
+  <!-- cast shadow of the fanned top sheet onto the one below -->
+  <path d="M136 480 L205 588 L880 490 L812 383 Z" fill="#000" opacity="0.16" transform="translate(-16 26)"/>
+
+  <!-- fanned top sheet -->
+  <g>
+    <polygon points="134.1,476.6 199.5,585.1 877.9,487.4 877.9,511.4 199.5,609.1 134.1,500.6"
+             fill="url(#cut)" stroke="#3c4145" stroke-width="2.5" stroke-linejoin="round"/>
+    <polygon points="199.5,585.1 877.9,487.4 812.5,378.9 134.1,476.6"
+             fill="url(#face)" stroke="#41464a" stroke-width="2.5" stroke-linejoin="round"/>
+    <polygon points="199.5,585.1 877.9,487.4 812.5,378.9 134.1,476.6" fill="url(#oil)"/>
+    <g stroke="#ffffff" stroke-opacity="0.13" stroke-width="2" fill="none">
+      <path d="M192 573 L871 475"/><path d="M185 561 L863 463"/><path d="M178 549 L856 451"/><path d="M170 537 L849 439"/><path d="M163 525 L842 427"/><path d="M156 513 L834 415"/><path d="M149 501 L827 403"/><path d="M141 489 L820 391"/>
+    </g>
+    <g stroke="#8f979d" stroke-opacity="0.35" stroke-width="1.6" fill="none">
+      <path d="M188 570 L868 472"/><path d="M174 543 L852 445"/><path d="M160 519 L838 421"/>
+    </g>
+    <!-- rounded shear burr, front long edge -->
+    <path d="M201 581 L876 484" stroke="#f0f4f6" stroke-opacity="0.5" stroke-width="3.5" fill="none"/>
+    <!-- chamfer / edge break on the short right edge -->
+    <path d="M866 490 L804 388" stroke="#e6ecef" stroke-opacity="0.35" stroke-width="3" fill="none"/>
+  </g>
+</svg>

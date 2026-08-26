@@ -64,8 +64,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger
 } from "./Collapsible";
-import type { ComboboxProps } from "./Combobox";
-import { Combobox } from "./Combobox";
+import type { ComboboxFilter, ComboboxOption, ComboboxProps } from "./Combobox";
+import { Combobox, filterComboboxOptions } from "./Combobox";
 import {
   Command,
   CommandDialog,
@@ -396,6 +396,7 @@ export {
   CollapsibleContent,
   CollapsibleTrigger,
   Combobox,
+  filterComboboxOptions,
   Command,
   CommandDialog,
   CommandEmpty,
@@ -642,6 +643,8 @@ export type {
   ButtonProps,
   ChoiceCardOption,
   ChoiceSelectOption,
+  ComboboxFilter,
+  ComboboxOption,
   ComboboxProps,
   CreatableComboboxProps,
   CreatableMultiSelectProps,

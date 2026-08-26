@@ -1,5 +1,11 @@
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
-import { getIntegrationConfigById, type IntegrationID } from "@carbon/ee";
+import {
+  getIntegrationConfigById,
+  type IntegrationID,
+  resolveIntegrationSecrets,
+  splitSecrets
+} from "@carbon/ee";
 import { getIntegrationServerHooks } from "@carbon/ee/hooks.server";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
@@ -189,7 +195,14 @@ export async function getCompanyIntegrations(
     throw error;
   }
 
-  const integrations = data || [];
+  // Secret material must never reach Redis. Strip each integration's secret keys
+  // into the vault-backed shape (config only) before caching AND returning, so no
+  // consumer of this function depends on a plaintext secret in `metadata` (secret
+  // reads go through resolveIntegrationSecrets against the row, not this cache).
+  const integrations = (data || []).map((integration) => ({
+    ...integration,
+    metadata: splitSecrets(integration.id, integration.metadata).config
+  }));
 
   try {
     // Force string storage to avoid Upstash automatic deserialization issues
@@ -236,13 +249,29 @@ export async function getSlackIntegration(
   client: SupabaseClient<Database>,
   companyId: string
 ): Promise<{ token: string; channelId?: string } | null> {
-  const integration = await getCompanyIntegration(client, companyId, "slack");
+  // The Redis cache (getCompanyIntegration) no longer holds secret material, so
+  // read the row directly with a service-role client — required both to resolve
+  // the vaulted access_token and, in the transitional window, to see the plaintext
+  // still in the column.
+  const serviceRole = getCarbonServiceRole();
+  const { data: integration } = await serviceRole
+    .from("companyIntegration")
+    .select("metadata, secretRef, active")
+    .eq("companyId", companyId)
+    .eq("id", "slack")
+    .maybeSingle();
 
-  if (!integration?.metadata) {
+  if (!integration?.active || !integration.metadata) {
     return null;
   }
 
-  const metadata = integration.metadata as any;
+  const metadata = (await resolveIntegrationSecrets(
+    serviceRole,
+    companyId,
+    "slack",
+    integration.metadata,
+    integration.secretRef
+  )) as any;
 
   if (!metadata.access_token) {
     return null;
@@ -271,9 +300,14 @@ export async function upsertCompanyIntegration(
     updatedBy: string;
   }
 ) {
+  // Split secret material out of the metadata: only the non-secret config is
+  // written to the column; the secrets go to Supabase Vault. The row is upserted
+  // FIRST (so it exists), then the vault RPC stamps `secretRef` onto it.
+  const { config, secrets } = splitSecrets(update.id, update.metadata);
+
   const result = await client
     .from("companyIntegration")
-    .upsert([update], {
+    .upsert([{ ...update, metadata: config as Json }], {
       onConflict: "id,companyId"
     })
     .select()
@@ -281,6 +315,25 @@ export async function upsertCompanyIntegration(
 
   if (result.error) {
     return result;
+  }
+
+  if (Object.keys(secrets).length > 0) {
+    const serviceRole = getCarbonServiceRole();
+    const { error: vaultError } = await serviceRole.rpc(
+      "upsert_integration_secret",
+      {
+        p_company_id: update.companyId,
+        p_integration_id: update.id,
+        p_secret: secrets as never
+      }
+    );
+    if (vaultError) {
+      logger.error("Failed to persist integration secret to vault", {
+        error: vaultError,
+        id: update.id
+      });
+      return { ...result, data: null, error: vaultError };
+    }
   }
 
   await clearCompanyIntegrationCache(update.companyId);
@@ -382,12 +435,35 @@ export async function getIntegrationHealth(
     };
   }
 
+  // Resolve vaulted secrets back into the metadata before the healthcheck
+  // builds its provider/client. Since the secret-vault refactor, credentials no
+  // longer live in the plaintext `metadata` column, so an unresolved metadata
+  // authenticates with nothing and every secret-bearing healthcheck (Rillet,
+  // Xero, Email) would read "unhealthy". `resolveIntegrationSecrets` looks up
+  // the row's `secretRef` itself (the `integrations` view doesn't expose it) and
+  // throws when the secret can't be read — treat that as unhealthy rather than
+  // crashing the whole settings page.
+  let resolvedMetadata: Record<string, any>;
+  try {
+    resolvedMetadata = (await resolveIntegrationSecrets(
+      getCarbonServiceRole(),
+      companyId,
+      integration.id!,
+      (integration.metadata as Record<string, any>) ?? {}
+    )) as Record<string, any>;
+  } catch {
+    return {
+      ...integration,
+      health: "unhealthy"
+    };
+  }
+
   const status = await (
     healthcheck as (
       companyId: string,
       metadata: Record<string, any>
     ) => Promise<boolean>
-  )(companyId, integration.metadata as Record<string, any>);
+  )(companyId, resolvedMetadata);
 
   await redis.set(key, status ? "1" : "0", "EX", INTEGRATION_CACHE_TTL * 5); // Cache for 5 minutes
 
@@ -427,4 +503,46 @@ export async function invalidateIntegrationHealthCache(
   const key = `integrations:${companyId}:${integrationId}:health`;
 
   return await redis.del(key);
+}
+
+// Server-only (needs the service-role client for the Vault RPC). Lives here rather
+// than in settings.service.ts because that file is re-exported by the client barrel;
+// a client.server import there would leak the service-role client into the browser
+// bundle. Reached by the MCP direct-executor, which imports this module server-side.
+export async function updateIntegrationMetadata(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  integrationId: string,
+  metadata: any,
+  updatedBy?: string
+) {
+  // Split secret material out to Supabase Vault; only the non-secret config is
+  // written to the column. The row already exists (this is an update), so vault
+  // FIRST (fail-closed: if the vault write fails, the plaintext is left intact
+  // rather than stripped-and-lost), then write the stripped config.
+  const { config, secrets } = splitSecrets(integrationId, metadata);
+
+  if (Object.keys(secrets).length > 0) {
+    const serviceRole = getCarbonServiceRole();
+    const { error } = await serviceRole.rpc("upsert_integration_secret", {
+      p_company_id: companyId,
+      p_integration_id: integrationId,
+      p_secret: secrets as never
+    });
+    if (error) {
+      return { data: null, error };
+    }
+  }
+
+  return client
+    .from("companyIntegration")
+    .update(
+      sanitize({
+        metadata: config as Json,
+        updatedAt: new Date().toISOString(),
+        updatedBy
+      })
+    )
+    .eq("companyId", companyId)
+    .eq("id", integrationId);
 }

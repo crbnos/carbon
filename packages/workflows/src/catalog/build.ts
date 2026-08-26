@@ -1,5 +1,9 @@
 import type { TermId } from "@carbon/glossary";
-import type { EventMatch, RequiredPermission } from "../definition/catalog";
+import {
+  type EventMatch,
+  isMultiSelect,
+  type RequiredPermission
+} from "../definition/catalog";
 import { t, type ValueType } from "../definition/types";
 import type { ActionDeclarationLike } from "./actions";
 import type { OperationDeclarationLike } from "./operations";
@@ -53,6 +57,9 @@ export interface RegistryEntry {
   /** Plain-English explanation per column, surfaced as a tooltip in the variable picker.
    * Any column in the entity may have one; not restricted to watched or writable columns. */
   describe?: Record<string, string>;
+  /** Columns that spell this record's name, best first. Read at run time by the catalog,
+   * not by the generator, so adding one needs no regeneration. */
+  display?: readonly string[];
 }
 
 export interface MomentDeclarationLike {
@@ -72,8 +79,11 @@ export interface BuiltActionInput {
   required: boolean;
   choices?: readonly string[];
   /** What the builder seeds a new node with. Nothing reads it at run time. */
-  defaultValue?: string;
+  defaultValue?: string | readonly string[];
   template?: boolean;
+  /** Prose a person reads: a record dropped in renders as a link when the caller
+   * supplies a resolver. Not set on webhook bodies. */
+  linkify?: boolean;
   /** Table a non-entity foreign key points at, so the update executor can scope the
    * value to the company. Resolved here so a dropped fk note fails CI rather than
    * silently disabling that check at run time. */
@@ -369,13 +379,38 @@ export function validateCatalogInputs(
       ) {
         problems.push(`${id}.${input} is a template but is not a string.`);
       }
+      // A fixed set of values on a list is what MAKES it a multi-select (`isMultiSelect`),
+      // so a list of anything else has no reading in the builder.
       if (
-        spec.defaultValue !== undefined &&
         spec.choices !== undefined &&
-        !spec.choices.includes(spec.defaultValue)
+        spec.type.kind === "list" &&
+        !(spec.type.of.kind === "primitive" && spec.type.of.of === "string")
       ) {
         problems.push(
-          `${id}.${input} defaults to "${spec.defaultValue}", which is not one of its values.`
+          `${id}.${input} offers a fixed set of values but is not a list of text.`
+        );
+      }
+      if (spec.defaultValue !== undefined && spec.choices !== undefined) {
+        // One default or a set of them — a multi-select seeds several at once.
+        const defaults =
+          typeof spec.defaultValue === "string"
+            ? [spec.defaultValue]
+            : spec.defaultValue;
+        for (const value of defaults) {
+          if (spec.choices.includes(value)) continue;
+          problems.push(
+            `${id}.${input} defaults to "${value}", which is not one of its values.`
+          );
+        }
+      }
+      if (Array.isArray(spec.defaultValue) && spec.type.kind !== "list") {
+        problems.push(
+          `${id}.${input} defaults to a set of values but only holds one.`
+        );
+      }
+      if (typeof spec.defaultValue === "string" && spec.type.kind === "list") {
+        problems.push(
+          `${id}.${input} defaults to one value but holds a set of them.`
         );
       }
       const gate = spec.showWhen;
@@ -389,6 +424,11 @@ export function validateCatalogInputs(
           // A gate against an open set cannot be reasoned about at build time.
           problems.push(
             `${id}.${input} is gated on "${gate.input}", which has no fixed set of values.`
+          );
+        } else if (isMultiSelect(target)) {
+          // The gate reads one literal string; a set has no single value to match.
+          problems.push(
+            `${id}.${input} is gated on "${gate.input}", which holds a set of values.`
           );
         } else {
           for (const value of gate.equals) {
@@ -613,6 +653,7 @@ export function buildCatalog(
         ...(spec.choices ? { choices: spec.choices } : {}),
         ...(spec.defaultValue ? { defaultValue: spec.defaultValue } : {}),
         ...(spec.template ? { template: true } : {}),
+        ...(spec.linkify ? { linkify: true } : {}),
         ...(spec.pairs ? { pairs: true } : {}),
         ...(spec.showWhen ? { showWhen: spec.showWhen } : {})
       };

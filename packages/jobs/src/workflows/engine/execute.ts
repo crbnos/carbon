@@ -1,6 +1,9 @@
+import { NotificationEvent } from "@carbon/notifications";
 import { datetime } from "@carbon/utils";
 import {
   batchCandidates,
+  buildCatalogOverlay,
+  type CustomFieldDef,
   createWorkflowCatalog,
   executorFor,
   FAILURE_HANDLE,
@@ -20,6 +23,7 @@ import {
 } from "@carbon/workflows";
 import { NonRetriableError } from "inngest";
 import { getJobDatabaseClient, type JobDatabase } from "../../db";
+import { buildNotificationLink } from "../../inngest/functions/notifications/content";
 import { createWorkflowServices } from "../actions";
 import {
   claimStep,
@@ -65,7 +69,7 @@ export interface EngineLogger {
   error(message: string, ...rest: unknown[]): void;
 }
 
-const SWITCHED_OFF = "This workflow was switched off before the run started.";
+const UNPUBLISHED = "This workflow was unpublished before the run started.";
 const NO_PERMISSIONS =
   "The permissions for the owner of this workflow could not be read.";
 const NOT_AVAILABLE = "This kind of step is not available yet.";
@@ -129,6 +133,18 @@ async function contextFor(args: NodeArgs): Promise<RuntimeContext> {
     catalog,
     loader: createEntityLoader({ client, companyId: payload.companyId, cache }),
     outputs: args.outputs,
+    // The one place a workflow value becomes a URL. `/api/link` performs the company
+    // switch before redirecting, so a recipient whose active company differs still
+    // lands on the right record. Only inputs the catalog marks `linkify` use this.
+    linkFor: (of: string, id: string) =>
+      buildNotificationLink(
+        NotificationEvent.Workflow,
+        id,
+        payload.companyId,
+        // The column is TEXT and the link resolver reads the workflow entity name;
+        // the payload type is the approval enum, so the cast mirrors notify.ts.
+        of as Parameters<typeof buildNotificationLink>[3]
+      ),
     ...(args.item === undefined ? {} : { item: args.item }),
     ...(args.record === undefined ? {} : { record: args.record }),
     services: createWorkflowServices({
@@ -349,7 +365,6 @@ export async function executeWorkflowRun(params: {
   logger: EngineLogger;
 }): Promise<{ runId: string; status: string; steps: number }> {
   const { payload, step, logger } = params;
-  const catalog = createWorkflowCatalog();
 
   const loaded = await step.run("load", async () => {
     const db = getJobDatabaseClient();
@@ -360,12 +375,12 @@ export async function executeWorkflowRun(params: {
 
     const startedAt = datetime.timestamp();
 
-    if (!context.workflowActive) {
+    if (!context.workflowPublished) {
       await finishRun(db, {
         runId: payload.runId,
         companyId: payload.companyId,
         status: "Skipped",
-        statusReason: SWITCHED_OFF,
+        statusReason: UNPUBLISHED,
         startedAt
       });
       return { settled: "Skipped" as const };
@@ -402,6 +417,28 @@ export async function executeWorkflowRun(params: {
   }
 
   const { definition, startedAt, companyGroupId } = loaded;
+
+  // The catalog is build-time and global; custom fields are runtime and per company, so
+  // they arrive as an overlay merged in here. Read as the OWNER, like every other business
+  // read — a field the owner may not see must not reach the workflow. Its own step so a
+  // transient read failure retries without redoing the run claim above.
+  const customFields = await step.run("custom-fields", async () => {
+    const client = await getOwnerClient(payload.ownerId, payload.runId);
+    const { data, error } = await client
+      .from("customField")
+      .select("table, id, name, dataTypeId, listOptions, active")
+      .eq("companyId", payload.companyId)
+      .eq("active", true);
+    // A refused read is an empty set under RLS, not an error, so an error here is transient
+    // and worth the retry — swallowing it would silently run against the shipped catalog.
+    if (error)
+      throw new Error(`Could not read custom fields: ${error.message}`);
+    return data ?? [];
+  });
+
+  const catalog = createWorkflowCatalog(
+    buildCatalogOverlay(customFields as CustomFieldDef[])
+  );
 
   const ledger = createDatabaseLedger(getJobDatabaseClient(), {
     runId: payload.runId,
