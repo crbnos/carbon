@@ -890,14 +890,24 @@ export async function getConsolidatedPeriodSeries(
   // Sum translated leaf balances per (account, bucket) and CTA per bucket
   const translatedByAccount = new Map<
     string,
-    Record<string, { translatedBalance: number; exchangeRate: number }>
+    Record<
+      string,
+      {
+        translatedBalance: number;
+        translatedNetChange: number;
+        exchangeRate: number;
+      }
+    >
   >();
   const ctaByBucket: Record<string, number> = Object.fromEntries(
     bucketKeys.map((key) => [key, 0])
   );
 
-  for (const { translation } of results) {
-    if (translation.error) continue;
+  for (const { series, translation } of results) {
+    if (translation.error || !series.data) continue;
+    const periodsByAccountId = new Map(
+      series.data.map((row) => [row.id, row.periods])
+    );
     for (const [key, bucket] of Object.entries(translation.byBucket)) {
       ctaByBucket[key] = (ctaByBucket[key] ?? 0) + bucket.cta;
       for (const row of bucket.balances) {
@@ -907,14 +917,22 @@ export async function getConsolidatedPeriodSeries(
           translatedByAccount.set(row.accountId, record);
         }
         const existing = record[key];
+        const sourceCell = periodsByAccountId.get(row.accountId)?.[key];
+        const translatedNetChange =
+          Math.round(
+            (sourceCell?.netChange ?? 0) * Number(row.exchangeRate) * 10000
+          ) / 10000;
         record[key] = existing
           ? {
               translatedBalance:
                 existing.translatedBalance + Number(row.translatedBalance),
+              translatedNetChange:
+                existing.translatedNetChange + translatedNetChange,
               exchangeRate: existing.exchangeRate
             }
           : {
               translatedBalance: Number(row.translatedBalance),
+              translatedNetChange,
               exchangeRate: Number(row.exchangeRate)
             };
       }
@@ -1200,14 +1218,31 @@ export async function getDimensionPivot(
       .in("id", [...valueIdsByDimension.keys()]);
 
     if (dimensions.error) return { data: null, error: dimensions.error };
+    if (dimensions.data == null) {
+      return {
+        data: null,
+        error: {
+          message: "Dimension metadata source returned no data"
+        } as PostgrestError
+      };
+    }
 
-    valueNames = await resolveDimensionValueNames(
+    const resolvedValueNames = await resolveDimensionValueNames(
       client,
-      (dimensions.data ?? []).map((d) => ({
+      dimensions.data.map((d) => ({
         entityType: d.entityType,
         valueIds: [...(valueIdsByDimension.get(d.id) ?? [])]
       }))
     );
+    if (resolvedValueNames === null) {
+      return {
+        data: null,
+        error: {
+          message: "Dimension metadata source returned no data"
+        } as PostgrestError
+      };
+    }
+    valueNames = resolvedValueNames;
   }
 
   return {
@@ -1416,7 +1451,7 @@ export async function getPurchaseLinePivot(
 
   let valueNames: Record<string, string> = {};
   if (valueIdsByField.size > 0) {
-    valueNames = await resolveDimensionValueNames(
+    const resolvedValueNames = await resolveDimensionValueNames(
       client,
       [...valueIdsByField.entries()]
         .map(([field, ids]) => ({
@@ -1425,6 +1460,15 @@ export async function getPurchaseLinePivot(
         }))
         .filter((request) => request.entityType)
     );
+    if (resolvedValueNames === null) {
+      return {
+        data: null,
+        error: {
+          message: "Purchase pivot metadata source returned no data"
+        } as PostgrestError
+      };
+    }
+    valueNames = resolvedValueNames;
   }
 
   return {
@@ -1500,7 +1544,7 @@ export async function getPurchaseLinePivotLines(
 async function resolveDimensionValueNames(
   client: SupabaseClient<Database>,
   requests: { entityType: string; valueIds: string[] }[]
-): Promise<Record<string, string>> {
+): Promise<Record<string, string> | null> {
   const batches = await Promise.all(
     requests.map(async ({ entityType, valueIds }) => {
       if (valueIds.length === 0) return [];
@@ -1509,12 +1553,16 @@ async function resolveDimensionValueNames(
           .from("dimensionValue")
           .select("id, name")
           .in("id", valueIds);
+        if (res.data == null && !res.error) return null;
         return res.data ?? [];
       }
       const res = await getEntityValuesByIds(client, entityType, valueIds);
+      if (res.data == null && !res.error) return null;
       return res.data ?? [];
     })
   );
+
+  if (batches.some((batch) => batch === null)) return null;
 
   const valueNames: Record<string, string> = {};
   for (const batch of batches) {

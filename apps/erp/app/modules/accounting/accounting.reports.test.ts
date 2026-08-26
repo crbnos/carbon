@@ -19,8 +19,10 @@ vi.mock("@carbon/glossary", () => ({
 import {
   getConsolidatedBalances,
   getConsolidatedPeriodSeries,
+  getDimensionPivot,
   getFinancialStatementBalances,
-  getFinancialStatementPeriodSeries
+  getFinancialStatementPeriodSeries,
+  getPurchaseLinePivot
 } from "./accounting.service";
 
 const bucket = {
@@ -56,12 +58,22 @@ type ClientOptions = {
   seriesFailureCompanyId?: string;
   translationFailureCompanyId?: string;
   translationRatesData?: unknown;
+  translationRatesByCompany?: Record<string, unknown>;
+  seriesByCompany?: Record<
+    string,
+    Array<{
+      accountId: string;
+      periodEnd: string;
+      netChange: number;
+      balanceAtDate: number;
+    }>
+  >;
   seriesRowCount?: number;
 };
 
 function queryResult<T>(data: T, error: { message: string } | null = null) {
   const builder: Record<string, unknown> = {};
-  for (const method of ["select", "eq", "order"]) {
+  for (const method of ["select", "eq", "in", "order"]) {
     builder[method] = () => builder;
   }
   builder.then = (resolve: (value: unknown) => unknown) =>
@@ -90,7 +102,22 @@ function makeReportClient(options: ClientOptions = {}) {
       if (table === "accounts") {
         return options.accountDataNull
           ? queryResult(null)
-          : queryResult([account]);
+          : queryResult(
+              options.seriesByCompany
+                ? [
+                    {
+                      ...account,
+                      id: "revenue-root",
+                      name: "Revenue",
+                      number: null,
+                      isGroup: true,
+                      isSystem: true,
+                      parentId: null
+                    },
+                    { ...account, parentId: "revenue-root" }
+                  ]
+                : [account]
+            );
       }
       throw new Error(`Unexpected table: ${table}`);
     },
@@ -125,7 +152,9 @@ function makeReportClient(options: ClientOptions = {}) {
           balanceAtDate: 10
         };
         return {
-          data: new Array(options.seriesRowCount ?? 1).fill(row),
+          data:
+            options.seriesByCompany?.[companyId] ??
+            new Array(options.seriesRowCount ?? 1).fill(row),
           error: null
         };
       }
@@ -135,14 +164,15 @@ function makeReportClient(options: ClientOptions = {}) {
         }
         return {
           data:
-            options.translationRatesData === undefined
+            options.translationRatesByCompany?.[companyId] ??
+            (options.translationRatesData === undefined
               ? {
                   sourceCurrency: "USD",
                   closingRate: 1,
                   averageRate: 1,
                   historicalRate: 1
                 }
-              : options.translationRatesData,
+              : options.translationRatesData),
           error: null
         };
       }
@@ -315,6 +345,150 @@ describe("getConsolidatedPeriodSeries", () => {
     expect(result.data).toBeNull();
     expect(result.isComplete).toBe(false);
     expect(result.error?.message).toContain("Consolidation rates");
+  });
+
+  it("sums translated period flows separately from translated balances", async () => {
+    const result = await getConsolidatedPeriodSeries(
+      makeReportClient({
+        seriesByCompany: {
+          "company-1": [
+            {
+              accountId: "sales",
+              periodEnd: bucket.end,
+              netChange: 10,
+              balanceAtDate: 100
+            }
+          ],
+          "company-2": [
+            {
+              accountId: "sales",
+              periodEnd: bucket.end,
+              netChange: 20,
+              balanceAtDate: 200
+            }
+          ]
+        },
+        translationRatesByCompany: {
+          "company-1": {
+            sourceCurrency: "EUR",
+            closingRate: 2,
+            averageRate: 2,
+            historicalRate: 2
+          },
+          "company-2": {
+            sourceCurrency: "EUR",
+            closingRate: 3,
+            averageRate: 3,
+            historicalRate: 3
+          }
+        }
+      }),
+      "group-1",
+      ["company-1", "company-2"],
+      "USD",
+      { buckets: [bucket] }
+    );
+
+    const sales = result.data?.find((row) => row.id === "sales");
+    expect(sales?.periods[bucket.key]).toMatchObject({
+      netChange: 30,
+      balanceAtDate: 300,
+      translatedNetChange: 80,
+      translatedBalance: 800,
+      exchangeRate: 2
+    });
+  });
+});
+
+function makePivotClient(options: {
+  dimensionMetadataDataNull?: boolean;
+  purchaseMetadataDataNull?: boolean;
+}) {
+  const pivotRows = [
+    {
+      rowValue1Id: "value-1",
+      rowValue2Id: null,
+      columnKey: "2026-01-31",
+      amount: 10,
+      quantity: 1,
+      lineCount: 1,
+      hasMore: false
+    }
+  ];
+
+  return {
+    from(table: string) {
+      if (table === "dimension") {
+        return options.dimensionMetadataDataNull
+          ? queryResult(null)
+          : queryResult([{ id: "dimension-1", entityType: "Custom" }]);
+      }
+      if (table === "supplier") {
+        return options.purchaseMetadataDataNull
+          ? queryResult(null)
+          : queryResult([{ id: "value-1", name: "Supplier 1" }]);
+      }
+      return queryResult([]);
+    },
+    async rpc(name: string) {
+      if (
+        name === "journalDimensionPivot" ||
+        name === "purchaseLineDimensionPivot"
+      ) {
+        return { data: pivotRows, error: null };
+      }
+      throw new Error(`Unexpected RPC: ${name}`);
+    }
+  } as never;
+}
+
+describe("pivot metadata completeness", () => {
+  it("fails closed when dimension metadata returns null data", async () => {
+    const result = await getDimensionPivot(
+      makePivotClient({ dimensionMetadataDataNull: true }),
+      {
+        companyId: "company-1",
+        companyGroupId: "group-1",
+        report: { accountScope: { classes: ["Revenue"] } },
+        startDate: "2026-01-01",
+        endDate: "2026-01-31",
+        periodEnds: [bucket.end],
+        state: {
+          rows: ["dimension-1"],
+          columnAxis: { type: "period" },
+          filters: [],
+          accountIds: []
+        }
+      } as never
+    );
+
+    expect(result.data).toBeNull();
+    expect(result.error?.message).toContain(
+      "Dimension metadata source returned no data"
+    );
+  });
+
+  it("fails closed when purchase value metadata returns null data", async () => {
+    const result = await getPurchaseLinePivot(
+      makePivotClient({ purchaseMetadataDataNull: true }),
+      {
+        companyId: "company-1",
+        startDate: "2026-01-01",
+        endDate: "2026-01-31",
+        periodEnds: [bucket.end],
+        state: {
+          rows: ["supplier"],
+          columnAxis: { type: "period" },
+          filters: [],
+          accountIds: []
+        }
+      } as never
+    );
+
+    expect(result.data).toBeNull();
+    expect(result.error?.message).toContain(
+      "Purchase pivot metadata source returned no data"
+    );
   });
 });
 
