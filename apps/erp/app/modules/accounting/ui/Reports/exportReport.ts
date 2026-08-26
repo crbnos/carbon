@@ -4,7 +4,8 @@ import { computeExecutivePnl, type ExecutivePnlRowKey } from "./executivePnl";
 import {
   accountsToFlatTree,
   filterAccounts,
-  getDebitCredit
+  getDebitCredit,
+  type ReportAccountNode
 } from "./reportTree";
 
 export type CsvTextCell = {
@@ -14,11 +15,15 @@ export type CsvTextCell = {
 
 export type CsvCell = string | number | CsvTextCell;
 
+export function csvIdentifier(value: string | null | undefined): CsvTextCell {
+  return { __csvText: true, value: value ?? "" };
+}
+
 export function csvText(
   value: string | null | undefined
 ): string | CsvTextCell {
   const text = value ?? "";
-  return /^\s*\d+\s*$/.test(text) ? { __csvText: true, value: text } : text;
+  return /^\s*\d+\s*$/.test(text) ? csvIdentifier(text) : text;
 }
 
 function isCsvText(value: unknown): value is CsvTextCell {
@@ -95,11 +100,13 @@ export function exportPeriodReport(args: {
   showTranslated?: boolean;
   search: string;
   filename: string;
+  isSourceComplete?: boolean;
 }) {
   const tree = accountsToFlatTree(filterAccounts(args.accounts, args.search));
+  if (args.isSourceComplete === false || tree.length === 0) return;
   const rows = tree.map(({ data: account }) => {
     const row: Record<string, unknown> = {
-      Number: account.isGroup ? "" : csvText(account.number),
+      Number: account.isGroup ? "" : csvIdentifier(account.number),
       Account: account.name ?? ""
     };
     for (const bucket of args.periods) {
@@ -148,6 +155,17 @@ export function canExportExecutivePnl(accounts: ChartPeriodSeries[]): boolean {
   return accounts.length > 0;
 }
 
+export function canExportFilteredReport(
+  accounts: ReportAccountNode[],
+  search: string,
+  isSourceComplete = true
+): boolean {
+  return (
+    isSourceComplete &&
+    accountsToFlatTree(filterAccounts(accounts, search)).length > 0
+  );
+}
+
 // Export the single-period trial balance with the same Beginning/Debit/Credit/
 // Ending derivation the tree renders.
 export function exportTrialBalance(args: {
@@ -158,12 +176,13 @@ export function exportTrialBalance(args: {
   filename: string;
 }) {
   const tree = accountsToFlatTree(filterAccounts(args.accounts, args.search));
+  if (tree.length === 0) return;
   const rows = tree.map(({ data: account }) => {
     const endingBalance = account.balanceAtDate ?? 0;
     const netChange = account.netChange ?? 0;
     const { debit, credit } = getDebitCredit(netChange, account.class);
     const row: Record<string, unknown> = {
-      Number: account.isGroup ? "" : csvText(account.number),
+      Number: account.isGroup ? "" : csvIdentifier(account.number),
       Account: account.name ?? "",
       Beginning: endingBalance - netChange,
       Debits: debit,

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { serializeCsv } from "../../../accounting/ui/Reports/exportReport";
+import {
+  csvIdentifier,
+  serializeCsv
+} from "../../../accounting/ui/Reports/exportReport";
 import { buildInventoryValuationExportRows } from "./inventoryValuationExport";
 
 describe("buildInventoryValuationExportRows", () => {
@@ -52,10 +55,10 @@ describe("buildInventoryValuationExportRows", () => {
         "As Of Date": "2026-05-31",
         "Group By": "location",
         "Location Filter": "All Locations",
-        "Location ID": "loc-1",
+        "Location ID": csvIdentifier("loc-1"),
         Location: "Main",
-        "Item ID": "item-1",
-        Item: "PART-001/A",
+        "Item ID": csvIdentifier("item-1"),
+        Item: csvIdentifier("PART-001/A"),
         "Item Name": "Widget",
         "Item Type": "Part",
         "Costing Method": "Standard",
@@ -70,10 +73,10 @@ describe("buildInventoryValuationExportRows", () => {
         "As Of Date": "2026-05-31",
         "Group By": "location",
         "Location Filter": "All Locations",
-        "Location ID": "loc-2",
+        "Location ID": csvIdentifier("loc-2"),
         Location: "Overflow",
-        "Item ID": "item-2",
-        Item: "MAT-002",
+        "Item ID": csvIdentifier("item-2"),
+        Item: csvIdentifier("MAT-002"),
         "Item Name": "Resin",
         "Item Type": "Material",
         "Costing Method": "Average",
@@ -118,19 +121,19 @@ describe("buildInventoryValuationExportRows", () => {
     expect(rows[0]).toMatchObject({
       "Group By": "item",
       "Location Filter": "Main",
-      "Location ID": "loc-1",
-      "Item ID": "item-1"
+      "Location ID": csvIdentifier("loc-1"),
+      "Item ID": csvIdentifier("item-1")
     });
   });
 
-  it("preserves unsigned numeric-looking item identifiers as text", () => {
+  it("preserves exponent-like and date-like item identifiers as text", () => {
     const rows = buildInventoryValuationExportRows({
       rows: [
         {
-          locationId: "loc-1",
+          locationId: "01-02",
           locationName: "Main",
-          itemId: "00123",
-          readableIdWithRevision: "0007",
+          itemId: "1E10",
+          readableIdWithRevision: "01-02",
           name: "Widget",
           thumbnailPath: "",
           type: "Part",
@@ -150,6 +153,6 @@ describe("buildInventoryValuationExportRows", () => {
       locationName: null
     });
 
-    expect(serializeCsv(rows)).toContain(",'00123,'0007,");
+    expect(serializeCsv(rows)).toContain(",'01-02,Main,'1E10,'01-02,");
   });
 });

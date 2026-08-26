@@ -1,4 +1,4 @@
-import { csvText } from "../../../accounting/ui/Reports/exportReport";
+import { csvIdentifier } from "../../../accounting/ui/Reports/exportReport";
 
 export type ARAPSide = "ar" | "ap";
 export type ARAPAgingMethod = "dueDate" | "documentDate";
@@ -83,10 +83,10 @@ export function buildARAPAgingExportRows({
       "Base Currency": baseCurrencyCode,
       "Row Type": "Invoice",
       "Counterparty Type": counterpartyType,
-      "Counterparty ID": partyIdOf(side, invoice),
+      "Counterparty ID": csvIdentifier(partyIdOf(side, invoice)),
       "Payment Term": "",
-      "Invoice ID": csvText(invoice.invoiceId),
-      "Invoice Number": csvText(invoice.invoiceNumber),
+      "Invoice ID": csvIdentifier(invoice.invoiceId),
+      "Invoice Number": csvIdentifier(invoice.invoiceNumber),
       "Document Type": invoice.documentType ?? "",
       "Due Date": invoice.dateDue ?? "",
       Currency: invoice.currencyCode,
@@ -117,7 +117,7 @@ export function buildARAPAgingExportRows({
       "Base Currency": baseCurrencyCode,
       "Row Type": "Counterparty",
       "Counterparty Type": counterpartyType,
-      "Counterparty ID": partyId,
+      "Counterparty ID": csvIdentifier(partyId),
       "Payment Term": agingRow.paymentTerm ?? "",
       "Invoice ID": "",
       "Invoice Number": "",
@@ -152,7 +152,8 @@ export function buildARAPAgingExportRows({
 
 export function canDownloadARAPAgingExport(
   dataError: boolean | undefined,
+  isSourceComplete: boolean,
   rowCount: number
 ): boolean {
-  return !dataError && rowCount > 0;
+  return !dataError && isSourceComplete && rowCount > 0;
 }

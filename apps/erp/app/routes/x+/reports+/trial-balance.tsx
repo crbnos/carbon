@@ -17,6 +17,7 @@ import {
   translateCompanyBalances
 } from "~/modules/accounting";
 import {
+  canExportFilteredReport,
   exportTrialBalance,
   ReportFilters,
   TrialBalanceTree
@@ -195,6 +196,18 @@ export default function TrialBalanceRoute() {
     fiscalStartMonth
   } = useLoaderData<typeof loader>();
   const [search, setSearch] = useState("");
+  const canDownload = canExportFilteredReport(trialBalance, search);
+
+  const onDownload = () => {
+    if (!canDownload) return;
+    exportTrialBalance({
+      accounts: trialBalance,
+      showTranslated,
+      parentCurrency,
+      search,
+      filename: "trial-balance.csv"
+    });
+  };
 
   return (
     <VStack spacing={0} className="h-full">
@@ -205,15 +218,8 @@ export default function TrialBalanceRoute() {
         isForeignCurrency={isForeignCurrency}
         parentCurrency={parentCurrency}
         fiscalStartMonth={fiscalStartMonth}
-        onDownload={() =>
-          exportTrialBalance({
-            accounts: trialBalance,
-            showTranslated,
-            parentCurrency,
-            search,
-            filename: "trial-balance.csv"
-          })
-        }
+        onDownload={onDownload}
+        isDownloadDisabled={!canDownload}
         search={search}
         onSearchChange={setSearch}
       />

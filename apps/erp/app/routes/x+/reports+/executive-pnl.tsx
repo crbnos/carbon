@@ -109,6 +109,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
       { buckets }
     );
 
+    if (consolidated.error || !consolidated.data) {
+      throw redirect(
+        path.to.accounting,
+        await flash(
+          request,
+          error(consolidated.error, "Failed to load executive P&L")
+        )
+      );
+    }
+
     return {
       incomeStatement: consolidated.data.filter(
         (a) => a.incomeBalance === "Income Statement"
@@ -121,7 +131,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       isMultiCompany: true,
       isForeignCurrency: false,
       parentCurrency,
-      fiscalStartMonth
+      fiscalStartMonth,
+      isExportSourceComplete: consolidated.isComplete
     };
   }
 
@@ -165,7 +176,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     isMultiCompany: false,
     isForeignCurrency,
     parentCurrency,
-    fiscalStartMonth
+    fiscalStartMonth,
+    isExportSourceComplete: series.isComplete
   };
 }
 
@@ -180,7 +192,8 @@ export default function ExecutivePnlRoute() {
     isMultiCompany,
     isForeignCurrency,
     parentCurrency,
-    fiscalStartMonth
+    fiscalStartMonth,
+    isExportSourceComplete
   } = useLoaderData<typeof loader>();
   const { t } = useLingui();
   const { locale } = useLocale();
@@ -197,7 +210,8 @@ export default function ExecutivePnlRoute() {
     netIncome: t`Net Income`
   };
 
-  const canDownload = canExportExecutivePnl(incomeStatement);
+  const canDownload =
+    isExportSourceComplete && canExportExecutivePnl(incomeStatement);
 
   const onDownload = () => {
     if (!canDownload) return;

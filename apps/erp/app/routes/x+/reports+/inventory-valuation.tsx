@@ -12,6 +12,7 @@ import { getCompanySettings } from "~/modules/settings";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+import { isReportSourceComplete } from "~/utils/reportExport";
 
 export const handle: Handle = {
   breadcrumb: msg`Inventory Valuation`,
@@ -62,6 +63,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     groupBy,
     locationId,
     rows: valuation.data ?? [],
+    isExportSourceComplete: isReportSourceComplete(valuation.data ?? []),
     tieOut: tieOut.data ?? null,
     // A failed tie-out must read as "unavailable", not "nothing to tie out" —
     // this is a financial control surface.
@@ -76,6 +78,7 @@ export default function InventoryValuationRoute() {
     groupBy,
     locationId,
     rows,
+    isExportSourceComplete,
     tieOut,
     tieOutError,
     locations
@@ -83,6 +86,7 @@ export default function InventoryValuationRoute() {
   return (
     <InventoryValuationWorkbench
       rows={rows}
+      isExportSourceComplete={isExportSourceComplete}
       tieOut={tieOut}
       tieOutError={tieOutError}
       asOfDate={asOfDate}

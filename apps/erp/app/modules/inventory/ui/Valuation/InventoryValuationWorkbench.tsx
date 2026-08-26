@@ -46,6 +46,7 @@ import { buildInventoryValuationExportRows } from "./inventoryValuationExport";
 
 type InventoryValuationWorkbenchProps = {
   rows: InventoryValuationRow[];
+  isExportSourceComplete: boolean;
   tieOut: InventoryTieOutRow[] | null;
   // The tie-out query failed — distinct from "accounting disabled" (null).
   tieOutError?: boolean;
@@ -88,6 +89,7 @@ const VARIANCE_EPSILON = 0.005;
 
 export function InventoryValuationWorkbench({
   rows,
+  isExportSourceComplete,
   tieOut,
   tieOutError,
   asOfDate,
@@ -470,9 +472,9 @@ export function InventoryValuationWorkbench({
     [rows, asOfDate, groupBy, locationId, selectedLocationName]
   );
   const onDownload = useCallback(() => {
-    if (exportRows.length === 0) return;
+    if (!isExportSourceComplete || exportRows.length === 0) return;
     downloadCsv(exportRows, `inventory-valuation-${groupBy}-${asOfDate}.csv`);
-  }, [exportRows, groupBy, asOfDate]);
+  }, [isExportSourceComplete, exportRows, groupBy, asOfDate]);
   const tieOutTotal = useMemo(() => {
     const list = tieOut ?? [];
     return {
@@ -603,7 +605,7 @@ export function InventoryValuationWorkbench({
         variant="secondary"
         leftIcon={<LuDownload />}
         onClick={onDownload}
-        isDisabled={exportRows.length === 0}
+        isDisabled={!isExportSourceComplete || exportRows.length === 0}
       >
         <Trans>Download</Trans>
       </Button>

@@ -5,6 +5,7 @@ export type { ExecutivePnlRow, ExecutivePnlRowKey } from "./executivePnl";
 export { computeExecutivePnl } from "./executivePnl";
 export {
   canExportExecutivePnl,
+  canExportFilteredReport,
   downloadCsv,
   downloadCsvRows,
   exportExecutivePnl,

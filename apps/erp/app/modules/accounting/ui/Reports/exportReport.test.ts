@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   canExportExecutivePnl,
+  canExportFilteredReport,
+  csvIdentifier,
   csvText,
   serializeCsv,
   serializeCsvRows
@@ -99,6 +101,18 @@ describe("serializeCsv", () => {
     ).toBe("Account,Unmarked,Amount\r\n'00123,0007,7");
   });
 
+  it("preserves exponent-like and date-like identifiers as text", () => {
+    expect(
+      serializeCsv([
+        {
+          "Item ID": csvIdentifier("1E10"),
+          "Location ID": csvIdentifier("01-02"),
+          Amount: 1e10
+        }
+      ])
+    ).toBe("Item ID,Location ID,Amount\r\n'1E10,'01-02,10000000000");
+  });
+
   it("returns no rows for empty input", () => {
     expect(serializeCsv([])).toBe("");
   });
@@ -107,5 +121,33 @@ describe("serializeCsv", () => {
 describe("canExportExecutivePnl", () => {
   it("rejects an empty source report", () => {
     expect(canExportExecutivePnl([])).toBe(false);
+  });
+});
+
+describe("canExportFilteredReport", () => {
+  const accounts = [
+    {
+      id: "root",
+      parentId: null,
+      name: "Revenue",
+      number: null,
+      isGroup: true
+    },
+    {
+      id: "sales",
+      parentId: "root",
+      name: "Sales",
+      number: "4000",
+      isGroup: false
+    }
+  ];
+
+  it("rejects a search with no matching flat-tree rows", () => {
+    expect(canExportFilteredReport(accounts, "missing", true)).toBe(false);
+  });
+
+  it("requires both matching rows and a complete source", () => {
+    expect(canExportFilteredReport(accounts, "sales", true)).toBe(true);
+    expect(canExportFilteredReport(accounts, "sales", false)).toBe(false);
   });
 });

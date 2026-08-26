@@ -12,6 +12,7 @@ import { getCompanySettings } from "~/modules/settings";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+import { isReportSourceComplete } from "~/utils/reportExport";
 
 export const handle: Handle = {
   breadcrumb: "Payables",
@@ -64,6 +65,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     bucketDays,
     result: tieOut.data ?? null,
     dataError: Boolean(aging.error || open.error),
+    isExportSourceComplete: isReportSourceComplete(
+      aging.data ?? [],
+      open.data ?? []
+    ),
     aging: aging.data ?? [],
     open: (open.data ?? []).map((r) => ({
       ...r,
@@ -74,13 +79,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function PayablesRoute() {
-  const { asOfDate, agingMethod, bucketDays, result, dataError, aging, open } =
-    useLoaderData<typeof loader>();
+  const {
+    asOfDate,
+    agingMethod,
+    bucketDays,
+    result,
+    dataError,
+    isExportSourceComplete,
+    aging,
+    open
+  } = useLoaderData<typeof loader>();
   return (
     <ARAPWorkbench
       side="ap"
       result={result}
       dataError={dataError}
+      isExportSourceComplete={isExportSourceComplete}
       aging={aging}
       open={open}
       asOfDate={asOfDate}

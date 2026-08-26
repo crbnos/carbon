@@ -21,6 +21,7 @@ import {
   getFiscalYearSettings
 } from "~/modules/accounting";
 import {
+  canExportFilteredReport,
   exportPeriodReport,
   getPeriodColumnLabel,
   MultiPeriodStatementTree,
@@ -128,6 +129,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
       { buckets }
     );
 
+    if (consolidated.error || !consolidated.data) {
+      throw redirect(
+        path.to.accounting,
+        await flash(
+          request,
+          error(consolidated.error, "Failed to load balance sheet")
+        )
+      );
+    }
+
     const balanceSheetAccounts = consolidated.data.filter(
       (a) => a.incomeBalance === "Balance Sheet"
     );
@@ -143,7 +154,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       isMultiCompany: true,
       isForeignCurrency: false,
       parentCurrency,
-      fiscalStartMonth
+      fiscalStartMonth,
+      isExportSourceComplete: consolidated.isComplete
     };
   }
 
@@ -193,7 +205,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     isMultiCompany: false,
     isForeignCurrency,
     parentCurrency,
-    fiscalStartMonth
+    fiscalStartMonth,
+    isExportSourceComplete: series.isComplete
   };
 }
 
@@ -208,10 +221,34 @@ export default function BalanceSheetRoute() {
     isMultiCompany,
     isForeignCurrency,
     parentCurrency,
-    fiscalStartMonth
+    fiscalStartMonth,
+    isExportSourceComplete
   } = useLoaderData<typeof loader>();
   const [search, setSearch] = useState("");
   const { locale } = useLocale();
+  const canDownload = canExportFilteredReport(
+    balanceSheet,
+    search,
+    isExportSourceComplete
+  );
+
+  const onDownload = () => {
+    if (!canDownload) return;
+    exportPeriodReport({
+      accounts: balanceSheet,
+      periods: periods.map((bucket) => ({
+        ...bucket,
+        label:
+          getPeriodColumnLabel(bucket, columns, locale) +
+          (bucket.isPartial ? " (To Date)" : "")
+      })),
+      measure: "balanceAtDate",
+      showTranslated,
+      search,
+      filename: "balance-sheet.csv",
+      isSourceComplete: isExportSourceComplete
+    });
+  };
 
   return (
     <VStack spacing={0} className="h-full">
@@ -224,21 +261,8 @@ export default function BalanceSheetRoute() {
         periodVariant="range"
         fiscalStartMonth={fiscalStartMonth}
         showColumns
-        onDownload={() =>
-          exportPeriodReport({
-            accounts: balanceSheet,
-            periods: periods.map((bucket) => ({
-              ...bucket,
-              label:
-                getPeriodColumnLabel(bucket, columns, locale) +
-                (bucket.isPartial ? " (To Date)" : "")
-            })),
-            measure: "balanceAtDate",
-            showTranslated,
-            search,
-            filename: "balance-sheet.csv"
-          })
-        }
+        onDownload={onDownload}
+        isDownloadDisabled={!canDownload}
         search={search}
         onSearchChange={setSearch}
       />

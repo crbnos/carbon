@@ -65,6 +65,7 @@ type ARAPWorkbenchProps = {
   agingMethod: ARAPAgingMethod;
   bucketDays: [number, number, number];
   dataError?: boolean;
+  isExportSourceComplete: boolean;
   // Overrides the table title. Defaults to Receivables/Payables (the invoicing
   // workbench); the aging reports pass "AR Aging" / "AP Aging".
   title?: string;
@@ -93,7 +94,8 @@ export function ARAPWorkbench({
   agingMethod,
   bucketDays,
   title,
-  dataError
+  dataError,
+  isExportSourceComplete
 }: ARAPWorkbenchProps) {
   const { t } = useLingui();
   const { company } = useUser();
@@ -411,7 +413,11 @@ export function ARAPWorkbench({
       bucketDays
     ]
   );
-  const canDownload = canDownloadARAPAgingExport(dataError, exportRows.length);
+  const canDownload = canDownloadARAPAgingExport(
+    dataError,
+    isExportSourceComplete,
+    exportRows.length
+  );
   const onDownload = useCallback(() => {
     if (!canDownload) return;
     const filenameTitle =

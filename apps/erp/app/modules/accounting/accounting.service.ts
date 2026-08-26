@@ -18,6 +18,7 @@ import type { z } from "zod";
 import { getNextSequence } from "~/modules/settings";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
+import { isReportSourceComplete } from "~/utils/reportExport";
 import { sanitize } from "~/utils/supabase";
 import type {
   AnalyticsAccountScope,
@@ -549,10 +550,11 @@ export async function getFinancialStatementPeriodSeries(
 ): Promise<{
   data: ChartPeriodSeries[] | null;
   ctaByBucket: Record<string, number>;
+  isComplete: boolean;
   error: { message: string } | null;
 }> {
   if (args.buckets.length === 0) {
-    return { data: [], ctaByBucket: {}, error: null };
+    return { data: [], ctaByBucket: {}, isComplete: true, error: null };
   }
 
   const bucketKeys = args.buckets.map((b) => b.key);
@@ -586,12 +588,23 @@ export async function getFinancialStatementPeriodSeries(
     return {
       data: null,
       ctaByBucket: {},
+      isComplete: false,
       error: accountsResponse.error
     };
   }
   if (seriesResponse.error) {
-    return { data: null, ctaByBucket: {}, error: seriesResponse.error };
+    return {
+      data: null,
+      ctaByBucket: {},
+      isComplete: false,
+      error: seriesResponse.error
+    };
   }
+
+  const isComplete = isReportSourceComplete(
+    accountsResponse.data ?? [],
+    seriesResponse.data ?? []
+  );
 
   const periodsByAccountId = new Map<string, Record<string, PeriodCell>>();
   for (const row of seriesResponse.data ?? []) {
@@ -689,6 +702,7 @@ export async function getFinancialStatementPeriodSeries(
       return {
         data: null,
         ctaByBucket: {},
+        isComplete: false,
         error: { message: translation.error }
       };
     }
@@ -704,6 +718,7 @@ export async function getFinancialStatementPeriodSeries(
       bucketKeys
     ) as unknown as ChartPeriodSeries[],
     ctaByBucket,
+    isComplete,
     error: null
   };
 }
@@ -721,8 +736,10 @@ export async function getConsolidatedPeriodSeries(
   targetCurrency: string,
   args: { buckets: ReportPeriodBucket[] }
 ): Promise<{
-  data: ChartPeriodSeries[];
+  data: ChartPeriodSeries[] | null;
   ctaByBucket: Record<string, number>;
+  isComplete: boolean;
+  error: { message: string } | null;
 }> {
   const bucketKeys = args.buckets.map((b) => b.key);
   const allIds = await resolveConsolidationCompanyIds(
@@ -741,13 +758,17 @@ export async function getConsolidatedPeriodSeries(
       );
 
       const translation =
-        series.error || !series.data
+        series.error || !series.data || !series.isComplete
           ? {
               byBucket: {} as Record<
                 string,
                 { balances: TranslatedBalance[]; cta: number }
               >,
-              error: series.error?.message ?? "Failed to load balances"
+              error:
+                series.error?.message ??
+                (series.isComplete
+                  ? "Failed to load balances"
+                  : "Financial statement source reached the 1000-row limit")
             }
           : await translateCompanyPeriodSeries(
               client,
@@ -758,9 +779,31 @@ export async function getConsolidatedPeriodSeries(
               series.data
             );
 
-      return { series, translation };
+      return { companyId: id, series, translation };
     })
   );
+
+  const failed = results.find(
+    ({ series, translation }) =>
+      series.error ||
+      !series.data ||
+      !series.isComplete ||
+      Boolean(translation.error)
+  );
+  if (failed) {
+    const reason =
+      failed.series.error?.message ??
+      failed.translation.error ??
+      "Financial statement source is incomplete";
+    return {
+      data: null,
+      ctaByBucket: {},
+      isComplete: false,
+      error: {
+        message: `Failed to consolidate company ${failed.companyId}: ${reason}`
+      }
+    };
+  }
 
   // Sum raw cells per (account, bucket) across companies
   const summedByAccount = new Map<string, Record<string, PeriodCell>>();
@@ -838,7 +881,9 @@ export async function getConsolidatedPeriodSeries(
 
   return {
     data: applyRootSignCorrectionToSeries(consolidated, bucketKeys),
-    ctaByBucket
+    ctaByBucket,
+    isComplete: true,
+    error: null
   };
 }
 

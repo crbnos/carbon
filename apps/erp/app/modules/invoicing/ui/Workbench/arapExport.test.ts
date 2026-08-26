@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { serializeCsv } from "../../../accounting/ui/Reports/exportReport";
+import {
+  csvIdentifier,
+  serializeCsv
+} from "../../../accounting/ui/Reports/exportReport";
 import {
   buildARAPAgingExportRows,
   canDownloadARAPAgingExport
@@ -64,7 +67,7 @@ describe("buildARAPAgingExportRows", () => {
         "Bucket Days": "15,45,75",
         "Row Type": "Counterparty",
         "Counterparty Type": "Customer",
-        "Counterparty ID": "cust-1",
+        "Counterparty ID": csvIdentifier("cust-1"),
         "Payment Term": "Net 30",
         "Invoice ID": "",
         "Invoice Number": "",
@@ -91,10 +94,10 @@ describe("buildARAPAgingExportRows", () => {
         "Bucket Days": "15,45,75",
         "Row Type": "Invoice",
         "Counterparty Type": "Customer",
-        "Counterparty ID": "cust-1",
+        "Counterparty ID": csvIdentifier("cust-1"),
         "Payment Term": "",
-        "Invoice ID": "inv-1",
-        "Invoice Number": "INV-001",
+        "Invoice ID": csvIdentifier("inv-1"),
+        "Invoice Number": csvIdentifier("INV-001"),
         "Document Type": "Invoice",
         "Due Date": "2026-05-10",
         Currency: "USD",
@@ -118,10 +121,10 @@ describe("buildARAPAgingExportRows", () => {
         "Bucket Days": "15,45,75",
         "Row Type": "Invoice",
         "Counterparty Type": "Customer",
-        "Counterparty ID": "cust-1",
+        "Counterparty ID": csvIdentifier("cust-1"),
         "Payment Term": "",
-        "Invoice ID": "inv-2",
-        "Invoice Number": "INV-002",
+        "Invoice ID": csvIdentifier("inv-2"),
+        "Invoice Number": csvIdentifier("INV-002"),
         "Document Type": "Credit Memo",
         "Due Date": "",
         Currency: "EUR",
@@ -173,10 +176,10 @@ describe("buildARAPAgingExportRows", () => {
         "Bucket Days": "30,60,90",
         "Row Type": "Invoice",
         "Counterparty Type": "Supplier",
-        "Counterparty ID": "sup-1",
+        "Counterparty ID": csvIdentifier("sup-1"),
         "Payment Term": "",
-        "Invoice ID": "bill-1",
-        "Invoice Number": "BILL-001",
+        "Invoice ID": csvIdentifier("bill-1"),
+        "Invoice Number": csvIdentifier("BILL-001"),
         "Document Type": "",
         "Due Date": "2026-06-01",
         Currency: "USD",
@@ -197,12 +200,16 @@ describe("buildARAPAgingExportRows", () => {
   });
 
   it("blocks downloads when either report source query failed", () => {
-    expect(canDownloadARAPAgingExport(false, 1)).toBe(true);
-    expect(canDownloadARAPAgingExport(false, 0)).toBe(false);
-    expect(canDownloadARAPAgingExport(true, 1)).toBe(false);
+    expect(canDownloadARAPAgingExport(false, true, 1)).toBe(true);
+    expect(canDownloadARAPAgingExport(false, true, 0)).toBe(false);
+    expect(canDownloadARAPAgingExport(true, true, 1)).toBe(false);
   });
 
-  it("preserves unsigned numeric-looking invoice identifiers as text", () => {
+  it("blocks downloads when a source may be truncated", () => {
+    expect(canDownloadARAPAgingExport(false, false, 1)).toBe(false);
+  });
+
+  it("preserves exponent-like and date-like invoice identifiers as text", () => {
     const rows = buildARAPAgingExportRows({
       side: "ar",
       baseCurrencyCode: "USD",
@@ -212,8 +219,8 @@ describe("buildARAPAgingExportRows", () => {
       aging: [],
       open: [
         {
-          invoiceId: "00123",
-          invoiceNumber: "0007",
+          invoiceId: "1E10",
+          invoiceNumber: "01-02",
           dateDue: null,
           currencyCode: "USD",
           exchangeRate: 1,
@@ -221,11 +228,11 @@ describe("buildARAPAgingExportRows", () => {
           settled: 0,
           openInCurrency: 10,
           openInBase: 10,
-          customerId: "customer-1"
+          customerId: "01-02"
         }
       ]
     });
 
-    expect(serializeCsv(rows)).toContain(",'00123,'0007,");
+    expect(serializeCsv(rows)).toContain(",'01-02,,'1E10,'01-02,");
   });
 });

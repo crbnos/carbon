@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { serializeCsvRows } from "./exportReport";
+import { csvIdentifier, serializeCsvRows } from "./exportReport";
 import type { PivotGroupRow } from "./pivotData";
 import {
   applyPercentOfTotal,
@@ -541,13 +541,18 @@ describe("pivotToCsvRows", () => {
 
     // header + 5 tree nodes (Alpha, 2 children, Unassigned parent + child) + totals
     expect(csv).toEqual([
-      ["", "Jan 2026", "Feb 2026", "Total"],
-      ["Alpha", 400, 50, 450],
-      ["  Yankee", 300, 0, 300],
-      ["  X-Ray", 100, 50, 150],
-      ["Unassigned", 5, 0, 5],
-      ["  Unassigned", 5, 0, 5],
-      ["Total", 405, 50, 455]
+      [
+        "",
+        csvIdentifier("Jan 2026"),
+        csvIdentifier("Feb 2026"),
+        csvIdentifier("Total")
+      ],
+      [csvIdentifier("Alpha"), 400, 50, 450],
+      [csvIdentifier("  Yankee"), 300, 0, 300],
+      [csvIdentifier("  X-Ray"), 100, 50, 150],
+      [csvIdentifier("Unassigned"), 5, 0, 5],
+      [csvIdentifier("  Unassigned"), 5, 0, 5],
+      [csvIdentifier("Total"), 405, 50, 455]
     ]);
   });
 
@@ -569,8 +574,8 @@ describe("pivotToCsvRows", () => {
       columnLabels: {}
     });
 
-    expect(csv[0]).toEqual(["", "c1", "Total"]);
-    expect(csv[csv.length - 1]).toEqual(["Total", 10, 10]);
+    expect(csv[0]).toEqual(["", csvIdentifier("c1"), csvIdentifier("Total")]);
+    expect(csv[csv.length - 1]).toEqual([csvIdentifier("Total"), 10, 10]);
   });
 
   it("exports the rendered percentage mode", () => {
@@ -598,10 +603,15 @@ describe("pivotToCsvRows", () => {
         percentOfTotal: true
       })
     ).toEqual([
-      ["", "January", "February", "Total"],
-      ["Beta", "75.0%", "50.0%", "62.5%"],
-      ["Alpha", "25.0%", "50.0%", "37.5%"],
-      ["Total", "100.0%", "100.0%", "100.0%"]
+      [
+        "",
+        csvIdentifier("January"),
+        csvIdentifier("February"),
+        csvIdentifier("Total")
+      ],
+      [csvIdentifier("Beta"), "75.0%", "50.0%", "62.5%"],
+      [csvIdentifier("Alpha"), "25.0%", "50.0%", "37.5%"],
+      [csvIdentifier("Total"), "100.0%", "100.0%", "100.0%"]
     ]);
   });
 
@@ -645,16 +655,16 @@ describe("pivotToCsvRows", () => {
       columnLabels: { c1: "January" }
     });
 
-    expect(rows[1]).toEqual(["Alpha", -40, -40]);
+    expect(rows[1]).toEqual([csvIdentifier("Alpha"), -40, -40]);
     expect(serializeCsvRows(rows)).toBe(
-      ",January,Total\r\nAlpha,-40,-40\r\nTotal,-40,-40"
+      ",'January,'Total\r\n'Alpha,-40,-40\r\n'Total,-40,-40"
     );
   });
 
-  it("preserves numeric-looking labels and duplicate headers as text", () => {
+  it("preserves exponent-like labels and date-like duplicate headers as text", () => {
     const built = buildPivotTree({
       groups: [group("a", null, "c1", 12), group("a", null, "c2", 34)],
-      valueNames: { a: "00123" },
+      valueNames: { a: "1E10" },
       columnKeys: ["c1", "c2"],
       rowCount: 1,
       measure: "amount"
@@ -666,11 +676,11 @@ describe("pivotToCsvRows", () => {
       columnTotals: built.columnTotals,
       grandTotal: built.grandTotal,
       measure: "amount",
-      columnLabels: { c1: "00456", c2: "00456" }
+      columnLabels: { c1: "01-02", c2: "01-02" }
     });
 
     expect(serializeCsvRows(rows)).toBe(
-      ",'00456,'00456,Total\r\n'00123,12,34,46\r\nTotal,12,34,46"
+      ",'01-02,'01-02,'Total\r\n'1E10,12,34,46\r\n'Total,12,34,46"
     );
     expect(rows[1]?.slice(1)).toEqual([12, 34, 46]);
   });
