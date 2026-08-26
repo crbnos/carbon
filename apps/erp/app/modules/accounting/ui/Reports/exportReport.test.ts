@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { csvRowsToRecords, serializeCsv } from "./exportReport";
+import { serializeCsv, serializeCsvRows } from "./exportReport";
 
-describe("csvRowsToRecords", () => {
-  it("keeps matrix headers and row values in order", () => {
+describe("serializeCsvRows", () => {
+  it("preserves duplicate headers and their distinct positional values", () => {
     expect(
-      csvRowsToRecords([
-        ["", "Jan 2026", "Total"],
-        ["  Alpha", "12", "12"]
+      serializeCsvRows([
+        ["", "Jan 2026", "Jan 2026"],
+        ["Alpha", "12", "34"]
       ])
-    ).toEqual([{ "": "  Alpha", "Jan 2026": "12", Total: "12" }]);
+    ).toBe(",Jan 2026,Jan 2026\r\nAlpha,12,34");
   });
 });
 

@@ -4,12 +4,13 @@ export { default as ExecutivePnlSummary } from "./ExecutivePnlSummary";
 export type { ExecutivePnlRow, ExecutivePnlRowKey } from "./executivePnl";
 export { computeExecutivePnl } from "./executivePnl";
 export {
-  csvRowsToRecords,
   downloadCsv,
+  downloadCsvRows,
   exportExecutivePnl,
   exportPeriodReport,
   exportTrialBalance,
-  serializeCsv
+  serializeCsv,
+  serializeCsvRows
 } from "./exportReport";
 export {
   default as MultiPeriodStatementTree,

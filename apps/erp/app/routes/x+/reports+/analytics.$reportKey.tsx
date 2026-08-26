@@ -39,8 +39,7 @@ import {
 } from "~/modules/accounting";
 import type { PivotCellCoordinates } from "~/modules/accounting/ui/Reports";
 import {
-  csvRowsToRecords,
-  downloadCsv,
+  downloadCsvRows,
   getPeriodColumnLabel,
   PivotControlBar,
   PivotLinesDrawer,
@@ -570,7 +569,7 @@ export default function AnalyticsReportRoute() {
     });
     if (rows.length === 0) return;
 
-    downloadCsv(csvRowsToRecords(rows), `${reportKey}.csv`);
+    downloadCsvRows(rows, `${reportKey}.csv`);
   };
 
   return (

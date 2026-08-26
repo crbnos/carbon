@@ -24,8 +24,7 @@ import {
 } from "~/modules/accounting";
 import type { PivotCellCoordinates } from "~/modules/accounting/ui/Reports";
 import {
-  csvRowsToRecords,
-  downloadCsv,
+  downloadCsvRows,
   getPeriodColumnLabel,
   PivotTree,
   PurchaseLinesDrawer,
@@ -302,7 +301,7 @@ export default function PurchasesReportRoute() {
     });
     if (rows.length === 0) return;
 
-    downloadCsv(csvRowsToRecords(rows), "purchases.csv");
+    downloadCsvRows(rows, "purchases.csv");
   };
 
   return (

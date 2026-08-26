@@ -7,48 +7,40 @@ import {
   getDebitCredit
 } from "./reportTree";
 
+function escapeCsvCell(value: unknown): string {
+  if (value == null) return "";
+  const text = String(value);
+  const safeText =
+    typeof value === "string" &&
+    !Number.isFinite(Number(value)) &&
+    /^[=+\-@]/.test(text)
+      ? `'${text}`
+      : text;
+  return /[",\r\n]/.test(safeText)
+    ? `"${safeText.replaceAll('"', '""')}"`
+    : safeText;
+}
+
 export function serializeCsv(rows: Record<string, unknown>[]): string {
   if (rows.length === 0) return "";
 
   const headers = [...new Set(rows.flatMap((row) => Object.keys(row)))];
-  const escapeCell = (value: unknown) => {
-    if (value == null) return "";
-    const text = String(value);
-    const safeText =
-      typeof value === "string" &&
-      !Number.isFinite(Number(value)) &&
-      /^[=+\-@]/.test(text)
-        ? `'${text}`
-        : text;
-    return /[",\r\n]/.test(safeText)
-      ? `"${safeText.replaceAll('"', '""')}"`
-      : safeText;
-  };
 
   return [
-    headers.map(escapeCell).join(","),
+    headers.map(escapeCsvCell).join(","),
     ...rows.map((row) =>
-      headers.map((header) => escapeCell(row[header])).join(",")
+      headers.map((header) => escapeCsvCell(row[header])).join(",")
     )
   ].join("\r\n");
 }
 
-export function csvRowsToRecords(rows: string[][]): Record<string, unknown>[] {
-  const [headers, ...data] = rows;
-  if (!headers) return [];
-
-  return data.map((row) =>
-    headers.reduce<Record<string, unknown>>((record, header, index) => {
-      record[header] = row[index] ?? "";
-      return record;
-    }, {})
-  );
+export function serializeCsvRows(rows: string[][]): string {
+  return rows.map((row) => row.map(escapeCsvCell).join(",")).join("\r\n");
 }
 
 // Standalone CSV download (ExchangeRateForm pattern) — the report trees are
 // not built on the shared Table component, so they get no free export button.
-export function downloadCsv(rows: Record<string, unknown>[], filename: string) {
-  const csvData = serializeCsv(rows);
+function downloadCsvData(csvData: string, filename: string) {
   if (!csvData) return;
   const blob = new Blob([csvData], { type: "text/csv" });
   const url = window.URL.createObjectURL(blob);
@@ -59,6 +51,14 @@ export function downloadCsv(rows: Record<string, unknown>[], filename: string) {
   a.click();
   window.URL.revokeObjectURL(url);
   document.body.removeChild(a);
+}
+
+export function downloadCsv(rows: Record<string, unknown>[], filename: string) {
+  downloadCsvData(serializeCsv(rows), filename);
+}
+
+export function downloadCsvRows(rows: string[][], filename: string) {
+  downloadCsvData(serializeCsvRows(rows), filename);
 }
 
 // Export the multi-period statement in flat-tree display order (the FULL tree,
