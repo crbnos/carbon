@@ -475,7 +475,7 @@ msgstr "Parçaları ebeveyn işine birlikte verilen bir Sipariş üzere Üretim 
 msgid "A managed cloud-hosted version of Carbon"
 msgstr ""
 
-msgid "A managed cloud-hosted version of Carbon that includes support and all advanced features"
+msgid "A managed version with all the advanced features"
 msgstr ""
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
@@ -14125,9 +14125,6 @@ msgstr "Süre bitişi süreç başlangıcında başlar"
 
 msgid "Start Here"
 msgstr "Buradan Başla"
-
-msgid "Start Learning"
-msgstr "Öğrenmeye Başla"
 
 msgid "Start Now"
 msgstr "Şimdi Başla"

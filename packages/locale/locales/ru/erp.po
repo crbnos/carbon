@@ -475,7 +475,7 @@ msgstr "Компонент \"Производство на заказ\", час�
 msgid "A managed cloud-hosted version of Carbon"
 msgstr ""
 
-msgid "A managed cloud-hosted version of Carbon that includes support and all advanced features"
+msgid "A managed version with all the advanced features"
 msgstr ""
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
@@ -14125,9 +14125,6 @@ msgstr "Начать истечение срока действия при за�
 
 msgid "Start Here"
 msgstr "Начните отсюда"
-
-msgid "Start Learning"
-msgstr "Начать обучение"
 
 msgid "Start Now"
 msgstr "Начать сейчас"

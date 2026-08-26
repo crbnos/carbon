@@ -475,7 +475,7 @@ msgstr "부품이 상위 작업에 함께 투입되는 주문생산(Make to Orde
 msgid "A managed cloud-hosted version of Carbon"
 msgstr ""
 
-msgid "A managed cloud-hosted version of Carbon that includes support and all advanced features"
+msgid "A managed version with all the advanced features"
 msgstr ""
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
@@ -14125,9 +14125,6 @@ msgstr "공정 시작 시 유효기한 시작"
 
 msgid "Start Here"
 msgstr "여기서 시작하기"
-
-msgid "Start Learning"
-msgstr "학습 시작"
 
 msgid "Start Now"
 msgstr "지금 시작"

@@ -475,7 +475,7 @@ msgstr "其零件一起发放到父项作业的按单生产组件——无单独
 msgid "A managed cloud-hosted version of Carbon"
 msgstr ""
 
-msgid "A managed cloud-hosted version of Carbon that includes support and all advanced features"
+msgid "A managed version with all the advanced features"
 msgstr ""
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
@@ -14125,9 +14125,6 @@ msgstr "在流程开始时开始过期"
 
 msgid "Start Here"
 msgstr "从这里开始"
-
-msgid "Start Learning"
-msgstr "开始学习"
 
 msgid "Start Now"
 msgstr "立即开始"

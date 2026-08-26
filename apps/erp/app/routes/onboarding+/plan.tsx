@@ -18,7 +18,7 @@ import { Edition } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo } from "react";
-import { LuGraduationCap, LuMoveLeft, LuPhoneCall } from "react-icons/lu";
+import { LuMoveLeft, LuPhoneCall } from "react-icons/lu";
 import type { ActionFunctionArgs } from "react-router";
 import { Form, redirect, useFetcher, useLoaderData } from "react-router";
 import { getCompany, getPlans } from "~/modules/settings";
@@ -52,7 +52,7 @@ function usePlans() {
       price: 100,
       userMinimum: 5,
       talkToSales: true,
-      description: t`A managed cloud-hosted version of Carbon that includes support and all advanced features`,
+      description: t`A managed version with all the advanced features`,
       features: [
         t`Technical support`,
         t`API, webhooks, and integrations`,
@@ -276,22 +276,7 @@ export default function OnboardingPlan() {
                             <Trans>Talk to Sales</Trans>
                           </a>
                         </Button>
-                      ) : (
-                        <Button
-                          leftIcon={<LuGraduationCap />}
-                          className="w-full"
-                          variant="secondary"
-                          asChild
-                        >
-                          <a
-                            href="https://learn.carbon.ms"
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            <Trans>Start Learning</Trans>
-                          </a>
-                        </Button>
-                      )}
+                      ) : null}
                     </VStack>
                   </CardFooter>
                 </Card>

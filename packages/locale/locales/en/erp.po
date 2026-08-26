@@ -475,8 +475,8 @@ msgstr "A Make to Order component whose parts are issued together into the paren
 msgid "A managed cloud-hosted version of Carbon"
 msgstr "A managed cloud-hosted version of Carbon"
 
-msgid "A managed cloud-hosted version of Carbon that includes support and all advanced features"
-msgstr "A managed cloud-hosted version of Carbon that includes support and all advanced features"
+msgid "A managed version with all the advanced features"
+msgstr "A managed version with all the advanced features"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "A material is a physical item used to make a part that can be used across multiple jobs"
@@ -14125,9 +14125,6 @@ msgstr "Start expiration on process start"
 
 msgid "Start Here"
 msgstr "Start Here"
-
-msgid "Start Learning"
-msgstr "Start Learning"
 
 msgid "Start Now"
 msgstr "Start Now"

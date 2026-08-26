@@ -475,7 +475,7 @@ msgstr "एक ऑर्डर टू मेक घटक जिसके भा
 msgid "A managed cloud-hosted version of Carbon"
 msgstr ""
 
-msgid "A managed cloud-hosted version of Carbon that includes support and all advanced features"
+msgid "A managed version with all the advanced features"
 msgstr ""
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
@@ -14125,9 +14125,6 @@ msgstr "प्रक्रिया शुरुआत पर समाप्त
 
 msgid "Start Here"
 msgstr "यहाँ शुरू करें"
-
-msgid "Start Learning"
-msgstr "सीखना शुरू करें"
 
 msgid "Start Now"
 msgstr "अभी शुरू करें"

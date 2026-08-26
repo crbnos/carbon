@@ -475,7 +475,7 @@ msgstr "Eine Make-to-Order-Komponente, deren Teile zusammen in den übergeordnet
 msgid "A managed cloud-hosted version of Carbon"
 msgstr ""
 
-msgid "A managed cloud-hosted version of Carbon that includes support and all advanced features"
+msgid "A managed version with all the advanced features"
 msgstr ""
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
@@ -14125,9 +14125,6 @@ msgstr "Ablauf des Verfallsdatums beim Prozessstart"
 
 msgid "Start Here"
 msgstr "Hier starten"
-
-msgid "Start Learning"
-msgstr "Lerne jetzt"
 
 msgid "Start Now"
 msgstr "Jetzt starten"

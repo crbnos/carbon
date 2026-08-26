@@ -475,7 +475,7 @@ msgstr "その部品が親ジョブに一緒に発行される受注製造コン
 msgid "A managed cloud-hosted version of Carbon"
 msgstr ""
 
-msgid "A managed cloud-hosted version of Carbon that includes support and all advanced features"
+msgid "A managed version with all the advanced features"
 msgstr ""
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
@@ -14125,9 +14125,6 @@ msgstr "プロセス開始時に有効期限を開始"
 
 msgid "Start Here"
 msgstr "ここから始める"
-
-msgid "Start Learning"
-msgstr "学習を開始"
 
 msgid "Start Now"
 msgstr "今すぐ開始"

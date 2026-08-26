@@ -475,7 +475,7 @@ msgstr "Un composant Fabriquer sur commande dont les pièces sont émises ensemb
 msgid "A managed cloud-hosted version of Carbon"
 msgstr ""
 
-msgid "A managed cloud-hosted version of Carbon that includes support and all advanced features"
+msgid "A managed version with all the advanced features"
 msgstr ""
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
@@ -14125,9 +14125,6 @@ msgstr "Commencer l'expiration au démarrage du processus"
 
 msgid "Start Here"
 msgstr "Commencer ici"
-
-msgid "Start Learning"
-msgstr "Commencer à apprendre"
 
 msgid "Start Now"
 msgstr "Commencer maintenant"
