@@ -222,11 +222,12 @@ export default function ExecutivePnlRoute() {
         ...bucket,
         label:
           getPeriodColumnLabel(bucket, columns, locale) +
-          (bucket.isPartial ? " (To Date)" : "")
+          (bucket.isPartial ? ` (${t`To Date`})` : "")
       })),
       labels,
       showTranslated,
-      filename: "executive-pnl.csv"
+      filename: "executive-pnl.csv",
+      lineLabel: t`Line`
     });
   };
 

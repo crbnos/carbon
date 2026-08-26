@@ -15,6 +15,16 @@ export type CsvTextCell = {
 
 export type CsvCell = string | number | CsvTextCell;
 
+export type FinancialStatementCsvLabels = {
+  number: string;
+  account: string;
+  beginning: string;
+  debits: string;
+  credits: string;
+  ending: string;
+  translatedEnding: string;
+};
+
 export function csvIdentifier(
   value: string | null | undefined
 ): CsvTextCell | string {
@@ -103,18 +113,26 @@ export function exportPeriodReport(args: {
   search: string;
   filename: string;
   isSourceComplete?: boolean;
+  labels?: Pick<FinancialStatementCsvLabels, "number" | "account">;
 }) {
   const tree = accountsToFlatTree(filterAccounts(args.accounts, args.search));
   if (args.isSourceComplete === false || tree.length === 0) return;
+  const labels = {
+    number: "Number",
+    account: "Account",
+    ...args.labels
+  };
   const rows = tree.map(({ data: account }) => {
     const row: Record<string, unknown> = {
-      Number: account.isGroup ? "" : csvIdentifier(account.number),
-      Account: account.name ?? ""
+      [labels.number]: account.isGroup ? "" : csvIdentifier(account.number),
+      [labels.account]: account.name ?? ""
     };
     for (const bucket of args.periods) {
       const cell = account.periods?.[bucket.key];
       row[bucket.label] = args.showTranslated
-        ? (cell?.translatedBalance ?? "")
+        ? args.measure === "netChange"
+          ? (cell?.translatedNetChange ?? "")
+          : (cell?.translatedBalance ?? "")
         : (cell?.[args.measure] ?? 0);
     }
     return row;
@@ -130,6 +148,7 @@ export function exportExecutivePnl(args: {
   labels: Record<ExecutivePnlRowKey, string>;
   showTranslated?: boolean;
   filename: string;
+  lineLabel?: string;
 }) {
   if (!canExportExecutivePnl(args.accounts)) return;
 
@@ -140,7 +159,9 @@ export function exportExecutivePnl(args: {
   );
 
   const csvRows = rows.map((row) => {
-    const csvRow: Record<string, unknown> = { Line: args.labels[row.key] };
+    const csvRow: Record<string, unknown> = {
+      [args.lineLabel ?? "Line"]: args.labels[row.key]
+    };
     for (const bucket of args.periods) {
       csvRow[bucket.label] = row.values[bucket.key] ?? 0;
       if (row.margins != null) {
@@ -177,24 +198,34 @@ export function exportTrialBalance(args: {
   search: string;
   filename: string;
   isSourceComplete?: boolean;
+  labels?: Partial<FinancialStatementCsvLabels>;
 }) {
   const tree = accountsToFlatTree(filterAccounts(args.accounts, args.search));
   if (args.isSourceComplete === false || tree.length === 0) return;
+  const labels = {
+    number: "Number",
+    account: "Account",
+    beginning: "Beginning",
+    debits: "Debits",
+    credits: "Credits",
+    ending: "Ending",
+    translatedEnding: `Ending (${args.parentCurrency ?? "Translated"})`,
+    ...args.labels
+  };
   const rows = tree.map(({ data: account }) => {
     const endingBalance = account.balanceAtDate ?? 0;
     const netChange = account.netChange ?? 0;
     const { debit, credit } = getDebitCredit(netChange, account.class);
     const row: Record<string, unknown> = {
-      Number: account.isGroup ? "" : csvIdentifier(account.number),
-      Account: account.name ?? "",
-      Beginning: endingBalance - netChange,
-      Debits: debit,
-      Credits: credit,
-      Ending: endingBalance
+      [labels.number]: account.isGroup ? "" : csvIdentifier(account.number),
+      [labels.account]: account.name ?? "",
+      [labels.beginning]: endingBalance - netChange,
+      [labels.debits]: debit,
+      [labels.credits]: credit,
+      [labels.ending]: endingBalance
     };
     if (args.showTranslated) {
-      row[`Ending (${args.parentCurrency ?? "Translated"})`] =
-        account.translatedBalance ?? "";
+      row[labels.translatedEnding] = account.translatedBalance ?? "";
     }
     return row;
   });

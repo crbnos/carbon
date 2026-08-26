@@ -1,12 +1,22 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   canExportExecutivePnl,
   canExportFilteredReport,
   csvIdentifier,
   csvText,
+  exportPeriodReport,
+  exportTrialBalance,
   serializeCsv,
   serializeCsvRows
 } from "./exportReport";
+
+const period = {
+  key: "2026-01",
+  start: "2026-01-01",
+  end: "2026-01-31",
+  fiscalYear: 2026,
+  isPartial: false
+};
 
 describe("serializeCsvRows", () => {
   it("preserves duplicate headers and their distinct positional values", () => {
@@ -157,5 +167,180 @@ describe("canExportFilteredReport", () => {
   it("requires both matching rows and a complete source", () => {
     expect(canExportFilteredReport(accounts, "sales", true)).toBe(true);
     expect(canExportFilteredReport(accounts, "sales", false)).toBe(false);
+  });
+});
+
+describe("exportPeriodReport", () => {
+  it("exports translated income-statement period activity instead of cumulative balance", () => {
+    let csv = "";
+    const anchor = {
+      href: "",
+      download: "",
+      click: () => undefined
+    };
+
+    vi.stubGlobal(
+      "Blob",
+      class {
+        constructor(parts: BlobPart[]) {
+          csv = String(parts[0]);
+        }
+      }
+    );
+    vi.stubGlobal("window", {
+      URL: {
+        createObjectURL: () => "blob:test",
+        revokeObjectURL: () => undefined
+      }
+    });
+    vi.stubGlobal("document", {
+      createElement: () => anchor,
+      body: {
+        appendChild: () => undefined,
+        removeChild: () => undefined
+      }
+    });
+
+    exportPeriodReport({
+      accounts: [
+        {
+          id: "revenue",
+          parentId: null,
+          name: "Revenue",
+          number: "4000",
+          isGroup: false,
+          periods: {
+            [period.key]: {
+              netChange: 10,
+              balanceAtDate: 100,
+              translatedNetChange: 12,
+              translatedBalance: 120
+            }
+          }
+        }
+      ] as never,
+      periods: [{ ...period, label: "Jan 2026" }],
+      measure: "netChange",
+      showTranslated: true,
+      search: "",
+      filename: "income-statement.csv"
+    });
+
+    expect(csv).toBe("Number,Account,Jan 2026\r\n'4000,Revenue,12");
+  });
+
+  it("uses route-provided localized CSV headers", () => {
+    let csv = "";
+    const anchor = {
+      href: "",
+      download: "",
+      click: () => undefined
+    };
+
+    vi.stubGlobal(
+      "Blob",
+      class {
+        constructor(parts: BlobPart[]) {
+          csv = String(parts[0]);
+        }
+      }
+    );
+    vi.stubGlobal("window", {
+      URL: {
+        createObjectURL: () => "blob:test",
+        revokeObjectURL: () => undefined
+      }
+    });
+    vi.stubGlobal("document", {
+      createElement: () => anchor,
+      body: {
+        appendChild: () => undefined,
+        removeChild: () => undefined
+      }
+    });
+
+    exportPeriodReport({
+      accounts: [
+        {
+          id: "revenue",
+          parentId: null,
+          name: "Revenue",
+          number: "4000",
+          isGroup: false,
+          periods: { [period.key]: { netChange: 10, balanceAtDate: 100 } }
+        }
+      ] as never,
+      periods: [{ ...period, label: "Jan 2026" }],
+      measure: "netChange",
+      search: "",
+      filename: "income-statement.csv",
+      labels: { number: "编号", account: "科目" }
+    });
+
+    expect(csv).toBe("编号,科目,Jan 2026\r\n'4000,Revenue,10");
+  });
+
+  it("uses route-provided localized trial-balance headers", () => {
+    let csv = "";
+    const anchor = {
+      href: "",
+      download: "",
+      click: () => undefined
+    };
+
+    vi.stubGlobal(
+      "Blob",
+      class {
+        constructor(parts: BlobPart[]) {
+          csv = String(parts[0]);
+        }
+      }
+    );
+    vi.stubGlobal("window", {
+      URL: {
+        createObjectURL: () => "blob:test",
+        revokeObjectURL: () => undefined
+      }
+    });
+    vi.stubGlobal("document", {
+      createElement: () => anchor,
+      body: {
+        appendChild: () => undefined,
+        removeChild: () => undefined
+      }
+    });
+
+    exportTrialBalance({
+      accounts: [
+        {
+          id: "cash",
+          parentId: null,
+          name: "Cash",
+          number: "1000",
+          isGroup: false,
+          class: "Asset",
+          balanceAtDate: 100,
+          netChange: 25,
+          translatedBalance: 110
+        }
+      ] as never,
+      showTranslated: true,
+      parentCurrency: "USD",
+      search: "",
+      filename: "trial-balance.csv",
+      labels: {
+        number: "编号",
+        account: "科目",
+        beginning: "期初",
+        debits: "借方",
+        credits: "贷方",
+        ending: "期末",
+        translatedEnding: "期末（美元）"
+      }
+    });
+
+    expect(csv).toBe(
+      "编号,科目,期初,借方,贷方,期末,期末（美元）\r\n'1000,Cash,75,25,0,100,110"
+    );
   });
 });

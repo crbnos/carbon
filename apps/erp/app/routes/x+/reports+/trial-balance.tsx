@@ -4,6 +4,7 @@ import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
 import { datetime, defaultReportRange } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
@@ -212,6 +213,7 @@ export default function TrialBalanceRoute() {
     isSourceComplete
   } = useLoaderData<typeof loader>();
   const [search, setSearch] = useState("");
+  const { t } = useLingui();
   const canDownload = canExportFilteredReport(
     trialBalance,
     search,
@@ -226,7 +228,16 @@ export default function TrialBalanceRoute() {
       parentCurrency,
       search,
       filename: "trial-balance.csv",
-      isSourceComplete
+      isSourceComplete,
+      labels: {
+        number: t`Number`,
+        account: t`Account`,
+        beginning: t`Beginning`,
+        debits: t`Debits`,
+        credits: t`Credits`,
+        ending: t`Ending`,
+        translatedEnding: t`Ending (${parentCurrency ?? "Translated"})`
+      }
     });
   };
 

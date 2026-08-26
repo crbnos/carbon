@@ -8,6 +8,7 @@ import {
   defaultReportRange
 } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
@@ -198,6 +199,7 @@ export default function IncomeStatementRoute() {
     isExportSourceComplete
   } = useLoaderData<typeof loader>();
   const [search, setSearch] = useState("");
+  const { t } = useLingui();
   const { locale } = useLocale();
   const canDownload = canExportFilteredReport(
     incomeStatement,
@@ -213,13 +215,14 @@ export default function IncomeStatementRoute() {
         ...bucket,
         label:
           getPeriodColumnLabel(bucket, columns, locale) +
-          (bucket.isPartial ? " (To Date)" : "")
+          (bucket.isPartial ? ` (${t`To Date`})` : "")
       })),
       measure: "netChange",
       showTranslated,
       search,
       filename: "income-statement.csv",
-      isSourceComplete: isExportSourceComplete
+      isSourceComplete: isExportSourceComplete,
+      labels: { number: t`Number`, account: t`Account` }
     });
   };
 

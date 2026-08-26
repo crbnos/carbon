@@ -273,6 +273,15 @@ export async function getFinancialStatementBalances(
   if (accountsResponse.error) {
     return { data: null, error: accountsResponse.error, isComplete: false };
   }
+  if (accountsResponse.data == null) {
+    return {
+      data: null,
+      error: {
+        message: "Financial statement account metadata source returned no data"
+      },
+      isComplete: false
+    };
+  }
   if (balancesResponse.error) {
     return { data: null, error: balancesResponse.error, isComplete: false };
   }
@@ -285,7 +294,7 @@ export async function getFinancialStatementBalances(
   }
 
   const isComplete = isReportSourceComplete(
-    accountsResponse.data ?? [],
+    accountsResponse.data,
     balancesResponse.data
   );
 
@@ -301,7 +310,7 @@ export async function getFinancialStatementBalances(
     return acc;
   }, {});
 
-  const mapped = (accountsResponse.data ?? [])
+  const mapped = accountsResponse.data
     .filter((a): a is typeof a & { id: string } => a.id !== null)
     .map((account) => ({
       ...account,
@@ -612,6 +621,16 @@ export async function getFinancialStatementPeriodSeries(
       error: accountsResponse.error
     };
   }
+  if (accountsResponse.data == null) {
+    return {
+      data: null,
+      ctaByBucket: {},
+      isComplete: false,
+      error: {
+        message: "Financial statement account metadata source returned no data"
+      }
+    };
+  }
   if (seriesResponse.error) {
     return {
       data: null,
@@ -620,14 +639,24 @@ export async function getFinancialStatementPeriodSeries(
       error: seriesResponse.error
     };
   }
+  if (seriesResponse.data == null) {
+    return {
+      data: null,
+      ctaByBucket: {},
+      isComplete: false,
+      error: {
+        message: "Financial statement period-series source returned no data"
+      }
+    };
+  }
 
   const isComplete = isReportSourceComplete(
-    accountsResponse.data ?? [],
-    seriesResponse.data ?? []
+    accountsResponse.data,
+    seriesResponse.data
   );
 
   const periodsByAccountId = new Map<string, Record<string, PeriodCell>>();
-  for (const row of seriesResponse.data ?? []) {
+  for (const row of seriesResponse.data) {
     const key = keyByEnd.get(row.periodEnd);
     if (!key) continue;
     let record = periodsByAccountId.get(row.accountId);
@@ -646,7 +675,7 @@ export async function getFinancialStatementPeriodSeries(
       bucketKeys.map((key) => [key, { netChange: 0, balanceAtDate: 0 }])
     );
 
-  let mapped = (accountsResponse.data ?? [])
+  let mapped = accountsResponse.data
     .filter((a): a is typeof a & { id: string } => a.id !== null)
     .map((account) => ({
       ...account,
@@ -4091,11 +4120,20 @@ async function resolveConsolidationCompanyIds(
   }
 
   const groupCompanies = allGroupCompanies;
+  const companyById = new Map(groupCompanies.map((c) => [c.id, c]));
+  const missingCompanyIds = companyIds.filter((id) => !companyById.has(id));
+  if (missingCompanyIds.length > 0) {
+    return {
+      data: null,
+      error: {
+        message: `Consolidation company resolution omitted requested companies: ${missingCompanyIds.join(", ")}`
+      } as PostgrestError
+    };
+  }
   const selectedSet = new Set(companyIds);
 
   // Collect all ancestors of selected companies
   const ancestors = new Set<string>();
-  const companyById = new Map(groupCompanies.map((c) => [c.id, c]));
   for (const id of companyIds) {
     let current = companyById.get(id);
     while (current?.parentCompanyId) {

@@ -45,12 +45,14 @@ const account = {
 };
 
 type ClientOptions = {
+  accountDataNull?: boolean;
   balanceFailureCompanyId?: string;
   balanceDataNull?: boolean;
   balanceRowCount?: number;
   companyDataNull?: boolean;
   companyQueryFailure?: boolean;
   companyRowCount?: number;
+  seriesDataNull?: boolean;
   seriesFailureCompanyId?: string;
   translationFailureCompanyId?: string;
   translationRatesData?: unknown;
@@ -85,7 +87,11 @@ function makeReportClient(options: ClientOptions = {}) {
             }))
         );
       }
-      if (table === "accounts") return queryResult([account]);
+      if (table === "accounts") {
+        return options.accountDataNull
+          ? queryResult(null)
+          : queryResult([account]);
+      }
       throw new Error(`Unexpected table: ${table}`);
     },
     async rpc(name: string, args: Record<string, unknown>) {
@@ -111,6 +117,7 @@ function makeReportClient(options: ClientOptions = {}) {
         if (companyId === options.seriesFailureCompanyId) {
           return { data: null, error: { message: "series failed" } };
         }
+        if (options.seriesDataNull) return { data: null, error: null };
         const row = {
           accountId: account.id,
           periodEnd: bucket.end,
@@ -156,6 +163,21 @@ describe("financial statement period-series completeness", () => {
     expect(result.error).toBeNull();
     expect(result.isComplete).toBe(false);
   });
+
+  it("fails closed when the period-series RPC returns null data without an error", async () => {
+    const result = await getFinancialStatementPeriodSeries(
+      makeReportClient({ seriesDataNull: true }),
+      "group-1",
+      "company-1",
+      { buckets: [bucket] }
+    );
+
+    expect(result.data).toBeNull();
+    expect(result.isComplete).toBe(false);
+    expect(result.error?.message).toContain(
+      "period-series source returned no data"
+    );
+  });
 });
 
 describe("financial statement balance completeness", () => {
@@ -183,6 +205,21 @@ describe("financial statement balance completeness", () => {
     expect(result.data).toBeNull();
     expect(result.isComplete).toBe(false);
     expect(result.error?.message).toContain("balance source returned no data");
+  });
+
+  it("fails closed when account metadata returns null data without an error", async () => {
+    const result = await getFinancialStatementBalances(
+      makeReportClient({ accountDataNull: true }),
+      "group-1",
+      "company-1",
+      { startDate: "2026-01-01", endDate: "2026-01-31" }
+    );
+
+    expect(result.data).toBeNull();
+    expect(result.isComplete).toBe(false);
+    expect(result.error?.message).toContain(
+      "account metadata source returned no data"
+    );
   });
 });
 
@@ -282,6 +319,23 @@ describe("getConsolidatedPeriodSeries", () => {
 });
 
 describe("getConsolidatedBalances", () => {
+  it("fails closed when a requested company is omitted from company data", async () => {
+    const result = await getConsolidatedBalances(
+      makeReportClient(),
+      "group-1",
+      ["company-1", "company-missing"],
+      "USD",
+      "2026-01-31",
+      "2026-01-01"
+    );
+
+    expect(result.data).toBeNull();
+    expect(result.isComplete).toBe(false);
+    expect(result.error?.message).toContain(
+      "company resolution omitted requested companies"
+    );
+  });
+
   it("returns no partial data when a company balance fails", async () => {
     const result = await getConsolidatedBalances(
       makeReportClient({ balanceFailureCompanyId: "company-2" }),
