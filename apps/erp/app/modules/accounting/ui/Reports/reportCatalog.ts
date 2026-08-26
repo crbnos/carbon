@@ -209,16 +209,18 @@ export function filterSavedViewsByVisibleReportKeys<
     args.visibleReports.map((report) => report.key)
   );
 
-  return args.savedViews.filter((view) => visibleReportKeys.has(view.reportKey));
+  return args.savedViews.filter((view) =>
+    visibleReportKeys.has(view.reportKey)
+  );
 }
 
-export function filterReportPinsByVisibleEntries<T extends { reportKey: string }>(
-  args: {
-    pins: readonly T[];
-    visibleReports: readonly Pick<ReportDefinition, "key">[];
-    savedViews: readonly Pick<{ id: string }, "id">[];
-  }
-): T[] {
+export function filterReportPinsByVisibleEntries<
+  T extends { reportKey: string }
+>(args: {
+  pins: readonly T[];
+  visibleReports: readonly Pick<ReportDefinition, "key">[];
+  savedViews: readonly Pick<{ id: string }, "id">[];
+}): T[] {
   const visibleReportKeys = new Set(
     args.visibleReports.map((report) => report.key)
   );

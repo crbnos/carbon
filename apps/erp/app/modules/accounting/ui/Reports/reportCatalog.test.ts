@@ -118,9 +118,7 @@ describe("reportCatalog", () => {
     const visibleReports = reportCatalog.filter(
       (report) => report.key === "income-statement"
     );
-    const savedViews = [
-      { id: "visible-view", reportKey: "income-statement" }
-    ];
+    const savedViews = [{ id: "visible-view", reportKey: "income-statement" }];
     const pins = [
       { reportKey: "income-statement", pinned: true },
       { reportKey: "executive-pnl", pinned: true },

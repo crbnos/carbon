@@ -31,9 +31,9 @@ import {
   upsertReportPin
 } from "~/modules/accounting";
 import {
+  type ReportDefinition as CatalogReportDefinition,
   filterSavedViewsByVisibleReportKeys,
   getVisibleReportCatalog,
-  type ReportDefinition as CatalogReportDefinition,
   reportCatalog
 } from "~/modules/accounting/ui/Reports";
 import type { Role } from "~/types";
@@ -130,11 +130,13 @@ export default function ReportsIndexRoute() {
   }, [is]);
 
   const viewPermissions = useMemo(() => {
-    return [...new Set(
-      reportCatalog
-        .map((report) => report.requiredViewPermission)
-        .filter((permission) => can("view", permission))
-    )];
+    return [
+      ...new Set(
+        reportCatalog
+          .map((report) => report.requiredViewPermission)
+          .filter((permission) => can("view", permission))
+      )
+    ];
   }, [can]);
 
   const visibleReportCatalog = useMemo(
