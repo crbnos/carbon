@@ -1292,6 +1292,11 @@ serve(async (req: Request) => {
               let substitutionFactor: number | null = null;
               // Captured before the swap so the revert below can undo it whole.
               const quantityBeforeSupersession = quantity;
+              // Post-configuration, pre-supersession. A configuration rule may
+              // already have moved this line off the BOM's item, and that choice
+              // has to survive a failed successor lookup — see the fallback chain
+              // below.
+              const configuredItemId = itemId;
               if (methodType !== "Make to Order") {
                 const redirect = supersessionRedirect.get(itemId);
                 if (redirect) {
@@ -1302,13 +1307,28 @@ serve(async (req: Request) => {
                 }
               }
 
-              if (itemId !== child.data.itemId) {
+              // Fall back in order of preference: the successor, then whatever a
+              // configuration rule chose, then the BOM's own item. Reverting
+              // straight to `child.data.itemId` discarded the configuration
+              // rule's decision, which the supersession never overrode — it only
+              // redirected the item that rule had already picked.
+              //
+              // Each candidate is READ before it is accepted, so `itemId` and the
+              // fields derived from it can never disagree. `child.data.itemId`
+              // needs no read: its fields are the defaults already in scope.
+              // What this row WOULD be for if every lookup succeeds.
+              const intendedItemId = itemId;
+              for (const candidate of [
+                ...new Set([itemId, configuredItemId, child.data.itemId]),
+              ]) {
+                itemId = candidate;
+                if (candidate === child.data.itemId) break;
                 const item = await client
                   .from("item")
                   .select(
                     "readableId, readableIdWithRevision, type, name, itemTrackingType, itemCost(unitCost)"
                   )
-                  .eq("id", itemId)
+                  .eq("id", candidate)
                   .eq("companyId", companyId)
                   .single();
                 if (item.data) {
@@ -1322,18 +1342,20 @@ serve(async (req: Request) => {
                     item.data.itemTrackingType === "Serial";
                   requiresBatchTracking =
                     item.data.itemTrackingType === "Batch";
-                } else {
-                  // The successor is unreadable, so the swap cannot be completed.
-                  // Undo it WHOLLY. Reverting only `itemId` left the row on the
-                  // predecessor while KEEPING the successor's factor-scaled
-                  // quantity and a `substitutedFromItemId` pointing at the row's
-                  // own item — a plausible-looking but wrong quantity that
-                  // nothing downstream can detect or repair.
-                  itemId = child.data.itemId;
-                  quantity = quantityBeforeSupersession;
-                  substitutedFromItemId = null;
-                  substitutionFactor = null;
+                  break;
                 }
+              }
+
+              if (itemId !== intendedItemId) {
+                // The swap could not be completed, so undo it WHOLLY. Reverting
+                // only `itemId` left the row on a different item while KEEPING
+                // the successor's factor-scaled quantity and a
+                // `substitutedFromItemId` that no longer described it — a
+                // plausible-looking but wrong quantity nothing downstream can
+                // detect or repair.
+                quantity = quantityBeforeSupersession;
+                substitutedFromItemId = null;
+                substitutionFactor = null;
               }
 
               // `itemId` here is post-configuration and post-supersession, so
