@@ -7,11 +7,36 @@ import {
   getDebitCredit
 } from "./reportTree";
 
+type CsvText = {
+  readonly __csvText: true;
+  readonly value: string;
+};
+
+export function csvText(value: string | null | undefined): string | CsvText {
+  const text = value ?? "";
+  return /^\d+$/.test(text) ? { __csvText: true, value: text } : text;
+}
+
+function isCsvText(value: unknown): value is CsvText {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "__csvText" in value &&
+    value.__csvText === true &&
+    "value" in value &&
+    typeof value.value === "string"
+  );
+}
+
 function escapeCsvCell(value: unknown): string {
-  if (value == null) return "";
-  const text = String(value);
+  const textValue = isCsvText(value) ? value.value : value;
+  if (textValue == null) return "";
+  const text = String(textValue);
   const safeText =
-    typeof value === "string" && /^[=+\-@]/.test(text) ? `'${text}` : text;
+    isCsvText(value) ||
+    (typeof textValue === "string" && /^[\s\p{Cc}]*[=+\-@]/u.test(text))
+      ? `'${text}`
+      : text;
   return /[",\r\n]/.test(safeText)
     ? `"${safeText.replaceAll('"', '""')}"`
     : safeText;
@@ -30,7 +55,7 @@ export function serializeCsv(rows: Record<string, unknown>[]): string {
   ].join("\r\n");
 }
 
-export function serializeCsvRows(rows: string[][]): string {
+export function serializeCsvRows(rows: (string | number)[][]): string {
   return rows.map((row) => row.map(escapeCsvCell).join(",")).join("\r\n");
 }
 
@@ -53,7 +78,7 @@ export function downloadCsv(rows: Record<string, unknown>[], filename: string) {
   downloadCsvData(serializeCsv(rows), filename);
 }
 
-export function downloadCsvRows(rows: string[][], filename: string) {
+export function downloadCsvRows(rows: (string | number)[][], filename: string) {
   downloadCsvData(serializeCsvRows(rows), filename);
 }
 
@@ -70,7 +95,7 @@ export function exportPeriodReport(args: {
   const tree = accountsToFlatTree(filterAccounts(args.accounts, args.search));
   const rows = tree.map(({ data: account }) => {
     const row: Record<string, unknown> = {
-      Number: account.isGroup ? "" : (account.number ?? ""),
+      Number: account.isGroup ? "" : csvText(account.number),
       Account: account.name ?? ""
     };
     for (const bucket of args.periods) {
@@ -128,7 +153,7 @@ export function exportTrialBalance(args: {
     const netChange = account.netChange ?? 0;
     const { debit, credit } = getDebitCredit(netChange, account.class);
     const row: Record<string, unknown> = {
-      Number: account.isGroup ? "" : (account.number ?? ""),
+      Number: account.isGroup ? "" : csvText(account.number),
       Account: account.name ?? "",
       Beginning: endingBalance - netChange,
       Debits: debit,

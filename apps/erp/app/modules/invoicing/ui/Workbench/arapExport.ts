@@ -1,3 +1,5 @@
+import { csvText } from "../../../accounting/ui/Reports/exportReport";
+
 export type ARAPSide = "ar" | "ap";
 export type ARAPAgingMethod = "dueDate" | "documentDate";
 
@@ -83,8 +85,8 @@ export function buildARAPAgingExportRows({
       "Counterparty Type": counterpartyType,
       "Counterparty ID": partyIdOf(side, invoice),
       "Payment Term": "",
-      "Invoice ID": invoice.invoiceId,
-      "Invoice Number": invoice.invoiceNumber,
+      "Invoice ID": csvText(invoice.invoiceId),
+      "Invoice Number": csvText(invoice.invoiceNumber),
       "Document Type": invoice.documentType ?? "",
       "Due Date": invoice.dateDue ?? "",
       Currency: invoice.currencyCode,

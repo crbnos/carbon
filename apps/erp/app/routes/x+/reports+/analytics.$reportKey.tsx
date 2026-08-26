@@ -47,6 +47,7 @@ import {
 } from "~/modules/accounting/ui/Reports";
 import {
   buildPivotTree,
+  canDownloadPivot,
   pivotToCsvRows,
   UNASSIGNED_COLUMN_KEY
 } from "~/modules/accounting/ui/Reports/pivotData";
@@ -547,8 +548,10 @@ export default function AnalyticsReportRoute() {
     );
   };
 
+  const canDownload = canDownloadPivot(pivot.groups);
+
   const onDownload = () => {
-    if (pivot.groups.length === 0) return;
+    if (!canDownload) return;
 
     const tree = buildPivotTree({
       groups: pivot.groups,
@@ -586,6 +589,7 @@ export default function AnalyticsReportRoute() {
         currentUserId={currentUserId}
         accounts={scopeAccounts}
         onDownload={onDownload}
+        isDownloadDisabled={!canDownload}
       />
       <PivotTree
         pivot={pivot}

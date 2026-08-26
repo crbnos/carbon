@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { serializeCsvRows } from "./exportReport";
 import type { PivotGroupRow } from "./pivotData";
 import {
   applyPercentOfTotal,
   buildPivotTree,
+  canDownloadPivot,
   getPivotMeasureValue,
   LABEL_SORT_KEY,
   pivotToCsvRows,
@@ -27,6 +29,13 @@ const VALUE_NAMES: Record<string, string> = {
   x: "X-Ray",
   y: "Yankee"
 };
+
+describe("canDownloadPivot", () => {
+  it("requires at least one source group", () => {
+    expect(canDownloadPivot([])).toBe(false);
+    expect(canDownloadPivot([group("a", null, "c1", 10)])).toBe(true);
+  });
+});
 
 describe("buildPivotTree", () => {
   it("1-dim rows: sorts by ABS(measure) desc, Unassigned last, totals correct", () => {
@@ -529,12 +538,12 @@ describe("pivotToCsvRows", () => {
     // header + 5 tree nodes (Alpha, 2 children, Unassigned parent + child) + totals
     expect(csv).toEqual([
       ["", "Jan 2026", "Feb 2026", "Total"],
-      ["Alpha", "400", "50", "450"],
-      ["  Yankee", "300", "0", "300"],
-      ["  X-Ray", "100", "50", "150"],
-      ["Unassigned", "5", "0", "5"],
-      ["  Unassigned", "5", "0", "5"],
-      ["Total", "405", "50", "455"]
+      ["Alpha", 400, 50, 450],
+      ["  Yankee", 300, 0, 300],
+      ["  X-Ray", 100, 50, 150],
+      ["Unassigned", 5, 0, 5],
+      ["  Unassigned", 5, 0, 5],
+      ["Total", 405, 50, 455]
     ]);
   });
 
@@ -557,7 +566,7 @@ describe("pivotToCsvRows", () => {
     });
 
     expect(csv[0]).toEqual(["", "c1", "Total"]);
-    expect(csv[csv.length - 1]).toEqual(["Total", "10", "10"]);
+    expect(csv[csv.length - 1]).toEqual(["Total", 10, 10]);
   });
 
   it("exports the rendered percentage mode", () => {
@@ -612,5 +621,29 @@ describe("pivotToCsvRows", () => {
         percentOfTotal: false
       })
     ).toEqual([]);
+  });
+
+  it("serializes negative measures as numeric CSV cells", () => {
+    const built = buildPivotTree({
+      groups: [group("a", null, "c1", -40)],
+      valueNames: VALUE_NAMES,
+      columnKeys: ["c1"],
+      rowCount: 1,
+      measure: "amount"
+    });
+
+    const rows = pivotToCsvRows({
+      flatTree: built.flatTree,
+      columnKeys: built.columnKeys,
+      columnTotals: built.columnTotals,
+      grandTotal: built.grandTotal,
+      measure: "amount",
+      columnLabels: { c1: "January" }
+    });
+
+    expect(rows[1]).toEqual(["Alpha", -40, -40]);
+    expect(serializeCsvRows(rows)).toBe(
+      ",January,Total\r\nAlpha,-40,-40\r\nTotal,-40,-40"
+    );
   });
 });

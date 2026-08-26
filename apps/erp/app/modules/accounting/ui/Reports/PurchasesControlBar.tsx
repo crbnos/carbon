@@ -33,11 +33,13 @@ import {
 type PurchasesControlBarProps = {
   state: PivotState;
   onDownload: () => void;
+  isDownloadDisabled: boolean;
 };
 
 const PurchasesControlBar = ({
   state,
-  onDownload
+  onDownload,
+  isDownloadDisabled
 }: PurchasesControlBarProps) => {
   const { t } = useLingui();
   const [params, setParams] = useUrlParams();
@@ -320,6 +322,7 @@ const PurchasesControlBar = ({
         variant="secondary"
         leftIcon={<LuDownload />}
         onClick={onDownload}
+        isDisabled={isDownloadDisabled}
       >
         {t`Download`}
       </Button>

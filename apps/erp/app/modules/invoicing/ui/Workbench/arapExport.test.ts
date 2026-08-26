@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { serializeCsv } from "../../../accounting/ui/Reports/exportReport";
 import {
   buildARAPAgingExportRows,
   canDownloadARAPAgingExport
@@ -199,5 +200,32 @@ describe("buildARAPAgingExportRows", () => {
     expect(canDownloadARAPAgingExport(false, 1)).toBe(true);
     expect(canDownloadARAPAgingExport(false, 0)).toBe(false);
     expect(canDownloadARAPAgingExport(true, 1)).toBe(false);
+  });
+
+  it("preserves unsigned numeric-looking invoice identifiers as text", () => {
+    const rows = buildARAPAgingExportRows({
+      side: "ar",
+      baseCurrencyCode: "USD",
+      asOfDate: "2026-05-31",
+      agingMethod: "documentDate",
+      bucketDays: [30, 60, 90],
+      aging: [],
+      open: [
+        {
+          invoiceId: "00123",
+          invoiceNumber: "0007",
+          dateDue: null,
+          currencyCode: "USD",
+          exchangeRate: 1,
+          totalAmount: 10,
+          settled: 0,
+          openInCurrency: 10,
+          openInBase: 10,
+          customerId: "customer-1"
+        }
+      ]
+    });
+
+    expect(serializeCsv(rows)).toContain(",'00123,'0007,");
   });
 });

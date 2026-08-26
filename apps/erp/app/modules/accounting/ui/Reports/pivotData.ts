@@ -20,6 +20,10 @@ export type PivotGroupRow = {
   lineCount: number;
 };
 
+export function canDownloadPivot(groups: PivotGroupRow[]): boolean {
+  return groups.length > 0;
+}
+
 export type PivotRowNode = {
   key: string;
   rowValue1Id: string | null; // null = Unassigned
@@ -319,7 +323,7 @@ export function pivotToCsvRows(args: {
   measure: PivotMeasure;
   columnLabels: Record<string, string>;
   percentOfTotal?: boolean;
-}): string[][] {
+}): (string | number)[][] {
   const {
     flatTree,
     columnKeys,
@@ -334,7 +338,7 @@ export function pivotToCsvRows(args: {
 
   const formatPercent = (value: number): string => `${value.toFixed(1)}%`;
   const grandTotalValue = getPivotMeasureValue(grandTotal, measure);
-  const rows: string[][] = [];
+  const rows: (string | number)[][] = [];
   rows.push([
     "",
     ...columnKeys.map((key) => columnLabels[key] ?? key),
@@ -352,13 +356,13 @@ export function pivotToCsvRows(args: {
       ...columnKeys.map((key) =>
         percentOfTotal
           ? formatPercent(percents?.[key] ?? 0)
-          : String(getPivotMeasureValue(node.data.cells[key], measure))
+          : getPivotMeasureValue(node.data.cells[key], measure)
       ),
       percentOfTotal
         ? formatPercent(
             grandTotalValue === 0 ? 0 : (rowTotalValue / grandTotalValue) * 100
           )
-        : String(rowTotalValue)
+        : rowTotalValue
     ]);
   }
 
@@ -369,11 +373,11 @@ export function pivotToCsvRows(args: {
         ? formatPercent(
             getPivotMeasureValue(columnTotals[key], measure) === 0 ? 0 : 100
           )
-        : String(getPivotMeasureValue(columnTotals[key], measure))
+        : getPivotMeasureValue(columnTotals[key], measure)
     ),
     percentOfTotal
       ? formatPercent(grandTotalValue === 0 ? 0 : 100)
-      : String(grandTotalValue)
+      : grandTotalValue
   ]);
 
   return rows;

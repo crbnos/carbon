@@ -61,6 +61,7 @@ type PivotControlBarProps = {
   currentUserId: string;
   accounts: PivotAccount[];
   onDownload: () => void;
+  isDownloadDisabled: boolean;
 };
 
 const PivotControlBar = ({
@@ -71,7 +72,8 @@ const PivotControlBar = ({
   activeViewId,
   currentUserId,
   accounts,
-  onDownload
+  onDownload,
+  isDownloadDisabled
 }: PivotControlBarProps) => {
   const { t } = useLingui();
   const [params, setParams] = useUrlParams();
@@ -443,6 +445,7 @@ const PivotControlBar = ({
           variant="secondary"
           leftIcon={<LuDownload />}
           onClick={onDownload}
+          isDisabled={isDownloadDisabled}
         >
           {t`Download`}
         </Button>

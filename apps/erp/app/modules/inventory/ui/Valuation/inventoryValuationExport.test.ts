@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { serializeCsv } from "../../../accounting/ui/Reports/exportReport";
 import { buildInventoryValuationExportRows } from "./inventoryValuationExport";
 
 describe("buildInventoryValuationExportRows", () => {
@@ -120,5 +121,35 @@ describe("buildInventoryValuationExportRows", () => {
       "Location ID": "loc-1",
       "Item ID": "item-1"
     });
+  });
+
+  it("preserves unsigned numeric-looking item identifiers as text", () => {
+    const rows = buildInventoryValuationExportRows({
+      rows: [
+        {
+          locationId: "loc-1",
+          locationName: "Main",
+          itemId: "00123",
+          readableIdWithRevision: "0007",
+          name: "Widget",
+          thumbnailPath: "",
+          type: "Part",
+          costingMethod: "Standard",
+          replenishmentSystem: "Make",
+          quantityOnHand: 12,
+          quantityOnHold: 2,
+          quantityRejected: 1,
+          unitOfMeasureCode: "EA",
+          unitCost: 4.5,
+          totalValue: 54
+        }
+      ],
+      asOfDate: "2026-05-31",
+      groupBy: "item",
+      locationId: null,
+      locationName: null
+    });
+
+    expect(serializeCsv(rows)).toContain(",'00123,'0007,");
   });
 });

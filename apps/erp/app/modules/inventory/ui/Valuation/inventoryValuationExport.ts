@@ -1,3 +1,4 @@
+import { csvText } from "../../../accounting/ui/Reports/exportReport";
 import type { InventoryValuationRow } from "../../types";
 
 type InventoryValuationExportArgs = {
@@ -23,8 +24,8 @@ export function buildInventoryValuationExportRows({
       : "All Locations",
     "Location ID": row.locationId,
     Location: row.locationName,
-    "Item ID": row.itemId,
-    Item: row.readableIdWithRevision,
+    "Item ID": csvText(row.itemId),
+    Item: csvText(row.readableIdWithRevision),
     "Item Name": row.name,
     "Item Type": row.type,
     "Costing Method": row.costingMethod,

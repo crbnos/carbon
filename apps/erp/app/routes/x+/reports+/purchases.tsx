@@ -32,6 +32,7 @@ import {
 } from "~/modules/accounting/ui/Reports";
 import {
   buildPivotTree,
+  canDownloadPivot,
   pivotToCsvRows,
   UNASSIGNED_COLUMN_KEY
 } from "~/modules/accounting/ui/Reports/pivotData";
@@ -279,8 +280,10 @@ export default function PurchasesReportRoute() {
     );
   };
 
+  const canDownload = canDownloadPivot(pivot.groups);
+
   const onDownload = () => {
-    if (pivot.groups.length === 0) return;
+    if (!canDownload) return;
 
     const tree = buildPivotTree({
       groups: pivot.groups,
@@ -309,7 +312,11 @@ export default function PurchasesReportRoute() {
 
   return (
     <VStack spacing={0} className="h-full">
-      <PurchasesControlBar state={state} onDownload={onDownload} />
+      <PurchasesControlBar
+        state={state}
+        onDownload={onDownload}
+        isDownloadDisabled={!canDownload}
+      />
       <PivotTree
         pivot={pivot}
         state={state}
