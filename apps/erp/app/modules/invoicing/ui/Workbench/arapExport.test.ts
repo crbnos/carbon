@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { buildARAPAgingExportRows } from "./arapExport";
+import {
+  buildARAPAgingExportRows,
+  canDownloadARAPAgingExport
+} from "./arapExport";
 
 describe("buildARAPAgingExportRows", () => {
   it("exports counterparty aging rows and every loaded open invoice row", () => {
     const rows = buildARAPAgingExportRows({
       side: "ar",
+      baseCurrencyCode: "USD",
       asOfDate: "2026-05-31",
       agingMethod: "documentDate",
       bucketDays: [15, 45, 75],
@@ -65,18 +69,19 @@ describe("buildARAPAgingExportRows", () => {
         "Invoice Number": "",
         "Document Type": "",
         "Due Date": "",
-        Currency: "",
-        Current: 100,
-        "1-15": 20,
-        "16-45": 30,
-        "46-75": 40,
-        "76+": 50,
-        Unapplied: -10,
-        "Open Amount": 230,
-        "Open Amount in Currency": "",
-        "Total Amount": "",
-        Settled: "",
-        "Exchange Rate": ""
+        Currency: "USD",
+        "Base Currency": "USD",
+        "Current (Base Currency)": 100,
+        "1-15 (Base Currency)": 20,
+        "16-45 (Base Currency)": 30,
+        "46-75 (Base Currency)": 40,
+        "76+ (Base Currency)": 50,
+        "Unapplied (Base Currency)": -10,
+        "Open Amount (Base Currency)": 230,
+        "Open Amount (Invoice Currency)": "",
+        "Total Amount (Invoice Currency)": "",
+        "Settled (Invoice Currency)": "",
+        "Exchange Rate (Invoice to Base)": ""
       },
       {
         "As Of Date": "2026-05-31",
@@ -92,17 +97,18 @@ describe("buildARAPAgingExportRows", () => {
         "Document Type": "Invoice",
         "Due Date": "2026-05-10",
         Currency: "USD",
-        Current: "",
-        "1-15": "",
-        "16-45": "",
-        "46-75": "",
-        "76+": "",
-        Unapplied: "",
-        "Open Amount": 230,
-        "Open Amount in Currency": 230,
-        "Total Amount": 250,
-        Settled: 20,
-        "Exchange Rate": 1
+        "Base Currency": "USD",
+        "Current (Base Currency)": "",
+        "1-15 (Base Currency)": "",
+        "16-45 (Base Currency)": "",
+        "46-75 (Base Currency)": "",
+        "76+ (Base Currency)": "",
+        "Unapplied (Base Currency)": "",
+        "Open Amount (Base Currency)": 230,
+        "Open Amount (Invoice Currency)": 230,
+        "Total Amount (Invoice Currency)": 250,
+        "Settled (Invoice Currency)": 20,
+        "Exchange Rate (Invoice to Base)": 1
       },
       {
         "As Of Date": "2026-05-31",
@@ -118,17 +124,18 @@ describe("buildARAPAgingExportRows", () => {
         "Document Type": "Credit Memo",
         "Due Date": "",
         Currency: "EUR",
-        Current: "",
-        "1-15": "",
-        "16-45": "",
-        "46-75": "",
-        "76+": "",
-        Unapplied: "",
-        "Open Amount": -55,
-        "Open Amount in Currency": -50,
-        "Total Amount": -50,
-        Settled: 0,
-        "Exchange Rate": 1.1
+        "Base Currency": "USD",
+        "Current (Base Currency)": "",
+        "1-15 (Base Currency)": "",
+        "16-45 (Base Currency)": "",
+        "46-75 (Base Currency)": "",
+        "76+ (Base Currency)": "",
+        "Unapplied (Base Currency)": "",
+        "Open Amount (Base Currency)": -55,
+        "Open Amount (Invoice Currency)": -50,
+        "Total Amount (Invoice Currency)": -50,
+        "Settled (Invoice Currency)": 0,
+        "Exchange Rate (Invoice to Base)": 1.1
       }
     ]);
   });
@@ -136,6 +143,7 @@ describe("buildARAPAgingExportRows", () => {
   it("uses supplier identity for AP exports and includes ungrouped loaded invoices", () => {
     const rows = buildARAPAgingExportRows({
       side: "ap",
+      baseCurrencyCode: "EUR",
       asOfDate: "2026-06-30",
       agingMethod: "dueDate",
       bucketDays: [30, 60, 90],
@@ -171,18 +179,25 @@ describe("buildARAPAgingExportRows", () => {
         "Document Type": "",
         "Due Date": "2026-06-01",
         Currency: "USD",
-        Current: "",
-        "1-30": "",
-        "31-60": "",
-        "61-90": "",
-        "91+": "",
-        Unapplied: "",
-        "Open Amount": 80,
-        "Open Amount in Currency": 80,
-        "Total Amount": 80,
-        Settled: 0,
-        "Exchange Rate": 1
+        "Base Currency": "EUR",
+        "Current (Base Currency)": "",
+        "1-30 (Base Currency)": "",
+        "31-60 (Base Currency)": "",
+        "61-90 (Base Currency)": "",
+        "91+ (Base Currency)": "",
+        "Unapplied (Base Currency)": "",
+        "Open Amount (Base Currency)": 80,
+        "Open Amount (Invoice Currency)": 80,
+        "Total Amount (Invoice Currency)": 80,
+        "Settled (Invoice Currency)": 0,
+        "Exchange Rate (Invoice to Base)": 1
       }
     ]);
+  });
+
+  it("blocks downloads when either report source query failed", () => {
+    expect(canDownloadARAPAgingExport(false, 1)).toBe(true);
+    expect(canDownloadARAPAgingExport(false, 0)).toBe(false);
+    expect(canDownloadARAPAgingExport(true, 1)).toBe(false);
   });
 });

@@ -33,7 +33,12 @@ import { Link, useFetcher, useNavigate } from "react-router";
 import { CustomerAvatar, DateTime, SupplierAvatar, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { IndeterminateCheckbox } from "~/components/Table/components";
-import { useCurrencyFormatter, usePermissions, useUrlParams } from "~/hooks";
+import {
+  useCurrencyFormatter,
+  usePermissions,
+  useUrlParams,
+  useUser
+} from "~/hooks";
 import { downloadCsv } from "~/modules/accounting/ui/Reports";
 import { path } from "~/utils/path";
 import {
@@ -41,6 +46,7 @@ import {
   type ARAPAgingMethod,
   type ARAPSide,
   buildARAPAgingExportRows,
+  canDownloadARAPAgingExport,
   type OpenInvoiceRow
 } from "./arapExport";
 
@@ -58,6 +64,7 @@ type ARAPWorkbenchProps = {
   asOfDate: string;
   agingMethod: ARAPAgingMethod;
   bucketDays: [number, number, number];
+  dataError?: boolean;
   // Overrides the table title. Defaults to Receivables/Payables (the invoicing
   // workbench); the aging reports pass "AR Aging" / "AP Aging".
   title?: string;
@@ -85,9 +92,11 @@ export function ARAPWorkbench({
   asOfDate,
   agingMethod,
   bucketDays,
-  title
+  title,
+  dataError
 }: ARAPWorkbenchProps) {
   const { t } = useLingui();
+  const { company } = useUser();
   const [, setParams] = useUrlParams();
   const navigate = useNavigate();
   const adjustFetcher = useFetcher();
@@ -385,23 +394,33 @@ export function ARAPWorkbench({
     () =>
       buildARAPAgingExportRows({
         side,
+        baseCurrencyCode: company.baseCurrencyCode,
         aging,
         open,
         asOfDate,
         agingMethod,
         bucketDays
       }),
-    [side, aging, open, asOfDate, agingMethod, bucketDays]
+    [
+      side,
+      company.baseCurrencyCode,
+      aging,
+      open,
+      asOfDate,
+      agingMethod,
+      bucketDays
+    ]
   );
+  const canDownload = canDownloadARAPAgingExport(dataError, exportRows.length);
   const onDownload = useCallback(() => {
-    if (exportRows.length === 0) return;
+    if (!canDownload) return;
     const filenameTitle =
       reportTitle
         .toLowerCase()
         .replace(/[^a-z0-9]+/gi, "-")
         .replace(/^-|-$/g, "") || side;
     downloadCsv(exportRows, `${filenameTitle}-${asOfDate}.csv`);
-  }, [exportRows, reportTitle, side, asOfDate]);
+  }, [canDownload, exportRows, reportTitle, side, asOfDate]);
 
   const filters = (
     <HStack>
@@ -509,7 +528,7 @@ export function ARAPWorkbench({
         variant="secondary"
         leftIcon={<LuDownload />}
         onClick={onDownload}
-        isDisabled={exportRows.length === 0}
+        isDisabled={!canDownload}
       >
         <Trans>Download</Trans>
       </Button>

@@ -31,6 +31,7 @@ export type OpenInvoiceRow = {
 
 type ARAPAgingExportArgs = {
   side: ARAPSide;
+  baseCurrencyCode: string;
   aging: AgingRow[];
   open: OpenInvoiceRow[];
   asOfDate: string;
@@ -45,6 +46,7 @@ const partyIdOf = (
 
 export function buildARAPAgingExportRows({
   side,
+  baseCurrencyCode,
   aging,
   open,
   asOfDate,
@@ -76,6 +78,7 @@ export function buildARAPAgingExportRows({
       Side: sideLabel,
       "Aging Method": agingMethod,
       "Bucket Days": bucketDays.join(","),
+      "Base Currency": baseCurrencyCode,
       "Row Type": "Invoice",
       "Counterparty Type": counterpartyType,
       "Counterparty ID": partyIdOf(side, invoice),
@@ -85,17 +88,17 @@ export function buildARAPAgingExportRows({
       "Document Type": invoice.documentType ?? "",
       "Due Date": invoice.dateDue ?? "",
       Currency: invoice.currencyCode,
-      Current: "",
-      [bucketHeaders[0]]: "",
-      [bucketHeaders[1]]: "",
-      [bucketHeaders[2]]: "",
-      [bucketHeaders[3]]: "",
-      Unapplied: "",
-      "Open Amount": invoice.openInBase,
-      "Open Amount in Currency": invoice.openInCurrency,
-      "Total Amount": invoice.totalAmount,
-      Settled: invoice.settled,
-      "Exchange Rate": invoice.exchangeRate
+      "Current (Base Currency)": "",
+      [`${bucketHeaders[0]} (Base Currency)`]: "",
+      [`${bucketHeaders[1]} (Base Currency)`]: "",
+      [`${bucketHeaders[2]} (Base Currency)`]: "",
+      [`${bucketHeaders[3]} (Base Currency)`]: "",
+      "Unapplied (Base Currency)": "",
+      "Open Amount (Base Currency)": invoice.openInBase,
+      "Open Amount (Invoice Currency)": invoice.openInCurrency,
+      "Total Amount (Invoice Currency)": invoice.totalAmount,
+      "Settled (Invoice Currency)": invoice.settled,
+      "Exchange Rate (Invoice to Base)": invoice.exchangeRate
     });
   };
 
@@ -109,6 +112,7 @@ export function buildARAPAgingExportRows({
       Side: sideLabel,
       "Aging Method": agingMethod,
       "Bucket Days": bucketDays.join(","),
+      "Base Currency": baseCurrencyCode,
       "Row Type": "Counterparty",
       "Counterparty Type": counterpartyType,
       "Counterparty ID": partyId,
@@ -117,18 +121,18 @@ export function buildARAPAgingExportRows({
       "Invoice Number": "",
       "Document Type": "",
       "Due Date": "",
-      Currency: "",
-      Current: agingRow.current,
-      [bucketHeaders[0]]: agingRow.bucket1,
-      [bucketHeaders[1]]: agingRow.bucket2,
-      [bucketHeaders[2]]: agingRow.bucket3,
-      [bucketHeaders[3]]: agingRow.bucket4,
-      Unapplied: agingRow.unapplied,
-      "Open Amount": agingRow.total,
-      "Open Amount in Currency": "",
-      "Total Amount": "",
-      Settled: "",
-      "Exchange Rate": ""
+      Currency: baseCurrencyCode,
+      "Current (Base Currency)": agingRow.current,
+      [`${bucketHeaders[0]} (Base Currency)`]: agingRow.bucket1,
+      [`${bucketHeaders[1]} (Base Currency)`]: agingRow.bucket2,
+      [`${bucketHeaders[2]} (Base Currency)`]: agingRow.bucket3,
+      [`${bucketHeaders[3]} (Base Currency)`]: agingRow.bucket4,
+      "Unapplied (Base Currency)": agingRow.unapplied,
+      "Open Amount (Base Currency)": agingRow.total,
+      "Open Amount (Invoice Currency)": "",
+      "Total Amount (Invoice Currency)": "",
+      "Settled (Invoice Currency)": "",
+      "Exchange Rate (Invoice to Base)": ""
     });
 
     for (const invoice of invoicesByParty.get(partyId) ?? []) {
@@ -142,4 +146,11 @@ export function buildARAPAgingExportRows({
   }
 
   return rows;
+}
+
+export function canDownloadARAPAgingExport(
+  dataError: boolean | undefined,
+  rowCount: number
+): boolean {
+  return !dataError && rowCount > 0;
 }

@@ -90,3 +90,31 @@ app/utils/dev-login.ts: 'configuredEmail' is possibly 'undefined'.
 
 - App-wide typecheck is blocked by the checkout's unresolved Lingui module declarations and an unrelated existing `dev-login.ts` diagnostic.
 - The global `pnpm` shim is broken in this environment, so verification used local app/root binaries directly.
+
+## Reviewer Fix Evidence (2026-08-26)
+
+- Added authenticated-company `baseCurrencyCode` to the AR/AP pure export input via `useUser().company.baseCurrencyCode`.
+- Counterparty rows now identify `Currency` and `Base Currency` as the company's base currency, and base-denominated aging/current/unapplied/open columns are explicitly labeled. Invoice rows retain invoice `Currency` and invoice-currency amount columns.
+- AR/AP aging/open loader failures now become an optional `dataError` prop on `ARAPWorkbench` across the report and existing receivables/payables routes. The Download button and click handler both block when the signal is present.
+- Added the pure `canDownloadARAPAgingExport` regression test for non-empty, empty, and partial-data/error cases.
+
+Fix verification:
+
+```text
+vitest run app/modules/invoicing/ui/Workbench/arapExport.test.ts
+Test Files 1 passed (1)
+Tests 3 passed (3)
+```
+
+```text
+vitest run app/modules/invoicing/ui/Workbench/arapExport.test.ts app/modules/inventory/ui/Valuation/inventoryValuationExport.test.ts
+Test Files 2 passed (2)
+Tests 5 passed (5)
+```
+
+```text
+biome check --write [7 changed Task 4 files]
+Checked 7 files in 32ms. Fixed 1 file.
+```
+
+The app `tsgo --noEmit` check still reaches only the pre-existing missing Lingui module declarations in the touched UI/routes (plus the unrelated `dev-login.ts` diagnostic); it reports no Task 4-specific type diagnostic before those environment errors.

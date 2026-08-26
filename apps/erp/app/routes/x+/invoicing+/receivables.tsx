@@ -63,6 +63,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     agingMethod,
     bucketDays,
     result: tieOut.data ?? null,
+    dataError: Boolean(aging.error || open.error),
     aging: aging.data ?? [],
     open: (open.data ?? []).map((r) => ({
       ...r,
@@ -73,12 +74,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function ReceivablesRoute() {
-  const { asOfDate, agingMethod, bucketDays, result, aging, open } =
+  const { asOfDate, agingMethod, bucketDays, result, dataError, aging, open } =
     useLoaderData<typeof loader>();
   return (
     <ARAPWorkbench
       side="ar"
       result={result}
+      dataError={dataError}
       aging={aging}
       open={open}
       asOfDate={asOfDate}
