@@ -571,7 +571,9 @@ export default function AnalyticsReportRoute() {
       grandTotal: tree.grandTotal,
       measure: state.measure,
       columnLabels,
-      percentOfTotal: state.percentOfTotal
+      percentOfTotal: state.percentOfTotal,
+      locale,
+      totalLabel: t`Total`
     });
     if (rows.length === 0) return;
 

@@ -401,8 +401,12 @@ describe("getConsolidatedPeriodSeries", () => {
 });
 
 function makePivotClient(options: {
+  dimensionLookupError?: boolean;
   dimensionMetadataDataNull?: boolean;
+  journalPivotDataNull?: boolean;
+  purchaseLookupError?: boolean;
   purchaseMetadataDataNull?: boolean;
+  purchasePivotDataNull?: boolean;
 }) {
   const pivotRows = [
     {
@@ -423,18 +427,25 @@ function makePivotClient(options: {
           ? queryResult(null)
           : queryResult([{ id: "dimension-1", entityType: "Custom" }]);
       }
+      if (table === "dimensionValue" && options.dimensionLookupError) {
+        return queryResult(null, { message: "dimension value lookup failed" });
+      }
       if (table === "supplier") {
         return options.purchaseMetadataDataNull
           ? queryResult(null)
-          : queryResult([{ id: "value-1", name: "Supplier 1" }]);
+          : options.purchaseLookupError
+            ? queryResult(null, { message: "purchase value lookup failed" })
+            : queryResult([{ id: "value-1", name: "Supplier 1" }]);
       }
       return queryResult([]);
     },
     async rpc(name: string) {
-      if (
-        name === "journalDimensionPivot" ||
-        name === "purchaseLineDimensionPivot"
-      ) {
+      if (name === "journalDimensionPivot") {
+        if (options.journalPivotDataNull) return { data: null, error: null };
+        return { data: pivotRows, error: null };
+      }
+      if (name === "purchaseLineDimensionPivot") {
+        if (options.purchasePivotDataNull) return { data: null, error: null };
         return { data: pivotRows, error: null };
       }
       throw new Error(`Unexpected RPC: ${name}`);
@@ -443,6 +454,54 @@ function makePivotClient(options: {
 }
 
 describe("pivot metadata completeness", () => {
+  it("fails closed when the journal pivot RPC returns null data", async () => {
+    const result = await getDimensionPivot(
+      makePivotClient({ journalPivotDataNull: true }),
+      {
+        companyId: "company-1",
+        companyGroupId: "group-1",
+        report: { accountScope: { classes: ["Revenue"] } },
+        startDate: "2026-01-01",
+        endDate: "2026-01-31",
+        periodEnds: [bucket.end],
+        state: {
+          rows: [],
+          columnAxis: { type: "period" },
+          filters: [],
+          accountIds: []
+        }
+      } as never
+    );
+
+    expect(result.data).toBeNull();
+    expect(result.error?.message).toContain(
+      "Journal pivot source returned no data"
+    );
+  });
+
+  it("fails closed when the purchase pivot RPC returns null data", async () => {
+    const result = await getPurchaseLinePivot(
+      makePivotClient({ purchasePivotDataNull: true }),
+      {
+        companyId: "company-1",
+        startDate: "2026-01-01",
+        endDate: "2026-01-31",
+        periodEnds: [bucket.end],
+        state: {
+          rows: [],
+          columnAxis: { type: "period" },
+          filters: [],
+          accountIds: []
+        }
+      } as never
+    );
+
+    expect(result.data).toBeNull();
+    expect(result.error?.message).toContain(
+      "Purchase pivot source returned no data"
+    );
+  });
+
   it("fails closed when dimension metadata returns null data", async () => {
     const result = await getDimensionPivot(
       makePivotClient({ dimensionMetadataDataNull: true }),
@@ -468,6 +527,29 @@ describe("pivot metadata completeness", () => {
     );
   });
 
+  it("propagates dimension value lookup errors", async () => {
+    const result = await getDimensionPivot(
+      makePivotClient({ dimensionLookupError: true }),
+      {
+        companyId: "company-1",
+        companyGroupId: "group-1",
+        report: { accountScope: { classes: ["Revenue"] } },
+        startDate: "2026-01-01",
+        endDate: "2026-01-31",
+        periodEnds: [bucket.end],
+        state: {
+          rows: ["dimension-1"],
+          columnAxis: { type: "period" },
+          filters: [],
+          accountIds: []
+        }
+      } as never
+    );
+
+    expect(result.data).toBeNull();
+    expect(result.error?.message).toContain("dimension value lookup failed");
+  });
+
   it("fails closed when purchase value metadata returns null data", async () => {
     const result = await getPurchaseLinePivot(
       makePivotClient({ purchaseMetadataDataNull: true }),
@@ -489,6 +571,27 @@ describe("pivot metadata completeness", () => {
     expect(result.error?.message).toContain(
       "Purchase pivot metadata source returned no data"
     );
+  });
+
+  it("propagates purchase value lookup errors", async () => {
+    const result = await getPurchaseLinePivot(
+      makePivotClient({ purchaseLookupError: true }),
+      {
+        companyId: "company-1",
+        startDate: "2026-01-01",
+        endDate: "2026-01-31",
+        periodEnds: [bucket.end],
+        state: {
+          rows: ["supplier"],
+          columnAxis: { type: "period" },
+          filters: [],
+          accountIds: []
+        }
+      } as never
+    );
+
+    expect(result.data).toBeNull();
+    expect(result.error?.message).toContain("purchase value lookup failed");
   });
 });
 

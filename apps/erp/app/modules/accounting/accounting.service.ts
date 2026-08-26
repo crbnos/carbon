@@ -1134,10 +1134,18 @@ export async function getDimensionPivot(
   });
 
   if (result.error) return { data: null, error: result.error };
+  if (result.data == null) {
+    return {
+      data: null,
+      error: {
+        message: "Journal pivot source returned no data"
+      } as PostgrestError
+    };
+  }
 
   // The generated Returns can't express nullability: NULL rowValue/columnKey
   // is the Unassigned bucket (line carries no tag for that dimension).
-  const rows = (result.data ?? []) as Array<{
+  const rows = result.data as Array<{
     rowValue1Id: string | null;
     rowValue2Id: string | null;
     columnKey: string | null;
@@ -1234,7 +1242,10 @@ export async function getDimensionPivot(
         valueIds: [...(valueIdsByDimension.get(d.id) ?? [])]
       }))
     );
-    if (resolvedValueNames === null) {
+    if (resolvedValueNames.error) {
+      return { data: null, error: resolvedValueNames.error };
+    }
+    if (resolvedValueNames.data === null) {
       return {
         data: null,
         error: {
@@ -1242,7 +1253,7 @@ export async function getDimensionPivot(
         } as PostgrestError
       };
     }
-    valueNames = resolvedValueNames;
+    valueNames = resolvedValueNames.data;
   }
 
   return {
@@ -1384,8 +1395,16 @@ export async function getPurchaseLinePivot(
   });
 
   if (result.error) return { data: null, error: result.error };
+  if (result.data == null) {
+    return {
+      data: null,
+      error: {
+        message: "Purchase pivot source returned no data"
+      } as PostgrestError
+    };
+  }
 
-  const rows = (result.data ?? []) as Array<{
+  const rows = result.data as Array<{
     rowValue1Id: string | null;
     rowValue2Id: string | null;
     columnKey: string | null;
@@ -1460,7 +1479,10 @@ export async function getPurchaseLinePivot(
         }))
         .filter((request) => request.entityType)
     );
-    if (resolvedValueNames === null) {
+    if (resolvedValueNames.error) {
+      return { data: null, error: resolvedValueNames.error };
+    }
+    if (resolvedValueNames.data === null) {
       return {
         data: null,
         error: {
@@ -1468,7 +1490,7 @@ export async function getPurchaseLinePivot(
         } as PostgrestError
       };
     }
-    valueNames = resolvedValueNames;
+    valueNames = resolvedValueNames.data;
   }
 
   return {
@@ -1539,38 +1561,55 @@ export async function getPurchaseLinePivotLines(
  * dimension's entityType. Entity-backed types resolve through the shared
  * entityType → source-table mapping (getEntityValuesByIds — the same helper
  * getJournalLineDimensions uses); Custom resolves from dimensionValue.
- * Lookup failures degrade to missing entries (callers fall back to the id).
+ * A missing response is returned as null data so callers can produce their
+ * context-specific incomplete result. Query errors are preserved.
  */
+type DimensionValueBatch = {
+  data: { id: string; name: string }[] | null;
+  error: PostgrestError | null;
+};
+
 async function resolveDimensionValueNames(
   client: SupabaseClient<Database>,
   requests: { entityType: string; valueIds: string[] }[]
-): Promise<Record<string, string> | null> {
+): Promise<{
+  data: Record<string, string> | null;
+  error: PostgrestError | null;
+}> {
   const batches = await Promise.all(
     requests.map(async ({ entityType, valueIds }) => {
-      if (valueIds.length === 0) return [];
+      if (valueIds.length === 0) return { data: [], error: null };
       if (entityType === "Custom") {
         const res = await client
           .from("dimensionValue")
           .select("id, name")
           .in("id", valueIds);
-        if (res.data == null && !res.error) return null;
-        return res.data ?? [];
+        return {
+          data: res.data,
+          error: res.error
+        } as DimensionValueBatch;
       }
       const res = await getEntityValuesByIds(client, entityType, valueIds);
-      if (res.data == null && !res.error) return null;
-      return res.data ?? [];
+      return {
+        data: res.data,
+        error: res.error
+      } as DimensionValueBatch;
     })
   );
 
-  if (batches.some((batch) => batch === null)) return null;
+  const failed = batches.find((batch) => batch.error);
+  if (failed?.error) return { data: null, error: failed.error };
+  if (batches.some((batch) => batch.data === null)) {
+    return { data: null, error: null };
+  }
 
   const valueNames: Record<string, string> = {};
   for (const batch of batches) {
-    for (const item of batch as { id: string; name: string }[]) {
+    for (const item of batch.data ?? []) {
       valueNames[item.id] = item.name;
     }
   }
-  return valueNames;
+  return { data: valueNames, error: null };
 }
 
 // Named, shareable saved pivot views for the analytics reports. RLS handles

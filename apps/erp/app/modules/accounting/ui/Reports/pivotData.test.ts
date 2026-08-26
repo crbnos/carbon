@@ -600,18 +600,20 @@ describe("pivotToCsvRows", () => {
         grandTotal: built.grandTotal,
         measure: "amount",
         columnLabels: { c1: "January", c2: "February" },
-        percentOfTotal: true
+        percentOfTotal: true,
+        locale: "de-DE",
+        totalLabel: "Gesamt"
       })
     ).toEqual([
       [
         "",
         csvIdentifier("January"),
         csvIdentifier("February"),
-        csvIdentifier("Total")
+        csvIdentifier("Gesamt")
       ],
-      [csvIdentifier("Beta"), "75.0%", "50.0%", "62.5%"],
-      [csvIdentifier("Alpha"), "25.0%", "50.0%", "37.5%"],
-      [csvIdentifier("Total"), "100.0%", "100.0%", "100.0%"]
+      [csvIdentifier("Beta"), "75,0 %", "50,0 %", "62,5 %"],
+      [csvIdentifier("Alpha"), "25,0 %", "50,0 %", "37,5 %"],
+      [csvIdentifier("Gesamt"), "100,0 %", "100,0 %", "100,0 %"]
     ]);
   });
 

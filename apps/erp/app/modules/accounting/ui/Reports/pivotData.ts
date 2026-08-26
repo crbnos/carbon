@@ -327,6 +327,8 @@ export function pivotToCsvRows(args: {
   measure: PivotMeasure;
   columnLabels: Record<string, string>;
   percentOfTotal?: boolean;
+  locale?: string;
+  totalLabel?: string;
 }): CsvCell[][] {
   const {
     flatTree,
@@ -335,18 +337,26 @@ export function pivotToCsvRows(args: {
     grandTotal,
     measure,
     columnLabels,
-    percentOfTotal = false
+    percentOfTotal = false,
+    locale,
+    totalLabel = "Total"
   } = args;
 
   if (flatTree.length === 0) return [];
 
-  const formatPercent = (value: number): string => `${value.toFixed(1)}%`;
+  const percentFormatter = new Intl.NumberFormat(locale, {
+    style: "percent",
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  });
+  const formatPercent = (value: number): string =>
+    percentFormatter.format(value / 100);
   const grandTotalValue = getPivotMeasureValue(grandTotal, measure);
   const rows: CsvCell[][] = [];
   rows.push([
     "",
     ...columnKeys.map((key) => csvIdentifier(columnLabels[key] ?? key)),
-    csvIdentifier("Total")
+    csvIdentifier(totalLabel)
   ]);
 
   for (const node of flatTree) {
@@ -371,7 +381,7 @@ export function pivotToCsvRows(args: {
   }
 
   rows.push([
-    csvIdentifier("Total"),
+    csvIdentifier(totalLabel),
     ...columnKeys.map((key) =>
       percentOfTotal
         ? formatPercent(
