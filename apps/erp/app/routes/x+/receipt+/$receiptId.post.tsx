@@ -8,6 +8,7 @@ import {
   isBlocked
 } from "@carbon/ee/storage-rules.server";
 import { trigger } from "@carbon/jobs";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
@@ -197,6 +198,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  /** Set by the catch below when the post was rolled back to Draft. */
+  let reverted = false;
+
   try {
     const receiptMetadata = await serviceRole
       .from("receipt")
@@ -296,6 +300,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (thrown instanceof Response) throw thrown;
 
     // Only reset to Draft for actual errors
+    reverted = true;
     await client
       .from("receipt")
       .update({
@@ -311,6 +316,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
     companyId,
     actorId: userId
   });
+
+  // Below the catch is not the same as "only on success": the catch resets the
+  // receipt to Draft and then falls through to here. `reverted` is what makes
+  // this a post that actually stuck. (The raiseMoment above has the same
+  // exposure and predates this change — see #1294 — but changing when
+  // workflows fire is a separate decision.)
+  if (!reverted) {
+    trackWorkEvent("receipt_posted", {
+      companyId,
+      userId,
+      receiptId,
+      sourceDocument: receiptForSurface?.sourceDocument ?? null
+    });
+  }
 
   throw redirect(path.to.receipt(receiptId));
 }

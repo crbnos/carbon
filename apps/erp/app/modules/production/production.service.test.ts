@@ -234,7 +234,7 @@ describe("duplicateJobOperationStep", () => {
         { jobOperationToolId: "tool-1", jobOperationStepId: "step-1" }
       ],
       jobMaterialStep: [
-        { jobMaterialId: "mat-1", jobOperationStepId: "step-1" }
+        { jobMaterialId: "mat-1", jobOperationStepId: "step-1", quantity: 5 }
       ]
     };
   }
@@ -276,7 +276,7 @@ describe("duplicateJobOperationStep", () => {
       { jobOperationToolId: "tool-1", jobOperationStepId: "step-new" }
     ]);
     expect(inserts.find((i) => i.table === "jobMaterialStep")?.rows).toEqual([
-      { jobMaterialId: "mat-1", jobOperationStepId: "step-new" }
+      { jobMaterialId: "mat-1", jobOperationStepId: "step-new", quantity: 5 }
     ]);
   });
 

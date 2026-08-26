@@ -25,7 +25,7 @@ OpenClaw runtime (heartbeat · webhooks · cron · sandbox · SQLite)
 2. **PR feedback** (highest priority) — unresolved review comments → re-enter inner loop on same branch. **Respond immediately on `pull_request_review` / `pull_request_review_comment` webhook — don't wait for heartbeat.** Human org-member comments always act; CodeRabbit Major+ act; CodeRabbit Trivial/Nitpick skip.
 3. **Assigned work** — pick top issue by priority → run the pre-dispatch gate (below) → synthesize Binding → dispatch conductor
 4. **Slack ingest** — tagged in a thread → read context, create issue, self-assign
-5. **Idle** → groom one backlog issue (comment spec + acceptance criteria, never build)
+5. **Idle** → **dispatch `claude -p` to groom one backlog issue** (comment spec + acceptance criteria, never build). Direct grooming in heartbeat sessions is forbidden — quality requires full Claude Code reasoning context.
 6. **GC** — prune worktrees, Docker volumes, loop runs — **never `loop/*` or `loop-rescue/*` branches on origin** (worktrees are disposable; branches are the work)
 
 ## Grooming Contract — questions die here, not in the loop

@@ -1,4 +1,5 @@
 import { getAppUrl, getMESUrl, SUPABASE_URL } from "@carbon/auth";
+import { getDatasetAssetUrl } from "@carbon/database/dataset-assets";
 import { generatePath } from "react-router";
 
 export const ERP_URL = getAppUrl();
@@ -161,6 +162,7 @@ export const path = {
     maintenanceEvent: `${x}/maintenance-event`,
     manualPrint: `${x}/print`,
     messagingNotify: `${x}/proxy/api/messaging/notify`,
+    mfa: "/mfa",
     newMaintenanceDispatch: `${x}/dispatch/new`,
     onboarding: `${ERP_URL}/onboarding`,
     operation: (id: string) => generatePath(`${x}/operation/${id}`),
@@ -190,6 +192,7 @@ export const path = {
       return parentId ? `${basePath}?parentId=${parentId}` : basePath;
     },
     scrapReasons: `${api}/scrap-reasons`,
+    setupRequired: "/setup-required",
     startOperation: (id: string) => generatePath(`${x}/start/${id}`),
     suggestion: `${x}/suggestion`,
     switchCompany: (companyId: string) =>
@@ -215,7 +218,9 @@ export const removeSubdomain = (url?: string): string => {
 };
 
 export const getPrivateUrl = (path: string) => {
-  return `/file/preview/private/${path}`;
+  // Demo-template artwork ships with the app, so it never goes through the
+  // storage proxy. Anything else is a real tenant file.
+  return getDatasetAssetUrl(path) ?? `/file/preview/private/${path}`;
 };
 
 // Raw model source for the viewer's WASM fallback tier — the bucket varies

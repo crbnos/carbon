@@ -87,7 +87,7 @@ export default function ConsumableCostingRoute() {
   const { itemCost, itemCostHistory } = useLoaderData<typeof loader>();
 
   return (
-    <VStack spacing={2} className="p-2">
+    <VStack spacing={4} className="p-4">
       <ItemCostingForm
         key={itemCost.itemId}
         // @ts-expect-error TS2322 - TODO: fix type

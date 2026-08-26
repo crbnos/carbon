@@ -1,23 +1,24 @@
 # Workflows Module
 
-Customer-authored automation. A workflow is a graph of nodes (trigger, condition, entity, lookup, filter, action) stored as a versioned definition; the engine in `packages/jobs` walks it. This module is the ERP front end: the list page, the full-screen builder canvas, versioning and publishing.
+Customer-authored automation. A workflow is a graph of nodes (trigger, condition, compute, lookup, filter, action) stored as a versioned definition; the engine in `packages/jobs` walks it. This module is the ERP front end: the list page, the full-screen builder canvas, versioning and publishing.
 
 The definition schema, validator, catalogs, matcher and engine all live outside this module in `packages/workflows` and `packages/jobs`. Read `packages/workflows/AGENTS.md` before touching anything that imports `@carbon/workflows`.
 
 ## Key Domain Concepts
 
-- **Workflow** — the `workflow` row. Carries `ownerId`, `active` (the on/off kill switch), and `activeVersionId` (the promoted version pointer). The pointer and the boolean are separate columns on purpose: turning a workflow off and back on restores whichever version was promoted.
+- **Workflow** — the `workflow` row. Carries `ownerId` and `publishedVersionId`. That pointer IS the on/off switch: set means the workflow runs that version, `NULL` means it is a draft and nothing fires. There is no separate `active` boolean — it was a second switch for the same idea and was removed (migration `20260824163808_workflow-publish-unpublish.sql`). Because the pointer names a version rather than carrying a flag, exactly one version can be published at a time by construction.
 - **Version** — a `workflowVersion` row holding `nodes`, `edges` and `formatVersion`. Numbered, never named.
-- **Canvas state** — `workflow.canvasState` JSONB: `{ x, y, zoom, panOnScroll }`. Per workflow (not per user, not per version), written by `$id.canvas.tsx` through `updateWorkflowCanvasState`, restored as `defaultViewport`. Node collapse is NOT here — `expanded` lives on each node in the definition and rides the autosave. Both `/save` and `/canvas` are excluded from `shouldRevalidate`; revalidating on a canvas write would snap the viewport back to where it was on load.
+- **Canvas state** — `workflow.canvasState` JSONB: `{ x, y, zoom, panOnScroll }`. Per workflow (not per user, not per version), written by `$id.canvas.tsx` through `updateWorkflowCanvasState`, restored as `defaultViewport`. Node collapse is NOT here — `expanded` lives on each node in the definition and rides the autosave. `/save`, `/canvas` and `/positions` are all excluded from `shouldRevalidate`; revalidating on a canvas write would snap the viewport back to where it was on load, and revalidating on a positions write would remount the builder store mid-drag.
 - **Definition** — `{ formatVersion, nodes, edges }`, validated by `workflowDefinitionSchema` from `@carbon/workflows`. `CURRENT_DEFINITION_FORMAT_VERSION` is **3**; the SQL column default is a stale **1**, so the app always writes the constant explicitly.
-- **Publish** — validate → set `activeVersionId` → set `active` → `syncWorkflowTriggers` → wake the scheduler. One route does all five; splitting them leaves a workflow that looks active and never fires.
-- **The live version is read-only.** Editing a live workflow means creating a new version, the same rule released item revisions follow.
+- **Publish** — validate → set `publishedVersionId` → `syncWorkflowTriggers` → wake the scheduler. One route does all four; splitting them leaves a workflow that looks published and never fires.
+- **Unpublish** — the inverse and the only off switch: `publishedVersionId = NULL` → the same `syncWorkflowTriggers`, which is what deletes the trigger rows and clears `nextRunAt`. It takes no boolean, because publishing needs a version id and has to validate first.
+- **The published version is read-only.** Editing a published workflow means creating a new version, the same rule released item revisions follow.
 
 ## Safety
 
 ### Always
 - MUST read a version through `readWorkflowVersion(row)` from `@carbon/workflows` — the only legal read path. On `{ ok: false }` render the failure and **do not mount the canvas**; a blank canvas would let an autosave overwrite a definition nobody could see.
-- MUST call `checkWorkflowVersionLock` in every mutating route. The live-version lock is enforced server-side, not only in the UI.
+- MUST call `checkWorkflowVersionLock` in every mutating route. The published-version lock is enforced server-side, not only in the UI. The ONE deliberate exception is `$id.positions.tsx` — node positions carry no behaviour, and `updateWorkflowNodePositions` writes only `position`, only onto node ids that already exist, so that route cannot change what a workflow does even when called by hand.
 - MUST write `formatVersion: CURRENT_DEFINITION_FORMAT_VERSION` on every definition write.
 - MUST scope every query by `companyId`.
 - MUST build version insert/update objects with every key explicitly present — PostgREST writes `NULL` for a present-but-`undefined` key, which would null `nodes`/`edges` past their `'[]'` defaults.
@@ -39,7 +40,7 @@ The definition schema, validator, catalogs, matcher and engine all live outside 
 pnpm exec turbo run typecheck --filter=erp   # the app package is named `erp`, not @carbon/erp
 pnpm --filter erp exec vitest run app/modules/workflows/ui/Builder/graph.test.ts
 pnpm exec biome check apps/erp/app/modules/workflows apps/erp/app/routes/x+/workflow+ apps/erp/app/routes/x+/workflows+
-pnpm --filter @carbon/checks workflow-events   # trigger-row drift after a publish/toggle
+pnpm --filter @carbon/checks workflow-events   # trigger-row drift after a publish/unpublish
 ```
 
 ## Layout
@@ -48,11 +49,12 @@ pnpm --filter @carbon/checks workflow-events   # trigger-row drift after a publi
 modules/workflows/
 ├── workflows.models.ts     # zod validators
 ├── workflows.service.ts    # Supabase reads/writes for workflow + workflowVersion
-├── workflows.server.ts     # lock predicates, publish, toggle — server only
+├── workflows.server.ts     # lock predicates, publish, unpublish — server only
 ├── types.ts                # BuilderNode / BuilderEdge React Flow aliases
 ├── index.ts                # barrel (does NOT export workflows.server)
 └── ui/
-    ├── WorkflowsTable.tsx, WorkflowForm.tsx, WorkflowLockAlert.tsx
+    ├── WorkflowsTable.tsx, WorkflowForm.tsx, WorkflowLockModal.tsx,
+    │   ConfirmUnpublishWorkflow.tsx, WorkflowsUpgradeOverlay.tsx
     ├── useWorkflowsSubmodules.tsx
     └── Builder/            # canvas, store, node cards, palette, versions, issues
 ```
@@ -66,14 +68,16 @@ Routes split in two trees: `x+/workflows+/` (list, create, rename, delete, with 
 - `insertWorkflow` / `updateWorkflow` — separate rather than one `upsert*`
 - `insertWorkflowVersion` / `updateWorkflowDefinition` / `deleteWorkflowVersion`
 - `updateWorkflowOwner` — takes the session user, never a submitted id
-- `getWorkflowLockFlags` / `checkWorkflowVersionLock` (server) — the live-version lock
-- `publishWorkflowVersion` / `setWorkflowActive` (server) — both call `syncWorkflowTriggers`, which uses Kysely and **bypasses RLS**; the route's `requirePermissions` is the only authorization gate
+- `checkWorkflowVersionLock` (server) — the published-version lock; the rule is one equality against `publishedVersionId`, so there is no helper wrapping it
+- `updateWorkflowNodePositions` (service) — the positions-only writer behind `$id.positions.tsx`
+- `publishWorkflowVersion` / `unpublishWorkflow` (server) — both call `syncWorkflowTriggers`, which uses Kysely and **bypasses RLS**; the route's `requirePermissions` is the only authorization gate
 
 ## Builder Notes
 
 - One zustand store per builder instance, vanilla `createStore` in a ref behind a context — the `DocumentTemplateEditor` idiom. React Flow keeps viewport and interaction state.
 - **No undo.** Deliberate; recovery is via versions.
-- Autosave is a 1s debounce posting to `$id.save.tsx`. The route exports `shouldRevalidate` returning false for `/save` — without it every autosave re-seeds the canvas from server state mid-edit.
+- Autosave is a 1s debounce with two modes. An editable version posts the whole definition to `$id.save.tsx`; a PUBLISHED version posts positions only, to `$id.positions.tsx`. The route exports `shouldRevalidate` returning false for both — without it every autosave re-seeds the canvas from server state mid-edit.
+- The builder store has TWO read-only reasons, not one: `canChangeDefinition` (`canEdit && !isVersionLocked`) gates config, nodes, edges and `expanded`; `canMoveNodes` (`canEdit` alone) gates dragging and auto-arrange. Movement follows PERMISSION, not the lock, so a published workflow can still be tidied. Every store mutator is gated on one of them — `updateNodeData` in particular, since every node config form funnels through it.
 - **A draft saves half-filled; only publishing demands completeness.** `clauseSchema.right` and `lookupMatchSchema.value` are optional and `lookupMatchSchema.field` may be `""`, so a node the user is still filling in round-trips through `workflowDefinitionSchema` (and therefore `readWorkflowVersion`) instead of failing autosave. `validateDefinition`'s config layer is what reports each gap as `INCOMPLETE_CONFIG` and blocks publish. Never re-tighten those three fields to make a runtime path simpler — the runtime skips with a reason (`compare.ts`, `lookup.ts`) precisely so it does not have to. When `/save` does return `ok: false`, `Autosave.tsx` raises the server's `error` string as a toast and the route logs the zod issues.
 - Drawn loops are blocked at connection time by `isValidConnection` + `wouldCreateCycle`. The validator's `CYCLE` check stays as the backstop.
 - Converging edges are allowed: the engine is a first-arrival OR-join by design.
@@ -89,13 +93,14 @@ Routes split in two trees: `x+/workflows+/` (list, create, rename, delete, with 
 
 - `fields/control.ts` `pickControl` is the single ordered decision for which control a value renders in — `inline` (the `{` editor), `chip` (an already-picked reference) or `literal` (everything `LiteralControl` dispatches). Order matters: `choices` must disqualify the free-text rule or every enum column loses its dropdown. Add a case there, never an `if` in `ValueField`.
 - `fields/Field.tsx` owns the label / required marker / issue shell. No control re-implements it.
-- Three controls, dispatched in `config/forms/ActionForm.tsx` in this order: `PairsField` when the catalog input sets `pairs`, `TemplateField` when it sets `template`, `ValueField` otherwise. Only the last consults `pickControl`. `TemplateField` is the prose editor — it takes line breaks (`multiline`, `minRows={4}`) so a JSON payload reads the way it is written; `VariableText` encodes a break as a paragraph and a `"\n"` in the stored text, so newlines survive the round trip.
+- Four controls, dispatched in `config/forms/ActionForm.tsx` in this order: `PairsField` when the catalog input sets `pairs`, `MultiChoiceField` when `isMultiSelect(input)` (`choices` on a `t.list` of text — derived, never a declared flag, so it cannot disagree with the type), `TemplateField` when it sets `template`, `ValueField` otherwise. Only the last consults `pickControl`. `TemplateField` is the prose editor — it takes line breaks (`multiline`, `minRows={4}`) so a JSON payload reads the way it is written; `VariableText` encodes a break as a paragraph and a `"\n"` in the stored text, so newlines survive the round trip.
 - `fields/pairsRows.ts` holds `PairsField`'s row maths and is macro-free by the same rule as `variableMenu.ts` — the component pulls in the glossary, which vitest cannot compile. Rows are keyed by position, an emptied set is stored as absent, and per-row errors arrive as `rowIssuesForField(issues, …)` reading `<field>.entries.<n>` (`partIssuesForField` reads `<field>.parts.<n>`; a variable inside a row nests both).
+- `fields/multiChoice.ts` holds `MultiChoiceField`'s value round-trip and is macro-free for the same reason as `pairsRows.ts`. Picks are stored in the order the choices are OFFERED, not clicked (two authors ticking the same channels must produce the same definition, or autosave churns), and an emptied set stores as absent. `fields/choiceOptions.tsx` is where a choice gets its title, its description and whether it is available — the notify job skips a channel the company has no plan or integration for in SILENCE, so build time is the only place the author can be told. `choiceState` owns what renders ticked and what the author may not touch, and the two are NOT the same: a choice in `LOCKED` (`inApp`) is ticked and frozen because the platform sends it regardless, while an UNAVAILABLE choice can only never be ADDED — one already stored stays removable, or a node seeded with a channel the company has no plan for is a dead end.
 - `CatalogInput.defaultValue` is seeded into `inputs` by `ActionForm` when the action is picked — nothing reads it at run time, so a required input with a default still reports `MISSING_INPUT` on a node saved before the default existed.
 - `showWhen` is enforced in **two** places in `ActionForm`: the visible-input list and an early return inside `renderInput`, because a `requireOneOf` member renders through a path the list never touches. Closing a gate clears the gated input's value in the same `updateNodeData` call.
 - **`{…}` is display only.** A reference is stored as `{ kind: "ref", nodeId, output, path }` and binds to the node **id**; the braces and the label are a rendering of it, so a rename never touches storage. `fields/tokenId.ts` is the only encoder/decoder and `fields/valueParts.ts` the only converter — a token label must come from `refLabel` so an inserted chip and a stored chip read identically (a mismatch trips the editor's remount check and steals focus mid-keystroke).
 - Serialization rule in `valueParts.ts`: plain text stays a `literal`, a lone variable stays a bare `ref`, only mixed content becomes a `template`. Templates are legal only where a string is expected (`packages/workflows/src/definition/nodes.ts`).
-- Every field reaches variables through the same `{` trigger. `fields/VariableTreeMenu.tsx` is the only menu; it is hosted by `fields/InlineVariableMenu.tsx` (inside the ProseMirror suggestion popup) and `fields/VariableMenuPopover.tsx` (a Radix popover, for controls you cannot type a brace into — those render `fields/VariableAffordance.tsx` inside their own border). `fields/menuNav.ts` is the single keyboard implementation and is unit-tested apart from both hosts, so a key can never behave differently in one of them. `VariableTreeMenu` binds it to a **document-level capture-phase `keydown`** rather than taking keys from its host: delegating through the ProseMirror suggestion plugin (or the popover's search input) is the thing that kept breaking. Focus deliberately stays in the field so search-as-you-type keeps working; the highlighted row is `aria-selected`, not focused. The listener no-ops when the menu's own root is detached or invisible — the editor popup is *hidden*, not unmounted, on dismissal, and a menu nobody can see must not eat arrow keys. Escape is never claimed; it belongs to whichever popup is wrapping the menu.
+- Every field reaches variables through the same `{` trigger. `fields/VariableTreeMenu.tsx` is the only menu; it is hosted by `fields/InlineVariableMenu.tsx` (inside the ProseMirror suggestion popup) and `fields/VariableMenuPopover.tsx` (a Radix popover, for controls you cannot type a brace into — those render `fields/VariablePickControl.tsx` inside their own border). `fields/menuNav.ts` is the single keyboard implementation and is unit-tested apart from both hosts, so a key can never behave differently in one of them. `VariableTreeMenu` binds it to a **document-level capture-phase `keydown`** rather than taking keys from its host: delegating through the ProseMirror suggestion plugin (or the popover's search input) is the thing that kept breaking. Focus deliberately stays in the field so search-as-you-type keeps working; the highlighted row is `aria-selected`, not focused. The listener no-ops when the menu's own root is detached or invisible — the editor popup is *hidden*, not unmounted, on dismissal, and a menu nobody can see must not eat arrow keys. Escape is never claimed; it belongs to whichever popup is wrapping the menu.
 - The tiptap popup mounts outside the React tree, so it can reach neither context nor a store hook. `fields/menuBridge.ts` bridges it with one module-level slot. Do not replace this with context — context does not reach a `ReactRenderer` subtree. The slot is published **on focus** (`onFocusCapture` in `InlineValueEditor`), never on mount: every value field mounts an editor, so a mount-time publish hands the slot to whichever one rendered last, and its unmount then blanks the menu for all of them. `retractVariableMenuData` only clears the slot if the caller still holds it.
 - `VariableMenuPopover` uses `PopoverAnchor`, not `PopoverTrigger` — the control it wraps contains a Select and text inputs, and a trigger toggles the menu on every click that lands in any of them. `open` is therefore driven only by the field, so the menu's data must be built from an effect on `open`, not from `onOpenChange` (which never fires for a `{}`-button or typed-brace open).
 - `fields/variableMenu.ts` exports both shapes: `variableTree` (browse, one level at a time) and `variableMenuItems` (the flat search index). Search matches the full `Step › output › property` breadcrumb, so it must keep coming from the flat list, not from the tree.

@@ -1,6 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { PickPartial } from "@carbon/utils";
@@ -25,6 +26,7 @@ import type {
 } from "../shared";
 import { normalizeOperationSourceIds } from "../shared";
 import {
+  getModelByItemId,
   lookupBuyPriceFromMap,
   upsertExternalLink
 } from "../shared/shared.service";
@@ -229,6 +231,17 @@ export async function convertQuoteToOrder(
       // A digital acceptance is the customer acting; `userId` is only the
       // employee who created the quote.
       actorId: payload.digitalQuoteAcceptedBy ? null : payload.userId
+    });
+
+    trackWorkEvent("quote_accepted", {
+      companyId: payload.companyId,
+      // Same reasoning as the moment above: on a digital acceptance there is
+      // no Carbon user, so the event is anonymous rather than attributed to
+      // whoever happened to write the quote.
+      userId: payload.digitalQuoteAcceptedBy ? null : payload.userId,
+      quoteId: payload.id,
+      salesOrderId: result.data.convertedId,
+      acceptedBy: payload.digitalQuoteAcceptedBy ? "portal" : "internal"
     });
   }
 
@@ -558,34 +571,42 @@ export async function getConfigurationParametersByQuoteLineId(
 
 export async function getCustomer(
   client: SupabaseClient<Database>,
-  customerId: string
+  customerId: string,
+  companyId?: string
 ) {
-  return client.from("customers").select("*").eq("id", customerId).single();
+  let query = client.from("customers").select("*").eq("id", customerId);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query.single();
 }
 
 export async function getCustomerContact(
   client: SupabaseClient<Database>,
-  customerContactId: string
+  customerContactId: string,
+  companyId?: string
 ) {
-  return client
+  let query = client
     .from("customerContact")
     .select(
       "*, contact(id, firstName, lastName, email, mobilePhone, homePhone, workPhone, fax, title, notes)"
     )
-    .eq("id", customerContactId)
-    .single();
+    .eq("id", customerContactId);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query.single();
 }
 
 export async function getCustomerContacts(
   client: SupabaseClient<Database>,
-  customerId: string
+  customerId: string,
+  companyId?: string
 ) {
-  return client
+  let query = client
     .from("customerContact")
     .select(
       "*, contact(id, fullName, firstName, lastName, email, mobilePhone, homePhone, workPhone, fax, title, notes), user(id, active)"
     )
     .eq("customerId", customerId);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query;
 }
 
 export async function getCustomerItemPriceOverride(
@@ -613,60 +634,71 @@ export async function getCustomerItemPriceOverride(
 
 export async function getCustomerLocation(
   client: SupabaseClient<Database>,
-  customerLocationId: string
+  customerLocationId: string,
+  companyId?: string
 ) {
-  return client
+  let query = client
     .from("customerLocation")
     .select(
       "*, address(id, addressLine1, addressLine2, city, stateProvince, countryCode, country(alpha2, name), postalCode)"
     )
-    .eq("id", customerLocationId)
-    .single();
+    .eq("id", customerLocationId);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query.single();
 }
 
 export async function getCustomerLocations(
   client: SupabaseClient<Database>,
-  customerId: string
+  customerId: string,
+  companyId?: string
 ) {
-  return client
+  let query = client
     .from("customerLocation")
     .select(
       "*, address(id, addressLine1, addressLine2, city, stateProvince, country(alpha2, name), postalCode)"
     )
     .eq("customerId", customerId);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query;
 }
 
 export async function getCustomerPayment(
   client: SupabaseClient<Database>,
-  customerId: string
+  customerId: string,
+  companyId?: string
 ) {
-  return client
+  let query = client
     .from("customerPayment")
     .select("*")
-    .eq("customerId", customerId)
-    .single();
+    .eq("customerId", customerId);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query.single();
 }
 
 export async function getCustomerShipping(
   client: SupabaseClient<Database>,
-  customerId: string
+  customerId: string,
+  companyId?: string
 ) {
-  return client
+  let query = client
     .from("customerShipping")
     .select("*")
-    .eq("customerId", customerId)
-    .single();
+    .eq("customerId", customerId);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query.single();
 }
 
 export async function getCustomerTax(
   client: SupabaseClient<Database>,
-  customerId: string
+  customerId: string,
+  companyId?: string
 ) {
-  return client
+  let query = client
     .from("customerTax")
     .select("*")
-    .eq("customerId", customerId)
-    .single();
+    .eq("customerId", customerId);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query.single();
 }
 
 export async function getCustomerTypeItemPriceOverride(
@@ -946,39 +978,7 @@ export async function getModelByQuoteLineId(
 
   if (!quoteLine.data) return null;
 
-  const item = await client
-    .from("item")
-    .select("id, type, modelUploadId")
-    .eq("id", quoteLine.data.itemId)
-    .single();
-
-  if (!item.data || !item.data.modelUploadId) {
-    return {
-      itemId: item.data?.id ?? null,
-      type: item.data?.type ?? null,
-      modelPath: null
-    };
-  }
-
-  const model = await client
-    .from("modelUpload")
-    .select("*")
-    .eq("id", item.data.modelUploadId)
-    .maybeSingle();
-
-  if (!model.data) {
-    return {
-      itemId: item.data?.id ?? null,
-      type: item.data?.type ?? null,
-      modelSize: null
-    };
-  }
-
-  return {
-    itemId: item.data!.id,
-    type: item.data!.type,
-    ...model.data
-  };
+  return getModelByItemId(client, quoteLine.data.itemId);
 }
 
 export async function getNoQuoteReasonsList(
@@ -2042,6 +2042,10 @@ export async function finalizeQuote(
     companyId,
     actorId: userId
   });
+
+  // finalizeQuote is the only writer of status 'Sent', and it is also the MCP
+  // write path, so this one capture covers API callers too.
+  trackWorkEvent("quote_sent", { companyId, userId, quoteId });
 
   return lineUpdate;
 }

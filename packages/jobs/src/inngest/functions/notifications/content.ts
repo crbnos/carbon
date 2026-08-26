@@ -1184,11 +1184,20 @@ async function buildEventContent(
       };
     }
 
-    // The only kind whose text comes from the payload — it reads nothing.
+    // The only kinds whose text comes from the payload — they read nothing.
     case NotificationEvent.Workflow: {
       return {
         description: opts?.title ?? "A workflow ran",
         details: opts?.body ? [{ label: "Message", value: opts.body }] : []
+      };
+    }
+
+    // Payload-carried like Workflow: documentId is a provider id (e.g.
+    // "rillet"), not a readable document, so there is nothing to look up.
+    case NotificationEvent.IntegrationSync: {
+      return {
+        description: opts?.title ?? "Accounting sync needs attention",
+        details: opts?.body ? [{ label: "Detail", value: opts.body }] : []
       };
     }
 
@@ -1302,6 +1311,9 @@ export function getNotificationEmailComponent(args: {
         ctaLabel: args.ctaLabel,
         ctaUrl: args.ctaUrl,
         details: args.content.details,
+        // Only a link on our own origin is rendered as an anchor; anything else in a
+        // customer-authored body stays literal text.
+        erpUrl: ERP_URL,
         heading: args.heading,
         message: args.content.description,
         preview: args.heading,

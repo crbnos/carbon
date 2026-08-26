@@ -26,6 +26,7 @@ import {
   Th,
   Thead,
   Tr,
+  TruncatedTooltipText,
   toast,
   VStack
 } from "@carbon/react";
@@ -433,20 +434,27 @@ const LinePricingForm = ({
             {line.thumbnailPath ? (
               <img
                 alt={line.itemReadableId!}
-                className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
+                className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
                 src={getPrivateUrl(line.thumbnailPath)}
               />
             ) : (
-              <div className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
+              <div className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
                 <LuImage className="w-16 h-16 text-muted-foreground" />
               </div>
             )}
 
-            <VStack spacing={0}>
-              <Heading>{line.itemReadableId}</Heading>
-              <span className="text-muted-foreground text-base truncate">
+            {/* flex-1 + min-w-0, not VStack's default w-full: `width: 100%`
+                on a flex item resolves against the row's full width and
+                ignores the thumbnail beside it, pushing the description past
+                the card edge. min-w-0 is what lets truncate bite. */}
+            <VStack spacing={0} className="flex-1 min-w-0">
+              <Heading className="min-w-0">{line.itemReadableId}</Heading>
+              <TruncatedTooltipText
+                className="text-muted-foreground text-base truncate"
+                tooltip={line.description}
+              >
                 {line.description}
-              </span>
+              </TruncatedTooltipText>
             </VStack>
           </HStack>
           <LinePricingOptions

@@ -61,11 +61,17 @@ vi.mock("./users", () => ({
 }));
 // session.server imports these siblings; they pull in supabase/env so we stub them.
 vi.mock("./auth.server", () => ({
+  makeAuthSession: vi.fn(),
   refreshAccessToken: vi.fn(),
   verifyAuthSession: vi.fn()
 }));
 vi.mock("./company.server", () => ({
   setCompanyId: vi.fn(() => "companyId=cookie")
+}));
+vi.mock("./mfa.server", () => ({
+  getTotpFactors: vi.fn().mockResolvedValue([]),
+  userHasVerifiedTotpFactor: vi.fn().mockResolvedValue(false),
+  verifyTotpChallenge: vi.fn().mockResolvedValue(null)
 }));
 
 import { redis } from "@carbon/kv";

@@ -10,7 +10,7 @@ export const themes = [
     },
     cssVars: {
       light: {
-        background: "0 0% 100%",
+        background: "220 4% 97%",
         foreground: "220 10% 3.9%",
         card: "0 0% 100%",
         "card-foreground": "220 10% 3.9%",
@@ -22,7 +22,7 @@ export const themes = [
         "primary-foreground": "0 0% 98%",
         secondary: "220 4.8% 95.9%",
         "secondary-foreground": "220 5.9% 10%",
-        muted: "220 4.8% 95.9%",
+        muted: "220 4.8% 92.9%",
         "muted-foreground": "220 3.8% 46.1%",
         accent: "220 4.8% 95.9%",
         "accent-foreground": "220 5.9% 10%",
@@ -36,7 +36,7 @@ export const themes = [
       },
       dark: {
         // Vercel/Geist-inspired dark mode - pure black base
-        background: "0 14.3% 6.1%",
+        background: "0 6.8% 6.1%",
         foreground: "0 0% 93%",
         card: "0 10% 3.9%",
         "card-foreground": "0 0% 93%",
@@ -48,7 +48,7 @@ export const themes = [
         "active-foreground": "0 0% 100%",
         secondary: "0 0% 7%",
         "secondary-foreground": "0 0% 93%",
-        muted: "0 0% 13.6%",
+        muted: "0 10% 10%",
         "muted-foreground": "0 0% 63%",
         accent: "0 0% 10%",
         "accent-foreground": "0 0% 93%",
@@ -71,7 +71,7 @@ export const themes = [
     },
     cssVars: {
       light: {
-        background: "0 0% 96%",
+        background: "0 4% 97%",
         foreground: "0 0% 3.9%",
         card: "0 0% 93%",
         "card-foreground": "0 0% 3.9%",
@@ -83,7 +83,7 @@ export const themes = [
         "active-foreground": "0 0% 12%",
         secondary: "0 0% 96%",
         "secondary-foreground": "0 0% 9%",
-        muted: "0 0% 85%",
+        muted: "0 0% 92.9%",
         "muted-foreground": "0 0% 45.1%",
         accent: "0 0% 96%",
         "accent-foreground": "0 0% 9%",
@@ -96,7 +96,7 @@ export const themes = [
         "success-foreground": "0 0% 98%"
       },
       dark: {
-        background: "20 14.3% 6.1%",
+        background: "20 6.8% 6.1%",
         foreground: "0 0% 98%",
         card: "0 10% 3.9%",
         "card-foreground": "0 0% 98%",
@@ -108,7 +108,7 @@ export const themes = [
         "active-foreground": "0 0% 98%",
         secondary: "0 0% 14.9%",
         "secondary-foreground": "0 0% 98%",
-        muted: "0 0% 13.6%",
+        muted: "0 10% 10%",
         "muted-foreground": "0 0% 63.9%",
         accent: "0 0% 14.9%",
         "accent-foreground": "0 0% 98%",
@@ -131,7 +131,7 @@ export const themes = [
     },
     cssVars: {
       light: {
-        background: "0 0% 100%",
+        background: "0 4% 97%",
         foreground: "0 0% 3.9%",
         card: "0 0% 100%",
         "card-foreground": "0 0% 3.9%",
@@ -143,7 +143,7 @@ export const themes = [
         "active-foreground": "0 72% 50%",
         secondary: "0 0% 96.1%",
         "secondary-foreground": "0 0% 9%",
-        muted: "0 0% 96.1%",
+        muted: "0 0% 92.9%",
         "muted-foreground": "0 0% 45.1%",
         accent: "0 0% 96.1%",
         "accent-foreground": "0 0% 9%",
@@ -156,7 +156,7 @@ export const themes = [
         "success-foreground": "0 0% 98%"
       },
       dark: {
-        background: "0 14.3% 6.1%",
+        background: "0 6.8% 6.1%",
         foreground: "0 0% 98%",
         card: "0 10% 3.9%",
         "card-foreground": "0 0% 98%",
@@ -168,7 +168,7 @@ export const themes = [
         "active-foreground": "0 80% 63%",
         secondary: "0 0% 14.9%",
         "secondary-foreground": "0 0% 98%",
-        muted: "0 0% 13.6%",
+        muted: "0 10% 10%",
         "muted-foreground": "0 0% 63.9%",
         accent: "0 0% 14.9%",
         "accent-foreground": "0 0% 98%",
@@ -191,7 +191,7 @@ export const themes = [
     },
     cssVars: {
       light: {
-        background: "0 0% 100%",
+        background: "17 4% 97%",
         foreground: "20 14.3% 4.1%",
         card: "0 0% 100%",
         "card-foreground": "20 14.3% 4.1%",
@@ -203,7 +203,7 @@ export const themes = [
         "active-foreground": "17 88% 51%",
         secondary: "24 4.8% 95.9%",
         "secondary-foreground": "24 9.8% 10%",
-        muted: "24 4.8% 95.9%",
+        muted: "24 4.8% 92.9%",
         "muted-foreground": "25 5.3% 44.7%",
         accent: "24 4.8% 95.9%",
         "accent-foreground": "24 9.8% 10%",
@@ -216,7 +216,7 @@ export const themes = [
         "success-foreground": "0 0% 98%"
       },
       dark: {
-        background: "20 14.3% 6.1%",
+        background: "20 6.8% 6.1%",
         foreground: "20 9.1% 97.8%",
         card: "20 10% 3.9%",
         "card-foreground": "60 9.1% 97.8%",
@@ -228,7 +228,7 @@ export const themes = [
         "active-foreground": "18 80% 63%",
         secondary: "12 6.5% 15.1%",
         "secondary-foreground": "60 9.1% 97.8%",
-        muted: "12 0% 13.6%",
+        muted: "12 10% 10%",
         "muted-foreground": "24 5.4% 63.9%",
         accent: "12 6.5% 15.1%",
         "accent-foreground": "60 9.1% 97.8%",
@@ -251,7 +251,7 @@ export const themes = [
     },
     cssVars: {
       light: {
-        background: "0 0% 100%",
+        background: "47.9 4% 97%",
         foreground: "20 14.3% 4.1%",
         card: "0 0% 100%",
         "card-foreground": "20 14.3% 4.1%",
@@ -263,7 +263,7 @@ export const themes = [
         "active-foreground": "47.9 95.8% 4%",
         secondary: "47.9 4.8% 95.9%",
         "secondary-foreground": "24 9.8% 10%",
-        muted: "47.9 4.8% 95.9%",
+        muted: "47.9 4.8% 92.9%",
         "muted-foreground": "25 5.3% 44.7%",
         accent: "60 4.8% 95.9%",
         "accent-foreground": "24 9.8% 10%",
@@ -276,7 +276,7 @@ export const themes = [
         "success-foreground": "0 0% 98%"
       },
       dark: {
-        background: "61 14.3% 6.1%",
+        background: "61 6.8% 6.1%",
         foreground: "61 9.1% 97.8%",
         card: "61 10% 3.9%",
         "card-foreground": "61 9.1% 97.8%",
@@ -289,7 +289,7 @@ export const themes = [
 
         secondary: "12 6.5% 15.1%",
         "secondary-foreground": "61 9.1% 97.8%",
-        muted: "12 0% 13.6%",
+        muted: "12 10% 10%",
         "muted-foreground": "24 5.4% 63.9%",
         accent: "12 6.5% 15.1%",
         "accent-foreground": "61 9.1% 97.8%",
@@ -313,7 +313,7 @@ export const themes = [
     },
     cssVars: {
       light: {
-        background: "0 0% 100%",
+        background: "171 4% 97%",
         foreground: "171 10% 3.9%",
         card: "0 0% 100%",
         "card-foreground": "171 10% 3.9%",
@@ -325,7 +325,7 @@ export const themes = [
         "active-foreground": "171 62% 22%",
         secondary: "171 4.8% 95.9%",
         "secondary-foreground": "171 5.9% 10%",
-        muted: "171 4.8% 95.9%",
+        muted: "171 4.8% 92.9%",
         "muted-foreground": "171 3.8% 46.1%",
         accent: "171 4.8% 95.9%",
         "accent-foreground": "171 5.9% 10%",
@@ -338,26 +338,26 @@ export const themes = [
         "success-foreground": "0 0% 98%"
       },
       dark: {
-        background: "151 14.3% 6.1%",
+        background: "171 6.8% 6.1%",
         foreground: "0 0% 95%",
-        popover: "151 0% 9%",
-        "popover-foreground": "151 0% 95%",
-        card: "151 10% 3.9%",
-        "card-foreground": "151 0% 95%",
+        popover: "171 0% 9%",
+        "popover-foreground": "171 0% 95%",
+        card: "171 10% 3.9%",
+        "card-foreground": "171 0% 95%",
         primary: "171 98% 59%",
         "primary-foreground": "144.9 80.4% 10%",
         active: "171 98% 15%",
         "active-foreground": "171 98% 59%",
-        secondary: "151 3.7% 15.9%",
+        secondary: "171 3.7% 15.9%",
         "secondary-foreground": "0 0% 98%",
-        muted: "151 0% 13.6%",
-        "muted-foreground": "151 5% 64.9%",
-        accent: "151 6.5% 15.1%",
+        muted: "171 10% 10%",
+        "muted-foreground": "171 5% 64.9%",
+        accent: "171 6.5% 15.1%",
         "accent-foreground": "0 0% 98%",
         destructive: "0 62.8% 30.6%",
         "destructive-foreground": "0 85.7% 97.3%",
-        border: "151 3.7% 15.9%",
-        input: "151 3.7% 15.9%",
+        border: "171 3.7% 15.9%",
+        input: "171 3.7% 15.9%",
         ring: "171 71.8% 29.2%",
         success: "142 70% 45%",
         "success-foreground": "0 0% 98%"
@@ -373,7 +373,7 @@ export const themes = [
     },
     cssVars: {
       light: {
-        background: "0 0% 100%",
+        background: "237 4% 97%",
         foreground: "237 98% 4.9%",
         card: "0 0% 100%",
         "card-foreground": "237 98% 4.9%",
@@ -385,7 +385,7 @@ export const themes = [
         "active-foreground": "237 57 30%",
         secondary: "210 40% 96.1%",
         "secondary-foreground": "237.2 47.4% 11.2%",
-        muted: "237 40% 96.1%",
+        muted: "237 40% 92.9%",
         "muted-foreground": "215.4 16.3% 46.9%",
         accent: "237 40% 96.1%",
         "accent-foreground": "237.2 47.4% 11.2%",
@@ -398,7 +398,7 @@ export const themes = [
         "success-foreground": "0 0% 98%"
       },
       dark: {
-        background: "220 14.3% 6.1%",
+        background: "220 6.8% 6.1%",
         foreground: "220 0% 95%",
         popover: "216 0% 9%",
         "popover-foreground": "220 0% 95%",
@@ -410,7 +410,7 @@ export const themes = [
         "active-foreground": "216 98% 58%",
         secondary: "220 10% 15.9%",
         "secondary-foreground": "220 0% 98%",
-        muted: "220 0% 13.6%",
+        muted: "220 10% 10%",
         "muted-foreground": "220 5% 64.9%",
         accent: "220 10% 15.9%",
         "accent-foreground": "0 0% 98%",
@@ -433,7 +433,7 @@ export const themes = [
     },
     cssVars: {
       light: {
-        background: "0 0% 100%",
+        background: "238 4% 97%",
         foreground: "224 71.4% 4.1%",
         card: "0 0% 100%",
         "card-foreground": "224 71.4% 4.1%",
@@ -445,7 +445,7 @@ export const themes = [
         "active-foreground": "238 57% 44%",
         secondary: "220 14.3% 95.9%",
         "secondary-foreground": "220.9 39.3% 11%",
-        muted: "238 57% 95.9%",
+        muted: "238 57% 92.9%",
         "muted-foreground": "238 8.9% 46.1%",
         accent: "238 33.3% 95.9%",
         "accent-foreground": "220.9 39.3% 11%",
@@ -458,7 +458,7 @@ export const themes = [
         "success-foreground": "0 0% 98%"
       },
       dark: {
-        background: "263 41.4 3.1%",
+        background: "263 6.8% 3.1%",
         foreground: "263 20% 98%",
         card: "263 41.4 5%",
         "card-foreground": "210 20% 98%",
@@ -470,7 +470,7 @@ export const themes = [
         "active-foreground": "327 80% 63%",
         secondary: "263 27.9% 16.9%",
         "secondary-foreground": "263 20% 98%",
-        muted: "263 27.9% 12.9%",
+        muted: "263 10% 10%",
         "muted-foreground": "217.9 10.6% 64.9%",
         accent: "263 27.9% 12.9%",
         "accent-foreground": "210 20% 98%",

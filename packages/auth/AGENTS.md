@@ -9,6 +9,7 @@ Authentication, RBAC, session management, Supabase client factories, API key aut
 - Invalidate Redis permission cache (`redis.del(getPermissionCacheKey(userId))`) when changing user permissions — stale cache is the #1 cause of "Access Denied" bugs.
 - API key `scopes: {}` **denies all** — never treat empty scopes as full access.
 - Import env constants from `@carbon/auth` (re-exports `@carbon/env`) — not `process.env` directly.
+- Re-issue the session cookie after any `supabase.auth.mfa.challengeAndVerify` — it rotates the refresh token, and the old one dies after GoTrue's reuse interval.
 
 ## Ask First
 
@@ -35,7 +36,8 @@ pnpm --filter @carbon/auth test
 |---------|----------|
 | `.` (index) | Env re-exports, Supabase client factories, `getClaims`, cookie/http/result utils, validators |
 | `./auth.server` | `requirePermissions`, API key auth, `hashApiKey`, `hashOAuthSecret` |
-| `./session.server` | `createCookieSessionStorage`, `requireAuthSession`, `destroyAuthSession`, session refresh |
+| `./mfa.server` | TOTP MFA: `enrollTotpFactor`, `verifyTotpChallenge`, `unenrollTotpFactor`, `userHasVerifiedTotpFactor` (Redis-cached), `adminDeleteTotpFactors` |
+| `./session.server` | `createCookieSessionStorage`, `requireAuthSession` (incl. MFA re-check), `destroyAuthSession`, session refresh, pending-MFA session + `completeMfaChallenge` |
 | `./company.server` | Company switching, `updateCompanySession` |
 | `./users.server` | `getUserClaims`, deactivation flows, cache invalidation |
 | `./passkey.server` | WebAuthn/passkey registration and authentication |

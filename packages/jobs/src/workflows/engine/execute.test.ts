@@ -18,11 +18,28 @@ vi.mock("./ledger", () => ({
   failInterruptedSteps: vi.fn(async () => 0)
 }));
 vi.mock("./owner", () => ({
-  getOwnerClient: vi.fn(async () => ({})),
+  // The engine reads the company custom fields through this client; a bare {} has no
+  // `.from`, so the stub answers that one query with an empty list.
+  getOwnerClient: vi.fn(async () => ({
+    from: () => ({
+      select: () => ({
+        eq: () => ({ eq: async () => ({ data: [], error: null }) })
+      })
+    })
+  })),
   readOwnerPermissions: vi.fn(async () => ({})),
   hasPermission: vi.fn(() => true)
 }));
 vi.mock("../actions", () => ({ createWorkflowServices: vi.fn() }));
+// The real module pulls in the email templates and @carbon/env; the engine only wants a URL.
+vi.mock("../../inngest/functions/notifications/content", () => ({
+  buildNotificationLink: (
+    event: string,
+    documentId: string,
+    companyId: string
+  ) =>
+    `https://erp.test/api/link?event=${event}&documentId=${documentId}&companyId=${companyId}`
+}));
 
 const { executeWorkflowRun } = await import("./execute");
 const { loadRunContext, claimRun, finishRun } = await import("./log");
@@ -121,7 +138,7 @@ beforeEach(() => {
       eventId: "purchaseOrder.status.changed",
       status: "Queued"
     },
-    workflowActive: true,
+    workflowPublished: true,
     companyGroupId: "cg1",
     version: definition
   });
@@ -151,7 +168,7 @@ describe("the owner's permissions", () => {
 
     await executeWorkflowRun({ payload, step, logger });
 
-    expect(ids).toEqual(["load", "permissions"]);
+    expect(ids).toEqual(["load", "custom-fields", "permissions"]);
     expect(vi.mocked(finishRun).mock.calls.at(-1)?.[1]).toMatchObject({
       status: "Failed",
       error: "The owner of this workflow no longer has access to Purchasing."

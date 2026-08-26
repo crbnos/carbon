@@ -30,6 +30,10 @@ import {
 import { extractDocumentFunction } from "./functions/extraction";
 import {
   accountingBackfillFunction,
+  accountingConsolidationFunction,
+  accountingOutboundSweepFunction,
+  accountingPullSweepFunction,
+  accountingReconciliationFunction,
   jiraSyncFunction,
   linearSyncFunction,
   onshapeBackfillFunction,
@@ -39,6 +43,7 @@ import {
   slackDocumentCreatedFunction,
   slackDocumentStatusUpdateFunction,
   slackDocumentTaskUpdateFunction,
+  stripeConnectPullSweepFunction,
   syncExternalAccountingFunction,
   timeCardAutoCloseFunction
 } from "./functions/integrations";
@@ -68,6 +73,9 @@ import {
   companyRestoreFinalizeFunction,
   companyRestoreFunction,
   companyRestoreRevertFunction,
+  companyTemplateFinalizeFunction,
+  companyTemplateFunction,
+  companyTemplateRevertFunction,
   modelCompactFunction,
   modelOptimizeFunction,
   modelThumbnailFunction,
@@ -114,6 +122,9 @@ export const functions = [
   companyRestoreFunction,
   companyRestoreFinalizeFunction,
   companyRestoreRevertFunction,
+  companyTemplateFinalizeFunction,
+  companyTemplateFunction,
+  companyTemplateRevertFunction,
   modelCompactFunction,
   modelOptimizeFunction,
   modelThumbnailFunction,
@@ -141,6 +152,10 @@ export const functions = [
   linearSyncFunction,
   paperlessPartsFunction,
   accountingBackfillFunction,
+  accountingConsolidationFunction,
+  accountingOutboundSweepFunction,
+  accountingReconciliationFunction,
+  accountingPullSweepFunction,
   onshapeBackfillFunction,
   onshapeRevisionSyncFunction,
   syncExternalAccountingFunction,
@@ -148,6 +163,7 @@ export const functions = [
   slackDocumentStatusUpdateFunction,
   slackDocumentTaskUpdateFunction,
   slackDocumentAssignmentUpdateFunction,
+  stripeConnectPullSweepFunction,
   timeCardAutoCloseFunction,
   // Document extraction
   extractDocumentFunction

@@ -1,4 +1,5 @@
 import type { Json } from "@carbon/database";
+import { getQuoteDisplayId } from "@carbon/documents/utils";
 import { DatePicker, InputControlled, ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -149,7 +150,7 @@ const QuoteProperties = () => {
                   size="sm"
                   className="p-1"
                   onClick={() =>
-                    copyToClipboard(routeData?.quote?.quoteId ?? "")
+                    copyToClipboard(getQuoteDisplayId(routeData?.quote))
                   }
                 >
                   <LuCopy className="w-3 h-3" />
@@ -161,7 +162,7 @@ const QuoteProperties = () => {
             </Tooltip>
           </HStack>
         </HStack>
-        <span className="text-sm">{routeData?.quote?.quoteId}</span>
+        <span className="text-sm">{getQuoteDisplayId(routeData?.quote)}</span>
       </VStack>
       <Assignee
         id={quoteId}

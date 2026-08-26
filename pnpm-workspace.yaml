@@ -75,11 +75,13 @@ catalog:
   cookie: 1.1.1
   cross-env: 7.0.3
   dompurify: 3.4.0
+  fast-xml-parser: 5.3.1
   framer-motion: 11.18.2
   intl-parse-accept-language: 1.0.0
   isbot: '5'
   jose: 6.0.11
   kysely: 0.28.15
+  match-sorter: 8.1.0
   nanoid: 5.1.7
   nanostores: 0.9.5
   nodemon: 3.1.14

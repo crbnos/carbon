@@ -4,12 +4,13 @@ import type { Database } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import * as accountFunctions from "~/modules/account/account.service";
-import * as accountingFunctions from "~/modules/accounting/accounting.service";
+import * as accountingFunctions from "~/modules/accounting/accounting.ee.service";
 import * as documentsFunctions from "~/modules/documents/documents.service";
 import * as inventoryFunctions from "~/modules/inventory/inventory.service";
 import * as invoicingFunctions from "~/modules/invoicing/invoicing.service";
 import * as itemsFunctions from "~/modules/items/items.service";
 import * as peopleFunctions from "~/modules/people/people.service";
+import * as productionMcpFunctions from "~/modules/production/production.mcp.server";
 import * as productionFunctions from "~/modules/production/production.service";
 import * as purchasingFunctions from "~/modules/purchasing/purchasing.service";
 import * as qualityFunctions from "~/modules/quality/quality.service";
@@ -34,7 +35,7 @@ const functionRegistry = {
   invoicing: invoicingFunctions,
   items: itemsFunctions,
   people: peopleFunctions,
-  production: productionFunctions,
+  production: { ...productionFunctions, ...productionMcpFunctions },
   purchasing: purchasingFunctions,
   quality: qualityFunctions,
   resources: resourcesFunctions,

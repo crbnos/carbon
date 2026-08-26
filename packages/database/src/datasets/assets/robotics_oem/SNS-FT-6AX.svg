@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="ssWall" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="ssTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#e4e9ec"/>
+      <stop offset="0.45" stop-color="#c4cbd0"/>
+      <stop offset="1" stop-color="#8d959b"/>
+    </linearGradient>
+    <linearGradient id="slotIn" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#14171a"/>
+      <stop offset="0.5" stop-color="#3d4348"/>
+      <stop offset="1" stop-color="#1a1e21"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="clipWall">
+      <path d="M122 354 L122 646 A390 148 0 0 0 902 646 L902 354 A390 148 0 0 1 122 354 Z"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="512" cy="778" rx="450" ry="99" fill="url(#shadow)"/>
+
+  <!-- cylindrical wall -->
+  <path d="M122 354 L122 646 A390 148 0 0 0 902 646 L902 354 A390 148 0 0 1 122 354 Z"
+        fill="url(#ssWall)" stroke="#4d5358" stroke-width="3"/>
+
+  <g clip-path="url(#clipWall)">
+    <!-- bead blasted matte cast over the wall -->
+    <path d="M122 300 L902 300 L902 800 L122 800 Z" fill="#aeb5ba" opacity="0.2"/>
+    <g stroke="#8c9399" stroke-opacity="0.25" stroke-width="2" fill="none">
+      <path d="M122 420 A390 148 0 0 0 902 420 M122 500 A390 148 0 0 0 902 500
+               M122 580 A390 148 0 0 0 902 580 M122 660 A390 148 0 0 0 902 660"/>
+    </g>
+
+    <!-- three symmetrical milled strain-beam slots (two visible on the front half) -->
+    <g>
+      <path d="M782 489 Q811 481 840 489 L840 701 Q811 709 782 701 Z" fill="url(#slotIn)"/>
+      <path d="M782 489 Q811 481 840 489 L840 701 Q811 709 782 701 Z" fill="none" stroke="#3c4247" stroke-width="3"/>
+      <path d="M786 493 Q811 486 836 493" fill="none" stroke="#eef2f4" stroke-opacity="0.55" stroke-width="4"/>
+      <path d="M786 697 Q811 704 836 697" fill="none" stroke="#eef2f4" stroke-opacity="0.3" stroke-width="3"/>
+      <path d="M806 492 L806 703" fill="none" stroke="#6a7278" stroke-opacity="0.7" stroke-width="6"/>
+
+      <path d="M130 445 Q145 440 160 445 L160 657 Q145 662 130 657 Z" fill="url(#slotIn)"/>
+      <path d="M130 445 Q145 440 160 445 L160 657 Q145 662 130 657 Z" fill="none" stroke="#3c4247" stroke-width="3"/>
+      <path d="M133 449 Q145 445 157 449" fill="none" stroke="#eef2f4" stroke-opacity="0.5" stroke-width="3.5"/>
+      <path d="M143 448 L143 655" fill="none" stroke="#6a7278" stroke-opacity="0.7" stroke-width="4"/>
+    </g>
+
+    <!-- low profile threaded connector port, flush in the side wall -->
+    <g transform="translate(470 566)">
+      <ellipse cx="0" cy="0" rx="58" ry="56" fill="#9aa1a7" stroke="#575d62" stroke-width="3"/>
+      <ellipse cx="0" cy="0" rx="49" ry="47" fill="none" stroke="#eef2f4" stroke-opacity="0.4" stroke-width="3"/>
+      <g fill="none" stroke="#666d73" stroke-width="2.4" opacity="0.75">
+        <ellipse cx="0" cy="-3" rx="44" ry="42"/><ellipse cx="0" cy="1" rx="38" ry="36"/>
+        <ellipse cx="0" cy="5" rx="32" ry="30"/>
+      </g>
+      <ellipse cx="0" cy="0" rx="26" ry="25" fill="#23272a" stroke="#4c5257" stroke-width="3"/>
+      <ellipse cx="-8" cy="-8" rx="12" ry="11" fill="#3e4448" opacity="0.8"/>
+      <path d="M-6 -25 L6 -25 L6 -18 L-6 -18 Z" fill="#121517"/>
+    </g>
+
+    <!-- vertical key light down the wall -->
+    <path d="M300 370 L300 700" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="16"/>
+  </g>
+
+  <!-- bright chamfer at the bottom edge -->
+  <path d="M122 630 A390 148 0 0 0 902 630" fill="none" stroke="#dfe5e9" stroke-opacity="0.4" stroke-width="4"/>
+
+  <!-- top face -->
+  <ellipse cx="512" cy="354" rx="390" ry="148" fill="url(#ssTop)" stroke="#767d83" stroke-width="3"/>
+  <ellipse cx="512" cy="354" rx="390" ry="148" fill="#b9c0c5" opacity="0.18"/>
+  <!-- bright chamfered outer edge -->
+  <ellipse cx="512" cy="354" rx="376" ry="143" fill="none" stroke="#f2f5f7" stroke-opacity="0.55" stroke-width="4"/>
+  <ellipse cx="512" cy="354" rx="362" ry="137" fill="none" stroke="#8f979d" stroke-opacity="0.5" stroke-width="2"/>
+
+  <!-- machined relief rings on the face -->
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2.5">
+    <ellipse cx="512" cy="354" rx="248" ry="94"/>
+    <ellipse cx="512" cy="354" rx="196" ry="74"/>
+    <ellipse cx="512" cy="354" rx="130" ry="49"/>
+  </g>
+  <ellipse cx="512" cy="354" rx="130" ry="49" fill="#b6bec3" opacity="0.35" stroke="#8b9299" stroke-width="2"/>
+  <ellipse cx="512" cy="350" rx="118" ry="44" fill="none" stroke="#ffffff" stroke-opacity="0.25" stroke-width="2.5"/>
+
+  <!-- bolt circle of precision counterbored holes -->
+  <g>
+    <g fill="#c6cdd2" opacity="0.85" stroke="#7d848a" stroke-width="2.5">
+      <ellipse cx="812" cy="354" rx="34" ry="13"/><ellipse cx="724" cy="435" rx="34" ry="13"/>
+      <ellipse cx="512" cy="468" rx="34" ry="13"/><ellipse cx="300" cy="435" rx="34" ry="13"/>
+      <ellipse cx="212" cy="354" rx="34" ry="13"/><ellipse cx="300" cy="273" rx="34" ry="13"/>
+      <ellipse cx="512" cy="240" rx="34" ry="13"/><ellipse cx="724" cy="273" rx="34" ry="13"/>
+    </g>
+    <g fill="#7f878d" opacity="0.9">
+      <ellipse cx="812" cy="356" rx="25" ry="10"/><ellipse cx="724" cy="437" rx="25" ry="10"/>
+      <ellipse cx="512" cy="470" rx="25" ry="10"/><ellipse cx="300" cy="437" rx="25" ry="10"/>
+      <ellipse cx="212" cy="356" rx="25" ry="10"/><ellipse cx="300" cy="275" rx="25" ry="10"/>
+      <ellipse cx="512" cy="242" rx="25" ry="10"/><ellipse cx="724" cy="275" rx="25" ry="10"/>
+    </g>
+    <g fill="#3a4045">
+      <ellipse cx="812" cy="356" rx="15" ry="6"/><ellipse cx="724" cy="437" rx="15" ry="6"/>
+      <ellipse cx="512" cy="470" rx="15" ry="6"/><ellipse cx="300" cy="437" rx="15" ry="6"/>
+      <ellipse cx="212" cy="356" rx="15" ry="6"/><ellipse cx="300" cy="275" rx="15" ry="6"/>
+      <ellipse cx="512" cy="242" rx="15" ry="6"/><ellipse cx="724" cy="275" rx="15" ry="6"/>
+    </g>
+  </g>
+
+  <!-- two dowel locating holes -->
+  <g>
+    <ellipse cx="681" cy="377" rx="18" ry="7" fill="#2f353a" stroke="#c3cacf" stroke-opacity="0.6" stroke-width="2.5"/>
+    <ellipse cx="343" cy="331" rx="18" ry="7" fill="#2f353a" stroke="#c3cacf" stroke-opacity="0.6" stroke-width="2.5"/>
+  </g>
+</svg>

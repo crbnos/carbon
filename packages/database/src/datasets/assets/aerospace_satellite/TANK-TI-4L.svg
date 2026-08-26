@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="ti" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4b4f52"/>
+      <stop offset="0.22" stop-color="#787d81"/>
+      <stop offset="0.45" stop-color="#8d9296"/>
+      <stop offset="0.72" stop-color="#63686c"/>
+      <stop offset="1" stop-color="#414548"/>
+    </linearGradient>
+    <linearGradient id="tiFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#8d9296"/>
+      <stop offset="0.45" stop-color="#787d81"/>
+      <stop offset="1" stop-color="#4b4f52"/>
+    </linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="steelFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#eef1f3"/>
+      <stop offset="0.5" stop-color="#c3c9cd"/>
+      <stop offset="1" stop-color="#6e747a"/>
+    </linearGradient>
+    <linearGradient id="heat" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6a5a7a"/>
+      <stop offset="0.2" stop-color="#8a6f4a"/>
+      <stop offset="0.4" stop-color="#a89a58"/>
+      <stop offset="0.6" stop-color="#5f8a86"/>
+      <stop offset="0.8" stop-color="#7a5f86"/>
+      <stop offset="1" stop-color="#5a5766"/>
+    </linearGradient>
+    <radialGradient id="sphereLight" cx="0.34" cy="0.28" r="0.72">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.30"/>
+      <stop offset="0.45" stop-color="#ffffff" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.28"/>
+    </radialGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="512" cy="846" rx="356" ry="78" fill="url(#shadow)"/>
+
+  <!-- bottom polar boss (behind the shell) -->
+  <path d="M456 760 L456 826 Q512 858 568 826 L568 760 Z" fill="url(#ti)" stroke="#33373a" stroke-width="2.5"/>
+  <ellipse cx="512" cy="806" rx="56" ry="21" fill="none" stroke="#2f3336" stroke-width="2" opacity="0.7"/>
+
+  <!-- top polar boss + tube stub -->
+  <path d="M450 150 L450 206 Q512 234 574 206 L574 150 Z" fill="url(#ti)" stroke="#33373a" stroke-width="2.5"/>
+  <ellipse cx="512" cy="150" rx="62" ry="24" fill="url(#tiFace)" stroke="#33373a" stroke-width="2.5"/>
+  <ellipse cx="512" cy="150" rx="52" ry="20" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2"/>
+  <path d="M482 106 L482 158 Q512 172 542 158 L542 106 Z" fill="url(#steel)" stroke="#4c5257" stroke-width="2.5"/>
+  <ellipse cx="512" cy="106" rx="30" ry="11.4" fill="url(#steelFace)" stroke="#4c5257" stroke-width="2.5"/>
+  <ellipse cx="512" cy="106" rx="18" ry="6.8" fill="#3a4045"/>
+  <!-- weld collar where the stub meets the boss -->
+  <ellipse cx="512" cy="152" rx="34" ry="13" fill="none" stroke="#9aa2a8" stroke-width="4" opacity="0.65"/>
+
+  <!-- spherical shell -->
+  <circle cx="512" cy="490" r="310" fill="url(#ti)" stroke="#2f3336" stroke-width="3"/>
+  <circle cx="512" cy="490" r="310" fill="url(#sphereLight)"/>
+
+  <!-- spun texture on the upper hemisphere -->
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.10" stroke-width="2">
+    <ellipse cx="512" cy="490" rx="262" ry="100"/>
+    <ellipse cx="512" cy="490" rx="196" ry="74"/>
+    <ellipse cx="512" cy="490" rx="126" ry="48"/>
+    <ellipse cx="512" cy="490" rx="58" ry="22"/>
+  </g>
+  <g fill="none" stroke="#22262a" stroke-opacity="0.16" stroke-width="1.5">
+    <ellipse cx="512" cy="490" rx="230" ry="87"/>
+    <ellipse cx="512" cy="490" rx="160" ry="61"/>
+  </g>
+
+  <!-- equatorial weld bead, slightly proud, faint heat tint -->
+  <ellipse cx="512" cy="490" rx="310" ry="118" fill="none" stroke="#2f3336" stroke-width="9" opacity="0.55"/>
+  <ellipse cx="512" cy="490" rx="310" ry="118" fill="none" stroke="url(#heat)" stroke-width="7" opacity="0.85"/>
+  <ellipse cx="512" cy="486" rx="310" ry="118" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="2.5"/>
+  <ellipse cx="512" cy="497" rx="310" ry="118" fill="none" stroke="#1c2023" stroke-opacity="0.30" stroke-width="2.5"/>
+
+  <!-- three welded mounting lugs around the equator -->
+  <g stroke="#2f3336" stroke-width="2.5">
+    <path d="M212 462 L262 456 L268 520 L218 528 Z" fill="url(#tiFace)"/>
+    <path d="M310 546 L364 536 L372 598 L318 608 Z" fill="url(#tiFace)"/>
+    <path d="M666 536 L720 546 L714 608 L660 598 Z" fill="url(#tiFace)"/>
+  </g>
+  <g fill="#3a4045">
+    <ellipse cx="240" cy="493" rx="13" ry="9"/>
+    <ellipse cx="341" cy="573" rx="14" ry="10"/>
+    <ellipse cx="690" cy="573" rx="14" ry="10"/>
+  </g>
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.20" stroke-width="2">
+    <ellipse cx="240" cy="493" rx="20" ry="14"/>
+    <ellipse cx="341" cy="573" rx="21" ry="15"/>
+    <ellipse cx="690" cy="573" rx="21" ry="15"/>
+  </g>
+  <!-- lug weld fillets -->
+  <g fill="none" stroke="#9aa2a8" stroke-opacity="0.45" stroke-width="4">
+    <path d="M214 470 L216 522"/>
+    <path d="M314 552 L320 602"/>
+    <path d="M710 552 L706 602"/>
+  </g>
+
+  <!-- specular sweep upper left -->
+  <ellipse cx="404" cy="356" rx="96" ry="58" fill="#ffffff" opacity="0.10" transform="rotate(-32 404 356)"/>
+</svg>

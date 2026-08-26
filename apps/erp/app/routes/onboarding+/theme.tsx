@@ -2,8 +2,6 @@ import { assertIsPost } from "@carbon/auth";
 import { validationError, validator } from "@carbon/form";
 import {
   Button,
-  Card,
-  CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
@@ -30,6 +28,7 @@ import {
   useNavigation,
   useSubmit
 } from "react-router";
+import { OnboardingCard, OnboardingCardContent } from "~/components";
 import { useOnboarding } from "~/hooks";
 import type { Theme as ThemeValue } from "~/modules/settings";
 import { themeValidator } from "~/modules/settings";
@@ -122,7 +121,7 @@ export default function OnboardingTheme() {
   });
 
   return (
-    <Card className="max-w-lg">
+    <OnboardingCard>
       <CardHeader>
         <CardTitle>
           <Trans>Choose your style</Trans>
@@ -133,7 +132,7 @@ export default function OnboardingTheme() {
           </Trans>
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <OnboardingCardContent>
         <VStack spacing={4}>
           <HStack className="w-full justify-between">
             <modeFetcher.Form
@@ -215,7 +214,7 @@ export default function OnboardingTheme() {
             })}
           </div>
         </VStack>
-      </CardContent>
+      </OnboardingCardContent>
       <CardFooter>
         <HStack>
           {previous && (
@@ -242,6 +241,6 @@ export default function OnboardingTheme() {
           </Button>
         </HStack>
       </CardFooter>
-    </Card>
+    </OnboardingCard>
   );
 }

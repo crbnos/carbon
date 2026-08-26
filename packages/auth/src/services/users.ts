@@ -18,6 +18,21 @@ export function getPermissionCacheKey(userId: string) {
   return `permissions:${userId}`;
 }
 
+/**
+ * Does a resolved claims permission set grant `<module>_<action>` for the company?
+ * Honors the `"0"` all-companies wildcard, matching `requirePermissions`. `permissions`
+ * is the `permissions` field from `makePermissionsFromClaims` / `getUserClaims`.
+ */
+export function hasPermission(
+  permissions: Record<string, Permission> | null | undefined,
+  module: string,
+  action: keyof Permission,
+  companyId: string
+): boolean {
+  const scoped = permissions?.[module]?.[action];
+  return scoped?.some((c) => c === companyId || c === "0") ?? false;
+}
+
 export async function getCompanies(
   client: SupabaseClient<Database>,
   userId: string

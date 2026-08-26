@@ -2,6 +2,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { persistIntegrationSecrets } from "../../integrations/secrets";
 import type { ActionTaskEntityType } from "../../lib/actionTaskEntity";
 import { actionTaskEntities } from "../../lib/actionTaskEntity";
 import { adfToTiptap } from "./richtext";
@@ -43,16 +44,13 @@ export async function updateJiraCredentials(
 
   const metadata = integration.metadata as Record<string, any>;
 
-  return await client
-    .from("companyIntegration")
-    .update({
-      metadata: {
-        ...metadata,
-        credentials
-      } as any
-    })
-    .eq("companyId", companyId)
-    .eq("id", "jira");
+  // Secret material (accessToken/refreshToken) is split out to Supabase Vault;
+  // only the non-secret config is written back to the metadata column. Requires
+  // the service-role client (the caller passes one).
+  return await persistIntegrationSecrets(client, companyId, "jira", {
+    ...metadata,
+    credentials
+  });
 }
 
 /**

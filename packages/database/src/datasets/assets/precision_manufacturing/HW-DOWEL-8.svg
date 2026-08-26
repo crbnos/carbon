@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="chromeV" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4e5459"/><stop offset="0.12" stop-color="#dfe6ea"/><stop offset="0.3" stop-color="#ffffff"/><stop offset="0.5" stop-color="#c2cad0"/><stop offset="0.72" stop-color="#8d959c"/><stop offset="1" stop-color="#43484d"/></linearGradient><linearGradient id="faceC" x1="0.2" y1="0" x2="0.85" y2="1"><stop offset="0" stop-color="#f4f8fa"/><stop offset="0.4" stop-color="#c3ccd3"/><stop offset="1" stop-color="#7f878e"/></linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="500" cy="688" rx="400" ry="86" fill="url(#shadow)" transform="rotate(-12 500 688)"/>
+  <g transform="translate(512 500) rotate(-12)">
+    <clipPath id="barC"><path d="M-372.0 -124.0 L372.0 -124.0 Q419.1 0 372.0 124.0 L-372.0 124.0 Z"/></clipPath>
+    <path d="M-372.0 -124.0 L372.0 -124.0 Q419.1 0 372.0 124.0 L-372.0 124.0 Z" fill="url(#chromeV)" stroke="#3d4247" stroke-width="2.5"/>
+    <g clip-path="url(#barC)" stroke="#ffffff" stroke-opacity="0.15" stroke-width="1.6" fill="none"><path d="M-366.0 -110.0 L419.1 -110.0"/><path d="M-366.0 -99.0 L419.1 -99.0"/><path d="M-366.0 -88.0 L419.1 -88.0"/><path d="M-366.0 -77.0 L419.1 -77.0"/><path d="M-366.0 -66.0 L419.1 -66.0"/><path d="M-366.0 -55.0 L419.1 -55.0"/><path d="M-366.0 -44.0 L419.1 -44.0"/><path d="M-366.0 -33.0 L419.1 -33.0"/><path d="M-366.0 -22.0 L419.1 -22.0"/><path d="M-366.0 -11.0 L419.1 -11.0"/><path d="M-366.0 0.0 L419.1 0.0"/><path d="M-366.0 11.0 L419.1 11.0"/><path d="M-366.0 22.0 L419.1 22.0"/><path d="M-366.0 33.0 L419.1 33.0"/><path d="M-366.0 44.0 L419.1 44.0"/><path d="M-366.0 55.0 L419.1 55.0"/><path d="M-366.0 66.0 L419.1 66.0"/><path d="M-366.0 77.0 L419.1 77.0"/><path d="M-366.0 88.0 L419.1 88.0"/><path d="M-366.0 99.0 L419.1 99.0"/><path d="M-366.0 110.0 L419.1 110.0"/></g>
+    <g clip-path="url(#barC)" stroke="#2f3438" stroke-opacity="0.15" stroke-width="1.2" fill="none"><path d="M-366.0 -105.0 L419.1 -105.0"/><path d="M-366.0 -94.0 L419.1 -94.0"/><path d="M-366.0 -83.0 L419.1 -83.0"/><path d="M-366.0 -72.0 L419.1 -72.0"/><path d="M-366.0 -61.0 L419.1 -61.0"/><path d="M-366.0 -50.0 L419.1 -50.0"/><path d="M-366.0 -39.0 L419.1 -39.0"/><path d="M-366.0 -28.0 L419.1 -28.0"/><path d="M-366.0 -17.0 L419.1 -17.0"/><path d="M-366.0 -6.0 L419.1 -6.0"/><path d="M-366.0 5.0 L419.1 5.0"/><path d="M-366.0 16.0 L419.1 16.0"/><path d="M-366.0 27.0 L419.1 27.0"/><path d="M-366.0 38.0 L419.1 38.0"/><path d="M-366.0 49.0 L419.1 49.0"/><path d="M-366.0 60.0 L419.1 60.0"/><path d="M-366.0 71.0 L419.1 71.0"/><path d="M-366.0 82.0 L419.1 82.0"/><path d="M-366.0 93.0 L419.1 93.0"/><path d="M-366.0 104.0 L419.1 104.0"/><path d="M-366.0 115.0 L419.1 115.0"/></g>
+    <g clip-path="url(#barC)"><rect x="-354.0" y="-98.0" width="714.0" height="22" fill="#ffffff" opacity="0.26"/><rect x="-342.0" y="78.0" width="694.0" height="10" fill="#e6c98f" opacity="0.20"/></g>
+    <path d="M350.0 -115.0 Q397.1 0 350.0 115.0" fill="none" stroke="#3a3f44" stroke-width="3" opacity="0.6"/>
+    <path d="M363.0 -120.0 Q410.1 0 363.0 120.0" fill="none" stroke="#ffffff" stroke-opacity="0.25" stroke-width="3"/>
+    <ellipse cx="-372.0" cy="0" rx="47.1" ry="124.0" fill="url(#faceC)" stroke="#6f777d" stroke-width="2.5"/>
+    <ellipse cx="-372.0" cy="0" rx="41.1" ry="110.0" fill="none" stroke="#9aa2a8" stroke-width="2.5" opacity="0.9"/>
+    <ellipse cx="-372.0" cy="0" rx="34.1" ry="90.0" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="2"/>
+    <ellipse cx="-372.0" cy="0" rx="28.1" ry="70.0" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2"/>
+  </g>
+</svg>

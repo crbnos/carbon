@@ -1,11 +1,15 @@
 import { redis } from "@carbon/kv";
 import { Edition } from "@carbon/utils";
+import type { AuthSession as SupabaseAuthSession } from "@supabase/supabase-js";
 import { createCookieSessionStorage, redirect } from "react-router";
 
 import {
   CarbonEdition,
+  CONTROLLED_ENVIRONMENT,
   DOMAIN,
   REFRESH_ACCESS_TOKEN_THRESHOLD,
+  SESSION_ABSOLUTE_MAX_MS,
+  SESSION_IDLE_LOCK_MS,
   SESSION_KEY,
   SESSION_MAX_AGE,
   SESSION_SECRET
@@ -14,8 +18,18 @@ import type { AuthSession, Result } from "../types";
 import { getCookieDomain } from "../utils/cookie";
 import { getCurrentPath, isGet, makeRedirectToFromHere } from "../utils/http";
 import { path } from "../utils/path";
-import { refreshAccessToken, verifyAuthSession } from "./auth.server";
+import {
+  logAuthEvent,
+  makeAuthSession,
+  refreshAccessToken,
+  verifyAuthSession
+} from "./auth.server";
 import { setCompanyId } from "./company.server";
+import {
+  getTotpFactors,
+  userHasVerifiedTotpFactor,
+  verifyTotpChallenge
+} from "./mfa.server";
 import { getPermissionCacheKey } from "./users";
 
 async function assertAuthSession(
@@ -61,9 +75,133 @@ export async function setAuthSession(
 
   if (authSession !== undefined) {
     session.set(SESSION_KEY, authSession);
+    // Issuing (or clearing) a full session always ends any in-flight MFA
+    // challenge — the pending tokens are single-purpose.
+    session.unset(MFA_SESSION_KEY);
   }
 
   return sessionStorage.commitSession(session, { maxAge: SESSION_MAX_AGE });
+}
+
+// The half-authenticated state between a successful first factor and the TOTP
+// challenge. Lives in the same cookie session under its own key — never under
+// SESSION_KEY, so `requireAuthSession` keeps failing until the challenge passes.
+const MFA_SESSION_KEY = "mfa";
+const PENDING_MFA_MAX_AGE_MS = 10 * 60 * 1000;
+
+export type PendingMfaSession = {
+  authSession: AuthSession;
+  redirectTo?: string;
+  createdAt: number;
+};
+
+export async function setPendingMfaSession(
+  request: Request,
+  {
+    authSession,
+    redirectTo
+  }: {
+    authSession: AuthSession;
+    redirectTo?: string;
+  }
+) {
+  const session = await getSession(request);
+  session.set(MFA_SESSION_KEY, {
+    authSession,
+    redirectTo,
+    createdAt: Date.now()
+  } satisfies PendingMfaSession);
+
+  return sessionStorage.commitSession(session, { maxAge: SESSION_MAX_AGE });
+}
+
+export async function getPendingMfaSession(
+  request: Request
+): Promise<PendingMfaSession | null> {
+  const session = await getSession(request);
+  const pending = session.get(MFA_SESSION_KEY) as PendingMfaSession | undefined;
+
+  if (!pending?.authSession?.accessToken || !pending?.authSession?.refreshToken)
+    return null;
+
+  if (Date.now() - pending.createdAt > PENDING_MFA_MAX_AGE_MS) return null;
+
+  return pending;
+}
+
+/**
+ * Verify a TOTP code for the `/mfa` route and mint the full session cookie.
+ *
+ * Two entry states, one exit: a login flow parked tokens in the pending-MFA
+ * key, or an already-issued session predates enrollment and got bounced here
+ * by `requireAuthSession`. Either way a passed challenge rotates the tokens
+ * to AAL2, so the returned cookie must be set on the response — the source
+ * refresh token is dead after GoTrue's reuse interval.
+ */
+export async function completeMfaChallenge(
+  request: Request,
+  code: string
+): Promise<
+  | {
+      success: true;
+      authSession: AuthSession;
+      sessionCookie: string;
+      redirectTo?: string;
+    }
+  | { success: false; reason: "no-session" | "invalid-code" }
+> {
+  const pending = await getPendingMfaSession(request);
+  const source = pending?.authSession ?? (await getAuthSession(request));
+
+  if (!source?.accessToken || !source?.refreshToken) {
+    return { success: false, reason: "no-session" };
+  }
+
+  const factors = await getTotpFactors(source.userId);
+  const verifiedFactors = factors.filter((f) => f.status === "verified");
+
+  // Nearly always one factor; on the rare multi-factor account, try the code
+  // against each until one accepts it.
+  let supabaseSession: SupabaseAuthSession | null = null;
+  for (const factor of verifiedFactors) {
+    supabaseSession = await verifyTotpChallenge(
+      { accessToken: source.accessToken, refreshToken: source.refreshToken },
+      factor.id,
+      code
+    );
+    if (supabaseSession) break;
+  }
+
+  if (!supabaseSession) {
+    logAuthEvent("mfa_challenge_failed", { userId: source.userId });
+    return { success: false, reason: "invalid-code" };
+  }
+
+  const authSession = makeAuthSession(
+    supabaseSession,
+    source.companyId,
+    source.companyGroupId,
+    { mfaVerified: true }
+  );
+
+  if (!authSession) {
+    return { success: false, reason: "invalid-code" };
+  }
+
+  if (source.console) {
+    authSession.console = source.console;
+  }
+
+  const sessionCookie = await setAuthSession(request, { authSession });
+
+  logAuthEvent("mfa_challenge_success", { userId: authSession.userId });
+
+  return {
+    success: true,
+    authSession,
+    sessionCookie,
+    redirectTo: pending?.redirectTo
+  };
 }
 
 export async function clearAuthCookies(request: Request) {
@@ -147,6 +285,25 @@ function isExpiringSoon(expiresAt: number) {
   return (expiresAt - REFRESH_ACCESS_TOKEN_THRESHOLD) * 1000 < Date.now();
 }
 
+/**
+ * Absolute session cap (NIST 800-171 3.1.11). A missing `createdAt` counts as
+ * "never expired" — a session minted before this shipped gets stamped on its
+ * next mint/refresh rather than being force-terminated on sight.
+ */
+export function isSessionExpiredAbsolute(session: AuthSession): boolean {
+  if (!session.createdAt) return false;
+  return Date.now() - session.createdAt > SESSION_ABSOLUTE_MAX_MS;
+}
+
+/**
+ * Idle session lock (NIST 800-171 3.1.10). A missing `lastActiveAt` counts as
+ * "not locked" (back-compat) — the heartbeat/unlock stamps it going forward.
+ */
+export function isSessionIdleLocked(session: AuthSession): boolean {
+  if (!session.lastActiveAt) return false;
+  return Date.now() - session.lastActiveAt > SESSION_IDLE_LOCK_MS;
+}
+
 export async function requireAuthSession(
   request: Request,
   {
@@ -157,14 +314,40 @@ export async function requireAuthSession(
     verify: boolean;
   } = { verify: false }
 ): Promise<AuthSession> {
-  const authSession = await assertAuthSession(request, {
+  let authSession = await assertAuthSession(request, {
     onFailRedirectTo
   });
 
   const isValidSession = verify ? await verifyAuthSession(authSession) : true;
 
   if (!isValidSession || isExpiringSoon(authSession.expiresAt)) {
-    return refreshAuthSession(request);
+    authSession = await refreshAuthSession(request);
+  }
+
+  // NIST 800-171 3.1.10 (session lock) / 3.1.11 (session termination) — enforced
+  // only in a controlled (ITAR/CUI) environment. Console DEVICE sessions are
+  // exempt: their lock is the operator pin-in (see console.server), and a shared
+  // shop-floor kiosk must not be force-logged-out mid-shift (spec D8).
+  if (CONTROLLED_ENVIRONMENT && !authSession.console) {
+    // Absolute cap (3.1.11): terminate — destroy the session, force full re-login.
+    if (isSessionExpiredAbsolute(authSession)) {
+      throw await destroyAuthSession(request);
+    }
+    // Idle lock (3.1.10): the session is PRESERVED; re-auth at /unlock to resume.
+    if (isSessionIdleLocked(authSession)) {
+      throw redirect(`${path.to.unlock}?${makeRedirectToFromHere(request)}`);
+    }
+  }
+
+  // Active MFA re-check: a session minted before the user enrolled a TOTP
+  // factor (or on another device) is not trusted just because it exists —
+  // send it through the challenge. Sessions issued after a passed challenge
+  // carry `mfaVerified` and skip the lookup's Redis/GoTrue cost entirely.
+  if (
+    !authSession.mfaVerified &&
+    (await userHasVerifiedTotpFactor(authSession.userId))
+  ) {
+    throw redirect(`${path.to.mfa}?${makeRedirectToFromHere(request)}`);
   }
 
   return authSession;
@@ -181,9 +364,22 @@ export async function refreshAuthSession(
     authSession?.companyGroupId
   );
 
-  // Preserve console mode across token refresh
+  // Preserve console mode and MFA verification across token refresh —
+  // `makeAuthSession` rebuilds the payload from the Supabase session alone.
   if (refreshedAuthSession && authSession?.console) {
     refreshedAuthSession.console = authSession.console;
+  }
+  if (refreshedAuthSession && authSession?.mfaVerified) {
+    refreshedAuthSession.mfaVerified = authSession.mfaVerified;
+  }
+  // Preserve session age + last-activity across a silent token refresh — a
+  // refresh is neither a re-auth nor user activity, so it must not reset the
+  // absolute-cap clock (3.1.11) or the idle clock (3.1.10).
+  if (refreshedAuthSession && authSession?.createdAt) {
+    refreshedAuthSession.createdAt = authSession.createdAt;
+  }
+  if (refreshedAuthSession && authSession?.lastActiveAt) {
+    refreshedAuthSession.lastActiveAt = authSession.lastActiveAt;
   }
 
   if (!refreshedAuthSession) {
@@ -217,6 +413,23 @@ export async function refreshAuthSession(
   }
 
   return refreshedAuthSession;
+}
+
+/**
+ * Re-commit the session cookie with `lastActiveAt = now`. Called by the activity
+ * heartbeat (an active session pings this well within the idle window) and on a
+ * successful unlock. Returns the Set-Cookie string, or null if there is no
+ * session to touch. Only the idle clock moves — `createdAt` (the absolute-cap
+ * clock) is left untouched.
+ */
+export async function touchAuthSession(
+  request: Request
+): Promise<string | null> {
+  const session = await getSession(request);
+  const authSession = await getAuthSession(request);
+  if (!authSession) return null;
+  session.set(SESSION_KEY, { ...authSession, lastActiveAt: Date.now() });
+  return sessionStorage.commitSession(session, { maxAge: SESSION_MAX_AGE });
 }
 
 export async function updateSessionConsole(

@@ -427,7 +427,7 @@ export function createOAuthClient({
   const basicAuth = btoa(`${clientId}:${clientSecret}`);
   const http = new HTTPClient();
 
-  let creds: ProviderCredentials = {
+  let creds: Extract<ProviderCredentials, { type: "oauth2" }> = {
     type: "oauth2",
     accessToken: options.accessToken!,
     refreshToken: options.refreshToken!
@@ -452,8 +452,16 @@ export function createOAuthClient({
         })
       });
 
-      if (response.error || !response.data) {
-        throw new Error(`Auth failed: ${response.data}`);
+      if (response.error || !response.data?.access_token) {
+        // Surface the provider's actual rejection (e.g. invalid_grant /
+        // invalid_client) instead of the useless "[object Object]".
+        throw new Error(
+          `Token exchange failed (HTTP ${response.code}): ${
+            typeof response.data === "string"
+              ? response.data
+              : JSON.stringify(response.data)
+          }`
+        );
       }
 
       const newCreds = {
@@ -510,7 +518,7 @@ export function createOAuthClient({
         expiresAt: new Date(
           Date.now() + response.data.expires_in * 1000
         ).toISOString(),
-        tenantId: creds?.tenantId
+        providerMetadata: creds?.providerMetadata
       } satisfies ProviderCredentials;
 
       creds = {

@@ -1,0 +1,159 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="castBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4b4f52"/>
+      <stop offset="0.22" stop-color="#787d81"/>
+      <stop offset="0.45" stop-color="#8d9296"/>
+      <stop offset="0.72" stop-color="#63686c"/>
+      <stop offset="1" stop-color="#414548"/>
+    </linearGradient>
+    <linearGradient id="castFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#4b4f52"/>
+      <stop offset="0.22" stop-color="#787d81"/>
+      <stop offset="0.45" stop-color="#8d9296"/>
+      <stop offset="0.72" stop-color="#63686c"/>
+      <stop offset="1" stop-color="#414548"/>
+    </linearGradient>
+    <linearGradient id="charcoalBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#26292c"/>
+      <stop offset="0.22" stop-color="#4a4f54"/>
+      <stop offset="0.45" stop-color="#5e646a"/>
+      <stop offset="0.72" stop-color="#383c40"/>
+      <stop offset="1" stop-color="#1e2124"/>
+    </linearGradient>
+    <linearGradient id="charcoalFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#26292c"/>
+      <stop offset="0.22" stop-color="#4a4f54"/>
+      <stop offset="0.45" stop-color="#5e646a"/>
+      <stop offset="0.72" stop-color="#383c40"/>
+      <stop offset="1" stop-color="#1e2124"/>
+    </linearGradient>
+    <linearGradient id="hardAno" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1c1f22"/>
+      <stop offset="0.2" stop-color="#43484d"/>
+      <stop offset="0.45" stop-color="#5a6167"/>
+      <stop offset="0.72" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="hardAnoFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#5a6167"/>
+      <stop offset="0.45" stop-color="#3c4145"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="amber" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8a5a12"/>
+      <stop offset="0.3" stop-color="#c9903a"/>
+      <stop offset="0.55" stop-color="#e0b25f"/>
+      <stop offset="0.8" stop-color="#a06f22"/>
+      <stop offset="1" stop-color="#7a4e10"/>
+    </linearGradient>
+    <linearGradient id="steelFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <g transform="translate(-12 0)">
+    <ellipse cx="512" cy="808" rx="348" ry="70" fill="url(#shadow)"/>
+
+    <!-- ================= heavy round machined base flange ================= -->
+    <path d="M266 726 A246 93 0 0 0 758 726 L758 762 A246 93 0 0 1 266 762 Z" fill="url(#castBarrel)" stroke="#33373a" stroke-width="3"/>
+    <path d="M266 736 A246 93 0 0 0 758 736" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="3"/>
+    <path d="M266 754 A246 93 0 0 0 758 754" fill="none" stroke="#000000" stroke-opacity="0.26" stroke-width="4"/>
+    <ellipse cx="512" cy="726" rx="246" ry="93" fill="url(#castFace)" stroke="#33373a" stroke-width="3"/>
+    <ellipse cx="512" cy="726" rx="234" ry="88.4" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2.5"/>
+    <ellipse cx="512" cy="726" rx="228" ry="86.2" fill="none" stroke="#000000" stroke-opacity="0.14" stroke-width="2"/>
+    <!-- ring of counterbored mounting holes -->
+    <ellipse cx="704.2" cy="756.2" rx="26" ry="10" fill="#ffffff" opacity="0.2"/>
+    <ellipse cx="704.2" cy="756.2" rx="19" ry="7.2" fill="#2c3236" stroke="#1c2124" stroke-width="2"/>
+    <ellipse cx="702.2" cy="754.2" rx="11" ry="4.2" fill="#171b1d"/>
+    <ellipse cx="591.6" cy="799.0" rx="26" ry="10" fill="#ffffff" opacity="0.2"/>
+    <ellipse cx="591.6" cy="799.0" rx="19" ry="7.2" fill="#2c3236" stroke="#1c2124" stroke-width="2"/>
+    <ellipse cx="589.6" cy="797.0" rx="11" ry="4.2" fill="#171b1d"/>
+    <ellipse cx="432.4" cy="799.0" rx="26" ry="10" fill="#ffffff" opacity="0.2"/>
+    <ellipse cx="432.4" cy="799.0" rx="19" ry="7.2" fill="#2c3236" stroke="#1c2124" stroke-width="2"/>
+    <ellipse cx="430.4" cy="797.0" rx="11" ry="4.2" fill="#171b1d"/>
+    <ellipse cx="319.8" cy="756.2" rx="26" ry="10" fill="#ffffff" opacity="0.2"/>
+    <ellipse cx="319.8" cy="756.2" rx="19" ry="7.2" fill="#2c3236" stroke="#1c2124" stroke-width="2"/>
+    <ellipse cx="317.8" cy="754.2" rx="11" ry="4.2" fill="#171b1d"/>
+    <ellipse cx="319.8" cy="695.8" rx="26" ry="10" fill="#ffffff" opacity="0.2"/>
+    <ellipse cx="319.8" cy="695.8" rx="19" ry="7.2" fill="#2c3236" stroke="#1c2124" stroke-width="2"/>
+    <ellipse cx="317.8" cy="693.8" rx="11" ry="4.2" fill="#171b1d"/>
+    <ellipse cx="432.4" cy="653.0" rx="26" ry="10" fill="#ffffff" opacity="0.2"/>
+    <ellipse cx="432.4" cy="653.0" rx="19" ry="7.2" fill="#2c3236" stroke="#1c2124" stroke-width="2"/>
+    <ellipse cx="430.4" cy="651.0" rx="11" ry="4.2" fill="#171b1d"/>
+    <ellipse cx="591.6" cy="653.0" rx="26" ry="10" fill="#ffffff" opacity="0.2"/>
+    <ellipse cx="591.6" cy="653.0" rx="19" ry="7.2" fill="#2c3236" stroke="#1c2124" stroke-width="2"/>
+    <ellipse cx="589.6" cy="651.0" rx="11" ry="4.2" fill="#171b1d"/>
+    <ellipse cx="704.2" cy="695.8" rx="26" ry="10" fill="#ffffff" opacity="0.2"/>
+    <ellipse cx="704.2" cy="695.8" rx="19" ry="7.2" fill="#2c3236" stroke="#1c2124" stroke-width="2"/>
+    <ellipse cx="702.2" cy="693.8" rx="11" ry="4.2" fill="#171b1d"/>
+
+    <!-- ================= broad tapered column casting ================= -->
+    <path d="M336 726 L384 396 L640 396 L688 726 Q512 860 336 726 Z" fill="url(#castFace)" stroke="#33373a" stroke-width="3"/>
+    <!-- cast draft on the flanks -->
+    <g fill="none" stroke="#4b4f52" stroke-opacity="0.7" stroke-width="5">
+      <path d="M392 748 L424 410"/>
+      <path d="M632 748 L600 410"/>
+    </g>
+    <g fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="3">
+      <path d="M400 748 L432 410"/>
+      <path d="M640 748 L608 410"/>
+    </g>
+    <path d="M362 620 L662 620" fill="none" stroke="#000000" stroke-opacity="0.14" stroke-width="5"/>
+    <path d="M356 660 L668 660" fill="none" stroke="#ffffff" stroke-opacity="0.12" stroke-width="5"/>
+    <!-- hard anodised machined band where the covers meet -->
+    <path d="M370 540 L654 540 L648 502 L376 502 Z" fill="url(#hardAno)" stroke="#0f1214" stroke-width="2.5"/>
+    <path d="M378 512 L646 512" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="4"/>
+    <path d="M372 532 L652 532" fill="none" stroke="#000000" stroke-opacity="0.35" stroke-width="4"/>
+    <ellipse cx="512" cy="396" rx="128" ry="48.6" fill="url(#castFace)" stroke="#33373a" stroke-width="2.5"/>
+    <ellipse cx="512" cy="396" rx="112" ry="42.6" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2"/>
+
+    <!-- ================= folded sheet metal rear cover panel ================= -->
+    <path d="M694 244 L776 206 L776 376 L694 420 Z" fill="url(#hardAnoFace)" stroke="#0f1214" stroke-width="3"/>
+    <path d="M712 236 L712 412" fill="none" stroke="#0f1214" stroke-opacity="0.7" stroke-width="3"/>
+    <path d="M718 234 L718 410" fill="none" stroke="#8a9298" stroke-opacity="0.3" stroke-width="2.5"/>
+    <path d="M766 212 L766 372" fill="none" stroke="#0f1214" stroke-opacity="0.7" stroke-width="3"/>
+    <ellipse cx="742" cy="248" rx="8" ry="8.5" fill="url(#steelFace)" stroke="#454b4f" stroke-width="1.8"/>
+    <ellipse cx="742" cy="368" rx="8" ry="8.5" fill="url(#steelFace)" stroke="#454b4f" stroke-width="1.8"/>
+    <path d="M700 250 L770 218" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="4"/>
+
+    <!-- ================= dark charcoal joint housing ================= -->
+    <path d="M318 226 Q318 186 358 186 L666 186 Q706 186 706 226 L706 400 Q706 440 666 440 L358 440 Q318 440 318 400 Z" fill="url(#charcoalFace)" stroke="#161a1c" stroke-width="3"/>
+    <path d="M340 206 Q340 200 352 200 L664 200" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="6"/>
+    <path d="M344 428 L672 428" fill="none" stroke="#000000" stroke-opacity="0.32" stroke-width="7"/>
+    <path d="M318 300 L706 300" fill="none" stroke="#ffffff" stroke-opacity="0.07" stroke-width="10"/>
+    <!-- large circular bolted cover plate -->
+    <ellipse cx="458" cy="313" rx="96" ry="112" fill="url(#charcoalFace)" stroke="#161a1c" stroke-width="3"/>
+    <ellipse cx="458" cy="313" rx="86" ry="100" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2.5"/>
+    <ellipse cx="458" cy="313" rx="58" ry="68" fill="url(#hardAnoFace)" stroke="#141719" stroke-width="2.5"/>
+    <ellipse cx="458" cy="313" rx="46" ry="54" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="2"/>
+    <ellipse cx="458" cy="313" rx="30" ry="35" fill="#22272a" stroke="#141719" stroke-width="2.5"/>
+    <ellipse cx="448" cy="300" rx="10" ry="12" fill="#ffffff" opacity="0.12"/>
+    <!-- bank of stainless cap screws -->
+    <ellipse cx="458.0" cy="221.0" rx="10" ry="11" fill="url(#steelFace)" stroke="#454b4f" stroke-width="2"/><ellipse cx="458.0" cy="221.0" rx="4.5" ry="5" fill="#3f454a" opacity="0.85"/>
+    <ellipse cx="497.0" cy="233.3" rx="10" ry="11" fill="url(#steelFace)" stroke="#454b4f" stroke-width="2"/><ellipse cx="497.0" cy="233.3" rx="4.5" ry="5" fill="#3f454a" opacity="0.85"/>
+    <ellipse cx="525.5" cy="267.0" rx="10" ry="11" fill="url(#steelFace)" stroke="#454b4f" stroke-width="2"/><ellipse cx="525.5" cy="267.0" rx="4.5" ry="5" fill="#3f454a" opacity="0.85"/>
+    <ellipse cx="536.0" cy="313.0" rx="10" ry="11" fill="url(#steelFace)" stroke="#454b4f" stroke-width="2"/><ellipse cx="536.0" cy="313.0" rx="4.5" ry="5" fill="#3f454a" opacity="0.85"/>
+    <ellipse cx="525.5" cy="359.0" rx="10" ry="11" fill="url(#steelFace)" stroke="#454b4f" stroke-width="2"/><ellipse cx="525.5" cy="359.0" rx="4.5" ry="5" fill="#3f454a" opacity="0.85"/>
+    <ellipse cx="497.0" cy="392.7" rx="10" ry="11" fill="url(#steelFace)" stroke="#454b4f" stroke-width="2"/><ellipse cx="497.0" cy="392.7" rx="4.5" ry="5" fill="#3f454a" opacity="0.85"/>
+    <ellipse cx="458.0" cy="405.0" rx="10" ry="11" fill="url(#steelFace)" stroke="#454b4f" stroke-width="2"/><ellipse cx="458.0" cy="405.0" rx="4.5" ry="5" fill="#3f454a" opacity="0.85"/>
+    <ellipse cx="419.0" cy="392.7" rx="10" ry="11" fill="url(#steelFace)" stroke="#454b4f" stroke-width="2"/><ellipse cx="419.0" cy="392.7" rx="4.5" ry="5" fill="#3f454a" opacity="0.85"/>
+    <ellipse cx="390.5" cy="359.0" rx="10" ry="11" fill="url(#steelFace)" stroke="#454b4f" stroke-width="2"/><ellipse cx="390.5" cy="359.0" rx="4.5" ry="5" fill="#3f454a" opacity="0.85"/>
+    <ellipse cx="380.0" cy="313.0" rx="10" ry="11" fill="url(#steelFace)" stroke="#454b4f" stroke-width="2"/><ellipse cx="380.0" cy="313.0" rx="4.5" ry="5" fill="#3f454a" opacity="0.85"/>
+    <ellipse cx="390.5" cy="267.0" rx="10" ry="11" fill="url(#steelFace)" stroke="#454b4f" stroke-width="2"/><ellipse cx="390.5" cy="267.0" rx="4.5" ry="5" fill="#3f454a" opacity="0.85"/>
+    <ellipse cx="419.0" cy="233.3" rx="10" ry="11" fill="url(#steelFace)" stroke="#454b4f" stroke-width="2"/><ellipse cx="419.0" cy="233.3" rx="4.5" ry="5" fill="#3f454a" opacity="0.85"/>
+    <!-- machined split line and the thin amber accent at the joint -->
+    <path d="M322 410 L702 410" fill="none" stroke="#0f1214" stroke-opacity="0.8" stroke-width="4"/>
+    <path d="M342 428 L682 428" fill="none" stroke="#5f3c0d" stroke-width="13"/>
+    <path d="M342 428 L682 428" fill="none" stroke="url(#amber)" stroke-width="7"/>
+  </g>
+</svg>

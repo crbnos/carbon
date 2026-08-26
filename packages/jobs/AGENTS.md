@@ -1,6 +1,6 @@
 # @carbon/jobs
 
-Background job system built on Inngest. Handles event system processing (webhooks, sync, search, audit, embeddings), integrations (Jira, Linear, Xero, Slack, Onshape), notifications, scheduled tasks, and async workflows.
+Background job system built on Inngest. Handles event system processing (webhooks, sync, search, audit, embeddings), integrations (Jira, Linear, accounting sync — Xero/QBO/Rillet, Slack, Onshape), notifications, scheduled tasks, and async workflows.
 
 ## Always
 
@@ -50,11 +50,28 @@ pnpm --filter @carbon/jobs dev:jobs   # Start local Inngest dev server
 | Handler | Event | Purpose |
 |---------|-------|---------|
 | WEBHOOK | `carbon/event-webhook` | POST to configured URL. Backs the user-facing Settings → Webhooks feature; its body `{type, record, old?, companyId, table}` is a public contract — change `toWebhookBody` only with the docs and `webhook.test.ts` |
-| SYNC | `carbon/event-sync` | Accounting sync (Xero) |
+| SYNC | `carbon/event-sync` | Accounting sync for all three providers (Xero, QBO, Rillet) — v5: events are hints; refs go to the shared `reconcileEntities` executor (`integrations/reconcile.ts` decides from state), then the `accountingSyncOperation` ledger drains; table→entity map in `events/sync-tables.ts` (see `.claude/rules/accounting-sync-handlers.md`) |
 | SEARCH | `carbon/event-search` | Upsert/delete search index |
 | AUDIT | `carbon/event-audit` | Per-company audit log |
 | EMBEDDING | `carbon/event-embedding` | AI embeddings for items/customers/suppliers |
 | WORKFLOW | `carbon/event-workflow` | Customer-workflow matcher: announcement → catalog event ids → subscribed workflows → one `workflowRun` each |
+
+The queue drainer (`events/queue.ts`) archives messages with an unknown `handlerType` to pgmq's
+dead-letter table (`pgmq.a_event_system`) instead of crash-looping — a poison message can no
+longer wedge all event processing.
+
+## Accounting sync functions (`src/inngest/functions/integrations/`)
+
+Full architecture in `.claude/rules/accounting-sync-handlers.md`; the ones to know:
+
+| Function | Trigger | Purpose |
+|----------|---------|---------|
+| `sync-external-accounting` | `carbon/sync-external-accounting` | Webhook-fired entry point; enqueues + drains the `accountingSyncOperation` ledger |
+| `accounting-pull-sweep` | cron `*/30 * * * *` | INBOUND correctness: incremental pull (`listChanges`) for every active integration |
+| `accounting-outbound-sweep` | cron `15,45 * * * *` | OUTBOUND correctness backstop (v4/v5): subscription convergence, then pages the window's candidate refs into the shared `reconcileEntities` executor (same brain as the event path), then a drain (Xero's only periodic drain). Fires `NotificationEvent.IntegrationSync` (in-app) to the integration's configurer when the drain leaves failed ops |
+| `accounting-reconciliation` | cron `0 3 * * 1` | Provider-agnostic (all three) presence drift check + `accountingSyncTieOut` writer — one cell per (integration × period × account) |
+| `accounting-consolidation` | cron `0 2 * * *` | Daily-consolidation journal push (one aggregated provider journal per posting date) |
+| `accounting-backfill` | `carbon/accounting-backfill` | Explicit history backfill |
 
 ## Workflow functions (`src/inngest/functions/workflows/`)
 
@@ -110,7 +127,7 @@ Routing is off the catalog's `getActionRoute(id)`, never off the shape of an id.
 | `services.ts` | `createWorkflowServices` — routes an action id to `notify`, `webhook`, the update path or the create path; the only export the engine uses |
 | `dispatcher.ts` | The `setWorkflowDispatch` seam (below) |
 | `create.ts` | `runCreateAction` — creates through the ERP's own `upsert*` service function via the dispatcher, so sequence numbers, defaults and required-field logic are the app's; digs the new row's id out of the returned envelope |
-| `update.ts` | `runUpdateAction` — writes the catalog's allowlisted columns on one record. Checks the target and **every entity-typed value** exists in this company before writing, and rejects a value outside a column's enum. Also exports `toPlainValue` |
+| `update.ts` | `runUpdateAction` — writes the catalog's allowlisted columns on one record. Checks the target and **every entity-typed value** exists in this company before writing, and rejects a value outside a column's enum. A custom field is written separately, through the `workflow_merge_custom_fields` RPC, so setting one cannot erase the others |
 | `notify.ts` | `runNotifyAction` — one `trigger("notify", …)` with `NotificationEvent.Workflow`. A role IS a group and every user has an identity group whose id is their user id, so both recipient inputs collapse to `groupIds` |
 | `search.ts` | `runSearch` — one Lookup node's search, translated to PostgREST filters that mean exactly what `runtime/compare.ts` says (`contains`/`startsWith`/`endsWith` → `ilike`). Reads `MAX_LIST_ITEMS + 1` so an over-cap list is detectable |
 | `operations.ts` | `runOperation` — the 15 read-only computations, one `COMPUTATIONS` entry per catalog operation id. An id with no implementation refuses rather than falls through; a throw becomes a failed node, never a thrown walk |

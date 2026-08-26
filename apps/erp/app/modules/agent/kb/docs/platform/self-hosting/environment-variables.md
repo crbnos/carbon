@@ -12,7 +12,7 @@ as you need them.
 Platform-wide behavior and edition.
 
 One of `community`, `cloud`, `enterprise`, or `test`. Gates edition-specific features.
-Enables ITAR / controlled-environment restrictions.
+Enables ITAR / controlled-environment restrictions: the US-Person certification gate, ITAR hostnames and branding, Slack and analytics disabled, and mandatory `docs/reference/two-factor` that a company admin cannot turn off.
 Allowed sign-in methods: `email`, `google`, `azure`, `passkey`.
 Base domain the apps are served from.
 Public URL of the ERP app.
@@ -57,6 +57,7 @@ Resend API key for transactional email.
 Verified sending domain.
 Stripe secret key, Cloud / Enterprise billing.
 Verifies inbound Stripe webhooks.
+Verifies inbound Stripe Connect webhooks (connected-account events, signed with a separate secret).
 
 ## AI & analytics
 

@@ -7,14 +7,17 @@ import {
 import { refreshAccessToken } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setCompanyId } from "@carbon/auth/company.server";
+import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import {
   destroyAuthSession,
   flash,
   getAuthSession,
-  setAuthSession
+  setAuthSession,
+  setPendingMfaSession
 } from "@carbon/auth/session.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { validator } from "@carbon/form";
+import { AccountLockout, redis } from "@carbon/kv";
 import {
   Alert,
   AlertDescription,
@@ -80,6 +83,22 @@ export async function action({ request }: ActionFunctionArgs) {
   const user = await getUserByEmail(authSession.email);
 
   if (user?.data) {
+    // Genuine login (magic-link / OAuth first factor verified) — clear any
+    // accumulated per-account lockout state (NIST 3.1.8 reset-on-success). Runs
+    // before the TOTP gate so an MFA-enrolled user's counter clears too.
+    await new AccountLockout({ redis }).reset(authSession.email);
+
+    // TOTP gate: park the tokens in the pending-MFA key and challenge before
+    // any full session cookie exists. The /mfa action mints the real session.
+    if (await userHasVerifiedTotpFactor(authSession.userId)) {
+      const pendingCookie = await setPendingMfaSession(request, {
+        authSession
+      });
+      return redirect(path.to.mfa, {
+        headers: [["Set-Cookie", pendingCookie]]
+      });
+    }
+
     const sessionCookie = await setAuthSession(request, {
       authSession
     });

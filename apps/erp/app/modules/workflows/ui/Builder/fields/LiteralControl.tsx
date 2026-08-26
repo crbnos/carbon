@@ -40,6 +40,8 @@ type LiteralControlProps = {
   /** Opens the variable menu. Every control here has two modes, and `{` is the one
    * way into the second. */
   onRequestVariable: () => void;
+  /** The version is published: show the value, refuse every edit. */
+  isReadOnly?: boolean;
 };
 
 export function LiteralControl({
@@ -47,7 +49,8 @@ export function LiteralControl({
   choices,
   value,
   onChange,
-  onRequestVariable
+  onRequestVariable,
+  isReadOnly = false
 }: LiteralControlProps) {
   const { t } = useLingui();
 
@@ -62,6 +65,7 @@ export function LiteralControl({
   // A `{` opens the menu rather than landing in the buffer. On the shell rather than
   // each input, so a dropdown and a switch answer the key the same way a text box does.
   const braceOpens = (e: KeyboardEvent) => {
+    if (isReadOnly) return;
     if (e.key === "{") {
       e.preventDefault();
       onRequestVariable();
@@ -80,8 +84,12 @@ export function LiteralControl({
   if (choices && choices.length > 0) {
     const strValue = typeof value === "string" ? value : "";
     return shell(
-      <Select value={strValue} onValueChange={(v) => emit(v || undefined)}>
-        <SelectTrigger>
+      <Select
+        value={strValue}
+        onValueChange={(v) => emit(v || undefined)}
+        disabled={isReadOnly}
+      >
+        <SelectTrigger disabled={isReadOnly}>
           <SelectValue className="truncate" placeholder={t`Select…`} />
         </SelectTrigger>
         <SelectContent>
@@ -109,6 +117,7 @@ export function LiteralControl({
             value={strValue}
             onChange={(e) => emit(e.target.value)}
             placeholder={t`Enter text…`}
+            isDisabled={isReadOnly}
           />
         );
       }
@@ -127,6 +136,7 @@ export function LiteralControl({
               emit(typeof n === "number" && !Number.isNaN(n) ? n : undefined)
             }
             aria-label={t`Number`}
+            isDisabled={isReadOnly}
           >
             <NumberInputGroup className="relative">
               <NumberInput
@@ -153,6 +163,7 @@ export function LiteralControl({
             checked={boolValue}
             onCheckedChange={(checked) => emit(checked)}
             aria-label={t`Toggle`}
+            disabled={isReadOnly}
           />
         );
       }
@@ -163,6 +174,7 @@ export function LiteralControl({
             value={asCalendarDate(value)}
             onChange={(date) => emit(date?.toString() ?? undefined)}
             aria-label={t`Date`}
+            isDisabled={isReadOnly}
           />
         );
       }
@@ -178,7 +190,11 @@ export function LiteralControl({
     if (Picker) {
       const strValue = typeof value === "string" ? value : undefined;
       return shell(
-        <Picker value={strValue} onChange={(id) => emit(id ?? undefined)} />
+        <Picker
+          value={strValue}
+          onChange={(id) => emit(id ?? undefined)}
+          isDisabled={isReadOnly}
+        />
       );
     }
   }
@@ -191,7 +207,7 @@ export function LiteralControl({
       type="text"
       className="truncate"
       placeholder={t`Pick a value from an earlier step`}
-      disabled
+      isDisabled
     />
   );
 }

@@ -10,6 +10,7 @@ import {
   LuDatabase,
   LuFactory,
   LuFileText,
+  LuFlaskConical,
   LuHistory,
   LuImage,
   LuKey,
@@ -19,6 +20,7 @@ import {
   LuPrinter,
   LuScanBarcode,
   LuSheet,
+  LuShieldCheck,
   LuShoppingCart,
   LuUsers,
   LuWebhook,
@@ -34,7 +36,10 @@ const internalOnlyRoutes = new Set<string>([path.to.companies]);
 
 // Internal-only in real deployments, but usable by anyone on a local dev stack —
 // mirrors `canAccessBackups`, which gates the route and the backup APIs.
-const localOrInternalRoutes = new Set<string>([path.to.backups]);
+const localOrInternalRoutes = new Set<string>([
+  path.to.backups,
+  path.to.demoData
+]);
 
 export default function useSettingsSubmodules() {
   const { t } = useLingui();
@@ -184,6 +189,12 @@ export default function useSettingsSubmodules() {
             icon: <LuLayoutDashboard />
           },
           {
+            name: t`Demo Data`,
+            to: path.to.demoData,
+            role: "employee",
+            icon: <LuFlaskConical />
+          },
+          {
             name: t`Integrations`,
             to: path.to.integrations,
             role: "employee",
@@ -195,6 +206,12 @@ export default function useSettingsSubmodules() {
             role: "employee",
             icon: <LuClipboardCheck />,
             requiresControlledEnvironment: true
+          },
+          {
+            name: t`Security`,
+            to: path.to.security,
+            role: "employee",
+            icon: <LuShieldCheck />
           },
           {
             name: t`Sequences`,

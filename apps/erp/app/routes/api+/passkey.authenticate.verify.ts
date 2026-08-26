@@ -2,8 +2,13 @@ import { assertIsPost, error, isAuthProviderEnabled } from "@carbon/auth";
 import { signInWithPasskey } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setCompanyId } from "@carbon/auth/company.server";
+import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import { verifyPasskeyAuthentication } from "@carbon/auth/passkey.server";
-import { setAuthSession } from "@carbon/auth/session.server";
+import {
+  setAuthSession,
+  setPendingMfaSession
+} from "@carbon/auth/session.server";
+import { AccountLockout, redis } from "@carbon/kv";
 import type { WebAuthnCredential } from "@simplewebauthn/browser";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
@@ -111,6 +116,10 @@ export async function action({ request }: ActionFunctionArgs) {
       });
     }
 
+    // Genuine passkey login verified — clear any per-account lockout state
+    // (NIST 3.1.8 reset-on-success), before the TOTP gate below.
+    await new AccountLockout({ redis }).reset(authUser.user.email);
+
     const employeeCompanies = await getEmployeeCompanies(
       serviceRole,
       credRow.userId
@@ -121,17 +130,30 @@ export async function action({ request }: ActionFunctionArgs) {
       });
     }
 
+    const safeRedirect =
+      redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+        ? redirectTo
+        : path.to.authenticatedRoot;
+
+    // TOTP gate: a passkey sign-in still lands at AAL1 (it is minted through
+    // a server-side magic link), so an enrolled user is challenged like any
+    // other login before the full session cookie exists.
+    if (await userHasVerifiedTotpFactor(credRow.userId)) {
+      const pendingCookie = await setPendingMfaSession(request, {
+        authSession,
+        redirectTo: safeRedirect
+      });
+      return redirect(path.to.mfa, {
+        headers: [["Set-Cookie", pendingCookie]]
+      });
+    }
+
     const sessionCookie = await setAuthSession(request, { authSession });
     const headers: [string, string][] = [["Set-Cookie", sessionCookie]];
 
     if (employeeCompanies.data.length <= 1) {
       headers.push(["Set-Cookie", setCompanyId(authSession.companyId)]);
     }
-
-    const safeRedirect =
-      redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
-        ? redirectTo
-        : path.to.authenticatedRoot;
 
     return redirect(safeRedirect, { headers });
   } catch {

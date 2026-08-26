@@ -90,6 +90,14 @@ refresh_token_reuse_interval = 10
 # Allow/disallow new user signups to your project.
 enable_signup = true
 
+[auth.mfa]
+# Maximum MFA factors (verified + unverified) a user can enroll.
+max_enrolled_factors = 10
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
 [auth.email]
 # Allow/disallow new user signups via email to your project.
 enable_signup = true

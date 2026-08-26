@@ -1,7 +1,7 @@
 import type { KyselyDatabase } from "@carbon/database/client";
 import type { Kysely, Transaction } from "kysely";
 import { z } from "zod";
-import { WORKFLOW_EVENTS } from "./catalog";
+import { getCatalogEvent } from "./catalog";
 import { nextRunAfter } from "./definition/schedule";
 import { nodeSchema, type Origin } from "./definition/schema";
 import type { Schedule } from "./definition/types";
@@ -56,7 +56,9 @@ export function deriveWorkflowSubscriptions(
 ): DesiredSubscription[] {
   const byTable = new Map<string, Set<"INSERT" | "UPDATE" | "DELETE">>();
   for (const eventId of eventIds) {
-    const match = WORKFLOW_EVENTS[eventId]?.match;
+    // Resolved, not indexed: a custom-field trigger's id is per company and is parsed
+    // rather than looked up, and it still needs an UPDATE subscription on its table.
+    const match = getCatalogEvent(eventId)?.match;
     if (!match || !("table" in match)) continue;
     const ops = byTable.get(match.table) ?? new Set();
     ops.add(match.operation);
@@ -158,12 +160,12 @@ export async function syncWorkflowTriggers(
 ): Promise<{ eventIds: string[]; tables: string[]; scheduled: boolean }> {
   return db.transaction().execute(async (trx) => {
     // First statement in the transaction — everything below reads company-wide
-    // state and must not interleave with another publish or toggle.
+    // state and must not interleave with another publish or unpublish.
     await lockCompany(trx, companyId);
 
     const workflow = await trx
       .selectFrom("workflow")
-      .select(["active", "activeVersionId"])
+      .select(["publishedVersionId"])
       .where("id", "=", workflowId)
       .where("companyId", "=", companyId)
       .executeTakeFirst();
@@ -171,11 +173,13 @@ export async function syncWorkflowTriggers(
     let versionId: string | null = null;
     let desired: DesiredTriggerRow[] = [];
     let schedule: Schedule | null = null;
-    if (workflow?.active && workflow.activeVersionId) {
+    // The pointer IS the on/off switch: unpublishing nulls it, so everything below
+    // computes an empty desired set and the workflow stops firing.
+    if (workflow?.publishedVersionId) {
       const version = await trx
         .selectFrom("workflowVersion")
         .select(["id", "nodes"])
-        .where("id", "=", workflow.activeVersionId)
+        .where("id", "=", workflow.publishedVersionId)
         .where("companyId", "=", companyId)
         .executeTakeFirst();
       if (version) {
@@ -206,7 +210,7 @@ export async function syncWorkflowTriggers(
         .execute();
     }
 
-    // Sole writer of workflow.nextRunAt. Folded in here so a promote or toggle cannot wire
+    // Sole writer of workflow.nextRunAt. Folded in here so a publish or unpublish cannot wire
     // trigger rows and forget the due time — the failure would be silent (workflow never runs).
     const nextRunAt =
       schedule && versionId

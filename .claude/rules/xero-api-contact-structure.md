@@ -109,9 +109,11 @@ mapping rows (unique index includes `entityType`).
 `XeroProvider` (`provider.ts`): OAuth2 against `https://identity.xero.com/connect/token`,
 base URL `https://api.xero.com/api.xro/2.0`. Every request sends
 `Authorization: Bearer <token>` + `xero-tenant-id` header. On `401` it refreshes the
-token once and retries. OAuth scopes (`packages/ee/src/xero/config.tsx`):
-`offline_access`, `accounting.contacts`, `accounting.transactions`,
-`accounting.settings`.
+token once and retries. OAuth scopes (`packages/ee/src/xero/config.tsx`) — **granular**
+(Xero retired the broad `accounting.transactions` scope for apps created after
+2026-03-02; granular also works on older apps): `offline_access`,
+`accounting.contacts`, `accounting.settings`, `accounting.invoices`,
+`accounting.payments`, `accounting.banktransactions`, `accounting.manualjournals`.
 
 Contact endpoints used:
 - `GET /Contacts/{id}`, `GET /Contacts?IDs=a,b,c` — fetch.

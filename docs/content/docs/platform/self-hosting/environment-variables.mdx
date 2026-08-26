@@ -14,7 +14,7 @@ Platform-wide behavior and edition.
 
 <EnvVars>
 <EnvVar name="CARBON_EDITION" type="enum">One of `community`, `cloud`, `enterprise`, or `test`. Gates edition-specific features.</EnvVar>
-<EnvVar name="CONTROLLED_ENVIRONMENT" type="boolean">Enables ITAR / controlled-environment restrictions.</EnvVar>
+<EnvVar name="CONTROLLED_ENVIRONMENT" type="boolean">Enables ITAR / controlled-environment restrictions: the US-Person certification gate, ITAR hostnames and branding, Slack and analytics disabled, and mandatory [two-factor authentication](/docs/reference/two-factor) that a company admin cannot turn off.</EnvVar>
 <EnvVar name="AUTH_PROVIDERS" type="enum[]">Allowed sign-in methods: `email`, `google`, `azure`, `passkey`.</EnvVar>
 <EnvVar name="DOMAIN" type="string">Base domain the apps are served from.</EnvVar>
 <EnvVar name="ERP_URL" type="url">Public URL of the ERP app.</EnvVar>
@@ -69,6 +69,7 @@ Sign-in bot protection uses Cloudflare Turnstile: `CLOUDFLARE_TURNSTILE_SITE_KEY
 <EnvVar name="RESEND_DOMAIN" type="string">Verified sending domain.</EnvVar>
 <EnvVar name="STRIPE_SECRET_KEY" type="string">Stripe secret key, Cloud / Enterprise billing.</EnvVar>
 <EnvVar name="STRIPE_WEBHOOK_SECRET" type="string">Verifies inbound Stripe webhooks.</EnvVar>
+<EnvVar name="STRIPE_CONNECT_WEBHOOK_SECRET" type="string">Verifies inbound Stripe Connect webhooks (connected-account events, signed with a separate secret).</EnvVar>
 </EnvVars>
 
 ## AI & analytics

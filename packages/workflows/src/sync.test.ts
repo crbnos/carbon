@@ -138,3 +138,26 @@ describe("deriveWorkflowSubscriptions", () => {
     expect(deriveWorkflowSubscriptions(["not.a.real.event"])).toEqual([]);
   });
 });
+
+describe("deriveWorkflowSubscriptions with custom-field triggers", () => {
+  it("subscribes to UPDATE on the field's own table", () => {
+    expect(
+      deriveWorkflowSubscriptions(["salesOrder.customFields.cf_1.changed"])
+    ).toEqual([{ table: "salesOrder", operations: ["UPDATE"] }]);
+  });
+
+  it("folds a custom field in with a watched column on the same table", () => {
+    expect(
+      deriveWorkflowSubscriptions([
+        "salesOrder.created",
+        "salesOrder.customFields.cf_1.changed"
+      ])
+    ).toEqual([{ table: "salesOrder", operations: ["INSERT", "UPDATE"] }]);
+  });
+
+  it("ignores an id no catalog entry resolves", () => {
+    expect(
+      deriveWorkflowSubscriptions(["item.customFields.cf_1.changed"])
+    ).toEqual([]);
+  });
+});

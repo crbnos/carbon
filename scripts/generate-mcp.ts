@@ -441,7 +441,10 @@ function classifyFunction(
   name: string
 ): "READ" | "WRITE" | "DESTRUCTIVE" {
   if (/^delete/.test(name)) return "DESTRUCTIVE";
-  if (/^(get|list|fetch|search|find|count|check|is|has|compute)/.test(name))
+  // Require a camelCase boundary after the read prefix so a mutating name that merely starts with
+  // those letters is not misread as a reader — e.g. `issueMaterial` ("is"+lowercase) is a WRITE,
+  // while `isBlocked`/`getJob` ("is"/"get"+uppercase) stay READ.
+  if (/^(get|list|fetch|search|find|count|check|is|has|compute)(?![a-z])/.test(name))
     return "READ";
   return "WRITE";
 }
@@ -611,6 +614,12 @@ function loadModelsContent(mod: string): string | null {
   if (fs.existsSync(modelsPath)) {
     return fs.readFileSync(modelsPath, "utf-8");
   }
+  // Fall back to the `.ee`-licensed variant (see root LICENSE) when a module
+  // keeps its single models file under that name.
+  const eeModelsPath = path.join(MODULES_DIR, mod, `${mod}.ee.models.ts`);
+  if (fs.existsSync(eeModelsPath)) {
+    return fs.readFileSync(eeModelsPath, "utf-8");
+  }
   // Try shared models for cross-module validators
   const sharedPath = path.join(MODULES_DIR, "shared", "index.ts");
   if (fs.existsSync(sharedPath)) {
@@ -625,15 +634,36 @@ export function generateToolMetadata(): void {
   const allTools: ToolMetadata[] = [];
 
   for (const mod of MODULE_LIST) {
-    const serviceFile = path.join(MODULES_DIR, mod, `${mod}.service.ts`);
+    let serviceFile = path.join(MODULES_DIR, mod, `${mod}.service.ts`);
     if (!fs.existsSync(serviceFile)) {
-      console.warn(`  ⚠ Service file not found: ${serviceFile}`);
-      continue;
+      // Fall back to the `.ee`-licensed variant (see root LICENSE) when a
+      // module keeps its single service file under that name (e.g.
+      // accounting.ee.service.ts).
+      const eeServiceFile = path.join(
+        MODULES_DIR,
+        mod,
+        `${mod}.ee.service.ts`
+      );
+      if (!fs.existsSync(eeServiceFile)) {
+        console.warn(`  ⚠ Service file not found: ${serviceFile}`);
+        continue;
+      }
+      serviceFile = eeServiceFile;
     }
 
-    const content = fs.readFileSync(serviceFile, "utf-8");
+    let content = fs.readFileSync(serviceFile, "utf-8");
     const modelsContent = loadModelsContent(mod);
     const functions = parseExportedFunctions(content);
+
+    // A module may expose MCP tools from a server-only companion file
+    // (`{mod}.mcp.server.ts`) when those functions must import `*.server`
+    // modules and therefore cannot live in the client-reachable service file.
+    const mcpServerFile = path.join(MODULES_DIR, mod, `${mod}.mcp.server.ts`);
+    if (fs.existsSync(mcpServerFile)) {
+      const mcpServerContent = fs.readFileSync(mcpServerFile, "utf-8");
+      content = `${content}\n${mcpServerContent}`;
+      functions.push(...parseExportedFunctions(mcpServerContent));
+    }
 
     let toolCount = 0;
 

@@ -51,6 +51,7 @@ The flags below are the real column names from the `companySettings` row (`packa
   <Field name="accountingEnabled" type="boolean">Master switch for the ledger. When off, operations complete without posting journal entries. This is the gate the accounting flow checks before it posts anything.</Field>
   <Field name="timeCardEnabled" type="boolean">Turns on shop-floor time cards. Edited via `timeCardSettingsValidator`.</Field>
   <Field name="consoleEnabled" type="boolean">Enables the support/impersonation console. Edited via `consoleSettingsValidator`.</Field>
+  <Field name="requireMfa" type="boolean">Requires everyone to have an authenticator app before they can open this company. Edited from the **Two-Factor Authentication Enforcement** card on **Settings → System → Security**. Locked on and uneditable in controlled (ITAR) deployments. See [two-factor authentication](/docs/reference/two-factor).</Field>
   <Field name="useMetric" type="boolean">Whether material units default to metric. Edited via `materialUnitsValidator`.</Field>
   <Field name="materialGeneratedIds" type="boolean">Whether new materials get an auto-generated readable id. Edited via `materialIdsValidator`.</Field>
   <Field name="plmReleaseControl" type="text">The release-control policy for item revisions.</Field>
