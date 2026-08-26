@@ -37,7 +37,13 @@ DECLARE
   v_item_readable_id TEXT;
   v_item_tracking_type TEXT;
   v_job_make_method_id TEXT;
-  v_version NUMERIC(10, 2);
+  -- Bare NUMERIC: the repo bans a precision spec on NUMERIC, and the
+  -- conformance gate scans migration TEXT — so carrying the original
+  -- declaration's precision forward registered as a new violation (as does
+  -- quoting it in a comment). Behaviour is identical: makeMethod.version is
+  -- itself a constrained numeric, so the value round-trips through this local
+  -- unchanged and lands back in the same column.
+  v_version NUMERIC;
   v_attributes JSONB;
 BEGIN
   IF p_operation != 'UPDATE' THEN RETURN; END IF;
