@@ -11,7 +11,7 @@ it does** — renders one control per parameter. No migration, no schema change,
 
 ## Progress
 
-- [ ] Task 1: Add configuration types + tolerant reader + `getElementConfiguration` to the ee client
+- [x] Task 1: Add configuration types + tolerant reader + `getElementConfiguration` to the ee client
 - [ ] Task 2: Add `encodeConfiguration` and thread `configuration` through `getBillOfMaterials`
 - [ ] Task 3: New configuration loader route + path helper
 - [ ] Task 4: Accept and encode a configuration on the BOM route
@@ -56,18 +56,26 @@ egress to it is blocked. Rely on the unit tests, which use committed fixtures.
 **Depends on:** none
 
 **Files:**
-- Modify: `packages/ee/src/onshape/lib/client.ts` — add the parameter type union, two
-  exported pure helpers, and one client method
-- Create: `packages/ee/src/onshape/lib/client.test.ts` — unit tests for the two pure helpers
+- Create: `packages/ee/src/onshape/lib/configuration.ts` — the parameter type union and the
+  pure helpers. **They do NOT go in `client.ts`**: that file imports `@carbon/env` at module
+  scope (`ONSHAPE_CLIENT_ID`/`ONSHAPE_CLIENT_SECRET`, line 6), which transitively evaluates
+  `INNGEST_SIGNING_KEY` and throws on import, so anything living there is untestable without
+  a full env. This mirrors `packages/jobs/src/inngest/functions/integrations/onshape-matching.ts`,
+  which exists for exactly this reason ("kept free of heavy imports … so they stay unit-testable").
+- Modify: `packages/ee/src/onshape/lib/client.ts` — import from `./configuration`, add one
+  client method, and re-export the module so `@carbon/ee/onshape` consumers are unaffected
+- Modify: `packages/ee/src/onshape/lib/index.ts` — add `export * from "./configuration";`
+- Create: `packages/ee/src/onshape/lib/configuration.test.ts` — unit tests for the pure helpers
 - Copy from (precedent): the existing `OnshapeRevision` / `OnshapeTranslation` interfaces in
   the same file (comment style: explain *why*, cite the Onshape behavior); test style from
   `packages/ee/src/paperless-parts/lib/utils.test.ts`
 
 **Steps:**
 
-1. In `packages/ee/src/onshape/lib/client.ts`, above the `OnshapeApiError` class, add the
-   parameter type union. Onshape discriminates on `btType`; Carbon discriminates on the
-   friendlier `parameterType`, which every variant also carries:
+1. In the NEW file `packages/ee/src/onshape/lib/configuration.ts`, add the parameter type
+   union. Onshape discriminates on `btType`; Carbon discriminates on the friendlier
+   `parameterType`, which every variant also carries. Give the file a header comment saying
+   why it is separate from `client.ts` (env-free so it stays unit-testable):
 
 ```ts
 // A configuration parameter definition for an element. Onshape discriminates these on
@@ -155,8 +163,12 @@ export function formatParameterValue(
 }
 ```
 
-4. Add the client method, placed next to `getElements` (it is an element read). Note the
-   `/elements/` form — NOT `/partstudios/` — because it must also serve assemblies:
+4. In `client.ts`, import the helpers (`import { readConfigurationParameters, type OnshapeConfigurationParameter } from "./configuration";`)
+   and re-export the module (`export * from "./configuration";`) so every existing
+   `@carbon/ee/onshape` import path keeps working. Add `export * from "./configuration";`
+   to `lib/index.ts` as well. Then add the client method, placed next to `getElements` (it
+   is an element read). Note the `/elements/` form — NOT `/partstudios/` — because it must
+   also serve assemblies:
 
 ```ts
   // Configuration definition for ONE element at a version. An element with no
@@ -178,8 +190,9 @@ export function formatParameterValue(
   }
 ```
 
-5. Create `packages/ee/src/onshape/lib/client.test.ts` with `describe`/`it` from `vitest`
-   covering, at minimum:
+5. Create `packages/ee/src/onshape/lib/configuration.test.ts` with `describe`/`it` from
+   `vitest`, importing from `./configuration` (NEVER from `./client` — that reintroduces the
+   env import and the suite fails to load). Cover, at minimum:
    - `readConfigurationParameters` returns `[]` for `null`, `undefined`, `{}`, `[]`,
      `{ configurationParameters: "nope" }`.
    - It reads a `configurationParameters` array (api-generator shape).
@@ -190,7 +203,7 @@ export function formatParameterValue(
 
 **Verify:**
 ```bash
-pnpm --filter @carbon/ee test -- client.test
+pnpm --filter @carbon/ee test -- configuration.test
 # Expected: all tests pass, "Test Files  1 passed", 0 failed
 pnpm exec turbo run typecheck --filter=@carbon/ee
 # Expected: exits 0, no TS errors
@@ -207,14 +220,17 @@ out of v1 by persisting the parameter map.
 **Depends on:** Task 1
 
 **Files:**
-- Modify: `packages/ee/src/onshape/lib/client.ts` — one exported pure helper, one client
-  method, one changed method signature
-- Modify: `packages/ee/src/onshape/lib/client.test.ts` — add tests for the path builder
+- Modify: `packages/ee/src/onshape/lib/configuration.ts` — the path builder (pure, so it
+  lives with the other helpers for the same env-import reason as Task 1)
+- Modify: `packages/ee/src/onshape/lib/client.ts` — one client method, one changed method
+  signature
+- Modify: `packages/ee/src/onshape/lib/configuration.test.ts` — add tests for the path builder
 
 **Steps:**
 
 1. Extract the BOM query string into an **exported pure function** so it is testable
-   without mocking axios. Place it beside the other exported helpers from Task 1:
+   without mocking axios. Place it in `configuration.ts` beside the Task 1 helpers — NOT in
+   `client.ts`, for the same env-import reason:
 
 ```ts
 // The BOM path, built separately from the request so the configuration handling is
@@ -287,7 +303,7 @@ export function buildBillOfMaterialsPath(
   }
 ```
 
-4. Add tests to `client.test.ts`:
+4. Add tests to `configuration.test.ts`:
    - `buildBillOfMaterialsPath` with no configuration produces a string **identical** to
      the literal currently in `client.ts` (paste today's literal into the test as the
      expected value — this is the backward-compatibility guarantee).
@@ -296,7 +312,7 @@ export function buildBillOfMaterialsPath(
 
 **Verify:**
 ```bash
-pnpm --filter @carbon/ee test -- client.test
+pnpm --filter @carbon/ee test -- configuration.test
 # Expected: all tests pass, including the byte-identical no-configuration path assertion
 pnpm exec turbo run typecheck --filter=@carbon/ee --filter=erp
 # Expected: exits 0 — erp must still compile with the un-updated 3-arg BOM call site

@@ -11,8 +11,15 @@ import {
   persistIntegrationSecrets,
   resolveIntegrationSecrets
 } from "../../integrations/secrets";
+import {
+  type OnshapeConfigurationParameter,
+  readConfigurationParameters
+} from "./configuration";
 import type { OnshapeDocument } from "./document.type";
 import type { OnshapeElementType } from "./element.type";
+
+// Re-exported so every existing `@carbon/ee/onshape` consumer keeps one import surface.
+export * from "./configuration";
 
 const logger = getLogger("ee", "onshape");
 
@@ -248,6 +255,24 @@ export class OnshapeClient {
       "GET",
       `/api/v10/documents/d/${document.documentId}/${document.wvm}/${document.wvmId}/elements${elementType ? "?elementType=" + elementType : ""}`
     );
+  }
+
+  // Configuration definition for ONE element at a version. An element with no
+  // configurations returns an empty parameter list — that emptiness is the signal the
+  // BOM picker uses to decide whether to render configuration controls at all. `{wvm}`
+  // accepts `v`, so this works at the released version the picker is scoped to; only the
+  // POST *update* form is workspace-only. Use the `/elements/` path rather than
+  // `/partstudios/` — it is the general form and is what covers assemblies.
+  async getElementConfiguration(
+    documentId: string,
+    versionId: string,
+    elementId: string
+  ): Promise<OnshapeConfigurationParameter[]> {
+    const response = await this.request<unknown>(
+      "GET",
+      `/api/v10/elements/d/${documentId}/v/${versionId}/e/${elementId}/configuration`
+    );
+    return readConfigurationParameters(response);
   }
 
   async getBillOfMaterials(
