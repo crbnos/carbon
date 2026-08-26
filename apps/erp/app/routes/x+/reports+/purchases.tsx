@@ -24,6 +24,8 @@ import {
 } from "~/modules/accounting";
 import type { PivotCellCoordinates } from "~/modules/accounting/ui/Reports";
 import {
+  csvRowsToRecords,
+  downloadCsv,
   getPeriodColumnLabel,
   PivotTree,
   PurchaseLinesDrawer,
@@ -300,29 +302,7 @@ export default function PurchasesReportRoute() {
     });
     if (rows.length === 0) return;
 
-    const sanitizeCell = (value: string) => {
-      if (value === "" || Number.isFinite(Number(value))) return value;
-      return /^[=+\-@]/.test(value) ? `'${value}` : value;
-    };
-    const csvData = rows
-      .map((row) =>
-        row
-          .map(sanitizeCell)
-          .map((value) =>
-            /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
-          )
-          .join(",")
-      )
-      .join("\n");
-    const blob = new Blob([csvData], { type: "text/csv" });
-    const downloadUrl = window.URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = downloadUrl;
-    anchor.download = "purchases.csv";
-    document.body.appendChild(anchor);
-    anchor.click();
-    window.URL.revokeObjectURL(downloadUrl);
-    document.body.removeChild(anchor);
+    downloadCsv(csvRowsToRecords(rows), "purchases.csv");
   };
 
   return (

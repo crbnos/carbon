@@ -39,6 +39,8 @@ import {
 } from "~/modules/accounting";
 import type { PivotCellCoordinates } from "~/modules/accounting/ui/Reports";
 import {
+  csvRowsToRecords,
+  downloadCsv,
   getPeriodColumnLabel,
   PivotControlBar,
   PivotLinesDrawer,
@@ -568,33 +570,7 @@ export default function AnalyticsReportRoute() {
     });
     if (rows.length === 0) return;
 
-    // Standalone Blob + anchor download — same mechanism as exportReport.ts.
-    // Label cells (dimension values, saved names) are user-controlled: prefix
-    // formula-trigger characters so spreadsheets treat them as text. Numeric
-    // measure cells (incl. negatives) pass through untouched.
-    const sanitizeCell = (value: string) => {
-      if (value === "" || Number.isFinite(Number(value))) return value;
-      return /^[=+\-@]/.test(value) ? `'${value}` : value;
-    };
-    const csvData = rows
-      .map((row) =>
-        row
-          .map(sanitizeCell)
-          .map((value) =>
-            /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
-          )
-          .join(",")
-      )
-      .join("\n");
-    const blob = new Blob([csvData], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${reportKey}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+    downloadCsv(csvRowsToRecords(rows), `${reportKey}.csv`);
   };
 
   return (

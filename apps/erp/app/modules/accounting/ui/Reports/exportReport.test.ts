@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { serializeCsv } from "./exportReport";
+import { csvRowsToRecords, serializeCsv } from "./exportReport";
+
+describe("csvRowsToRecords", () => {
+  it("keeps matrix headers and row values in order", () => {
+    expect(
+      csvRowsToRecords([
+        ["", "Jan 2026", "Total"],
+        ["  Alpha", "12", "12"]
+      ])
+    ).toEqual([{ "": "  Alpha", "Jan 2026": "12", Total: "12" }]);
+  });
+});
 
 describe("serializeCsv", () => {
   it("keeps the first-seen header order and escapes CSV values", () => {

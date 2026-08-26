@@ -15,7 +15,11 @@ export function serializeCsv(rows: Record<string, unknown>[]): string {
     if (value == null) return "";
     const text = String(value);
     const safeText =
-      typeof value === "string" && /^[=+\-@]/.test(text) ? `'${text}` : text;
+      typeof value === "string" &&
+      !Number.isFinite(Number(value)) &&
+      /^[=+\-@]/.test(text)
+        ? `'${text}`
+        : text;
     return /[",\r\n]/.test(safeText)
       ? `"${safeText.replaceAll('"', '""')}"`
       : safeText;
@@ -29,9 +33,21 @@ export function serializeCsv(rows: Record<string, unknown>[]): string {
   ].join("\r\n");
 }
 
+export function csvRowsToRecords(rows: string[][]): Record<string, unknown>[] {
+  const [headers, ...data] = rows;
+  if (!headers) return [];
+
+  return data.map((row) =>
+    headers.reduce<Record<string, unknown>>((record, header, index) => {
+      record[header] = row[index] ?? "";
+      return record;
+    }, {})
+  );
+}
+
 // Standalone CSV download (ExchangeRateForm pattern) — the report trees are
 // not built on the shared Table component, so they get no free export button.
-function downloadCsv(rows: Record<string, unknown>[], filename: string) {
+export function downloadCsv(rows: Record<string, unknown>[], filename: string) {
   const csvData = serializeCsv(rows);
   if (!csvData) return;
   const blob = new Blob([csvData], { type: "text/csv" });
