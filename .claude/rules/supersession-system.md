@@ -49,8 +49,11 @@ Picking uses a *different* rule set on purpose
 
 ## `buildSupersessionRedirectMap` — the shared builder
 
-`lib/supersession-pick.ts`, used by MRP and `get-method` so the two can never
-disagree. Collapses `A→B→C` to `A→C` with the product of the factors.
+`lib/supersession-pick.ts`, used by MRP and `get-method` so both resolve a
+supersession by the same rules. It does NOT make their answers identical: each
+caller passes its own `asOfDate` (below), so a date-effective supersession can
+apply to one and not the other. Collapses `A→B→C` to `A→C` with the product of
+the factors.
 
 - Effectivity: `!date || date <= asOfDate`, lexicographic on `YYYY-MM-DD`
   (all three columns are `DATE`, so string order is chronological).

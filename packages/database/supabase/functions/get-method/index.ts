@@ -5373,10 +5373,17 @@ serve(async (req: Request) => {
                   // swapped row carries `unitCost` the column joins the statement
                   // and every row that omitted the key is written NULL — and
                   // `jobMaterial.unitCost` is NOT NULL DEFAULT 0, so the whole
-                  // insert fails. Omitting a key only reaches the default when
-                  // NO row in the batch has it. 0 is that default, so unswapped
-                  // rows land exactly where they did before.
-                  unitCost: supersession?.unitCost ?? 0,
+                  // insert fails. Omitting a key only reaches the default when NO
+                  // row in the batch has it.
+                  //
+                  // Branch on whether a swap happened, matching the other two
+                  // flows: a swapped row must not inherit the predecessor's cost,
+                  // and an unswapped one keeps the quote line's own. This path
+                  // never set the column before, so unswapped rows silently took
+                  // the 0 default even though the quote tree carries a cost.
+                  unitCost: supersession
+                    ? (supersession.unitCost ?? 0)
+                    : (child.data.unitCost ?? 0),
                   // The bin belongs to the post-swap item; an explicit bin on the
                   // quote line still wins.
                   storageUnitId: await getStorageUnitId(
