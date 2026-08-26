@@ -46,10 +46,14 @@ const account = {
 
 type ClientOptions = {
   balanceFailureCompanyId?: string;
+  balanceDataNull?: boolean;
   balanceRowCount?: number;
+  companyDataNull?: boolean;
   companyQueryFailure?: boolean;
+  companyRowCount?: number;
   seriesFailureCompanyId?: string;
   translationFailureCompanyId?: string;
+  translationRatesData?: unknown;
   seriesRowCount?: number;
 };
 
@@ -70,18 +74,16 @@ function makeReportClient(options: ClientOptions = {}) {
         if (options.companyQueryFailure) {
           return queryResult(null, { message: "company lookup failed" });
         }
-        return queryResult([
-          {
-            id: "company-1",
-            parentCompanyId: null,
-            isEliminationEntity: false
-          },
-          {
-            id: "company-2",
-            parentCompanyId: null,
-            isEliminationEntity: false
-          }
-        ]);
+        if (options.companyDataNull) return queryResult(null);
+        return queryResult(
+          new Array(options.companyRowCount ?? 2)
+            .fill(null)
+            .map((_, index) => ({
+              id: `company-${index + 1}`,
+              parentCompanyId: null,
+              isEliminationEntity: false
+            }))
+        );
       }
       if (table === "accounts") return queryResult([account]);
       throw new Error(`Unexpected table: ${table}`);
@@ -92,6 +94,7 @@ function makeReportClient(options: ClientOptions = {}) {
         if (companyId === options.balanceFailureCompanyId) {
           return { data: null, error: { message: "balances failed" } };
         }
+        if (options.balanceDataNull) return { data: null, error: null };
         const row = {
           accountId: account.id,
           number: account.number,
@@ -124,12 +127,15 @@ function makeReportClient(options: ClientOptions = {}) {
           return { data: null, error: { message: "translation failed" } };
         }
         return {
-          data: {
-            sourceCurrency: "USD",
-            closingRate: 1,
-            averageRate: 1,
-            historicalRate: 1
-          },
+          data:
+            options.translationRatesData === undefined
+              ? {
+                  sourceCurrency: "USD",
+                  closingRate: 1,
+                  averageRate: 1,
+                  historicalRate: 1
+                }
+              : options.translationRatesData,
           error: null
         };
       }
@@ -165,6 +171,19 @@ describe("financial statement balance completeness", () => {
     expect(result.isComplete).toBe(false);
     expect(result.data).not.toBeNull();
   });
+
+  it("fails closed when the balance RPC returns null data without an error", async () => {
+    const result = await getFinancialStatementBalances(
+      makeReportClient({ balanceDataNull: true }),
+      "group-1",
+      "company-1",
+      { startDate: "2026-01-01", endDate: "2026-01-31" }
+    );
+
+    expect(result.data).toBeNull();
+    expect(result.isComplete).toBe(false);
+    expect(result.error?.message).toContain("balance source returned no data");
+  });
 });
 
 describe("getConsolidatedPeriodSeries", () => {
@@ -180,6 +199,36 @@ describe("getConsolidatedPeriodSeries", () => {
     expect(result.data).toBeNull();
     expect(result.isComplete).toBe(false);
     expect(result.error?.message).toContain("company lookup failed");
+  });
+
+  it("fails closed when company resolution reaches the PostgREST row cap", async () => {
+    const result = await getConsolidatedPeriodSeries(
+      makeReportClient({ companyRowCount: 1000 }),
+      "group-1",
+      ["company-1", "company-2"],
+      "USD",
+      { buckets: [bucket] }
+    );
+
+    expect(result.data).toBeNull();
+    expect(result.isComplete).toBe(false);
+    expect(result.error?.message).toContain("company resolution reached");
+  });
+
+  it("fails closed when company resolution returns null data", async () => {
+    const result = await getConsolidatedPeriodSeries(
+      makeReportClient({ companyDataNull: true }),
+      "group-1",
+      ["company-1", "company-2"],
+      "USD",
+      { buckets: [bucket] }
+    );
+
+    expect(result.data).toBeNull();
+    expect(result.isComplete).toBe(false);
+    expect(result.error?.message).toContain(
+      "company resolution returned no data"
+    );
   });
 
   it("returns no partial data when a company series fails", async () => {
@@ -209,6 +258,27 @@ describe("getConsolidatedPeriodSeries", () => {
     expect(result.isComplete).toBe(false);
     expect(result.error?.message).toContain("translation failed");
   });
+
+  it("returns no partial data when consolidation rates are malformed", async () => {
+    const result = await getConsolidatedPeriodSeries(
+      makeReportClient({
+        translationRatesData: {
+          sourceCurrency: "USD",
+          closingRate: null,
+          averageRate: 1,
+          historicalRate: 1
+        }
+      }),
+      "group-1",
+      ["company-1", "company-2"],
+      "USD",
+      { buckets: [bucket] }
+    );
+
+    expect(result.data).toBeNull();
+    expect(result.isComplete).toBe(false);
+    expect(result.error?.message).toContain("Consolidation rates");
+  });
 });
 
 describe("getConsolidatedBalances", () => {
@@ -225,5 +295,35 @@ describe("getConsolidatedBalances", () => {
     expect(result.data).toBeNull();
     expect(result.isComplete).toBe(false);
     expect(result.error?.message).toContain("balances failed");
+  });
+
+  it("fails closed when company resolution reaches the PostgREST row cap", async () => {
+    const result = await getConsolidatedBalances(
+      makeReportClient({ companyRowCount: 1000 }),
+      "group-1",
+      ["company-1", "company-2"],
+      "USD",
+      "2026-01-31",
+      "2026-01-01"
+    );
+
+    expect(result.data).toBeNull();
+    expect(result.isComplete).toBe(false);
+    expect(result.error?.message).toContain("company resolution reached");
+  });
+
+  it("fails closed when consolidation rates are null", async () => {
+    const result = await getConsolidatedBalances(
+      makeReportClient({ translationRatesData: null }),
+      "group-1",
+      ["company-1", "company-2"],
+      "USD",
+      "2026-01-31",
+      "2026-01-01"
+    );
+
+    expect(result.data).toBeNull();
+    expect(result.isComplete).toBe(false);
+    expect(result.error?.message).toContain("Consolidation rates");
   });
 });

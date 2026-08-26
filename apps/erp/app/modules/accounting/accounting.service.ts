@@ -276,10 +276,17 @@ export async function getFinancialStatementBalances(
   if (balancesResponse.error) {
     return { data: null, error: balancesResponse.error, isComplete: false };
   }
+  if (balancesResponse.data == null) {
+    return {
+      data: null,
+      error: { message: "Financial statement balance source returned no data" },
+      isComplete: false
+    };
+  }
 
   const isComplete = isReportSourceComplete(
     accountsResponse.data ?? [],
-    balancesResponse.data ?? []
+    balancesResponse.data
   );
 
   const balancesByAccountId = (
@@ -3966,18 +3973,38 @@ export async function translateCompanyBalances(
     return { data: null, cta: 0, error: ratesError.message };
   }
 
-  const rates = (Array.isArray(ratesData) ? ratesData[0] : ratesData) as
-    | {
-        sourceCurrency: string | null;
-        closingRate: number;
-        averageRate: number;
-        historicalRate: number;
-      }
-    | undefined;
+  const rates = Array.isArray(ratesData) ? ratesData[0] : ratesData;
+  const isValidRateData = (
+    value: unknown
+  ): value is {
+    sourceCurrency: string;
+    closingRate: number;
+    averageRate: number;
+    historicalRate: number;
+  } => {
+    if (typeof value !== "object" || value === null) return false;
+    const record = value as Record<string, unknown>;
+    return (
+      typeof record.sourceCurrency === "string" &&
+      record.sourceCurrency.trim().length > 0 &&
+      ["closingRate", "averageRate", "historicalRate"].every((key) => {
+        const rate = record[key];
+        return typeof rate === "number" && Number.isFinite(rate) && rate > 0;
+      })
+    );
+  };
 
-  const sameCurrency = rates?.sourceCurrency === targetCurrency;
+  if (!isValidRateData(rates)) {
+    return {
+      data: null,
+      cta: 0,
+      error: "Consolidation rates returned missing or malformed data"
+    };
+  }
+
+  const sameCurrency = rates.sourceCurrency === targetCurrency;
   const rateFor = (consolidatedRate: string | null): number => {
-    if (sameCurrency || !rates) return 1;
+    if (sameCurrency) return 1;
     switch (consolidatedRate) {
       case "Average":
         return Number(rates.averageRate);
@@ -4045,7 +4072,25 @@ async function resolveConsolidationCompanyIds(
 
   if (error) return { data: null, error };
 
-  const groupCompanies = allGroupCompanies ?? [];
+  if (allGroupCompanies == null) {
+    return {
+      data: null,
+      error: {
+        message: "Consolidation company resolution returned no data"
+      } as PostgrestError
+    };
+  }
+  if (allGroupCompanies.length >= POSTGREST_REPORT_ROW_CAP) {
+    return {
+      data: null,
+      error: {
+        message:
+          "Consolidation company resolution reached the PostgREST row cap"
+      } as PostgrestError
+    };
+  }
+
+  const groupCompanies = allGroupCompanies;
   const selectedSet = new Set(companyIds);
 
   // Collect all ancestors of selected companies
