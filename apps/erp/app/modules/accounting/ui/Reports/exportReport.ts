@@ -11,11 +11,7 @@ function escapeCsvCell(value: unknown): string {
   if (value == null) return "";
   const text = String(value);
   const safeText =
-    typeof value === "string" &&
-    !Number.isFinite(Number(value)) &&
-    /^[=+\-@]/.test(text)
-      ? `'${text}`
-      : text;
+    typeof value === "string" && /^[=+\-@]/.test(text) ? `'${text}` : text;
   return /[",\r\n]/.test(safeText)
     ? `"${safeText.replaceAll('"', '""')}"`
     : safeText;

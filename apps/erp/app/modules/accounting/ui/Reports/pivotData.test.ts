@@ -559,4 +559,58 @@ describe("pivotToCsvRows", () => {
     expect(csv[0]).toEqual(["", "c1", "Total"]);
     expect(csv[csv.length - 1]).toEqual(["Total", "10", "10"]);
   });
+
+  it("exports the rendered percentage mode", () => {
+    const built = buildPivotTree({
+      groups: [
+        group("a", null, "c1", 25),
+        group("a", null, "c2", 50),
+        group("b", null, "c1", 75),
+        group("b", null, "c2", 50)
+      ],
+      valueNames: VALUE_NAMES,
+      columnKeys: ["c1", "c2"],
+      rowCount: 1,
+      measure: "amount"
+    });
+
+    expect(
+      pivotToCsvRows({
+        flatTree: built.flatTree,
+        columnKeys: built.columnKeys,
+        columnTotals: built.columnTotals,
+        grandTotal: built.grandTotal,
+        measure: "amount",
+        columnLabels: { c1: "January", c2: "February" },
+        percentOfTotal: true
+      })
+    ).toEqual([
+      ["", "January", "February", "Total"],
+      ["Beta", "75.0%", "50.0%", "62.5%"],
+      ["Alpha", "25.0%", "50.0%", "37.5%"],
+      ["Total", "100.0%", "100.0%", "100.0%"]
+    ]);
+  });
+
+  it("returns no export rows for an empty pivot", () => {
+    const built = buildPivotTree({
+      groups: [],
+      valueNames: VALUE_NAMES,
+      columnKeys: ["c1"],
+      rowCount: 1,
+      measure: "amount"
+    });
+
+    expect(
+      pivotToCsvRows({
+        flatTree: built.flatTree,
+        columnKeys: built.columnKeys,
+        columnTotals: built.columnTotals,
+        grandTotal: built.grandTotal,
+        measure: "amount",
+        columnLabels: { c1: "January" },
+        percentOfTotal: false
+      })
+    ).toEqual([]);
+  });
 });

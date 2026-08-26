@@ -318,6 +318,7 @@ export function pivotToCsvRows(args: {
   grandTotal: PivotCellValue;
   measure: PivotMeasure;
   columnLabels: Record<string, string>;
+  percentOfTotal?: boolean;
 }): string[][] {
   const {
     flatTree,
@@ -325,9 +326,14 @@ export function pivotToCsvRows(args: {
     columnTotals,
     grandTotal,
     measure,
-    columnLabels
+    columnLabels,
+    percentOfTotal = false
   } = args;
 
+  if (flatTree.length === 0) return [];
+
+  const formatPercent = (value: number): string => `${value.toFixed(1)}%`;
+  const grandTotalValue = getPivotMeasureValue(grandTotal, measure);
   const rows: string[][] = [];
   rows.push([
     "",
@@ -337,21 +343,37 @@ export function pivotToCsvRows(args: {
 
   for (const node of flatTree) {
     const indent = "  ".repeat(node.level);
+    const percents = percentOfTotal
+      ? applyPercentOfTotal(node.data.cells, columnTotals, measure)
+      : undefined;
+    const rowTotalValue = getPivotMeasureValue(node.data.total, measure);
     rows.push([
       `${indent}${node.data.label}`,
       ...columnKeys.map((key) =>
-        String(getPivotMeasureValue(node.data.cells[key], measure))
+        percentOfTotal
+          ? formatPercent(percents?.[key] ?? 0)
+          : String(getPivotMeasureValue(node.data.cells[key], measure))
       ),
-      String(getPivotMeasureValue(node.data.total, measure))
+      percentOfTotal
+        ? formatPercent(
+            grandTotalValue === 0 ? 0 : (rowTotalValue / grandTotalValue) * 100
+          )
+        : String(rowTotalValue)
     ]);
   }
 
   rows.push([
     "Total",
     ...columnKeys.map((key) =>
-      String(getPivotMeasureValue(columnTotals[key], measure))
+      percentOfTotal
+        ? formatPercent(
+            getPivotMeasureValue(columnTotals[key], measure) === 0 ? 0 : 100
+          )
+        : String(getPivotMeasureValue(columnTotals[key], measure))
     ),
-    String(getPivotMeasureValue(grandTotal, measure))
+    percentOfTotal
+      ? formatPercent(grandTotalValue === 0 ? 0 : 100)
+      : String(grandTotalValue)
   ]);
 
   return rows;

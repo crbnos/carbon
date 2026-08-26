@@ -280,6 +280,8 @@ export default function PurchasesReportRoute() {
   };
 
   const onDownload = () => {
+    if (pivot.groups.length === 0) return;
+
     const tree = buildPivotTree({
       groups: pivot.groups,
       valueNames: pivot.valueNames,
@@ -297,7 +299,8 @@ export default function PurchasesReportRoute() {
       columnTotals: tree.columnTotals,
       grandTotal: tree.grandTotal,
       measure: state.measure,
-      columnLabels
+      columnLabels,
+      percentOfTotal: state.percentOfTotal
     });
     if (rows.length === 0) return;
 

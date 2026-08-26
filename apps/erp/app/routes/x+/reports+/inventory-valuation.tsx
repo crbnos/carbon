@@ -21,7 +21,8 @@ export const handle: Handle = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
-    view: "accounting"
+    view: "accounting",
+    role: "employee"
   });
 
   const url = new URL(request.url);
