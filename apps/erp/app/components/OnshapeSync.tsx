@@ -1,5 +1,6 @@
 import { useCarbon } from "@carbon/auth";
 import { OnshapeLogo } from "@carbon/ee";
+import type { OnshapeConfigurationParameter } from "@carbon/ee/onshape";
 import {
   Badge,
   Button,
@@ -13,16 +14,24 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  Input,
+  NumberDecrementStepper,
+  NumberField,
+  NumberIncrementStepper,
+  NumberInput,
+  NumberInputGroup,
+  NumberInputStepper,
   PulsingDot,
   Spinner,
   Status,
+  Switch,
   toast,
   useDisclosure,
   useMount
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { LuChevronRight } from "react-icons/lu";
+import { LuChevronDown, LuChevronRight, LuChevronUp } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { MethodIcon } from "~/components";
 import { OnshapeStatus } from "~/components/Icons";
@@ -66,6 +75,16 @@ export const OnshapeSync = ({
   const [versionId, setVersionId] = useState<string | null>(null);
   const [elementId, setElementId] = useState<string | null>(null);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
+  // The configuration this item was last synced at, read back from the mapping row. Kept
+  // separate from `configurationValues` so the seeding effect can layer it OVER the
+  // element's defaults rather than racing them.
+  const [savedConfiguration, setSavedConfiguration] = useState<Record<
+    string,
+    string | number | boolean
+  > | null>(null);
+  const [configurationValues, setConfigurationValues] = useState<
+    Record<string, string | number | boolean>
+  >({});
 
   const { carbon } = useCarbon();
   useMount(() => {
@@ -85,6 +104,12 @@ export const OnshapeSync = ({
         setDocumentId(metadata?.documentId ?? null);
         setVersionId(metadata?.versionId ?? null);
         setElementId(metadata?.elementId ?? null);
+        setSavedConfiguration(
+          (metadata?.configurationParameters as Record<
+            string,
+            string | number | boolean
+          > | null) ?? null
+        );
         setLastSyncedAt(data?.lastSyncedAt ?? null);
       });
   });
@@ -168,6 +193,73 @@ export const OnshapeSync = ({
       );
     }, [elementsFetcher.data]) ?? [];
 
+  const configurationFetcher = useFetcher<{
+    data: { parameters: OnshapeConfigurationParameter[] };
+    error: null;
+  }>({});
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
+  useEffect(() => {
+    if (documentId && versionId && elementId && !isDisabled && initialized) {
+      configurationFetcher.load(
+        path.to.api.onShapeElementConfiguration(
+          documentId,
+          versionId,
+          elementId
+        )
+      );
+    }
+  }, [documentId, versionId, elementId, initialized]);
+
+  const configurationParameters = useMemo(
+    () => configurationFetcher.data?.data?.parameters ?? [],
+    [configurationFetcher.data]
+  );
+
+  // Re-seeded on every parameter set, so switching assemblies resets to the NEW element's
+  // defaults rather than carrying the previous element's values across. Seeding this once
+  // would leave stale values behind — the component never remounts between elements.
+  useEffect(() => {
+    const defaults: Record<string, string | number | boolean> = {};
+    for (const parameter of configurationParameters) {
+      switch (parameter.parameterType) {
+        case "ENUM":
+          defaults[parameter.parameterId] =
+            parameter.defaultValue ?? parameter.options?.[0]?.option ?? "";
+          break;
+        case "BOOLEAN":
+          defaults[parameter.parameterId] = parameter.defaultValue ?? false;
+          break;
+        case "QUANTITY":
+          defaults[parameter.parameterId] =
+            parameter.rangeAndDefault?.defaultValue ?? 0;
+          break;
+        case "STRING":
+          defaults[parameter.parameterId] = parameter.defaultValue ?? "";
+          break;
+      }
+    }
+    // A saved map wins over the defaults, but only for parameters that still exist —
+    // the element's configuration may have changed in Onshape since the last sync.
+    if (savedConfiguration) {
+      for (const parameter of configurationParameters) {
+        const saved = savedConfiguration[parameter.parameterId];
+        if (saved !== undefined) defaults[parameter.parameterId] = saved;
+      }
+    }
+    setConfigurationValues(defaults);
+  }, [configurationParameters, savedConfiguration]);
+
+  const setConfigurationValue = (
+    parameterId: string,
+    value: string | number | boolean
+  ) => {
+    setConfigurationValues((previous) => ({
+      ...previous,
+      [parameterId]: value
+    }));
+  };
+
   const isDataLoading =
     documentsFetcher.state === "loading" ||
     versionsFetcher.state === "loading" ||
@@ -200,7 +292,14 @@ export const OnshapeSync = ({
 
   const loadBom = () => {
     if (isReadyForSync) {
-      bomFetcher.load(path.to.api.onShapeBom(documentId, versionId, elementId));
+      bomFetcher.load(
+        path.to.api.onShapeBom(
+          documentId,
+          versionId,
+          elementId,
+          configurationValues
+        )
+      );
     }
   };
 
@@ -213,6 +312,7 @@ export const OnshapeSync = ({
     formData.append("versionId", versionId ?? "");
     formData.append("elementId", elementId ?? "");
     formData.append("makeMethodId", makeMethodId);
+    formData.append("configuration", JSON.stringify(configurationValues));
     formData.append("rows", JSON.stringify(bomRows));
     upsertBomFetcher.submit(formData, {
       method: "post",
@@ -313,6 +413,125 @@ export const OnshapeSync = ({
                 />
               </div>
             </div>
+
+            {/* Configuration controls, rendered ONLY when the element actually has
+                configuration parameters. An unconfigured assembly shows nothing at all —
+                no header, no empty state, no "None" placeholder — so the panel is
+                identical to what it was before this feature existed. The labels are
+                Onshape's own parameterName values, so they are data and are NOT wrapped
+                in <Trans>. */}
+            {configurationParameters.map((parameter) => (
+              <div
+                key={parameter.parameterId}
+                className="flex w-full items-center justify-between gap-2"
+              >
+                <span className="text-xs text-muted-foreground line-clamp-1">
+                  {parameter.parameterName}
+                </span>
+                <div className="w-[180px]">
+                  {parameter.parameterType === "ENUM" && (
+                    <Combobox
+                      options={(parameter.options ?? []).map((option) => ({
+                        value: option.option,
+                        label: option.optionName
+                      }))}
+                      disabled={isDisabled}
+                      onChange={(value) =>
+                        setConfigurationValue(parameter.parameterId, value)
+                      }
+                      size="sm"
+                      className="text-xs"
+                      value={
+                        (configurationValues[parameter.parameterId] as
+                          | string
+                          | undefined) ?? undefined
+                      }
+                    />
+                  )}
+
+                  {parameter.parameterType === "BOOLEAN" && (
+                    <div className="flex justify-end">
+                      <Switch
+                        checked={
+                          configurationValues[parameter.parameterId] === true
+                        }
+                        onCheckedChange={(checked) =>
+                          setConfigurationValue(parameter.parameterId, checked)
+                        }
+                        disabled={isDisabled}
+                        aria-label={parameter.parameterName}
+                      />
+                    </div>
+                  )}
+
+                  {parameter.parameterType === "QUANTITY" && (
+                    <div className="flex items-center gap-1">
+                      {/* No `step` and no `formatOptions`: an Onshape quantity has an
+                          externally-defined range, and a bare NumberField defaults to the
+                          quantity kind. The unit is a text suffix, never a format option. */}
+                      <NumberField
+                        value={
+                          typeof configurationValues[parameter.parameterId] ===
+                          "number"
+                            ? (configurationValues[
+                                parameter.parameterId
+                              ] as number)
+                            : undefined
+                        }
+                        onChange={(next) =>
+                          setConfigurationValue(
+                            parameter.parameterId,
+                            Number.isNaN(next) ? 0 : next
+                          )
+                        }
+                        minValue={parameter.rangeAndDefault?.minValue}
+                        maxValue={parameter.rangeAndDefault?.maxValue}
+                        aria-label={parameter.parameterName}
+                        isDisabled={isDisabled}
+                      >
+                        <NumberInputGroup className="relative">
+                          <NumberInput size="sm" className="text-xs" />
+                          <NumberInputStepper>
+                            <NumberIncrementStepper>
+                              <LuChevronUp size="1em" strokeWidth="3" />
+                            </NumberIncrementStepper>
+                            <NumberDecrementStepper>
+                              <LuChevronDown size="1em" strokeWidth="3" />
+                            </NumberDecrementStepper>
+                          </NumberInputStepper>
+                        </NumberInputGroup>
+                      </NumberField>
+                      {parameter.rangeAndDefault?.units && (
+                        <span className="text-xs text-muted-foreground shrink-0">
+                          {parameter.rangeAndDefault.units}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {parameter.parameterType === "STRING" && (
+                    <Input
+                      size="sm"
+                      type="text"
+                      className="text-xs"
+                      value={
+                        (configurationValues[parameter.parameterId] as
+                          | string
+                          | undefined) ?? ""
+                      }
+                      onChange={(event) =>
+                        setConfigurationValue(
+                          parameter.parameterId,
+                          event.target.value
+                        )
+                      }
+                      isDisabled={isDisabled}
+                      aria-label={parameter.parameterName}
+                    />
+                  )}
+                </div>
+              </div>
+            ))}
 
             {/* <div className="flex w-full items-center justify-between gap-2">
               <span className="text-xs text-muted-foreground">Sync mode:</span>
