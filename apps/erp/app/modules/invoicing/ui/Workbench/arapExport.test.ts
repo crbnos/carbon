@@ -235,4 +235,39 @@ describe("buildARAPAgingExportRows", () => {
 
     expect(serializeCsv(rows)).toContain(",'01-02,,'1E10,'01-02,");
   });
+
+  it("uses supplied localized headers and row labels", () => {
+    const rows = buildARAPAgingExportRows({
+      side: "ar",
+      baseCurrencyCode: "USD",
+      asOfDate: "2026-05-31",
+      agingMethod: "dueDate",
+      bucketDays: [30, 60, 90],
+      aging: [
+        {
+          customerId: "cust-1",
+          current: 10,
+          bucket1: 0,
+          bucket2: 0,
+          bucket3: 0,
+          bucket4: 0,
+          unapplied: 0,
+          total: 10
+        }
+      ],
+      open: [],
+      labels: {
+        asOfDate: "日期",
+        rowType: "行类型",
+        counterpartyRow: "往来单位",
+        counterpartyType: "往来单位类型"
+      }
+    });
+
+    expect(rows[0]).toMatchObject({
+      日期: "2026-05-31",
+      行类型: "往来单位",
+      往来单位类型: "Customer"
+    });
+  });
 });

@@ -6,6 +6,11 @@ describe("isReportSourceComplete", () => {
     expect(isReportSourceComplete([], new Array(999))).toBe(true);
   });
 
+  it("rejects null or undefined required sources", () => {
+    expect(isReportSourceComplete(null, [])).toBe(false);
+    expect(isReportSourceComplete([], undefined)).toBe(false);
+  });
+
   it("rejects an export when any source reaches the PostgREST row cap", () => {
     expect(isReportSourceComplete(new Array(999), new Array(1000))).toBe(false);
   });

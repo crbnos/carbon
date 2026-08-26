@@ -43,6 +43,7 @@ import { downloadCsv } from "~/modules/accounting/ui/Reports";
 import { path } from "~/utils/path";
 import {
   type AgingRow,
+  type ARAPAgingExportLabels,
   type ARAPAgingMethod,
   type ARAPSide,
   buildARAPAgingExportRows,
@@ -392,6 +393,36 @@ export function ARAPWorkbench({
     : false;
   const canAdjust = permissions.can("create", "accounting");
   const reportTitle = title ?? (side === "ar" ? t`Receivables` : t`Payables`);
+  const exportLabels = useMemo<ARAPAgingExportLabels>(
+    () => ({
+      asOfDate: t`As Of Date`,
+      side: t`Side`,
+      agingMethod: t`Aging Method`,
+      bucketDays: t`Bucket Days`,
+      baseCurrency: t`Base Currency`,
+      rowType: t`Row Type`,
+      counterpartyType: t`Counterparty Type`,
+      counterpartyId: t`Counterparty ID`,
+      paymentTerm: t`Payment Term`,
+      invoiceId: t`Invoice ID`,
+      invoiceNumber: t`Invoice Number`,
+      documentType: t`Document Type`,
+      dueDate: t`Due Date`,
+      currency: t`Currency`,
+      currentBaseCurrency: t`Current (Base Currency)`,
+      unappliedBaseCurrency: t`Unapplied (Base Currency)`,
+      openAmountBaseCurrency: t`Open Amount (Base Currency)`,
+      openAmountInvoiceCurrency: t`Open Amount (Invoice Currency)`,
+      totalAmountInvoiceCurrency: t`Total Amount (Invoice Currency)`,
+      settledInvoiceCurrency: t`Settled (Invoice Currency)`,
+      exchangeRateInvoiceToBase: t`Exchange Rate (Invoice to Base)`,
+      counterpartyRow: t`Counterparty`,
+      invoiceRow: t`Invoice`,
+      customer: t`Customer`,
+      supplier: t`Supplier`
+    }),
+    [t]
+  );
   const exportRows = useMemo(
     () =>
       buildARAPAgingExportRows({
@@ -401,7 +432,8 @@ export function ARAPWorkbench({
         open,
         asOfDate,
         agingMethod,
-        bucketDays
+        bucketDays,
+        labels: exportLabels
       }),
     [
       side,
@@ -410,7 +442,8 @@ export function ARAPWorkbench({
       open,
       asOfDate,
       agingMethod,
-      bucketDays
+      bucketDays,
+      exportLabels
     ]
   );
   const canDownload = canDownloadARAPAgingExport(

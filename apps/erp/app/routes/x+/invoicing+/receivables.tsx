@@ -65,10 +65,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     bucketDays,
     result: tieOut.data ?? null,
     dataError: Boolean(aging.error || open.error),
-    isExportSourceComplete: isReportSourceComplete(
-      aging.data ?? [],
-      open.data ?? []
-    ),
+    isExportSourceComplete: isReportSourceComplete(aging.data, open.data),
     aging: aging.data ?? [],
     open: (open.data ?? []).map((r) => ({
       ...r,

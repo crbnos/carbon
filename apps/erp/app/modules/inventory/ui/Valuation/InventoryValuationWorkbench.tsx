@@ -42,7 +42,11 @@ import type {
   InventoryValuationRow
 } from "~/modules/inventory";
 import { path } from "~/utils/path";
-import { buildInventoryValuationExportRows } from "./inventoryValuationExport";
+import {
+  buildInventoryValuationExportRows,
+  buildInventoryValuationReportModel,
+  type InventoryValuationReportRow
+} from "./inventoryValuationExport";
 
 type InventoryValuationWorkbenchProps = {
   rows: InventoryValuationRow[];
@@ -55,33 +59,6 @@ type InventoryValuationWorkbenchProps = {
   locationId: string | null;
   locations: { id: string; name: string }[];
 };
-
-// A group row is a location (default grouping) or an item; its details are the
-// rows of the other dimension. One union type so a single ColumnDef set renders
-// both, branching on `kind` — the ARAPWorkbench heterogeneous-tree pattern.
-type ValuationRow =
-  | {
-      kind: "group";
-      id: string;
-      label: string;
-      // Set when grouping by item — renders the standard ItemThumbnail +
-      // stacked readableId/name cell (InventoryTable precedent).
-      item?: Pick<
-        InventoryValuationRow,
-        "itemId" | "readableIdWithRevision" | "name" | "thumbnailPath" | "type"
-      >;
-      quantityOnHand: number;
-      quantityOnHold: number;
-      quantityRejected: number;
-      totalValue: number;
-      pctOfTotal: number;
-    }
-  | ({
-      kind: "detail";
-      rowId: string;
-      groupId: string;
-      pctOfTotal: number;
-    } & InventoryValuationRow);
 
 // Mirrors ARAPWorkbench: swallow floating-point dust in the subledger-vs-GL
 // comparison.
@@ -113,66 +90,16 @@ export function InventoryValuationWorkbench({
 
   const isDated = asOfDate < new Date().toISOString().slice(0, 10);
 
-  const grandTotal = useMemo(
-    () => rows.reduce((acc, r) => acc + Number(r.totalValue), 0),
-    [rows]
+  const reportModel = useMemo(
+    () =>
+      buildInventoryValuationReportModel({
+        rows,
+        groupBy,
+        totalLabel: t`Total`
+      }),
+    [rows, groupBy, t]
   );
-
-  // Group by the selected dimension; details are the other dimension's rows.
-  const { groups, childrenByGroup } = useMemo(() => {
-    const byGroup = new Map<
-      string,
-      { label: string; children: InventoryValuationRow[] }
-    >();
-    for (const r of rows) {
-      const key = groupBy === "location" ? r.locationId : r.itemId;
-      const label =
-        groupBy === "location"
-          ? r.locationName
-          : `${r.readableIdWithRevision} · ${r.name}`;
-      const entry = byGroup.get(key) ?? { label, children: [] };
-      entry.children.push(r);
-      byGroup.set(key, entry);
-    }
-    const sorted = [...byGroup.entries()].sort(([, a], [, b]) =>
-      a.label.localeCompare(b.label)
-    );
-    const groupRows = sorted.map(([id, { label, children }]) => ({
-      kind: "group" as const,
-      id,
-      label,
-      item:
-        groupBy === "item" && children[0]
-          ? {
-              itemId: children[0].itemId,
-              readableIdWithRevision: children[0].readableIdWithRevision,
-              name: children[0].name,
-              thumbnailPath: children[0].thumbnailPath,
-              type: children[0].type
-            }
-          : undefined,
-      quantityOnHand: children.reduce(
-        (s, c) => s + Number(c.quantityOnHand),
-        0
-      ),
-      quantityOnHold: children.reduce(
-        (s, c) => s + Number(c.quantityOnHold),
-        0
-      ),
-      quantityRejected: children.reduce(
-        (s, c) => s + Number(c.quantityRejected),
-        0
-      ),
-      totalValue: children.reduce((s, c) => s + Number(c.totalValue), 0),
-      pctOfTotal:
-        grandTotal === 0
-          ? 0
-          : children.reduce((s, c) => s + Number(c.totalValue), 0) / grandTotal
-    }));
-    const childMap: Record<string, InventoryValuationRow[]> = {};
-    for (const [id, { children }] of sorted) childMap[id] = children;
-    return { groups: groupRows, childrenByGroup: childMap };
-  }, [rows, groupBy, grandTotal]);
+  const { childrenByGroup } = reportModel;
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
@@ -186,47 +113,23 @@ export function InventoryValuationWorkbench({
   }, []);
 
   // Flatten groups (roots), expanded details, and a grand-total row.
-  const displayRows = useMemo<ValuationRow[]>(() => {
-    const out: ValuationRow[] = [];
-    for (const g of groups) {
-      out.push(g);
-      if (expandedIds.has(g.id)) {
-        for (const r of childrenByGroup[g.id] ?? []) {
-          out.push({
-            kind: "detail",
-            rowId: `${r.locationId}:${r.itemId}`,
-            groupId: g.id,
-            pctOfTotal:
-              grandTotal === 0 ? 0 : Number(r.totalValue) / grandTotal,
-            ...r
-          });
-        }
-      }
-    }
-    if (groups.length > 0) {
-      out.push({
-        kind: "group",
-        id: "grand-total",
-        label: t`Total`,
-        quantityOnHand: groups.reduce((s, g) => s + g.quantityOnHand, 0),
-        quantityOnHold: groups.reduce((s, g) => s + g.quantityOnHold, 0),
-        quantityRejected: groups.reduce((s, g) => s + g.quantityRejected, 0),
-        totalValue: grandTotal,
-        pctOfTotal: grandTotal === 0 ? 0 : 1
-      });
-    }
-    return out;
-  }, [groups, childrenByGroup, expandedIds, grandTotal, t]);
+  const displayRows = useMemo<InventoryValuationReportRow[]>(
+    () =>
+      reportModel.rows.filter(
+        (row) => row.kind === "group" || expandedIds.has(row.groupId)
+      ),
+    [reportModel, expandedIds]
+  );
 
   const detailLabel = useCallback(
-    (r: Extract<ValuationRow, { kind: "detail" }>) =>
+    (r: Extract<InventoryValuationReportRow, { kind: "detail" }>) =>
       groupBy === "location"
         ? `${r.readableIdWithRevision} · ${r.name}`
         : r.locationName,
     [groupBy]
   );
 
-  const columns = useMemo<ColumnDef<ValuationRow>[]>(() => {
+  const columns = useMemo<ColumnDef<InventoryValuationReportRow>[]>(() => {
     return [
       {
         id: "label",
@@ -315,7 +218,7 @@ export function InventoryValuationWorkbench({
           );
         },
         meta: {
-          exportValue: (row: ValuationRow) =>
+          exportValue: (row: InventoryValuationReportRow) =>
             row.kind === "group" ? row.label : detailLabel(row)
         }
       },
@@ -327,7 +230,7 @@ export function InventoryValuationWorkbench({
             <Enumerable value={row.original.costingMethod} />
           ) : null,
         meta: {
-          exportValue: (row: ValuationRow) =>
+          exportValue: (row: InventoryValuationReportRow) =>
             row.kind === "detail" ? row.costingMethod : null
         }
       },
@@ -345,7 +248,7 @@ export function InventoryValuationWorkbench({
           </span>
         ),
         meta: {
-          exportValue: (row: ValuationRow) => row.quantityOnHand
+          exportValue: (row: InventoryValuationReportRow) => row.quantityOnHand
         }
       },
       {
@@ -358,7 +261,7 @@ export function InventoryValuationWorkbench({
             </span>
           ) : null,
         meta: {
-          exportValue: (row: ValuationRow) => row.quantityOnHold
+          exportValue: (row: InventoryValuationReportRow) => row.quantityOnHold
         }
       },
       {
@@ -371,7 +274,8 @@ export function InventoryValuationWorkbench({
             </span>
           ) : null,
         meta: {
-          exportValue: (row: ValuationRow) => row.quantityRejected
+          exportValue: (row: InventoryValuationReportRow) =>
+            row.quantityRejected
         }
       },
       {
@@ -388,7 +292,7 @@ export function InventoryValuationWorkbench({
           );
         },
         meta: {
-          exportValue: (row: ValuationRow) =>
+          exportValue: (row: InventoryValuationReportRow) =>
             row.kind === "detail"
               ? (unitOfMeasures.find(
                   (uom) => uom.value === row.unitOfMeasureCode
@@ -404,7 +308,7 @@ export function InventoryValuationWorkbench({
             <span className="tabular-nums">{money(row.original.unitCost)}</span>
           ) : null,
         meta: {
-          exportValue: (row: ValuationRow) =>
+          exportValue: (row: InventoryValuationReportRow) =>
             row.kind === "detail" ? row.unitCost : null
         }
       },
@@ -426,7 +330,7 @@ export function InventoryValuationWorkbench({
           );
         },
         meta: {
-          exportValue: (row: ValuationRow) => row.totalValue
+          exportValue: (row: InventoryValuationReportRow) => row.totalValue
         }
       },
       {
@@ -438,7 +342,7 @@ export function InventoryValuationWorkbench({
           </span>
         ),
         meta: {
-          exportValue: (row: ValuationRow) => row.pctOfTotal
+          exportValue: (row: InventoryValuationReportRow) => row.pctOfTotal
         }
       }
     ];
@@ -460,6 +364,34 @@ export function InventoryValuationWorkbench({
   );
   const selectedLocationName =
     locations.find((location) => location.id === locationId)?.name ?? null;
+  const exportLabels = useMemo(
+    () => ({
+      asOfDate: t`As Of Date`,
+      groupBy: t`Group By`,
+      locationFilter: t`Location Filter`,
+      rowType: t`Row Type`,
+      group: t`Group`,
+      locationId: t`Location ID`,
+      location: t`Location`,
+      itemId: t`Item ID`,
+      item: t`Item`,
+      itemName: t`Item Name`,
+      itemType: t`Item Type`,
+      costingMethod: t`Costing Method`,
+      qtyOnHand: t`Qty On Hand`,
+      qtyOnHold: t`On Hold`,
+      qtyRejected: t`Rejected`,
+      unitOfMeasure: t`Unit of Measure`,
+      unitCost: t`Unit Cost`,
+      totalValue: t`Total Value`,
+      pctOfTotal: t`% of Total`,
+      allLocations: t`All Locations`,
+      groupRow: t`Group`,
+      detailRow: t`Detail`,
+      grandTotalRow: t`Grand Total`
+    }),
+    [t]
+  );
   const exportRows = useMemo(
     () =>
       buildInventoryValuationExportRows({
@@ -467,9 +399,11 @@ export function InventoryValuationWorkbench({
         asOfDate,
         groupBy,
         locationId,
-        locationName: selectedLocationName
+        locationName: selectedLocationName,
+        totalLabel: t`Total`,
+        labels: exportLabels
       }),
-    [rows, asOfDate, groupBy, locationId, selectedLocationName]
+    [rows, asOfDate, groupBy, locationId, selectedLocationName, exportLabels, t]
   );
   const onDownload = useCallback(() => {
     if (!isExportSourceComplete || exportRows.length === 0) return;
@@ -688,7 +622,7 @@ export function InventoryValuationWorkbench({
         </div>
       ) : null}
       <div className="flex-1 w-full">
-        <Table<ValuationRow>
+        <Table<InventoryValuationReportRow>
           data={displayRows}
           columns={columns}
           count={displayRows.length}

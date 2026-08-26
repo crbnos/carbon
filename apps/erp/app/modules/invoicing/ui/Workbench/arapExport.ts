@@ -39,6 +39,63 @@ type ARAPAgingExportArgs = {
   asOfDate: string;
   agingMethod: ARAPAgingMethod;
   bucketDays: [number, number, number];
+  labels?: Partial<ARAPAgingExportLabels>;
+};
+
+export type ARAPAgingExportLabels = {
+  asOfDate: string;
+  side: string;
+  agingMethod: string;
+  bucketDays: string;
+  baseCurrency: string;
+  rowType: string;
+  counterpartyType: string;
+  counterpartyId: string;
+  paymentTerm: string;
+  invoiceId: string;
+  invoiceNumber: string;
+  documentType: string;
+  dueDate: string;
+  currency: string;
+  currentBaseCurrency: string;
+  unappliedBaseCurrency: string;
+  openAmountBaseCurrency: string;
+  openAmountInvoiceCurrency: string;
+  totalAmountInvoiceCurrency: string;
+  settledInvoiceCurrency: string;
+  exchangeRateInvoiceToBase: string;
+  counterpartyRow: string;
+  invoiceRow: string;
+  customer: string;
+  supplier: string;
+};
+
+const defaultLabels: ARAPAgingExportLabels = {
+  asOfDate: "As Of Date",
+  side: "Side",
+  agingMethod: "Aging Method",
+  bucketDays: "Bucket Days",
+  baseCurrency: "Base Currency",
+  rowType: "Row Type",
+  counterpartyType: "Counterparty Type",
+  counterpartyId: "Counterparty ID",
+  paymentTerm: "Payment Term",
+  invoiceId: "Invoice ID",
+  invoiceNumber: "Invoice Number",
+  documentType: "Document Type",
+  dueDate: "Due Date",
+  currency: "Currency",
+  currentBaseCurrency: "Current (Base Currency)",
+  unappliedBaseCurrency: "Unapplied (Base Currency)",
+  openAmountBaseCurrency: "Open Amount (Base Currency)",
+  openAmountInvoiceCurrency: "Open Amount (Invoice Currency)",
+  totalAmountInvoiceCurrency: "Total Amount (Invoice Currency)",
+  settledInvoiceCurrency: "Settled (Invoice Currency)",
+  exchangeRateInvoiceToBase: "Exchange Rate (Invoice to Base)",
+  counterpartyRow: "Counterparty",
+  invoiceRow: "Invoice",
+  customer: "Customer",
+  supplier: "Supplier"
 };
 
 const partyIdOf = (
@@ -53,8 +110,10 @@ export function buildARAPAgingExportRows({
   open,
   asOfDate,
   agingMethod,
-  bucketDays
+  bucketDays,
+  labels: labelOverrides
 }: ARAPAgingExportArgs): Record<string, unknown>[] {
+  const labels = { ...defaultLabels, ...labelOverrides };
   const [b1, b2, b3] = bucketDays;
   const bucketHeaders = [
     `1-${b1}`,
@@ -63,7 +122,7 @@ export function buildARAPAgingExportRows({
     `${b3 + 1}+`
   ];
   const sideLabel = side.toUpperCase();
-  const counterpartyType = side === "ar" ? "Customer" : "Supplier";
+  const counterpartyType = side === "ar" ? labels.customer : labels.supplier;
   const rows: Record<string, unknown>[] = [];
 
   const invoicesByParty = new Map<string, OpenInvoiceRow[]>();
@@ -76,31 +135,31 @@ export function buildARAPAgingExportRows({
 
   const pushInvoice = (invoice: OpenInvoiceRow) => {
     rows.push({
-      "As Of Date": asOfDate,
-      Side: sideLabel,
-      "Aging Method": agingMethod,
-      "Bucket Days": bucketDays.join(","),
-      "Base Currency": baseCurrencyCode,
-      "Row Type": "Invoice",
-      "Counterparty Type": counterpartyType,
-      "Counterparty ID": csvIdentifier(partyIdOf(side, invoice)),
-      "Payment Term": "",
-      "Invoice ID": csvIdentifier(invoice.invoiceId),
-      "Invoice Number": csvIdentifier(invoice.invoiceNumber),
-      "Document Type": invoice.documentType ?? "",
-      "Due Date": invoice.dateDue ?? "",
-      Currency: invoice.currencyCode,
-      "Current (Base Currency)": "",
-      [`${bucketHeaders[0]} (Base Currency)`]: "",
-      [`${bucketHeaders[1]} (Base Currency)`]: "",
-      [`${bucketHeaders[2]} (Base Currency)`]: "",
-      [`${bucketHeaders[3]} (Base Currency)`]: "",
-      "Unapplied (Base Currency)": "",
-      "Open Amount (Base Currency)": invoice.openInBase,
-      "Open Amount (Invoice Currency)": invoice.openInCurrency,
-      "Total Amount (Invoice Currency)": invoice.totalAmount,
-      "Settled (Invoice Currency)": invoice.settled,
-      "Exchange Rate (Invoice to Base)": invoice.exchangeRate
+      [labels.asOfDate]: asOfDate,
+      [labels.side]: sideLabel,
+      [labels.agingMethod]: agingMethod,
+      [labels.bucketDays]: bucketDays.join(","),
+      [labels.baseCurrency]: baseCurrencyCode,
+      [labels.rowType]: labels.invoiceRow,
+      [labels.counterpartyType]: counterpartyType,
+      [labels.counterpartyId]: csvIdentifier(partyIdOf(side, invoice)),
+      [labels.paymentTerm]: "",
+      [labels.invoiceId]: csvIdentifier(invoice.invoiceId),
+      [labels.invoiceNumber]: csvIdentifier(invoice.invoiceNumber),
+      [labels.documentType]: invoice.documentType ?? "",
+      [labels.dueDate]: invoice.dateDue ?? "",
+      [labels.currency]: invoice.currencyCode,
+      [labels.currentBaseCurrency]: "",
+      [`${bucketHeaders[0]} (${labels.baseCurrency})`]: "",
+      [`${bucketHeaders[1]} (${labels.baseCurrency})`]: "",
+      [`${bucketHeaders[2]} (${labels.baseCurrency})`]: "",
+      [`${bucketHeaders[3]} (${labels.baseCurrency})`]: "",
+      [labels.unappliedBaseCurrency]: "",
+      [labels.openAmountBaseCurrency]: invoice.openInBase,
+      [labels.openAmountInvoiceCurrency]: invoice.openInCurrency,
+      [labels.totalAmountInvoiceCurrency]: invoice.totalAmount,
+      [labels.settledInvoiceCurrency]: invoice.settled,
+      [labels.exchangeRateInvoiceToBase]: invoice.exchangeRate
     });
   };
 
@@ -110,31 +169,31 @@ export function buildARAPAgingExportRows({
     if (!partyId) continue;
     groupedPartyIds.add(partyId);
     rows.push({
-      "As Of Date": asOfDate,
-      Side: sideLabel,
-      "Aging Method": agingMethod,
-      "Bucket Days": bucketDays.join(","),
-      "Base Currency": baseCurrencyCode,
-      "Row Type": "Counterparty",
-      "Counterparty Type": counterpartyType,
-      "Counterparty ID": csvIdentifier(partyId),
-      "Payment Term": agingRow.paymentTerm ?? "",
-      "Invoice ID": "",
-      "Invoice Number": "",
-      "Document Type": "",
-      "Due Date": "",
-      Currency: baseCurrencyCode,
-      "Current (Base Currency)": agingRow.current,
-      [`${bucketHeaders[0]} (Base Currency)`]: agingRow.bucket1,
-      [`${bucketHeaders[1]} (Base Currency)`]: agingRow.bucket2,
-      [`${bucketHeaders[2]} (Base Currency)`]: agingRow.bucket3,
-      [`${bucketHeaders[3]} (Base Currency)`]: agingRow.bucket4,
-      "Unapplied (Base Currency)": agingRow.unapplied,
-      "Open Amount (Base Currency)": agingRow.total,
-      "Open Amount (Invoice Currency)": "",
-      "Total Amount (Invoice Currency)": "",
-      "Settled (Invoice Currency)": "",
-      "Exchange Rate (Invoice to Base)": ""
+      [labels.asOfDate]: asOfDate,
+      [labels.side]: sideLabel,
+      [labels.agingMethod]: agingMethod,
+      [labels.bucketDays]: bucketDays.join(","),
+      [labels.baseCurrency]: baseCurrencyCode,
+      [labels.rowType]: labels.counterpartyRow,
+      [labels.counterpartyType]: counterpartyType,
+      [labels.counterpartyId]: csvIdentifier(partyId),
+      [labels.paymentTerm]: agingRow.paymentTerm ?? "",
+      [labels.invoiceId]: "",
+      [labels.invoiceNumber]: "",
+      [labels.documentType]: "",
+      [labels.dueDate]: "",
+      [labels.currency]: baseCurrencyCode,
+      [labels.currentBaseCurrency]: agingRow.current,
+      [`${bucketHeaders[0]} (${labels.baseCurrency})`]: agingRow.bucket1,
+      [`${bucketHeaders[1]} (${labels.baseCurrency})`]: agingRow.bucket2,
+      [`${bucketHeaders[2]} (${labels.baseCurrency})`]: agingRow.bucket3,
+      [`${bucketHeaders[3]} (${labels.baseCurrency})`]: agingRow.bucket4,
+      [labels.unappliedBaseCurrency]: agingRow.unapplied,
+      [labels.openAmountBaseCurrency]: agingRow.total,
+      [labels.openAmountInvoiceCurrency]: "",
+      [labels.totalAmountInvoiceCurrency]: "",
+      [labels.settledInvoiceCurrency]: "",
+      [labels.exchangeRateInvoiceToBase]: ""
     });
 
     for (const invoice of invoicesByParty.get(partyId) ?? []) {

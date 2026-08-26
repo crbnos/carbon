@@ -58,6 +58,10 @@ vi.mock("~/utils/path", () => ({
   }
 }));
 
+vi.mock("~/utils/reportExport", () => ({
+  isReportSourceComplete: vi.fn()
+}));
+
 const stopAfterAuthorization = new Error("stop after authorization");
 
 beforeEach(() => {

@@ -63,7 +63,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     groupBy,
     locationId,
     rows: valuation.data ?? [],
-    isExportSourceComplete: isReportSourceComplete(valuation.data ?? []),
+    isExportSourceComplete: isReportSourceComplete(valuation.data),
     tieOut: tieOut.data ?? null,
     // A failed tie-out must read as "unavailable", not "nothing to tie out" —
     // this is a financial control surface.
