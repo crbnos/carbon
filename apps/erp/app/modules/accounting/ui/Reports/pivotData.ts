@@ -1,5 +1,6 @@
 import type { FlatTreeItem } from "~/components/TreeView";
 import type { PivotMeasure } from "../../accounting.models";
+import { type CsvCell, csvText } from "./exportReport";
 
 // Pure pivot assembly for the dimensional analytics reports — no React, no
 // data fetching. Spec: .ai/specs/2026-08-09-dimensional-pivot-reporting.md.
@@ -20,8 +21,11 @@ export type PivotGroupRow = {
   lineCount: number;
 };
 
-export function canDownloadPivot(groups: PivotGroupRow[]): boolean {
-  return groups.length > 0;
+export function canDownloadPivot(
+  groups: PivotGroupRow[],
+  hasMore: boolean
+): boolean {
+  return groups.length > 0 && !hasMore;
 }
 
 export type PivotRowNode = {
@@ -323,7 +327,7 @@ export function pivotToCsvRows(args: {
   measure: PivotMeasure;
   columnLabels: Record<string, string>;
   percentOfTotal?: boolean;
-}): (string | number)[][] {
+}): CsvCell[][] {
   const {
     flatTree,
     columnKeys,
@@ -338,11 +342,11 @@ export function pivotToCsvRows(args: {
 
   const formatPercent = (value: number): string => `${value.toFixed(1)}%`;
   const grandTotalValue = getPivotMeasureValue(grandTotal, measure);
-  const rows: (string | number)[][] = [];
+  const rows: CsvCell[][] = [];
   rows.push([
-    "",
-    ...columnKeys.map((key) => columnLabels[key] ?? key),
-    "Total"
+    csvText(""),
+    ...columnKeys.map((key) => csvText(columnLabels[key] ?? key)),
+    csvText("Total")
   ]);
 
   for (const node of flatTree) {
@@ -352,7 +356,7 @@ export function pivotToCsvRows(args: {
       : undefined;
     const rowTotalValue = getPivotMeasureValue(node.data.total, measure);
     rows.push([
-      `${indent}${node.data.label}`,
+      csvText(`${indent}${node.data.label}`),
       ...columnKeys.map((key) =>
         percentOfTotal
           ? formatPercent(percents?.[key] ?? 0)
@@ -367,7 +371,7 @@ export function pivotToCsvRows(args: {
   }
 
   rows.push([
-    "Total",
+    csvText("Total"),
     ...columnKeys.map((key) =>
       percentOfTotal
         ? formatPercent(

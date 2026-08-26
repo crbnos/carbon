@@ -7,17 +7,21 @@ import {
   getDebitCredit
 } from "./reportTree";
 
-type CsvText = {
+export type CsvTextCell = {
   readonly __csvText: true;
   readonly value: string;
 };
 
-export function csvText(value: string | null | undefined): string | CsvText {
+export type CsvCell = string | number | CsvTextCell;
+
+export function csvText(
+  value: string | null | undefined
+): string | CsvTextCell {
   const text = value ?? "";
-  return /^\d+$/.test(text) ? { __csvText: true, value: text } : text;
+  return /^\s*\d+\s*$/.test(text) ? { __csvText: true, value: text } : text;
 }
 
-function isCsvText(value: unknown): value is CsvText {
+function isCsvText(value: unknown): value is CsvTextCell {
   return (
     typeof value === "object" &&
     value !== null &&
@@ -55,7 +59,7 @@ export function serializeCsv(rows: Record<string, unknown>[]): string {
   ].join("\r\n");
 }
 
-export function serializeCsvRows(rows: (string | number)[][]): string {
+export function serializeCsvRows(rows: CsvCell[][]): string {
   return rows.map((row) => row.map(escapeCsvCell).join(",")).join("\r\n");
 }
 
@@ -78,7 +82,7 @@ export function downloadCsv(rows: Record<string, unknown>[], filename: string) {
   downloadCsvData(serializeCsv(rows), filename);
 }
 
-export function downloadCsvRows(rows: (string | number)[][], filename: string) {
+export function downloadCsvRows(rows: CsvCell[][], filename: string) {
   downloadCsvData(serializeCsvRows(rows), filename);
 }
 
@@ -118,6 +122,8 @@ export function exportExecutivePnl(args: {
   showTranslated?: boolean;
   filename: string;
 }) {
+  if (!canExportExecutivePnl(args.accounts)) return;
+
   const rows = computeExecutivePnl(
     args.accounts,
     args.periods.map((bucket) => bucket.key),
@@ -136,6 +142,10 @@ export function exportExecutivePnl(args: {
     return csvRow;
   });
   downloadCsv(csvRows, args.filename);
+}
+
+export function canExportExecutivePnl(accounts: ChartPeriodSeries[]): boolean {
+  return accounts.length > 0;
 }
 
 // Export the single-period trial balance with the same Beginning/Debit/Credit/

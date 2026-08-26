@@ -4,6 +4,7 @@ export { default as ExecutivePnlSummary } from "./ExecutivePnlSummary";
 export type { ExecutivePnlRow, ExecutivePnlRowKey } from "./executivePnl";
 export { computeExecutivePnl } from "./executivePnl";
 export {
+  canExportExecutivePnl,
   downloadCsv,
   downloadCsvRows,
   exportExecutivePnl,

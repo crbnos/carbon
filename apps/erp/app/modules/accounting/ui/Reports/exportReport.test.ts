@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { csvText, serializeCsv, serializeCsvRows } from "./exportReport";
+import {
+  canExportExecutivePnl,
+  csvText,
+  serializeCsv,
+  serializeCsvRows
+} from "./exportReport";
 
 describe("serializeCsvRows", () => {
   it("preserves duplicate headers and their distinct positional values", () => {
@@ -23,6 +28,15 @@ describe("serializeCsvRows", () => {
     ).toBe(
       "Label,Value\r\nTab,'\t=SUM(A1:A2)\r\nSpace,'  +malicious\r\nCRLF,\"'\r\n-malicious\"\r\nNumeric,-42"
     );
+  });
+
+  it("accepts explicit text cells without deduplicating positional headers", () => {
+    expect(
+      serializeCsvRows([
+        ["", csvText("00123"), csvText("00123")],
+        [csvText("00456"), 12, 34]
+      ])
+    ).toBe(",'00123,'00123\r\n'00456,12,34");
   });
 });
 
@@ -87,5 +101,11 @@ describe("serializeCsv", () => {
 
   it("returns no rows for empty input", () => {
     expect(serializeCsv([])).toBe("");
+  });
+});
+
+describe("canExportExecutivePnl", () => {
+  it("rejects an empty source report", () => {
+    expect(canExportExecutivePnl([])).toBe(false);
   });
 });

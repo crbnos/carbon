@@ -21,6 +21,7 @@ import {
 } from "~/modules/accounting";
 import type { ExecutivePnlRowKey } from "~/modules/accounting/ui/Reports";
 import {
+  canExportExecutivePnl,
   ExecutivePnlSummary,
   exportExecutivePnl,
   getPeriodColumnLabel,
@@ -196,6 +197,25 @@ export default function ExecutivePnlRoute() {
     netIncome: t`Net Income`
   };
 
+  const canDownload = canExportExecutivePnl(incomeStatement);
+
+  const onDownload = () => {
+    if (!canDownload) return;
+
+    exportExecutivePnl({
+      accounts: incomeStatement,
+      periods: periods.map((bucket) => ({
+        ...bucket,
+        label:
+          getPeriodColumnLabel(bucket, columns, locale) +
+          (bucket.isPartial ? " (To Date)" : "")
+      })),
+      labels,
+      showTranslated,
+      filename: "executive-pnl.csv"
+    });
+  };
+
   return (
     <VStack spacing={0} className="h-full">
       <ReportFilters
@@ -208,20 +228,8 @@ export default function ExecutivePnlRoute() {
         fiscalStartMonth={fiscalStartMonth}
         showColumns
         showSearch={false}
-        onDownload={() =>
-          exportExecutivePnl({
-            accounts: incomeStatement,
-            periods: periods.map((bucket) => ({
-              ...bucket,
-              label:
-                getPeriodColumnLabel(bucket, columns, locale) +
-                (bucket.isPartial ? " (To Date)" : "")
-            })),
-            labels,
-            showTranslated,
-            filename: "executive-pnl.csv"
-          })
-        }
+        onDownload={onDownload}
+        isDownloadDisabled={!canDownload}
       />
       <ExecutivePnlSummary
         data={incomeStatement}

@@ -32,8 +32,12 @@ const VALUE_NAMES: Record<string, string> = {
 
 describe("canDownloadPivot", () => {
   it("requires at least one source group", () => {
-    expect(canDownloadPivot([])).toBe(false);
-    expect(canDownloadPivot([group("a", null, "c1", 10)])).toBe(true);
+    expect(canDownloadPivot([], false)).toBe(false);
+    expect(canDownloadPivot([group("a", null, "c1", 10)], false)).toBe(true);
+  });
+
+  it("rejects a truncated source", () => {
+    expect(canDownloadPivot([group("a", null, "c1", 10)], true)).toBe(false);
   });
 });
 
@@ -645,5 +649,29 @@ describe("pivotToCsvRows", () => {
     expect(serializeCsvRows(rows)).toBe(
       ",January,Total\r\nAlpha,-40,-40\r\nTotal,-40,-40"
     );
+  });
+
+  it("preserves numeric-looking labels and duplicate headers as text", () => {
+    const built = buildPivotTree({
+      groups: [group("a", null, "c1", 12), group("a", null, "c2", 34)],
+      valueNames: { a: "00123" },
+      columnKeys: ["c1", "c2"],
+      rowCount: 1,
+      measure: "amount"
+    });
+
+    const rows = pivotToCsvRows({
+      flatTree: built.flatTree,
+      columnKeys: built.columnKeys,
+      columnTotals: built.columnTotals,
+      grandTotal: built.grandTotal,
+      measure: "amount",
+      columnLabels: { c1: "00456", c2: "00456" }
+    });
+
+    expect(serializeCsvRows(rows)).toBe(
+      ",'00456,'00456,Total\r\n'00123,12,34,46\r\nTotal,12,34,46"
+    );
+    expect(rows[1]?.slice(1)).toEqual([12, 34, 46]);
   });
 });

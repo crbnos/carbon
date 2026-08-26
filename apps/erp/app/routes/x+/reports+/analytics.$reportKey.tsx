@@ -548,7 +548,7 @@ export default function AnalyticsReportRoute() {
     );
   };
 
-  const canDownload = canDownloadPivot(pivot.groups);
+  const canDownload = canDownloadPivot(pivot.groups, pivot.hasMore);
 
   const onDownload = () => {
     if (!canDownload) return;

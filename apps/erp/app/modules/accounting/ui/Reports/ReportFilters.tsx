@@ -45,6 +45,7 @@ type ReportFiltersProps = {
   showSearch?: boolean;
   /** Renders a Download (CSV) button on the right */
   onDownload?: () => void;
+  isDownloadDisabled?: boolean;
   /** Omitted for fixed summary reports that render no search box */
   search?: string;
   onSearchChange?: (value: string) => void;
@@ -62,6 +63,7 @@ const ReportFilters = ({
   showColumns = false,
   showSearch = true,
   onDownload,
+  isDownloadDisabled = false,
   search = "",
   onSearchChange
 }: ReportFiltersProps) => {
@@ -172,6 +174,7 @@ const ReportFilters = ({
           variant="secondary"
           leftIcon={<LuDownload />}
           onClick={onDownload}
+          isDisabled={isDownloadDisabled}
         >
           {t`Download`}
         </Button>
