@@ -174,9 +174,10 @@ export function exportTrialBalance(args: {
   parentCurrency?: string | null;
   search: string;
   filename: string;
+  isSourceComplete?: boolean;
 }) {
   const tree = accountsToFlatTree(filterAccounts(args.accounts, args.search));
-  if (tree.length === 0) return;
+  if (args.isSourceComplete === false || tree.length === 0) return;
   const rows = tree.map(({ data: account }) => {
     const endingBalance = account.balanceAtDate ?? 0;
     const netChange = account.netChange ?? 0;

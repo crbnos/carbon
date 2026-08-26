@@ -18,7 +18,10 @@ import type { z } from "zod";
 import { getNextSequence } from "~/modules/settings";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
-import { isReportSourceComplete } from "~/utils/reportExport";
+import {
+  isReportSourceComplete,
+  POSTGREST_REPORT_ROW_CAP
+} from "~/utils/reportExport";
 import { sanitize } from "~/utils/supabase";
 import type {
   AnalyticsAccountScope,
@@ -267,8 +270,17 @@ export async function getFinancialStatementBalances(
     balancesQuery
   ]);
 
-  if (accountsResponse.error) return accountsResponse;
-  if (balancesResponse.error) return balancesResponse;
+  if (accountsResponse.error) {
+    return { data: null, error: accountsResponse.error, isComplete: false };
+  }
+  if (balancesResponse.error) {
+    return { data: null, error: balancesResponse.error, isComplete: false };
+  }
+
+  const isComplete = isReportSourceComplete(
+    accountsResponse.data ?? [],
+    balancesResponse.data ?? []
+  );
 
   const balancesByAccountId = (
     balancesResponse.data as unknown as (Transaction & { accountId: string })[]
@@ -344,7 +356,8 @@ export async function getFinancialStatementBalances(
 
   return {
     data: applyRootSignCorrection(mapped),
-    error: null
+    error: null,
+    isComplete
   };
 }
 
@@ -742,11 +755,22 @@ export async function getConsolidatedPeriodSeries(
   error: { message: string } | null;
 }> {
   const bucketKeys = args.buckets.map((b) => b.key);
-  const allIds = await resolveConsolidationCompanyIds(
+  const resolvedCompanies = await resolveConsolidationCompanyIds(
     client,
     companyGroupId,
     companyIds
   );
+  if (resolvedCompanies.error || !resolvedCompanies.data) {
+    return {
+      data: null,
+      ctaByBucket: {},
+      isComplete: false,
+      error: resolvedCompanies.error ?? {
+        message: "Failed to resolve consolidation companies"
+      }
+    };
+  }
+  const allIds = resolvedCompanies.data;
 
   const results = await Promise.all(
     allIds.map(async (id) => {
@@ -1069,7 +1093,8 @@ export async function getDimensionPivot(
     hasMore: boolean;
   }>;
 
-  const hasMore = rows.some((r) => r.hasMore);
+  const hasMore =
+    rows.some((r) => r.hasMore) || rows.length >= POSTGREST_REPORT_ROW_CAP;
 
   // Sorted descending by ABS(amount) in TS — never trust RPC ordering.
   const groups: DimensionPivotGroup[] = rows
@@ -1299,7 +1324,8 @@ export async function getPurchaseLinePivot(
     hasMore: boolean;
   }>;
 
-  const hasMore = rows.some((r) => r.hasMore);
+  const hasMore =
+    rows.some((r) => r.hasMore) || rows.length >= POSTGREST_REPORT_ROW_CAP;
 
   const groups: DimensionPivotGroup[] = rows
     .map((r) => ({
@@ -4010,12 +4036,14 @@ async function resolveConsolidationCompanyIds(
   client: SupabaseClient<Database>,
   companyGroupId: string,
   companyIds: string[]
-): Promise<string[]> {
-  const { data: allGroupCompanies } = await client
+): Promise<{ data: string[] | null; error: PostgrestError | null }> {
+  const { data: allGroupCompanies, error } = await client
     .from("company")
     .select("id, parentCompanyId, isEliminationEntity")
     .eq("companyGroupId", companyGroupId)
     .eq("active", true);
+
+  if (error) return { data: null, error };
 
   const groupCompanies = allGroupCompanies ?? [];
   const selectedSet = new Set(companyIds);
@@ -4042,7 +4070,7 @@ async function resolveConsolidationCompanyIds(
     )
     .map((c) => c.id);
 
-  return [...companyIds, ...eliminationIds];
+  return { data: [...companyIds, ...eliminationIds], error: null };
 }
 
 export async function getConsolidatedBalances(
@@ -4054,11 +4082,22 @@ export async function getConsolidatedBalances(
   periodStart?: string
 ) {
   // All companies whose balances we need (operating + elimination entities)
-  const allIds = await resolveConsolidationCompanyIds(
+  const resolvedCompanies = await resolveConsolidationCompanyIds(
     client,
     companyGroupId,
     companyIds
   );
+  if (resolvedCompanies.error || !resolvedCompanies.data) {
+    return {
+      data: null,
+      cta: 0,
+      isComplete: false,
+      error: resolvedCompanies.error ?? {
+        message: "Failed to resolve consolidation companies"
+      }
+    };
+  }
+  const allIds = resolvedCompanies.data;
 
   // Get balances for all companies, then translate the already-computed
   // balances to the target currency (one ledger scan per company, not two).
@@ -4091,9 +4130,31 @@ export async function getConsolidatedBalances(
               balances.data
             );
 
-      return { balances, translation };
+      return { companyId: id, balances, translation };
     })
   );
+
+  const failed = results.find(
+    ({ balances, translation }) =>
+      balances.error ||
+      !balances.data ||
+      !balances.isComplete ||
+      Boolean(translation.error)
+  );
+  if (failed) {
+    const reason =
+      failed.balances.error?.message ??
+      failed.translation.error ??
+      "Financial statement source is incomplete";
+    return {
+      data: null,
+      cta: 0,
+      isComplete: false,
+      error: {
+        message: `Failed to consolidate company ${failed.companyId}: ${reason}`
+      }
+    };
+  }
 
   const allBalances = results.map((r) => r.balances);
   const translations = results.map((r) => r.translation);
@@ -4178,7 +4239,12 @@ export async function getConsolidatedBalances(
     };
   });
 
-  return { data: applyRootSignCorrection(consolidated), cta: totalCta };
+  return {
+    data: applyRootSignCorrection(consolidated),
+    cta: totalCta,
+    isComplete: true,
+    error: null
+  };
 }
 
 // -- Intercompany --

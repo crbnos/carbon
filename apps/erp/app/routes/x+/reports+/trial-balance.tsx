@@ -97,6 +97,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
       startDate
     );
 
+    if (consolidated.error || !consolidated.data) {
+      throw redirect(
+        path.to.accounting,
+        await flash(
+          request,
+          error(consolidated.error, "Failed to load trial balance")
+        )
+      );
+    }
+
     return {
       trialBalance: consolidated.data as (Chart & {
         translatedBalance?: number;
@@ -108,7 +118,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       isMultiCompany: true,
       isForeignCurrency: false,
       parentCurrency,
-      fiscalStartMonth
+      fiscalStartMonth,
+      isSourceComplete: consolidated.isComplete
     };
   }
 
@@ -141,6 +152,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     translatedBalance?: number;
     exchangeRate?: number;
   })[];
+  let isSourceComplete = balances.isComplete;
 
   if (showTranslatedParam && isForeignCurrency && parentCurrency) {
     const translation = await translateCompanyBalances(
@@ -169,6 +181,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
         }
         return account;
       });
+    } else {
+      isSourceComplete = false;
     }
   }
 
@@ -180,7 +194,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     isMultiCompany: false,
     isForeignCurrency,
     parentCurrency,
-    fiscalStartMonth
+    fiscalStartMonth,
+    isSourceComplete
   };
 }
 
@@ -193,10 +208,15 @@ export default function TrialBalanceRoute() {
     isMultiCompany,
     isForeignCurrency,
     parentCurrency,
-    fiscalStartMonth
+    fiscalStartMonth,
+    isSourceComplete
   } = useLoaderData<typeof loader>();
   const [search, setSearch] = useState("");
-  const canDownload = canExportFilteredReport(trialBalance, search);
+  const canDownload = canExportFilteredReport(
+    trialBalance,
+    search,
+    isSourceComplete
+  );
 
   const onDownload = () => {
     if (!canDownload) return;
@@ -205,7 +225,8 @@ export default function TrialBalanceRoute() {
       showTranslated,
       parentCurrency,
       search,
-      filename: "trial-balance.csv"
+      filename: "trial-balance.csv",
+      isSourceComplete
     });
   };
 

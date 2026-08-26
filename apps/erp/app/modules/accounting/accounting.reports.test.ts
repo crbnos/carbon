@@ -17,7 +17,9 @@ vi.mock("@carbon/glossary", () => ({
 }));
 
 import {
+  getConsolidatedBalances,
   getConsolidatedPeriodSeries,
+  getFinancialStatementBalances,
   getFinancialStatementPeriodSeries
 } from "./accounting.service";
 
@@ -43,18 +45,21 @@ const account = {
 };
 
 type ClientOptions = {
+  balanceFailureCompanyId?: string;
+  balanceRowCount?: number;
+  companyQueryFailure?: boolean;
   seriesFailureCompanyId?: string;
   translationFailureCompanyId?: string;
   seriesRowCount?: number;
 };
 
-function queryResult<T>(data: T) {
+function queryResult<T>(data: T, error: { message: string } | null = null) {
   const builder: Record<string, unknown> = {};
   for (const method of ["select", "eq", "order"]) {
     builder[method] = () => builder;
   }
   builder.then = (resolve: (value: unknown) => unknown) =>
-    resolve({ data, error: null });
+    resolve({ data, error });
   return builder;
 }
 
@@ -62,6 +67,9 @@ function makeReportClient(options: ClientOptions = {}) {
   return {
     from(table: string) {
       if (table === "company") {
+        if (options.companyQueryFailure) {
+          return queryResult(null, { message: "company lookup failed" });
+        }
         return queryResult([
           {
             id: "company-1",
@@ -80,6 +88,22 @@ function makeReportClient(options: ClientOptions = {}) {
     },
     async rpc(name: string, args: Record<string, unknown>) {
       const companyId = args.p_company_id as string;
+      if (name === "accountTreeBalancesByCompany") {
+        if (companyId === options.balanceFailureCompanyId) {
+          return { data: null, error: { message: "balances failed" } };
+        }
+        const row = {
+          accountId: account.id,
+          number: account.number,
+          netChange: 10,
+          balance: 10,
+          balanceAtDate: 10
+        };
+        return {
+          data: new Array(options.balanceRowCount ?? 1).fill(row),
+          error: null
+        };
+      }
       if (name === "accountTreeBalancePeriodSeries") {
         if (companyId === options.seriesFailureCompanyId) {
           return { data: null, error: { message: "series failed" } };
@@ -128,7 +152,36 @@ describe("financial statement period-series completeness", () => {
   });
 });
 
+describe("financial statement balance completeness", () => {
+  it("marks balances incomplete when a source reaches 1000 rows", async () => {
+    const result = await getFinancialStatementBalances(
+      makeReportClient({ balanceRowCount: 1000 }),
+      "group-1",
+      "company-1",
+      { startDate: "2026-01-01", endDate: "2026-01-31" }
+    );
+
+    expect(result.error).toBeNull();
+    expect(result.isComplete).toBe(false);
+    expect(result.data).not.toBeNull();
+  });
+});
+
 describe("getConsolidatedPeriodSeries", () => {
+  it("fails closed when company resolution fails", async () => {
+    const result = await getConsolidatedPeriodSeries(
+      makeReportClient({ companyQueryFailure: true }),
+      "group-1",
+      ["company-1", "company-2"],
+      "USD",
+      { buckets: [bucket] }
+    );
+
+    expect(result.data).toBeNull();
+    expect(result.isComplete).toBe(false);
+    expect(result.error?.message).toContain("company lookup failed");
+  });
+
   it("returns no partial data when a company series fails", async () => {
     const result = await getConsolidatedPeriodSeries(
       makeReportClient({ seriesFailureCompanyId: "company-2" }),
@@ -155,5 +208,22 @@ describe("getConsolidatedPeriodSeries", () => {
     expect(result.data).toBeNull();
     expect(result.isComplete).toBe(false);
     expect(result.error?.message).toContain("translation failed");
+  });
+});
+
+describe("getConsolidatedBalances", () => {
+  it("returns no partial data when a company balance fails", async () => {
+    const result = await getConsolidatedBalances(
+      makeReportClient({ balanceFailureCompanyId: "company-2" }),
+      "group-1",
+      ["company-1", "company-2"],
+      "USD",
+      "2026-01-31",
+      "2026-01-01"
+    );
+
+    expect(result.data).toBeNull();
+    expect(result.isComplete).toBe(false);
+    expect(result.error?.message).toContain("balances failed");
   });
 });
