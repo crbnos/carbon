@@ -198,3 +198,16 @@ export function getVisibleReportCatalog(args: {
       args.viewPermissions.includes(report.requiredViewPermission)
   );
 }
+
+export function filterSavedViewsByVisibleReportKeys<
+  T extends { reportKey: string }
+>(args: {
+  savedViews: readonly T[];
+  visibleReports: readonly Pick<ReportDefinition, "key">[];
+}): T[] {
+  const visibleReportKeys = new Set(
+    args.visibleReports.map((report) => report.key)
+  );
+
+  return args.savedViews.filter((view) => visibleReportKeys.has(view.reportKey));
+}

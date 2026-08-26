@@ -23,6 +23,7 @@ import type {
 } from "react-router";
 import { data, Link, useFetcher, useLoaderData } from "react-router";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
+import { usePermissions } from "~/hooks";
 import {
   getReportPins,
   getReportViews,
@@ -30,9 +31,12 @@ import {
   upsertReportPin
 } from "~/modules/accounting";
 import {
+  filterSavedViewsByVisibleReportKeys,
+  getVisibleReportCatalog,
   type ReportDefinition as CatalogReportDefinition,
   reportCatalog
 } from "~/modules/accounting/ui/Reports";
+import type { Role } from "~/types";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -111,24 +115,53 @@ export default function ReportsIndexRoute() {
   const { currentUserId, pinOverrides, savedViews } =
     useLoaderData<typeof loader>();
   const { t } = useLingui();
+  const { can, is } = usePermissions();
   const [search, setSearch] = useState("");
   const [viewPendingDelete, setViewPendingDelete] = useState<SavedView | null>(
     null
   );
   const pinFetcher = useFetcher<typeof action>();
 
+  const role = useMemo<Role>(() => {
+    if (is("employee")) return "employee";
+    if (is("supplier")) return "supplier";
+    return "customer";
+  }, [is]);
+
+  const viewPermissions = useMemo(() => {
+    return [...new Set(
+      reportCatalog
+        .map((report) => report.requiredViewPermission)
+        .filter((permission) => can("view", permission))
+    )];
+  }, [can]);
+
+  const visibleReportCatalog = useMemo(
+    () => getVisibleReportCatalog({ role, viewPermissions }),
+    [role, viewPermissions]
+  );
+
+  const accessibleSavedViews = useMemo(
+    () =>
+      filterSavedViewsByVisibleReportKeys({
+        savedViews,
+        visibleReports: visibleReportCatalog
+      }),
+    [savedViews, visibleReportCatalog]
+  );
+
   // The core financial statements default to pinned; users can pin/unpin from
   // the cards and list rows below (persisted per user + company).
   const reports = useMemo<ReportDefinition[]>(
     () =>
-      reportCatalog.map((report) => ({
+      visibleReportCatalog.map((report) => ({
         ...report,
         name: t(report.label),
         description: t(report.description),
         category: t(report.category),
         to: report.route
       })),
-    [t]
+    [t, visibleReportCatalog]
   );
 
   // Persisted overrides + optimistic in-flight toggle
@@ -186,7 +219,7 @@ export default function ReportsIndexRoute() {
   }, [filtered]);
 
   const pinnedReports = reports.filter(isPinned);
-  const pinnedViews = savedViews.filter(isViewPinned);
+  const pinnedViews = accessibleSavedViews.filter(isViewPinned);
   const hasPinned = pinnedReports.length > 0 || pinnedViews.length > 0;
 
   return (
@@ -246,7 +279,7 @@ export default function ReportsIndexRoute() {
         {categories.map(([category, categoryReports]) => {
           // Saved pivot views belong to a report card (by reportKey); show them
           // directly beneath the category that hosts that card (Analytics).
-          const categoryViews = savedViews.filter((view) =>
+          const categoryViews = accessibleSavedViews.filter((view) =>
             categoryReports.some((report) => report.key === view.reportKey)
           );
           return (

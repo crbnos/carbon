@@ -7,7 +7,11 @@ vi.mock("@lingui/core/macro", () => ({
   })
 }));
 
-import { getVisibleReportCatalog, reportCatalog } from "./reportCatalog";
+import {
+  filterSavedViewsByVisibleReportKeys,
+  getVisibleReportCatalog,
+  reportCatalog
+} from "./reportCatalog";
 
 describe("reportCatalog", () => {
   it("defines stable metadata and CSV support for every current report", () => {
@@ -63,5 +67,49 @@ describe("reportCatalog", () => {
         viewPermissions: ["accounting"]
       })
     ).toEqual([]);
+  });
+
+  it("filters saved views to reports that remain visible", () => {
+    const visibleReports = reportCatalog.filter(
+      (report) => report.key !== "executive-pnl"
+    );
+    const savedViews = [
+      { id: "view-income", name: "Income View", reportKey: "income-statement" },
+      { id: "view-pnl", name: "Executive View", reportKey: "executive-pnl" }
+    ];
+
+    expect(
+      filterSavedViewsByVisibleReportKeys({
+        savedViews,
+        visibleReports
+      })
+    ).toEqual([savedViews[0]]);
+  });
+
+  it("does not let a pinned saved view reappear when its parent report is hidden", () => {
+    const visibleReports = reportCatalog.filter(
+      (report) => report.key === "income-statement"
+    );
+    const savedViews = [
+      {
+        id: "visible-view",
+        name: "Visible View",
+        reportKey: "income-statement",
+        pinned: false
+      },
+      {
+        id: "hidden-view",
+        name: "Hidden View",
+        reportKey: "executive-pnl",
+        pinned: true
+      }
+    ];
+
+    expect(
+      filterSavedViewsByVisibleReportKeys({
+        savedViews,
+        visibleReports
+      })
+    ).toEqual([savedViews[0]]);
   });
 });

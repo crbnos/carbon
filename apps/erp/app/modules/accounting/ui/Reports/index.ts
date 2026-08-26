@@ -26,6 +26,7 @@ export { default as PurchasesControlBar } from "./PurchasesControlBar";
 export { default as ReportFilters } from "./ReportFilters";
 export type { ReportDefinition } from "./reportCatalog";
 export {
+  filterSavedViewsByVisibleReportKeys,
   getVisibleReportCatalog,
   reportCatalog
 } from "./reportCatalog";
