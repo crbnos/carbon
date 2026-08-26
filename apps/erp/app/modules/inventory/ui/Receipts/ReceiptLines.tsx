@@ -7,6 +7,9 @@ import {
   CardHeader,
   CardTitle,
   Checkbox,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
   cn,
   DatePicker,
   DropdownMenu,
@@ -38,9 +41,17 @@ import type { TrackedEntityAttributes } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { Suspense, useCallback, useEffect, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import {
   LuCalendar,
+  LuChevronDown,
   LuCircleAlert,
   LuEllipsisVertical,
   LuGroup,
@@ -84,6 +95,7 @@ import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 import BatchPropertiesConfig from "../Batches/BatchPropertiesConfig";
 import { BatchPropertiesFields } from "../Batches/BatchPropertiesFields";
+import { getTrackingPropertyValues } from "../Batches/tracking-properties";
 
 const ReceiptLines = () => {
   const { receiptId } = useParams();
@@ -282,6 +294,7 @@ const ReceiptLines = () => {
                     batchProperties={routeData?.batchProperties}
                     itemShelfLife={routeData?.itemShelfLife}
                     tracking={tracking}
+                    serialTracking={trackingCandidates}
                     upload={(files) => upload(files, line.id!)}
                     deleteFile={(file) => deleteFile(file, line.id!)}
                   />
@@ -398,6 +411,7 @@ function ReceiptLineItem({
   batchProperties,
   itemShelfLife,
   tracking,
+  serialTracking,
   serialNumbers,
   getPath,
   onSerialNumbersChange,
@@ -416,6 +430,7 @@ function ReceiptLineItem({
     days: number | null;
   }>;
   tracking: ItemTracking | undefined;
+  serialTracking: ItemTracking[];
   serialNumbers: { index: number; number: string }[];
   getPath: (file: StorageItem) => string;
   onSerialNumbersChange: (
@@ -613,8 +628,9 @@ function ReceiptLineItem({
           serialNumbers={serialNumbers}
           isReadOnly={isReadOnly}
           onSerialNumbersChange={onSerialNumbersChange}
+          batchProperties={batchProperties}
           itemShelfLife={itemShelfLife}
-          tracking={tracking}
+          serialTracking={serialTracking}
         />
       )}
       {(line.requiresBatchTracking || line.requiresSerialTracking) && (
@@ -721,19 +737,7 @@ function BatchForm({
       return {
         number: tracking.readableId || "",
         expirationDate: tracking.expirationDate ?? "",
-        properties: Object.entries(attributes)
-          .filter(
-            ([key]) =>
-              ![
-                "Shipment Line",
-                "Shipment",
-                "Shipment Line Index",
-                "Receipt Line",
-                "Receipt",
-                "expirationDate"
-              ].includes(key)
-          )
-          .reduce((acc, [key, value]) => ({ ...acc, [key]: value || "" }), {})
+        properties: getTrackingPropertyValues(attributes)
       };
     }
     return {
@@ -754,19 +758,7 @@ function BatchForm({
       return {
         number: newNumber || prev.number,
         expirationDate: newExpiration || prev.expirationDate,
-        properties: Object.entries(attributes)
-          .filter(
-            ([key]) =>
-              ![
-                "Shipment Line",
-                "Shipment",
-                "Shipment Line Index",
-                "Receipt Line",
-                "Receipt",
-                "expirationDate"
-              ].includes(key)
-          )
-          .reduce((acc, [key, value]) => ({ ...acc, [key]: value || "" }), {})
+        properties: getTrackingPropertyValues(attributes)
       };
     });
   }, [tracking]);
@@ -833,7 +825,7 @@ function BatchForm({
   return (
     <div className="flex flex-col gap-6 w-full p-6 border rounded-lg">
       <div className="flex justify-between items-center gap-4">
-        <Heading size="h4">Batch Properties</Heading>
+        <Heading size="h4">Tracking Properties</Heading>
         <div className="flex items-center gap-2">
           {values.number.trim() !== "" && (
             <PrintButton
@@ -958,6 +950,34 @@ function BatchForm({
   );
 }
 
+// Per-serial custom property values + expiration, keyed by receipt-line index.
+type SerialDetail = {
+  properties: Record<string, string>;
+  expirationDate: string;
+};
+
+function seedSerialDetails(
+  serialTracking: ItemTracking[],
+  count: number
+): Record<number, SerialDetail> {
+  const details: Record<number, SerialDetail> = {};
+  for (let index = 0; index < count; index++) {
+    const entity = serialTracking.find((t) => {
+      const attributes = t.attributes as TrackedEntityAttributes;
+      return attributes["Receipt Line Index"] === index;
+    });
+    details[index] = {
+      properties: entity
+        ? getTrackingPropertyValues(
+            entity.attributes as TrackedEntityAttributes
+          )
+        : {},
+      expirationDate: entity?.expirationDate ?? ""
+    };
+  }
+  return details;
+}
+
 function SerialForm({
   line,
   receipt,
@@ -966,7 +986,7 @@ function SerialForm({
   serialNumbers,
   isReadOnly,
   onSerialNumbersChange,
-  tracking
+  serialTracking
 }: {
   line: ReceiptLine;
   receipt?: Receipt;
@@ -981,21 +1001,37 @@ function SerialForm({
   onSerialNumbersChange: (
     serialNumbers: { index: number; number: string }[]
   ) => void;
-  tracking: ItemTracking | undefined;
+  serialTracking: ItemTracking[];
 }) {
   const shelfLife = itemShelfLife?.data?.find(
     (sl) => sl.itemId === line.itemId
   );
   const showExpiryField = shelfLife?.mode === "Set on Receipt";
-  const [expiryDate, setExpiryDate] = useState(tracking?.expirationDate ?? "");
-
-  useEffect(() => {
-    if (tracking?.expirationDate) {
-      setExpiryDate((prev) => prev || tracking.expirationDate || "");
-    }
-  }, [tracking?.expirationDate]);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const [errors, setErrors] = useState<Record<number, string>>({});
+  const [details, setDetails] = useState<Record<number, SerialDetail>>(() =>
+    seedSerialDetails(serialTracking, serialNumbers.length)
+  );
+
+  // Re-seed per-serial property/expiry values from the persisted entities when
+  // the tracked-entity set changes (initial load, post-save revalidate, or the
+  // received quantity changing). A stable signature avoids a render loop — the
+  // parent recomputes `serialTracking`'s identity every render.
+  const trackingSignature = useMemo(() => {
+    const parts = serialTracking.map((t) => {
+      const a = t.attributes as TrackedEntityAttributes;
+      return `${a["Receipt Line Index"]}:${t.readableId ?? ""}:${
+        t.expirationDate ?? ""
+      }:${JSON.stringify(getTrackingPropertyValues(a))}`;
+    });
+    return `${serialNumbers.length}|${parts.sort().join("|")}`;
+  }, [serialTracking, serialNumbers.length]);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the stable signature
+  useEffect(() => {
+    setDetails(seedSerialDetails(serialTracking, serialNumbers.length));
+  }, [trackingSignature]);
 
   // Check for duplicates within the current form
   const validateSerialNumber = useCallback(
@@ -1012,29 +1048,35 @@ function SerialForm({
     [serialNumbers]
   );
 
-  const updateSerialNumber = useCallback(
-    async (serialNumber: { index: number; number: string }) => {
-      if (!receipt?.id || !serialNumber.number.trim()) return;
+  // Persist one serial (its number + its own properties + expiry). Keyed by
+  // index so each unit's values are stored independently on its own entity.
+  // `detailOverride` carries a just-edited property/expiry value so we don't
+  // read a stale `details[index]` from an un-committed setState.
+  const persistSerial = useCallback(
+    async (index: number, detailOverride?: SerialDetail) => {
+      const number = serialNumbers[index]?.number?.trim();
+      if (!receipt?.id || !number) return;
 
-      const error = validateSerialNumber(
-        serialNumber.number,
-        serialNumber.index
-      );
+      const error = validateSerialNumber(number, index);
       if (error) {
-        setErrors((prev) => ({ ...prev, [serialNumber.index]: error }));
+        setErrors((prev) => ({ ...prev, [index]: error }));
         return;
       }
+
+      const detail = detailOverride ??
+        details[index] ?? { properties: {}, expirationDate: "" };
 
       const formData = new FormData();
       formData.append("itemId", line.itemId!);
       formData.append("receiptId", receipt.id);
       formData.append("receiptLineId", line.id!);
       formData.append("trackingType", "serial");
-      formData.append("index", serialNumber.index.toString());
-      formData.append("serialNumber", serialNumber.number.trim());
-      if (expiryDate) {
-        formData.append("expiryDate", expiryDate);
+      formData.append("index", index.toString());
+      formData.append("serialNumber", number);
+      if (detail.expirationDate) {
+        formData.append("expiryDate", detail.expirationDate);
       }
+      formData.append("properties", JSON.stringify(detail.properties ?? {}));
 
       try {
         const response = await fetch(path.to.receiptLinesTracking(receipt.id), {
@@ -1043,36 +1085,60 @@ function SerialForm({
         });
 
         if (response.ok) {
-          // Clear error if submission was successful
           setErrors((prev) => {
             const newErrors = { ...prev };
-            delete newErrors[serialNumber.index];
+            delete newErrors[index];
             return newErrors;
           });
         } else {
           setErrors((prev) => ({
             ...prev,
-            [serialNumber.index]: "Serial number already exists"
+            [index]: "Serial number already exists"
           }));
         }
       } catch (error) {
         if (error instanceof Error && error.message.includes("duplicate")) {
           setErrors((prev) => ({
             ...prev,
-            [serialNumber.index]: "Serial number already exists for this item"
+            [index]: "Serial number already exists for this item"
           }));
         }
       }
     },
-    [line.id, line.itemId, receipt?.id, validateSerialNumber, expiryDate]
+    [
+      serialNumbers,
+      details,
+      line.id,
+      line.itemId,
+      receipt?.id,
+      validateSerialNumber
+    ]
+  );
+
+  const updateSerialDetail = useCallback(
+    (index: number, patch: Partial<SerialDetail>) => {
+      setDetails((prev) => ({
+        ...prev,
+        [index]: {
+          properties: patch.properties ?? prev[index]?.properties ?? {},
+          expirationDate:
+            patch.expirationDate ?? prev[index]?.expirationDate ?? ""
+        }
+      }));
+    },
+    []
   );
 
   const propertiesDisclosure = useDisclosure();
+  const defaultOpen = serialNumbers.length <= 5;
 
   return (
-    <div className="flex flex-col gap-6 p-6 border rounded-lg">
+    <div
+      ref={containerRef}
+      className="flex flex-col gap-6 p-6 border rounded-lg"
+    >
       <div className="flex justify-between items-center gap-6">
-        <Heading size="h4">Serial Numbers</Heading>
+        <Heading size="h4">Tracking Properties</Heading>
         <div className="flex items-center gap-2">
           <PrintButton
             sourceDocument="Receipt"
@@ -1092,97 +1158,174 @@ function SerialForm({
                 })
             }}
           />
+          <Button
+            variant="secondary"
+            leftIcon={<LuGroup />}
+            size="md"
+            onClick={propertiesDisclosure.onOpen}
+          >
+            Edit Properties
+          </Button>
         </div>
       </div>
 
-      {showExpiryField && (
-        <div className="flex flex-col gap-2 max-w-xs">
-          <label className="text-xs text-muted-foreground flex items-center gap-2">
-            <LuCalendar />{" "}
-            <Trans>Expiration Date (applies to all serials on this line)</Trans>
-          </label>
-          <DatePicker
-            isDisabled={isReadOnly}
-            value={expiryDate ? parseDate(expiryDate) : null}
-            onChange={(date) => setExpiryDate(date?.toString() ?? "")}
-          />
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-4 gap-y-3">
+      <div className="flex flex-col gap-3">
         {serialNumbers.map((serialNumber, index) => (
           <div
             key={`${line.id}-${index}-serial`}
-            className="flex flex-col gap-1"
+            className="flex flex-col gap-3 p-4 border rounded-lg"
           >
-            <Input
-              placeholder={`Serial ${index + 1}`}
-              isDisabled={isReadOnly}
-              value={serialNumber.number}
-              onChange={(e) => {
-                const newValue = e.target.value;
-                const error = validateSerialNumber(newValue, index);
+            <div className="flex flex-col gap-1 max-w-md">
+              <label className="text-xs text-muted-foreground flex items-center gap-2">
+                <LuGroup /> <Trans>Serial</Trans> {index + 1}
+              </label>
+              <Input
+                data-serial-index={index}
+                placeholder={`Serial ${index + 1}`}
+                isDisabled={isReadOnly}
+                value={serialNumber.number}
+                onChange={(e) => {
+                  const newValue = e.target.value;
+                  const error = validateSerialNumber(newValue, index);
 
-                setErrors((prev) => {
-                  const newErrors = { ...prev };
-                  if (error) {
-                    newErrors[index] = error;
-                  } else {
-                    delete newErrors[index];
-                  }
-                  return newErrors;
-                });
+                  setErrors((prev) => {
+                    const newErrors = { ...prev };
+                    if (error) {
+                      newErrors[index] = error;
+                    } else {
+                      delete newErrors[index];
+                    }
+                    return newErrors;
+                  });
 
-                const newSerialNumbers = [...serialNumbers];
-                newSerialNumbers[index] = {
-                  index,
-                  number: newValue
-                };
-                onSerialNumbersChange(newSerialNumbers);
-              }}
-              onBlur={() => {
-                if (serialNumber.number.trim()) {
-                  updateSerialNumber(serialNumber);
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
+                  const newSerialNumbers = [...serialNumbers];
+                  newSerialNumbers[index] = {
+                    index,
+                    number: newValue
+                  };
+                  onSerialNumbersChange(newSerialNumbers);
+                }}
+                onBlur={() => {
                   if (serialNumber.number.trim()) {
-                    updateSerialNumber(serialNumber);
+                    persistSerial(index);
                   }
-                  const nextInput = e.currentTarget
-                    .closest("div")
-                    ?.querySelector(`input[placeholder="Serial ${index + 2}"]`);
-                  if (nextInput) {
-                    (nextInput as HTMLElement).focus();
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (serialNumber.number.trim()) {
+                      persistSerial(index);
+                    }
+                    const nextInput = containerRef.current?.querySelector(
+                      `input[data-serial-index="${index + 1}"]`
+                    );
+                    if (nextInput) {
+                      (nextInput as HTMLElement).focus();
+                    }
                   }
-                }
-              }}
-              className={cn(errors[index] && "border-destructive")}
-            />
-            {errors[index] && (
-              <span className="text-xs text-destructive">{errors[index]}</span>
-            )}
+                }}
+                className={cn(errors[index] && "border-destructive")}
+              />
+              {errors[index] && (
+                <span className="text-xs text-destructive">
+                  {errors[index]}
+                </span>
+              )}
+            </div>
+
+            <Suspense fallback={null}>
+              <Await resolve={batchProperties}>
+                {(resolvedBatchProperties) => {
+                  const defs =
+                    resolvedBatchProperties?.data?.filter(
+                      (p) => p.itemId === line.itemId
+                    ) ?? [];
+                  if (defs.length === 0 && !showExpiryField) return null;
+                  return (
+                    <Collapsible defaultOpen={defaultOpen}>
+                      <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <LuChevronDown />
+                        <Trans>Properties</Trans>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 pt-3">
+                          {showExpiryField && (
+                            <div className="flex flex-col gap-2 w-full">
+                              <label className="text-xs text-muted-foreground flex items-center gap-2">
+                                <LuCalendar /> <Trans>Expiration Date</Trans>
+                              </label>
+                              <DatePicker
+                                isDisabled={isReadOnly}
+                                value={
+                                  details[index]?.expirationDate
+                                    ? parseDate(details[index].expirationDate)
+                                    : null
+                                }
+                                onChange={(date) => {
+                                  const nextExpiry = date?.toString() ?? "";
+                                  updateSerialDetail(index, {
+                                    expirationDate: nextExpiry
+                                  });
+                                  if (serialNumber.number.trim()) {
+                                    persistSerial(index, {
+                                      properties:
+                                        details[index]?.properties ?? {},
+                                      expirationDate: nextExpiry
+                                    });
+                                  }
+                                }}
+                              />
+                            </div>
+                          )}
+                          <BatchPropertiesFields
+                            itemId={line.itemId!}
+                            properties={defs}
+                            isReadOnly={isReadOnly}
+                            values={details[index]?.properties ?? {}}
+                            onChange={(newProperties) => {
+                              const nextProperties = newProperties as Record<
+                                string,
+                                string
+                              >;
+                              updateSerialDetail(index, {
+                                properties: nextProperties
+                              });
+                              if (serialNumber.number.trim()) {
+                                persistSerial(index, {
+                                  properties: nextProperties,
+                                  expirationDate:
+                                    details[index]?.expirationDate ?? ""
+                                });
+                              }
+                            }}
+                          />
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  );
+                }}
+              </Await>
+            </Suspense>
           </div>
         ))}
-        {propertiesDisclosure.isOpen && (
-          <Suspense fallback={null}>
-            <Await resolve={batchProperties}>
-              {(resolvedBatchProperties) => {
-                return (
-                  <BatchPropertiesConfig
-                    itemId={line.itemId!}
-                    properties={resolvedBatchProperties?.data ?? []}
-                    type="modal"
-                    onClose={propertiesDisclosure.onClose}
-                  />
-                );
-              }}
-            </Await>
-          </Suspense>
-        )}
       </div>
+
+      {propertiesDisclosure.isOpen && (
+        <Suspense fallback={null}>
+          <Await resolve={batchProperties}>
+            {(resolvedBatchProperties) => {
+              return (
+                <BatchPropertiesConfig
+                  itemId={line.itemId!}
+                  properties={resolvedBatchProperties?.data ?? []}
+                  type="modal"
+                  onClose={propertiesDisclosure.onClose}
+                />
+              );
+            }}
+          </Await>
+        </Suspense>
+      )}
     </div>
   );
 }

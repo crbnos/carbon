@@ -74,6 +74,14 @@ export async function action({ request, context }: ActionFunctionArgs) {
     const serialNumber = formData.get("serialNumber") as string;
     const index = Number(formData.get("index"));
     const expiryDate = formData.get("expiryDate") as string | null;
+    const propertiesRaw = formData.get("properties") as string | null;
+
+    let serialPropertiesJson = {};
+    try {
+      serialPropertiesJson = propertiesRaw ? JSON.parse(propertiesRaw) : {};
+    } catch (error) {
+      logger.error("Failed to parse serial tracking properties", { error });
+    }
 
     // Check if the serial number is already used for a different receipt line or index
     const { data: existingEntityWithIndex, error: indexQueryError } =
@@ -134,7 +142,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
         p_receipt_id: receiptId,
         p_serial_number: serialNumber,
         p_index: index,
-        p_expiry_date: expiryDate || undefined
+        p_expiry_date: expiryDate || undefined,
+        p_properties: serialPropertiesJson
       }
     );
 

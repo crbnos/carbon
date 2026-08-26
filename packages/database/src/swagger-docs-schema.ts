@@ -89997,6 +89997,9 @@ export default {
                   format: "integer",
                   type: "integer"
                 },
+                p_properties: {
+                  format: "jsonb"
+                },
                 p_receipt_id: {
                   format: "text",
                   type: "string"

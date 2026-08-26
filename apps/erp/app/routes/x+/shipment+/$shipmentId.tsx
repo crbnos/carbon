@@ -6,6 +6,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useParams } from "react-router";
 import {
+  getBatchProperties,
   getShipment,
   getShipmentLines,
   getShipmentRelatedItems,
@@ -45,6 +46,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (shipment.data.companyId !== companyId) {
     throw redirect(path.to.shipments);
   }
+
+  // Item ids for batch- or serial-tracked lines, so the UI can render each
+  // picked entity's tracking properties (read-only, inherited from receipt).
+  const trackedItemIds = (shipmentLines.data ?? [])
+    .filter(
+      (line) =>
+        line?.itemId &&
+        (line.requiresBatchTracking || line.requiresSerialTracking)
+    )
+    .map((line) => line.itemId)
+    .filter((itemId): itemId is string => itemId !== null);
 
   let fixedAssetLines: {
     id: string;
@@ -91,6 +103,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     shipmentLines: shipmentLines.data ?? [],
     fixedAssetLines,
     shipmentLineTracking: shipmentLineTracking.data ?? [],
+    batchProperties: getBatchProperties(client, trackedItemIds, companyId),
     relatedItems: getShipmentRelatedItems(
       client,
       shipmentId,

@@ -7,6 +7,9 @@ import {
   CardHeader,
   CardTitle,
   Checkbox,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
   Combobox,
   cn,
   DropdownMenu,
@@ -38,9 +41,11 @@ import {
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import { getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect, useState } from "react";
+import type { PostgrestResponse } from "@supabase/supabase-js";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import {
   LuCheck,
+  LuChevronDown,
   LuCircleAlert,
   LuEllipsisVertical,
   LuGroup,
@@ -50,6 +55,7 @@ import {
   LuTrash
 } from "react-icons/lu";
 import {
+  Await,
   Outlet,
   useFetcher,
   useFetchers,
@@ -63,6 +69,7 @@ import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
 import type {
+  BatchProperty,
   getBatchNumbersForItem,
   getSerialNumbersForItem,
   ItemTracking,
@@ -74,6 +81,8 @@ import { splitValidator } from "~/modules/inventory";
 import type { action as shipmentLinesUpdateAction } from "~/routes/x+/shipment+/lines.update";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
+import { BatchPropertiesFields } from "../Batches/BatchPropertiesFields";
+import { getTrackingPropertyValues } from "../Batches/tracking-properties";
 
 const ShipmentLines = () => {
   const { shipmentId } = useParams();
@@ -86,6 +95,7 @@ const ShipmentLines = () => {
     shipment: Shipment;
     shipmentLines: ShipmentLine[];
     shipmentLineTracking: ShipmentLineTracking[];
+    batchProperties: PostgrestResponse<BatchProperty>;
     fixedAssetLines: {
       id: string;
       salesOrderLineId: string;
@@ -284,6 +294,14 @@ const ShipmentLines = () => {
                         }));
                       }}
                       tracking={tracking}
+                      trackingCandidates={
+                        routeData?.shipmentLineTracking?.filter((t) => {
+                          const attributes =
+                            t.attributes as TrackedEntityAttributes;
+                          return attributes["Shipment Line"] === line.id;
+                        }) ?? []
+                      }
+                      batchProperties={routeData?.batchProperties}
                     />
                   );
                 })
@@ -395,6 +413,8 @@ function ShipmentLineItem({
   hasTrackingLabel,
   isReadOnly,
   tracking,
+  trackingCandidates,
+  batchProperties,
   serialNumbers,
   onUpdate,
   onSerialNumbersChange
@@ -405,6 +425,8 @@ function ShipmentLineItem({
   hasTrackingLabel: boolean;
   isReadOnly: boolean;
   tracking: ItemTracking | undefined;
+  trackingCandidates: ItemTracking[];
+  batchProperties?: PostgrestResponse<BatchProperty>;
   serialNumbers: { index: number; id: string }[];
   onSerialNumbersChange: (
     serialNumbers: { index: number; id: string }[]
@@ -618,6 +640,7 @@ function ShipmentLineItem({
           hasTrackingLabel={hasTrackingLabel}
           isReadOnly={isReadOnly}
           tracking={tracking}
+          batchProperties={batchProperties}
           onUpdate={onUpdate}
         />
       )}
@@ -629,6 +652,8 @@ function ShipmentLineItem({
           serialNumbers={serialNumbers}
           isReadOnly={isReadOnly}
           onSerialNumbersChange={onSerialNumbersChange}
+          trackingCandidates={trackingCandidates}
+          batchProperties={batchProperties}
         />
       )}
       {splitDisclosure.isOpen && (
@@ -653,6 +678,7 @@ function BatchForm({
   hasTrackingLabel,
   tracking,
   isReadOnly,
+  batchProperties,
   onUpdate
 }: {
   line: ShipmentLine;
@@ -660,6 +686,7 @@ function BatchForm({
   hasTrackingLabel: boolean;
   isReadOnly: boolean;
   tracking: ItemTracking | undefined;
+  batchProperties?: PostgrestResponse<BatchProperty>;
   onUpdate: ({
     lineId,
     field,
@@ -679,20 +706,9 @@ function BatchForm({
     if (tracking) {
       return {
         number: tracking.readableId || "",
-        properties: Object.entries(
-          (tracking.attributes ?? {}) as TrackedEntityAttributes
+        properties: getTrackingPropertyValues(
+          tracking.attributes as TrackedEntityAttributes
         )
-          .filter(
-            ([key]) =>
-              ![
-                "Shipment Line",
-                "Shipment",
-                "Shipment Line Index",
-                "Receipt Line",
-                "Receipt"
-              ].includes(key)
-          )
-          .reduce((acc, [key, value]) => ({ ...acc, [key]: value || "" }), {})
       };
     }
     return {
@@ -870,7 +886,7 @@ function BatchForm({
   return (
     <div className="flex flex-col gap-6 w-full p-6 border rounded-lg">
       <div className="flex justify-between items-center gap-4">
-        <Heading size="h4">Tracking Number</Heading>
+        <Heading size="h4">Tracking Properties</Heading>
         {hasTrackingLabel && (
           <PrintButton
             sourceDocument="Shipment"
@@ -926,6 +942,33 @@ function BatchForm({
           </div>
         </div>
       </div>
+      {resolvedBatch && (
+        <Suspense fallback={null}>
+          <Await resolve={batchProperties}>
+            {(resolvedBatchProperties) => {
+              const defs =
+                resolvedBatchProperties?.data?.filter(
+                  (p) => p.itemId === line.itemId
+                ) ?? [];
+              if (defs.length === 0) return null;
+              return (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <BatchPropertiesFields
+                    itemId={line.itemId!}
+                    properties={defs}
+                    isReadOnly
+                    values={getTrackingPropertyValues(
+                      // @ts-expect-error TS2339 - resolved entity is untyped
+                      resolvedBatch?.attributes
+                    )}
+                    onChange={() => undefined}
+                  />
+                </div>
+              );
+            }}
+          </Await>
+        </Suspense>
+      )}
       {values.number &&
         batchNumbers?.data &&
         (() => {
@@ -956,7 +999,9 @@ function SerialForm({
   hasTrackingLabel,
   serialNumbers,
   isReadOnly,
-  onSerialNumbersChange
+  onSerialNumbersChange,
+  trackingCandidates,
+  batchProperties
 }: {
   line: ShipmentLine;
   shipment?: Shipment;
@@ -966,6 +1011,8 @@ function SerialForm({
   onSerialNumbersChange: (
     serialNumbers: { index: number; id: string }[]
   ) => void;
+  trackingCandidates: ItemTracking[];
+  batchProperties?: PostgrestResponse<BatchProperty>;
 }) {
   const [errors, setErrors] = useState<Record<number, string>>({});
   const { data: serialNumbersData } = useSerialNumbers(
@@ -1122,7 +1169,7 @@ function SerialForm({
   return (
     <div className="flex flex-col gap-6 p-6 border rounded-lg">
       <div className="flex justify-between items-center gap-4">
-        <Heading size="h4">Tracking Numbers</Heading>
+        <Heading size="h4">Tracking Properties</Heading>
         {hasTrackingLabel && (
           <PrintButton
             sourceDocument="Shipment"
@@ -1145,7 +1192,7 @@ function SerialForm({
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-4 gap-y-3">
+      <div className="flex flex-col gap-3">
         {serialNumbers.map((serialNumber, index) => {
           // Check if the serial number is valid and in the list
           const resolvedSerial = serialNumber.id
@@ -1157,67 +1204,114 @@ function SerialForm({
           // @ts-expect-error TS2339 - TODO: fix type
           const isSerialNumberValid = resolvedSerial?.status === "Available";
 
+          // The picked entity carries its (read-only) tracking properties.
+          const resolvedEntity =
+            resolvedSerial ??
+            trackingCandidates.find((t) => {
+              const attributes = t.attributes as TrackedEntityAttributes;
+              return attributes["Shipment Line Index"] === index;
+            });
+          const propertyValues = getTrackingPropertyValues(
+            // @ts-expect-error TS2339 - resolved entity is untyped
+            resolvedEntity?.attributes
+          );
+
           return (
             <div
               key={`${line.id}-${index}-serial`}
-              className="flex flex-col gap-1"
+              className="flex flex-col gap-3 p-4 border rounded-lg"
             >
-              <InputGroup isDisabled={isReadOnly}>
-                <Input
-                  placeholder={`Tracking Number ${index + 1}`}
-                  value={serialNumber.id}
-                  onChange={(e) => {
-                    const newValue = e.target.value;
-                    const newSerialNumbers = [...serialNumbers];
-                    newSerialNumbers[index] = {
-                      index,
-                      id: newValue
-                    };
-                    onSerialNumbersChange(newSerialNumbers);
-                  }}
-                  onBlur={(e) => {
-                    const newValue = e.target.value;
-                    const error = validateSerialNumber(newValue, index);
-
-                    setErrors((prev) => {
-                      const newErrors = { ...prev };
-                      if (error) {
-                        newErrors[index] = error;
-                      } else {
-                        delete newErrors[index];
-                      }
-                      return newErrors;
-                    });
-
-                    if (!error) {
-                      updateSerialNumber({
-                        index,
-                        id: newValue
-                      });
-                    } else {
-                      // Clear the input value but keep the error message
+              <div className="flex flex-col gap-1 max-w-md">
+                <InputGroup isDisabled={isReadOnly}>
+                  <Input
+                    placeholder={`Tracking Number ${index + 1}`}
+                    value={serialNumber.id}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
                       const newSerialNumbers = [...serialNumbers];
                       newSerialNumbers[index] = {
                         index,
-                        id: ""
+                        id: newValue
                       };
                       onSerialNumbersChange(newSerialNumbers);
-                    }
-                  }}
-                  className={cn(errors[index] && "border-destructive")}
-                />
-                <InputRightElement className="pl-2">
-                  {isSerialNumberValid ? (
-                    <LuCheck className="text-emerald-500" />
-                  ) : (
-                    <LuQrCode />
-                  )}
-                </InputRightElement>
-              </InputGroup>
-              {errors[index] && (
-                <span className="text-xs text-destructive">
-                  {errors[index]}
-                </span>
+                    }}
+                    onBlur={(e) => {
+                      const newValue = e.target.value;
+                      const error = validateSerialNumber(newValue, index);
+
+                      setErrors((prev) => {
+                        const newErrors = { ...prev };
+                        if (error) {
+                          newErrors[index] = error;
+                        } else {
+                          delete newErrors[index];
+                        }
+                        return newErrors;
+                      });
+
+                      if (!error) {
+                        updateSerialNumber({
+                          index,
+                          id: newValue
+                        });
+                      } else {
+                        // Clear the input value but keep the error message
+                        const newSerialNumbers = [...serialNumbers];
+                        newSerialNumbers[index] = {
+                          index,
+                          id: ""
+                        };
+                        onSerialNumbersChange(newSerialNumbers);
+                      }
+                    }}
+                    className={cn(errors[index] && "border-destructive")}
+                  />
+                  <InputRightElement className="pl-2">
+                    {isSerialNumberValid ? (
+                      <LuCheck className="text-emerald-500" />
+                    ) : (
+                      <LuQrCode />
+                    )}
+                  </InputRightElement>
+                </InputGroup>
+                {errors[index] && (
+                  <span className="text-xs text-destructive">
+                    {errors[index]}
+                  </span>
+                )}
+              </div>
+
+              {resolvedEntity && (
+                <Suspense fallback={null}>
+                  <Await resolve={batchProperties}>
+                    {(resolvedBatchProperties) => {
+                      const defs =
+                        resolvedBatchProperties?.data?.filter(
+                          (p) => p.itemId === line.itemId
+                        ) ?? [];
+                      if (defs.length === 0) return null;
+                      return (
+                        <Collapsible defaultOpen={serialNumbers.length <= 5}>
+                          <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <LuChevronDown />
+                            <Trans>Properties</Trans>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 pt-3">
+                              <BatchPropertiesFields
+                                itemId={line.itemId!}
+                                properties={defs}
+                                isReadOnly
+                                values={propertyValues}
+                                onChange={() => undefined}
+                              />
+                            </div>
+                          </CollapsibleContent>
+                        </Collapsible>
+                      );
+                    }}
+                  </Await>
+                </Suspense>
               )}
             </div>
           );
