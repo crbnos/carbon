@@ -1713,7 +1713,8 @@ export async function getCompaniesInGroup(
   return client
     .from("company")
     .select(
-      "id, name, baseCurrencyCode, timezone, parentCompanyId, isEliminationEntity"
+      "id, name, baseCurrencyCode, timezone, parentCompanyId, isEliminationEntity",
+      { count: "exact" }
     )
     .eq("companyGroupId", companyGroupId)
     .eq("active", true)

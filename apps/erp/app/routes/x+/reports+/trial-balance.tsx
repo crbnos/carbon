@@ -27,6 +27,7 @@ import { months } from "~/modules/shared";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+import { resolveReportCompanies } from "~/utils/reportExport";
 import { revalidateIgnoringOffset } from "~/utils/revalidate";
 
 export const handle: Handle = {
@@ -67,16 +68,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ]);
   const fiscalStartMonth =
     months.indexOf(fiscalYearSettings.data?.startMonth ?? "January") + 1;
-  const companiesList = companies.data ?? [];
+  const {
+    companies: companiesList,
+    selectedCompanyIds,
+    isComplete: isCompanySourceComplete
+  } = resolveReportCompanies(companies, companiesParam, companyId);
+
+  if (!selectedCompanyIds) {
+    throw redirect(
+      path.to.accounting,
+      await flash(
+        request,
+        error(companies.error, "Failed to load complete company metadata")
+      )
+    );
+  }
+
   const parentCompany = companiesList.find((c) => !c.parentCompanyId);
   const parentCurrency = parentCompany?.baseCurrencyCode ?? null;
-
-  const selectedCompanyIds =
-    companiesParam === "all"
-      ? companiesList.map((c) => c.id)
-      : companiesParam
-        ? [companiesParam]
-        : [companyId];
   const isMultiCompany = selectedCompanyIds.length > 1;
 
   // Default to the trailing six months, matching every other range report
@@ -120,7 +129,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       isForeignCurrency: false,
       parentCurrency,
       fiscalStartMonth,
-      isSourceComplete: consolidated.isComplete
+      isCompanySourceComplete,
+      isSourceComplete: isCompanySourceComplete && consolidated.isComplete
     };
   }
 
@@ -153,7 +163,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     translatedBalance?: number;
     exchangeRate?: number;
   })[];
-  let isSourceComplete = balances.isComplete;
+  let isSourceComplete = isCompanySourceComplete && balances.isComplete;
 
   if (showTranslatedParam && isForeignCurrency && parentCurrency) {
     const translation = await translateCompanyBalances(
@@ -196,6 +206,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     isForeignCurrency,
     parentCurrency,
     fiscalStartMonth,
+    isCompanySourceComplete,
     isSourceComplete
   };
 }
@@ -210,6 +221,7 @@ export default function TrialBalanceRoute() {
     isForeignCurrency,
     parentCurrency,
     fiscalStartMonth,
+    isCompanySourceComplete,
     isSourceComplete
   } = useLoaderData<typeof loader>();
   const [search, setSearch] = useState("");
@@ -246,6 +258,7 @@ export default function TrialBalanceRoute() {
       <ReportFilters
         companies={companies}
         selectedCompanyIds={selectedCompanyIds}
+        isCompanySourceComplete={isCompanySourceComplete}
         isMultiCompany={isMultiCompany}
         isForeignCurrency={isForeignCurrency}
         parentCurrency={parentCurrency}

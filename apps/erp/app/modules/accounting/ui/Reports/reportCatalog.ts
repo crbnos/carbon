@@ -36,11 +36,11 @@ const reportMessage = (message: string): MessageDescriptor => ({
 export const reportCatalog: readonly ReportDefinition[] = [
   {
     key: "income-statement",
-    label: reportMessage("Income Statement"),
-    description: reportMessage("Revenue and expenses over a period"),
+    label: reportMessage(/*i18n*/ "Income Statement"),
+    description: reportMessage(/*i18n*/ "Revenue and expenses over a period"),
     route: "/x/reports/income-statement",
     icon: LuTrendingUp,
-    category: reportMessage("Financial Statements"),
+    category: reportMessage(/*i18n*/ "Financial Statements"),
     defaultPinned: true,
     allowedRole: "employee",
     requiredViewPermission: "accounting",
@@ -48,11 +48,13 @@ export const reportCatalog: readonly ReportDefinition[] = [
   },
   {
     key: "executive-pnl",
-    label: reportMessage("Executive P&L"),
-    description: reportMessage("Condensed P&L with margins and key subtotals"),
+    label: reportMessage(/*i18n*/ "Executive P&L"),
+    description: reportMessage(
+      /*i18n*/ "Condensed P&L with margins and key subtotals"
+    ),
     route: "/x/reports/executive-pnl",
     icon: LuBriefcase,
-    category: reportMessage("Financial Statements"),
+    category: reportMessage(/*i18n*/ "Financial Statements"),
     defaultPinned: false,
     allowedRole: "employee",
     requiredViewPermission: "accounting",
@@ -60,11 +62,13 @@ export const reportCatalog: readonly ReportDefinition[] = [
   },
   {
     key: "balance-sheet",
-    label: reportMessage("Balance Sheet"),
-    description: reportMessage("Assets, liabilities and equity as of a date"),
+    label: reportMessage(/*i18n*/ "Balance Sheet"),
+    description: reportMessage(
+      /*i18n*/ "Assets, liabilities and equity as of a date"
+    ),
     route: "/x/reports/balance-sheet",
     icon: LuScale,
-    category: reportMessage("Financial Statements"),
+    category: reportMessage(/*i18n*/ "Financial Statements"),
     defaultPinned: true,
     allowedRole: "employee",
     requiredViewPermission: "accounting",
@@ -72,11 +76,13 @@ export const reportCatalog: readonly ReportDefinition[] = [
   },
   {
     key: "trial-balance",
-    label: reportMessage("Trial Balance"),
-    description: reportMessage("Account balances with debits and credits"),
+    label: reportMessage(/*i18n*/ "Trial Balance"),
+    description: reportMessage(
+      /*i18n*/ "Account balances with debits and credits"
+    ),
     route: "/x/reports/trial-balance",
     icon: LuFileSpreadsheet,
-    category: reportMessage("Close Reports"),
+    category: reportMessage(/*i18n*/ "Close Reports"),
     defaultPinned: true,
     allowedRole: "employee",
     requiredViewPermission: "accounting",
@@ -84,11 +90,13 @@ export const reportCatalog: readonly ReportDefinition[] = [
   },
   {
     key: "inventory-valuation",
-    label: reportMessage("Inventory Valuation"),
-    description: reportMessage("On-hand value by location or item, with GL tie-out"),
+    label: reportMessage(/*i18n*/ "Inventory Valuation"),
+    description: reportMessage(
+      /*i18n*/ "On-hand value by location or item, with GL tie-out"
+    ),
     route: "/x/reports/inventory-valuation",
     icon: LuBoxes,
-    category: reportMessage("Close Reports"),
+    category: reportMessage(/*i18n*/ "Close Reports"),
     defaultPinned: false,
     allowedRole: "employee",
     requiredViewPermission: "accounting",
@@ -96,11 +104,13 @@ export const reportCatalog: readonly ReportDefinition[] = [
   },
   {
     key: "revenue",
-    label: reportMessage("Revenue"),
-    description: reportMessage("Slice revenue by customer, customer type, or any dimension"),
+    label: reportMessage(/*i18n*/ "Revenue"),
+    description: reportMessage(
+      /*i18n*/ "Slice revenue by customer, customer type, or any dimension"
+    ),
     route: "/x/reports/analytics/revenue",
     icon: LuUsers,
-    category: reportMessage("Analytics"),
+    category: reportMessage(/*i18n*/ "Analytics"),
     defaultPinned: false,
     allowedRole: "employee",
     requiredViewPermission: "accounting",
@@ -108,11 +118,13 @@ export const reportCatalog: readonly ReportDefinition[] = [
   },
   {
     key: "expenses",
-    label: reportMessage("Expenses"),
-    description: reportMessage("Slice expenses by location, cost center, or any dimension"),
+    label: reportMessage(/*i18n*/ "Expenses"),
+    description: reportMessage(
+      /*i18n*/ "Slice expenses by location, cost center, or any dimension"
+    ),
     route: "/x/reports/analytics/expenses",
     icon: LuTruck,
-    category: reportMessage("Analytics"),
+    category: reportMessage(/*i18n*/ "Analytics"),
     defaultPinned: false,
     allowedRole: "employee",
     requiredViewPermission: "accounting",
@@ -120,11 +132,13 @@ export const reportCatalog: readonly ReportDefinition[] = [
   },
   {
     key: "purchases",
-    label: reportMessage("Purchases"),
-    description: reportMessage("Spend by supplier, item, or category — your biggest cost drivers"),
+    label: reportMessage(/*i18n*/ "Purchases"),
+    description: reportMessage(
+      /*i18n*/ "Spend by supplier, item, or category — your biggest cost drivers"
+    ),
     route: "/x/reports/purchases",
     icon: LuHandCoins,
-    category: reportMessage("Analytics"),
+    category: reportMessage(/*i18n*/ "Analytics"),
     defaultPinned: false,
     allowedRole: "employee",
     requiredViewPermission: "accounting",
@@ -132,11 +146,13 @@ export const reportCatalog: readonly ReportDefinition[] = [
   },
   {
     key: "assets",
-    label: reportMessage("Assets"),
-    description: reportMessage("Slice asset activity by location, item, or any dimension"),
+    label: reportMessage(/*i18n*/ "Assets"),
+    description: reportMessage(
+      /*i18n*/ "Slice asset activity by location, item, or any dimension"
+    ),
     route: "/x/reports/analytics/assets",
     icon: LuBanknote,
-    category: reportMessage("Analytics"),
+    category: reportMessage(/*i18n*/ "Analytics"),
     defaultPinned: false,
     allowedRole: "employee",
     requiredViewPermission: "accounting",
@@ -144,11 +160,13 @@ export const reportCatalog: readonly ReportDefinition[] = [
   },
   {
     key: "inventory-change",
-    label: reportMessage("Inventory"),
-    description: reportMessage("What drove inventory up or down, by any dimension"),
+    label: reportMessage(/*i18n*/ "Inventory"),
+    description: reportMessage(
+      /*i18n*/ "What drove inventory up or down, by any dimension"
+    ),
     route: "/x/reports/analytics/inventory-change",
     icon: LuArrowUpDown,
-    category: reportMessage("Analytics"),
+    category: reportMessage(/*i18n*/ "Analytics"),
     defaultPinned: false,
     allowedRole: "employee",
     requiredViewPermission: "accounting",
@@ -156,11 +174,13 @@ export const reportCatalog: readonly ReportDefinition[] = [
   },
   {
     key: "scrap",
-    label: reportMessage("Scrap"),
-    description: reportMessage("Biggest causes of scrap by reason, item, or work center"),
+    label: reportMessage(/*i18n*/ "Scrap"),
+    description: reportMessage(
+      /*i18n*/ "Biggest causes of scrap by reason, item, or work center"
+    ),
     route: "/x/reports/analytics/scrap",
     icon: LuRecycle,
-    category: reportMessage("Analytics"),
+    category: reportMessage(/*i18n*/ "Analytics"),
     defaultPinned: false,
     allowedRole: "employee",
     requiredViewPermission: "accounting",
@@ -168,11 +188,11 @@ export const reportCatalog: readonly ReportDefinition[] = [
   },
   {
     key: "ar-aging",
-    label: reportMessage("AR Aging"),
-    description: reportMessage("Open receivables by customer and age"),
+    label: reportMessage(/*i18n*/ "AR Aging"),
+    description: reportMessage(/*i18n*/ "Open receivables by customer and age"),
     route: "/x/reports/ar-aging",
     icon: LuHandCoins,
-    category: reportMessage("Aging"),
+    category: reportMessage(/*i18n*/ "Aging"),
     defaultPinned: false,
     allowedRole: "employee",
     requiredViewPermission: "accounting",
@@ -180,11 +200,11 @@ export const reportCatalog: readonly ReportDefinition[] = [
   },
   {
     key: "ap-aging",
-    label: reportMessage("AP Aging"),
-    description: reportMessage("Open payables by supplier and age"),
+    label: reportMessage(/*i18n*/ "AP Aging"),
+    description: reportMessage(/*i18n*/ "Open payables by supplier and age"),
     route: "/x/reports/ap-aging",
     icon: LuBanknote,
-    category: reportMessage("Aging"),
+    category: reportMessage(/*i18n*/ "Aging"),
     defaultPinned: false,
     allowedRole: "employee",
     requiredViewPermission: "accounting",

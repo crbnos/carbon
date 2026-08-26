@@ -18,18 +18,20 @@ type Company = {
 type CompanySelectorProps = {
   companies: Company[];
   selectedCompanyIds: string[];
+  isSourceComplete: boolean;
 };
 
 const ALL = "__all__";
 
 const CompanySelector = ({
   companies,
-  selectedCompanyIds
+  selectedCompanyIds,
+  isSourceComplete
 }: CompanySelectorProps) => {
   const { t } = useLingui();
   const [, setParams] = useUrlParams();
 
-  if (companies.length <= 1) return null;
+  if (!isSourceComplete || companies.length <= 1) return null;
 
   const allSelected = selectedCompanyIds.length === companies.length;
   const value = allSelected ? ALL : selectedCompanyIds[0];

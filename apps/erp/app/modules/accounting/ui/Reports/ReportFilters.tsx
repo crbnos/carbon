@@ -32,6 +32,7 @@ type Company = {
 type ReportFiltersProps = {
   companies: Company[];
   selectedCompanyIds: string[];
+  isCompanySourceComplete: boolean;
   isMultiCompany: boolean;
   isForeignCurrency?: boolean;
   parentCurrency?: string | null;
@@ -54,6 +55,7 @@ type ReportFiltersProps = {
 const ReportFilters = ({
   companies,
   selectedCompanyIds,
+  isCompanySourceComplete,
   isMultiCompany,
   isForeignCurrency = false,
   parentCurrency,
@@ -102,6 +104,7 @@ const ReportFilters = ({
         <CompanySelector
           companies={companies}
           selectedCompanyIds={selectedCompanyIds}
+          isSourceComplete={isCompanySourceComplete}
         />
         <PeriodSelector
           variant={periodVariant}

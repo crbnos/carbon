@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@lingui/core/macro", () => ({
@@ -15,6 +16,19 @@ import {
 } from "./reportCatalog";
 
 describe("reportCatalog", () => {
+  it("marks every catalog message for Lingui clean extraction", () => {
+    const source = readFileSync(
+      new URL("./reportCatalog.ts", import.meta.url),
+      "utf8"
+    );
+    const reportMessages = [
+      ...source.matchAll(/reportMessage\(\s*(\/\*i18n\*\/)?/g)
+    ];
+
+    expect(reportMessages).toHaveLength(reportCatalog.length * 3);
+    expect(reportMessages.every((match) => match[1] === "/*i18n*/")).toBe(true);
+  });
+
   it("defines stable metadata and CSV support for every current report", () => {
     expect(reportCatalog).toHaveLength(13);
     expect(new Set(reportCatalog.map((report) => report.key)).size).toBe(

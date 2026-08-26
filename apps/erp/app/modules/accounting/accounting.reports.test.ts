@@ -17,6 +17,7 @@ vi.mock("@carbon/glossary", () => ({
 }));
 
 import {
+  getCompaniesInGroup,
   getConsolidatedBalances,
   getConsolidatedPeriodSeries,
   getDimensionPivot,
@@ -24,6 +25,23 @@ import {
   getFinancialStatementPeriodSeries,
   getPurchaseLinePivot
 } from "./accounting.service";
+
+describe("getCompaniesInGroup", () => {
+  it("requests an exact count so partial company metadata is detectable", async () => {
+    const result = queryResult([]);
+    const select = vi.fn(() => result);
+    const client = {
+      from: vi.fn(() => ({ select }))
+    };
+
+    await getCompaniesInGroup(client as never, "group-1");
+
+    expect(select).toHaveBeenCalledWith(
+      "id, name, baseCurrencyCode, timezone, parentCompanyId, isEliminationEntity",
+      { count: "exact" }
+    );
+  });
+});
 
 const bucket = {
   key: "2026-01",

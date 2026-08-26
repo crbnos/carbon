@@ -31,6 +31,7 @@ import { months } from "~/modules/shared";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+import { resolveReportCompanies } from "~/utils/reportExport";
 import { revalidateIgnoringOffset } from "~/utils/revalidate";
 
 export const handle: Handle = {
@@ -72,16 +73,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ]);
   const fiscalStartMonth =
     months.indexOf(fiscalYearSettings.data?.startMonth ?? "January") + 1;
-  const companiesList = companies.data ?? [];
+  const {
+    companies: companiesList,
+    selectedCompanyIds,
+    isComplete: isCompanySourceComplete
+  } = resolveReportCompanies(companies, companiesParam, companyId);
+
+  if (!selectedCompanyIds) {
+    throw redirect(
+      path.to.accounting,
+      await flash(
+        request,
+        error(companies.error, "Failed to load complete company metadata")
+      )
+    );
+  }
+
   const parentCompany = companiesList.find((c) => !c.parentCompanyId);
   const parentCurrency = parentCompany?.baseCurrencyCode ?? null;
-
-  const selectedCompanyIds =
-    companiesParam === "all"
-      ? companiesList.map((c) => c.id)
-      : companiesParam
-        ? [companiesParam]
-        : [companyId];
   const isMultiCompany = selectedCompanyIds.length > 1;
 
   // Default range: last 6 months to date (in the company's business timezone) —
@@ -132,7 +141,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       isForeignCurrency: false,
       parentCurrency,
       fiscalStartMonth,
-      isExportSourceComplete: consolidated.isComplete
+      isCompanySourceComplete,
+      isExportSourceComplete: isCompanySourceComplete && consolidated.isComplete
     };
   }
 
@@ -177,7 +187,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     isForeignCurrency,
     parentCurrency,
     fiscalStartMonth,
-    isExportSourceComplete: series.isComplete
+    isCompanySourceComplete,
+    isExportSourceComplete: isCompanySourceComplete && series.isComplete
   };
 }
 
@@ -193,6 +204,7 @@ export default function ExecutivePnlRoute() {
     isForeignCurrency,
     parentCurrency,
     fiscalStartMonth,
+    isCompanySourceComplete,
     isExportSourceComplete
   } = useLoaderData<typeof loader>();
   const { t } = useLingui();
@@ -236,6 +248,7 @@ export default function ExecutivePnlRoute() {
       <ReportFilters
         companies={companies}
         selectedCompanyIds={selectedCompanyIds}
+        isCompanySourceComplete={isCompanySourceComplete}
         isMultiCompany={isMultiCompany}
         isForeignCurrency={isForeignCurrency}
         parentCurrency={parentCurrency}
