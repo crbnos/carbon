@@ -15,7 +15,7 @@ it does** — renders one control per parameter. No migration, no schema change,
 - [x] Task 2: Add `encodeConfiguration` and thread `configuration` through `getBillOfMaterials`
 - [x] Task 3: New configuration loader route + path helper
 - [x] Task 4: Accept and encode a configuration on the BOM route
-- [ ] Task 5: Persist the configuration on sync
+- [x] Task 5: Persist the configuration on sync
 - [ ] Task 6: Render the configuration controls in `OnshapeSync`
 - [ ] Task 7: Extract and fill i18n strings
 - [ ] Task 8: Browser-verify the feature
