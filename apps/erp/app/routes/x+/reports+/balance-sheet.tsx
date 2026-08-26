@@ -92,6 +92,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getCompaniesInGroup(client, companyGroupId),
     getFiscalYearSettings(client, companyId)
   ]);
+  if (
+    fiscalYearSettings.error?.code !== "PGRST116" &&
+    (fiscalYearSettings.error || fiscalYearSettings.data == null)
+  ) {
+    throw redirect(
+      path.to.accounting,
+      await flash(
+        request,
+        error(fiscalYearSettings.error, "Failed to load fiscal year settings")
+      )
+    );
+  }
   const fiscalStartMonth =
     months.indexOf(fiscalYearSettings.data?.startMonth ?? "January") + 1;
   const {
@@ -113,6 +125,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const parentCompany = companiesList.find((c) => !c.parentCompanyId);
   const parentCurrency = parentCompany?.baseCurrencyCode ?? null;
   const isMultiCompany = selectedCompanyIds.length > 1;
+
+  if (
+    companiesParam === "all" &&
+    isMultiCompany &&
+    (!parentCompany || !parentCurrency)
+  ) {
+    throw redirect(
+      path.to.accounting,
+      await flash(
+        request,
+        error(null, "Failed to load complete company metadata")
+      )
+    );
+  }
 
   // Default range: last 6 months to date (in the company's business timezone) —
   // the current partial month plus the five preceding whole months.

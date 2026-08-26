@@ -17,6 +17,7 @@ vi.mock("@carbon/glossary", () => ({
 }));
 
 import {
+  getActiveDimensionsWithValues,
   getCompaniesInGroup,
   getConsolidatedBalances,
   getConsolidatedPeriodSeries,
@@ -40,6 +41,149 @@ describe("getCompaniesInGroup", () => {
       "id, name, baseCurrencyCode, timezone, parentCompanyId, isEliminationEntity",
       { count: "exact" }
     );
+  });
+});
+
+function makeActiveDimensionsClient(options: {
+  dimensions?: unknown[] | null;
+  dimensionsError?: { message: string } | null;
+  customValues?: unknown[] | null;
+  customValuesError?: { message: string } | null;
+  entityValues?: unknown[] | null;
+  entityValuesError?: { message: string } | null;
+}) {
+  return {
+    from(table: string) {
+      if (table === "dimension") {
+        return queryResult(
+          options.dimensions === undefined
+            ? [{ id: "dimension-1", entityType: "Custom" }]
+            : options.dimensions,
+          options.dimensionsError ?? null
+        );
+      }
+      if (table === "dimensionValue") {
+        return queryResult(
+          options.customValues === undefined
+            ? [
+                {
+                  id: "value-1",
+                  name: "Value 1",
+                  dimensionId: "dimension-1"
+                }
+              ]
+            : options.customValues,
+          options.customValuesError ?? null
+        );
+      }
+      return queryResult(
+        options.entityValues === undefined
+          ? [{ id: "value-1", name: "Value 1" }]
+          : options.entityValues,
+        options.entityValuesError ?? null
+      );
+    }
+  } as never;
+}
+
+describe("getActiveDimensionsWithValues", () => {
+  it.each([
+    {
+      name: "top-level query error",
+      client: makeActiveDimensionsClient({
+        dimensions: null,
+        dimensionsError: { message: "dimension lookup failed" }
+      })
+    },
+    {
+      name: "top-level null data",
+      client: makeActiveDimensionsClient({ dimensions: null })
+    },
+    {
+      name: "top-level row cap",
+      client: makeActiveDimensionsClient({
+        dimensions: new Array(1000).fill({
+          id: "dimension",
+          entityType: "Custom"
+        })
+      })
+    }
+  ])("fails closed for $name", async ({ client }) => {
+    const result = await getActiveDimensionsWithValues(
+      client,
+      "group-1",
+      "company-1"
+    );
+
+    expect(result.data).toBeNull();
+    expect(result.error).not.toBeNull();
+  });
+
+  it.each([
+    {
+      name: "custom value query error",
+      client: makeActiveDimensionsClient({
+        customValues: null,
+        customValuesError: { message: "custom value lookup failed" }
+      })
+    },
+    {
+      name: "custom value null data",
+      client: makeActiveDimensionsClient({ customValues: null })
+    },
+    {
+      name: "custom value row cap",
+      client: makeActiveDimensionsClient({
+        customValues: new Array(1000).fill({
+          id: "value",
+          name: "Value",
+          dimensionId: "dimension-1"
+        })
+      })
+    }
+  ])("fails closed for $name", async ({ client }) => {
+    const result = await getActiveDimensionsWithValues(
+      client,
+      "group-1",
+      "company-1"
+    );
+
+    expect(result.data).toBeNull();
+    expect(result.error).not.toBeNull();
+  });
+
+  it.each([
+    {
+      name: "entity value query error",
+      client: makeActiveDimensionsClient({
+        dimensions: [{ id: "dimension-1", entityType: "Location" }],
+        entityValues: null,
+        entityValuesError: { message: "entity value lookup failed" }
+      })
+    },
+    {
+      name: "entity value null data",
+      client: makeActiveDimensionsClient({
+        dimensions: [{ id: "dimension-1", entityType: "Location" }],
+        entityValues: null
+      })
+    },
+    {
+      name: "entity value row cap",
+      client: makeActiveDimensionsClient({
+        dimensions: [{ id: "dimension-1", entityType: "Location" }],
+        entityValues: new Array(1000).fill({ id: "location", name: "Location" })
+      })
+    }
+  ])("fails closed for $name", async ({ client }) => {
+    const result = await getActiveDimensionsWithValues(
+      client,
+      "group-1",
+      "company-1"
+    );
+
+    expect(result.data).toBeNull();
+    expect(result.error).not.toBeNull();
   });
 });
 

@@ -57,6 +57,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (valuation.error) {
     throw new Error(valuation.error.message);
   }
+  if (locations.error) {
+    throw new Error(locations.error.message);
+  }
+  if (locations.data == null) {
+    throw new Error("Inventory location metadata source returned no data");
+  }
+  if (!isReportSourceComplete(locations.data)) {
+    throw new Error("Inventory location metadata source reached the row cap");
+  }
+  if (
+    locationId &&
+    !locations.data.some((location) => location.id === locationId)
+  ) {
+    throw new Error("Selected inventory location was not found");
+  }
 
   return {
     asOfDate,
@@ -68,7 +83,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // A failed tie-out must read as "unavailable", not "nothing to tie out" —
     // this is a financial control surface.
     tieOutError: Boolean(tieOut.error),
-    locations: locations.data ?? []
+    locations: locations.data
   };
 }
 

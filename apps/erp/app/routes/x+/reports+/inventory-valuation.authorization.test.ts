@@ -1,5 +1,12 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  getInventoryValuation,
+  getInventoryValuationTieOut
+} from "~/modules/inventory";
+import { getCompanySettings } from "~/modules/settings";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { isReportSourceComplete } from "~/utils/reportExport";
 import { loader } from "./inventory-valuation";
 import { action } from "./inventory-valuation.reconcile";
 
@@ -64,9 +71,44 @@ vi.mock("~/utils/reportExport", () => ({
 
 const stopAfterAuthorization = new Error("stop after authorization");
 
+function queryResult(data: unknown, error: unknown = null) {
+  const builder: Record<string, unknown> = {};
+  for (const method of ["select", "eq", "order"]) {
+    builder[method] = () => builder;
+  }
+  builder.then = (resolve: (value: unknown) => unknown) =>
+    resolve({ data, error });
+  return builder;
+}
+
+function makeLoaderClient(locationResult: unknown) {
+  return {
+    from(table: string) {
+      if (table === "location") return locationResult;
+      throw new Error(`Unexpected table: ${table}`);
+    }
+  } as never;
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(requirePermissions).mockRejectedValue(stopAfterAuthorization);
+  vi.mocked(getCompanyTimeZone).mockResolvedValue("UTC" as never);
+  vi.mocked(getCompanySettings).mockResolvedValue({
+    data: { accountingEnabled: false },
+    error: null
+  } as never);
+  vi.mocked(getInventoryValuation).mockResolvedValue({
+    data: [],
+    error: null
+  } as never);
+  vi.mocked(getInventoryValuationTieOut).mockResolvedValue({
+    data: [],
+    error: null
+  } as never);
+  vi.mocked(isReportSourceComplete).mockImplementation((...sources) =>
+    sources.every((source) => source != null && source.length < 1000)
+  );
 });
 
 describe("inventory valuation authorization", () => {
@@ -99,5 +141,50 @@ describe("inventory valuation authorization", () => {
       create: "accounting",
       role: "employee"
     });
+  });
+
+  it.each([
+    {
+      name: "location metadata query error",
+      result: queryResult(null, { message: "location lookup failed" })
+    },
+    {
+      name: "location metadata is null",
+      result: queryResult(null)
+    },
+    {
+      name: "location metadata reaches the row cap",
+      result: queryResult(
+        new Array(1000).fill({ id: "location", name: "Location" })
+      )
+    }
+  ])("blocks the loader for incomplete $name", async ({ result }) => {
+    vi.mocked(requirePermissions).mockResolvedValue({
+      client: makeLoaderClient(result),
+      companyId: "company-1"
+    } as never);
+
+    await expect(
+      loader({
+        request: new Request("http://localhost/x/reports/inventory-valuation")
+      } as never)
+    ).rejects.toThrow();
+  });
+
+  it("blocks a selected location that is absent from complete metadata", async () => {
+    vi.mocked(requirePermissions).mockResolvedValue({
+      client: makeLoaderClient(
+        queryResult([{ id: "location-1", name: "Main" }])
+      ),
+      companyId: "company-1"
+    } as never);
+
+    await expect(
+      loader({
+        request: new Request(
+          "http://localhost/x/reports/inventory-valuation?locationId=missing"
+        )
+      } as never)
+    ).rejects.toThrow();
   });
 });

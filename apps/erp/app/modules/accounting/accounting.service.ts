@@ -3783,8 +3783,24 @@ export async function getActiveDimensionsWithValues(
     .order("name");
 
   if (dimensionsResult.error) return dimensionsResult;
+  if (dimensionsResult.data == null) {
+    return {
+      data: null,
+      error: {
+        message: "Active dimensions source returned no data"
+      } as PostgrestError
+    };
+  }
+  if (!isReportSourceComplete(dimensionsResult.data)) {
+    return {
+      data: null,
+      error: {
+        message: "Active dimensions source reached the row cap"
+      } as PostgrestError
+    };
+  }
 
-  const dimensions = dimensionsResult.data ?? [];
+  const dimensions = dimensionsResult.data;
 
   const customDimensionIds = dimensions
     .filter((d) => d.entityType === "Custom")
@@ -3812,14 +3828,53 @@ export async function getActiveDimensionsWithValues(
   ]);
 
   if (customValues.error) return customValues;
+  if (customValues.data == null) {
+    return {
+      data: null,
+      error: {
+        message: "Custom dimension values source returned no data"
+      } as PostgrestError
+    };
+  }
+  if (!isReportSourceComplete(customValues.data)) {
+    return {
+      data: null,
+      error: {
+        message: "Custom dimension values source reached the row cap"
+      } as PostgrestError
+    };
+  }
 
   const entityValuesByType = new Map<string, { id: string; name: string }[]>();
-  entityTypes.forEach((et, i) => {
+  for (const [i, et] of entityTypes.entries()) {
     const result = entityResults[i];
-    if (result && !result.error && result.data) {
-      entityValuesByType.set(et, result.data as { id: string; name: string }[]);
+    if (!result) {
+      return {
+        data: null,
+        error: {
+          message: `Entity dimension values source for ${et} returned no data`
+        } as PostgrestError
+      };
     }
-  });
+    if (result.error) return { data: null, error: result.error };
+    if (result.data == null) {
+      return {
+        data: null,
+        error: {
+          message: `Entity dimension values source for ${et} returned no data`
+        } as PostgrestError
+      };
+    }
+    if (!isReportSourceComplete(result.data)) {
+      return {
+        data: null,
+        error: {
+          message: `Entity dimension values source for ${et} reached the row cap`
+        } as PostgrestError
+      };
+    }
+    entityValuesByType.set(et, result.data as { id: string; name: string }[]);
+  }
 
   const customValuesByDimension = new Map<
     string,
