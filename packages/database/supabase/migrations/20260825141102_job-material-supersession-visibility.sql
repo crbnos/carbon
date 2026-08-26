@@ -51,6 +51,9 @@ WITH
       "jobMaterial" jm
     WHERE
       jm."jobId" = job_id
+      -- SECURITY DEFINER bypasses RLS, so the caller's company must be checked
+      -- here: without it a valid job id from another tenant returns its rows.
+      AND jm."companyId" = company_id
   ),
   -- Distinct item / item+unit sets used to FILTER the aggregate CTEs below.
   -- Joining the raw job_materials rows fans out (multiplies) the aggregates when

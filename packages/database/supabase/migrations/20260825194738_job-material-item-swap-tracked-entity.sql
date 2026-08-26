@@ -108,7 +108,9 @@ BEGIN
         "sourceDocumentReadableId" = v_item_readable_id,
         "itemId" = p_new->>'itemId',
         "quantity" = (p_new->>'quantity')::numeric,
-        "attributes" = v_attributes
+        -- Merge, don't replace: the shelf-life stamp writes expirationDate into
+        -- this same attributes object, and an assignment would silently drop it.
+        "attributes" = "attributes" || v_attributes
     WHERE "companyId" = p_new->>'companyId'
       AND "status" = 'Reserved'
       AND "attributes"->>'Job Material' = p_new->>'id';
