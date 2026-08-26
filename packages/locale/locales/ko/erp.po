@@ -302,8 +302,8 @@ msgstr "3시간"
 msgid "4h"
 msgstr "4시간"
 
-msgid "5 User Minimum"
-msgstr "최소 5명 사용자"
+msgid "5 user minimum"
+msgstr ""
 
 msgid "5-8 weeks"
 msgstr "5-8주"
@@ -358,6 +358,9 @@ msgstr "소모품은 여러 작업에 걸쳐 사용할 수 있는, 부품 제작
 
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "계약직은 특정 역량과 가용 시간을 가진 공급업체 담당자입니다"
+
+msgid "A custom solution to meet your needs"
+msgstr ""
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "고객은 귀사의 부품이나 서비스를 구매하는 회사 또는 개인입니다."
@@ -468,6 +471,12 @@ msgstr "상위 빌드 내에서 자체 작업과 공정을 갖는 주문생산(M
 
 msgid "A Make to Order component whose parts are issued together into the parent job — no separate build."
 msgstr "부품이 상위 작업에 함께 투입되는 주문생산(Make to Order) 구성품으로, 별도의 빌드가 없습니다."
+
+msgid "A managed cloud-hosted version of Carbon"
+msgstr ""
+
+msgid "A managed cloud-hosted version of Carbon that includes support and all advanced features"
+msgstr ""
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "자재는 여러 작업에 걸쳐 사용할 수 있는, 부품 제작에 쓰이는 실물 품목입니다"
@@ -1324,6 +1333,9 @@ msgstr "모든 계정"
 msgid "All actions selected"
 msgstr "모든 조치가 선택됨"
 
+msgid "All advanced features available"
+msgstr ""
+
 msgid "All Audit Logs"
 msgstr "모든 감사 로그"
 
@@ -1578,9 +1590,6 @@ msgstr "매입채무 미결제액"
 msgid "AP Overdue"
 msgstr "매입채무 연체"
 
-msgid "API and Webhooks"
-msgstr "API 및 웹훅"
-
 msgid "API Docs"
 msgstr "API 문서"
 
@@ -1598,6 +1607,9 @@ msgstr "API 키"
 
 msgid "API keys for programmatic access to your Carbon data."
 msgstr "Carbon 데이터에 프로그래밍 방식으로 접근하기 위한 API 키입니다."
+
+msgid "API, webhooks, and integrations"
+msgstr ""
 
 msgid "Applied"
 msgstr "적용됨"
@@ -2292,6 +2304,9 @@ msgstr "속성은 절차서에서 상속됩니다."
 msgid "Audit Log"
 msgstr "감사 로그"
 
+msgid "Audit logging"
+msgstr ""
+
 msgid "Audit Logging"
 msgstr "감사 로깅"
 
@@ -2360,6 +2375,9 @@ msgstr "자동 리드타임 업데이트"
 
 msgid "Automatic Updates"
 msgstr "자동 업데이트"
+
+msgid "Automatic updates and backups"
+msgstr ""
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "산출물이 보고될 때 작업의 미추적 자재를 비례 배분하여 자동으로 소비합니다 — 추적 자재는 수동으로 출고됩니다."
@@ -2457,6 +2475,9 @@ msgstr "기준 통화"
 
 msgid "Base Price"
 msgstr "기본 가격"
+
+msgid "Basic ERP, MES, and QMS functionality"
+msgstr ""
 
 msgid "Basic Information"
 msgstr "기본 정보"
@@ -3145,11 +3166,11 @@ msgstr "마감"
 msgid "Closure blocked"
 msgstr "마감 차단됨"
 
-msgid "Cloud-Hosted"
-msgstr "클라우드 호스팅"
-
 msgid "Cloud, or your self-hosted environment."
 msgstr "클라우드 또는 자체 호스팅 환경."
+
+msgid "CMMC compliant"
+msgstr ""
 
 msgid "Code"
 msgstr "코드"
@@ -3210,6 +3231,9 @@ msgstr "각 영역에 챔피언 사용자를 지정하세요"
 
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "입고, 출하, 인보이스를 확정하면 수량이 이동하고 전표가 원장에 반영되며 상태가 '전기됨'으로 변경됩니다."
+
+msgid "Community support"
+msgstr ""
 
 msgid "Companies"
 msgstr "회사"
@@ -3500,6 +3524,9 @@ msgstr "담당자"
 
 msgid "Contact (optional)"
 msgstr "담당자(선택)"
+
+msgid "Contact us"
+msgstr ""
 
 msgid "contacts"
 msgstr "담당자"
@@ -4378,6 +4405,9 @@ msgstr "고객"
 
 msgid "Customers"
 msgstr "고객"
+
+msgid "Customizations, training, and integrations"
+msgstr ""
 
 msgid "Customize"
 msgstr "사용자 지정"
@@ -6063,9 +6093,6 @@ msgstr "누적 손익에 대한 자본 계정"
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "환산차손익(CTA)에 대한 자본 계정"
 
-msgid "ERP, MES, QMS"
-msgstr "ERP, MES, QMS"
-
 msgid "Error"
 msgstr "오류"
 
@@ -6185,9 +6212,6 @@ msgstr "그 외 모든 것"
 
 msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
 msgstr "그 외 모든 것은 사람, 가져오기, 통합 및 API를 포함합니다 — 워크플로우가 아닌 모든 항목입니다."
-
-msgid "Everything from Starter"
-msgstr "스타터의 모든 기능 포함"
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "총 {PO_EMAIL_ATTACHMENT_LIMIT_MB}MB를 초과합니다 — 발송하려면 일부 첨부 파일을 제거하세요."
@@ -6936,12 +6960,6 @@ msgstr "플래그"
 msgid "for anything. They'll pull in the right person."
 msgstr "무엇이든지요. 적임자를 연결해 드립니다."
 
-msgid "For growing businesses that need support"
-msgstr "지원이 필요한 성장 중인 기업을 위한"
-
-msgid "For US companies handling ITAR data"
-msgstr "ITAR 데이터를 다루는 미국 기업을 위한"
-
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "예측 방법: <0>{0}</0>. 이 행은 진행 중인 작업에서 파생되지 않았으므로 상위 소스를 사용할 수 없습니다."
@@ -6951,6 +6969,9 @@ msgstr "퇴근 체크를 잊으셨나요?"
 
 msgid "Format"
 msgstr "형식"
+
+msgid "Forward deployed engineer"
+msgstr ""
 
 msgid "Foundation"
 msgstr "파운데이션"
@@ -7004,6 +7025,9 @@ msgstr "이행 위치"
 
 msgid "Full name"
 msgstr "전체 이름"
+
+msgid "Full setup and migrations"
+msgstr ""
 
 msgid "Fully Depreciated"
 msgstr "완전 감가상각"
@@ -7605,9 +7629,6 @@ msgstr "구현 허브"
 
 msgid "Implementation Lead"
 msgstr "구현 리드"
-
-msgid "Implementation Support"
-msgstr "구현 지원"
 
 msgid "Import {label} CSV"
 msgstr "{label} CSV 가져오기"
@@ -10981,9 +11002,6 @@ msgstr "비율"
 msgid "Percentage of Lot"
 msgstr "로트 비율"
 
-msgid "Perfect for low-cost evaluation"
-msgstr "저비용 평가에 적합"
-
 msgid "Period"
 msgstr "기간"
 
@@ -13427,8 +13445,11 @@ msgstr "선택됨: {selectedSum} / 분할 후 남은 수량: {0}"
 msgid "Self Managed"
 msgstr "자체 관리"
 
-msgid "Self-Onboarding with Carbon Academy"
-msgstr "Carbon 아카데미로 자체 온보딩"
+msgid "Self-hosted or managed"
+msgstr ""
+
+msgid "Self-onboarding"
+msgstr ""
 
 msgid "Self-paced"
 msgstr "자율 학습"
@@ -14052,6 +14073,9 @@ msgstr "입고 라인 분할"
 
 msgid "Split shipment line"
 msgstr "출하 라인 분할"
+
+msgid "SSO/SAML"
+msgstr ""
 
 msgid "Stand up hosting"
 msgstr "호스팅 구축"
@@ -14739,6 +14763,9 @@ msgstr "세금"
 
 msgid "Team trained"
 msgstr "팀 교육 완료"
+
+msgid "Technical support"
+msgstr ""
 
 msgid "Temperature"
 msgstr "온도"
@@ -16266,8 +16293,11 @@ msgstr "알 수 없는 오류"
 msgid "unknown location"
 msgstr "알 수 없는 위치"
 
-msgid "Unlimited Functional Support"
-msgstr "무제한 기능 지원"
+msgid "Unlimited functional support"
+msgstr ""
+
+msgid "Unlimited records"
+msgstr ""
 
 msgid "Unlink"
 msgstr "연결 해제"

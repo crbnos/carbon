@@ -302,8 +302,8 @@ msgstr "3s"
 msgid "4h"
 msgstr "4s"
 
-msgid "5 User Minimum"
-msgstr "Minimum 5 kullanıcı"
+msgid "5 user minimum"
+msgstr ""
 
 msgid "5-8 weeks"
 msgstr "5-8 hafta"
@@ -358,6 +358,9 @@ msgstr "Sarflama, birden fazla işte kullanılabilecek bir parça yapmak için k
 
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "Bir yüklenici, belirli yeteneklere ve müsait saatlere sahip bir tedarikçi iletişimidir."
+
+msgid "A custom solution to meet your needs"
+msgstr ""
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Bir müşteri, parçalarınızı veya hizmetlerinizi satın alan bir işletme veya kişidir."
@@ -468,6 +471,12 @@ msgstr "Kendi işini ve yönlendirmesini ana kısmının içinde alan bir Sipari
 
 msgid "A Make to Order component whose parts are issued together into the parent job — no separate build."
 msgstr "Parçaları ebeveyn işine birlikte verilen bir Sipariş üzere Üretim bileşeni — ayrı yapı yok."
+
+msgid "A managed cloud-hosted version of Carbon"
+msgstr ""
+
+msgid "A managed cloud-hosted version of Carbon that includes support and all advanced features"
+msgstr ""
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Bir malzeme, birden fazla işte kullanılabilecek bir parça yapmak için kullanılan fiziksel bir öğedir"
@@ -1324,6 +1333,9 @@ msgstr "Tüm hesaplar"
 msgid "All actions selected"
 msgstr "Tüm eylemler seçildi"
 
+msgid "All advanced features available"
+msgstr ""
+
 msgid "All Audit Logs"
 msgstr "Tüm Denetim Kayıtları"
 
@@ -1578,9 +1590,6 @@ msgstr "AP Ödenmemiş"
 msgid "AP Overdue"
 msgstr "AP Vadesi Geçmiş"
 
-msgid "API and Webhooks"
-msgstr "API ve Webhook'lar"
-
 msgid "API Docs"
 msgstr "API Belgeleri"
 
@@ -1598,6 +1607,9 @@ msgstr "API Anahtarları"
 
 msgid "API keys for programmatic access to your Carbon data."
 msgstr "Carbon verilerinize programatik erişim için API anahtarları."
+
+msgid "API, webhooks, and integrations"
+msgstr ""
 
 msgid "Applied"
 msgstr "Uygulandı"
@@ -2292,6 +2304,9 @@ msgstr "Nitelikler prosedürden miras alınır."
 msgid "Audit Log"
 msgstr "Denetim Kaydı"
 
+msgid "Audit logging"
+msgstr ""
+
 msgid "Audit Logging"
 msgstr "Denetim Kaydı Tutma"
 
@@ -2360,6 +2375,9 @@ msgstr "Otomatik Süre Güncellemeleri"
 
 msgid "Automatic Updates"
 msgstr "Otomatik Güncellemeler"
+
+msgid "Automatic updates and backups"
+msgstr ""
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "Çıktı raporlandığında bir işin izlenmeyen malzemelerin otomatik, orantılı tüketimi — izlenen malzeme el ile verilir."
@@ -2457,6 +2475,9 @@ msgstr "Temel Para Birimi"
 
 msgid "Base Price"
 msgstr "Temel Fiyat"
+
+msgid "Basic ERP, MES, and QMS functionality"
+msgstr ""
 
 msgid "Basic Information"
 msgstr "Temel Bilgiler"
@@ -3145,11 +3166,11 @@ msgstr "Kapanış"
 msgid "Closure blocked"
 msgstr "Kapanış engellendi"
 
-msgid "Cloud-Hosted"
-msgstr "Bulut Tabanlı"
-
 msgid "Cloud, or your self-hosted environment."
 msgstr "Bulut veya kendi barındırılan ortamınız."
+
+msgid "CMMC compliant"
+msgstr ""
 
 msgid "Code"
 msgstr "Kod"
@@ -3210,6 +3231,9 @@ msgstr "Her alan için bir şampiyon kullanıcı atayın"
 
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "Bir makbuzu, sevkiyatı veya faturayı taahhüt etme: miktarlar hareket eder, günlük girişleri deftere vurur ve durum Gönderilen olur."
+
+msgid "Community support"
+msgstr ""
 
 msgid "Companies"
 msgstr "Şirketler"
@@ -3500,6 +3524,9 @@ msgstr "İletişim"
 
 msgid "Contact (optional)"
 msgstr "İletişim (isteğe bağlı)"
+
+msgid "Contact us"
+msgstr ""
 
 msgid "contacts"
 msgstr "kişiler"
@@ -4378,6 +4405,9 @@ msgstr "müşteriler"
 
 msgid "Customers"
 msgstr "Müşteriler"
+
+msgid "Customizations, training, and integrations"
+msgstr ""
 
 msgid "Customize"
 msgstr "Özelleştir"
@@ -6063,9 +6093,6 @@ msgstr "Birikmiş kâr veya zararlar için öz kaynak hesabı"
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "Döviz dönüştürme ayarlamaları (CTA) için öz kaynak hesabı"
 
-msgid "ERP, MES, QMS"
-msgstr "ERP, MES, QMS"
-
 msgid "Error"
 msgstr "Hata"
 
@@ -6185,9 +6212,6 @@ msgstr "Her şey başka"
 
 msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
 msgstr "Her şey başka, insanları, ithalatları, entegrasyonları ve API'yi kapsar — iş akışlarınızdan biri olmayan her şey."
-
-msgid "Everything from Starter"
-msgstr "Başlangıç'tan her şey"
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Toplamda {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB'ı aşıyor — göndermek için bazı ekler kaldırın."
@@ -6936,12 +6960,6 @@ msgstr "Bayraklar"
 msgid "for anything. They'll pull in the right person."
 msgstr "herhangi bir şey için. Doğru kişiyi çekerler."
 
-msgid "For growing businesses that need support"
-msgstr "Destek ihtiyacı olan büyüyen işletmeler için"
-
-msgid "For US companies handling ITAR data"
-msgstr "ITAR verilerini işleyen ABD şirketleri için"
-
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "Tahmin yöntemi: <0>{0}</0>. Bu satır aktif işlerden türetilmediği için üst kaynaklar mevcut değil."
@@ -6951,6 +6969,9 @@ msgstr "Çıkış yapmayı unuttunuz mu?"
 
 msgid "Format"
 msgstr "Biçim"
+
+msgid "Forward deployed engineer"
+msgstr ""
 
 msgid "Foundation"
 msgstr "Temel"
@@ -7004,6 +7025,9 @@ msgstr "Yerine Getirme Konumu"
 
 msgid "Full name"
 msgstr "Tam adı"
+
+msgid "Full setup and migrations"
+msgstr ""
 
 msgid "Fully Depreciated"
 msgstr "Tamamen Amortismana Tabi Tutulmuş"
@@ -7605,9 +7629,6 @@ msgstr "Uygulama Merkezi"
 
 msgid "Implementation Lead"
 msgstr "Uygulama Müdürü"
-
-msgid "Implementation Support"
-msgstr "Kurulum Desteği"
 
 msgid "Import {label} CSV"
 msgstr "İçe aktarılacak {label} CSV"
@@ -10981,9 +11002,6 @@ msgstr "Yüzde"
 msgid "Percentage of Lot"
 msgstr "Lot Yüzdesi"
 
-msgid "Perfect for low-cost evaluation"
-msgstr "Düşük maliyetli değerlendirme için mükemmel"
-
 msgid "Period"
 msgstr "Dönem"
 
@@ -13427,8 +13445,11 @@ msgstr "Seçilen: {selectedSum} / bölünme sonrası kalan: {0}"
 msgid "Self Managed"
 msgstr "Kendi Yönettiği"
 
-msgid "Self-Onboarding with Carbon Academy"
-msgstr "Carbon Akademisi ile Kendi Kendine Kayıt"
+msgid "Self-hosted or managed"
+msgstr ""
+
+msgid "Self-onboarding"
+msgstr ""
 
 msgid "Self-paced"
 msgstr "Kendi hızında"
@@ -14052,6 +14073,9 @@ msgstr "Fiş hattını böl"
 
 msgid "Split shipment line"
 msgstr "Sevkiyat satırını böl"
+
+msgid "SSO/SAML"
+msgstr ""
 
 msgid "Stand up hosting"
 msgstr "Barındırmayı ayarla"
@@ -14739,6 +14763,9 @@ msgstr "Vergiler"
 
 msgid "Team trained"
 msgstr "Takım eğitildi"
+
+msgid "Technical support"
+msgstr ""
 
 msgid "Temperature"
 msgstr "Sıcaklık"
@@ -16266,8 +16293,11 @@ msgstr "bilinmeyen hata"
 msgid "unknown location"
 msgstr "bilinmeyen konum"
 
-msgid "Unlimited Functional Support"
-msgstr "Sınırsız Fonksiyonel Destek"
+msgid "Unlimited functional support"
+msgstr ""
+
+msgid "Unlimited records"
+msgstr ""
 
 msgid "Unlink"
 msgstr "Bağlantısını Kes"

@@ -302,8 +302,8 @@ msgstr "3ч"
 msgid "4h"
 msgstr "4ч"
 
-msgid "5 User Minimum"
-msgstr "Минимум 5 пользователей"
+msgid "5 user minimum"
+msgstr ""
 
 msgid "5-8 weeks"
 msgstr "5-8 недель"
@@ -358,6 +358,9 @@ msgstr "Расходный материал — это физический пр
 
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "Подрядчик — это контакт поставщика с особыми навыками и доступными часами"
+
+msgid "A custom solution to meet your needs"
+msgstr ""
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Клиент — это компания или физическое лицо, которое покупает ваши детали или услуги."
@@ -468,6 +471,12 @@ msgstr "Компонент \"Производство на заказ\", кот�
 
 msgid "A Make to Order component whose parts are issued together into the parent job — no separate build."
 msgstr "Компонент \"Производство на заказ\", части которого выпускаются вместе в родительское задание — без отдельного построения."
+
+msgid "A managed cloud-hosted version of Carbon"
+msgstr ""
+
+msgid "A managed cloud-hosted version of Carbon that includes support and all advanced features"
+msgstr ""
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Материал — это физический предмет, используемый для изготовления детали, которая может использоваться в нескольких заданиях"
@@ -1324,6 +1333,9 @@ msgstr "Все счёта"
 msgid "All actions selected"
 msgstr "Все действия выбраны"
 
+msgid "All advanced features available"
+msgstr ""
+
 msgid "All Audit Logs"
 msgstr "Все журналы аудита"
 
@@ -1578,9 +1590,6 @@ msgstr "Задолженность перед поставщиками"
 msgid "AP Overdue"
 msgstr "Просроченные кредиторские задолженности"
 
-msgid "API and Webhooks"
-msgstr "API и Webhooks"
-
 msgid "API Docs"
 msgstr "Документация API"
 
@@ -1598,6 +1607,9 @@ msgstr "API ключи"
 
 msgid "API keys for programmatic access to your Carbon data."
 msgstr "API ключи для программного доступа к вашим данным Carbon."
+
+msgid "API, webhooks, and integrations"
+msgstr ""
 
 msgid "Applied"
 msgstr "Применено"
@@ -2292,6 +2304,9 @@ msgstr "Атрибуты наследуются из процедуры."
 msgid "Audit Log"
 msgstr "Журнал аудита"
 
+msgid "Audit logging"
+msgstr ""
+
 msgid "Audit Logging"
 msgstr "Аудит логирования"
 
@@ -2360,6 +2375,9 @@ msgstr "Автоматические обновления времени пос�
 
 msgid "Automatic Updates"
 msgstr "Автоматические обновления"
+
+msgid "Automatic updates and backups"
+msgstr ""
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "Автоматическое пропорциональное потребление материалов задания, не отслеживаемых при отчетности о выходе — отслеживаемые материалы выпускаются вручную."
@@ -2457,6 +2475,9 @@ msgstr "Базовая валюта"
 
 msgid "Base Price"
 msgstr "Базовая цена"
+
+msgid "Basic ERP, MES, and QMS functionality"
+msgstr ""
 
 msgid "Basic Information"
 msgstr "Основная информация"
@@ -3145,11 +3166,11 @@ msgstr "Закрытие"
 msgid "Closure blocked"
 msgstr "Закрытие заблокировано"
 
-msgid "Cloud-Hosted"
-msgstr "Размещено в облаке"
-
 msgid "Cloud, or your self-hosted environment."
 msgstr "Облако или ваша собственная размещённая среда."
+
+msgid "CMMC compliant"
+msgstr ""
 
 msgid "Code"
 msgstr "Код"
@@ -3210,6 +3231,9 @@ msgstr "Назначьте пользователя-чемпиона для ка
 
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "Фиксирование квитанции, отправки или счета: количества движутся, записи журнала попадают в бухгалтерскую книгу, и статус становится Выполнено."
+
+msgid "Community support"
+msgstr ""
 
 msgid "Companies"
 msgstr "Компании"
@@ -3500,6 +3524,9 @@ msgstr "Контакт"
 
 msgid "Contact (optional)"
 msgstr "Контакт (опционально)"
+
+msgid "Contact us"
+msgstr ""
 
 msgid "contacts"
 msgstr "контакты"
@@ -4378,6 +4405,9 @@ msgstr "клиенты"
 
 msgid "Customers"
 msgstr "Клиенты"
+
+msgid "Customizations, training, and integrations"
+msgstr ""
 
 msgid "Customize"
 msgstr "Настроить"
@@ -6063,9 +6093,6 @@ msgstr "Счет собственного капитала для накопле
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "Счет собственного капитала для корректировок курсовых разниц (CTA)"
 
-msgid "ERP, MES, QMS"
-msgstr "ERP, MES, QMS"
-
 msgid "Error"
 msgstr "Ошибка"
 
@@ -6185,9 +6212,6 @@ msgstr "Все остальное"
 
 msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
 msgstr "Все остальное охватывает людей, импорт, интеграции и API — все, что не входит в ваши рабочие процессы."
-
-msgid "Everything from Starter"
-msgstr "Всё из Starter"
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Превышает {PO_EMAIL_ATTACHMENT_LIMIT_MB} МБ всего — удалите некоторые вложения для отправки."
@@ -6936,12 +6960,6 @@ msgstr "Флаги"
 msgid "for anything. They'll pull in the right person."
 msgstr "для чего угодно. Они привлекут нужного человека."
 
-msgid "For growing businesses that need support"
-msgstr "Для растущих компаний, нуждающихся в поддержке"
-
-msgid "For US companies handling ITAR data"
-msgstr "Для компаний США, работающих с данными ITAR"
-
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "Метод прогнозирования: <0>{0}</0>. Эта строка не была получена из активных заданий, поэтому родительские источники недоступны."
@@ -6951,6 +6969,9 @@ msgstr "Забыли отметить уход?"
 
 msgid "Format"
 msgstr "Формат"
+
+msgid "Forward deployed engineer"
+msgstr ""
 
 msgid "Foundation"
 msgstr "Основа"
@@ -7004,6 +7025,9 @@ msgstr "Местоположение исполнения"
 
 msgid "Full name"
 msgstr "Полное имя"
+
+msgid "Full setup and migrations"
+msgstr ""
 
 msgid "Fully Depreciated"
 msgstr "Полностью амортизирован"
@@ -7605,9 +7629,6 @@ msgstr "Центр внедрения"
 
 msgid "Implementation Lead"
 msgstr "Руководитель внедрения"
-
-msgid "Implementation Support"
-msgstr "Поддержка внедрения"
 
 msgid "Import {label} CSV"
 msgstr "Импорт {label} CSV"
@@ -10981,9 +11002,6 @@ msgstr "Процент"
 msgid "Percentage of Lot"
 msgstr "Процент партии"
 
-msgid "Perfect for low-cost evaluation"
-msgstr "Идеально для недорогой оценки"
-
 msgid "Period"
 msgstr "Период"
 
@@ -13427,8 +13445,11 @@ msgstr "Выбрано: {selectedSum} / осталось после раздел
 msgid "Self Managed"
 msgstr "Самоуправляемый"
 
-msgid "Self-Onboarding with Carbon Academy"
-msgstr "Самостоятельное внедрение с Carbon Academy"
+msgid "Self-hosted or managed"
+msgstr ""
+
+msgid "Self-onboarding"
+msgstr ""
 
 msgid "Self-paced"
 msgstr "Самостоятельно"
@@ -14052,6 +14073,9 @@ msgstr "Разделить строку приемки"
 
 msgid "Split shipment line"
 msgstr "Разделить строку отправки"
+
+msgid "SSO/SAML"
+msgstr ""
 
 msgid "Stand up hosting"
 msgstr "Развернуть хостинг"
@@ -14739,6 +14763,9 @@ msgstr "Налоги"
 
 msgid "Team trained"
 msgstr "Команда обучена"
+
+msgid "Technical support"
+msgstr ""
 
 msgid "Temperature"
 msgstr "Температура"
@@ -16266,8 +16293,11 @@ msgstr "неизвестная ошибка"
 msgid "unknown location"
 msgstr "неизвестное местоположение"
 
-msgid "Unlimited Functional Support"
-msgstr "Неограниченная функциональная поддержка"
+msgid "Unlimited functional support"
+msgstr ""
+
+msgid "Unlimited records"
+msgstr ""
 
 msgid "Unlink"
 msgstr "Отменить связь"

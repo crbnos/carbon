@@ -302,8 +302,8 @@ msgstr "3h"
 msgid "4h"
 msgstr "4h"
 
-msgid "5 User Minimum"
-msgstr "Minimum 5 utilisateurs"
+msgid "5 user minimum"
+msgstr ""
 
 msgid "5-8 weeks"
 msgstr "5-8 semaines"
@@ -358,6 +358,9 @@ msgstr "Un consommable est un article physique utilisé pour fabriquer une pièc
 
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "Un entrepreneur est un contact fournisseur ayant des compétences particulières et des heures disponibles"
+
+msgid "A custom solution to meet your needs"
+msgstr ""
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Un client est une entreprise ou une personne qui achète vos pièces ou services."
@@ -468,6 +471,12 @@ msgstr "Un composant Fabriquer sur commande qui obtient son propre travail et so
 
 msgid "A Make to Order component whose parts are issued together into the parent job — no separate build."
 msgstr "Un composant Fabriquer sur commande dont les pièces sont émises ensemble dans la tâche parent — pas de construction séparée."
+
+msgid "A managed cloud-hosted version of Carbon"
+msgstr ""
+
+msgid "A managed cloud-hosted version of Carbon that includes support and all advanced features"
+msgstr ""
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Un matériau est un article physique utilisé pour fabriquer une pièce qui peut être utilisée dans plusieurs travaux"
@@ -1324,6 +1333,9 @@ msgstr "Tous les comptes"
 msgid "All actions selected"
 msgstr "Toutes les actions sélectionnées"
 
+msgid "All advanced features available"
+msgstr ""
+
 msgid "All Audit Logs"
 msgstr "Tous les journaux d'audit"
 
@@ -1578,9 +1590,6 @@ msgstr "AP à payer"
 msgid "AP Overdue"
 msgstr "AP En retard"
 
-msgid "API and Webhooks"
-msgstr "API et Webhooks"
-
 msgid "API Docs"
 msgstr "Documentation API"
 
@@ -1598,6 +1607,9 @@ msgstr "Clés API"
 
 msgid "API keys for programmatic access to your Carbon data."
 msgstr "Clés API pour un accès programmatique à vos données Carbon."
+
+msgid "API, webhooks, and integrations"
+msgstr ""
 
 msgid "Applied"
 msgstr "Appliqué"
@@ -2292,6 +2304,9 @@ msgstr "Les attributs sont hérités de la procédure."
 msgid "Audit Log"
 msgstr "Journal d'audit"
 
+msgid "Audit logging"
+msgstr ""
+
 msgid "Audit Logging"
 msgstr "Journalisation d'audit"
 
@@ -2360,6 +2375,9 @@ msgstr "Mises à jour automatiques des délais d'approvisionnement"
 
 msgid "Automatic Updates"
 msgstr "Mises à jour automatiques"
+
+msgid "Automatic updates and backups"
+msgstr ""
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "Consommation automatique au prorata des matériaux non tracés d'un travail lors du signalement de la production — les matériaux tracés sont émis manuellement."
@@ -2457,6 +2475,9 @@ msgstr "Devise de base"
 
 msgid "Base Price"
 msgstr "Prix de base"
+
+msgid "Basic ERP, MES, and QMS functionality"
+msgstr ""
 
 msgid "Basic Information"
 msgstr "Informations de base"
@@ -3145,11 +3166,11 @@ msgstr "Clôture"
 msgid "Closure blocked"
 msgstr "Fermeture bloquée"
 
-msgid "Cloud-Hosted"
-msgstr "Hébergé dans le cloud"
-
 msgid "Cloud, or your self-hosted environment."
 msgstr "Cloud, ou votre environnement auto-hébergé."
+
+msgid "CMMC compliant"
+msgstr ""
 
 msgid "Code"
 msgstr "Code"
@@ -3210,6 +3231,9 @@ msgstr "Engager un utilisateur champion pour chaque domaine"
 
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "Valider un reçu, un envoi ou une facture: les quantités se déplacent, les écritures du journal atteignent le grand livre, et le statut devient Validé."
+
+msgid "Community support"
+msgstr ""
 
 msgid "Companies"
 msgstr "Entreprises"
@@ -3500,6 +3524,9 @@ msgstr "Contact"
 
 msgid "Contact (optional)"
 msgstr "Contact (facultatif)"
+
+msgid "Contact us"
+msgstr ""
 
 msgid "contacts"
 msgstr "contacts"
@@ -4378,6 +4405,9 @@ msgstr "clients"
 
 msgid "Customers"
 msgstr "Clients"
+
+msgid "Customizations, training, and integrations"
+msgstr ""
 
 msgid "Customize"
 msgstr "Personnaliser"
@@ -6063,9 +6093,6 @@ msgstr "Compte de capitaux propres pour les bénéfices ou pertes accumulés"
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "Compte de capitaux propres pour ajustements de conversion de devises (CTA)"
 
-msgid "ERP, MES, QMS"
-msgstr "ERP, MES, QMS"
-
 msgid "Error"
 msgstr "Erreur"
 
@@ -6185,9 +6212,6 @@ msgstr "Tout le reste"
 
 msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
 msgstr "Tout le reste couvre les personnes, les importations, les intégrations et l'API — tout ce qui n'est pas l'un de vos flux de travail."
-
-msgid "Everything from Starter"
-msgstr "Tout de Starter"
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Dépasse {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB au total — supprimez certaines pièces jointes pour envoyer."
@@ -6936,12 +6960,6 @@ msgstr "Indicateurs"
 msgid "for anything. They'll pull in the right person."
 msgstr "pour n'importe quoi. Ils vont faire intervenir la bonne personne."
 
-msgid "For growing businesses that need support"
-msgstr "Pour les entreprises en croissance qui ont besoin de support"
-
-msgid "For US companies handling ITAR data"
-msgstr "Pour les entreprises américaines traitant des données ITAR"
-
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "Méthode de prévision : <0>{0}</0>. Cette ligne n'a pas été dérivée de tâches actives, donc aucune source parent n'est disponible."
@@ -6951,6 +6969,9 @@ msgstr "Oublié de pointer la sortie ?"
 
 msgid "Format"
 msgstr "Format"
+
+msgid "Forward deployed engineer"
+msgstr ""
 
 msgid "Foundation"
 msgstr "Fondation"
@@ -7004,6 +7025,9 @@ msgstr "Lieu d'Exécution"
 
 msgid "Full name"
 msgstr "Nom complet"
+
+msgid "Full setup and migrations"
+msgstr ""
 
 msgid "Fully Depreciated"
 msgstr "Entièrement amorti"
@@ -7605,9 +7629,6 @@ msgstr "Centre de mise en œuvre"
 
 msgid "Implementation Lead"
 msgstr "Chef de mise en œuvre"
-
-msgid "Implementation Support"
-msgstr "Support à la mise en œuvre"
 
 msgid "Import {label} CSV"
 msgstr "Importer {label} CSV"
@@ -10981,9 +11002,6 @@ msgstr "Pourcentage"
 msgid "Percentage of Lot"
 msgstr "Pourcentage du lot"
 
-msgid "Perfect for low-cost evaluation"
-msgstr "Parfait pour une évaluation à faible coût"
-
 msgid "Period"
 msgstr "Période"
 
@@ -13427,8 +13445,11 @@ msgstr "Sélectionné : {selectedSum} / restant après division : {0}"
 msgid "Self Managed"
 msgstr "Autogéré"
 
-msgid "Self-Onboarding with Carbon Academy"
-msgstr "Intégration autonome avec Carbon Academy"
+msgid "Self-hosted or managed"
+msgstr ""
+
+msgid "Self-onboarding"
+msgstr ""
 
 msgid "Self-paced"
 msgstr "Apprentissage autonome"
@@ -14052,6 +14073,9 @@ msgstr "Diviser la ligne de reçu"
 
 msgid "Split shipment line"
 msgstr "Diviser la ligne d'expédition"
+
+msgid "SSO/SAML"
+msgstr ""
 
 msgid "Stand up hosting"
 msgstr "Mettre en place l'hébergement"
@@ -14739,6 +14763,9 @@ msgstr "Taxes"
 
 msgid "Team trained"
 msgstr "Équipe formée"
+
+msgid "Technical support"
+msgstr ""
 
 msgid "Temperature"
 msgstr "Température"
@@ -16266,8 +16293,11 @@ msgstr "erreur inconnue"
 msgid "unknown location"
 msgstr "localisation inconnue"
 
-msgid "Unlimited Functional Support"
-msgstr "Support fonctionnel illimité"
+msgid "Unlimited functional support"
+msgstr ""
+
+msgid "Unlimited records"
+msgstr ""
 
 msgid "Unlink"
 msgstr "Dissocier"

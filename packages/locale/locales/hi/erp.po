@@ -302,8 +302,8 @@ msgstr "3 घंटे"
 msgid "4h"
 msgstr "4 घंटे"
 
-msgid "5 User Minimum"
-msgstr "5 उपयोगकर्ता न्यूनतम"
+msgid "5 user minimum"
+msgstr ""
 
 msgid "5-8 weeks"
 msgstr "5-8 सप्ताह"
@@ -358,6 +358,9 @@ msgstr "एक उपभोग्य एक भौतिक वस्तु ह�
 
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "एक ठेकेदार एक आपूर्तिकर्ता संपर्क है जिसके पास विशेष क्षमताएं और उपलब्ध घंटे हैं"
+
+msgid "A custom solution to meet your needs"
+msgstr ""
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "एक ग्राहक एक व्यवसाय या व्यक्ति है जो आपके पार्ट्स या सेवाएं खरीदता है।"
@@ -468,6 +471,12 @@ msgstr "एक ऑर्डर टू मेक घटक जो माता-�
 
 msgid "A Make to Order component whose parts are issued together into the parent job — no separate build."
 msgstr "एक ऑर्डर टू मेक घटक जिसके भाग माता-पिता की नौकरी में एक साथ जारी किए जाते हैं — कोई अलग बिल्ड नहीं।"
+
+msgid "A managed cloud-hosted version of Carbon"
+msgstr ""
+
+msgid "A managed cloud-hosted version of Carbon that includes support and all advanced features"
+msgstr ""
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "एक सामग्री एक भौतिक वस्तु है जिसका उपयोग एक भाग बनाने के लिए किया जाता है जिसे कई नौकरियों में उपयोग किया जा सकता है"
@@ -1324,6 +1333,9 @@ msgstr "सभी खाते"
 msgid "All actions selected"
 msgstr "सभी कार्य चयनित"
 
+msgid "All advanced features available"
+msgstr ""
+
 msgid "All Audit Logs"
 msgstr "सभी ऑडिट लॉग"
 
@@ -1578,9 +1590,6 @@ msgstr "AP बकाया"
 msgid "AP Overdue"
 msgstr "AP देय"
 
-msgid "API and Webhooks"
-msgstr "API और Webhooks"
-
 msgid "API Docs"
 msgstr "API डॉक्स"
 
@@ -1598,6 +1607,9 @@ msgstr "एपीआई कुंजियाँ"
 
 msgid "API keys for programmatic access to your Carbon data."
 msgstr "आपके Carbon डेटा के लिए प्रोग्रामेटिक एक्सेस के लिए API कुंजियाँ।"
+
+msgid "API, webhooks, and integrations"
+msgstr ""
 
 msgid "Applied"
 msgstr "लागू"
@@ -2292,6 +2304,9 @@ msgstr "प्रक्रिया से विशेषताएं विर
 msgid "Audit Log"
 msgstr "ऑडिट लॉग"
 
+msgid "Audit logging"
+msgstr ""
+
 msgid "Audit Logging"
 msgstr "ऑडिट लॉगिंग"
 
@@ -2360,6 +2375,9 @@ msgstr "स्वचालित लीड टाइम अपडेट"
 
 msgid "Automatic Updates"
 msgstr "स्वचालित अपडेट"
+
+msgid "Automatic updates and backups"
+msgstr ""
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "आउटपुट की रिपोर्ट करते समय एक कार्य की गैर-ट्रैक की गई सामग्री की स्वचालित, आनुपातिक खपत — ट्रैक की गई सामग्री को मैन्युअल रूप से जारी किया जाता है।"
@@ -2457,6 +2475,9 @@ msgstr "आधार मुद्रा"
 
 msgid "Base Price"
 msgstr "आधार मूल्य"
+
+msgid "Basic ERP, MES, and QMS functionality"
+msgstr ""
 
 msgid "Basic Information"
 msgstr "बुनियादी जानकारी"
@@ -3145,11 +3166,11 @@ msgstr "समापन"
 msgid "Closure blocked"
 msgstr "बंद करना अवरुद्ध"
 
-msgid "Cloud-Hosted"
-msgstr "क्लाउड-होस्टेड"
-
 msgid "Cloud, or your self-hosted environment."
 msgstr "क्लाउड, या आपका स्व-होस्ट किया गया वातावरण।"
+
+msgid "CMMC compliant"
+msgstr ""
 
 msgid "Code"
 msgstr "कोड"
@@ -3210,6 +3231,9 @@ msgstr "प्रत्येक क्षेत्र के लिए एक �
 
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "एक प्राप्ति, शिपमेंट या चालान की प्रतिबद्धता: मात्रा चलती है, जर्नल प्रविष्टियां बहीखाता को मारती हैं, और स्थिति पोस्ट की जाती है।"
+
+msgid "Community support"
+msgstr ""
 
 msgid "Companies"
 msgstr "कंपनियां"
@@ -3500,6 +3524,9 @@ msgstr "संपर्क"
 
 msgid "Contact (optional)"
 msgstr "संपर्क (वैकल्पिक)"
+
+msgid "Contact us"
+msgstr ""
 
 msgid "contacts"
 msgstr "संपर्क"
@@ -4378,6 +4405,9 @@ msgstr "ग्राहकों"
 
 msgid "Customers"
 msgstr "ग्राहक"
+
+msgid "Customizations, training, and integrations"
+msgstr ""
 
 msgid "Customize"
 msgstr "अनुकूलित करें"
@@ -6063,9 +6093,6 @@ msgstr "संचित लाभ या हानि के लिए इक्
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "मुद्रा अनुवाद समायोजन (CTA) के लिए इक्विटी खाता"
 
-msgid "ERP, MES, QMS"
-msgstr "ERP, MES, QMS"
-
 msgid "Error"
 msgstr "त्रुटि"
 
@@ -6185,9 +6212,6 @@ msgstr "बाकी सब कुछ"
 
 msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
 msgstr "बाकी सब कुछ लोगों, आयातों, एकीकरण और API को कवर करता है — कुछ भी जो आपके वर्कफ़्लो में से एक नहीं है।"
-
-msgid "Everything from Starter"
-msgstr "स्टार्टर से सब कुछ"
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "{PO_EMAIL_ATTACHMENT_LIMIT_MB} MB से अधिक है — भेजने के लिए कुछ अटैचमेंट हटाएं।"
@@ -6936,12 +6960,6 @@ msgstr "झंडे"
 msgid "for anything. They'll pull in the right person."
 msgstr "किसी भी चीज़ के लिए। वे सही व्यक्ति को शामिल करेंगे।"
 
-msgid "For growing businesses that need support"
-msgstr "बढ़ते हुए व्यवसायों के लिए जिन्हें समर्थन की आवश्यकता है"
-
-msgid "For US companies handling ITAR data"
-msgstr "ITAR डेटा संभालने वाली US कंपनियों के लिए"
-
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "पूर्वानुमान विधि: <0>{0}</0>. यह पंक्ति सक्रिय कार्यों से प्राप्त नहीं की गई थी, इसलिए कोई मूल स्रोत उपलब्ध नहीं हैं।"
@@ -6951,6 +6969,9 @@ msgstr "क्या आप क्लॉक आउट करना भूल ग
 
 msgid "Format"
 msgstr "प्रारूप"
+
+msgid "Forward deployed engineer"
+msgstr ""
 
 msgid "Foundation"
 msgstr "आधार"
@@ -7004,6 +7025,9 @@ msgstr "पूरा करने का स्थान"
 
 msgid "Full name"
 msgstr "पूरा नाम"
+
+msgid "Full setup and migrations"
+msgstr ""
 
 msgid "Fully Depreciated"
 msgstr "पूरी तरह से मूल्यह्रास"
@@ -7605,9 +7629,6 @@ msgstr "कार्यान्वयन हब"
 
 msgid "Implementation Lead"
 msgstr "कार्यान्वयन नेता"
-
-msgid "Implementation Support"
-msgstr "कार्यान्वयन समर्थन"
 
 msgid "Import {label} CSV"
 msgstr "{label} CSV आयात करें"
@@ -10981,9 +11002,6 @@ msgstr "प्रतिशत"
 msgid "Percentage of Lot"
 msgstr "लॉट का प्रतिशत"
 
-msgid "Perfect for low-cost evaluation"
-msgstr "कम लागत मूल्यांकन के लिए बिल्कुल सही"
-
 msgid "Period"
 msgstr "अवधि"
 
@@ -13427,8 +13445,11 @@ msgstr "चयनित: {selectedSum} / विभाजन के बाद श
 msgid "Self Managed"
 msgstr "स्व प्रबंधित"
 
-msgid "Self-Onboarding with Carbon Academy"
-msgstr "कार्बन अकादमी के साथ स्व-प्रशिक्षण"
+msgid "Self-hosted or managed"
+msgstr ""
+
+msgid "Self-onboarding"
+msgstr ""
 
 msgid "Self-paced"
 msgstr "स्व-गति"
@@ -14052,6 +14073,9 @@ msgstr "रसीद लाइन को विभाजित करें"
 
 msgid "Split shipment line"
 msgstr "शिपमेंट लाइन को विभाजित करें"
+
+msgid "SSO/SAML"
+msgstr ""
 
 msgid "Stand up hosting"
 msgstr "होस्टिंग सेट अप करें"
@@ -14739,6 +14763,9 @@ msgstr "कर"
 
 msgid "Team trained"
 msgstr "टीम प्रशिक्षित"
+
+msgid "Technical support"
+msgstr ""
 
 msgid "Temperature"
 msgstr "तापमान"
@@ -16266,8 +16293,11 @@ msgstr "अज्ञात त्रुटि"
 msgid "unknown location"
 msgstr "अज्ञात स्थान"
 
-msgid "Unlimited Functional Support"
-msgstr "असीमित कार्यात्मक समर्थन"
+msgid "Unlimited functional support"
+msgstr ""
+
+msgid "Unlimited records"
+msgstr ""
 
 msgid "Unlink"
 msgstr "अनलिंक करें"
