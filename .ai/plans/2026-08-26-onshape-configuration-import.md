@@ -19,7 +19,7 @@ it does** — renders one control per parameter. No migration, no schema change,
 - [ ] Task 6: Render the configuration controls in `OnshapeSync`
 - [ ] Task 7: Extract and fill i18n strings
 - [ ] Task 8: Browser-verify the feature
-- [ ] Task 9 (Phase 2, separable): Surface `configuration` on released revisions
+- [x] Task 9 (Phase 2, separable): Surface `configuration` on released revisions
 
 ## Dependencies
 

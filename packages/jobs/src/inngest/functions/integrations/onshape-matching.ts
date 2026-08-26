@@ -38,3 +38,35 @@ export function escapeLikePattern(value: string): string {
     (specialCharacter) => `\\${specialCharacter}`
   );
 }
+
+// A released revision carries the CONFIGURATION it was released at. Carbon's join key
+// (releaseKey) has no configuration component, so two configurations released under the
+// SAME part number + revision resolve to ONE Carbon item — and the attach helper's
+// replace-not-append rule silently overwrites whichever landed first. There is no key
+// Carbon can pick to tell them apart, so the only honest outcome is to refuse.
+//
+// A single configured revision with no competitor is NOT ambiguous and must sync
+// normally — this exists to stop a silent overwrite, not to refuse configured CAD.
+// Empty/absent configurations are ignored: an unconfigured element is the common case
+// and two of those sharing a part number + revision is a different problem.
+export function hasCompetingConfiguration(
+  revision: {
+    partNumber: string;
+    revision: string;
+    configuration?: string | null;
+  },
+  revisionList: {
+    partNumber: string;
+    revision: string;
+    configuration?: string | null;
+  }[]
+): boolean {
+  if (!revision.configuration) return false;
+  return revisionList.some(
+    (candidate) =>
+      candidate.partNumber === revision.partNumber &&
+      candidate.revision === revision.revision &&
+      !!candidate.configuration &&
+      candidate.configuration !== revision.configuration
+  );
+}

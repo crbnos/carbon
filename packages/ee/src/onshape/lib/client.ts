@@ -85,6 +85,11 @@ export interface OnshapeRevision {
   releaseId?: string;
   releaseName?: string;
   isObsolete?: boolean;
+  // The configuration this revision was released at. Two configurations released under the
+  // SAME part number collapse onto one releaseKey(partNumber, revision), match the same
+  // Carbon item, and the attach helper's replace-not-append rule makes it last-writer-wins
+  // — a silent geometry overwrite. Carrying the field is what makes that detectable.
+  configuration?: string | null;
   [key: string]: unknown;
 }
 
