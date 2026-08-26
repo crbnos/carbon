@@ -60,12 +60,14 @@ function resolve(
     case NotificationEvent.SalesRfqReady:
       return path.to.salesRfq(documentId);
     case NotificationEvent.SalesRuleViolation: {
-      // Compound documentId: "<quote|salesOrder>:<documentId>:<outcome>"
+      // Compound documentId: "<quote|salesOrder|salesInvoice>:<documentId>:<outcome>"
       const [docType, docId] = documentId.split(":");
       if (!docId) return null;
-      return docType === "salesOrder"
-        ? path.to.salesOrder(docId)
-        : path.to.quote(docId);
+      return docType === "salesInvoice"
+        ? path.to.salesInvoice(docId)
+        : docType === "salesOrder"
+          ? path.to.salesOrder(docId)
+          : path.to.quote(docId);
     }
     case NotificationEvent.MaintenanceDispatchAssignment:
     case NotificationEvent.MaintenanceDispatchCreated:

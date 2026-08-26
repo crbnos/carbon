@@ -76,7 +76,8 @@ const CTX_KEYS_BY_SURFACE: Record<RuleSurface, FieldDef["context"][]> = {
   materialIssue: ["workCenter", "operation", "transaction"],
   materialReceive: ["workCenter", "operation", "transaction"],
   quoteLine: ["customer", "transaction"],
-  salesOrderLine: ["customer", "transaction"]
+  salesOrderLine: ["customer", "transaction"],
+  salesInvoiceLine: ["customer", "transaction"]
 };
 
 const CONTEXT_LABELS: Record<FieldDef["context"], string> = {

@@ -51,7 +51,11 @@ describe("sales rules", () => {
       salesRuleOf({ message: "{item.name} fails the embargo rule" })
     );
     // Default surfaces = every sales-rule surface.
-    expect(compiled.surfaces).toEqual(["quoteLine", "salesOrderLine"]);
+    expect(compiled.surfaces).toEqual([
+      "quoteLine",
+      "salesOrderLine",
+      "salesInvoiceLine"
+    ]);
     expect(compiled.targetType).toBe("item");
 
     const failingCtx: RuleContext = {
@@ -100,6 +104,15 @@ describe("sales rules", () => {
     };
     expect(evaluateRules([compiled], ctx, "quoteLine")).toEqual([]);
     expect(evaluateRules([compiled], ctx, "salesOrderLine")).toHaveLength(1);
+    expect(evaluateRules([compiled], ctx, "salesInvoiceLine")).toEqual([]);
+
+    const invoiceOnly = compileSalesRuleWithCache(
+      salesRuleOf({ id: "item_rule_inv", surfaces: ["salesInvoiceLine"] })
+    );
+    expect(evaluateRules([invoiceOnly], ctx, "salesOrderLine")).toEqual([]);
+    expect(evaluateRules([invoiceOnly], ctx, "salesInvoiceLine")).toHaveLength(
+      1
+    );
   });
 
   it("getFieldsForSalesRuleSurfaces includes customer fields and excludes storage/workCenter fields", () => {
@@ -115,11 +128,13 @@ describe("sales rules", () => {
     expect(paths.some((p) => p.startsWith("workCenter."))).toBe(false);
     expect(paths.some((p) => p.startsWith("operation."))).toBe(false);
 
-    // Same set on both surfaces (identical context availability).
+    // Same set on all surfaces (identical context availability).
     expect(
-      getFieldsForSalesRuleSurfaces(["quoteLine", "salesOrderLine"]).map(
-        (f) => f.path
-      )
+      getFieldsForSalesRuleSurfaces([
+        "quoteLine",
+        "salesOrderLine",
+        "salesInvoiceLine"
+      ]).map((f) => f.path)
     ).toEqual(paths);
   });
 

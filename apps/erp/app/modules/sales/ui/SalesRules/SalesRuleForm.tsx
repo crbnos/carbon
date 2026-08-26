@@ -26,7 +26,7 @@ import {
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
-import { LuFileText, LuShoppingCart } from "react-icons/lu";
+import { LuFileText, LuReceipt, LuShoppingCart } from "react-icons/lu";
 import type { z } from "zod";
 import {
   CustomFormFields,
@@ -61,6 +61,12 @@ const SALES_RULE_SURFACE_OPTIONS: {
     label: "Sales order line",
     description: "When an item is added to a sales order",
     icon: <LuShoppingCart />
+  },
+  {
+    value: "salesInvoiceLine",
+    label: "Sales invoice line",
+    description: "When an item is added to a sales invoice",
+    icon: <LuReceipt />
   }
 ];
 

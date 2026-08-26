@@ -98,15 +98,16 @@ function enrichWithAuthContext(
 /**
  * Sales-rule backstop for sales line writes reached through MCP.
  *
- * The route actions that add quote / sales-order lines evaluate sales rules
- * before writing. This executor calls the same service functions by name, so
- * those checks never run — an agent holding an OAuth token or API key could
- * otherwise put a restricted item on a sales document.
+ * The route actions that add quote / sales-order / sales-invoice lines
+ * evaluate sales rules before writing. This executor calls the same service
+ * functions by name, so those checks never run — an agent holding an OAuth
+ * token or API key could otherwise put a restricted item on a sales document.
  *
  * The check lives here rather than inside `upsertQuoteLine` /
- * `upsertSalesOrderLine` deliberately: `sales.service.ts` is re-exported from
- * the `~/modules/sales` barrel that UI components import, so it must stay free
- * of server-only imports. This module is server-only by construction.
+ * `upsertSalesOrderLine` / `upsertSalesInvoiceLine` deliberately: the service
+ * files are re-exported from module barrels that UI components import, so they
+ * must stay free of server-only imports. This module is server-only by
+ * construction.
  *
  * Only `error`-severity violations block. A `warn` needs a human to acknowledge
  * it, and there is no human on this path — warns are allowed through so the
@@ -122,23 +123,40 @@ async function checkSalesRulesForSalesLineWrite(
       ? ("quoteLine" as const)
       : functionName === "sales_upsertSalesOrderLine"
         ? ("salesOrderLine" as const)
-        : null;
+        : functionName === "invoicing_upsertSalesInvoiceLine"
+          ? ("salesInvoiceLine" as const)
+          : null;
   if (!surface || !args) return null;
 
-  const itemId = typeof args.itemId === "string" ? args.itemId : null;
+  // The invoicing tool's payload arrives nested under its parameter name
+  // (`serviceParams: ["client", "salesInvoiceLine"]`); the sales tools' args
+  // are flat.
+  const payload: Record<string, any> =
+    surface === "salesInvoiceLine" &&
+    args.salesInvoiceLine &&
+    typeof args.salesInvoiceLine === "object"
+      ? args.salesInvoiceLine
+      : args;
+
+  const itemId = typeof payload.itemId === "string" ? payload.itemId : null;
   if (!itemId) return null;
 
   const documentId =
     surface === "quoteLine"
-      ? typeof args.quoteId === "string"
-        ? args.quoteId
+      ? typeof payload.quoteId === "string"
+        ? payload.quoteId
         : null
-      : typeof args.salesOrderId === "string"
-        ? args.salesOrderId
-        : null;
+      : surface === "salesOrderLine"
+        ? typeof payload.salesOrderId === "string"
+          ? payload.salesOrderId
+          : null
+        : typeof payload.invoiceId === "string"
+          ? payload.invoiceId
+          : null;
   if (!documentId) return null;
 
   const serviceRole = getCarbonServiceRole();
+  const lineId = typeof payload.id === "string" ? payload.id : "new";
   const shipTo =
     surface === "salesOrderLine"
       ? await resolveSalesOrderShipTo(
@@ -146,26 +164,59 @@ async function checkSalesRulesForSalesLineWrite(
           documentId,
           context.companyId
         )
-      : await (async () => {
-          const { data } = await serviceRole
-            .from("quote")
-            .select("customerId, customerLocationId")
-            .eq("id", documentId)
-            .eq("companyId", context.companyId)
-            .maybeSingle();
-          return {
-            customerId: data?.customerId ?? null,
-            customerLocationId: data?.customerLocationId ?? null
-          };
-        })();
+      : surface === "salesInvoiceLine"
+        ? await (async () => {
+            // An invoice line converted from a sales order resolves its
+            // ship-to through that order; a standalone line has none and
+            // none may be invented (the bill-to is a different address), so
+            // a null location lets a destination rule fail closed via the
+            // engine's required-field semantics.
+            if (lineId !== "new") {
+              const existing = await serviceRole
+                .from("salesInvoiceLine")
+                .select("salesOrderId")
+                .eq("id", lineId)
+                .eq("companyId", context.companyId)
+                .maybeSingle();
+              if (existing.data?.salesOrderId) {
+                return resolveSalesOrderShipTo(
+                  serviceRole,
+                  existing.data.salesOrderId,
+                  context.companyId
+                );
+              }
+            }
+            const { data } = await serviceRole
+              .from("salesInvoice")
+              .select("customerId")
+              .eq("id", documentId)
+              .eq("companyId", context.companyId)
+              .maybeSingle();
+            return {
+              customerId: data?.customerId ?? null,
+              customerLocationId: null
+            };
+          })()
+        : await (async () => {
+            const { data } = await serviceRole
+              .from("quote")
+              .select("customerId, customerLocationId")
+              .eq("id", documentId)
+              .eq("companyId", context.companyId)
+              .maybeSingle();
+            return {
+              customerId: data?.customerId ?? null,
+              customerLocationId: data?.customerLocationId ?? null
+            };
+          })();
 
   const quantity =
-    typeof args.saleQuantity === "number"
-      ? args.saleQuantity
-      : Array.isArray(args.quantity)
-        ? Math.max(1, ...(args.quantity as number[]))
-        : typeof args.quantity === "number"
-          ? args.quantity
+    typeof payload.saleQuantity === "number"
+      ? payload.saleQuantity
+      : Array.isArray(payload.quantity)
+        ? Math.max(1, ...(payload.quantity as number[]))
+        : typeof payload.quantity === "number"
+          ? payload.quantity
           : 1;
 
   const { violations } = await evaluateSalesRuleLines({
@@ -175,7 +226,7 @@ async function checkSalesRulesForSalesLineWrite(
     surface,
     lines: [
       {
-        lineId: typeof args.id === "string" ? args.id : "new",
+        lineId,
         itemId,
         quantity
       }

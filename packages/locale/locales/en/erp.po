@@ -5975,8 +5975,8 @@ msgstr "Enforce — edits are blocked"
 msgid "Enforce checks on quote and sales order lines for this item."
 msgstr "Enforce checks on quote and sales order lines for this item."
 
-msgid "Enforce customer and item checks when items are added to quotes and sales orders."
-msgstr "Enforce customer and item checks when items are added to quotes and sales orders."
+msgid "Enforce customer and item checks when items are added to quotes, sales orders, and sales invoices."
+msgstr "Enforce customer and item checks when items are added to quotes, sales orders, and sales invoices."
 
 msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
 msgstr "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."

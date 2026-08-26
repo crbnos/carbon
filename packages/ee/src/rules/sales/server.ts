@@ -1,6 +1,6 @@
 // Server-side sales-rules evaluator. Cross-app entry point — the ERP quote /
-// sales-order line actions call `evaluateSalesRuleLines`. Mirrors
-// `../storage/server.ts`.
+// sales-order / sales-invoice line actions call `evaluateSalesRuleLines`.
+// Mirrors `../storage/server.ts`.
 //
 // All functions here are server-only. Never import from a client module.
 
@@ -273,7 +273,11 @@ export async function evaluateSalesRuleLines({
 // Document evaluator — the terminal-gate entry point
 // ---------------------------------------------------------------------------
 
-export type SalesDocumentType = "salesRfq" | "quote" | "salesOrder";
+export type SalesDocumentType =
+  | "salesRfq"
+  | "quote"
+  | "salesOrder"
+  | "salesInvoice";
 
 export type EvaluateSalesRulesForSalesDocumentArgs = {
   client: Client;
@@ -387,6 +391,13 @@ export async function evaluateSalesRulesForSalesDocument({
         .eq("companyId", companyId)
     ]);
 
+    // A lines-read error that silently yields zero lines turns the gate off.
+    if (linesRes.error) {
+      throw new Error(
+        `Sales rule evaluation could not load salesRfq lines for ${documentId}: ${linesRes.error.message}`
+      );
+    }
+
     const lines: SalesRuleLineInput[] = (linesRes.data ?? [])
       .filter((l) => !!l.itemId)
       .map((l) => ({
@@ -421,6 +432,13 @@ export async function evaluateSalesRulesForSalesDocument({
         .eq("companyId", companyId)
     ]);
 
+    // A lines-read error that silently yields zero lines turns the gate off.
+    if (linesRes.error) {
+      throw new Error(
+        `Sales rule evaluation could not load quote lines for ${documentId}: ${linesRes.error.message}`
+      );
+    }
+
     const lines: SalesRuleLineInput[] = (linesRes.data ?? [])
       .filter((l) => !!l.itemId)
       .map((l) => ({
@@ -443,30 +461,124 @@ export async function evaluateSalesRulesForSalesDocument({
     });
   }
 
-  const [shipTo, linesRes] = await Promise.all([
-    resolveSalesOrderShipTo(client, documentId, companyId),
-    client
-      .from("salesOrderLine")
-      .select("id, itemId, saleQuantity")
-      .eq("salesOrderId", documentId)
-      .eq("companyId", companyId)
-  ]);
+  // A sales invoice can be raised with no upstream document at all, so this
+  // gate is the only checkpoint such an invoice ever passes. Ship-to is
+  // resolved PER SOURCE ORDER: a line converted from a sales order carries
+  // `salesOrderId` and resolves the real destination through that order
+  // (drop-ship included, staleness re-checked); a standalone line has no
+  // ship-to and none may be invented — the bill-to
+  // (`invoiceCustomerLocationId`) is a different address and frequently a
+  // different country, so substituting it would clear a rule that should
+  // have blocked. A null location flows into the engine's required-field
+  // semantics ("Customer country is required" at the rule's severity), so
+  // the information-poorer path fails closed rather than open.
+  if (documentType === "salesInvoice") {
+    const [invoiceRes, linesRes] = await Promise.all([
+      client
+        .from("salesInvoice")
+        .select("customerId")
+        .eq("id", documentId)
+        .eq("companyId", companyId)
+        .maybeSingle(),
+      client
+        .from("salesInvoiceLine")
+        .select("id, itemId, quantity, salesOrderId")
+        .eq("invoiceId", documentId)
+        .eq("companyId", companyId)
+    ]);
 
-  const lines: SalesRuleLineInput[] = (linesRes.data ?? [])
-    .filter((l) => !!l.itemId)
-    .map((l) => ({
-      lineId: l.id,
-      itemId: l.itemId,
-      quantity: l.saleQuantity ?? 1
-    }));
+    // A read error that silently yields zero lines turns the gate off.
+    if (invoiceRes.error || linesRes.error) {
+      const err = invoiceRes.error ?? linesRes.error;
+      throw new Error(
+        `Sales rule evaluation could not load sales invoice ${documentId}: ${err?.message}`
+      );
+    }
 
-  return evaluateSalesRuleLines({
-    client,
-    companyId,
-    userId,
-    surface: "salesOrderLine",
-    lines,
-    customerId: shipTo.customerId,
-    customerLocationId: shipTo.customerLocationId
-  });
+    const itemLines = (linesRes.data ?? []).filter((l) => !!l.itemId);
+
+    // Group by source order so each group evaluates against the destination
+    // its goods actually ship to. The null key holds the standalone lines.
+    const groups = new Map<string | null, typeof itemLines>();
+    for (const line of itemLines) {
+      const key = line.salesOrderId ?? null;
+      const group = groups.get(key);
+      if (group) {
+        group.push(line);
+      } else {
+        groups.set(key, [line]);
+      }
+    }
+
+    const results = await Promise.all(
+      [...groups].map(async ([salesOrderId, groupLines]) => {
+        const shipTo = salesOrderId
+          ? await resolveSalesOrderShipTo(client, salesOrderId, companyId)
+          : {
+              customerId: invoiceRes.data?.customerId ?? null,
+              customerLocationId: null
+            };
+        return evaluateSalesRuleLines({
+          client,
+          companyId,
+          userId,
+          surface: "salesInvoiceLine",
+          lines: groupLines.map((l) => ({
+            lineId: l.id,
+            itemId: l.itemId,
+            quantity: l.quantity ?? 1
+          })),
+          customerId: shipTo.customerId,
+          customerLocationId: shipTo.customerLocationId
+        });
+      })
+    );
+
+    return {
+      violations: dedupeViolations(results.flatMap((r) => r.violations)),
+      ruleNames: Object.assign({}, ...results.map((r) => r.ruleNames))
+    };
+  }
+
+  if (documentType === "salesOrder") {
+    const [shipTo, linesRes] = await Promise.all([
+      resolveSalesOrderShipTo(client, documentId, companyId),
+      client
+        .from("salesOrderLine")
+        .select("id, itemId, saleQuantity")
+        .eq("salesOrderId", documentId)
+        .eq("companyId", companyId)
+    ]);
+
+    // A lines-read error that silently yields zero lines turns the gate off.
+    if (linesRes.error) {
+      throw new Error(
+        `Sales rule evaluation could not load sales order lines for ${documentId}: ${linesRes.error.message}`
+      );
+    }
+
+    const lines: SalesRuleLineInput[] = (linesRes.data ?? [])
+      .filter((l) => !!l.itemId)
+      .map((l) => ({
+        lineId: l.id,
+        itemId: l.itemId,
+        quantity: l.saleQuantity ?? 1
+      }));
+
+    return evaluateSalesRuleLines({
+      client,
+      companyId,
+      userId,
+      surface: "salesOrderLine",
+      lines,
+      customerId: shipTo.customerId,
+      customerLocationId: shipTo.customerLocationId
+    });
+  }
+
+  // Exhaustiveness: a new document type must get its own branch — falling
+  // through to another document's query would silently evaluate nothing.
+  throw new Error(
+    `Unknown sales document type: ${documentType satisfies never}`
+  );
 }

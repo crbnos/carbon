@@ -54,8 +54,8 @@ export default function SalesRulesUpgradeOverlay() {
       title={<Trans>Sales Rules</Trans>}
       description={
         <Trans>
-          Enforce customer and item checks when items are added to quotes and
-          sales orders.
+          Enforce customer and item checks when items are added to quotes, sales
+          orders, and sales invoices.
         </Trans>
       }
     />

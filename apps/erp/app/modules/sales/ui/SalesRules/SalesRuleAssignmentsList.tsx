@@ -41,7 +41,8 @@ import { path } from "~/utils/path";
 
 const SALES_RULE_SURFACE_LABELS: Record<SalesRuleSurface, string> = {
   quoteLine: "Quote line",
-  salesOrderLine: "Sales order line"
+  salesOrderLine: "Sales order line",
+  salesInvoiceLine: "Sales invoice line"
 };
 
 type AssignedSalesRule = {

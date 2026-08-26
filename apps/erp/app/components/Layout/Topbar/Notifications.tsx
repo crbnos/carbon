@@ -318,15 +318,17 @@ function GenericNotification({
         />
       );
     case NotificationEvent.SalesRuleViolation: {
-      // Compound documentId: "<quote|salesOrder>:<documentId>:<outcome>"
+      // Compound documentId: "<quote|salesOrder|salesInvoice>:<documentId>:<outcome>"
       const [docType, docId] = id.split(":");
       return (
         <Notification
           icon={<LuShieldAlert />}
           to={
-            docType === "salesOrder"
-              ? path.to.salesOrderDetails(docId ?? "")
-              : path.to.quoteDetails(docId ?? "")
+            docType === "salesInvoice"
+              ? path.to.salesInvoiceDetails(docId ?? "")
+              : docType === "salesOrder"
+                ? path.to.salesOrderDetails(docId ?? "")
+                : path.to.quoteDetails(docId ?? "")
           }
           {...props}
         />

@@ -587,7 +587,7 @@ async function buildEventContent(
 
     case NotificationEvent.SalesRuleViolation: {
       // Compound documentId (same pattern as JobOperation*):
-      // "<quote|salesOrder>:<documentId>:<blocked|acknowledged>"
+      // "<quote|salesOrder|salesInvoice>:<documentId>:<blocked|acknowledged>"
       const [docType, docId, outcome] = documentId.split(":");
       if (!docId) return null;
 
@@ -596,6 +596,30 @@ async function buildEventContent(
           ? "blocked by sales rules"
           : "flagged by sales rules and acknowledged";
       const outcomeLabel = outcome === "blocked" ? "Blocked" : "Acknowledged";
+
+      if (docType === "salesInvoice") {
+        // salesInvoice has two FKs to customer (customerId and
+        // invoiceCustomerId), so the embed must name the one it means.
+        const salesInvoice = await client
+          .from("salesInvoice")
+          .select("invoiceId, customer!salesInvoice_customerId_fkey(name)")
+          .eq("id", docId)
+          .single();
+
+        if (salesInvoice.error) {
+          console.error("Failed to get salesInvoice", salesInvoice.error);
+          throw salesInvoice.error;
+        }
+
+        return {
+          description: `A line on Sales Invoice ${salesInvoice.data?.invoiceId} was ${phrase}`,
+          reference: salesInvoice.data?.invoiceId ?? undefined,
+          details: buildDetails([
+            { label: "Customer", value: salesInvoice.data?.customer?.name },
+            { label: "Outcome", value: outcomeLabel }
+          ])
+        };
+      }
 
       if (docType === "salesOrder") {
         const salesOrder = await client

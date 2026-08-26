@@ -1,6 +1,6 @@
 # Sales Rules — commercial & compliance checks on sales documents
 
-- Status: **Ready to implement** (all design questions resolved)
+- Status: **Implemented** on `naveen/item-rules` (sales-invoice surface added 2026-08-26: `salesInvoiceLine` enum value + CHECK widening, line gates on the two invoice write routes, terminal gate in `$invoiceId.post.tsx` before the `Pending` write, MCP backstop for `invoicing_upsertSalesInvoiceLine`, per-source-order ship-to resolution pinned by `packages/ee/src/rules/sales/invoice-shipto.test.ts`)
 - Date: 2026-08-11
 - Research: `.ai/research/2026-08-11-item-rules.md`, `.ai/research/2026-08-12-item-rules-enforcement-surface.md`
 - Scope: Phase 1 (data model + engine extensions + admin UI + sales-line enforcement) · Phase 2 (notifications + acknowledgment evidence) · Phase 3 (enforcement completeness — terminal gates through invoice post, unbypassable hard errors)

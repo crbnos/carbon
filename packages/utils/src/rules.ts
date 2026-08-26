@@ -78,7 +78,11 @@ export type TransactionSurface = (typeof TRANSACTION_SURFACES)[number];
  * engine (same AST, operators, compiler, evaluator) but fire when items are
  * added to sales documents, not on warehouse transactions.
  */
-export const SALES_RULE_SURFACES = ["quoteLine", "salesOrderLine"] as const;
+export const SALES_RULE_SURFACES = [
+  "quoteLine",
+  "salesOrderLine",
+  "salesInvoiceLine"
+] as const;
 export type SalesRuleSurface = (typeof SALES_RULE_SURFACES)[number];
 
 /** Any surface the shared engine can evaluate a compiled rule on. */
@@ -611,14 +615,15 @@ export const getFieldsForTargetTypeAndSurfaces = (
  * Sales-rule counterpart of `SURFACE_CONTEXT_AVAILABILITY`: which root
  * `FieldContext`s the sales-rule evaluator structurally builds in `RuleContext`
  * for each sales-document surface. Locked by the anti-drift test in
- * `packages/ee/src/rules/item/context.test.ts`.
+ * `packages/ee/src/rules/sales/context.test.ts`.
  */
 export const SALES_RULE_SURFACE_CONTEXT_AVAILABILITY: Record<
   SalesRuleSurface,
   readonly FieldContext[]
 > = {
   quoteLine: ["item", "customer", "transaction"],
-  salesOrderLine: ["item", "customer", "transaction"]
+  salesOrderLine: ["item", "customer", "transaction"],
+  salesInvoiceLine: ["item", "customer", "transaction"]
 };
 
 /**
