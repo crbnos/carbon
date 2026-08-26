@@ -1,5 +1,4 @@
 import type { ReportPeriodBucket } from "@carbon/utils";
-import { json2csv } from "json-2-csv";
 import type { Chart, ChartPeriodSeries } from "../../types";
 import { computeExecutivePnl, type ExecutivePnlRowKey } from "./executivePnl";
 import {
@@ -8,11 +7,33 @@ import {
   getDebitCredit
 } from "./reportTree";
 
+export function serializeCsv(rows: Record<string, unknown>[]): string {
+  if (rows.length === 0) return "";
+
+  const headers = [...new Set(rows.flatMap((row) => Object.keys(row)))];
+  const escapeCell = (value: unknown) => {
+    if (value == null) return "";
+    const text = String(value);
+    const safeText =
+      typeof value === "string" && /^[=+\-@]/.test(text) ? `'${text}` : text;
+    return /[",\r\n]/.test(safeText)
+      ? `"${safeText.replaceAll('"', '""')}"`
+      : safeText;
+  };
+
+  return [
+    headers.map(escapeCell).join(","),
+    ...rows.map((row) =>
+      headers.map((header) => escapeCell(row[header])).join(",")
+    )
+  ].join("\r\n");
+}
+
 // Standalone CSV download (ExchangeRateForm pattern) — the report trees are
 // not built on the shared Table component, so they get no free export button.
 function downloadCsv(rows: Record<string, unknown>[], filename: string) {
-  if (rows.length === 0) return;
-  const csvData = json2csv(rows, { emptyFieldValue: "" });
+  const csvData = serializeCsv(rows);
+  if (!csvData) return;
   const blob = new Blob([csvData], { type: "text/csv" });
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement("a");

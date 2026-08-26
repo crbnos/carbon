@@ -6,7 +6,8 @@ export { computeExecutivePnl } from "./executivePnl";
 export {
   exportExecutivePnl,
   exportPeriodReport,
-  exportTrialBalance
+  exportTrialBalance,
+  serializeCsv
 } from "./exportReport";
 export {
   default as MultiPeriodStatementTree,
@@ -20,6 +21,11 @@ export { default as PivotTree } from "./PivotTree";
 export { default as PurchaseLinesDrawer } from "./PurchaseLinesDrawer";
 export { default as PurchasesControlBar } from "./PurchasesControlBar";
 export { default as ReportFilters } from "./ReportFilters";
+export type { ReportDefinition } from "./reportCatalog";
+export {
+  getVisibleReportCatalog,
+  reportCatalog
+} from "./reportCatalog";
 export { default as SaveViewModal } from "./SaveViewModal";
 export { default as TrialBalanceTable } from "./TrialBalanceTable";
 export { default as TrialBalanceTree } from "./TrialBalanceTree";

@@ -15,23 +15,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import type { IconType } from "react-icons";
-import {
-  LuArrowUpDown,
-  LuBanknote,
-  LuBookmark,
-  LuBoxes,
-  LuBriefcase,
-  LuFileSpreadsheet,
-  LuHandCoins,
-  LuPin,
-  LuRecycle,
-  LuScale,
-  LuSearch,
-  LuTrash2,
-  LuTrendingUp,
-  LuTruck,
-  LuUsers
-} from "react-icons/lu";
+import { LuBookmark, LuPin, LuSearch, LuTrash2 } from "react-icons/lu";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
@@ -45,6 +29,10 @@ import {
   reportPinValidator,
   upsertReportPin
 } from "~/modules/accounting";
+import {
+  type ReportDefinition as CatalogReportDefinition,
+  reportCatalog
+} from "~/modules/accounting/ui/Reports";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -108,14 +96,9 @@ export async function action({ request }: ActionFunctionArgs) {
   return {};
 }
 
-type ReportDefinition = {
-  key: string;
+type ReportDefinition = CatalogReportDefinition & {
   name: string;
-  description: string;
   to: string;
-  icon: IconType;
-  category: string;
-  defaultPinned: boolean;
 };
 
 type SavedView = Awaited<ReturnType<typeof loader>>["savedViews"][number];
@@ -137,126 +120,13 @@ export default function ReportsIndexRoute() {
   // The core financial statements default to pinned; users can pin/unpin from
   // the cards and list rows below (persisted per user + company).
   const reports = useMemo<ReportDefinition[]>(
-    () => [
-      {
-        key: "income-statement",
-        name: t`Income Statement`,
-        description: t`Revenue and expenses over a period`,
-        to: path.to.incomeStatement,
-        icon: LuTrendingUp,
-        category: t`Financial Statements`,
-        defaultPinned: true
-      },
-      {
-        key: "executive-pnl",
-        name: t`Executive P&L`,
-        description: t`Condensed P&L with margins and key subtotals`,
-        to: path.to.executivePnl,
-        icon: LuBriefcase,
-        category: t`Financial Statements`,
-        defaultPinned: false
-      },
-      {
-        key: "balance-sheet",
-        name: t`Balance Sheet`,
-        description: t`Assets, liabilities and equity as of a date`,
-        to: path.to.balanceSheet,
-        icon: LuScale,
-        category: t`Financial Statements`,
-        defaultPinned: true
-      },
-      {
-        key: "trial-balance",
-        name: t`Trial Balance`,
-        description: t`Account balances with debits and credits`,
-        to: path.to.trialBalance,
-        icon: LuFileSpreadsheet,
-        category: t`Close Reports`,
-        defaultPinned: true
-      },
-      {
-        key: "inventory-valuation",
-        name: t`Inventory Valuation`,
-        description: t`On-hand value by location or item, with GL tie-out`,
-        to: path.to.inventoryValuation,
-        icon: LuBoxes,
-        category: t`Close Reports`,
-        defaultPinned: false
-      },
-      {
-        key: "revenue",
-        name: t`Revenue`,
-        description: t`Slice revenue by customer, customer type, or any dimension`,
-        to: path.to.analyticsReport("revenue"),
-        icon: LuUsers,
-        category: t`Analytics`,
-        defaultPinned: false
-      },
-      {
-        key: "expenses",
-        name: t`Expenses`,
-        description: t`Slice expenses by location, cost center, or any dimension`,
-        to: path.to.analyticsReport("expenses"),
-        icon: LuTruck,
-        category: t`Analytics`,
-        defaultPinned: false
-      },
-      {
-        key: "purchases",
-        name: t`Purchases`,
-        description: t`Spend by supplier, item, or category — your biggest cost drivers`,
-        to: path.to.purchasesReport,
-        icon: LuHandCoins,
-        category: t`Analytics`,
-        defaultPinned: false
-      },
-      {
-        key: "assets",
-        name: t`Assets`,
-        description: t`Slice asset activity by location, item, or any dimension`,
-        to: path.to.analyticsReport("assets"),
-        icon: LuBanknote,
-        category: t`Analytics`,
-        defaultPinned: false
-      },
-      {
-        key: "inventory-change",
-        name: t`Inventory`,
-        description: t`What drove inventory up or down, by any dimension`,
-        to: path.to.analyticsReport("inventory-change"),
-        icon: LuArrowUpDown,
-        category: t`Analytics`,
-        defaultPinned: false
-      },
-      {
-        key: "scrap",
-        name: t`Scrap`,
-        description: t`Biggest causes of scrap by reason, item, or work center`,
-        to: path.to.analyticsReport("scrap"),
-        icon: LuRecycle,
-        category: t`Analytics`,
-        defaultPinned: false
-      },
-      {
-        key: "ar-aging",
-        name: t`AR Aging`,
-        description: t`Open receivables by customer and age`,
-        to: path.to.arAging,
-        icon: LuHandCoins,
-        category: t`Aging`,
-        defaultPinned: false
-      },
-      {
-        key: "ap-aging",
-        name: t`AP Aging`,
-        description: t`Open payables by supplier and age`,
-        to: path.to.apAging,
-        icon: LuBanknote,
-        category: t`Aging`,
-        defaultPinned: false
-      }
-    ],
-    [t]
+    () =>
+      reportCatalog.map((report) => ({
+        ...report,
+        name: report.label,
+        to: report.route
+      })),
+    []
   );
 
   // Persisted overrides + optimistic in-flight toggle
