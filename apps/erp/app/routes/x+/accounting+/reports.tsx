@@ -101,8 +101,13 @@ export async function action({ request }: ActionFunctionArgs) {
   return {};
 }
 
-type ReportDefinition = CatalogReportDefinition & {
+type ReportDefinition = Omit<
+  CatalogReportDefinition,
+  "label" | "description" | "category"
+> & {
   name: string;
+  description: string;
+  category: string;
   to: string;
 };
 
