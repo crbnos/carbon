@@ -1,6 +1,9 @@
 import { useCarbon } from "@carbon/auth";
 import { OnshapeLogo } from "@carbon/ee";
-import type { OnshapeConfigurationParameter } from "@carbon/ee/onshape";
+import {
+  formatParameterValue,
+  type OnshapeConfigurationParameter
+} from "@carbon/ee/onshape";
 import {
   Badge,
   Button,
@@ -244,11 +247,35 @@ export const OnshapeSync = ({
     if (savedConfiguration) {
       for (const parameter of configurationParameters) {
         const saved = savedConfiguration[parameter.parameterId];
-        if (saved !== undefined) defaults[parameter.parameterId] = saved;
+        if (saved === undefined) continue;
+        if (parameter.parameterType === "QUANTITY") {
+          // A persisted QUANTITY carries its unit ("500 mm") because that is the form
+          // Onshape's encoder wants. Recover the bare number for the control, and fall
+          // back to the default if it is unparseable rather than seeding NaN.
+          const parsed = Number.parseFloat(String(saved));
+          if (Number.isFinite(parsed)) defaults[parameter.parameterId] = parsed;
+          continue;
+        }
+        defaults[parameter.parameterId] = saved;
       }
     }
     setConfigurationValues(defaults);
   }, [configurationParameters, savedConfiguration]);
+
+  // What actually goes to Onshape. The controls hold raw typed values (a QUANTITY is a
+  // number, so the NumberField can bind to it), but the encoder takes every value as a
+  // STRING and a bare number is unit-ambiguous — formatParameterValue appends the unit.
+  // Deriving it here keeps the routes dumb string-passers: the parameter DEFINITIONS only
+  // exist on this side, so this is the one place that can do it.
+  const configurationPayload = useMemo(() => {
+    const payload: Record<string, string> = {};
+    for (const parameter of configurationParameters) {
+      const value = configurationValues[parameter.parameterId];
+      if (value === undefined) continue;
+      payload[parameter.parameterId] = formatParameterValue(parameter, value);
+    }
+    return payload;
+  }, [configurationParameters, configurationValues]);
 
   const setConfigurationValue = (
     parameterId: string,
@@ -297,7 +324,7 @@ export const OnshapeSync = ({
           documentId,
           versionId,
           elementId,
-          configurationValues
+          configurationPayload
         )
       );
     }
@@ -312,7 +339,7 @@ export const OnshapeSync = ({
     formData.append("versionId", versionId ?? "");
     formData.append("elementId", elementId ?? "");
     formData.append("makeMethodId", makeMethodId);
-    formData.append("configuration", JSON.stringify(configurationValues));
+    formData.append("configuration", JSON.stringify(configurationPayload));
     formData.append("rows", JSON.stringify(bomRows));
     upsertBomFetcher.submit(formData, {
       method: "post",

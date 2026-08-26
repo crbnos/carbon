@@ -775,7 +775,14 @@ Do NOT run `pnpm run generate:types`; nothing about the schema changed. Do not c
    it is NOT wrapped in `<Trans>` (it is data, not UI copy). Every control gets
    `disabled`/`isDisabled` from the existing `isDisabled` prop, matching the three rows above.
 
-7. Pass the values through both submit paths:
+7. Pass the values through both submit paths. **Send the FORMATTED payload, not the raw
+   values** — `formatParameterValue` (Task 1) appends a QUANTITY's unit, and only this
+   side has the parameter DEFINITIONS needed to do that, so the routes stay dumb
+   string-passers. Derive it with a `useMemo` over `configurationParameters` +
+   `configurationValues`. The controls keep the raw typed values (a QUANTITY stays a
+   number so `NumberField` can bind to it); the seeding effect coerces a persisted
+   `"500 mm"` back with `Number.parseFloat`, falling back to the default when unparseable
+   rather than seeding NaN:
 
 ```tsx
   const loadBom = () => {
