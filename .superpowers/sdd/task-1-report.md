@@ -35,5 +35,18 @@ The exporter now exposes a pure CSV serializer and keeps the existing browser do
 
 ## Concerns
 
-- The catalog is intentionally macro-free so it can be tested under plain Vitest. Its presentation strings are therefore plain English metadata rather than Lingui macro descriptors; the reports route currently uses those strings directly, so localized report labels/descriptions will need a later presentation-layer mapping if those catalog entries are expected to participate in runtime translation.
+- Resolved in the reviewer fix below: catalog copy now uses Lingui message descriptors and the route translates it at presentation time.
 - Full ERP TypeScript verification remains unavailable because of pre-existing missing Lingui module declarations in the checkout.
+
+## Reviewer fix
+
+The catalog copy now uses Lingui `MessageDescriptor` values created with `msg` for labels, descriptions, and categories. The reports route translates those descriptors with its existing `t` function before rendering, preserving runtime localization while keeping the permission policy helper testable. The catalog test mocks `@lingui/core/macro` so plain Vitest can inspect descriptor metadata. Route authorization is unchanged. Raw route strings remain in the pure catalog because importing `path` would pull application/auth runtime dependencies into the plain Vitest contract test.
+
+Commands and output:
+
+- `apps/erp/node_modules/.bin/vitest.cmd run app/modules/accounting/ui/Reports/reportCatalog.test.ts`
+  - 3 tests passed.
+- `node_modules/.bin/biome.cmd check --write apps/erp/app/modules/accounting/ui/Reports/reportCatalog.ts apps/erp/app/modules/accounting/ui/Reports/reportCatalog.test.ts apps/erp/app/routes/x+/accounting+/reports.tsx`
+  - 3 files checked, no fixes required.
+- `apps/erp/node_modules/.bin/vitest.cmd run app/modules/accounting/ui/Reports`
+  - 4 files passed, 32 tests passed.

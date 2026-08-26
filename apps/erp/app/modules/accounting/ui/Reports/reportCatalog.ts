@@ -1,3 +1,5 @@
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import type { IconType } from "react-icons";
 import {
   LuArrowUpDown,
@@ -16,9 +18,9 @@ import type { Role } from "~/types";
 
 export type ReportDefinition = {
   key: string;
-  label: string;
-  description: string;
-  category: string;
+  label: MessageDescriptor;
+  description: MessageDescriptor;
+  category: MessageDescriptor;
   route: string;
   defaultPinned: boolean;
   allowedRole: Role;
@@ -30,11 +32,11 @@ export type ReportDefinition = {
 export const reportCatalog: readonly ReportDefinition[] = [
   {
     key: "income-statement",
-    label: "Income Statement",
-    description: "Revenue and expenses over a period",
+    label: msg`Income Statement`,
+    description: msg`Revenue and expenses over a period`,
     route: "/x/reports/income-statement",
     icon: LuTrendingUp,
-    category: "Financial Statements",
+    category: msg`Financial Statements`,
     defaultPinned: true,
     allowedRole: "employee",
     requiredViewPermission: "accounting",
@@ -42,11 +44,11 @@ export const reportCatalog: readonly ReportDefinition[] = [
   },
   {
     key: "executive-pnl",
-    label: "Executive P&L",
-    description: "Condensed P&L with margins and key subtotals",
+    label: msg`Executive P&L`,
+    description: msg`Condensed P&L with margins and key subtotals`,
     route: "/x/reports/executive-pnl",
     icon: LuBriefcase,
-    category: "Financial Statements",
+    category: msg`Financial Statements`,
     defaultPinned: false,
     allowedRole: "employee",
     requiredViewPermission: "accounting",
@@ -54,11 +56,11 @@ export const reportCatalog: readonly ReportDefinition[] = [
   },
   {
     key: "balance-sheet",
-    label: "Balance Sheet",
-    description: "Assets, liabilities and equity as of a date",
+    label: msg`Balance Sheet`,
+    description: msg`Assets, liabilities and equity as of a date`,
     route: "/x/reports/balance-sheet",
     icon: LuScale,
-    category: "Financial Statements",
+    category: msg`Financial Statements`,
     defaultPinned: true,
     allowedRole: "employee",
     requiredViewPermission: "accounting",
@@ -66,11 +68,11 @@ export const reportCatalog: readonly ReportDefinition[] = [
   },
   {
     key: "trial-balance",
-    label: "Trial Balance",
-    description: "Account balances with debits and credits",
+    label: msg`Trial Balance`,
+    description: msg`Account balances with debits and credits`,
     route: "/x/reports/trial-balance",
     icon: LuFileSpreadsheet,
-    category: "Close Reports",
+    category: msg`Close Reports`,
     defaultPinned: true,
     allowedRole: "employee",
     requiredViewPermission: "accounting",
@@ -78,11 +80,11 @@ export const reportCatalog: readonly ReportDefinition[] = [
   },
   {
     key: "inventory-valuation",
-    label: "Inventory Valuation",
-    description: "On-hand value by location or item, with GL tie-out",
+    label: msg`Inventory Valuation`,
+    description: msg`On-hand value by location or item, with GL tie-out`,
     route: "/x/reports/inventory-valuation",
     icon: LuBoxes,
-    category: "Close Reports",
+    category: msg`Close Reports`,
     defaultPinned: false,
     allowedRole: "employee",
     requiredViewPermission: "accounting",
@@ -90,11 +92,11 @@ export const reportCatalog: readonly ReportDefinition[] = [
   },
   {
     key: "revenue",
-    label: "Revenue",
-    description: "Slice revenue by customer, customer type, or any dimension",
+    label: msg`Revenue`,
+    description: msg`Slice revenue by customer, customer type, or any dimension`,
     route: "/x/reports/analytics/revenue",
     icon: LuUsers,
-    category: "Analytics",
+    category: msg`Analytics`,
     defaultPinned: false,
     allowedRole: "employee",
     requiredViewPermission: "accounting",
@@ -102,11 +104,11 @@ export const reportCatalog: readonly ReportDefinition[] = [
   },
   {
     key: "expenses",
-    label: "Expenses",
-    description: "Slice expenses by location, cost center, or any dimension",
+    label: msg`Expenses`,
+    description: msg`Slice expenses by location, cost center, or any dimension`,
     route: "/x/reports/analytics/expenses",
     icon: LuTruck,
-    category: "Analytics",
+    category: msg`Analytics`,
     defaultPinned: false,
     allowedRole: "employee",
     requiredViewPermission: "accounting",
@@ -114,12 +116,11 @@ export const reportCatalog: readonly ReportDefinition[] = [
   },
   {
     key: "purchases",
-    label: "Purchases",
-    description:
-      "Spend by supplier, item, or category — your biggest cost drivers",
+    label: msg`Purchases`,
+    description: msg`Spend by supplier, item, or category — your biggest cost drivers`,
     route: "/x/reports/purchases",
     icon: LuHandCoins,
-    category: "Analytics",
+    category: msg`Analytics`,
     defaultPinned: false,
     allowedRole: "employee",
     requiredViewPermission: "accounting",
@@ -127,11 +128,11 @@ export const reportCatalog: readonly ReportDefinition[] = [
   },
   {
     key: "assets",
-    label: "Assets",
-    description: "Slice asset activity by location, item, or any dimension",
+    label: msg`Assets`,
+    description: msg`Slice asset activity by location, item, or any dimension`,
     route: "/x/reports/analytics/assets",
     icon: LuBanknote,
-    category: "Analytics",
+    category: msg`Analytics`,
     defaultPinned: false,
     allowedRole: "employee",
     requiredViewPermission: "accounting",
@@ -139,11 +140,11 @@ export const reportCatalog: readonly ReportDefinition[] = [
   },
   {
     key: "inventory-change",
-    label: "Inventory",
-    description: "What drove inventory up or down, by any dimension",
+    label: msg`Inventory`,
+    description: msg`What drove inventory up or down, by any dimension`,
     route: "/x/reports/analytics/inventory-change",
     icon: LuArrowUpDown,
-    category: "Analytics",
+    category: msg`Analytics`,
     defaultPinned: false,
     allowedRole: "employee",
     requiredViewPermission: "accounting",
@@ -151,11 +152,11 @@ export const reportCatalog: readonly ReportDefinition[] = [
   },
   {
     key: "scrap",
-    label: "Scrap",
-    description: "Biggest causes of scrap by reason, item, or work center",
+    label: msg`Scrap`,
+    description: msg`Biggest causes of scrap by reason, item, or work center`,
     route: "/x/reports/analytics/scrap",
     icon: LuRecycle,
-    category: "Analytics",
+    category: msg`Analytics`,
     defaultPinned: false,
     allowedRole: "employee",
     requiredViewPermission: "accounting",
@@ -163,11 +164,11 @@ export const reportCatalog: readonly ReportDefinition[] = [
   },
   {
     key: "ar-aging",
-    label: "AR Aging",
-    description: "Open receivables by customer and age",
+    label: msg`AR Aging`,
+    description: msg`Open receivables by customer and age`,
     route: "/x/reports/ar-aging",
     icon: LuHandCoins,
-    category: "Aging",
+    category: msg`Aging`,
     defaultPinned: false,
     allowedRole: "employee",
     requiredViewPermission: "accounting",
@@ -175,11 +176,11 @@ export const reportCatalog: readonly ReportDefinition[] = [
   },
   {
     key: "ap-aging",
-    label: "AP Aging",
-    description: "Open payables by supplier and age",
+    label: msg`AP Aging`,
+    description: msg`Open payables by supplier and age`,
     route: "/x/reports/ap-aging",
     icon: LuBanknote,
-    category: "Aging",
+    category: msg`Aging`,
     defaultPinned: false,
     allowedRole: "employee",
     requiredViewPermission: "accounting",

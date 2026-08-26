@@ -123,10 +123,12 @@ export default function ReportsIndexRoute() {
     () =>
       reportCatalog.map((report) => ({
         ...report,
-        name: report.label,
+        name: t(report.label),
+        description: t(report.description),
+        category: t(report.category),
         to: report.route
       })),
-    []
+    [t]
   );
 
   // Persisted overrides + optimistic in-flight toggle

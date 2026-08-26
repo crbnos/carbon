@@ -1,4 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@lingui/core/macro", () => ({
+  msg: (parts: TemplateStringsArray) => ({
+    id: parts[0],
+    message: parts[0]
+  })
+}));
+
 import { getVisibleReportCatalog, reportCatalog } from "./reportCatalog";
 
 describe("reportCatalog", () => {
@@ -9,9 +17,18 @@ describe("reportCatalog", () => {
     );
 
     for (const report of reportCatalog) {
-      expect(report.label).toBeTruthy();
-      expect(report.description).toBeTruthy();
-      expect(report.category).toBeTruthy();
+      expect(report.label).toMatchObject({
+        id: expect.any(String),
+        message: expect.any(String)
+      });
+      expect(report.description).toMatchObject({
+        id: expect.any(String),
+        message: expect.any(String)
+      });
+      expect(report.category).toMatchObject({
+        id: expect.any(String),
+        message: expect.any(String)
+      });
       expect(report.route).toMatch(/^\/x\//);
       expect(report.defaultPinned).toEqual(expect.any(Boolean));
       expect(report.allowedRole).toBe("employee");
