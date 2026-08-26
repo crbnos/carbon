@@ -8,6 +8,7 @@ vi.mock("@lingui/core/macro", () => ({
 }));
 
 import {
+  filterReportPinsByVisibleEntries,
   filterSavedViewsByVisibleReportKeys,
   getVisibleReportCatalog,
   reportCatalog
@@ -111,5 +112,28 @@ describe("reportCatalog", () => {
         visibleReports
       })
     ).toEqual([savedViews[0]]);
+  });
+
+  it("keeps only visible report pins and surviving saved-view pins", () => {
+    const visibleReports = reportCatalog.filter(
+      (report) => report.key === "income-statement"
+    );
+    const savedViews = [
+      { id: "visible-view", reportKey: "income-statement" }
+    ];
+    const pins = [
+      { reportKey: "income-statement", pinned: true },
+      { reportKey: "executive-pnl", pinned: true },
+      { reportKey: "view:visible-view", pinned: true },
+      { reportKey: "view:hidden-view", pinned: true }
+    ];
+
+    expect(
+      filterReportPinsByVisibleEntries({
+        pins,
+        visibleReports,
+        savedViews
+      })
+    ).toEqual([pins[0], pins[2]]);
   });
 });

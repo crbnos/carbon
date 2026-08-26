@@ -39,6 +39,7 @@ import {
 import type { Role } from "~/types";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+import { getSerializedReportsHubData } from "./reports.loader";
 
 export const meta: MetaFunction = () => {
   return [{ title: "Carbon | Reports" }];
@@ -60,11 +61,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getReportViews(client, { companyId })
   ]);
 
-  return {
+  return getSerializedReportsHubData({
     currentUserId: userId,
     pinOverrides: pins.data ?? [],
     savedViews: savedViews.data ?? []
-  };
+  });
 }
 
 export async function action({ request }: ActionFunctionArgs) {

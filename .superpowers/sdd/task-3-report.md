@@ -59,3 +59,42 @@
 
 - There is no route-level automated test coverage in this task; the pure helper coverage is present, but the route wiring is validated by inspection plus the focused catalog test only.
 - App-wide TypeScript verification was inconclusive in this environment because the direct `tsc` process did not finish within the bounded waits.
+
+## Reviewer Follow-Up Fix
+
+- Fixed the loader-boundary exposure gap called out in review.
+- The loader now filters serialized `savedViews` and `pinOverrides` server-side before returning hub data to the browser.
+- Client-side `usePermissions()` filtering remains in place as defense in depth.
+
+### Follow-Up Files
+
+- `apps/erp/app/modules/accounting/ui/Reports/reportCatalog.ts`
+- `apps/erp/app/modules/accounting/ui/Reports/reportCatalog.test.ts`
+- `apps/erp/app/modules/accounting/ui/Reports/index.ts`
+- `apps/erp/app/routes/x+/accounting+/reports.tsx`
+- `apps/erp/app/routes/x+/accounting+/reports.loader.ts`
+- `apps/erp/app/routes/x+/accounting+/reports.test.ts`
+
+### Follow-Up Commands And Output
+
+1. Red step: added hidden-pin / serialized-loader assertions
+   - Command:
+     - `node 'E:/6.Factory OS/carbon-runtime/carbon/node_modules/.pnpm/vitest@4.1.6_@opentelemetry_10c1bba3f31dad38ba365baa319743ea/node_modules/vitest/vitest.mjs' run 'app/modules/accounting/ui/Reports/reportCatalog.test.ts' 'app/routes/x+/accounting+/reports.test.ts'`
+   - Result:
+     - `1 failed test, 1 failed suite`
+     - Failure reasons:
+       - `TypeError: filterReportPinsByVisibleEntries is not a function`
+       - route-focused suite initially failed before the pure loader helper/import path was isolated
+
+2. Green step: reran the requested focused suites after the fix
+   - Command:
+     - `node 'E:/6.Factory OS/carbon-runtime/carbon/node_modules/.pnpm/vitest@4.1.6_@opentelemetry_10c1bba3f31dad38ba365baa319743ea/node_modules/vitest/vitest.mjs' run 'app/modules/accounting/ui/Reports/reportCatalog.test.ts' 'app/routes/x+/accounting+/reports.test.ts'`
+   - Result:
+     - `Test Files 2 passed`
+     - `Tests 7 passed`
+
+### Follow-Up Self-Review
+
+- Hidden report pins no longer serialize from the loader payload.
+- Saved-view pins now survive only when the underlying saved view survives visible-report filtering.
+- The server-side visibility policy is tied to the same authoritative employee/accounting gate the route already enforces.
