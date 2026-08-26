@@ -578,7 +578,7 @@ describe("pivotToCsvRows", () => {
     expect(csv[csv.length - 1]).toEqual([csvIdentifier("Total"), 10, 10]);
   });
 
-  it("exports the rendered percentage mode", () => {
+  it("exports percentage mode as stable numeric cells with translated units in headers", () => {
     const built = buildPivotTree({
       groups: [
         group("a", null, "c1", 25),
@@ -601,19 +601,19 @@ describe("pivotToCsvRows", () => {
         measure: "amount",
         columnLabels: { c1: "January", c2: "February" },
         percentOfTotal: true,
-        locale: "de-DE",
+        percentLabel: "Anteil am Gesamtwert",
         totalLabel: "Gesamt"
       })
     ).toEqual([
       [
         "",
-        csvIdentifier("January"),
-        csvIdentifier("February"),
-        csvIdentifier("Gesamt")
+        csvIdentifier("January (Anteil am Gesamtwert)"),
+        csvIdentifier("February (Anteil am Gesamtwert)"),
+        csvIdentifier("Gesamt (Anteil am Gesamtwert)")
       ],
-      [csvIdentifier("Beta"), "75,0 %", "50,0 %", "62,5 %"],
-      [csvIdentifier("Alpha"), "25,0 %", "50,0 %", "37,5 %"],
-      [csvIdentifier("Gesamt"), "100,0 %", "100,0 %", "100,0 %"]
+      [csvIdentifier("Beta"), 75, 50, 62.5],
+      [csvIdentifier("Alpha"), 25, 50, 37.5],
+      [csvIdentifier("Gesamt"), 100, 100, 100]
     ]);
   });
 

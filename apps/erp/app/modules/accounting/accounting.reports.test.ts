@@ -402,9 +402,12 @@ describe("getConsolidatedPeriodSeries", () => {
 
 function makePivotClient(options: {
   dimensionLookupError?: boolean;
+  dimensionMetadataIncomplete?: boolean;
   dimensionMetadataDataNull?: boolean;
+  dimensionValueMetadataIncomplete?: boolean;
   journalPivotDataNull?: boolean;
   purchaseLookupError?: boolean;
+  purchaseMetadataIncomplete?: boolean;
   purchaseMetadataDataNull?: boolean;
   purchasePivotDataNull?: boolean;
 }) {
@@ -425,17 +428,34 @@ function makePivotClient(options: {
       if (table === "dimension") {
         return options.dimensionMetadataDataNull
           ? queryResult(null)
-          : queryResult([{ id: "dimension-1", entityType: "Custom" }]);
+          : queryResult(
+              options.dimensionMetadataIncomplete
+                ? []
+                : [{ id: "dimension-1", entityType: "Custom" }]
+            );
       }
-      if (table === "dimensionValue" && options.dimensionLookupError) {
-        return queryResult(null, { message: "dimension value lookup failed" });
+      if (table === "dimensionValue") {
+        if (options.dimensionLookupError) {
+          return queryResult(null, {
+            message: "dimension value lookup failed"
+          });
+        }
+        return queryResult(
+          options.dimensionValueMetadataIncomplete
+            ? []
+            : [{ id: "value-1", name: "Value 1" }]
+        );
       }
       if (table === "supplier") {
         return options.purchaseMetadataDataNull
           ? queryResult(null)
           : options.purchaseLookupError
             ? queryResult(null, { message: "purchase value lookup failed" })
-            : queryResult([{ id: "value-1", name: "Supplier 1" }]);
+            : queryResult(
+                options.purchaseMetadataIncomplete
+                  ? []
+                  : [{ id: "value-1", name: "Supplier 1" }]
+              );
       }
       return queryResult([]);
     },
@@ -527,6 +547,56 @@ describe("pivot metadata completeness", () => {
     );
   });
 
+  it("fails closed when requested dimension metadata is omitted", async () => {
+    const result = await getDimensionPivot(
+      makePivotClient({ dimensionMetadataIncomplete: true }),
+      {
+        companyId: "company-1",
+        companyGroupId: "group-1",
+        report: { accountScope: { classes: ["Revenue"] } },
+        startDate: "2026-01-01",
+        endDate: "2026-01-31",
+        periodEnds: [bucket.end],
+        state: {
+          rows: ["dimension-1"],
+          columnAxis: { type: "period" },
+          filters: [],
+          accountIds: []
+        }
+      } as never
+    );
+
+    expect(result.data).toBeNull();
+    expect(result.error?.message).toContain(
+      "Dimension metadata source returned incomplete data"
+    );
+  });
+
+  it("fails closed when requested dimension value metadata is omitted", async () => {
+    const result = await getDimensionPivot(
+      makePivotClient({ dimensionValueMetadataIncomplete: true }),
+      {
+        companyId: "company-1",
+        companyGroupId: "group-1",
+        report: { accountScope: { classes: ["Revenue"] } },
+        startDate: "2026-01-01",
+        endDate: "2026-01-31",
+        periodEnds: [bucket.end],
+        state: {
+          rows: ["dimension-1"],
+          columnAxis: { type: "period" },
+          filters: [],
+          accountIds: []
+        }
+      } as never
+    );
+
+    expect(result.data).toBeNull();
+    expect(result.error?.message).toContain(
+      "Dimension value metadata source returned incomplete data"
+    );
+  });
+
   it("propagates dimension value lookup errors", async () => {
     const result = await getDimensionPivot(
       makePivotClient({ dimensionLookupError: true }),
@@ -570,6 +640,29 @@ describe("pivot metadata completeness", () => {
     expect(result.data).toBeNull();
     expect(result.error?.message).toContain(
       "Purchase pivot metadata source returned no data"
+    );
+  });
+
+  it("fails closed when requested purchase value metadata is omitted", async () => {
+    const result = await getPurchaseLinePivot(
+      makePivotClient({ purchaseMetadataIncomplete: true }),
+      {
+        companyId: "company-1",
+        startDate: "2026-01-01",
+        endDate: "2026-01-31",
+        periodEnds: [bucket.end],
+        state: {
+          rows: ["supplier"],
+          columnAxis: { type: "period" },
+          filters: [],
+          accountIds: []
+        }
+      } as never
+    );
+
+    expect(result.data).toBeNull();
+    expect(result.error?.message).toContain(
+      "Dimension value metadata source returned incomplete data"
     );
   });
 

@@ -419,7 +419,9 @@ export function ARAPWorkbench({
       counterpartyRow: t`Counterparty`,
       invoiceRow: t`Invoice`,
       customer: t`Customer`,
-      supplier: t`Supplier`
+      supplier: t`Supplier`,
+      dueDateMethod: t`Due Date`,
+      documentDateMethod: t`Document Date`
     }),
     [t]
   );

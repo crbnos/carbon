@@ -260,14 +260,42 @@ describe("buildARAPAgingExportRows", () => {
         asOfDate: "日期",
         rowType: "行类型",
         counterpartyRow: "往来单位",
-        counterpartyType: "往来单位类型"
+        counterpartyType: "往来单位类型",
+        dueDateMethod: "按到期日"
       }
     });
 
     expect(rows[0]).toMatchObject({
       日期: "2026-05-31",
       行类型: "往来单位",
-      往来单位类型: "Customer"
+      往来单位类型: "Customer",
+      "Aging Method": "按到期日"
     });
+
+    const documentDateRows = buildARAPAgingExportRows({
+      side: "ar",
+      baseCurrencyCode: "USD",
+      asOfDate: "2026-05-31",
+      agingMethod: "documentDate",
+      bucketDays: [30, 60, 90],
+      aging: [],
+      open: [
+        {
+          invoiceId: "inv-1",
+          invoiceNumber: "INV-001",
+          dateDue: null,
+          currencyCode: "USD",
+          exchangeRate: 1,
+          totalAmount: 10,
+          settled: 0,
+          openInCurrency: 10,
+          openInBase: 10,
+          customerId: "cust-1"
+        }
+      ],
+      labels: { documentDateMethod: "按单据日" }
+    });
+
+    expect(documentDateRows[0]).toHaveProperty("Aging Method", "按单据日");
   });
 });

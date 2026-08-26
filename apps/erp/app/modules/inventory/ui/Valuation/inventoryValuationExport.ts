@@ -171,6 +171,8 @@ export type InventoryValuationExportLabels = {
   groupRow: string;
   detailRow: string;
   grandTotalRow: string;
+  locationGroupBy: string;
+  itemGroupBy: string;
 };
 
 const defaultLabels: InventoryValuationExportLabels = {
@@ -196,7 +198,9 @@ const defaultLabels: InventoryValuationExportLabels = {
   allLocations: "All Locations",
   groupRow: "Group",
   detailRow: "Detail",
-  grandTotalRow: "Grand Total"
+  grandTotalRow: "Grand Total",
+  locationGroupBy: "location",
+  itemGroupBy: "item"
 };
 
 type InventoryValuationExportArgs = Omit<
@@ -225,6 +229,8 @@ export function buildInventoryValuationExportRows({
     groupBy,
     totalLabel
   });
+  const groupByLabel =
+    groupBy === "location" ? labels.locationGroupBy : labels.itemGroupBy;
 
   return model.rows.map((row) => {
     const isGroup = row.kind === "group";
@@ -235,7 +241,7 @@ export function buildInventoryValuationExportRows({
 
     return {
       [labels.asOfDate]: asOfDate,
-      [labels.groupBy]: groupBy,
+      [labels.groupBy]: groupByLabel,
       [labels.locationFilter]: locationId
         ? (locationName ?? locationId)
         : labels.allLocations,

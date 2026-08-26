@@ -68,6 +68,8 @@ export type ARAPAgingExportLabels = {
   invoiceRow: string;
   customer: string;
   supplier: string;
+  dueDateMethod: string;
+  documentDateMethod: string;
 };
 
 const defaultLabels: ARAPAgingExportLabels = {
@@ -95,7 +97,9 @@ const defaultLabels: ARAPAgingExportLabels = {
   counterpartyRow: "Counterparty",
   invoiceRow: "Invoice",
   customer: "Customer",
-  supplier: "Supplier"
+  supplier: "Supplier",
+  dueDateMethod: "dueDate",
+  documentDateMethod: "documentDate"
 };
 
 const partyIdOf = (
@@ -122,6 +126,10 @@ export function buildARAPAgingExportRows({
     `${b3 + 1}+`
   ];
   const sideLabel = side.toUpperCase();
+  const agingMethodLabel =
+    agingMethod === "dueDate"
+      ? labels.dueDateMethod
+      : labels.documentDateMethod;
   const counterpartyType = side === "ar" ? labels.customer : labels.supplier;
   const rows: Record<string, unknown>[] = [];
 
@@ -137,7 +145,7 @@ export function buildARAPAgingExportRows({
     rows.push({
       [labels.asOfDate]: asOfDate,
       [labels.side]: sideLabel,
-      [labels.agingMethod]: agingMethod,
+      [labels.agingMethod]: agingMethodLabel,
       [labels.bucketDays]: bucketDays.join(","),
       [labels.baseCurrency]: baseCurrencyCode,
       [labels.rowType]: labels.invoiceRow,
@@ -171,7 +179,7 @@ export function buildARAPAgingExportRows({
     rows.push({
       [labels.asOfDate]: asOfDate,
       [labels.side]: sideLabel,
-      [labels.agingMethod]: agingMethod,
+      [labels.agingMethod]: agingMethodLabel,
       [labels.bucketDays]: bucketDays.join(","),
       [labels.baseCurrency]: baseCurrencyCode,
       [labels.rowType]: labels.counterpartyRow,

@@ -247,7 +247,8 @@ describe("buildInventoryValuationExportRows", () => {
         asOfDate: "日期",
         rowType: "行类型",
         group: "分组",
-        pctOfTotal: "占比"
+        pctOfTotal: "占比",
+        locationGroupBy: "按地点"
       }
     });
 
@@ -255,5 +256,35 @@ describe("buildInventoryValuationExportRows", () => {
     expect(rows[0]).toHaveProperty("行类型", "Group");
     expect(rows[0]).toHaveProperty("分组", "Main");
     expect(rows[0]).toHaveProperty("占比", 1);
+    expect(rows[0]).toHaveProperty("Group By", "按地点");
+
+    const itemGroupRows = buildInventoryValuationExportRows({
+      rows: [
+        {
+          locationId: "loc-1",
+          locationName: "Main",
+          itemId: "item-1",
+          readableIdWithRevision: "PART-001",
+          name: "Widget",
+          thumbnailPath: "",
+          type: "Part",
+          costingMethod: "Standard",
+          replenishmentSystem: "Make",
+          quantityOnHand: 1,
+          quantityOnHold: 0,
+          quantityRejected: 0,
+          unitOfMeasureCode: "EA",
+          unitCost: 2,
+          totalValue: 2
+        }
+      ],
+      asOfDate: "2026-05-31",
+      groupBy: "item",
+      locationId: null,
+      locationName: null,
+      labels: { itemGroupBy: "按物料" }
+    });
+
+    expect(itemGroupRows[0]).toHaveProperty("Group By", "按物料");
   });
 });

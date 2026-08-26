@@ -315,9 +315,10 @@ export function applyPercentOfTotal(
 }
 
 /**
- * CSV rows exactly as rendered: header row ("", column labels, "Total"), one
- * row per flat-tree node (level-2 labels indented two spaces), and a final
- * totals row.
+ * CSV rows for the rendered pivot: header row ("", column labels, "Total"),
+ * one row per flat-tree node (level-2 labels indented two spaces), and a final
+ * totals row. Percentage mode keeps cells numeric and puts the translated unit
+ * in the column labels so spreadsheet calculations remain possible.
  */
 export function pivotToCsvRows(args: {
   flatTree: FlatTreeItem<PivotRowNode>[];
@@ -327,7 +328,7 @@ export function pivotToCsvRows(args: {
   measure: PivotMeasure;
   columnLabels: Record<string, string>;
   percentOfTotal?: boolean;
-  locale?: string;
+  percentLabel?: string;
   totalLabel?: string;
 }): CsvCell[][] {
   const {
@@ -338,25 +339,22 @@ export function pivotToCsvRows(args: {
     measure,
     columnLabels,
     percentOfTotal = false,
-    locale,
+    percentLabel = "% of Total",
     totalLabel = "Total"
   } = args;
 
   if (flatTree.length === 0) return [];
 
-  const percentFormatter = new Intl.NumberFormat(locale, {
-    style: "percent",
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1
-  });
-  const formatPercent = (value: number): string =>
-    percentFormatter.format(value / 100);
+  const valueColumnLabel = (label: string): string =>
+    percentOfTotal ? `${label} (${percentLabel})` : label;
   const grandTotalValue = getPivotMeasureValue(grandTotal, measure);
   const rows: CsvCell[][] = [];
   rows.push([
     "",
-    ...columnKeys.map((key) => csvIdentifier(columnLabels[key] ?? key)),
-    csvIdentifier(totalLabel)
+    ...columnKeys.map((key) =>
+      csvIdentifier(valueColumnLabel(columnLabels[key] ?? key))
+    ),
+    csvIdentifier(valueColumnLabel(totalLabel))
   ]);
 
   for (const node of flatTree) {
@@ -369,13 +367,13 @@ export function pivotToCsvRows(args: {
       csvIdentifier(`${indent}${node.data.label}`),
       ...columnKeys.map((key) =>
         percentOfTotal
-          ? formatPercent(percents?.[key] ?? 0)
+          ? (percents?.[key] ?? 0)
           : getPivotMeasureValue(node.data.cells[key], measure)
       ),
       percentOfTotal
-        ? formatPercent(
-            grandTotalValue === 0 ? 0 : (rowTotalValue / grandTotalValue) * 100
-          )
+        ? grandTotalValue === 0
+          ? 0
+          : (rowTotalValue / grandTotalValue) * 100
         : rowTotalValue
     ]);
   }
@@ -384,14 +382,12 @@ export function pivotToCsvRows(args: {
     csvIdentifier(totalLabel),
     ...columnKeys.map((key) =>
       percentOfTotal
-        ? formatPercent(
-            getPivotMeasureValue(columnTotals[key], measure) === 0 ? 0 : 100
-          )
+        ? getPivotMeasureValue(columnTotals[key], measure) === 0
+          ? 0
+          : 100
         : getPivotMeasureValue(columnTotals[key], measure)
     ),
-    percentOfTotal
-      ? formatPercent(grandTotalValue === 0 ? 0 : 100)
-      : grandTotalValue
+    percentOfTotal ? (grandTotalValue === 0 ? 0 : 100) : grandTotalValue
   ]);
 
   return rows;

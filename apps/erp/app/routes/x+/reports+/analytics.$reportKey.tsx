@@ -572,7 +572,7 @@ export default function AnalyticsReportRoute() {
       measure: state.measure,
       columnLabels,
       percentOfTotal: state.percentOfTotal,
-      locale,
+      percentLabel: t`% of Total`,
       totalLabel: t`Total`
     });
     if (rows.length === 0) return;

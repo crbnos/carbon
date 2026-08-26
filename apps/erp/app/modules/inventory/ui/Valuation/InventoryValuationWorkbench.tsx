@@ -388,7 +388,9 @@ export function InventoryValuationWorkbench({
       allLocations: t`All Locations`,
       groupRow: t`Group`,
       detailRow: t`Detail`,
-      grandTotalRow: t`Grand Total`
+      grandTotalRow: t`Grand Total`,
+      locationGroupBy: t`Location`,
+      itemGroupBy: t`Item`
     }),
     [t]
   );

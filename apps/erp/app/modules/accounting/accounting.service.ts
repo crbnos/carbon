@@ -1220,10 +1220,11 @@ export async function getDimensionPivot(
 
   let valueNames: Record<string, string> = {};
   if (valueIdsByDimension.size > 0) {
+    const requestedDimensionIds = [...valueIdsByDimension.keys()];
     const dimensions = await client
       .from("dimension")
       .select("id, entityType")
-      .in("id", [...valueIdsByDimension.keys()]);
+      .in("id", requestedDimensionIds);
 
     if (dimensions.error) return { data: null, error: dimensions.error };
     if (dimensions.data == null) {
@@ -1231,6 +1232,15 @@ export async function getDimensionPivot(
         data: null,
         error: {
           message: "Dimension metadata source returned no data"
+        } as PostgrestError
+      };
+    }
+    const returnedDimensionIds = new Set(dimensions.data.map((d) => d.id));
+    if (requestedDimensionIds.some((id) => !returnedDimensionIds.has(id))) {
+      return {
+        data: null,
+        error: {
+          message: "Dimension metadata source returned incomplete data"
         } as PostgrestError
       };
     }
@@ -1561,8 +1571,10 @@ export async function getPurchaseLinePivotLines(
  * dimension's entityType. Entity-backed types resolve through the shared
  * entityType → source-table mapping (getEntityValuesByIds — the same helper
  * getJournalLineDimensions uses); Custom resolves from dimensionValue.
- * A missing response is returned as null data so callers can produce their
- * context-specific incomplete result. Query errors are preserved.
+ * Missing responses return null data so callers can produce their
+ * context-specific incomplete result. Partial responses return an error so no
+ * requested id can silently fall back to a raw identifier. Query errors are
+ * preserved.
  */
 type DimensionValueBatch = {
   data: { id: string; name: string }[] | null;
@@ -1579,21 +1591,38 @@ async function resolveDimensionValueNames(
   const batches = await Promise.all(
     requests.map(async ({ entityType, valueIds }) => {
       if (valueIds.length === 0) return { data: [], error: null };
+      let batch: DimensionValueBatch;
       if (entityType === "Custom") {
         const res = await client
           .from("dimensionValue")
           .select("id, name")
           .in("id", valueIds);
-        return {
+        batch = {
+          data: res.data,
+          error: res.error
+        } as DimensionValueBatch;
+      } else {
+        const res = await getEntityValuesByIds(client, entityType, valueIds);
+        batch = {
           data: res.data,
           error: res.error
         } as DimensionValueBatch;
       }
-      const res = await getEntityValuesByIds(client, entityType, valueIds);
-      return {
-        data: res.data,
-        error: res.error
-      } as DimensionValueBatch;
+
+      if (!batch.error && batch.data !== null) {
+        const returnedIds = new Set(batch.data.map((item) => item.id));
+        if (valueIds.some((id) => !returnedIds.has(id))) {
+          return {
+            data: null,
+            error: {
+              message:
+                "Dimension value metadata source returned incomplete data"
+            } as PostgrestError
+          } as DimensionValueBatch;
+        }
+      }
+
+      return batch;
     })
   );
 
