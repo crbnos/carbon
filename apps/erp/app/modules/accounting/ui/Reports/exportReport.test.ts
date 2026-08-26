@@ -118,6 +118,14 @@ describe("serializeCsv", () => {
   });
 });
 
+describe("csvIdentifier", () => {
+  it("leaves missing identifiers as empty cells", () => {
+    expect(serializeCsv([{ Identifier: csvIdentifier(null) }])).toBe(
+      "Identifier\r\n"
+    );
+  });
+});
+
 describe("canExportExecutivePnl", () => {
   it("rejects an empty source report", () => {
     expect(canExportExecutivePnl([])).toBe(false);

@@ -15,8 +15,10 @@ export type CsvTextCell = {
 
 export type CsvCell = string | number | CsvTextCell;
 
-export function csvIdentifier(value: string | null | undefined): CsvTextCell {
-  return { __csvText: true, value: value ?? "" };
+export function csvIdentifier(
+  value: string | null | undefined
+): CsvTextCell | string {
+  return value == null ? "" : { __csvText: true, value };
 }
 
 export function csvText(
