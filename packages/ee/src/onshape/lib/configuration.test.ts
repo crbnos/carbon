@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildBillOfMaterialsPath,
   formatParameterValue,
   type OnshapeConfigurationParameter,
   readConfigurationParameters
@@ -192,5 +193,50 @@ describe("formatParameterValue", () => {
     expect(formatParameterValue(booleanParameter, true)).toBe("true");
     expect(formatParameterValue(booleanParameter, false)).toBe("false");
     expect(formatParameterValue(stringParameter, "ACME")).toBe("ACME");
+  });
+});
+
+describe("buildBillOfMaterialsPath", () => {
+  // The literal Carbon has always sent, pasted verbatim. This is the backward-compatibility
+  // guarantee: an unconfigured import must produce a byte-identical URL, so an existing
+  // customer's BOM cannot shift underneath them when this feature ships.
+  const LEGACY_PATH =
+    "/api/v10/assemblies/d/DID/v/VID/e/EID/bom?indented=true&multiLevel=true&generateIfAbsent=true&onlyVisibleColumns=false&includeItemMicroversions=false&includeTopLevelAssemblyRow=true&thumbnail=false";
+
+  it("is byte-identical to the pre-feature path when no configuration is given", () => {
+    expect(buildBillOfMaterialsPath("DID", "VID", "EID")).toBe(LEGACY_PATH);
+  });
+
+  it("is byte-identical for an explicitly undefined or empty configuration", () => {
+    expect(buildBillOfMaterialsPath("DID", "VID", "EID", undefined)).toBe(
+      LEGACY_PATH
+    );
+    expect(buildBillOfMaterialsPath("DID", "VID", "EID", "")).toBe(LEGACY_PATH);
+  });
+
+  it("appends a URL-encoded configuration when one is given", () => {
+    const path = buildBillOfMaterialsPath(
+      "DID",
+      "VID",
+      "EID",
+      "List_abc=Default;Bool_x=true"
+    );
+
+    expect(path).toBe(
+      `${LEGACY_PATH}&configuration=List_abc%3DDefault%3BBool_x%3Dtrue`
+    );
+  });
+
+  it("encodes the characters Onshape configuration strings actually contain", () => {
+    const path = buildBillOfMaterialsPath(
+      "DID",
+      "VID",
+      "EID",
+      "List_sCW2T7xBCmN6an=_500_mm"
+    );
+
+    // `=` must not survive raw — it would be read as a second query separator.
+    expect(path).toContain("&configuration=List_sCW2T7xBCmN6an%3D_500_mm");
+    expect(path.split("&configuration=")[1]).not.toContain("=");
   });
 });

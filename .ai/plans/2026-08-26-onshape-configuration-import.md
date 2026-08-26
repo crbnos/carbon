@@ -12,7 +12,7 @@ it does** — renders one control per parameter. No migration, no schema change,
 ## Progress
 
 - [x] Task 1: Add configuration types + tolerant reader + `getElementConfiguration` to the ee client
-- [ ] Task 2: Add `encodeConfiguration` and thread `configuration` through `getBillOfMaterials`
+- [x] Task 2: Add `encodeConfiguration` and thread `configuration` through `getBillOfMaterials`
 - [ ] Task 3: New configuration loader route + path helper
 - [ ] Task 4: Accept and encode a configuration on the BOM route
 - [ ] Task 5: Persist the configuration on sync

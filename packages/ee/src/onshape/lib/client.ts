@@ -12,6 +12,7 @@ import {
   resolveIntegrationSecrets
 } from "../../integrations/secrets";
 import {
+  buildBillOfMaterialsPath,
   type OnshapeConfigurationParameter,
   readConfigurationParameters
 } from "./configuration";
@@ -278,11 +279,39 @@ export class OnshapeClient {
   async getBillOfMaterials(
     documentId: string,
     versionId: string,
-    elementId: string
+    elementId: string,
+    options: { configuration?: string } = {}
   ): Promise<any> {
     return this.request(
       "GET",
-      `/api/v10/assemblies/d/${documentId}/v/${versionId}/e/${elementId}/bom?indented=true&multiLevel=true&generateIfAbsent=true&onlyVisibleColumns=false&includeItemMicroversions=false&includeTopLevelAssemblyRow=true&thumbnail=false`
+      buildBillOfMaterialsPath(
+        documentId,
+        versionId,
+        elementId,
+        options.configuration
+      )
+    );
+  }
+
+  // Turn a parameter map into the encoded configuration string Onshape's own APIs expect.
+  // NEVER hand-build this string: parameter ids are generated (List_sCW2T7xBCmN6an=) and
+  // values with non-alphanumeric characters get encoding beyond plain URL-encoding.
+  // NOTE the path shape — it takes did/eid but NOT wvm/wvmid; the version is a QUERY param.
+  // `queryParam` is for appending to GET URLs; `encodedId` is for POST bodies
+  // (BTTranslateFormatParams.configuration).
+  async encodeConfiguration(
+    documentId: string,
+    elementId: string,
+    parameters: { parameterId: string; parameterValue: string }[],
+    versionId?: string
+  ): Promise<{ encodedId: string; queryParam: string }> {
+    const query = versionId
+      ? `?versionId=${encodeURIComponent(versionId)}`
+      : "";
+    return this.request<{ encodedId: string; queryParam: string }>(
+      "POST",
+      `/api/v10/elements/d/${documentId}/e/${elementId}/configurationencodings${query}`,
+      { parameters }
     );
   }
 

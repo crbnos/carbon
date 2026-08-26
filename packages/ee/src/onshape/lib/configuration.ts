@@ -82,3 +82,19 @@ export function formatParameterValue(
   }
   return String(value);
 }
+
+// The BOM path, built separately from the request so the configuration handling is
+// unit-testable without a network. Every flag here is the pre-existing behavior — only
+// `configuration` is new, and it is appended ONLY when non-empty so an unconfigured
+// import produces a byte-identical URL to the one Carbon has always sent.
+export function buildBillOfMaterialsPath(
+  documentId: string,
+  versionId: string,
+  elementId: string,
+  configuration?: string
+): string {
+  const base = `/api/v10/assemblies/d/${documentId}/v/${versionId}/e/${elementId}/bom?indented=true&multiLevel=true&generateIfAbsent=true&onlyVisibleColumns=false&includeItemMicroversions=false&includeTopLevelAssemblyRow=true&thumbnail=false`;
+  return configuration
+    ? `${base}&configuration=${encodeURIComponent(configuration)}`
+    : base;
+}
