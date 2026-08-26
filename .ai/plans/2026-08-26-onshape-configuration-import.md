@@ -17,7 +17,7 @@ it does** — renders one control per parameter. No migration, no schema change,
 - [x] Task 4: Accept and encode a configuration on the BOM route
 - [x] Task 5: Persist the configuration on sync
 - [x] Task 6: Render the configuration controls in `OnshapeSync`
-- [ ] Task 7: Extract and fill i18n strings
+- [x] Task 7: Extract and fill i18n strings
 - [ ] Task 8: Browser-verify the feature
 - [x] Task 9 (Phase 2, separable): Surface `configuration` on released revisions
 
