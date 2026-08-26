@@ -21,6 +21,7 @@ import { useCallback, useMemo, useState } from "react";
 import {
   LuChevronDown,
   LuChevronRight,
+  LuDownload,
   LuInfo,
   LuScale,
   LuTriangleAlert
@@ -35,11 +36,13 @@ import {
   usePermissions,
   useUrlParams
 } from "~/hooks";
+import { downloadCsv } from "~/modules/accounting/ui/Reports";
 import type {
   InventoryTieOutRow,
   InventoryValuationRow
 } from "~/modules/inventory";
 import { path } from "~/utils/path";
+import { buildInventoryValuationExportRows } from "./inventoryValuationExport";
 
 type InventoryValuationWorkbenchProps = {
   rows: InventoryValuationRow[];
@@ -453,6 +456,23 @@ export function InventoryValuationWorkbench({
   const hasVariance = (tieOut ?? []).some(
     (row) => Math.abs(Number(row.variance)) > VARIANCE_EPSILON
   );
+  const selectedLocationName =
+    locations.find((location) => location.id === locationId)?.name ?? null;
+  const exportRows = useMemo(
+    () =>
+      buildInventoryValuationExportRows({
+        rows,
+        asOfDate,
+        groupBy,
+        locationId,
+        locationName: selectedLocationName
+      }),
+    [rows, asOfDate, groupBy, locationId, selectedLocationName]
+  );
+  const onDownload = useCallback(() => {
+    if (exportRows.length === 0) return;
+    downloadCsv(exportRows, `inventory-valuation-${groupBy}-${asOfDate}.csv`);
+  }, [exportRows, groupBy, asOfDate]);
   const tieOutTotal = useMemo(() => {
     const list = tieOut ?? [];
     return {
@@ -579,6 +599,14 @@ export function InventoryValuationWorkbench({
           </PopoverContent>
         </Popover>
       ) : null}
+      <Button
+        variant="secondary"
+        leftIcon={<LuDownload />}
+        onClick={onDownload}
+        isDisabled={exportRows.length === 0}
+      >
+        <Trans>Download</Trans>
+      </Button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="secondary" rightIcon={<LuChevronDown />}>

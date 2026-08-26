@@ -24,6 +24,7 @@ import { useCallback, useMemo, useState } from "react";
 import {
   LuChevronDown,
   LuChevronRight,
+  LuDownload,
   LuScale,
   LuTriangleAlert,
   LuUser
@@ -33,7 +34,15 @@ import { CustomerAvatar, DateTime, SupplierAvatar, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { IndeterminateCheckbox } from "~/components/Table/components";
 import { useCurrencyFormatter, usePermissions, useUrlParams } from "~/hooks";
+import { downloadCsv } from "~/modules/accounting/ui/Reports";
 import { path } from "~/utils/path";
+import {
+  type AgingRow,
+  type ARAPAgingMethod,
+  type ARAPSide,
+  buildARAPAgingExportRows,
+  type OpenInvoiceRow
+} from "./arapExport";
 
 type TieOutResult = {
   subledgerBalance: number;
@@ -41,42 +50,13 @@ type TieOutResult = {
   variance: number;
 };
 
-type AgingRow = {
-  customerId?: string;
-  supplierId?: string;
-  paymentTerm?: string | null;
-  current: number;
-  bucket1: number;
-  bucket2: number;
-  bucket3: number;
-  bucket4: number;
-  unapplied: number;
-  total: number;
-};
-
-type OpenInvoiceRow = {
-  invoiceId: string;
-  invoiceNumber: string;
-  // 'Invoice' | 'Credit Memo' | 'Debit Memo' — from the open-by drill-down
-  documentType?: string;
-  dateDue: string | null;
-  currencyCode: string;
-  exchangeRate: number;
-  totalAmount: number;
-  settled: number;
-  openInCurrency: number;
-  openInBase: number;
-  customerId?: string;
-  supplierId?: string;
-};
-
 type ARAPWorkbenchProps = {
-  side: "ar" | "ap";
+  side: ARAPSide;
   result: TieOutResult | null;
   aging: AgingRow[];
   open: OpenInvoiceRow[];
   asOfDate: string;
-  agingMethod: "dueDate" | "documentDate";
+  agingMethod: ARAPAgingMethod;
   bucketDays: [number, number, number];
   // Overrides the table title. Defaults to Receivables/Payables (the invoicing
   // workbench); the aging reports pass "AR Aging" / "AP Aging".
@@ -400,6 +380,28 @@ export function ARAPWorkbench({
     ? Math.abs(result.variance) > VARIANCE_EPSILON
     : false;
   const canAdjust = permissions.can("create", "accounting");
+  const reportTitle = title ?? (side === "ar" ? t`Receivables` : t`Payables`);
+  const exportRows = useMemo(
+    () =>
+      buildARAPAgingExportRows({
+        side,
+        aging,
+        open,
+        asOfDate,
+        agingMethod,
+        bucketDays
+      }),
+    [side, aging, open, asOfDate, agingMethod, bucketDays]
+  );
+  const onDownload = useCallback(() => {
+    if (exportRows.length === 0) return;
+    const filenameTitle =
+      reportTitle
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/gi, "-")
+        .replace(/^-|-$/g, "") || side;
+    downloadCsv(exportRows, `${filenameTitle}-${asOfDate}.csv`);
+  }, [exportRows, reportTitle, side, asOfDate]);
 
   const filters = (
     <HStack>
@@ -503,6 +505,14 @@ export function ARAPWorkbench({
           </TooltipContent>
         </Tooltip>
       ) : null}
+      <Button
+        variant="secondary"
+        leftIcon={<LuDownload />}
+        onClick={onDownload}
+        isDisabled={exportRows.length === 0}
+      >
+        <Trans>Download</Trans>
+      </Button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="secondary" rightIcon={<LuChevronDown />}>
@@ -550,7 +560,7 @@ export function ARAPWorkbench({
           data={displayRows}
           columns={columns}
           count={displayRows.length}
-          title={title ?? (side === "ar" ? t`Receivables` : t`Payables`)}
+          title={reportTitle}
           primaryAction={filters}
           defaultColumnPinning={{ left: ["Select", "counterparty"] }}
         />
