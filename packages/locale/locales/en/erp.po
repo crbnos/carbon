@@ -11561,6 +11561,9 @@ msgstr "Pinned"
 msgid "Plan"
 msgstr "Plan"
 
+msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
+msgstr "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
+
 msgid "Plan the work"
 msgstr "Plan the work"
 
@@ -13767,6 +13770,9 @@ msgstr "Secure your account with 2FA"
 
 msgid "Security"
 msgstr "Security"
+
+msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
+msgstr "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
 
 msgid "Segments that drive customer pricing and terms"
 msgstr "Segments that drive customer pricing and terms"

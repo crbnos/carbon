@@ -11561,6 +11561,9 @@ msgstr "Fissato"
 msgid "Plan"
 msgstr "Piano"
 
+msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
+msgstr ""
+
 msgid "Plan the work"
 msgstr "Pianifica il lavoro"
 
@@ -13767,6 +13770,9 @@ msgstr "Proteggi il tuo account con 2FA"
 
 msgid "Security"
 msgstr "Sicurezza"
+
+msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
+msgstr ""
 
 msgid "Segments that drive customer pricing and terms"
 msgstr "Segmenti che determinano i prezzi e le condizioni dei clienti"

@@ -21,6 +21,7 @@ import type { LoaderFunctionArgs, Location } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { Empty } from "~/components";
 import { Gantt } from "~/components/Gantt";
+import { usePlanGate } from "~/hooks/usePlanGate";
 import { useReplaceLocation } from "~/hooks/useReplaceLocation";
 import { getDepartmentsList, getShiftsWithTimes } from "~/modules/people";
 import {
@@ -28,6 +29,7 @@ import {
   getMaintenanceDowntimeForResources
 } from "~/modules/production";
 import { getForecastNonWorkingIntervals } from "~/modules/production/forecast.server";
+import ForecastUpgradeOverlay from "~/modules/production/ui/ForecastUpgradeOverlay";
 import type { ForecastRange } from "~/modules/production/ui/Schedule/ForecastHeader";
 import { ForecastHeader } from "~/modules/production/ui/Schedule/ForecastHeader";
 import {
@@ -536,6 +538,8 @@ export default function ResourceGanttView() {
     workCenterAvailability
   } = useLoaderData<typeof loader>();
 
+  const { isGated } = usePlanGate({ feature: "FORECAST" });
+
   const { locale } = useLocale();
   const navigate = useNavigate();
   const { location, replaceSearchParam } = useReplaceLocation();
@@ -599,6 +603,20 @@ export default function ResourceGanttView() {
   const selectedDetail = selectedSpanId
     ? detailsById[selectedSpanId]
     : undefined;
+
+  if (isGated) {
+    return (
+      <ForecastUpgradeOverlay
+        title={<Trans>Forecast</Trans>}
+        description={
+          <Trans>
+            See a live capacity forecast of every work center — when each job is
+            projected to run and finish across your shop.
+          </Trans>
+        }
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col h-[calc(100dvh-var(--topbar-height))] overflow-hidden w-full bg-background">

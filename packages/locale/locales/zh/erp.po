@@ -11561,6 +11561,9 @@ msgstr "已固定"
 msgid "Plan"
 msgstr "计划"
 
+msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
+msgstr ""
+
 msgid "Plan the work"
 msgstr "规划工作"
 
@@ -13767,6 +13770,9 @@ msgstr "使用2FA保护您的账户"
 
 msgid "Security"
 msgstr "安全"
+
+msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
+msgstr ""
 
 msgid "Segments that drive customer pricing and terms"
 msgstr "驱动客户定价和条款的细分市场"

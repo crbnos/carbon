@@ -11561,6 +11561,9 @@ msgstr "Przypięte"
 msgid "Plan"
 msgstr "Plan"
 
+msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
+msgstr ""
+
 msgid "Plan the work"
 msgstr "Zaplanuj pracę"
 
@@ -13767,6 +13770,9 @@ msgstr "Zabezpiecz swoje konto za pomocą 2FA"
 
 msgid "Security"
 msgstr "Bezpieczeństwo"
+
+msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
+msgstr ""
 
 msgid "Segments that drive customer pricing and terms"
 msgstr "Segmenty, które wpływają na ceny i warunki dla klientów"

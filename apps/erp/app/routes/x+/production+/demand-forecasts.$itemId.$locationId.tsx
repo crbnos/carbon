@@ -1,6 +1,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { requirePlan } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -68,6 +69,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
     update: "production"
+  });
+
+  await requirePlan({
+    request,
+    client,
+    companyId,
+    feature: "FORECAST",
+    redirectTo: path.to.demandProjections
   });
 
   const { itemId: routeItemId, locationId: routeLocationId } = params;

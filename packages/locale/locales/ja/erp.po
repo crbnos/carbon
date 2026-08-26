@@ -11561,6 +11561,9 @@ msgstr "ピン留め"
 msgid "Plan"
 msgstr "計画"
 
+msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
+msgstr ""
+
 msgid "Plan the work"
 msgstr "作業を計画する"
 
@@ -13767,6 +13770,9 @@ msgstr "2FAでアカウントを保護"
 
 msgid "Security"
 msgstr "セキュリティ"
+
+msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
+msgstr ""
 
 msgid "Segments that drive customer pricing and terms"
 msgstr "顧客の価格設定と条件を決定するセグメント"

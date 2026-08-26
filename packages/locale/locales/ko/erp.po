@@ -11561,6 +11561,9 @@ msgstr "고정됨"
 msgid "Plan"
 msgstr "계획"
 
+msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
+msgstr ""
+
 msgid "Plan the work"
 msgstr "작업 계획 수립"
 
@@ -13767,6 +13770,9 @@ msgstr "2FA로 계정 보호"
 
 msgid "Security"
 msgstr "보안"
+
+msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
+msgstr ""
 
 msgid "Segments that drive customer pricing and terms"
 msgstr "고객 가격 및 조건을 결정하는 세그먼트"

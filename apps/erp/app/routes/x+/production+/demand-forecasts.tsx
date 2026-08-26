@@ -4,10 +4,13 @@ import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
 import { datetime } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
+import { usePlanGate } from "~/hooks/usePlanGate";
 import { getProductionProjections } from "~/modules/production";
 import DemandProjectionsTable from "~/modules/production/ui/DemandProjection/DemandProjectionTable";
+import ForecastUpgradeOverlay from "~/modules/production/ui/ForecastUpgradeOverlay";
 import { resolveLocationId } from "~/modules/shared/location.server";
 import { getOrCreatePeriods } from "~/modules/shared/shared.server";
 import { getLocationTimeZone } from "~/modules/shared/timezone.server";
@@ -83,6 +86,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function DemandProjectionsRoute() {
   const { projections, count, locationId, periods } =
     useLoaderData<typeof loader>();
+
+  const { isGated } = usePlanGate({ feature: "FORECAST" });
+
+  if (isGated) {
+    return (
+      <ForecastUpgradeOverlay
+        title={<Trans>Demand Forecasts</Trans>}
+        description={
+          <Trans>
+            Plan ahead by projecting demand per item and location, then feed it
+            straight into MRP and scheduling.
+          </Trans>
+        }
+      />
+    );
+  }
 
   return (
     <VStack spacing={0} className="h-full">

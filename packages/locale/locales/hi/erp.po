@@ -11561,6 +11561,9 @@ msgstr "पिन किया गया"
 msgid "Plan"
 msgstr "योजना"
 
+msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
+msgstr ""
+
 msgid "Plan the work"
 msgstr "काम की योजना बनाएं"
 
@@ -13767,6 +13770,9 @@ msgstr "2FA के साथ अपने खाते को सुरक्ष
 
 msgid "Security"
 msgstr "सुरक्षा"
+
+msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
+msgstr ""
 
 msgid "Segments that drive customer pricing and terms"
 msgstr "ऐसे सेगमेंट जो ग्राहक मूल्य निर्धारण और शर्तों को चलाते हैं"
