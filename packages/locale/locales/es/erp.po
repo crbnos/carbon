@@ -6204,6 +6204,9 @@ msgstr "Todas las pruebas dentro del alcance se aprueban en su sistema configura
 msgid "Every match"
 msgstr "Cada coincidencia"
 
+msgid "Every required action has already been added."
+msgstr ""
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Todas las tareas requeridas deben estar Completadas u Omitidas antes de que se pueda cerrar el período."
 

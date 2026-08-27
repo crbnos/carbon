@@ -6204,6 +6204,9 @@ msgstr "您配置的系统中的每项范围内测试都通过了，使用您的
 msgid "Every match"
 msgstr "每次匹配"
 
+msgid "Every required action has already been added."
+msgstr ""
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "期间关闭前，每项必需任务都必须完成或跳过。"
 

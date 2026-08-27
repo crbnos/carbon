@@ -6204,6 +6204,9 @@ msgstr "Każdy test w zakresie przechodzi w Twoim skonfigurowanym systemie, z Tw
 msgid "Every match"
 msgstr "Każde dopasowanie"
 
+msgid "Every required action has already been added."
+msgstr ""
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Każde wymagane zadanie musi być oznaczone jako Wykonane lub Pominięte zanim okres będzie mógł być zamknięty."
 

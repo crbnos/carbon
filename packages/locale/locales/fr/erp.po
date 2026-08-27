@@ -6204,6 +6204,9 @@ msgstr "Tous les tests dans le périmètre réussissent dans votre système conf
 msgid "Every match"
 msgstr "Chaque correspondance"
 
+msgid "Every required action has already been added."
+msgstr ""
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Chaque tâche requise doit être terminée ou ignorée avant que la période puisse être fermée."
 

@@ -6204,6 +6204,9 @@ msgstr "Ogni test nell'ambito passa nel tuo sistema configurato, con i tuoi dati
 msgid "Every match"
 msgstr "Ogni corrispondenza"
 
+msgid "Every required action has already been added."
+msgstr ""
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Ogni attività richiesta deve essere Completata o Saltata prima che il periodo possa essere chiuso."
 

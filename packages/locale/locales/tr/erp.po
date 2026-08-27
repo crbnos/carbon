@@ -6204,6 +6204,9 @@ msgstr "Kapsamdaki her test, yapılandırılmış sisteminizde, verilerinizle ge
 msgid "Every match"
 msgstr "Her eşleşme"
 
+msgid "Every required action has already been added."
+msgstr ""
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Dönem kapatılmadan önce gerekli tüm görevler Tamamlandı veya Atlandı olarak işaretlenmelidir."
 

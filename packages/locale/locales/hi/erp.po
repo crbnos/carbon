@@ -6204,6 +6204,9 @@ msgstr "आपकी कॉन्फ़िगर की गई सिस्ट�
 msgid "Every match"
 msgstr "हर मेल"
 
+msgid "Every required action has already been added."
+msgstr ""
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "अवधि बंद करने से पहले प्रत्येक आवश्यक कार्य को पूर्ण या छोड़ा जाना चाहिए।"
 

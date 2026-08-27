@@ -6204,6 +6204,9 @@ msgstr "Every in-scope test passes in your configured system, with your data."
 msgid "Every match"
 msgstr "Every match"
 
+msgid "Every required action has already been added."
+msgstr "Every required action has already been added."
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Every required task must be Done or Skipped before the period can be closed."
 

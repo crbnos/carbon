@@ -59,18 +59,28 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       const serviceRole = await getCarbonServiceRole();
-      await Promise.all(
-        ids.map(async (id) => {
-          await serviceRole.functions.invoke("create", {
+      // A silent reconcile failure leaves the column and the task list disagreeing.
+      const reconciled = await Promise.all(
+        ids.map((id) =>
+          serviceRole.functions.invoke("create", {
             body: {
               type: "nonConformanceTasks",
               id,
               companyId,
               userId
             }
-          });
-        })
+          })
+        )
       );
+
+      const reconcileError = reconciled.find((r) => r.error)?.error;
+      if (reconcileError) {
+        logger.error(reconcileError);
+        return {
+          error: { message: "Failed to update issue tasks" },
+          data: null
+        };
+      }
 
       return { data: update.data };
     case "source":

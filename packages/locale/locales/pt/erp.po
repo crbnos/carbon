@@ -6204,6 +6204,9 @@ msgstr "Todos os testes no escopo passam no seu sistema configurado, com seus da
 msgid "Every match"
 msgstr "Cada correspondência"
 
+msgid "Every required action has already been added."
+msgstr ""
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Toda tarefa obrigatória deve ser Concluída ou Saltada antes que o período possa ser fechado."
 

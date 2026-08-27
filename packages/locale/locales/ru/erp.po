@@ -6204,6 +6204,9 @@ msgstr "Все тесты в области действия проходят в
 msgid "Every match"
 msgstr "Каждое совпадение"
 
+msgid "Every required action has already been added."
+msgstr ""
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Каждая требуемая задача должна быть завершена или пропущена перед закрытием периода."
 

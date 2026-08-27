@@ -6204,6 +6204,9 @@ msgstr "설정한 시스템에서 귀사의 데이터로 범위 내 모든 테�
 msgid "Every match"
 msgstr "모든 일치"
 
+msgid "Every required action has already been added."
+msgstr ""
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "기간을 종료하기 전에 모든 필수 작업을 완료하거나 건너뛰어야 합니다."
 

@@ -6204,6 +6204,9 @@ msgstr "スコープ内のすべてのテストが、設定されたシステム
 msgid "Every match"
 msgstr "すべてのマッチ"
 
+msgid "Every required action has already been added."
+msgstr ""
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "期間を閉じる前に、すべての必須タスクが完了またはスキップされている必要があります。"
 
