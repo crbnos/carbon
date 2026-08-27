@@ -169,7 +169,7 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} / {count}개 작업"
 
 msgid "{hiddenCount} more: {hiddenNames}"
-msgstr ""
+msgstr "{hiddenCount}개 더: {hiddenNames}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -491,7 +491,7 @@ msgid "A new size will be created using a copy of the current size"
 msgstr "현재 사이즈를 복사하여 새 사이즈가 생성됩니다"
 
 msgid "A new Stripe customer will be created"
-msgstr ""
+msgstr "새로운 Stripe 고객이 생성됩니다"
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "인보이스를 이유 계정에 대해 정산하는 비현금 문서로서, 신용은 지불액을 낮추고 차변은 올립니다."
@@ -2593,7 +2593,7 @@ msgid "Browse library"
 msgstr "라이브러리 둘러보기"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
-msgstr ""
+msgstr "게시된 버전을 읽기 전용으로 탐색합니다. 여전히 단계를 재정렬하여 레이아웃을 정리할 수 있습니다."
 
 msgid "Bucket"
 msgstr "버킷"
@@ -2800,7 +2800,7 @@ msgid "Cannot send RFQ"
 msgstr "RFQ를 보낼 수 없습니다"
 
 msgid "Cannot send through Stripe"
-msgstr ""
+msgstr "Stripe를 통해 전송할 수 없습니다"
 
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "업로드할 수 없습니다 — 공급업체 상호작용이 아직 생성되지 않았습니다"
@@ -3008,7 +3008,7 @@ msgid "Check your email"
 msgstr "이메일을 확인하세요"
 
 msgid "Checking Stripe for this customer…"
-msgstr ""
+msgstr "이 고객의 Stripe를 확인 중입니다…"
 
 msgid "Checkpoint ·"
 msgstr "체크포인트 ·"
@@ -3909,7 +3909,7 @@ msgid "Create a new production job to fulfill the sales order"
 msgstr "판매주문을 이행할 새 생산 작업을 생성합니다"
 
 msgid "Create a new Stripe customer instead"
-msgstr ""
+msgstr "대신 새로운 Stripe 고객을 만듭니다"
 
 msgid "Create a new version"
 msgstr "새 버전 만들기"
@@ -6226,7 +6226,7 @@ msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "기존 매핑입니다. 다시 매핑하려면 다른 제공자 옵션을 선택하세요."
 
 msgid "Existing Stripe customer"
-msgstr ""
+msgstr "기존 Stripe 고객"
 
 msgid "Expand"
 msgstr "펼치기"
@@ -8103,7 +8103,7 @@ msgid "Issues"
 msgstr "이슈"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
-msgstr ""
+msgstr "다시 버전을 게시할 때까지 실행이 중지됩니다. 삭제된 것은 없습니다."
 
 msgid "ITAR Certifications"
 msgstr "ITAR 인증"
@@ -8465,7 +8465,7 @@ msgid "Less manual work, fewer errors"
 msgstr "수작업 감소, 오류 감소"
 
 msgid "Let's Build"
-msgstr ""
+msgstr "구축해봅시다"
 
 msgid "Let's build something"
 msgstr "무언가를 만들어봅시다"
@@ -8546,7 +8546,7 @@ msgid "Link Linear Issue"
 msgstr "Linear 이슈 연결"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
-msgstr ""
+msgstr "이 Carbon 고객을 그 중 하나에 연결하거나 별도의 Stripe 고객을 만듭니다."
 
 msgid "Link to sales order line"
 msgstr "판매주문 라인에 연결"
@@ -11593,7 +11593,7 @@ msgid "Published by Carbon"
 msgstr "Carbon에서 게시함"
 
 msgid "Published Version"
-msgstr ""
+msgstr "게시된 버전"
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "게시된 버전은 편집할 수 없습니다. 읽기 전용으로 둘러보거나 새 버전을 분기하여 변경하세요."
@@ -12452,6 +12452,9 @@ msgstr "워크플로 내 품질 문서에 승인 필요"
 msgid "Require two-factor authentication"
 msgstr "2단계 인증 필수"
 
+msgid "Require two-factor authentication for everyone in your company before they can sign in."
+msgstr "회사의 모든 사람이 로그인하기 전에 2단계 인증을 요구합니다."
+
 msgid "Required"
 msgstr "필수"
 
@@ -12613,7 +12616,7 @@ msgid "Reverse any item ledger entries from this invoice"
 msgstr "이 인보이스의 모든 품목 원장 항목 취소"
 
 msgid "Reverse charge"
-msgstr ""
+msgstr "역청구"
 
 msgid "Reverse Charge Sales Tax"
 msgstr "매입자 납부 판매세(Reverse Charge)"
@@ -13850,7 +13853,7 @@ msgid "Shown to the user when this rule fails."
 msgstr "이 규칙이 실패할 때 사용자에게 표시됩니다."
 
 msgid "Sign in to Carbon"
-msgstr ""
+msgstr "Carbon에 로그인"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "매직 링크 대신 생체 인식으로 로그인하세요. 패스키는 Face ID, Touch ID 또는 기기 PIN으로 보호됩니다."
@@ -14266,19 +14269,19 @@ msgid "Straight line"
 msgstr "정액법"
 
 msgid "Stripe"
-msgstr ""
+msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr ""
+msgstr "Stripe에는 이미 이 이메일이 있는 고객이 있습니다"
 
 msgid "Stripe Due Date"
-msgstr ""
+msgstr "Stripe 만기일"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr ""
+msgstr "Stripe는 고객에게 인보이스를 이메일로 보내므로 주소가 필요합니다. 이것은 Carbon의 연락처에도 저장됩니다."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr ""
+msgstr "Stripe에는 이 Carbon 고객을 위한 고객이 아직 없습니다. 게시하면 연결된 계정에서 하나를 생성합니다."
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "칸반 테이블에 표시할 칸반 출력 스타일"
@@ -14693,7 +14696,7 @@ msgid "Tax Depreciation Method"
 msgstr "세무 감가상각 방법"
 
 msgid "Tax exempt"
-msgstr ""
+msgstr "면세"
 
 msgid "Tax Exempt"
 msgstr "세금 면제"
@@ -15553,7 +15556,7 @@ msgid "This completes the Discovery step."
 msgstr "이것으로 발견(Discovery) 단계가 완료됩니다."
 
 msgid "This contact has no email address"
-msgstr ""
+msgstr "이 연락처에는 이메일 주소가 없습니다"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "이 거래처에는 미결제 항목이 없습니다 — 결제는 선수금으로 기록됩니다."
@@ -15581,10 +15584,10 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "{0}에 참여하기 위한 이 초대권은 만료되었습니다. 이메일로 새 초대권을 보내달라고 요청할 수 있습니다."
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr ""
+msgstr "이 인보이스에는 사용할 수 있는 만기일이 없습니다 — Stripe에 대해 하나를 선택합니다."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr ""
+msgstr "이 인보이스는 이미 이 Carbon 고객에 연결된 Stripe 고객에게 청구됩니다. 세부 정보를 변경하려면 Stripe 대시보드에서 편집합니다."
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "이것은 제어되는 환경이므로 인증자 앱이 필수입니다."
@@ -15721,10 +15724,10 @@ msgid "This version cannot be opened"
 msgstr "이 버전을 열 수 없습니다."
 
 msgid "This version is published"
-msgstr ""
+msgstr "이 버전이 게시됩니다"
 
 msgid "This version is published. Create a new version to edit."
-msgstr ""
+msgstr "이 버전이 게시됩니다. 편집할 새 버전을 만듭니다."
 
 msgid "This version's definition could not be read."
 msgstr "이 버전의 정의를 읽을 수 없습니다."
@@ -16128,6 +16131,9 @@ msgstr "2단계"
 msgid "Two-factor authentication"
 msgstr "2단계 인증"
 
+msgid "Two-Factor Authentication"
+msgstr "2단계 인증"
+
 msgid "Two-factor authentication disabled"
 msgstr "2단계 인증이 비활성화되었습니다"
 
@@ -16312,10 +16318,10 @@ msgid "Unposted Documents"
 msgstr "미전기 문서"
 
 msgid "Unpublish"
-msgstr ""
+msgstr "게시 취소"
 
 msgid "Unpublish {name}?"
-msgstr ""
+msgstr "게시 취소 {name}?"
 
 msgid "Unreceived POs"
 msgstr "미입고 구매주문"
@@ -16676,7 +16682,7 @@ msgstr "버전"
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
-msgstr ""
+msgstr "버전 {0}이 지금 게시되고 바뀔 것입니다."
 
 msgid "Version:"
 msgstr "버전:"
@@ -17561,7 +17567,7 @@ msgid "You're live on Carbon"
 msgstr "Carbon 도입 완료"
 
 msgid "You're one step away from your workspace."
-msgstr ""
+msgstr "작업 공간에서 한 걸음 떨어져 있습니다."
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "귀사가 원하는 속도로 직접 Carbon을 설정합니다"

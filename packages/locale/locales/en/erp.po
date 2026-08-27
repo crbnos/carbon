@@ -12452,6 +12452,9 @@ msgstr "Require approval for quality documents in your workflow"
 msgid "Require two-factor authentication"
 msgstr "Require two-factor authentication"
 
+msgid "Require two-factor authentication for everyone in your company before they can sign in."
+msgstr "Require two-factor authentication for everyone in your company before they can sign in."
+
 msgid "Required"
 msgstr "Required"
 
@@ -16127,6 +16130,9 @@ msgstr "Two-Factor"
 
 msgid "Two-factor authentication"
 msgstr "Two-factor authentication"
+
+msgid "Two-Factor Authentication"
+msgstr "Two-Factor Authentication"
 
 msgid "Two-factor authentication disabled"
 msgstr "Two-factor authentication disabled"
