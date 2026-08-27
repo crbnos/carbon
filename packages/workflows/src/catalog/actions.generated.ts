@@ -1,6 +1,6 @@
 // GENERATED FILE — do not edit. Run `pnpm run generate:workflow-catalog`.
 
-import type { BuiltAction, BuiltOperation } from "./build";
+import type { BuiltAction, BuiltIntegration, BuiltOperation } from "./build";
 
 export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
   "customer.update": {
@@ -315,6 +315,131 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
     outputs: { status: { kind: "primitive", of: "number" } },
     batchable: true,
     permission: { module: "workflows", action: "update" }
+  }
+};
+
+export const WORKFLOW_INTEGRATION_CATALOG: Record<string, BuiltIntegration> = {
+  "integration.google-calendar.create_google_calendar_event": {
+    inputs: {
+      connectionId: {
+        type: { kind: "primitive", of: "string" },
+        required: true,
+        options: {
+          provider: "integration.connection",
+          params: { piece: "google-calendar" }
+        }
+      },
+      calendar_id: {
+        type: { kind: "primitive", of: "string" },
+        required: true,
+        options: {
+          provider: "integration.property",
+          params: {
+            piece: "google-calendar",
+            action: "create_google_calendar_event",
+            prop: "calendar_id"
+          },
+          dependsOn: ["connectionId"]
+        }
+      },
+      title: { type: { kind: "primitive", of: "string" }, required: true },
+      start_date_time: {
+        type: { kind: "primitive", of: "date" },
+        required: true
+      },
+      end_date_time: {
+        type: { kind: "primitive", of: "date" },
+        required: false
+      },
+      location: { type: { kind: "primitive", of: "string" }, required: false },
+      description: {
+        type: { kind: "primitive", of: "string" },
+        required: false
+      },
+      colorId: {
+        type: { kind: "primitive", of: "string" },
+        required: false,
+        options: {
+          provider: "integration.property",
+          params: {
+            piece: "google-calendar",
+            action: "create_google_calendar_event",
+            prop: "colorId"
+          },
+          dependsOn: ["connectionId"]
+        }
+      },
+      attendees: {
+        type: { kind: "list", of: { kind: "primitive", of: "string" } },
+        required: false
+      },
+      guests_can_modify: {
+        type: { kind: "primitive", of: "boolean" },
+        required: false
+      },
+      guests_can_invite_others: {
+        type: { kind: "primitive", of: "boolean" },
+        required: false
+      },
+      guests_can_see_other_guests: {
+        type: { kind: "primitive", of: "boolean" },
+        required: false
+      },
+      send_notifications: {
+        type: { kind: "primitive", of: "string" },
+        required: true,
+        choices: ["all", "externalOnly", "none"]
+      },
+      create_meet_link: {
+        type: { kind: "primitive", of: "boolean" },
+        required: false
+      }
+    },
+    outputs: { result: { kind: "primitive", of: "string" } },
+    batchable: false,
+    permission: { module: "workflows", action: "update" },
+    piece: { name: "google-calendar", action: "create_google_calendar_event" }
+  },
+  "integration.google-calendar.google_calendar_get_events": {
+    inputs: {
+      connectionId: {
+        type: { kind: "primitive", of: "string" },
+        required: true,
+        options: {
+          provider: "integration.connection",
+          params: { piece: "google-calendar" }
+        }
+      },
+      calendar_id: {
+        type: { kind: "primitive", of: "string" },
+        required: true,
+        options: {
+          provider: "integration.property",
+          params: {
+            piece: "google-calendar",
+            action: "google_calendar_get_events",
+            prop: "calendar_id"
+          },
+          dependsOn: ["connectionId"]
+        }
+      },
+      event_types: {
+        type: { kind: "list", of: { kind: "primitive", of: "string" } },
+        required: true,
+        choices: ["default", "outOfOffice", "focusTime", "workingLocation"]
+      },
+      search: { type: { kind: "primitive", of: "string" }, required: false },
+      start_date: { type: { kind: "primitive", of: "date" }, required: false },
+      end_date: { type: { kind: "primitive", of: "date" }, required: false },
+      singleEvents: {
+        type: { kind: "primitive", of: "boolean" },
+        required: true
+      }
+    },
+    outputs: { result: { kind: "primitive", of: "string" } },
+    batchable: false,
+    permission: { module: "workflows", action: "update" },
+    piece: { name: "google-calendar", action: "google_calendar_get_events" }
   }
 };
 
