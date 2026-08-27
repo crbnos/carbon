@@ -84,6 +84,12 @@ export {
   isOnshapeIntegrationId,
   ONSHAPE_INTEGRATION_IDS
 } from "./onshape/lib/connection";
+export type { OnshapeBomNode } from "./onshape/panel/bom";
+export {
+  flattenBomTree,
+  metadataProperty,
+  parseBomTree
+} from "./onshape/panel/bom";
 export type { OnshapePanelContext } from "./onshape/panel/messages";
 export {
   PANEL_SESSION_MESSAGE,
@@ -98,7 +104,11 @@ export type {
   PanelMappingRow,
   PanelPartStatus
 } from "./onshape/panel/status";
-export { buildPartStatuses, externalIdForPart } from "./onshape/panel/status";
+export {
+  buildPartStatuses,
+  externalIdForAssembly,
+  externalIdForPart
+} from "./onshape/panel/status";
 // TODO: export as @carbon/ee/paperless
 export { PaperlessPartsClient } from "./paperless-parts/lib/client";
 export { QuickBooks } from "./quickbooks/config";

@@ -1,6 +1,11 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { PanelItemRow } from "@carbon/ee";
-import { buildPartStatuses } from "@carbon/ee";
+import {
+  buildPartStatuses,
+  externalIdForAssembly,
+  metadataProperty,
+  parseBomTree
+} from "@carbon/ee";
 import type { OnshapeDocument } from "@carbon/ee/onshape";
 import { getOnshapeClient, OnshapeWVMType } from "@carbon/ee/onshape";
 import type { LoaderFunctionArgs } from "react-router";
@@ -11,11 +16,11 @@ export const config = {
 };
 
 /**
- * Carbon status for every part of the current Onshape element.
+ * Carbon status for the current Onshape element.
  *
- * Exactly one live Onshape call (the element's part list); everything else is
- * Carbon's own database. Quota discipline: the annual per-account API limit is
- * the panel's scarcest resource — see build-plan §4.
+ * Part Studio: the part list joined to mappings/items (one live call, cached).
+ * Assembly: the indented BOM joined to items by part number (one live call,
+ * cached) plus the assembly's own mapping. Everything else is Carbon's DB.
  */
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -52,6 +57,147 @@ export async function loader({ request }: LoaderFunctionArgs) {
         ? OnshapeWVMType.VERSION
         : OnshapeWVMType.MICROVERSION;
   const document: OnshapeDocument = { documentId, wvm, wvmId: wvId };
+
+  let kind: "partstudio" | "assembly" | "other";
+  try {
+    const elements = await onshape.client.getElementsIn(document);
+    const element = elements.find((e) => e.id === elementId);
+    kind =
+      element?.elementType === "ASSEMBLY"
+        ? "assembly"
+        : element?.elementType === "PARTSTUDIO"
+          ? "partstudio"
+          : "other";
+  } catch (error) {
+    return data(
+      {
+        error: error instanceof Error ? error.message : "Onshape request failed"
+      },
+      { status: 502 }
+    );
+  }
+
+  if (kind === "other") {
+    return data({ kind }, { headers: { "Cache-Control": "no-store" } });
+  }
+
+  if (kind === "assembly") {
+    let bom: unknown;
+    try {
+      bom = await onshape.client.getBillOfMaterialsIn(document, elementId);
+    } catch (error) {
+      return data(
+        {
+          error:
+            error instanceof Error ? error.message : "Onshape request failed"
+        },
+        { status: 502 }
+      );
+    }
+
+    const { root: bomRoot, lines } = parseBomTree(bom);
+    // The BOM omits the assembly's own row; its identity lives in element
+    // metadata (one cached call).
+    let rootPartNumber = bomRoot?.partNumber ?? null;
+    let rootName = bomRoot?.name ?? null;
+    try {
+      const metadata = await onshape.client.getElementMetadata(
+        document,
+        elementId
+      );
+      rootPartNumber =
+        metadataProperty(metadata, "Part number") ?? rootPartNumber;
+      rootName = metadataProperty(metadata, "Name") ?? rootName;
+    } catch {
+      // Identity stays null; the panel asks for a part number.
+    }
+    const flat: Array<{
+      index: string;
+      level: number;
+      partNumber: string | null;
+      name: string | null;
+      quantity: number;
+      purchased: boolean;
+    }> = [];
+    const walk = (nodes: ReturnType<typeof parseBomTree>["lines"]) => {
+      for (const node of nodes) {
+        flat.push({
+          index: node.index,
+          level: node.level,
+          partNumber: node.partNumber,
+          name: node.name,
+          quantity: node.quantity,
+          purchased: node.purchased
+        });
+        walk(node.children);
+      }
+    };
+    walk(lines);
+
+    const partNumbers = [
+      ...new Set(
+        [rootPartNumber, ...flat.map((l) => l.partNumber)].filter(
+          (n): n is string => !!n
+        )
+      )
+    ];
+
+    const [rootMapping, items] = await Promise.all([
+      client
+        .from("externalIntegrationMapping")
+        .select("entityId, lastSyncedAt")
+        .eq("companyId", companyId)
+        .eq("integration", "onshape")
+        .eq("entityType", "item")
+        .eq("externalId", externalIdForAssembly(documentId, elementId))
+        .maybeSingle(),
+      partNumbers.length > 0
+        ? client
+            .from("item")
+            .select("id, readableId, revision, name")
+            .eq("companyId", companyId)
+            .in("readableId", partNumbers)
+        : Promise.resolve({ data: [], error: null })
+    ]);
+
+    const itemByReadableId = new Map(
+      ((items.data ?? []) as PanelItemRow[]).map((i) => [i.readableId, i])
+    );
+    const rootItem = rootPartNumber
+      ? itemByReadableId.get(rootPartNumber)
+      : undefined;
+
+    return data(
+      {
+        kind,
+        assembly: {
+          root: {
+            partNumber: rootPartNumber,
+            name: rootName,
+            state: rootMapping.data
+              ? ("linked" as const)
+              : rootItem
+                ? ("matched" as const)
+                : ("missing" as const),
+            itemId: rootMapping.data?.entityId ?? rootItem?.id ?? null,
+            lastSyncedAt: rootMapping.data?.lastSyncedAt ?? null
+          },
+          lines: flat.map((line) => ({
+            ...line,
+            state: line.partNumber
+              ? itemByReadableId.has(line.partNumber)
+                ? ("matched" as const)
+                : ("missing" as const)
+              : ("missing" as const),
+            itemId: line.partNumber
+              ? (itemByReadableId.get(line.partNumber)?.id ?? null)
+              : null
+          }))
+        }
+      },
+      { headers: { "Cache-Control": "no-store" } }
+    );
+  }
 
   let parts: Awaited<ReturnType<typeof onshape.client.getPartsInElement>>;
   try {
@@ -90,7 +236,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return data({ error: "Failed to read Onshape mappings" }, { status: 500 });
   }
 
-  // Items referenced by mappings may not share the part number; fetch them too.
   const mappedItemIds = (mappings.data ?? [])
     .map((m) => m.entityId)
     .filter((id) => !(matches.data ?? []).some((i) => i.id === id));
@@ -113,7 +258,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   return data(
-    { parts: statuses },
+    { kind, parts: statuses },
     { headers: { "Cache-Control": "no-store" } }
   );
 }
