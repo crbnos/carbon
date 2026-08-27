@@ -8721,10 +8721,10 @@ msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "Link (optional) — z. B. /x/settings/…"
 
 msgid "Link a purchase order"
-msgstr ""
+msgstr "Bestellung verknüpfen"
 
 msgid "Link a sales order"
-msgstr ""
+msgstr "Verkaufsauftrag verknüpfen"
 
 msgid "Link Jira Issue"
 msgstr "Jira-Problem verknüpfen"
@@ -12879,7 +12879,7 @@ msgid "Returning unused picked material"
 msgstr "Rückgabe ungenutzten Pickmaterials"
 
 msgid "Returns"
-msgstr ""
+msgstr "Retouren"
 
 msgid "Returns:"
 msgstr "Gibt zurück:"
@@ -16656,10 +16656,10 @@ msgid "Unlink job from sales order?"
 msgstr "Auftrag von Verkaufsauftrag trennen?"
 
 msgid "Unlink purchase order"
-msgstr ""
+msgstr "Bestellung trennen"
 
 msgid "Unlink sales order"
-msgstr ""
+msgstr "Verkaufsauftrag trennen"
 
 msgid "Unlock"
 msgstr "Entsperren"

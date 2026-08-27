@@ -8721,10 +8721,10 @@ msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "Bağlantı (isteğe bağlı) — örn. /x/settings/…"
 
 msgid "Link a purchase order"
-msgstr ""
+msgstr "Satın alma siparişi bağla"
 
 msgid "Link a sales order"
-msgstr ""
+msgstr "Satış siparişi bağla"
 
 msgid "Link Jira Issue"
 msgstr "Jira Sorununu Bağla"
@@ -12879,7 +12879,7 @@ msgid "Returning unused picked material"
 msgstr "Kullanılmayan alınan malzeme iade ediliyor"
 
 msgid "Returns"
-msgstr ""
+msgstr "İadeler"
 
 msgid "Returns:"
 msgstr "Döndürür:"
@@ -16656,10 +16656,10 @@ msgid "Unlink job from sales order?"
 msgstr "İş emrini satış siparişinden ayır?"
 
 msgid "Unlink purchase order"
-msgstr ""
+msgstr "Satın alma siparişi bağlantısını kaldır"
 
 msgid "Unlink sales order"
-msgstr ""
+msgstr "Satış siparişi bağlantısını kaldır"
 
 msgid "Unlock"
 msgstr "Kilidi Aç"
