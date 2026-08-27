@@ -127,8 +127,15 @@ export function OnshapePanel({
         });
         const response = await panelFetch(token, `${paths.status}?${query}`);
         const body = (await response.json()) as
-          | { parts: PanelPartStatus[] }
+          | { kind: "partstudio"; parts: PanelPartStatus[] }
+          | { kind: "assembly"; assembly: PanelAssemblyStatus }
+          | { kind: "other" }
           | { error: string };
+        // eslint-disable-next-line no-console
+        console.debug("[onshape-panel] status", {
+          ok: response.ok,
+          kind: (body as { kind?: string }).kind
+        });
         if (!response.ok || "error" in body) {
           setParts({
             status: "error",
@@ -139,7 +146,13 @@ export function OnshapePanel({
           });
           return;
         }
-        setParts({ status: "ready", rows: body.parts });
+        if (body.kind === "assembly" && body.assembly) {
+          setParts({ status: "ready-assembly", assembly: body.assembly });
+        } else if (body.kind === "partstudio" && Array.isArray(body.parts)) {
+          setParts({ status: "ready", rows: body.parts });
+        } else {
+          setParts({ status: "ready-other" });
+        }
       } catch (error) {
         if (error instanceof PanelUnauthorizedError) {
           setSession({ status: "signed-out" });
