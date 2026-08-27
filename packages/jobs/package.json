@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@activepieces/piece-google-calendar": "0.10.3",
     "@ai-sdk/openai": "catalog:",
     "@carbon/auth": "workspace:*",
     "@carbon/database": "workspace:*",
@@ -49,6 +50,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./events": "./src/events.ts",
+    "./integrations": "./src/workflows/integrations/index.ts",
     "./inngest": "./src/inngest/index.ts",
     "./worker": "./src/inngest/worker.ts"
   },
