@@ -129,6 +129,28 @@ const payloadValidator = z.discriminatedUnion("type", [
     userId: z.string(),
   }),
   z.object({
+    type: z.literal("receiptFromRepairOrder"),
+    repairOrderId: z.string(),
+    // "intake" pulls Pending lines in from the customer; "return" pulls the
+    // repaired units back from the supplier. One leg per receipt.
+    leg: z.enum(["intake", "return"]),
+    receiptId: z.string().optional(),
+    locationId: z.string().optional(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("shipmentFromRepairOrder"),
+    repairOrderId: z.string(),
+    // "supplier" sends Received units out to the OEM; "customer" sends
+    // Repaired units home.
+    leg: z.enum(["supplier", "customer"]),
+    shipmentId: z.string().optional(),
+    locationId: z.string().optional(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
     type: z.literal("shipmentFromSalesReturnOrder"),
     salesReturnOrderId: z.string(),
     shipmentId: z.string().optional(),
@@ -189,6 +211,8 @@ serve(async (req: Request) => {
     shipmentFromPurchaseReturnOrder: { create: "inventory" },
     shipmentFromSalesOrder: { create: "inventory" },
     shipmentFromSalesReturnOrder: { create: "inventory" },
+    receiptFromRepairOrder: { create: "inventory" },
+    shipmentFromRepairOrder: { create: "inventory" },
     shipmentFromSalesOrderLine: { create: "inventory" },
     shipmentLineSplit: { create: "inventory" },
     journalEntry: { create: "accounting" },
@@ -1412,6 +1436,193 @@ serve(async (req: Request) => {
         return errorResponse(err, 500);
       }
     }
+    case "receiptFromRepairOrder": {
+      const {
+        repairOrderId,
+        leg,
+        receiptId: existingReceiptId,
+        locationId: userLocationId,
+      } = payload;
+
+      console.log({
+        function: "create",
+        type,
+        companyId,
+        repairOrderId,
+        leg,
+        userId,
+      });
+
+      try {
+        const [repairOrder, repairOrderLines, receipt] = await Promise.all([
+          client
+            .from("repairOrder")
+            .select("*")
+            .eq("id", repairOrderId)
+            .eq("companyId", companyId)
+            .single(),
+          client
+            .from("repairOrderLine")
+            .select("*")
+            .eq("repairOrderId", repairOrderId)
+            .eq("companyId", companyId),
+          client
+            .from("receipt")
+            .select("*")
+            .eq("id", existingReceiptId)
+            .maybeSingle(),
+        ]);
+
+        if (!repairOrder.data) throw new Error("Repair order not found");
+        if (["Draft", "Completed", "Cancelled"].includes(
+          repairOrder.data.status
+        )) {
+          throw new Error(
+            `Cannot receive against a repair order in ${repairOrder.data.status} status`
+          );
+        }
+        if (repairOrderLines.error)
+          throw new Error(repairOrderLines.error.message);
+
+        const locationId = userLocationId ?? repairOrder.data.locationId ?? null;
+        if (!locationId)
+          throw new Error(
+            "The repair order has no location — set one before creating a receipt"
+          );
+
+        // Custody decides what a leg may pull: intake takes units that have
+        // not arrived yet, the return leg takes units the supplier is holding.
+        const eligibleStatus = leg === "intake" ? "Pending" : "At Supplier";
+
+        const itemIds = repairOrderLines.data
+          .map((d) => d.itemId)
+          .filter(Boolean) as string[];
+        const items = await client
+          .from("item")
+          .select("id, itemTrackingType")
+          .in("id", itemIds);
+        const serializedItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Serial")
+            .map((d) => d.id)
+        );
+        const batchItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Batch")
+            .map((d) => d.id)
+        );
+
+        const pickMethods = await client
+          .from("pickMethod")
+          .select("itemId, locationId, defaultStorageUnitId")
+          .in("itemId", itemIds);
+        const defaultStorageUnitByItem = new Map<string, string>();
+        for (const row of pickMethods.data ?? []) {
+          if (row.defaultStorageUnitId && row.locationId === locationId) {
+            defaultStorageUnitByItem.set(row.itemId, row.defaultStorageUnitId);
+          }
+        }
+
+        const hasReceipt = !!receipt.data?.id;
+        if (hasReceipt && receipt.data!.status !== "Draft")
+          throw new Error(`Cannot re-source a ${receipt.data!.status} receipt`);
+
+        // A repair leg always moves the whole line: the line's custody status
+        // is a single value, so a partial move would misreport the remainder.
+        const receiptLineItems = repairOrderLines.data.reduce<ReceiptLineItem[]>(
+          (acc, d) => {
+            if (!d.itemId || d.closedComplete) return acc;
+            if (d.status !== eligibleStatus) return acc;
+            const quantity = Number(d.quantity ?? 0);
+            if (quantity <= 0) return acc;
+
+            acc.push({
+              lineId: d.id,
+              itemId: d.itemId,
+              locationId,
+              storageUnitId: defaultStorageUnitByItem.get(d.itemId) ?? null,
+              requiresSerialTracking: serializedItems.has(d.itemId),
+              requiresBatchTracking: batchItems.has(d.itemId),
+              receivedQuantity: quantity,
+              outstandingQuantity: quantity,
+              // Customer property: it enters at ZERO value, always. Posting
+              // does not consult a cost source for this source document.
+              unitPrice: 0,
+              conversionFactor: 1,
+              unitOfMeasure: d.unitOfMeasureCode ?? "EA",
+              companyId,
+              createdBy: userId,
+              orderQuantity: quantity,
+            });
+            return acc;
+          },
+          []
+        );
+
+        if (receiptLineItems.length === 0) {
+          throw new Error(
+            leg === "intake"
+              ? "No units are waiting to be received"
+              : "No units are at the supplier"
+          );
+        }
+
+        const result = await db.transaction().execute(async (trx) => {
+          const nextReceiptId = await getNextSequence(trx, "receipt", companyId);
+
+          let id: string;
+          if (hasReceipt) {
+            id = receipt.data!.id;
+            await trx
+              .updateTable("receipt")
+              .set({
+                sourceDocument: "Repair Order",
+                sourceDocumentId: repairOrderId,
+                sourceDocumentReadableId: repairOrder.data.repairOrderId,
+                locationId,
+                updatedBy: userId,
+              })
+              .where("id", "=", id)
+              .execute();
+          } else {
+            const insertReceipt = await trx
+              .insertInto("receipt")
+              .values({
+                receiptId: nextReceiptId,
+                sourceDocument: "Repair Order",
+                sourceDocumentId: repairOrderId,
+                sourceDocumentReadableId: repairOrder.data.repairOrderId,
+                locationId,
+                status: "Draft",
+                companyId,
+                createdBy: userId,
+              })
+              .returning(["id"])
+              .execute();
+            id = insertReceipt[0]?.id ?? "";
+          }
+
+          await trx.deleteFrom("receiptLine").where("receiptId", "=", id)
+            .execute();
+
+          await trx
+            .insertInto("receiptLine")
+            .values(
+              receiptLineItems.map((lineItem) => ({
+                ...lineItem,
+                receiptId: id,
+              }))
+            )
+            .execute();
+
+          return { id };
+        });
+
+        return jsonResponse(result, 201);
+      } catch (err) {
+        return errorResponse(err, 500);
+      }
+    }
     case "receiptFromWarehouseTransfer": {
       const { warehouseTransferId, receiptId: existingReceiptId } = payload;
 
@@ -2485,6 +2696,192 @@ serve(async (req: Request) => {
         });
 
         return jsonResponse({ id: shipmentId }, 201);
+      } catch (err) {
+        return errorResponse(err, 500);
+      }
+    }
+    case "shipmentFromRepairOrder": {
+      const {
+        repairOrderId,
+        leg,
+        shipmentId: existingShipmentId,
+        locationId: userLocationId,
+      } = payload;
+
+      console.log({
+        function: "create",
+        type,
+        companyId,
+        repairOrderId,
+        leg,
+        userId,
+      });
+
+      try {
+        const [repairOrder, repairOrderLines, shipment] = await Promise.all([
+          client
+            .from("repairOrder")
+            .select("*")
+            .eq("id", repairOrderId)
+            .eq("companyId", companyId)
+            .single(),
+          client
+            .from("repairOrderLine")
+            .select("*")
+            .eq("repairOrderId", repairOrderId)
+            .eq("companyId", companyId),
+          client
+            .from("shipment")
+            .select("*")
+            .eq("id", existingShipmentId)
+            .maybeSingle(),
+        ]);
+
+        if (!repairOrder.data) throw new Error("Repair order not found");
+        if (repairOrderLines.error)
+          throw new Error(repairOrderLines.error.message);
+        if (["Draft", "Completed", "Cancelled"].includes(
+          repairOrder.data.status
+        )) {
+          throw new Error(
+            `Cannot create a shipment for a ${repairOrder.data.status} repair order`
+          );
+        }
+        if (leg === "supplier" && !repairOrder.data.supplierId) {
+          throw new Error(
+            "Set the repair supplier on the order before shipping units out"
+          );
+        }
+
+        const locationId = userLocationId ?? repairOrder.data.locationId ?? null;
+        if (!locationId) throw new Error("The repair order has no location");
+
+        // Custody gates the leg: only a unit in the shop can go to the OEM,
+        // and only a repaired unit can go home.
+        const eligibleStatus = leg === "supplier" ? "Received" : "Repaired";
+
+        const itemIds = repairOrderLines.data
+          .map((d) => d.itemId)
+          .filter(Boolean) as string[];
+        const items = await client
+          .from("item")
+          .select("id, itemTrackingType")
+          .in("id", itemIds);
+        const serializedItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Serial")
+            .map((d) => d.id)
+        );
+        const batchItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Batch")
+            .map((d) => d.id)
+        );
+
+        const hasShipment = !!shipment.data?.id;
+        if (hasShipment && shipment.data!.status !== "Draft")
+          throw new Error(
+            `Cannot re-source a ${shipment.data!.status} shipment`
+          );
+
+        const shipmentLineItems = repairOrderLines.data.reduce<
+          ShipmentLineItem[]
+        >((acc, d) => {
+          if (!d.itemId || d.closedComplete) return acc;
+          if (d.status !== eligibleStatus) return acc;
+          const quantity = Number(d.quantity ?? 0);
+          if (quantity <= 0) return acc;
+
+          acc.push({
+            lineId: d.id,
+            itemId: d.itemId,
+            locationId,
+            requiresSerialTracking: serializedItems.has(d.itemId),
+            requiresBatchTracking: batchItems.has(d.itemId),
+            shippedQuantity: quantity,
+            outstandingQuantity: quantity,
+            orderQuantity: quantity,
+            // Customer property moving under custody: no revenue either way.
+            unitPrice: 0,
+            unitOfMeasure: d.unitOfMeasureCode ?? "EA",
+            companyId,
+            createdBy: userId,
+          });
+          return acc;
+        }, []);
+
+        if (shipmentLineItems.length === 0) {
+          throw new Error(
+            leg === "supplier"
+              ? "No units in the shop are ready to send to the supplier"
+              : "No repaired units are ready to ship back"
+          );
+        }
+
+        const result = await db.transaction().execute(async (trx) => {
+          const nextShipmentId = await getNextSequence(
+            trx,
+            "shipment",
+            companyId
+          );
+
+          let id: string;
+          if (hasShipment) {
+            id = shipment.data!.id;
+            await trx
+              .updateTable("shipment")
+              .set({
+                sourceDocument: "Repair Order",
+                sourceDocumentId: repairOrderId,
+                sourceDocumentReadableId: repairOrder.data.repairOrderId,
+                customerId:
+                  leg === "customer" ? repairOrder.data.customerId : null,
+                supplierId:
+                  leg === "supplier" ? repairOrder.data.supplierId : null,
+                locationId,
+                updatedBy: userId,
+              })
+              .where("id", "=", id)
+              .execute();
+          } else {
+            const insertShipment = await trx
+              .insertInto("shipment")
+              .values({
+                shipmentId: nextShipmentId,
+                sourceDocument: "Repair Order",
+                sourceDocumentId: repairOrderId,
+                sourceDocumentReadableId: repairOrder.data.repairOrderId,
+                customerId:
+                  leg === "customer" ? repairOrder.data.customerId : null,
+                supplierId:
+                  leg === "supplier" ? repairOrder.data.supplierId : null,
+                locationId,
+                status: "Draft",
+                companyId,
+                createdBy: userId,
+              })
+              .returning(["id"])
+              .execute();
+            id = insertShipment[0]?.id ?? "";
+          }
+
+          await trx.deleteFrom("shipmentLine").where("shipmentId", "=", id)
+            .execute();
+
+          await trx
+            .insertInto("shipmentLine")
+            .values(
+              shipmentLineItems.map((lineItem) => ({
+                ...lineItem,
+                shipmentId: id,
+              }))
+            )
+            .execute();
+
+          return { id };
+        });
+
+        return jsonResponse(result, 201);
       } catch (err) {
         return errorResponse(err, 500);
       }

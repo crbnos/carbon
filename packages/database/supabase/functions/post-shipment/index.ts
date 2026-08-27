@@ -12,6 +12,10 @@ import { calculateCOGS } from "../shared/calculate-cogs.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
 import {
+  removeWarrantyRegistrations,
+  stampWarrantyRegistrations,
+} from "../shared/warranty-registration.ts";
+import {
   getDefaultPostingGroup,
   resolveInventoryAccount,
 } from "../shared/get-posting-group.ts";
@@ -1238,6 +1242,42 @@ serve(async (req: Request) => {
                   }
                 }
               }
+
+              // Warranty registrations for Ship-Date terms.
+              //
+              // Inside the posting transaction ON PURPOSE: a posted shipment
+              // whose registrations silently failed would leave units in the
+              // field with no coverage record and no way to notice.
+              const warrantySources = (shipmentLines.data ?? [])
+                .filter((line) => line.itemId)
+                .map((line) => ({
+                  shipmentLineId: line.id,
+                  itemId: line.itemId as string,
+                  quantity: round(line.shippedQuantity ?? 0),
+                  trackedEntityIds: (shipmentLineTracking.data ?? [])
+                    .filter(
+                      (tracking) =>
+                        (
+                          tracking.attributes as
+                            | TrackedEntityAttributes
+                            | undefined
+                        )?.["Shipment Line"] === line.id
+                    )
+                    .map((tracking) => tracking.id),
+                }))
+                .filter((source) => source.quantity > 0);
+
+              if (salesOrder.data.customerId) {
+                await stampWarrantyRegistrations(trx, {
+                  companyId,
+                  userId,
+                  customerId: salesOrder.data.customerId,
+                  today,
+                  basis: "Ship Date",
+                  sources: warrantySources,
+                });
+              }
+
             });
             break;
           }
@@ -2069,6 +2109,232 @@ serve(async (req: Request) => {
             break;
           }
 
+          case "Repair Order": {
+            // A customer unit leaving the building — to the OEM, or home.
+            //
+            // It was taken in at ZERO value, so relief is zero-value too: the
+            // quantity moves, no journal is written, and nothing touches the
+            // balance sheet. Entities go Consumed (the same terminal state a
+            // sale or a supplier return uses); the repair line's custody
+            // status is what says WHERE the unit actually is.
+            if (!shipment.data.sourceDocumentId)
+              throw new Error("Shipment has no sourceDocumentId");
+            const repairOrderId = shipment.data.sourceDocumentId;
+
+            const [repairOrder, repairOrderLines] = await Promise.all([
+              client
+                .from("repairOrder")
+                .select("*")
+                .eq("id", repairOrderId)
+                .eq("companyId", companyId)
+                .single(),
+              client
+                .from("repairOrderLine")
+                .select("*")
+                .eq("repairOrderId", repairOrderId)
+                .eq("companyId", companyId),
+            ]);
+            if (repairOrder.error)
+              throw new Error("Failed to fetch repair order");
+            if (repairOrderLines.error)
+              throw new Error("Failed to fetch repair order lines");
+            if (["Draft", "Completed", "Cancelled"].includes(
+              repairOrder.data.status
+            )) {
+              throw new Error(
+                `Cannot ship against a repair order in ${repairOrder.data.status} status`
+              );
+            }
+
+            const repairLineById = new Map(
+              (repairOrderLines.data ?? []).map((l) => [l.id, l])
+            );
+
+            const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
+              [];
+            const repairLineUpdates: Record<
+              string,
+              {
+                status: Database["public"]["Tables"]["repairOrderLine"]["Row"]["status"];
+                updatedBy: string;
+              }
+            > = {};
+            const trackedEntityUpdates: Record<
+              string,
+              {
+                status: Database["public"]["Tables"]["trackedEntity"]["Row"]["status"];
+                quantity: number;
+              }
+            > = {};
+
+            for (const shipmentLine of shipmentLines.data ?? []) {
+              if (!shipmentLine.itemId || !shipmentLine.lineId) continue;
+              const repairLine = repairLineById.get(shipmentLine.lineId);
+              if (!repairLine) {
+                throw new Error(
+                  `Shipment line ${shipmentLine.id} does not map to a repair order line`
+                );
+              }
+
+              // Custody gate, re-read inside the posting transaction: only a
+              // unit in the shop can go to the OEM, only a repaired one home.
+              const nextStatus =
+                repairLine.status === "Received"
+                  ? ("At Supplier" as const)
+                  : repairLine.status === "Repaired"
+                    ? ("Shipped" as const)
+                    : null;
+              if (!nextStatus) {
+                throw new Error(
+                  `Repair line ${repairLine.lineNumber} is ${repairLine.status}; it cannot be shipped`
+                );
+              }
+
+              const shippedQuantity = round(shipmentLine.shippedQuantity ?? 0);
+              if (shippedQuantity <= 0) continue;
+
+              const itemTrackingType =
+                items.data?.find((i) => i.id === shipmentLine.itemId)
+                  ?.itemTrackingType ?? "Inventory";
+
+              const lineEntities = (shipmentLineTracking.data ?? []).filter(
+                (tracking) =>
+                  (
+                    tracking.attributes as TrackedEntityAttributes | undefined
+                  )?.["Shipment Line"] === shipmentLine.id
+              );
+
+              if (itemTrackingType === "Inventory") {
+                itemLedgerInserts.push({
+                  postingDate: today,
+                  itemId: shipmentLine.itemId,
+                  quantity: round(-shippedQuantity),
+                  locationId: shipmentLine.locationId,
+                  storageUnitId: shipmentLine.storageUnitId,
+                  entryType: "Negative Adjmt.",
+                  documentType: "Repair Shipment",
+                  documentId: shipment.data?.id ?? undefined,
+                  documentLineId: repairLine.id,
+                  externalDocumentId:
+                    shipment.data?.externalDocumentId ?? undefined,
+                  createdBy: userId,
+                  companyId,
+                });
+              } else {
+                for (const entity of lineEntities) {
+                  itemLedgerInserts.push({
+                    postingDate: today,
+                    itemId: shipmentLine.itemId,
+                    quantity: round(-(entity.quantity ?? 0)),
+                    locationId: shipmentLine.locationId,
+                    storageUnitId: shipmentLine.storageUnitId,
+                    entryType: "Negative Adjmt.",
+                    documentType: "Repair Shipment",
+                    documentId: shipment.data?.id ?? undefined,
+                    documentLineId: repairLine.id,
+                    trackedEntityId: entity.id,
+                    externalDocumentId:
+                      shipment.data?.externalDocumentId ?? undefined,
+                    createdBy: userId,
+                    companyId,
+                  });
+                  trackedEntityUpdates[entity.id] = {
+                    status: "Consumed",
+                    quantity: entity.quantity ?? 0,
+                  };
+                }
+              }
+
+              repairLineUpdates[repairLine.id] = {
+                status: nextStatus,
+                updatedBy: userId,
+              };
+            }
+
+            await db.transaction().execute(async (trx) => {
+              for await (const [lineId, update] of Object.entries(
+                repairLineUpdates
+              )) {
+                await trx
+                  .updateTable("repairOrderLine")
+                  .set(update)
+                  .where("id", "=", lineId)
+                  .execute();
+              }
+
+              if (repairOrder.data.status === "Confirmed") {
+                await trx
+                  .updateTable("repairOrder")
+                  .set({ status: "In Progress", updatedBy: userId })
+                  .where("id", "=", repairOrderId)
+                  .execute();
+              }
+
+              if (itemLedgerInserts.length > 0) {
+                await trx
+                  .insertInto("itemLedger")
+                  .values(itemLedgerInserts)
+                  .execute();
+              }
+
+              await trx
+                .updateTable("shipment")
+                .set({
+                  status: "Posted",
+                  postingDate: today,
+                  postedBy: userId,
+                  updatedBy: userId,
+                })
+                .where("id", "=", shipmentId)
+                .execute();
+
+              if (Object.keys(trackedEntityUpdates).length > 0) {
+                const trackedActivity = await trx
+                  .insertInto("trackedActivity")
+                  .values({
+                    type: "Repair Shipment",
+                    sourceDocument: "Shipment",
+                    sourceDocumentId: shipmentId,
+                    sourceDocumentReadableId: shipment.data?.shipmentId,
+                    attributes: {
+                      "Repair Order": repairOrderId,
+                      Shipment: shipmentId,
+                      Employee: userId,
+                    },
+                    companyId,
+                    createdBy: userId,
+                  })
+                  .returning(["id"])
+                  .execute();
+                const trackedActivityId = trackedActivity[0]?.id;
+
+                for await (const [entityId, update] of Object.entries(
+                  trackedEntityUpdates
+                )) {
+                  await trx
+                    .updateTable("trackedEntity")
+                    .set({ status: update.status, updatedBy: userId })
+                    .where("id", "=", entityId)
+                    .execute();
+
+                  if (trackedActivityId) {
+                    await trx
+                      .insertInto("trackedActivityInput")
+                      .values({
+                        trackedActivityId,
+                        trackedEntityId: entityId,
+                        quantity: update.quantity,
+                        companyId,
+                        createdBy: userId,
+                      })
+                      .execute();
+                  }
+                }
+              }
+            });
+
+            break;
+          }
           case "Purchase Return Order": {
             // Supplier return: relieves inventory at carried cost against
             // GRNI (reverses the receipt posting). Cr Inventory / Dr GRNI.
@@ -2865,6 +3131,16 @@ serve(async (req: Request) => {
                 })
                 .where("id", "=", salesOrder.data.id)
                 .execute();
+
+              // A void un-ships the units, so the coverage it created goes
+              // with it — matched on this shipment's own line ids. Manual and
+              // repair-issued registrations (no stamping key) are untouched.
+              await removeWarrantyRegistrations(trx, {
+                companyId,
+                shipmentLineIds: (shipmentLines.data ?? []).map(
+                  (line) => line.id
+                ),
+              });
 
               // Update shipment status to Voided
               await trx

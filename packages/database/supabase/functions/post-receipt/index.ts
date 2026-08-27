@@ -2713,6 +2713,311 @@ serve(async (req: Request) => {
         });
         break;
       }
+      case "Repair Order": {
+        // Custody intake, and the OEM return leg.
+        //
+        // The unit is the CUSTOMER'S property: it enters at ZERO value, always
+        // — no cost source is consulted and no journal is written, so a $50k
+        // machine on the shop floor never lands on our balance sheet. What we
+        // do keep is identity: a serial re-enters as the SAME trackedEntity,
+        // re-tagged On Hold (the returns-receipt pattern), so the genealogy
+        // survives the whole customer -> shop -> supplier -> shop round trip.
+        if (!receipt.data.sourceDocumentId)
+          throw new Error("Receipt has no sourceDocumentId");
+        const repairOrderId = receipt.data.sourceDocumentId;
+
+        const [repairOrder, repairOrderLines] = await Promise.all([
+          client
+            .from("repairOrder")
+            .select("*")
+            .eq("id", repairOrderId)
+            .eq("companyId", companyId)
+            .single(),
+          client
+            .from("repairOrderLine")
+            .select("*")
+            .eq("repairOrderId", repairOrderId)
+            .eq("companyId", companyId),
+        ]);
+        if (repairOrder.error) throw new Error("Failed to fetch repair order");
+        if (repairOrderLines.error)
+          throw new Error("Failed to fetch repair order lines");
+        if (["Draft", "Completed", "Cancelled"].includes(
+          repairOrder.data.status
+        )) {
+          throw new Error(
+            `Cannot post a receipt against a repair order in ${repairOrder.data.status} status`
+          );
+        }
+
+        const repairLineById = new Map(
+          (repairOrderLines.data ?? []).map((l) => [l.id, l])
+        );
+
+        const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
+          [];
+        const costLedgerInserts: Database["public"]["Tables"]["costLedger"]["Insert"][] =
+          [];
+        const repairLineUpdates: Record<
+          string,
+          {
+            status: Database["public"]["Tables"]["repairOrderLine"]["Row"]["status"];
+            updatedBy: string;
+          }
+        > = {};
+        const trackedEntityUpdates: Record<
+          string,
+          {
+            status: Database["public"]["Tables"]["trackedEntity"]["Row"]["status"];
+            quantity: number;
+          }
+        > = {};
+
+        for (const receiptLine of receiptLines.data ?? []) {
+          if (!receiptLine.itemId || !receiptLine.lineId) continue;
+          const repairLine = repairLineById.get(receiptLine.lineId);
+          if (!repairLine) {
+            throw new Error(
+              `Receipt line ${receiptLine.id} does not map to a repair order line`
+            );
+          }
+
+          // Custody is a state machine, re-read here under the posting
+          // transaction: only a Pending line can be taken in, and only a line
+          // the supplier holds can come back.
+          const nextStatus =
+            repairLine.status === "Pending"
+              ? ("Received" as const)
+              : repairLine.status === "At Supplier"
+                ? ("Repaired" as const)
+                : null;
+          if (!nextStatus) {
+            throw new Error(
+              `Repair line ${repairLine.lineNumber} is ${repairLine.status}; it cannot be received`
+            );
+          }
+
+          const safeReceivedQuantity =
+            isNaN(receiptLine.receivedQuantity) ||
+            receiptLine.receivedQuantity == null
+              ? 0
+              : receiptLine.receivedQuantity;
+          const receivedQuantity = round(
+            safeReceivedQuantity * (receiptLine.conversionFactor ?? 1)
+          );
+          if (receivedQuantity <= 0) continue;
+
+          const item = itemDetails.data?.find(
+            (i) => i.id === receiptLine.itemId
+          );
+          const itemTrackingType = item?.itemTrackingType ?? "Inventory";
+
+          if (itemTrackingType === "Inventory") {
+            itemLedgerInserts.push({
+              postingDate: today,
+              itemId: receiptLine.itemId,
+              quantity: round(receivedQuantity),
+              locationId: receiptLine.locationId,
+              storageUnitId: receiptLine.storageUnitId,
+              entryType: "Positive Adjmt.",
+              documentType: "Repair Receipt",
+              documentId: receipt.data?.id ?? undefined,
+              documentLineId: repairLine.id,
+              externalDocumentId:
+                receipt.data?.externalDocumentId ?? undefined,
+              createdBy: userId,
+              companyId,
+            });
+          }
+
+          if (receiptLine.requiresBatchTracking) {
+            const entity = receiptLineTracking.data?.find(
+              (tracking) =>
+                (tracking.attributes as TrackedEntityAttributes | undefined)?.[
+                  "Receipt Line"
+                ] === receiptLine.id
+            );
+            itemLedgerInserts.push({
+              postingDate: today,
+              itemId: receiptLine.itemId,
+              quantity: round(receivedQuantity),
+              locationId: receiptLine.locationId,
+              storageUnitId: receiptLine.storageUnitId,
+              entryType: "Positive Adjmt.",
+              documentType: "Repair Receipt",
+              documentId: receipt.data?.id ?? undefined,
+              documentLineId: repairLine.id,
+              trackedEntityId: entity?.id,
+              externalDocumentId:
+                receipt.data?.externalDocumentId ?? undefined,
+              createdBy: userId,
+              companyId,
+            });
+            if (entity) {
+              trackedEntityUpdates[entity.id] = {
+                status: "On Hold",
+                quantity: receivedQuantity,
+              };
+            }
+          }
+
+          if (receiptLine.requiresSerialTracking) {
+            const lineTracking = receiptLineTracking.data?.filter(
+              (tracking) =>
+                (tracking.attributes as TrackedEntityAttributes | undefined)?.[
+                  "Receipt Line"
+                ] === receiptLine.id
+            );
+            for (let i = 0; i < receivedQuantity; i++) {
+              const trackingWithIndex = lineTracking?.find(
+                (tracking) =>
+                  (
+                    tracking.attributes as TrackedEntityAttributes | undefined
+                  )?.["Receipt Line Index"] === i
+              );
+              itemLedgerInserts.push({
+                postingDate: today,
+                itemId: receiptLine.itemId,
+                quantity: 1,
+                locationId: receiptLine.locationId,
+                storageUnitId: receiptLine.storageUnitId,
+                entryType: "Positive Adjmt.",
+                documentType: "Repair Receipt",
+                documentId: receipt.data?.id ?? undefined,
+                documentLineId: repairLine.id,
+                trackedEntityId: trackingWithIndex?.id,
+                externalDocumentId:
+                  receipt.data?.externalDocumentId ?? undefined,
+                createdBy: userId,
+                companyId,
+              });
+              if (trackingWithIndex) {
+                trackedEntityUpdates[trackingWithIndex.id] = {
+                  status: "On Hold",
+                  quantity: 1,
+                };
+              }
+            }
+          }
+
+          // Zero-value layer. It still exists so FIFO consumption stays
+          // quantity-consistent, exactly like the zero-value return reason.
+          if (itemTrackingType !== "Non-Inventory") {
+            costLedgerInserts.push({
+              itemLedgerType: "Positive Adjmt.",
+              costLedgerType: "Direct Cost",
+              adjustment: false,
+              documentType: "Repair Receipt",
+              documentId: receipt.data?.id ?? undefined,
+              externalDocumentId:
+                receipt.data?.externalDocumentId ?? undefined,
+              postingDate: today,
+              itemId: receiptLine.itemId,
+              quantity: round(receivedQuantity),
+              cost: 0,
+              createdBy: userId,
+              companyId,
+            });
+          }
+
+          repairLineUpdates[repairLine.id] = {
+            status: nextStatus,
+            updatedBy: userId,
+          };
+        }
+
+        await db.transaction().execute(async (trx) => {
+          if (costLedgerInserts.length > 0) {
+            await trx
+              .insertInto("costLedger")
+              .values(costLedgerInserts)
+              .execute();
+          }
+
+          for await (const [lineId, update] of Object.entries(
+            repairLineUpdates
+          )) {
+            await trx
+              .updateTable("repairOrderLine")
+              .set(update)
+              .where("id", "=", lineId)
+              .execute();
+          }
+
+          // First custody movement takes the order out of Confirmed.
+          if (repairOrder.data.status === "Confirmed") {
+            await trx
+              .updateTable("repairOrder")
+              .set({ status: "In Progress", updatedBy: userId })
+              .where("id", "=", repairOrderId)
+              .execute();
+          }
+
+          if (itemLedgerInserts.length > 0) {
+            await trx
+              .insertInto("itemLedger")
+              .values(itemLedgerInserts)
+              .execute();
+          }
+
+          await trx
+            .updateTable("receipt")
+            .set({
+              status: "Posted",
+              postingDate: today,
+              postedBy: userId,
+              updatedBy: userId,
+            })
+            .where("id", "=", receiptId)
+            .execute();
+
+          if (Object.keys(trackedEntityUpdates).length > 0) {
+            const trackedActivity = await trx
+              .insertInto("trackedActivity")
+              .values({
+                type: "Repair Receipt",
+                sourceDocument: "Receipt",
+                sourceDocumentId: receiptId,
+                sourceDocumentReadableId: receipt.data?.receiptId,
+                attributes: {
+                  "Repair Order": repairOrderId,
+                  Receipt: receiptId,
+                  Employee: userId,
+                },
+                companyId,
+                createdBy: userId,
+              })
+              .returning(["id"])
+              .execute();
+            const trackedActivityId = trackedActivity[0]?.id;
+
+            for await (const [entityId, update] of Object.entries(
+              trackedEntityUpdates
+            )) {
+              await trx
+                .updateTable("trackedEntity")
+                .set({ status: update.status, updatedBy: userId })
+                .where("id", "=", entityId)
+                .execute();
+
+              if (trackedActivityId) {
+                await trx
+                  .insertInto("trackedActivityOutput")
+                  .values({
+                    trackedActivityId,
+                    trackedEntityId: entityId,
+                    quantity: update.quantity,
+                    companyId,
+                    createdBy: userId,
+                  })
+                  .execute();
+              }
+            }
+          }
+        });
+
+        break;
+      }
       case "Inbound Transfer": {
         if (!receipt.data.sourceDocumentId)
           throw new Error("Receipt has no sourceDocumentId");
