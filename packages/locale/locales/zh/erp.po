@@ -3471,6 +3471,9 @@ msgstr "确认期间内每笔已过账日记账条目都有相等的借贷金额
 msgid "Conflict reason"
 msgstr "冲突原因"
 
+msgid "Connect"
+msgstr ""
+
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "将 Carbon 连接到您的会计、项目管理和 CAD 工具等更多应用。"
 
@@ -8527,6 +8530,9 @@ msgstr "更少的手动工作"
 msgid "Less manual work, fewer errors"
 msgstr "更少的手动工作，更少的错误"
 
+msgid "Let members sign in through your identity provider with SAML."
+msgstr ""
+
 msgid "Let's Build"
 msgstr "开始构建"
 
@@ -8894,6 +8900,9 @@ msgstr "使此文档处于活跃状态并可见。"
 
 msgid "Manage"
 msgstr "管理"
+
+msgid "Manage authentication and sign-in requirements for your company."
+msgstr ""
 
 msgid "Manage how shelf life is tracked, computed, and enforced across inventory."
 msgstr "管理如何在整个库存中跟踪、计算和执行保质期。"
@@ -10233,6 +10242,9 @@ msgstr "不是表格而是总账余额：当发出工作物料时成本积累，
 
 msgid "Not certified"
 msgstr "未认证"
+
+msgid "Not configured"
+msgstr ""
 
 msgid "Not enough jobs to cover quantity"
 msgstr "工作数量不足以覆盖数量"
@@ -13061,6 +13073,9 @@ msgstr "保存并覆盖"
 
 msgid "Save applications"
 msgstr "保存应用"
+
+msgid "Save changes"
+msgstr ""
 
 msgid "Save contacts"
 msgstr "保存联系人"

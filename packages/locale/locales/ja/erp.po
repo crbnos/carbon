@@ -3471,6 +3471,9 @@ msgstr "当期中に転記されたすべての仕訳が借方と貸方で一致
 msgid "Conflict reason"
 msgstr "紛争の理由"
 
+msgid "Connect"
+msgstr ""
+
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Carbonを会計、プロジェクト管理、CADツールなど、さまざまなツールに接続できます。"
 
@@ -8527,6 +8530,9 @@ msgstr "手作業を減らす"
 msgid "Less manual work, fewer errors"
 msgstr "手作業を減らし、エラーを削減"
 
+msgid "Let members sign in through your identity provider with SAML."
+msgstr ""
+
 msgid "Let's Build"
 msgstr "ビルドしましょう"
 
@@ -8894,6 +8900,9 @@ msgstr "このドキュメントをアクティブにして表示します。"
 
 msgid "Manage"
 msgstr "管理"
+
+msgid "Manage authentication and sign-in requirements for your company."
+msgstr ""
 
 msgid "Manage how shelf life is tracked, computed, and enforced across inventory."
 msgstr "棚卸資産全体で賞味期限がどのように追跡、計算、および実施されるかを管理します。"
@@ -10233,6 +10242,9 @@ msgstr "テーブルではなく、総勘定元帳残高：ジョブ材料が発
 
 msgid "Not certified"
 msgstr "認定されていない"
+
+msgid "Not configured"
+msgstr ""
 
 msgid "Not enough jobs to cover quantity"
 msgstr "数量をカバーするのに十分なジョブがありません"
@@ -13061,6 +13073,9 @@ msgstr "保存して上書き"
 
 msgid "Save applications"
 msgstr "アプリケーションを保存"
+
+msgid "Save changes"
+msgstr ""
 
 msgid "Save contacts"
 msgstr "連絡先を保存"

@@ -3471,6 +3471,9 @@ msgstr "Confirms every posted journal entry in the period has equal debits and c
 msgid "Conflict reason"
 msgstr "Conflict reason"
 
+msgid "Connect"
+msgstr "Connect"
+
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Connect Carbon to your accounting, project management, and CAD tools and much more."
 
@@ -8527,6 +8530,9 @@ msgstr "Less manual work"
 msgid "Less manual work, fewer errors"
 msgstr "Less manual work, fewer errors"
 
+msgid "Let members sign in through your identity provider with SAML."
+msgstr "Let members sign in through your identity provider with SAML."
+
 msgid "Let's Build"
 msgstr "Let's Build"
 
@@ -8894,6 +8900,9 @@ msgstr "Makes this document active and visible."
 
 msgid "Manage"
 msgstr "Manage"
+
+msgid "Manage authentication and sign-in requirements for your company."
+msgstr "Manage authentication and sign-in requirements for your company."
 
 msgid "Manage how shelf life is tracked, computed, and enforced across inventory."
 msgstr "Manage how shelf life is tracked, computed, and enforced across inventory."
@@ -10233,6 +10242,9 @@ msgstr "Not a table but a general-ledger balance: cost accumulates as job materi
 
 msgid "Not certified"
 msgstr "Not certified"
+
+msgid "Not configured"
+msgstr "Not configured"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Not enough jobs to cover quantity"
@@ -13061,6 +13073,9 @@ msgstr "Save and Overwrite"
 
 msgid "Save applications"
 msgstr "Save applications"
+
+msgid "Save changes"
+msgstr "Save changes"
 
 msgid "Save contacts"
 msgstr "Save contacts"

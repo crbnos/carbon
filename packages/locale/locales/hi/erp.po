@@ -3471,6 +3471,9 @@ msgstr "पुष्टि करता है कि अवधि में ह
 msgid "Conflict reason"
 msgstr "संघर्ष कारण"
 
+msgid "Connect"
+msgstr ""
+
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Carbon को अपने लेखांकन, परियोजना प्रबंधन, और CAD उपकरणों और बहुत कुछ से जोड़ें।"
 
@@ -8527,6 +8530,9 @@ msgstr "कम मैनुअल काम"
 msgid "Less manual work, fewer errors"
 msgstr "कम मैनुअल काम, कम त्रुटियां"
 
+msgid "Let members sign in through your identity provider with SAML."
+msgstr ""
+
 msgid "Let's Build"
 msgstr "चलिए बनाते हैं"
 
@@ -8894,6 +8900,9 @@ msgstr "यह दस्तावेज़ सक्रिय और दृश�
 
 msgid "Manage"
 msgstr "प्रबंधित करें"
+
+msgid "Manage authentication and sign-in requirements for your company."
+msgstr ""
 
 msgid "Manage how shelf life is tracked, computed, and enforced across inventory."
 msgstr "शेल्फ लाइफ को कैसे ट्रैक किया जाता है, गणना की जाती है, और इन्वेंटरी में लागू किया जाता है, इसे प्रबंधित करें।"
@@ -10233,6 +10242,9 @@ msgstr "एक तालिका नहीं बल्कि एक साम�
 
 msgid "Not certified"
 msgstr "प्रमाणित नहीं"
+
+msgid "Not configured"
+msgstr ""
 
 msgid "Not enough jobs to cover quantity"
 msgstr "पर्याप्त नौकरियां नहीं हैं मात्रा को कवर करने के लिए"
@@ -13061,6 +13073,9 @@ msgstr "सहेजें और अधिलेखित करें"
 
 msgid "Save applications"
 msgstr "आवेदन सहेजें"
+
+msgid "Save changes"
+msgstr ""
 
 msgid "Save contacts"
 msgstr "संपर्क सहेजें"

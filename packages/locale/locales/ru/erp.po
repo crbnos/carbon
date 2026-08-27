@@ -3471,6 +3471,9 @@ msgstr "Проверяет, что каждая опубликованная з�
 msgid "Conflict reason"
 msgstr "Причина конфликта"
 
+msgid "Connect"
+msgstr ""
+
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Подключите Carbon к своим инструментам бухгалтерского учета, управления проектами, CAD и многому другому."
 
@@ -8527,6 +8530,9 @@ msgstr "Меньше ручной работы"
 msgid "Less manual work, fewer errors"
 msgstr "Меньше ручной работы, меньше ошибок"
 
+msgid "Let members sign in through your identity provider with SAML."
+msgstr ""
+
 msgid "Let's Build"
 msgstr "Давайте создавать"
 
@@ -8894,6 +8900,9 @@ msgstr "Делает этот документ активным и видимы�
 
 msgid "Manage"
 msgstr "Управление"
+
+msgid "Manage authentication and sign-in requirements for your company."
+msgstr ""
 
 msgid "Manage how shelf life is tracked, computed, and enforced across inventory."
 msgstr "Управляйте отслеживанием, расчетом и применением сроков годности по всему инвентарю."
@@ -10233,6 +10242,9 @@ msgstr "Не таблица, а баланс главной книги: стои
 
 msgid "Not certified"
 msgstr "Не сертифицировано"
+
+msgid "Not configured"
+msgstr ""
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Недостаточно заданий для покрытия количества"
@@ -13061,6 +13073,9 @@ msgstr "Сохранить и перезаписать"
 
 msgid "Save applications"
 msgstr "Сохранить применения"
+
+msgid "Save changes"
+msgstr ""
 
 msgid "Save contacts"
 msgstr "Сохранить контакты"

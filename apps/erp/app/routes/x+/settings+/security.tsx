@@ -22,9 +22,9 @@ import {
   CardHeader,
   CardTitle,
   Copy,
+  cn,
   Heading,
   HStack,
-  Input as InputBase,
   Modal,
   ModalBody,
   ModalContent,
@@ -160,6 +160,36 @@ export async function action({ request }: ActionFunctionArgs) {
   );
 }
 
+function ConnectionStatus({ active }: { active: boolean }) {
+  return (
+    <span className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
+      <span
+        className={cn(
+          "size-2 rounded-full",
+          active
+            ? "bg-emerald-500 shadow-[0_0_0_3px_rgb(16_185_129_/_0.15)]"
+            : "bg-muted-foreground/40"
+        )}
+      />
+      {active ? <Trans>Active</Trans> : <Trans>Not configured</Trans>}
+    </span>
+  );
+}
+
+function CopyableField({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-1.5 w-full">
+      <span className="text-sm font-medium text-foreground">{label}</span>
+      <div className="flex items-center gap-1 h-10 w-full rounded-md border border-input bg-muted/40 pl-3 pr-1">
+        <span className="flex-1 truncate font-mono text-sm text-muted-foreground">
+          {value}
+        </span>
+        <Copy text={value} />
+      </div>
+    </div>
+  );
+}
+
 export default function Security() {
   const { ssoEnabled, connection, acsUrl, metadataUrl } =
     useLoaderData<typeof loader>();
@@ -191,11 +221,18 @@ export default function Security() {
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">
       <VStack
         spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
+        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-8"
       >
-        <Heading size="h3">
-          <Trans>Security</Trans>
-        </Heading>
+        <div className="flex flex-col gap-1 w-full">
+          <Heading size="h3">
+            <Trans>Security</Trans>
+          </Heading>
+          <p className="text-sm text-muted-foreground text-pretty">
+            <Trans>
+              Manage authentication and sign-in requirements for your company.
+            </Trans>
+          </p>
+        </div>
         <Card>
           <CardHeader>
             <HStack className="justify-between items-center">
@@ -246,9 +283,20 @@ export default function Security() {
 
         {ssoEnabled && (
           <>
-            <Heading size="h3">
-              <Trans>Single Sign-On</Trans>
-            </Heading>
+            <div className="flex items-end justify-between gap-4 w-full">
+              <div className="flex flex-col gap-1">
+                <Heading size="h3">
+                  <Trans>Single Sign-On</Trans>
+                </Heading>
+                <p className="text-sm text-muted-foreground text-pretty max-w-xl">
+                  <Trans>
+                    Let members sign in through your identity provider with
+                    SAML.
+                  </Trans>
+                </p>
+              </div>
+              <ConnectionStatus active={Boolean(connection)} />
+            </div>
 
             <Card>
               <CardHeader>
@@ -263,27 +311,9 @@ export default function Security() {
                   </Trans>
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <VStack spacing={4}>
-                  <VStack spacing={1}>
-                    <label className="text-sm font-medium">
-                      <Trans>ACS URL</Trans>
-                    </label>
-                    <HStack className="w-full">
-                      <InputBase value={acsUrl} isReadOnly />
-                      <Copy text={acsUrl} />
-                    </HStack>
-                  </VStack>
-                  <VStack spacing={1}>
-                    <label className="text-sm font-medium">
-                      <Trans>SP Metadata URL</Trans>
-                    </label>
-                    <HStack className="w-full">
-                      <InputBase value={metadataUrl} isReadOnly />
-                      <Copy text={metadataUrl} />
-                    </HStack>
-                  </VStack>
-                </VStack>
+              <CardContent className="gap-4">
+                <CopyableField label={t`ACS URL`} value={acsUrl} />
+                <CopyableField label={t`SP Metadata URL`} value={metadataUrl} />
               </CardContent>
             </Card>
 
@@ -315,7 +345,7 @@ export default function Security() {
                     </Trans>
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="gap-6">
                   <Hidden name="intent" value="upsert" />
                   <VStack spacing={4}>
                     <Input
@@ -333,55 +363,62 @@ export default function Security() {
                       label={t`Email Domains`}
                       helperText={t`Comma-separated list of email domains, e.g. example.com, example.org`}
                     />
-                    {connection && (
-                      <HStack className="w-full justify-between items-center">
-                        <div>
-                          <p className="text-sm font-medium">
-                            <Trans>Require SSO</Trans>
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            <Trans>
-                              Users on covered domains can sign in only with
-                              SSO; magic link, Google, and passkeys are refused.
-                            </Trans>
-                          </p>
-                        </div>
-                        {/* The connection loaded here is active by definition
-                            (getSsoConnection filters active = true), so the
-                            switch is enabled whenever a connection renders. */}
-                        <Switch
-                          checked={connection.requireSso === true}
-                          onCheckedChange={(checked) =>
-                            requireSsoFetcher.submit(
-                              {
-                                intent: "requireSso",
-                                enabled: String(checked)
-                              },
-                              { method: "post", action: path.to.sso }
-                            )
-                          }
-                          disabled={
-                            requireSsoFetcher.state !== "idle" || !canEdit
-                          }
-                          aria-label={t`Require SSO`}
-                        />
-                      </HStack>
-                    )}
                   </VStack>
+                  {connection && (
+                    <div className="flex items-center justify-between gap-4 border-t border-border pt-6">
+                      <div className="flex flex-col gap-0.5">
+                        <p className="text-sm font-medium text-foreground">
+                          <Trans>Require SSO</Trans>
+                        </p>
+                        <p className="text-sm text-muted-foreground text-pretty max-w-md">
+                          <Trans>
+                            Users on covered domains can sign in only with SSO;
+                            magic link, Google, and passkeys are refused.
+                          </Trans>
+                        </p>
+                      </div>
+                      {/* The connection loaded here is active by definition
+                          (getSsoConnection filters active = true), so the
+                          switch is enabled whenever a connection renders. */}
+                      <Switch
+                        checked={connection.requireSso === true}
+                        onCheckedChange={(checked) =>
+                          requireSsoFetcher.submit(
+                            {
+                              intent: "requireSso",
+                              enabled: String(checked)
+                            },
+                            { method: "post", action: path.to.sso }
+                          )
+                        }
+                        disabled={
+                          requireSsoFetcher.state !== "idle" || !canEdit
+                        }
+                        aria-label={t`Require SSO`}
+                      />
+                    </div>
+                  )}
                 </CardContent>
-                <CardFooter className="justify-between">
-                  <Submit isDisabled={!canEdit}>
-                    <Trans>Save</Trans>
-                  </Submit>
+                <CardFooter
+                  className={connection ? "justify-between" : "justify-end"}
+                >
                   {connection && (
                     <Button
-                      variant="destructive"
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive"
                       isDisabled={!canEdit}
                       onClick={() => setDeactivateModalOpen(true)}
                     >
                       <Trans>Deactivate</Trans>
                     </Button>
                   )}
+                  <Submit isDisabled={!canEdit}>
+                    {connection ? (
+                      <Trans>Save changes</Trans>
+                    ) : (
+                      <Trans>Connect</Trans>
+                    )}
+                  </Submit>
                 </CardFooter>
               </Card>
             </ValidatedForm>

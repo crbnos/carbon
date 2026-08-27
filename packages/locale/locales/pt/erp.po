@@ -3471,6 +3471,9 @@ msgstr "Confirma que cada lançamento de diário lançado no período tem débit
 msgid "Conflict reason"
 msgstr "Motivo do conflito"
 
+msgid "Connect"
+msgstr ""
+
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Conecte o Carbon às suas ferramentas de contabilidade, gerenciamento de projetos, CAD e muito mais."
 
@@ -8527,6 +8530,9 @@ msgstr "Menos trabalho manual"
 msgid "Less manual work, fewer errors"
 msgstr "Menos trabalho manual, menos erros"
 
+msgid "Let members sign in through your identity provider with SAML."
+msgstr ""
+
 msgid "Let's Build"
 msgstr "Vamos Construir"
 
@@ -8894,6 +8900,9 @@ msgstr "Torna este documento ativo e visível."
 
 msgid "Manage"
 msgstr "Gerenciar"
+
+msgid "Manage authentication and sign-in requirements for your company."
+msgstr ""
 
 msgid "Manage how shelf life is tracked, computed, and enforced across inventory."
 msgstr "Gerir como a vida útil é rastreada, calculada e aplicada no inventário."
@@ -10233,6 +10242,9 @@ msgstr "Não é uma tabela, mas um saldo do livro-razão geral: o custo se acumu
 
 msgid "Not certified"
 msgstr "Não certificado"
+
+msgid "Not configured"
+msgstr ""
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Não há trabalhos suficientes para cobrir a quantidade"
@@ -13061,6 +13073,9 @@ msgstr "Guardar e Sobrescrever"
 
 msgid "Save applications"
 msgstr "Guardar aplicações"
+
+msgid "Save changes"
+msgstr ""
 
 msgid "Save contacts"
 msgstr "Guardar contactos"
