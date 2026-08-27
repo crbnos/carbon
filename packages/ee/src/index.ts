@@ -80,6 +80,7 @@ export {
   Onshape,
   OnshapeGovernment
 } from "./onshape/config";
+export type { OnshapeDocument } from "./onshape/lib";
 // Client-safe (no client or env imports): lets UI ask "is Onshape connected?"
 // without naming either integration id.
 export {
@@ -94,6 +95,12 @@ export {
 } from "./onshape/panel/messages";
 export type { OnshapePanelMe, OnshapePanelPaths } from "./onshape/panel/Panel";
 export { OnshapePanel } from "./onshape/panel/Panel";
+export type {
+  PanelItemRow,
+  PanelMappingRow,
+  PanelPartStatus
+} from "./onshape/panel/status";
+export { buildPartStatuses, externalIdForPart } from "./onshape/panel/status";
 // TODO: export as @carbon/ee/paperless
 export { PaperlessPartsClient } from "./paperless-parts/lib/client";
 export { QuickBooks } from "./quickbooks/config";
