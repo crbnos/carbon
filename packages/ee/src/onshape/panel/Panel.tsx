@@ -21,6 +21,7 @@ import {
   panelFetch,
   setPanelSessionToken
 } from "./session-storage";
+import type { PanelPartStatus } from "./status";
 
 export type OnshapePanelPaths = {
   /** Popup route that mints a panel session for the signed-in user. */
@@ -29,6 +30,8 @@ export type OnshapePanelPaths = {
   me: string;
   /** DELETE revokes the token. */
   session: string;
+  /** Carbon status for the current element's parts. */
+  status: string;
 };
 
 export type OnshapePanelMe = {
@@ -66,6 +69,59 @@ export function OnshapePanel({
     null
   );
   const [messageCount, setMessageCount] = useState(0);
+  const [parts, setParts] = useState<
+    | { status: "idle" }
+    | { status: "loading" }
+    | { status: "ready"; rows: PanelPartStatus[] }
+    | { status: "error"; message: string }
+  >({ status: "idle" });
+
+  const canLoadParts =
+    !!context.documentId &&
+    !!context.wv &&
+    !!context.wvId &&
+    !!context.elementId;
+
+  const loadParts = useCallback(
+    async (token: string) => {
+      if (!canLoadParts) return;
+      setParts({ status: "loading" });
+      try {
+        const query = new URLSearchParams({
+          documentId: context.documentId as string,
+          wv: context.wv as string,
+          wvId: context.wvId as string,
+          elementId: context.elementId as string
+        });
+        const response = await panelFetch(token, `${paths.status}?${query}`);
+        const body = (await response.json()) as
+          | { parts: PanelPartStatus[] }
+          | { error: string };
+        if (!response.ok || "error" in body) {
+          setParts({
+            status: "error",
+            message:
+              "error" in body
+                ? body.error
+                : `Carbon answered ${response.status}`
+          });
+          return;
+        }
+        setParts({ status: "ready", rows: body.parts });
+      } catch (error) {
+        if (error instanceof PanelUnauthorizedError) {
+          setSession({ status: "signed-out" });
+          setParts({ status: "idle" });
+          return;
+        }
+        setParts({
+          status: "error",
+          message: error instanceof Error ? error.message : String(error)
+        });
+      }
+    },
+    [canLoadParts, context, paths.status]
+  );
 
   const loadMe = useCallback(
     async (token: string) => {
@@ -82,6 +138,7 @@ export function OnshapePanel({
         }
         const me = (await response.json()) as OnshapePanelMe;
         setSession({ status: "signed-in", token, me });
+        void loadParts(token);
       } catch (error) {
         if (error instanceof PanelUnauthorizedError) {
           setSession({ status: "signed-out" });
@@ -94,7 +151,7 @@ export function OnshapePanel({
         });
       }
     },
-    [paths.me]
+    [paths.me, loadParts]
   );
 
   // Boot: tell Onshape we are ready, restore a stored token, and listen for
@@ -245,6 +302,13 @@ export function OnshapePanel({
         </VStack>
       ) : null}
 
+      {session.status === "signed-in" && canLoadParts ? (
+        <PartsSection
+          parts={parts}
+          onRefresh={() => loadParts(session.token)}
+        />
+      ) : null}
+
       <details className="w-full text-xs text-muted-foreground">
         <summary className="cursor-pointer">
           Onshape messages ({messageCount})
@@ -257,6 +321,83 @@ export function OnshapePanel({
       </details>
     </VStack>
   );
+}
+
+function PartsSection({
+  parts,
+  onRefresh
+}: {
+  parts:
+    | { status: "idle" }
+    | { status: "loading" }
+    | { status: "ready"; rows: PanelPartStatus[] }
+    | { status: "error"; message: string };
+  onRefresh: () => void;
+}) {
+  return (
+    <VStack spacing={2} className="w-full">
+      <HStack className="w-full justify-between">
+        <span className="text-sm font-medium">Parts in this element</span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onRefresh}
+          isDisabled={parts.status === "loading"}
+        >
+          Refresh
+        </Button>
+      </HStack>
+
+      {parts.status === "loading" || parts.status === "idle" ? (
+        <p className="text-sm text-muted-foreground">Loading parts…</p>
+      ) : null}
+
+      {parts.status === "error" ? (
+        <Alert variant="destructive">
+          <AlertTitle>Couldn't load part status</AlertTitle>
+          <AlertDescription>{parts.message}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      {parts.status === "ready" && parts.rows.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          This element has no parts.
+        </p>
+      ) : null}
+
+      {parts.status === "ready" && parts.rows.length > 0 ? (
+        <ul className="w-full divide-y divide-border rounded-md border border-border">
+          {parts.rows.map((part) => (
+            <li
+              key={part.partId}
+              className="flex items-center justify-between gap-2 px-3 py-2"
+            >
+              <div className="min-w-0">
+                <p className="text-sm truncate">{part.name}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {part.partNumber ?? "No part number"}
+                  {part.revision ? ` · Rev ${part.revision}` : ""}
+                  {part.state === "linked" && part.item
+                    ? ` → ${part.item.readableId}`
+                    : ""}
+                  {part.state === "matched" && part.item
+                    ? ` · matches ${part.item.readableId}`
+                    : ""}
+                </p>
+              </div>
+              <PartStateBadge state={part.state} />
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </VStack>
+  );
+}
+
+function PartStateBadge({ state }: { state: PanelPartStatus["state"] }) {
+  if (state === "linked") return <Badge variant="green">In Carbon</Badge>;
+  if (state === "matched") return <Badge variant="yellow">Match found</Badge>;
+  return <Badge variant="secondary">Not in Carbon</Badge>;
 }
 
 function ContextSummary({ context }: { context: OnshapePanelContext }) {
