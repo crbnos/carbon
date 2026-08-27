@@ -797,6 +797,8 @@ export const path = {
       generatePath(`${x}/reports/views/${id}/delete`),
     deleteRequiredAction: (id: string) =>
       generatePath(`${x}/quality/required-actions/delete/${id}`),
+    deleteWarrantyTerm: (id: string) =>
+      generatePath(`${x}/sales/warranty-terms/delete/${id}`),
     deleteReturnReason: (id: string) =>
       generatePath(`${x}/sales/return-reasons/delete/${id}`),
     deleteRisk: (id: string) => generatePath(`${x}/quality/risks/delete/${id}`),
@@ -1033,8 +1035,12 @@ export const path = {
       salesInvoice: (id: string) =>
         generatePath(`${file}/sales-invoice/${id}.pdf`),
       salesOrder: (id: string) => generatePath(`${file}/sales-order/${id}.pdf`),
+      repairOrder: (id: string) =>
+        generatePath(`${file}/repair-order/${id}.pdf`),
       salesReturnOrder: (id: string) =>
         generatePath(`${file}/sales-return-order/${id}.pdf`),
+      warrantyRegistration: (id: string) =>
+        generatePath(`${file}/warranty-registration/${id}.pdf`),
       shipment: (id: string) => generatePath(`${file}/shipment/${id}.pdf`),
       shipmentLabelsPdf: (
         id: string,
@@ -1588,6 +1594,9 @@ export const path = {
     newReceipt: `${x}/receipt/new`,
     newRequiredAction: `${x}/quality/required-actions/new`,
     newReturnReason: `${x}/sales/return-reasons/new`,
+    newRepairOrder: `${x}/repair-order/new`,
+    newWarrantyRegistration: `${x}/warranty-registration/new`,
+    newWarrantyTerm: `${x}/sales/warranty-terms/new`,
     newRevision: `${x}/items/revisions/new`,
     newRisk: `${x}/quality/risks/new`,
     newSalesInvoice: `${x}/sales-invoice/new`,
@@ -1996,6 +2005,45 @@ export const path = {
     salesOrders: `${x}/sales/orders`,
     salesPriceList: `${x}/sales/price-list`,
     salesPricingRules: `${x}/sales/pricing-rules`,
+    repairOrder: (id: string) => generatePath(`${x}/repair-order/${id}`),
+    repairOrderApplyWarranty: (id: string) =>
+      generatePath(`${x}/repair-order/${id}/warranty`),
+    repairOrderCancel: (id: string) =>
+      generatePath(`${x}/repair-order/${id}/cancel`),
+    repairOrderCharge: (orderId: string, chargeId: string) =>
+      generatePath(`${x}/repair-order/${orderId}/charge/${chargeId}`),
+    repairOrderChargeDelete: (orderId: string, chargeId: string) =>
+      generatePath(`${x}/repair-order/${orderId}/charge/${chargeId}/delete`),
+    repairOrderChargeIssue: (orderId: string, chargeId: string) =>
+      generatePath(`${x}/repair-order/${orderId}/charge/${chargeId}/issue`),
+    repairOrderComplete: (id: string) =>
+      generatePath(`${x}/repair-order/${id}/complete`),
+    repairOrderConfirm: (id: string) =>
+      generatePath(`${x}/repair-order/${id}/confirm`),
+    repairOrderDelete: (id: string) =>
+      generatePath(`${x}/repair-order/${id}/delete`),
+    repairOrderDetails: (id: string) =>
+      generatePath(`${x}/repair-order/${id}/details`),
+    repairOrderLine: (orderId: string, lineId: string) =>
+      generatePath(`${x}/repair-order/${orderId}/${lineId}/details`),
+    repairOrderLineClose: (orderId: string, lineId: string) =>
+      generatePath(`${x}/repair-order/${orderId}/${lineId}/close`),
+    repairOrderLineDelete: (orderId: string, lineId: string) =>
+      generatePath(`${x}/repair-order/${orderId}/${lineId}/delete`),
+    repairOrderLineRepaired: (orderId: string, lineId: string) =>
+      generatePath(`${x}/repair-order/${orderId}/${lineId}/repaired`),
+    repairOrderLineScrap: (orderId: string, lineId: string) =>
+      generatePath(`${x}/repair-order/${orderId}/${lineId}/scrap`),
+    repairOrderNewCharge: (id: string) =>
+      generatePath(`${x}/repair-order/${id}/charge/new`),
+    repairOrderPurchaseOrder: (id: string) =>
+      generatePath(`${x}/repair-order/${id}/purchase-order`),
+    repairOrderQuote: (id: string) =>
+      generatePath(`${x}/repair-order/${id}/quote`),
+    repairOrderSalesOrder: (id: string) =>
+      generatePath(`${x}/repair-order/${id}/order`),
+    repairOrders: `${x}/sales/repairs`,
+    repairOrderUpdate: `${x}/repair-order/update`,
     salesReturnOrder: (id: string) =>
       generatePath(`${x}/sales-return-order/${id}`),
     salesReturnOrderConfirm: (id: string) =>
@@ -2018,6 +2066,12 @@ export const path = {
     salesReturnOrderStatus: (id: string) =>
       generatePath(`${x}/sales-return-order/${id}/status`),
     salesReturnOrders: `${x}/sales/rmas`,
+    warrantyRegistration: (id: string) =>
+      generatePath(`${x}/warranty-registration/${id}`),
+    warrantyRegistrations: `${x}/sales/warranties`,
+    warrantyTerm: (id: string) =>
+      generatePath(`${x}/sales/warranty-terms/${id}`),
+    warrantyTerms: `${x}/sales/warranty-terms`,
     salesReturnOrderUpdate: `${x}/sales-return-order/update`,
     salesRfq: (id: string) => generatePath(`${x}/sales-rfq/${id}`),
     salesRfqConvert: (id: string) =>

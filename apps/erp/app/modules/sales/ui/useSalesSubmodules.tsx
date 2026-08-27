@@ -6,8 +6,10 @@ import {
   LuPercent,
   LuShapes,
   LuSquareUser,
+  LuShieldCheck,
   LuStar,
-  LuUndo2
+  LuUndo2,
+  LuWrench
 } from "react-icons/lu";
 import {
   RiProgress2Line,
@@ -58,6 +60,18 @@ export default function useSalesSubmodules() {
           table: "salesReturnOrder"
         },
         {
+          name: t`Repairs`,
+          to: path.to.repairOrders,
+          icon: <LuWrench />,
+          table: "repairOrder"
+        },
+        {
+          name: t`Warranties`,
+          to: path.to.warrantyRegistrations,
+          icon: <LuShieldCheck />,
+          table: "warrantyRegistration"
+        },
+        {
           name: t`Portals`,
           to: path.to.customerPortals,
           role: "employee",
@@ -91,6 +105,12 @@ export default function useSalesSubmodules() {
           to: path.to.returnReasons,
           role: "employee",
           icon: <LuUndo2 />
+        },
+        {
+          name: t`Warranty Terms`,
+          to: path.to.warrantyTerms,
+          role: "employee",
+          icon: <LuShieldCheck />
         },
 
         {
