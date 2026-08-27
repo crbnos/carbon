@@ -12,6 +12,7 @@ import {
   markItemSyncStateFailedByItem,
   markRunRunning,
   type OnshapeReleaseReference,
+  onshapeElementKindFromType,
   RELEASE_CAPTURE_LIMIT,
   upsertItemSyncState,
   writeRunProgress
@@ -198,6 +199,20 @@ function makeReleases(
   }));
 }
 
+describe("onshapeElementKindFromType", () => {
+  it("names the two model kinds and refuses to guess at anything else", () => {
+    expect(onshapeElementKindFromType(0)).toBe("partstudio");
+    expect(onshapeElementKindFromType(1)).toBe("assembly");
+    // 2 is a drawing; the rest are element types that carry no model at all.
+    // The old `elementType === 1 ? "assembly" : "partstudio"` called every one of
+    // these a part studio, which is the mistake this column exists to avoid.
+    expect(onshapeElementKindFromType(2)).toBeNull();
+    expect(onshapeElementKindFromType(7)).toBeNull();
+    expect(onshapeElementKindFromType(null)).toBeNull();
+    expect(onshapeElementKindFromType(undefined)).toBeNull();
+  });
+});
+
 describe("buildItemSyncState", () => {
   it("builds a synced model row with its identifiers and no skip/error", () => {
     const row = buildItemSyncState({
@@ -209,6 +224,7 @@ describe("buildItemSyncState", () => {
       documentId: "doc_1",
       versionId: "ver_1",
       elementId: "el_1",
+      elementKind: "partstudio",
       releaseState: "Released",
       modelUploadId: "model_1",
       runId: "run_1"
@@ -229,6 +245,7 @@ describe("buildItemSyncState", () => {
       documentId: "doc_1",
       versionId: "ver_1",
       elementId: "el_1",
+      elementKind: "partstudio",
       releaseState: "Released",
       modelUploadId: "model_1",
       documentPath: null,

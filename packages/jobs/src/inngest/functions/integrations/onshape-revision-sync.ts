@@ -24,6 +24,7 @@ import {
 import {
   markItemSyncStateFailedByElement,
   type OnshapeSyncAssetKind,
+  onshapeElementKindFromType,
   upsertItemSyncState
 } from "./onshape-sync-state";
 
@@ -332,6 +333,9 @@ async function recordRevisionSyncState(
     documentId: payload.documentId,
     versionId: payload.versionId,
     elementId: payload.elementId,
+    // Null for a drawing: the webhook's own element-kind resolver only names the
+    // two model kinds, which is exactly what this column records.
+    elementKind: onshapeElementKindFromType(payload.elementType),
     releaseState: result.releaseState,
     modelUploadId: assetKind === "model" ? (result.modelUploadId ?? null) : null
   });

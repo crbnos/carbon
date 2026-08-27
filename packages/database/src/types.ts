@@ -34488,6 +34488,7 @@ export type Database = {
           documentId: string | null
           documentPath: string | null
           elementId: string | null
+          elementKind: string | null
           error: string | null
           id: string
           itemId: string
@@ -34513,6 +34514,7 @@ export type Database = {
           documentId?: string | null
           documentPath?: string | null
           elementId?: string | null
+          elementKind?: string | null
           error?: string | null
           id?: string
           itemId: string
@@ -34538,6 +34540,7 @@ export type Database = {
           documentId?: string | null
           documentPath?: string | null
           elementId?: string | null
+          elementKind?: string | null
           error?: string | null
           id?: string
           itemId?: string

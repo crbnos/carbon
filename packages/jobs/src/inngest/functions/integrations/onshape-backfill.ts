@@ -32,6 +32,8 @@ import {
   type OnshapeReleaseReference,
   type OnshapeSkipReason,
   type OnshapeSyncAssetKind,
+  type OnshapeSyncElementKind,
+  onshapeElementKindFromType,
   upsertItemSyncState,
   writeRunProgress
 } from "./onshape-sync-state";
@@ -81,7 +83,9 @@ export interface OnshapeBackfillWorkItem {
   documentId: string;
   versionId: string;
   elementId: string;
-  modelElementKind?: "partstudio" | "assembly"; // kind === "model" only
+  // kind === "model" only; null when Onshape reported an elementType that
+  // carries no model, which is not a kind this sync can name.
+  modelElementKind?: OnshapeSyncElementKind | null;
   assetBaseName?: string;
 }
 
@@ -105,6 +109,7 @@ export interface OnshapeBackfillObservedMatch {
   documentId: string;
   versionId: string;
   elementId: string;
+  modelElementKind?: OnshapeSyncElementKind | null;
 }
 
 export interface OnshapeBackfillPageResult {
@@ -251,7 +256,7 @@ interface OnshapeBackfillMatch {
   documentId: string;
   versionId: string;
   elementId: string;
-  modelElementKind?: "partstudio" | "assembly";
+  modelElementKind?: OnshapeSyncElementKind | null;
   assetBaseName?: string;
   /** What the item row holds for a model match; always null for a drawing. */
   modelUploadId: string | null;
@@ -486,7 +491,7 @@ export async function matchOnshapeBackfillPage(
       documentId: revision.documentId,
       versionId: revision.versionId,
       elementId: revision.elementId,
-      modelElementKind: revision.elementType === 1 ? "assembly" : "partstudio",
+      modelElementKind: onshapeElementKindFromType(revision.elementType),
       assetBaseName: releaseKey(revision.partNumber, revision.revision),
       modelUploadId: matchedItem.modelUploadId
     });
@@ -542,7 +547,8 @@ export async function matchOnshapeBackfillPage(
         releaseState: match.releaseState,
         documentId: match.documentId,
         versionId: match.versionId,
-        elementId: match.elementId
+        elementId: match.elementId,
+        modelElementKind: match.modelElementKind
       });
       continue;
     }
@@ -652,6 +658,7 @@ function itemStateForWorkItem(
     documentId: workItem.documentId,
     versionId: workItem.versionId,
     elementId: workItem.elementId,
+    elementKind: workItem.modelElementKind ?? null,
     runId: input.runId ?? null
   };
 }
@@ -717,6 +724,7 @@ async function recordObservedMatches(
       documentId: observed.documentId,
       versionId: observed.versionId,
       elementId: observed.elementId,
+      elementKind: observed.modelElementKind ?? null,
       runId: input.runId ?? null
     });
   }

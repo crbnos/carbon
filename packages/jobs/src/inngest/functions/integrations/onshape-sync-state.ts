@@ -55,6 +55,20 @@ export type OnshapeItemSyncStatus =
 
 export type OnshapeSyncSource = "webhook" | "backfill" | "manual";
 
+// Onshape splits its translation API on this: a model export is requested from
+// /partstudios/... or /assemblies/..., never interchangeably. Mirrors the numeric
+// elementType the revisions API returns (0 = part studio, 1 = assembly).
+export type OnshapeSyncElementKind = "partstudio" | "assembly";
+
+/** The element kind for a revision's numeric elementType, or null if it carries no model. */
+export function onshapeElementKindFromType(
+  elementType: number | null | undefined
+): OnshapeSyncElementKind | null {
+  if (elementType === 0) return "partstudio";
+  if (elementType === 1) return "assembly";
+  return null;
+}
+
 export type OnshapeSyncRunStatus =
   | "queued"
   | "running"
@@ -108,6 +122,8 @@ export interface BuildItemSyncStateInput {
   documentId?: string | null;
   versionId?: string | null;
   elementId?: string | null;
+  /** Which Onshape element the model came from. Null for drawings. */
+  elementKind?: OnshapeSyncElementKind | null;
   releaseState?: string | null;
   modelUploadId?: string | null;
   documentPath?: string | null;
@@ -142,6 +158,7 @@ export function buildItemSyncState(
     documentId: input.documentId ?? null,
     versionId: input.versionId ?? null,
     elementId: input.elementId ?? null,
+    elementKind: input.elementKind ?? null,
     releaseState: input.releaseState ?? null,
     modelUploadId: input.modelUploadId ?? null,
     documentPath: input.documentPath ?? null,

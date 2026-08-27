@@ -36,12 +36,16 @@ export interface OnshapeCompany {
   [key: string]: unknown;
 }
 
-// The only export formats Carbon ingests: GLTF for models (compressed to a
+// What Carbon ingests automatically: GLTF for models (compressed to a
 // viewer-renderable GLB before attaching) and PDF for drawings. Onshape's API
-// supports more (STEP, PARASOLID, IGES, ...) but they are deliberately not
-// accepted here — real assemblies export to multi-GB STEP files, and Onshape
+// supports more (PARASOLID, IGES, ...) which are still not accepted — Onshape
 // stays the CAD system of record.
-export type OnshapeModelTranslationFormat = "GLTF";
+//
+// STEP is allowed, but ONLY for an on-demand export of a single Part Studio that
+// a person asked for and waits on. It is deliberately not part of the automatic
+// sync and must never be requested for an assembly: a real assembly exports to a
+// multi-GB STEP file, which is why the whole format was excluded here before.
+export type OnshapeModelTranslationFormat = "GLTF" | "STEP";
 export type OnshapeDrawingTranslationFormat = "PDF";
 
 // Tessellation presets Onshape accepts for mesh exports (mirrors the UI's

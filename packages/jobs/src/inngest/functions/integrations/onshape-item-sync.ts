@@ -24,6 +24,7 @@ import {
 } from "./onshape-sync-element";
 import {
   markItemSyncStateFailedByItem,
+  onshapeElementKindFromType,
   upsertItemSyncState
 } from "./onshape-sync-state";
 
@@ -154,6 +155,9 @@ export async function syncOnshapeItemModel(
 
   const assetBaseName = itemReleaseKey(input.item);
   try {
+    // Derived once: the export endpoint and the kind recorded on the row must not
+    // be able to disagree about what was pulled.
+    const elementKind = onshapeElementKindFromType(released.elementType);
     const attached = await withRateLimitRetry(
       () =>
         syncOnshapeElementAssetsToItem(carbon, {
@@ -164,8 +168,7 @@ export async function syncOnshapeItemModel(
           documentId: released.documentId,
           versionId: released.versionId,
           modelElementId: released.elementId,
-          modelElementKind:
-            released.elementType === 1 ? "assembly" : "partstudio",
+          modelElementKind: elementKind ?? "partstudio",
           assetBaseName
         }),
       `model ${partNumber} rev ${released.revision}`
@@ -183,6 +186,7 @@ export async function syncOnshapeItemModel(
       documentId: released.documentId,
       versionId: released.versionId,
       elementId: released.elementId,
+      elementKind,
       modelUploadId: attached.modelUploadId
     });
     return {
