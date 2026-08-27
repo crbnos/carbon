@@ -185,12 +185,14 @@ export const path = {
         generatePath(
           `${api}/integrations/onshape/d/${documentId}/v/${versionId}/e/${elementId}/bom`
         ),
+      onShapeDetach: `${api}/integrations/onshape/detach`,
       onShapeDocuments: `${api}/integrations/onshape/documents`,
       onShapeElements: (documentId: string, versionId: string) =>
         generatePath(
           `${api}/integrations/onshape/d/${documentId}/v/${versionId}/elements`
         ),
       onShapePanelMe: `${api}/integrations/onshape/panel/me`,
+      onShapePanelPushPart: `${api}/integrations/onshape/panel/push-part`,
       onShapePanelSession: `${api}/integrations/onshape/panel/session`,
       onShapePanelStatus: `${api}/integrations/onshape/panel/status`,
       onShapeSync: `${api}/integrations/onshape/sync`,

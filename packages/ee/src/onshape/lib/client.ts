@@ -51,6 +51,30 @@ export interface OnshapePart {
 
 const DEV_CACHE_TTL_SECONDS = 10 * 60;
 
+// Stable content reads only — never /translations (a status poll) and never
+// anything paginated by cursor.
+const DEV_CACHEABLE_PATHS = [
+  /^\/api\/v\d+\/parts\//,
+  /^\/api\/v\d+\/partstudios\/.*\/massproperties/,
+  /^\/api\/v\d+\/documents\//,
+  /^\/api\/v\d+\/assemblies\/.*\/bom/,
+  /^\/api\/v\d+\/metadata\//
+];
+
+export interface OnshapeMassProperties {
+  bodies: Record<
+    string,
+    {
+      mass: number[];
+      volume: number[];
+      centroid: number[];
+      hasMass: boolean;
+      [key: string]: unknown;
+    }
+  >;
+  [key: string]: unknown;
+}
+
 export interface OnshapeCompany {
   id: string;
   name?: string;
@@ -160,8 +184,15 @@ export class OnshapeClient {
     // Every Onshape call counts against an annual per-account quota (private
     // apps debit the app owner). In dev, ONSHAPE_DEV_CACHE=1 serves repeated
     // GETs from Redis so panel reloads and test loops cost zero live calls.
+    //
+    // Allow-list, not "all GETs": polling endpoints (translation status) change
+    // between calls, and caching one poisons the poll loop — waitForTranslation
+    // then sees ACTIVE forever and spins to its attempt cap (hit live
+    // 2026-08-28). Only content reads keyed by document state are safe.
+    const cacheable =
+      method === "GET" && DEV_CACHEABLE_PATHS.some((re) => re.test(path));
     const cacheKey =
-      process.env.ONSHAPE_DEV_CACHE === "1" && method === "GET"
+      process.env.ONSHAPE_DEV_CACHE === "1" && cacheable
         ? `onshape-dev-cache:${path}`
         : null;
 
@@ -421,6 +452,21 @@ export class OnshapeClient {
     );
   }
 
+  /**
+   * Mass properties for every part of an element in one call. SI units
+   * (kg, m); numeric triples are [value, min, max]. Parts without an assigned
+   * material come back with hasMass=false.
+   */
+  async getPartStudioMassProperties(
+    document: OnshapeDocument,
+    elementId: string
+  ): Promise<OnshapeMassProperties> {
+    return this.request<OnshapeMassProperties>(
+      "GET",
+      `/api/v10/partstudios/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}/massproperties?massAsGroup=false&useMassPropertyOverrides=true`
+    );
+  }
+
   /** Parts of one element at a workspace, version or microversion. One call. */
   async getPartsInElement(
     document: OnshapeDocument,
@@ -444,11 +490,13 @@ export class OnshapeClient {
       // FLAGGED: single-part export support unverified. Omit to export the whole
       // Part Studio; the reliable documented path is a whole-Part-Studio translation.
       partIds?: string;
+      /** Path segment: version ("v", default) or workspace ("w"). */
+      wvm?: "w" | "v";
     } = {}
   ): Promise<OnshapeTranslation> {
     return this.request<OnshapeTranslation>(
       "POST",
-      `/api/v10/partstudios/d/${documentId}/v/${versionId}/e/${elementId}/translations`,
+      `/api/v10/partstudios/d/${documentId}/${options.wvm ?? "v"}/${versionId}/e/${elementId}/translations`,
       {
         formatName: options.formatName ?? "GLTF",
         storeInDocument: options.storeInDocument ?? false,
@@ -473,11 +521,13 @@ export class OnshapeClient {
       storeInDocument?: boolean;
       configuration?: string;
       resolution?: OnshapeMeshResolution;
+      /** Path segment: version ("v", default) or workspace ("w"). */
+      wvm?: "w" | "v";
     } = {}
   ): Promise<OnshapeTranslation> {
     return this.request<OnshapeTranslation>(
       "POST",
-      `/api/v10/assemblies/d/${documentId}/v/${versionId}/e/${elementId}/translations`,
+      `/api/v10/assemblies/d/${documentId}/${options.wvm ?? "v"}/${versionId}/e/${elementId}/translations`,
       {
         formatName: options.formatName ?? "GLTF",
         storeInDocument: options.storeInDocument ?? false,
@@ -497,11 +547,13 @@ export class OnshapeClient {
     options: {
       formatName?: OnshapeDrawingTranslationFormat;
       storeInDocument?: boolean;
+      /** Path segment: version ("v", default) or workspace ("w"). */
+      wvm?: "w" | "v";
     } = {}
   ): Promise<OnshapeTranslation> {
     return this.request<OnshapeTranslation>(
       "POST",
-      `/api/v10/drawings/d/${documentId}/v/${versionId}/e/${elementId}/translations`,
+      `/api/v10/drawings/d/${documentId}/${options.wvm ?? "v"}/${versionId}/e/${elementId}/translations`,
       {
         formatName: options.formatName ?? "PDF",
         storeInDocument: options.storeInDocument ?? false
@@ -559,12 +611,13 @@ export class OnshapeClient {
     documentId: string,
     versionId: string,
     elementId: string,
-    size: string = "300x300"
+    size: string = "300x300",
+    wvm: "w" | "v" = "v"
   ): Promise<ArrayBuffer> {
     try {
       const response = await this.axiosInstance.request<ArrayBuffer>({
         method: "GET",
-        url: `/api/v10/thumbnails/d/${documentId}/v/${versionId}/e/${elementId}/s/${size}`,
+        url: `/api/v10/thumbnails/d/${documentId}/${wvm}/${versionId}/e/${elementId}/s/${size}`,
         responseType: "arraybuffer",
         headers: { Accept: "image/png" }
       });

@@ -58,6 +58,8 @@ export {
 } from "./onshape/panel/messages";
 export type { OnshapePanelMe, OnshapePanelPaths } from "./onshape/panel/Panel";
 export { OnshapePanel } from "./onshape/panel/Panel";
+export type { PartPushPlan } from "./onshape/panel/push-plan";
+export { planPartPush } from "./onshape/panel/push-plan";
 export type {
   PanelItemRow,
   PanelMappingRow,

@@ -581,6 +581,23 @@ export type Events = {
   };
 
   // Onshape released-asset backfill / reconcile
+  // Panel push: export one pushed element's assets (GLTF + thumbnail) onto an
+  // item the push route already created/linked. Workspace- or version-scoped.
+  "carbon/onshape-panel-sync": {
+    data: {
+      companyId: string;
+      userId: string;
+      itemId: string;
+      documentId: string;
+      wvm: "w" | "v";
+      wvmId: string;
+      elementId: string;
+      elementKind: "partstudio" | "assembly";
+      partId?: string;
+      assetBaseName?: string;
+    };
+  };
+
   "carbon/onshape-backfill": {
     data: {
       companyId: string;

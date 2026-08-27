@@ -24,6 +24,7 @@ const taskToEvent = {
   notify: "carbon/notify",
   onboard: "carbon/onboard",
   "onshape-backfill": "carbon/onshape-backfill",
+  "onshape-panel-sync": "carbon/onshape-panel-sync",
   "onshape-revision-sync": "carbon/onshape-revision-sync",
   "paperless-parts": "carbon/paperless-parts",
   "post-transactions": "carbon/post-transaction",
