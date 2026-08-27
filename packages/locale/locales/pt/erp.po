@@ -11564,6 +11564,9 @@ msgstr "Proteja a data de ativação"
 msgid "Protect training time and attend"
 msgstr "Proteja o tempo de treinamento e participe"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "Proteja sua empresa com controles de segurança avançados, como a aplicação de autenticação de dois fatores."
+
 msgid "Protects your company's data"
 msgstr "Protege os dados da sua empresa"
 

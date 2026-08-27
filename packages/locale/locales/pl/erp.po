@@ -11564,6 +11564,9 @@ msgstr "Chroń datę wdrożenia"
 msgid "Protect training time and attend"
 msgstr "Zarezerwuj czas na szkolenie i weź w nim udział"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "Chroń swoją firmę za pomocą zaawansowanych kontroli bezpieczeństwa, takich jak wymuszanie uwierzytelniania wieloskładnikowego."
+
 msgid "Protects your company's data"
 msgstr "Chroni dane twojej firmy"
 

@@ -11564,6 +11564,9 @@ msgstr "保护上线日期"
 msgid "Protect training time and attend"
 msgstr "保护培训时间并参加"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "使用双因素身份验证等高级安全控制措施保护您的公司。"
+
 msgid "Protects your company's data"
 msgstr "保护您公司的数据"
 

@@ -11564,6 +11564,9 @@ msgstr "गो-लाइव की तारीख की सुरक्षा 
 msgid "Protect training time and attend"
 msgstr "प्रशिक्षण समय की सुरक्षा करें और भाग लें"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "दो-कारक प्रमाणीकरण के प्रवर्तन जैसी उन्नत सुरक्षा नियंत्रणों से अपनी कंपनी की सुरक्षा करें।"
+
 msgid "Protects your company's data"
 msgstr "आपकी कंपनी के डेटा की सुरक्षा करता है"
 

@@ -11564,6 +11564,9 @@ msgstr "ゴーライブ日を保護する"
 msgid "Protect training time and attend"
 msgstr "トレーニング時間を確保して参加する"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "二段階認証の強制などの高度なセキュリティ管理で会社を保護してください。"
+
 msgid "Protects your company's data"
 msgstr "会社データを保護します"
 

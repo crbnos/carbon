@@ -11564,6 +11564,9 @@ msgstr "도입일을 사수하세요"
 msgid "Protect training time and attend"
 msgstr "교육 시간을 확보하고 참석하세요"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "이중 인증 강제와 같은 고급 보안 제어로 회사를 보호하세요."
+
 msgid "Protects your company's data"
 msgstr "회사 데이터 보호"
 

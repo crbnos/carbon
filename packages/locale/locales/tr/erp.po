@@ -11564,6 +11564,9 @@ msgstr "Go-live tarihini koruyun"
 msgid "Protect training time and attend"
 msgstr "Eğitim zamanını koru ve katıl"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "Şirketinizi iki faktörlü kimlik doğrulama zorunluluğu gibi gelişmiş güvenlik kontrolleriyle koruyun."
+
 msgid "Protects your company's data"
 msgstr "Şirketinizin verilerini korur"
 
