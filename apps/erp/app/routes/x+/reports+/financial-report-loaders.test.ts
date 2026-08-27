@@ -190,12 +190,9 @@ beforeEach(() => {
 describe("financial report loader completeness", () => {
   it.each(
     loaders
-  )("%s redirects when all-company metadata omits the root company", async (_name, loader) => {
+  )("%s redirects when all-company metadata contains only a visible child company", async (_name, loader) => {
     vi.mocked(getCompaniesInGroup).mockResolvedValue(
-      companySource([
-        { ...childCompany, parentCompanyId: "missing-root" },
-        { ...childCompany, id: "company-child-2" }
-      ]) as never
+      companySource([childCompany]) as never
     );
 
     await expect(loader({ request: request() } as never)).rejects.toMatchObject(
@@ -205,6 +202,20 @@ describe("financial report loader completeness", () => {
     expect(getConsolidatedBalances).not.toHaveBeenCalled();
     expect(getFinancialStatementPeriodSeries).not.toHaveBeenCalled();
     expect(getFinancialStatementBalances).not.toHaveBeenCalled();
+  });
+
+  it("passes current-year earnings through to consolidated balance sheet loading", async () => {
+    await expect(
+      balanceSheetLoader({ request: request() } as never)
+    ).resolves.toMatchObject({ isMultiCompany: true });
+
+    expect(getConsolidatedPeriodSeries).toHaveBeenCalledWith(
+      {},
+      "group-1",
+      [rootCompany.id, childCompany.id],
+      "USD",
+      { buckets: [], includeCurrentYearEarnings: true }
+    );
   });
 
   it.each(

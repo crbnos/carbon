@@ -783,7 +783,11 @@ export async function getConsolidatedPeriodSeries(
   companyGroupId: string,
   companyIds: string[],
   targetCurrency: string,
-  args: { buckets: ReportPeriodBucket[] }
+  args: {
+    buckets: ReportPeriodBucket[];
+    // Balance sheet only: append a computed "Net Income" equity line per bucket.
+    includeCurrentYearEarnings?: boolean;
+  }
 ): Promise<{
   data: ChartPeriodSeries[] | null;
   ctaByBucket: Record<string, number>;
@@ -814,7 +818,10 @@ export async function getConsolidatedPeriodSeries(
         client,
         companyGroupId,
         id,
-        { buckets: args.buckets }
+        {
+          buckets: args.buckets,
+          includeCurrentYearEarnings: args.includeCurrentYearEarnings
+        }
       );
 
       const translation =

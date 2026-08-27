@@ -100,11 +100,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const parentCurrency = parentCompany?.baseCurrencyCode ?? null;
   const isMultiCompany = selectedCompanyIds.length > 1;
 
-  if (
-    companiesParam === "all" &&
-    isMultiCompany &&
-    (!parentCompany || !parentCurrency)
-  ) {
+  if (companiesParam === "all" && (!parentCompany || !parentCurrency)) {
     throw redirect(
       path.to.accounting,
       await flash(

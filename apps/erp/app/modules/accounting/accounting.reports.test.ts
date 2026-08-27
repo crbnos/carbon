@@ -209,6 +209,7 @@ const account = {
 };
 
 type ClientOptions = {
+  accounts?: unknown[];
   accountDataNull?: boolean;
   balanceFailureCompanyId?: string;
   balanceDataNull?: boolean;
@@ -221,6 +222,12 @@ type ClientOptions = {
   translationFailureCompanyId?: string;
   translationRatesData?: unknown;
   translationRatesByCompany?: Record<string, unknown>;
+  periodSeriesRows?: Array<{
+    accountId: string;
+    periodEnd: string;
+    netChange: number;
+    balanceAtDate: number;
+  }>;
   seriesByCompany?: Record<
     string,
     Array<{
@@ -265,20 +272,21 @@ function makeReportClient(options: ClientOptions = {}) {
         return options.accountDataNull
           ? queryResult(null)
           : queryResult(
-              options.seriesByCompany
-                ? [
-                    {
-                      ...account,
-                      id: "revenue-root",
-                      name: "Revenue",
-                      number: null,
-                      isGroup: true,
-                      isSystem: true,
-                      parentId: null
-                    },
-                    { ...account, parentId: "revenue-root" }
-                  ]
-                : [account]
+              options.accounts ??
+                (options.seriesByCompany
+                  ? [
+                      {
+                        ...account,
+                        id: "revenue-root",
+                        name: "Revenue",
+                        number: null,
+                        isGroup: true,
+                        isSystem: true,
+                        parentId: null
+                      },
+                      { ...account, parentId: "revenue-root" }
+                    ]
+                  : [account])
             );
       }
       throw new Error(`Unexpected table: ${table}`);
@@ -315,6 +323,7 @@ function makeReportClient(options: ClientOptions = {}) {
         };
         return {
           data:
+            options.periodSeriesRows ??
             options.seriesByCompany?.[companyId] ??
             new Array(options.seriesRowCount ?? 1).fill(row),
           error: null
@@ -507,6 +516,91 @@ describe("getConsolidatedPeriodSeries", () => {
     expect(result.data).toBeNull();
     expect(result.isComplete).toBe(false);
     expect(result.error?.message).toContain("Consolidation rates");
+  });
+
+  it("includes current-year earnings in consolidated balance sheet results", async () => {
+    const result = await getConsolidatedPeriodSeries(
+      makeReportClient({
+        accounts: [
+          {
+            id: "balance-sheet-root",
+            parentId: null,
+            name: "Balance Sheet",
+            number: "1000",
+            active: true,
+            isGroup: true,
+            isSystem: true,
+            incomeBalance: "Balance Sheet",
+            class: "Asset",
+            consolidatedRate: "Closing"
+          },
+          {
+            id: "asset",
+            parentId: "balance-sheet-root",
+            name: "Cash",
+            number: "1100",
+            active: true,
+            isGroup: false,
+            isSystem: false,
+            incomeBalance: "Balance Sheet",
+            class: "Asset",
+            consolidatedRate: "Closing"
+          },
+          {
+            id: "equity",
+            parentId: "balance-sheet-root",
+            name: "Equity",
+            number: "3000",
+            active: true,
+            isGroup: true,
+            isSystem: false,
+            incomeBalance: "Balance Sheet",
+            class: "Equity",
+            consolidatedRate: "Historical"
+          },
+          {
+            id: "revenue",
+            parentId: "income-statement-root",
+            name: "Revenue",
+            number: "4000",
+            active: true,
+            isGroup: false,
+            isSystem: false,
+            incomeBalance: "Income Statement",
+            class: "Revenue",
+            consolidatedRate: "Average"
+          }
+        ],
+        periodSeriesRows: [
+          {
+            accountId: "asset",
+            periodEnd: bucket.end,
+            netChange: 20,
+            balanceAtDate: 20
+          },
+          {
+            accountId: "revenue",
+            periodEnd: bucket.end,
+            netChange: 20,
+            balanceAtDate: 20
+          }
+        ]
+      }),
+      "group-1",
+      ["company-1", "company-2"],
+      "USD",
+      { buckets: [bucket], includeCurrentYearEarnings: true }
+    );
+
+    expect(result.error).toBeNull();
+    expect(result.data?.find((row) => row.id === "net-income")).toMatchObject({
+      periods: { [bucket.key]: { netChange: 40, balanceAtDate: 40 } }
+    });
+    expect(
+      result.data?.find((row) => row.id === "balance-sheet-root")?.periods[
+        bucket.key
+      ]
+    ).toMatchObject({ netChange: 0, balanceAtDate: 0 });
   });
 
   it("sums translated period flows separately from translated balances", async () => {
