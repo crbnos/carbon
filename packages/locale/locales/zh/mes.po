@@ -176,6 +176,9 @@ msgstr "被 {0} 阻塞"
 msgid "Blocking"
 msgstr "阻塞中"
 
+msgid "Board view"
+msgstr "看板视图"
+
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "但别担心。您可以使用忘记密码流程来请求新的魔法链接。"
 
@@ -645,6 +648,9 @@ msgstr "让我们开始构建"
 msgid "lines"
 msgstr "行"
 
+msgid "List view"
+msgstr "列表视图"
+
 msgid "Loading item details..."
 msgstr "正在加载物料详情..."
 
@@ -873,6 +879,9 @@ msgstr "本周无考勤记录"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "此项目没有仓库库存记录。您仍然可以领取它——现有库存将变为负数，直到库存被核对。"
+
+msgid "No Work Center"
+msgstr "无工作中心"
 
 msgid "No work centers are blocked"
 msgstr "无工作中心被阻塞"

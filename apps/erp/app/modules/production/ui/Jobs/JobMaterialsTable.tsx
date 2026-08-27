@@ -135,9 +135,7 @@ const JobMaterialsTable = memo(
           accessorKey: "jobMaterialItemId",
           header: t`Item`,
           cell: ({ row }) => {
-            const substitutedFromId = (
-              row.original as { substitutedFromItemId?: string | null }
-            ).substitutedFromItemId;
+            const substitutedFromId = row.original.substitutedFromItemId;
             const substitutedFrom = substitutedFromId
               ? (items.find((i) => i.id === substitutedFromId)
                   ?.readableIdWithRevision ?? substitutedFromId)

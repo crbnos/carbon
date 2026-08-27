@@ -176,6 +176,9 @@ msgstr "Заблокировано {0}"
 msgid "Blocking"
 msgstr "Блокирующие"
 
+msgid "Board view"
+msgstr "Вид доски"
+
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "Но не волнуйтесь. Вы можете использовать функцию восстановления пароля, чтобы запросить новую волшебную ссылку."
 
@@ -645,6 +648,9 @@ msgstr "Давайте создадим что-то"
 msgid "lines"
 msgstr "строки"
 
+msgid "List view"
+msgstr "Вид списка"
+
 msgid "Loading item details..."
 msgstr "Загрузка данных номенклатуры..."
 
@@ -873,6 +879,9 @@ msgstr "Нет записей учёта времени за эту неделю
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "На складе нет записей о наличии этого товара. Вы все равно можете его подобрать — количество в наличии станет отрицательным до тех пор, пока инвентаризация не будет согласована."
+
+msgid "No Work Center"
+msgstr "Без рабочего центра"
 
 msgid "No work centers are blocked"
 msgstr "Нет заблокированных рабочих центров"
