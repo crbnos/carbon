@@ -393,6 +393,7 @@
       "term": "Credit",
       "category": "accounting",
       "context": "The right side of a posting.",
+      "ambiguity": "Only the ledger side. Do NOT apply to a credit memo, a customer's available credit, or credit terms.",
       "translations": {
         "fr": "Crédit",
         "de": "Haben",
@@ -1574,6 +1575,7 @@
       "term": "Close",
       "category": "action",
       "context": "Finish a record so it can no longer be edited.",
+      "ambiguity": "Only closing a record or period. Do NOT apply to 'month-end close' as a noun, 'closing balance', or 'close to'.",
       "translations": {
         "fr": "Clôturer",
         "de": "Abschließen",
@@ -2922,6 +2924,7 @@
       "term": "Split",
       "category": "inventory",
       "context": "Dividing a lot or line into smaller parts.",
+      "ambiguity": "Only dividing a lot or a line. Do NOT apply to the ordinary verb — 'status splits across ship and invoice'.",
       "translations": {
         "fr": "Fractionner",
         "de": "Teilen",
@@ -3057,6 +3060,7 @@
       "term": "Buy",
       "category": "items",
       "context": "A replenishment system: the item is purchased.",
+      "ambiguity": "Only the replenishment system. Do NOT apply to 'buy' as an ordinary verb — 'a customer who buys your parts'.",
       "translations": {
         "fr": "Achat",
         "de": "Fremdbeschaffung",
@@ -4417,6 +4421,7 @@
       "term": "Team",
       "category": "people",
       "context": "A group of employees work is assigned to.",
+      "ambiguity": "Only the shop-floor group work is assigned to. Do NOT apply to 'your team' meaning the company or the people reading the screen.",
       "translations": {
         "fr": "Groupe",
         "de": "Team",
@@ -5063,6 +5068,7 @@
       "term": "Monthly",
       "category": "platform",
       "context": "Once a month.",
+      "ambiguity": "Only the recurrence option. Do NOT apply to 'monthly periods' or 'monthly total', where the word is an ordinary adjective.",
       "translations": {
         "fr": "Mensuel",
         "de": "Monatlich",
@@ -5272,6 +5278,7 @@
       "term": "Role",
       "category": "platform",
       "context": "A named set of permissions given to users.",
+      "ambiguity": "Only the named permission set. Do NOT apply to 'a gauge whose role is Master' or other ordinary 'role/purpose' senses.",
       "translations": {
         "fr": "Rôle",
         "de": "Rolle",
@@ -7720,6 +7727,7 @@
       "term": "Active",
       "category": "status",
       "context": "In use.",
+      "ambiguity": "Only the record status. Do NOT apply to 'active jobs', 'active session', or other ordinary adjective uses.",
       "translations": {
         "fr": "Actif",
         "de": "Aktiv",
@@ -7778,6 +7786,7 @@
       "term": "Assigned",
       "category": "status",
       "context": "Given to a person or resource.",
+      "ambiguity": "Only the status. Do NOT apply to the ordinary verb — 'jobs assigned to me', 'work is assigned to a team'.",
       "translations": {
         "fr": "Assigné",
         "de": "Zugewiesen",
@@ -7897,6 +7906,7 @@
       "term": "Consumed",
       "category": "status",
       "context": "Used up by a job.",
+      "ambiguity": "Only material used up by a job. Do NOT apply to the ordinary verb — 'not consumed', 'consumes the allowance'.",
       "translations": {
         "fr": "Consommé",
         "de": "Verbraucht",
@@ -7935,6 +7945,7 @@
       "term": "Disposed",
       "category": "status",
       "context": "A fixed asset removed from the books.",
+      "ambiguity": "Only a fixed asset removed from the books. Do NOT apply to scrap or waste disposal.",
       "translations": {
         "fr": "Cédé",
         "de": "Abgegangen",
@@ -8240,6 +8251,7 @@
       "term": "Ordered",
       "category": "status",
       "context": "A purchase or sales order exists for it.",
+      "ambiguity": "Only the status meaning an order exists. Do NOT apply to 'ordered set', 'ordered list', or sequence senses.",
       "translations": {
         "fr": "Commandé",
         "de": "Bestellt",
@@ -8297,6 +8309,7 @@
       "term": "Pass",
       "category": "status",
       "context": "Met the inspection requirement.",
+      "ambiguity": "Only the inspection result. Do NOT apply to the verb 'it passes', or to a passing score, a pass-through, or a passkey.",
       "translations": {
         "fr": "Conforme",
         "de": "Bestanden",
@@ -8490,6 +8503,7 @@
       "term": "Rejected",
       "category": "status",
       "context": "Refused.",
+      "ambiguity": "Only the inspection or approval status. Do NOT apply to the ordinary verb — 'quote rejected by email'.",
       "translations": {
         "fr": "Rejeté",
         "de": "Abgelehnt",
@@ -8509,6 +8523,7 @@
       "term": "Released",
       "category": "status",
       "context": "Authorised to proceed to the floor.",
+      "ambiguity": "Only a job authorised to the floor. Do NOT apply to stock 'released to Available', or to a released revision or document.",
       "translations": {
         "fr": "Lancé",
         "de": "Freigegeben",
