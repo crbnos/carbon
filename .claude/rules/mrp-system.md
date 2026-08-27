@@ -18,10 +18,22 @@ Deno edge function** — NOT Trigger.dev, and not inline in the app server.
 
 1. **Scheduled job** — `packages/jobs/src/inngest/functions/scheduled/mrp.ts`.
    `inngest.createFunction({ id: "mrp", retries: 2 }, { cron: "0 */3 * * *" }, …)`
-   — every 3 hours. Fans out **per company**: selects all rows from `companyPlan`
+   — every 3 hours. Fans out **per company**: selects all rows from `company`
    and, for each, calls `serviceRole.functions.invoke("mrp", { body: { type:
    "company", id, companyId, userId: "system" } })`. There is no location-scoped
    cron — only company-wide.
+
+   It enumerated `companyPlan` until 2026-08-26. MRP is not in `FEATURE_PLANS`,
+   so that was never a billing gate — just a convenient list of companies — but
+   the table is only written by Stripe checkout and is seeded nowhere, so every
+   self-hosted, community and local-dev install had an empty work list and
+   silently never ran MRP, reporting a green Inngest run. Do not reintroduce it:
+   the work list is `company`, and a company with no plan row must still run.
+   On **Cloud only**, companies whose `stripeSubscriptionStatus` is `'Canceled'`
+   are skipped, because `weekly.ts` deletes those. The selection rule is the pure
+   `selectCompaniesForMrp` (`scheduled/mrp-companies.ts`), unit-tested in its
+   sibling `.test.ts`; the scheduler logs a `warn` when the list comes back
+   empty, so "no work" can never again look like "worked fine".
 
 2. **Manual trigger** — POST `apps/erp/app/routes/api+/mrp.ts` (permission
    `update: "inventory"`). Reads `?location` query param; calls
