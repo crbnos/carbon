@@ -178,9 +178,6 @@ export default function AccountSecurity() {
     }
   });
 
-  // Enrolling a new authenticator app is a Business-tier feature. Removing an
-  // existing factor is always allowed, and controlled environments — where MFA
-  // is mandatory at the deployment level — must never block enrollment.
   const { isGated } = usePlanGate({ feature: "TWO_FACTOR" });
   const mfaGated = isGated && !CONTROLLED_ENVIRONMENT;
   const [showUpgrade, setShowUpgrade] = useState(false);

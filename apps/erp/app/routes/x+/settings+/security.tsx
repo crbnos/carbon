@@ -56,8 +56,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const requireMfa = formData.get("enabled") === "true";
 
-  // Turning enforcement ON is a Business-tier feature (like audit logs).
-  // Turning it OFF stays free so a downgraded company is never stuck.
   if (requireMfa) {
     await requirePlan({
       request,
@@ -127,8 +125,6 @@ export default function Security() {
   const requireMfa = settings.requireMfa === true;
   const { isGated } = usePlanGate({ feature: "TWO_FACTOR" });
 
-  // Controlled environments enforce MFA at the deployment level — there is
-  // nothing to upsell, so the informational page always renders.
   if (isGated && !CONTROLLED_ENVIRONMENT) {
     return <SecurityUpgradeOverlay />;
   }

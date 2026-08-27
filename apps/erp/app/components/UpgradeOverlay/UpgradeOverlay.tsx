@@ -130,8 +130,6 @@ function UpgradeOverlayDialog({
   return (
     <Modal open={open} onOpenChange={onOpenChange}>
       <ModalContent className="max-w-md">
-        {/* ModalContent already draws the surface (background, border, radius,
-            shadow) — a CardContent here would render a second box inside it. */}
         <div className="flex flex-col items-center text-center gap-4 px-6 pt-4 pb-8">
           {children}
         </div>
