@@ -8687,6 +8687,12 @@ msgstr "लिंक"
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "लिंक (वैकल्पिक) — उदा. /x/settings/…"
 
+msgid "Link a purchase order"
+msgstr ""
+
+msgid "Link a sales order"
+msgstr ""
+
 msgid "Link Jira Issue"
 msgstr "Jira समस्या को लिंक करें"
 
@@ -12839,6 +12845,9 @@ msgstr "रिटर्न की गई सीरीज संख्याए�
 msgid "Returning unused picked material"
 msgstr "अप्रयुक्त सामग्री को वापस किया जा रहा है"
 
+msgid "Returns"
+msgstr ""
+
 msgid "Returns:"
 msgstr "रिटर्न:"
 
@@ -16597,6 +16606,12 @@ msgstr "अनलिंक करें"
 
 msgid "Unlink job from sales order?"
 msgstr "बिक्रय आदेश से नौकरी को अनलिंक करें?"
+
+msgid "Unlink purchase order"
+msgstr ""
+
+msgid "Unlink sales order"
+msgstr ""
 
 msgid "Unlock"
 msgstr "अनलॉक करें"

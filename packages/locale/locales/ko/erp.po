@@ -8687,6 +8687,12 @@ msgstr "링크"
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "링크(선택 사항) — 예: /x/settings/…"
 
+msgid "Link a purchase order"
+msgstr ""
+
+msgid "Link a sales order"
+msgstr ""
+
 msgid "Link Jira Issue"
 msgstr "Jira 이슈 연결"
 
@@ -12839,6 +12845,9 @@ msgstr "반품된 일련번호"
 msgid "Returning unused picked material"
 msgstr "미사용 선택 재료 반환 중"
 
+msgid "Returns"
+msgstr ""
+
 msgid "Returns:"
 msgstr "반환 값:"
 
@@ -16597,6 +16606,12 @@ msgstr "연결 해제"
 
 msgid "Unlink job from sales order?"
 msgstr "작업을 판매주문에서 연결 해제하시겠습니까?"
+
+msgid "Unlink purchase order"
+msgstr ""
+
+msgid "Unlink sales order"
+msgstr ""
 
 msgid "Unlock"
 msgstr "잠금 해제"

@@ -1,8 +1,11 @@
+import { useCarbon } from "@carbon/auth";
 import type { Json } from "@carbon/database";
 import { DatePicker, InputControlled, ValidatedForm } from "@carbon/form";
 import {
   Button,
+  Combobox,
   HStack,
+  IconButton,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -10,8 +13,8 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect } from "react";
-import { LuCopy, LuLink } from "react-icons/lu";
+import { useCallback, useEffect, useState } from "react";
+import { LuCopy, LuLink, LuX } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -55,6 +58,28 @@ const SalesReturnOrderProperties = () => {
       toast.error(fetcher.data.error.message);
     }
   }, [fetcher.data]);
+
+  const { carbon } = useCarbon();
+  const [salesOrderOptions, setSalesOrderOptions] = useState<
+    { value: string; label: string }[]
+  >([]);
+  const customerId = routeData?.salesReturnOrder?.customerId;
+  useEffect(() => {
+    if (!carbon || !customerId) return;
+    carbon
+      .from("salesOrder")
+      .select("id, salesOrderId")
+      .eq("customerId", customerId)
+      .order("salesOrderId", { ascending: false })
+      .then(({ data }) => {
+        setSalesOrderOptions(
+          (data ?? []).map((order) => ({
+            value: order.id,
+            label: order.salesOrderId
+          }))
+        );
+      });
+  }, [carbon, customerId]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onUpdate = useCallback(
@@ -354,6 +379,34 @@ const SalesReturnOrderProperties = () => {
           }}
         />
       </ValidatedForm>
+
+      <VStack spacing={2} className="w-full">
+        <span className="text-xs text-muted-foreground">
+          <Trans>Sales Order</Trans>
+        </span>
+        <HStack className="w-full" spacing={1}>
+          <Combobox
+            size="sm"
+            className="w-full"
+            value={routeData?.salesReturnOrder?.salesOrderId ?? ""}
+            options={salesOrderOptions}
+            isReadOnly={isDisabled}
+            placeholder={t`Link a sales order`}
+            onChange={(value) => {
+              if (value) onUpdate("salesOrderId", value);
+            }}
+          />
+          {routeData?.salesReturnOrder?.salesOrderId && !isDisabled && (
+            <IconButton
+              aria-label={t`Unlink sales order`}
+              icon={<LuX />}
+              size="sm"
+              variant="ghost"
+              onClick={() => onUpdate("salesOrderId", null)}
+            />
+          )}
+        </HStack>
+      </VStack>
 
       {routeData?.salesReturnOrder?.replacementSalesOrderId && (
         <VStack spacing={2}>

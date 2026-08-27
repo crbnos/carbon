@@ -139,6 +139,7 @@ const SalesReturnOrderForm = ({ initialValues }: SalesReturnOrderFormProps) => {
         <CardContent>
           {isEditing && <Hidden name="salesReturnOrderId" />}
           <Hidden name="status" />
+          <Hidden name="salesOrderId" />
           <VStack>
             <div
               className={cn(

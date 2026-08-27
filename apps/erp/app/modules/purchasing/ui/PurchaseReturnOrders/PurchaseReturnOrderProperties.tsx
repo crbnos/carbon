@@ -1,8 +1,11 @@
+import { useCarbon } from "@carbon/auth";
 import type { Json } from "@carbon/database";
 import { DatePicker, InputControlled, ValidatedForm } from "@carbon/form";
 import {
   Button,
+  Combobox,
   HStack,
+  IconButton,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -10,8 +13,8 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect } from "react";
-import { LuCopy, LuLink } from "react-icons/lu";
+import { useCallback, useEffect, useState } from "react";
+import { LuCopy, LuLink, LuX } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -54,6 +57,28 @@ const PurchaseReturnOrderProperties = () => {
       toast.error(fetcher.data.error.message);
     }
   }, [fetcher.data]);
+
+  const { carbon } = useCarbon();
+  const [purchaseOrderOptions, setPurchaseOrderOptions] = useState<
+    { value: string; label: string }[]
+  >([]);
+  const supplierId = routeData?.purchaseReturnOrder?.supplierId;
+  useEffect(() => {
+    if (!carbon || !supplierId) return;
+    carbon
+      .from("purchaseOrder")
+      .select("id, purchaseOrderId")
+      .eq("supplierId", supplierId)
+      .order("purchaseOrderId", { ascending: false })
+      .then(({ data }) => {
+        setPurchaseOrderOptions(
+          (data ?? []).map((order) => ({
+            value: order.id,
+            label: order.purchaseOrderId
+          }))
+        );
+      });
+  }, [carbon, supplierId]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onUpdate = useCallback(
@@ -357,6 +382,34 @@ const PurchaseReturnOrderProperties = () => {
           }}
         />
       </ValidatedForm>
+
+      <VStack spacing={2} className="w-full">
+        <span className="text-xs text-muted-foreground">
+          <Trans>Purchase Order</Trans>
+        </span>
+        <HStack className="w-full" spacing={1}>
+          <Combobox
+            size="sm"
+            className="w-full"
+            value={routeData?.purchaseReturnOrder?.purchaseOrderId ?? ""}
+            options={purchaseOrderOptions}
+            isReadOnly={isDisabled}
+            placeholder={t`Link a purchase order`}
+            onChange={(value) => {
+              if (value) onUpdate("purchaseOrderId", value);
+            }}
+          />
+          {routeData?.purchaseReturnOrder?.purchaseOrderId && !isDisabled && (
+            <IconButton
+              aria-label={t`Unlink purchase order`}
+              icon={<LuX />}
+              size="sm"
+              variant="ghost"
+              onClick={() => onUpdate("purchaseOrderId", null)}
+            />
+          )}
+        </HStack>
+      </VStack>
 
       {routeData?.purchaseReturnOrder?.replacementPurchaseOrderId && (
         <VStack spacing={2}>

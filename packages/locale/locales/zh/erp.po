@@ -8687,6 +8687,12 @@ msgstr "链接"
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "链接（可选）— 例如 /x/settings/…"
 
+msgid "Link a purchase order"
+msgstr ""
+
+msgid "Link a sales order"
+msgstr ""
+
 msgid "Link Jira Issue"
 msgstr "关联 Jira 问题"
 
@@ -12839,6 +12845,9 @@ msgstr "退货序列号"
 msgid "Returning unused picked material"
 msgstr "返回未使用的拣配物料"
 
+msgid "Returns"
+msgstr ""
+
 msgid "Returns:"
 msgstr "返回："
 
@@ -16597,6 +16606,12 @@ msgstr "取消链接"
 
 msgid "Unlink job from sales order?"
 msgstr "从销售订单取消关联工作？"
+
+msgid "Unlink purchase order"
+msgstr ""
+
+msgid "Unlink sales order"
+msgstr ""
 
 msgid "Unlock"
 msgstr "解锁"

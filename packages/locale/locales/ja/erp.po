@@ -8687,6 +8687,12 @@ msgstr "リンク"
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "リンク（オプション）— 例：/x/settings/…"
 
+msgid "Link a purchase order"
+msgstr ""
+
+msgid "Link a sales order"
+msgstr ""
+
 msgid "Link Jira Issue"
 msgstr "Jira イシューをリンク"
 
@@ -12839,6 +12845,9 @@ msgstr "返品シリアル番号"
 msgid "Returning unused picked material"
 msgstr "未使用の仕分け材料を返却中"
 
+msgid "Returns"
+msgstr ""
+
 msgid "Returns:"
 msgstr "返す:"
 
@@ -16597,6 +16606,12 @@ msgstr "リンク解除"
 
 msgid "Unlink job from sales order?"
 msgstr "販売注文からジョブのリンクを解除しますか？"
+
+msgid "Unlink purchase order"
+msgstr ""
+
+msgid "Unlink sales order"
+msgstr ""
 
 msgid "Unlock"
 msgstr "ロック解除"

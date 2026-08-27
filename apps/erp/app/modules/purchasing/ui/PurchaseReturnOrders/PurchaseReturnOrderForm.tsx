@@ -143,6 +143,7 @@ const PurchaseReturnOrderForm = ({
         <CardContent>
           {isEditing && <Hidden name="purchaseReturnOrderId" />}
           <Hidden name="status" />
+          <Hidden name="purchaseOrderId" />
           <VStack>
             <div
               className={cn(

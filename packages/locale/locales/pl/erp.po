@@ -8687,6 +8687,12 @@ msgstr "Łącze"
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "Link (opcjonalnie) — np. /x/settings/…"
 
+msgid "Link a purchase order"
+msgstr ""
+
+msgid "Link a sales order"
+msgstr ""
+
 msgid "Link Jira Issue"
 msgstr "Połącz problem Jiry"
 
@@ -12839,6 +12845,9 @@ msgstr "Zwrócone numery seryjne"
 msgid "Returning unused picked material"
 msgstr "Zwracanie nieużywanego pobranego materiału"
 
+msgid "Returns"
+msgstr ""
+
 msgid "Returns:"
 msgstr "Zwraca:"
 
@@ -16597,6 +16606,12 @@ msgstr "Odłącz"
 
 msgid "Unlink job from sales order?"
 msgstr "Odłączyć zadanie od zamówienia sprzedaży?"
+
+msgid "Unlink purchase order"
+msgstr ""
+
+msgid "Unlink sales order"
+msgstr ""
 
 msgid "Unlock"
 msgstr "Odblokuj"

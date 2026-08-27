@@ -64,6 +64,7 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function SalesReturnOrderNewRoute() {
   const [params] = useUrlParams();
   const customerId = params.get("customerId");
+  const salesOrderId = params.get("salesOrderId");
   const { company, defaults } = useUser();
   const companyToday = useCompanyToday();
 
@@ -71,6 +72,7 @@ export default function SalesReturnOrderNewRoute() {
     id: undefined,
     salesReturnOrderId: undefined,
     customerId: customerId ?? "",
+    salesOrderId: salesOrderId ?? undefined,
     orderDate: companyToday,
     expirationDate: "",
     status: "Draft" as const,

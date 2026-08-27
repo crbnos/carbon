@@ -1632,22 +1632,49 @@ export async function getSalesOrderRelatedItems(
   salesOrderId: string,
   opportunityId: string
 ) {
-  const [jobs, shipments, invoices] = await Promise.all([
-    client.from("job").select("*").eq("salesOrderId", salesOrderId),
-    client
-      .from("shipment")
-      .select("*, shipmentLine(*)")
-      .eq("opportunityId", opportunityId),
-    client
-      .from("salesInvoice")
-      .select("id, invoiceId, status")
-      .eq("opportunityId", opportunityId)
-  ]);
+  const [jobs, shipments, invoices, returnOrders, lineLinkedReturns] =
+    await Promise.all([
+      client.from("job").select("*").eq("salesOrderId", salesOrderId),
+      client
+        .from("shipment")
+        .select("*, shipmentLine(*)")
+        .eq("opportunityId", opportunityId),
+      client
+        .from("salesInvoice")
+        .select("id, invoiceId, status")
+        .eq("opportunityId", opportunityId),
+      // RMAs linked at the header level
+      client
+        .from("salesReturnOrder")
+        .select("id, salesReturnOrderId, status")
+        .eq("salesOrderId", salesOrderId),
+      // RMAs linked only through their lines (salesOrderLineId provenance)
+      client
+        .from("salesReturnOrderLine")
+        .select(
+          "salesReturnOrder!salesReturnOrderLine_salesReturnOrderId_fkey(id, salesReturnOrderId, status), salesOrderLine!inner(salesOrderId)"
+        )
+        .eq("salesOrderLine.salesOrderId", salesOrderId)
+    ]);
+
+  // Union of header-linked and line-linked, de-duplicated by id
+  const returnsById = new Map<
+    string,
+    { id: string; salesReturnOrderId: string; status: string }
+  >();
+  for (const row of returnOrders.data ?? []) {
+    returnsById.set(row.id, row);
+  }
+  for (const row of lineLinkedReturns.data ?? []) {
+    const order = row.salesReturnOrder;
+    if (order) returnsById.set(order.id, order);
+  }
 
   return {
     jobs: jobs.data ?? [],
     shipments: shipments.data ?? [],
-    invoices: invoices.data ?? []
+    invoices: invoices.data ?? [],
+    salesReturnOrders: Array.from(returnsById.values())
   };
 }
 
