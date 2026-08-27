@@ -64,7 +64,11 @@ describe("POSTING_POLICY", () => {
         "Asset Depreciation",
         "Asset Disposal",
         "Non-Conformance",
-        "Inbound Inspection"
+        "Inbound Inspection",
+        // Added post-v2 with the Ramp integration: card-transaction journals
+        // (Dr expense / Cr card liability) push to the provider like any other
+        // automated internal posting — no document representation exists.
+        "Card Transaction"
       ].sort()
     );
 
