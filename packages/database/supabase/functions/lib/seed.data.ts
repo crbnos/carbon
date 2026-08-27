@@ -377,6 +377,24 @@ export const sequences = [
     step: 1
   },
   {
+    table: "repairOrder",
+    name: "Repair Order",
+    prefix: "REP",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
+    table: "warrantyRegistration",
+    name: "Warranty Registration",
+    prefix: "WTY",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
     table: "salesInvoice",
     name: "Sales Invoice",
     prefix: "AR",
@@ -755,6 +773,7 @@ export const accounts = [
   { key: "inventory-adjustments", number: null, name: "Inventory Adjustments", isGroup: true, parentKey: "cogs", accountType: "Cost of Goods Sold", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
   { key: "5310", number: "5310", name: "Inventory Adjustment", isGroup: false, parentKey: "inventory-adjustments", accountType: "Cost of Goods Sold", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
   { key: "5320", number: "5320", name: "Scrap / Cost of Quality", isGroup: false, parentKey: "inventory-adjustments", accountType: "Cost of Goods Sold", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
+  { key: "5330", number: "5330", name: "Warranty Expense", isGroup: false, parentKey: "cogs", accountType: "Cost of Goods Sold", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
 
   // ─── 6000-6999: OPERATING EXPENSES ───
   { key: "operating-expenses", number: null, name: "Operating Expenses", isGroup: true, parentKey: "income-statement", accountType: "Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
@@ -792,6 +811,7 @@ export const accountDefaults = {
   salesAccount: "4010",
   salesDiscountAccount: "4020",
   salesReturnsAccount: "4900",
+  warrantyCostAccount: "5330",
   costOfGoodsSoldAccount: "5010",
   purchaseVarianceAccount: "5210",
   inventoryAdjustmentVarianceAccount: "5310",
