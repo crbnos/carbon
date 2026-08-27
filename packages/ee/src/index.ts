@@ -48,7 +48,15 @@ export const integrations = [
 export type IntegrationID = (typeof integrations)[number]["id"];
 
 export { Jira } from "./jira/config";
+export { openOAuthPopup } from "./oauth-popup";
 export { Logo as OnshapeLogo, Onshape } from "./onshape/config";
+export type { OnshapePanelContext } from "./onshape/panel/messages";
+export {
+  PANEL_SESSION_MESSAGE,
+  parsePanelContext
+} from "./onshape/panel/messages";
+export type { OnshapePanelMe, OnshapePanelPaths } from "./onshape/panel/Panel";
+export { OnshapePanel } from "./onshape/panel/Panel";
 // TODO: export as @carbon/ee/paperless
 export { PaperlessPartsClient } from "./paperless-parts/lib/client";
 export { QuickBooks } from "./quickbooks/config";

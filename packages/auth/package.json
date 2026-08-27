@@ -19,6 +19,7 @@
     "./company.server": "./src/services/company.server.ts",
     "./mfa.server": "./src/services/mfa.server.ts",
     "./session.server": "./src/services/session.server.ts",
+    "./panel-session.server": "./src/services/panel-session.server.ts",
     "./users.server": "./src/services/users.server.ts",
     "./passkey.server": "./src/services/passkey.server.ts",
     "./verification.server": "./src/services/verification.server.ts",
