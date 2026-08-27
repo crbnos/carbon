@@ -1,31 +1,15 @@
--- Record whether a quote BOM material's unit cost was typed by a person or
--- worked out by Carbon.
+-- 'manual' = typed by a person and never recalculated; 'system' = derived, and
+-- re-derived on every quote method mutation.
 --
--- 'system' = Carbon derived it (average item cost, or supplier price breaks).
---            Recalculations keep re-deriving it, which is what keeps a quote
---            tracking supplier prices.
--- 'manual' = a person typed it in the BOM editor. No recalculation may change it.
---
--- Without this, `buildCostEffects` (and its twins in the quote configurator and
--- the edge runtime) re-derived every "Purchase to Order" material's cost from
--- supplierPart price breaks on EVERY quote method mutation, so a hand-entered
--- cost was written and then immediately overwritten in the same request. It only
--- reproduced where the item had a supplierPart row, which is why dev never saw it.
---
--- Deliberately NOT backfilled, and this is the opposite call the sibling
--- quoteLinePrice."priceSource" migration (20260714180443) made. There, freezing
--- an un-overwritten customer-facing price was the safe default. Here the
--- overwrite has been running on every save, so every existing bought-to-order
--- row ALREADY holds the supplier price -- anything typed was destroyed long ago.
--- Marking those 'manual' would freeze a supplier-derived number and stop it
--- updating forever. Materials that are not "Purchase to Order" were never
--- touched by the loop, so the column is inert for them.
+-- Deliberately NOT backfilled, unlike the sibling quoteLinePrice."priceSource"
+-- (20260714180443). The overwrite this fixes has run on every save, so existing
+-- bought-to-order rows already hold the supplier price; marking them 'manual'
+-- would freeze a supplier-derived number forever.
 
 ALTER TABLE "quoteMaterial"
   ADD COLUMN "unitCostSource" TEXT NOT NULL DEFAULT 'system';
 
--- NOT VALID skips the full-table scan under the ACCESS EXCLUSIVE lock; the
--- constraint is validated separately under a weaker lock.
+-- NOT VALID skips the full-table scan under the ACCESS EXCLUSIVE lock.
 ALTER TABLE "quoteMaterial"
   ADD CONSTRAINT "quoteMaterial_unitCostSource_check"
   CHECK ("unitCostSource" IN ('system', 'manual')) NOT VALID;
@@ -33,12 +17,8 @@ ALTER TABLE "quoteMaterial"
 ALTER TABLE "quoteMaterial"
   VALIDATE CONSTRAINT "quoteMaterial_unitCostSource_check";
 
--- "quoteMaterialWithMakeMethodId" is SELECT qm.*, but a view's column list is
--- frozen when it is created -- the new column does not appear until the view is
--- recreated. CREATE OR REPLACE cannot do it either (the column lands mid-list,
--- and OR REPLACE may only append), so drop and recreate. Nothing else depends
--- on the view: the two functions below are string-bodied SQL, and app reads go
--- through PostgREST.
+-- The view is SELECT qm.*, but a view's column list is frozen at creation and
+-- CREATE OR REPLACE may only append, so it has to be dropped and recreated.
 
 DROP VIEW "quoteMaterialWithMakeMethodId";
 
@@ -52,10 +32,7 @@ CREATE VIEW "quoteMaterialWithMakeMethodId" WITH(SECURITY_INVOKER=true) AS
   LEFT JOIN "quoteMakeMethod" qmm
     ON qmm."parentMaterialId" = qm."id";
 
--- The two method-tree readers have to carry the new column or the browser's cost
--- panel, which does its own supplier-price lookup, would keep ignoring a typed
--- cost even though the database now keeps it. Both change their RETURNS TABLE,
--- so they must be dropped first -- CREATE OR REPLACE cannot change a return type.
+-- Both readers change their RETURNS TABLE, which CREATE OR REPLACE cannot do.
 
 DROP FUNCTION IF EXISTS get_quote_methods_by_method_id(TEXT);
 DROP FUNCTION IF EXISTS get_quote_methods(TEXT);
@@ -84,7 +61,7 @@ RETURNS TABLE (
     "kit" BOOLEAN,
     "revision" TEXT,
     "externalId" JSONB,
-    "version" NUMERIC(10,2),
+    "version" NUMERIC,
     "storageUnitId" TEXT
 ) AS $$
 WITH RECURSIVE material AS (
@@ -199,7 +176,7 @@ RETURNS TABLE (
     "kit" BOOLEAN,
     "revision" TEXT,
     "externalId" JSONB,
-    "version" NUMERIC(10,2),
+    "version" NUMERIC,
     "storageUnitId" TEXT
 ) AS $$
 WITH RECURSIVE material AS (

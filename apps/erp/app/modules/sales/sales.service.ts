@@ -4042,9 +4042,8 @@ async function buildCostEffects(
 
   const operations = operationsResult.data ?? [];
 
-  // Refresh Buy material costs from supplier price breaks, so a quote nobody has
-  // touched follows the supplier's current price. A cost someone typed is left
-  // alone — resolveBuyUnitCost is what knows the difference.
+  // Refresh Buy material costs from supplier price breaks; resolveBuyUnitCost
+  // leaves a typed cost alone.
   const buyMaterials = await client
     .from("quoteMaterial")
     .select("id, itemId, unitCost, unitCostSource")

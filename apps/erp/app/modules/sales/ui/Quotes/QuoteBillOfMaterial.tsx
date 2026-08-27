@@ -715,7 +715,6 @@ function MaterialForm({
       itemId,
       description: item.data?.name ?? "",
       unitCost,
-      // A different part — whatever was typed for the old one no longer applies.
       unitCostSource: "system",
       unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
       methodType: item.data?.defaultMethodType ?? "Pull from Inventory",
@@ -735,8 +734,7 @@ function MaterialForm({
 
       if (itemData.methodType !== "Purchase to Order" || !itemData.itemId)
         return;
-      // A cost someone typed survives a quantity change. Only a cost we worked
-      // out ourselves gets re-resolved against the new quantity's price break.
+      // A typed cost survives a quantity change.
       if (itemData.unitCostSource === "manual") return;
       if (!carbon) return;
 
@@ -753,9 +751,8 @@ function MaterialForm({
         fallbackCost
       );
 
-      // Re-check inside the updater: the guard above read the value as it was
-      // when this callback was built, and someone can type a cost while the two
-      // awaits above are still in flight.
+      // Re-checked here because the guard above reads a captured value, and a
+      // cost can be typed while the awaits are in flight.
       setItemData((d) =>
         d.unitCostSource === "manual" ? d : { ...d, unitCost }
       );

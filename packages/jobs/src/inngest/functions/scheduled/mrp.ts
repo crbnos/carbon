@@ -14,15 +14,10 @@ export const mrpFunction = inngest.createFunction(
         `Scheduled MRP Calculation Started: ${new Date().toISOString()}`
       );
 
-      // Enumerate `company`, never `companyPlan`. This used to read the
-      // billing table, so every install where nobody completed Stripe checkout
-      // — self-hosted, community, local dev — had an empty work list and MRP
-      // silently never ran, with a green Inngest run to show for it.
-      //
-      // Paged with a stable order: PostgREST's max_rows caps a bare select at
-      // 1000, which drops the tail of the work list the same silent way. The
-      // dev stack does not enforce the cap, so the truncation is invisible
-      // locally.
+      // Enumerate `company`, never `companyPlan` — that billing table is empty
+      // on every install where nobody completed Stripe checkout, and MRP
+      // silently never ran there. Paged, because max_rows would truncate the
+      // work list the same silent way.
       const companies = await fetchAllFromTable<{ id: string; name: string }>(
         serviceRole,
         "company",
@@ -32,15 +27,13 @@ export const mrpFunction = inngest.createFunction(
 
       if (companies.error) {
         logger.error("Failed to get companies", { error: companies.error });
-        // Throw, never return: a return here is a step that SUCCEEDS having
-        // planned for nobody — the exact failure mode this function was fixed
-        // for. Throwing spends the two configured retries and shows red.
+        // Throwing, not returning: a return is a step that succeeds having
+        // planned for nobody, and never spends the configured retries.
         throw companies.error;
       }
 
       // Cloud only: a cancelled subscription means the weekly job is about to
-      // delete the company, so planning for it is wasted work. Everywhere else
-      // there is nothing to check — MRP is not a paid feature.
+      // delete the company. MRP is not a paid feature anywhere else.
       let plans:
         | { id: string; stripeSubscriptionStatus: string | null }[]
         | null = null;

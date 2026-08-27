@@ -9,8 +9,7 @@ const companies = [
 
 describe("selectCompaniesForMrp", () => {
   it("plans for a company with no companyPlan row", () => {
-    // The regression. The scheduler used to enumerate `companyPlan` directly, so
-    // an empty table meant MRP silently never ran for anyone.
+    // The regression: an empty companyPlan table meant MRP ran for nobody.
     expect(selectCompaniesForMrp(companies, [])).toEqual(companies);
   });
 

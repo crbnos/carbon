@@ -406,12 +406,8 @@ function lookupBuyPriceFromMap(
 }
 
 /**
- * The one rule for what a "Purchase to Order" quote material's unit cost IS.
- * A cost a person typed wins outright; anything else re-resolves from supplier
- * price breaks.
- *
- * Mirror of `resolveBuyUnitCost` in `apps/erp/app/modules/shared/shared.service.ts`
- * — keep both in sync, the same way `decideRecalcPricing` is.
+ * Mirror of `resolveBuyUnitCost` in
+ * `apps/erp/app/modules/shared/shared.service.ts` — keep both in sync.
  */
 function resolveBuyUnitCost(
   material: { itemId: string; unitCost: number; unitCostSource?: string | null },
@@ -546,8 +542,8 @@ export async function calculateQuoteLinePrices(
       .map((row) => Number(row.quantity))
   );
 
-  // 2. Fix Buy material costs with supplier price breaks. A cost someone typed
-  //    is left alone — resolveBuyUnitCost knows the difference.
+  // 2. Fix Buy material costs with supplier price breaks; resolveBuyUnitCost
+  //    leaves a typed cost alone.
   const buyMaterials = await client
     .from("quoteMaterial")
     .select("id, itemId, unitCost, unitCostSource")

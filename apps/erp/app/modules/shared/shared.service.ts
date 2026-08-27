@@ -1402,19 +1402,12 @@ export function lookupBuyPriceFromMap(
 }
 
 /**
- * The one rule for what a "Purchase to Order" quote material's unit cost IS.
+ * What a "Purchase to Order" quote material's unit cost IS: a typed cost wins,
+ * anything else re-resolves from supplier price breaks. Every reader of a
+ * bought-to-order cost must go through this — reaching for
+ * lookupBuyPriceFromMap directly silently ignores a typed cost.
  *
- * A cost a person typed wins outright. Anything else is re-resolved from the
- * supplier's price breaks, which is what keeps an untouched quote tracking
- * supplier prices as they change.
- *
- * Every reader of a bought-to-order material cost goes through this — the three
- * that persist it (buildCostEffects, the quote configurator, the edge runtime)
- * and the three that only compute displayed totals. A caller that reaches for
- * lookupBuyPriceFromMap directly will silently ignore a typed cost.
- *
- * Mirrored in the Deno edge runtime (`functions/lib/methods.ts`) — keep both in
- * sync, the same way `decideRecalcPricing` is.
+ * Mirrored in the Deno edge runtime (`functions/lib/methods.ts`).
  */
 export function resolveBuyUnitCost(
   material: {

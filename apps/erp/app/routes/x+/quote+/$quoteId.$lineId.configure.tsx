@@ -64,9 +64,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    // Fix BOM material costs: replace average cost with price break values.
-    // A cost someone typed is left alone — resolveBuyUnitCost knows the
-    // difference, and overwriting it here was how a hand-entered cost got lost.
+    // Replace average cost with price break values; resolveBuyUnitCost leaves
+    // a typed cost alone.
     const buyMaterials = await serviceRole
       .from("quoteMaterial")
       .select("id, itemId, unitCost, unitCostSource")
