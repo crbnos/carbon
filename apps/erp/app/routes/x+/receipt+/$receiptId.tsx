@@ -61,7 +61,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (receiptLines.data) {
     receiptLineIds = receiptLines.data.map((line) => line.id!).filter(Boolean);
     itemsWithBatchProperties = receiptLines.data
-      .filter((line) => line && line.itemId && line.requiresBatchTracking)
+      .filter(
+        (line) =>
+          line &&
+          line.itemId &&
+          (line.requiresBatchTracking || line.requiresSerialTracking)
+      )
       .map((line) => line.itemId)
       .filter((itemId) => itemId !== null);
     trackedItemIds = receiptLines.data

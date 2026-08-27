@@ -519,7 +519,7 @@ msgid "Finish Anyways"
 msgstr "Завершить в любом случае"
 
 msgid "Finish setting up your account"
-msgstr ""
+msgstr "Завершите настройку своего аккаунта"
 
 msgid "Finish with material unpicked?"
 msgstr "Завершить с неподобранным материалом?"
@@ -531,7 +531,7 @@ msgid "Go back to operation"
 msgstr "Вернуться к операции"
 
 msgid "Go to onboarding"
-msgstr ""
+msgstr "Перейти на адаптацию"
 
 msgid "How many were actually picked?"
 msgstr "Сколько было фактически собрано?"
@@ -1513,7 +1513,7 @@ msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock 
 msgstr "Вы на смене уже {hoursElapsed} часов. Вы забыли отметить уход?"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
-msgstr ""
+msgstr "Ваш аккаунт еще не является частью компании. Завершите адаптацию в Carbon ERP, чтобы продолжить."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Ваша организация требует приложения аутентификатора. Настройте его в Carbon, а затем вернитесь сюда."

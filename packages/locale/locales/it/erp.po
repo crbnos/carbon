@@ -169,7 +169,7 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} di {count} operazioni"
 
 msgid "{hiddenCount} more: {hiddenNames}"
-msgstr ""
+msgstr "{hiddenCount} altri: {hiddenNames}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -303,7 +303,7 @@ msgid "4h"
 msgstr "4h"
 
 msgid "5 user minimum"
-msgstr ""
+msgstr "Minimo 5 utenti"
 
 msgid "5-8 weeks"
 msgstr "5-8 settimane"
@@ -360,7 +360,7 @@ msgid "A contractor is a supplier contact with particular abilities and availabl
 msgstr "Un appaltatore è un contatto fornitore con particolari competenze e ore disponibili"
 
 msgid "A custom solution to meet your needs"
-msgstr ""
+msgstr "Una soluzione personalizzata per le tue esigenze"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Un cliente è un'azienda o una persona che acquista i tuoi prodotti o servizi."
@@ -473,10 +473,10 @@ msgid "A Make to Order component whose parts are issued together into the parent
 msgstr "Un componente Fabrica su Ordine le cui parti vengono emesse insieme nel lavoro padre — nessuna compilazione separata."
 
 msgid "A managed cloud-hosted version of Carbon"
-msgstr ""
+msgstr "Una versione gestita ospitata nel cloud di Carbon"
 
 msgid "A managed version with all the advanced features"
-msgstr ""
+msgstr "Una versione gestita con tutte le funzionalità avanzate"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Un materiale è un articolo fisico utilizzato per realizzare una parte che può essere utilizzata in più lavori"
@@ -500,7 +500,7 @@ msgid "A new size will be created using a copy of the current size"
 msgstr "Una nuova dimensione verrà creata utilizzando una copia della dimensione attuale"
 
 msgid "A new Stripe customer will be created"
-msgstr ""
+msgstr "Verrà creato un nuovo cliente Stripe"
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "Un documento non in contanti che regola una fattura rispetto a un conto motivo: un credito abbassa ciò che è dovuto, un debito lo aumenta."
@@ -1334,7 +1334,7 @@ msgid "All actions selected"
 msgstr "Tutte le azioni selezionate"
 
 msgid "All advanced features available"
-msgstr ""
+msgstr "Tutte le funzionalità avanzate disponibili"
 
 msgid "All Audit Logs"
 msgstr "Tutti i registri di audit"
@@ -1609,7 +1609,7 @@ msgid "API keys for programmatic access to your Carbon data."
 msgstr "Chiavi API per l'accesso programmatico ai tuoi dati Carbon."
 
 msgid "API, webhooks, and integrations"
-msgstr ""
+msgstr "API, webhook e integrazioni"
 
 msgid "Applied"
 msgstr "Applicato"
@@ -2305,7 +2305,7 @@ msgid "Audit Log"
 msgstr "Registro di Audit"
 
 msgid "Audit logging"
-msgstr ""
+msgstr "Registrazione di controllo"
 
 msgid "Audit Logging"
 msgstr "Registrazione di audit"
@@ -2377,7 +2377,7 @@ msgid "Automatic Updates"
 msgstr "Aggiornamenti Automatici"
 
 msgid "Automatic updates and backups"
-msgstr ""
+msgstr "Aggiornamenti e backup automatici"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "Consumo automatico e proporzionato dei materiali non tracciati di un lavoro quando viene segnalata l'uscita — i materiali tracciati vengono emessi manualmente."
@@ -2477,7 +2477,7 @@ msgid "Base Price"
 msgstr "Prezzo Base"
 
 msgid "Basic ERP, MES, and QMS functionality"
-msgstr ""
+msgstr "Funzionalità di base ERP, MES e QMS"
 
 msgid "Basic Information"
 msgstr "Informazioni di base"
@@ -2614,7 +2614,7 @@ msgid "Browse library"
 msgstr "Sfoglia libreria"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
-msgstr ""
+msgstr "Sfoglia la versione pubblicata in sola lettura. Puoi comunque riorganizzare i passaggi per pulire il layout."
 
 msgid "Bucket"
 msgstr "Bucket"
@@ -2821,7 +2821,7 @@ msgid "Cannot send RFQ"
 msgstr "Impossibile inviare RFQ"
 
 msgid "Cannot send through Stripe"
-msgstr ""
+msgstr "Impossibile inviare tramite Stripe"
 
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "Impossibile caricare — interazione fornitore non ancora creata"
@@ -3029,7 +3029,7 @@ msgid "Check your email"
 msgstr "Controlla la tua email"
 
 msgid "Checking Stripe for this customer…"
-msgstr ""
+msgstr "Verifica di Stripe per questo cliente…"
 
 msgid "Checkpoint ·"
 msgstr "Checkpoint ·"
@@ -3170,7 +3170,7 @@ msgid "Cloud, or your self-hosted environment."
 msgstr "Cloud, o il tuo ambiente self-hosted."
 
 msgid "CMMC compliant"
-msgstr ""
+msgstr "Conforme a CMMC"
 
 msgid "Code"
 msgstr "Codice"
@@ -3233,7 +3233,7 @@ msgid "Committing a receipt, shipment, or invoice: quantities move, journal entr
 msgstr "Conferma di una ricevuta, spedizione o fattura: le quantità si muovono, i movimenti del giornale colpiscono il mastro, e lo stato diventa Registrato."
 
 msgid "Community support"
-msgstr ""
+msgstr "Supporto della comunità"
 
 msgid "Companies"
 msgstr "Aziende"
@@ -3526,7 +3526,7 @@ msgid "Contact (optional)"
 msgstr "Contatto (facoltativo)"
 
 msgid "Contact us"
-msgstr ""
+msgstr "Contattaci"
 
 msgid "contacts"
 msgstr "contatti"
@@ -3936,7 +3936,7 @@ msgid "Create a new production job to fulfill the sales order"
 msgstr "Crea un nuovo ordine di produzione per evadere l'ordine di vendita"
 
 msgid "Create a new Stripe customer instead"
-msgstr ""
+msgstr "Crea un nuovo cliente Stripe"
 
 msgid "Create a new version"
 msgstr "Crea una nuova versione"
@@ -4407,7 +4407,7 @@ msgid "Customers"
 msgstr "Clienti"
 
 msgid "Customizations, training, and integrations"
-msgstr ""
+msgstr "Personalizzazioni, formazione e integrazioni"
 
 msgid "Customize"
 msgstr "Personalizza"
@@ -6250,7 +6250,7 @@ msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Mapping esistenti. Scegli un'opzione provider diversa per rimappare."
 
 msgid "Existing Stripe customer"
-msgstr ""
+msgstr "Cliente Stripe esistente"
 
 msgid "Expand"
 msgstr "Espandi"
@@ -6327,9 +6327,6 @@ msgstr "Data di scadenza"
 
 msgid "Expiration Date"
 msgstr "Data di scadenza"
-
-msgid "Expiration Date (applies to all serials on this line)"
-msgstr "Data di scadenza (si applica a tutti i numeri seriali su questa riga)"
 
 msgid "Expired"
 msgstr "Scaduto"
@@ -6971,7 +6968,7 @@ msgid "Format"
 msgstr "Formato"
 
 msgid "Forward deployed engineer"
-msgstr ""
+msgstr "Ingegnere implementato in avanti"
 
 msgid "Foundation"
 msgstr "Fondamenti"
@@ -7027,7 +7024,7 @@ msgid "Full name"
 msgstr "Nome completo"
 
 msgid "Full setup and migrations"
-msgstr ""
+msgstr "Configurazione completa e migrazioni"
 
 msgid "Fully Depreciated"
 msgstr "Completamente Ammortizzato"
@@ -8124,7 +8121,7 @@ msgid "Issues"
 msgstr "Problemi"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
-msgstr ""
+msgstr "Smetterà di funzionare finché non pubblichi di nuovo una versione. Nulla viene eliminato."
 
 msgid "ITAR Certifications"
 msgstr "Certificazioni ITAR"
@@ -8486,7 +8483,7 @@ msgid "Less manual work, fewer errors"
 msgstr "Meno lavoro manuale, meno errori"
 
 msgid "Let's Build"
-msgstr ""
+msgstr "Costruiamo"
 
 msgid "Let's build something"
 msgstr "Costruiamo qualcosa"
@@ -8567,7 +8564,7 @@ msgid "Link Linear Issue"
 msgstr "Collega problema Linear"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
-msgstr ""
+msgstr "Collega questo cliente Carbon a uno di essi, o crea un cliente Stripe separato."
 
 msgid "Link to sales order line"
 msgstr "Collega alla riga dell'ordine di vendita"
@@ -11611,7 +11608,7 @@ msgid "Published by Carbon"
 msgstr "Pubblicato da Carbon"
 
 msgid "Published Version"
-msgstr ""
+msgstr "Versione Pubblicata"
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "Le versioni pubblicate non possono essere modificate. Sfoglia in sola lettura o crea una nuova versione per apportare modifiche."
@@ -12631,7 +12628,7 @@ msgid "Reverse any item ledger entries from this invoice"
 msgstr "Storna qualsiasi voce di ledger articoli da questa fattura"
 
 msgid "Reverse charge"
-msgstr ""
+msgstr "Addebito inverso"
 
 msgid "Reverse Charge Sales Tax"
 msgstr "Imposta di vendita con inversione contabile"
@@ -13446,10 +13443,10 @@ msgid "Self Managed"
 msgstr "Gestito autonomamente"
 
 msgid "Self-hosted or managed"
-msgstr ""
+msgstr "Auto-hosted o gestito"
 
 msgid "Self-onboarding"
-msgstr ""
+msgstr "Onboarding automatico"
 
 msgid "Self-paced"
 msgstr "Autonomo"
@@ -13871,7 +13868,7 @@ msgid "Shown to the user when this rule fails."
 msgstr "Mostrato all'utente quando questa regola non riesce."
 
 msgid "Sign in to Carbon"
-msgstr ""
+msgstr "Accedi a Carbon"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Accedi con biometrica invece di un magic link. Le passkey sono protette da Face ID, Touch ID o dal PIN del tuo dispositivo."
@@ -14075,7 +14072,7 @@ msgid "Split shipment line"
 msgstr "Dividi riga spedizione"
 
 msgid "SSO/SAML"
-msgstr ""
+msgstr "SSO/SAML"
 
 msgid "Stand up hosting"
 msgstr "Configura l'hosting"
@@ -14287,19 +14284,19 @@ msgid "Straight line"
 msgstr "Lineare"
 
 msgid "Stripe"
-msgstr ""
+msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr ""
+msgstr "Stripe ha già un cliente con questa email"
 
 msgid "Stripe Due Date"
-msgstr ""
+msgstr "Data di scadenza Stripe"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr ""
+msgstr "Stripe invia la fattura via email al cliente, quindi è richiesto un indirizzo. Questo verrà anche salvato nel contatto in Carbon."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr ""
+msgstr "Stripe non ha ancora un cliente per questo cliente Carbon. La registrazione ne creerà uno sul tuo account collegato."
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Stile dell'output kanban da mostrare nella tabella Kanban"
@@ -14714,7 +14711,7 @@ msgid "Tax Depreciation Method"
 msgstr "Metodo di Ammortamento Fiscale"
 
 msgid "Tax exempt"
-msgstr ""
+msgstr "Esente da tasse"
 
 msgid "Tax Exempt"
 msgstr "Esente da Imposte"
@@ -14762,7 +14759,7 @@ msgid "Team trained"
 msgstr "Team addestrato"
 
 msgid "Technical support"
-msgstr ""
+msgstr "Supporto tecnico"
 
 msgid "Temperature"
 msgstr "Temperatura"
@@ -15577,7 +15574,7 @@ msgid "This completes the Discovery step."
 msgstr "Questo completa il passaggio Discovery."
 
 msgid "This contact has no email address"
-msgstr ""
+msgstr "Questo contatto non ha un indirizzo email"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Questa controparte non ha nulla in sospeso — il pagamento verrà registrato come credito in conto."
@@ -15605,10 +15602,10 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "Questo invito per unirti a {0} è scaduto. Puoi richiedere un nuovo invito da inviare alla tua email."
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr ""
+msgstr "Questa fattura non ha una data di scadenza utilizzabile — scegline una per Stripe."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr ""
+msgstr "Questa fattura sarà addebitata al cliente Stripe già collegato a questo cliente Carbon. Per modificare i dettagli, modificalo nel dashboard di Stripe."
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "Questo è un ambiente controllato, quindi è necessaria un'app autenticatore."
@@ -15745,10 +15742,10 @@ msgid "This version cannot be opened"
 msgstr "Questa versione non può essere aperta"
 
 msgid "This version is published"
-msgstr ""
+msgstr "Questa versione è pubblicata"
 
 msgid "This version is published. Create a new version to edit."
-msgstr ""
+msgstr "Questa versione è pubblicata. Crea una nuova versione per modificare."
 
 msgid "This version's definition could not be read."
 msgstr "La definizione di questa versione non potrebbe essere letta."
@@ -16291,10 +16288,10 @@ msgid "unknown location"
 msgstr "posizione sconosciuta"
 
 msgid "Unlimited functional support"
-msgstr ""
+msgstr "Supporto funzionale illimitato"
 
 msgid "Unlimited records"
-msgstr ""
+msgstr "Record illimitati"
 
 msgid "Unlink"
 msgstr "Scollega"
@@ -16339,10 +16336,10 @@ msgid "Unposted Documents"
 msgstr "Documenti Non Registrati"
 
 msgid "Unpublish"
-msgstr ""
+msgstr "Annulla pubblicazione"
 
 msgid "Unpublish {name}?"
-msgstr ""
+msgstr "Annulla pubblicazione di {name}?"
 
 msgid "Unreceived POs"
 msgstr "PO non ricevuti"
@@ -16703,7 +16700,7 @@ msgstr "Versione"
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
-msgstr ""
+msgstr "La versione {0} è ora pubblicata e sarà sostituita."
 
 msgid "Version:"
 msgstr "Versione:"
@@ -17588,7 +17585,7 @@ msgid "You're live on Carbon"
 msgstr "Sei live su Carbon"
 
 msgid "You're one step away from your workspace."
-msgstr ""
+msgstr "Sei a un passo dal tuo workspace."
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "Stai configurando Carbon da solo, al tuo ritmo"

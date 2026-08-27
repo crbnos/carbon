@@ -6328,9 +6328,6 @@ msgstr "Expiration date"
 msgid "Expiration Date"
 msgstr "Expiration Date"
 
-msgid "Expiration Date (applies to all serials on this line)"
-msgstr "Expiration Date (applies to all serials on this line)"
-
 msgid "Expired"
 msgstr "Expired"
 

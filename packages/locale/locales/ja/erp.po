@@ -169,7 +169,7 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{from}～{to}件 (合計{count}件の操作)"
 
 msgid "{hiddenCount} more: {hiddenNames}"
-msgstr ""
+msgstr "{hiddenCount}件以上：{hiddenNames}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -303,7 +303,7 @@ msgid "4h"
 msgstr "4時間"
 
 msgid "5 user minimum"
-msgstr ""
+msgstr "最小5ユーザー"
 
 msgid "5-8 weeks"
 msgstr "5～8週間"
@@ -360,7 +360,7 @@ msgid "A contractor is a supplier contact with particular abilities and availabl
 msgstr "契約者は、特定の能力と利用可能な時間を持つサプライヤー連絡先です"
 
 msgid "A custom solution to meet your needs"
-msgstr ""
+msgstr "ニーズに合わせたカスタムソリューション"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "顧客とは、あなたの部品またはサービスを購入する企業または個人です。"
@@ -473,10 +473,10 @@ msgid "A Make to Order component whose parts are issued together into the parent
 msgstr "その部品が親ジョブに一緒に発行される受注製造コンポーネント—別のビルドはありません。"
 
 msgid "A managed cloud-hosted version of Carbon"
-msgstr ""
+msgstr "クラウドホスト型のマネージドCarbon"
 
 msgid "A managed version with all the advanced features"
-msgstr ""
+msgstr "すべての高度な機能を備えたマネージドバージョン"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "材料は、複数のジョブで使用できるパーツを作成するために使用される物理的なアイテムです"
@@ -500,7 +500,7 @@ msgid "A new size will be created using a copy of the current size"
 msgstr "新しいサイズが現在のサイズのコピーを使用して作成されます"
 
 msgid "A new Stripe customer will be created"
-msgstr ""
+msgstr "新しいStripeカスタマーが作成されます"
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "請求書を理由勘定に対して決済する非現金ドキュメント。クレジットは債務額を低下させ、デビットは債務額を増加させます。"
@@ -1334,7 +1334,7 @@ msgid "All actions selected"
 msgstr "すべてのアクションが選択されました"
 
 msgid "All advanced features available"
-msgstr ""
+msgstr "すべての高度な機能を利用可能"
 
 msgid "All Audit Logs"
 msgstr "すべての監査ログ"
@@ -1609,7 +1609,7 @@ msgid "API keys for programmatic access to your Carbon data."
 msgstr "Carbonデータへのプログラマティックアクセス用のAPIキー。"
 
 msgid "API, webhooks, and integrations"
-msgstr ""
+msgstr "API、Webhook、および統合"
 
 msgid "Applied"
 msgstr "適用"
@@ -2305,7 +2305,7 @@ msgid "Audit Log"
 msgstr "監査ログ"
 
 msgid "Audit logging"
-msgstr ""
+msgstr "監査ログ"
 
 msgid "Audit Logging"
 msgstr "監査ログ"
@@ -2377,7 +2377,7 @@ msgid "Automatic Updates"
 msgstr "自動更新"
 
 msgid "Automatic updates and backups"
-msgstr ""
+msgstr "自動更新とバックアップ"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "出力が報告されるとジョブの追跡されていない材料の自動的な比例消費。追跡された材料は手動で発行されます。"
@@ -2477,7 +2477,7 @@ msgid "Base Price"
 msgstr "基本価格"
 
 msgid "Basic ERP, MES, and QMS functionality"
-msgstr ""
+msgstr "基本的なERP、MES、およびQMS機能"
 
 msgid "Basic Information"
 msgstr "基本情報"
@@ -2614,7 +2614,7 @@ msgid "Browse library"
 msgstr "ライブラリを参照"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
-msgstr ""
+msgstr "公開バージョンを読み取り専用で参照します。ステップを再配置してレイアウトを整理することができます。"
 
 msgid "Bucket"
 msgstr "バケット"
@@ -2821,7 +2821,7 @@ msgid "Cannot send RFQ"
 msgstr "RFQを送信できません"
 
 msgid "Cannot send through Stripe"
-msgstr ""
+msgstr "Stripeを通じて送信できません"
 
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "アップロードできません — サプライヤーインタラクションがまだ作成されていません"
@@ -3029,7 +3029,7 @@ msgid "Check your email"
 msgstr "メールを確認してください"
 
 msgid "Checking Stripe for this customer…"
-msgstr ""
+msgstr "このカスタマーのStripeを確認中…"
 
 msgid "Checkpoint ·"
 msgstr "チェックポイント ·"
@@ -3170,7 +3170,7 @@ msgid "Cloud, or your self-hosted environment."
 msgstr "クラウド、またはセルフホストされた環境。"
 
 msgid "CMMC compliant"
-msgstr ""
+msgstr "CMMC準拠"
 
 msgid "Code"
 msgstr "コード"
@@ -3233,7 +3233,7 @@ msgid "Committing a receipt, shipment, or invoice: quantities move, journal entr
 msgstr "領収書、出荷、または請求書のコミット: 数量が移動し、仕訳帳エントリが元帳に記載され、ステータスが投稿されます。"
 
 msgid "Community support"
-msgstr ""
+msgstr "コミュニティサポート"
 
 msgid "Companies"
 msgstr "企業"
@@ -3526,7 +3526,7 @@ msgid "Contact (optional)"
 msgstr "連絡先（オプション）"
 
 msgid "Contact us"
-msgstr ""
+msgstr "お問い合わせ"
 
 msgid "contacts"
 msgstr "連絡先"
@@ -3936,7 +3936,7 @@ msgid "Create a new production job to fulfill the sales order"
 msgstr "販売注文を履行するための新しい生産ジョブを作成します"
 
 msgid "Create a new Stripe customer instead"
-msgstr ""
+msgstr "代わりに新しいStripeカスタマーを作成"
 
 msgid "Create a new version"
 msgstr "新しいバージョンを作成"
@@ -4407,7 +4407,7 @@ msgid "Customers"
 msgstr "顧客"
 
 msgid "Customizations, training, and integrations"
-msgstr ""
+msgstr "カスタマイズ、トレーニング、および統合"
 
 msgid "Customize"
 msgstr "カスタマイズ"
@@ -6250,7 +6250,7 @@ msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "既存のマッピング。異なるプロバイダーオプションを選択して再マップしてください。"
 
 msgid "Existing Stripe customer"
-msgstr ""
+msgstr "既存のStripeカスタマー"
 
 msgid "Expand"
 msgstr "展開"
@@ -6327,9 +6327,6 @@ msgstr "有効期限"
 
 msgid "Expiration Date"
 msgstr "有効期限"
-
-msgid "Expiration Date (applies to all serials on this line)"
-msgstr "有効期限（このラインのすべてのシリアルに適用）"
 
 msgid "Expired"
 msgstr "期限切れ"
@@ -6971,7 +6968,7 @@ msgid "Format"
 msgstr "フォーマット"
 
 msgid "Forward deployed engineer"
-msgstr ""
+msgstr "フォワードデプロイメントエンジニア"
 
 msgid "Foundation"
 msgstr "基礎"
@@ -7027,7 +7024,7 @@ msgid "Full name"
 msgstr "氏名"
 
 msgid "Full setup and migrations"
-msgstr ""
+msgstr "完全なセットアップと移行"
 
 msgid "Fully Depreciated"
 msgstr "完全償却済み"
@@ -8124,7 +8121,7 @@ msgid "Issues"
 msgstr "問題"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
-msgstr ""
+msgstr "バージョンを再度公開するまで実行が停止します。何も削除されません。"
 
 msgid "ITAR Certifications"
 msgstr "ITAR認定"
@@ -8486,7 +8483,7 @@ msgid "Less manual work, fewer errors"
 msgstr "手作業を減らし、エラーを削減"
 
 msgid "Let's Build"
-msgstr ""
+msgstr "構築を開始しましょう"
 
 msgid "Let's build something"
 msgstr "何か作ってみましょう"
@@ -8567,7 +8564,7 @@ msgid "Link Linear Issue"
 msgstr "Linear イシューをリンク"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
-msgstr ""
+msgstr "このCarbonカスタマーをそのうちの1つにリンクするか、別のStripeカスタマーを作成します。"
 
 msgid "Link to sales order line"
 msgstr "販売注文行へのリンク"
@@ -11611,7 +11608,7 @@ msgid "Published by Carbon"
 msgstr "Carbonによって公開"
 
 msgid "Published Version"
-msgstr ""
+msgstr "公開済みバージョン"
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "公開済みバージョンは編集できません。読み取り専用で参照するか、新しいバージョンをブランチして変更してください。"
@@ -12631,7 +12628,7 @@ msgid "Reverse any item ledger entries from this invoice"
 msgstr "このインボイスからのアイテム台帳エントリをすべて取り消す"
 
 msgid "Reverse charge"
-msgstr ""
+msgstr "リバースチャージ"
 
 msgid "Reverse Charge Sales Tax"
 msgstr "逆請求売上税"
@@ -13446,10 +13443,10 @@ msgid "Self Managed"
 msgstr "自己管理"
 
 msgid "Self-hosted or managed"
-msgstr ""
+msgstr "セルフホストまたはマネージド"
 
 msgid "Self-onboarding"
-msgstr ""
+msgstr "セルフオンボーディング"
 
 msgid "Self-paced"
 msgstr "自習型"
@@ -13871,7 +13868,7 @@ msgid "Shown to the user when this rule fails."
 msgstr "このルールが失敗したときにユーザーに表示されます。"
 
 msgid "Sign in to Carbon"
-msgstr ""
+msgstr "Carbonにサインイン"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "マジックリンクの代わりに生体認証でサインインします。パスキーはFace ID、Touch ID、またはデバイスPINで保護されます。"
@@ -14075,7 +14072,7 @@ msgid "Split shipment line"
 msgstr "出荷ラインを分割"
 
 msgid "SSO/SAML"
-msgstr ""
+msgstr "SSO/SAML"
 
 msgid "Stand up hosting"
 msgstr "ホスティングをセットアップ"
@@ -14287,19 +14284,19 @@ msgid "Straight line"
 msgstr "定額法"
 
 msgid "Stripe"
-msgstr ""
+msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr ""
+msgstr "Stripeにはこのメールアドレスの顧客が既に存在します"
 
 msgid "Stripe Due Date"
-msgstr ""
+msgstr "Stripe期日"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr ""
+msgstr "Stripeが請求書を顧客にメールで送信するため、アドレスが必要です。これはCarbonの連絡先にも保存されます。"
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr ""
+msgstr "このCarbonカスタマーに対するStripeカスタマーはまだありません。ポスティングは接続したアカウントに1つ作成します。"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Kanbanテーブルに表示するカンバン出力のスタイル"
@@ -14714,7 +14711,7 @@ msgid "Tax Depreciation Method"
 msgstr "税務償却方法"
 
 msgid "Tax exempt"
-msgstr ""
+msgstr "税務免除"
 
 msgid "Tax Exempt"
 msgstr "税務上免除"
@@ -14762,7 +14759,7 @@ msgid "Team trained"
 msgstr "チームが訓練を受けた"
 
 msgid "Technical support"
-msgstr ""
+msgstr "テクニカルサポート"
 
 msgid "Temperature"
 msgstr "温度"
@@ -15577,7 +15574,7 @@ msgid "This completes the Discovery step."
 msgstr "これはDiscoveryステップを完了します。"
 
 msgid "This contact has no email address"
-msgstr ""
+msgstr "この連絡先にはメールアドレスがありません"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "この取引先には未払い金がありません。支払いは掛け金として記録されます。"
@@ -15605,10 +15602,10 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "この{0}への参加への招待は期限切れです。新しい招待をメールで送信されるようにリクエストできます。"
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr ""
+msgstr "この請求書に使用可能な期日がありません—Stripeの期日を選択してください。"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr ""
+msgstr "このインボイスは、このCarbonカスタマーにリンク済みのStripeカスタマーに請求されます。詳細を変更するには、Stripeダッシュボードで編集してください。"
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "これは管理環境のため、認証アプリが必須です。"
@@ -15745,10 +15742,10 @@ msgid "This version cannot be opened"
 msgstr "このバージョンは開くことができません"
 
 msgid "This version is published"
-msgstr ""
+msgstr "このバージョンは公開済みです"
 
 msgid "This version is published. Create a new version to edit."
-msgstr ""
+msgstr "このバージョンは公開済みです。編集するには新しいバージョンを作成してください。"
 
 msgid "This version's definition could not be read."
 msgstr "このバージョンの定義を読み取ることができませんでした。"
@@ -16291,10 +16288,10 @@ msgid "unknown location"
 msgstr "不明な場所"
 
 msgid "Unlimited functional support"
-msgstr ""
+msgstr "無制限の機能サポート"
 
 msgid "Unlimited records"
-msgstr ""
+msgstr "無制限のレコード"
 
 msgid "Unlink"
 msgstr "リンク解除"
@@ -16339,10 +16336,10 @@ msgid "Unposted Documents"
 msgstr "未転記書類"
 
 msgid "Unpublish"
-msgstr ""
+msgstr "公開を取り消す"
 
 msgid "Unpublish {name}?"
-msgstr ""
+msgstr "{name}の公開を取り消しますか？"
 
 msgid "Unreceived POs"
 msgstr "未受領PO"
@@ -16703,7 +16700,7 @@ msgstr "バージョン"
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
-msgstr ""
+msgstr "バージョン {0} は現在公開されており、置き換えられます。"
 
 msgid "Version:"
 msgstr "バージョン:"
@@ -17588,7 +17585,7 @@ msgid "You're live on Carbon"
 msgstr "Carbonで本番稼働中です"
 
 msgid "You're one step away from your workspace."
-msgstr ""
+msgstr "ワークスペースまであと1ステップです。"
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "あなた自身のペースでCarbonをセットアップしています"
