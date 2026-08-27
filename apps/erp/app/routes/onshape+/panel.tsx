@@ -41,7 +41,8 @@ export default function OnshapePanelRoute() {
         me: path.to.api.onShapePanelMe,
         session: path.to.api.onShapePanelSession,
         status: path.to.api.onShapePanelStatus,
-        pushPart: path.to.api.onShapePanelPushPart
+        pushPart: path.to.api.onShapePanelPushPart,
+        pushAssembly: path.to.api.onShapePanelPushAssembly
       }}
     />
   );
