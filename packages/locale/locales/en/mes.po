@@ -176,6 +176,9 @@ msgstr "Blocked by {0}"
 msgid "Blocking"
 msgstr "Blocking"
 
+msgid "Board view"
+msgstr "Board view"
+
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "But don't worry. You can use the forgot password flow to request a new magic link."
 
@@ -642,6 +645,9 @@ msgstr "Let's build something"
 msgid "lines"
 msgstr "lines"
 
+msgid "List view"
+msgstr "List view"
+
 msgid "Loading item details..."
 msgstr "Loading item details..."
 
@@ -870,6 +876,9 @@ msgstr "No time entries for this week"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
+
+msgid "No Work Center"
+msgstr "No Work Center"
 
 msgid "No work centers are blocked"
 msgstr "No work centers are blocked"

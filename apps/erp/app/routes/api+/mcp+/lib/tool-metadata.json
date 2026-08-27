@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-27T20:24:15.823Z",
-  "totalTools": 1495,
+  "generated": "2026-08-27T20:24:40.535Z",
+  "totalTools": 1500,
   "modules": 15,
   "tools": [
     {
@@ -111,6 +111,24 @@
         "required": [
           "id"
         ]
+      }
+    },
+    {
+      "name": "account_getCurrentUser",
+      "module": "account",
+      "classification": "READ",
+      "description": "get current user",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "userId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
       }
     },
     {
@@ -23320,38 +23338,6 @@
       }
     },
     {
-      "name": "production_triggerJobSchedule",
-      "module": "production",
-      "classification": "WRITE",
-      "description": "trigger job schedule",
-      "paramCount": 3,
-      "serviceParams": [
-        "jobId",
-        "companyId",
-        "userId",
-        "mode",
-        "direction"
-      ],
-      "injectAuth": [
-        "companyId"
-      ],
-      "schema": {
-        "type": "object",
-        "properties": {
-          "jobId": {
-            "type": "string"
-          },
-          "mode": {},
-          "direction": {}
-        },
-        "required": [
-          "jobId",
-          "mode",
-          "direction"
-        ]
-      }
-    },
-    {
       "name": "production_getAssemblyInstruction",
       "module": "production",
       "classification": "READ",
@@ -25248,6 +25234,162 @@
           "inspectionDocumentId",
           "features",
           "balloons"
+        ]
+      }
+    },
+    {
+      "name": "production_completeOperation",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "complete operation",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "userId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "operationId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "operationId",
+          "quantity"
+        ]
+      }
+    },
+    {
+      "name": "production_issueMaterial",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "issue material",
+      "paramCount": 7,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "userId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "operationId": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "materialId": {
+            "type": "string"
+          },
+          "jobOperationStepId": {
+            "type": "string"
+          },
+          "adjustmentType": {
+            "type": "string"
+          },
+          "acknowledged": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "operationId",
+          "itemId",
+          "quantity"
+        ]
+      }
+    },
+    {
+      "name": "production_completeJob",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "complete job",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "userId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "storageUnitId": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "jobId",
+          "quantity"
+        ]
+      }
+    },
+    {
+      "name": "production_scheduleJob",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "schedule job",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "userId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "initial",
+              "reschedule"
+            ]
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "backward",
+              "forward"
+            ]
+          }
+        },
+        "required": [
+          "jobId"
         ]
       }
     },
@@ -46394,6 +46536,56 @@
           "requestedQty",
           "priceMap",
           "fallbackCost"
+        ]
+      }
+    },
+    {
+      "name": "shared_resolveBuyUnitCost",
+      "module": "shared",
+      "classification": "WRITE",
+      "description": "resolve buy unit cost",
+      "paramCount": 3,
+      "serviceParams": [
+        "material",
+        "requestedQty",
+        "priceMap"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "material": {
+            "type": "object",
+            "properties": {
+              "itemId": {
+                "type": "string"
+              },
+              "unitCost": {
+                "type": "number"
+              },
+              "unitCostSource": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "itemId",
+              "unitCost"
+            ]
+          },
+          "requestedQty": {
+            "type": "number"
+          },
+          "priceMap": {}
+        },
+        "required": [
+          "material",
+          "requestedQty",
+          "priceMap"
         ]
       }
     },

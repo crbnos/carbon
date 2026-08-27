@@ -179,6 +179,9 @@ msgstr "{from}–{to} de {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} de {count} operações"
 
+msgid "{hiddenCount} more: {hiddenNames}"
+msgstr "{hiddenCount} mais: {hiddenNames}"
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -310,8 +313,8 @@ msgstr "3h"
 msgid "4h"
 msgstr "4h"
 
-msgid "5 User Minimum"
-msgstr "Mínimo de 5 Usuários"
+msgid "5 user minimum"
+msgstr ""
 
 msgid "5-8 weeks"
 msgstr "5-8 semanas"
@@ -366,6 +369,9 @@ msgstr "Um consumível é um item físico usado para fazer uma peça que pode se
 
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "Um contratante é um contato de fornecedor com habilidades particulares e horas disponíveis"
+
+msgid "A custom solution to meet your needs"
+msgstr ""
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Um cliente é uma empresa ou pessoa que compra suas peças ou serviços."
@@ -477,6 +483,12 @@ msgstr "Um componente Fazer sob pedido que obtém seu próprio trabalho e rota d
 msgid "A Make to Order component whose parts are issued together into the parent job — no separate build."
 msgstr "Um componente Fazer sob pedido cujas peças são emitidas juntas para o trabalho pai — sem construção separada."
 
+msgid "A managed cloud-hosted version of Carbon"
+msgstr ""
+
+msgid "A managed version with all the advanced features"
+msgstr ""
+
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Um material é um item físico usado para fazer uma peça que pode ser usada em vários trabalhos"
 
@@ -499,7 +511,7 @@ msgid "A new size will be created using a copy of the current size"
 msgstr "Um novo tamanho será criado usando uma cópia do tamanho atual"
 
 msgid "A new Stripe customer will be created"
-msgstr ""
+msgstr "Um novo cliente Stripe será criado"
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "Um documento sem dinheiro que liquida uma fatura em relação a uma conta de motivo: um crédito reduz o que é devido, um débito aumenta."
@@ -1087,6 +1099,9 @@ msgstr "Adicionar ajuste"
 msgid "Add Affected Item"
 msgstr "Adicionar Item Afetado"
 
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "Adicione uma camada extra de segurança exigindo um código de um aplicativo autenticador ao fazer login."
+
 msgid "Add any notes about your decision..."
 msgstr "Adicione qualquer nota sobre sua decisão..."
 
@@ -1348,6 +1363,9 @@ msgstr "Todas as contas"
 msgid "All actions selected"
 msgstr "Todas as ações selecionadas"
 
+msgid "All advanced features available"
+msgstr ""
+
 msgid "All Audit Logs"
 msgstr "Todos os Registos de Auditoria"
 
@@ -1602,9 +1620,6 @@ msgstr "AP Pendente"
 msgid "AP Overdue"
 msgstr "AP Vencido"
 
-msgid "API and Webhooks"
-msgstr "API e Webhooks"
-
 msgid "API Docs"
 msgstr "Documentação da API"
 
@@ -1622,6 +1637,9 @@ msgstr "Chaves de API"
 
 msgid "API keys for programmatic access to your Carbon data."
 msgstr "Chaves de API para acesso programático aos seus dados do Carbon."
+
+msgid "API, webhooks, and integrations"
+msgstr ""
 
 msgid "Applied"
 msgstr "Aplicado"
@@ -2341,6 +2359,9 @@ msgstr "Os atributos são herdados do procedimento."
 msgid "Audit Log"
 msgstr "Registro de Auditoria"
 
+msgid "Audit logging"
+msgstr ""
+
 msgid "Audit Logging"
 msgstr "Registro de Auditoria"
 
@@ -2409,6 +2430,9 @@ msgstr "Atualizações Automáticas de Prazo de Entrega"
 
 msgid "Automatic Updates"
 msgstr "Atualizações Automáticas"
+
+msgid "Automatic updates and backups"
+msgstr ""
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "Consumo automático e rateado de materiais não rastreados de um trabalho quando a saída é relatada — os materiais rastreados são emitidos manualmente."
@@ -2506,6 +2530,9 @@ msgstr "Moeda Base"
 
 msgid "Base Price"
 msgstr "Preço Base"
+
+msgid "Basic ERP, MES, and QMS functionality"
+msgstr ""
 
 msgid "Basic Information"
 msgstr "Informações Básicas"
@@ -2645,7 +2672,7 @@ msgid "Browse library"
 msgstr "Procurar biblioteca"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
-msgstr ""
+msgstr "Navegue pela versão publicada somente leitura. Você ainda pode reorganizar as etapas para organizar o layout."
 
 msgid "Bucket"
 msgstr "Bucket"
@@ -2863,7 +2890,7 @@ msgid "Cannot send RFQ"
 msgstr "Não é possível enviar RFQ"
 
 msgid "Cannot send through Stripe"
-msgstr ""
+msgstr "Não é possível enviar através do Stripe"
 
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "Não é possível fazer upload — interação com fornecedor ainda não foi criada"
@@ -3071,7 +3098,7 @@ msgid "Check your email"
 msgstr "Verifique seu email"
 
 msgid "Checking Stripe for this customer…"
-msgstr ""
+msgstr "Verificando o Stripe para este cliente…"
 
 msgid "Checkpoint ·"
 msgstr "Checkpoint ·"
@@ -3208,11 +3235,11 @@ msgstr "Encerramento"
 msgid "Closure blocked"
 msgstr "Encerramento bloqueado"
 
-msgid "Cloud-Hosted"
-msgstr "Hospedado na Nuvem"
-
 msgid "Cloud, or your self-hosted environment."
 msgstr "Nuvem, ou seu ambiente auto-hospedado."
+
+msgid "CMMC compliant"
+msgstr ""
 
 msgid "Code"
 msgstr "Código"
@@ -3273,6 +3300,9 @@ msgstr "Designar um utilizador campeão para cada área"
 
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "Confirmar um recibo, remessa ou fatura: as quantidades se movem, os lançamentos do diário atingem o razão, e o status se torna Lançado."
+
+msgid "Community support"
+msgstr ""
 
 msgid "Companies"
 msgstr "Empresas"
@@ -3573,6 +3603,9 @@ msgstr "Contacto"
 
 msgid "Contact (optional)"
 msgstr "Contacto (opcional)"
+
+msgid "Contact us"
+msgstr ""
 
 msgid "contacts"
 msgstr "contatos"
@@ -3994,7 +4027,7 @@ msgid "Create a new production job to fulfill the sales order"
 msgstr "Criar um novo trabalho de produção para atender ao pedido de venda"
 
 msgid "Create a new Stripe customer instead"
-msgstr ""
+msgstr "Criar um novo cliente Stripe em seu lugar"
 
 msgid "Create a new version"
 msgstr "Criar uma nova versão"
@@ -4481,6 +4514,9 @@ msgstr "clientes"
 
 msgid "Customers"
 msgstr "Clientes"
+
+msgid "Customizations, training, and integrations"
+msgstr ""
 
 msgid "Customize"
 msgstr "Personalizar"
@@ -6175,9 +6211,6 @@ msgstr "Conta de patrimônio para lucros ou perdas acumulados"
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "Conta de patrimônio para ajustes de conversão de moeda (CTA)"
 
-msgid "ERP, MES, QMS"
-msgstr "ERP, MES, QMS"
-
 msgid "Error"
 msgstr "Erro"
 
@@ -6286,6 +6319,9 @@ msgstr "Todos os testes no escopo passam no seu sistema configurado, com seus da
 msgid "Every match"
 msgstr "Cada correspondência"
 
+msgid "Every required action has already been added."
+msgstr ""
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Toda tarefa obrigatória deve ser Concluída ou Saltada antes que o período possa ser fechado."
 
@@ -6297,9 +6333,6 @@ msgstr "Tudo mais"
 
 msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
 msgstr "Tudo mais cobre pessoas, importações, integrações e a API — qualquer coisa que não seja um de seus fluxos de trabalho."
-
-msgid "Everything from Starter"
-msgstr "Tudo do Starter"
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Excede {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB no total — remova alguns anexos para enviar."
@@ -6338,7 +6371,7 @@ msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Mapeamentos existentes. Escolha uma opção de provedor diferente para remapear."
 
 msgid "Existing Stripe customer"
-msgstr ""
+msgstr "Cliente Stripe existente"
 
 msgid "Expand"
 msgstr "Expandir"
@@ -7077,12 +7110,6 @@ msgstr "Sinalizadores"
 msgid "for anything. They'll pull in the right person."
 msgstr "para qualquer coisa. Eles vão trazer a pessoa certa."
 
-msgid "For growing businesses that need support"
-msgstr "Para empresas em crescimento que precisam de suporte"
-
-msgid "For US companies handling ITAR data"
-msgstr "Para empresas dos EUA que lidam com dados ITAR"
-
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "Método de previsão: <0>{0}</0>. Esta linha não foi derivada de trabalhos ativos, portanto nenhuma fonte pai está disponível."
@@ -7092,6 +7119,9 @@ msgstr "Esqueceu de Registrar a Saída?"
 
 msgid "Format"
 msgstr "Formato"
+
+msgid "Forward deployed engineer"
+msgstr ""
 
 msgid "Foundation"
 msgstr "Fundação"
@@ -7145,6 +7175,9 @@ msgstr "Local de Cumprimento"
 
 msgid "Full name"
 msgstr "Nome completo"
+
+msgid "Full setup and migrations"
+msgstr ""
 
 msgid "Fully Depreciated"
 msgstr "Totalmente Depreciado"
@@ -7747,9 +7780,6 @@ msgstr "Centro de Implementação"
 msgid "Implementation Lead"
 msgstr "Líder de Implementação"
 
-msgid "Implementation Support"
-msgstr "Suporte de Implementação"
-
 msgid "Import {label} CSV"
 msgstr "Importar {label} CSV"
 
@@ -8247,7 +8277,7 @@ msgid "Issues"
 msgstr "Problemas"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
-msgstr ""
+msgstr "Ele parará de ser executado até que você publique uma versão novamente. Nada é deletado."
 
 msgid "ITAR Certifications"
 msgstr "Certificações ITAR"
@@ -8608,6 +8638,9 @@ msgstr "Menos trabalho manual"
 msgid "Less manual work, fewer errors"
 msgstr "Menos trabalho manual, menos erros"
 
+msgid "Let's Build"
+msgstr "Vamos Construir"
+
 msgid "Let's build something"
 msgstr "Vamos construir algo"
 
@@ -8700,7 +8733,7 @@ msgid "Link Linear Issue"
 msgstr "Vincular Problema Linear"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
-msgstr ""
+msgstr "Vincule este cliente Carbon a um deles, ou crie um cliente Stripe separado."
 
 msgid "Link to sales order line"
 msgstr "Vincular à linha do pedido de venda"
@@ -8801,9 +8834,6 @@ msgstr "Bloqueado"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "O bloqueio torna o período somente leitura para documentos operacionais (recebimentos, remessas, faturas) enquanto ainda permite ajustes contábeis como depreciação e alienações. Um período deve ser bloqueado antes de poder ser fechado."
-
-msgid "Log In"
-msgstr "Entrar"
 
 msgid "Log nonconformances and drive a CAPA"
 msgstr "Registar não conformidades e impulsionar uma CAPA"
@@ -11177,9 +11207,6 @@ msgstr "Percentual"
 msgid "Percentage of Lot"
 msgstr "Percentagem do Lote"
 
-msgid "Perfect for low-cost evaluation"
-msgstr "Perfeito para avaliação de baixo custo"
-
 msgid "Period"
 msgstr "Período"
 
@@ -11763,6 +11790,9 @@ msgstr "Proteja a data de ativação"
 msgid "Protect training time and attend"
 msgstr "Proteja o tempo de treinamento e participe"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "Proteja sua empresa com controles de segurança avançados, como a aplicação de autenticação de dois fatores."
+
 msgid "Protects your company's data"
 msgstr "Protege os dados da sua empresa"
 
@@ -11795,7 +11825,7 @@ msgid "Published by Carbon"
 msgstr "Publicado pela Carbon"
 
 msgid "Published Version"
-msgstr ""
+msgstr "Versão Publicada"
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "As versões publicadas não podem ser editadas. Procure somente para leitura ou ramifique uma nova versão para fazer alterações."
@@ -12648,6 +12678,9 @@ msgstr "Data Solicitada"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Exigir um código de 6 dígitos de uma aplicação autenticadora ao iniciar sessão."
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "Exigir um aplicativo autenticador antes que alguém possa abrir esta empresa. Suas outras empresas não são afetadas."
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Requer um aplicativo autenticador antes de qualquer pessoa poder abrir esta empresa. Suas outras empresas não são afetadas. Visite a <0>página de contas de funcionários</0> para ver o status de cada pessoa."
 
@@ -12870,7 +12903,7 @@ msgid "Reverse any item ledger entries from this invoice"
 msgstr "Reverter quaisquer entradas do razão de itens desta fatura"
 
 msgid "Reverse charge"
-msgstr ""
+msgstr "Cobrança Inversa"
 
 msgid "Reverse Charge Sales Tax"
 msgstr "Imposto de vendas de cobrança reversa"
@@ -13705,8 +13738,11 @@ msgstr "Selecionado: {selectedSum} / restante após divisão: {0}"
 msgid "Self Managed"
 msgstr "Autogerenciado"
 
-msgid "Self-Onboarding with Carbon Academy"
-msgstr "Integração Autônoma com Carbon Academy"
+msgid "Self-hosted or managed"
+msgstr ""
+
+msgid "Self-onboarding"
+msgstr ""
 
 msgid "Self-paced"
 msgstr "Autoaprendizagem"
@@ -14142,6 +14178,9 @@ msgstr "Exibido como um fundo suave atrás de cada página dos PDFs gerados"
 msgid "Shown to the user when this rule fails."
 msgstr "Mostrado ao usuário quando esta regra falha."
 
+msgid "Sign in to Carbon"
+msgstr "Entrar no Carbon"
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Inicie sessão com biometria em vez de uma ligação mágica. As chaves de acesso são protegidas por Face ID, Touch ID ou o PIN do seu dispositivo."
 
@@ -14349,6 +14388,9 @@ msgstr "Dividir linha de recebimento"
 msgid "Split shipment line"
 msgstr "Dividir linha de envio"
 
+msgid "SSO/SAML"
+msgstr ""
+
 msgid "Stand up hosting"
 msgstr "Configurar hospedagem"
 
@@ -14397,9 +14439,6 @@ msgstr "Iniciar expiração no início do processo"
 
 msgid "Start Here"
 msgstr "Comece Aqui"
-
-msgid "Start Learning"
-msgstr "Começar a Aprender"
 
 msgid "Start Now"
 msgstr "Começar Agora"
@@ -14565,19 +14604,19 @@ msgid "Straight line"
 msgstr "Linear"
 
 msgid "Stripe"
-msgstr ""
+msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr ""
+msgstr "Stripe já possui um cliente com este e-mail"
 
 msgid "Stripe Due Date"
-msgstr ""
+msgstr "Data de Vencimento Stripe"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr ""
+msgstr "O Stripe envia a fatura por e-mail ao cliente, portanto, um endereço é necessário. Isso também será salvo no contato no Carbon."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr ""
+msgstr "Stripe ainda não possui um cliente para este cliente Carbon. O envio criará um em sua conta conectada."
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Estilo de saída do kanban para mostrar na tabela Kanban"
@@ -15010,7 +15049,7 @@ msgid "Tax Depreciation Method"
 msgstr "Método de Depreciação Fiscal"
 
 msgid "Tax exempt"
-msgstr ""
+msgstr "Isento de Impostos"
 
 msgid "Tax Exempt"
 msgstr "Isento de Impostos"
@@ -15056,6 +15095,9 @@ msgstr "Impostos"
 
 msgid "Team trained"
 msgstr "Equipa treinada"
+
+msgid "Technical support"
+msgstr ""
 
 msgid "Temperature"
 msgstr "Temperatura"
@@ -15882,7 +15924,7 @@ msgid "This completes the Discovery step."
 msgstr "Isto completa a etapa de Descoberta."
 
 msgid "This contact has no email address"
-msgstr ""
+msgstr "Este contato não possui um endereço de e-mail"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Este terceiro não tem nada pendente — o pagamento será registrado em conta."
@@ -15910,10 +15952,10 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "Este convite para ingressar em {0} expirou. Você pode solicitar um novo convite a ser enviado para seu e-mail."
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr ""
+msgstr "Esta fatura não possui uma data de vencimento utilizável — escolha uma para Stripe."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr ""
+msgstr "Esta fatura será cobrada do cliente Stripe já vinculado a este cliente Carbon. Para alterar seus detalhes, edite-o no painel Stripe."
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "Este é um ambiente controlado, portanto um aplicativo autenticador é obrigatório."
@@ -16053,10 +16095,10 @@ msgid "This version cannot be opened"
 msgstr "Esta versão não pode ser aberta"
 
 msgid "This version is published"
-msgstr ""
+msgstr "Esta versão está publicada"
 
 msgid "This version is published. Create a new version to edit."
-msgstr ""
+msgstr "Esta versão está publicada. Crie uma nova versão para editar."
 
 msgid "This version's definition could not be read."
 msgstr "A definição desta versão não pôde ser lida."
@@ -16460,6 +16502,9 @@ msgstr "Dois Fatores"
 msgid "Two-factor authentication"
 msgstr "Autenticação de dois fatores"
 
+msgid "Two-Factor Authentication"
+msgstr "Autenticação de Dois Fatores"
+
 msgid "Two-factor authentication disabled"
 msgstr "Autenticação de dois fatores desabilitada"
 
@@ -16598,8 +16643,11 @@ msgstr "erro desconhecido"
 msgid "unknown location"
 msgstr "localização desconhecida"
 
-msgid "Unlimited Functional Support"
-msgstr "Suporte Funcional Ilimitado"
+msgid "Unlimited functional support"
+msgstr ""
+
+msgid "Unlimited records"
+msgstr ""
 
 msgid "Unlink"
 msgstr "Desvinculação"
@@ -16650,10 +16698,10 @@ msgid "Unposted Documents"
 msgstr "Documentos Não Lançados"
 
 msgid "Unpublish"
-msgstr ""
+msgstr "Cancelar Publicação"
 
 msgid "Unpublish {name}?"
-msgstr ""
+msgstr "Cancelar Publicação de {name}?"
 
 msgid "Unreceived POs"
 msgstr "POs não recebidas"
@@ -17014,7 +17062,7 @@ msgstr "Versão"
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
-msgstr ""
+msgstr "A versão {0} está publicada agora e será substituída."
 
 msgid "Version:"
 msgstr "Versão:"
@@ -17909,6 +17957,9 @@ msgstr "Você recebeu este lote"
 
 msgid "You're live on Carbon"
 msgstr "Está ao vivo no Carbon"
+
+msgid "You're one step away from your workspace."
+msgstr "Você está a um passo do seu espaço de trabalho."
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "Você está configurando o Carbon por conta própria, no seu próprio ritmo"

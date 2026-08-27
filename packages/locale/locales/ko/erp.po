@@ -179,6 +179,9 @@ msgstr "{count}개 중 {from}–{to}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} / {count}개 작업"
 
+msgid "{hiddenCount} more: {hiddenNames}"
+msgstr "{hiddenCount}개 더: {hiddenNames}"
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -310,8 +313,8 @@ msgstr "3시간"
 msgid "4h"
 msgstr "4시간"
 
-msgid "5 User Minimum"
-msgstr "최소 5명 사용자"
+msgid "5 user minimum"
+msgstr ""
 
 msgid "5-8 weeks"
 msgstr "5-8주"
@@ -366,6 +369,9 @@ msgstr "소모품은 여러 작업에 걸쳐 사용할 수 있는, 부품 제작
 
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "계약직은 특정 역량과 가용 시간을 가진 공급업체 담당자입니다"
+
+msgid "A custom solution to meet your needs"
+msgstr ""
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "고객은 귀사의 부품이나 서비스를 구매하는 회사 또는 개인입니다."
@@ -477,6 +483,12 @@ msgstr "상위 빌드 내에서 자체 작업과 공정을 갖는 주문생산(M
 msgid "A Make to Order component whose parts are issued together into the parent job — no separate build."
 msgstr "부품이 상위 작업에 함께 투입되는 주문생산(Make to Order) 구성품으로, 별도의 빌드가 없습니다."
 
+msgid "A managed cloud-hosted version of Carbon"
+msgstr ""
+
+msgid "A managed version with all the advanced features"
+msgstr ""
+
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "자재는 여러 작업에 걸쳐 사용할 수 있는, 부품 제작에 쓰이는 실물 품목입니다"
 
@@ -499,7 +511,7 @@ msgid "A new size will be created using a copy of the current size"
 msgstr "현재 사이즈를 복사하여 새 사이즈가 생성됩니다"
 
 msgid "A new Stripe customer will be created"
-msgstr ""
+msgstr "새로운 Stripe 고객이 생성됩니다"
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "인보이스를 이유 계정에 대해 정산하는 비현금 문서로서, 신용은 지불액을 낮추고 차변은 올립니다."
@@ -1087,6 +1099,9 @@ msgstr "조정 추가"
 msgid "Add Affected Item"
 msgstr "영향받는 항목 추가"
 
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "로그인할 때 인증 앱의 코드를 입력하도록 요구하여 추가 보안 계층을 추가합니다."
+
 msgid "Add any notes about your decision..."
 msgstr "결정에 대한 메모를 추가하세요..."
 
@@ -1348,6 +1363,9 @@ msgstr "모든 계정"
 msgid "All actions selected"
 msgstr "모든 조치가 선택됨"
 
+msgid "All advanced features available"
+msgstr ""
+
 msgid "All Audit Logs"
 msgstr "모든 감사 로그"
 
@@ -1602,9 +1620,6 @@ msgstr "매입채무 미결제액"
 msgid "AP Overdue"
 msgstr "매입채무 연체"
 
-msgid "API and Webhooks"
-msgstr "API 및 웹훅"
-
 msgid "API Docs"
 msgstr "API 문서"
 
@@ -1622,6 +1637,9 @@ msgstr "API 키"
 
 msgid "API keys for programmatic access to your Carbon data."
 msgstr "Carbon 데이터에 프로그래밍 방식으로 접근하기 위한 API 키입니다."
+
+msgid "API, webhooks, and integrations"
+msgstr ""
 
 msgid "Applied"
 msgstr "적용됨"
@@ -2341,6 +2359,9 @@ msgstr "속성은 절차서에서 상속됩니다."
 msgid "Audit Log"
 msgstr "감사 로그"
 
+msgid "Audit logging"
+msgstr ""
+
 msgid "Audit Logging"
 msgstr "감사 로깅"
 
@@ -2409,6 +2430,9 @@ msgstr "자동 리드타임 업데이트"
 
 msgid "Automatic Updates"
 msgstr "자동 업데이트"
+
+msgid "Automatic updates and backups"
+msgstr ""
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "산출물이 보고될 때 작업의 미추적 자재를 비례 배분하여 자동으로 소비합니다 — 추적 자재는 수동으로 출고됩니다."
@@ -2506,6 +2530,9 @@ msgstr "기준 통화"
 
 msgid "Base Price"
 msgstr "기본 가격"
+
+msgid "Basic ERP, MES, and QMS functionality"
+msgstr ""
 
 msgid "Basic Information"
 msgstr "기본 정보"
@@ -2645,7 +2672,7 @@ msgid "Browse library"
 msgstr "라이브러리 둘러보기"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
-msgstr ""
+msgstr "게시된 버전을 읽기 전용으로 탐색합니다. 여전히 단계를 재정렬하여 레이아웃을 정리할 수 있습니다."
 
 msgid "Bucket"
 msgstr "버킷"
@@ -2863,7 +2890,7 @@ msgid "Cannot send RFQ"
 msgstr "RFQ를 보낼 수 없습니다"
 
 msgid "Cannot send through Stripe"
-msgstr ""
+msgstr "Stripe를 통해 전송할 수 없습니다"
 
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "업로드할 수 없습니다 — 공급업체 상호작용이 아직 생성되지 않았습니다"
@@ -3071,7 +3098,7 @@ msgid "Check your email"
 msgstr "이메일을 확인하세요"
 
 msgid "Checking Stripe for this customer…"
-msgstr ""
+msgstr "이 고객의 Stripe를 확인 중입니다…"
 
 msgid "Checkpoint ·"
 msgstr "체크포인트 ·"
@@ -3208,11 +3235,11 @@ msgstr "마감"
 msgid "Closure blocked"
 msgstr "마감 차단됨"
 
-msgid "Cloud-Hosted"
-msgstr "클라우드 호스팅"
-
 msgid "Cloud, or your self-hosted environment."
 msgstr "클라우드 또는 자체 호스팅 환경."
+
+msgid "CMMC compliant"
+msgstr ""
 
 msgid "Code"
 msgstr "코드"
@@ -3273,6 +3300,9 @@ msgstr "각 영역에 챔피언 사용자를 지정하세요"
 
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "입고, 출하, 인보이스를 확정하면 수량이 이동하고 전표가 원장에 반영되며 상태가 '전기됨'으로 변경됩니다."
+
+msgid "Community support"
+msgstr ""
 
 msgid "Companies"
 msgstr "회사"
@@ -3573,6 +3603,9 @@ msgstr "담당자"
 
 msgid "Contact (optional)"
 msgstr "담당자(선택)"
+
+msgid "Contact us"
+msgstr ""
 
 msgid "contacts"
 msgstr "담당자"
@@ -3994,7 +4027,7 @@ msgid "Create a new production job to fulfill the sales order"
 msgstr "판매주문을 이행할 새 생산 작업을 생성합니다"
 
 msgid "Create a new Stripe customer instead"
-msgstr ""
+msgstr "대신 새로운 Stripe 고객을 만듭니다"
 
 msgid "Create a new version"
 msgstr "새 버전 만들기"
@@ -4481,6 +4514,9 @@ msgstr "고객"
 
 msgid "Customers"
 msgstr "고객"
+
+msgid "Customizations, training, and integrations"
+msgstr ""
 
 msgid "Customize"
 msgstr "사용자 지정"
@@ -6175,9 +6211,6 @@ msgstr "누적 손익에 대한 자본 계정"
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "환산차손익(CTA)에 대한 자본 계정"
 
-msgid "ERP, MES, QMS"
-msgstr "ERP, MES, QMS"
-
 msgid "Error"
 msgstr "오류"
 
@@ -6286,6 +6319,9 @@ msgstr "설정한 시스템에서 귀사의 데이터로 범위 내 모든 테�
 msgid "Every match"
 msgstr "모든 일치"
 
+msgid "Every required action has already been added."
+msgstr ""
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "기간을 종료하기 전에 모든 필수 작업을 완료하거나 건너뛰어야 합니다."
 
@@ -6297,9 +6333,6 @@ msgstr "그 외 모든 것"
 
 msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
 msgstr "그 외 모든 것은 사람, 가져오기, 통합 및 API를 포함합니다 — 워크플로우가 아닌 모든 항목입니다."
-
-msgid "Everything from Starter"
-msgstr "스타터의 모든 기능 포함"
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "총 {PO_EMAIL_ATTACHMENT_LIMIT_MB}MB를 초과합니다 — 발송하려면 일부 첨부 파일을 제거하세요."
@@ -6338,7 +6371,7 @@ msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "기존 매핑입니다. 다시 매핑하려면 다른 제공자 옵션을 선택하세요."
 
 msgid "Existing Stripe customer"
-msgstr ""
+msgstr "기존 Stripe 고객"
 
 msgid "Expand"
 msgstr "펼치기"
@@ -7077,12 +7110,6 @@ msgstr "플래그"
 msgid "for anything. They'll pull in the right person."
 msgstr "무엇이든지요. 적임자를 연결해 드립니다."
 
-msgid "For growing businesses that need support"
-msgstr "지원이 필요한 성장 중인 기업을 위한"
-
-msgid "For US companies handling ITAR data"
-msgstr "ITAR 데이터를 다루는 미국 기업을 위한"
-
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "예측 방법: <0>{0}</0>. 이 행은 진행 중인 작업에서 파생되지 않았으므로 상위 소스를 사용할 수 없습니다."
@@ -7092,6 +7119,9 @@ msgstr "퇴근 체크를 잊으셨나요?"
 
 msgid "Format"
 msgstr "형식"
+
+msgid "Forward deployed engineer"
+msgstr ""
 
 msgid "Foundation"
 msgstr "파운데이션"
@@ -7145,6 +7175,9 @@ msgstr "이행 위치"
 
 msgid "Full name"
 msgstr "전체 이름"
+
+msgid "Full setup and migrations"
+msgstr ""
 
 msgid "Fully Depreciated"
 msgstr "완전 감가상각"
@@ -7747,9 +7780,6 @@ msgstr "구현 허브"
 msgid "Implementation Lead"
 msgstr "구현 리드"
 
-msgid "Implementation Support"
-msgstr "구현 지원"
-
 msgid "Import {label} CSV"
 msgstr "{label} CSV 가져오기"
 
@@ -8247,7 +8277,7 @@ msgid "Issues"
 msgstr "이슈"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
-msgstr ""
+msgstr "다시 버전을 게시할 때까지 실행이 중지됩니다. 삭제된 것은 없습니다."
 
 msgid "ITAR Certifications"
 msgstr "ITAR 인증"
@@ -8608,6 +8638,9 @@ msgstr "수작업 감소"
 msgid "Less manual work, fewer errors"
 msgstr "수작업 감소, 오류 감소"
 
+msgid "Let's Build"
+msgstr "구축해봅시다"
+
 msgid "Let's build something"
 msgstr "무언가를 만들어봅시다"
 
@@ -8700,7 +8733,7 @@ msgid "Link Linear Issue"
 msgstr "Linear 이슈 연결"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
-msgstr ""
+msgstr "이 Carbon 고객을 그 중 하나에 연결하거나 별도의 Stripe 고객을 만듭니다."
 
 msgid "Link to sales order line"
 msgstr "판매주문 라인에 연결"
@@ -8801,9 +8834,6 @@ msgstr "잠금"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "잠금하면 기간이 운영 문서(수령, 배송, 송장)에 대해 읽기 전용이 되며 감가상각 및 처분과 같은 회계 조정은 여전히 허용됩니다. 기간을 종료하려면 먼저 잠금해야 합니다."
-
-msgid "Log In"
-msgstr "로그인"
 
 msgid "Log nonconformances and drive a CAPA"
 msgstr "부적합을 기록하고 CAPA를 진행하세요"
@@ -11177,9 +11207,6 @@ msgstr "비율"
 msgid "Percentage of Lot"
 msgstr "로트 비율"
 
-msgid "Perfect for low-cost evaluation"
-msgstr "저비용 평가에 적합"
-
 msgid "Period"
 msgstr "기간"
 
@@ -11763,6 +11790,9 @@ msgstr "도입일을 사수하세요"
 msgid "Protect training time and attend"
 msgstr "교육 시간을 확보하고 참석하세요"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "이중 인증 강제와 같은 고급 보안 제어로 회사를 보호하세요."
+
 msgid "Protects your company's data"
 msgstr "회사 데이터 보호"
 
@@ -11795,7 +11825,7 @@ msgid "Published by Carbon"
 msgstr "Carbon에서 게시함"
 
 msgid "Published Version"
-msgstr ""
+msgstr "게시된 버전"
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "게시된 버전은 편집할 수 없습니다. 읽기 전용으로 둘러보거나 새 버전을 분기하여 변경하세요."
@@ -12648,6 +12678,9 @@ msgstr "요청일"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "로그인 시 인증 앱의 6자리 코드를 입력하세요."
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "누구든지 이 회사를 열기 전에 인증 앱이 필요합니다. 다른 회사는 영향을 받지 않습니다."
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "이 회사를 열기 전에 인증자 앱을 요구합니다. 다른 회사는 영향을 받지 않습니다. <0>직원 계정 페이지</0>를 방문하여 각 사람의 상태를 확인하세요."
 
@@ -12870,7 +12903,7 @@ msgid "Reverse any item ledger entries from this invoice"
 msgstr "이 인보이스의 모든 품목 원장 항목 취소"
 
 msgid "Reverse charge"
-msgstr ""
+msgstr "역청구"
 
 msgid "Reverse Charge Sales Tax"
 msgstr "매입자 납부 판매세(Reverse Charge)"
@@ -13705,8 +13738,11 @@ msgstr "선택됨: {selectedSum} / 분할 후 남은 수량: {0}"
 msgid "Self Managed"
 msgstr "자체 관리"
 
-msgid "Self-Onboarding with Carbon Academy"
-msgstr "Carbon 아카데미로 자체 온보딩"
+msgid "Self-hosted or managed"
+msgstr ""
+
+msgid "Self-onboarding"
+msgstr ""
 
 msgid "Self-paced"
 msgstr "자율 학습"
@@ -14142,6 +14178,9 @@ msgstr "생성된 PDF의 모든 페이지 배경에 옅게 표시됩니다"
 msgid "Shown to the user when this rule fails."
 msgstr "이 규칙이 실패할 때 사용자에게 표시됩니다."
 
+msgid "Sign in to Carbon"
+msgstr "Carbon에 로그인"
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "매직 링크 대신 생체 인식으로 로그인하세요. 패스키는 Face ID, Touch ID 또는 기기 PIN으로 보호됩니다."
 
@@ -14349,6 +14388,9 @@ msgstr "입고 라인 분할"
 msgid "Split shipment line"
 msgstr "출하 라인 분할"
 
+msgid "SSO/SAML"
+msgstr ""
+
 msgid "Stand up hosting"
 msgstr "호스팅 구축"
 
@@ -14397,9 +14439,6 @@ msgstr "공정 시작 시 유효기한 시작"
 
 msgid "Start Here"
 msgstr "여기서 시작하기"
-
-msgid "Start Learning"
-msgstr "학습 시작"
 
 msgid "Start Now"
 msgstr "지금 시작"
@@ -14565,19 +14604,19 @@ msgid "Straight line"
 msgstr "정액법"
 
 msgid "Stripe"
-msgstr ""
+msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr ""
+msgstr "Stripe에는 이미 이 이메일이 있는 고객이 있습니다"
 
 msgid "Stripe Due Date"
-msgstr ""
+msgstr "Stripe 만기일"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr ""
+msgstr "Stripe는 고객에게 인보이스를 이메일로 보내므로 주소가 필요합니다. 이것은 Carbon의 연락처에도 저장됩니다."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr ""
+msgstr "Stripe에는 이 Carbon 고객을 위한 고객이 아직 없습니다. 게시하면 연결된 계정에서 하나를 생성합니다."
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "칸반 테이블에 표시할 칸반 출력 스타일"
@@ -15010,7 +15049,7 @@ msgid "Tax Depreciation Method"
 msgstr "세무 감가상각 방법"
 
 msgid "Tax exempt"
-msgstr ""
+msgstr "면세"
 
 msgid "Tax Exempt"
 msgstr "세금 면제"
@@ -15056,6 +15095,9 @@ msgstr "세금"
 
 msgid "Team trained"
 msgstr "팀 교육 완료"
+
+msgid "Technical support"
+msgstr ""
 
 msgid "Temperature"
 msgstr "온도"
@@ -15882,7 +15924,7 @@ msgid "This completes the Discovery step."
 msgstr "이것으로 발견(Discovery) 단계가 완료됩니다."
 
 msgid "This contact has no email address"
-msgstr ""
+msgstr "이 연락처에는 이메일 주소가 없습니다"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "이 거래처에는 미결제 항목이 없습니다 — 결제는 선수금으로 기록됩니다."
@@ -15910,10 +15952,10 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "{0}에 참여하기 위한 이 초대권은 만료되었습니다. 이메일로 새 초대권을 보내달라고 요청할 수 있습니다."
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr ""
+msgstr "이 인보이스에는 사용할 수 있는 만기일이 없습니다 — Stripe에 대해 하나를 선택합니다."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr ""
+msgstr "이 인보이스는 이미 이 Carbon 고객에 연결된 Stripe 고객에게 청구됩니다. 세부 정보를 변경하려면 Stripe 대시보드에서 편집합니다."
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "이것은 제어되는 환경이므로 인증자 앱이 필수입니다."
@@ -16053,10 +16095,10 @@ msgid "This version cannot be opened"
 msgstr "이 버전을 열 수 없습니다."
 
 msgid "This version is published"
-msgstr ""
+msgstr "이 버전이 게시됩니다"
 
 msgid "This version is published. Create a new version to edit."
-msgstr ""
+msgstr "이 버전이 게시됩니다. 편집할 새 버전을 만듭니다."
 
 msgid "This version's definition could not be read."
 msgstr "이 버전의 정의를 읽을 수 없습니다."
@@ -16460,6 +16502,9 @@ msgstr "2단계"
 msgid "Two-factor authentication"
 msgstr "2단계 인증"
 
+msgid "Two-Factor Authentication"
+msgstr "2단계 인증"
+
 msgid "Two-factor authentication disabled"
 msgstr "2단계 인증이 비활성화되었습니다"
 
@@ -16598,8 +16643,11 @@ msgstr "알 수 없는 오류"
 msgid "unknown location"
 msgstr "알 수 없는 위치"
 
-msgid "Unlimited Functional Support"
-msgstr "무제한 기능 지원"
+msgid "Unlimited functional support"
+msgstr ""
+
+msgid "Unlimited records"
+msgstr ""
 
 msgid "Unlink"
 msgstr "연결 해제"
@@ -16650,10 +16698,10 @@ msgid "Unposted Documents"
 msgstr "미전기 문서"
 
 msgid "Unpublish"
-msgstr ""
+msgstr "게시 취소"
 
 msgid "Unpublish {name}?"
-msgstr ""
+msgstr "게시 취소 {name}?"
 
 msgid "Unreceived POs"
 msgstr "미입고 구매주문"
@@ -17014,7 +17062,7 @@ msgstr "버전"
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
-msgstr ""
+msgstr "버전 {0}이 지금 게시되고 바뀔 것입니다."
 
 msgid "Version:"
 msgstr "버전:"
@@ -17909,6 +17957,9 @@ msgstr "이 로트를 입고받았습니다"
 
 msgid "You're live on Carbon"
 msgstr "Carbon 도입 완료"
+
+msgid "You're one step away from your workspace."
+msgstr "작업 공간에서 한 걸음 떨어져 있습니다."
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "귀사가 원하는 속도로 직접 Carbon을 설정합니다"

@@ -1402,6 +1402,32 @@ export function lookupBuyPriceFromMap(
 }
 
 /**
+ * What a "Purchase to Order" quote material's unit cost IS: a typed cost wins,
+ * anything else re-resolves from supplier price breaks. Every reader of a
+ * bought-to-order cost must go through this — reaching for
+ * lookupBuyPriceFromMap directly silently ignores a typed cost.
+ *
+ * Mirrored in the Deno edge runtime (`functions/lib/methods.ts`).
+ */
+export function resolveBuyUnitCost(
+  material: {
+    itemId: string;
+    unitCost: number;
+    unitCostSource?: string | null;
+  },
+  requestedQty: number,
+  priceMap: SupplierPriceMap
+): number {
+  if (material.unitCostSource === "manual") return material.unitCost;
+  return lookupBuyPriceFromMap(
+    material.itemId,
+    requestedQty,
+    priceMap,
+    material.unitCost
+  );
+}
+
+/**
  * Resolve the best supplier unit price for a quantity, applying exchange
  * rate conversion.
  */

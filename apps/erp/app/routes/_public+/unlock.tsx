@@ -10,6 +10,7 @@ import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import { verifyPasskeyAuthentication } from "@carbon/auth/passkey.server";
 import {
   completeMfaChallenge,
+  destroyAuthSession,
   flash,
   getAuthSession,
   isSessionExpiredAbsolute,
@@ -95,8 +96,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     new URL(request.url).searchParams.get("redirectTo") ?? undefined;
 
   // Absolute cap already passed → termination wins over lock; force full re-login.
+  // DESTROY the session (not a bare redirect): the tokens are still valid, so
+  // /login would just bounce an authenticated user straight back to the app and
+  // /unlock would relock them — an ERR_TOO_MANY_REDIRECTS loop. Clearing the
+  // cookie makes /login render its form.
   if (isSessionExpiredAbsolute(authSession)) {
-    throw redirect(path.to.login);
+    throw await destroyAuthSession(request);
   }
   // Not actually locked → nothing to unlock, send them where they were going.
   if (!isSessionIdleLocked(authSession)) {
@@ -105,8 +110,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // Unlock credentials: a verified TOTP factor and/or a registered passkey.
   // Either can re-establish access here; a session with neither cannot unlock
-  // (should not happen under CONTROLLED_ENVIRONMENT, where MFA is forced) —
-  // fall through to a full re-login.
+  // (happens on FIRST-RUN enterprise: a user who idle-locks before enrolling
+  // MFA has nothing to present) — DESTROY the session and force a full re-login.
+  // A bare redirect(login) would loop: the tokens are still valid, so /login
+  // sends them back to the app, /x relocks, /unlock lands here again.
   const [hasTotp, hasPasskey] = await Promise.all([
     userHasVerifiedTotpFactor(authSession.userId),
     isAuthProviderEnabled("passkey")
@@ -115,7 +122,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ]);
 
   if (!hasTotp && !hasPasskey) {
-    throw redirect(path.to.login);
+    throw await destroyAuthSession(request);
   }
 
   return { hasTotp, hasPasskey };

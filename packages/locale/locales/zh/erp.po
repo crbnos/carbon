@@ -179,6 +179,9 @@ msgstr "{from}–{to} 共 {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} / {count} 条操作"
 
+msgid "{hiddenCount} more: {hiddenNames}"
+msgstr "{hiddenCount} 更多: {hiddenNames}"
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -310,8 +313,8 @@ msgstr "3小时"
 msgid "4h"
 msgstr "4小时"
 
-msgid "5 User Minimum"
-msgstr "5 个用户最少"
+msgid "5 user minimum"
+msgstr ""
 
 msgid "5-8 weeks"
 msgstr "5-8 周"
@@ -366,6 +369,9 @@ msgstr "消耗品是用于制造零件的物理项目，可以在多个工作中
 
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "承包商是具有特定能力和可用工作时间的供应商联系人"
+
+msgid "A custom solution to meet your needs"
+msgstr ""
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "客户是购买您的零件或服务的企业或个人。"
@@ -477,6 +483,12 @@ msgstr "在父项构建中获得自己的作业和路由的按单生产组件。
 msgid "A Make to Order component whose parts are issued together into the parent job — no separate build."
 msgstr "其零件一起发放到父项作业的按单生产组件——无单独构建。"
 
+msgid "A managed cloud-hosted version of Carbon"
+msgstr ""
+
+msgid "A managed version with all the advanced features"
+msgstr ""
+
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "材料是用于制造零件的物理项目，可以在多个工作中使用"
 
@@ -499,7 +511,7 @@ msgid "A new size will be created using a copy of the current size"
 msgstr "将使用当前尺寸的副本创建新尺寸"
 
 msgid "A new Stripe customer will be created"
-msgstr ""
+msgstr "将创建一个新的 Stripe 客户"
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "一份非现金单据，根据原因账户结算发票：贷方降低应付金额，借方提高它。"
@@ -1087,6 +1099,9 @@ msgstr "添加调整"
 msgid "Add Affected Item"
 msgstr "添加受影响项目"
 
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "通过在登录时要求来自身份验证应用的代码来增加额外的安全层。"
+
 msgid "Add any notes about your decision..."
 msgstr "添加关于您的决定的任何备注..."
 
@@ -1348,6 +1363,9 @@ msgstr "所有账户"
 msgid "All actions selected"
 msgstr "所有操作已选中"
 
+msgid "All advanced features available"
+msgstr ""
+
 msgid "All Audit Logs"
 msgstr "所有审计日志"
 
@@ -1602,9 +1620,6 @@ msgstr "应付账款未结"
 msgid "AP Overdue"
 msgstr "应付账款逾期"
 
-msgid "API and Webhooks"
-msgstr "API 和 Webhooks"
-
 msgid "API Docs"
 msgstr "API 文档"
 
@@ -1622,6 +1637,9 @@ msgstr "API 密钥"
 
 msgid "API keys for programmatic access to your Carbon data."
 msgstr "用于以编程方式访问您的 Carbon 数据的 API 密钥。"
+
+msgid "API, webhooks, and integrations"
+msgstr ""
 
 msgid "Applied"
 msgstr "已应用"
@@ -2341,6 +2359,9 @@ msgstr "属性继承自工序。"
 msgid "Audit Log"
 msgstr "审计日志"
 
+msgid "Audit logging"
+msgstr ""
+
 msgid "Audit Logging"
 msgstr "审计日志"
 
@@ -2409,6 +2430,9 @@ msgstr "自动提前期更新"
 
 msgid "Automatic Updates"
 msgstr "自动更新"
+
+msgid "Automatic updates and backups"
+msgstr ""
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "报告输出时，自动按比例消耗工作的未跟踪材料—跟踪的材料手动发出。"
@@ -2506,6 +2530,9 @@ msgstr "基础货币"
 
 msgid "Base Price"
 msgstr "基础价格"
+
+msgid "Basic ERP, MES, and QMS functionality"
+msgstr ""
 
 msgid "Basic Information"
 msgstr "基本信息"
@@ -2645,7 +2672,7 @@ msgid "Browse library"
 msgstr "浏览库"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
-msgstr ""
+msgstr "浏览已发布的版本（只读）。您仍然可以重新排列步骤来整理布局。"
 
 msgid "Bucket"
 msgstr "存储桶"
@@ -2863,7 +2890,7 @@ msgid "Cannot send RFQ"
 msgstr "无法发送询价单"
 
 msgid "Cannot send through Stripe"
-msgstr ""
+msgstr "无法通过 Stripe 发送"
 
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "无法上传 — 供应商互动尚未创建"
@@ -3071,7 +3098,7 @@ msgid "Check your email"
 msgstr "检查您的电子邮件"
 
 msgid "Checking Stripe for this customer…"
-msgstr ""
+msgstr "正在检查该客户的 Stripe…"
 
 msgid "Checkpoint ·"
 msgstr "检查点 ·"
@@ -3208,11 +3235,11 @@ msgstr "结余"
 msgid "Closure blocked"
 msgstr "关闭被阻止"
 
-msgid "Cloud-Hosted"
-msgstr "云托管"
-
 msgid "Cloud, or your self-hosted environment."
 msgstr "云端或您自托管的环境。"
+
+msgid "CMMC compliant"
+msgstr ""
 
 msgid "Code"
 msgstr "代码"
@@ -3273,6 +3300,9 @@ msgstr "为每个领域指定一名冠军用户"
 
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "提交收据、发货或发票: 数量移动、日记账分录到达分类账、状态变为已过帐。"
+
+msgid "Community support"
+msgstr ""
 
 msgid "Companies"
 msgstr "公司"
@@ -3573,6 +3603,9 @@ msgstr "联系人"
 
 msgid "Contact (optional)"
 msgstr "联系人（可选）"
+
+msgid "Contact us"
+msgstr ""
 
 msgid "contacts"
 msgstr "联系人"
@@ -3994,7 +4027,7 @@ msgid "Create a new production job to fulfill the sales order"
 msgstr "创建新的生产工作以完成销售订单"
 
 msgid "Create a new Stripe customer instead"
-msgstr ""
+msgstr "改为创建新的 Stripe 客户"
 
 msgid "Create a new version"
 msgstr "创建新版本"
@@ -4481,6 +4514,9 @@ msgstr "客户"
 
 msgid "Customers"
 msgstr "客户"
+
+msgid "Customizations, training, and integrations"
+msgstr ""
 
 msgid "Customize"
 msgstr "自定义"
@@ -6175,9 +6211,6 @@ msgstr "累积利润或亏损的股权账户"
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "货币转换调整 (CTA) 的股权账户"
 
-msgid "ERP, MES, QMS"
-msgstr "ERP, MES, QMS"
-
 msgid "Error"
 msgstr "错误"
 
@@ -6286,6 +6319,9 @@ msgstr "您配置的系统中的每项范围内测试都通过了，使用您的
 msgid "Every match"
 msgstr "每次匹配"
 
+msgid "Every required action has already been added."
+msgstr ""
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "期间关闭前，每项必需任务都必须完成或跳过。"
 
@@ -6297,9 +6333,6 @@ msgstr "其他所有内容"
 
 msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
 msgstr "其他所有内容涵盖人员、导入、集成和 API — 任何不属于您的工作流的内容。"
-
-msgid "Everything from Starter"
-msgstr "Starter 中的所有功能"
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "超过 {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB 总限制 — 请删除一些附件以发送。"
@@ -6338,7 +6371,7 @@ msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "现有映射。选择不同的提供商选项以重新映射。"
 
 msgid "Existing Stripe customer"
-msgstr ""
+msgstr "现有 Stripe 客户"
 
 msgid "Expand"
 msgstr "展开"
@@ -7077,12 +7110,6 @@ msgstr "标志"
 msgid "for anything. They'll pull in the right person."
 msgstr "用于任何事情。他们会找到合适的人。"
 
-msgid "For growing businesses that need support"
-msgstr "适合需要支持的成长型企业"
-
-msgid "For US companies handling ITAR data"
-msgstr "适用于处理ITAR数据的美国公司"
-
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "预测方法：<0>{0}</0>。此行不是从活跃工作派生的，因此没有可用的父源。"
@@ -7092,6 +7119,9 @@ msgstr "忘记打卡下班了？"
 
 msgid "Format"
 msgstr "格式"
+
+msgid "Forward deployed engineer"
+msgstr ""
 
 msgid "Foundation"
 msgstr "基础"
@@ -7145,6 +7175,9 @@ msgstr "履行地点"
 
 msgid "Full name"
 msgstr "全名"
+
+msgid "Full setup and migrations"
+msgstr ""
 
 msgid "Fully Depreciated"
 msgstr "完全折旧"
@@ -7747,9 +7780,6 @@ msgstr "实施中心"
 msgid "Implementation Lead"
 msgstr "实施主管"
 
-msgid "Implementation Support"
-msgstr "实施支持"
-
 msgid "Import {label} CSV"
 msgstr "导入 {label} CSV"
 
@@ -8247,7 +8277,7 @@ msgid "Issues"
 msgstr "问题"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
-msgstr ""
+msgstr "在您再次发布版本之前，它将停止运行。没有任何内容被删除。"
 
 msgid "ITAR Certifications"
 msgstr "ITAR 认证"
@@ -8608,6 +8638,9 @@ msgstr "更少的手动工作"
 msgid "Less manual work, fewer errors"
 msgstr "更少的手动工作，更少的错误"
 
+msgid "Let's Build"
+msgstr "让我们开始构建"
+
 msgid "Let's build something"
 msgstr "让我们构建一些东西"
 
@@ -8700,7 +8733,7 @@ msgid "Link Linear Issue"
 msgstr "关联 Linear 问题"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
-msgstr ""
+msgstr "将此 Carbon 客户链接到其中一个，或创建一个单独的 Stripe 客户。"
 
 msgid "Link to sales order line"
 msgstr "关联销售订单行"
@@ -8801,9 +8834,6 @@ msgstr "已锁定"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "锁定使期间对于业务单据（收据、装运、发票）为只读，同时仍允许进行折旧和处置等会计调整。期间在结束前必须被锁定。"
-
-msgid "Log In"
-msgstr "登录"
 
 msgid "Log nonconformances and drive a CAPA"
 msgstr "记录不符合项并推动纠正和预防措施"
@@ -11177,9 +11207,6 @@ msgstr "百分比"
 msgid "Percentage of Lot"
 msgstr "批次百分比"
 
-msgid "Perfect for low-cost evaluation"
-msgstr "非常适合低成本评估"
-
 msgid "Period"
 msgstr "期间"
 
@@ -11763,6 +11790,9 @@ msgstr "保护上线日期"
 msgid "Protect training time and attend"
 msgstr "保护培训时间并参加"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "使用双因素身份验证等高级安全控制措施保护您的公司。"
+
 msgid "Protects your company's data"
 msgstr "保护您公司的数据"
 
@@ -11795,7 +11825,7 @@ msgid "Published by Carbon"
 msgstr "由 Carbon 发布"
 
 msgid "Published Version"
-msgstr ""
+msgstr "已发布版本"
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "已发布的版本无法编辑。以只读方式浏览，或创建新版本以进行更改。"
@@ -12648,6 +12678,9 @@ msgstr "请求日期"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "登录时需要来自身份验证器应用的 6 位数字代码。"
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "需要身份验证器应用才能打开此公司。其他公司不受影响。"
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "在任何人打开此公司之前需要身份验证器应用。他们的其他公司不受影响。访问<0>员工账户页面</0>以查看每个人的状态。"
 
@@ -12870,7 +12903,7 @@ msgid "Reverse any item ledger entries from this invoice"
 msgstr "反转此发票中的任何项目分类账条目"
 
 msgid "Reverse charge"
-msgstr ""
+msgstr "反向收费"
 
 msgid "Reverse Charge Sales Tax"
 msgstr "反向收费销售税"
@@ -13705,8 +13738,11 @@ msgstr "已选择: {selectedSum} / 分割后剩余: {0}"
 msgid "Self Managed"
 msgstr "自我管理"
 
-msgid "Self-Onboarding with Carbon Academy"
-msgstr "使用 Carbon Academy 自助入门"
+msgid "Self-hosted or managed"
+msgstr ""
+
+msgid "Self-onboarding"
+msgstr ""
 
 msgid "Self-paced"
 msgstr "自主学习"
@@ -14142,6 +14178,9 @@ msgstr "作为淡色背景显示在每个生成的PDF页面后面"
 msgid "Shown to the user when this rule fails."
 msgstr "当此规则失败时向用户显示。"
 
+msgid "Sign in to Carbon"
+msgstr "登录 Carbon"
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "使用生物识别而不是魔法链接登录。密钥由 Face ID、Touch ID 或您的设备 PIN 保护。"
 
@@ -14349,6 +14388,9 @@ msgstr "拆分收据行"
 msgid "Split shipment line"
 msgstr "拆分发货行"
 
+msgid "SSO/SAML"
+msgstr ""
+
 msgid "Stand up hosting"
 msgstr "建立托管"
 
@@ -14397,9 +14439,6 @@ msgstr "在流程开始时开始过期"
 
 msgid "Start Here"
 msgstr "从这里开始"
-
-msgid "Start Learning"
-msgstr "开始学习"
 
 msgid "Start Now"
 msgstr "立即开始"
@@ -14565,19 +14604,19 @@ msgid "Straight line"
 msgstr "直线法"
 
 msgid "Stripe"
-msgstr ""
+msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr ""
+msgstr "Stripe 已有使用此电子邮件的客户"
 
 msgid "Stripe Due Date"
-msgstr ""
+msgstr "Stripe 到期日期"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr ""
+msgstr "Stripe 将发票发送给客户，因此需要地址。这也将保存到 Carbon 中的联系人。"
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr ""
+msgstr "Stripe 还没有该 Carbon 客户的客户。发布将在您连接的帐户上创建一个。"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "看板输出在看板表中显示的样式"
@@ -15010,7 +15049,7 @@ msgid "Tax Depreciation Method"
 msgstr "税务折旧方法"
 
 msgid "Tax exempt"
-msgstr ""
+msgstr "免税"
 
 msgid "Tax Exempt"
 msgstr "免税"
@@ -15056,6 +15095,9 @@ msgstr "税"
 
 msgid "Team trained"
 msgstr "团队已培训"
+
+msgid "Technical support"
+msgstr ""
 
 msgid "Temperature"
 msgstr "温度"
@@ -15882,7 +15924,7 @@ msgid "This completes the Discovery step."
 msgstr "这完成了发现步骤。"
 
 msgid "This contact has no email address"
-msgstr ""
+msgstr "此联系人没有电子邮件地址"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "该交易对手没有未结余额——该付款将记录为应收账款。"
@@ -15910,10 +15952,10 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "加入 {0} 的邀请已过期。您可以请求将新邀请发送到您的电子邮件。"
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr ""
+msgstr "此发票没有可用的到期日期 — 为 Stripe 选择一个。"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr ""
+msgstr "此发票将计费给已链接到此 Carbon 客户的 Stripe 客户。要更改其详细信息，请在 Stripe 仪表板中编辑它。"
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "这是受控环境，因此需要身份验证器应用。"
@@ -16053,10 +16095,10 @@ msgid "This version cannot be opened"
 msgstr "无法打开此版本"
 
 msgid "This version is published"
-msgstr ""
+msgstr "此版本已发布"
 
 msgid "This version is published. Create a new version to edit."
-msgstr ""
+msgstr "此版本已发布。创建新版本进行编辑。"
 
 msgid "This version's definition could not be read."
 msgstr "无法读取此版本的定义。"
@@ -16460,6 +16502,9 @@ msgstr "双因素"
 msgid "Two-factor authentication"
 msgstr "双因素认证"
 
+msgid "Two-Factor Authentication"
+msgstr "双因素身份验证"
+
 msgid "Two-factor authentication disabled"
 msgstr "双因素身份验证已禁用"
 
@@ -16598,8 +16643,11 @@ msgstr "未知错误"
 msgid "unknown location"
 msgstr "未知位置"
 
-msgid "Unlimited Functional Support"
-msgstr "无限功能支持"
+msgid "Unlimited functional support"
+msgstr ""
+
+msgid "Unlimited records"
+msgstr ""
 
 msgid "Unlink"
 msgstr "取消链接"
@@ -16650,10 +16698,10 @@ msgid "Unposted Documents"
 msgstr "未过账单据"
 
 msgid "Unpublish"
-msgstr ""
+msgstr "取消发布"
 
 msgid "Unpublish {name}?"
-msgstr ""
+msgstr "取消发布 {name}？"
 
 msgid "Unreceived POs"
 msgstr "未收到的采购订单"
@@ -17014,7 +17062,7 @@ msgstr "版本"
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
-msgstr ""
+msgstr "版本 {0} 现已发布，将被替换。"
 
 msgid "Version:"
 msgstr "版本："
@@ -17909,6 +17957,9 @@ msgstr "你收到了这批货"
 
 msgid "You're live on Carbon"
 msgstr "您已在 Carbon 上线"
+
+msgid "You're one step away from your workspace."
+msgstr "您离工作区只有一步之遥。"
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "您正在按照自己的节奏自行设置 Carbon"

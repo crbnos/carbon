@@ -7,6 +7,7 @@ import {
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { requirePlan } from "@carbon/ee/plan.server";
 import {
   Card,
   CardDescription,
@@ -23,8 +24,12 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, Link, useFetcher } from "react-router";
 import { usePermissions } from "~/hooks";
+import { usePlanGate } from "~/hooks/usePlanGate";
 import { useSettings } from "~/hooks/useSettings";
-import { updateRequireMfaSetting } from "~/modules/settings";
+import {
+  SecurityUpgradeOverlay,
+  updateRequireMfaSetting
+} from "~/modules/settings";
 import { sendMfaRequiredEmails } from "~/services/mfa-email.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -50,6 +55,17 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
 
   const requireMfa = formData.get("enabled") === "true";
+
+  if (requireMfa) {
+    await requirePlan({
+      request,
+      client,
+      companyId,
+      feature: "TWO_FACTOR",
+      redirectTo: path.to.security,
+      message: "Upgrade to Business to require two-factor authentication"
+    });
+  }
 
   // Read the stored value first: the switch re-submits on every flip, and a
   // toggle that lands on the value it already had must not re-announce.
@@ -107,6 +123,11 @@ export default function Security() {
   const mfaFetcher = useFetcher<{}>();
   const settings = useSettings();
   const requireMfa = settings.requireMfa === true;
+  const { isGated } = usePlanGate({ feature: "TWO_FACTOR" });
+
+  if (isGated && !CONTROLLED_ENVIRONMENT && !requireMfa) {
+    return <SecurityUpgradeOverlay />;
+  }
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">

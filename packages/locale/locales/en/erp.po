@@ -179,6 +179,9 @@ msgstr "{from}–{to} of {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} of {count} operations"
 
+msgid "{hiddenCount} more: {hiddenNames}"
+msgstr "{hiddenCount} more: {hiddenNames}"
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -310,8 +313,8 @@ msgstr "3h"
 msgid "4h"
 msgstr "4h"
 
-msgid "5 User Minimum"
-msgstr "5 User Minimum"
+msgid "5 user minimum"
+msgstr "5 user minimum"
 
 msgid "5-8 weeks"
 msgstr "5-8 weeks"
@@ -366,6 +369,9 @@ msgstr "A consumable is a physical item used to make a part that can be used acr
 
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "A contractor is a supplier contact with particular abilities and available hours"
+
+msgid "A custom solution to meet your needs"
+msgstr "A custom solution to meet your needs"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "A customer is a business or person who buys your parts or services."
@@ -476,6 +482,12 @@ msgstr "A Make to Order component that gets its own job and routing inside the p
 
 msgid "A Make to Order component whose parts are issued together into the parent job — no separate build."
 msgstr "A Make to Order component whose parts are issued together into the parent job — no separate build."
+
+msgid "A managed cloud-hosted version of Carbon"
+msgstr "A managed cloud-hosted version of Carbon"
+
+msgid "A managed version with all the advanced features"
+msgstr "A managed version with all the advanced features"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "A material is a physical item used to make a part that can be used across multiple jobs"
@@ -1087,6 +1099,9 @@ msgstr "Add Adjustment"
 msgid "Add Affected Item"
 msgstr "Add Affected Item"
 
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+
 msgid "Add any notes about your decision..."
 msgstr "Add any notes about your decision..."
 
@@ -1348,6 +1363,9 @@ msgstr "All accounts"
 msgid "All actions selected"
 msgstr "All actions selected"
 
+msgid "All advanced features available"
+msgstr "All advanced features available"
+
 msgid "All Audit Logs"
 msgstr "All Audit Logs"
 
@@ -1602,9 +1620,6 @@ msgstr "AP Outstanding"
 msgid "AP Overdue"
 msgstr "AP Overdue"
 
-msgid "API and Webhooks"
-msgstr "API and Webhooks"
-
 msgid "API Docs"
 msgstr "API Docs"
 
@@ -1622,6 +1637,9 @@ msgstr "API Keys"
 
 msgid "API keys for programmatic access to your Carbon data."
 msgstr "API keys for programmatic access to your Carbon data."
+
+msgid "API, webhooks, and integrations"
+msgstr "API, webhooks, and integrations"
 
 msgid "Applied"
 msgstr "Applied"
@@ -2341,6 +2359,9 @@ msgstr "Attributes are inherited from the procedure."
 msgid "Audit Log"
 msgstr "Audit Log"
 
+msgid "Audit logging"
+msgstr "Audit logging"
+
 msgid "Audit Logging"
 msgstr "Audit Logging"
 
@@ -2409,6 +2430,9 @@ msgstr "Automatic Lead Time Updates"
 
 msgid "Automatic Updates"
 msgstr "Automatic Updates"
+
+msgid "Automatic updates and backups"
+msgstr "Automatic updates and backups"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
@@ -2506,6 +2530,9 @@ msgstr "Base Currency"
 
 msgid "Base Price"
 msgstr "Base Price"
+
+msgid "Basic ERP, MES, and QMS functionality"
+msgstr "Basic ERP, MES, and QMS functionality"
 
 msgid "Basic Information"
 msgstr "Basic Information"
@@ -3208,11 +3235,11 @@ msgstr "Closing"
 msgid "Closure blocked"
 msgstr "Closure blocked"
 
-msgid "Cloud-Hosted"
-msgstr "Cloud-Hosted"
-
 msgid "Cloud, or your self-hosted environment."
 msgstr "Cloud, or your self-hosted environment."
+
+msgid "CMMC compliant"
+msgstr "CMMC compliant"
 
 msgid "Code"
 msgstr "Code"
@@ -3273,6 +3300,9 @@ msgstr "Commit a champion user for each area"
 
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
+
+msgid "Community support"
+msgstr "Community support"
 
 msgid "Companies"
 msgstr "Companies"
@@ -3573,6 +3603,9 @@ msgstr "Contact"
 
 msgid "Contact (optional)"
 msgstr "Contact (optional)"
+
+msgid "Contact us"
+msgstr "Contact us"
 
 msgid "contacts"
 msgstr "contacts"
@@ -4481,6 +4514,9 @@ msgstr "customers"
 
 msgid "Customers"
 msgstr "Customers"
+
+msgid "Customizations, training, and integrations"
+msgstr "Customizations, training, and integrations"
 
 msgid "Customize"
 msgstr "Customize"
@@ -6175,9 +6211,6 @@ msgstr "Equity account for accumulated profits or losses"
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "Equity account for currency translation adjustments (CTA)"
 
-msgid "ERP, MES, QMS"
-msgstr "ERP, MES, QMS"
-
 msgid "Error"
 msgstr "Error"
 
@@ -6286,6 +6319,9 @@ msgstr "Every in-scope test passes in your configured system, with your data."
 msgid "Every match"
 msgstr "Every match"
 
+msgid "Every required action has already been added."
+msgstr "Every required action has already been added."
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Every required task must be Done or Skipped before the period can be closed."
 
@@ -6297,9 +6333,6 @@ msgstr "Everything else"
 
 msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
 msgstr "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
-
-msgid "Everything from Starter"
-msgstr "Everything from Starter"
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
@@ -7077,12 +7110,6 @@ msgstr "Flags"
 msgid "for anything. They'll pull in the right person."
 msgstr "for anything. They'll pull in the right person."
 
-msgid "For growing businesses that need support"
-msgstr "For growing businesses that need support"
-
-msgid "For US companies handling ITAR data"
-msgstr "For US companies handling ITAR data"
-
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
@@ -7092,6 +7119,9 @@ msgstr "Forgot to Clock Out?"
 
 msgid "Format"
 msgstr "Format"
+
+msgid "Forward deployed engineer"
+msgstr "Forward deployed engineer"
 
 msgid "Foundation"
 msgstr "Foundation"
@@ -7145,6 +7175,9 @@ msgstr "Fulfillment Location"
 
 msgid "Full name"
 msgstr "Full name"
+
+msgid "Full setup and migrations"
+msgstr "Full setup and migrations"
 
 msgid "Fully Depreciated"
 msgstr "Fully Depreciated"
@@ -7746,9 +7779,6 @@ msgstr "Implementation Hub"
 
 msgid "Implementation Lead"
 msgstr "Implementation Lead"
-
-msgid "Implementation Support"
-msgstr "Implementation Support"
 
 msgid "Import {label} CSV"
 msgstr "Import {label} CSV"
@@ -8608,6 +8638,9 @@ msgstr "Less manual work"
 msgid "Less manual work, fewer errors"
 msgstr "Less manual work, fewer errors"
 
+msgid "Let's Build"
+msgstr "Let's Build"
+
 msgid "Let's build something"
 msgstr "Let's build something"
 
@@ -8801,9 +8834,6 @@ msgstr "Locked"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
-
-msgid "Log In"
-msgstr "Log In"
 
 msgid "Log nonconformances and drive a CAPA"
 msgstr "Log nonconformances and drive a CAPA"
@@ -11177,9 +11207,6 @@ msgstr "Percentage"
 msgid "Percentage of Lot"
 msgstr "Percentage of Lot"
 
-msgid "Perfect for low-cost evaluation"
-msgstr "Perfect for low-cost evaluation"
-
 msgid "Period"
 msgstr "Period"
 
@@ -11762,6 +11789,9 @@ msgstr "Protect the go-live date"
 
 msgid "Protect training time and attend"
 msgstr "Protect training time and attend"
+
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "Protect your company with advanced security controls like two-factor authentication enforcement."
 
 msgid "Protects your company's data"
 msgstr "Protects your company's data"
@@ -12647,6 +12677,9 @@ msgstr "Requested Date"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Require a 6-digit code from an authenticator app when signing in."
+
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
@@ -13705,8 +13738,11 @@ msgstr "Selected: {selectedSum} / remaining after split: {0}"
 msgid "Self Managed"
 msgstr "Self Managed"
 
-msgid "Self-Onboarding with Carbon Academy"
-msgstr "Self-Onboarding with Carbon Academy"
+msgid "Self-hosted or managed"
+msgstr "Self-hosted or managed"
+
+msgid "Self-onboarding"
+msgstr "Self-onboarding"
 
 msgid "Self-paced"
 msgstr "Self-paced"
@@ -14142,6 +14178,9 @@ msgstr "Shown as a faint background behind every page of generated PDFs"
 msgid "Shown to the user when this rule fails."
 msgstr "Shown to the user when this rule fails."
 
+msgid "Sign in to Carbon"
+msgstr "Sign in to Carbon"
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 
@@ -14349,6 +14388,9 @@ msgstr "Split receipt line"
 msgid "Split shipment line"
 msgstr "Split shipment line"
 
+msgid "SSO/SAML"
+msgstr "SSO/SAML"
+
 msgid "Stand up hosting"
 msgstr "Stand up hosting"
 
@@ -14397,9 +14439,6 @@ msgstr "Start expiration on process start"
 
 msgid "Start Here"
 msgstr "Start Here"
-
-msgid "Start Learning"
-msgstr "Start Learning"
 
 msgid "Start Now"
 msgstr "Start Now"
@@ -15056,6 +15095,9 @@ msgstr "Taxes"
 
 msgid "Team trained"
 msgstr "Team trained"
+
+msgid "Technical support"
+msgstr "Technical support"
 
 msgid "Temperature"
 msgstr "Temperature"
@@ -16460,6 +16502,9 @@ msgstr "Two-Factor"
 msgid "Two-factor authentication"
 msgstr "Two-factor authentication"
 
+msgid "Two-Factor Authentication"
+msgstr "Two-Factor Authentication"
+
 msgid "Two-factor authentication disabled"
 msgstr "Two-factor authentication disabled"
 
@@ -16598,8 +16643,11 @@ msgstr "unknown error"
 msgid "unknown location"
 msgstr "unknown location"
 
-msgid "Unlimited Functional Support"
-msgstr "Unlimited Functional Support"
+msgid "Unlimited functional support"
+msgstr "Unlimited functional support"
+
+msgid "Unlimited records"
+msgstr "Unlimited records"
 
 msgid "Unlink"
 msgstr "Unlink"
@@ -17913,6 +17961,9 @@ msgstr "You received this lot"
 
 msgid "You're live on Carbon"
 msgstr "You're live on Carbon"
+
+msgid "You're one step away from your workspace."
+msgstr "You're one step away from your workspace."
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "You're setting Carbon up yourself, at your own pace"

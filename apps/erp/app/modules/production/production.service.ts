@@ -7719,3 +7719,196 @@ export async function saveInspectionDocumentAtomic(
     p_balloons: args.balloons
   });
 }
+
+// ---------------------------------------------------------------------------
+// MES-core write entry points exposed to MCP (gatekeeper-carbon asks #1–#4).
+//
+// Each wraps the SAME edge function / RPC the MES/ERP UI uses, so an MCP caller drives
+// production as the connected user — companyId/userId come from the OAuth token (injected by the
+// MCP executor), not from caller-supplied (falsifiable) fields. Exposed automatically by
+// scripts/generate-mcp.ts as production_issueMaterial / _completeJob / _scheduleJob.
+
+// `issueMaterial`, `completeJob`, and `scheduleJob` moved to `production.mcp.server.ts`: they
+// depend on server-only modules (`@carbon/ee/storage-rules.server`, `@carbon/auth/users.server`)
+// that cannot be referenced from this file, which is client-reachable via the module barrel.
+
+/**
+ * Complete a job operation by reporting produced quantity (non-tracked items). Re-orchestrates the
+ * MES material-complete flow's non-tracked path against the same entry points, so an MCP caller
+ * drives it as the connected user:
+ *   1. record the produced quantity (productionQuantity insert),
+ *   2. backflush consumed material (`issue` edge fn, type "jobOperation"),
+ *   3. when good + reworked quantity reaches the operation's target, mark it Done — the
+ *      sync_finish_job_operation DB trigger then completes the job to inventory if this was the
+ *      last operation — post any ended-but-unposted production events for GL, and return picked
+ *      remainders.
+ *
+ * Serial/batch-tracked operations are refused: they require per-entity completion with a
+ * trackedEntityId (use the MES station). Authenticated-only, matching the MES complete route.
+ *
+ * NOTE: mirrors apps/mes complete.tsx (non-tracked branch) + finishJobOperation; these should share
+ * a service function eventually rather than duplicate the orchestration.
+ */
+export async function completeOperation(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  userId: string,
+  args: {
+    operationId: string;
+    quantity: number;
+  }
+) {
+  const operation = await client
+    .from("jobOperation")
+    .select(
+      "jobId, jobMakeMethodId, quantityComplete, quantityReworked, targetQuantity, operationQuantity"
+    )
+    .eq("id", args.operationId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (operation.error || !operation.data) {
+    throw new Error(`Job operation ${args.operationId} was not found.`);
+  }
+
+  // Serial/batch-tracked operations need per-entity completion (a trackedEntityId) — refuse here.
+  if (operation.data.jobMakeMethodId) {
+    const method = await client
+      .from("jobMakeMethod")
+      .select("requiresSerialTracking, requiresBatchTracking")
+      .eq("id", operation.data.jobMakeMethodId)
+      .maybeSingle();
+    if (
+      method.data?.requiresSerialTracking ||
+      method.data?.requiresBatchTracking
+    ) {
+      throw new Error(
+        "This operation's item is serial/batch tracked and must be completed per tracked entity at the MES station."
+      );
+    }
+  }
+
+  // 1. Record produced quantity.
+  const insertProduction = await client
+    .from("productionQuantity")
+    .insert(
+      sanitize({
+        jobOperationId: args.operationId,
+        quantity: args.quantity,
+        type: "Production",
+        companyId,
+        createdBy: userId
+      })
+    )
+    .select("id")
+    .single();
+  if (insertProduction.error) return insertProduction;
+  if (insertProduction.data?.id) {
+    trackWorkEvent("production_quantity_reported", {
+      companyId,
+      userId,
+      productionQuantityId: insertProduction.data.id,
+      jobOperationId: args.operationId,
+      quantity: args.quantity,
+      source: "api"
+    });
+  }
+
+  // 2. Backflush consumed material.
+  const issue = await client.functions.invoke("issue", {
+    body: {
+      id: args.operationId,
+      type: "jobOperation",
+      quantity: args.quantity,
+      companyId,
+      userId
+    }
+  });
+  if (issue.error) return { data: null, error: issue.error };
+
+  // 3. Finish when good + reworked quantity reaches target (scrap excluded, mirroring the
+  //    sync_update_job_operation_quantities DB predicate).
+  const totalAccounted =
+    (operation.data.quantityComplete ?? 0) +
+    (operation.data.quantityReworked ?? 0) +
+    args.quantity;
+  const target =
+    operation.data.targetQuantity ?? operation.data.operationQuantity ?? 0;
+  if (totalAccounted >= target) {
+    const finished = await client
+      .from("jobOperation")
+      .update({ status: "Done", updatedBy: userId })
+      .eq("id", args.operationId)
+      .eq("companyId", companyId);
+    if (finished.error) return { data: null, error: finished.error };
+
+    // Post ended-but-unposted production events for GL absorption.
+    const unposted = await client
+      .from("productionEvent")
+      .select("id")
+      .eq("jobOperationId", args.operationId)
+      .eq("companyId", companyId)
+      .not("endTime", "is", null)
+      .eq("postedToGL", false);
+    if (unposted.data?.length) {
+      await Promise.all(
+        unposted.data.map((event) =>
+          client.functions.invoke("post-production-event", {
+            body: { productionEventId: event.id, userId, companyId }
+          })
+        )
+      );
+    }
+
+    // Return picked-but-unconsumed stock (the SQL trigger can't call edge functions).
+    const jobId = operation.data.jobId;
+    if (jobId) {
+      const job = await client
+        .from("job")
+        .select("status")
+        .eq("id", jobId)
+        .eq("companyId", companyId)
+        .maybeSingle();
+      const returnBody =
+        job.data?.status === "Completed"
+          ? { type: "returnJobRemainders" as const, jobId, userId, companyId }
+          : {
+              type: "returnOperationRemainders" as const,
+              jobOperationId: args.operationId,
+              userId,
+              companyId
+            };
+      const { error: returnError } = await client.functions.invoke(
+        "post-picking",
+        {
+          body: returnBody
+        }
+      );
+      if (returnError) {
+        logger.error("picked-material return sweep failed", {
+          error: returnError,
+          jobId,
+          scope: returnBody.type,
+          companyId
+        });
+      }
+
+      await raiseMoment("production.jobOperationCompleted", {
+        outputs: {
+          job: { id: jobId },
+          jobOperation: { id: args.operationId },
+          completedBy: { id: userId }
+        },
+        companyId,
+        actorId: userId
+      });
+      trackWorkEvent("job_operation_finished", {
+        companyId,
+        userId,
+        jobOperationId: args.operationId,
+        jobId
+      });
+    }
+  }
+
+  return issue;
+}
