@@ -83,7 +83,7 @@ msgstr "{0} 份草稿日记账条目"
 
 #. placeholder {0}: integration.name
 msgid "{0} isn't installed yet. There's nothing to configure — install it to connect an account."
-msgstr ""
+msgstr "{0}还未安装。没有需要配置的内容 — 安装它以连接账户。"
 
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
@@ -155,7 +155,7 @@ msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% 的应付账款"
 
 msgid "{appName} isn't connected yet. Connect an account before this step can do anything."
-msgstr ""
+msgstr "{appName}还未连接。在此步骤执行任何操作前，请先连接账户。"
 
 msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}% 的应收账款"
@@ -176,7 +176,7 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} / {count} 条操作"
 
 msgid "{hiddenCount} more: {hiddenNames}"
-msgstr ""
+msgstr "{hiddenCount} 更多：{hiddenNames}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -310,7 +310,7 @@ msgid "4h"
 msgstr "4小时"
 
 msgid "5 user minimum"
-msgstr ""
+msgstr "最少 5 个用户"
 
 msgid "5-8 weeks"
 msgstr "5-8 周"
@@ -367,7 +367,7 @@ msgid "A contractor is a supplier contact with particular abilities and availabl
 msgstr "承包商是具有特定能力和可用工作时间的供应商联系人"
 
 msgid "A custom solution to meet your needs"
-msgstr ""
+msgstr "满足您需求的自定义解决方案"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "客户是购买您的零件或服务的企业或个人。"
@@ -480,10 +480,10 @@ msgid "A Make to Order component whose parts are issued together into the parent
 msgstr "其零件一起发放到父项作业的按单生产组件——无单独构建。"
 
 msgid "A managed cloud-hosted version of Carbon"
-msgstr ""
+msgstr "托管的 Carbon 云版本"
 
 msgid "A managed version with all the advanced features"
-msgstr ""
+msgstr "具有所有高级功能的托管版本"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "材料是用于制造零件的物理项目，可以在多个工作中使用"
@@ -507,7 +507,7 @@ msgid "A new size will be created using a copy of the current size"
 msgstr "将使用当前尺寸的副本创建新尺寸"
 
 msgid "A new Stripe customer will be created"
-msgstr ""
+msgstr "将创建新的 Stripe 客户"
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "一份非现金单据，根据原因账户结算发票：贷方降低应付金额，借方提高它。"
@@ -949,7 +949,7 @@ msgid "Accounts referenced by posting defaults or journal history that have no p
 msgstr "由过账默认值或日记账历史记录引用但尚无提供商映射的账户。"
 
 msgid "Accounts your workflows can act as. Add one for each account a workflow step should use."
-msgstr ""
+msgstr "您的工作流可以用来执行操作的账户。为每个工作流步骤应该使用的账户添加一个。"
 
 msgid "Accumulated Depreciation"
 msgstr "累计折旧"
@@ -1081,7 +1081,7 @@ msgid "Add a step"
 msgstr "添加步骤"
 
 msgid "Add account"
-msgstr ""
+msgstr "添加账户"
 
 msgid "Add Account"
 msgstr "添加账户"
@@ -1347,7 +1347,7 @@ msgid "All actions selected"
 msgstr "所有操作已选中"
 
 msgid "All advanced features available"
-msgstr ""
+msgstr "所有高级功能可用"
 
 msgid "All Audit Logs"
 msgstr "所有审计日志"
@@ -1540,7 +1540,7 @@ msgid "An unexpected error occurred while connecting to Onshape. Try connecting 
 msgstr "连接 Onshape 时发生意外错误。请重新连接。"
 
 msgid "An unexpected error occurred while connecting. Try connecting again."
-msgstr ""
+msgstr "连接时发生意外错误。请尝试重新连接。"
 
 msgid "Analytics"
 msgstr "分析"
@@ -1577,7 +1577,7 @@ msgid "Annotation updated"
 msgstr "注释已更新"
 
 msgid "Another connection to this integration already has that name. Choose a different one."
-msgstr ""
+msgstr "此集成的另一个连接已具有该名称。请选择不同的名称。"
 
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "该成本中心所归属的另一个成本中心，允许您在其父级下嵌套子成本中心，以进行分层成本报告。"
@@ -1628,10 +1628,10 @@ msgid "API keys for programmatic access to your Carbon data."
 msgstr "用于以编程方式访问您的 Carbon 数据的 API 密钥。"
 
 msgid "API, webhooks, and integrations"
-msgstr ""
+msgstr "API、Webhooks 和集成"
 
 msgid "App"
-msgstr ""
+msgstr "应用"
 
 msgid "Applied"
 msgstr "已应用"
@@ -2312,7 +2312,7 @@ msgid "Attempts"
 msgstr "尝试次数"
 
 msgid "Attendees"
-msgstr ""
+msgstr "参与者"
 
 msgid "Attribute"
 msgstr "属性"
@@ -2330,7 +2330,7 @@ msgid "Audit Log"
 msgstr "审计日志"
 
 msgid "Audit logging"
-msgstr ""
+msgstr "审计日志"
 
 msgid "Audit Logging"
 msgstr "审计日志"
@@ -2357,7 +2357,7 @@ msgid "Authenticator QR code"
 msgstr "身份验证器二维码"
 
 msgid "Authorization was refused. Try connecting again."
-msgstr ""
+msgstr "授权被拒绝。请尝试重新连接。"
 
 msgid "Auto apply"
 msgstr "自动应用"
@@ -2405,7 +2405,7 @@ msgid "Automatic Updates"
 msgstr "自动更新"
 
 msgid "Automatic updates and backups"
-msgstr ""
+msgstr "自动更新和备份"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "报告输出时，自动按比例消耗工作的未跟踪材料—跟踪的材料手动发出。"
@@ -2505,7 +2505,7 @@ msgid "Base Price"
 msgstr "基础价格"
 
 msgid "Basic ERP, MES, and QMS functionality"
-msgstr ""
+msgstr "基础 ERP、MES 和 QMS 功能"
 
 msgid "Basic Information"
 msgstr "基本信息"
@@ -2642,7 +2642,7 @@ msgid "Browse library"
 msgstr "浏览库"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
-msgstr ""
+msgstr "以只读方式浏览已发布版本。您仍可以重新排列步骤以整理布局。"
 
 msgid "Bucket"
 msgstr "存储桶"
@@ -2738,7 +2738,7 @@ msgid "Calculation Method"
 msgstr "计算方法"
 
 msgid "Calendar"
-msgstr ""
+msgstr "日历"
 
 msgid "Calibration"
 msgstr "校准"
@@ -2852,7 +2852,7 @@ msgid "Cannot send RFQ"
 msgstr "无法发送询价单"
 
 msgid "Cannot send through Stripe"
-msgstr ""
+msgstr "无法通过 Stripe 发送"
 
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "无法上传 — 供应商互动尚未创建"
@@ -3060,7 +3060,7 @@ msgid "Check your email"
 msgstr "检查您的电子邮件"
 
 msgid "Checking Stripe for this customer…"
-msgstr ""
+msgstr "正在为此客户检查 Stripe…"
 
 msgid "Checkpoint ·"
 msgstr "检查点 ·"
@@ -3069,7 +3069,7 @@ msgid "Checkpoints"
 msgstr "检查点"
 
 msgid "Choose {named} first."
-msgstr ""
+msgstr "请先选择 {named}。"
 
 msgid "Choose a batch number"
 msgstr "选择批号"
@@ -3204,7 +3204,7 @@ msgid "Cloud, or your self-hosted environment."
 msgstr "云端或您自托管的环境。"
 
 msgid "CMMC compliant"
-msgstr ""
+msgstr "符合 CMMC"
 
 msgid "Code"
 msgstr "代码"
@@ -3234,7 +3234,7 @@ msgid "Collapse subtree"
 msgstr "折叠子树"
 
 msgid "Color"
-msgstr ""
+msgstr "颜色"
 
 msgid "Column dimension"
 msgstr "列维度"
@@ -3270,7 +3270,7 @@ msgid "Committing a receipt, shipment, or invoice: quantities move, journal entr
 msgstr "提交收据、发货或发票: 数量移动、日记账分录到达分类账、状态变为已过帐。"
 
 msgid "Community support"
-msgstr ""
+msgstr "社区支持"
 
 msgid "Companies"
 msgstr "公司"
@@ -3494,7 +3494,7 @@ msgid "Conflict reason"
 msgstr "冲突原因"
 
 msgid "Connect {appName}"
-msgstr ""
+msgstr "连接 {appName}"
 
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "将 Carbon 连接到您的会计、项目管理和 CAD 工具等更多应用。"
@@ -3518,10 +3518,10 @@ msgid "Connected to"
 msgstr "连接到"
 
 msgid "Connection"
-msgstr ""
+msgstr "连接"
 
 msgid "Connection name"
-msgstr ""
+msgstr "连接名称"
 
 msgid "Console Mode"
 msgstr "控制台模式"
@@ -3572,7 +3572,7 @@ msgid "Contact (optional)"
 msgstr "联系人（可选）"
 
 msgid "Contact us"
-msgstr ""
+msgstr "联系我们"
 
 msgid "contacts"
 msgstr "联系人"
@@ -3910,7 +3910,7 @@ msgid "Could not save"
 msgstr "无法保存"
 
 msgid "Couldn't complete the connection"
-msgstr ""
+msgstr "无法完成连接"
 
 msgid "Couldn't complete the Onshape connection"
 msgstr "无法完成 Onshape 连接"
@@ -3928,7 +3928,7 @@ msgid "Couldn't reschedule the job. Please try again."
 msgstr "无法重新安排作业。请重试。"
 
 msgid "Couldn't save the connection"
-msgstr ""
+msgstr "无法保存连接"
 
 msgid "Couldn't save the Onshape connection"
 msgstr "无法保存 Onshape 连接"
@@ -3988,7 +3988,7 @@ msgid "Create a new production job to fulfill the sales order"
 msgstr "创建新的生产工作以完成销售订单"
 
 msgid "Create a new Stripe customer instead"
-msgstr ""
+msgstr "改为创建新的 Stripe 客户"
 
 msgid "Create a new version"
 msgstr "创建新版本"
@@ -4024,7 +4024,7 @@ msgid "Create Change Notice"
 msgstr "创建更改单"
 
 msgid "Create Google Meet Link"
-msgstr ""
+msgstr "创建 Google Meet 链接"
 
 msgid "Create Issue"
 msgstr "创建问题"
@@ -4462,7 +4462,7 @@ msgid "Customers"
 msgstr "客户"
 
 msgid "Customizations, training, and integrations"
-msgstr ""
+msgstr "定制、培训和集成"
 
 msgid "Customize"
 msgstr "自定义"
@@ -4549,7 +4549,7 @@ msgid "Date Due"
 msgstr "到期日期"
 
 msgid "Date from"
-msgstr ""
+msgstr "开始日期"
 
 msgid "Date issued"
 msgstr "发行日期"
@@ -4564,7 +4564,7 @@ msgid "Date Paid"
 msgstr "支付日期"
 
 msgid "Date to"
-msgstr ""
+msgstr "截止日期"
 
 msgid "Dates"
 msgstr "日期"
@@ -6033,7 +6033,7 @@ msgid "End Date"
 msgstr "结束日期"
 
 msgid "End date time of the event"
-msgstr ""
+msgstr "活动的结束日期时间"
 
 msgid "End of Last Fiscal Year"
 msgstr "上一财政年度末"
@@ -6254,7 +6254,7 @@ msgid "Event Type"
 msgstr "事件类型"
 
 msgid "Event types"
-msgstr ""
+msgstr "事件类型"
 
 msgid "Events"
 msgstr "事件"
@@ -6317,7 +6317,7 @@ msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "现有映射。选择不同的提供商选项以重新映射。"
 
 msgid "Existing Stripe customer"
-msgstr ""
+msgstr "现有 Stripe 客户"
 
 msgid "Expand"
 msgstr "展开"
@@ -6342,7 +6342,7 @@ msgid "Expand Machine"
 msgstr "展开机器"
 
 msgid "Expand Recurring Event?"
-msgstr ""
+msgstr "展开循环事件？"
 
 msgid "Expand Setup"
 msgstr "展开设置"
@@ -7041,7 +7041,7 @@ msgid "Format"
 msgstr "格式"
 
 msgid "Forward deployed engineer"
-msgstr ""
+msgstr "前线部署工程师"
 
 msgid "Foundation"
 msgstr "基础"
@@ -7097,7 +7097,7 @@ msgid "Full name"
 msgstr "全名"
 
 msgid "Full setup and migrations"
-msgstr ""
+msgstr "完整设置和迁移"
 
 msgid "Fully Depreciated"
 msgstr "完全折旧"
@@ -7380,10 +7380,10 @@ msgid "Good morning, {0}"
 msgstr "早上好，{0}"
 
 msgid "Google Calendar: Create Event"
-msgstr ""
+msgstr "Google 日历：创建事件"
 
 msgid "Google Calendar: Get all Events"
-msgstr ""
+msgstr "Google 日历：获取所有事件"
 
 msgid "Google Places API key not configured"
 msgstr "Google Places API 密钥未配置"
@@ -7428,13 +7428,13 @@ msgid "Groups"
 msgstr "组"
 
 msgid "Guests can invite others"
-msgstr ""
+msgstr "嘉宾可以邀请其他人"
 
 msgid "Guests can modify"
-msgstr ""
+msgstr "嘉宾可以修改"
 
 msgid "Guests can see other guests"
-msgstr ""
+msgstr "嘉宾可以看到其他嘉宾"
 
 msgid "Guided"
 msgstr "引导式"
@@ -8209,7 +8209,7 @@ msgid "Issues"
 msgstr "问题"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
-msgstr ""
+msgstr "它将停止运行，直到您再次发布版本。没有任何内容被删除。"
 
 msgid "ITAR Certifications"
 msgstr "ITAR 认证"
@@ -8571,7 +8571,7 @@ msgid "Less manual work, fewer errors"
 msgstr "更少的手动工作，更少的错误"
 
 msgid "Let's Build"
-msgstr ""
+msgstr "让我们开始构建"
 
 msgid "Let's build something"
 msgstr "让我们构建一些东西"
@@ -8652,7 +8652,7 @@ msgid "Link Linear Issue"
 msgstr "关联 Linear 问题"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
-msgstr ""
+msgstr "将此 Carbon 客户链接到其中一个，或创建单独的 Stripe 客户。"
 
 msgid "Link to sales order line"
 msgstr "关联销售订单行"
@@ -9836,7 +9836,7 @@ msgid "No Access"
 msgstr "无权限"
 
 msgid "No accounts connected yet."
-msgstr ""
+msgstr "尚未连接任何账户。"
 
 msgid "No accounts mapped yet"
 msgstr "尚未映射账户"
@@ -9879,7 +9879,7 @@ msgid "No attachments."
 msgstr "没有附件。"
 
 msgid "No authorization code was returned"
-msgstr ""
+msgstr "未返回授权代码"
 
 msgid "No available filters"
 msgstr "没有可用的筛选器"
@@ -10336,7 +10336,7 @@ msgid "Nothing in the archive"
 msgstr "存档中没有任何内容"
 
 msgid "Nothing to choose yet - <0>set one up in Settings</0>."
-msgstr ""
+msgstr "还没有可选择的内容 - <0>在设置中设置一个</0>。"
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "暂无内容。步骤配置后才会提供值。"
@@ -11705,7 +11705,7 @@ msgid "Published by Carbon"
 msgstr "由 Carbon 发布"
 
 msgid "Published Version"
-msgstr ""
+msgstr "已发布版本"
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "已发布的版本无法编辑。以只读方式浏览，或创建新版本以进行更改。"
@@ -12725,7 +12725,7 @@ msgid "Reverse any item ledger entries from this invoice"
 msgstr "反转此发票中的任何项目分类账条目"
 
 msgid "Reverse charge"
-msgstr ""
+msgstr "反向收费"
 
 msgid "Reverse Charge Sales Tax"
 msgstr "反向收费销售税"
@@ -13307,7 +13307,7 @@ msgid "Search suppliers..."
 msgstr "搜索供应商..."
 
 msgid "Search Term"
-msgstr ""
+msgstr "搜索词"
 
 msgid "Search tools..."
 msgstr "搜索工具..."
@@ -13386,7 +13386,7 @@ msgid "Select a shape first to see available options"
 msgstr "请先选择形状以查看可用选项"
 
 msgid "Select a step…"
-msgstr ""
+msgstr "选择一个步骤…"
 
 msgid "Select a substance and shape first to see available options"
 msgstr "请先选择物质和形状以查看可用选项"
@@ -13407,7 +13407,7 @@ msgid "Select an action…"
 msgstr "选择一个操作…"
 
 msgid "Select an app…"
-msgstr ""
+msgstr "选择一个应用…"
 
 msgid "Select an assignee"
 msgstr "选择受理人"
@@ -13434,7 +13434,7 @@ msgid "Select an option"
 msgstr "选择一个选项"
 
 msgid "Select an option…"
-msgstr ""
+msgstr "选择一个选项…"
 
 msgid "Select at least one line to convert"
 msgstr "至少选择一行进行转换"
@@ -13552,10 +13552,10 @@ msgid "Self Managed"
 msgstr "自我管理"
 
 msgid "Self-hosted or managed"
-msgstr ""
+msgstr "自托管或托管"
 
 msgid "Self-onboarding"
-msgstr ""
+msgstr "自助入职"
 
 msgid "Self-paced"
 msgstr "自主学习"
@@ -13576,7 +13576,7 @@ msgid "Send Invites"
 msgstr "发送邀请"
 
 msgid "Send Notifications"
-msgstr ""
+msgstr "发送通知"
 
 msgid "Send RFQ to Suppliers"
 msgstr "向供应商发送询价单"
@@ -13980,7 +13980,7 @@ msgid "Shown to the user when this rule fails."
 msgstr "当此规则失败时向用户显示。"
 
 msgid "Sign in to Carbon"
-msgstr ""
+msgstr "登录 Carbon"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "使用生物识别而不是魔法链接登录。密钥由 Face ID、Touch ID 或您的设备 PIN 保护。"
@@ -14184,7 +14184,7 @@ msgid "Split shipment line"
 msgstr "拆分发货行"
 
 msgid "SSO/SAML"
-msgstr ""
+msgstr "SSO/SAML"
 
 msgid "Stand up hosting"
 msgstr "建立托管"
@@ -14224,7 +14224,7 @@ msgid "Start Date"
 msgstr "开始日期"
 
 msgid "Start date time of the event"
-msgstr ""
+msgstr "事件的开始日期时间"
 
 msgid "Start Expiration"
 msgstr "开始过期"
@@ -14399,19 +14399,19 @@ msgid "Straight line"
 msgstr "直线法"
 
 msgid "Stripe"
-msgstr ""
+msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr ""
+msgstr "Stripe 已经拥有使用此电子邮件的客户"
 
 msgid "Stripe Due Date"
-msgstr ""
+msgstr "Stripe 到期日期"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr ""
+msgstr "Stripe 向客户发送发票电子邮件，因此需要地址。这也将保存到 Carbon 中的联系人。"
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr ""
+msgstr "Stripe 还没有此 Carbon 客户的客户。发布将在您连接的账户上创建一个。"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "看板输出在看板表中显示的样式"
@@ -14826,7 +14826,7 @@ msgid "Tax Depreciation Method"
 msgstr "税务折旧方法"
 
 msgid "Tax exempt"
-msgstr ""
+msgstr "免税"
 
 msgid "Tax Exempt"
 msgstr "免税"
@@ -14874,7 +14874,7 @@ msgid "Team trained"
 msgstr "团队已培训"
 
 msgid "Technical support"
-msgstr ""
+msgstr "技术支持"
 
 msgid "Temperature"
 msgstr "温度"
@@ -14913,13 +14913,13 @@ msgid "Text size"
 msgstr "文本大小"
 
 msgid "That connection name is already used"
-msgstr ""
+msgstr "该连接名称已被使用"
 
 msgid "That name is already used by another step."
 msgstr "该名称已被另一个步骤使用。"
 
 msgid "That name is already used."
-msgstr ""
+msgstr "该名称已被使用。"
 
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
@@ -14959,13 +14959,13 @@ msgid "The append-only record of every stock movement; on-hand is the sum of its
 msgstr "每个库存变动的追加专用记录；在手数量是其带符号条目的总和，也是单一信息源。"
 
 msgid "The authorization took too long or came back altered. Start the connection again from this page."
-msgstr ""
+msgstr "授权耗时过长或被修改。请从此页面重新开始连接。"
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "授权在 Onshape 中被拒绝。请重新连接。"
 
 msgid "The authorization was rejected"
-msgstr ""
+msgstr "授权被拒绝"
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "所有已记账的日记账行书，按账户汇总 - 仅在公司启用会计时编写。"
@@ -15037,10 +15037,10 @@ msgid "The code printed on the kanban card that operators scan to mark the job c
 msgstr "印在看板卡上的代码，操作员扫描该代码以将工作标记为完成；如果留空，则自动生成。"
 
 msgid "The connection could not be verified"
-msgstr ""
+msgstr "无法验证连接"
 
 msgid "The connection was refused"
-msgstr ""
+msgstr "连接被拒绝"
 
 msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
 msgstr "承包商的预期周可用性；在将此承包商分配给整周的操作时，计划将其用作上限。"
@@ -15226,7 +15226,7 @@ msgid "The Incoterm rule (FOB, DAP, EXW, CIF, …) that governs who pays freight
 msgstr "Incoterms规则（FOB、DAP、EXW、CIF等），管制向该客户发货时谁支付运费、谁承担风险以及所有权转让在何处发生。"
 
 msgid "The integration authorized the connection but saving it failed. Try connecting again."
-msgstr ""
+msgstr "集成已授权连接，但保存失败。请尝试重新连接。"
 
 msgid "The inventory cost recognized when a shipment posts, valued by the item's costing method."
 msgstr "发货过账时确认的库存成本，按物品的成本计算方法评估。"
@@ -15479,7 +15479,7 @@ msgid "The response from Onshape was missing required parameters. Try connecting
 msgstr "Onshape 的响应缺少必需的参数。请重新连接。"
 
 msgid "The response was missing required parameters. Try connecting again."
-msgstr ""
+msgstr "响应缺少必需的参数。请尝试重新连接。"
 
 msgid "The result will not appear on the Runs page."
 msgstr "结果不会出现在运行页面上。"
@@ -15701,7 +15701,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "这些日记账条目仍为草稿状态，因此其借贷金额不在本期分类账中。过账每一份，或将其重新标记日期至较晚的开放期间。"
 
 msgid "This Carbon instance is missing its OAuth credentials for this integration. Ask an administrator to set them."
-msgstr ""
+msgstr "此 Carbon 实例缺少此集成的 OAuth 凭证。请要求管理员设置。"
 
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "此 Carbon 实例缺少 Onshape 的 OAuth 凭据。请让管理员进行设置。"
@@ -15716,7 +15716,7 @@ msgid "This completes the Discovery step."
 msgstr "这完成了发现步骤。"
 
 msgid "This contact has no email address"
-msgstr ""
+msgstr "此联系人没有电子邮件地址"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "该交易对手没有未结余额——该付款将记录为应收账款。"
@@ -15740,17 +15740,17 @@ msgid "this inspection plan"
 msgstr "这个检验计划"
 
 msgid "This integration isn't configured"
-msgstr ""
+msgstr "此集成未配置"
 
 #. placeholder {0}: company?.name ?? "Carbon"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
 msgstr "加入 {0} 的邀请已过期。您可以请求将新邀请发送到您的电子邮件。"
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr ""
+msgstr "此发票没有可用的到期日期 - 为 Stripe 选择一个。"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr ""
+msgstr "此发票将由已链接到此 Carbon 客户的 Stripe 客户结账。要更改其详细信息，请在 Stripe 仪表板中编辑。"
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "这是受控环境，因此需要身份验证器应用。"
@@ -15887,10 +15887,10 @@ msgid "This version cannot be opened"
 msgstr "无法打开此版本"
 
 msgid "This version is published"
-msgstr ""
+msgstr "此版本已发布"
 
 msgid "This version is published. Create a new version to edit."
-msgstr ""
+msgstr "此版本已发布。创建新版本以进行编辑。"
 
 msgid "This version's definition could not be read."
 msgstr "无法读取此版本的定义。"
@@ -15992,7 +15992,7 @@ msgid "Title"
 msgstr "标题"
 
 msgid "Title of the event"
-msgstr ""
+msgstr "事件标题"
 
 msgid "To Date"
 msgstr "截止日期"
@@ -16436,10 +16436,10 @@ msgid "unknown location"
 msgstr "未知位置"
 
 msgid "Unlimited functional support"
-msgstr ""
+msgstr "无限功能支持"
 
 msgid "Unlimited records"
-msgstr ""
+msgstr "无限记录"
 
 msgid "Unlink"
 msgstr "取消链接"
@@ -16484,10 +16484,10 @@ msgid "Unposted Documents"
 msgstr "未过账单据"
 
 msgid "Unpublish"
-msgstr ""
+msgstr "取消发布"
 
 msgid "Unpublish {name}?"
-msgstr ""
+msgstr "取消发布 {name}？"
 
 msgid "Unreceived POs"
 msgstr "未收到的采购订单"
@@ -16848,7 +16848,7 @@ msgstr "版本"
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
-msgstr ""
+msgstr "版本 {0} 现已发布，将被替换。"
 
 msgid "Version:"
 msgstr "版本："
@@ -17733,7 +17733,7 @@ msgid "You're live on Carbon"
 msgstr "您已在 Carbon 上线"
 
 msgid "You're one step away from your workspace."
-msgstr ""
+msgstr "您离工作区只有一步之遥。"
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "您正在按照自己的节奏自行设置 Carbon"

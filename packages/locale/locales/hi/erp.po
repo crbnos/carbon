@@ -83,7 +83,7 @@ msgstr "{0} ड्राफ्ट जर्नल प्रविष्टिय
 
 #. placeholder {0}: integration.name
 msgid "{0} isn't installed yet. There's nothing to configure — install it to connect an account."
-msgstr ""
+msgstr "{0} अभी इंस्टॉल नहीं किया गया है। कोई कॉन्फ़िगर नहीं करने के लिए है — इसे इंस्टॉल करें एक खाता कनेक्ट करने के लिए।"
 
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
@@ -155,7 +155,7 @@ msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% देय राशि का"
 
 msgid "{appName} isn't connected yet. Connect an account before this step can do anything."
-msgstr ""
+msgstr "{appName} अभी कनेक्ट नहीं किया गया है। इस चरण से पहले एक खाता कनेक्ट करें कुछ भी कर सकता है।"
 
 msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}% प्राप्य"
@@ -176,7 +176,7 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} में से {count} परिचालन"
 
 msgid "{hiddenCount} more: {hiddenNames}"
-msgstr ""
+msgstr "{hiddenCount} अधिक: {hiddenNames}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -310,7 +310,7 @@ msgid "4h"
 msgstr "4 घंटे"
 
 msgid "5 user minimum"
-msgstr ""
+msgstr "5 उपयोगकर्ता न्यूनतम"
 
 msgid "5-8 weeks"
 msgstr "5-8 सप्ताह"
@@ -367,7 +367,7 @@ msgid "A contractor is a supplier contact with particular abilities and availabl
 msgstr "एक ठेकेदार एक आपूर्तिकर्ता संपर्क है जिसके पास विशेष क्षमताएं और उपलब्ध घंटे हैं"
 
 msgid "A custom solution to meet your needs"
-msgstr ""
+msgstr "आपकी आवश्यकताओं को पूरा करने के लिए एक कस्टम समाधान"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "एक ग्राहक एक व्यवसाय या व्यक्ति है जो आपके पार्ट्स या सेवाएं खरीदता है।"
@@ -480,10 +480,10 @@ msgid "A Make to Order component whose parts are issued together into the parent
 msgstr "एक ऑर्डर टू मेक घटक जिसके भाग माता-पिता की नौकरी में एक साथ जारी किए जाते हैं — कोई अलग बिल्ड नहीं।"
 
 msgid "A managed cloud-hosted version of Carbon"
-msgstr ""
+msgstr "कार्बन का एक प्रबंधित क्लाउड-होस्ट किया गया संस्करण"
 
 msgid "A managed version with all the advanced features"
-msgstr ""
+msgstr "सभी उन्नत सुविधाओं के साथ एक प्रबंधित संस्करण"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "एक सामग्री एक भौतिक वस्तु है जिसका उपयोग एक भाग बनाने के लिए किया जाता है जिसे कई नौकरियों में उपयोग किया जा सकता है"
@@ -507,7 +507,7 @@ msgid "A new size will be created using a copy of the current size"
 msgstr "एक नया आकार वर्तमान आकार की प्रतिलिपि का उपयोग करके बनाया जाएगा"
 
 msgid "A new Stripe customer will be created"
-msgstr ""
+msgstr "एक नया Stripe ग्राहक बनाया जाएगा"
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "एक गैर-नकद दस्तावेज जो एक कारण खाते के विरुद्ध एक चालान को निपटाता है: एक क्रेडिट बकाया राशि को कम करता है, एक डेबिट इसे बढ़ाता है।"
@@ -949,7 +949,7 @@ msgid "Accounts referenced by posting defaults or journal history that have no p
 msgstr "पोस्टिंग डिफ़ॉल्ट या जर्नल इतिहास द्वारा संदर्भित खाते जिनके पास अभी तक कोई प्रदाता मानचित्रण नहीं है।"
 
 msgid "Accounts your workflows can act as. Add one for each account a workflow step should use."
-msgstr ""
+msgstr "खाते जिन के रूप में आपके वर्कफ़्लो कार्य कर सकते हैं। प्रत्येक खाते के लिए एक जोड़ें जो एक वर्कफ़्लो चरण को उपयोग करना चाहिए।"
 
 msgid "Accumulated Depreciation"
 msgstr "संचयी मूल्यह्रास"
@@ -1081,7 +1081,7 @@ msgid "Add a step"
 msgstr "एक चरण जोड़ें"
 
 msgid "Add account"
-msgstr ""
+msgstr "खाता जोड़ें"
 
 msgid "Add Account"
 msgstr "खाता जोड़ें"
@@ -1347,7 +1347,7 @@ msgid "All actions selected"
 msgstr "सभी कार्य चयनित"
 
 msgid "All advanced features available"
-msgstr ""
+msgstr "सभी उन्नत सुविधाएं उपलब्ध"
 
 msgid "All Audit Logs"
 msgstr "सभी ऑडिट लॉग"
@@ -1540,7 +1540,7 @@ msgid "An unexpected error occurred while connecting to Onshape. Try connecting 
 msgstr "Onshape से कनेक्ट करते समय एक अनपेक्षित त्रुटि हुई। दोबारा कनेक्ट करने का प्रयास करें।"
 
 msgid "An unexpected error occurred while connecting. Try connecting again."
-msgstr ""
+msgstr "कनेक्ट करते समय एक अप्रत्याशित त्रुटि हुई। फिर से कनेक्ट करने का प्रयास करें।"
 
 msgid "Analytics"
 msgstr "विश्लेषण"
@@ -1577,7 +1577,7 @@ msgid "Annotation updated"
 msgstr "एनोटेशन अपडेट किया गया"
 
 msgid "Another connection to this integration already has that name. Choose a different one."
-msgstr ""
+msgstr "इस एकीकरण के लिए एक और कनेक्शन पहले से ही उस नाम के साथ है। एक अलग चुनें।"
 
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "एक अन्य लागत केंद्र जिसमें यह रोल हो जाता है, आपको एक उप-लागत केंद्र को इसके मूल के अंतर्गत घोंसले के लिए सक्षम करता है जो पदानुक्रमित लागत रिपोर्टिंग के लिए।"
@@ -1628,10 +1628,10 @@ msgid "API keys for programmatic access to your Carbon data."
 msgstr "आपके Carbon डेटा के लिए प्रोग्रामेटिक एक्सेस के लिए API कुंजियाँ।"
 
 msgid "API, webhooks, and integrations"
-msgstr ""
+msgstr "API, webhooks, और एकीकरण"
 
 msgid "App"
-msgstr ""
+msgstr "ऐप"
 
 msgid "Applied"
 msgstr "लागू"
@@ -2312,7 +2312,7 @@ msgid "Attempts"
 msgstr "प्रयास"
 
 msgid "Attendees"
-msgstr ""
+msgstr "उपस्थिति"
 
 msgid "Attribute"
 msgstr "विशेषता"
@@ -2330,7 +2330,7 @@ msgid "Audit Log"
 msgstr "ऑडिट लॉग"
 
 msgid "Audit logging"
-msgstr ""
+msgstr "ऑडिट लॉगिंग"
 
 msgid "Audit Logging"
 msgstr "ऑडिट लॉगिंग"
@@ -2357,7 +2357,7 @@ msgid "Authenticator QR code"
 msgstr "प्रमाणकर्ता QR कोड"
 
 msgid "Authorization was refused. Try connecting again."
-msgstr ""
+msgstr "प्राधिकरण को अस्वीकार कर दिया गया। फिर से कनेक्ट करने का प्रयास करें।"
 
 msgid "Auto apply"
 msgstr "स्वचालित रूप से लागू करें"
@@ -2405,7 +2405,7 @@ msgid "Automatic Updates"
 msgstr "स्वचालित अपडेट"
 
 msgid "Automatic updates and backups"
-msgstr ""
+msgstr "स्वचालित अपडेट और बैकअप"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "आउटपुट की रिपोर्ट करते समय एक कार्य की गैर-ट्रैक की गई सामग्री की स्वचालित, आनुपातिक खपत — ट्रैक की गई सामग्री को मैन्युअल रूप से जारी किया जाता है।"
@@ -2505,7 +2505,7 @@ msgid "Base Price"
 msgstr "आधार मूल्य"
 
 msgid "Basic ERP, MES, and QMS functionality"
-msgstr ""
+msgstr "बुनियादी ERP, MES, और QMS कार्यक्षमता"
 
 msgid "Basic Information"
 msgstr "बुनियादी जानकारी"
@@ -2642,7 +2642,7 @@ msgid "Browse library"
 msgstr "लाइब्रेरी ब्राउज़ करें"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
-msgstr ""
+msgstr "प्रकाशित संस्करण को केवल-पढ़ने के लिए ब्राउज़ करें। आप अभी भी लेआउट को साफ करने के लिए चरणों को पुनर्व्यवस्थित कर सकते हैं।"
 
 msgid "Bucket"
 msgstr "बकेट"
@@ -2738,7 +2738,7 @@ msgid "Calculation Method"
 msgstr "गणना विधि"
 
 msgid "Calendar"
-msgstr ""
+msgstr "कैलेंडर"
 
 msgid "Calibration"
 msgstr "अंशांकन"
@@ -2852,7 +2852,7 @@ msgid "Cannot send RFQ"
 msgstr "RFQ नहीं भेज सकते"
 
 msgid "Cannot send through Stripe"
-msgstr ""
+msgstr "Stripe के माध्यम से नहीं भेज सकता"
 
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "अपलोड नहीं कर सकते — आपूर्तिकर्ता इंटरैक्शन अभी तक बनाया नहीं गया"
@@ -3060,7 +3060,7 @@ msgid "Check your email"
 msgstr "अपना ईमेल जांचें"
 
 msgid "Checking Stripe for this customer…"
-msgstr ""
+msgstr "इस ग्राहक के लिए Stripe की जांच की जा रही है…"
 
 msgid "Checkpoint ·"
 msgstr "चेकपॉइंट ·"
@@ -3069,7 +3069,7 @@ msgid "Checkpoints"
 msgstr "चेकपॉइंट्स"
 
 msgid "Choose {named} first."
-msgstr ""
+msgstr "पहले {named} चुनें।"
 
 msgid "Choose a batch number"
 msgstr "एक बैच नंबर चुनें"
@@ -3204,7 +3204,7 @@ msgid "Cloud, or your self-hosted environment."
 msgstr "क्लाउड, या आपका स्व-होस्ट किया गया वातावरण।"
 
 msgid "CMMC compliant"
-msgstr ""
+msgstr "CMMC अनुपालन"
 
 msgid "Code"
 msgstr "कोड"
@@ -3234,7 +3234,7 @@ msgid "Collapse subtree"
 msgstr "सबट्री को संक्षिप्त करें"
 
 msgid "Color"
-msgstr ""
+msgstr "रंग"
 
 msgid "Column dimension"
 msgstr "कॉलम आयाम"
@@ -3270,7 +3270,7 @@ msgid "Committing a receipt, shipment, or invoice: quantities move, journal entr
 msgstr "एक प्राप्ति, शिपमेंट या चालान की प्रतिबद्धता: मात्रा चलती है, जर्नल प्रविष्टियां बहीखाता को मारती हैं, और स्थिति पोस्ट की जाती है।"
 
 msgid "Community support"
-msgstr ""
+msgstr "सामुदायिक समर्थन"
 
 msgid "Companies"
 msgstr "कंपनियां"
@@ -3494,7 +3494,7 @@ msgid "Conflict reason"
 msgstr "संघर्ष कारण"
 
 msgid "Connect {appName}"
-msgstr ""
+msgstr "{appName} कनेक्ट करें"
 
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Carbon को अपने लेखांकन, परियोजना प्रबंधन, और CAD उपकरणों और बहुत कुछ से जोड़ें।"
@@ -3518,10 +3518,10 @@ msgid "Connected to"
 msgstr "को जोड़ा गया"
 
 msgid "Connection"
-msgstr ""
+msgstr "कनेक्शन"
 
 msgid "Connection name"
-msgstr ""
+msgstr "कनेक्शन का नाम"
 
 msgid "Console Mode"
 msgstr "कंसोल मोड"
@@ -3572,7 +3572,7 @@ msgid "Contact (optional)"
 msgstr "संपर्क (वैकल्पिक)"
 
 msgid "Contact us"
-msgstr ""
+msgstr "हमसे संपर्क करें"
 
 msgid "contacts"
 msgstr "संपर्क"
@@ -3910,7 +3910,7 @@ msgid "Could not save"
 msgstr "सहेज नहीं सके"
 
 msgid "Couldn't complete the connection"
-msgstr ""
+msgstr "कनेक्शन को पूरा नहीं कर सका"
 
 msgid "Couldn't complete the Onshape connection"
 msgstr "Onshape कनेक्शन पूरा नहीं हो सका"
@@ -3928,7 +3928,7 @@ msgid "Couldn't reschedule the job. Please try again."
 msgstr "कार्य पुनर्निर्धारित नहीं हो सका। कृपया पुनः प्रयास करें।"
 
 msgid "Couldn't save the connection"
-msgstr ""
+msgstr "कनेक्शन को सहेज नहीं सका"
 
 msgid "Couldn't save the Onshape connection"
 msgstr "Onshape कनेक्शन सहेजा नहीं जा सका"
@@ -3988,7 +3988,7 @@ msgid "Create a new production job to fulfill the sales order"
 msgstr "बिक्रय आदेश को पूरा करने के लिए एक नई उत्पादन नौकरी बनाएं"
 
 msgid "Create a new Stripe customer instead"
-msgstr ""
+msgstr "इसके बजाय एक नया Stripe ग्राहक बनाएं"
 
 msgid "Create a new version"
 msgstr "एक नया संस्करण बनाएं"
@@ -4024,7 +4024,7 @@ msgid "Create Change Notice"
 msgstr "परिवर्तन सूचना बनाएं"
 
 msgid "Create Google Meet Link"
-msgstr ""
+msgstr "Google Meet लिंक बनाएं"
 
 msgid "Create Issue"
 msgstr "समस्या बनाएं"
@@ -4462,7 +4462,7 @@ msgid "Customers"
 msgstr "ग्राहक"
 
 msgid "Customizations, training, and integrations"
-msgstr ""
+msgstr "अनुकूलन, प्रशिक्षण, और एकीकरण"
 
 msgid "Customize"
 msgstr "अनुकूलित करें"
@@ -4549,7 +4549,7 @@ msgid "Date Due"
 msgstr "देय तारीख"
 
 msgid "Date from"
-msgstr ""
+msgstr "तारीख से"
 
 msgid "Date issued"
 msgstr "जारी करने की तारीख"
@@ -4564,7 +4564,7 @@ msgid "Date Paid"
 msgstr "भुगतान की तारीख"
 
 msgid "Date to"
-msgstr ""
+msgstr "तारीख को"
 
 msgid "Dates"
 msgstr "तारीखें"
@@ -6033,7 +6033,7 @@ msgid "End Date"
 msgstr "अंतिम तारीख"
 
 msgid "End date time of the event"
-msgstr ""
+msgstr "इवेंट का समाप्ति तारीख समय"
 
 msgid "End of Last Fiscal Year"
 msgstr "पिछले वित्तीय वर्ष का अंत"
@@ -6254,7 +6254,7 @@ msgid "Event Type"
 msgstr "ईवेंट प्रकार"
 
 msgid "Event types"
-msgstr ""
+msgstr "इवेंट प्रकार"
 
 msgid "Events"
 msgstr "घटनाएं"
@@ -6317,7 +6317,7 @@ msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "मौजूदा मैपिंग। पुनः-मैप करने के लिए एक अलग प्रदाता विकल्प चुनें।"
 
 msgid "Existing Stripe customer"
-msgstr ""
+msgstr "मौजूदा Stripe ग्राहक"
 
 msgid "Expand"
 msgstr "विस्तार करें"
@@ -6342,7 +6342,7 @@ msgid "Expand Machine"
 msgstr "मशीन का विस्तार करें"
 
 msgid "Expand Recurring Event?"
-msgstr ""
+msgstr "आवर्ती इवेंट विस्तृत करें?"
 
 msgid "Expand Setup"
 msgstr "सेटअप विस्तृत करें"
@@ -7041,7 +7041,7 @@ msgid "Format"
 msgstr "प्रारूप"
 
 msgid "Forward deployed engineer"
-msgstr ""
+msgstr "फॉरवर्ड तैनात इंजीनियर"
 
 msgid "Foundation"
 msgstr "आधार"
@@ -7097,7 +7097,7 @@ msgid "Full name"
 msgstr "पूरा नाम"
 
 msgid "Full setup and migrations"
-msgstr ""
+msgstr "पूर्ण सेटअप और माइग्रेशन"
 
 msgid "Fully Depreciated"
 msgstr "पूरी तरह से मूल्यह्रास"
@@ -7380,10 +7380,10 @@ msgid "Good morning, {0}"
 msgstr "शुभ प्रभात, {0}"
 
 msgid "Google Calendar: Create Event"
-msgstr ""
+msgstr "Google Calendar: इवेंट बनाएं"
 
 msgid "Google Calendar: Get all Events"
-msgstr ""
+msgstr "Google Calendar: सभी इवेंट प्राप्त करें"
 
 msgid "Google Places API key not configured"
 msgstr "Google Places API key कॉन्फ़िगर नहीं है"
@@ -7428,13 +7428,13 @@ msgid "Groups"
 msgstr "समूह"
 
 msgid "Guests can invite others"
-msgstr ""
+msgstr "अतिथि दूसरों को आमंत्रित कर सकते हैं"
 
 msgid "Guests can modify"
-msgstr ""
+msgstr "अतिथि संशोधन कर सकते हैं"
 
 msgid "Guests can see other guests"
-msgstr ""
+msgstr "अतिथि अन्य अतिथियों को देख सकते हैं"
 
 msgid "Guided"
 msgstr "निर्देशित"
@@ -8209,7 +8209,7 @@ msgid "Issues"
 msgstr "समस्याएं"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
-msgstr ""
+msgstr "यह तब तक चलना बंद कर देगा जब तक आप फिर से एक संस्करण प्रकाशित न करें। कुछ भी हटाया नहीं गया है।"
 
 msgid "ITAR Certifications"
 msgstr "ITAR प्रमाणपत्र"
@@ -8571,7 +8571,7 @@ msgid "Less manual work, fewer errors"
 msgstr "कम मैनुअल काम, कम त्रुटियां"
 
 msgid "Let's Build"
-msgstr ""
+msgstr "आइए निर्माण करें"
 
 msgid "Let's build something"
 msgstr "चलिए कुछ बनाते हैं"
@@ -8652,7 +8652,7 @@ msgid "Link Linear Issue"
 msgstr "Linear समस्या को लिंक करें"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
-msgstr ""
+msgstr "इस Carbon ग्राहक को उनमें से किसी एक से जोड़ें, या एक अलग Stripe ग्राहक बनाएं।"
 
 msgid "Link to sales order line"
 msgstr "बिक्रय आदेश पंक्ति से लिंक करें"
@@ -9836,7 +9836,7 @@ msgid "No Access"
 msgstr "कोई एक्सेस नहीं"
 
 msgid "No accounts connected yet."
-msgstr ""
+msgstr "अभी तक कोई खाता जुड़ा नहीं है।"
 
 msgid "No accounts mapped yet"
 msgstr "अभी तक कोई खाते मैप नहीं किए गए"
@@ -9879,7 +9879,7 @@ msgid "No attachments."
 msgstr "कोई अनुलग्नक नहीं।"
 
 msgid "No authorization code was returned"
-msgstr ""
+msgstr "कोई प्राधिकरण कोड नहीं लौटाया गया"
 
 msgid "No available filters"
 msgstr "कोई उपलब्ध फ़िल्टर नहीं"
@@ -10336,7 +10336,7 @@ msgid "Nothing in the archive"
 msgstr "आर्काइव में कुछ नहीं है"
 
 msgid "Nothing to choose yet - <0>set one up in Settings</0>."
-msgstr ""
+msgstr "अभी तक कुछ भी चुनने के लिए नहीं है - <0>Settings में एक सेट करें</0>।"
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "अभी कुछ नहीं। एक स्टेप केवल तभी मूल्य प्रदान करता है जब इसे कॉन्फ़िगर किया जाता है।"
@@ -11705,7 +11705,7 @@ msgid "Published by Carbon"
 msgstr "Carbon द्वारा प्रकाशित"
 
 msgid "Published Version"
-msgstr ""
+msgstr "प्रकाशित संस्करण"
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "प्रकाशित संस्करणों को संपादित नहीं किया जा सकता। केवल-पठन के लिए देखें, या परिवर्तन करने के लिए एक नया संस्करण शाखा करें।"
@@ -12725,7 +12725,7 @@ msgid "Reverse any item ledger entries from this invoice"
 msgstr "इस चालान से किसी भी आइटम लेजर प्रविष्टियों को उलट दें"
 
 msgid "Reverse charge"
-msgstr ""
+msgstr "रिवर्स चार्ज"
 
 msgid "Reverse Charge Sales Tax"
 msgstr "रिवर्स चार्ज बिक्रय कर"
@@ -13307,7 +13307,7 @@ msgid "Search suppliers..."
 msgstr "आपूर्तिकर्ताओं को खोजें..."
 
 msgid "Search Term"
-msgstr ""
+msgstr "खोज शब्द"
 
 msgid "Search tools..."
 msgstr "उपकरण खोजें..."
@@ -13386,7 +13386,7 @@ msgid "Select a shape first to see available options"
 msgstr "उपलब्ध विकल्प देखने के लिए पहले एक आकार चुनें"
 
 msgid "Select a step…"
-msgstr ""
+msgstr "एक कदम चुनें…"
 
 msgid "Select a substance and shape first to see available options"
 msgstr "उपलब्ध विकल्प देखने के लिए पहले एक पदार्थ और आकार चुनें"
@@ -13407,7 +13407,7 @@ msgid "Select an action…"
 msgstr "एक क्रिया चुनें…"
 
 msgid "Select an app…"
-msgstr ""
+msgstr "एक ऐप चुनें…"
 
 msgid "Select an assignee"
 msgstr "एक असाइनी चुनें"
@@ -13434,7 +13434,7 @@ msgid "Select an option"
 msgstr "एक विकल्प चुनें"
 
 msgid "Select an option…"
-msgstr ""
+msgstr "एक विकल्प चुनें…"
 
 msgid "Select at least one line to convert"
 msgstr "परिवर्तित करने के लिए कम से कम एक पंक्ति चुनें"
@@ -13552,10 +13552,10 @@ msgid "Self Managed"
 msgstr "स्व प्रबंधित"
 
 msgid "Self-hosted or managed"
-msgstr ""
+msgstr "स्व-होस्टेड या प्रबंधित"
 
 msgid "Self-onboarding"
-msgstr ""
+msgstr "स्व-ऑनबोर्डिंग"
 
 msgid "Self-paced"
 msgstr "स्व-गति"
@@ -13576,7 +13576,7 @@ msgid "Send Invites"
 msgstr "आमंत्रण भेजें"
 
 msgid "Send Notifications"
-msgstr ""
+msgstr "सूचनाएं भेजें"
 
 msgid "Send RFQ to Suppliers"
 msgstr "आपूर्तिकर्ताओं को RFQ भेजें"
@@ -13980,7 +13980,7 @@ msgid "Shown to the user when this rule fails."
 msgstr "जब यह नियम विफल हो तो उपयोगकर्ता को दिखाया जाता है।"
 
 msgid "Sign in to Carbon"
-msgstr ""
+msgstr "Carbon में साइन इन करें"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "जादुई लिंक के बजाय बायोमेट्रिक्स के साथ साइन इन करें। पासकीज़ Face ID, Touch ID, या आपकी डिवाइस PIN द्वारा सुरक्षित हैं।"
@@ -14184,7 +14184,7 @@ msgid "Split shipment line"
 msgstr "शिपमेंट लाइन को विभाजित करें"
 
 msgid "SSO/SAML"
-msgstr ""
+msgstr "SSO/SAML"
 
 msgid "Stand up hosting"
 msgstr "होस्टिंग सेट अप करें"
@@ -14224,7 +14224,7 @@ msgid "Start Date"
 msgstr "शुरुआत तारीख"
 
 msgid "Start date time of the event"
-msgstr ""
+msgstr "इवेंट का प्रारंभ तारीख समय"
 
 msgid "Start Expiration"
 msgstr "समाप्ति शुरू करें"
@@ -14399,19 +14399,19 @@ msgid "Straight line"
 msgstr "सीधी रेखा"
 
 msgid "Stripe"
-msgstr ""
+msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr ""
+msgstr "Stripe के पास पहले से इस ईमेल के साथ एक ग्राहक है"
 
 msgid "Stripe Due Date"
-msgstr ""
+msgstr "Stripe देय तारीख"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr ""
+msgstr "Stripe ग्राहक को चालान ईमेल करता है, इसलिए एक पता आवश्यक है। यह Carbon में संपर्क को भी सहेजा जाएगा।"
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr ""
+msgstr "Stripe के पास इस Carbon ग्राहक के लिए अभी तक कोई ग्राहक नहीं है। पोस्टिंग आपके जुड़े खाते में एक बनाएगी।"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Kanban तालिका में दिखाने के लिए kanban आउटपुट की शैली"
@@ -14826,7 +14826,7 @@ msgid "Tax Depreciation Method"
 msgstr "कर मूल्यह्रास पद्धति"
 
 msgid "Tax exempt"
-msgstr ""
+msgstr "कर छूट"
 
 msgid "Tax Exempt"
 msgstr "कर छूट"
@@ -14874,7 +14874,7 @@ msgid "Team trained"
 msgstr "टीम प्रशिक्षित"
 
 msgid "Technical support"
-msgstr ""
+msgstr "तकनीकी सहायता"
 
 msgid "Temperature"
 msgstr "तापमान"
@@ -14913,13 +14913,13 @@ msgid "Text size"
 msgstr "पाठ आकार"
 
 msgid "That connection name is already used"
-msgstr ""
+msgstr "वह कनेक्शन नाम पहले से उपयोग किया जा रहा है"
 
 msgid "That name is already used by another step."
 msgstr "वह नाम पहले से ही एक अन्य चरण द्वारा उपयोग किया जा रहा है।"
 
 msgid "That name is already used."
-msgstr ""
+msgstr "वह नाम पहले से उपयोग किया जा रहा है।"
 
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
@@ -14959,13 +14959,13 @@ msgid "The append-only record of every stock movement; on-hand is the sum of its
 msgstr "प्रत्येक स्टॉक आंदोलन का केवल-परिशिष्ट रिकॉर्ड; हाथ में राशि इसकी हस्ताक्षरित प्रविष्टियों का योग है और सत्य का स्रोत है।"
 
 msgid "The authorization took too long or came back altered. Start the connection again from this page."
-msgstr ""
+msgstr "प्राधिकरण में बहुत लंबा समय लगा या यह बदला हुआ वापस आ गया। इस पृष्ठ से कनेक्शन फिर से शुरू करें।"
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Onshape में प्राधिकरण अस्वीकार कर दिया गया। दोबारा कनेक्ट करने का प्रयास करें।"
 
 msgid "The authorization was rejected"
-msgstr ""
+msgstr "प्राधिकरण को अस्वीकार कर दिया गया"
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "सभी पोस्ट की गई जर्नल पंक्तियों की पुस्तक, खाते द्वारा योग किया गया - केवल तभी लिखा जाता है जब कंपनी के लिए लेखांकन सक्षम हो।"
@@ -15037,10 +15037,10 @@ msgid "The code printed on the kanban card that operators scan to mark the job c
 msgstr "कन्बन कार्ड पर मुद्रित कोड जिसे ऑपरेटर नौकरी को पूर्ण के रूप में चिह्नित करने के लिए स्कैन करते हैं; यदि खाली छोड़ा जाता है तो स्वचालित रूप से उत्पन्न होता है।"
 
 msgid "The connection could not be verified"
-msgstr ""
+msgstr "कनेक्शन को सत्यापित नहीं किया जा सका"
 
 msgid "The connection was refused"
-msgstr ""
+msgstr "कनेक्शन अस्वीकार किया गया"
 
 msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
 msgstr "ठेकेदार की अपेक्षित साप्ताहिक उपलब्धता; शेड्यूलिंग इसे ऊपरी सीमा के रूप में उपयोग करता है जब इस ठेकेदार को सप्ताह भर के संचालन को असाइन करता है।"
@@ -15226,7 +15226,7 @@ msgid "The Incoterm rule (FOB, DAP, EXW, CIF, …) that governs who pays freight
 msgstr "Incoterm नियम (FOB, DAP, EXW, CIF, ...) जो नियंत्रित करता है कि इस ग्राहक को माल भेजने पर कौन माल ढुलाई का भुगतान करता है, जोखिम कौन लेता है और शीर्षक का हस्तांतरण कहां होता है।"
 
 msgid "The integration authorized the connection but saving it failed. Try connecting again."
-msgstr ""
+msgstr "एकीकरण ने कनेक्शन को अधिकृत किया लेकिन इसे सहेजने में विफल रहा। फिर से कनेक्ट करने का प्रयास करें।"
 
 msgid "The inventory cost recognized when a shipment posts, valued by the item's costing method."
 msgstr "इन्वेंटरी लागत जो शिपमेंट पोस्ट होने पर पहचानी जाती है, वस्तु की लागत पद्धति द्वारा मूल्यांकित।"
@@ -15479,7 +15479,7 @@ msgid "The response from Onshape was missing required parameters. Try connecting
 msgstr "Onshape की प्रतिक्रिया में आवश्यक पैरामीटर नहीं थे। दोबारा कनेक्ट करने का प्रयास करें।"
 
 msgid "The response was missing required parameters. Try connecting again."
-msgstr ""
+msgstr "प्रतिक्रिया में आवश्यक पैरामीटर गायब थे। फिर से कनेक्ट करने का प्रयास करें।"
 
 msgid "The result will not appear on the Runs page."
 msgstr "परिणाम Runs page पर प्रदर्शित नहीं होगा।"
@@ -15701,7 +15701,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "ये जर्नल प्रविष्टियाँ अभी भी ड्राफ्ट हैं, इसलिए उनके डेबिट और क्रेडिट इस अवधि के लिए लेजर में नहीं हैं। प्रत्येक को पोस्ट करें, या इसे बाद की खुली अवधि में पुनः दिनांकित करें।"
 
 msgid "This Carbon instance is missing its OAuth credentials for this integration. Ask an administrator to set them."
-msgstr ""
+msgstr "यह Carbon उदाहरण इस एकीकरण के लिए अपने OAuth क्रेडेंशियल गायब हैं। व्यवस्थापक को उन्हें सेट करने के लिए कहें।"
 
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "इस Carbon इंस्टेंस में Onshape OAuth क्रेडेंशियल नहीं हैं। किसी व्यवस्थापक से उन्हें सेट करने के लिए कहें।"
@@ -15716,7 +15716,7 @@ msgid "This completes the Discovery step."
 msgstr "यह Discovery चरण को पूरा करता है।"
 
 msgid "This contact has no email address"
-msgstr ""
+msgstr "इस संपर्क के पास कोई ईमेल पता नहीं है"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "यह प्रतिपक्ष के पास कुछ भी बकाया नहीं है — भुगतान खाते पर दर्ज किया जाएगा।"
@@ -15740,17 +15740,17 @@ msgid "this inspection plan"
 msgstr "इस निरीक्षण योजना"
 
 msgid "This integration isn't configured"
-msgstr ""
+msgstr "यह एकीकरण कॉन्फ़िगर नहीं किया गया है"
 
 #. placeholder {0}: company?.name ?? "Carbon"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
 msgstr "यह आमंत्रण {0} में शामिल होने के लिए समाप्त हो गया है। आप अपने ईमेल पर भेजने के लिए नया आमंत्रण का अनुरोध कर सकते हैं।"
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr ""
+msgstr "इस चालान का कोई उपयोगी देय तिथि नहीं है — Stripe के लिए एक चुनें।"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr ""
+msgstr "इस चालान को Stripe ग्राहक को बिल दिया जाएगा जो पहले से इस Carbon ग्राहक से जुड़ा हुआ है। इसके विवरण को बदलने के लिए, इसे Stripe डैशबोर्ड में संपादित करें।"
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "यह एक नियंत्रित वातावरण है, इसलिए एक प्रमाणकर्ता ऐप की आवश्यकता है।"
@@ -15887,10 +15887,10 @@ msgid "This version cannot be opened"
 msgstr "यह version खोला नहीं जा सकता"
 
 msgid "This version is published"
-msgstr ""
+msgstr "यह संस्करण प्रकाशित है"
 
 msgid "This version is published. Create a new version to edit."
-msgstr ""
+msgstr "यह संस्करण प्रकाशित है। संपादित करने के लिए एक नया संस्करण बनाएं।"
 
 msgid "This version's definition could not be read."
 msgstr "इस version की परिभाषा को पढ़ा नहीं जा सका।"
@@ -15992,7 +15992,7 @@ msgid "Title"
 msgstr "शीर्षक"
 
 msgid "Title of the event"
-msgstr ""
+msgstr "घटना का शीर्षक"
 
 msgid "To Date"
 msgstr "दिनांक तक"
@@ -16436,10 +16436,10 @@ msgid "unknown location"
 msgstr "अज्ञात स्थान"
 
 msgid "Unlimited functional support"
-msgstr ""
+msgstr "असीमित कार्यात्मक समर्थन"
 
 msgid "Unlimited records"
-msgstr ""
+msgstr "असीमित रिकॉर्ड"
 
 msgid "Unlink"
 msgstr "अनलिंक करें"
@@ -16484,10 +16484,10 @@ msgid "Unposted Documents"
 msgstr "अपोस्ट किए गए दस्तावेज़"
 
 msgid "Unpublish"
-msgstr ""
+msgstr "प्रकाशन रद्द करें"
 
 msgid "Unpublish {name}?"
-msgstr ""
+msgstr "प्रकाशन रद्द करें {name}?"
 
 msgid "Unreceived POs"
 msgstr "अप्राप्त POs"
@@ -16848,7 +16848,7 @@ msgstr "संस्करण"
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
-msgstr ""
+msgstr "संस्करण {0} अभी प्रकाशित है और इसे बदला जाएगा।"
 
 msgid "Version:"
 msgstr "संस्करण:"
@@ -17733,7 +17733,7 @@ msgid "You're live on Carbon"
 msgstr "आप Carbon पर लाइव हैं"
 
 msgid "You're one step away from your workspace."
-msgstr ""
+msgstr "आप अपने कार्यक्षेत्र से एक कदम दूर हैं।"
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "आप Carbon को स्वयं सेट अप कर रहे हैं, अपनी गति से"

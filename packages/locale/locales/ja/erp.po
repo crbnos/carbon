@@ -83,7 +83,7 @@ msgstr "{0}件の下書き仕訳"
 
 #. placeholder {0}: integration.name
 msgid "{0} isn't installed yet. There's nothing to configure — install it to connect an account."
-msgstr ""
+msgstr "{0}はまだインストールされていません。設定することはできません—アカウントに接続するためにインストールしてください。"
 
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
@@ -155,7 +155,7 @@ msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}%の買掛金"
 
 msgid "{appName} isn't connected yet. Connect an account before this step can do anything."
-msgstr ""
+msgstr "{appName}はまだ接続されていません。このステップが機能する前にアカウントを接続してください。"
 
 msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}%の売掛金"
@@ -176,7 +176,7 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{from}～{to}件 (合計{count}件の操作)"
 
 msgid "{hiddenCount} more: {hiddenNames}"
-msgstr ""
+msgstr "他に{hiddenCount}個: {hiddenNames}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -310,7 +310,7 @@ msgid "4h"
 msgstr "4時間"
 
 msgid "5 user minimum"
-msgstr ""
+msgstr "最小5ユーザー"
 
 msgid "5-8 weeks"
 msgstr "5～8週間"
@@ -367,7 +367,7 @@ msgid "A contractor is a supplier contact with particular abilities and availabl
 msgstr "契約者は、特定の能力と利用可能な時間を持つサプライヤー連絡先です"
 
 msgid "A custom solution to meet your needs"
-msgstr ""
+msgstr "お客様のニーズに合わせたカスタムソリューション"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "顧客とは、あなたの部品またはサービスを購入する企業または個人です。"
@@ -480,10 +480,10 @@ msgid "A Make to Order component whose parts are issued together into the parent
 msgstr "その部品が親ジョブに一緒に発行される受注製造コンポーネント—別のビルドはありません。"
 
 msgid "A managed cloud-hosted version of Carbon"
-msgstr ""
+msgstr "Carbon のマネージドクラウドホスト版"
 
 msgid "A managed version with all the advanced features"
-msgstr ""
+msgstr "すべての高度な機能を備えたマネージドバージョン"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "材料は、複数のジョブで使用できるパーツを作成するために使用される物理的なアイテムです"
@@ -507,7 +507,7 @@ msgid "A new size will be created using a copy of the current size"
 msgstr "新しいサイズが現在のサイズのコピーを使用して作成されます"
 
 msgid "A new Stripe customer will be created"
-msgstr ""
+msgstr "新しい Stripe カスタマーが作成されます"
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "請求書を理由勘定に対して決済する非現金ドキュメント。クレジットは債務額を低下させ、デビットは債務額を増加させます。"
@@ -949,7 +949,7 @@ msgid "Accounts referenced by posting defaults or journal history that have no p
 msgstr "転記デフォルトまたはジャーナル履歴で参照されているが、プロバイダーマッピングがまだない勘定科目。"
 
 msgid "Accounts your workflows can act as. Add one for each account a workflow step should use."
-msgstr ""
+msgstr "ワークフローが動作するアカウント。ワークフロー ステップが使用する各アカウントに対して 1 つ追加してください。"
 
 msgid "Accumulated Depreciation"
 msgstr "累計減価償却費"
@@ -1081,7 +1081,7 @@ msgid "Add a step"
 msgstr "ステップを追加"
 
 msgid "Add account"
-msgstr ""
+msgstr "アカウントを追加"
 
 msgid "Add Account"
 msgstr "勘定科目を追加"
@@ -1347,7 +1347,7 @@ msgid "All actions selected"
 msgstr "すべてのアクションが選択されました"
 
 msgid "All advanced features available"
-msgstr ""
+msgstr "すべての高度な機能が利用可能"
 
 msgid "All Audit Logs"
 msgstr "すべての監査ログ"
@@ -1540,7 +1540,7 @@ msgid "An unexpected error occurred while connecting to Onshape. Try connecting 
 msgstr "Onshape への接続中に予期しないエラーが発生しました。もう一度接続してください。"
 
 msgid "An unexpected error occurred while connecting. Try connecting again."
-msgstr ""
+msgstr "接続中に予期しないエラーが発生しました。もう一度接続してみてください。"
 
 msgid "Analytics"
 msgstr "分析"
@@ -1577,7 +1577,7 @@ msgid "Annotation updated"
 msgstr "注釈が更新されました"
 
 msgid "Another connection to this integration already has that name. Choose a different one."
-msgstr ""
+msgstr "この統合への別の接続がすでにその名前を持っています。別の名前を選択してください。"
 
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "これが集計される別のコストセンター。階層的なコストレポート用に、親の下に部分コストセンターをネストできます。"
@@ -1628,10 +1628,10 @@ msgid "API keys for programmatic access to your Carbon data."
 msgstr "Carbonデータへのプログラマティックアクセス用のAPIキー。"
 
 msgid "API, webhooks, and integrations"
-msgstr ""
+msgstr "API、ウェブフック、統合"
 
 msgid "App"
-msgstr ""
+msgstr "アプリ"
 
 msgid "Applied"
 msgstr "適用"
@@ -2312,7 +2312,7 @@ msgid "Attempts"
 msgstr "試行"
 
 msgid "Attendees"
-msgstr ""
+msgstr "参加者"
 
 msgid "Attribute"
 msgstr "属性"
@@ -2330,7 +2330,7 @@ msgid "Audit Log"
 msgstr "監査ログ"
 
 msgid "Audit logging"
-msgstr ""
+msgstr "監査ログ"
 
 msgid "Audit Logging"
 msgstr "監査ログ"
@@ -2357,7 +2357,7 @@ msgid "Authenticator QR code"
 msgstr "認証器QRコード"
 
 msgid "Authorization was refused. Try connecting again."
-msgstr ""
+msgstr "認可が拒否されました。もう一度接続してみてください。"
 
 msgid "Auto apply"
 msgstr "自動適用"
@@ -2405,7 +2405,7 @@ msgid "Automatic Updates"
 msgstr "自動更新"
 
 msgid "Automatic updates and backups"
-msgstr ""
+msgstr "自動更新とバックアップ"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "出力が報告されるとジョブの追跡されていない材料の自動的な比例消費。追跡された材料は手動で発行されます。"
@@ -2505,7 +2505,7 @@ msgid "Base Price"
 msgstr "基本価格"
 
 msgid "Basic ERP, MES, and QMS functionality"
-msgstr ""
+msgstr "基本的な ERP、MES、QMS 機能"
 
 msgid "Basic Information"
 msgstr "基本情報"
@@ -2642,7 +2642,7 @@ msgid "Browse library"
 msgstr "ライブラリを参照"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
-msgstr ""
+msgstr "公開されたバージョンを読み取り専用で参照します。ステップを再配置してレイアウトをきれいにすることができます。"
 
 msgid "Bucket"
 msgstr "バケット"
@@ -2738,7 +2738,7 @@ msgid "Calculation Method"
 msgstr "計算方法"
 
 msgid "Calendar"
-msgstr ""
+msgstr "カレンダー"
 
 msgid "Calibration"
 msgstr "キャリブレーション"
@@ -2852,7 +2852,7 @@ msgid "Cannot send RFQ"
 msgstr "RFQを送信できません"
 
 msgid "Cannot send through Stripe"
-msgstr ""
+msgstr "Stripe 経由で送信できません"
 
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "アップロードできません — サプライヤーインタラクションがまだ作成されていません"
@@ -3060,7 +3060,7 @@ msgid "Check your email"
 msgstr "メールを確認してください"
 
 msgid "Checking Stripe for this customer…"
-msgstr ""
+msgstr "このカスタマーの Stripe を確認中…"
 
 msgid "Checkpoint ·"
 msgstr "チェックポイント ·"
@@ -3069,7 +3069,7 @@ msgid "Checkpoints"
 msgstr "チェックポイント"
 
 msgid "Choose {named} first."
-msgstr ""
+msgstr "まず {named} を選択してください。"
 
 msgid "Choose a batch number"
 msgstr "バッチ番号を選択"
@@ -3204,7 +3204,7 @@ msgid "Cloud, or your self-hosted environment."
 msgstr "クラウド、またはセルフホストされた環境。"
 
 msgid "CMMC compliant"
-msgstr ""
+msgstr "CMMC 準拠"
 
 msgid "Code"
 msgstr "コード"
@@ -3234,7 +3234,7 @@ msgid "Collapse subtree"
 msgstr "サブツリーを折りたたむ"
 
 msgid "Color"
-msgstr ""
+msgstr "色"
 
 msgid "Column dimension"
 msgstr "列ディメンション"
@@ -3270,7 +3270,7 @@ msgid "Committing a receipt, shipment, or invoice: quantities move, journal entr
 msgstr "領収書、出荷、または請求書のコミット: 数量が移動し、仕訳帳エントリが元帳に記載され、ステータスが投稿されます。"
 
 msgid "Community support"
-msgstr ""
+msgstr "コミュニティサポート"
 
 msgid "Companies"
 msgstr "企業"
@@ -3494,7 +3494,7 @@ msgid "Conflict reason"
 msgstr "紛争の理由"
 
 msgid "Connect {appName}"
-msgstr ""
+msgstr "{appName} に接続"
 
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Carbonを会計、プロジェクト管理、CADツールなど、さまざまなツールに接続できます。"
@@ -3518,10 +3518,10 @@ msgid "Connected to"
 msgstr "接続先"
 
 msgid "Connection"
-msgstr ""
+msgstr "接続"
 
 msgid "Connection name"
-msgstr ""
+msgstr "接続名"
 
 msgid "Console Mode"
 msgstr "コンソールモード"
@@ -3572,7 +3572,7 @@ msgid "Contact (optional)"
 msgstr "連絡先（オプション）"
 
 msgid "Contact us"
-msgstr ""
+msgstr "お問い合わせ"
 
 msgid "contacts"
 msgstr "連絡先"
@@ -3910,7 +3910,7 @@ msgid "Could not save"
 msgstr "保存できませんでした"
 
 msgid "Couldn't complete the connection"
-msgstr ""
+msgstr "接続を完了できませんでした"
 
 msgid "Couldn't complete the Onshape connection"
 msgstr "Onshape 接続を完了できませんでした"
@@ -3928,7 +3928,7 @@ msgid "Couldn't reschedule the job. Please try again."
 msgstr "ジョブを再スケジュールできませんでした。もう一度お試しください。"
 
 msgid "Couldn't save the connection"
-msgstr ""
+msgstr "接続を保存できませんでした"
 
 msgid "Couldn't save the Onshape connection"
 msgstr "Onshape 接続を保存できませんでした"
@@ -3988,7 +3988,7 @@ msgid "Create a new production job to fulfill the sales order"
 msgstr "販売注文を履行するための新しい生産ジョブを作成します"
 
 msgid "Create a new Stripe customer instead"
-msgstr ""
+msgstr "代わりに新しい Stripe カスタマーを作成"
 
 msgid "Create a new version"
 msgstr "新しいバージョンを作成"
@@ -4024,7 +4024,7 @@ msgid "Create Change Notice"
 msgstr "変更通知を作成"
 
 msgid "Create Google Meet Link"
-msgstr ""
+msgstr "Google Meet リンクを作成"
 
 msgid "Create Issue"
 msgstr "問題を作成"
@@ -4462,7 +4462,7 @@ msgid "Customers"
 msgstr "顧客"
 
 msgid "Customizations, training, and integrations"
-msgstr ""
+msgstr "カスタマイズ、トレーニング、統合"
 
 msgid "Customize"
 msgstr "カスタマイズ"
@@ -4549,7 +4549,7 @@ msgid "Date Due"
 msgstr "支払期日"
 
 msgid "Date from"
-msgstr ""
+msgstr "開始日"
 
 msgid "Date issued"
 msgstr "発行日"
@@ -4564,7 +4564,7 @@ msgid "Date Paid"
 msgstr "支払日"
 
 msgid "Date to"
-msgstr ""
+msgstr "終了日"
 
 msgid "Dates"
 msgstr "日付"
@@ -6033,7 +6033,7 @@ msgid "End Date"
 msgstr "終了日"
 
 msgid "End date time of the event"
-msgstr ""
+msgstr "イベントの終了日時"
 
 msgid "End of Last Fiscal Year"
 msgstr "前会計年度末"
@@ -6254,7 +6254,7 @@ msgid "Event Type"
 msgstr "イベントタイプ"
 
 msgid "Event types"
-msgstr ""
+msgstr "イベントタイプ"
 
 msgid "Events"
 msgstr "イベント"
@@ -6317,7 +6317,7 @@ msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "既存のマッピング。異なるプロバイダーオプションを選択して再マップしてください。"
 
 msgid "Existing Stripe customer"
-msgstr ""
+msgstr "既存のStripeカスタマー"
 
 msgid "Expand"
 msgstr "展開"
@@ -6342,7 +6342,7 @@ msgid "Expand Machine"
 msgstr "機械を展開"
 
 msgid "Expand Recurring Event?"
-msgstr ""
+msgstr "定期イベントを展開しますか？"
 
 msgid "Expand Setup"
 msgstr "段取りを展開"
@@ -7041,7 +7041,7 @@ msgid "Format"
 msgstr "フォーマット"
 
 msgid "Forward deployed engineer"
-msgstr ""
+msgstr "フォワードデプロイエンジニア"
 
 msgid "Foundation"
 msgstr "基礎"
@@ -7097,7 +7097,7 @@ msgid "Full name"
 msgstr "氏名"
 
 msgid "Full setup and migrations"
-msgstr ""
+msgstr "フルセットアップとマイグレーション"
 
 msgid "Fully Depreciated"
 msgstr "完全償却済み"
@@ -7380,10 +7380,10 @@ msgid "Good morning, {0}"
 msgstr "おはようございます、{0}"
 
 msgid "Google Calendar: Create Event"
-msgstr ""
+msgstr "Google Calendar: イベントを作成"
 
 msgid "Google Calendar: Get all Events"
-msgstr ""
+msgstr "Google Calendar: すべてのイベントを取得"
 
 msgid "Google Places API key not configured"
 msgstr "Google Places APIキーが設定されていません"
@@ -7428,13 +7428,13 @@ msgid "Groups"
 msgstr "グループ"
 
 msgid "Guests can invite others"
-msgstr ""
+msgstr "ゲストは他の人を招待できます"
 
 msgid "Guests can modify"
-msgstr ""
+msgstr "ゲストは変更できます"
 
 msgid "Guests can see other guests"
-msgstr ""
+msgstr "ゲストは他のゲストを見ることができます"
 
 msgid "Guided"
 msgstr "ガイド付き"
@@ -8209,7 +8209,7 @@ msgid "Issues"
 msgstr "問題"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
-msgstr ""
+msgstr "バージョンを再び公開するまで実行は停止します。何も削除されません。"
 
 msgid "ITAR Certifications"
 msgstr "ITAR認定"
@@ -8571,7 +8571,7 @@ msgid "Less manual work, fewer errors"
 msgstr "手作業を減らし、エラーを削減"
 
 msgid "Let's Build"
-msgstr ""
+msgstr "ビルドしましょう"
 
 msgid "Let's build something"
 msgstr "何か作ってみましょう"
@@ -8652,7 +8652,7 @@ msgid "Link Linear Issue"
 msgstr "Linear イシューをリンク"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
-msgstr ""
+msgstr "このCarbonカスタマーをいずれかにリンクするか、別のStripeカスタマーを作成してください。"
 
 msgid "Link to sales order line"
 msgstr "販売注文行へのリンク"
@@ -9836,7 +9836,7 @@ msgid "No Access"
 msgstr "アクセスなし"
 
 msgid "No accounts connected yet."
-msgstr ""
+msgstr "まだアカウントが接続されていません。"
 
 msgid "No accounts mapped yet"
 msgstr "マップされた勘定科目がまだありません"
@@ -9879,7 +9879,7 @@ msgid "No attachments."
 msgstr "添付ファイルがありません。"
 
 msgid "No authorization code was returned"
-msgstr ""
+msgstr "認可コードが返されませんでした"
 
 msgid "No available filters"
 msgstr "利用可能なフィルターがありません"
@@ -10336,7 +10336,7 @@ msgid "Nothing in the archive"
 msgstr "アーカイブに何もありません"
 
 msgid "Nothing to choose yet - <0>set one up in Settings</0>."
-msgstr ""
+msgstr "まだ選ぶものがありません - <0>設定で設定してください</0>。"
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "まだ何もありません。ステップは構成されると値を提供します。"
@@ -11705,7 +11705,7 @@ msgid "Published by Carbon"
 msgstr "Carbonによって公開"
 
 msgid "Published Version"
-msgstr ""
+msgstr "公開されたバージョン"
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "公開済みバージョンは編集できません。読み取り専用で参照するか、新しいバージョンをブランチして変更してください。"
@@ -12725,7 +12725,7 @@ msgid "Reverse any item ledger entries from this invoice"
 msgstr "このインボイスからのアイテム台帳エントリをすべて取り消す"
 
 msgid "Reverse charge"
-msgstr ""
+msgstr "逆請求"
 
 msgid "Reverse Charge Sales Tax"
 msgstr "逆請求売上税"
@@ -13307,7 +13307,7 @@ msgid "Search suppliers..."
 msgstr "サプライヤーを検索..."
 
 msgid "Search Term"
-msgstr ""
+msgstr "検索語句"
 
 msgid "Search tools..."
 msgstr "ツールを検索..."
@@ -13386,7 +13386,7 @@ msgid "Select a shape first to see available options"
 msgstr "形状を先に選択すると、利用可能なオプションが表示されます。"
 
 msgid "Select a step…"
-msgstr ""
+msgstr "ステップを選択…"
 
 msgid "Select a substance and shape first to see available options"
 msgstr "物質と形状を先に選択すると、利用可能なオプションが表示されます。"
@@ -13407,7 +13407,7 @@ msgid "Select an action…"
 msgstr "アクションを選択…"
 
 msgid "Select an app…"
-msgstr ""
+msgstr "アプリを選択…"
 
 msgid "Select an assignee"
 msgstr "担当者を選択"
@@ -13434,7 +13434,7 @@ msgid "Select an option"
 msgstr "オプションを選択"
 
 msgid "Select an option…"
-msgstr ""
+msgstr "オプションを選択…"
 
 msgid "Select at least one line to convert"
 msgstr "変換する行を少なくとも1つ選択してください"
@@ -13552,10 +13552,10 @@ msgid "Self Managed"
 msgstr "自己管理"
 
 msgid "Self-hosted or managed"
-msgstr ""
+msgstr "自己ホストまたは管理"
 
 msgid "Self-onboarding"
-msgstr ""
+msgstr "セルフオンボーディング"
 
 msgid "Self-paced"
 msgstr "自習型"
@@ -13576,7 +13576,7 @@ msgid "Send Invites"
 msgstr "招待を送信"
 
 msgid "Send Notifications"
-msgstr ""
+msgstr "通知を送信"
 
 msgid "Send RFQ to Suppliers"
 msgstr "RFQをサプライヤーに送信"
@@ -13980,7 +13980,7 @@ msgid "Shown to the user when this rule fails."
 msgstr "このルールが失敗したときにユーザーに表示されます。"
 
 msgid "Sign in to Carbon"
-msgstr ""
+msgstr "Carbonにサインイン"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "マジックリンクの代わりに生体認証でサインインします。パスキーはFace ID、Touch ID、またはデバイスPINで保護されます。"
@@ -14184,7 +14184,7 @@ msgid "Split shipment line"
 msgstr "出荷ラインを分割"
 
 msgid "SSO/SAML"
-msgstr ""
+msgstr "SSO/SAML"
 
 msgid "Stand up hosting"
 msgstr "ホスティングをセットアップ"
@@ -14224,7 +14224,7 @@ msgid "Start Date"
 msgstr "開始日"
 
 msgid "Start date time of the event"
-msgstr ""
+msgstr "イベントの開始日時"
 
 msgid "Start Expiration"
 msgstr "有効期限開始"
@@ -14399,19 +14399,19 @@ msgid "Straight line"
 msgstr "定額法"
 
 msgid "Stripe"
-msgstr ""
+msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr ""
+msgstr "Stripeにはすでにこのメールアドレスを持つカスタマーがいます"
 
 msgid "Stripe Due Date"
-msgstr ""
+msgstr "Stripe期限日"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr ""
+msgstr "Stripeはカスタマーに請求書をメールで送信するため、アドレスが必要です。これはCarbonの連絡先にも保存されます。"
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr ""
+msgstr "StripeにはまだこのCarbonカスタマーのカスタマーがありません。投稿すると、接続されたアカウントに作成されます。"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Kanbanテーブルに表示するカンバン出力のスタイル"
@@ -14826,7 +14826,7 @@ msgid "Tax Depreciation Method"
 msgstr "税務償却方法"
 
 msgid "Tax exempt"
-msgstr ""
+msgstr "税務除外"
 
 msgid "Tax Exempt"
 msgstr "税務上免除"
@@ -14874,7 +14874,7 @@ msgid "Team trained"
 msgstr "チームが訓練を受けた"
 
 msgid "Technical support"
-msgstr ""
+msgstr "技術サポート"
 
 msgid "Temperature"
 msgstr "温度"
@@ -14913,13 +14913,13 @@ msgid "Text size"
 msgstr "テキストサイズ"
 
 msgid "That connection name is already used"
-msgstr ""
+msgstr "その接続名はすでに使用されています"
 
 msgid "That name is already used by another step."
 msgstr "その名前は別のステップで既に使用されています。"
 
 msgid "That name is already used."
-msgstr ""
+msgstr "その名前はすでに使用されています。"
 
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
@@ -14959,13 +14959,13 @@ msgid "The append-only record of every stock movement; on-hand is the sum of its
 msgstr "すべての在庫移動の追加専用レコード。手持在庫はその署名付きエントリの合計であり、信頼できる情報源です。"
 
 msgid "The authorization took too long or came back altered. Start the connection again from this page."
-msgstr ""
+msgstr "認可に時間がかかりすぎるか、変更されて戻ってきました。このページから接続を再度開始してください。"
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Onshape で認可が拒否されました。もう一度接続してください。"
 
 msgid "The authorization was rejected"
-msgstr ""
+msgstr "認可が拒否されました"
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "投稿されたすべての仕訳行のブック（勘定ごとに合計）。会社で会計が有効な場合にのみ記入されます。"
@@ -15037,10 +15037,10 @@ msgid "The code printed on the kanban card that operators scan to mark the job c
 msgstr "オペレーターがジョブを完了としてマークするためにスキャンするかんばんカードに印刷されているコード。空白のままにすると自動生成されます。"
 
 msgid "The connection could not be verified"
-msgstr ""
+msgstr "接続を検証できませんでした"
 
 msgid "The connection was refused"
-msgstr ""
+msgstr "接続が拒否されました"
 
 msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
 msgstr "請負業者の予想される週次の利用可能性。スケジューリングは、この請負業者を週中の操作に割り当てるときに、これを上限として使用します。"
@@ -15226,7 +15226,7 @@ msgid "The Incoterm rule (FOB, DAP, EXW, CIF, …) that governs who pays freight
 msgstr "このカスタマーへの出荷時に、誰が運送料を支払うか、誰がリスクを負うか、所有権の移転がどこで発生するかを管理するIncoterms規則（FOB、DAP、EXW、CIF、...）。"
 
 msgid "The integration authorized the connection but saving it failed. Try connecting again."
-msgstr ""
+msgstr "統合は接続を認可しましたが、保存に失敗しました。再度接続してみてください。"
 
 msgid "The inventory cost recognized when a shipment posts, valued by the item's costing method."
 msgstr "出荷が転記されるときに認識されるインベントリコスト。品目の原価計算方法で評価されます。"
@@ -15479,7 +15479,7 @@ msgid "The response from Onshape was missing required parameters. Try connecting
 msgstr "Onshape からの応答に必須パラメーターが含まれていませんでした。もう一度接続してください。"
 
 msgid "The response was missing required parameters. Try connecting again."
-msgstr ""
+msgstr "レスポンスに必要なパラメータが不足しています。再度接続してみてください。"
 
 msgid "The result will not appear on the Runs page."
 msgstr "結果は実行ページに表示されません。"
@@ -15701,7 +15701,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "これらの仕訳はまだ下書きであるため、それらの借方と貸方は当期の元帳に含まれていません。各仕訳を転記するか、後の開いている期間に再度日付を付け直してください。"
 
 msgid "This Carbon instance is missing its OAuth credentials for this integration. Ask an administrator to set them."
-msgstr ""
+msgstr "このCarbonインスタンスには、この統合のOAuth認証情報がありません。管理者に設定するよう依頼してください。"
 
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "この Carbon インスタンスには Onshape の OAuth 認証情報がありません。管理者に設定を依頼してください。"
@@ -15716,7 +15716,7 @@ msgid "This completes the Discovery step."
 msgstr "これはDiscoveryステップを完了します。"
 
 msgid "This contact has no email address"
-msgstr ""
+msgstr "このコンタクトにはメールアドレスがありません"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "この取引先には未払い金がありません。支払いは掛け金として記録されます。"
@@ -15740,17 +15740,17 @@ msgid "this inspection plan"
 msgstr "この検査計画"
 
 msgid "This integration isn't configured"
-msgstr ""
+msgstr "この統合は設定されていません"
 
 #. placeholder {0}: company?.name ?? "Carbon"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
 msgstr "この{0}への参加への招待は期限切れです。新しい招待をメールで送信されるようにリクエストできます。"
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr ""
+msgstr "この請求書に使用可能な支払期日がありません—Stripeから1つを選択してください。"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr ""
+msgstr "この請求書は、このCarbonカスタマーに既にリンクされているStripeカスタマーに請求されます。その詳細を変更するには、Stripeダッシュボードで編集してください。"
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "これは管理環境のため、認証アプリが必須です。"
@@ -15887,10 +15887,10 @@ msgid "This version cannot be opened"
 msgstr "このバージョンは開くことができません"
 
 msgid "This version is published"
-msgstr ""
+msgstr "このバージョンは公開されています"
 
 msgid "This version is published. Create a new version to edit."
-msgstr ""
+msgstr "このバージョンは公開されています。編集するには新しいバージョンを作成してください。"
 
 msgid "This version's definition could not be read."
 msgstr "このバージョンの定義を読み取ることができませんでした。"
@@ -15992,7 +15992,7 @@ msgid "Title"
 msgstr "タイトル"
 
 msgid "Title of the event"
-msgstr ""
+msgstr "イベントのタイトル"
 
 msgid "To Date"
 msgstr "終了日"
@@ -16436,10 +16436,10 @@ msgid "unknown location"
 msgstr "不明な場所"
 
 msgid "Unlimited functional support"
-msgstr ""
+msgstr "無制限の機能サポート"
 
 msgid "Unlimited records"
-msgstr ""
+msgstr "無制限のレコード"
 
 msgid "Unlink"
 msgstr "リンク解除"
@@ -16484,10 +16484,10 @@ msgid "Unposted Documents"
 msgstr "未転記書類"
 
 msgid "Unpublish"
-msgstr ""
+msgstr "公開を取り消す"
 
 msgid "Unpublish {name}?"
-msgstr ""
+msgstr "{name}の公開を取り消しますか?"
 
 msgid "Unreceived POs"
 msgstr "未受領PO"
@@ -16848,7 +16848,7 @@ msgstr "バージョン"
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
-msgstr ""
+msgstr "バージョン{0}は現在公開されており、置き換わります。"
 
 msgid "Version:"
 msgstr "バージョン:"
@@ -17733,7 +17733,7 @@ msgid "You're live on Carbon"
 msgstr "Carbonで本番稼働中です"
 
 msgid "You're one step away from your workspace."
-msgstr ""
+msgstr "ワークスペースまであと1ステップです。"
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "あなた自身のペースでCarbonをセットアップしています"
