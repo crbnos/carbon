@@ -1,12 +1,7 @@
 # Runbook — repair translation terminology, one language at a time
-
-**Paste this whole file to an agent as its instructions.** It is written to be
-resumable: every phase records what it did before moving on, so a lost
-connection costs you one phase, never the run.
-
 ---
 
-## What you are fixing
+## What we are fixing
 
 Carbon's UI is translated into 12 languages. Those translations were produced by
 a cheap model with no domain context, so the same English term came out
@@ -28,18 +23,18 @@ fine. The tooling is built around fixing only what is wrong.
 
 All paths are relative to the repo root. Run everything from the repo root.
 
-| What you need | Command |
-|---|---|
-| Is this a domain term, and what is its approved translation? | `node .claude/skills/translate/scripts/glossary-lookup.mjs --term Job --locale zh` |
-| Which terms appear in this English string? | `node .claude/skills/translate/scripts/glossary-lookup.mjs --scan "Delete this job?" --locale zh` |
-| How much of the glossary is filled per language? | `node .claude/skills/translate/scripts/glossary-lookup.mjs --coverage` |
-| Which translations disagree with the glossary? | `node .claude/skills/translate/scripts/check-glossary.mjs --locale zh` |
-| The same, machine-readable | `node .claude/skills/translate/scripts/check-glossary.mjs --locale zh --json` |
-| Preview what would be cleared | `node .claude/skills/translate/scripts/reset-violations.mjs --locale zh --dry-run` |
-| Clear the disagreeing translations | `node .claude/skills/translate/scripts/reset-violations.mjs --locale zh` |
-| Refill every empty translation | the **`/translate` skill** (not a script — it fans out to cheap subagents) |
-| Strip catalog churn before committing | `pnpm run lingui:clean` |
-| Confirm nothing is left empty | `pnpm exec linguito check` |
+| What you need                                                | Command                                                                                           |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| Is this a domain term, and what is its approved translation? | `node .claude/skills/translate/scripts/glossary-lookup.mjs --term Job --locale zh`                |
+| Which terms appear in this English string?                   | `node .claude/skills/translate/scripts/glossary-lookup.mjs --scan "Delete this job?" --locale zh` |
+| How much of the glossary is filled per language?             | `node .claude/skills/translate/scripts/glossary-lookup.mjs --coverage`                            |
+| Which translations disagree with the glossary?               | `node .claude/skills/translate/scripts/check-glossary.mjs --locale zh`                            |
+| The same, machine-readable                                   | `node .claude/skills/translate/scripts/check-glossary.mjs --locale zh --json`                     |
+| Preview what would be cleared                                | `node .claude/skills/translate/scripts/reset-violations.mjs --locale zh --dry-run`                |
+| Clear the disagreeing translations                           | `node .claude/skills/translate/scripts/reset-violations.mjs --locale zh`                          |
+| Refill every empty translation                               | the **`/translate` skill** (not a script — it fans out to cheap subagents)                        |
+| Strip catalog churn before committing                        | `pnpm run lingui:clean`                                                                           |
+| Confirm nothing is left empty                                | `pnpm exec linguito check`                                                                        |
 
 Two rules about these:
 
