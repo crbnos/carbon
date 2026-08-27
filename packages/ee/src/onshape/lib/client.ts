@@ -51,6 +51,13 @@ export interface OnshapePart {
 
 const DEV_CACHE_TTL_SECONDS = 10 * 60;
 
+export interface OnshapeElementRow {
+  id: string;
+  name: string;
+  elementType: string; // "PARTSTUDIO" | "ASSEMBLY" | "DRAWING" | ...
+  [key: string]: unknown;
+}
+
 // Stable content reads only — never /translations (a status poll) and never
 // anything paginated by cursor.
 const DEV_CACHEABLE_PATHS = [
@@ -464,6 +471,42 @@ export class OnshapeClient {
     return this.request<OnshapeMassProperties>(
       "GET",
       `/api/v10/partstudios/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}/massproperties?massAsGroup=false&useMassPropertyOverrides=true`
+    );
+  }
+
+  /** The element rows of a document at w/v/m — id, name and elementType. */
+  async getElementsIn(
+    document: OnshapeDocument,
+    elementType?: OnshapeElementType
+  ): Promise<OnshapeElementRow[]> {
+    return this.request<OnshapeElementRow[]>(
+      "GET",
+      `/api/v10/documents/d/${document.documentId}/${document.wvm}/${document.wvmId}/elements${elementType ? "?elementType=" + elementType : ""}`
+    );
+  }
+
+  /** Indented multi-level BOM of an assembly at w/v/m. One call. */
+  async getBillOfMaterialsIn(
+    document: OnshapeDocument,
+    elementId: string
+  ): Promise<Record<string, unknown>> {
+    return this.request<Record<string, unknown>>(
+      "GET",
+      `/api/v10/assemblies/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}/bom?indented=true&multiLevel=true&generateIfAbsent=true&onlyVisibleColumns=false&includeItemMicroversions=true&includeTopLevelAssemblyRow=true&thumbnail=false`
+    );
+  }
+
+  /**
+   * Element metadata (the properties panel: Part number, Name, ...) at w/v/m.
+   * One call; used for an assembly's own identity, which the BOM omits.
+   */
+  async getElementMetadata(
+    document: OnshapeDocument,
+    elementId: string
+  ): Promise<Record<string, unknown>> {
+    return this.request<Record<string, unknown>>(
+      "GET",
+      `/api/v10/metadata/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}?inferMetadataOwner=false&depth=1`
     );
   }
 

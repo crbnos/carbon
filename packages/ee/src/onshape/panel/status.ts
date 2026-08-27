@@ -26,6 +26,11 @@ export type PanelPartStatus = {
   lastSyncedAt: string | null;
 };
 
+/** Mapping key for an assembly element pushed as a whole. */
+export function externalIdForAssembly(documentId: string, elementId: string) {
+  return `${documentId}:${elementId}:assembly`;
+}
+
 /** The one mapping key every panel write uses. */
 export function externalIdForPart(
   documentId: string,
