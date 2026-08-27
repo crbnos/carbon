@@ -150,13 +150,42 @@ They are kept as the record of how much of an "enforced violation" count can be
 the checker rather than the translation: `zh` went 2069 → 103, and roughly half
 of that came from Phase 0 alone.
 
-**Start with `zh`** — there is a real Chinese customer who reported this, so it
-is the one language where you will get feedback on whether the fix worked.
+Finish a language end to end, commit it, and **stop and ask the user before
+starting the next one**. This is a hard gate, not a courtesy: one language is
+~1,000–2,300 strings, which is already a large diff; two is unreviewable, and a
+failure halfway through leaves both in an unknown state. It is also the only
+point where a human sees what the terminology actually produced before the next
+language repeats it.
 
-Finish a language end to end, commit it, and stop. Do not begin a second
-language in the same run. One language is ~1,500–2,800 strings, which is already
-a large diff; two is unreviewable, and a failure halfway through leaves both in
-an unknown state.
+At that gate, report: the before/after enforced count, how many strings changed,
+the commit hash, what the residual is made of, and the remaining backlog. Then
+wait. Do not start the next language on your own initiative, even if the user
+previously said "do them all" — that is the instruction to work through the
+list, not permission to skip the gate.
+
+## The order
+
+`zh` went first because a real Chinese customer reported the bug, so it is the
+one language where feedback on the fix is available. It is **done**
+(`3c9315ce3`).
+
+Remaining, and the order to take them in:
+
+```
+de 1623   ja 2296   ru 2155   ko 1727   pl 1538   hi 1509
+fr 1348   tr 1292   pt 1257   it 1177   es 990
+```
+
+`de` is deliberately NOT the biggest. It goes next because it is the first
+Latin-script language through this pipeline, and Latin-script languages take a
+completely different code path in the checker: CJK matches the approved term
+whole, everything else matches on a ~60% stem prefix (`stemOf` in
+`lib-glossary.mjs`) so an inflected form still passes. German is the most
+inflection-heavy and compound-heavy of the large backlogs, so it is the best
+stress test of a path `zh` never touched. Find the stem bugs on the language
+most likely to expose them, before spending five more languages on them.
+
+After `de`, work down by size.
 
 ---
 
@@ -331,7 +360,7 @@ Commit **only** `packages/locale/locales/<locale>/*.po`. Do not commit
 
 Then update the ledger to `Status: done` and **stop**. Do not start another
 language. Tell the user which language is finished, how many strings changed,
-and what the remaining backlog is.
+and what the remaining backlog is — then wait for them to say go.
 
 ---
 
