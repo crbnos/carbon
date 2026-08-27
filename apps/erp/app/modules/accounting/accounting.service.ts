@@ -491,6 +491,7 @@ function overlayTranslationOnSeries<
         // so flow reads (income statement / executive P&L) get a translated
         // activity figure rather than the translated cumulative balance.
         translatedNetChange:
+          translation.translatedNetChange ??
           Math.round(existing.netChange * exchangeRate * 10000) / 10000,
         exchangeRate
       };
@@ -516,6 +517,7 @@ export async function translateCompanyPeriodSeries(
     consolidatedRate: string | null;
     isGroup: boolean | null;
     class: string | null;
+    incomeBalance: string | null;
     periods: Record<string, PeriodCell>;
   }>
 ): Promise<{
@@ -526,10 +528,12 @@ export async function translateCompanyPeriodSeries(
     buckets.map(async (bucket) => {
       const synthetic = series.map((row) => ({
         id: row.id,
+        netChange: row.periods[bucket.key]?.netChange ?? 0,
         balanceAtDate: row.periods[bucket.key]?.balanceAtDate ?? 0,
         consolidatedRate: row.consolidatedRate,
         isGroup: row.isGroup,
-        class: row.class
+        class: row.class,
+        incomeBalance: row.incomeBalance
       }));
       const translation = await translateCompanyBalances(
         client,
@@ -926,6 +930,7 @@ export async function getConsolidatedPeriodSeries(
         const existing = record[key];
         const sourceCell = periodsByAccountId.get(row.accountId)?.[key];
         const translatedNetChange =
+          row.translatedNetChange ??
           Math.round(
             (sourceCell?.netChange ?? 0) * Number(row.exchangeRate) * 10000
           ) / 10000;
@@ -4147,15 +4152,17 @@ export async function translateCompanyBalances(
   periodEnd: string,
   periodStart: string | undefined,
   // Rows from getFinancialStatementBalances for the same company/dates —
-  // translation only needs balanceAtDate + consolidatedRate, so re-running
-  // the full journalLine scan through the translateTrialBalance RPC would
-  // double the cost of every translated statement.
+  // translation reuses the computed balances, so re-running the full
+  // journalLine scan through the translateTrialBalance RPC would double the
+  // cost of every translated statement.
   balances: Array<{
     id: string;
+    netChange: number;
     balanceAtDate: number;
     consolidatedRate: string | null;
     isGroup: boolean | null;
     class: string | null;
+    incomeBalance: string | null;
   }>
 ): Promise<{
   data: TranslatedBalance[] | null;
@@ -4227,12 +4234,26 @@ export async function translateCompanyBalances(
   const rows: TranslatedBalance[] = [];
   let totalTranslatedAssets = 0;
   let totalTranslatedLiabilitiesAndEquity = 0;
+  const syntheticAccount = balances.find(
+    (account) => account.id === NET_INCOME_ACCOUNT_ID
+  );
+  const syntheticNetIncome: {
+    localBalance: number;
+    translatedBalance: number;
+    translatedNetChange: number;
+  } | null = syntheticAccount
+    ? {
+        localBalance: Number(syntheticAccount.balanceAtDate ?? 0),
+        translatedBalance: 0,
+        translatedNetChange: 0
+      }
+    : null;
 
   for (const account of balances) {
-    // Leaf accounts only, and never the synthetic Net Income line — its
-    // income-statement components are already in the rows, so translating it
-    // too would double-count net income in the CTA.
-    if (account.isGroup || account.id === NET_INCOME_ACCOUNT_ID) continue;
+    if (account.id === NET_INCOME_ACCOUNT_ID) {
+      continue;
+    }
+    if (account.isGroup) continue;
 
     const exchangeRate = rateFor(account.consolidatedRate);
     const localBalance = Number(account.balanceAtDate ?? 0);
@@ -4246,6 +4267,15 @@ export async function translateCompanyBalances(
       translatedBalance
     });
 
+    if (account.incomeBalance === "Income Statement") {
+      const sign = rootSignMultiplier(account.class);
+      if (syntheticNetIncome) {
+        syntheticNetIncome.translatedBalance += sign * translatedBalance;
+        syntheticNetIncome.translatedNetChange +=
+          sign * (Math.round(account.netChange * exchangeRate * 10000) / 10000);
+      }
+    }
+
     if (account.class === "Asset") {
       totalTranslatedAssets += translatedBalance;
     } else {
@@ -4253,6 +4283,20 @@ export async function translateCompanyBalances(
       // accounts net to retained earnings on balance sheet)
       totalTranslatedLiabilitiesAndEquity += translatedBalance;
     }
+  }
+
+  if (syntheticNetIncome) {
+    const localBalance = syntheticNetIncome.localBalance;
+    rows.push({
+      accountId: NET_INCOME_ACCOUNT_ID,
+      localBalance,
+      exchangeRate:
+        localBalance === 0
+          ? 1
+          : syntheticNetIncome.translatedBalance / localBalance,
+      translatedBalance: syntheticNetIncome.translatedBalance,
+      translatedNetChange: syntheticNetIncome.translatedNetChange
+    });
   }
 
   // CTA = translated assets - translated (liabilities + equity)

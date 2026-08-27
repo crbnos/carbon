@@ -584,7 +584,21 @@ describe("getConsolidatedPeriodSeries", () => {
             netChange: 20,
             balanceAtDate: 20
           }
-        ]
+        ],
+        translationRatesByCompany: {
+          "company-1": {
+            sourceCurrency: "EUR",
+            closingRate: 2,
+            averageRate: 2,
+            historicalRate: 2
+          },
+          "company-2": {
+            sourceCurrency: "EUR",
+            closingRate: 3,
+            averageRate: 3,
+            historicalRate: 3
+          }
+        }
       }),
       "group-1",
       ["company-1", "company-2"],
@@ -594,7 +608,15 @@ describe("getConsolidatedPeriodSeries", () => {
 
     expect(result.error).toBeNull();
     expect(result.data?.find((row) => row.id === "net-income")).toMatchObject({
-      periods: { [bucket.key]: { netChange: 40, balanceAtDate: 40 } }
+      name: "Net Income",
+      periods: {
+        [bucket.key]: {
+          netChange: 40,
+          balanceAtDate: 40,
+          translatedNetChange: 100,
+          translatedBalance: 100
+        }
+      }
     });
     expect(
       result.data?.find((row) => row.id === "balance-sheet-root")?.periods[

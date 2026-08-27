@@ -280,6 +280,65 @@ describe("exportPeriodReport", () => {
     expect(csv).toBe("编号,科目,Jan 2026\r\n'4000,Revenue,10");
   });
 
+  it("exports translated synthetic balance-sheet earnings with its label", () => {
+    let csv = "";
+    const anchor = {
+      href: "",
+      download: "",
+      click: () => undefined
+    };
+
+    vi.stubGlobal(
+      "Blob",
+      class {
+        constructor(parts: BlobPart[]) {
+          csv = String(parts[0]);
+        }
+      }
+    );
+    vi.stubGlobal("window", {
+      URL: {
+        createObjectURL: () => "blob:test",
+        revokeObjectURL: () => undefined
+      }
+    });
+    vi.stubGlobal("document", {
+      createElement: () => anchor,
+      body: {
+        appendChild: () => undefined,
+        removeChild: () => undefined
+      }
+    });
+
+    exportPeriodReport({
+      accounts: [
+        {
+          id: "net-income",
+          parentId: null,
+          name: "本年净利润",
+          number: null,
+          isGroup: false,
+          periods: {
+            [period.key]: {
+              netChange: 40,
+              balanceAtDate: 40,
+              translatedNetChange: 200,
+              translatedBalance: 200
+            }
+          }
+        }
+      ] as never,
+      periods: [{ ...period, label: "2026年1月" }],
+      measure: "balanceAtDate",
+      showTranslated: true,
+      search: "",
+      filename: "balance-sheet.csv",
+      labels: { number: "编号", account: "科目" }
+    });
+
+    expect(csv).toBe("编号,科目,2026年1月\r\n,本年净利润,200");
+  });
+
   it("uses route-provided localized trial-balance headers", () => {
     let csv = "";
     const anchor = {

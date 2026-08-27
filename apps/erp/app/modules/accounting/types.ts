@@ -412,6 +412,7 @@ export type TranslatedBalance = {
   localBalance: number;
   exchangeRate: number;
   translatedBalance: number;
+  translatedNetChange?: number;
 };
 
 export type TranslatedTransaction = Transaction & {
