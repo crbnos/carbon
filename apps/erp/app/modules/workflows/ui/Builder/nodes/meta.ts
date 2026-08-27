@@ -1,11 +1,13 @@
 import { OPERATOR_LABELS } from "@carbon/utils";
 import type { WorkflowNode, WorkflowNodeType } from "@carbon/workflows";
+import { integrationStepId } from "@carbon/workflows";
 import { WORKFLOW_LABELS } from "@carbon/workflows/labels";
 import type { IconType } from "react-icons";
 import {
   LuCalculator,
   LuFilter,
   LuPlay,
+  LuPlug,
   LuSearch,
   LuSplit,
   LuZap
@@ -101,6 +103,23 @@ export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
       return labelText(node.data.action) ?? node.data.action;
     }
   },
+  integration: {
+    name: "Integration",
+    Icon: LuPlug,
+    description: "Runs a step in a connected app",
+    defaultTitle: "Use an integration",
+    hasTarget: NODE_ACCEPTS_INCOMING.integration,
+    catalogId: (node) =>
+      node.type === "integration" && node.data.piece && node.data.action
+        ? integrationStepId(node.data.piece, node.data.action)
+        : undefined,
+    summary: (node) => {
+      if (node.type !== "integration" || !node.data.piece) return undefined;
+      if (!node.data.action) return undefined;
+      const id = integrationStepId(node.data.piece, node.data.action);
+      return labelText(id) ?? id;
+    }
+  },
   compute: {
     name: "Compute",
     Icon: LuCalculator,
@@ -155,6 +174,7 @@ export const NODE_KIND_ORDER: WorkflowNodeType[] = [
   "trigger",
   "condition",
   "action",
+  "integration",
   "compute",
   "lookup",
   "filter"

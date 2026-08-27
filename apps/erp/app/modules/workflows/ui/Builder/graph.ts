@@ -211,6 +211,17 @@ export function createNode(
         expanded: true,
         data: { action: "", inputs: {} }
       };
+    case "integration":
+      return {
+        id,
+        name,
+        type,
+        position,
+        expanded: true,
+        // Blank until the author picks the app and then the step; `checkConfig`
+        // asks for each in that order.
+        data: { piece: "", action: "", inputs: {} }
+      };
   }
 }
 

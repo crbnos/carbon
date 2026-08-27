@@ -34,18 +34,11 @@ import {
 } from "../../catalog";
 import { useBuilderStore } from "../../context";
 import { lockedChoices, useChoiceOptions } from "../../fields/choiceOptions";
-import { MultiChoiceField } from "../../fields/MultiChoiceField";
-import { PairsField } from "../../fields/PairsField";
-import { TemplateField } from "../../fields/TemplateField";
 import { ValueField } from "../../fields/ValueField";
-import {
-  issueForField,
-  partIssuesForField,
-  rowIssuesForField
-} from "../../issues";
 import { useActionBatchPlan, useAvailableVariables } from "../../useDefinition";
 import { FormStack, Section } from "../layout";
 import type { NodeFormProps } from "./index";
+import { renderStepInput } from "./StepInput";
 
 /** Module-level, not an inline literal: it reaches the variable menu as `accepts`,
  * which memoises on identity. */
@@ -382,86 +375,21 @@ export function ActionForm({
     if (!inputDef) return null;
     // Also guarded in the list below; a requireOneOf member reaches here without it.
     if (!isGateOpen(inputDef.showWhen, inputs)) return null;
-    const fieldLabel = inputLabel(name);
-    const inputHelp = workflowFieldHelp(actionInputLabelKey(actionId, name));
-    const fieldContext = {
+    return renderStepInput({
+      name,
+      inputDef,
+      label: inputLabel(name),
+      helpTermId: workflowFieldHelp(actionInputLabelKey(actionId, name)),
+      inputs,
+      issues,
       nodeId: node.id,
-      inLoop: isBatch,
-      batching: isBatch
-    };
-    const fieldIssue = issueForField(issues, name, `inputs.${name}`);
-    const fieldParts = partIssuesForField(issues, name, `inputs.${name}`);
-
-    if (inputDef.pairs) {
-      return (
-        <PairsField
-          key={name}
-          label={fieldLabel}
-          helpTermId={inputHelp}
-          type={inputDef.type}
-          required={inputDef.required}
-          value={inputs[name]}
-          onChange={(v) => handleInputChange(name, v)}
-          context={fieldContext}
-          issue={fieldIssue}
-          partIssues={rowIssuesForField(issues, name, `inputs.${name}`)}
-          isReadOnly={isReadOnly}
-        />
-      );
-    }
-
-    if (isMultiSelect(inputDef)) {
-      return (
-        <MultiChoiceField
-          key={name}
-          label={fieldLabel}
-          helpTermId={inputHelp}
-          type={inputDef.type}
-          required={inputDef.required}
-          options={choiceOptions(inputDef.choices)}
-          locked={lockedChoices(inputDef.choices)}
-          value={inputs[name]}
-          onChange={(v) => handleInputChange(name, v)}
-          issue={fieldIssue}
-          isReadOnly={isReadOnly}
-        />
-      );
-    }
-
-    if (inputDef.template) {
-      return (
-        <TemplateField
-          key={name}
-          label={fieldLabel}
-          helpTermId={inputHelp}
-          type={inputDef.type}
-          required={inputDef.required}
-          value={inputs[name]}
-          onChange={(v) => handleInputChange(name, v)}
-          context={fieldContext}
-          issue={fieldIssue}
-          partIssues={fieldParts}
-          isReadOnly={isReadOnly}
-        />
-      );
-    }
-
-    return (
-      <ValueField
-        key={name}
-        label={fieldLabel}
-        helpTermId={inputHelp}
-        type={inputDef.type}
-        required={inputDef.required}
-        choices={inputDef.choices}
-        value={inputs[name]}
-        onChange={(v) => handleInputChange(name, v)}
-        context={fieldContext}
-        issue={fieldIssue}
-        partIssues={fieldParts}
-        isReadOnly={isReadOnly}
-      />
-    );
+      batching: isBatch,
+      isReadOnly,
+      onChange: handleInputChange,
+      labelFor: inputLabel,
+      choiceOptions,
+      lockedChoices
+    });
   }
 
   /** Rendered directly under the action picker rather than with the rest: a multi-select

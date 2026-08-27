@@ -104,7 +104,7 @@ export function describeValueType(
  * identifier other nodes reference, so the rename left already-saved `entity_0` names
  * alone. Drop it and every one of them starts rendering as "Entity 0". */
 const DEFAULT_NODE_NAME =
-  /^(trigger|action|condition|compute|entity|lookup|filter)_\d+$/;
+  /^(trigger|action|integration|condition|compute|entity|lookup|filter)_\d+$/;
 
 export function isDefaultNodeName(name: string): boolean {
   return DEFAULT_NODE_NAME.test(name);
