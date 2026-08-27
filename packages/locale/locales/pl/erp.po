@@ -303,7 +303,7 @@ msgid "4h"
 msgstr "4h"
 
 msgid "5 user minimum"
-msgstr ""
+msgstr "Minimum 5 użytkowników"
 
 msgid "5-8 weeks"
 msgstr "5-8 tygodni"
@@ -360,7 +360,7 @@ msgid "A contractor is a supplier contact with particular abilities and availabl
 msgstr "Wykonawca to kontakt dostawcy z określonymi umiejętnościami i dostępnymi godzinami"
 
 msgid "A custom solution to meet your needs"
-msgstr ""
+msgstr "Niestandardowe rozwiązanie dostosowane do Twoich potrzeb"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Klient to firma lub osoba, która kupuje Twoje części lub usługi."
@@ -473,10 +473,10 @@ msgid "A Make to Order component whose parts are issued together into the parent
 msgstr "Komponent Wytwarzaj na zamówienie, którego części są wydawane razem do zadania nadrzędnego — bez oddzielnej kompilacji."
 
 msgid "A managed cloud-hosted version of Carbon"
-msgstr ""
+msgstr "Zarządzana wersja Carbon hostowana w chmurze"
 
 msgid "A managed version with all the advanced features"
-msgstr ""
+msgstr "Zarządzana wersja ze wszystkimi zaawansowanymi funkcjami"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Materiał to element fizyczny używany do wytworzenia części, którą można wykorzystać w wielu zadaniach"
@@ -500,7 +500,6 @@ msgid "A new size will be created using a copy of the current size"
 msgstr "Nowy rozmiar zostanie utworzony przy użyciu kopii bieżącego rozmiaru"
 
 msgid "A new Stripe customer will be created"
-msgstr "Zostanie utworzony nowy klient Stripe"
 msgstr "Nowy klient Stripe zostanie utworzony"
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
@@ -1347,7 +1346,7 @@ msgid "All actions selected"
 msgstr "Wszystkie akcje zaznaczone"
 
 msgid "All advanced features available"
-msgstr ""
+msgstr "Wszystkie zaawansowane funkcje dostępne"
 
 msgid "All Audit Logs"
 msgstr "Wszystkie dzienniki audytu"
@@ -1625,7 +1624,7 @@ msgid "API keys for programmatic access to your Carbon data."
 msgstr "Klucze API do programowego dostępu do danych Carbon."
 
 msgid "API, webhooks, and integrations"
-msgstr ""
+msgstr "API, webhooki i integracje"
 
 msgid "Applied"
 msgstr "Zastosowano"
@@ -2324,7 +2323,7 @@ msgid "Audit Log"
 msgstr "Dziennik audytu"
 
 msgid "Audit logging"
-msgstr ""
+msgstr "Rejestrowanie audytu"
 
 msgid "Audit Logging"
 msgstr "Rejestrowanie audytu"
@@ -2396,7 +2395,7 @@ msgid "Automatic Updates"
 msgstr "Automatyczne aktualizacje"
 
 msgid "Automatic updates and backups"
-msgstr ""
+msgstr "Automatyczne aktualizacje i kopie zapasowe"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "Automatyczne, proporcjonalne zużycie materiałów nieparowanych pracy po zgłoszeniu wydajności — materiały śledzone są wydawane ręcznie."
@@ -2496,7 +2495,7 @@ msgid "Base Price"
 msgstr "Cena bazowa"
 
 msgid "Basic ERP, MES, and QMS functionality"
-msgstr ""
+msgstr "Podstawowa funkcjonalność ERP, MES i QMS"
 
 msgid "Basic Information"
 msgstr "Informacje podstawowe"
@@ -2633,7 +2632,6 @@ msgid "Browse library"
 msgstr "Przeglądaj bibliotekę"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
-msgstr "Przeglądaj opublikowaną wersję tylko do odczytu. Możesz nadal reorganizować kroki, aby uporządkować układ."
 msgstr "Przeglądaj opublikowaną wersję jako tylko do odczytu. Możesz jeszcze zmienić kolejność kroków, aby uporządkować układ."
 
 msgid "Bucket"
@@ -2841,7 +2839,6 @@ msgid "Cannot send RFQ"
 msgstr "Nie można wysłać ZZO"
 
 msgid "Cannot send through Stripe"
-msgstr "Nie można wysłać przez Stripe"
 msgstr "Nie można wysłać za pośrednictwem Stripe"
 
 msgid "Cannot upload — supplier interaction not yet created"
@@ -3194,7 +3191,7 @@ msgid "Cloud, or your self-hosted environment."
 msgstr "Chmura lub Twoje środowisko hostowane samodzielnie."
 
 msgid "CMMC compliant"
-msgstr ""
+msgstr "Zgodne z CMMC"
 
 msgid "Code"
 msgstr "Kod"
@@ -3257,7 +3254,7 @@ msgid "Committing a receipt, shipment, or invoice: quantities move, journal entr
 msgstr "Zatwierdzenie paragonu, wysyłki lub faktury: ilości się poruszają, wpisy do dziennika trafiają do księgi głównej, a stan zmienia się na Zaksięgowany."
 
 msgid "Community support"
-msgstr ""
+msgstr "Wsparcie społeczności"
 
 msgid "Companies"
 msgstr "Firmy"
@@ -3553,7 +3550,7 @@ msgid "Contact (optional)"
 msgstr "Kontakt (opcjonalnie)"
 
 msgid "Contact us"
-msgstr ""
+msgstr "Skontaktuj się z nami"
 
 msgid "contacts"
 msgstr "kontakty"
@@ -4434,7 +4431,7 @@ msgid "Customers"
 msgstr "Klienci"
 
 msgid "Customizations, training, and integrations"
-msgstr ""
+msgstr "Dostosowania, szkolenia i integracje"
 
 msgid "Customize"
 msgstr "Dostosuj"
@@ -6238,7 +6235,7 @@ msgid "Every match"
 msgstr "Każde dopasowanie"
 
 msgid "Every required action has already been added."
-msgstr ""
+msgstr "Każde wymagane działanie zostało już dodane."
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Każde wymagane zadanie musi być oznaczone jako Wykonane lub Pominięte zanim okres będzie mógł być zamknięty."
@@ -7010,7 +7007,7 @@ msgid "Format"
 msgstr "Format"
 
 msgid "Forward deployed engineer"
-msgstr ""
+msgstr "Inżynier wdrożony na miejscu"
 
 msgid "Foundation"
 msgstr "Fundament"
@@ -7066,7 +7063,7 @@ msgid "Full name"
 msgstr "Pełne imię i nazwisko"
 
 msgid "Full setup and migrations"
-msgstr ""
+msgstr "Pełna konfiguracja i migracje"
 
 msgid "Fully Depreciated"
 msgstr "Całkowicie zamortyzowane"
@@ -8178,7 +8175,6 @@ msgid "Issues"
 msgstr "Problemy"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
-msgstr "Przestanie działać, dopóki nie opublikujesz ponownie wersji. Nic nie zostanie usunięte."
 msgstr "Przestanie działać do momentu ponownego opublikowania wersji. Nic nie jest usunięte."
 
 msgid "ITAR Certifications"
@@ -8541,7 +8537,6 @@ msgid "Less manual work, fewer errors"
 msgstr "Mniej pracy ręcznej, mniej błędów"
 
 msgid "Let's Build"
-msgstr "Zacznijmy tworzyć"
 msgstr "Zaczynamy Budować"
 
 msgid "Let's build something"
@@ -8623,7 +8618,6 @@ msgid "Link Linear Issue"
 msgstr "Połącz problem Linear"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
-msgstr "Połącz tego klienta Carbon z jednym z nich lub utwórz odrębnego klienta Stripe."
 msgstr "Połącz tego klienta Carbon z jednym z nich lub utwórz oddzielnego klienta Stripe."
 
 msgid "Link to sales order line"
@@ -12709,7 +12703,6 @@ msgid "Reverse any item ledger entries from this invoice"
 msgstr "Odwróć wszystkie wpisy rejestru pozycji z tej faktury"
 
 msgid "Reverse charge"
-msgstr "Pobranie zwrotne"
 msgstr "Odwrócenie opodatkowania"
 
 msgid "Reverse Charge Sales Tax"
@@ -13531,10 +13524,10 @@ msgid "Self Managed"
 msgstr "Samodzielnie zarządzane"
 
 msgid "Self-hosted or managed"
-msgstr ""
+msgstr "Samoobsługiwanie lub zarządzanie"
 
 msgid "Self-onboarding"
-msgstr ""
+msgstr "Samodzielne wdrożenie"
 
 msgid "Self-paced"
 msgstr "Samodzielne tempo"
@@ -14172,7 +14165,7 @@ msgid "Split shipment line"
 msgstr "Podziel linię wysyłki"
 
 msgid "SSO/SAML"
-msgstr ""
+msgstr "SSO/SAML"
 
 msgid "Stand up hosting"
 msgstr "Skonfiguruj hosting"
@@ -14391,13 +14384,6 @@ msgstr "Stripe już ma klienta z tym adresem e-mail"
 
 msgid "Stripe Due Date"
 msgstr "Data wymagalności Stripe"
-
-msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripe wysyła rachunek do klienta, dlatego wymagany jest adres. Zostanie to również zapisane w kontakcie w Carbon."
-
-msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe nie ma jeszcze klienta dla tego klienta Carbon. Wysłanie utworzy jeden na Twoim podłączonym koncie."
-msgstr "Data płatności Stripe"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 msgstr "Stripe wysyła fakturę do klienta pocztą e-mail, więc wymagany jest adres. Zostanie również zapisany w kontakcie w Carbon."
@@ -14866,7 +14852,7 @@ msgid "Team trained"
 msgstr "Zespół przeszkolony"
 
 msgid "Technical support"
-msgstr ""
+msgstr "Wsparcie techniczne"
 
 msgid "Temperature"
 msgstr "Temperatura"
@@ -15721,10 +15707,6 @@ msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "Ten rachunek nie ma użytecznej daty wymagalności — wybierz jedną dla Stripe."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "Ten rachunek będzie wystawiony dla klienta Stripe już połączonego z tym klientem Carbon. Aby zmienić jego szczegóły, edytuj go w panelu kontrolnym Stripe."
-msgstr "Ta faktura nie ma użytecznej daty płatności — wybierz jedną dla Stripe."
-
-msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Ta faktura będzie naliczona klientowi Stripe już połączonemu z tym klientem Carbon. Aby zmienić jego szczegóły, edytuj go w pulpicie Stripe."
 
 msgid "This is a controlled environment, so an authenticator app is required."
@@ -16411,10 +16393,10 @@ msgid "unknown location"
 msgstr "nieznana lokalizacja"
 
 msgid "Unlimited functional support"
-msgstr ""
+msgstr "Nieograniczone wsparcie funkcjonalne"
 
 msgid "Unlimited records"
-msgstr ""
+msgstr "Nieograniczone rekordy"
 
 msgid "Unlink"
 msgstr "Odłącz"
@@ -16460,10 +16442,6 @@ msgstr "Nieopublikowane dokumenty"
 
 msgid "Unpublish"
 msgstr "Cofnij publikowanie"
-
-msgid "Unpublish {name}?"
-msgstr "Cofnąć publikowanie {name}?"
-msgstr "Cofnij publikację"
 
 msgid "Unpublish {name}?"
 msgstr "Cofnąć publikację {name}?"
@@ -17718,7 +17696,6 @@ msgid "You're live on Carbon"
 msgstr "Jesteś na żywo w Carbon"
 
 msgid "You're one step away from your workspace."
-msgstr "Jesteś o jeden krok od swojego obszaru roboczego."
 msgstr "Jesteś jednym krokiem od swojego obszaru roboczego."
 
 msgid "You're setting Carbon up yourself, at your own pace"

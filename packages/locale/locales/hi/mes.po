@@ -522,7 +522,6 @@ msgid "Finish Anyways"
 msgstr "वैसे भी समाप्त करें"
 
 msgid "Finish setting up your account"
-msgstr "अपने खाते की स्थापना पूरी करें"
 msgstr "अपना खाता सेट करना समाप्त करें"
 
 msgid "Finish with material unpicked?"
@@ -1523,7 +1522,6 @@ msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock 
 msgstr "आप {hoursElapsed} घंटे के लिए क्लॉक इन हैं। क्या आप क्लॉक आउट करना भूल गए?"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
-msgstr "आपका खाता अभी किसी कंपनी का हिस्सा नहीं है। जारी रखने के लिए Carbon ERP में ऑनबोर्डिंग पूरी करें।"
 msgstr "आपका खाता अभी तक किसी कंपनी का हिस्सा नहीं है। जारी रखने के लिए Carbon ERP में ऑनबोर्डिंग पूरी करें।"
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."

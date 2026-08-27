@@ -106575,7 +106575,8 @@ export default {
         },
         status: {
           default: "pending",
-          format: "text",
+          enum: ["pending", "verified"],
+          format: 'public."ssoDomainStatus"',
           type: "string"
         },
         verifiedAt: {
@@ -126996,6 +126997,8 @@ export default {
           type: "string"
         },
         itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
           format: "text",
           type: "string"
         },

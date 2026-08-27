@@ -522,7 +522,6 @@ msgid "Finish Anyways"
 msgstr "とにかく完了"
 
 msgid "Finish setting up your account"
-msgstr "アカウントの設定を完了してください"
 msgstr "アカウント設定を完了する"
 
 msgid "Finish with material unpicked?"
@@ -1523,7 +1522,6 @@ msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock 
 msgstr "{hoursElapsed} 時間出勤中です。退勤打刻を忘れていませんか？"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
-msgstr "アカウントがまだ企業に属していません。続行するにはCarbon ERPのオンボーディングを完了してください。"
 msgstr "アカウントはまだ企業に属していません。Carbon ERPでオンボーディングを完了して続行してください。"
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."

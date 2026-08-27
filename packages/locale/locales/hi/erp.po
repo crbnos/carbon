@@ -169,7 +169,6 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} में से {count} परिचालन"
 
 msgid "{hiddenCount} more: {hiddenNames}"
-msgstr "{hiddenCount} अधिक: {hiddenNames}"
 msgstr "{hiddenCount} और: {hiddenNames}"
 
 #. placeholder {0}: errors.length
@@ -304,7 +303,7 @@ msgid "4h"
 msgstr "4 घंटे"
 
 msgid "5 user minimum"
-msgstr ""
+msgstr "5 उपयोगकर्ता न्यूनतम"
 
 msgid "5-8 weeks"
 msgstr "5-8 सप्ताह"
@@ -361,7 +360,7 @@ msgid "A contractor is a supplier contact with particular abilities and availabl
 msgstr "एक ठेकेदार एक आपूर्तिकर्ता संपर्क है जिसके पास विशेष क्षमताएं और उपलब्ध घंटे हैं"
 
 msgid "A custom solution to meet your needs"
-msgstr ""
+msgstr "आपकी ज़रूरतों को पूरा करने के लिए एक कस्टम समाधान"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "एक ग्राहक एक व्यवसाय या व्यक्ति है जो आपके पार्ट्स या सेवाएं खरीदता है।"
@@ -474,10 +473,10 @@ msgid "A Make to Order component whose parts are issued together into the parent
 msgstr "एक ऑर्डर टू मेक घटक जिसके भाग माता-पिता की नौकरी में एक साथ जारी किए जाते हैं — कोई अलग बिल्ड नहीं।"
 
 msgid "A managed cloud-hosted version of Carbon"
-msgstr ""
+msgstr "Carbon का एक प्रबंधित क्लाउड-होस्टेड संस्करण"
 
 msgid "A managed version with all the advanced features"
-msgstr ""
+msgstr "सभी उन्नत सुविधाओं के साथ एक प्रबंधित संस्करण"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "एक सामग्री एक भौतिक वस्तु है जिसका उपयोग एक भाग बनाने के लिए किया जाता है जिसे कई नौकरियों में उपयोग किया जा सकता है"
@@ -1347,7 +1346,7 @@ msgid "All actions selected"
 msgstr "सभी कार्य चयनित"
 
 msgid "All advanced features available"
-msgstr ""
+msgstr "सभी उन्नत सुविधाएं उपलब्ध हैं"
 
 msgid "All Audit Logs"
 msgstr "सभी ऑडिट लॉग"
@@ -1625,7 +1624,7 @@ msgid "API keys for programmatic access to your Carbon data."
 msgstr "आपके Carbon डेटा के लिए प्रोग्रामेटिक एक्सेस के लिए API कुंजियाँ।"
 
 msgid "API, webhooks, and integrations"
-msgstr ""
+msgstr "API, वेबहुक, और एकीकरण"
 
 msgid "Applied"
 msgstr "लागू"
@@ -2324,7 +2323,7 @@ msgid "Audit Log"
 msgstr "ऑडिट लॉग"
 
 msgid "Audit logging"
-msgstr ""
+msgstr "ऑडिट लॉगिंग"
 
 msgid "Audit Logging"
 msgstr "ऑडिट लॉगिंग"
@@ -2396,7 +2395,7 @@ msgid "Automatic Updates"
 msgstr "स्वचालित अपडेट"
 
 msgid "Automatic updates and backups"
-msgstr ""
+msgstr "स्वचालित अपडेट और बैकअप"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "आउटपुट की रिपोर्ट करते समय एक कार्य की गैर-ट्रैक की गई सामग्री की स्वचालित, आनुपातिक खपत — ट्रैक की गई सामग्री को मैन्युअल रूप से जारी किया जाता है।"
@@ -2496,7 +2495,7 @@ msgid "Base Price"
 msgstr "आधार मूल्य"
 
 msgid "Basic ERP, MES, and QMS functionality"
-msgstr ""
+msgstr "बुनियादी ERP, MES, और QMS कार्यक्षमता"
 
 msgid "Basic Information"
 msgstr "बुनियादी जानकारी"
@@ -2633,7 +2632,6 @@ msgid "Browse library"
 msgstr "लाइब्रेरी ब्राउज़ करें"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
-msgstr "प्रकाशित संस्करण को केवल-पढ़ने के लिए ब्राउज़ करें। आप अभी भी लेआउट को साफ करने के लिए चरणों को पुनर्व्यवस्थित कर सकते हैं।"
 msgstr "प्रकाशित संस्करण को केवल-पढ़ने के लिए देखें। आप अभी भी लेआउट को साफ करने के लिए चरणों को पुनः व्यवस्थित कर सकते हैं।"
 
 msgid "Bucket"
@@ -3193,7 +3191,7 @@ msgid "Cloud, or your self-hosted environment."
 msgstr "क्लाउड, या आपका स्व-होस्ट किया गया वातावरण।"
 
 msgid "CMMC compliant"
-msgstr ""
+msgstr "CMMC अनुपालक"
 
 msgid "Code"
 msgstr "कोड"
@@ -3256,7 +3254,7 @@ msgid "Committing a receipt, shipment, or invoice: quantities move, journal entr
 msgstr "एक प्राप्ति, शिपमेंट या चालान की प्रतिबद्धता: मात्रा चलती है, जर्नल प्रविष्टियां बहीखाता को मारती हैं, और स्थिति पोस्ट की जाती है।"
 
 msgid "Community support"
-msgstr ""
+msgstr "सामुदायिक सहायता"
 
 msgid "Companies"
 msgstr "कंपनियां"
@@ -3552,7 +3550,7 @@ msgid "Contact (optional)"
 msgstr "संपर्क (वैकल्पिक)"
 
 msgid "Contact us"
-msgstr ""
+msgstr "हमसे संपर्क करें"
 
 msgid "contacts"
 msgstr "संपर्क"
@@ -4433,7 +4431,7 @@ msgid "Customers"
 msgstr "ग्राहक"
 
 msgid "Customizations, training, and integrations"
-msgstr ""
+msgstr "अनुकूलन, प्रशिक्षण, और एकीकरण"
 
 msgid "Customize"
 msgstr "अनुकूलित करें"
@@ -6237,7 +6235,7 @@ msgid "Every match"
 msgstr "हर मेल"
 
 msgid "Every required action has already been added."
-msgstr ""
+msgstr "प्रत्येक आवश्यक कार्रवाई पहले से ही जोड़ी जा चुकी है।"
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "अवधि बंद करने से पहले प्रत्येक आवश्यक कार्य को पूर्ण या छोड़ा जाना चाहिए।"
@@ -7009,7 +7007,7 @@ msgid "Format"
 msgstr "प्रारूप"
 
 msgid "Forward deployed engineer"
-msgstr ""
+msgstr "आगे तैनात इंजीनियर"
 
 msgid "Foundation"
 msgstr "आधार"
@@ -7065,7 +7063,7 @@ msgid "Full name"
 msgstr "पूरा नाम"
 
 msgid "Full setup and migrations"
-msgstr ""
+msgstr "पूर्ण सेटअप और माइग्रेशन"
 
 msgid "Fully Depreciated"
 msgstr "पूरी तरह से मूल्यह्रास"
@@ -8177,7 +8175,6 @@ msgid "Issues"
 msgstr "समस्याएं"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
-msgstr "यह तब तक चलना बंद कर देगा जब तक आप फिर से एक संस्करण प्रकाशित नहीं करते। कुछ भी हटाया नहीं जाता है।"
 msgstr "यह तब तक चलना बंद कर देगा जब तक आप फिर से एक संस्करण प्रकाशित न करें। कुछ भी हटाया नहीं गया है।"
 
 msgid "ITAR Certifications"
@@ -8540,7 +8537,6 @@ msgid "Less manual work, fewer errors"
 msgstr "कम मैनुअल काम, कम त्रुटियां"
 
 msgid "Let's Build"
-msgstr "चलिए बनाते हैं"
 msgstr "आइए निर्माण करें"
 
 msgid "Let's build something"
@@ -8622,7 +8618,6 @@ msgid "Link Linear Issue"
 msgstr "Linear समस्या को लिंक करें"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
-msgstr "इस Carbon ग्राहक को उनमें से किसी एक से लिंक करें, या एक अलग Stripe ग्राहक बनाएं।"
 msgstr "इस Carbon ग्राहक को उनमें से किसी एक से जोड़ें, या एक अलग Stripe ग्राहक बनाएं।"
 
 msgid "Link to sales order line"
@@ -13529,10 +13524,10 @@ msgid "Self Managed"
 msgstr "स्व प्रबंधित"
 
 msgid "Self-hosted or managed"
-msgstr ""
+msgstr "स्व-होस्टेड या प्रबंधित"
 
 msgid "Self-onboarding"
-msgstr ""
+msgstr "स्व-ऑनबोर्डिंग"
 
 msgid "Self-paced"
 msgstr "स्व-गति"
@@ -14170,7 +14165,7 @@ msgid "Split shipment line"
 msgstr "शिपमेंट लाइन को विभाजित करें"
 
 msgid "SSO/SAML"
-msgstr ""
+msgstr "SSO/SAML"
 
 msgid "Stand up hosting"
 msgstr "होस्टिंग सेट अप करें"
@@ -14386,16 +14381,6 @@ msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
 msgstr "Stripe के पास पहले से इस ईमेल के साथ एक ग्राहक है"
-
-msgid "Stripe Due Date"
-msgstr "Stripe देय तारीख"
-
-msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripe ईमेल को ग्राहक को भेजता है, इसलिए एक पता आवश्यक है। यह Carbon में संपर्क को भी सहेजा जाएगा।"
-
-msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe के पास इस Carbon ग्राहक के लिए अभी तक कोई ग्राहक नहीं है। पोस्टिंग आपके जुड़े खाते पर एक बनाएगी।"
-msgstr "Stripe के पास पहले से इस ईमेल वाला एक ग्राहक है"
 
 msgid "Stripe Due Date"
 msgstr "Stripe देय तिथि"
@@ -14867,7 +14852,7 @@ msgid "Team trained"
 msgstr "टीम प्रशिक्षित"
 
 msgid "Technical support"
-msgstr ""
+msgstr "तकनीकी सहायता"
 
 msgid "Temperature"
 msgstr "तापमान"
@@ -15722,10 +15707,6 @@ msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "इस इनवॉयस के पास कोई उपयोगी देय तारीख नहीं है — Stripe के लिए एक चुनें।"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "इस इनवॉयस को Stripe ग्राहक को बिल दिया जाएगा जो पहले से इस Carbon ग्राहक से जुड़ा है। इसके विवरण को बदलने के लिए, इसे Stripe डैशबोर्ड में संपादित करें।"
-msgstr "इस चालान की कोई उपयोगी देय तिथि नहीं है — Stripe के लिए एक चुनें।"
-
-msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "इस चालान को Stripe ग्राहक को बिल दिया जाएगा जो पहले से इस Carbon ग्राहक से जुड़ा हुआ है। इसके विवरण को बदलने के लिए, Stripe डैशबोर्ड में संपादित करें।"
 
 msgid "This is a controlled environment, so an authenticator app is required."
@@ -16412,10 +16393,10 @@ msgid "unknown location"
 msgstr "अज्ञात स्थान"
 
 msgid "Unlimited functional support"
-msgstr ""
+msgstr "असीमित कार्यात्मक समर्थन"
 
 msgid "Unlimited records"
-msgstr ""
+msgstr "असीमित रिकॉर्ड"
 
 msgid "Unlink"
 msgstr "अनलिंक करें"
@@ -16461,10 +16442,6 @@ msgstr "अपोस्ट किए गए दस्तावेज़"
 
 msgid "Unpublish"
 msgstr "अप्रकाशित करें"
-
-msgid "Unpublish {name}?"
-msgstr "{name} को अप्रकाशित करें?"
-msgstr "प्रकाशन रद्द करें"
 
 msgid "Unpublish {name}?"
 msgstr "{name} को प्रकाशन रद्द करें?"

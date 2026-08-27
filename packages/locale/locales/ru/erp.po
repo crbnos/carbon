@@ -169,7 +169,6 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} из {count} операций"
 
 msgid "{hiddenCount} more: {hiddenNames}"
-msgstr "{hiddenCount} еще: {hiddenNames}"
 msgstr "{hiddenCount} ещё: {hiddenNames}"
 
 #. placeholder {0}: errors.length
@@ -304,7 +303,7 @@ msgid "4h"
 msgstr "4ч"
 
 msgid "5 user minimum"
-msgstr ""
+msgstr "Минимум 5 пользователей"
 
 msgid "5-8 weeks"
 msgstr "5-8 недель"
@@ -361,7 +360,7 @@ msgid "A contractor is a supplier contact with particular abilities and availabl
 msgstr "Подрядчик — это контакт поставщика с особыми навыками и доступными часами"
 
 msgid "A custom solution to meet your needs"
-msgstr ""
+msgstr "Индивидуальное решение в соответствии с вашими потребностями"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Клиент — это компания или физическое лицо, которое покупает ваши детали или услуги."
@@ -474,10 +473,10 @@ msgid "A Make to Order component whose parts are issued together into the parent
 msgstr "Компонент \"Производство на заказ\", части которого выпускаются вместе в родительское задание — без отдельного построения."
 
 msgid "A managed cloud-hosted version of Carbon"
-msgstr ""
+msgstr "Управляемая облачная версия Carbon"
 
 msgid "A managed version with all the advanced features"
-msgstr ""
+msgstr "Управляемая версия со всеми расширенными функциями"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Материал — это физический предмет, используемый для изготовления детали, которая может использоваться в нескольких заданиях"
@@ -1347,7 +1346,7 @@ msgid "All actions selected"
 msgstr "Все действия выбраны"
 
 msgid "All advanced features available"
-msgstr ""
+msgstr "Все расширенные функции доступны"
 
 msgid "All Audit Logs"
 msgstr "Все журналы аудита"
@@ -1625,7 +1624,7 @@ msgid "API keys for programmatic access to your Carbon data."
 msgstr "API ключи для программного доступа к вашим данным Carbon."
 
 msgid "API, webhooks, and integrations"
-msgstr ""
+msgstr "API, веб-перехватчики и интеграции"
 
 msgid "Applied"
 msgstr "Применено"
@@ -2324,7 +2323,7 @@ msgid "Audit Log"
 msgstr "Журнал аудита"
 
 msgid "Audit logging"
-msgstr ""
+msgstr "Логирование аудита"
 
 msgid "Audit Logging"
 msgstr "Аудит логирования"
@@ -2396,7 +2395,7 @@ msgid "Automatic Updates"
 msgstr "Автоматические обновления"
 
 msgid "Automatic updates and backups"
-msgstr ""
+msgstr "Автоматические обновления и резервные копии"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "Автоматическое пропорциональное потребление материалов задания, не отслеживаемых при отчетности о выходе — отслеживаемые материалы выпускаются вручную."
@@ -2496,7 +2495,7 @@ msgid "Base Price"
 msgstr "Базовая цена"
 
 msgid "Basic ERP, MES, and QMS functionality"
-msgstr ""
+msgstr "Базовая функциональность ERP, MES и QMS"
 
 msgid "Basic Information"
 msgstr "Основная информация"
@@ -2633,7 +2632,6 @@ msgid "Browse library"
 msgstr "Обзор библиотеки"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
-msgstr "Просмотрите опубликованную версию в режиме только для чтения. Вы все еще можете переставлять шаги для чистоты макета."
 msgstr "Просмотрите опубликованную версию в режиме только для чтения. Вы все равно можете переупорядочить шаги для чистоты макета."
 
 msgid "Bucket"
@@ -3193,7 +3191,7 @@ msgid "Cloud, or your self-hosted environment."
 msgstr "Облако или ваша собственная размещённая среда."
 
 msgid "CMMC compliant"
-msgstr ""
+msgstr "Соответствие CMMC"
 
 msgid "Code"
 msgstr "Код"
@@ -3256,7 +3254,7 @@ msgid "Committing a receipt, shipment, or invoice: quantities move, journal entr
 msgstr "Фиксирование квитанции, отправки или счета: количества движутся, записи журнала попадают в бухгалтерскую книгу, и статус становится Выполнено."
 
 msgid "Community support"
-msgstr ""
+msgstr "Поддержка сообщества"
 
 msgid "Companies"
 msgstr "Компании"
@@ -3552,7 +3550,7 @@ msgid "Contact (optional)"
 msgstr "Контакт (опционально)"
 
 msgid "Contact us"
-msgstr ""
+msgstr "Свяжитесь с нами"
 
 msgid "contacts"
 msgstr "контакты"
@@ -3962,7 +3960,6 @@ msgid "Create a new production job to fulfill the sales order"
 msgstr "Создайте новое производственное задание для выполнения заказа"
 
 msgid "Create a new Stripe customer instead"
-msgstr "Вместо этого создайте нового клиента Stripe"
 msgstr "Создайте нового клиента Stripe вместо этого"
 
 msgid "Create a new version"
@@ -4434,7 +4431,7 @@ msgid "Customers"
 msgstr "Клиенты"
 
 msgid "Customizations, training, and integrations"
-msgstr ""
+msgstr "Настройки, обучение и интеграции"
 
 msgid "Customize"
 msgstr "Настроить"
@@ -6238,7 +6235,7 @@ msgid "Every match"
 msgstr "Каждое совпадение"
 
 msgid "Every required action has already been added."
-msgstr ""
+msgstr "Все необходимые действия уже добавлены."
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Каждая требуемая задача должна быть завершена или пропущена перед закрытием периода."
@@ -7010,7 +7007,7 @@ msgid "Format"
 msgstr "Формат"
 
 msgid "Forward deployed engineer"
-msgstr ""
+msgstr "Инженер развертывания на местах"
 
 msgid "Foundation"
 msgstr "Основа"
@@ -7066,7 +7063,7 @@ msgid "Full name"
 msgstr "Полное имя"
 
 msgid "Full setup and migrations"
-msgstr ""
+msgstr "Полная настройка и миграции"
 
 msgid "Fully Depreciated"
 msgstr "Полностью амортизирован"
@@ -8178,7 +8175,6 @@ msgid "Issues"
 msgstr "Проблемы"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
-msgstr "Он будет останавливаться до тех пор, пока вы не опубликуете версию снова. Ничего не удаляется."
 msgstr "Он будет остановлен до тех пор, пока вы снова не опубликуете версию. Ничего не удаляется."
 
 msgid "ITAR Certifications"
@@ -8541,7 +8537,6 @@ msgid "Less manual work, fewer errors"
 msgstr "Меньше ручной работы, меньше ошибок"
 
 msgid "Let's Build"
-msgstr "Давайте создавать"
 msgstr "Давайте начнём"
 
 msgid "Let's build something"
@@ -13529,10 +13524,10 @@ msgid "Self Managed"
 msgstr "Самоуправляемый"
 
 msgid "Self-hosted or managed"
-msgstr ""
+msgstr "Самостоятельно размещенный или управляемый"
 
 msgid "Self-onboarding"
-msgstr ""
+msgstr "Самостоятельная адаптация"
 
 msgid "Self-paced"
 msgstr "Самостоятельно"
@@ -14170,7 +14165,7 @@ msgid "Split shipment line"
 msgstr "Разделить строку отправки"
 
 msgid "SSO/SAML"
-msgstr ""
+msgstr "SSO/SAML"
 
 msgid "Stand up hosting"
 msgstr "Развернуть хостинг"
@@ -14385,7 +14380,6 @@ msgid "Stripe"
 msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr "Stripe уже имеет клиента с этой электронной почтой"
 msgstr "В Stripe уже есть клиент с этой электронной почтой"
 
 msgid "Stripe Due Date"
@@ -14393,10 +14387,6 @@ msgstr "Срок платежа Stripe"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 msgstr "Stripe отправляет счет-фактуру клиенту по электронной почте, поэтому требуется адрес. Это также будет сохранено в контакт в Carbon."
-
-msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe еще не имеет клиента для этого клиента Carbon. При публикации будет создан клиент на вашем подключенном счете."
-msgstr "Stripe отправляет счет клиенту, поэтому требуется адрес. Это также будет сохранено в контакт в Carbon."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe еще не имеет клиента для этого клиента Carbon. Отправка создаст его на вашем подключенном счете."
@@ -14814,7 +14804,6 @@ msgid "Tax Depreciation Method"
 msgstr "Метод налоговой амортизации"
 
 msgid "Tax exempt"
-msgstr "Освобожден от налогов"
 msgstr "Не облагается налогом"
 
 msgid "Tax Exempt"
@@ -14863,7 +14852,7 @@ msgid "Team trained"
 msgstr "Команда обучена"
 
 msgid "Technical support"
-msgstr ""
+msgstr "Техническая поддержка"
 
 msgid "Temperature"
 msgstr "Температура"
@@ -15684,7 +15673,6 @@ msgid "This completes the Discovery step."
 msgstr "Это завершает этап Discovery."
 
 msgid "This contact has no email address"
-msgstr "У этого контакта нет адреса электронной почты"
 msgstr "Этот контакт не имеет адреса электронной почты"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
@@ -15717,10 +15705,6 @@ msgstr "Это приглашение присоединиться к {0} ист
 
 msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "У этого счета-фактуры нет пригодного срока платежа — выберите один для Stripe."
-
-msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "Этот счет-фактура будет выставлен уже связанному клиенту Stripe этого клиента Carbon. Чтобы изменить его детали, отредактируйте его на панели инструментов Stripe."
-msgstr "Этот счет не имеет пригодного срока платежа — выберите один для Stripe."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Этот счет будет отправлен клиенту Stripe, уже связанному с этим клиентом Carbon. Чтобы изменить его детали, отредактируйте его в панели управления Stripe."
@@ -16409,10 +16393,10 @@ msgid "unknown location"
 msgstr "неизвестное местоположение"
 
 msgid "Unlimited functional support"
-msgstr ""
+msgstr "Неограниченная функциональная поддержка"
 
 msgid "Unlimited records"
-msgstr ""
+msgstr "Неограниченные записи"
 
 msgid "Unlink"
 msgstr "Отменить связь"
@@ -16827,7 +16811,6 @@ msgstr "Версия"
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
-msgstr "Версия {0} опубликована сейчас и будет заменена."
 msgstr "Версия {0} опубликована и будет заменена."
 
 msgid "Version:"
@@ -17713,7 +17696,6 @@ msgid "You're live on Carbon"
 msgstr "Вы работаете на Carbon"
 
 msgid "You're one step away from your workspace."
-msgstr "Вы на один шаг от вашего рабочего пространства."
 msgstr "Вы в одном шаге от вашего рабочего пространства."
 
 msgid "You're setting Carbon up yourself, at your own pace"

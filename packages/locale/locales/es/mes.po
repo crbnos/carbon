@@ -534,7 +534,6 @@ msgid "Go back to operation"
 msgstr "Volver a la operación"
 
 msgid "Go to onboarding"
-msgstr "Ir a la incorporación"
 msgstr "Ir a la configuración"
 
 msgid "How many were actually picked?"
@@ -1523,7 +1522,6 @@ msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock 
 msgstr "Ha estado registrado durante {hoursElapsed} horas. ¿Olvidó registrar la salida?"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
-msgstr "Tu cuenta aún no es parte de una empresa. Completa la incorporación en Carbon ERP para continuar."
 msgstr "Tu cuenta aún no forma parte de una empresa. Completa la configuración inicial en Carbon ERP para continuar."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
