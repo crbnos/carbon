@@ -3843,20 +3843,38 @@ export async function upsertPart(
     return newPart;
   }
 
+  const item: Database["public"]["Tables"]["item"]["Update"] = {
+    name: part.name,
+    description: part.description,
+    replenishmentSystem: part.replenishmentSystem,
+    defaultMethodType: part.defaultMethodType,
+    itemTrackingType: part.itemTrackingType,
+    unitOfMeasureCode: part.unitOfMeasureCode,
+    active: true
+  };
+
+  // An item pushed from Onshape (externalIntegrationMapping row) has its
+  // identity fields owned by the CAD side: a Properties save must not
+  // overwrite them. The panel's own push updates them directly; Detach
+  // removes the mapping and releases the fields.
+  const externalSource = await client
+    .from("externalIntegrationMapping")
+    .select("id")
+    .eq("entityType", "item")
+    .eq("entityId", part.id)
+    .eq("integration", "onshape")
+    .maybeSingle();
+  if (externalSource.data) {
+    item.name = undefined;
+    item.description = undefined;
+  }
+
   const updated = await updateTypedItem(client, {
     id: part.id,
     companyId: part.companyId,
     updatedBy: part.updatedBy,
     type: "Part",
-    item: {
-      name: part.name,
-      description: part.description,
-      replenishmentSystem: part.replenishmentSystem,
-      defaultMethodType: part.defaultMethodType,
-      itemTrackingType: part.itemTrackingType,
-      unitOfMeasureCode: part.unitOfMeasureCode,
-      active: true
-    },
+    item,
     typed: { customFields: part.customFields }
   });
   if (updated.error) return updated;

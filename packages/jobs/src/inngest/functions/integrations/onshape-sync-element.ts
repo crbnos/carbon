@@ -36,7 +36,8 @@ export interface SyncOnshapeElementInput {
   itemId: string; // resolved Carbon item (caller guarantees it exists)
   sourceDocument: DocumentSourceType; // e.g. "Part"
   documentId: string;
-  versionId: string; // the released version
+  versionId: string; // the released version — or a workspace id when sourceWvm is "w"
+  sourceWvm?: "w" | "v"; // path segment for export/thumbnail calls; default "v"
   modelElementId: string; // released Part Studio OR Assembly element to export
   modelElementKind: "partstudio" | "assembly"; // from the revision's elementType (0/1)
   partId?: string | null; // REQUIRED for individual Part Studio releases
@@ -138,7 +139,12 @@ async function exportRawGltfModel(
           input.documentId,
           input.versionId,
           input.modelElementId,
-          { formatName: "GLTF", storeInDocument: false, configuration }
+          {
+            formatName: "GLTF",
+            storeInDocument: false,
+            configuration,
+            wvm: input.sourceWvm ?? "v"
+          }
         )
       : await client.createPartStudioTranslation(
           input.documentId,
@@ -148,7 +154,8 @@ async function exportRawGltfModel(
             formatName: "GLTF",
             storeInDocument: false,
             configuration,
-            partIds: input.partId!
+            partIds: input.partId!,
+            wvm: input.sourceWvm ?? "v"
           }
         );
   const gltfDone = await waitForTranslation(client, gltfTranslation.id);
@@ -228,7 +235,11 @@ export async function syncOnshapeElementAssetsToItem(
         input.documentId,
         input.versionId,
         drawingElementId,
-        { formatName: "PDF", storeInDocument: false }
+        {
+          formatName: "PDF",
+          storeInDocument: false,
+          wvm: input.sourceWvm ?? "v"
+        }
       );
       const pdfDone = await waitForTranslation(client, pdfTranslation.id);
       const pdfBytes = await downloadTranslationBytes(
@@ -264,7 +275,9 @@ export async function syncOnshapeElementAssetsToItem(
         const thumbnail = await client.getElementThumbnail(
           input.documentId,
           input.versionId,
-          input.modelElementId
+          input.modelElementId,
+          "300x300",
+          input.sourceWvm ?? "v"
         );
         await attachModelThumbnail(carbon, {
           companyId: input.companyId,
@@ -295,6 +308,7 @@ export interface SyncOnshapeDrawingInput {
   versionId: string; // the released version
   drawingElementId: string; // the released DRAWING element to export as PDF
   assetBaseName?: string; // filename base (e.g. the model's readableIdWithRevision)
+  sourceWvm?: "w" | "v"; // path segment for the drawing translation; default "v"
 }
 
 // Export ONE released Onshape DRAWING element as a PDF and attach it as a document
@@ -317,7 +331,7 @@ export async function syncOnshapeDrawingAssetsToItem(
     input.documentId,
     input.versionId,
     input.drawingElementId,
-    { formatName: "PDF", storeInDocument: false }
+    { formatName: "PDF", storeInDocument: false, wvm: input.sourceWvm ?? "v" }
   );
   const pdfDone = await waitForTranslation(client, pdfTranslation.id);
   const pdfBytes = await downloadTranslationBytes(
