@@ -35,6 +35,14 @@ Deno edge function** — NOT Trigger.dev, and not inline in the app server.
    sibling `.test.ts`; the scheduler logs a `warn` when the list comes back
    empty, so "no work" can never again look like "worked fine".
 
+   Both reads go through `fetchAllFromTable` with a stable `.order("id")` — the
+   same reason the edge function pages (below): `max_rows = 1000` truncates a
+   bare select, and the dev stack does not enforce the cap, so a dropped tail is
+   invisible locally. A failed `company` read **throws**; returning would make
+   the step succeed having planned for nobody, which is this function's whole
+   bug class. A failed `companyPlan` read does not — it leaves `plans` null and
+   plans for everyone, which is the fail-safe direction.
+
 2. **Manual trigger** — POST `apps/erp/app/routes/api+/mrp.ts` (permission
    `update: "inventory"`). Reads `?location` query param; calls
    `runMRP(getCarbonServiceRole(), { type: locationId ? "location" : "company",

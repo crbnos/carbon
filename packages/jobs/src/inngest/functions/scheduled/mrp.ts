@@ -1,4 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { fetchAllFromTable } from "@carbon/database";
 import { Edition } from "@carbon/utils";
 import { inngest } from "../../client";
 import { selectCompaniesForMrp } from "./mrp-companies";
@@ -17,11 +18,24 @@ export const mrpFunction = inngest.createFunction(
       // billing table, so every install where nobody completed Stripe checkout
       // — self-hosted, community, local dev — had an empty work list and MRP
       // silently never ran, with a green Inngest run to show for it.
-      const companies = await serviceRole.from("company").select("id, name");
+      //
+      // Paged with a stable order: PostgREST's max_rows caps a bare select at
+      // 1000, which drops the tail of the work list the same silent way. The
+      // dev stack does not enforce the cap, so the truncation is invisible
+      // locally.
+      const companies = await fetchAllFromTable<{ id: string; name: string }>(
+        serviceRole,
+        "company",
+        "id, name",
+        (query) => query.order("id")
+      );
 
       if (companies.error) {
         logger.error("Failed to get companies", { error: companies.error });
-        return;
+        // Throw, never return: a return here is a step that SUCCEEDS having
+        // planned for nobody — the exact failure mode this function was fixed
+        // for. Throwing spends the two configured retries and shows red.
+        throw companies.error;
       }
 
       // Cloud only: a cancelled subscription means the weekly job is about to
@@ -31,9 +45,15 @@ export const mrpFunction = inngest.createFunction(
         | { id: string; stripeSubscriptionStatus: string | null }[]
         | null = null;
       if (process.env.CARBON_EDITION === Edition.Cloud) {
-        const companyPlans = await serviceRole
-          .from("companyPlan")
-          .select("id, stripeSubscriptionStatus");
+        const companyPlans = await fetchAllFromTable<{
+          id: string;
+          stripeSubscriptionStatus: string | null;
+        }>(
+          serviceRole,
+          "companyPlan",
+          "id, stripeSubscriptionStatus",
+          (query) => query.order("id")
+        );
 
         if (companyPlans.error) {
           // Deliberately not a return: leaving `plans` null plans for everyone.

@@ -753,7 +753,12 @@ function MaterialForm({
         fallbackCost
       );
 
-      setItemData((d) => ({ ...d, unitCost }));
+      // Re-check inside the updater: the guard above read the value as it was
+      // when this callback was built, and someone can type a cost while the two
+      // awaits above are still in flight.
+      setItemData((d) =>
+        d.unitCostSource === "manual" ? d : { ...d, unitCost }
+      );
     },
     [
       carbon,
