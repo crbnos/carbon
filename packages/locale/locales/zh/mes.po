@@ -280,9 +280,6 @@ msgstr "已消耗"
 msgid "Consumed expired"
 msgstr "已消耗过期"
 
-msgid "Continue with SSO"
-msgstr "继续使用 SSO"
-
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "过去 {0} 天的计划外维护成本"
@@ -525,7 +522,7 @@ msgid "Finish Anyways"
 msgstr "仍然完成"
 
 msgid "Finish setting up your account"
-msgstr "完成账户设置"
+msgstr "完成您的账户设置"
 
 msgid "Finish with material unpicked?"
 msgstr "物料未拣选完毕，是否完成？"
@@ -537,7 +534,7 @@ msgid "Go back to operation"
 msgstr "返回操作"
 
 msgid "Go to onboarding"
-msgstr "前往入职培训"
+msgstr "前往入职"
 
 msgid "How many were actually picked?"
 msgstr "实际上捡了多少个？"
@@ -1119,6 +1116,12 @@ msgstr "运行中"
 msgid "Sales Order"
 msgstr "销售订单"
 
+msgid "SAML SSO"
+msgstr "SAML SSO"
+
+msgid "SAML SSO is not configured for your email domain."
+msgstr "您的电子邮件域尚未配置 SAML SSO。"
+
 msgid "Save"
 msgstr "保存"
 
@@ -1310,9 +1313,6 @@ msgstr "备件"
 
 msgid "Spare Parts Used"
 msgstr "已使用备件"
-
-msgid "SSO is not configured for your email domain."
-msgstr "您的邮箱域未配置 SSO"
 
 msgid "Start"
 msgstr "开始"
@@ -1522,7 +1522,7 @@ msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock 
 msgstr "您已打卡上班 {hoursElapsed} 小时。您是否忘记打卡下班了？"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
-msgstr "您的账户尚未属于任何公司。请在Carbon ERP中完成入职培训以继续。"
+msgstr "您的账户尚未关联任何公司。请在Carbon ERP中完成入职以继续。"
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "您的组织需要身份验证器应用。在 Carbon 中设置，然后返回此处。"

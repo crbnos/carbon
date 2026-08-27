@@ -66,7 +66,7 @@ async function ssoProviderRequest<T>(
     return { data: (await response.json()) as T, error: null };
   } catch (e) {
     const message =
-      e instanceof Error ? e.message : "SSO provider request failed";
+      e instanceof Error ? e.message : "SAML SSO provider request failed";
     log.error("SSO provider request threw", {
       method,
       path,
@@ -94,7 +94,10 @@ export async function createGoTrueSsoProvider(
     toProviderBody(args)
   );
   if (result.error === null && !result.data?.id) {
-    return { data: null, error: "SSO backend did not return a provider id" };
+    return {
+      data: null,
+      error: "SAML SSO backend did not return a provider id"
+    };
   }
   return result;
 }

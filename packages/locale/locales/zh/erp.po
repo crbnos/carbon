@@ -169,7 +169,7 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} / {count} 条操作"
 
 msgid "{hiddenCount} more: {hiddenNames}"
-msgstr "{hiddenCount} 更多：{hiddenNames}"
+msgstr "{hiddenCount} 更多: {hiddenNames}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -303,7 +303,7 @@ msgid "4h"
 msgstr "4小时"
 
 msgid "5 user minimum"
-msgstr ""
+msgstr "最少5个用户"
 
 msgid "5-8 weeks"
 msgstr "5-8 周"
@@ -360,7 +360,7 @@ msgid "A contractor is a supplier contact with particular abilities and availabl
 msgstr "承包商是具有特定能力和可用工作时间的供应商联系人"
 
 msgid "A custom solution to meet your needs"
-msgstr ""
+msgstr "根据您的需求定制的解决方案"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "客户是购买您的零件或服务的企业或个人。"
@@ -473,10 +473,10 @@ msgid "A Make to Order component whose parts are issued together into the parent
 msgstr "其零件一起发放到父项作业的按单生产组件——无单独构建。"
 
 msgid "A managed cloud-hosted version of Carbon"
-msgstr ""
+msgstr "托管的Carbon云端版本"
 
 msgid "A managed version with all the advanced features"
-msgstr ""
+msgstr "具有所有高级功能的托管版本"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "材料是用于制造零件的物理项目，可以在多个工作中使用"
@@ -500,7 +500,7 @@ msgid "A new size will be created using a copy of the current size"
 msgstr "将使用当前尺寸的副本创建新尺寸"
 
 msgid "A new Stripe customer will be created"
-msgstr "将创建新的 Stripe 客户"
+msgstr "将创建一个新的 Stripe 客户"
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "一份非现金单据，根据原因账户结算发票：贷方降低应付金额，借方提高它。"
@@ -1058,6 +1058,9 @@ msgstr "添加评论..."
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "添加自定义定价行以覆盖数量、价格、运费、交货期和税费"
 
+msgid "Add a domain"
+msgstr "添加一个域"
+
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "添加一个材料部分，列出物料清单上的每个项目及其数量。"
 
@@ -1084,6 +1087,9 @@ msgstr "添加调整"
 
 msgid "Add Affected Item"
 msgstr "添加受影响项目"
+
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "通过在登录时要求来自身份验证应用的代码来增加额外的安全层。"
 
 msgid "Add any notes about your decision..."
 msgstr "添加关于您的决定的任何备注..."
@@ -1235,6 +1241,9 @@ msgstr "添加供应商"
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "在同一系统上添加下一个功能，而不是购买另一个工具。"
 
+msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
+msgstr "在您的 DNS 主机上添加此 TXT 记录，然后单击验证。DNS 更改可能需要几分钟才能传播。"
+
 msgid "Add Timecard"
 msgstr "添加工时卡"
 
@@ -1337,7 +1346,7 @@ msgid "All actions selected"
 msgstr "所有操作已选中"
 
 msgid "All advanced features available"
-msgstr ""
+msgstr "所有高级功能均可用"
 
 msgid "All Audit Logs"
 msgstr "所有审计日志"
@@ -1615,7 +1624,7 @@ msgid "API keys for programmatic access to your Carbon data."
 msgstr "用于以编程方式访问您的 Carbon 数据的 API 密钥。"
 
 msgid "API, webhooks, and integrations"
-msgstr ""
+msgstr "API、Webhook和集成"
 
 msgid "Applied"
 msgstr "已应用"
@@ -1791,8 +1800,8 @@ msgstr "你确定要为此销售订单创建工作吗？这将为所有还没有
 msgid "Are you sure you want to deactivate {0}?"
 msgstr "你确定要停用 {0} 吗？"
 
-msgid "Are you sure you want to deactivate SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
-msgstr "您确定要停用 SSO 吗?注册域中的用户将无法再通过您的身份提供商登录。此操作无法撤消。"
+msgid "Are you sure you want to deactivate SAML SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
+msgstr "您确定要停用 SAML SSO 吗？注册域上的用户将无法再通过身份提供者登录。此操作无法撤销。"
 
 #. placeholder {0}: selectedCategory?.name
 msgid "Are you sure you want to deactivate the {0} attribute category?"
@@ -2314,7 +2323,7 @@ msgid "Audit Log"
 msgstr "审计日志"
 
 msgid "Audit logging"
-msgstr ""
+msgstr "审计日志"
 
 msgid "Audit Logging"
 msgstr "审计日志"
@@ -2386,7 +2395,7 @@ msgid "Automatic Updates"
 msgstr "自动更新"
 
 msgid "Automatic updates and backups"
-msgstr ""
+msgstr "自动更新和备份"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "报告输出时，自动按比例消耗工作的未跟踪材料—跟踪的材料手动发出。"
@@ -2486,7 +2495,7 @@ msgid "Base Price"
 msgstr "基础价格"
 
 msgid "Basic ERP, MES, and QMS functionality"
-msgstr ""
+msgstr "基本ERP、MES和QMS功能"
 
 msgid "Basic Information"
 msgstr "基本信息"
@@ -2623,7 +2632,7 @@ msgid "Browse library"
 msgstr "浏览库"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
-msgstr "浏览已发布版本（只读）。您仍然可以重新排列步骤以整理布局。"
+msgstr "浏览已发布的版本（只读）。您仍然可以重新排列步骤来整理布局。"
 
 msgid "Bucket"
 msgstr "存储桶"
@@ -3041,7 +3050,7 @@ msgid "Check your email"
 msgstr "检查您的电子邮件"
 
 msgid "Checking Stripe for this customer…"
-msgstr "正在检查此客户的 Stripe…"
+msgstr "正在检查该客户的 Stripe…"
 
 msgid "Checkpoint ·"
 msgstr "检查点 ·"
@@ -3182,7 +3191,7 @@ msgid "Cloud, or your self-hosted environment."
 msgstr "云端或您自托管的环境。"
 
 msgid "CMMC compliant"
-msgstr ""
+msgstr "符合CMMC"
 
 msgid "Code"
 msgstr "代码"
@@ -3229,9 +3238,6 @@ msgstr "合并筛选"
 msgid "Coming soon"
 msgstr "即将推出"
 
-msgid "Comma-separated list of email domains, e.g. example.com, example.org"
-msgstr "以逗号分隔的电子邮件域列表,例如 example.com, example.org"
-
 msgid "comma-separated values"
 msgstr "逗号分隔的值"
 
@@ -3248,7 +3254,7 @@ msgid "Committing a receipt, shipment, or invoice: quantities move, journal entr
 msgstr "提交收据、发货或发票: 数量移动、日记账分录到达分类账、状态变为已过帐。"
 
 msgid "Community support"
-msgstr ""
+msgstr "社区支持"
 
 msgid "Companies"
 msgstr "公司"
@@ -3547,7 +3553,7 @@ msgid "Contact (optional)"
 msgstr "联系人（可选）"
 
 msgid "Contact us"
-msgstr ""
+msgstr "联系我们"
 
 msgid "contacts"
 msgstr "联系人"
@@ -3569,9 +3575,6 @@ msgstr "内容"
 
 msgid "Context"
 msgstr "上下文"
-
-msgid "Continue with SSO"
-msgstr "使用 SSO 继续"
 
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "用于固定资产总折旧的反向资产账户"
@@ -4431,7 +4434,7 @@ msgid "Customers"
 msgstr "客户"
 
 msgid "Customizations, training, and integrations"
-msgstr ""
+msgstr "定制、培训和集成"
 
 msgid "Customize"
 msgstr "自定义"
@@ -6234,6 +6237,9 @@ msgstr "您配置的系统中的每项范围内测试都通过了，使用您的
 msgid "Every match"
 msgstr "每次匹配"
 
+msgid "Every required action has already been added."
+msgstr "所有必需的操作已添加。"
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "期间关闭前，每项必需任务都必须完成或跳过。"
 
@@ -7004,7 +7010,7 @@ msgid "Format"
 msgstr "格式"
 
 msgid "Forward deployed engineer"
-msgstr ""
+msgstr "前置部署工程师"
 
 msgid "Foundation"
 msgstr "基础"
@@ -7060,7 +7066,7 @@ msgid "Full name"
 msgstr "全名"
 
 msgid "Full setup and migrations"
-msgstr ""
+msgstr "完整的设置和迁移"
 
 msgid "Fully Depreciated"
 msgstr "完全折旧"
@@ -7458,6 +7464,9 @@ msgstr "家庭电话"
 
 msgid "Hop {depth}"
 msgstr "跳转 {depth}"
+
+msgid "Host"
+msgstr "主机"
 
 msgid "Host, secure, and back up the platform"
 msgstr "托管、保护和备份平台"
@@ -8169,7 +8178,7 @@ msgid "Issues"
 msgstr "问题"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
-msgstr "它将停止运行，直到您再次发布版本。不会删除任何内容。"
+msgstr "在您再次发布版本之前，它将停止运行。没有任何内容被删除。"
 
 msgid "ITAR Certifications"
 msgstr "ITAR 认证"
@@ -8534,7 +8543,7 @@ msgid "Let members sign in through your identity provider with SAML."
 msgstr ""
 
 msgid "Let's Build"
-msgstr "开始构建"
+msgstr "让我们开始构建"
 
 msgid "Let's build something"
 msgstr "让我们构建一些东西"
@@ -8615,7 +8624,7 @@ msgid "Link Linear Issue"
 msgstr "关联 Linear 问题"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
-msgstr "将此 Carbon 客户链接到其中一个，或创建单独的 Stripe 客户。"
+msgstr "将此 Carbon 客户链接到其中一个，或创建一个单独的 Stripe 客户。"
 
 msgid "Link to sales order line"
 msgstr "关联销售订单行"
@@ -11639,8 +11648,14 @@ msgstr "保护上线日期"
 msgid "Protect training time and attend"
 msgstr "保护培训时间并参加"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "使用双因素身份验证等高级安全控制措施保护您的公司。"
+
 msgid "Protects your company's data"
 msgstr "保护您公司的数据"
+
+msgid "Prove ownership of each email domain with a DNS TXT record before it can route SAML SSO sign-ins. Add the record at DNS host, then click Verify — only verified domains participate in single sign-on."
+msgstr "在路由 SAML SSO 登录前，通过 DNS TXT 记录证明每个电子邮件域的所有权。在 DNS 主机上添加记录，然后单击验证 — 仅经过验证的域参与单点登录。"
 
 msgid "Provide process knowledge and inputs"
 msgstr "提供流程知识和输入"
@@ -12518,6 +12533,9 @@ msgstr "请求日期"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "登录时需要来自身份验证器应用的 6 位数字代码。"
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "需要身份验证器应用才能打开此公司。其他公司不受影响。"
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "在任何人打开此公司之前需要身份验证器应用。他们的其他公司不受影响。访问<0>员工账户页面</0>以查看每个人的状态。"
 
@@ -12530,8 +12548,8 @@ msgstr "根据金额阈值要求采购订单获得批准"
 msgid "Require approval for quality documents in your workflow"
 msgstr "在您的工作流程中需要质量文件的批准"
 
-msgid "Require SSO"
-msgstr "需要 SSO"
+msgid "Require SAML SSO"
+msgstr "需要 SAML SSO"
 
 msgid "Require two-factor authentication"
 msgstr "需要双因素认证"
@@ -13044,6 +13062,12 @@ msgstr "销售人员"
 msgid "Same as Book"
 msgstr "与账面相同"
 
+msgid "SAML SSO"
+msgstr "SAML SSO"
+
+msgid "SAML SSO is not configured for your email domain."
+msgstr "未为您的电子邮件域配置 SAML SSO。"
+
 msgid "Sample"
 msgstr "样本"
 
@@ -13515,10 +13539,10 @@ msgid "Self Managed"
 msgstr "自我管理"
 
 msgid "Self-hosted or managed"
-msgstr ""
+msgstr "自托管或托管"
 
 msgid "Self-onboarding"
-msgstr ""
+msgstr "自助入职"
 
 msgid "Self-paced"
 msgstr "自主学习"
@@ -14155,11 +14179,8 @@ msgstr "拆分收据行"
 msgid "Split shipment line"
 msgstr "拆分发货行"
 
-msgid "SSO is not configured for your email domain."
-msgstr "SSO 未针对您的电子邮件域进行配置。"
-
 msgid "SSO/SAML"
-msgstr ""
+msgstr "SSO/SAML"
 
 msgid "Stand up hosting"
 msgstr "建立托管"
@@ -14374,7 +14395,7 @@ msgid "Stripe"
 msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr "Stripe 已有一个使用此电子邮件的客户"
+msgstr "Stripe 已有使用此电子邮件的客户"
 
 msgid "Stripe Due Date"
 msgstr "Stripe 到期日期"
@@ -14383,7 +14404,7 @@ msgid "Stripe emails the invoice to the customer, so an address is required. Thi
 msgstr "Stripe 将发票通过电子邮件发送给客户，因此需要地址。这也将保存到 Carbon 中的联系人。"
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe 还没有此 Carbon 客户的客户。发布将在您连接的账户上创建一个。"
+msgstr "Stripe 还没有该 Carbon 客户的客户。发布将在您连接的帐户上创建一个。"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "看板输出在看板表中显示的样式"
@@ -14846,7 +14867,7 @@ msgid "Team trained"
 msgstr "团队已培训"
 
 msgid "Technical support"
-msgstr ""
+msgstr "技术支持"
 
 msgid "Temperature"
 msgstr "温度"
@@ -15681,6 +15702,9 @@ msgstr "此文件不再可用，或您没有权限下载它。"
 msgid "This Fiscal Year"
 msgstr "本财政年度"
 
+msgid "This has no effect until an email domain is verified below."
+msgstr "在下面验证电子邮件域之前，这不会产生任何影响。"
+
 msgid "This information will be used on document headers"
 msgstr "此信息将用于文档标题"
 
@@ -15698,7 +15722,7 @@ msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "此发票没有可用的到期日期 — 为 Stripe 选择一个。"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "此发票将计费到已链接到此 Carbon 客户的 Stripe 客户。要更改其详细信息，请在 Stripe 仪表板中编辑它。"
+msgstr "此发票将计费给已链接到此 Carbon 客户的 Stripe 客户。要更改其详细信息，请在 Stripe 仪表板中编辑它。"
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "这是受控环境，因此需要身份验证器应用。"
@@ -15838,7 +15862,7 @@ msgid "This version is published"
 msgstr "此版本已发布"
 
 msgid "This version is published. Create a new version to edit."
-msgstr "此版本已发布。创建新版本以编辑。"
+msgstr "此版本已发布。创建新版本进行编辑。"
 
 msgid "This version's definition could not be read."
 msgstr "无法读取此版本的定义。"
@@ -16242,6 +16266,9 @@ msgstr "双因素"
 msgid "Two-factor authentication"
 msgstr "双因素认证"
 
+msgid "Two-Factor Authentication"
+msgstr "双因素身份验证"
+
 msgid "Two-factor authentication disabled"
 msgstr "双因素身份验证已禁用"
 
@@ -16381,10 +16408,10 @@ msgid "unknown location"
 msgstr "未知位置"
 
 msgid "Unlimited functional support"
-msgstr ""
+msgstr "无限功能支持"
 
 msgid "Unlimited records"
-msgstr ""
+msgstr "无限记录"
 
 msgid "Unlink"
 msgstr "取消链接"
@@ -16692,8 +16719,8 @@ msgstr "允许重命名、替换或重新标记此文档的用户和群组;上�
 msgid "Users can update this value for themselves"
 msgstr "用户可以自行更新此值"
 
-msgid "Users on covered domains can sign in only with SSO; magic link, Google, and passkeys are refused."
-msgstr "受覆盖域上的用户只能使用 SSO 登录;拒绝魔法链接、Google 和密钥。"
+msgid "Users on covered domains can sign in only with SAML SSO; magic link, Google, and passkeys are refused."
+msgstr "覆盖域上的用户只能使用 SAML SSO 登录；magic link、Google 和通行密钥被拒绝。"
 
 msgid "Users to Update"
 msgstr "要更新的用户"
@@ -16778,6 +16805,9 @@ msgstr "验证错误"
 
 msgid "Verification failed"
 msgstr "验证失败"
+
+msgid "Verified"
+msgstr "已验证"
 
 msgid "Verify"
 msgstr "验证"
@@ -17681,7 +17711,7 @@ msgid "You're live on Carbon"
 msgstr "您已在 Carbon 上线"
 
 msgid "You're one step away from your workspace."
-msgstr "您离您的工作区只有一步之遥。"
+msgstr "您离工作区只有一步之遥。"
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "您正在按照自己的节奏自行设置 Carbon"
@@ -17709,6 +17739,9 @@ msgstr "您面向客户的价格表"
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "您的数据可访问且相对干净"
+
+msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
+msgstr "您的 DNS 提供商可能会自动将您的域追加到记录名称中 — 如果是这样，只需输入它之前的部分（例如 _carbon-challenge 加上任何子域）。"
 
 msgid "Your Email"
 msgstr "你的电子邮件"

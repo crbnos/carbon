@@ -169,7 +169,7 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} / {count} işlem"
 
 msgid "{hiddenCount} more: {hiddenNames}"
-msgstr "{hiddenCount} daha fazla: {hiddenNames}"
+msgstr "{hiddenCount} daha: {hiddenNames}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -303,7 +303,7 @@ msgid "4h"
 msgstr "4s"
 
 msgid "5 user minimum"
-msgstr ""
+msgstr "5 kullanıcı minimum"
 
 msgid "5-8 weeks"
 msgstr "5-8 hafta"
@@ -360,7 +360,7 @@ msgid "A contractor is a supplier contact with particular abilities and availabl
 msgstr "Bir yüklenici, belirli yeteneklere ve müsait saatlere sahip bir tedarikçi iletişimidir."
 
 msgid "A custom solution to meet your needs"
-msgstr ""
+msgstr "İhtiyaçlarınızı karşılamak için özel bir çözüm"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Bir müşteri, parçalarınızı veya hizmetlerinizi satın alan bir işletme veya kişidir."
@@ -473,10 +473,10 @@ msgid "A Make to Order component whose parts are issued together into the parent
 msgstr "Parçaları ebeveyn işine birlikte verilen bir Sipariş üzere Üretim bileşeni — ayrı yapı yok."
 
 msgid "A managed cloud-hosted version of Carbon"
-msgstr ""
+msgstr "Carbon'un yönetilen bir bulut barındırmalı sürümü"
 
 msgid "A managed version with all the advanced features"
-msgstr ""
+msgstr "Tüm gelişmiş özellikleri ile yönetilen bir sürüm"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Bir malzeme, birden fazla işte kullanılabilecek bir parça yapmak için kullanılan fiziksel bir öğedir"
@@ -1058,6 +1058,9 @@ msgstr "Bir yorum ekle..."
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "Miktar, fiyat, kargo, teslim süresi ve vergiyi geçersiz kılmak için özel bir fiyatlandırma satırı ekleyin"
 
+msgid "Add a domain"
+msgstr "Alan adı ekle"
+
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Malzeme listesindeki her parçayı ve miktarını gösteren bir malzeme bölümü ekleyin."
 
@@ -1084,6 +1087,9 @@ msgstr "Ayarlama ekle"
 
 msgid "Add Affected Item"
 msgstr "Etkilenen Öğe Ekle"
+
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "Oturum açarken bir kimlik doğrulayıcı uygulamadan kod isteyerek güvenliğe ekstra bir katman ekle."
 
 msgid "Add any notes about your decision..."
 msgstr "Kararınızla ilgili herhangi bir not ekleyin..."
@@ -1235,6 +1241,9 @@ msgstr "Tedarikçi Ekle"
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "Aynı sistem üzerinde bir sonraki özelliği ekleyin, başka bir araç satın almak yerine."
 
+msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
+msgstr "Bu TXT kaydını DNS sağlayıcınıza ekleyin, ardından Doğrula'ya tıklayın. DNS değişiklikleri yaygınlaştırılması birkaç dakika sürebilir."
+
 msgid "Add Timecard"
 msgstr "Zaman Kartı Ekle"
 
@@ -1337,7 +1346,7 @@ msgid "All actions selected"
 msgstr "Tüm eylemler seçildi"
 
 msgid "All advanced features available"
-msgstr ""
+msgstr "Tüm gelişmiş özellikler kullanılabilir"
 
 msgid "All Audit Logs"
 msgstr "Tüm Denetim Kayıtları"
@@ -1615,7 +1624,7 @@ msgid "API keys for programmatic access to your Carbon data."
 msgstr "Carbon verilerinize programatik erişim için API anahtarları."
 
 msgid "API, webhooks, and integrations"
-msgstr ""
+msgstr "API, web kancaları ve entegrasyonlar"
 
 msgid "Applied"
 msgstr "Uygulandı"
@@ -1791,8 +1800,8 @@ msgstr "Bu satış emri için iş oluşturmak istediğinizden emin misiniz? Bu, 
 msgid "Are you sure you want to deactivate {0}?"
 msgstr "{0}'yi devre dışı bırakmak istediğinizden emin misiniz?"
 
-msgid "Are you sure you want to deactivate SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
-msgstr "SSO'yu devre dışı bırakmak istediğinizden emin misiniz? Kayıtlı alanlarınızdaki kullanıcılar artık kimlik sağlayıcınız aracılığıyla oturum açamayacaklar. Bu işlem geri alınamaz."
+msgid "Are you sure you want to deactivate SAML SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
+msgstr "SAML SSO'yu devre dışı bırakmak istediğinizden emin misiniz? Kayıtlı etki alanlarınızdaki kullanıcılar artık kimlik sağlayıcınız aracılığıyla oturum açamayacaklardır. Bu işlem geri alınamaz."
 
 #. placeholder {0}: selectedCategory?.name
 msgid "Are you sure you want to deactivate the {0} attribute category?"
@@ -2314,7 +2323,7 @@ msgid "Audit Log"
 msgstr "Denetim Kaydı"
 
 msgid "Audit logging"
-msgstr ""
+msgstr "Denetim günlüğü"
 
 msgid "Audit Logging"
 msgstr "Denetim Kaydı Tutma"
@@ -2386,7 +2395,7 @@ msgid "Automatic Updates"
 msgstr "Otomatik Güncellemeler"
 
 msgid "Automatic updates and backups"
-msgstr ""
+msgstr "Otomatik güncellemeler ve yedeklemeler"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "Çıktı raporlandığında bir işin izlenmeyen malzemelerin otomatik, orantılı tüketimi — izlenen malzeme el ile verilir."
@@ -2486,7 +2495,7 @@ msgid "Base Price"
 msgstr "Temel Fiyat"
 
 msgid "Basic ERP, MES, and QMS functionality"
-msgstr ""
+msgstr "Temel ERP, MES ve QMS işlevselliği"
 
 msgid "Basic Information"
 msgstr "Temel Bilgiler"
@@ -2623,7 +2632,7 @@ msgid "Browse library"
 msgstr "Kütüphaneyi göz at"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
-msgstr "Yayınlanan sürümü salt okunur şekilde göz atın. Yine de adımları düzenlemek için yeniden düzenleyebilirsiniz."
+msgstr "Yayınlanan sürümü salt okunur olarak göz atın. Düzeni düzenlemek için adımları yeniden düzenleyebilirsiniz."
 
 msgid "Bucket"
 msgstr "Kova"
@@ -2830,7 +2839,7 @@ msgid "Cannot send RFQ"
 msgstr "RFQ gönderilemiyor"
 
 msgid "Cannot send through Stripe"
-msgstr "Stripe üzerinden gönderilemez"
+msgstr "Stripe aracılığıyla gönderilemez"
 
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "Yüklenemiyor — tedarikçi etkileşimi henüz oluşturulmadı"
@@ -3182,7 +3191,7 @@ msgid "Cloud, or your self-hosted environment."
 msgstr "Bulut veya kendi barındırılan ortamınız."
 
 msgid "CMMC compliant"
-msgstr ""
+msgstr "CMMC uyumlu"
 
 msgid "Code"
 msgstr "Kod"
@@ -3229,9 +3238,6 @@ msgstr "Filtreleri birleştir"
 msgid "Coming soon"
 msgstr "Yakında"
 
-msgid "Comma-separated list of email domains, e.g. example.com, example.org"
-msgstr "E-posta etki alanlarının virgülle ayrılmış listesi, örneğin example.com, example.org"
-
 msgid "comma-separated values"
 msgstr "virgülle ayrılmış değerler"
 
@@ -3248,7 +3254,7 @@ msgid "Committing a receipt, shipment, or invoice: quantities move, journal entr
 msgstr "Bir makbuzu, sevkiyatı veya faturayı taahhüt etme: miktarlar hareket eder, günlük girişleri deftere vurur ve durum Gönderilen olur."
 
 msgid "Community support"
-msgstr ""
+msgstr "Topluluk desteği"
 
 msgid "Companies"
 msgstr "Şirketler"
@@ -3547,7 +3553,7 @@ msgid "Contact (optional)"
 msgstr "İletişim (isteğe bağlı)"
 
 msgid "Contact us"
-msgstr ""
+msgstr "Bizimle iletişime geçin"
 
 msgid "contacts"
 msgstr "kişiler"
@@ -3569,9 +3575,6 @@ msgstr "İçerik"
 
 msgid "Context"
 msgstr "Bağlam"
-
-msgid "Continue with SSO"
-msgstr "SSO ile Devam Et"
 
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "Sabit kıymetlerin toplam amortismanı için karşı hesap"
@@ -4431,7 +4434,7 @@ msgid "Customers"
 msgstr "Müşteriler"
 
 msgid "Customizations, training, and integrations"
-msgstr ""
+msgstr "Özelleştirmeler, eğitim ve entegrasyonlar"
 
 msgid "Customize"
 msgstr "Özelleştir"
@@ -6234,6 +6237,9 @@ msgstr "Kapsamdaki her test, yapılandırılmış sisteminizde, verilerinizle ge
 msgid "Every match"
 msgstr "Her eşleşme"
 
+msgid "Every required action has already been added."
+msgstr "Gerekli tüm işlemler zaten eklendi."
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Dönem kapatılmadan önce gerekli tüm görevler Tamamlandı veya Atlandı olarak işaretlenmelidir."
 
@@ -7004,7 +7010,7 @@ msgid "Format"
 msgstr "Biçim"
 
 msgid "Forward deployed engineer"
-msgstr ""
+msgstr "İleriye dönük konuşlandırılmış mühendis"
 
 msgid "Foundation"
 msgstr "Temel"
@@ -7060,7 +7066,7 @@ msgid "Full name"
 msgstr "Tam adı"
 
 msgid "Full setup and migrations"
-msgstr ""
+msgstr "Tam kurulum ve geçişler"
 
 msgid "Fully Depreciated"
 msgstr "Tamamen Amortismana Tabi Tutulmuş"
@@ -7458,6 +7464,9 @@ msgstr "Ev Telefonu"
 
 msgid "Hop {depth}"
 msgstr "Atlama {depth}"
+
+msgid "Host"
+msgstr "Ana bilgisayar"
 
 msgid "Host, secure, and back up the platform"
 msgstr "Platformu barındırın, güvenli hale getirin ve yedekleyin"
@@ -8169,7 +8178,7 @@ msgid "Issues"
 msgstr "Sorunlar"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
-msgstr "Tekrar bir sürüm yayınlayana kadar çalışmayı durduracak. Hiçbir şey silinmez."
+msgstr "Yeniden bir sürüm yayınlayana kadar çalışmayı durduracak. Hiçbir şey silinmez."
 
 msgid "ITAR Certifications"
 msgstr "ITAR Sertifikaları"
@@ -8534,7 +8543,7 @@ msgid "Let members sign in through your identity provider with SAML."
 msgstr ""
 
 msgid "Let's Build"
-msgstr "Haydi İnşa Edelim"
+msgstr "Haydi Oluşturalım"
 
 msgid "Let's build something"
 msgstr "Bir şeyler inşa edelim"
@@ -11639,8 +11648,14 @@ msgstr "Go-live tarihini koruyun"
 msgid "Protect training time and attend"
 msgstr "Eğitim zamanını koru ve katıl"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "Şirketinizi iki faktörlü kimlik doğrulama zorunluluğu gibi gelişmiş güvenlik kontrolleriyle koruyun."
+
 msgid "Protects your company's data"
 msgstr "Şirketinizin verilerini korur"
+
+msgid "Prove ownership of each email domain with a DNS TXT record before it can route SAML SSO sign-ins. Add the record at DNS host, then click Verify — only verified domains participate in single sign-on."
+msgstr "Her bir e-posta etki alanının sahipliğini kanıtlayın - SAML SSO oturum açma işlemini yönlendirebilmesi için DNS TXT kaydıyla. Kaydı DNS ana bilgisayarına ekleyin, ardından Doğrula'ya tıklayın — yalnızca doğrulanmış etki alanları çoklu oturum açmada yer alır."
 
 msgid "Provide process knowledge and inputs"
 msgstr "Süreç bilgisi ve girdileri sağlayın"
@@ -12518,6 +12533,9 @@ msgstr "Talep Edilen Tarih"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Oturum açarken kimlik doğrulayıcı uygulamasından 6 haneli kod isteyini."
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "Bu şirketi açmadan önce bir kimlik doğrulayıcı uygulaması gerekli hale getirin. Diğer şirketler etkilenmez."
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Bu şirketi açabilmek için doğrulayıcı uygulamayı gerektir. Diğer şirketleri etkilenmez. Her kişinin durumunu görmek için <0>çalışan hesapları sayfasını</0> ziyaret edin."
 
@@ -12530,8 +12548,8 @@ msgstr "Belirli tutar eşiklerine göre satın alma siparişleri için onay gere
 msgid "Require approval for quality documents in your workflow"
 msgstr "İş akışınızdaki kalite belgeleri için onay gerektirir"
 
-msgid "Require SSO"
-msgstr "SSO Gerekli Kıl"
+msgid "Require SAML SSO"
+msgstr "SAML SSO Gerekli"
 
 msgid "Require two-factor authentication"
 msgstr "İki faktörlü kimlik doğrulamayı gerektir"
@@ -12697,7 +12715,7 @@ msgid "Reverse any item ledger entries from this invoice"
 msgstr "Bu faturadaki herhangi bir kalem defteri girişini tersine çevirir"
 
 msgid "Reverse charge"
-msgstr "Ters ücretlendirme"
+msgstr "Ters ücret"
 
 msgid "Reverse Charge Sales Tax"
 msgstr "Ters yükleme satış vergisi"
@@ -13043,6 +13061,12 @@ msgstr "Satış danışmanı"
 
 msgid "Same as Book"
 msgstr "Kitapta aynı"
+
+msgid "SAML SSO"
+msgstr "SAML SSO"
+
+msgid "SAML SSO is not configured for your email domain."
+msgstr "E-posta etki alanınız için SAML SSO yapılandırılmamıştır."
 
 msgid "Sample"
 msgstr "Örnek"
@@ -13515,10 +13539,10 @@ msgid "Self Managed"
 msgstr "Kendi Yönettiği"
 
 msgid "Self-hosted or managed"
-msgstr ""
+msgstr "Kendi kendine barındırılan veya yönetilen"
 
 msgid "Self-onboarding"
-msgstr ""
+msgstr "Kendi kendine yerleştirme"
 
 msgid "Self-paced"
 msgstr "Kendi hızında"
@@ -13943,7 +13967,7 @@ msgid "Shown to the user when this rule fails."
 msgstr "Bu kural başarısız olduğunda kullanıcıya gösterilir."
 
 msgid "Sign in to Carbon"
-msgstr "Carbon'a giriş yapın"
+msgstr "Carbon'da oturum açın"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Sihirli bağlantı yerine biyometrik kimlik doğrulama ile oturum açın. Geçiş Anahtarları Face ID, Touch ID veya cihaz PIN'iniz tarafından korunur."
@@ -14155,11 +14179,8 @@ msgstr "Fiş hattını böl"
 msgid "Split shipment line"
 msgstr "Sevkiyat satırını böl"
 
-msgid "SSO is not configured for your email domain."
-msgstr "SSO e-posta alanınız için yapılandırılmamış."
-
 msgid "SSO/SAML"
-msgstr ""
+msgstr "SSO/SAML"
 
 msgid "Stand up hosting"
 msgstr "Barındırmayı ayarla"
@@ -14377,13 +14398,13 @@ msgid "Stripe already has a customer with this email"
 msgstr "Stripe'ın zaten bu e-postayla bir müşterisi var"
 
 msgid "Stripe Due Date"
-msgstr "Stripe Vadesi"
+msgstr "Stripe Vade Tarihi"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripe faturayı müşteriye e-postayla gönderir, bu nedenle bir adres gereklidir. Bu ayrıca Carbon'da kişiye kaydedilecektir."
+msgstr "Stripe faturayı müşteriye e-postayla gönderir, bu nedenle bir adres gereklidir. Bu, Carbon'daki ilgili kişiye de kaydedilecek."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe'ın bu Carbon müşterisi için henüz bir müşterisi yok. Gönderme, bağlı hesabınızda bir tane oluşturacaktır."
+msgstr "Stripe'da henüz bu Carbon müşterisi için bir müşteri yok. Gönderme, bağlı hesabınızda bir tane oluşturacak."
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Kanban tablosunda gösterilecek kanban çıktısı stili"
@@ -14798,7 +14819,7 @@ msgid "Tax Depreciation Method"
 msgstr "Vergi Amortisman Yöntemi"
 
 msgid "Tax exempt"
-msgstr "Vergiden muaf"
+msgstr "Vergi muafiyeti"
 
 msgid "Tax Exempt"
 msgstr "Vergi Muaf"
@@ -14846,7 +14867,7 @@ msgid "Team trained"
 msgstr "Takım eğitildi"
 
 msgid "Technical support"
-msgstr ""
+msgstr "Teknik destek"
 
 msgid "Temperature"
 msgstr "Sıcaklık"
@@ -15667,7 +15688,7 @@ msgid "This completes the Discovery step."
 msgstr "Bu, Keşif adımını tamamlar."
 
 msgid "This contact has no email address"
-msgstr "Bu kişinin e-posta adresi yok"
+msgstr "Bu ilgili kişinin e-posta adresi yok"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Bu muhasebe ortağının ödenmemiş bir borcu yok — ödeme hesap üzerinde kaydedilecektir."
@@ -15680,6 +15701,9 @@ msgstr "Bu dosya artık kullanılamıyor veya onu indirme izniniz yok."
 
 msgid "This Fiscal Year"
 msgstr "Bu Mali Yıl"
+
+msgid "This has no effect until an email domain is verified below."
+msgstr "Bu, aşağıda bir e-posta etki alanı doğrulanana kadar hiçbir etkisi yoktur."
 
 msgid "This information will be used on document headers"
 msgstr "Bu bilgiler belge başlıklarında kullanılacaktır"
@@ -15698,7 +15722,7 @@ msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "Bu faturanın kullanılabilir bir vadesi yok — Stripe için bir tane seçin."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "Bu fatura, zaten bu Carbon müşterisine bağlı olan Stripe müşterisine faturalandırılacaktır. Ayrıntılarını değiştirmek için Stripe panosunda düzenleyin."
+msgstr "Bu fatura, zaten bu Carbon müşterisine bağlı olan Stripe müşterisine faturalanacak. Ayrıntılarını değiştirmek için Stripe panosunda düzenleyin."
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "Bu kontrollü bir ortamdır, bu nedenle doğrulayıcı uygulaması gereklidir."
@@ -16242,6 +16266,9 @@ msgstr "İki Faktörlü"
 msgid "Two-factor authentication"
 msgstr "İki faktörlü kimlik doğrulaması"
 
+msgid "Two-Factor Authentication"
+msgstr "İki Faktörlü Kimlik Doğrulaması"
+
 msgid "Two-factor authentication disabled"
 msgstr "İki Faktörlü Kimlik Doğrulama Devre Dışı Bırakıldı"
 
@@ -16381,10 +16408,10 @@ msgid "unknown location"
 msgstr "bilinmeyen konum"
 
 msgid "Unlimited functional support"
-msgstr ""
+msgstr "Sınırsız işlevsel destek"
 
 msgid "Unlimited records"
-msgstr ""
+msgstr "Sınırsız kayıtlar"
 
 msgid "Unlink"
 msgstr "Bağlantısını Kes"
@@ -16432,7 +16459,7 @@ msgid "Unpublish"
 msgstr "Yayını kaldır"
 
 msgid "Unpublish {name}?"
-msgstr "{name} yayınını kaldır?"
+msgstr "{name} yayınlaması kaldırılsın mı?"
 
 msgid "Unreceived POs"
 msgstr "Alınmamış PO'lar"
@@ -16692,8 +16719,8 @@ msgstr "Bu belgeyi yeniden adlandırmaya, değiştirmeye veya yeniden etiketleme
 msgid "Users can update this value for themselves"
 msgstr "Kullanıcılar bu değeri kendileri için güncelleyebilir"
 
-msgid "Users on covered domains can sign in only with SSO; magic link, Google, and passkeys are refused."
-msgstr "Kapsanan alanlarındaki kullanıcılar yalnızca SSO ile oturum açabilir; sihirli bağlantı, Google ve erişim anahtarları reddedilir."
+msgid "Users on covered domains can sign in only with SAML SSO; magic link, Google, and passkeys are refused."
+msgstr "Kapsanan etki alanlarındaki kullanıcılar yalnızca SAML SSO ile oturum açabilir; sihirli bağlantı, Google ve geçiş anahtarları reddedilir."
 
 msgid "Users to Update"
 msgstr "Güncellenecek Kullanıcılar"
@@ -16779,6 +16806,9 @@ msgstr "Doğrulama Hatası"
 msgid "Verification failed"
 msgstr "Doğrulama başarısız"
 
+msgid "Verified"
+msgstr "Doğrulandı"
+
 msgid "Verify"
 msgstr "Doğrula"
 
@@ -16796,7 +16826,7 @@ msgstr "Sürüm"
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
-msgstr "Sürüm {0} şimdi yayınlanır ve değiştirilecektir."
+msgstr "Sürüm {0} şu anda yayınlandı ve değiştirilecek."
 
 msgid "Version:"
 msgstr "Sürüm:"
@@ -17709,6 +17739,9 @@ msgstr "Müşterilerinize sunduğunuz fiyat listeleri"
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "Verileriniz erişilebilir ve makul ölçüde temizdir"
+
+msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
+msgstr "DNS sağlayıcınız kaydın adına etki alanınızı otomatik olarak ekleyebilir — eğer öyleyse, yalnızca önceki kısmı girin (ör. _carbon-challenge artı herhangi bir alt alan adı)."
 
 msgid "Your Email"
 msgstr "E-posta Adresiniz"

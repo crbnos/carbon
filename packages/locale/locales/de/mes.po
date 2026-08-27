@@ -280,9 +280,6 @@ msgstr "Verbraucht"
 msgid "Consumed expired"
 msgstr "Verbrauchte abgelaufen"
 
-msgid "Continue with SSO"
-msgstr "Mit SSO fortfahren"
-
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Kosten für ungeplante Wartung, letzte {0} Tage"
@@ -525,7 +522,7 @@ msgid "Finish Anyways"
 msgstr "Trotzdem beenden"
 
 msgid "Finish setting up your account"
-msgstr "Richten Sie Ihr Konto fertig ein"
+msgstr "Richten Sie Ihr Konto ein"
 
 msgid "Finish with material unpicked?"
 msgstr "Mit nicht gepicktem Material abschließen?"
@@ -537,7 +534,7 @@ msgid "Go back to operation"
 msgstr "Zurück zur Operation"
 
 msgid "Go to onboarding"
-msgstr "Gehen Sie zum Onboarding"
+msgstr "Zum Onboarding"
 
 msgid "How many were actually picked?"
 msgstr "Wie viele wurden tatsächlich gepickt?"
@@ -1119,6 +1116,12 @@ msgstr "Läuft"
 msgid "Sales Order"
 msgstr "Kundenauftrag"
 
+msgid "SAML SSO"
+msgstr "SAML SSO"
+
+msgid "SAML SSO is not configured for your email domain."
+msgstr "SAML SSO ist nicht für Ihre E-Mail-Domain konfiguriert."
+
 msgid "Save"
 msgstr "Speichern"
 
@@ -1310,9 +1313,6 @@ msgstr "Ersatzteile"
 
 msgid "Spare Parts Used"
 msgstr "Verwendete Ersatzteile"
-
-msgid "SSO is not configured for your email domain."
-msgstr "SSO ist nicht für Ihre E-Mail-Domain konfiguriert."
 
 msgid "Start"
 msgstr "Start"
@@ -1522,7 +1522,7 @@ msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock 
 msgstr "Sie sind seit {hoursElapsed} Stunden eingestempelt. Haben Sie vergessen auszustempeln?"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
-msgstr "Ihr Konto ist noch nicht Teil eines Unternehmens. Schließen Sie das Onboarding im Carbon ERP ab, um fortzufahren."
+msgstr "Ihr Konto gehört noch zu keinem Unternehmen. Schließen Sie das Onboarding in der Carbon ERP ab, um fortzufahren."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Ihre Organisation erfordert eine Authentifizierungs-App. Richten Sie sie in Carbon ein und kommen Sie dann hierher zurück."

@@ -280,9 +280,6 @@ msgstr "Zużyte"
 msgid "Consumed expired"
 msgstr "Zużyte wygasłe"
 
-msgid "Continue with SSO"
-msgstr "Kontynuuj z SSO"
-
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Koszt nieplanowanej konserwacji w ciągu ostatnich {0} dni"
@@ -525,7 +522,7 @@ msgid "Finish Anyways"
 msgstr "Zakończ mimo wszystko"
 
 msgid "Finish setting up your account"
-msgstr "Dokończ konfigurowanie swojego konta"
+msgstr "Ukończ konfigurowanie konta"
 
 msgid "Finish with material unpicked?"
 msgstr "Zakończyć bez wybranego materiału?"
@@ -537,7 +534,7 @@ msgid "Go back to operation"
 msgstr "Wróć do operacji"
 
 msgid "Go to onboarding"
-msgstr "Przejdź do onboardingu"
+msgstr "Przejdź do procesu wdrażania"
 
 msgid "How many were actually picked?"
 msgstr "Ile faktycznie zostało zebrane?"
@@ -1119,6 +1116,12 @@ msgstr "W trakcie"
 msgid "Sales Order"
 msgstr "Zamówienie sprzedaży"
 
+msgid "SAML SSO"
+msgstr "SAML SSO"
+
+msgid "SAML SSO is not configured for your email domain."
+msgstr "SAML SSO nie jest skonfigurowany dla Twojej domeny e-mail."
+
 msgid "Save"
 msgstr "Zapisz"
 
@@ -1310,9 +1313,6 @@ msgstr "Części zamienne"
 
 msgid "Spare Parts Used"
 msgstr "Użyte części zamienne"
-
-msgid "SSO is not configured for your email domain."
-msgstr "SSO nie jest skonfigurowany dla Twojej domeny e-mail."
 
 msgid "Start"
 msgstr "Start"
@@ -1522,7 +1522,7 @@ msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock 
 msgstr "Jesteś zalogowany od {hoursElapsed} godzin. Czy zapomniałeś zakończyć zmianę?"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
-msgstr "Twoje konto nie jest jeszcze częścią firmy. Aby kontynuować, dokończ wdrożenie w systemie Carbon ERP."
+msgstr "Twoje konto nie jest jeszcze częścią żadnej firmy. Dokończ proces wdrażania w aplikacji Carbon ERP, aby kontynuować."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Twoja organizacja wymaga aplikacji uwierzytelniającej. Skonfiguruj ją w aplikacji Carbon, a następnie wróć tutaj."

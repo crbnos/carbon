@@ -64,7 +64,68 @@ export async function linkSsoIdentityToUser(
     });
     return {
       data: null,
-      error: err instanceof Error ? err.message : "Failed to link SSO identity"
+      error:
+        err instanceof Error ? err.message : "Failed to link SAML SSO identity"
+    };
+  }
+}
+
+/**
+ * Remove a throwaway JIT SSO auth user COMPLETELY — the auth user AND the
+ * `public."user"` / `userPermission` rows the `on_auth_user_created` trigger
+ * auto-created for it. `public."user".id` has no FK to `auth.users`, so
+ * deleting only the auth half (what the callback's rejection paths once did)
+ * strands a profile row that trips `authIdentityExists` and makes the email
+ * permanently un-invitable.
+ *
+ * Guarded on zero `userToCompany` memberships — re-checked here, not just at
+ * the caller — so a linked or real account can never be deleted: a membership
+ * means the id was attached to a company and is not a throwaway. Public rows
+ * are deleted BEFORE the auth user: if the auth delete then fails, the remnant
+ * is auth-only, which the next SSO attempt (or invite) resolves by itself —
+ * never the un-invitable orphan.
+ */
+export async function deleteJitSsoUser(
+  serviceRole: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  userId: string
+): Promise<{ data: { deleted: boolean } | null; error: string | null }> {
+  try {
+    const membership = await db
+      .selectFrom("userToCompany")
+      .select("companyId")
+      .where("userId", "=", userId)
+      .limit(1)
+      .executeTakeFirst();
+
+    if (membership) {
+      logger.warn("Refused to delete JIT SSO user with a company membership", {
+        userId
+      });
+      return { data: { deleted: false }, error: null };
+    }
+
+    await db.transaction().execute(async (trx) => {
+      await trx.deleteFrom("userPermission").where("id", "=", userId).execute();
+      await trx.deleteFrom("user").where("id", "=", userId).execute();
+    });
+
+    const removed = await serviceRole.auth.admin.deleteUser(userId);
+    if (removed.error) {
+      logger.error("Failed to delete JIT SSO auth user", {
+        userId,
+        error: removed.error
+      });
+      return { data: null, error: removed.error.message };
+    }
+
+    return { data: { deleted: true }, error: null };
+  } catch (err) {
+    logger.error("Failed to delete JIT SSO user", { userId, error: err });
+    return {
+      data: null,
+      error:
+        err instanceof Error ? err.message : "Failed to delete JIT SSO user"
     };
   }
 }
@@ -115,7 +176,7 @@ export function uncoveredSsoDomainError(
   }
   return `Single sign-on is active for ${domains.join(
     ", "
-  )}. Employees must be invited with an email on a covered domain — or add this domain to the SSO connection in Settings → Security.`;
+  )}. Employees must be invited with an email on a covered domain — or add this domain to the SAML SSO connection in Settings → Security.`;
 }
 
 type InviteRow = Database["public"]["Tables"]["invite"]["Row"];
@@ -182,7 +243,7 @@ export async function migrateUserToSso(
     return {
       data: null,
       error:
-        "An active account already owns this email and should have been linked automatically. Sign in with SSO again; contact your administrator if this persists."
+        "An active account already owns this email and should have been linked automatically. Sign in with SAML SSO again; contact your administrator if this persists."
     };
   }
 

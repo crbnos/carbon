@@ -28,6 +28,7 @@ import { normalizeOperationSourceIds } from "../shared";
 import {
   getModelByItemId,
   lookupBuyPriceFromMap,
+  resolveBuyUnitCost,
   upsertExternalLink
 } from "../shared/shared.service";
 import type {
@@ -4041,10 +4042,11 @@ async function buildCostEffects(
 
   const operations = operationsResult.data ?? [];
 
-  // Fix Buy material costs
+  // Refresh Buy material costs from supplier price breaks; resolveBuyUnitCost
+  // leaves a typed cost alone.
   const buyMaterials = await client
     .from("quoteMaterial")
-    .select("id, itemId, unitCost")
+    .select("id, itemId, unitCost, unitCostSource")
     .eq("quoteLineId", quoteLineId)
     .eq("methodType", "Purchase to Order");
 
@@ -4054,7 +4056,8 @@ async function buildCostEffects(
   const priceMap = await getSupplierPriceBreaksForItems(client, buyItemIds);
 
   for (const mat of buyMaterials.data ?? []) {
-    const price = lookupBuyPriceFromMap(mat.itemId, 1, priceMap, mat.unitCost);
+    if (mat.unitCostSource === "manual") continue;
+    const price = resolveBuyUnitCost(mat, 1, priceMap);
     if (price !== mat.unitCost) {
       await client
         .from("quoteMaterial")
@@ -4170,13 +4173,17 @@ async function buildCostEffects(
     itemId: string,
     itemType: string,
     quantity: number,
-    unitCost: number
+    unitCost: number,
+    unitCostSource: string | null
   ) {
     const costFn = (outerQty: number) => {
       const requestedQty = quantity * outerQty;
       return (
-        lookupBuyPriceFromMap(itemId, requestedQty, priceMap, unitCost) *
-        requestedQty
+        resolveBuyUnitCost(
+          { itemId, unitCost, unitCostSource },
+          requestedQty,
+          priceMap
+        ) * requestedQty
       );
     };
     const key =
@@ -4199,7 +4206,13 @@ async function buildCostEffects(
     const qty = d.quantity * parentQuantity;
 
     if (d.methodType === "Purchase to Order") {
-      pushBuyCostEffect(d.itemId, d.itemType, qty, d.unitCost);
+      pushBuyCostEffect(
+        d.itemId,
+        d.itemType,
+        qty,
+        d.unitCost,
+        d.unitCostSource
+      );
     } else if (d.methodType === "Pull from Inventory") {
       const costFn = (outerQty: number) => d.unitCost * qty * outerQty;
       const key =

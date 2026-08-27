@@ -7,9 +7,12 @@ import {
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { requirePlan } from "@carbon/ee/plan.server";
 import {
   getSamlSpUrls,
   getSsoConnection,
+  getSsoDomains,
+  getTxtRecord,
   isSsoEnabled
 } from "@carbon/ee/sso.server";
 import { ValidatedForm } from "@carbon/form";
@@ -38,14 +41,17 @@ import {
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, Link, redirect, useFetcher, useLoaderData } from "react-router";
 import { Hidden, Input, Submit, TextArea } from "~/components/Form";
 import { usePermissions } from "~/hooks";
+import { usePlanGate } from "~/hooks/usePlanGate";
 import { useSettings } from "~/hooks/useSettings";
 import {
+  SecurityUpgradeOverlay,
   ssoConnectionValidator,
+  ssoDomainValidator,
   updateRequireMfaSetting
 } from "~/modules/settings";
 import { sendMfaRequiredEmails } from "~/services/mfa-email.server";
@@ -78,6 +84,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return {
       ssoEnabled,
       connection: null,
+      domains: [],
       acsUrl,
       metadataUrl
     };
@@ -89,14 +96,50 @@ export async function loader({ request }: LoaderFunctionArgs) {
       path.to.settings,
       await flash(
         request,
-        error(connection.error, "Failed to load SSO connection")
+        error(connection.error, "Failed to load SAML SSO connection")
       )
     );
+  }
+
+  // Domain claims with their DNS challenge instructions. The token is not a
+  // secret (once published it is world-readable in DNS), so shipping the
+  // ready-to-copy record to the client is fine.
+  let domains: {
+    id: string;
+    domain: string;
+    status: string;
+    txtHost: string;
+    txtValue: string;
+  }[] = [];
+  if (connection.data) {
+    const domainRows = await getSsoDomains(client, companyId);
+    if (domainRows.error) {
+      throw redirect(
+        path.to.settings,
+        await flash(
+          request,
+          error(domainRows.error, "Failed to load SAML SSO domains")
+        )
+      );
+    }
+    domains = (domainRows.data ?? [])
+      .filter((row) => row.connectionId === connection.data?.id)
+      .map((row) => {
+        const txt = getTxtRecord(row.domain, row.verificationToken);
+        return {
+          id: row.id,
+          domain: row.domain,
+          status: row.status,
+          txtHost: txt.host,
+          txtValue: txt.value
+        };
+      });
   }
 
   return {
     ssoEnabled,
     connection: connection.data,
+    domains,
     acsUrl,
     metadataUrl
   };
@@ -110,6 +153,17 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
 
   const requireMfa = formData.get("enabled") === "true";
+
+  if (requireMfa) {
+    await requirePlan({
+      request,
+      client,
+      companyId,
+      feature: "TWO_FACTOR",
+      redirectTo: path.to.security,
+      message: "Upgrade to Business to require two-factor authentication"
+    });
+  }
 
   // Read the stored value first: the switch re-submits on every flip, and a
   // toggle that lands on the value it already had must not re-announce.
@@ -160,19 +214,32 @@ export async function action({ request }: ActionFunctionArgs) {
   );
 }
 
-function ConnectionStatus({ active }: { active: boolean }) {
+function StatusDot({
+  tone,
+  children
+}: {
+  tone: "green" | "amber" | "gray";
+  children: ReactNode;
+}) {
+  const toneClass = {
+    green: "bg-emerald-500 shadow-[0_0_0_3px_rgb(16_185_129_/_0.15)]",
+    amber: "bg-amber-500 shadow-[0_0_0_3px_rgb(245_158_11_/_0.15)]",
+    gray: "bg-muted-foreground/40"
+  }[tone];
+
   return (
     <span className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
-      <span
-        className={cn(
-          "size-2 rounded-full",
-          active
-            ? "bg-emerald-500 shadow-[0_0_0_3px_rgb(16_185_129_/_0.15)]"
-            : "bg-muted-foreground/40"
-        )}
-      />
-      {active ? <Trans>Active</Trans> : <Trans>Not configured</Trans>}
+      <span className={cn("size-2 rounded-full", toneClass)} />
+      {children}
     </span>
+  );
+}
+
+function ConnectionStatus({ active }: { active: boolean }) {
+  return (
+    <StatusDot tone={active ? "green" : "gray"}>
+      {active ? <Trans>Active</Trans> : <Trans>Not configured</Trans>}
+    </StatusDot>
   );
 }
 
@@ -190,8 +257,88 @@ function CopyableField({ label, value }: { label: string; value: string }) {
   );
 }
 
+function SsoDomainRow({
+  domain,
+  canEdit
+}: {
+  domain: {
+    id: string;
+    domain: string;
+    status: string;
+    txtHost: string;
+    txtValue: string;
+  };
+  canEdit: boolean;
+}) {
+  const { t } = useLingui();
+  const fetcher = useFetcher<{}>();
+  const isPending = domain.status !== "verified";
+  const isBusy = fetcher.state !== "idle";
+  const submitting = fetcher.formData?.get("intent");
+
+  return (
+    <div className="w-full rounded-md border border-border p-4">
+      <HStack className="w-full justify-between items-center">
+        <HStack spacing={2}>
+          <span className="text-sm font-medium font-mono">{domain.domain}</span>
+          <StatusDot tone={isPending ? "amber" : "green"}>
+            {isPending ? <Trans>Pending</Trans> : <Trans>Verified</Trans>}
+          </StatusDot>
+        </HStack>
+        <HStack spacing={2}>
+          {isPending && (
+            <fetcher.Form method="post" action={path.to.sso}>
+              <input type="hidden" name="intent" value="verifyDomain" />
+              <input type="hidden" name="domainId" value={domain.id} />
+              <Button
+                type="submit"
+                variant="secondary"
+                isLoading={isBusy && submitting === "verifyDomain"}
+                isDisabled={!canEdit || isBusy}
+              >
+                <Trans>Verify</Trans>
+              </Button>
+            </fetcher.Form>
+          )}
+          <fetcher.Form method="post" action={path.to.sso}>
+            <input type="hidden" name="intent" value="removeDomain" />
+            <input type="hidden" name="domainId" value={domain.id} />
+            <Button
+              type="submit"
+              variant="ghost"
+              isLoading={isBusy && submitting === "removeDomain"}
+              isDisabled={!canEdit || isBusy}
+            >
+              <Trans>Remove</Trans>
+            </Button>
+          </fetcher.Form>
+        </HStack>
+      </HStack>
+      {isPending && (
+        <VStack spacing={2} className="mt-4">
+          <p className="text-sm text-muted-foreground">
+            <Trans>
+              Add this TXT record at your DNS host, then click Verify. DNS
+              changes can take a few minutes to propagate.
+            </Trans>
+          </p>
+          <p className="text-sm text-muted-foreground">
+            <Trans>
+              Your DNS provider may auto-append your domain to the record name —
+              if so, enter only the part before it (e.g. _carbon-challenge plus
+              any subdomain).
+            </Trans>
+          </p>
+          <CopyableField label={t`Host`} value={domain.txtHost} />
+          <CopyableField label={t`Value`} value={domain.txtValue} />
+        </VStack>
+      )}
+    </div>
+  );
+}
+
 export default function Security() {
-  const { ssoEnabled, connection, acsUrl, metadataUrl } =
+  const { ssoEnabled, connection, domains, acsUrl, metadataUrl } =
     useLoaderData<typeof loader>();
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -207,6 +354,8 @@ export default function Security() {
   // submit is a pathname change, which Submit's unsaved-changes blocker
   // intercepts as "leaving the page".
   const connectionFetcher = useFetcher<{}>();
+  const addDomainFetcher = useFetcher<{}>();
+  const { isGated } = usePlanGate({ feature: "TWO_FACTOR" });
 
   // A successful deactivation redirects and revalidates the loader, so the
   // connection disappears — close the confirm modal with it instead of
@@ -216,6 +365,10 @@ export default function Security() {
   useEffect(() => {
     if (!connection) setDeactivateModalOpen(false);
   }, [connection]);
+
+  if (isGated && !CONTROLLED_ENVIRONMENT && !requireMfa) {
+    return <SecurityUpgradeOverlay />;
+  }
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">
@@ -325,11 +478,7 @@ export default function Security() {
               fetcher={connectionFetcher}
               defaultValues={{
                 metadataUrl: connection?.metadataUrl ?? "",
-                metadataXml: connection?.metadataXml ?? "",
-                // The form field carries the comma-separated string; the
-                // validator's transform turns it into the stored string array.
-                domains: (connection?.domains?.join(", ") ??
-                  "") as unknown as string[]
+                metadataXml: connection?.metadataXml ?? ""
               }}
             >
               <Card>
@@ -358,24 +507,27 @@ export default function Security() {
                       label={t`IdP Metadata XML`}
                       placeholder={t`Paste the metadata XML if your identity provider does not publish a metadata URL`}
                     />
-                    <Input
-                      name="domains"
-                      label={t`Email Domains`}
-                      helperText={t`Comma-separated list of email domains, e.g. example.com, example.org`}
-                    />
                   </VStack>
                   {connection && (
                     <div className="flex items-center justify-between gap-4 border-t border-border pt-6">
-                      <div className="flex flex-col gap-0.5">
+                      <div className="flex flex-col gap-0.5 max-w-md">
                         <p className="text-sm font-medium text-foreground">
-                          <Trans>Require SSO</Trans>
+                          <Trans>Require SAML SSO</Trans>
                         </p>
-                        <p className="text-sm text-muted-foreground text-pretty max-w-md">
+                        <p className="text-sm text-muted-foreground text-pretty">
                           <Trans>
-                            Users on covered domains can sign in only with SSO;
-                            magic link, Google, and passkeys are refused.
+                            Users on covered domains can sign in only with SAML
+                            SSO; magic link, Google, and passkeys are refused.
                           </Trans>
                         </p>
+                        {connection.domains.length === 0 && (
+                          <p className="text-sm text-muted-foreground text-pretty">
+                            <Trans>
+                              This has no effect until an email domain is
+                              verified below.
+                            </Trans>
+                          </p>
+                        )}
                       </div>
                       {/* The connection loaded here is active by definition
                           (getSsoConnection filters active = true), so the
@@ -394,7 +546,7 @@ export default function Security() {
                         disabled={
                           requireSsoFetcher.state !== "idle" || !canEdit
                         }
-                        aria-label={t`Require SSO`}
+                        aria-label={t`Require SAML SSO`}
                       />
                     </div>
                   )}
@@ -423,6 +575,58 @@ export default function Security() {
               </Card>
             </ValidatedForm>
 
+            {connection && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>
+                    <Trans>Email Domains</Trans>
+                  </CardTitle>
+                  <CardDescription>
+                    <Trans>
+                      Prove ownership of each email domain with a DNS TXT record
+                      before it can route SAML SSO sign-ins. Add the record at
+                      DNS host, then click Verify — only verified domains
+                      participate in single sign-on.
+                    </Trans>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <VStack spacing={4}>
+                    {domains.map((domain) => (
+                      <SsoDomainRow
+                        key={domain.id}
+                        domain={domain}
+                        canEdit={canEdit}
+                      />
+                    ))}
+                    <ValidatedForm
+                      className="w-full"
+                      validator={ssoDomainValidator}
+                      method="post"
+                      action={path.to.sso}
+                      defaultValues={{ domain: "" }}
+                      fetcher={addDomainFetcher}
+                      resetAfterSubmit
+                    >
+                      <Hidden name="intent" value="addDomain" />
+                      <HStack className="w-full items-end">
+                        <div className="flex-1">
+                          <Input
+                            name="domain"
+                            label={t`Add a domain`}
+                            placeholder="example.com"
+                          />
+                        </div>
+                        <Submit isDisabled={!canEdit} withBlocker={false}>
+                          <Trans>Add</Trans>
+                        </Submit>
+                      </HStack>
+                    </ValidatedForm>
+                  </VStack>
+                </CardContent>
+              </Card>
+            )}
+
             {deactivateModalOpen && (
               <Modal
                 open
@@ -440,9 +644,10 @@ export default function Security() {
                   <ModalBody>
                     <p className="text-sm text-muted-foreground">
                       <Trans>
-                        Are you sure you want to deactivate SSO? Users on your
-                        registered domains will no longer be able to sign in
-                        through your identity provider. This cannot be undone.
+                        Are you sure you want to deactivate SAML SSO? Users on
+                        your registered domains will no longer be able to sign
+                        in through your identity provider. This cannot be
+                        undone.
                       </Trans>
                     </p>
                   </ModalBody>

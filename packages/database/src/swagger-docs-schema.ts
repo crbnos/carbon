@@ -2077,6 +2077,9 @@ export default {
             $ref: "#/parameters/rowFilter.consumables.mpn"
           },
           {
+            $ref: "#/parameters/rowFilter.consumables.suppliers"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -16012,6 +16015,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMaterialWithMakeMethodId.storageUnitId"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteMaterialWithMakeMethodId.unitCostSource"
+          },
+          {
             $ref: "#/parameters/rowFilter.quoteMaterialWithMakeMethodId.quoteMaterialMakeMethodId"
           },
           {
@@ -16054,6 +16060,195 @@ export default {
           }
         },
         tags: ["quoteMaterialWithMakeMethodId"]
+      }
+    },
+    "/ssoDomain": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.connectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.domain"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.verificationToken"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.verifiedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/ssoDomain"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["ssoDomain"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.ssoDomain"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["ssoDomain"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.connectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.domain"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.verificationToken"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.verifiedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["ssoDomain"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.connectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.domain"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.verificationToken"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.verifiedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.ssoDomain.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.ssoDomain"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["ssoDomain"]
       }
     },
     "/itemUnitSalePrice": {
@@ -30499,6 +30694,9 @@ export default {
             $ref: "#/parameters/rowFilter.services.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.services.suppliers"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -43255,6 +43453,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMaterial.storageUnitId"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteMaterial.unitCostSource"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -43386,6 +43587,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMaterial.storageUnitId"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteMaterial.unitCostSource"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -43469,6 +43673,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteMaterial.storageUnitId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteMaterial.unitCostSource"
           },
           {
             $ref: "#/parameters/body.quoteMaterial"
@@ -48850,9 +49057,6 @@ export default {
             $ref: "#/parameters/rowFilter.ssoConnection.providerId"
           },
           {
-            $ref: "#/parameters/rowFilter.ssoConnection.domains"
-          },
-          {
             $ref: "#/parameters/rowFilter.ssoConnection.metadataUrl"
           },
           {
@@ -48945,9 +49149,6 @@ export default {
             $ref: "#/parameters/rowFilter.ssoConnection.providerId"
           },
           {
-            $ref: "#/parameters/rowFilter.ssoConnection.domains"
-          },
-          {
             $ref: "#/parameters/rowFilter.ssoConnection.metadataUrl"
           },
           {
@@ -48992,9 +49193,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.ssoConnection.providerId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.ssoConnection.domains"
           },
           {
             $ref: "#/parameters/rowFilter.ssoConnection.metadataUrl"
@@ -57847,6 +58045,9 @@ export default {
             $ref: "#/parameters/rowFilter.parts.mpn"
           },
           {
+            $ref: "#/parameters/rowFilter.parts.suppliers"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -58700,6 +58901,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.materials.mpn"
+          },
+          {
+            $ref: "#/parameters/rowFilter.materials.suppliers"
           },
           {
             $ref: "#/parameters/select"
@@ -61043,6 +61247,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.tools.mpn"
+          },
+          {
+            $ref: "#/parameters/rowFilter.tools.suppliers"
           },
           {
             $ref: "#/parameters/select"
@@ -99929,6 +100136,13 @@ export default {
         mpn: {
           format: "text",
           type: "string"
+        },
+        suppliers: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         }
       },
       type: "object"
@@ -106307,6 +106521,10 @@ export default {
           format: "text",
           type: "string"
         },
+        unitCostSource: {
+          format: "text",
+          type: "string"
+        },
         quoteMaterialMakeMethodId: {
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
@@ -106315,6 +106533,76 @@ export default {
         version: {
           format: "numeric",
           type: "number"
+        }
+      },
+      type: "object"
+    },
+    ssoDomain: {
+      required: [
+        "id",
+        "companyId",
+        "connectionId",
+        "domain",
+        "verificationToken",
+        "status",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('ssod'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        connectionId: {
+          format: "text",
+          type: "string"
+        },
+        domain: {
+          format: "text",
+          type: "string"
+        },
+        verificationToken: {
+          format: "text",
+          type: "string"
+        },
+        status: {
+          default: "pending",
+          enum: ["pending", "verified"],
+          format: 'public."ssoDomainStatus"',
+          type: "string"
+        },
+        verifiedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -113318,6 +113606,13 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        suppliers: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         }
       },
       type: "object"
@@ -119348,7 +119643,8 @@ export default {
         "createdBy",
         "quoteMakeMethodId",
         "scrapQuantity",
-        "kit"
+        "kit",
+        "unitCostSource"
       ],
       properties: {
         id: {
@@ -119475,6 +119771,11 @@ export default {
         storageUnitId: {
           description:
             "Note:\nThis is a Foreign Key to `storageUnit.id`.<fk table='storageUnit' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        unitCostSource: {
+          default: "system",
           format: "text",
           type: "string"
         }
@@ -121997,7 +122298,6 @@ export default {
         "id",
         "companyId",
         "providerId",
-        "domains",
         "active",
         "requireSso",
         "createdBy",
@@ -122019,13 +122319,6 @@ export default {
         providerId: {
           format: "text",
           type: "string"
-        },
-        domains: {
-          format: "text[]",
-          items: {
-            type: "string"
-          },
-          type: "array"
         },
         metadataUrl: {
           format: "text",
@@ -125994,6 +126287,13 @@ export default {
         mpn: {
           format: "text",
           type: "string"
+        },
+        suppliers: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         }
       },
       type: "object"
@@ -126459,6 +126759,13 @@ export default {
         mpn: {
           format: "text",
           type: "string"
+        },
+        suppliers: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         }
       },
       type: "object"
@@ -126690,6 +126997,8 @@ export default {
           type: "string"
         },
         itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -127663,6 +127972,13 @@ export default {
         mpn: {
           format: "text",
           type: "string"
+        },
+        suppliers: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         }
       },
       type: "object"
@@ -141623,6 +141939,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.consumables.suppliers": {
+      name: "suppliers",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.quoteLine": {
       name: "quoteLine",
       description: "quoteLine",
@@ -148795,6 +149117,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.quoteMaterialWithMakeMethodId.unitCostSource": {
+      name: "unitCostSource",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.quoteMaterialWithMakeMethodId.quoteMaterialMakeMethodId": {
       name: "quoteMaterialMakeMethodId",
       required: false,
@@ -148803,6 +149131,81 @@ export default {
     },
     "rowFilter.quoteMaterialWithMakeMethodId.version": {
       name: "version",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.ssoDomain": {
+      name: "ssoDomain",
+      description: "ssoDomain",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/ssoDomain"
+      }
+    },
+    "rowFilter.ssoDomain.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoDomain.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoDomain.connectionId": {
+      name: "connectionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoDomain.domain": {
+      name: "domain",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoDomain.verificationToken": {
+      name: "verificationToken",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoDomain.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoDomain.verifiedAt": {
+      name: "verifiedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoDomain.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoDomain.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoDomain.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.ssoDomain.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -156735,6 +157138,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.services.suppliers": {
+      name: "suppliers",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.unitOfMeasure": {
       name: "unitOfMeasure",
       description: "unitOfMeasure",
@@ -163343,6 +163752,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.quoteMaterial.unitCostSource": {
+      name: "unitCostSource",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.customerStatus": {
       name: "customerStatus",
       description: "customerStatus",
@@ -166285,12 +166700,6 @@ export default {
     },
     "rowFilter.ssoConnection.providerId": {
       name: "providerId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.ssoConnection.domains": {
-      name: "domains",
       required: false,
       in: "query",
       type: "string"
@@ -170736,6 +171145,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.parts.suppliers": {
+      name: "suppliers",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.currency": {
       name: "currency",
       description: "currency",
@@ -171290,6 +171705,12 @@ export default {
     },
     "rowFilter.materials.mpn": {
       name: "mpn",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.materials.suppliers": {
+      name: "suppliers",
       required: false,
       in: "query",
       type: "string"
@@ -172585,6 +173006,12 @@ export default {
     },
     "rowFilter.tools.mpn": {
       name: "mpn",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.tools.suppliers": {
+      name: "suppliers",
       required: false,
       in: "query",
       type: "string"

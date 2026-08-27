@@ -280,9 +280,6 @@ msgstr "Tüketildi"
 msgid "Consumed expired"
 msgstr "Tüketilmiş süre dolmuş"
 
-msgid "Continue with SSO"
-msgstr "SSO ile devam et"
-
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Planlanmamış bakım maliyeti, son {0} gün"
@@ -525,7 +522,7 @@ msgid "Finish Anyways"
 msgstr "Yine de Bitir"
 
 msgid "Finish setting up your account"
-msgstr "Hesabınızı ayarlamayı tamamlayın"
+msgstr "Hesabınızı kurulumunu tamamlayın"
 
 msgid "Finish with material unpicked?"
 msgstr "Malzeme seçilmeden bitir?"
@@ -1119,6 +1116,12 @@ msgstr "Çalışıyor"
 msgid "Sales Order"
 msgstr "Satış Siparişi"
 
+msgid "SAML SSO"
+msgstr "SAML SSO"
+
+msgid "SAML SSO is not configured for your email domain."
+msgstr "SAML SSO, e-posta etki alanınız için yapılandırılmamıştır."
+
 msgid "Save"
 msgstr "Kaydet"
 
@@ -1310,9 +1313,6 @@ msgstr "Yedek Parçalar"
 
 msgid "Spare Parts Used"
 msgstr "Kullanılan Yedek Parçalar"
-
-msgid "SSO is not configured for your email domain."
-msgstr "SSO, e-posta alan adınız için yapılandırılmadı."
 
 msgid "Start"
 msgstr "Başlat"

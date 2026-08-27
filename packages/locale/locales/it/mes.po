@@ -280,9 +280,6 @@ msgstr "Consumato"
 msgid "Consumed expired"
 msgstr "Consumato scaduto"
 
-msgid "Continue with SSO"
-msgstr "Continua con SSO"
-
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Costo della manutenzione non pianificata, ultimi {0} giorni"
@@ -525,7 +522,7 @@ msgid "Finish Anyways"
 msgstr "Termina comunque"
 
 msgid "Finish setting up your account"
-msgstr "Finisci di configurare il tuo account"
+msgstr "Completa la configurazione del tuo account"
 
 msgid "Finish with material unpicked?"
 msgstr "Terminare con il materiale non prelevato?"
@@ -1119,6 +1116,12 @@ msgstr "In esecuzione"
 msgid "Sales Order"
 msgstr "Ordine di Vendita"
 
+msgid "SAML SSO"
+msgstr "SAML SSO"
+
+msgid "SAML SSO is not configured for your email domain."
+msgstr "SAML SSO non è configurato per il tuo dominio email."
+
 msgid "Save"
 msgstr "Salva"
 
@@ -1310,9 +1313,6 @@ msgstr "Ricambi"
 
 msgid "Spare Parts Used"
 msgstr "Ricambi Utilizzati"
-
-msgid "SSO is not configured for your email domain."
-msgstr "SSO non è configurato per il tuo dominio email."
 
 msgid "Start"
 msgstr "Avvia"
@@ -1522,7 +1522,7 @@ msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock 
 msgstr "Sei timbrato in ingresso da {hoursElapsed} ore. Hai dimenticato di timbrare l'uscita?"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
-msgstr "Il tuo account non fa ancora parte di un'azienda. Completa l'onboarding nel Carbon ERP per continuare."
+msgstr "Il tuo account non fa ancora parte di un'azienda. Completa l'onboarding in Carbon ERP per continuare."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "La tua organizzazione richiede un'app di autenticazione. Configurala in Carbon, quindi torna qui."

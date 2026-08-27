@@ -29,11 +29,26 @@ vi.mock("@carbon/logger", () => ({
   })
 }));
 
+// Stub the DNS challenge so no test resolves real TXT records.
+const { checkDomainVerificationMock } = vi.hoisted(() => ({
+  checkDomainVerificationMock: vi.fn()
+}));
+vi.mock("./verification.server", () => ({
+  generateVerificationToken: () => "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  checkDomainVerification: checkDomainVerificationMock
+}));
+
 const { getSsoProviderIdFromSession, getSsoProviderIdFromUser } = await import(
   "./session.server"
 );
-const { getSsoAwareInviteLink, isSsoRequiredForEmail, upsertSsoConnection } =
-  await import("./connections.server");
+const {
+  addSsoDomain,
+  getSsoAwareInviteLink,
+  getSsoConnection,
+  isSsoRequiredForEmail,
+  upsertSsoConnection,
+  verifySsoDomain
+} = await import("./connections.server");
 
 function makeUser(overrides: {
   identityProviders?: string[];
@@ -264,7 +279,7 @@ describe("isSsoRequiredForEmail", () => {
     expect(calls.from).toBeUndefined();
   });
 
-  it("matches the domain case-insensitively (lowercased before the array lookup)", async () => {
+  it("matches the domain case-insensitively (lowercased before the lookup)", async () => {
     const { client, calls } = makeSsoClient({
       data: { requireSso: true },
       error: null
@@ -272,7 +287,131 @@ describe("isSsoRequiredForEmail", () => {
     await expect(isSsoRequiredForEmail(client, "Jane@ACME.com")).resolves.toBe(
       true
     );
-    expect(calls.contains?.[0]).toEqual(["domains", ["acme.com"]]);
+    expect(calls.eq).toContainEqual(["ssoDomain.domain", "acme.com"]);
+  });
+
+  it("only matches VERIFIED domain claims (pending claims must not enforce)", async () => {
+    const { client, calls } = makeSsoClient({
+      data: { requireSso: true },
+      error: null
+    });
+    await expect(isSsoRequiredForEmail(client, "jane@acme.com")).resolves.toBe(
+      true
+    );
+    expect(calls.eq).toContainEqual(["ssoDomain.status", "verified"]);
+  });
+});
+
+describe("getSsoConnection domains mapping", () => {
+  it("attaches VERIFIED domains only and strips the embed", async () => {
+    const { client } = makeSsoClient({
+      data: {
+        id: "sso_1",
+        companyId: "company_1",
+        ssoDomain: [
+          { domain: "acme.com", status: "verified" },
+          { domain: "pending.com", status: "pending" }
+        ]
+      },
+      error: null
+    });
+    const result = await getSsoConnection(client, "company_1");
+    expect(result.data?.domains).toEqual(["acme.com"]);
+    expect(result.data).not.toHaveProperty("ssoDomain");
+  });
+
+  it("attaches an empty domains array when the connection has no claims", async () => {
+    const { client } = makeSsoClient({
+      data: { id: "sso_1", companyId: "company_1" },
+      error: null
+    });
+    const result = await getSsoConnection(client, "company_1");
+    expect(result.data?.domains).toEqual([]);
+  });
+});
+
+// Exclusivity attaches to verification, not the claim — pending rows never
+// conflict across companies, so squatting is impossible.
+describe("ssoDomain claim exclusivity", () => {
+  const activeConnection = {
+    data: {
+      id: "conn_1",
+      companyId: "c1",
+      providerId: "p1",
+      metadataUrl: null,
+      metadataXml: null,
+      active: true
+    },
+    error: null
+  };
+
+  const chainFor = (result: { data: unknown; error: unknown }) => {
+    const chain = {
+      select: () => chain,
+      eq: () => chain,
+      neq: () => chain,
+      maybeSingle: async () => result
+    };
+    return chain;
+  };
+
+  it("refuses the company's OWN duplicate before inserting (pending claims never conflict across companies)", async () => {
+    const insertSpy = vi.fn();
+    const client = {
+      from: (table: string) => {
+        if (table === "ssoConnection") return chainFor(activeConnection);
+        return {
+          ...chainFor({ data: { id: "dom_1" }, error: null }),
+          insert: insertSpy
+        };
+      }
+    } as never;
+
+    const result = await addSsoDomain(client, {
+      companyId: "c1",
+      domain: "Acme.com",
+      userId: "user_1"
+    });
+    expect(result.data).toBeNull();
+    expect(result.error).toContain("already been added");
+    expect(result.error).not.toContain("another company");
+    expect(insertSpy).not.toHaveBeenCalled();
+  });
+
+  it("refuses verification when another company already verified the domain — with a GENERIC message (no oracle) and no DNS lookup", async () => {
+    checkDomainVerificationMock.mockClear();
+    let ssoDomainCall = 0;
+    const client = {
+      from: (table: string) => {
+        if (table === "ssoConnection") return chainFor(activeConnection);
+        ssoDomainCall += 1;
+        return chainFor(
+          ssoDomainCall === 1
+            ? {
+                data: {
+                  id: "dom_1",
+                  companyId: "c1",
+                  connectionId: "conn_1",
+                  domain: "acme.com",
+                  verificationToken: "tok",
+                  status: "pending"
+                },
+                error: null
+              }
+            : { data: { companyId: "c2" }, error: null }
+        );
+      }
+    } as never;
+
+    const result = await verifySsoDomain(client, {
+      companyId: "c1",
+      domainId: "dom_1",
+      userId: "user_1"
+    });
+    expect(result.data).toBeNull();
+    expect(result.error).toBe("Failed to verify domain");
+    expect(result.error).not.toContain("another company");
+    expect(checkDomainVerificationMock).not.toHaveBeenCalled();
   });
 });
 
@@ -295,7 +434,6 @@ describe("isSsoEnabled gate (AUTH_PROVIDERS half toggled off)", () => {
       const upsert = await upsertSsoConnection(client, {
         companyId: "c1",
         metadataUrl: "https://idp.example.com/metadata",
-        domains: ["acme.com"],
         userId: "user_1"
       });
       expect(upsert.error).toBe(

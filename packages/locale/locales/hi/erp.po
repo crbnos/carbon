@@ -169,7 +169,7 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} में से {count} परिचालन"
 
 msgid "{hiddenCount} more: {hiddenNames}"
-msgstr "{hiddenCount} अधिक: {hiddenNames}"
+msgstr "{hiddenCount} और: {hiddenNames}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -303,7 +303,7 @@ msgid "4h"
 msgstr "4 घंटे"
 
 msgid "5 user minimum"
-msgstr ""
+msgstr "5 उपयोगकर्ता न्यूनतम"
 
 msgid "5-8 weeks"
 msgstr "5-8 सप्ताह"
@@ -360,7 +360,7 @@ msgid "A contractor is a supplier contact with particular abilities and availabl
 msgstr "एक ठेकेदार एक आपूर्तिकर्ता संपर्क है जिसके पास विशेष क्षमताएं और उपलब्ध घंटे हैं"
 
 msgid "A custom solution to meet your needs"
-msgstr ""
+msgstr "आपकी ज़रूरतों को पूरा करने के लिए एक कस्टम समाधान"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "एक ग्राहक एक व्यवसाय या व्यक्ति है जो आपके पार्ट्स या सेवाएं खरीदता है।"
@@ -473,10 +473,10 @@ msgid "A Make to Order component whose parts are issued together into the parent
 msgstr "एक ऑर्डर टू मेक घटक जिसके भाग माता-पिता की नौकरी में एक साथ जारी किए जाते हैं — कोई अलग बिल्ड नहीं।"
 
 msgid "A managed cloud-hosted version of Carbon"
-msgstr ""
+msgstr "Carbon का एक प्रबंधित क्लाउड-होस्टेड संस्करण"
 
 msgid "A managed version with all the advanced features"
-msgstr ""
+msgstr "सभी उन्नत सुविधाओं के साथ एक प्रबंधित संस्करण"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "एक सामग्री एक भौतिक वस्तु है जिसका उपयोग एक भाग बनाने के लिए किया जाता है जिसे कई नौकरियों में उपयोग किया जा सकता है"
@@ -1058,6 +1058,9 @@ msgstr "एक टिप्पणी जोड़ें..."
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "मात्रा, मूल्य, शिपिंग, लीड समय और कर को ओवरराइड करने के लिए एक कस्टम मूल्य निर्धारण पंक्ति जोड़ें"
 
+msgid "Add a domain"
+msgstr "एक डोमेन जोड़ें"
+
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "बिल ऑफ मेटेरियल्स पर प्रत्येक आइटम और उसकी मात्रा को सूचीबद्ध करने वाली एक सामग्री अनुभाग जोड़ें।"
 
@@ -1084,6 +1087,9 @@ msgstr "समायोजन जोड़ें"
 
 msgid "Add Affected Item"
 msgstr "प्रभावित आइटम जोड़ें"
+
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "साइन इन करते समय एक प्रमाणक ऐप से कोड मांगकर सुरक्षा की एक अतिरिक्त परत जोड़ें।"
 
 msgid "Add any notes about your decision..."
 msgstr "अपने निर्णय के बारे में कोई भी नोट्स जोड़ें..."
@@ -1235,6 +1241,9 @@ msgstr "आपूर्तिकर्ता जोड़ें"
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "अगली क्षमता को एक ही सिस्टम पर जोड़ें, दूसरा टूल खरीदने के बजाय।"
 
+msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
+msgstr "अपने DNS होस्ट में यह TXT रिकॉर्ड जोड़ें, फिर सत्यापित करें पर क्लिक करें। DNS परिवर्तन प्रसारित होने में कुछ मिनट लग सकते हैं।"
+
 msgid "Add Timecard"
 msgstr "टाइमकार्ड जोड़ें"
 
@@ -1337,7 +1346,7 @@ msgid "All actions selected"
 msgstr "सभी कार्य चयनित"
 
 msgid "All advanced features available"
-msgstr ""
+msgstr "सभी उन्नत सुविधाएं उपलब्ध हैं"
 
 msgid "All Audit Logs"
 msgstr "सभी ऑडिट लॉग"
@@ -1615,7 +1624,7 @@ msgid "API keys for programmatic access to your Carbon data."
 msgstr "आपके Carbon डेटा के लिए प्रोग्रामेटिक एक्सेस के लिए API कुंजियाँ।"
 
 msgid "API, webhooks, and integrations"
-msgstr ""
+msgstr "API, वेबहुक, और एकीकरण"
 
 msgid "Applied"
 msgstr "लागू"
@@ -1791,8 +1800,8 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 msgid "Are you sure you want to deactivate {0}?"
 msgstr "क्या आप सुनिश्चित हैं कि आप {0} को निष्क्रिय करना चाहते हैं?"
 
-msgid "Are you sure you want to deactivate SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
-msgstr "क्या आप वाकई SSO को निष्क्रिय करना चाहते हैं? आपके पंजीकृत डोमेन पर उपयोगकर्ता अब आपके आइडेंटिटी प्रदाता के माध्यम से साइन इन नहीं कर सकेंगे। यह पूर्ववत नहीं किया जा सकता।"
+msgid "Are you sure you want to deactivate SAML SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
+msgstr "क्या आप निश्चित हैं कि आप SAML SSO को निष्क्रिय करना चाहते हैं? आपके पंजीकृत डोमेन पर उपयोगकर्ता आपके पहचान प्रदाता के माध्यम से साइन इन नहीं कर सकेंगे। यह पूर्ववत नहीं किया जा सकता।"
 
 #. placeholder {0}: selectedCategory?.name
 msgid "Are you sure you want to deactivate the {0} attribute category?"
@@ -2314,7 +2323,7 @@ msgid "Audit Log"
 msgstr "ऑडिट लॉग"
 
 msgid "Audit logging"
-msgstr ""
+msgstr "ऑडिट लॉगिंग"
 
 msgid "Audit Logging"
 msgstr "ऑडिट लॉगिंग"
@@ -2386,7 +2395,7 @@ msgid "Automatic Updates"
 msgstr "स्वचालित अपडेट"
 
 msgid "Automatic updates and backups"
-msgstr ""
+msgstr "स्वचालित अपडेट और बैकअप"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "आउटपुट की रिपोर्ट करते समय एक कार्य की गैर-ट्रैक की गई सामग्री की स्वचालित, आनुपातिक खपत — ट्रैक की गई सामग्री को मैन्युअल रूप से जारी किया जाता है।"
@@ -2486,7 +2495,7 @@ msgid "Base Price"
 msgstr "आधार मूल्य"
 
 msgid "Basic ERP, MES, and QMS functionality"
-msgstr ""
+msgstr "बुनियादी ERP, MES, और QMS कार्यक्षमता"
 
 msgid "Basic Information"
 msgstr "बुनियादी जानकारी"
@@ -2623,7 +2632,7 @@ msgid "Browse library"
 msgstr "लाइब्रेरी ब्राउज़ करें"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
-msgstr "प्रकाशित संस्करण को केवल-पढ़ने के लिए ब्राउज़ करें। आप अभी भी लेआउट को साफ करने के लिए चरणों को पुनर्व्यवस्थित कर सकते हैं।"
+msgstr "प्रकाशित संस्करण को केवल-पढ़ने के लिए देखें। आप अभी भी लेआउट को साफ करने के लिए चरणों को पुनः व्यवस्थित कर सकते हैं।"
 
 msgid "Bucket"
 msgstr "बकेट"
@@ -3182,7 +3191,7 @@ msgid "Cloud, or your self-hosted environment."
 msgstr "क्लाउड, या आपका स्व-होस्ट किया गया वातावरण।"
 
 msgid "CMMC compliant"
-msgstr ""
+msgstr "CMMC अनुपालक"
 
 msgid "Code"
 msgstr "कोड"
@@ -3229,9 +3238,6 @@ msgstr "फ़िल्टर को संयोजित करें"
 msgid "Coming soon"
 msgstr "जल्द ही आ रहा है"
 
-msgid "Comma-separated list of email domains, e.g. example.com, example.org"
-msgstr "ईमेल डोमेन की अल्पविराम से अलग की गई सूची, उदा. example.com, example.org"
-
 msgid "comma-separated values"
 msgstr "अल्पविराम से अलग किए गए मान"
 
@@ -3248,7 +3254,7 @@ msgid "Committing a receipt, shipment, or invoice: quantities move, journal entr
 msgstr "एक प्राप्ति, शिपमेंट या चालान की प्रतिबद्धता: मात्रा चलती है, जर्नल प्रविष्टियां बहीखाता को मारती हैं, और स्थिति पोस्ट की जाती है।"
 
 msgid "Community support"
-msgstr ""
+msgstr "सामुदायिक सहायता"
 
 msgid "Companies"
 msgstr "कंपनियां"
@@ -3547,7 +3553,7 @@ msgid "Contact (optional)"
 msgstr "संपर्क (वैकल्पिक)"
 
 msgid "Contact us"
-msgstr ""
+msgstr "हमसे संपर्क करें"
 
 msgid "contacts"
 msgstr "संपर्क"
@@ -3569,9 +3575,6 @@ msgstr "सामग्री"
 
 msgid "Context"
 msgstr "संदर्भ"
-
-msgid "Continue with SSO"
-msgstr "SSO के साथ जारी रखें"
 
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "अचल संपत्तियों के कुल मूल्यह्रास के लिए विरोधी संपत्ति खाता"
@@ -4431,7 +4434,7 @@ msgid "Customers"
 msgstr "ग्राहक"
 
 msgid "Customizations, training, and integrations"
-msgstr ""
+msgstr "अनुकूलन, प्रशिक्षण, और एकीकरण"
 
 msgid "Customize"
 msgstr "अनुकूलित करें"
@@ -6234,6 +6237,9 @@ msgstr "आपकी कॉन्फ़िगर की गई सिस्ट�
 msgid "Every match"
 msgstr "हर मेल"
 
+msgid "Every required action has already been added."
+msgstr "प्रत्येक आवश्यक कार्रवाई पहले से ही जोड़ी जा चुकी है।"
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "अवधि बंद करने से पहले प्रत्येक आवश्यक कार्य को पूर्ण या छोड़ा जाना चाहिए।"
 
@@ -7004,7 +7010,7 @@ msgid "Format"
 msgstr "प्रारूप"
 
 msgid "Forward deployed engineer"
-msgstr ""
+msgstr "आगे तैनात इंजीनियर"
 
 msgid "Foundation"
 msgstr "आधार"
@@ -7060,7 +7066,7 @@ msgid "Full name"
 msgstr "पूरा नाम"
 
 msgid "Full setup and migrations"
-msgstr ""
+msgstr "पूर्ण सेटअप और माइग्रेशन"
 
 msgid "Fully Depreciated"
 msgstr "पूरी तरह से मूल्यह्रास"
@@ -7458,6 +7464,9 @@ msgstr "होम फोन"
 
 msgid "Hop {depth}"
 msgstr "हॉप {depth}"
+
+msgid "Host"
+msgstr "होस्ट"
 
 msgid "Host, secure, and back up the platform"
 msgstr "प्लेटफॉर्म को होस्ट करें, सुरक्षित रखें और बैकअप लें"
@@ -8169,7 +8178,7 @@ msgid "Issues"
 msgstr "समस्याएं"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
-msgstr "यह तब तक चलना बंद कर देगा जब तक आप फिर से एक संस्करण प्रकाशित नहीं करते। कुछ भी हटाया नहीं जाता है।"
+msgstr "यह तब तक चलना बंद कर देगा जब तक आप फिर से एक संस्करण प्रकाशित न करें। कुछ भी हटाया नहीं गया है।"
 
 msgid "ITAR Certifications"
 msgstr "ITAR प्रमाणपत्र"
@@ -8534,7 +8543,7 @@ msgid "Let members sign in through your identity provider with SAML."
 msgstr ""
 
 msgid "Let's Build"
-msgstr "चलिए बनाते हैं"
+msgstr "आइए निर्माण करें"
 
 msgid "Let's build something"
 msgstr "चलिए कुछ बनाते हैं"
@@ -8615,7 +8624,7 @@ msgid "Link Linear Issue"
 msgstr "Linear समस्या को लिंक करें"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
-msgstr "इस Carbon ग्राहक को उनमें से किसी एक से लिंक करें, या एक अलग Stripe ग्राहक बनाएं।"
+msgstr "इस Carbon ग्राहक को उनमें से किसी एक से जोड़ें, या एक अलग Stripe ग्राहक बनाएं।"
 
 msgid "Link to sales order line"
 msgstr "बिक्रय आदेश पंक्ति से लिंक करें"
@@ -11639,8 +11648,14 @@ msgstr "गो-लाइव की तारीख की सुरक्षा 
 msgid "Protect training time and attend"
 msgstr "प्रशिक्षण समय की सुरक्षा करें और भाग लें"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "दो-कारक प्रमाणीकरण के प्रवर्तन जैसी उन्नत सुरक्षा नियंत्रणों से अपनी कंपनी की सुरक्षा करें।"
+
 msgid "Protects your company's data"
 msgstr "आपकी कंपनी के डेटा की सुरक्षा करता है"
+
+msgid "Prove ownership of each email domain with a DNS TXT record before it can route SAML SSO sign-ins. Add the record at DNS host, then click Verify — only verified domains participate in single sign-on."
+msgstr "SAML SSO साइन-इन को रूट करने से पहले DNS TXT रिकॉर्ड के साथ प्रत्येक ईमेल डोमेन का स्वामित्व साबित करें। DNS होस्ट पर रिकॉर्ड जोड़ें, फिर सत्यापित करें पर क्लिक करें — केवल सत्यापित डोमेन एकल साइन-ऑन में भाग लेते हैं।"
 
 msgid "Provide process knowledge and inputs"
 msgstr "प्रक्रिया ज्ञान और इनपुट प्रदान करें"
@@ -12518,6 +12533,9 @@ msgstr "अनुरोधित तारीख"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "साइन इन करते समय ऑथेंटिकेटर ऐप से 6-अंकीय कोड की आवश्यकता है।"
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "इस कंपनी को खोलने से पहले सभी को एक सत्यापनकर्ता ऐप की आवश्यकता है। उनकी अन्य कंपनियां प्रभावित नहीं होंगी।"
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "किसी को भी इस कंपनी को खोलने से पहले एक प्रमाणकर्ता ऐप की आवश्यकता है। उनकी अन्य कंपनियां प्रभावित नहीं हैं। प्रत्येक व्यक्ति की स्थिति देखने के लिए <0>कर्मचारी खातों पृष्ठ</0> पर जाएं।"
 
@@ -12530,8 +12548,8 @@ msgstr "राशि सीमा के आधार पर क्रय आद
 msgid "Require approval for quality documents in your workflow"
 msgstr "आपके वर्कफ़्लो में गुणवत्ता दस्तावेज़ों के लिए अनुमोदन की आवश्यकता है"
 
-msgid "Require SSO"
-msgstr "SSO की आवश्यकता है"
+msgid "Require SAML SSO"
+msgstr "SAML SSO आवश्यक करें"
 
 msgid "Require two-factor authentication"
 msgstr "दो-कारक प्रमाणीकरण की आवश्यकता"
@@ -13044,6 +13062,12 @@ msgstr "विक्रयकर्ता"
 msgid "Same as Book"
 msgstr "किताब के समान"
 
+msgid "SAML SSO"
+msgstr "SAML SSO"
+
+msgid "SAML SSO is not configured for your email domain."
+msgstr "आपके ईमेल डोमेन के लिए SAML SSO कॉन्फ़िगर नहीं है।"
+
 msgid "Sample"
 msgstr "नमूना"
 
@@ -13515,10 +13539,10 @@ msgid "Self Managed"
 msgstr "स्व प्रबंधित"
 
 msgid "Self-hosted or managed"
-msgstr ""
+msgstr "स्व-होस्टेड या प्रबंधित"
 
 msgid "Self-onboarding"
-msgstr ""
+msgstr "स्व-ऑनबोर्डिंग"
 
 msgid "Self-paced"
 msgstr "स्व-गति"
@@ -14155,11 +14179,8 @@ msgstr "रसीद लाइन को विभाजित करें"
 msgid "Split shipment line"
 msgstr "शिपमेंट लाइन को विभाजित करें"
 
-msgid "SSO is not configured for your email domain."
-msgstr "आपके ईमेल डोमेन के लिए SSO कॉन्फ़िगर नहीं है।"
-
 msgid "SSO/SAML"
-msgstr ""
+msgstr "SSO/SAML"
 
 msgid "Stand up hosting"
 msgstr "होस्टिंग सेट अप करें"
@@ -14377,13 +14398,13 @@ msgid "Stripe already has a customer with this email"
 msgstr "Stripe के पास पहले से इस ईमेल के साथ एक ग्राहक है"
 
 msgid "Stripe Due Date"
-msgstr "Stripe देय तारीख"
+msgstr "Stripe देय तिथि"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripe ईमेल को ग्राहक को भेजता है, इसलिए एक पता आवश्यक है। यह Carbon में संपर्क को भी सहेजा जाएगा।"
+msgstr "Stripe ग्राहक को चालान ईमेल करता है, इसलिए एक पता आवश्यक है। यह Carbon में संपर्क के लिए भी सहेजा जाएगा।"
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe के पास इस Carbon ग्राहक के लिए अभी तक कोई ग्राहक नहीं है। पोस्टिंग आपके जुड़े खाते पर एक बनाएगी।"
+msgstr "Stripe के पास इस Carbon ग्राहक के लिए अभी कोई ग्राहक नहीं है। पोस्ट करने से आपके जुड़े खाते पर एक बनाया जाएगा।"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Kanban तालिका में दिखाने के लिए kanban आउटपुट की शैली"
@@ -14846,7 +14867,7 @@ msgid "Team trained"
 msgstr "टीम प्रशिक्षित"
 
 msgid "Technical support"
-msgstr ""
+msgstr "तकनीकी सहायता"
 
 msgid "Temperature"
 msgstr "तापमान"
@@ -15681,6 +15702,9 @@ msgstr "यह फ़ाइल अब उपलब्ध नहीं है, �
 msgid "This Fiscal Year"
 msgstr "यह वित्तीय वर्ष"
 
+msgid "This has no effect until an email domain is verified below."
+msgstr "जब तक नीचे एक ईमेल डोमेन सत्यापित नहीं किया जाता, तब तक इसका कोई प्रभाव नहीं होगा।"
+
 msgid "This information will be used on document headers"
 msgstr "यह जानकारी दस्तावेज़ शीर्षलेख पर उपयोग की जाएगी"
 
@@ -15698,7 +15722,7 @@ msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "इस इनवॉयस के पास कोई उपयोगी देय तारीख नहीं है — Stripe के लिए एक चुनें।"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "इस इनवॉयस को Stripe ग्राहक को बिल दिया जाएगा जो पहले से इस Carbon ग्राहक से जुड़ा है। इसके विवरण को बदलने के लिए, इसे Stripe डैशबोर्ड में संपादित करें।"
+msgstr "इस चालान को Stripe ग्राहक को बिल दिया जाएगा जो पहले से इस Carbon ग्राहक से जुड़ा हुआ है। इसके विवरण को बदलने के लिए, Stripe डैशबोर्ड में संपादित करें।"
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "यह एक नियंत्रित वातावरण है, इसलिए एक प्रमाणकर्ता ऐप की आवश्यकता है।"
@@ -16242,6 +16266,9 @@ msgstr "दो-कारक"
 msgid "Two-factor authentication"
 msgstr "दो-कारक प्रमाणीकरण"
 
+msgid "Two-Factor Authentication"
+msgstr "दो-कारक प्रमाणीकरण"
+
 msgid "Two-factor authentication disabled"
 msgstr "दो-फ़ैक्टर प्रमाणीकरण अक्षम"
 
@@ -16381,10 +16408,10 @@ msgid "unknown location"
 msgstr "अज्ञात स्थान"
 
 msgid "Unlimited functional support"
-msgstr ""
+msgstr "असीमित कार्यात्मक समर्थन"
 
 msgid "Unlimited records"
-msgstr ""
+msgstr "असीमित रिकॉर्ड"
 
 msgid "Unlink"
 msgstr "अनलिंक करें"
@@ -16432,7 +16459,7 @@ msgid "Unpublish"
 msgstr "अप्रकाशित करें"
 
 msgid "Unpublish {name}?"
-msgstr "{name} को अप्रकाशित करें?"
+msgstr "{name} को प्रकाशन रद्द करें?"
 
 msgid "Unreceived POs"
 msgstr "अप्राप्त POs"
@@ -16692,8 +16719,8 @@ msgstr "इस दस्तावेज़ का नाम बदलने, उ
 msgid "Users can update this value for themselves"
 msgstr "उपयोगकर्ता स्वयं के लिए इस मान को अपडेट कर सकते हैं"
 
-msgid "Users on covered domains can sign in only with SSO; magic link, Google, and passkeys are refused."
-msgstr "कवर किए गए डोमेन पर उपयोगकर्ता केवल SSO के साथ साइन इन कर सकते हैं; मैजिक लिंक, Google, और पासकीज़ को अस्वीकार कर दिया जाता है।"
+msgid "Users on covered domains can sign in only with SAML SSO; magic link, Google, and passkeys are refused."
+msgstr "कवर किए गए डोमेन पर उपयोगकर्ता केवल SAML SSO के साथ साइन इन कर सकते हैं; जादू लिंक, Google, और पासकी को अस्वीकार किया जाता है।"
 
 msgid "Users to Update"
 msgstr "अपडेट करने के लिए उपयोगकर्ता"
@@ -16778,6 +16805,9 @@ msgstr "सत्यापन त्रुटि"
 
 msgid "Verification failed"
 msgstr "सत्यापन विफल रहा"
+
+msgid "Verified"
+msgstr "सत्यापित"
 
 msgid "Verify"
 msgstr "सत्यापित करें"
@@ -17709,6 +17739,9 @@ msgstr "आपकी ग्राहक-सामना करने वाल�
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "आपका डेटा सुलभ है और उचित रूप से स्वच्छ है"
+
+msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
+msgstr "आपका DNS प्रदाता रिकॉर्ड नाम में आपका डोमेन स्वचालित रूप से जोड़ सकता है — यदि ऐसा है, तो केवल इससे पहले का भाग दर्ज करें (उदाहरण के लिए _carbon-challenge प्लस कोई भी सबडोमेन)।"
 
 msgid "Your Email"
 msgstr "आपका ईमेल"

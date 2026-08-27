@@ -280,9 +280,6 @@ msgstr "Consumido"
 msgid "Consumed expired"
 msgstr "Consumido expirado"
 
-msgid "Continue with SSO"
-msgstr "Continuar com SSO"
-
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Custo de manutenção não planejada, últimos {0} dias"
@@ -525,7 +522,7 @@ msgid "Finish Anyways"
 msgstr "Terminar Mesmo Assim"
 
 msgid "Finish setting up your account"
-msgstr "Conclua a configuração da sua conta"
+msgstr "Termine de configurar sua conta"
 
 msgid "Finish with material unpicked?"
 msgstr "Finalizar com material não selecionado?"
@@ -537,7 +534,7 @@ msgid "Go back to operation"
 msgstr "Voltar para operação"
 
 msgid "Go to onboarding"
-msgstr "Ir para integração"
+msgstr "Ir para a integração"
 
 msgid "How many were actually picked?"
 msgstr "Quantos foram realmente apanhados?"
@@ -1119,6 +1116,12 @@ msgstr "Em execução"
 msgid "Sales Order"
 msgstr "Pedido de Venda"
 
+msgid "SAML SSO"
+msgstr "SAML SSO"
+
+msgid "SAML SSO is not configured for your email domain."
+msgstr "SAML SSO não está configurado para seu domínio de email."
+
 msgid "Save"
 msgstr "Salvar"
 
@@ -1310,9 +1313,6 @@ msgstr "Peças Sobressalentes"
 
 msgid "Spare Parts Used"
 msgstr "Peças Sobressalentes Utilizadas"
-
-msgid "SSO is not configured for your email domain."
-msgstr "SSO não está configurado para seu domínio de email."
 
 msgid "Start"
 msgstr "Iniciar"
@@ -1522,7 +1522,7 @@ msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock 
 msgstr "Você está registrado há {hoursElapsed} horas. Esqueceu de registrar a saída?"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
-msgstr "Sua conta ainda não faz parte de uma empresa. Conclua a integração no Carbon ERP para continuar."
+msgstr "Sua conta ainda não faz parte de uma empresa. Complete a integração no Carbon ERP para continuar."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Sua organização requer um aplicativo autenticador. Configure-o no Carbon e retorne aqui."

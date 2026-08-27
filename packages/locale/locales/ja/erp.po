@@ -169,7 +169,7 @@ msgid "{from}–{to} of {count} operations"
 msgstr "{from}～{to}件 (合計{count}件の操作)"
 
 msgid "{hiddenCount} more: {hiddenNames}"
-msgstr "{hiddenCount}件以上: {hiddenNames}"
+msgstr "{hiddenCount}その他: {hiddenNames}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -303,7 +303,7 @@ msgid "4h"
 msgstr "4時間"
 
 msgid "5 user minimum"
-msgstr ""
+msgstr "ユーザー5人以上必須"
 
 msgid "5-8 weeks"
 msgstr "5～8週間"
@@ -360,7 +360,7 @@ msgid "A contractor is a supplier contact with particular abilities and availabl
 msgstr "契約者は、特定の能力と利用可能な時間を持つサプライヤー連絡先です"
 
 msgid "A custom solution to meet your needs"
-msgstr ""
+msgstr "ニーズに合わせたカスタムソリューション"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "顧客とは、あなたの部品またはサービスを購入する企業または個人です。"
@@ -473,10 +473,10 @@ msgid "A Make to Order component whose parts are issued together into the parent
 msgstr "その部品が親ジョブに一緒に発行される受注製造コンポーネント—別のビルドはありません。"
 
 msgid "A managed cloud-hosted version of Carbon"
-msgstr ""
+msgstr "クラウドでホストされたCarbonの管理版"
 
 msgid "A managed version with all the advanced features"
-msgstr ""
+msgstr "すべての高度な機能を備えた管理版"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "材料は、複数のジョブで使用できるパーツを作成するために使用される物理的なアイテムです"
@@ -1058,6 +1058,9 @@ msgstr "コメントを追加..."
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "数量、価格、送料、リードタイム、税金を上書きするカスタム価格行を追加します"
 
+msgid "Add a domain"
+msgstr "ドメインを追加"
+
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "部品表の各項目とその数量をリストアップした材料セクションを追加します。"
 
@@ -1084,6 +1087,9 @@ msgstr "調整を追加"
 
 msgid "Add Affected Item"
 msgstr "影響を受けるアイテムを追加"
+
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "認証器アプリからのコードを要求することで、サインイン時のセキュリティレイヤーを追加します。"
 
 msgid "Add any notes about your decision..."
 msgstr "あなたの決定についてのメモを追加してください..."
@@ -1235,6 +1241,9 @@ msgstr "サプライヤーを追加"
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "同じシステム上に次の機能を追加して、別のツールを購入する代わりにします。"
 
+msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
+msgstr "このTXTレコードをDNSホストに追加し、[確認]をクリックしてください。DNSの変更が反映されるまで数分かかる場合があります。"
+
 msgid "Add Timecard"
 msgstr "タイムカードを追加"
 
@@ -1337,7 +1346,7 @@ msgid "All actions selected"
 msgstr "すべてのアクションが選択されました"
 
 msgid "All advanced features available"
-msgstr ""
+msgstr "すべての高度な機能が利用可能"
 
 msgid "All Audit Logs"
 msgstr "すべての監査ログ"
@@ -1615,7 +1624,7 @@ msgid "API keys for programmatic access to your Carbon data."
 msgstr "Carbonデータへのプログラマティックアクセス用のAPIキー。"
 
 msgid "API, webhooks, and integrations"
-msgstr ""
+msgstr "API、ウェブフック、統合"
 
 msgid "Applied"
 msgstr "適用"
@@ -1791,8 +1800,8 @@ msgstr "このセールスオーダーのジョブを作成してもよろしい
 msgid "Are you sure you want to deactivate {0}?"
 msgstr "{0}を非アクティブ化してもよろしいですか？"
 
-msgid "Are you sure you want to deactivate SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
-msgstr "SSOを無効化してもよろしいですか？登録されたドメインのユーザーはIDプロバイダーを通じてサインインできなくなります。この操作は取り消せません。"
+msgid "Are you sure you want to deactivate SAML SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
+msgstr "SAML SSOを無効化してもよろしいですか？登録済みドメインのユーザーは、ID プロバイダー経由でのサインインができなくなります。この操作は元に戻せません。"
 
 #. placeholder {0}: selectedCategory?.name
 msgid "Are you sure you want to deactivate the {0} attribute category?"
@@ -2314,7 +2323,7 @@ msgid "Audit Log"
 msgstr "監査ログ"
 
 msgid "Audit logging"
-msgstr ""
+msgstr "監査ログ"
 
 msgid "Audit Logging"
 msgstr "監査ログ"
@@ -2386,7 +2395,7 @@ msgid "Automatic Updates"
 msgstr "自動更新"
 
 msgid "Automatic updates and backups"
-msgstr ""
+msgstr "自動更新とバックアップ"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "出力が報告されるとジョブの追跡されていない材料の自動的な比例消費。追跡された材料は手動で発行されます。"
@@ -2486,7 +2495,7 @@ msgid "Base Price"
 msgstr "基本価格"
 
 msgid "Basic ERP, MES, and QMS functionality"
-msgstr ""
+msgstr "基本的なERP、MES、QMS機能"
 
 msgid "Basic Information"
 msgstr "基本情報"
@@ -2623,7 +2632,7 @@ msgid "Browse library"
 msgstr "ライブラリを参照"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
-msgstr "公開版を読み取り専用で表示します。ステップを並べ替えてレイアウトを整理することができます。"
+msgstr "公開されたバージョンを読み取り専用で参照できます。レイアウトをきれいにするためにステップを再配置することもできます。"
 
 msgid "Bucket"
 msgstr "バケット"
@@ -2830,7 +2839,7 @@ msgid "Cannot send RFQ"
 msgstr "RFQを送信できません"
 
 msgid "Cannot send through Stripe"
-msgstr "Stripeを通じて送信できません"
+msgstr "Stripeを経由して送信できません"
 
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "アップロードできません — サプライヤーインタラクションがまだ作成されていません"
@@ -3182,7 +3191,7 @@ msgid "Cloud, or your self-hosted environment."
 msgstr "クラウド、またはセルフホストされた環境。"
 
 msgid "CMMC compliant"
-msgstr ""
+msgstr "CMMC準拠"
 
 msgid "Code"
 msgstr "コード"
@@ -3229,9 +3238,6 @@ msgstr "フィルターを組み合わせる"
 msgid "Coming soon"
 msgstr "近日公開予定"
 
-msgid "Comma-separated list of email domains, e.g. example.com, example.org"
-msgstr "メールドメインのコンマ区切りリスト。例：example.com, example.org"
-
 msgid "comma-separated values"
 msgstr "カンマ区切りの値"
 
@@ -3248,7 +3254,7 @@ msgid "Committing a receipt, shipment, or invoice: quantities move, journal entr
 msgstr "領収書、出荷、または請求書のコミット: 数量が移動し、仕訳帳エントリが元帳に記載され、ステータスが投稿されます。"
 
 msgid "Community support"
-msgstr ""
+msgstr "コミュニティサポート"
 
 msgid "Companies"
 msgstr "企業"
@@ -3547,7 +3553,7 @@ msgid "Contact (optional)"
 msgstr "連絡先（オプション）"
 
 msgid "Contact us"
-msgstr ""
+msgstr "お問い合わせ"
 
 msgid "contacts"
 msgstr "連絡先"
@@ -3569,9 +3575,6 @@ msgstr "コンテンツ"
 
 msgid "Context"
 msgstr "コンテキスト"
-
-msgid "Continue with SSO"
-msgstr "SSOで続ける"
 
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "固定資産の総減価償却費の逆資産勘定"
@@ -4431,7 +4434,7 @@ msgid "Customers"
 msgstr "顧客"
 
 msgid "Customizations, training, and integrations"
-msgstr ""
+msgstr "カスタマイズ、トレーニング、統合"
 
 msgid "Customize"
 msgstr "カスタマイズ"
@@ -6234,6 +6237,9 @@ msgstr "スコープ内のすべてのテストが、設定されたシステム
 msgid "Every match"
 msgstr "すべてのマッチ"
 
+msgid "Every required action has already been added."
+msgstr "すべての必須アクションは既に追加されています。"
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "期間を閉じる前に、すべての必須タスクが完了またはスキップされている必要があります。"
 
@@ -7004,7 +7010,7 @@ msgid "Format"
 msgstr "フォーマット"
 
 msgid "Forward deployed engineer"
-msgstr ""
+msgstr "駐在エンジニア"
 
 msgid "Foundation"
 msgstr "基礎"
@@ -7060,7 +7066,7 @@ msgid "Full name"
 msgstr "氏名"
 
 msgid "Full setup and migrations"
-msgstr ""
+msgstr "完全なセットアップと移行"
 
 msgid "Fully Depreciated"
 msgstr "完全償却済み"
@@ -7458,6 +7464,9 @@ msgstr "自宅電話"
 
 msgid "Hop {depth}"
 msgstr "ホップ {depth}"
+
+msgid "Host"
+msgstr "ホスト"
 
 msgid "Host, secure, and back up the platform"
 msgstr "プラットフォームをホストし、保護し、バックアップする"
@@ -8169,7 +8178,7 @@ msgid "Issues"
 msgstr "問題"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
-msgstr "再度バージョンを公開するまで実行が停止します。何も削除されません。"
+msgstr "バージョンを再度公開するまで実行が停止します。何も削除されません。"
 
 msgid "ITAR Certifications"
 msgstr "ITAR認定"
@@ -8615,7 +8624,7 @@ msgid "Link Linear Issue"
 msgstr "Linear イシューをリンク"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
-msgstr "このCarbonカスタマーをそのいずれかにリンクするか、個別のStripeカスタマーを作成してください。"
+msgstr "このCarbonカスタマーをそのいずれかにリンクするか、別のStripeカスタマーを作成してください。"
 
 msgid "Link to sales order line"
 msgstr "販売注文行へのリンク"
@@ -11639,8 +11648,14 @@ msgstr "ゴーライブ日を保護する"
 msgid "Protect training time and attend"
 msgstr "トレーニング時間を確保して参加する"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "二段階認証の強制などの高度なセキュリティ管理で会社を保護してください。"
+
 msgid "Protects your company's data"
 msgstr "会社データを保護します"
+
+msgid "Prove ownership of each email domain with a DNS TXT record before it can route SAML SSO sign-ins. Add the record at DNS host, then click Verify — only verified domains participate in single sign-on."
+msgstr "SAML SSO サインインをルーティングする前に、DNS TXTレコードでメールドメインの所有権を証明してください。DNSホストでレコードを追加してから[確認]をクリックします。検証済みドメインのみシングル サインオンに参加できます。"
 
 msgid "Provide process knowledge and inputs"
 msgstr "プロセスの知識と入力を提供する"
@@ -11674,7 +11689,7 @@ msgid "Published by Carbon"
 msgstr "Carbonによって公開"
 
 msgid "Published Version"
-msgstr "公開版"
+msgstr "公開されたバージョン"
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "公開済みバージョンは編集できません。読み取り専用で参照するか、新しいバージョンをブランチして変更してください。"
@@ -12518,6 +12533,9 @@ msgstr "リクエスト日"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "サインイン時に認証器アプリから6桁のコードが必要です。"
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "このカンパニーを開く前に、認証アプリが必須です。他のカンパニーは影響を受けません。"
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "このコンパニーを開く前に認証アプリが必須になります。他のコンパニーには影響しません。<0>従業員アカウントページ</0>をご覧ください。"
 
@@ -12530,8 +12548,8 @@ msgstr "金額閾値に基づいて購買注文の承認を要求する"
 msgid "Require approval for quality documents in your workflow"
 msgstr "ワークフロー内の品質文書の承認が必要です"
 
-msgid "Require SSO"
-msgstr "SSOを必須にする"
+msgid "Require SAML SSO"
+msgstr "SAML SSOを必須にする"
 
 msgid "Require two-factor authentication"
 msgstr "2要素認証が必須"
@@ -13044,6 +13062,12 @@ msgstr "営業担当者"
 msgid "Same as Book"
 msgstr "簿価と同じ"
 
+msgid "SAML SSO"
+msgstr "SAML SSO"
+
+msgid "SAML SSO is not configured for your email domain."
+msgstr "SAML SSO はメールドメイン用に構成されていません。"
+
 msgid "Sample"
 msgstr "サンプル"
 
@@ -13515,10 +13539,10 @@ msgid "Self Managed"
 msgstr "自己管理"
 
 msgid "Self-hosted or managed"
-msgstr ""
+msgstr "セルフホストまたは管理"
 
 msgid "Self-onboarding"
-msgstr ""
+msgstr "セルフオンボーディング"
 
 msgid "Self-paced"
 msgstr "自習型"
@@ -14155,11 +14179,8 @@ msgstr "領収書行を分割"
 msgid "Split shipment line"
 msgstr "出荷ラインを分割"
 
-msgid "SSO is not configured for your email domain."
-msgstr "メールドメインのSSOが設定されていません。"
-
 msgid "SSO/SAML"
-msgstr ""
+msgstr "SSO/SAML"
 
 msgid "Stand up hosting"
 msgstr "ホスティングをセットアップ"
@@ -14377,13 +14398,13 @@ msgid "Stripe already has a customer with this email"
 msgstr "Stripeにはすでにこのメールアドレスを持つカスタマーがあります"
 
 msgid "Stripe Due Date"
-msgstr "Stripe期日"
+msgstr "Stripe支払期日"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripeはカスタマーに請求書をメール送信するため、住所が必要です。これはCarbonの連絡先にも保存されます。"
+msgstr "Stripeはカスタマーに請求書をメール送信するため、アドレスが必要です。これはCarbonの連絡先にも保存されます。"
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "StripeにはまだこのCarbonカスタマーのカスタマーがありません。投稿により、接続されたアカウントに作成されます。"
+msgstr "StripeにはこのCarbonカスタマーのカスタマーがまだありません。投稿するとあなたの接続されたアカウントに1つ作成されます。"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Kanbanテーブルに表示するカンバン出力のスタイル"
@@ -14798,7 +14819,7 @@ msgid "Tax Depreciation Method"
 msgstr "税務償却方法"
 
 msgid "Tax exempt"
-msgstr "税務上免除"
+msgstr "税金免除"
 
 msgid "Tax Exempt"
 msgstr "税務上免除"
@@ -14846,7 +14867,7 @@ msgid "Team trained"
 msgstr "チームが訓練を受けた"
 
 msgid "Technical support"
-msgstr ""
+msgstr "技術サポート"
 
 msgid "Temperature"
 msgstr "温度"
@@ -15667,7 +15688,7 @@ msgid "This completes the Discovery step."
 msgstr "これはDiscoveryステップを完了します。"
 
 msgid "This contact has no email address"
-msgstr "この連絡先はメールアドレスを持っていません"
+msgstr "この連絡先にはメールアドレスがありません"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "この取引先には未払い金がありません。支払いは掛け金として記録されます。"
@@ -15680,6 +15701,9 @@ msgstr "このファイルは利用できなくなっているか、ダウンロ
 
 msgid "This Fiscal Year"
 msgstr "この会計年度"
+
+msgid "This has no effect until an email domain is verified below."
+msgstr "メールドメインが下で検証されるまで、これは効果がありません。"
 
 msgid "This information will be used on document headers"
 msgstr "この情報はドキュメントヘッダーで使用されます"
@@ -15698,7 +15722,7 @@ msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "この請求書に使用可能な期日がありません。Stripeの場合は1つを選択してください。"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "この請求書は、既にこのCarbonカスタマーにリンクされているStripeカスタマーに請求されます。詳細を変更するには、Stripeダッシュボードで編集してください。"
+msgstr "この請求書は、このCarbonカスタマーに既にリンクされているStripeカスタマーに請求されます。その詳細を変更するには、Stripeダッシュボードで編集してください。"
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "これは管理環境のため、認証アプリが必須です。"
@@ -15838,7 +15862,7 @@ msgid "This version is published"
 msgstr "このバージョンは公開されています"
 
 msgid "This version is published. Create a new version to edit."
-msgstr "このバージョンは公開されています。編集するには新しいバージョンを作成してください。"
+msgstr "このバージョンは公開されています。編集するために新しいバージョンを作成してください。"
 
 msgid "This version's definition could not be read."
 msgstr "このバージョンの定義を読み取ることができませんでした。"
@@ -16242,6 +16266,9 @@ msgstr "2要素認証"
 msgid "Two-factor authentication"
 msgstr "2要素認証"
 
+msgid "Two-Factor Authentication"
+msgstr "2要素認証"
+
 msgid "Two-factor authentication disabled"
 msgstr "二要素認証が無効になりました"
 
@@ -16381,10 +16408,10 @@ msgid "unknown location"
 msgstr "不明な場所"
 
 msgid "Unlimited functional support"
-msgstr ""
+msgstr "無制限の機能サポート"
 
 msgid "Unlimited records"
-msgstr ""
+msgstr "無制限レコード"
 
 msgid "Unlink"
 msgstr "リンク解除"
@@ -16432,7 +16459,7 @@ msgid "Unpublish"
 msgstr "公開を解除"
 
 msgid "Unpublish {name}?"
-msgstr "{name}の公開を解除しますか？"
+msgstr "{name}の公開を取り消しますか?"
 
 msgid "Unreceived POs"
 msgstr "未受領PO"
@@ -16692,8 +16719,8 @@ msgstr "このドキュメントの名前変更、差し替え、ラベル付け
 msgid "Users can update this value for themselves"
 msgstr "ユーザーは自分でこの値を更新できます"
 
-msgid "Users on covered domains can sign in only with SSO; magic link, Google, and passkeys are refused."
-msgstr "対象ドメインのユーザーはSSOでのみサインインできます。マジックリンク、Google、パスキーは使用できません。"
+msgid "Users on covered domains can sign in only with SAML SSO; magic link, Google, and passkeys are refused."
+msgstr "対象ドメインのユーザーは SAML SSO でのみサインインでき、マジック リンク、Google、パスキーは拒否されます。"
 
 msgid "Users to Update"
 msgstr "更新するユーザー"
@@ -16779,6 +16806,9 @@ msgstr "認証エラー"
 msgid "Verification failed"
 msgstr "検証に失敗しました"
 
+msgid "Verified"
+msgstr "検証済み"
+
 msgid "Verify"
 msgstr "検証"
 
@@ -16796,7 +16826,7 @@ msgstr "バージョン"
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
-msgstr "バージョン{0}が公開されており、置き換えられます。"
+msgstr "バージョン{0}は現在公開されており、置き換えられます。"
 
 msgid "Version:"
 msgstr "バージョン:"
@@ -17709,6 +17739,9 @@ msgstr "顧客向けの価格表"
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "あなたのデータはアクセス可能で、適切にクリーンです"
+
+msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
+msgstr "DNS プロバイダーはレコード名にドメインを自動的に追加する場合があります。その場合は、その前の部分のみを入力してください（例：_carbon-challenge または任意のサブドメイン付き）。"
 
 msgid "Your Email"
 msgstr "あなたのメールアドレス"

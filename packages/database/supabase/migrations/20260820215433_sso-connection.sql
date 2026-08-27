@@ -13,7 +13,6 @@ CREATE TABLE IF NOT EXISTS "ssoConnection" (
     "id" TEXT NOT NULL DEFAULT id('sso'),
     "companyId" TEXT NOT NULL,
     "providerId" TEXT NOT NULL,
-    "domains" TEXT[] NOT NULL,
     "metadataUrl" TEXT,
     "metadataXml" TEXT,
     "active" BOOLEAN NOT NULL DEFAULT TRUE,
@@ -31,7 +30,6 @@ CREATE TABLE IF NOT EXISTS "ssoConnection" (
 CREATE INDEX IF NOT EXISTS "ssoConnection_companyId_idx" ON "ssoConnection" ("companyId");
 CREATE INDEX IF NOT EXISTS "ssoConnection_createdBy_idx" ON "ssoConnection" ("createdBy");
 CREATE INDEX IF NOT EXISTS "ssoConnection_updatedBy_idx" ON "ssoConnection" ("updatedBy");
-CREATE INDEX IF NOT EXISTS "ssoConnection_domains_idx" ON "ssoConnection" USING GIN ("domains");
 
 -- One ACTIVE connection per company. Readers use .maybeSingle() (errors on two
 -- rows) and two concurrent upserts could otherwise both pass the app-side check;
@@ -58,6 +56,69 @@ FOR UPDATE USING (
 );
 
 CREATE POLICY "DELETE" ON "public"."ssoConnection"
+FOR DELETE USING (
+  "companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_update'))::text[])
+);
+
+-- One row per claimed email domain, with a DNS TXT ownership challenge. A
+-- domain routes SSO logins (and enforces "requireSso") ONLY while
+-- status = 'verified' — the GoTrue provider is registered with the verified
+-- set, and every app-side lookup filters on it, so a pending claim is inert.
+-- Verification is one-shot and manual: the admin publishes
+--   _carbon-challenge.<domain>  TXT  "carbon-domain-verification=<token>"
+-- and clicks Verify; there is no periodic re-check, and the record may be
+-- removed once verified. Exclusivity attaches to VERIFICATION, not the claim:
+-- pending claims may coexist across companies (a free pending row must never
+-- block the rightful owner), and the partial unique index below enforces
+-- first-to-verify-wins race-free.
+DO $$ BEGIN
+  CREATE TYPE "ssoDomainStatus" AS ENUM ('pending', 'verified');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+CREATE TABLE IF NOT EXISTS "ssoDomain" (
+    "id" TEXT NOT NULL DEFAULT id('ssod'),
+    "companyId" TEXT NOT NULL,
+    "connectionId" TEXT NOT NULL,
+    "domain" TEXT NOT NULL,
+    "verificationToken" TEXT NOT NULL,
+    "status" "ssoDomainStatus" NOT NULL DEFAULT 'pending',
+    "verifiedAt" TIMESTAMP WITH TIME ZONE,
+    "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+    "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    "updatedBy" TEXT REFERENCES "user"("id"),
+    "updatedAt" TIMESTAMP WITH TIME ZONE,
+    PRIMARY KEY ("id", "companyId"),
+    FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
+    CONSTRAINT "ssoDomain_connectionId_fkey" FOREIGN KEY ("connectionId", "companyId") REFERENCES "ssoConnection"("id", "companyId") ON DELETE CASCADE,
+    CONSTRAINT "ssoDomain_companyId_domain_key" UNIQUE ("companyId", "domain")
+);
+
+-- First-to-verify-wins: at most one VERIFIED row per domain across companies.
+CREATE UNIQUE INDEX IF NOT EXISTS "ssoDomain_domain_verified_key" ON "ssoDomain" ("domain") WHERE "status" = 'verified';
+
+CREATE INDEX IF NOT EXISTS "ssoDomain_companyId_idx" ON "ssoDomain" ("companyId");
+CREATE INDEX IF NOT EXISTS "ssoDomain_connectionId_idx" ON "ssoDomain" ("connectionId", "companyId");
+CREATE INDEX IF NOT EXISTS "ssoDomain_createdBy_idx" ON "ssoDomain" ("createdBy");
+CREATE INDEX IF NOT EXISTS "ssoDomain_updatedBy_idx" ON "ssoDomain" ("updatedBy");
+
+ALTER TABLE "ssoDomain" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "SELECT" ON "public"."ssoDomain"
+FOR SELECT USING (
+  "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
+);
+
+CREATE POLICY "INSERT" ON "public"."ssoDomain"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_update'))::text[])
+);
+
+CREATE POLICY "UPDATE" ON "public"."ssoDomain"
+FOR UPDATE USING (
+  "companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_update'))::text[])
+);
+
+CREATE POLICY "DELETE" ON "public"."ssoDomain"
 FOR DELETE USING (
   "companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_update'))::text[])
 );

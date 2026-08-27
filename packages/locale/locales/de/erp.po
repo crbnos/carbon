@@ -303,7 +303,7 @@ msgid "4h"
 msgstr "4h"
 
 msgid "5 user minimum"
-msgstr ""
+msgstr "Mindestens 5 Benutzer"
 
 msgid "5-8 weeks"
 msgstr "5-8 Wochen"
@@ -360,7 +360,7 @@ msgid "A contractor is a supplier contact with particular abilities and availabl
 msgstr "Ein Auftragnehmer ist ein Lieferantenkontakt mit besonderen Fähigkeiten und verfügbaren Stunden"
 
 msgid "A custom solution to meet your needs"
-msgstr ""
+msgstr "Eine maßgeschneiderte Lösung für Ihre Anforderungen"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Ein Kunde ist ein Unternehmen oder eine Person, die Ihre Teile oder Dienstleistungen kauft."
@@ -473,10 +473,10 @@ msgid "A Make to Order component whose parts are issued together into the parent
 msgstr "Eine Make-to-Order-Komponente, deren Teile zusammen in den übergeordneten Job ausgegeben werden — kein separater Build."
 
 msgid "A managed cloud-hosted version of Carbon"
-msgstr ""
+msgstr "Eine verwaltete Cloud-gehostete Version von Carbon"
 
 msgid "A managed version with all the advanced features"
-msgstr ""
+msgstr "Eine verwaltete Version mit allen erweiterten Funktionen"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Ein Material ist ein physischer Artikel, der zur Herstellung eines Teils verwendet wird und über mehrere Aufträge hinweg verwendet werden kann"
@@ -1058,6 +1058,9 @@ msgstr "Einen Kommentar hinzufügen..."
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "Fügen Sie eine benutzerdefinierte Preiszeile hinzu, um Menge, Preis, Versand, Lieferzeit und Steuer zu überschreiben"
 
+msgid "Add a domain"
+msgstr "Domäne hinzufügen"
+
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Fügen Sie einen Materialkatalogabschnitt hinzu, der jedes Element der Stückliste mit seiner Menge auflistet."
 
@@ -1084,6 +1087,9 @@ msgstr "Anpassung hinzufügen"
 
 msgid "Add Affected Item"
 msgstr "Betroffenes Element hinzufügen"
+
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "Erhöhen Sie die Sicherheit, indem Sie beim Anmelden einen Code aus einer Authentifizierungs-App anfordern."
 
 msgid "Add any notes about your decision..."
 msgstr "Fügen Sie Notizen zu Ihrer Entscheidung hinzu..."
@@ -1235,6 +1241,9 @@ msgstr "Lieferant hinzufügen"
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "Fügen Sie die nächste Funktion im selben System hinzu, anstatt ein anderes Tool zu kaufen."
 
+msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
+msgstr "Fügen Sie diesen TXT-Eintrag bei Ihrem DNS-Host hinzu, klicken Sie dann auf Verifizieren. DNS-Änderungen können einige Minuten dauern, um sich auszubreiten."
+
 msgid "Add Timecard"
 msgstr "Zeitkarte hinzufügen"
 
@@ -1337,7 +1346,7 @@ msgid "All actions selected"
 msgstr "Alle Aktionen ausgewählt"
 
 msgid "All advanced features available"
-msgstr ""
+msgstr "Alle erweiterten Funktionen verfügbar"
 
 msgid "All Audit Logs"
 msgstr "Alle Audit-Protokolle"
@@ -1615,7 +1624,7 @@ msgid "API keys for programmatic access to your Carbon data."
 msgstr "API-Schlüssel für programmgesteuerten Zugriff auf Ihre Carbon-Daten."
 
 msgid "API, webhooks, and integrations"
-msgstr ""
+msgstr "API, Webhooks und Integrationen"
 
 msgid "Applied"
 msgstr "Angewendet"
@@ -1791,8 +1800,8 @@ msgstr "Sind Sie sicher, dass Sie Aufträge für diese Bestellung erstellen möc
 msgid "Are you sure you want to deactivate {0}?"
 msgstr "Sind Sie sicher, dass Sie {0} deaktivieren möchten?"
 
-msgid "Are you sure you want to deactivate SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
-msgstr "Sind Sie sicher, dass Sie SSO deaktivieren möchten? Benutzer in Ihren registrierten Domänen können sich nicht mehr über Ihren Identitätsanbieter anmelden. Dies kann nicht rückgängig gemacht werden."
+msgid "Are you sure you want to deactivate SAML SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
+msgstr "Sind Sie sicher, dass Sie SAML SSO deaktivieren möchten? Benutzer auf Ihren registrierten Domänen können sich nicht mehr über Ihren Identitätsanbieter anmelden. Dies kann nicht rückgängig gemacht werden."
 
 #. placeholder {0}: selectedCategory?.name
 msgid "Are you sure you want to deactivate the {0} attribute category?"
@@ -2314,7 +2323,7 @@ msgid "Audit Log"
 msgstr "Audit-Protokoll"
 
 msgid "Audit logging"
-msgstr ""
+msgstr "Audit-Protokollierung"
 
 msgid "Audit Logging"
 msgstr "Audit-Protokollierung"
@@ -2386,7 +2395,7 @@ msgid "Automatic Updates"
 msgstr "Automatische Aktualisierungen"
 
 msgid "Automatic updates and backups"
-msgstr ""
+msgstr "Automatische Updates und Sicherungen"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "Automatischer, anteiliger Verbrauch der ungespurten Materialien eines Auftrags, wenn die Leistung gemeldet wird — verfolgte Materialien werden manuell ausgegeben."
@@ -2486,7 +2495,7 @@ msgid "Base Price"
 msgstr "Basispreis"
 
 msgid "Basic ERP, MES, and QMS functionality"
-msgstr ""
+msgstr "Grundlegende ERP-, MES- und QMS-Funktionalität"
 
 msgid "Basic Information"
 msgstr "Grundinformationen"
@@ -2623,7 +2632,7 @@ msgid "Browse library"
 msgstr "Bibliothek durchsuchen"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
-msgstr "Zeigen Sie die veröffentlichte Version schreibgeschützt an. Sie können Schritte weiterhin neu anordnen, um das Layout aufzuräumen."
+msgstr "Durchsuchen Sie die veröffentlichte Version schreibgeschützt. Sie können Schritte immer noch neu anordnen, um das Layout aufzuräumen."
 
 msgid "Bucket"
 msgstr "Bucket"
@@ -3041,7 +3050,7 @@ msgid "Check your email"
 msgstr "Überprüfen Sie Ihre E-Mail"
 
 msgid "Checking Stripe for this customer…"
-msgstr "Stripe für diesen Kunden wird überprüft…"
+msgstr "Stripe für diesen Kunden wird überprüft …"
 
 msgid "Checkpoint ·"
 msgstr "Checkpoint ·"
@@ -3182,7 +3191,7 @@ msgid "Cloud, or your self-hosted environment."
 msgstr "Cloud oder Ihre selbst gehostete Umgebung."
 
 msgid "CMMC compliant"
-msgstr ""
+msgstr "CMMC-konform"
 
 msgid "Code"
 msgstr "Code"
@@ -3229,9 +3238,6 @@ msgstr "Filter kombinieren"
 msgid "Coming soon"
 msgstr "Demnächst verfügbar"
 
-msgid "Comma-separated list of email domains, e.g. example.com, example.org"
-msgstr "Durch Kommas getrennte Liste von E-Mail-Domänen, z. B. example.com, example.org"
-
 msgid "comma-separated values"
 msgstr "durch Kommas getrennte Werte"
 
@@ -3248,7 +3254,7 @@ msgid "Committing a receipt, shipment, or invoice: quantities move, journal entr
 msgstr "Commit einer Quittung, eines Versands oder einer Rechnung: Mengen bewegen sich, Journal-Einträge treffen das Ledger, und der Status wird Posted."
 
 msgid "Community support"
-msgstr ""
+msgstr "Community-Unterstützung"
 
 msgid "Companies"
 msgstr "Unternehmen"
@@ -3547,7 +3553,7 @@ msgid "Contact (optional)"
 msgstr "Kontakt (optional)"
 
 msgid "Contact us"
-msgstr ""
+msgstr "Kontaktieren Sie uns"
 
 msgid "contacts"
 msgstr "Kontakte"
@@ -3569,9 +3575,6 @@ msgstr "Inhalt"
 
 msgid "Context"
 msgstr "Kontext"
-
-msgid "Continue with SSO"
-msgstr "Mit SSO fortfahren"
 
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "Gegenkonto für die gesamte Abschreibung von Anlagevermögen"
@@ -4431,7 +4434,7 @@ msgid "Customers"
 msgstr "Kunden"
 
 msgid "Customizations, training, and integrations"
-msgstr ""
+msgstr "Anpassungen, Schulungen und Integrationen"
 
 msgid "Customize"
 msgstr "Anpassen"
@@ -6234,6 +6237,9 @@ msgstr "Jeder Test im Umfang wird in Ihrem konfigurierten System mit Ihren Daten
 msgid "Every match"
 msgstr "Jede Übereinstimmung"
 
+msgid "Every required action has already been added."
+msgstr "Jede erforderliche Aktion wurde bereits hinzugefügt."
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Jede erforderliche Aufgabe muss erledigt oder übersprungen werden, bevor der Zeitraum geschlossen werden kann."
 
@@ -7004,7 +7010,7 @@ msgid "Format"
 msgstr "Format"
 
 msgid "Forward deployed engineer"
-msgstr ""
+msgstr "Vor-Ort-Ingenieur"
 
 msgid "Foundation"
 msgstr "Grundlagen"
@@ -7060,7 +7066,7 @@ msgid "Full name"
 msgstr "Vollständiger Name"
 
 msgid "Full setup and migrations"
-msgstr ""
+msgstr "Vollständiges Setup und Migrationen"
 
 msgid "Fully Depreciated"
 msgstr "Vollständig abgeschrieben"
@@ -7458,6 +7464,9 @@ msgstr "Telefon zu Hause"
 
 msgid "Hop {depth}"
 msgstr "Ebene {depth}"
+
+msgid "Host"
+msgstr "Host"
 
 msgid "Host, secure, and back up the platform"
 msgstr "Plattform hosten, sichern und sichern"
@@ -8169,7 +8178,7 @@ msgid "Issues"
 msgstr "Probleme"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
-msgstr "Es wird nicht mehr ausgeführt, bis Sie eine Version erneut veröffentlichen. Nichts wird gelöscht."
+msgstr "Es wird nicht mehr ausgeführt, bis Sie erneut eine Version veröffentlichen. Nichts wird gelöscht."
 
 msgid "ITAR Certifications"
 msgstr "ITAR-Zertifikationen"
@@ -8534,7 +8543,7 @@ msgid "Let members sign in through your identity provider with SAML."
 msgstr ""
 
 msgid "Let's Build"
-msgstr "Lassen Sie uns bauen"
+msgstr "Bauen wir"
 
 msgid "Let's build something"
 msgstr "Lassen Sie uns etwas bauen"
@@ -8615,7 +8624,7 @@ msgid "Link Linear Issue"
 msgstr "Linear-Problem verknüpfen"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
-msgstr "Verknüpfen Sie diesen Carbon-Kunden mit einem davon, oder erstellen Sie einen separaten Stripe-Kunden."
+msgstr "Verknüpfen Sie diesen Carbon-Kunden mit einem von ihnen, oder erstellen Sie einen separaten Stripe-Kunden."
 
 msgid "Link to sales order line"
 msgstr "Mit Verkaufsauftragszeile verknüpfen"
@@ -11639,8 +11648,14 @@ msgstr "Schützen Sie das Go-Live-Datum"
 msgid "Protect training time and attend"
 msgstr "Schulungszeit schützen und teilnehmen"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "Schützen Sie Ihr Unternehmen mit erweiterten Sicherheitskontrollen wie der Durchsetzung der Zwei-Faktor-Authentifizierung."
+
 msgid "Protects your company's data"
 msgstr "Schützt die Daten Ihres Unternehmens"
+
+msgid "Prove ownership of each email domain with a DNS TXT record before it can route SAML SSO sign-ins. Add the record at DNS host, then click Verify — only verified domains participate in single sign-on."
+msgstr "Weisen Sie den Besitz jeder E-Mail-Domäne mit einem DNS-TXT-Eintrag nach, bevor sie SAML-SSO-Anmeldungen weiterleiten kann. Fügen Sie den Eintrag bei DNS-Host hinzu, klicken Sie dann auf Verifizieren – nur verifizierte Domänen nehmen an Single Sign-On teil."
 
 msgid "Provide process knowledge and inputs"
 msgstr "Prozesswissen und Eingaben bereitstellen"
@@ -12518,6 +12533,9 @@ msgstr "Angeforderte Datum"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Erfordert einen 6-stelligen Code aus einer Authentifikator-App beim Anmelden."
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "Eine Authentifizierungs-App ist erforderlich, bevor jemand dieses Unternehmen öffnen kann. Ihre anderen Unternehmen sind davon nicht betroffen."
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Erfordert eine Authentifizierungs-App, bevor jemand dieses Unternehmen öffnen kann. Ihre anderen Unternehmen sind nicht betroffen. Besuchen Sie die <0>Seite mit den Mitarbeiterkonten</0>, um den Status jeder Person zu sehen."
 
@@ -12530,8 +12548,8 @@ msgstr "Genehmigung für Bestellungen basierend auf Schwellenwertbeträgen erfor
 msgid "Require approval for quality documents in your workflow"
 msgstr "Genehmigung für Qualitätsdokumente in Ihrem Workflow erforderlich"
 
-msgid "Require SSO"
-msgstr "SSO erforderlich"
+msgid "Require SAML SSO"
+msgstr "SAML SSO erforderlich"
 
 msgid "Require two-factor authentication"
 msgstr "Zwei-Faktor-Authentifizierung erforderlich"
@@ -12697,7 +12715,7 @@ msgid "Reverse any item ledger entries from this invoice"
 msgstr "Alle Artikelledgereinträge aus dieser Rechnung stornieren"
 
 msgid "Reverse charge"
-msgstr "Umkehrbelastung"
+msgstr "Umkehrung der Steuerschuld"
 
 msgid "Reverse Charge Sales Tax"
 msgstr "Umkehrbuchung Umsatzsteuer"
@@ -13043,6 +13061,12 @@ msgstr "Verkaufsvertreter"
 
 msgid "Same as Book"
 msgstr "Gleich wie Buch"
+
+msgid "SAML SSO"
+msgstr "SAML SSO"
+
+msgid "SAML SSO is not configured for your email domain."
+msgstr "SAML SSO ist nicht für Ihre E-Mail-Domäne konfiguriert."
 
 msgid "Sample"
 msgstr "Probe"
@@ -13515,10 +13539,10 @@ msgid "Self Managed"
 msgstr "Selbst verwaltet"
 
 msgid "Self-hosted or managed"
-msgstr ""
+msgstr "Selbst gehostet oder verwaltet"
 
 msgid "Self-onboarding"
-msgstr ""
+msgstr "Selbst-Onboarding"
 
 msgid "Self-paced"
 msgstr "Selbstgesteuertes Lernen"
@@ -14155,11 +14179,8 @@ msgstr "Beleg-Position aufteilen"
 msgid "Split shipment line"
 msgstr "Versandzeile teilen"
 
-msgid "SSO is not configured for your email domain."
-msgstr "SSO ist nicht für Ihre E-Mail-Domäne konfiguriert."
-
 msgid "SSO/SAML"
-msgstr ""
+msgstr "SSO/SAML"
 
 msgid "Stand up hosting"
 msgstr "Hosting einrichten"
@@ -14380,7 +14401,7 @@ msgid "Stripe Due Date"
 msgstr "Stripe-Fälligkeitsdatum"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripe sendet die Rechnung per E-Mail an den Kunden, daher ist eine Adresse erforderlich. Dies wird auch im Kontakt in Carbon gespeichert."
+msgstr "Stripe sendet die Rechnung per E-Mail an den Kunden, daher ist eine Adresse erforderlich. Dies wird auch als Kontakt in Carbon gespeichert."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe hat noch keinen Kunden für diesen Carbon-Kunden. Das Buchen erstellt einen auf Ihrem verbundenen Konto."
@@ -14798,7 +14819,7 @@ msgid "Tax Depreciation Method"
 msgstr "Steuerabschreibungsmethode"
 
 msgid "Tax exempt"
-msgstr "Steuerfrei"
+msgstr "Steuerbefreit"
 
 msgid "Tax Exempt"
 msgstr "Steuerbefreit"
@@ -14846,7 +14867,7 @@ msgid "Team trained"
 msgstr "Team trainiert"
 
 msgid "Technical support"
-msgstr ""
+msgstr "Technischer Support"
 
 msgid "Temperature"
 msgstr "Temperatur"
@@ -15681,6 +15702,9 @@ msgstr "Diese Datei ist nicht mehr verfügbar, oder Sie haben keine Berechtigung
 msgid "This Fiscal Year"
 msgstr "Dieses Geschäftsjahr"
 
+msgid "This has no effect until an email domain is verified below."
+msgstr "Dies hat keine Auswirkung, bis eine E-Mail-Domäne unten verifiziert wird."
+
 msgid "This information will be used on document headers"
 msgstr "Diese Informationen werden in Dokumentkopfzeilen verwendet"
 
@@ -15698,7 +15722,7 @@ msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "Diese Rechnung hat kein verwendbares Fälligkeitsdatum — wählen Sie eines für Stripe aus."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "Diese Rechnung wird dem Stripe-Kunden in Rechnung gestellt, der bereits mit diesem Carbon-Kunden verknüpft ist. Um seine Details zu ändern, bearbeiten Sie es im Stripe-Dashboard."
+msgstr "Diese Rechnung wird dem Stripe-Kunden in Rechnung gestellt, der bereits mit diesem Carbon-Kunden verknüpft ist. Um die Details zu ändern, bearbeiten Sie sie im Stripe-Dashboard."
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "Dies ist eine kontrollierte Umgebung, daher ist eine Authentifizierungs-App erforderlich."
@@ -16242,6 +16266,9 @@ msgstr "Zwei-Faktor"
 msgid "Two-factor authentication"
 msgstr "Zwei-Faktor-Authentifizierung"
 
+msgid "Two-Factor Authentication"
+msgstr "Zwei-Faktor-Authentifizierung"
+
 msgid "Two-factor authentication disabled"
 msgstr "Zwei-Faktor-Authentifizierung deaktiviert"
 
@@ -16381,10 +16408,10 @@ msgid "unknown location"
 msgstr "unbekannter Ort"
 
 msgid "Unlimited functional support"
-msgstr ""
+msgstr "Unbegrenzter funktionaler Support"
 
 msgid "Unlimited records"
-msgstr ""
+msgstr "Unbegrenzte Datensätze"
 
 msgid "Unlink"
 msgstr "Verknüpfung aufheben"
@@ -16692,8 +16719,8 @@ msgstr "Benutzer und Gruppen, die dieses Dokument umbenennen, ersetzen oder neu 
 msgid "Users can update this value for themselves"
 msgstr "Benutzer können diesen Wert für sich selbst aktualisieren"
 
-msgid "Users on covered domains can sign in only with SSO; magic link, Google, and passkeys are refused."
-msgstr "Benutzer in abgedeckten Domänen können sich nur mit SSO anmelden; Magic Link, Google und Passkeys werden abgelehnt."
+msgid "Users on covered domains can sign in only with SAML SSO; magic link, Google, and passkeys are refused."
+msgstr "Benutzer auf abgedeckten Domänen können sich nur mit SAML SSO anmelden; Magic Link, Google und Passkeys werden abgelehnt."
 
 msgid "Users to Update"
 msgstr "Benutzer zum Aktualisieren"
@@ -16778,6 +16805,9 @@ msgstr "Verifizierungsfehler"
 
 msgid "Verification failed"
 msgstr "Verifizierung fehlgeschlagen"
+
+msgid "Verified"
+msgstr "Verifiziert"
 
 msgid "Verify"
 msgstr "Verifizieren"
@@ -17709,6 +17739,9 @@ msgstr "Ihre kundenorientierten Preislisten"
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "Ihre Daten sind zugänglich und angemessen bereinigt"
+
+msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
+msgstr "Ihr DNS-Anbieter kann Ihre Domäne möglicherweise automatisch an den Eintragsnamen anhängen – geben Sie in diesem Fall nur den Teil davor ein (z. B. _carbon-challenge plus eine beliebige Subdomain)."
 
 msgid "Your Email"
 msgstr "Ihre E-Mail"

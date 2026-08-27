@@ -8583,6 +8583,48 @@ export type Database = {
             referencedColumns: ["companyId"]
           },
           {
+            foreignKeyName: "costLedger_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "costLedger_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "costLedger_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "costLedger_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "costLedger_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "costLedger_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "costLedger_supplierId_fkey"
             columns: ["supplierId", "companyId"]
             isOneToOne: false
@@ -42946,6 +42988,7 @@ export type Database = {
           storageUnitId: string | null
           tags: string[] | null
           unitCost: number
+          unitCostSource: string
           unitOfMeasureCode: string | null
           updatedAt: string | null
           updatedBy: string | null
@@ -42972,6 +43015,7 @@ export type Database = {
           storageUnitId?: string | null
           tags?: string[] | null
           unitCost?: number
+          unitCostSource?: string
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -42998,6 +43042,7 @@ export type Database = {
           storageUnitId?: string | null
           tags?: string[] | null
           unitCost?: number
+          unitCostSource?: string
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -50453,7 +50498,6 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
-          domains: string[]
           id: string
           metadataUrl: string | null
           metadataXml: string | null
@@ -50467,7 +50511,6 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
-          domains: string[]
           id?: string
           metadataUrl?: string | null
           metadataXml?: string | null
@@ -50481,7 +50524,6 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
-          domains?: string[]
           id?: string
           metadataUrl?: string | null
           metadataXml?: string | null
@@ -50584,6 +50626,154 @@ export type Database = {
           },
           {
             foreignKeyName: "ssoConnection_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      ssoDomain: {
+        Row: {
+          companyId: string
+          connectionId: string
+          createdAt: string
+          createdBy: string
+          domain: string
+          id: string
+          status: Database["public"]["Enums"]["ssoDomainStatus"]
+          updatedAt: string | null
+          updatedBy: string | null
+          verificationToken: string
+          verifiedAt: string | null
+        }
+        Insert: {
+          companyId: string
+          connectionId: string
+          createdAt?: string
+          createdBy: string
+          domain: string
+          id?: string
+          status?: Database["public"]["Enums"]["ssoDomainStatus"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+          verificationToken: string
+          verifiedAt?: string | null
+        }
+        Update: {
+          companyId?: string
+          connectionId?: string
+          createdAt?: string
+          createdBy?: string
+          domain?: string
+          id?: string
+          status?: Database["public"]["Enums"]["ssoDomainStatus"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+          verificationToken?: string
+          verifiedAt?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ssoDomain_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ssoDomain_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ssoDomain_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "ssoDomain_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "ssoDomain_connectionId_fkey"
+            columns: ["connectionId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "ssoConnection"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "ssoDomain_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ssoDomain_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ssoDomain_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ssoDomain_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ssoDomain_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "ssoDomain_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ssoDomain_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ssoDomain_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ssoDomain_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ssoDomain_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -70320,6 +70510,7 @@ export type Database = {
           storageUnitId: string | null
           tags: string[] | null
           unitCost: number | null
+          unitCostSource: string | null
           unitOfMeasureCode: string | null
           updatedAt: string | null
           updatedBy: string | null
@@ -72085,14 +72276,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -72646,14 +72837,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -77615,6 +77806,7 @@ export type Database = {
           revision: string
           storageUnitId: string
           unitCost: number
+          unitCostSource: string
           version: number
         }[]
       }
@@ -77641,6 +77833,7 @@ export type Database = {
           revision: string
           storageUnitId: string
           unitCost: number
+          unitCostSource: string
           unitOfMeasureCode: string
           version: number
         }[]
@@ -79291,6 +79484,7 @@ export type Database = {
       shipmentStatus: "Draft" | "Pending" | "Posted" | "Voided"
       shippingCarrier: "UPS" | "FedEx" | "USPS" | "DHL" | "Other"
       sourcingType: "Specified" | "Drop Ship" | "Ship from Inventory"
+      ssoDomainStatus: "pending" | "verified"
       stockTransferStatus: "Draft" | "Released" | "In Progress" | "Completed"
       storageRuleTargetType: "item" | "workCenter"
       supersessionMode:
@@ -80722,6 +80916,7 @@ export const Constants = {
       shipmentStatus: ["Draft", "Pending", "Posted", "Voided"],
       shippingCarrier: ["UPS", "FedEx", "USPS", "DHL", "Other"],
       sourcingType: ["Specified", "Drop Ship", "Ship from Inventory"],
+      ssoDomainStatus: ["pending", "verified"],
       stockTransferStatus: ["Draft", "Released", "In Progress", "Completed"],
       storageRuleTargetType: ["item", "workCenter"],
       supersessionMode: [

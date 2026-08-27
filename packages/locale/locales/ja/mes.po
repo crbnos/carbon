@@ -280,9 +280,6 @@ msgstr "消費済み"
 msgid "Consumed expired"
 msgstr "消費期限切れ"
 
-msgid "Continue with SSO"
-msgstr "SSOで続ける"
-
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "計画外メンテナンスのコスト（過去{0}日間）"
@@ -525,7 +522,7 @@ msgid "Finish Anyways"
 msgstr "とにかく完了"
 
 msgid "Finish setting up your account"
-msgstr "アカウントの設定を完了してください"
+msgstr "アカウント設定を完了する"
 
 msgid "Finish with material unpicked?"
 msgstr "材料がピッキングされていない状態で終了しますか?"
@@ -1119,6 +1116,12 @@ msgstr "実行中"
 msgid "Sales Order"
 msgstr "受注"
 
+msgid "SAML SSO"
+msgstr "SAML SSO"
+
+msgid "SAML SSO is not configured for your email domain."
+msgstr "ご使用のメールドメインでは SAML SSO が設定されていません。"
+
 msgid "Save"
 msgstr "保存"
 
@@ -1310,9 +1313,6 @@ msgstr "スペアパーツ"
 
 msgid "Spare Parts Used"
 msgstr "使用済みスペアパーツ"
-
-msgid "SSO is not configured for your email domain."
-msgstr "メールドメインに対してSSOが設定されていません。"
 
 msgid "Start"
 msgstr "開始"
@@ -1522,7 +1522,7 @@ msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock 
 msgstr "{hoursElapsed} 時間出勤中です。退勤打刻を忘れていませんか？"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
-msgstr "アカウントがまだ企業に属していません。続行するにはCarbon ERPのオンボーディングを完了してください。"
+msgstr "アカウントはまだ企業に属していません。Carbon ERPでオンボーディングを完了して続行してください。"
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "あなたの組織は認証器アプリが必要です。Carbonで設定してから、ここに戻ってください。"

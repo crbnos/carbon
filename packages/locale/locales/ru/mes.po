@@ -280,9 +280,6 @@ msgstr "Использовано"
 msgid "Consumed expired"
 msgstr "Потреблено истекшее"
 
-msgid "Continue with SSO"
-msgstr "Продолжить с SSO"
-
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Стоимость незапланированного обслуживания за последние {0} дней"
@@ -525,7 +522,7 @@ msgid "Finish Anyways"
 msgstr "Завершить в любом случае"
 
 msgid "Finish setting up your account"
-msgstr "Завершите настройку своего аккаунта"
+msgstr "Завершить настройку учетной записи"
 
 msgid "Finish with material unpicked?"
 msgstr "Завершить с неподобранным материалом?"
@@ -537,7 +534,7 @@ msgid "Go back to operation"
 msgstr "Вернуться к операции"
 
 msgid "Go to onboarding"
-msgstr "Перейти к подготовке"
+msgstr "Перейти к адаптации"
 
 msgid "How many were actually picked?"
 msgstr "Сколько было фактически собрано?"
@@ -1119,6 +1116,12 @@ msgstr "Работает"
 msgid "Sales Order"
 msgstr "Заказ на продажу"
 
+msgid "SAML SSO"
+msgstr "SAML SSO"
+
+msgid "SAML SSO is not configured for your email domain."
+msgstr "SAML SSO не настроен для вашего почтового домена."
+
 msgid "Save"
 msgstr "Сохранить"
 
@@ -1310,9 +1313,6 @@ msgstr "Запасные части"
 
 msgid "Spare Parts Used"
 msgstr "Использованные запасные части"
-
-msgid "SSO is not configured for your email domain."
-msgstr "SSO не настроен для вашего домена электронной почты."
 
 msgid "Start"
 msgstr "Старт"
@@ -1522,7 +1522,7 @@ msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock 
 msgstr "Вы на смене уже {hoursElapsed} часов. Вы забыли отметить уход?"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
-msgstr "Ваш аккаунт еще не входит в состав компании. Завершите подготовку в Carbon ERP, чтобы продолжить."
+msgstr "Ваша учетная запись еще не связана с компанией. Завершите адаптацию в Carbon ERP, чтобы продолжить."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Ваша организация требует приложения аутентификатора. Настройте его в Carbon, а затем вернитесь сюда."

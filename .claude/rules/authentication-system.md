@@ -75,11 +75,35 @@ querying), and every route entry point checks it too — login buttons, the
   `deactivateSsoConnection` in `connections.server.ts`.
 - **`ssoConnection` table** (migration `20260820215433`; partial unique index also
   in `20260825185617` for pre-squash DBs) binds a provider to a company:
-  `providerId` UNIQUE, `domains TEXT[]`, `metadataUrl` XOR `metadataXml` (CHECK),
+  `providerId` UNIQUE, `metadataUrl` XOR `metadataXml` (CHECK),
   `active`, `requireSso`, and at most ONE active row per company
   (`ssoConnection_companyId_active_key` — readers use `.maybeSingle()`). GoTrue
   providers are project-global, so the CALLBACK — not GoTrue — enforces
   provider → company + email-domain binding.
+- **Domain ownership verification** (`ssoDomain` table, same migration; spec
+  `.ai/specs/2026-08-27-sso-domain-verification.md`): one row per claimed email
+  domain — `verificationToken` (32-hex, per row), `status pending|verified`.
+  Exclusivity attaches to VERIFICATION, not the claim: `UNIQUE("companyId","domain")`
+  plus a partial unique index on `("domain") WHERE status='verified'` — any number
+  of companies may hold pending claims on one domain (a free pending row must not
+  block the rightful owner — that would be a squatting vector); first to verify
+  wins, race-free. A cross-company verify conflict fails fast with a deliberately
+  GENERIC message ("Failed to verify domain") — a distinct one would be an oracle
+  for probing which domains are verified where. `addSsoDomain` pre-checks the
+  company's own duplicate (no error-code branching). A domain
+  routes SSO / enforces `requireSso` only while VERIFIED; the connection lookups
+  in `connections.server.ts` attach a computed `domains: string[]` of verified
+  domains, so consumers (callbacks, invite guards) keep the old shape. The DNS
+  challenge (`verification.server.ts`): TXT at `_carbon-challenge.<domain>` with
+  `carbon-domain-verification=<token>`, checked manually via the Verify button
+  (pinned resolvers 1.1.1.1/8.8.8.8; no polling, no re-verification — one-shot
+  by design). Only verified domains are pushed to the GoTrue provider
+  (`syncGoTrueDomains`); a new connection registers with `domains: []`.
+  Domain admin flows: `addSsoDomain` / `verifySsoDomain` / `removeSsoDomain`
+  intents on `x+/settings+/sso.tsx`; UI is the Email Domains card on
+  Settings → Security. Deactivating a connection DELETES its `ssoDomain` rows
+  (releases the claims; re-activation re-verifies). Public email providers are
+  denied at validation (`PUBLIC_EMAIL_DOMAINS`, `settings.models.ts`).
 - **Session classification**: `getSsoProviderIdFromSession(accessToken, user)` requires
   an `amr` entry with `method: "sso/saml"` before resolving the provider id; fails
   CLOSED to the non-SSO path. `getSsoProviderIdFromUser` only answers "HAS an SSO
@@ -93,8 +117,11 @@ querying), and every route entry point checks it too — login buttons, the
   redemption); otherwise the invite-first migration `migrateUserToSso` runs (one Kysely
   transaction: user row, role-keyed account activation — `employee` /
   `customerAccount` / `supplierAccount` — membership, permission merge, invite accept
-  under FOR UPDATE). No invite → rejected, orphan auth user deleted. MES defers first
-  login to ERP.
+  under FOR UPDATE). No invite (and the domain-mismatch rejection) → rejected;
+  `deleteJitSsoUser` removes the WHOLE throwaway JIT user — auth user plus the
+  trigger-created `user`/`userPermission` rows (no FK cascade between the schemas),
+  guarded on zero memberships — or the leftover profile trips `authIdentityExists`
+  and makes the email un-invitable. MES defers first login to ERP.
 - **Require SSO** (`ssoConnection.requireSso`): `isSsoRequiredForEmail`
   (`connections.server.ts`, like all connection lookups —
   `getSsoConnectionByDomain` / `getSsoConnectionByProviderId` are the ONE copy
@@ -282,9 +309,14 @@ ERP exposes an OAuth 2.0 AS for use as a remote Claude/MCP connector. Routes und
 - `userToCompany` — junction, PK `(userId, companyId)`, `role` enum
   `'employee' | 'supplier' | 'customer'`.
 - `ssoConnection` — SAML SSO tenant binding (see the SSO section): PK
-  `(id, companyId)`, `providerId` UNIQUE, `domains TEXT[]` (GIN),
+  `(id, companyId)`, `providerId` UNIQUE,
   `metadataUrl`/`metadataXml` (exactly one, CHECK), `active`, `requireSso`.
   SELECT: employee role; writes: `settings_update`.
+- `ssoDomain` — DNS-verified email domain claims: PK `(id, companyId)`,
+  composite FK → `ssoConnection`, `UNIQUE("companyId","domain")` + partial unique
+  `("domain") WHERE status='verified'` (first-to-verify-wins), `verificationToken`,
+  `status` (`ssoDomainStatus` enum: `pending|verified`), `verifiedAt`. Same RLS split as
+  `ssoConnection`.
 - `apiKey` — `keyHash` (unique), `keyPreview`, `name`, `companyId`, `createdBy`, `scopes`
   JSONB, `rateLimit` (default **60**), `rateLimitWindow` (default `'1m'`), `expiresAt`,
   `lastUsedAt`. The old plaintext `key` column was dropped.

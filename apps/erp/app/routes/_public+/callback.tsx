@@ -19,6 +19,7 @@ import {
 } from "@carbon/auth/session.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import {
+  deleteJitSsoUser,
   getSsoConnectionByProviderId,
   getSsoProviderIdFromSession,
   isSsoEnabled,
@@ -129,7 +130,7 @@ export async function action({ request }: ActionFunctionArgs) {
           request,
           error(
             connection.error,
-            "SSO connection is not active. Contact your administrator."
+            "SAML SSO connection is not active. Contact your administrator."
           )
         )
       );
@@ -146,9 +147,11 @@ export async function action({ request }: ActionFunctionArgs) {
     const emailDomain = authSession.email.split("@")[1]?.toLowerCase() ?? "";
     if (!connection.data.domains.includes(emailDomain)) {
       // The IdP asserted an email outside its registered domains. Never
-      // attach it; remove the JIT-created orphan so a retry starts clean.
+      // attach it; remove the JIT-created orphan — auth user AND the
+      // trigger-created profile rows — so a retry (or a later invite for
+      // this email) starts clean.
       if (memberships.length === 0) {
-        await serviceRole.auth.admin.deleteUser(userId);
+        await deleteJitSsoUser(serviceRole, getDatabaseClient(), userId);
       }
       return redirect(
         path.to.root,
@@ -156,7 +159,7 @@ export async function action({ request }: ActionFunctionArgs) {
           request,
           error(
             null,
-            "SSO sign-in rejected: this email domain is not registered for your company's SSO connection."
+            "SAML SSO sign-in rejected: this email domain is not registered for your company's SAML SSO connection."
           )
         )
       );
@@ -192,7 +195,7 @@ export async function action({ request }: ActionFunctionArgs) {
             request,
             error(
               linked.error,
-              "SSO sign-in failed while linking your account. Contact your administrator."
+              "SAML SSO sign-in failed while linking your account. Contact your administrator."
             )
           )
         );
@@ -228,7 +231,7 @@ export async function action({ request }: ActionFunctionArgs) {
             request,
             error(
               link.error ?? verified?.error,
-              "Your SSO identity was linked. Sign in with SSO again to continue."
+              "Your SAML SSO identity was linked. Sign in with SAML SSO again to continue."
             )
           )
         );
@@ -266,8 +269,10 @@ export async function action({ request }: ActionFunctionArgs) {
 
       if (!invite.data) {
         // Only ever delete the throwaway duplicate — never a linked account.
+        // The whole throwaway goes: auth user plus its trigger-created
+        // profile rows, or the leftover profile makes the email un-invitable.
         if (memberships.length === 0 && authSession.userId === userId) {
-          await serviceRole.auth.admin.deleteUser(userId);
+          await deleteJitSsoUser(serviceRole, getDatabaseClient(), userId);
         }
         return redirect(
           path.to.root,
@@ -275,7 +280,7 @@ export async function action({ request }: ActionFunctionArgs) {
             request,
             error(
               invite.error,
-              `SSO sign-in succeeded but no invite exists for ${authSession.email}. Contact your administrator.`
+              `SAML SSO sign-in succeeded but no invite exists for ${authSession.email}. Contact your administrator.`
             )
           )
         );
@@ -299,7 +304,7 @@ export async function action({ request }: ActionFunctionArgs) {
             request,
             error(
               migration.error,
-              "SSO sign-in failed while activating your account. Contact your administrator."
+              "SAML SSO sign-in failed while activating your account. Contact your administrator."
             )
           )
         );
@@ -346,7 +351,7 @@ export async function action({ request }: ActionFunctionArgs) {
           request,
           error(
             null,
-            'Your organization requires single sign-on. Use "Continue with SSO".'
+            'Your organization requires single sign-on. Use "SAML SSO".'
           )
         )
       );

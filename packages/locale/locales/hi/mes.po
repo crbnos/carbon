@@ -280,9 +280,6 @@ msgstr "खपत"
 msgid "Consumed expired"
 msgstr "खपत की गई समाप्त"
 
-msgid "Continue with SSO"
-msgstr "SSO के साथ जारी रखें"
-
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "अनियोजित रखरखाव की लागत, पिछले {0} दिन"
@@ -525,7 +522,7 @@ msgid "Finish Anyways"
 msgstr "वैसे भी समाप्त करें"
 
 msgid "Finish setting up your account"
-msgstr "अपने खाते की स्थापना पूरी करें"
+msgstr "अपना खाता सेट करना समाप्त करें"
 
 msgid "Finish with material unpicked?"
 msgstr "सामग्री बिना चुने समाप्त करें?"
@@ -1119,6 +1116,12 @@ msgstr "चल रहा है"
 msgid "Sales Order"
 msgstr "बिक्रय आदेश"
 
+msgid "SAML SSO"
+msgstr "SAML SSO"
+
+msgid "SAML SSO is not configured for your email domain."
+msgstr "SAML SSO आपके ईमेल डोमेन के लिए कॉन्फ़िगर नहीं है।"
+
 msgid "Save"
 msgstr "सहेजें"
 
@@ -1310,9 +1313,6 @@ msgstr "स्पेयर पार्ट्स"
 
 msgid "Spare Parts Used"
 msgstr "उपयोग किए गए स्पेयर पार्ट्स"
-
-msgid "SSO is not configured for your email domain."
-msgstr "SSO आपके ईमेल डोमेन के लिए कॉन्फ़िगर नहीं है।"
 
 msgid "Start"
 msgstr "शुरू करें"
@@ -1522,7 +1522,7 @@ msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock 
 msgstr "आप {hoursElapsed} घंटे के लिए क्लॉक इन हैं। क्या आप क्लॉक आउट करना भूल गए?"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
-msgstr "आपका खाता अभी किसी कंपनी का हिस्सा नहीं है। जारी रखने के लिए Carbon ERP में ऑनबोर्डिंग पूरी करें।"
+msgstr "आपका खाता अभी तक किसी कंपनी का हिस्सा नहीं है। जारी रखने के लिए Carbon ERP में ऑनबोर्डिंग पूरी करें।"
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "आपके संगठन को एक ऑथेंटिकेटर ऐप की आवश्यकता है। इसे Carbon में सेट अप करें, फिर यहाँ वापस आएं।"

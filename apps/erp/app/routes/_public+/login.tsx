@@ -220,7 +220,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // keeps working.
   if (await isSsoRequiredForEmail(getCarbonServiceRole(), email)) {
     const SSO_REQUIRED_MESSAGE =
-      'Your organization requires single sign-on. Use "Continue with SSO".';
+      'Your organization requires single sign-on. Use "SAML SSO".';
     logAuthEvent("login_failed", {
       actor: email,
       ip,
@@ -456,7 +456,7 @@ export default function LoginRoute() {
 
     const domain = email.split("@")[1];
     if (!domain) {
-      setSsoError(t`SSO is not configured for your email domain.`);
+      setSsoError(t`SAML SSO is not configured for your email domain.`);
       return;
     }
 
@@ -471,7 +471,7 @@ export default function LoginRoute() {
       const result = response.ok ? await response.json() : { enabled: false };
 
       if (!result.enabled) {
-        setSsoError(t`SSO is not configured for your email domain.`);
+        setSsoError(t`SAML SSO is not configured for your email domain.`);
         return;
       }
 
@@ -627,7 +627,7 @@ export default function LoginRoute() {
                   variant="secondary"
                   leftIcon={<LuKeyRound className="size-4" />}
                 >
-                  <Trans>Continue with SSO</Trans>
+                  <Trans>SAML SSO</Trans>
                 </Button>
               )}
 
