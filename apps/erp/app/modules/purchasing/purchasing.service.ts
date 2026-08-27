@@ -4335,3 +4335,91 @@ export async function createReplacementPurchaseOrder(
 
   return { data: { id: purchaseOrderId }, error: null };
 }
+
+/**
+ * The commercial half of the OEM repair leg: a purchase order carrying the
+ * supplier's repair fee for the units on a repair order.
+ *
+ * Row-locked check-then-create in one transaction (the repair services use the
+ * same shape): lock the repair order, re-read `purchaseOrderId`, return the
+ * existing PO if one is linked, otherwise create it and set the link before
+ * commit. Idempotent under concurrent clicks; the partial unique index on
+ * ("purchaseOrderId","companyId") is the backstop.
+ *
+ * The fee is authored by the user afterwards — we cannot know the OEM's price,
+ * and a repair covered by the supplier's own warranty is legitimately zero.
+ */
+export async function createRepairPurchaseOrder(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  {
+    repairOrderId,
+    companyId,
+    companyGroupId,
+    userId
+  }: {
+    repairOrderId: string;
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+  }
+): Promise<{
+  data: { id: string } | null;
+  error: import("@supabase/supabase-js").PostgrestError | null;
+}> {
+  const prepared = await db.transaction().execute(async (trx) => {
+    const order = await trx
+      .selectFrom("repairOrder")
+      .selectAll()
+      .where("id", "=", repairOrderId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!order) throw new Error("Repair order not found");
+    if (order.purchaseOrderId) {
+      return { existing: order.purchaseOrderId, order };
+    }
+    if (!order.supplierId) {
+      throw new Error(
+        "Set the repair supplier on the order before raising a repair PO"
+      );
+    }
+    if (order.status === "Cancelled") {
+      throw new Error("Cannot raise a PO for a cancelled repair order");
+    }
+    return { existing: null, order };
+  });
+
+  if (prepared.existing) {
+    return { data: { id: prepared.existing }, error: null };
+  }
+
+  const order = prepared.order;
+  const purchaseOrder = await insertPurchaseOrder(client, {
+    supplierId: order.supplierId!,
+    companyId,
+    companyGroupId,
+    createdBy: userId,
+    locationId: order.locationId ?? undefined,
+    orderDate: order.orderDate,
+    supplierReference: order.supplierReference ?? order.repairOrderId,
+    supplierLocationId: undefined,
+    currencyCode: undefined
+  });
+  if (purchaseOrder.error || !purchaseOrder.data) {
+    return { data: null, error: purchaseOrder.error };
+  }
+
+  const link = await client
+    .from("repairOrder")
+    .update({
+      purchaseOrderId: purchaseOrder.data.id,
+      updatedBy: userId,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", repairOrderId)
+    .eq("companyId", companyId);
+  if (link.error) return { data: null, error: link.error };
+
+  return { data: { id: purchaseOrder.data.id }, error: null };
+}

@@ -5,6 +5,7 @@ import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { PickPartial } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { datetime, EPSILON, round } from "@carbon/utils";
 import type {
   PostgrestError,
@@ -60,6 +61,12 @@ import type {
   salesReturnOrderLineValidator,
   salesReturnOrderStatusType,
   salesReturnOrderValidator,
+  repairOrderStatusType,
+  warrantyTermValidator,
+  warrantyRegistrationValidator,
+  repairOrderValidator,
+  repairOrderLineValidator,
+  repairOrderChargeValidator,
   salesRFQStatusType,
   salesRfqLineValidator,
   salesRfqValidator,
@@ -7643,4 +7650,1650 @@ export async function setSalesReturnOrderLineDisposition(
   }
 
   return { data: { id: lineId }, error: null };
+}
+
+// ============================================================
+// Warranty & Repairs — spec .ai/specs/2026-08-27-warranty-repairs.md
+// ============================================================
+
+export async function getWarrantyTerms(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("warrantyTerm")
+    .select("*", { count: LIST_COUNT })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "name", ascending: true }
+  ]);
+  return query;
+}
+
+export async function getWarrantyTermsList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("warrantyTerm")
+    .select("id, name, coversParts, partsDurationMonths, coversLabor, laborDurationMonths, startBasis")
+    .eq("companyId", companyId)
+    .order("name");
+}
+
+export async function getWarrantyTerm(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("warrantyTerm")
+    .select("*")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export async function upsertWarrantyTerm(
+  client: SupabaseClient<Database>,
+  warrantyTerm:
+    | (Omit<z.infer<typeof warrantyTermValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof warrantyTermValidator>, "id"> & {
+        id: string;
+        companyId: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("id" in warrantyTerm) {
+    return client
+      .from("warrantyTerm")
+      .update(sanitize(warrantyTerm))
+      .eq("id", warrantyTerm.id)
+      .eq("companyId", warrantyTerm.companyId)
+      .select("id")
+      .single();
+  }
+  return client.from("warrantyTerm").insert(warrantyTerm).select("id").single();
+}
+
+export async function deleteWarrantyTerm(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("warrantyTerm")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
+}
+
+export async function getWarrantyRegistrations(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+    customerId: string | null;
+    itemId: string | null;
+  }
+) {
+  let query = client
+    .from("warrantyRegistrations")
+    .select("*", { count: LIST_COUNT })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `warrantyRegistrationId.ilike.%${args.search}%,serialNumber.ilike.%${args.search}%,itemReadableId.ilike.%${args.search}%`
+    );
+  }
+  if (args.customerId) query = query.eq("customerId", args.customerId);
+  if (args.itemId) query = query.eq("itemId", args.itemId);
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "createdAt", ascending: false }
+  ]);
+  return query;
+}
+
+export async function getWarrantyRegistration(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("warrantyRegistrations")
+    .select("*")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
+/**
+ * Manual registrations only — both stamping keys stay NULL so they survive
+ * every shipment/invoice void. Auto-created rows are written by the posting
+ * functions, never here.
+ */
+export async function upsertWarrantyRegistration(
+  client: SupabaseClient<Database>,
+  registration:
+    | (Omit<z.infer<typeof warrantyRegistrationValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof warrantyRegistrationValidator>, "id"> & {
+        id: string;
+        companyId: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("id" in registration) {
+    return client
+      .from("warrantyRegistration")
+      .update(sanitize(registration))
+      .eq("id", registration.id)
+      .eq("companyId", registration.companyId)
+      .select("id")
+      .single();
+  }
+
+  const seq = await client.rpc("get_next_sequence", {
+    sequence_name: "warrantyRegistration",
+    company_id: registration.companyId
+  });
+  if (seq.error || !seq.data) {
+    return {
+      data: null,
+      error:
+        seq.error ??
+        ({
+          message: "Failed to generate warranty registration sequence"
+        } as PostgrestError)
+    };
+  }
+
+  return client
+    .from("warrantyRegistration")
+    .insert({ ...registration, warrantyRegistrationId: seq.data })
+    .select("id")
+    .single();
+}
+
+export async function deleteWarrantyRegistration(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("warrantyRegistration")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
+}
+
+export type WarrantyCoverageVerdict = {
+  registrationId: string;
+  warrantyRegistrationId: string;
+  startDate: string;
+  coversParts: boolean;
+  partsUntil: string | null;
+  partsInWarranty: boolean;
+  coversLabor: boolean;
+  laborUntil: string | null;
+  laborInWarranty: boolean;
+  supplierId: string | null;
+  supplierCoveredUntil: string | null;
+  supplierInWarranty: boolean;
+};
+
+const coverageVerdict = (
+  row: {
+    id: string;
+    warrantyRegistrationId: string;
+    startDate: string;
+    coversParts: boolean;
+    partsExpirationDate: string | null;
+    coversLabor: boolean;
+    laborExpirationDate: string | null;
+    supplierId: string | null;
+    supplierWarrantyExpirationDate: string | null;
+  },
+  today: string
+): WarrantyCoverageVerdict => {
+  // Dates are DATE columns, so lexicographic YYYY-MM-DD comparison is
+  // chronological. A NULL expiration with covers* true means lifetime.
+  const active = (covers: boolean, until: string | null) =>
+    covers && (until === null || until >= today);
+  return {
+    registrationId: row.id,
+    warrantyRegistrationId: row.warrantyRegistrationId,
+    startDate: row.startDate,
+    coversParts: row.coversParts,
+    partsUntil: row.partsExpirationDate,
+    partsInWarranty: active(row.coversParts, row.partsExpirationDate),
+    coversLabor: row.coversLabor,
+    laborUntil: row.laborExpirationDate,
+    laborInWarranty: active(row.coversLabor, row.laborExpirationDate),
+    supplierId: row.supplierId,
+    supplierCoveredUntil: row.supplierWarrantyExpirationDate,
+    supplierInWarranty:
+      !!row.supplierId &&
+      row.supplierWarrantyExpirationDate !== null &&
+      row.supplierWarrantyExpirationDate >= today
+  };
+};
+
+const REGISTRATION_COLUMNS =
+  "id, warrantyRegistrationId, startDate, coversParts, partsExpirationDate, coversLabor, laborExpirationDate, supplierId, supplierWarrantyExpirationDate, itemId, customerId, trackedEntityId, quantity, createdAt";
+
+/**
+ * The one advisory coverage check. Never blocks — it reports.
+ *
+ * `trackedEntityId` / `warrantyRegistrationId` resolve to a single verdict;
+ * `itemId + customerId` returns the CANDIDATE list, because repeat purchases of
+ * an untracked item are genuinely ambiguous and the user must pick one.
+ *
+ * Tracked selection is a total order: latest startDate, then latest createdAt,
+ * then highest id — bulk inserts can tie on the first two.
+ */
+export async function getWarrantyCoverage(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; today: string } & (
+    | { trackedEntityId: string }
+    | { warrantyRegistrationId: string }
+    | { itemId: string; customerId: string }
+  )
+): Promise<{
+  data: {
+    verdict: WarrantyCoverageVerdict | null;
+    candidates: WarrantyCoverageVerdict[];
+  } | null;
+  error: PostgrestError | null;
+}> {
+  let query = client
+    .from("warrantyRegistration")
+    .select(REGISTRATION_COLUMNS)
+    .eq("companyId", args.companyId);
+
+  if ("trackedEntityId" in args) {
+    query = query.eq("trackedEntityId", args.trackedEntityId);
+  } else if ("warrantyRegistrationId" in args) {
+    query = query.eq("id", args.warrantyRegistrationId);
+  } else {
+    query = query
+      .eq("itemId", args.itemId)
+      .eq("customerId", args.customerId)
+      .is("trackedEntityId", null);
+  }
+
+  const { data, error } = await query;
+  if (error) return { data: null, error };
+
+  const rows = [...(data ?? [])].sort((a, b) => {
+    if (a.startDate !== b.startDate) return a.startDate < b.startDate ? 1 : -1;
+    if (a.createdAt !== b.createdAt) return a.createdAt < b.createdAt ? 1 : -1;
+    return a.id < b.id ? 1 : -1;
+  });
+
+  const candidates = rows.map((row) => coverageVerdict(row, args.today));
+  return {
+    data: {
+      verdict:
+        "itemId" in args && !("trackedEntityId" in args)
+          ? null
+          : (candidates[0] ?? null),
+      candidates
+    },
+    error: null
+  };
+}
+
+
+/**
+ * Warranty expirations are month arithmetic on a DATE: `@internationalized/date`
+ * clamps day-of-month (31 Jan + 1 month = 28/29 Feb), which JS Date does not.
+ * A null duration means lifetime coverage — no expiration date at all.
+ */
+function addMonthsToDate(date: string, months: number | null): string | null {
+  if (months === null || months === undefined) return null;
+  return parseDate(date).add({ months }).toString();
+}
+
+// ---------- Repair orders ----------
+
+export async function getRepairOrders(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+    status: string | null;
+    customerId: string | null;
+    supplierId: string | null;
+  }
+) {
+  let query = client
+    .from("repairOrders")
+    .select("*", { count: LIST_COUNT })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `repairOrderId.ilike.%${args.search}%,customerReference.ilike.%${args.search}%,supplierReference.ilike.%${args.search}%`
+    );
+  }
+  if (args.status) {
+    query = query.eq(
+      "status",
+      args.status as (typeof repairOrderStatusType)[number]
+    );
+  }
+  if (args.customerId) query = query.eq("customerId", args.customerId);
+  if (args.supplierId) query = query.eq("supplierId", args.supplierId);
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "createdAt", ascending: false }
+  ]);
+  return query;
+}
+
+export async function getRepairOrder(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("repairOrder")
+    .select("*")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export async function getRepairOrderLines(
+  client: SupabaseClient<Database>,
+  repairOrderId: string,
+  companyId: string
+) {
+  return client
+    .from("repairOrderLine")
+    .select(
+      "*, item(readableIdWithRevision, name, itemTrackingType), returnReason(name), repairOrderLineTrackedEntity(trackedEntityId, quantity, trackedEntity(readableId, status))"
+    )
+    .eq("repairOrderId", repairOrderId)
+    .eq("companyId", companyId)
+    .order("lineNumber");
+}
+
+export async function getRepairOrderCharges(
+  client: SupabaseClient<Database>,
+  repairOrderId: string,
+  companyId: string
+) {
+  return client
+    .from("repairOrderCharge")
+    .select("*, item(readableIdWithRevision, name)")
+    .eq("repairOrderId", repairOrderId)
+    .eq("companyId", companyId)
+    .order("createdAt");
+}
+
+export async function insertRepairOrder(
+  client: SupabaseClient<Database>,
+  input: {
+    customerId: string;
+    companyId: string;
+    createdBy: string;
+    orderDate: string;
+    repairOrderId?: string;
+    customerLocationId?: string;
+    customerContactId?: string;
+    customerReference?: string;
+    locationId?: string;
+    salesReturnOrderId?: string;
+    supplierId?: string;
+    supplierReference?: string;
+    currencyCode?: string;
+    promisedDate?: string;
+    assignee?: string;
+    customFields?: Json;
+  }
+): Promise<{
+  data: { id: string; repairOrderId: string } | null;
+  error: PostgrestError | null;
+}> {
+  let repairOrderId: string;
+  if (input.repairOrderId) {
+    repairOrderId = input.repairOrderId;
+  } else {
+    const seq = await client.rpc("get_next_sequence", {
+      sequence_name: "repairOrder",
+      company_id: input.companyId
+    });
+    if (seq.error || !seq.data) {
+      return {
+        data: null,
+        error:
+          seq.error ??
+          ({
+            message: "Failed to generate repair order sequence"
+          } as PostgrestError)
+      };
+    }
+    repairOrderId = seq.data;
+  }
+
+  let currencyCode = input.currencyCode;
+  if (!currencyCode) {
+    const [customer, company] = await Promise.all([
+      client
+        .from("customer")
+        .select("currencyCode")
+        .eq("id", input.customerId)
+        .single(),
+      client
+        .from("company")
+        .select("baseCurrencyCode")
+        .eq("id", input.companyId)
+        .single()
+    ]);
+    currencyCode =
+      customer.data?.currencyCode ?? company.data?.baseCurrencyCode ?? "USD";
+  }
+
+  const insert = await client
+    .from("repairOrder")
+    .insert({
+      repairOrderId,
+      customerId: input.customerId,
+      customerLocationId: input.customerLocationId,
+      customerContactId: input.customerContactId,
+      customerReference: input.customerReference,
+      locationId: input.locationId,
+      salesReturnOrderId: input.salesReturnOrderId,
+      supplierId: input.supplierId,
+      supplierReference: input.supplierReference,
+      currencyCode,
+      orderDate: input.orderDate,
+      promisedDate: input.promisedDate,
+      assignee: input.assignee,
+      companyId: input.companyId,
+      createdBy: input.createdBy,
+      customFields: input.customFields
+    })
+    .select("id, repairOrderId")
+    .single();
+
+  if (insert.error || !insert.data) {
+    return { data: null, error: insert.error };
+  }
+  return { data: insert.data, error: null };
+}
+
+export async function upsertRepairOrder(
+  client: SupabaseClient<Database>,
+  repairOrder: Omit<z.infer<typeof repairOrderValidator>, "id"> & {
+    id: string;
+    companyId: string;
+    updatedBy: string;
+    customFields?: Json;
+  }
+) {
+  return client
+    .from("repairOrder")
+    .update(sanitize(repairOrder))
+    .eq("id", repairOrder.id)
+    .eq("companyId", repairOrder.companyId)
+    .select("id")
+    .single();
+}
+
+export async function deleteRepairOrder(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("repairOrder")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
+}
+
+export async function deleteRepairOrderLine(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("repairOrderLine")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
+}
+
+export async function deleteRepairOrderCharge(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  // A charge that already posted its consumption is history, not a draft.
+  const charge = await client
+    .from("repairOrderCharge")
+    .select("issuedAt")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+  if (charge.error) return charge;
+  if (charge.data.issuedAt) {
+    return {
+      data: null,
+      error: {
+        message: "Cannot delete a charge that has already been issued"
+      } as PostgrestError
+    };
+  }
+  return client
+    .from("repairOrderCharge")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
+}
+
+/**
+ * Writes a repair line and keeps its warranty reference honest.
+ *
+ * Two guards, both inside one transaction with the registration row locked:
+ *  - identity: the registration must match the line's item, the order's
+ *    customer, and (when tracked) the entity the line holds;
+ *  - allocation: an untracked registration's quantity is a CAP across every
+ *    open line that references it. The cap is derived, never stored, so a
+ *    deleted or cancelled line releases its share automatically.
+ */
+export async function upsertRepairOrderLine(
+  db: Kysely<KyselyDatabase>,
+  input: z.infer<typeof repairOrderLineValidator> & {
+    companyId: string;
+    userId: string;
+    customFields?: Json;
+  }
+): Promise<{ id: string }> {
+  return db.transaction().execute(async (trx) => {
+    const order = await trx
+      .selectFrom("repairOrder")
+      .select(["id", "status", "customerId"])
+      .where("id", "=", input.repairOrderId)
+      .where("companyId", "=", input.companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!order) throw new Error("Repair order not found");
+    if (order.status === "Completed" || order.status === "Cancelled") {
+      throw new Error(`Cannot edit a ${order.status} repair order`);
+    }
+
+    const existing = input.id
+      ? await trx
+          .selectFrom("repairOrderLine")
+          .select(["id", "status", "closedComplete"])
+          .where("id", "=", input.id)
+          .where("companyId", "=", input.companyId)
+          .forUpdate()
+          .executeTakeFirst()
+      : undefined;
+
+    if (input.id && !existing) throw new Error("Repair line not found");
+    // Custody past Pending means a physical leg posted against this line.
+    if (existing && existing.status !== "Pending" && existing.status !== "Received") {
+      throw new Error(
+        `Cannot edit a line that is ${existing.status}; reverse the posting first`
+      );
+    }
+
+    const item = await trx
+      .selectFrom("item")
+      .select(["id", "itemTrackingType"])
+      .where("id", "=", input.itemId)
+      .where("companyId", "=", input.companyId)
+      .executeTakeFirst();
+    if (!item) throw new Error("Item not found");
+
+    const isTracked =
+      item.itemTrackingType === "Serial" || item.itemTrackingType === "Batch";
+    const quantity = Number(input.quantity);
+
+    // One tracked unit per line keeps the line's scalar custody truthful.
+    if (isTracked && item.itemTrackingType === "Serial" && quantity !== 1) {
+      throw new Error("A serialized repair line holds exactly one unit");
+    }
+
+    if (input.warrantyRegistrationId) {
+      const registration = await trx
+        .selectFrom("warrantyRegistration")
+        .select(["id", "itemId", "customerId", "trackedEntityId", "quantity"])
+        .where("id", "=", input.warrantyRegistrationId)
+        .where("companyId", "=", input.companyId)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!registration) throw new Error("Warranty registration not found");
+      if (registration.itemId !== input.itemId) {
+        throw new Error("That warranty registration is for a different item");
+      }
+      if (registration.customerId !== order.customerId) {
+        throw new Error(
+          "That warranty registration belongs to a different customer"
+        );
+      }
+      if (
+        registration.trackedEntityId &&
+        input.trackedEntityId &&
+        registration.trackedEntityId !== input.trackedEntityId
+      ) {
+        throw new Error("That warranty registration is for a different unit");
+      }
+
+      // Untracked registrations cover a quantity, so they can be over-claimed.
+      if (!registration.trackedEntityId) {
+        const siblings = await trx
+          .selectFrom("repairOrderLine")
+          .innerJoin("repairOrder", (join) =>
+            join
+              .onRef("repairOrder.id", "=", "repairOrderLine.repairOrderId")
+              .onRef("repairOrder.companyId", "=", "repairOrderLine.companyId")
+          )
+          .select(["repairOrderLine.id", "repairOrderLine.quantity"])
+          .where("repairOrderLine.warrantyRegistrationId", "=", registration.id)
+          .where("repairOrderLine.companyId", "=", input.companyId)
+          .where("repairOrder.status", "!=", "Cancelled")
+          .execute();
+
+        const claimed = siblings
+          .filter((row) => row.id !== input.id)
+          .reduce((sum, row) => sum + Number(row.quantity), 0);
+
+        if (claimed + quantity > Number(registration.quantity)) {
+          throw new Error(
+            `That registration covers ${registration.quantity} unit(s); ${claimed} already claimed`
+          );
+        }
+      }
+    }
+
+    let lineId: string;
+    if (input.id && existing) {
+      await trx
+        .updateTable("repairOrderLine")
+        .set({
+          itemId: input.itemId,
+          quantity,
+          unitOfMeasureCode: input.unitOfMeasureCode ?? null,
+          warrantyRegistrationId: input.warrantyRegistrationId ?? null,
+          underWarranty: !!input.warrantyRegistrationId,
+          returnReasonId: input.returnReasonId ?? null,
+          updatedBy: input.userId,
+          updatedAt: new Date().toISOString(),
+          ...(input.customFields ? { customFields: input.customFields } : {})
+        })
+        .where("id", "=", input.id)
+        .where("companyId", "=", input.companyId)
+        .execute();
+      lineId = input.id;
+    } else {
+      const maxLine = await trx
+        .selectFrom("repairOrderLine")
+        .select((eb) => eb.fn.max("lineNumber").as("max"))
+        .where("repairOrderId", "=", input.repairOrderId)
+        .where("companyId", "=", input.companyId)
+        .executeTakeFirst();
+
+      const inserted = await trx
+        .insertInto("repairOrderLine")
+        .values({
+          repairOrderId: input.repairOrderId,
+          lineNumber: Number(maxLine?.max ?? 0) + 1,
+          itemId: input.itemId,
+          quantity,
+          unitOfMeasureCode: input.unitOfMeasureCode ?? null,
+          warrantyRegistrationId: input.warrantyRegistrationId ?? null,
+          underWarranty: !!input.warrantyRegistrationId,
+          returnReasonId: input.returnReasonId ?? null,
+          companyId: input.companyId,
+          createdBy: input.userId,
+          ...(input.customFields ? { customFields: input.customFields } : {})
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      lineId = inserted.id;
+    }
+
+    // At most one entity per line (unique index backs this).
+    await trx
+      .deleteFrom("repairOrderLineTrackedEntity")
+      .where("repairOrderLineId", "=", lineId)
+      .where("companyId", "=", input.companyId)
+      .execute();
+
+    if (input.trackedEntityId) {
+      await trx
+        .insertInto("repairOrderLineTrackedEntity")
+        .values({
+          repairOrderLineId: lineId,
+          trackedEntityId: input.trackedEntityId,
+          quantity,
+          companyId: input.companyId,
+          createdBy: input.userId
+        })
+        .execute();
+    }
+
+    return { id: lineId };
+  });
+}
+
+/**
+ * Short-close: stop expecting a unit that will never arrive. Legal ONLY while
+ * the line is still Pending — once a unit is in custody it must leave through
+ * a ship-back or a scrap, never behind a flag.
+ */
+export async function closeRepairOrderLine(
+  client: SupabaseClient<Database>,
+  { id, companyId, userId }: { id: string; companyId: string; userId: string }
+) {
+  const line = await client
+    .from("repairOrderLine")
+    .select("status, closedComplete")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+  if (line.error) return line;
+  if (!line.data.closedComplete && line.data.status !== "Pending") {
+    return {
+      data: null,
+      error: {
+        message: `Cannot short-close a line that is ${line.data.status} — ship it back or scrap it`
+      } as PostgrestError
+    };
+  }
+  return client
+    .from("repairOrderLine")
+    .update({
+      closedComplete: !line.data.closedComplete,
+      updatedBy: userId,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
+}
+
+/**
+ * Charges carry the billing code the caller resolved from coverage — there is
+ * no DB default, so an omitted code is a validation error rather than a silent
+ * "Warranty". The code locks once the charge has posted its consumption.
+ */
+export async function upsertRepairOrderCharge(
+  client: SupabaseClient<Database>,
+  charge:
+    | (Omit<z.infer<typeof repairOrderChargeValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof repairOrderChargeValidator>, "id"> & {
+        id: string;
+        companyId: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("id" in charge) {
+    const existing = await client
+      .from("repairOrderCharge")
+      .select("issuedAt, billingCode")
+      .eq("id", charge.id)
+      .eq("companyId", charge.companyId)
+      .single();
+    if (existing.error) return existing;
+    if (existing.data.issuedAt && existing.data.billingCode !== charge.billingCode) {
+      return {
+        data: null,
+        error: {
+          message:
+            "This charge has been issued; re-code it with a reversing re-issue"
+        } as PostgrestError
+      };
+    }
+    return client
+      .from("repairOrderCharge")
+      .update(sanitize(charge))
+      .eq("id", charge.id)
+      .eq("companyId", charge.companyId)
+      .select("id")
+      .single();
+  }
+  return client
+    .from("repairOrderCharge")
+    .insert(charge)
+    .select("id")
+    .single();
+}
+
+export async function confirmRepairOrder(
+  db: Kysely<KyselyDatabase>,
+  { id, companyId }: { id: string; companyId: string },
+  userId: string
+) {
+  return db.transaction().execute(async (trx) => {
+    const order = await trx
+      .selectFrom("repairOrder")
+      .select(["id", "status"])
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!order) throw new Error("Repair order not found");
+    if (order.status !== "Draft") {
+      throw new Error(`Cannot confirm a repair order in ${order.status} status`);
+    }
+
+    const lines = await trx
+      .selectFrom("repairOrderLine")
+      .select(["id"])
+      .where("repairOrderId", "=", id)
+      .where("companyId", "=", companyId)
+      .execute();
+    if (lines.length === 0) {
+      throw new Error("Cannot confirm a repair order with no lines");
+    }
+
+    await trx
+      .updateTable("repairOrder")
+      .set({
+        status: "Confirmed",
+        updatedBy: userId,
+        updatedAt: new Date().toISOString()
+      })
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return { id };
+  });
+}
+
+/** Cancel is refused the moment any unit is in custody. */
+export async function cancelRepairOrder(
+  db: Kysely<KyselyDatabase>,
+  { id, companyId }: { id: string; companyId: string },
+  userId: string
+) {
+  return db.transaction().execute(async (trx) => {
+    const order = await trx
+      .selectFrom("repairOrder")
+      .select(["id", "status"])
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!order) throw new Error("Repair order not found");
+    if (order.status === "Completed") {
+      throw new Error("Cannot cancel a completed repair order");
+    }
+
+    const inCustody = await trx
+      .selectFrom("repairOrderLine")
+      .select(["id", "status"])
+      .where("repairOrderId", "=", id)
+      .where("companyId", "=", companyId)
+      .where("status", "!=", "Pending")
+      .execute();
+    if (inCustody.length > 0) {
+      throw new Error(
+        "Cannot cancel — units have already been received. Ship them back or scrap them first."
+      );
+    }
+
+    await trx
+      .updateTable("repairOrder")
+      .set({
+        status: "Cancelled",
+        updatedBy: userId,
+        updatedAt: new Date().toISOString()
+      })
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return { id };
+  });
+}
+
+/**
+ * Complete requires at least one line, and every line resolved: shipped back,
+ * scrapped, or short-closed while still Pending. An empty repair order cannot
+ * complete — its "every line" guard would be vacuously true.
+ */
+export async function completeRepairOrder(
+  db: Kysely<KyselyDatabase>,
+  { id, companyId }: { id: string; companyId: string },
+  userId: string
+) {
+  return db.transaction().execute(async (trx) => {
+    const order = await trx
+      .selectFrom("repairOrder")
+      .select(["id", "status"])
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!order) throw new Error("Repair order not found");
+    if (order.status === "Completed" || order.status === "Cancelled") {
+      throw new Error(`Repair order is already ${order.status}`);
+    }
+
+    const lines = await trx
+      .selectFrom("repairOrderLine")
+      .select(["id", "lineNumber", "status", "closedComplete"])
+      .where("repairOrderId", "=", id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .execute();
+
+    if (lines.length === 0) {
+      throw new Error("Cannot complete a repair order with no lines");
+    }
+
+    const unresolved = lines.filter(
+      (line) =>
+        !line.closedComplete &&
+        line.status !== "Shipped" &&
+        line.status !== "Scrapped"
+    );
+    if (unresolved.length > 0) {
+      throw new Error(
+        `Line(s) ${unresolved
+          .map((line) => line.lineNumber)
+          .join(", ")} are not shipped back or scrapped yet`
+      );
+    }
+
+    await trx
+      .updateTable("repairOrder")
+      .set({
+        status: "Completed",
+        updatedBy: userId,
+        updatedAt: new Date().toISOString()
+      })
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return { id };
+  });
+}
+
+/** In-house repair finished: Received -> Repaired, ready to ship home. */
+export async function markRepairOrderLineRepaired(
+  db: Kysely<KyselyDatabase>,
+  { id, companyId }: { id: string; companyId: string },
+  userId: string
+) {
+  return db.transaction().execute(async (trx) => {
+    const line = await trx
+      .selectFrom("repairOrderLine")
+      .select(["id", "status"])
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!line) throw new Error("Repair line not found");
+    if (line.status !== "Received") {
+      throw new Error(
+        `Only a Received line can be marked repaired (this one is ${line.status})`
+      );
+    }
+
+    await trx
+      .updateTable("repairOrderLine")
+      .set({
+        status: "Repaired",
+        updatedBy: userId,
+        updatedAt: new Date().toISOString()
+      })
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return { id };
+  });
+}
+
+/**
+ * Terminal exit for a unit that cannot be repaired or that the customer
+ * abandons. The unit is customer property carried at ZERO value, so this
+ * writes no GL — it relieves the zero-value custody layer and closes the
+ * genealogy. Tracked lines flip their entity to 'Scrapped'; untracked lines
+ * relieve the full line quantity.
+ *
+ * Deliberately NOT routed through the `issue` function's `scrapTrackedEntity`
+ * case: that path is job-material specific (it needs a jobMaterial, a parent
+ * entity and a replacement decision) and has no meaning for a customer unit.
+ */
+export async function scrapRepairOrderLine(
+  db: Kysely<KyselyDatabase>,
+  {
+    id,
+    companyId,
+    userId,
+    today
+  }: { id: string; companyId: string; userId: string; today: string }
+) {
+  return db.transaction().execute(async (trx) => {
+    const line = await trx
+      .selectFrom("repairOrderLine")
+      .innerJoin("repairOrder", (join) =>
+        join
+          .onRef("repairOrder.id", "=", "repairOrderLine.repairOrderId")
+          .onRef("repairOrder.companyId", "=", "repairOrderLine.companyId")
+      )
+      .select([
+        "repairOrderLine.id as id",
+        "repairOrderLine.status as status",
+        "repairOrderLine.itemId as itemId",
+        "repairOrderLine.quantity as quantity",
+        "repairOrder.id as orderId",
+        "repairOrder.locationId as locationId"
+      ])
+      .where("repairOrderLine.id", "=", id)
+      .where("repairOrderLine.companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!line) throw new Error("Repair line not found");
+    if (line.status !== "Received" && line.status !== "Repaired") {
+      throw new Error(
+        `Only a unit in the shop can be scrapped (this line is ${line.status})`
+      );
+    }
+
+    const held = await trx
+      .selectFrom("repairOrderLineTrackedEntity")
+      .select(["trackedEntityId", "quantity"])
+      .where("repairOrderLineId", "=", id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    // Zero-value relief: the custody layer was booked at 0, so quantity moves
+    // and value does not. No journal, by construction.
+    await trx
+      .insertInto("itemLedger")
+      .values({
+        postingDate: today,
+        itemId: line.itemId,
+        quantity: -Number(line.quantity),
+        locationId: line.locationId,
+        entryType: "Negative Adjmt.",
+        documentType: "Scrap",
+        documentId: line.orderId,
+        documentLineId: line.id,
+        trackedEntityId: held[0]?.trackedEntityId ?? null,
+        comment: "Repair order scrap (customer unit, zero value)",
+        companyId,
+        createdBy: userId
+      })
+      .execute();
+
+    for (const entity of held) {
+      await trx
+        .updateTable("trackedEntity")
+        .set({ status: "Scrapped", updatedBy: userId })
+        .where("id", "=", entity.trackedEntityId)
+        .where("companyId", "=", companyId)
+        .execute();
+
+      await trx
+        .insertInto("trackedActivity")
+        .values({
+          type: "Scrap",
+          sourceDocument: "Repair Order",
+          sourceDocumentId: line.orderId,
+          attributes: { "Repair Order": line.orderId, Employee: userId },
+          companyId,
+          createdBy: userId
+        })
+        .execute();
+    }
+
+    await trx
+      .updateTable("repairOrderLine")
+      .set({
+        status: "Scrapped",
+        updatedBy: userId,
+        updatedAt: new Date().toISOString()
+      })
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return { id };
+  });
+}
+
+/**
+ * Spawn (or return) the repair order behind an RMA line's 'Repair' disposition.
+ *
+ * Idempotent by constraint AND by lock: the transaction locks the RMA line,
+ * re-reads any existing link, and returns it rather than minting a second
+ * repair order. The spawned line starts in custody at 'Received' — the unit is
+ * already in the building, re-tagged On Hold by the return receipt, so a second
+ * receipt would double-count it.
+ */
+export async function createRepairOrderFromReturnLine(
+  db: Kysely<KyselyDatabase>,
+  {
+    salesReturnOrderLineId,
+    companyId,
+    userId,
+    today
+  }: {
+    salesReturnOrderLineId: string;
+    companyId: string;
+    userId: string;
+    today: string;
+  }
+): Promise<{ repairOrderId: string; created: boolean }> {
+  return db.transaction().execute(async (trx) => {
+    const returnLine = await trx
+      .selectFrom("salesReturnOrderLine")
+      .select([
+        "id",
+        "salesReturnOrderId",
+        "itemId",
+        "quantity",
+        "quantityReceived",
+        "unitOfMeasureCode",
+        "returnReasonId"
+      ])
+      .where("id", "=", salesReturnOrderLineId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!returnLine) throw new Error("Return line not found");
+    if (Number(returnLine.quantityReceived) <= 0) {
+      throw new Error(
+        "Receive the unit before sending it to repair — nothing has arrived yet"
+      );
+    }
+
+    const existing = await trx
+      .selectFrom("repairOrderLine")
+      .select(["id", "repairOrderId"])
+      .where("salesReturnOrderLineId", "=", salesReturnOrderLineId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (existing) {
+      return { repairOrderId: existing.repairOrderId, created: false };
+    }
+
+    const returnOrder = await trx
+      .selectFrom("salesReturnOrder")
+      .select([
+        "id",
+        "customerId",
+        "customerLocationId",
+        "customerContactId",
+        "salesReturnOrderId",
+        "locationId",
+        "currencyCode"
+      ])
+      .where("id", "=", returnLine.salesReturnOrderId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!returnOrder) throw new Error("Return order not found");
+
+    // Re-use the repair order already open for this RMA, if any, so a
+    // multi-line return produces one repair document.
+    const openRepair = await trx
+      .selectFrom("repairOrder")
+      .select(["id"])
+      .where("salesReturnOrderId", "=", returnOrder.id)
+      .where("companyId", "=", companyId)
+      .where("status", "in", ["Draft", "Confirmed", "In Progress"])
+      .orderBy("createdAt", "desc")
+      .executeTakeFirst();
+
+    let repairOrderId: string;
+    if (openRepair) {
+      repairOrderId = openRepair.id;
+    } else {
+      const seq = await sql<{
+        get_next_sequence: string;
+      }>`select get_next_sequence(${"repairOrder"}, ${companyId})`.execute(trx);
+      const readableId = seq.rows[0]?.get_next_sequence;
+      if (!readableId) throw new Error("Failed to generate repair order id");
+
+      const inserted = await trx
+        .insertInto("repairOrder")
+        .values({
+          repairOrderId: readableId,
+          status: "Confirmed",
+          customerId: returnOrder.customerId,
+          customerLocationId: returnOrder.customerLocationId,
+          customerContactId: returnOrder.customerContactId,
+          customerReference: returnOrder.salesReturnOrderId,
+          locationId: returnOrder.locationId,
+          salesReturnOrderId: returnOrder.id,
+          currencyCode: returnOrder.currencyCode,
+          orderDate: today,
+          companyId,
+          createdBy: userId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      repairOrderId = inserted.id;
+    }
+
+    const maxLine = await trx
+      .selectFrom("repairOrderLine")
+      .select((eb) => eb.fn.max("lineNumber").as("max"))
+      .where("repairOrderId", "=", repairOrderId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+
+    // Coverage at intake: prefer the entity's registration, else leave the
+    // line unregistered (the user picks one on the line for untracked items).
+    const entities = await trx
+      .selectFrom("salesReturnOrderLineTrackedEntity")
+      .select(["trackedEntityId"])
+      .where("salesReturnOrderLineId", "=", salesReturnOrderLineId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    let registrationId: string | null = null;
+    if (entities.length > 0) {
+      const registration = await trx
+        .selectFrom("warrantyRegistration")
+        .select(["id"])
+        .where("trackedEntityId", "=", entities[0].trackedEntityId)
+        .where("companyId", "=", companyId)
+        .orderBy("startDate", "desc")
+        .orderBy("createdAt", "desc")
+        .orderBy("id", "desc")
+        .executeTakeFirst();
+      registrationId = registration?.id ?? null;
+    }
+
+    const line = await trx
+      .insertInto("repairOrderLine")
+      .values({
+        repairOrderId,
+        lineNumber: Number(maxLine?.max ?? 0) + 1,
+        itemId: returnLine.itemId,
+        quantity: Number(returnLine.quantityReceived),
+        unitOfMeasureCode: returnLine.unitOfMeasureCode,
+        // The unit is already in the building, On Hold from the return receipt.
+        status: "Received",
+        warrantyRegistrationId: registrationId,
+        underWarranty: !!registrationId,
+        returnReasonId: returnLine.returnReasonId,
+        salesReturnOrderLineId,
+        companyId,
+        createdBy: userId
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+
+    if (entities.length > 0) {
+      await trx
+        .insertInto("repairOrderLineTrackedEntity")
+        .values({
+          repairOrderLineId: line.id,
+          trackedEntityId: entities[0].trackedEntityId,
+          quantity: Number(returnLine.quantityReceived),
+          companyId,
+          createdBy: userId
+        })
+        .execute();
+    }
+
+    await trx
+      .updateTable("repairOrder")
+      .set({
+        status: "In Progress",
+        updatedBy: userId,
+        updatedAt: new Date().toISOString()
+      })
+      .where("id", "=", repairOrderId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    // The RMA line is settled from the return's point of view.
+    await trx
+      .updateTable("salesReturnOrderLine")
+      .set({
+        disposition: "Repair",
+        updatedBy: userId,
+        updatedAt: new Date().toISOString()
+      })
+      .where("id", "=", salesReturnOrderLineId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return { repairOrderId, created: true };
+  });
+}
+
+/**
+ * Apply a repair warranty at completion.
+ *
+ * INSERTS a new manual-class registration (both stamping keys NULL) rather than
+ * restamping the source row: an auto-created registration is owned by its
+ * shipment/invoice void path, so mutating it would either erase the original
+ * warranty history or delete the repair warranty on a later void. The
+ * latest-startDate selection rule makes the new row govern from now on.
+ */
+export async function applyRepairWarranty(
+  db: Kysely<KyselyDatabase>,
+  {
+    lineId,
+    warrantyTermId,
+    companyId,
+    userId,
+    today
+  }: {
+    lineId: string;
+    warrantyTermId: string;
+    companyId: string;
+    userId: string;
+    today: string;
+  }
+) {
+  return db.transaction().execute(async (trx) => {
+    const line = await trx
+      .selectFrom("repairOrderLine")
+      .innerJoin("repairOrder", (join) =>
+        join
+          .onRef("repairOrder.id", "=", "repairOrderLine.repairOrderId")
+          .onRef("repairOrder.companyId", "=", "repairOrderLine.companyId")
+      )
+      .select([
+        "repairOrderLine.id as id",
+        "repairOrderLine.itemId as itemId",
+        "repairOrderLine.quantity as quantity",
+        "repairOrder.customerId as customerId"
+      ])
+      .where("repairOrderLine.id", "=", lineId)
+      .where("repairOrderLine.companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!line) throw new Error("Repair line not found");
+
+    const term = await trx
+      .selectFrom("warrantyTerm")
+      .selectAll()
+      .where("id", "=", warrantyTermId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!term) throw new Error("Warranty term not found");
+
+    const entity = await trx
+      .selectFrom("repairOrderLineTrackedEntity")
+      .select(["trackedEntityId"])
+      .where("repairOrderLineId", "=", lineId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+
+    const seq = await sql<{
+      get_next_sequence: string;
+    }>`select get_next_sequence(${"warrantyRegistration"}, ${companyId})`.execute(
+      trx
+    );
+    const readableId = seq.rows[0]?.get_next_sequence;
+    if (!readableId) throw new Error("Failed to generate registration id");
+
+    const inserted = await trx
+      .insertInto("warrantyRegistration")
+      .values({
+        warrantyRegistrationId: readableId,
+        itemId: line.itemId,
+        customerId: line.customerId,
+        trackedEntityId: entity?.trackedEntityId ?? null,
+        quantity: Number(line.quantity),
+        warrantyTermId: term.id,
+        startDate: today,
+        coversParts: term.coversParts,
+        partsExpirationDate: addMonthsToDate(
+          today,
+          term.coversParts ? term.partsDurationMonths : null
+        ),
+        coversLabor: term.coversLabor,
+        laborExpirationDate: addMonthsToDate(
+          today,
+          term.coversLabor ? term.laborDurationMonths : null
+        ),
+        repairOrderLineId: lineId,
+        companyId,
+        createdBy: userId
+      })
+      .returning(["id", "warrantyRegistrationId"])
+      .executeTakeFirstOrThrow();
+
+    return inserted;
+  });
+}
+
+type RepairBillingTarget = "quote" | "salesOrder";
+
+/**
+ * Quote-first billing, and its direct sibling.
+ *
+ * Row-locked check-then-create in ONE transaction: lock the repair order,
+ * re-read the link, return the existing document if set, otherwise create the
+ * child and set the link before commit. Two concurrent clicks therefore cannot
+ * each mint a document and race on the pointer — the second finds the first's
+ * link under the lock. The partial unique indexes are the backstop, not the
+ * mechanism.
+ */
+async function createRepairBillingDocument(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  {
+    repairOrderId,
+    companyId,
+    companyGroupId,
+    userId,
+    target
+  }: {
+    repairOrderId: string;
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+    target: RepairBillingTarget;
+  }
+): Promise<{ data: { id: string } | null; error: PostgrestError | null }> {
+  const linkColumn = target === "quote" ? "quoteId" : "salesOrderId";
+
+  const prepared = await db.transaction().execute(async (trx) => {
+    const order = await trx
+      .selectFrom("repairOrder")
+      .selectAll()
+      .where("id", "=", repairOrderId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!order) throw new Error("Repair order not found");
+    if (order.status === "Cancelled") {
+      throw new Error("Cannot bill a cancelled repair order");
+    }
+
+    const existingLink = order[linkColumn];
+    if (existingLink) return { existing: existingLink, order, charges: [] };
+
+    const charges = await trx
+      .selectFrom("repairOrderCharge")
+      .select([
+        "id",
+        "itemId",
+        "description",
+        "quantity",
+        "unitPrice",
+        "chargeType"
+      ])
+      .where("repairOrderId", "=", repairOrderId)
+      .where("companyId", "=", companyId)
+      .where("billingCode", "=", "Billable")
+      .execute();
+
+    if (charges.length === 0) {
+      throw new Error(
+        "No billable charges — warranty and no-charge work is not invoiced"
+      );
+    }
+    const missingItem = charges.filter((charge) => !charge.itemId);
+    if (missingItem.length > 0) {
+      throw new Error(
+        "Every billable charge needs an item (pick a service item for labor and fees)"
+      );
+    }
+
+    return { existing: null, order, charges };
+  });
+
+  if (prepared.existing) {
+    return { data: { id: prepared.existing }, error: null };
+  }
+
+  const order = prepared.order;
+  const documentId =
+    target === "quote"
+      ? await insertQuote(client, {
+          customerId: order.customerId,
+          companyId,
+          companyGroupId,
+          createdBy: userId,
+          currencyCode: order.currencyCode,
+          customerContactId: order.customerContactId ?? undefined,
+          customerLocationId: order.customerLocationId ?? undefined,
+          locationId: order.locationId ?? undefined,
+          customerReference: order.repairOrderId
+        })
+      : await insertSalesOrder(client, {
+          customerId: order.customerId,
+          companyId,
+          companyGroupId,
+          createdBy: userId,
+          currencyCode: order.currencyCode,
+          customerContactId: order.customerContactId ?? undefined,
+          customerLocationId: order.customerLocationId ?? undefined,
+          locationId: order.locationId ?? undefined,
+          customerReference: order.repairOrderId
+        });
+
+  if (documentId.error || !documentId.data) {
+    return { data: null, error: documentId.error };
+  }
+  const newId = documentId.data.id;
+
+  for (const charge of prepared.charges) {
+    const item = await client
+      .from("item")
+      .select("type, name")
+      .eq("id", charge.itemId!)
+      .eq("companyId", companyId)
+      .single();
+
+    const lineType = ((): Database["public"]["Enums"]["salesOrderLineType"] => {
+      switch (item.data?.type) {
+        case "Part":
+        case "Material":
+        case "Tool":
+        case "Consumable":
+        case "Service":
+          return item.data.type;
+        default:
+          return "Part";
+      }
+    })();
+
+    const insertLine =
+      target === "quote"
+        ? await client.from("quoteLine").insert({
+            quoteId: newId,
+            itemId: charge.itemId!,
+            description: charge.description ?? item.data?.name ?? "Repair",
+            quantity: [Number(charge.quantity)],
+            companyId,
+            createdBy: userId
+          })
+        : await client.from("salesOrderLine").insert({
+            salesOrderId: newId,
+            salesOrderLineType: lineType,
+            itemId: charge.itemId!,
+            saleQuantity: Number(charge.quantity),
+            unitPrice: Number(charge.unitPrice),
+            companyId,
+            createdBy: userId
+          });
+
+    if (insertLine.error) {
+      if (target === "quote") {
+        await client.from("quote").delete().eq("id", newId);
+      } else {
+        await deleteSalesOrder(client, newId);
+      }
+      return { data: null, error: insertLine.error };
+    }
+  }
+
+  const link = await client
+    .from("repairOrder")
+    .update({
+      [linkColumn]: newId,
+      updatedBy: userId,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", repairOrderId)
+    .eq("companyId", companyId);
+  if (link.error) return { data: null, error: link.error };
+
+  return { data: { id: newId }, error: null };
+}
+
+export async function createRepairQuote(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: {
+    repairOrderId: string;
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+  }
+) {
+  return createRepairBillingDocument(client, db, { ...args, target: "quote" });
+}
+
+export async function createRepairSalesOrder(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: {
+    repairOrderId: string;
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+  }
+) {
+  return createRepairBillingDocument(client, db, {
+    ...args,
+    target: "salesOrder"
+  });
 }
