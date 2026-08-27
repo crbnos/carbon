@@ -83821,12 +83821,14 @@ export type Database = {
           revision: string
           revisions: Json
           sourcingType: Database["public"]["Enums"]["sourcingType"]
+          supplierWarrantyTermId: string
           tags: string[]
           thumbnailPath: string
           unitOfMeasure: string
           unitOfMeasureCode: string
           updatedAt: string
           updatedBy: string
+          warrantyTermId: string
         }[]
       }
       get_period_end_date: { Args: { period: string }; Returns: string }

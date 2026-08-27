@@ -70,6 +70,19 @@ export async function action({ request }: ActionFunctionArgs) {
 
       return result;
     }
+    // Warranty terms are plain nullable references: clearing the select sends
+    // an empty string, which must persist as NULL rather than a bad FK.
+    case "warrantyTermId":
+    case "supplierWarrantyTermId":
+      return await client
+        .from("item")
+        .update({
+          [field]: value === "" ? null : value,
+          updatedBy: userId,
+          updatedAt: new Date().toISOString()
+        })
+        .in("id", items as string[])
+        .eq("companyId", companyId);
     case "name":
     case "description":
     case "mpn":

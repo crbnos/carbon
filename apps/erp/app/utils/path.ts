@@ -84,6 +84,7 @@ export const path = {
       customerLocations: (id: string) =>
         generatePath(`${api}/sales/customer-locations/${id}`),
       customerStatuses: `${api}/sales/customer-statuses`,
+      warrantyTerms: `${api}/sales/warranty-terms`,
       customerTypes: `${api}/sales/customer-types`,
       customFieldOptions: (table: string, fieldId: string) =>
         generatePath(`${api}/settings/custom-fields/${table}/${fieldId}`),
