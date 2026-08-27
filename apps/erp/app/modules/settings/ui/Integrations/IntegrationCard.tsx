@@ -9,13 +9,16 @@ import {
   CardHeader,
   CardTitle,
   cn,
+  toast,
   useRouteData
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
-import { useState } from "react";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useEffect, useState } from "react";
 import { LuLock } from "react-icons/lu";
-import { Link, useFetcher, useNavigate } from "react-router";
+import { Link, useFetcher, useNavigate, useRevalidator } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
+import { getIntegrationError } from "~/modules/settings/integration-errors";
+import { isOAuthPopupResult } from "~/modules/settings/oauth-popup";
 import { path } from "~/utils/path";
 import { InstallModeDialog } from "./InstallModeDialog";
 
@@ -41,6 +44,8 @@ export function IntegrationCard({
 }) {
   const fetcher = useFetcher<{}>();
   const navigate = useNavigate();
+  const revalidator = useRevalidator();
+  const { i18n } = useLingui();
 
   // The declared mode this install is in, if any. Undefined for every
   // integration without modes, which then keeps its own description.
@@ -105,6 +110,34 @@ export function IntegrationCard({
 
   const conflictsWith =
     roleIncumbent && roleIncumbent !== integration.id ? roleIncumbent : null;
+
+  // An OAuth callback that ran inside the popup `onClientInstall` opened posts
+  // its outcome here and closes the popup (see oauth-popup.server.ts). Revalidate
+  // so the card flips to Installed without a reload; surface a failure the same
+  // way the integrations page does for a redirected callback.
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (!isOAuthPopupResult(event.data)) return;
+      if (event.data.integration !== integration.id) return;
+
+      if (event.data.ok) {
+        revalidator.revalidate();
+        return;
+      }
+
+      const failure = getIntegrationError(integration.id, event.data.error);
+      if (failure) {
+        toast.error(i18n._(failure.title), {
+          id: `${integration.id}:${event.data.error}`,
+          description: i18n._(failure.description)
+        });
+      }
+    };
+
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [integration.id, revalidator, i18n]);
 
   const handleInstall = async () => {
     if ("oauth" in integration && integration.oauth) {

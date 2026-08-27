@@ -13,11 +13,11 @@ import {
 } from "@carbon/ee/onshape";
 import { loadOnshapeOAuthConfig } from "@carbon/ee/onshape.server";
 import { getLogger } from "@carbon/logger";
-import { redirect } from "react-router";
 import { oAuthCallbackSchema } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { IntegrationErrorCode } from "./integration-errors";
 import { integrationErrorSearch } from "./integration-errors";
+import { oauthPopupResponse } from "./oauth-popup.server";
 import { upsertCompanyIntegration } from "./settings.server";
 
 const logger = getLogger("erp", "onshape", "oauth");
@@ -39,10 +39,13 @@ function integrationsUrl(request: Request) {
  * (`/api/integrations/onshape-government/oauth`). Only where the client comes
  * from differs, and `loadOnshapeOAuthConfig` owns that.
  *
- * Onshape reaches this by redirecting the user's browser, so a failure has to
- * render as something they can act on: send them back to the integrations
- * page, which turns the code into a toast. Only a code crosses the URL;
- * `integrationErrors` owns the copy.
+ * Onshape reaches this by redirecting the user's browser — inside the popup
+ * `Onshape.onClientInstall` opened, or the whole tab when the connect started
+ * from a settings save — so a failure has to render as something the user can
+ * act on. `oauthPopupResponse` posts the outcome to the page that opened the
+ * popup and closes it; that page turns the code into a toast. With no opener it
+ * falls back to the integrations page, which shows the same toast. Only a code
+ * crosses the boundary; `integrationErrors` owns the copy.
  */
 export async function completeOnshapeAuthorization({
   request,
@@ -73,9 +76,12 @@ export async function completeOnshapeAuthorization({
   const connectionFailed = (
     reason: IntegrationErrorCode<OnshapeIntegrationId>
   ) =>
-    redirect(
-      `${integrationsUrl(request)}${integrationErrorSearch<OnshapeIntegrationId>(integrationId, reason)}`,
-      { headers: { "Set-Cookie": consumedState.cookie } }
+    withCookie(
+      oauthPopupResponse(
+        { integration: integrationId, ok: false, error: reason },
+        `${integrationsUrl(request)}${integrationErrorSearch<OnshapeIntegrationId>(integrationId, reason)}`
+      ),
+      consumedState.cookie
     );
 
   if (!consumedState.valid) {
@@ -210,11 +216,21 @@ export async function completeOnshapeAuthorization({
       }
     }
 
-    return redirect(integrationsUrl(request), {
-      headers: { "Set-Cookie": consumedState.cookie }
-    });
+    // Success: tell the opener to revalidate, close the popup.
+    return withCookie(
+      oauthPopupResponse(
+        { integration: integrationId, ok: true },
+        integrationsUrl(request)
+      ),
+      consumedState.cookie
+    );
   } catch (error) {
     logger.error("Onshape OAuth Error", { integrationId, error });
     return connectionFailed("unexpected");
   }
+}
+
+function withCookie(response: Response, cookie: string) {
+  response.headers.append("Set-Cookie", cookie);
+  return response;
 }

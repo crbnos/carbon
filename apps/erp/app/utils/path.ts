@@ -226,6 +226,8 @@ export const path = {
         generatePath(
           `${api}/integrations/onshape/d/${documentId}/v/${versionId}/elements`
         ),
+      onShapePanelMe: `${api}/integrations/onshape/panel/me`,
+      onShapePanelSession: `${api}/integrations/onshape/panel/session`,
       onShapeSync: `${api}/integrations/onshape/sync`,
       onShapeVersions: (documentId: string) =>
         generatePath(`${api}/integrations/onshape/d/${documentId}/versions`),
@@ -1751,6 +1753,8 @@ export const path = {
     operationBatch: (id: string) =>
       generatePath(`${x}/production/batches/${id}`),
     operationBatches: `${x}/production/batches`,
+    onshapePanel: "/onshape/panel",
+    onshapePanelAuth: "/onshape/auth",
     operator: (id: string) => generatePath(`${x}/users/operators/${id}`),
     operatorResetPin: (id: string) =>
       generatePath(`${x}/users/operators/reset-pin/${id}`),

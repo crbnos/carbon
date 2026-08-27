@@ -31,6 +31,12 @@ import { logAuthEvent } from "./auth-events.server";
 import { isCarbonOwnedCompany } from "./company.server";
 import { resolveConsolePinIn } from "./console-pin.server";
 import {
+  deletePanelSession,
+  loadPanelSession,
+  panelSessionTokenFromRequest,
+  savePanelSession
+} from "./panel-session.server";
+import {
   destroyAuthSession,
   flash,
   requireAuthSession
@@ -340,7 +346,13 @@ export async function requirePermissions(
     }
   }
 
-  const authSession = await requireAuthSession(request);
+  // A panel session (Carbon UI inside another product's iframe, e.g. the
+  // Onshape right panel) authenticates with a bearer token instead of the
+  // cookie, then goes through the same claims check and RLS client below.
+  const panelToken = panelSessionTokenFromRequest(request);
+  const authSession = panelToken
+    ? await requirePanelSession(panelToken)
+    : await requireAuthSession(request);
   const { accessToken, companyId, companyGroupId, email, userId } = authSession;
   const consoleMode = authSession.console === companyId;
 
@@ -419,6 +431,11 @@ export async function requirePermissions(
       ip: getClientIp(request) ?? undefined,
       reason: JSON.stringify(requiredPermissions)
     });
+    // A panel request is a fetch from an iframe: a redirect to the app would
+    // be followed silently and land as HTML. Answer with a status instead.
+    if (panelToken) {
+      throw new Response("Forbidden", { status: 403 });
+    }
     if (myClaims.role === null) {
       throw redirect("/", await destroyAuthSession(request));
     }
@@ -663,4 +680,43 @@ export async function signInWithPasskey(
     companies?.[0] ?? "",
     companyRecord?.companyGroupId ?? ""
   );
+}
+
+// Mirrors session.server's isExpiringSoon: `expiresAt` is epoch seconds.
+const PANEL_REFRESH_THRESHOLD_SECONDS = 60;
+
+/**
+ * Resolve a panel session token to a live `AuthSession`, refreshing the
+ * Supabase token in place when it is about to expire. A missing, expired or
+ * unrefreshable session is a 401 — the panel then asks the user to sign in
+ * again through its popup.
+ */
+async function requirePanelSession(token: string): Promise<AuthSession> {
+  const stored = await loadPanelSession(token);
+  if (!stored) {
+    throw new Response("Unauthorized", { status: 401 });
+  }
+
+  const expiringSoon =
+    (stored.expiresAt - PANEL_REFRESH_THRESHOLD_SECONDS) * 1000 < Date.now();
+  if (!expiringSoon) return stored;
+
+  const refreshed = await refreshAccessToken(
+    stored.refreshToken,
+    stored.companyId,
+    stored.companyGroupId
+  );
+  if (!refreshed) {
+    await deletePanelSession(token);
+    throw new Response("Unauthorized", { status: 401 });
+  }
+
+  // Same carry-over as refreshAuthSession: a refresh is not a re-auth.
+  if (stored.console) refreshed.console = stored.console;
+  if (stored.mfaVerified) refreshed.mfaVerified = stored.mfaVerified;
+  if (stored.createdAt) refreshed.createdAt = stored.createdAt;
+  if (stored.lastActiveAt) refreshed.lastActiveAt = stored.lastActiveAt;
+
+  await savePanelSession(token, refreshed);
+  return refreshed;
 }
