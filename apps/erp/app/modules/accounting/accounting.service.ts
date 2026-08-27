@@ -248,6 +248,7 @@ export async function getFinancialStatementBalances(
     endDate: string | null;
     // Balance sheet only: append a computed "Net Income" equity line.
     includeCurrentYearEarnings?: boolean;
+    netIncomeLabel?: string;
   }
 ) {
   let accountsQuery = client
@@ -359,7 +360,7 @@ export async function getFinancialStatementBalances(
       mapped.push({
         ...equityGroup,
         id: NET_INCOME_ACCOUNT_ID,
-        name: "Net Income",
+        name: args.netIncomeLabel ?? "Net Income",
         isGroup: false,
         isSystem: false,
         parentId: equityGroup.id,
@@ -576,6 +577,7 @@ export async function getFinancialStatementPeriodSeries(
     buckets: ReportPeriodBucket[];
     // Balance sheet only: append a computed "Net Income" equity line per bucket.
     includeCurrentYearEarnings?: boolean;
+    netIncomeLabel?: string;
     // When set, per-bucket translated balances are overlaid before the root
     // sign correction so root rows carry translated values too.
     translate?: { targetCurrency: string };
@@ -731,7 +733,7 @@ export async function getFinancialStatementPeriodSeries(
       mapped.push({
         ...equityGroup,
         id: NET_INCOME_ACCOUNT_ID,
-        name: "Net Income",
+        name: args.netIncomeLabel ?? "Net Income",
         isGroup: false,
         isSystem: false,
         parentId: equityGroup.id,
@@ -791,6 +793,7 @@ export async function getConsolidatedPeriodSeries(
     buckets: ReportPeriodBucket[];
     // Balance sheet only: append a computed "Net Income" equity line per bucket.
     includeCurrentYearEarnings?: boolean;
+    netIncomeLabel?: string;
   }
 ): Promise<{
   data: ChartPeriodSeries[] | null;
@@ -824,7 +827,8 @@ export async function getConsolidatedPeriodSeries(
         id,
         {
           buckets: args.buckets,
-          includeCurrentYearEarnings: args.includeCurrentYearEarnings
+          includeCurrentYearEarnings: args.includeCurrentYearEarnings,
+          netIncomeLabel: args.netIncomeLabel
         }
       );
 

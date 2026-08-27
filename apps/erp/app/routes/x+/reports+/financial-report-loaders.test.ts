@@ -214,7 +214,11 @@ describe("financial report loader completeness", () => {
       "group-1",
       [rootCompany.id, childCompany.id],
       "USD",
-      { buckets: [], includeCurrentYearEarnings: true }
+      {
+        buckets: [],
+        includeCurrentYearEarnings: true,
+        netIncomeLabel: "Net Income"
+      }
     );
   });
 

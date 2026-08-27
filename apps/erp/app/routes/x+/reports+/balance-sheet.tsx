@@ -1,12 +1,15 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { resolveLanguage } from "@carbon/locale";
 import { VStack } from "@carbon/react";
 import {
   computeReportPeriodBuckets,
   datetime,
-  defaultReportRange
+  defaultReportRange,
+  getPreferenceHeaders
 } from "@carbon/utils";
+import { setupI18n } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
@@ -30,6 +33,7 @@ import {
 } from "~/modules/accounting/ui/Reports";
 import { months } from "~/modules/shared";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { loadLinguiCatalogForRequest } from "~/services/lingui.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { resolveReportCompanies } from "~/utils/reportExport";
@@ -151,6 +155,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     columns,
     fiscalStartMonth
   );
+  const { locale } = getPreferenceHeaders(request);
+  const language = resolveLanguage(locale);
+  const linguiCatalog = await loadLinguiCatalogForRequest(request, language);
+  const reportI18n = setupI18n();
+  reportI18n.load(language, linguiCatalog);
+  reportI18n.activate(language);
+  const netIncomeLabel = reportI18n._(msg`Net Income`);
 
   if (isMultiCompany && parentCurrency) {
     const consolidated = await getConsolidatedPeriodSeries(
@@ -158,7 +169,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       companyGroupId,
       selectedCompanyIds,
       parentCurrency,
-      { buckets, includeCurrentYearEarnings: true }
+      { buckets, includeCurrentYearEarnings: true, netIncomeLabel }
     );
 
     if (consolidated.error || !consolidated.data) {
@@ -208,6 +219,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     {
       buckets,
       includeCurrentYearEarnings: true,
+      netIncomeLabel,
       ...(showTranslated && parentCurrency
         ? { translate: { targetCurrency: parentCurrency } }
         : {})

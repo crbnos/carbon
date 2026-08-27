@@ -603,12 +603,16 @@ describe("getConsolidatedPeriodSeries", () => {
       "group-1",
       ["company-1", "company-2"],
       "USD",
-      { buckets: [bucket], includeCurrentYearEarnings: true }
+      {
+        buckets: [bucket],
+        includeCurrentYearEarnings: true,
+        netIncomeLabel: "本年净利润"
+      }
     );
 
     expect(result.error).toBeNull();
     expect(result.data?.find((row) => row.id === "net-income")).toMatchObject({
-      name: "Net Income",
+      name: "本年净利润",
       periods: {
         [bucket.key]: {
           netChange: 40,
