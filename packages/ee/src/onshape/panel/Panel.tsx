@@ -32,6 +32,8 @@ export type OnshapePanelPaths = {
   session: string;
   /** Carbon status for the current element's parts. */
   status: string;
+  /** POST: push parts of the current element into Carbon. */
+  pushPart: string;
 };
 
 export type OnshapePanelMe = {
@@ -81,6 +83,9 @@ export function OnshapePanel({
     !!context.wv &&
     !!context.wvId &&
     !!context.elementId;
+  const canPush = canLoadParts && (context.wv === "w" || context.wv === "v");
+  const [pushing, setPushing] = useState<Set<string> | null>(null);
+  const [pushOutcome, setPushOutcome] = useState<Record<string, string>>({});
 
   const loadParts = useCallback(
     async (token: string) => {
@@ -186,6 +191,71 @@ export function OnshapePanel({
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
   }, [context, serverOrigin, loadMe]);
+
+  const pushParts = useCallback(
+    async (token: string, partIds: string[]) => {
+      if (!canPush || partIds.length === 0) return;
+      setPushing(new Set(partIds));
+      try {
+        const response = await panelFetch(token, paths.pushPart, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            documentId: context.documentId,
+            wv: context.wv,
+            wvId: context.wvId,
+            elementId: context.elementId,
+            partIds
+          })
+        });
+        const body = (await response.json()) as
+          | {
+              results: Array<{
+                partId: string;
+                action: string;
+                message?: string;
+              }>;
+            }
+          | { error: string };
+        if (!response.ok || "error" in body) {
+          const message =
+            "error" in body ? body.error : `Carbon answered ${response.status}`;
+          setPushOutcome(
+            Object.fromEntries(partIds.map((id) => [id, message]))
+          );
+          return;
+        }
+        setPushOutcome((prev) => ({
+          ...prev,
+          ...Object.fromEntries(
+            body.results.map((r) => [
+              r.partId,
+              r.action === "created"
+                ? "Created — model syncing"
+                : r.action === "adopted"
+                  ? "Linked to existing item — model syncing"
+                  : r.action === "updated"
+                    ? "Updated — model syncing"
+                    : r.action === "unchanged"
+                      ? "Already up to date"
+                      : (r.message ?? r.action)
+            ])
+          )
+        }));
+        await loadParts(token);
+      } catch (error) {
+        if (error instanceof PanelUnauthorizedError) {
+          setSession({ status: "signed-out" });
+          return;
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        setPushOutcome(Object.fromEntries(partIds.map((id) => [id, message])));
+      } finally {
+        setPushing(null);
+      }
+    },
+    [canPush, context, paths.pushPart, loadParts]
+  );
 
   const signIn = () => {
     const width = 480;
@@ -305,7 +375,11 @@ export function OnshapePanel({
       {session.status === "signed-in" && canLoadParts ? (
         <PartsSection
           parts={parts}
+          canPush={canPush}
+          pushing={pushing}
+          pushOutcome={pushOutcome}
           onRefresh={() => loadParts(session.token)}
+          onPush={(partIds) => pushParts(session.token, partIds)}
         />
       ) : null}
 
@@ -325,27 +399,51 @@ export function OnshapePanel({
 
 function PartsSection({
   parts,
-  onRefresh
+  canPush,
+  pushing,
+  pushOutcome,
+  onRefresh,
+  onPush
 }: {
   parts:
     | { status: "idle" }
     | { status: "loading" }
     | { status: "ready"; rows: PanelPartStatus[] }
     | { status: "error"; message: string };
+  canPush: boolean;
+  pushing: Set<string> | null;
+  pushOutcome: Record<string, string>;
   onRefresh: () => void;
+  onPush: (partIds: string[]) => void;
 }) {
+  const pushableIds =
+    parts.status === "ready"
+      ? parts.rows.filter((r) => r.partNumber).map((r) => r.partId)
+      : [];
   return (
     <VStack spacing={2} className="w-full">
       <HStack className="w-full justify-between">
         <span className="text-sm font-medium">Parts in this element</span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onRefresh}
-          isDisabled={parts.status === "loading"}
-        >
-          Refresh
-        </Button>
+        <HStack spacing={1}>
+          {canPush && pushableIds.length > 0 ? (
+            <Button
+              size="sm"
+              onClick={() => onPush(pushableIds)}
+              isDisabled={!!pushing || parts.status === "loading"}
+              isLoading={!!pushing && pushing.size > 1}
+            >
+              Push all
+            </Button>
+          ) : null}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onRefresh}
+            isDisabled={parts.status === "loading" || !!pushing}
+          >
+            Refresh
+          </Button>
+        </HStack>
       </HStack>
 
       {parts.status === "loading" || parts.status === "idle" ? (
@@ -385,7 +483,30 @@ function PartsSection({
                     : ""}
                 </p>
               </div>
-              <PartStateBadge state={part.state} />
+              <HStack spacing={2} className="shrink-0">
+                {pushOutcome[part.partId] ? (
+                  <span className="text-xs text-muted-foreground">
+                    {pushOutcome[part.partId]}
+                  </span>
+                ) : null}
+                <PartStateBadge state={part.state} />
+                {canPush ? (
+                  <Button
+                    size="sm"
+                    variant={part.state === "linked" ? "ghost" : "secondary"}
+                    onClick={() => onPush([part.partId])}
+                    isDisabled={!!pushing || !part.partNumber}
+                    isLoading={!!pushing && pushing.has(part.partId)}
+                    title={
+                      part.partNumber
+                        ? undefined
+                        : "Set a part number in Onshape first"
+                    }
+                  >
+                    {part.state === "linked" ? "Re-push" : "Push"}
+                  </Button>
+                ) : null}
+              </HStack>
             </li>
           ))}
         </ul>
