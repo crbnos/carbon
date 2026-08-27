@@ -34621,45 +34621,52 @@ export type Database = {
           },
           {
             foreignKeyName: "onshapeItemSyncState_itemId_fkey"
-            columns: ["itemId"]
+            columns: ["itemId", "companyId"]
             isOneToOne: false
             referencedRelation: "consumables"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "onshapeItemSyncState_itemId_fkey"
-            columns: ["itemId"]
+            columns: ["itemId", "companyId"]
             isOneToOne: false
             referencedRelation: "item"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "onshapeItemSyncState_itemId_fkey"
-            columns: ["itemId"]
+            columns: ["itemId", "companyId"]
             isOneToOne: false
             referencedRelation: "materials"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "onshapeItemSyncState_itemId_fkey"
-            columns: ["itemId"]
+            columns: ["itemId", "companyId"]
             isOneToOne: false
             referencedRelation: "parts"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "onshapeItemSyncState_itemId_fkey"
-            columns: ["itemId"]
+            columns: ["itemId", "companyId"]
             isOneToOne: false
             referencedRelation: "services"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "onshapeItemSyncState_itemId_fkey"
-            columns: ["itemId"]
+            columns: ["itemId", "companyId"]
             isOneToOne: false
             referencedRelation: "tools"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "onshapeItemSyncState_runId_fkey"
+            columns: ["runId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "onshapeSyncRun"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "onshapeItemSyncState_updatedBy_fkey"
@@ -72427,7 +72434,7 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -72441,7 +72448,7 @@ export type Database = {
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
