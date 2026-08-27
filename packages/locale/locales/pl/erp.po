@@ -11565,7 +11565,7 @@ msgid "Protect training time and attend"
 msgstr "Zarezerwuj czas na szkolenie i weź w nim udział"
 
 msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
-msgstr "Chroń swoją firmę za pomocą zaawansowanych kontroli bezpieczeństwa, takich jak wymuszanie uwierzytelniania wieloskładnikowego."
+msgstr "Chroń swoją firmę za pomocą zaawansowanych kontroli bezpieczeństwa, takich jak wymuszanie uwierzytelniania dwuskładnikowego."
 
 msgid "Protects your company's data"
 msgstr "Chroni dane twojej firmy"
@@ -12442,6 +12442,9 @@ msgstr "Data żądana"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Wymagaj 6-cyfrowego kodu z aplikacji Authenticator przy logowaniu."
+
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "Wymagaj aplikacji uwierzytelniającej zanim ktokolwiek będzie mógł otworzyć tę firmę. Ich inne firmy nie będą dotknięte."
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Wymagaj aplikacji authenticator przed otwarciem tej firmy. Pozostałe firmy danej osoby nie są objęte. Odwiedź <0>stronę kont pracowników</0>, aby zobaczyć status każdej osoby."

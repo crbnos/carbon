@@ -27,15 +27,21 @@ export default function SecurityUpgradeOverlay() {
     <UpgradeOverlay>
       <UpgradeOverlayPreview>
         <VStack spacing={4} className="py-12 px-4 max-w-[60rem] mx-auto gap-4">
-          <Heading size="h3">Security</Heading>
+          <Heading size="h3">
+            <Trans>Security</Trans>
+          </Heading>
           <Card>
             <CardHeader>
               <HStack className="justify-between items-center">
                 <div>
-                  <CardTitle>Two-Factor Authentication Enforcement</CardTitle>
+                  <CardTitle>
+                    <Trans>Two-Factor Authentication Enforcement</Trans>
+                  </CardTitle>
                   <CardDescription>
-                    Require an authenticator app before anyone can open this
-                    company. Their other companies are unaffected.
+                    <Trans>
+                      Require an authenticator app before anyone can open this
+                      company. Their other companies are unaffected.
+                    </Trans>
                   </CardDescription>
                 </div>
                 <Switch checked={false} disabled />

@@ -12443,6 +12443,9 @@ msgstr "अनुरोधित तारीख"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "साइन इन करते समय ऑथेंटिकेटर ऐप से 6-अंकीय कोड की आवश्यकता है।"
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "इस कंपनी को खोलने से पहले सभी को एक सत्यापनकर्ता ऐप की आवश्यकता है। उनकी अन्य कंपनियां प्रभावित नहीं होंगी।"
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "किसी को भी इस कंपनी को खोलने से पहले एक प्रमाणकर्ता ऐप की आवश्यकता है। उनकी अन्य कंपनियां प्रभावित नहीं हैं। प्रत्येक व्यक्ति की स्थिति देखने के लिए <0>कर्मचारी खातों पृष्ठ</0> पर जाएं।"
 

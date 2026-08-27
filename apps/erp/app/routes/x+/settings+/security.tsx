@@ -125,7 +125,7 @@ export default function Security() {
   const requireMfa = settings.requireMfa === true;
   const { isGated } = usePlanGate({ feature: "TWO_FACTOR" });
 
-  if (isGated && !CONTROLLED_ENVIRONMENT) {
+  if (isGated && !CONTROLLED_ENVIRONMENT && !requireMfa) {
     return <SecurityUpgradeOverlay />;
   }
 

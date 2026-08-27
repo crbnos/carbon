@@ -12443,6 +12443,9 @@ msgstr "Date demandée"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Exiger un code à 6 chiffres d'une application d'authentification lors de la connexion."
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "Exiger une application d'authentification avant que quiconque puisse ouvrir cette entreprise. Leurs autres entreprises ne sont pas affectées."
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Exigez une application d'authentification avant que quiconque ne puisse ouvrir cette entreprise. Leurs autres entreprises ne sont pas affectées. Visitez la <0>page des comptes d'employés</0> pour voir le statut de chaque personne."
 

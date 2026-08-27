@@ -12443,6 +12443,9 @@ msgstr "リクエスト日"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "サインイン時に認証器アプリから6桁のコードが必要です。"
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "このカンパニーを開く前に、認証アプリが必須です。他のカンパニーは影響を受けません。"
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "このコンパニーを開く前に認証アプリが必須になります。他のコンパニーには影響しません。<0>従業員アカウントページ</0>をご覧ください。"
 

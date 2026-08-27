@@ -12443,6 +12443,9 @@ msgstr "请求日期"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "登录时需要来自身份验证器应用的 6 位数字代码。"
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "需要身份验证器应用才能打开此公司。其他公司不受影响。"
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "在任何人打开此公司之前需要身份验证器应用。他们的其他公司不受影响。访问<0>员工账户页面</0>以查看每个人的状态。"
 
