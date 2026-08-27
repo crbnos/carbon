@@ -16,6 +16,7 @@ import { Suspense } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
+import { ExternalSourceCard } from "~/components/ExternalSource";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemFile, MakeMethod, PartSummary } from "~/modules/items";
 import {
@@ -405,6 +406,10 @@ export default function PartDetailsRoute() {
             modelUpload={partData?.partSummary ?? null}
             title={t`CAD Model`}
             titleExtras={lockHint}
+          />
+          <ExternalSourceCard
+            itemId={itemId}
+            canDetach={permissions.can("update", "parts")}
           />
           <ItemRiskRegister itemId={itemId} />
           <ItemChangeNotices
