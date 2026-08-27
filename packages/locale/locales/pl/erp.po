@@ -8687,9 +8687,6 @@ msgstr "Odświeżanie na żywo"
 msgid "Live updates paused — retrying"
 msgstr "Aktualizacje na żywo wstrzymane — ponawianie"
 
-msgid "Live Version"
-msgstr "Wersja aktywna"
-
 msgid "Load newer"
 msgstr "Załaduj nowsze"
 
@@ -10535,9 +10532,6 @@ msgstr "Edytowalne są tylko procedury w wersji roboczej. Utwórz nową wersję,
 msgid "Only empty, open periods can be deleted."
 msgstr "Usunięte mogą być tylko puste, otwarte okresy."
 
-msgid "Onshape"
-msgstr "Onshape"
-
 msgid "Onshape asset sync is turned off for this company"
 msgstr "Synchronizacja plików Onshape jest wyłączona dla tej firmy"
 
@@ -10555,6 +10549,9 @@ msgstr "Onshape nie jest skonfigurowany"
 
 msgid "Onshape rejected the authorization"
 msgstr "Onshape odrzucił autoryzację"
+
+msgid "Onshape revision"
+msgstr "Wersja Onshape"
 
 msgid "Onshape Status"
 msgstr "Status Onshape"
@@ -14327,9 +14324,6 @@ msgstr "Rozpocznij wygaśnięcie na starcie procesu"
 msgid "Start Here"
 msgstr "Zacznij tutaj"
 
-msgid "Start Learning"
-msgstr "Zacznij się uczyć"
-
 msgid "Start new sync"
 msgstr "Rozpocznij nową synchronizację"
 
@@ -14354,10 +14348,11 @@ msgstr "Zacznij od"
 msgid "Started"
 msgstr "Rozpoczęto"
 
-msgid "Starting…"
-msgstr "Uruchamianie…"
 msgid "Started by"
 msgstr "Rozpoczęte przez"
+
+msgid "Starting…"
+msgstr "Uruchamianie…"
 
 msgid "State / Province"
 msgstr "Stan / Prowincja"

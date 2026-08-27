@@ -50,7 +50,7 @@ export function OnshapeBlock({
     <VStack spacing={2} className={className}>
       <HStack className="w-full justify-between">
         <h3 className="text-xs text-muted-foreground">
-          <Trans>Onshape</Trans>
+          <Trans>Onshape revision</Trans>
         </h3>
       </HStack>
       <Suspense fallback={<Skeleton className="h-4 w-40" />}>

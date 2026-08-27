@@ -8687,9 +8687,6 @@ msgstr "Rechargement en direct"
 msgid "Live updates paused — retrying"
 msgstr "Mises à jour en direct suspendues — nouvelle tentative"
 
-msgid "Live Version"
-msgstr "Version active"
-
 msgid "Load newer"
 msgstr "Charger les plus récents"
 
@@ -10535,9 +10532,6 @@ msgstr "Seules les procédures en brouillon sont modifiables. Créez une nouvell
 msgid "Only empty, open periods can be deleted."
 msgstr "Seules les périodes vides et ouvertes peuvent être supprimées."
 
-msgid "Onshape"
-msgstr "Onshape"
-
 msgid "Onshape asset sync is turned off for this company"
 msgstr "La synchronisation des fichiers Onshape est désactivée pour cette société"
 
@@ -10555,6 +10549,9 @@ msgstr "Onshape n'est pas configuré"
 
 msgid "Onshape rejected the authorization"
 msgstr "Onshape a rejeté l'autorisation"
+
+msgid "Onshape revision"
+msgstr "Révision Onshape"
 
 msgid "Onshape Status"
 msgstr "Statut Onshape"
@@ -14327,9 +14324,6 @@ msgstr "Commencer l'expiration au démarrage du processus"
 msgid "Start Here"
 msgstr "Commencer ici"
 
-msgid "Start Learning"
-msgstr "Commencer à apprendre"
-
 msgid "Start new sync"
 msgstr "Lancer une nouvelle synchronisation"
 
@@ -14354,10 +14348,11 @@ msgstr "Commencez par"
 msgid "Started"
 msgstr "Commencé"
 
-msgid "Starting…"
-msgstr "Démarrage…"
 msgid "Started by"
 msgstr "Lancé par"
+
+msgid "Starting…"
+msgstr "Démarrage…"
 
 msgid "State / Province"
 msgstr "État / Province"

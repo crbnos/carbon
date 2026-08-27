@@ -8687,9 +8687,6 @@ msgstr "실시간 새로고침"
 msgid "Live updates paused — retrying"
 msgstr "실시간 업데이트 일시 중지 — 재시도 중"
 
-msgid "Live Version"
-msgstr "실시간 버전"
-
 msgid "Load newer"
 msgstr "최신 항목 불러오기"
 
@@ -10535,9 +10532,6 @@ msgstr "초안 상태의 절차만 수정할 수 있습니다. 활성 또는 보
 msgid "Only empty, open periods can be deleted."
 msgstr "비어있는 열린 기간만 삭제할 수 있습니다."
 
-msgid "Onshape"
-msgstr "Onshape"
-
 msgid "Onshape asset sync is turned off for this company"
 msgstr "이 회사에서는 Onshape 파일 동기화가 꺼져 있습니다"
 
@@ -10555,6 +10549,9 @@ msgstr "Onshape가 구성되지 않았습니다"
 
 msgid "Onshape rejected the authorization"
 msgstr "Onshape가 인증을 거부했습니다"
+
+msgid "Onshape revision"
+msgstr "Onshape 리비전"
 
 msgid "Onshape Status"
 msgstr "Onshape 상태"
@@ -14327,9 +14324,6 @@ msgstr "공정 시작 시 유효기한 시작"
 msgid "Start Here"
 msgstr "여기서 시작하기"
 
-msgid "Start Learning"
-msgstr "학습 시작"
-
 msgid "Start new sync"
 msgstr "새 동기화 시작"
 
@@ -14354,10 +14348,11 @@ msgstr "…부터 시작"
 msgid "Started"
 msgstr "시작됨"
 
-msgid "Starting…"
-msgstr "시작 중…"
 msgid "Started by"
 msgstr "시작한 사람"
+
+msgid "Starting…"
+msgstr "시작 중…"
 
 msgid "State / Province"
 msgstr "주/도"

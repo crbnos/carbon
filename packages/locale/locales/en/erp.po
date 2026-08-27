@@ -8687,9 +8687,6 @@ msgstr "Live reloading"
 msgid "Live updates paused — retrying"
 msgstr "Live updates paused — retrying"
 
-msgid "Live Version"
-msgstr "Live Version"
-
 msgid "Load newer"
 msgstr "Load newer"
 
@@ -10535,9 +10532,6 @@ msgstr "Only Draft procedures are editable. Create a new version to change an Ac
 msgid "Only empty, open periods can be deleted."
 msgstr "Only empty, open periods can be deleted."
 
-msgid "Onshape"
-msgstr "Onshape"
-
 msgid "Onshape asset sync is turned off for this company"
 msgstr "Onshape asset sync is turned off for this company"
 
@@ -10555,6 +10549,9 @@ msgstr "Onshape isn't configured"
 
 msgid "Onshape rejected the authorization"
 msgstr "Onshape rejected the authorization"
+
+msgid "Onshape revision"
+msgstr "Onshape revision"
 
 msgid "Onshape Status"
 msgstr "Onshape Status"
@@ -14327,9 +14324,6 @@ msgstr "Start expiration on process start"
 msgid "Start Here"
 msgstr "Start Here"
 
-msgid "Start Learning"
-msgstr "Start Learning"
-
 msgid "Start new sync"
 msgstr "Start new sync"
 
@@ -14354,10 +14348,11 @@ msgstr "Start with"
 msgid "Started"
 msgstr "Started"
 
-msgid "Starting…"
-msgstr "Starting…"
 msgid "Started by"
 msgstr "Started by"
+
+msgid "Starting…"
+msgstr "Starting…"
 
 msgid "State / Province"
 msgstr "State / Province"

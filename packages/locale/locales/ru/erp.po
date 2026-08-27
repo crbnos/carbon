@@ -8687,9 +8687,6 @@ msgstr "Живая перезагрузка"
 msgid "Live updates paused — retrying"
 msgstr "Live-обновления приостановлены — повтор"
 
-msgid "Live Version"
-msgstr "Активная версия"
-
 msgid "Load newer"
 msgstr "Загрузить новые"
 
@@ -10535,9 +10532,6 @@ msgstr "Редактировать можно только процедуры в
 msgid "Only empty, open periods can be deleted."
 msgstr "Удалять можно только пустые открытые периоды."
 
-msgid "Onshape"
-msgstr "Onshape"
-
 msgid "Onshape asset sync is turned off for this company"
 msgstr "Синхронизация файлов Onshape отключена для этой компании"
 
@@ -10555,6 +10549,9 @@ msgstr "Onshape не настроен"
 
 msgid "Onshape rejected the authorization"
 msgstr "Onshape отклонил авторизацию"
+
+msgid "Onshape revision"
+msgstr "Редакция Onshape"
 
 msgid "Onshape Status"
 msgstr "Статус Onshape"
@@ -14327,9 +14324,6 @@ msgstr "Начать истечение срока действия при за�
 msgid "Start Here"
 msgstr "Начните отсюда"
 
-msgid "Start Learning"
-msgstr "Начать обучение"
-
 msgid "Start new sync"
 msgstr "Запустить новую синхронизацию"
 
@@ -14354,10 +14348,11 @@ msgstr "Начните с"
 msgid "Started"
 msgstr "Начал"
 
-msgid "Starting…"
-msgstr "Начинаю…"
 msgid "Started by"
 msgstr "Запустил"
+
+msgid "Starting…"
+msgstr "Начинаю…"
 
 msgid "State / Province"
 msgstr "Штат / Провинция"

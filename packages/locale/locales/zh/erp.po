@@ -8687,9 +8687,6 @@ msgstr "实时重新加载"
 msgid "Live updates paused — retrying"
 msgstr "实时更新已暂停 — 正在重试"
 
-msgid "Live Version"
-msgstr "实时版本"
-
 msgid "Load newer"
 msgstr "加载更新"
 
@@ -10535,9 +10532,6 @@ msgstr "只有草稿程序可以编辑。创建新版本以更改活动或已归
 msgid "Only empty, open periods can be deleted."
 msgstr "仅可删除空白的开放期间。"
 
-msgid "Onshape"
-msgstr "Onshape"
-
 msgid "Onshape asset sync is turned off for this company"
 msgstr "此公司的 Onshape 文件同步已关闭"
 
@@ -10555,6 +10549,9 @@ msgstr "尚未配置 Onshape"
 
 msgid "Onshape rejected the authorization"
 msgstr "Onshape 拒绝了授权"
+
+msgid "Onshape revision"
+msgstr "Onshape 修订版"
 
 msgid "Onshape Status"
 msgstr "Onshape 状态"
@@ -14327,9 +14324,6 @@ msgstr "在流程开始时开始过期"
 msgid "Start Here"
 msgstr "从这里开始"
 
-msgid "Start Learning"
-msgstr "开始学习"
-
 msgid "Start new sync"
 msgstr "开始新同步"
 
@@ -14354,10 +14348,11 @@ msgstr "从以下开始"
 msgid "Started"
 msgstr "开始于"
 
-msgid "Starting…"
-msgstr "正在启动…"
 msgid "Started by"
 msgstr "启动者"
+
+msgid "Starting…"
+msgstr "正在启动…"
 
 msgid "State / Province"
 msgstr "州/省"

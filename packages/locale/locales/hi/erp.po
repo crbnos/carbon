@@ -8687,9 +8687,6 @@ msgstr "लाइव रीलोडिंग"
 msgid "Live updates paused — retrying"
 msgstr "लाइव अपडेट रुके — पुनः प्रयास"
 
-msgid "Live Version"
-msgstr "लाइव संस्करण"
-
 msgid "Load newer"
 msgstr "नया लोड करें"
 
@@ -10535,9 +10532,6 @@ msgstr "केवल ड्राफ्ट प्रक्रियाएं स
 msgid "Only empty, open periods can be deleted."
 msgstr "केवल खाली, खुली अवधियों को हटाया जा सकता है।"
 
-msgid "Onshape"
-msgstr "Onshape"
-
 msgid "Onshape asset sync is turned off for this company"
 msgstr "इस कंपनी के लिए Onshape फ़ाइल सिंक बंद है"
 
@@ -10555,6 +10549,9 @@ msgstr "Onshape कॉन्फ़िगर नहीं है"
 
 msgid "Onshape rejected the authorization"
 msgstr "Onshape ने प्राधिकरण अस्वीकार कर दिया"
+
+msgid "Onshape revision"
+msgstr "Onshape संस्करण"
 
 msgid "Onshape Status"
 msgstr "Onshape स्थिति"
@@ -14327,9 +14324,6 @@ msgstr "प्रक्रिया शुरुआत पर समाप्त
 msgid "Start Here"
 msgstr "यहाँ शुरू करें"
 
-msgid "Start Learning"
-msgstr "सीखना शुरू करें"
-
 msgid "Start new sync"
 msgstr "नया सिंक शुरू करें"
 
@@ -14354,10 +14348,11 @@ msgstr "शुरुआत करें"
 msgid "Started"
 msgstr "शुरू किया गया"
 
-msgid "Starting…"
-msgstr "शुरू हो रहा है…"
 msgid "Started by"
 msgstr "द्वारा शुरू किया गया"
+
+msgid "Starting…"
+msgstr "शुरू हो रहा है…"
 
 msgid "State / Province"
 msgstr "राज्य / प्रांत"

@@ -8687,9 +8687,6 @@ msgstr "Live-Neuladen"
 msgid "Live updates paused — retrying"
 msgstr "Live-Updates angehalten — neuer Versuch"
 
-msgid "Live Version"
-msgstr "Live-Version"
-
 msgid "Load newer"
 msgstr "Neuere laden"
 
@@ -10535,9 +10532,6 @@ msgstr "Nur Entwurfsverfahren sind bearbeitbar. Erstellen Sie eine neue Version,
 msgid "Only empty, open periods can be deleted."
 msgstr "Nur leere, offene Perioden können gelöscht werden."
 
-msgid "Onshape"
-msgstr "Onshape"
-
 msgid "Onshape asset sync is turned off for this company"
 msgstr "Die Onshape-Dateisynchronisierung ist für dieses Unternehmen deaktiviert"
 
@@ -10555,6 +10549,9 @@ msgstr "Onshape ist nicht konfiguriert"
 
 msgid "Onshape rejected the authorization"
 msgstr "Onshape hat die Autorisierung abgelehnt"
+
+msgid "Onshape revision"
+msgstr "Onshape-Revision"
 
 msgid "Onshape Status"
 msgstr "Onshape-Status"
@@ -14327,9 +14324,6 @@ msgstr "Ablauf des Verfallsdatums beim Prozessstart"
 msgid "Start Here"
 msgstr "Hier starten"
 
-msgid "Start Learning"
-msgstr "Lerne jetzt"
-
 msgid "Start new sync"
 msgstr "Neue Synchronisierung starten"
 
@@ -14354,10 +14348,11 @@ msgstr "Beginnen Sie mit"
 msgid "Started"
 msgstr "Gestartet"
 
-msgid "Starting…"
-msgstr "Wird gestartet…"
 msgid "Started by"
 msgstr "Gestartet von"
+
+msgid "Starting…"
+msgstr "Wird gestartet…"
 
 msgid "State / Province"
 msgstr "Bundesland / Provinz"

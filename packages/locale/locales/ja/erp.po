@@ -8687,9 +8687,6 @@ msgstr "ライブリロード中"
 msgid "Live updates paused — retrying"
 msgstr "ライブ更新を一時停止 — 再試行中"
 
-msgid "Live Version"
-msgstr "ライブバージョン"
-
 msgid "Load newer"
 msgstr "新しいものを読み込む"
 
@@ -10535,9 +10532,6 @@ msgstr "編集可能なのは下書き手順のみです。アクティブまた
 msgid "Only empty, open periods can be deleted."
 msgstr "空のオープン期間のみ削除できます。"
 
-msgid "Onshape"
-msgstr "Onshape"
-
 msgid "Onshape asset sync is turned off for this company"
 msgstr "この会社では Onshape のファイル同期が無効です"
 
@@ -10555,6 +10549,9 @@ msgstr "Onshape が構成されていません"
 
 msgid "Onshape rejected the authorization"
 msgstr "Onshape が認可を拒否しました"
+
+msgid "Onshape revision"
+msgstr "Onshape リビジョン"
 
 msgid "Onshape Status"
 msgstr "Onshape ステータス"
@@ -14327,9 +14324,6 @@ msgstr "プロセス開始時に有効期限を開始"
 msgid "Start Here"
 msgstr "ここから始める"
 
-msgid "Start Learning"
-msgstr "学習を開始"
-
 msgid "Start new sync"
 msgstr "新しい同期を開始"
 
@@ -14354,10 +14348,11 @@ msgstr "まず"
 msgid "Started"
 msgstr "開始"
 
-msgid "Starting…"
-msgstr "開始中…"
 msgid "Started by"
 msgstr "開始者"
+
+msgid "Starting…"
+msgstr "開始中…"
 
 msgid "State / Province"
 msgstr "都道府県"

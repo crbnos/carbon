@@ -8687,9 +8687,6 @@ msgstr "Canlı yeniden yükleniyor"
 msgid "Live updates paused — retrying"
 msgstr "Canlı güncellemeler duraklatıldı — yeniden deneniyor"
 
-msgid "Live Version"
-msgstr "Canlı Sürüm"
-
 msgid "Load newer"
 msgstr "Daha yenisini yükle"
 
@@ -10535,9 +10532,6 @@ msgstr "Yalnızca Taslak prosedürler düzenlenebilir. Aktif veya Arşivlenmiş 
 msgid "Only empty, open periods can be deleted."
 msgstr "Yalnızca boş, açık dönemler silinebilir."
 
-msgid "Onshape"
-msgstr "Onshape"
-
 msgid "Onshape asset sync is turned off for this company"
 msgstr "Bu şirket için Onshape dosya senkronizasyonu kapalı"
 
@@ -10555,6 +10549,9 @@ msgstr "Onshape yapılandırılmamış"
 
 msgid "Onshape rejected the authorization"
 msgstr "Onshape yetkilendirmeyi reddetti"
+
+msgid "Onshape revision"
+msgstr "Onshape revizyonu"
 
 msgid "Onshape Status"
 msgstr "Onshape Durumu"
@@ -14327,9 +14324,6 @@ msgstr "Süre bitişi süreç başlangıcında başlar"
 msgid "Start Here"
 msgstr "Buradan Başla"
 
-msgid "Start Learning"
-msgstr "Öğrenmeye Başla"
-
 msgid "Start new sync"
 msgstr "Yeni senkronizasyon başlat"
 
@@ -14354,10 +14348,11 @@ msgstr "Başla"
 msgid "Started"
 msgstr "Başlangıç"
 
-msgid "Starting…"
-msgstr "Başlanıyor…"
 msgid "Started by"
 msgstr "Başlatan"
+
+msgid "Starting…"
+msgstr "Başlanıyor…"
 
 msgid "State / Province"
 msgstr "Eyalet / İl"
