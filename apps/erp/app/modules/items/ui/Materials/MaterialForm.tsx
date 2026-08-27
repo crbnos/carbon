@@ -42,6 +42,7 @@ import MaterialType, { useMaterialTypes } from "~/components/Form/MaterialType";
 import Shape, { useShape } from "~/components/Form/Shape";
 import Substance, { useSubstance } from "~/components/Form/Substance";
 import {
+  useCompanySettings,
   useCurrencyDecimals,
   useNextItemId,
   usePermissions,
@@ -127,6 +128,8 @@ const MaterialForm = ({
   const permissions = usePermissions();
   const companySettings = useSettings();
   const useCustomId = companySettings.materialGeneratedIds === false;
+  const allowLowercaseItemIds =
+    useCompanySettings()?.allowLowercaseItemIds === true;
 
   const [defaultMethodType, setDefaultMethodType] = useState<string>(
     initialValues.defaultMethodType ?? "Purchase to Order"
@@ -205,7 +208,7 @@ const MaterialForm = ({
                       value={id}
                       onChange={onIdChange}
                       isDisabled={loading}
-                      isUppercase
+                      isUppercase={!allowLowercaseItemIds}
                       autoFocus
                     />
 

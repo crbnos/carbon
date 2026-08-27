@@ -303,7 +303,7 @@ msgid "4h"
 msgstr "4ч"
 
 msgid "5 user minimum"
-msgstr ""
+msgstr "Минимум 5 пользователей"
 
 msgid "5-8 weeks"
 msgstr "5-8 недель"
@@ -360,7 +360,7 @@ msgid "A contractor is a supplier contact with particular abilities and availabl
 msgstr "Подрядчик — это контакт поставщика с особыми навыками и доступными часами"
 
 msgid "A custom solution to meet your needs"
-msgstr ""
+msgstr "Пользовательское решение в соответствии с вашими потребностями"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Клиент — это компания или физическое лицо, которое покупает ваши детали или услуги."
@@ -473,10 +473,10 @@ msgid "A Make to Order component whose parts are issued together into the parent
 msgstr "Компонент \"Производство на заказ\", части которого выпускаются вместе в родительское задание — без отдельного построения."
 
 msgid "A managed cloud-hosted version of Carbon"
-msgstr ""
+msgstr "Управляемая облачная версия Carbon"
 
 msgid "A managed version with all the advanced features"
-msgstr ""
+msgstr "Управляемая версия со всеми дополнительными функциями"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Материал — это физический предмет, используемый для изготовления детали, которая может использоваться в нескольких заданиях"
@@ -938,9 +938,6 @@ msgstr "Дебиторская задолженность"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Дебиторская задолженность клиентов за задолженные суммы."
 
-msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
-msgstr "Счета, на которые ссылаются стандартные значения проводок или история журналов, которые еще не имеют сопоставления с системой."
-
 msgid "Accumulated Depreciation"
 msgstr "Накопленная амортизация"
 
@@ -1337,7 +1334,7 @@ msgid "All actions selected"
 msgstr "Все действия выбраны"
 
 msgid "All advanced features available"
-msgstr ""
+msgstr "Все расширенные функции доступны"
 
 msgid "All Audit Logs"
 msgstr "Все журналы аудита"
@@ -1365,9 +1362,6 @@ msgstr "Все местоположения"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Все члены выбранных групп и выбранные лица смогут одобрять запросы"
-
-msgid "All posting accounts are mapped"
-msgstr "Все счета проводок сопоставлены"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "Все строки импортированы — {inserted} вставлено, {updated} обновлено."
@@ -1612,7 +1606,7 @@ msgid "API keys for programmatic access to your Carbon data."
 msgstr "API ключи для программного доступа к вашим данным Carbon."
 
 msgid "API, webhooks, and integrations"
-msgstr ""
+msgstr "API, вебхуки и интеграции"
 
 msgid "Applied"
 msgstr "Применено"
@@ -2308,7 +2302,7 @@ msgid "Audit Log"
 msgstr "Журнал аудита"
 
 msgid "Audit logging"
-msgstr ""
+msgstr "Логирование аудита"
 
 msgid "Audit Logging"
 msgstr "Аудит логирования"
@@ -2380,7 +2374,7 @@ msgid "Automatic Updates"
 msgstr "Автоматические обновления"
 
 msgid "Automatic updates and backups"
-msgstr ""
+msgstr "Автоматические обновления и резервные копии"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "Автоматическое пропорциональное потребление материалов задания, не отслеживаемых при отчетности о выходе — отслеживаемые материалы выпускаются вручную."
@@ -2480,7 +2474,7 @@ msgid "Base Price"
 msgstr "Базовая цена"
 
 msgid "Basic ERP, MES, and QMS functionality"
-msgstr ""
+msgstr "Базовая функциональность ERP, MES и QMS"
 
 msgid "Basic Information"
 msgstr "Основная информация"
@@ -2567,6 +2561,9 @@ msgstr "Заблокировано"
 #. placeholder {0}: workCenter.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Заблокировано {0}"
+
+msgid "Blocking sync"
+msgstr "Блокировка синхронизации"
 
 msgid "Blocks save until resolved"
 msgstr "Блокирует сохранение до разрешения"
@@ -3173,7 +3170,7 @@ msgid "Cloud, or your self-hosted environment."
 msgstr "Облако или ваша собственная размещённая среда."
 
 msgid "CMMC compliant"
-msgstr ""
+msgstr "Соответствие CMMC"
 
 msgid "Code"
 msgstr "Код"
@@ -3236,7 +3233,7 @@ msgid "Committing a receipt, shipment, or invoice: quantities move, journal entr
 msgstr "Фиксирование квитанции, отправки или счета: количества движутся, записи журнала попадают в бухгалтерскую книгу, и статус становится Выполнено."
 
 msgid "Community support"
-msgstr ""
+msgstr "Поддержка сообщества"
 
 msgid "Companies"
 msgstr "Компании"
@@ -3529,7 +3526,7 @@ msgid "Contact (optional)"
 msgstr "Контакт (опционально)"
 
 msgid "Contact us"
-msgstr ""
+msgstr "Свяжитесь с нами"
 
 msgid "contacts"
 msgstr "контакты"
@@ -3572,6 +3569,9 @@ msgstr "Контролировать изменения конструкции �
 
 msgid "Control how operators pick material and track time on the shop floor."
 msgstr "Контролировать, как операторы подбирают материал и отслеживают время на производственном полу."
+
+msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
+msgstr "Управляйте тем, могут ли коды элементов (детали, материалы, расходники, инструменты и услуги) содержать символы нижнего регистра."
 
 msgid "Controller, Accountant"
 msgstr "Контроллер, Бухгалтер"
@@ -4410,7 +4410,7 @@ msgid "Customers"
 msgstr "Клиенты"
 
 msgid "Customizations, training, and integrations"
-msgstr ""
+msgstr "Настройки, обучение и интеграции"
 
 msgid "Customize"
 msgstr "Настроить"
@@ -5947,6 +5947,9 @@ msgstr "Включите это правило, чтобы автоматиче�
 msgid "Enable timecard tracking for work shifts."
 msgstr "Включить отслеживание табелей учета рабочего времени для смен."
 
+msgid "Enable to allow lowercase characters in item IDs."
+msgstr "Включите, чтобы разрешить символы нижнего регистра в кодах элементов."
+
 msgid "Enable to allow shared workstation mode."
 msgstr "Включите, чтобы разрешить режим общей рабочей станции."
 
@@ -6205,7 +6208,7 @@ msgid "Every match"
 msgstr "Каждое совпадение"
 
 msgid "Every required action has already been added."
-msgstr ""
+msgstr "Все требуемые действия уже добавлены."
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Каждая требуемая задача должна быть завершена или пропущена перед закрытием периода."
@@ -6977,7 +6980,7 @@ msgid "Format"
 msgstr "Формат"
 
 msgid "Forward deployed engineer"
-msgstr ""
+msgstr "Развернутый инженер"
 
 msgid "Foundation"
 msgstr "Основа"
@@ -7033,7 +7036,7 @@ msgid "Full name"
 msgstr "Полное имя"
 
 msgid "Full setup and migrations"
-msgstr ""
+msgstr "Полная настройка и миграции"
 
 msgid "Fully Depreciated"
 msgstr "Полностью амортизирован"
@@ -7386,6 +7389,9 @@ msgstr "Справка"
 
 msgid "Hide"
 msgstr "Скрыть"
+
+msgid "Hide accounts"
+msgstr "Скрыть счета"
 
 msgid "Hide raw"
 msgstr "Скрыть исходное"
@@ -8165,6 +8171,15 @@ msgstr "Группы товаров"
 msgid "Item ID"
 msgstr "ID товара"
 
+msgid "Item IDs"
+msgstr "Коды элементов"
+
+msgid "Item IDs are forced to uppercase"
+msgstr "Коды элементов преобразуются в верхний регистр"
+
+msgid "Item IDs keep the casing you type."
+msgstr "Коды элементов сохраняют вводимый вами регистр."
+
 msgid "Item ledger"
 msgstr "Реестр товаров"
 
@@ -8739,6 +8754,9 @@ msgstr "Партионная проверка полученных товаро�
 msgid "Low"
 msgstr "Низкий"
 
+msgid "Lowercase item IDs are allowed"
+msgstr "Коды элементов в нижнем регистре разрешены"
+
 msgid "Machine"
 msgstr "Машина"
 
@@ -8889,8 +8907,11 @@ msgstr "Производство"
 msgid "Map accounts"
 msgstr "Сопоставить счета"
 
-msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
-msgstr "Сопоставьте счета Carbon с планом счетов системы. Проводимые журналы отправляются, используя сопоставленный код счета системы."
+msgid "Map any account in the chart of accounts, not just the required ones."
+msgstr "Отобразите любой счет в плане счетов, а не только требуемые."
+
+msgid "Map any Carbon account to the provider's chart of accounts. Accounts that automated postings run through are marked Required; the rest are optional. Posted journals push using the mapped provider account code."
+msgstr "Отобразите любой счет Carbon на план счетов провайдера. Счета, по которым проходят автоматические проводки, помечены как «Требуется»; остальные являются необязательными. Опубликованные журналы отправляются с использованием кода отображенного счета провайдера."
 
 msgid "Map Extracted Invoice Lines"
 msgstr "Сопоставить извлеченные строки счета"
@@ -9381,6 +9402,9 @@ msgstr "Нужны правильные столбцы?"
 msgid "Needs a Business or Partner plan."
 msgstr "Требуется план Business или Partner."
 
+msgid "Needs attention"
+msgstr "Требует внимания"
+
 msgid "Needs fixing"
 msgstr "Требуется исправление"
 
@@ -9758,6 +9782,9 @@ msgstr "Нет доступа"
 
 msgid "No accounts mapped yet"
 msgstr "Счета еще не сопоставлены"
+
+msgid "No accounts match your search"
+msgstr "Ни один счет не соответствует вашему поиску"
 
 msgid "No action needed"
 msgstr "Никаких действий не требуется"
@@ -10249,6 +10276,9 @@ msgstr "На этом месте больше нечего извлекать и
 
 msgid "Nothing in the archive"
 msgstr "Ничего в архиве"
+
+msgid "Nothing needs mapping"
+msgstr "Ничего не требует отображения"
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Пока ничего. Шаг предоставляет значения только после того, как он будет настроен."
@@ -12485,6 +12515,9 @@ msgstr "Требовать двухфакторную аутентификаци
 msgid "Required"
 msgstr "Обязательно"
 
+msgid "Required accounts with no mapping, and accounts blocking a sync right now."
+msgstr "Требуемые счета без отображения и счета, которые сейчас блокируют синхронизацию."
+
 msgid "Required Action"
 msgstr "Требуемое действие"
 
@@ -13161,6 +13194,9 @@ msgstr "Списано"
 msgid "Search"
 msgstr "Поиск"
 
+msgid "Search accounts"
+msgstr "Поиск счетов"
+
 msgid "Search accounts..."
 msgstr "Поиск счетов..."
 
@@ -13458,10 +13494,10 @@ msgid "Self Managed"
 msgstr "Самоуправляемый"
 
 msgid "Self-hosted or managed"
-msgstr ""
+msgstr "Размещается самостоятельно или управляется"
 
 msgid "Self-onboarding"
-msgstr ""
+msgstr "Самостоятельное подключение"
 
 msgid "Self-paced"
 msgstr "Самостоятельно"
@@ -13833,6 +13869,9 @@ msgstr "Показывать столбец с читаемым ID клиент�
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "Показать читаемый столбец ID поставщика в списке поставщиков, формах поставщиков и раскрывающихся списках. Поставщики по-прежнему идентифицируются внутри системы в любом случае."
 
+msgid "Show all accounts"
+msgstr "Показать все счета"
+
 msgid "Show Customer IDs"
 msgstr "Показать ID клиентов"
 
@@ -14087,7 +14126,7 @@ msgid "Split shipment line"
 msgstr "Разделить строку отправки"
 
 msgid "SSO/SAML"
-msgstr ""
+msgstr "SSO/SAML"
 
 msgid "Stand up hosting"
 msgstr "Развернуть хостинг"
@@ -14774,7 +14813,7 @@ msgid "Team trained"
 msgstr "Команда обучена"
 
 msgid "Technical support"
-msgstr ""
+msgstr "Техническая поддержка"
 
 msgid "Temperature"
 msgstr "Температура"
@@ -16306,10 +16345,10 @@ msgid "unknown location"
 msgstr "неизвестное местоположение"
 
 msgid "Unlimited functional support"
-msgstr ""
+msgstr "Неограниченная функциональная поддержка"
 
 msgid "Unlimited records"
-msgstr ""
+msgstr "Неограниченное количество записей"
 
 msgid "Unlink"
 msgstr "Отменить связь"
@@ -16322,9 +16361,6 @@ msgstr "Разблокировать"
 
 msgid "Unlock with passkey"
 msgstr "Разблокировка с помощью Passkey"
-
-msgid "Unmapped accounts"
-msgstr "Несопоставленные счета"
 
 msgid "Unmapped dimension values"
 msgstr "Неотображенные значения размерности"

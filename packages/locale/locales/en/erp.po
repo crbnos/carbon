@@ -938,9 +938,6 @@ msgstr "Accounts Receivable"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Accounts receivable for amounts owed by customers"
 
-msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
-msgstr "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
-
 msgid "Accumulated Depreciation"
 msgstr "Accumulated Depreciation"
 
@@ -1365,9 +1362,6 @@ msgstr "All Locations"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "All members of selected groups and selected individuals will be able to approve requests"
-
-msgid "All posting accounts are mapped"
-msgstr "All posting accounts are mapped"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "All rows imported — {inserted} inserted, {updated} updated."
@@ -2568,6 +2562,9 @@ msgstr "Blocked"
 msgid "Blocked by {0}"
 msgstr "Blocked by {0}"
 
+msgid "Blocking sync"
+msgstr "Blocking sync"
+
 msgid "Blocks save until resolved"
 msgstr "Blocks save until resolved"
 
@@ -3572,6 +3569,9 @@ msgstr "Control design changes with revisions / ECOs"
 
 msgid "Control how operators pick material and track time on the shop floor."
 msgstr "Control how operators pick material and track time on the shop floor."
+
+msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
+msgstr "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
 
 msgid "Controller, Accountant"
 msgstr "Controller, Accountant"
@@ -5947,6 +5947,9 @@ msgstr "Enable this rule to automatically require approval for matching document
 msgid "Enable timecard tracking for work shifts."
 msgstr "Enable timecard tracking for work shifts."
 
+msgid "Enable to allow lowercase characters in item IDs."
+msgstr "Enable to allow lowercase characters in item IDs."
+
 msgid "Enable to allow shared workstation mode."
 msgstr "Enable to allow shared workstation mode."
 
@@ -7387,6 +7390,9 @@ msgstr "Help"
 msgid "Hide"
 msgstr "Hide"
 
+msgid "Hide accounts"
+msgstr "Hide accounts"
+
 msgid "Hide raw"
 msgstr "Hide raw"
 
@@ -8165,6 +8171,15 @@ msgstr "Item Groups"
 msgid "Item ID"
 msgstr "Item ID"
 
+msgid "Item IDs"
+msgstr "Item IDs"
+
+msgid "Item IDs are forced to uppercase"
+msgstr "Item IDs are forced to uppercase"
+
+msgid "Item IDs keep the casing you type."
+msgstr "Item IDs keep the casing you type."
+
 msgid "Item ledger"
 msgstr "Item ledger"
 
@@ -8739,6 +8754,9 @@ msgstr "Lot-based inspection of received goods against a sampling plan; the unit
 msgid "Low"
 msgstr "Low"
 
+msgid "Lowercase item IDs are allowed"
+msgstr "Lowercase item IDs are allowed"
+
 msgid "Machine"
 msgstr "Machine"
 
@@ -8889,8 +8907,11 @@ msgstr "Manufacturing"
 msgid "Map accounts"
 msgstr "Map accounts"
 
-msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
-msgstr "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
+msgid "Map any account in the chart of accounts, not just the required ones."
+msgstr "Map any account in the chart of accounts, not just the required ones."
+
+msgid "Map any Carbon account to the provider's chart of accounts. Accounts that automated postings run through are marked Required; the rest are optional. Posted journals push using the mapped provider account code."
+msgstr "Map any Carbon account to the provider's chart of accounts. Accounts that automated postings run through are marked Required; the rest are optional. Posted journals push using the mapped provider account code."
 
 msgid "Map Extracted Invoice Lines"
 msgstr "Map Extracted Invoice Lines"
@@ -9381,6 +9402,9 @@ msgstr "Need the right columns?"
 msgid "Needs a Business or Partner plan."
 msgstr "Needs a Business or Partner plan."
 
+msgid "Needs attention"
+msgstr "Needs attention"
+
 msgid "Needs fixing"
 msgstr "Needs fixing"
 
@@ -9758,6 +9782,9 @@ msgstr "No Access"
 
 msgid "No accounts mapped yet"
 msgstr "No accounts mapped yet"
+
+msgid "No accounts match your search"
+msgstr "No accounts match your search"
 
 msgid "No action needed"
 msgstr "No action needed"
@@ -10249,6 +10276,9 @@ msgstr "Nothing else at this location has stock to pull from."
 
 msgid "Nothing in the archive"
 msgstr "Nothing in the archive"
+
+msgid "Nothing needs mapping"
+msgstr "Nothing needs mapping"
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Nothing yet. A step only offers values once it is configured."
@@ -12485,6 +12515,9 @@ msgstr "Require two-factor authentication"
 msgid "Required"
 msgstr "Required"
 
+msgid "Required accounts with no mapping, and accounts blocking a sync right now."
+msgstr "Required accounts with no mapping, and accounts blocking a sync right now."
+
 msgid "Required Action"
 msgstr "Required Action"
 
@@ -13161,6 +13194,9 @@ msgstr "Scrapped"
 msgid "Search"
 msgstr "Search"
 
+msgid "Search accounts"
+msgstr "Search accounts"
+
 msgid "Search accounts..."
 msgstr "Search accounts..."
 
@@ -13832,6 +13868,9 @@ msgstr "Show a readable Customer ID column on the customer list, customer forms,
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
+
+msgid "Show all accounts"
+msgstr "Show all accounts"
 
 msgid "Show Customer IDs"
 msgstr "Show Customer IDs"
@@ -16322,9 +16361,6 @@ msgstr "Unlock"
 
 msgid "Unlock with passkey"
 msgstr "Unlock with passkey"
-
-msgid "Unmapped accounts"
-msgstr "Unmapped accounts"
 
 msgid "Unmapped dimension values"
 msgstr "Unmapped dimension values"
