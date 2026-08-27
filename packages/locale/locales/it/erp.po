@@ -14152,9 +14152,6 @@ msgstr "Dividi riga ricevuta"
 msgid "Split shipment line"
 msgstr "Dividi riga spedizione"
 
-msgid "SSO is not configured for your email domain."
-msgstr "SSO non è configurato per il tuo dominio email."
-
 msgid "SSO/SAML"
 msgstr ""
 

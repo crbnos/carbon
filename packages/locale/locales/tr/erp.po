@@ -14152,9 +14152,6 @@ msgstr "Fiş hattını böl"
 msgid "Split shipment line"
 msgstr "Sevkiyat satırını böl"
 
-msgid "SSO is not configured for your email domain."
-msgstr "SSO e-posta alanınız için yapılandırılmamış."
-
 msgid "SSO/SAML"
 msgstr ""
 

@@ -14152,9 +14152,6 @@ msgstr "Split receipt line"
 msgid "Split shipment line"
 msgstr "Split shipment line"
 
-msgid "SSO is not configured for your email domain."
-msgstr "SSO is not configured for your email domain."
-
 msgid "SSO/SAML"
 msgstr "SSO/SAML"
 

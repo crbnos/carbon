@@ -14152,9 +14152,6 @@ msgstr "입고 라인 분할"
 msgid "Split shipment line"
 msgstr "출하 라인 분할"
 
-msgid "SSO is not configured for your email domain."
-msgstr "SSO가 이메일 도메인에 대해 구성되지 않았습니다."
-
 msgid "SSO/SAML"
 msgstr ""
 

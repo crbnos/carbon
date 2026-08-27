@@ -14152,9 +14152,6 @@ msgstr "領収書行を分割"
 msgid "Split shipment line"
 msgstr "出荷ラインを分割"
 
-msgid "SSO is not configured for your email domain."
-msgstr "メールドメインのSSOが設定されていません。"
-
 msgid "SSO/SAML"
 msgstr ""
 

@@ -14152,9 +14152,6 @@ msgstr "Beleg-Position aufteilen"
 msgid "Split shipment line"
 msgstr "Versandzeile teilen"
 
-msgid "SSO is not configured for your email domain."
-msgstr "SSO ist nicht für Ihre E-Mail-Domäne konfiguriert."
-
 msgid "SSO/SAML"
 msgstr ""
 

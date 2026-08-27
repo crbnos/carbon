@@ -14152,9 +14152,6 @@ msgstr "拆分收据行"
 msgid "Split shipment line"
 msgstr "拆分发货行"
 
-msgid "SSO is not configured for your email domain."
-msgstr "SSO 未针对您的电子邮件域进行配置。"
-
 msgid "SSO/SAML"
 msgstr ""
 

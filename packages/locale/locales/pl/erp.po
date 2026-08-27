@@ -14152,9 +14152,6 @@ msgstr "Podziel linię paragonu"
 msgid "Split shipment line"
 msgstr "Podziel linię wysyłki"
 
-msgid "SSO is not configured for your email domain."
-msgstr "Logowanie jednokrotne nie jest skonfigurowane dla Twojej domeny e-mail."
-
 msgid "SSO/SAML"
 msgstr ""
 

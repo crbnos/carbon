@@ -14152,9 +14152,6 @@ msgstr "रसीद लाइन को विभाजित करें"
 msgid "Split shipment line"
 msgstr "शिपमेंट लाइन को विभाजित करें"
 
-msgid "SSO is not configured for your email domain."
-msgstr "आपके ईमेल डोमेन के लिए SSO कॉन्फ़िगर नहीं है।"
-
 msgid "SSO/SAML"
 msgstr ""
 
