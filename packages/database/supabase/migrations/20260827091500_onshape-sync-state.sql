@@ -21,7 +21,7 @@ CREATE TABLE "onshapeItemSyncState" (
     "releaseState" TEXT,
     "modelUploadId" TEXT,
     "documentPath" TEXT,
-    -- constrained in 20260819104312: tenant-scoped, and SET NULL rather than
+    -- constrained in 20260827091812: tenant-scoped, and SET NULL rather than
     -- CASCADE so retention-pruning a run never deletes the rows it wrote
     "runId" TEXT,
     "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
@@ -33,7 +33,7 @@ CREATE TABLE "onshapeItemSyncState" (
     FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
     -- single-column here by an explicit decision: "item" had no (id, companyId)
     -- unique key, and adding one to that table was declined at the time. That was
-    -- later reversed -- 20260819104520 adds the key and makes this FK composite --
+    -- later reversed -- 20260827092004 adds the key and makes this FK composite --
     -- but the reversal has a deploy cost, so it is a separate migration and this
     -- is the record that the original call was deliberate
     FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE,

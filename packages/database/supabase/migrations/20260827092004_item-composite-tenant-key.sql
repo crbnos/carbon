@@ -2,7 +2,7 @@
 -- customer/supplier: a composite FK so the database itself rejects a sync-state
 -- row in company A pointing at company B's item.
 --
--- Its own migration, separate from 20260819104312, because of what it costs
+-- Its own migration, separate from 20260827091812, because of what it costs
 -- rather than what it does. Adding a UNIQUE constraint takes ACCESS EXCLUSIVE on
 -- "item" -- which conflicts with EVERY other lock mode, so it blocks reads too,
 -- not just writes: every SELECT on "item", and every query through the many views

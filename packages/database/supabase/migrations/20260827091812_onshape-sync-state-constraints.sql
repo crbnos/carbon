@@ -1,14 +1,15 @@
 -- Constraints and indexes for the Onshape sync-state tables, plus the corrected
 -- engineering-data view.
 --
--- These belong to 20260817143012 / 20260817143148 by subject, but they are a
--- separate migration on purpose: those two have already been applied on every
--- database that has run this branch, and the migration runner reconciles by
--- VERSION only -- there is no content checksum. Editing an applied file therefore
--- reaches nothing that already ran it, while a fresh database gets it. The result
--- is a constraint that exists only where it was never exercised, which is worse
--- than not having it. Anything schema-shaped that is discovered after a migration
--- has been applied has to arrive as a new version.
+-- These belong to 20260827091500 / 20260827091640 by subject, and are kept
+-- separate because that is how they were landed: both were discovered after those
+-- two had been applied on development databases, and the runner reconciles by
+-- VERSION only -- there is no content checksum. Editing an applied file reaches
+-- nothing that already ran it while a fresh database gets it, which produces a
+-- constraint existing only where it was never exercised -- worse than not having
+-- it at all. The rule that follows is the point worth keeping: anything
+-- schema-shaped discovered after a migration is applied has to arrive as a new
+-- version, never as an edit to the old one.
 
 -- The index below is built against existing rows, and the very race it exists to
 -- close could already have left two live runs for one company on a database that
@@ -69,7 +70,7 @@ CREATE INDEX "onshapeItemSyncState_runId_idx" ON "onshapeItemSyncState" ("runId"
 -- was added. Small table, but a "user" delete would otherwise scan it.
 CREATE INDEX "onshapeSyncRun_cancelledBy_idx" ON "onshapeSyncRun" ("cancelledBy");
 
--- Re-issued so databases that already applied 20260817143148 pick up the
+-- Re-issued so databases that already applied 20260827091640 pick up the
 -- "entityType" filter. `entityType` is part of a mapping's identity, so without it
 -- a future non-item 'onshapeData' mapping joins to any item sharing its entityId
 -- and duplicates the row.
