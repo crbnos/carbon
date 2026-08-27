@@ -102,11 +102,25 @@ Drafted wording for the 16 worst terms is in
 a reviewed decision — get the user's sign-off, apply, then re-measure the
 backlog before choosing a language.
 
-**Status: done on 2026-08-27.** 16 notes added (`Inventory`, `Open`, `Pick`,
-`Material`, `Total`, `Standard`, `Posted`, `View`, `Setup`, `Planned`, `Closed`,
-`Picked`, `Move`, `Schedule`, `Person`, `Items`), taking the glossary from 30
-notes to 46. Effect: zh enforced 401 → **168**, de 2081 → **1712**. Re-measure
-before starting any language; the pre-Phase-0 table below is now stale.
+**Status: done on 2026-08-27.** 31 notes added across two rounds, taking the
+glossary from 30 noted terms to **61**:
+
+- Round 1 (`8426a12e6`) — `Inventory`, `Open`, `Pick`, `Material`, `Total`,
+  `Standard`, `Posted`, `View`, `Setup`, `Planned`, `Closed`, `Picked`, `Move`,
+  `Schedule`, `Person`, `Items`, plus the placeholder-masking fix.
+- Round 2 (`afac560b9`) — statuses and actions that double as ordinary verbs:
+  `Close`, `Active`, `Assigned`, `Released`, `Disposed`, `Team`, `Credit`,
+  `Consumed`, `Rejected`, `Pass`, `Split`, `Ordered`, `Role`, `Monthly`, `Buy`.
+
+Backlog after Phase 0, with NO translation work in between — measure from these,
+not from the pre-Phase-0 table below:
+
+```
+ja 2296   ru 2155   ko 1727   de 1623   fr 1348   zh 103
+```
+
+(zh also had its catalogs repaired, `3c9315ce3`; the others are untouched, so
+their drop is purely the checker no longer crying wolf.)
 
 One divergence fixed at the same time: `Item` had an `ambiguity` note and `Items`
 did not, so the same sentence passed or failed depending on which form the
@@ -123,16 +137,18 @@ published` is translated 未发布 ("not published") and rejected for lacking
 
 ## Do one language per run
 
-Backlog of enforced violations as first measured on 2026-08-27, BEFORE Phase 0:
+Backlog of enforced violations as first measured on 2026-08-27, BEFORE Phase 0.
+**Historical only — do not plan against these.** Use the post-Phase-0 numbers in
+the section above.
 
 ```
 ja 2837   ru 2569   ko 2204   de 2091   zh 2069   pl 1869
 hi 1871   fr 1797   tr 1680   pt 1558   it 1485   es 1282
 ```
 
-Treat these as an upper bound, not a defect count — a large share are the
-false positives Phase 0 removes. Re-measure after Phase 0 and pick from the new
-numbers.
+They are kept as the record of how much of an "enforced violation" count can be
+the checker rather than the translation: `zh` went 2069 → 103, and roughly half
+of that came from Phase 0 alone.
 
 **Start with `zh`** — there is a real Chinese customer who reported this, so it
 is the one language where you will get feedback on whether the fix worked.
