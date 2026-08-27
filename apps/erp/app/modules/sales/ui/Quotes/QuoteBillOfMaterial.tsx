@@ -624,6 +624,7 @@ function MaterialForm({
     methodType: MethodType;
     description: string;
     unitCost: number;
+    unitCostSource: "system" | "manual";
     unitOfMeasureCode: string;
     quantity: number;
     kit: boolean;
@@ -637,6 +638,7 @@ function MaterialForm({
     methodType: item.data.methodType ?? "Pull from Inventory",
     description: item.data.description ?? "",
     unitCost: item.data.unitCost ?? 0,
+    unitCostSource: item.data.unitCostSource === "manual" ? "manual" : "system",
     unitOfMeasureCode: item.data.unitOfMeasureCode ?? "EA",
     quantity: item.data.quantity ?? 1,
     kit: item.data.kit ?? false,
@@ -655,6 +657,7 @@ function MaterialForm({
       methodType: "Pull from Inventory",
       quantity: 1,
       unitCost: 0,
+      unitCostSource: "system",
       description: "",
       unitOfMeasureCode: "EA",
       kit: false,
@@ -712,6 +715,8 @@ function MaterialForm({
       itemId,
       description: item.data?.name ?? "",
       unitCost,
+      // A different part — whatever was typed for the old one no longer applies.
+      unitCostSource: "system",
       unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
       methodType: item.data?.defaultMethodType ?? "Pull from Inventory",
       requiresBatchTracking: item.data?.itemTrackingType === "Batch",
@@ -730,6 +735,9 @@ function MaterialForm({
 
       if (itemData.methodType !== "Purchase to Order" || !itemData.itemId)
         return;
+      // A cost someone typed survives a quantity change. Only a cost we worked
+      // out ourselves gets re-resolved against the new quantity's price break.
+      if (itemData.unitCostSource === "manual") return;
       if (!carbon) return;
 
       const itemCost = await carbon
@@ -747,7 +755,13 @@ function MaterialForm({
 
       setItemData((d) => ({ ...d, unitCost }));
     },
-    [carbon, itemData.methodType, itemData.itemId, lookupBuyPriceFn]
+    [
+      carbon,
+      itemData.methodType,
+      itemData.itemId,
+      itemData.unitCostSource,
+      lookupBuyPriceFn
+    ]
   );
 
   const sourceDisclosure = useDisclosure();
@@ -776,6 +790,7 @@ function MaterialForm({
         <Hidden name="quoteMakeMethodId" />
         <Hidden name="kit" value={itemData.kit.toString()} />
         <Hidden name="order" />
+        <Hidden name="unitCostSource" value={itemData.unitCostSource} />
 
         {itemData.methodType === "Make to Order" && (
           <Hidden name="unitCost" value={itemData.unitCost} />
@@ -829,6 +844,13 @@ function MaterialForm({
             value={itemData.unitCost}
             minValue={0}
             formatOptions={INPUT_FORMAT.rate(baseCurrency, currencyDecimals)}
+            onChange={(newValue) =>
+              setItemData((d) => ({
+                ...d,
+                unitCost: newValue,
+                unitCostSource: "manual"
+              }))
+            }
           />
         )}
       </div>

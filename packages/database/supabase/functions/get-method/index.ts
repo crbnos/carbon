@@ -5765,6 +5765,9 @@ serve(async (req: Request) => {
                   storageUnitId: child.data.storageUnitId,
                   unitOfMeasureCode: child.data.unitOfMeasureCode,
                   unitCost: child.data.unitCost ?? 0, // TODO: get real unit cost
+                  // Carry the cost's origin across, or a copied line quietly
+                  // loses a cost someone typed the next time prices recalculate.
+                  unitCostSource: child.data.unitCostSource ?? "system",
                   companyId,
                   createdBy: userId,
                   customFields: {},
@@ -6282,6 +6285,9 @@ serve(async (req: Request) => {
                     quantity: child.data.quantity,
                     storageUnitId: child.data.storageUnitId,
                     unitCost: child.data.unitCost ?? 0, // TODO: get real unit cost
+                    // Carry the cost's origin across, or a duplicate/revision
+                    // quietly loses a cost someone typed.
+                    unitCostSource: child.data.unitCostSource ?? "system",
                     unitOfMeasureCode: child.data.unitOfMeasureCode,
                     companyId,
                     createdBy: userId,

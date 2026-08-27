@@ -16015,6 +16015,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMaterialWithMakeMethodId.storageUnitId"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteMaterialWithMakeMethodId.unitCostSource"
+          },
+          {
             $ref: "#/parameters/rowFilter.quoteMaterialWithMakeMethodId.quoteMaterialMakeMethodId"
           },
           {
@@ -43261,6 +43264,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMaterial.storageUnitId"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteMaterial.unitCostSource"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -43392,6 +43398,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMaterial.storageUnitId"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteMaterial.unitCostSource"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -43475,6 +43484,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteMaterial.storageUnitId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteMaterial.unitCostSource"
           },
           {
             $ref: "#/parameters/body.quoteMaterial"
@@ -106131,6 +106143,10 @@ export default {
           format: "text",
           type: "string"
         },
+        unitCostSource: {
+          format: "text",
+          type: "string"
+        },
         quoteMaterialMakeMethodId: {
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
@@ -119179,7 +119195,8 @@ export default {
         "createdBy",
         "quoteMakeMethodId",
         "scrapQuantity",
-        "kit"
+        "kit",
+        "unitCostSource"
       ],
       properties: {
         id: {
@@ -119306,6 +119323,11 @@ export default {
         storageUnitId: {
           description:
             "Note:\nThis is a Foreign Key to `storageUnit.id`.<fk table='storageUnit' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        unitCostSource: {
+          default: "system",
           format: "text",
           type: "string"
         }
@@ -148576,6 +148598,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.quoteMaterialWithMakeMethodId.unitCostSource": {
+      name: "unitCostSource",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.quoteMaterialWithMakeMethodId.quoteMaterialMakeMethodId": {
       name: "quoteMaterialMakeMethodId",
       required: false,
@@ -163126,6 +163154,12 @@ export default {
     },
     "rowFilter.quoteMaterial.storageUnitId": {
       name: "storageUnitId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.quoteMaterial.unitCostSource": {
+      name: "unitCostSource",
       required: false,
       in: "query",
       type: "string"

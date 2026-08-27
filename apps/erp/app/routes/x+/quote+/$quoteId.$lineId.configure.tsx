@@ -6,7 +6,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getSupplierPriceBreaksForItems } from "~/modules/items";
 import { upsertQuoteLineMethod } from "~/modules/sales/sales.service";
-import { lookupBuyPriceFromMap } from "~/modules/shared";
+import { resolveBuyUnitCost } from "~/modules/shared";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -64,10 +64,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    // Fix BOM material costs: replace average cost with price break values
+    // Fix BOM material costs: replace average cost with price break values.
+    // A cost someone typed is left alone — resolveBuyUnitCost knows the
+    // difference, and overwriting it here was how a hand-entered cost got lost.
     const buyMaterials = await serviceRole
       .from("quoteMaterial")
-      .select("id, itemId, unitCost")
+      .select("id, itemId, unitCost, unitCostSource")
       .eq("quoteLineId", lineId)
       .eq("methodType", "Purchase to Order");
 
@@ -80,12 +82,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
 
     for (const mat of buyMaterials.data ?? []) {
-      const price = lookupBuyPriceFromMap(
-        mat.itemId,
-        1,
-        priceMap,
-        mat.unitCost
-      );
+      if (mat.unitCostSource === "manual") continue;
+      const price = resolveBuyUnitCost(mat, 1, priceMap);
       if (price !== mat.unitCost) {
         await serviceRole
           .from("quoteMaterial")
