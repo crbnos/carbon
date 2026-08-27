@@ -2,10 +2,14 @@ import type { TermId } from "@carbon/glossary";
 import {
   type EventMatch,
   isMultiSelect,
+  type OptionsSource,
   type RequiredPermission
 } from "../definition/catalog";
 import { t, type ValueType } from "../definition/types";
-import type { ActionDeclarationLike } from "./actions";
+import type {
+  ActionDeclarationLike,
+  IntegrationDeclarationLike
+} from "./actions";
 import type { OperationDeclarationLike } from "./operations";
 
 /** The slice of `swagger-docs-schema.ts` the builder reads. */
@@ -94,6 +98,8 @@ export interface BuiltActionInput {
   pairs?: boolean;
   /** Only shown, and only required, while `input` holds one of `equals`. */
   showWhen?: { input: string; equals: readonly string[] };
+  /** Choices are fetched while editing, from a registered options provider. */
+  options?: OptionsSource;
 }
 
 export interface BuiltAction {
@@ -104,6 +110,20 @@ export interface BuiltAction {
   requireOneOf?: string[][];
   call?: string;
   update?: { entity: string };
+}
+
+/**
+ * A step run by a third-party integration. Deliberately NOT a `BuiltAction`: the
+ * action path has no notion of a vendor, so the two cannot be confused at a call
+ * site or routed through the same dispatcher.
+ */
+export interface BuiltIntegration {
+  inputs: Record<string, BuiltActionInput>;
+  outputs: Record<string, ValueType>;
+  batchable: boolean;
+  permission: RequiredPermission;
+  /** Which piece, and which of its actions. */
+  piece: { name: string; action: string };
 }
 
 export interface BuiltOperation {
@@ -123,11 +143,66 @@ export interface BuiltCatalog {
   /** Allowed values per entity + property, only for enum columns. */
   enums: Record<string, Record<string, readonly string[]>>;
   actions: Record<string, BuiltAction>;
+  integrations: Record<string, BuiltIntegration>;
   operations: Record<string, BuiltOperation>;
 }
 
 /** A hand-written action with neither of these has no way to run. */
 const BUILT_IN_ACTIONS = new Set(["notify", "webhook"]);
+
+/** Declared inputs → built inputs. Shared by actions and integration steps: they
+ * describe their inputs identically, and only differ in how the step is run. */
+function buildDeclaredInputs(
+  id: string,
+  declaration: ActionDeclarationLike,
+  registry: Record<string, RegistryEntry>,
+  schema: SwaggerSchema
+): Record<string, BuiltActionInput> {
+  const inputs: Record<string, BuiltActionInput> = {};
+  for (const [input, spec] of Object.entries(declaration.inputs)) {
+    inputs[input] = {
+      type: spec.type,
+      required: spec.required,
+      ...(spec.choices ? { choices: spec.choices } : {}),
+      ...(spec.defaultValue ? { defaultValue: spec.defaultValue } : {}),
+      ...(spec.template ? { template: true } : {}),
+      ...(spec.linkify ? { linkify: true } : {}),
+      ...(spec.pairs ? { pairs: true } : {}),
+      ...(spec.showWhen ? { showWhen: spec.showWhen } : {}),
+      ...(spec.options ? { options: spec.options } : {})
+    };
+    // An `<entity>.<verb>` id inherits its entity's enum columns; an integration
+    // id has no registry entry, so this simply does not fire for one.
+    const [entityPrefix] = id.split(".");
+    const table =
+      entityPrefix !== undefined ? registry[entityPrefix]?.table : undefined;
+    if (table !== undefined) {
+      const values = enumFor(schema, table, input);
+      if (values !== undefined && values.length > 0) {
+        inputs[input].choices = values;
+      }
+    }
+  }
+  return inputs;
+}
+
+/** The English label for a declaration and each of its inputs. Key shape is shared
+ * with actions so one lookup serves both kinds in the builder. */
+function labelDeclaration(
+  id: string,
+  declaration: ActionDeclarationLike,
+  labels: Record<string, string>,
+  help: Record<string, string>
+): void {
+  labels[id] = declaration.label;
+  for (const [input, spec] of Object.entries(declaration.inputs)) {
+    const key = `action.${id}.input.${input}`;
+    const label = spec.label.charAt(0).toUpperCase() + spec.label.slice(1);
+    assertLabelIsSafe(key, label);
+    labels[key] = label;
+    if (spec.help !== undefined) help[key] = spec.help;
+  }
+}
 
 /** Tenancy, extensibility and audit columns, hidden from every entity. */
 const DROPPED_COLUMNS = new Set([
@@ -255,7 +330,8 @@ export function validateCatalogInputs(
   moments: Record<string, MomentDeclarationLike>,
   actions: Record<string, ActionDeclarationLike>,
   operations: Record<string, OperationDeclarationLike>,
-  schema: SwaggerSchema
+  schema: SwaggerSchema,
+  integrations: Record<string, IntegrationDeclarationLike> = {}
 ): string[] {
   const problems: string[] = [];
   const byTable = indexByTable(registry);
@@ -364,15 +440,36 @@ export function validateCatalogInputs(
     }
   };
 
-  for (const [id, declaration] of Object.entries(actions)) {
+  // Actions and integration steps declare their inputs identically, so the same
+  // rules apply to both — only how each one is RUN differs.
+  const declarations: [string, string, ActionDeclarationLike][] = [
+    ...Object.entries(actions).map(
+      ([id, declaration]) =>
+        ["Action", id, declaration] as [string, string, ActionDeclarationLike]
+    ),
+    ...Object.entries(integrations).map(
+      ([id, declaration]) =>
+        ["Integration step", id, declaration] as [
+          string,
+          string,
+          ActionDeclarationLike
+        ]
+    )
+  ];
+
+  for (const [kind, id, declaration] of declarations) {
     if (declaration.label.trim().length === 0) {
-      problems.push(`Action "${id}" has no label.`);
+      problems.push(`${kind} "${id}" has no label.`);
     }
-    if (declaration.call === undefined && !BUILT_IN_ACTIONS.has(id)) {
+    if (
+      kind === "Action" &&
+      declaration.call === undefined &&
+      !BUILT_IN_ACTIONS.has(id)
+    ) {
       problems.push(`Action "${id}" has no implementation route.`);
     }
     for (const [input, spec] of Object.entries(declaration.inputs)) {
-      checkEntityType(`Action "${id}"`, `input "${input}"`, spec.type);
+      checkEntityType(`${kind} "${id}"`, `input "${input}"`, spec.type);
       if (
         spec.template === true &&
         !(spec.type.kind === "primitive" && spec.type.of === "string")
@@ -413,6 +510,18 @@ export function validateCatalogInputs(
           `${id}.${input} defaults to one value but holds a set of them.`
         );
       }
+      // A fetched list and a fixed one are two answers to the same question.
+      if (spec.options !== undefined && spec.choices !== undefined) {
+        problems.push(
+          `${id}.${input} both fetches its values and lists them; it can only do one.`
+        );
+      }
+      for (const dependency of spec.options?.dependsOn ?? []) {
+        if (declaration.inputs[dependency] !== undefined) continue;
+        problems.push(
+          `${id}.${input} fetches its values using "${dependency}", which is not an input of "${id}".`
+        );
+      }
       const gate = spec.showWhen;
       if (gate !== undefined) {
         const target = declaration.inputs[gate.input];
@@ -442,7 +551,7 @@ export function validateCatalogInputs(
       }
     }
     for (const [output, type] of Object.entries(declaration.outputs)) {
-      checkEntityType(`Action "${id}"`, `output "${output}"`, type);
+      checkEntityType(`${kind} "${id}"`, `output "${output}"`, type);
     }
   }
 
@@ -495,14 +604,16 @@ export function buildCatalog(
   moments: Record<string, MomentDeclarationLike>,
   handWrittenActions: Record<string, ActionDeclarationLike>,
   handWrittenOperations: Record<string, OperationDeclarationLike>,
-  schema: SwaggerSchema
+  schema: SwaggerSchema,
+  integrationSteps: Record<string, IntegrationDeclarationLike> = {}
 ): BuiltCatalog {
   const problems = validateCatalogInputs(
     registry,
     moments,
     handWrittenActions,
     handWrittenOperations,
-    schema
+    schema,
+    integrationSteps
   );
   if (problems.length > 0) throw new Error(problems.join("\n"));
 
@@ -513,6 +624,7 @@ export function buildCatalog(
   const entities: Record<string, Record<string, ValueType>> = {};
   const enums: Record<string, Record<string, readonly string[]>> = {};
   const actions: Record<string, BuiltAction> = {};
+  const integrations: Record<string, BuiltIntegration> = {};
   const operations: Record<string, BuiltOperation> = {};
 
   for (const [name, entry] of Object.entries(registry)) {
@@ -645,28 +757,7 @@ export function buildCatalog(
         `Action "${id}" is declared by hand and also generated from the entity registry.`
       );
     }
-    const inputs: Record<string, BuiltActionInput> = {};
-    for (const [input, spec] of Object.entries(declaration.inputs)) {
-      inputs[input] = {
-        type: spec.type,
-        required: spec.required,
-        ...(spec.choices ? { choices: spec.choices } : {}),
-        ...(spec.defaultValue ? { defaultValue: spec.defaultValue } : {}),
-        ...(spec.template ? { template: true } : {}),
-        ...(spec.linkify ? { linkify: true } : {}),
-        ...(spec.pairs ? { pairs: true } : {}),
-        ...(spec.showWhen ? { showWhen: spec.showWhen } : {})
-      };
-      const [entityPrefix] = id.split(".");
-      const table =
-        entityPrefix !== undefined ? registry[entityPrefix]?.table : undefined;
-      if (table !== undefined) {
-        const values = enumFor(schema, table, input);
-        if (values !== undefined && values.length > 0) {
-          inputs[input].choices = values;
-        }
-      }
-    }
+    const inputs = buildDeclaredInputs(id, declaration, registry, schema);
     actions[id] = {
       inputs,
       outputs: declaration.outputs,
@@ -677,14 +768,25 @@ export function buildCatalog(
         : { requireOneOf: declaration.requireOneOf }),
       ...(declaration.call === undefined ? {} : { call: declaration.call })
     };
-    labels[id] = declaration.label;
-    for (const [input, spec] of Object.entries(declaration.inputs)) {
-      const key = `action.${id}.input.${input}`;
-      const label = spec.label.charAt(0).toUpperCase() + spec.label.slice(1);
-      assertLabelIsSafe(key, label);
-      labels[key] = label;
-      if (spec.help !== undefined) help[key] = spec.help;
+    labelDeclaration(id, declaration, labels, help);
+  }
+
+  // Same input handling, a different map: an integration step never reaches the
+  // action dispatcher, and an action never carries a piece.
+  for (const [id, declaration] of Object.entries(integrationSteps)) {
+    if (actions[id] !== undefined) {
+      throw new Error(
+        `"${id}" is declared as both an action and an integration step.`
+      );
     }
+    integrations[id] = {
+      inputs: buildDeclaredInputs(id, declaration, registry, schema),
+      outputs: declaration.outputs,
+      batchable: declaration.batchable,
+      permission: declaration.permission,
+      piece: declaration.piece
+    };
+    labelDeclaration(id, declaration, labels, help);
   }
 
   for (const [id, declaration] of Object.entries(handWrittenOperations)) {
@@ -715,5 +817,14 @@ export function buildCatalog(
     }
   }
 
-  return { events, labels, help, entities, enums, actions, operations };
+  return {
+    events,
+    labels,
+    help,
+    entities,
+    enums,
+    actions,
+    integrations,
+    operations
+  };
 }

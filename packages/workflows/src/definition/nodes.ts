@@ -1,5 +1,9 @@
-import { type BatchPlan, batchPlan } from "./batch";
-import type { CatalogInput, WorkflowCatalog } from "./catalog";
+import { type BatchableStep, type BatchPlan, batchPlan } from "./batch";
+import {
+  type CatalogInput,
+  integrationStepId,
+  type WorkflowCatalog
+} from "./catalog";
 import type { WorkflowIssue } from "./issues";
 import {
   type ActionNode,
@@ -8,6 +12,7 @@ import {
   DEFAULT_OUTPUT,
   FAILURE_HANDLE,
   type FilterNode,
+  type IntegrationNode,
   SUCCESS_HANDLE,
   type WorkflowNode,
   type WorkflowNodeType
@@ -144,26 +149,41 @@ function computeBatchInput(
   return undefined;
 }
 
-/** The wiring decides whether an action repeats; nothing is stored. */
-function actionBatchPlan(node: ActionNode, ctx: NodeContext): BatchPlan {
-  const action = ctx.catalog.getAction(node.data.action);
-  if (action === undefined) return { kind: "none" };
-  return batchPlan(action, node.data.inputs, (name) => {
+/** The catalog entry a step node runs, or undefined when the id names nothing.
+ * The wiring decides whether it repeats; nothing is stored. */
+function stepDefinition(
+  node: ActionNode | IntegrationNode,
+  ctx: NodeContext
+): BatchableStep | undefined {
+  return node.type === "action"
+    ? ctx.catalog.getAction(node.data.action)
+    : ctx.catalog.getIntegration(
+        integrationStepId(node.data.piece, node.data.action)
+      );
+}
+
+function stepBatchPlan(
+  node: ActionNode | IntegrationNode,
+  ctx: NodeContext
+): BatchPlan {
+  const step = stepDefinition(node, ctx);
+  if (step === undefined) return { kind: "none" };
+  return batchPlan(step, node.data.inputs, (name) => {
     const supplied = node.data.inputs[name];
     return supplied === undefined ? undefined : ctx.typeOf(supplied, node.id);
   });
 }
 
-function actionLoopList(
-  node: ActionNode,
+function stepLoopList(
+  node: ActionNode | IntegrationNode,
   ctx: NodeContext
 ): LoopList | undefined {
   // With no catalog entry there is nothing to read the wiring against. `unconfigured`
-  // is suppressed, so an item ref reports the missing action rather than piling on.
-  if (ctx.catalog.getAction(node.data.action) === undefined) {
+  // is suppressed, so an item ref reports the missing step rather than piling on.
+  if (stepDefinition(node, ctx) === undefined) {
     return { failure: "unconfigured" };
   }
-  const plan = actionBatchPlan(node, ctx);
+  const plan = stepBatchPlan(node, ctx);
   if (plan.kind === "none") return undefined;
   return plan.kind === "repeats"
     ? { type: plan.type }
@@ -682,7 +702,7 @@ export const NODE_KINDS: {
     handles: () => [SUCCESS_HANDLE, FAILURE_HANDLE],
     values: (node) => inputValues(node.data.inputs),
     outputs: (node, ctx) => ctx.catalog.getAction(node.data.action)?.outputs,
-    loopList: actionLoopList,
+    loopList: stepLoopList,
     configured: (node, ctx) =>
       ctx.catalog.getAction(node.data.action) !== undefined,
     checkTypes: (node, ctx) => {
@@ -690,7 +710,7 @@ export const NODE_KINDS: {
       if (action === undefined) return [];
       // Ambiguity counts as batching here so two wired lists raise the one issue that
       // explains them, rather than that issue plus a rejection of each list.
-      const batching = actionBatchPlan(node, ctx).kind !== "none";
+      const batching = stepBatchPlan(node, ctx).kind !== "none";
       return checkInputs(node, node.data.inputs, action.inputs, batching, ctx);
     },
     checkConfig: (node, ctx) => {
@@ -707,7 +727,7 @@ export const NODE_KINDS: {
           }
         ];
       }
-      const plan = actionBatchPlan(node, ctx);
+      const plan = stepBatchPlan(node, ctx);
       if (plan.kind === "ambiguous") {
         return [
           incomplete(
@@ -727,6 +747,53 @@ export const NODE_KINDS: {
             node,
             group[0] ?? "inputs",
             `This step needs at least one of: ${group.join(", ")}.`
+          )
+        ];
+      }
+      return [];
+    }
+  },
+  integration: {
+    handles: () => [SUCCESS_HANDLE, FAILURE_HANDLE],
+    values: (node) => inputValues(node.data.inputs),
+    outputs: (node, ctx) =>
+      ctx.catalog.getIntegration(
+        integrationStepId(node.data.piece, node.data.action)
+      )?.outputs,
+    loopList: stepLoopList,
+    configured: (node, ctx) => stepDefinition(node, ctx) !== undefined,
+    checkTypes: (node, ctx) => {
+      const step = stepDefinition(node, ctx);
+      if (step === undefined) return [];
+      const batching = stepBatchPlan(node, ctx).kind !== "none";
+      return checkInputs(node, node.data.inputs, step.inputs, batching, ctx);
+    },
+    checkConfig: (node, ctx) => {
+      if (node.data.piece.length === 0) {
+        return [incomplete(node, "piece", "Choose an integration.")];
+      }
+      if (node.data.action.length === 0) {
+        return [incomplete(node, "action", "Choose what this step should do.")];
+      }
+      // Same code as a missing action: to the customer an integration step that no
+      // longer exists and an action that no longer exists are the same problem.
+      if (stepDefinition(node, ctx) === undefined) {
+        return [
+          {
+            code: "UNKNOWN_ACTION",
+            nodeId: node.id,
+            field: "action",
+            message: `"${node.data.action}" is not something we can do any more.`
+          }
+        ];
+      }
+      const plan = stepBatchPlan(node, ctx);
+      if (plan.kind === "ambiguous") {
+        return [
+          incomplete(
+            node,
+            plan.second,
+            `Lists are wired into both "${plan.first}" and "${plan.second}", so this step cannot tell which one to repeat over.`
           )
         ];
       }

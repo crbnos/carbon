@@ -6,15 +6,18 @@ export type {
   CatalogEntity,
   CatalogEvent,
   CatalogInput,
+  CatalogIntegration,
   CatalogOperation,
   EventMatch,
   FixtureCatalogOptions,
+  OptionsSource,
   PermissionAction,
   RequiredPermission,
   WorkflowCatalog
 } from "./definition/catalog";
 export {
   createFixtureCatalog,
+  INTEGRATION_CONNECTION_INPUT,
   isMultiSelect,
   walkPath
 } from "./definition/catalog";
@@ -66,6 +69,7 @@ export type {
   ConditionNode,
   ConditionPath,
   FilterNode,
+  IntegrationNode,
   LookupNode,
   Origin,
   TriggerNode,

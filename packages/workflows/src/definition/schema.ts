@@ -103,13 +103,32 @@ const actionNode = z.object({
   })
 });
 
+/**
+ * A step run by a third-party integration. Its own kind rather than an action, so
+ * the action path carries no notion of a vendor: `piece` names the integration and
+ * `action` the step within it, both drawn from `WORKFLOW_INTEGRATION_CATALOG`.
+ *
+ * Which account it acts as is an ordinary input (`connectionId`), not a field here
+ * — that is what lets the generic options provider fill it like any other list.
+ */
+const integrationNode = z.object({
+  ...nodeBase,
+  type: z.literal("integration"),
+  data: z.object({
+    piece: z.string(),
+    action: z.string(),
+    inputs: z.record(valueOrRefSchema).default({})
+  })
+});
+
 export const nodeSchema = z.discriminatedUnion("type", [
   triggerNode,
   conditionNode,
   computeNode,
   lookupNode,
   filterNode,
-  actionNode
+  actionNode,
+  integrationNode
 ]);
 export type WorkflowNode = z.infer<typeof nodeSchema>;
 export type WorkflowNodeType = WorkflowNode["type"];
@@ -120,6 +139,7 @@ export type ComputeNode = Extract<WorkflowNode, { type: "compute" }>;
 export type LookupNode = Extract<WorkflowNode, { type: "lookup" }>;
 export type FilterNode = Extract<WorkflowNode, { type: "filter" }>;
 export type ActionNode = Extract<WorkflowNode, { type: "action" }>;
+export type IntegrationNode = Extract<WorkflowNode, { type: "integration" }>;
 
 export const edgeSchema = z.object({
   id: z.string().min(1),

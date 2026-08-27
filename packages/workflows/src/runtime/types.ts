@@ -60,6 +60,12 @@ export interface WorkflowServices {
     actionId: string,
     inputs: Record<string, RuntimeValue>
   ): Promise<ActionOutcome>;
+  /** One step of a third-party integration. Takes the piece and its action off the
+   * catalog entry rather than an id, so nothing job-side parses an id's shape. */
+  runIntegration(
+    piece: { name: string; action: string },
+    inputs: Record<string, RuntimeValue>
+  ): Promise<ActionOutcome>;
   runOperation(
     operationId: string,
     inputs: Record<string, RuntimeValue>

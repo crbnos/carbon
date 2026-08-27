@@ -22,6 +22,24 @@ export interface CatalogEvent {
   match?: EventMatch;
 }
 
+/**
+ * Where an input's choices come from when they cannot be listed at build time.
+ *
+ * Deliberately generic: `provider` names a resolver the app registers, not an
+ * integration. A vendor's calendar list, a Carbon-owned lookup and anything added
+ * later are all the same shape here — the catalog says WHICH list, never HOW to
+ * fetch it, so the builder renders every one of them with one field.
+ */
+export interface OptionsSource {
+  /** Registered resolver id, e.g. `integration.connection`. */
+  provider: string;
+  /** Fixed arguments the resolver needs, decided when the catalog is built. */
+  params?: Record<string, string>;
+  /** Other inputs on the same node whose current values the resolver needs. The
+   * field stays unfetched until every one of them holds a value. */
+  dependsOn?: readonly string[];
+}
+
 export interface CatalogInput {
   type: ValueType;
   required: boolean;
@@ -42,6 +60,8 @@ export interface CatalogInput {
   /** The value is a set of name/value rows; the builder renders an editable list.
    * Only a `pairs` value is legal here, and a `pairs` value is legal nowhere else. */
   pairs?: boolean;
+  /** Choices are fetched while editing rather than listed in `choices`. */
+  options?: OptionsSource;
   /** Show — and only then require — this input while another input holds one of these
    * values. Evaluated on literals only: a variable-valued gate cannot be read at build
    * time, so it opens rather than guessing and hiding the user's work. */
@@ -75,6 +95,31 @@ export interface CatalogAction {
   requireOneOf?: string[][];
 }
 
+/** The input every integration step carries: which of the company's connections it acts
+ * as. Named here because the builder has to ask "is this app connected at all?" before it
+ * can offer any of its steps. */
+export const INTEGRATION_CONNECTION_INPUT = "connectionId";
+
+/** The catalog id for one integration step. The ONE place the shape is written:
+ * routing reads the catalog entry, never the id. */
+export function integrationStepId(piece: string, action: string): string {
+  return `integration.${piece}.${action}`;
+}
+
+/**
+ * One step a third-party integration offers. Separate from `CatalogAction` on
+ * purpose: an action is something Carbon does to its own data, and nothing on the
+ * action path should have to ask whether it is really a vendor call.
+ */
+export interface CatalogIntegration {
+  id: string;
+  inputs: Record<string, CatalogInput>;
+  outputs: Record<string, ValueType>;
+  batchable: boolean;
+  permission: RequiredPermission;
+  piece: { name: string; action: string };
+}
+
 export interface CatalogOperation {
   id: string;
   entity: string;
@@ -99,6 +144,7 @@ export interface CatalogEntity {
 export interface WorkflowCatalog {
   getEvent(id: string): CatalogEvent | undefined;
   getAction(id: string): CatalogAction | undefined;
+  getIntegration(id: string): CatalogIntegration | undefined;
   getOperation(id: string): CatalogOperation | undefined;
   getEntity(name: string): CatalogEntity | undefined;
   /** Allowed values for an entity's column, or undefined when it is not an enum. */
@@ -301,6 +347,9 @@ export function createFixtureCatalog(
   return {
     getEvent: (id) => events.get(id),
     getAction: (id) => actions.get(id),
+    // The fixtures carry no integration steps: they exercise the definition model,
+    // and a vendor's form adds nothing to that.
+    getIntegration: () => undefined,
     getOperation: (id) => operations.get(id),
     getEntity: (name) => entities.get(name),
     getEnum: options.omitEnums

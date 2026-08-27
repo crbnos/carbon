@@ -20,6 +20,7 @@ export function createFixtureServices(
 ): WorkflowServices {
   return {
     runAction: async () => NOT_STUBBED,
+    runIntegration: async () => NOT_STUBBED,
     runOperation: async () => NOT_STUBBED,
     search: async () => NOT_STUBBED,
     ...overrides

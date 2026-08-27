@@ -1,7 +1,13 @@
-import type { CatalogAction } from "./catalog";
+import type { CatalogInput } from "./catalog";
 import type { ValueOrRef, ValueType } from "./types";
 
 type ListType = Extract<ValueType, { kind: "list" }>;
+
+/** All batching needs of a step — an action or an integration step alike. */
+export type BatchableStep = {
+  inputs: Record<string, CatalogInput>;
+  batchable: boolean;
+};
 
 /**
  * Whether an action step repeats, and over what. Derived from the wiring rather than
@@ -21,7 +27,7 @@ export type BatchPlan =
  * resolving it would recurse into the loop it helps define.
  */
 export function batchCandidates(
-  action: CatalogAction,
+  action: BatchableStep,
   inputs: Record<string, ValueOrRef>
 ): string[] {
   if (!action.batchable) return [];
@@ -37,7 +43,7 @@ export function batchCandidates(
 
 /** The same rule the engine follows, resolved through whatever knows an input's type. */
 export function batchPlan(
-  action: CatalogAction,
+  action: BatchableStep,
   inputs: Record<string, ValueOrRef>,
   typeOfInput: (name: string) => ValueType | undefined
 ): BatchPlan {

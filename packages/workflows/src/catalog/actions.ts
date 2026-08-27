@@ -1,5 +1,5 @@
 import type { TermId } from "@carbon/glossary";
-import type { RequiredPermission } from "../definition/catalog";
+import type { OptionsSource, RequiredPermission } from "../definition/catalog";
 import { t, type ValueType } from "../definition/types";
 
 export interface ActionInputLike {
@@ -21,6 +21,8 @@ export interface ActionInputLike {
   showWhen?: { input: string; equals: readonly string[] };
   /** Glossary term whose definition explains this field. Rendered as the ⓘ hover. */
   help?: TermId;
+  /** Choices are fetched while editing, from a registered options provider. */
+  options?: OptionsSource;
 }
 
 export interface ActionDeclarationLike {
@@ -34,6 +36,16 @@ export interface ActionDeclarationLike {
   call?: string;
   /** Set by the generator for the expanded update family; never hand-written. */
   update?: { entity: string };
+}
+
+/**
+ * One step of a third-party integration, declared by the generator from the piece
+ * allowlist and never by hand. Inputs work exactly as an action's — only how the
+ * step RUNS differs, which is why `piece` is required here and absent above.
+ */
+export interface IntegrationDeclarationLike
+  extends Omit<ActionDeclarationLike, "call" | "update"> {
+  piece: { name: string; action: string };
 }
 
 /** Identity helper, so each entry's shape is checked where it is written. */
