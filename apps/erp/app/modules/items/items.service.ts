@@ -3534,7 +3534,7 @@ export async function upsertPart(
     return newPart;
   }
 
-  const itemUpdate = {
+  const itemUpdate: Record<string, unknown> = {
     id: part.id,
     name: part.name,
     description: part.description,
@@ -3544,6 +3544,22 @@ export async function upsertPart(
     unitOfMeasureCode: part.unitOfMeasureCode,
     active: true
   };
+
+  // An item pushed from Onshape (externalIntegrationMapping row) has its
+  // identity fields owned by the CAD side: a Properties save must not
+  // overwrite them. The panel's own push updates them directly; Detach
+  // removes the mapping and releases the fields.
+  const externalSource = await client
+    .from("externalIntegrationMapping")
+    .select("id")
+    .eq("entityType", "item")
+    .eq("entityId", part.id)
+    .eq("integration", "onshape")
+    .maybeSingle();
+  if (externalSource.data) {
+    itemUpdate.name = undefined;
+    itemUpdate.description = undefined;
+  }
 
   const partUpdate = {
     customFields: part.customFields
