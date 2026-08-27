@@ -105,6 +105,9 @@ export const path = {
         ),
       inspectionDocuments: (itemId: string) =>
         generatePath(`${api}/production/inspection-documents/${itemId}`),
+      integrationConnect: (piece: string) =>
+        generatePath(`${api}/integrations/connections/${piece}/connect`),
+      integrationConnectionCallback: `${api}/integrations/connections/callback`,
       issueTypes: `${api}/quality/issue-types`,
       item: (type: string) => generatePath(`${api}/item/${type}`),
       itemConfigurable: `${api}/items/configurable`,
@@ -306,7 +309,8 @@ export const path = {
       webhookTables: `${api}/webhook/tables`,
       workCenters: `${api}/resources/work-centers`,
       workCentersByLocation: (id: string) =>
-        generatePath(`${api}/resources/work-centers?location=${id}`)
+        generatePath(`${api}/resources/work-centers?location=${id}`),
+      workflowOptions: `${api}/workflows/options`
     },
     apiDocs: "https://docs.carbon.ms/api-reference",
     apiKey: (id: string) => generatePath(`${x}/settings/api-keys/${id}`),
@@ -1186,6 +1190,7 @@ export const path = {
     inspections: `${x}/quality/inspections`,
     integration: (id: string) =>
       generatePath(`${x}/settings/integrations/${id}`),
+    integrationConnections: `${x}/settings/integrations/connections`,
     integrationDeactivate: (id: string) =>
       generatePath(`${x}/settings/integrations/deactivate/${id}`),
     integrations: `${x}/settings/integrations`,
