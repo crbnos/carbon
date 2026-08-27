@@ -4,6 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import { ONSHAPE_CLIENT_ID, ONSHAPE_CLIENT_SECRET } from "@carbon/env";
+import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import axios from "axios";
@@ -21,6 +22,24 @@ interface OnshapeClientConfig {
   accessToken: string;
 }
 
+/**
+ * A row from `GET /parts/d/{did}/{wvm}/{wvmId}/e/{eid}`. The API names the
+ * stable per-studio identifier `partId`; `microversionId` moves whenever the
+ * part's definition changes, which makes it the cheap "did anything change
+ * since the last push" check.
+ */
+export interface OnshapeElementPart {
+  partId: string;
+  name: string;
+  partNumber: string | null;
+  revision: string | null;
+  description?: string | null;
+  state?: string;
+  microversionId?: string;
+  isHidden?: boolean;
+  [key: string]: unknown;
+}
+
 export interface OnshapePart {
   id: string;
   name: string;
@@ -29,6 +48,8 @@ export interface OnshapePart {
   description: string;
   metadata: Record<string, string>;
 }
+
+const DEV_CACHE_TTL_SECONDS = 10 * 60;
 
 export interface OnshapeCompany {
   id: string;
@@ -136,15 +157,59 @@ export class OnshapeClient {
     path: string,
     body?: Record<string, unknown>
   ): Promise<T> {
+    // Every Onshape call counts against an annual per-account quota (private
+    // apps debit the app owner). In dev, ONSHAPE_DEV_CACHE=1 serves repeated
+    // GETs from Redis so panel reloads and test loops cost zero live calls.
+    const cacheKey =
+      process.env.ONSHAPE_DEV_CACHE === "1" && method === "GET"
+        ? `onshape-dev-cache:${path}`
+        : null;
+
+    if (cacheKey) {
+      try {
+        const cached = await redis.get(cacheKey);
+        if (cached) return JSON.parse(cached) as T;
+      } catch {
+        // Cache is best-effort; fall through to the live call.
+      }
+    }
+
     try {
       const response = await this.axiosInstance.request<T>({
         method,
         url: path,
         data: body
       });
+      await this.countLiveCall(path);
+      if (cacheKey) {
+        try {
+          await redis.set(
+            cacheKey,
+            JSON.stringify(response.data),
+            "EX",
+            DEV_CACHE_TTL_SECONDS
+          );
+        } catch {
+          // best-effort
+        }
+      }
       return response.data;
     } catch (error) {
+      await this.countLiveCall(path);
       throw this.toApiError(error);
+    }
+  }
+
+  /**
+   * Tally of live calls per year, so quota use is observable without the dev
+   * portal: `GET onshape:api-calls:<year>` in Redis. Best-effort only.
+   */
+  private async countLiveCall(path: string) {
+    try {
+      const year = new Date().getUTCFullYear();
+      await redis.incr(`onshape:api-calls:${year}`);
+    } catch {
+      // Never let accounting break a real request.
     }
   }
 
@@ -353,6 +418,17 @@ export class OnshapeClient {
     return this.request<OnshapePart[]>(
       "GET",
       `/api/v10/parts/d/${documentId}/v/${versionId}/e/${elementId}`
+    );
+  }
+
+  /** Parts of one element at a workspace, version or microversion. One call. */
+  async getPartsInElement(
+    document: OnshapeDocument,
+    elementId: string
+  ): Promise<OnshapeElementPart[]> {
+    return this.request<OnshapeElementPart[]>(
+      "GET",
+      `/api/v10/parts/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}?includePropertyDefaults=true`
     );
   }
 

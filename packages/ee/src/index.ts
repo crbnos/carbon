@@ -50,6 +50,7 @@ export type IntegrationID = (typeof integrations)[number]["id"];
 export { Jira } from "./jira/config";
 export { openOAuthPopup } from "./oauth-popup";
 export { Logo as OnshapeLogo, Onshape } from "./onshape/config";
+export type { OnshapeDocument } from "./onshape/lib";
 export type { OnshapePanelContext } from "./onshape/panel/messages";
 export {
   PANEL_SESSION_MESSAGE,
@@ -57,6 +58,12 @@ export {
 } from "./onshape/panel/messages";
 export type { OnshapePanelMe, OnshapePanelPaths } from "./onshape/panel/Panel";
 export { OnshapePanel } from "./onshape/panel/Panel";
+export type {
+  PanelItemRow,
+  PanelMappingRow,
+  PanelPartStatus
+} from "./onshape/panel/status";
+export { buildPartStatuses, externalIdForPart } from "./onshape/panel/status";
 // TODO: export as @carbon/ee/paperless
 export { PaperlessPartsClient } from "./paperless-parts/lib/client";
 export { QuickBooks } from "./quickbooks/config";
