@@ -23,6 +23,36 @@ import {
 } from "./session-storage";
 import type { PanelPartStatus } from "./status";
 
+export type PanelAssemblyLine = {
+  index: string;
+  level: number;
+  partNumber: string | null;
+  name: string | null;
+  quantity: number;
+  purchased: boolean;
+  state: "matched" | "missing";
+  itemId: string | null;
+};
+
+export type PanelAssemblyStatus = {
+  root: {
+    partNumber: string | null;
+    name: string | null;
+    state: "linked" | "matched" | "missing";
+    itemId: string | null;
+    lastSyncedAt: string | null;
+  };
+  lines: PanelAssemblyLine[];
+};
+
+type PanelStatusState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "ready"; rows: PanelPartStatus[] }
+  | { status: "ready-assembly"; assembly: PanelAssemblyStatus }
+  | { status: "ready-other" }
+  | { status: "error"; message: string };
+
 export type OnshapePanelPaths = {
   /** Popup route that mints a panel session for the signed-in user. */
   auth: string;
@@ -34,6 +64,8 @@ export type OnshapePanelPaths = {
   status: string;
   /** POST: push parts of the current element into Carbon. */
   pushPart: string;
+  /** POST: push the current assembly (items + BOM) into Carbon. */
+  pushAssembly: string;
 };
 
 export type OnshapePanelMe = {
@@ -71,12 +103,7 @@ export function OnshapePanel({
     null
   );
   const [messageCount, setMessageCount] = useState(0);
-  const [parts, setParts] = useState<
-    | { status: "idle" }
-    | { status: "loading" }
-    | { status: "ready"; rows: PanelPartStatus[] }
-    | { status: "error"; message: string }
-  >({ status: "idle" });
+  const [parts, setParts] = useState<PanelStatusState>({ status: "idle" });
 
   const canLoadParts =
     !!context.documentId &&
@@ -257,6 +284,64 @@ export function OnshapePanel({
     [canPush, context, paths.pushPart, loadParts]
   );
 
+  const [assemblyOutcome, setAssemblyOutcome] = useState<string | null>(null);
+  const pushAssembly = useCallback(
+    async (token: string) => {
+      if (!canPush) return;
+      setPushing(new Set(["__assembly__"]));
+      setAssemblyOutcome(null);
+      try {
+        const response = await panelFetch(token, paths.pushAssembly, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            documentId: context.documentId,
+            wv: context.wv,
+            wvId: context.wvId,
+            elementId: context.elementId
+          })
+        });
+        const body = (await response.json()) as
+          | {
+              summary: {
+                itemsCreated: number;
+                itemsReused: number;
+                linesWritten: number;
+                methodsTouched: number;
+                skipped: string[];
+                errors: string[];
+              };
+            }
+          | { error: string };
+        if (!response.ok || "error" in body) {
+          setAssemblyOutcome(
+            "error" in body ? body.error : `Carbon answered ${response.status}`
+          );
+          return;
+        }
+        const s = body.summary;
+        const problems = [...s.errors, ...s.skipped];
+        setAssemblyOutcome(
+          `${s.itemsCreated} items created, ${s.itemsReused} reused, ` +
+            `${s.linesWritten} BOM lines across ${s.methodsTouched} methods — model syncing` +
+            (problems.length > 0 ? ` · ${problems.join(" · ")}` : "")
+        );
+        await loadParts(token);
+      } catch (error) {
+        if (error instanceof PanelUnauthorizedError) {
+          setSession({ status: "signed-out" });
+          return;
+        }
+        setAssemblyOutcome(
+          error instanceof Error ? error.message : String(error)
+        );
+      } finally {
+        setPushing(null);
+      }
+    },
+    [canPush, context, paths.pushAssembly, loadParts]
+  );
+
   const signIn = () => {
     const width = 480;
     const height = 680;
@@ -372,7 +457,30 @@ export function OnshapePanel({
         </VStack>
       ) : null}
 
-      {session.status === "signed-in" && canLoadParts ? (
+      {session.status === "signed-in" &&
+      canLoadParts &&
+      (parts.status === "ready-assembly" || parts.status === "ready-other") ? (
+        parts.status === "ready-assembly" ? (
+          <AssemblySection
+            assembly={parts.assembly}
+            canPush={canPush}
+            busy={!!pushing}
+            outcome={assemblyOutcome}
+            onPush={() => pushAssembly(session.token)}
+            onRefresh={() => loadParts(session.token)}
+          />
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            This element type has nothing to push. Open a Part Studio or an
+            assembly.
+          </p>
+        )
+      ) : null}
+
+      {session.status === "signed-in" &&
+      canLoadParts &&
+      parts.status !== "ready-assembly" &&
+      parts.status !== "ready-other" ? (
         <PartsSection
           parts={parts}
           canPush={canPush}
@@ -397,6 +505,105 @@ export function OnshapePanel({
   );
 }
 
+function AssemblySection({
+  assembly,
+  canPush,
+  busy,
+  outcome,
+  onPush,
+  onRefresh
+}: {
+  assembly: PanelAssemblyStatus;
+  canPush: boolean;
+  busy: boolean;
+  outcome: string | null;
+  onPush: () => void;
+  onRefresh: () => void;
+}) {
+  return (
+    <VStack spacing={2} className="w-full">
+      <HStack className="w-full justify-between">
+        <HStack spacing={2}>
+          <span className="text-sm font-medium">
+            {assembly.root.partNumber ?? assembly.root.name ?? "Assembly"}
+          </span>
+          <PartStateBadge
+            state={
+              assembly.root.state === "linked" ? "linked" : assembly.root.state
+            }
+          />
+        </HStack>
+        <HStack spacing={1}>
+          {canPush ? (
+            <Button
+              size="sm"
+              onClick={onPush}
+              isDisabled={busy}
+              isLoading={busy}
+            >
+              {assembly.root.state === "linked"
+                ? "Re-push assembly"
+                : "Push assembly"}
+            </Button>
+          ) : null}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onRefresh}
+            isDisabled={busy}
+          >
+            Refresh
+          </Button>
+        </HStack>
+      </HStack>
+
+      {!assembly.root.partNumber ? (
+        <Alert variant="destructive">
+          <AlertTitle>The assembly has no part number</AlertTitle>
+          <AlertDescription>
+            Set a part number on the assembly in Onshape, then push.
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
+      {outcome ? (
+        <p className="text-xs text-muted-foreground w-full">{outcome}</p>
+      ) : null}
+
+      {assembly.lines.length === 0 ? (
+        <p className="text-sm text-muted-foreground">The BOM is empty.</p>
+      ) : (
+        <ul className="w-full divide-y divide-border rounded-md border border-border">
+          {assembly.lines.map((line) => (
+            <li
+              key={line.index}
+              className="flex items-center justify-between gap-2 px-3 py-1.5"
+            >
+              <div
+                className="min-w-0"
+                style={{ paddingLeft: `${(line.level - 1) * 16}px` }}
+              >
+                <p className="text-sm truncate">
+                  {line.name ?? line.partNumber ?? line.index}
+                  <span className="text-muted-foreground">
+                    {" "}
+                    × {line.quantity}
+                  </span>
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {line.partNumber ?? "No part number"}
+                  {line.purchased ? " · purchased" : ""}
+                </p>
+              </div>
+              <PartStateBadge state={line.state} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </VStack>
+  );
+}
+
 function PartsSection({
   parts,
   canPush,
@@ -416,10 +623,11 @@ function PartsSection({
   onRefresh: () => void;
   onPush: (partIds: string[]) => void;
 }) {
-  const pushableIds =
-    parts.status === "ready"
-      ? parts.rows.filter((r) => r.partNumber).map((r) => r.partId)
-      : [];
+  // Defensive against a half-migrated state shape (stale HMR closures can
+  // deliver ready without rows): never crash the panel over it.
+  const rows =
+    parts.status === "ready" && Array.isArray(parts.rows) ? parts.rows : [];
+  const pushableIds = rows.filter((r) => r.partNumber).map((r) => r.partId);
   return (
     <VStack spacing={2} className="w-full">
       <HStack className="w-full justify-between">
@@ -457,15 +665,15 @@ function PartsSection({
         </Alert>
       ) : null}
 
-      {parts.status === "ready" && parts.rows.length === 0 ? (
+      {parts.status === "ready" && rows.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           This element has no parts.
         </p>
       ) : null}
 
-      {parts.status === "ready" && parts.rows.length > 0 ? (
+      {parts.status === "ready" && rows.length > 0 ? (
         <ul className="w-full divide-y divide-border rounded-md border border-border">
-          {parts.rows.map((part) => (
+          {rows.map((part) => (
             <li
               key={part.partId}
               className="flex items-center justify-between gap-2 px-3 py-2"
