@@ -1,5 +1,6 @@
 import {
   assertIsPost,
+  CONTROLLED_ENVIRONMENT,
   error,
   isAuthProviderEnabled,
   success
@@ -49,6 +50,8 @@ import {
   OtpInput,
   useTotpEnrollment
 } from "~/components/TotpEnrollment";
+import { usePlanGate } from "~/hooks/usePlanGate";
+import { TwoFactorUpgradeDialog } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -174,6 +177,13 @@ export default function AccountSecurity() {
       revalidate();
     }
   });
+
+  // Enrolling a new authenticator app is a Business-tier feature. Removing an
+  // existing factor is always allowed, and controlled environments — where MFA
+  // is mandatory at the deployment level — must never block enrollment.
+  const { isGated } = usePlanGate({ feature: "TWO_FACTOR" });
+  const mfaGated = isGated && !CONTROLLED_ENVIRONMENT;
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   const [removeFactor, setRemoveFactor] = useState<TotpFactor | null>(null);
   const [removeCode, setRemoveCode] = useState("");
@@ -385,7 +395,13 @@ export default function AccountSecurity() {
             <Button
               type="button"
               variant="secondary"
-              onClick={onStartMfaEnrollment}
+              onClick={() => {
+                if (mfaGated) {
+                  setShowUpgrade(true);
+                  return;
+                }
+                onStartMfaEnrollment();
+              }}
               isDisabled={mfaStarting}
               isLoading={mfaStarting}
               leftIcon={<LuShieldCheck className="size-4" />}
@@ -439,6 +455,11 @@ export default function AccountSecurity() {
           )}
         </CardContent>
       </Card>
+
+      <TwoFactorUpgradeDialog
+        open={showUpgrade}
+        onOpenChange={setShowUpgrade}
+      />
 
       <Modal
         open={!!mfaEnrollment}

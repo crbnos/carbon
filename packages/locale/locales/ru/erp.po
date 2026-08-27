@@ -1073,6 +1073,9 @@ msgstr "Добавить корректировку"
 msgid "Add Affected Item"
 msgstr "Добавить затронутый элемент"
 
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "Добавьте дополнительный уровень безопасности, требуя код из приложения аутентификатора при входе."
+
 msgid "Add any notes about your decision..."
 msgstr "Добавьте любые заметки о вашем решении..."
 
@@ -12451,9 +12454,6 @@ msgstr "Требуется одобрение для документов кач
 
 msgid "Require two-factor authentication"
 msgstr "Требовать двухфакторную аутентификацию"
-
-msgid "Require two-factor authentication for everyone in your company before they can sign in."
-msgstr "Требуйте двухфакторную аутентификацию для всех в вашей компании перед входом."
 
 msgid "Required"
 msgstr "Обязательно"

@@ -1073,6 +1073,9 @@ msgstr "調整を追加"
 msgid "Add Affected Item"
 msgstr "影響を受けるアイテムを追加"
 
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "認証器アプリからのコードを要求することで、サインイン時のセキュリティレイヤーを追加します。"
+
 msgid "Add any notes about your decision..."
 msgstr "あなたの決定についてのメモを追加してください..."
 
@@ -12451,9 +12454,6 @@ msgstr "ワークフロー内の品質文書の承認が必要です"
 
 msgid "Require two-factor authentication"
 msgstr "2要素認証が必須"
-
-msgid "Require two-factor authentication for everyone in your company before they can sign in."
-msgstr "会社内のすべてのユーザーがサインインする前に2要素認証を要求します。"
 
 msgid "Required"
 msgstr "必須"

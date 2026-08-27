@@ -1073,6 +1073,9 @@ msgstr "조정 추가"
 msgid "Add Affected Item"
 msgstr "영향받는 항목 추가"
 
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "로그인할 때 인증 앱의 코드를 입력하도록 요구하여 추가 보안 계층을 추가합니다."
+
 msgid "Add any notes about your decision..."
 msgstr "결정에 대한 메모를 추가하세요..."
 
@@ -12451,9 +12454,6 @@ msgstr "워크플로 내 품질 문서에 승인 필요"
 
 msgid "Require two-factor authentication"
 msgstr "2단계 인증 필수"
-
-msgid "Require two-factor authentication for everyone in your company before they can sign in."
-msgstr "회사의 모든 사람이 로그인하기 전에 2단계 인증을 요구합니다."
 
 msgid "Required"
 msgstr "필수"

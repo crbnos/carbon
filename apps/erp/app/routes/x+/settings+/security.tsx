@@ -21,13 +21,14 @@ import {
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, Link, useFetcher } from "react-router";
 import { usePermissions } from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { useSettings } from "~/hooks/useSettings";
 import {
-  SecurityUpgradeOverlay,
+  TwoFactorUpgradeDialog,
   updateRequireMfaSetting
 } from "~/modules/settings";
 import { sendMfaRequiredEmails } from "~/services/mfa-email.server";
@@ -63,7 +64,7 @@ export async function action({ request }: ActionFunctionArgs) {
       request,
       client,
       companyId,
-      feature: "TWO_FACTOR_ENFORCEMENT",
+      feature: "TWO_FACTOR",
       redirectTo: path.to.security,
       message: "Upgrade to Business to require two-factor authentication"
     });
@@ -125,13 +126,8 @@ export default function Security() {
   const mfaFetcher = useFetcher<{}>();
   const settings = useSettings();
   const requireMfa = settings.requireMfa === true;
-  const { isGated } = usePlanGate({ feature: "TWO_FACTOR_ENFORCEMENT" });
-
-  // Controlled environments enforce MFA at the deployment level — there is
-  // nothing to upsell, so the informational page always renders.
-  if (isGated && !CONTROLLED_ENVIRONMENT) {
-    return <SecurityUpgradeOverlay />;
-  }
+  const { isGated } = usePlanGate({ feature: "TWO_FACTOR" });
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">
@@ -173,12 +169,19 @@ export default function Security() {
               </div>
               <Switch
                 checked={CONTROLLED_ENVIRONMENT || requireMfa}
-                onCheckedChange={(checked) =>
+                onCheckedChange={(checked) => {
+                  // Enabling is a Business-tier feature; turning it off is
+                  // always allowed. Controlled environments never reach here
+                  // (the switch is disabled and MFA is mandatory anyway).
+                  if (checked && isGated && !CONTROLLED_ENVIRONMENT) {
+                    setShowUpgrade(true);
+                    return;
+                  }
                   mfaFetcher.submit(
                     { enabled: String(checked) },
                     { method: "post" }
-                  )
-                }
+                  );
+                }}
                 disabled={
                   CONTROLLED_ENVIRONMENT ||
                   mfaFetcher.state !== "idle" ||
@@ -189,6 +192,10 @@ export default function Security() {
             </HStack>
           </CardHeader>
         </Card>
+        <TwoFactorUpgradeDialog
+          open={showUpgrade}
+          onOpenChange={setShowUpgrade}
+        />
       </VStack>
     </ScrollArea>
   );

@@ -1073,6 +1073,9 @@ msgstr "Adicionar ajuste"
 msgid "Add Affected Item"
 msgstr "Adicionar Item Afetado"
 
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "Adicione uma camada extra de segurança exigindo um código de um aplicativo autenticador ao fazer login."
+
 msgid "Add any notes about your decision..."
 msgstr "Adicione qualquer nota sobre sua decisão..."
 
@@ -12451,9 +12454,6 @@ msgstr "Exigir aprovação para documentos de qualidade no seu fluxo de trabalho
 
 msgid "Require two-factor authentication"
 msgstr "Requerer autenticação de dois fatores"
-
-msgid "Require two-factor authentication for everyone in your company before they can sign in."
-msgstr "Exigir autenticação de dois fatores para todos na sua empresa antes de se conectarem."
 
 msgid "Required"
 msgstr "Obrigatório"

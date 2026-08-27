@@ -1073,6 +1073,9 @@ msgstr "添加调整"
 msgid "Add Affected Item"
 msgstr "添加受影响项目"
 
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "通过在登录时要求来自身份验证应用的代码来增加额外的安全层。"
+
 msgid "Add any notes about your decision..."
 msgstr "添加关于您的决定的任何备注..."
 
@@ -12451,9 +12454,6 @@ msgstr "在您的工作流程中需要质量文件的批准"
 
 msgid "Require two-factor authentication"
 msgstr "需要双因素认证"
-
-msgid "Require two-factor authentication for everyone in your company before they can sign in."
-msgstr "要求公司中的每个人在登录前进行双因素身份验证。"
 
 msgid "Required"
 msgstr "必需"

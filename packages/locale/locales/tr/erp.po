@@ -1073,6 +1073,9 @@ msgstr "Ayarlama ekle"
 msgid "Add Affected Item"
 msgstr "Etkilenen Öğe Ekle"
 
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "Oturum açarken bir kimlik doğrulayıcı uygulamadan kod isteyerek güvenliğe ekstra bir katman ekle."
+
 msgid "Add any notes about your decision..."
 msgstr "Kararınızla ilgili herhangi bir not ekleyin..."
 
@@ -12451,9 +12454,6 @@ msgstr "İş akışınızdaki kalite belgeleri için onay gerektirir"
 
 msgid "Require two-factor authentication"
 msgstr "İki faktörlü kimlik doğrulamayı gerektir"
-
-msgid "Require two-factor authentication for everyone in your company before they can sign in."
-msgstr "Şirketinizdeki herkesin oturum açmadan önce iki faktörlü kimlik doğrulaması gerekli kılın."
 
 msgid "Required"
 msgstr "Gerekli"

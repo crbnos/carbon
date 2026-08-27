@@ -1073,6 +1073,9 @@ msgstr "समायोजन जोड़ें"
 msgid "Add Affected Item"
 msgstr "प्रभावित आइटम जोड़ें"
 
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "साइन इन करते समय एक प्रमाणक ऐप से कोड मांगकर सुरक्षा की एक अतिरिक्त परत जोड़ें।"
+
 msgid "Add any notes about your decision..."
 msgstr "अपने निर्णय के बारे में कोई भी नोट्स जोड़ें..."
 
@@ -12451,9 +12454,6 @@ msgstr "आपके वर्कफ़्लो में गुणवत्त
 
 msgid "Require two-factor authentication"
 msgstr "दो-कारक प्रमाणीकरण की आवश्यकता"
-
-msgid "Require two-factor authentication for everyone in your company before they can sign in."
-msgstr "आपकी कंपनी में सभी के लिए साइन इन करने से पहले दो-कारक प्रमाणीकरण की आवश्यकता है।"
 
 msgid "Required"
 msgstr "आवश्यक"

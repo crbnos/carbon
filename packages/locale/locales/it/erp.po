@@ -1073,6 +1073,9 @@ msgstr "Aggiungi rettifica"
 msgid "Add Affected Item"
 msgstr "Aggiungi elemento interessato"
 
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "Aggiungi un ulteriore livello di sicurezza richiedendo un codice da un'app di autenticazione durante l'accesso."
+
 msgid "Add any notes about your decision..."
 msgstr "Aggiungi eventuali note sulla tua decisione..."
 
@@ -12451,9 +12454,6 @@ msgstr "Richiedi approvazione per i documenti di qualità nel tuo flusso di lavo
 
 msgid "Require two-factor authentication"
 msgstr "Richiedi autenticazione a due fattori"
-
-msgid "Require two-factor authentication for everyone in your company before they can sign in."
-msgstr "Richiedi l'autenticazione a due fattori per tutti nella tua azienda prima che possano accedere."
 
 msgid "Required"
 msgstr "Obbligatorio"
