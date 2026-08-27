@@ -76990,6 +76990,7 @@ export type Database = {
           estimatedQuantity: number
           id: string
           itemReadableId: string
+          itemScrapPercentage: number
           itemTrackingType: Database["public"]["Enums"]["itemTrackingType"]
           jobMakeMethodId: string
           jobMaterialItemId: string
@@ -77007,6 +77008,7 @@ export type Database = {
           quantityPerParent: number
           storageUnitId: string
           storageUnitName: string
+          substitutedFromItemId: string
           thumbnailPath: string
           type: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode: string

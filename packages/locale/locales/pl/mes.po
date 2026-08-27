@@ -176,6 +176,9 @@ msgstr "Zablokowane przez {0}"
 msgid "Blocking"
 msgstr "Blokujące"
 
+msgid "Board view"
+msgstr "Widok tablicy"
+
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "Ale nie martw się. Możesz użyć funkcji resetowania hasła, aby poprosić o nowy magiczny link."
 
@@ -648,6 +651,9 @@ msgstr "Zbudujmy coś"
 msgid "lines"
 msgstr "linie"
 
+msgid "List view"
+msgstr "Widok listy"
+
 msgid "Loading item details..."
 msgstr "Ładowanie szczegółów pozycji..."
 
@@ -876,6 +882,9 @@ msgstr "Brak wpisów czasu pracy w tym tygodniu"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Brak zapasu w magazynie dla tego artykułu. Możesz go mimo tego pobrać — dostępna ilość będzie ujemna do czasu uzgodnienia stanu."
+
+msgid "No Work Center"
+msgstr "Brak stanowiska roboczego"
 
 msgid "No work centers are blocked"
 msgstr "Żadne gniazda produkcyjne nie są zablokowane"

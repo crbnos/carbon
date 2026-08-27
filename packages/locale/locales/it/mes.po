@@ -176,6 +176,9 @@ msgstr "Bloccato da {0}"
 msgid "Blocking"
 msgstr "Bloccante"
 
+msgid "Board view"
+msgstr "Vista bacheca"
+
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "Ma non preoccuparti. Puoi utilizzare il flusso password dimenticata per richiedere un nuovo magic link."
 
@@ -648,6 +651,9 @@ msgstr "Costruiamo qualcosa"
 msgid "lines"
 msgstr "righe"
 
+msgid "List view"
+msgstr "Vista elenco"
+
 msgid "Loading item details..."
 msgstr "Caricamento dettagli articolo..."
 
@@ -876,6 +882,9 @@ msgstr "Nessuna registrazione oraria per questa settimana"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Nessun stock di magazzino è registrato per questo articolo. Puoi comunque prelevarlo — la giacenza disponibile diventerà negativa fino al riconciliamento del conteggio."
+
+msgid "No Work Center"
+msgstr "Nessun centro di lavoro"
 
 msgid "No work centers are blocked"
 msgstr "Nessun centro di lavoro bloccato"
