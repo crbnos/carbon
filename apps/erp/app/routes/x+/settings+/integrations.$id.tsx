@@ -44,11 +44,13 @@ import {
   getIntegrationServerHooks,
   onshapeConnectionHasWriteScope
 } from "@carbon/ee/hooks.server";
+import { listConnections } from "@carbon/ee/integrations/connections";
 import { getPath, SECRET_KEYS } from "@carbon/ee/integrations/secrets";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { requirePlan } from "@carbon/ee/plan.server";
 import { STRIPE_SECRET_KEY } from "@carbon/env";
 import { validationError, validator } from "@carbon/form";
+import { PIECE_ALLOWLIST } from "@carbon/jobs/integrations";
 import { getLogger } from "@carbon/logger";
 import { Badge } from "@carbon/react";
 import {
@@ -89,6 +91,8 @@ import {
   upsertCompanyIntegration
 } from "~/modules/settings/settings.server";
 import { AccountMapping } from "~/modules/settings/ui/Integrations/AccountMapping";
+import type { ConnectionRow } from "~/modules/settings/ui/Integrations/ConnectionsTab";
+import { ConnectionsTab } from "~/modules/settings/ui/Integrations/ConnectionsTab";
 import { DimensionMapping } from "~/modules/settings/ui/Integrations/DimensionMapping";
 import type { IntegrationFormTab } from "~/modules/settings/ui/Integrations/IntegrationForm";
 import { PostingSyncSettings } from "~/modules/settings/ui/Integrations/PostingSyncSettings";
@@ -528,7 +532,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       syncActivity: null,
       accountMapping: null,
       postingSync: null,
-      dimensionSync: null
+      dimensionSync: null,
+      connections: null
     };
   }
 
@@ -903,6 +908,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       })
     : null;
 
+  // An allowlisted workflow piece has no settings — what it has is the accounts a
+  // workflow step can act as, so its card gets that list as a tab.
+  const piece = PIECE_ALLOWLIST[integrationId];
+  const connections = piece
+    ? {
+        pieceName: integrationId,
+        defaultName: piece.label,
+        rows: ((await listConnections(client, companyId, integrationId)).data ??
+          []) as ConnectionRow[]
+      }
+    : null;
+
   return {
     installed: integrationData.data.active,
     metadata: flattenedMetadata,
@@ -910,7 +927,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     syncActivity,
     accountMapping,
     postingSync,
-    dimensionSync
+    dimensionSync,
+    connections
   };
 }
 
@@ -1661,7 +1679,8 @@ export default function IntegrationRoute() {
     syncActivity,
     accountMapping,
     postingSync,
-    dimensionSync
+    dimensionSync,
+    connections
   } = useLoaderData<typeof loader>();
 
   const navigate = useNavigate();
@@ -1671,6 +1690,20 @@ export default function IntegrationRoute() {
   // and Sync Activity tabs next to the Settings form (deep-linkable via
   // ?tab=<value>).
   const tabs: IntegrationFormTab[] = [];
+  if (connections) {
+    tabs.push({
+      value: "connections",
+      label: <Trans>Accounts</Trans>,
+      content: (tabBar) => (
+        <ConnectionsTab
+          tabs={tabBar}
+          pieceName={connections.pieceName}
+          defaultName={connections.defaultName}
+          connections={connections.rows}
+        />
+      )
+    });
+  }
   if (accountMapping) {
     tabs.push({
       value: "account-mapping",

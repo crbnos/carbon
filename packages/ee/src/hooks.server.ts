@@ -1,4 +1,5 @@
 import { emailHealthcheck } from "./email/hooks.server";
+import { googleCalendarOnUninstall } from "./google-calendar/hooks.server";
 import { jiraHealthcheck } from "./jira/hooks.server";
 import { linearHealthcheck } from "./linear/hooks.server";
 import { onshapeOnUninstall } from "./onshape/hooks.server";
@@ -49,6 +50,9 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
   },
   linear: {
     onHealthcheck: linearHealthcheck
+  },
+  "google-calendar": {
+    onUninstall: googleCalendarOnUninstall
   },
   onshape: {
     onUninstall: onshapeOnUninstall

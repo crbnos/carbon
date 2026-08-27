@@ -1,5 +1,6 @@
 import { Email } from "./email/config";
 import { ExchangeRates } from "./exchange-rates/config";
+import { GoogleCalendar } from "./google-calendar/config";
 import { Jira } from "./jira/config";
 import { Linear } from "./linear/config";
 import { Onshape } from "./onshape/config";
@@ -33,6 +34,7 @@ export const integrations = [
   // Radan,
   Email,
   ExchangeRates,
+  GoogleCalendar,
   Jira,
   Linear,
   Onshape,
@@ -47,6 +49,10 @@ export const integrations = [
 
 export type IntegrationID = (typeof integrations)[number]["id"];
 
+export {
+  GoogleCalendar,
+  Logo as GoogleCalendarLogo
+} from "./google-calendar/config";
 export { Jira } from "./jira/config";
 export { Logo as OnshapeLogo, Onshape } from "./onshape/config";
 // TODO: export as @carbon/ee/paperless
@@ -67,6 +73,26 @@ export const getIntegrationConfigById = (id: IntegrationID) => {
   return integrations.find((integration) => integration.id === id);
 };
 
+export type {
+  ConnectionStatus,
+  ConnectionTokens,
+  ExchangedTokens,
+  IntegrationConnection,
+  OAuth2RefreshConfig
+} from "./integrations/connections";
+export {
+  ConnectionRefreshTimeoutError,
+  ConnectionRevokedError,
+  ConnectionSecretUnavailableError,
+  createConnection,
+  disconnectConnection,
+  exchangeAuthorizationCode,
+  exchangeRefreshToken,
+  getConnection,
+  listConnections,
+  renameConnection,
+  resolveConnectionAuth
+} from "./integrations/connections";
 export {
   IntegrationSecretUnavailableError,
   persistIntegrationSecrets,
