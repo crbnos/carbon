@@ -21,12 +21,15 @@ packages/workflows/src/catalog/entities.ts    HAND-WRITTEN  `write` allowlist pe
                     │
                     ▼  scripts/generate-workflow-catalog.ts → buildCatalog (pure)
 packages/workflows/src/catalog/actions.generated.ts   COMMITTED
-      WORKFLOW_ACTION_CATALOG  +  WORKFLOW_OPERATION_CATALOG   (one file, both maps)
+      WORKFLOW_ACTION_CATALOG + WORKFLOW_INTEGRATION_CATALOG
+                             + WORKFLOW_OPERATION_CATALOG    (one file, three maps)
 packages/workflows/src/catalog/labels.generated.ts    COMMITTED  labels for events, actions and operations
 ```
 
-Today: **16 actions** (6 hand-written, 10 generated `<entity>.update`) and
-**15 operations**. Same commands as the event side — one generator writes all
+Today: **16 actions** (6 hand-written, 10 generated `<entity>.update`) and **15
+operations**, plus **2 integration steps** in their own catalog — an integration is a
+distinct NODE KIND, not an action, so nothing on this path carries a piece. See
+`workflow-integrations.md`. Same commands as the event side — one generator writes all
 three `*.generated.ts` files:
 
 ```bash
@@ -34,7 +37,8 @@ pnpm run generate:workflow-catalog
 pnpm run check:workflow-catalog
 ```
 
-`buildCatalog(registry, moments, actions, operations, schema)` expands each
+`buildCatalog(registry, moments, actions, operations, schema, integrationSteps)`
+expands each
 entity's `write` map into one `<entity>.update` action: an input keyed by the
 entity name (the record, `required: true`), plus one optional input per writable
 column typed from the swagger schema. It sets `update: { entity }` and
@@ -42,8 +46,8 @@ column typed from the swagger schema. It sets `update: { entity }` and
 `Update a/an <entity>`. A hand-written id that collides with a generated one is a
 **build error**, not a silent overwrite.
 
-A hand-written action must have either a `call` (an MCP tool name) or be one of
-`BUILT_IN_ACTIONS` (`notify`, `webhook`) — `validateCatalogInputs` reports
+An action must have a `call` (an MCP tool name) or membership in `BUILT_IN_ACTIONS`
+(`notify`, `webhook`) — `validateCatalogInputs` reports
 `Action "<id>" has no implementation route.` otherwise. The check script also
 verifies every `call` exists in `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
 and tells you to run `pnpm run generate:mcp`.
@@ -128,6 +132,10 @@ if (route.update !== undefined) …   // runUpdateAction
 if (route.call   !== undefined) …   // runCreateAction
 return { ok: false, error: GONE };
 ```
+
+`runIntegration` is a SEPARATE service method, not a branch here: it is handed the
+`{ name, action }` block off the integration step's own catalog entry, so the action
+path never learns what a piece is and no id is ever parsed for one.
 
 An id that *reads* like `x.update` but carries no `update` block must not reach
 the update executor. `getActionRoute` (`catalog/catalog.ts`) exists precisely so

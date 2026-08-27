@@ -39,6 +39,7 @@ pnpm --filter @carbon/ee typecheck   # tsgo --noEmit
 - **Tie-out remote reads**: `accounting/core/remote-journal.ts` `fetchRemoteJournalTotals()` — provider-agnostic debit-signed per-account journal totals for the reconciliation tie-out
 - **Dependency sync**: transaction syncers use `ensureDependencySynced()` for JIT deps (e.g. push customer before invoice)
 - **Integration pattern**: `defineIntegration()` → config with id, name, settings, OAuth, actions
+- **Workflow integration connections**: `./integrations/connections` — named per-company connections to Activepieces pieces (`integrationConnection` table + its own `connection:`-prefixed vault RPCs). Distinct from `./integrations/secrets`, which serves `companyIntegration` and allows only one row per integration per company. Tokens go to the vault, never to `metadata`; refresh is claimed via `refreshingAt`. The piece itself ships as an ORDINARY integration config (`google-calendar/config.tsx`, `id` === the piece name) — the accounts list is a tab on its card, not a separate panel. See `.claude/rules/workflow-integrations.md`
 - **Exports**: `./accounting`, `./plan`, `./plan.server`, `./exchange-rates.server`, `./slack.server`, `./hooks.server`, `./jira`, `./linear`, `./rillet/hooks.server`, `./xero/hooks.server`, etc.
 
 ## Cross-References

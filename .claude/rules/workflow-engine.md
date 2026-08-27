@@ -21,7 +21,8 @@ packages/workflows/src/runtime/     pure. no I/O, no client, no database.
   values.ts    RuntimeValue + fromColumn coercion
   resolve.ts   {kind:"ref"|"item"|"literal"|"template"} -> a value, or a reason
   compare.ts   operator semantics + evaluateClauses
-  condition.ts filter.ts compute.ts lookup.ts action.ts   the five executors
+  condition.ts filter.ts compute.ts lookup.ts action.ts
+  integration.ts                                          the six executors
   executors.ts the node-kind -> executor registry
   batch.ts     planBatch + itemKeyFor
 
@@ -46,8 +47,10 @@ permission check — so a new kind is one registry line, never an extended
 ## The services port
 
 The runtime is pure, so an executor that must reach the world calls
-`ctx.services` — `runAction`, `runOperation`, `search` — declared as
-`WorkflowServices` in `runtime/types.ts` and **required** on `RuntimeContext`.
+`ctx.services` — `runAction`, `runIntegration`, `runOperation`, `search` — declared as
+`WorkflowServices` in `runtime/types.ts` and **required** on `RuntimeContext`
+(`runIntegration` takes the piece off the step's catalog entry, so nothing job-side
+parses an id's shape).
 `execute.ts` builds one per step from the owner's freshly-minted client, so the
 port carries the owner's identity with it and cannot be handed a privileged one
 by accident. The implementations live in `packages/jobs/src/workflows/actions/`

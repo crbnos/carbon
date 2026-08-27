@@ -18,13 +18,14 @@ customer-facing feature (a "when this happens, do that" rule built on a canvas) 
 Spec: `.ai/specs/2026-07-30-workflows-event-catalog.md`. Package guide:
 `packages/workflows/AGENTS.md`.
 
-## Four hand-written inputs, three generated files
+## Five hand-written inputs, four generated files
 
 ```
 packages/workflows/src/catalog/entities.ts   HAND-WRITTEN  record types + watched columns + write allowlist
 packages/workflows/src/catalog/moments.ts    HAND-WRITTEN  business events + labels + outputs
 packages/workflows/src/catalog/actions.ts    HAND-WRITTEN  the actions with no generic form
 packages/workflows/src/catalog/operations.ts HAND-WRITTEN  read-only computations
+packages/jobs/src/workflows/integrations/allowlist.ts  HAND-WRITTEN  the integration pieces we expose
                     │
                     ▼  scripts/generate-workflow-catalog.ts  (buildCatalog, pure)
 packages/workflows/src/catalog/events.generated.ts   COMMITTED  ids, outputs, permission, match
@@ -35,7 +36,8 @@ packages/workflows/src/catalog/labels.generated.ts   COMMITTED  one msg`` per ev
 Today: 10 triggerable entities with 77 watched columns → 97 record events, plus 9 moments
 = **106 events**, plus property maps for 17 entities (the 10 triggerable ones and 7
 reference-only: `user`, `group`, `jobOperation`, `nonConformanceType`, `salesInvoice`,
-`purchaseInvoice`, `location`), plus **16 actions** and **15 operations**.
+`purchaseInvoice`, `location`), plus **16 actions**, **2 integration steps** (their own catalog — see
+`workflow-integrations.md`) and **15 operations**.
 
 To add an entity, a moment, an action or an operation, edit the one hand-written file
 and run:
@@ -189,7 +191,9 @@ allowlist into `actions.generated.ts`, which holds **both** `WORKFLOW_ACTION_CAT
 
 - **Actions** are what a workflow does. 6 hand-written (`job.create`,
   `nonConformance.create`, `purchaseOrder.create`, `salesOrder.create`, `notify`,
-  `webhook`) plus one `<entity>.update` generated per entity that declares `write`.
+  `webhook`), one `<entity>.update` generated per entity that declares `write`, and one
+  `integration.<piece>.<action>` per entry in the piece allowlist (see
+  `workflow-integrations.md`).
 - **Operations** are read-only computations over things a property map cannot reach —
   stored totals live only on views, and counts span child tables.
 
@@ -223,8 +227,8 @@ tenancy checks, webhook signing and the SSRF guard — is in
 5. **Every moment, action and operation has a label**, and names only registry entities for
    its outputs, inputs and output.
 6. **Every action has an implementation route** — a `call` that is a real tool in
-   `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json` (run `pnpm run generate:mcp`), or
-   membership in the built-in set (`notify`, `webhook`).
+   `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json` (run `pnpm run generate:mcp`), a
+   `piece` block from the allowlist, or membership in the built-in set (`notify`, `webhook`).
 
 Deploy-time, against a live database (so not CI — they sit with `packages/checks`' invariants):
 the `workflow-trigger-event-drift` SQL invariant and
