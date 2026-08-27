@@ -8,7 +8,8 @@ export const GLOSSARY_PATH = "packages/locale/locales/glossary.json";
 
 export function loadGlossary(repo = process.cwd()) {
   const doc = JSON.parse(readFileSync(`${repo}/${GLOSSARY_PATH}`, "utf8"));
-  if (!Array.isArray(doc.terms)) throw new Error(`${GLOSSARY_PATH}: no terms[]`);
+  if (!Array.isArray(doc.terms))
+    throw new Error(`${GLOSSARY_PATH}: no terms[]`);
   return doc;
 }
 
@@ -25,29 +26,48 @@ function escapeRe(s) {
 // "rma" inside "format", so a loose match there produces confident nonsense.
 function formRegex(form) {
   const caseSensitive = form === form.toUpperCase() && /[A-Z]/.test(form);
-  return new RegExp(`(?<![\\w-])${escapeRe(form)}(s|es)?(?![\\w-])`, caseSensitive ? "" : "i");
+  return new RegExp(
+    `(?<![\\w-])${escapeRe(form)}(s|es)?(?![\\w-])`,
+    caseSensitive ? "" : "i"
+  );
 }
 
 // Build a matcher once, reuse across thousands of strings.
 export function buildMatcher(doc) {
   const forms = [];
   for (const entry of doc.terms) {
-    for (const form of surfaceForms(entry)) forms.push({ form, entry, re: formRegex(form) });
+    for (const form of surfaceForms(entry))
+      forms.push({ form, entry, re: formRegex(form) });
   }
   forms.sort((a, b) => b.form.length - a.form.length);
   return forms;
+}
+
+// A placeholder is CODE, not prose: `{total}` is a variable name the translator
+// must copy verbatim, so scanning it for terms both mis-reports a violation and
+// — worse — orders the subagent to translate an identifier. Masked to spaces so
+// match offsets still line up with the original.
+// Only `{identifier}` is masked. An ICU plural branch (`{# lines differ …}`)
+// holds real human text and MUST stay visible to the matcher.
+const PLACEHOLDER = /\{[A-Za-z0-9_]+\}/g;
+
+export function maskPlaceholders(str) {
+  return str.replace(PLACEHOLDER, (m) => " ".repeat(m.length));
 }
 
 // Longest-match-wins: "Sales Order Line" consumes the "Line" inside it, so a
 // compound doesn't drag in its own parts and bury the terms that matter.
 export function termsInString(str, matcher) {
   const hits = [];
-  let masked = str;
+  let masked = maskPlaceholders(str);
   for (const { form, entry, re } of matcher) {
     const m = masked.match(re);
     if (!m) continue;
     if (!hits.includes(entry)) hits.push(entry);
-    masked = masked.slice(0, m.index) + " ".repeat(m[0].length) + masked.slice(m.index + m[0].length);
+    masked =
+      masked.slice(0, m.index) +
+      " ".repeat(m[0].length) +
+      masked.slice(m.index + m[0].length);
   }
   return hits;
 }
@@ -78,7 +98,10 @@ export function glossaryForItems(msgids, locale, doc, matcher) {
 const CJK = /[぀-ヿ㐀-䶿一-鿿豈-﫿가-힯]/;
 
 function normalize(s) {
-  return s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+  return s
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
 }
 
 // CJK doesn't inflect, so the term must appear whole; else keep ~60% as stem.
@@ -110,6 +133,13 @@ export function doNotTranslate(doc) {
 
 export function localeCoverage(doc, locale) {
   const total = doc.terms.length;
-  const filled = doc.terms.filter((t) => (t.translations?.[locale] || "").trim() !== "").length;
-  return { locale, filled, total, pct: total ? Math.round((filled / total) * 100) : 0 };
+  const filled = doc.terms.filter(
+    (t) => (t.translations?.[locale] || "").trim() !== ""
+  ).length;
+  return {
+    locale,
+    filled,
+    total,
+    pct: total ? Math.round((filled / total) * 100) : 0,
+  };
 }

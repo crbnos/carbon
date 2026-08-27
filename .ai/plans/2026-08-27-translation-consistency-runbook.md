@@ -43,9 +43,12 @@ All paths are relative to the repo root. Run everything from the repo root.
 
 Two rules about these:
 
-- **Never edit `packages/locale/locales/glossary.json`.** It is the source of
-  truth and it is already filled and reviewed. If a term looks wrong, record it
-  in the ledger and tell the user — do not change it yourself.
+- **Never edit `packages/locale/locales/glossary.json` mid-run.** It is the
+  source of truth for every language at once, so changing it while a language is
+  in flight silently changes what the checker measured five minutes ago. Term
+  changes happen in Phase 0, as their own reviewed decision, before any language
+  starts. If a term looks wrong once you are past Phase 0, record it in the
+  ledger and stop — do not change it yourself.
 - **Never hand-edit a `.po` file.** Blanking is `reset-violations.mjs`; filling
   is `/translate`. Both are deterministic; a hand edit is not.
 
@@ -66,16 +69,70 @@ The checker matches on the word's stem, so a correctly inflected form passes
 (German `Auftrag` → `Aufträge`, Russian `заказ` → `заказа`). A translation is
 supposed to inflect the approved term, not paste it in.
 
+**Only 30 of the 448 terms carry an `ambiguity` note today**, so "enforced" is
+currently far wider than "unambiguous". That is what Phase 0 exists to fix, and
+until it is done the enforced counts below overstate the real defect count.
+
+---
+
+## Phase 0 — fix the glossary BEFORE any language (do this once)
+
+Learned the hard way on the zh run: the checker matches a bare English word with
+no sense of context, and the SAME matcher builds the word list the Haiku
+subagent is ordered to obey. So a term missing its `ambiguity` note does not
+merely produce a noisy report — it tells a small model to write the wrong word.
+The small model cannot push back; that is the whole reason the glossary exists.
+
+Concrete misses from the zh run, all reported as hard defects when the Chinese
+was right: `Pick another field` (ordinary verb, not warehouse 拣货),
+`inventory transactions` (the plain noun, not the module title 库存管理),
+`bill of materials` (items, not raw stock 原材料), `Setup Map`
+(onboarding, not machine changeover 换型), `a traceable standard`
+(not the AQL level 正常检验), `the right person`, `maintenance schedule`,
+`open the document`, `Closed at`.
+
+**These false positives are identical in every language** — they come from the
+English side of the matcher, so `de`, `ja`, `ru` and the rest will hit exactly
+the same ones. Fixing the glossary once removes them from all twelve runs;
+skipping it means paying to blank and re-translate correct strings twelve times,
+and shipping worse text each time.
+
+Drafted wording for the 16 worst terms is in
+`.ai/runs/translation-consistency/glossary-ambiguity-draft.md`. Adding a note is
+a reviewed decision — get the user's sign-off, apply, then re-measure the
+backlog before choosing a language.
+
+**Status: done on 2026-08-27.** 16 notes added (`Inventory`, `Open`, `Pick`,
+`Material`, `Total`, `Standard`, `Posted`, `View`, `Setup`, `Planned`, `Closed`,
+`Picked`, `Move`, `Schedule`, `Person`, `Items`), taking the glossary from 30
+notes to 46. Effect: zh enforced 401 → **168**, de 2081 → **1712**. Re-measure
+before starting any language; the pre-Phase-0 table below is now stale.
+
+One divergence fixed at the same time: `Item` had an `ambiguity` note and `Items`
+did not, so the same sentence passed or failed depending on which form the
+English used. `Items` got a mirroring note. Do NOT "simplify" this by folding
+`Items` into `Item` as an `englishVariants` — their translations genuinely differ
+in six locales (`fr` Article/Articles, `pt` Item/Itens, `tr` Stok kartı/Stok
+kartları, and `es`/`it`/`pl`), because `Items` is the plural module name.
+
+Not solvable with a note, and still open: **negation**. `{0} problems — not
+published` is translated 未发布 ("not published") and rejected for lacking
+已发布 ("published"). That needs checker logic, and it is easy to get wrong.
+
 ---
 
 ## Do one language per run
 
-Current backlog of enforced violations (measured 2026-08-27):
+Backlog of enforced violations as first measured on 2026-08-27, BEFORE Phase 0:
 
 ```
 ja 2837   ru 2569   ko 2204   de 2091   zh 2069   pl 1869
 hi 1871   fr 1797   tr 1680   pt 1558   it 1485   es 1282
 ```
+
+Treat these as an upper bound, not a defect count — a large share are the
+false positives Phase 0 removes. Re-measure after Phase 0 and pick from the new
+numbers.
 
 **Start with `zh`** — there is a real Chinese customer who reported this, so it
 is the one language where you will get feedback on whether the fix worked.
@@ -100,6 +157,7 @@ Started: <date>
 Status: in-progress | blocked | done
 
 ## Phase log
+- [ ] Phase 0 — glossary ambiguity notes applied (once, repo-wide)
 - [ ] Phase 1 — baseline measured
 - [ ] Phase 2 — violations cleared
 - [ ] Phase 3 — re-translated
@@ -153,6 +211,11 @@ This writes `.ai/runs/translation-consistency/reset-<locale>.json` containing
 **every old value it cleared**. That file is your undo — do not delete it until
 the language is committed and verified.
 
+**It is overwritten on every run**, so a second pass over the same locale
+destroys the first pass's record. The reliable undo for a whole run is
+`git checkout packages/locale/locales/<locale>/` — nothing is committed until
+Phase 5. Do not rely on the JSON alone.
+
 Record in the ledger: how many were cleared, per catalog, and the record path.
 
 ---
@@ -168,6 +231,22 @@ It fills only empty entries, so it will pick up exactly what Phase 2 cleared
 (plus any that were already missing).
 
 The skill has its own progress watcher and its own retry cap. Let it finish.
+
+Three things the zh run hit that the skill's own docs do not warn you about:
+
+- **`extract-missing.mjs` has no `--locale` flag** — it always chunks all twelve
+  locales. To honour one-language-per-run, read
+  `.ai/scratch/translate/manifest.json` and dispatch only the entries whose
+  `locale` matches yours. The other locales' chunks stay unwritten, which is
+  fine: the merge skips them.
+- **Skip `pnpm run lingui:extract`** unless source strings actually changed. You
+  are refilling existing entries, and on this branch it dumps a large unrelated
+  catalog diff that breaks Phase 4's "only `msgstr` changed" check.
+- **Read the merge output's `Missing/invalid chunk outputs` list.** A subagent
+  that writes unparseable JSON has its whole chunk dropped in silence — 3 of 44
+  chunks failed this way on the zh run, 120 strings, all of it from bare ASCII
+  `"` inside a value. The retry round catches them; not reading the list means
+  you never learn they were dropped.
 
 Record in the ledger: how many it filled, and any residual it reported.
 
@@ -185,6 +264,15 @@ What each proves: `linguito check` proves nothing is **empty**; the glossary
 check proves the filled ones **agree**. You need both — the original bug shipped
 through a green `linguito check`.
 
+`linguito check` is repo-wide and was **already red before this work started**
+(~52 pre-existing empty strings per locale, ~572 across the eleven you are not
+touching), so it cannot pass on a single-language run and is not a gate here.
+Check your own locale directly instead — one hit per file is the PO header:
+
+```bash
+grep -c '^msgstr ""$' packages/locale/locales/<locale>/erp.po packages/locale/locales/<locale>/mes.po
+```
+
 Also confirm you changed only what you meant to:
 
 ```bash
@@ -198,6 +286,16 @@ The second must print `glossary untouched`.
 **If enforced violations remain:** run Phase 2 and 3 once more for just those.
 If a second pass does not clear them, stop and report — repeating a third time
 means the approved term or the checker is wrong, not the translation.
+
+The zh run proved this out: 2069 → 513 after one pass, → 406 after two, and
+sampling the residual showed it was almost entirely Phase 0 material rather than
+bad Chinese. A third pass would have blanked correct translations and paid a
+model to make them worse. **Read a dozen residuals before you decide** — if they
+are ordinary English words used in a non-ERP sense, the answer is a glossary
+note, not another pass.
+
+Expect to land with a residual, not a zero, until Phase 0 is done. Say so
+plainly rather than letting the count read as remaining defects.
 
 Record in the ledger: final counts from all three commands.
 
@@ -225,6 +323,10 @@ and what the remaining backlog is.
 
 - This fixes **terminology only**. A translation that is wrong for some other
   reason is invisible to the checker, which only knows the 448 glossary terms.
+- The checker reads the ENGLISH with no sense of context, so a term without an
+  `ambiguity` note flags correct translations as defects — and pushes the
+  subagent to write the wrong word. Until Phase 0 lands, "enforced" does not
+  mean "defect". Never quote an enforced count as a defect count.
 - Roughly **71% of strings** contain a glossary term. The other 29% are
   unconstrained and can still drift.
 - The approved terms were chosen by a model, not a native speaker. They are

@@ -1363,6 +1363,7 @@
       "term": "Total",
       "category": "accounting",
       "context": "The final amount including tax and shipping.",
+      "ambiguity": "Only a document total. Do NOT apply to 'total depreciation', 'MB total', or other adjective uses.",
       "translations": {
         "fr": "Total",
         "de": "Gesamtbetrag",
@@ -1783,6 +1784,7 @@
       "term": "Move",
       "category": "action",
       "context": "Relocate stock or a record.",
+      "ambiguity": "Only relocating stock or a record. Do NOT apply to 'status moves through' or 'moves Open → Locked'.",
       "translations": {
         "fr": "Déplacer",
         "de": "Umlagern",
@@ -2031,6 +2033,7 @@
       "term": "View",
       "category": "action",
       "context": "Open a record read-only.",
+      "ambiguity": "Only the read-only action. Do NOT apply to a saved 'view' (a table configuration) or to 'the operator view' (a screen).",
       "translations": {
         "fr": "Afficher",
         "de": "Anzeigen",
@@ -2318,6 +2321,7 @@
       "term": "Material",
       "category": "core",
       "context": "An item type: raw stock consumed by manufacturing (bar, sheet, resin), usually by dimension rather than by piece.",
+      "ambiguity": "Only the item TYPE (raw stock). Do NOT apply inside 'bill of materials', 'material ID', or a job's 'materials' generally — those are items, not raw stock.",
       "translations": {
         "fr": "Matière",
         "de": "Werkstoff",
@@ -2646,6 +2650,7 @@
       "term": "Inventory",
       "category": "inventory",
       "context": "The stock the company holds, and the module that manages it.",
+      "ambiguity": "Only the module name. Ordinary stock prose — 'inventory transactions', 'inventory value' — takes the plain word for stock, not the module title.",
       "translations": {
         "fr": "Stocks",
         "de": "Bestände",
@@ -2744,6 +2749,7 @@
       "term": "Pick",
       "category": "inventory",
       "context": "Taking stock off the shelf for a job or a shipment.",
+      "ambiguity": "Only taking stock off the shelf. Do NOT apply to 'pick another field', 'pick options', or 'the order the floor picks work up'.",
       "translations": {
         "fr": "Prélever",
         "de": "Kommissionieren",
@@ -3892,6 +3898,7 @@
       "term": "Setup",
       "category": "methods",
       "context": "Preparing a work center before running parts.",
+      "ambiguity": "Only work-center changeover. Do NOT apply to 'Setup Map', a setup checklist, or onboarding/configuration senses.",
       "translations": {
         "fr": "Réglage",
         "de": "Rüsten",
@@ -4044,6 +4051,7 @@
       "term": "Items",
       "category": "module",
       "context": "The item master: parts, materials, tools and their methods.",
+      "ambiguity": "Also used loosely as 'rows in a list'. Only the domain sense is fixed. Mirrors the note on 'Item' — singular and plural must not disagree on whether a miss is a defect.",
       "translations": {
         "fr": "Articles",
         "de": "Artikel",
@@ -4370,6 +4378,7 @@
       "term": "Person",
       "category": "people",
       "context": "An individual, as opposed to a company.",
+      "ambiguity": "Only the individual-vs-company distinction. Do NOT apply to 'a different person', 'the right person', or 'Sales Person'.",
       "translations": {
         "fr": "Personne",
         "de": "Person",
@@ -5874,6 +5883,7 @@
       "term": "Schedule",
       "category": "production",
       "context": "The planned timing of jobs and operations.",
+      "ambiguity": "Only job and operation timing. Do NOT apply to a calibration, maintenance, or depreciation schedule.",
       "translations": {
         "fr": "Planning",
         "de": "Terminplan",
@@ -7156,6 +7166,7 @@
       "term": "Standard",
       "category": "quality",
       "context": "The normal inspection level.",
+      "ambiguity": "Only the AQL inspection level. Do NOT apply to 'a traceable standard', 'reference standard', or 'sampling standard'.",
       "translations": {
         "fr": "Normal",
         "de": "Normal",
@@ -7827,6 +7838,7 @@
       "term": "Closed",
       "category": "status",
       "context": "Finished and no longer editable.",
+      "ambiguity": "Only the status. 'Closed at', 'Closed by' and 'Closed Date' are column labels and may inflect differently.",
       "translations": {
         "fr": "Clôturé",
         "de": "Abgeschlossen",
@@ -8208,6 +8220,7 @@
       "term": "Open",
       "category": "status",
       "context": "Still being worked on.",
+      "ambiguity": "Only the document status. Do NOT apply to 'open a record', 'open the document', or 'documents you open'.",
       "translations": {
         "fr": "Ouvert",
         "de": "Offen",
@@ -8341,6 +8354,7 @@
       "term": "Picked",
       "category": "status",
       "context": "Taken off the shelf.",
+      "ambiguity": "Same boundary as 'Pick' — only stock taken off the shelf.",
       "translations": {
         "fr": "Prélevé",
         "de": "Kommissioniert",
@@ -8360,6 +8374,7 @@
       "term": "Planned",
       "category": "status",
       "context": "Scheduled but not started.",
+      "ambiguity": "Only the status. Do NOT apply to 'planned quantity', 'planned end', or 'planned lot size' as an ordinary adjective.",
       "translations": {
         "fr": "Planifié",
         "de": "Geplant",
@@ -8379,6 +8394,7 @@
       "term": "Posted",
       "category": "status",
       "context": "Committed to the ledger.",
+      "ambiguity": "Only the ledger state. Many languages inflect the verb ('is posted') differently from the status adjective — do not force the status rendering onto the verb.",
       "translations": {
         "fr": "Comptabilisé",
         "de": "Gebucht",

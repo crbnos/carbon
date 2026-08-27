@@ -177,6 +177,11 @@ RULES — follow exactly:
 3. Preserve leading/trailing spaces, capitalization intent, and punctuation.
 4. Do NOT translate brand names, code identifiers, or placeholder variable names.
 5. Use `note` only as context for a placeholder; never include it in the output.
+6. Every ASCII `"` INSIDE a key or value must be escaped as `\"`, or the whole
+   chunk is unparseable and every string in it is silently dropped. Many msgids
+   quote a word (`Pick another "field"`); prefer the target language's own
+   quotation marks (`“ ”`, `« »`, `„ “`) over a bare ASCII `"`. Re-read your
+   output and confirm it parses as JSON before writing.
 
 OUTPUT — write ONLY a JSON object (create/overwrite) to this absolute path:
 <manifest entry `out`>
