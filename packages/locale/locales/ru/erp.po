@@ -1049,6 +1049,9 @@ msgstr "Добавить комментарий..."
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "Добавьте пользовательскую строку ценообразования для переопределения количества, цены, доставки, времени выполнения заказа и налога"
 
+msgid "Add a domain"
+msgstr "Добавить домен"
+
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Добавить раздел материалов, в котором указывается каждый элемент спецификации материалов с его количеством."
 
@@ -1225,6 +1228,9 @@ msgstr "Добавить поставщика"
 
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "Добавьте следующую возможность в ту же систему вместо покупки другого инструмента."
+
+msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
+msgstr "Добавьте эту TXT запись на хосте DNS, затем нажмите Проверить. Изменения DNS могут занять несколько минут на распространение."
 
 msgid "Add Timecard"
 msgstr "Добавить табель учета рабочего времени"
@@ -1779,8 +1785,8 @@ msgstr "Вы уверены, что хотите создать задания �
 msgid "Are you sure you want to deactivate {0}?"
 msgstr "Вы уверены, что хотите деактивировать {0}?"
 
-msgid "Are you sure you want to deactivate SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
-msgstr "Вы уверены, что хотите деактивировать SSO? Пользователи из ваших зарегистрированных доменов больше не смогут входить через вашего поставщика удостоверений. Это действие нельзя отменить."
+msgid "Are you sure you want to deactivate SAML SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
+msgstr "Вы уверены, что хотите отключить SAML SSO? Пользователи на ваших зарегистрированных доменах больше не смогут входить через поставщика удостоверений. Это действие невозможно отменить."
 
 #. placeholder {0}: selectedCategory?.name
 msgid "Are you sure you want to deactivate the {0} attribute category?"
@@ -3208,9 +3214,6 @@ msgstr "Объединить фильтры"
 msgid "Coming soon"
 msgstr "Скоро"
 
-msgid "Comma-separated list of email domains, e.g. example.com, example.org"
-msgstr "Разделённый запятыми список доменов электронной почты, например example.com, example.org"
-
 msgid "comma-separated values"
 msgstr "значения, разделённые запятыми"
 
@@ -3539,9 +3542,6 @@ msgstr "Содержание"
 
 msgid "Context"
 msgstr "Контекст"
-
-msgid "Continue with SSO"
-msgstr "Продолжить с SSO"
 
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "Счет-контра активов для полного износа основных средств"
@@ -7431,6 +7431,9 @@ msgstr "Домашний телефон"
 
 msgid "Hop {depth}"
 msgstr "Шаг {depth}"
+
+msgid "Host"
+msgstr "Хост"
 
 msgid "Host, secure, and back up the platform"
 msgstr "Размещение, защита и резервное копирование платформы"
@@ -11612,6 +11615,9 @@ msgstr "Защитите время обучения и участвуйте"
 msgid "Protects your company's data"
 msgstr "Защищает данные вашей компании"
 
+msgid "Prove ownership of each email domain with a DNS TXT record before it can route SAML SSO sign-ins. Add the record at DNS host, then click Verify — only verified domains participate in single sign-on."
+msgstr "Докажите владение каждым доменом электронной почты с помощью TXT записи DNS перед маршрутизацией входов SAML SSO. Добавьте запись на хосте DNS, затем нажмите Проверить — только проверенные домены участвуют в единой авторизации."
+
 msgid "Provide process knowledge and inputs"
 msgstr "Предоставить знания о процессе и входные данные"
 
@@ -12500,8 +12506,8 @@ msgstr "Требовать утверждение для заказов на п�
 msgid "Require approval for quality documents in your workflow"
 msgstr "Требуется одобрение для документов качества в вашем рабочем процессе"
 
-msgid "Require SSO"
-msgstr "Требовать SSO"
+msgid "Require SAML SSO"
+msgstr "Требовать SAML SSO"
 
 msgid "Require two-factor authentication"
 msgstr "Требовать двухфакторную аутентификацию"
@@ -13013,6 +13019,12 @@ msgstr "Продавец"
 
 msgid "Same as Book"
 msgstr "Как в книге"
+
+msgid "SAML SSO"
+msgstr "SAML SSO"
+
+msgid "SAML SSO is not configured for your email domain."
+msgstr "SAML SSO не настроен для вашего домена электронной почты."
 
 msgid "Sample"
 msgstr "Образец"
@@ -14118,9 +14130,6 @@ msgstr "Разделить строку приемки"
 
 msgid "Split shipment line"
 msgstr "Разделить строку отправки"
-
-msgid "SSO is not configured for your email domain."
-msgstr "SSO не настроен для вашего домена электронной почты."
 
 msgid "Stand up hosting"
 msgstr "Развернуть хостинг"
@@ -15642,6 +15651,9 @@ msgstr "Этот файл больше не доступен, или у вас �
 msgid "This Fiscal Year"
 msgstr "Этот финансовый год"
 
+msgid "This has no effect until an email domain is verified below."
+msgstr "Это не вступит в силу до проверки домена электронной почты ниже."
+
 msgid "This information will be used on document headers"
 msgstr "Эта информация будет использована в заголовках документов"
 
@@ -16650,8 +16662,8 @@ msgstr "Пользователи и группы, которым разреше�
 msgid "Users can update this value for themselves"
 msgstr "Пользователи могут обновлять это значение для себя"
 
-msgid "Users on covered domains can sign in only with SSO; magic link, Google, and passkeys are refused."
-msgstr "Пользователи охваченных доменов могут входить только с SSO; волшебная ссылка, Google и ключи доступа отклоняются."
+msgid "Users on covered domains can sign in only with SAML SSO; magic link, Google, and passkeys are refused."
+msgstr "Пользователи на охватываемых доменах могут входить только с SAML SSO; волшебная ссылка, Google и ключи доступа отклоняются."
 
 msgid "Users to Update"
 msgstr "Пользователи для обновления"
@@ -16736,6 +16748,9 @@ msgstr "Ошибка проверки"
 
 msgid "Verification failed"
 msgstr "Ошибка проверки"
+
+msgid "Verified"
+msgstr "Проверено"
 
 msgid "Verify"
 msgstr "Проверить"
@@ -17667,6 +17682,9 @@ msgstr "Ваши ценовые списки для клиентов"
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "Ваши данные доступны и находятся в относительно чистом виде"
+
+msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
+msgstr "Ваш поставщик DNS может автоматически добавить ваш домен к имени записи — если это так, введите только часть перед ней (например, _carbon-challenge плюс любой поддомен)."
 
 msgid "Your Email"
 msgstr "Ваша электронная почта"

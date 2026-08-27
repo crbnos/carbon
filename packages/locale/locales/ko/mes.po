@@ -277,9 +277,6 @@ msgstr "소비됨"
 msgid "Consumed expired"
 msgstr "만료 후 소모됨"
 
-msgid "Continue with SSO"
-msgstr "SSO로 계속하기"
-
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "계획되지 않은 유지보수 비용, 최근 {0}일"
@@ -1110,6 +1107,12 @@ msgstr "실행 중"
 msgid "Sales Order"
 msgstr "판매주문"
 
+msgid "SAML SSO"
+msgstr "SAML SSO"
+
+msgid "SAML SSO is not configured for your email domain."
+msgstr "SAML SSO가 귀 이메일 도메인에 대해 설정되지 않았습니다."
+
 msgid "Save"
 msgstr "저장"
 
@@ -1301,9 +1304,6 @@ msgstr "예비 부품"
 
 msgid "Spare Parts Used"
 msgstr "사용된 예비 부품"
-
-msgid "SSO is not configured for your email domain."
-msgstr "사용자 이메일 도메인에 대해 SSO가 설정되지 않았습니다."
 
 msgid "Start"
 msgstr "시작"

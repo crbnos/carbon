@@ -1049,6 +1049,9 @@ msgstr "Add a comment..."
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 
+msgid "Add a domain"
+msgstr "Add a domain"
+
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Add a materials section that lists each item on the bill of materials with its quantity."
 
@@ -1225,6 +1228,9 @@ msgstr "Add Supplier"
 
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "Add the next capability on the same system instead of buying another tool."
+
+msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
+msgstr "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 
 msgid "Add Timecard"
 msgstr "Add Timecard"
@@ -1779,8 +1785,8 @@ msgstr "Are you sure you want to create jobs for this sales order? This will cre
 msgid "Are you sure you want to deactivate {0}?"
 msgstr "Are you sure you want to deactivate {0}?"
 
-msgid "Are you sure you want to deactivate SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
-msgstr "Are you sure you want to deactivate SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
+msgid "Are you sure you want to deactivate SAML SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
+msgstr "Are you sure you want to deactivate SAML SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
 
 #. placeholder {0}: selectedCategory?.name
 msgid "Are you sure you want to deactivate the {0} attribute category?"
@@ -3208,9 +3214,6 @@ msgstr "Combine filters"
 msgid "Coming soon"
 msgstr "Coming soon"
 
-msgid "Comma-separated list of email domains, e.g. example.com, example.org"
-msgstr "Comma-separated list of email domains, e.g. example.com, example.org"
-
 msgid "comma-separated values"
 msgstr "comma-separated values"
 
@@ -3539,9 +3542,6 @@ msgstr "Content"
 
 msgid "Context"
 msgstr "Context"
-
-msgid "Continue with SSO"
-msgstr "Continue with SSO"
 
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "Contra-asset account for total depreciation of fixed assets"
@@ -7431,6 +7431,9 @@ msgstr "Home Phone"
 
 msgid "Hop {depth}"
 msgstr "Hop {depth}"
+
+msgid "Host"
+msgstr "Host"
 
 msgid "Host, secure, and back up the platform"
 msgstr "Host, secure, and back up the platform"
@@ -11612,6 +11615,9 @@ msgstr "Protect training time and attend"
 msgid "Protects your company's data"
 msgstr "Protects your company's data"
 
+msgid "Prove ownership of each email domain with a DNS TXT record before it can route SAML SSO sign-ins. Add the record at DNS host, then click Verify — only verified domains participate in single sign-on."
+msgstr "Prove ownership of each email domain with a DNS TXT record before it can route SAML SSO sign-ins. Add the record at DNS host, then click Verify — only verified domains participate in single sign-on."
+
 msgid "Provide process knowledge and inputs"
 msgstr "Provide process knowledge and inputs"
 
@@ -12500,8 +12506,8 @@ msgstr "Require approval for purchase orders based on amount thresholds"
 msgid "Require approval for quality documents in your workflow"
 msgstr "Require approval for quality documents in your workflow"
 
-msgid "Require SSO"
-msgstr "Require SSO"
+msgid "Require SAML SSO"
+msgstr "Require SAML SSO"
 
 msgid "Require two-factor authentication"
 msgstr "Require two-factor authentication"
@@ -13013,6 +13019,12 @@ msgstr "Salesperson"
 
 msgid "Same as Book"
 msgstr "Same as Book"
+
+msgid "SAML SSO"
+msgstr "SAML SSO"
+
+msgid "SAML SSO is not configured for your email domain."
+msgstr "SAML SSO is not configured for your email domain."
 
 msgid "Sample"
 msgstr "Sample"
@@ -14118,9 +14130,6 @@ msgstr "Split receipt line"
 
 msgid "Split shipment line"
 msgstr "Split shipment line"
-
-msgid "SSO is not configured for your email domain."
-msgstr "SSO is not configured for your email domain."
 
 msgid "Stand up hosting"
 msgstr "Stand up hosting"
@@ -15642,6 +15651,9 @@ msgstr "This file is no longer available, or you don't have permission to downlo
 msgid "This Fiscal Year"
 msgstr "This Fiscal Year"
 
+msgid "This has no effect until an email domain is verified below."
+msgstr "This has no effect until an email domain is verified below."
+
 msgid "This information will be used on document headers"
 msgstr "This information will be used on document headers"
 
@@ -16650,8 +16662,8 @@ msgstr "Users and groups allowed to rename, replace, or re-label this document; 
 msgid "Users can update this value for themselves"
 msgstr "Users can update this value for themselves"
 
-msgid "Users on covered domains can sign in only with SSO; magic link, Google, and passkeys are refused."
-msgstr "Users on covered domains can sign in only with SSO; magic link, Google, and passkeys are refused."
+msgid "Users on covered domains can sign in only with SAML SSO; magic link, Google, and passkeys are refused."
+msgstr "Users on covered domains can sign in only with SAML SSO; magic link, Google, and passkeys are refused."
 
 msgid "Users to Update"
 msgstr "Users to Update"
@@ -16736,6 +16748,9 @@ msgstr "Verification Error"
 
 msgid "Verification failed"
 msgstr "Verification failed"
+
+msgid "Verified"
+msgstr "Verified"
 
 msgid "Verify"
 msgstr "Verify"
@@ -17671,6 +17686,9 @@ msgstr "Your customer-facing price lists"
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "Your data is accessible and reasonably clean"
+
+msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
+msgstr "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 
 msgid "Your Email"
 msgstr "Your Email"

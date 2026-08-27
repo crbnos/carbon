@@ -111,7 +111,7 @@ export async function action({ request }: ActionFunctionArgs) {
           request,
           error(
             connection.error,
-            "SSO connection is not active. Contact your administrator."
+            "SAML SSO connection is not active. Contact your administrator."
           )
         )
       );
@@ -125,7 +125,7 @@ export async function action({ request }: ActionFunctionArgs) {
           request,
           error(
             null,
-            "SSO sign-in rejected: this email domain is not registered for your company's SSO connection."
+            "SAML SSO sign-in rejected: this email domain is not registered for your company's SAML SSO connection."
           )
         )
       );
@@ -142,7 +142,7 @@ export async function action({ request }: ActionFunctionArgs) {
           request,
           error(
             null,
-            "Complete your first SSO sign-in in Carbon ERP, then return here."
+            "Complete your first SAML SSO sign-in in Carbon ERP, then return here."
           )
         )
       );
@@ -185,7 +185,7 @@ export async function action({ request }: ActionFunctionArgs) {
           request,
           error(
             null,
-            'Your organization requires single sign-on. Use "Continue with SSO".'
+            'Your organization requires single sign-on. Use "SAML SSO".'
           )
         )
       );

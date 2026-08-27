@@ -277,9 +277,6 @@ msgstr "已消耗"
 msgid "Consumed expired"
 msgstr "已消耗过期"
 
-msgid "Continue with SSO"
-msgstr "继续使用 SSO"
-
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "过去 {0} 天的计划外维护成本"
@@ -1110,6 +1107,12 @@ msgstr "运行中"
 msgid "Sales Order"
 msgstr "销售订单"
 
+msgid "SAML SSO"
+msgstr "SAML SSO"
+
+msgid "SAML SSO is not configured for your email domain."
+msgstr "您的电子邮件域尚未配置 SAML SSO。"
+
 msgid "Save"
 msgstr "保存"
 
@@ -1301,9 +1304,6 @@ msgstr "备件"
 
 msgid "Spare Parts Used"
 msgstr "已使用备件"
-
-msgid "SSO is not configured for your email domain."
-msgstr "您的邮箱域未配置 SSO"
 
 msgid "Start"
 msgstr "开始"

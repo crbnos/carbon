@@ -50453,7 +50453,6 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
-          domains: string[]
           id: string
           metadataUrl: string | null
           metadataXml: string | null
@@ -50467,7 +50466,6 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
-          domains: string[]
           id?: string
           metadataUrl?: string | null
           metadataXml?: string | null
@@ -50481,7 +50479,6 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
-          domains?: string[]
           id?: string
           metadataUrl?: string | null
           metadataXml?: string | null
@@ -50584,6 +50581,154 @@ export type Database = {
           },
           {
             foreignKeyName: "ssoConnection_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      ssoDomain: {
+        Row: {
+          companyId: string
+          connectionId: string
+          createdAt: string
+          createdBy: string
+          domain: string
+          id: string
+          status: string
+          updatedAt: string | null
+          updatedBy: string | null
+          verificationToken: string
+          verifiedAt: string | null
+        }
+        Insert: {
+          companyId: string
+          connectionId: string
+          createdAt?: string
+          createdBy: string
+          domain: string
+          id?: string
+          status?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+          verificationToken: string
+          verifiedAt?: string | null
+        }
+        Update: {
+          companyId?: string
+          connectionId?: string
+          createdAt?: string
+          createdBy?: string
+          domain?: string
+          id?: string
+          status?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+          verificationToken?: string
+          verifiedAt?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ssoDomain_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ssoDomain_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ssoDomain_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "ssoDomain_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "ssoDomain_connectionId_fkey"
+            columns: ["connectionId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "ssoConnection"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "ssoDomain_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ssoDomain_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ssoDomain_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ssoDomain_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ssoDomain_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "ssoDomain_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ssoDomain_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ssoDomain_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ssoDomain_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ssoDomain_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"

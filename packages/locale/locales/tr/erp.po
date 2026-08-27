@@ -1049,6 +1049,9 @@ msgstr "Bir yorum ekle..."
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "Miktar, fiyat, kargo, teslim süresi ve vergiyi geçersiz kılmak için özel bir fiyatlandırma satırı ekleyin"
 
+msgid "Add a domain"
+msgstr "Alan adı ekle"
+
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Malzeme listesindeki her parçayı ve miktarını gösteren bir malzeme bölümü ekleyin."
 
@@ -1225,6 +1228,9 @@ msgstr "Tedarikçi Ekle"
 
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "Aynı sistem üzerinde bir sonraki özelliği ekleyin, başka bir araç satın almak yerine."
+
+msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
+msgstr "Bu TXT kaydını DNS sağlayıcınıza ekleyin, ardından Doğrula'ya tıklayın. DNS değişiklikleri yaygınlaştırılması birkaç dakika sürebilir."
 
 msgid "Add Timecard"
 msgstr "Zaman Kartı Ekle"
@@ -1779,8 +1785,8 @@ msgstr "Bu satış emri için iş oluşturmak istediğinizden emin misiniz? Bu, 
 msgid "Are you sure you want to deactivate {0}?"
 msgstr "{0}'yi devre dışı bırakmak istediğinizden emin misiniz?"
 
-msgid "Are you sure you want to deactivate SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
-msgstr "SSO'yu devre dışı bırakmak istediğinizden emin misiniz? Kayıtlı alanlarınızdaki kullanıcılar artık kimlik sağlayıcınız aracılığıyla oturum açamayacaklar. Bu işlem geri alınamaz."
+msgid "Are you sure you want to deactivate SAML SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
+msgstr "SAML SSO'yu devre dışı bırakmak istediğinizden emin misiniz? Kayıtlı etki alanlarınızdaki kullanıcılar artık kimlik sağlayıcınız aracılığıyla oturum açamayacaklardır. Bu işlem geri alınamaz."
 
 #. placeholder {0}: selectedCategory?.name
 msgid "Are you sure you want to deactivate the {0} attribute category?"
@@ -3208,9 +3214,6 @@ msgstr "Filtreleri birleştir"
 msgid "Coming soon"
 msgstr "Yakında"
 
-msgid "Comma-separated list of email domains, e.g. example.com, example.org"
-msgstr "E-posta etki alanlarının virgülle ayrılmış listesi, örneğin example.com, example.org"
-
 msgid "comma-separated values"
 msgstr "virgülle ayrılmış değerler"
 
@@ -3539,9 +3542,6 @@ msgstr "İçerik"
 
 msgid "Context"
 msgstr "Bağlam"
-
-msgid "Continue with SSO"
-msgstr "SSO ile Devam Et"
 
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "Sabit kıymetlerin toplam amortismanı için karşı hesap"
@@ -7431,6 +7431,9 @@ msgstr "Ev Telefonu"
 
 msgid "Hop {depth}"
 msgstr "Atlama {depth}"
+
+msgid "Host"
+msgstr "Ana bilgisayar"
 
 msgid "Host, secure, and back up the platform"
 msgstr "Platformu barındırın, güvenli hale getirin ve yedekleyin"
@@ -11612,6 +11615,9 @@ msgstr "Eğitim zamanını koru ve katıl"
 msgid "Protects your company's data"
 msgstr "Şirketinizin verilerini korur"
 
+msgid "Prove ownership of each email domain with a DNS TXT record before it can route SAML SSO sign-ins. Add the record at DNS host, then click Verify — only verified domains participate in single sign-on."
+msgstr "Her bir e-posta etki alanının sahipliğini kanıtlayın - SAML SSO oturum açma işlemini yönlendirebilmesi için DNS TXT kaydıyla. Kaydı DNS ana bilgisayarına ekleyin, ardından Doğrula'ya tıklayın — yalnızca doğrulanmış etki alanları çoklu oturum açmada yer alır."
+
 msgid "Provide process knowledge and inputs"
 msgstr "Süreç bilgisi ve girdileri sağlayın"
 
@@ -12500,8 +12506,8 @@ msgstr "Belirli tutar eşiklerine göre satın alma siparişleri için onay gere
 msgid "Require approval for quality documents in your workflow"
 msgstr "İş akışınızdaki kalite belgeleri için onay gerektirir"
 
-msgid "Require SSO"
-msgstr "SSO Gerekli Kıl"
+msgid "Require SAML SSO"
+msgstr "SAML SSO Gerekli"
 
 msgid "Require two-factor authentication"
 msgstr "İki faktörlü kimlik doğrulamayı gerektir"
@@ -13013,6 +13019,12 @@ msgstr "Satış danışmanı"
 
 msgid "Same as Book"
 msgstr "Kitapta aynı"
+
+msgid "SAML SSO"
+msgstr "SAML SSO"
+
+msgid "SAML SSO is not configured for your email domain."
+msgstr "E-posta etki alanınız için SAML SSO yapılandırılmamıştır."
 
 msgid "Sample"
 msgstr "Örnek"
@@ -14118,9 +14130,6 @@ msgstr "Fiş hattını böl"
 
 msgid "Split shipment line"
 msgstr "Sevkiyat satırını böl"
-
-msgid "SSO is not configured for your email domain."
-msgstr "SSO e-posta alanınız için yapılandırılmamış."
 
 msgid "Stand up hosting"
 msgstr "Barındırmayı ayarla"
@@ -15642,6 +15651,9 @@ msgstr "Bu dosya artık kullanılamıyor veya onu indirme izniniz yok."
 msgid "This Fiscal Year"
 msgstr "Bu Mali Yıl"
 
+msgid "This has no effect until an email domain is verified below."
+msgstr "Bu, aşağıda bir e-posta etki alanı doğrulanana kadar hiçbir etkisi yoktur."
+
 msgid "This information will be used on document headers"
 msgstr "Bu bilgiler belge başlıklarında kullanılacaktır"
 
@@ -16650,8 +16662,8 @@ msgstr "Bu belgeyi yeniden adlandırmaya, değiştirmeye veya yeniden etiketleme
 msgid "Users can update this value for themselves"
 msgstr "Kullanıcılar bu değeri kendileri için güncelleyebilir"
 
-msgid "Users on covered domains can sign in only with SSO; magic link, Google, and passkeys are refused."
-msgstr "Kapsanan alanlarındaki kullanıcılar yalnızca SSO ile oturum açabilir; sihirli bağlantı, Google ve erişim anahtarları reddedilir."
+msgid "Users on covered domains can sign in only with SAML SSO; magic link, Google, and passkeys are refused."
+msgstr "Kapsanan etki alanlarındaki kullanıcılar yalnızca SAML SSO ile oturum açabilir; sihirli bağlantı, Google ve geçiş anahtarları reddedilir."
 
 msgid "Users to Update"
 msgstr "Güncellenecek Kullanıcılar"
@@ -16736,6 +16748,9 @@ msgstr "Doğrulama Hatası"
 
 msgid "Verification failed"
 msgstr "Doğrulama başarısız"
+
+msgid "Verified"
+msgstr "Doğrulandı"
 
 msgid "Verify"
 msgstr "Doğrula"
@@ -17667,6 +17682,9 @@ msgstr "Müşterilerinize sunduğunuz fiyat listeleri"
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "Verileriniz erişilebilir ve makul ölçüde temizdir"
+
+msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
+msgstr "DNS sağlayıcınız kaydın adına etki alanınızı otomatik olarak ekleyebilir — eğer öyleyse, yalnızca önceki kısmı girin (ör. _carbon-challenge artı herhangi bir alt alan adı)."
 
 msgid "Your Email"
 msgstr "E-posta Adresiniz"

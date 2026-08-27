@@ -24,8 +24,12 @@ vi.mock("@carbon/utils", () => ({
   datetime: { timestamp: vi.fn(() => "2026-01-01T00:00:00.000Z") }
 }));
 
-const { buildArchivedEmail, mergeInvitePermissions, uncoveredSsoDomainError } =
-  await import("./provisioning.server");
+const {
+  buildArchivedEmail,
+  deleteJitSsoUser,
+  mergeInvitePermissions,
+  uncoveredSsoDomainError
+} = await import("./provisioning.server");
 
 describe("buildArchivedEmail", () => {
   it("is deterministic for the same inputs", () => {
@@ -86,6 +90,142 @@ describe("mergeInvitePermissions", () => {
       sales_view: ["0", "c2"],
       parts_update: ["0"]
     });
+  });
+});
+
+// In-memory model of the state the on_auth_user_created trigger leaves behind
+// for a JIT SSO user: an auth user plus its auto-created public."user" and
+// userPermission rows (no FK cascade between the schemas — that gap is the bug).
+function makeJitUserState(userId: string, options?: { memberOf?: string[] }) {
+  return {
+    authUsers: new Set([userId]),
+    publicUsers: new Set([userId]),
+    userPermissions: new Set([userId]),
+    memberships: new Set(options?.memberOf ?? [])
+  };
+}
+
+function makeFakeDb(state: ReturnType<typeof makeJitUserState>) {
+  const deleteFrom = (table: string) => {
+    let targetId: string | undefined;
+    const chain = {
+      where: (_column: string, _op: string, value: string) => {
+        targetId = value;
+        return chain;
+      },
+      execute: async () => {
+        if (targetId === undefined) return [];
+        if (table === "userPermission") state.userPermissions.delete(targetId);
+        if (table === "user") state.publicUsers.delete(targetId);
+        return [];
+      }
+    };
+    return chain;
+  };
+
+  return {
+    selectFrom: (_table: string) => ({
+      select: (_column: string) => ({
+        where: (_c: string, _op: string, value: string) => ({
+          limit: (_n: number) => ({
+            executeTakeFirst: async () =>
+              state.memberships.has(value) ? { companyId: "c1" } : undefined
+          })
+        })
+      })
+    }),
+    transaction: () => ({
+      execute: async (
+        cb: (trx: { deleteFrom: typeof deleteFrom }) => unknown
+      ) => cb({ deleteFrom })
+    })
+  } as never;
+}
+
+function makeFakeServiceRole(state: ReturnType<typeof makeJitUserState>) {
+  return {
+    auth: {
+      admin: {
+        deleteUser: vi.fn(async (id: string) => {
+          state.authUsers.delete(id);
+          return { data: {}, error: null };
+        })
+      }
+    }
+  } as never;
+}
+
+describe("deleteJitSsoUser", () => {
+  // The invite paths refuse when a public."user" row exists whose auth account
+  // is gone (authIdentityExists) — the orphan state this helper must prevent.
+  const isUninvitableOrphan = (
+    state: ReturnType<typeof makeJitUserState>,
+    userId: string
+  ) => state.publicUsers.has(userId) && !state.authUsers.has(userId);
+
+  it("removes the whole throwaway user after a no-invite rejection, so the email stays invitable", async () => {
+    const state = makeJitUserState("jit_user");
+    const result = await deleteJitSsoUser(
+      makeFakeServiceRole(state),
+      makeFakeDb(state),
+      "jit_user"
+    );
+
+    expect(result.error).toBeNull();
+    expect(result.data).toEqual({ deleted: true });
+    expect(state.authUsers.has("jit_user")).toBe(false);
+    expect(state.publicUsers.has("jit_user")).toBe(false);
+    expect(state.userPermissions.has("jit_user")).toBe(false);
+    // The regression: deleting only the auth half left this true, tripping
+    // "This user's auth account no longer exists" on the next invite.
+    expect(isUninvitableOrphan(state, "jit_user")).toBe(false);
+  });
+
+  it("refuses to delete a user with a company membership (never a linked/real account)", async () => {
+    const state = makeJitUserState("real_user", { memberOf: ["real_user"] });
+    const serviceRole = makeFakeServiceRole(state);
+    const result = await deleteJitSsoUser(
+      serviceRole,
+      makeFakeDb(state),
+      "real_user"
+    );
+
+    expect(result.data).toEqual({ deleted: false });
+    expect(result.error).toBeNull();
+    expect(state.authUsers.has("real_user")).toBe(true);
+    expect(state.publicUsers.has("real_user")).toBe(true);
+    expect(state.userPermissions.has("real_user")).toBe(true);
+    expect(
+      (serviceRole as { auth: { admin: { deleteUser: unknown } } }).auth.admin
+        .deleteUser
+    ).not.toHaveBeenCalled();
+  });
+
+  it("returns the auth deletion failure without recreating the orphan state", async () => {
+    const state = makeJitUserState("jit_user");
+    const serviceRole = {
+      auth: {
+        admin: {
+          deleteUser: vi
+            .fn()
+            .mockResolvedValue({ data: {}, error: { message: "gotrue down" } })
+        }
+      }
+    } as never;
+
+    const result = await deleteJitSsoUser(
+      serviceRole,
+      makeFakeDb(state),
+      "jit_user"
+    );
+
+    expect(result.data).toBeNull();
+    expect(result.error).toContain("gotrue down");
+    // Public rows go first: a failed auth delete leaves an auth-only remnant
+    // (self-healing on the next SSO attempt), never the un-invitable orphan.
+    expect(state.publicUsers.has("jit_user")).toBe(false);
+    expect(state.userPermissions.has("jit_user")).toBe(false);
+    expect(isUninvitableOrphan(state, "jit_user")).toBe(false);
   });
 });
 

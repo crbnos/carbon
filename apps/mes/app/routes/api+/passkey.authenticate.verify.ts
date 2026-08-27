@@ -113,7 +113,7 @@ export async function action({ request }: ActionFunctionArgs) {
       return data(
         error(
           null,
-          'Your organization requires single sign-on. Use "Continue with SSO".'
+          'Your organization requires single sign-on. Use "SAML SSO".'
         ),
         { status: 403 }
       );

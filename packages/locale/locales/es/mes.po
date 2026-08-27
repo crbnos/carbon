@@ -277,9 +277,6 @@ msgstr "Consumido"
 msgid "Consumed expired"
 msgstr "Consumido vencido"
 
-msgid "Continue with SSO"
-msgstr "Continuar con SSO"
-
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Costo del mantenimiento no planificado, últimos {0} días"
@@ -1110,6 +1107,12 @@ msgstr "En ejecución"
 msgid "Sales Order"
 msgstr "Orden de venta"
 
+msgid "SAML SSO"
+msgstr "SAML SSO"
+
+msgid "SAML SSO is not configured for your email domain."
+msgstr "SAML SSO no está configurado para su dominio de correo electrónico."
+
 msgid "Save"
 msgstr "Guardar"
 
@@ -1301,9 +1304,6 @@ msgstr "Repuestos"
 
 msgid "Spare Parts Used"
 msgstr "Repuestos utilizados"
-
-msgid "SSO is not configured for your email domain."
-msgstr "SSO no está configurado para tu dominio de correo electrónico."
 
 msgid "Start"
 msgstr "Iniciar"

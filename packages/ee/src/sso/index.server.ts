@@ -1,12 +1,16 @@
 export {
+  addSsoDomain,
   deactivateSsoConnection,
   getSsoAwareInviteLink,
   getSsoConnection,
   getSsoConnectionByDomain,
   getSsoConnectionByProviderId,
+  getSsoDomains,
   isSsoRequiredForEmail,
+  removeSsoDomain,
   updateSsoRequireSso,
-  upsertSsoConnection
+  upsertSsoConnection,
+  verifySsoDomain
 } from "./connections.server";
 export { isSsoEnabled } from "./gate";
 export {
@@ -18,6 +22,7 @@ export {
 } from "./provider.server";
 export {
   buildArchivedEmail,
+  deleteJitSsoUser,
   linkSsoIdentityToUser,
   mergeInvitePermissions,
   migrateUserToSso,
@@ -27,3 +32,10 @@ export {
   getSsoProviderIdFromSession,
   getSsoProviderIdFromUser
 } from "./session.server";
+export {
+  checkDomainVerification,
+  generateVerificationToken,
+  getTxtRecord,
+  TXT_HOST_PREFIX,
+  TXT_VALUE_PREFIX
+} from "./verification.server";

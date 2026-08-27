@@ -1049,6 +1049,9 @@ msgstr "Ajouter un commentaire..."
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "Ajoutez une ligne de tarification personnalisée pour remplacer la quantité, le prix, l'expédition, le délai et la taxe"
 
+msgid "Add a domain"
+msgstr "Ajouter un domaine"
+
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Ajouter une section de matériaux qui liste chaque article de la nomenclature avec sa quantité."
 
@@ -1225,6 +1228,9 @@ msgstr "Ajouter un fournisseur"
 
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "Ajoutez la prochaine fonctionnalité sur le même système au lieu d'acheter un autre outil."
+
+msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
+msgstr "Ajoutez cet enregistrement TXT chez votre fournisseur DNS, puis cliquez sur Vérifier. Les modifications DNS peuvent prendre quelques minutes pour se propager."
 
 msgid "Add Timecard"
 msgstr "Ajouter une feuille de temps"
@@ -1779,8 +1785,8 @@ msgstr "Êtes-vous sûr de vouloir créer des tâches pour cette commande client
 msgid "Are you sure you want to deactivate {0}?"
 msgstr "Êtes-vous sûr de vouloir désactiver {0} ?"
 
-msgid "Are you sure you want to deactivate SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
-msgstr "Êtes-vous sûr de vouloir désactiver SSO ? Les utilisateurs de vos domaines enregistrés ne pourront plus se connecter via votre fournisseur d'identité. Cette action ne peut pas être annulée."
+msgid "Are you sure you want to deactivate SAML SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
+msgstr "Êtes-vous sûr de vouloir désactiver SAML SSO ? Les utilisateurs de vos domaines enregistrés ne pourront plus se connecter via votre fournisseur d'identité. Cette action ne peut pas être annulée."
 
 #. placeholder {0}: selectedCategory?.name
 msgid "Are you sure you want to deactivate the {0} attribute category?"
@@ -3208,9 +3214,6 @@ msgstr "Combiner les filtres"
 msgid "Coming soon"
 msgstr "Bientôt disponible"
 
-msgid "Comma-separated list of email domains, e.g. example.com, example.org"
-msgstr "Liste de domaines de messagerie séparés par des virgules, par exemple example.com, example.org"
-
 msgid "comma-separated values"
 msgstr "valeurs séparées par des virgules"
 
@@ -3539,9 +3542,6 @@ msgstr "Contenu"
 
 msgid "Context"
 msgstr "Contexte"
-
-msgid "Continue with SSO"
-msgstr "Continuer avec SSO"
 
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "Compte d'actif contré pour la dépréciation totale des immobilisations"
@@ -7431,6 +7431,9 @@ msgstr "Téléphone personnel"
 
 msgid "Hop {depth}"
 msgstr "Saut {depth}"
+
+msgid "Host"
+msgstr "Hôte"
 
 msgid "Host, secure, and back up the platform"
 msgstr "Héberger, sécuriser et sauvegarder la plateforme"
@@ -11612,6 +11615,9 @@ msgstr "Protégez le temps de formation et participez"
 msgid "Protects your company's data"
 msgstr "Protège les données de votre entreprise"
 
+msgid "Prove ownership of each email domain with a DNS TXT record before it can route SAML SSO sign-ins. Add the record at DNS host, then click Verify — only verified domains participate in single sign-on."
+msgstr "Prouvez la propriété de chaque domaine de messagerie avec un enregistrement DNS TXT avant de pouvoir acheminer les connexions SAML SSO. Ajoutez l'enregistrement chez votre hôte DNS, puis cliquez sur Vérifier — seuls les domaines vérifiés participent à l'authentification unique."
+
 msgid "Provide process knowledge and inputs"
 msgstr "Fournir les connaissances et les données du processus"
 
@@ -12500,8 +12506,8 @@ msgstr "Exiger une approbation pour les commandes d'achat en fonction des seuils
 msgid "Require approval for quality documents in your workflow"
 msgstr "Exiger une approbation pour les documents de qualité dans votre flux de travail"
 
-msgid "Require SSO"
-msgstr "Exiger SSO"
+msgid "Require SAML SSO"
+msgstr "Exiger SAML SSO"
 
 msgid "Require two-factor authentication"
 msgstr "Exiger l'authentification à deux facteurs"
@@ -13013,6 +13019,12 @@ msgstr "Représentant commercial"
 
 msgid "Same as Book"
 msgstr "Identique à la comptabilité"
+
+msgid "SAML SSO"
+msgstr "SAML SSO"
+
+msgid "SAML SSO is not configured for your email domain."
+msgstr "SAML SSO n'est pas configuré pour votre domaine de messagerie."
 
 msgid "Sample"
 msgstr "Échantillon"
@@ -14118,9 +14130,6 @@ msgstr "Diviser la ligne de reçu"
 
 msgid "Split shipment line"
 msgstr "Diviser la ligne d'expédition"
-
-msgid "SSO is not configured for your email domain."
-msgstr "SSO n'est pas configuré pour votre domaine de messagerie."
 
 msgid "Stand up hosting"
 msgstr "Mettre en place l'hébergement"
@@ -15642,6 +15651,9 @@ msgstr "Ce fichier n'est plus disponible, ou vous n'avez pas la permission de le
 msgid "This Fiscal Year"
 msgstr "Cet exercice fiscal"
 
+msgid "This has no effect until an email domain is verified below."
+msgstr "Cela n'aura aucun effet jusqu'à ce qu'un domaine de messagerie soit vérifié ci-dessous."
+
 msgid "This information will be used on document headers"
 msgstr "Ces informations seront utilisées dans les en-têtes de document"
 
@@ -16650,8 +16662,8 @@ msgstr "Utilisateurs et groupes autorisés à renommer, remplacer ou re-étiquet
 msgid "Users can update this value for themselves"
 msgstr "Les utilisateurs peuvent mettre à jour cette valeur pour eux-mêmes"
 
-msgid "Users on covered domains can sign in only with SSO; magic link, Google, and passkeys are refused."
-msgstr "Les utilisateurs des domaines couverts ne peuvent se connecter que via SSO ; le lien magique, Google et les clés d'accès sont refusés."
+msgid "Users on covered domains can sign in only with SAML SSO; magic link, Google, and passkeys are refused."
+msgstr "Les utilisateurs des domaines couverts ne peuvent se connecter qu'avec SAML SSO ; les liens magiques, Google et les passkeys sont refusés."
 
 msgid "Users to Update"
 msgstr "Utilisateurs à mettre à jour"
@@ -16736,6 +16748,9 @@ msgstr "Erreur de vérification"
 
 msgid "Verification failed"
 msgstr "Vérification échouée"
+
+msgid "Verified"
+msgstr "Vérifié"
 
 msgid "Verify"
 msgstr "Vérifier"
@@ -17667,6 +17682,9 @@ msgstr "Vos listes de prix destinées aux clients"
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "Vos données sont accessibles et raisonnablement propres"
+
+msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
+msgstr "Votre fournisseur DNS peut ajouter automatiquement votre domaine au nom de l'enregistrement — le cas échéant, entrez uniquement la partie qui précède (par exemple, _carbon-challenge plus tout sous-domaine)."
 
 msgid "Your Email"
 msgstr "Votre e-mail"

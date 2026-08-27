@@ -277,9 +277,6 @@ msgstr "消費済み"
 msgid "Consumed expired"
 msgstr "消費期限切れ"
 
-msgid "Continue with SSO"
-msgstr "SSOで続ける"
-
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "計画外メンテナンスのコスト（過去{0}日間）"
@@ -1110,6 +1107,12 @@ msgstr "実行中"
 msgid "Sales Order"
 msgstr "受注"
 
+msgid "SAML SSO"
+msgstr "SAML SSO"
+
+msgid "SAML SSO is not configured for your email domain."
+msgstr "ご使用のメールドメインでは SAML SSO が設定されていません。"
+
 msgid "Save"
 msgstr "保存"
 
@@ -1301,9 +1304,6 @@ msgstr "スペアパーツ"
 
 msgid "Spare Parts Used"
 msgstr "使用済みスペアパーツ"
-
-msgid "SSO is not configured for your email domain."
-msgstr "メールドメインに対してSSOが設定されていません。"
 
 msgid "Start"
 msgstr "開始"

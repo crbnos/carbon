@@ -1049,6 +1049,9 @@ msgstr "एक टिप्पणी जोड़ें..."
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "मात्रा, मूल्य, शिपिंग, लीड समय और कर को ओवरराइड करने के लिए एक कस्टम मूल्य निर्धारण पंक्ति जोड़ें"
 
+msgid "Add a domain"
+msgstr "एक डोमेन जोड़ें"
+
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "बिल ऑफ मेटेरियल्स पर प्रत्येक आइटम और उसकी मात्रा को सूचीबद्ध करने वाली एक सामग्री अनुभाग जोड़ें।"
 
@@ -1225,6 +1228,9 @@ msgstr "आपूर्तिकर्ता जोड़ें"
 
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "अगली क्षमता को एक ही सिस्टम पर जोड़ें, दूसरा टूल खरीदने के बजाय।"
+
+msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
+msgstr "अपने DNS होस्ट में यह TXT रिकॉर्ड जोड़ें, फिर सत्यापित करें पर क्लिक करें। DNS परिवर्तन प्रसारित होने में कुछ मिनट लग सकते हैं।"
 
 msgid "Add Timecard"
 msgstr "टाइमकार्ड जोड़ें"
@@ -1779,8 +1785,8 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 msgid "Are you sure you want to deactivate {0}?"
 msgstr "क्या आप सुनिश्चित हैं कि आप {0} को निष्क्रिय करना चाहते हैं?"
 
-msgid "Are you sure you want to deactivate SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
-msgstr "क्या आप वाकई SSO को निष्क्रिय करना चाहते हैं? आपके पंजीकृत डोमेन पर उपयोगकर्ता अब आपके आइडेंटिटी प्रदाता के माध्यम से साइन इन नहीं कर सकेंगे। यह पूर्ववत नहीं किया जा सकता।"
+msgid "Are you sure you want to deactivate SAML SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
+msgstr "क्या आप निश्चित हैं कि आप SAML SSO को निष्क्रिय करना चाहते हैं? आपके पंजीकृत डोमेन पर उपयोगकर्ता आपके पहचान प्रदाता के माध्यम से साइन इन नहीं कर सकेंगे। यह पूर्ववत नहीं किया जा सकता।"
 
 #. placeholder {0}: selectedCategory?.name
 msgid "Are you sure you want to deactivate the {0} attribute category?"
@@ -3208,9 +3214,6 @@ msgstr "फ़िल्टर को संयोजित करें"
 msgid "Coming soon"
 msgstr "जल्द ही आ रहा है"
 
-msgid "Comma-separated list of email domains, e.g. example.com, example.org"
-msgstr "ईमेल डोमेन की अल्पविराम से अलग की गई सूची, उदा. example.com, example.org"
-
 msgid "comma-separated values"
 msgstr "अल्पविराम से अलग किए गए मान"
 
@@ -3539,9 +3542,6 @@ msgstr "सामग्री"
 
 msgid "Context"
 msgstr "संदर्भ"
-
-msgid "Continue with SSO"
-msgstr "SSO के साथ जारी रखें"
 
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "अचल संपत्तियों के कुल मूल्यह्रास के लिए विरोधी संपत्ति खाता"
@@ -7431,6 +7431,9 @@ msgstr "होम फोन"
 
 msgid "Hop {depth}"
 msgstr "हॉप {depth}"
+
+msgid "Host"
+msgstr "होस्ट"
 
 msgid "Host, secure, and back up the platform"
 msgstr "प्लेटफॉर्म को होस्ट करें, सुरक्षित रखें और बैकअप लें"
@@ -11612,6 +11615,9 @@ msgstr "प्रशिक्षण समय की सुरक्षा क�
 msgid "Protects your company's data"
 msgstr "आपकी कंपनी के डेटा की सुरक्षा करता है"
 
+msgid "Prove ownership of each email domain with a DNS TXT record before it can route SAML SSO sign-ins. Add the record at DNS host, then click Verify — only verified domains participate in single sign-on."
+msgstr "SAML SSO साइन-इन को रूट करने से पहले DNS TXT रिकॉर्ड के साथ प्रत्येक ईमेल डोमेन का स्वामित्व साबित करें। DNS होस्ट पर रिकॉर्ड जोड़ें, फिर सत्यापित करें पर क्लिक करें — केवल सत्यापित डोमेन एकल साइन-ऑन में भाग लेते हैं।"
+
 msgid "Provide process knowledge and inputs"
 msgstr "प्रक्रिया ज्ञान और इनपुट प्रदान करें"
 
@@ -12500,8 +12506,8 @@ msgstr "राशि सीमा के आधार पर क्रय आद
 msgid "Require approval for quality documents in your workflow"
 msgstr "आपके वर्कफ़्लो में गुणवत्ता दस्तावेज़ों के लिए अनुमोदन की आवश्यकता है"
 
-msgid "Require SSO"
-msgstr "SSO की आवश्यकता है"
+msgid "Require SAML SSO"
+msgstr "SAML SSO आवश्यक करें"
 
 msgid "Require two-factor authentication"
 msgstr "दो-कारक प्रमाणीकरण की आवश्यकता"
@@ -13013,6 +13019,12 @@ msgstr "विक्रयकर्ता"
 
 msgid "Same as Book"
 msgstr "किताब के समान"
+
+msgid "SAML SSO"
+msgstr "SAML SSO"
+
+msgid "SAML SSO is not configured for your email domain."
+msgstr "आपके ईमेल डोमेन के लिए SAML SSO कॉन्फ़िगर नहीं है।"
 
 msgid "Sample"
 msgstr "नमूना"
@@ -14118,9 +14130,6 @@ msgstr "रसीद लाइन को विभाजित करें"
 
 msgid "Split shipment line"
 msgstr "शिपमेंट लाइन को विभाजित करें"
-
-msgid "SSO is not configured for your email domain."
-msgstr "आपके ईमेल डोमेन के लिए SSO कॉन्फ़िगर नहीं है।"
 
 msgid "Stand up hosting"
 msgstr "होस्टिंग सेट अप करें"
@@ -15642,6 +15651,9 @@ msgstr "यह फ़ाइल अब उपलब्ध नहीं है, �
 msgid "This Fiscal Year"
 msgstr "यह वित्तीय वर्ष"
 
+msgid "This has no effect until an email domain is verified below."
+msgstr "जब तक नीचे एक ईमेल डोमेन सत्यापित नहीं किया जाता, तब तक इसका कोई प्रभाव नहीं होगा।"
+
 msgid "This information will be used on document headers"
 msgstr "यह जानकारी दस्तावेज़ शीर्षलेख पर उपयोग की जाएगी"
 
@@ -16650,8 +16662,8 @@ msgstr "इस दस्तावेज़ का नाम बदलने, उ
 msgid "Users can update this value for themselves"
 msgstr "उपयोगकर्ता स्वयं के लिए इस मान को अपडेट कर सकते हैं"
 
-msgid "Users on covered domains can sign in only with SSO; magic link, Google, and passkeys are refused."
-msgstr "कवर किए गए डोमेन पर उपयोगकर्ता केवल SSO के साथ साइन इन कर सकते हैं; मैजिक लिंक, Google, और पासकीज़ को अस्वीकार कर दिया जाता है।"
+msgid "Users on covered domains can sign in only with SAML SSO; magic link, Google, and passkeys are refused."
+msgstr "कवर किए गए डोमेन पर उपयोगकर्ता केवल SAML SSO के साथ साइन इन कर सकते हैं; जादू लिंक, Google, और पासकी को अस्वीकार किया जाता है।"
 
 msgid "Users to Update"
 msgstr "अपडेट करने के लिए उपयोगकर्ता"
@@ -16736,6 +16748,9 @@ msgstr "सत्यापन त्रुटि"
 
 msgid "Verification failed"
 msgstr "सत्यापन विफल रहा"
+
+msgid "Verified"
+msgstr "सत्यापित"
 
 msgid "Verify"
 msgstr "सत्यापित करें"
@@ -17667,6 +17682,9 @@ msgstr "आपकी ग्राहक-सामना करने वाल�
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "आपका डेटा सुलभ है और उचित रूप से स्वच्छ है"
+
+msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
+msgstr "आपका DNS प्रदाता रिकॉर्ड नाम में आपका डोमेन स्वचालित रूप से जोड़ सकता है — यदि ऐसा है, तो केवल इससे पहले का भाग दर्ज करें (उदाहरण के लिए _carbon-challenge प्लस कोई भी सबडोमेन)।"
 
 msgid "Your Email"
 msgstr "आपका ईमेल"

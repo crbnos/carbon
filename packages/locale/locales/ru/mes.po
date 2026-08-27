@@ -277,9 +277,6 @@ msgstr "Использовано"
 msgid "Consumed expired"
 msgstr "Потреблено истекшее"
 
-msgid "Continue with SSO"
-msgstr "Продолжить с SSO"
-
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Стоимость незапланированного обслуживания за последние {0} дней"
@@ -1110,6 +1107,12 @@ msgstr "Работает"
 msgid "Sales Order"
 msgstr "Заказ на продажу"
 
+msgid "SAML SSO"
+msgstr "SAML SSO"
+
+msgid "SAML SSO is not configured for your email domain."
+msgstr "SAML SSO не настроен для вашего почтового домена."
+
 msgid "Save"
 msgstr "Сохранить"
 
@@ -1301,9 +1304,6 @@ msgstr "Запасные части"
 
 msgid "Spare Parts Used"
 msgstr "Использованные запасные части"
-
-msgid "SSO is not configured for your email domain."
-msgstr "SSO не настроен для вашего домена электронной почты."
 
 msgid "Start"
 msgstr "Старт"

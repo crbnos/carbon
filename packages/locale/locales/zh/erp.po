@@ -1049,6 +1049,9 @@ msgstr "添加评论..."
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "添加自定义定价行以覆盖数量、价格、运费、交货期和税费"
 
+msgid "Add a domain"
+msgstr "添加一个域"
+
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "添加一个材料部分，列出物料清单上的每个项目及其数量。"
 
@@ -1225,6 +1228,9 @@ msgstr "添加供应商"
 
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "在同一系统上添加下一个功能，而不是购买另一个工具。"
+
+msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
+msgstr "在您的 DNS 主机上添加此 TXT 记录，然后单击验证。DNS 更改可能需要几分钟才能传播。"
 
 msgid "Add Timecard"
 msgstr "添加工时卡"
@@ -1779,8 +1785,8 @@ msgstr "你确定要为此销售订单创建工作吗？这将为所有还没有
 msgid "Are you sure you want to deactivate {0}?"
 msgstr "你确定要停用 {0} 吗？"
 
-msgid "Are you sure you want to deactivate SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
-msgstr "您确定要停用 SSO 吗?注册域中的用户将无法再通过您的身份提供商登录。此操作无法撤消。"
+msgid "Are you sure you want to deactivate SAML SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
+msgstr "您确定要停用 SAML SSO 吗？注册域上的用户将无法再通过身份提供者登录。此操作无法撤销。"
 
 #. placeholder {0}: selectedCategory?.name
 msgid "Are you sure you want to deactivate the {0} attribute category?"
@@ -3208,9 +3214,6 @@ msgstr "合并筛选"
 msgid "Coming soon"
 msgstr "即将推出"
 
-msgid "Comma-separated list of email domains, e.g. example.com, example.org"
-msgstr "以逗号分隔的电子邮件域列表,例如 example.com, example.org"
-
 msgid "comma-separated values"
 msgstr "逗号分隔的值"
 
@@ -3539,9 +3542,6 @@ msgstr "内容"
 
 msgid "Context"
 msgstr "上下文"
-
-msgid "Continue with SSO"
-msgstr "使用 SSO 继续"
 
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "用于固定资产总折旧的反向资产账户"
@@ -7431,6 +7431,9 @@ msgstr "家庭电话"
 
 msgid "Hop {depth}"
 msgstr "跳转 {depth}"
+
+msgid "Host"
+msgstr "主机"
 
 msgid "Host, secure, and back up the platform"
 msgstr "托管、保护和备份平台"
@@ -11612,6 +11615,9 @@ msgstr "保护培训时间并参加"
 msgid "Protects your company's data"
 msgstr "保护您公司的数据"
 
+msgid "Prove ownership of each email domain with a DNS TXT record before it can route SAML SSO sign-ins. Add the record at DNS host, then click Verify — only verified domains participate in single sign-on."
+msgstr "在路由 SAML SSO 登录前，通过 DNS TXT 记录证明每个电子邮件域的所有权。在 DNS 主机上添加记录，然后单击验证 — 仅经过验证的域参与单点登录。"
+
 msgid "Provide process knowledge and inputs"
 msgstr "提供流程知识和输入"
 
@@ -12500,8 +12506,8 @@ msgstr "根据金额阈值要求采购订单获得批准"
 msgid "Require approval for quality documents in your workflow"
 msgstr "在您的工作流程中需要质量文件的批准"
 
-msgid "Require SSO"
-msgstr "需要 SSO"
+msgid "Require SAML SSO"
+msgstr "需要 SAML SSO"
 
 msgid "Require two-factor authentication"
 msgstr "需要双因素认证"
@@ -13013,6 +13019,12 @@ msgstr "销售人员"
 
 msgid "Same as Book"
 msgstr "与账面相同"
+
+msgid "SAML SSO"
+msgstr "SAML SSO"
+
+msgid "SAML SSO is not configured for your email domain."
+msgstr "未为您的电子邮件域配置 SAML SSO。"
 
 msgid "Sample"
 msgstr "样本"
@@ -14118,9 +14130,6 @@ msgstr "拆分收据行"
 
 msgid "Split shipment line"
 msgstr "拆分发货行"
-
-msgid "SSO is not configured for your email domain."
-msgstr "SSO 未针对您的电子邮件域进行配置。"
 
 msgid "Stand up hosting"
 msgstr "建立托管"
@@ -15642,6 +15651,9 @@ msgstr "此文件不再可用，或您没有权限下载它。"
 msgid "This Fiscal Year"
 msgstr "本财政年度"
 
+msgid "This has no effect until an email domain is verified below."
+msgstr "在下面验证电子邮件域之前，这不会产生任何影响。"
+
 msgid "This information will be used on document headers"
 msgstr "此信息将用于文档标题"
 
@@ -16650,8 +16662,8 @@ msgstr "允许重命名、替换或重新标记此文档的用户和群组;上�
 msgid "Users can update this value for themselves"
 msgstr "用户可以自行更新此值"
 
-msgid "Users on covered domains can sign in only with SSO; magic link, Google, and passkeys are refused."
-msgstr "受覆盖域上的用户只能使用 SSO 登录;拒绝魔法链接、Google 和密钥。"
+msgid "Users on covered domains can sign in only with SAML SSO; magic link, Google, and passkeys are refused."
+msgstr "覆盖域上的用户只能使用 SAML SSO 登录；magic link、Google 和通行密钥被拒绝。"
 
 msgid "Users to Update"
 msgstr "要更新的用户"
@@ -16736,6 +16748,9 @@ msgstr "验证错误"
 
 msgid "Verification failed"
 msgstr "验证失败"
+
+msgid "Verified"
+msgstr "已验证"
 
 msgid "Verify"
 msgstr "验证"
@@ -17667,6 +17682,9 @@ msgstr "您面向客户的价格表"
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "您的数据可访问且相对干净"
+
+msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
+msgstr "您的 DNS 提供商可能会自动将您的域追加到记录名称中 — 如果是这样，只需输入它之前的部分（例如 _carbon-challenge 加上任何子域）。"
 
 msgid "Your Email"
 msgstr "你的电子邮件"

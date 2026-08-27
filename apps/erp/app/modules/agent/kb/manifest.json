@@ -237,6 +237,7 @@
       "headings": [
         "Requirements",
         "Connect your identity provider",
+        "Verifying a domain",
         "How sign-in works",
         "Existing accounts",
         "Requiring SSO",

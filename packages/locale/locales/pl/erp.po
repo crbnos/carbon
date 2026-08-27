@@ -1049,6 +1049,9 @@ msgstr "Dodaj komentarz..."
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "Dodaj niestandardowy wiersz cenowy, aby zastąpić ilość, cenę, wysyłkę, czas realizacji i podatek"
 
+msgid "Add a domain"
+msgstr "Dodaj domenę"
+
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Dodaj sekcję materiałów, która zawiera listę każdego elementu zestawienia materiałowego z jego ilością."
 
@@ -1225,6 +1228,9 @@ msgstr "Dodaj dostawcę"
 
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "Dodaj następną funkcję w tym samym systemie zamiast kupować inne narzędzie."
+
+msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
+msgstr "Dodaj ten rekord TXT u dostawcy DNS, a następnie kliknij Weryfikuj. Zmiany DNS mogą potrwać kilka minut."
 
 msgid "Add Timecard"
 msgstr "Dodaj kartę czasu pracy"
@@ -1779,8 +1785,8 @@ msgstr "Czy na pewno chcesz utworzyć zadania dla tego zamówienia sprzedaży? S
 msgid "Are you sure you want to deactivate {0}?"
 msgstr "Czy na pewno chcesz dezaktywować {0}?"
 
-msgid "Are you sure you want to deactivate SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
-msgstr "Czy na pewno chcesz dezaktywować logowanie jednokrotne? Użytkownicy z Twoich zarejestrowanych domen nie będą już mogli logować się za pośrednictwem Twojego dostawcy tożsamości. Nie można tego cofnąć."
+msgid "Are you sure you want to deactivate SAML SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
+msgstr "Czy na pewno chcesz wyłączyć SAML SSO? Użytkownicy w Twoich zarejestrowanych domenach nie będą już mogli się logować poprzez dostawcę tożsamości. Tej operacji nie można cofnąć."
 
 #. placeholder {0}: selectedCategory?.name
 msgid "Are you sure you want to deactivate the {0} attribute category?"
@@ -3208,9 +3214,6 @@ msgstr "Połącz filtry"
 msgid "Coming soon"
 msgstr "Wkrótce"
 
-msgid "Comma-separated list of email domains, e.g. example.com, example.org"
-msgstr "Lista domen e-mail oddzielona przecinkami, np. example.com, example.org"
-
 msgid "comma-separated values"
 msgstr "wartości oddzielone przecinkami"
 
@@ -3539,9 +3542,6 @@ msgstr "Zawartość"
 
 msgid "Context"
 msgstr "Kontekst"
-
-msgid "Continue with SSO"
-msgstr "Kontynuuj za pomocą logowania jednokrotnego"
 
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "Konto aktywa przeciwnego dla całkowitej amortyzacji środków trwałych"
@@ -7431,6 +7431,9 @@ msgstr "Telefon domowy"
 
 msgid "Hop {depth}"
 msgstr "Przeskok {depth}"
+
+msgid "Host"
+msgstr "Host"
 
 msgid "Host, secure, and back up the platform"
 msgstr "Hostuj, zabezpiecz i wykonuj kopie zapasowe platformy"
@@ -11612,6 +11615,9 @@ msgstr "Zarezerwuj czas na szkolenie i weź w nim udział"
 msgid "Protects your company's data"
 msgstr "Chroni dane twojej firmy"
 
+msgid "Prove ownership of each email domain with a DNS TXT record before it can route SAML SSO sign-ins. Add the record at DNS host, then click Verify — only verified domains participate in single sign-on."
+msgstr "Udowodnij własność każdej domeny e-mail za pomocą rekordu TXT DNS, zanim będzie ona mogła obsługiwać logowania SAML SSO. Dodaj rekord u dostawcy DNS, a następnie kliknij Weryfikuj — tylko zweryfikowane domeny uczestniczą w logowaniu jednokrotnym."
+
 msgid "Provide process knowledge and inputs"
 msgstr "Udostępnij wiedzę procesową i dane wejściowe"
 
@@ -12500,8 +12506,8 @@ msgstr "Wymagaj zatwierdzenia dla zamówień zakupu na podstawie progów kwotowy
 msgid "Require approval for quality documents in your workflow"
 msgstr "Wymagaj zatwierdzenia dla dokumentów jakości w przepływie pracy"
 
-msgid "Require SSO"
-msgstr "Wymagaj logowania jednokrotnego"
+msgid "Require SAML SSO"
+msgstr "Wymagaj SAML SSO"
 
 msgid "Require two-factor authentication"
 msgstr "Wymagaj uwierzytelniania dwuskładnikowego"
@@ -13013,6 +13019,12 @@ msgstr "Sprzedawca"
 
 msgid "Same as Book"
 msgstr "Taki sam jak w księdze"
+
+msgid "SAML SSO"
+msgstr "SAML SSO"
+
+msgid "SAML SSO is not configured for your email domain."
+msgstr "SAML SSO nie jest skonfigurowany dla Twojej domeny e-mail."
 
 msgid "Sample"
 msgstr "Próbka"
@@ -14118,9 +14130,6 @@ msgstr "Podziel linię paragonu"
 
 msgid "Split shipment line"
 msgstr "Podziel linię wysyłki"
-
-msgid "SSO is not configured for your email domain."
-msgstr "Logowanie jednokrotne nie jest skonfigurowane dla Twojej domeny e-mail."
 
 msgid "Stand up hosting"
 msgstr "Skonfiguruj hosting"
@@ -15642,6 +15651,9 @@ msgstr "Ten plik nie jest już dostępny lub nie masz uprawnień do jego pobrani
 msgid "This Fiscal Year"
 msgstr "Ten rok obrachunkowy"
 
+msgid "This has no effect until an email domain is verified below."
+msgstr "To nie ma żadnego wpływu do momentu weryfikacji domeny e-mail poniżej."
+
 msgid "This information will be used on document headers"
 msgstr "Te informacje będą używane w nagłówkach dokumentów"
 
@@ -16650,8 +16662,8 @@ msgstr "Użytkownicy i grupy uprawnione do zmiany nazwy, zastąpienia lub ponown
 msgid "Users can update this value for themselves"
 msgstr "Użytkownicy mogą aktualizować tę wartość dla siebie"
 
-msgid "Users on covered domains can sign in only with SSO; magic link, Google, and passkeys are refused."
-msgstr "Użytkownicy z objętych domen mogą logować się tylko za pośrednictwem logowania jednokrotnego; magiczny link, Google i klucze dostępu są odrzucane."
+msgid "Users on covered domains can sign in only with SAML SSO; magic link, Google, and passkeys are refused."
+msgstr "Użytkownicy w domenach objętych wymogiem mogą się logować tylko za pomocą SAML SSO; linki magiczne, Google i klucze dostępu są blokowane."
 
 msgid "Users to Update"
 msgstr "Użytkownicy do aktualizacji"
@@ -16736,6 +16748,9 @@ msgstr "Błąd weryfikacji"
 
 msgid "Verification failed"
 msgstr "Weryfikacja nie powiodła się"
+
+msgid "Verified"
+msgstr "Zweryfikowany"
 
 msgid "Verify"
 msgstr "Weryfikuj"
@@ -17667,6 +17682,9 @@ msgstr "Twoje cenniki dostępne dla klientów"
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "Twoje dane są dostępne i w rozsądnie czystej formie"
+
+msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
+msgstr "Twój dostawca DNS może automatycznie dołączyć Twoją domenę do nazwy rekordu — jeśli tak się stanie, wpisz tylko część przed nią (np. _carbon-challenge plus dowolna poddomena)."
 
 msgid "Your Email"
 msgstr "Twój e-mail"
