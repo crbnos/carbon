@@ -210,7 +210,8 @@ const SalesReturnOrderLineForm = ({
   };
 
   // Disposition submits through its own fetcher, not the line form. Scrap and
-  // Rework escalate to an Issue instead of writing the disposition directly.
+  // Rework escalate to an Issue, and Repair spawns a repair order, instead of
+  // writing the disposition directly.
   const dispositionFetcher = useFetcher<{ success: boolean }>();
   const [disposition, setDisposition] = useState(
     (line?.disposition as string | undefined) ?? "Pending"
@@ -236,7 +237,11 @@ const SalesReturnOrderLineForm = ({
       action:
         value === "Scrap" || value === "Rework"
           ? path.to.salesReturnOrderLineIssue(orderId, line.id)
-          : path.to.salesReturnOrderLineDisposition(orderId, line.id)
+          : // Repair hands the unit to a repair order, which sets the
+            // disposition itself once the handover succeeds.
+            value === "Repair"
+            ? path.to.salesReturnOrderLineRepair(orderId, line.id)
+            : path.to.salesReturnOrderLineDisposition(orderId, line.id)
     });
   };
 

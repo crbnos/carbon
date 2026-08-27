@@ -78,6 +78,64 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       throw redirect(path.to.shipmentDetails(salesOrderShipment.data.id));
+    case "Repair Order": {
+      // The leg says which way the unit is going: to the OEM, or home to the
+      // customer. One open draft per leg, so clicking twice reuses the draft
+      // instead of stacking duplicates.
+      const leg = (formData.get("leg") as string) === "supplier"
+        ? "supplier"
+        : "customer";
+
+      const existingRepairShipment = await client
+        .from("shipment")
+        .select("id")
+        .eq("sourceDocument", "Repair Order")
+        .eq("sourceDocumentId", sourceDocumentId)
+        .eq("status", "Draft")
+        .eq("companyId", companyId)
+        .order("createdAt", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (existingRepairShipment.data) {
+        throw redirect(
+          path.to.shipmentDetails(existingRepairShipment.data.id)
+        );
+      }
+
+      const repairShipment = await serviceRole.functions.invoke<{
+        id: string;
+      }>("create", {
+        body: {
+          type: "shipmentFromRepairOrder",
+          companyId,
+          locationId: defaults.data?.locationId,
+          repairOrderId: sourceDocumentId,
+          leg,
+          shipmentId: undefined,
+          userId: userId
+        }
+      });
+      if (!repairShipment.data || repairShipment.error) {
+        logger.error("Failed to create repair shipment", {
+          error: repairShipment.error
+        });
+        throw redirect(
+          path.to.repairOrderDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              repairShipment.error,
+              await getEdgeFunctionErrorMessage(
+                repairShipment.error,
+                "Failed to create shipment"
+              )
+            )
+          )
+        );
+      }
+
+      throw redirect(path.to.shipmentDetails(repairShipment.data.id));
+    }
     case "Sales Return Order": {
       // One open draft per return order: clicking Ship again goes to the
       // existing draft instead of stacking up duplicates.

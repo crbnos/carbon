@@ -114,6 +114,58 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       throw redirect(path.to.receiptDetails(salesReturnOrderReceipt.data.id));
+    case "Repair Order": {
+      // "intake" takes the customer's unit in; "return" takes it back from the
+      // OEM. One open draft at a time, same as the RMA path.
+      const repairLeg = (formData.get("leg") as string) === "return"
+        ? "return"
+        : "intake";
+
+      const existingRepairReceipt = await client
+        .from("receipt")
+        .select("id")
+        .eq("sourceDocument", "Repair Order")
+        .eq("sourceDocumentId", sourceDocumentId)
+        .eq("status", "Draft")
+        .eq("companyId", companyId)
+        .order("createdAt", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (existingRepairReceipt.data) {
+        throw redirect(path.to.receiptDetails(existingRepairReceipt.data.id));
+      }
+
+      const repairReceipt = await serviceRole.functions.invoke<{
+        id: string;
+      }>("create", {
+        body: {
+          type: "receiptFromRepairOrder",
+          companyId,
+          locationId: defaults.data?.locationId,
+          repairOrderId: sourceDocumentId,
+          leg: repairLeg,
+          receiptId: undefined,
+          userId: userId
+        }
+      });
+      if (!repairReceipt.data || repairReceipt.error) {
+        throw redirect(
+          path.to.repairOrderDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              repairReceipt.error,
+              await getEdgeFunctionErrorMessage(
+                repairReceipt.error,
+                "Failed to create receipt"
+              )
+            )
+          )
+        );
+      }
+
+      throw redirect(path.to.receiptDetails(repairReceipt.data.id));
+    }
     case "Inbound Transfer":
       const warehouseTransferReceipt = await serviceRole.functions.invoke<{
         id: string;

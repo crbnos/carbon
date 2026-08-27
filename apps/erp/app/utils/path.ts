@@ -2059,6 +2059,8 @@ export const path = {
       generatePath(`${x}/sales-return-order/${orderId}/${lineId}/disposition`),
     salesReturnOrderLineIssue: (orderId: string, lineId: string) =>
       generatePath(`${x}/sales-return-order/${orderId}/${lineId}/issue`),
+    salesReturnOrderLineRepair: (orderId: string, lineId: string) =>
+      generatePath(`${x}/sales-return-order/${orderId}/${lineId}/repair`),
     salesReturnOrderLineReceiving: (orderId: string, lineId: string) =>
       generatePath(`${x}/sales-return-order/${orderId}/${lineId}/receiving`),
     salesReturnOrderReplacement: (id: string) =>
