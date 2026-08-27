@@ -1143,6 +1143,9 @@ msgstr "Add Adjustment"
 msgid "Add Affected Item"
 msgstr "Add Affected Item"
 
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+
 msgid "Add any notes about your decision..."
 msgstr "Add any notes about your decision..."
 
@@ -12048,6 +12051,9 @@ msgstr "Protect the go-live date"
 msgid "Protect training time and attend"
 msgstr "Protect training time and attend"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "Protect your company with advanced security controls like two-factor authentication enforcement."
+
 msgid "Protects your company's data"
 msgstr "Protects your company's data"
 
@@ -12959,6 +12965,9 @@ msgstr "Require a 6-digit code from an authenticator app when signing in."
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
+
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
@@ -16817,6 +16826,9 @@ msgstr "Two-Factor"
 
 msgid "Two-factor authentication"
 msgstr "Two-factor authentication"
+
+msgid "Two-Factor Authentication"
+msgstr "Two-Factor Authentication"
 
 msgid "Two-factor authentication disabled"
 msgstr "Two-factor authentication disabled"

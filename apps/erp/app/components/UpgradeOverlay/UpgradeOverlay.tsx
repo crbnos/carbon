@@ -129,10 +129,10 @@ function UpgradeOverlayDialog({
 }) {
   return (
     <Modal open={open} onOpenChange={onOpenChange}>
-      <ModalContent className="max-w-md">
-        <CardContent className="flex flex-col items-center text-center gap-4 pt-8 pb-6">
+      <ModalContent className="max-w-md bg-card dark:bg-muted/40">
+        <div className="flex flex-col items-center text-center gap-4 px-6 pt-4 pb-8">
           {children}
-        </CardContent>
+        </div>
       </ModalContent>
     </Modal>
   );
