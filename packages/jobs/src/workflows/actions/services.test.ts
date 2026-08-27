@@ -17,6 +17,7 @@ vi.mock("./webhook", () => ({
   runWebhookAction: vi.fn(async () => ({ ok: true, outputs: {} }))
 }));
 vi.mock("./operations", () => ({
+  runIntegration: async () => ({ ok: false as const, error: "not stubbed" }),
   runOperation: vi.fn(async () => ({ ok: true, value: null }))
 }));
 vi.mock("./search", () => ({
