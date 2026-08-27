@@ -98813,6 +98813,693 @@ export default {
         },
         tags: ["(rpc) get_direct_ancestors_of_tracked_entity_strict"]
       }
+    },
+    "/onshapeEngineeringData": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.onshapeEngineeringData.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeEngineeringData.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeEngineeringData.readableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeEngineeringData.revision"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeEngineeringData.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeEngineeringData.releaseState"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeEngineeringData.stateSyncedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeEngineeringData.mass"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeEngineeringData.material"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeEngineeringData.vendor"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeEngineeringData.bomSyncedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/onshapeEngineeringData"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["onshapeEngineeringData"]
+      }
+    },
+    "/onshapeItemSyncState": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.assetKind"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.source"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.skipReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.error"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.observedOnly"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.partNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.revision"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.revisionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.versionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.elementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.releaseState"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.modelUploadId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.documentPath"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.runId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/onshapeItemSyncState"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["onshapeItemSyncState"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.onshapeItemSyncState"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["onshapeItemSyncState"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.assetKind"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.source"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.skipReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.error"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.observedOnly"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.partNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.revision"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.revisionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.versionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.elementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.releaseState"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.modelUploadId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.documentPath"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.runId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["onshapeItemSyncState"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.assetKind"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.source"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.skipReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.error"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.observedOnly"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.partNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.revision"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.revisionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.versionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.elementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.releaseState"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.modelUploadId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.documentPath"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.runId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeItemSyncState.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.onshapeItemSyncState"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["onshapeItemSyncState"]
+      }
+    },
+    "/onshapeSyncRun": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.startedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.finishedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.pagesProcessed"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.revisionsScanned"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.matched"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.synced"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.skippedNoItem"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.skippedAlreadySynced"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.skippedNonModel"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.skippedTooLarge"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.failed"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.totalRevisions"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.unmatchedReleases"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.unmatchedOverflow"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.ambiguousReleases"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.ambiguousOverflow"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.error"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.cancelledBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/onshapeSyncRun"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["onshapeSyncRun"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.onshapeSyncRun"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["onshapeSyncRun"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.startedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.finishedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.pagesProcessed"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.revisionsScanned"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.matched"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.synced"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.skippedNoItem"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.skippedAlreadySynced"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.skippedNonModel"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.skippedTooLarge"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.failed"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.totalRevisions"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.unmatchedReleases"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.unmatchedOverflow"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.ambiguousReleases"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.ambiguousOverflow"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.error"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.cancelledBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["onshapeSyncRun"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.startedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.finishedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.pagesProcessed"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.revisionsScanned"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.matched"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.synced"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.skippedNoItem"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.skippedAlreadySynced"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.skippedNonModel"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.skippedTooLarge"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.failed"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.totalRevisions"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.unmatchedReleases"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.unmatchedOverflow"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.ambiguousReleases"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.ambiguousOverflow"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.error"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.cancelledBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.onshapeSyncRun.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.onshapeSyncRun"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["onshapeSyncRun"]
+      }
     }
   },
   definitions: {
@@ -140213,6 +140900,322 @@ export default {
         },
         companyId: {
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    onshapeEngineeringData: {
+      properties: {
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        itemId: {
+          format: "text",
+          type: "string"
+        },
+        readableId: {
+          format: "text",
+          type: "string"
+        },
+        revision: {
+          format: "text",
+          type: "string"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        releaseState: {
+          format: "text",
+          type: "string"
+        },
+        stateSyncedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        mass: {
+          format: "text",
+          type: "string"
+        },
+        material: {
+          format: "text",
+          type: "string"
+        },
+        vendor: {
+          format: "text",
+          type: "string"
+        },
+        bomSyncedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    onshapeItemSyncState: {
+      required: [
+        "id",
+        "companyId",
+        "itemId",
+        "assetKind",
+        "status",
+        "source",
+        "observedOnly",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('osis'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        assetKind: {
+          format: "text",
+          type: "string"
+        },
+        status: {
+          format: "text",
+          type: "string"
+        },
+        source: {
+          format: "text",
+          type: "string"
+        },
+        skipReason: {
+          format: "text",
+          type: "string"
+        },
+        error: {
+          format: "text",
+          type: "string"
+        },
+        observedOnly: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        partNumber: {
+          format: "text",
+          type: "string"
+        },
+        revision: {
+          format: "text",
+          type: "string"
+        },
+        revisionId: {
+          format: "text",
+          type: "string"
+        },
+        documentId: {
+          format: "text",
+          type: "string"
+        },
+        versionId: {
+          format: "text",
+          type: "string"
+        },
+        elementId: {
+          format: "text",
+          type: "string"
+        },
+        releaseState: {
+          format: "text",
+          type: "string"
+        },
+        modelUploadId: {
+          format: "text",
+          type: "string"
+        },
+        documentPath: {
+          format: "text",
+          type: "string"
+        },
+        runId: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    onshapeSyncRun: {
+      required: [
+        "id",
+        "companyId",
+        "status",
+        "pagesProcessed",
+        "revisionsScanned",
+        "matched",
+        "synced",
+        "skippedNoItem",
+        "skippedAlreadySynced",
+        "skippedNonModel",
+        "skippedTooLarge",
+        "failed",
+        "unmatchedReleases",
+        "unmatchedOverflow",
+        "ambiguousReleases",
+        "ambiguousOverflow",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('osr'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        status: {
+          format: "text",
+          type: "string"
+        },
+        startedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        finishedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        pagesProcessed: {
+          default: 0,
+          format: "integer",
+          type: "integer"
+        },
+        revisionsScanned: {
+          default: 0,
+          format: "integer",
+          type: "integer"
+        },
+        matched: {
+          default: 0,
+          format: "integer",
+          type: "integer"
+        },
+        synced: {
+          default: 0,
+          format: "integer",
+          type: "integer"
+        },
+        skippedNoItem: {
+          default: 0,
+          format: "integer",
+          type: "integer"
+        },
+        skippedAlreadySynced: {
+          default: 0,
+          format: "integer",
+          type: "integer"
+        },
+        skippedNonModel: {
+          default: 0,
+          format: "integer",
+          type: "integer"
+        },
+        skippedTooLarge: {
+          default: 0,
+          format: "integer",
+          type: "integer"
+        },
+        failed: {
+          default: 0,
+          format: "integer",
+          type: "integer"
+        },
+        totalRevisions: {
+          format: "integer",
+          type: "integer"
+        },
+        unmatchedReleases: {
+          format: "jsonb"
+        },
+        unmatchedOverflow: {
+          default: 0,
+          format: "integer",
+          type: "integer"
+        },
+        ambiguousReleases: {
+          format: "jsonb"
+        },
+        ambiguousOverflow: {
+          default: 0,
+          format: "integer",
+          type: "integer"
+        },
+        error: {
+          format: "text",
+          type: "string"
+        },
+        cancelledBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -186469,6 +187472,387 @@ export default {
     },
     "rowFilter.salesOrderTransaction.companyId": {
       name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.onshapeEngineeringData": {
+      name: "onshapeEngineeringData",
+      description: "onshapeEngineeringData",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/onshapeEngineeringData"
+      }
+    },
+    "rowFilter.onshapeEngineeringData.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeEngineeringData.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeEngineeringData.readableId": {
+      name: "readableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeEngineeringData.revision": {
+      name: "revision",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeEngineeringData.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeEngineeringData.releaseState": {
+      name: "releaseState",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeEngineeringData.stateSyncedAt": {
+      name: "stateSyncedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeEngineeringData.mass": {
+      name: "mass",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeEngineeringData.material": {
+      name: "material",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeEngineeringData.vendor": {
+      name: "vendor",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeEngineeringData.bomSyncedAt": {
+      name: "bomSyncedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.onshapeItemSyncState": {
+      name: "onshapeItemSyncState",
+      description: "onshapeItemSyncState",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/onshapeItemSyncState"
+      }
+    },
+    "rowFilter.onshapeItemSyncState.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeItemSyncState.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeItemSyncState.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeItemSyncState.assetKind": {
+      name: "assetKind",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeItemSyncState.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeItemSyncState.source": {
+      name: "source",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeItemSyncState.skipReason": {
+      name: "skipReason",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeItemSyncState.error": {
+      name: "error",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeItemSyncState.observedOnly": {
+      name: "observedOnly",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeItemSyncState.partNumber": {
+      name: "partNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeItemSyncState.revision": {
+      name: "revision",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeItemSyncState.revisionId": {
+      name: "revisionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeItemSyncState.documentId": {
+      name: "documentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeItemSyncState.versionId": {
+      name: "versionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeItemSyncState.elementId": {
+      name: "elementId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeItemSyncState.releaseState": {
+      name: "releaseState",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeItemSyncState.modelUploadId": {
+      name: "modelUploadId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeItemSyncState.documentPath": {
+      name: "documentPath",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeItemSyncState.runId": {
+      name: "runId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeItemSyncState.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeItemSyncState.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeItemSyncState.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeItemSyncState.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.onshapeSyncRun": {
+      name: "onshapeSyncRun",
+      description: "onshapeSyncRun",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/onshapeSyncRun"
+      }
+    },
+    "rowFilter.onshapeSyncRun.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeSyncRun.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeSyncRun.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeSyncRun.startedAt": {
+      name: "startedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeSyncRun.finishedAt": {
+      name: "finishedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeSyncRun.pagesProcessed": {
+      name: "pagesProcessed",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeSyncRun.revisionsScanned": {
+      name: "revisionsScanned",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeSyncRun.matched": {
+      name: "matched",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeSyncRun.synced": {
+      name: "synced",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeSyncRun.skippedNoItem": {
+      name: "skippedNoItem",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeSyncRun.skippedAlreadySynced": {
+      name: "skippedAlreadySynced",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeSyncRun.skippedNonModel": {
+      name: "skippedNonModel",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeSyncRun.skippedTooLarge": {
+      name: "skippedTooLarge",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeSyncRun.failed": {
+      name: "failed",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeSyncRun.totalRevisions": {
+      name: "totalRevisions",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeSyncRun.unmatchedReleases": {
+      name: "unmatchedReleases",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeSyncRun.unmatchedOverflow": {
+      name: "unmatchedOverflow",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeSyncRun.ambiguousReleases": {
+      name: "ambiguousReleases",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeSyncRun.ambiguousOverflow": {
+      name: "ambiguousOverflow",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeSyncRun.error": {
+      name: "error",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeSyncRun.cancelledBy": {
+      name: "cancelledBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeSyncRun.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeSyncRun.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeSyncRun.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.onshapeSyncRun.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"

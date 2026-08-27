@@ -6,6 +6,7 @@ import z from "npm:zod@^3.24.1";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { getReadableIdWithRevision } from "../lib/utils.ts";
+import { extractEngineeringFields } from "../shared/extract-engineering-fields.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -401,6 +402,17 @@ serve(async (req: Request) => {
 
             const externalPartId = getReadableIdWithRevision(partId, revision);
 
+            // The raw BOM row is stored as-is; the engineering facts Carbon reads
+            // (release state, mass, material, vendor) are normalized alongside it
+            // under stable keys so the engineering data view can use plain JSON paths.
+            // Raw cells keep their header's own casing, so only a header spelled
+            // exactly "engineering" would be displaced by this key — rename the
+            // key, not the raw row, if that ever shows up in a customer's BOM.
+            const onshapeMappingMetadata = {
+              ...data.data,
+              engineering: extractEngineeringFields(data.data),
+            };
+
             const isMade = children.length > 0;
             let itemId = id;
 
@@ -429,7 +441,7 @@ serve(async (req: Request) => {
                   entityId: itemId,
                   integration: "onshapeData",
                   externalId: externalPartId,
-                  metadata: data.data,
+                  metadata: onshapeMappingMetadata,
                   companyId,
                   allowDuplicateExternalId: false,
                 })
@@ -444,7 +456,7 @@ serve(async (req: Request) => {
                     .where("allowDuplicateExternalId", "=", false)
                     .doUpdateSet({
                       entityId: itemId,
-                      metadata: data.data,
+                      metadata: onshapeMappingMetadata,
                       updatedAt: new Date().toISOString(),
                     })
                 )
@@ -483,7 +495,7 @@ serve(async (req: Request) => {
                       entityId: itemId,
                       integration: "onshapeData",
                       externalId: externalPartId,
-                      metadata: data.data,
+                      metadata: onshapeMappingMetadata,
                       companyId,
                       allowDuplicateExternalId: false,
                     })
@@ -498,7 +510,7 @@ serve(async (req: Request) => {
                         .where("allowDuplicateExternalId", "=", false)
                         .doUpdateSet({
                           entityId: itemId,
-                          metadata: data.data,
+                          metadata: onshapeMappingMetadata,
                           updatedAt: new Date().toISOString(),
                         })
                     )

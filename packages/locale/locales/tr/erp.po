@@ -81,6 +81,11 @@ msgstr "{0} başarıyla silindi"
 msgid "{0} draft journal entries"
 msgstr "{0} taslak muhasebe kaydı"
 
+#. placeholder {0}: row.original.failed
+#. placeholder {0}: run.failed
+msgid "{0} failed"
+msgstr "{0} başarısız"
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} iş oluşturuldu"
@@ -152,6 +157,9 @@ msgstr "{apOverduePct}% borç"
 
 msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}% alacakların"
+
+msgid "{catalogPercent}% of parts have a model"
+msgstr "Parçaların %{catalogPercent} kadarında model var"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Bu parçayı doğrudan son halefine yönlendirmeyi düşünün."
@@ -793,6 +801,9 @@ msgstr "Bir tedarikçinin vergi yüzdesi değişti"
 msgid "A supplier's type changes"
 msgstr "Bir tedarikçinin türü değişti"
 
+msgid "A sync is already running — cancel it before starting another"
+msgstr "Zaten bir senkronizasyon çalışıyor — yenisini başlatmadan önce iptal edin"
+
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "Vergilendirilecek bir ek ücret (işçilik, kurulum, yakıt) satıra eklenir ve vergi matrahına dahil edilir."
 
@@ -1399,6 +1410,9 @@ msgstr "Onaylayıp devam etmeye izin verir"
 msgid "Alpha"
 msgstr "Alfa"
 
+msgid "Already synced"
+msgstr "Zaten eşitlendi"
+
 msgid "Always"
 msgstr "Her zaman"
 
@@ -1435,6 +1449,9 @@ msgstr "Bir carbon/notify etkinliğinden uygulama içi gelen kutusu ve isteğe b
 
 msgid "An approval requirement on a non-conformance whose reviewers (seeded Engineering and Quality) must sign off before the issue can close."
 msgstr "Sorun kapanmadan önce gözden geçirenler (Mühendislik ve Kalite) onay vermelidir uygunsuzluk üzerinde bir onay gerekliliği."
+
+msgid "An asset is already attached"
+msgstr "Zaten bir dosya ekli"
 
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "Bir varlığın satın alma maliyeti eksi birikmiş amortisman — kitaplarda halen değeri olan ve imha edildiği tutar."
@@ -1542,11 +1559,17 @@ msgstr "VE"
 msgid "And {0} more — resolve these to see the rest."
 msgstr "Ve {0} tane daha — bunları çözmek için geri kalanını görmek için."
 
+msgid "and {ambiguousOverflow} more matching more than one part"
+msgstr "ve birden fazla parçayla eşleşen {ambiguousOverflow} tane daha"
+
 msgid "and {hidden} more"
 msgstr "ve {hidden} tane daha"
 
 msgid "and {remaining} more"
 msgstr "ve daha fazla"
+
+msgid "and {unmatchedOverflow} more with no matching part"
+msgstr "ve eşleşen parçası olmayan {unmatchedOverflow} tane daha"
 
 msgid "Annotation added"
 msgstr "Açıklama eklendi"
@@ -2370,6 +2393,9 @@ msgstr "Kalite bayraklarını ve bildirimleri otomatikleştir"
 msgid "Automate your business processes with event-driven workflows that trigger actions when things happen in Carbon."
 msgstr "Karbon'da olaylar meydana geldiğinde işlemleri tetikleyen olay temelli iş akışları ile iş süreçlerinizi otomatikleştirin."
 
+msgid "Automatic"
+msgstr "Otomatik"
+
 msgid "Automatic Cost Updates"
 msgstr "Otomatik Maliyet Güncellemeleri"
 
@@ -2655,6 +2681,9 @@ msgstr "Toplu İçe Aktarma"
 msgid "Bulk Jobs"
 msgstr "Toplu İşler"
 
+msgid "Bulk sync"
+msgstr "Toplu senkronizasyon"
+
 msgid "Business moment"
 msgstr "İş anı"
 
@@ -2790,11 +2819,23 @@ msgstr "SO'yu İptal Et + {0} seçili"
 msgid "Cancel SO only"
 msgstr "Siparişten sadece iptal et"
 
+msgid "Cancel sync"
+msgstr "Senkronizasyonu iptal et"
+
+msgid "Cancel this sync? Items already synced are kept. This action is recorded."
+msgstr "Bu senkronizasyon iptal edilsin mi? Zaten eşitlenmiş kalemler korunur. Bu işlem kaydedilir."
+
 msgid "Canceled"
 msgstr "İptal edildi"
 
 msgid "Cancelled"
 msgstr "İptal edildi"
+
+msgid "Cancelled by"
+msgstr "İptal eden"
+
+msgid "Cancelled by {cancelledByName}"
+msgstr "{cancelledByName} tarafından iptal edildi"
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "Kaydedilmemiş işleme parametre eklenemez"
@@ -3051,6 +3092,9 @@ msgstr "Stokun nereden gelebileceğini görmek için sol taraftaki bir satırı 
 
 msgid "Choose a serial number"
 msgstr "Bir seri numarası seçin"
+
+msgid "Choose an Onshape document, version and assembly first"
+msgstr "Önce bir Onshape belgesi, sürümü ve montajı seçin"
 
 msgid "Choose another file"
 msgstr "Başka bir dosya seç"
@@ -3908,6 +3952,9 @@ msgstr "Ülke"
 msgid "Country code"
 msgstr "Ülke kodu"
 
+msgid "Coverage unavailable"
+msgstr "Kapsam kullanılamıyor"
+
 msgid "Create"
 msgstr "Oluştur"
 
@@ -4471,6 +4518,9 @@ msgstr "Veri Geçişi Haritasındaki öğelerin veri geçişi"
 
 msgid "Data scattered across spreadsheets and disconnected tools"
 msgstr "Veriler elektronik tablolara dağılmış ve bağlantısız araçlara yayılmış"
+
+msgid "Data synced"
+msgstr "Veri eşitlendi"
 
 msgid "Data Type"
 msgstr "Veri Türü"
@@ -5397,6 +5447,9 @@ msgstr "Çizim Numarası"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "Çizim değiştirildi. Balon yerleşimleri kaldırıldı; özellik satırları değişmedi."
 
+msgid "Drawings {drawingsSynced}/{drawingsTracked}"
+msgstr "Çizimler {drawingsSynced}/{drawingsTracked}"
+
 msgid "Drop Shipment"
 msgstr "Sevkiyatı Başka Bir Yere Gönderme"
 
@@ -6014,6 +6067,9 @@ msgstr "Mühendislik Değişiklikleri ve CAD"
 msgid "Engineering Contact"
 msgstr "Mühendislik İletişim Kişisi"
 
+msgid "Engineering Data"
+msgstr "Mühendislik verileri"
+
 msgid "Enroll"
 msgstr "Kaydol"
 
@@ -6204,6 +6260,9 @@ msgstr "Kapsamdaki her test, yapılandırılmış sisteminizde, verilerinizle ge
 msgid "Every match"
 msgstr "Her eşleşme"
 
+msgid "Every released revision in the latest sync matched exactly one part"
+msgstr "Son senkronizasyondaki her yayınlanmış revizyon tam olarak bir parçayla eşleşti"
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Dönem kapatılmadan önce gerekli tüm görevler Tamamlandı veya Atlandı olarak işaretlenmelidir."
 
@@ -6245,6 +6304,9 @@ msgstr "İstisnai Sertifika"
 
 msgid "Exemption Reason"
 msgstr "İstisnai Nedeni"
+
+msgid "Existing attachment confirmed"
+msgstr "Mevcut ek doğrulandı"
 
 msgid "Existing mappings. Pick a different provider account to re-map."
 msgstr "Mevcut haritalamalar. Yeniden haritalamak için farklı bir sağlayıcı hesabı seçin."
@@ -6429,6 +6491,10 @@ msgstr "Başarısız"
 
 msgid "Failed"
 msgstr "Başarısız"
+
+#. placeholder {0}: run.failed
+msgid "Failed {0}"
+msgstr "Başarısız {0}"
 
 msgid "Failed features"
 msgstr "Başarısız özellikler"
@@ -6796,6 +6862,9 @@ msgstr "Tamamlama"
 msgid "Fetch"
 msgstr "Al\\\\'ındır"
 
+msgid "Fetch this company's Onshape documents first"
+msgstr "Önce bu şirketin Onshape belgelerini alın"
+
 msgid "Field"
 msgstr "Alan"
 
@@ -6827,6 +6896,12 @@ msgstr "Dosya boyutu 10MB sınırını aşıyor"
 #. placeholder {0}: SIZE_LIMIT.format()
 msgid "File size too big (max. {0})"
 msgstr "Dosya boyutu çok büyük (maks. {0})"
+
+msgid "File too large"
+msgstr "Dosya çok büyük"
+
+msgid "File too large to sync"
+msgstr "Senkronize etmek için dosya çok büyük"
 
 msgid "File type not supported"
 msgstr "Desteklenmeyen dosya türü"
@@ -6872,6 +6947,9 @@ msgstr "Bitirmek İçin"
 
 msgid "Finish with material unpicked?"
 msgstr "Seçilmemiş malzeme ile Bitir?"
+
+msgid "Finished"
+msgstr "Bitti"
 
 msgid "Finished goods"
 msgstr "Tamamlamalar"
@@ -8316,6 +8394,9 @@ msgstr "Açık Tut"
 msgid "Keep picking"
 msgstr "Seçmeye Devam Et"
 
+msgid "Keep syncing"
+msgstr "Senkronizasyona devam et"
+
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "Siparişleri, teklifleri ve ayarları ikinci bir kontrolün arkasında tutar"
 
@@ -8421,6 +8502,9 @@ msgstr "Son Çeyrek"
 
 msgid "Last Run"
 msgstr "Son Çalıştırma"
+
+msgid "Last synced"
+msgstr "Son eşitleme"
 
 msgid "Last synced: <0/>"
 msgstr "Son senkronizasyon: <0/>"
@@ -8602,6 +8686,9 @@ msgstr "Carbon'da Canlı"
 
 msgid "Live reloading"
 msgstr "Canlı yeniden yükleniyor"
+
+msgid "Live updates paused — retrying"
+msgstr "Canlı güncellemeler duraklatıldı — yeniden deneniyor"
 
 msgid "Load newer"
 msgstr "Daha yenisini yükle"
@@ -8956,6 +9043,9 @@ msgstr "Az eksik olarak işaretle"
 msgid "Mark to delete"
 msgstr "Silmek için işaretle"
 
+msgid "Mass"
+msgstr "Kütle"
+
 msgid "Master gauge"
 msgstr "Ana Gösterge"
 
@@ -8991,6 +9081,9 @@ msgstr "Eşleştirildi"
 
 msgid "matches"
 msgstr "eşleşir"
+
+msgid "Matches more than one part"
+msgstr "Birden fazla parçayla eşleşiyor"
 
 msgid "Matching Pairs"
 msgstr "Eşleştirme Çiftleri"
@@ -9232,6 +9325,9 @@ msgstr "Tedarikçi Eksikleri"
 msgid "Mobile Phone"
 msgstr "Cep Telefonu"
 
+msgid "Model"
+msgstr "Model"
+
 msgid "Model Number"
 msgstr "Model Numarası"
 
@@ -9252,6 +9348,12 @@ msgstr "Model satırdan kaldırıldı"
 
 msgid "Model upload"
 msgstr "Model yükleme"
+
+msgid "Models {modelsSynced}/{modelsTracked}"
+msgstr "Modeller {modelsSynced}/{modelsTracked}"
+
+msgid "Models and drawings synced, out of the parts this sync has tried. {partsWithModel} of {partsTotal} parts in the catalog carry a CAD model, including any uploaded by hand."
+msgstr "Bu senkronizasyonun denediği parçalara göre eşitlenen modeller ve çizimler. Katalogdaki {partsTotal} parçadan {partsWithModel} tanesinde CAD modeli var; elle yüklenenler dahil."
 
 msgid "Modified"
 msgstr "Değiştirildi"
@@ -9805,6 +9907,9 @@ msgstr "Hiçbir BOM girdisi raf ömrü politikasına sahip değil"
 msgid "No CAD model to preview."
 msgstr "Önizlemek için CAD modeli yok."
 
+msgid "No CAD synced yet"
+msgstr "Henüz CAD eşitlenmedi"
+
 msgid "No calibration records found"
 msgstr "Kalibrasyon kaydı bulunamadı"
 
@@ -9855,6 +9960,9 @@ msgstr "Bu öğe için henüz taslak yapım yöntemi yok."
 
 msgid "No draft versions available"
 msgstr "Taslak sürüm mevcut değil"
+
+msgid "No drawing synced"
+msgstr "Çizim eşitlenmedi"
 
 msgid "No due date"
 msgstr "Teslim tarihi yok"
@@ -9922,6 +10030,9 @@ msgstr "Öğe yok"
 msgid "No items have inventory activity here yet."
 msgstr "Burada henüz hiçbir maddenin envanter hareketi yok."
 
+msgid "No items match these filters"
+msgstr "Bu filtrelerle eşleşen kalem yok"
+
 msgid "No jobs were created"
 msgstr "Hiçbir iş oluşturulmadı"
 
@@ -9955,11 +10066,17 @@ msgstr "Eşleşme yok. Bir tane oluşturmak için yazın."
 msgid "No matching bins"
 msgstr "Eşleşen kutu yok"
 
+msgid "No matching part"
+msgstr "Eşleşen parça yok"
+
 msgid "No new notifications"
 msgstr "Yeni bildirim yok"
 
 msgid "No notes"
 msgstr "Notlar yok"
+
+msgid "No Onshape documents could be loaded for this company"
+msgstr "Bu şirket için Onshape belgeleri yüklenemedi"
 
 msgid "No open invoices"
 msgstr "Açık fatura yok"
@@ -10039,6 +10156,9 @@ msgstr "Hiçbir işlem seçilmedi"
 msgid "No production events recorded for this operation yet"
 msgstr "Bu işlem için henüz üretim etkinliği kaydedilmedi"
 
+msgid "No progress for 30 minutes"
+msgstr "30 dakikadır ilerleme yok"
+
 msgid "No purchases in this period"
 msgstr "Bu dönemde satın alma yok"
 
@@ -10059,6 +10179,9 @@ msgstr "Kayıt bulunamadı"
 
 msgid "No reference image"
 msgstr "Referans resim yok"
+
+msgid "No released revision found"
+msgstr "Yayınlanmış revizyon bulunamadı"
 
 msgid "No remaining entities to inspect."
 msgstr "İncelenecek kalan varlık yok."
@@ -10104,6 +10227,12 @@ msgstr "Henüz tedarikçi yok"
 
 msgid "No sync operations yet"
 msgstr "Henüz hiçbir eşitleme işlemi yok"
+
+msgid "No synced items yet — run a sync to populate this table"
+msgstr "Henüz eşitlenmiş kalem yok — bu tabloyu doldurmak için bir senkronizasyon çalıştırın"
+
+msgid "No syncs have run yet"
+msgstr "Henüz senkronizasyon çalıştırılmadı"
 
 msgid "No time entries for this week"
 msgstr "Bu hafta için zaman girişi yok"
@@ -10186,6 +10315,9 @@ msgstr "Yok"
 msgid "Normal"
 msgstr "Normal"
 
+msgid "Not a model"
+msgstr "Model değil"
+
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "Bir tablo değil, bir genel muhasebe dengesi: iş malzemeleri verildiğinde maliyetler birikir ve iş envantere alındığında temizlenir."
 
@@ -10194,6 +10326,9 @@ msgstr "Sertifikalı değil"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Miktarı karşılayacak yeterli iş yok"
+
+msgid "Not linked to Onshape"
+msgstr "Onshape ile bağlantılı değil"
 
 msgid "Not reached"
 msgstr "Ulaşılmadı"
@@ -10218,6 +10353,9 @@ msgstr "Başlanmadı"
 
 msgid "Not started training for"
 msgstr "Henüz eğitim alınmadı"
+
+msgid "Not synced"
+msgstr "Eşitlenmedi"
 
 msgid "Not yet"
 msgstr "Henüz değil"
@@ -10397,6 +10535,9 @@ msgstr "Yalnızca Taslak prosedürler düzenlenebilir. Aktif veya Arşivlenmiş 
 msgid "Only empty, open periods can be deleted."
 msgstr "Yalnızca boş, açık dönemler silinebilir."
 
+msgid "Onshape asset sync is turned off for this company"
+msgstr "Bu şirket için Onshape dosya senkronizasyonu kapalı"
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape bağlantıyı yetkilendirdi ancak kaydetme başarısız oldu. Yeniden bağlanmayı deneyin."
 
@@ -10412,8 +10553,17 @@ msgstr "Onshape yapılandırılmamış"
 msgid "Onshape rejected the authorization"
 msgstr "Onshape yetkilendirmeyi reddetti"
 
+msgid "Onshape revision"
+msgstr "Onshape revizyonu"
+
 msgid "Onshape Status"
 msgstr "Onshape Durumu"
+
+msgid "Onshape sync"
+msgstr "Onshape senkronizasyonu"
+
+msgid "Onshape Sync"
+msgstr "Onshape Senkronizasyonu"
 
 msgid "Oops! The link you're trying to access has expired or is no longer valid."
 msgstr "Üzgünüz! Erişim sağlamaya çalıştığınız bağlantı süresi dolmuş veya artık geçerli değil."
@@ -10463,6 +10613,9 @@ msgstr "{ids} değişiklik bildirimlerinde aç. Yeni sürümler veya revizyonlar
 msgid "Open in MES"
 msgstr "MES'te Aç"
 
+msgid "Open in Onshape"
+msgstr "Onshape'te aç"
+
 msgid "Open Issues"
 msgstr "Açık Sorunlar"
 
@@ -10474,6 +10627,9 @@ msgstr "Açık işler"
 
 msgid "Open menu"
 msgstr "Menüyü aç"
+
+msgid "Open Onshape settings"
+msgstr "Onshape ayarlarını aç"
 
 msgid "Open payables by supplier and age"
 msgstr "Tedarikçi ve yaşa göre açık borçlar"
@@ -10860,6 +11016,9 @@ msgstr "Parça Kimliği"
 
 msgid "Part is configured for manufacturing"
 msgstr "Parça üretim için yapılandırılmış"
+
+msgid "Part number"
+msgstr "Parça numarası"
 
 msgid "Part Number"
 msgstr "Parça Numarası"
@@ -11634,8 +11793,14 @@ msgstr "Muhasebeden çek"
 msgid "Pull from Inventory"
 msgstr "Stoktan Çek"
 
+msgid "Pull from Onshape"
+msgstr "Onshape'ten al"
+
 msgid "Pull, map, and load your data"
 msgstr "Verilerinizi çekin, eşleyin ve yükleyin"
+
+msgid "Pulling the latest released CAD from Onshape"
+msgstr "Onshape'ten en son yayınlanan CAD alınıyor"
 
 msgid "Purchase & manufacture from MRP"
 msgstr "MRP'den satın al ve üretim yap"
@@ -12261,8 +12426,17 @@ msgstr "Yayın kontrolü"
 msgid "Release Control"
 msgstr "Yayın Kontrolü"
 
+msgid "Release exceptions"
+msgstr "Yayın istisnaları"
+
 msgid "Release Job"
 msgstr "İşi Yayınla"
+
+msgid "Release state"
+msgstr "Yayın durumu"
+
+msgid "Release State"
+msgstr "Yayın Durumu"
 
 msgid "Released"
 msgstr "Yayınlandı"
@@ -12685,6 +12859,9 @@ msgstr "Revizyon {0}"
 msgid "Revision status"
 msgstr "Revizyon durumu"
 
+msgid "Revision unknown"
+msgstr "Revizyon bilinmiyor"
+
 msgid "Revisions"
 msgstr "Revizyonlar"
 
@@ -12805,6 +12982,9 @@ msgstr "Fiyatları miktara veya müşteriye göre otomatik olarak ayarlayan kura
 
 msgid "Rules that decide where each item gets stored"
 msgstr "Her öğenin nereye depolanacağını belirleyen kurallar"
+
+msgid "Run a BOM sync from a part's <0>BoM Explorer</0> to populate this table"
+msgstr "Bu tabloyu doldurmak için bir parçanın <0>BoM Explorer</0> ekranından malzeme listesi senkronizasyonu çalıştırın"
 
 msgid "Run acceptance testing"
 msgstr "Kabul testini çalıştır"
@@ -13076,6 +13256,13 @@ msgstr "Bu QR kodunu kimlik doğrulayıcı uygulamanız (örn. Google Authentica
 
 msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
 msgstr "Bunu doğrulayıcı uygulamanızla tarayın, ardından gösterdiği 6 haneli kodu girin."
+
+msgid "Scanned"
+msgstr "Tarandı"
+
+#. placeholder {0}: run.revisionsScanned
+msgid "Scanned {0}"
+msgstr "Tarandı {0}"
 
 msgid "SCAR"
 msgstr "SCAR"
@@ -13854,6 +14041,10 @@ msgstr "Tedarikçi Kimliklerini Göster"
 msgid "Show sync options"
 msgstr "Senkronizasyon seçeneklerini göster"
 
+#. placeholder {0}: run.failed
+msgid "Show the {0} parts that failed"
+msgstr "Başarısız {0} parçayı göster"
+
 msgid "Show Trailing Zeros"
 msgstr "Sondaki Sıfırları Göster"
 
@@ -13956,6 +14147,10 @@ msgstr "Yayınlanan ancak başlatılmayan durumu atlayın - iş tarama sırasın
 
 msgid "Skipped"
 msgstr "Atlanmış"
+
+#. placeholder {0}: countSkipped(run)
+msgid "Skipped {0}"
+msgstr "Atlandı {0}"
 
 msgid "Slack"
 msgstr "Slack"
@@ -14114,6 +14309,9 @@ msgstr "Başlat"
 msgid "Start {0} Day Free Trial"
 msgstr "{0} Gün Ücretsiz Deneme Başlat"
 
+msgid "Start a sync to pull released Onshape models and drawings onto matching parts."
+msgstr "Yayınlanmış Onshape modellerini ve çizimlerini eşleşen parçalara almak için bir senkronizasyon başlatın."
+
 msgid "Start counting"
 msgstr "Saymaya başla"
 
@@ -14135,6 +14333,9 @@ msgstr "Süre bitişi süreç başlangıcında başlar"
 msgid "Start Here"
 msgstr "Buradan Başla"
 
+msgid "Start new sync"
+msgstr "Yeni senkronizasyon başlat"
+
 msgid "Start Now"
 msgstr "Şimdi Başla"
 
@@ -14143,6 +14344,9 @@ msgstr "Mali Yıl Başlangıcı"
 
 msgid "Start of Tax Year"
 msgstr "Vergi Yılı Başlangıcı"
+
+msgid "Start sync"
+msgstr "Senkronizasyonu başlat"
 
 msgid "Start Time"
 msgstr "Başlangıç Saati"
@@ -14153,6 +14357,9 @@ msgstr "Başla"
 msgid "Started"
 msgstr "Başlangıç"
 
+msgid "Started by"
+msgstr "Başlatan"
+
 msgid "Starting…"
 msgstr "Başlanıyor…"
 
@@ -14161,6 +14368,9 @@ msgstr "Eyalet / İl"
 
 msgid "State province"
 msgstr "İl/Bölge"
+
+msgid "State synced"
+msgstr "Durum eşitlendi"
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -14608,14 +14818,39 @@ msgstr "Senkronize Et"
 msgid "Sync Activity"
 msgstr "Senkronizasyon Etkinliği"
 
+msgid "Sync again"
+msgstr "Yeniden senkronize et"
+
+msgid "Sync details"
+msgstr "Senkronizasyon detayları"
+
+msgid "Sync did not complete — try again"
+msgstr "Senkronizasyon tamamlanmadı — tekrar deneyin"
+
 msgid "Sync operation"
 msgstr "Senkronizasyon işlemi"
+
+msgid "Sync started"
+msgstr "Senkronizasyon başlatıldı"
 
 msgid "Sync Tie-Out"
 msgstr "Senkronizasyon Uyumu"
 
 msgid "Synced"
 msgstr "Eşitlendi"
+
+#. placeholder {0}: run.synced
+msgid "Synced {0}"
+msgstr "Eşitlendi {0}"
+
+msgid "Synced by"
+msgstr "Eşitleyen"
+
+msgid "Synced by {actorName}"
+msgstr "{actorName} tarafından eşitlendi"
+
+msgid "Syncing"
+msgstr "Eşitleniyor"
 
 msgid "System"
 msgstr "Sistem"
@@ -14851,6 +15086,9 @@ msgstr "Her stok hareketinin yalnızca ekleme kaydı; eldeki tutar, imzalı gird
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Yetkilendirme Onshape'te reddedildi. Yeniden bağlanmayı deneyin."
+
+msgid "The bill of materials can only be synced into a draft method"
+msgstr "Malzeme listesi yalnızca taslak bir yönteme senkronize edilebilir"
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "Tüm kaydedilen günlük satırlarının defteri, hesaba göre özetlenmiş — yalnızca şirket muhasebesi etkinleştirildiğinde yazılır."
@@ -16689,6 +16927,9 @@ msgstr "Yalnızca fark"
 msgid "VAT Number"
 msgstr "KDV Numarası"
 
+msgid "Vendor"
+msgstr "Tedarikçi"
+
 msgid "Vendor Write-Off Income"
 msgstr "Satıcı Silme Geliri"
 
@@ -17567,6 +17808,9 @@ msgstr "Sipariş edilen miktardan {leftoverQuantity} fazla {0} tamamladınız. F
 
 msgid "You do not have permission to edit workflows"
 msgstr "İş akışlarını düzenlemek için izniniz yok"
+
+msgid "You do not have permission to start a sync"
+msgstr "Senkronizasyon başlatma izniniz yok"
 
 msgid "You don't have permission to edit this bill of material."
 msgstr "Bu malzeme listesini düzenleme izniniz yok."

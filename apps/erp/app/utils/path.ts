@@ -177,6 +177,8 @@ export const path = {
         generatePath(
           `${api}/mrp${locationId ? `?location=${locationId}` : ""}`
         ),
+      onShapeBackfill: `${api}/integrations/onshape/backfill`,
+      onShapeBackfillCancel: `${api}/integrations/onshape/backfill/cancel`,
       onShapeBom: (documentId: string, versionId: string, elementId: string) =>
         generatePath(
           `${api}/integrations/onshape/d/${documentId}/v/${versionId}/e/${elementId}/bom`
@@ -186,6 +188,10 @@ export const path = {
         generatePath(
           `${api}/integrations/onshape/d/${documentId}/v/${versionId}/elements`
         ),
+      onShapeItemSync: (itemId: string) =>
+        generatePath(`${api}/integrations/onshape/item-sync/${itemId}`),
+      onShapeItemSyncState: (itemId: string) =>
+        generatePath(`${api}/integrations/onshape/item-sync-state/${itemId}`),
       onShapeSync: `${api}/integrations/onshape/sync`,
       onShapeVersions: (documentId: string) =>
         generatePath(`${api}/integrations/onshape/d/${documentId}/versions`),
@@ -901,6 +907,7 @@ export const path = {
     employeeType: (id: string) =>
       generatePath(`${x}/users/employee-types/${id}`),
     employeeTypes: `${x}/users/employee-types`,
+    engineeringData: `${x}/items/engineering`,
     exchangeRate: (id: string) =>
       generatePath(`${x}/accounting/exchange-rates/${id}`),
     exchangeRates: `${x}/accounting/exchange-rates`,
@@ -1188,6 +1195,12 @@ export const path = {
       generatePath(`${x}/settings/integrations/${id}`),
     integrationDeactivate: (id: string) =>
       generatePath(`${x}/settings/integrations/deactivate/${id}`),
+    // The Onshape sync dashboard, optionally opened filtered to one part (the
+    // Items tab is its default view).
+    integrationOnshapeSync: (itemId?: string) =>
+      `${generatePath(`${x}/settings/integrations/onshape/sync`)}${
+        itemId ? `?filter=itemId:eq:${itemId}` : ""
+      }`,
     integrations: `${x}/settings/integrations`,
     intercompany: `${x}/accounting/intercompany`,
     inventory: `${x}/inventory/quantities`,

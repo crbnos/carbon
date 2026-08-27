@@ -81,6 +81,11 @@ msgstr "{0} 已成功删除"
 msgid "{0} draft journal entries"
 msgstr "{0} 份草稿日记账条目"
 
+#. placeholder {0}: row.original.failed
+#. placeholder {0}: run.failed
+msgid "{0} failed"
+msgstr "{0} 个失败"
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} 个作业已创建"
@@ -152,6 +157,9 @@ msgstr "{apOverduePct}% 的应付账款"
 
 msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}% 的应收账款"
+
+msgid "{catalogPercent}% of parts have a model"
+msgstr "{catalogPercent}% 的零件有模型"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}。考虑将此零件直接指向最终后继产品。"
@@ -793,6 +801,9 @@ msgstr "供应商的税率百分比已更改"
 msgid "A supplier's type changes"
 msgstr "供应商的类型已更改"
 
+msgid "A sync is already running — cancel it before starting another"
+msgstr "已有同步正在运行 — 请先取消后再开始新的同步"
+
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "应税附加费（搬运、设置、燃料），添加到行中并包含在税基中。"
 
@@ -1399,6 +1410,9 @@ msgstr "允许确认并继续"
 msgid "Alpha"
 msgstr "Alpha"
 
+msgid "Already synced"
+msgstr "已同步"
+
 msgid "Always"
 msgstr "始终"
 
@@ -1435,6 +1449,9 @@ msgstr "一个警报，表示某些内容需要人员的注意，从 carbon/noti
 
 msgid "An approval requirement on a non-conformance whose reviewers (seeded Engineering and Quality) must sign off before the issue can close."
 msgstr "不符合上的批准要求，其审核人（预设为工程和质量）必须签署才能关闭问题。"
+
+msgid "An asset is already attached"
+msgstr "已附加文件"
 
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "资产的收购成本减去累计折旧—仍在账簿上的价值和处置的金额。"
@@ -1542,11 +1559,17 @@ msgstr "且"
 msgid "And {0} more — resolve these to see the rest."
 msgstr "还有 {0} 份 — 解决这些以查看其余部分。"
 
+msgid "and {ambiguousOverflow} more matching more than one part"
+msgstr "另有 {ambiguousOverflow} 个匹配到多个零件"
+
 msgid "and {hidden} more"
 msgstr "以及{hidden}个更多"
 
 msgid "and {remaining} more"
 msgstr "和 {remaining} 个更多"
+
+msgid "and {unmatchedOverflow} more with no matching part"
+msgstr "另有 {unmatchedOverflow} 个没有匹配零件"
 
 msgid "Annotation added"
 msgstr "注释已添加"
@@ -2370,6 +2393,9 @@ msgstr "自动化质量标志和通知"
 msgid "Automate your business processes with event-driven workflows that trigger actions when things happen in Carbon."
 msgstr "通过事件驱动的工作流自动化您的业务流程，当 Carbon 中发生事情时触发操作。"
 
+msgid "Automatic"
+msgstr "自动"
+
 msgid "Automatic Cost Updates"
 msgstr "自动成本更新"
 
@@ -2655,6 +2681,9 @@ msgstr "批量导入"
 msgid "Bulk Jobs"
 msgstr "批量作业"
 
+msgid "Bulk sync"
+msgstr "批量同步"
+
 msgid "Business moment"
 msgstr "业务时刻"
 
@@ -2790,11 +2819,23 @@ msgstr "取消 SO + {0} 已选择"
 msgid "Cancel SO only"
 msgstr "仅取消销售订单"
 
+msgid "Cancel sync"
+msgstr "取消同步"
+
+msgid "Cancel this sync? Items already synced are kept. This action is recorded."
+msgstr "取消此次同步？已同步的项目将保留。此操作会被记录。"
+
 msgid "Canceled"
 msgstr "已取消"
 
 msgid "Cancelled"
 msgstr "已取消"
+
+msgid "Cancelled by"
+msgstr "取消者"
+
+msgid "Cancelled by {cancelledByName}"
+msgstr "由 {cancelledByName} 取消"
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "无法向未保存的操作添加参数"
@@ -3051,6 +3092,9 @@ msgstr "选择左侧的行以查看其库存可能来自何处。"
 
 msgid "Choose a serial number"
 msgstr "选择序列号"
+
+msgid "Choose an Onshape document, version and assembly first"
+msgstr "请先选择 Onshape 文档、版本和装配体"
 
 msgid "Choose another file"
 msgstr "选择另一个文件"
@@ -3908,6 +3952,9 @@ msgstr "国家"
 msgid "Country code"
 msgstr "国家代码"
 
+msgid "Coverage unavailable"
+msgstr "覆盖率不可用"
+
 msgid "Create"
 msgstr "创建"
 
@@ -4471,6 +4518,9 @@ msgstr "数据迁移映射表中的项目数据迁移"
 
 msgid "Data scattered across spreadsheets and disconnected tools"
 msgstr "数据分散在电子表格和断开连接的工具中"
+
+msgid "Data synced"
+msgstr "数据已同步"
 
 msgid "Data Type"
 msgstr "数据类型"
@@ -5397,6 +5447,9 @@ msgstr "图纸编号"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "图纸已替换。气球位置已移除；功能行保持不变。"
 
+msgid "Drawings {drawingsSynced}/{drawingsTracked}"
+msgstr "图纸 {drawingsSynced}/{drawingsTracked}"
+
 msgid "Drop Shipment"
 msgstr "直运"
 
@@ -6014,6 +6067,9 @@ msgstr "工程变更和CAD"
 msgid "Engineering Contact"
 msgstr "工程联系人"
 
+msgid "Engineering Data"
+msgstr "工程数据"
+
 msgid "Enroll"
 msgstr "注册"
 
@@ -6204,6 +6260,9 @@ msgstr "您配置的系统中的每项范围内测试都通过了，使用您的
 msgid "Every match"
 msgstr "每次匹配"
 
+msgid "Every released revision in the latest sync matched exactly one part"
+msgstr "最近一次同步中，每个已发布修订版都恰好匹配一个零件"
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "期间关闭前，每项必需任务都必须完成或跳过。"
 
@@ -6245,6 +6304,9 @@ msgstr "豁免证书"
 
 msgid "Exemption Reason"
 msgstr "豁免原因"
+
+msgid "Existing attachment confirmed"
+msgstr "已确认现有附件"
 
 msgid "Existing mappings. Pick a different provider account to re-map."
 msgstr "现有映射。选择不同的提供商账户以重新映射。"
@@ -6429,6 +6491,10 @@ msgstr "失败"
 
 msgid "Failed"
 msgstr "失败"
+
+#. placeholder {0}: run.failed
+msgid "Failed {0}"
+msgstr "失败 {0}"
 
 msgid "Failed features"
 msgstr "失效特性"
@@ -6796,6 +6862,9 @@ msgstr "表面处理"
 msgid "Fetch"
 msgstr "获取"
 
+msgid "Fetch this company's Onshape documents first"
+msgstr "请先获取此公司的 Onshape 文档"
+
 msgid "Field"
 msgstr "字段"
 
@@ -6827,6 +6896,12 @@ msgstr "文件大小超过10MB限制"
 #. placeholder {0}: SIZE_LIMIT.format()
 msgid "File size too big (max. {0})"
 msgstr "文件大小过大（最大 {0}）"
+
+msgid "File too large"
+msgstr "文件过大"
+
+msgid "File too large to sync"
+msgstr "文件过大，无法同步"
 
 msgid "File type not supported"
 msgstr "不支持的文件类型"
@@ -6872,6 +6947,9 @@ msgstr "完成至"
 
 msgid "Finish with material unpicked?"
 msgstr "完成但物料未领取？"
+
+msgid "Finished"
+msgstr "已结束"
 
 msgid "Finished goods"
 msgstr "表面处理"
@@ -8316,6 +8394,9 @@ msgstr "保持开放"
 msgid "Keep picking"
 msgstr "继续领取"
 
+msgid "Keep syncing"
+msgstr "继续同步"
+
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "让订单、报价单和设置受到第二道检查的保护"
 
@@ -8421,6 +8502,9 @@ msgstr "上一季度"
 
 msgid "Last Run"
 msgstr "最后运行"
+
+msgid "Last synced"
+msgstr "上次同步"
 
 msgid "Last synced: <0/>"
 msgstr "上次同步: <0/>"
@@ -8602,6 +8686,9 @@ msgstr "在 Carbon 上线"
 
 msgid "Live reloading"
 msgstr "实时重新加载"
+
+msgid "Live updates paused — retrying"
+msgstr "实时更新已暂停 — 正在重试"
 
 msgid "Load newer"
 msgstr "加载更新"
@@ -8956,6 +9043,9 @@ msgstr "标记短缺"
 msgid "Mark to delete"
 msgstr "标记删除"
 
+msgid "Mass"
+msgstr "质量"
+
 msgid "Master gauge"
 msgstr "主量具"
 
@@ -8991,6 +9081,9 @@ msgstr "已匹配"
 
 msgid "matches"
 msgstr "匹配"
+
+msgid "Matches more than one part"
+msgstr "匹配到多个零件"
 
 msgid "Matching Pairs"
 msgstr "匹配对"
@@ -9232,6 +9325,9 @@ msgstr "缺少供应商"
 msgid "Mobile Phone"
 msgstr "手机"
 
+msgid "Model"
+msgstr "模型"
+
 msgid "Model Number"
 msgstr "型号"
 
@@ -9252,6 +9348,12 @@ msgstr "模型已从行中移除"
 
 msgid "Model upload"
 msgstr "模型上传"
+
+msgid "Models {modelsSynced}/{modelsTracked}"
+msgstr "模型 {modelsSynced}/{modelsTracked}"
+
+msgid "Models and drawings synced, out of the parts this sync has tried. {partsWithModel} of {partsTotal} parts in the catalog carry a CAD model, including any uploaded by hand."
+msgstr "已同步的模型与图纸，基于本次同步尝试过的零件。目录中 {partsTotal} 个零件里有 {partsWithModel} 个带有 CAD 模型，包括手动上传的。"
 
 msgid "Modified"
 msgstr "已修改"
@@ -9805,6 +9907,9 @@ msgstr "没有物料清单输入具有保质期政策"
 msgid "No CAD model to preview."
 msgstr "没有CAD模型可预览。"
 
+msgid "No CAD synced yet"
+msgstr "尚未同步 CAD"
+
 msgid "No calibration records found"
 msgstr "未找到校准记录"
 
@@ -9855,6 +9960,9 @@ msgstr "此项目还没有草稿制造方法。"
 
 msgid "No draft versions available"
 msgstr "没有可用的草稿版本"
+
+msgid "No drawing synced"
+msgstr "未同步图纸"
 
 msgid "No due date"
 msgstr "无截止日期"
@@ -9922,6 +10030,9 @@ msgstr "无项目"
 msgid "No items have inventory activity here yet."
 msgstr "此处尚无项目的库存活动。"
 
+msgid "No items match these filters"
+msgstr "没有符合这些筛选条件的项目"
+
 msgid "No jobs were created"
 msgstr "没有创建任何作业"
 
@@ -9955,11 +10066,17 @@ msgstr "无匹配项。输入内容以创建一个。"
 msgid "No matching bins"
 msgstr "无匹配的箱子"
 
+msgid "No matching part"
+msgstr "无匹配零件"
+
 msgid "No new notifications"
 msgstr "没有新通知"
 
 msgid "No notes"
 msgstr "没有备注"
+
+msgid "No Onshape documents could be loaded for this company"
+msgstr "无法为此公司加载 Onshape 文档"
 
 msgid "No open invoices"
 msgstr "没有未结发票"
@@ -10039,6 +10156,9 @@ msgstr "未选择工艺"
 msgid "No production events recorded for this operation yet"
 msgstr "此操作尚未记录任何生产事件"
 
+msgid "No progress for 30 minutes"
+msgstr "30 分钟无进展"
+
 msgid "No purchases in this period"
 msgstr "此期间无采购"
 
@@ -10059,6 +10179,9 @@ msgstr "未找到记录"
 
 msgid "No reference image"
 msgstr "没有参考图像"
+
+msgid "No released revision found"
+msgstr "未找到已发布的修订版"
 
 msgid "No remaining entities to inspect."
 msgstr "没有剩余的实体可检查。"
@@ -10104,6 +10227,12 @@ msgstr "还没有供应商"
 
 msgid "No sync operations yet"
 msgstr "尚无同步操作"
+
+msgid "No synced items yet — run a sync to populate this table"
+msgstr "尚无已同步的项目 — 运行一次同步以填充此表"
+
+msgid "No syncs have run yet"
+msgstr "尚未运行任何同步"
 
 msgid "No time entries for this week"
 msgstr "本周没有时间条目"
@@ -10186,6 +10315,9 @@ msgstr "无"
 msgid "Normal"
 msgstr "正常"
 
+msgid "Not a model"
+msgstr "非模型"
+
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "不是表格而是总账余额：当发出工作物料时成本积累，当工作收到库存时清除。"
 
@@ -10194,6 +10326,9 @@ msgstr "未认证"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "工作数量不足以覆盖数量"
+
+msgid "Not linked to Onshape"
+msgstr "未关联 Onshape"
 
 msgid "Not reached"
 msgstr "未到达"
@@ -10218,6 +10353,9 @@ msgstr "未开始"
 
 msgid "Not started training for"
 msgstr "未开始培训"
+
+msgid "Not synced"
+msgstr "未同步"
 
 msgid "Not yet"
 msgstr "还未"
@@ -10397,6 +10535,9 @@ msgstr "只有草稿程序可以编辑。创建新版本以更改活动或已归
 msgid "Only empty, open periods can be deleted."
 msgstr "仅可删除空白的开放期间。"
 
+msgid "Onshape asset sync is turned off for this company"
+msgstr "此公司的 Onshape 文件同步已关闭"
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape 已授权此连接，但保存失败。请重新连接。"
 
@@ -10412,8 +10553,17 @@ msgstr "尚未配置 Onshape"
 msgid "Onshape rejected the authorization"
 msgstr "Onshape 拒绝了授权"
 
+msgid "Onshape revision"
+msgstr "Onshape 修订版"
+
 msgid "Onshape Status"
 msgstr "Onshape 状态"
+
+msgid "Onshape sync"
+msgstr "Onshape 同步"
+
+msgid "Onshape Sync"
+msgstr "Onshape 同步"
 
 msgid "Oops! The link you're trying to access has expired or is no longer valid."
 msgstr "哎呀！您尝试访问的链接已过期或不再有效。"
@@ -10463,6 +10613,9 @@ msgstr "在更改单{ids}中打开。发布它们以创建新版本或修订版�
 msgid "Open in MES"
 msgstr "在MES中打开"
 
+msgid "Open in Onshape"
+msgstr "在 Onshape 中打开"
+
 msgid "Open Issues"
 msgstr "未解决的问题"
 
@@ -10474,6 +10627,9 @@ msgstr "未结工单"
 
 msgid "Open menu"
 msgstr "打开菜单"
+
+msgid "Open Onshape settings"
+msgstr "打开 Onshape 设置"
 
 msgid "Open payables by supplier and age"
 msgstr "按供应商和账龄统计的未清应付账款"
@@ -10860,6 +11016,9 @@ msgstr "零件ID"
 
 msgid "Part is configured for manufacturing"
 msgstr "零件已配置用于制造"
+
+msgid "Part number"
+msgstr "零件编号"
 
 msgid "Part Number"
 msgstr "零件编号"
@@ -11634,8 +11793,14 @@ msgstr "从会计系统拉取"
 msgid "Pull from Inventory"
 msgstr "从库存中提取"
 
+msgid "Pull from Onshape"
+msgstr "从 Onshape 拉取"
+
 msgid "Pull, map, and load your data"
 msgstr "拉取、映射和加载您的数据"
+
+msgid "Pulling the latest released CAD from Onshape"
+msgstr "正在从 Onshape 拉取最新已发布的 CAD"
 
 msgid "Purchase & manufacture from MRP"
 msgstr "从 MRP 采购和制造"
@@ -12261,8 +12426,17 @@ msgstr "发布控制"
 msgid "Release Control"
 msgstr "发布控制"
 
+msgid "Release exceptions"
+msgstr "发布例外"
+
 msgid "Release Job"
 msgstr "发布工作"
+
+msgid "Release state"
+msgstr "发布状态"
+
+msgid "Release State"
+msgstr "发布状态"
 
 msgid "Released"
 msgstr "已发布"
@@ -12685,6 +12859,9 @@ msgstr "修订版本 {0}"
 msgid "Revision status"
 msgstr "版本状态"
 
+msgid "Revision unknown"
+msgstr "修订版未知"
+
 msgid "Revisions"
 msgstr "版本"
 
@@ -12805,6 +12982,9 @@ msgstr "根据数量或客户自动调整价格的规则"
 
 msgid "Rules that decide where each item gets stored"
 msgstr "决定每个项目存储位置的规则"
+
+msgid "Run a BOM sync from a part's <0>BoM Explorer</0> to populate this table"
+msgstr "在零件的 <0>BoM Explorer</0> 中运行一次物料清单同步以填充此表"
 
 msgid "Run acceptance testing"
 msgstr "运行验收测试"
@@ -13076,6 +13256,13 @@ msgstr "使用您的身份验证器应用(例如 Google Authenticator 或 1Passw
 
 msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
 msgstr "使用您的身份验证器应用扫描此内容，然后输入它显示的6位数代码。"
+
+msgid "Scanned"
+msgstr "已扫描"
+
+#. placeholder {0}: run.revisionsScanned
+msgid "Scanned {0}"
+msgstr "已扫描 {0}"
 
 msgid "SCAR"
 msgstr "SCAR"
@@ -13854,6 +14041,10 @@ msgstr "显示供应商ID"
 msgid "Show sync options"
 msgstr "显示同步选项"
 
+#. placeholder {0}: run.failed
+msgid "Show the {0} parts that failed"
+msgstr "显示失败的 {0} 个零件"
+
 msgid "Show Trailing Zeros"
 msgstr "显示尾随零"
 
@@ -13956,6 +14147,10 @@ msgstr "跳过已发布但未启动的状态 - 扫描时工作立即开始。"
 
 msgid "Skipped"
 msgstr "已跳过"
+
+#. placeholder {0}: countSkipped(run)
+msgid "Skipped {0}"
+msgstr "已跳过 {0}"
 
 msgid "Slack"
 msgstr "Slack"
@@ -14114,6 +14309,9 @@ msgstr "开始"
 msgid "Start {0} Day Free Trial"
 msgstr "开始 {0} 天免费试用"
 
+msgid "Start a sync to pull released Onshape models and drawings onto matching parts."
+msgstr "开始同步，将已发布的 Onshape 模型和图纸拉取到匹配的零件上。"
+
 msgid "Start counting"
 msgstr "开始盘点"
 
@@ -14135,6 +14333,9 @@ msgstr "在流程开始时开始过期"
 msgid "Start Here"
 msgstr "从这里开始"
 
+msgid "Start new sync"
+msgstr "开始新同步"
+
 msgid "Start Now"
 msgstr "立即开始"
 
@@ -14143,6 +14344,9 @@ msgstr "财政年度开始"
 
 msgid "Start of Tax Year"
 msgstr "税年开始"
+
+msgid "Start sync"
+msgstr "开始同步"
 
 msgid "Start Time"
 msgstr "开始时间"
@@ -14153,6 +14357,9 @@ msgstr "从以下开始"
 msgid "Started"
 msgstr "开始于"
 
+msgid "Started by"
+msgstr "启动者"
+
 msgid "Starting…"
 msgstr "正在启动…"
 
@@ -14161,6 +14368,9 @@ msgstr "州/省"
 
 msgid "State province"
 msgstr "州/省"
+
+msgid "State synced"
+msgstr "状态已同步"
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -14608,14 +14818,39 @@ msgstr "同步"
 msgid "Sync Activity"
 msgstr "同步活动"
 
+msgid "Sync again"
+msgstr "再次同步"
+
+msgid "Sync details"
+msgstr "同步详情"
+
+msgid "Sync did not complete — try again"
+msgstr "同步未完成 — 请重试"
+
 msgid "Sync operation"
 msgstr "同步操作"
+
+msgid "Sync started"
+msgstr "同步已开始"
 
 msgid "Sync Tie-Out"
 msgstr "同步对账"
 
 msgid "Synced"
 msgstr "已同步"
+
+#. placeholder {0}: run.synced
+msgid "Synced {0}"
+msgstr "已同步 {0}"
+
+msgid "Synced by"
+msgstr "同步者"
+
+msgid "Synced by {actorName}"
+msgstr "由 {actorName} 同步"
+
+msgid "Syncing"
+msgstr "同步中"
 
 msgid "System"
 msgstr "系统"
@@ -14851,6 +15086,9 @@ msgstr "每个库存变动的追加专用记录；在手数量是其带符号条
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "授权在 Onshape 中被拒绝。请重新连接。"
+
+msgid "The bill of materials can only be synced into a draft method"
+msgstr "物料清单只能同步到草稿方法中"
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "所有已记账的日记账行书，按账户汇总 - 仅在公司启用会计时编写。"
@@ -16689,6 +16927,9 @@ msgstr "仅差异"
 msgid "VAT Number"
 msgstr "增值税号"
 
+msgid "Vendor"
+msgstr "供应商"
+
 msgid "Vendor Write-Off Income"
 msgstr "供应商核销收入"
 
@@ -17567,6 +17808,9 @@ msgstr "您完成了 {leftoverQuantity} 个以上的 {0}，超过了订购数量
 
 msgid "You do not have permission to edit workflows"
 msgstr "您没有权限编辑工作流"
+
+msgid "You do not have permission to start a sync"
+msgstr "您没有权限开始同步"
 
 msgid "You don't have permission to edit this bill of material."
 msgstr "您没有编辑此物料清单的权限。"

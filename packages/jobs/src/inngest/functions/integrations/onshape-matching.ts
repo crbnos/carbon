@@ -38,3 +38,100 @@ export function escapeLikePattern(value: string): string {
     (specialCharacter) => `\\${specialCharacter}`
   );
 }
+
+// --- Matching from the ITEM side (the per-item re-pull) ----------------------
+// The two triggers above start from a release and look for its item. The
+// per-item re-pull starts from the item and looks for its release, so the same
+// contract is applied in reverse. Both decisions live here (rather than beside
+// the job) to stay loadable without the Inngest client — see the header.
+
+export interface OnshapeItemRevisionTarget {
+  readableId: string;
+  revision: string | null;
+  /** Carbon's generated readableId+revision key; recomputed when absent. */
+  readableIdWithRevision?: string | null;
+}
+
+// An item's release key is its readableIdWithRevision, which is exactly
+// releaseKey(readableId, revision) — so a release matches when its own key is
+// equal.
+export function itemReleaseKey(item: OnshapeItemRevisionTarget): string {
+  return (
+    item.readableIdWithRevision ?? releaseKey(item.readableId, item.revision)
+  );
+}
+
+// A released revision as the revisions API reports it. Structural (not the
+// OnshapeRevision interface) so this module keeps its zero runtime imports.
+export interface ReleasedRevisionCandidate {
+  partNumber: string;
+  revision: string;
+  elementType: number;
+  isObsolete?: boolean;
+}
+
+// Which released revision (if any) belongs to this item. Three filters, all of
+// them load-bearing:
+//   - element type: 0 = Part Studio, 1 = Assembly carry a model; a drawing
+//     released under the same number (2) is not one;
+//   - isObsolete: an obsoleted revision is no longer released, so re-pulling it
+//     would attach superseded geometry;
+//   - release key: the revision LETTER has to be the item's revision. An item at
+//     rev A never silently receives rev B's geometry — in Carbon that is a
+//     different item.
+// No match is a legitimate outcome (nothing released for this exact revision),
+// never a retry: the answer would not change on a second call.
+export function selectRevisionForItem<
+  TRevision extends ReleasedRevisionCandidate
+>(revisions: TRevision[], item: OnshapeItemRevisionTarget): TRevision | null {
+  const wantedReleaseKey = itemReleaseKey(item);
+  return (
+    revisions.find(
+      (revision) =>
+        !revision.isObsolete &&
+        (revision.elementType === 0 || revision.elementType === 1) &&
+        releaseKey(revision.partNumber, revision.revision) === wantedReleaseKey
+    ) ?? null
+  );
+}
+
+// The persisted locator a drawing re-pull runs from. Drawings release under
+// their OWN part numbers, so the revisions API can never find one from the
+// item's part number — a re-pull re-exports the element a previous sync
+// recorded, or does nothing.
+export interface OnshapeDrawingIdentifiers {
+  documentId: string;
+  versionId: string;
+  elementId: string;
+  partNumber: string | null;
+  revision: string | null;
+  releaseState: string | null;
+}
+
+export interface OnshapeDrawingStateRow {
+  documentId: string | null;
+  versionId: string | null;
+  elementId: string | null;
+  partNumber: string | null;
+  revision: string | null;
+  releaseState: string | null;
+}
+
+// The drawing arm's gate: all three identifiers or nothing. A partial locator
+// cannot address an Onshape element, and a state row written by a sync that
+// skipped before resolving one carries none of them.
+export function drawingIdentifiersFromState(
+  row: OnshapeDrawingStateRow | null | undefined
+): OnshapeDrawingIdentifiers | null {
+  if (!row?.documentId || !row.versionId || !row.elementId) {
+    return null;
+  }
+  return {
+    documentId: row.documentId,
+    versionId: row.versionId,
+    elementId: row.elementId,
+    partNumber: row.partNumber,
+    revision: row.revision,
+    releaseState: row.releaseState
+  };
+}

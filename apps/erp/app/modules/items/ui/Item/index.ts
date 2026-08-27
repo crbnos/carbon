@@ -15,6 +15,7 @@ import ItemSupersessionForm, {
   getItemLifecycleStatus
 } from "./ItemSupersessionForm";
 import MakeMethodTools from "./MakeMethodTools";
+import { OnshapeBlock } from "./OnshapeBlock";
 import PickMethodForm from "./PickMethodForm";
 import ReleaseLockAlert from "./ReleaseLockAlert";
 import { SelectedItemProperties } from "./SelectedItemProperties";
@@ -40,6 +41,7 @@ export {
   getItemLifecycleStatus,
   ItemSalePriceForm,
   MakeMethodTools,
+  OnshapeBlock,
   PickMethodForm,
   ReleaseLockAlert,
   SelectedItemProperties,

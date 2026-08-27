@@ -81,6 +81,11 @@ msgstr "{0}이(가) 삭제되었습니다"
 msgid "{0} draft journal entries"
 msgstr "{0}건의 임시 분개"
 
+#. placeholder {0}: row.original.failed
+#. placeholder {0}: run.failed
+msgid "{0} failed"
+msgstr "{0}건 실패"
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0}개 작업이 생성됨"
@@ -152,6 +157,9 @@ msgstr "매입채무의 {apOverduePct}%"
 
 msgid "{arOverduePct}% of receivables"
 msgstr "매출채권의 {arOverduePct}%"
+
+msgid "{catalogPercent}% of parts have a model"
+msgstr "부품의 {catalogPercent}%에 모델 있음"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. 이 품목을 최종 후속 품목으로 직접 연결하는 것을 고려하세요."
@@ -793,6 +801,9 @@ msgstr "공급업체의 세율이 변경됨"
 msgid "A supplier's type changes"
 msgstr "공급업체의 유형이 변경됨"
 
+msgid "A sync is already running — cancel it before starting another"
+msgstr "이미 동기화가 실행 중입니다 — 다른 동기화를 시작하려면 먼저 취소하세요"
+
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "라인에 추가되는 과세 대상 추가요금(취급료, 셋업비, 유류비 등)으로, 과세표준에 포함됩니다."
 
@@ -1399,6 +1410,9 @@ msgstr "확인 후 계속 진행 허용"
 msgid "Alpha"
 msgstr "알파"
 
+msgid "Already synced"
+msgstr "이미 동기화됨"
+
 msgid "Always"
 msgstr "항상"
 
@@ -1435,6 +1449,9 @@ msgstr "누군가의 주의가 필요함을 알리는 경보로서, carbon/notif
 
 msgid "An approval requirement on a non-conformance whose reviewers (seeded Engineering and Quality) must sign off before the issue can close."
 msgstr "부적합 사항에 대한 승인 요구 사항으로서, 검토자(씨드된 엔지니어링 및 품질)가 문제를 종료하기 전에 서명해야 합니다."
+
+msgid "An asset is already attached"
+msgstr "이미 파일이 첨부되어 있습니다"
 
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "자산의 취득원가에서 감가상각누계액을 뺀 값 — 장부상 남은 가치이며 처분 시 사용되는 금액입니다."
@@ -1542,11 +1559,17 @@ msgstr "그리고"
 msgid "And {0} more — resolve these to see the rest."
 msgstr "그리고 {0}건 더 — 이를 해결하면 나머지를 볼 수 있습니다."
 
+msgid "and {ambiguousOverflow} more matching more than one part"
+msgstr "여러 부품과 일치하는 항목 {ambiguousOverflow}건 더"
+
 msgid "and {hidden} more"
 msgstr "및 {hidden}개 더"
 
 msgid "and {remaining} more"
 msgstr "외 {remaining}개"
+
+msgid "and {unmatchedOverflow} more with no matching part"
+msgstr "일치하는 부품이 없는 항목 {unmatchedOverflow}건 더"
 
 msgid "Annotation added"
 msgstr "주석이 추가됨"
@@ -2370,6 +2393,9 @@ msgstr "품질 플래그와 알림 자동화"
 msgid "Automate your business processes with event-driven workflows that trigger actions when things happen in Carbon."
 msgstr "Carbon에서 발생하는 사건에 따라 작업을 트리거하는 이벤트 기반 워크플로우로 비즈니스 프로세스를 자동화합니다."
 
+msgid "Automatic"
+msgstr "자동"
+
 msgid "Automatic Cost Updates"
 msgstr "자동 원가 업데이트"
 
@@ -2655,6 +2681,9 @@ msgstr "일괄 가져오기"
 msgid "Bulk Jobs"
 msgstr "일괄 작업"
 
+msgid "Bulk sync"
+msgstr "일괄 동기화"
+
 msgid "Business moment"
 msgstr "비즈니스 순간"
 
@@ -2790,11 +2819,23 @@ msgstr "판매주문 + 선택한 {0}개 취소"
 msgid "Cancel SO only"
 msgstr "판매주문만 취소"
 
+msgid "Cancel sync"
+msgstr "동기화 취소"
+
+msgid "Cancel this sync? Items already synced are kept. This action is recorded."
+msgstr "이 동기화를 취소하시겠습니까? 이미 동기화된 품목은 유지됩니다. 이 작업은 기록됩니다."
+
 msgid "Canceled"
 msgstr "취소됨"
 
 msgid "Cancelled"
 msgstr "취소됨"
+
+msgid "Cancelled by"
+msgstr "취소한 사람"
+
+msgid "Cancelled by {cancelledByName}"
+msgstr "{cancelledByName}이(가) 취소함"
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "저장되지 않은 공정작업에는 파라미터를 추가할 수 없습니다"
@@ -3051,6 +3092,9 @@ msgstr "왼쪽의 행을 선택하여 해당 재고가 어디서 올 수 있는�
 
 msgid "Choose a serial number"
 msgstr "일련번호를 선택하세요"
+
+msgid "Choose an Onshape document, version and assembly first"
+msgstr "먼저 Onshape 문서, 버전, 어셈블리를 선택하세요"
 
 msgid "Choose another file"
 msgstr "다른 파일을 선택하세요"
@@ -3908,6 +3952,9 @@ msgstr "국가"
 msgid "Country code"
 msgstr "국가 코드"
 
+msgid "Coverage unavailable"
+msgstr "커버리지를 불러올 수 없음"
+
 msgid "Create"
 msgstr "생성"
 
@@ -4471,6 +4518,9 @@ msgstr "데이터 마이그레이션 맵에 있는 항목의 데이터 마이그
 
 msgid "Data scattered across spreadsheets and disconnected tools"
 msgstr "스프레드시트와 서로 연결되지 않은 도구에 흩어진 데이터"
+
+msgid "Data synced"
+msgstr "데이터 동기화"
 
 msgid "Data Type"
 msgstr "데이터 유형"
@@ -5397,6 +5447,9 @@ msgstr "도면 번호"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "도면이 교체되었습니다. 벌룬 배치는 제거되었으며, 피처 행은 변경되지 않습니다."
 
+msgid "Drawings {drawingsSynced}/{drawingsTracked}"
+msgstr "도면 {drawingsSynced}/{drawingsTracked}"
+
 msgid "Drop Shipment"
 msgstr "직송 출하"
 
@@ -6014,6 +6067,9 @@ msgstr "엔지니어링 변경 및 CAD"
 msgid "Engineering Contact"
 msgstr "엔지니어링 담당자"
 
+msgid "Engineering Data"
+msgstr "엔지니어링 데이터"
+
 msgid "Enroll"
 msgstr "등록"
 
@@ -6204,6 +6260,9 @@ msgstr "설정한 시스템에서 귀사의 데이터로 범위 내 모든 테�
 msgid "Every match"
 msgstr "모든 일치"
 
+msgid "Every released revision in the latest sync matched exactly one part"
+msgstr "최근 동기화의 모든 릴리스된 리비전이 정확히 하나의 부품과 일치했습니다"
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "기간을 종료하기 전에 모든 필수 작업을 완료하거나 건너뛰어야 합니다."
 
@@ -6245,6 +6304,9 @@ msgstr "면세 증명서"
 
 msgid "Exemption Reason"
 msgstr "면세 사유"
+
+msgid "Existing attachment confirmed"
+msgstr "기존 첨부 확인됨"
 
 msgid "Existing mappings. Pick a different provider account to re-map."
 msgstr "기존 매핑입니다. 다시 매핑하려면 다른 공급자 계정을 선택하세요."
@@ -6429,6 +6491,10 @@ msgstr "실패"
 
 msgid "Failed"
 msgstr "실패"
+
+#. placeholder {0}: run.failed
+msgid "Failed {0}"
+msgstr "실패 {0}"
 
 msgid "Failed features"
 msgstr "부적합 특성"
@@ -6796,6 +6862,9 @@ msgstr "FEFO(유효기한 임박 순 출고)"
 msgid "Fetch"
 msgstr "가져오기"
 
+msgid "Fetch this company's Onshape documents first"
+msgstr "먼저 이 회사의 Onshape 문서를 가져오세요"
+
 msgid "Field"
 msgstr "필드"
 
@@ -6827,6 +6896,12 @@ msgstr "파일 크기가 10MB 제한을 초과했습니다"
 #. placeholder {0}: SIZE_LIMIT.format()
 msgid "File size too big (max. {0})"
 msgstr "파일 크기가 너무 큽니다(최대 {0})"
+
+msgid "File too large"
+msgstr "파일이 너무 큼"
+
+msgid "File too large to sync"
+msgstr "너무 커서 동기화할 수 없는 파일"
 
 msgid "File type not supported"
 msgstr "지원하지 않는 파일 형식입니다"
@@ -6872,6 +6947,9 @@ msgstr "종료 시점"
 
 msgid "Finish with material unpicked?"
 msgstr "자재가 선택되지 않은 상태로 완료하시겠습니까?"
+
+msgid "Finished"
+msgstr "완료"
 
 msgid "Finished goods"
 msgstr "완제품"
@@ -8316,6 +8394,9 @@ msgstr "열린 상태 유지"
 msgid "Keep picking"
 msgstr "계속 선택"
 
+msgid "Keep syncing"
+msgstr "동기화 계속"
+
 msgid "Keeps orders, quotes, and settings behind a second check"
 msgstr "주문, 견적 및 설정을 이중 확인으로 보호합니다"
 
@@ -8421,6 +8502,9 @@ msgstr "지난 분기"
 
 msgid "Last Run"
 msgstr "마지막 실행"
+
+msgid "Last synced"
+msgstr "마지막 동기화"
 
 msgid "Last synced: <0/>"
 msgstr "마지막 동기화: <0/>"
@@ -8602,6 +8686,9 @@ msgstr "Carbon 도입 완료"
 
 msgid "Live reloading"
 msgstr "실시간 새로고침"
+
+msgid "Live updates paused — retrying"
+msgstr "실시간 업데이트 일시 중지 — 재시도 중"
 
 msgid "Load newer"
 msgstr "최신 항목 불러오기"
@@ -8956,6 +9043,9 @@ msgstr "부족으로 표시"
 msgid "Mark to delete"
 msgstr "삭제 대상으로 표시"
 
+msgid "Mass"
+msgstr "질량"
+
 msgid "Master gauge"
 msgstr "마스터 게이지"
 
@@ -8991,6 +9081,9 @@ msgstr "일치함"
 
 msgid "matches"
 msgstr "일치"
+
+msgid "Matches more than one part"
+msgstr "여러 부품과 일치"
 
 msgid "Matching Pairs"
 msgstr "일치하는 쌍"
@@ -9232,6 +9325,9 @@ msgstr "누락된 공급업체"
 msgid "Mobile Phone"
 msgstr "휴대전화"
 
+msgid "Model"
+msgstr "모델"
+
 msgid "Model Number"
 msgstr "모델 번호"
 
@@ -9252,6 +9348,12 @@ msgstr "라인에서 모델이 제거됨"
 
 msgid "Model upload"
 msgstr "모델 업로드"
+
+msgid "Models {modelsSynced}/{modelsTracked}"
+msgstr "모델 {modelsSynced}/{modelsTracked}"
+
+msgid "Models and drawings synced, out of the parts this sync has tried. {partsWithModel} of {partsTotal} parts in the catalog carry a CAD model, including any uploaded by hand."
+msgstr "이 동기화가 시도한 부품 대비 동기화된 모델과 도면입니다. 카탈로그의 {partsTotal}개 부품 중 {partsWithModel}개가 CAD 모델을 가지고 있으며, 직접 업로드한 것도 포함됩니다."
 
 msgid "Modified"
 msgstr "수정됨"
@@ -9805,6 +9907,9 @@ msgstr "BOM 투입 항목 중 유효기간 정책이 설정된 항목이 없습�
 msgid "No CAD model to preview."
 msgstr "미리 볼 수 있는 CAD 모델이 없습니다."
 
+msgid "No CAD synced yet"
+msgstr "아직 동기화된 CAD 없음"
+
 msgid "No calibration records found"
 msgstr "교정 기록이 없습니다"
 
@@ -9855,6 +9960,9 @@ msgstr "이 항목에 대한 초안 제작 방법이 아직 없습니다."
 
 msgid "No draft versions available"
 msgstr "사용 가능한 초안 버전이 없습니다"
+
+msgid "No drawing synced"
+msgstr "동기화된 도면 없음"
 
 msgid "No due date"
 msgstr "마감일 없음"
@@ -9922,6 +10030,9 @@ msgstr "품목 없음"
 msgid "No items have inventory activity here yet."
 msgstr "아직 여기에 재고 활동이 있는 항목이 없습니다."
 
+msgid "No items match these filters"
+msgstr "이 필터와 일치하는 품목이 없습니다"
+
 msgid "No jobs were created"
 msgstr "생성된 작업이 없음"
 
@@ -9955,11 +10066,17 @@ msgstr "일치하는 항목 없음. 입력하여 새로 만드세요."
 msgid "No matching bins"
 msgstr "일치하는 빈이 없습니다"
 
+msgid "No matching part"
+msgstr "일치하는 부품 없음"
+
 msgid "No new notifications"
 msgstr "새 알림이 없습니다"
 
 msgid "No notes"
 msgstr "메모 없음"
+
+msgid "No Onshape documents could be loaded for this company"
+msgstr "이 회사의 Onshape 문서를 불러올 수 없습니다"
 
 msgid "No open invoices"
 msgstr "미결 인보이스가 없습니다"
@@ -10039,6 +10156,9 @@ msgstr "프로세스를 선택하지 않았습니다"
 msgid "No production events recorded for this operation yet"
 msgstr "이 공정작업에 대해 아직 기록된 생산 이벤트가 없습니다"
 
+msgid "No progress for 30 minutes"
+msgstr "30분간 진행 없음"
+
 msgid "No purchases in this period"
 msgstr "이 기간에 구매가 없습니다"
 
@@ -10059,6 +10179,9 @@ msgstr "기록을 찾을 수 없습니다"
 
 msgid "No reference image"
 msgstr "참조 이미지 없음"
+
+msgid "No released revision found"
+msgstr "릴리스된 리비전을 찾을 수 없음"
 
 msgid "No remaining entities to inspect."
 msgstr "검사할 개체가 남아 있지 않습니다."
@@ -10104,6 +10227,12 @@ msgstr "아직 공급업체가 없습니다"
 
 msgid "No sync operations yet"
 msgstr "아직 동기화 작업 없음"
+
+msgid "No synced items yet — run a sync to populate this table"
+msgstr "아직 동기화된 품목이 없습니다 — 동기화를 실행하면 이 표가 채워집니다"
+
+msgid "No syncs have run yet"
+msgstr "아직 실행된 동기화가 없습니다"
 
 msgid "No time entries for this week"
 msgstr "이번 주 시간 기록이 없습니다"
@@ -10186,6 +10315,9 @@ msgstr "없음"
 msgid "Normal"
 msgstr "일반"
 
+msgid "Not a model"
+msgstr "모델이 아님"
+
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "테이블이 아니라 총계정원장 잔액입니다. 작업 자재가 투입되면서 원가가 누적되고, 작업이 재고로 입고되면 정산됩니다."
 
@@ -10194,6 +10326,9 @@ msgstr "인증되지 않음"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "수량을 충족할 만큼 작업이 충분하지 않습니다"
+
+msgid "Not linked to Onshape"
+msgstr "Onshape에 연결되지 않음"
 
 msgid "Not reached"
 msgstr "도달하지 않음"
@@ -10218,6 +10353,9 @@ msgstr "시작되지 않음"
 
 msgid "Not started training for"
 msgstr "다음 교육을 시작하지 않음:"
+
+msgid "Not synced"
+msgstr "동기화되지 않음"
 
 msgid "Not yet"
 msgstr "아직 아님"
@@ -10397,6 +10535,9 @@ msgstr "초안 상태의 절차만 수정할 수 있습니다. 활성 또는 보
 msgid "Only empty, open periods can be deleted."
 msgstr "비어있는 열린 기간만 삭제할 수 있습니다."
 
+msgid "Onshape asset sync is turned off for this company"
+msgstr "이 회사에서는 Onshape 파일 동기화가 꺼져 있습니다"
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape가 연결을 승인했지만 저장하지 못했습니다. 다시 연결해 보세요."
 
@@ -10412,8 +10553,17 @@ msgstr "Onshape가 구성되지 않았습니다"
 msgid "Onshape rejected the authorization"
 msgstr "Onshape가 인증을 거부했습니다"
 
+msgid "Onshape revision"
+msgstr "Onshape 리비전"
+
 msgid "Onshape Status"
 msgstr "Onshape 상태"
+
+msgid "Onshape sync"
+msgstr "Onshape 동기화"
+
+msgid "Onshape Sync"
+msgstr "Onshape 동기화"
 
 msgid "Oops! The link you're trying to access has expired or is no longer valid."
 msgstr "이런! 접근하려는 링크가 만료되었거나 더 이상 유효하지 않습니다."
@@ -10463,6 +10613,9 @@ msgstr "변경 공지 {ids}에서 열기. 새 버전 또는 개정본을 만들�
 msgid "Open in MES"
 msgstr "MES에서 열기"
 
+msgid "Open in Onshape"
+msgstr "Onshape에서 열기"
+
 msgid "Open Issues"
 msgstr "미결 이슈"
 
@@ -10474,6 +10627,9 @@ msgstr "미결 작업"
 
 msgid "Open menu"
 msgstr "메뉴 열기"
+
+msgid "Open Onshape settings"
+msgstr "Onshape 설정 열기"
 
 msgid "Open payables by supplier and age"
 msgstr "공급자 및 기간별 미지급금"
@@ -10860,6 +11016,9 @@ msgstr "품목 ID"
 
 msgid "Part is configured for manufacturing"
 msgstr "제조용으로 설정된 품목입니다"
+
+msgid "Part number"
+msgstr "부품 번호"
 
 msgid "Part Number"
 msgstr "부품 번호"
@@ -11634,8 +11793,14 @@ msgstr "회계에서 가져오기"
 msgid "Pull from Inventory"
 msgstr "재고에서 가져오기"
 
+msgid "Pull from Onshape"
+msgstr "Onshape에서 가져오기"
+
 msgid "Pull, map, and load your data"
 msgstr "데이터를 가져와서 매핑하고 로드하세요"
+
+msgid "Pulling the latest released CAD from Onshape"
+msgstr "Onshape에서 최신 릴리스 CAD를 가져오는 중"
 
 msgid "Purchase & manufacture from MRP"
 msgstr "MRP 기반 구매 및 제조"
@@ -12261,8 +12426,17 @@ msgstr "릴리스 제어"
 msgid "Release Control"
 msgstr "릴리스 제어"
 
+msgid "Release exceptions"
+msgstr "릴리스 예외"
+
 msgid "Release Job"
 msgstr "작업 릴리즈"
+
+msgid "Release state"
+msgstr "릴리스 상태"
+
+msgid "Release State"
+msgstr "릴리스 상태"
 
 msgid "Released"
 msgstr "릴리즈됨"
@@ -12685,6 +12859,9 @@ msgstr "리비전 {0}"
 msgid "Revision status"
 msgstr "개정판 상태"
 
+msgid "Revision unknown"
+msgstr "리비전 알 수 없음"
+
 msgid "Revisions"
 msgstr "리비전"
 
@@ -12805,6 +12982,9 @@ msgstr "수량이나 고객에 따라 가격을 자동으로 조정하는 규칙
 
 msgid "Rules that decide where each item gets stored"
 msgstr "각 품목의 보관 위치를 결정하는 규칙"
+
+msgid "Run a BOM sync from a part's <0>BoM Explorer</0> to populate this table"
+msgstr "이 표를 채우려면 부품의 <0>BoM Explorer</0>에서 자재명세서 동기화를 실행하세요"
 
 msgid "Run acceptance testing"
 msgstr "인수 테스트 실행"
@@ -13076,6 +13256,13 @@ msgstr "인증 앱(예: Google Authenticator 또는 1Password)으로 이 QR 코�
 
 msgid "Scan this with your authenticator app, then enter the 6-digit code it shows."
 msgstr "인증자 앱으로 이것을 스캔한 후 표시된 6자리 코드를 입력하세요."
+
+msgid "Scanned"
+msgstr "스캔됨"
+
+#. placeholder {0}: run.revisionsScanned
+msgid "Scanned {0}"
+msgstr "스캔됨 {0}"
 
 msgid "SCAR"
 msgstr "SCAR"
@@ -13854,6 +14041,10 @@ msgstr "공급업체 ID 표시"
 msgid "Show sync options"
 msgstr "동기화 옵션 표시"
 
+#. placeholder {0}: run.failed
+msgid "Show the {0} parts that failed"
+msgstr "실패한 {0}개 부품 보기"
+
 msgid "Show Trailing Zeros"
 msgstr "후행 0 표시"
 
@@ -13956,6 +14147,10 @@ msgstr "릴리즈되었지만 시작되지 않은 상태를 건너뜁니다 — 
 
 msgid "Skipped"
 msgstr "건너뜀"
+
+#. placeholder {0}: countSkipped(run)
+msgid "Skipped {0}"
+msgstr "건너뜀 {0}"
 
 msgid "Slack"
 msgstr "Slack"
@@ -14114,6 +14309,9 @@ msgstr "시작"
 msgid "Start {0} Day Free Trial"
 msgstr "{0}일 무료 체험 시작"
 
+msgid "Start a sync to pull released Onshape models and drawings onto matching parts."
+msgstr "동기화를 시작하면 릴리스된 Onshape 모델과 도면이 일치하는 부품에 추가됩니다."
+
 msgid "Start counting"
 msgstr "실사 시작"
 
@@ -14135,6 +14333,9 @@ msgstr "공정 시작 시 유효기한 시작"
 msgid "Start Here"
 msgstr "여기서 시작하기"
 
+msgid "Start new sync"
+msgstr "새 동기화 시작"
+
 msgid "Start Now"
 msgstr "지금 시작"
 
@@ -14143,6 +14344,9 @@ msgstr "회계연도 시작"
 
 msgid "Start of Tax Year"
 msgstr "세무연도 시작"
+
+msgid "Start sync"
+msgstr "동기화 시작"
 
 msgid "Start Time"
 msgstr "시작 시간"
@@ -14153,6 +14357,9 @@ msgstr "…부터 시작"
 msgid "Started"
 msgstr "시작됨"
 
+msgid "Started by"
+msgstr "시작한 사람"
+
 msgid "Starting…"
 msgstr "시작 중…"
 
@@ -14161,6 +14368,9 @@ msgstr "주/도"
 
 msgid "State province"
 msgstr "주/도"
+
+msgid "State synced"
+msgstr "상태 동기화"
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
@@ -14608,14 +14818,39 @@ msgstr "동기화"
 msgid "Sync Activity"
 msgstr "동기화 활동"
 
+msgid "Sync again"
+msgstr "다시 동기화"
+
+msgid "Sync details"
+msgstr "동기화 상세 정보"
+
+msgid "Sync did not complete — try again"
+msgstr "동기화가 완료되지 않았습니다 — 다시 시도하세요"
+
 msgid "Sync operation"
 msgstr "동기화 작업"
+
+msgid "Sync started"
+msgstr "동기화를 시작했습니다"
 
 msgid "Sync Tie-Out"
 msgstr "동기화 일치"
 
 msgid "Synced"
 msgstr "동기화됨"
+
+#. placeholder {0}: run.synced
+msgid "Synced {0}"
+msgstr "동기화됨 {0}"
+
+msgid "Synced by"
+msgstr "동기화한 사람"
+
+msgid "Synced by {actorName}"
+msgstr "{actorName}이(가) 동기화함"
+
+msgid "Syncing"
+msgstr "동기화 중"
 
 msgid "System"
 msgstr "시스템"
@@ -14851,6 +15086,9 @@ msgstr "모든 재고 이동을 추가 전용으로 기록한 원장으로, 보�
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Onshape에서 인증이 거부되었습니다. 다시 연결해 보세요."
+
+msgid "The bill of materials can only be synced into a draft method"
+msgstr "자재명세서는 초안 방법에만 동기화할 수 있습니다"
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "전기된 모든 분개 라인을 계정별로 합산한 장부로, 회사에서 회계 기능이 활성화된 경우에만 기록됩니다."
@@ -16689,6 +16927,9 @@ msgstr "편차만"
 msgid "VAT Number"
 msgstr "VAT 번호"
 
+msgid "Vendor"
+msgstr "공급업체"
+
 msgid "Vendor Write-Off Income"
 msgstr "공급업체 상각 수익"
 
@@ -17567,6 +17808,9 @@ msgstr "주문 수량 {1}보다 {leftoverQuantity}개 더 많은 {0}을(를) 완
 
 msgid "You do not have permission to edit workflows"
 msgstr "워크플로우를 편집할 권한이 없습니다."
+
+msgid "You do not have permission to start a sync"
+msgstr "동기화를 시작할 권한이 없습니다"
 
 msgid "You don't have permission to edit this bill of material."
 msgstr "이 자재명세서를 수정할 권한이 없습니다."

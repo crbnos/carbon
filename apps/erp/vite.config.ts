@@ -52,6 +52,9 @@ export default defineConfig(({ isSsrBuild, mode }) => {
         ".trycloudflare.com",
         ".dev",
         ".localhost",
+        // The dockerized Inngest dev server executes functions by calling the
+        // app through Docker's host alias.
+        "host.docker.internal",
       ],
     },
     plugins: [

@@ -21,6 +21,12 @@ import {
   syncOnshapeDrawingAssetsToItem,
   syncOnshapeElementAssetsToItem
 } from "./onshape-sync-element";
+import {
+  markItemSyncStateFailedByElement,
+  type OnshapeSyncAssetKind,
+  onshapeElementKindFromType,
+  upsertItemSyncState
+} from "./onshape-sync-state";
 
 // Go-forward sync: one released Onshape revision ->
 // attach its CAD model to the matching Carbon item. LINK-ONLY (never creates
@@ -59,6 +65,8 @@ export interface OnshapeRevisionSyncResult {
   modelUploadId?: string | null;
   thumbnailAttached?: boolean; // Onshape-rendered thumbnail stored — no fallback event needed
   releaseKey?: string;
+  revision?: string; // the resolved revision LETTER (the event only carries an id)
+  releaseState?: string; // what Onshape reports for the resolved revision
 }
 
 // Onshape elementType is NUMERIC: 0 = Part Studio, 1 = Assembly, 2 = Drawing.
@@ -107,6 +115,9 @@ export async function runOnshapeRevisionSync(
     return { synced: false, skippedReason: "revision-not-found" };
   }
   const revision = releasedRevision.revision;
+  // The only release-state signal the revisions API carries: a revision that is
+  // not obsolete is the released one for its part.
+  const releaseState = releasedRevision.isObsolete ? "Obsolete" : "Released";
 
   // DRAWING (elementType 2): released as its own DRW-xxxx element. Export it as a
   // PDF and attach it to the MODEL item sharing its number (PRT-xxxx / ASM-xxxx)
@@ -162,7 +173,9 @@ export async function runOnshapeRevisionSync(
         synced: true,
         itemId: target.id,
         modelUploadId: attached.modelUploadId,
-        releaseKey: target.readableIdWithRevision ?? undefined
+        releaseKey: target.readableIdWithRevision ?? undefined,
+        revision,
+        releaseState
       };
     } catch (syncError) {
       if (syncError instanceof OnshapeAssetTooLargeError) {
@@ -170,7 +183,13 @@ export async function runOnshapeRevisionSync(
         console.warn(
           `runOnshapeRevisionSync: skipping oversized drawing ${input.partNumber}: ${syncError.message}`
         );
-        return { synced: false, skippedReason: "asset-too-large" };
+        return {
+          synced: false,
+          skippedReason: "asset-too-large",
+          itemId: target.id,
+          revision,
+          releaseState
+        };
       }
       throw syncError;
     }
@@ -227,7 +246,10 @@ export async function runOnshapeRevisionSync(
       return {
         synced: false,
         skippedReason: "asset-too-large",
-        releaseKey: key
+        releaseKey: key,
+        itemId: carbonItem.data.id,
+        revision,
+        releaseState
       };
     }
     throw syncError;
@@ -238,7 +260,9 @@ export async function runOnshapeRevisionSync(
     itemId: carbonItem.data.id,
     modelUploadId: attached.modelUploadId,
     thumbnailAttached: attached.thumbnailAttached,
-    releaseKey: key
+    releaseKey: key,
+    revision,
+    releaseState
   };
 }
 
@@ -262,13 +286,87 @@ const OnshapeRevisionSyncPayloadSchema = z.object({
   onshapeCompanyId: z.string().optional()
 });
 
+type OnshapeRevisionSyncPayload = z.infer<
+  typeof OnshapeRevisionSyncPayloadSchema
+>;
+
+function assetKindForElementType(elementType: number): OnshapeSyncAssetKind {
+  return elementType === 2 ? "drawing" : "model";
+}
+
+// Which skip reasons an ITEM row may carry. 'ambiguous-item' is deliberately
+// absent: a release that matched several candidate parts is not attributable to
+// one of them, so an automatic sync records it at run level only. A
+// user-initiated re-pull on a known item is the one path that records it.
+function itemSkipReasonFor(
+  skippedReason: OnshapeRevisionSyncResult["skippedReason"]
+): "revision-not-found" | "asset-too-large" | null {
+  if (skippedReason === "asset-too-large") return "asset-too-large";
+  if (skippedReason === "revision-not-found") return "revision-not-found";
+  return null;
+}
+
+// Best-effort sync state for this release. Only written once the sync resolved
+// WHICH Carbon item the release belongs to — a release matching no item (or
+// several) has no item row to own the outcome.
+async function recordRevisionSyncState(
+  carbon: CarbonClient,
+  payload: OnshapeRevisionSyncPayload,
+  result: OnshapeRevisionSyncResult
+): Promise<{ recorded: boolean }> {
+  if (!result.itemId) {
+    return { recorded: false };
+  }
+  const assetKind = assetKindForElementType(payload.elementType);
+  const written = await upsertItemSyncState(carbon, {
+    companyId: payload.companyId,
+    // The Onshape integration installer — the acting user for every webhook sync.
+    userId: payload.userId,
+    itemId: result.itemId,
+    assetKind,
+    status: result.synced ? "synced" : "skipped",
+    source: "webhook",
+    skipReason: result.synced ? null : itemSkipReasonFor(result.skippedReason),
+    partNumber: payload.partNumber,
+    revision: result.revision,
+    revisionId: payload.revisionId,
+    documentId: payload.documentId,
+    versionId: payload.versionId,
+    elementId: payload.elementId,
+    // Null for a drawing: the webhook's own element-kind resolver only names the
+    // two model kinds, which is exactly what this column records.
+    elementKind: onshapeElementKindFromType(payload.elementType),
+    releaseState: result.releaseState,
+    modelUploadId: assetKind === "model" ? (result.modelUploadId ?? null) : null
+  });
+  return { recorded: written.applied };
+}
+
 export const onshapeRevisionSyncFunction = inngest.createFunction(
   {
     id: "onshape-revision-sync",
     retries: 3,
     idempotency: "event.data.messageId",
     // One in-flight sync per released element; different elements run in parallel.
-    concurrency: { key: "event.data.elementId", limit: 1 }
+    concurrency: { key: "event.data.elementId", limit: 1 },
+    // A run that exhausted its retries records the failure on the item row for
+    // the released element AND revision it was syncing — every revision of a
+    // part is released from the same element but lives on its own Carbon item,
+    // so the failure belongs to this revision's row alone. The row exists once
+    // any earlier sync of the same release wrote one; a first-ever sync that
+    // fails before it resolves an item has nothing to attribute the failure to.
+    onFailure: async ({ event }) => {
+      const { companyId, userId, elementId, elementType, revisionId } = event
+        .data.event.data as OnshapeRevisionSyncPayload;
+      await markItemSyncStateFailedByElement(getCarbonServiceRole(), {
+        companyId,
+        userId,
+        elementId,
+        revisionId,
+        assetKind: assetKindForElementType(elementType),
+        error: event.data.error.message
+      });
+    }
   },
   { event: "carbon/onshape-revision-sync" },
   async ({ event, step }) => {
@@ -293,6 +391,12 @@ export const onshapeRevisionSyncFunction = inngest.createFunction(
         () => runOnshapeRevisionSync(carbon, payload),
         `revision ${payload.partNumber}`
       )
+    );
+
+    // Own memoized step: the function body replays on every step invocation, so
+    // a write placed at body level would re-run on each replay.
+    await step.run("record-item-state", () =>
+      recordRevisionSyncState(carbon, payload, result)
     );
 
     if (result.synced && result.modelUploadId) {
