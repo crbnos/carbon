@@ -81,6 +81,10 @@ msgstr "{0}이(가) 삭제되었습니다"
 msgid "{0} draft journal entries"
 msgstr "{0}건의 임시 분개"
 
+#. placeholder {0}: integration.name
+msgid "{0} isn't installed yet. There's nothing to configure — install it to connect an account."
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0}개 작업이 생성됨"
@@ -149,6 +153,9 @@ msgstr "{alreadyPlannedItemCount}개 부품이 건너뜀 — 이미 활성 작�
 
 msgid "{apOverduePct}% of payables"
 msgstr "매입채무의 {apOverduePct}%"
+
+msgid "{appName} isn't connected yet. Connect an account before this step can do anything."
+msgstr ""
 
 msgid "{arOverduePct}% of receivables"
 msgstr "매출채권의 {arOverduePct}%"
@@ -941,6 +948,9 @@ msgstr "고객이 지급할 금액에 대한 매출채권"
 msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
 msgstr "게시 기본값 또는 분개 기록에서 참조되지만 공급자 매핑이 아직 없는 계정입니다."
 
+msgid "Accounts your workflows can act as. Add one for each account a workflow step should use."
+msgstr ""
+
 msgid "Accumulated Depreciation"
 msgstr "감가상각누계액"
 
@@ -1069,6 +1079,9 @@ msgstr "행 추가"
 
 msgid "Add a step"
 msgstr "단계 추가"
+
+msgid "Add account"
+msgstr ""
 
 msgid "Add Account"
 msgstr "계정 추가"
@@ -1526,6 +1539,9 @@ msgstr "작업 센터의 작업 대기열에서 작업의 위치(현장이 작�
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "Onshape에 연결하는 중 예기치 않은 오류가 발생했습니다. 다시 연결해 보세요."
 
+msgid "An unexpected error occurred while connecting. Try connecting again."
+msgstr ""
+
 msgid "Analytics"
 msgstr "분석"
 
@@ -1559,6 +1575,9 @@ msgstr "주석 텍스트가 필요합니다"
 
 msgid "Annotation updated"
 msgstr "주석이 업데이트됨"
+
+msgid "Another connection to this integration already has that name. Choose a different one."
+msgstr ""
 
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "이 원가센터가 합산되는 상위 원가센터로, 계층적 원가 보고를 위해 하위 부서를 상위 부서 아래에 중첩할 수 있게 합니다."
@@ -1609,6 +1628,9 @@ msgid "API keys for programmatic access to your Carbon data."
 msgstr "Carbon 데이터에 프로그래밍 방식으로 접근하기 위한 API 키입니다."
 
 msgid "API, webhooks, and integrations"
+msgstr ""
+
+msgid "App"
 msgstr ""
 
 msgid "Applied"
@@ -2289,6 +2311,9 @@ msgstr "첨부파일"
 msgid "Attempts"
 msgstr "시도"
 
+msgid "Attendees"
+msgstr ""
+
 msgid "Attribute"
 msgstr "속성"
 
@@ -2330,6 +2355,9 @@ msgstr "인증 앱"
 
 msgid "Authenticator QR code"
 msgstr "인증자 QR 코드"
+
+msgid "Authorization was refused. Try connecting again."
+msgstr ""
 
 msgid "Auto apply"
 msgstr "자동 적용"
@@ -2709,6 +2737,9 @@ msgstr "계산된 완제품 유효기한"
 msgid "Calculation Method"
 msgstr "계산 방법"
 
+msgid "Calendar"
+msgstr ""
+
 msgid "Calibration"
 msgstr "교정"
 
@@ -3037,6 +3068,9 @@ msgstr "체크포인트 ·"
 msgid "Checkpoints"
 msgstr "체크포인트"
 
+msgid "Choose {named} first."
+msgstr ""
+
 msgid "Choose a batch number"
 msgstr "배치 번호를 선택하세요"
 
@@ -3198,6 +3232,9 @@ msgstr "셋업 접기"
 
 msgid "Collapse subtree"
 msgstr "하위 트리 접기"
+
+msgid "Color"
+msgstr ""
 
 msgid "Column dimension"
 msgstr "열 차원"
@@ -3456,6 +3493,9 @@ msgstr "기간 내 모든 전기된 분개의 차변과 대변이 일치하는�
 msgid "Conflict reason"
 msgstr "충돌 이유"
 
+msgid "Connect {appName}"
+msgstr ""
+
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Carbon을 회계, 프로젝트 관리, CAD 도구 등과 연동하세요."
 
@@ -3476,6 +3516,12 @@ msgstr "귀사가 이미 사용 중인 외부 도구와 연동하세요"
 
 msgid "Connected to"
 msgstr "연결 대상"
+
+msgid "Connection"
+msgstr ""
+
+msgid "Connection name"
+msgstr ""
 
 msgid "Console Mode"
 msgstr "콘솔 모드"
@@ -3863,6 +3909,9 @@ msgstr "문서를 읽을 수 없습니다: {0}"
 msgid "Could not save"
 msgstr "저장할 수 없습니다"
 
+msgid "Couldn't complete the connection"
+msgstr ""
+
 msgid "Couldn't complete the Onshape connection"
 msgstr "Onshape 연결을 완료할 수 없습니다"
 
@@ -3877,6 +3926,9 @@ msgstr "제공자의 차원 대상을 로드할 수 없습니다 — 연결을 �
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "작업 일정을 변경할 수 없습니다. 다시 시도하세요."
+
+msgid "Couldn't save the connection"
+msgstr ""
 
 msgid "Couldn't save the Onshape connection"
 msgstr "Onshape 연결을 저장할 수 없습니다"
@@ -3970,6 +4022,9 @@ msgstr "감사 추적 항목 생성"
 
 msgid "Create Change Notice"
 msgstr "변경 공지 만들기"
+
+msgid "Create Google Meet Link"
+msgstr ""
 
 msgid "Create Issue"
 msgstr "이슈 생성"
@@ -4493,6 +4548,9 @@ msgstr "만기일"
 msgid "Date Due"
 msgstr "만기일"
 
+msgid "Date from"
+msgstr ""
+
 msgid "Date issued"
 msgstr "발행일"
 
@@ -4504,6 +4562,9 @@ msgstr "결제일"
 
 msgid "Date Paid"
 msgstr "지급일"
+
+msgid "Date to"
+msgstr ""
 
 msgid "Dates"
 msgstr "날짜"
@@ -5971,6 +6032,9 @@ msgstr "활성화됨"
 msgid "End Date"
 msgstr "종료일"
 
+msgid "End date time of the event"
+msgstr ""
+
 msgid "End of Last Fiscal Year"
 msgstr "지난 회계연도 말"
 
@@ -6189,6 +6253,9 @@ msgstr "이벤트"
 msgid "Event Type"
 msgstr "이벤트 유형"
 
+msgid "Event types"
+msgstr ""
+
 msgid "Events"
 msgstr "이벤트"
 
@@ -6273,6 +6340,9 @@ msgstr "노무 펼치기"
 
 msgid "Expand Machine"
 msgstr "기계 펼치기"
+
+msgid "Expand Recurring Event?"
+msgstr ""
 
 msgid "Expand Setup"
 msgstr "셋업 펼치기"
@@ -7309,6 +7379,12 @@ msgstr "좋은 저녁입니다, {0}님"
 msgid "Good morning, {0}"
 msgstr "좋은 아침입니다, {0}님"
 
+msgid "Google Calendar: Create Event"
+msgstr ""
+
+msgid "Google Calendar: Get all Events"
+msgstr ""
+
 msgid "Google Places API key not configured"
 msgstr "Google Places API 키가 설정되지 않았습니다"
 
@@ -7350,6 +7426,15 @@ msgstr "그룹 이름"
 
 msgid "Groups"
 msgstr "그룹"
+
+msgid "Guests can invite others"
+msgstr ""
+
+msgid "Guests can modify"
+msgstr ""
+
+msgid "Guests can see other guests"
+msgstr ""
 
 msgid "Guided"
 msgstr "가이드형"
@@ -9750,6 +9835,9 @@ msgstr "추가된 역량이 없습니다"
 msgid "No Access"
 msgstr "접근 권한 없음"
 
+msgid "No accounts connected yet."
+msgstr ""
+
 msgid "No accounts mapped yet"
 msgstr "아직 매핑된 계정 없음"
 
@@ -9789,6 +9877,9 @@ msgstr "아직 보관된 로그가 없습니다. {0}일이 지난 로그는 자�
 
 msgid "No attachments."
 msgstr "첨부파일이 없습니다."
+
+msgid "No authorization code was returned"
+msgstr ""
 
 msgid "No available filters"
 msgstr "사용 가능한 필터가 없습니다"
@@ -10243,6 +10334,9 @@ msgstr "이 위치에는 더 이상 가져올 재고가 없습니다."
 
 msgid "Nothing in the archive"
 msgstr "보관함이 비어 있습니다"
+
+msgid "Nothing to choose yet - <0>set one up in Settings</0>."
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "아직 없습니다. 단계는 구성된 후에만 값을 제공합니다."
@@ -13212,6 +13306,9 @@ msgstr "관련 품목 검색..."
 msgid "Search suppliers..."
 msgstr "공급업체 검색..."
 
+msgid "Search Term"
+msgstr ""
+
 msgid "Search tools..."
 msgstr "도구 검색..."
 
@@ -13288,6 +13385,9 @@ msgstr "견적이 생성되지 않은 사유를 선택하세요."
 msgid "Select a shape first to see available options"
 msgstr "먼저 형상을 선택하면 사용 가능한 옵션이 표시됩니다"
 
+msgid "Select a step…"
+msgstr ""
+
 msgid "Select a substance and shape first to see available options"
 msgstr "먼저 재질과 형상을 선택하면 사용 가능한 옵션이 표시됩니다"
 
@@ -13305,6 +13405,9 @@ msgstr "전체 선택"
 
 msgid "Select an action…"
 msgstr "작업 선택…"
+
+msgid "Select an app…"
+msgstr ""
 
 msgid "Select an assignee"
 msgstr "담당자 선택"
@@ -13329,6 +13432,9 @@ msgstr "작업 선택…"
 
 msgid "Select an option"
 msgstr "옵션 선택"
+
+msgid "Select an option…"
+msgstr ""
 
 msgid "Select at least one line to convert"
 msgstr "전환할 라인을 하나 이상 선택하세요"
@@ -13468,6 +13574,9 @@ msgstr "초대 보내기"
 
 msgid "Send Invites"
 msgstr "초대 보내기"
+
+msgid "Send Notifications"
+msgstr ""
 
 msgid "Send RFQ to Suppliers"
 msgstr "공급업체에 RFQ 전송"
@@ -14113,6 +14222,9 @@ msgstr "시작 날짜"
 
 msgid "Start Date"
 msgstr "시작일"
+
+msgid "Start date time of the event"
+msgstr ""
 
 msgid "Start Expiration"
 msgstr "유효기한 시작"
@@ -14800,8 +14912,14 @@ msgstr "테스트 값"
 msgid "Text size"
 msgstr "글자 크기"
 
+msgid "That connection name is already used"
+msgstr ""
+
 msgid "That name is already used by another step."
 msgstr "해당 이름은 이미 다른 단계에서 사용 중입니다."
+
+msgid "That name is already used."
+msgstr ""
 
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
@@ -14840,8 +14958,14 @@ msgstr "계산 방법 기준일로부터 결제 기한까지의 일수"
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "모든 재고 이동을 추가 전용으로 기록한 원장으로, 보유 수량은 부호가 있는 항목들의 합이며 최종 근거 데이터입니다."
 
+msgid "The authorization took too long or came back altered. Start the connection again from this page."
+msgstr ""
+
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Onshape에서 인증이 거부되었습니다. 다시 연결해 보세요."
+
+msgid "The authorization was rejected"
+msgstr ""
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "전기된 모든 분개 라인을 계정별로 합산한 장부로, 회사에서 회계 기능이 활성화된 경우에만 기록됩니다."
@@ -14911,6 +15035,12 @@ msgstr "이 공급업체가 속하는 카테고리(원자재, 서비스, 위탁�
 
 msgid "The code printed on the kanban card that operators scan to mark the job complete; auto-generated when left blank."
 msgstr "칸반 카드에 인쇄되는 코드로, 작업자가 스캔하여 작업 완료를 표시합니다. 비워두면 자동으로 생성됩니다."
+
+msgid "The connection could not be verified"
+msgstr ""
+
+msgid "The connection was refused"
+msgstr ""
 
 msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
 msgstr "계약직의 주간 예상 가용 시간으로, 한 주 동안 이 계약직을 공정작업에 배정할 때 스케줄링에서 상한선으로 사용됩니다."
@@ -15094,6 +15224,9 @@ msgstr "이 공급업체로부터의 출하에서 운임 부담자, 위험 부�
 
 msgid "The Incoterm rule (FOB, DAP, EXW, CIF, …) that governs who pays freight, who bears risk, and where the transfer of title occurs on shipments to this customer."
 msgstr "이 고객에게 발송되는 출하에서 운임 부담자, 위험 부담자, 소유권 이전 시점을 정하는 인코텀즈(Incoterm) 규칙(FOB, DAP, EXW, CIF 등)입니다."
+
+msgid "The integration authorized the connection but saving it failed. Try connecting again."
+msgstr ""
 
 msgid "The inventory cost recognized when a shipment posts, valued by the item's costing method."
 msgstr "출하가 전기될 때 인식되는 재고 원가로, 품목의 원가 계산 방법에 따라 평가됩니다."
@@ -15345,6 +15478,9 @@ msgstr "작업 마감 시 남은 재공품(WIP)으로, 생산 차이 계정으�
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "Onshape의 응답에 필수 매개변수가 없습니다. 다시 연결해 보세요."
 
+msgid "The response was missing required parameters. Try connecting again."
+msgstr ""
+
 msgid "The result will not appear on the Runs page."
 msgstr "결과는 실행 페이지에 나타나지 않습니다."
 
@@ -15564,6 +15700,9 @@ msgstr "다음 작업에 이 작업장이 지정된 공정작업이 있습니다
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "이 분개들은 아직 임시이므로 그 차변과 대변이 이 기간의 총계정원장에 없습니다. 각각을 전기하거나 나중의 개방된 기간으로 재날짜하세요."
 
+msgid "This Carbon instance is missing its OAuth credentials for this integration. Ask an administrator to set them."
+msgstr ""
+
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "이 Carbon 인스턴스에 Onshape OAuth 자격 증명이 없습니다. 관리자에게 설정을 요청하세요."
 
@@ -15599,6 +15738,9 @@ msgstr "이 정보는 모든 사용자에게 표시되므로 공유하는 내용
 
 msgid "this inspection plan"
 msgstr "이 검사 계획"
+
+msgid "This integration isn't configured"
+msgstr ""
 
 #. placeholder {0}: company?.name ?? "Carbon"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
@@ -15848,6 +15990,9 @@ msgstr "시간대"
 
 msgid "Title"
 msgstr "제목"
+
+msgid "Title of the event"
+msgstr ""
 
 msgid "To Date"
 msgstr "마감일"

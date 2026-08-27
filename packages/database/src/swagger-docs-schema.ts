@@ -68283,6 +68283,240 @@ export default {
         tags: ["materialTypes"]
       }
     },
+    "/integrationConnection": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.pieceName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.authType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.accountLabel"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.metadata"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.secretRef"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.expiresAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.refreshingAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.lastError"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/integrationConnection"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["integrationConnection"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.integrationConnection"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["integrationConnection"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.pieceName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.authType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.accountLabel"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.metadata"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.secretRef"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.expiresAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.refreshingAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.lastError"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["integrationConnection"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.pieceName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.authType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.accountLabel"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.metadata"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.secretRef"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.expiresAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.refreshingAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.lastError"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integrationConnection.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.integrationConnection"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["integrationConnection"]
+      }
+    },
     "/journalLineDimension": {
       get: {
         parameters: [
@@ -104762,7 +104996,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -104811,7 +105045,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -131120,6 +131354,96 @@ export default {
         },
         formName: {
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    integrationConnection: {
+      required: [
+        "id",
+        "companyId",
+        "pieceName",
+        "name",
+        "authType",
+        "metadata",
+        "status",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('icn'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        pieceName: {
+          format: "text",
+          type: "string"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        authType: {
+          default: "OAUTH2",
+          format: "text",
+          type: "string"
+        },
+        accountLabel: {
+          format: "text",
+          type: "string"
+        },
+        metadata: {
+          format: "jsonb"
+        },
+        secretRef: {
+          format: "text",
+          type: "string"
+        },
+        expiresAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        refreshingAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        status: {
+          default: "Active",
+          format: "text",
+          type: "string"
+        },
+        lastError: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -176448,6 +176772,111 @@ export default {
     },
     "rowFilter.materialTypes.formName": {
       name: "formName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.integrationConnection": {
+      name: "integrationConnection",
+      description: "integrationConnection",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/integrationConnection"
+      }
+    },
+    "rowFilter.integrationConnection.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.integrationConnection.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.integrationConnection.pieceName": {
+      name: "pieceName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.integrationConnection.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.integrationConnection.authType": {
+      name: "authType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.integrationConnection.accountLabel": {
+      name: "accountLabel",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.integrationConnection.metadata": {
+      name: "metadata",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.integrationConnection.secretRef": {
+      name: "secretRef",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.integrationConnection.expiresAt": {
+      name: "expiresAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.integrationConnection.refreshingAt": {
+      name: "refreshingAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.integrationConnection.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.integrationConnection.lastError": {
+      name: "lastError",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.integrationConnection.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.integrationConnection.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.integrationConnection.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.integrationConnection.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"

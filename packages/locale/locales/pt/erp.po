@@ -81,6 +81,10 @@ msgstr "{0} eliminado com sucesso"
 msgid "{0} draft journal entries"
 msgstr "{0} lançamentos de diário em rascunho"
 
+#. placeholder {0}: integration.name
+msgid "{0} isn't installed yet. There's nothing to configure — install it to connect an account."
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} trabalhos criados"
@@ -149,6 +153,9 @@ msgstr "{alreadyPlannedItemCount} peças ignoradas — elas já têm trabalhos a
 
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% de contas a pagar"
+
+msgid "{appName} isn't connected yet. Connect an account before this step can do anything."
+msgstr ""
 
 msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}% de contas a receber"
@@ -941,6 +948,9 @@ msgstr "Contas a receber para valores devidos pelos clientes."
 msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
 msgstr "Contas referenciadas por padrões de lançamento ou histórico de periódicos que ainda não têm mapeamento de provedor."
 
+msgid "Accounts your workflows can act as. Add one for each account a workflow step should use."
+msgstr ""
+
 msgid "Accumulated Depreciation"
 msgstr "Depreciação acumulada"
 
@@ -1069,6 +1079,9 @@ msgstr "Adicionar uma linha"
 
 msgid "Add a step"
 msgstr "Adicionar uma etapa"
+
+msgid "Add account"
+msgstr ""
 
 msgid "Add Account"
 msgstr "Adicionar Conta"
@@ -1526,6 +1539,9 @@ msgstr "A posição de uma operação na fila de seu centro de trabalho — a or
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "Ocorreu um erro inesperado ao conectar ao Onshape. Tente conectar novamente."
 
+msgid "An unexpected error occurred while connecting. Try connecting again."
+msgstr ""
+
 msgid "Analytics"
 msgstr "Análises"
 
@@ -1559,6 +1575,9 @@ msgstr "O texto da anotação é obrigatório"
 
 msgid "Annotation updated"
 msgstr "Anotação atualizada"
+
+msgid "Another connection to this integration already has that name. Choose a different one."
+msgstr ""
 
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "Outro centro de custo ao qual este agrega, permitindo aninhar um subcentro de custo sob seu pai para relatórios de custo hierárquicos."
@@ -1609,6 +1628,9 @@ msgid "API keys for programmatic access to your Carbon data."
 msgstr "Chaves de API para acesso programático aos seus dados do Carbon."
 
 msgid "API, webhooks, and integrations"
+msgstr ""
+
+msgid "App"
 msgstr ""
 
 msgid "Applied"
@@ -2289,6 +2311,9 @@ msgstr "Anexos"
 msgid "Attempts"
 msgstr "Tentativas"
 
+msgid "Attendees"
+msgstr ""
+
 msgid "Attribute"
 msgstr "Atributo"
 
@@ -2330,6 +2355,9 @@ msgstr "Aplicação Autenticadora"
 
 msgid "Authenticator QR code"
 msgstr "Código QR do autenticador"
+
+msgid "Authorization was refused. Try connecting again."
+msgstr ""
 
 msgid "Auto apply"
 msgstr "Aplicar automaticamente"
@@ -2709,6 +2737,9 @@ msgstr "Expiração do produto acabado calculada"
 msgid "Calculation Method"
 msgstr "Método de Cálculo"
 
+msgid "Calendar"
+msgstr ""
+
 msgid "Calibration"
 msgstr "Calibração"
 
@@ -3037,6 +3068,9 @@ msgstr "Checkpoint ·"
 msgid "Checkpoints"
 msgstr "Pontos de Verificação"
 
+msgid "Choose {named} first."
+msgstr ""
+
 msgid "Choose a batch number"
 msgstr "Escolha um número de lote"
 
@@ -3198,6 +3232,9 @@ msgstr "Recolher Configuração"
 
 msgid "Collapse subtree"
 msgstr "Recolher subárvore"
+
+msgid "Color"
+msgstr ""
 
 msgid "Column dimension"
 msgstr "Dimensão da coluna"
@@ -3456,6 +3493,9 @@ msgstr "Confirma que cada lançamento de diário lançado no período tem débit
 msgid "Conflict reason"
 msgstr "Motivo do conflito"
 
+msgid "Connect {appName}"
+msgstr ""
+
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Conecte o Carbon às suas ferramentas de contabilidade, gerenciamento de projetos, CAD e muito mais."
 
@@ -3476,6 +3516,12 @@ msgstr "Conecte as ferramentas externas que sua empresa já utiliza"
 
 msgid "Connected to"
 msgstr "Conectado a"
+
+msgid "Connection"
+msgstr ""
+
+msgid "Connection name"
+msgstr ""
 
 msgid "Console Mode"
 msgstr "Modo Console"
@@ -3863,6 +3909,9 @@ msgstr "Não foi possível ler o documento: {0}"
 msgid "Could not save"
 msgstr "Não foi possível salvar"
 
+msgid "Couldn't complete the connection"
+msgstr ""
+
 msgid "Couldn't complete the Onshape connection"
 msgstr "Não foi possível concluir a conexão com o Onshape"
 
@@ -3877,6 +3926,9 @@ msgstr "Não foi possível carregar os alvos de dimensão do provedor — verifi
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "Não foi possível reagendar o trabalho. Por favor, tente novamente."
+
+msgid "Couldn't save the connection"
+msgstr ""
 
 msgid "Couldn't save the Onshape connection"
 msgstr "Não foi possível salvar a conexão com o Onshape"
@@ -3970,6 +4022,9 @@ msgstr "Criar entradas de trilha de auditoria"
 
 msgid "Create Change Notice"
 msgstr "Criar Aviso de Mudança"
+
+msgid "Create Google Meet Link"
+msgstr ""
 
 msgid "Create Issue"
 msgstr "Criar Problema"
@@ -4493,6 +4548,9 @@ msgstr "Data de vencimento"
 msgid "Date Due"
 msgstr "Data de Vencimento"
 
+msgid "Date from"
+msgstr ""
+
 msgid "Date issued"
 msgstr "Data de emissão"
 
@@ -4504,6 +4562,9 @@ msgstr "Data de pagamento"
 
 msgid "Date Paid"
 msgstr "Data de Pagamento"
+
+msgid "Date to"
+msgstr ""
 
 msgid "Dates"
 msgstr "Datas"
@@ -5971,6 +6032,9 @@ msgstr "Ativado"
 msgid "End Date"
 msgstr "Data Final"
 
+msgid "End date time of the event"
+msgstr ""
+
 msgid "End of Last Fiscal Year"
 msgstr "Fim do Último Ano Fiscal"
 
@@ -6189,6 +6253,9 @@ msgstr "Evento"
 msgid "Event Type"
 msgstr "Tipo de Evento"
 
+msgid "Event types"
+msgstr ""
+
 msgid "Events"
 msgstr "Eventos"
 
@@ -6273,6 +6340,9 @@ msgstr "Expandir Trabalho"
 
 msgid "Expand Machine"
 msgstr "Expandir Máquina"
+
+msgid "Expand Recurring Event?"
+msgstr ""
 
 msgid "Expand Setup"
 msgstr "Expandir Configuração"
@@ -7309,6 +7379,12 @@ msgstr "Boa noite, {0}"
 msgid "Good morning, {0}"
 msgstr "Bom dia, {0}"
 
+msgid "Google Calendar: Create Event"
+msgstr ""
+
+msgid "Google Calendar: Get all Events"
+msgstr ""
+
 msgid "Google Places API key not configured"
 msgstr "Chave da API do Google Places não configurada"
 
@@ -7350,6 +7426,15 @@ msgstr "Nome do Grupo"
 
 msgid "Groups"
 msgstr "Grupos"
+
+msgid "Guests can invite others"
+msgstr ""
+
+msgid "Guests can modify"
+msgstr ""
+
+msgid "Guests can see other guests"
+msgstr ""
 
 msgid "Guided"
 msgstr "Orientado"
@@ -9750,6 +9835,9 @@ msgstr "Nenhuma habilidade adicionada"
 msgid "No Access"
 msgstr "Sem Acesso"
 
+msgid "No accounts connected yet."
+msgstr ""
+
 msgid "No accounts mapped yet"
 msgstr "Nenhuma conta mapeada ainda"
 
@@ -9789,6 +9877,9 @@ msgstr "Nenhum log arquivado ainda. Logs com mais de {0} dias serão automaticam
 
 msgid "No attachments."
 msgstr "Sem anexos."
+
+msgid "No authorization code was returned"
+msgstr ""
 
 msgid "No available filters"
 msgstr "Nenhum filtro disponível"
@@ -10243,6 +10334,9 @@ msgstr "Nada mais neste local tem estoque para puxar."
 
 msgid "Nothing in the archive"
 msgstr "Nada no arquivo"
+
+msgid "Nothing to choose yet - <0>set one up in Settings</0>."
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Nada ainda. Um passo só oferece valores uma vez que está configurado."
@@ -13212,6 +13306,9 @@ msgstr "Pesquisar itens relacionados..."
 msgid "Search suppliers..."
 msgstr "Pesquisar fornecedores..."
 
+msgid "Search Term"
+msgstr ""
+
 msgid "Search tools..."
 msgstr "Pesquisar ferramentas..."
 
@@ -13288,6 +13385,9 @@ msgstr "Selecione um motivo pelo qual a cotação não foi criada."
 msgid "Select a shape first to see available options"
 msgstr "Selecione uma forma primeiro para ver as opções disponíveis"
 
+msgid "Select a step…"
+msgstr ""
+
 msgid "Select a substance and shape first to see available options"
 msgstr "Selecione uma substância e forma primeiro para ver as opções disponíveis"
 
@@ -13305,6 +13405,9 @@ msgstr "Selecionar tudo"
 
 msgid "Select an action…"
 msgstr "Selecionar uma ação…"
+
+msgid "Select an app…"
+msgstr ""
 
 msgid "Select an assignee"
 msgstr "Selecione um responsável"
@@ -13329,6 +13432,9 @@ msgstr "Selecionar uma operação…"
 
 msgid "Select an option"
 msgstr "Selecione uma opção"
+
+msgid "Select an option…"
+msgstr ""
 
 msgid "Select at least one line to convert"
 msgstr "Selecione pelo menos uma linha para converter"
@@ -13468,6 +13574,9 @@ msgstr "Enviar Convite"
 
 msgid "Send Invites"
 msgstr "Enviar Convites"
+
+msgid "Send Notifications"
+msgstr ""
 
 msgid "Send RFQ to Suppliers"
 msgstr "Enviar RFQ para Fornecedores"
@@ -14113,6 +14222,9 @@ msgstr "Data de início"
 
 msgid "Start Date"
 msgstr "Data de Início"
+
+msgid "Start date time of the event"
+msgstr ""
 
 msgid "Start Expiration"
 msgstr "Iniciar Expiração"
@@ -14800,8 +14912,14 @@ msgstr "Valor de Teste"
 msgid "Text size"
 msgstr "Tamanho do texto"
 
+msgid "That connection name is already used"
+msgstr ""
+
 msgid "That name is already used by another step."
 msgstr "Esse nome já está sendo usado por outra etapa."
+
+msgid "That name is already used."
+msgstr ""
 
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
@@ -14840,8 +14958,14 @@ msgstr "A quantidade de dias após o método de cálculo em que o pagamento é d
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "O registro de adição ao final de cada movimento de estoque; a quantidade disponível é a soma de suas entradas assinadas e a fonte confiável."
 
+msgid "The authorization took too long or came back altered. Start the connection again from this page."
+msgstr ""
+
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "A autorização foi recusada no Onshape. Tente conectar novamente."
+
+msgid "The authorization was rejected"
+msgstr ""
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "O livro de todas as linhas de diário registradas, somadas por conta – escrito apenas quando a contabilidade está habilitada para a empresa."
@@ -14911,6 +15035,12 @@ msgstr "A categoria a que este fornecedor pertence (matéria-prima, serviços, f
 
 msgid "The code printed on the kanban card that operators scan to mark the job complete; auto-generated when left blank."
 msgstr "O código impresso no cartão kanban que os operadores digitalizam para marcar o trabalho como concluído; gerado automaticamente se deixado em branco."
+
+msgid "The connection could not be verified"
+msgstr ""
+
+msgid "The connection was refused"
+msgstr ""
 
 msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
 msgstr "A disponibilidade semanal esperada do contratante; o agendamento a usa como limite superior ao atribuir este contratante a operações ao longo da semana."
@@ -15094,6 +15224,9 @@ msgstr "A regra de Incoterms (FOB, DAP, EXW, CIF, ...) que governa quem paga o f
 
 msgid "The Incoterm rule (FOB, DAP, EXW, CIF, …) that governs who pays freight, who bears risk, and where the transfer of title occurs on shipments to this customer."
 msgstr "A regra de Incoterms (FOB, DAP, EXW, CIF, ...) que governa quem paga o frete, quem assume o risco e onde a transferência de título ocorre nos envios para este cliente."
+
+msgid "The integration authorized the connection but saving it failed. Try connecting again."
+msgstr ""
 
 msgid "The inventory cost recognized when a shipment posts, valued by the item's costing method."
 msgstr "O custo de inventário reconhecido quando uma remessa é registrada, avaliado pelo método de custeio do item."
@@ -15345,6 +15478,9 @@ msgstr "O WIP residual que um trabalho deixou no fechamento, varrido para uma co
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "A resposta do Onshape não incluía os parâmetros necessários. Tente conectar novamente."
 
+msgid "The response was missing required parameters. Try connecting again."
+msgstr ""
+
 msgid "The result will not appear on the Runs page."
 msgstr "O resultado não aparecerá na página de Execuções."
 
@@ -15564,6 +15700,9 @@ msgstr "Estes trabalhos têm operações atribuídas a este centro de trabalho:"
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Estes lançamentos de diário ainda estão em Rascunho, portanto seus débitos e créditos não estão no livro-razão para este período. Lance cada um, ou redatē-o para um período aberto posterior."
 
+msgid "This Carbon instance is missing its OAuth credentials for this integration. Ask an administrator to set them."
+msgstr ""
+
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "Esta instância do Carbon não tem credenciais OAuth do Onshape. Peça a um administrador para configurá-las."
 
@@ -15599,6 +15738,9 @@ msgstr "Esta informação será visível para todos os usuários, portanto, tenh
 
 msgid "this inspection plan"
 msgstr "este plano de inspeção"
+
+msgid "This integration isn't configured"
+msgstr ""
 
 #. placeholder {0}: company?.name ?? "Carbon"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
@@ -15848,6 +15990,9 @@ msgstr "Fuso Horário"
 
 msgid "Title"
 msgstr "Título"
+
+msgid "Title of the event"
+msgstr ""
 
 msgid "To Date"
 msgstr "Até a Data"

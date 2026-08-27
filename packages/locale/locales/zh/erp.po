@@ -81,6 +81,10 @@ msgstr "{0} 已成功删除"
 msgid "{0} draft journal entries"
 msgstr "{0} 份草稿日记账条目"
 
+#. placeholder {0}: integration.name
+msgid "{0} isn't installed yet. There's nothing to configure — install it to connect an account."
+msgstr ""
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} 个作业已创建"
@@ -149,6 +153,9 @@ msgstr "{alreadyPlannedItemCount} 个零件已跳过 — 它们已有待处理�
 
 msgid "{apOverduePct}% of payables"
 msgstr "{apOverduePct}% 的应付账款"
+
+msgid "{appName} isn't connected yet. Connect an account before this step can do anything."
+msgstr ""
 
 msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}% 的应收账款"
@@ -941,6 +948,9 @@ msgstr "客户应付金额的应收账款。"
 msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
 msgstr "由过账默认值或日记账历史记录引用但尚无提供商映射的账户。"
 
+msgid "Accounts your workflows can act as. Add one for each account a workflow step should use."
+msgstr ""
+
 msgid "Accumulated Depreciation"
 msgstr "累计折旧"
 
@@ -1069,6 +1079,9 @@ msgstr "添加一行"
 
 msgid "Add a step"
 msgstr "添加步骤"
+
+msgid "Add account"
+msgstr ""
 
 msgid "Add Account"
 msgstr "添加账户"
@@ -1526,6 +1539,9 @@ msgstr "一个操作在其工作中心队列中的位置——车间拿起工作
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "连接 Onshape 时发生意外错误。请重新连接。"
 
+msgid "An unexpected error occurred while connecting. Try connecting again."
+msgstr ""
+
 msgid "Analytics"
 msgstr "分析"
 
@@ -1559,6 +1575,9 @@ msgstr "注释文本是必需的"
 
 msgid "Annotation updated"
 msgstr "注释已更新"
+
+msgid "Another connection to this integration already has that name. Choose a different one."
+msgstr ""
 
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "该成本中心所归属的另一个成本中心，允许您在其父级下嵌套子成本中心，以进行分层成本报告。"
@@ -1609,6 +1628,9 @@ msgid "API keys for programmatic access to your Carbon data."
 msgstr "用于以编程方式访问您的 Carbon 数据的 API 密钥。"
 
 msgid "API, webhooks, and integrations"
+msgstr ""
+
+msgid "App"
 msgstr ""
 
 msgid "Applied"
@@ -2289,6 +2311,9 @@ msgstr "附件"
 msgid "Attempts"
 msgstr "尝试次数"
 
+msgid "Attendees"
+msgstr ""
+
 msgid "Attribute"
 msgstr "属性"
 
@@ -2330,6 +2355,9 @@ msgstr "身份验证器应用"
 
 msgid "Authenticator QR code"
 msgstr "身份验证器二维码"
+
+msgid "Authorization was refused. Try connecting again."
+msgstr ""
 
 msgid "Auto apply"
 msgstr "自动应用"
@@ -2709,6 +2737,9 @@ msgstr "计算成品过期时间"
 msgid "Calculation Method"
 msgstr "计算方法"
 
+msgid "Calendar"
+msgstr ""
+
 msgid "Calibration"
 msgstr "校准"
 
@@ -3037,6 +3068,9 @@ msgstr "检查点 ·"
 msgid "Checkpoints"
 msgstr "检查点"
 
+msgid "Choose {named} first."
+msgstr ""
+
 msgid "Choose a batch number"
 msgstr "选择批号"
 
@@ -3198,6 +3232,9 @@ msgstr "折叠设置"
 
 msgid "Collapse subtree"
 msgstr "折叠子树"
+
+msgid "Color"
+msgstr ""
 
 msgid "Column dimension"
 msgstr "列维度"
@@ -3456,6 +3493,9 @@ msgstr "确认期间内每笔已过账日记账条目都有相等的借贷金额
 msgid "Conflict reason"
 msgstr "冲突原因"
 
+msgid "Connect {appName}"
+msgstr ""
+
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "将 Carbon 连接到您的会计、项目管理和 CAD 工具等更多应用。"
 
@@ -3476,6 +3516,12 @@ msgstr "连接您的公司已在使用的外部工具"
 
 msgid "Connected to"
 msgstr "连接到"
+
+msgid "Connection"
+msgstr ""
+
+msgid "Connection name"
+msgstr ""
 
 msgid "Console Mode"
 msgstr "控制台模式"
@@ -3863,6 +3909,9 @@ msgstr "无法读取文档：{0}"
 msgid "Could not save"
 msgstr "无法保存"
 
+msgid "Couldn't complete the connection"
+msgstr ""
+
 msgid "Couldn't complete the Onshape connection"
 msgstr "无法完成 Onshape 连接"
 
@@ -3877,6 +3926,9 @@ msgstr "无法加载提供商的维度目标 — 检查连接并重新加载。"
 
 msgid "Couldn't reschedule the job. Please try again."
 msgstr "无法重新安排作业。请重试。"
+
+msgid "Couldn't save the connection"
+msgstr ""
 
 msgid "Couldn't save the Onshape connection"
 msgstr "无法保存 Onshape 连接"
@@ -3970,6 +4022,9 @@ msgstr "创建审计跟踪条目"
 
 msgid "Create Change Notice"
 msgstr "创建更改单"
+
+msgid "Create Google Meet Link"
+msgstr ""
 
 msgid "Create Issue"
 msgstr "创建问题"
@@ -4493,6 +4548,9 @@ msgstr "到期日期"
 msgid "Date Due"
 msgstr "到期日期"
 
+msgid "Date from"
+msgstr ""
+
 msgid "Date issued"
 msgstr "发行日期"
 
@@ -4504,6 +4562,9 @@ msgstr "支付日期"
 
 msgid "Date Paid"
 msgstr "支付日期"
+
+msgid "Date to"
+msgstr ""
 
 msgid "Dates"
 msgstr "日期"
@@ -5971,6 +6032,9 @@ msgstr "已启用"
 msgid "End Date"
 msgstr "结束日期"
 
+msgid "End date time of the event"
+msgstr ""
+
 msgid "End of Last Fiscal Year"
 msgstr "上一财政年度末"
 
@@ -6189,6 +6253,9 @@ msgstr "事件"
 msgid "Event Type"
 msgstr "事件类型"
 
+msgid "Event types"
+msgstr ""
+
 msgid "Events"
 msgstr "事件"
 
@@ -6273,6 +6340,9 @@ msgstr "展开人工"
 
 msgid "Expand Machine"
 msgstr "展开机器"
+
+msgid "Expand Recurring Event?"
+msgstr ""
 
 msgid "Expand Setup"
 msgstr "展开设置"
@@ -7309,6 +7379,12 @@ msgstr "晚上好，{0}"
 msgid "Good morning, {0}"
 msgstr "早上好，{0}"
 
+msgid "Google Calendar: Create Event"
+msgstr ""
+
+msgid "Google Calendar: Get all Events"
+msgstr ""
+
 msgid "Google Places API key not configured"
 msgstr "Google Places API 密钥未配置"
 
@@ -7350,6 +7426,15 @@ msgstr "组名"
 
 msgid "Groups"
 msgstr "组"
+
+msgid "Guests can invite others"
+msgstr ""
+
+msgid "Guests can modify"
+msgstr ""
+
+msgid "Guests can see other guests"
+msgstr ""
 
 msgid "Guided"
 msgstr "引导式"
@@ -9750,6 +9835,9 @@ msgstr "未添加任何能力"
 msgid "No Access"
 msgstr "无权限"
 
+msgid "No accounts connected yet."
+msgstr ""
+
 msgid "No accounts mapped yet"
 msgstr "尚未映射账户"
 
@@ -9789,6 +9877,9 @@ msgstr "还没有存档日志。超过 {0} 天的日志将自动存档，并可�
 
 msgid "No attachments."
 msgstr "没有附件。"
+
+msgid "No authorization code was returned"
+msgstr ""
 
 msgid "No available filters"
 msgstr "没有可用的筛选器"
@@ -10243,6 +10334,9 @@ msgstr "此位置没有其他可提取的库存。"
 
 msgid "Nothing in the archive"
 msgstr "存档中没有任何内容"
+
+msgid "Nothing to choose yet - <0>set one up in Settings</0>."
+msgstr ""
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "暂无内容。步骤配置后才会提供值。"
@@ -13212,6 +13306,9 @@ msgstr "搜索相关项目..."
 msgid "Search suppliers..."
 msgstr "搜索供应商..."
 
+msgid "Search Term"
+msgstr ""
+
 msgid "Search tools..."
 msgstr "搜索工具..."
 
@@ -13288,6 +13385,9 @@ msgstr "选择未创建报价的原因。"
 msgid "Select a shape first to see available options"
 msgstr "请先选择形状以查看可用选项"
 
+msgid "Select a step…"
+msgstr ""
+
 msgid "Select a substance and shape first to see available options"
 msgstr "请先选择物质和形状以查看可用选项"
 
@@ -13305,6 +13405,9 @@ msgstr "全选"
 
 msgid "Select an action…"
 msgstr "选择一个操作…"
+
+msgid "Select an app…"
+msgstr ""
 
 msgid "Select an assignee"
 msgstr "选择受理人"
@@ -13329,6 +13432,9 @@ msgstr "选择一个操作…"
 
 msgid "Select an option"
 msgstr "选择一个选项"
+
+msgid "Select an option…"
+msgstr ""
 
 msgid "Select at least one line to convert"
 msgstr "至少选择一行进行转换"
@@ -13468,6 +13574,9 @@ msgstr "发送邀请"
 
 msgid "Send Invites"
 msgstr "发送邀请"
+
+msgid "Send Notifications"
+msgstr ""
 
 msgid "Send RFQ to Suppliers"
 msgstr "向供应商发送询价单"
@@ -14113,6 +14222,9 @@ msgstr "开始日期"
 
 msgid "Start Date"
 msgstr "开始日期"
+
+msgid "Start date time of the event"
+msgstr ""
 
 msgid "Start Expiration"
 msgstr "开始过期"
@@ -14800,8 +14912,14 @@ msgstr "测试值"
 msgid "Text size"
 msgstr "文本大小"
 
+msgid "That connection name is already used"
+msgstr ""
+
 msgid "That name is already used by another step."
 msgstr "该名称已被另一个步骤使用。"
+
+msgid "That name is already used."
+msgstr ""
 
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
@@ -14840,8 +14958,14 @@ msgstr "计算方法后的天数，在该天数后付款到期"
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "每个库存变动的追加专用记录；在手数量是其带符号条目的总和，也是单一信息源。"
 
+msgid "The authorization took too long or came back altered. Start the connection again from this page."
+msgstr ""
+
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "授权在 Onshape 中被拒绝。请重新连接。"
+
+msgid "The authorization was rejected"
+msgstr ""
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "所有已记账的日记账行书，按账户汇总 - 仅在公司启用会计时编写。"
@@ -14911,6 +15035,12 @@ msgstr "此供应商所属的类别（原材料、服务、合同制造商）；
 
 msgid "The code printed on the kanban card that operators scan to mark the job complete; auto-generated when left blank."
 msgstr "印在看板卡上的代码，操作员扫描该代码以将工作标记为完成；如果留空，则自动生成。"
+
+msgid "The connection could not be verified"
+msgstr ""
+
+msgid "The connection was refused"
+msgstr ""
 
 msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
 msgstr "承包商的预期周可用性；在将此承包商分配给整周的操作时，计划将其用作上限。"
@@ -15094,6 +15224,9 @@ msgstr "Incoterms规则（FOB、DAP、EXW、CIF等），管制从该供应商发
 
 msgid "The Incoterm rule (FOB, DAP, EXW, CIF, …) that governs who pays freight, who bears risk, and where the transfer of title occurs on shipments to this customer."
 msgstr "Incoterms规则（FOB、DAP、EXW、CIF等），管制向该客户发货时谁支付运费、谁承担风险以及所有权转让在何处发生。"
+
+msgid "The integration authorized the connection but saving it failed. Try connecting again."
+msgstr ""
 
 msgid "The inventory cost recognized when a shipment posts, valued by the item's costing method."
 msgstr "发货过账时确认的库存成本，按物品的成本计算方法评估。"
@@ -15345,6 +15478,9 @@ msgstr "工作在关闭时留下的残余在制品，扫至生产差异帐户 - 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "Onshape 的响应缺少必需的参数。请重新连接。"
 
+msgid "The response was missing required parameters. Try connecting again."
+msgstr ""
+
 msgid "The result will not appear on the Runs page."
 msgstr "结果不会出现在运行页面上。"
 
@@ -15564,6 +15700,9 @@ msgstr "这些工作有分配给此工作中心的操作："
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "这些日记账条目仍为草稿状态，因此其借贷金额不在本期分类账中。过账每一份，或将其重新标记日期至较晚的开放期间。"
 
+msgid "This Carbon instance is missing its OAuth credentials for this integration. Ask an administrator to set them."
+msgstr ""
+
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "此 Carbon 实例缺少 Onshape 的 OAuth 凭据。请让管理员进行设置。"
 
@@ -15599,6 +15738,9 @@ msgstr "此信息将对所有用户可见，请谨慎分享。"
 
 msgid "this inspection plan"
 msgstr "这个检验计划"
+
+msgid "This integration isn't configured"
+msgstr ""
 
 #. placeholder {0}: company?.name ?? "Carbon"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
@@ -15848,6 +15990,9 @@ msgstr "时区"
 
 msgid "Title"
 msgstr "标题"
+
+msgid "Title of the event"
+msgstr ""
 
 msgid "To Date"
 msgstr "截止日期"
