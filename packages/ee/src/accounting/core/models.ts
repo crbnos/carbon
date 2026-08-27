@@ -313,6 +313,15 @@ export const POSTING_POLICY: Record<
     defaultEnabled: true,
     defaultGranularity: "individual"
   },
+  // New in the returns module. Left OFF by default so upgrading an existing
+  // integration never starts pushing a new journal type to the customer's
+  // ledger unasked — this keeps POSTING_SYNC_DEFAULT_SOURCE_TYPES at the
+  // frozen v2 set. Flip to true if returns should sync out of the box.
+  "Purchase Return Shipment": {
+    representation: "journal",
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
   "Transfer Receipt": {
     representation: "journal",
     defaultEnabled: true,
@@ -321,6 +330,15 @@ export const POSTING_POLICY: Record<
   "Sales Shipment": {
     representation: "journal",
     defaultEnabled: true,
+    defaultGranularity: "individual"
+  },
+  // New in the returns module. Left OFF by default so upgrading an existing
+  // integration never starts pushing a new journal type to the customer's
+  // ledger unasked — this keeps POSTING_SYNC_DEFAULT_SOURCE_TYPES at the
+  // frozen v2 set. Flip to true if returns should sync out of the box.
+  "Sales Return Receipt": {
+    representation: "journal",
+    defaultEnabled: false,
     defaultGranularity: "individual"
   },
   "Inventory Adjustment": {
@@ -607,12 +625,17 @@ export const PostingSyncSettingsSchema = z.preprocess(
       };
     }
 
-    // Always-on: the set of syncing journal types is defined by POSTING_POLICY
-    // (journal-represented, non-Manual), never by stored per-type enables.
+    // Always-on for the frozen v2 set: those types sync regardless of stored
+    // per-type enables. Types shipped defaultEnabled: false (the return
+    // journals) are the exception — posting.ts pushes them only when the
+    // stored config explicitly enables them, so they are excluded here unless
+    // enabled.
     const enabledJournalTypes = JOURNAL_ENTRY_SOURCE_TYPES.filter(
       (sourceType) =>
         POSTING_POLICY[sourceType].representation === "journal" &&
-        POSTING_POLICY[sourceType].syncable !== false
+        POSTING_POLICY[sourceType].syncable !== false &&
+        (POSTING_POLICY[sourceType].defaultEnabled !== false ||
+          sourceTypes[sourceType].enabled)
     );
     const consolidation: "individual" | "daily" =
       enabledJournalTypes.length > 0 &&

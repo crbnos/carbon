@@ -1,5 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import type { Json } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -16,7 +17,10 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const itemId = formData.get("itemId") as string;
   const receiptLineId = formData.get("receiptLineId") as string;
   const receiptId = formData.get("receiptId") as string;
-  const trackingType = formData.get("trackingType") as "batch" | "serial";
+  const trackingType = formData.get("trackingType") as
+    | "batch"
+    | "serial"
+    | "returnEntity";
 
   if (trackingType === "batch") {
     const batchNumber = formData.get("batchNumber") as string;
@@ -147,6 +151,143 @@ export async function action({ request, context }: ActionFunctionArgs) {
           { status: 400 }
         );
       }
+      return data({ error: "Failed to update tracking" }, { status: 500 });
+    }
+  } else if (trackingType === "returnEntity") {
+    // Sales-return receipts re-tag an EXISTING (Consumed) tracked entity with
+    // this receipt line's attributes instead of creating a new entity — the
+    // standard serial path rejects a serial that already carries a Receipt
+    // Line Index from its original receipt. post-receipt discovers the entity
+    // through the same attributes and reactivates it On Hold.
+    const trackedEntityId = formData.get("trackedEntityId") as string;
+    const intent = (formData.get("intent") as string) ?? "assign";
+    const indexRaw = formData.get("index") as string | null;
+    const index = indexRaw == null || indexRaw === "" ? null : Number(indexRaw);
+
+    const [receipt, receiptLine, entity] = await Promise.all([
+      client
+        .from("receipt")
+        .select("id, sourceDocument, sourceDocumentId")
+        .eq("id", receiptId)
+        .eq("companyId", companyId)
+        .single(),
+      client
+        .from("receiptLine")
+        .select("id, lineId")
+        .eq("id", receiptLineId)
+        .single(),
+      client
+        .from("trackedEntity")
+        .select("id, status, attributes")
+        .eq("id", trackedEntityId)
+        .eq("companyId", companyId)
+        .single()
+    ]);
+
+    if (receipt.error || receipt.data.sourceDocument !== "Sales Return Order") {
+      return data(
+        { error: "Return tracking requires a sales-return receipt" },
+        { status: 400 }
+      );
+    }
+    if (receiptLine.error || !receiptLine.data.lineId) {
+      return data({ error: "Receipt line not found" }, { status: 400 });
+    }
+    if (entity.error) {
+      return data({ error: "Tracked entity not found" }, { status: 400 });
+    }
+
+    const serviceRole = await getCarbonServiceRole();
+    const attributes = (entity.data.attributes ?? {}) as Record<
+      string,
+      unknown
+    >;
+
+    if (intent === "remove") {
+      // Only clear tracking that points at THIS receipt line — otherwise a
+      // crafted POST could strip tracking off another receipt's entity.
+      if (attributes["Receipt Line"] !== receiptLineId) {
+        return data(
+          { error: "Entity is not assigned to this receipt line" },
+          { status: 400 }
+        );
+      }
+      delete attributes["Receipt"];
+      delete attributes["Receipt Line"];
+      delete attributes["Receipt Line Index"];
+      const { error } = await serviceRole
+        .from("trackedEntity")
+        .update({ attributes: attributes as Json })
+        .eq("id", trackedEntityId);
+      if (error) {
+        logger.error("Failed to clear return tracking", { error });
+        return data({ error: "Failed to update tracking" }, { status: 500 });
+      }
+      return { success: true };
+    }
+
+    if (entity.data.status !== "Consumed") {
+      return data(
+        { error: "Only shipped (consumed) entities can be returned" },
+        { status: 400 }
+      );
+    }
+
+    const expected = await client
+      .from("salesReturnOrderLineTrackedEntity")
+      .select("trackedEntityId")
+      .eq("salesReturnOrderLineId", receiptLine.data.lineId)
+      .eq("trackedEntityId", trackedEntityId)
+      .maybeSingle();
+    if (!expected.data) {
+      return data(
+        { error: "Entity is not expected on this return line" },
+        { status: 400 }
+      );
+    }
+
+    // Clear the slot on any other entity currently occupying it
+    const stale = await client
+      .from("trackedEntity")
+      .select("id, attributes")
+      .eq("attributes ->> Receipt Line", receiptLineId)
+      .eq("companyId", companyId)
+      .neq("id", trackedEntityId);
+    for (const staleEntity of stale.data ?? []) {
+      const staleAttributes = (staleEntity.attributes ?? {}) as Record<
+        string,
+        unknown
+      >;
+      if (
+        index != null &&
+        staleAttributes["Receipt Line Index"] !== index &&
+        staleAttributes["Receipt Line Index"] !== undefined
+      ) {
+        continue;
+      }
+      delete staleAttributes["Receipt"];
+      delete staleAttributes["Receipt Line"];
+      delete staleAttributes["Receipt Line Index"];
+      await serviceRole
+        .from("trackedEntity")
+        .update({ attributes: staleAttributes as Json })
+        .eq("id", staleEntity.id);
+    }
+
+    attributes["Receipt"] = receiptId;
+    attributes["Receipt Line"] = receiptLineId;
+    if (index != null) {
+      attributes["Receipt Line Index"] = index;
+    } else {
+      delete attributes["Receipt Line Index"];
+    }
+
+    const { error } = await serviceRole
+      .from("trackedEntity")
+      .update({ attributes: attributes as Json })
+      .eq("id", trackedEntityId);
+    if (error) {
+      logger.error("Failed to assign return tracking", { error });
       return data({ error: "Failed to update tracking" }, { status: 500 });
     }
   }

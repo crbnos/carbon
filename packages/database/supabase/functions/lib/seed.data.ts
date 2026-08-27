@@ -39,6 +39,15 @@ export const customerStatuses = [
 
 export const scrapReasons = ["Defective", "Damaged", "Quality"] as const;
 
+export const returnReasons = [
+  "Defective",
+  "Wrong Item Shipped",
+  "Damaged in Transit",
+  "No Longer Needed",
+  "Warranty",
+  "Other"
+] as const;
+
 export const paymentTerms = [
   {
     name: "Net 15",
@@ -344,6 +353,24 @@ export const sequences = [
     table: "salesOrder",
     name: "Sales Order",
     prefix: "SO",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
+    table: "salesReturnOrder",
+    name: "Sales Return Order",
+    prefix: "RMA",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
+    table: "purchaseReturnOrder",
+    name: "Purchase Return Order",
+    prefix: "RTS",
     suffix: null,
     next: 0,
     size: 6,
@@ -699,6 +726,7 @@ export const accounts = [
   { key: "4010", number: "4010", name: "Sales", isGroup: false, parentKey: "revenue", accountType: "Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
   { key: "4020", number: "4020", name: "Sales Discounts", isGroup: false, parentKey: "revenue", accountType: "Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
   { key: "4030", number: "4030", name: "Manufacturing Services Revenue", isGroup: false, parentKey: "revenue", accountType: "Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
+  { key: "4900", number: "4900", name: "Sales Returns", isGroup: false, parentKey: "revenue", accountType: "Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
 
   // Other Income
   { key: "other-income", number: null, name: "Other Income", isGroup: true, parentKey: "income-statement", accountType: "Other Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
@@ -763,6 +791,7 @@ export const accounts = [
 export const accountDefaults = {
   salesAccount: "4010",
   salesDiscountAccount: "4020",
+  salesReturnsAccount: "4900",
   costOfGoodsSoldAccount: "5010",
   purchaseVarianceAccount: "5210",
   inventoryAdjustmentVarianceAccount: "5310",

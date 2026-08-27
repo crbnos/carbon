@@ -77,6 +77,8 @@ export const nonConformanceAssociationType = [
   "salesOrderLines",
   "shipmentLines",
   "receiptLines",
+  "salesReturnOrderLines",
+  "purchaseReturnOrderLines",
   "trackedEntities",
   "inspections"
 ] as const;

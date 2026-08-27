@@ -665,7 +665,80 @@ export async function closeIssue(
     }))
   }));
 
+  // Supplier-return bridge state: linked purchaseReturnOrder lines cover
+  // 'Return to Supplier' quantities. An OPEN linked return blocks the close
+  // (ship, short-close, or cancel it first); shipped coverage reduces the
+  // write-off (the return shipment already relieved inventory), and entities
+  // that left via a return shipment are exempt from the Consumed guard and
+  // the Rejected flip.
+  const linkedReturnsResult = await (client as any)
+    .from("nonConformancePurchaseReturnOrderLine")
+    .select(
+      `id, quantity, purchaseReturnOrderLineId,
+       purchaseReturnOrderLine(
+         id, itemId, quantityShipped,
+         purchaseReturnOrder(id, purchaseReturnOrderId, status)
+       )`
+    )
+    .eq("nonConformanceId", nonConformanceId)
+    .eq("companyId", companyId);
+
+  if (linkedReturnsResult.error) {
+    return errResult("Failed to load linked supplier returns");
+  }
+  const linkedReturns = ((linkedReturnsResult.data as any[]) ?? []).filter(
+    (row) =>
+      row.purchaseReturnOrderLine?.purchaseReturnOrder?.status !== "Cancelled"
+  );
+  const openLinkedReturns = linkedReturns.filter((row) =>
+    ["Draft", "Confirmed", "Partially Shipped"].includes(
+      row.purchaseReturnOrderLine?.purchaseReturnOrder?.status ?? ""
+    )
+  );
+  // Shipped coverage per item: min(covered quantity, the line's shipped
+  // quantity) per association row — one association per line by construction.
+  const shippedCoverageByItem = new Map<string, number>();
+  for (const row of linkedReturns) {
+    const line = row.purchaseReturnOrderLine;
+    if (!line?.itemId) continue;
+    const covered = Math.min(
+      Number(row.quantity ?? 0),
+      Number(line.quantityShipped ?? 0)
+    );
+    if (covered <= 0) continue;
+    shippedCoverageByItem.set(
+      line.itemId,
+      (shippedCoverageByItem.get(line.itemId) ?? 0) + covered
+    );
+  }
+  const linkedReturnLineIds = linkedReturns
+    .map((row) => row.purchaseReturnOrderLineId)
+    .filter(Boolean) as string[];
+  let returnedEntityIds = new Set<string>();
+  if (linkedReturnLineIds.length > 0) {
+    const picks = await (client as any)
+      .from("purchaseReturnOrderLineTrackedEntity")
+      .select("trackedEntityId")
+      .in("purchaseReturnOrderLineId", linkedReturnLineIds)
+      .eq("companyId", companyId);
+    if (picks.error) {
+      return errResult("Failed to load supplier-return tracked entities");
+    }
+    returnedEntityIds = new Set(
+      ((picks.data as any[]) ?? []).map((p) => p.trackedEntityId)
+    );
+  }
+
   const blockers: IssueClosureBlocker[] = [];
+  for (const ret of openLinkedReturns) {
+    blockers.push({
+      nonConformanceItemId: ret.purchaseReturnOrderLineId,
+      reason: `Supplier return ${
+        ret.purchaseReturnOrderLine?.purchaseReturnOrder
+          ?.purchaseReturnOrderId ?? ""
+      } is open — ship, short-close, or cancel it first`
+    });
+  }
   for (const row of plan) {
     // Every row must be dispositioned before closing, tracked or not.
     if (!row.disposition || row.disposition === "Pending") {
@@ -691,7 +764,10 @@ export async function closeIssue(
           nonConformanceItemId: row.id,
           reason: "Linked tracked entity is missing"
         });
-      } else if (link.trackedEntityStatus === "Consumed") {
+      } else if (
+        link.trackedEntityStatus === "Consumed" &&
+        !returnedEntityIds.has(link.trackedEntityId)
+      ) {
         blockers.push({
           nonConformanceItemId: row.id,
           reason: `Tracked entity ${link.trackedEntityId} is already Consumed`
@@ -763,6 +839,8 @@ export async function closeIssue(
     quantity: number;
     comment: string;
   }[] = [];
+  // Mutable copy: shipped-via-return coverage consumed as it offsets rows.
+  const remainingCoverageByItem = new Map(shippedCoverageByItem);
   for (const row of plan) {
     const isScrap =
       row.disposition === "Scrap" || row.disposition === "Return to Supplier";
@@ -773,6 +851,15 @@ export async function closeIssue(
         const suffix =
           row.disposition === "Scrap" ? "scrap" : "return to supplier";
         for (const link of row.links) {
+          // Shipped via a linked supplier return: post-shipment already
+          // relieved this entity's value — no write-off here.
+          if (
+            row.disposition === "Return to Supplier" &&
+            returnedEntityIds.has(link.trackedEntityId) &&
+            link.trackedEntityStatus === "Consumed"
+          ) {
+            continue;
+          }
           movements.push({
             itemId: row.itemId,
             locationId,
@@ -786,14 +873,26 @@ export async function closeIssue(
     }
     if (!inventoryItemIds.has(row.itemId)) continue; // Non-Inventory: no ledger
     if (isScrap && !inspectionOriginated) {
+      let writeOff = row.quantity;
+      if (row.disposition === "Return to Supplier") {
+        const coverage = remainingCoverageByItem.get(row.itemId) ?? 0;
+        const offset = Math.min(writeOff, coverage);
+        if (offset > 0) {
+          remainingCoverageByItem.set(row.itemId, coverage - offset);
+          writeOff -= offset;
+        }
+      }
+      if (writeOff <= EPSILON) continue;
       movements.push({
         itemId: row.itemId,
         locationId,
         trackedEntityId: null,
-        quantity: -row.quantity,
+        quantity: -writeOff,
         comment: `NC ${readableNc} scrap`
       });
-    } else if (isKeep && inspectionOriginated) {
+      continue;
+    }
+    if (isKeep && inspectionOriginated) {
       movements.push({
         itemId: row.itemId,
         locationId,
@@ -909,7 +1008,8 @@ export async function closeIssue(
         for (const link of row.links) {
           if (
             !link.trackedEntityStatus ||
-            link.trackedEntityStatus === "Consumed"
+            (link.trackedEntityStatus === "Consumed" &&
+              !returnedEntityIds.has(link.trackedEntityId))
           ) {
             throw new Error(
               "A tracked entity changed while closing; please retry."
@@ -975,8 +1075,17 @@ export async function closeIssue(
           row.disposition === "Scrap" ||
           row.disposition === "Return to Supplier"
         ) {
+          // Entities that left via a linked supplier-return shipment are
+          // Consumed with a closed genealogy — they stay Consumed.
           const idsToFlip = row.links
-            .filter((l) => l.trackedEntityStatus !== "Rejected")
+            .filter(
+              (l) =>
+                l.trackedEntityStatus !== "Rejected" &&
+                !(
+                  returnedEntityIds.has(l.trackedEntityId) &&
+                  l.trackedEntityStatus === "Consumed"
+                )
+            )
             .map((l) => l.trackedEntityId);
           if (idsToFlip.length > 0) {
             await trx

@@ -1122,6 +1122,23 @@ canvas hosting Radix popovers/selects.
 
 **Applies to:** `packages/database/supabase/functions/get-method/index.ts` (`quoteToQuote`), `apps/erp/app/modules/sales/sales.service.ts` (`deleteQuote`), any insert into `externalLink`.
 
+## A bare FormLabel outside FormControl 500s the whole route
+
+**Context:** The returns-module line forms (`SalesReturnOrderLineForm`, `PurchaseReturnOrderLineForm`) used `<FormLabel>` as a standalone section heading for the tracked-entity picker area.
+
+**Problem:** `FormLabel` (`packages/react/src/Form/FormLabel.tsx`) calls `useFormControlContext()`, which **throws** outside a `<FormControl>`. The throw happens at render, so the route's error boundary replaces the page — the user sees "Error 500. Something broke on our end." on an otherwise-valid URL. Subtler: when the crash is below a `ValidatedForm`, the form unmounts, so a page can LOOK fine in a stale snapshot while its Save button is dead. The error is only visible in the browser console (`useFormControlContext() must be used inside of a FormControl`); the server log shows nothing useful.
+
+**Rule:** `FormLabel`/`FormError` are only valid inside a `<FormControl>`. For a standalone section heading in a form, use a plain `<label>`/heading element. When a page 500s with no server error, check the browser console for context-hook throws before suspecting the loader — and treat "form renders but Save does nothing" as a possible sibling-render crash, not a submit bug.
+
+**Applies to:** any usage of `packages/react/src/Form/{FormLabel,FormError}.tsx`; form components under `apps/erp/app/modules/*/ui/`.
+
+## Demo-seeded attributes can make a dead query look alive
+
+- **Context:** The supplier-return entity picker filtered `trackedEntity` on `attributes ->> Supplier`. Browser verification on the local DB showed results, so the query looked correct.
+- **Problem:** No production code ever writes a `Supplier` attribute — the 49 local entities carrying it came from MCP demo seeding (Axiom/Northspoke programs). In production the picker would always be empty. Verification against hand-seeded data validated the seed, not the code.
+- **Rule:** Before anchoring a query on a `trackedEntity.attributes` key, grep for the WRITER of that key in app + edge-function code (receipt tracking writes `Receipt`/`Receipt Line`/`Receipt Line Index`; shipment tracking writes `Shipment`/`Shipment Line`). If the only writers are tests or seeds, the key does not exist in production. Local rows proving a filter matches prove nothing about who writes the attribute.
+- **Applies to:** any `attributes ->> X` filter on trackedEntity/trackedActivity; browser verification on a DB that has been demo-seeded.
+
 ## An incremental pull-sweep cursor must advance on the SAME field the query filters on
 
 **Context:** The Stripe Connect payment pull sweep (`stripe-connect-pull-sweep.ts`) queried Stripe with `invoices.list({ status: "paid", created: { gte: since } })` but advanced the cursor to `latest status_transitions.paid_at + 1`. An invoice created before the cursor but paid after it (a normal case — invoices are created, then paid later) would never be returned by a future `created`-filtered query once the cursor passed its `paid_at`, so it was permanently skipped with no error, no log, and no retry.
