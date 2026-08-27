@@ -1,4 +1,3 @@
-import type { Database } from "@carbon/database";
 import { getPurchaseOrderDisplayId } from "@carbon/documents/utils";
 import {
   Badge,
@@ -39,7 +38,6 @@ import {
   LuPanelRight,
   LuTrash,
   LuTruck,
-  LuUndo2,
   LuX
 } from "react-icons/lu";
 import { Link, useFetcher, useNavigation, useParams } from "react-router";
@@ -58,7 +56,6 @@ import {
 import { ReceiptStatus } from "~/modules/inventory/ui/Receipts";
 import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import PurchaseInvoicingStatus from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicingStatus";
-import { PurchaseReturnOrderStatus } from "~/modules/purchasing/ui/PurchaseReturnOrders";
 import type { ApprovalDecision } from "~/modules/shared/types";
 import { useSuppliers } from "~/stores/suppliers";
 import { path } from "~/utils/path";
@@ -149,12 +146,10 @@ const PurchaseOrderHeader = () => {
     receipts,
     invoices,
     shipments,
-    returnOrders,
     hasError: relatedDocsError
   } = usePurchaseOrderRelatedDocuments(
     routeData?.purchaseOrder?.supplierInteractionId ?? "",
-    routeData?.purchaseOrder?.purchaseOrderType === "Outside Processing",
-    orderId
+    routeData?.purchaseOrder?.purchaseOrderType === "Outside Processing"
   );
 
   const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
@@ -622,47 +617,6 @@ const PurchaseOrderHeader = () => {
                   </RelatedDocsErrorTooltip>
                 )}
               </>
-            )}
-            {returnOrders.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    leftIcon={<LuUndo2 />}
-                    rightIcon={<LuChevronDown />}
-                    variant="secondary"
-                  >
-                    <Trans>Returns</Trans>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link
-                      to={`${path.to.newPurchaseReturnOrder}?supplierId=${
-                        routeData?.purchaseOrder?.supplierId ?? ""
-                      }&purchaseOrderId=${orderId}`}
-                    >
-                      <DropdownMenuIcon icon={<LuCirclePlus />} />
-                      <Trans>New Supplier Return</Trans>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  {returnOrders.map((returnOrder) => (
-                    <DropdownMenuItem key={returnOrder.id} asChild>
-                      <Link to={path.to.purchaseReturnOrder(returnOrder.id)}>
-                        <DropdownMenuIcon icon={<LuUndo2 />} />
-                        <HStack spacing={8}>
-                          <span>{returnOrder.purchaseReturnOrderId}</span>
-                          <PurchaseReturnOrderStatus
-                            status={
-                              returnOrder.status as Database["public"]["Enums"]["purchaseReturnOrderStatus"]
-                            }
-                          />
-                        </HStack>
-                      </Link>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
             )}
             <Button
               onClick={cancelModal.onOpen}

@@ -41,8 +41,7 @@ import {
   LuPanelLeft,
   LuPanelRight,
   LuTrash,
-  LuTruck,
-  LuUndo2
+  LuTruck
 } from "react-icons/lu";
 import type { FetcherWithComponents } from "react-router";
 import { Await, Link, useFetcher, useParams } from "react-router";
@@ -59,7 +58,6 @@ import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import type { SalesInvoice } from "~/modules/invoicing/types";
 import SalesInvoiceStatus from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceStatus";
 import type { Job } from "~/modules/production/types";
-import { SalesReturnOrderStatus } from "~/modules/sales/ui/SalesReturnOrders";
 import type { action as confirmAction } from "~/routes/x+/sales-order+/$orderId.confirm";
 import type { action as statusAction } from "~/routes/x+/sales-order+/$orderId.status";
 import { useCustomers } from "~/stores/customers";
@@ -457,8 +455,6 @@ const SalesOrderHeader = () => {
                 {(relatedItems) => {
                   const shipments = relatedItems?.shipments || [];
                   const invoices = relatedItems?.invoices || [];
-                  const salesReturnOrders =
-                    relatedItems?.salesReturnOrders || [];
                   return (
                     <>
                       {shipments.length > 0 ? (
@@ -601,49 +597,6 @@ const SalesOrderHeader = () => {
                         >
                           <Trans>Invoice</Trans>
                         </Button>
-                      )}
-                      {salesReturnOrders.length > 0 && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              leftIcon={<LuUndo2 />}
-                              rightIcon={<LuChevronDown />}
-                              variant="secondary"
-                            >
-                              <Trans>RMAs</Trans>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
-                              <Link
-                                to={`${path.to.newSalesReturnOrder}?customerId=${
-                                  routeData?.salesOrder?.customerId ?? ""
-                                }&salesOrderId=${orderId}`}
-                              >
-                                <DropdownMenuIcon icon={<LuCirclePlus />} />
-                                <Trans>New RMA</Trans>
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            {salesReturnOrders.map((returnOrder) => (
-                              <DropdownMenuItem key={returnOrder.id} asChild>
-                                <Link
-                                  to={path.to.salesReturnOrder(returnOrder.id)}
-                                >
-                                  <DropdownMenuIcon icon={<LuUndo2 />} />
-                                  <HStack spacing={8}>
-                                    <span>
-                                      {returnOrder.salesReturnOrderId}
-                                    </span>
-                                    <SalesReturnOrderStatus
-                                      status={returnOrder.status}
-                                    />
-                                  </HStack>
-                                </Link>
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
                       )}
                     </>
                   );

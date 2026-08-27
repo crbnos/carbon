@@ -436,7 +436,10 @@ const PurchaseReturnOrderProperties = () => {
               routeData.purchaseReturnOrder.purchaseOrderId
             )}
           >
-            <Trans>View source purchase order</Trans>
+            {purchaseOrderOptions.find(
+              (option) =>
+                option.value === routeData.purchaseReturnOrder.purchaseOrderId
+            )?.label ?? <Trans>View source purchase order</Trans>}
           </Hyperlink>
         </VStack>
       )}

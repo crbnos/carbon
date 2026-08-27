@@ -431,7 +431,10 @@ const SalesReturnOrderProperties = () => {
           <Hyperlink
             to={path.to.salesOrder(routeData.salesReturnOrder.salesOrderId)}
           >
-            <Trans>View source sales order</Trans>
+            {salesOrderOptions.find(
+              (option) =>
+                option.value === routeData.salesReturnOrder.salesOrderId
+            )?.label ?? <Trans>View source sales order</Trans>}
           </Hyperlink>
         </VStack>
       )}

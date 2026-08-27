@@ -1,4 +1,4 @@
-import type { Json } from "@carbon/database";
+import type { Database, Json } from "@carbon/database";
 import { DatePicker, InputControlled, ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -11,15 +11,16 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect } from "react";
+import { Suspense, useCallback, useEffect } from "react";
 import { LuCopy, LuInfo, LuLink, LuRefreshCcw } from "react-icons/lu";
-import { useFetcher, useParams } from "react-router";
+import { Await, useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
   Assignee,
   DateTime,
   EmployeeAvatar,
+  Hyperlink,
   useOptimisticAssignment
 } from "~/components";
 import {
@@ -32,6 +33,7 @@ import {
 } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { SalesReturnOrderStatus } from "~/modules/sales/ui/SalesReturnOrders";
 import type { action } from "~/routes/x+/items+/update";
 import type { action as exchangeRateAction } from "~/routes/x+/sales-order+/$orderId.exchange-rate";
 import { path } from "~/utils/path";
@@ -46,6 +48,13 @@ const SalesOrderProperties = () => {
 
   const routeData = useRouteData<{
     salesOrder: SalesOrder;
+    relatedItems: Promise<{
+      salesReturnOrders: {
+        id: string;
+        salesReturnOrderId: string;
+        status: Database["public"]["Enums"]["salesReturnOrderStatus"];
+      }[];
+    }>;
   }>(path.to.salesOrder(orderId));
 
   const fetcher = useFetcher<typeof action>();
@@ -451,6 +460,40 @@ const SalesOrderProperties = () => {
             </HStack>
           </VStack>
         )}
+      <Suspense fallback={null}>
+        <Await resolve={routeData?.relatedItems}>
+          {(relatedItems) => {
+            const salesReturnOrders = relatedItems?.salesReturnOrders ?? [];
+            return (
+              <VStack spacing={2} className="w-full">
+                <span className="text-xs text-muted-foreground">
+                  <Trans>RMAs</Trans>
+                </span>
+                {salesReturnOrders.map((returnOrder) => (
+                  <HStack
+                    key={returnOrder.id}
+                    className="w-full justify-between"
+                  >
+                    <Hyperlink to={path.to.salesReturnOrder(returnOrder.id)}>
+                      {returnOrder.salesReturnOrderId}
+                    </Hyperlink>
+                    <SalesReturnOrderStatus status={returnOrder.status} />
+                  </HStack>
+                ))}
+                <Hyperlink
+                  to={`${path.to.newSalesReturnOrder}?customerId=${
+                    routeData?.salesOrder?.customerId ?? ""
+                  }&salesOrderId=${orderId}`}
+                  className="text-xs text-muted-foreground"
+                >
+                  + <Trans>New RMA</Trans>
+                </Hyperlink>
+              </VStack>
+            );
+          }}
+        </Await>
+      </Suspense>
+
       <VStack spacing={2}>
         <span className="text-xs font-medium text-muted-foreground">
           Created By
