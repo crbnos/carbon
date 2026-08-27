@@ -170,6 +170,7 @@ msgstr "{from}–{to} / {count} işlem"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} daha fazla: {hiddenNames}"
+msgstr "{hiddenCount} daha: {hiddenNames}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -1087,6 +1088,9 @@ msgstr "Ayarlama ekle"
 
 msgid "Add Affected Item"
 msgstr "Etkilenen Öğe Ekle"
+
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "Oturum açarken bir kimlik doğrulayıcı uygulamadan kod isteyerek güvenliğe ekstra bir katman ekle."
 
 msgid "Add any notes about your decision..."
 msgstr "Kararınızla ilgili herhangi bir not ekleyin..."
@@ -2630,6 +2634,7 @@ msgstr "Kütüphaneyi göz at"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Yayınlanan sürümü salt okunur şekilde göz atın. Yine de adımları düzenlemek için yeniden düzenleyebilirsiniz."
+msgstr "Yayınlanan sürümü salt okunur olarak göz atın. Düzeni düzenlemek için adımları yeniden düzenleyebilirsiniz."
 
 msgid "Bucket"
 msgstr "Kova"
@@ -2837,6 +2842,7 @@ msgstr "RFQ gönderilemiyor"
 
 msgid "Cannot send through Stripe"
 msgstr "Stripe üzerinden gönderilemez"
+msgstr "Stripe aracılığıyla gönderilemez"
 
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "Yüklenemiyor — tedarikçi etkileşimi henüz oluşturulmadı"
@@ -6231,6 +6237,9 @@ msgstr "Kapsamdaki her test, yapılandırılmış sisteminizde, verilerinizle ge
 msgid "Every match"
 msgstr "Her eşleşme"
 
+msgid "Every required action has already been added."
+msgstr ""
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Dönem kapatılmadan önce gerekli tüm görevler Tamamlandı veya Atlandı olarak işaretlenmelidir."
 
@@ -8170,6 +8179,7 @@ msgstr "Sorunlar"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "Tekrar bir sürüm yayınlayana kadar çalışmayı durduracak. Hiçbir şey silinmez."
+msgstr "Yeniden bir sürüm yayınlayana kadar çalışmayı durduracak. Hiçbir şey silinmez."
 
 msgid "ITAR Certifications"
 msgstr "ITAR Sertifikaları"
@@ -8532,6 +8542,7 @@ msgstr "Daha az manuel çalışma, daha az hata"
 
 msgid "Let's Build"
 msgstr "Haydi İnşa Edelim"
+msgstr "Haydi Oluşturalım"
 
 msgid "Let's build something"
 msgstr "Bir şeyler inşa edelim"
@@ -11630,6 +11641,9 @@ msgstr "Go-live tarihini koruyun"
 msgid "Protect training time and attend"
 msgstr "Eğitim zamanını koru ve katıl"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "Şirketinizi iki faktörlü kimlik doğrulama zorunluluğu gibi gelişmiş güvenlik kontrolleriyle koruyun."
+
 msgid "Protects your company's data"
 msgstr "Şirketinizin verilerini korur"
 
@@ -12512,6 +12526,9 @@ msgstr "Talep Edilen Tarih"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Oturum açarken kimlik doğrulayıcı uygulamasından 6 haneli kod isteyini."
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "Bu şirketi açmadan önce bir kimlik doğrulayıcı uygulaması gerekli hale getirin. Diğer şirketler etkilenmez."
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Bu şirketi açabilmek için doğrulayıcı uygulamayı gerektir. Diğer şirketleri etkilenmez. Her kişinin durumunu görmek için <0>çalışan hesapları sayfasını</0> ziyaret edin."
 
@@ -12692,6 +12709,7 @@ msgstr "Bu faturadaki herhangi bir kalem defteri girişini tersine çevirir"
 
 msgid "Reverse charge"
 msgstr "Ters ücretlendirme"
+msgstr "Ters ücret"
 
 msgid "Reverse Charge Sales Tax"
 msgstr "Ters yükleme satış vergisi"
@@ -13941,6 +13959,7 @@ msgstr "Bu kural başarısız olduğunda kullanıcıya gösterilir."
 
 msgid "Sign in to Carbon"
 msgstr "Carbon'a giriş yapın"
+msgstr "Carbon'da oturum açın"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Sihirli bağlantı yerine biyometrik kimlik doğrulama ile oturum açın. Geçiş Anahtarları Face ID, Touch ID veya cihaz PIN'iniz tarafından korunur."
@@ -14378,6 +14397,16 @@ msgstr "Stripe faturayı müşteriye e-postayla gönderir, bu nedenle bir adres 
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe'ın bu Carbon müşterisi için henüz bir müşterisi yok. Gönderme, bağlı hesabınızda bir tane oluşturacaktır."
+msgstr "Stripe'da zaten bu e-postaya sahip bir müşteri var"
+
+msgid "Stripe Due Date"
+msgstr "Stripe Vade Tarihi"
+
+msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
+msgstr "Stripe faturayı müşteriye e-postayla gönderir, bu nedenle bir adres gereklidir. Bu, Carbon'daki ilgili kişiye de kaydedilecek."
+
+msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
+msgstr "Stripe'da henüz bu Carbon müşterisi için bir müşteri yok. Gönderme, bağlı hesabınızda bir tane oluşturacak."
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Kanban tablosunda gösterilecek kanban çıktısı stili"
@@ -14793,6 +14822,7 @@ msgstr "Vergi Amortisman Yöntemi"
 
 msgid "Tax exempt"
 msgstr "Vergiden muaf"
+msgstr "Vergi muafiyeti"
 
 msgid "Tax Exempt"
 msgstr "Vergi Muaf"
@@ -15662,6 +15692,7 @@ msgstr "Bu, Keşif adımını tamamlar."
 
 msgid "This contact has no email address"
 msgstr "Bu kişinin e-posta adresi yok"
+msgstr "Bu ilgili kişinin e-posta adresi yok"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Bu muhasebe ortağının ödenmemiş bir borcu yok — ödeme hesap üzerinde kaydedilecektir."
@@ -15696,6 +15727,10 @@ msgstr "Bu faturanın kullanılabilir bir vadesi yok — Stripe için bir tane s
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Bu fatura, zaten bu Carbon müşterisine bağlı olan Stripe müşterisine faturalandırılacaktır. Ayrıntılarını değiştirmek için Stripe panosunda düzenleyin."
+msgstr "Bu faturanın kullanılabilir bir vade tarihi yok — Stripe için birini seçin."
+
+msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
+msgstr "Bu fatura, zaten bu Carbon müşterisine bağlı olan Stripe müşterisine faturalanacak. Ayrıntılarını değiştirmek için Stripe panosunda düzenleyin."
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "Bu kontrollü bir ortamdır, bu nedenle doğrulayıcı uygulaması gereklidir."
@@ -16239,6 +16274,9 @@ msgstr "İki Faktörlü"
 msgid "Two-factor authentication"
 msgstr "İki faktörlü kimlik doğrulaması"
 
+msgid "Two-Factor Authentication"
+msgstr "İki Faktörlü Kimlik Doğrulaması"
+
 msgid "Two-factor authentication disabled"
 msgstr "İki Faktörlü Kimlik Doğrulama Devre Dışı Bırakıldı"
 
@@ -16430,6 +16468,10 @@ msgstr "Yayını kaldır"
 
 msgid "Unpublish {name}?"
 msgstr "{name} yayınını kaldır?"
+msgstr "Yayınlamayı Kaldır"
+
+msgid "Unpublish {name}?"
+msgstr "{name} yayınlaması kaldırılsın mı?"
 
 msgid "Unreceived POs"
 msgstr "Alınmamış PO'lar"
@@ -16797,6 +16839,7 @@ msgstr "Sürüm"
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
 msgstr "Sürüm {0} şimdi yayınlanır ve değiştirilecektir."
+msgstr "Sürüm {0} şu anda yayınlandı ve değiştirilecek."
 
 msgid "Version:"
 msgstr "Sürüm:"

@@ -170,6 +170,7 @@ msgstr "{from}–{to} में से {count} परिचालन"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} अधिक: {hiddenNames}"
+msgstr "{hiddenCount} और: {hiddenNames}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -1087,6 +1088,9 @@ msgstr "समायोजन जोड़ें"
 
 msgid "Add Affected Item"
 msgstr "प्रभावित आइटम जोड़ें"
+
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "साइन इन करते समय एक प्रमाणक ऐप से कोड मांगकर सुरक्षा की एक अतिरिक्त परत जोड़ें।"
 
 msgid "Add any notes about your decision..."
 msgstr "अपने निर्णय के बारे में कोई भी नोट्स जोड़ें..."
@@ -2630,6 +2634,7 @@ msgstr "लाइब्रेरी ब्राउज़ करें"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "प्रकाशित संस्करण को केवल-पढ़ने के लिए ब्राउज़ करें। आप अभी भी लेआउट को साफ करने के लिए चरणों को पुनर्व्यवस्थित कर सकते हैं।"
+msgstr "प्रकाशित संस्करण को केवल-पढ़ने के लिए देखें। आप अभी भी लेआउट को साफ करने के लिए चरणों को पुनः व्यवस्थित कर सकते हैं।"
 
 msgid "Bucket"
 msgstr "बकेट"
@@ -6231,6 +6236,9 @@ msgstr "आपकी कॉन्फ़िगर की गई सिस्ट�
 msgid "Every match"
 msgstr "हर मेल"
 
+msgid "Every required action has already been added."
+msgstr ""
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "अवधि बंद करने से पहले प्रत्येक आवश्यक कार्य को पूर्ण या छोड़ा जाना चाहिए।"
 
@@ -8170,6 +8178,7 @@ msgstr "समस्याएं"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "यह तब तक चलना बंद कर देगा जब तक आप फिर से एक संस्करण प्रकाशित नहीं करते। कुछ भी हटाया नहीं जाता है।"
+msgstr "यह तब तक चलना बंद कर देगा जब तक आप फिर से एक संस्करण प्रकाशित न करें। कुछ भी हटाया नहीं गया है।"
 
 msgid "ITAR Certifications"
 msgstr "ITAR प्रमाणपत्र"
@@ -8532,6 +8541,7 @@ msgstr "कम मैनुअल काम, कम त्रुटियां"
 
 msgid "Let's Build"
 msgstr "चलिए बनाते हैं"
+msgstr "आइए निर्माण करें"
 
 msgid "Let's build something"
 msgstr "चलिए कुछ बनाते हैं"
@@ -8613,6 +8623,7 @@ msgstr "Linear समस्या को लिंक करें"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "इस Carbon ग्राहक को उनमें से किसी एक से लिंक करें, या एक अलग Stripe ग्राहक बनाएं।"
+msgstr "इस Carbon ग्राहक को उनमें से किसी एक से जोड़ें, या एक अलग Stripe ग्राहक बनाएं।"
 
 msgid "Link to sales order line"
 msgstr "बिक्रय आदेश पंक्ति से लिंक करें"
@@ -11630,6 +11641,9 @@ msgstr "गो-लाइव की तारीख की सुरक्षा 
 msgid "Protect training time and attend"
 msgstr "प्रशिक्षण समय की सुरक्षा करें और भाग लें"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "दो-कारक प्रमाणीकरण के प्रवर्तन जैसी उन्नत सुरक्षा नियंत्रणों से अपनी कंपनी की सुरक्षा करें।"
+
 msgid "Protects your company's data"
 msgstr "आपकी कंपनी के डेटा की सुरक्षा करता है"
 
@@ -12511,6 +12525,9 @@ msgstr "अनुरोधित तारीख"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "साइन इन करते समय ऑथेंटिकेटर ऐप से 6-अंकीय कोड की आवश्यकता है।"
+
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "इस कंपनी को खोलने से पहले सभी को एक सत्यापनकर्ता ऐप की आवश्यकता है। उनकी अन्य कंपनियां प्रभावित नहीं होंगी।"
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "किसी को भी इस कंपनी को खोलने से पहले एक प्रमाणकर्ता ऐप की आवश्यकता है। उनकी अन्य कंपनियां प्रभावित नहीं हैं। प्रत्येक व्यक्ति की स्थिति देखने के लिए <0>कर्मचारी खातों पृष्ठ</0> पर जाएं।"
@@ -14378,6 +14395,16 @@ msgstr "Stripe ईमेल को ग्राहक को भेजता ह
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe के पास इस Carbon ग्राहक के लिए अभी तक कोई ग्राहक नहीं है। पोस्टिंग आपके जुड़े खाते पर एक बनाएगी।"
+msgstr "Stripe के पास पहले से इस ईमेल वाला एक ग्राहक है"
+
+msgid "Stripe Due Date"
+msgstr "Stripe देय तिथि"
+
+msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
+msgstr "Stripe ग्राहक को चालान ईमेल करता है, इसलिए एक पता आवश्यक है। यह Carbon में संपर्क के लिए भी सहेजा जाएगा।"
+
+msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
+msgstr "Stripe के पास इस Carbon ग्राहक के लिए अभी कोई ग्राहक नहीं है। पोस्ट करने से आपके जुड़े खाते पर एक बनाया जाएगा।"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Kanban तालिका में दिखाने के लिए kanban आउटपुट की शैली"
@@ -15696,6 +15723,10 @@ msgstr "इस इनवॉयस के पास कोई उपयोगी 
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "इस इनवॉयस को Stripe ग्राहक को बिल दिया जाएगा जो पहले से इस Carbon ग्राहक से जुड़ा है। इसके विवरण को बदलने के लिए, इसे Stripe डैशबोर्ड में संपादित करें।"
+msgstr "इस चालान की कोई उपयोगी देय तिथि नहीं है — Stripe के लिए एक चुनें।"
+
+msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
+msgstr "इस चालान को Stripe ग्राहक को बिल दिया जाएगा जो पहले से इस Carbon ग्राहक से जुड़ा हुआ है। इसके विवरण को बदलने के लिए, Stripe डैशबोर्ड में संपादित करें।"
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "यह एक नियंत्रित वातावरण है, इसलिए एक प्रमाणकर्ता ऐप की आवश्यकता है।"
@@ -16239,6 +16270,9 @@ msgstr "दो-कारक"
 msgid "Two-factor authentication"
 msgstr "दो-कारक प्रमाणीकरण"
 
+msgid "Two-Factor Authentication"
+msgstr "दो-कारक प्रमाणीकरण"
+
 msgid "Two-factor authentication disabled"
 msgstr "दो-फ़ैक्टर प्रमाणीकरण अक्षम"
 
@@ -16430,6 +16464,10 @@ msgstr "अप्रकाशित करें"
 
 msgid "Unpublish {name}?"
 msgstr "{name} को अप्रकाशित करें?"
+msgstr "प्रकाशन रद्द करें"
+
+msgid "Unpublish {name}?"
+msgstr "{name} को प्रकाशन रद्द करें?"
 
 msgid "Unreceived POs"
 msgstr "अप्राप्त POs"

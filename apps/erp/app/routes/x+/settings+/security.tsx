@@ -7,6 +7,7 @@ import {
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { requirePlan } from "@carbon/ee/plan.server";
 import {
   getSamlSpUrls,
   getSsoConnection,
@@ -46,8 +47,10 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, Link, redirect, useFetcher, useLoaderData } from "react-router";
 import { Hidden, Input, Submit, TextArea } from "~/components/Form";
 import { usePermissions } from "~/hooks";
+import { usePlanGate } from "~/hooks/usePlanGate";
 import { useSettings } from "~/hooks/useSettings";
 import {
+  SecurityUpgradeOverlay,
   ssoConnectionValidator,
   ssoDomainValidator,
   updateRequireMfaSetting
@@ -151,6 +154,17 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
 
   const requireMfa = formData.get("enabled") === "true";
+
+  if (requireMfa) {
+    await requirePlan({
+      request,
+      client,
+      companyId,
+      feature: "TWO_FACTOR",
+      redirectTo: path.to.security,
+      message: "Upgrade to Business to require two-factor authentication"
+    });
+  }
 
   // Read the stored value first: the switch re-submits on every flip, and a
   // toggle that lands on the value it already had must not re-announce.
@@ -319,6 +333,7 @@ export default function Security() {
   // intercepts as "leaving the page".
   const connectionFetcher = useFetcher<{}>();
   const addDomainFetcher = useFetcher<{}>();
+  const { isGated } = usePlanGate({ feature: "TWO_FACTOR" });
 
   // A successful deactivation redirects and revalidates the loader, so the
   // connection disappears — close the confirm modal with it instead of
@@ -328,6 +343,10 @@ export default function Security() {
   useEffect(() => {
     if (!connection) setDeactivateModalOpen(false);
   }, [connection]);
+
+  if (isGated && !CONTROLLED_ENVIRONMENT && !requireMfa) {
+    return <SecurityUpgradeOverlay />;
+  }
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">

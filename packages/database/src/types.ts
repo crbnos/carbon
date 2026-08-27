@@ -42946,6 +42946,7 @@ export type Database = {
           storageUnitId: string | null
           tags: string[] | null
           unitCost: number
+          unitCostSource: string
           unitOfMeasureCode: string | null
           updatedAt: string | null
           updatedBy: string | null
@@ -42972,6 +42973,7 @@ export type Database = {
           storageUnitId?: string | null
           tags?: string[] | null
           unitCost?: number
+          unitCostSource?: string
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -42998,6 +43000,7 @@ export type Database = {
           storageUnitId?: string | null
           tags?: string[] | null
           unitCost?: number
+          unitCostSource?: string
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -70465,6 +70468,7 @@ export type Database = {
           storageUnitId: string | null
           tags: string[] | null
           unitCost: number | null
+          unitCostSource: string | null
           unitOfMeasureCode: string | null
           updatedAt: string | null
           updatedBy: string | null
@@ -77760,6 +77764,7 @@ export type Database = {
           revision: string
           storageUnitId: string
           unitCost: number
+          unitCostSource: string
           version: number
         }[]
       }
@@ -77786,6 +77791,7 @@ export type Database = {
           revision: string
           storageUnitId: string
           unitCost: number
+          unitCostSource: string
           unitOfMeasureCode: string
           version: number
         }[]

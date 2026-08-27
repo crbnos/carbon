@@ -501,6 +501,7 @@ msgstr "Una nuova dimensione verrà creata utilizzando una copia della dimension
 
 msgid "A new Stripe customer will be created"
 msgstr "Un nuovo cliente Stripe verrà creato"
+msgstr "Verrà creato un nuovo cliente Stripe"
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "Un documento non in contanti che regola una fattura rispetto a un conto motivo: un credito abbassa ciò che è dovuto, un debito lo aumenta."
@@ -1087,6 +1088,9 @@ msgstr "Aggiungi rettifica"
 
 msgid "Add Affected Item"
 msgstr "Aggiungi elemento interessato"
+
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "Aggiungi un ulteriore livello di sicurezza richiedendo un codice da un'app di autenticazione durante l'accesso."
 
 msgid "Add any notes about your decision..."
 msgstr "Aggiungi eventuali note sulla tua decisione..."
@@ -2630,6 +2634,7 @@ msgstr "Sfoglia libreria"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Sfoglia la versione pubblicata in sola lettura. Puoi ancora riordinare i passaggi per pulire il layout."
+msgstr "Sfoglia la versione pubblicata in sola lettura. Puoi comunque riorganizzare i passaggi per organizzare il layout."
 
 msgid "Bucket"
 msgstr "Bucket"
@@ -6231,6 +6236,9 @@ msgstr "Ogni test nell'ambito passa nel tuo sistema configurato, con i tuoi dati
 msgid "Every match"
 msgstr "Ogni corrispondenza"
 
+msgid "Every required action has already been added."
+msgstr ""
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Ogni attività richiesta deve essere Completata o Saltata prima che il periodo possa essere chiuso."
 
@@ -8170,6 +8178,7 @@ msgstr "Problemi"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "Smetterà di funzionare finché non pubblichi di nuovo una versione. Nulla viene eliminato."
+msgstr "Smetterà di funzionare finché non pubblichi di nuovo una versione. Niente viene eliminato."
 
 msgid "ITAR Certifications"
 msgstr "Certificazioni ITAR"
@@ -11630,6 +11639,9 @@ msgstr "Proteggi la data di go-live"
 msgid "Protect training time and attend"
 msgstr "Proteggi il tempo di formazione e partecipa"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "Proteggi la tua azienda con controlli di sicurezza avanzati come l'autenticazione a due fattori."
+
 msgid "Protects your company's data"
 msgstr "Protegge i dati della tua azienda"
 
@@ -12512,6 +12524,9 @@ msgstr "Data Richiesta"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Richiedi un codice a 6 cifre dall'app autenticatore al momento dell'accesso."
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "Richiedi un'app di autenticazione prima che chiunque possa aprire questa azienda. Le altre aziende non saranno interessate."
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Richiedi un'app autenticatore prima che chiunque possa aprire questa azienda. Le loro altre aziende non sono interessate. Visita la <0>pagina degli account dei dipendenti</0> per vedere lo stato di ogni persona."
 
@@ -12692,6 +12707,7 @@ msgstr "Storna qualsiasi voce di ledger articoli da questa fattura"
 
 msgid "Reverse charge"
 msgstr "Inversione del carico"
+msgstr "Inversione d'imponibilità"
 
 msgid "Reverse Charge Sales Tax"
 msgstr "Imposta di vendita con inversione contabile"
@@ -14378,6 +14394,10 @@ msgstr "Stripe invia l'invoice via email al cliente, quindi è richiesto un indi
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe non ha ancora un cliente per questo cliente Carbon. La registrazione ne creerà uno sul tuo account connesso."
+msgstr "Stripe invia la fattura al cliente per email, quindi è richiesto un indirizzo. Questo verrà salvato anche nel contatto in Carbon."
+
+msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
+msgstr "Stripe non ha ancora un cliente per questo cliente Carbon. La registrazione ne creerà uno sul tuo account collegato."
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Stile dell'output kanban da mostrare nella tabella Kanban"
@@ -14793,6 +14813,7 @@ msgstr "Metodo di Ammortamento Fiscale"
 
 msgid "Tax exempt"
 msgstr "Esente da tasse"
+msgstr "Esente da imposta"
 
 msgid "Tax Exempt"
 msgstr "Esente da Imposte"
@@ -15696,6 +15717,7 @@ msgstr "Questa fattura non ha una data di scadenza utilizzabile — scegline una
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Questa fattura verrà fatturata al cliente Stripe già collegato a questo cliente Carbon. Per modificarne i dettagli, modificala nel dashboard Stripe."
+msgstr "Questa fattura verrà addebitata al cliente Stripe già collegato a questo cliente Carbon. Per modificarne i dettagli, modificala nel dashboard di Stripe."
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "Questo è un ambiente controllato, quindi è necessaria un'app autenticatore."
@@ -16239,6 +16261,9 @@ msgstr "Due Fattori"
 msgid "Two-factor authentication"
 msgstr "Autenticazione a due fattori"
 
+msgid "Two-Factor Authentication"
+msgstr "Autenticazione a due fattori"
+
 msgid "Two-factor authentication disabled"
 msgstr "Autenticazione a due fattori disabilitata"
 
@@ -16430,6 +16455,7 @@ msgstr "Annulla pubblicazione"
 
 msgid "Unpublish {name}?"
 msgstr "Annulla la pubblicazione di {name}?"
+msgstr "Annulla pubblicazione di {name}?"
 
 msgid "Unreceived POs"
 msgstr "PO non ricevuti"
@@ -17682,6 +17708,7 @@ msgstr "Sei live su Carbon"
 
 msgid "You're one step away from your workspace."
 msgstr "Sei a un passo dal tuo workspace."
+msgstr "Sei a un passo dal tuo spazio di lavoro."
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "Stai configurando Carbon da solo, al tuo ritmo"

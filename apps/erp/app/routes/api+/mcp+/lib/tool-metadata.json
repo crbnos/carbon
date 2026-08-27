@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-27T20:48:05.239Z",
-  "totalTools": 1447,
+  "generated": "2026-08-27T21:04:20.204Z",
+  "totalTools": 1448,
   "modules": 15,
   "tools": [
     {
@@ -44763,6 +44763,56 @@
           "requestedQty",
           "priceMap",
           "fallbackCost"
+        ]
+      }
+    },
+    {
+      "name": "shared_resolveBuyUnitCost",
+      "module": "shared",
+      "classification": "WRITE",
+      "description": "resolve buy unit cost",
+      "paramCount": 3,
+      "serviceParams": [
+        "material",
+        "requestedQty",
+        "priceMap"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "material": {
+            "type": "object",
+            "properties": {
+              "itemId": {
+                "type": "string"
+              },
+              "unitCost": {
+                "type": "number"
+              },
+              "unitCostSource": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "itemId",
+              "unitCost"
+            ]
+          },
+          "requestedQty": {
+            "type": "number"
+          },
+          "priceMap": {}
+        },
+        "required": [
+          "material",
+          "requestedQty",
+          "priceMap"
         ]
       }
     },

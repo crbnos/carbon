@@ -523,6 +523,7 @@ msgstr "그래도 완료"
 
 msgid "Finish setting up your account"
 msgstr "계정 설정 완료하기"
+msgstr "계정 설정을 완료하세요"
 
 msgid "Finish with material unpicked?"
 msgstr "미선택 재료가 있는 상태로 완료하시겠습니까?"
@@ -535,6 +536,7 @@ msgstr "공정작업으로 돌아가기"
 
 msgid "Go to onboarding"
 msgstr "온보딩으로 이동"
+msgstr "온보딩으로 이동하기"
 
 msgid "How many were actually picked?"
 msgstr "실제로 몇 개를 피킹했습니까?"

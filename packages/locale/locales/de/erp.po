@@ -1088,6 +1088,9 @@ msgstr "Anpassung hinzufügen"
 msgid "Add Affected Item"
 msgstr "Betroffenes Element hinzufügen"
 
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "Erhöhen Sie die Sicherheit, indem Sie beim Anmelden einen Code aus einer Authentifizierungs-App anfordern."
+
 msgid "Add any notes about your decision..."
 msgstr "Fügen Sie Notizen zu Ihrer Entscheidung hinzu..."
 
@@ -2630,6 +2633,7 @@ msgstr "Bibliothek durchsuchen"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Zeigen Sie die veröffentlichte Version schreibgeschützt an. Sie können Schritte weiterhin neu anordnen, um das Layout aufzuräumen."
+msgstr "Durchsuchen Sie die veröffentlichte Version schreibgeschützt. Sie können Schritte immer noch neu anordnen, um das Layout aufzuräumen."
 
 msgid "Bucket"
 msgstr "Bucket"
@@ -3048,6 +3052,7 @@ msgstr "Überprüfen Sie Ihre E-Mail"
 
 msgid "Checking Stripe for this customer…"
 msgstr "Stripe für diesen Kunden wird überprüft…"
+msgstr "Stripe für diesen Kunden wird überprüft …"
 
 msgid "Checkpoint ·"
 msgstr "Checkpoint ·"
@@ -6231,6 +6236,9 @@ msgstr "Jeder Test im Umfang wird in Ihrem konfigurierten System mit Ihren Daten
 msgid "Every match"
 msgstr "Jede Übereinstimmung"
 
+msgid "Every required action has already been added."
+msgstr ""
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Jede erforderliche Aufgabe muss erledigt oder übersprungen werden, bevor der Zeitraum geschlossen werden kann."
 
@@ -8170,6 +8178,7 @@ msgstr "Probleme"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "Es wird nicht mehr ausgeführt, bis Sie eine Version erneut veröffentlichen. Nichts wird gelöscht."
+msgstr "Es wird nicht mehr ausgeführt, bis Sie erneut eine Version veröffentlichen. Nichts wird gelöscht."
 
 msgid "ITAR Certifications"
 msgstr "ITAR-Zertifikationen"
@@ -8532,6 +8541,7 @@ msgstr "Weniger manuelle Arbeit, weniger Fehler"
 
 msgid "Let's Build"
 msgstr "Lassen Sie uns bauen"
+msgstr "Bauen wir"
 
 msgid "Let's build something"
 msgstr "Lassen Sie uns etwas bauen"
@@ -8613,6 +8623,7 @@ msgstr "Linear-Problem verknüpfen"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "Verknüpfen Sie diesen Carbon-Kunden mit einem davon, oder erstellen Sie einen separaten Stripe-Kunden."
+msgstr "Verknüpfen Sie diesen Carbon-Kunden mit einem von ihnen, oder erstellen Sie einen separaten Stripe-Kunden."
 
 msgid "Link to sales order line"
 msgstr "Mit Verkaufsauftragszeile verknüpfen"
@@ -11630,6 +11641,9 @@ msgstr "Schützen Sie das Go-Live-Datum"
 msgid "Protect training time and attend"
 msgstr "Schulungszeit schützen und teilnehmen"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "Schützen Sie Ihr Unternehmen mit erweiterten Sicherheitskontrollen wie der Durchsetzung der Zwei-Faktor-Authentifizierung."
+
 msgid "Protects your company's data"
 msgstr "Schützt die Daten Ihres Unternehmens"
 
@@ -12512,6 +12526,9 @@ msgstr "Angeforderte Datum"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Erfordert einen 6-stelligen Code aus einer Authentifikator-App beim Anmelden."
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "Eine Authentifizierungs-App ist erforderlich, bevor jemand dieses Unternehmen öffnen kann. Ihre anderen Unternehmen sind davon nicht betroffen."
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Erfordert eine Authentifizierungs-App, bevor jemand dieses Unternehmen öffnen kann. Ihre anderen Unternehmen sind nicht betroffen. Besuchen Sie die <0>Seite mit den Mitarbeiterkonten</0>, um den Status jeder Person zu sehen."
 
@@ -12692,6 +12709,7 @@ msgstr "Alle Artikelledgereinträge aus dieser Rechnung stornieren"
 
 msgid "Reverse charge"
 msgstr "Umkehrbelastung"
+msgstr "Umkehrung der Steuerschuld"
 
 msgid "Reverse Charge Sales Tax"
 msgstr "Umkehrbuchung Umsatzsteuer"
@@ -14375,6 +14393,7 @@ msgstr "Stripe-Fälligkeitsdatum"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 msgstr "Stripe sendet die Rechnung per E-Mail an den Kunden, daher ist eine Adresse erforderlich. Dies wird auch im Kontakt in Carbon gespeichert."
+msgstr "Stripe sendet die Rechnung per E-Mail an den Kunden, daher ist eine Adresse erforderlich. Dies wird auch als Kontakt in Carbon gespeichert."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe hat noch keinen Kunden für diesen Carbon-Kunden. Das Buchen erstellt einen auf Ihrem verbundenen Konto."
@@ -14793,6 +14812,7 @@ msgstr "Steuerabschreibungsmethode"
 
 msgid "Tax exempt"
 msgstr "Steuerfrei"
+msgstr "Steuerbefreit"
 
 msgid "Tax Exempt"
 msgstr "Steuerbefreit"
@@ -15696,6 +15716,10 @@ msgstr "Diese Rechnung hat kein verwendbares Fälligkeitsdatum — wählen Sie e
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Diese Rechnung wird dem Stripe-Kunden in Rechnung gestellt, der bereits mit diesem Carbon-Kunden verknüpft ist. Um seine Details zu ändern, bearbeiten Sie es im Stripe-Dashboard."
+msgstr "Diese Rechnung hat kein verwendbares Fälligkeitsdatum — wählen Sie eines für Stripe."
+
+msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
+msgstr "Diese Rechnung wird dem Stripe-Kunden in Rechnung gestellt, der bereits mit diesem Carbon-Kunden verknüpft ist. Um die Details zu ändern, bearbeiten Sie sie im Stripe-Dashboard."
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "Dies ist eine kontrollierte Umgebung, daher ist eine Authentifizierungs-App erforderlich."
@@ -16237,6 +16261,9 @@ msgid "Two-Factor"
 msgstr "Zwei-Faktor"
 
 msgid "Two-factor authentication"
+msgstr "Zwei-Faktor-Authentifizierung"
+
+msgid "Two-Factor Authentication"
 msgstr "Zwei-Faktor-Authentifizierung"
 
 msgid "Two-factor authentication disabled"

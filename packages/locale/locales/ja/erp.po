@@ -170,6 +170,7 @@ msgstr "{from}～{to}件 (合計{count}件の操作)"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount}件以上: {hiddenNames}"
+msgstr "{hiddenCount}その他: {hiddenNames}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -1087,6 +1088,9 @@ msgstr "調整を追加"
 
 msgid "Add Affected Item"
 msgstr "影響を受けるアイテムを追加"
+
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "認証器アプリからのコードを要求することで、サインイン時のセキュリティレイヤーを追加します。"
 
 msgid "Add any notes about your decision..."
 msgstr "あなたの決定についてのメモを追加してください..."
@@ -2630,6 +2634,7 @@ msgstr "ライブラリを参照"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "公開版を読み取り専用で表示します。ステップを並べ替えてレイアウトを整理することができます。"
+msgstr "公開されたバージョンを読み取り専用で参照できます。レイアウトをきれいにするためにステップを再配置することもできます。"
 
 msgid "Bucket"
 msgstr "バケット"
@@ -2837,6 +2842,7 @@ msgstr "RFQを送信できません"
 
 msgid "Cannot send through Stripe"
 msgstr "Stripeを通じて送信できません"
+msgstr "Stripeを経由して送信できません"
 
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "アップロードできません — サプライヤーインタラクションがまだ作成されていません"
@@ -6231,6 +6237,9 @@ msgstr "スコープ内のすべてのテストが、設定されたシステム
 msgid "Every match"
 msgstr "すべてのマッチ"
 
+msgid "Every required action has already been added."
+msgstr ""
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "期間を閉じる前に、すべての必須タスクが完了またはスキップされている必要があります。"
 
@@ -8170,6 +8179,7 @@ msgstr "問題"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "再度バージョンを公開するまで実行が停止します。何も削除されません。"
+msgstr "バージョンを再度公開するまで実行が停止します。何も削除されません。"
 
 msgid "ITAR Certifications"
 msgstr "ITAR認定"
@@ -8613,6 +8623,7 @@ msgstr "Linear イシューをリンク"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "このCarbonカスタマーをそのいずれかにリンクするか、個別のStripeカスタマーを作成してください。"
+msgstr "このCarbonカスタマーをそのいずれかにリンクするか、別のStripeカスタマーを作成してください。"
 
 msgid "Link to sales order line"
 msgstr "販売注文行へのリンク"
@@ -11630,6 +11641,9 @@ msgstr "ゴーライブ日を保護する"
 msgid "Protect training time and attend"
 msgstr "トレーニング時間を確保して参加する"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "二段階認証の強制などの高度なセキュリティ管理で会社を保護してください。"
+
 msgid "Protects your company's data"
 msgstr "会社データを保護します"
 
@@ -11669,6 +11683,7 @@ msgstr "Carbonによって公開"
 
 msgid "Published Version"
 msgstr "公開版"
+msgstr "公開されたバージョン"
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "公開済みバージョンは編集できません。読み取り専用で参照するか、新しいバージョンをブランチして変更してください。"
@@ -12511,6 +12526,9 @@ msgstr "リクエスト日"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "サインイン時に認証器アプリから6桁のコードが必要です。"
+
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "このカンパニーを開く前に、認証アプリが必須です。他のカンパニーは影響を受けません。"
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "このコンパニーを開く前に認証アプリが必須になります。他のコンパニーには影響しません。<0>従業員アカウントページ</0>をご覧ください。"
@@ -14378,6 +14396,16 @@ msgstr "Stripeはカスタマーに請求書をメール送信するため、住
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "StripeにはまだこのCarbonカスタマーのカスタマーがありません。投稿により、接続されたアカウントに作成されます。"
+msgstr "Stripeにはこのメールアドレスを持つカスタマーが既に存在します"
+
+msgid "Stripe Due Date"
+msgstr "Stripe支払期日"
+
+msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
+msgstr "Stripeはカスタマーに請求書をメール送信するため、アドレスが必要です。これはCarbonの連絡先にも保存されます。"
+
+msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
+msgstr "StripeにはこのCarbonカスタマーのカスタマーがまだありません。投稿するとあなたの接続されたアカウントに1つ作成されます。"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Kanbanテーブルに表示するカンバン出力のスタイル"
@@ -14793,6 +14821,7 @@ msgstr "税務償却方法"
 
 msgid "Tax exempt"
 msgstr "税務上免除"
+msgstr "税金免除"
 
 msgid "Tax Exempt"
 msgstr "税務上免除"
@@ -15662,6 +15691,7 @@ msgstr "これはDiscoveryステップを完了します。"
 
 msgid "This contact has no email address"
 msgstr "この連絡先はメールアドレスを持っていません"
+msgstr "この連絡先にはメールアドレスがありません"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "この取引先には未払い金がありません。支払いは掛け金として記録されます。"
@@ -15696,6 +15726,10 @@ msgstr "この請求書に使用可能な期日がありません。Stripeの場
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "この請求書は、既にこのCarbonカスタマーにリンクされているStripeカスタマーに請求されます。詳細を変更するには、Stripeダッシュボードで編集してください。"
+msgstr "この請求書には使用可能な支払期日がありません — Stripeのために1つ選択してください。"
+
+msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
+msgstr "この請求書は、このCarbonカスタマーに既にリンクされているStripeカスタマーに請求されます。その詳細を変更するには、Stripeダッシュボードで編集してください。"
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "これは管理環境のため、認証アプリが必須です。"
@@ -15836,6 +15870,7 @@ msgstr "このバージョンは公開されています"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "このバージョンは公開されています。編集するには新しいバージョンを作成してください。"
+msgstr "このバージョンは公開されています。編集するために新しいバージョンを作成してください。"
 
 msgid "This version's definition could not be read."
 msgstr "このバージョンの定義を読み取ることができませんでした。"
@@ -16239,6 +16274,9 @@ msgstr "2要素認証"
 msgid "Two-factor authentication"
 msgstr "2要素認証"
 
+msgid "Two-Factor Authentication"
+msgstr "2要素認証"
+
 msgid "Two-factor authentication disabled"
 msgstr "二要素認証が無効になりました"
 
@@ -16430,6 +16468,10 @@ msgstr "公開を解除"
 
 msgid "Unpublish {name}?"
 msgstr "{name}の公開を解除しますか？"
+msgstr "公開を取り消す"
+
+msgid "Unpublish {name}?"
+msgstr "{name}の公開を取り消しますか?"
 
 msgid "Unreceived POs"
 msgstr "未受領PO"
@@ -16797,6 +16839,7 @@ msgstr "バージョン"
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
 msgstr "バージョン{0}が公開されており、置き換えられます。"
+msgstr "バージョン{0}は現在公開されており、置き換えられます。"
 
 msgid "Version:"
 msgstr "バージョン:"

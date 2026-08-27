@@ -501,6 +501,7 @@ msgstr "Nowy rozmiar zostanie utworzony przy użyciu kopii bieżącego rozmiaru"
 
 msgid "A new Stripe customer will be created"
 msgstr "Zostanie utworzony nowy klient Stripe"
+msgstr "Nowy klient Stripe zostanie utworzony"
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "Dokument bezgotówkowy, który rozlicza fakturę względem konta przyczyny: kredyt obniża to, co się należy, debet to podwyższa."
@@ -1087,6 +1088,9 @@ msgstr "Dodaj korektę"
 
 msgid "Add Affected Item"
 msgstr "Dodaj element dotknięty zmianą"
+
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "Dodaj dodatkową warstwę bezpieczeństwa, wymagając kodu z aplikacji uwierzytelniającej podczas logowania."
 
 msgid "Add any notes about your decision..."
 msgstr "Dodaj dowolne notatki dotyczące Twojej decyzji..."
@@ -2630,6 +2634,7 @@ msgstr "Przeglądaj bibliotekę"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Przeglądaj opublikowaną wersję tylko do odczytu. Możesz nadal reorganizować kroki, aby uporządkować układ."
+msgstr "Przeglądaj opublikowaną wersję jako tylko do odczytu. Możesz jeszcze zmienić kolejność kroków, aby uporządkować układ."
 
 msgid "Bucket"
 msgstr "Zasobnik"
@@ -2837,6 +2842,7 @@ msgstr "Nie można wysłać ZZO"
 
 msgid "Cannot send through Stripe"
 msgstr "Nie można wysłać przez Stripe"
+msgstr "Nie można wysłać za pośrednictwem Stripe"
 
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "Nie można przesłać — interakcja z dostawcą nie została jeszcze utworzona"
@@ -6231,6 +6237,9 @@ msgstr "Każdy test w zakresie przechodzi w Twoim skonfigurowanym systemie, z Tw
 msgid "Every match"
 msgstr "Każde dopasowanie"
 
+msgid "Every required action has already been added."
+msgstr ""
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Każde wymagane zadanie musi być oznaczone jako Wykonane lub Pominięte zanim okres będzie mógł być zamknięty."
 
@@ -8170,6 +8179,7 @@ msgstr "Problemy"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "Przestanie działać, dopóki nie opublikujesz ponownie wersji. Nic nie zostanie usunięte."
+msgstr "Przestanie działać do momentu ponownego opublikowania wersji. Nic nie jest usunięte."
 
 msgid "ITAR Certifications"
 msgstr "Certyfikacje ITAR"
@@ -8532,6 +8542,7 @@ msgstr "Mniej pracy ręcznej, mniej błędów"
 
 msgid "Let's Build"
 msgstr "Zacznijmy tworzyć"
+msgstr "Zaczynamy Budować"
 
 msgid "Let's build something"
 msgstr "Zbudujmy coś"
@@ -8613,6 +8624,7 @@ msgstr "Połącz problem Linear"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "Połącz tego klienta Carbon z jednym z nich lub utwórz odrębnego klienta Stripe."
+msgstr "Połącz tego klienta Carbon z jednym z nich lub utwórz oddzielnego klienta Stripe."
 
 msgid "Link to sales order line"
 msgstr "Połącz z linią zamówienia sprzedaży"
@@ -11630,6 +11642,9 @@ msgstr "Chroń datę wdrożenia"
 msgid "Protect training time and attend"
 msgstr "Zarezerwuj czas na szkolenie i weź w nim udział"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "Chroń swoją firmę za pomocą zaawansowanych kontroli bezpieczeństwa, takich jak wymuszanie uwierzytelniania dwuskładnikowego."
+
 msgid "Protects your company's data"
 msgstr "Chroni dane twojej firmy"
 
@@ -12512,6 +12527,9 @@ msgstr "Data żądana"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Wymagaj 6-cyfrowego kodu z aplikacji Authenticator przy logowaniu."
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "Wymagaj aplikacji uwierzytelniającej zanim ktokolwiek będzie mógł otworzyć tę firmę. Ich inne firmy nie będą dotknięte."
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Wymagaj aplikacji authenticator przed otwarciem tej firmy. Pozostałe firmy danej osoby nie są objęte. Odwiedź <0>stronę kont pracowników</0>, aby zobaczyć status każdej osoby."
 
@@ -12692,6 +12710,7 @@ msgstr "Odwróć wszystkie wpisy rejestru pozycji z tej faktury"
 
 msgid "Reverse charge"
 msgstr "Pobranie zwrotne"
+msgstr "Odwrócenie opodatkowania"
 
 msgid "Reverse Charge Sales Tax"
 msgstr "Odwrotne obciążenie podatkiem od sprzedaży"
@@ -14378,6 +14397,13 @@ msgstr "Stripe wysyła rachunek do klienta, dlatego wymagany jest adres. Zostani
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe nie ma jeszcze klienta dla tego klienta Carbon. Wysłanie utworzy jeden na Twoim podłączonym koncie."
+msgstr "Data płatności Stripe"
+
+msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
+msgstr "Stripe wysyła fakturę do klienta pocztą e-mail, więc wymagany jest adres. Zostanie również zapisany w kontakcie w Carbon."
+
+msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
+msgstr "Stripe jeszcze nie ma klienta dla tego klienta Carbon. Posting utworzy jeden na Twoim połączonym koncie."
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Styl wyjścia kanban do wyświetlenia w tabeli Kanban"
@@ -15696,6 +15722,10 @@ msgstr "Ten rachunek nie ma użytecznej daty wymagalności — wybierz jedną dl
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Ten rachunek będzie wystawiony dla klienta Stripe już połączonego z tym klientem Carbon. Aby zmienić jego szczegóły, edytuj go w panelu kontrolnym Stripe."
+msgstr "Ta faktura nie ma użytecznej daty płatności — wybierz jedną dla Stripe."
+
+msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
+msgstr "Ta faktura będzie naliczona klientowi Stripe już połączonemu z tym klientem Carbon. Aby zmienić jego szczegóły, edytuj go w pulpicie Stripe."
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "To jest kontrolowane środowisko, dlatego wymagana jest aplikacja authenticator."
@@ -16239,6 +16269,9 @@ msgstr "Dwuskładnikowe"
 msgid "Two-factor authentication"
 msgstr "Uwierzytelnianie dwuskładnikowe"
 
+msgid "Two-Factor Authentication"
+msgstr "Uwierzytelnianie dwuskładnikowe"
+
 msgid "Two-factor authentication disabled"
 msgstr "Uwierzytelnianie dwuskładnikowe wyłączone"
 
@@ -16430,6 +16463,10 @@ msgstr "Cofnij publikowanie"
 
 msgid "Unpublish {name}?"
 msgstr "Cofnąć publikowanie {name}?"
+msgstr "Cofnij publikację"
+
+msgid "Unpublish {name}?"
+msgstr "Cofnąć publikację {name}?"
 
 msgid "Unreceived POs"
 msgstr "Nieprzyjęte zamówienia"
@@ -17682,6 +17719,7 @@ msgstr "Jesteś na żywo w Carbon"
 
 msgid "You're one step away from your workspace."
 msgstr "Jesteś o jeden krok od swojego obszaru roboczego."
+msgstr "Jesteś jednym krokiem od swojego obszaru roboczego."
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "Samodzielnie konfigurujesz Carbon w swoim tempie"

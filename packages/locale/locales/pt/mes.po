@@ -523,6 +523,7 @@ msgstr "Terminar Mesmo Assim"
 
 msgid "Finish setting up your account"
 msgstr "Conclua a configuração da sua conta"
+msgstr "Termine de configurar sua conta"
 
 msgid "Finish with material unpicked?"
 msgstr "Finalizar com material não selecionado?"
@@ -535,6 +536,7 @@ msgstr "Voltar para operação"
 
 msgid "Go to onboarding"
 msgstr "Ir para integração"
+msgstr "Ir para a integração"
 
 msgid "How many were actually picked?"
 msgstr "Quantos foram realmente apanhados?"
@@ -1523,6 +1525,7 @@ msgstr "Você está registrado há {hoursElapsed} horas. Esqueceu de registrar a
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Sua conta ainda não faz parte de uma empresa. Conclua a integração no Carbon ERP para continuar."
+msgstr "Sua conta ainda não faz parte de uma empresa. Complete a integração no Carbon ERP para continuar."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Sua organização requer um aplicativo autenticador. Configure-o no Carbon e retorne aqui."

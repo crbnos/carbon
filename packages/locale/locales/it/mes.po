@@ -523,6 +523,7 @@ msgstr "Termina comunque"
 
 msgid "Finish setting up your account"
 msgstr "Finisci di configurare il tuo account"
+msgstr "Completa la configurazione del tuo account"
 
 msgid "Finish with material unpicked?"
 msgstr "Terminare con il materiale non prelevato?"
@@ -1523,6 +1524,7 @@ msgstr "Sei timbrato in ingresso da {hoursElapsed} ore. Hai dimenticato di timbr
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Il tuo account non fa ancora parte di un'azienda. Completa l'onboarding nel Carbon ERP per continuare."
+msgstr "Il tuo account non fa ancora parte di un'azienda. Completa l'onboarding in Carbon ERP per continuare."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "La tua organizzazione richiede un'app di autenticazione. Configurala in Carbon, quindi torna qui."

@@ -523,6 +523,7 @@ msgstr "Yine de Bitir"
 
 msgid "Finish setting up your account"
 msgstr "Hesabınızı ayarlamayı tamamlayın"
+msgstr "Hesabınızı kurulumunu tamamlayın"
 
 msgid "Finish with material unpicked?"
 msgstr "Malzeme seçilmeden bitir?"

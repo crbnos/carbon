@@ -170,6 +170,7 @@ msgstr "{from}–{to} / {count} 条操作"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} 更多：{hiddenNames}"
+msgstr "{hiddenCount} 更多: {hiddenNames}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -501,6 +502,7 @@ msgstr "将使用当前尺寸的副本创建新尺寸"
 
 msgid "A new Stripe customer will be created"
 msgstr "将创建新的 Stripe 客户"
+msgstr "将创建一个新的 Stripe 客户"
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "一份非现金单据，根据原因账户结算发票：贷方降低应付金额，借方提高它。"
@@ -1087,6 +1089,9 @@ msgstr "添加调整"
 
 msgid "Add Affected Item"
 msgstr "添加受影响项目"
+
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "通过在登录时要求来自身份验证应用的代码来增加额外的安全层。"
 
 msgid "Add any notes about your decision..."
 msgstr "添加关于您的决定的任何备注..."
@@ -2630,6 +2635,7 @@ msgstr "浏览库"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "浏览已发布版本（只读）。您仍然可以重新排列步骤以整理布局。"
+msgstr "浏览已发布的版本（只读）。您仍然可以重新排列步骤来整理布局。"
 
 msgid "Bucket"
 msgstr "存储桶"
@@ -3048,6 +3054,7 @@ msgstr "检查您的电子邮件"
 
 msgid "Checking Stripe for this customer…"
 msgstr "正在检查此客户的 Stripe…"
+msgstr "正在检查该客户的 Stripe…"
 
 msgid "Checkpoint ·"
 msgstr "检查点 ·"
@@ -6231,6 +6238,9 @@ msgstr "您配置的系统中的每项范围内测试都通过了，使用您的
 msgid "Every match"
 msgstr "每次匹配"
 
+msgid "Every required action has already been added."
+msgstr ""
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "期间关闭前，每项必需任务都必须完成或跳过。"
 
@@ -8170,6 +8180,7 @@ msgstr "问题"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "它将停止运行，直到您再次发布版本。不会删除任何内容。"
+msgstr "在您再次发布版本之前，它将停止运行。没有任何内容被删除。"
 
 msgid "ITAR Certifications"
 msgstr "ITAR 认证"
@@ -8532,6 +8543,7 @@ msgstr "更少的手动工作，更少的错误"
 
 msgid "Let's Build"
 msgstr "开始构建"
+msgstr "让我们开始构建"
 
 msgid "Let's build something"
 msgstr "让我们构建一些东西"
@@ -8613,6 +8625,7 @@ msgstr "关联 Linear 问题"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "将此 Carbon 客户链接到其中一个，或创建单独的 Stripe 客户。"
+msgstr "将此 Carbon 客户链接到其中一个，或创建一个单独的 Stripe 客户。"
 
 msgid "Link to sales order line"
 msgstr "关联销售订单行"
@@ -11630,6 +11643,9 @@ msgstr "保护上线日期"
 msgid "Protect training time and attend"
 msgstr "保护培训时间并参加"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "使用双因素身份验证等高级安全控制措施保护您的公司。"
+
 msgid "Protects your company's data"
 msgstr "保护您公司的数据"
 
@@ -12511,6 +12527,9 @@ msgstr "请求日期"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "登录时需要来自身份验证器应用的 6 位数字代码。"
+
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "需要身份验证器应用才能打开此公司。其他公司不受影响。"
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "在任何人打开此公司之前需要身份验证器应用。他们的其他公司不受影响。访问<0>员工账户页面</0>以查看每个人的状态。"
@@ -14369,6 +14388,7 @@ msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
 msgstr "Stripe 已有一个使用此电子邮件的客户"
+msgstr "Stripe 已有使用此电子邮件的客户"
 
 msgid "Stripe Due Date"
 msgstr "Stripe 到期日期"
@@ -14378,6 +14398,10 @@ msgstr "Stripe 将发票通过电子邮件发送给客户，因此需要地址�
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe 还没有此 Carbon 客户的客户。发布将在您连接的账户上创建一个。"
+msgstr "Stripe 将发票发送给客户，因此需要地址。这也将保存到 Carbon 中的联系人。"
+
+msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
+msgstr "Stripe 还没有该 Carbon 客户的客户。发布将在您连接的帐户上创建一个。"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "看板输出在看板表中显示的样式"
@@ -15696,6 +15720,7 @@ msgstr "此发票没有可用的到期日期 — 为 Stripe 选择一个。"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "此发票将计费到已链接到此 Carbon 客户的 Stripe 客户。要更改其详细信息，请在 Stripe 仪表板中编辑它。"
+msgstr "此发票将计费给已链接到此 Carbon 客户的 Stripe 客户。要更改其详细信息，请在 Stripe 仪表板中编辑它。"
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "这是受控环境，因此需要身份验证器应用。"
@@ -15836,6 +15861,7 @@ msgstr "此版本已发布"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "此版本已发布。创建新版本以编辑。"
+msgstr "此版本已发布。创建新版本进行编辑。"
 
 msgid "This version's definition could not be read."
 msgstr "无法读取此版本的定义。"
@@ -16238,6 +16264,9 @@ msgstr "双因素"
 
 msgid "Two-factor authentication"
 msgstr "双因素认证"
+
+msgid "Two-Factor Authentication"
+msgstr "双因素身份验证"
 
 msgid "Two-factor authentication disabled"
 msgstr "双因素身份验证已禁用"
@@ -17682,6 +17711,7 @@ msgstr "您已在 Carbon 上线"
 
 msgid "You're one step away from your workspace."
 msgstr "您离您的工作区只有一步之遥。"
+msgstr "您离工作区只有一步之遥。"
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "您正在按照自己的节奏自行设置 Carbon"
