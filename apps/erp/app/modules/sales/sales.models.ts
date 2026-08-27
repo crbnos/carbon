@@ -1010,7 +1010,7 @@ export const salesReturnDispositionType = [
   // "No Action Required",
   "Pending",
   // "Quarantine",
-  // "Repair",
+  "Repair",
   "Return to Customer",
   "Rework",
   "Scrap",
@@ -1102,4 +1102,160 @@ export const salesReturnOrderCreditValidator = z.object({
         )
         .min(1, { message: "At least one line is required" })
     )
+});
+
+
+// ============================================================
+// Warranty & Repairs — spec .ai/specs/2026-08-27-warranty-repairs.md
+// ============================================================
+
+export const warrantyTermStartBasisType = ["Ship Date", "Invoice Date"] as const;
+
+export const repairOrderStatusType = [
+  "Draft",
+  "Confirmed",
+  "In Progress",
+  "Completed",
+  "Cancelled"
+] as const;
+
+// Custody of the customer's unit. 'Scrapped' is terminal like 'Shipped': a unit
+// in custody leaves through a ship-back or a scrap, never behind a flag.
+export const repairOrderLineStatusType = [
+  "Pending",
+  "Received",
+  "At Supplier",
+  "Repaired",
+  "Shipped",
+  "Scrapped"
+] as const;
+
+export const repairBillingCodeType = [
+  "Warranty",
+  "No Charge",
+  "Billable"
+] as const;
+
+export const repairOrderChargeTypeType = ["Part", "Service"] as const;
+
+// A NULL duration with covers* true means lifetime coverage for that class.
+export const warrantyTermValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    name: z.string().trim().min(1, { message: "Name is required" }),
+    coversParts: zfd.checkbox(),
+    partsDurationMonths: zfd.numeric(z.number().int().min(0).optional()),
+    coversLabor: zfd.checkbox(),
+    laborDurationMonths: zfd.numeric(z.number().int().min(0).optional()),
+    startBasis: z.enum(warrantyTermStartBasisType, {
+      errorMap: () => ({ message: "Start basis is required" })
+    })
+  })
+  .refine((data) => data.coversParts || data.coversLabor, {
+    message: "A term must cover parts, labor, or both",
+    path: ["coversParts"]
+  });
+
+export const warrantyRegistrationValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    itemId: z.string().min(1, { message: "Item is required" }),
+    customerId: z.string().min(1, { message: "Customer is required" }),
+    trackedEntityId: zfd.text(z.string().optional()),
+    quantity: zfd.numeric(z.number().gt(0).optional()),
+    warrantyTermId: zfd.text(z.string().optional()),
+    startDate: z.string().min(1, { message: "Start date is required" }),
+    coversParts: zfd.checkbox(),
+    partsExpirationDate: zfd.text(z.string().optional()),
+    coversLabor: zfd.checkbox(),
+    laborExpirationDate: zfd.text(z.string().optional()),
+    supplierId: zfd.text(z.string().optional()),
+    supplierWarrantyExpirationDate: zfd.text(z.string().optional())
+  })
+  .refine(
+    (data) =>
+      !data.partsExpirationDate || data.partsExpirationDate >= data.startDate,
+    {
+      message: "Parts expiration cannot precede the start date",
+      path: ["partsExpirationDate"]
+    }
+  )
+  .refine(
+    (data) =>
+      !data.laborExpirationDate || data.laborExpirationDate >= data.startDate,
+    {
+      message: "Labor expiration cannot precede the start date",
+      path: ["laborExpirationDate"]
+    }
+  );
+
+export const repairOrderValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  repairOrderId: zfd.text(z.string().optional()),
+  status: z.enum(repairOrderStatusType).optional(),
+  customerId: z.string().min(1, { message: "Customer is required" }),
+  customerLocationId: zfd.text(z.string().optional()),
+  customerContactId: zfd.text(z.string().optional()),
+  customerReference: zfd.text(z.string().optional()),
+  locationId: zfd.text(z.string().optional()),
+  salesReturnOrderId: zfd.text(z.string().optional()),
+  supplierId: zfd.text(z.string().optional()),
+  supplierReference: zfd.text(z.string().optional()),
+  currencyCode: zfd.text(z.string().optional()),
+  exchangeRate: zfd.numeric(z.number().optional()),
+  orderDate: z.string().min(1, { message: "Order date is required" }),
+  promisedDate: zfd.text(z.string().optional()),
+  assignee: zfd.text(z.string().optional())
+});
+
+// One tracked unit per line; untracked lines move their FULL quantity on every
+// leg (split the line for partials) so the scalar custody status stays truthful.
+export const repairOrderLineValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  repairOrderId: z.string().min(1, { message: "Repair order is required" }),
+  itemId: z.string().min(1, { message: "Item is required" }),
+  quantity: zfd.numeric(
+    z.number().gt(0, { message: "Quantity must be positive" })
+  ),
+  unitOfMeasureCode: zfd.text(z.string().optional()),
+  warrantyRegistrationId: zfd.text(z.string().optional()),
+  returnReasonId: zfd.text(z.string().optional()),
+  trackedEntityId: zfd.text(z.string().optional())
+});
+
+// billingCode is REQUIRED — there is no DB default. The caller resolves it from
+// coverage (uncovered or unregistered -> 'Billable') before the insert.
+export const repairOrderChargeValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    repairOrderId: z.string().min(1, { message: "Repair order is required" }),
+    repairOrderLineId: zfd.text(z.string().optional()),
+    chargeType: z.enum(repairOrderChargeTypeType, {
+      errorMap: () => ({ message: "Charge type is required" })
+    }),
+    itemId: zfd.text(z.string().optional()),
+    description: zfd.text(z.string().optional()),
+    quantity: zfd.numeric(
+      z.number().gt(0, { message: "Quantity must be positive" })
+    ),
+    unitPrice: zfd.numeric(z.number().min(0)),
+    billingCode: z.enum(repairBillingCodeType, {
+      errorMap: () => ({ message: "Billing code is required" })
+    })
+  })
+  .refine((data) => data.chargeType !== "Part" || !!data.itemId, {
+    message: "A part charge must name the item consumed",
+    path: ["itemId"]
+  });
+
+export const repairOrderLineStatusValidator = z.object({
+  lineId: z.string().min(1),
+  status: z.enum(repairOrderLineStatusType, {
+    errorMap: () => ({ message: "Status is required" })
+  })
+});
+
+export const applyRepairWarrantyValidator = z.object({
+  lineId: z.string().min(1),
+  warrantyTermId: z.string().min(1, { message: "Warranty term is required" })
 });

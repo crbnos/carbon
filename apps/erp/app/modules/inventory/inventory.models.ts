@@ -76,6 +76,7 @@ export const receiptSourceDocumentType = [
   "Purchase Order",
   "Purchase Invoice",
   // "Purchase Return Order",
+  "Repair Order",
   "Inbound Transfer"
   // "Outbound Transfer",
   // "Manufacturing Consumption",
@@ -297,6 +298,7 @@ export const shipmentSourceDocumentType = [
   "Purchase Order",
   // "Purchase Invoice",
   "Purchase Return Order",
+  "Repair Order",
   // "Inbound Transfer",
   "Outbound Transfer"
 ] as const;

@@ -386,6 +386,11 @@ export const POSTING_POLICY: Record<
     defaultEnabled: true,
     defaultGranularity: "individual"
   },
+  "Repair Consumption": {
+    representation: "journal",
+    defaultEnabled: true,
+    defaultGranularity: "individual"
+  },
   "Inbound Inspection": {
     representation: "journal",
     defaultEnabled: true,

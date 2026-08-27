@@ -20,6 +20,8 @@ export const documentSourceTypes = [
   "Sales Invoice",
   "Sales Return Order",
   "Purchase Return Order",
+  "Repair Order",
+  "Warranty Registration",
   "Shipment",
   ...itemType
 ] as const;
