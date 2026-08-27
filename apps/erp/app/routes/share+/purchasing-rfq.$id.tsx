@@ -15,6 +15,7 @@ import {
   Th,
   Thead,
   Tr,
+  TruncatedTooltipText,
   useMode,
   VStack
 } from "@carbon/react";
@@ -183,24 +184,32 @@ const LineItems = ({
               {thumbnails[line.id] ? (
                 <img
                   alt={line.itemReadableId ?? "Item"}
-                  className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
+                  className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
                   src={thumbnails[line.id] ?? undefined}
                 />
               ) : (
-                <div className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
+                <div className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
                   <LuImage className="w-16 h-16 text-muted-foreground" />
                 </div>
               )}
 
-              <VStack spacing={0} className="w-full">
+              {/* flex-1 + min-w-0, not w-full: `width: 100%` on a flex item
+                  resolves against the row's full width and ignores the
+                  thumbnail beside it, pushing the description past the card
+                  edge. min-w-0 is what lets truncate bite. */}
+              <VStack spacing={0} className="flex-1 min-w-0">
                 <div
-                  className="flex flex-col cursor-pointer w-full"
+                  className="flex flex-col cursor-pointer w-full min-w-0"
                   // @ts-expect-error TS2345 - TODO: fix type
                   onClick={() => toggleOpen(line.id)}
                 >
-                  <div className="flex items-center gap-x-4 justify-between flex-grow">
-                    <Heading>{line.itemReadableId ?? "Item"}</Heading>
-                    <HStack spacing={4}>
+                  <div className="flex items-center gap-x-4 justify-between flex-grow min-w-0">
+                    {/* min-w-0 so a long item id wraps inside the card
+                        instead of shoving the chevron out of it. */}
+                    <Heading className="min-w-0">
+                      {line.itemReadableId ?? "Item"}
+                    </Heading>
+                    <HStack spacing={4} className="shrink-0">
                       <motion.div
                         animate={{
                           rotate: openItems.includes(line.id) ? 90 : 0
@@ -211,9 +220,12 @@ const LineItems = ({
                       </motion.div>
                     </HStack>
                   </div>
-                  <span className="text-muted-foreground text-base truncate">
+                  <TruncatedTooltipText
+                    className="text-muted-foreground text-base truncate"
+                    tooltip={line.description}
+                  >
                     {line.description}
-                  </span>
+                  </TruncatedTooltipText>
                 </div>
               </VStack>
             </HStack>

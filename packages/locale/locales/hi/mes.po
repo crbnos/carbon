@@ -179,6 +179,9 @@ msgstr "{0} द्वारा अवरुद्ध"
 msgid "Blocking"
 msgstr "अवरुद्ध"
 
+msgid "Board view"
+msgstr "बोर्ड दृश्य"
+
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "लेकिन चिंता न करें। आप नया जादुई लिंक अनुरोध करने के लिए भूल गए पासवर्ड प्रवाह का उपयोग कर सकते हैं।"
 
@@ -521,6 +524,9 @@ msgstr "{0} को समाप्त करें"
 msgid "Finish Anyways"
 msgstr "वैसे भी समाप्त करें"
 
+msgid "Finish setting up your account"
+msgstr ""
+
 msgid "Finish with material unpicked?"
 msgstr "सामग्री बिना चुने समाप्त करें?"
 
@@ -529,6 +535,9 @@ msgstr "घड़ी से बाहर निकलना भूल गए?"
 
 msgid "Go back to operation"
 msgstr "ऑपरेशन पर वापस जाएं"
+
+msgid "Go to onboarding"
+msgstr ""
 
 msgid "How many were actually picked?"
 msgstr "वास्तव में कितने चुने गए?"
@@ -641,6 +650,9 @@ msgstr "चलिए कुछ बनाते हैं"
 
 msgid "lines"
 msgstr "लाइनें"
+
+msgid "List view"
+msgstr "सूची दृश्य"
 
 msgid "Loading item details..."
 msgstr "आइटम विवरण लोड हो रहे हैं..."
@@ -870,6 +882,9 @@ msgstr "इस सप्ताह के लिए कोई समय प्र
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "इस आइटम के लिए कोई गोदाम स्टॉक रिकॉर्ड पर नहीं है। आप इसे अभी भी चुन सकते हैं — ऑन-हैंड नकारात्मक हो जाएगा जब तक गिनती समेकित नहीं हो जाती।"
+
+msgid "No Work Center"
+msgstr "कोई कार्य केंद्र नहीं"
 
 msgid "No work centers are blocked"
 msgstr "कोई कार्य केंद्र अवरुद्ध नहीं हैं"
@@ -1510,6 +1525,9 @@ msgstr "आपने <0/> पर घड़ी शुरू की है। आ�
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "आप {hoursElapsed} घंटे के लिए क्लॉक इन हैं। क्या आप क्लॉक आउट करना भूल गए?"
+
+msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
+msgstr ""
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "आपके संगठन को एक ऑथेंटिकेटर ऐप की आवश्यकता है। इसे Carbon में सेट अप करें, फिर यहाँ वापस आएं।"

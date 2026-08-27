@@ -14,7 +14,7 @@ export const workflowDefinitionSaveValidator = z.object({
   formatVersion: zfd.numeric(z.number().int())
 });
 
-/** Layout only. The one payload a live version accepts — see `$id.positions.tsx`. */
+/** Layout only. The one payload a published version accepts — see `$id.positions.tsx`. */
 export const workflowNodePositionsValidator = z.object({
   versionId: z.string().min(1, { message: "Version is required" }),
   positions: z.string().min(1)
@@ -64,10 +64,6 @@ export const workflowCanvasStateValidator = z.object({
 
 export const workflowPublishValidator = z.object({
   versionId: z.string().min(1, { message: "Version is required" })
-});
-
-export const workflowToggleValidator = z.object({
-  active: zfd.checkbox()
 });
 
 export const workflowVersionValidator = z.object({

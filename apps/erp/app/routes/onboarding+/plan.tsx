@@ -18,13 +18,19 @@ import { Edition } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo } from "react";
-import { LuGraduationCap, LuMoveLeft, LuPhoneCall } from "react-icons/lu";
+import { LuMoveLeft, LuPhoneCall } from "react-icons/lu";
 import type { ActionFunctionArgs } from "react-router";
 import { Form, redirect, useFetcher, useLoaderData } from "react-router";
 import { getCompany, getPlans } from "~/modules/settings";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "plan");
+
+// Self-signup is limited to Starter. Higher tiers (Business, GovCloud) are
+// sales-assisted only — their cards render, but with a "Talk to Sales" CTA and
+// no self-checkout button. Keep this as the single source of truth for both the
+// server allow-list and the UI so the two can never disagree.
+const SELF_SIGNUP_PLAN_IDS = ["STARTER"];
 
 function usePlans() {
   const { t } = useLingui();
@@ -33,38 +39,42 @@ function usePlans() {
       price: 40,
       userMinimum: 0,
       talkToSales: false,
-      description: t`Perfect for low-cost evaluation`,
+      description: t`A managed cloud-hosted version of Carbon`,
       features: [
-        t`ERP, MES, QMS`,
-        t`Cloud-Hosted`,
-        t`Self-Onboarding with Carbon Academy`
+        t`Automatic updates and backups`,
+        t`Basic ERP, MES, and QMS functionality`,
+        t`Unlimited records`,
+        t`Self-onboarding`,
+        t`Community support`
       ]
     },
     BUSINESS: {
       price: 100,
       userMinimum: 5,
       talkToSales: true,
-      description: t`For growing businesses that need support`,
+      description: t`A managed version with all the advanced features`,
       features: [
-        t`5 User Minimum`,
-        t`Everything from Starter`,
-        t`API and Webhooks`,
-        t`Implementation Support`,
-        t`Unlimited Functional Support`
+        t`Technical support`,
+        t`API, webhooks, and integrations`,
+        t`Accounting`,
+        t`Audit logging`,
+        t`All advanced features available`,
+        t`5 user minimum`
       ]
     },
-    GOVCLOUD: {
-      price: 100,
-      userMinimum: 5,
+    ENTERPRISE: {
+      price: null as number | null,
+      userMinimum: 0,
       talkToSales: true,
-      description: t`For US companies handling ITAR data`,
+      description: t`A custom solution to meet your needs`,
       features: [
-        t`5 User Minimum`,
-        t`ERP, MES, QMS`,
-        t`Cloud-Hosted`,
-        t`API and Webhooks`,
-        t`Implementation Support`,
-        t`Unlimited Functional Support`
+        t`Self-hosted or managed`,
+        t`Forward deployed engineer`,
+        t`Customizations, training, and integrations`,
+        t`CMMC compliant`,
+        t`Full setup and migrations`,
+        t`SSO/SAML`,
+        t`Unlimited functional support`
       ]
     }
   };
@@ -98,8 +108,7 @@ export async function action({ request }: ActionFunctionArgs) {
     throw new Error("Plan ID is required");
   }
 
-  const validPlanIds = ["STARTER", "BUSINESS", "GOVCLOUD"];
-  if (!validPlanIds.includes(planId) || planId.startsWith("PARTNER")) {
+  if (!SELF_SIGNUP_PLAN_IDS.includes(planId)) {
     throw new Error("Invalid plan ID");
   }
 
@@ -146,13 +155,31 @@ export default function OnboardingPlan() {
   logger.info({ companyId });
   const fetcher = useFetcher<typeof action>();
 
+  // Starter/Business come from the DB (self-checkout via Stripe). Enterprise is
+  // a static, sales-assisted tier — no plan row, no self-signup — appended last
+  // so all three tiers render on the onboarding step.
+  const cards = [
+    ...[...plans]
+      .sort((a, b) => {
+        const priceA = PLANS[a.id as keyof typeof PLANS]?.price ?? 0;
+        const priceB = PLANS[b.id as keyof typeof PLANS]?.price ?? 0;
+        return priceA - priceB;
+      })
+      .map((plan) => ({
+        id: plan.id,
+        name: plan.name,
+        stripeTrialPeriodDays: plan.stripeTrialPeriodDays
+      })),
+    { id: "ENTERPRISE", name: t`Enterprise`, stripeTrialPeriodDays: 0 }
+  ];
+
   return (
     <>
       {/* Not an OnboardingCard — a wide two-column grid rather than a form card —
           but it caps and scrolls for the same reason. Mobile keeps min-h-screen
           and scrolls the page instead. */}
-      <div className="flex flex-col max-w-2xl w-full min-h-screen md:min-h-0 md:max-h-full">
-        <div className="sticky top-0 bg-background z-10 mb-4 rounded-lg">
+      <div className="flex flex-col max-w-5xl w-full min-h-screen md:min-h-0 md:max-h-full">
+        <div className="sticky top-0 z-10 mb-4 rounded-lg">
           <CardHeader>
             <CardTitle>
               <Trans>Select a plan</Trans>
@@ -167,50 +194,54 @@ export default function OnboardingPlan() {
           <div
             className={cn(
               "grid gap-6",
-              plans.length === 1
-                ? "grid-cols-1 justify-center"
-                : "grid-cols-1 md:grid-cols-2"
+              cards.length <= 2
+                ? "grid-cols-1 md:grid-cols-2"
+                : "grid-cols-1 md:grid-cols-3"
             )}
           >
-            {plans
-              .sort((a, b) => {
-                const priceA = PLANS[a.id as keyof typeof PLANS]?.price || 0;
-                const priceB = PLANS[b.id as keyof typeof PLANS]?.price || 0;
-                return priceA - priceB;
-              })
-              .map((plan) => {
-                const planDetails = PLANS[plan.id as keyof typeof PLANS];
+            {cards.map((plan) => {
+              const planDetails = PLANS[plan.id as keyof typeof PLANS];
+              const price = planDetails?.price;
 
-                return (
-                  <Card key={plan.id} className="relative">
-                    <CardHeader>
-                      <CardTitle>{plan.name}</CardTitle>
-                      <CardDescription>
-                        {planDetails?.description}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-baseline">
-                        <span className="text-5xl font-bold tracking-tighter">
-                          {formatter.format(planDetails?.price)}
+              return (
+                <Card key={plan.id} className="relative">
+                  <CardHeader>
+                    <CardTitle>{plan.name}</CardTitle>
+                    <CardDescription>
+                      {planDetails?.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-baseline">
+                      {price == null ? (
+                        <span className="text-4xl font-bold tracking-tighter">
+                          <Trans>Contact us</Trans>
                         </span>
-                        <span className="ml-1 text-sm text-muted-foreground tracking-tighter">
-                          <Trans>/month/user</Trans>
-                        </span>
-                      </div>
-                      <ul className="mt-6 space-y-3">
-                        {planDetails?.features.map((feature, index) => (
-                          <li
-                            key={index}
-                            className="flex items-center justify-start gap-2"
-                          >
-                            <span className="text-sm">{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                    <CardFooter>
-                      <VStack className="w-full">
+                      ) : (
+                        <>
+                          <span className="text-5xl font-bold tracking-tighter">
+                            {formatter.format(price)}
+                          </span>
+                          <span className="ml-1 text-sm text-muted-foreground tracking-tighter">
+                            <Trans>/month/user</Trans>
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    <ul className="mt-6 space-y-3">
+                      {planDetails?.features.map((feature, index) => (
+                        <li
+                          key={index}
+                          className="flex items-center justify-start gap-2"
+                        >
+                          <span className="text-sm">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                  <CardFooter>
+                    <VStack className="w-full">
+                      {SELF_SIGNUP_PLAN_IDS.includes(plan.id) ? (
                         <fetcher.Form method="post" className="w-full">
                           <input type="hidden" name="planId" value={plan.id} />
                           <Button
@@ -228,43 +259,29 @@ export default function OnboardingPlan() {
                               : t`Start Now`}
                           </Button>
                         </fetcher.Form>
+                      ) : null}
 
-                        {planDetails?.talkToSales ? (
-                          <Button
-                            leftIcon={<LuPhoneCall />}
-                            className="w-full"
-                            variant="secondary"
-                            asChild
+                      {planDetails?.talkToSales ? (
+                        <Button
+                          leftIcon={<LuPhoneCall />}
+                          className="w-full"
+                          variant="secondary"
+                          asChild
+                        >
+                          <a
+                            href="https://carbon.ms/sales"
+                            target="_blank"
+                            rel="noreferrer"
                           >
-                            <a
-                              href="https://carbon.ms/sales"
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              <Trans>Talk to Sales</Trans>
-                            </a>
-                          </Button>
-                        ) : (
-                          <Button
-                            leftIcon={<LuGraduationCap />}
-                            className="w-full"
-                            variant="secondary"
-                            asChild
-                          >
-                            <a
-                              href="https://learn.carbon.ms"
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              <Trans>Start Learning</Trans>
-                            </a>
-                          </Button>
-                        )}
-                      </VStack>
-                    </CardFooter>
-                  </Card>
-                );
-              })}
+                            <Trans>Talk to Sales</Trans>
+                          </a>
+                        </Button>
+                      ) : null}
+                    </VStack>
+                  </CardFooter>
+                </Card>
+              );
+            })}
           </div>
         </div>
       </div>

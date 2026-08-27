@@ -17,6 +17,7 @@ import {
   updateCompanySession
 } from "@carbon/auth/session.server";
 import { isAuditLogEnabled } from "@carbon/database/audit";
+import { getPlan } from "@carbon/ee/plan.server";
 import {
   detectImplementationSignals,
   getImplementationCheckStates,
@@ -159,6 +160,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     companies,
     employeeCompaniesResult,
     stripeCustomer,
+    plan,
     customFields,
     integrations,
     companySettings,
@@ -178,6 +180,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getCompanies(client, userId),
     getEmployeeCompanies(client, userId),
     getStripeCustomerByCompanyId(companyId, userId),
+    getPlan(client, companyId),
     getCustomFieldsSchemas(client, { companyId }),
     getCompanyIntegrations(client, companyId),
     getCompanySettings(client, companyId),
@@ -186,8 +189,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getUserClaims(userId, companyId),
     getUserGroups(client, userId),
     getUserDefaults(client, userId, companyId),
-    // Throws, unlike the {data, error} services around it — unguarded, a
-    // transient timeout on this flag 500s every page under /x.
     isAuditLogEnabled(client, companyId).catch(() => false),
     getModulePreferences(client, userId, companyId),
     getPrinterRoutes(client, companyId),
@@ -197,7 +198,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     itarCertificationPromise
   ]);
 
-  if (!claims || user.error || !user.data || !groups.data) {
+  // Empty groups is a valid pre-onboarding state (a first-run user with no
+  // company yet has zero memberships → groups is []), NOT an auth failure —
+  // logging out here made the `requiresOnboarding` redirect below unreachable.
+  // Only a genuine RPC error (groups.error) logs out.
+  if (!claims || user.error || !user.data || groups.error) {
     throw await destroyAuthSession(request);
   }
 
@@ -273,9 +278,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     customFields: customFields.data ?? [],
     defaults: defaults.data,
     integrations: integrations.data ?? [],
-    groups: groups.data,
+    groups: groups.data ?? [],
     permissions: claims?.permissions,
-    plan: stripeCustomer?.planId,
+    plan,
     role: claims?.role,
     user: user.data,
     modulePreferences: modulePreferences.data ?? [],

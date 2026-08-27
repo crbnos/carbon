@@ -179,6 +179,9 @@ msgstr "Bloccato da {0}"
 msgid "Blocking"
 msgstr "Bloccante"
 
+msgid "Board view"
+msgstr "Vista bacheca"
+
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "Ma non preoccuparti. Puoi utilizzare il flusso password dimenticata per richiedere un nuovo magic link."
 
@@ -521,6 +524,9 @@ msgstr "Termina {0}"
 msgid "Finish Anyways"
 msgstr "Termina comunque"
 
+msgid "Finish setting up your account"
+msgstr ""
+
 msgid "Finish with material unpicked?"
 msgstr "Terminare con il materiale non prelevato?"
 
@@ -529,6 +535,9 @@ msgstr "Hai dimenticato di timbrare l'uscita?"
 
 msgid "Go back to operation"
 msgstr "Torna all'operazione"
+
+msgid "Go to onboarding"
+msgstr ""
 
 msgid "How many were actually picked?"
 msgstr "Quanti sono stati effettivamente prelevati?"
@@ -641,6 +650,9 @@ msgstr "Costruiamo qualcosa"
 
 msgid "lines"
 msgstr "righe"
+
+msgid "List view"
+msgstr "Vista elenco"
 
 msgid "Loading item details..."
 msgstr "Caricamento dettagli articolo..."
@@ -870,6 +882,9 @@ msgstr "Nessuna registrazione oraria per questa settimana"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Nessun stock di magazzino è registrato per questo articolo. Puoi comunque prelevarlo — la giacenza disponibile diventerà negativa fino al riconciliamento del conteggio."
+
+msgid "No Work Center"
+msgstr "Nessun centro di lavoro"
 
 msgid "No work centers are blocked"
 msgstr "Nessun centro di lavoro bloccato"
@@ -1510,6 +1525,9 @@ msgstr "Ti sei connesso a <0/>. Puoi modificare l'orario di disconnessione di se
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Sei timbrato in ingresso da {hoursElapsed} ore. Hai dimenticato di timbrare l'uscita?"
+
+msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
+msgstr ""
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "La tua organizzazione richiede un'app di autenticazione. Configurala in Carbon, quindi torna qui."

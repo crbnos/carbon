@@ -110,11 +110,9 @@ There is no Save button. The builder saves as you work and reports its state nex
 
 **"Publish"** is all-or-nothing. Carbon validates the whole workflow — a trigger exists, no step loops back, every step is reachable, every required field is filled, every variable resolves and comes from upstream, every type lines up — and if anything is wrong, **nothing is written**. The problems appear in a panel headed **"3 problems — not published"**, and clicking one pans the canvas to the step it belongs to.
 
-<Callout type="warn" title="“Published” and “Active” are different switches">
-Publishing promotes a version to live **and** turns the workflow on. The **"Active"** switch, on the list and in the builder, is a separate kill switch: turning it off removes the workflow's trigger registrations so nothing fires, while leaving the published version in place. A workflow only runs when it is active *and* has a live version.
-</Callout>
+Publishing is also the only on/off switch there is. Whichever version you publish is the one that runs, and **"Unpublish"** — on the published version in the builder, or from a workflow's row menu on the list — stops the workflow entirely: its trigger registrations are removed so nothing fires. Nothing is deleted, so publishing a version again starts it back up. A workflow with nothing published reads as **Draft**.
 
-Publishing also freezes that version. The builder locks with *"This version is live. Create a new version to edit."* — to keep working, use the version menu to create a new version, which copies the live one and numbers it one higher. Older versions stay readable, and a run that is already in flight keeps using the version it started with even if you promote another one mid-run.
+Publishing also freezes that version. The builder locks with *"This version is published. Create a new version to edit."* — to keep working, use the version menu to create a new version, which copies the published one and numbers it one higher. Older versions stay readable, and a run that is already in flight keeps using the version it started with even if you publish another one mid-run.
 
 **Test run.** The trigger card has a **"Test run"** button, available to the workflow's owner. It executes for real, so anything it creates or sends actually happens, but the result is never written to run history: *"The result will not appear on the Runs page."*
 
@@ -126,7 +124,7 @@ Workflows have their own permission module, seeded from your existing settings a
 | --- | --- |
 | View | Open the list, the builder, and run history |
 | Create | Add a workflow, or create a new version of one |
-| Update | Edit, publish, rename, toggle active, test run |
+| Update | Edit, publish, unpublish, rename, test run |
 | Delete | Delete a workflow, its versions, and its run history |
 
 <Callout type="note" title="A workflow runs as its owner, not as whoever triggered it">

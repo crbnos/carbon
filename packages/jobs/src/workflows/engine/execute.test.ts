@@ -138,7 +138,7 @@ beforeEach(() => {
       eventId: "purchaseOrder.status.changed",
       status: "Queued"
     },
-    workflowActive: true,
+    workflowPublished: true,
     companyGroupId: "cg1",
     version: definition
   });

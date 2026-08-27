@@ -1551,6 +1551,7 @@
         "Someone is stuck on the setup screen and can't get in",
         "The Two-Factor column isn't in the employee list",
         "Turning enforcement on didn't prompt anyone",
+        "Nobody got the announcement email",
         "An admin can't turn enforcement off"
       ]
     },

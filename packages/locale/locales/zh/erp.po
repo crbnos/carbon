@@ -201,6 +201,9 @@ msgstr "{from}–{to} 共 {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} / {count} 条操作"
 
+msgid "{hiddenCount} more: {hiddenNames}"
+msgstr ""
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -351,8 +354,8 @@ msgstr "3小时"
 msgid "4h"
 msgstr "4小时"
 
-msgid "5 User Minimum"
-msgstr "5 个用户最少"
+msgid "5 user minimum"
+msgstr ""
 
 msgid "5-8 weeks"
 msgstr "5-8 周"
@@ -407,6 +410,9 @@ msgstr "消耗品是用于制造零件的物理项目，可以在多个工作中
 
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "承包商是具有特定能力和可用工作时间的供应商联系人"
+
+msgid "A custom solution to meet your needs"
+msgstr ""
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "客户是购买您的零件或服务的企业或个人。"
@@ -517,6 +523,12 @@ msgstr "在父项构建中获得自己的作业和路由的按单生产组件。
 
 msgid "A Make to Order component whose parts are issued together into the parent job — no separate build."
 msgstr "其零件一起发放到父项作业的按单生产组件——无单独构建。"
+
+msgid "A managed cloud-hosted version of Carbon"
+msgstr ""
+
+msgid "A managed version with all the advanced features"
+msgstr ""
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "材料是用于制造零件的物理项目，可以在多个工作中使用"
@@ -1388,6 +1400,9 @@ msgstr "所有账户"
 msgid "All actions selected"
 msgstr "所有操作已选中"
 
+msgid "All advanced features available"
+msgstr ""
+
 msgid "All Audit Logs"
 msgstr "所有审计日志"
 
@@ -1660,9 +1675,6 @@ msgstr "应付账款未结"
 msgid "AP Overdue"
 msgstr "应付账款逾期"
 
-msgid "API and Webhooks"
-msgstr "API 和 Webhooks"
-
 msgid "API Docs"
 msgstr "API 文档"
 
@@ -1680,6 +1692,9 @@ msgstr "API 密钥"
 
 msgid "API keys for programmatic access to your Carbon data."
 msgstr "用于以编程方式访问您的 Carbon 数据的 API 密钥。"
+
+msgid "API, webhooks, and integrations"
+msgstr ""
 
 msgid "Applied"
 msgstr "已应用"
@@ -2389,6 +2404,9 @@ msgstr "属性继承自工序。"
 msgid "Audit Log"
 msgstr "审计日志"
 
+msgid "Audit logging"
+msgstr ""
+
 msgid "Audit Logging"
 msgstr "审计日志"
 
@@ -2460,6 +2478,9 @@ msgstr "自动提前期更新"
 
 msgid "Automatic Updates"
 msgstr "自动更新"
+
+msgid "Automatic updates and backups"
+msgstr ""
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "报告输出时，自动按比例消耗工作的未跟踪材料—跟踪的材料手动发出。"
@@ -2563,6 +2584,9 @@ msgstr "基础货币"
 
 msgid "Base Price"
 msgstr "基础价格"
+
+msgid "Basic ERP, MES, and QMS functionality"
+msgstr ""
 
 msgid "Basic Information"
 msgstr "基本信息"
@@ -2725,8 +2749,8 @@ msgstr "导入您的零件、物料清单、工艺流程和成本——使用 Ca
 msgid "Browse library"
 msgstr "浏览库"
 
-msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
-msgstr "以只读方式浏览实时版本。您仍然可以重新排列步骤以整理布局。"
+msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
+msgstr ""
 
 msgid "Bucket"
 msgstr "存储桶"
@@ -3287,11 +3311,11 @@ msgstr "结余"
 msgid "Closure blocked"
 msgstr "关闭被阻止"
 
-msgid "Cloud-Hosted"
-msgstr "云托管"
-
 msgid "Cloud, or your self-hosted environment."
 msgstr "云端或您自托管的环境。"
+
+msgid "CMMC compliant"
+msgstr ""
 
 msgid "Code"
 msgstr "代码"
@@ -3352,6 +3376,9 @@ msgstr "为每个领域指定一名冠军用户"
 
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "提交收据、发货或发票: 数量移动、日记账分录到达分类账、状态变为已过帐。"
+
+msgid "Community support"
+msgstr ""
 
 msgid "Companies"
 msgstr "公司"
@@ -3648,6 +3675,9 @@ msgstr "联系人"
 
 msgid "Contact (optional)"
 msgstr "联系人（可选）"
+
+msgid "Contact us"
+msgstr ""
 
 msgid "contacts"
 msgstr "联系人"
@@ -4541,6 +4571,9 @@ msgstr "客户"
 
 msgid "Customers"
 msgstr "客户"
+
+msgid "Customizations, training, and integrations"
+msgstr ""
 
 msgid "Customize"
 msgstr "自定义"
@@ -6268,9 +6301,6 @@ msgstr "累积利润或亏损的股权账户"
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "货币转换调整 (CTA) 的股权账户"
 
-msgid "ERP, MES, QMS"
-msgstr "ERP, MES, QMS"
-
 msgid "Error"
 msgstr "错误"
 
@@ -6405,9 +6435,6 @@ msgstr "其他所有内容"
 
 msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
 msgstr "其他所有内容涵盖人员、导入、集成和 API — 任何不属于您的工作流的内容。"
-
-msgid "Everything from Starter"
-msgstr "Starter 中的所有功能"
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "超过 {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB 总限制 — 请删除一些附件以发送。"
@@ -7174,12 +7201,6 @@ msgstr "标志"
 msgid "for anything. They'll pull in the right person."
 msgstr "用于任何事情。他们会找到合适的人。"
 
-msgid "For growing businesses that need support"
-msgstr "适合需要支持的成长型企业"
-
-msgid "For US companies handling ITAR data"
-msgstr "适用于处理ITAR数据的美国公司"
-
 msgid "Forecast"
 msgstr "预测"
 
@@ -7192,6 +7213,9 @@ msgstr "忘记打卡下班了？"
 
 msgid "Format"
 msgstr "格式"
+
+msgid "Forward deployed engineer"
+msgstr ""
 
 msgid "Foundation"
 msgstr "基础"
@@ -7251,6 +7275,9 @@ msgstr "履行地点"
 
 msgid "Full name"
 msgstr "全名"
+
+msgid "Full setup and migrations"
+msgstr ""
 
 msgid "Fully Depreciated"
 msgstr "完全折旧"
@@ -7880,9 +7907,6 @@ msgstr "实施中心"
 msgid "Implementation Lead"
 msgstr "实施主管"
 
-msgid "Implementation Support"
-msgstr "实施支持"
-
 msgid "Import {label} CSV"
 msgstr "导入 {label} CSV"
 
@@ -8379,6 +8403,9 @@ msgstr "签发日期"
 msgid "Issues"
 msgstr "问题"
 
+msgid "It will stop running until you publish a version again. Nothing is deleted."
+msgstr ""
+
 msgid "ITAR Certifications"
 msgstr "ITAR 认证"
 
@@ -8747,6 +8774,9 @@ msgstr "更少的手动工作，更少的错误"
 msgid "Less overtime"
 msgstr "较少加班"
 
+msgid "Let's Build"
+msgstr ""
+
 msgid "Let's build something"
 msgstr "让我们构建一些东西"
 
@@ -8862,17 +8892,11 @@ msgstr "列表参数"
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
 msgstr "列表同时连接到{0}和{1}，因此此步骤无法判断要在哪一个上重复。仅在其中一个上保留列表。"
 
-msgid "Live"
-msgstr "实时"
-
 msgid "Live on Carbon"
 msgstr "在 Carbon 上线"
 
 msgid "Live reloading"
 msgstr "实时重新加载"
-
-msgid "Live Version"
-msgstr "实时版本"
 
 msgid "Load"
 msgstr "负荷"
@@ -8942,9 +8966,6 @@ msgstr "已锁定"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "锁定使期间对于业务单据（收据、装运、发票）为只读，同时仍允许进行折旧和处置等会计调整。期间在结束前必须被锁定。"
-
-msgid "Log In"
-msgstr "登录"
 
 msgid "Log nonconformances and drive a CAPA"
 msgstr "记录不符合项并推动纠正和预防措施"
@@ -11418,9 +11439,6 @@ msgstr "百分比"
 msgid "Percentage of Lot"
 msgstr "批次百分比"
 
-msgid "Perfect for low-cost evaluation"
-msgstr "非常适合低成本评估"
-
 msgid "Period"
 msgstr "期间"
 
@@ -12060,6 +12078,9 @@ msgstr "已发布"
 
 msgid "Published by Carbon"
 msgstr "由 Carbon 发布"
+
+msgid "Published Version"
+msgstr ""
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "已发布的版本无法编辑。以只读方式浏览，或创建新版本以进行更改。"
@@ -13983,8 +14004,11 @@ msgstr "已选择: {selectedSum} / 分割后剩余: {0}"
 msgid "Self Managed"
 msgstr "自我管理"
 
-msgid "Self-Onboarding with Carbon Academy"
-msgstr "使用 Carbon Academy 自助入门"
+msgid "Self-hosted or managed"
+msgstr ""
+
+msgid "Self-onboarding"
+msgstr ""
 
 msgid "Self-paced"
 msgstr "自主学习"
@@ -14411,6 +14435,9 @@ msgstr "作为淡色背景显示在每个生成的PDF页面后面"
 msgid "Shown to the user when this rule fails."
 msgstr "当此规则失败时向用户显示。"
 
+msgid "Sign in to Carbon"
+msgstr ""
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "使用生物识别而不是魔法链接登录。密钥由 Face ID、Touch ID 或您的设备 PIN 保护。"
 
@@ -14618,6 +14645,9 @@ msgstr "拆分收据行"
 msgid "Split shipment line"
 msgstr "拆分发货行"
 
+msgid "SSO/SAML"
+msgstr ""
+
 msgid "Staffing optional"
 msgstr ""
 
@@ -14672,9 +14702,6 @@ msgstr "在流程开始时开始过期"
 
 msgid "Start Here"
 msgstr "从这里开始"
-
-msgid "Start Learning"
-msgstr "开始学习"
 
 msgid "Start Now"
 msgstr "立即开始"
@@ -15325,6 +15352,9 @@ msgstr "税"
 
 msgid "Team trained"
 msgstr "团队已培训"
+
+msgid "Technical support"
+msgstr ""
 
 msgid "Temperature"
 msgstr "温度"
@@ -16356,11 +16386,11 @@ msgstr "此版本属于变更通知<0>{0}</0>。请在那里编辑。"
 msgid "This version cannot be opened"
 msgstr "无法打开此版本"
 
-msgid "This version is live"
-msgstr "此版本已上线"
+msgid "This version is published"
+msgstr ""
 
-msgid "This version is live. Create a new version to edit."
-msgstr "此版本处于实时状态。创建新版本进行编辑。"
+msgid "This version is published. Create a new version to edit."
+msgstr ""
 
 msgid "This version's definition could not be read."
 msgstr "无法读取此版本的定义。"
@@ -16926,8 +16956,11 @@ msgstr "未知错误"
 msgid "unknown location"
 msgstr "未知位置"
 
-msgid "Unlimited Functional Support"
-msgstr "无限功能支持"
+msgid "Unlimited functional support"
+msgstr ""
+
+msgid "Unlimited records"
+msgstr ""
 
 msgid "Unlink"
 msgstr "取消链接"
@@ -16970,6 +17003,12 @@ msgstr "取消固定{0}"
 
 msgid "Unposted Documents"
 msgstr "未过账单据"
+
+msgid "Unpublish"
+msgstr ""
+
+msgid "Unpublish {name}?"
+msgstr ""
 
 msgid "Unreceived POs"
 msgstr "未收到的采购订单"
@@ -17337,9 +17376,9 @@ msgstr "验证您的电子邮件"
 msgid "Version"
 msgstr "版本"
 
-#. placeholder {0}: live.versionNumber
-msgid "Version {0} is live now and will be replaced."
-msgstr "版本 {0} 现已上线，将被替换。"
+#. placeholder {0}: published.versionNumber
+msgid "Version {0} is published now and will be replaced."
+msgstr ""
 
 msgid "Version:"
 msgstr "版本："
@@ -18261,6 +18300,9 @@ msgstr "你收到了这批货"
 
 msgid "You're live on Carbon"
 msgstr "您已在 Carbon 上线"
+
+msgid "You're one step away from your workspace."
+msgstr ""
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "您正在按照自己的节奏自行设置 Carbon"

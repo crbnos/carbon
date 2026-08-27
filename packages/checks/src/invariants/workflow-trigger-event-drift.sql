@@ -1,22 +1,22 @@
--- invariant: an active workflow's workflowTriggerEvent rows equal the event ids
--- on its active version's trigger nodes; returns violating rows (none = healthy)
-WITH active AS (
+-- invariant: a published workflow's workflowTriggerEvent rows equal the event ids
+-- on its published version's trigger nodes; returns violating rows (none = healthy)
+WITH published AS (
     SELECT w."id" AS "workflowId",
            w."companyId",
-           w."activeVersionId",
+           w."publishedVersionId",
            v."nodes"
     FROM "workflow" w
     JOIN "workflowVersion" v
-        ON v."id" = w."activeVersionId"
+        ON v."id" = w."publishedVersionId"
        AND v."companyId" = w."companyId"
-    WHERE w."active" = TRUE
+    WHERE w."publishedVersionId" IS NOT NULL
 ),
 declared AS (
     SELECT a."workflowId",
            a."companyId",
-           a."activeVersionId",
+           a."publishedVersionId",
            e AS "eventId"
-    FROM active a,
+    FROM published a,
          LATERAL jsonb_array_elements(a."nodes") n,
          LATERAL jsonb_array_elements_text(n -> 'data' -> 'events') e
     WHERE n ->> 'type' = 'trigger'
@@ -33,7 +33,7 @@ WHERE t."eventId" IS NULL
 UNION ALL
 
 SELECT t."workflowId", t."companyId", t."eventId",
-       'dispatch row with no matching trigger node on an active, promoted version' AS "violation"
+       'dispatch row with no matching trigger node on a published version' AS "violation"
 FROM "workflowTriggerEvent" t
 LEFT JOIN declared d
     ON d."workflowId" = t."workflowId"
@@ -44,10 +44,10 @@ WHERE d."eventId" IS NULL
 UNION ALL
 
 SELECT t."workflowId", t."companyId", t."eventId",
-       'dispatch row points at a version that is no longer the active one' AS "violation"
+       'dispatch row points at a version that is no longer the published one' AS "violation"
 FROM "workflowTriggerEvent" t
 JOIN declared d
     ON d."workflowId" = t."workflowId"
    AND d."companyId" = t."companyId"
    AND d."eventId" = t."eventId"
-WHERE t."workflowVersionId" <> d."activeVersionId";
+WHERE t."workflowVersionId" <> d."publishedVersionId";

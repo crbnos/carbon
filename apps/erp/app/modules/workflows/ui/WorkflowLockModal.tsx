@@ -22,7 +22,7 @@ type WorkflowLockModalProps = {
 };
 
 /**
- * Shown when the open version is the live one. Replaces the old inline warning banner:
+ * Shown when the open version is the published one. Replaces the old inline warning banner:
  * opening a published version is a fork in the road, so we ask once which way to go —
  * keep reading the read-only canvas, or branch a version you can edit. Dismissing (the X,
  * the overlay, or "View the workflow") lands on the read-only canvas; the header lock glyph
@@ -60,7 +60,7 @@ const WorkflowLockModal = ({
       <ModalContent size="small">
         <ModalHeader>
           <ModalTitle>
-            <Trans>This version is live</Trans>
+            <Trans>This version is published</Trans>
           </ModalTitle>
           <ModalDescription>
             <Trans>
@@ -83,7 +83,7 @@ const WorkflowLockModal = ({
               <span className="flex flex-1 flex-col gap-0.5">
                 <span className="text-sm font-medium">{t`View the workflow`}</span>
                 <span className="text-xs leading-snug text-muted-foreground">
-                  {t`Browse the live version read-only. You can still rearrange steps to tidy the layout.`}
+                  {t`Browse the published version read-only. You can still rearrange steps to tidy the layout.`}
                 </span>
               </span>
               <LuChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />

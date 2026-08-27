@@ -72,7 +72,7 @@ function seed(eventId: string, definition: SeedDefinition): void {
       eventId,
       status: "Queued"
     },
-    workflowActive: true,
+    workflowPublished: true,
     companyGroupId: "cg1",
     version: definition
   });

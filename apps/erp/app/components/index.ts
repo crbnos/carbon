@@ -48,6 +48,7 @@ import SearchFilter from "./SearchFilter";
 import { SearchLandingPage } from "./SearchLandingPage";
 import Select from "./Select";
 import SupplierAvatar from "./SupplierAvatar";
+import SupplierAvatarGroup from "./SupplierAvatarGroup";
 import Table, { exportOnlyColumn } from "./Table";
 import { VersionMenu } from "./VersionMenu";
 
@@ -98,6 +99,7 @@ export {
   Select,
   SourcingTypeIcon,
   SupplierAvatar,
+  SupplierAvatarGroup,
   Table,
   TimeTypeIcon,
   TrackingTypeIcon,

@@ -201,6 +201,9 @@ msgstr "{from}–{to} / {count}"
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}～{to}件 (合計{count}件の操作)"
 
+msgid "{hiddenCount} more: {hiddenNames}"
+msgstr ""
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -351,8 +354,8 @@ msgstr "3時間"
 msgid "4h"
 msgstr "4時間"
 
-msgid "5 User Minimum"
-msgstr "5ユーザー最小"
+msgid "5 user minimum"
+msgstr ""
 
 msgid "5-8 weeks"
 msgstr "5～8週間"
@@ -407,6 +410,9 @@ msgstr "消耗品は、複数のジョブで使用できるパーツを作成す
 
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "契約者は、特定の能力と利用可能な時間を持つサプライヤー連絡先です"
+
+msgid "A custom solution to meet your needs"
+msgstr ""
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "顧客とは、あなたの部品またはサービスを購入する企業または個人です。"
@@ -517,6 +523,12 @@ msgstr "親のビルド内で独自のジョブとルーティングを取得す
 
 msgid "A Make to Order component whose parts are issued together into the parent job — no separate build."
 msgstr "その部品が親ジョブに一緒に発行される受注製造コンポーネント—別のビルドはありません。"
+
+msgid "A managed cloud-hosted version of Carbon"
+msgstr ""
+
+msgid "A managed version with all the advanced features"
+msgstr ""
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "材料は、複数のジョブで使用できるパーツを作成するために使用される物理的なアイテムです"
@@ -1388,6 +1400,9 @@ msgstr "すべてのアカウント"
 msgid "All actions selected"
 msgstr "すべてのアクションが選択されました"
 
+msgid "All advanced features available"
+msgstr ""
+
 msgid "All Audit Logs"
 msgstr "すべての監査ログ"
 
@@ -1660,9 +1675,6 @@ msgstr "AP未払金"
 msgid "AP Overdue"
 msgstr "AP 期限超過"
 
-msgid "API and Webhooks"
-msgstr "APIとWebhooks"
-
 msgid "API Docs"
 msgstr "API ドキュメント"
 
@@ -1680,6 +1692,9 @@ msgstr "APIキー"
 
 msgid "API keys for programmatic access to your Carbon data."
 msgstr "Carbonデータへのプログラマティックアクセス用のAPIキー。"
+
+msgid "API, webhooks, and integrations"
+msgstr ""
 
 msgid "Applied"
 msgstr "適用"
@@ -2389,6 +2404,9 @@ msgstr "属性は手順から継承されます。"
 msgid "Audit Log"
 msgstr "監査ログ"
 
+msgid "Audit logging"
+msgstr ""
+
 msgid "Audit Logging"
 msgstr "監査ログ"
 
@@ -2460,6 +2478,9 @@ msgstr "自動リードタイム更新"
 
 msgid "Automatic Updates"
 msgstr "自動更新"
+
+msgid "Automatic updates and backups"
+msgstr ""
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "出力が報告されるとジョブの追跡されていない材料の自動的な比例消費。追跡された材料は手動で発行されます。"
@@ -2563,6 +2584,9 @@ msgstr "基本通貨"
 
 msgid "Base Price"
 msgstr "基本価格"
+
+msgid "Basic ERP, MES, and QMS functionality"
+msgstr ""
 
 msgid "Basic Information"
 msgstr "基本情報"
@@ -2725,8 +2749,8 @@ msgstr "パーツ、BOM、Bill of Process、原価計算をインポートして
 msgid "Browse library"
 msgstr "ライブラリを参照"
 
-msgid "Browse the live version read-only. You can still rearrange steps to tidy the layout."
-msgstr "ライブバージョンを読み取り専用で参照できます。ステップを並べ替えてレイアウトを整理することもできます。"
+msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
+msgstr ""
 
 msgid "Bucket"
 msgstr "バケット"
@@ -3287,11 +3311,11 @@ msgstr "終了残高"
 msgid "Closure blocked"
 msgstr "完了がブロックされています"
 
-msgid "Cloud-Hosted"
-msgstr "クラウドホスト"
-
 msgid "Cloud, or your self-hosted environment."
 msgstr "クラウド、またはセルフホストされた環境。"
+
+msgid "CMMC compliant"
+msgstr ""
 
 msgid "Code"
 msgstr "コード"
@@ -3352,6 +3376,9 @@ msgstr "各エリアのチャンピオンユーザーをコミットする"
 
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "領収書、出荷、または請求書のコミット: 数量が移動し、仕訳帳エントリが元帳に記載され、ステータスが投稿されます。"
+
+msgid "Community support"
+msgstr ""
 
 msgid "Companies"
 msgstr "企業"
@@ -3648,6 +3675,9 @@ msgstr "連絡先"
 
 msgid "Contact (optional)"
 msgstr "連絡先（オプション）"
+
+msgid "Contact us"
+msgstr ""
 
 msgid "contacts"
 msgstr "連絡先"
@@ -4541,6 +4571,9 @@ msgstr "顧客"
 
 msgid "Customers"
 msgstr "顧客"
+
+msgid "Customizations, training, and integrations"
+msgstr ""
 
 msgid "Customize"
 msgstr "カスタマイズ"
@@ -6268,9 +6301,6 @@ msgstr "蓄積利益または損失の資本勘定"
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "為替換算調整 (CTA) の資本勘定"
 
-msgid "ERP, MES, QMS"
-msgstr "ERP、MES、QMS"
-
 msgid "Error"
 msgstr "エラー"
 
@@ -6405,9 +6435,6 @@ msgstr "その他すべて"
 
 msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
 msgstr "その他すべてには、人、インポート、統合、およびAPI（ワークフローの1つではないもの）が含まれます。"
-
-msgid "Everything from Starter"
-msgstr "スターターのすべての機能"
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "{PO_EMAIL_ATTACHMENT_LIMIT_MB} MB を超えています — 送信するには添付ファイルを削除してください。"
@@ -7174,12 +7201,6 @@ msgstr "フラグ"
 msgid "for anything. They'll pull in the right person."
 msgstr "何でも構いません。彼らが適切な人を連れてきます。"
 
-msgid "For growing businesses that need support"
-msgstr "成長中のビジネスをサポートするために"
-
-msgid "For US companies handling ITAR data"
-msgstr "ITAR データを扱う米国企業向け"
-
 msgid "Forecast"
 msgstr "予測"
 
@@ -7192,6 +7213,9 @@ msgstr "時刻記録を忘れましたか？"
 
 msgid "Format"
 msgstr "フォーマット"
+
+msgid "Forward deployed engineer"
+msgstr ""
 
 msgid "Foundation"
 msgstr "基礎"
@@ -7251,6 +7275,9 @@ msgstr "履行場所"
 
 msgid "Full name"
 msgstr "氏名"
+
+msgid "Full setup and migrations"
+msgstr ""
 
 msgid "Fully Depreciated"
 msgstr "完全償却済み"
@@ -7880,9 +7907,6 @@ msgstr "実装ハブ"
 msgid "Implementation Lead"
 msgstr "実装リード"
 
-msgid "Implementation Support"
-msgstr "実装サポート"
-
 msgid "Import {label} CSV"
 msgstr "{label} CSV をインポート"
 
@@ -8379,6 +8403,9 @@ msgstr "発行日"
 msgid "Issues"
 msgstr "問題"
 
+msgid "It will stop running until you publish a version again. Nothing is deleted."
+msgstr ""
+
 msgid "ITAR Certifications"
 msgstr "ITAR認定"
 
@@ -8747,6 +8774,9 @@ msgstr "手作業を減らし、エラーを削減"
 msgid "Less overtime"
 msgstr "残業を減らす"
 
+msgid "Let's Build"
+msgstr ""
+
 msgid "Let's build something"
 msgstr "何か作ってみましょう"
 
@@ -8862,17 +8892,11 @@ msgstr "リストパラメータ"
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
 msgstr "リストが{0}と{1}の両方に接続されています。そのため、このステップはどちらを繰り返すべきかを判断できません。リストはそのうちの1つにのみ残してください。"
 
-msgid "Live"
-msgstr "ライブ"
-
 msgid "Live on Carbon"
 msgstr "Carbonで稼働中"
 
 msgid "Live reloading"
 msgstr "ライブリロード中"
-
-msgid "Live Version"
-msgstr "ライブバージョン"
 
 msgid "Load"
 msgstr "負荷"
@@ -8942,9 +8966,6 @@ msgstr "ロック済み"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "ロックにより、当期は運用書類（受領書、出荷、請求書）に対して読み取り専用になりますが、減価償却や処分などの会計調整は引き続き可能です。期間は終了する前にロックする必要があります。"
-
-msgid "Log In"
-msgstr "ログイン"
 
 msgid "Log nonconformances and drive a CAPA"
 msgstr "不適合を記録し、是正予防処置を実施する"
@@ -11418,9 +11439,6 @@ msgstr "パーセンテージ"
 msgid "Percentage of Lot"
 msgstr "ロットの割合"
 
-msgid "Perfect for low-cost evaluation"
-msgstr "低コスト評価に最適"
-
 msgid "Period"
 msgstr "期間"
 
@@ -12060,6 +12078,9 @@ msgstr "公開済み"
 
 msgid "Published by Carbon"
 msgstr "Carbonによって公開"
+
+msgid "Published Version"
+msgstr ""
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "公開済みバージョンは編集できません。読み取り専用で参照するか、新しいバージョンをブランチして変更してください。"
@@ -13983,8 +14004,11 @@ msgstr "選択済み: {selectedSum} / 分割後の残数: {0}"
 msgid "Self Managed"
 msgstr "自己管理"
 
-msgid "Self-Onboarding with Carbon Academy"
-msgstr "Carbon Academyによるセルフオンボーディング"
+msgid "Self-hosted or managed"
+msgstr ""
+
+msgid "Self-onboarding"
+msgstr ""
 
 msgid "Self-paced"
 msgstr "自習型"
@@ -14411,6 +14435,9 @@ msgstr "生成されたPDFの各ページの背景に薄く表示されます"
 msgid "Shown to the user when this rule fails."
 msgstr "このルールが失敗したときにユーザーに表示されます。"
 
+msgid "Sign in to Carbon"
+msgstr ""
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "マジックリンクの代わりに生体認証でサインインします。パスキーはFace ID、Touch ID、またはデバイスPINで保護されます。"
 
@@ -14618,6 +14645,9 @@ msgstr "領収書行を分割"
 msgid "Split shipment line"
 msgstr "出荷ラインを分割"
 
+msgid "SSO/SAML"
+msgstr ""
+
 msgid "Staffing optional"
 msgstr ""
 
@@ -14672,9 +14702,6 @@ msgstr "プロセス開始時に有効期限を開始"
 
 msgid "Start Here"
 msgstr "ここから始める"
-
-msgid "Start Learning"
-msgstr "学習を開始"
 
 msgid "Start Now"
 msgstr "今すぐ開始"
@@ -15325,6 +15352,9 @@ msgstr "税金"
 
 msgid "Team trained"
 msgstr "チームが訓練を受けた"
+
+msgid "Technical support"
+msgstr ""
 
 msgid "Temperature"
 msgstr "温度"
@@ -16356,11 +16386,11 @@ msgstr "このバージョンは変更通知<0>{0}</0>に属しています。�
 msgid "This version cannot be opened"
 msgstr "このバージョンは開くことができません"
 
-msgid "This version is live"
-msgstr "このバージョンはライブです"
+msgid "This version is published"
+msgstr ""
 
-msgid "This version is live. Create a new version to edit."
-msgstr "このバージョンはライブです。編集するには新しいバージョンを作成してください。"
+msgid "This version is published. Create a new version to edit."
+msgstr ""
 
 msgid "This version's definition could not be read."
 msgstr "このバージョンの定義を読み取ることができませんでした。"
@@ -16926,8 +16956,11 @@ msgstr "不明なエラー"
 msgid "unknown location"
 msgstr "不明な場所"
 
-msgid "Unlimited Functional Support"
-msgstr "無制限の機能サポート"
+msgid "Unlimited functional support"
+msgstr ""
+
+msgid "Unlimited records"
+msgstr ""
 
 msgid "Unlink"
 msgstr "リンク解除"
@@ -16970,6 +17003,12 @@ msgstr "{0}をピン留め解除"
 
 msgid "Unposted Documents"
 msgstr "未転記書類"
+
+msgid "Unpublish"
+msgstr ""
+
+msgid "Unpublish {name}?"
+msgstr ""
 
 msgid "Unreceived POs"
 msgstr "未受領PO"
@@ -17337,9 +17376,9 @@ msgstr "メールアドレスを確認"
 msgid "Version"
 msgstr "バージョン"
 
-#. placeholder {0}: live.versionNumber
-msgid "Version {0} is live now and will be replaced."
-msgstr "バージョン {0} は現在ライブであり、置き換えられます。"
+#. placeholder {0}: published.versionNumber
+msgid "Version {0} is published now and will be replaced."
+msgstr ""
 
 msgid "Version:"
 msgstr "バージョン:"
@@ -18261,6 +18300,9 @@ msgstr "このロットを受け取りました"
 
 msgid "You're live on Carbon"
 msgstr "Carbonで本番稼働中です"
+
+msgid "You're one step away from your workspace."
+msgstr ""
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "あなた自身のペースでCarbonをセットアップしています"

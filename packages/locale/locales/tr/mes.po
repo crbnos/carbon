@@ -179,6 +179,9 @@ msgstr "Engelli edildi: {0}"
 msgid "Blocking"
 msgstr "Bloklayıcı"
 
+msgid "Board view"
+msgstr "Pano görünümü"
+
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "Ama endişelenmeyin. Yeni bir sihirli bağlantı talep etmek için şifremi unuttum akışını kullanabilirsiniz."
 
@@ -521,6 +524,9 @@ msgstr "Bitir {0}"
 msgid "Finish Anyways"
 msgstr "Yine de Bitir"
 
+msgid "Finish setting up your account"
+msgstr ""
+
 msgid "Finish with material unpicked?"
 msgstr "Malzeme seçilmeden bitir?"
 
@@ -529,6 +535,9 @@ msgstr "Çıkış yapmayı unuttunuz mu?"
 
 msgid "Go back to operation"
 msgstr "İşleme geri dön"
+
+msgid "Go to onboarding"
+msgstr ""
 
 msgid "How many were actually picked?"
 msgstr "Gerçekte kaç tane alındı?"
@@ -641,6 +650,9 @@ msgstr "Bir şeyler inşa edelim"
 
 msgid "lines"
 msgstr "satırlar"
+
+msgid "List view"
+msgstr "Liste görünümü"
 
 msgid "Loading item details..."
 msgstr "Ürün detayları yükleniyor..."
@@ -870,6 +882,9 @@ msgstr "Bu hafta için zaman girişi yok"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Bu ürün için depoda kayıtlı stok bulunmamaktadır. Sayım yeniden yapılana kadar eldeki stok negatif olabilir, ancak yine de alabilirsiniz."
+
+msgid "No Work Center"
+msgstr "İş merkezi yok"
 
 msgid "No work centers are blocked"
 msgstr "Bloke edilmiş iş merkezi yok"
@@ -1510,6 +1525,9 @@ msgstr "Saat <0/>'te kaydedildiniz. Aşağıda çıkış saatinizi düzenleyebil
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Ne kadar süredir giriş yaptınız? Çıkış yapmayı unuttunuz mu?"
+
+msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
+msgstr ""
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Kuruluşunuz bir kimlik doğrulama uygulaması gerektirir. Bunu Carbon'da ayarlayın, ardından buraya geri dönün."

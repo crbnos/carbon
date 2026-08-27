@@ -179,6 +179,9 @@ msgstr "{0} によりブロック中"
 msgid "Blocking"
 msgstr "ブロック中"
 
+msgid "Board view"
+msgstr "ボード表示"
+
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "ご心配なく。パスワード忘却フローを使用して新しいマジックリンクをリクエストできます。"
 
@@ -521,6 +524,9 @@ msgstr "完了 {0}"
 msgid "Finish Anyways"
 msgstr "とにかく完了"
 
+msgid "Finish setting up your account"
+msgstr ""
+
 msgid "Finish with material unpicked?"
 msgstr "材料がピッキングされていない状態で終了しますか?"
 
@@ -529,6 +535,9 @@ msgstr "退勤打刻を忘れましたか？"
 
 msgid "Go back to operation"
 msgstr "操作に戻る"
+
+msgid "Go to onboarding"
+msgstr ""
 
 msgid "How many were actually picked?"
 msgstr "実際にはいくつ選ばれましたか？"
@@ -641,6 +650,9 @@ msgstr "さあ、何かを作りましょう"
 
 msgid "lines"
 msgstr "行"
+
+msgid "List view"
+msgstr "リスト表示"
 
 msgid "Loading item details..."
 msgstr "品目詳細を読み込み中..."
@@ -870,6 +882,9 @@ msgstr "今週のタイムエントリーはありません"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "このアイテムの倉庫在庫は記録されていません。それでも選択できます。在庫数が負になるまで、実在庫は負のままになります。"
+
+msgid "No Work Center"
+msgstr "作業区未設定"
 
 msgid "No work centers are blocked"
 msgstr "ブロックされているワークセンターはありません"
@@ -1510,6 +1525,9 @@ msgstr "あなたは<0/>にクロックインしました。下記でクロッ�
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "{hoursElapsed} 時間出勤中です。退勤打刻を忘れていませんか？"
+
+msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
+msgstr ""
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "あなたの組織は認証器アプリが必要です。Carbonで設定してから、ここに戻ってください。"
