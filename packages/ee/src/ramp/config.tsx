@@ -201,32 +201,63 @@ export const Ramp = defineIntegration({
 });
 
 function SetupInstructions({ companyId }: { companyId: string }) {
-  const webhookUrl = isBrowser
-    ? `${window.location.origin}/api/webhook/ramp/${companyId}`
-    : "";
+  const origin = isBrowser ? window.location.origin : "";
+  const webhookUrl = origin ? `${origin}/api/webhook/ramp/${companyId}` : "";
   return (
-    <>
-      <p className="text-sm text-muted-foreground">
-        1. In Ramp under Settings → Developer API, create an API client with the
-        accounting, transactions, bills, reimbursements, and vendors scopes.
-        Paste its Client ID and Client Secret below and choose the matching
-        environment.
-      </p>
-      <p className="mt-3 text-sm text-muted-foreground">
-        2. Map the GL accounts under Accounts so card charges, statement
-        payments, cashback, and reimbursements post to the right places.
-      </p>
-      <p className="mt-3 text-sm text-muted-foreground">
-        3. Ramp notifies Carbon of new activity through a webhook pointed at the
-        URL below. It is registered automatically when you connect.
-      </p>
-      <InputGroup className="mb-8">
-        <Input value={webhookUrl} />
+    <div className="text-sm text-muted-foreground">
+      <ol className="list-decimal space-y-3 pl-4">
+        <li>
+          <span className="font-medium text-foreground">
+            Create a Ramp API client.
+          </span>{" "}
+          In Ramp go to Settings → Developer API → Create app and choose the{" "}
+          <span className="font-medium">
+            server-to-server (client credentials)
+          </span>{" "}
+          grant. Under Set scopes, enable the accounting, transactions, bills,
+          reimbursements, transfers, cashbacks, receipts, statements, entities,
+          vendors, purchase-orders, and business scopes (read, plus write for
+          accounting, bills, vendors, and purchase orders) — the simplest is to
+          use <span className="font-medium">Enable all</span>.
+        </li>
+        <li>
+          <span className="font-medium text-foreground">
+            Connect the client.
+          </span>{" "}
+          Paste the Client ID and Client Secret into the fields below and set{" "}
+          <span className="font-medium">Environment</span> to match your Ramp
+          app (Sandbox → demo-api.ramp.com, Production → api.ramp.com). Ramp's{" "}
+          <span className="font-medium">Redirect URI</span> and{" "}
+          <span className="font-medium">Allowed origins</span> are only used by
+          the browser OAuth flow, which Carbon doesn't use — leave them blank
+          (or set them to this Carbon URL if Ramp requires a value).
+        </li>
+        <li>
+          <span className="font-medium text-foreground">
+            Map the GL accounts
+          </span>{" "}
+          under Accounts so card charges, statement payments, cashback, and
+          reimbursements post to the right places.
+        </li>
+        <li>
+          <span className="font-medium text-foreground">
+            Webhook (registered automatically).
+          </span>{" "}
+          On connect, Carbon registers the endpoint below with Ramp so new
+          activity syncs in near-real-time. Ramp must be able to reach it over
+          the public internet — for local development, expose Carbon with a
+          tunnel (e.g. ngrok) and point your app URL at that tunnel. If the URL
+          isn't publicly reachable, the hourly sync still keeps everything up to
+          date.
+        </li>
+      </ol>
+      <InputGroup className="mb-8 mt-4">
+        <Input value={webhookUrl} readOnly />
         <InputRightElement>
           <Copy text={webhookUrl} />
         </InputRightElement>
       </InputGroup>
-    </>
+    </div>
   );
 }
 

@@ -9264,6 +9264,9 @@ msgstr "नेटिव CAD एकीकरण (उदाहरण के लि
 msgid "Navigate"
 msgstr "नेविगेट करें"
 
+msgid "Navigation"
+msgstr ""
+
 msgid "NCRs by Type"
 msgstr "प्रकार के अनुसार NCR"
 

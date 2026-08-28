@@ -9264,6 +9264,9 @@ msgstr "Native CAD integration (for example Onshape)"
 msgid "Navigate"
 msgstr "Navigate"
 
+msgid "Navigation"
+msgstr "Navigation"
+
 msgid "NCRs by Type"
 msgstr "NCRs by Type"
 
