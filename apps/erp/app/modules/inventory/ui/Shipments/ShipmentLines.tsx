@@ -647,6 +647,15 @@ function ShipmentLineItem({
   );
 }
 
+// Sales-return shipments (source "Sales Return Order") ship returned stock,
+// which is deliberately On Hold until it leaves — mirror the status
+// lines.tracking accepts when validating entities for this source.
+function expectedEntityStatus(shipment?: Shipment) {
+  return shipment?.sourceDocument === "Sales Return Order"
+    ? "On Hold"
+    : "Available";
+}
+
 function BatchForm({
   line,
   shipment,
@@ -709,8 +718,9 @@ function BatchForm({
   const resolvedBatch = values.number
     ? resolveTrackedEntity(values.number, batchNumbers?.data ?? [])
     : null;
-  // @ts-expect-error TS2339 - TODO: fix type
-  const isBatchNumberValid = resolvedBatch?.status === "Available";
+  const isBatchNumberValid =
+    // @ts-expect-error TS2339 - TODO: fix type
+    resolvedBatch?.status === expectedEntityStatus(shipment);
 
   // Verify batch quantity is sufficient for the shipped quantity
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -728,7 +738,7 @@ function BatchForm({
       if (
         batchNumber &&
         // @ts-expect-error TS2339 - TODO: fix type
-        batchNumber.status === "Available" &&
+        batchNumber.status === expectedEntityStatus(shipment) &&
         // @ts-expect-error TS2339 - TODO: fix type
         (line.shippedQuantity || 0) > batchNumber.quantity
       ) {
@@ -803,7 +813,7 @@ function BatchForm({
     );
 
     // @ts-expect-error TS2339 - TODO: fix type
-    if (batchNumber && batchNumber.status !== "Available") {
+    if (batchNumber && batchNumber.status !== expectedEntityStatus(shipment)) {
       // @ts-expect-error TS2339 - TODO: fix type
       setError(`Batch number is ${batchNumber.status}`);
       setValues({
@@ -1012,14 +1022,14 @@ function SerialForm({
       }
 
       // @ts-expect-error TS2339 - TODO: fix type
-      if (serialNumber.status !== "Available") {
+      if (serialNumber.status !== expectedEntityStatus(shipment)) {
         // @ts-expect-error TS2339 - TODO: fix type
         return `Serial number is ${serialNumber.status}`;
       }
 
       return null;
     },
-    [serialNumbers, serialNumbersData?.data]
+    [serialNumbers, serialNumbersData?.data, shipment]
   );
 
   const updateSerialNumber = useCallback(
@@ -1154,8 +1164,9 @@ function SerialForm({
                 serialNumbersData?.data ?? []
               )
             : null;
-          // @ts-expect-error TS2339 - TODO: fix type
-          const isSerialNumberValid = resolvedSerial?.status === "Available";
+          const isSerialNumberValid =
+            // @ts-expect-error TS2339 - TODO: fix type
+            resolvedSerial?.status === expectedEntityStatus(shipment);
 
           return (
             <div
