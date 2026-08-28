@@ -79,7 +79,7 @@ export default function RepairOrderDetailsRoute() {
         repairOrder={routeData.repairOrder}
         lines={routeData.lines}
       />
-      <div className="w-full p-2 flex flex-col gap-4">
+      <VStack spacing={4} className="w-full p-4">
         <RepairOrderLinesTable
           repairOrderId={id}
           status={routeData.repairOrder.status}
@@ -113,7 +113,7 @@ export default function RepairOrderDetailsRoute() {
             promisedDate: routeData.repairOrder.promisedDate ?? undefined
           }}
         />
-      </div>
+      </VStack>
     </VStack>
   );
 }

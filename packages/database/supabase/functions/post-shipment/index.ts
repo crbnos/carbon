@@ -1254,6 +1254,9 @@ serve(async (req: Request) => {
                   shipmentLineId: line.id,
                   itemId: line.itemId as string,
                   quantity: round(line.shippedQuantity ?? 0),
+                  // What the shipper picked on the line, if anything — it
+                  // outranks every customer and item rule.
+                  warrantyTermId: line.warrantyTermId,
                   trackedEntityIds: (shipmentLineTracking.data ?? [])
                     .filter(
                       (tracking) =>

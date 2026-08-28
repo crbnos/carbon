@@ -1261,3 +1261,12 @@ export const applyRepairWarrantyValidator = z.object({
   lineId: z.string().min(1),
   warrantyTermId: z.string().min(1, { message: "Warranty term is required" })
 });
+
+// A customer's warranty rule. `itemId` empty means "every item this customer
+// buys"; set it to narrow the rule to one part.
+export const customerWarrantyTermValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  customerId: z.string().min(1, { message: "Customer is required" }),
+  itemId: zfd.text(z.string().optional()),
+  warrantyTermId: z.string().min(1, { message: "Warranty term is required" })
+});

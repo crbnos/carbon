@@ -60,6 +60,7 @@ import { Empty, ItemThumbnail, PrintButton } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useStorageUnits } from "~/components/Form/StorageUnit";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
+import WarrantyTerm from "~/components/Form/WarrantyTerm";
 import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
 import type {
@@ -206,14 +207,14 @@ const ShipmentLines = () => {
         }
       | {
           lineId: string;
-          field: "storageUnitId";
-          value: string;
+          field: "storageUnitId" | "warrantyTermId";
+          value: string | null;
         }) => {
       const formData = new FormData();
 
       formData.append("ids", lineId);
       formData.append("field", field);
-      formData.append("value", value.toString());
+      formData.append("value", value === null ? "" : value.toString());
       fetcher.submit(formData, {
         method: "post",
         action: path.to.bulkUpdateShipmentLine
@@ -421,8 +422,8 @@ function ShipmentLineItem({
       }
     | {
         lineId: string;
-        field: "storageUnitId";
-        value: string;
+        field: "storageUnitId" | "warrantyTermId";
+        value: string | null;
       }) => Promise<void>;
 }) {
   const { t } = useLingui();
@@ -609,6 +610,25 @@ function ShipmentLineItem({
                 }}
               />
             )}
+          {/* Warranty is not welded to the part: whatever the customer rules or
+              the item default would give, the shipper can override it here on
+              the day. Empty means "use the rules". */}
+          {shipment?.sourceDocument === "Sales Order" && (
+            <WarrantyTerm
+              name={`warrantyTerm:${line.id}`}
+              label={undefined}
+              value={line.warrantyTermId ?? undefined}
+              isReadOnly={isReadOnly}
+              placeholder="Warranty (from rules)"
+              onChange={(option) => {
+                onUpdate({
+                  lineId: line.id!,
+                  field: "warrantyTermId",
+                  value: option?.value ?? null
+                });
+              }}
+            />
+          )}
         </div>
       </div>
       {line.requiresBatchTracking && (
@@ -678,8 +698,8 @@ function BatchForm({
     value
   }: {
     lineId: string;
-    field: "storageUnitId";
-    value: string;
+    field: "storageUnitId" | "warrantyTermId";
+    value: string | null;
   }) => Promise<void>;
 }) {
   const { t } = useLingui();

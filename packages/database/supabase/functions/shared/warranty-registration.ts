@@ -26,6 +26,11 @@ export type StampSource = {
   quantity: number;
   /** Serial/batch entities shipped on this line, if any. */
   trackedEntityIds: string[];
+  /**
+   * What the shipper chose on this line, if anything. Beats every rule — the
+   * whole point is that warranty is not welded to the part.
+   */
+  warrantyTermId?: string | null;
 };
 
 export async function stampWarrantyRegistrations(
@@ -61,12 +66,41 @@ export async function stampWarrantyRegistrations(
   const trackingTypeByItem = new Map(
     items.map((item) => [item.id, item.itemTrackingType])
   );
+  const itemById = new Map(items.map((item) => [item.id, item]));
+
+  // Customer rules: a row per (customer, item) and optionally one catch-all
+  // row for the customer. Read once, not per line.
+  const customerRules = await trx
+    .selectFrom("customerWarrantyTerm")
+    .select(["itemId", "warrantyTermId"])
+    .where("customerId", "=", customerId)
+    .where("companyId", "=", companyId)
+    .execute();
+
+  const customerItemTerm = new Map<string, string>();
+  let customerAllItemsTerm: string | null = null;
+  for (const rule of customerRules) {
+    if (rule.itemId) customerItemTerm.set(rule.itemId, rule.warrantyTermId);
+    else customerAllItemsTerm = rule.warrantyTermId;
+  }
+
+  /**
+   * Most specific wins. The item's own term is only the fallback, so the same
+   * part can carry different cover for different customers.
+   */
+  const resolveTermId = (source: StampSource): string | null =>
+    source.warrantyTermId ??
+    customerItemTerm.get(source.itemId) ??
+    customerAllItemsTerm ??
+    itemById.get(source.itemId)?.warrantyTermId ??
+    null;
 
   const termIds = [
     ...new Set(
-      items
-        .flatMap((i) => [i.warrantyTermId, i.supplierWarrantyTermId])
-        .filter(Boolean) as string[]
+      [
+        ...sources.map(resolveTermId),
+        ...items.map((i) => i.supplierWarrantyTermId),
+      ].filter(Boolean) as string[]
     ),
   ];
   if (termIds.length === 0) return 0;
@@ -79,7 +113,6 @@ export async function stampWarrantyRegistrations(
     .execute();
 
   const termById = new Map(terms.map((t) => [t.id, t]));
-  const itemById = new Map(items.map((i) => [i.id, i]));
 
   // Month arithmetic in SQL: Postgres clamps day-of-month the way a warranty
   // should (31 Jan + 1 month = 28 Feb), and no JS Date is involved.
@@ -184,9 +217,8 @@ export async function stampWarrantyRegistrations(
 
   for (const source of sources) {
     const item = itemById.get(source.itemId);
-    const term = item?.warrantyTermId
-      ? termById.get(item.warrantyTermId)
-      : undefined;
+    const resolvedTermId = resolveTermId(source);
+    const term = resolvedTermId ? termById.get(resolvedTermId) : undefined;
     // Only this posting's basis stamps here; the other basis belongs to the
     // sibling posting function.
     if (!term || term.startBasis !== basis) continue;

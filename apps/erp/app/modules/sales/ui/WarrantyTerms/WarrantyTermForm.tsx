@@ -111,14 +111,14 @@ const WarrantyTermForm = ({
                   options={startBasisOptions}
                   helperText={t`Which document starts the clock`}
                 />
-                <Boolean name="coversParts" label={t`Covers parts`} />
+                <Boolean name="coversParts" label={t`Covers parts`} bordered />
                 <Number
                   name="partsDurationMonths"
                   label={t`Parts duration (months)`}
                   helperText={t`Leave empty for lifetime coverage`}
                   minValue={0}
                 />
-                <Boolean name="coversLabor" label={t`Covers labor`} />
+                <Boolean name="coversLabor" label={t`Covers labor`} bordered />
                 <Number
                   name="laborDurationMonths"
                   label={t`Labor duration (months)`}

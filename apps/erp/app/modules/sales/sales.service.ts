@@ -41,6 +41,7 @@ import type {
   customerTaxValidator,
   customerTypeValidator,
   customerValidator,
+  customerWarrantyTermValidator,
   getMethodValidator,
   noQuoteReasonValidator,
   pricingRuleValidator,
@@ -9352,4 +9353,136 @@ export async function createRepairSalesOrder(
     ...args,
     target: "salesOrder"
   });
+}
+
+// ---------- Customer warranty rules ----------
+
+export async function getCustomerWarrantyTerms(
+  client: SupabaseClient<Database>,
+  customerId: string,
+  companyId: string
+) {
+  return client
+    .from("customerWarrantyTerms")
+    .select("*")
+    .eq("customerId", customerId)
+    .eq("companyId", companyId)
+    .order("itemReadableId", { nullsFirst: true });
+}
+
+export async function upsertCustomerWarrantyTerm(
+  client: SupabaseClient<Database>,
+  rule:
+    | (Omit<z.infer<typeof customerWarrantyTermValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof customerWarrantyTermValidator>, "id"> & {
+        id: string;
+        companyId: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("id" in rule) {
+    return client
+      .from("customerWarrantyTerm")
+      .update(sanitize(rule))
+      .eq("id", rule.id)
+      .eq("companyId", rule.companyId)
+      .select("id")
+      .single();
+  }
+  return client.from("customerWarrantyTerm").insert(rule).select("id").single();
+}
+
+export async function deleteCustomerWarrantyTerm(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("customerWarrantyTerm")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
+}
+
+/**
+ * Which warranty term a sale of this item to this customer would use, and why.
+ *
+ * The same chain the stamping helper applies, exposed so the UI can SHOW the
+ * answer before anything posts — a shipper should never have to guess which
+ * rule won.
+ */
+export async function resolveWarrantyTermForSale(
+  client: SupabaseClient<Database>,
+  {
+    companyId,
+    customerId,
+    itemId,
+    shipmentLineTermId
+  }: {
+    companyId: string;
+    customerId: string;
+    itemId: string;
+    shipmentLineTermId?: string | null;
+  }
+): Promise<{
+  data: {
+    warrantyTermId: string | null;
+    source: "Shipment line" | "Customer + item" | "Customer" | "Item" | "None";
+  } | null;
+  error: PostgrestError | null;
+}> {
+  if (shipmentLineTermId) {
+    return {
+      data: { warrantyTermId: shipmentLineTermId, source: "Shipment line" },
+      error: null
+    };
+  }
+
+  const [rules, item] = await Promise.all([
+    client
+      .from("customerWarrantyTerm")
+      .select("itemId, warrantyTermId")
+      .eq("customerId", customerId)
+      .eq("companyId", companyId),
+    client
+      .from("item")
+      .select("warrantyTermId")
+      .eq("id", itemId)
+      .eq("companyId", companyId)
+      .maybeSingle()
+  ]);
+  if (rules.error) return { data: null, error: rules.error };
+
+  const forItem = (rules.data ?? []).find((rule) => rule.itemId === itemId);
+  if (forItem) {
+    return {
+      data: {
+        warrantyTermId: forItem.warrantyTermId,
+        source: "Customer + item"
+      },
+      error: null
+    };
+  }
+
+  const forCustomer = (rules.data ?? []).find((rule) => rule.itemId === null);
+  if (forCustomer) {
+    return {
+      data: { warrantyTermId: forCustomer.warrantyTermId, source: "Customer" },
+      error: null
+    };
+  }
+
+  if (item.data?.warrantyTermId) {
+    return {
+      data: { warrantyTermId: item.data.warrantyTermId, source: "Item" },
+      error: null
+    };
+  }
+
+  return { data: { warrantyTermId: null, source: "None" }, error: null };
 }

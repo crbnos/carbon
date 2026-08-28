@@ -546,6 +546,12 @@ export const path = {
     customerType: (id: string) =>
       generatePath(`${x}/sales/customer-types/${id}`),
     customerTypes: `${x}/sales/customer-types`,
+    customerWarranties: (id: string) =>
+      generatePath(`${x}/customer/${id}/warranties`),
+    customerWarrantyTermDelete: (id: string, ruleId: string) =>
+      generatePath(`${x}/customer/${id}/warranties/delete/${ruleId}`),
+    customerWarrantyTermNew: (id: string) =>
+      generatePath(`${x}/customer/${id}/warranties/new`),
     customField: (tableId: string, id: string) =>
       generatePath(`${x}/settings/custom-fields/${tableId}/${id}`),
     customFieldList: (id: string) =>

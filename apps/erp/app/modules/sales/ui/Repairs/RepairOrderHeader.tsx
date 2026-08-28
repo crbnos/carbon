@@ -88,7 +88,7 @@ const RepairOrderHeader = ({ repairOrder, lines }: RepairOrderHeaderProps) => {
 
   return (
     <>
-      <div className="flex flex-col gap-2 p-2 border-b bg-background">
+      <div className="flex flex-col gap-2 p-4 border-b bg-background">
         <HStack className="w-full justify-between">
           <HStack spacing={2}>
             <h1 className="text-lg font-semibold">
@@ -197,7 +197,7 @@ const RepairOrderHeader = ({ repairOrder, lines }: RepairOrderHeaderProps) => {
         </HStack>
       </div>
 
-      <Card className="m-2">
+      <Card className="m-4">
         <CardHeader>
           <CardTitle>
             <Trans>Repair Order</Trans>

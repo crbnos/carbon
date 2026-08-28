@@ -1,3 +1,4 @@
+import WarrantyRegistrationForm from "./WarrantyRegistrationForm";
 import WarrantyRegistrationsTable from "./WarrantyRegistrationsTable";
 
-export { WarrantyRegistrationsTable };
+export { WarrantyRegistrationForm, WarrantyRegistrationsTable };
