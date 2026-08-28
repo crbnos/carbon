@@ -163,7 +163,7 @@ const PeopleBoard = ({
             id: `pending:${move.employeeId}`,
             workCenterId: move.workCenterId,
             employeeId: move.employeeId,
-            shiftId,
+            shiftId: employeeShiftId[move.employeeId] ?? null,
             note: null,
             date,
             overtimeHours: 0,
@@ -175,7 +175,7 @@ const PeopleBoard = ({
       }
     }
     return map;
-  }, [assignments, pendingMoves, shiftId, date]);
+  }, [assignments, pendingMoves, employeeShiftId, date]);
 
   const absenceByEmployee = useMemo(() => {
     const map = new Map<string, PeopleAbsence>();
@@ -373,11 +373,11 @@ const PeopleBoard = ({
     });
   };
 
-  // Stamp new rows with the PERSON's own shift so the shift filter (an exact
-  // match on the assignment) finds them. Falls back to the active filter for
-  // people who have no shift of their own.
+  // Stamp new rows with the PERSON's own shift only — never the active filter
+  // shift, which is a view scope, not a fact about the person. A shift-less
+  // person's rows stay unstamped and resolve through the ladder.
   const shiftForEmployee = (employeeId: string) =>
-    employeeShiftId[employeeId] ?? shiftId;
+    employeeShiftId[employeeId] ?? null;
 
   function onDragStart(event: DragStartEvent) {
     if (!hasDraggableData(event.active)) return;

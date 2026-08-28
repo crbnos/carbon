@@ -24,6 +24,7 @@ import {
 import { parseDate } from "@internationalized/date";
 import type { FileObject, StorageError } from "@supabase/storage-js";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
+import type { ExpressionBuilder } from "kysely";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
 import type { StorageItem } from "~/types";
@@ -4676,9 +4677,9 @@ export async function upsertDemandProjections(
 export async function getPeopleAssignments(
   client: SupabaseClient<Database>,
   companyId: string,
-  args: { locationId: string; date: string; shiftId?: string | null }
+  args: { locationId: string; date: string }
 ) {
-  let query = client
+  return client
     .from("peopleAssignment")
     .select(
       "id, workCenterId, employeeId, shiftId, note, date, overtimeHours, hours"
@@ -4686,8 +4687,6 @@ export async function getPeopleAssignments(
     .eq("companyId", companyId)
     .eq("locationId", args.locationId)
     .eq("date", args.date);
-  if (args.shiftId) query = query.eq("shiftId", args.shiftId);
-  return query;
 }
 
 export async function getPeopleAbsences(
@@ -4934,6 +4933,30 @@ export async function getActiveEmployeeAbilities(
 }
 
 /**
+ * Filter `peopleAssignment` rows to those whose EFFECTIVE shift is `shiftId`:
+ * the row's stamped shift, or — for shift-less rows — the person's own
+ * `employeeShift`. The same ladder the boards' shift filter displays through,
+ * so a row a filtered board shows is always a row its mutations can reach.
+ */
+function whereEffectiveShift(shiftId: string) {
+  return (eb: ExpressionBuilder<KyselyDatabase, "peopleAssignment">) =>
+    eb.or([
+      eb("shiftId", "=", shiftId),
+      eb.and([
+        eb("shiftId", "is", null),
+        eb(
+          "employeeId",
+          "in",
+          eb
+            .selectFrom("employeeShift")
+            .select("employeeId")
+            .where("shiftId", "=", shiftId)
+        )
+      ])
+    ]);
+}
+
+/**
  * Move-semantics upsert: one magnet per person per date/shift — any existing
  * assignment for the person on that date/shift is replaced.
  */
@@ -4964,7 +4987,7 @@ export async function upsertPeopleAssignment(
         .where("date", "=", assignment.date)
         .where("workCenterId", "=", assignment.workCenterId);
       existing = assignment.shiftId
-        ? existing.where("shiftId", "=", assignment.shiftId)
+        ? existing.where(whereEffectiveShift(assignment.shiftId))
         : existing.where("shiftId", "is", null);
       const row = await existing.executeTakeFirst();
       if (row) {
@@ -5010,7 +5033,7 @@ export async function upsertPeopleAssignment(
       .where("employeeId", "=", assignment.employeeId)
       .where("date", "=", assignment.date);
     existing = assignment.shiftId
-      ? existing.where("shiftId", "=", assignment.shiftId)
+      ? existing.where(whereEffectiveShift(assignment.shiftId))
       : existing.where("shiftId", "is", null);
     // moving stations keeps the person's authorized overtime for that day
     const carriedOvertime = (await existing.executeTakeFirst())?.overtimeHours;
@@ -5022,7 +5045,7 @@ export async function upsertPeopleAssignment(
       .where("employeeId", "=", assignment.employeeId)
       .where("date", "=", assignment.date);
     del = assignment.shiftId
-      ? del.where("shiftId", "=", assignment.shiftId)
+      ? del.where(whereEffectiveShift(assignment.shiftId))
       : del.where("shiftId", "is", null);
     await del.execute();
     return trx
@@ -5106,6 +5129,18 @@ export async function movePeopleAssignment(
       .where("companyId", "=", args.companyId)
       .executeTakeFirstOrThrow();
 
+    // merge with target rows sharing the source's EFFECTIVE shift — a
+    // shift-less row belongs to the person's own shift, like the boards show it
+    const effectiveShiftId =
+      source.shiftId ??
+      (
+        await trx
+          .selectFrom("employeeShift")
+          .select("shiftId")
+          .where("employeeId", "=", source.employeeId)
+          .executeTakeFirst()
+      )?.shiftId ??
+      null;
     let targetQuery = trx
       .selectFrom("peopleAssignment")
       .select(["id", "hours"])
@@ -5113,8 +5148,8 @@ export async function movePeopleAssignment(
       .where("employeeId", "=", source.employeeId)
       .where("date", "=", source.date)
       .where("workCenterId", "=", args.workCenterId);
-    targetQuery = source.shiftId
-      ? targetQuery.where("shiftId", "=", source.shiftId)
+    targetQuery = effectiveShiftId
+      ? targetQuery.where(whereEffectiveShift(effectiveShiftId))
       : targetQuery.where("shiftId", "is", null);
     const target = await targetQuery.executeTakeFirst();
 
@@ -5192,7 +5227,7 @@ export async function setPeopleDay(
       .where("employeeId", "=", args.employeeId)
       .where("date", "=", args.date);
     if (args.shiftId) {
-      existingQuery = existingQuery.where("shiftId", "=", args.shiftId);
+      existingQuery = existingQuery.where(whereEffectiveShift(args.shiftId));
     }
     const existing = await existingQuery.execute();
     const existingByStation = new Map(
@@ -5309,7 +5344,7 @@ export async function setPeopleOvertimeBulk(
       ? query.where("date", ">=", args.date).where("date", "<=", args.toDate)
       : query.where("date", "=", args.date);
     if (args.shiftId) {
-      query = query.where("shiftId", "=", args.shiftId);
+      query = query.where(whereEffectiveShift(args.shiftId));
     }
     if (args.departmentId) {
       const departmentId = args.departmentId;
@@ -5363,7 +5398,7 @@ async function copyPeopleDayInTransaction(
     .where("locationId", "=", args.locationId)
     .where("date", "=", args.fromDate);
   if (args.shiftId) {
-    sourceQuery = sourceQuery.where("shiftId", "=", args.shiftId);
+    sourceQuery = sourceQuery.where(whereEffectiveShift(args.shiftId));
   }
   const source = await sourceQuery.execute();
 
@@ -5559,7 +5594,7 @@ export async function unassignPeopleWeek(
     .where("date", ">=", args.weekStart)
     .where("date", "<=", addIsoDays(args.weekStart, 6));
   if (args.shiftId) {
-    query = query.where("shiftId", "=", args.shiftId);
+    query = query.where(whereEffectiveShift(args.shiftId));
   }
   return query.execute();
 }
@@ -5591,7 +5626,7 @@ export async function movePeopleWeek(
       .where("date", ">=", args.weekStart)
       .where("date", "<=", weekEnd);
     if (args.shiftId) {
-      sourceQuery = sourceQuery.where("shiftId", "=", args.shiftId);
+      sourceQuery = sourceQuery.where(whereEffectiveShift(args.shiftId));
     }
     const source = await sourceQuery.execute();
 

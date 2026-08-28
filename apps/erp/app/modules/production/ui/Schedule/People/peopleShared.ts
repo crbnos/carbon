@@ -64,6 +64,24 @@ export function ladderShiftTime(
 }
 
 /**
+ * Does this assignment belong to the shift being filtered by? The assignment's
+ * own stamped shift wins; a shift-less row (created under "All shifts", or
+ * before the person had an `employeeShift`) falls back to the person's own
+ * shift — the same ladder the hours resolve through, so the filter can never
+ * hide a row whose hours it would attribute to that shift.
+ */
+export function assignmentMatchesShift(
+  assignment: { shiftId: string | null; employeeId: string },
+  shiftId: string | null,
+  employeeShiftId: Record<string, string>
+): boolean {
+  if (!shiftId) return true;
+  return (
+    (assignment.shiftId ?? employeeShiftId[assignment.employeeId]) === shiftId
+  );
+}
+
+/**
  * Overtime is one value for the DAY, stamped on each of the day's rows —
  * take the max, never the sum, or a split person's overtime multiplies.
  */

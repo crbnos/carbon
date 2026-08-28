@@ -42,6 +42,7 @@ import { PeopleCapacity } from "~/modules/production/ui/Schedule/People/PeopleCa
 import { PeopleHeader } from "~/modules/production/ui/Schedule/People/PeopleHeader";
 import { PeopleMatrix } from "~/modules/production/ui/Schedule/People/PeopleMatrix";
 import { PeopleWeekBoard } from "~/modules/production/ui/Schedule/People/PeopleWeekBoard";
+import { assignmentMatchesShift } from "~/modules/production/ui/Schedule/People/peopleShared";
 import { TimeOffDialog } from "~/modules/production/ui/Schedule/People/TimeOffDialog";
 import { getWorkCentersByLocation } from "~/modules/resources";
 import { resolveLocationId } from "~/modules/shared/location.server";
@@ -158,7 +159,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     employeeJobs,
     employeeShiftRows
   ] = await Promise.all([
-    getPeopleAssignments(client, companyId, { locationId, date, shiftId }),
+    getPeopleAssignments(client, companyId, { locationId, date }),
     getPeopleAbsences(client, companyId, date),
     getLocationEmployees(client, companyId, locationId),
     getWorkCentersByLocation(client, locationId),
@@ -228,8 +229,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const employeeShiftHours: Record<string, number> = {};
   const employeeShiftStart: Record<string, string> = {};
   const employeeShiftEnd: Record<string, string> = {};
-  // the person's own shift — stamped onto assignments as they're created, so
-  // the shift filter (an exact match on the assignment) can find them later
+  // the person's own shift — stamped onto assignments as they're created, and
+  // the shift filter's fallback for rows created before the person had one
   const employeeShiftId: Record<string, string> = {};
   for (const row of employeeShiftRows.data ?? []) {
     employeeShiftId[row.employeeId] = row.shiftId;
@@ -255,6 +256,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
       )
     );
   }
+
+  // shift scope resolves through the ladder (the row's stamped shift, else the
+  // person's own shift) — an exact match on the stamped shift alone would hide
+  // every assignment created before the person's shift was set
+  const dayAssignments = (assignments.data ?? []).filter((assignment) =>
+    assignmentMatchesShift(assignment, shiftId, employeeShiftId)
+  );
 
   // week-scoped data for the matrix and capacity views
   let weekAssignments: {
@@ -461,7 +469,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     scheduledByWorkCenter,
     requiredHoursByWorkCenter,
     employeeShiftHours,
-    assignments: assignments.data ?? [],
+    assignments: dayAssignments,
     absences: absences.data ?? [],
     employees: (employees.data ?? []).flatMap((employee) =>
       employee.id
@@ -767,6 +775,7 @@ export default function SchedulePeopleRoute() {
           locationTimeZone={locationTimeZone}
           departmentId={departmentId}
           shiftId={shiftId}
+          employeeShiftId={employeeShiftId}
           dayAssignments={boardAssignments}
           weekAssignments={matrixAssignments}
         />

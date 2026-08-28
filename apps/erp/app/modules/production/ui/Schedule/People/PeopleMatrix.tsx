@@ -26,6 +26,7 @@ import { PeopleChip } from "./PeopleChip";
 import { PeopleHoursModal } from "./PeopleHoursModal";
 import {
   assignmentHours,
+  assignmentMatchesShift,
   buildAbsentSet,
   dayOvertime,
   ladderShiftHours,
@@ -129,11 +130,16 @@ export function PeopleMatrix({
     [workCenters]
   );
 
-  // shift-filtered assignments (page-level shift tabs apply here like the board)
+  // shift-filtered assignments (page-level shift tabs apply here like the
+  // board) — shift-less rows resolve through the person's own shift
   const visibleAssignments = useMemo(
     () =>
-      shiftId ? assignments.filter((a) => a.shiftId === shiftId) : assignments,
-    [assignments, shiftId]
+      shiftId
+        ? assignments.filter((a) =>
+            assignmentMatchesShift(a, shiftId, employeeShiftId)
+          )
+        : assignments,
+    [assignments, shiftId, employeeShiftId]
   );
 
   // a person can legally hold one assignment PER SHIFT on the same date —
@@ -366,7 +372,7 @@ export function PeopleMatrix({
                           employeeId={employee.id}
                           employeeName={employee.name}
                           date={date}
-                          shiftId={employeeShiftId[employee.id] ?? shiftId}
+                          shiftId={employeeShiftId[employee.id] ?? null}
                           locationId={locationId}
                           locationTimeZone={locationTimeZone}
                           workCenters={workCenters}

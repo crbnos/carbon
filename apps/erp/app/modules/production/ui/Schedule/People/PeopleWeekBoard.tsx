@@ -25,6 +25,7 @@ import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { BoardContainer } from "../Kanban/components/ColumnCard";
 import { hasDraggableData } from "../Kanban/utils";
+import { assignmentMatchesShift } from "./peopleShared";
 
 const UNASSIGNED = "unassigned";
 
@@ -275,12 +276,15 @@ const PeopleWeekBoard = ({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
+  // shift-less rows resolve through the person's own shift, like the hours do
   const scopedAssignments = useMemo(
     () =>
       shiftId
-        ? assignments.filter((assignment) => assignment.shiftId === shiftId)
+        ? assignments.filter((assignment) =>
+            assignmentMatchesShift(assignment, shiftId, employeeShiftId)
+          )
         : assignments,
-    [assignments, shiftId]
+    [assignments, shiftId, employeeShiftId]
   );
 
   const daysOffByEmployee = useMemo(() => {
@@ -353,11 +357,11 @@ const PeopleWeekBoard = ({
     });
   };
 
-  // Stamp new rows with the PERSON's own shift so the shift filter (an exact
-  // match on the assignment) finds them; fall back to the active filter for
-  // people who have no shift of their own.
+  // Stamp new rows with the PERSON's own shift only — never the active filter
+  // shift, which is a view scope, not a fact about the person. A shift-less
+  // person's rows stay unstamped and resolve through the ladder.
   const shiftForEmployee = (employeeId: string) =>
-    employeeShiftId[employeeId] ?? shiftId;
+    employeeShiftId[employeeId] ?? null;
 
   function onDragStart(event: DragStartEvent) {
     if (!hasDraggableData(event.active)) return;

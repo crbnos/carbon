@@ -18,6 +18,7 @@ import { useSubmit } from "react-router";
 import { DateTime } from "~/components";
 import { path } from "~/utils/path";
 import type { WeekOption } from "./PeopleHeader";
+import { assignmentMatchesShift } from "./peopleShared";
 
 type OvertimeAssignment = {
   employeeId: string;
@@ -36,6 +37,8 @@ type OvertimeDialogProps = {
   locationTimeZone?: string;
   departmentId: string | null;
   shiftId: string | null;
+  /** each person's own shift — the shift filter's fallback for shift-less rows */
+  employeeShiftId: Record<string, string>;
   /** day range: the selected day's (department-filtered) assignments */
   dayAssignments: OvertimeAssignment[];
   /** week range: the visible week's (department-filtered) assignments */
@@ -57,6 +60,7 @@ export function OvertimeDialog({
   locationTimeZone,
   departmentId,
   shiftId,
+  employeeShiftId,
   dayAssignments,
   weekAssignments
 }: OvertimeDialogProps) {
@@ -86,14 +90,23 @@ export function OvertimeDialog({
     // person assigned Mon–Fri is five separate authorizations
     return new Set(
       source
-        .filter((assignment) => !shiftId || assignment.shiftId === shiftId)
+        .filter((assignment) =>
+          assignmentMatchesShift(assignment, shiftId, employeeShiftId)
+        )
         .map((assignment) =>
           range === "day"
             ? assignment.employeeId
             : `${assignment.employeeId}:${assignment.date}`
         )
     ).size;
-  }, [range, dayAssignments, weekAssignments, weekDates, shiftId]);
+  }, [
+    range,
+    dayAssignments,
+    weekAssignments,
+    weekDates,
+    shiftId,
+    employeeShiftId
+  ]);
 
   const apply = () => {
     const hours = Number(hoursInput);

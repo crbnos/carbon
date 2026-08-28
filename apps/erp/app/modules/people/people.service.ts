@@ -433,9 +433,14 @@ export async function getShifts(
 
 export async function getShiftsList(
   client: SupabaseClient<Database>,
+  companyId: string,
   locationId: string | null
 ) {
-  let query = client.from("shift").select(`id, name`).eq("active", true);
+  let query = client
+    .from("shift")
+    .select(`id, name`)
+    .eq("companyId", companyId)
+    .eq("active", true);
 
   if (locationId) {
     query = query.eq("locationId", locationId);

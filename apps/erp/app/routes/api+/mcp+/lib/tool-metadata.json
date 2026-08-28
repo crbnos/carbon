@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-27T14:06:54.704Z",
+  "generated": "2026-08-28T17:07:04.859Z",
   "totalTools": 1487,
   "modules": 15,
   "tools": [
@@ -17878,6 +17878,7 @@
       "paramCount": 1,
       "serviceParams": [
         "client",
+        "companyId",
         "locationId"
       ],
       "injectAuth": [
@@ -23583,7 +23584,7 @@
       "module": "production",
       "classification": "READ",
       "description": "get people assignments",
-      "paramCount": 3,
+      "paramCount": 2,
       "serviceParams": [
         "client",
         "companyId",
@@ -23600,12 +23601,6 @@
           },
           "date": {
             "type": "string"
-          },
-          "shiftId": {
-            "type": [
-              "string",
-              "null"
-            ]
           }
         },
         "required": [

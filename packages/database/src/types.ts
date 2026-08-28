@@ -38191,119 +38191,119 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "procedureStep_companyId_fkey"
+            foreignKeyName: "procedureAttribute_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "procedureStep_companyId_fkey"
+            foreignKeyName: "procedureAttribute_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "procedureStep_companyId_fkey"
+            foreignKeyName: "procedureAttribute_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "customFieldTables"
             referencedColumns: ["companyId"]
           },
           {
-            foreignKeyName: "procedureStep_companyId_fkey"
+            foreignKeyName: "procedureAttribute_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
           },
           {
-            foreignKeyName: "procedureStep_createdBy_fkey"
+            foreignKeyName: "procedureAttribute_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "procedureStep_createdBy_fkey"
+            foreignKeyName: "procedureAttribute_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "procedureStep_createdBy_fkey"
+            foreignKeyName: "procedureAttribute_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "procedureStep_createdBy_fkey"
+            foreignKeyName: "procedureAttribute_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "user"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "procedureStep_createdBy_fkey"
+            foreignKeyName: "procedureAttribute_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
           },
           {
-            foreignKeyName: "procedureStep_procedureId_fkey"
+            foreignKeyName: "procedureAttribute_procedureId_fkey"
             columns: ["procedureId"]
             isOneToOne: false
             referencedRelation: "procedure"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "procedureStep_procedureId_fkey"
+            foreignKeyName: "procedureAttribute_procedureId_fkey"
             columns: ["procedureId"]
             isOneToOne: false
             referencedRelation: "procedures"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "procedureStep_unitOfMeasureCode_fkey"
+            foreignKeyName: "procedureAttribute_unitOfMeasureCode_fkey"
             columns: ["unitOfMeasureCode", "companyId"]
             isOneToOne: false
             referencedRelation: "unitOfMeasure"
             referencedColumns: ["code", "companyId"]
           },
           {
-            foreignKeyName: "procedureStep_updatedBy_fkey"
+            foreignKeyName: "procedureAttribute_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "procedureStep_updatedBy_fkey"
+            foreignKeyName: "procedureAttribute_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "procedureStep_updatedBy_fkey"
+            foreignKeyName: "procedureAttribute_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "procedureStep_updatedBy_fkey"
+            foreignKeyName: "procedureAttribute_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "user"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "procedureStep_updatedBy_fkey"
+            foreignKeyName: "procedureAttribute_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -58701,6 +58701,21 @@ export type Database = {
           },
         ]
       }
+      v_readable_id: {
+        Row: {
+          companyId: string | null
+          readableId: string | null
+        }
+        Insert: {
+          companyId?: string | null
+          readableId?: string | null
+        }
+        Update: {
+          companyId?: string | null
+          readableId?: string | null
+        }
+        Relationships: []
+      }
       warehouse: {
         Row: {
           active: boolean
@@ -62831,6 +62846,8 @@ export type Database = {
           locationId: string | null
           locationName: string | null
           name: string | null
+          shiftId: string | null
+          shiftName: string | null
           status: string | null
         }
         Relationships: [
@@ -62874,6 +62891,20 @@ export type Database = {
             columns: ["locationId"]
             isOneToOne: false
             referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employeeJob_shiftId_fkey"
+            columns: ["shiftId"]
+            isOneToOne: false
+            referencedRelation: "shift"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employeeJob_shiftId_fkey"
+            columns: ["shiftId"]
+            isOneToOne: false
+            referencedRelation: "shifts"
             referencedColumns: ["id"]
           },
         ]
@@ -65092,7 +65123,6 @@ export type Database = {
           quantityComplete: number | null
           quantityReworked: number | null
           quantityScrapped: number | null
-          readyAt: string | null
           reworkId: string | null
           setupTime: number | null
           setupUnit: Database["public"]["Enums"]["factor"] | null
@@ -65145,7 +65175,6 @@ export type Database = {
           quantityComplete?: number | null
           quantityReworked?: number | null
           quantityScrapped?: number | null
-          readyAt?: string | null
           reworkId?: string | null
           setupTime?: number | null
           setupUnit?: Database["public"]["Enums"]["factor"] | null
@@ -65198,7 +65227,6 @@ export type Database = {
           quantityComplete?: number | null
           quantityReworked?: number | null
           quantityScrapped?: number | null
-          readyAt?: string | null
           reworkId?: string | null
           setupTime?: number | null
           setupUnit?: Database["public"]["Enums"]["factor"] | null
@@ -65521,7 +65549,6 @@ export type Database = {
           quantityComplete: number | null
           quantityReworked: number | null
           quantityScrapped: number | null
-          readyAt: string | null
           reworkId: string | null
           setupTime: number | null
           setupUnit: Database["public"]["Enums"]["factor"] | null

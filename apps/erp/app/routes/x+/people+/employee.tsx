@@ -4,7 +4,11 @@ import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
-import { getAttributeCategories, getPeople } from "~/modules/people";
+import {
+  getAttributeCategories,
+  getPeople,
+  getShiftsList
+} from "~/modules/people";
 import { PeopleTable } from "~/modules/people/ui/People";
 import { getEmployeeTypes } from "~/modules/users";
 import { path } from "~/utils/path";
@@ -24,11 +28,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [attributeCategories, employeeTypes, people] = await Promise.all([
-    getAttributeCategories(client, companyId),
-    getEmployeeTypes(client, companyId),
-    getPeople(client, companyId, { search, limit, offset, sorts, filters })
-  ]);
+  const [attributeCategories, employeeTypes, people, shifts] =
+    await Promise.all([
+      getAttributeCategories(client, companyId),
+      getEmployeeTypes(client, companyId),
+      getPeople(client, companyId, { search, limit, offset, sorts, filters }),
+      getShiftsList(client, companyId, null)
+    ]);
   if (attributeCategories.error) {
     throw redirect(
       path.to.authenticatedRoot,
@@ -58,12 +64,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     attributeCategories: attributeCategories.data,
     employeeTypes: employeeTypes.data ?? [],
     people: people.data ?? [],
+    shifts: shifts.data ?? [],
     count: people.count ?? 0
   };
 }
 
 export default function ResourcesPeopleRoute() {
-  const { attributeCategories, count, employeeTypes, people } =
+  const { attributeCategories, count, employeeTypes, people, shifts } =
     useLoaderData<typeof loader>();
 
   return (
@@ -73,6 +80,7 @@ export default function ResourcesPeopleRoute() {
         data={people ?? []}
         count={count ?? 0}
         employeeTypes={employeeTypes}
+        shifts={shifts}
       />
       <Outlet />
     </VStack>
