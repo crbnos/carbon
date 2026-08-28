@@ -45,7 +45,8 @@ export interface ActionDeclarationLike {
  */
 export interface IntegrationDeclarationLike
   extends Omit<ActionDeclarationLike, "call" | "update"> {
-  piece: { name: string; action: string };
+  /** `label` is the APP's own name — see `integrationAppLabelKey`. */
+  piece: { name: string; action: string; label: string };
 }
 
 /** Identity helper, so each entry's shape is checked where it is written. */

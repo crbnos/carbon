@@ -1,6 +1,7 @@
 import type { TermId } from "@carbon/glossary";
 import {
   type EventMatch,
+  integrationAppLabelKey,
   isMultiSelect,
   type OptionsSource,
   type RequiredPermission
@@ -117,12 +118,10 @@ export interface BuiltAction {
  * action path has no notion of a vendor, so the two cannot be confused at a call
  * site or routed through the same dispatcher.
  */
-export interface BuiltIntegration {
-  inputs: Record<string, BuiltActionInput>;
-  outputs: Record<string, ValueType>;
-  batchable: boolean;
-  permission: RequiredPermission;
-  /** Which piece, and which of its actions. */
+export interface BuiltIntegration
+  extends Omit<BuiltAction, "call" | "update" | "requireOneOf"> {
+  /** Which piece, and which of its actions. The app's display name lives in the
+   * label map instead, so it is not repeated on every step. */
   piece: { name: string; action: string };
 }
 
@@ -779,14 +778,20 @@ export function buildCatalog(
         `"${id}" is declared as both an action and an integration step.`
       );
     }
+    const { name, action, label: appLabel } = declaration.piece;
     integrations[id] = {
       inputs: buildDeclaredInputs(id, declaration, registry, schema),
       outputs: declaration.outputs,
       batchable: declaration.batchable,
       permission: declaration.permission,
-      piece: declaration.piece
+      piece: { name, action }
     };
     labelDeclaration(id, declaration, labels, help);
+    // Written once per step of the app, to the same key — the builder needs the app's
+    // own name to offer it before any step has been picked.
+    const appKey = integrationAppLabelKey(name);
+    assertLabelIsSafe(appKey, appLabel);
+    labels[appKey] = appLabel;
   }
 
   for (const [id, declaration] of Object.entries(handWrittenOperations)) {

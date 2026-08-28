@@ -502,6 +502,7 @@ export const WORKFLOW_LABELS: Record<string, MessageDescriptor> = {
   "entity.user.isConsoleOperator": msg`Is console operator`,
   "entity.user.lastName": msg`Last name`,
   "entity.user.phone": msg`Phone`,
+  "integration.google-calendar": msg`Google Calendar`,
   "integration.google-calendar.create_google_calendar_event": msg`Google Calendar: Create Event`,
   "integration.google-calendar.google_calendar_get_events": msg`Google Calendar: Get all Events`,
   "inventory.receiptPosted": msg`A receipt is posted`,

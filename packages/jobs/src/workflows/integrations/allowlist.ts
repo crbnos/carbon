@@ -4,10 +4,11 @@
  * verified with the vendor, so breadth is bounded by that, not by this file. The
  * allowlist — not the piece — decides which actions a workflow can reach.
  *
- * It is also the ONE place a vendor is named. Everything vendor-specific that used
- * to live in shared code — which env vars hold our OAuth app, how to read back which
- * account authorized — is a field on the row below, so adding a vendor edits no
- * shared file.
+ * It is the one place the workflow side names a vendor: which env vars hold our OAuth
+ * app and how to read back which account authorized are fields on the row below, not
+ * branches in shared code. A new vendor still needs its own `defineIntegration` card
+ * and its three env vars registered in `@carbon/env` — see the checklist in
+ * `.claude/rules/workflow-integrations.md`.
  *
  * **Only OAuth2 pieces are supported.** A piece whose auth is `SECRET_TEXT`,
  * `BASIC_AUTH` or `CUSTOM_AUTH` is refused by `getPieceOAuth2Auth` with an
@@ -17,8 +18,10 @@
  * than a special case bolted onto this path.
  */
 export interface AllowlistEntry {
-  /** npm package, pinned exactly in packages/jobs/package.json. */
   package: string;
+  /** The EXACT version, no range prefix — `assertPinnedVersions` holds this and
+   * package.json together, so an upstream release can never silently change code we
+   * execute against a customer's account. */
   version: string;
   label: string;
   actions: readonly string[];
@@ -63,8 +66,26 @@ export const PIECE_ALLOWLIST: Record<string, AllowlistEntry> = {
   }
 };
 
-export type PieceName = keyof typeof PIECE_ALLOWLIST;
+/**
+ * Refuses a row whose `version` disagrees with the installed dependency, or whose
+ * dependency carries a range. Run by the catalog check — without it `version` would
+ * be a comment, since the pin that decides which code runs lives in package.json.
+ */
+export function assertPinnedVersions(
+  dependencies: Record<string, string>
+): void {
+  const problems: string[] = [];
 
-export function isAllowlistedPiece(name: string): boolean {
-  return PIECE_ALLOWLIST[name] !== undefined;
+  for (const [pieceName, entry] of Object.entries(PIECE_ALLOWLIST)) {
+    const installed = dependencies[entry.package];
+    if (installed === undefined) {
+      problems.push(`${pieceName}: ${entry.package} is not a dependency.`);
+    } else if (installed !== entry.version) {
+      problems.push(
+        `${pieceName}: the allowlist says ${entry.package}@${entry.version}, package.json says ${installed}.`
+      );
+    }
+  }
+
+  if (problems.length > 0) throw new Error(problems.join("\n"));
 }

@@ -140,15 +140,3 @@ export function getActionRoute(id: string):
 }
 
 export { integrationStepId } from "../definition/catalog";
-
-/** One integration step, or undefined when the id names nothing we ship. */
-export function getCatalogIntegration(
-  id: string
-): CatalogIntegration | undefined {
-  return INTEGRATIONS.get(id);
-}
-
-/** The id of every integration step, for the builder's picker. */
-export function integrationStepIds(): string[] {
-  return [...INTEGRATIONS.keys()];
-}

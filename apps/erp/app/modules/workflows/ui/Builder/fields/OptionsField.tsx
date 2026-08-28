@@ -1,18 +1,11 @@
 import { Combobox, MultiSelect } from "@carbon/react";
 import type { OptionsSource, ValueOrRef, ValueType } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo } from "react";
-import { Link, useFetcher } from "react-router";
-import { path } from "~/utils/path";
+import { Link } from "react-router";
 import { Field } from "./Field";
+import { useWorkflowOptions } from "./useWorkflowOptions";
 
 const STRING_TYPE: ValueType = { kind: "primitive", of: "string" };
-
-type Loaded = {
-  options: { label: string; value: string }[];
-  emptyHref?: string;
-  error?: string;
-};
 
 function literal(value: string | undefined): ValueOrRef | undefined {
   return value ? { kind: "literal", type: STRING_TYPE, value } : undefined;
@@ -60,31 +53,8 @@ export function OptionsField({
   isReadOnly?: boolean;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher<Loaded>();
-
-  const dependsOn = useMemo(() => source.dependsOn ?? [], [source.dependsOn]);
-  const missing = dependsOn.filter((name) => !values[name]);
-  const ready = missing.length === 0;
-
-  // `values` is a fresh object every render, so the serialized payload (stable by
-  // value) is what identifies the request rather than the object's identity.
-  const payload = JSON.stringify(
-    Object.fromEntries(dependsOn.map((name) => [name, values[name] ?? ""]))
-  );
-
-  const query = useMemo(() => {
-    const params = new URLSearchParams({ provider: source.provider });
-    if (source.params) params.set("params", JSON.stringify(source.params));
-    if (dependsOn.length > 0) params.set("values", payload);
-    return params.toString();
-  }, [source.provider, source.params, dependsOn, payload]);
-
-  useEffect(() => {
-    if (!ready) return;
-    if (fetcher.state === "idle" && fetcher.data === undefined) {
-      fetcher.load(`${path.to.api.workflowOptions}?${query}`);
-    }
-  }, [fetcher, query, ready]);
+  const { ready, missing, loaded, isLoading, options, emptyHref, error } =
+    useWorkflowOptions(source, values);
 
   if (!ready) {
     const named = missing
@@ -98,10 +68,6 @@ export function OptionsField({
       </Field>
     );
   }
-
-  const loaded = fetcher.data !== undefined;
-  const options = fetcher.data?.options ?? [];
-  const emptyHref = fetcher.data?.emptyHref;
 
   // Nothing to pick and somewhere to go and make one: a dropdown the author cannot
   // do anything about is worse than a link out.
@@ -121,15 +87,10 @@ export function OptionsField({
     );
   }
 
-  const placeholder =
-    fetcher.state === "loading" || !loaded ? t`Loading…` : t`Select an option…`;
+  const placeholder = isLoading || !loaded ? t`Loading…` : t`Select an option…`;
 
   return (
-    <Field
-      label={label}
-      required={required}
-      issue={issue ?? fetcher.data?.error}
-    >
+    <Field label={label} required={required} issue={issue ?? error}>
       {type.kind === "list" ? (
         <MultiSelect
           options={options}

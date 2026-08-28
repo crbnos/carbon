@@ -106,6 +106,14 @@ export function integrationStepId(piece: string, action: string): string {
   return `integration.${piece}.${action}`;
 }
 
+/** The label key holding an app's own display name — "Google Calendar", not the
+ * `google-calendar` package slug. Carried through the generator rather than derived
+ * from the slug, so a vendor that does not title-case ("HubSpot", "GitHub") reads
+ * correctly and is translated like every other catalog string. */
+export function integrationAppLabelKey(piece: string): string {
+  return `integration.${piece}`;
+}
+
 /**
  * One step a third-party integration offers. Separate from `CatalogAction` on
  * purpose: an action is something Carbon does to its own data, and nothing on the

@@ -13,9 +13,7 @@ export {
   createWorkflowCatalog,
   getActionRoute,
   getCatalogEvent,
-  getCatalogIntegration,
-  integrationStepId,
-  integrationStepIds
+  integrationStepId
 } from "./catalog";
 export type { CatalogOverlay, CustomFieldDef } from "./custom-fields";
 export {

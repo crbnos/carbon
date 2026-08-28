@@ -18,6 +18,7 @@ export type {
 export {
   createFixtureCatalog,
   INTEGRATION_CONNECTION_INPUT,
+  integrationAppLabelKey,
   isMultiSelect,
   walkPath
 } from "./definition/catalog";

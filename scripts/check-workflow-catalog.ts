@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { assertPinnedVersions } from "../packages/jobs/src/workflows/integrations/allowlist";
 import { buildPieceActionDeclarations } from "../packages/jobs/src/workflows/integrations/catalog";
 import schema from "../packages/database/src/swagger-docs-schema";
 import { WORKFLOW_ACTIONS as HAND_WRITTEN_ACTIONS } from "../packages/workflows/src/catalog/actions";
@@ -45,6 +46,16 @@ async function main(): Promise<void> {
 
   const failures: string[] = [];
   const fail = (message: string) => failures.push(message);
+
+  // The allowlist names an exact version; package.json is what actually installs.
+  try {
+    const jobsPackage = JSON.parse(
+      fs.readFileSync(path.join(ROOT, "packages/jobs/package.json"), "utf8")
+    ) as { dependencies?: Record<string, string> };
+    assertPinnedVersions(jobsPackage.dependencies ?? {});
+  } catch (err) {
+    fail((err as Error).message);
+  }
 
   // `git grep` searches the index, so build output and dependencies are excluded
   // without a skip-list.
