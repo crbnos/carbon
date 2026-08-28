@@ -2,19 +2,28 @@ import { useCarbon } from "@carbon/auth";
 import type { Json } from "@carbon/database";
 import { DatePicker, InputControlled, ValidatedForm } from "@carbon/form";
 import {
+  Badge,
   Button,
   Combobox,
   HStack,
-  IconButton,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  ModalTitle,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   toast,
+  useDisclosure,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
-import { LuCopy, LuLink, LuX } from "react-icons/lu";
+import { LuCopy, LuLink, LuUnlink2 } from "react-icons/lu";
+import { RiProgress8Line } from "react-icons/ri";
 import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -50,6 +59,8 @@ const PurchaseReturnOrderProperties = () => {
   const routeData = useRouteData<{
     purchaseReturnOrder: PurchaseReturnOrder;
   }>(path.to.purchaseReturnOrder(id));
+
+  const unlinkDisclosure = useDisclosure();
 
   const fetcher = useFetcher<{ error: { message: string } | null }>();
   useEffect(() => {
@@ -197,6 +208,58 @@ const PurchaseReturnOrderProperties = () => {
           {routeData?.purchaseReturnOrder?.purchaseReturnOrderId}
         </span>
       </VStack>
+
+      {routeData?.purchaseReturnOrder?.purchaseOrderId ? (
+        <VStack spacing={0} className="w-full">
+          <span className="text-xs text-muted-foreground">
+            <Trans>Purchase Order</Trans>
+          </span>
+          <HStack className="group w-full justify-between" spacing={0}>
+            <Hyperlink
+              to={path.to.purchaseOrder(
+                routeData.purchaseReturnOrder.purchaseOrderId
+              )}
+            >
+              <Badge variant="secondary">
+                <RiProgress8Line className="w-3 h-3 mr-1" />
+                {purchaseOrderOptions.find(
+                  (option) =>
+                    option.value ===
+                    routeData.purchaseReturnOrder.purchaseOrderId
+                )?.label ?? t`Purchase Order`}
+              </Badge>
+            </Hyperlink>
+            {!isDisabled && (
+              <Button
+                className="group-hover:opacity-100 opacity-0 transition-opacity duration-200"
+                variant="ghost"
+                size="sm"
+                leftIcon={<LuUnlink2 className="w-3 h-3" />}
+                onClick={unlinkDisclosure.onOpen}
+              >
+                <Trans>Unlink</Trans>
+              </Button>
+            )}
+          </HStack>
+        </VStack>
+      ) : (
+        <VStack spacing={0} className="w-full">
+          <span className="text-xs text-muted-foreground">
+            <Trans>Purchase Order</Trans>
+          </span>
+          <Combobox
+            size="sm"
+            className="w-full"
+            value=""
+            options={purchaseOrderOptions}
+            isReadOnly={isDisabled}
+            placeholder={t`Link a purchase order`}
+            onChange={(value) => {
+              if (value) onUpdate("purchaseOrderId", value);
+            }}
+          />
+        </VStack>
+      )}
 
       <Assignee
         id={id}
@@ -383,34 +446,6 @@ const PurchaseReturnOrderProperties = () => {
         />
       </ValidatedForm>
 
-      <VStack spacing={2} className="w-full">
-        <span className="text-xs text-muted-foreground">
-          <Trans>Purchase Order</Trans>
-        </span>
-        <HStack className="w-full" spacing={1}>
-          <Combobox
-            size="sm"
-            className="w-full"
-            value={routeData?.purchaseReturnOrder?.purchaseOrderId ?? ""}
-            options={purchaseOrderOptions}
-            isReadOnly={isDisabled}
-            placeholder={t`Link a purchase order`}
-            onChange={(value) => {
-              if (value) onUpdate("purchaseOrderId", value);
-            }}
-          />
-          {routeData?.purchaseReturnOrder?.purchaseOrderId && !isDisabled && (
-            <IconButton
-              aria-label={t`Unlink purchase order`}
-              icon={<LuX />}
-              size="sm"
-              variant="ghost"
-              onClick={() => onUpdate("purchaseOrderId", null)}
-            />
-          )}
-        </HStack>
-      </VStack>
-
       {routeData?.purchaseReturnOrder?.replacementPurchaseOrderId && (
         <VStack spacing={2}>
           <span className="text-xs text-muted-foreground">
@@ -426,24 +461,6 @@ const PurchaseReturnOrderProperties = () => {
         </VStack>
       )}
 
-      {routeData?.purchaseReturnOrder?.purchaseOrderId && (
-        <VStack spacing={2}>
-          <span className="text-xs text-muted-foreground">
-            <Trans>Source Purchase Order</Trans>
-          </span>
-          <Hyperlink
-            to={path.to.purchaseOrder(
-              routeData.purchaseReturnOrder.purchaseOrderId
-            )}
-          >
-            {purchaseOrderOptions.find(
-              (option) =>
-                option.value === routeData.purchaseReturnOrder.purchaseOrderId
-            )?.label ?? <Trans>View source purchase order</Trans>}
-          </Hyperlink>
-        </VStack>
-      )}
-
       <VStack spacing={2}>
         <span className="text-xs font-medium text-muted-foreground">
           <Trans>Created By</Trans>
@@ -452,6 +469,49 @@ const PurchaseReturnOrderProperties = () => {
           employeeId={routeData?.purchaseReturnOrder?.createdBy ?? null}
         />
       </VStack>
+
+      {unlinkDisclosure.isOpen && (
+        <Modal
+          open={unlinkDisclosure.isOpen}
+          onOpenChange={(open) => {
+            if (!open) unlinkDisclosure.onClose();
+          }}
+        >
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>
+                <Trans>Unlink return from purchase order?</Trans>
+              </ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+              <p className="text-sm text-muted-foreground">
+                <Trans>
+                  This will remove the link between{" "}
+                  {routeData?.purchaseReturnOrder?.purchaseReturnOrderId} and
+                  its purchase order. The return will no longer appear under the
+                  purchase order.
+                </Trans>
+              </p>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="secondary" onClick={unlinkDisclosure.onClose}>
+                <Trans>Cancel</Trans>
+              </Button>
+              <Button
+                variant="destructive"
+                leftIcon={<LuUnlink2 className="w-3 h-3" />}
+                onClick={() => {
+                  onUpdate("purchaseOrderId", null);
+                  unlinkDisclosure.onClose();
+                }}
+              >
+                <Trans>Unlink</Trans>
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      )}
 
       <CustomFormInlineFields
         customFields={

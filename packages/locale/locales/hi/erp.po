@@ -14331,12 +14331,6 @@ msgstr "स्रोत सूची"
 msgid "Source Method"
 msgstr "स्रोत विधि"
 
-msgid "Source Purchase Order"
-msgstr "स्रोत क्रय आदेश"
-
-msgid "Source Sales Order"
-msgstr "स्रोत विक्रय आदेश"
-
 msgid "Source types"
 msgstr "स्रोत प्रकार"
 
@@ -16123,6 +16117,14 @@ msgstr "यह सक्रिय निर्माण विधि के स�
 msgid "This will remove {0}'s link to {1}. The job will no longer appear under the sales order and shipments won't find it."
 msgstr "यह {0} का {1} से लिंक हटा देगा। यह जॉब अब बिक्री आदेश के तहत दिखाई नहीं देगा और शिपमेंट इसे नहीं खोज पाएंगे।"
 
+#. placeholder {0}: routeData?.purchaseReturnOrder?.purchaseReturnOrderId
+msgid "This will remove the link between {0} and its purchase order. The return will no longer appear under the purchase order."
+msgstr ""
+
+#. placeholder {0}: routeData?.salesReturnOrder?.salesReturnOrderId
+msgid "This will remove the link between {0} and its sales order. The RMA will no longer appear under the sales order."
+msgstr ""
+
 msgid "This will replace all method materials of other revisions with this revision."
 msgstr "यह अन्य संशोधनों की सभी विधि सामग्री को इस संशोधन से बदल देगा।"
 
@@ -16655,11 +16657,11 @@ msgstr "अनलिंक करें"
 msgid "Unlink job from sales order?"
 msgstr "बिक्रय आदेश से नौकरी को अनलिंक करें?"
 
-msgid "Unlink purchase order"
-msgstr "क्रय आदेश अनलिंक करें"
+msgid "Unlink return from purchase order?"
+msgstr ""
 
-msgid "Unlink sales order"
-msgstr "विक्रय आदेश अनलिंक करें"
+msgid "Unlink RMA from sales order?"
+msgstr ""
 
 msgid "Unlock"
 msgstr "अनलॉक करें"
@@ -17231,12 +17233,6 @@ msgstr "निर्धारित देखें"
 
 msgid "View Shipment"
 msgstr "शिपमेंट देखें"
-
-msgid "View source purchase order"
-msgstr "स्रोत क्रय आदेश देखें"
-
-msgid "View source sales order"
-msgstr "स्रोत विक्रय आदेश देखें"
 
 msgid "View Status"
 msgstr "स्थिति देखें"

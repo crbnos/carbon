@@ -14331,12 +14331,6 @@ msgstr "원본 목록"
 msgid "Source Method"
 msgstr "소스 방법"
 
-msgid "Source Purchase Order"
-msgstr "원본 구매 주문"
-
-msgid "Source Sales Order"
-msgstr "원본 판매 주문"
-
 msgid "Source types"
 msgstr "소스 유형"
 
@@ -16123,6 +16117,14 @@ msgstr "배치 크기를 사용하여 활성 제조 방법의 자재명세서와
 msgid "This will remove {0}'s link to {1}. The job will no longer appear under the sales order and shipments won't find it."
 msgstr "{0}에서 {1}로의 연결이 제거됩니다. 이후 해당 작업은 판매주문 아래에 표시되지 않으며 출하에서도 찾을 수 없습니다."
 
+#. placeholder {0}: routeData?.purchaseReturnOrder?.purchaseReturnOrderId
+msgid "This will remove the link between {0} and its purchase order. The return will no longer appear under the purchase order."
+msgstr ""
+
+#. placeholder {0}: routeData?.salesReturnOrder?.salesReturnOrderId
+msgid "This will remove the link between {0} and its sales order. The RMA will no longer appear under the sales order."
+msgstr ""
+
 msgid "This will replace all method materials of other revisions with this revision."
 msgstr "다른 리비전의 모든 방법 자재가 이 리비전으로 교체됩니다."
 
@@ -16655,11 +16657,11 @@ msgstr "연결 해제"
 msgid "Unlink job from sales order?"
 msgstr "작업을 판매주문에서 연결 해제하시겠습니까?"
 
-msgid "Unlink purchase order"
-msgstr "구매 주문 연결 해제"
+msgid "Unlink return from purchase order?"
+msgstr ""
 
-msgid "Unlink sales order"
-msgstr "판매 주문 연결 해제"
+msgid "Unlink RMA from sales order?"
+msgstr ""
 
 msgid "Unlock"
 msgstr "잠금 해제"
@@ -17231,12 +17233,6 @@ msgstr "예정 정비 보기"
 
 msgid "View Shipment"
 msgstr "출하 보기"
-
-msgid "View source purchase order"
-msgstr "원본 구매 주문 보기"
-
-msgid "View source sales order"
-msgstr "원본 판매 주문 보기"
 
 msgid "View Status"
 msgstr "상태 보기"

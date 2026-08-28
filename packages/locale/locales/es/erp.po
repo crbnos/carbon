@@ -14331,12 +14331,6 @@ msgstr "Lista de origen"
 msgid "Source Method"
 msgstr "Método de Origen"
 
-msgid "Source Purchase Order"
-msgstr "Orden de Compra de Origen"
-
-msgid "Source Sales Order"
-msgstr "Orden de Venta de Origen"
-
 msgid "Source types"
 msgstr "Tipos de origen"
 
@@ -16123,6 +16117,14 @@ msgstr "Esto recalculará el costo unitario del método de fabricación activo b
 msgid "This will remove {0}'s link to {1}. The job will no longer appear under the sales order and shipments won't find it."
 msgstr "Esto eliminará el vínculo de {0} con {1}. El trabajo ya no aparecerá bajo la orden de venta y los envíos no lo encontrarán."
 
+#. placeholder {0}: routeData?.purchaseReturnOrder?.purchaseReturnOrderId
+msgid "This will remove the link between {0} and its purchase order. The return will no longer appear under the purchase order."
+msgstr ""
+
+#. placeholder {0}: routeData?.salesReturnOrder?.salesReturnOrderId
+msgid "This will remove the link between {0} and its sales order. The RMA will no longer appear under the sales order."
+msgstr ""
+
 msgid "This will replace all method materials of other revisions with this revision."
 msgstr "Esto reemplazará todos los materiales de método de otras revisiones con esta revisión."
 
@@ -16655,11 +16657,11 @@ msgstr "Desenlazar"
 msgid "Unlink job from sales order?"
 msgstr "¿Desenlazar trabajo de la orden de venta?"
 
-msgid "Unlink purchase order"
-msgstr "Desvincular orden de compra"
+msgid "Unlink return from purchase order?"
+msgstr ""
 
-msgid "Unlink sales order"
-msgstr "Desvincular pedido de venta"
+msgid "Unlink RMA from sales order?"
+msgstr ""
 
 msgid "Unlock"
 msgstr "Desbloquear"
@@ -17231,12 +17233,6 @@ msgstr "Ver Programado"
 
 msgid "View Shipment"
 msgstr "Ver Envío"
-
-msgid "View source purchase order"
-msgstr "Ver orden de compra de origen"
-
-msgid "View source sales order"
-msgstr "Ver orden de venta de origen"
 
 msgid "View Status"
 msgstr "Ver Estado"

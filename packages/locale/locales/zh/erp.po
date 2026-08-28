@@ -14331,12 +14331,6 @@ msgstr "源列表"
 msgid "Source Method"
 msgstr "源方法"
 
-msgid "Source Purchase Order"
-msgstr "源采购订单"
-
-msgid "Source Sales Order"
-msgstr "源销售订单"
-
 msgid "Source types"
 msgstr "源类型"
 
@@ -16123,6 +16117,14 @@ msgstr "这将根据活跃制造方法的物料清单和工艺流程使用批量
 msgid "This will remove {0}'s link to {1}. The job will no longer appear under the sales order and shipments won't find it."
 msgstr "这将移除 {0} 与 {1} 的关联。该工作单将不再显示在销售订单下，发货单也将无法找到它。"
 
+#. placeholder {0}: routeData?.purchaseReturnOrder?.purchaseReturnOrderId
+msgid "This will remove the link between {0} and its purchase order. The return will no longer appear under the purchase order."
+msgstr ""
+
+#. placeholder {0}: routeData?.salesReturnOrder?.salesReturnOrderId
+msgid "This will remove the link between {0} and its sales order. The RMA will no longer appear under the sales order."
+msgstr ""
+
 msgid "This will replace all method materials of other revisions with this revision."
 msgstr "这将用此修订版本替换其他修订版本的所有方法材料。"
 
@@ -16655,11 +16657,11 @@ msgstr "取消链接"
 msgid "Unlink job from sales order?"
 msgstr "从销售订单取消关联工作？"
 
-msgid "Unlink purchase order"
-msgstr "取消关联采购订单"
+msgid "Unlink return from purchase order?"
+msgstr ""
 
-msgid "Unlink sales order"
-msgstr "取消关联销售订单"
+msgid "Unlink RMA from sales order?"
+msgstr ""
 
 msgid "Unlock"
 msgstr "解锁"
@@ -17231,12 +17233,6 @@ msgstr "查看已排期"
 
 msgid "View Shipment"
 msgstr "查看发货单"
-
-msgid "View source purchase order"
-msgstr "查看源采购订单"
-
-msgid "View source sales order"
-msgstr "查看源销售订单"
 
 msgid "View Status"
 msgstr "查看状态"

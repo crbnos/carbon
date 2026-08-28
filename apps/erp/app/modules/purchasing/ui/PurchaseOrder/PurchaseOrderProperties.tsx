@@ -1,4 +1,4 @@
-import type { Database, Json } from "@carbon/database";
+import type { Json } from "@carbon/database";
 import { getPurchaseOrderDisplayId } from "@carbon/documents/utils";
 import { DatePicker, InputControlled, ValidatedForm } from "@carbon/form";
 import {
@@ -46,20 +46,16 @@ import {
   useSupplierApprovalRequired,
   useUser
 } from "~/hooks";
-import { PurchaseReturnOrderStatus } from "~/modules/purchasing/ui/PurchaseReturnOrders";
 import type { action } from "~/routes/x+/items+/update";
 import type { action as exchangeRateAction } from "~/routes/x+/purchase-order+/$orderId.exchange-rate";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 import { isPurchaseOrderLocked } from "../../purchasing.models";
 import type { PurchaseOrder, SupplierQuote } from "../../types";
-import { usePurchaseOrderReturns } from "./usePurchaseOrder";
 
 const PurchaseOrderProperties = () => {
   const { orderId } = useParams();
   if (!orderId) throw new Error("orderId not found");
-
-  const returnOrders = usePurchaseOrderReturns(orderId);
 
   const routeData = useRouteData<{
     purchaseOrder: PurchaseOrder;
@@ -479,32 +475,6 @@ const PurchaseOrderProperties = () => {
             </HStack>
           </VStack>
         )}
-
-      <VStack spacing={2} className="w-full">
-        <span className="text-xs text-muted-foreground">
-          <Trans>Returns</Trans>
-        </span>
-        {returnOrders.map((returnOrder) => (
-          <HStack key={returnOrder.id} className="w-full justify-between">
-            <Hyperlink to={path.to.purchaseReturnOrder(returnOrder.id)}>
-              {returnOrder.purchaseReturnOrderId}
-            </Hyperlink>
-            <PurchaseReturnOrderStatus
-              status={
-                returnOrder.status as Database["public"]["Enums"]["purchaseReturnOrderStatus"]
-              }
-            />
-          </HStack>
-        ))}
-        <Hyperlink
-          to={`${path.to.newPurchaseReturnOrder}?supplierId=${
-            routeData?.purchaseOrder?.supplierId ?? ""
-          }&purchaseOrderId=${orderId}`}
-          className="text-xs text-muted-foreground"
-        >
-          + <Trans>New Supplier Return</Trans>
-        </Hyperlink>
-      </VStack>
 
       <VStack spacing={2}>
         <span className="text-xs font-medium text-muted-foreground">

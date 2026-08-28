@@ -14331,12 +14331,6 @@ msgstr "ソースリスト"
 msgid "Source Method"
 msgstr "ソース方法"
 
-msgid "Source Purchase Order"
-msgstr "ソース発注書"
-
-msgid "Source Sales Order"
-msgstr "ソース販売注文"
-
 msgid "Source types"
 msgstr "ソースタイプ"
 
@@ -16123,6 +16117,14 @@ msgstr "これにより、アクティブな製造方法の部品表とプロセ
 msgid "This will remove {0}'s link to {1}. The job will no longer appear under the sales order and shipments won't find it."
 msgstr "これにより{0}から{1}へのリンクが削除されます。ジョブは販売注文の下に表示されなくなり、出荷はそれを見つけることができなくなります。"
 
+#. placeholder {0}: routeData?.purchaseReturnOrder?.purchaseReturnOrderId
+msgid "This will remove the link between {0} and its purchase order. The return will no longer appear under the purchase order."
+msgstr ""
+
+#. placeholder {0}: routeData?.salesReturnOrder?.salesReturnOrderId
+msgid "This will remove the link between {0} and its sales order. The RMA will no longer appear under the sales order."
+msgstr ""
+
 msgid "This will replace all method materials of other revisions with this revision."
 msgstr "これにより、他のリビジョンのすべてのメソッドマテリアルがこのリビジョンに置き換わります。"
 
@@ -16655,11 +16657,11 @@ msgstr "リンク解除"
 msgid "Unlink job from sales order?"
 msgstr "販売注文からジョブのリンクを解除しますか？"
 
-msgid "Unlink purchase order"
-msgstr "発注書のリンクを解除"
+msgid "Unlink return from purchase order?"
+msgstr ""
 
-msgid "Unlink sales order"
-msgstr "受注のリンクを解除"
+msgid "Unlink RMA from sales order?"
+msgstr ""
 
 msgid "Unlock"
 msgstr "ロック解除"
@@ -17231,12 +17233,6 @@ msgstr "スケジュール済みを表示"
 
 msgid "View Shipment"
 msgstr "出荷を表示"
-
-msgid "View source purchase order"
-msgstr "ソース発注書を表示"
-
-msgid "View source sales order"
-msgstr "ソース販売注文を表示"
 
 msgid "View Status"
 msgstr "ステータスを表示"

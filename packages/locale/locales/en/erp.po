@@ -14331,12 +14331,6 @@ msgstr "Source list"
 msgid "Source Method"
 msgstr "Source Method"
 
-msgid "Source Purchase Order"
-msgstr "Source Purchase Order"
-
-msgid "Source Sales Order"
-msgstr "Source Sales Order"
-
 msgid "Source types"
 msgstr "Source types"
 
@@ -16123,6 +16117,14 @@ msgstr "This will recalculate the unit cost from the active make method's bill o
 msgid "This will remove {0}'s link to {1}. The job will no longer appear under the sales order and shipments won't find it."
 msgstr "This will remove {0}'s link to {1}. The job will no longer appear under the sales order and shipments won't find it."
 
+#. placeholder {0}: routeData?.purchaseReturnOrder?.purchaseReturnOrderId
+msgid "This will remove the link between {0} and its purchase order. The return will no longer appear under the purchase order."
+msgstr "This will remove the link between {0} and its purchase order. The return will no longer appear under the purchase order."
+
+#. placeholder {0}: routeData?.salesReturnOrder?.salesReturnOrderId
+msgid "This will remove the link between {0} and its sales order. The RMA will no longer appear under the sales order."
+msgstr "This will remove the link between {0} and its sales order. The RMA will no longer appear under the sales order."
+
 msgid "This will replace all method materials of other revisions with this revision."
 msgstr "This will replace all method materials of other revisions with this revision."
 
@@ -16655,11 +16657,11 @@ msgstr "Unlink"
 msgid "Unlink job from sales order?"
 msgstr "Unlink job from sales order?"
 
-msgid "Unlink purchase order"
-msgstr "Unlink purchase order"
+msgid "Unlink return from purchase order?"
+msgstr "Unlink return from purchase order?"
 
-msgid "Unlink sales order"
-msgstr "Unlink sales order"
+msgid "Unlink RMA from sales order?"
+msgstr "Unlink RMA from sales order?"
 
 msgid "Unlock"
 msgstr "Unlock"
@@ -17231,12 +17233,6 @@ msgstr "View Scheduled"
 
 msgid "View Shipment"
 msgstr "View Shipment"
-
-msgid "View source purchase order"
-msgstr "View source purchase order"
-
-msgid "View source sales order"
-msgstr "View source sales order"
 
 msgid "View Status"
 msgstr "View Status"

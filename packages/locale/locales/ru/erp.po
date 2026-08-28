@@ -14331,12 +14331,6 @@ msgstr "Список источников"
 msgid "Source Method"
 msgstr "Исходный метод"
 
-msgid "Source Purchase Order"
-msgstr "Исходный заказ на покупку"
-
-msgid "Source Sales Order"
-msgstr "Исходный заказ на продажу"
-
 msgid "Source types"
 msgstr "Типы источников"
 
@@ -16123,6 +16117,14 @@ msgstr "Это пересчитает себестоимость единицы 
 msgid "This will remove {0}'s link to {1}. The job will no longer appear under the sales order and shipments won't find it."
 msgstr "Это удалит связь {0} с {1}. Задание больше не будет отображаться в заказе на продажу, и отправки его не найдут."
 
+#. placeholder {0}: routeData?.purchaseReturnOrder?.purchaseReturnOrderId
+msgid "This will remove the link between {0} and its purchase order. The return will no longer appear under the purchase order."
+msgstr ""
+
+#. placeholder {0}: routeData?.salesReturnOrder?.salesReturnOrderId
+msgid "This will remove the link between {0} and its sales order. The RMA will no longer appear under the sales order."
+msgstr ""
+
 msgid "This will replace all method materials of other revisions with this revision."
 msgstr "Это заменит все материалы методов других редакций на эту редакцию."
 
@@ -16655,11 +16657,11 @@ msgstr "Отменить связь"
 msgid "Unlink job from sales order?"
 msgstr "Отменить связь задания с заказом на продажу?"
 
-msgid "Unlink purchase order"
-msgstr "Отвязать заказ на закупку"
+msgid "Unlink return from purchase order?"
+msgstr ""
 
-msgid "Unlink sales order"
-msgstr "Отвязать заказ на продажу"
+msgid "Unlink RMA from sales order?"
+msgstr ""
 
 msgid "Unlock"
 msgstr "Разблокировать"
@@ -17231,12 +17233,6 @@ msgstr "Просмотреть запланированные"
 
 msgid "View Shipment"
 msgstr "Просмотр отправки"
-
-msgid "View source purchase order"
-msgstr "Просмотреть исходный заказ на покупку"
-
-msgid "View source sales order"
-msgstr "Просмотреть исходный заказ на продажу"
 
 msgid "View Status"
 msgstr "Просмотр статуса"

@@ -14331,12 +14331,6 @@ msgstr "Kaynak listesi"
 msgid "Source Method"
 msgstr "Kaynak Yöntem"
 
-msgid "Source Purchase Order"
-msgstr "Kaynak Satın Alma Siparişi"
-
-msgid "Source Sales Order"
-msgstr "Kaynak Satış Siparişi"
-
 msgid "Source types"
 msgstr "Kaynak türleri"
 
@@ -16123,6 +16117,14 @@ msgstr "Bu, aktif üretim yönteminin malzeme listesinden ve partileri kullanara
 msgid "This will remove {0}'s link to {1}. The job will no longer appear under the sales order and shipments won't find it."
 msgstr "Bu, {0}\"'nin {1} ile bağlantısını kaldıracaktır. İş artık satış siparişi altında görünmeyecek ve sevkiyatlar onu bulamayacak."
 
+#. placeholder {0}: routeData?.purchaseReturnOrder?.purchaseReturnOrderId
+msgid "This will remove the link between {0} and its purchase order. The return will no longer appear under the purchase order."
+msgstr ""
+
+#. placeholder {0}: routeData?.salesReturnOrder?.salesReturnOrderId
+msgid "This will remove the link between {0} and its sales order. The RMA will no longer appear under the sales order."
+msgstr ""
+
 msgid "This will replace all method materials of other revisions with this revision."
 msgstr "Bu, diğer revizyonlardaki tüm yöntem malzemelerini bu revizyonla değiştirecektir."
 
@@ -16655,11 +16657,11 @@ msgstr "Bağlantısını Kes"
 msgid "Unlink job from sales order?"
 msgstr "İş emrini satış siparişinden ayır?"
 
-msgid "Unlink purchase order"
-msgstr "Satın alma siparişi bağlantısını kaldır"
+msgid "Unlink return from purchase order?"
+msgstr ""
 
-msgid "Unlink sales order"
-msgstr "Satış siparişi bağlantısını kaldır"
+msgid "Unlink RMA from sales order?"
+msgstr ""
 
 msgid "Unlock"
 msgstr "Kilidi Aç"
@@ -17231,12 +17233,6 @@ msgstr "Planlanmışları Gör"
 
 msgid "View Shipment"
 msgstr "Sevkiyatı Görüntüle"
-
-msgid "View source purchase order"
-msgstr "Kaynak Satın Alma Siparişini Görüntüle"
-
-msgid "View source sales order"
-msgstr "Kaynak Satış Siparişini Görüntüle"
 
 msgid "View Status"
 msgstr "Durumu Görüntüle"
