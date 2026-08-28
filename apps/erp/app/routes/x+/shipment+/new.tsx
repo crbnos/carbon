@@ -78,6 +78,215 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       throw redirect(path.to.shipmentDetails(salesOrderShipment.data.id));
+    case "Repair Order": {
+      // The leg says which way the unit is going: to the OEM, or home to the
+      // customer. One open draft per leg, so clicking twice reuses the draft
+      // instead of stacking duplicates.
+      const leg =
+        (formData.get("leg") as string) === "supplier"
+          ? "supplier"
+          : "customer";
+
+      // The create function stamps supplierId on the supplier leg and
+      // customerId on the customer leg, so the party column IS the leg
+      // discriminator — filter on it rather than handing one leg the other's
+      // draft.
+      let existingRepairShipmentQuery = client
+        .from("shipment")
+        .select("id")
+        .eq("sourceDocument", "Repair Order")
+        .eq("sourceDocumentId", sourceDocumentId)
+        .eq("status", "Draft")
+        .eq("companyId", companyId);
+
+      existingRepairShipmentQuery =
+        leg === "supplier"
+          ? existingRepairShipmentQuery.not("supplierId", "is", null)
+          : existingRepairShipmentQuery.not("customerId", "is", null);
+
+      const existingRepairShipment = await existingRepairShipmentQuery
+        .order("createdAt", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingRepairShipment.error) {
+        throw redirect(
+          path.to.repairOrderDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              existingRepairShipment.error,
+              "Failed to check for an existing shipment"
+            )
+          )
+        );
+      }
+      if (existingRepairShipment.data) {
+        throw redirect(path.to.shipmentDetails(existingRepairShipment.data.id));
+      }
+
+      const repairShipment = await serviceRole.functions.invoke<{
+        id: string;
+      }>("create", {
+        body: {
+          type: "shipmentFromRepairOrder",
+          companyId,
+          locationId: defaults.data?.locationId,
+          repairOrderId: sourceDocumentId,
+          leg,
+          shipmentId: undefined,
+          userId: userId
+        }
+      });
+      if (!repairShipment.data || repairShipment.error) {
+        logger.error("Failed to create repair shipment", {
+          error: repairShipment.error
+        });
+        throw redirect(
+          path.to.repairOrderDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              repairShipment.error,
+              await getEdgeFunctionErrorMessage(
+                repairShipment.error,
+                "Failed to create shipment"
+              )
+            )
+          )
+        );
+      }
+
+      throw redirect(path.to.shipmentDetails(repairShipment.data.id));
+    }
+    case "Sales Return Order": {
+      // One open draft per return order: clicking Ship again goes to the
+      // existing draft instead of stacking up duplicates.
+      const existingDraftsalesReturnShipment = await client
+        .from("shipment")
+        .select("id")
+        .eq("sourceDocument", "Sales Return Order")
+        .eq("sourceDocumentId", sourceDocumentId)
+        .eq("status", "Draft")
+        .eq("companyId", companyId)
+        .order("createdAt", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (existingDraftsalesReturnShipment.error) {
+        throw redirect(
+          path.to.salesReturnOrderDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              existingDraftsalesReturnShipment.error,
+              "Failed to check for an existing shipment"
+            )
+          )
+        );
+      }
+      if (existingDraftsalesReturnShipment.data) {
+        throw redirect(
+          path.to.shipmentDetails(existingDraftsalesReturnShipment.data.id)
+        );
+      }
+
+      const salesReturnShipment = await serviceRole.functions.invoke<{
+        id: string;
+      }>("create", {
+        body: {
+          type: "shipmentFromSalesReturnOrder",
+          companyId,
+          locationId: defaults.data?.locationId,
+          salesReturnOrderId: sourceDocumentId,
+          shipmentId: undefined,
+          userId: userId
+        }
+      });
+      if (!salesReturnShipment.data || salesReturnShipment.error) {
+        logger.error("Failed to create shipment", {
+          error: salesReturnShipment.error
+        });
+        throw redirect(
+          path.to.salesReturnOrderDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              salesReturnShipment.error,
+              await getEdgeFunctionErrorMessage(
+                salesReturnShipment.error,
+                "Failed to create shipment"
+              )
+            )
+          )
+        );
+      }
+
+      throw redirect(path.to.shipmentDetails(salesReturnShipment.data.id));
+    }
+    case "Purchase Return Order": {
+      // One open draft per return order: clicking Ship again goes to the
+      // existing draft instead of stacking up duplicates.
+      const existingDraftpurchaseReturnShipment = await client
+        .from("shipment")
+        .select("id")
+        .eq("sourceDocument", "Purchase Return Order")
+        .eq("sourceDocumentId", sourceDocumentId)
+        .eq("status", "Draft")
+        .eq("companyId", companyId)
+        .order("createdAt", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (existingDraftpurchaseReturnShipment.error) {
+        throw redirect(
+          path.to.purchaseReturnOrderDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              existingDraftpurchaseReturnShipment.error,
+              "Failed to check for an existing shipment"
+            )
+          )
+        );
+      }
+      if (existingDraftpurchaseReturnShipment.data) {
+        throw redirect(
+          path.to.shipmentDetails(existingDraftpurchaseReturnShipment.data.id)
+        );
+      }
+
+      const purchaseReturnShipment = await serviceRole.functions.invoke<{
+        id: string;
+      }>("create", {
+        body: {
+          type: "shipmentFromPurchaseReturnOrder",
+          companyId,
+          locationId: defaults.data?.locationId,
+          purchaseReturnOrderId: sourceDocumentId,
+          shipmentId: undefined,
+          userId: userId
+        }
+      });
+      if (!purchaseReturnShipment.data || purchaseReturnShipment.error) {
+        logger.error("Failed to create shipment", {
+          error: purchaseReturnShipment.error
+        });
+        throw redirect(
+          path.to.purchaseReturnOrderDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              purchaseReturnShipment.error,
+              await getEdgeFunctionErrorMessage(
+                purchaseReturnShipment.error,
+                "Failed to create shipment"
+              )
+            )
+          )
+        );
+      }
+
+      throw redirect(path.to.shipmentDetails(purchaseReturnShipment.data.id));
+    }
     case "Purchase Order":
       if (!defaults.data?.locationId) {
         throw redirect(

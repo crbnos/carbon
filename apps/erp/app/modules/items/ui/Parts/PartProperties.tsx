@@ -29,7 +29,8 @@ import {
   Boolean,
   ItemPostingGroup,
   Tags,
-  UnitOfMeasure
+  UnitOfMeasure,
+  WarrantyTerm
 } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
@@ -182,7 +183,9 @@ const PartProperties = ({
         | "description"
         | "mpn"
         | "replenishmentSystem"
-        | "unitOfMeasureCode",
+        | "unitOfMeasureCode"
+        | "warrantyTermId"
+        | "supplierWarrantyTermId",
       value: string | null
     ) => {
       const formData = new FormData();
@@ -679,6 +682,47 @@ const PartProperties = ({
           inline={inlineLayout}
           onChange={(value) => {
             onUpdate("unitOfMeasureCode", value?.value ?? null);
+          }}
+        />
+      </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{
+          warrantyTermId: routeData?.partSummary?.warrantyTermId ?? undefined
+        }}
+        validator={z.object({
+          warrantyTermId: z.string().optional()
+        })}
+        className="w-full"
+        isReadOnly={isReadOnly}
+      >
+        <WarrantyTerm
+          label={t`Warranty Term`}
+          name="warrantyTermId"
+          inline={inlineLayout}
+          onChange={(value) => {
+            onUpdate("warrantyTermId", value?.value ?? null);
+          }}
+        />
+      </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{
+          supplierWarrantyTermId:
+            routeData?.partSummary?.supplierWarrantyTermId ?? undefined
+        }}
+        validator={z.object({
+          supplierWarrantyTermId: z.string().optional()
+        })}
+        className="w-full"
+        isReadOnly={isReadOnly}
+      >
+        <WarrantyTerm
+          label={t`Supplier Warranty`}
+          name="supplierWarrantyTermId"
+          inline={inlineLayout}
+          onChange={(value) => {
+            onUpdate("supplierWarrantyTermId", value?.value ?? null);
           }}
         />
       </ValidatedForm>

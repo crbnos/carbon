@@ -20,6 +20,7 @@ import {
   nonConformanceTypes,
   paymentTerms,
   periodCloseTaskDefinitions,
+  returnReasons,
   scrapReasons,
   sequences,
   unitOfMeasures
@@ -207,6 +208,13 @@ export async function seedCompanyReferenceData(
     );
   }
 
+  for (const name of returnReasons) {
+    await client.query(
+      `INSERT INTO "returnReason" (name, "inventoryValueZero", "companyId", "createdBy") VALUES ($1, false, $2, 'system')`,
+      [name, companyId]
+    );
+  }
+
   for (const pt of paymentTerms) {
     await client.query(
       `INSERT INTO "paymentTerm" (name, "daysDue", "calculationMethod", "daysDiscount", "discountPercentage", "companyId", "createdBy")
@@ -308,8 +316,13 @@ export async function seedCompanyReferenceData(
   const accountIdByKey: Record<string, string> = {};
   for (const { key, parentKey, ...acc } of accounts) {
     const result = await client.query(
-      `INSERT INTO account (number, name, "isGroup", "accountType", "incomeBalance", class, "parentId", "isSystem", "companyGroupId", "createdBy")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'system') RETURNING id`,
+      // consolidatedRate is part of the seed data and must be persisted here
+      // too: dropping it left bootstrap-provisioned companies on the column
+      // default while the migration path used the seeded value, so the same
+      // account consolidated differently depending on how the company was
+      // created.
+      `INSERT INTO account (number, name, "isGroup", "accountType", "incomeBalance", class, "consolidatedRate", "parentId", "isSystem", "companyGroupId", "createdBy")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'system') RETURNING id`,
       [
         acc.number,
         acc.name,
@@ -317,6 +330,7 @@ export async function seedCompanyReferenceData(
         acc.accountType,
         acc.incomeBalance,
         acc.class,
+        acc.consolidatedRate,
         parentKey ? (accountIdByKey[parentKey] ?? null) : null,
         ("isSystem" in acc ? acc.isSystem : false) ?? false,
         companyGroupId

@@ -64,6 +64,12 @@ msgstr "{0} पहले"
 msgid "{0} cells with deltas"
 msgstr "{0} अंतर वाली कोशिकाएँ"
 
+#. placeholder {0}: line.creditableQuantity
+#. placeholder {1}: line.quantityCredited
+#. placeholder {2}: line.quantityShipped
+msgid "{0} creditable ({1} / {2} credited)"
+msgstr "{0} क्रेडिट योग्य ({1} / {2} क्रेडिट किया गया)"
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} ग्राहक शेष राशि के साथ"
@@ -109,6 +115,11 @@ msgstr "{0} समस्याएं — प्रकाशित नहीं"
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "{0} प्रक्रियाएं"
+
+#. placeholder {0}: quantityFormatter(line.quantityReceived)
+#. placeholder {1}: quantityFormatter(line.quantityCredited)
+msgid "{0} received · {1} credited"
+msgstr "{0} प्राप्त · {1} क्रेडिट किया गया"
 
 #. placeholder {0}: result.credentialName ?? "Passkey"
 msgid "{0} registered"
@@ -652,6 +663,9 @@ msgstr "किसी रसीद की स्थिति में परि�
 msgid "A receipt's supplier changes"
 msgstr "किसी रसीद के आपूर्तिकर्ता में परिवर्तन होता है"
 
+msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
+msgstr "एक रिटर्न मर्चेंडाइज ऑथराइजेशन (RMA) एक ग्राहक को क्रेडिट, प्रतिस्थापन या मरम्मत के लिए सामान वापस करने का अधिकार देता है।"
+
 msgid "A reusable, versioned set of work instructions attached to a process, giving an operation its ordered steps to record and check plus the parameters it runs at."
 msgstr "एक पुनः प्रयोग योग्य, संस्करण युक्त कार्य निर्देशों का समूह जो एक प्रक्रिया से जुड़ा होता है, जो एक ऑपरेशन को रिकॉर्ड और जांच के लिए क्रमबद्ध चरण प्रदान करता है साथ ही वह पैरामीटर भी प्रदान करता है जिस पर यह चलता है।"
 
@@ -768,6 +782,9 @@ msgstr "एक आपूर्तिकर्ता बनाया गया �
 
 msgid "A supplier is deleted"
 msgstr "एक आपूर्तिकर्ता हटा दिया गया है"
+
+msgid "A supplier return sends previously received goods back to the supplier for credit or replacement."
+msgstr "एक आपूर्तिकर्ता रिटर्न पहले से प्राप्त सामानों को क्रेडिट या प्रतिस्थापन के लिए आपूर्तिकर्ता को वापस भेजता है।"
 
 msgid "A supplier's account manager changes"
 msgstr "एक आपूर्तिकर्ता के खाता प्रबंधक में परिवर्तन"
@@ -1136,6 +1153,12 @@ msgstr "लाइन जोड़ें"
 msgid "Add Line Item"
 msgstr "लाइन आइटम जोड़ें"
 
+msgid "Add Lines"
+msgstr "लाइनें जोड़ें"
+
+msgid "Add lines from document"
+msgstr "दस्तावेज़ से लाइनें जोड़ें"
+
 msgid "Add match"
 msgstr "मिलान जोड़ें"
 
@@ -1253,6 +1276,10 @@ msgstr "ऐड-ऑन लागत"
 
 msgid "Added"
 msgstr "जोड़ा गया"
+
+#. placeholder {0}: rows.length
+msgid "Added {0} lines"
+msgstr "जोड़ी गई {0} लाइनें"
 
 msgid "Added for this customer"
 msgstr "इस ग्राहक के लिए जोड़ा गया"
@@ -1763,14 +1790,32 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 msgstr "क्या आप सुनिश्चित हैं कि आप इस कार्य को रद्द करना चाहते हैं? यह अब शॉप फ्लोर पर उपलब्ध नहीं होगा।"
 
+msgid "Are you sure you want to cancel this RMA? This releases the authorized quantities back to the source documents."
+msgstr "क्या आप निश्चित हैं कि आप इस RMA को रद्द करना चाहते हैं? यह अधिकृत मात्राओं को स्रोत दस्तावेज़ों में वापस जारी करता है।"
+
+msgid "Are you sure you want to cancel this supplier return? This releases the authorized quantities back to the source documents."
+msgstr "क्या आप निश्चित हैं कि आप इस आपूर्तिकर्ता रिटर्न को रद्द करना चाहते हैं? यह अधिकृत मात्राओं को स्रोत दस्तावेज़ों में वापस जारी करता है।"
+
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "क्या आप {propertyName} संपत्ति को बदलना चाहते हैं? चूंकि आप उत्पन्न सामग्री आईडी का उपयोग करते हैं, यह इस पार्ट की पार्ट आईडी और सभी संबंधित रिवीजन को बदल देगा।"
+
+msgid "Are you sure you want to complete this RMA? Every line must be fully received or short-closed, with no received quantity pending disposition."
+msgstr "क्या आप निश्चित हैं कि आप इस RMA को पूरा करना चाहते हैं? प्रत्येक लाइन को पूरी तरह प्राप्त या अल्प-बंद होना चाहिए, कोई प्राप्त मात्रा निपटान के लिए लंबित नहीं होनी चाहिए।"
 
 msgid "Are you sure you want to complete this stock transfer?"
 msgstr "क्या आप सुनिश्चित हैं कि आप इस स्टॉक ट्रांसफर को पूरा करना चाहते हैं?"
 
+msgid "Are you sure you want to complete this supplier return? Every line must be fully shipped or short-closed."
+msgstr "क्या आप निश्चित हैं कि आप इस आपूर्तिकर्ता रिटर्न को पूरा करना चाहते हैं? प्रत्येक लाइन को पूरी तरह भेजा जाना चाहिए या अल्प-बंद होना चाहिए।"
+
+msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
+msgstr "क्या आप निश्चित हैं कि आप इस RMA की पुष्टि करना चाहते हैं? पुष्टि करने से ग्राहक को लाइनों पर सामान वापस करने का अधिकार मिलता है।"
+
 msgid "Are you sure you want to confirm this sales order? Confirming the order will affect on order quantities used to calculate supply and demand."
 msgstr "क्या आप इस विक्रय आदेश की पुष्टि करना चाहते हैं? आदेश की पुष्टि करने से आपूर्ति और मांग की गणना के लिए उपयोग किए जाने वाले ऑर्डर मात्राओं पर प्रभाव पड़ेगा।"
+
+msgid "Are you sure you want to confirm this supplier return? Confirming authorizes the goods on the lines to be shipped back to the supplier."
+msgstr "क्या आप निश्चित हैं कि आप इस आपूर्तिकर्ता रिटर्न की पुष्टि करना चाहते हैं? पुष्टि करने से लाइनों पर सामान आपूर्तिकर्ता को वापस भेजने का अधिकार देता है।"
 
 msgid "Are you sure you want to convert the RFQ to a quote?"
 msgstr "क्या आप RFQ को कोटेशन में परिवर्तित करना चाहते हैं?"
@@ -1976,6 +2021,10 @@ msgstr "क्या आप प्रिंटर \"{0}\" को हटाना
 msgid "Are you sure you want to delete the purchase invoice line for {0} {1}? This cannot be undone."
 msgstr "क्या आप {0} {1} के लिए क्रय चालान पंक्ति को हटाना चाहते हैं? इसे पूर्ववत नहीं किया जा सकता।"
 
+#. placeholder {0}: returnReason.name
+msgid "Are you sure you want to delete the return reason: {0}? This cannot be undone."
+msgstr "क्या आप निश्चित हैं कि आप रिटर्न कारण को हटाना चाहते हैं: {0}? यह अस्वीकार नहीं किया जा सकता।"
+
 #. placeholder {0}: salesInvoiceLine.quantity ?? 0
 #. placeholder {1}: salesInvoiceLine.description ?? ""
 msgid "Are you sure you want to delete the sales invoice line for {0} {1}? This cannot be undone."
@@ -2062,6 +2111,9 @@ msgstr "क्या आप इस रिकॉर्ड को हटाना 
 
 msgid "Are you sure you want to delete this required action?"
 msgstr "क्या आप इस आवश्यक कार्य को हटाना चाहते हैं?"
+
+msgid "Are you sure you want to delete this return order line? This cannot be undone."
+msgstr "क्या आप निश्चित हैं कि आप इस रिटर्न ऑर्डर लाइन को हटाना चाहते हैं? यह अस्वीकार नहीं किया जा सकता।"
 
 msgid "Are you sure you want to delete this risk?"
 msgstr "क्या आप इस जोखिम को हटाना चाहते हैं?"
@@ -2546,6 +2598,9 @@ msgstr "बिलिंग पता"
 msgid "Bills of material"
 msgstr "सामग्री के बिल"
 
+msgid "Blind"
+msgstr "ब्लाइंड"
+
 msgid "Blind Count"
 msgstr "ब्लाइंड काउंट"
 
@@ -2754,6 +2809,11 @@ msgstr "इस फ़ाइल को डाउनलोड नहीं कि�
 msgid "Cancel"
 msgstr "रद्द करें"
 
+#. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
+#. placeholder {0}: salesReturnOrder.salesReturnOrderId
+msgid "Cancel {0}"
+msgstr "रद्द करें {0}"
+
 msgid "Cancel change notice"
 msgstr "परिवर्तन सूचना को रद्द करें"
 
@@ -2768,6 +2828,12 @@ msgstr "ऑर्डर रद्द करें"
 
 msgid "Cancel Purchase Order"
 msgstr "क्रय आदेश रद्द करें"
+
+msgid "Cancel Return"
+msgstr "रिटर्न रद्द करें"
+
+msgid "Cancel RMA"
+msgstr "RMA रद्द करें"
 
 msgid "Cancel Sales Order"
 msgstr "विक्रय आदेश रद्द करें"
@@ -3271,6 +3337,11 @@ msgstr "आपूर्तिकर्ता कोटेशन की तुल
 msgid "Complete"
 msgstr "पूर्ण करें"
 
+#. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
+#. placeholder {0}: salesReturnOrder.salesReturnOrderId
+msgid "Complete {0}"
+msgstr "पूरा करें {0}"
+
 msgid "Complete All"
 msgstr "सभी को पूर्ण करें"
 
@@ -3401,7 +3472,9 @@ msgstr "कॉन्फ़िगर किया गया"
 msgid "Confirm"
 msgstr "पुष्टि करें"
 
+#. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
 #. placeholder {0}: salesOrder?.salesOrderId
+#. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Confirm {0}"
 msgstr "की पुष्टि करें {0}"
 
@@ -3443,6 +3516,9 @@ msgstr "पासवर्ड की पुष्टि करें"
 
 msgid "Confirm Skip"
 msgstr "छोड़ने की पुष्टि करें"
+
+msgid "Confirmed"
+msgstr "पुष्टि की गई"
 
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "पुष्टि की गई आने वाली स्टॉक — खरीद और उत्पादन आदेश (बार शून्य से ऊपर)।"
@@ -3693,8 +3769,14 @@ msgstr "भाग के लिए लिंक कॉपी करें"
 msgid "Copy link to procedure"
 msgstr "कार्यविधि के लिए लिंक की नकल करें"
 
+msgid "Copy link to RMA"
+msgstr "RMA के लिए लिंक कॉपी करें"
+
 msgid "Copy link to service"
 msgstr "सेवा के लिए लिंक कॉपी करें"
+
+msgid "Copy link to supplier return"
+msgstr "आपूर्तिकर्ता रिटर्न के लिए लिंक कॉपी करें"
 
 msgid "Copy link to tool"
 msgstr "टूल के लिए लिंक कॉपी करें"
@@ -3743,6 +3825,12 @@ msgstr "उद्धरण की प्रतिलिपि बनाएँ"
 
 msgid "Copy Quote number"
 msgstr "उद्धरण संख्या कॉपी करें"
+
+msgid "Copy return number"
+msgstr "रिटर्न नंबर कॉपी करें"
+
+msgid "Copy RMA number"
+msgstr "RMA नंबर कॉपी करें"
 
 msgid "Copy service number"
 msgstr "सेवा संख्या कॉपी करें"
@@ -4001,11 +4089,17 @@ msgstr "प्रक्षेपण बनाएं"
 msgid "Create Quote Revision"
 msgstr "कोटेशन रिवीजन बनाएँ"
 
+msgid "Create Replacement"
+msgstr "प्रतिस्थापन बनाएं"
+
 msgid "Create Revision"
 msgstr "रिवीजन बनाएँ"
 
 msgid "Create Rule"
 msgstr "नियम बनाएं"
+
+msgid "Create Supplier Return"
+msgstr "आपूर्तिकर्ता रिटर्न बनाएं"
 
 msgid "Create Transfer"
 msgstr "ट्रांसफर बनाएं"
@@ -4122,6 +4216,9 @@ msgstr "प्रक्रिया बनाई गई"
 msgid "Created required action"
 msgstr "आवश्यक कार्रवाई बनाई गई"
 
+msgid "Created return reason"
+msgstr "रिटर्न कारण बनाया गया"
+
 msgid "Created scrap reason"
 msgstr "स्क्रैप कारण बनाया गया"
 
@@ -4152,6 +4249,9 @@ msgstr "वेबहुक बनाया गया"
 
 msgid "Created work center"
 msgstr "वर्क सेंटर बनाया गया"
+
+msgid "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
+msgstr "शिप किए गए मात्राओं के लिए एक ड्राफ्ट आपूर्तिकर्ता क्रेडिट मेमो बनाता है जिन्हें अभी तक क्रेडिट नहीं किया गया है"
 
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "एक वित्तीय वर्ष के लिए 12 मासिक अवधियों को बनाता है। जो अवधियां पहले से मौजूद हैं उन्हें रखा जाता है।"
@@ -4186,6 +4286,12 @@ msgstr "जब विनिर्माण लागत को WIP में अ
 
 msgid "Credit Memo"
 msgstr "क्रेडिट नोट"
+
+msgid "Credit total"
+msgstr "क्रेडिट कुल"
+
+msgid "Credited"
+msgstr "क्रेडिट किया गया"
 
 msgid "Credits"
 msgstr "जमा"
@@ -4941,6 +5047,9 @@ msgstr "RFQ हटाएं"
 msgid "Delete Risk"
 msgstr "जोखिम हटाएं"
 
+msgid "Delete RMA"
+msgstr "RMA हटाएं"
+
 msgid "Delete row"
 msgstr "पंक्ति हटाएं"
 
@@ -5000,6 +5109,9 @@ msgstr "आपूर्तिकर्ता हटाएं"
 
 msgid "Delete Supplier Quote"
 msgstr "आपूर्तिकर्ता कोटेशन हटाएँ"
+
+msgid "Delete Supplier Return"
+msgstr "आपूर्तिकर्ता रिटर्न हटाएं"
 
 msgid "Delete Supplier Type"
 msgstr "आपूर्तिकर्ता प्रकार हटाएं"
@@ -5357,6 +5469,9 @@ msgstr "टेम्पलेट डाउनलोड करें"
 
 msgid "Draft"
 msgstr "ड्राफ्ट"
+
+msgid "Draft a supplier return for the quantities dispositioned Return to Supplier. Quantities already covered by a linked return are excluded, and this issue cannot close while a linked return is open."
+msgstr "आपूर्तिकर्ता को मात्राओं को वापस करने के लिए एक आपूर्तिकर्ता रिटर्न का ड्राफ्ट करें। जो मात्राएं पहले से लिंक किए गए रिटर्न द्वारा कवर की गई हैं वे बहिष्कृत हैं, और यह समस्या तब तक बंद नहीं हो सकती जब तक कि एक लिंक किया गया रिटर्न खुला है।"
 
 msgid "Draft is editable; Active is in use and requires a new version to change; Archived is retired."
 msgstr "ड्राफ्ट संपादन योग्य है; सक्रिय उपयोग में है और बदलने के लिए नए संस्करण की आवश्यकता है; संग्रहीत सेवानिवृत्त है।"
@@ -6298,6 +6413,9 @@ msgstr "अपेक्षित रसीद"
 msgid "Expected Receipt Date"
 msgstr "अपेक्षित प्राप्ति तारीख"
 
+msgid "Expected serials/batches"
+msgstr "अपेक्षित सीरीज़/बैच"
+
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "ग्राहक शेष राशि के लिए व्यय खाता जो प्राप्य खाते समझौते पर अनिर्धारक के रूप में लिखा गया है"
 
@@ -6436,6 +6554,13 @@ msgstr "विफल"
 msgid "Failed features"
 msgstr "विफल विशेषताएँ"
 
+#. placeholder {0}: rows.length
+msgid "Failed to add line — {addedCount} of {0} lines were added"
+msgstr "पंक्ति जोड़ने में विफल — {0} में से {addedCount} पंक्तियाँ जोड़ी गईं"
+
+msgid "Failed to add lines"
+msgstr "लाइनें जोड़ने में विफल"
+
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
 msgstr "परिसंपत्ति वर्ग बनाने में विफल: {0}"
@@ -6531,6 +6656,10 @@ msgstr "भुगतान शर्तें बनाने में वि�
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "प्रक्रिया बनाने में विफल: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create return reason: {0}"
+msgstr "रिटर्न कारण बनाने में विफल: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create service: {0}"
@@ -6630,6 +6759,15 @@ msgstr "रसीद लाइनें लोड करने में वि�
 msgid "Failed to load receipts"
 msgstr "रसीदें लोड करने में विफल"
 
+msgid "Failed to load return reasons"
+msgstr "वापसी के कारण लोड नहीं हो सके"
+
+msgid "Failed to load RMA lines"
+msgstr "RMA लाइनें लोड करने में विफल"
+
+msgid "Failed to load RMAs"
+msgstr "RMA लोड करने में विफल"
+
 msgid "Failed to load sales order lines"
 msgstr "विक्रय आदेश पंक्ति लोड करने में विफल"
 
@@ -6644,6 +6782,12 @@ msgstr "शिपमेंट लोड करने में विफल"
 
 msgid "Failed to load supplier part details"
 msgstr "आपूर्तिकर्ता भाग विवरण लोड करने में विफल"
+
+msgid "Failed to load supplier return lines"
+msgstr "आपूर्तिकर्ता रिटर्न लाइनें लोड करने में विफल"
+
+msgid "Failed to load supplier returns"
+msgstr "आपूर्तिकर्ता रिटर्न लोड करने में विफल"
 
 msgid "Failed to load tracked entities"
 msgstr "ट्रैक किए गए इकाइयों को लोड करने में विफल"
@@ -8081,6 +8225,9 @@ msgstr "समस्या"
 msgid "Issue (material)"
 msgstr "समस्या (सामग्री)"
 
+msgid "Issue Credit"
+msgstr "क्रेडिट जारी करें"
+
 msgid "Issue description"
 msgstr "समस्या विवरण"
 
@@ -8542,6 +8689,13 @@ msgstr "लाइट मोड"
 msgid "Likelihood"
 msgstr "संभावना"
 
+msgid "Line"
+msgstr "लाइन"
+
+#. placeholder {0}: line.lineNumber
+msgid "Line {0}"
+msgstr "लाइन {0}"
+
 msgid "Line description (optional)"
 msgstr "पंक्ति विवरण (वैकल्पिक)"
 
@@ -8574,6 +8728,12 @@ msgstr "लिंक"
 
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "लिंक (वैकल्पिक) — उदा. /x/settings/…"
+
+msgid "Link a purchase order"
+msgstr "क्रय आदेश लिंक करें"
+
+msgid "Link a sales order"
+msgstr "विक्रय आदेश लिंक करें"
 
 msgid "Link Jira Issue"
 msgstr "Jira समस्या को लिंक करें"
@@ -8630,11 +8790,17 @@ msgstr "अंतिम रूप से लोड किया गया, क�
 msgid "Loading associated jobs..."
 msgstr "संबंधित जॉब लोड हो रहे हैं..."
 
+msgid "Loading creditable lines..."
+msgstr "क्रेडिट योग्य लाइनें लोड हो रही हैं..."
+
 msgid "Loading current quantity…"
 msgstr "वर्तमान मात्रा लोड हो रही है…"
 
 msgid "Loading item details..."
 msgstr "आइटम विवरण लोड हो रहे हैं..."
+
+msgid "Loading returnable lines..."
+msgstr "रिटर्न योग्य लाइनें लोड हो रही हैं..."
 
 msgid "Loading your own data with Carbon's import tools"
 msgstr "Carbon के आयात उपकरणों के साथ अपने डेटा को लोड करना"
@@ -9630,6 +9796,9 @@ msgstr "नया रिवीजन"
 msgid "New RFQ"
 msgstr "नया RFQ"
 
+msgid "New RMA"
+msgstr "नया RMA"
+
 msgid "New rule"
 msgstr "नया नियम"
 
@@ -9680,6 +9849,9 @@ msgstr "नया आपूर्तिकर्ता"
 
 msgid "New Supplier Part"
 msgstr "नया आपूर्तिकर्ता भाग"
+
+msgid "New Supplier Return"
+msgstr "नया आपूर्तिकर्ता रिटर्न"
 
 msgid "New Timecard"
 msgstr "नया टाइमकार्ड"
@@ -9847,6 +10019,9 @@ msgstr "कोई रूपांतरण आवश्यक नहीं ह�
 msgid "No cost history found"
 msgstr "कोई लागत इतिहास नहीं मिला"
 
+msgid "No credits yet"
+msgstr "अभी कोई क्रेडिट नहीं"
+
 msgid "No Data"
 msgstr "कोई डेटा नहीं"
 
@@ -9930,6 +10105,9 @@ msgstr "कोई निरीक्षण योजनाएं नहीं"
 
 msgid "No issue types configured"
 msgstr "कोई समस्या प्रकार कॉन्फ़िगर नहीं किया गया"
+
+msgid "No issues yet"
+msgstr "अभी कोई समस्या नहीं"
 
 msgid "No items"
 msgstr "कोई आइटम नहीं"
@@ -10066,8 +10244,14 @@ msgstr "कोई कोटेशन कारण नहीं"
 msgid "No Quote Reasons"
 msgstr "कोई कोटेशन कारण नहीं"
 
+msgid "No receipts yet"
+msgstr "अभी कोई रसीद नहीं"
+
 msgid "No receivables"
 msgstr "कोई प्राप्य राशि नहीं"
+
+msgid "No received quantity remains creditable"
+msgstr "कोई प्राप्त मात्रा क्रेडिट योग्य नहीं रह गई"
 
 msgid "No records found"
 msgstr "कोई रिकॉर्ड नहीं मिला"
@@ -10090,11 +10274,20 @@ msgstr "कोई परिणाम नहीं"
 msgid "No results found"
 msgstr "कोई परिणाम नहीं मिला"
 
+msgid "No returnable lines found for this customer"
+msgstr "इस ग्राहक के लिए कोई रिटर्न योग्य लाइनें नहीं मिलीं"
+
+msgid "No returnable lines found for this supplier"
+msgstr "इस आपूर्तिकर्ता के लिए कोई रिटर्न योग्य लाइनें नहीं मिलीं"
+
 msgid "No rows here."
 msgstr "यहाँ कोई पंक्तियाँ नहीं हैं।"
 
 msgid "No rules assigned"
 msgstr "कोई नियम असाइन नहीं किया गया"
+
+msgid "No shipments yet"
+msgstr "अभी कोई शिपमेंट नहीं"
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "इन्वेंटरी या जॉब स्थिति के लिए कोई एकल, विश्वसनीय संख्या नहीं"
@@ -10885,6 +11078,12 @@ msgstr "भाग प्रतिस्थापन"
 msgid "Partial"
 msgstr "आंशिक"
 
+msgid "Partially Received"
+msgstr "आंशिक रूप से प्राप्त"
+
+msgid "Partially Shipped"
+msgstr "आंशिक रूप से शिप किया गया"
+
 msgid "Partner"
 msgstr "साथी"
 
@@ -11101,11 +11300,17 @@ msgstr "पहले के एक चरण से मान चुनें"
 msgid "Pick a variable…"
 msgstr "एक वेरिएबल चुनें…"
 
+msgid "Pick expected serials/batches"
+msgstr "अपेक्षित सीरीज/बैच चुनें"
+
 msgid "Pick List"
 msgstr "पिक लिस्ट"
 
 msgid "Pick Order"
 msgstr "पिक ऑर्डर"
+
+msgid "Pick serials/batches to return"
+msgstr "रिटर्न करने के लिए सीरीज/बैच चुनें"
 
 msgid "Pick the bin that needs stock, then pick the bins to pull it from."
 msgstr "स्टॉक की जरूरत वाली बिन को चुनें, फिर उन बिन को चुनें जहां से स्टॉक खींचना है।"
@@ -12144,8 +12349,14 @@ msgstr "प्राप्त किया गया"
 msgid "Received By"
 msgstr "द्वारा प्राप्त"
 
+msgid "Received lines from this supplier with quantity remaining to return"
+msgstr "इस आपूर्तिकर्ता से प्राप्त लाइनें जिनमें रिटर्न करने के लिए मात्रा बाकी है"
+
 msgid "Received Qty"
 msgstr "प्राप्त मात्रा"
+
+msgid "Received quantity not yet credited. The credit memo is created as a draft."
+msgstr "प्राप्त मात्रा अभी क्रेडिट नहीं की गई है। क्रेडिट मेमो ड्राफ्ट के रूप में बनाया गया है।"
 
 msgid "Receiving Location"
 msgstr "प्राप्ति स्थान"
@@ -12434,6 +12645,9 @@ msgstr "PDF को बदलें"
 msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
 msgstr "इस कंपनी के डेटा को डेमो डेटासेट से बदलें — पहले स्नैपशॉट लिया जाता है, ताकि आप पूर्ववत् कर सकें।"
 
+msgid "Replacement Order"
+msgstr "प्रतिस्थापन आदेश"
+
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "इस दस्तावेज़ पर PDF को बदलने से सभी बैलून प्लेसमेंट हटा दिए जाते हैं। सुविधा पंक्तियां और उनके मान रहते हैं; आप नई ड्राइंग पर फिर से बैलून रख सकते हैं।"
 
@@ -12582,6 +12796,16 @@ msgstr "संसाधन"
 msgid "Resources"
 msgstr "संसाधन"
 
+msgid "restock fee"
+msgstr "पुनः स्टॉक शुल्क"
+
+msgid "Restock Fee Percent"
+msgstr "पुनः स्टॉक शुल्क प्रतिशत"
+
+#. placeholder {0}: percentFormatter.format( line.restockFeePercent )
+msgid "Restocking fee {0}"
+msgstr "पुनर्भंडारण शुल्क {0}"
+
 msgid "Restore from Trash"
 msgstr "ट्रैश से पुनः स्थापित करें"
 
@@ -12606,6 +12830,9 @@ msgstr "प्रति पृष्ठ परिणाम"
 msgid "Resume Receiving"
 msgstr "प्राप्ति को फिर से शुरू करें"
 
+msgid "Resume Shipping"
+msgstr "शिपिंग फिर से शुरू करें"
+
 msgid "Retained Earnings"
 msgstr "प्रतिधारित आय"
 
@@ -12627,11 +12854,44 @@ msgstr "पूर्ववत् करने का पुन: प्रया�
 msgid "Return Home"
 msgstr "घर लौटें"
 
+msgid "Return ID"
+msgstr "रिटर्न ID"
+
+msgid "Return Location"
+msgstr "रिटर्न स्थान"
+
+msgid "Return Number"
+msgstr "रिटर्न संख्या"
+
+msgid "Return Quantity"
+msgstr "रिटर्न मात्रा"
+
+msgid "Return Reason"
+msgstr "रिटर्न कारण"
+
+msgid "Return Reasons"
+msgstr "रिटर्न कारण"
+
+msgid "returnable"
+msgstr "रिटर्न योग्य"
+
 msgid "Returned"
 msgstr "लौटाया गया"
 
+msgid "Returned batch"
+msgstr "रिटर्न किया गया बैच"
+
+msgid "Returned goods re-enter inventory at zero value"
+msgstr "रिटर्न किए गए सामान शून्य मूल्य पर इन्वेंटरी में फिर से प्रवेश करते हैं"
+
+msgid "Returned serial numbers"
+msgstr "रिटर्न की गई सीरीज संख्याएं"
+
 msgid "Returning unused picked material"
 msgstr "अप्रयुक्त सामग्री को वापस किया जा रहा है"
+
+msgid "Returns"
+msgstr "वापसियाँ"
 
 msgid "Returns:"
 msgstr "रिटर्न:"
@@ -12760,6 +13020,24 @@ msgstr "जोखिम रजिस्टर"
 
 msgid "Risks"
 msgstr "जोखिमें"
+
+msgid "RMA"
+msgstr "RMA"
+
+msgid "RMA ID"
+msgstr "RMA आईडी"
+
+msgid "RMA Line"
+msgstr "RMA लाइन"
+
+msgid "RMA Lines"
+msgstr "RMA लाइनें"
+
+msgid "RMA Number"
+msgstr "RMA संख्या"
+
+msgid "RMAs"
+msgstr "RMA"
 
 msgid "Role"
 msgstr "भूमिका"
@@ -13378,6 +13656,9 @@ msgstr "ग्राहकों का चयन करें"
 msgid "Select dimension"
 msgstr "आयाम चुनें"
 
+msgid "Select disposition"
+msgstr "निष्पादन चुनें"
+
 msgid "Select Employee"
 msgstr "कर्मचारी चुनें"
 
@@ -13555,6 +13836,15 @@ msgstr "सीरीज़/बैच #"
 
 msgid "Serialize & sell your parts"
 msgstr "अपने पार्ट्स को सीरियलाइज़ करें और बेचें"
+
+msgid "Serials and batches on hand that were received from this supplier"
+msgstr "इस आपूर्तिकर्ता से प्राप्त सीरीज़ और बैच"
+
+msgid "Serials and batches previously shipped to this customer"
+msgstr "पहले इस ग्राहक को भेजी गई सीरीज़ और बैच"
+
+msgid "Serials/batches to return"
+msgstr "लौटाने के लिए सीरीज़/बैच"
 
 msgid "service"
 msgstr "सेवा"
@@ -13769,6 +14059,12 @@ msgstr "शिपमेंट स्थान"
 
 msgid "Shipments"
 msgstr "शिपमेंट"
+
+msgid "Shipped"
+msgstr "भेजी गई"
+
+msgid "Shipped lines for this customer with quantity remaining to return"
+msgstr "इस ग्राहक के लिए भेजी गई लाइनें जिनमें वापसी के लिए मात्रा बाकी है"
 
 msgid "Shipped Qty"
 msgstr "भेजी गई मात्रा"
@@ -14265,6 +14561,9 @@ msgstr "इस तारीख के बाद क्रय आदेश जा
 msgid "Stop Receiving"
 msgstr "प्राप्ति को रोकें"
 
+msgid "Stop Shipping"
+msgstr "शिपिंग बंद करें"
+
 msgid "Storage client not available"
 msgstr "स्टोरेज क्लाइंट उपलब्ध नहीं है"
 
@@ -14463,6 +14762,9 @@ msgstr "आपूर्तिकर्ता"
 msgid "Supplier"
 msgstr "आपूर्तिकर्ता"
 
+msgid "Supplier (optional — auto-resolved)"
+msgstr "आपूर्तिकर्ता (वैकल्पिक — स्वतः समाधान किया गया)"
+
 msgid "Supplier Accounts"
 msgstr "आपूर्तिकर्ता खाते"
 
@@ -14561,6 +14863,21 @@ msgstr "आपूर्तिकर्ता संदर्भ"
 
 msgid "Supplier Reference"
 msgstr "आपूर्तिकर्ता संदर्भ"
+
+msgid "Supplier Return"
+msgstr "आपूर्तिकर्ता रिटर्न"
+
+msgid "Supplier Return Line"
+msgstr "आपूर्तिकर्ता रिटर्न लाइन"
+
+msgid "Supplier Return Lines"
+msgstr "आपूर्तिकर्ता रिटर्न लाइनें"
+
+msgid "Supplier Returns"
+msgstr "आपूर्तिकर्ता रिटर्न"
+
+msgid "Supplier RMA #"
+msgstr "आपूर्तिकर्ता RMA #"
 
 msgid "Supplier Status"
 msgstr "आपूर्तिकर्ता स्थिति"
@@ -14999,6 +15316,9 @@ msgstr "वह तारीख जब सामान वास्तव मे�
 msgid "The date the item is required on-site to cover the period's projected demand."
 msgstr "वह तारीख जिस दिन आइटम साइट पर आवश्यक है ताकि अवधि की अनुमानित मांग को पूरा किया जा सके।"
 
+msgid "The date the return authorization expires"
+msgstr "वह तारीख जब रिटर्न प्राधिकरण समाप्त हो जाता है"
+
 msgid "The date this asset is retired from service; depreciation stops on this date and remaining net book value is booked to the disposal account."
 msgstr "वह तिथि जिस पर यह अचल संपत्ति सेवा से सेवानिवृत्त हो जाती है; इस तिथि पर मूल्यह्रास रुक जाता है और शेष शुद्ध बही मूल्य निपटान खाते में दर्ज किया जाता है।"
 
@@ -15173,6 +15493,9 @@ msgstr "इस आपूर्तिकर्ता की जीवन चक�
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "स्थानीय समय क्षेत्र जिसमें यह स्थान समय रिपोर्ट करता है; इस स्थान पर शेड्यूल, टाइमकार्ड और शिफ्ट घंटों की व्याख्या इस क्षेत्र में की जाती है, भले ही उपयोगकर्ता के ब्राउज़र लोकेल की परवाह किए बिना।"
 
+msgid "The location the goods will be shipped from"
+msgstr "वह स्थान जहाँ से माल भेजा जाएगा"
+
 msgid "The location this employee defaults to; drives timezone interpretation on their timecards and the default shift selectors on their job record."
 msgstr "यह स्थान जिसके लिए यह कर्मचारी डिफ़ॉल्ट रूप से सेट है; उनके टाइमकार्ड पर टाइमज़ोन व्याख्या को चलाता है और उनके जॉब रिकॉर्ड पर डिफ़ॉल्ट शिफ्ट चयनकर्ता को चलाता है।"
 
@@ -15184,6 +15507,9 @@ msgstr "यह स्थान जहाँ से यह कोटेशन प
 
 msgid "The location this RFQ would fulfill from if it converts to a quote and then an order."
 msgstr "यह स्थान जहाँ से यह RFQ पूरा होगा यदि यह एक कोटेशन में परिवर्तित होता है और फिर एक आदेश में।"
+
+msgid "The location where the goods will be received"
+msgstr "वह स्थान जहाँ माल प्राप्त किया जाएगा"
 
 msgid "The log of risks and opportunities raised against any entity, each rated by independent 1–5 severity and likelihood and driven to a resolution."
 msgstr "किसी भी इकाई के खिलाफ उठाए गए जोखिमों और अवसरों का लॉग, प्रत्येक को स्वतंत्र 1–5 गंभीरता और संभावना द्वारा दर्जांकित और समाधान के लिए संचालित।"
@@ -15471,6 +15797,9 @@ msgstr "इस ऑर्डर के लिए आपूर्तिकर्�
 msgid "The supplier's packing-slip or shipment number, recorded for audit; not used by any posting logic."
 msgstr "आपूर्तिकर्ता की पैकिंग-स्लिप या शिपमेंट संख्या, ऑडिट के लिए दर्ज की गई; किसी भी पोस्टिंग तर्क द्वारा उपयोग नहीं किया गया।"
 
+msgid "The supplier's return authorization number"
+msgstr "आपूर्तिकर्ता की रिटर्न प्राधिकरण संख्या"
+
 msgid "The suppliers and vendors you buy from"
 msgstr "वह आपूर्तिकर्ता और विक्रेता जिनसे आप खरीदते हैं"
 
@@ -15736,6 +16065,9 @@ msgstr "इस त्रैमासिक"
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "यह उनके प्रमाणीकरणकर्ता ऐप को निकालता है, इसलिए उनके अगले साइन-इन के लिए केवल एक जादुई लिंक की आवश्यकता होती है। जब वे अपने प्रमाणीकरणकर्ता तक पहुंच खो गए हों तो इसका उपयोग करें। यह उनके साइन-इन को उन सभी कंपनियों के लिए प्रभावित करता है जिनसे वे संबंधित हैं।"
 
+msgid "This return order has no lines to credit"
+msgstr "इस रिटर्न आदेश में क्रेडिट करने के लिए कोई लाइन नहीं है"
+
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "यह रिवीजन जारी है (उत्पादन)। परिवर्तन आमतौर पर एक परिवर्तन सूचना के माध्यम से प्रवाहित होने चाहिए।"
 
@@ -15811,6 +16143,14 @@ msgstr "यह बैच आकार का उपयोग करके सक
 #. placeholder {1}: routeData?.job?.salesOrderReadableId
 msgid "This will remove {0}'s link to {1}. The job will no longer appear under the sales order and shipments won't find it."
 msgstr "यह {0} के लिंक को {1} से निकालेगा। जॉब अब विक्रय आदेश के तहत नहीं दिखाई देगा और शिपमेंट इसे नहीं ढूंढेंगे।"
+
+#. placeholder {0}: routeData?.purchaseReturnOrder?.purchaseReturnOrderId
+msgid "This will remove the link between {0} and its purchase order. The return will no longer appear under the purchase order."
+msgstr "इससे {0} और उसके क्रय आदेश के बीच का लिंक हट जाएगा। वापसी अब क्रय आदेश के अंतर्गत नहीं दिखेगी।"
+
+#. placeholder {0}: routeData?.salesReturnOrder?.salesReturnOrderId
+msgid "This will remove the link between {0} and its sales order. The RMA will no longer appear under the sales order."
+msgstr "इससे {0} और उसके विक्रय आदेश के बीच का लिंक हट जाएगा। RMA अब विक्रय आदेश के अंतर्गत नहीं दिखेगी।"
 
 msgid "This will replace all method materials of other revisions with this revision."
 msgstr "यह अन्य रिवीजन की सभी विधि सामग्री को इस रिवीजन के साथ प्रतिस्थापित करेगा।"
@@ -16343,6 +16683,12 @@ msgstr "अनलिंक करें"
 
 msgid "Unlink job from sales order?"
 msgstr "जॉब को विक्रय आदेश से अलग करें?"
+
+msgid "Unlink return from purchase order?"
+msgstr "वापसी को क्रय आदेश से अनलिंक करें?"
+
+msgid "Unlink RMA from sales order?"
+msgstr "RMA को विक्रय आदेश से अनलिंक करें?"
 
 msgid "Unlock"
 msgstr "अनलॉक करें"
@@ -16899,6 +17245,12 @@ msgstr "रसीद देखें"
 
 msgid "View Receivables"
 msgstr "प्राप्य राशि देखें"
+
+msgid "View replacement purchase order"
+msgstr "प्रतिस्थापन क्रय आदेश देखें"
+
+msgid "View replacement sales order"
+msgstr "प्रतिस्थापन विक्रय आदेश देखें"
 
 msgid "View Run"
 msgstr "रन देखें"
@@ -17730,6 +18082,12 @@ msgstr "Z1.4 निरीक्षण स्तर (I / II / III); उच्च 
 
 msgid "Z1.4 severity (Normal / Tightened / Reduced); switches by rule based on recent lot-acceptance history."
 msgstr "Z1.4 गंभीरता (सामान्य / कठोर / शिथिल); हाल के लॉट-स्वीकार इतिहास के आधार पर नियम द्वारा स्विच करता है।"
+
+msgid "Zero inventory value"
+msgstr "शून्य इन्वेंटरी मूल्य"
+
+msgid "Zero Inventory Value"
+msgstr "शून्य इन्वेंटरी मूल्य"
 
 msgid "Zoom Box"
 msgstr "ज़ूम बॉक्स"

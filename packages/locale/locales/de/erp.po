@@ -64,6 +64,12 @@ msgstr "vor {0}"
 msgid "{0} cells with deltas"
 msgstr "{0} Zellen mit Deltas"
 
+#. placeholder {0}: line.creditableQuantity
+#. placeholder {1}: line.quantityCredited
+#. placeholder {2}: line.quantityShipped
+msgid "{0} creditable ({1} / {2} credited)"
+msgstr "{0} gutschreibbar ({1} / {2} gutgeschrieben)"
+
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
 msgstr "{0} Kunden mit einem Saldo"
@@ -109,6 +115,11 @@ msgstr "{0} Probleme — nicht veröffentlicht"
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "{0} Prozesse"
+
+#. placeholder {0}: quantityFormatter(line.quantityReceived)
+#. placeholder {1}: quantityFormatter(line.quantityCredited)
+msgid "{0} received · {1} credited"
+msgstr "{0} erhalten · {1} gutgeschrieben"
 
 #. placeholder {0}: result.credentialName ?? "Passkey"
 msgid "{0} registered"
@@ -655,6 +666,9 @@ msgstr "Der Status eines Wareneingangs ändert sich"
 msgid "A receipt's supplier changes"
 msgstr "Der Lieferant eines Wareneingangs ändert sich"
 
+msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
+msgstr "Eine Rückgenehmigung für Waren (RMA) berechtigt einen Kunden, Waren zur Gutschrift, zum Austausch oder zur Reparatur zurückzugeben."
+
 msgid "A reusable, versioned set of work instructions attached to a process, giving an operation its ordered steps to record and check plus the parameters it runs at."
 msgstr "Ein wiederverwendbarer, versionierter Satz von Arbeitsanweisungen, die an einen Prozess angehängt sind und einem Vorgang seine geordneten Schritte zum Aufzeichnen und Überprüfen sowie die Parameter, mit denen er ausgeführt wird, geben."
 
@@ -771,6 +785,9 @@ msgstr "Ein Lieferant wird erstellt"
 
 msgid "A supplier is deleted"
 msgstr "Ein Lieferant wird gelöscht"
+
+msgid "A supplier return sends previously received goods back to the supplier for credit or replacement."
+msgstr "Eine Lieferantenrückgabe sendet zuvor erhaltene Waren zur Gutschrift oder zum Austausch an den Lieferanten zurück."
 
 msgid "A supplier's account manager changes"
 msgstr "Der Kundenbetreuer eines Lieferanten ändert sich"
@@ -1139,6 +1156,12 @@ msgstr "Zeile hinzufügen"
 msgid "Add Line Item"
 msgstr "Zeilenelement hinzufügen"
 
+msgid "Add Lines"
+msgstr "Linien hinzufügen"
+
+msgid "Add lines from document"
+msgstr "Linien aus Dokument hinzufügen"
+
 msgid "Add match"
 msgstr "Übereinstimmung hinzufügen"
 
@@ -1256,6 +1279,10 @@ msgstr "Add-On-Kosten"
 
 msgid "Added"
 msgstr "Hinzugefügt"
+
+#. placeholder {0}: rows.length
+msgid "Added {0} lines"
+msgstr "Fügte {0} Linien hinzu"
 
 msgid "Added for this customer"
 msgstr "Für diesen Kunden hinzugefügt"
@@ -1766,14 +1793,32 @@ msgstr "Sind Sie sicher, dass Sie {orderLabel} stornieren möchten? Dies wird di
 msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 msgstr "Sind Sie sicher, dass Sie diesen Auftrag stornieren möchten? Er ist dann nicht mehr auf der Werkstatt verfügbar."
 
+msgid "Are you sure you want to cancel this RMA? This releases the authorized quantities back to the source documents."
+msgstr "Sind Sie sicher, dass Sie diese RMA stornieren möchten? Dies gibt die autorisierten Mengen an die Quelldokumente zurück."
+
+msgid "Are you sure you want to cancel this supplier return? This releases the authorized quantities back to the source documents."
+msgstr "Sind Sie sicher, dass Sie diese Lieferantenrückgabe stornieren möchten? Dies gibt die autorisierten Mengen an die Quelldokumente zurück."
+
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "Sind Sie sicher, dass Sie die Eigenschaft {propertyName} ändern möchten? Da Sie generierte Material-IDs verwenden, wird dies die Teile-ID dieses Teils und aller zugehörigen Revisionen ändern."
+
+msgid "Are you sure you want to complete this RMA? Every line must be fully received or short-closed, with no received quantity pending disposition."
+msgstr "Sind Sie sicher, dass Sie diese RMA abschließen möchten? Jede Zeile muss vollständig eingegangen oder kurzgeschlossen sein, ohne ausstehende Menge zur Disposition."
 
 msgid "Are you sure you want to complete this stock transfer?"
 msgstr "Sind Sie sicher, dass Sie diese Bestandsübertragung abschließen möchten?"
 
+msgid "Are you sure you want to complete this supplier return? Every line must be fully shipped or short-closed."
+msgstr "Sind Sie sicher, dass Sie diese Lieferantenrückgabe abschließen möchten? Jede Zeile muss vollständig versandt oder kurzgeschlossen sein."
+
+msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
+msgstr "Sind Sie sicher, dass Sie diese RMA bestätigen möchten? Die Bestätigung autorisiert den Kunden, die Waren in den Zeilen zurückzugeben."
+
 msgid "Are you sure you want to confirm this sales order? Confirming the order will affect on order quantities used to calculate supply and demand."
 msgstr "Möchten Sie diesen Kundenauftrag wirklich bestätigen? Die Bestätigung des Auftrags wirkt sich auf die Auftragsmengen aus, die zur Berechnung von Deckung und Bedarf verwendet werden."
+
+msgid "Are you sure you want to confirm this supplier return? Confirming authorizes the goods on the lines to be shipped back to the supplier."
+msgstr "Sind Sie sicher, dass Sie diese Lieferantenrückgabe bestätigen möchten? Die Bestätigung autorisiert, dass die Waren in den Zeilen an den Lieferanten zurückversandt werden."
 
 msgid "Are you sure you want to convert the RFQ to a quote?"
 msgstr "Sind Sie sicher, dass Sie die Anfrage in ein Angebot umwandeln möchten?"
@@ -1979,6 +2024,10 @@ msgstr "Sind Sie sicher, dass Sie den Drucker \"{0}\" löschen möchten? Alle Zu
 msgid "Are you sure you want to delete the purchase invoice line for {0} {1}? This cannot be undone."
 msgstr "Sind Sie sicher, dass Sie die Eingangsrechnungsposition für {0} {1} löschen möchten? Dies kann nicht rückgängig gemacht werden."
 
+#. placeholder {0}: returnReason.name
+msgid "Are you sure you want to delete the return reason: {0}? This cannot be undone."
+msgstr "Sind Sie sicher, dass Sie den Rückgabegrund löschen möchten: {0}? Dies kann nicht rückgängig gemacht werden."
+
 #. placeholder {0}: salesInvoiceLine.quantity ?? 0
 #. placeholder {1}: salesInvoiceLine.description ?? ""
 msgid "Are you sure you want to delete the sales invoice line for {0} {1}? This cannot be undone."
@@ -2065,6 +2114,9 @@ msgstr "Sind Sie sicher, dass Sie diesen Datensatz löschen möchten?"
 
 msgid "Are you sure you want to delete this required action?"
 msgstr "Sind Sie sicher, dass Sie diese erforderliche Aktion löschen möchten?"
+
+msgid "Are you sure you want to delete this return order line? This cannot be undone."
+msgstr "Sind Sie sicher, dass Sie diese Rückgabeauftragszeile löschen möchten? Dies kann nicht rückgängig gemacht werden."
 
 msgid "Are you sure you want to delete this risk?"
 msgstr "Sind Sie sicher, dass Sie dieses Risiko löschen möchten?"
@@ -2549,6 +2601,9 @@ msgstr "Rechnungsadresse"
 msgid "Bills of material"
 msgstr "Stücklisten"
 
+msgid "Blind"
+msgstr "Blind"
+
 msgid "Blind Count"
 msgstr "Blinde Inventur"
 
@@ -2757,6 +2812,11 @@ msgstr "Diese Datei kann nicht heruntergeladen werden"
 msgid "Cancel"
 msgstr "Abbrechen"
 
+#. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
+#. placeholder {0}: salesReturnOrder.salesReturnOrderId
+msgid "Cancel {0}"
+msgstr "Stornieren {0}"
+
 msgid "Cancel change notice"
 msgstr "Änderungsmitteilung abbrechen"
 
@@ -2771,6 +2831,12 @@ msgstr "Auftrag stornieren"
 
 msgid "Cancel Purchase Order"
 msgstr "Bestellung stornieren"
+
+msgid "Cancel Return"
+msgstr "Rückgabe stornieren"
+
+msgid "Cancel RMA"
+msgstr "RMA stornieren"
 
 msgid "Cancel Sales Order"
 msgstr "Kundenauftrag abbrechen"
@@ -3274,6 +3340,11 @@ msgstr "Lieferantenofferte vergleichen"
 msgid "Complete"
 msgstr "Abschließen"
 
+#. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
+#. placeholder {0}: salesReturnOrder.salesReturnOrderId
+msgid "Complete {0}"
+msgstr "Abschließen {0}"
+
 msgid "Complete All"
 msgstr "Alle abschließen"
 
@@ -3404,7 +3475,9 @@ msgstr "Konfiguriert"
 msgid "Confirm"
 msgstr "Bestätigen"
 
+#. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
 #. placeholder {0}: salesOrder?.salesOrderId
+#. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Confirm {0}"
 msgstr "Bestätigen {0}"
 
@@ -3446,6 +3519,9 @@ msgstr "Passwort bestätigen"
 
 msgid "Confirm Skip"
 msgstr "Überspringen bestätigen"
+
+msgid "Confirmed"
+msgstr "Bestätigt"
 
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "Bestätigter eingehender Bestand — Kauf- und Produktionsaufträge (Balken über Null)."
@@ -3696,8 +3772,14 @@ msgstr "Link zum Teil kopieren"
 msgid "Copy link to procedure"
 msgstr "Link zur Verfahrensanweisung kopieren"
 
+msgid "Copy link to RMA"
+msgstr "Link zu RMA kopieren"
+
 msgid "Copy link to service"
 msgstr "Link zur Dienstleistung kopieren"
+
+msgid "Copy link to supplier return"
+msgstr "Link zu Lieferantenrückgabe kopieren"
 
 msgid "Copy link to tool"
 msgstr "Link zum Werkzeug kopieren"
@@ -3746,6 +3828,12 @@ msgstr "Angebot kopieren"
 
 msgid "Copy Quote number"
 msgstr "Angebotsnummer kopieren"
+
+msgid "Copy return number"
+msgstr "Rückgabennummer kopieren"
+
+msgid "Copy RMA number"
+msgstr "RMA-Nummer kopieren"
 
 msgid "Copy service number"
 msgstr "Dienstleistungsnummer kopieren"
@@ -4004,11 +4092,17 @@ msgstr "Projektion erstellen"
 msgid "Create Quote Revision"
 msgstr "Angebotrevision erstellen"
 
+msgid "Create Replacement"
+msgstr "Ersatz erstellen"
+
 msgid "Create Revision"
 msgstr "Revision erstellen"
 
 msgid "Create Rule"
 msgstr "Regel erstellen"
+
+msgid "Create Supplier Return"
+msgstr "Lieferantenrückgabe erstellen"
 
 msgid "Create Transfer"
 msgstr "Übertrag erstellen"
@@ -4125,6 +4219,9 @@ msgstr "Prozess erstellt"
 msgid "Created required action"
 msgstr "Erforderliche Aktion erstellt"
 
+msgid "Created return reason"
+msgstr "Rückgabegrund erstellt"
+
 msgid "Created scrap reason"
 msgstr "Ausschussgrund erstellt"
 
@@ -4155,6 +4252,9 @@ msgstr "Webhook erstellt"
 
 msgid "Created work center"
 msgstr "Arbeitsplatz erstellt"
+
+msgid "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
+msgstr "Erstellt einen Entwurf für eine Lieferantengutsschrift für die versandten Mengen, die noch nicht gutgeschrieben wurden"
 
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "Erstellt die 12 monatlichen Perioden für ein Geschäftsjahr. Bereits vorhandene Perioden werden beibehalten."
@@ -4189,6 +4289,12 @@ msgstr "Habenkonten bei der Absorption von Fertigungskosten in WIP"
 
 msgid "Credit Memo"
 msgstr "Gutschrift"
+
+msgid "Credit total"
+msgstr "Gutschriftsumme"
+
+msgid "Credited"
+msgstr "Gutgeschrieben"
 
 msgid "Credits"
 msgstr "Guthaben"
@@ -4944,6 +5050,9 @@ msgstr "RFQ löschen"
 msgid "Delete Risk"
 msgstr "Risiko löschen"
 
+msgid "Delete RMA"
+msgstr "RMA löschen"
+
 msgid "Delete row"
 msgstr "Zeile löschen"
 
@@ -5003,6 +5112,9 @@ msgstr "Lieferant löschen"
 
 msgid "Delete Supplier Quote"
 msgstr "Lieferantenangebotsanfrage löschen"
+
+msgid "Delete Supplier Return"
+msgstr "Lieferantenrückgabe löschen"
 
 msgid "Delete Supplier Type"
 msgstr "Lieferantentyp löschen"
@@ -5360,6 +5472,9 @@ msgstr "Vorlage herunterladen"
 
 msgid "Draft"
 msgstr "Entwurf"
+
+msgid "Draft a supplier return for the quantities dispositioned Return to Supplier. Quantities already covered by a linked return are excluded, and this issue cannot close while a linked return is open."
+msgstr "Entwerfen Sie eine Lieferantenrückgabe für die zur Rückgabe an den Lieferanten verfügten Mengen. Mengen, die bereits durch eine verknüpfte Rückgabe abgedeckt sind, sind ausgeschlossen, und dieses Problem kann nicht geschlossen werden, während eine verknüpfte Rückgabe offen ist."
 
 msgid "Draft is editable; Active is in use and requires a new version to change; Archived is retired."
 msgstr "Entwurf ist bearbeitbar; Aktiv ist in Verwendung und erfordert eine neue Version zum Ändern; Archiviert ist deaktiviert."
@@ -6301,6 +6416,9 @@ msgstr "Erwarteter Eingang"
 msgid "Expected Receipt Date"
 msgstr "Erwartetes Eingangsdatum"
 
+msgid "Expected serials/batches"
+msgstr "Erwartete Seriennummern/Chargen"
+
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "Aufwandskonto für Kundensalden, die beim Debitoren-Abgleich als uneinbringlich abgeschrieben werden"
 
@@ -6439,6 +6557,13 @@ msgstr "Fehlgeschlagen"
 msgid "Failed features"
 msgstr "Fehlgeschlagene Merkmale"
 
+#. placeholder {0}: rows.length
+msgid "Failed to add line — {addedCount} of {0} lines were added"
+msgstr "Zeile konnte nicht hinzugefügt werden — {addedCount} von {0} Zeilen wurden hinzugefügt"
+
+msgid "Failed to add lines"
+msgstr "Fehler beim Hinzufügen von Zeilen"
+
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
 msgstr "Anlagenklasse konnte nicht erstellt werden: {0}"
@@ -6534,6 +6659,10 @@ msgstr "Zahlungsbedingung konnte nicht erstellt werden: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "Fehler beim Erstellen des Prozesses: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create return reason: {0}"
+msgstr "Fehler beim Erstellen des Rückgabegrunds: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create service: {0}"
@@ -6633,6 +6762,15 @@ msgstr "Fehler beim Laden von Belegzeilen"
 msgid "Failed to load receipts"
 msgstr "Fehler beim Laden von Quittungen"
 
+msgid "Failed to load return reasons"
+msgstr "Rückgabegründe konnten nicht geladen werden"
+
+msgid "Failed to load RMA lines"
+msgstr "Fehler beim Laden der RMA-Zeilen"
+
+msgid "Failed to load RMAs"
+msgstr "Fehler beim Laden von RMAs"
+
 msgid "Failed to load sales order lines"
 msgstr "Kundenauftragsposition konnten nicht geladen werden"
 
@@ -6647,6 +6785,12 @@ msgstr "Fehler beim Laden von Lieferungen"
 
 msgid "Failed to load supplier part details"
 msgstr "Fehler beim Laden der Lieferantenteildetails"
+
+msgid "Failed to load supplier return lines"
+msgstr "Fehler beim Laden von Lieferantenrückgabezeilen"
+
+msgid "Failed to load supplier returns"
+msgstr "Fehler beim Laden von Lieferantenrückgaben"
 
 msgid "Failed to load tracked entities"
 msgstr "Fehler beim Laden von verfolgten Entitäten"
@@ -8084,6 +8228,9 @@ msgstr "Problem"
 msgid "Issue (material)"
 msgstr "Ausgabe (Material)"
 
+msgid "Issue Credit"
+msgstr "Gutschrift ausstellen"
+
 msgid "Issue description"
 msgstr "Problembeschreibung"
 
@@ -8545,6 +8692,13 @@ msgstr "Hellmodus"
 msgid "Likelihood"
 msgstr "Wahrscheinlichkeit"
 
+msgid "Line"
+msgstr "Zeile"
+
+#. placeholder {0}: line.lineNumber
+msgid "Line {0}"
+msgstr "Zeile {0}"
+
 msgid "Line description (optional)"
 msgstr "Zeilenbeschreibung (optional)"
 
@@ -8577,6 +8731,12 @@ msgstr "Verknüpfung"
 
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "Link (optional) — z. B. /x/settings/…"
+
+msgid "Link a purchase order"
+msgstr "Bestellung verknüpfen"
+
+msgid "Link a sales order"
+msgstr "Verkaufsauftrag verknüpfen"
 
 msgid "Link Jira Issue"
 msgstr "Jira-Problem verknüpfen"
@@ -8633,11 +8793,17 @@ msgstr "Zuletzt geladen, direkt bei der Umstellung, damit die Salden aktuell sin
 msgid "Loading associated jobs..."
 msgstr "Zugehörige Fertigungsaufträge werden geladen..."
 
+msgid "Loading creditable lines..."
+msgstr "Kreditfähige Zeilen werden geladen..."
+
 msgid "Loading current quantity…"
 msgstr "Aktuelle Menge wird geladen…"
 
 msgid "Loading item details..."
 msgstr "Artikeldetails werden geladen..."
+
+msgid "Loading returnable lines..."
+msgstr "Rückgabefähige Zeilen werden geladen..."
 
 msgid "Loading your own data with Carbon's import tools"
 msgstr "Laden Sie Ihre eigenen Daten mit Carbons Importtools"
@@ -9633,6 +9799,9 @@ msgstr "Neue Revision"
 msgid "New RFQ"
 msgstr "Neue RFQ"
 
+msgid "New RMA"
+msgstr "Neue RMA"
+
 msgid "New rule"
 msgstr "Neue Regel"
 
@@ -9683,6 +9852,9 @@ msgstr "Neuer Lieferant"
 
 msgid "New Supplier Part"
 msgstr "Neuer Lieferantenteil"
+
+msgid "New Supplier Return"
+msgstr "Neue Lieferantenrückgabe"
 
 msgid "New Timecard"
 msgstr "Neue Zeiterfassung"
@@ -9850,6 +10022,9 @@ msgstr "Keine Umrechnung erforderlich"
 msgid "No cost history found"
 msgstr "Kein Kostenverlauf gefunden"
 
+msgid "No credits yet"
+msgstr "Noch keine Gutschriften"
+
 msgid "No Data"
 msgstr "Keine Daten"
 
@@ -9933,6 +10108,9 @@ msgstr "Keine Prüfpläne"
 
 msgid "No issue types configured"
 msgstr "Keine Problemtypen konfiguriert"
+
+msgid "No issues yet"
+msgstr "Noch keine Probleme"
 
 msgid "No items"
 msgstr "Keine Artikel"
@@ -10069,8 +10247,14 @@ msgstr "Kein Angebotgrund"
 msgid "No Quote Reasons"
 msgstr "Keine Angebotsgründe"
 
+msgid "No receipts yet"
+msgstr "Noch keine Eingänge"
+
 msgid "No receivables"
 msgstr "Keine Forderungen"
+
+msgid "No received quantity remains creditable"
+msgstr "Keine empfangene Menge bleibt kreditfähig"
 
 msgid "No records found"
 msgstr "Keine Datensätze gefunden"
@@ -10093,11 +10277,20 @@ msgstr "Keine Ergebnisse"
 msgid "No results found"
 msgstr "Keine Ergebnisse gefunden"
 
+msgid "No returnable lines found for this customer"
+msgstr "Keine rückgabefähigen Zeilen für diesen Kunden gefunden"
+
+msgid "No returnable lines found for this supplier"
+msgstr "Keine rückgabefähigen Zeilen für diesen Lieferanten gefunden"
+
 msgid "No rows here."
 msgstr "Hier sind keine Zeilen."
 
 msgid "No rules assigned"
 msgstr "Keine Regeln zugewiesen"
+
+msgid "No shipments yet"
+msgstr "Noch keine Lieferungen"
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "Keine einzige, vertrauenswürdige Zahl für Bestand oder Auftragsstatus"
@@ -10888,6 +11081,12 @@ msgstr "Teil-Ablösung"
 msgid "Partial"
 msgstr "Teilweise"
 
+msgid "Partially Received"
+msgstr "Teilweise erhalten"
+
+msgid "Partially Shipped"
+msgstr "Teilweise versandt"
+
 msgid "Partner"
 msgstr "Partner"
 
@@ -11104,11 +11303,17 @@ msgstr "Wählen Sie einen Wert aus einem früheren Schritt"
 msgid "Pick a variable…"
 msgstr "Wählen Sie eine Variable…"
 
+msgid "Pick expected serials/batches"
+msgstr "Erwartete Seriennummern/Chargen auswählen"
+
 msgid "Pick List"
 msgstr "Pickliste"
 
 msgid "Pick Order"
 msgstr "Entnahmereihenfol­ge"
+
+msgid "Pick serials/batches to return"
+msgstr "Seriennummern/Chargen zur Rückgabe auswählen"
 
 msgid "Pick the bin that needs stock, then pick the bins to pull it from."
 msgstr "Wählen Sie den Lagerplatz mit Bestandsbedarf aus, dann die Lagerplätze, von denen Sie ihn entnehmen möchten."
@@ -12147,8 +12352,14 @@ msgstr "Empfangen am"
 msgid "Received By"
 msgstr "Empfangen von"
 
+msgid "Received lines from this supplier with quantity remaining to return"
+msgstr "Von diesem Lieferanten eingegangene Zeilen mit verbleibender Menge zur Rückgabe"
+
 msgid "Received Qty"
 msgstr "Empfangene Menge"
+
+msgid "Received quantity not yet credited. The credit memo is created as a draft."
+msgstr "Empfangene Menge noch nicht kreditiert. Das Gutschriftenmemo wird als Entwurf erstellt."
 
 msgid "Receiving Location"
 msgstr "Empfangsort"
@@ -12437,6 +12648,9 @@ msgstr "PDF ersetzen"
 msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
 msgstr "Ersetzen Sie die Daten dieses Unternehmens durch einen Demo-Datensatz – zunächst ein Snapshot erstellt, damit Sie zurücksetzen können."
 
+msgid "Replacement Order"
+msgstr "Ersatzbestellung"
+
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "Das Ersetzen der PDF entfernt alle Ballonplatzierungen in diesem Dokument. Funktionszeilen und ihre Werte bleiben erhalten; Sie können Ballons auf der neuen Zeichnung erneut platzieren."
 
@@ -12585,6 +12799,16 @@ msgstr "Ressourcen"
 msgid "Resources"
 msgstr "Ressourcen"
 
+msgid "restock fee"
+msgstr "Restockgebühr"
+
+msgid "Restock Fee Percent"
+msgstr "Restockgebühren-Prozentsatz"
+
+#. placeholder {0}: percentFormatter.format( line.restockFeePercent )
+msgid "Restocking fee {0}"
+msgstr "Wiedereinlagerungsgebühr {0}"
+
 msgid "Restore from Trash"
 msgstr "Aus dem Papierkorb wiederherstellen"
 
@@ -12609,6 +12833,9 @@ msgstr "Ergebnisse pro Seite"
 msgid "Resume Receiving"
 msgstr "Empfang fortsetzen"
 
+msgid "Resume Shipping"
+msgstr "Versand fortsetzen"
+
 msgid "Retained Earnings"
 msgstr "Gewinnvortrag"
 
@@ -12630,11 +12857,44 @@ msgstr "Zurücksetzen erneut versuchen"
 msgid "Return Home"
 msgstr "Zur Startseite zurück"
 
+msgid "Return ID"
+msgstr "Rückgabe-ID"
+
+msgid "Return Location"
+msgstr "Rückgabeort"
+
+msgid "Return Number"
+msgstr "Rückgabenummer"
+
+msgid "Return Quantity"
+msgstr "Rückgabemenge"
+
+msgid "Return Reason"
+msgstr "Rückgabegrund"
+
+msgid "Return Reasons"
+msgstr "Rückgabegründe"
+
+msgid "returnable"
+msgstr "rückgabefähig"
+
 msgid "Returned"
 msgstr "Zurückgegeben"
 
+msgid "Returned batch"
+msgstr "Zurückgegebene Charge"
+
+msgid "Returned goods re-enter inventory at zero value"
+msgstr "Zurückgegebene Waren treten mit Nullwert wieder in den Bestand"
+
+msgid "Returned serial numbers"
+msgstr "Zurückgegebene Seriennummern"
+
 msgid "Returning unused picked material"
 msgstr "Rückgabe ungenutzten Pickmaterials"
+
+msgid "Returns"
+msgstr "Retouren"
 
 msgid "Returns:"
 msgstr "Gibt zurück:"
@@ -12763,6 +13023,24 @@ msgstr "Risikoregister"
 
 msgid "Risks"
 msgstr "Risiken"
+
+msgid "RMA"
+msgstr "RMA"
+
+msgid "RMA ID"
+msgstr "RMA-ID"
+
+msgid "RMA Line"
+msgstr "RMA-Zeile"
+
+msgid "RMA Lines"
+msgstr "RMA-Zeilen"
+
+msgid "RMA Number"
+msgstr "RMA-Nummer"
+
+msgid "RMAs"
+msgstr "RMAs"
 
 msgid "Role"
 msgstr "Rolle"
@@ -13381,6 +13659,9 @@ msgstr "Kunden auswählen"
 msgid "Select dimension"
 msgstr "Dimension wählen"
 
+msgid "Select disposition"
+msgstr "Disposition auswählen"
+
 msgid "Select Employee"
 msgstr "Mitarbeiter auswählen"
 
@@ -13561,6 +13842,15 @@ msgstr "Seriennummer/Chargennummer #"
 
 msgid "Serialize & sell your parts"
 msgstr "Serialisieren und verkaufen Sie Ihre Teile"
+
+msgid "Serials and batches on hand that were received from this supplier"
+msgstr "Im Bestand befindliche Serien- und Chargen, die von diesem Lieferanten eingegangen sind"
+
+msgid "Serials and batches previously shipped to this customer"
+msgstr "Serien- und Chargen, die zuvor an diesen Kunden versandt wurden"
+
+msgid "Serials/batches to return"
+msgstr "Serien-/Chargen zum Zurückgeben"
 
 msgid "service"
 msgstr "Dienstleistung"
@@ -13775,6 +14065,12 @@ msgstr "Lieferungsstandort"
 
 msgid "Shipments"
 msgstr "Lieferungen"
+
+msgid "Shipped"
+msgstr "Versandt"
+
+msgid "Shipped lines for this customer with quantity remaining to return"
+msgstr "Versandte Zeilen für diesen Kunden mit zu returnierenden Restmengen"
 
 msgid "Shipped Qty"
 msgstr "Versendete Menge"
@@ -14271,6 +14567,9 @@ msgstr "Bestellungen nach diesem Datum nicht mehr aufgeben"
 msgid "Stop Receiving"
 msgstr "Empfang beenden"
 
+msgid "Stop Shipping"
+msgstr "Versand stoppen"
+
 msgid "Storage client not available"
 msgstr "Speicherclient nicht verfügbar"
 
@@ -14463,6 +14762,9 @@ msgstr "Lieferant"
 msgid "Supplier"
 msgstr "Lieferant"
 
+msgid "Supplier (optional — auto-resolved)"
+msgstr "Lieferant (optional – automatisch aufgelöst)"
+
 msgid "Supplier Accounts"
 msgstr "Lieferantenkonten"
 
@@ -14561,6 +14863,21 @@ msgstr "Lieferantenreferenz"
 
 msgid "Supplier Reference"
 msgstr "Lieferantenreferenz"
+
+msgid "Supplier Return"
+msgstr "Lieferantenrücksendung"
+
+msgid "Supplier Return Line"
+msgstr "Lieferantenrücksendungs-Zeile"
+
+msgid "Supplier Return Lines"
+msgstr "Lieferantenrücksendungs-Zeilen"
+
+msgid "Supplier Returns"
+msgstr "Lieferantenrücksendungen"
+
+msgid "Supplier RMA #"
+msgstr "Lieferanten-RMA-Nummer"
 
 msgid "Supplier Status"
 msgstr "Lieferantenstatus"
@@ -14999,6 +15316,9 @@ msgstr "Das Datum, an dem die Waren tatsächlich das Lager verlassen; wird bei d
 msgid "The date the item is required on-site to cover the period's projected demand."
 msgstr "Das Datum, an dem der Artikel vor Ort benötigt wird, um den Bedarf des Zeitraums zu decken."
 
+msgid "The date the return authorization expires"
+msgstr "Das Ablaufdatum der Rückgabegenehmigung"
+
 msgid "The date this asset is retired from service; depreciation stops on this date and remaining net book value is booked to the disposal account."
 msgstr "Das Datum, an dem das Anlagevermögen aus dem Dienst genommen wird; die Abschreibung endet an diesem Datum und der verbleibende Restbuchwert wird auf das Abgangskonto gebucht."
 
@@ -15173,6 +15493,9 @@ msgstr "Der Lebenszykluszustand dieses Lieferanten – Aktiv, Inaktiv, Genehmigu
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "Die Zeitzone dieses Standorts; Terminpläne, Zeiterfassung und Schichtstunden an diesem Standort werden in dieser Zone interpretiert, unabhängig vom Browser-Gebietsschema des Benutzers."
 
+msgid "The location the goods will be shipped from"
+msgstr "Der Ort, von dem aus die Waren versandt werden"
+
 msgid "The location this employee defaults to; drives timezone interpretation on their timecards and the default shift selectors on their job record."
 msgstr "Der Standardstandort dieses Mitarbeiters; steuert die Zeitzoneinterpretation in seiner Zeiterfassung und die Standard-Schichtwähler in seinem Fertigungsauftrag."
 
@@ -15184,6 +15507,9 @@ msgstr "Der Standort, von dem dieses Angebot erfüllt wird, wenn es in einen Kun
 
 msgid "The location this RFQ would fulfill from if it converts to a quote and then an order."
 msgstr "Der Standort, von dem diese Anfrage erfüllt würde, wenn sie sich in ein Angebot und dann einen Kundenauftrag umwandelt."
+
+msgid "The location where the goods will be received"
+msgstr "Der Ort, an dem die Waren empfangen werden"
 
 msgid "The log of risks and opportunities raised against any entity, each rated by independent 1–5 severity and likelihood and driven to a resolution."
 msgstr "Das Protokoll von Risiken und Chancen, die gegen jede Entität aufgehoben werden, jeweils bewertet durch unabhängige 1–5 Schweregrad und Wahrscheinlichkeit und zu einer Lösung geführt."
@@ -15471,6 +15797,9 @@ msgstr "Die eigene Referenz des Lieferanten für diese Bestellung (ihre SO-Numme
 msgid "The supplier's packing-slip or shipment number, recorded for audit; not used by any posting logic."
 msgstr "Die Versand-Klebeschein oder Lieferscheinnummer des Lieferanten, aufgezeichnet für die Prüfung; wird von keiner Buchungslogik verwendet."
 
+msgid "The supplier's return authorization number"
+msgstr "Die Rückgabegenehmigungsnummer des Lieferanten"
+
 msgid "The suppliers and vendors you buy from"
 msgstr "Die Lieferanten und Anbieter, von denen Sie kaufen"
 
@@ -15736,6 +16065,9 @@ msgstr "Dieses Quartal"
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "Dies entfernt ihre Authentifizierungs-App, daher benötigt ihre nächste Anmeldung nur einen Magic Link. Verwenden Sie dies, wenn sie den Zugriff auf ihre Authentifizierungs-App verloren haben. Dies wirkt sich auf ihre Anmeldung bei jedem Unternehmen aus, zu dem sie gehören."
 
+msgid "This return order has no lines to credit"
+msgstr "Diese Rückgabebestellung hat keine Zeilen zum Gutschreiben"
+
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "Diese Revision ist freigegeben (Produktion). Änderungen sollten normalerweise durch eine Änderungsmitteilung fließen."
 
@@ -15811,6 +16143,14 @@ msgstr "Dies berechnet die Stückkosten aus der Stückliste und den Arbeitsgäng
 #. placeholder {1}: routeData?.job?.salesOrderReadableId
 msgid "This will remove {0}'s link to {1}. The job will no longer appear under the sales order and shipments won't find it."
 msgstr "Dies entfernt die Verknüpfung zwischen {0} und {1}. Der Fertigungsauftrag wird nicht mehr unter dem Kundenauftrag angezeigt und Lieferungen werden ihn nicht finden."
+
+#. placeholder {0}: routeData?.purchaseReturnOrder?.purchaseReturnOrderId
+msgid "This will remove the link between {0} and its purchase order. The return will no longer appear under the purchase order."
+msgstr "Dadurch wird die Verknüpfung zwischen {0} und der Bestellung entfernt. Die Retoure erscheint nicht mehr unter der Bestellung."
+
+#. placeholder {0}: routeData?.salesReturnOrder?.salesReturnOrderId
+msgid "This will remove the link between {0} and its sales order. The RMA will no longer appear under the sales order."
+msgstr "Dadurch wird die Verknüpfung zwischen {0} und dem Verkaufsauftrag entfernt. Die RMA erscheint nicht mehr unter dem Verkaufsauftrag."
 
 msgid "This will replace all method materials of other revisions with this revision."
 msgstr "Dies ersetzt alle Methodenmaterialien anderer Revisionen durch diese Revision."
@@ -16343,6 +16683,12 @@ msgstr "Verknüpfung aufheben"
 
 msgid "Unlink job from sales order?"
 msgstr "Fertigungsauftrag von Kundenauftrag trennen?"
+
+msgid "Unlink return from purchase order?"
+msgstr "Retoure von der Bestellung trennen?"
+
+msgid "Unlink RMA from sales order?"
+msgstr "RMA vom Verkaufsauftrag trennen?"
 
 msgid "Unlock"
 msgstr "Entsperren"
@@ -16896,6 +17242,12 @@ msgstr "Beleg anzeigen"
 
 msgid "View Receivables"
 msgstr "Forderungen anzeigen"
+
+msgid "View replacement purchase order"
+msgstr "Ersatz-Bestellung anzeigen"
+
+msgid "View replacement sales order"
+msgstr "Ersatz-Verkaufsauftrag anzeigen"
 
 msgid "View Run"
 msgstr "Durchlauf anzeigen"
@@ -17727,6 +18079,12 @@ msgstr "Z1.4 Prüfniveau (I / II / III); höhere Niveaus bedeuten größere Stic
 
 msgid "Z1.4 severity (Normal / Tightened / Reduced); switches by rule based on recent lot-acceptance history."
 msgstr "Z1.4 Schweregrad (Normal / Verschärft / Reduziert); Wechsel nach Regel basierend auf dem letzten Charge-Akzeptierungs-Verlauf."
+
+msgid "Zero inventory value"
+msgstr "Null-Lagerwert"
+
+msgid "Zero Inventory Value"
+msgstr "Null-Lagerwert"
 
 msgid "Zoom Box"
 msgstr "Zoom-Feld"

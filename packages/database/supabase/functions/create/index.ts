@@ -76,6 +76,14 @@ const payloadValidator = z.discriminatedUnion("type", [
     userId: z.string(),
   }),
   z.object({
+    type: z.literal("receiptFromSalesReturnOrder"),
+    salesReturnOrderId: z.string(),
+    receiptId: z.string().optional(),
+    locationId: z.string().optional(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
     type: z.literal("receiptFromWarehouseTransfer"),
     warehouseTransferId: z.string(),
     receiptId: z.string().optional(),
@@ -109,6 +117,44 @@ const payloadValidator = z.discriminatedUnion("type", [
     type: z.literal("shipmentFromWarehouseTransfer"),
     warehouseTransferId: z.string(),
     shipmentId: z.string().optional(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("shipmentFromPurchaseReturnOrder"),
+    purchaseReturnOrderId: z.string(),
+    shipmentId: z.string().optional(),
+    locationId: z.string().optional(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("receiptFromRepairOrder"),
+    repairOrderId: z.string(),
+    // "intake" pulls Pending lines in from the customer; "return" pulls the
+    // repaired units back from the supplier. One leg per receipt.
+    leg: z.enum(["intake", "return"]),
+    receiptId: z.string().optional(),
+    locationId: z.string().optional(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("shipmentFromRepairOrder"),
+    repairOrderId: z.string(),
+    // "supplier" sends Received units out to the OEM; "customer" sends
+    // Repaired units home.
+    leg: z.enum(["supplier", "customer"]),
+    shipmentId: z.string().optional(),
+    locationId: z.string().optional(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("shipmentFromSalesReturnOrder"),
+    salesReturnOrderId: z.string(),
+    shipmentId: z.string().optional(),
+    locationId: z.string().optional(),
     companyId: z.string(),
     userId: z.string(),
   }),
@@ -156,12 +202,17 @@ serve(async (req: Request) => {
     receiptDefault: { create: "inventory" },
     receiptFromPurchaseOrder: { create: "inventory" },
     receiptFromInboundTransfer: { create: "inventory" },
+    receiptFromSalesReturnOrder: { create: "inventory" },
     receiptFromWarehouseTransfer: { create: "inventory" },
     receiptLineSplit: { create: "inventory" },
     shipmentDefault: { create: "inventory" },
     shipmentFromPurchaseOrder: { create: "inventory" },
     shipmentFromWarehouseTransfer: { create: "inventory" },
+    shipmentFromPurchaseReturnOrder: { create: "inventory" },
     shipmentFromSalesOrder: { create: "inventory" },
+    shipmentFromSalesReturnOrder: { create: "inventory" },
+    receiptFromRepairOrder: { create: "inventory" },
+    shipmentFromRepairOrder: { create: "inventory" },
     shipmentFromSalesOrderLine: { create: "inventory" },
     shipmentLineSplit: { create: "inventory" },
     journalEntry: { create: "accounting" },
@@ -1195,6 +1246,384 @@ serve(async (req: Request) => {
         return errorResponse(err, 500);
       }
     }
+    case "receiptFromSalesReturnOrder": {
+      const {
+        salesReturnOrderId,
+        receiptId: existingReceiptId,
+        locationId: userLocationId,
+      } = payload;
+
+      console.log({
+        function: "create",
+        type,
+        companyId,
+        salesReturnOrderId,
+        existingReceiptId,
+        userId,
+      });
+
+      try {
+        const [salesReturnOrder, salesReturnOrderLines, receipt] =
+          await Promise.all([
+            client
+              .from("salesReturnOrder")
+              .select("*")
+              .eq("id", salesReturnOrderId)
+              .single(),
+            client
+              .from("salesReturnOrderLine")
+              .select("*")
+              .eq("salesReturnOrderId", salesReturnOrderId),
+            client
+              .from("receipt")
+              .select("*")
+              .eq("id", existingReceiptId)
+              .maybeSingle(),
+          ]);
+
+        if (!salesReturnOrder.data)
+          throw new Error("Sales return order not found");
+        if (
+          !["Confirmed", "Partially Received"].includes(
+            salesReturnOrder.data.status
+          )
+        )
+          throw new Error(
+            `Cannot receive against a return order in ${salesReturnOrder.data.status} status`
+          );
+        if (salesReturnOrderLines.error)
+          throw new Error(salesReturnOrderLines.error.message);
+
+        const locationId =
+          userLocationId ?? salesReturnOrder.data.locationId ?? null;
+        if (!locationId)
+          throw new Error(
+            "The return order has no receiving location — set one before creating a receipt"
+          );
+
+        const returnItemIds = salesReturnOrderLines.data
+          .map((d) => d.itemId)
+          .filter(Boolean) as string[];
+        const items = await client
+          .from("item")
+          .select("id, itemTrackingType")
+          .in("id", returnItemIds);
+        const serializedItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Serial")
+            .map((d) => d.id)
+        );
+        const batchItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Batch")
+            .map((d) => d.id)
+        );
+
+        const pickMethods = await client
+          .from("pickMethod")
+          .select("itemId, locationId, defaultStorageUnitId")
+          .in("itemId", returnItemIds);
+        const defaultStorageUnitByItem = new Map<string, string>();
+        for (const row of pickMethods.data ?? []) {
+          if (row.defaultStorageUnitId && row.locationId === locationId) {
+            defaultStorageUnitByItem.set(row.itemId, row.defaultStorageUnitId);
+          }
+        }
+
+        const hasReceipt = !!receipt.data?.id;
+        // Re-targeting deletes and rebuilds the lines — only a Draft may be
+        // rebuilt; a Posted document's lines are referenced by ledger rows.
+        if (hasReceipt && receipt.data!.status !== "Draft")
+          throw new Error(
+            `Cannot re-source a ${receipt.data!.status} receipt`
+          );
+
+        const receiptLineItems = salesReturnOrderLines.data.reduce<
+          ReceiptLineItem[]
+        >((acc, d) => {
+          if (!d.itemId || !d.quantity || d.closedComplete) return acc;
+
+          const outstanding = Math.max(
+            0,
+            (d.quantity ?? 0) - (d.quantityReceived ?? 0)
+          );
+          if (outstanding === 0) return acc;
+
+          acc.push({
+            lineId: d.id,
+            itemId: d.itemId,
+            locationId,
+            storageUnitId: defaultStorageUnitByItem.get(d.itemId) ?? null,
+            requiresSerialTracking: serializedItems.has(d.itemId),
+            requiresBatchTracking: batchItems.has(d.itemId),
+            receivedQuantity: outstanding,
+            outstandingQuantity: outstanding,
+            // Cost is resolved at posting (original outbound cost / current /
+            // zero-value reason) — never the line's credit-basis unitPrice.
+            unitPrice: 0,
+            conversionFactor: 1,
+            unitOfMeasure: d.unitOfMeasureCode ?? "EA",
+            companyId,
+            createdBy: userId,
+            orderQuantity: d.quantity ?? 0,
+          });
+
+          return acc;
+        }, []);
+
+        if (receiptLineItems.length === 0) {
+          throw new Error("No lines to receive");
+        }
+
+        const result = await db.transaction().execute(async (trx) => {
+          const receiptId = await getNextSequence(trx, "receipt", companyId);
+
+          let id: string;
+          if (hasReceipt) {
+            id = receipt.data!.id;
+            await trx
+              .updateTable("receipt")
+              .set({
+                sourceDocument: "Sales Return Order",
+                sourceDocumentId: salesReturnOrderId,
+                sourceDocumentReadableId:
+                  salesReturnOrder.data.salesReturnOrderId,
+                locationId,
+                updatedBy: userId,
+              })
+              .where("id", "=", id)
+              .execute();
+          } else {
+            const insertReceipt = await trx
+              .insertInto("receipt")
+              .values({
+                receiptId,
+                sourceDocument: "Sales Return Order",
+                sourceDocumentId: salesReturnOrderId,
+                sourceDocumentReadableId:
+                  salesReturnOrder.data.salesReturnOrderId,
+                locationId,
+                status: "Draft",
+                companyId,
+                createdBy: userId,
+              })
+              .returning(["id"])
+              .execute();
+
+            id = insertReceipt[0]?.id ?? "";
+          }
+
+          await trx
+            .deleteFrom("receiptLine")
+            .where("receiptId", "=", id)
+            .execute();
+
+          await trx
+            .insertInto("receiptLine")
+            .values(
+              receiptLineItems.map((lineItem) => ({
+                ...lineItem,
+                receiptId: id,
+              }))
+            )
+            .execute();
+
+          return { id };
+        });
+
+        return jsonResponse(result, 201);
+      } catch (err) {
+        return errorResponse(err, 500);
+      }
+    }
+    case "receiptFromRepairOrder": {
+      const {
+        repairOrderId,
+        leg,
+        receiptId: existingReceiptId,
+        locationId: userLocationId,
+      } = payload;
+
+      console.log({
+        function: "create",
+        type,
+        companyId,
+        repairOrderId,
+        leg,
+        userId,
+      });
+
+      try {
+        const [repairOrder, repairOrderLines, receipt] = await Promise.all([
+          client
+            .from("repairOrder")
+            .select("*")
+            .eq("id", repairOrderId)
+            .eq("companyId", companyId)
+            .single(),
+          client
+            .from("repairOrderLine")
+            .select("*")
+            .eq("repairOrderId", repairOrderId)
+            .eq("companyId", companyId),
+          client
+            .from("receipt")
+            .select("*")
+            .eq("id", existingReceiptId)
+            .eq("companyId", companyId)
+            .maybeSingle(),
+        ]);
+
+        if (!repairOrder.data) throw new Error("Repair order not found");
+        if (["Draft", "Completed", "Cancelled"].includes(
+          repairOrder.data.status
+        )) {
+          throw new Error(
+            `Cannot receive against a repair order in ${repairOrder.data.status} status`
+          );
+        }
+        if (repairOrderLines.error)
+          throw new Error(repairOrderLines.error.message);
+
+        const locationId = userLocationId ?? repairOrder.data.locationId ?? null;
+        if (!locationId)
+          throw new Error(
+            "The repair order has no location — set one before creating a receipt"
+          );
+
+        // Custody decides what a leg may pull: intake takes units that have
+        // not arrived yet, the return leg takes units the supplier is holding.
+        const eligibleStatus = leg === "intake" ? "Pending" : "At Supplier";
+
+        const itemIds = repairOrderLines.data
+          .map((d) => d.itemId)
+          .filter(Boolean) as string[];
+        const items = await client
+          .from("item")
+          .select("id, itemTrackingType")
+          .in("id", itemIds);
+        const serializedItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Serial")
+            .map((d) => d.id)
+        );
+        const batchItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Batch")
+            .map((d) => d.id)
+        );
+
+        const pickMethods = await client
+          .from("pickMethod")
+          .select("itemId, locationId, defaultStorageUnitId")
+          .in("itemId", itemIds);
+        const defaultStorageUnitByItem = new Map<string, string>();
+        for (const row of pickMethods.data ?? []) {
+          if (row.defaultStorageUnitId && row.locationId === locationId) {
+            defaultStorageUnitByItem.set(row.itemId, row.defaultStorageUnitId);
+          }
+        }
+
+        const hasReceipt = !!receipt.data?.id;
+        if (hasReceipt && receipt.data!.status !== "Draft")
+          throw new Error(`Cannot re-source a ${receipt.data!.status} receipt`);
+
+        // A repair leg always moves the whole line: the line's custody status
+        // is a single value, so a partial move would misreport the remainder.
+        const receiptLineItems = repairOrderLines.data.reduce<ReceiptLineItem[]>(
+          (acc, d) => {
+            if (!d.itemId || d.closedComplete) return acc;
+            if (d.status !== eligibleStatus) return acc;
+            const quantity = Number(d.quantity ?? 0);
+            if (quantity <= 0) return acc;
+
+            acc.push({
+              lineId: d.id,
+              itemId: d.itemId,
+              locationId,
+              storageUnitId: defaultStorageUnitByItem.get(d.itemId) ?? null,
+              requiresSerialTracking: serializedItems.has(d.itemId),
+              requiresBatchTracking: batchItems.has(d.itemId),
+              receivedQuantity: quantity,
+              outstandingQuantity: quantity,
+              // Customer property: it enters at ZERO value, always. Posting
+              // does not consult a cost source for this source document.
+              unitPrice: 0,
+              conversionFactor: 1,
+              unitOfMeasure: d.unitOfMeasureCode ?? "EA",
+              companyId,
+              createdBy: userId,
+              orderQuantity: quantity,
+            });
+            return acc;
+          },
+          []
+        );
+
+        if (receiptLineItems.length === 0) {
+          throw new Error(
+            leg === "intake"
+              ? "No units are waiting to be received"
+              : "No units are at the supplier"
+          );
+        }
+
+        const result = await db.transaction().execute(async (trx) => {
+          const nextReceiptId = await getNextSequence(trx, "receipt", companyId);
+
+          let id: string;
+          if (hasReceipt) {
+            id = receipt.data!.id;
+            await trx
+              .updateTable("receipt")
+              .set({
+                sourceDocument: "Repair Order",
+                sourceDocumentId: repairOrderId,
+                sourceDocumentReadableId: repairOrder.data.repairOrderId,
+                locationId,
+                updatedBy: userId,
+              })
+              .where("id", "=", id)
+              .execute();
+          } else {
+            const insertReceipt = await trx
+              .insertInto("receipt")
+              .values({
+                receiptId: nextReceiptId,
+                sourceDocument: "Repair Order",
+                sourceDocumentId: repairOrderId,
+                sourceDocumentReadableId: repairOrder.data.repairOrderId,
+                locationId,
+                status: "Draft",
+                companyId,
+                createdBy: userId,
+              })
+              .returning(["id"])
+              .execute();
+            id = insertReceipt[0]?.id ?? "";
+          }
+
+          await trx.deleteFrom("receiptLine").where("receiptId", "=", id)
+            .execute();
+
+          await trx
+            .insertInto("receiptLine")
+            .values(
+              receiptLineItems.map((lineItem) => ({
+                ...lineItem,
+                receiptId: id,
+              }))
+            )
+            .execute();
+
+          return { id };
+        });
+
+        return jsonResponse(result, 201);
+      } catch (err) {
+        return errorResponse(err, 500);
+      }
+    }
     case "receiptFromWarehouseTransfer": {
       const { warehouseTransferId, receiptId: existingReceiptId } = payload;
 
@@ -1694,6 +2123,390 @@ serve(async (req: Request) => {
         return errorResponse(err, 500);
       }
     }
+    case "shipmentFromSalesReturnOrder": {
+      // Return-to-customer shipment: ships back RECEIVED quantity on lines
+      // dispositioned "Return to Customer", minus what earlier posted
+      // shipments of this source already sent back.
+      const {
+        salesReturnOrderId,
+        shipmentId: existingShipmentId,
+        locationId: userLocationId,
+      } = payload;
+
+      console.log({
+        function: "create",
+        type,
+        companyId,
+        salesReturnOrderId,
+        existingShipmentId,
+        userId,
+      });
+
+      try {
+        const [salesReturnOrder, salesReturnOrderLines, shipment] =
+          await Promise.all([
+            client
+              .from("salesReturnOrder")
+              .select("*")
+              .eq("id", salesReturnOrderId)
+              .single(),
+            client
+              .from("salesReturnOrderLine")
+              .select("*")
+              .eq("salesReturnOrderId", salesReturnOrderId),
+            client
+              .from("shipment")
+              .select("*")
+              .eq("id", existingShipmentId)
+              .maybeSingle(),
+          ]);
+
+        if (!salesReturnOrder.data)
+          throw new Error("Sales return order not found");
+        if (salesReturnOrderLines.error)
+          throw new Error(salesReturnOrderLines.error.message);
+        // Goods can only go back out once they came in: the sibling return
+        // cases gate on the same received statuses.
+        if (
+          !["Confirmed", "Partially Received", "Received"].includes(
+            salesReturnOrder.data.status
+          )
+        )
+          throw new Error(
+            `Cannot create a shipment for a ${salesReturnOrder.data.status} return order`
+          );
+
+        const locationId =
+          userLocationId ?? salesReturnOrder.data.locationId ?? null;
+        if (!locationId)
+          throw new Error("The return order has no location");
+
+        const returnLines = salesReturnOrderLines.data.filter(
+          (d) => d.disposition === "Return to Customer"
+        );
+        if (returnLines.length === 0)
+          throw new Error(
+            'No lines are dispositioned "Return to Customer"'
+          );
+
+        // Quantity already shipped back by earlier posted shipments
+        const priorShipments = await client
+          .from("shipment")
+          .select("id")
+          .eq("sourceDocumentId", salesReturnOrderId)
+          .eq("sourceDocument", "Sales Return Order")
+          .eq("status", "Posted")
+          .eq("companyId", companyId);
+        const priorShipmentIds = (priorShipments.data ?? []).map((d) => d.id);
+        const shippedBackByLine = new Map<string, number>();
+        if (priorShipmentIds.length > 0) {
+          const priorLines = await client
+            .from("shipmentLine")
+            .select("lineId, shippedQuantity")
+            .in("shipmentId", priorShipmentIds);
+          for (const line of priorLines.data ?? []) {
+            if (!line.lineId) continue;
+            shippedBackByLine.set(
+              line.lineId,
+              (shippedBackByLine.get(line.lineId) ?? 0) +
+                (line.shippedQuantity ?? 0)
+            );
+          }
+        }
+
+        const returnItemIds = returnLines
+          .map((d) => d.itemId)
+          .filter(Boolean) as string[];
+        const items = await client
+          .from("item")
+          .select("id, itemTrackingType")
+          .in("id", returnItemIds);
+        const serializedItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Serial")
+            .map((d) => d.id)
+        );
+        const batchItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Batch")
+            .map((d) => d.id)
+        );
+
+        const hasShipment = !!shipment.data?.id;
+        if (hasShipment && shipment.data!.status !== "Draft")
+          throw new Error(
+            `Cannot re-source a ${shipment.data!.status} shipment`
+          );
+
+        const shipmentLineItems = returnLines.reduce<ShipmentLineItem[]>(
+          (acc, d) => {
+            if (!d.itemId) return acc;
+            const outstanding = Math.max(
+              0,
+              (d.quantityReceived ?? 0) - (shippedBackByLine.get(d.id) ?? 0)
+            );
+            if (outstanding === 0) return acc;
+
+            acc.push({
+              lineId: d.id,
+              itemId: d.itemId,
+              locationId,
+              requiresSerialTracking: serializedItems.has(d.itemId),
+              requiresBatchTracking: batchItems.has(d.itemId),
+              shippedQuantity: outstanding,
+              outstandingQuantity: outstanding,
+              orderQuantity: d.quantityReceived ?? 0,
+              // No revenue on a rejected-claim return
+              unitPrice: 0,
+              unitOfMeasure: d.unitOfMeasureCode ?? "EA",
+              companyId,
+              createdBy: userId,
+            });
+            return acc;
+          },
+          []
+        );
+
+        if (shipmentLineItems.length === 0) {
+          throw new Error("No quantity remains to ship back");
+        }
+
+        const result = await db.transaction().execute(async (trx) => {
+          const shipmentId = await getNextSequence(trx, "shipment", companyId);
+
+          let id: string;
+          if (hasShipment) {
+            id = shipment.data!.id;
+            await trx
+              .updateTable("shipment")
+              .set({
+                sourceDocument: "Sales Return Order",
+                sourceDocumentId: salesReturnOrderId,
+                sourceDocumentReadableId:
+                  salesReturnOrder.data.salesReturnOrderId,
+                customerId: salesReturnOrder.data.customerId,
+                locationId,
+                updatedBy: userId,
+              })
+              .where("id", "=", id)
+              .execute();
+          } else {
+            const insertShipment = await trx
+              .insertInto("shipment")
+              .values({
+                shipmentId,
+                sourceDocument: "Sales Return Order",
+                sourceDocumentId: salesReturnOrderId,
+                sourceDocumentReadableId:
+                  salesReturnOrder.data.salesReturnOrderId,
+                customerId: salesReturnOrder.data.customerId,
+                locationId,
+                status: "Draft",
+                companyId,
+                createdBy: userId,
+              })
+              .returning(["id"])
+              .execute();
+
+            id = insertShipment[0]?.id ?? "";
+          }
+
+          await trx
+            .deleteFrom("shipmentLine")
+            .where("shipmentId", "=", id)
+            .execute();
+
+          await trx
+            .insertInto("shipmentLine")
+            .values(
+              shipmentLineItems.map((lineItem) => ({
+                ...lineItem,
+                shipmentId: id,
+              }))
+            )
+            .execute();
+
+          return { id };
+        });
+
+        return jsonResponse(result, 201);
+      } catch (err) {
+        return errorResponse(err, 500);
+      }
+    }
+    case "shipmentFromPurchaseReturnOrder": {
+      // Supplier return shipment: open (not short-closed) return lines,
+      // quantity minus already shipped. Quantities are inventory units.
+      const {
+        purchaseReturnOrderId,
+        shipmentId: existingShipmentId,
+        locationId: userLocationId,
+      } = payload;
+
+      console.log({
+        function: "create",
+        type,
+        companyId,
+        purchaseReturnOrderId,
+        existingShipmentId,
+        userId,
+      });
+
+      try {
+        const [purchaseReturnOrder, purchaseReturnOrderLines, shipment] =
+          await Promise.all([
+            client
+              .from("purchaseReturnOrder")
+              .select("*")
+              .eq("id", purchaseReturnOrderId)
+              .single(),
+            client
+              .from("purchaseReturnOrderLine")
+              .select("*")
+              .eq("purchaseReturnOrderId", purchaseReturnOrderId),
+            client
+              .from("shipment")
+              .select("*")
+              .eq("id", existingShipmentId)
+              .maybeSingle(),
+          ]);
+
+        if (!purchaseReturnOrder.data)
+          throw new Error("Purchase return order not found");
+        if (
+          !["Confirmed", "Partially Shipped"].includes(
+            purchaseReturnOrder.data.status
+          )
+        )
+          throw new Error(
+            `Cannot ship against a return order in ${purchaseReturnOrder.data.status} status`
+          );
+        if (purchaseReturnOrderLines.error)
+          throw new Error(purchaseReturnOrderLines.error.message);
+
+        const locationId =
+          userLocationId ?? purchaseReturnOrder.data.locationId ?? null;
+        if (!locationId)
+          throw new Error("The return order has no location");
+
+        const returnItemIds = purchaseReturnOrderLines.data
+          .map((d) => d.itemId)
+          .filter(Boolean) as string[];
+        const items = await client
+          .from("item")
+          .select("id, itemTrackingType")
+          .in("id", returnItemIds);
+        const serializedItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Serial")
+            .map((d) => d.id)
+        );
+        const batchItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Batch")
+            .map((d) => d.id)
+        );
+
+        const hasShipment = !!shipment.data?.id;
+        if (hasShipment && shipment.data!.status !== "Draft")
+          throw new Error(
+            `Cannot re-source a ${shipment.data!.status} shipment`
+          );
+
+        const shipmentLineItems = purchaseReturnOrderLines.data.reduce<
+          ShipmentLineItem[]
+        >((acc, d) => {
+          if (!d.itemId || d.closedComplete) return acc;
+          const outstanding = Math.max(
+            0,
+            (d.quantity ?? 0) - (d.quantityShipped ?? 0)
+          );
+          if (outstanding === 0) return acc;
+
+          acc.push({
+            lineId: d.id,
+            itemId: d.itemId,
+            locationId,
+            requiresSerialTracking: serializedItems.has(d.itemId),
+            requiresBatchTracking: batchItems.has(d.itemId),
+            shippedQuantity: outstanding,
+            outstandingQuantity: outstanding,
+            orderQuantity: d.quantity ?? 0,
+            unitPrice: d.unitPrice ?? 0,
+            unitOfMeasure: d.unitOfMeasureCode ?? "EA",
+            companyId,
+            createdBy: userId,
+          });
+          return acc;
+        }, []);
+
+        if (shipmentLineItems.length === 0) {
+          throw new Error("No lines to ship");
+        }
+
+        const result = await db.transaction().execute(async (trx) => {
+          const shipmentId = await getNextSequence(trx, "shipment", companyId);
+
+          let id: string;
+          if (hasShipment) {
+            id = shipment.data!.id;
+            await trx
+              .updateTable("shipment")
+              .set({
+                sourceDocument: "Purchase Return Order",
+                sourceDocumentId: purchaseReturnOrderId,
+                sourceDocumentReadableId:
+                  purchaseReturnOrder.data.purchaseReturnOrderId,
+                supplierId: purchaseReturnOrder.data.supplierId,
+                locationId,
+                updatedBy: userId,
+              })
+              .where("id", "=", id)
+              .execute();
+          } else {
+            const insertShipment = await trx
+              .insertInto("shipment")
+              .values({
+                shipmentId,
+                sourceDocument: "Purchase Return Order",
+                sourceDocumentId: purchaseReturnOrderId,
+                sourceDocumentReadableId:
+                  purchaseReturnOrder.data.purchaseReturnOrderId,
+                supplierId: purchaseReturnOrder.data.supplierId,
+                locationId,
+                status: "Draft",
+                companyId,
+                createdBy: userId,
+              })
+              .returning(["id"])
+              .execute();
+
+            id = insertShipment[0]?.id ?? "";
+          }
+
+          await trx
+            .deleteFrom("shipmentLine")
+            .where("shipmentId", "=", id)
+            .execute();
+
+          await trx
+            .insertInto("shipmentLine")
+            .values(
+              shipmentLineItems.map((lineItem) => ({
+                ...lineItem,
+                shipmentId: id,
+              }))
+            )
+            .execute();
+
+          return { id };
+        });
+
+        return jsonResponse(result, 201);
+      } catch (err) {
+        return errorResponse(err, 500);
+      }
+    }
     case "shipmentFromPurchaseOrder": {
       const {
         purchaseOrderId,
@@ -1884,6 +2697,193 @@ serve(async (req: Request) => {
         });
 
         return jsonResponse({ id: shipmentId }, 201);
+      } catch (err) {
+        return errorResponse(err, 500);
+      }
+    }
+    case "shipmentFromRepairOrder": {
+      const {
+        repairOrderId,
+        leg,
+        shipmentId: existingShipmentId,
+        locationId: userLocationId,
+      } = payload;
+
+      console.log({
+        function: "create",
+        type,
+        companyId,
+        repairOrderId,
+        leg,
+        userId,
+      });
+
+      try {
+        const [repairOrder, repairOrderLines, shipment] = await Promise.all([
+          client
+            .from("repairOrder")
+            .select("*")
+            .eq("id", repairOrderId)
+            .eq("companyId", companyId)
+            .single(),
+          client
+            .from("repairOrderLine")
+            .select("*")
+            .eq("repairOrderId", repairOrderId)
+            .eq("companyId", companyId),
+          client
+            .from("shipment")
+            .select("*")
+            .eq("id", existingShipmentId)
+            .eq("companyId", companyId)
+            .maybeSingle(),
+        ]);
+
+        if (!repairOrder.data) throw new Error("Repair order not found");
+        if (repairOrderLines.error)
+          throw new Error(repairOrderLines.error.message);
+        if (["Draft", "Completed", "Cancelled"].includes(
+          repairOrder.data.status
+        )) {
+          throw new Error(
+            `Cannot create a shipment for a ${repairOrder.data.status} repair order`
+          );
+        }
+        if (leg === "supplier" && !repairOrder.data.supplierId) {
+          throw new Error(
+            "Set the repair supplier on the order before shipping units out"
+          );
+        }
+
+        const locationId = userLocationId ?? repairOrder.data.locationId ?? null;
+        if (!locationId) throw new Error("The repair order has no location");
+
+        // Custody gates the leg: only a unit in the shop can go to the OEM,
+        // and only a repaired unit can go home.
+        const eligibleStatus = leg === "supplier" ? "Received" : "Repaired";
+
+        const itemIds = repairOrderLines.data
+          .map((d) => d.itemId)
+          .filter(Boolean) as string[];
+        const items = await client
+          .from("item")
+          .select("id, itemTrackingType")
+          .in("id", itemIds);
+        const serializedItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Serial")
+            .map((d) => d.id)
+        );
+        const batchItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Batch")
+            .map((d) => d.id)
+        );
+
+        const hasShipment = !!shipment.data?.id;
+        if (hasShipment && shipment.data!.status !== "Draft")
+          throw new Error(
+            `Cannot re-source a ${shipment.data!.status} shipment`
+          );
+
+        const shipmentLineItems = repairOrderLines.data.reduce<
+          ShipmentLineItem[]
+        >((acc, d) => {
+          if (!d.itemId || d.closedComplete) return acc;
+          if (d.status !== eligibleStatus) return acc;
+          const quantity = Number(d.quantity ?? 0);
+          if (quantity <= 0) return acc;
+
+          acc.push({
+            lineId: d.id,
+            itemId: d.itemId,
+            locationId,
+            requiresSerialTracking: serializedItems.has(d.itemId),
+            requiresBatchTracking: batchItems.has(d.itemId),
+            shippedQuantity: quantity,
+            outstandingQuantity: quantity,
+            orderQuantity: quantity,
+            // Customer property moving under custody: no revenue either way.
+            unitPrice: 0,
+            unitOfMeasure: d.unitOfMeasureCode ?? "EA",
+            companyId,
+            createdBy: userId,
+          });
+          return acc;
+        }, []);
+
+        if (shipmentLineItems.length === 0) {
+          throw new Error(
+            leg === "supplier"
+              ? "No units in the shop are ready to send to the supplier"
+              : "No repaired units are ready to ship back"
+          );
+        }
+
+        const result = await db.transaction().execute(async (trx) => {
+          const nextShipmentId = await getNextSequence(
+            trx,
+            "shipment",
+            companyId
+          );
+
+          let id: string;
+          if (hasShipment) {
+            id = shipment.data!.id;
+            await trx
+              .updateTable("shipment")
+              .set({
+                sourceDocument: "Repair Order",
+                sourceDocumentId: repairOrderId,
+                sourceDocumentReadableId: repairOrder.data.repairOrderId,
+                customerId:
+                  leg === "customer" ? repairOrder.data.customerId : null,
+                supplierId:
+                  leg === "supplier" ? repairOrder.data.supplierId : null,
+                locationId,
+                updatedBy: userId,
+              })
+              .where("id", "=", id)
+              .execute();
+          } else {
+            const insertShipment = await trx
+              .insertInto("shipment")
+              .values({
+                shipmentId: nextShipmentId,
+                sourceDocument: "Repair Order",
+                sourceDocumentId: repairOrderId,
+                sourceDocumentReadableId: repairOrder.data.repairOrderId,
+                customerId:
+                  leg === "customer" ? repairOrder.data.customerId : null,
+                supplierId:
+                  leg === "supplier" ? repairOrder.data.supplierId : null,
+                locationId,
+                status: "Draft",
+                companyId,
+                createdBy: userId,
+              })
+              .returning(["id"])
+              .execute();
+            id = insertShipment[0]?.id ?? "";
+          }
+
+          await trx.deleteFrom("shipmentLine").where("shipmentId", "=", id)
+            .execute();
+
+          await trx
+            .insertInto("shipmentLine")
+            .values(
+              shipmentLineItems.map((lineItem) => ({
+                ...lineItem,
+                shipmentId: id,
+              }))
+            )
+            .execute();
+
+          return { id };
+        });
+
+        return jsonResponse(result, 201);
       } catch (err) {
         return errorResponse(err, 500);
       }

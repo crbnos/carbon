@@ -18,7 +18,13 @@ export async function action({ request }: ActionFunctionArgs) {
     return { error: { message: "Invalid form data" }, data: null };
   }
 
-  if (field !== "storageUnitId" && field !== "shippedQuantity") {
+  // warrantyTermId is the shipper's per-line override — it outranks the
+  // customer rules and the item default when the registration is stamped.
+  if (
+    field !== "storageUnitId" &&
+    field !== "shippedQuantity" &&
+    field !== "warrantyTermId"
+  ) {
     return { error: { message: `Invalid field: ${field}` }, data: null };
   }
 

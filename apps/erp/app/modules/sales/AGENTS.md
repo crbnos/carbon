@@ -54,6 +54,9 @@ cd apps/erp && pnpm exec vitest run app/modules/sales
 | `pricingRule` | Company-scoped discount/markup rules |
 | `customerItemPriceOverride` / `customerItemPriceOverrideBreak` | Customer-specific price overrides with quantity breaks |
 | `noQuoteReason` | Why a quote line was declined |
+| `salesReturnOrder` / `salesReturnOrderLine` / `salesReturnOrders` (view) | Customer RMAs: non-posting authorization document; receipt-driven statuses (Draft → Confirmed → Partially Received → Received → Completed/Cancelled); lines link optionally to SO/shipment/invoice lines with a `disposition` + `closedComplete` short-close |
+| `salesReturnOrderLineTrackedEntity` / `salesReturnOrderCreditLine` | Expected serials/batches per RMA line; per-line credit breakdown behind the header-level AR `memo` (`memo.salesReturnOrderId`) |
+| `returnReason` | Why goods came back (company-defined, seeded; `inventoryValueZero` re-enters stock at zero value). Shared with purchasing's supplier returns |
 
 ## Key Service Functions
 
@@ -69,6 +72,10 @@ cd apps/erp && pnpm exec vitest run app/modules/sales
 - `getCustomer(s)` / `getCustomerContacts` / `getCustomerLocations` — customer reads
 - `getPricingRules` / `createPricingRule` / `duplicatePricingRule` — rule management
 - `getOpportunity` / `getOpportunityDocuments` — deal tracking
+- `getSalesReturnOrders` / `insertSalesReturnOrder` / `upsertSalesReturnOrderLine` — RMA CRUD; `confirmSalesReturnOrder` (Kysely, row-locked reversible-quantity caps, THROWS), `cancelSalesReturnOrder` / `completeSalesReturnOrder` (guarded), `shortCloseSalesReturnOrderLine`
+- `getReturnableLinesForCustomer` (posted shipment lines minus already-authorized) / `getShippedTrackedEntitiesForCustomer` — RMA pickers
+- `createSalesReturnOrderCredit` (Kysely, row-locked creditable cap, THROWS) / `getCreditableQuantities` / `createReplacementSalesOrder` (resolvePrice-priced draft SO)
+- `setSalesReturnOrderLineDisposition` — Use As Is releases returned entities; Scrap/Rework escalate to a quality Issue via the line's issue route
 
 ## Key Exports
 

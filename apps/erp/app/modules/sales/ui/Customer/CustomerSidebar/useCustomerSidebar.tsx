@@ -6,6 +6,7 @@ import {
   LuMapPin,
   LuReceipt,
   LuShieldAlert,
+  LuShieldCheck,
   LuTruck
 } from "react-icons/lu";
 import {
@@ -71,6 +72,12 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
       role: ["employee"],
       icon: <LuTruck />,
       shortcut: "Command+Shift+s"
+    },
+    {
+      name: t`Warranties`,
+      to: path.to.customerWarranties(customerId),
+      role: ["employee"],
+      icon: <LuShieldCheck />
     },
     {
       name: t`Risks`,

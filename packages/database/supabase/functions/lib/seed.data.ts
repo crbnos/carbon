@@ -39,6 +39,15 @@ export const customerStatuses = [
 
 export const scrapReasons = ["Defective", "Damaged", "Quality"] as const;
 
+export const returnReasons = [
+  "Defective",
+  "Wrong Item Shipped",
+  "Damaged in Transit",
+  "No Longer Needed",
+  "Warranty",
+  "Other"
+] as const;
+
 export const paymentTerms = [
   {
     name: "Net 15",
@@ -344,6 +353,42 @@ export const sequences = [
     table: "salesOrder",
     name: "Sales Order",
     prefix: "SO",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
+    table: "salesReturnOrder",
+    name: "Sales Return Order",
+    prefix: "RMA",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
+    table: "purchaseReturnOrder",
+    name: "Purchase Return Order",
+    prefix: "RTS",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
+    table: "repairOrder",
+    name: "Repair Order",
+    prefix: "REP",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
+    table: "warrantyRegistration",
+    name: "Warranty Registration",
+    prefix: "WTY",
     suffix: null,
     next: 0,
     size: 6,
@@ -699,6 +744,7 @@ export const accounts = [
   { key: "4010", number: "4010", name: "Sales", isGroup: false, parentKey: "revenue", accountType: "Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
   { key: "4020", number: "4020", name: "Sales Discounts", isGroup: false, parentKey: "revenue", accountType: "Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
   { key: "4030", number: "4030", name: "Manufacturing Services Revenue", isGroup: false, parentKey: "revenue", accountType: "Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
+  { key: "4900", number: "4900", name: "Sales Returns", isGroup: false, parentKey: "revenue", accountType: "Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
 
   // Other Income
   { key: "other-income", number: null, name: "Other Income", isGroup: true, parentKey: "income-statement", accountType: "Other Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
@@ -727,6 +773,7 @@ export const accounts = [
   { key: "inventory-adjustments", number: null, name: "Inventory Adjustments", isGroup: true, parentKey: "cogs", accountType: "Cost of Goods Sold", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
   { key: "5310", number: "5310", name: "Inventory Adjustment", isGroup: false, parentKey: "inventory-adjustments", accountType: "Cost of Goods Sold", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
   { key: "5320", number: "5320", name: "Scrap / Cost of Quality", isGroup: false, parentKey: "inventory-adjustments", accountType: "Cost of Goods Sold", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
+  { key: "5330", number: "5330", name: "Warranty Expense", isGroup: false, parentKey: "cogs", accountType: "Cost of Goods Sold", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
 
   // ─── 6000-6999: OPERATING EXPENSES ───
   { key: "operating-expenses", number: null, name: "Operating Expenses", isGroup: true, parentKey: "income-statement", accountType: "Expense", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
@@ -763,6 +810,8 @@ export const accounts = [
 export const accountDefaults = {
   salesAccount: "4010",
   salesDiscountAccount: "4020",
+  salesReturnsAccount: "4900",
+  warrantyCostAccount: "5330",
   costOfGoodsSoldAccount: "5010",
   purchaseVarianceAccount: "5210",
   inventoryAdjustmentVarianceAccount: "5310",

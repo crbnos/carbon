@@ -1122,6 +1122,23 @@ canvas hosting Radix popovers/selects.
 
 **Applies to:** `packages/database/supabase/functions/get-method/index.ts` (`quoteToQuote`), `apps/erp/app/modules/sales/sales.service.ts` (`deleteQuote`), any insert into `externalLink`.
 
+## A bare FormLabel outside FormControl 500s the whole route
+
+**Context:** The returns-module line forms (`SalesReturnOrderLineForm`, `PurchaseReturnOrderLineForm`) used `<FormLabel>` as a standalone section heading for the tracked-entity picker area.
+
+**Problem:** `FormLabel` (`packages/react/src/Form/FormLabel.tsx`) calls `useFormControlContext()`, which **throws** outside a `<FormControl>`. The throw happens at render, so the route's error boundary replaces the page — the user sees "Error 500. Something broke on our end." on an otherwise-valid URL. Subtler: when the crash is below a `ValidatedForm`, the form unmounts, so a page can LOOK fine in a stale snapshot while its Save button is dead. The error is only visible in the browser console (`useFormControlContext() must be used inside of a FormControl`); the server log shows nothing useful.
+
+**Rule:** `FormLabel`/`FormError` are only valid inside a `<FormControl>`. For a standalone section heading in a form, use a plain `<label>`/heading element. When a page 500s with no server error, check the browser console for context-hook throws before suspecting the loader — and treat "form renders but Save does nothing" as a possible sibling-render crash, not a submit bug.
+
+**Applies to:** any usage of `packages/react/src/Form/{FormLabel,FormError}.tsx`; form components under `apps/erp/app/modules/*/ui/`.
+
+## Demo-seeded attributes can make a dead query look alive
+
+- **Context:** The supplier-return entity picker filtered `trackedEntity` on `attributes ->> Supplier`. Browser verification on the local DB showed results, so the query looked correct.
+- **Problem:** No production code ever writes a `Supplier` attribute — the 49 local entities carrying it came from MCP demo seeding (Axiom/Northspoke programs). In production the picker would always be empty. Verification against hand-seeded data validated the seed, not the code.
+- **Rule:** Before anchoring a query on a `trackedEntity.attributes` key, grep for the WRITER of that key in app + edge-function code (receipt tracking writes `Receipt`/`Receipt Line`/`Receipt Line Index`; shipment tracking writes `Shipment`/`Shipment Line`). If the only writers are tests or seeds, the key does not exist in production. Local rows proving a filter matches prove nothing about who writes the attribute.
+- **Applies to:** any `attributes ->> X` filter on trackedEntity/trackedActivity; browser verification on a DB that has been demo-seeded.
+
 ## An incremental pull-sweep cursor must advance on the SAME field the query filters on
 
 **Context:** The Stripe Connect payment pull sweep (`stripe-connect-pull-sweep.ts`) queried Stripe with `invoices.list({ status: "paid", created: { gte: since } })` but advanced the cursor to `latest status_transitions.paid_at + 1`. An invoice created before the cursor but paid after it (a normal case — invoices are created, then paid later) would never be returned by a future `created`-filtered query once the cursor passed its `paid_at`, so it was permanently skipped with no error, no log, and no retry.
@@ -1181,3 +1198,30 @@ canvas hosting Radix popovers/selects.
 **Rule:** Treat `as { someField?: T }` on a row/DTO type as a smell, not a convenience — it is indistinguishable from a field that does not exist. When a UI needs a column its loader does not return, widen the RPC/view and regenerate types so the compiler enforces the contract. More generally: a field written to the DB but rendered nowhere has no feedback loop — `jobMaterial.itemScrapPercentage` was wrong in three code paths for the same reason.
 
 **Applies to:** `apps/erp/app/**` table cells reading loader rows; any `as { x?: T }` over a generated DB/RPC type.
+
+## Applying a migration by hand leaves the Supabase ledger inconsistent — repair it with the CLI, never a raw INSERT
+
+**Context:** `pnpm db:migrate` was unavailable (blocked in the session), so a new
+migration was applied straight to the local database with
+`docker exec … psql -f` and its version hand-inserted into
+`supabase_migrations.schema_migrations`.
+
+**Problem:** The hand-written ledger rows did not survive. A later `crbn up`
+ran `supabase migration up --include-all`, found those versions absent, and
+replayed migrations whose effects were already present — failing on
+`column "unitCostSource" of relation "quoteMaterial" already exists` and
+aborting the whole dev-stack startup. A raw INSERT also writes an empty
+`statements` array, so the ledger row is not equivalent to one the CLI wrote.
+
+**Rule:** Apply migrations with `pnpm db:migrate`. If that is genuinely
+unavailable, apply the SQL directly **and then** reconcile with the CLI —
+`supabase migration repair --status applied <version…> --db-url <url>` — never
+by inserting into `supabase_migrations.schema_migrations` yourself. Before
+repairing, probe the database for each migration's actual artifact (the column,
+constraint, table or function it creates) and only mark applied the ones whose
+effects are really present; let the CLI apply the rest. Note the artifact is
+often a CONSTRAINT rather than a function — `pg_constraint.convalidated` and
+`confdeltype` are what prove a `NOT VALID` / `VALIDATE CONSTRAINT` pair ran.
+
+**Applies to:** any local-database work in `packages/database/supabase/migrations`,
+and any session where `pnpm db:migrate` is blocked or skipped.

@@ -60,6 +60,7 @@ import { Empty, ItemThumbnail, PrintButton } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useStorageUnits } from "~/components/Form/StorageUnit";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
+import WarrantyTerm from "~/components/Form/WarrantyTerm";
 import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
 import type {
@@ -206,14 +207,14 @@ const ShipmentLines = () => {
         }
       | {
           lineId: string;
-          field: "storageUnitId";
-          value: string;
+          field: "storageUnitId" | "warrantyTermId";
+          value: string | null;
         }) => {
       const formData = new FormData();
 
       formData.append("ids", lineId);
       formData.append("field", field);
-      formData.append("value", value.toString());
+      formData.append("value", value === null ? "" : value.toString());
       fetcher.submit(formData, {
         method: "post",
         action: path.to.bulkUpdateShipmentLine
@@ -421,8 +422,8 @@ function ShipmentLineItem({
       }
     | {
         lineId: string;
-        field: "storageUnitId";
-        value: string;
+        field: "storageUnitId" | "warrantyTermId";
+        value: string | null;
       }) => Promise<void>;
 }) {
   const { t } = useLingui();
@@ -609,6 +610,25 @@ function ShipmentLineItem({
                 }}
               />
             )}
+          {/* Warranty is not welded to the part: whatever the customer rules or
+              the item default would give, the shipper can override it here on
+              the day. Empty means "use the rules". */}
+          {shipment?.sourceDocument === "Sales Order" && (
+            <WarrantyTerm
+              name={`warrantyTerm:${line.id}`}
+              label={undefined}
+              value={line.warrantyTermId ?? undefined}
+              isReadOnly={isReadOnly}
+              placeholder="Warranty (from rules)"
+              onChange={(option) => {
+                onUpdate({
+                  lineId: line.id!,
+                  field: "warrantyTermId",
+                  value: option?.value ?? null
+                });
+              }}
+            />
+          )}
         </div>
       </div>
       {line.requiresBatchTracking && (
@@ -647,6 +667,18 @@ function ShipmentLineItem({
   );
 }
 
+// Two sources ship stock that is deliberately NOT Available: a sales return
+// ships returned goods (On Hold until they leave), and a repair order ships the
+// customer's own unit, which is On Hold for its whole stay in custody — out to
+// the OEM and home again. Mirrors what lines.tracking accepts.
+const ON_HOLD_SHIPMENT_SOURCES = ["Sales Return Order", "Repair Order"];
+
+function expectedEntityStatus(shipment?: Shipment) {
+  return ON_HOLD_SHIPMENT_SOURCES.includes(shipment?.sourceDocument ?? "")
+    ? "On Hold"
+    : "Available";
+}
+
 function BatchForm({
   line,
   shipment,
@@ -666,8 +698,8 @@ function BatchForm({
     value
   }: {
     lineId: string;
-    field: "storageUnitId";
-    value: string;
+    field: "storageUnitId" | "warrantyTermId";
+    value: string | null;
   }) => Promise<void>;
 }) {
   const { t } = useLingui();
@@ -709,8 +741,9 @@ function BatchForm({
   const resolvedBatch = values.number
     ? resolveTrackedEntity(values.number, batchNumbers?.data ?? [])
     : null;
-  // @ts-expect-error TS2339 - TODO: fix type
-  const isBatchNumberValid = resolvedBatch?.status === "Available";
+  const isBatchNumberValid =
+    // @ts-expect-error TS2339 - TODO: fix type
+    resolvedBatch?.status === expectedEntityStatus(shipment);
 
   // Verify batch quantity is sufficient for the shipped quantity
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -728,7 +761,7 @@ function BatchForm({
       if (
         batchNumber &&
         // @ts-expect-error TS2339 - TODO: fix type
-        batchNumber.status === "Available" &&
+        batchNumber.status === expectedEntityStatus(shipment) &&
         // @ts-expect-error TS2339 - TODO: fix type
         (line.shippedQuantity || 0) > batchNumber.quantity
       ) {
@@ -803,7 +836,7 @@ function BatchForm({
     );
 
     // @ts-expect-error TS2339 - TODO: fix type
-    if (batchNumber && batchNumber.status !== "Available") {
+    if (batchNumber && batchNumber.status !== expectedEntityStatus(shipment)) {
       // @ts-expect-error TS2339 - TODO: fix type
       setError(`Batch number is ${batchNumber.status}`);
       setValues({
@@ -1012,14 +1045,14 @@ function SerialForm({
       }
 
       // @ts-expect-error TS2339 - TODO: fix type
-      if (serialNumber.status !== "Available") {
+      if (serialNumber.status !== expectedEntityStatus(shipment)) {
         // @ts-expect-error TS2339 - TODO: fix type
         return `Serial number is ${serialNumber.status}`;
       }
 
       return null;
     },
-    [serialNumbers, serialNumbersData?.data]
+    [serialNumbers, serialNumbersData?.data, shipment]
   );
 
   const updateSerialNumber = useCallback(
@@ -1154,8 +1187,9 @@ function SerialForm({
                 serialNumbersData?.data ?? []
               )
             : null;
-          // @ts-expect-error TS2339 - TODO: fix type
-          const isSerialNumberValid = resolvedSerial?.status === "Available";
+          const isSerialNumberValid =
+            // @ts-expect-error TS2339 - TODO: fix type
+            resolvedSerial?.status === expectedEntityStatus(shipment);
 
           return (
             <div

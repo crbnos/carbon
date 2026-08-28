@@ -683,9 +683,11 @@ export const journalEntrySourceTypes = [
   "Purchase Receipt",
   "Purchase Invoice",
   "Purchase Return",
+  "Purchase Return Shipment",
   "Sales Invoice",
   "Sales Shipment",
   "Sales Return",
+  "Sales Return Receipt",
   "Transfer Receipt",
   "Inventory Adjustment",
   "Production Order",
@@ -699,7 +701,8 @@ export const journalEntrySourceTypes = [
   "Credit Memo",
   "Debit Memo",
   "Non-Conformance",
-  "Inbound Inspection"
+  "Inbound Inspection",
+  "Repair Consumption"
 ] as const;
 
 export const journalEntryStatuses = ["Draft", "Posted", "Reversed"] as const;

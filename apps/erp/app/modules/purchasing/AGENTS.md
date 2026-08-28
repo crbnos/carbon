@@ -52,6 +52,8 @@ cd apps/erp && pnpm exec vitest run app/modules/purchasing
 | `supplierQuote` / `supplierQuoteLine` / `supplierQuoteLinePrice` | Vendor pricing at quantity breaks |
 | `purchasingRfq` / `purchasingRfqLine` / `purchasingRfqSupplier` | RFQ header, lines, and invited suppliers |
 | `terms` | Payment/delivery terms reference data |
+| `purchaseReturnOrder` / `purchaseReturnOrderLine` / `purchaseReturnOrders` (view) | Supplier returns: authorize → ship (via shipments, source "Purchase Return Order") → credit. Statuses Draft → Confirmed → Partially Shipped → Shipped → Completed/Cancelled; `supplierReference` carries the supplier's own RMA number; line quantities/prices are ALWAYS inventory-UOM (converted once at authoring) |
+| `purchaseReturnOrderLineTrackedEntity` / `purchaseReturnOrderCreditLine` | Entities to send back (picked from Available stock from that supplier); per-line credit breakdown behind the AP `memo` (`memo.purchaseReturnOrderId`, reason account = GRNI) |
 
 ## Key Service Functions
 
@@ -67,6 +69,9 @@ cd apps/erp && pnpm exec vitest run app/modules/purchasing
 - `getPurchasingRFQ` / `getPurchasingRFQs` / `upsertPurchasingRFQ` — RFQ management
 - `getSupplierQuotesForComparison` — side-by-side quote comparison
 - `getDefaultAttachmentsForPO` — default document attachments for PO creation
+- `getPurchaseReturnOrders` / `insertPurchaseReturnOrder` / `upsertPurchaseReturnOrderLine` — supplier-return CRUD; `confirmPurchaseReturnOrder` (Kysely row-locked caps: receiptLine received → PO line received×factor → invoice line×factor), `cancelPurchaseReturnOrder` / `completePurchaseReturnOrder` / `shortClosePurchaseReturnOrderLine`
+- `getReturnableLinesForSupplier` (posted receipt lines minus already-authorized; invoice-only rows are explicit blind returns) / `getReturnableEntitiesForSupplier` (Available entities whose `attributes ->> Receipt` resolves to a posted receipt from the supplier)
+- `createPurchaseReturnOrderCredit` (Kysely, shipped-minus-credited cap) / `getCreditableQuantitiesForPurchaseReturn` / `createReplacementPurchaseOrder` (linked-PO-line / supplierPart pricing)
 
 ## Key Exports
 

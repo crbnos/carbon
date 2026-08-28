@@ -44,7 +44,10 @@ const Header = ({
 
   const headerView = (
     <View style={tw("flex flex-row justify-between mb-1")}>
-      <View style={tw("flex flex-row")}>
+      {/* Unconstrained flex children overlap in react-pdf when both sides are
+          wide (long titles like "Return Merchandise Authorization") — bound
+          each side so the title wraps instead of colliding. */}
+      <View style={tw("flex flex-row shrink pr-3")}>
         {showLogo ? (
           <LogoImage
             src={logoSrc!}
@@ -76,9 +79,13 @@ const Header = ({
           </View>
         )}
       </View>
-      <View style={tw("flex flex-col items-end justify-start")}>
+      <View
+        style={tw("flex flex-col items-end justify-start shrink-0 max-w-[55%]")}
+      >
         {opts.showDocumentTitle && (
-          <Text style={tw("text-2xl font-bold text-gray-800")}>{title}</Text>
+          <Text style={tw("text-2xl font-bold text-gray-800 text-right")}>
+            {title}
+          </Text>
         )}
         {opts.showDocumentId && documentId && (
           <Text style={tw("text-sm font-bold text-gray-600 -mt-4")}>

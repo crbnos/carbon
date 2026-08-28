@@ -67,6 +67,46 @@ export default function useReceiptForm({
           });
         break;
 
+      case "Sales Return Order":
+        carbon
+          ?.from("salesReturnOrder")
+          .select("id, salesReturnOrderId")
+          .eq("companyId", user.company.id)
+          .or("status.eq.Confirmed, status.eq.Partially Received")
+          .then((response) => {
+            if (response.error) {
+              setError(response.error.message);
+            } else {
+              setSourceDocuments(
+                response.data.map((d) => ({
+                  name: d.salesReturnOrderId,
+                  id: d.id
+                }))
+              );
+            }
+          });
+        break;
+
+      case "Repair Order":
+        carbon
+          ?.from("repairOrder")
+          .select("id, repairOrderId")
+          .eq("companyId", user.company.id)
+          .in("status", ["Confirmed", "In Progress"])
+          .then((response) => {
+            if (response.error) {
+              setError(response.error.message);
+            } else {
+              setSourceDocuments(
+                response.data.map((d) => ({
+                  name: d.repairOrderId,
+                  id: d.id
+                }))
+              );
+            }
+          });
+        break;
+
       case "Inbound Transfer":
         carbon
           ?.from("warehouseTransfer")

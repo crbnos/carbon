@@ -7,6 +7,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import type { ReceiptSourceDocument } from "~/modules/inventory";
 import { getUserDefaults } from "~/modules/users/users.server";
+import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -53,6 +54,157 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       throw redirect(path.to.receiptDetails(purchaseOrderReceipt.data.id));
+    case "Sales Return Order":
+      // One open draft per RMA: clicking Receive again goes to the existing
+      // draft instead of stacking up duplicates.
+      const existingReturnReceipt = await client
+        .from("receipt")
+        .select("id")
+        .eq("sourceDocument", "Sales Return Order")
+        .eq("sourceDocumentId", sourceDocumentId)
+        .eq("status", "Draft")
+        .eq("companyId", companyId)
+        .order("createdAt", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (existingReturnReceipt.error) {
+        throw redirect(
+          path.to.salesReturnOrderDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              existingReturnReceipt.error,
+              "Failed to check for an existing receipt"
+            )
+          )
+        );
+      }
+      if (existingReturnReceipt.data) {
+        throw redirect(path.to.receiptDetails(existingReturnReceipt.data.id));
+      }
+
+      // No default-location guard: the create edge function falls back to
+      // the return order's own location and errors specifically otherwise.
+      const salesReturnOrderReceipt = await serviceRole.functions.invoke<{
+        id: string;
+      }>("create", {
+        body: {
+          type: "receiptFromSalesReturnOrder",
+          companyId,
+          locationId: defaults.data?.locationId,
+          salesReturnOrderId: sourceDocumentId,
+          receiptId: undefined,
+          userId: userId
+        }
+      });
+      if (!salesReturnOrderReceipt.data || salesReturnOrderReceipt.error) {
+        throw redirect(
+          path.to.salesReturnOrderDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              salesReturnOrderReceipt.error,
+              await getEdgeFunctionErrorMessage(
+                salesReturnOrderReceipt.error,
+                "Failed to create receipt"
+              )
+            )
+          )
+        );
+      }
+
+      throw redirect(path.to.receiptDetails(salesReturnOrderReceipt.data.id));
+    case "Repair Order": {
+      // "intake" takes the customer's unit in; "return" takes it back from the
+      // OEM. One open draft at a time, same as the RMA path.
+      const repairLeg =
+        (formData.get("leg") as string) === "return" ? "return" : "intake";
+
+      // A draft carries no leg of its own, so reuse has to be proved from what
+      // it actually holds: the custody state of the repair lines behind its
+      // receipt lines. Without this, asking to receive units back from the
+      // supplier could hand you the intake draft instead.
+      const existingRepairReceipt = await client
+        .from("receipt")
+        .select("id, receiptLine(lineId)")
+        .eq("sourceDocument", "Repair Order")
+        .eq("sourceDocumentId", sourceDocumentId)
+        .eq("status", "Draft")
+        .eq("companyId", companyId)
+        .order("createdAt", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (existingRepairReceipt.error) {
+        throw redirect(
+          path.to.repairOrderDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              existingRepairReceipt.error,
+              "Failed to check for an existing receipt"
+            )
+          )
+        );
+      }
+      if (existingRepairReceipt.data) {
+        const draftLineIds = (existingRepairReceipt.data.receiptLine ?? [])
+          .map((line: { lineId: string | null }) => line.lineId)
+          .filter(Boolean) as string[];
+
+        const eligibleStatus =
+          repairLeg === "intake" ? "Pending" : "At Supplier";
+        const draftRepairLines =
+          draftLineIds.length > 0
+            ? await client
+                .from("repairOrderLine")
+                .select("id, status")
+                .in("id", draftLineIds)
+                .eq("companyId", companyId)
+            : { data: [], error: null };
+
+        // An empty draft belongs to neither leg, so it is safe to reuse.
+        const matchesLeg =
+          draftLineIds.length === 0 ||
+          (draftRepairLines.data ?? []).every(
+            (line) => line.status === eligibleStatus
+          );
+
+        if (matchesLeg) {
+          throw redirect(path.to.receiptDetails(existingRepairReceipt.data.id));
+        }
+      }
+
+      const repairReceipt = await serviceRole.functions.invoke<{
+        id: string;
+      }>("create", {
+        body: {
+          type: "receiptFromRepairOrder",
+          companyId,
+          locationId: defaults.data?.locationId,
+          repairOrderId: sourceDocumentId,
+          leg: repairLeg,
+          receiptId: undefined,
+          userId: userId
+        }
+      });
+      if (!repairReceipt.data || repairReceipt.error) {
+        throw redirect(
+          path.to.repairOrderDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              repairReceipt.error,
+              await getEdgeFunctionErrorMessage(
+                repairReceipt.error,
+                "Failed to create receipt"
+              )
+            )
+          )
+        );
+      }
+
+      throw redirect(path.to.receiptDetails(repairReceipt.data.id));
+    }
     case "Inbound Transfer":
       const warehouseTransferReceipt = await serviceRole.functions.invoke<{
         id: string;

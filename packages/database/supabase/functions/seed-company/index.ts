@@ -20,6 +20,7 @@ import {
   nonConformanceTypes,
   paymentTerms,
   periodCloseTaskDefinitions,
+  returnReasons,
   scrapReasons,
   sequences,
   unitOfMeasures,
@@ -251,6 +252,19 @@ serve(async (req: Request) => {
         .values(
           scrapReasons.map((name) => ({
             name,
+            companyId,
+            createdBy: "system",
+          }))
+        )
+        .execute();
+
+      // return reason codes (shared by customer RMAs and supplier returns)
+      await trx
+        .insertInto("returnReason")
+        .values(
+          returnReasons.map((name) => ({
+            name,
+            inventoryValueZero: false,
             companyId,
             createdBy: "system",
           }))

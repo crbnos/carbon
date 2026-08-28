@@ -28,7 +28,7 @@ import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { reconcileReceiptLineSerials } from "../../inventory.models";
 import { getReceiptTracking } from "../../inventory.service";
-import type { ReceiptLine } from "../../types";
+import type { Receipt, ReceiptLine } from "../../types";
 
 const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
   const { receiptId } = useParams();
@@ -37,6 +37,7 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
   const { t } = useLingui();
   const [items] = useItems();
   const routeData = useRouteData<{
+    receipt: Receipt;
     receiptLines: ReceiptLine[];
     fixedAssetLines: {
       id: string;
@@ -116,6 +117,14 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
         const receivedQuantity = line.receivedQuantity ?? 0;
         if (receivedQuantity === 0) return;
 
+        // Sales-return and repair receipts fill their slots by picking existing
+        // tracked entities (ReturnEntityForm) — the entity itself is the serial
+        // unit, so an assigned entity counts even when it carries no
+        // readableId.
+        const isSalesReturn = ["Sales Return Order", "Repair Order"].includes(
+          routeData?.receipt?.sourceDocument ?? ""
+        );
+
         // post-receipt consumes one serial per index in [0, receivedQuantity);
         // extra or duplicate entities are ignored at post time. Validate that
         // every required index has a serial via the same reconciliation the
@@ -130,7 +139,7 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
             index: (tracking.attributes as TrackedEntityAttributes)[
               "Receipt Line Index"
             ],
-            hasSerial: !!tracking.readableId
+            hasSerial: isSalesReturn || !!tracking.readableId
           }));
 
         const { missingIndexes } = reconcileReceiptLineSerials(

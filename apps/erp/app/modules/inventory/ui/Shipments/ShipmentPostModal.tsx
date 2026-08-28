@@ -29,7 +29,7 @@ import { DateTime } from "~/components";
 import { useSettings, useUser } from "~/hooks";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
-import type { ShipmentLine } from "../..";
+import type { Shipment, ShipmentLine } from "../..";
 import { getShipmentTracking } from "../..";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
@@ -41,12 +41,22 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
   const { t } = useLingui();
   const [items] = useItems();
   const routeData = useRouteData<{
+    shipment: Shipment;
     shipmentLines: ShipmentLine[];
     fixedAssetLines: {
       id: string;
       shipped: boolean;
     }[];
   }>(path.to.shipment(shipmentId));
+
+  // Sales returns and repair orders both move stock that is deliberately On
+  // Hold rather than Available — mirror the status lines.tracking required
+  // when the entity was assigned.
+  const expectedEntityStatus = ["Sales Return Order", "Repair Order"].includes(
+    routeData?.shipment?.sourceDocument ?? ""
+  )
+    ? "On Hold"
+    : "Available";
 
   const navigation = useNavigation();
 
@@ -148,7 +158,7 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
           return attributes["Shipment Line"] === line.id;
         });
 
-        if (trackedEntity?.status !== "Available") {
+        if (trackedEntity?.status !== expectedEntityStatus) {
           errors.push({
             itemReadableId: getItemReadableId(items, line.itemId) ?? null,
             shippedQuantity: line.shippedQuantity ?? 0,
@@ -186,7 +196,10 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
         const quantityAvailable = trackedEntities?.reduce((acc, tracking) => {
           const trackingQuantity = Number(tracking.quantity);
 
-          return acc + (tracking.status === "Available" ? trackingQuantity : 0);
+          return (
+            acc +
+            (tracking.status === expectedEntityStatus ? trackingQuantity : 0)
+          );
         }, 0);
 
         if (quantityAvailable !== line.shippedQuantity) {

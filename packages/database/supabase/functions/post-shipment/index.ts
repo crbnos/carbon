@@ -12,6 +12,10 @@ import { calculateCOGS } from "../shared/calculate-cogs.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
 import {
+  removeWarrantyRegistrations,
+  stampWarrantyRegistrations,
+} from "../shared/warranty-registration.ts";
+import {
   getDefaultPostingGroup,
   resolveInventoryAccount,
 } from "../shared/get-posting-group.ts";
@@ -1238,6 +1242,45 @@ serve(async (req: Request) => {
                   }
                 }
               }
+
+              // Warranty registrations for Ship-Date terms.
+              //
+              // Inside the posting transaction ON PURPOSE: a posted shipment
+              // whose registrations silently failed would leave units in the
+              // field with no coverage record and no way to notice.
+              const warrantySources = (shipmentLines.data ?? [])
+                .filter((line) => line.itemId)
+                .map((line) => ({
+                  shipmentLineId: line.id,
+                  itemId: line.itemId as string,
+                  quantity: round(line.shippedQuantity ?? 0),
+                  // What the shipper picked on the line, if anything — it
+                  // outranks every customer and item rule.
+                  warrantyTermId: line.warrantyTermId,
+                  trackedEntityIds: (shipmentLineTracking.data ?? [])
+                    .filter(
+                      (tracking) =>
+                        (
+                          tracking.attributes as
+                            | TrackedEntityAttributes
+                            | undefined
+                        )?.["Shipment Line"] === line.id
+                    )
+                    .map((tracking) => tracking.id),
+                }))
+                .filter((source) => source.quantity > 0);
+
+              if (salesOrder.data.customerId) {
+                await stampWarrantyRegistrations(trx, {
+                  companyId,
+                  userId,
+                  customerId: salesOrder.data.customerId,
+                  today,
+                  basis: "Ship Date",
+                  sources: warrantySources,
+                });
+              }
+
             });
             break;
           }
@@ -1779,6 +1822,879 @@ serve(async (req: Request) => {
             break;
           }
 
+          case "Sales Return Order": {
+            // Return-to-customer: ships rejected-claim goods back out of the
+            // returned (On Hold) stock at carried cost. Dr COGS / Cr Inventory.
+            // No RMA quantity bumps — dispositions carry the line state.
+            if (!shipment.data.sourceDocumentId)
+              throw new Error("Shipment has no sourceDocumentId");
+            const salesReturnOrderId = shipment.data.sourceDocumentId;
+
+            const salesReturnOrder = await client
+              .from("salesReturnOrder")
+              .select("*")
+              .eq("id", salesReturnOrderId)
+              .single();
+            if (salesReturnOrder.error)
+              throw new Error("Failed to fetch sales return order");
+            if (salesReturnOrder.data.status === "Cancelled")
+              throw new Error(
+                "Cannot ship against a cancelled return order"
+              );
+
+            const accountingSettings = await client
+              .from("companySettings")
+              .select("accountingEnabled")
+              .eq("id", companyId)
+              .single();
+            const accountingEnabled =
+              accountingSettings.data?.accountingEnabled ?? false;
+
+            const accountDefaults = accountingEnabled
+              ? await getDefaultPostingGroup(client, companyId)
+              : null;
+
+            const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
+              [];
+            const trackedEntityUpdates: Record<
+              string,
+              {
+                status: Database["public"]["Tables"]["trackedEntity"]["Row"]["status"];
+                quantity: number;
+              }
+            > = {};
+            const itemShipmentQuantities: Record<string, number> = {};
+
+            for (const shipmentLine of shipmentLines.data) {
+              if (!shipmentLine.itemId) continue;
+              const shippedQuantity =
+                isNaN(shipmentLine.shippedQuantity) ||
+                shipmentLine.shippedQuantity == null
+                  ? 0
+                  : shipmentLine.shippedQuantity;
+              if (shippedQuantity <= 0) continue;
+
+              const itemTrackingType =
+                items.data.find((i) => i.id === shipmentLine.itemId)
+                  ?.itemTrackingType ?? "Inventory";
+
+              itemShipmentQuantities[shipmentLine.itemId] =
+                (itemShipmentQuantities[shipmentLine.itemId] ?? 0) +
+                shippedQuantity;
+
+              const lineEntities = (shipmentLineTracking.data ?? []).filter(
+                (tracking) =>
+                  (
+                    tracking.attributes as TrackedEntityAttributes | undefined
+                  )?.["Shipment Line"] === shipmentLine.id
+              );
+
+              if (itemTrackingType === "Inventory") {
+                itemLedgerInserts.push({
+                  postingDate: today,
+                  itemId: shipmentLine.itemId,
+                  quantity: round(-shippedQuantity),
+                  locationId: shipmentLine.locationId,
+                  storageUnitId: shipmentLine.storageUnitId,
+                  entryType: "Negative Adjmt.",
+                  documentType: "Sales Shipment",
+                  documentId: shipment.data?.id ?? undefined,
+                  externalDocumentId:
+                    shipment.data?.externalDocumentId ?? undefined,
+                  createdBy: userId,
+                  companyId,
+                });
+              } else {
+                // Whole-entity shipping (v1: return shipments do not split
+                // partial batches — the picker picks whole entities)
+                for (const entity of lineEntities) {
+                  itemLedgerInserts.push({
+                    postingDate: today,
+                    itemId: shipmentLine.itemId,
+                    quantity: round(-(entity.quantity ?? 0)),
+                    locationId: shipmentLine.locationId,
+                    storageUnitId: shipmentLine.storageUnitId,
+                    entryType: "Negative Adjmt.",
+                    documentType: "Sales Shipment",
+                    documentId: shipment.data?.id ?? undefined,
+                    trackedEntityId: entity.id,
+                    externalDocumentId:
+                      shipment.data?.externalDocumentId ?? undefined,
+                    createdBy: userId,
+                    companyId,
+                  });
+                  trackedEntityUpdates[entity.id] = {
+                    status: "Consumed",
+                    quantity: entity.quantity ?? 0,
+                  };
+                }
+              }
+            }
+
+            const accountingPeriodId = accountingEnabled
+              ? await getCurrentAccountingPeriod(client, companyId, db, today)
+              : null;
+
+            await db.transaction().execute(async (trx) => {
+              const journalLineInserts: Omit<
+                Database["public"]["Tables"]["journalLine"]["Insert"],
+                "journalId"
+              >[] = [];
+
+              for (const [itemId, quantity] of Object.entries(
+                itemShipmentQuantities
+              )) {
+                const cogsResult = await calculateCOGS(trx, {
+                  itemId,
+                  quantity,
+                  companyId,
+                });
+
+                await trx
+                  .insertInto("costLedger")
+                  .values({
+                    itemLedgerType: "Sale",
+                    costLedgerType: "Direct Cost",
+                    adjustment: false,
+                    documentType: "Sales Shipment",
+                    documentId: shipment.data?.id ?? undefined,
+                    externalDocumentId:
+                      shipment.data?.externalDocumentId ?? undefined,
+                    itemId,
+                    quantity: round(-quantity),
+                    cost: round(-cogsResult.totalCost),
+                    nominalCost: round(-cogsResult.totalCost),
+                    remainingQuantity: 0,
+                    companyId,
+                    postingDate: today,
+                  })
+                  .execute();
+
+                if (
+                  accountingEnabled &&
+                  accountDefaults?.data &&
+                  cogsResult.totalCost > 0
+                ) {
+                  const journalLineReference = nanoid();
+                  const item = items.data.find((i) => i.id === itemId);
+                  const inventoryAccount = resolveInventoryAccount(
+                    item?.replenishmentSystem ?? null,
+                    accountDefaults.data
+                  );
+                  journalLineInserts.push({
+                    accountId: accountDefaults.data.costOfGoodsSoldAccount,
+                    description: "Cost of Goods Sold",
+                    amount: round(debit("expense", cogsResult.totalCost)),
+                    quantity: round(quantity),
+                    documentType: "Sales Shipment",
+                    documentId: shipment.data?.id ?? undefined,
+                    documentLineReference: journalReference.to.shipment(
+                      shipment.data?.id ?? ""
+                    ),
+                    journalLineReference,
+                    companyId,
+                  });
+                  journalLineInserts.push({
+                    accountId: inventoryAccount.account,
+                    description: inventoryAccount.description,
+                    amount: round(credit("asset", cogsResult.totalCost)),
+                    quantity: round(quantity),
+                    documentType: "Sales Shipment",
+                    documentId: shipment.data?.id ?? undefined,
+                    documentLineReference: journalReference.to.shipment(
+                      shipment.data?.id ?? ""
+                    ),
+                    journalLineReference,
+                    companyId,
+                  });
+                }
+              }
+
+              if (
+                accountingEnabled &&
+                journalLineInserts.length > 0 &&
+                accountingPeriodId
+              ) {
+                const journalEntryId = await getNextSequence(
+                  trx,
+                  "journalEntry",
+                  companyId
+                );
+                const journalResult = await trx
+                  .insertInto("journal")
+                  .values({
+                    journalEntryId,
+                    accountingPeriodId,
+                    description: `Return Shipment ${shipment.data.shipmentId}`,
+                    postingDate: today,
+                    companyId,
+                    sourceType: "Sales Shipment",
+                    status: "Posted",
+                    postedAt: new Date().toISOString(),
+                    postedBy: userId,
+                    createdBy: userId,
+                  })
+                  .returning(["id"])
+                  .executeTakeFirstOrThrow();
+                await trx
+                  .insertInto("journalLine")
+                  .values(
+                    journalLineInserts.map((line) => ({
+                      ...line,
+                      journalId: journalResult.id,
+                    }))
+                  )
+                  .execute();
+              }
+
+              if (itemLedgerInserts.length > 0) {
+                await trx
+                  .insertInto("itemLedger")
+                  .values(itemLedgerInserts)
+                  .execute();
+              }
+
+              if (Object.keys(trackedEntityUpdates).length > 0) {
+                const activity = await trx
+                  .insertInto("trackedActivity")
+                  .values({
+                    type: "Return Shipment",
+                    sourceDocument: "Shipment",
+                    sourceDocumentId: shipmentId,
+                    sourceDocumentReadableId: shipment.data.shipmentId,
+                    attributes: {
+                      "Sales Return Order": salesReturnOrderId,
+                      Shipment: shipmentId,
+                      Employee: userId,
+                    },
+                    companyId,
+                    createdBy: userId,
+                    createdAt: today,
+                  })
+                  .returning(["id"])
+                  .execute();
+                const activityId = activity[0]?.id;
+                for await (const [id, update] of Object.entries(
+                  trackedEntityUpdates
+                )) {
+                  await trx
+                    .updateTable("trackedEntity")
+                    .set(update)
+                    .where("id", "=", id)
+                    .execute();
+                  if (activityId) {
+                    await trx
+                      .insertInto("trackedActivityInput")
+                      .values({
+                        trackedActivityId: activityId,
+                        trackedEntityId: id,
+                        quantity: update.quantity ?? 0,
+                        companyId,
+                        createdBy: userId,
+                        createdAt: today,
+                      })
+                      .execute();
+                  }
+                }
+              }
+
+              await trx
+                .updateTable("shipment")
+                .set({
+                  status: "Posted",
+                  postingDate: today,
+                  postedBy: userId,
+                })
+                .where("id", "=", shipmentId)
+                .execute();
+            });
+
+            break;
+          }
+
+          case "Repair Order": {
+            // A customer unit leaving the building — to the OEM, or home.
+            //
+            // It was taken in at ZERO value, so relief is zero-value too: the
+            // quantity moves, no journal is written, and nothing touches the
+            // balance sheet. Entities go Consumed (the same terminal state a
+            // sale or a supplier return uses); the repair line's custody
+            // status is what says WHERE the unit actually is.
+            if (!shipment.data.sourceDocumentId)
+              throw new Error("Shipment has no sourceDocumentId");
+            const repairOrderId = shipment.data.sourceDocumentId;
+
+            const [repairOrder, repairOrderLines] = await Promise.all([
+              client
+                .from("repairOrder")
+                .select("*")
+                .eq("id", repairOrderId)
+                .eq("companyId", companyId)
+                .single(),
+              client
+                .from("repairOrderLine")
+                .select("*")
+                .eq("repairOrderId", repairOrderId)
+                .eq("companyId", companyId),
+            ]);
+            if (repairOrder.error)
+              throw new Error("Failed to fetch repair order");
+            if (repairOrderLines.error)
+              throw new Error("Failed to fetch repair order lines");
+            if (["Draft", "Completed", "Cancelled"].includes(
+              repairOrder.data.status
+            )) {
+              throw new Error(
+                `Cannot ship against a repair order in ${repairOrder.data.status} status`
+              );
+            }
+
+            const repairLineById = new Map(
+              (repairOrderLines.data ?? []).map((l) => [l.id, l])
+            );
+
+            const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
+              [];
+            const repairLineUpdates: Record<
+              string,
+              {
+                status: Database["public"]["Tables"]["repairOrderLine"]["Row"]["status"];
+                updatedBy: string;
+              }
+            > = {};
+            const trackedEntityUpdates: Record<
+              string,
+              {
+                status: Database["public"]["Tables"]["trackedEntity"]["Row"]["status"];
+                quantity: number;
+              }
+            > = {};
+
+            for (const shipmentLine of shipmentLines.data ?? []) {
+              if (!shipmentLine.itemId || !shipmentLine.lineId) continue;
+              const repairLine = repairLineById.get(shipmentLine.lineId);
+              if (!repairLine) {
+                throw new Error(
+                  `Shipment line ${shipmentLine.id} does not map to a repair order line`
+                );
+              }
+
+              // Custody gate, re-read inside the posting transaction: only a
+              // unit in the shop can go to the OEM, only a repaired one home.
+              const nextStatus =
+                repairLine.status === "Received"
+                  ? ("At Supplier" as const)
+                  : repairLine.status === "Repaired"
+                    ? ("Shipped" as const)
+                    : null;
+              if (!nextStatus) {
+                throw new Error(
+                  `Repair line ${repairLine.lineNumber} is ${repairLine.status}; it cannot be shipped`
+                );
+              }
+
+              const shippedQuantity = round(shipmentLine.shippedQuantity ?? 0);
+              if (shippedQuantity <= 0) continue;
+
+              const itemTrackingType =
+                items.data?.find((i) => i.id === shipmentLine.itemId)
+                  ?.itemTrackingType ?? "Inventory";
+
+              const lineEntities = (shipmentLineTracking.data ?? []).filter(
+                (tracking) =>
+                  (
+                    tracking.attributes as TrackedEntityAttributes | undefined
+                  )?.["Shipment Line"] === shipmentLine.id
+              );
+
+              if (itemTrackingType === "Inventory") {
+                itemLedgerInserts.push({
+                  postingDate: today,
+                  itemId: shipmentLine.itemId,
+                  quantity: round(-shippedQuantity),
+                  locationId: shipmentLine.locationId,
+                  storageUnitId: shipmentLine.storageUnitId,
+                  entryType: "Negative Adjmt.",
+                  documentType: "Repair Shipment",
+                  documentId: shipment.data?.id ?? undefined,
+                  documentLineId: repairLine.id,
+                  externalDocumentId:
+                    shipment.data?.externalDocumentId ?? undefined,
+                  createdBy: userId,
+                  companyId,
+                });
+              } else {
+                for (const entity of lineEntities) {
+                  itemLedgerInserts.push({
+                    postingDate: today,
+                    itemId: shipmentLine.itemId,
+                    quantity: round(-(entity.quantity ?? 0)),
+                    locationId: shipmentLine.locationId,
+                    storageUnitId: shipmentLine.storageUnitId,
+                    entryType: "Negative Adjmt.",
+                    documentType: "Repair Shipment",
+                    documentId: shipment.data?.id ?? undefined,
+                    documentLineId: repairLine.id,
+                    trackedEntityId: entity.id,
+                    externalDocumentId:
+                      shipment.data?.externalDocumentId ?? undefined,
+                    createdBy: userId,
+                    companyId,
+                  });
+                  trackedEntityUpdates[entity.id] = {
+                    status: "Consumed",
+                    quantity: entity.quantity ?? 0,
+                  };
+                }
+              }
+
+              repairLineUpdates[repairLine.id] = {
+                status: nextStatus,
+                updatedBy: userId,
+              };
+            }
+
+            await db.transaction().execute(async (trx) => {
+              for await (const [lineId, update] of Object.entries(
+                repairLineUpdates
+              )) {
+                await trx
+                  .updateTable("repairOrderLine")
+                  .set(update)
+                  .where("id", "=", lineId)
+                  .execute();
+              }
+
+              if (repairOrder.data.status === "Confirmed") {
+                await trx
+                  .updateTable("repairOrder")
+                  .set({ status: "In Progress", updatedBy: userId })
+                  .where("id", "=", repairOrderId)
+                  .execute();
+              }
+
+              if (itemLedgerInserts.length > 0) {
+                await trx
+                  .insertInto("itemLedger")
+                  .values(itemLedgerInserts)
+                  .execute();
+              }
+
+              await trx
+                .updateTable("shipment")
+                .set({
+                  status: "Posted",
+                  postingDate: today,
+                  postedBy: userId,
+                  updatedBy: userId,
+                })
+                .where("id", "=", shipmentId)
+                .execute();
+
+              if (Object.keys(trackedEntityUpdates).length > 0) {
+                const trackedActivity = await trx
+                  .insertInto("trackedActivity")
+                  .values({
+                    type: "Repair Shipment",
+                    sourceDocument: "Shipment",
+                    sourceDocumentId: shipmentId,
+                    sourceDocumentReadableId: shipment.data?.shipmentId,
+                    attributes: {
+                      "Repair Order": repairOrderId,
+                      Shipment: shipmentId,
+                      Employee: userId,
+                    },
+                    companyId,
+                    createdBy: userId,
+                  })
+                  .returning(["id"])
+                  .execute();
+                const trackedActivityId = trackedActivity[0]?.id;
+
+                for await (const [entityId, update] of Object.entries(
+                  trackedEntityUpdates
+                )) {
+                  await trx
+                    .updateTable("trackedEntity")
+                    .set({ status: update.status, updatedBy: userId })
+                    .where("id", "=", entityId)
+                    .execute();
+
+                  if (trackedActivityId) {
+                    await trx
+                      .insertInto("trackedActivityInput")
+                      .values({
+                        trackedActivityId,
+                        trackedEntityId: entityId,
+                        quantity: update.quantity,
+                        companyId,
+                        createdBy: userId,
+                      })
+                      .execute();
+                  }
+                }
+              }
+            });
+
+            break;
+          }
+          case "Purchase Return Order": {
+            // Supplier return: relieves inventory at carried cost against
+            // GRNI (reverses the receipt posting). Cr Inventory / Dr GRNI.
+            if (!shipment.data.sourceDocumentId)
+              throw new Error("Shipment has no sourceDocumentId");
+            const purchaseReturnOrderId = shipment.data.sourceDocumentId;
+
+            const [purchaseReturnOrder, purchaseReturnOrderLines] =
+              await Promise.all([
+                client
+                  .from("purchaseReturnOrder")
+                  .select("*")
+                  .eq("id", purchaseReturnOrderId)
+                  .single(),
+                client
+                  .from("purchaseReturnOrderLine")
+                  .select("*")
+                  .eq("purchaseReturnOrderId", purchaseReturnOrderId),
+              ]);
+            if (purchaseReturnOrder.error)
+              throw new Error("Failed to fetch purchase return order");
+            if (purchaseReturnOrderLines.error)
+              throw new Error("Failed to fetch purchase return order lines");
+            if (
+              !["Confirmed", "Partially Shipped"].includes(
+                purchaseReturnOrder.data.status
+              )
+            )
+              throw new Error(
+                `Cannot ship against a return order in ${purchaseReturnOrder.data.status} status`
+              );
+
+            const accountingSettings = await client
+              .from("companySettings")
+              .select("accountingEnabled")
+              .eq("id", companyId)
+              .single();
+            const accountingEnabled =
+              accountingSettings.data?.accountingEnabled ?? false;
+
+            const returnLineById = new Map(
+              (purchaseReturnOrderLines.data ?? []).map((l) => [l.id, l])
+            );
+
+            const accountDefaults = accountingEnabled
+              ? await getDefaultPostingGroup(client, companyId)
+              : null;
+
+            const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
+              [];
+            const trackedEntityUpdates: Record<
+              string,
+              {
+                status: Database["public"]["Tables"]["trackedEntity"]["Row"]["status"];
+                quantity: number;
+              }
+            > = {};
+            const itemShipmentQuantities: Record<string, number> = {};
+            const returnLineUpdates: Record<
+              string,
+              { quantityShipped: number; updatedBy: string }
+            > = {};
+
+            for (const shipmentLine of shipmentLines.data) {
+              if (!shipmentLine.itemId || !shipmentLine.lineId) continue;
+              const returnLine = returnLineById.get(shipmentLine.lineId);
+              if (!returnLine)
+                throw new Error(
+                  `Shipment line ${shipmentLine.id} does not map to a return order line`
+                );
+              const shippedQuantity =
+                isNaN(shipmentLine.shippedQuantity) ||
+                shipmentLine.shippedQuantity == null
+                  ? 0
+                  : shipmentLine.shippedQuantity;
+              if (shippedQuantity <= 0) continue;
+
+              const itemTrackingType =
+                items.data.find((i) => i.id === shipmentLine.itemId)
+                  ?.itemTrackingType ?? "Inventory";
+
+              itemShipmentQuantities[shipmentLine.itemId] =
+                (itemShipmentQuantities[shipmentLine.itemId] ?? 0) +
+                shippedQuantity;
+
+              const existingUpdate = returnLineUpdates[returnLine.id];
+              returnLineUpdates[returnLine.id] = {
+                quantityShipped:
+                  (existingUpdate?.quantityShipped ??
+                    Number(returnLine.quantityShipped ?? 0)) + shippedQuantity,
+                updatedBy: userId,
+              };
+
+              const lineEntities = (shipmentLineTracking.data ?? []).filter(
+                (tracking) =>
+                  (
+                    tracking.attributes as TrackedEntityAttributes | undefined
+                  )?.["Shipment Line"] === shipmentLine.id
+              );
+
+              if (itemTrackingType === "Inventory") {
+                itemLedgerInserts.push({
+                  postingDate: today,
+                  itemId: shipmentLine.itemId,
+                  quantity: round(-shippedQuantity),
+                  locationId: shipmentLine.locationId,
+                  storageUnitId: shipmentLine.storageUnitId,
+                  entryType: "Negative Adjmt.",
+                  documentType: "Purchase Return Shipment",
+                  documentId: shipment.data?.id ?? undefined,
+                  externalDocumentId:
+                    shipment.data?.externalDocumentId ?? undefined,
+                  createdBy: userId,
+                  companyId,
+                });
+              } else {
+                for (const entity of lineEntities) {
+                  itemLedgerInserts.push({
+                    postingDate: today,
+                    itemId: shipmentLine.itemId,
+                    quantity: round(-(entity.quantity ?? 0)),
+                    locationId: shipmentLine.locationId,
+                    storageUnitId: shipmentLine.storageUnitId,
+                    entryType: "Negative Adjmt.",
+                    documentType: "Purchase Return Shipment",
+                    documentId: shipment.data?.id ?? undefined,
+                    trackedEntityId: entity.id,
+                    externalDocumentId:
+                      shipment.data?.externalDocumentId ?? undefined,
+                    createdBy: userId,
+                    companyId,
+                  });
+                  trackedEntityUpdates[entity.id] = {
+                    status: "Consumed",
+                    quantity: entity.quantity ?? 0,
+                  };
+                }
+              }
+            }
+
+            const accountingPeriodId = accountingEnabled
+              ? await getCurrentAccountingPeriod(client, companyId, db, today)
+              : null;
+
+            await db.transaction().execute(async (trx) => {
+              const journalLineInserts: Omit<
+                Database["public"]["Tables"]["journalLine"]["Insert"],
+                "journalId"
+              >[] = [];
+
+              for (const [itemId, quantity] of Object.entries(
+                itemShipmentQuantities
+              )) {
+                const cogsResult = await calculateCOGS(trx, {
+                  itemId,
+                  quantity,
+                  companyId,
+                });
+
+                await trx
+                  .insertInto("costLedger")
+                  .values({
+                    itemLedgerType: "Purchase",
+                    costLedgerType: "Direct Cost",
+                    adjustment: false,
+                    documentType: "Purchase Return Shipment",
+                    documentId: shipment.data?.id ?? undefined,
+                    externalDocumentId:
+                      shipment.data?.externalDocumentId ?? undefined,
+                    itemId,
+                    quantity: round(-quantity),
+                    cost: round(-cogsResult.totalCost),
+                    nominalCost: round(-cogsResult.totalCost),
+                    remainingQuantity: 0,
+                    companyId,
+                    postingDate: today,
+                  })
+                  .execute();
+
+                if (
+                  accountingEnabled &&
+                  accountDefaults?.data &&
+                  cogsResult.totalCost > 0
+                ) {
+                  const journalLineReference = nanoid();
+                  const item = items.data.find((i) => i.id === itemId);
+                  const inventoryAccount = resolveInventoryAccount(
+                    item?.replenishmentSystem ?? null,
+                    accountDefaults.data
+                  );
+                  journalLineInserts.push({
+                    accountId:
+                      accountDefaults.data.goodsReceivedNotInvoicedAccount,
+                    description: "Goods Received Not Invoiced",
+                    amount: round(debit("liability", cogsResult.totalCost)),
+                    quantity: round(quantity),
+                    documentType: "Return Order",
+                    documentId: shipment.data?.id ?? undefined,
+                    documentLineReference: journalReference.to.shipment(
+                      shipment.data?.id ?? ""
+                    ),
+                    journalLineReference,
+                    companyId,
+                  });
+                  journalLineInserts.push({
+                    accountId: inventoryAccount.account,
+                    description: inventoryAccount.description,
+                    amount: round(credit("asset", cogsResult.totalCost)),
+                    quantity: round(quantity),
+                    documentType: "Return Order",
+                    documentId: shipment.data?.id ?? undefined,
+                    documentLineReference: journalReference.to.shipment(
+                      shipment.data?.id ?? ""
+                    ),
+                    journalLineReference,
+                    companyId,
+                  });
+                }
+              }
+
+              if (
+                accountingEnabled &&
+                journalLineInserts.length > 0 &&
+                accountingPeriodId
+              ) {
+                const journalEntryId = await getNextSequence(
+                  trx,
+                  "journalEntry",
+                  companyId
+                );
+                const journalResult = await trx
+                  .insertInto("journal")
+                  .values({
+                    journalEntryId,
+                    accountingPeriodId,
+                    description: `Purchase Return Shipment ${shipment.data.shipmentId}`,
+                    postingDate: today,
+                    companyId,
+                    sourceType: "Purchase Return Shipment",
+                    status: "Posted",
+                    postedAt: new Date().toISOString(),
+                    postedBy: userId,
+                    createdBy: userId,
+                  })
+                  .returning(["id"])
+                  .executeTakeFirstOrThrow();
+                await trx
+                  .insertInto("journalLine")
+                  .values(
+                    journalLineInserts.map((line) => ({
+                      ...line,
+                      journalId: journalResult.id,
+                    }))
+                  )
+                  .execute();
+              }
+
+              if (itemLedgerInserts.length > 0) {
+                await trx
+                  .insertInto("itemLedger")
+                  .values(itemLedgerInserts)
+                  .execute();
+              }
+
+              for await (const [lineId, update] of Object.entries(
+                returnLineUpdates
+              )) {
+                await trx
+                  .updateTable("purchaseReturnOrderLine")
+                  .set(update)
+                  .where("id", "=", lineId)
+                  .execute();
+              }
+
+              // Ladder: Confirmed -> Partially Shipped -> Shipped
+              const allLines = await trx
+                .selectFrom("purchaseReturnOrderLine")
+                .select(["quantity", "quantityShipped", "closedComplete"])
+                .where("purchaseReturnOrderId", "=", purchaseReturnOrderId)
+                .execute();
+              const anyShipped = allLines.some(
+                (l) => Number(l.quantityShipped) > 0
+              );
+              const allShipped = allLines.every(
+                (l) =>
+                  l.closedComplete ||
+                  Number(l.quantityShipped) >= Number(l.quantity)
+              );
+              const returnStatus = allShipped
+                ? ("Shipped" as const)
+                : anyShipped
+                  ? ("Partially Shipped" as const)
+                  : ("Confirmed" as const);
+              await trx
+                .updateTable("purchaseReturnOrder")
+                .set({ status: returnStatus, updatedBy: userId })
+                .where("id", "=", purchaseReturnOrderId)
+                .execute();
+
+              if (Object.keys(trackedEntityUpdates).length > 0) {
+                const activity = await trx
+                  .insertInto("trackedActivity")
+                  .values({
+                    type: "Return Shipment",
+                    sourceDocument: "Shipment",
+                    sourceDocumentId: shipmentId,
+                    sourceDocumentReadableId: shipment.data.shipmentId,
+                    attributes: {
+                      "Purchase Return Order": purchaseReturnOrderId,
+                      Shipment: shipmentId,
+                      Employee: userId,
+                    },
+                    companyId,
+                    createdBy: userId,
+                    createdAt: today,
+                  })
+                  .returning(["id"])
+                  .execute();
+                const activityId = activity[0]?.id;
+                for await (const [id, update] of Object.entries(
+                  trackedEntityUpdates
+                )) {
+                  await trx
+                    .updateTable("trackedEntity")
+                    .set(update)
+                    .where("id", "=", id)
+                    .execute();
+                  if (activityId) {
+                    await trx
+                      .insertInto("trackedActivityInput")
+                      .values({
+                        trackedActivityId: activityId,
+                        trackedEntityId: id,
+                        quantity: update.quantity ?? 0,
+                        companyId,
+                        createdBy: userId,
+                        createdAt: today,
+                      })
+                      .execute();
+                  }
+                }
+              }
+
+              await trx
+                .updateTable("shipment")
+                .set({
+                  status: "Posted",
+                  postingDate: today,
+                  postedBy: userId,
+                })
+                .where("id", "=", shipmentId)
+                .execute();
+            });
+
+            break;
+          }
+
           default: {
             throw new Error(
               `Invalid source document type: ${shipment.data.sourceDocument}`
@@ -1788,6 +2704,13 @@ serve(async (req: Request) => {
         break;
       }
       case "void": {
+        // A void replays quantity rollbacks — voiding a shipment that is not
+        // Posted (e.g. already Voided) would subtract them a second time.
+        if (shipment.data?.status !== "Posted") {
+          throw new Error(
+            `Cannot void a shipment in ${shipment.data?.status} status`
+          );
+        }
         switch (shipment.data?.sourceDocument) {
           case "Sales Order": {
             if (!shipment.data.sourceDocumentId)
@@ -2211,6 +3134,16 @@ serve(async (req: Request) => {
                 })
                 .where("id", "=", salesOrder.data.id)
                 .execute();
+
+              // A void un-ships the units, so the coverage it created goes
+              // with it — matched on this shipment's own line ids. Manual and
+              // repair-issued registrations (no stamping key) are untouched.
+              await removeWarrantyRegistrations(trx, {
+                companyId,
+                shipmentLineIds: (shipmentLines.data ?? []).map(
+                  (line) => line.id
+                ),
+              });
 
               // Update shipment status to Voided
               await trx
@@ -2797,6 +3730,389 @@ serve(async (req: Request) => {
               }
 
               // Update shipment status to Voided
+              await trx
+                .updateTable("shipment")
+                .set({
+                  status: "Voided",
+                  updatedAt: today,
+                  updatedBy: userId,
+                })
+                .where("id", "=", shipmentId)
+                .execute();
+            });
+
+            break;
+          }
+
+          case "Sales Return Order": {
+            // Void a return-to-customer shipment: rebuild positive ledger,
+            // sign-flip journal, entities back On Hold (their RMA state).
+            if (!shipment.data.sourceDocumentId)
+              throw new Error("Shipment has no sourceDocumentId");
+
+            const accountingSettings = await client
+              .from("companySettings")
+              .select("accountingEnabled")
+              .eq("id", companyId)
+              .single();
+            const accountingEnabled =
+              accountingSettings.data?.accountingEnabled ?? false;
+
+            const originalJournalLines = await client
+              .from("journalLine")
+              .select("*")
+              .eq("documentId", shipmentId)
+              .eq("documentType", "Sales Shipment")
+              .eq("companyId", companyId);
+
+            const originalItemLedger = await client
+              .from("itemLedger")
+              .select("*")
+              .eq("documentId", shipmentId)
+              .eq("documentType", "Sales Shipment")
+              .eq("companyId", companyId);
+
+            const accountingPeriodId =
+              accountingEnabled && (originalJournalLines.data ?? []).length > 0
+                ? await getCurrentAccountingPeriod(client, companyId, db, today)
+                : null;
+
+            await db.transaction().execute(async (trx) => {
+              const reversingItemLedger = (
+                originalItemLedger.data ?? []
+              ).map((entry) => ({
+                postingDate: today,
+                itemId: entry.itemId,
+                quantity: -entry.quantity,
+                locationId: entry.locationId,
+                storageUnitId: entry.storageUnitId,
+                entryType: "Positive Adjmt." as const,
+                documentType: "Sales Shipment" as const,
+                documentId: entry.documentId,
+                externalDocumentId: entry.externalDocumentId,
+                trackedEntityId: entry.trackedEntityId,
+                createdBy: userId,
+                companyId,
+              }));
+              if (reversingItemLedger.length > 0) {
+                await trx
+                  .insertInto("itemLedger")
+                  .values(reversingItemLedger)
+                  .execute();
+              }
+
+              if (
+                accountingEnabled &&
+                (originalJournalLines.data ?? []).length > 0 &&
+                accountingPeriodId
+              ) {
+                const journalEntryId = await getNextSequence(
+                  trx,
+                  "journalEntry",
+                  companyId
+                );
+                const journalResult = await trx
+                  .insertInto("journal")
+                  .values({
+                    journalEntryId,
+                    accountingPeriodId,
+                    description: `VOID Return Shipment ${shipment.data?.shipmentId}`,
+                    postingDate: today,
+                    companyId,
+                    sourceType: "Sales Shipment",
+                    status: "Posted",
+                    postedAt: new Date().toISOString(),
+                    postedBy: userId,
+                    createdBy: userId,
+                  })
+                  .returning(["id"])
+                  .executeTakeFirstOrThrow();
+                await trx
+                  .insertInto("journalLine")
+                  .values(
+                    (originalJournalLines.data ?? []).map((line) => ({
+                      accountId: line.accountId,
+                      description: `VOID: ${line.description ?? ""}`,
+                      amount: -line.amount,
+                      quantity:
+                        line.quantity == null ? undefined : -line.quantity,
+                      documentType: line.documentType,
+                      documentId: line.documentId,
+                      externalDocumentId:
+                        line.externalDocumentId ?? undefined,
+                      documentLineReference:
+                        line.documentLineReference ?? undefined,
+                      journalLineReference: line.journalLineReference,
+                      journalId: journalResult.id,
+                      companyId,
+                    }))
+                  )
+                  .execute();
+              }
+
+              const voidActivity = await trx
+                .insertInto("trackedActivity")
+                .values({
+                  type: "Void Shipment",
+                  sourceDocument: "Shipment",
+                  sourceDocumentId: shipmentId,
+                  sourceDocumentReadableId: shipment.data?.shipmentId,
+                  attributes: {
+                    "Sales Return Order": shipment.data?.sourceDocumentId,
+                    Shipment: shipmentId,
+                    Employee: userId,
+                  },
+                  companyId,
+                  createdBy: userId,
+                  createdAt: today,
+                })
+                .returning(["id"])
+                .execute();
+              const voidActivityId = voidActivity[0]?.id;
+
+              for await (const entity of shipmentLineTracking.data ?? []) {
+                await trx
+                  .updateTable("trackedEntity")
+                  .set({ status: "On Hold" })
+                  .where("id", "=", entity.id)
+                  .execute();
+                if (voidActivityId) {
+                  await trx
+                    .insertInto("trackedActivityOutput")
+                    .values({
+                      trackedActivityId: voidActivityId,
+                      trackedEntityId: entity.id,
+                      quantity: entity.quantity ?? 0,
+                      companyId,
+                      createdBy: userId,
+                      createdAt: today,
+                    })
+                    .execute();
+                }
+              }
+
+              await trx
+                .updateTable("shipment")
+                .set({
+                  status: "Voided",
+                  updatedAt: today,
+                  updatedBy: userId,
+                })
+                .where("id", "=", shipmentId)
+                .execute();
+            });
+
+            break;
+          }
+
+          case "Purchase Return Order": {
+            // Void a supplier-return shipment: rebuild positive ledger,
+            // sign-flip journal, roll back quantityShipped + ladder,
+            // entities back to Available (their pre-shipment state).
+            if (!shipment.data.sourceDocumentId)
+              throw new Error("Shipment has no sourceDocumentId");
+            const purchaseReturnOrderId = shipment.data.sourceDocumentId;
+
+            const accountingSettings = await client
+              .from("companySettings")
+              .select("accountingEnabled")
+              .eq("id", companyId)
+              .single();
+            const accountingEnabled =
+              accountingSettings.data?.accountingEnabled ?? false;
+
+            const [originalJournalLines, originalItemLedger, returnLinesVoid] =
+              await Promise.all([
+                client
+                  .from("journalLine")
+                  .select("*")
+                  .eq("documentId", shipmentId)
+                  .eq("documentType", "Return Order")
+                  .eq("companyId", companyId),
+                client
+                  .from("itemLedger")
+                  .select("*")
+                  .eq("documentId", shipmentId)
+                  .eq("documentType", "Purchase Return Shipment")
+                  .eq("companyId", companyId),
+                client
+                  .from("purchaseReturnOrderLine")
+                  .select("*")
+                  .eq("purchaseReturnOrderId", purchaseReturnOrderId)
+                  .eq("companyId", companyId),
+              ]);
+
+            const shippedByLine = new Map<string, number>();
+            for (const shipmentLine of shipmentLines.data ?? []) {
+              if (!shipmentLine.lineId) continue;
+              const qty = Number(shipmentLine.shippedQuantity ?? 0);
+              shippedByLine.set(
+                shipmentLine.lineId,
+                (shippedByLine.get(shipmentLine.lineId) ?? 0) + qty
+              );
+            }
+
+            const accountingPeriodId =
+              accountingEnabled && (originalJournalLines.data ?? []).length > 0
+                ? await getCurrentAccountingPeriod(client, companyId, db, today)
+                : null;
+
+            await db.transaction().execute(async (trx) => {
+              const reversingItemLedger = (
+                originalItemLedger.data ?? []
+              ).map((entry) => ({
+                postingDate: today,
+                itemId: entry.itemId,
+                quantity: -entry.quantity,
+                locationId: entry.locationId,
+                storageUnitId: entry.storageUnitId,
+                entryType: "Positive Adjmt." as const,
+                documentType: "Purchase Return Shipment" as const,
+                documentId: entry.documentId,
+                externalDocumentId: entry.externalDocumentId,
+                trackedEntityId: entry.trackedEntityId,
+                createdBy: userId,
+                companyId,
+              }));
+              if (reversingItemLedger.length > 0) {
+                await trx
+                  .insertInto("itemLedger")
+                  .values(reversingItemLedger)
+                  .execute();
+              }
+
+              if (
+                accountingEnabled &&
+                (originalJournalLines.data ?? []).length > 0 &&
+                accountingPeriodId
+              ) {
+                const journalEntryId = await getNextSequence(
+                  trx,
+                  "journalEntry",
+                  companyId
+                );
+                const journalResult = await trx
+                  .insertInto("journal")
+                  .values({
+                    journalEntryId,
+                    accountingPeriodId,
+                    description: `VOID Purchase Return Shipment ${shipment.data?.shipmentId}`,
+                    postingDate: today,
+                    companyId,
+                    sourceType: "Purchase Return Shipment",
+                    status: "Posted",
+                    postedAt: new Date().toISOString(),
+                    postedBy: userId,
+                    createdBy: userId,
+                  })
+                  .returning(["id"])
+                  .executeTakeFirstOrThrow();
+                await trx
+                  .insertInto("journalLine")
+                  .values(
+                    (originalJournalLines.data ?? []).map((line) => ({
+                      accountId: line.accountId,
+                      description: `VOID: ${line.description ?? ""}`,
+                      amount: -line.amount,
+                      quantity:
+                        line.quantity == null ? undefined : -line.quantity,
+                      documentType: line.documentType,
+                      documentId: line.documentId,
+                      externalDocumentId:
+                        line.externalDocumentId ?? undefined,
+                      documentLineReference:
+                        line.documentLineReference ?? undefined,
+                      journalLineReference: line.journalLineReference,
+                      journalId: journalResult.id,
+                      companyId,
+                    }))
+                  )
+                  .execute();
+              }
+
+              for await (const [lineId, shipped] of shippedByLine) {
+                const line = (returnLinesVoid.data ?? []).find(
+                  (l) => l.id === lineId
+                );
+                if (!line) continue;
+                await trx
+                  .updateTable("purchaseReturnOrderLine")
+                  .set({
+                    quantityShipped: Math.max(
+                      0,
+                      Number(line.quantityShipped ?? 0) - shipped
+                    ),
+                    updatedBy: userId,
+                  })
+                  .where("id", "=", lineId)
+                  .execute();
+              }
+
+              const remainingLines = await trx
+                .selectFrom("purchaseReturnOrderLine")
+                .select(["quantity", "quantityShipped", "closedComplete"])
+                .where("purchaseReturnOrderId", "=", purchaseReturnOrderId)
+                .execute();
+              const anyShipped = remainingLines.some(
+                (l) => Number(l.quantityShipped) > 0
+              );
+              const allShipped = remainingLines.every(
+                (l) =>
+                  l.closedComplete ||
+                  Number(l.quantityShipped) >= Number(l.quantity)
+              );
+              const returnStatus = anyShipped
+                ? allShipped
+                  ? ("Shipped" as const)
+                  : ("Partially Shipped" as const)
+                : ("Confirmed" as const);
+              await trx
+                .updateTable("purchaseReturnOrder")
+                .set({ status: returnStatus, updatedBy: userId })
+                .where("id", "=", purchaseReturnOrderId)
+                .execute();
+
+              const voidActivity = await trx
+                .insertInto("trackedActivity")
+                .values({
+                  type: "Void Shipment",
+                  sourceDocument: "Shipment",
+                  sourceDocumentId: shipmentId,
+                  sourceDocumentReadableId: shipment.data?.shipmentId,
+                  attributes: {
+                    "Purchase Return Order": purchaseReturnOrderId,
+                    Shipment: shipmentId,
+                    Employee: userId,
+                  },
+                  companyId,
+                  createdBy: userId,
+                  createdAt: today,
+                })
+                .returning(["id"])
+                .execute();
+              const voidActivityId = voidActivity[0]?.id;
+
+              for await (const entity of shipmentLineTracking.data ?? []) {
+                await trx
+                  .updateTable("trackedEntity")
+                  .set({ status: "Available" })
+                  .where("id", "=", entity.id)
+                  .execute();
+                if (voidActivityId) {
+                  await trx
+                    .insertInto("trackedActivityOutput")
+                    .values({
+                      trackedActivityId: voidActivityId,
+                      trackedEntityId: entity.id,
+                      quantity: entity.quantity ?? 0,
+                      companyId,
+                      createdBy: userId,
+                      createdAt: today,
+                    })
+                    .execute();
+                }
+              }
+
               await trx
                 .updateTable("shipment")
                 .set({
