@@ -373,12 +373,22 @@ export class RampClient {
     });
   }
 
-  // ---- Vendors (accounting vendor upload) ----
+  // ---- Vendors (spend vendors — the id a PO/bill `vendor_id` references) ----
 
-  createVendor<T = unknown>(body: unknown): Promise<T> {
-    return this.request<T>("POST", "/developer/v1/accounting/vendors", {
-      body
-    });
+  /**
+   * Create a Ramp SPEND vendor (`POST /developer/v1/vendors`). This is the
+   * vendor a purchase order / bill `vendor_id` points at — NOT the accounting
+   * vendor (`/accounting/vendors`, for coding), whose id a PO/bill rejects.
+   * Requires `country` + `business_vendor_contacts: [{ email }]`.
+   */
+  createSpendVendor<T = unknown>(body: unknown): Promise<T> {
+    return this.request<T>("POST", "/developer/v1/vendors", { body });
+  }
+
+  // ---- Business entities (for the required PO `entity_id`) ----
+
+  getEntities<T = unknown>(): Promise<T> {
+    return this.request<T>("GET", "/developer/v1/entities");
   }
 
   // ---- Purchase orders ----

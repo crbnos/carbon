@@ -33,6 +33,7 @@ import {
   type RampBill,
   type RampBillPayment,
   type RampCashback,
+  type RampClient,
   type RampCurrencyAmount,
   type RampIntegrationMetadata,
   type RampLineItem,
@@ -40,6 +41,7 @@ import {
   type RampRepayment,
   type RampTransaction,
   type RampTransfer,
+  type RampVendorSupplier,
   resolveEmployeeSupplier,
   resolveRampSupplier,
   scaleLinesToTotal,
@@ -257,6 +259,133 @@ async function getExchangeRate(
   }
   ctx.exchangeRateCache.set(currencyCode, rate);
   return rate;
+}
+
+/** A supplier row with its purchasing contact + a location's address embedded. */
+type SupplierVendorRow = {
+  id: string;
+  name: string | null;
+  supplierTypeId: string | null;
+  supplierContact: {
+    contact: {
+      email: string | null;
+      firstName: string | null;
+      lastName: string | null;
+      mobilePhone: string | null;
+      homePhone: string | null;
+      workPhone: string | null;
+    } | null;
+  } | null;
+  supplierLocation: Array<{
+    address: {
+      countryCode: string | null;
+      addressLine1: string | null;
+      addressLine2: string | null;
+      city: string | null;
+      stateProvince: string | null;
+      postalCode: string | null;
+    } | null;
+  }> | null;
+};
+
+/**
+ * Batch-resolve suppliers with the contact + country a Ramp SPEND vendor needs
+ * (option B: match-then-create). One query, never per-supplier: the purchasing
+ * contact (`supplier.purchasingContactId`) supplies the required email; the first
+ * location with a country supplies the required `country` (+ address). Returns a
+ * map keyed by supplier id; `supplierTypeId` rides along for the invoice family's
+ * employee-supplier check so it needs no second query.
+ */
+async function loadRampVendorSuppliers(
+  ctx: Ctx,
+  supplierIds: string[]
+): Promise<
+  Map<string, RampVendorSupplier & { supplierTypeId: string | null }>
+> {
+  const map = new Map<
+    string,
+    RampVendorSupplier & { supplierTypeId: string | null }
+  >();
+  const ids = [...new Set(supplierIds.filter(Boolean))];
+  if (ids.length === 0) return map;
+
+  const { data } = await ctx.client
+    .from("supplier")
+    .select(
+      "id, name, supplierTypeId, supplierContact!supplier_purchasingContactId_fkey(contact(email, firstName, lastName, mobilePhone, homePhone, workPhone)), supplierLocation!supplierLocation_supplierId_fkey(address(countryCode, addressLine1, addressLine2, city, stateProvince, postalCode))"
+    )
+    .eq("companyId", ctx.companyId)
+    .in("id", ids);
+
+  for (const row of (data ?? []) as unknown as SupplierVendorRow[]) {
+    const contact = row.supplierContact?.contact ?? null;
+    const addresses = (row.supplierLocation ?? [])
+      .map((location) => location.address)
+      .filter((address): address is NonNullable<typeof address> =>
+        Boolean(address)
+      );
+    const address =
+      addresses.find((candidate) => candidate.countryCode) ??
+      addresses[0] ??
+      null;
+
+    map.set(row.id, {
+      id: row.id,
+      name: row.name,
+      supplierTypeId: row.supplierTypeId ?? null,
+      country: address?.countryCode ?? null,
+      contact: contact
+        ? {
+            email: contact.email ?? null,
+            firstName: contact.firstName ?? null,
+            lastName: contact.lastName ?? null,
+            phone:
+              contact.mobilePhone ??
+              contact.workPhone ??
+              contact.homePhone ??
+              null
+          }
+        : null,
+      address: address
+        ? {
+            line1: address.addressLine1 ?? null,
+            line2: address.addressLine2 ?? null,
+            city: address.city ?? null,
+            stateProvince: address.stateProvince ?? null,
+            postalCode: address.postalCode ?? null
+          }
+        : null
+    });
+  }
+  return map;
+}
+
+/** A bare supplier fallback when its details row is missing. */
+function emptyRampVendorSupplier(
+  id: string,
+  name: string | null
+): RampVendorSupplier {
+  return { id, name, country: null, contact: null, address: null };
+}
+
+/**
+ * Ramp requires an `entity_id` on a PO create. Prefer the configured
+ * `metadata.entityId`; otherwise resolve the business's first entity (the common
+ * single-entity case). Returns undefined only when neither is available.
+ */
+async function resolveRampEntityId(
+  metadata: RampIntegrationMetadata,
+  ramp: RampClient
+): Promise<string | undefined> {
+  if (metadata.entityId) return metadata.entityId;
+  try {
+    const res = await ramp.getEntities<{
+      data?: Array<{ id?: string }>;
+    }>();
+    return res.data?.[0]?.id;
+  } catch {
+    return undefined;
+  }
 }
 
 function extension(fileName: string): string {
@@ -2535,7 +2664,9 @@ export const rampSyncFunction = inngest.createFunction(
 
           let poQuery = client
             .from("purchaseOrder")
-            .select("id, purchaseOrderId, status, supplierId, updatedAt")
+            .select(
+              "id, purchaseOrderId, status, supplierId, currencyCode, updatedAt"
+            )
             .eq("companyId", companyId)
             .in("status", PO_PUSH_STATUSES)
             .order("updatedAt", { ascending: true })
@@ -2546,18 +2677,16 @@ export const rampSyncFunction = inngest.createFunction(
           const poRows = pos.data ?? [];
 
           if (poRows.length > 0) {
-            // Batch the supplier names + lines (never a query per PO).
+            // Batch the supplier vendor details + lines (never a query per PO).
             const supplierIds = [
               ...new Set(poRows.map((row) => row.supplierId))
             ];
-            const suppliers = await client
-              .from("supplier")
-              .select("id, name")
-              .eq("companyId", companyId)
-              .in("id", supplierIds);
-            const supplierById = new Map(
-              (suppliers.data ?? []).map((s) => [s.id, s.name])
+            const supplierById = await loadRampVendorSuppliers(
+              ctx,
+              supplierIds
             );
+            // Ramp requires an entity_id on a PO create — resolve it once.
+            const rampEntityId = await resolveRampEntityId(metadata, ramp);
 
             const poIds = poRows.map((row) => row.id);
             const lines = await client
@@ -2598,11 +2727,11 @@ export const rampSyncFunction = inngest.createFunction(
                   id: row.id,
                   readableId: row.purchaseOrderId,
                   status: row.status,
-                  supplier: {
-                    id: row.supplierId,
-                    name: supplierById.get(row.supplierId) ?? null
-                  },
-                  entityId: metadata.entityId,
+                  supplier:
+                    supplierById.get(row.supplierId) ??
+                    emptyRampVendorSupplier(row.supplierId, null),
+                  currencyCode: row.currencyCode ?? ctx.baseCurrency,
+                  entityId: rampEntityId,
                   lines: linesByPo.get(row.id) ?? []
                 });
                 if (action === "archived") result.purchaseOrders.archived += 1;
@@ -2687,20 +2816,16 @@ export const rampSyncFunction = inngest.createFunction(
                   .filter((id): id is string => Boolean(id))
               )
             ];
-            const suppliers = await client
-              .from("supplier")
-              .select("id, name, supplierTypeId")
-              .eq("companyId", companyId)
-              .in("id", supplierIds);
-            const supplierById = new Map(
-              (suppliers.data ?? []).map((s) => [s.id, s])
+            const supplierById = await loadRampVendorSuppliers(
+              ctx,
+              supplierIds
             );
 
             // Resolve which supplier types are "Employee" (reimbursement
             // suppliers — their invoices never push).
             const typeIds = [
               ...new Set(
-                (suppliers.data ?? [])
+                [...supplierById.values()]
                   .map((s) => s.supplierTypeId)
                   .filter((id): id is string => Boolean(id))
               )
@@ -2763,10 +2888,9 @@ export const rampSyncFunction = inngest.createFunction(
                     currencyCode: row.currencyCode,
                     dateIssued: row.dateIssued,
                     dateDue: row.dateDue,
-                    supplier: {
-                      id: row.supplierId ?? "",
-                      name: supplier?.name ?? null
-                    },
+                    supplier:
+                      supplier ??
+                      emptyRampVendorSupplier(row.supplierId ?? "", null),
                     lines: linesByInvoice.get(invoiceRowId) ?? []
                   }
                 );

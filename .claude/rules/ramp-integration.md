@@ -39,13 +39,20 @@ providers, which own the data and mirror it out.
 >   `id`-only / `companyGroupId`.
 > - `getJobDatabaseClient(5)` was poisoned by the accounting sweeps' `pool.end()` on the
 >   shared pool ("Cannot use a pool after calling end on the pool") — fixed in `jobs/db.ts`.
-> - Known remaining: a **foreign-currency charge** (merchant currency ≠ settlement) fails the
->   post-card-transaction line-sum check because `line_item.amount` is in merchant currency
->   while the header is settlement `entity_amount`. USD-only charges post fine.
-> - Outbound (documented, unverified live): PO create uses `external_id` not `remote_id` and
->   omits required `currency`/`three_way_match_enabled`; `archiveBill` hits a nonexistent
->   endpoint (bills have no `/archive` — use `DELETE /bills/{id}`). Webhook signing encoding
->   is the one thing the public docs don't cover.
+> - **Foreign-currency charge** — FIXED + live-verified: Ramp line amounts are in the
+>   MERCHANT currency but the header is settlement `entity_amount`, so
+>   `buildTransactionLines` scales the lines to the settlement total via the shared
+>   `scaleLinesToTotal` (residual on the largest line; no-op for same-currency).
+> - **Outbound PO/bill push** — FIXED + live-verified (option B). PO create uses `external_id`
+>   (not `remote_id`) with required `currency` + `entity_id` (resolved from `metadata.entityId`
+>   or the business's first entity) + `three_way_match_enabled: false`; line items use
+>   `external_id` + `unit_quantity`. The PO/bill `vendor_id` is a **Ramp SPEND vendor**
+>   (`POST /vendors`), NOT an accounting vendor — `resolveOrCreateRampSpendVendor` matches by
+>   `external_vendor_id`/name then CREATES one with the supplier's synced purchasing-contact
+>   email + `country` + `state` (US requires it) and `business_vendor_contacts` as a **single
+>   object** (plural name, `allOf` of one). `loadRampVendorSuppliers` batches the
+>   supplier→purchasing-contact/address embed. `archiveBill` now `DELETE /bills/{id}` (bills
+>   have no `/archive`). Webhook signing encoding is the one thing the public docs don't cover.
 
 ## Pieces
 
