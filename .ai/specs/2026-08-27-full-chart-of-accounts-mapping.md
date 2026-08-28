@@ -132,12 +132,12 @@ tables are introduced, so there is nothing to add `companyId` / composite PK / R
 
 In `packages/ee/src/accounting/core/account-mapping.ts`:
 
-- **New reader `getFullChartMappableAccounts(db, { companyId, companyGroupId })`** (or
+- **New reader `getFullChartMappableAccounts(db, { companyId })`** (or
   reuse an existing full-CoA reader if one fits) — returns all `account` rows where
   `isGroup = false`, scoped to the company group, ordered by `number`, as
   `{ id, number, name, type/class }`. Used to populate the "All accounts" expansion.
   Client-first, returns `{ data, error }`, never throws.
-- **New reader `getAccountsBlockingSync(db, { companyId, integration })`** — returns the
+- **New reader `getAccountsBlockingSync(client, { companyId, integration })`** — returns the
   distinct account ids (joined to `account` for `number`/`name`) collected from parked
   sync operations with `errorCode = UNMAPPED_ACCOUNTS` and status `Warning` for this
   company + integration, via each operation's `metadata.unmappedAccountIds`. Feeds the

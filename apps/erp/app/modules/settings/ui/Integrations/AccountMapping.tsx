@@ -432,14 +432,21 @@ function AccountMappingRowForm({
   highlighted?: boolean;
 }) {
   const { t } = useLingui();
+  // `selected` holds the user's explicit pick this session; `touched` marks
+  // whether they have edited this row. The row stays mounted (key=account.id)
+  // across parent revalidations, so until the user edits we must derive the
+  // hidden provider metadata from the CURRENT mapping props (not a value frozen
+  // at mount) — otherwise a save after the mapping changed elsewhere (match-by-
+  // code, AI suggest, revalidation) would overwrite the stored code/name with
+  // stale or empty values. Once touched, the user's selection wins, and an
+  // explicit clear submits empty to unmap.
   const [selected, setSelected] = useState<{
     code: string | null;
     name: string | null;
-  } | null>(
-    currentExternalId
-      ? { code: currentExternalCode, name: currentExternalName }
-      : null
-  );
+  } | null>(null);
+  const [touched, setTouched] = useState(false);
+  const externalCode = touched ? selected?.code : currentExternalCode;
+  const externalName = touched ? selected?.name : currentExternalName;
 
   // A mapped provider account can be missing from the chart (archived or
   // the chart failed to load): keep it selectable/visible via a fallback
@@ -484,8 +491,8 @@ function AccountMappingRowForm({
       >
         <input type="hidden" name="intent" value="upsert-account-mapping" />
         <input type="hidden" name="accountId" value={accountId} />
-        <input type="hidden" name="externalCode" value={selected?.code ?? ""} />
-        <input type="hidden" name="externalName" value={selected?.name ?? ""} />
+        <input type="hidden" name="externalCode" value={externalCode ?? ""} />
+        <input type="hidden" name="externalName" value={externalName ?? ""} />
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="flex min-w-0 items-center gap-2">
             <span className="truncate text-sm font-medium">
@@ -506,6 +513,7 @@ function AccountMappingRowForm({
             options={options}
             placeholder={t`Select provider account`}
             onChange={(option) => {
+              setTouched(true);
               if (!option) {
                 setSelected(null);
                 return;
