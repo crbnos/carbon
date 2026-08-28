@@ -8,7 +8,11 @@ import { path } from "~/utils/path";
 import type { Receipt, ReceiptLine } from "../../types";
 
 type ExpectedEntity = {
-  salesReturnOrderLineId: string;
+  // The owning line lives in a different table per source — an RMA line for a
+  // sales return, a repair line for a repair receipt — and this component never
+  // reads it, so it stays optional rather than naming only one of them.
+  salesReturnOrderLineId?: string;
+  repairOrderLineId?: string;
   trackedEntityId: string;
   quantity: number;
   trackedEntity: {
@@ -25,7 +29,8 @@ type AssignedRow = {
 };
 
 /**
- * Tracking UI for sales-return receipt lines: instead of typing new
+ * Tracking UI for receipt lines that RE-TAG an existing entity — sales returns
+ * and repair receipts. Instead of typing new
  * serial/batch numbers, the user picks WHICH expected entities (from the RMA
  * line's picks) actually arrived. Assignment re-tags the EXISTING entity with
  * the receipt-line attributes (lines.tracking `returnEntity` branch); posting
@@ -55,7 +60,9 @@ export function ReturnEntityForm({
   const reload = () => {
     if (line.lineId) {
       expectedFetcher.load(
-        `${path.to.receiptLinesReturnEntities}?lineId=${line.lineId}&receiptLineId=${line.id}`
+        `${path.to.receiptLinesReturnEntities}?lineId=${line.lineId}&receiptLineId=${line.id}&source=${encodeURIComponent(
+          receipt?.sourceDocument ?? ""
+        )}`
       );
     }
   };
@@ -63,7 +70,7 @@ export function ReturnEntityForm({
   // biome-ignore lint/correctness/useExhaustiveDependencies: load once per line
   useEffect(() => {
     reload();
-  }, [line.lineId]);
+  }, [line.lineId, receipt?.sourceDocument]);
 
   // Refresh assignment state after each assign/remove settles
   // biome-ignore lint/correctness/useExhaustiveDependencies: refetch on settle

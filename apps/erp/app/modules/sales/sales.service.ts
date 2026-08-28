@@ -6329,6 +6329,16 @@ export async function getSalesReturnOrderLineTrackedEntities(
     .in("salesReturnOrderLineId", lineIds);
 }
 
+export async function getRepairOrderLineTrackedEntities(
+  client: SupabaseClient<Database>,
+  lineIds: string[]
+) {
+  return client
+    .from("repairOrderLineTrackedEntity")
+    .select("*, trackedEntity(id, readableId, status, quantity)")
+    .in("repairOrderLineId", lineIds);
+}
+
 export async function insertSalesReturnOrder(
   client: SupabaseClient<Database>,
   input: {
