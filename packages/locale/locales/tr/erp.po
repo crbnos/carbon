@@ -304,6 +304,7 @@ msgstr "4s"
 
 msgid "5 user minimum"
 msgstr "5 kullanıcı minimum"
+msgstr "5 kullanıcı minimumu"
 
 msgid "5-8 weeks"
 msgstr "5-8 hafta"
@@ -361,6 +362,7 @@ msgstr "Taşeron, belirli yetkinliklere ve kullanılabilir saatlere sahip bir te
 
 msgid "A custom solution to meet your needs"
 msgstr "Sizin ihtiyaçlarınızı karşılamak için özel bir çözüm"
+msgstr "İhtiyaçlarınızı karşılamak için özel bir çözüm"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Bir müşteri, parçalarınızı veya hizmetlerinizi satın alan bir işletme veya kişidir."
@@ -477,6 +479,10 @@ msgstr "Carbon'ın yönetilen bulut barındırılan sürümü"
 
 msgid "A managed version with all the advanced features"
 msgstr "Tüm gelişmiş özelliklerle yönetilen sürüm"
+msgstr "Carbon'un yönetilen bulut barındırmalı sürümü"
+
+msgid "A managed version with all the advanced features"
+msgstr "Tüm gelişmiş özellikleri içeren yönetilen bir sürüm"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Malzeme, bir parçayı yapmak için kullanılan ve birden fazla iş emrinde kullanılabilen fiziksel bir stok kartıdır."
@@ -1082,6 +1088,9 @@ msgstr "Düzeltme Ekle"
 msgid "Add Affected Item"
 msgstr "Etkilenen Öğe Ekle"
 
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "Oturum açarken bir kimlik doğrulayıcı uygulamadan kod isteyerek güvenliğe ekstra bir katman ekle."
+
 msgid "Add any notes about your decision..."
 msgstr "Kararınızla ilgili herhangi bir not ekleyin..."
 
@@ -1335,6 +1344,7 @@ msgstr "Tüm eylemler seçildi"
 
 msgid "All advanced features available"
 msgstr "Tüm gelişmiş özellikler kullanılabilir"
+msgstr "Tüm gelişmiş özellikler mevcut"
 
 msgid "All Audit Logs"
 msgstr "Tüm Denetim Günlükleri"
@@ -1610,6 +1620,7 @@ msgstr "Carbon verilerinize programatik erişim için API anahtarları."
 
 msgid "API, webhooks, and integrations"
 msgstr "API, webhook'lar ve entegrasyonlar"
+msgstr "API, web kancaları ve entegrasyonlar"
 
 msgid "Applied"
 msgstr "Uygulandı"
@@ -2306,6 +2317,7 @@ msgstr "Denetim günlüğü"
 
 msgid "Audit logging"
 msgstr "Denetim günlüğü tutma"
+msgstr "Denetim günlüğü"
 
 msgid "Audit Logging"
 msgstr "Denetim Kaydı Tutma"
@@ -2565,6 +2577,9 @@ msgstr "Engellendi"
 msgid "Blocked by {0}"
 msgstr "Bloklandı: {0}"
 
+msgid "Blocking sync"
+msgstr "Engelleme senkronizasyonu"
+
 msgid "Blocks save until resolved"
 msgstr "Çözülene kadar kaydetmeyi engeller"
 
@@ -2615,6 +2630,7 @@ msgstr "Kütüphaneyi göz at"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Yayınlanan sürümü salt okunur şekilde inceleyin. Düzeni düzenlemek için adımları yine de yeniden düzenleyebilirsiniz."
+msgstr "Yayınlanan sürümü salt okunur olarak göz atın. Düzeni düzenlemek için adımları yeniden düzenleyebilirsiniz."
 
 msgid "Bucket"
 msgstr "Kova"
@@ -3527,6 +3543,7 @@ msgstr "İlgili kişi (İsteğe bağlı)"
 
 msgid "Contact us"
 msgstr "Bize ulaşın"
+msgstr "Bize başvurun"
 
 msgid "contacts"
 msgstr "İlgili kişiler"
@@ -3569,6 +3586,9 @@ msgstr "Tasarım değişikliklerini revizyonlar / ECO'lar ile kontrol edin"
 
 msgid "Control how operators pick material and track time on the shop floor."
 msgstr "Operatörlerin malzeme nasıl seçtiğini ve atölye katında zamanı nasıl takip ettiğini kontrol edin."
+
+msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
+msgstr "Ürün kimliklerinin (parçalar, malzemeler, tüketilebilir ürünler, araçlar ve hizmetler) küçük harf karakterler içerebilir olup olmadığını kontrol edin."
 
 msgid "Controller, Accountant"
 msgstr "Kontrolör, Muhasebeci"
@@ -5944,6 +5964,9 @@ msgstr "Bu kuralı etkinleştirerek eşleşen belgeler için otomatik olarak ona
 msgid "Enable timecard tracking for work shifts."
 msgstr "Çalışma vardiyaları için zaman kartı takibini etkinleştir."
 
+msgid "Enable to allow lowercase characters in item IDs."
+msgstr "Ürün kimliklerinde küçük harf karakterlere izin vermek için etkinleştirin."
+
 msgid "Enable to allow shared workstation mode."
 msgstr "Paylaşımlı iş istasyonu moduna izin vermek için etkinleştirin."
 
@@ -6201,6 +6224,9 @@ msgstr "Kapsamdaki her test, yapılandırılmış sisteminizde, verilerinizle ge
 msgid "Every match"
 msgstr "Her eşleşme"
 
+msgid "Every required action has already been added."
+msgstr "Gerekli olan tüm eylemler zaten eklendi."
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Dönem kapatılmadan önce her gerekli görev Bitti veya Atlandı olmalıdır."
 
@@ -6242,9 +6268,6 @@ msgstr "İstisnai Sertifika"
 
 msgid "Exemption Reason"
 msgstr "İstisnai Nedeni"
-
-msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr "Mevcut haritalamalar. Yeniden haritalamak için farklı bir sağlayıcı hesabı seçin."
 
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Mevcut eşlemeler. Yeniden eşlemek için farklı bir sağlayıcı seçeneği seçin."
@@ -6972,6 +6995,7 @@ msgstr "Biçim"
 
 msgid "Forward deployed engineer"
 msgstr "Sahadaki mühendis"
+msgstr "Ön konuşlandırılmış mühendis"
 
 msgid "Foundation"
 msgstr "Temel"
@@ -7028,6 +7052,7 @@ msgstr "Tam adı"
 
 msgid "Full setup and migrations"
 msgstr "Tam kurulum ve göçler"
+msgstr "Tam kurulum ve geçişler"
 
 msgid "Fully Depreciated"
 msgstr "Amortismanı tamamlanmış"
@@ -8125,6 +8150,7 @@ msgstr "Sorunlar"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "Yeniden bir sürüm yayınlayana kadar çalışmayı durdurur. Hiçbir şey silinmez."
+msgstr "Yeniden bir sürüm yayınlayana kadar çalışmayı durduracak. Hiçbir şey silinmez."
 
 msgid "ITAR Certifications"
 msgstr "ITAR Sertifikaları"
@@ -8158,6 +8184,15 @@ msgstr "Ürün Grupları"
 
 msgid "Item ID"
 msgstr "Ürün Kimliği"
+
+msgid "Item IDs"
+msgstr "Ürün Kimlikleri"
+
+msgid "Item IDs are forced to uppercase"
+msgstr "Ürün Kimlikleri büyük harfe zorlanır"
+
+msgid "Item IDs keep the casing you type."
+msgstr "Ürün Kimlikleri yazdığınız büyük/küçük harf yazımını korur."
 
 msgid "Item ledger"
 msgstr "Madde Defteri"
@@ -8487,6 +8522,7 @@ msgstr "Daha az manuel çalışma, daha az hata"
 
 msgid "Let's Build"
 msgstr "Üretelim"
+msgstr "Haydi Oluşturalım"
 
 msgid "Let's build something"
 msgstr "Bir şeyler inşa edelim"
@@ -8733,6 +8769,9 @@ msgstr "Lot tabanlı alınan malların örnekleme planına karşı muayenesi; bi
 msgid "Low"
 msgstr "Düşük"
 
+msgid "Lowercase item IDs are allowed"
+msgstr "Küçük harf Ürün Kimlikleri izin verilir"
+
 msgid "Machine"
 msgstr "Makine"
 
@@ -8895,11 +8934,11 @@ msgstr "Çıkarılan Satırları Eşle"
 msgid "Map Lines Now"
 msgstr "Satırları Şimdi Eşle"
 
+msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+msgstr "Muhasebe planınızı sağlayıcıya eşleştirin. Deftere Nakil-varsayılan ve gider hesapları Gerekli olarak işaretlenmiştir; deftere nakledilen günlükler eşleştirilen sağlayıcı hesap kodunu kullanarak gönderilir."
+
 msgid "Map your current process, systems, and data"
 msgstr "Mevcut sürecinizi, sistemlerinizi ve verilerinizi eşleyin"
-
-msgid "Mapped accounts"
-msgstr "Haritalanan hesaplar"
 
 msgid "Mapped values"
 msgstr "Eşlenen değerler"
@@ -9750,8 +9789,8 @@ msgstr "Hiçbir yetkinlik eklenmedi"
 msgid "No Access"
 msgstr "Erişim Yok"
 
-msgid "No accounts mapped yet"
-msgstr "Henüz hiçbir hesap haritalanmamış"
+msgid "No accounts match your search"
+msgstr "Aramanızla eşleşen hesap yok"
 
 msgid "No action needed"
 msgstr "Yapılacak işlem yok"
@@ -11579,6 +11618,9 @@ msgstr "Go-live tarihini koruyun"
 msgid "Protect training time and attend"
 msgstr "Eğitim zamanını koru ve katıl"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "Şirketinizi iki faktörlü kimlik doğrulama zorunluluğu gibi gelişmiş güvenlik kontrolleriyle koruyun."
+
 msgid "Protects your company's data"
 msgstr "Şirketinizin verilerini korur"
 
@@ -12455,6 +12497,9 @@ msgstr "Talep Edilen Tarih"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Oturum açarken kimlik doğrulayıcı uygulamasından 6 haneli kod isteyini."
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "Bu şirketi açmadan önce bir kimlik doğrulayıcı uygulaması gerekli hale getirin. Diğer şirketler etkilenmez."
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Bu şirketi açabilmek için doğrulayıcı uygulamayı gerektir. Diğer şirketleri etkilenmez. Her kişinin durumunu görmek için <0>çalışan hesapları sayfasını</0> ziyaret edin."
 
@@ -12632,6 +12677,7 @@ msgstr "Bu faturadaki herhangi bir kalem defteri girişini tersine çevirir"
 
 msgid "Reverse charge"
 msgstr "Ters kayıt"
+msgstr "Ters ücret"
 
 msgid "Reverse Charge Sales Tax"
 msgstr "Ters yükleme satış vergisi"
@@ -13149,6 +13195,9 @@ msgstr "Çıkartıldı"
 msgid "Search"
 msgstr "Ara"
 
+msgid "Search accounts"
+msgstr "Hesapları arayın"
+
 msgid "Search accounts..."
 msgstr "Hesapları ara..."
 
@@ -13447,6 +13496,7 @@ msgstr "Kendi Yönettiği"
 
 msgid "Self-hosted or managed"
 msgstr "Kendi barındırılan veya yönetilen"
+msgstr "Kendi barındırmalı veya yönetilen"
 
 msgid "Self-onboarding"
 msgstr "Kendi kendine katılım"
@@ -13872,6 +13922,7 @@ msgstr "Bu kural başarısız olduğunda kullanıcıya gösterilir."
 
 msgid "Sign in to Carbon"
 msgstr "Carbon'a giriş yapın"
+msgstr "Carbon'da oturum açın"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Sihirli bağlantı yerine biyometrik kimlik doğrulama ile oturum açın. Geçiş Anahtarları Face ID, Touch ID veya cihaz PIN'iniz tarafından korunur."
@@ -14300,6 +14351,16 @@ msgstr "Stripe faturayı müşteriye e-posta ile gönderir, bu nedenle bir adres
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe'ın bu Carbon müşterisi için henüz bir müşterisi yok. Muhasebeleştirme, bağlı hesabınızda bir tane oluşturacaktır."
+msgstr "Stripe'da zaten bu e-postaya sahip bir müşteri var"
+
+msgid "Stripe Due Date"
+msgstr "Stripe Vade Tarihi"
+
+msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
+msgstr "Stripe faturayı müşteriye e-postayla gönderir, bu nedenle bir adres gereklidir. Bu, Carbon'daki ilgili kişiye de kaydedilecek."
+
+msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
+msgstr "Stripe'da henüz bu Carbon müşterisi için bir müşteri yok. Gönderme, bağlı hesabınızda bir tane oluşturacak."
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Kanban tablosunda gösterilecek kanban çıktısı stili"
@@ -14715,6 +14776,7 @@ msgstr "Vergi Amortisman Yöntemi"
 
 msgid "Tax exempt"
 msgstr "vergiden muaf"
+msgstr "Vergi muafiyeti"
 
 msgid "Tax Exempt"
 msgstr "Vergi Muaf"
@@ -15609,6 +15671,10 @@ msgstr "Bu fatura, Stripe için kullanılabilir bir son tarih içermiyor — lü
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Bu fatura, bu Carbon müşterisine zaten bağlı olan Stripe müşterisine faturalandırılacaktır. Ayrıntılarını değiştirmek için Stripe panosunda düzenleyin."
+msgstr "Bu faturanın kullanılabilir bir vade tarihi yok — Stripe için birini seçin."
+
+msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
+msgstr "Bu fatura, zaten bu Carbon müşterisine bağlı olan Stripe müşterisine faturalanacak. Ayrıntılarını değiştirmek için Stripe panosunda düzenleyin."
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "Bu kontrollü bir ortamdır, bu nedenle doğrulayıcı uygulaması gereklidir."
@@ -16152,6 +16218,9 @@ msgstr "İki Faktörlü"
 msgid "Two-factor authentication"
 msgstr "İki faktörlü kimlik doğrulaması"
 
+msgid "Two-Factor Authentication"
+msgstr "İki Faktörlü Kimlik Doğrulaması"
+
 msgid "Two-factor authentication disabled"
 msgstr "İki Faktörlü Kimlik Doğrulama Devre Dışı Bırakıldı"
 
@@ -16295,6 +16364,7 @@ msgstr "Sınırsız işlevsel destek"
 
 msgid "Unlimited records"
 msgstr "Sınırsız kayıt"
+msgstr "Sınırsız kayıtlar"
 
 msgid "Unlink"
 msgstr "Bağlantısını Kes"
@@ -16307,9 +16377,6 @@ msgstr "Kilidi Aç"
 
 msgid "Unlock with passkey"
 msgstr "Geçiş Anahtarı ile Kilit Aç"
-
-msgid "Unmapped accounts"
-msgstr "Eşleştirilmemiş hesaplar"
 
 msgid "Unmapped dimension values"
 msgstr "Eşlenmemiş boyut değerleri"
@@ -16343,6 +16410,10 @@ msgstr "Yayını kaldır"
 
 msgid "Unpublish {name}?"
 msgstr "Yayını {name} için kaldır?"
+msgstr "Yayınlamayı Kaldır"
+
+msgid "Unpublish {name}?"
+msgstr "{name} yayınlaması kaldırılsın mı?"
 
 msgid "Unreceived POs"
 msgstr "Alınmamış PO'lar"
@@ -16704,6 +16775,7 @@ msgstr "Sürüm"
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
 msgstr "Sürüm {0} şu anda yayınlandı ve değiştirilecektir."
+msgstr "Sürüm {0} şu anda yayınlandı ve değiştirilecek."
 
 msgid "Version:"
 msgstr "Sürüm:"

@@ -90,9 +90,16 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
     }, [inline, inlineMode]);
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-      setControlValue(e.target.value);
+      // Uppercase the control value itself (not just the onChange arg) so every
+      // consumer stays consistent: the displayed value, the value read from
+      // e.target.value in an onBlur handler, and the onChange callback. Consumers
+      // that only wire onBlur (e.g. the item properties sidebars) relied on this.
+      const nextValue = isUppercase
+        ? uppercase(e.target.value)
+        : e.target.value;
+      setControlValue(nextValue);
       if (onChange && typeof onChange === "function") {
-        onChange(isUppercase ? uppercase(e.target.value) : e.target.value);
+        onChange(nextValue);
       }
     };
     const resolvedIsOptional =

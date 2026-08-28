@@ -46,6 +46,7 @@ import {
 import { ReplenishmentSystemIcon, TrackingTypeIcon } from "~/components/Icons";
 import { ModelUploadProgress } from "~/components/ModelUploadProgress";
 import {
+  useCompanySettings,
   useCurrencyDecimals,
   useModelUpload,
   useNextItemId,
@@ -175,6 +176,8 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
 
   const { id, onIdChange, loading } = useNextItemId("Tool");
   const permissions = usePermissions();
+  const allowLowercaseItemIds =
+    useCompanySettings()?.allowLowercaseItemIds === true;
   const isEditing = !!initialValues.id;
 
   const translateItemTrackingType = (v: string) =>
@@ -270,7 +273,7 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
                     value={id}
                     onChange={onIdChange}
                     isDisabled={loading}
-                    isUppercase
+                    isUppercase={!allowLowercaseItemIds}
                     autoFocus
                   />
                 )}

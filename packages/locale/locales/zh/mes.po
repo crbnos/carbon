@@ -520,6 +520,7 @@ msgstr "仍然完成"
 
 msgid "Finish setting up your account"
 msgstr "完成账户设置"
+msgstr "完成您的账户设置"
 
 msgid "Finish with material unpicked?"
 msgstr "物料未拣货的情况下要完成吗？"
@@ -532,6 +533,7 @@ msgstr "返回操作"
 
 msgid "Go to onboarding"
 msgstr "前往入门"
+msgstr "前往入职"
 
 msgid "How many were actually picked?"
 msgstr "实际拣了多少？"
@@ -1514,6 +1516,7 @@ msgstr "您已打卡 {hoursElapsed} 小时。您是否忘记收工？"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "您的账户尚未属于任何公司。完成 Carbon ERP 入职流程以继续。"
+msgstr "您的账户尚未关联任何公司。请在Carbon ERP中完成入职以继续。"
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "您的组织需要身份验证器应用。在 Carbon 中设置，然后返回此处。"

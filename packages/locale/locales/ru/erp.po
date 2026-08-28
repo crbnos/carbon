@@ -170,6 +170,7 @@ msgstr "{from}–{to} из {count} операций"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} еще: {hiddenNames}"
+msgstr "{hiddenCount} ещё: {hiddenNames}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -361,6 +362,7 @@ msgstr "Подрядчик — контактное лицо поставщик�
 
 msgid "A custom solution to meet your needs"
 msgstr "Пользовательское решение для удовлетворения ваших потребностей."
+msgstr "Пользовательское решение в соответствии с вашими потребностями"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Клиент — это компания или физическое лицо, которое покупает ваши детали или услуги."
@@ -477,6 +479,7 @@ msgstr "Управляемая облачная версия Carbon"
 
 msgid "A managed version with all the advanced features"
 msgstr "Управляемая версия со всеми расширенными возможностями"
+msgstr "Управляемая версия со всеми дополнительными функциями"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Материал — это физический элемент, применяемый при изготовлении деталей и используемый в нескольких производственных заказах"
@@ -501,6 +504,7 @@ msgstr "Новый размер будет создан с использова�
 
 msgid "A new Stripe customer will be created"
 msgstr "Будет создана новая учетная запись покупателя Stripe"
+msgstr "Будет создан новый клиент Stripe"
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "Неденежный документ, погашающий счёт-фактуру по счёту причин: кредит уменьшает сумму задолженности, дебет её увеличивает."
@@ -1081,6 +1085,9 @@ msgstr "Добавить корректировку"
 
 msgid "Add Affected Item"
 msgstr "Добавить затронутый элемент"
+
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "Добавьте дополнительный уровень безопасности, требуя код из приложения аутентификатора при входе."
 
 msgid "Add any notes about your decision..."
 msgstr "Добавьте примечания о вашем решении..."
@@ -2306,6 +2313,7 @@ msgstr "Журнал аудита"
 
 msgid "Audit logging"
 msgstr "Журнал аудита"
+msgstr "Логирование аудита"
 
 msgid "Audit Logging"
 msgstr "Аудит логирования"
@@ -2378,6 +2386,7 @@ msgstr "Автоматические обновления"
 
 msgid "Automatic updates and backups"
 msgstr "Автоматическое обновление и резервное копирование"
+msgstr "Автоматические обновления и резервные копии"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "Автоматическое пропорциональное потребление материалов задания, не отслеживаемых при отчетности о выходе — отслеживаемые материалы выпускаются вручную."
@@ -2565,6 +2574,9 @@ msgstr "Заблокировано"
 msgid "Blocked by {0}"
 msgstr "Заблокировано {0}"
 
+msgid "Blocking sync"
+msgstr "Блокировка синхронизации"
+
 msgid "Blocks save until resolved"
 msgstr "Блокирует сохранение до разрешения"
 
@@ -2615,6 +2627,7 @@ msgstr "Обзор библиотеки"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Просмотрите опубликованную версию в режиме только для чтения. Вы все еще можете переставлять шаги для очистки макета."
+msgstr "Просмотрите опубликованную версию в режиме только для чтения. Вы все равно можете переупорядочить шаги для чистоты макета."
 
 msgid "Bucket"
 msgstr "Хранилище"
@@ -3030,6 +3043,7 @@ msgstr "Проверьте вашу почту"
 
 msgid "Checking Stripe for this customer…"
 msgstr "Проверка Stripe для этого покупателя…"
+msgstr "Проверка Stripe для этого клиента…"
 
 msgid "Checkpoint ·"
 msgstr "Контрольная точка ·"
@@ -3171,6 +3185,7 @@ msgstr "Облако или ваша собственная размещённа
 
 msgid "CMMC compliant"
 msgstr "Соответствует CMMC"
+msgstr "Соответствие CMMC"
 
 msgid "Code"
 msgstr "Код"
@@ -3570,6 +3585,9 @@ msgstr "Управление изменениями конструкции с п
 msgid "Control how operators pick material and track time on the shop floor."
 msgstr "Управление тем, как операторы отбирают материал и отслеживают время на цехе."
 
+msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
+msgstr "Управляйте тем, могут ли коды элементов (детали, материалы, расходники, инструменты и услуги) содержать символы нижнего регистра."
+
 msgid "Controller, Accountant"
 msgstr "Контроллер, Бухгалтер"
 
@@ -3937,6 +3955,7 @@ msgstr "Создать новый производственный заказ д
 
 msgid "Create a new Stripe customer instead"
 msgstr "Вместо этого создать нового покупателя Stripe"
+msgstr "Создайте нового клиента Stripe вместо этого"
 
 msgid "Create a new version"
 msgstr "Создать новую версию"
@@ -5944,6 +5963,9 @@ msgstr "Включите это правило, чтобы автоматиче�
 msgid "Enable timecard tracking for work shifts."
 msgstr "Включить отслеживание табелей учета рабочего времени для смен."
 
+msgid "Enable to allow lowercase characters in item IDs."
+msgstr "Включите, чтобы разрешить символы нижнего регистра в кодах элементов."
+
 msgid "Enable to allow shared workstation mode."
 msgstr "Включите, чтобы разрешить режим общей рабочей станции."
 
@@ -6201,6 +6223,9 @@ msgstr "Все тесты в области действия проходят в
 msgid "Every match"
 msgstr "Каждое совпадение"
 
+msgid "Every required action has already been added."
+msgstr "Все требуемые действия уже добавлены."
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Каждая требуемая задача должна быть Готово или Пропущено перед закрытием периода."
 
@@ -6243,14 +6268,12 @@ msgstr "Сертификат освобождения"
 msgid "Exemption Reason"
 msgstr "Причина освобождения"
 
-msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr "Существующие сопоставления. Выберите другой счет системы для переассоциации."
-
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Существующие отображения. Выберите другой вариант провайдера для переотображения."
 
 msgid "Existing Stripe customer"
 msgstr "Существующий покупатель Stripe"
+msgstr "Существующий клиент Stripe"
 
 msgid "Expand"
 msgstr "Развернуть"
@@ -6972,6 +6995,7 @@ msgstr "Формат"
 
 msgid "Forward deployed engineer"
 msgstr "Инженер на месте"
+msgstr "Развернутый инженер"
 
 msgid "Foundation"
 msgstr "Основа"
@@ -7028,6 +7052,7 @@ msgstr "Полное имя"
 
 msgid "Full setup and migrations"
 msgstr "Полная наладка и миграции"
+msgstr "Полная настройка и миграции"
 
 msgid "Fully Depreciated"
 msgstr "Полностью амортизирован"
@@ -8125,6 +8150,7 @@ msgstr "Проблемы"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "Он перестанет работать, пока вы не опубликуете версию снова. Ничего не удаляется."
+msgstr "Он будет остановлен до тех пор, пока вы снова не опубликуете версию. Ничего не удаляется."
 
 msgid "ITAR Certifications"
 msgstr "Сертификации ITAR"
@@ -8158,6 +8184,15 @@ msgstr "Группы товаров"
 
 msgid "Item ID"
 msgstr "ID товара"
+
+msgid "Item IDs"
+msgstr "Коды элементов"
+
+msgid "Item IDs are forced to uppercase"
+msgstr "Коды элементов преобразуются в верхний регистр"
+
+msgid "Item IDs keep the casing you type."
+msgstr "Коды элементов сохраняют вводимый вами регистр."
 
 msgid "Item ledger"
 msgstr "Реестр товаров"
@@ -8487,6 +8522,7 @@ msgstr "Меньше ручной работы, меньше ошибок"
 
 msgid "Let's Build"
 msgstr "Начнём производство"
+msgstr "Давайте начнём"
 
 msgid "Let's build something"
 msgstr "Давайте создадим что-то"
@@ -8568,6 +8604,7 @@ msgstr "Связать проблему Linear"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "Свяжите этого покупателя Carbon с одним из них или создайте отдельного покупателя Stripe."
+msgstr "Свяжите этого клиента Carbon с одним из них или создайте отдельного клиента Stripe."
 
 msgid "Link to sales order line"
 msgstr "Ссылка на строку заказа покупателя"
@@ -8733,6 +8770,9 @@ msgstr "Контроль на основе партии полученных т�
 msgid "Low"
 msgstr "Низкий"
 
+msgid "Lowercase item IDs are allowed"
+msgstr "Коды элементов в нижнем регистре разрешены"
+
 msgid "Machine"
 msgstr "Станок"
 
@@ -8895,11 +8935,11 @@ msgstr "Сопоставить извлеченные строки"
 msgid "Map Lines Now"
 msgstr "Сопоставить строки сейчас"
 
+msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+msgstr "Сопоставьте свой план счетов с планом счетов провайдера. Счета учета по умолчанию и счета расходов обозначены как Требуемые; проведенные журналы отправляются с использованием сопоставленного кода счета провайдера."
+
 msgid "Map your current process, systems, and data"
 msgstr "Сопоставьте ваш текущий процесс, системы и данные"
-
-msgid "Mapped accounts"
-msgstr "Сопоставленные счета"
 
 msgid "Mapped values"
 msgstr "Отображенные значения"
@@ -9750,8 +9790,8 @@ msgstr "Нет добавленных навыков"
 msgid "No Access"
 msgstr "Нет доступа"
 
-msgid "No accounts mapped yet"
-msgstr "Счета еще не сопоставлены"
+msgid "No accounts match your search"
+msgstr "Ни один счет не соответствует вашему поиску"
 
 msgid "No action needed"
 msgstr "Никаких действий не требуется"
@@ -11579,6 +11619,9 @@ msgstr "Защитите дату запуска"
 msgid "Protect training time and attend"
 msgstr "Защитите время обучения и участвуйте"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "Защитите вашу компанию с помощью расширенных элементов управления безопасностью, таких как принудительное применение двухфакторной аутентификации."
+
 msgid "Protects your company's data"
 msgstr "Защищает данные вашей организации"
 
@@ -12455,6 +12498,9 @@ msgstr "Запрошенная дата"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Требовать 6-значный код из приложения-аутентификатора при входе."
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "Требуется приложение-аутентификатор, прежде чем кто-либо сможет открыть эту компанию. Их другие компании не будут затронуты."
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Требовать приложение аутентификатора перед тем как кто-либо сможет открыть эту организацию. Их другие организации не затронуты. Посетите страницу <0>учетных записей сотрудников</0>, чтобы увидеть статус каждого человека."
 
@@ -13149,6 +13195,9 @@ msgstr "Списано"
 msgid "Search"
 msgstr "Поиск"
 
+msgid "Search accounts"
+msgstr "Поиск счетов"
+
 msgid "Search accounts..."
 msgstr "Поиск счетов..."
 
@@ -13450,6 +13499,10 @@ msgstr "Локальная установка или облачная"
 
 msgid "Self-onboarding"
 msgstr "Самостоятельное внедрение"
+msgstr "Размещается самостоятельно или управляется"
+
+msgid "Self-onboarding"
+msgstr "Самостоятельное подключение"
 
 msgid "Self-paced"
 msgstr "Самостоятельно"
@@ -14300,6 +14353,16 @@ msgstr "Stripe отправляет счет-фактуру клиенту по 
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "В Stripe еще нет покупателя для этого покупателя Carbon. При проведении будет создан в вашей подключенной учетной записи."
+msgstr "В Stripe уже есть клиент с этой электронной почтой"
+
+msgid "Stripe Due Date"
+msgstr "Срок платежа Stripe"
+
+msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
+msgstr "Stripe отправляет счет клиенту, поэтому требуется адрес. Это также будет сохранено в контакт в Carbon."
+
+msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
+msgstr "Stripe еще не имеет клиента для этого клиента Carbon. Отправка создаст его на вашем подключенном счете."
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Стиль вывода канбана для отображения в таблице Канбана"
@@ -15578,6 +15641,7 @@ msgstr "Этим завершается этап обнаружения."
 
 msgid "This contact has no email address"
 msgstr "Это контактное лицо не имеет адреса электронной почты"
+msgstr "Этот контакт не имеет адреса электронной почты"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Эта контрагент не имеет задолженности — платеж будет записан на счет."
@@ -15609,6 +15673,10 @@ msgstr "Этот счет-фактура не имеет используемо�
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Этот счет-фактура будет выставлен покупателю Stripe, уже связанному с этим покупателем Carbon. Чтобы изменить его детали, отредактируйте его в панели инструментов Stripe."
+msgstr "Этот счет не имеет пригодного срока платежа — выберите один для Stripe."
+
+msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
+msgstr "Этот счет будет отправлен клиенту Stripe, уже связанному с этим клиентом Carbon. Чтобы изменить его детали, отредактируйте его в панели управления Stripe."
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "Это контролируемая среда, поэтому требуется приложение аутентификации."
@@ -16152,6 +16220,9 @@ msgstr "Двухфакторная аутентификация"
 msgid "Two-factor authentication"
 msgstr "Двухфакторная аутентификация"
 
+msgid "Two-Factor Authentication"
+msgstr "Двухфакторная аутентификация"
+
 msgid "Two-factor authentication disabled"
 msgstr "Двухфакторная аутентификация отключена"
 
@@ -16307,9 +16378,6 @@ msgstr "Разблокировать"
 
 msgid "Unlock with passkey"
 msgstr "Разблокировать с помощью ключа доступа"
-
-msgid "Unmapped accounts"
-msgstr "Несопоставленные счета"
 
 msgid "Unmapped dimension values"
 msgstr "Неотображенные значения измерений"
@@ -16704,6 +16772,7 @@ msgstr "Версия"
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
 msgstr "Версия {0} опубликована сейчас и будет заменена."
+msgstr "Версия {0} опубликована и будет заменена."
 
 msgid "Version:"
 msgstr "Версия:"
@@ -17589,6 +17658,7 @@ msgstr "Вы работаете на Carbon"
 
 msgid "You're one step away from your workspace."
 msgstr "Вы на один шаг от вашего рабочего пространства."
+msgstr "Вы в одном шаге от вашего рабочего пространства."
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "Вы самостоятельно настраиваете Carbon в удобном для вас темпе"

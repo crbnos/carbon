@@ -170,6 +170,7 @@ msgstr "{count} ऑपरेशन में से {from}–{to}"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "और {hiddenCount}: {hiddenNames}"
+msgstr "{hiddenCount} और: {hiddenNames}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -304,6 +305,7 @@ msgstr "4 घंटे"
 
 msgid "5 user minimum"
 msgstr "न्यूनतम 5 उपयोगकर्ता"
+msgstr "5 उपयोगकर्ता न्यूनतम"
 
 msgid "5-8 weeks"
 msgstr "5-8 सप्ताह"
@@ -361,6 +363,7 @@ msgstr "एक ठेकेदार एक आपूर्तिकर्ता
 
 msgid "A custom solution to meet your needs"
 msgstr "आपकी आवश्यकताओं को पूरा करने के लिए एक कस्टम समाधान"
+msgstr "आपकी जरूरतों को पूरा करने के लिए एक कस्टम समाधान"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "एक ग्राहक एक व्यवसाय या व्यक्ति है जो आपके पार्ट्स या सेवाएं खरीदता है।"
@@ -474,6 +477,7 @@ msgstr "एक ऑर्डर पर निर्माण घटक जिस�
 
 msgid "A managed cloud-hosted version of Carbon"
 msgstr "Carbon का एक प्रबंधित क्लाउड-होस्ट किया गया संस्करण"
+msgstr "Carbon का एक प्रबंधित क्लाउड-होस्टेड संस्करण"
 
 msgid "A managed version with all the advanced features"
 msgstr "सभी उन्नत सुविधाओं के साथ एक प्रबंधित संस्करण"
@@ -938,9 +942,6 @@ msgstr "प्राप्य खाते"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "ग्राहकों द्वारा देय राशियों के लिए प्राप्य खाते।"
 
-msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
-msgstr "पोस्टिंग डिफ़ॉल्ट या जर्नल इतिहास द्वारा संदर्भित खाते जिनके पास अभी तक कोई प्रदाता मानचित्रण नहीं है।"
-
 msgid "Accumulated Depreciation"
 msgstr "संचित मूल्यह्रास"
 
@@ -1081,6 +1082,9 @@ msgstr "समायोजन जोड़ें"
 
 msgid "Add Affected Item"
 msgstr "प्रभावित आइटम जोड़ें"
+
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "साइन इन करते समय एक प्रमाणक ऐप से कोड मांगकर सुरक्षा की एक अतिरिक्त परत जोड़ें।"
 
 msgid "Add any notes about your decision..."
 msgstr "अपने निर्णय के बारे में कोई भी नोट्स जोड़ें..."
@@ -1335,6 +1339,7 @@ msgstr "सभी कार्य चयनित"
 
 msgid "All advanced features available"
 msgstr "सभी उन्नत विशेषताएं उपलब्ध हैं"
+msgstr "सभी उन्नत सुविधाएं उपलब्ध हैं"
 
 msgid "All Audit Logs"
 msgstr "सभी ऑडिट लॉग"
@@ -1362,9 +1367,6 @@ msgstr "सभी स्थान"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "सभी चुने गए समूहों के सदस्य और चुने गए व्यक्ति अनुरोधों को अनुमोदित कर सकेंगे"
-
-msgid "All posting accounts are mapped"
-msgstr "सभी पोस्टिंग खाते मैप किए गए हैं"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "सभी पंक्तियाँ आयात की गईं — {inserted} डाली गईं, {updated} अपडेट की गईं।"
@@ -1610,6 +1612,7 @@ msgstr "आपके Carbon डेटा के लिए प्रोग्र�
 
 msgid "API, webhooks, and integrations"
 msgstr "API, वेबहुक, और एकीकरण"
+msgstr "API, webhooks, और integrations"
 
 msgid "Applied"
 msgstr "लागू"
@@ -2478,6 +2481,7 @@ msgstr "आधार मूल्य"
 
 msgid "Basic ERP, MES, and QMS functionality"
 msgstr "मूल ERP, MES और QMS कार्यक्षमता"
+msgstr "बुनियादी ERP, MES, और QMS कार्यक्षमता"
 
 msgid "Basic Information"
 msgstr "बुनियादी जानकारी"
@@ -2565,6 +2569,9 @@ msgstr "अवरुद्ध"
 msgid "Blocked by {0}"
 msgstr "{0} द्वारा अवरुद्ध"
 
+msgid "Blocking sync"
+msgstr "ब्लॉकिंग सिंक"
+
 msgid "Blocks save until resolved"
 msgstr "सहेजने को तब तक ब्लॉक करता है जब तक समाधान न हो जाए"
 
@@ -2615,6 +2622,7 @@ msgstr "लाइब्रेरी ब्राउज़ करें"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "प्रकाशित संस्करण को केवल पढ़ने के लिए ब्राउज़ करें। आप अभी भी लेआउट को साफ करने के लिए चरणों को पुनर्व्यवस्थित कर सकते हैं।"
+msgstr "प्रकाशित संस्करण को केवल-पढ़ने के लिए देखें। आप अभी भी लेआउट को साफ करने के लिए चरणों को पुनः व्यवस्थित कर सकते हैं।"
 
 msgid "Bucket"
 msgstr "बकेट"
@@ -2822,6 +2830,7 @@ msgstr "RFQ नहीं भेज सकते"
 
 msgid "Cannot send through Stripe"
 msgstr "Stripe के माध्यम से भेजा नहीं जा सकता"
+msgstr "Stripe के माध्यम से नहीं भेज सकते"
 
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "अपलोड नहीं कर सकते — आपूर्तिकर्ता इंटरैक्शन अभी तक बनाया नहीं गया"
@@ -3171,6 +3180,7 @@ msgstr "क्लाउड, या आपका स्व-होस्ट कि
 
 msgid "CMMC compliant"
 msgstr "CMMC अनुपालन"
+msgstr "CMMC अनुरूप"
 
 msgid "Code"
 msgstr "कोड"
@@ -3570,6 +3580,9 @@ msgstr "रिवीजन / ECO के साथ डिज़ाइन पर�
 msgid "Control how operators pick material and track time on the shop floor."
 msgstr "नियंत्रित करें कि ऑपरेटर शॉप फ्लोर पर सामग्री कैसे चुनते हैं और समय कैसे ट्रैक करते हैं।"
 
+msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
+msgstr "नियंत्रित करें कि क्या आइटम आईडी (भाग, सामग्री, उपभोग्य सामग्री, उपकरण, और सेवाएं) लोअरकेस वर्ण हो सकते हैं।"
+
 msgid "Controller, Accountant"
 msgstr "नियंत्रक, लेखाकार"
 
@@ -3937,6 +3950,7 @@ msgstr "विक्रय आदेश को पूरा करने के 
 
 msgid "Create a new Stripe customer instead"
 msgstr "इसके बजाय एक नया Stripe ग्राहक बनाएँ"
+msgstr "इसके बजाय एक नया Stripe ग्राहक बनाएं"
 
 msgid "Create a new version"
 msgstr "एक नया संस्करण बनाएं"
@@ -4408,6 +4422,7 @@ msgstr "ग्राहक"
 
 msgid "Customizations, training, and integrations"
 msgstr "कस्टमाइज़ेशन, प्रशिक्षण और एकीकरण"
+msgstr "अनुकूलन, प्रशिक्षण, और integrations"
 
 msgid "Customize"
 msgstr "अनुकूलित करें"
@@ -5944,6 +5959,9 @@ msgstr "इस नियम को सक्षम करें ताकि म
 msgid "Enable timecard tracking for work shifts."
 msgstr "कार्य शिफ्ट के लिए टाइमकार्ड ट्रैकिंग सक्षम करें।"
 
+msgid "Enable to allow lowercase characters in item IDs."
+msgstr "आइटम आईडी में लोअरकेस वर्णों की अनुमति देने के लिए सक्षम करें।"
+
 msgid "Enable to allow shared workstation mode."
 msgstr "साझा वर्कस्टेशन मोड की अनुमति देने के लिए सक्षम करें।"
 
@@ -6201,6 +6219,9 @@ msgstr "आपकी कॉन्फ़िगर की गई सिस्ट�
 msgid "Every match"
 msgstr "हर मेल"
 
+msgid "Every required action has already been added."
+msgstr "हर आवश्यक कार्रवाई पहले से जोड़ी जा चुकी है।"
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "अवधि को बंद करने से पहले प्रत्येक आवश्यक कार्य को हो गया या छोड़ा गया होना चाहिए।"
 
@@ -6242,9 +6263,6 @@ msgstr "छूट प्रमाणपत्र"
 
 msgid "Exemption Reason"
 msgstr "छूट कारण"
-
-msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr "मौजूदा मानचित्रण। पुनः मानचित्रण के लिए एक अलग प्रदाता खाता चुनें।"
 
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "मौजूदा मैपिंग। पुनः-मैप करने के लिए एक अलग प्रदाता विकल्प चुनें।"
@@ -6972,6 +6990,7 @@ msgstr "प्रारूप"
 
 msgid "Forward deployed engineer"
 msgstr "अग्रपंक्ति में तैनात इंजीनियर"
+msgstr "आगे तैनात इंजीनियर"
 
 msgid "Foundation"
 msgstr "आधार"
@@ -8125,6 +8144,7 @@ msgstr "समस्याएं"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "यह तब तक चलना बंद कर देगा जब तक आप फिर से एक संस्करण प्रकाशित नहीं करते। कुछ भी हटाया नहीं गया है।"
+msgstr "यह तब तक चलना बंद कर देगा जब तक आप फिर से एक संस्करण प्रकाशित न करें। कुछ भी हटाया नहीं गया है।"
 
 msgid "ITAR Certifications"
 msgstr "ITAR प्रमाणपत्र"
@@ -8158,6 +8178,15 @@ msgstr "आइटम समूह"
 
 msgid "Item ID"
 msgstr "आइटम आईडी"
+
+msgid "Item IDs"
+msgstr "आइटम आईडी"
+
+msgid "Item IDs are forced to uppercase"
+msgstr "आइटम आईडी को अपरकेस में जबरदस्ती किया जाता है"
+
+msgid "Item IDs keep the casing you type."
+msgstr "आइटम आईडी आपके द्वारा टाइप किए गए केसिंग को बनाए रखते हैं।"
 
 msgid "Item ledger"
 msgstr "आइटम बहीखाता"
@@ -8487,6 +8516,7 @@ msgstr "कम मैनुअल काम, कम त्रुटियां"
 
 msgid "Let's Build"
 msgstr "चलिए निर्माण करें"
+msgstr "आइए निर्माण करें"
 
 msgid "Let's build something"
 msgstr "चलिए कुछ बनाते हैं"
@@ -8568,6 +8598,7 @@ msgstr "Linear समस्या को लिंक करें"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "इस Carbon ग्राहक को इनमें से किसी एक से जोड़ें, या एक अलग Stripe ग्राहक बनाएँ।"
+msgstr "इस Carbon ग्राहक को उनमें से किसी एक से जोड़ें, या एक अलग Stripe ग्राहक बनाएं।"
 
 msgid "Link to sales order line"
 msgstr "विक्रय आदेश पंक्ति से जोड़ें"
@@ -8733,6 +8764,9 @@ msgstr "नमूनाकरण योजना के विरुद्ध �
 msgid "Low"
 msgstr "निम्न"
 
+msgid "Lowercase item IDs are allowed"
+msgstr "लोअरकेस आइटम आईडी की अनुमति है"
+
 msgid "Machine"
 msgstr "मशीन"
 
@@ -8895,11 +8929,11 @@ msgstr "निकाली गई लाइनों को मैप करे�
 msgid "Map Lines Now"
 msgstr "अभी लाइनें मैप करें"
 
+msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+msgstr "अपने खाता चार्ट को प्रदाता के साथ मैप करें। पोस्टिंग-डिफ़ॉल्ट और व्यय खाते आवश्यक के रूप में चिह्नित हैं; पोस्ट किए गए जर्नल मैप किए गए प्रदाता खाता कोड का उपयोग करके पुश किए जाते हैं।"
+
 msgid "Map your current process, systems, and data"
 msgstr "अपनी वर्तमान प्रक्रिया, सिस्टम और डेटा को मैप करें"
-
-msgid "Mapped accounts"
-msgstr "मैप किए गए खाते"
 
 msgid "Mapped values"
 msgstr "मैप किए गए मान"
@@ -9750,8 +9784,8 @@ msgstr "कोई कौशल जोड़ा नहीं गया"
 msgid "No Access"
 msgstr "कोई एक्सेस नहीं"
 
-msgid "No accounts mapped yet"
-msgstr "अभी तक कोई खाते मैप नहीं किए गए"
+msgid "No accounts match your search"
+msgstr "कोई खाते आपकी खोज से मेल नहीं खाते"
 
 msgid "No action needed"
 msgstr "कोई कार्रवाई की आवश्यकता नहीं है"
@@ -11579,6 +11613,9 @@ msgstr "गो-लाइव की तारीख की सुरक्षा 
 msgid "Protect training time and attend"
 msgstr "प्रशिक्षण समय की सुरक्षा करें और भाग लें"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "दो-कारक प्रमाणीकरण के प्रवर्तन जैसी उन्नत सुरक्षा नियंत्रणों से अपनी कंपनी की सुरक्षा करें।"
+
 msgid "Protects your company's data"
 msgstr "आपकी कंपनी के डेटा की सुरक्षा करता है"
 
@@ -12455,6 +12492,9 @@ msgstr "अनुरोधित तिथि"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "साइन इन करते समय ऑथेंटिकेटर ऐप से 6-अंकीय कोड की आवश्यकता है।"
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "इस कंपनी को खोलने से पहले सभी को एक सत्यापनकर्ता ऐप की आवश्यकता है। उनकी अन्य कंपनियां प्रभावित नहीं होंगी।"
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "किसी को भी इस कंपनी को खोलने से पहले एक प्रमाणकर्ता ऐप की आवश्यकता है। उनकी अन्य कंपनियां प्रभावित नहीं हैं। प्रत्येक व्यक्ति की स्थिति देखने के लिए <0>कर्मचारी खातों पृष्ठ</0> पर जाएं।"
 
@@ -13148,6 +13188,9 @@ msgstr "स्क्रैप किया गया"
 
 msgid "Search"
 msgstr "खोजें"
+
+msgid "Search accounts"
+msgstr "खातों को खोजें"
 
 msgid "Search accounts..."
 msgstr "खातों को खोजें..."
@@ -14300,6 +14343,16 @@ msgstr "Stripe चालान को ग्राहक को ईमेल क
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe के पास इस Carbon ग्राहक के लिए अभी तक कोई ग्राहक नहीं है। पोस्टिंग आपके जुड़े खाते पर एक बनाएगी।"
+msgstr "Stripe के पास पहले से इस ईमेल वाला एक ग्राहक है"
+
+msgid "Stripe Due Date"
+msgstr "Stripe देय तिथि"
+
+msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
+msgstr "Stripe ग्राहक को चालान ईमेल करता है, इसलिए एक पता आवश्यक है। यह Carbon में संपर्क के लिए भी सहेजा जाएगा।"
+
+msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
+msgstr "Stripe के पास इस Carbon ग्राहक के लिए अभी कोई ग्राहक नहीं है। पोस्ट करने से आपके जुड़े खाते पर एक बनाया जाएगा।"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "कानबान तालिका में दिखाने के लिए कानबान आउटपुट की शैली"
@@ -15578,6 +15631,7 @@ msgstr "यह Discovery चरण को पूरा करता है।"
 
 msgid "This contact has no email address"
 msgstr "इस संपर्क के पास कोई ईमेल पता नहीं है"
+msgstr "इस संपर्क का कोई ईमेल पता नहीं है"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "यह प्रतिपक्ष के पास कुछ भी बकाया नहीं है — भुगतान खाते पर दर्ज किया जाएगा।"
@@ -15609,6 +15663,10 @@ msgstr "इस चालान के पास कोई उपयोगी न
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "यह चालान इस Carbon ग्राहक के लिए पहले से जुड़े Stripe ग्राहक को बिल किया जाएगा। इसके विवरण को बदलने के लिए, इसे Stripe डैशबोर्ड में संपादित करें।"
+msgstr "इस चालान की कोई उपयोगी देय तिथि नहीं है — Stripe के लिए एक चुनें।"
+
+msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
+msgstr "इस चालान को Stripe ग्राहक को बिल दिया जाएगा जो पहले से इस Carbon ग्राहक से जुड़ा हुआ है। इसके विवरण को बदलने के लिए, Stripe डैशबोर्ड में संपादित करें।"
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "यह एक नियंत्रित वातावरण है, इसलिए एक प्रमाणकर्ता ऐप की आवश्यकता है।"
@@ -16152,6 +16210,9 @@ msgstr "दो-कारक"
 msgid "Two-factor authentication"
 msgstr "दो-कारक प्रमाणीकरण"
 
+msgid "Two-Factor Authentication"
+msgstr "दो-कारक प्रमाणीकरण"
+
 msgid "Two-factor authentication disabled"
 msgstr "दो-कारक प्रमाणीकरण अक्षम किया गया"
 
@@ -16308,9 +16369,6 @@ msgstr "अनलॉक करें"
 msgid "Unlock with passkey"
 msgstr "पासकी के साथ अनलॉक करें"
 
-msgid "Unmapped accounts"
-msgstr "असंबद्ध खाते"
-
 msgid "Unmapped dimension values"
 msgstr "अनमैप्ड आयाम मान"
 
@@ -16343,6 +16401,10 @@ msgstr "अप्रकाशित करें"
 
 msgid "Unpublish {name}?"
 msgstr "अप्रकाशित करें {name}?"
+msgstr "प्रकाशन रद्द करें"
+
+msgid "Unpublish {name}?"
+msgstr "{name} को प्रकाशन रद्द करें?"
 
 msgid "Unreceived POs"
 msgstr "अप्राप्त POs"
@@ -16704,6 +16766,7 @@ msgstr "संस्करण"
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
 msgstr "संस्करण {0} अभी प्रकाशित है और प्रतिस्थापित किया जाएगा।"
+msgstr "संस्करण {0} अब प्रकाशित है और प्रतिस्थापित किया जाएगा।"
 
 msgid "Version:"
 msgstr "संस्करण:"
@@ -17589,6 +17652,7 @@ msgstr "आप Carbon पर लाइव हैं"
 
 msgid "You're one step away from your workspace."
 msgstr "आप अपने कार्यक्षेत्र से एक चरण दूर हैं।"
+msgstr "आप अपने कार्यक्षेत्र से एक कदम दूर हैं।"
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "आप Carbon को स्वयं सेट अप कर रहे हैं, अपनी गति से"

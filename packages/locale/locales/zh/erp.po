@@ -170,6 +170,7 @@ msgstr "第{from}–{to}个工序（共{count}个）"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "还有{hiddenCount}个：{hiddenNames}"
+msgstr "{hiddenCount} 更多: {hiddenNames}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -304,6 +305,7 @@ msgstr "4小时"
 
 msgid "5 user minimum"
 msgstr "最少需要5个用户"
+msgstr "5 个用户最少"
 
 msgid "5-8 weeks"
 msgstr "5-8 周"
@@ -361,6 +363,7 @@ msgstr "外协人员是具有特定技能和可用工时的供应商联系人。
 
 msgid "A custom solution to meet your needs"
 msgstr "满足您需求的定制解决方案"
+msgstr "满足您需求的自定义解决方案"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "客户是购买您的零件或服务的企业或个人。"
@@ -474,6 +477,7 @@ msgstr "一个按订单生产的组件，其零件一起领用到父工单中—
 
 msgid "A managed cloud-hosted version of Carbon"
 msgstr "Carbon 的托管云版本"
+msgstr "Carbon 的托管云托管版本"
 
 msgid "A managed version with all the advanced features"
 msgstr "具有所有高级功能的托管版本"
@@ -501,6 +505,7 @@ msgstr "将使用当前尺寸的副本创建新尺寸"
 
 msgid "A new Stripe customer will be created"
 msgstr "将创建新的 Stripe 客户"
+msgstr "将创建一个新的 Stripe 客户"
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "一份非现金文件，根据原因账户结算发票：贷方降低欠额，借方提高欠额。"
@@ -1082,6 +1087,9 @@ msgstr "添加调整"
 msgid "Add Affected Item"
 msgstr "添加受影响项目"
 
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "通过在登录时要求来自身份验证应用的代码来增加额外的安全层。"
+
 msgid "Add any notes about your decision..."
 msgstr "添加关于您的决定的任何备注..."
 
@@ -1363,9 +1371,6 @@ msgstr "所有位置"
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "所选组的所有成员和所选个人都将能够审批请求"
 
-msgid "All posting accounts are mapped"
-msgstr "所有过账账户已映射"
-
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "所有行已导入—{inserted}行插入，{updated}行更新。"
 
@@ -1610,6 +1615,7 @@ msgstr "API密钥用于以编程方式访问您的Carbon数据。"
 
 msgid "API, webhooks, and integrations"
 msgstr "API、Webhook 和集成"
+msgstr "API、webhooks 和集成"
 
 msgid "Applied"
 msgstr "已应用"
@@ -2478,6 +2484,7 @@ msgstr "基础价格"
 
 msgid "Basic ERP, MES, and QMS functionality"
 msgstr "基本的 ERP、MES 和 QMS 功能"
+msgstr "基本 ERP、MES 和 QMS 功能"
 
 msgid "Basic Information"
 msgstr "基本信息"
@@ -2565,6 +2572,9 @@ msgstr "已阻止"
 msgid "Blocked by {0}"
 msgstr "被 {0} 阻止"
 
+msgid "Blocking sync"
+msgstr "阻止同步"
+
 msgid "Blocks save until resolved"
 msgstr "阻止保存直到解决"
 
@@ -2615,6 +2625,7 @@ msgstr "浏览库"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "浏览已发布版本（只读）。您仍然可以重新排列步骤来整理布局。"
+msgstr "浏览已发布的版本（只读）。您仍然可以重新排列步骤来整理布局。"
 
 msgid "Bucket"
 msgstr "存储桶"
@@ -2822,6 +2833,7 @@ msgstr "无法发送询价单"
 
 msgid "Cannot send through Stripe"
 msgstr "无法通过Stripe发送"
+msgstr "无法通过 Stripe 发送"
 
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "无法上传 — 供应商互动尚未创建"
@@ -3030,6 +3042,7 @@ msgstr "检查您的电子邮件"
 
 msgid "Checking Stripe for this customer…"
 msgstr "正在为此客户检查Stripe…"
+msgstr "正在检查该客户的 Stripe…"
 
 msgid "Checkpoint ·"
 msgstr "检查点 ·"
@@ -3570,6 +3583,9 @@ msgstr "通过修订版/ECO控制设计变更"
 msgid "Control how operators pick material and track time on the shop floor."
 msgstr "控制操作员在车间内如何拣货原材料和跟踪时间。"
 
+msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
+msgstr "控制物料编号（零件、原料、耗材、工具和服务）是否可以包含小写字符。"
+
 msgid "Controller, Accountant"
 msgstr "控制器，会计"
 
@@ -3937,6 +3953,7 @@ msgstr "创建新的生产工作以完成销售订单"
 
 msgid "Create a new Stripe customer instead"
 msgstr "改为创建新的Stripe客户"
+msgstr "改为创建新的 Stripe 客户"
 
 msgid "Create a new version"
 msgstr "创建新版本"
@@ -5944,6 +5961,9 @@ msgstr "启用此规则以自动要求匹配文档的审批"
 msgid "Enable timecard tracking for work shifts."
 msgstr "启用工作班次的时间卡跟踪。"
 
+msgid "Enable to allow lowercase characters in item IDs."
+msgstr "启用以允许物料编号中的小写字符。"
+
 msgid "Enable to allow shared workstation mode."
 msgstr "启用以允许共享工作站模式。"
 
@@ -6200,6 +6220,9 @@ msgstr "您配置的系统中的每项范围内测试都通过了您的数据。
 
 msgid "Every match"
 msgstr "每次匹配"
+
+msgid "Every required action has already been added."
+msgstr "每个必需的操作已添加。"
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "每项必需任务必须在完成或已跳过后期间才能关闭。"
@@ -6972,6 +6995,7 @@ msgstr "格式"
 
 msgid "Forward deployed engineer"
 msgstr "驻场工程师"
+msgstr "前置部署工程师"
 
 msgid "Foundation"
 msgstr "基础"
@@ -8125,6 +8149,7 @@ msgstr "问题"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "它将停止运行，直到您再次发布版本。不会删除任何内容。"
+msgstr "在您再次发布版本之前，它将停止运行。没有任何内容被删除。"
 
 msgid "ITAR Certifications"
 msgstr "ITAR 认证"
@@ -8158,6 +8183,15 @@ msgstr "物品组"
 
 msgid "Item ID"
 msgstr "物品ID"
+
+msgid "Item IDs"
+msgstr "物料编号"
+
+msgid "Item IDs are forced to uppercase"
+msgstr "物料编号强制转换为大写"
+
+msgid "Item IDs keep the casing you type."
+msgstr "物料编号保持您输入的大小写。"
 
 msgid "Item ledger"
 msgstr "物品分类账"
@@ -8487,6 +8521,7 @@ msgstr "更少的手动工作，更少的错误"
 
 msgid "Let's Build"
 msgstr "让我们构建"
+msgstr "让我们开始构建"
 
 msgid "Let's build something"
 msgstr "让我们构建一些东西"
@@ -8568,6 +8603,7 @@ msgstr "关联 Linear 问题"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "将此 Carbon 客户链接到其中一个，或创建单独的 Stripe 客户。"
+msgstr "将此 Carbon 客户链接到其中一个，或创建一个单独的 Stripe 客户。"
 
 msgid "Link to sales order line"
 msgstr "关联销售订单行"
@@ -8733,6 +8769,9 @@ msgstr "对收到的货物进行基于批次的检验（根据抽样方案）；
 msgid "Low"
 msgstr "低"
 
+msgid "Lowercase item IDs are allowed"
+msgstr "允许使用小写物料编号"
+
 msgid "Machine"
 msgstr "机器"
 
@@ -8895,11 +8934,11 @@ msgstr "映射提取的行"
 msgid "Map Lines Now"
 msgstr "立即映射行"
 
+msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+msgstr "将您的科目表映射到提供商的科目表。默认过账科目和费用科目标记为必需；已过账日记账使用映射的提供商科目代码进行推送。"
+
 msgid "Map your current process, systems, and data"
 msgstr "映射您当前的流程、系统和数据"
-
-msgid "Mapped accounts"
-msgstr "已映射账户"
 
 msgid "Mapped values"
 msgstr "已映射的值"
@@ -9750,8 +9789,8 @@ msgstr "没有添加技能"
 msgid "No Access"
 msgstr "无权限"
 
-msgid "No accounts mapped yet"
-msgstr "尚未映射账户"
+msgid "No accounts match your search"
+msgstr "没有账户与您的搜索匹配"
 
 msgid "No action needed"
 msgstr "无需操作"
@@ -11579,6 +11618,9 @@ msgstr "保护上线日期"
 msgid "Protect training time and attend"
 msgstr "保护培训时间并参加"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "使用双因素身份验证等高级安全控制措施保护您的公司。"
+
 msgid "Protects your company's data"
 msgstr "保护您公司的数据"
 
@@ -12455,6 +12497,9 @@ msgstr "要求日期"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "登录时需要来自身份验证器应用的 6 位数字代码。"
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "需要身份验证器应用才能打开此公司。其他公司不受影响。"
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "需要身份验证应用程序才能打开此公司。他们的其他公司不受影响。访问<0>员工账户页面</0>以查看每个人的状态。"
 
@@ -13148,6 +13193,9 @@ msgstr "已报废"
 
 msgid "Search"
 msgstr "搜索"
+
+msgid "Search accounts"
+msgstr "搜索账户"
 
 msgid "Search accounts..."
 msgstr "搜索账户..."
@@ -14300,6 +14348,16 @@ msgstr "Stripe 会向客户发送发票电子邮件，因此需要地址。这�
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe 还没有此 Carbon 客户的客户。过账将在您的关联账户上创建一个。"
+msgstr "Stripe 已有使用此电子邮件的客户"
+
+msgid "Stripe Due Date"
+msgstr "Stripe 到期日期"
+
+msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
+msgstr "Stripe 将发票发送给客户，因此需要地址。这也将保存到 Carbon 中的联系人。"
+
+msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
+msgstr "Stripe 还没有该 Carbon 客户的客户。发布将在您连接的帐户上创建一个。"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "看板输出在看板表中显示的样式"
@@ -15609,6 +15667,10 @@ msgstr "此发票没有可用的到期日——为Stripe选择一个。"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "此发票将为已与此Carbon客户关联的Stripe客户计费。要更改其详细信息，请在Stripe仪表板中编辑。"
+msgstr "此发票没有可用的到期日期 — 为 Stripe 选择一个。"
+
+msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
+msgstr "此发票将计费给已链接到此 Carbon 客户的 Stripe 客户。要更改其详细信息，请在 Stripe 仪表板中编辑它。"
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "这是受控环境，因此需要身份验证器应用。"
@@ -15749,6 +15811,10 @@ msgstr "这个版本已发布"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "这个版本已发布。创建新版本进行编辑。"
+msgstr "此版本已发布"
+
+msgid "This version is published. Create a new version to edit."
+msgstr "此版本已发布。创建新版本进行编辑。"
 
 msgid "This version's definition could not be read."
 msgstr "无法读取此版本的定义。"
@@ -16152,6 +16218,9 @@ msgstr "双因素"
 msgid "Two-factor authentication"
 msgstr "双因素认证"
 
+msgid "Two-Factor Authentication"
+msgstr "双因素身份验证"
+
 msgid "Two-factor authentication disabled"
 msgstr "双因素认证已禁用"
 
@@ -16307,9 +16376,6 @@ msgstr "解锁"
 
 msgid "Unlock with passkey"
 msgstr "使用通行密钥解锁"
-
-msgid "Unmapped accounts"
-msgstr "未映射的账户"
 
 msgid "Unmapped dimension values"
 msgstr "未映射的维度值"
@@ -16704,6 +16770,7 @@ msgstr "版本"
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
 msgstr "版本{0}现已发布，将被替换。"
+msgstr "版本 {0} 现已发布，将被替换。"
 
 msgid "Version:"
 msgstr "版本："
@@ -17589,6 +17656,7 @@ msgstr "您已在 Carbon 上线"
 
 msgid "You're one step away from your workspace."
 msgstr "您离您的工作区只有一步之遥。"
+msgstr "您离工作区只有一步之遥。"
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "您正在按照自己的节奏自行设置 Carbon"

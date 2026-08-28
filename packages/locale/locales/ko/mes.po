@@ -532,6 +532,7 @@ msgstr "공정작업으로 돌아가기"
 
 msgid "Go to onboarding"
 msgstr "온보딩으로 이동"
+msgstr "온보딩으로 이동하기"
 
 msgid "How many were actually picked?"
 msgstr "실제로 몇 개를 피킹했습니까?"
@@ -1514,6 +1515,7 @@ msgstr "{hoursElapsed}시간 동안 작업 중입니다. 작업 종료를 잊으
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "아직 회사에 속하지 않은 계정입니다. Carbon ERP에서 온보딩을 완료해 주시기 바랍니다."
+msgstr "아직 계정이 회사에 속하지 않았습니다. Carbon ERP에서 온보딩을 완료하여 계속하세요."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "조직에서 인증 앱을 요구하고 있습니다. Carbon에서 설정한 후 여기로 돌아오세요."

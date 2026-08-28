@@ -170,6 +170,7 @@ msgstr "{from}–{to} / {count} 件の工程"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} 件さらに表示: {hiddenNames}"
+msgstr "{hiddenCount}その他: {hiddenNames}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -304,6 +305,7 @@ msgstr "4時間"
 
 msgid "5 user minimum"
 msgstr "最低 5 ユーザー"
+msgstr "ユーザー最小5名"
 
 msgid "5-8 weeks"
 msgstr "5～8週間"
@@ -477,6 +479,10 @@ msgstr "Carbonのマネージド クラウド ホスト版"
 
 msgid "A managed version with all the advanced features"
 msgstr "すべての高度な機能を備えたマネージド版"
+msgstr "管理されたクラウドホスト版Carbon"
+
+msgid "A managed version with all the advanced features"
+msgstr "すべての高度な機能を備えた管理版"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "材料は部品を製造するために使用される物理的品目で、複数の製造指図にわたって使用できます"
@@ -501,6 +507,7 @@ msgstr "新しいサイズが現在のサイズのコピーを使用して作成
 
 msgid "A new Stripe customer will be created"
 msgstr "新しい Stripe 顧客が作成されます"
+msgstr "新しいStripeカスタマーが作成されます"
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "請求書を理由勘定に対して決済する非現金文書。貸方は支払額を減らし、借方は増やします。"
@@ -1082,6 +1089,9 @@ msgstr "調整を追加"
 msgid "Add Affected Item"
 msgstr "影響を受けるアイテムを追加"
 
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "認証器アプリからのコードを要求することで、サインイン時のセキュリティレイヤーを追加します。"
+
 msgid "Add any notes about your decision..."
 msgstr "あなたの決定についてのメモを追加してください..."
 
@@ -1363,9 +1373,6 @@ msgstr "すべての場所"
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "選択されたグループのすべてのメンバーと選択された個人が承認リクエストを承認できます"
 
-msgid "All posting accounts are mapped"
-msgstr "すべての転記勘定科目がマップされています"
-
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "すべての行をインポート—{inserted}行挿入、{updated}行更新。"
 
@@ -1610,6 +1617,7 @@ msgstr "Carbonデータへのプログラマティックアクセス用のAPIキ
 
 msgid "API, webhooks, and integrations"
 msgstr "API、Webhook、および連携"
+msgstr "API、ウェブフック、および統合"
 
 msgid "Applied"
 msgstr "適用"
@@ -2565,6 +2573,9 @@ msgstr "ブロック中"
 msgid "Blocked by {0}"
 msgstr "{0}によってブロックされています"
 
+msgid "Blocking sync"
+msgstr "ブロッキング同期"
+
 msgid "Blocks save until resolved"
 msgstr "解決されるまで保存をブロックします"
 
@@ -2615,6 +2626,7 @@ msgstr "ライブラリを参照"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "公開済バージョンを読み取り専用で閲覧できます。レイアウトを整理するためにステップを並び替えることもできます。"
+msgstr "公開されたバージョンを読み取り専用で参照できます。レイアウトをきれいにするためにステップを再配置することもできます。"
 
 msgid "Bucket"
 msgstr "バケット"
@@ -2822,6 +2834,7 @@ msgstr "RFQを送信できません"
 
 msgid "Cannot send through Stripe"
 msgstr "Stripeを通じて送信できません"
+msgstr "Stripeを経由して送信できません"
 
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "アップロードできません — 仕入先インタラクションがまだ作成されていません"
@@ -3030,6 +3043,7 @@ msgstr "メールを確認してください"
 
 msgid "Checking Stripe for this customer…"
 msgstr "この得意先の Stripe を確認中…"
+msgstr "このカスタマーのStripeを確認中…"
 
 msgid "Checkpoint ·"
 msgstr "チェックポイント ·"
@@ -3570,6 +3584,9 @@ msgstr "設計変更をリビジョン/ECOで管理"
 msgid "Control how operators pick material and track time on the shop floor."
 msgstr "作業者が製造現場で材料をピッキングし時間を追跡する方法を制御します。"
 
+msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
+msgstr "アイテムID（部品、材料、消耗品、工具、およびサービス）に小文字を含めることができるかどうかを制御します。"
+
 msgid "Controller, Accountant"
 msgstr "コントローラー、会計士"
 
@@ -3937,6 +3954,7 @@ msgstr "受注を満たすために新しい生産製造指図を作成"
 
 msgid "Create a new Stripe customer instead"
 msgstr "代わりに新しいStripe得意先を作成"
+msgstr "代わりに新しいStripeカスタマーを作成する"
 
 msgid "Create a new version"
 msgstr "新しいバージョンを作成"
@@ -4408,6 +4426,7 @@ msgstr "得意先"
 
 msgid "Customizations, training, and integrations"
 msgstr "カスタマイズ、教育訓練、連携"
+msgstr "カスタマイズ、トレーニング、および統合"
 
 msgid "Customize"
 msgstr "カスタマイズ"
@@ -5944,6 +5963,9 @@ msgstr "このルールを有効にして、一致するドキュメントの承
 msgid "Enable timecard tracking for work shifts."
 msgstr "勤務シフトのタイムカード追跡を有効にします。"
 
+msgid "Enable to allow lowercase characters in item IDs."
+msgstr "アイテムIDで小文字を許可するには有効にしてください。"
+
 msgid "Enable to allow shared workstation mode."
 msgstr "共有ワークステーションモードを有効にします。"
 
@@ -6201,6 +6223,9 @@ msgstr "スコープ内のすべてのテストが、設定されたシステム
 msgid "Every match"
 msgstr "すべてのマッチ"
 
+msgid "Every required action has already been added."
+msgstr "すべての必須アクションが既に追加されています。"
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "すべての必須タスクは期間がクローズされる前に完了またはスキップ済である必要があります。"
 
@@ -6243,14 +6268,12 @@ msgstr "免除証明書"
 msgid "Exemption Reason"
 msgstr "免除理由"
 
-msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr "既存のマッピング。再マップするには別のプロバイダー勘定科目を選択してください。"
-
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "既存のマッピング。異なるプロバイダーオプションを選択して再マップしてください。"
 
 msgid "Existing Stripe customer"
 msgstr "既存のStripe顧客"
+msgstr "既存のStripeカスタマー"
 
 msgid "Expand"
 msgstr "展開"
@@ -6972,6 +6995,7 @@ msgstr "フォーマット"
 
 msgid "Forward deployed engineer"
 msgstr "現地配置エンジニア"
+msgstr "フィールドデプロイエンジニア"
 
 msgid "Foundation"
 msgstr "基礎"
@@ -7028,6 +7052,7 @@ msgstr "氏名"
 
 msgid "Full setup and migrations"
 msgstr "完全なセットアップとマイグレーション"
+msgstr "完全なセットアップと移行"
 
 msgid "Fully Depreciated"
 msgstr "完全償却済み"
@@ -8125,6 +8150,7 @@ msgstr "問題"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "バージョンを再度公開するまで実行は停止します。削除されるものはありません。"
+msgstr "バージョンを再度公開するまで実行が停止します。何も削除されません。"
 
 msgid "ITAR Certifications"
 msgstr "ITAR認定"
@@ -8158,6 +8184,15 @@ msgstr "アイテムグループ"
 
 msgid "Item ID"
 msgstr "アイテムID"
+
+msgid "Item IDs"
+msgstr "アイテムID"
+
+msgid "Item IDs are forced to uppercase"
+msgstr "アイテムIDは大文字に強制されます"
+
+msgid "Item IDs keep the casing you type."
+msgstr "アイテムIDは入力した大文字小文字を保持します。"
 
 msgid "Item ledger"
 msgstr "アイテム台帳"
@@ -8568,6 +8603,7 @@ msgstr "Linear イシューをリンク"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "このCarbonの得意先をいずれかにリンクするか、別のStripe顧客を作成してください。"
+msgstr "このCarbonカスタマーをそのいずれかにリンクするか、別のStripeカスタマーを作成してください。"
 
 msgid "Link to sales order line"
 msgstr "受注明細へのリンク"
@@ -8733,6 +8769,9 @@ msgstr "入荷商品をロット単位で抜取検査方式に従って検査し
 msgid "Low"
 msgstr "低"
 
+msgid "Lowercase item IDs are allowed"
+msgstr "小文字のアイテムIDが許可されます"
+
 msgid "Machine"
 msgstr "機械"
 
@@ -8895,11 +8934,11 @@ msgstr "抽出行をマップ"
 msgid "Map Lines Now"
 msgstr "今すぐラインをマップ"
 
+msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+msgstr "勘定科目表をプロバイダーのものにマップしてください。転記デフォルトと費用アカウントは必須としてマークされています。転記されたジャーナルはマップされたプロバイダーアカウントコードを使用してプッシュされます。"
+
 msgid "Map your current process, systems, and data"
 msgstr "現在のプロセス、システム、データをマップする"
-
-msgid "Mapped accounts"
-msgstr "マップ済み勘定科目"
 
 msgid "Mapped values"
 msgstr "マップされた値"
@@ -9750,8 +9789,8 @@ msgstr "スキルが追加されていません"
 msgid "No Access"
 msgstr "アクセスなし"
 
-msgid "No accounts mapped yet"
-msgstr "マップされた勘定科目がまだありません"
+msgid "No accounts match your search"
+msgstr "検索に一致するアカウントがありません"
 
 msgid "No action needed"
 msgstr "対応は不要です"
@@ -11579,6 +11618,9 @@ msgstr "ゴーライブ日を保護する"
 msgid "Protect training time and attend"
 msgstr "教育訓練の時間を確保して参加する"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "二段階認証の強制などの高度なセキュリティ管理で会社を保護してください。"
+
 msgid "Protects your company's data"
 msgstr "会社データを保護します"
 
@@ -11612,6 +11654,7 @@ msgstr "Carbonによって公開済"
 
 msgid "Published Version"
 msgstr "公開済バージョン"
+msgstr "公開されたバージョン"
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "公開済みバージョンは編集できません。読み取り専用で参照するか、新しいバージョンをブランチして変更してください。"
@@ -12455,6 +12498,9 @@ msgstr "希望納期"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "サインイン時に認証器アプリから6桁のコードが必要です。"
 
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "このカンパニーを開く前に、認証アプリが必須です。他のカンパニーは影響を受けません。"
+
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "このアプリケーション認証器を要求して、誰もがこの会社を開く前に認証を要求します。他の会社は影響を受けません。<0>従業員アカウントページ</0>にアクセスして、各個人のステータスを確認してください。"
 
@@ -12632,6 +12678,7 @@ msgstr "この請求書の品目台帳の仕訳をすべて反対仕訳する"
 
 msgid "Reverse charge"
 msgstr "逆請求"
+msgstr "リバースチャージ"
 
 msgid "Reverse Charge Sales Tax"
 msgstr "リバースチャージ売上税"
@@ -13149,6 +13196,9 @@ msgstr "スクラップ済み"
 msgid "Search"
 msgstr "検索"
 
+msgid "Search accounts"
+msgstr "アカウントを検索"
+
 msgid "Search accounts..."
 msgstr "アカウントを検索..."
 
@@ -13447,6 +13497,7 @@ msgstr "自己管理"
 
 msgid "Self-hosted or managed"
 msgstr "セルフホストまたはマネージド"
+msgstr "セルフホスト型または管理型"
 
 msgid "Self-onboarding"
 msgstr "セルフオンボーディング"
@@ -14300,6 +14351,16 @@ msgstr "Stripeは請求書を得意先にメール送信するため、住所が
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "このCarbonの得意先に対してまだStripeの顧客がありません。転記すると接続されたアカウントに顧客が作成されます。"
+msgstr "Stripeにはこのメールアドレスを持つカスタマーが既に存在します"
+
+msgid "Stripe Due Date"
+msgstr "Stripe支払期日"
+
+msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
+msgstr "Stripeはカスタマーに請求書をメール送信するため、アドレスが必要です。これはCarbonの連絡先にも保存されます。"
+
+msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
+msgstr "StripeにはこのCarbonカスタマーのカスタマーがまだありません。投稿するとあなたの接続されたアカウントに1つ作成されます。"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "かんばんテーブルに表示するかんばん出力のスタイル"
@@ -14715,6 +14776,7 @@ msgstr "税務減価償却方法"
 
 msgid "Tax exempt"
 msgstr "非課税"
+msgstr "税金免除"
 
 msgid "Tax Exempt"
 msgstr "非課税"
@@ -15578,6 +15640,7 @@ msgstr "これはDiscoveryステップを完了します。"
 
 msgid "This contact has no email address"
 msgstr "この担当者はメールアドレスを持っていません"
+msgstr "この連絡先にはメールアドレスがありません"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "この取引先には未払い金がありません。支払いは掛け金として記録されます。"
@@ -15609,6 +15672,10 @@ msgstr "この請求書には使用可能な期日がありません。Stripeの
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "この請求書は、この Carbon 得意先にすでにリンクされている Stripe 顧客に請求されます。詳細を変更するには、Stripe ダッシュボードで編集してください。"
+msgstr "この請求書には使用可能な支払期日がありません — Stripeのために1つ選択してください。"
+
+msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
+msgstr "この請求書は、このCarbonカスタマーに既にリンクされているStripeカスタマーに請求されます。その詳細を変更するには、Stripeダッシュボードで編集してください。"
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "これは管理環境のため、認証アプリが必須です。"
@@ -15749,6 +15816,10 @@ msgstr "このバージョンは公開済です"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "このバージョンは公開済です。編集するには新しいバージョンを作成してください。"
+msgstr "このバージョンは公開されています"
+
+msgid "This version is published. Create a new version to edit."
+msgstr "このバージョンは公開されています。編集するために新しいバージョンを作成してください。"
 
 msgid "This version's definition could not be read."
 msgstr "このバージョンの定義を読み取ることができませんでした。"
@@ -16152,6 +16223,9 @@ msgstr "2要素認証"
 msgid "Two-factor authentication"
 msgstr "二要素認証"
 
+msgid "Two-Factor Authentication"
+msgstr "2要素認証"
+
 msgid "Two-factor authentication disabled"
 msgstr "二要素認証が無効になりました"
 
@@ -16308,9 +16382,6 @@ msgstr "ロック解除"
 msgid "Unlock with passkey"
 msgstr "パスキーでロック解除"
 
-msgid "Unmapped accounts"
-msgstr "マップされていないアカウント"
-
 msgid "Unmapped dimension values"
 msgstr "マップされていないディメンション値"
 
@@ -16343,6 +16414,10 @@ msgstr "非公開にする"
 
 msgid "Unpublish {name}?"
 msgstr "{name}を非公開にしますか？"
+msgstr "公開を取り消す"
+
+msgid "Unpublish {name}?"
+msgstr "{name}の公開を取り消しますか?"
 
 msgid "Unreceived POs"
 msgstr "未受領PO"
@@ -16704,6 +16779,7 @@ msgstr "バージョン"
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
 msgstr "バージョン {0} は現在公開済であり、置き換えられます。"
+msgstr "バージョン{0}は現在公開されており、置き換えられます。"
 
 msgid "Version:"
 msgstr "バージョン:"
@@ -17589,6 +17665,7 @@ msgstr "Carbonで本番稼働中です"
 
 msgid "You're one step away from your workspace."
 msgstr "ワークスペースの1ステップ手前です。"
+msgstr "ワークスペースまであと1ステップです。"
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "あなた自身のペースでCarbonをセットアップしています"
