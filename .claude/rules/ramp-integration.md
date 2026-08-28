@@ -23,12 +23,29 @@ transaction against Carbon's accounts inside Ramp's UI, marks it "ready to sync"
 `ramp-sync` job pulls it into Carbon already coded — the opposite of the Xero/QBO/Rillet
 providers, which own the data and mirror it out.
 
-> Many Ramp Developer-API field names/values are `// TODO(task-1)`-marked in the code
-> (`sync_status` strings, `payment_method` enum, bill `vendor` object shape, whether
-> `amount` is minor-units, the webhook signing encoding, several POST body shapes) —
-> they are the documented defaults, **pending live-sandbox verification**. Treat any
-> claim below that rests on one of those as provisional; grep `TODO(task-1)` before
-> trusting a specific string/shape.
+> **Live-verified 2026-08-28** (Ramp sandbox, scopes granted). Key corrections that
+> came out of it — see `.ai/research/ramp-api-doc-verification.md` for the full record:
+> - Transaction **`amount` is DEPRECATED and a major-unit (dollar) FLOAT** — read
+>   `entity_amount.value` (signed integer minor-units/cents) instead. The old code read
+>   `amount` as cents and understated every card charge 100×. `RampSignedAmount` =
+>   `{ currency, value }`; `toMinorUnits` handles both it and `CurrencyAmount` (`{amount}`).
+> - Transaction **coding lives on `line_items[].accounting_field_selections[]`** (mirrored
+>   in `accounting_categories`), NOT top-level `accounting_field_selections` (which is `[]`).
+>   The selection's **type is at `category_info.type`** (`GL_ACCOUNT`/`COST_CENTER`), its
+>   `external_id` is the pushed Carbon `account.id`.
+> - **`account` (chart of accounts) is companyGroup-scoped — NO `companyId` column** (PK is
+>   `id` alone). Four sites had `.eq("companyId")` on `account` and all failed hard
+>   (post-card-transaction, pushChartOfAccounts, ramp-sync account verification) — fixed to
+>   `id`-only / `companyGroupId`.
+> - `getJobDatabaseClient(5)` was poisoned by the accounting sweeps' `pool.end()` on the
+>   shared pool ("Cannot use a pool after calling end on the pool") — fixed in `jobs/db.ts`.
+> - Known remaining: a **foreign-currency charge** (merchant currency ≠ settlement) fails the
+>   post-card-transaction line-sum check because `line_item.amount` is in merchant currency
+>   while the header is settlement `entity_amount`. USD-only charges post fine.
+> - Outbound (documented, unverified live): PO create uses `external_id` not `remote_id` and
+>   omits required `currency`/`three_way_match_enabled`; `archiveBill` hits a nonexistent
+>   endpoint (bills have no `/archive` — use `DELETE /bills/{id}`). Webhook signing encoding
+>   is the one thing the public docs don't cover.
 
 ## Pieces
 

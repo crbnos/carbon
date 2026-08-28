@@ -4,6 +4,7 @@ import {
   chunk,
   RAMP_ACCOUNTS_BATCH_SIZE,
   rampClassificationForClass,
+  scaleLinesToTotal,
   scaleRepaymentLines
 } from "../service";
 
@@ -77,5 +78,71 @@ describe("scaleRepaymentLines", () => {
 
   it("returns an empty list for no original lines", () => {
     expect(scaleRepaymentLines([], 5, 10, 2)).toEqual([]);
+  });
+});
+
+describe("scaleLinesToTotal", () => {
+  it("converts a single merchant-currency line to the settlement header total (foreign charge)", () => {
+    // A CAD 608.98 charge that settled at USD 431.68 — the line comes in the
+    // merchant currency and must be scaled to the settlement amount so it sums
+    // to the header (post-card-transaction's invariant).
+    const lines = [{ accountId: "adv", amount: 608.98 }];
+    const scaled = scaleLinesToTotal(lines, 431.68, 2);
+    expect(scaled.map((l) => l.amount)).toEqual([431.68]);
+  });
+
+  it("is a no-op when the lines already sum to the target (same-currency)", () => {
+    const lines = [
+      { accountId: "a", amount: 100 },
+      { accountId: "b", amount: 50 }
+    ];
+    const scaled = scaleLinesToTotal(lines, 150, 2);
+    expect(scaled.map((l) => l.amount)).toEqual([100, 50]);
+  });
+
+  it("scales multiple lines proportionally, residual on the largest so the sum is exact", () => {
+    const lines = [
+      { accountId: "a", amount: 10 },
+      { accountId: "b", amount: 10 },
+      { accountId: "c", amount: 13.33 }
+    ];
+    const scaled = scaleLinesToTotal(lines, 11.11, 2);
+    expect(scaled.map((l) => l.amount)).toEqual([3.33, 3.33, 4.45]);
+    const sum = round(
+      scaled.reduce((acc, l) => acc + l.amount, 0),
+      2
+    );
+    expect(sum).toBe(11.11);
+  });
+
+  it("preserves non-amount fields on each line", () => {
+    const lines = [
+      { accountId: "a", amount: 5, costCenterId: "cc1", description: "x" }
+    ];
+    const [scaled] = scaleLinesToTotal(lines, 10, 2);
+    expect(scaled).toMatchObject({
+      accountId: "a",
+      amount: 10,
+      costCenterId: "cc1",
+      description: "x"
+    });
+  });
+
+  it("degrades a zero raw-sum to the target on the largest line", () => {
+    const lines = [
+      { accountId: "a", amount: 0 },
+      { accountId: "b", amount: 0 }
+    ];
+    const scaled = scaleLinesToTotal(lines, 7, 2);
+    expect(
+      round(
+        scaled.reduce((acc, l) => acc + l.amount, 0),
+        2
+      )
+    ).toBe(7);
+  });
+
+  it("returns an empty list for no lines", () => {
+    expect(scaleLinesToTotal([], 5, 2)).toEqual([]);
   });
 });

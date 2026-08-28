@@ -264,10 +264,27 @@ export async function pushChartOfAccounts(
 
   const { client, metadata } = integration;
 
+  // `account` (chart of accounts) is scoped by companyGroupId, NOT companyId —
+  // it has no companyId column. Resolve the company's group first, then load its
+  // accounts. (Filtering by companyId here errored — "column companyId does not
+  // exist" — so this whole push threw and silently pushed nothing.)
+  const { data: company, error: companyError } = await serviceRole
+    .from("company")
+    .select("companyGroupId")
+    .eq("id", companyId)
+    .single();
+  if (companyError || !company?.companyGroupId) {
+    throw new Error(
+      `Failed to resolve company group for ${companyId}: ${
+        companyError?.message ?? "no companyGroupId"
+      }`
+    );
+  }
+
   const { data: accounts, error } = await serviceRole
     .from("account")
     .select("id, number, name, class")
-    .eq("companyId", companyId)
+    .eq("companyGroupId", company.companyGroupId)
     .eq("isGroup", false)
     .eq("active", true);
 
@@ -627,6 +644,57 @@ export type ScaledRepaymentLine = {
   costCenterId: string | null;
   description: string | null;
 };
+
+/**
+ * Scale a set of lines so their amounts sum EXACTLY to `target` (rounded at
+ * `decimals`), putting the rounding residual on the largest-magnitude line.
+ * PURE. Used to convert a Ramp transaction's line amounts — which come in the
+ * MERCHANT currency — into the settlement currency the header (`entity_amount`)
+ * is in: a foreign card charge otherwise fails post-card-transaction's
+ * "lines must sum to the header" invariant. A no-op for a same-currency
+ * transaction (ratio ≈ 1, residual 0). `rawSum === 0` degrades to a zero ratio
+ * (the whole target lands as the residual on the largest line).
+ */
+export function scaleLinesToTotal<T extends { amount: number }>(
+  lines: T[],
+  target: number,
+  decimals: number
+): T[] {
+  if (lines.length === 0) return [];
+
+  const rawSum = lines.reduce((acc, line) => acc + line.amount, 0);
+  const ratio = rawSum === 0 ? 0 : target / rawSum;
+
+  const scaled = lines.map((line) => ({
+    ...line,
+    amount: round(line.amount * ratio, decimals)
+  }));
+
+  const roundedTarget = round(target, decimals);
+  const sum = round(
+    scaled.reduce((acc, line) => acc + line.amount, 0),
+    decimals
+  );
+  const residual = round(roundedTarget - sum, decimals);
+
+  if (residual !== 0) {
+    let largest = 0;
+    let largestMagnitude = Math.abs(scaled[0]?.amount ?? 0);
+    for (let i = 1; i < scaled.length; i++) {
+      const magnitude = Math.abs(scaled[i]?.amount ?? 0);
+      if (magnitude > largestMagnitude) {
+        largest = i;
+        largestMagnitude = magnitude;
+      }
+    }
+    const largestLine = scaled[largest];
+    if (largestLine) {
+      largestLine.amount = round(largestLine.amount + residual, decimals);
+    }
+  }
+
+  return scaled;
+}
 
 /**
  * Scale a card transaction's original coding lines down to a (possibly partial)

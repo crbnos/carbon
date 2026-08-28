@@ -54,13 +54,31 @@ export function fromMinorUnits(
  * pushed (account.id, costCenter.id); `type` distinguishes GL_ACCOUNT from
  * COST_CENTER and the rest.
  */
+export const RampAccountingCategoryInfoSchema = z
+  .object({
+    external_id: z.string().nullish(),
+    id: z.string().nullish(),
+    name: z.string().nullish(),
+    // The accounting-field TYPE lives HERE per the Ramp OpenAPI spec
+    // (`ApiTransactionAccountingCategoryInfo.type`: GL_ACCOUNT / COST_CENTER /
+    // …), NOT on the selection itself. Verified against
+    // docs.ramp.com/openapi/developer-api.json (2026-08-28).
+    type: z.string().optional()
+  })
+  .passthrough();
+
 export const RampAccountingFieldSelectionSchema = z
   .object({
     id: z.string().optional(),
+    // `external_id` is the Carbon-side id we pushed as the field OPTION
+    // (account.id / costCenter.id) — this part matches the spec.
     external_id: z.string().nullish(),
+    // Legacy/top-level `type` — kept for resilience but the spec puts the type
+    // under `category_info.type` (see schema above). `codeSelections` reads
+    // `category_info.type` first, then falls back here.
     type: z.string().optional(),
     name: z.string().nullish(),
-    category_info: z.unknown().optional()
+    category_info: RampAccountingCategoryInfoSchema.optional()
   })
   .passthrough();
 
@@ -93,13 +111,37 @@ export const RampCardHolderSchema = z
   })
   .passthrough();
 
+/**
+ * `ApiSignedAmount` (Ramp OpenAPI): `{ currency, value }` where `value` is a
+ * SIGNED integer in the currency's smallest denomination (cents for USD).
+ * Distinct from `RampCurrencyAmount` (`{ amount, currency_code }`) — the newer
+ * transaction endpoints return `entity_amount` / `merchant_amount` as this
+ * shape. Verified against docs.ramp.com/openapi/developer-api.json (2026-08-28).
+ */
+export const RampSignedAmountSchema = z
+  .object({
+    value: z.number().int(),
+    currency: z.string().optional()
+  })
+  .passthrough();
+
+export type RampSignedAmount = z.infer<typeof RampSignedAmountSchema>;
+
 export const RampTransactionSchema = z
   .object({
     id: z.string(),
     state: z.string().optional(),
     sync_status: z.string().optional(),
-    // TODO(task-1): verify whether `amount` is minor units or a decimal number.
+    // DEPRECATED per the Ramp spec ("Use `entity_amount`") and it is a bare
+    // `number` in MAJOR units (dollars), not minor units. Consumers must prefer
+    // `entity_amount.value` (signed integer cents) below; `amount` is kept only
+    // as a last-resort fallback. Verified 2026-08-28 against the OpenAPI spec.
     amount: z.number().optional(),
+    // The settlement amount to the entity — signed integer in minor units
+    // (cents). This is the field ramp-sync should read for card transactions.
+    entity_amount: RampSignedAmountSchema.nullish(),
+    // The amount the merchant originally charged — signed integer minor units.
+    merchant_amount: RampSignedAmountSchema.nullish(),
     currency_code: z.string().optional(),
     currency: z.string().optional(),
     merchant_name: z.string().nullish(),

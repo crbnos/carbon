@@ -295,11 +295,16 @@ serve(async (req: Request) => {
         ...lines.map((l) => l.accountId),
       ].filter((id): id is string => Boolean(id));
 
+      // `account` (chart of accounts) is scoped by companyGroupId, not
+      // companyId — its PK is `id` alone and ids are globally unique. The ids
+      // here come from this company's own cardTransaction + lines, so an
+      // id-only lookup is both correct and tenant-safe. (An `.eq("companyId")`
+      // here errors: the column does not exist on `account`. Mirrors
+      // post-purchase-invoice / post-memo, which also filter by id only.)
       const accountsResult = await client
         .from("account")
         .select("id, class")
-        .in("id", [...new Set(accountIds)])
-        .eq("companyId", companyId);
+        .in("id", [...new Set(accountIds)]);
       if (accountsResult.error)
         throw new Error("Failed to fetch card transaction accounts");
 

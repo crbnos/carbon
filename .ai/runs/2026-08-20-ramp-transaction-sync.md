@@ -36,6 +36,10 @@
   - `16d36618e8` — **ramp-sync tenancy + financial correctness**: companyId scoping on 11 service-role writes; stuck-Draft false-confirm (`.neq status Draft` on the dup guard); `cardTransaction.exchangeRate` set from stored currency rate (was defaulting to 1 → foreign face value in base GL); PO-convert dedupe on retry; N+1 reconfirm batched.
 - Residual (documented, not blocking): webhook challenge one-call amplification + no replay check (idempotent/`concurrency:1` mitigated); post→link atomicity window (mapping-idempotent, narrow); cursor lost-update (bounded); outbound create-response parse + bill/PO line-amount units are `TODO(task-1)` sandbox-gated; ramp-sync is 2730 lines (extraction is a follow-up).
 
+## Resume pass (2026-08-27)
+- Found 5 uncommitted files in the tree. Triaged: generated-types FK-order churn REVERTED per lessons.md (turbo ride-along); committed `1ab07b71aa` posting-policy golden-list fix ('Card Transaction' in POSTING_SYNC_DEFAULT_SOURCE_TYPES — the full ee suite was failing on the branch), `ece3cf6e78` Rillet webhook vault fix (token scrubbed from metadata since 20260817122916 → route 401'd every delivery; now resolves secrets first), `d19f048d72` official Ramp wordmark logo. LEFT UNCOMMITTED: `apps/erp/app/components/SettingsSectionHeader.tsx` styling change (references financial-reporting page; provenance unclear, not obviously Ramp work — flagged to Brad).
+- Gates: erp+ee typecheck green; full ee suite 576/576; repo-wide `pnpm test` 24/24 tasks green (execute Step-5 finishing gate, previously unrun).
+
 ## Outcome
 - **Feature code-complete** on `ramp-transaction-sync-integration` (~19 commits). All gates green: scoped typechecks (ee/jobs/erp), deno builder tests (8), ee ramp vitest (20), 0 missing translations (13 locales), self-review Must-fixes + high-value Risks fixed.
 - BLOCKED on user for the two verification tasks only: Task 1 (live sandbox endpoint probe — resolves the `TODO(task-1)` field-name assumptions) + Task 14 (browser verification) need Ramp sandbox `clientId`/`clientSecret` (and a stable local stack; brisbane Postgres was flapping during this pass).

@@ -56,7 +56,7 @@ async function convergeRamp(
     // packages. The non-literal specifier keeps TS from resolving/type-checking a
     // module ee cannot see.
     const jobsModule = "@carbon/jobs";
-    const jobs = (await import(jobsModule)) as {
+    const jobs = (await import(/* @vite-ignore */ jobsModule)) as {
       trigger: (
         task: string,
         payload: { companyId: string; reason: string }

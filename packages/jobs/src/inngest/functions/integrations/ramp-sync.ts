@@ -42,6 +42,7 @@ import {
   type RampTransfer,
   resolveEmployeeSupplier,
   resolveRampSupplier,
+  scaleLinesToTotal,
   scaleRepaymentLines
 } from "@carbon/ee/ramp.server";
 import { getAppUrl } from "@carbon/env";
@@ -155,7 +156,11 @@ type Ctx = {
  */
 function codeSelections(
   selections:
-    | Array<{ external_id?: string | null; type?: string }>
+    | Array<{
+        external_id?: string | null;
+        type?: string;
+        category_info?: { type?: string } | null;
+      }>
     | null
     | undefined
 ): { accountId: string | null; costCenterId: string | null } {
@@ -163,9 +168,14 @@ function codeSelections(
   let costCenterId: string | null = null;
   for (const selection of selections ?? []) {
     if (!selection.external_id) continue;
-    if (selection.type === GL_ACCOUNT && !accountId) {
+    // The field TYPE is at `category_info.type` per the Ramp OpenAPI spec
+    // (verified 2026-08-28); the legacy top-level `type` is only a fallback.
+    // Reading `selection.type` alone left this always-undefined, so no line
+    // ever resolved an account/cost-center — every line failed "uncoded".
+    const fieldType = selection.category_info?.type ?? selection.type;
+    if (fieldType === GL_ACCOUNT && !accountId) {
       accountId = selection.external_id;
-    } else if (selection.type === COST_CENTER && !costCenterId) {
+    } else if (fieldType === COST_CENTER && !costCenterId) {
       costCenterId = selection.external_id;
     }
   }
@@ -180,13 +190,26 @@ function invoiceDeepLinkUrl(invoiceRowId: string): string {
   return `${getAppUrl()}${PURCHASE_INVOICE_PATH}/${invoiceRowId}`;
 }
 
-/** Extract the integer minor-unit amount from a Ramp money value. */
+/**
+ * Extract the integer minor-unit amount from a Ramp money value. Handles both
+ * money shapes the API returns: `CurrencyAmount` (`{ amount }`) and
+ * `ApiSignedAmount` (`{ value }`, used by transaction `entity_amount` /
+ * `merchant_amount`). A bare number is assumed already-minor (legacy callers).
+ */
 function toMinorUnits(
-  value: number | RampCurrencyAmount | null | undefined
+  value:
+    | number
+    | RampCurrencyAmount
+    | { value: number; currency?: string }
+    | null
+    | undefined
 ): number | null {
   if (value === null || value === undefined) return null;
   if (typeof value === "number") return value;
-  return value.amount;
+  if ("value" in value && typeof value.value === "number") return value.value;
+  if ("amount" in value && typeof value.amount === "number")
+    return value.amount;
+  return null;
 }
 
 async function getDecimals(ctx: Ctx, currencyCode: string): Promise<number> {
@@ -387,13 +410,29 @@ async function buildTransactionLines(
     });
   }
 
-  // Verify every coded account really exists in this company (one query).
-  const accountIds = [...new Set(lines.map((line) => line.accountId))];
-  const { data: accounts, error } = await ctx.client
+  // Ramp line-item amounts are in the MERCHANT currency; the header amount is
+  // the SETTLEMENT amount (`entity_amount`). For a foreign transaction the two
+  // differ, so the raw lines would not sum to the header and
+  // post-card-transaction (lines must sum to the header) would reject the whole
+  // charge. Scale the lines to the settlement header, residual on the largest
+  // line — a no-op for a same-currency transaction (ratio ≈ 1, residual 0).
+  const settledLines = scaleLinesToTotal(lines, headerAmount, decimals);
+
+  // Verify every coded account really exists in this company's group (one
+  // query). `account` (chart of accounts) is scoped by companyGroupId, NOT
+  // companyId — it has no companyId column, so filtering by it errored and made
+  // EVERY coded card transaction fail "Failed to verify accounts". The ids come
+  // from Ramp coding (the account.id Carbon pushed), so scoping to the group is
+  // both correct and tenant-safe.
+  const accountIds = [...new Set(settledLines.map((line) => line.accountId))];
+  let accountQuery = ctx.client
     .from("account")
     .select("id")
-    .eq("companyId", ctx.companyId)
     .in("id", accountIds);
+  if (ctx.companyGroupId) {
+    accountQuery = accountQuery.eq("companyGroupId", ctx.companyGroupId);
+  }
+  const { data: accounts, error } = await accountQuery;
   if (error) {
     return { error: `Failed to verify accounts: ${error.message}` };
   }
@@ -402,7 +441,7 @@ async function buildTransactionLines(
     return { error: uncoded };
   }
 
-  return { lines };
+  return { lines: settledLines };
 }
 
 /**
@@ -1808,10 +1847,18 @@ export const rampSyncFunction = inngest.createFunction(
             }
 
             const currencyCode =
-              tx.currency_code ?? tx.currency ?? ctx.baseCurrency;
+              tx.entity_amount?.currency ??
+              tx.currency_code ??
+              tx.currency ??
+              ctx.baseCurrency;
             const decimals = await getDecimals(ctx, currencyCode);
-            const rawMinor = tx.amount ?? 0;
-            // TODO(task-1): confirm `amount` is minor units (not a decimal).
+            // Prefer `entity_amount.value` (signed integer minor units / cents)
+            // — the non-deprecated settlement amount per the Ramp OpenAPI spec.
+            // The top-level `amount` is DEPRECATED and a major-unit (dollar)
+            // float, so reading it as minor units understated every charge 100×.
+            // Fall back to it only when entity_amount is absent (rare: no valid
+            // settlement currency). Verified 2026-08-28 against the spec.
+            const rawMinor = toMinorUnits(tx.entity_amount) ?? tx.amount ?? 0;
             const isCredit =
               rawMinor < 0 || Boolean(tx.original_transaction_id);
             const headerAmount = fromMinorUnits(
