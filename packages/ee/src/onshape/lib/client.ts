@@ -65,7 +65,11 @@ const DEV_CACHEABLE_PATHS = [
   /^\/api\/v\d+\/partstudios\/.*\/massproperties/,
   /^\/api\/v\d+\/documents\//,
   /^\/api\/v\d+\/assemblies\/.*\/bom/,
-  /^\/api\/v\d+\/metadata\//
+  /^\/api\/v\d+\/metadata\//,
+  // Document revisions: content changes only when a release happens. Dev
+  // caching means a fresh Onshape release can take up to the TTL (10 min) to
+  // show in a dev panel — flush the onshape-dev-cache:* keys to see it sooner.
+  /^\/api\/v\d+\/revisions\/d\//
 ];
 
 export interface OnshapeMassProperties {
@@ -128,6 +132,8 @@ export interface OnshapeRevision {
   name?: string;
   releaseId?: string;
   releaseName?: string;
+  releaseCreatedDate?: string;
+  configuration?: string | null;
   isObsolete?: boolean;
   [key: string]: unknown;
 }
@@ -424,6 +430,23 @@ export class OnshapeClient {
         unknown
       >
     >("GET", nextUrl);
+  }
+
+  // Released revisions for ONE document — the panel's Releases list. Every
+  // item carries releaseId/releaseName plus the released versionId/elementId,
+  // so grouping by releaseId reconstructs the release packages without a
+  // per-package call (Onshape has no packages-by-document endpoint).
+  async getDocumentRevisions(
+    documentId: string
+  ): Promise<
+    { items: OnshapeRevision[]; next?: string | null } & Record<string, unknown>
+  > {
+    return this.request<
+      { items: OnshapeRevision[]; next?: string | null } & Record<
+        string,
+        unknown
+      >
+    >("GET", `/api/v10/revisions/d/${documentId}`);
   }
 
   // --- Release-asset export ---------------------------------------------------
