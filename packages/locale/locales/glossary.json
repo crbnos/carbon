@@ -4335,9 +4335,7 @@
         "tr": "Yetkinlik",
         "ko": "역량"
       },
-      "englishVariants": [
-        "Abilities"
-      ]
+      "englishVariants": ["Abilities"]
     },
     {
       "term": "Contractor",
@@ -7864,9 +7862,7 @@
         "tr": "İptal edildi",
         "ko": "취소됨"
       },
-      "englishVariants": [
-        "Canceled"
-      ]
+      "englishVariants": ["Canceled"]
     },
     {
       "term": "Closed",
