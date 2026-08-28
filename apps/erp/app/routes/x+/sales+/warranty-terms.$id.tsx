@@ -43,7 +43,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
-    update: "sales"
+    update: "sales",
+    role: "employee"
   });
 
   const formData = await request.formData();

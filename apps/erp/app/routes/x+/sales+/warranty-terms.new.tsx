@@ -12,7 +12,8 @@ import { getParams, path, requestReferrer } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requirePermissions(request, {
-    create: "sales"
+    create: "sales",
+    role: "employee"
   });
 
   return null;
@@ -21,7 +22,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
-    create: "sales"
+    create: "sales",
+    role: "employee"
   });
 
   const formData = await request.formData();

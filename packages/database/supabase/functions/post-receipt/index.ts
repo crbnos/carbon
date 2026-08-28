@@ -2915,6 +2915,11 @@ serve(async (req: Request) => {
               itemId: receiptLine.itemId,
               quantity: round(receivedQuantity),
               cost: 0,
+              // Without this the layer is never consumable (calculateCOGS only
+              // selects layers with remainingQuantity > 0), so shipping the
+              // customer's unit back out would consume a real VALUED layer
+              // instead of the zero-value one it came in on.
+              remainingQuantity: round(receivedQuantity),
               createdBy: userId,
               companyId,
             });

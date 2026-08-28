@@ -89,6 +89,7 @@ export default function RepairOrderDetailsRoute() {
         <RepairChargesTable
           repairOrderId={id}
           status={routeData.repairOrder.status}
+          currencyCode={routeData.repairOrder.currencyCode}
           charges={routeData.charges}
           lines={routeData.lines}
         />

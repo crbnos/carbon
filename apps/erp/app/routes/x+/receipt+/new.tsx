@@ -121,9 +121,13 @@ export async function action({ request }: ActionFunctionArgs) {
         ? "return"
         : "intake";
 
+      // A draft carries no leg of its own, so reuse has to be proved from what
+      // it actually holds: the custody state of the repair lines behind its
+      // receipt lines. Without this, asking to receive units back from the
+      // supplier could hand you the intake draft instead.
       const existingRepairReceipt = await client
         .from("receipt")
-        .select("id")
+        .select("id, receiptLine(lineId)")
         .eq("sourceDocument", "Repair Order")
         .eq("sourceDocumentId", sourceDocumentId)
         .eq("status", "Draft")
@@ -131,8 +135,43 @@ export async function action({ request }: ActionFunctionArgs) {
         .order("createdAt", { ascending: false })
         .limit(1)
         .maybeSingle();
+      if (existingRepairReceipt.error) {
+        throw redirect(
+          path.to.repairOrderDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              existingRepairReceipt.error,
+              "Failed to check for an existing receipt"
+            )
+          )
+        );
+      }
       if (existingRepairReceipt.data) {
-        throw redirect(path.to.receiptDetails(existingRepairReceipt.data.id));
+        const draftLineIds = (existingRepairReceipt.data.receiptLine ?? [])
+          .map((line: { lineId: string | null }) => line.lineId)
+          .filter(Boolean) as string[];
+
+        const eligibleStatus = repairLeg === "intake" ? "Pending" : "At Supplier";
+        const draftRepairLines =
+          draftLineIds.length > 0
+            ? await client
+                .from("repairOrderLine")
+                .select("id, status")
+                .in("id", draftLineIds)
+                .eq("companyId", companyId)
+            : { data: [], error: null };
+
+        // An empty draft belongs to neither leg, so it is safe to reuse.
+        const matchesLeg =
+          draftLineIds.length === 0 ||
+          (draftRepairLines.data ?? []).every(
+            (line) => line.status === eligibleStatus
+          );
+
+        if (matchesLeg) {
+          throw redirect(path.to.receiptDetails(existingRepairReceipt.data.id));
+        }
       }
 
       const repairReceipt = await serviceRole.functions.invoke<{

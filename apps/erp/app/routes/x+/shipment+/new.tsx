@@ -86,16 +86,40 @@ export async function action({ request }: ActionFunctionArgs) {
         ? "supplier"
         : "customer";
 
-      const existingRepairShipment = await client
+      // The create function stamps supplierId on the supplier leg and
+      // customerId on the customer leg, so the party column IS the leg
+      // discriminator — filter on it rather than handing one leg the other's
+      // draft.
+      let existingRepairShipmentQuery = client
         .from("shipment")
         .select("id")
         .eq("sourceDocument", "Repair Order")
         .eq("sourceDocumentId", sourceDocumentId)
         .eq("status", "Draft")
-        .eq("companyId", companyId)
+        .eq("companyId", companyId);
+
+      existingRepairShipmentQuery =
+        leg === "supplier"
+          ? existingRepairShipmentQuery.not("supplierId", "is", null)
+          : existingRepairShipmentQuery.not("customerId", "is", null);
+
+      const existingRepairShipment = await existingRepairShipmentQuery
         .order("createdAt", { ascending: false })
         .limit(1)
         .maybeSingle();
+
+      if (existingRepairShipment.error) {
+        throw redirect(
+          path.to.repairOrderDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              existingRepairShipment.error,
+              "Failed to check for an existing shipment"
+            )
+          )
+        );
+      }
       if (existingRepairShipment.data) {
         throw redirect(
           path.to.shipmentDetails(existingRepairShipment.data.id)

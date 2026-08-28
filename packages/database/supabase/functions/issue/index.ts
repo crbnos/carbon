@@ -2226,36 +2226,53 @@ serve(async (req: Request) => {
           charge.data.billingCode === "Warranty" ||
           charge.data.billingCode === "No Charge"
         ) {
-          if (charge.data.repairOrderLineId) {
-            const line = await client
-              .from("repairOrderLine")
-              .select("id, itemId, warrantyRegistrationId, repairOrderId")
-              .eq("id", charge.data.repairOrderLineId)
-              .eq("companyId", companyId)
-              .single();
-            if (line.data?.warrantyRegistrationId) {
-              const registration = await client
+          if (!charge.data.repairOrderLineId) {
+            throw new Error(
+              "A covered charge must be attached to the unit it repairs"
+            );
+          }
+
+          const line = await client
+            .from("repairOrderLine")
+            .select("id, itemId, warrantyRegistrationId, repairOrderId")
+            .eq("id", charge.data.repairOrderLineId)
+            .eq("companyId", companyId)
+            .single();
+          if (!line.data) {
+            throw new Error("The unit this charge belongs to could not be read");
+          }
+
+          if (line.data.warrantyRegistrationId) {
+            const [registration, order] = await Promise.all([
+              client
                 .from("warrantyRegistration")
                 .select("id, itemId, customerId")
                 .eq("id", line.data.warrantyRegistrationId)
                 .eq("companyId", companyId)
-                .single();
-              const order = await client
+                .single(),
+              client
                 .from("repairOrder")
                 .select("customerId")
                 .eq("id", line.data.repairOrderId)
                 .eq("companyId", companyId)
-                .single();
-              if (
-                registration.data &&
-                order.data &&
-                (registration.data.itemId !== line.data.itemId ||
-                  registration.data.customerId !== order.data.customerId)
-              ) {
-                throw new Error(
-                  "The warranty registration on this unit does not match its item or customer"
-                );
-              }
+                .single(),
+            ]);
+
+            // Fail CLOSED: a row we cannot read is not proof of coverage. The
+            // whole point of this check is that an unmatched registration must
+            // never make a charge free.
+            if (!registration.data || !order.data) {
+              throw new Error(
+                "Could not verify the warranty registration on this unit"
+              );
+            }
+            if (
+              registration.data.itemId !== line.data.itemId ||
+              registration.data.customerId !== order.data.customerId
+            ) {
+              throw new Error(
+                "The warranty registration on this unit does not match its item or customer"
+              );
             }
           }
         }
@@ -2294,6 +2311,26 @@ serve(async (req: Request) => {
           .toString();
 
         await db.transaction().execute(async (trx) => {
+          // Claim the charge FIRST, matching on issuedAt IS NULL. The guard
+          // above read outside the transaction, so two concurrent requests
+          // (a double click on Issue Part) would both pass it and both consume
+          // stock. Only the request that actually flips the row may post.
+          const claimed = await trx
+            .updateTable("repairOrderCharge")
+            .set({
+              unitCost,
+              issuedAt: new Date().toISOString(),
+              updatedBy: userId,
+            })
+            .where("id", "=", chargeId)
+            .where("companyId", "=", companyId)
+            .where("issuedAt", "is", null)
+            .executeTakeFirst();
+
+          if (Number(claimed?.numUpdatedRows ?? 0) === 0) {
+            throw new Error("This charge has already been issued");
+          }
+
           if (item.data?.itemTrackingType !== "Non-Inventory") {
             await trx
               .insertInto("itemLedger")
@@ -2312,16 +2349,6 @@ serve(async (req: Request) => {
               .execute();
           }
 
-          await trx
-            .updateTable("repairOrderCharge")
-            .set({
-              unitCost,
-              issuedAt: new Date().toISOString(),
-              updatedBy: userId,
-            })
-            .where("id", "=", chargeId)
-            .where("companyId", "=", companyId)
-            .execute();
         });
 
         return jsonResponse(

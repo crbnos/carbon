@@ -7976,12 +7976,18 @@ export async function getWarrantyCoverage(
   });
 
   const candidates = rows.map((row) => coverageVerdict(row, args.today));
+
+  // Prefer a registration that still covers the unit today. Recency alone would
+  // let an expired-but-newer row (a lapsed repair warranty, say) shadow the
+  // original that is still live. Within each group the total order above holds.
+  const stillCovered = candidates.filter(
+    (verdict) => verdict.partsInWarranty || verdict.laborInWarranty
+  );
+  const preferred = stillCovered[0] ?? candidates[0] ?? null;
   return {
     data: {
       verdict:
-        "itemId" in args && !("trackedEntityId" in args)
-          ? null
-          : (candidates[0] ?? null),
+        "itemId" in args && !("trackedEntityId" in args) ? null : preferred,
       candidates
     },
     error: null
@@ -9058,12 +9064,19 @@ export async function applyRepairWarranty(
         "repairOrderLine.id as id",
         "repairOrderLine.itemId as itemId",
         "repairOrderLine.quantity as quantity",
-        "repairOrder.customerId as customerId"
+        "repairOrder.customerId as customerId",
+        "repairOrder.status as orderStatus"
       ])
       .where("repairOrderLine.id", "=", lineId)
       .where("repairOrderLine.companyId", "=", companyId)
       .executeTakeFirst();
     if (!line) throw new Error("Repair line not found");
+    // A settled repair order must not keep issuing warranties.
+    if (line.orderStatus === "Completed" || line.orderStatus === "Cancelled") {
+      throw new Error(
+        `Cannot register a repair warranty on a ${line.orderStatus} repair order`
+      );
+    }
 
     const term = await trx
       .selectFrom("warrantyTerm")

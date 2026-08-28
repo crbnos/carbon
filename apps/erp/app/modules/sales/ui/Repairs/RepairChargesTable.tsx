@@ -16,7 +16,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuCirclePlus, LuHandCoins, LuTrash } from "react-icons/lu";
 import { useFetcher } from "react-router";
-import { usePermissions } from "~/hooks";
+import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import RepairChargeForm from "./RepairChargeForm";
 import type { RepairOrderCharge, RepairOrderLine } from "./types";
@@ -24,6 +24,7 @@ import type { RepairOrderCharge, RepairOrderLine } from "./types";
 type RepairChargesTableProps = {
   repairOrderId: string;
   status: string;
+  currencyCode: string;
   charges: RepairOrderCharge[];
   lines: RepairOrderLine[];
 };
@@ -31,11 +32,13 @@ type RepairChargesTableProps = {
 const RepairChargesTable = ({
   repairOrderId,
   status,
+  currencyCode,
   charges,
   lines
 }: RepairChargesTableProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
+  const currencyFormatter = useCurrencyFormatter({ currency: currencyCode });
   const fetcher = useFetcher();
   const newCharge = useDisclosure();
 
@@ -110,7 +113,9 @@ const RepairChargesTable = ({
                     </div>
                   </Td>
                   <Td className="tabular-nums">{charge.quantity}</Td>
-                  <Td className="tabular-nums">{charge.unitPrice}</Td>
+                  <Td className="tabular-nums">
+                    {currencyFormatter.format(Number(charge.unitPrice))}
+                  </Td>
                   <Td>{charge.billingCode}</Td>
                   <Td>
                     {charge.issuedAt ? (
@@ -182,7 +187,7 @@ const RepairChargesTable = ({
               <Trans>Billable total</Trans>
             </span>
             <span className="text-sm font-semibold tabular-nums">
-              {billableTotal.toFixed(2)}
+              {currencyFormatter.format(billableTotal)}
             </span>
           </HStack>
         </CardContent>

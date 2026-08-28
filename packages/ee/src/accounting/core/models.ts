@@ -388,7 +388,10 @@ export const POSTING_POLICY: Record<
   },
   "Repair Consumption": {
     representation: "journal",
-    defaultEnabled: true,
+    // OFF by default, like the return source types: a new journal source must
+    // not start syncing to an existing customer's ledger without them opting
+    // in. POSTING_SYNC_DEFAULT_SOURCE_TYPES is frozen for that parity.
+    defaultEnabled: false,
     defaultGranularity: "individual"
   },
   "Inbound Inspection": {

@@ -53,10 +53,14 @@ export async function stampWarrantyRegistrations(
   // One read for every item's terms — never per line.
   const items = await trx
     .selectFrom("item")
-    .select(["id", "warrantyTermId", "supplierWarrantyTermId"])
+    .select(["id", "warrantyTermId", "supplierWarrantyTermId", "itemTrackingType"])
     .where("id", "in", itemIds)
     .where("companyId", "=", companyId)
     .execute();
+
+  const trackingTypeByItem = new Map(
+    items.map((item) => [item.id, item.itemTrackingType])
+  );
 
   const termIds = [
     ...new Set(
@@ -79,13 +83,26 @@ export async function stampWarrantyRegistrations(
 
   // Month arithmetic in SQL: Postgres clamps day-of-month the way a warranty
   // should (31 Jan + 1 month = 28 Feb), and no JS Date is involved.
-  const addMonths = async (months: number | null): Promise<string | null> => {
+  // Postgres clamps day-of-month the way a warranty should (31 Jan + 1 month =
+  // 28 Feb), so the arithmetic stays in SQL — but it is resolved ONCE per
+  // (base date, duration) pair rather than once per registration row.
+  const dateCache = new Map<string, string | null>();
+  const addMonthsFrom = async (
+    base: string,
+    months: number | null
+  ): Promise<string | null> => {
     if (months === null || months === undefined) return null;
+    const key = `${base}::${months}`;
+    const cached = dateCache.get(key);
+    if (cached !== undefined) return cached;
     const row = await sql<{ d: string }>`
-      select to_char((${today}::date + (${months} || ' months')::interval)::date, 'YYYY-MM-DD') as d
+      select to_char((${base}::date + (${months} || ' months')::interval)::date, 'YYYY-MM-DD') as d
     `.execute(trx);
-    return row.rows[0]?.d ?? null;
+    const value = row.rows[0]?.d ?? null;
+    dateCache.set(key, value);
+    return value;
   };
+  const addMonths = (months: number | null) => addMonthsFrom(today, months);
 
   // Supplier warranty is advisory provenance: resolve it only from a DIRECT
   // purchase-receipt ancestor of the entity. Anything ambiguous stays NULL
@@ -103,6 +120,11 @@ export async function stampWarrantyRegistrations(
       .where("companyId", "=", companyId)
       .execute();
 
+    // Collect the receipt ids first and read them in ONE query — a shipment of
+    // a few hundred serials would otherwise issue a few hundred round trips
+    // inside the posting transaction.
+    const receiptIdByEntity = new Map<string, string>();
+    const supplierIdByEntity = new Map<string, string>();
     for (const entity of entities) {
       const attributes = (entity.attributes ?? {}) as Record<string, unknown>;
       const supplierId = attributes["Supplier"];
@@ -110,17 +132,30 @@ export async function stampWarrantyRegistrations(
       if (typeof supplierId !== "string" || typeof receiptId !== "string") {
         continue;
       }
-      const receipt = await trx
+      receiptIdByEntity.set(entity.id, receiptId);
+      supplierIdByEntity.set(entity.id, supplierId);
+    }
+
+    const receiptIds = [...new Set(receiptIdByEntity.values())];
+    if (receiptIds.length > 0) {
+      const receipts = await trx
         .selectFrom("receipt")
-        .select(["postingDate"])
-        .where("id", "=", receiptId)
+        .select(["id", "postingDate"])
+        .where("id", "in", receiptIds)
         .where("companyId", "=", companyId)
-        .executeTakeFirst();
-      if (receipt?.postingDate) {
-        supplierByEntity.set(entity.id, {
-          supplierId,
-          receiptDate: receipt.postingDate,
-        });
+        .execute();
+      const postingDateByReceipt = new Map(
+        receipts
+          .filter((receipt) => receipt.postingDate)
+          .map((receipt) => [receipt.id, receipt.postingDate as string])
+      );
+
+      for (const [entityId, receiptId] of receiptIdByEntity) {
+        const receiptDate = postingDateByReceipt.get(receiptId);
+        const supplierId = supplierIdByEntity.get(entityId);
+        if (receiptDate && supplierId) {
+          supplierByEntity.set(entityId, { supplierId, receiptDate });
+        }
       }
     }
   }
@@ -182,12 +217,10 @@ export async function stampWarrantyRegistrations(
         // The supplier's clock starts when WE received the unit.
         const months =
           supplierTerm.partsDurationMonths ?? supplierTerm.laborDurationMonths;
-        if (months !== null && months !== undefined) {
-          const row = await sql<{ d: string }>`
-            select to_char((${provenance.receiptDate}::date + (${months} || ' months')::interval)::date, 'YYYY-MM-DD') as d
-          `.execute(trx);
-          supplierWarrantyExpirationDate = row.rows[0]?.d ?? null;
-        }
+        supplierWarrantyExpirationDate = await addMonthsFrom(
+          provenance.receiptDate,
+          months ?? null
+        );
       }
 
       const readableId = await getNextSequence(
@@ -227,16 +260,8 @@ export async function stampWarrantyRegistrations(
       // untracked item (quantity row), but a TRACKED item would have to be
       // registered with a null identity, which tracked coverage could never
       // find again. Skip it and let a manual registration fix it.
-      const trackingType = await trx
-        .selectFrom("item")
-        .select(["itemTrackingType"])
-        .where("id", "=", source.itemId)
-        .where("companyId", "=", companyId)
-        .executeTakeFirst();
-      if (
-        trackingType?.itemTrackingType === "Serial" ||
-        trackingType?.itemTrackingType === "Batch"
-      ) {
+      const trackingType = trackingTypeByItem.get(source.itemId);
+      if (trackingType === "Serial" || trackingType === "Batch") {
         continue;
       }
       inserts.push(await buildRow(null, source.quantity));

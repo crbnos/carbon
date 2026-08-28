@@ -1,3 +1,4 @@
+import type { Database } from "@carbon/database";
 import { Status } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
@@ -15,25 +16,10 @@ import { Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { path } from "~/utils/path";
 
-// Every column of a Postgres view is nullable to the type generator, so the
-// row type mirrors that rather than fighting it with casts at the call site.
-type WarrantyRegistration = {
-  id: string | null;
-  warrantyRegistrationId: string | null;
-  itemReadableId: string | null;
-  itemName: string | null;
-  customerName: string | null;
-  serialNumber: string | null;
-  warrantyTermName: string | null;
-  supplierName: string | null;
-  startDate: string | null;
-  partsExpirationDate: string | null;
-  laborExpirationDate: string | null;
-  partsStatus: string | null;
-  laborStatus: string | null;
-  source: string | null;
-  quantity: number | null;
-};
+// The generated view row — duplicating the shape here would drift the moment
+// the view changes.
+type WarrantyRegistration =
+  Database["public"]["Views"]["warrantyRegistrations"]["Row"];
 
 type WarrantyRegistrationsTableProps = {
   data: WarrantyRegistration[];

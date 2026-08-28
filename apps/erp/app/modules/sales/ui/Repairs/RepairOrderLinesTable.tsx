@@ -143,7 +143,8 @@ const RepairOrderLinesTable = ({
                           </Button>
                         )}
                       {/* Applying a repair warranty writes a NEW registration. */}
-                      {line.status === "Repaired" &&
+                      {isOpen &&
+                        line.status === "Repaired" &&
                         warrantyTerms.length > 0 && (
                           <select
                             className="text-sm border rounded-md px-2 py-1 bg-background"

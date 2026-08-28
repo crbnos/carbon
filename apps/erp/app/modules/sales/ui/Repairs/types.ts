@@ -1,36 +1,15 @@
-export type RepairOrderLine = {
-  id: string;
-  lineNumber: number;
-  itemId: string;
-  quantity: number;
-  status: string;
-  underWarranty: boolean;
-  warrantyRegistrationId: string | null;
-  returnReasonId: string | null;
-  closedComplete: boolean;
-  item: {
-    readableIdWithRevision: string | null;
-    name: string | null;
-    itemTrackingType: string | null;
-  } | null;
-  returnReason: { name: string } | null;
-  repairOrderLineTrackedEntity: {
-    trackedEntityId: string;
-    quantity: number;
-    trackedEntity: { readableId: string | null; status: string | null } | null;
-  }[];
-};
+import type {
+  getRepairOrderCharges,
+  getRepairOrderLines
+} from "~/modules/sales";
 
-export type RepairOrderCharge = {
-  id: string;
-  repairOrderLineId: string | null;
-  chargeType: string;
-  itemId: string | null;
-  description: string | null;
-  quantity: number;
-  unitPrice: number;
-  unitCost: number;
-  billingCode: string;
-  issuedAt: string | null;
-  item: { readableIdWithRevision: string | null; name: string | null } | null;
-};
+// Derived from the service reads the route actually performs — changing a
+// select() then shows up here as a type error rather than as a runtime
+// surprise in the table.
+export type RepairOrderLine = NonNullable<
+  Awaited<ReturnType<typeof getRepairOrderLines>>["data"]
+>[number];
+
+export type RepairOrderCharge = NonNullable<
+  Awaited<ReturnType<typeof getRepairOrderCharges>>["data"]
+>[number];

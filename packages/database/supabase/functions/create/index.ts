@@ -1470,6 +1470,7 @@ serve(async (req: Request) => {
             .from("receipt")
             .select("*")
             .eq("id", existingReceiptId)
+            .eq("companyId", companyId)
             .maybeSingle(),
         ]);
 
@@ -2734,6 +2735,7 @@ serve(async (req: Request) => {
             .from("shipment")
             .select("*")
             .eq("id", existingShipmentId)
+            .eq("companyId", companyId)
             .maybeSingle(),
         ]);
 
