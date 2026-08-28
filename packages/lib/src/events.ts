@@ -621,7 +621,7 @@ export type Events = {
       wvm: "w" | "v";
       wvmId: string;
       elementId: string;
-      elementKind: "partstudio" | "assembly";
+      elementKind: "partstudio" | "assembly" | "drawing";
       partId?: string;
       assetBaseName?: string;
     };
