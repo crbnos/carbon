@@ -938,9 +938,6 @@ msgstr "Należności"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Należności za kwoty należne od klientów"
 
-msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
-msgstr "Konta z domyślnych wpisów księgowych lub historii dowodów, które nie mają jeszcze mapowania dostawcy."
-
 msgid "Accumulated Depreciation"
 msgstr "Umorzenie"
 
@@ -8961,9 +8958,6 @@ msgstr "Produkcja"
 msgid "Map accounts"
 msgstr "Zmapuj konta"
 
-msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
-msgstr "Mapuj konta Carbon na plan kont dostawcy. Zaksięgowane dowody księgowe będą przesyłane, używając zmapowanego kodu konta dostawcy."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Mapuj wyekstrahowane pozycje faktury"
 
@@ -13554,7 +13548,6 @@ msgid "Self Managed"
 msgstr "Samodzielnie zarządzane"
 
 msgid "Self-hosted or managed"
-msgstr "Samoobsługiwanie lub zarządzanie"
 msgstr "Samodzielnie hostowana lub zarządzana"
 
 msgid "Self-onboarding"
@@ -14414,14 +14407,7 @@ msgid "Stripe already has a customer with this email"
 msgstr "Stripe już ma klienta z tym adresem e-mail"
 
 msgid "Stripe Due Date"
-msgstr "Data wymagalności Stripe"
 msgstr "Termin Stripe"
-
-msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripe wysyła fakturę do klienta, dlatego wymagany jest adres. Zostanie to również zapisane w kontakcie w Carbon."
-
-msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe nie ma jeszcze klienta dla tego klienta Carbon. Księgowanie utworzy go na twoim podłączonym koncie."
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 msgstr "Stripe wysyła fakturę do klienta pocztą e-mail, więc wymagany jest adres. Zostanie również zapisany w kontakcie w Carbon."
@@ -15742,11 +15728,7 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "To zaproszenie do dołączenia do {0} wygasło. Możesz poprosić o wysłanie nowego zaproszenia na Twoją wiadomość e-mail."
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "Ten rachunek nie ma użytecznej daty wymagalności — wybierz jedną dla Stripe."
 msgstr "Ta faktura nie ma użytecznego terminu — wybierz jeden dla Stripe."
-
-msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "Ta faktura będzie wystawiona klientowi Stripe już powiązanemu z tym klientem Carbon. Aby zmienić jego szczegóły, edytuj go na pulpicie Stripe."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Ta faktura będzie naliczona klientowi Stripe już połączonemu z tym klientem Carbon. Aby zmienić jego szczegóły, edytuj go w pulpicie Stripe."

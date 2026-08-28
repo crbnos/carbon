@@ -8958,9 +8958,6 @@ msgstr "विनिर्माण"
 msgid "Map accounts"
 msgstr "खातों को मैप करें"
 
-msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
-msgstr "Carbon खातों को प्रदाता के खातों का चार्ट से मैप करें। पोस्ट किए गए जर्नल मैप किए गए प्रदाता खाता कोड का उपयोग करके पुश करते हैं।"
-
 msgid "Map Extracted Invoice Lines"
 msgstr "निकाली गई चालान पंक्तियों को मैप करें"
 
@@ -14413,15 +14410,6 @@ msgid "Stripe Due Date"
 msgstr "Stripe नियत तिथि"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripe चालान को ग्राहक को ईमेल करता है, इसलिए एक पता आवश्यक है। यह Carbon में संपर्क के लिए भी सहेजा जाएगा।"
-
-msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe के पास इस Carbon ग्राहक के लिए अभी कोई ग्राहक नहीं है। पोस्टिंग आपके जुड़े खाते पर एक नया ग्राहक बना देगी।"
-
-msgid "Stripe Due Date"
-msgstr "Stripe नियत तिथि"
-
-msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 msgstr "Stripe ग्राहक को चालान ईमेल करता है, इसलिए एक पता आवश्यक है। यह Carbon में संपर्क के लिए भी सहेजा जाएगा।"
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
@@ -15740,11 +15728,7 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "यह आमंत्रण {0} में शामिल होने के लिए समाप्त हो गया है। आप अपने ईमेल पर भेजने के लिए नया आमंत्रण का अनुरोध कर सकते हैं।"
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "इस इनवॉयस के पास कोई उपयोगी देय तारीख नहीं है — Stripe के लिए एक चुनें।"
 msgstr "इस चालान के पास कोई उपयोगी नियत तिथि नहीं है — Stripe के लिए एक चुनें।"
-
-msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "यह चालान इस Carbon ग्राहक के लिए पहले से जुड़े Stripe ग्राहक को बिल किया जाएगा। इसके विवरण को बदलने के लिए, इसे Stripe डैशबोर्ड में संपादित करें।"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "इस चालान को Stripe ग्राहक को बिल दिया जाएगा जो पहले से इस Carbon ग्राहक से जुड़ा हुआ है। इसके विवरण को बदलने के लिए, Stripe डैशबोर्ड में संपादित करें।"
@@ -16479,9 +16463,6 @@ msgstr "अपोस्ट किए गए दस्तावेज़"
 
 msgid "Unpublish"
 msgstr "अप्रकाशित करें"
-
-msgid "Unpublish {name}?"
-msgstr "अप्रकाशित करें {name}?"
 
 msgid "Unpublish {name}?"
 msgstr "{name} को प्रकाशन रद्द करें?"
@@ -17699,7 +17680,11 @@ msgid ""
 "                        {0} than the\n"
 "                        ordered quantity of {1}. What would you like\n"
 "                        to do with the extra parts?"
-msgstr "आप {leftoverQuantity} अधिक \n                        {0} को {1} की ऑर्डर की गई \n                        मात्रा से पूरा कर चुके हैं। आप अतिरिक्त पार्ट्स के साथ \n                        क्या करना चाहेंगे?"
+msgstr ""
+"आप {leftoverQuantity} अधिक \n"
+"                        {0} को {1} की ऑर्डर की गई \n"
+"                        मात्रा से पूरा कर चुके हैं। आप अतिरिक्त पार्ट्स के साथ \n"
+"                        क्या करना चाहेंगे?"
 
 msgid "You do not have permission to edit workflows"
 msgstr "आपके पास वर्कफ़्लो को संपादित करने की अनुमति नहीं है"

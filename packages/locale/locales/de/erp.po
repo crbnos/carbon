@@ -476,9 +476,6 @@ msgid "A managed cloud-hosted version of Carbon"
 msgstr "Eine verwaltete, cloud-gehostete Version von Carbon."
 
 msgid "A managed version with all the advanced features"
-msgstr "Eine verwaltete Version mit allen erweiterten Funktionen."
-
-msgid "A managed version with all the advanced features"
 msgstr "Eine verwaltete Version mit allen erweiterten Funktionen"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
@@ -8961,9 +8958,6 @@ msgstr "Fertigung"
 msgid "Map accounts"
 msgstr "Konten zuordnen"
 
-msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
-msgstr "Ordnen Sie Carbon-Konten dem Kontenplan des Anbieters zu. Gebuchte Buchungssätze werden mit der zugeordneten Anbieter-Kontonummer übertragen."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Extrahierte Rechnungspositionen zuordnen"
 
@@ -13557,9 +13551,6 @@ msgid "Self-hosted or managed"
 msgstr "Selbstgehostet oder verwaltet"
 
 msgid "Self-onboarding"
-msgstr "Selbstgesteuertes Onboarding"
-
-msgid "Self-onboarding"
 msgstr "Selbst-Onboarding"
 
 msgid "Self-paced"
@@ -14420,9 +14411,6 @@ msgstr "Stripe-Fälligkeitsdatum"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 msgstr "Stripe sendet die Rechnung per E-Mail an den Kunden, daher ist eine Adresse erforderlich. Dies wird auch im Kontakt in Carbon gespeichert."
-
-msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe hat noch keinen Kunden für diesen Carbon-Kunden. Beim Buchen wird einer auf Ihrem verbundenen Konto erstellt."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe hat noch keinen Kunden für diesen Carbon-Kunden. Beim Buchen wird einer auf Ihrem verbundenen Konto erstellt."
@@ -15740,11 +15728,7 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "Diese Einladung zum Beitritt zu {0} ist abgelaufen. Sie können eine neue Einladung anfordern, die an Ihre E-Mail gesendet wird."
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "Diese Rechnung hat kein verwendbares Fälligkeitsdatum — wählen Sie eines für Stripe aus."
 msgstr "Diese Rechnung hat kein nutzbares Fälligkeitsdatum – wählen Sie eines für Stripe."
-
-msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "Diese Rechnung wird dem Stripe-Kunden in Rechnung gestellt, der bereits mit diesem Carbon-Kunden verknüpft ist. Um die Details zu ändern, bearbeiten Sie diese im Stripe Dashboard."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Diese Rechnung wird dem Stripe-Kunden in Rechnung gestellt, der bereits mit diesem Carbon-Kunden verknüpft ist. Um die Details zu ändern, bearbeiten Sie sie im Stripe-Dashboard."

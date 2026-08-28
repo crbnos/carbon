@@ -938,9 +938,6 @@ msgstr "应收账款"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "客户应付金额的应收账款。"
 
-msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
-msgstr "由过账默认值或凭证历史引用但还没有供应商映射的账户。"
-
 msgid "Accumulated Depreciation"
 msgstr "累计折旧"
 
@@ -6288,9 +6285,6 @@ msgstr "豁免证书"
 msgid "Exemption Reason"
 msgstr "豁免原因"
 
-msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr "现有映射。选择不同的提供商账户进行重新映射。"
-
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "现有映射。选择不同的提供商选项进行重新映射。"
 
@@ -8963,9 +8957,6 @@ msgstr "制造"
 
 msgid "Map accounts"
 msgstr "映射科目"
-
-msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
-msgstr "将Carbon账户映射到提供商的会计科目表。已过账凭证使用映射的提供商账户代码进行推送。"
 
 msgid "Map Extracted Invoice Lines"
 msgstr "映射提取的发票行项目"
@@ -14416,15 +14407,6 @@ msgid "Stripe already has a customer with this email"
 msgstr "Stripe 已拥有此电子邮件的客户"
 
 msgid "Stripe Due Date"
-msgstr "Stripe 到期日"
-
-msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripe 会向客户发送发票电子邮件，因此需要地址。这也将保存到 Carbon 中的联系人。"
-
-msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe还没有该Carbon客户对应的客户。过账将在您的连接账户上创建一个。"
-
-msgid "Stripe Due Date"
 msgstr "Stripe 到期日期"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
@@ -15749,9 +15731,6 @@ msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "此发票没有可用的到期日——为Stripe选择一个。"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "此发票将为已与此Carbon客户关联的Stripe客户计费。要更改其详细信息，请在Stripe仪表板中编辑。"
-
-msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "此发票将计费给已链接到此 Carbon 客户的 Stripe 客户。要更改其详细信息，请在 Stripe 仪表板中编辑它。"
 
 msgid "This is a controlled environment, so an authenticator app is required."
@@ -15890,9 +15869,6 @@ msgstr "无法打开此版本"
 
 msgid "This version is published"
 msgstr "这个版本已发布"
-
-msgid "This version is published. Create a new version to edit."
-msgstr "这个版本已发布。创建新版本进行编辑。"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "此版本已发布。创建新版本进行编辑。"
@@ -17704,7 +17680,11 @@ msgid ""
 "                        {0} than the\n"
 "                        ordered quantity of {1}. What would you like\n"
 "                        to do with the extra parts?"
-msgstr "您完成了 {leftoverQuantity} 个以上 \n                        {0}，比 \n                        订购数量 {1} 多。您想 \n                        用多余的零件怎么办？"
+msgstr ""
+"您完成了 {leftoverQuantity} 个以上 \n"
+"                        {0}，比 \n"
+"                        订购数量 {1} 多。您想 \n"
+"                        用多余的零件怎么办？"
 
 msgid "You do not have permission to edit workflows"
 msgstr "您没有权限编辑工作流"

@@ -473,11 +473,7 @@ msgid "A Make to Order component whose parts are issued together into the parent
 msgstr "Siparişe göre üretim bileşeni, parçaları ana iş emrine birlikte verilen — ayrı yapı yoktur."
 
 msgid "A managed cloud-hosted version of Carbon"
-msgstr "Carbon'un yönetilen bir bulut barındırmalı sürümü"
 msgstr "Carbon'ın yönetilen bulut barındırılan sürümü"
-
-msgid "A managed version with all the advanced features"
-msgstr "Tüm gelişmiş özelliklerle yönetilen sürüm"
 
 msgid "A managed version with all the advanced features"
 msgstr "Tüm gelişmiş özellikleri içeren yönetilen bir sürüm"
@@ -942,9 +938,6 @@ msgstr "Alacak hesapları"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Müşteriler tarafından borçlu olunan tutarlar için alacak hesapları."
 
-msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
-msgstr "Muhasebeleştirme varsayılanları veya muhasebe fişi geçmişi tarafından referans gösterilen ancak henüz sağlayıcı eşlemesi olmayan hesaplar."
-
 msgid "Accumulated Depreciation"
 msgstr "Birikmiş amortisman"
 
@@ -1378,9 +1371,6 @@ msgstr "Tüm Konumlar"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Seçilen gruplardaki ve bireylerdeki tüm üyeler talepleri onaylayabilecektir"
-
-msgid "All posting accounts are mapped"
-msgstr "Tüm muhasebeleştirme hesapları eşlendi"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "{inserted} eklendi, {updated} güncellendi — tüm satırlar içe aktarıldı."
@@ -8968,9 +8958,6 @@ msgstr "Üretim"
 msgid "Map accounts"
 msgstr "Hesapları Eşle"
 
-msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
-msgstr "Carbon hesaplarını sağlayıcının hesap planı ile eşleştirin. Muhasebeleştirilmiş muhasebe fişleri eşleştirilmiş sağlayıcı hesap kodu kullanılarak iletilir."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Çıkarılan Fatura Satırlarını Eşle"
 
@@ -13561,7 +13548,6 @@ msgid "Self Managed"
 msgstr "Kendi Yönettiği"
 
 msgid "Self-hosted or managed"
-msgstr "Kendi kendine barındırılan veya yönetilen"
 msgstr "Kendi barındırılan veya yönetilen"
 
 msgid "Self-onboarding"
@@ -14418,17 +14404,7 @@ msgid "Stripe"
 msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr "Stripe'ın zaten bu e-postayla bir müşterisi var"
 msgstr "Stripe'ın zaten bu e-postaya sahip bir müşterisi var"
-
-msgid "Stripe Due Date"
-msgstr "Stripe Son Tarihi"
-
-msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripe faturayı müşteriye e-posta ile gönderir, bu nedenle bir adres gereklidir. Bu, Carbon'daki ilgili kişiye de kaydedilecektir."
-
-msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Bu Carbon müşterisi için Stripe'da henüz müşteri yok. Muhasebeleştirme, bağlı hesabınızda bir tane oluşturacak."
 
 msgid "Stripe Due Date"
 msgstr "Stripe Son Tarihi"
@@ -15752,11 +15728,7 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "{0} grubuna katılma davetinizin süresi doldu. Yeni bir davet talebinde bulunabilirsiniz ve bu e-postanıza gönderilir."
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "Bu faturanın kullanılabilir bir vadesi yok — Stripe için bir tane seçin."
 msgstr "Bu fatura, Stripe için kullanılabilir bir son tarih içermiyor — lütfen bir tane seçin."
-
-msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "Bu fatura, bu Carbon müşterisine zaten bağlı olan Stripe müşterisine faturalandırılacaktır. Ayrıntılarını değiştirmek için Stripe panosunda düzenleyin."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Bu fatura, zaten bu Carbon müşterisine bağlı olan Stripe müşterisine faturalanacak. Ayrıntılarını değiştirmek için Stripe panosunda düzenleyin."
@@ -16491,9 +16463,6 @@ msgstr "Deftere Geçmemiş Belgeler"
 
 msgid "Unpublish"
 msgstr "Yayını kaldır"
-
-msgid "Unpublish {name}?"
-msgstr "Yayını {name} için kaldır?"
 
 msgid "Unpublish {name}?"
 msgstr "{name} yayınlaması kaldırılsın mı?"

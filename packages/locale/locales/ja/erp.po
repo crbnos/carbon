@@ -476,9 +476,6 @@ msgid "A managed cloud-hosted version of Carbon"
 msgstr "Carbonのマネージド クラウド ホスト版"
 
 msgid "A managed version with all the advanced features"
-msgstr "すべての高度な機能を備えたマネージド版"
-
-msgid "A managed version with all the advanced features"
 msgstr "すべての高度な機能を備えた管理版"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
@@ -940,9 +937,6 @@ msgstr "売掛金"
 
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "得意先から支払われるべき金額の売掛金"
-
-msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
-msgstr "転記デフォルトまたは仕訳履歴によって参照されているが、プロバイダーマッピングがないアカウント。"
 
 msgid "Accumulated Depreciation"
 msgstr "減価償却累計額"
@@ -8964,9 +8958,6 @@ msgstr "製造"
 msgid "Map accounts"
 msgstr "勘定をマップ"
 
-msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
-msgstr "Carbonの勘定科目をプロバイダーの勘定科目表にマップします。転記済の仕訳は、マップされたプロバイダー勘定科目コードを使用してプッシュされます。"
-
 msgid "Map Extracted Invoice Lines"
 msgstr "抽出された請求書明細をマップ"
 
@@ -12551,9 +12542,6 @@ msgstr "希望納期"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "サインイン時に認証器アプリから6桁のコードが必要です。"
 
-msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
-msgstr "この会社にアクセスするにはオーセンティケーターアプリが必須です。他の会社は影響を受けません。"
-
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "このアプリケーション認証器を要求して、誰もがこの会社を開く前に認証を要求します。他の会社は影響を受けません。<0>従業員アカウントページ</0>にアクセスして、各個人のステータスを確認してください。"
 
@@ -14416,17 +14404,7 @@ msgid "Stripe"
 msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr "Stripeにはすでにこのメールアドレスを持つカスタマーがあります"
 msgstr "Stripeには既にこのメールアドレスの得意先があります"
-
-msgid "Stripe Due Date"
-msgstr "Stripe期日"
-
-msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripeは得意先に請求書をメール送信するため、住所が必須です。これはCarbonの担当者にも保存されます。"
-
-msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "StripeにはこのCarbon得意先に対応する顧客がまだありません。転記すると、接続済みアカウント上に作成されます。"
 
 msgid "Stripe Due Date"
 msgstr "Stripe支払期日"
@@ -15750,11 +15728,7 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "この{0}への参加への招待は期限切れです。新しい招待をメールで送信されるようにリクエストできます。"
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "この請求書に使用可能な期日がありません。Stripeの場合は1つを選択してください。"
 msgstr "この請求書には使用可能な期日がありません。Stripeの場合は、期日を選択してください。"
-
-msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "この請求書は、すでにこのCarbon得意先にリンクされているStripe顧客に請求されます。詳細を変更するには、Stripeダッシュボードで編集してください。"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "この請求書は、すでにこのCarbon得意先にリンクされているStripe顧客に請求されます。詳細を変更するには、Stripeダッシュボードで編集してください。"
@@ -15895,9 +15869,6 @@ msgstr "このバージョンは開くことができません"
 
 msgid "This version is published"
 msgstr "このバージョンは公開済です"
-
-msgid "This version is published. Create a new version to edit."
-msgstr "このバージョンは公開済です。編集するには新しいバージョンを作成してください。"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "このバージョンは公開済です。編集するには新しいバージョンを作成してください。"
@@ -16491,11 +16462,7 @@ msgid "Unposted Documents"
 msgstr "転記されていない文書"
 
 msgid "Unpublish"
-msgstr "公開を解除"
 msgstr "非公開にする"
-
-msgid "Unpublish {name}?"
-msgstr "{name}を非公開にしますか？"
 
 msgid "Unpublish {name}?"
 msgstr "{name}の公開を取り消しますか?"

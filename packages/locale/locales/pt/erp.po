@@ -938,9 +938,6 @@ msgstr "Contas a receber"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Contas a receber para valores devidos pelos clientes."
 
-msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
-msgstr "Contas referenciadas por padrões de contabilização ou histórico de diários que ainda não têm mapeamento de provedor."
-
 msgid "Accumulated Depreciation"
 msgstr "Depreciação acumulada"
 
@@ -1374,9 +1371,6 @@ msgstr "Todos os Locais"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Todos os membros dos grupos selecionados e indivíduos selecionados poderão aprovar solicitações"
-
-msgid "All posting accounts are mapped"
-msgstr "Todas as contas de contabilização estão mapeadas"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "Todas as linhas importadas — {inserted} inseridas, {updated} atualizadas."
@@ -8964,9 +8958,6 @@ msgstr "Manufatura"
 msgid "Map accounts"
 msgstr "Mapear contas"
 
-msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
-msgstr "Mapeie contas Carbon para o plano de contas do fornecedor. Diários contabilizados são enviados usando o código de conta do fornecedor mapeado."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Mapear Linhas de Fatura Extraídas"
 
@@ -14416,15 +14407,6 @@ msgid "Stripe already has a customer with this email"
 msgstr "Stripe já tem um cliente com este e-mail"
 
 msgid "Stripe Due Date"
-msgstr "Data de vencimento do Stripe"
-
-msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "O Stripe envia a fatura para o cliente, portanto um endereço é obrigatório. Isso também será salvo no contato no Carbon."
-
-msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe ainda não tem um cliente para este cliente do Carbon. A Contabilização criará um na sua conta conectada."
-
-msgid "Stripe Due Date"
 msgstr "Data de Vencimento Stripe"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
@@ -15746,11 +15728,7 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "Este convite para participar de {0} expirou. Você pode solicitar que um novo convite seja enviado para seu e-mail."
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "Este boleto não tem uma data de vencimento utilizável — escolha uma para Stripe."
 msgstr "Esta fatura não tem uma data de vencimento utilizável — escolha uma para Stripe."
-
-msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "Esta fatura será cobrada do cliente Stripe já vinculado a este cliente Carbon. Para alterar seus detalhes, edite-a no painel do Stripe."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Esta fatura será cobrada do cliente Stripe já vinculado a este cliente Carbon. Para alterar seus detalhes, edite-o no painel Stripe."
@@ -15890,11 +15868,7 @@ msgid "This version cannot be opened"
 msgstr "Esta versão não pode ser aberta"
 
 msgid "This version is published"
-msgstr "Esta versão foi publicada"
 msgstr "Esta versão é publicada."
-
-msgid "This version is published. Create a new version to edit."
-msgstr "Esta versão é publicada. Crie uma nova versão para editar."
 
 msgid "This version is published. Create a new version to edit."
 msgstr "Esta versão está publicada. Crie uma nova versão para editar."
@@ -16488,11 +16462,7 @@ msgid "Unposted Documents"
 msgstr "Documentos Não Lançados"
 
 msgid "Unpublish"
-msgstr "Despublicar"
 msgstr "Cancelar publicação"
-
-msgid "Unpublish {name}?"
-msgstr "Cancelar publicação de {name}?"
 
 msgid "Unpublish {name}?"
 msgstr "Cancelar Publicação de {name}?"

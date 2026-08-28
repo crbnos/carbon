@@ -476,9 +476,6 @@ msgid "A managed cloud-hosted version of Carbon"
 msgstr "Una versione gestita ospitata nel cloud di Carbon"
 
 msgid "A managed version with all the advanced features"
-msgstr "Una versione gestita con tutte le funzionalità avanzate"
-
-msgid "A managed version with all the advanced features"
 msgstr "Una versione gestita con tutte le funzioni avanzate"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
@@ -941,9 +938,6 @@ msgstr "Crediti verso clienti"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Crediti verso clienti per importi dovuti dai clienti."
 
-msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
-msgstr "Conti referenziati da impostazioni predefinite di registrazione o cronologia prima nota che non hanno ancora una mappatura del provider."
-
 msgid "Accumulated Depreciation"
 msgstr "Fondo di ammortamento"
 
@@ -1377,9 +1371,6 @@ msgstr "Tutte le Ubicazioni"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Tutti i membri dei gruppi selezionati e gli individui selezionati potranno approvare le richieste"
-
-msgid "All posting accounts are mapped"
-msgstr "Tutti i conti di registrazione sono mappati"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "Tutte le righe importate — {inserted} inserite, {updated} aggiornate."
@@ -8967,9 +8958,6 @@ msgstr "Produzione"
 msgid "Map accounts"
 msgstr "Mappa conti"
 
-msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
-msgstr "Mappa i conti di Carbon nel piano dei conti del fornitore. I giornali registrati si inoltrano usando il codice account del fornitore mappato."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Mappa le righe fattura estratte"
 
@@ -13563,9 +13551,6 @@ msgid "Self-hosted or managed"
 msgstr "Self-hosted o gestito"
 
 msgid "Self-onboarding"
-msgstr "Onboarding autonomo"
-
-msgid "Self-onboarding"
 msgstr "Auto-onboarding"
 
 msgid "Self-paced"
@@ -14425,11 +14410,7 @@ msgid "Stripe Due Date"
 msgstr "Data di scadenza Stripe"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripe invia l'invoice via email al cliente, quindi è richiesto un indirizzo. Questo sarà salvato anche nel contatto in Carbon."
 msgstr "Stripe invia l'email della fattura al cliente, quindi è richiesto un indirizzo. Questo sarà anche salvato al contatto in Carbon."
-
-msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe non ha ancora un cliente per questo cliente Carbon. La registrazione ne creerà uno nel tuo account connesso."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe non ha ancora un cliente per questo cliente Carbon. La registrazione ne creerà uno sul tuo account collegato."
@@ -17699,7 +17680,11 @@ msgid ""
 "                        {0} than the\n"
 "                        ordered quantity of {1}. What would you like\n"
 "                        to do with the extra parts?"
-msgstr "Hai completato {leftoverQuantity} più \n                        {0} della\n                        quantità ordinata di {1}. Cosa vorresti\n                        fare con i pezzi extra?"
+msgstr ""
+"Hai completato {leftoverQuantity} più \n"
+"                        {0} della\n"
+"                        quantità ordinata di {1}. Cosa vorresti\n"
+"                        fare con i pezzi extra?"
 
 msgid "You do not have permission to edit workflows"
 msgstr "Non hai l'autorizzazione per modificare i flussi di lavoro"

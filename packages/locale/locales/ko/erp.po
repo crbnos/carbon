@@ -473,11 +473,7 @@ msgid "A Make to Order component whose parts are issued together into the parent
 msgstr "주문 생산 부품으로 부품이 모품목 작업 지시로 함께 불출되며 별도 생산은 없습니다."
 
 msgid "A managed cloud-hosted version of Carbon"
-msgstr "Carbon의 관리형 클라우드 호스팅 버전"
 msgstr "관리형 클라우드 호스팅 Carbon 버전"
-
-msgid "A managed version with all the advanced features"
-msgstr "모든 고급 기능을 갖춘 관리형 버전"
 
 msgid "A managed version with all the advanced features"
 msgstr "모든 고급 기능이 포함된 관리되는 버전"
@@ -942,9 +938,6 @@ msgstr "매출채권"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "고객이 지급할 금액에 대한 매출채권"
 
-msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
-msgstr "전기 기본값이나 전표 이력에서 참조하는 계정 중 공급 업체 매핑이 아직 없는 것"
-
 msgid "Accumulated Depreciation"
 msgstr "감가상각누계액"
 
@@ -1378,9 +1371,6 @@ msgstr "모든 위치"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "선택한 그룹의 모든 구성원과 선택한 개인이 요청을 승인할 수 있습니다"
-
-msgid "All posting accounts are mapped"
-msgstr "모든 전기 계정이 매핑됨"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "모든 행을 가져왔습니다 — {inserted}개 추가, {updated}개 업데이트."
@@ -8968,9 +8958,6 @@ msgstr "제조"
 msgid "Map accounts"
 msgstr "계정 매핑"
 
-msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
-msgstr "Carbon 계정을 공급자의 계정과목표에 매핑합니다. 전기된 전표는 매핑된 공급자 계정 코드를 사용하여 전송됩니다."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "추출한 송장 라인 매핑"
 
@@ -14423,16 +14410,6 @@ msgid "Stripe Due Date"
 msgstr "Stripe 마감일"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripe에서 고객에게 송장을 이메일로 보내므로 주소가 필요합니다. 이 주소는 Carbon의 연락처에도 저장됩니다."
-msgstr "Stripe가 송장을 고객에게 이메일로 보내므로 주소가 필요합니다. 이것도 Carbon의 담당자 정보에 저장됩니다."
-
-msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "이 Carbon 고객에 대한 Stripe 고객이 아직 없습니다. 전기하면 연결된 계정에 생성됩니다."
-
-msgid "Stripe Due Date"
-msgstr "Stripe 마감일"
-
-msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 msgstr "Stripe가 송장을 고객에게 이메일로 보내므로 주소가 필요합니다. 이것도 Carbon의 담당자 정보에 저장됩니다."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
@@ -15751,11 +15728,7 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "{0}에 가입하라는 초대가 만료되었습니다. 이메일로 새 초대를 보내도록 요청할 수 있습니다."
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "이 송장에는 사용할 수 있는 만기일이 없습니다 — Stripe용으로 선택하세요."
 msgstr "이 송장은 사용 가능한 마감일이 없습니다 — Stripe를 위해 선택하십시오."
-
-msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "이 송장은 이미 이 Carbon 고객과 연결된 Stripe 고객에게 청구됩니다. 세부 사항을 변경하려면 Stripe 대시보드에서 편집하세요."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "이 송장은 이미 이 Carbon 고객과 연결된 Stripe 고객에게 청구됩니다. 세부 사항을 변경하려면 Stripe 대시보드에서 편집하세요."
@@ -15895,11 +15868,7 @@ msgid "This version cannot be opened"
 msgstr "이 버전을 열 수 없습니다."
 
 msgid "This version is published"
-msgstr "이 버전이 게시되었습니다"
 msgstr "이 버전은 게시되었습니다."
-
-msgid "This version is published. Create a new version to edit."
-msgstr "이 버전은 게시되었습니다. 편집하려면 새 버전을 생성하세요."
 
 msgid "This version is published. Create a new version to edit."
 msgstr "이 버전이 게시됩니다. 편집할 새 버전을 만듭니다."
@@ -16494,9 +16463,6 @@ msgstr "미전기 문서"
 
 msgid "Unpublish"
 msgstr "게시 해제"
-
-msgid "Unpublish {name}?"
-msgstr "{name}을 게시 해제하시겠습니까?"
 
 msgid "Unpublish {name}?"
 msgstr "게시 취소 {name}?"

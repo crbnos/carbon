@@ -473,11 +473,7 @@ msgid "A Make to Order component whose parts are issued together into the parent
 msgstr "Un composant de fabrication à la commande dont les pièces sont émises ensemble dans l'ordre de fabrication parent – sans fabrication séparée."
 
 msgid "A managed cloud-hosted version of Carbon"
-msgstr "Une version gérée en cloud de Carbon"
 msgstr "Une version gérée de Carbon hébergée en nuage."
-
-msgid "A managed version with all the advanced features"
-msgstr "Une version gérée avec toutes les fonctionnalités avancées."
 
 msgid "A managed version with all the advanced features"
 msgstr "Une version managée avec toutes les fonctionnalités avancées"
@@ -941,9 +937,6 @@ msgstr "Comptes clients"
 
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Comptes débiteurs pour les montants dus par les clients."
-
-msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
-msgstr "Comptes référencés par les défauts de Comptabilisation ou l'Historique des Écritures qui n'ont pas encore de mapping de fournisseur."
 
 msgid "Accumulated Depreciation"
 msgstr "Amortissement cumulé"
@@ -8965,9 +8958,6 @@ msgstr "Production"
 msgid "Map accounts"
 msgstr "Mapper les comptes"
 
-msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
-msgstr "Mappez les comptes Carbon au plan comptable du fournisseur. Les écritures comptabilisées sont transmises en utilisant le code de compte fournisseur mappé."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Mapper les lignes de facture extraites"
 
@@ -12552,9 +12542,6 @@ msgstr "Date demandée"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Exiger un code à 6 chiffres d'une application d'authentification lors de la connexion."
 
-msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
-msgstr "Exigez une application d'authentification avant que quiconque puisse ouvrir cette société. Leurs autres sociétés ne sont pas affectées."
-
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Exiger une application d'authentification avant que quiconque puisse ouvrir cette société. Leurs autres sociétés ne sont pas affectées. Visitez la <0>page des comptes employé</0> pour voir le statut de chaque personne."
 
@@ -13564,9 +13551,6 @@ msgid "Self-hosted or managed"
 msgstr "Auto-hébergé ou géré"
 
 msgid "Self-onboarding"
-msgstr "Intégration autonome"
-
-msgid "Self-onboarding"
 msgstr "Auto-intégration"
 
 msgid "Self-paced"
@@ -14427,9 +14411,6 @@ msgstr "Date d'échéance Stripe"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 msgstr "Stripe envoie par e-mail la facture au client, c'est pourquoi une adresse est requise. Cette adresse sera également enregistrée au contact dans Carbon."
-
-msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe n'a pas encore de client pour ce client Carbon. La comptabilisation en créera un sur votre compte connecté."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe n'a pas encore de client pour ce client Carbon. La comptabilisation en créera un sur votre compte connecté."
@@ -15888,9 +15869,6 @@ msgstr "Cette version ne peut pas être ouverte"
 
 msgid "This version is published"
 msgstr "Cette version est publiée."
-
-msgid "This version is published. Create a new version to edit."
-msgstr "Cette version est publiée. Créez une nouvelle version pour la modifier."
 
 msgid "This version is published. Create a new version to edit."
 msgstr "Cette version est publiée. Créez une nouvelle version à modifier."

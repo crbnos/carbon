@@ -938,9 +938,6 @@ msgstr "Дебиторская задолженность"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Дебиторская задолженность за суммы, причитающиеся от покупателей"
 
-msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
-msgstr "Счета, на которые ссылаются стандарты проведения или история операций, но которые пока не имеют сопоставления провайдера."
-
 msgid "Accumulated Depreciation"
 msgstr "Накопленная амортизация"
 
@@ -1374,9 +1371,6 @@ msgstr "Все местоположения"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Все члены выбранных групп и выбранные лица смогут утвердить запросы"
-
-msgid "All posting accounts are mapped"
-msgstr "Все счета для проведения сопоставлены"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "Все строки импортированы — {inserted} вставлено, {updated} обновлено."
@@ -8964,9 +8958,6 @@ msgstr "Производство"
 msgid "Map accounts"
 msgstr "Сопоставить счета"
 
-msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
-msgstr "Сопоставьте счета Carbon с планом счетов поставщика. Проведенные операции отправляются с использованием сопоставленного кода счета поставщика."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Сопоставить извлеченные строки счета-фактуры"
 
@@ -12551,9 +12542,6 @@ msgstr "Запрошенная дата"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Требовать 6-значный код из приложения-аутентификатора при входе."
 
-msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
-msgstr "Требовать использование приложения аутентификатора, прежде чем кто-либо сможет открыть эту организацию. Их другие организации не затрагиваются."
-
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Требовать приложение аутентификатора перед тем как кто-либо сможет открыть эту организацию. Их другие организации не затронуты. Посетите страницу <0>учетных записей сотрудников</0>, чтобы увидеть статус каждого человека."
 
@@ -13560,11 +13548,7 @@ msgid "Self Managed"
 msgstr "Самоуправляемый"
 
 msgid "Self-hosted or managed"
-msgstr "Самостоятельно размещенный или управляемый"
 msgstr "Локальная установка или облачная"
-
-msgid "Self-onboarding"
-msgstr "Самостоятельное внедрение"
 
 msgid "Self-onboarding"
 msgstr "Самостоятельное подключение"
@@ -14421,15 +14405,6 @@ msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
 msgstr "У Stripe уже есть покупатель с этим адресом электронной почты"
-
-msgid "Stripe Due Date"
-msgstr "Срок выполнения Stripe"
-
-msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripe отправляет счет-фактуру клиенту по электронной почте, поэтому требуется адрес. Он также будет сохранен в контакте в Carbon."
-
-msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe еще не имеет покупателя для этого покупателя Carbon. Проведение создаст его на вашем подключенном счете."
 
 msgid "Stripe Due Date"
 msgstr "Срок выполнения Stripe"
@@ -15753,11 +15728,7 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "Это приглашение присоединиться к {0} истекло. Вы можете запросить отправку нового приглашения на вашу электронную почту."
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "У этого счета-фактуры нет пригодного срока платежа — выберите один для Stripe."
 msgstr "Этот счет-фактура не имеет используемого срока выполнения — выберите один для Stripe."
-
-msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "Этот счет-фактура будет выставлен покупателю Stripe, уже связанному с этим покупателем Carbon. Чтобы изменить его данные, отредактируйте его в панели Stripe."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Этот счет-фактура будет выставлен покупателю Stripe, уже связанному с этим покупателем Carbon. Чтобы изменить его данные, отредактируйте его в панели Stripe."

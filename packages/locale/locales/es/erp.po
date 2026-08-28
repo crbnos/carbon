@@ -473,11 +473,7 @@ msgid "A Make to Order component whose parts are issued together into the parent
 msgstr "Un componente de Fabricación bajo pedido cuyas piezas se emiten juntas en la orden de trabajo principal — sin construcción separada."
 
 msgid "A managed cloud-hosted version of Carbon"
-msgstr "Una versión de Carbon alojada en la nube administrada"
 msgstr "Una versión de Carbon alojada en la nube y administrada"
-
-msgid "A managed version with all the advanced features"
-msgstr "Una versión administrada con todas las características avanzadas"
 
 msgid "A managed version with all the advanced features"
 msgstr "Una versión administrada con todas las funciones avanzadas"
@@ -942,9 +938,6 @@ msgstr "Cuentas por cobrar"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Cuentas por cobrar para montos adeudados por clientes."
 
-msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
-msgstr "Cuentas referenciadas por predeterminados de contabilización o historial de asientos que aún no tienen asignación de proveedor."
-
 msgid "Accumulated Depreciation"
 msgstr "Depreciación acumulada"
 
@@ -1378,9 +1371,6 @@ msgstr "Todas las Ubicaciones"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Todos los miembros de los grupos seleccionados e individuos seleccionados podrán aprobar solicitudes"
-
-msgid "All posting accounts are mapped"
-msgstr "Todas las cuentas de contabilización están asignadas"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "Todas las filas importadas — {inserted} insertadas, {updated} actualizadas."
@@ -8968,9 +8958,6 @@ msgstr "Manufactura"
 msgid "Map accounts"
 msgstr "Asignar cuentas"
 
-msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
-msgstr "Mapee las cuentas de Carbon al plan de cuentas del proveedor. Los asientos contabilizados se envían utilizando el código de cuenta del proveedor mapeado."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Mapear Líneas de Factura Extraídas"
 
@@ -13561,11 +13548,7 @@ msgid "Self Managed"
 msgstr "Autogestionado"
 
 msgid "Self-hosted or managed"
-msgstr "Auto-alojado o administrado"
 msgstr "Autohospedado o gestionado"
-
-msgid "Self-onboarding"
-msgstr "Autoincorporación"
 
 msgid "Self-onboarding"
 msgstr "Incorporación automática"
@@ -14425,12 +14408,6 @@ msgstr "Stripe ya tiene un cliente con este correo electrónico"
 
 msgid "Stripe Due Date"
 msgstr "Fecha de vencimiento de Stripe"
-
-msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripe envía la factura al cliente por correo electrónico, por lo que se requiere una dirección. Esta también se guardará en el contacto en Carbon."
-
-msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe aún no tiene un cliente para este cliente de Carbon. La contabilización creará uno en su cuenta conectada."
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 msgstr "Stripe envía la factura por correo electrónico al cliente, por lo que se requiere una dirección. Esto también se guardará en el contacto en Carbon."
@@ -15892,9 +15869,6 @@ msgstr "Esta versión no se puede abrir"
 
 msgid "This version is published"
 msgstr "Esta versión está publicada"
-
-msgid "This version is published. Create a new version to edit."
-msgstr "Esta versión está publicada. Cree una nueva versión para editar."
 
 msgid "This version is published. Create a new version to edit."
 msgstr "Esta versión se ha publicado. Crea una nueva versión para editar."
