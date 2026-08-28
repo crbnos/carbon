@@ -314,7 +314,7 @@ msgid "4h"
 msgstr "4 घंटे"
 
 msgid "5 user minimum"
-msgstr ""
+msgstr "5 उपयोगकर्ता न्यूनतम"
 
 msgid "5-8 weeks"
 msgstr "5-8 सप्ताह"
@@ -371,7 +371,7 @@ msgid "A contractor is a supplier contact with particular abilities and availabl
 msgstr "एक ठेकेदार एक आपूर्तिकर्ता संपर्क है जिसके पास विशेष क्षमताएं और उपलब्ध घंटे हैं"
 
 msgid "A custom solution to meet your needs"
-msgstr ""
+msgstr "आपकी जरूरतों को पूरा करने के लिए एक कस्टम समाधान"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "एक ग्राहक एक व्यवसाय या व्यक्ति है जो आपके पार्ट्स या सेवाएं खरीदता है।"
@@ -484,10 +484,10 @@ msgid "A Make to Order component whose parts are issued together into the parent
 msgstr "एक ऑर्डर टू मेक घटक जिसके भाग माता-पिता की नौकरी में एक साथ जारी किए जाते हैं — कोई अलग बिल्ड नहीं।"
 
 msgid "A managed cloud-hosted version of Carbon"
-msgstr ""
+msgstr "Carbon का एक प्रबंधित क्लाउड-होस्टेड संस्करण"
 
 msgid "A managed version with all the advanced features"
-msgstr ""
+msgstr "सभी उन्नत सुविधाओं के साथ एक प्रबंधित संस्करण"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "एक सामग्री एक भौतिक वस्तु है जिसका उपयोग एक भाग बनाने के लिए किया जाता है जिसे कई नौकरियों में उपयोग किया जा सकता है"
@@ -955,9 +955,6 @@ msgstr "प्राप्य खाते"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "ग्राहकों द्वारा देय राशियों के लिए प्राप्य खाते।"
 
-msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
-msgstr "पोस्टिंग डिफ़ॉल्ट या जर्नल इतिहास द्वारा संदर्भित खाते जिनके पास अभी तक कोई प्रदाता मानचित्रण नहीं है।"
-
 msgid "Accumulated Depreciation"
 msgstr "संचयी मूल्यह्रास"
 
@@ -1364,7 +1361,7 @@ msgid "All actions selected"
 msgstr "सभी कार्य चयनित"
 
 msgid "All advanced features available"
-msgstr ""
+msgstr "सभी उन्नत सुविधाएं उपलब्ध हैं"
 
 msgid "All Audit Logs"
 msgstr "सभी ऑडिट लॉग"
@@ -1392,9 +1389,6 @@ msgstr "सभी स्थान"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "चयनित समूहों के सभी सदस्य और चयनित व्यक्ति अनुरोधों को मंजूरी दे सकेंगे"
-
-msgid "All posting accounts are mapped"
-msgstr "सभी पोस्टिंग खाते मैप किए गए हैं"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "सभी पंक्तियाँ आयात की गईं — {inserted} डाली गईं, {updated} अपडेट की गईं।"
@@ -1639,7 +1633,7 @@ msgid "API keys for programmatic access to your Carbon data."
 msgstr "आपके Carbon डेटा के लिए प्रोग्रामेटिक एक्सेस के लिए API कुंजियाँ।"
 
 msgid "API, webhooks, and integrations"
-msgstr ""
+msgstr "API, webhooks, और integrations"
 
 msgid "Applied"
 msgstr "लागू"
@@ -2360,7 +2354,7 @@ msgid "Audit Log"
 msgstr "ऑडिट लॉग"
 
 msgid "Audit logging"
-msgstr ""
+msgstr "ऑडिट लॉगिंग"
 
 msgid "Audit Logging"
 msgstr "ऑडिट लॉगिंग"
@@ -2432,7 +2426,7 @@ msgid "Automatic Updates"
 msgstr "स्वचालित अपडेट"
 
 msgid "Automatic updates and backups"
-msgstr ""
+msgstr "स्वचालित अपडेट और बैकअप"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "आउटपुट की रिपोर्ट करते समय एक कार्य की गैर-ट्रैक की गई सामग्री की स्वचालित, आनुपातिक खपत — ट्रैक की गई सामग्री को मैन्युअल रूप से जारी किया जाता है।"
@@ -2532,7 +2526,7 @@ msgid "Base Price"
 msgstr "आधार मूल्य"
 
 msgid "Basic ERP, MES, and QMS functionality"
-msgstr ""
+msgstr "बुनियादी ERP, MES, और QMS कार्यक्षमता"
 
 msgid "Basic Information"
 msgstr "बुनियादी जानकारी"
@@ -2622,6 +2616,9 @@ msgstr "अवरुद्ध"
 #. placeholder {0}: workCenter.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "{0} द्वारा अवरुद्ध"
+
+msgid "Blocking sync"
+msgstr "ब्लॉकिंग सिंक"
 
 msgid "Blocks save until resolved"
 msgstr "सहेजने को तब तक ब्लॉक करता है जब तक समाधान न हो जाए"
@@ -3239,7 +3236,7 @@ msgid "Cloud, or your self-hosted environment."
 msgstr "क्लाउड, या आपका स्व-होस्ट किया गया वातावरण।"
 
 msgid "CMMC compliant"
-msgstr ""
+msgstr "CMMC अनुरूप"
 
 msgid "Code"
 msgstr "कोड"
@@ -3302,7 +3299,7 @@ msgid "Committing a receipt, shipment, or invoice: quantities move, journal entr
 msgstr "एक प्राप्ति, शिपमेंट या चालान की प्रतिबद्धता: मात्रा चलती है, जर्नल प्रविष्टियां बहीखाता को मारती हैं, और स्थिति पोस्ट की जाती है।"
 
 msgid "Community support"
-msgstr ""
+msgstr "सामुदायिक समर्थन"
 
 msgid "Companies"
 msgstr "कंपनियां"
@@ -3605,7 +3602,7 @@ msgid "Contact (optional)"
 msgstr "संपर्क (वैकल्पिक)"
 
 msgid "Contact us"
-msgstr ""
+msgstr "हमसे संपर्क करें"
 
 msgid "contacts"
 msgstr "संपर्क"
@@ -3648,6 +3645,9 @@ msgstr "संशोधन / ECOs के साथ डिज़ाइन पर�
 
 msgid "Control how operators pick material and track time on the shop floor."
 msgstr "नियंत्रित करें कि ऑपरेटर शॉप फ्लोर पर सामग्री कैसे चुनते हैं और समय कैसे ट्रैक करते हैं।"
+
+msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
+msgstr "नियंत्रित करें कि क्या आइटम आईडी (भाग, सामग्री, उपभोग्य सामग्री, उपकरण, और सेवाएं) लोअरकेस वर्ण हो सकते हैं।"
 
 msgid "Controller, Accountant"
 msgstr "नियंत्रक, लेखाकार"
@@ -4516,7 +4516,7 @@ msgid "Customers"
 msgstr "ग्राहक"
 
 msgid "Customizations, training, and integrations"
-msgstr ""
+msgstr "अनुकूलन, प्रशिक्षण, और integrations"
 
 msgid "Customize"
 msgstr "अनुकूलित करें"
@@ -6062,6 +6062,9 @@ msgstr "इस नियम को सक्षम करें ताकि म
 msgid "Enable timecard tracking for work shifts."
 msgstr "कार्य शिफ्ट के लिए टाइमकार्ड ट्रैकिंग सक्षम करें।"
 
+msgid "Enable to allow lowercase characters in item IDs."
+msgstr "आइटम आईडी में लोअरकेस वर्णों की अनुमति देने के लिए सक्षम करें।"
+
 msgid "Enable to allow shared workstation mode."
 msgstr "साझा वर्कस्टेशन मोड की अनुमति देने के लिए सक्षम करें।"
 
@@ -6319,6 +6322,9 @@ msgstr "आपकी कॉन्फ़िगर की गई सिस्ट�
 msgid "Every match"
 msgstr "हर मेल"
 
+msgid "Every required action has already been added."
+msgstr "हर आवश्यक कार्रवाई पहले से जोड़ी जा चुकी है।"
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "अवधि बंद करने से पहले प्रत्येक आवश्यक कार्य को पूर्ण या छोड़ा जाना चाहिए।"
 
@@ -6360,9 +6366,6 @@ msgstr "छूट प्रमाणपत्र"
 
 msgid "Exemption Reason"
 msgstr "छूट कारण"
-
-msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr "मौजूदा मानचित्रण। पुनः मानचित्रण के लिए एक अलग प्रदाता खाता चुनें।"
 
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "मौजूदा मैपिंग। पुनः-मैप करने के लिए एक अलग प्रदाता विकल्प चुनें।"
@@ -7118,7 +7121,7 @@ msgid "Format"
 msgstr "प्रारूप"
 
 msgid "Forward deployed engineer"
-msgstr ""
+msgstr "आगे तैनात इंजीनियर"
 
 msgid "Foundation"
 msgstr "आधार"
@@ -7174,7 +7177,7 @@ msgid "Full name"
 msgstr "पूरा नाम"
 
 msgid "Full setup and migrations"
-msgstr ""
+msgstr "पूर्ण सेटअप और माइग्रेशन"
 
 msgid "Fully Depreciated"
 msgstr "पूरी तरह से मूल्यह्रास"
@@ -8309,6 +8312,15 @@ msgstr "आइटम समूह"
 msgid "Item ID"
 msgstr "आइटम आईडी"
 
+msgid "Item IDs"
+msgstr "आइटम आईडी"
+
+msgid "Item IDs are forced to uppercase"
+msgstr "आइटम आईडी को अपरकेस में जबरदस्ती किया जाता है"
+
+msgid "Item IDs keep the casing you type."
+msgstr "आइटम आईडी आपके द्वारा टाइप किए गए केसिंग को बनाए रखते हैं।"
+
 msgid "Item ledger"
 msgstr "आइटम बहीखाता"
 
@@ -8717,6 +8729,12 @@ msgstr "लिंक"
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "लिंक (वैकल्पिक) — उदा. /x/settings/…"
 
+msgid "Link a purchase order"
+msgstr "क्रय आदेश लिंक करें"
+
+msgid "Link a sales order"
+msgstr "विक्रय आदेश लिंक करें"
+
 msgid "Link Jira Issue"
 msgstr "Jira समस्या को लिंक करें"
 
@@ -8896,6 +8914,9 @@ msgstr "एक नमूने योजना के विरुद्ध प�
 msgid "Low"
 msgstr "कम"
 
+msgid "Lowercase item IDs are allowed"
+msgstr "लोअरकेस आइटम आईडी की अनुमति है"
+
 msgid "Machine"
 msgstr "मशीन"
 
@@ -9046,9 +9067,6 @@ msgstr "विनिर्माण"
 msgid "Map accounts"
 msgstr "खातों को मैप करें"
 
-msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
-msgstr "कार्बन खातों को प्रदाता के खातों के चार्ट से मैप करें। पोस्ट की गई पत्रिकाएं मैप किए गए प्रदाता खाता कोड का उपयोग करके धकेली जाती हैं।"
-
 msgid "Map Extracted Invoice Lines"
 msgstr "निकाली गई चालान पंक्तियों को मैप करें"
 
@@ -9058,11 +9076,11 @@ msgstr "निकाली गई लाइनों को मैप करे�
 msgid "Map Lines Now"
 msgstr "अभी लाइनें मैप करें"
 
+msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+msgstr "अपने खाता चार्ट को प्रदाता के साथ मैप करें। पोस्टिंग-डिफ़ॉल्ट और व्यय खाते आवश्यक के रूप में चिह्नित हैं; पोस्ट किए गए जर्नल मैप किए गए प्रदाता खाता कोड का उपयोग करके पुश किए जाते हैं।"
+
 msgid "Map your current process, systems, and data"
 msgstr "अपनी वर्तमान प्रक्रिया, सिस्टम और डेटा को मैप करें"
-
-msgid "Mapped accounts"
-msgstr "मैप किए गए खाते"
 
 msgid "Mapped values"
 msgstr "मैप किए गए मान"
@@ -9919,8 +9937,8 @@ msgstr "कोई क्षमता जोड़ी नहीं गई"
 msgid "No Access"
 msgstr "कोई एक्सेस नहीं"
 
-msgid "No accounts mapped yet"
-msgstr "अभी तक कोई खाते मैप नहीं किए गए"
+msgid "No accounts match your search"
+msgstr "कोई खाते आपकी खोज से मेल नहीं खाते"
 
 msgid "No action needed"
 msgstr "कोई कार्रवाई की आवश्यकता नहीं है"
@@ -12869,6 +12887,9 @@ msgstr "रिटर्न की गई सीरीज संख्याए�
 msgid "Returning unused picked material"
 msgstr "अप्रयुक्त सामग्री को वापस किया जा रहा है"
 
+msgid "Returns"
+msgstr "वापसियाँ"
+
 msgid "Returns:"
 msgstr "रिटर्न:"
 
@@ -13427,6 +13448,9 @@ msgstr "स्क्रैप किया गया"
 msgid "Search"
 msgstr "खोज"
 
+msgid "Search accounts"
+msgstr "खातों को खोजें"
+
 msgid "Search accounts..."
 msgstr "खातों को खोजें..."
 
@@ -13727,10 +13751,10 @@ msgid "Self Managed"
 msgstr "स्व प्रबंधित"
 
 msgid "Self-hosted or managed"
-msgstr ""
+msgstr "स्व-होस्टेड या प्रबंधित"
 
 msgid "Self-onboarding"
-msgstr ""
+msgstr "स्व-ऑनबोर्डिंग"
 
 msgid "Self-paced"
 msgstr "स्व-गति"
@@ -14319,12 +14343,6 @@ msgstr "स्रोत सूची"
 msgid "Source Method"
 msgstr "स्रोत विधि"
 
-msgid "Source Purchase Order"
-msgstr "स्रोत क्रय आदेश"
-
-msgid "Source Sales Order"
-msgstr "स्रोत विक्रय आदेश"
-
 msgid "Source types"
 msgstr "स्रोत प्रकार"
 
@@ -14377,7 +14395,7 @@ msgid "Split shipment line"
 msgstr "शिपमेंट लाइन को विभाजित करें"
 
 msgid "SSO/SAML"
-msgstr ""
+msgstr "SSO/SAML"
 
 msgid "Stand up hosting"
 msgstr "होस्टिंग सेट अप करें"
@@ -15085,7 +15103,7 @@ msgid "Team trained"
 msgstr "टीम प्रशिक्षित"
 
 msgid "Technical support"
-msgstr ""
+msgstr "तकनीकी समर्थन"
 
 msgid "Temperature"
 msgstr "तापमान"
@@ -16111,6 +16129,14 @@ msgstr "यह सक्रिय निर्माण विधि के स�
 msgid "This will remove {0}'s link to {1}. The job will no longer appear under the sales order and shipments won't find it."
 msgstr "यह {0} का {1} से लिंक हटा देगा। यह जॉब अब बिक्री आदेश के तहत दिखाई नहीं देगा और शिपमेंट इसे नहीं खोज पाएंगे।"
 
+#. placeholder {0}: routeData?.purchaseReturnOrder?.purchaseReturnOrderId
+msgid "This will remove the link between {0} and its purchase order. The return will no longer appear under the purchase order."
+msgstr "इससे {0} और उसके क्रय आदेश के बीच का लिंक हट जाएगा। वापसी अब क्रय आदेश के अंतर्गत नहीं दिखेगी।"
+
+#. placeholder {0}: routeData?.salesReturnOrder?.salesReturnOrderId
+msgid "This will remove the link between {0} and its sales order. The RMA will no longer appear under the sales order."
+msgstr "इससे {0} और उसके विक्रय आदेश के बीच का लिंक हट जाएगा। RMA अब विक्रय आदेश के अंतर्गत नहीं दिखेगी।"
+
 msgid "This will replace all method materials of other revisions with this revision."
 msgstr "यह अन्य संशोधनों की सभी विधि सामग्री को इस संशोधन से बदल देगा।"
 
@@ -16632,10 +16658,10 @@ msgid "unknown location"
 msgstr "अज्ञात स्थान"
 
 msgid "Unlimited functional support"
-msgstr ""
+msgstr "असीमित कार्यात्मक समर्थन"
 
 msgid "Unlimited records"
-msgstr ""
+msgstr "असीमित रिकॉर्ड"
 
 msgid "Unlink"
 msgstr "अनलिंक करें"
@@ -16643,14 +16669,17 @@ msgstr "अनलिंक करें"
 msgid "Unlink job from sales order?"
 msgstr "बिक्रय आदेश से नौकरी को अनलिंक करें?"
 
+msgid "Unlink return from purchase order?"
+msgstr "वापसी को क्रय आदेश से अनलिंक करें?"
+
+msgid "Unlink RMA from sales order?"
+msgstr "RMA को विक्रय आदेश से अनलिंक करें?"
+
 msgid "Unlock"
 msgstr "अनलॉक करें"
 
 msgid "Unlock with passkey"
 msgstr "पासकी के साथ अनलॉक करें"
-
-msgid "Unmapped accounts"
-msgstr "असंबद्ध खाते"
 
 msgid "Unmapped dimension values"
 msgstr "अनमैप्ड आयाम मान"
@@ -17213,12 +17242,6 @@ msgstr "निर्धारित देखें"
 
 msgid "View Shipment"
 msgstr "शिपमेंट देखें"
-
-msgid "View source purchase order"
-msgstr "स्रोत क्रय आदेश देखें"
-
-msgid "View source sales order"
-msgstr "स्रोत विक्रय आदेश देखें"
 
 msgid "View Status"
 msgstr "स्थिति देखें"

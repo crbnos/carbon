@@ -96,6 +96,7 @@ export async function action({ request }: ActionFunctionArgs) {
           .in("id", ids as string[]);
       }
     // Clearing the currency falls through to the generic null update.
+    case "salesOrderId":
     case "customerContactId":
     case "customerLocationId":
     case "customerReference":

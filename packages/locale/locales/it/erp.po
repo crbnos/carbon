@@ -314,7 +314,7 @@ msgid "4h"
 msgstr "4h"
 
 msgid "5 user minimum"
-msgstr ""
+msgstr "Minimo 5 utenti"
 
 msgid "5-8 weeks"
 msgstr "5-8 settimane"
@@ -371,7 +371,7 @@ msgid "A contractor is a supplier contact with particular abilities and availabl
 msgstr "Un appaltatore è un contatto fornitore con particolari competenze e ore disponibili"
 
 msgid "A custom solution to meet your needs"
-msgstr ""
+msgstr "Una soluzione personalizzata per le tue esigenze"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Un cliente è un'azienda o una persona che acquista i tuoi prodotti o servizi."
@@ -484,10 +484,10 @@ msgid "A Make to Order component whose parts are issued together into the parent
 msgstr "Un componente Fabrica su Ordine le cui parti vengono emesse insieme nel lavoro padre — nessuna compilazione separata."
 
 msgid "A managed cloud-hosted version of Carbon"
-msgstr ""
+msgstr "Una versione gestita di Carbon ospitata nel cloud"
 
 msgid "A managed version with all the advanced features"
-msgstr ""
+msgstr "Una versione gestita con tutte le funzioni avanzate"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Un materiale è un articolo fisico utilizzato per realizzare una parte che può essere utilizzata in più lavori"
@@ -955,9 +955,6 @@ msgstr "Crediti verso clienti"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Crediti verso clienti per importi dovuti dai clienti."
 
-msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
-msgstr "Conti referenziati da impostazioni di default di posting o cronologia giornale che non hanno ancora una mappatura provider."
-
 msgid "Accumulated Depreciation"
 msgstr "Fondo di ammortamento"
 
@@ -1364,7 +1361,7 @@ msgid "All actions selected"
 msgstr "Tutte le azioni selezionate"
 
 msgid "All advanced features available"
-msgstr ""
+msgstr "Tutte le funzioni avanzate disponibili"
 
 msgid "All Audit Logs"
 msgstr "Tutti i registri di audit"
@@ -1392,9 +1389,6 @@ msgstr "Tutte le Ubicazioni"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Tutti i membri dei gruppi selezionati e gli individui selezionati potranno approvare le richieste"
-
-msgid "All posting accounts are mapped"
-msgstr "Tutti i conti di posting sono mappati"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "Tutte le righe importate — {inserted} inserite, {updated} aggiornate."
@@ -1639,7 +1633,7 @@ msgid "API keys for programmatic access to your Carbon data."
 msgstr "Chiavi API per l'accesso programmatico ai tuoi dati Carbon."
 
 msgid "API, webhooks, and integrations"
-msgstr ""
+msgstr "API, webhook e integrazioni"
 
 msgid "Applied"
 msgstr "Applicato"
@@ -2360,7 +2354,7 @@ msgid "Audit Log"
 msgstr "Registro di Audit"
 
 msgid "Audit logging"
-msgstr ""
+msgstr "Registrazione di audit"
 
 msgid "Audit Logging"
 msgstr "Registrazione di audit"
@@ -2432,7 +2426,7 @@ msgid "Automatic Updates"
 msgstr "Aggiornamenti Automatici"
 
 msgid "Automatic updates and backups"
-msgstr ""
+msgstr "Aggiornamenti e backup automatici"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "Consumo automatico e proporzionato dei materiali non tracciati di un lavoro quando viene segnalata l'uscita — i materiali tracciati vengono emessi manualmente."
@@ -2532,7 +2526,7 @@ msgid "Base Price"
 msgstr "Prezzo Base"
 
 msgid "Basic ERP, MES, and QMS functionality"
-msgstr ""
+msgstr "Funzionalità ERP, MES e QMS di base"
 
 msgid "Basic Information"
 msgstr "Informazioni di base"
@@ -2622,6 +2616,9 @@ msgstr "Bloccato"
 #. placeholder {0}: workCenter.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Bloccato da {0}"
+
+msgid "Blocking sync"
+msgstr "Sincronizzazione bloccante"
 
 msgid "Blocks save until resolved"
 msgstr "Blocca il salvataggio fino alla risoluzione"
@@ -3239,7 +3236,7 @@ msgid "Cloud, or your self-hosted environment."
 msgstr "Cloud, o il tuo ambiente self-hosted."
 
 msgid "CMMC compliant"
-msgstr ""
+msgstr "Conforme a CMMC"
 
 msgid "Code"
 msgstr "Codice"
@@ -3302,7 +3299,7 @@ msgid "Committing a receipt, shipment, or invoice: quantities move, journal entr
 msgstr "Conferma di una ricevuta, spedizione o fattura: le quantità si muovono, i movimenti del giornale colpiscono il mastro, e lo stato diventa Registrato."
 
 msgid "Community support"
-msgstr ""
+msgstr "Supporto della comunità"
 
 msgid "Companies"
 msgstr "Aziende"
@@ -3605,7 +3602,7 @@ msgid "Contact (optional)"
 msgstr "Contatto (facoltativo)"
 
 msgid "Contact us"
-msgstr ""
+msgstr "Contattaci"
 
 msgid "contacts"
 msgstr "contatti"
@@ -3648,6 +3645,9 @@ msgstr "Controllare le modifiche di progettazione con revisioni / ECO"
 
 msgid "Control how operators pick material and track time on the shop floor."
 msgstr "Controlla come gli operatori prelevano il materiale e tracciano il tempo in officina."
+
+msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
+msgstr "Controlla se gli ID degli articoli (parti, materiali, consumabili, strumenti e servizi) possono contenere caratteri minuscoli."
 
 msgid "Controller, Accountant"
 msgstr "Controllore, Contabile"
@@ -4516,7 +4516,7 @@ msgid "Customers"
 msgstr "Clienti"
 
 msgid "Customizations, training, and integrations"
-msgstr ""
+msgstr "Personalizzazioni, formazione e integrazioni"
 
 msgid "Customize"
 msgstr "Personalizza"
@@ -6062,6 +6062,9 @@ msgstr "Abilita questa regola per richiedere automaticamente l'approvazione per 
 msgid "Enable timecard tracking for work shifts."
 msgstr "Abilita il monitoraggio delle schede orarie per i turni di lavoro."
 
+msgid "Enable to allow lowercase characters in item IDs."
+msgstr "Abilita per consentire caratteri minuscoli negli ID degli articoli."
+
 msgid "Enable to allow shared workstation mode."
 msgstr "Abilita per consentire la modalità workstation condivisa."
 
@@ -6319,6 +6322,9 @@ msgstr "Ogni test nell'ambito passa nel tuo sistema configurato, con i tuoi dati
 msgid "Every match"
 msgstr "Ogni corrispondenza"
 
+msgid "Every required action has already been added."
+msgstr "Ogni azione richiesta è stata già aggiunta."
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Ogni attività richiesta deve essere Completata o Saltata prima che il periodo possa essere chiuso."
 
@@ -6360,9 +6366,6 @@ msgstr "Certificato di Esenzione"
 
 msgid "Exemption Reason"
 msgstr "Motivo dell'Esenzione"
-
-msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr "Mappature esistenti. Seleziona un conto provider diverso per rimappare."
 
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Mapping esistenti. Scegli un'opzione provider diversa per rimappare."
@@ -7118,7 +7121,7 @@ msgid "Format"
 msgstr "Formato"
 
 msgid "Forward deployed engineer"
-msgstr ""
+msgstr "Ingegnere distribuito in avanti"
 
 msgid "Foundation"
 msgstr "Fondamenti"
@@ -7174,7 +7177,7 @@ msgid "Full name"
 msgstr "Nome completo"
 
 msgid "Full setup and migrations"
-msgstr ""
+msgstr "Configurazione e migrazioni complete"
 
 msgid "Fully Depreciated"
 msgstr "Completamente Ammortizzato"
@@ -8309,6 +8312,15 @@ msgstr "Gruppi di articoli"
 msgid "Item ID"
 msgstr "ID Articolo"
 
+msgid "Item IDs"
+msgstr "ID articoli"
+
+msgid "Item IDs are forced to uppercase"
+msgstr "Gli ID degli articoli sono forzati in maiuscole"
+
+msgid "Item IDs keep the casing you type."
+msgstr "Gli ID degli articoli mantengono l'uso delle maiuscole che digiti."
+
 msgid "Item ledger"
 msgstr "Libro Mastro Articoli"
 
@@ -8717,6 +8729,12 @@ msgstr "Collegamento"
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "Collegamento (facoltativo) — ad es. /x/settings/…"
 
+msgid "Link a purchase order"
+msgstr "Collega un ordine di acquisto"
+
+msgid "Link a sales order"
+msgstr "Collega un ordine di vendita"
+
 msgid "Link Jira Issue"
 msgstr "Collega Problema Jira"
 
@@ -8896,6 +8914,9 @@ msgstr "Ispezione basata su lotto della merce ricevuta secondo un piano di campi
 msgid "Low"
 msgstr "Basso"
 
+msgid "Lowercase item IDs are allowed"
+msgstr "Gli ID degli articoli in minuscole sono consentiti"
+
 msgid "Machine"
 msgstr "Macchina"
 
@@ -9046,9 +9067,6 @@ msgstr "Produzione"
 msgid "Map accounts"
 msgstr "Mappa conti"
 
-msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
-msgstr "Mappa i conti Carbon al piano dei conti del provider. I giornali posting vengono inviati utilizzando il codice conto provider mappato."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Mappa Righe Fattura Estratte"
 
@@ -9058,11 +9076,11 @@ msgstr "Mappa Righe Estratte"
 msgid "Map Lines Now"
 msgstr "Mappa Righe Ora"
 
+msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+msgstr "Associa il tuo piano dei conti con quello del fornitore. I conti di registrazione predefinita e i conti spese sono contrassegnati come Obbligatori; i diari contabili registrati vengono inviati utilizzando il codice account del fornitore mappato."
+
 msgid "Map your current process, systems, and data"
 msgstr "Mappa il tuo processo attuale, i sistemi e i dati"
-
-msgid "Mapped accounts"
-msgstr "Conti mappati"
 
 msgid "Mapped values"
 msgstr "Valori mappati"
@@ -9919,8 +9937,8 @@ msgstr "Nessuna competenza aggiunta"
 msgid "No Access"
 msgstr "Nessun accesso"
 
-msgid "No accounts mapped yet"
-msgstr "Nessun conto mappato ancora"
+msgid "No accounts match your search"
+msgstr "Nessun account corrisponde alla tua ricerca"
 
 msgid "No action needed"
 msgstr "Nessuna azione necessaria"
@@ -12869,6 +12887,9 @@ msgstr "Numeri di serie restituiti"
 msgid "Returning unused picked material"
 msgstr "Restituzione di materiale prelevato inutilizzato"
 
+msgid "Returns"
+msgstr "Resi"
+
 msgid "Returns:"
 msgstr "Restituisce:"
 
@@ -13427,6 +13448,9 @@ msgstr "Scartato"
 msgid "Search"
 msgstr "Cerca"
 
+msgid "Search accounts"
+msgstr "Cerca account"
+
 msgid "Search accounts..."
 msgstr "Cerca conti..."
 
@@ -13727,10 +13751,10 @@ msgid "Self Managed"
 msgstr "Gestito autonomamente"
 
 msgid "Self-hosted or managed"
-msgstr ""
+msgstr "Auto-ospitato o gestito"
 
 msgid "Self-onboarding"
-msgstr ""
+msgstr "Auto-onboarding"
 
 msgid "Self-paced"
 msgstr "Autonomo"
@@ -14319,12 +14343,6 @@ msgstr "Elenco di origine"
 msgid "Source Method"
 msgstr "Metodo Sorgente"
 
-msgid "Source Purchase Order"
-msgstr "Ordine di acquisto di origine"
-
-msgid "Source Sales Order"
-msgstr "Ordine di vendita di origine"
-
 msgid "Source types"
 msgstr "Tipi di origine"
 
@@ -14377,7 +14395,7 @@ msgid "Split shipment line"
 msgstr "Dividi riga spedizione"
 
 msgid "SSO/SAML"
-msgstr ""
+msgstr "SSO/SAML"
 
 msgid "Stand up hosting"
 msgstr "Configura l'hosting"
@@ -15085,7 +15103,7 @@ msgid "Team trained"
 msgstr "Team addestrato"
 
 msgid "Technical support"
-msgstr ""
+msgstr "Supporto tecnico"
 
 msgid "Temperature"
 msgstr "Temperatura"
@@ -16111,6 +16129,14 @@ msgstr "Questo ricalcolerà il costo unitario dal distinta base e dai processi d
 msgid "This will remove {0}'s link to {1}. The job will no longer appear under the sales order and shipments won't find it."
 msgstr "Questo rimuoverà il collegamento di {0} a {1}. Il lavoro non apparirà più nell'ordine di vendita e le spedizioni non lo troveranno."
 
+#. placeholder {0}: routeData?.purchaseReturnOrder?.purchaseReturnOrderId
+msgid "This will remove the link between {0} and its purchase order. The return will no longer appear under the purchase order."
+msgstr "Questo rimuoverà il collegamento tra {0} e il suo ordine di acquisto. Il reso non apparirà più sotto l'ordine di acquisto."
+
+#. placeholder {0}: routeData?.salesReturnOrder?.salesReturnOrderId
+msgid "This will remove the link between {0} and its sales order. The RMA will no longer appear under the sales order."
+msgstr "Questo rimuoverà il collegamento tra {0} e il suo ordine di vendita. La RMA non apparirà più sotto l'ordine di vendita."
+
 msgid "This will replace all method materials of other revisions with this revision."
 msgstr "Questo sostituirà tutti i materiali del metodo di altre revisioni con questa revisione."
 
@@ -16632,10 +16658,10 @@ msgid "unknown location"
 msgstr "posizione sconosciuta"
 
 msgid "Unlimited functional support"
-msgstr ""
+msgstr "Supporto funzionale illimitato"
 
 msgid "Unlimited records"
-msgstr ""
+msgstr "Record illimitati"
 
 msgid "Unlink"
 msgstr "Scollega"
@@ -16643,14 +16669,17 @@ msgstr "Scollega"
 msgid "Unlink job from sales order?"
 msgstr "Scollega il lavoro dall'ordine di vendita?"
 
+msgid "Unlink return from purchase order?"
+msgstr "Scollegare il reso dall'ordine di acquisto?"
+
+msgid "Unlink RMA from sales order?"
+msgstr "Scollegare la RMA dall'ordine di vendita?"
+
 msgid "Unlock"
 msgstr "Sblocca"
 
 msgid "Unlock with passkey"
 msgstr "Sblocca con passkey"
-
-msgid "Unmapped accounts"
-msgstr "Account non mappati"
 
 msgid "Unmapped dimension values"
 msgstr "Valori di dimensione non mappati"
@@ -17213,12 +17242,6 @@ msgstr "Visualizza Programmato"
 
 msgid "View Shipment"
 msgstr "Visualizza Spedizione"
-
-msgid "View source purchase order"
-msgstr "Visualizza ordine di acquisto di origine"
-
-msgid "View source sales order"
-msgstr "Visualizza ordine di vendita di origine"
 
 msgid "View Status"
 msgstr "Visualizza Stato"

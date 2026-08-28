@@ -314,7 +314,7 @@ msgid "4h"
 msgstr "4시간"
 
 msgid "5 user minimum"
-msgstr ""
+msgstr "5명 사용자 최소"
 
 msgid "5-8 weeks"
 msgstr "5-8주"
@@ -371,7 +371,7 @@ msgid "A contractor is a supplier contact with particular abilities and availabl
 msgstr "계약직은 특정 역량과 가용 시간을 가진 공급업체 담당자입니다"
 
 msgid "A custom solution to meet your needs"
-msgstr ""
+msgstr "당신의 요구를 충족하기 위한 맞춤형 솔루션"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "고객은 귀사의 부품이나 서비스를 구매하는 회사 또는 개인입니다."
@@ -484,10 +484,10 @@ msgid "A Make to Order component whose parts are issued together into the parent
 msgstr "부품이 상위 작업에 함께 투입되는 주문생산(Make to Order) 구성품으로, 별도의 빌드가 없습니다."
 
 msgid "A managed cloud-hosted version of Carbon"
-msgstr ""
+msgstr "Carbon의 관리되는 클라우드 호스팅 버전"
 
 msgid "A managed version with all the advanced features"
-msgstr ""
+msgstr "모든 고급 기능이 포함된 관리되는 버전"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "자재는 여러 작업에 걸쳐 사용할 수 있는, 부품 제작에 쓰이는 실물 품목입니다"
@@ -955,9 +955,6 @@ msgstr "매출채권"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "고객이 지급할 금액에 대한 매출채권"
 
-msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
-msgstr "게시 기본값 또는 분개 기록에서 참조되지만 공급자 매핑이 아직 없는 계정입니다."
-
 msgid "Accumulated Depreciation"
 msgstr "감가상각누계액"
 
@@ -1364,7 +1361,7 @@ msgid "All actions selected"
 msgstr "모든 조치가 선택됨"
 
 msgid "All advanced features available"
-msgstr ""
+msgstr "모든 고급 기능 사용 가능"
 
 msgid "All Audit Logs"
 msgstr "모든 감사 로그"
@@ -1392,9 +1389,6 @@ msgstr "모든 위치"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "선택한 그룹의 모든 구성원과 선택한 개인이 요청을 승인할 수 있습니다"
-
-msgid "All posting accounts are mapped"
-msgstr "모든 게시 계정이 매핑됨"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "모든 행을 가져왔습니다 — {inserted}개 추가, {updated}개 업데이트."
@@ -1639,7 +1633,7 @@ msgid "API keys for programmatic access to your Carbon data."
 msgstr "Carbon 데이터에 프로그래밍 방식으로 접근하기 위한 API 키입니다."
 
 msgid "API, webhooks, and integrations"
-msgstr ""
+msgstr "API, 웹훅 및 통합"
 
 msgid "Applied"
 msgstr "적용됨"
@@ -2360,7 +2354,7 @@ msgid "Audit Log"
 msgstr "감사 로그"
 
 msgid "Audit logging"
-msgstr ""
+msgstr "감사 로깅"
 
 msgid "Audit Logging"
 msgstr "감사 로깅"
@@ -2432,7 +2426,7 @@ msgid "Automatic Updates"
 msgstr "자동 업데이트"
 
 msgid "Automatic updates and backups"
-msgstr ""
+msgstr "자동 업데이트 및 백업"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "산출물이 보고될 때 작업의 미추적 자재를 비례 배분하여 자동으로 소비합니다 — 추적 자재는 수동으로 출고됩니다."
@@ -2532,7 +2526,7 @@ msgid "Base Price"
 msgstr "기본 가격"
 
 msgid "Basic ERP, MES, and QMS functionality"
-msgstr ""
+msgstr "기본 ERP, MES 및 QMS 기능"
 
 msgid "Basic Information"
 msgstr "기본 정보"
@@ -2622,6 +2616,9 @@ msgstr "차단됨"
 #. placeholder {0}: workCenter.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "{0}에 의해 차단됨"
+
+msgid "Blocking sync"
+msgstr "동기화 차단"
 
 msgid "Blocks save until resolved"
 msgstr "해결될 때까지 저장을 차단합니다"
@@ -3239,7 +3236,7 @@ msgid "Cloud, or your self-hosted environment."
 msgstr "클라우드 또는 자체 호스팅 환경."
 
 msgid "CMMC compliant"
-msgstr ""
+msgstr "CMMC 규정 준수"
 
 msgid "Code"
 msgstr "코드"
@@ -3302,7 +3299,7 @@ msgid "Committing a receipt, shipment, or invoice: quantities move, journal entr
 msgstr "입고, 출하, 인보이스를 확정하면 수량이 이동하고 전표가 원장에 반영되며 상태가 '전기됨'으로 변경됩니다."
 
 msgid "Community support"
-msgstr ""
+msgstr "커뮤니티 지원"
 
 msgid "Companies"
 msgstr "회사"
@@ -3605,7 +3602,7 @@ msgid "Contact (optional)"
 msgstr "담당자(선택)"
 
 msgid "Contact us"
-msgstr ""
+msgstr "문의하기"
 
 msgid "contacts"
 msgstr "담당자"
@@ -3648,6 +3645,9 @@ msgstr "리비전/ECO로 설계 변경을 관리하세요"
 
 msgid "Control how operators pick material and track time on the shop floor."
 msgstr "작업장에서 작업자가 자재를 선택하고 시간을 추적하는 방식을 제어합니다."
+
+msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
+msgstr "항목 ID(부품, 재료, 소비품, 도구 및 서비스)에 소문자가 포함될 수 있는지 제어합니다."
 
 msgid "Controller, Accountant"
 msgstr "컨트롤러, 회계 담당자"
@@ -4516,7 +4516,7 @@ msgid "Customers"
 msgstr "고객"
 
 msgid "Customizations, training, and integrations"
-msgstr ""
+msgstr "맞춤화, 교육 및 통합"
 
 msgid "Customize"
 msgstr "사용자 지정"
@@ -6062,6 +6062,9 @@ msgstr "이 규칙을 활성화하면 조건에 맞는 문서에 대해 자동�
 msgid "Enable timecard tracking for work shifts."
 msgstr "교대 근무에 대한 근무기록 추적을 활성화하세요."
 
+msgid "Enable to allow lowercase characters in item IDs."
+msgstr "항목 ID에 소문자 사용을 허용하려면 활성화하세요."
+
 msgid "Enable to allow shared workstation mode."
 msgstr "공유 워크스테이션 모드를 허용하려면 활성화하세요."
 
@@ -6319,6 +6322,9 @@ msgstr "설정한 시스템에서 귀사의 데이터로 범위 내 모든 테�
 msgid "Every match"
 msgstr "모든 일치"
 
+msgid "Every required action has already been added."
+msgstr "필요한 모든 작업이 이미 추가되었습니다."
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "기간을 종료하기 전에 모든 필수 작업을 완료하거나 건너뛰어야 합니다."
 
@@ -6360,9 +6366,6 @@ msgstr "면세 증명서"
 
 msgid "Exemption Reason"
 msgstr "면세 사유"
-
-msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr "기존 매핑입니다. 다시 매핑하려면 다른 공급자 계정을 선택하세요."
 
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "기존 매핑입니다. 다시 매핑하려면 다른 제공자 옵션을 선택하세요."
@@ -7118,7 +7121,7 @@ msgid "Format"
 msgstr "형식"
 
 msgid "Forward deployed engineer"
-msgstr ""
+msgstr "현지 배치 엔지니어"
 
 msgid "Foundation"
 msgstr "파운데이션"
@@ -7174,7 +7177,7 @@ msgid "Full name"
 msgstr "전체 이름"
 
 msgid "Full setup and migrations"
-msgstr ""
+msgstr "전체 설정 및 마이그레이션"
 
 msgid "Fully Depreciated"
 msgstr "완전 감가상각"
@@ -8309,6 +8312,15 @@ msgstr "품목 그룹"
 msgid "Item ID"
 msgstr "품목 ID"
 
+msgid "Item IDs"
+msgstr "항목 ID"
+
+msgid "Item IDs are forced to uppercase"
+msgstr "항목 ID는 대문자로 강제됩니다"
+
+msgid "Item IDs keep the casing you type."
+msgstr "항목 ID는 입력한 대문자/소문자를 유지합니다."
+
 msgid "Item ledger"
 msgstr "품목 원장"
 
@@ -8717,6 +8729,12 @@ msgstr "링크"
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "링크(선택 사항) — 예: /x/settings/…"
 
+msgid "Link a purchase order"
+msgstr "구매 주문 연결"
+
+msgid "Link a sales order"
+msgstr "판매 주문 연결"
+
 msgid "Link Jira Issue"
 msgstr "Jira 이슈 연결"
 
@@ -8896,6 +8914,9 @@ msgstr "샘플링 계획에 따라 수령한 상품에 대한 로트 기반 검�
 msgid "Low"
 msgstr "낮음"
 
+msgid "Lowercase item IDs are allowed"
+msgstr "소문자 항목 ID는 허용됩니다"
+
 msgid "Machine"
 msgstr "기계"
 
@@ -9046,9 +9067,6 @@ msgstr "제조"
 msgid "Map accounts"
 msgstr "계정 매핑"
 
-msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
-msgstr "Carbon 계정을 공급자의 계정 과목표에 매핑합니다. 게시된 분개는 매핑된 공급자 계정 코드를 사용하여 푸시됩니다."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "추출된 인보이스 라인 매핑"
 
@@ -9058,11 +9076,11 @@ msgstr "추출된 라인 매핑"
 msgid "Map Lines Now"
 msgstr "지금 라인 매핑"
 
+msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+msgstr "귀사의 계정과목을 제공자의 계정과목으로 매핑하세요. 기본 전기 계정과 비용 계정은 필수로 표시되어 있으며, 전기된 분개는 매핑된 제공자 계정 코드를 사용하여 전송됩니다."
+
 msgid "Map your current process, systems, and data"
 msgstr "현재 프로세스, 시스템, 데이터를 매핑하세요"
-
-msgid "Mapped accounts"
-msgstr "매핑된 계정"
 
 msgid "Mapped values"
 msgstr "매핑된 값"
@@ -9919,8 +9937,8 @@ msgstr "추가된 역량이 없습니다"
 msgid "No Access"
 msgstr "접근 권한 없음"
 
-msgid "No accounts mapped yet"
-msgstr "아직 매핑된 계정 없음"
+msgid "No accounts match your search"
+msgstr "검색과 일치하는 계정이 없습니다"
 
 msgid "No action needed"
 msgstr "조치가 필요하지 않습니다"
@@ -12869,6 +12887,9 @@ msgstr "반품된 일련번호"
 msgid "Returning unused picked material"
 msgstr "미사용 선택 재료 반환 중"
 
+msgid "Returns"
+msgstr "반품"
+
 msgid "Returns:"
 msgstr "반환 값:"
 
@@ -13427,6 +13448,9 @@ msgstr "폐기됨"
 msgid "Search"
 msgstr "검색"
 
+msgid "Search accounts"
+msgstr "계정 검색"
+
 msgid "Search accounts..."
 msgstr "계정 검색..."
 
@@ -13727,10 +13751,10 @@ msgid "Self Managed"
 msgstr "자체 관리"
 
 msgid "Self-hosted or managed"
-msgstr ""
+msgstr "자체 호스팅 또는 관리형"
 
 msgid "Self-onboarding"
-msgstr ""
+msgstr "자체 온보딩"
 
 msgid "Self-paced"
 msgstr "자율 학습"
@@ -14319,12 +14343,6 @@ msgstr "원본 목록"
 msgid "Source Method"
 msgstr "소스 방법"
 
-msgid "Source Purchase Order"
-msgstr "원본 구매 주문"
-
-msgid "Source Sales Order"
-msgstr "원본 판매 주문"
-
 msgid "Source types"
 msgstr "소스 유형"
 
@@ -14377,7 +14395,7 @@ msgid "Split shipment line"
 msgstr "출하 라인 분할"
 
 msgid "SSO/SAML"
-msgstr ""
+msgstr "SSO/SAML"
 
 msgid "Stand up hosting"
 msgstr "호스팅 구축"
@@ -15085,7 +15103,7 @@ msgid "Team trained"
 msgstr "팀 교육 완료"
 
 msgid "Technical support"
-msgstr ""
+msgstr "기술 지원"
 
 msgid "Temperature"
 msgstr "온도"
@@ -16111,6 +16129,14 @@ msgstr "배치 크기를 사용하여 활성 제조 방법의 자재명세서와
 msgid "This will remove {0}'s link to {1}. The job will no longer appear under the sales order and shipments won't find it."
 msgstr "{0}에서 {1}로의 연결이 제거됩니다. 이후 해당 작업은 판매주문 아래에 표시되지 않으며 출하에서도 찾을 수 없습니다."
 
+#. placeholder {0}: routeData?.purchaseReturnOrder?.purchaseReturnOrderId
+msgid "This will remove the link between {0} and its purchase order. The return will no longer appear under the purchase order."
+msgstr "{0}와(과) 구매 주문 간의 연결이 해제됩니다. 반품이 더 이상 구매 주문 아래에 표시되지 않습니다."
+
+#. placeholder {0}: routeData?.salesReturnOrder?.salesReturnOrderId
+msgid "This will remove the link between {0} and its sales order. The RMA will no longer appear under the sales order."
+msgstr "{0}와(과) 판매 주문 간의 연결이 해제됩니다. RMA가 더 이상 판매 주문 아래에 표시되지 않습니다."
+
 msgid "This will replace all method materials of other revisions with this revision."
 msgstr "다른 리비전의 모든 방법 자재가 이 리비전으로 교체됩니다."
 
@@ -16632,10 +16658,10 @@ msgid "unknown location"
 msgstr "알 수 없는 위치"
 
 msgid "Unlimited functional support"
-msgstr ""
+msgstr "무제한 기능 지원"
 
 msgid "Unlimited records"
-msgstr ""
+msgstr "무제한 레코드"
 
 msgid "Unlink"
 msgstr "연결 해제"
@@ -16643,14 +16669,17 @@ msgstr "연결 해제"
 msgid "Unlink job from sales order?"
 msgstr "작업을 판매주문에서 연결 해제하시겠습니까?"
 
+msgid "Unlink return from purchase order?"
+msgstr "구매 주문에서 반품 연결을 해제하시겠습니까?"
+
+msgid "Unlink RMA from sales order?"
+msgstr "판매 주문에서 RMA 연결을 해제하시겠습니까?"
+
 msgid "Unlock"
 msgstr "잠금 해제"
 
 msgid "Unlock with passkey"
 msgstr "패스키로 잠금 해제"
-
-msgid "Unmapped accounts"
-msgstr "매핑되지 않은 계정"
 
 msgid "Unmapped dimension values"
 msgstr "매핑되지 않은 차원 값"
@@ -17213,12 +17242,6 @@ msgstr "예정 정비 보기"
 
 msgid "View Shipment"
 msgstr "출하 보기"
-
-msgid "View source purchase order"
-msgstr "원본 구매 주문 보기"
-
-msgid "View source sales order"
-msgstr "원본 판매 주문 보기"
 
 msgid "View Status"
 msgstr "상태 보기"

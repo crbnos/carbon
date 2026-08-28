@@ -314,7 +314,7 @@ msgid "4h"
 msgstr "4s"
 
 msgid "5 user minimum"
-msgstr ""
+msgstr "5 kullanıcı minimumu"
 
 msgid "5-8 weeks"
 msgstr "5-8 hafta"
@@ -371,7 +371,7 @@ msgid "A contractor is a supplier contact with particular abilities and availabl
 msgstr "Bir yüklenici, belirli yeteneklere ve müsait saatlere sahip bir tedarikçi iletişimidir."
 
 msgid "A custom solution to meet your needs"
-msgstr ""
+msgstr "İhtiyaçlarınızı karşılamak için özel bir çözüm"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Bir müşteri, parçalarınızı veya hizmetlerinizi satın alan bir işletme veya kişidir."
@@ -484,10 +484,10 @@ msgid "A Make to Order component whose parts are issued together into the parent
 msgstr "Parçaları ebeveyn işine birlikte verilen bir Sipariş üzere Üretim bileşeni — ayrı yapı yok."
 
 msgid "A managed cloud-hosted version of Carbon"
-msgstr ""
+msgstr "Carbon'un yönetilen bulut barındırmalı sürümü"
 
 msgid "A managed version with all the advanced features"
-msgstr ""
+msgstr "Tüm gelişmiş özellikleri içeren yönetilen bir sürüm"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Bir malzeme, birden fazla işte kullanılabilecek bir parça yapmak için kullanılan fiziksel bir öğedir"
@@ -955,9 +955,6 @@ msgstr "Alacak hesapları"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Müşteriler tarafından borçlu olunan tutarlar için alacak hesapları."
 
-msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
-msgstr "Deftere nakil varsayılanları veya yevmiye geçmişi tarafından referans verilen ancak henüz sağlayıcı haritalaması olmayan hesaplar."
-
 msgid "Accumulated Depreciation"
 msgstr "Birikmiş amortisman"
 
@@ -1364,7 +1361,7 @@ msgid "All actions selected"
 msgstr "Tüm eylemler seçildi"
 
 msgid "All advanced features available"
-msgstr ""
+msgstr "Tüm gelişmiş özellikler mevcut"
 
 msgid "All Audit Logs"
 msgstr "Tüm Denetim Kayıtları"
@@ -1392,9 +1389,6 @@ msgstr "Tüm Konumlar"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Seçilen gruplardaki ve bireylerdeki tüm üyeler talepleri onaylayabilecektir"
-
-msgid "All posting accounts are mapped"
-msgstr "Tüm deftere nakil hesapları haritalanmış"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "{inserted} eklendi, {updated} güncellendi — tüm satırlar içe aktarıldı."
@@ -1639,7 +1633,7 @@ msgid "API keys for programmatic access to your Carbon data."
 msgstr "Carbon verilerinize programatik erişim için API anahtarları."
 
 msgid "API, webhooks, and integrations"
-msgstr ""
+msgstr "API, web kancaları ve entegrasyonlar"
 
 msgid "Applied"
 msgstr "Uygulandı"
@@ -2360,7 +2354,7 @@ msgid "Audit Log"
 msgstr "Denetim Kaydı"
 
 msgid "Audit logging"
-msgstr ""
+msgstr "Denetim günlüğü"
 
 msgid "Audit Logging"
 msgstr "Denetim Kaydı Tutma"
@@ -2432,7 +2426,7 @@ msgid "Automatic Updates"
 msgstr "Otomatik Güncellemeler"
 
 msgid "Automatic updates and backups"
-msgstr ""
+msgstr "Otomatik güncellemeler ve yedeklemeler"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "Çıktı raporlandığında bir işin izlenmeyen malzemelerin otomatik, orantılı tüketimi — izlenen malzeme el ile verilir."
@@ -2532,7 +2526,7 @@ msgid "Base Price"
 msgstr "Temel Fiyat"
 
 msgid "Basic ERP, MES, and QMS functionality"
-msgstr ""
+msgstr "Temel ERP, MES ve QMS işlevselliği"
 
 msgid "Basic Information"
 msgstr "Temel Bilgiler"
@@ -2622,6 +2616,9 @@ msgstr "Engellendi"
 #. placeholder {0}: workCenter.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Bloklandı: {0}"
+
+msgid "Blocking sync"
+msgstr "Engelleme senkronizasyonu"
 
 msgid "Blocks save until resolved"
 msgstr "Çözülene kadar kaydetmeyi engeller"
@@ -3239,7 +3236,7 @@ msgid "Cloud, or your self-hosted environment."
 msgstr "Bulut veya kendi barındırılan ortamınız."
 
 msgid "CMMC compliant"
-msgstr ""
+msgstr "CMMC uyumlu"
 
 msgid "Code"
 msgstr "Kod"
@@ -3302,7 +3299,7 @@ msgid "Committing a receipt, shipment, or invoice: quantities move, journal entr
 msgstr "Bir makbuzu, sevkiyatı veya faturayı taahhüt etme: miktarlar hareket eder, günlük girişleri deftere vurur ve durum Gönderilen olur."
 
 msgid "Community support"
-msgstr ""
+msgstr "Topluluk desteği"
 
 msgid "Companies"
 msgstr "Şirketler"
@@ -3605,7 +3602,7 @@ msgid "Contact (optional)"
 msgstr "İletişim (isteğe bağlı)"
 
 msgid "Contact us"
-msgstr ""
+msgstr "Bize başvurun"
 
 msgid "contacts"
 msgstr "kişiler"
@@ -3648,6 +3645,9 @@ msgstr "Tasarım değişikliklerini revizyonlar / ECO'lar ile kontrol edin"
 
 msgid "Control how operators pick material and track time on the shop floor."
 msgstr "Operatörlerin malzeme nasıl seçtiğini ve atölye katında zamanı nasıl takip ettiğini kontrol edin."
+
+msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
+msgstr "Ürün kimliklerinin (parçalar, malzemeler, tüketilebilir ürünler, araçlar ve hizmetler) küçük harf karakterler içerebilir olup olmadığını kontrol edin."
 
 msgid "Controller, Accountant"
 msgstr "Kontrolör, Muhasebeci"
@@ -4516,7 +4516,7 @@ msgid "Customers"
 msgstr "Müşteriler"
 
 msgid "Customizations, training, and integrations"
-msgstr ""
+msgstr "Özelleştirmeler, eğitim ve entegrasyonlar"
 
 msgid "Customize"
 msgstr "Özelleştir"
@@ -6062,6 +6062,9 @@ msgstr "Bu kuralı etkinleştirerek eşleşen belgeler için otomatik olarak ona
 msgid "Enable timecard tracking for work shifts."
 msgstr "Çalışma vardiyaları için zaman kartı takibini etkinleştir."
 
+msgid "Enable to allow lowercase characters in item IDs."
+msgstr "Ürün kimliklerinde küçük harf karakterlere izin vermek için etkinleştirin."
+
 msgid "Enable to allow shared workstation mode."
 msgstr "Paylaşımlı iş istasyonu moduna izin vermek için etkinleştirin."
 
@@ -6319,6 +6322,9 @@ msgstr "Kapsamdaki her test, yapılandırılmış sisteminizde, verilerinizle ge
 msgid "Every match"
 msgstr "Her eşleşme"
 
+msgid "Every required action has already been added."
+msgstr "Gerekli olan tüm eylemler zaten eklendi."
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Dönem kapatılmadan önce gerekli tüm görevler Tamamlandı veya Atlandı olarak işaretlenmelidir."
 
@@ -6360,9 +6366,6 @@ msgstr "İstisnai Sertifika"
 
 msgid "Exemption Reason"
 msgstr "İstisnai Nedeni"
-
-msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr "Mevcut haritalamalar. Yeniden haritalamak için farklı bir sağlayıcı hesabı seçin."
 
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Mevcut eşlemeler. Yeniden eşlemek için farklı bir sağlayıcı seçeneği seçin."
@@ -7118,7 +7121,7 @@ msgid "Format"
 msgstr "Biçim"
 
 msgid "Forward deployed engineer"
-msgstr ""
+msgstr "Ön konuşlandırılmış mühendis"
 
 msgid "Foundation"
 msgstr "Temel"
@@ -7174,7 +7177,7 @@ msgid "Full name"
 msgstr "Tam adı"
 
 msgid "Full setup and migrations"
-msgstr ""
+msgstr "Tam kurulum ve geçişler"
 
 msgid "Fully Depreciated"
 msgstr "Tamamen Amortismana Tabi Tutulmuş"
@@ -8309,6 +8312,15 @@ msgstr "Ürün Grupları"
 msgid "Item ID"
 msgstr "Ürün Kimliği"
 
+msgid "Item IDs"
+msgstr "Ürün Kimlikleri"
+
+msgid "Item IDs are forced to uppercase"
+msgstr "Ürün Kimlikleri büyük harfe zorlanır"
+
+msgid "Item IDs keep the casing you type."
+msgstr "Ürün Kimlikleri yazdığınız büyük/küçük harf yazımını korur."
+
 msgid "Item ledger"
 msgstr "Madde Defteri"
 
@@ -8717,6 +8729,12 @@ msgstr "Bağlantı"
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "Bağlantı (isteğe bağlı) — örn. /x/settings/…"
 
+msgid "Link a purchase order"
+msgstr "Satın alma siparişi bağla"
+
+msgid "Link a sales order"
+msgstr "Satış siparişi bağla"
+
 msgid "Link Jira Issue"
 msgstr "Jira Sorununu Bağla"
 
@@ -8896,6 +8914,9 @@ msgstr "Alınan malların bir örnekleme planına karşı lot bazında denetlenm
 msgid "Low"
 msgstr "Düşük"
 
+msgid "Lowercase item IDs are allowed"
+msgstr "Küçük harf Ürün Kimlikleri izin verilir"
+
 msgid "Machine"
 msgstr "Makine"
 
@@ -9046,9 +9067,6 @@ msgstr "Üretim"
 msgid "Map accounts"
 msgstr "Hesapları Eşle"
 
-msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
-msgstr "Carbon hesaplarını sağlayıcının hesap planına haritalayın. Deftere nakledilen yevmiyeler, haritalanan sağlayıcı hesap kodunu kullanarak gönderilir."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Çıkarılan Fatura Satırlarını Eşle"
 
@@ -9058,11 +9076,11 @@ msgstr "Çıkarılan Satırları Eşle"
 msgid "Map Lines Now"
 msgstr "Satırları Şimdi Eşle"
 
+msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+msgstr "Muhasebe planınızı sağlayıcıya eşleştirin. Deftere Nakil-varsayılan ve gider hesapları Gerekli olarak işaretlenmiştir; deftere nakledilen günlükler eşleştirilen sağlayıcı hesap kodunu kullanarak gönderilir."
+
 msgid "Map your current process, systems, and data"
 msgstr "Mevcut sürecinizi, sistemlerinizi ve verilerinizi eşleyin"
-
-msgid "Mapped accounts"
-msgstr "Haritalanan hesaplar"
 
 msgid "Mapped values"
 msgstr "Eşlenen değerler"
@@ -9919,8 +9937,8 @@ msgstr "Ek yetenek eklenmedi"
 msgid "No Access"
 msgstr "Erişim Yok"
 
-msgid "No accounts mapped yet"
-msgstr "Henüz hiçbir hesap haritalanmamış"
+msgid "No accounts match your search"
+msgstr "Aramanızla eşleşen hesap yok"
 
 msgid "No action needed"
 msgstr "Yapılacak işlem yok"
@@ -12869,6 +12887,9 @@ msgstr "İade Edilen Seri Numaraları"
 msgid "Returning unused picked material"
 msgstr "Kullanılmayan alınan malzeme iade ediliyor"
 
+msgid "Returns"
+msgstr "İadeler"
+
 msgid "Returns:"
 msgstr "Döndürür:"
 
@@ -13427,6 +13448,9 @@ msgstr "Çıkartıldı"
 msgid "Search"
 msgstr "Ara"
 
+msgid "Search accounts"
+msgstr "Hesapları arayın"
+
 msgid "Search accounts..."
 msgstr "Hesapları ara..."
 
@@ -13727,10 +13751,10 @@ msgid "Self Managed"
 msgstr "Kendi Yönettiği"
 
 msgid "Self-hosted or managed"
-msgstr ""
+msgstr "Kendi barındırmalı veya yönetilen"
 
 msgid "Self-onboarding"
-msgstr ""
+msgstr "Kendi kendine katılım"
 
 msgid "Self-paced"
 msgstr "Kendi hızında"
@@ -14319,12 +14343,6 @@ msgstr "Kaynak listesi"
 msgid "Source Method"
 msgstr "Kaynak Yöntem"
 
-msgid "Source Purchase Order"
-msgstr "Kaynak Satın Alma Siparişi"
-
-msgid "Source Sales Order"
-msgstr "Kaynak Satış Siparişi"
-
 msgid "Source types"
 msgstr "Kaynak türleri"
 
@@ -14377,7 +14395,7 @@ msgid "Split shipment line"
 msgstr "Sevkiyat satırını böl"
 
 msgid "SSO/SAML"
-msgstr ""
+msgstr "SSO/SAML"
 
 msgid "Stand up hosting"
 msgstr "Barındırmayı ayarla"
@@ -15085,7 +15103,7 @@ msgid "Team trained"
 msgstr "Takım eğitildi"
 
 msgid "Technical support"
-msgstr ""
+msgstr "Teknik destek"
 
 msgid "Temperature"
 msgstr "Sıcaklık"
@@ -16111,6 +16129,14 @@ msgstr "Bu, aktif üretim yönteminin malzeme listesinden ve partileri kullanara
 msgid "This will remove {0}'s link to {1}. The job will no longer appear under the sales order and shipments won't find it."
 msgstr "Bu, {0}\"'nin {1} ile bağlantısını kaldıracaktır. İş artık satış siparişi altında görünmeyecek ve sevkiyatlar onu bulamayacak."
 
+#. placeholder {0}: routeData?.purchaseReturnOrder?.purchaseReturnOrderId
+msgid "This will remove the link between {0} and its purchase order. The return will no longer appear under the purchase order."
+msgstr "Bu, {0} ile satın alma siparişi arasındaki bağlantıyı kaldırır. İade artık satın alma siparişi altında görünmez."
+
+#. placeholder {0}: routeData?.salesReturnOrder?.salesReturnOrderId
+msgid "This will remove the link between {0} and its sales order. The RMA will no longer appear under the sales order."
+msgstr "Bu, {0} ile satış siparişi arasındaki bağlantıyı kaldırır. RMA artık satış siparişi altında görünmez."
+
 msgid "This will replace all method materials of other revisions with this revision."
 msgstr "Bu, diğer revizyonlardaki tüm yöntem malzemelerini bu revizyonla değiştirecektir."
 
@@ -16632,10 +16658,10 @@ msgid "unknown location"
 msgstr "bilinmeyen konum"
 
 msgid "Unlimited functional support"
-msgstr ""
+msgstr "Sınırsız işlevsel destek"
 
 msgid "Unlimited records"
-msgstr ""
+msgstr "Sınırsız kayıtlar"
 
 msgid "Unlink"
 msgstr "Bağlantısını Kes"
@@ -16643,14 +16669,17 @@ msgstr "Bağlantısını Kes"
 msgid "Unlink job from sales order?"
 msgstr "İş emrini satış siparişinden ayır?"
 
+msgid "Unlink return from purchase order?"
+msgstr "İade satın alma siparişinden ayrılsın mı?"
+
+msgid "Unlink RMA from sales order?"
+msgstr "RMA satış siparişinden ayrılsın mı?"
+
 msgid "Unlock"
 msgstr "Kilidi Aç"
 
 msgid "Unlock with passkey"
 msgstr "Geçiş Anahtarı ile Kilit Aç"
-
-msgid "Unmapped accounts"
-msgstr "Eşleştirilmemiş hesaplar"
 
 msgid "Unmapped dimension values"
 msgstr "Eşlenmemiş boyut değerleri"
@@ -17213,12 +17242,6 @@ msgstr "Planlanmışları Gör"
 
 msgid "View Shipment"
 msgstr "Sevkiyatı Görüntüle"
-
-msgid "View source purchase order"
-msgstr "Kaynak Satın Alma Siparişini Görüntüle"
-
-msgid "View source sales order"
-msgstr "Kaynak Satış Siparişini Görüntüle"
 
 msgid "View Status"
 msgstr "Durumu Görüntüle"

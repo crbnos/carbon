@@ -65,6 +65,8 @@ type PurchaseReturnOrderLineFormProps = {
   returnReasons?: { id: string; name: string }[];
   /** Available serials/batches on hand received from this supplier */
   returnableEntities?: ReturnableEntity[];
+  /** Readable ids for already-picked entities no longer in returnableEntities */
+  pickedEntityLabels?: Record<string, string>;
   /** Readable ids for the linked source documents */
   linkage?: {
     receiptReadableId?: string | null;
@@ -80,6 +82,7 @@ const PurchaseReturnOrderLineForm = ({
   line,
   returnReasons,
   returnableEntities,
+  pickedEntityLabels,
   linkage
 }: PurchaseReturnOrderLineFormProps) => {
   const { t } = useLingui();
@@ -350,7 +353,9 @@ const PurchaseReturnOrderLineForm = ({
                   <HStack spacing={2} className="flex-wrap">
                     {selectedEntityIds.map((entityId) => (
                       <Badge key={entityId} variant="secondary">
-                        {entityById.get(entityId)?.readableId ?? entityId}
+                        {entityById.get(entityId)?.readableId ??
+                          pickedEntityLabels?.[entityId] ??
+                          entityId}
                         <IconButton
                           aria-label={t`Remove`}
                           icon={<LuX />}

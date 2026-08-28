@@ -35,7 +35,7 @@ import {
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
-import { useRouteData } from "~/hooks";
+import { useCompanySettings, useRouteData } from "~/hooks";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
 import { useSuppliers } from "~/stores";
@@ -111,6 +111,8 @@ const PartProperties = ({
   const lockPartNumber = changeType === "Revision";
   const { t } = useLingui();
   const params = useParams();
+  const companySettings = useCompanySettings();
+  const allowLowercaseItemIds = companySettings?.allowLowercaseItemIds === true;
   const itemId = data?.itemId ?? params.itemId;
   if (!itemId) throw new Error("itemId not found");
 
@@ -322,6 +324,7 @@ const PartProperties = ({
           label={formLayout ? t`Part Number` : ""}
           name="partId"
           inline={inlineLayout}
+          isUppercase={!allowLowercaseItemIds}
           value={routeData?.partSummary?.readableId ?? ""}
           onBlur={(e) => {
             onUpdate("partId", e.target.value ?? null);
@@ -339,7 +342,7 @@ const PartProperties = ({
       validator={z.object({
         name: z.string()
       })}
-      className={cn("w-full", !formLayout && "-mt-2")}
+      className="w-full"
       isReadOnly={isReadOnly}
     >
       <span className="text-xs text-muted-foreground">

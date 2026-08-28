@@ -133,6 +133,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     trackedEntityIds: (trackedEntities.data ?? []).map(
       (entity) => entity.trackedEntityId
     ),
+    // Serial/batch labels for the picked entities — the returnable-entities
+    // list only covers currently returnable stock, so a pick that has since
+    // shipped (or otherwise changed status) still needs its readable id.
+    pickedEntityLabels: Object.fromEntries(
+      (trackedEntities.data ?? [])
+        .filter((entity) => entity.trackedEntity?.readableId)
+        .map((entity) => [
+          entity.trackedEntityId,
+          entity.trackedEntity!.readableId as string
+        ])
+    ),
     returnableEntities: returnableEntities.data ?? [],
     linkage: {
       receiptReadableId,
@@ -250,8 +261,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function PurchaseReturnOrderLineDetailsRoute() {
-  const { line, returnReasons, trackedEntityIds, returnableEntities, linkage } =
-    useLoaderData<typeof loader>();
+  const {
+    line,
+    returnReasons,
+    trackedEntityIds,
+    pickedEntityLabels,
+    returnableEntities,
+    linkage
+  } = useLoaderData<typeof loader>();
   const { id: orderId, lineId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
   if (!lineId) throw new Error("Could not find lineId");
@@ -286,6 +303,7 @@ export default function PurchaseReturnOrderLineDetailsRoute() {
       line={fullLine}
       returnReasons={returnReasons}
       returnableEntities={returnableEntities}
+      pickedEntityLabels={pickedEntityLabels}
       linkage={linkage}
     />
   );

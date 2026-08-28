@@ -314,7 +314,7 @@ msgid "4h"
 msgstr "4小时"
 
 msgid "5 user minimum"
-msgstr ""
+msgstr "5 个用户最少"
 
 msgid "5-8 weeks"
 msgstr "5-8 周"
@@ -371,7 +371,7 @@ msgid "A contractor is a supplier contact with particular abilities and availabl
 msgstr "承包商是具有特定能力和可用工作时间的供应商联系人"
 
 msgid "A custom solution to meet your needs"
-msgstr ""
+msgstr "满足您需求的自定义解决方案"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "客户是购买您的零件或服务的企业或个人。"
@@ -484,10 +484,10 @@ msgid "A Make to Order component whose parts are issued together into the parent
 msgstr "其零件一起发放到父项作业的按单生产组件——无单独构建。"
 
 msgid "A managed cloud-hosted version of Carbon"
-msgstr ""
+msgstr "Carbon 的托管云托管版本"
 
 msgid "A managed version with all the advanced features"
-msgstr ""
+msgstr "具有所有高级功能的托管版本"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "材料是用于制造零件的物理项目，可以在多个工作中使用"
@@ -955,9 +955,6 @@ msgstr "应收账款"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "客户应付金额的应收账款。"
 
-msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
-msgstr "由过账默认值或日记账历史记录引用但尚无提供商映射的账户。"
-
 msgid "Accumulated Depreciation"
 msgstr "累计折旧"
 
@@ -1364,7 +1361,7 @@ msgid "All actions selected"
 msgstr "所有操作已选中"
 
 msgid "All advanced features available"
-msgstr ""
+msgstr "所有高级功能可用"
 
 msgid "All Audit Logs"
 msgstr "所有审计日志"
@@ -1392,9 +1389,6 @@ msgstr "所有位置"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "所选组的所有成员和所选个人将能够批准请求"
-
-msgid "All posting accounts are mapped"
-msgstr "所有过账账户已映射"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "所有行已导入—{inserted}行插入，{updated}行更新。"
@@ -1639,7 +1633,7 @@ msgid "API keys for programmatic access to your Carbon data."
 msgstr "用于以编程方式访问您的 Carbon 数据的 API 密钥。"
 
 msgid "API, webhooks, and integrations"
-msgstr ""
+msgstr "API、webhooks 和集成"
 
 msgid "Applied"
 msgstr "已应用"
@@ -2360,7 +2354,7 @@ msgid "Audit Log"
 msgstr "审计日志"
 
 msgid "Audit logging"
-msgstr ""
+msgstr "审计日志"
 
 msgid "Audit Logging"
 msgstr "审计日志"
@@ -2432,7 +2426,7 @@ msgid "Automatic Updates"
 msgstr "自动更新"
 
 msgid "Automatic updates and backups"
-msgstr ""
+msgstr "自动更新和备份"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "报告输出时，自动按比例消耗工作的未跟踪材料—跟踪的材料手动发出。"
@@ -2532,7 +2526,7 @@ msgid "Base Price"
 msgstr "基础价格"
 
 msgid "Basic ERP, MES, and QMS functionality"
-msgstr ""
+msgstr "基本 ERP、MES 和 QMS 功能"
 
 msgid "Basic Information"
 msgstr "基本信息"
@@ -2622,6 +2616,9 @@ msgstr "已阻止"
 #. placeholder {0}: workCenter.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "被 {0} 阻止"
+
+msgid "Blocking sync"
+msgstr "阻止同步"
 
 msgid "Blocks save until resolved"
 msgstr "阻止保存直到解决"
@@ -3239,7 +3236,7 @@ msgid "Cloud, or your self-hosted environment."
 msgstr "云端或您自托管的环境。"
 
 msgid "CMMC compliant"
-msgstr ""
+msgstr "符合 CMMC"
 
 msgid "Code"
 msgstr "代码"
@@ -3302,7 +3299,7 @@ msgid "Committing a receipt, shipment, or invoice: quantities move, journal entr
 msgstr "提交收据、发货或发票: 数量移动、日记账分录到达分类账、状态变为已过帐。"
 
 msgid "Community support"
-msgstr ""
+msgstr "社区支持"
 
 msgid "Companies"
 msgstr "公司"
@@ -3605,7 +3602,7 @@ msgid "Contact (optional)"
 msgstr "联系人（可选）"
 
 msgid "Contact us"
-msgstr ""
+msgstr "联系我们"
 
 msgid "contacts"
 msgstr "联系人"
@@ -3648,6 +3645,9 @@ msgstr "控制设计变更与修订版本/工程变更单"
 
 msgid "Control how operators pick material and track time on the shop floor."
 msgstr "控制操作人员如何在车间选择材料并跟踪时间。"
+
+msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
+msgstr "控制物料编号（零件、原料、耗材、工具和服务）是否可以包含小写字符。"
 
 msgid "Controller, Accountant"
 msgstr "控制器，会计"
@@ -4516,7 +4516,7 @@ msgid "Customers"
 msgstr "客户"
 
 msgid "Customizations, training, and integrations"
-msgstr ""
+msgstr "定制、培训和集成"
 
 msgid "Customize"
 msgstr "自定义"
@@ -6062,6 +6062,9 @@ msgstr "启用此规则以自动要求匹配文档的批准"
 msgid "Enable timecard tracking for work shifts."
 msgstr "启用工作班次的时间卡跟踪。"
 
+msgid "Enable to allow lowercase characters in item IDs."
+msgstr "启用以允许物料编号中的小写字符。"
+
 msgid "Enable to allow shared workstation mode."
 msgstr "启用以允许共享工作站模式。"
 
@@ -6319,6 +6322,9 @@ msgstr "您配置的系统中的每项范围内测试都通过了，使用您的
 msgid "Every match"
 msgstr "每次匹配"
 
+msgid "Every required action has already been added."
+msgstr "每个必需的操作已添加。"
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "期间关闭前，每项必需任务都必须完成或跳过。"
 
@@ -6360,9 +6366,6 @@ msgstr "豁免证书"
 
 msgid "Exemption Reason"
 msgstr "豁免原因"
-
-msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr "现有映射。选择不同的提供商账户以重新映射。"
 
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "现有映射。选择不同的提供商选项以重新映射。"
@@ -7118,7 +7121,7 @@ msgid "Format"
 msgstr "格式"
 
 msgid "Forward deployed engineer"
-msgstr ""
+msgstr "前置部署工程师"
 
 msgid "Foundation"
 msgstr "基础"
@@ -7174,7 +7177,7 @@ msgid "Full name"
 msgstr "全名"
 
 msgid "Full setup and migrations"
-msgstr ""
+msgstr "完整设置和迁移"
 
 msgid "Fully Depreciated"
 msgstr "完全折旧"
@@ -8309,6 +8312,15 @@ msgstr "物品组"
 msgid "Item ID"
 msgstr "物品ID"
 
+msgid "Item IDs"
+msgstr "物料编号"
+
+msgid "Item IDs are forced to uppercase"
+msgstr "物料编号强制转换为大写"
+
+msgid "Item IDs keep the casing you type."
+msgstr "物料编号保持您输入的大小写。"
+
 msgid "Item ledger"
 msgstr "物品分类账"
 
@@ -8717,6 +8729,12 @@ msgstr "链接"
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "链接（可选）— 例如 /x/settings/…"
 
+msgid "Link a purchase order"
+msgstr "关联采购订单"
+
+msgid "Link a sales order"
+msgstr "关联销售订单"
+
 msgid "Link Jira Issue"
 msgstr "关联 Jira 问题"
 
@@ -8896,6 +8914,9 @@ msgstr "基于批次的已接收商品对抽样计划的检验；单位在收货
 msgid "Low"
 msgstr "低"
 
+msgid "Lowercase item IDs are allowed"
+msgstr "允许使用小写物料编号"
+
 msgid "Machine"
 msgstr "机器"
 
@@ -9046,9 +9067,6 @@ msgstr "制造"
 msgid "Map accounts"
 msgstr "映射科目"
 
-msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
-msgstr "将 Carbon 账户映射到提供商的科目表。已过账日记账使用映射的提供商账户代码推送。"
-
 msgid "Map Extracted Invoice Lines"
 msgstr "映射提取的发票行项目"
 
@@ -9058,11 +9076,11 @@ msgstr "映射提取的行"
 msgid "Map Lines Now"
 msgstr "立即映射行"
 
+msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+msgstr "将您的科目表映射到提供商的科目表。默认过账科目和费用科目标记为必需；已过账日记账使用映射的提供商科目代码进行推送。"
+
 msgid "Map your current process, systems, and data"
 msgstr "映射您当前的流程、系统和数据"
-
-msgid "Mapped accounts"
-msgstr "已映射账户"
 
 msgid "Mapped values"
 msgstr "已映射的值"
@@ -9919,8 +9937,8 @@ msgstr "未添加任何能力"
 msgid "No Access"
 msgstr "无权限"
 
-msgid "No accounts mapped yet"
-msgstr "尚未映射账户"
+msgid "No accounts match your search"
+msgstr "没有账户与您的搜索匹配"
 
 msgid "No action needed"
 msgstr "无需操作"
@@ -12869,6 +12887,9 @@ msgstr "退货序列号"
 msgid "Returning unused picked material"
 msgstr "返回未使用的拣配物料"
 
+msgid "Returns"
+msgstr "退货"
+
 msgid "Returns:"
 msgstr "返回："
 
@@ -13427,6 +13448,9 @@ msgstr "已报废"
 msgid "Search"
 msgstr "搜索"
 
+msgid "Search accounts"
+msgstr "搜索账户"
+
 msgid "Search accounts..."
 msgstr "搜索账户..."
 
@@ -13727,10 +13751,10 @@ msgid "Self Managed"
 msgstr "自我管理"
 
 msgid "Self-hosted or managed"
-msgstr ""
+msgstr "自托管或托管"
 
 msgid "Self-onboarding"
-msgstr ""
+msgstr "自助入职"
 
 msgid "Self-paced"
 msgstr "自主学习"
@@ -14319,12 +14343,6 @@ msgstr "源列表"
 msgid "Source Method"
 msgstr "源方法"
 
-msgid "Source Purchase Order"
-msgstr "源采购订单"
-
-msgid "Source Sales Order"
-msgstr "源销售订单"
-
 msgid "Source types"
 msgstr "源类型"
 
@@ -14377,7 +14395,7 @@ msgid "Split shipment line"
 msgstr "拆分发货行"
 
 msgid "SSO/SAML"
-msgstr ""
+msgstr "SSO/SAML"
 
 msgid "Stand up hosting"
 msgstr "建立托管"
@@ -15085,7 +15103,7 @@ msgid "Team trained"
 msgstr "团队已培训"
 
 msgid "Technical support"
-msgstr ""
+msgstr "技术支持"
 
 msgid "Temperature"
 msgstr "温度"
@@ -16111,6 +16129,14 @@ msgstr "这将根据活跃制造方法的物料清单和工艺流程使用批量
 msgid "This will remove {0}'s link to {1}. The job will no longer appear under the sales order and shipments won't find it."
 msgstr "这将移除 {0} 与 {1} 的关联。该工作单将不再显示在销售订单下，发货单也将无法找到它。"
 
+#. placeholder {0}: routeData?.purchaseReturnOrder?.purchaseReturnOrderId
+msgid "This will remove the link between {0} and its purchase order. The return will no longer appear under the purchase order."
+msgstr "这将解除 {0} 与其采购订单的关联。该退货将不再显示在采购订单下。"
+
+#. placeholder {0}: routeData?.salesReturnOrder?.salesReturnOrderId
+msgid "This will remove the link between {0} and its sales order. The RMA will no longer appear under the sales order."
+msgstr "这将解除 {0} 与其销售订单的关联。该 RMA 将不再显示在销售订单下。"
+
 msgid "This will replace all method materials of other revisions with this revision."
 msgstr "这将用此修订版本替换其他修订版本的所有方法材料。"
 
@@ -16632,10 +16658,10 @@ msgid "unknown location"
 msgstr "未知位置"
 
 msgid "Unlimited functional support"
-msgstr ""
+msgstr "无限功能支持"
 
 msgid "Unlimited records"
-msgstr ""
+msgstr "无限记录"
 
 msgid "Unlink"
 msgstr "取消链接"
@@ -16643,14 +16669,17 @@ msgstr "取消链接"
 msgid "Unlink job from sales order?"
 msgstr "从销售订单取消关联工作？"
 
+msgid "Unlink return from purchase order?"
+msgstr "解除退货与采购订单的关联？"
+
+msgid "Unlink RMA from sales order?"
+msgstr "解除 RMA 与销售订单的关联？"
+
 msgid "Unlock"
 msgstr "解锁"
 
 msgid "Unlock with passkey"
 msgstr "使用密钥解锁"
-
-msgid "Unmapped accounts"
-msgstr "未映射的账户"
 
 msgid "Unmapped dimension values"
 msgstr "未映射的维度值"
@@ -17213,12 +17242,6 @@ msgstr "查看已排期"
 
 msgid "View Shipment"
 msgstr "查看发货单"
-
-msgid "View source purchase order"
-msgstr "查看源采购订单"
-
-msgid "View source sales order"
-msgstr "查看源销售订单"
 
 msgid "View Status"
 msgstr "查看状态"

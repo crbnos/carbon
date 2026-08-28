@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-27T17:38:17.783Z",
-  "totalTools": 1500,
+  "generated": "2026-08-28T13:02:48.270Z",
+  "totalTools": 1533,
   "modules": 15,
   "tools": [
     {
@@ -29561,6 +29561,34 @@
       }
     },
     {
+      "name": "purchasing_createRepairPurchaseOrder",
+      "module": "purchasing",
+      "classification": "WRITE",
+      "description": "create repair purchase order",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "db",
+        "{\n    repairOrderId,\n    companyId,\n    companyGroupId,\n    userId\n  }"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "repairOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "repairOrderId"
+        ]
+      }
+    },
+    {
       "name": "quality_activateGauge",
       "module": "quality",
       "classification": "WRITE",
@@ -42572,6 +42600,995 @@
       }
     },
     {
+      "name": "sales_getWarrantyTerms",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get warranty terms",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "sales_getWarrantyTermsList",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get warranty terms list",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "sales_getWarrantyTerm",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get warranty term",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "sales_upsertWarrantyTerm",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "upsert warranty term",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "warrantyTerm"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "warrantyTerm": {}
+        },
+        "required": [
+          "warrantyTerm"
+        ]
+      }
+    },
+    {
+      "name": "sales_deleteWarrantyTerm",
+      "module": "sales",
+      "classification": "DESTRUCTIVE",
+      "description": "delete warranty term",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "sales_getWarrantyRegistrations",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get warranty registrations",
+      "paramCount": 5,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "customerId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "itemId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "sales_getWarrantyRegistration",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get warranty registration",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "sales_upsertWarrantyRegistration",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "upsert warranty registration",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "registration"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "registration": {}
+        },
+        "required": [
+          "registration"
+        ]
+      }
+    },
+    {
+      "name": "sales_deleteWarrantyRegistration",
+      "module": "sales",
+      "classification": "DESTRUCTIVE",
+      "description": "delete warranty registration",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "sales_getWarrantyCoverage",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get warranty coverage",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "today": {}
+        },
+        "required": [
+          "today"
+        ]
+      }
+    },
+    {
+      "name": "sales_getRepairOrders",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get repair orders",
+      "paramCount": 6,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "status": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "customerId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "supplierId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "sales_getRepairOrder",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get repair order",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "sales_getRepairOrderLines",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get repair order lines",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "repairOrderId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "repairOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "repairOrderId"
+        ]
+      }
+    },
+    {
+      "name": "sales_getRepairOrderCharges",
+      "module": "sales",
+      "classification": "READ",
+      "description": "get repair order charges",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "repairOrderId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "repairOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "repairOrderId"
+        ]
+      }
+    },
+    {
+      "name": "sales_insertRepairOrder",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "insert repair order",
+      "paramCount": 14,
+      "serviceParams": [
+        "client",
+        "input"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string"
+          },
+          "orderDate": {
+            "type": "string"
+          },
+          "repairOrderId": {
+            "type": "string"
+          },
+          "customerLocationId": {
+            "type": "string"
+          },
+          "customerContactId": {
+            "type": "string"
+          },
+          "customerReference": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "salesReturnOrderId": {
+            "type": "string"
+          },
+          "supplierId": {
+            "type": "string"
+          },
+          "supplierReference": {
+            "type": "string"
+          },
+          "currencyCode": {
+            "type": "string"
+          },
+          "promisedDate": {
+            "type": "string"
+          },
+          "assignee": {
+            "type": "string"
+          },
+          "customFields": {}
+        },
+        "required": [
+          "customerId",
+          "orderDate"
+        ]
+      }
+    },
+    {
+      "name": "sales_upsertRepairOrder",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "upsert repair order",
+      "paramCount": 16,
+      "serviceParams": [
+        "client",
+        "repairOrder"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "repairOrderId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "customerId": {
+            "type": "string"
+          },
+          "customerLocationId": {
+            "type": "string"
+          },
+          "customerContactId": {
+            "type": "string"
+          },
+          "customerReference": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "salesReturnOrderId": {
+            "type": "string"
+          },
+          "supplierId": {
+            "type": "string"
+          },
+          "supplierReference": {
+            "type": "string"
+          },
+          "currencyCode": {
+            "type": "string"
+          },
+          "exchangeRate": {
+            "type": "number"
+          },
+          "orderDate": {
+            "type": "string"
+          },
+          "promisedDate": {
+            "type": "string"
+          },
+          "assignee": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "customerId",
+          "orderDate"
+        ]
+      }
+    },
+    {
+      "name": "sales_deleteRepairOrder",
+      "module": "sales",
+      "classification": "DESTRUCTIVE",
+      "description": "delete repair order",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "sales_deleteRepairOrderLine",
+      "module": "sales",
+      "classification": "DESTRUCTIVE",
+      "description": "delete repair order line",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "sales_deleteRepairOrderCharge",
+      "module": "sales",
+      "classification": "DESTRUCTIVE",
+      "description": "delete repair order charge",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "id",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "sales_upsertRepairOrderLine",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "upsert repair order line",
+      "paramCount": 8,
+      "serviceParams": [
+        "db",
+        "input"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "repairOrderId": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unitOfMeasureCode": {
+            "type": "string"
+          },
+          "warrantyRegistrationId": {
+            "type": "string"
+          },
+          "returnReasonId": {
+            "type": "string"
+          },
+          "trackedEntityId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "repairOrderId",
+          "itemId"
+        ]
+      }
+    },
+    {
+      "name": "sales_closeRepairOrderLine",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "close repair order line",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "{ id, companyId, userId }"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "sales_upsertRepairOrderCharge",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "upsert repair order charge",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "charge"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "charge": {}
+        },
+        "required": [
+          "charge"
+        ]
+      }
+    },
+    {
+      "name": "sales_confirmRepairOrder",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "confirm repair order",
+      "paramCount": 1,
+      "serviceParams": [
+        "db",
+        "{ id, companyId }",
+        "userId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "sales_cancelRepairOrder",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "cancel repair order",
+      "paramCount": 1,
+      "serviceParams": [
+        "db",
+        "{ id, companyId }",
+        "userId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "sales_completeRepairOrder",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "complete repair order",
+      "paramCount": 1,
+      "serviceParams": [
+        "db",
+        "{ id, companyId }",
+        "userId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "sales_markRepairOrderLineRepaired",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "mark repair order line repaired",
+      "paramCount": 1,
+      "serviceParams": [
+        "db",
+        "{ id, companyId }",
+        "userId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    {
+      "name": "sales_scrapRepairOrderLine",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "scrap repair order line",
+      "paramCount": 2,
+      "serviceParams": [
+        "db",
+        "{\n    id,\n    companyId,\n    userId,\n    today\n  }"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "today": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "today"
+        ]
+      }
+    },
+    {
+      "name": "sales_createRepairOrderFromReturnLine",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "create repair order from return line",
+      "paramCount": 2,
+      "serviceParams": [
+        "db",
+        "{\n    salesReturnOrderLineId,\n    companyId,\n    userId,\n    today\n  }"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "salesReturnOrderLineId": {
+            "type": "string"
+          },
+          "today": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "salesReturnOrderLineId",
+          "today"
+        ]
+      }
+    },
+    {
+      "name": "sales_applyRepairWarranty",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "apply repair warranty",
+      "paramCount": 3,
+      "serviceParams": [
+        "db",
+        "{\n    lineId,\n    warrantyTermId,\n    companyId,\n    userId,\n    today\n  }"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "lineId": {
+            "type": "string"
+          },
+          "warrantyTermId": {
+            "type": "string"
+          },
+          "today": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lineId",
+          "warrantyTermId",
+          "today"
+        ]
+      }
+    },
+    {
+      "name": "sales_createRepairQuote",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "create repair quote",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "repairOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "repairOrderId"
+        ]
+      }
+    },
+    {
+      "name": "sales_createRepairSalesOrder",
+      "module": "sales",
+      "classification": "WRITE",
+      "description": "create repair sales order",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "db",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "repairOrderId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "repairOrderId"
+        ]
+      }
+    },
+    {
       "name": "settings_getAccountsPayableBillingAddress",
       "module": "settings",
       "classification": "READ",
@@ -44435,6 +45452,33 @@
         },
         "required": [
           "useMetric"
+        ]
+      }
+    },
+    {
+      "name": "settings_updateAllowLowercaseItemIdsSetting",
+      "module": "settings",
+      "classification": "WRITE",
+      "description": "update allow lowercase item ids setting",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "allowLowercaseItemIds"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "allowLowercaseItemIds": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "allowLowercaseItemIds"
         ]
       }
     },
