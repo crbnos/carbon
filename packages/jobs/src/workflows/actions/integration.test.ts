@@ -8,10 +8,12 @@ const COMPANY = "cmp_1";
 const CONNECTION = "icn_1";
 
 const resolveConnectionAuth = vi.fn();
-const getConnection = vi.fn();
+const readConnection = vi.fn();
 const getPieceAction = vi.fn();
 
 class FakeRevoked extends Error {}
+class FakeSecretUnavailable extends Error {}
+class FakeRefreshTimeout extends Error {}
 
 vi.mock("@carbon/auth/client.server", () => ({
   getCarbonServiceRole: () => ({}) as SupabaseClient<Database>
@@ -32,7 +34,9 @@ vi.mock("@carbon/env", () => ({
 
 vi.mock("@carbon/ee/integrations/connections", () => ({
   ConnectionRevokedError: FakeRevoked,
-  getConnection: (...args: unknown[]) => getConnection(...args),
+  ConnectionSecretUnavailableError: FakeSecretUnavailable,
+  ConnectionRefreshTimeoutError: FakeRefreshTimeout,
+  readConnection: (...args: unknown[]) => readConnection(...args),
   resolveConnectionAuth: (...args: unknown[]) => resolveConnectionAuth(...args)
 }));
 
@@ -78,9 +82,9 @@ const run = (
 
 describe("runIntegrationAction", () => {
   beforeEach(() => {
-    getConnection.mockResolvedValue({
-      data: { id: CONNECTION, pieceName: "google-calendar" },
-      error: null
+    readConnection.mockResolvedValue({
+      id: CONNECTION,
+      pieceName: "google-calendar"
     });
     resolveConnectionAuth.mockResolvedValue({ accessToken: "at-1" });
     getPieceAction.mockResolvedValue({
@@ -135,10 +139,7 @@ describe("runIntegrationAction", () => {
   });
 
   it("refuses a connection belonging to another piece", async () => {
-    getConnection.mockResolvedValue({
-      data: { id: CONNECTION, pieceName: "slack" },
-      error: null
-    });
+    readConnection.mockResolvedValue({ id: CONNECTION, pieceName: "slack" });
     const outcome = await run();
     expect(outcome).toEqual({
       ok: false,
@@ -154,11 +155,27 @@ describe("runIntegrationAction", () => {
     });
   });
 
-  it("asks the customer to reconnect when the refresh fails", async () => {
-    resolveConnectionAuth.mockRejectedValue(new Error("network"));
+  it("asks the customer to reconnect when the token cannot be read", async () => {
+    resolveConnectionAuth.mockRejectedValue(new FakeSecretUnavailable("gone"));
     expect(await run()).toEqual({
       ok: false,
       error: "The Google Calendar connection needs to be reconnected."
+    });
+  });
+
+  it("says to try again when another worker holds the refresh", async () => {
+    resolveConnectionAuth.mockRejectedValue(new FakeRefreshTimeout("busy"));
+    expect(await run()).toEqual({
+      ok: false,
+      error: "The Google Calendar connection was busy refreshing. Try again."
+    });
+  });
+
+  it("reports an unavailable connection for anything else", async () => {
+    resolveConnectionAuth.mockRejectedValue(new Error("network"));
+    expect(await run()).toEqual({
+      ok: false,
+      error: "The Google Calendar connection is unavailable."
     });
   });
 

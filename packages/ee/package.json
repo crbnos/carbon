@@ -7,6 +7,7 @@
     "./accounting": "./src/accounting/index.ts",
     "./integrations/secrets": "./src/integrations/secrets.ts",
     "./integrations/connections": "./src/integrations/connections.ts",
+    "./integrations/connect": "./src/integrations/connect.ts",
     "./action-task-entity": "./src/lib/actionTaskEntity.ts",
     "./storage-rules": "./src/storage-rules/index.ts",
     "./storage-rules.server": "./src/storage-rules/server.ts",

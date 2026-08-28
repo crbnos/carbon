@@ -3,8 +3,10 @@ import type { Database } from "@carbon/database";
 // The deep subpath, not the `@carbon/ee` root: that barrel pulls in integration
 // config files whose `msg` macro is untransformed outside a Vite build.
 import {
+  ConnectionRefreshTimeoutError,
   ConnectionRevokedError,
-  getConnection,
+  ConnectionSecretUnavailableError,
+  readConnection,
   resolveConnectionAuth
 } from "@carbon/ee/integrations/connections";
 import type { ActionOutcome, RuntimeValue } from "@carbon/workflows";
@@ -50,7 +52,7 @@ export async function runIntegrationAction(args: {
 
   // The connection must belong to THIS company and be one the piece owns.
   // Read through the owner's client, so RLS still applies to the lookup.
-  const { data: owned } = await getConnection(client, companyId, connectionId);
+  const owned = await readConnection(client, companyId, connectionId);
   if (owned === null || owned.pieceName !== pieceName) {
     return { ok: false, error: NO_CONNECTION };
   }
@@ -67,16 +69,26 @@ export async function runIntegrationAction(args: {
       oauth
     ));
   } catch (cause) {
-    if (cause instanceof ConnectionRevokedError) {
+    // A busy refresh is transient and a retry fixes it; a revoked or unreadable
+    // token needs a person. Telling the customer to reconnect in the first case
+    // would send them to do work that changes nothing.
+    if (cause instanceof ConnectionRefreshTimeoutError) {
+      return {
+        ok: false,
+        error: `The ${label} connection was busy refreshing. Try again.`
+      };
+    }
+    if (
+      cause instanceof ConnectionRevokedError ||
+      cause instanceof ConnectionSecretUnavailableError
+    ) {
       return {
         ok: false,
         error: `The ${label} connection needs to be reconnected.`
       };
     }
-    return {
-      ok: false,
-      error: `The ${label} connection needs to be reconnected.`
-    };
+    // Anything else is ours, not theirs — a missing OAuth app reaches here.
+    return { ok: false, error: `The ${label} connection is unavailable.` };
   }
 
   try {

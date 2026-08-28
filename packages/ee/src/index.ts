@@ -88,10 +88,11 @@ export {
   disconnectConnection,
   exchangeAuthorizationCode,
   exchangeRefreshToken,
-  getConnection,
-  listConnections,
+  readConnection,
+  readConnections,
   renameConnection,
-  resolveConnectionAuth
+  resolveConnectionAuth,
+  revokeConnectionsForPiece
 } from "./integrations/connections";
 export {
   IntegrationSecretUnavailableError,

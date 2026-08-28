@@ -1,3 +1,6 @@
+import type { ConnectRouteResponse } from "@carbon/ee/integrations/connect";
+import { openConsentPopup } from "@carbon/ee/integrations/connect";
+import type { IntegrationConnection } from "@carbon/ee/integrations/connections";
 import {
   Badge,
   Button,
@@ -14,14 +17,12 @@ import { LuPlug, LuUnplug } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { path } from "~/utils/path";
 
-export type ConnectionRow = {
-  id: string;
-  pieceName: string;
-  name: string;
-  accountLabel: string | null;
-  status: "Active" | "Expired" | "Revoked";
-  lastError: string | null;
-};
+/** Derived, not restated: the loader hands these rows straight through, so a column
+ * that changes type upstream fails here rather than rendering something else. */
+export type ConnectionRow = Pick<
+  IntegrationConnection,
+  "id" | "pieceName" | "name" | "accountLabel" | "status" | "lastError"
+>;
 
 const STATUS_VARIANT = {
   Active: "green",
@@ -50,7 +51,7 @@ export function ConnectionsTab({
 }) {
   const { t } = useLingui();
   const [name, setName] = useState("");
-  const connect = useFetcher<{ url?: string; error?: string }>();
+  const connect = useFetcher<ConnectRouteResponse>();
 
   const taken = new Set(connections.map((connection) => connection.name));
   const proposed = name.trim() || defaultName;
@@ -64,9 +65,7 @@ export function ConnectionsTab({
       toast.error(connect.data.error);
       return;
     }
-    if (connect.data.url) {
-      window.open(connect.data.url, "_blank", "width=600,height=800");
-    }
+    if (connect.data.url) openConsentPopup(connect.data.url);
   }, [connect.state, connect.data]);
 
   return (

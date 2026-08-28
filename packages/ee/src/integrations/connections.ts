@@ -71,30 +71,37 @@ const CLAIM_STALE_SECONDS = 30;
 const POLL_INTERVAL_MS = 250;
 const POLL_ATTEMPTS = 20;
 
-export async function listConnections(
+/**
+ * The two readers. `SELECT_COLUMNS` is a string, so supabase-js cannot infer the row
+ * shape from it — these are the ONLY place that gap is bridged, rather than every
+ * caller asserting the same shape for itself.
+ */
+export async function readConnections(
   client: SupabaseClient<Database>,
   companyId: string,
   pieceName?: string
-) {
+): Promise<IntegrationConnection[]> {
   let query = client
     .from("integrationConnection")
     .select(SELECT_COLUMNS)
     .eq("companyId", companyId);
   if (pieceName !== undefined) query = query.eq("pieceName", pieceName);
-  return query.order("createdAt", { ascending: true });
+  const { data } = await query.order("createdAt", { ascending: true });
+  return (data ?? []) as unknown as IntegrationConnection[];
 }
 
-export async function getConnection(
+export async function readConnection(
   client: SupabaseClient<Database>,
   companyId: string,
   connectionId: string
-) {
-  return client
+): Promise<IntegrationConnection | null> {
+  const { data } = await client
     .from("integrationConnection")
     .select(SELECT_COLUMNS)
     .eq("companyId", companyId)
     .eq("id", connectionId)
     .maybeSingle();
+  return (data ?? null) as unknown as IntegrationConnection | null;
 }
 
 export async function createConnection(
@@ -175,6 +182,36 @@ export async function disconnectConnection(
     })
     .eq("companyId", companyId)
     .eq("id", connectionId);
+}
+
+/**
+ * Revokes every account connected to one piece — what uninstalling its card means.
+ * Generic rather than per-vendor, so a new piece registers this instead of adding a
+ * hooks file of its own. Leaving live tokens behind would hand the customer
+ * credentials they can no longer see.
+ *
+ * Serial: each disconnect is a vault RPC plus a row update, and a company has a
+ * handful of accounts, not thousands.
+ */
+export async function revokeConnectionsForPiece(
+  serviceClient: SupabaseClient<Database>,
+  pieceName: string,
+  companyId: string
+): Promise<void> {
+  const connections = await readConnections(
+    serviceClient,
+    companyId,
+    pieceName
+  );
+  for (const connection of connections) {
+    if (connection.status === "Revoked") continue;
+    await disconnectConnection(
+      serviceClient,
+      companyId,
+      connection.id,
+      "system"
+    );
+  }
 }
 
 async function writeTokens(
@@ -261,16 +298,12 @@ export async function resolveConnectionAuth(
   connectionId: string,
   oauth: OAuth2RefreshConfig
 ): Promise<{ accessToken: string; connection: IntegrationConnection }> {
-  const { data: row, error } = await getConnection(
+  const connection = await readConnection(
     serviceClient,
     companyId,
     connectionId
   );
-  if (error || row === null) {
-    throw new ConnectionRevokedError(connectionId);
-  }
-  const connection = row as unknown as IntegrationConnection;
-  if (connection.status !== "Active") {
+  if (connection === null || connection.status !== "Active") {
     throw new ConnectionRevokedError(connectionId);
   }
 
@@ -345,12 +378,11 @@ async function awaitRefreshedToken(
 ): Promise<string> {
   for (let attempt = 0; attempt < POLL_ATTEMPTS; attempt++) {
     await wait(POLL_INTERVAL_MS);
-    const { data } = await getConnection(
+    const current = await readConnection(
       serviceClient,
       companyId,
       connectionId
     );
-    const current = data as unknown as IntegrationConnection | null;
     if (current === null) break;
     if (current.status !== "Active") {
       throw new ConnectionRevokedError(connectionId);
@@ -382,20 +414,21 @@ export interface ExchangedTokens {
   expiresAt: string | null;
 }
 
-/** Server-side only — `client_secret` must never reach the browser. */
-export async function exchangeRefreshToken(
-  oauth: OAuth2RefreshConfig,
-  refreshToken: string
+/**
+ * The one token-endpoint call. Server-side only — `client_secret` must never reach
+ * the browser.
+ *
+ * The OAuth callback matches on this rejection message to pick its error code, so
+ * the string is a contract between two files and is written here once.
+ */
+async function postTokenRequest(
+  tokenUrl: string,
+  body: Record<string, string>
 ): Promise<ExchangedTokens> {
-  const response = await fetch(oauth.tokenUrl, {
+  const response = await fetch(tokenUrl, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "refresh_token",
-      refresh_token: refreshToken,
-      client_id: oauth.clientId,
-      client_secret: oauth.clientSecret
-    })
+    body: new URLSearchParams(body)
   });
 
   if (!response.ok) {
@@ -404,27 +437,30 @@ export async function exchangeRefreshToken(
   return readTokenResponse(await response.json());
 }
 
-/** Server-side only. Swaps an authorization code for the first token pair. */
+export async function exchangeRefreshToken(
+  oauth: OAuth2RefreshConfig,
+  refreshToken: string
+): Promise<ExchangedTokens> {
+  return postTokenRequest(oauth.tokenUrl, {
+    grant_type: "refresh_token",
+    refresh_token: refreshToken,
+    client_id: oauth.clientId,
+    client_secret: oauth.clientSecret
+  });
+}
+
+/** Swaps an authorization code for the first token pair. */
 export async function exchangeAuthorizationCode(
   oauth: OAuth2RefreshConfig & { redirectUri: string },
   code: string
 ): Promise<ExchangedTokens> {
-  const response = await fetch(oauth.tokenUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "authorization_code",
-      code,
-      client_id: oauth.clientId,
-      client_secret: oauth.clientSecret,
-      redirect_uri: oauth.redirectUri
-    })
+  return postTokenRequest(oauth.tokenUrl, {
+    grant_type: "authorization_code",
+    code,
+    client_id: oauth.clientId,
+    client_secret: oauth.clientSecret,
+    redirect_uri: oauth.redirectUri
   });
-
-  if (!response.ok) {
-    throw new Error(`The connection was rejected (${response.status}).`);
-  }
-  return readTokenResponse(await response.json());
 }
 
 function readTokenResponse(payload: unknown): ExchangedTokens {

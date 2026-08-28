@@ -7379,6 +7379,9 @@ msgstr "좋은 저녁입니다, {0}님"
 msgid "Good morning, {0}"
 msgstr "좋은 아침입니다, {0}님"
 
+msgid "Google Calendar"
+msgstr ""
+
 msgid "Google Calendar: Create Event"
 msgstr "Google Calendar: 이벤트 만들기"
 

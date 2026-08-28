@@ -41,7 +41,11 @@ export function buildPieceContext(args: {
     files: {
       write: () => unavailable("file storage")
     },
-    server: { publicUrl: "", apiUrl: "", token: "" },
+    // Getters, not empty strings: a piece reading one of these would otherwise send
+    // "" to the vendor and fail there instead of here.
+    get server(): never {
+      return unavailable("the host server URL");
+    },
     run: { id: "carbon", stop: () => unavailable("run control") },
     generateResumeUrl: () => unavailable("a resume URL")
   };

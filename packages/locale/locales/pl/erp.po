@@ -7379,6 +7379,9 @@ msgstr "Dobry wieczór, {0}"
 msgid "Good morning, {0}"
 msgstr "Dzień dobry, {0}"
 
+msgid "Google Calendar"
+msgstr ""
+
 msgid "Google Calendar: Create Event"
 msgstr "Google Calendar: Utwórz zdarzenie"
 

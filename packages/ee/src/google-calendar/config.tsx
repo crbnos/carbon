@@ -2,6 +2,11 @@ import { GOOGLE_OAUTH_CLIENT_ID } from "@carbon/auth";
 import type { SVGProps } from "react";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
+import { startIntegrationConnect } from "../integrations/connect";
+
+/** The card's id IS the Activepieces piece name, which is what lets the connect
+ * route, the uninstall hook and the workflow catalog all address it as one thing. */
+const PIECE = "google-calendar";
 
 /**
  * Google Calendar, as an ordinary integration card.
@@ -14,7 +19,7 @@ import { defineIntegration } from "../fns";
  */
 export const GoogleCalendar = defineIntegration({
   name: "Google Calendar",
-  id: "google-calendar",
+  id: PIECE,
   category: "Productivity",
   // Unset OAuth credentials render the card "Coming soon" rather than offering an
   // Install that could only fail.
@@ -26,31 +31,8 @@ export const GoogleCalendar = defineIntegration({
   images: [],
   settings: [],
   schema: z.object({}),
-  onClientInstall: async () => {
-    const response = await fetch(
-      "/api/integrations/connections/google-calendar/connect"
-    ).then((res) => res.json());
-
-    const { url, error } = response;
-    if (!url) {
-      throw new Error(error ?? "Couldn't start the Google authorization.");
-    }
-
-    const width = 600;
-    const height = 800;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2.5;
-
-    const popup = window.open(
-      url,
-      "",
-      `toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=${width}, height=${height}, top=${top}, left=${left}`
-    );
-
-    if (!popup) {
-      window.location.href = url;
-    }
-  }
+  onClientInstall: () =>
+    startIntegrationConnect(`/api/integrations/connections/${PIECE}/connect`)
 });
 
 export function Logo(props: SVGProps<SVGSVGElement>) {

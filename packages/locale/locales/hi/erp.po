@@ -7379,6 +7379,9 @@ msgstr "शुभ संध्या, {0}"
 msgid "Good morning, {0}"
 msgstr "शुभ प्रभात, {0}"
 
+msgid "Google Calendar"
+msgstr ""
+
 msgid "Google Calendar: Create Event"
 msgstr "Google Calendar: इवेंट बनाएं"
 

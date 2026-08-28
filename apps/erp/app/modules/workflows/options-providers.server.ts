@@ -2,8 +2,8 @@ import type { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import {
-  getConnection,
-  listConnections,
+  readConnection,
+  readConnections,
   resolveConnectionAuth
 } from "@carbon/ee/integrations/connections";
 import {
@@ -58,10 +58,10 @@ const connectionProvider: OptionsProvider = {
     const piece = params.piece;
     if (!piece) return { options: [] };
 
-    const { data } = await listConnections(client, companyId, piece);
+    const rows = await readConnections(client, companyId, piece);
 
     return {
-      options: (data ?? []).map((row) => ({
+      options: rows.map((row) => ({
         value: row.id,
         label:
           row.status === "Active"
@@ -89,11 +89,7 @@ const propertyProvider: OptionsProvider = {
 
     // Scope the connection to this company through the user's own client first;
     // the vault RPCs below are service-role only and would skip that check.
-    const { data: owned } = await getConnection(
-      client,
-      companyId,
-      connectionId
-    );
+    const owned = await readConnection(client, companyId, connectionId);
     if (owned === null || owned.pieceName !== piece) return { options: [] };
 
     const action = await getPieceAction(piece, actionName);

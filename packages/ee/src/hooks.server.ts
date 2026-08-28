@@ -1,5 +1,6 @@
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { emailHealthcheck } from "./email/hooks.server";
-import { googleCalendarOnUninstall } from "./google-calendar/hooks.server";
+import { revokeConnectionsForPiece } from "./integrations/connections";
 import { jiraHealthcheck } from "./jira/hooks.server";
 import { linearHealthcheck } from "./linear/hooks.server";
 import { onshapeOnUninstall } from "./onshape/hooks.server";
@@ -51,8 +52,16 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
   linear: {
     onHealthcheck: linearHealthcheck
   },
+  // A workflow-integration card's whole uninstall behaviour is "revoke the accounts
+  // it connected", and its `id` IS the piece name — so a new piece is this one line,
+  // not a hooks file of its own.
   "google-calendar": {
-    onUninstall: googleCalendarOnUninstall
+    onUninstall: (companyId) =>
+      revokeConnectionsForPiece(
+        getCarbonServiceRole(),
+        "google-calendar",
+        companyId
+      )
   },
   onshape: {
     onUninstall: onshapeOnUninstall

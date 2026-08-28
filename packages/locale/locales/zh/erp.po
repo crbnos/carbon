@@ -7379,6 +7379,9 @@ msgstr "晚上好，{0}"
 msgid "Good morning, {0}"
 msgstr "早上好，{0}"
 
+msgid "Google Calendar"
+msgstr ""
+
 msgid "Google Calendar: Create Event"
 msgstr "Google 日历：创建事件"
 

@@ -44,7 +44,7 @@ import {
   getIntegrationServerHooks,
   onshapeConnectionHasWriteScope
 } from "@carbon/ee/hooks.server";
-import { listConnections } from "@carbon/ee/integrations/connections";
+import { readConnections } from "@carbon/ee/integrations/connections";
 import { getPath, SECRET_KEYS } from "@carbon/ee/integrations/secrets";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { requirePlan } from "@carbon/ee/plan.server";
@@ -91,7 +91,6 @@ import {
   upsertCompanyIntegration
 } from "~/modules/settings/settings.server";
 import { AccountMapping } from "~/modules/settings/ui/Integrations/AccountMapping";
-import type { ConnectionRow } from "~/modules/settings/ui/Integrations/ConnectionsTab";
 import { ConnectionsTab } from "~/modules/settings/ui/Integrations/ConnectionsTab";
 import { DimensionMapping } from "~/modules/settings/ui/Integrations/DimensionMapping";
 import type { IntegrationFormTab } from "~/modules/settings/ui/Integrations/IntegrationForm";
@@ -915,8 +914,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ? {
         pieceName: integrationId,
         defaultName: piece.label,
-        rows: ((await listConnections(client, companyId, integrationId)).data ??
-          []) as ConnectionRow[]
+        rows: await readConnections(client, companyId, integrationId)
       }
     : null;
 
