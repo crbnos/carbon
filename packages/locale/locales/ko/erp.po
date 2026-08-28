@@ -16119,11 +16119,11 @@ msgstr "{0}에서 {1}로의 연결이 제거됩니다. 이후 해당 작업은 �
 
 #. placeholder {0}: routeData?.purchaseReturnOrder?.purchaseReturnOrderId
 msgid "This will remove the link between {0} and its purchase order. The return will no longer appear under the purchase order."
-msgstr ""
+msgstr "{0}와(과) 구매 주문 간의 연결이 해제됩니다. 반품이 더 이상 구매 주문 아래에 표시되지 않습니다."
 
 #. placeholder {0}: routeData?.salesReturnOrder?.salesReturnOrderId
 msgid "This will remove the link between {0} and its sales order. The RMA will no longer appear under the sales order."
-msgstr ""
+msgstr "{0}와(과) 판매 주문 간의 연결이 해제됩니다. RMA가 더 이상 판매 주문 아래에 표시되지 않습니다."
 
 msgid "This will replace all method materials of other revisions with this revision."
 msgstr "다른 리비전의 모든 방법 자재가 이 리비전으로 교체됩니다."
@@ -16658,10 +16658,10 @@ msgid "Unlink job from sales order?"
 msgstr "작업을 판매주문에서 연결 해제하시겠습니까?"
 
 msgid "Unlink return from purchase order?"
-msgstr ""
+msgstr "구매 주문에서 반품 연결을 해제하시겠습니까?"
 
 msgid "Unlink RMA from sales order?"
-msgstr ""
+msgstr "판매 주문에서 RMA 연결을 해제하시겠습니까?"
 
 msgid "Unlock"
 msgstr "잠금 해제"

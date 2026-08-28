@@ -16119,11 +16119,11 @@ msgstr "Cela supprimera le lien de {0} vers {1}. Le travail n'apparaîtra plus s
 
 #. placeholder {0}: routeData?.purchaseReturnOrder?.purchaseReturnOrderId
 msgid "This will remove the link between {0} and its purchase order. The return will no longer appear under the purchase order."
-msgstr ""
+msgstr "Cela supprimera le lien entre {0} et son bon de commande. Le retour n'apparaîtra plus sous le bon de commande."
 
 #. placeholder {0}: routeData?.salesReturnOrder?.salesReturnOrderId
 msgid "This will remove the link between {0} and its sales order. The RMA will no longer appear under the sales order."
-msgstr ""
+msgstr "Cela supprimera le lien entre {0} et sa commande client. La RMA n'apparaîtra plus sous la commande client."
 
 msgid "This will replace all method materials of other revisions with this revision."
 msgstr "Cela remplacera tous les matériaux de méthode des autres révisions par cette révision."
@@ -16658,10 +16658,10 @@ msgid "Unlink job from sales order?"
 msgstr "Dissocier la commande de la commande client ?"
 
 msgid "Unlink return from purchase order?"
-msgstr ""
+msgstr "Dissocier le retour du bon de commande ?"
 
 msgid "Unlink RMA from sales order?"
-msgstr ""
+msgstr "Dissocier la RMA de la commande client ?"
 
 msgid "Unlock"
 msgstr "Déverrouiller"

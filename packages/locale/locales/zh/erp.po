@@ -16119,11 +16119,11 @@ msgstr "这将移除 {0} 与 {1} 的关联。该工作单将不再显示在销�
 
 #. placeholder {0}: routeData?.purchaseReturnOrder?.purchaseReturnOrderId
 msgid "This will remove the link between {0} and its purchase order. The return will no longer appear under the purchase order."
-msgstr ""
+msgstr "这将解除 {0} 与其采购订单的关联。该退货将不再显示在采购订单下。"
 
 #. placeholder {0}: routeData?.salesReturnOrder?.salesReturnOrderId
 msgid "This will remove the link between {0} and its sales order. The RMA will no longer appear under the sales order."
-msgstr ""
+msgstr "这将解除 {0} 与其销售订单的关联。该 RMA 将不再显示在销售订单下。"
 
 msgid "This will replace all method materials of other revisions with this revision."
 msgstr "这将用此修订版本替换其他修订版本的所有方法材料。"
@@ -16658,10 +16658,10 @@ msgid "Unlink job from sales order?"
 msgstr "从销售订单取消关联工作？"
 
 msgid "Unlink return from purchase order?"
-msgstr ""
+msgstr "解除退货与采购订单的关联？"
 
 msgid "Unlink RMA from sales order?"
-msgstr ""
+msgstr "解除 RMA 与销售订单的关联？"
 
 msgid "Unlock"
 msgstr "解锁"

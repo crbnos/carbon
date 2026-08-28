@@ -16119,11 +16119,11 @@ msgstr "Dies wird die Verknüpfung von {0} mit {1} entfernen. Der Auftrag wird n
 
 #. placeholder {0}: routeData?.purchaseReturnOrder?.purchaseReturnOrderId
 msgid "This will remove the link between {0} and its purchase order. The return will no longer appear under the purchase order."
-msgstr ""
+msgstr "Dadurch wird die Verknüpfung zwischen {0} und der Bestellung entfernt. Die Retoure erscheint nicht mehr unter der Bestellung."
 
 #. placeholder {0}: routeData?.salesReturnOrder?.salesReturnOrderId
 msgid "This will remove the link between {0} and its sales order. The RMA will no longer appear under the sales order."
-msgstr ""
+msgstr "Dadurch wird die Verknüpfung zwischen {0} und dem Verkaufsauftrag entfernt. Die RMA erscheint nicht mehr unter dem Verkaufsauftrag."
 
 msgid "This will replace all method materials of other revisions with this revision."
 msgstr "Dies ersetzt alle Methodenmaterialien anderer Revisionen durch diese Revision."
@@ -16658,10 +16658,10 @@ msgid "Unlink job from sales order?"
 msgstr "Auftrag von Verkaufsauftrag trennen?"
 
 msgid "Unlink return from purchase order?"
-msgstr ""
+msgstr "Retoure von der Bestellung trennen?"
 
 msgid "Unlink RMA from sales order?"
-msgstr ""
+msgstr "RMA vom Verkaufsauftrag trennen?"
 
 msgid "Unlock"
 msgstr "Entsperren"

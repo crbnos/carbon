@@ -16119,11 +16119,11 @@ msgstr "これにより{0}から{1}へのリンクが削除されます。ジョ
 
 #. placeholder {0}: routeData?.purchaseReturnOrder?.purchaseReturnOrderId
 msgid "This will remove the link between {0} and its purchase order. The return will no longer appear under the purchase order."
-msgstr ""
+msgstr "{0} と発注書のリンクを解除します。返品は発注書の下に表示されなくなります。"
 
 #. placeholder {0}: routeData?.salesReturnOrder?.salesReturnOrderId
 msgid "This will remove the link between {0} and its sales order. The RMA will no longer appear under the sales order."
-msgstr ""
+msgstr "{0} と受注のリンクを解除します。RMA は受注の下に表示されなくなります。"
 
 msgid "This will replace all method materials of other revisions with this revision."
 msgstr "これにより、他のリビジョンのすべてのメソッドマテリアルがこのリビジョンに置き換わります。"
@@ -16658,10 +16658,10 @@ msgid "Unlink job from sales order?"
 msgstr "販売注文からジョブのリンクを解除しますか？"
 
 msgid "Unlink return from purchase order?"
-msgstr ""
+msgstr "返品と発注書のリンクを解除しますか？"
 
 msgid "Unlink RMA from sales order?"
-msgstr ""
+msgstr "RMA と受注のリンクを解除しますか？"
 
 msgid "Unlock"
 msgstr "ロック解除"

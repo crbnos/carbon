@@ -16119,11 +16119,11 @@ msgstr "Isto removerá o link de {0} para {1}. O trabalho não aparecerá mais s
 
 #. placeholder {0}: routeData?.purchaseReturnOrder?.purchaseReturnOrderId
 msgid "This will remove the link between {0} and its purchase order. The return will no longer appear under the purchase order."
-msgstr ""
+msgstr "Isto removerá o vínculo entre {0} e o seu pedido de compra. A devolução deixará de aparecer sob o pedido de compra."
 
 #. placeholder {0}: routeData?.salesReturnOrder?.salesReturnOrderId
 msgid "This will remove the link between {0} and its sales order. The RMA will no longer appear under the sales order."
-msgstr ""
+msgstr "Isto removerá o vínculo entre {0} e o seu pedido de venda. A RMA deixará de aparecer sob o pedido de venda."
 
 msgid "This will replace all method materials of other revisions with this revision."
 msgstr "Isto substituirá todos os materiais de método de outras revisões por esta revisão."
@@ -16658,10 +16658,10 @@ msgid "Unlink job from sales order?"
 msgstr "Desassociar trabalho da ordem de venda?"
 
 msgid "Unlink return from purchase order?"
-msgstr ""
+msgstr "Desvincular a devolução do pedido de compra?"
 
 msgid "Unlink RMA from sales order?"
-msgstr ""
+msgstr "Desvincular a RMA do pedido de venda?"
 
 msgid "Unlock"
 msgstr "Desbloquear"

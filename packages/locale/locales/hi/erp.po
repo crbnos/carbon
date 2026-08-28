@@ -16119,11 +16119,11 @@ msgstr "यह {0} का {1} से लिंक हटा देगा। य�
 
 #. placeholder {0}: routeData?.purchaseReturnOrder?.purchaseReturnOrderId
 msgid "This will remove the link between {0} and its purchase order. The return will no longer appear under the purchase order."
-msgstr ""
+msgstr "इससे {0} और उसके क्रय आदेश के बीच का लिंक हट जाएगा। वापसी अब क्रय आदेश के अंतर्गत नहीं दिखेगी।"
 
 #. placeholder {0}: routeData?.salesReturnOrder?.salesReturnOrderId
 msgid "This will remove the link between {0} and its sales order. The RMA will no longer appear under the sales order."
-msgstr ""
+msgstr "इससे {0} और उसके विक्रय आदेश के बीच का लिंक हट जाएगा। RMA अब विक्रय आदेश के अंतर्गत नहीं दिखेगी।"
 
 msgid "This will replace all method materials of other revisions with this revision."
 msgstr "यह अन्य संशोधनों की सभी विधि सामग्री को इस संशोधन से बदल देगा।"
@@ -16658,10 +16658,10 @@ msgid "Unlink job from sales order?"
 msgstr "बिक्रय आदेश से नौकरी को अनलिंक करें?"
 
 msgid "Unlink return from purchase order?"
-msgstr ""
+msgstr "वापसी को क्रय आदेश से अनलिंक करें?"
 
 msgid "Unlink RMA from sales order?"
-msgstr ""
+msgstr "RMA को विक्रय आदेश से अनलिंक करें?"
 
 msgid "Unlock"
 msgstr "अनलॉक करें"

@@ -16119,11 +16119,11 @@ msgstr "Bu, {0}\"'nin {1} ile bağlantısını kaldıracaktır. İş artık sat�
 
 #. placeholder {0}: routeData?.purchaseReturnOrder?.purchaseReturnOrderId
 msgid "This will remove the link between {0} and its purchase order. The return will no longer appear under the purchase order."
-msgstr ""
+msgstr "Bu, {0} ile satın alma siparişi arasındaki bağlantıyı kaldırır. İade artık satın alma siparişi altında görünmez."
 
 #. placeholder {0}: routeData?.salesReturnOrder?.salesReturnOrderId
 msgid "This will remove the link between {0} and its sales order. The RMA will no longer appear under the sales order."
-msgstr ""
+msgstr "Bu, {0} ile satış siparişi arasındaki bağlantıyı kaldırır. RMA artık satış siparişi altında görünmez."
 
 msgid "This will replace all method materials of other revisions with this revision."
 msgstr "Bu, diğer revizyonlardaki tüm yöntem malzemelerini bu revizyonla değiştirecektir."
@@ -16658,10 +16658,10 @@ msgid "Unlink job from sales order?"
 msgstr "İş emrini satış siparişinden ayır?"
 
 msgid "Unlink return from purchase order?"
-msgstr ""
+msgstr "İade satın alma siparişinden ayrılsın mı?"
 
 msgid "Unlink RMA from sales order?"
-msgstr ""
+msgstr "RMA satış siparişinden ayrılsın mı?"
 
 msgid "Unlock"
 msgstr "Kilidi Aç"

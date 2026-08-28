@@ -16119,11 +16119,11 @@ msgstr "Это удалит связь {0} с {1}. Задание больше �
 
 #. placeholder {0}: routeData?.purchaseReturnOrder?.purchaseReturnOrderId
 msgid "This will remove the link between {0} and its purchase order. The return will no longer appear under the purchase order."
-msgstr ""
+msgstr "Связь между {0} и заказом на закупку будет удалена. Возврат больше не будет отображаться под заказом на закупку."
 
 #. placeholder {0}: routeData?.salesReturnOrder?.salesReturnOrderId
 msgid "This will remove the link between {0} and its sales order. The RMA will no longer appear under the sales order."
-msgstr ""
+msgstr "Связь между {0} и заказом на продажу будет удалена. RMA больше не будет отображаться под заказом на продажу."
 
 msgid "This will replace all method materials of other revisions with this revision."
 msgstr "Это заменит все материалы методов других редакций на эту редакцию."
@@ -16658,10 +16658,10 @@ msgid "Unlink job from sales order?"
 msgstr "Отменить связь задания с заказом на продажу?"
 
 msgid "Unlink return from purchase order?"
-msgstr ""
+msgstr "Отвязать возврат от заказа на закупку?"
 
 msgid "Unlink RMA from sales order?"
-msgstr ""
+msgstr "Отвязать RMA от заказа на продажу?"
 
 msgid "Unlock"
 msgstr "Разблокировать"
