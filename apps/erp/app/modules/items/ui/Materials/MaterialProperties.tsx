@@ -45,7 +45,7 @@ import MaterialType from "~/components/Form/MaterialType";
 import Shape from "~/components/Form/Shape";
 import Substance from "~/components/Form/Substance";
 import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
-import { useCompanySettings, useRouteData } from "~/hooks";
+import { useRouteData } from "~/hooks";
 import { useSettings } from "~/hooks/useSettings";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
@@ -160,8 +160,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
   } | null>(null);
 
   const settings = useSettings();
-  const allowLowercaseItemIds =
-    useCompanySettings()?.allowLowercaseItemIds === true;
+  const allowLowercaseItemIds = settings.allowLowercaseItemIds === true;
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(

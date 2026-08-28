@@ -248,14 +248,14 @@ export default function ItemsSettingsRoute() {
             <HStack className="justify-between items-center">
               <VStack className="items-start" spacing={1}>
                 <span className="font-medium">
-                  {(companySettings as any).allowLowercaseItemIds ? (
+                  {companySettings.allowLowercaseItemIds ? (
                     <Trans>Lowercase item IDs are allowed</Trans>
                   ) : (
                     <Trans>Item IDs are forced to uppercase</Trans>
                   )}
                 </span>
                 <span className="text-sm text-muted-foreground">
-                  {(companySettings as any).allowLowercaseItemIds ? (
+                  {companySettings.allowLowercaseItemIds ? (
                     <Trans>Item IDs keep the casing you type.</Trans>
                   ) : (
                     <Trans>
@@ -265,9 +265,7 @@ export default function ItemsSettingsRoute() {
                 </span>
               </VStack>
               <Switch
-                checked={
-                  (companySettings as any).allowLowercaseItemIds ?? false
-                }
+                checked={companySettings.allowLowercaseItemIds ?? false}
                 onCheckedChange={handleLowercaseItemIdsToggle}
                 disabled={isToggling}
               />
