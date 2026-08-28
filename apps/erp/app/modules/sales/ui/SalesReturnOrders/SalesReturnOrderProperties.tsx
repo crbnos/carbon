@@ -59,6 +59,7 @@ const SalesReturnOrderProperties = () => {
 
   const routeData = useRouteData<{
     salesReturnOrder: SalesReturnOrder;
+    lines: { itemId: string | null }[];
   }>(path.to.salesReturnOrder(id));
 
   const unlinkDisclosure = useDisclosure();
@@ -75,22 +76,55 @@ const SalesReturnOrderProperties = () => {
     { value: string; label: string }[]
   >([]);
   const customerId = routeData?.salesReturnOrder?.customerId;
+  const [linkedOrderLabel, setLinkedOrderLabel] = useState<string | null>(null);
+  const linkedOrderId = routeData?.salesReturnOrder?.salesOrderId;
   useEffect(() => {
-    if (!carbon || !customerId) return;
+    if (!carbon || !linkedOrderId) {
+      setLinkedOrderLabel(null);
+      return;
+    }
     carbon
       .from("salesOrder")
-      .select("id, salesOrderId")
-      .eq("customerId", customerId)
-      .order("salesOrderId", { ascending: false })
+      .select("salesOrderId")
+      .eq("id", linkedOrderId)
+      .maybeSingle()
       .then(({ data }) => {
-        setSalesOrderOptions(
-          (data ?? []).map((order) => ({
-            value: order.id,
-            label: order.salesOrderId
-          }))
-        );
+        setLinkedOrderLabel(data?.salesOrderId ?? null);
       });
-  }, [carbon, customerId]);
+  }, [carbon, linkedOrderId]);
+
+  const lineItemIds = (routeData?.lines ?? [])
+    .map((line) => line.itemId)
+    .filter((itemId): itemId is string => Boolean(itemId));
+  const lineItemKey = lineItemIds.sort().join(",");
+  useEffect(() => {
+    if (!carbon || !customerId) return;
+    // Only offer orders that actually contain the RMA's items — linking to
+    // an order that never sold these items would be meaningless. With no
+    // lines yet, every order of the customer is offered.
+    const query =
+      lineItemIds.length > 0
+        ? carbon
+            .from("salesOrder")
+            .select("id, salesOrderId, salesOrderLine!inner(itemId)")
+            .eq("customerId", customerId)
+            .in("salesOrderLine.itemId", lineItemIds)
+            .order("salesOrderId", { ascending: false })
+        : carbon
+            .from("salesOrder")
+            .select("id, salesOrderId")
+            .eq("customerId", customerId)
+            .order("salesOrderId", { ascending: false });
+    query.then(({ data }) => {
+      setSalesOrderOptions(
+        (data ?? []).map((order) => ({
+          value: order.id,
+          label: order.salesOrderId
+        }))
+      );
+    });
+    // biome-ignore lint/correctness/useExhaustiveDependencies: lineItemKey stands in for the array identity
+  }, [carbon, customerId, lineItemKey]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onUpdate = useCallback(
@@ -220,10 +254,12 @@ const SalesReturnOrderProperties = () => {
             >
               <Badge variant="secondary">
                 <RiProgress8Line className="w-3 h-3 mr-1" />
-                {salesOrderOptions.find(
-                  (option) =>
-                    option.value === routeData.salesReturnOrder.salesOrderId
-                )?.label ?? t`Sales Order`}
+                {linkedOrderLabel ??
+                  salesOrderOptions.find(
+                    (option) =>
+                      option.value === routeData.salesReturnOrder.salesOrderId
+                  )?.label ??
+                  t`Sales Order`}
               </Badge>
             </Hyperlink>
             {!isDisabled && (

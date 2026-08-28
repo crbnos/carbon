@@ -58,6 +58,7 @@ const PurchaseReturnOrderProperties = () => {
 
   const routeData = useRouteData<{
     purchaseReturnOrder: PurchaseReturnOrder;
+    lines: { itemId: string | null }[];
   }>(path.to.purchaseReturnOrder(id));
 
   const unlinkDisclosure = useDisclosure();
@@ -74,22 +75,54 @@ const PurchaseReturnOrderProperties = () => {
     { value: string; label: string }[]
   >([]);
   const supplierId = routeData?.purchaseReturnOrder?.supplierId;
+  const [linkedOrderLabel, setLinkedOrderLabel] = useState<string | null>(null);
+  const linkedOrderId = routeData?.purchaseReturnOrder?.purchaseOrderId;
   useEffect(() => {
-    if (!carbon || !supplierId) return;
+    if (!carbon || !linkedOrderId) {
+      setLinkedOrderLabel(null);
+      return;
+    }
     carbon
       .from("purchaseOrder")
-      .select("id, purchaseOrderId")
-      .eq("supplierId", supplierId)
-      .order("purchaseOrderId", { ascending: false })
+      .select("purchaseOrderId")
+      .eq("id", linkedOrderId)
+      .maybeSingle()
       .then(({ data }) => {
-        setPurchaseOrderOptions(
-          (data ?? []).map((order) => ({
-            value: order.id,
-            label: order.purchaseOrderId
-          }))
-        );
+        setLinkedOrderLabel(data?.purchaseOrderId ?? null);
       });
-  }, [carbon, supplierId]);
+  }, [carbon, linkedOrderId]);
+
+  const lineItemIds = (routeData?.lines ?? [])
+    .map((line) => line.itemId)
+    .filter((itemId): itemId is string => Boolean(itemId));
+  const lineItemKey = lineItemIds.sort().join(",");
+  useEffect(() => {
+    if (!carbon || !supplierId) return;
+    // Only offer orders that actually contain the return's items. With no
+    // lines yet, every order of the supplier is offered.
+    const query =
+      lineItemIds.length > 0
+        ? carbon
+            .from("purchaseOrder")
+            .select("id, purchaseOrderId, purchaseOrderLine!inner(itemId)")
+            .eq("supplierId", supplierId)
+            .in("purchaseOrderLine.itemId", lineItemIds)
+            .order("purchaseOrderId", { ascending: false })
+        : carbon
+            .from("purchaseOrder")
+            .select("id, purchaseOrderId")
+            .eq("supplierId", supplierId)
+            .order("purchaseOrderId", { ascending: false });
+    query.then(({ data }) => {
+      setPurchaseOrderOptions(
+        (data ?? []).map((order) => ({
+          value: order.id,
+          label: order.purchaseOrderId
+        }))
+      );
+    });
+    // biome-ignore lint/correctness/useExhaustiveDependencies: lineItemKey stands in for the array identity
+  }, [carbon, supplierId, lineItemKey]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onUpdate = useCallback(
@@ -222,11 +255,13 @@ const PurchaseReturnOrderProperties = () => {
             >
               <Badge variant="secondary">
                 <RiProgress8Line className="w-3 h-3 mr-1" />
-                {purchaseOrderOptions.find(
-                  (option) =>
-                    option.value ===
-                    routeData.purchaseReturnOrder.purchaseOrderId
-                )?.label ?? t`Purchase Order`}
+                {linkedOrderLabel ??
+                  purchaseOrderOptions.find(
+                    (option) =>
+                      option.value ===
+                      routeData.purchaseReturnOrder.purchaseOrderId
+                  )?.label ??
+                  t`Purchase Order`}
               </Badge>
             </Hyperlink>
             {!isDisabled && (
