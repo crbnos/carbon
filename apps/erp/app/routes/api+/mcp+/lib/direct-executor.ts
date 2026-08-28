@@ -71,12 +71,13 @@ function enrichWithAuthContext(
   // the row table failed. Only createdBy is injected into elements (and only for
   // an insert): element keys are spread straight into an INSERT, so injecting
   // companyId/updatedBy could add a column the row table doesn't have. The
-  // service owns companyId for these rows.
+  // service owns companyId for these rows. createdBy is stamped AFTER the spread
+  // so a caller can't forge audit attribution by supplying it in a row.
   if (Array.isArray(value)) {
     if (operation === "update" || !fields.includes("createdBy")) return value;
     return value.map((element) =>
       element && typeof element === "object" && !Array.isArray(element)
-        ? { createdBy: context.userId, ...(element as Record<string, unknown>) }
+        ? { ...(element as Record<string, unknown>), createdBy: context.userId }
         : element
     );
   }
