@@ -161,7 +161,6 @@ export function AccountMapping({
   const canUpdate = permissions.can("update", "settings");
   const [showMatchDrawer, setShowMatchDrawer] = useState(false);
   const [showAiModal, setShowAiModal] = useState(false);
-  const [showAll, setShowAll] = useState(false);
   const [search, setSearch] = useState("");
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const rowRefs = useRef(new Map<string, HTMLDivElement>());
@@ -183,49 +182,42 @@ export function AccountMapping({
     () => new Set(requiredAccountIds),
     [requiredAccountIds]
   );
+  const blockingSet = useMemo(
+    () => new Set(blocking.map((account) => account.id)),
+    [blocking]
+  );
   const mappedById = useMemo(
     () => new Map(mappings.map((mapping) => [mapping.accountId, mapping])),
     [mappings]
   );
 
-  // Needs attention = required-unmapped ∪ blocking-a-sync, deduped and with
-  // already-mapped accounts excluded. Blocking wins the badge when an account
-  // is both (it is the more urgent signal).
-  const needsAttention = useMemo(() => {
-    const byId = new Map<
-      string,
-      { id: string; number: string | null; name: string; blocking: boolean }
-    >();
-    for (const account of unmapped) {
-      if (mappedById.has(account.id)) continue;
-      byId.set(account.id, {
-        id: account.id,
-        number: account.number,
-        name: account.name,
-        blocking: false
-      });
-    }
+  // One list: every account in the chart, plus any account blocking a sync
+  // that isn't an active leaf (so a block is never hidden).
+  const displayAccounts = useMemo(() => {
+    const byId = new Map<string, AllAccountRow>();
+    for (const account of allAccounts) byId.set(account.id, account);
     for (const account of blocking) {
-      if (mappedById.has(account.id)) continue;
+      if (byId.has(account.id)) continue;
       byId.set(account.id, {
         id: account.id,
         number: account.number,
         name: account.name,
-        blocking: true
+        class: null,
+        accountType: null
       });
     }
     return [...byId.values()];
-  }, [unmapped, blocking, mappedById]);
+  }, [allAccounts, blocking]);
 
-  const groupedAllAccounts = useMemo(() => {
+  const grouped = useMemo(() => {
     const term = search.trim().toLowerCase();
     const filtered = term
-      ? allAccounts.filter(
+      ? displayAccounts.filter(
           (account) =>
             (account.number ?? "").toLowerCase().includes(term) ||
             account.name.toLowerCase().includes(term)
         )
-      : allAccounts;
+      : displayAccounts;
     const groups = new Map<string, AllAccountRow[]>();
     for (const account of filtered) {
       const key =
@@ -239,36 +231,63 @@ export function AccountMapping({
     return [...ACCOUNT_CLASS_ORDER, OTHER_CLASS]
       .filter((key) => groups.has(key))
       .map((key) => ({ class: key, accounts: groups.get(key) ?? [] }));
-  }, [allAccounts, search]);
+  }, [displayAccounts, search]);
 
-  const showAllAccounts = showAll || search.trim().length > 0;
+  // Unmapped required accounts (posting defaults + expense) — the AI-suggest
+  // input and the gate for the Suggest button.
+  const unmappedRequired = useMemo(() => {
+    const infoById = new Map<string, { number: string | null; name: string }>();
+    for (const account of displayAccounts) {
+      infoById.set(account.id, { number: account.number, name: account.name });
+    }
+    for (const account of unmapped) {
+      if (!infoById.has(account.id)) {
+        infoById.set(account.id, {
+          number: account.number,
+          name: account.name
+        });
+      }
+    }
+    const rows: UnmappedAccountRow[] = [];
+    for (const id of requiredAccountIds) {
+      if (mappedById.has(id)) continue;
+      const info = infoById.get(id);
+      if (info) rows.push({ id, number: info.number, name: info.name });
+    }
+    return rows;
+  }, [displayAccounts, unmapped, requiredAccountIds, mappedById]);
 
   const setRowRef = (id: string) => (el: HTMLDivElement | null) => {
     if (el) rowRefs.current.set(id, el);
     else rowRefs.current.delete(id);
   };
 
-  // Sync Activity deep-links here with ?focusAccount=<id>. Expand the full
-  // chart when a focused account isn't already in Needs attention, then scroll
-  // to it and highlight it briefly.
+  // Sync Activity deep-links here with ?focusAccount=<id>: scroll to the row
+  // and highlight it briefly. The whole list is always shown, so no expansion.
   const focusKey = (focusAccountIds ?? []).join(",");
   useEffect(() => {
     if (!focusKey) return;
-    const ids = focusKey.split(",");
-    const attentionIds = new Set(needsAttention.map((a) => a.id));
-    if (ids.some((id) => !attentionIds.has(id))) setShowAll(true);
-    setHighlightedId(ids[0] ?? null);
+    setHighlightedId(focusKey.split(",")[0] ?? null);
     const timer = setTimeout(() => setHighlightedId(null), 2500);
     return () => clearTimeout(timer);
-  }, [focusKey, needsAttention]);
+  }, [focusKey]);
 
   useEffect(() => {
     if (!highlightedId) return;
-    // Runs after the render that expanded the list (both state updates from
-    // the focus effect commit together), so the target row's ref is present.
     const el = rowRefs.current.get(highlightedId);
     if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
   }, [highlightedId]);
+
+  const rowBadge = (id: string) =>
+    blockingSet.has(id) ? (
+      <AccountRowBadge tone="warning">
+        <Trans>Blocking sync</Trans>
+      </AccountRowBadge>
+    ) : requiredSet.has(id) ? (
+      <AccountRowBadge tone="neutral">
+        <Trans>Required</Trans>
+      </AccountRowBadge>
+    ) : undefined;
 
   return (
     <>
@@ -277,15 +296,14 @@ export function AccountMapping({
         <div className="flex w-full flex-wrap items-center justify-between gap-2">
           <p className="max-w-prose text-xs leading-relaxed text-muted-foreground">
             <Trans>
-              Map any Carbon account to the provider's chart of accounts.
-              Accounts that automated postings run through are marked Required;
-              the rest are optional. Posted journals push using the mapped
-              provider account code.
+              Map your chart of accounts to the provider's. Posting-default and
+              expense accounts are marked Required; posted journals push using
+              the mapped provider account code.
             </Trans>
           </p>
           {chart.length > 0 && (
             <HStack spacing={2}>
-              {unmapped.length > 0 && (
+              {unmappedRequired.length > 0 && (
                 <Button
                   size="sm"
                   variant="secondary"
@@ -308,166 +326,56 @@ export function AccountMapping({
           )}
         </div>
 
-        <MappingSection
-          title={<Trans>Needs attention</Trans>}
-          description={
-            <Trans>
-              Required accounts with no mapping, and accounts blocking a sync
-              right now.
-            </Trans>
-          }
-          count={needsAttention.length}
-          emptyMessage={<Trans>Nothing needs mapping</Trans>}
-        >
-          {needsAttention.map((account) => (
-            <AccountMappingRowForm
-              key={account.id}
-              accountId={account.id}
-              accountNumber={account.number}
-              accountName={account.name}
-              currentExternalId={null}
-              currentExternalCode={null}
-              currentExternalName={null}
-              chartById={chartById}
-              chartOptions={chartOptions}
-              canUpdate={canUpdate}
-              badge={
-                account.blocking ? (
-                  <AccountRowBadge tone="warning">
-                    <Trans>Blocking sync</Trans>
-                  </AccountRowBadge>
-                ) : (
-                  <AccountRowBadge tone="neutral">
-                    <Trans>Required</Trans>
-                  </AccountRowBadge>
-                )
-              }
-              rowRef={setRowRef(account.id)}
-              highlighted={highlightedId === account.id}
+        <div className="w-full max-w-[280px]">
+          <InputGroup size="sm">
+            <InputLeftElement>
+              <LuSearch className="size-4 text-muted-foreground" />
+            </InputLeftElement>
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={t`Search accounts`}
             />
-          ))}
-        </MappingSection>
+          </InputGroup>
+        </div>
 
-        <MappingSection
-          title={<Trans>Mapped accounts</Trans>}
-          description={
-            <Trans>
-              Existing mappings. Pick a different provider account to re-map.
-            </Trans>
-          }
-          count={mappings.length}
-          emptyMessage={<Trans>No accounts mapped yet</Trans>}
-        >
-          {mappings.map((mapping) => (
-            <AccountMappingRowForm
-              key={mapping.id}
-              accountId={mapping.accountId}
-              accountNumber={mapping.accountNumber}
-              accountName={mapping.accountName}
-              currentExternalId={mapping.externalId}
-              currentExternalCode={mapping.externalCode}
-              currentExternalName={mapping.externalName}
-              chartById={chartById}
-              chartOptions={chartOptions}
-              canUpdate={canUpdate}
-              badge={
-                requiredSet.has(mapping.accountId) ? (
-                  <AccountRowBadge tone="neutral">
-                    <Trans>Required</Trans>
-                  </AccountRowBadge>
-                ) : undefined
-              }
-              rowRef={setRowRef(mapping.accountId)}
-              highlighted={highlightedId === mapping.accountId}
-            />
-          ))}
-        </MappingSection>
-
-        <section className="flex w-full flex-col gap-2">
-          <div className="flex w-full flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-[0.6875rem] font-semibold uppercase tracking-wider text-foreground/70">
-                <Trans>All accounts</Trans>
-              </span>
-              <p className="text-xs text-muted-foreground">
-                <Trans>
-                  Map any account in the chart of accounts, not just the
-                  required ones.
-                </Trans>
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-[220px]">
-                <InputGroup size="sm">
-                  <InputLeftElement>
-                    <LuSearch className="size-4 text-muted-foreground" />
-                  </InputLeftElement>
-                  <Input
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder={t`Search accounts`}
-                  />
-                </InputGroup>
-              </div>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => setShowAll((prev) => !prev)}
-              >
-                {showAllAccounts ? (
-                  <Trans>Hide accounts</Trans>
-                ) : (
-                  <Trans>Show all accounts</Trans>
-                )}
-              </Button>
-            </div>
+        {grouped.length === 0 ? (
+          <div className="flex w-full items-center justify-center rounded-lg border border-border py-8 text-sm text-muted-foreground">
+            <Trans>No accounts match your search</Trans>
           </div>
-
-          {showAllAccounts &&
-            (groupedAllAccounts.length === 0 ? (
-              <div className="flex w-full items-center justify-center rounded-lg border border-border py-8 text-sm text-muted-foreground">
-                <Trans>No accounts match your search</Trans>
-              </div>
-            ) : (
-              groupedAllAccounts.map((group) => (
-                <div key={group.class} className="flex w-full flex-col gap-1">
-                  <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {group.class}
-                  </span>
-                  <div className="w-full rounded-lg border border-border">
-                    <div className="flex w-full flex-col divide-y divide-border">
-                      {group.accounts.map((account) => {
-                        const mapping = mappedById.get(account.id);
-                        return (
-                          <AccountMappingRowForm
-                            key={account.id}
-                            accountId={account.id}
-                            accountNumber={account.number}
-                            accountName={account.name}
-                            currentExternalId={mapping?.externalId ?? null}
-                            currentExternalCode={mapping?.externalCode ?? null}
-                            currentExternalName={mapping?.externalName ?? null}
-                            chartById={chartById}
-                            chartOptions={chartOptions}
-                            canUpdate={canUpdate}
-                            badge={
-                              requiredSet.has(account.id) ? (
-                                <AccountRowBadge tone="neutral">
-                                  <Trans>Required</Trans>
-                                </AccountRowBadge>
-                              ) : undefined
-                            }
-                            rowRef={setRowRef(account.id)}
-                            highlighted={highlightedId === account.id}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
+        ) : (
+          grouped.map((group) => (
+            <div key={group.class} className="flex w-full flex-col gap-1">
+              <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-muted-foreground">
+                {group.class}
+              </span>
+              <div className="w-full rounded-lg border border-border">
+                <div className="flex w-full flex-col divide-y divide-border">
+                  {group.accounts.map((account) => {
+                    const mapping = mappedById.get(account.id);
+                    return (
+                      <AccountMappingRowForm
+                        key={account.id}
+                        accountId={account.id}
+                        accountNumber={account.number}
+                        accountName={account.name}
+                        currentExternalId={mapping?.externalId ?? null}
+                        currentExternalCode={mapping?.externalCode ?? null}
+                        currentExternalName={mapping?.externalName ?? null}
+                        chartById={chartById}
+                        chartOptions={chartOptions}
+                        canUpdate={canUpdate}
+                        badge={rowBadge(account.id)}
+                        rowRef={setRowRef(account.id)}
+                        highlighted={highlightedId === account.id}
+                      />
+                    );
+                  })}
                 </div>
-              ))
-            ))}
-        </section>
+              </div>
+            </div>
+          ))
+        )}
       </DrawerBody>
 
       {showMatchDrawer && (
@@ -480,54 +388,13 @@ export function AccountMapping({
 
       {showAiModal && (
         <AiSuggestModal
-          unmapped={unmapped}
+          unmapped={unmappedRequired}
           chart={chart}
           canUpdate={canUpdate}
           onClose={() => setShowAiModal(false)}
         />
       )}
     </>
-  );
-}
-
-function MappingSection({
-  title,
-  description,
-  count,
-  emptyMessage,
-  children
-}: {
-  title: ReactNode;
-  description: ReactNode;
-  count: number;
-  emptyMessage: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <section className="flex w-full flex-col gap-2">
-      <div className="flex flex-col gap-0.5">
-        <div className="flex items-center gap-2">
-          <span className="text-[0.6875rem] font-semibold uppercase tracking-wider text-foreground/70">
-            {title}
-          </span>
-          <span className="text-[0.6875rem] tabular-nums text-muted-foreground">
-            {count}
-          </span>
-        </div>
-        <p className="text-xs text-muted-foreground">{description}</p>
-      </div>
-      <div className="w-full rounded-lg border border-border">
-        {count === 0 ? (
-          <div className="flex w-full items-center justify-center py-8 text-sm text-muted-foreground">
-            {emptyMessage}
-          </div>
-        ) : (
-          <div className="flex w-full flex-col divide-y divide-border">
-            {children}
-          </div>
-        )}
-      </div>
-    </section>
   );
 }
 

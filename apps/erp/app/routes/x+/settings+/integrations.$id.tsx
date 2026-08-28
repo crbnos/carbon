@@ -220,17 +220,27 @@ async function getAccountMappingTabData(
     }
   }
 
-  // The tab spans the FULL chart of accounts: accountDefault accounts are the
-  // "required" baseline (badged in the UI), but every mapping is shown and any
-  // account can be mapped. getAccountMappings is unscoped and the syncers'
-  // account resolution already sees every mapping.
+  // The tab spans the FULL chart of accounts (getAccountMappings is unscoped and
+  // the syncers already see every mapping). The "required" set — badged and
+  // surfaced as needing mapping — is the accountDefault posting accounts PLUS
+  // every Expense account: any Expense account can be charged directly on a PO
+  // G/L-account line, so it should be mapped up front rather than parking a
+  // journal later.
+  const fullChart = allAccounts.data ?? [];
+  const expenseAccountIds = fullChart
+    .filter((account) => account.class === "Expense")
+    .map((account) => account.id);
+  const requiredAccountIds = [
+    ...new Set([...accountDefaultIds, ...expenseAccountIds])
+  ];
+
   return {
     mappings: mappings.data ?? [],
     unmapped: unmapped.data ?? [],
     chart,
     proposals: proposals.data ?? [],
-    requiredAccountIds: accountDefaultIds,
-    allAccounts: allAccounts.data ?? [],
+    requiredAccountIds,
+    allAccounts: fullChart,
     blocking: blocking.data ?? []
   };
 }
