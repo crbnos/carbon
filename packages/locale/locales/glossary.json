@@ -203,6 +203,7 @@
       "term": "Balance",
       "category": "accounting",
       "context": "What remains outstanding.",
+      "ambiguity": "Only the account/ledger balance. Do NOT apply to the verb ('the account balances when...', 'equal debits and credits') or to the compound 'Trial Balance', which is its own term.",
       "translations": {
         "fr": "Solde",
         "de": "Saldo",
@@ -279,6 +280,7 @@
       "term": "Cash",
       "category": "accounting",
       "context": "A posted receipt or disbursement of money.",
+      "ambiguity": "Only the cash account. Do NOT apply inside compounds — 'cash discount', 'Quote to cash'.",
       "translations": {
         "fr": "Trésorerie",
         "de": "Kasse",
@@ -470,6 +472,7 @@
       "term": "Debit",
       "category": "accounting",
       "context": "The left side of a posting.",
+      "ambiguity": "Only the ledger column/side (paired with Credit). Ordinary prose and compound names use the everyday word instead — 'debit memo', 'Credits & Debits'.",
       "translations": {
         "fr": "Débit",
         "de": "Soll",
@@ -717,6 +720,7 @@
       "term": "GL",
       "category": "accounting",
       "context": "Short form of General Ledger, used mainly in 'GL Account'.",
+      "ambiguity": "Only the general-ledger noun. English also uses 'GL' as a modifier ('Default GL expense account'), where most languages use an accounting adjective instead.",
       "translations": {
         "fr": "Grand livre",
         "de": "Hauptbuch",
@@ -813,6 +817,7 @@
       "term": "Income",
       "category": "accounting",
       "context": "Money earned, as an account category.",
+      "ambiguity": "Only the income account. Do NOT apply inside compounds that are their own terms — 'Income Tax', 'Net Income', 'interest income'.",
       "translations": {
         "fr": "Produits",
         "de": "Erträge",
@@ -1326,6 +1331,7 @@
       "term": "Tax",
       "category": "accounting",
       "context": "Tax charged or paid on a transaction.",
+      "ambiguity": "Only the tax charged or paid on a transaction. English also uses 'tax' as a modifier meaning 'relating to taxation' ('tax year', 'tax depreciation method', 'tax timing differences') — most languages need a different, adjectival word there.",
       "translations": {
         "fr": "Taxe",
         "de": "Steuer",
@@ -1615,6 +1621,7 @@
       "term": "Create",
       "category": "action",
       "context": "Make a new record.",
+      "ambiguity": "Only the create action. Do NOT apply to the ordinary verb in prose ('create a separate Stripe customer', 'failed to create asset class').",
       "translations": {
         "fr": "Créer",
         "de": "Erstellen",
@@ -1653,6 +1660,7 @@
       "term": "Delete",
       "category": "action",
       "context": "Remove permanently.",
+      "ambiguity": "Only the delete action. Do NOT apply to the HTTP method DELETE in an API/webhook context.",
       "translations": {
         "fr": "Supprimer",
         "de": "Löschen",
@@ -1691,6 +1699,7 @@
       "term": "Duplicate",
       "category": "action",
       "context": "Copy a record into a new one.",
+      "ambiguity": "Only the duplicate action. Do NOT apply to the adjective in an error message ('Duplicate batch number', 'Duplicate serial number').",
       "translations": {
         "fr": "Dupliquer",
         "de": "Duplizieren",
@@ -1902,6 +1911,7 @@
       "term": "Remove",
       "category": "action",
       "context": "Take a row out, without necessarily deleting the record.",
+      "ambiguity": "Only the remove action. Do NOT apply to the ordinary verb ('remove some attachments', 'to remove the asset's original cost').",
       "translations": {
         "fr": "Retirer",
         "de": "Entfernen",
@@ -1921,6 +1931,7 @@
       "term": "Reopen",
       "category": "action",
       "context": "Move a closed record back to open.",
+      "ambiguity": "Only the domain action on a closed record. Do NOT apply to ordinary re-opening described in prose.",
       "translations": {
         "fr": "Rouvrir",
         "de": "Wieder öffnen",
@@ -1997,6 +2008,7 @@
       "term": "Update",
       "category": "action",
       "context": "Apply changes to an existing record.",
+      "ambiguity": "Only the domain action. Do NOT apply to the ordinary verb ('failed to update batch property'), to a plural noun ('Automatic Cost Updates'), or inside a permission code ('inventory:update').",
       "translations": {
         "fr": "Mettre à jour",
         "de": "Aktualisieren",
@@ -2188,6 +2200,7 @@
       "term": "Review",
       "category": "changes",
       "context": "The stage where a change is examined before approval.",
+      "ambiguity": "Only the review record/step. Do NOT apply to the imperative verb ('Review each item's changes, then confirm').",
       "translations": {
         "fr": "Revue",
         "de": "Überprüfung",
@@ -2771,6 +2784,7 @@
       "term": "Picking",
       "category": "inventory",
       "context": "The activity of taking stock off the shelf for a job or shipment.",
+      "ambiguity": "Only warehouse picking. Do NOT apply to the ordinary verb ('sending work to a supplier and picking it back up').",
       "translations": {
         "fr": "Prélèvement",
         "de": "Kommissionierung",
@@ -2886,6 +2900,7 @@
       "term": "Shelf",
       "category": "inventory",
       "context": "A storage position inside a location.",
+      "ambiguity": "Only the physical storage shelf. Do NOT apply inside 'shelf life', which is a fixed idiom with its own wording in most languages.",
       "translations": {
         "fr": "Étagère",
         "de": "Regal",
@@ -4113,6 +4128,7 @@
       "term": "Manufacturing",
       "category": "module",
       "context": "The making module: methods, jobs, shop floor.",
+      "ambiguity": "Only the domain noun. Do NOT apply inside a company name ('e.g. Acme Manufacturing') or as a modifier of another term ('manufacturing method', 'manufacturing change').",
       "translations": {
         "fr": "Production",
         "de": "Fertigung",
@@ -4227,6 +4243,7 @@
       "term": "Sales",
       "category": "module",
       "context": "The selling module: quotes, sales orders, shipments.",
+      "ambiguity": "Only the sales module/domain noun. Do NOT apply as a modifier of another noun ('sales contact', 'sales request for quote').",
       "translations": {
         "fr": "Ventes",
         "de": "Vertrieb",
@@ -4246,6 +4263,7 @@
       "term": "Settings",
       "category": "module",
       "context": "Company configuration.",
+      "ambiguity": "Only the settings screen. Do NOT apply inside a URL path or code sample ('Link (optional) — e.g. /x/settings/…').",
       "translations": {
         "fr": "Paramètres",
         "de": "Einstellungen",
@@ -4707,6 +4725,7 @@
       "term": "Supply",
       "category": "planning",
       "context": "Everything that adds stock: purchase orders, jobs, on-hand quantity.",
+      "ambiguity": "Only the supply noun. Do NOT apply to the ordinary verb ('the sales order line this job was created to supply').",
       "translations": {
         "fr": "Approvisionnement",
         "de": "Deckung",
@@ -5126,6 +5145,7 @@
       "term": "Override",
       "category": "platform",
       "context": "Replacing an inherited or calculated value with a manual one.",
+      "ambiguity": "Only the override record/noun. Do NOT apply to the ordinary verb ('per-line locations override the default') — most languages use a different form there.",
       "translations": {
         "fr": "Substitution",
         "de": "Übersteuerung",
@@ -5145,6 +5165,7 @@
       "term": "Owner",
       "category": "platform",
       "context": "The person accountable for a record.",
+      "ambiguity": "Only the record owner. Do NOT apply to company/group ownership ('as the company owner, you can transfer ownership').",
       "translations": {
         "fr": "Propriétaire",
         "de": "Verantwortlicher",
@@ -5642,6 +5663,7 @@
       "term": "Dispatch",
       "category": "production",
       "context": "A maintenance dispatch — a scheduled or reactive maintenance task raised against equipment.",
+      "ambiguity": "Only the maintenance dispatch record. The app also uses 'dispatch' for operations-, quality- and other-category dispatches, and for the scheduling 'dispatch sequence' — do NOT force the maintenance wording there.",
       "translations": {
         "fr": "Intervention de maintenance",
         "de": "Instandhaltungsauftrag",
@@ -6388,6 +6410,7 @@
       "term": "To Receive",
       "category": "purchasing",
       "context": "Outstanding lines awaiting receipt.",
+      "ambiguity": "Only the quantity-to-receive column/status. Do NOT apply to the ordinary infinitive ('the date the customer expects to receive the goods').",
       "translations": {
         "fr": "À réceptionner",
         "de": "Zu empfangen",
@@ -6964,6 +6987,7 @@
       "term": "Reduced",
       "category": "quality",
       "context": "A looser inspection level after sustained passes.",
+      "ambiguity": "Only the domain status. Do NOT apply to the ordinary participle (\"when an asset's carrying value is reduced\").",
       "translations": {
         "fr": "Réduit",
         "de": "Reduziert",
@@ -7460,6 +7484,7 @@
       "term": "Pricing",
       "category": "sales",
       "context": "The activity and configuration of setting prices.",
+      "ambiguity": "Only the pricing feature/screen. Do NOT apply to ordinary use in prose ('contains pricing and lead times', 'a customer inquiry for pricing').",
       "translations": {
         "fr": "Tarification",
         "de": "Preisfindung",
@@ -7965,6 +7990,7 @@
       "term": "Done",
       "category": "status",
       "context": "Finished.",
+      "ambiguity": "Only the job/operation status. Do NOT apply to ordinary English use — 'all phases are done', 'an operation done by an outside supplier', 'we make sure it's done right'.",
       "translations": {
         "fr": "Fait",
         "de": "Erledigt",
@@ -8022,6 +8048,7 @@
       "term": "Fail",
       "category": "status",
       "context": "Did not meet the inspection requirement.",
+      "ambiguity": "Only the inspection/test result. Do NOT apply to the ordinary verb — 'shown when this rule fails', 'the ways equipment fails'.",
       "translations": {
         "fr": "Non conforme",
         "de": "Nicht bestanden",
@@ -8155,6 +8182,7 @@
       "term": "Lost",
       "category": "status",
       "context": "A quote or opportunity that did not convert.",
+      "ambiguity": "Only the quote/opportunity status. Do NOT apply to the ordinary participle ('output lost during production', 'Negative (lost/scrap)').",
       "translations": {
         "fr": "Perdu",
         "de": "Verloren",
