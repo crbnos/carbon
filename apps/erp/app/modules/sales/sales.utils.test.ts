@@ -2,8 +2,58 @@ import { describe, expect, it } from "vitest";
 import {
   decideRecalcPricing,
   getEffectiveDefaultMarkups,
-  reconcileQuantityBreaks
+  reconcileQuantityBreaks,
+  resolvePreservedQuoteLinePriceFields
 } from "./sales.utils";
+
+describe("resolvePreservedQuoteLinePriceFields", () => {
+  const stored = {
+    leadTime: 14,
+    discountPercent: 0.1,
+    shippingCost: 5,
+    categoryMarkups: { laborCost: 25 },
+    priceSource: "system" as const
+  };
+
+  it("preserves stored values when the caller omits a field", () => {
+    expect(resolvePreservedQuoteLinePriceFields({}, stored)).toEqual({
+      leadTime: 14,
+      discountPercent: 0.1,
+      shippingCost: 5,
+      categoryMarkups: { laborCost: 25 },
+      priceSource: "system"
+    });
+  });
+
+  it("lets an explicit value win over the stored one", () => {
+    const result = resolvePreservedQuoteLinePriceFields(
+      { leadTime: 3, discountPercent: 0.2, shippingCost: 0 },
+      stored
+    );
+    expect(result.leadTime).toBe(3);
+    expect(result.discountPercent).toBe(0.2);
+    // An explicit zero is a real value, not "omitted".
+    expect(result.shippingCost).toBe(0);
+  });
+
+  it("falls back to column defaults for a brand-new row", () => {
+    expect(resolvePreservedQuoteLinePriceFields({}, null)).toEqual({
+      leadTime: 0,
+      discountPercent: 0,
+      shippingCost: 0,
+      categoryMarkups: {},
+      // A hand-set price with no declared source is manual, not system.
+      priceSource: "manual"
+    });
+  });
+
+  it("marks an explicit price system when the caller says so", () => {
+    expect(
+      resolvePreservedQuoteLinePriceFields({ priceSource: "system" }, null)
+        .priceSource
+    ).toBe("system");
+  });
+});
 
 describe("reconcileQuantityBreaks", () => {
   it("reports nothing when the breaks are unchanged", () => {

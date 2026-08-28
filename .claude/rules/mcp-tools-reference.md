@@ -67,7 +67,12 @@ registered individually:
 - `tool-metadata.json` provides `serviceParams` (positional arg order, e.g.
   `["client", "args"]`) and `injectAuth`. The executor builds the positional
   arg array: `client`/`userId`/`companyId`/`companyGroupId` come from `ctx`;
-  payload params are stamped with auth fields via `enrichWithAuthContext`.
+  payload params are stamped with auth fields via `enrichWithAuthContext`. When a
+  payload param is an **array** of rows, `enrichWithAuthContext` stamps
+  `createdBy` into each element (insert only) — the top-level stamp never reached
+  inside, so a NOT NULL `createdBy` on the row table (e.g. `quoteLinePrice`) used
+  to fail. Only `createdBy` is injected per element; `companyId`/`updatedBy` are
+  left to the service, since element keys spread straight into an INSERT.
 - Blocked tools (`lib/mcp-blocked-tools.ts`, `MCP_BLOCKED_TOOL_NAMES`) are rejected
   in both `call_tool` and the executor. Currently only `settings_seedCompany`.
 - Supabase query builders returned by services are awaited; result is
@@ -86,13 +91,19 @@ namespace), and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
 `{ name, module, classification, description, paramCount, serviceParams, injectAuth, schema }`.
 
 - **Classification** (`classifyFunction`): `delete*` → `DESTRUCTIVE`;
-  `get|list|fetch|search|find|count|check|is|has*` → `READ`; everything else →
+  `get|list|fetch|search|find|count|check|is|has*` → `READ`; a WRITE whose
+  **body issues a delete** (`.delete(` / `.deleteFrom(`, detected by
+  `functionBodyDeletes`) → `DESTRUCTIVE` too — a delete-and-reinsert `upsert*`
+  (e.g. `upsertQuoteLinePrices`, `replace*Steps`, favourite toggles) is
+  destructive-by-omission and the client must treat it as such; everything else →
   `WRITE`. Drives the MCP annotations (`READ_ONLY_/WRITE_/DESTRUCTIVE_ANNOTATIONS`
   in `lib/types.ts`).
-- **injectAuth** (`computeInjectAuth`): READ/DESTRUCTIVE → `["companyId"]`;
-  `upsert|create|insert|add|new|copy|duplicate|generate*` →
-  `["companyId","createdBy","updatedBy"]`; `update|set|sync|run|…*` →
-  `["companyId","updatedBy"]`.
+- **injectAuth** (`computeInjectAuth`): keyed off the **name verb, not the
+  classification** — only `READ` takes `["companyId"]`. `upsert|create|insert|
+  add|new|copy|duplicate|generate*` → `["companyId","createdBy","updatedBy"]`;
+  `update|set|sync|run|…*` → `["companyId","updatedBy"]`; anything else (incl. a
+  genuine `delete*`) → `["companyId"]`. A DESTRUCTIVE-classified `upsert*` still
+  inserts rows, so it keeps its `createdBy` — the label is only a caller hint.
 
 - **`_operation`** (`usesCreatedByDiscriminator`): the ~96 tools whose service picks
   insert-vs-update with `if ("createdBy" in …)` get a **required**
@@ -115,11 +126,17 @@ namespace), and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
 
 ## Gotchas
 
-- The generator reads a service's **parameter list textually**. A parameter typed
-  with a named alias (`prices: QuoteLinePriceInput[]`) publishes as an untyped
-  `{"type":"array","items":{}}` — only literal object types get inlined — and a
-  `//` comment inside the parameter list is parsed as a property name. Spell the
-  object type out inline and keep comments above the function.
+- The generator reads a service's **parameter list textually**, but resolves more
+  shapes than it used to. An **inline** array-of-objects
+  (`prices: { quantity: number; ... }[]`) now publishes as a typed
+  `{"type":"array","items":{...}}`; a `z.infer<typeof V>` validator param resolves
+  `V.merge(z.object({...}))` / `applyX(...)` wrappers / referenced `*Validator`s
+  (same models file) into real fields; and an `errorMap: () => (...)` inside a
+  validator no longer truncates the fields after it. A parameter typed with a bare
+  **named alias** (`prices: QuoteLinePriceInput[]`) still publishes with opaque
+  `items` — the alias isn't resolved — so spell the object type out inline. Keep
+  `//` comments above the function, not inside the parameter list (a comment there
+  is parsed as a property name).
 - A service whose first parameter is `db` (a Kysely transaction client) is served
   `getDatabaseClient()` by `direct-executor.ts`, the same way `client` is served
   the supabase one. A first parameter named anything else falls through to the

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-27T23:53:14.959Z",
+  "generated": "2026-08-28T16:35:40.658Z",
   "totalTools": 1449,
   "modules": 15,
   "tools": [
@@ -1678,7 +1678,7 @@
     {
       "name": "accounting_reopenAccountingPeriod",
       "module": "accounting",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "reopen accounting period",
       "paramCount": 1,
       "serviceParams": [
@@ -1968,7 +1968,7 @@
       "module": "accounting",
       "classification": "WRITE",
       "description": "upsert period close task definition",
-      "paramCount": 3,
+      "paramCount": 9,
       "serviceParams": [
         "client",
         "definition"
@@ -1988,11 +1988,32 @@
             "type": "string"
           },
           "taskType": {
+            "type": "string"
+          },
+          "autoCheckKey": {
+            "type": "string"
+          },
+          "sortOrder": {
             "type": "number"
+          },
+          "required": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string"
+          },
+          "active": {
+            "type": "string"
+          },
+          "defaultAssigneeId": {
+            "type": "string"
           }
         },
         "required": [
-          "name"
+          "name",
+          "taskType",
+          "required",
+          "active"
         ]
       }
     },
@@ -2400,7 +2421,7 @@
       "module": "accounting",
       "classification": "WRITE",
       "description": "update fiscal year settings",
-      "paramCount": 1,
+      "paramCount": 2,
       "serviceParams": [
         "client",
         "fiscalYearSettings"
@@ -2414,10 +2435,14 @@
         "properties": {
           "startMonth": {
             "type": "string"
+          },
+          "taxStartMonth": {
+            "type": "string"
           }
         },
         "required": [
-          "startMonth"
+          "startMonth",
+          "taxStartMonth"
         ]
       }
     },
@@ -2793,7 +2818,7 @@
     {
       "name": "accounting_upsertDimension",
       "module": "accounting",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "upsert dimension",
       "paramCount": 2,
       "serviceParams": [
@@ -2906,7 +2931,7 @@
     {
       "name": "accounting_saveJournalLineDimensions",
       "module": "accounting",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "save journal line dimensions",
       "paramCount": 2,
       "serviceParams": [
@@ -3363,7 +3388,7 @@
       "module": "accounting",
       "classification": "WRITE",
       "description": "upsert journal entry line",
-      "paramCount": 1,
+      "paramCount": 35,
       "serviceParams": [
         "client",
         "data"
@@ -3376,10 +3401,131 @@
       "schema": {
         "type": "object",
         "properties": {
-          "data": {}
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "entityType": {
+            "type": "string"
+          },
+          "active": {
+            "type": "string"
+          },
+          "required": {
+            "type": "string"
+          },
+          "dimensionValues": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "depreciationMethod": {
+            "type": "string"
+          },
+          "usefulLifeMonths": {
+            "type": "number"
+          },
+          "residualValuePercent": {
+            "type": "number"
+          },
+          "assetAccountId": {
+            "type": "string"
+          },
+          "accumulatedDepreciationAccountId": {
+            "type": "string"
+          },
+          "depreciationExpenseAccountId": {
+            "type": "string"
+          },
+          "writeOffAccountId": {
+            "type": "string"
+          },
+          "writeDownAccountId": {
+            "type": "string"
+          },
+          "gainOnDisposalAccountId": {
+            "type": "string"
+          },
+          "lossOnDisposalAccountId": {
+            "type": "string"
+          },
+          "taxDepreciationMethod": {
+            "type": "string"
+          },
+          "taxUsefulLifeMonths": {
+            "type": "number"
+          },
+          "taxResidualValuePercent": {
+            "type": "number"
+          },
+          "macrsPropertyClass": {
+            "type": "string"
+          },
+          "macrsConvention": {
+            "type": "string"
+          },
+          "bonusDepreciationPercent": {
+            "type": "number"
+          },
+          "fixedAssetClassId": {
+            "type": "string"
+          },
+          "serialNumber": {
+            "type": "string"
+          },
+          "assetLifetimeUsage": {
+            "type": "number"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "periodEnd": {
+            "type": "string"
+          },
+          "fixedAssetId": {
+            "type": "string"
+          },
+          "periodStart": {
+            "type": "string"
+          },
+          "unitsProduced": {
+            "type": "number"
+          },
+          "disposalDate": {
+            "type": "string"
+          },
+          "acquisitionCost": {
+            "type": "number"
+          },
+          "acquisitionDate": {
+            "type": "string"
+          },
+          "accumulatedDepreciation": {
+            "type": "number"
+          }
         },
         "required": [
-          "data"
+          "name",
+          "entityType",
+          "active",
+          "required",
+          "depreciationMethod",
+          "assetAccountId",
+          "accumulatedDepreciationAccountId",
+          "depreciationExpenseAccountId",
+          "writeOffAccountId",
+          "writeDownAccountId",
+          "gainOnDisposalAccountId",
+          "lossOnDisposalAccountId",
+          "fixedAssetClassId",
+          "periodEnd",
+          "fixedAssetId",
+          "periodStart",
+          "disposalDate",
+          "acquisitionDate"
         ]
       }
     },
@@ -3411,7 +3557,7 @@
     {
       "name": "accounting_saveJournalEntryWithLines",
       "module": "accounting",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "save journal entry with lines",
       "paramCount": 4,
       "serviceParams": [
@@ -4007,7 +4153,7 @@
     {
       "name": "accounting_insertDepreciationRun",
       "module": "accounting",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "insert depreciation run",
       "paramCount": 3,
       "serviceParams": [
@@ -4681,7 +4827,10 @@
             "type": "string"
           },
           "labels": {
-            "type": "array"
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "readGroups": {
             "type": "string"
@@ -4710,7 +4859,7 @@
     {
       "name": "documents_updateDocumentFavorite",
       "module": "documents",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "update document favorite",
       "paramCount": 2,
       "serviceParams": [
@@ -4740,7 +4889,7 @@
     {
       "name": "documents_updateDocumentLabels",
       "module": "documents",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "update document labels",
       "paramCount": 2,
       "serviceParams": [
@@ -4758,7 +4907,10 @@
             "type": "string"
           },
           "labels": {
-            "type": "array"
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -5815,7 +5967,7 @@
     {
       "name": "inventory_reconcileReceiptSerialEntities",
       "module": "inventory",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "reconcile receipt serial entities",
       "paramCount": 2,
       "serviceParams": [
@@ -6970,7 +7122,7 @@
       "module": "inventory",
       "classification": "WRITE",
       "description": "insert manual inventory adjustment",
-      "paramCount": 1,
+      "paramCount": 30,
       "serviceParams": [
         "client",
         "// `requiresSerialTracking` is a form-only flag for the validator's serial\n  // quantity guard — the route strips it before calling this.\n  inventoryAdjustment"
@@ -6982,10 +7134,110 @@
       "schema": {
         "type": "object",
         "properties": {
-          "// `requiresSerialTracking` is a form-only flag for the validator's serial\n  // quantity guard — the route strips it before calling this.\n  inventoryAdjustment": {}
+          "correctedQuantity": {
+            "type": "number"
+          },
+          "comment": {
+            "type": "string"
+          },
+          "postingDate": {
+            "type": "string"
+          },
+          "entryType": {
+            "type": "string"
+          },
+          "documentType": {
+            "type": "string"
+          },
+          "documentId": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "storageUnitId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "id": {
+            "type": "string"
+          },
+          "receiptId": {
+            "type": "string"
+          },
+          "sourceDocument": {
+            "type": "string"
+          },
+          "sourceDocumentId": {
+            "type": "string"
+          },
+          "externalDocumentId": {
+            "type": "string"
+          },
+          "sourceDocumentReadableId": {
+            "type": "string"
+          },
+          "supplierId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "warehouseId": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": "string"
+          },
+          "workCenterId": {
+            "type": "string"
+          },
+          "storageTypeIds": {
+            "type": "string"
+          },
+          "shipmentId": {
+            "type": "string"
+          },
+          "trackingNumber": {
+            "type": "string"
+          },
+          "shippingMethodId": {
+            "type": "string"
+          },
+          "customerId": {
+            "type": "string"
+          },
+          "carrier": {
+            "type": "string"
+          },
+          "carrierAccountId": {
+            "type": "string"
+          },
+          "trackingUrl": {
+            "type": "string"
+          },
+          "documentLineId": {
+            "type": "string"
+          }
         },
         "required": [
-          "// `requiresSerialTracking` is a form-only flag for the validator's serial\n  // quantity guard — the route strips it before calling this.\n  inventoryAdjustment"
+          "entryType",
+          "documentType",
+          "itemId",
+          "quantity",
+          "id",
+          "receiptId",
+          "name",
+          "locationId",
+          "shipmentId",
+          "carrier",
+          "documentId",
+          "documentLineId"
         ]
       }
     },
@@ -7276,7 +7528,7 @@
     {
       "name": "inventory_generateInventoryCountLines",
       "module": "inventory",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "generate inventory count lines",
       "paramCount": 4,
       "serviceParams": [
@@ -7618,7 +7870,7 @@
       "module": "inventory",
       "classification": "WRITE",
       "description": "upsert shipping method",
-      "paramCount": 3,
+      "paramCount": 5,
       "serviceParams": [
         "client",
         "shippingMethod"
@@ -7640,6 +7892,12 @@
           "carrier": {
             "type": "string"
           },
+          "carrierAccountId": {
+            "type": "string"
+          },
+          "trackingUrl": {
+            "type": "string"
+          },
           "_operation": {
             "type": "string",
             "enum": [
@@ -7651,6 +7909,7 @@
         },
         "required": [
           "name",
+          "carrier",
           "_operation"
         ]
       }
@@ -7755,7 +8014,7 @@
       "module": "inventory",
       "classification": "WRITE",
       "description": "upsert stock transfer line",
-      "paramCount": 1,
+      "paramCount": 5,
       "serviceParams": [
         "client",
         "stockTransferLine"
@@ -7768,7 +8027,21 @@
       "schema": {
         "type": "object",
         "properties": {
-          "stockTransferLine": {},
+          "id": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "stockTransferId": {
+            "type": "string"
+          },
+          "trackedEntityId": {
+            "type": "string"
+          },
           "_operation": {
             "type": "string",
             "enum": [
@@ -7779,7 +8052,10 @@
           }
         },
         "required": [
-          "stockTransferLine",
+          "itemId",
+          "locationId",
+          "stockTransferId",
+          "trackedEntityId",
           "_operation"
         ]
       }
@@ -7789,7 +8065,7 @@
       "module": "inventory",
       "classification": "WRITE",
       "description": "upsert stock transfer lines",
-      "paramCount": 3,
+      "paramCount": 2,
       "serviceParams": [
         "client",
         "args"
@@ -7802,18 +8078,14 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
+          "lines": {},
+          "stockTransferId": {
             "type": "string"
-          },
-          "locationId": {
-            "type": "string"
-          },
-          "lines": {
-            "type": "number"
           }
         },
         "required": [
-          "locationId"
+          "lines",
+          "stockTransferId"
         ]
       }
     },
@@ -8745,7 +9017,7 @@
     {
       "name": "inventory_generatePickingList",
       "module": "inventory",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "generate picking list",
       "paramCount": 4,
       "serviceParams": [
@@ -8823,7 +9095,7 @@
     {
       "name": "inventory_insertStockTransfer",
       "module": "inventory",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "Create a stock transfer with lines. Generates sequence ID automatically.",
       "paramCount": 4,
       "serviceParams": [
@@ -9648,7 +9920,7 @@
     {
       "name": "invoicing_insertPurchaseInvoice",
       "module": "invoicing",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "insert purchase invoice",
       "paramCount": 15,
       "serviceParams": [
@@ -9802,7 +10074,7 @@
     {
       "name": "invoicing_upsertPurchaseInvoice",
       "module": "invoicing",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "upsert purchase invoice",
       "paramCount": 15,
       "serviceParams": [
@@ -9945,7 +10217,7 @@
       "module": "invoicing",
       "classification": "WRITE",
       "description": "update purchase invoice line order",
-      "paramCount": 2,
+      "paramCount": 1,
       "serviceParams": [
         "db",
         "updates"
@@ -9957,23 +10229,34 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "sortOrder": {
-            "type": "number"
+          "updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "sortOrder": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "sortOrder"
+              ]
+            }
           }
         },
         "required": [
-          "id",
-          "sortOrder"
+          "updates"
         ]
       }
     },
     {
       "name": "invoicing_insertSalesInvoice",
       "module": "invoicing",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "insert sales invoice",
       "paramCount": 14,
       "serviceParams": [
@@ -10124,7 +10407,7 @@
     {
       "name": "invoicing_upsertSalesInvoice",
       "module": "invoicing",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "upsert sales invoice",
       "paramCount": 15,
       "serviceParams": [
@@ -10267,7 +10550,7 @@
       "module": "invoicing",
       "classification": "WRITE",
       "description": "update sales invoice line order",
-      "paramCount": 2,
+      "paramCount": 1,
       "serviceParams": [
         "db",
         "updates"
@@ -10279,16 +10562,27 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "sortOrder": {
-            "type": "number"
+          "updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "sortOrder": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "sortOrder"
+              ]
+            }
           }
         },
         "required": [
-          "id",
-          "sortOrder"
+          "updates"
         ]
       }
     },
@@ -10671,7 +10965,7 @@
     {
       "name": "invoicing_replaceInvoiceSettlements",
       "module": "invoicing",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "replace invoice settlements",
       "paramCount": 2,
       "serviceParams": [
@@ -10952,7 +11246,7 @@
     {
       "name": "invoicing_applyCreditsToInvoices",
       "module": "invoicing",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "apply credits to invoices",
       "paramCount": 4,
       "serviceParams": [
@@ -14202,7 +14496,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "update material order",
-      "paramCount": 2,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "updates"
@@ -14214,16 +14508,27 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "order": {
-            "type": "number"
+          "updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "order": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "order"
+              ]
+            }
           }
         },
         "required": [
-          "id",
-          "order"
+          "updates"
         ]
       }
     },
@@ -14232,7 +14537,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "update operation order",
-      "paramCount": 2,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "updates"
@@ -14244,16 +14549,27 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "order": {
-            "type": "number"
+          "updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "order": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "order"
+              ]
+            }
           }
         },
         "required": [
-          "id",
-          "order"
+          "updates"
         ]
       }
     },
@@ -14477,7 +14793,7 @@
     {
       "name": "items_upsertItemShelfLife",
       "module": "items",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "upsert item shelf life",
       "paramCount": 6,
       "serviceParams": [
@@ -14519,7 +14835,7 @@
     {
       "name": "items_upsertPickMethodWithShelfLife",
       "module": "items",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "upsert pick method with shelf life",
       "paramCount": 6,
       "serviceParams": [
@@ -14550,9 +14866,7 @@
             "type": "string"
           },
           "customFields": {},
-          "shelfLife: {\n      mode": {
-            "type": "string"
-          }
+          "shelfLife: {\n      mode": {}
         },
         "required": [
           "itemId",
@@ -14626,7 +14940,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "upsert consumable",
-      "paramCount": 1,
+      "paramCount": 12,
       "serviceParams": [
         "client",
         "consumable"
@@ -14639,7 +14953,42 @@
       "schema": {
         "type": "object",
         "properties": {
-          "consumable": {},
+          "id": {
+            "type": "string"
+          },
+          "readableId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "replenishmentSystem": {
+            "type": "string"
+          },
+          "defaultMethodType": {
+            "type": "string"
+          },
+          "itemTrackingType": {
+            "type": "string"
+          },
+          "postingGroupId": {
+            "type": "string"
+          },
+          "unitOfMeasureCode": {
+            "type": "string"
+          },
+          "unitCost": {
+            "type": "number"
+          },
+          "shelfLifeDays": {
+            "type": "number"
+          },
+          "shelfLifeTriggerProcessId": {
+            "type": "string"
+          },
           "_operation": {
             "type": "string",
             "enum": [
@@ -14650,7 +14999,12 @@
           }
         },
         "required": [
-          "consumable",
+          "id",
+          "name",
+          "replenishmentSystem",
+          "defaultMethodType",
+          "itemTrackingType",
+          "unitOfMeasureCode",
           "_operation"
         ]
       }
@@ -14711,7 +15065,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "upsert part",
-      "paramCount": 1,
+      "paramCount": 15,
       "serviceParams": [
         "client",
         "part"
@@ -14724,7 +15078,51 @@
       "schema": {
         "type": "object",
         "properties": {
-          "part": {},
+          "id": {
+            "type": "string"
+          },
+          "readableId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "replenishmentSystem": {
+            "type": "string"
+          },
+          "defaultMethodType": {
+            "type": "string"
+          },
+          "itemTrackingType": {
+            "type": "string"
+          },
+          "postingGroupId": {
+            "type": "string"
+          },
+          "unitOfMeasureCode": {
+            "type": "string"
+          },
+          "unitCost": {
+            "type": "number"
+          },
+          "shelfLifeDays": {
+            "type": "number"
+          },
+          "shelfLifeTriggerProcessId": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "string"
+          },
+          "modelUploadId": {
+            "type": "string"
+          },
+          "lotSize": {
+            "type": "number"
+          },
           "_operation": {
             "type": "string",
             "enum": [
@@ -14735,7 +15133,13 @@
           }
         },
         "required": [
-          "part",
+          "id",
+          "name",
+          "replenishmentSystem",
+          "defaultMethodType",
+          "itemTrackingType",
+          "unitOfMeasureCode",
+          "revision",
           "_operation"
         ]
       }
@@ -14745,7 +15149,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "update item",
-      "paramCount": 5,
+      "paramCount": 12,
       "serviceParams": [
         "client",
         "item"
@@ -14771,12 +15175,36 @@
           },
           "replenishmentSystem": {
             "type": "string"
+          },
+          "defaultMethodType": {
+            "type": "string"
+          },
+          "itemTrackingType": {
+            "type": "string"
+          },
+          "postingGroupId": {
+            "type": "string"
+          },
+          "unitOfMeasureCode": {
+            "type": "string"
+          },
+          "unitCost": {
+            "type": "number"
+          },
+          "shelfLifeDays": {
+            "type": "number"
+          },
+          "shelfLifeTriggerProcessId": {
+            "type": "string"
           }
         },
         "required": [
           "id",
           "name",
-          "replenishmentSystem"
+          "replenishmentSystem",
+          "defaultMethodType",
+          "itemTrackingType",
+          "unitOfMeasureCode"
         ]
       }
     },
@@ -14785,7 +15213,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "upsert item cost",
-      "paramCount": 3,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "itemCost"
@@ -14805,6 +15233,9 @@
             "type": "string"
           },
           "costingMethod": {
+            "type": "string"
+          },
+          "unitCost": {
             "type": "number"
           }
         },
@@ -14975,9 +15406,9 @@
     {
       "name": "items_upsertItemSupersession",
       "module": "items",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "upsert item supersession",
-      "paramCount": 1,
+      "paramCount": 36,
       "serviceParams": [
         "client",
         "itemSupersession"
@@ -14990,10 +15421,130 @@
       "schema": {
         "type": "object",
         "properties": {
-          "itemSupersession": {}
+          "itemId": {
+            "type": "string"
+          },
+          "preferredSupplierId": {
+            "type": "string"
+          },
+          "conversionFactor": {
+            "type": "number"
+          },
+          "leadTime": {
+            "type": "number"
+          },
+          "purchasingUnitOfMeasureCode": {
+            "type": "string"
+          },
+          "unitSalePrice": {
+            "type": "number"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "materialFormId": {
+            "type": "string"
+          },
+          "materialSubstanceId": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "readableId": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "replenishmentSystem": {
+            "type": "string"
+          },
+          "defaultMethodType": {
+            "type": "string"
+          },
+          "itemTrackingType": {
+            "type": "string"
+          },
+          "postingGroupId": {
+            "type": "string"
+          },
+          "unitOfMeasureCode": {
+            "type": "string"
+          },
+          "unitCost": {
+            "type": "number"
+          },
+          "shelfLifeDays": {
+            "type": "number"
+          },
+          "shelfLifeTriggerProcessId": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "string"
+          },
+          "modelUploadId": {
+            "type": "string"
+          },
+          "lotSize": {
+            "type": "number"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "defaultStorageUnitId": {
+            "type": "string"
+          },
+          "sortMethod": {
+            "type": "string"
+          },
+          "shelfLifeMode": {
+            "type": "string"
+          },
+          "shelfLifeTriggerTiming": {
+            "type": "string"
+          },
+          "shelfLifeCalculateFromBom": {
+            "type": "string"
+          },
+          "supplierId": {
+            "type": "string"
+          },
+          "supplierPartId": {
+            "type": "string"
+          },
+          "supplierUnitOfMeasureCode": {
+            "type": "string"
+          },
+          "minimumOrderQuantity": {
+            "type": "number"
+          },
+          "orderMultiple": {
+            "type": "number"
+          },
+          "unitPrice": {
+            "type": "number"
+          }
         },
         "required": [
-          "itemSupersession"
+          "itemId",
+          "name",
+          "materialFormId",
+          "materialSubstanceId",
+          "code",
+          "id",
+          "replenishmentSystem",
+          "defaultMethodType",
+          "itemTrackingType",
+          "unitOfMeasureCode",
+          "revision",
+          "locationId",
+          "shelfLifeCalculateFromBom",
+          "supplierId"
         ]
       }
     },
@@ -15209,7 +15760,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "upsert method material",
-      "paramCount": 4,
+      "paramCount": 12,
       "serviceParams": [
         "client",
         "methodMaterial"
@@ -15234,6 +15785,30 @@
           "itemType": {
             "type": "string"
           },
+          "kit": {
+            "type": "string"
+          },
+          "methodType": {
+            "type": "string"
+          },
+          "sourcingType": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "methodOperationId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unitOfMeasureCode": {
+            "type": "string"
+          },
+          "storageUnitIds": {
+            "type": "string"
+          },
           "_operation": {
             "type": "string",
             "enum": [
@@ -15246,6 +15821,11 @@
         "required": [
           "id",
           "makeMethodId",
+          "itemType",
+          "methodType",
+          "sourcingType",
+          "unitOfMeasureCode",
+          "storageUnitIds",
           "_operation"
         ]
       }
@@ -15450,7 +16030,7 @@
     {
       "name": "items_replaceMethodMaterialSteps",
       "module": "items",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "replace method material steps",
       "paramCount": 2,
       "serviceParams": [
@@ -15483,7 +16063,7 @@
     {
       "name": "items_setMethodMaterialStepLink",
       "module": "items",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "set method material step link",
       "paramCount": 4,
       "serviceParams": [
@@ -15523,7 +16103,7 @@
     {
       "name": "items_setMethodOperationToolStepLink",
       "module": "items",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "set method operation tool step link",
       "paramCount": 4,
       "serviceParams": [
@@ -15563,7 +16143,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "upsert material",
-      "paramCount": 1,
+      "paramCount": 19,
       "serviceParams": [
         "client",
         "material"
@@ -15576,7 +16156,66 @@
       "schema": {
         "type": "object",
         "properties": {
-          "material": {},
+          "id": {
+            "type": "string"
+          },
+          "readableId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "replenishmentSystem": {
+            "type": "string"
+          },
+          "defaultMethodType": {
+            "type": "string"
+          },
+          "itemTrackingType": {
+            "type": "string"
+          },
+          "postingGroupId": {
+            "type": "string"
+          },
+          "unitOfMeasureCode": {
+            "type": "string"
+          },
+          "unitCost": {
+            "type": "number"
+          },
+          "shelfLifeDays": {
+            "type": "number"
+          },
+          "shelfLifeTriggerProcessId": {
+            "type": "string"
+          },
+          "materialSubstanceId": {
+            "type": "string"
+          },
+          "materialFormId": {
+            "type": "string"
+          },
+          "materialTypeId": {
+            "type": "string"
+          },
+          "finishId": {
+            "type": "string"
+          },
+          "gradeId": {
+            "type": "string"
+          },
+          "dimensionId": {
+            "type": "string"
+          },
+          "sizes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "_operation": {
             "type": "string",
             "enum": [
@@ -15587,7 +16226,12 @@
           }
         },
         "required": [
-          "material",
+          "id",
+          "name",
+          "replenishmentSystem",
+          "defaultMethodType",
+          "itemTrackingType",
+          "unitOfMeasureCode",
           "_operation"
         ]
       }
@@ -15947,7 +16591,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "upsert service",
-      "paramCount": 1,
+      "paramCount": 13,
       "serviceParams": [
         "client",
         "service"
@@ -15960,7 +16604,45 @@
       "schema": {
         "type": "object",
         "properties": {
-          "service": {},
+          "id": {
+            "type": "string"
+          },
+          "readableId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "replenishmentSystem": {
+            "type": "string"
+          },
+          "defaultMethodType": {
+            "type": "string"
+          },
+          "itemTrackingType": {
+            "type": "string"
+          },
+          "postingGroupId": {
+            "type": "string"
+          },
+          "unitOfMeasureCode": {
+            "type": "string"
+          },
+          "unitCost": {
+            "type": "number"
+          },
+          "shelfLifeDays": {
+            "type": "number"
+          },
+          "shelfLifeTriggerProcessId": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "string"
+          },
           "_operation": {
             "type": "string",
             "enum": [
@@ -15971,7 +16653,13 @@
           }
         },
         "required": [
-          "service",
+          "id",
+          "name",
+          "replenishmentSystem",
+          "defaultMethodType",
+          "itemTrackingType",
+          "unitOfMeasureCode",
+          "revision",
           "_operation"
         ]
       }
@@ -16015,7 +16703,7 @@
       "module": "items",
       "classification": "WRITE",
       "description": "upsert tool",
-      "paramCount": 1,
+      "paramCount": 15,
       "serviceParams": [
         "client",
         "tool"
@@ -16028,7 +16716,51 @@
       "schema": {
         "type": "object",
         "properties": {
-          "tool": {},
+          "id": {
+            "type": "string"
+          },
+          "readableId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "replenishmentSystem": {
+            "type": "string"
+          },
+          "defaultMethodType": {
+            "type": "string"
+          },
+          "itemTrackingType": {
+            "type": "string"
+          },
+          "postingGroupId": {
+            "type": "string"
+          },
+          "unitOfMeasureCode": {
+            "type": "string"
+          },
+          "unitCost": {
+            "type": "number"
+          },
+          "shelfLifeDays": {
+            "type": "number"
+          },
+          "shelfLifeTriggerProcessId": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "string"
+          },
+          "modelUploadId": {
+            "type": "string"
+          },
+          "lotSize": {
+            "type": "number"
+          },
           "_operation": {
             "type": "string",
             "enum": [
@@ -16039,7 +16771,13 @@
           }
         },
         "required": [
-          "tool",
+          "id",
+          "name",
+          "replenishmentSystem",
+          "defaultMethodType",
+          "itemTrackingType",
+          "unitOfMeasureCode",
+          "revision",
           "_operation"
         ]
       }
@@ -16596,7 +17334,7 @@
     {
       "name": "items_createChangeNoticeDraftMethod",
       "module": "items",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "create change notice draft method",
       "paramCount": 4,
       "serviceParams": [
@@ -16632,7 +17370,7 @@
     {
       "name": "items_addChangeNoticeAffectedItem",
       "module": "items",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "add change notice affected item",
       "paramCount": 5,
       "serviceParams": [
@@ -16658,7 +17396,39 @@
             "type": "string"
           },
           "newPart": {
-            "type": "string"
+            "type": "object",
+            "properties": {
+              "readableId": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "itemType": {
+                "type": "string",
+                "enum": [
+                  "Part",
+                  "Tool"
+                ]
+              },
+              "replenishmentSystem": {
+                "type": "string",
+                "enum": [
+                  "Buy",
+                  "Make",
+                  "Buy and Make"
+                ]
+              },
+              "itemTrackingType": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "readableId",
+              "name",
+              "itemType",
+              "replenishmentSystem"
+            ]
           }
         },
         "required": [
@@ -16758,7 +17528,7 @@
     {
       "name": "items_removeChangeNoticeAffectedItem",
       "module": "items",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "remove change notice affected item",
       "paramCount": 1,
       "serviceParams": [
@@ -17163,7 +17933,7 @@
     {
       "name": "items_setChangeNoticeActionTasks",
       "module": "items",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "set change notice action tasks",
       "paramCount": 2,
       "serviceParams": [
@@ -18088,7 +18858,7 @@
       "module": "people",
       "classification": "WRITE",
       "description": "update attribute sort order",
-      "paramCount": 2,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "updates"
@@ -18100,16 +18870,27 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "sortOrder": {
-            "type": "number"
+          "updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "sortOrder": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "sortOrder"
+              ]
+            }
           }
         },
         "required": [
-          "id",
-          "sortOrder"
+          "updates"
         ]
       }
     },
@@ -21508,7 +22289,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "update job material order",
-      "paramCount": 2,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "updates"
@@ -21520,16 +22301,27 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "order": {
-            "type": "number"
+          "updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "order": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "order"
+              ]
+            }
           }
         },
         "required": [
-          "id",
-          "order"
+          "updates"
         ]
       }
     },
@@ -21538,7 +22330,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "update job operation order",
-      "paramCount": 2,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "updates"
@@ -21550,16 +22342,27 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "order": {
-            "type": "number"
+          "updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "order": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "order"
+              ]
+            }
           }
         },
         "required": [
-          "id",
-          "order"
+          "updates"
         ]
       }
     },
@@ -21568,7 +22371,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "update job operation step order",
-      "paramCount": 2,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "updates"
@@ -21580,16 +22383,27 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "sortOrder": {
-            "type": "number"
+          "updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "sortOrder": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "sortOrder"
+              ]
+            }
           }
         },
         "required": [
-          "id",
-          "sortOrder"
+          "updates"
         ]
       }
     },
@@ -21631,7 +22445,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "update quote operation step order",
-      "paramCount": 2,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "updates"
@@ -21643,16 +22457,27 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "sortOrder": {
-            "type": "number"
+          "updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "sortOrder": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "sortOrder"
+              ]
+            }
           }
         },
         "required": [
-          "id",
-          "sortOrder"
+          "updates"
         ]
       }
     },
@@ -21661,7 +22486,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "update method operation step order",
-      "paramCount": 2,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "updates"
@@ -21673,16 +22498,27 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "sortOrder": {
-            "type": "number"
+          "updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "sortOrder": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "sortOrder"
+              ]
+            }
           }
         },
         "required": [
-          "id",
-          "sortOrder"
+          "updates"
         ]
       }
     },
@@ -21758,7 +22594,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "update procedure step order",
-      "paramCount": 2,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "updates"
@@ -21770,16 +22606,27 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "sortOrder": {
-            "type": "number"
+          "updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "sortOrder": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "sortOrder"
+              ]
+            }
           }
         },
         "required": [
-          "id",
-          "sortOrder"
+          "updates"
         ]
       }
     },
@@ -21788,7 +22635,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "upsert production event",
-      "paramCount": 1,
+      "paramCount": 49,
       "serviceParams": [
         "client",
         "productionEvent"
@@ -21801,7 +22648,156 @@
       "schema": {
         "type": "object",
         "properties": {
-          "productionEvent": {},
+          "startDate": {
+            "type": "string"
+          },
+          "dueDate": {
+            "type": "string"
+          },
+          "periodId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "existingId": {
+            "type": "string"
+          },
+          "existingQuantity": {
+            "type": "number"
+          },
+          "existingReadableId": {
+            "type": "string"
+          },
+          "existingStatus": {
+            "type": "string"
+          },
+          "isASAP": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string"
+          },
+          "columnId": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "oeeImpact": {
+            "type": "string"
+          },
+          "workCenterId": {
+            "type": "string"
+          },
+          "suspectedFailureModeId": {
+            "type": "string"
+          },
+          "plannedStartTime": {
+            "type": "string"
+          },
+          "plannedEndTime": {
+            "type": "string"
+          },
+          "assignee": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "maintenanceDispatchId": {
+            "type": "string"
+          },
+          "comment": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "unitOfMeasureCode": {
+            "type": "string"
+          },
+          "unitCost": {
+            "type": "number"
+          },
+          "description": {
+            "type": "string"
+          },
+          "frequency": {
+            "type": "string"
+          },
+          "estimatedDuration": {
+            "type": "number"
+          },
+          "active": {
+            "type": "string"
+          },
+          "maintenanceScheduleId": {
+            "type": "string"
+          },
+          "periods": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "modelUploadId": {
+            "type": "string"
+          },
+          "operationId": {
+            "type": "string"
+          },
+          "copyFromId": {
+            "type": "string"
+          },
+          "motion": {
+            "type": "string"
+          },
+          "camera": {
+            "type": "string"
+          },
+          "componentNodeIds": {
+            "type": "string"
+          },
+          "updates": {
+            "type": "number"
+          },
+          "stepId": {
+            "type": "string"
+          },
+          "sortOrder": {
+            "type": "number"
+          },
+          "partId": {
+            "type": "string"
+          },
+          "drawingNumber": {
+            "type": "string"
+          },
+          "pdfUrl": {
+            "type": "string"
+          },
+          "annotations": {
+            "type": "string"
+          },
+          "features": {
+            "type": "string"
+          },
           "_operation": {
             "type": "string",
             "enum": [
@@ -21812,7 +22808,28 @@
           }
         },
         "required": [
-          "productionEvent",
+          "periodId",
+          "id",
+          "columnId",
+          "priority",
+          "locationId",
+          "name",
+          "status",
+          "maintenanceDispatchId",
+          "comment",
+          "itemId",
+          "unitOfMeasureCode",
+          "workCenterId",
+          "frequency",
+          "active",
+          "maintenanceScheduleId",
+          "modelUploadId",
+          "operationId",
+          "copyFromId",
+          "componentNodeIds",
+          "updates",
+          "stepId",
+          "partId",
           "_operation"
         ]
       }
@@ -22151,7 +23168,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "upsert job operation",
-      "paramCount": 1,
+      "paramCount": 24,
       "serviceParams": [
         "client",
         "jobOperation"
@@ -22164,7 +23181,78 @@
       "schema": {
         "type": "object",
         "properties": {
-          "jobOperation": {},
+          "id": {
+            "type": "string"
+          },
+          "jobMakeMethodId": {
+            "type": "string"
+          },
+          "order": {
+            "type": "number"
+          },
+          "operationOrder": {
+            "type": "string"
+          },
+          "operationType": {
+            "type": "string"
+          },
+          "processId": {
+            "type": "string"
+          },
+          "procedureId": {
+            "type": "string"
+          },
+          "assemblyInstructionId": {
+            "type": "string"
+          },
+          "inspectionDocumentId": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "setupUnit": {
+            "type": "string"
+          },
+          "setupTime": {
+            "type": "number"
+          },
+          "laborUnit": {
+            "type": "string"
+          },
+          "laborTime": {
+            "type": "number"
+          },
+          "machineUnit": {
+            "type": "string"
+          },
+          "machineTime": {
+            "type": "number"
+          },
+          "machineRate": {
+            "type": "number"
+          },
+          "overheadRate": {
+            "type": "number"
+          },
+          "laborRate": {
+            "type": "number"
+          },
+          "operationSupplierProcessId": {
+            "type": "string"
+          },
+          "operationMinimumCost": {
+            "type": "number"
+          },
+          "operationUnitCost": {
+            "type": "number"
+          },
+          "operationLeadTime": {
+            "type": "number"
+          },
+          "workCenterId": {
+            "type": "string"
+          },
           "_operation": {
             "type": "string",
             "enum": [
@@ -22175,7 +23263,11 @@
           }
         },
         "required": [
-          "jobOperation",
+          "id",
+          "jobMakeMethodId",
+          "operationOrder",
+          "operationType",
+          "processId",
           "_operation"
         ]
       }
@@ -22346,7 +23438,7 @@
     {
       "name": "production_replaceJobMaterialSteps",
       "module": "production",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "replace job material steps",
       "paramCount": 2,
       "serviceParams": [
@@ -22379,7 +23471,7 @@
     {
       "name": "production_setJobMaterialStepLink",
       "module": "production",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "set job material step link",
       "paramCount": 4,
       "serviceParams": [
@@ -22419,7 +23511,7 @@
     {
       "name": "production_setJobOperationToolStepLink",
       "module": "production",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "set job operation tool step link",
       "paramCount": 4,
       "serviceParams": [
@@ -23051,7 +24143,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "upsert maintenance dispatch event",
-      "paramCount": 1,
+      "paramCount": 18,
       "serviceParams": [
         "client",
         "event"
@@ -23064,7 +24156,63 @@
       "schema": {
         "type": "object",
         "properties": {
-          "event": {},
+          "id": {
+            "type": "string"
+          },
+          "maintenanceDispatchId": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unitOfMeasureCode": {
+            "type": "string"
+          },
+          "unitCost": {
+            "type": "number"
+          },
+          "workCenterId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "frequency": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "string"
+          },
+          "estimatedDuration": {
+            "type": "number"
+          },
+          "active": {
+            "type": "string"
+          },
+          "maintenanceScheduleId": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "periods": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "modelUploadId": {
+            "type": "string"
+          },
+          "operationId": {
+            "type": "string"
+          },
           "_operation": {
             "type": "string",
             "enum": [
@@ -23075,7 +24223,18 @@
           }
         },
         "required": [
-          "event",
+          "maintenanceDispatchId",
+          "itemId",
+          "unitOfMeasureCode",
+          "workCenterId",
+          "name",
+          "frequency",
+          "priority",
+          "active",
+          "maintenanceScheduleId",
+          "locationId",
+          "modelUploadId",
+          "operationId",
           "_operation"
         ]
       }
@@ -23290,7 +24449,7 @@
     {
       "name": "production_upsertDemandForecasts",
       "module": "production",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "upsert demand forecasts",
       "paramCount": 1,
       "serviceParams": [
@@ -23315,7 +24474,7 @@
     {
       "name": "production_upsertDemandProjections",
       "module": "production",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "upsert demand projections",
       "paramCount": 1,
       "serviceParams": [
@@ -23663,7 +24822,7 @@
     {
       "name": "production_invalidateAssemblyModelCache",
       "module": "production",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "invalidate assembly model cache",
       "paramCount": 1,
       "serviceParams": [
@@ -23835,7 +24994,7 @@
     {
       "name": "production_reassignAssemblyStepComponents",
       "module": "production",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "reassign assembly step components",
       "paramCount": 4,
       "serviceParams": [
@@ -23920,7 +25079,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "update assembly instruction step order",
-      "paramCount": 2,
+      "paramCount": 1,
       "serviceParams": [
         "db",
         "updates"
@@ -23932,16 +25091,27 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "sortOrder": {
-            "type": "number"
+          "updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "sortOrder": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "sortOrder"
+              ]
+            }
           }
         },
         "required": [
-          "id",
-          "sortOrder"
+          "updates"
         ]
       }
     },
@@ -24226,7 +25396,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "update assembly instruction step material order",
-      "paramCount": 2,
+      "paramCount": 1,
       "serviceParams": [
         "db",
         "updates"
@@ -24238,16 +25408,27 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "sortOrder": {
-            "type": "number"
+          "updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "sortOrder": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "sortOrder"
+              ]
+            }
           }
         },
         "required": [
-          "id",
-          "sortOrder"
+          "updates"
         ]
       }
     },
@@ -24685,20 +25866,25 @@
             }
           },
           "existingSynced": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "assemblyInstructionStepId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
               },
-              "assemblyInstructionStepId": {
-                "type": "array",
-                "items": {}
-              }
-            },
-            "required": [
-              "id",
-              "assemblyInstructionStepId"
-            ]
+              "required": [
+                "id",
+                "assemblyInstructionStepId"
+              ]
+            }
           }
         },
         "required": [
@@ -24712,7 +25898,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "max tool quantity by item",
-      "paramCount": 2,
+      "paramCount": 1,
       "serviceParams": [
         "sourceTools"
       ],
@@ -24722,17 +25908,30 @@
       "schema": {
         "type": "object",
         "properties": {
-          "itemId": {
-            "type": "string"
-          },
-          "quantity": {
+          "sourceTools": {
             "type": "array",
-            "items": {}
+            "items": {
+              "type": "object",
+              "properties": {
+                "itemId": {
+                  "type": "string"
+                },
+                "quantity": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "itemId",
+                "quantity"
+              ]
+            }
           }
         },
         "required": [
-          "itemId",
-          "quantity"
+          "sourceTools"
         ]
       }
     },
@@ -24755,16 +25954,18 @@
         "type": "object",
         "properties": {
           "sourceSteps": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "array",
-                "items": {}
-              }
-            },
-            "required": [
-              "id"
-            ]
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id"
+              ]
+            }
           },
           "toolsByStep": {},
           "toolRowIdByItemId": {},
@@ -24781,7 +25982,7 @@
     {
       "name": "production_syncAssemblyInstructionToOperation",
       "module": "production",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "sync assembly instruction to operation",
       "paramCount": 2,
       "serviceParams": [
@@ -24811,7 +26012,7 @@
     {
       "name": "production_generateAssemblyStepsFromPlan",
       "module": "production",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "generate assembly steps from plan",
       "paramCount": 2,
       "serviceParams": [
@@ -26803,7 +28004,7 @@
       "module": "purchasing",
       "classification": "WRITE",
       "description": "insert supplier",
-      "paramCount": 4,
+      "paramCount": 9,
       "serviceParams": [
         "client",
         "supplier"
@@ -26827,11 +28028,25 @@
           },
           "supplierStatus": {
             "type": "string"
+          },
+          "supplierTypeId": {
+            "type": "string"
+          },
+          "accountManagerId": {
+            "type": "string"
+          },
+          "currencyCode": {
+            "type": "string"
+          },
+          "purchasingContactId": {
+            "type": "string"
+          },
+          "website": {
+            "type": "string"
           }
         },
         "required": [
-          "name",
-          "supplierStatus"
+          "name"
         ]
       }
     },
@@ -26840,7 +28055,7 @@
       "module": "purchasing",
       "classification": "WRITE",
       "description": "insert supplier contact",
-      "paramCount": 2,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "supplierContact"
@@ -26853,13 +28068,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
+          "supplierId": {
             "type": "string"
           },
+          "contact": {},
           "supplierLocationId": {
             "type": "string"
-          }
-        }
+          },
+          "customFields": {}
+        },
+        "required": [
+          "supplierId",
+          "contact"
+        ]
       }
     },
     {
@@ -27040,7 +28261,7 @@
     {
       "name": "purchasing_updatePurchaseOrderFavorite",
       "module": "purchasing",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "update purchase order favorite",
       "paramCount": 2,
       "serviceParams": [
@@ -27155,7 +28376,7 @@
       "module": "purchasing",
       "classification": "WRITE",
       "description": "update supplier contact",
-      "paramCount": 2,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "supplierContact"
@@ -27167,13 +28388,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
+          "contactId": {
             "type": "string"
           },
+          "contact": {},
           "supplierLocationId": {
             "type": "string"
-          }
-        }
+          },
+          "customFields": {}
+        },
+        "required": [
+          "contactId",
+          "contact"
+        ]
       }
     },
     {
@@ -27279,7 +28506,7 @@
     {
       "name": "purchasing_updateSupplierQuoteFavorite",
       "module": "purchasing",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "update supplier quote favorite",
       "paramCount": 2,
       "serviceParams": [
@@ -27582,9 +28809,7 @@
       "schema": {
         "type": "object",
         "properties": {
-          "purchaseOrder": {
-            "type": "string"
-          },
+          "purchaseOrder": {},
           "receiptRequestedDate": {
             "type": "string"
           }
@@ -27649,7 +28874,7 @@
       "module": "purchasing",
       "classification": "WRITE",
       "description": "update purchase order line order",
-      "paramCount": 2,
+      "paramCount": 1,
       "serviceParams": [
         "db",
         "updates"
@@ -27661,16 +28886,27 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "sortOrder": {
-            "type": "number"
+          "updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "sortOrder": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "sortOrder"
+              ]
+            }
           }
         },
         "required": [
-          "id",
-          "sortOrder"
+          "updates"
         ]
       }
     },
@@ -27755,7 +28991,7 @@
       "module": "purchasing",
       "classification": "WRITE",
       "description": "upsert supplier",
-      "paramCount": 4,
+      "paramCount": 9,
       "serviceParams": [
         "client",
         "supplier"
@@ -27780,6 +29016,21 @@
           "supplierStatus": {
             "type": "string"
           },
+          "supplierTypeId": {
+            "type": "string"
+          },
+          "accountManagerId": {
+            "type": "string"
+          },
+          "currencyCode": {
+            "type": "string"
+          },
+          "purchasingContactId": {
+            "type": "string"
+          },
+          "website": {
+            "type": "string"
+          },
           "_operation": {
             "type": "string",
             "enum": [
@@ -27791,7 +29042,6 @@
         },
         "required": [
           "name",
-          "supplierStatus",
           "_operation"
         ]
       }
@@ -27969,7 +29219,7 @@
       "module": "purchasing",
       "classification": "WRITE",
       "description": "upsert supplier quote",
-      "paramCount": 1,
+      "paramCount": 17,
       "serviceParams": [
         "client",
         "supplierQuote"
@@ -27982,7 +29232,63 @@
       "schema": {
         "type": "object",
         "properties": {
-          "supplierQuote": {},
+          "id": {
+            "type": "string"
+          },
+          "rfqId": {
+            "type": "string"
+          },
+          "rfqDate": {
+            "type": "string"
+          },
+          "expirationDate": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "employeeId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "supplierIds": {
+            "type": "string"
+          },
+          "purchasingRfqId": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "purchaseUnitOfMeasureCode": {
+            "type": "string"
+          },
+          "inventoryUnitOfMeasureCode": {
+            "type": "string"
+          },
+          "conversionFactor": {
+            "type": "number"
+          },
+          "order": {
+            "type": "number"
+          },
+          "suppliers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "_operation": {
             "type": "string",
             "enum": [
@@ -27993,7 +29299,11 @@
           }
         },
         "required": [
-          "supplierQuote",
+          "rfqDate",
+          "supplierIds",
+          "purchasingRfqId",
+          "itemId",
+          "quantity",
           "_operation"
         ]
       }
@@ -28028,7 +29338,7 @@
       "module": "purchasing",
       "classification": "WRITE",
       "description": "update supplier quote line order",
-      "paramCount": 2,
+      "paramCount": 1,
       "serviceParams": [
         "db",
         "updates"
@@ -28040,16 +29350,27 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "sortOrder": {
-            "type": "number"
+          "updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "sortOrder": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "sortOrder"
+              ]
+            }
           }
         },
         "required": [
-          "id",
-          "sortOrder"
+          "updates"
         ]
       }
     },
@@ -28455,7 +29776,7 @@
       "module": "purchasing",
       "classification": "WRITE",
       "description": "update purchasing r f q line order",
-      "paramCount": 2,
+      "paramCount": 1,
       "serviceParams": [
         "db",
         "updates"
@@ -28467,23 +29788,34 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "sortOrder": {
-            "type": "number"
+          "updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "sortOrder": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "sortOrder"
+              ]
+            }
           }
         },
         "required": [
-          "id",
-          "sortOrder"
+          "updates"
         ]
       }
     },
     {
       "name": "purchasing_upsertPurchasingRFQSuppliers",
       "module": "purchasing",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "upsert purchasing r f q suppliers",
       "paramCount": 2,
       "serviceParams": [
@@ -30199,7 +31531,7 @@
     {
       "name": "quality_updateIssueActionProcesses",
       "module": "quality",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "update issue action processes",
       "paramCount": 2,
       "serviceParams": [
@@ -30357,7 +31689,7 @@
       "module": "quality",
       "classification": "WRITE",
       "description": "update quality document step order",
-      "paramCount": 2,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "updates"
@@ -30369,16 +31701,27 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "sortOrder": {
-            "type": "number"
+          "updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "sortOrder": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "sortOrder"
+              ]
+            }
           }
         },
         "required": [
-          "id",
-          "sortOrder"
+          "updates"
         ]
       }
     },
@@ -31010,7 +32353,10 @@
             "type": "string"
           },
           "requiredActionIds": {
-            "type": "array"
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "approvalRequirements": {
             "type": "string"
@@ -31037,7 +32383,10 @@
             "type": "number"
           },
           "items": {
-            "type": "array"
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "jobOperationId": {
             "type": "string"
@@ -31076,7 +32425,7 @@
       "module": "quality",
       "classification": "WRITE",
       "description": "upsert issue workflow",
-      "paramCount": 3,
+      "paramCount": 7,
       "serviceParams": [
         "client",
         "nonConformanceWorkflow"
@@ -31098,6 +32447,18 @@
           "content": {
             "type": "string"
           },
+          "priority": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "requiredActionIds": {
+            "type": "string"
+          },
+          "approvalRequirements": {
+            "type": "string"
+          },
           "_operation": {
             "type": "string",
             "enum": [
@@ -31109,6 +32470,9 @@
         },
         "required": [
           "name",
+          "content",
+          "priority",
+          "source",
           "_operation"
         ]
       }
@@ -31260,7 +32624,7 @@
       "module": "quality",
       "classification": "WRITE",
       "description": "upsert risk",
-      "paramCount": 6,
+      "paramCount": 12,
       "serviceParams": [
         "client",
         "risk"
@@ -31290,10 +32654,33 @@
           },
           "notes": {
             "type": "string"
+          },
+          "severity": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "sourceId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
           }
         },
         "required": [
-          "likelihood"
+          "likelihood",
+          "severity",
+          "source",
+          "status",
+          "title",
+          "type"
         ]
       }
     },
@@ -31506,7 +32893,7 @@
     {
       "name": "quality_upsertItemInspectionDocumentAssignment",
       "module": "quality",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "upsert item inspection document assignment",
       "paramCount": 2,
       "serviceParams": [
@@ -31529,7 +32916,8 @@
           }
         },
         "required": [
-          "itemId"
+          "itemId",
+          "usage"
         ]
       }
     },
@@ -33682,7 +35070,7 @@
       "module": "resources",
       "classification": "WRITE",
       "description": "update training question order",
-      "paramCount": 2,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "updates"
@@ -33694,23 +35082,34 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "sortOrder": {
-            "type": "number"
+          "updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "sortOrder": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "sortOrder"
+              ]
+            }
           }
         },
         "required": [
-          "id",
-          "sortOrder"
+          "updates"
         ]
       }
     },
     {
       "name": "resources_upsertContractor",
       "module": "resources",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "upsert contractor",
       "paramCount": 1,
       "serviceParams": [
@@ -34144,7 +35543,7 @@
       "module": "resources",
       "classification": "WRITE",
       "description": "upsert maintenance dispatch event",
-      "paramCount": 1,
+      "paramCount": 41,
       "serviceParams": [
         "client",
         "event"
@@ -34157,7 +35556,136 @@
       "schema": {
         "type": "object",
         "properties": {
-          "event": {},
+          "id": {
+            "type": "string"
+          },
+          "maintenanceDispatchId": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unitOfMeasureCode": {
+            "type": "string"
+          },
+          "unitCost": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "oeeImpact": {
+            "type": "string"
+          },
+          "workCenterId": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "suspectedFailureModeId": {
+            "type": "string"
+          },
+          "plannedStartTime": {
+            "type": "string"
+          },
+          "plannedEndTime": {
+            "type": "string"
+          },
+          "assignee": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "maintenanceDispatchItemId": {
+            "type": "string"
+          },
+          "adjustmentType": {
+            "type": "string",
+            "enum": [
+              "Positive Adjmt.",
+              "Negative Adjmt."
+            ]
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "maintenanceScheduleId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "frequency": {
+            "type": "string"
+          },
+          "estimatedDuration": {
+            "type": "number"
+          },
+          "nextDueAt": {
+            "type": "string"
+          },
+          "active": {
+            "type": "string"
+          },
+          "tuesday": {
+            "type": "string"
+          },
+          "wednesday": {
+            "type": "string"
+          },
+          "thursday": {
+            "type": "string"
+          },
+          "friday": {
+            "type": "string"
+          },
+          "saturday": {
+            "type": "string"
+          },
+          "sunday": {
+            "type": "string"
+          },
+          "supplierId": {
+            "type": "string"
+          },
+          "hoursPerWeek": {
+            "type": "number"
+          },
+          "trainingId": {
+            "type": "string"
+          },
+          "groupIds": {
+            "type": "string"
+          },
+          "trainingAssignmentId": {
+            "type": "string"
+          },
+          "employeeId": {
+            "type": "string"
+          },
+          "period": {
+            "type": "string"
+          },
           "_operation": {
             "type": "string",
             "enum": [
@@ -34168,7 +35696,31 @@
           }
         },
         "required": [
-          "event",
+          "maintenanceDispatchId",
+          "itemId",
+          "unitOfMeasureCode",
+          "status",
+          "priority",
+          "locationId",
+          "workCenterId",
+          "maintenanceDispatchItemId",
+          "adjustmentType",
+          "children",
+          "maintenanceScheduleId",
+          "name",
+          "frequency",
+          "active",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday",
+          "sunday",
+          "id",
+          "trainingId",
+          "groupIds",
+          "trainingAssignmentId",
+          "employeeId",
           "_operation"
         ]
       }
@@ -34447,7 +35999,7 @@
     {
       "name": "resources_upsertProcess",
       "module": "resources",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "upsert process",
       "paramCount": 1,
       "serviceParams": [
@@ -34576,9 +36128,9 @@
     {
       "name": "resources_upsertWorkCenter",
       "module": "resources",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "upsert work center",
-      "paramCount": 4,
+      "paramCount": 10,
       "serviceParams": [
         "client",
         "workCenter"
@@ -34601,7 +36153,25 @@
             "type": "string"
           },
           "defaultStandardFactor": {
+            "type": "string"
+          },
+          "departmentId": {
+            "type": "string"
+          },
+          "laborRate": {
             "type": "number"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "machineRate": {
+            "type": "number"
+          },
+          "overheadRate": {
+            "type": "number"
+          },
+          "processes": {
+            "type": "string"
           },
           "_operation": {
             "type": "string",
@@ -34615,6 +36185,8 @@
         "required": [
           "name",
           "description",
+          "defaultStandardFactor",
+          "locationId",
           "_operation"
         ]
       }
@@ -34874,7 +36446,7 @@
       "module": "sales",
       "classification": "WRITE",
       "description": "create pricing rule",
-      "paramCount": 1,
+      "paramCount": 58,
       "serviceParams": [
         "client",
         "companyId",
@@ -34889,10 +36461,197 @@
       "schema": {
         "type": "object",
         "properties": {
-          "data": {}
+          "id": {
+            "type": "string"
+          },
+          "quoteId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "salesPersonId": {
+            "type": "string"
+          },
+          "estimatorId": {
+            "type": "string"
+          },
+          "customerId": {
+            "type": "string"
+          },
+          "customerLocationId": {
+            "type": "string"
+          },
+          "customerContactId": {
+            "type": "string"
+          },
+          "customerEngineeringContactId": {
+            "type": "string"
+          },
+          "customerReference": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "notes": {},
+          "dueDate": {
+            "type": "string"
+          },
+          "expirationDate": {
+            "type": "string"
+          },
+          "currencyCode": {
+            "type": "string"
+          },
+          "exchangeRate": {
+            "type": "number"
+          },
+          "exchangeRateUpdatedAt": {
+            "type": "string"
+          },
+          "digitalQuoteAcceptedBy": {
+            "type": "string"
+          },
+          "digitalQuoteAcceptedByEmail": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "amounts": {
+            "type": "number"
+          },
+          "taxable": {
+            "type": "boolean"
+          },
+          "itemType": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "methodType": {
+            "type": "string"
+          },
+          "customerPartId": {
+            "type": "string"
+          },
+          "customerPartRevision": {
+            "type": "string"
+          },
+          "unitOfMeasureCode": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "modelUploadId": {
+            "type": "string"
+          },
+          "noQuoteReason": {
+            "type": "string"
+          },
+          "taxPercent": {
+            "type": "number"
+          },
+          "configuration": {},
+          "invoiceCustomerId": {
+            "type": "string"
+          },
+          "invoiceCustomerLocationId": {
+            "type": "string"
+          },
+          "invoiceCustomerContactId": {
+            "type": "string"
+          },
+          "paymentTermId": {
+            "type": "string"
+          },
+          "shippingMethodId": {
+            "type": "string"
+          },
+          "receiptRequestedDate": {
+            "type": "string"
+          },
+          "shippingCost": {
+            "type": "number"
+          },
+          "incoterm": {
+            "type": "string"
+          },
+          "incotermLocation": {
+            "type": "string"
+          },
+          "salesOrderId": {
+            "type": "string"
+          },
+          "orderDate": {
+            "type": "string"
+          },
+          "requestedDate": {
+            "type": "string"
+          },
+          "promisedDate": {
+            "type": "string"
+          },
+          "paymentComplete": {
+            "type": "string"
+          },
+          "rfqId": {
+            "type": "string"
+          },
+          "externalNotes": {
+            "type": "string"
+          },
+          "internalNotes": {
+            "type": "string"
+          },
+          "rfqDate": {
+            "type": "string"
+          },
+          "is3DModel": {
+            "type": "boolean"
+          },
+          "size": {
+            "type": "number"
+          },
+          "lineId": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "salesRfqId": {
+            "type": "string"
+          },
+          "order": {
+            "type": "number"
+          }
         },
         "required": [
-          "data"
+          "customerId",
+          "locationId",
+          "description",
+          "amounts",
+          "quoteId",
+          "itemId",
+          "status",
+          "methodType",
+          "quantity",
+          "id",
+          "paymentComplete",
+          "rfqDate",
+          "customerPartId",
+          "path",
+          "salesRfqId",
+          "unitOfMeasureCode"
         ]
       }
     },
@@ -37714,7 +39473,7 @@
       "module": "sales",
       "classification": "WRITE",
       "description": "insert customer contact",
-      "paramCount": 2,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "customerContact"
@@ -37727,13 +39486,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
+          "customerId": {
             "type": "string"
           },
+          "contact": {},
           "customerLocationId": {
             "type": "string"
-          }
-        }
+          },
+          "customFields": {}
+        },
+        "required": [
+          "customerId",
+          "contact"
+        ]
       }
     },
     {
@@ -38023,7 +39788,7 @@
     {
       "name": "sales_upsertCustomerItemPriceOverride",
       "module": "sales",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "upsert customer item price override",
       "paramCount": 10,
       "serviceParams": [
@@ -38208,7 +39973,7 @@
       "module": "sales",
       "classification": "WRITE",
       "description": "update customer contact",
-      "paramCount": 2,
+      "paramCount": 4,
       "serviceParams": [
         "client",
         "customerContact"
@@ -38220,13 +39985,19 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
+          "contactId": {
             "type": "string"
           },
+          "contact": {},
           "customerLocationId": {
             "type": "string"
-          }
-        }
+          },
+          "customFields": {}
+        },
+        "required": [
+          "contactId",
+          "contact"
+        ]
       }
     },
     {
@@ -38517,7 +40288,7 @@
     {
       "name": "sales_updateSalesRFQFavorite",
       "module": "sales",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "update sales r f q favorite",
       "paramCount": 2,
       "serviceParams": [
@@ -38644,7 +40415,7 @@
     {
       "name": "sales_updateQuoteFavorite",
       "module": "sales",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "update quote favorite",
       "paramCount": 2,
       "serviceParams": [
@@ -38715,7 +40486,7 @@
       "module": "sales",
       "classification": "WRITE",
       "description": "update quote material order",
-      "paramCount": 2,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "updates"
@@ -38727,16 +40498,27 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "order": {
-            "type": "number"
+          "updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "order": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "order"
+              ]
+            }
           }
         },
         "required": [
-          "id",
-          "order"
+          "updates"
         ]
       }
     },
@@ -38745,7 +40527,7 @@
       "module": "sales",
       "classification": "WRITE",
       "description": "update quote operation order",
-      "paramCount": 2,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "updates"
@@ -38757,16 +40539,27 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "order": {
-            "type": "number"
+          "updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "order": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "order"
+              ]
+            }
           }
         },
         "required": [
-          "id",
-          "order"
+          "updates"
         ]
       }
     },
@@ -39203,7 +40996,7 @@
       "module": "sales",
       "classification": "WRITE",
       "description": "upsert quote line",
-      "paramCount": 5,
+      "paramCount": 16,
       "serviceParams": [
         "client",
         "quotationLine"
@@ -39230,11 +41023,49 @@
           },
           "status": {
             "type": "string"
-          }
+          },
+          "estimatorId": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "methodType": {
+            "type": "string"
+          },
+          "customerPartId": {
+            "type": "string"
+          },
+          "customerPartRevision": {
+            "type": "string"
+          },
+          "unitOfMeasureCode": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "modelUploadId": {
+            "type": "string"
+          },
+          "noQuoteReason": {
+            "type": "string"
+          },
+          "taxPercent": {
+            "type": "number"
+          },
+          "configuration": {}
         },
         "required": [
           "quoteId",
-          "itemId"
+          "itemId",
+          "status",
+          "description",
+          "methodType",
+          "quantity"
         ]
       }
     },
@@ -39243,7 +41074,7 @@
       "module": "sales",
       "classification": "WRITE",
       "description": "update quote line order",
-      "paramCount": 2,
+      "paramCount": 1,
       "serviceParams": [
         "db",
         "updates"
@@ -39255,16 +41086,27 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "sortOrder": {
-            "type": "number"
+          "updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "sortOrder": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "sortOrder"
+              ]
+            }
           }
         },
         "required": [
-          "id",
-          "sortOrder"
+          "updates"
         ]
       }
     },
@@ -39309,7 +41151,7 @@
     {
       "name": "sales_upsertQuoteLinePrices",
       "module": "sales",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "upsert quote line prices",
       "paramCount": 3,
       "serviceParams": [
@@ -39334,39 +41176,43 @@
             "type": "string"
           },
           "quoteLinePrices": {
-            "type": "object",
-            "properties": {
-              "quoteLineId": {
-                "type": "string"
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "quoteLineId": {
+                  "type": "string"
+                },
+                "unitPrice": {
+                  "type": "number"
+                },
+                "quantity": {
+                  "type": "number"
+                },
+                "leadTime": {
+                  "type": "number"
+                },
+                "discountPercent": {
+                  "type": "number"
+                },
+                "shippingCost": {
+                  "type": "number"
+                },
+                "categoryMarkups": {},
+                "priceSource": {
+                  "type": "string",
+                  "enum": [
+                    "system",
+                    "manual"
+                  ]
+                }
               },
-              "unitPrice": {
-                "type": "number"
-              },
-              "leadTime": {
-                "type": "number"
-              },
-              "discountPercent": {
-                "type": "number"
-              },
-              "quantity": {
-                "type": "number"
-              },
-              "categoryMarkups": {},
-              "priceSource": {
-                "type": "string",
-                "enum": [
-                  "system",
-                  "manual"
-                ]
-              }
-            },
-            "required": [
-              "quoteLineId",
-              "unitPrice",
-              "leadTime",
-              "discountPercent",
-              "quantity"
-            ]
+              "required": [
+                "quoteLineId",
+                "unitPrice",
+                "quantity"
+              ]
+            }
           }
         },
         "required": [
@@ -40045,7 +41891,7 @@
     {
       "name": "sales_updateSalesOrderFavorite",
       "module": "sales",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "update sales order favorite",
       "paramCount": 2,
       "serviceParams": [
@@ -40400,7 +42246,7 @@
       "module": "sales",
       "classification": "WRITE",
       "description": "update sales order line order",
-      "paramCount": 2,
+      "paramCount": 1,
       "serviceParams": [
         "db",
         "updates"
@@ -40412,16 +42258,27 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "sortOrder": {
-            "type": "number"
+          "updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "sortOrder": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "sortOrder"
+              ]
+            }
           }
         },
         "required": [
-          "id",
-          "sortOrder"
+          "updates"
         ]
       }
     },
@@ -40739,7 +42596,10 @@
             "type": "string"
           },
           "quantity": {
-            "type": "array"
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
           },
           "unitOfMeasureCode": {
             "type": "string"
@@ -40773,7 +42633,7 @@
       "module": "sales",
       "classification": "WRITE",
       "description": "update sales r f q line order",
-      "paramCount": 2,
+      "paramCount": 1,
       "serviceParams": [
         "db",
         "updates"
@@ -40785,16 +42645,27 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "sortOrder": {
-            "type": "number"
+          "updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "sortOrder": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "sortOrder"
+              ]
+            }
           }
         },
         "required": [
-          "id",
-          "sortOrder"
+          "updates"
         ]
       }
     },
@@ -43081,7 +44952,7 @@
       "module": "settings",
       "classification": "WRITE",
       "description": "upsert api key",
-      "paramCount": 4,
+      "paramCount": 49,
       "serviceParams": [
         "client",
         "apiKey"
@@ -43094,7 +44965,158 @@
       "schema": {
         "type": "object",
         "properties": {
+          "next": {
+            "type": "string"
+          },
+          "industryId": {
+            "type": "string"
+          },
+          "customIndustryDescription": {
+            "type": "string"
+          },
+          "digitalQuoteEnabled": {
+            "type": "string"
+          },
+          "digitalQuoteNotificationGroup": {
+            "type": "string"
+          },
+          "digitalQuoteIncludesPurchaseOrders": {
+            "type": "string"
+          },
+          "inventoryJobCompletedNotificationGroup": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "salesJobCompletedNotificationGroup": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "kanbanOutput": {
+            "type": "string"
+          },
+          "plmReleaseControl": {
+            "type": "string"
+          },
+          "purchasePriceUpdateTiming": {
+            "type": "string"
+          },
+          "incompletePickingListPolicy": {
+            "type": "string"
+          },
+          "returnPickedMaterialTiming": {
+            "type": "string"
+          },
+          "updateLeadTimesOnReceipt": {
+            "type": "string"
+          },
+          "materialGeneratedIds": {
+            "type": "string"
+          },
+          "useMetric": {
+            "type": "string"
+          },
+          "productLabelSize": {
+            "type": "string"
+          },
+          "rfqReadyNotificationGroup": {
+            "type": "string"
+          },
+          "suggestionNotificationGroup": {
+            "type": "string"
+          },
+          "maintenanceDispatchNotificationGroup": {
+            "type": "string"
+          },
+          "qualityDispatchNotificationGroup": {
+            "type": "string"
+          },
+          "operationsDispatchNotificationGroup": {
+            "type": "string"
+          },
+          "otherDispatchNotificationGroup": {
+            "type": "string"
+          },
+          "supplierQuoteNotificationGroup": {
+            "type": "string"
+          },
+          "accountsPayableEmail": {
+            "type": "string"
+          },
+          "defaultSupplierCc": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "accountsReceivableEmail": {
+            "type": "string"
+          },
+          "defaultCustomerCc": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "id": {
+            "type": "string"
+          },
+          "parentCompanyId": {
+            "type": "string"
+          },
+          "table": {
+            "type": "string"
+          },
+          "prefix": {
+            "type": "string"
+          },
+          "suffix": {
+            "type": "string"
+          },
+          "step": {
+            "type": "number"
+          },
+          "size": {
+            "type": "number"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "theme": {
+            "type": "string"
+          },
+          "consoleEnabled": {
+            "type": "string"
+          },
+          "intent": {
+            "type": "string"
+          },
+          "ids": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string",
+            "enum": [
+              "Pending",
+              "Skipped"
+            ]
+          },
+          "accountId": {
+            "type": "string"
+          },
+          "externalId": {
+            "type": "string"
+          },
+          "externalCode": {
+            "type": "string"
+          },
+          "externalName": {
+            "type": "string"
+          },
+          "mappings": {
             "type": "string"
           },
           "name": {
@@ -43116,6 +45138,26 @@
           }
         },
         "required": [
+          "next",
+          "digitalQuoteEnabled",
+          "digitalQuoteIncludesPurchaseOrders",
+          "kanbanOutput",
+          "plmReleaseControl",
+          "purchasePriceUpdateTiming",
+          "updateLeadTimesOnReceipt",
+          "materialGeneratedIds",
+          "useMetric",
+          "productLabelSize",
+          "table",
+          "itemId",
+          "theme",
+          "consoleEnabled",
+          "intent",
+          "ids",
+          "to",
+          "accountId",
+          "externalId",
+          "mappings",
           "name",
           "_operation"
         ]
@@ -44696,7 +46738,7 @@
       "module": "shared",
       "classification": "WRITE",
       "description": "update saved view order",
-      "paramCount": 2,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "updates"
@@ -44708,16 +46750,27 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "sortOrder": {
-            "type": "number"
+          "updates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "sortOrder": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "id",
+                "sortOrder"
+              ]
+            }
           }
         },
         "required": [
-          "id",
-          "sortOrder"
+          "updates"
         ]
       }
     },
@@ -45748,20 +47801,20 @@
             "type": "string"
           },
           "permissions": {
-            "type": "object",
-            "properties": {
-              "name": {
-                "type": "string"
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "permission": {}
               },
-              "permission": {
-                "type": "array",
-                "items": {}
-              }
-            },
-            "required": [
-              "name",
-              "permission"
-            ]
+              "required": [
+                "name",
+                "permission"
+              ]
+            }
           }
         },
         "required": [
@@ -45804,7 +47857,7 @@
     {
       "name": "users_upsertGroupMembers",
       "module": "users",
-      "classification": "WRITE",
+      "classification": "DESTRUCTIVE",
       "description": "upsert group members",
       "paramCount": 2,
       "serviceParams": [

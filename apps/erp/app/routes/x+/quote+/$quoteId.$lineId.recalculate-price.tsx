@@ -74,9 +74,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       quoteLineId: lineId,
       quantity,
       unitPrice,
-      discountPercent: 0,
-      leadTime: 0,
       createdBy: userId,
+      // discountPercent / leadTime / shippingCost are intentionally omitted so
+      // upsertQuoteLinePrices preserves the user-entered values for each quantity
+      // — a recalc only recomputes the unit price.
       categoryMarkups: categoryMarkupsByQuantity.data[quantity] ?? undefined,
       // Applying a markup is explicit cost-plus intent: the row goes back to
       // system pricing so future BOM changes reprice it from these markups.
