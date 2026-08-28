@@ -194,6 +194,8 @@ export const path = {
       onShapePanelMe: `${api}/integrations/onshape/panel/me`,
       onShapePanelPushAssembly: `${api}/integrations/onshape/panel/push-assembly`,
       onShapePanelPushPart: `${api}/integrations/onshape/panel/push-part`,
+      onShapePanelPushRelease: `${api}/integrations/onshape/panel/push-release`,
+      onShapePanelReleases: `${api}/integrations/onshape/panel/releases`,
       onShapePanelSession: `${api}/integrations/onshape/panel/session`,
       onShapePanelStatus: `${api}/integrations/onshape/panel/status`,
       onShapeSync: `${api}/integrations/onshape/sync`,

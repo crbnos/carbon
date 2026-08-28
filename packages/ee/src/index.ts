@@ -67,6 +67,18 @@ export { OnshapePanel } from "./onshape/panel/Panel";
 export type { PartPushPlan } from "./onshape/panel/push-plan";
 export { planPartPush } from "./onshape/panel/push-plan";
 export type {
+  PanelRelease,
+  PanelReleaseItem,
+  ReleaseCarbonItemRow,
+  ReleaseRevisionLike
+} from "./onshape/panel/releases";
+export {
+  groupRevisionsIntoReleases,
+  isModelReleaseItem,
+  releaseKeyFor,
+  resolveReleaseStates
+} from "./onshape/panel/releases";
+export type {
   PanelItemRow,
   PanelMappingRow,
   PanelPartStatus

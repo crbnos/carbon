@@ -14,6 +14,7 @@ import {
   isPanelSessionMessage,
   postApplicationInit
 } from "./messages";
+import type { PanelRelease } from "./releases";
 import {
   clearPanelSessionToken,
   getPanelSessionToken,
@@ -53,6 +54,12 @@ type PanelStatusState =
   | { status: "ready-other" }
   | { status: "error"; message: string };
 
+type PanelReleasesState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "ready"; releases: PanelRelease[] }
+  | { status: "error"; message: string };
+
 export type OnshapePanelPaths = {
   /** Popup route that mints a panel session for the signed-in user. */
   auth: string;
@@ -66,6 +73,10 @@ export type OnshapePanelPaths = {
   pushPart: string;
   /** POST: push the current assembly (items + BOM) into Carbon. */
   pushAssembly: string;
+  /** Releases for the current document, grouped from Onshape revisions. */
+  releases: string;
+  /** POST: push one release (revisions, assets, BOMs, change notice). */
+  pushRelease: string;
 };
 
 export type OnshapePanelMe = {
@@ -104,6 +115,13 @@ export function OnshapePanel({
   );
   const [messageCount, setMessageCount] = useState(0);
   const [parts, setParts] = useState<PanelStatusState>({ status: "idle" });
+  const [releases, setReleases] = useState<PanelReleasesState>({
+    status: "idle"
+  });
+  const [pushingReleaseId, setPushingReleaseId] = useState<string | null>(null);
+  const [releaseOutcome, setReleaseOutcome] = useState<Record<string, string>>(
+    {}
+  );
 
   const canLoadParts =
     !!context.documentId &&
@@ -168,6 +186,41 @@ export function OnshapePanel({
     [canLoadParts, context, paths.status]
   );
 
+  const loadReleases = useCallback(
+    async (token: string) => {
+      if (!context.documentId) return;
+      setReleases({ status: "loading" });
+      try {
+        const query = new URLSearchParams({ documentId: context.documentId });
+        const response = await panelFetch(token, `${paths.releases}?${query}`);
+        const body = (await response.json()) as
+          | { releases: PanelRelease[] }
+          | { error: string };
+        if (!response.ok || "error" in body) {
+          setReleases({
+            status: "error",
+            message:
+              "error" in body
+                ? body.error
+                : `Carbon answered ${response.status}`
+          });
+          return;
+        }
+        setReleases({ status: "ready", releases: body.releases });
+      } catch (error) {
+        if (error instanceof PanelUnauthorizedError) {
+          setSession({ status: "signed-out" });
+          return;
+        }
+        setReleases({
+          status: "error",
+          message: error instanceof Error ? error.message : String(error)
+        });
+      }
+    },
+    [context.documentId, paths.releases]
+  );
+
   const loadMe = useCallback(
     async (token: string) => {
       setSession({ status: "loading", token });
@@ -184,6 +237,7 @@ export function OnshapePanel({
         const me = (await response.json()) as OnshapePanelMe;
         setSession({ status: "signed-in", token, me });
         void loadParts(token);
+        void loadReleases(token);
       } catch (error) {
         if (error instanceof PanelUnauthorizedError) {
           setSession({ status: "signed-out" });
@@ -196,7 +250,7 @@ export function OnshapePanel({
         });
       }
     },
-    [paths.me, loadParts]
+    [paths.me, loadParts, loadReleases]
   );
 
   // Boot: tell Onshape we are ready, restore a stored token, and listen for
@@ -355,6 +409,73 @@ export function OnshapePanel({
     [canPush, context, paths.pushAssembly, loadParts]
   );
 
+  const pushRelease = useCallback(
+    async (token: string, releaseId: string) => {
+      setPushingReleaseId(releaseId);
+      try {
+        const response = await panelFetch(token, paths.pushRelease, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ documentId: context.documentId, releaseId })
+        });
+        const body = (await response.json()) as
+          | {
+              summary: {
+                releaseName: string | null;
+                revisionsCreated: number;
+                itemsCreated: number;
+                reused: number;
+                linesWritten: number;
+                methodsTouched: number;
+                defaultsUpdated: number;
+                changeNotice: string | null;
+                alreadyPushed: boolean;
+                skipped: string[];
+                errors: string[];
+              };
+            }
+          | { error: string };
+        if (!response.ok || "error" in body) {
+          setReleaseOutcome((prev) => ({
+            ...prev,
+            [releaseId]:
+              "error" in body
+                ? body.error
+                : `Carbon answered ${response.status}`
+          }));
+          return;
+        }
+        const s = body.summary;
+        const problems = [...s.errors, ...s.skipped];
+        setReleaseOutcome((prev) => ({
+          ...prev,
+          [releaseId]: s.alreadyPushed
+            ? "Revisions already in Carbon — BOMs refreshed, models re-syncing" +
+              (problems.length > 0 ? ` · ${problems.join(" · ")}` : "")
+            : `${s.revisionsCreated} revisions + ${s.itemsCreated} new items, ` +
+              `${s.linesWritten} BOM lines` +
+              (s.changeNotice ? ` · change notice ${s.changeNotice}` : "") +
+              " — models syncing" +
+              (problems.length > 0 ? ` · ${problems.join(" · ")}` : "")
+        }));
+        await loadReleases(token);
+        await loadParts(token);
+      } catch (error) {
+        if (error instanceof PanelUnauthorizedError) {
+          setSession({ status: "signed-out" });
+          return;
+        }
+        setReleaseOutcome((prev) => ({
+          ...prev,
+          [releaseId]: error instanceof Error ? error.message : String(error)
+        }));
+      } finally {
+        setPushingReleaseId(null);
+      }
+    },
+    [context.documentId, paths.pushRelease, loadReleases, loadParts]
+  );
+
   const signIn = () => {
     const width = 480;
     const height = 680;
@@ -501,6 +622,16 @@ export function OnshapePanel({
           pushOutcome={pushOutcome}
           onRefresh={() => loadParts(session.token)}
           onPush={(partIds) => pushParts(session.token, partIds)}
+        />
+      ) : null}
+
+      {session.status === "signed-in" && context.documentId ? (
+        <ReleasesSection
+          releases={releases}
+          pushingReleaseId={pushingReleaseId}
+          outcome={releaseOutcome}
+          onPush={(releaseId) => pushRelease(session.token, releaseId)}
+          onRefresh={() => loadReleases(session.token)}
         />
       ) : null}
 
@@ -734,6 +865,114 @@ function PartsSection({
       ) : null}
     </VStack>
   );
+}
+
+function ReleasesSection({
+  releases,
+  pushingReleaseId,
+  outcome,
+  onPush,
+  onRefresh
+}: {
+  releases: PanelReleasesState;
+  pushingReleaseId: string | null;
+  outcome: Record<string, string>;
+  onPush: (releaseId: string) => void;
+  onRefresh: () => void;
+}) {
+  return (
+    <VStack spacing={2} className="w-full">
+      <HStack className="w-full justify-between">
+        <span className="text-sm font-medium">Releases</span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onRefresh}
+          isDisabled={releases.status === "loading" || !!pushingReleaseId}
+        >
+          Refresh
+        </Button>
+      </HStack>
+
+      {releases.status === "loading" || releases.status === "idle" ? (
+        <p className="text-sm text-muted-foreground">Loading releases…</p>
+      ) : null}
+
+      {releases.status === "error" ? (
+        <Alert variant="destructive">
+          <AlertTitle>Couldn't load releases</AlertTitle>
+          <AlertDescription>{releases.message}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      {releases.status === "ready" && releases.releases.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          This document has no releases yet. Release it in Onshape, then
+          refresh.
+        </p>
+      ) : null}
+
+      {releases.status === "ready" && releases.releases.length > 0 ? (
+        <ul className="w-full divide-y divide-border rounded-md border border-border">
+          {releases.releases.map((release) => {
+            const models = release.items.filter(
+              (item) => item.elementType === 0 || item.elementType === 1
+            );
+            const drawings = release.items.length - models.length;
+            return (
+              <li key={release.releaseId} className="px-3 py-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm truncate">
+                      {release.releaseName ?? "Release"}
+                      {release.createdAt
+                        ? ` · ${new Date(release.createdAt).toLocaleDateString()}`
+                        : ""}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {models
+                        .map(
+                          (item) => `${item.partNumber} Rev ${item.revision}`
+                        )
+                        .join(", ")}
+                      {drawings > 0 ? ` · ${drawings} drawing(s)` : ""}
+                    </p>
+                  </div>
+                  <HStack spacing={2} className="shrink-0">
+                    <ReleaseStateBadge state={release.state} />
+                    <Button
+                      size="sm"
+                      variant={
+                        release.state === "pushed" ? "ghost" : "secondary"
+                      }
+                      onClick={() => onPush(release.releaseId)}
+                      isDisabled={!!pushingReleaseId}
+                      isLoading={pushingReleaseId === release.releaseId}
+                    >
+                      {release.state === "pushed"
+                        ? "Re-push release"
+                        : "Push release"}
+                    </Button>
+                  </HStack>
+                </div>
+                {outcome[release.releaseId] ? (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {outcome[release.releaseId]}
+                  </p>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+    </VStack>
+  );
+}
+
+function ReleaseStateBadge({ state }: { state: PanelRelease["state"] }) {
+  if (state === "pushed") return <Badge variant="green">In Carbon</Badge>;
+  if (state === "partial") return <Badge variant="yellow">Partial</Badge>;
+  return <Badge variant="secondary">Not in Carbon</Badge>;
 }
 
 function PartStateBadge({ state }: { state: PanelPartStatus["state"] }) {
