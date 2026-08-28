@@ -1,6 +1,6 @@
 ---
 name: self-review
-description: Critically review your own branch work before or just after opening the PR, producing Must fix / Risks / Suggested improvements plus a docs-freshness check. Use when finishing a branch, before opening or merging a PR, or to sanity-check a diff against main. Supports an opt-in strict "thermo-nuclear" mode for a deep maintainability and abstraction audit when explicitly requested.
+description: Critically review your own branch work before or just after opening the PR, producing Must fix / Risks / Suggested improvements plus a docs-freshness check. Use when finishing a branch, before opening or merging a PR, or to sanity-check a diff against main. Supports an opt-in strict "thermo-nuclear" / "nuclear review" mode for a deep maintainability and abstraction audit when explicitly requested — it fetches and follows the upstream Cursor thermo-nuclear rubric.
 ---
 
 # self-review — review your own work before the PR
@@ -66,9 +66,17 @@ findings to the user — they decide what to act on; do not auto-fix.
 
 ## Strict mode (thermo-nuclear)
 
-Run **only when explicitly requested** ("thermo-nuclear", "harsh", "deep code
-quality", "extremely strict"). Raises the bar from "correct and shippable" to
-"simplest, most maintainable structure possible".
+Run **only when explicitly requested** ("nuclear review", "thermo-nuclear",
+"harsh", "deep code quality", "extremely strict"). Raises the bar from "correct
+and shippable" to "simplest, most maintainable structure possible".
+
+**When a nuclear review is requested, fetch the upstream thermo-nuclear rubric
+and follow it as the authoritative methodology** — `WebFetch`
+`https://raw.githubusercontent.com/cursor/plugins/refs/heads/main/cursor-team-kit/skills/thermo-nuclear-code-quality-review/SKILL.md`,
+then apply its diagnostic questions, escalation triggers, preferred remedies, and
+output prioritization on top of the base review (Steps 1–3 above still run). If
+the fetch fails (offline or unreachable), fall back to the standards below —
+they mirror it.
 
 Hunt for behavior-preserving restructurings that make whole branches, helpers,
 modes, or layers disappear. Prefer deleting complexity over rearranging it.
