@@ -520,7 +520,6 @@ msgstr "とにかく完了"
 
 msgid "Finish setting up your account"
 msgstr "アカウントのセットアップを完了する"
-msgstr "アカウント設定を完了する"
 
 msgid "Finish with material unpicked?"
 msgstr "材料がピッキングされていない状態で終了しますか?"
@@ -533,7 +532,6 @@ msgstr "操作に戻る"
 
 msgid "Go to onboarding"
 msgstr "オンボーディングに移動"
-msgstr "オンボーディングへ進む"
 
 msgid "How many were actually picked?"
 msgstr "実際にはいくつ選ばれましたか？"
@@ -1516,7 +1514,6 @@ msgstr "作業開始から{hoursElapsed}時間が経過しています。作業�
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "あなたのアカウントはまだ会社に属していません。継続するには、Carbon ERP でオンボーディングを完了してください。"
-msgstr "アカウントはまだ企業に属していません。Carbon ERPでオンボーディングを完了して続行してください。"
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "あなたの組織は認証器アプリが必要です。Carbonで設定してから、ここに戻ってください。"

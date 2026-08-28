@@ -1514,7 +1514,6 @@ msgstr "Sei timbrato da {hoursElapsed} ore. Hai dimenticato di timbra fine?"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Il tuo account non è ancora parte di un'azienda. Completa l'onboarding in Carbon ERP per continuare."
-msgstr "Il tuo account non fa ancora parte di un'azienda. Completa l'onboarding in Carbon ERP per continuare."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "La tua organizzazione richiede un'app di autenticazione. Configurala in Carbon, quindi torna qui."

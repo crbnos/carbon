@@ -304,7 +304,6 @@ msgstr "4s"
 
 msgid "5 user minimum"
 msgstr "5 kullanıcı minimum"
-msgstr "5 kullanıcı minimumu"
 
 msgid "5-8 weeks"
 msgstr "5-8 hafta"
@@ -362,7 +361,6 @@ msgstr "Taşeron, belirli yetkinliklere ve kullanılabilir saatlere sahip bir te
 
 msgid "A custom solution to meet your needs"
 msgstr "Sizin ihtiyaçlarınızı karşılamak için özel bir çözüm"
-msgstr "İhtiyaçlarınızı karşılamak için özel bir çözüm"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Bir müşteri, parçalarınızı veya hizmetlerinizi satın alan bir işletme veya kişidir."
@@ -479,7 +477,6 @@ msgstr "Carbon'ın yönetilen bulut barındırılan sürümü"
 
 msgid "A managed version with all the advanced features"
 msgstr "Tüm gelişmiş özelliklerle yönetilen sürüm"
-msgstr "Carbon'un yönetilen bulut barındırmalı sürümü"
 
 msgid "A managed version with all the advanced features"
 msgstr "Tüm gelişmiş özellikleri içeren yönetilen bir sürüm"
@@ -1344,7 +1341,6 @@ msgstr "Tüm eylemler seçildi"
 
 msgid "All advanced features available"
 msgstr "Tüm gelişmiş özellikler kullanılabilir"
-msgstr "Tüm gelişmiş özellikler mevcut"
 
 msgid "All Audit Logs"
 msgstr "Tüm Denetim Günlükleri"
@@ -1620,7 +1616,6 @@ msgstr "Carbon verilerinize programatik erişim için API anahtarları."
 
 msgid "API, webhooks, and integrations"
 msgstr "API, webhook'lar ve entegrasyonlar"
-msgstr "API, web kancaları ve entegrasyonlar"
 
 msgid "Applied"
 msgstr "Uygulandı"
@@ -2317,7 +2312,6 @@ msgstr "Denetim günlüğü"
 
 msgid "Audit logging"
 msgstr "Denetim günlüğü tutma"
-msgstr "Denetim günlüğü"
 
 msgid "Audit Logging"
 msgstr "Denetim Kaydı Tutma"
@@ -2630,7 +2624,6 @@ msgstr "Kütüphaneyi göz at"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Yayınlanan sürümü salt okunur şekilde inceleyin. Düzeni düzenlemek için adımları yine de yeniden düzenleyebilirsiniz."
-msgstr "Yayınlanan sürümü salt okunur olarak göz atın. Düzeni düzenlemek için adımları yeniden düzenleyebilirsiniz."
 
 msgid "Bucket"
 msgstr "Kova"
@@ -3543,7 +3536,6 @@ msgstr "İlgili kişi (İsteğe bağlı)"
 
 msgid "Contact us"
 msgstr "Bize ulaşın"
-msgstr "Bize başvurun"
 
 msgid "contacts"
 msgstr "İlgili kişiler"
@@ -6995,7 +6987,6 @@ msgstr "Biçim"
 
 msgid "Forward deployed engineer"
 msgstr "Sahadaki mühendis"
-msgstr "Ön konuşlandırılmış mühendis"
 
 msgid "Foundation"
 msgstr "Temel"
@@ -7052,7 +7043,6 @@ msgstr "Tam adı"
 
 msgid "Full setup and migrations"
 msgstr "Tam kurulum ve göçler"
-msgstr "Tam kurulum ve geçişler"
 
 msgid "Fully Depreciated"
 msgstr "Amortismanı tamamlanmış"
@@ -8150,7 +8140,6 @@ msgstr "Sorunlar"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "Yeniden bir sürüm yayınlayana kadar çalışmayı durdurur. Hiçbir şey silinmez."
-msgstr "Yeniden bir sürüm yayınlayana kadar çalışmayı durduracak. Hiçbir şey silinmez."
 
 msgid "ITAR Certifications"
 msgstr "ITAR Sertifikaları"
@@ -8522,7 +8511,6 @@ msgstr "Daha az manuel çalışma, daha az hata"
 
 msgid "Let's Build"
 msgstr "Üretelim"
-msgstr "Haydi Oluşturalım"
 
 msgid "Let's build something"
 msgstr "Bir şeyler inşa edelim"
@@ -12677,7 +12665,6 @@ msgstr "Bu faturadaki herhangi bir kalem defteri girişini tersine çevirir"
 
 msgid "Reverse charge"
 msgstr "Ters kayıt"
-msgstr "Ters ücret"
 
 msgid "Reverse Charge Sales Tax"
 msgstr "Ters yükleme satış vergisi"
@@ -13496,7 +13483,6 @@ msgstr "Kendi Yönettiği"
 
 msgid "Self-hosted or managed"
 msgstr "Kendi barındırılan veya yönetilen"
-msgstr "Kendi barındırmalı veya yönetilen"
 
 msgid "Self-onboarding"
 msgstr "Kendi kendine katılım"
@@ -13922,7 +13908,6 @@ msgstr "Bu kural başarısız olduğunda kullanıcıya gösterilir."
 
 msgid "Sign in to Carbon"
 msgstr "Carbon'a giriş yapın"
-msgstr "Carbon'da oturum açın"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Sihirli bağlantı yerine biyometrik kimlik doğrulama ile oturum açın. Geçiş Anahtarları Face ID, Touch ID veya cihaz PIN'iniz tarafından korunur."
@@ -14351,7 +14336,6 @@ msgstr "Stripe faturayı müşteriye e-posta ile gönderir, bu nedenle bir adres
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Bu Carbon müşterisi için Stripe'da henüz müşteri yok. Muhasebeleştirme, bağlı hesabınızda bir tane oluşturacak."
-msgstr "Stripe'da zaten bu e-postaya sahip bir müşteri var"
 
 msgid "Stripe Due Date"
 msgstr "Stripe Son Tarihi"
@@ -14776,7 +14760,6 @@ msgstr "Vergi Amortisman Yöntemi"
 
 msgid "Tax exempt"
 msgstr "vergiden muaf"
-msgstr "Vergi muafiyeti"
 
 msgid "Tax Exempt"
 msgstr "Vergi Muaf"
@@ -15671,7 +15654,6 @@ msgstr "Bu fatura, Stripe için kullanılabilir bir son tarih içermiyor — lü
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Bu fatura, bu Carbon müşterisine zaten bağlı olan Stripe müşterisine faturalandırılacaktır. Ayrıntılarını değiştirmek için Stripe panosunda düzenleyin."
-msgstr "Bu faturanın kullanılabilir bir vade tarihi yok — Stripe için birini seçin."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Bu fatura, zaten bu Carbon müşterisine bağlı olan Stripe müşterisine faturalanacak. Ayrıntılarını değiştirmek için Stripe panosunda düzenleyin."
@@ -16364,7 +16346,6 @@ msgstr "Sınırsız işlevsel destek"
 
 msgid "Unlimited records"
 msgstr "Sınırsız kayıt"
-msgstr "Sınırsız kayıtlar"
 
 msgid "Unlink"
 msgstr "Bağlantısını Kes"
@@ -16410,7 +16391,6 @@ msgstr "Yayını kaldır"
 
 msgid "Unpublish {name}?"
 msgstr "Yayını {name} için kaldır?"
-msgstr "Yayınlamayı Kaldır"
 
 msgid "Unpublish {name}?"
 msgstr "{name} yayınlaması kaldırılsın mı?"
@@ -16775,7 +16755,6 @@ msgstr "Sürüm"
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
 msgstr "Sürüm {0} şu anda yayınlandı ve değiştirilecektir."
-msgstr "Sürüm {0} şu anda yayınlandı ve değiştirilecek."
 
 msgid "Version:"
 msgstr "Sürüm:"

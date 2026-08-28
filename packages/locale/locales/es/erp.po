@@ -361,7 +361,6 @@ msgstr "Un contratista es un contacto de proveedor con habilidades particulares 
 
 msgid "A custom solution to meet your needs"
 msgstr "Una solución personalizada para satisfacer sus necesidades"
-msgstr "Una solución personalizada para satisfacer tus necesidades"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Un cliente es una empresa o persona que compra tus piezas o servicios."
@@ -478,7 +477,6 @@ msgstr "Una versión de Carbon alojada en la nube y administrada"
 
 msgid "A managed version with all the advanced features"
 msgstr "Una versión administrada con todas las características avanzadas"
-msgstr "Una versión administrada y alojada en la nube de Carbon"
 
 msgid "A managed version with all the advanced features"
 msgstr "Una versión administrada con todas las funciones avanzadas"
@@ -2626,7 +2624,6 @@ msgstr "Examinar biblioteca"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Explore la versión publicada de solo lectura. Aún puede reorganizar pasos para ordenar el diseño."
-msgstr "Explora la versión publicada en solo lectura. Aún puedes reorganizar pasos para organizar el diseño."
 
 msgid "Bucket"
 msgstr "Depósito"
@@ -3042,7 +3039,6 @@ msgstr "Revisa tu correo electrónico"
 
 msgid "Checking Stripe for this customer…"
 msgstr "Verificando Stripe para este cliente…"
-msgstr "Comprobando Stripe para este cliente…"
 
 msgid "Checkpoint ·"
 msgstr "Punto de control ·"
@@ -3184,7 +3180,6 @@ msgstr "Nube, o tu entorno autohospedado."
 
 msgid "CMMC compliant"
 msgstr "Cumple con CMMC"
-msgstr "Compatible con CMMC"
 
 msgid "Code"
 msgstr "Código"
@@ -6992,7 +6987,6 @@ msgstr "Formato"
 
 msgid "Forward deployed engineer"
 msgstr "Ingeniero desplegado en sitio"
-msgstr "Ingeniero desplegado en campo"
 
 msgid "Foundation"
 msgstr "Fundación"
@@ -8146,7 +8140,6 @@ msgstr "Problemas"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "Se detendrá hasta que publique una Versión nuevamente. Nada se elimina."
-msgstr "Dejará de ejecutarse hasta que publiques una versión nuevamente. Nada se elimina."
 
 msgid "ITAR Certifications"
 msgstr "Certificaciones ITAR"
@@ -8599,7 +8592,6 @@ msgstr "Vincular problema de Linear"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "Vincule este cliente de Carbon a uno de ellos o cree un cliente de Stripe separado."
-msgstr "Vincula este cliente de Carbon a uno de ellos, o crea un cliente de Stripe separado."
 
 msgid "Link to sales order line"
 msgstr "Vínculo a línea de pedido de venta"
@@ -11650,7 +11642,6 @@ msgstr "Publicado por Carbon"
 
 msgid "Published Version"
 msgstr "Versión publicada"
-msgstr "Versión Publicada"
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "Las versiones publicadas no se pueden editar. Explora en solo lectura, o crea una nueva versión para hacer cambios."
@@ -12674,7 +12665,6 @@ msgstr "Revertir cualquier entrada del libro mayor de artículos de esta factura
 
 msgid "Reverse charge"
 msgstr "Inversión del sujeto pasivo"
-msgstr "Cobro invertido"
 
 msgid "Reverse Charge Sales Tax"
 msgstr "Impuesto a las ventas de cargo inverso"
@@ -13496,7 +13486,6 @@ msgstr "Autohospedado o gestionado"
 
 msgid "Self-onboarding"
 msgstr "Autoincorporación"
-msgstr "Alojado localmente o administrado"
 
 msgid "Self-onboarding"
 msgstr "Incorporación automática"
@@ -13922,7 +13911,6 @@ msgstr "Mostrado al usuario cuando falla esta regla."
 
 msgid "Sign in to Carbon"
 msgstr "Inicie sesión en Carbon"
-msgstr "Iniciar sesión en Carbon"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Inicie sesión con biometría en lugar de un enlace mágico. Las llaves de acceso se aseguran con Face ID, Touch ID o su PIN de dispositivo."
@@ -14351,7 +14339,6 @@ msgstr "Stripe envía la factura al cliente por correo electrónico, por lo que 
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe aún no tiene un cliente para este cliente de Carbon. La contabilización creará uno en su cuenta conectada."
-msgstr "Fecha de Vencimiento de Stripe"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 msgstr "Stripe envía la factura por correo electrónico al cliente, por lo que se requiere una dirección. Esto también se guardará en el contacto en Carbon."
@@ -15667,7 +15654,6 @@ msgstr "Esta factura no tiene una fecha de vencimiento utilizable — elige una 
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Esta factura se facturará al cliente de Stripe ya vinculado a este cliente de Carbon. Para cambiar sus detalles, edítalo en el panel de Stripe."
-msgstr "Esta factura se cobrará al cliente de Stripe ya vinculado a este cliente de Carbon. Para cambiar sus detalles, edítalo en el panel de control de Stripe."
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "Este es un entorno controlado, por lo que se requiere una aplicación autenticadora."
@@ -15808,7 +15794,6 @@ msgstr "Esta versión está publicada"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "Esta versión está publicada. Cree una nueva versión para editar."
-msgstr "Esta versión se ha publicado"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "Esta versión se ha publicado. Crea una nueva versión para editar."
@@ -16767,7 +16752,6 @@ msgstr "Versión"
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
 msgstr "Versión {0} está publicada ahora y será reemplazada."
-msgstr "La versión {0} se ha publicado ahora y será reemplazada."
 
 msgid "Version:"
 msgstr "Versión:"

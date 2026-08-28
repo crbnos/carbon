@@ -170,7 +170,6 @@ msgstr "{count} ऑपरेशन में से {from}–{to}"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "और {hiddenCount}: {hiddenNames}"
-msgstr "{hiddenCount} और: {hiddenNames}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -305,7 +304,6 @@ msgstr "4 घंटे"
 
 msgid "5 user minimum"
 msgstr "न्यूनतम 5 उपयोगकर्ता"
-msgstr "5 उपयोगकर्ता न्यूनतम"
 
 msgid "5-8 weeks"
 msgstr "5-8 सप्ताह"
@@ -363,7 +361,6 @@ msgstr "एक ठेकेदार एक आपूर्तिकर्ता
 
 msgid "A custom solution to meet your needs"
 msgstr "आपकी आवश्यकताओं को पूरा करने के लिए एक कस्टम समाधान"
-msgstr "आपकी जरूरतों को पूरा करने के लिए एक कस्टम समाधान"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "एक ग्राहक एक व्यवसाय या व्यक्ति है जो आपके पार्ट्स या सेवाएं खरीदता है।"
@@ -477,7 +474,6 @@ msgstr "एक ऑर्डर पर निर्माण घटक जिस�
 
 msgid "A managed cloud-hosted version of Carbon"
 msgstr "Carbon का एक प्रबंधित क्लाउड-होस्ट किया गया संस्करण"
-msgstr "Carbon का एक प्रबंधित क्लाउड-होस्टेड संस्करण"
 
 msgid "A managed version with all the advanced features"
 msgstr "सभी उन्नत सुविधाओं के साथ एक प्रबंधित संस्करण"
@@ -1339,7 +1335,6 @@ msgstr "सभी कार्य चयनित"
 
 msgid "All advanced features available"
 msgstr "सभी उन्नत विशेषताएं उपलब्ध हैं"
-msgstr "सभी उन्नत सुविधाएं उपलब्ध हैं"
 
 msgid "All Audit Logs"
 msgstr "सभी ऑडिट लॉग"
@@ -1612,7 +1607,6 @@ msgstr "आपके Carbon डेटा के लिए प्रोग्र�
 
 msgid "API, webhooks, and integrations"
 msgstr "API, वेबहुक, और एकीकरण"
-msgstr "API, webhooks, और integrations"
 
 msgid "Applied"
 msgstr "लागू"
@@ -2481,7 +2475,6 @@ msgstr "आधार मूल्य"
 
 msgid "Basic ERP, MES, and QMS functionality"
 msgstr "मूल ERP, MES और QMS कार्यक्षमता"
-msgstr "बुनियादी ERP, MES, और QMS कार्यक्षमता"
 
 msgid "Basic Information"
 msgstr "बुनियादी जानकारी"
@@ -2622,7 +2615,6 @@ msgstr "लाइब्रेरी ब्राउज़ करें"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "प्रकाशित संस्करण को केवल पढ़ने के लिए ब्राउज़ करें। आप अभी भी लेआउट को साफ करने के लिए चरणों को पुनर्व्यवस्थित कर सकते हैं।"
-msgstr "प्रकाशित संस्करण को केवल-पढ़ने के लिए देखें। आप अभी भी लेआउट को साफ करने के लिए चरणों को पुनः व्यवस्थित कर सकते हैं।"
 
 msgid "Bucket"
 msgstr "बकेट"
@@ -2830,7 +2822,6 @@ msgstr "RFQ नहीं भेज सकते"
 
 msgid "Cannot send through Stripe"
 msgstr "Stripe के माध्यम से भेजा नहीं जा सकता"
-msgstr "Stripe के माध्यम से नहीं भेज सकते"
 
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "अपलोड नहीं कर सकते — आपूर्तिकर्ता इंटरैक्शन अभी तक बनाया नहीं गया"
@@ -3180,7 +3171,6 @@ msgstr "क्लाउड, या आपका स्व-होस्ट कि
 
 msgid "CMMC compliant"
 msgstr "CMMC अनुपालन"
-msgstr "CMMC अनुरूप"
 
 msgid "Code"
 msgstr "कोड"
@@ -3950,7 +3940,6 @@ msgstr "विक्रय आदेश को पूरा करने के 
 
 msgid "Create a new Stripe customer instead"
 msgstr "इसके बजाय एक नया Stripe ग्राहक बनाएँ"
-msgstr "इसके बजाय एक नया Stripe ग्राहक बनाएं"
 
 msgid "Create a new version"
 msgstr "एक नया संस्करण बनाएं"
@@ -4422,7 +4411,6 @@ msgstr "ग्राहक"
 
 msgid "Customizations, training, and integrations"
 msgstr "कस्टमाइज़ेशन, प्रशिक्षण और एकीकरण"
-msgstr "अनुकूलन, प्रशिक्षण, और integrations"
 
 msgid "Customize"
 msgstr "अनुकूलित करें"
@@ -6990,7 +6978,6 @@ msgstr "प्रारूप"
 
 msgid "Forward deployed engineer"
 msgstr "अग्रपंक्ति में तैनात इंजीनियर"
-msgstr "आगे तैनात इंजीनियर"
 
 msgid "Foundation"
 msgstr "आधार"
@@ -8144,7 +8131,6 @@ msgstr "समस्याएं"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "यह तब तक चलना बंद कर देगा जब तक आप फिर से एक संस्करण प्रकाशित नहीं करते। कुछ भी हटाया नहीं गया है।"
-msgstr "यह तब तक चलना बंद कर देगा जब तक आप फिर से एक संस्करण प्रकाशित न करें। कुछ भी हटाया नहीं गया है।"
 
 msgid "ITAR Certifications"
 msgstr "ITAR प्रमाणपत्र"
@@ -8516,7 +8502,6 @@ msgstr "कम मैनुअल काम, कम त्रुटियां"
 
 msgid "Let's Build"
 msgstr "चलिए निर्माण करें"
-msgstr "आइए निर्माण करें"
 
 msgid "Let's build something"
 msgstr "चलिए कुछ बनाते हैं"
@@ -8598,7 +8583,6 @@ msgstr "Linear समस्या को लिंक करें"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "इस Carbon ग्राहक को इनमें से किसी एक से जोड़ें, या एक अलग Stripe ग्राहक बनाएँ।"
-msgstr "इस Carbon ग्राहक को उनमें से किसी एक से जोड़ें, या एक अलग Stripe ग्राहक बनाएं।"
 
 msgid "Link to sales order line"
 msgstr "विक्रय आदेश पंक्ति से जोड़ें"
@@ -14343,7 +14327,6 @@ msgstr "Stripe चालान को ग्राहक को ईमेल क
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe के पास इस Carbon ग्राहक के लिए अभी कोई ग्राहक नहीं है। पोस्टिंग आपके जुड़े खाते पर एक नया ग्राहक बना देगी।"
-msgstr "Stripe के पास पहले से इस ईमेल वाला एक ग्राहक है"
 
 msgid "Stripe Due Date"
 msgstr "Stripe नियत तिथि"
@@ -15631,7 +15614,6 @@ msgstr "यह Discovery चरण को पूरा करता है।"
 
 msgid "This contact has no email address"
 msgstr "इस संपर्क के पास कोई ईमेल पता नहीं है"
-msgstr "इस संपर्क का कोई ईमेल पता नहीं है"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "यह प्रतिपक्ष के पास कुछ भी बकाया नहीं है — भुगतान खाते पर दर्ज किया जाएगा।"
@@ -15663,7 +15645,6 @@ msgstr "इस चालान के पास कोई उपयोगी न
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "यह चालान इस Carbon ग्राहक के लिए पहले से जुड़े Stripe ग्राहक को बिल किया जाएगा। इसके विवरण को बदलने के लिए, इसे Stripe डैशबोर्ड में संपादित करें।"
-msgstr "इस चालान की कोई उपयोगी देय तिथि नहीं है — Stripe के लिए एक चुनें।"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "इस चालान को Stripe ग्राहक को बिल दिया जाएगा जो पहले से इस Carbon ग्राहक से जुड़ा हुआ है। इसके विवरण को बदलने के लिए, Stripe डैशबोर्ड में संपादित करें।"
@@ -16401,7 +16382,6 @@ msgstr "अप्रकाशित करें"
 
 msgid "Unpublish {name}?"
 msgstr "अप्रकाशित करें {name}?"
-msgstr "प्रकाशन रद्द करें"
 
 msgid "Unpublish {name}?"
 msgstr "{name} को प्रकाशन रद्द करें?"
@@ -16766,7 +16746,6 @@ msgstr "संस्करण"
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
 msgstr "संस्करण {0} अभी प्रकाशित है और प्रतिस्थापित किया जाएगा।"
-msgstr "संस्करण {0} अब प्रकाशित है और प्रतिस्थापित किया जाएगा।"
 
 msgid "Version:"
 msgstr "संस्करण:"
@@ -17652,7 +17631,6 @@ msgstr "आप Carbon पर लाइव हैं"
 
 msgid "You're one step away from your workspace."
 msgstr "आप अपने कार्यक्षेत्र से एक चरण दूर हैं।"
-msgstr "आप अपने कार्यक्षेत्र से एक कदम दूर हैं।"
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "आप Carbon को स्वयं सेट अप कर रहे हैं, अपनी गति से"

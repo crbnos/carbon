@@ -304,7 +304,6 @@ msgstr "4h"
 
 msgid "5 user minimum"
 msgstr "Minimum 5 Benutzer"
-msgstr "Mindestens 5 Benutzer"
 
 msgid "5-8 weeks"
 msgstr "5-8 Wochen"
@@ -362,7 +361,6 @@ msgstr "Ein Externer Mitarbeiter ist ein Lieferantenkontakt mit bestimmten Quali
 
 msgid "A custom solution to meet your needs"
 msgstr "Eine maßgeschneiderte Lösung für Ihre Anforderungen."
-msgstr "Eine maßgeschneiderte Lösung für Ihre Anforderungen"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Ein Kunde ist ein Unternehmen oder eine Person, die Ihre Teile oder Dienstleistungen kauft."
@@ -479,7 +477,6 @@ msgstr "Eine verwaltete, cloud-gehostete Version von Carbon."
 
 msgid "A managed version with all the advanced features"
 msgstr "Eine verwaltete Version mit allen erweiterten Funktionen."
-msgstr "Eine verwaltete Cloud-gehostete Version von Carbon"
 
 msgid "A managed version with all the advanced features"
 msgstr "Eine verwaltete Version mit allen erweiterten Funktionen"
@@ -507,7 +504,6 @@ msgstr "Eine neue Größe wird erstellt, indem eine Kopie der aktuellen Größe 
 
 msgid "A new Stripe customer will be created"
 msgstr "Ein neuer Stripe-Kunde wird erstellt."
-msgstr "Ein neuer Stripe-Kunde wird erstellt"
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "Ein bargeldloses Dokument, das eine Rechnung gegen ein Verrechnungskonto ausgleicht: ein Haben senkt die Schuld, ein Soll erhöht sie."
@@ -2310,7 +2306,6 @@ msgstr "Änderungsprotokoll"
 
 msgid "Audit logging"
 msgstr "Änderungsprotokollierung"
-msgstr "Audit-Protokollierung"
 
 msgid "Audit Logging"
 msgstr "Audit-Protokollierung"
@@ -2383,7 +2378,6 @@ msgstr "Automatische Aktualisierungen"
 
 msgid "Automatic updates and backups"
 msgstr "Automatische Aktualisierungen und Sicherungen"
-msgstr "Automatische Updates und Sicherungen"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "Automatischer, anteiliger Verbrauch der ungespurten Materialien eines Auftrags, wenn die Leistung gemeldet wird — verfolgte Materialien werden manuell ausgegeben."
@@ -2624,7 +2618,6 @@ msgstr "Bibliothek durchsuchen"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Durchsuchen Sie die veröffentlichte Version schreibgeschützt. Sie können die Schritte weiterhin neu anordnen, um das Layout zu ordnen."
-msgstr "Durchsuchen Sie die veröffentlichte Version schreibgeschützt. Sie können Schritte immer noch neu anordnen, um das Layout aufzuräumen."
 
 msgid "Bucket"
 msgstr "Bucket"
@@ -2832,7 +2825,6 @@ msgstr "RFQ kann nicht gesendet werden"
 
 msgid "Cannot send through Stripe"
 msgstr "Kann nicht über Stripe senden"
-msgstr "Kann nicht über Stripe gesendet werden"
 
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "Hochladen nicht möglich — Lieferanteninteraktion noch nicht erstellt"
@@ -3041,7 +3033,6 @@ msgstr "Überprüfen Sie Ihre E-Mail"
 
 msgid "Checking Stripe for this customer…"
 msgstr "Überprüfung von Stripe für diesen Kunden…"
-msgstr "Stripe für diesen Kunden wird überprüft …"
 
 msgid "Checkpoint ·"
 msgstr "Checkpoint ·"
@@ -3246,7 +3237,6 @@ msgstr "Bestätigung eines Wareneingangs, einer Lieferung oder einer Rechnung: M
 
 msgid "Community support"
 msgstr "Community-Unterstützung"
-msgstr "Community-Support"
 
 msgid "Companies"
 msgstr "Unternehmen"
@@ -4424,7 +4414,6 @@ msgstr "Kunden"
 
 msgid "Customizations, training, and integrations"
 msgstr "Anpassungen, Schulung und Integrationen"
-msgstr "Anpassungen, Schulungen und Integrationen"
 
 msgid "Customize"
 msgstr "Anpassen"
@@ -6271,7 +6260,6 @@ msgstr "Vorhandene Zuordnungen. Wählen Sie eine andere Provider-Option zum Neu-
 
 msgid "Existing Stripe customer"
 msgstr "Bestehender Stripe-Kunde"
-msgstr "Vorhandener Stripe-Kunde"
 
 msgid "Expand"
 msgstr "Erweitern"
@@ -6993,7 +6981,6 @@ msgstr "Format"
 
 msgid "Forward deployed engineer"
 msgstr "Techniker vor Ort"
-msgstr "Ingenieur vor Ort"
 
 msgid "Foundation"
 msgstr "Grundlagen"
@@ -7050,7 +7037,6 @@ msgstr "Vollständiger Name"
 
 msgid "Full setup and migrations"
 msgstr "Vollständiges Setup und Migrationen"
-msgstr "Vollständige Einrichtung und Migrationen"
 
 msgid "Fully Depreciated"
 msgstr "Vollständig abgeschrieben"
@@ -8600,7 +8586,6 @@ msgstr "Linear-Problem verknüpfen"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "Verknüpfen Sie diesen Carbon-Kunden mit einem davon, oder erstellen Sie einen separaten Stripe-Kunden."
-msgstr "Verknüpfen Sie diesen Carbon-Kunden mit einem von ihnen, oder erstellen Sie einen separaten Stripe-Kunden."
 
 msgid "Link to sales order line"
 msgstr "Mit Kundenauftragsposition verknüpfen"
@@ -12674,7 +12659,6 @@ msgstr "Alle Artikelledgereinträge aus dieser Rechnung stornieren"
 
 msgid "Reverse charge"
 msgstr "Stornierungsgebühr"
-msgstr "Umkehrung der Steuerschuld"
 
 msgid "Reverse Charge Sales Tax"
 msgstr "Reverse-Charge-Verfahren Umsatzsteuer"
@@ -13496,7 +13480,6 @@ msgstr "Selbstgehostet oder verwaltet"
 
 msgid "Self-onboarding"
 msgstr "Selbstgesteuertes Onboarding"
-msgstr "Selbst gehostet oder verwaltet"
 
 msgid "Self-onboarding"
 msgstr "Selbst-Onboarding"
@@ -14350,7 +14333,6 @@ msgstr "Stripe sendet die Rechnung per E-Mail an den Kunden, daher ist eine Adre
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe hat noch keinen Kunden für diesen Carbon-Kunden. Beim Buchen wird einer auf Ihrem verbundenen Konto erstellt."
-msgstr "Stripe sendet die Rechnung per E-Mail an den Kunden, daher ist eine Adresse erforderlich. Dies wird auch als Kontakt in Carbon gespeichert."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe hat noch keinen Kunden für diesen Carbon-Kunden. Beim Buchen wird einer auf Ihrem verbundenen Konto erstellt."
@@ -15663,7 +15645,6 @@ msgstr "Diese Rechnung hat kein nutzbares Fälligkeitsdatum – wählen Sie eine
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Diese Rechnung wird dem Stripe-Kunden in Rechnung gestellt, der bereits mit diesem Carbon-Kunden verknüpft ist. Um die Details zu ändern, bearbeiten Sie diese im Stripe Dashboard."
-msgstr "Diese Rechnung hat kein verwendbares Fälligkeitsdatum — wählen Sie eines für Stripe."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Diese Rechnung wird dem Stripe-Kunden in Rechnung gestellt, der bereits mit diesem Carbon-Kunden verknüpft ist. Um die Details zu ändern, bearbeiten Sie sie im Stripe-Dashboard."
@@ -15807,7 +15788,6 @@ msgstr "Diese Version ist veröffentlicht"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "Diese Version ist veröffentlicht. Erstellen Sie eine neue Version, um sie zu bearbeiten."
-msgstr "Diese Version ist veröffentlicht. Erstellen Sie eine neue Version zum Bearbeiten."
 
 msgid "This version's definition could not be read."
 msgstr "Die Definition dieser Version konnte nicht gelesen werden."
@@ -17648,7 +17628,6 @@ msgstr "Du bist live auf Carbon"
 
 msgid "You're one step away from your workspace."
 msgstr "Sie sind einen Schritt entfernt von Ihrem Arbeitsbereich."
-msgstr "Sie sind nur noch einen Schritt von Ihrem Arbeitsbereich entfernt."
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "Du richtest Carbon selbst ein, in deinem eigenen Tempo"

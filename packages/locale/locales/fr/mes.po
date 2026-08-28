@@ -532,7 +532,6 @@ msgstr "Revenir à l'opération"
 
 msgid "Go to onboarding"
 msgstr "Aller à l'onboarding"
-msgstr "Aller à l'intégration"
 
 msgid "How many were actually picked?"
 msgstr "Combien ont réellement été prélevés ?"
@@ -1515,7 +1514,6 @@ msgstr "Vous êtes pointé(e) depuis {hoursElapsed} heures. Avez-vous oublié le
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Votre compte ne fait pas encore partie d'une société. Terminez l'onboarding dans Carbon ERP pour continuer."
-msgstr "Votre compte n'est pas encore associé à une entreprise. Complétez l'intégration dans l'ERP Carbon pour continuer."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Votre organisation nécessite une application d'authentification. Configurez-la dans Carbon, puis revenez ici."

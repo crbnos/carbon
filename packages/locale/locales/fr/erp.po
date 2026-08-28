@@ -170,7 +170,6 @@ msgstr "{from}–{to} sur {count} opérations"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} autres : {hiddenNames}"
-msgstr "{hiddenCount} de plus : {hiddenNames}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -362,7 +361,6 @@ msgstr "Un prestataire est un contact fournisseur ayant des compétences particu
 
 msgid "A custom solution to meet your needs"
 msgstr "Une solution personnalisée pour répondre à vos besoins."
-msgstr "Une solution personnalisée pour répondre à vos besoins"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Un client est une entreprise ou une personne qui achète vos pièces ou services."
@@ -479,7 +477,6 @@ msgstr "Une version gérée de Carbon hébergée en nuage."
 
 msgid "A managed version with all the advanced features"
 msgstr "Une version gérée avec toutes les fonctionnalités avancées."
-msgstr "Une version managée du Cloud de Carbon"
 
 msgid "A managed version with all the advanced features"
 msgstr "Une version managée avec toutes les fonctionnalités avancées"
@@ -507,7 +504,6 @@ msgstr "Une nouvelle taille sera créée en utilisant une copie de la taille act
 
 msgid "A new Stripe customer will be created"
 msgstr "Un nouveau client Stripe sera créé."
-msgstr "Un nouveau client Stripe sera créé"
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "Un document sans trésorerie qui règle une facture sur un compte de raison : un crédit réduit ce qui est dû, un débit l'augmente."
@@ -1617,7 +1613,6 @@ msgstr "Clés API pour un accès programmatique à vos données Carbon."
 
 msgid "API, webhooks, and integrations"
 msgstr "API, Webhooks et Intégrations"
-msgstr "API, webhooks et intégrations"
 
 msgid "Applied"
 msgstr "Appliqué"
@@ -2386,7 +2381,6 @@ msgstr "Mises à jour automatiques"
 
 msgid "Automatic updates and backups"
 msgstr "Mises à jour automatiques et sauvegardes"
-msgstr "Mises à jour et sauvegardes automatiques"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "Consommation automatique au prorata des matériaux non tracés d'un travail lors du signalement de la production — les matériaux tracés sont émis manuellement."
@@ -2487,7 +2481,6 @@ msgstr "Prix de base"
 
 msgid "Basic ERP, MES, and QMS functionality"
 msgstr "Fonctionnalités de base ERP, MES et QMS"
-msgstr "Fonctionnalité de base ERP, MES et QMS"
 
 msgid "Basic Information"
 msgstr "Informations de base"
@@ -2628,7 +2621,6 @@ msgstr "Parcourir la bibliothèque"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Parcourez la version publiée en lecture seule. Vous pouvez toujours réarranger les étapes pour nettoyer la mise en page."
-msgstr "Consultez la version publiée en lecture seule. Vous pouvez toujours réorganiser les étapes pour organiser la mise en page."
 
 msgid "Bucket"
 msgstr "Compartiment"
@@ -3185,7 +3177,6 @@ msgstr "Cloud, ou votre environnement auto-hébergé."
 
 msgid "CMMC compliant"
 msgstr "CMMC conforme"
-msgstr "Conforme CMMC"
 
 msgid "Code"
 msgstr "Code"
@@ -4426,7 +4417,6 @@ msgstr "Clients"
 
 msgid "Customizations, training, and integrations"
 msgstr "Personnalisations, formations et intégrations"
-msgstr "Personnalisations, formation et intégrations"
 
 msgid "Customize"
 msgstr "Personnaliser"
@@ -6994,7 +6984,6 @@ msgstr "Format"
 
 msgid "Forward deployed engineer"
 msgstr "Ingénieur dédié au terrain"
-msgstr "Ingénieur déployé en avant"
 
 msgid "Foundation"
 msgstr "Fondation"
@@ -7051,7 +7040,6 @@ msgstr "Nom complet"
 
 msgid "Full setup and migrations"
 msgstr "Réglage complet et migrations"
-msgstr "Configuration complète et migrations"
 
 msgid "Fully Depreciated"
 msgstr "Totalement amorti"
@@ -8149,7 +8137,6 @@ msgstr "Problèmes"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "Elle s'arrêtera d'être exécutée jusqu'à ce que vous publiiez une nouvelle version. Rien n'est supprimé."
-msgstr "Il s'arrêtera jusqu'à ce que vous publiiez à nouveau une version. Rien n'est supprimé."
 
 msgid "ITAR Certifications"
 msgstr "Certifications ITAR"
@@ -8521,7 +8508,6 @@ msgstr "Moins de travail manuel, moins d'erreurs"
 
 msgid "Let's Build"
 msgstr "Allons construire"
-msgstr "Commençons"
 
 msgid "Let's build something"
 msgstr "Construisons quelque chose"
@@ -8603,7 +8589,6 @@ msgstr "Lier un problème Linear"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "Liez ce client Carbon à l'un d'entre eux, ou créez un client Stripe distinct."
-msgstr "Liez ce client Carbon à l'un d'eux, ou créez un client Stripe séparé."
 
 msgid "Link to sales order line"
 msgstr "Lier à la ligne de commande client"
@@ -12677,7 +12662,6 @@ msgstr "Inverser les écritures de registre d'articles de cette facture"
 
 msgid "Reverse charge"
 msgstr "Autofacture"
-msgstr "Facture inversée"
 
 msgid "Reverse Charge Sales Tax"
 msgstr "Taxe de vente d'autoliquidation"
@@ -13499,7 +13483,6 @@ msgstr "Auto-hébergé ou géré"
 
 msgid "Self-onboarding"
 msgstr "Intégration autonome"
-msgstr "Auto-hébergé ou managé"
 
 msgid "Self-onboarding"
 msgstr "Auto-intégration"
@@ -14344,7 +14327,6 @@ msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
 msgstr "Stripe possède déjà un client avec cet e-mail"
-msgstr "Stripe a déjà un client avec cet email"
 
 msgid "Stripe Due Date"
 msgstr "Date d'échéance Stripe"
@@ -14354,7 +14336,6 @@ msgstr "Stripe envoie par e-mail la facture au client, c'est pourquoi une adress
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe n'a pas encore de client pour ce client Carbon. La comptabilisation en créera un sur votre compte connecté."
-msgstr "Stripe envoie la facture par email au client, donc une adresse est requise. Celle-ci sera également enregistrée dans le contact dans Carbon."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe n'a pas encore de client pour ce client Carbon. La comptabilisation en créera un sur votre compte connecté."
@@ -14773,7 +14754,6 @@ msgstr "Méthode d'amortissement fiscal"
 
 msgid "Tax exempt"
 msgstr "Exonéré de taxe"
-msgstr "Exonéré de taxes"
 
 msgid "Tax Exempt"
 msgstr "Exonéré de Taxe"
@@ -15637,7 +15617,6 @@ msgstr "Cela complète l'étape de découverte."
 
 msgid "This contact has no email address"
 msgstr "Ce contact n'a pas d'adresse e-mail"
-msgstr "Ce contact n'a pas d'adresse email"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Ce tiers n'a rien en suspens — le paiement sera enregistré en compte courant."
@@ -15669,7 +15648,6 @@ msgstr "Cette facture n'a pas de date d'échéance utilisable — choisissez-en 
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Cette facture sera facturée au client Stripe déjà lié à ce client Carbon. Pour modifier ses détails, modifiez-le dans le tableau de bord Stripe."
-msgstr "Cette facture sera facturée au client Stripe déjà lié à ce client Carbon. Pour modifier ses détails, modifiez-la dans le tableau de bord Stripe."
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "C'est un environnement contrôlé, donc une application d'authentification est requise."
@@ -15810,7 +15788,6 @@ msgstr "Cette version est publiée."
 
 msgid "This version is published. Create a new version to edit."
 msgstr "Cette version est publiée. Créez une nouvelle version pour la modifier."
-msgstr "Cette version est publiée"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "Cette version est publiée. Créez une nouvelle version à modifier."
@@ -16360,7 +16337,6 @@ msgstr "localisation inconnue"
 
 msgid "Unlimited functional support"
 msgstr "Soutien fonctionnel illimité"
-msgstr "Support fonctionnel illimité"
 
 msgid "Unlimited records"
 msgstr "Enregistrements illimités"
@@ -16770,7 +16746,6 @@ msgstr "Version"
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
 msgstr "La version {0} est publiée maintenant et sera remplacée."
-msgstr "La version {0} est maintenant publiée et sera remplacée."
 
 msgid "Version:"
 msgstr "Version :"

@@ -170,7 +170,6 @@ msgstr "第{from}–{to}个工序（共{count}个）"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "还有{hiddenCount}个：{hiddenNames}"
-msgstr "{hiddenCount} 更多: {hiddenNames}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -305,7 +304,6 @@ msgstr "4小时"
 
 msgid "5 user minimum"
 msgstr "最少需要5个用户"
-msgstr "5 个用户最少"
 
 msgid "5-8 weeks"
 msgstr "5-8 周"
@@ -363,7 +361,6 @@ msgstr "外协人员是具有特定技能和可用工时的供应商联系人。
 
 msgid "A custom solution to meet your needs"
 msgstr "满足您需求的定制解决方案"
-msgstr "满足您需求的自定义解决方案"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "客户是购买您的零件或服务的企业或个人。"
@@ -477,7 +474,6 @@ msgstr "一个按订单生产的组件，其零件一起领用到父工单中—
 
 msgid "A managed cloud-hosted version of Carbon"
 msgstr "Carbon 的托管云版本"
-msgstr "Carbon 的托管云托管版本"
 
 msgid "A managed version with all the advanced features"
 msgstr "具有所有高级功能的托管版本"
@@ -505,7 +501,6 @@ msgstr "将使用当前尺寸的副本创建新尺寸"
 
 msgid "A new Stripe customer will be created"
 msgstr "将创建新的 Stripe 客户"
-msgstr "将创建一个新的 Stripe 客户"
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "一份非现金文件，根据原因账户结算发票：贷方降低欠额，借方提高欠额。"
@@ -1615,7 +1610,6 @@ msgstr "API密钥用于以编程方式访问您的Carbon数据。"
 
 msgid "API, webhooks, and integrations"
 msgstr "API、Webhook 和集成"
-msgstr "API、webhooks 和集成"
 
 msgid "Applied"
 msgstr "已应用"
@@ -2484,7 +2478,6 @@ msgstr "基础价格"
 
 msgid "Basic ERP, MES, and QMS functionality"
 msgstr "基本的 ERP、MES 和 QMS 功能"
-msgstr "基本 ERP、MES 和 QMS 功能"
 
 msgid "Basic Information"
 msgstr "基本信息"
@@ -2625,7 +2618,6 @@ msgstr "浏览库"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "浏览已发布版本（只读）。您仍然可以重新排列步骤来整理布局。"
-msgstr "浏览已发布的版本（只读）。您仍然可以重新排列步骤来整理布局。"
 
 msgid "Bucket"
 msgstr "存储桶"
@@ -2833,7 +2825,6 @@ msgstr "无法发送询价单"
 
 msgid "Cannot send through Stripe"
 msgstr "无法通过Stripe发送"
-msgstr "无法通过 Stripe 发送"
 
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "无法上传 — 供应商互动尚未创建"
@@ -3042,7 +3033,6 @@ msgstr "检查您的电子邮件"
 
 msgid "Checking Stripe for this customer…"
 msgstr "正在为此客户检查Stripe…"
-msgstr "正在检查该客户的 Stripe…"
 
 msgid "Checkpoint ·"
 msgstr "检查点 ·"
@@ -3953,7 +3943,6 @@ msgstr "创建新的生产工作以完成销售订单"
 
 msgid "Create a new Stripe customer instead"
 msgstr "改为创建新的Stripe客户"
-msgstr "改为创建新的 Stripe 客户"
 
 msgid "Create a new version"
 msgstr "创建新版本"
@@ -6995,7 +6984,6 @@ msgstr "格式"
 
 msgid "Forward deployed engineer"
 msgstr "驻场工程师"
-msgstr "前置部署工程师"
 
 msgid "Foundation"
 msgstr "基础"
@@ -8149,7 +8137,6 @@ msgstr "问题"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "它将停止运行，直到您再次发布版本。不会删除任何内容。"
-msgstr "在您再次发布版本之前，它将停止运行。没有任何内容被删除。"
 
 msgid "ITAR Certifications"
 msgstr "ITAR 认证"
@@ -8521,7 +8508,6 @@ msgstr "更少的手动工作，更少的错误"
 
 msgid "Let's Build"
 msgstr "让我们构建"
-msgstr "让我们开始构建"
 
 msgid "Let's build something"
 msgstr "让我们构建一些东西"
@@ -8603,7 +8589,6 @@ msgstr "关联 Linear 问题"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "将此 Carbon 客户链接到其中一个，或创建单独的 Stripe 客户。"
-msgstr "将此 Carbon 客户链接到其中一个，或创建一个单独的 Stripe 客户。"
 
 msgid "Link to sales order line"
 msgstr "关联销售订单行"
@@ -14348,7 +14333,6 @@ msgstr "Stripe 会向客户发送发票电子邮件，因此需要地址。这�
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe还没有该Carbon客户对应的客户。过账将在您的连接账户上创建一个。"
-msgstr "Stripe 已有使用此电子邮件的客户"
 
 msgid "Stripe Due Date"
 msgstr "Stripe 到期日期"
@@ -15667,7 +15651,6 @@ msgstr "此发票没有可用的到期日——为Stripe选择一个。"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "此发票将为已与此Carbon客户关联的Stripe客户计费。要更改其详细信息，请在Stripe仪表板中编辑。"
-msgstr "此发票没有可用的到期日期 — 为 Stripe 选择一个。"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "此发票将计费给已链接到此 Carbon 客户的 Stripe 客户。要更改其详细信息，请在 Stripe 仪表板中编辑它。"
@@ -15811,7 +15794,6 @@ msgstr "这个版本已发布"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "这个版本已发布。创建新版本进行编辑。"
-msgstr "此版本已发布"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "此版本已发布。创建新版本进行编辑。"
@@ -16770,7 +16752,6 @@ msgstr "版本"
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
 msgstr "版本{0}现已发布，将被替换。"
-msgstr "版本 {0} 现已发布，将被替换。"
 
 msgid "Version:"
 msgstr "版本："
@@ -17656,7 +17637,6 @@ msgstr "您已在 Carbon 上线"
 
 msgid "You're one step away from your workspace."
 msgstr "您离您的工作区只有一步之遥。"
-msgstr "您离工作区只有一步之遥。"
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "您正在按照自己的节奏自行设置 Carbon"

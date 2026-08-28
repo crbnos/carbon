@@ -361,7 +361,6 @@ msgstr "Pracownik zewnętrzny to kontakt dostawcy z konkretnymi umiejętnościam
 
 msgid "A custom solution to meet your needs"
 msgstr "Rozwiązanie niestandardowe dostosowane do Twoich potrzeb"
-msgstr "Dostosowane rozwiązanie spełniające Twoje potrzeby"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Klient to firma lub osoba, która kupuje Twoje części lub usługi."
@@ -475,7 +474,6 @@ msgstr "Komponent Produkcji na zamówienie, którego części są wydawane razem
 
 msgid "A managed cloud-hosted version of Carbon"
 msgstr "Zarządzana, hostowana w chmurze wersja Carbon"
-msgstr "Zarządzana wersja Carbon hostowana w chmurze"
 
 msgid "A managed version with all the advanced features"
 msgstr "Zarządzana wersja ze wszystkimi zaawansowanymi funkcjami"
@@ -1612,7 +1610,6 @@ msgstr "Klucze API do programowego dostępu do danych Carbon."
 
 msgid "API, webhooks, and integrations"
 msgstr "API, webhooks i integracje"
-msgstr "API, webhooki i integracje"
 
 msgid "Applied"
 msgstr "Zastosowano"
@@ -2481,7 +2478,6 @@ msgstr "Cena bazowa"
 
 msgid "Basic ERP, MES, and QMS functionality"
 msgstr "Podstawowa funkcjonalność ERP, MES i QMS"
-msgstr "Podstawowe funkcje ERP, MES i QMS"
 
 msgid "Basic Information"
 msgstr "Informacje podstawowe"
@@ -2622,7 +2618,6 @@ msgstr "Przeglądaj bibliotekę"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Przeglądaj opublikowaną wersję w trybie tylko do odczytu. Nadal możesz zmienić kolejność kroków, aby uporządkować układ."
-msgstr "Przeglądaj opublikowaną wersję jako tylko do odczytu. Możesz jeszcze zmienić kolejność kroków, aby uporządkować układ."
 
 msgid "Bucket"
 msgstr "Zasobnik"
@@ -2830,7 +2825,6 @@ msgstr "Nie można wysłać ZZO"
 
 msgid "Cannot send through Stripe"
 msgstr "Nie można wysłać przez Stripe"
-msgstr "Nie można wysłać za pośrednictwem Stripe"
 
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "Nie można przesłać pliku — interakcja z dostawcą nie została jeszcze utworzona"
@@ -3180,7 +3174,6 @@ msgstr "Chmura lub Twoje środowisko hostowane samodzielnie."
 
 msgid "CMMC compliant"
 msgstr "Zgodny z CMMC"
-msgstr "Zgodne z CMMC"
 
 msgid "Code"
 msgstr "Kod"
@@ -6988,7 +6981,6 @@ msgstr "Format"
 
 msgid "Forward deployed engineer"
 msgstr "Inżynier wdrażający"
-msgstr "Inżynier wdrażany on-site"
 
 msgid "Foundation"
 msgstr "Fundament"
@@ -7045,7 +7037,6 @@ msgstr "Pełne imię i nazwisko"
 
 msgid "Full setup and migrations"
 msgstr "Pełne przezbrojenie i migracje"
-msgstr "Pełne ustawienie i migracje"
 
 msgid "Fully Depreciated"
 msgstr "Całkowicie zamortyzowane"
@@ -8143,7 +8134,6 @@ msgstr "Problemy"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "To przestanie działać, dopóki nie opublikujesz wersji ponownie. Nic nie jest usunięte."
-msgstr "Przestanie działać do momentu ponownego opublikowania wersji. Nic nie jest usunięte."
 
 msgid "ITAR Certifications"
 msgstr "Certyfikacje ITAR"
@@ -8515,7 +8505,6 @@ msgstr "Mniej pracy ręcznej, mniej błędów"
 
 msgid "Let's Build"
 msgstr "Zbudujmy"
-msgstr "Zaczynamy Budować"
 
 msgid "Let's build something"
 msgstr "Zbudujmy coś"
@@ -8597,7 +8586,6 @@ msgstr "Połącz problem Linear"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "Połącz tego klienta Carbon z jednym z nich, lub utwórz osobnego klienta Stripe."
-msgstr "Połącz tego klienta Carbon z jednym z nich lub utwórz oddzielnego klienta Stripe."
 
 msgid "Link to sales order line"
 msgstr "Łącze do pozycji zamówienia sprzedaży"
@@ -12671,7 +12659,6 @@ msgstr "Odwróć wszystkie wpisy rejestru pozycji z tej faktury"
 
 msgid "Reverse charge"
 msgstr "Odwrotne obciążenie"
-msgstr "Odwrócenie opodatkowania"
 
 msgid "Reverse Charge Sales Tax"
 msgstr "Odwrotne obciążenie podatkiem od sprzedaży"
@@ -13490,7 +13477,6 @@ msgstr "Samodzielnie zarządzane"
 
 msgid "Self-hosted or managed"
 msgstr "Samodzielnie hostowana lub zarządzana"
-msgstr "Samodzielnie hostowany lub zarządzany"
 
 msgid "Self-onboarding"
 msgstr "Samodzielne wdrażanie"
@@ -14344,7 +14330,6 @@ msgstr "Stripe wysyła fakturę do klienta, dlatego wymagany jest adres. Zostani
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe nie ma jeszcze klienta dla tego klienta Carbon. Księgowanie utworzy go na twoim podłączonym koncie."
-msgstr "Data płatności Stripe"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 msgstr "Stripe wysyła fakturę do klienta pocztą e-mail, więc wymagany jest adres. Zostanie również zapisany w kontakcie w Carbon."
@@ -14814,7 +14799,6 @@ msgstr "Zespół przeszkolony"
 
 msgid "Technical support"
 msgstr "Pomoc techniczna"
-msgstr "Wsparcie techniczne"
 
 msgid "Temperature"
 msgstr "Temperatura"
@@ -15661,7 +15645,6 @@ msgstr "Ta faktura nie ma użytecznego terminu — wybierz jeden dla Stripe."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Ta faktura będzie wystawiona klientowi Stripe już powiązanemu z tym klientem Carbon. Aby zmienić jego szczegóły, edytuj go na pulpicie Stripe."
-msgstr "Ta faktura nie ma użytecznej daty płatności — wybierz jedną dla Stripe."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Ta faktura będzie naliczona klientowi Stripe już połączonemu z tym klientem Carbon. Aby zmienić jego szczegóły, edytuj go w pulpicie Stripe."
@@ -15805,7 +15788,6 @@ msgstr "Ta wersja jest opublikowana"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "Ta wersja jest opublikowana. Utwórz nową wersję, aby edytować."
-msgstr "Ta wersja jest opublikowana. Utwórz nową wersję do edycji."
 
 msgid "This version's definition could not be read."
 msgstr "Definicję tej wersji nie można było odczytać."
@@ -17646,7 +17628,6 @@ msgstr "Jesteś na żywo w Carbon"
 
 msgid "You're one step away from your workspace."
 msgstr "Jesteś o jeden krok od swojego obszaru roboczego."
-msgstr "Jesteś jednym krokiem od swojego obszaru roboczego."
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "Samodzielnie konfigurujesz Carbon w swoim tempie"

@@ -170,7 +170,6 @@ msgstr "{from}–{to} / {count} 件の工程"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} 件さらに表示: {hiddenNames}"
-msgstr "{hiddenCount}その他: {hiddenNames}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -305,7 +304,6 @@ msgstr "4時間"
 
 msgid "5 user minimum"
 msgstr "最低 5 ユーザー"
-msgstr "ユーザー最小5名"
 
 msgid "5-8 weeks"
 msgstr "5～8週間"
@@ -479,7 +477,6 @@ msgstr "Carbonのマネージド クラウド ホスト版"
 
 msgid "A managed version with all the advanced features"
 msgstr "すべての高度な機能を備えたマネージド版"
-msgstr "管理されたクラウドホスト版Carbon"
 
 msgid "A managed version with all the advanced features"
 msgstr "すべての高度な機能を備えた管理版"
@@ -507,7 +504,6 @@ msgstr "新しいサイズが現在のサイズのコピーを使用して作成
 
 msgid "A new Stripe customer will be created"
 msgstr "新しい Stripe 顧客が作成されます"
-msgstr "新しいStripeカスタマーが作成されます"
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "請求書を理由勘定に対して決済する非現金文書。貸方は支払額を減らし、借方は増やします。"
@@ -1617,7 +1613,6 @@ msgstr "Carbonデータへのプログラマティックアクセス用のAPIキ
 
 msgid "API, webhooks, and integrations"
 msgstr "API、Webhook、および連携"
-msgstr "API、ウェブフック、および統合"
 
 msgid "Applied"
 msgstr "適用"
@@ -2626,7 +2621,6 @@ msgstr "ライブラリを参照"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "公開済バージョンを読み取り専用で閲覧できます。レイアウトを整理するためにステップを並び替えることもできます。"
-msgstr "公開されたバージョンを読み取り専用で参照できます。レイアウトをきれいにするためにステップを再配置することもできます。"
 
 msgid "Bucket"
 msgstr "バケット"
@@ -2834,7 +2828,6 @@ msgstr "RFQを送信できません"
 
 msgid "Cannot send through Stripe"
 msgstr "Stripeを通じて送信できません"
-msgstr "Stripeを経由して送信できません"
 
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "アップロードできません — 仕入先インタラクションがまだ作成されていません"
@@ -3043,7 +3036,6 @@ msgstr "メールを確認してください"
 
 msgid "Checking Stripe for this customer…"
 msgstr "この得意先の Stripe を確認中…"
-msgstr "このカスタマーのStripeを確認中…"
 
 msgid "Checkpoint ·"
 msgstr "チェックポイント ·"
@@ -3954,7 +3946,6 @@ msgstr "受注を満たすために新しい生産製造指図を作成"
 
 msgid "Create a new Stripe customer instead"
 msgstr "代わりに新しいStripe得意先を作成"
-msgstr "代わりに新しいStripeカスタマーを作成する"
 
 msgid "Create a new version"
 msgstr "新しいバージョンを作成"
@@ -4426,7 +4417,6 @@ msgstr "得意先"
 
 msgid "Customizations, training, and integrations"
 msgstr "カスタマイズ、教育訓練、連携"
-msgstr "カスタマイズ、トレーニング、および統合"
 
 msgid "Customize"
 msgstr "カスタマイズ"
@@ -6273,7 +6263,6 @@ msgstr "既存のマッピング。異なるプロバイダーオプションを
 
 msgid "Existing Stripe customer"
 msgstr "既存のStripe顧客"
-msgstr "既存のStripeカスタマー"
 
 msgid "Expand"
 msgstr "展開"
@@ -6995,7 +6984,6 @@ msgstr "フォーマット"
 
 msgid "Forward deployed engineer"
 msgstr "現地配置エンジニア"
-msgstr "フィールドデプロイエンジニア"
 
 msgid "Foundation"
 msgstr "基礎"
@@ -7052,7 +7040,6 @@ msgstr "氏名"
 
 msgid "Full setup and migrations"
 msgstr "完全なセットアップとマイグレーション"
-msgstr "完全なセットアップと移行"
 
 msgid "Fully Depreciated"
 msgstr "完全償却済み"
@@ -8150,7 +8137,6 @@ msgstr "問題"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "バージョンを再度公開するまで実行は停止します。削除されるものはありません。"
-msgstr "バージョンを再度公開するまで実行が停止します。何も削除されません。"
 
 msgid "ITAR Certifications"
 msgstr "ITAR認定"
@@ -8603,7 +8589,6 @@ msgstr "Linear イシューをリンク"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "このCarbonの得意先をいずれかにリンクするか、別のStripe顧客を作成してください。"
-msgstr "このCarbonカスタマーをそのいずれかにリンクするか、別のStripeカスタマーを作成してください。"
 
 msgid "Link to sales order line"
 msgstr "受注明細へのリンク"
@@ -11654,7 +11639,6 @@ msgstr "Carbonによって公開済"
 
 msgid "Published Version"
 msgstr "公開済バージョン"
-msgstr "公開されたバージョン"
 
 msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
 msgstr "公開済みバージョンは編集できません。読み取り専用で参照するか、新しいバージョンをブランチして変更してください。"
@@ -12678,7 +12662,6 @@ msgstr "この請求書の品目台帳の仕訳をすべて反対仕訳する"
 
 msgid "Reverse charge"
 msgstr "逆請求"
-msgstr "リバースチャージ"
 
 msgid "Reverse Charge Sales Tax"
 msgstr "リバースチャージ売上税"
@@ -13497,7 +13480,6 @@ msgstr "自己管理"
 
 msgid "Self-hosted or managed"
 msgstr "セルフホストまたはマネージド"
-msgstr "セルフホスト型または管理型"
 
 msgid "Self-onboarding"
 msgstr "セルフオンボーディング"
@@ -14351,7 +14333,6 @@ msgstr "Stripeは得意先に請求書をメール送信するため、住所が
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "StripeにはこのCarbon得意先に対応する顧客がまだありません。転記すると、接続済みアカウント上に作成されます。"
-msgstr "Stripeにはこのメールアドレスを持つカスタマーが既に存在します"
 
 msgid "Stripe Due Date"
 msgstr "Stripe支払期日"
@@ -14776,7 +14757,6 @@ msgstr "税務減価償却方法"
 
 msgid "Tax exempt"
 msgstr "非課税"
-msgstr "税金免除"
 
 msgid "Tax Exempt"
 msgstr "非課税"
@@ -15640,7 +15620,6 @@ msgstr "これはDiscoveryステップを完了します。"
 
 msgid "This contact has no email address"
 msgstr "この担当者はメールアドレスを持っていません"
-msgstr "この連絡先にはメールアドレスがありません"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "この取引先には未払い金がありません。支払いは掛け金として記録されます。"
@@ -15672,7 +15651,6 @@ msgstr "この請求書には使用可能な期日がありません。Stripeの
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "この請求書は、すでにこのCarbon得意先にリンクされているStripe顧客に請求されます。詳細を変更するには、Stripeダッシュボードで編集してください。"
-msgstr "この請求書には使用可能な支払期日がありません — Stripeのために1つ選択してください。"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "この請求書は、すでにこのCarbon得意先にリンクされているStripe顧客に請求されます。詳細を変更するには、Stripeダッシュボードで編集してください。"
@@ -15816,7 +15794,6 @@ msgstr "このバージョンは公開済です"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "このバージョンは公開済です。編集するには新しいバージョンを作成してください。"
-msgstr "このバージョンは公開されています"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "このバージョンは公開済です。編集するには新しいバージョンを作成してください。"
@@ -16414,7 +16391,6 @@ msgstr "非公開にする"
 
 msgid "Unpublish {name}?"
 msgstr "{name}を非公開にしますか？"
-msgstr "公開を取り消す"
 
 msgid "Unpublish {name}?"
 msgstr "{name}の公開を取り消しますか?"
@@ -16779,7 +16755,6 @@ msgstr "バージョン"
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
 msgstr "バージョン {0} は現在公開済であり、置き換えられます。"
-msgstr "バージョン{0}は現在公開されており、置き換えられます。"
 
 msgid "Version:"
 msgstr "バージョン:"
@@ -17665,7 +17640,6 @@ msgstr "Carbonで本番稼働中です"
 
 msgid "You're one step away from your workspace."
 msgstr "ワークスペースの1ステップ手前です。"
-msgstr "ワークスペースまであと1ステップです。"
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "あなた自身のペースでCarbonをセットアップしています"

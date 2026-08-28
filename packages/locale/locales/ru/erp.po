@@ -170,7 +170,6 @@ msgstr "{from}–{to} из {count} операций"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "{hiddenCount} еще: {hiddenNames}"
-msgstr "{hiddenCount} ещё: {hiddenNames}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -362,7 +361,6 @@ msgstr "Подрядчик — контактное лицо поставщик�
 
 msgid "A custom solution to meet your needs"
 msgstr "Пользовательское решение для удовлетворения ваших потребностей."
-msgstr "Пользовательское решение в соответствии с вашими потребностями"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Клиент — это компания или физическое лицо, которое покупает ваши детали или услуги."
@@ -479,7 +477,6 @@ msgstr "Управляемая облачная версия Carbon"
 
 msgid "A managed version with all the advanced features"
 msgstr "Управляемая версия со всеми расширенными возможностями"
-msgstr "Управляемая версия со всеми дополнительными функциями"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Материал — это физический элемент, применяемый при изготовлении деталей и используемый в нескольких производственных заказах"
@@ -504,7 +501,6 @@ msgstr "Новый размер будет создан с использова�
 
 msgid "A new Stripe customer will be created"
 msgstr "Будет создана новая учетная запись покупателя Stripe"
-msgstr "Будет создан новый клиент Stripe"
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "Неденежный документ, погашающий счёт-фактуру по счёту причин: кредит уменьшает сумму задолженности, дебет её увеличивает."
@@ -2313,7 +2309,6 @@ msgstr "Журнал аудита"
 
 msgid "Audit logging"
 msgstr "Журнал аудита"
-msgstr "Логирование аудита"
 
 msgid "Audit Logging"
 msgstr "Аудит логирования"
@@ -2386,7 +2381,6 @@ msgstr "Автоматические обновления"
 
 msgid "Automatic updates and backups"
 msgstr "Автоматическое обновление и резервное копирование"
-msgstr "Автоматические обновления и резервные копии"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "Автоматическое пропорциональное потребление материалов задания, не отслеживаемых при отчетности о выходе — отслеживаемые материалы выпускаются вручную."
@@ -2627,7 +2621,6 @@ msgstr "Обзор библиотеки"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Просмотрите опубликованную версию в режиме только для чтения. Вы все еще можете переставлять шаги для очистки макета."
-msgstr "Просмотрите опубликованную версию в режиме только для чтения. Вы все равно можете переупорядочить шаги для чистоты макета."
 
 msgid "Bucket"
 msgstr "Хранилище"
@@ -3043,7 +3036,6 @@ msgstr "Проверьте вашу почту"
 
 msgid "Checking Stripe for this customer…"
 msgstr "Проверка Stripe для этого покупателя…"
-msgstr "Проверка Stripe для этого клиента…"
 
 msgid "Checkpoint ·"
 msgstr "Контрольная точка ·"
@@ -3185,7 +3177,6 @@ msgstr "Облако или ваша собственная размещённа
 
 msgid "CMMC compliant"
 msgstr "Соответствует CMMC"
-msgstr "Соответствие CMMC"
 
 msgid "Code"
 msgstr "Код"
@@ -3955,7 +3946,6 @@ msgstr "Создать новый производственный заказ д
 
 msgid "Create a new Stripe customer instead"
 msgstr "Вместо этого создать нового покупателя Stripe"
-msgstr "Создайте нового клиента Stripe вместо этого"
 
 msgid "Create a new version"
 msgstr "Создать новую версию"
@@ -6273,7 +6263,6 @@ msgstr "Существующие отображения. Выберите дру
 
 msgid "Existing Stripe customer"
 msgstr "Существующий покупатель Stripe"
-msgstr "Существующий клиент Stripe"
 
 msgid "Expand"
 msgstr "Развернуть"
@@ -6995,7 +6984,6 @@ msgstr "Формат"
 
 msgid "Forward deployed engineer"
 msgstr "Инженер на месте"
-msgstr "Развернутый инженер"
 
 msgid "Foundation"
 msgstr "Основа"
@@ -7052,7 +7040,6 @@ msgstr "Полное имя"
 
 msgid "Full setup and migrations"
 msgstr "Полная наладка и миграции"
-msgstr "Полная настройка и миграции"
 
 msgid "Fully Depreciated"
 msgstr "Полностью амортизирован"
@@ -8150,7 +8137,6 @@ msgstr "Проблемы"
 
 msgid "It will stop running until you publish a version again. Nothing is deleted."
 msgstr "Он перестанет работать, пока вы не опубликуете версию снова. Ничего не удаляется."
-msgstr "Он будет остановлен до тех пор, пока вы снова не опубликуете версию. Ничего не удаляется."
 
 msgid "ITAR Certifications"
 msgstr "Сертификации ITAR"
@@ -8522,7 +8508,6 @@ msgstr "Меньше ручной работы, меньше ошибок"
 
 msgid "Let's Build"
 msgstr "Начнём производство"
-msgstr "Давайте начнём"
 
 msgid "Let's build something"
 msgstr "Давайте создадим что-то"
@@ -8604,7 +8589,6 @@ msgstr "Связать проблему Linear"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "Свяжите этого покупателя Carbon с одним из них или создайте отдельного покупателя Stripe."
-msgstr "Свяжите этого клиента Carbon с одним из них или создайте отдельного клиента Stripe."
 
 msgid "Link to sales order line"
 msgstr "Ссылка на строку заказа покупателя"
@@ -13499,7 +13483,6 @@ msgstr "Локальная установка или облачная"
 
 msgid "Self-onboarding"
 msgstr "Самостоятельное внедрение"
-msgstr "Размещается самостоятельно или управляется"
 
 msgid "Self-onboarding"
 msgstr "Самостоятельное подключение"
@@ -14353,7 +14336,6 @@ msgstr "Stripe отправляет счет-фактуру клиенту по 
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe еще не имеет покупателя для этого покупателя Carbon. Проведение создаст его на вашем подключенном счете."
-msgstr "В Stripe уже есть клиент с этой электронной почтой"
 
 msgid "Stripe Due Date"
 msgstr "Срок выполнения Stripe"
@@ -15641,7 +15623,6 @@ msgstr "Этим завершается этап обнаружения."
 
 msgid "This contact has no email address"
 msgstr "Это контактное лицо не имеет адреса электронной почты"
-msgstr "Этот контакт не имеет адреса электронной почты"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Эта контрагент не имеет задолженности — платеж будет записан на счет."
@@ -15673,7 +15654,6 @@ msgstr "Этот счет-фактура не имеет используемо�
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Этот счет-фактура будет выставлен покупателю Stripe, уже связанному с этим покупателем Carbon. Чтобы изменить его данные, отредактируйте его в панели Stripe."
-msgstr "Этот счет не имеет пригодного срока платежа — выберите один для Stripe."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Этот счет-фактура будет выставлен покупателю Stripe, уже связанному с этим покупателем Carbon. Чтобы изменить его данные, отредактируйте его в панели Stripe."
@@ -16772,7 +16752,6 @@ msgstr "Версия"
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
 msgstr "Версия {0} опубликована сейчас и будет заменена."
-msgstr "Версия {0} опубликована и будет заменена."
 
 msgid "Version:"
 msgstr "Версия:"
@@ -17658,7 +17637,6 @@ msgstr "Вы работаете на Carbon"
 
 msgid "You're one step away from your workspace."
 msgstr "Вы на один шаг от вашего рабочего пространства."
-msgstr "Вы в одном шаге от вашего рабочего пространства."
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "Вы самостоятельно настраиваете Carbon в удобном для вас темпе"
