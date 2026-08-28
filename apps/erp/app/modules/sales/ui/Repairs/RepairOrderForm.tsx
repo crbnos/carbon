@@ -5,8 +5,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-  HStack,
-  VStack
+  HStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { z } from "zod";
@@ -54,7 +53,11 @@ const RepairOrderForm = ({ initialValues }: RepairOrderFormProps) => {
       <Card>
         <CardHeader>
           <CardTitle>
-            {isEditing ? <Trans>Repair Order</Trans> : <Trans>New Repair Order</Trans>}
+            {isEditing ? (
+              <Trans>Repair Order</Trans>
+            ) : (
+              <Trans>New Repair Order</Trans>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -71,19 +74,13 @@ const RepairOrderForm = ({ initialValues }: RepairOrderFormProps) => {
               label={t`Customer Contact`}
               customer={initialValues.customerId}
             />
-            <Input
-              name="customerReference"
-              label={t`Customer Reference`}
-            />
+            <Input name="customerReference" label={t`Customer Reference`} />
             <Location name="locationId" label={t`Shop Location`} />
             <DatePicker name="orderDate" label={t`Opened`} />
             <DatePicker name="promisedDate" label={t`Promised`} />
             {/* The OEM that repairs the unit, when it does not stay in-house. */}
             <Supplier name="supplierId" label={t`Repair Supplier`} />
-            <Input
-              name="supplierReference"
-              label={t`Supplier RMA Number`}
-            />
+            <Input name="supplierReference" label={t`Supplier RMA Number`} />
             <CustomFormFields table="repairOrder" />
           </div>
         </CardContent>

@@ -43,16 +43,14 @@ const coverageStatus = (value: string | null) => {
 const WarrantyRegistrationsTable = memo(
   ({ data, count }: WarrantyRegistrationsTableProps) => {
     const { t } = useLingui();
-  
+
     const columns = useMemo<ColumnDef<WarrantyRegistration>[]>(
       () => [
         {
           accessorKey: "warrantyRegistrationId",
           header: t`Registration`,
           cell: ({ row }) => (
-            <Hyperlink
-              to={path.to.warrantyRegistration(row.original.id ?? "")}
-            >
+            <Hyperlink to={path.to.warrantyRegistration(row.original.id ?? "")}>
               {row.original.warrantyRegistrationId}
             </Hyperlink>
           ),
@@ -86,7 +84,8 @@ const WarrantyRegistrationsTable = memo(
         {
           accessorKey: "startDate",
           header: t`Start`,
-          cell: ({ row }) => row.original.startDate ? formatDate(row.original.startDate) : "—",
+          cell: ({ row }) =>
+            row.original.startDate ? formatDate(row.original.startDate) : "—",
           meta: { icon: <LuCalendarClock /> }
         },
         {

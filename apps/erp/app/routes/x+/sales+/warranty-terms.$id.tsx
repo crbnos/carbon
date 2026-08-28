@@ -6,8 +6,8 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData, useNavigate } from "react-router";
 import {
   getWarrantyTerm,
-  warrantyTermValidator,
-  upsertWarrantyTerm
+  upsertWarrantyTerm,
+  warrantyTermValidator
 } from "~/modules/sales";
 import WarrantyTermForm from "~/modules/sales/ui/WarrantyTerms/WarrantyTermForm";
 

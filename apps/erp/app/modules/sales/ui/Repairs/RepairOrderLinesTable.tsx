@@ -10,8 +10,7 @@ import {
   Td,
   Th,
   Thead,
-  Tr,
-  useDisclosure
+  Tr
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuCheck, LuTrash2 } from "react-icons/lu";
@@ -153,9 +152,7 @@ const RepairOrderLinesTable = ({
                             onChange={(event) => {
                               if (!event.target.value) return;
                               post(
-                                path.to.repairOrderApplyWarranty(
-                                  repairOrderId
-                                ),
+                                path.to.repairOrderApplyWarranty(repairOrderId),
                                 {
                                   lineId: line.id,
                                   warrantyTermId: event.target.value

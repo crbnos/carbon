@@ -1,10 +1,10 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getDatabaseClient } from "~/services/database.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { createRepairPurchaseOrder } from "~/modules/purchasing";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -35,7 +35,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (result.error || !result.data) {
     throw redirect(
       path.to.repairOrderDetails(id),
-      await flash(request, error(result.error, "Failed to create the repair PO"))
+      await flash(
+        request,
+        error(result.error, "Failed to create the repair PO")
+      )
     );
   }
 

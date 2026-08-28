@@ -117,9 +117,8 @@ export async function action({ request }: ActionFunctionArgs) {
     case "Repair Order": {
       // "intake" takes the customer's unit in; "return" takes it back from the
       // OEM. One open draft at a time, same as the RMA path.
-      const repairLeg = (formData.get("leg") as string) === "return"
-        ? "return"
-        : "intake";
+      const repairLeg =
+        (formData.get("leg") as string) === "return" ? "return" : "intake";
 
       // A draft carries no leg of its own, so reuse has to be proved from what
       // it actually holds: the custody state of the repair lines behind its
@@ -152,7 +151,8 @@ export async function action({ request }: ActionFunctionArgs) {
           .map((line: { lineId: string | null }) => line.lineId)
           .filter(Boolean) as string[];
 
-        const eligibleStatus = repairLeg === "intake" ? "Pending" : "At Supplier";
+        const eligibleStatus =
+          repairLeg === "intake" ? "Pending" : "At Supplier";
         const draftRepairLines =
           draftLineIds.length > 0
             ? await client

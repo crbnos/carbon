@@ -5,8 +5,8 @@ import {
   LuList,
   LuPercent,
   LuShapes,
-  LuSquareUser,
   LuShieldCheck,
+  LuSquareUser,
   LuStar,
   LuUndo2,
   LuWrench

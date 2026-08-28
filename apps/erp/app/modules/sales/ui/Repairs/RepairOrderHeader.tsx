@@ -3,8 +3,8 @@ import {
   Card,
   CardAttribute,
   CardAttributeLabel,
-  CardAttributeValue,
   CardAttributes,
+  CardAttributeValue,
   CardContent,
   CardHeader,
   CardTitle,
@@ -170,9 +170,7 @@ const RepairOrderHeader = ({ repairOrder, lines }: RepairOrderHeaderProps) => {
                     variant="secondary"
                     leftIcon={<LuCirclePlus />}
                     isDisabled={!permissions.can("create", "purchasing")}
-                    onClick={() =>
-                      post(path.to.repairOrderPurchaseOrder(id))
-                    }
+                    onClick={() => post(path.to.repairOrderPurchaseOrder(id))}
                   >
                     <Trans>Create Repair PO</Trans>
                   </Button>

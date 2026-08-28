@@ -688,8 +688,7 @@ const PartProperties = ({
 
       <ValidatedForm
         defaultValues={{
-          warrantyTermId:
-            routeData?.partSummary?.warrantyTermId ?? undefined
+          warrantyTermId: routeData?.partSummary?.warrantyTermId ?? undefined
         }}
         validator={z.object({
           warrantyTermId: z.string().optional()

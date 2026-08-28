@@ -82,9 +82,10 @@ export async function action({ request }: ActionFunctionArgs) {
       // The leg says which way the unit is going: to the OEM, or home to the
       // customer. One open draft per leg, so clicking twice reuses the draft
       // instead of stacking duplicates.
-      const leg = (formData.get("leg") as string) === "supplier"
-        ? "supplier"
-        : "customer";
+      const leg =
+        (formData.get("leg") as string) === "supplier"
+          ? "supplier"
+          : "customer";
 
       // The create function stamps supplierId on the supplier leg and
       // customerId on the customer leg, so the party column IS the leg
@@ -121,9 +122,7 @@ export async function action({ request }: ActionFunctionArgs) {
         );
       }
       if (existingRepairShipment.data) {
-        throw redirect(
-          path.to.shipmentDetails(existingRepairShipment.data.id)
-        );
+        throw redirect(path.to.shipmentDetails(existingRepairShipment.data.id));
       }
 
       const repairShipment = await serviceRole.functions.invoke<{

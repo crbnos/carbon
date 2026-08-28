@@ -1,6 +1,6 @@
 import { assertIsPost, error, success } from "@carbon/auth";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -36,7 +36,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
         request,
         error(
           issued.error,
-          await getEdgeFunctionErrorMessage(issued.error, "Failed to issue part")
+          await getEdgeFunctionErrorMessage(
+            issued.error,
+            "Failed to issue part"
+          )
         )
       )
     );

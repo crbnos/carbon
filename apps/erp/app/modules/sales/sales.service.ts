@@ -5,8 +5,8 @@ import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { PickPartial } from "@carbon/utils";
-import { parseDate } from "@internationalized/date";
 import { datetime, EPSILON, round } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import type {
   PostgrestError,
   PostgrestSingleResponse,
@@ -52,6 +52,10 @@ import type {
   quoteShipmentValidator,
   quoteStatusType,
   quoteValidator,
+  repairOrderChargeValidator,
+  repairOrderLineValidator,
+  repairOrderStatusType,
+  repairOrderValidator,
   returnReasonValidator,
   salesOrderLineValidator,
   salesOrderPaymentValidator,
@@ -61,16 +65,12 @@ import type {
   salesReturnOrderLineValidator,
   salesReturnOrderStatusType,
   salesReturnOrderValidator,
-  repairOrderStatusType,
-  warrantyTermValidator,
-  warrantyRegistrationValidator,
-  repairOrderValidator,
-  repairOrderLineValidator,
-  repairOrderChargeValidator,
   salesRFQStatusType,
   salesRfqLineValidator,
   salesRfqValidator,
-  selectedLinesValidator
+  selectedLinesValidator,
+  warrantyRegistrationValidator,
+  warrantyTermValidator
 } from "./sales.models";
 import { costCategoryKeys, OPEN_SALES_ORDER_STATUSES } from "./sales.models";
 import { decideRecalcPricing, getEffectiveDefaultMarkups } from "./sales.utils";
@@ -7709,7 +7709,9 @@ export async function getWarrantyTermsList(
 ) {
   return client
     .from("warrantyTerm")
-    .select("id, name, coversParts, partsDurationMonths, coversLabor, laborDurationMonths, startBasis")
+    .select(
+      "id, name, coversParts, partsDurationMonths, coversLabor, laborDurationMonths, startBasis"
+    )
     .eq("companyId", companyId)
     .order("name");
 }
@@ -7993,7 +7995,6 @@ export async function getWarrantyCoverage(
     error: null
   };
 }
-
 
 /**
  * Warranty expirations are month arithmetic on a DATE: `@internationalized/date`
@@ -8288,7 +8289,11 @@ export async function upsertRepairOrderLine(
 
     if (input.id && !existing) throw new Error("Repair line not found");
     // Custody past Pending means a physical leg posted against this line.
-    if (existing && existing.status !== "Pending" && existing.status !== "Received") {
+    if (
+      existing &&
+      existing.status !== "Pending" &&
+      existing.status !== "Received"
+    ) {
       throw new Error(
         `Cannot edit a line that is ${existing.status}; reverse the posting first`
       );
@@ -8499,7 +8504,10 @@ export async function upsertRepairOrderCharge(
       .eq("companyId", charge.companyId)
       .single();
     if (existing.error) return existing;
-    if (existing.data.issuedAt && existing.data.billingCode !== charge.billingCode) {
+    if (
+      existing.data.issuedAt &&
+      existing.data.billingCode !== charge.billingCode
+    ) {
       return {
         data: null,
         error: {
@@ -8516,11 +8524,7 @@ export async function upsertRepairOrderCharge(
       .select("id")
       .single();
   }
-  return client
-    .from("repairOrderCharge")
-    .insert(charge)
-    .select("id")
-    .single();
+  return client.from("repairOrderCharge").insert(charge).select("id").single();
 }
 
 export async function confirmRepairOrder(
@@ -8538,7 +8542,9 @@ export async function confirmRepairOrder(
       .executeTakeFirst();
     if (!order) throw new Error("Repair order not found");
     if (order.status !== "Draft") {
-      throw new Error(`Cannot confirm a repair order in ${order.status} status`);
+      throw new Error(
+        `Cannot confirm a repair order in ${order.status} status`
+      );
     }
 
     const lines = await trx

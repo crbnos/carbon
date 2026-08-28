@@ -86,9 +86,9 @@ import Timezone from "./Timezone";
 import Tool from "./Tool";
 import UnitHint from "./UnitHint";
 import UnitOfMeasure from "./UnitOfMeasure";
-import WarrantyTerm from "./WarrantyTerm";
 import User from "./User";
 import Users from "./Users";
+import WarrantyTerm from "./WarrantyTerm";
 import WorkCenter from "./WorkCenter";
 import WorkCenters from "./WorkCenters";
 

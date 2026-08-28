@@ -4,7 +4,7 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useNavigate } from "react-router";
-import { warrantyTermValidator, upsertWarrantyTerm } from "~/modules/sales";
+import { upsertWarrantyTerm, warrantyTermValidator } from "~/modules/sales";
 import WarrantyTermForm from "~/modules/sales/ui/WarrantyTerms/WarrantyTermForm";
 
 import { setCustomFields } from "~/utils/form";

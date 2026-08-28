@@ -1104,12 +1104,14 @@ export const salesReturnOrderCreditValidator = z.object({
     )
 });
 
-
 // ============================================================
 // Warranty & Repairs — spec .ai/specs/2026-08-27-warranty-repairs.md
 // ============================================================
 
-export const warrantyTermStartBasisType = ["Ship Date", "Invoice Date"] as const;
+export const warrantyTermStartBasisType = [
+  "Ship Date",
+  "Invoice Date"
+] as const;
 
 export const repairOrderStatusType = [
   "Draft",

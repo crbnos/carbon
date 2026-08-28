@@ -39,7 +39,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (insertCharge.error) {
     throw redirect(
       path.to.repairOrderDetails(id),
-      await flash(request, error(insertCharge.error, "Failed to add the charge"))
+      await flash(
+        request,
+        error(insertCharge.error, "Failed to add the charge")
+      )
     );
   }
 
