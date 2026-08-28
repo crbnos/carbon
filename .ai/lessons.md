@@ -1198,3 +1198,30 @@ canvas hosting Radix popovers/selects.
 **Rule:** Treat `as { someField?: T }` on a row/DTO type as a smell, not a convenience — it is indistinguishable from a field that does not exist. When a UI needs a column its loader does not return, widen the RPC/view and regenerate types so the compiler enforces the contract. More generally: a field written to the DB but rendered nowhere has no feedback loop — `jobMaterial.itemScrapPercentage` was wrong in three code paths for the same reason.
 
 **Applies to:** `apps/erp/app/**` table cells reading loader rows; any `as { x?: T }` over a generated DB/RPC type.
+
+## Applying a migration by hand leaves the Supabase ledger inconsistent — repair it with the CLI, never a raw INSERT
+
+**Context:** `pnpm db:migrate` was unavailable (blocked in the session), so a new
+migration was applied straight to the local database with
+`docker exec … psql -f` and its version hand-inserted into
+`supabase_migrations.schema_migrations`.
+
+**Problem:** The hand-written ledger rows did not survive. A later `crbn up`
+ran `supabase migration up --include-all`, found those versions absent, and
+replayed migrations whose effects were already present — failing on
+`column "unitCostSource" of relation "quoteMaterial" already exists` and
+aborting the whole dev-stack startup. A raw INSERT also writes an empty
+`statements` array, so the ledger row is not equivalent to one the CLI wrote.
+
+**Rule:** Apply migrations with `pnpm db:migrate`. If that is genuinely
+unavailable, apply the SQL directly **and then** reconcile with the CLI —
+`supabase migration repair --status applied <version…> --db-url <url>` — never
+by inserting into `supabase_migrations.schema_migrations` yourself. Before
+repairing, probe the database for each migration's actual artifact (the column,
+constraint, table or function it creates) and only mark applied the ones whose
+effects are really present; let the CLI apply the rest. Note the artifact is
+often a CONSTRAINT rather than a function — `pg_constraint.convalidated` and
+`confdeltype` are what prove a `NOT VALID` / `VALIDATE CONSTRAINT` pair ran.
+
+**Applies to:** any local-database work in `packages/database/supabase/migrations`,
+and any session where `pnpm db:migrate` is blocked or skipped.
