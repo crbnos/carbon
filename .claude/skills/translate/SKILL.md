@@ -19,6 +19,15 @@ Scope: all target locales at once (supportedLanguages minus source `en`; orphane
 `nl` is excluded automatically). Never overwrites an existing translation — only
 empty `msgstr` are touched.
 
+**One exception, and it overrides the scope above.** Repairing a locale whose
+existing translations disagree with the glossary is a DIFFERENT job: it is
+one locale per run, it skips `lingui:extract`, and repo-wide `linguito check` is
+not a gate for it. That procedure is
+`.ai/plans/2026-08-27-translation-consistency-runbook.md`, and it is
+authoritative wherever it contradicts this file. Follow it end to end rather
+than mixing the two — it calls back into this skill for the refill step only
+(its Phase 3), after `reset-violations.mjs` has emptied the wrong entries.
+
 ## What this product is (the domain context every subagent gets)
 
 Carbon is a manufacturing **ERP/MES/QMS** — it runs a machine shop end to end:
@@ -258,7 +267,7 @@ confirms the approved rendering is present. Exit 0 = clean, 1 = violations.
 |--------|--------|
 | `No approved translations yet` | The glossary has no filled column for these locales, so there is nothing to check against. Report that plainly — do NOT report the run as "consistent". |
 | Exit 0 with approved terms | Verified consistent → Step 8. |
-| Violations listed | These are strings the subagent translated against the approved word. Re-run the offending locale with a smaller chunk (`TRANSLATE_CHUNK_SIZE=15`), or report them for review. Advisory hits on `ambiguity` terms are judgement calls — read before acting. |
+| Violations listed | Report them for review — do NOT just re-run this skill. A violation has a NON-EMPTY `msgstr`, and every step above only fills empty ones, so a retry cannot touch it. Clearing it first is what makes it re-translatable: `node .claude/skills/translate/scripts/reset-violations.mjs --locale <locale> --dry-run`, then without `--dry-run`, then re-run this skill. That is a terminology repair, not a fill — follow `.ai/plans/2026-08-27-translation-consistency-runbook.md`. Advisory hits on `ambiguity` terms are judgement calls — read before acting. |
 
 Use `--locale zh --max 40` to focus, `--json` for the full machine-readable list.
 
