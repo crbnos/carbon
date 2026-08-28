@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-27T20:24:40.535Z",
-  "totalTools": 1500,
+  "generated": "2026-08-28T06:11:56.096Z",
+  "totalTools": 1501,
   "modules": 15,
   "tools": [
     {
@@ -44435,6 +44435,33 @@
         },
         "required": [
           "useMetric"
+        ]
+      }
+    },
+    {
+      "name": "settings_updateAllowLowercaseItemIdsSetting",
+      "module": "settings",
+      "classification": "WRITE",
+      "description": "update allow lowercase item ids setting",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "allowLowercaseItemIds"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "allowLowercaseItemIds": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "allowLowercaseItemIds"
         ]
       }
     },

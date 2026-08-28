@@ -314,7 +314,7 @@ msgid "4h"
 msgstr "4h"
 
 msgid "5 user minimum"
-msgstr ""
+msgstr "Mindestens 5 Benutzer"
 
 msgid "5-8 weeks"
 msgstr "5-8 Wochen"
@@ -371,7 +371,7 @@ msgid "A contractor is a supplier contact with particular abilities and availabl
 msgstr "Ein Auftragnehmer ist ein Lieferantenkontakt mit besonderen Fähigkeiten und verfügbaren Stunden"
 
 msgid "A custom solution to meet your needs"
-msgstr ""
+msgstr "Eine maßgeschneiderte Lösung für Ihre Anforderungen"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Ein Kunde ist ein Unternehmen oder eine Person, die Ihre Teile oder Dienstleistungen kauft."
@@ -484,10 +484,10 @@ msgid "A Make to Order component whose parts are issued together into the parent
 msgstr "Eine Make-to-Order-Komponente, deren Teile zusammen in den übergeordneten Job ausgegeben werden — kein separater Build."
 
 msgid "A managed cloud-hosted version of Carbon"
-msgstr ""
+msgstr "Eine verwaltete Cloud-gehostete Version von Carbon"
 
 msgid "A managed version with all the advanced features"
-msgstr ""
+msgstr "Eine verwaltete Version mit allen erweiterten Funktionen"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Ein Material ist ein physischer Artikel, der zur Herstellung eines Teils verwendet wird und über mehrere Aufträge hinweg verwendet werden kann"
@@ -955,9 +955,6 @@ msgstr "Forderungen aus Lieferungen und Leistungen"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Forderungen aus Lieferungen und Leistungen für Beträge, die Kunden schulden."
 
-msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
-msgstr "Konten, auf die Buchungsstandardwerte oder Journalverlauf verweisen und die noch keine Provider-Zuordnung haben."
-
 msgid "Accumulated Depreciation"
 msgstr "Kumulierte Abschreibung"
 
@@ -1364,7 +1361,7 @@ msgid "All actions selected"
 msgstr "Alle Aktionen ausgewählt"
 
 msgid "All advanced features available"
-msgstr ""
+msgstr "Alle erweiterten Funktionen verfügbar"
 
 msgid "All Audit Logs"
 msgstr "Alle Audit-Protokolle"
@@ -1392,9 +1389,6 @@ msgstr "Alle Standorte"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Alle Mitglieder der ausgewählten Gruppen und ausgewählten Personen können Anfragen genehmigen"
-
-msgid "All posting accounts are mapped"
-msgstr "Alle Buchungskonten sind zugeordnet"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "Alle Zeilen importiert — {inserted} eingefügt, {updated} aktualisiert."
@@ -1639,7 +1633,7 @@ msgid "API keys for programmatic access to your Carbon data."
 msgstr "API-Schlüssel für programmgesteuerten Zugriff auf Ihre Carbon-Daten."
 
 msgid "API, webhooks, and integrations"
-msgstr ""
+msgstr "API, Webhooks und Integrationen"
 
 msgid "Applied"
 msgstr "Angewendet"
@@ -2360,7 +2354,7 @@ msgid "Audit Log"
 msgstr "Audit-Protokoll"
 
 msgid "Audit logging"
-msgstr ""
+msgstr "Audit-Protokollierung"
 
 msgid "Audit Logging"
 msgstr "Audit-Protokollierung"
@@ -2432,7 +2426,7 @@ msgid "Automatic Updates"
 msgstr "Automatische Aktualisierungen"
 
 msgid "Automatic updates and backups"
-msgstr ""
+msgstr "Automatische Updates und Sicherungen"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "Automatischer, anteiliger Verbrauch der ungespurten Materialien eines Auftrags, wenn die Leistung gemeldet wird — verfolgte Materialien werden manuell ausgegeben."
@@ -2532,7 +2526,7 @@ msgid "Base Price"
 msgstr "Basispreis"
 
 msgid "Basic ERP, MES, and QMS functionality"
-msgstr ""
+msgstr "Grundlegende ERP-, MES- und QMS-Funktionalität"
 
 msgid "Basic Information"
 msgstr "Grundinformationen"
@@ -2622,6 +2616,9 @@ msgstr "Blockiert"
 #. placeholder {0}: workCenter.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Blockiert durch {0}"
+
+msgid "Blocking sync"
+msgstr "Blockierendes Synchronisieren"
 
 msgid "Blocks save until resolved"
 msgstr "Blockiert Speichern bis behoben"
@@ -3239,7 +3236,7 @@ msgid "Cloud, or your self-hosted environment."
 msgstr "Cloud oder Ihre selbst gehostete Umgebung."
 
 msgid "CMMC compliant"
-msgstr ""
+msgstr "CMMC-konform"
 
 msgid "Code"
 msgstr "Code"
@@ -3302,7 +3299,7 @@ msgid "Committing a receipt, shipment, or invoice: quantities move, journal entr
 msgstr "Commit einer Quittung, eines Versands oder einer Rechnung: Mengen bewegen sich, Journal-Einträge treffen das Ledger, und der Status wird Posted."
 
 msgid "Community support"
-msgstr ""
+msgstr "Community-Support"
 
 msgid "Companies"
 msgstr "Unternehmen"
@@ -3605,7 +3602,7 @@ msgid "Contact (optional)"
 msgstr "Kontakt (optional)"
 
 msgid "Contact us"
-msgstr ""
+msgstr "Kontaktieren Sie uns"
 
 msgid "contacts"
 msgstr "Kontakte"
@@ -3648,6 +3645,9 @@ msgstr "Designänderungen mit Revisionen / ECOs steuern"
 
 msgid "Control how operators pick material and track time on the shop floor."
 msgstr "Kontrollieren Sie, wie Bediener Material auswählen und Zeit auf dem Shopfloor nachverfolgen."
+
+msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
+msgstr "Steuern Sie, ob Artikel-IDs (Teile, Materialien, Verbrauchsmaterialien, Werkzeuge und Dienstleistungen) Kleinbuchstaben enthalten dürfen."
 
 msgid "Controller, Accountant"
 msgstr "Controller, Buchhalter"
@@ -4516,7 +4516,7 @@ msgid "Customers"
 msgstr "Kunden"
 
 msgid "Customizations, training, and integrations"
-msgstr ""
+msgstr "Anpassungen, Schulungen und Integrationen"
 
 msgid "Customize"
 msgstr "Anpassen"
@@ -6062,6 +6062,9 @@ msgstr "Aktivieren Sie diese Regel, um automatisch eine Genehmigung für überei
 msgid "Enable timecard tracking for work shifts."
 msgstr "Zeiterfassung für Arbeitseinsätze aktivieren."
 
+msgid "Enable to allow lowercase characters in item IDs."
+msgstr "Aktivieren Sie, um Kleinbuchstaben in Artikel-IDs zuzulassen."
+
 msgid "Enable to allow shared workstation mode."
 msgstr "Aktivieren Sie diese Option, um den Modus für gemeinsame Arbeitsstationen zu ermöglichen."
 
@@ -6320,7 +6323,7 @@ msgid "Every match"
 msgstr "Jede Übereinstimmung"
 
 msgid "Every required action has already been added."
-msgstr ""
+msgstr "Jede erforderliche Aktion wurde bereits hinzugefügt."
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Jede erforderliche Aufgabe muss erledigt oder übersprungen werden, bevor der Zeitraum geschlossen werden kann."
@@ -6363,9 +6366,6 @@ msgstr "Ausnahmezertifikat"
 
 msgid "Exemption Reason"
 msgstr "Ausnahmegrunde"
-
-msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr "Existierende Zuordnungen. Wählen Sie ein anderes Provider-Konto zum Neuzuordnen."
 
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Vorhandene Zuordnungen. Wählen Sie eine andere Provider-Option zum Neu-Zuordnen."
@@ -7121,7 +7121,7 @@ msgid "Format"
 msgstr "Format"
 
 msgid "Forward deployed engineer"
-msgstr ""
+msgstr "Ingenieur vor Ort"
 
 msgid "Foundation"
 msgstr "Grundlagen"
@@ -7177,7 +7177,7 @@ msgid "Full name"
 msgstr "Vollständiger Name"
 
 msgid "Full setup and migrations"
-msgstr ""
+msgstr "Vollständige Einrichtung und Migrationen"
 
 msgid "Fully Depreciated"
 msgstr "Vollständig abgeschrieben"
@@ -8312,6 +8312,15 @@ msgstr "Artikelgruppen"
 msgid "Item ID"
 msgstr "Artikel-ID"
 
+msgid "Item IDs"
+msgstr "Artikel-IDs"
+
+msgid "Item IDs are forced to uppercase"
+msgstr "Artikel-IDs werden in Großbuchstaben erzwungen"
+
+msgid "Item IDs keep the casing you type."
+msgstr "Artikel-IDs behalten die Groß-/Kleinschreibung, die Sie eingeben."
+
 msgid "Item ledger"
 msgstr "Artikelbuch"
 
@@ -8905,6 +8914,9 @@ msgstr "Losbasierte Prüfung empfangener Waren gemäß einem Prüfplan; die Einh
 msgid "Low"
 msgstr "Niedrig"
 
+msgid "Lowercase item IDs are allowed"
+msgstr "Kleingeschriebene Artikel-IDs sind erlaubt"
+
 msgid "Machine"
 msgstr "Maschine"
 
@@ -9055,9 +9067,6 @@ msgstr "Herstellung"
 msgid "Map accounts"
 msgstr "Konten zuordnen"
 
-msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
-msgstr "Ordnen Sie Carbon-Konten dem Kontenrahmen des Providers zu. Gebuchte Journale werden mithilfe des zugeordneten Provider-Kontocodes gesendet."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Extrahierte Rechnungspositionen zuordnen"
 
@@ -9067,11 +9076,11 @@ msgstr "Extrahierte Zeilen zuordnen"
 msgid "Map Lines Now"
 msgstr "Zeilen jetzt zuordnen"
 
+msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+msgstr "Ordnen Sie Ihren Kontenplan den Konten des Anbieters zu. Posting-Standard- und Ausgabenkonten sind als erforderlich gekennzeichnet; gebuchte Journale werden mit dem zugeordneten Anbieter-Kontokencode übertragen."
+
 msgid "Map your current process, systems, and data"
 msgstr "Ordnen Sie Ihren aktuellen Prozess, Ihre Systeme und Daten"
-
-msgid "Mapped accounts"
-msgstr "Zugeordnete Konten"
 
 msgid "Mapped values"
 msgstr "Zugeordnete Werte"
@@ -9928,8 +9937,8 @@ msgstr "Keine Fähigkeiten hinzugefügt"
 msgid "No Access"
 msgstr "Kein Zugriff"
 
-msgid "No accounts mapped yet"
-msgstr "Noch keine Konten zugeordnet"
+msgid "No accounts match your search"
+msgstr "Keine Konten stimmen mit Ihrer Suche überein"
 
 msgid "No action needed"
 msgstr "Keine Aktion erforderlich"
@@ -13439,6 +13448,9 @@ msgstr "Verschrottet"
 msgid "Search"
 msgstr "Suchen"
 
+msgid "Search accounts"
+msgstr "Konten durchsuchen"
+
 msgid "Search accounts..."
 msgstr "Konten durchsuchen..."
 
@@ -13739,10 +13751,10 @@ msgid "Self Managed"
 msgstr "Selbst verwaltet"
 
 msgid "Self-hosted or managed"
-msgstr ""
+msgstr "Selbst gehostet oder verwaltet"
 
 msgid "Self-onboarding"
-msgstr ""
+msgstr "Selbst-Onboarding"
 
 msgid "Self-paced"
 msgstr "Selbstgesteuertes Lernen"
@@ -14383,7 +14395,7 @@ msgid "Split shipment line"
 msgstr "Versandzeile teilen"
 
 msgid "SSO/SAML"
-msgstr ""
+msgstr "SSO/SAML"
 
 msgid "Stand up hosting"
 msgstr "Hosting einrichten"
@@ -15091,7 +15103,7 @@ msgid "Team trained"
 msgstr "Team trainiert"
 
 msgid "Technical support"
-msgstr ""
+msgstr "Technischer Support"
 
 msgid "Temperature"
 msgstr "Temperatur"
@@ -16646,10 +16658,10 @@ msgid "unknown location"
 msgstr "unbekannter Ort"
 
 msgid "Unlimited functional support"
-msgstr ""
+msgstr "Unbegrenzter funktionaler Support"
 
 msgid "Unlimited records"
-msgstr ""
+msgstr "Unbegrenzte Datensätze"
 
 msgid "Unlink"
 msgstr "Verknüpfung aufheben"
@@ -16668,9 +16680,6 @@ msgstr "Entsperren"
 
 msgid "Unlock with passkey"
 msgstr "Mit Passkey entsperren"
-
-msgid "Unmapped accounts"
-msgstr "Nicht zugeordnete Konten"
 
 msgid "Unmapped dimension values"
 msgstr "Nicht zugeordnete Dimensionswerte"
