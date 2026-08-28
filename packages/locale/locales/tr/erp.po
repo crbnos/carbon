@@ -3478,7 +3478,7 @@ msgid "Conflict reason"
 msgstr "Çatışma nedeni"
 
 msgid "Connect"
-msgstr ""
+msgstr "Bağlan"
 
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Carbon'ı muhasebe, proje yönetimi ve CAD araçlarınızla ve çok daha fazlasıyla bağlayın."
@@ -8540,7 +8540,7 @@ msgid "Less manual work, fewer errors"
 msgstr "Daha az manuel çalışma, daha az hata"
 
 msgid "Let members sign in through your identity provider with SAML."
-msgstr ""
+msgstr "Üyelerin SAML ile kimlik sağlayıcınız üzerinden oturum açmasını sağlayın."
 
 msgid "Let's Build"
 msgstr "Haydi Oluşturalım"
@@ -8911,7 +8911,7 @@ msgid "Manage"
 msgstr "Yönet"
 
 msgid "Manage authentication and sign-in requirements for your company."
-msgstr ""
+msgstr "Şirketiniz için kimlik doğrulama ve oturum açma gereksinimlerini yönetin."
 
 msgid "Manage how shelf life is tracked, computed, and enforced across inventory."
 msgstr "Envanterdeki raf ömrünün nasıl izlendiğini, hesaplandığını ve uygulandığını yönetin."
@@ -10253,7 +10253,7 @@ msgid "Not certified"
 msgstr "Sertifikalı değil"
 
 msgid "Not configured"
-msgstr ""
+msgstr "Yapılandırılmadı"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Miktarı karşılayacak yeterli iş yok"
@@ -12533,9 +12533,6 @@ msgstr "Talep Edilen Tarih"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Oturum açarken kimlik doğrulayıcı uygulamasından 6 haneli kod isteyini."
 
-msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
-msgstr "Bu şirketi açmadan önce bir kimlik doğrulayıcı uygulaması gerekli hale getirin. Diğer şirketler etkilenmez."
-
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Bu şirketi açabilmek için doğrulayıcı uygulamayı gerektir. Diğer şirketleri etkilenmez. Her kişinin durumunu görmek için <0>çalışan hesapları sayfasını</0> ziyaret edin."
 
@@ -13099,7 +13096,7 @@ msgid "Save applications"
 msgstr "Uygulamaları kaydet"
 
 msgid "Save changes"
-msgstr ""
+msgstr "Değişiklikleri kaydet"
 
 msgid "Save contacts"
 msgstr "Kişileri kaydet"

@@ -3478,7 +3478,7 @@ msgid "Conflict reason"
 msgstr "紛争の理由"
 
 msgid "Connect"
-msgstr ""
+msgstr "接続"
 
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Carbonを会計、プロジェクト管理、CADツールなど、さまざまなツールに接続できます。"
@@ -8540,7 +8540,7 @@ msgid "Less manual work, fewer errors"
 msgstr "手作業を減らし、エラーを削減"
 
 msgid "Let members sign in through your identity provider with SAML."
-msgstr ""
+msgstr "SAMLを使用してIDプロバイダーを通じてメンバーがサインインできるようにします。"
 
 msgid "Let's Build"
 msgstr "ビルドしましょう"
@@ -8911,7 +8911,7 @@ msgid "Manage"
 msgstr "管理"
 
 msgid "Manage authentication and sign-in requirements for your company."
-msgstr ""
+msgstr "会社の認証とサインイン要件を管理します。"
 
 msgid "Manage how shelf life is tracked, computed, and enforced across inventory."
 msgstr "棚卸資産全体で賞味期限がどのように追跡、計算、および実施されるかを管理します。"
@@ -10253,7 +10253,7 @@ msgid "Not certified"
 msgstr "認定されていない"
 
 msgid "Not configured"
-msgstr ""
+msgstr "未設定"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "数量をカバーするのに十分なジョブがありません"
@@ -12533,9 +12533,6 @@ msgstr "リクエスト日"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "サインイン時に認証器アプリから6桁のコードが必要です。"
 
-msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
-msgstr "このカンパニーを開く前に、認証アプリが必須です。他のカンパニーは影響を受けません。"
-
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "このコンパニーを開く前に認証アプリが必須になります。他のコンパニーには影響しません。<0>従業員アカウントページ</0>をご覧ください。"
 
@@ -13099,7 +13096,7 @@ msgid "Save applications"
 msgstr "アプリケーションを保存"
 
 msgid "Save changes"
-msgstr ""
+msgstr "変更を保存"
 
 msgid "Save contacts"
 msgstr "連絡先を保存"

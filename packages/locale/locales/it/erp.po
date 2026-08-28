@@ -3478,7 +3478,7 @@ msgid "Conflict reason"
 msgstr "Motivo del conflitto"
 
 msgid "Connect"
-msgstr ""
+msgstr "Connetti"
 
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Connetti Carbon ai tuoi strumenti di contabilità, gestione dei progetti, CAD e molto altro."
@@ -8540,7 +8540,7 @@ msgid "Less manual work, fewer errors"
 msgstr "Meno lavoro manuale, meno errori"
 
 msgid "Let members sign in through your identity provider with SAML."
-msgstr ""
+msgstr "Consenti ai membri di accedere tramite il tuo provider di identità con SAML."
 
 msgid "Let's Build"
 msgstr "Iniziamo a costruire"
@@ -8911,7 +8911,7 @@ msgid "Manage"
 msgstr "Gestisci"
 
 msgid "Manage authentication and sign-in requirements for your company."
-msgstr ""
+msgstr "Gestisci i requisiti di autenticazione e accesso per la tua azienda."
 
 msgid "Manage how shelf life is tracked, computed, and enforced across inventory."
 msgstr "Gestisci come la durata di conservazione viene tracciata, calcolata e applicata nell'inventario."
@@ -10253,7 +10253,7 @@ msgid "Not certified"
 msgstr "Non certificato"
 
 msgid "Not configured"
-msgstr ""
+msgstr "Non configurato"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Non ci sono abbastanza lavori per coprire la quantità"
@@ -12533,9 +12533,6 @@ msgstr "Data Richiesta"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Richiedi un codice a 6 cifre dall'app autenticatore al momento dell'accesso."
 
-msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
-msgstr "Richiedi un'app di autenticazione prima che chiunque possa aprire questa azienda. Le altre aziende non saranno interessate."
-
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Richiedi un'app autenticatore prima che chiunque possa aprire questa azienda. Le loro altre aziende non sono interessate. Visita la <0>pagina degli account dei dipendenti</0> per vedere lo stato di ogni persona."
 
@@ -13099,7 +13096,7 @@ msgid "Save applications"
 msgstr "Salva applicazioni"
 
 msgid "Save changes"
-msgstr ""
+msgstr "Salva modifiche"
 
 msgid "Save contacts"
 msgstr "Salva contatti"

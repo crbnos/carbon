@@ -3478,7 +3478,7 @@ msgid "Conflict reason"
 msgstr "संघर्ष कारण"
 
 msgid "Connect"
-msgstr ""
+msgstr "कनेक्ट करें"
 
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Carbon को अपने लेखांकन, परियोजना प्रबंधन, और CAD उपकरणों और बहुत कुछ से जोड़ें।"
@@ -8540,7 +8540,7 @@ msgid "Less manual work, fewer errors"
 msgstr "कम मैनुअल काम, कम त्रुटियां"
 
 msgid "Let members sign in through your identity provider with SAML."
-msgstr ""
+msgstr "अपने सदस्यों को SAML के साथ अपने पहचान प्रदाता के माध्यम से साइन इन करने दें।"
 
 msgid "Let's Build"
 msgstr "आइए निर्माण करें"
@@ -8911,7 +8911,7 @@ msgid "Manage"
 msgstr "प्रबंधित करें"
 
 msgid "Manage authentication and sign-in requirements for your company."
-msgstr ""
+msgstr "अपनी कंपनी के लिए प्रमाणीकरण और साइन-इन आवश्यकताओं का प्रबंधन करें।"
 
 msgid "Manage how shelf life is tracked, computed, and enforced across inventory."
 msgstr "शेल्फ लाइफ को कैसे ट्रैक किया जाता है, गणना की जाती है, और इन्वेंटरी में लागू किया जाता है, इसे प्रबंधित करें।"
@@ -10253,7 +10253,7 @@ msgid "Not certified"
 msgstr "प्रमाणित नहीं"
 
 msgid "Not configured"
-msgstr ""
+msgstr "कॉन्फ़िगर नहीं किया गया"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "पर्याप्त नौकरियां नहीं हैं मात्रा को कवर करने के लिए"
@@ -12533,9 +12533,6 @@ msgstr "अनुरोधित तारीख"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "साइन इन करते समय ऑथेंटिकेटर ऐप से 6-अंकीय कोड की आवश्यकता है।"
 
-msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
-msgstr "इस कंपनी को खोलने से पहले सभी को एक सत्यापनकर्ता ऐप की आवश्यकता है। उनकी अन्य कंपनियां प्रभावित नहीं होंगी।"
-
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "किसी को भी इस कंपनी को खोलने से पहले एक प्रमाणकर्ता ऐप की आवश्यकता है। उनकी अन्य कंपनियां प्रभावित नहीं हैं। प्रत्येक व्यक्ति की स्थिति देखने के लिए <0>कर्मचारी खातों पृष्ठ</0> पर जाएं।"
 
@@ -13099,7 +13096,7 @@ msgid "Save applications"
 msgstr "आवेदन सहेजें"
 
 msgid "Save changes"
-msgstr ""
+msgstr "परिवर्तन सहेजें"
 
 msgid "Save contacts"
 msgstr "संपर्क सहेजें"

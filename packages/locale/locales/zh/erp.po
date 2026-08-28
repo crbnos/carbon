@@ -3478,7 +3478,7 @@ msgid "Conflict reason"
 msgstr "冲突原因"
 
 msgid "Connect"
-msgstr ""
+msgstr "连接"
 
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "将 Carbon 连接到您的会计、项目管理和 CAD 工具等更多应用。"
@@ -8540,7 +8540,7 @@ msgid "Less manual work, fewer errors"
 msgstr "更少的手动工作，更少的错误"
 
 msgid "Let members sign in through your identity provider with SAML."
-msgstr ""
+msgstr "允许成员通过您的身份提供商使用 SAML 登录。"
 
 msgid "Let's Build"
 msgstr "让我们开始构建"
@@ -8911,7 +8911,7 @@ msgid "Manage"
 msgstr "管理"
 
 msgid "Manage authentication and sign-in requirements for your company."
-msgstr ""
+msgstr "管理您公司的身份验证和登录要求。"
 
 msgid "Manage how shelf life is tracked, computed, and enforced across inventory."
 msgstr "管理如何在整个库存中跟踪、计算和执行保质期。"
@@ -10253,7 +10253,7 @@ msgid "Not certified"
 msgstr "未认证"
 
 msgid "Not configured"
-msgstr ""
+msgstr "未配置"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "工作数量不足以覆盖数量"
@@ -12533,9 +12533,6 @@ msgstr "请求日期"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "登录时需要来自身份验证器应用的 6 位数字代码。"
 
-msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
-msgstr "需要身份验证器应用才能打开此公司。其他公司不受影响。"
-
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "在任何人打开此公司之前需要身份验证器应用。他们的其他公司不受影响。访问<0>员工账户页面</0>以查看每个人的状态。"
 
@@ -13099,7 +13096,7 @@ msgid "Save applications"
 msgstr "保存应用"
 
 msgid "Save changes"
-msgstr ""
+msgstr "保存更改"
 
 msgid "Save contacts"
 msgstr "保存联系人"

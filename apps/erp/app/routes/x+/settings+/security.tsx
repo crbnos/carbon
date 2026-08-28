@@ -42,14 +42,15 @@ import {
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type ReactNode, useEffect, useState } from "react";
+import { LuShieldCheck } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, Link, redirect, useFetcher, useLoaderData } from "react-router";
 import { Hidden, Input, Submit, TextArea } from "~/components/Form";
+import { UpgradeOverlaySection } from "~/components/UpgradeOverlay";
 import { usePermissions } from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { useSettings } from "~/hooks/useSettings";
 import {
-  SecurityUpgradeOverlay,
   ssoConnectionValidator,
   ssoDomainValidator,
   updateRequireMfaSetting
@@ -356,6 +357,9 @@ export default function Security() {
   const connectionFetcher = useFetcher<{}>();
   const addDomainFetcher = useFetcher<{}>();
   const { isGated } = usePlanGate({ feature: "TWO_FACTOR" });
+  // Gate only the 2FA enforcement card — the SSO section is edition-gated
+  // separately (isSsoEnabled), so a plan-gated company must still reach it.
+  const mfaGated = isGated && !CONTROLLED_ENVIRONMENT && !requireMfa;
 
   // A successful deactivation redirects and revalidates the loader, so the
   // connection disappears — close the confirm modal with it instead of
@@ -366,9 +370,52 @@ export default function Security() {
     if (!connection) setDeactivateModalOpen(false);
   }, [connection]);
 
-  if (isGated && !CONTROLLED_ENVIRONMENT && !requireMfa) {
-    return <SecurityUpgradeOverlay />;
-  }
+  const twoFactorCard = (
+    <Card>
+      <CardHeader>
+        <HStack className="justify-between items-center">
+          <div>
+            <CardTitle>
+              <Trans>Two-Factor Authentication Enforcement</Trans>
+            </CardTitle>
+            <CardDescription>
+              {CONTROLLED_ENVIRONMENT ? (
+                <Trans>
+                  This is a controlled environment, so two-factor authentication
+                  is required for everyone and cannot be turned off.
+                </Trans>
+              ) : (
+                <Trans>
+                  Require an authenticator app before anyone can open this
+                  company. Their other companies are unaffected. Visit the{" "}
+                  <Link
+                    to={path.to.employeeAccounts}
+                    className="text-primary underline"
+                  >
+                    employee accounts page
+                  </Link>{" "}
+                  to see each person's status.
+                </Trans>
+              )}
+            </CardDescription>
+          </div>
+          <Switch
+            checked={CONTROLLED_ENVIRONMENT || requireMfa}
+            onCheckedChange={(checked) =>
+              mfaFetcher.submit(
+                { enabled: String(checked) },
+                { method: "post" }
+              )
+            }
+            disabled={
+              CONTROLLED_ENVIRONMENT || mfaFetcher.state !== "idle" || !canEdit
+            }
+            aria-label={t`Require two-factor authentication`}
+          />
+        </HStack>
+      </CardHeader>
+    </Card>
+  );
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">
@@ -386,53 +433,22 @@ export default function Security() {
             </Trans>
           </p>
         </div>
-        <Card>
-          <CardHeader>
-            <HStack className="justify-between items-center">
-              <div>
-                <CardTitle>
-                  <Trans>Two-Factor Authentication Enforcement</Trans>
-                </CardTitle>
-                <CardDescription>
-                  {CONTROLLED_ENVIRONMENT ? (
-                    <Trans>
-                      This is a controlled environment, so two-factor
-                      authentication is required for everyone and cannot be
-                      turned off.
-                    </Trans>
-                  ) : (
-                    <Trans>
-                      Require an authenticator app before anyone can open this
-                      company. Their other companies are unaffected. Visit the{" "}
-                      <Link
-                        to={path.to.employeeAccounts}
-                        className="text-primary underline"
-                      >
-                        employee accounts page
-                      </Link>{" "}
-                      to see each person's status.
-                    </Trans>
-                  )}
-                </CardDescription>
-              </div>
-              <Switch
-                checked={CONTROLLED_ENVIRONMENT || requireMfa}
-                onCheckedChange={(checked) =>
-                  mfaFetcher.submit(
-                    { enabled: String(checked) },
-                    { method: "post" }
-                  )
-                }
-                disabled={
-                  CONTROLLED_ENVIRONMENT ||
-                  mfaFetcher.state !== "idle" ||
-                  !canEdit
-                }
-                aria-label={t`Require two-factor authentication`}
-              />
-            </HStack>
-          </CardHeader>
-        </Card>
+        {mfaGated ? (
+          <UpgradeOverlaySection
+            icon={<LuShieldCheck className="size-6 text-muted-foreground" />}
+            title={<Trans>Two-Factor Authentication Enforcement</Trans>}
+            description={
+              <Trans>
+                Protect your company with advanced security controls like
+                two-factor authentication enforcement.
+              </Trans>
+            }
+          >
+            {twoFactorCard}
+          </UpgradeOverlaySection>
+        ) : (
+          twoFactorCard
+        )}
 
         {ssoEnabled && (
           <>

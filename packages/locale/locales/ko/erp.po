@@ -3478,7 +3478,7 @@ msgid "Conflict reason"
 msgstr "충돌 이유"
 
 msgid "Connect"
-msgstr ""
+msgstr "연결"
 
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Carbon을 회계, 프로젝트 관리, CAD 도구 등과 연동하세요."
@@ -8540,7 +8540,7 @@ msgid "Less manual work, fewer errors"
 msgstr "수작업 감소, 오류 감소"
 
 msgid "Let members sign in through your identity provider with SAML."
-msgstr ""
+msgstr "멤버가 SAML을 통한 ID 제공자로 로그인하도록 허용합니다."
 
 msgid "Let's Build"
 msgstr "구축해봅시다"
@@ -8911,7 +8911,7 @@ msgid "Manage"
 msgstr "관리"
 
 msgid "Manage authentication and sign-in requirements for your company."
-msgstr ""
+msgstr "회사의 인증 및 로그인 요구 사항을 관리합니다."
 
 msgid "Manage how shelf life is tracked, computed, and enforced across inventory."
 msgstr "재고 전반에서 유효기간을 추적, 계산, 적용하는 방식을 관리합니다."
@@ -10253,7 +10253,7 @@ msgid "Not certified"
 msgstr "인증되지 않음"
 
 msgid "Not configured"
-msgstr ""
+msgstr "구성되지 않음"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "수량을 충족할 만큼 작업이 충분하지 않습니다"
@@ -12533,9 +12533,6 @@ msgstr "요청일"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "로그인 시 인증 앱의 6자리 코드를 입력하세요."
 
-msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
-msgstr "누구든지 이 회사를 열기 전에 인증 앱이 필요합니다. 다른 회사는 영향을 받지 않습니다."
-
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "이 회사를 열기 전에 인증자 앱을 요구합니다. 다른 회사는 영향을 받지 않습니다. <0>직원 계정 페이지</0>를 방문하여 각 사람의 상태를 확인하세요."
 
@@ -13099,7 +13096,7 @@ msgid "Save applications"
 msgstr "애플리케이션 저장"
 
 msgid "Save changes"
-msgstr ""
+msgstr "변경 사항 저장"
 
 msgid "Save contacts"
 msgstr "연락처 저장"
