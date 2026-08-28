@@ -38,7 +38,13 @@ function refuse(error: string, status = 400, issues: WorkflowIssue[] = []) {
 }
 
 /** The run acts as the owner, so anyone else firing it would be borrowing the owner's
- * permissions. This is the authorization boundary, not a UI nicety. */
+ * permissions. This is the authorization boundary, not a UI nicety.
+ *
+ * A company-owned workflow has no human owner to borrow from — it runs as the
+ * company's service identity, which holds no more than read access. There is
+ * nothing to escalate to, so `workflows_update` is the gate, and the run is
+ * still executed as the owner rather than as the caller so the test exercises
+ * the permissions production will use. */
 async function requireOwnedWorkflow(request: Request, id: string | undefined) {
   const { client, companyId, companyGroupId, userId } =
     await requirePermissions(request, { update: "workflows" });
@@ -58,13 +64,26 @@ async function requireOwnedWorkflow(request: Request, id: string | undefined) {
   if (workflow.error || !workflow.data) {
     return { refused: refuse("Workflow not found", 404) };
   }
-  if (workflow.data.ownerId !== userId) {
+  if (
+    workflow.data.ownerKind !== "company" &&
+    workflow.data.ownerId !== userId
+  ) {
     return {
       refused: refuse("Only the owner of this workflow can test it", 403)
     };
   }
 
-  return { client, companyId, companyGroupId, userId, workflow: workflow.data };
+  return {
+    client,
+    companyId,
+    companyGroupId,
+    userId,
+    // The identity the run acts as, which is the owner in both cases — never the
+    // caller. A test that ran with the tester's own access would prove nothing
+    // about the workflow.
+    ownerId: workflow.data.ownerId,
+    workflow: workflow.data
+  };
 }
 
 /** Options for the test-run record picker. Reads through the request's own client, so
@@ -215,7 +234,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     definition: definition.data,
     companyId: gate.companyId,
     companyGroupId: gate.companyGroupId,
-    ownerId: gate.userId,
+    ownerId: gate.ownerId,
     workflowId: gate.workflow.id,
     workflowVersionId: versionId,
     eventId: eventId ?? "",

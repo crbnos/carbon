@@ -672,10 +672,12 @@ export async function updateSubscriptionQuantityForCompany(companyId: string) {
       return;
     }
 
-    // Count active users
+    // Count active users. Service accounts (the per-company workflow service
+    // identity) hold a userToCompany row so RLS can resolve their permissions,
+    // but they are not people and must never be billed as a seat.
     const activeUsersResult = await serviceRole
       .from("userToCompany")
-      .select("userId, ...user(email)")
+      .select("userId, ...user(email, isServiceAccount)")
       .eq("companyId", companyId);
 
     if (activeUsersResult.error) {
@@ -688,7 +690,8 @@ export async function updateSubscriptionQuantityForCompany(companyId: string) {
 
     const activeUserCount =
       activeUsersResult.data?.filter(
-        (user) => !(user?.email).includes("@carbon.ms")
+        (user) =>
+          !user?.isServiceAccount && !(user?.email ?? "").includes("@carbon.ms")
       ).length || 1;
 
     // Get the subscription from Stripe to find the subscription item

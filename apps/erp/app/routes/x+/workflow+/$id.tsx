@@ -167,7 +167,11 @@ export default function WorkflowBuilderRoute() {
   // Two reasons, two behaviours: a locked version still allows dragging to tidy the
   // layout, a missing permission does not.
   const canEdit = permissions.can("update", "workflows");
-  const isOwner = workflow.ownerId === userId;
+  // Gates the Test run affordance. A company-owned workflow has no human owner,
+  // so it would otherwise be untestable by everyone; it runs as the company's
+  // read-only service identity, which is nobody's access to borrow.
+  const isOwner =
+    workflow.ownerKind === "company" ? canEdit : workflow.ownerId === userId;
 
   if (!definition || !versionId) {
     return (

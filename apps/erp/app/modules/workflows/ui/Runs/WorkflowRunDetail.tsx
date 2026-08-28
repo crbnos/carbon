@@ -4,7 +4,7 @@ import { readWorkflowVersion } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuCircleAlert, LuCircleSlash, LuTriangle } from "react-icons/lu";
-import { EmployeeAvatar, Hyperlink } from "~/components";
+import { Hyperlink } from "~/components";
 import { path } from "~/utils/path";
 import type {
   WorkflowRunChainEntry,
@@ -12,6 +12,7 @@ import type {
   WorkflowRunStep
 } from "../../workflows.service";
 import { useWorkflowEventLabel, useWorkflowLabel } from "../Builder/catalog";
+import WorkflowOwner from "../WorkflowOwner";
 import { EntityRecordLink } from "./EntityRecordLink";
 import { RunLiveUpdates } from "./RunLiveUpdates";
 import { RunStatus, TestRunBadge } from "./RunStatus";
@@ -148,7 +149,7 @@ export function WorkflowRunDetail({
         {/* Metadata grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           <HeaderRow label={t`Owner`}>
-            <EmployeeAvatar employeeId={run.ownerId} />
+            <WorkflowOwner ownerId={run.ownerId} />
           </HeaderRow>
 
           <HeaderRow label={t`Started`}>

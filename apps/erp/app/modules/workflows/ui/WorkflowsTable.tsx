@@ -27,7 +27,7 @@ import {
   LuWorkflow
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { EmployeeAvatar, Hyperlink, Table } from "~/components";
+import { Hyperlink, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { usePeople } from "~/stores";
@@ -36,6 +36,7 @@ import type { Workflow, WorkflowLastRun } from "../workflows.service";
 import { ConfirmUnpublishWorkflow } from "./ConfirmUnpublishWorkflow";
 import { RunStatus } from "./Runs/RunStatus";
 import WorkflowForm from "./WorkflowForm";
+import WorkflowOwner from "./WorkflowOwner";
 
 type WorkflowsTableProps = {
   data: Workflow[];
@@ -118,9 +119,7 @@ const WorkflowsTable = memo(
         {
           accessorKey: "ownerId",
           header: t`Owner`,
-          cell: ({ row }) => (
-            <EmployeeAvatar employeeId={row.original.ownerId} />
-          ),
+          cell: ({ row }) => <WorkflowOwner ownerId={row.original.ownerId} />,
           meta: {
             icon: <LuUser />,
             filter: {

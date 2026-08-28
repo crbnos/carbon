@@ -6,7 +6,7 @@ The definition schema, validator, catalogs, matcher and engine all live outside 
 
 ## Key Domain Concepts
 
-- **Workflow** — the `workflow` row. Carries `ownerId` and `publishedVersionId`. That pointer IS the on/off switch: set means the workflow runs that version, `NULL` means it is a draft and nothing fires. There is no separate `active` boolean — it was a second switch for the same idea and was removed (migration `20260824163808_workflow-publish-unpublish.sql`). Because the pointer names a version rather than carrying a flag, exactly one version can be published at a time by construction.
+- **Workflow** — the `workflow` row. Carries `ownerId`, `ownerKind` and `publishedVersionId`. That pointer IS the on/off switch: set means the workflow runs that version, `NULL` means it is a draft and nothing fires. There is no separate `active` boolean — it was a second switch for the same idea and was removed (migration `20260824163808_workflow-publish-unpublish.sql`). Because the pointer names a version rather than carrying a flag, exactly one version can be published at a time by construction.
 - **Version** — a `workflowVersion` row holding `nodes`, `edges` and `formatVersion`. Numbered, never named.
 - **Canvas state** — `workflow.canvasState` JSONB: `{ x, y, zoom, panOnScroll }`. Per workflow (not per user, not per version), written by `$id.canvas.tsx` through `updateWorkflowCanvasState`, restored as `defaultViewport`. Node collapse is NOT here — `expanded` lives on each node in the definition and rides the autosave. `/save`, `/canvas` and `/positions` are all excluded from `shouldRevalidate`; revalidating on a canvas write would snap the viewport back to where it was on load, and revalidating on a positions write would remount the builder store mid-drag.
 - **Definition** — `{ formatVersion, nodes, edges }`, validated by `workflowDefinitionSchema` from `@carbon/workflows`. `CURRENT_DEFINITION_FORMAT_VERSION` is **3**; the SQL column default is a stale **1**, so the app always writes the constant explicitly.
@@ -24,12 +24,12 @@ The definition schema, validator, catalogs, matcher and engine all live outside 
 - MUST build version insert/update objects with every key explicitly present — PostgREST writes `NULL` for a present-but-`undefined` key, which would null `nodes`/`edges` past their `'[]'` defaults.
 
 ### Ask First
-- Changing who may own a workflow. A workflow runs with its owner's permissions.
+- Changing who may own a workflow. A workflow runs with its owner's permissions. `ownerKind` picks WHICH principal that is (`user` = the employee who created it, `company` = the company's read-only service identity, `wfsvc_<companyId>`); it is not an escape from the rule.
 - Adding undo. Its absence is a deliberate, recorded decision (recovery is via versions).
 
 ### Never
 - Never write `workflowTriggerEvent`, `workflow.nextRunAt` or `eventSystemSubscription` directly. `syncWorkflowTriggers` is their sole writer, and it is what makes a workflow able to fire at all.
-- Never let `$id.owner.tsx` accept a submitted `ownerId`. It writes the session user, always. An arbitrary id would let anyone with `workflows_update` borrow someone else's access.
+- Never let a route accept a submitted `ownerId`. `insertWorkflow` derives it: the session user for `ownerKind: "user"`, `getWorkflowServiceUserId(companyId)` for `"company"`. An arbitrary id would let anyone with `workflows_update` borrow someone else's access. (There is no `$id.owner.tsx` and no `updateWorkflowOwner`; ownership is still set once at creation.)
 - Never derive node output handles from a hand-written list — use `getNodeHandles(node)`, the same function the validator uses, or the canvas can draw a handle the validator calls `UNKNOWN_HANDLE`.
 - Never add a per-kind component or a second per-kind lookup. All six node kinds render through one `WorkflowNodeCard`; everything that differs between them is data in `ui/Builder/nodes/meta.ts`, which the palette and the card both read. A new kind is a row in `NODE_KIND_META` plus a row in `nodeTypes` — both are exhaustive `Record<WorkflowNodeType, …>`, so missing either fails the build.
 - Never re-export `@carbon/workflows/labels` through the package barrel. `msg` is a build-time macro; only Vite-built app code may import it.
@@ -65,9 +65,8 @@ Routes split in two trees: `x+/workflows+/` (list, create, rename, delete, with 
 
 - `getWorkflows` / `getWorkflow` — list and detail reads
 - `getWorkflowVersions` / `getWorkflowVersion` / `getWorkflowVersionNumbers` — version reads (flat selects; nested embeds across `workflow` + `workflowVersion` trip TS2589 in this app)
-- `insertWorkflow` / `updateWorkflow` — separate rather than one `upsert*`
+- `insertWorkflow` / `updateWorkflow` — separate rather than one `upsert*`. `insertWorkflow` takes an optional `ownerKind` and derives `ownerId` from it; `updateWorkflow` never touches either.
 - `insertWorkflowVersion` / `updateWorkflowDefinition` / `deleteWorkflowVersion`
-- `updateWorkflowOwner` — takes the session user, never a submitted id
 - `checkWorkflowVersionLock` (server) — the published-version lock; the rule is one equality against `publishedVersionId`, so there is no helper wrapping it
 - `updateWorkflowNodePositions` (service) — the positions-only writer behind `$id.positions.tsx`
 - `publishWorkflowVersion` / `unpublishWorkflow` (server) — both call `syncWorkflowTriggers`, which uses Kysely and **bypasses RLS**; the route's `requirePermissions` is the only authorization gate

@@ -504,7 +504,8 @@ export async function resolveUserSelectIds(
     client
       .from("user")
       .select("id, firstName, lastName, fullName, email, avatarUrl")
-      .in("id", ids),
+      .in("id", ids)
+      .eq("isServiceAccount", false),
     client
       .from("group")
       .select("id, name")
@@ -564,7 +565,8 @@ export async function getUsers(client: SupabaseClient<Database>) {
     client,
     "user",
     "id, firstName, lastName, fullName, email, avatarUrl",
-    (query) => query.eq("active", true).order("lastName")
+    (query) =>
+      query.eq("active", true).eq("isServiceAccount", false).order("lastName")
   );
 }
 
@@ -578,7 +580,8 @@ export async function getUserEmails(
     .from("user")
     .select("email")
     .in("id", userIds)
-    .eq("active", true);
+    .eq("active", true)
+    .eq("isServiceAccount", false);
 
   if (result.error || !result.data) return [];
 

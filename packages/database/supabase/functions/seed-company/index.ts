@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
+import { sql } from "npm:kysely@0.27.6";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
@@ -149,6 +150,15 @@ serve(async (req: Request) => {
         .insertInto("userToCompany")
         .values([{ userId, companyId, role: "employee" }])
         .execute();
+
+      // The company's workflow service identity. A workflow runs as its owner,
+      // so one owned by an employee stops the day that employee is deactivated;
+      // a company-owned workflow runs as this instead and outlives them all.
+      // Provisioned in SQL so the migration that backfills existing companies
+      // and this path can never define the identity two different ways.
+      await sql`SELECT provision_workflow_service_user(${companyId})`.execute(
+        trx
+      );
 
       // high-order groups — identity infrastructure: the employeeType insert
       // below fires a trigger that creates a membership row referencing these,

@@ -145,6 +145,13 @@ export {
   createContext,
   variablesFromHandle
 } from "./definition/variables";
+export type { WorkflowOwnerKind } from "./owner";
+export {
+  getWorkflowServiceUserId,
+  isWorkflowServiceUserId,
+  WORKFLOW_OWNER_KINDS,
+  WORKFLOW_SERVICE_USER_PREFIX
+} from "./owner";
 export type { RunTrigger } from "./run-trigger";
 export { runTriggerSchema } from "./run-trigger";
 export type {

@@ -1,6 +1,8 @@
 import type { Database, Json } from "@carbon/database";
 import { fkDisplayRegistry } from "@carbon/database/audit.config";
 import { datetime } from "@carbon/utils";
+import type { WorkflowOwnerKind } from "@carbon/workflows";
+import { getWorkflowServiceUserId } from "@carbon/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { Filter, GenericQueryFilters } from "~/utils/query";
@@ -15,7 +17,7 @@ export async function getWorkflows(
   let query = client
     .from("workflow")
     .select(
-      "id, name, description, ownerId, publishedVersionId, createdAt, updatedAt",
+      "id, name, description, ownerId, ownerKind, publishedVersionId, createdAt, updatedAt",
       { count: "exact" }
     )
     .eq("companyId", companyId);
@@ -59,7 +61,7 @@ export async function getWorkflow(
   return client
     .from("workflow")
     .select(
-      "id, name, description, ownerId, publishedVersionId, nextRunAt, canvasState, createdAt, updatedAt"
+      "id, name, description, ownerId, ownerKind, publishedVersionId, nextRunAt, canvasState, createdAt, updatedAt"
     )
     .eq("id", id)
     .eq("companyId", companyId)
@@ -115,15 +117,25 @@ export async function insertWorkflow(
   workflow: Omit<z.infer<typeof workflowValidator>, "id"> & {
     companyId: string;
     createdBy: string;
+    ownerKind?: WorkflowOwnerKind;
   }
 ) {
+  const ownerKind = workflow.ownerKind ?? "user";
+
   return client
     .from("workflow")
     .insert({
       name: workflow.name,
       description: workflow.description ?? null,
       companyId: workflow.companyId,
-      ownerId: workflow.createdBy,
+      ownerKind,
+      // A company-owned workflow runs as the company's service identity, so it
+      // keeps working after any employee leaves. Ownership is still a real user
+      // id either way, which is why the engine needs no branch.
+      ownerId:
+        ownerKind === "company"
+          ? getWorkflowServiceUserId(workflow.companyId)
+          : workflow.createdBy,
       createdBy: workflow.createdBy
     })
     .select("id")

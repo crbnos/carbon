@@ -11,11 +11,12 @@ import {
   LuUser,
   LuZap
 } from "react-icons/lu";
-import { EmployeeAvatar, Hyperlink, Table } from "~/components";
+import { Hyperlink, Table } from "~/components";
 import { useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import type { WorkflowRun } from "../../workflows.service";
 import { useWorkflowEventLabel } from "../Builder/catalog";
+import WorkflowOwner from "../WorkflowOwner";
 import { EntityRecordLink } from "./EntityRecordLink";
 import { RunsLiveUpdates } from "./RunLiveUpdates";
 import { RunStatus, TestRunBadge } from "./RunStatus";
@@ -117,7 +118,7 @@ const WorkflowRunsTable = memo(({ data, count }: WorkflowRunsTableProps) => {
       {
         accessorKey: "ownerId",
         header: t`Owner`,
-        cell: ({ row }) => <EmployeeAvatar employeeId={row.original.ownerId} />,
+        cell: ({ row }) => <WorkflowOwner ownerId={row.original.ownerId} />,
         meta: {
           icon: <LuUser />,
           filterHeader: t`Owner`,
