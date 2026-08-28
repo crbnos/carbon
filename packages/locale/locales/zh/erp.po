@@ -304,6 +304,7 @@ msgstr "4小时"
 
 msgid "5 user minimum"
 msgstr "最少5个用户"
+msgstr "5 个用户最少"
 
 msgid "5-8 weeks"
 msgstr "5-8 周"
@@ -361,6 +362,7 @@ msgstr "承包商是具有特定能力和可用工作时间的供应商联系人
 
 msgid "A custom solution to meet your needs"
 msgstr "根据您的需求定制的解决方案"
+msgstr "满足您需求的自定义解决方案"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "客户是购买您的零件或服务的企业或个人。"
@@ -474,6 +476,7 @@ msgstr "其零件一起发放到父项作业的按单生产组件——无单独
 
 msgid "A managed cloud-hosted version of Carbon"
 msgstr "托管的Carbon云端版本"
+msgstr "Carbon 的托管云托管版本"
 
 msgid "A managed version with all the advanced features"
 msgstr "具有所有高级功能的托管版本"
@@ -938,9 +941,6 @@ msgstr "应收账款"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "客户应付金额的应收账款。"
 
-msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
-msgstr "由过账默认值或日记账历史记录引用但尚无提供商映射的账户。"
-
 msgid "Accumulated Depreciation"
 msgstr "累计折旧"
 
@@ -1347,6 +1347,7 @@ msgstr "所有操作已选中"
 
 msgid "All advanced features available"
 msgstr "所有高级功能均可用"
+msgstr "所有高级功能可用"
 
 msgid "All Audit Logs"
 msgstr "所有审计日志"
@@ -1374,9 +1375,6 @@ msgstr "所有位置"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "所选组的所有成员和所选个人将能够批准请求"
-
-msgid "All posting accounts are mapped"
-msgstr "所有过账账户已映射"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "所有行已导入—{inserted}行插入，{updated}行更新。"
@@ -1625,6 +1623,7 @@ msgstr "用于以编程方式访问您的 Carbon 数据的 API 密钥。"
 
 msgid "API, webhooks, and integrations"
 msgstr "API、Webhook和集成"
+msgstr "API、webhooks 和集成"
 
 msgid "Applied"
 msgstr "已应用"
@@ -2496,6 +2495,7 @@ msgstr "基础价格"
 
 msgid "Basic ERP, MES, and QMS functionality"
 msgstr "基本ERP、MES和QMS功能"
+msgstr "基本 ERP、MES 和 QMS 功能"
 
 msgid "Basic Information"
 msgstr "基本信息"
@@ -2582,6 +2582,9 @@ msgstr "已阻止"
 #. placeholder {0}: workCenter.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "被 {0} 阻止"
+
+msgid "Blocking sync"
+msgstr "阻止同步"
 
 msgid "Blocks save until resolved"
 msgstr "阻止保存直到解决"
@@ -3192,6 +3195,7 @@ msgstr "云端或您自托管的环境。"
 
 msgid "CMMC compliant"
 msgstr "符合CMMC"
+msgstr "符合 CMMC"
 
 msgid "Code"
 msgstr "代码"
@@ -3596,6 +3600,9 @@ msgstr "控制设计变更与修订版本/工程变更单"
 
 msgid "Control how operators pick material and track time on the shop floor."
 msgstr "控制操作人员如何在车间选择材料并跟踪时间。"
+
+msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
+msgstr "控制物料编号（零件、原料、耗材、工具和服务）是否可以包含小写字符。"
 
 msgid "Controller, Accountant"
 msgstr "控制器，会计"
@@ -5977,6 +5984,9 @@ msgstr "启用此规则以自动要求匹配文档的批准"
 msgid "Enable timecard tracking for work shifts."
 msgstr "启用工作班次的时间卡跟踪。"
 
+msgid "Enable to allow lowercase characters in item IDs."
+msgstr "启用以允许物料编号中的小写字符。"
+
 msgid "Enable to allow shared workstation mode."
 msgstr "启用以允许共享工作站模式。"
 
@@ -6239,6 +6249,7 @@ msgstr "每次匹配"
 
 msgid "Every required action has already been added."
 msgstr "所有必需的操作已添加。"
+msgstr "每个必需的操作已添加。"
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "期间关闭前，每项必需任务都必须完成或跳过。"
@@ -6281,9 +6292,6 @@ msgstr "豁免证书"
 
 msgid "Exemption Reason"
 msgstr "豁免原因"
-
-msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr "现有映射。选择不同的提供商账户以重新映射。"
 
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "现有映射。选择不同的提供商选项以重新映射。"
@@ -7067,6 +7075,7 @@ msgstr "全名"
 
 msgid "Full setup and migrations"
 msgstr "完整的设置和迁移"
+msgstr "完整设置和迁移"
 
 msgid "Fully Depreciated"
 msgstr "完全折旧"
@@ -8213,6 +8222,15 @@ msgstr "物品组"
 msgid "Item ID"
 msgstr "物品ID"
 
+msgid "Item IDs"
+msgstr "物料编号"
+
+msgid "Item IDs are forced to uppercase"
+msgstr "物料编号强制转换为大写"
+
+msgid "Item IDs keep the casing you type."
+msgstr "物料编号保持您输入的大小写。"
+
 msgid "Item ledger"
 msgstr "物品分类账"
 
@@ -8790,6 +8808,9 @@ msgstr "基于批次的已接收商品对抽样计划的检验；单位在收货
 msgid "Low"
 msgstr "低"
 
+msgid "Lowercase item IDs are allowed"
+msgstr "允许使用小写物料编号"
+
 msgid "Machine"
 msgstr "机器"
 
@@ -8946,9 +8967,6 @@ msgstr "制造"
 msgid "Map accounts"
 msgstr "映射科目"
 
-msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
-msgstr "将 Carbon 账户映射到提供商的科目表。已过账日记账使用映射的提供商账户代码推送。"
-
 msgid "Map Extracted Invoice Lines"
 msgstr "映射提取的发票行项目"
 
@@ -8958,11 +8976,11 @@ msgstr "映射提取的行"
 msgid "Map Lines Now"
 msgstr "立即映射行"
 
+msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+msgstr "将您的科目表映射到提供商的科目表。默认过账科目和费用科目标记为必需；已过账日记账使用映射的提供商科目代码进行推送。"
+
 msgid "Map your current process, systems, and data"
 msgstr "映射您当前的流程、系统和数据"
-
-msgid "Mapped accounts"
-msgstr "已映射账户"
 
 msgid "Mapped values"
 msgstr "已映射的值"
@@ -9813,8 +9831,8 @@ msgstr "未添加任何能力"
 msgid "No Access"
 msgstr "无权限"
 
-msgid "No accounts mapped yet"
-msgstr "尚未映射账户"
+msgid "No accounts match your search"
+msgstr "没有账户与您的搜索匹配"
 
 msgid "No action needed"
 msgstr "无需操作"
@@ -13239,6 +13257,9 @@ msgstr "已报废"
 msgid "Search"
 msgstr "搜索"
 
+msgid "Search accounts"
+msgstr "搜索账户"
+
 msgid "Search accounts..."
 msgstr "搜索账户..."
 
@@ -16421,9 +16442,6 @@ msgstr "解锁"
 
 msgid "Unlock with passkey"
 msgstr "使用密钥解锁"
-
-msgid "Unmapped accounts"
-msgstr "未映射的账户"
 
 msgid "Unmapped dimension values"
 msgstr "未映射的维度值"

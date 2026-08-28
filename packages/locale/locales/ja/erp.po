@@ -304,6 +304,7 @@ msgstr "4時間"
 
 msgid "5 user minimum"
 msgstr "ユーザー5人以上必須"
+msgstr "ユーザー最小5名"
 
 msgid "5-8 weeks"
 msgstr "5～8週間"
@@ -361,6 +362,7 @@ msgstr "契約者は、特定の能力と利用可能な時間を持つサプラ
 
 msgid "A custom solution to meet your needs"
 msgstr "ニーズに合わせたカスタムソリューション"
+msgstr "お客様のニーズに合わせたカスタムソリューション"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "顧客とは、あなたの部品またはサービスを購入する企業または個人です。"
@@ -474,6 +476,7 @@ msgstr "その部品が親ジョブに一緒に発行される受注製造コン
 
 msgid "A managed cloud-hosted version of Carbon"
 msgstr "クラウドでホストされたCarbonの管理版"
+msgstr "管理されたクラウドホスト版Carbon"
 
 msgid "A managed version with all the advanced features"
 msgstr "すべての高度な機能を備えた管理版"
@@ -938,9 +941,6 @@ msgstr "売掛金"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "顧客に支払う金額の売掛金。"
 
-msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
-msgstr "転記デフォルトまたはジャーナル履歴で参照されているが、プロバイダーマッピングがまだない勘定科目。"
-
 msgid "Accumulated Depreciation"
 msgstr "累計減価償却費"
 
@@ -1375,9 +1375,6 @@ msgstr "すべての場所"
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "選択されたグループのすべてのメンバーと選択された個人が承認リクエストを承認できます"
 
-msgid "All posting accounts are mapped"
-msgstr "すべての転記勘定科目がマップされています"
-
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "すべての行をインポート—{inserted}行挿入、{updated}行更新。"
 
@@ -1625,6 +1622,7 @@ msgstr "Carbonデータへのプログラマティックアクセス用のAPIキ
 
 msgid "API, webhooks, and integrations"
 msgstr "API、ウェブフック、統合"
+msgstr "API、ウェブフック、および統合"
 
 msgid "Applied"
 msgstr "適用"
@@ -2496,6 +2494,7 @@ msgstr "基本価格"
 
 msgid "Basic ERP, MES, and QMS functionality"
 msgstr "基本的なERP、MES、QMS機能"
+msgstr "基本的なERP、MES、およびQMS機能"
 
 msgid "Basic Information"
 msgstr "基本情報"
@@ -2582,6 +2581,9 @@ msgstr "ブロック中"
 #. placeholder {0}: workCenter.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "{0}によってブロックされています"
+
+msgid "Blocking sync"
+msgstr "ブロッキング同期"
 
 msgid "Blocks save until resolved"
 msgstr "解決されるまで保存をブロックします"
@@ -3554,6 +3556,7 @@ msgstr "連絡先（オプション）"
 
 msgid "Contact us"
 msgstr "お問い合わせ"
+msgstr "お問い合わせください"
 
 msgid "contacts"
 msgstr "連絡先"
@@ -3596,6 +3599,9 @@ msgstr "設計変更をリビジョン/ECOで管理"
 
 msgid "Control how operators pick material and track time on the shop floor."
 msgstr "オペレーターが材料をピックして、現場で時間を追跡する方法を制御します。"
+
+msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
+msgstr "アイテムID（部品、材料、消耗品、工具、およびサービス）に小文字を含めることができるかどうかを制御します。"
 
 msgid "Controller, Accountant"
 msgstr "コントローラー、会計士"
@@ -4435,6 +4441,7 @@ msgstr "顧客"
 
 msgid "Customizations, training, and integrations"
 msgstr "カスタマイズ、トレーニング、統合"
+msgstr "カスタマイズ、トレーニング、および統合"
 
 msgid "Customize"
 msgstr "カスタマイズ"
@@ -5977,6 +5984,9 @@ msgstr "このルールを有効にして、一致するドキュメントの承
 msgid "Enable timecard tracking for work shifts."
 msgstr "勤務シフトのタイムカード追跡を有効にします。"
 
+msgid "Enable to allow lowercase characters in item IDs."
+msgstr "アイテムIDで小文字を許可するには有効にしてください。"
+
 msgid "Enable to allow shared workstation mode."
 msgstr "共有ワークステーションモードを有効にします。"
 
@@ -6239,6 +6249,7 @@ msgstr "すべてのマッチ"
 
 msgid "Every required action has already been added."
 msgstr "すべての必須アクションは既に追加されています。"
+msgstr "すべての必須アクションが既に追加されています。"
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "期間を閉じる前に、すべての必須タスクが完了またはスキップされている必要があります。"
@@ -6281,9 +6292,6 @@ msgstr "免除証明書"
 
 msgid "Exemption Reason"
 msgstr "免除理由"
-
-msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr "既存のマッピング。再マップするには別のプロバイダー勘定科目を選択してください。"
 
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "既存のマッピング。異なるプロバイダーオプションを選択して再マップしてください。"
@@ -7011,6 +7019,7 @@ msgstr "フォーマット"
 
 msgid "Forward deployed engineer"
 msgstr "駐在エンジニア"
+msgstr "フィールドデプロイエンジニア"
 
 msgid "Foundation"
 msgstr "基礎"
@@ -8213,6 +8222,15 @@ msgstr "アイテムグループ"
 msgid "Item ID"
 msgstr "アイテムID"
 
+msgid "Item IDs"
+msgstr "アイテムID"
+
+msgid "Item IDs are forced to uppercase"
+msgstr "アイテムIDは大文字に強制されます"
+
+msgid "Item IDs keep the casing you type."
+msgstr "アイテムIDは入力した大文字小文字を保持します。"
+
 msgid "Item ledger"
 msgstr "アイテム台帳"
 
@@ -8790,6 +8808,9 @@ msgstr "サンプリング計画に対する受け取った商品のロットベ
 msgid "Low"
 msgstr "低"
 
+msgid "Lowercase item IDs are allowed"
+msgstr "小文字のアイテムIDが許可されます"
+
 msgid "Machine"
 msgstr "機械"
 
@@ -8946,9 +8967,6 @@ msgstr "製造"
 msgid "Map accounts"
 msgstr "勘定をマップ"
 
-msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
-msgstr "Carbon勘定科目をプロバイダーの勘定科目体系にマップします。転記されたジャーナルはマップされたプロバイダー勘定科目コードを使用して転記されます。"
-
 msgid "Map Extracted Invoice Lines"
 msgstr "抽出された請求書行をマップする"
 
@@ -8958,11 +8976,11 @@ msgstr "抽出行をマップ"
 msgid "Map Lines Now"
 msgstr "今すぐラインをマップ"
 
+msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+msgstr "勘定科目表をプロバイダーのものにマップしてください。転記デフォルトと費用アカウントは必須としてマークされています。転記されたジャーナルはマップされたプロバイダーアカウントコードを使用してプッシュされます。"
+
 msgid "Map your current process, systems, and data"
 msgstr "現在のプロセス、システム、データをマップする"
-
-msgid "Mapped accounts"
-msgstr "マップ済み勘定科目"
 
 msgid "Mapped values"
 msgstr "マップされた値"
@@ -9813,8 +9831,8 @@ msgstr "能力が追加されていません"
 msgid "No Access"
 msgstr "アクセスなし"
 
-msgid "No accounts mapped yet"
-msgstr "マップされた勘定科目がまだありません"
+msgid "No accounts match your search"
+msgstr "検索に一致するアカウントがありません"
 
 msgid "No action needed"
 msgstr "対応は不要です"
@@ -13239,6 +13257,9 @@ msgstr "スクラップ済み"
 msgid "Search"
 msgstr "検索"
 
+msgid "Search accounts"
+msgstr "アカウントを検索"
+
 msgid "Search accounts..."
 msgstr "アカウントを検索..."
 
@@ -13537,6 +13558,7 @@ msgstr "自己管理"
 
 msgid "Self-hosted or managed"
 msgstr "セルフホストまたは管理"
+msgstr "セルフホスト型または管理型"
 
 msgid "Self-onboarding"
 msgstr "セルフオンボーディング"
@@ -14865,6 +14887,7 @@ msgstr "チームが訓練を受けた"
 
 msgid "Technical support"
 msgstr "技術サポート"
+msgstr "テクニカルサポート"
 
 msgid "Temperature"
 msgstr "温度"
@@ -16409,6 +16432,7 @@ msgstr "無制限の機能サポート"
 
 msgid "Unlimited records"
 msgstr "無制限レコード"
+msgstr "無制限のレコード"
 
 msgid "Unlink"
 msgstr "リンク解除"
@@ -16421,9 +16445,6 @@ msgstr "ロック解除"
 
 msgid "Unlock with passkey"
 msgstr "パスキーでロック解除"
-
-msgid "Unmapped accounts"
-msgstr "マップされていないアカウント"
 
 msgid "Unmapped dimension values"
 msgstr "マップされていないディメンション値"

@@ -127,6 +127,7 @@ const MaterialForm = ({
   const permissions = usePermissions();
   const companySettings = useSettings();
   const useCustomId = companySettings.materialGeneratedIds === false;
+  const allowLowercaseItemIds = companySettings.allowLowercaseItemIds === true;
 
   const [defaultMethodType, setDefaultMethodType] = useState<string>(
     initialValues.defaultMethodType ?? "Purchase to Order"
@@ -205,7 +206,7 @@ const MaterialForm = ({
                       value={id}
                       onChange={onIdChange}
                       isDisabled={loading}
-                      isUppercase
+                      isUppercase={!allowLowercaseItemIds}
                       autoFocus
                     />
 

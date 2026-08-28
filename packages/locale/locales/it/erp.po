@@ -477,6 +477,7 @@ msgstr "Una versione gestita di Carbon ospitata nel cloud"
 
 msgid "A managed version with all the advanced features"
 msgstr "Una versione gestita con tutte le funzionalità avanzate"
+msgstr "Una versione gestita con tutte le funzioni avanzate"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Un materiale è un articolo fisico utilizzato per realizzare una parte che può essere utilizzata in più lavori"
@@ -938,9 +939,6 @@ msgstr "Crediti verso clienti"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Crediti verso clienti per importi dovuti dai clienti."
 
-msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
-msgstr "Conti referenziati da impostazioni di default di posting o cronologia giornale che non hanno ancora una mappatura provider."
-
 msgid "Accumulated Depreciation"
 msgstr "Fondo di ammortamento"
 
@@ -1347,6 +1345,7 @@ msgstr "Tutte le azioni selezionate"
 
 msgid "All advanced features available"
 msgstr "Tutte le funzionalità avanzate disponibili"
+msgstr "Tutte le funzioni avanzate disponibili"
 
 msgid "All Audit Logs"
 msgstr "Tutti i registri di audit"
@@ -1374,9 +1373,6 @@ msgstr "Tutte le Ubicazioni"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Tutti i membri dei gruppi selezionati e gli individui selezionati potranno approvare le richieste"
-
-msgid "All posting accounts are mapped"
-msgstr "Tutti i conti di posting sono mappati"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "Tutte le righe importate — {inserted} inserite, {updated} aggiornate."
@@ -2324,6 +2320,7 @@ msgstr "Registro di Audit"
 
 msgid "Audit logging"
 msgstr "Registrazione di controllo"
+msgstr "Registrazione di audit"
 
 msgid "Audit Logging"
 msgstr "Registrazione di audit"
@@ -2496,6 +2493,7 @@ msgstr "Prezzo Base"
 
 msgid "Basic ERP, MES, and QMS functionality"
 msgstr "Funzionalità di base di ERP, MES e QMS"
+msgstr "Funzionalità ERP, MES e QMS di base"
 
 msgid "Basic Information"
 msgstr "Informazioni di base"
@@ -2582,6 +2580,9 @@ msgstr "Bloccato"
 #. placeholder {0}: workCenter.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Bloccato da {0}"
+
+msgid "Blocking sync"
+msgstr "Sincronizzazione bloccante"
 
 msgid "Blocks save until resolved"
 msgstr "Blocca il salvataggio fino alla risoluzione"
@@ -3596,6 +3597,9 @@ msgstr "Controllare le modifiche di progettazione con revisioni / ECO"
 
 msgid "Control how operators pick material and track time on the shop floor."
 msgstr "Controlla come gli operatori prelevano il materiale e tracciano il tempo in officina."
+
+msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
+msgstr "Controlla se gli ID degli articoli (parti, materiali, consumabili, strumenti e servizi) possono contenere caratteri minuscoli."
 
 msgid "Controller, Accountant"
 msgstr "Controllore, Contabile"
@@ -5977,6 +5981,9 @@ msgstr "Abilita questa regola per richiedere automaticamente l'approvazione per 
 msgid "Enable timecard tracking for work shifts."
 msgstr "Abilita il monitoraggio delle schede orarie per i turni di lavoro."
 
+msgid "Enable to allow lowercase characters in item IDs."
+msgstr "Abilita per consentire caratteri minuscoli negli ID degli articoli."
+
 msgid "Enable to allow shared workstation mode."
 msgstr "Abilita per consentire la modalità workstation condivisa."
 
@@ -6281,9 +6288,6 @@ msgstr "Certificato di Esenzione"
 
 msgid "Exemption Reason"
 msgstr "Motivo dell'Esenzione"
-
-msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr "Mappature esistenti. Seleziona un conto provider diverso per rimappare."
 
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Mapping esistenti. Scegli un'opzione provider diversa per rimappare."
@@ -7011,6 +7015,7 @@ msgstr "Formato"
 
 msgid "Forward deployed engineer"
 msgstr "Ingegnere dislocato in avanti"
+msgstr "Ingegnere distribuito in avanti"
 
 msgid "Foundation"
 msgstr "Fondamenti"
@@ -7067,6 +7072,7 @@ msgstr "Nome completo"
 
 msgid "Full setup and migrations"
 msgstr "Configurazione completa e migrazioni"
+msgstr "Configurazione e migrazioni complete"
 
 msgid "Fully Depreciated"
 msgstr "Completamente Ammortizzato"
@@ -8213,6 +8219,15 @@ msgstr "Gruppi di articoli"
 msgid "Item ID"
 msgstr "ID Articolo"
 
+msgid "Item IDs"
+msgstr "ID articoli"
+
+msgid "Item IDs are forced to uppercase"
+msgstr "Gli ID degli articoli sono forzati in maiuscole"
+
+msgid "Item IDs keep the casing you type."
+msgstr "Gli ID degli articoli mantengono l'uso delle maiuscole che digiti."
+
 msgid "Item ledger"
 msgstr "Libro Mastro Articoli"
 
@@ -8790,6 +8805,9 @@ msgstr "Ispezione basata su lotto della merce ricevuta secondo un piano di campi
 msgid "Low"
 msgstr "Basso"
 
+msgid "Lowercase item IDs are allowed"
+msgstr "Gli ID degli articoli in minuscole sono consentiti"
+
 msgid "Machine"
 msgstr "Macchina"
 
@@ -8946,9 +8964,6 @@ msgstr "Produzione"
 msgid "Map accounts"
 msgstr "Mappa conti"
 
-msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
-msgstr "Mappa i conti Carbon al piano dei conti del provider. I giornali posting vengono inviati utilizzando il codice conto provider mappato."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Mappa Righe Fattura Estratte"
 
@@ -8958,11 +8973,11 @@ msgstr "Mappa Righe Estratte"
 msgid "Map Lines Now"
 msgstr "Mappa Righe Ora"
 
+msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+msgstr "Associa il tuo piano dei conti con quello del fornitore. I conti di registrazione predefinita e i conti spese sono contrassegnati come Obbligatori; i diari contabili registrati vengono inviati utilizzando il codice account del fornitore mappato."
+
 msgid "Map your current process, systems, and data"
 msgstr "Mappa il tuo processo attuale, i sistemi e i dati"
-
-msgid "Mapped accounts"
-msgstr "Conti mappati"
 
 msgid "Mapped values"
 msgstr "Valori mappati"
@@ -9813,8 +9828,8 @@ msgstr "Nessuna competenza aggiunta"
 msgid "No Access"
 msgstr "Nessun accesso"
 
-msgid "No accounts mapped yet"
-msgstr "Nessun conto mappato ancora"
+msgid "No accounts match your search"
+msgstr "Nessun account corrisponde alla tua ricerca"
 
 msgid "No action needed"
 msgstr "Nessuna azione necessaria"
@@ -13239,6 +13254,9 @@ msgstr "Scartato"
 msgid "Search"
 msgstr "Cerca"
 
+msgid "Search accounts"
+msgstr "Cerca account"
+
 msgid "Search accounts..."
 msgstr "Cerca conti..."
 
@@ -13540,6 +13558,7 @@ msgstr "Auto-ospitato o gestito"
 
 msgid "Self-onboarding"
 msgstr "Onboarding autonomo"
+msgstr "Auto-onboarding"
 
 msgid "Self-paced"
 msgstr "Autonomo"
@@ -16421,9 +16440,6 @@ msgstr "Sblocca"
 
 msgid "Unlock with passkey"
 msgstr "Sblocca con passkey"
-
-msgid "Unmapped accounts"
-msgstr "Account non mappati"
 
 msgid "Unmapped dimension values"
 msgstr "Valori di dimensione non mappati"

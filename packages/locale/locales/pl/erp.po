@@ -361,6 +361,7 @@ msgstr "Wykonawca to kontakt dostawcy z określonymi umiejętnościami i dostęp
 
 msgid "A custom solution to meet your needs"
 msgstr "Niestandardowe rozwiązanie dostosowane do Twoich potrzeb"
+msgstr "Dostosowane rozwiązanie spełniające Twoje potrzeby"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Klient to firma lub osoba, która kupuje Twoje części lub usługi."
@@ -938,9 +939,6 @@ msgstr "Rozrachunki z odbiorcami"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Rozrachunki z odbiorcami za kwoty należne od odbiorców."
 
-msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
-msgstr "Konta przywoływane przez ustawienia domyślne księgowania lub historię dziennika, które nie mają jeszcze mapowania dostawcy."
-
 msgid "Accumulated Depreciation"
 msgstr "Skumulowana amortyzacja"
 
@@ -1374,9 +1372,6 @@ msgstr "Wszystkie lokalizacje"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Wszyscy członkowie wybranych grup i wybrane osoby będą mogły zatwierdzać żądania"
-
-msgid "All posting accounts are mapped"
-msgstr "Wszystkie konta księgowania są zmapowane"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "Wszystkie wiersze zaimportowane — {inserted} wstawiono, {updated} zaktualizowano."
@@ -2496,6 +2491,7 @@ msgstr "Cena bazowa"
 
 msgid "Basic ERP, MES, and QMS functionality"
 msgstr "Podstawowa funkcjonalność ERP, MES i QMS"
+msgstr "Podstawowe funkcje ERP, MES i QMS"
 
 msgid "Basic Information"
 msgstr "Informacje podstawowe"
@@ -2582,6 +2578,9 @@ msgstr "Zablokowane"
 #. placeholder {0}: workCenter.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Zablokowane przez {0}"
+
+msgid "Blocking sync"
+msgstr "Synchronizacja blokująca"
 
 msgid "Blocks save until resolved"
 msgstr "Blokuje zapis do czasu rozwiązania"
@@ -3596,6 +3595,9 @@ msgstr "Kontroluj zmiany projektowe za pomocą wersji / ECO"
 
 msgid "Control how operators pick material and track time on the shop floor."
 msgstr "Kontroluj, jak operatorzy zbierają materiały i śledzą czas na hali produkcyjnej."
+
+msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
+msgstr "Kontroluj, czy identyfikatory pozycji (części, materiały, materiały eksploatacyjne, narzędzia i usługi) mogą zawierać małe litery."
 
 msgid "Controller, Accountant"
 msgstr "Kontroler, Księgowy"
@@ -5977,6 +5979,9 @@ msgstr "Włącz tę regułę, aby automatycznie wymagać zatwierdzenia dla pasuj
 msgid "Enable timecard tracking for work shifts."
 msgstr "Włącz śledzenie kart czasu pracy dla zmian roboczych."
 
+msgid "Enable to allow lowercase characters in item IDs."
+msgstr "Włącz, aby zezwolić na małe litery w identyfikatorach pozycji."
+
 msgid "Enable to allow shared workstation mode."
 msgstr "Włącz, aby umożliwić tryb wspólnej stacji roboczej."
 
@@ -6281,9 +6286,6 @@ msgstr "Certifikat Zwolnienia"
 
 msgid "Exemption Reason"
 msgstr "Powód Zwolnienia"
-
-msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr "Istniejące mapowania. Wybierz inne konto dostawcy, aby ponownie zmapować."
 
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Istniejące mapowania. Wybierz inną opcję dostawcy, aby przezmapować."
@@ -7011,6 +7013,7 @@ msgstr "Format"
 
 msgid "Forward deployed engineer"
 msgstr "Inżynier wdrożony na miejscu"
+msgstr "Inżynier wdrażany on-site"
 
 msgid "Foundation"
 msgstr "Fundament"
@@ -7067,6 +7070,7 @@ msgstr "Pełne imię i nazwisko"
 
 msgid "Full setup and migrations"
 msgstr "Pełna konfiguracja i migracje"
+msgstr "Pełne ustawienie i migracje"
 
 msgid "Fully Depreciated"
 msgstr "Całkowicie zamortyzowane"
@@ -8213,6 +8217,15 @@ msgstr "Grupy Pozycji"
 msgid "Item ID"
 msgstr "ID Przedmiotu"
 
+msgid "Item IDs"
+msgstr "Identyfikatory pozycji"
+
+msgid "Item IDs are forced to uppercase"
+msgstr "Identyfikatory pozycji są wymuszane na wielkie litery"
+
+msgid "Item IDs keep the casing you type."
+msgstr "Identyfikatory pozycji zachowują wielkość liter, które wpisujesz."
+
 msgid "Item ledger"
 msgstr "Księga Artykułów"
 
@@ -8790,6 +8803,9 @@ msgstr "Inspekcja oparta na partiach otrzymanych towarów względem planu poboru
 msgid "Low"
 msgstr "Niska"
 
+msgid "Lowercase item IDs are allowed"
+msgstr "Identyfikatory pozycji z małymi literami są dozwolone"
+
 msgid "Machine"
 msgstr "Maszyna"
 
@@ -8946,9 +8962,6 @@ msgstr "Produkcja"
 msgid "Map accounts"
 msgstr "Zmapuj konta"
 
-msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
-msgstr "Mapuj konta Carbon na plan kont dostawcy. Opublikowane dzienniki są wysyłane przy użyciu zmapowanego kodu konta dostawcy."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Mapuj wyodrębnione linie faktury"
 
@@ -8958,11 +8971,11 @@ msgstr "Mapuj Wyodrębnione Linie"
 msgid "Map Lines Now"
 msgstr "Mapuj linie teraz"
 
+msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+msgstr "Zmapuj swój plan kont na plan dostawcy. Konta Posting-default i wydatkowe są oznaczone jako Wymagane; zaksięgowane dzienniki są wysyłane przy użyciu zmapowanego kodu konta dostawcy."
+
 msgid "Map your current process, systems, and data"
 msgstr "Zmapuj swój obecny proces, systemy i dane"
-
-msgid "Mapped accounts"
-msgstr "Zmapowane konta"
 
 msgid "Mapped values"
 msgstr "Zmapowane wartości"
@@ -9813,8 +9826,8 @@ msgstr "Brak dodanych umiejętności"
 msgid "No Access"
 msgstr "Brak dostępu"
 
-msgid "No accounts mapped yet"
-msgstr "Nie zmapowano jeszcze żadnych kont"
+msgid "No accounts match your search"
+msgstr "Żadne konta nie pasują do Twojego wyszukiwania"
 
 msgid "No action needed"
 msgstr "Brak wymaganych działań"
@@ -13239,6 +13252,9 @@ msgstr "Złomowany"
 msgid "Search"
 msgstr "Szukaj"
 
+msgid "Search accounts"
+msgstr "Wyszukaj konta"
+
 msgid "Search accounts..."
 msgstr "Szukaj kont..."
 
@@ -13540,6 +13556,10 @@ msgstr "Samoobsługiwanie lub zarządzanie"
 
 msgid "Self-onboarding"
 msgstr "Samodzielne wdrożenie"
+msgstr "Samodzielnie hostowany lub zarządzany"
+
+msgid "Self-onboarding"
+msgstr "Samodzielne wdrażanie"
 
 msgid "Self-paced"
 msgstr "Samodzielne tempo"
@@ -16421,9 +16441,6 @@ msgstr "Odblokuj"
 
 msgid "Unlock with passkey"
 msgstr "Odblokuj za pomocą klucza dostępu"
-
-msgid "Unmapped accounts"
-msgstr "Niezamapowane konta"
 
 msgid "Unmapped dimension values"
 msgstr "Niezamapowane wartości wymiarów"

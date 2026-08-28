@@ -304,6 +304,7 @@ msgstr "4s"
 
 msgid "5 user minimum"
 msgstr "5 kullanıcı minimum"
+msgstr "5 kullanıcı minimumu"
 
 msgid "5-8 weeks"
 msgstr "5-8 hafta"
@@ -477,6 +478,10 @@ msgstr "Carbon'un yönetilen bir bulut barındırmalı sürümü"
 
 msgid "A managed version with all the advanced features"
 msgstr "Tüm gelişmiş özellikleri ile yönetilen bir sürüm"
+msgstr "Carbon'un yönetilen bulut barındırmalı sürümü"
+
+msgid "A managed version with all the advanced features"
+msgstr "Tüm gelişmiş özellikleri içeren yönetilen bir sürüm"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Bir malzeme, birden fazla işte kullanılabilecek bir parça yapmak için kullanılan fiziksel bir öğedir"
@@ -938,9 +943,6 @@ msgstr "Alacak hesapları"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Müşteriler tarafından borçlu olunan tutarlar için alacak hesapları."
 
-msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
-msgstr "Deftere nakil varsayılanları veya yevmiye geçmişi tarafından referans verilen ancak henüz sağlayıcı haritalaması olmayan hesaplar."
-
 msgid "Accumulated Depreciation"
 msgstr "Birikmiş amortisman"
 
@@ -1347,6 +1349,7 @@ msgstr "Tüm eylemler seçildi"
 
 msgid "All advanced features available"
 msgstr "Tüm gelişmiş özellikler kullanılabilir"
+msgstr "Tüm gelişmiş özellikler mevcut"
 
 msgid "All Audit Logs"
 msgstr "Tüm Denetim Kayıtları"
@@ -1374,9 +1377,6 @@ msgstr "Tüm Konumlar"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Seçilen gruplardaki ve bireylerdeki tüm üyeler talepleri onaylayabilecektir"
-
-msgid "All posting accounts are mapped"
-msgstr "Tüm deftere nakil hesapları haritalanmış"
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "{inserted} eklendi, {updated} güncellendi — tüm satırlar içe aktarıldı."
@@ -2583,6 +2583,9 @@ msgstr "Engellendi"
 msgid "Blocked by {0}"
 msgstr "Bloklandı: {0}"
 
+msgid "Blocking sync"
+msgstr "Engelleme senkronizasyonu"
+
 msgid "Blocks save until resolved"
 msgstr "Çözülene kadar kaydetmeyi engeller"
 
@@ -3554,6 +3557,7 @@ msgstr "İletişim (isteğe bağlı)"
 
 msgid "Contact us"
 msgstr "Bizimle iletişime geçin"
+msgstr "Bize başvurun"
 
 msgid "contacts"
 msgstr "kişiler"
@@ -3596,6 +3600,9 @@ msgstr "Tasarım değişikliklerini revizyonlar / ECO'lar ile kontrol edin"
 
 msgid "Control how operators pick material and track time on the shop floor."
 msgstr "Operatörlerin malzeme nasıl seçtiğini ve atölye katında zamanı nasıl takip ettiğini kontrol edin."
+
+msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
+msgstr "Ürün kimliklerinin (parçalar, malzemeler, tüketilebilir ürünler, araçlar ve hizmetler) küçük harf karakterler içerebilir olup olmadığını kontrol edin."
 
 msgid "Controller, Accountant"
 msgstr "Kontrolör, Muhasebeci"
@@ -5977,6 +5984,9 @@ msgstr "Bu kuralı etkinleştirerek eşleşen belgeler için otomatik olarak ona
 msgid "Enable timecard tracking for work shifts."
 msgstr "Çalışma vardiyaları için zaman kartı takibini etkinleştir."
 
+msgid "Enable to allow lowercase characters in item IDs."
+msgstr "Ürün kimliklerinde küçük harf karakterlere izin vermek için etkinleştirin."
+
 msgid "Enable to allow shared workstation mode."
 msgstr "Paylaşımlı iş istasyonu moduna izin vermek için etkinleştirin."
 
@@ -6239,6 +6249,7 @@ msgstr "Her eşleşme"
 
 msgid "Every required action has already been added."
 msgstr "Gerekli tüm işlemler zaten eklendi."
+msgstr "Gerekli olan tüm eylemler zaten eklendi."
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Dönem kapatılmadan önce gerekli tüm görevler Tamamlandı veya Atlandı olarak işaretlenmelidir."
@@ -6281,9 +6292,6 @@ msgstr "İstisnai Sertifika"
 
 msgid "Exemption Reason"
 msgstr "İstisnai Nedeni"
-
-msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr "Mevcut haritalamalar. Yeniden haritalamak için farklı bir sağlayıcı hesabı seçin."
 
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Mevcut eşlemeler. Yeniden eşlemek için farklı bir sağlayıcı seçeneği seçin."
@@ -7011,6 +7019,7 @@ msgstr "Biçim"
 
 msgid "Forward deployed engineer"
 msgstr "İleriye dönük konuşlandırılmış mühendis"
+msgstr "Ön konuşlandırılmış mühendis"
 
 msgid "Foundation"
 msgstr "Temel"
@@ -8213,6 +8222,15 @@ msgstr "Ürün Grupları"
 msgid "Item ID"
 msgstr "Ürün Kimliği"
 
+msgid "Item IDs"
+msgstr "Ürün Kimlikleri"
+
+msgid "Item IDs are forced to uppercase"
+msgstr "Ürün Kimlikleri büyük harfe zorlanır"
+
+msgid "Item IDs keep the casing you type."
+msgstr "Ürün Kimlikleri yazdığınız büyük/küçük harf yazımını korur."
+
 msgid "Item ledger"
 msgstr "Madde Defteri"
 
@@ -8790,6 +8808,9 @@ msgstr "Alınan malların bir örnekleme planına karşı lot bazında denetlenm
 msgid "Low"
 msgstr "Düşük"
 
+msgid "Lowercase item IDs are allowed"
+msgstr "Küçük harf Ürün Kimlikleri izin verilir"
+
 msgid "Machine"
 msgstr "Makine"
 
@@ -8946,9 +8967,6 @@ msgstr "Üretim"
 msgid "Map accounts"
 msgstr "Hesapları Eşle"
 
-msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
-msgstr "Carbon hesaplarını sağlayıcının hesap planına haritalayın. Deftere nakledilen yevmiyeler, haritalanan sağlayıcı hesap kodunu kullanarak gönderilir."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Çıkarılan Fatura Satırlarını Eşle"
 
@@ -8958,11 +8976,11 @@ msgstr "Çıkarılan Satırları Eşle"
 msgid "Map Lines Now"
 msgstr "Satırları Şimdi Eşle"
 
+msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+msgstr "Muhasebe planınızı sağlayıcıya eşleştirin. Deftere Nakil-varsayılan ve gider hesapları Gerekli olarak işaretlenmiştir; deftere nakledilen günlükler eşleştirilen sağlayıcı hesap kodunu kullanarak gönderilir."
+
 msgid "Map your current process, systems, and data"
 msgstr "Mevcut sürecinizi, sistemlerinizi ve verilerinizi eşleyin"
-
-msgid "Mapped accounts"
-msgstr "Haritalanan hesaplar"
 
 msgid "Mapped values"
 msgstr "Eşlenen değerler"
@@ -9813,8 +9831,8 @@ msgstr "Ek yetenek eklenmedi"
 msgid "No Access"
 msgstr "Erişim Yok"
 
-msgid "No accounts mapped yet"
-msgstr "Henüz hiçbir hesap haritalanmamış"
+msgid "No accounts match your search"
+msgstr "Aramanızla eşleşen hesap yok"
 
 msgid "No action needed"
 msgstr "Yapılacak işlem yok"
@@ -13239,6 +13257,9 @@ msgstr "Çıkartıldı"
 msgid "Search"
 msgstr "Ara"
 
+msgid "Search accounts"
+msgstr "Hesapları arayın"
+
 msgid "Search accounts..."
 msgstr "Hesapları ara..."
 
@@ -13540,6 +13561,10 @@ msgstr "Kendi kendine barındırılan veya yönetilen"
 
 msgid "Self-onboarding"
 msgstr "Kendi kendine yerleştirme"
+msgstr "Kendi barındırmalı veya yönetilen"
+
+msgid "Self-onboarding"
+msgstr "Kendi kendine katılım"
 
 msgid "Self-paced"
 msgstr "Kendi hızında"
@@ -16421,9 +16446,6 @@ msgstr "Kilidi Aç"
 
 msgid "Unlock with passkey"
 msgstr "Geçiş Anahtarı ile Kilit Aç"
-
-msgid "Unmapped accounts"
-msgstr "Eşleştirilmemiş hesaplar"
 
 msgid "Unmapped dimension values"
 msgstr "Eşlenmemiş boyut değerleri"
