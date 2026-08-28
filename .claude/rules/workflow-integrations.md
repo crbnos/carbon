@@ -82,8 +82,10 @@ node, then pick the app and the step inside it. `config/forms/IntegrationNodeFor
 does that; `config/forms/StepInput.tsx` renders the inputs and is SHARED with `ActionForm`,
 so the two kinds cannot drift apart as input kinds are added.
 
-Picking the app is GATED on that app being connected: `useHasConnection` asks the same
-options provider the connection input would, and an app with no connection renders one
+Picking the app is GATED on that app being connected: the form calls `useWorkflowOptions`
+— the SAME hook `OptionsField` uses, so the "is this connected?" question and the connection
+dropdown cannot disagree about how a provider is called (notably about `dependsOn`, which a
+hand-rolled second fetcher was free to forget) — and an app with no connection renders one
 "Connect …" button (to `path.to.integration(piece)`, in a new tab so the canvas survives)
 instead of the step picker and inputs. Every step of an app shares one connection input, so
 the FIRST step of the app answers for it — which is what lets the question be asked before a
@@ -258,14 +260,28 @@ the SAME string as the piece name, so nothing has to map between the two.
   listing the connected accounts with rename, Disconnect and Add account. It is the ONE place
   this integration differs from the others, and only because a workflow step picks which
   account it runs as.
-- Uninstall goes through the standard deactivate route, whose `onUninstall` hook
-  (`google-calendar/hooks.server.ts`) revokes every connected account — otherwise the
-  uninstall would leave live tokens the customer can no longer see.
+- Uninstall goes through the standard deactivate route, whose `onUninstall` hook calls the
+  generic `revokeConnectionsForPiece` — otherwise the uninstall would leave live tokens the
+  customer can no longer see. There is deliberately no per-vendor hooks FILE: that behaviour
+  is identical for every piece, and a file per vendor is a file per vendor to forget.
+- Both Install (the card) and Add account (the drawer) go through
+  `integrations/connect.ts` `startIntegrationConnect` / `openConsentPopup`, so the two
+  entry points cannot drift into different popup sizes and different failure behaviour.
 
-## A vendor is named in ONE place
+## A vendor is named in ONE place, on the workflow side
 
-`allowlist.ts` carries everything vendor-specific, so no shared file has a
-`if (pieceName === …)` in it. Beyond the package and the action names, a row declares:
+`allowlist.ts` carries everything the workflow side needs, so no shared file has a
+`if (pieceName === …)` in it. (A vendor still has its own `defineIntegration` card and its
+three env vars in `@carbon/env` — see the checklist below.) Beyond the package and the
+action names, a row declares:
+
+- `label` — the app's OWN name. The generator emits it as the `integration.<piece>` label,
+  so the builder reads it like any other catalog string, translated. Nothing derives a name
+  by title-casing the package slug: that is only ever right by accident ("Hubspot",
+  "Github", "Zoho Crm").
+- `version` — the EXACT installed version. `assertPinnedVersions` compares it against
+  `packages/jobs/package.json` from the catalog check, so the field is a gate rather than a
+  comment.
 
 - `oauth` — the **NAMES** of the three env vars holding Carbon's app for that vendor, never
   the values (this module is imported by build-time catalog scripts). `resolveOAuthApp` in
@@ -285,16 +301,22 @@ in this path.
 ## Adding a piece
 
 1. `pnpm --filter @carbon/jobs add @activepieces/piece-<name>@<exact version>`
-2. Add the entry to `PIECE_ALLOWLIST`: action names, the three `oauth` env var names, and
-   `accountLabel` if the vendor has such an endpoint.
+2. Add the entry to `PIECE_ALLOWLIST`: the exact `version` (no range — `assertPinnedVersions`
+   compares it to package.json from the catalog check), `label` (the app's own name, which
+   the generator emits as the `integration.<piece>` label — do NOT expect it to be derived
+   from the slug), action names, the three `oauth` env var names, and `accountLabel` if the
+   vendor has such an endpoint.
 3. Register the OAuth app with the vendor and set those env vars (add them to
    `.env.example` too).
 4. Add the client id to `getBrowserEnv()` and the `Window.env` declaration in
    `packages/env/src/index.ts`. That list is fixed and cannot be looked up by name, and the
    settings card reads it client-side to decide "Coming soon" — this is the one step the
    allowlist row cannot carry for you.
-5. Add an ordinary `defineIntegration` config whose `id` IS the piece name, register it in
-   the `integrations` array, and add its `onUninstall` to `hooks.server.ts`.
+5. Add an ordinary `defineIntegration` config whose `id` IS the piece name, with
+   `onClientInstall: () => startIntegrationConnect(...)`, and register it in the
+   `integrations` array. Its `hooks.server.ts` entry is one line —
+   `onUninstall: (companyId) => revokeConnectionsForPiece(getCarbonServiceRole(), "<piece>", companyId)`
+   — never a per-vendor hooks file; there is nothing vendor-specific in that behaviour.
 6. `pnpm run generate:workflow-catalog && pnpm run check:workflow-catalog`.
 
 Step 3 is the real work and the real gate. The rest takes minutes.
