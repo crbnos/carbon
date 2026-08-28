@@ -51,8 +51,15 @@ export function buildMatcher(doc) {
 // holds real human text and MUST stay visible to the matcher.
 const PLACEHOLDER = /\{[A-Za-z0-9_]+\}/g;
 
+// `{variances, plural, …}` — the argument name and the ICU keyword are code too,
+// but the trailing comma keeps them out of PLACEHOLDER. Mask the header ONLY,
+// so the branches after it stay visible.
+const ICU_HEADER = /\{\s*[A-Za-z0-9_]+\s*,\s*(plural|select|selectordinal)\s*,/g;
+
 export function maskPlaceholders(str) {
-  return str.replace(PLACEHOLDER, (m) => " ".repeat(m.length));
+  return str
+    .replace(ICU_HEADER, (m) => " ".repeat(m.length))
+    .replace(PLACEHOLDER, (m) => " ".repeat(m.length));
 }
 
 // Longest-match-wins: "Sales Order Line" consumes the "Line" inside it, so a
