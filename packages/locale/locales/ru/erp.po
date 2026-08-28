@@ -6252,9 +6252,6 @@ msgstr "Сертификат освобождения"
 msgid "Exemption Reason"
 msgstr "Причина освобождения"
 
-msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr "Существующие сопоставления. Выберите другой счет системы для переассоциации."
-
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Существующие отображения. Выберите другой вариант провайдера для переотображения."
 
@@ -7389,9 +7386,6 @@ msgstr "Справка"
 
 msgid "Hide"
 msgstr "Скрыть"
-
-msgid "Hide accounts"
-msgstr "Скрыть счета"
 
 msgid "Hide raw"
 msgstr "Скрыть исходное"
@@ -8907,12 +8901,6 @@ msgstr "Производство"
 msgid "Map accounts"
 msgstr "Сопоставить счета"
 
-msgid "Map any account in the chart of accounts, not just the required ones."
-msgstr "Отобразите любой счет в плане счетов, а не только требуемые."
-
-msgid "Map any Carbon account to the provider's chart of accounts. Accounts that automated postings run through are marked Required; the rest are optional. Posted journals push using the mapped provider account code."
-msgstr "Отобразите любой счет Carbon на план счетов провайдера. Счета, по которым проходят автоматические проводки, помечены как «Требуется»; остальные являются необязательными. Опубликованные журналы отправляются с использованием кода отображенного счета провайдера."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Сопоставить извлеченные строки счета"
 
@@ -8922,11 +8910,11 @@ msgstr "Сопоставить извлеченные строки"
 msgid "Map Lines Now"
 msgstr "Сопоставить строки сейчас"
 
+msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+msgstr "Сопоставьте свой план счетов с планом счетов провайдера. Счета учета по умолчанию и счета расходов обозначены как Требуемые; проведенные журналы отправляются с использованием сопоставленного кода счета провайдера."
+
 msgid "Map your current process, systems, and data"
 msgstr "Сопоставьте ваш текущий процесс, системы и данные"
-
-msgid "Mapped accounts"
-msgstr "Сопоставленные счета"
 
 msgid "Mapped values"
 msgstr "Отображенные значения"
@@ -9402,9 +9390,6 @@ msgstr "Нужны правильные столбцы?"
 msgid "Needs a Business or Partner plan."
 msgstr "Требуется план Business или Partner."
 
-msgid "Needs attention"
-msgstr "Требует внимания"
-
 msgid "Needs fixing"
 msgstr "Требуется исправление"
 
@@ -9779,9 +9764,6 @@ msgstr "Нет добавленных навыков"
 
 msgid "No Access"
 msgstr "Нет доступа"
-
-msgid "No accounts mapped yet"
-msgstr "Счета еще не сопоставлены"
 
 msgid "No accounts match your search"
 msgstr "Ни один счет не соответствует вашему поиску"
@@ -10276,9 +10258,6 @@ msgstr "На этом месте больше нечего извлекать и
 
 msgid "Nothing in the archive"
 msgstr "Ничего в архиве"
-
-msgid "Nothing needs mapping"
-msgstr "Ничего не требует отображения"
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Пока ничего. Шаг предоставляет значения только после того, как он будет настроен."
@@ -12515,9 +12494,6 @@ msgstr "Требовать двухфакторную аутентификаци
 msgid "Required"
 msgstr "Обязательно"
 
-msgid "Required accounts with no mapping, and accounts blocking a sync right now."
-msgstr "Требуемые счета без отображения и счета, которые сейчас блокируют синхронизацию."
-
 msgid "Required Action"
 msgstr "Требуемое действие"
 
@@ -13868,9 +13844,6 @@ msgstr "Показывать столбец с читаемым ID клиент�
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "Показать читаемый столбец ID поставщика в списке поставщиков, формах поставщиков и раскрывающихся списках. Поставщики по-прежнему идентифицируются внутри системы в любом случае."
-
-msgid "Show all accounts"
-msgstr "Показать все счета"
 
 msgid "Show Customer IDs"
 msgstr "Показать ID клиентов"

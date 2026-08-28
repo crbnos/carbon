@@ -6252,9 +6252,6 @@ msgstr "免除証明書"
 msgid "Exemption Reason"
 msgstr "免除理由"
 
-msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr "既存のマッピング。再マップするには別のプロバイダー勘定科目を選択してください。"
-
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "既存のマッピング。異なるプロバイダーオプションを選択して再マップしてください。"
 
@@ -7389,9 +7386,6 @@ msgstr "ヘルプ"
 
 msgid "Hide"
 msgstr "非表示"
-
-msgid "Hide accounts"
-msgstr "アカウントを非表示にする"
 
 msgid "Hide raw"
 msgstr "生データを非表示"
@@ -8907,12 +8901,6 @@ msgstr "製造"
 msgid "Map accounts"
 msgstr "勘定をマップ"
 
-msgid "Map any account in the chart of accounts, not just the required ones."
-msgstr "勘定科目表内のいずれかのアカウントをマップします。必要なものだけではなく。"
-
-msgid "Map any Carbon account to the provider's chart of accounts. Accounts that automated postings run through are marked Required; the rest are optional. Posted journals push using the mapped provider account code."
-msgstr "Carbonのアカウントをプロバイダーの勘定科目表にマップします。自動転記が通過するアカウントは「必須」としてマークされます。残りはオプションです。転記されたジャーナルはマップされたプロバイダーアカウントコードを使用してプッシュされます。"
-
 msgid "Map Extracted Invoice Lines"
 msgstr "抽出された請求書行をマップする"
 
@@ -8922,11 +8910,11 @@ msgstr "抽出行をマップ"
 msgid "Map Lines Now"
 msgstr "今すぐラインをマップ"
 
+msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+msgstr "勘定科目表をプロバイダーのものにマップしてください。転記デフォルトと費用アカウントは必須としてマークされています。転記されたジャーナルはマップされたプロバイダーアカウントコードを使用してプッシュされます。"
+
 msgid "Map your current process, systems, and data"
 msgstr "現在のプロセス、システム、データをマップする"
-
-msgid "Mapped accounts"
-msgstr "マップ済み勘定科目"
 
 msgid "Mapped values"
 msgstr "マップされた値"
@@ -9402,9 +9390,6 @@ msgstr "正しい列が必要ですか？"
 msgid "Needs a Business or Partner plan."
 msgstr "ビジネスプランまたはパートナープランが必要です。"
 
-msgid "Needs attention"
-msgstr "注意が必要です"
-
 msgid "Needs fixing"
 msgstr "修理が必要です"
 
@@ -9779,9 +9764,6 @@ msgstr "能力が追加されていません"
 
 msgid "No Access"
 msgstr "アクセスなし"
-
-msgid "No accounts mapped yet"
-msgstr "マップされた勘定科目がまだありません"
 
 msgid "No accounts match your search"
 msgstr "検索に一致するアカウントがありません"
@@ -10276,9 +10258,6 @@ msgstr "この場所には他に引き出す在庫がありません。"
 
 msgid "Nothing in the archive"
 msgstr "アーカイブに何もありません"
-
-msgid "Nothing needs mapping"
-msgstr "マッピングする必要があるものはありません"
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "まだ何もありません。ステップは構成されると値を提供します。"
@@ -12515,9 +12494,6 @@ msgstr "2要素認証が必須"
 msgid "Required"
 msgstr "必須"
 
-msgid "Required accounts with no mapping, and accounts blocking a sync right now."
-msgstr "マッピングがない必須アカウント、および現在同期をブロックしているアカウント。"
-
 msgid "Required Action"
 msgstr "必須アクション"
 
@@ -13868,9 +13844,6 @@ msgstr "顧客リスト、顧客フォーム、ドロップダウンに読みや
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "サプライヤーリスト、サプライヤーフォーム、ドロップダウンに読みやすいサプライヤーID列を表示します。サプライヤーは内部的にはどちらの方法でも識別されます。"
-
-msgid "Show all accounts"
-msgstr "すべてのアカウントを表示"
 
 msgid "Show Customer IDs"
 msgstr "顧客IDを表示"

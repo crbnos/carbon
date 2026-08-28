@@ -6252,9 +6252,6 @@ msgstr "면세 증명서"
 msgid "Exemption Reason"
 msgstr "면세 사유"
 
-msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr "기존 매핑입니다. 다시 매핑하려면 다른 공급자 계정을 선택하세요."
-
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "기존 매핑입니다. 다시 매핑하려면 다른 제공자 옵션을 선택하세요."
 
@@ -7389,9 +7386,6 @@ msgstr "도움말"
 
 msgid "Hide"
 msgstr "숨기기"
-
-msgid "Hide accounts"
-msgstr "계정 숨기기"
 
 msgid "Hide raw"
 msgstr "원본 숨기기"
@@ -8907,12 +8901,6 @@ msgstr "제조"
 msgid "Map accounts"
 msgstr "계정 매핑"
 
-msgid "Map any account in the chart of accounts, not just the required ones."
-msgstr "계정 차트에서 필수 계정뿐만 아니라 모든 계정을 매핑하세요."
-
-msgid "Map any Carbon account to the provider's chart of accounts. Accounts that automated postings run through are marked Required; the rest are optional. Posted journals push using the mapped provider account code."
-msgstr "Carbon 계정을 공급자의 계정 차트에 매핑하세요. 자동화된 게시물이 실행되는 계정은 필수로 표시되며, 나머지는 선택사항입니다. 게시된 분개는 매핑된 공급자 계정 코드를 사용하여 푸시됩니다."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "추출된 인보이스 라인 매핑"
 
@@ -8922,11 +8910,11 @@ msgstr "추출된 라인 매핑"
 msgid "Map Lines Now"
 msgstr "지금 라인 매핑"
 
+msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+msgstr "귀사의 계정과목을 제공자의 계정과목으로 매핑하세요. 기본 전기 계정과 비용 계정은 필수로 표시되어 있으며, 전기된 분개는 매핑된 제공자 계정 코드를 사용하여 전송됩니다."
+
 msgid "Map your current process, systems, and data"
 msgstr "현재 프로세스, 시스템, 데이터를 매핑하세요"
-
-msgid "Mapped accounts"
-msgstr "매핑된 계정"
 
 msgid "Mapped values"
 msgstr "매핑된 값"
@@ -9402,9 +9390,6 @@ msgstr "적절한 열이 필요하신가요?"
 msgid "Needs a Business or Partner plan."
 msgstr "Business 또는 Partner 요금제가 필요합니다."
 
-msgid "Needs attention"
-msgstr "주의 필요"
-
 msgid "Needs fixing"
 msgstr "수정 필요"
 
@@ -9779,9 +9764,6 @@ msgstr "추가된 역량이 없습니다"
 
 msgid "No Access"
 msgstr "접근 권한 없음"
-
-msgid "No accounts mapped yet"
-msgstr "아직 매핑된 계정 없음"
 
 msgid "No accounts match your search"
 msgstr "검색과 일치하는 계정이 없습니다"
@@ -10276,9 +10258,6 @@ msgstr "이 위치에는 더 이상 가져올 재고가 없습니다."
 
 msgid "Nothing in the archive"
 msgstr "보관함이 비어 있습니다"
-
-msgid "Nothing needs mapping"
-msgstr "매핑할 항목이 없습니다"
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "아직 없습니다. 단계는 구성된 후에만 값을 제공합니다."
@@ -12515,9 +12494,6 @@ msgstr "2단계 인증 필수"
 msgid "Required"
 msgstr "필수"
 
-msgid "Required accounts with no mapping, and accounts blocking a sync right now."
-msgstr "매핑이 없는 필수 계정 및 현재 동기화를 차단하는 계정입니다."
-
 msgid "Required Action"
 msgstr "필수 조치"
 
@@ -13868,9 +13844,6 @@ msgstr "고객 목록, 고객 양식, 드롭다운에 읽기 쉬운 고객 ID �
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "공급업체 목록, 공급업체 양식, 드롭다운에 읽기 쉬운 공급업체 ID 열을 표시합니다. 어느 쪽이든 공급업체는 내부적으로 동일하게 식별됩니다."
-
-msgid "Show all accounts"
-msgstr "모든 계정 표시"
 
 msgid "Show Customer IDs"
 msgstr "고객 ID 표시"

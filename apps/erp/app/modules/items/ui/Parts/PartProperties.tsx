@@ -339,7 +339,7 @@ const PartProperties = ({
       validator={z.object({
         name: z.string()
       })}
-      className={cn("w-full", !formLayout && "-mt-2")}
+      className="w-full"
       isReadOnly={isReadOnly}
     >
       <span className="text-xs text-muted-foreground">

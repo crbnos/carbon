@@ -313,7 +313,7 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
             validator={z.object({
               name: z.string()
             })}
-            className="w-full -mt-2"
+            className="w-full"
           >
             <span className="text-xs text-muted-foreground">
               <InputControlled

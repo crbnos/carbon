@@ -6252,9 +6252,6 @@ msgstr "छूट प्रमाणपत्र"
 msgid "Exemption Reason"
 msgstr "छूट कारण"
 
-msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr "मौजूदा मानचित्रण। पुनः मानचित्रण के लिए एक अलग प्रदाता खाता चुनें।"
-
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "मौजूदा मैपिंग। पुनः-मैप करने के लिए एक अलग प्रदाता विकल्प चुनें।"
 
@@ -7389,9 +7386,6 @@ msgstr "मदद"
 
 msgid "Hide"
 msgstr "छिपाएं"
-
-msgid "Hide accounts"
-msgstr "खातों को छिपाएं"
 
 msgid "Hide raw"
 msgstr "कच्चे को छुपाएं"
@@ -8907,12 +8901,6 @@ msgstr "विनिर्माण"
 msgid "Map accounts"
 msgstr "खातों को मैप करें"
 
-msgid "Map any account in the chart of accounts, not just the required ones."
-msgstr "खातों के चार्ट में किसी भी खाते को मैप करें, केवल आवश्यक वाले नहीं।"
-
-msgid "Map any Carbon account to the provider's chart of accounts. Accounts that automated postings run through are marked Required; the rest are optional. Posted journals push using the mapped provider account code."
-msgstr "किसी भी Carbon खाते को प्रदाता के खातों के चार्ट में मैप करें। वे खाते जो स्वचालित पोस्टिंग के माध्यम से चलते हैं, आवश्यक के रूप में चिह्नित हैं; बाकी वैकल्पिक हैं। पोस्ट किए गए जर्नल मैप किए गए प्रदाता खाते कोड का उपयोग करके पुश करते हैं।"
-
 msgid "Map Extracted Invoice Lines"
 msgstr "निकाली गई चालान पंक्तियों को मैप करें"
 
@@ -8922,11 +8910,11 @@ msgstr "निकाली गई लाइनों को मैप करे�
 msgid "Map Lines Now"
 msgstr "अभी लाइनें मैप करें"
 
+msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+msgstr "अपने खाता चार्ट को प्रदाता के साथ मैप करें। पोस्टिंग-डिफ़ॉल्ट और व्यय खाते आवश्यक के रूप में चिह्नित हैं; पोस्ट किए गए जर्नल मैप किए गए प्रदाता खाता कोड का उपयोग करके पुश किए जाते हैं।"
+
 msgid "Map your current process, systems, and data"
 msgstr "अपनी वर्तमान प्रक्रिया, सिस्टम और डेटा को मैप करें"
-
-msgid "Mapped accounts"
-msgstr "मैप किए गए खाते"
 
 msgid "Mapped values"
 msgstr "मैप किए गए मान"
@@ -9402,9 +9390,6 @@ msgstr "क्या आपको सही कॉलम चाहिए?"
 msgid "Needs a Business or Partner plan."
 msgstr "एक बिजनेस या पार्टनर प्लान की आवश्यकता है।"
 
-msgid "Needs attention"
-msgstr "ध्यान आवश्यक है"
-
 msgid "Needs fixing"
 msgstr "मरम्मत की आवश्यकता है"
 
@@ -9779,9 +9764,6 @@ msgstr "कोई क्षमता जोड़ी नहीं गई"
 
 msgid "No Access"
 msgstr "कोई एक्सेस नहीं"
-
-msgid "No accounts mapped yet"
-msgstr "अभी तक कोई खाते मैप नहीं किए गए"
 
 msgid "No accounts match your search"
 msgstr "कोई खाते आपकी खोज से मेल नहीं खाते"
@@ -10276,9 +10258,6 @@ msgstr "इस स्थान पर कोई अन्य स्टॉक न
 
 msgid "Nothing in the archive"
 msgstr "आर्काइव में कुछ नहीं है"
-
-msgid "Nothing needs mapping"
-msgstr "कुछ भी मैप करने की आवश्यकता नहीं है"
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "अभी कुछ नहीं। एक स्टेप केवल तभी मूल्य प्रदान करता है जब इसे कॉन्फ़िगर किया जाता है।"
@@ -12515,9 +12494,6 @@ msgstr "दो-कारक प्रमाणीकरण की आवश्�
 msgid "Required"
 msgstr "आवश्यक"
 
-msgid "Required accounts with no mapping, and accounts blocking a sync right now."
-msgstr "मैपिंग के बिना आवश्यक खाते, और अभी सिंक को ब्लॉक करने वाले खाते।"
-
 msgid "Required Action"
 msgstr "आवश्यक कार्रवाई"
 
@@ -13868,9 +13844,6 @@ msgstr "ग्राहक सूची, ग्राहक फॉर्म औ�
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "आपूर्तिकर्ता सूची, आपूर्तिकर्ता फॉर्म और ड्रॉपडाउन पर एक पठनीय आपूर्तिकर्ता ID कॉलम दिखाएं। आपूर्तिकर्ता अभी भी किसी भी तरह से आंतरिक रूप से पहचाने जाते हैं।"
-
-msgid "Show all accounts"
-msgstr "सभी खातों को दिखाएं"
 
 msgid "Show Customer IDs"
 msgstr "ग्राहक आईडी दिखाएं"

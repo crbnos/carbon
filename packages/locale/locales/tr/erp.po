@@ -6252,9 +6252,6 @@ msgstr "İstisnai Sertifika"
 msgid "Exemption Reason"
 msgstr "İstisnai Nedeni"
 
-msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr "Mevcut haritalamalar. Yeniden haritalamak için farklı bir sağlayıcı hesabı seçin."
-
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Mevcut eşlemeler. Yeniden eşlemek için farklı bir sağlayıcı seçeneği seçin."
 
@@ -7389,9 +7386,6 @@ msgstr "Yardım"
 
 msgid "Hide"
 msgstr "Gizle"
-
-msgid "Hide accounts"
-msgstr "Hesapları gizle"
 
 msgid "Hide raw"
 msgstr "Ham verileri gizle"
@@ -8907,12 +8901,6 @@ msgstr "Üretim"
 msgid "Map accounts"
 msgstr "Hesapları Eşle"
 
-msgid "Map any account in the chart of accounts, not just the required ones."
-msgstr "Hesaplar tablosundaki herhangi bir hesabı, yalnızca gerekli olanları değil, eşleştirin."
-
-msgid "Map any Carbon account to the provider's chart of accounts. Accounts that automated postings run through are marked Required; the rest are optional. Posted journals push using the mapped provider account code."
-msgstr "Herhangi bir Carbon hesabını sağlayıcının hesaplar tablosuna eşleştirin. Otomatik gönderilerin çalıştığı hesaplar Gerekli olarak işaretlenir; geri kalanı isteğe bağlıdır. Gönderilen günlükler, eşlenen sağlayıcı hesap kodunu kullanarak gönderilir."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Çıkarılan Fatura Satırlarını Eşle"
 
@@ -8922,11 +8910,11 @@ msgstr "Çıkarılan Satırları Eşle"
 msgid "Map Lines Now"
 msgstr "Satırları Şimdi Eşle"
 
+msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+msgstr "Muhasebe planınızı sağlayıcıya eşleştirin. Deftere Nakil-varsayılan ve gider hesapları Gerekli olarak işaretlenmiştir; deftere nakledilen günlükler eşleştirilen sağlayıcı hesap kodunu kullanarak gönderilir."
+
 msgid "Map your current process, systems, and data"
 msgstr "Mevcut sürecinizi, sistemlerinizi ve verilerinizi eşleyin"
-
-msgid "Mapped accounts"
-msgstr "Haritalanan hesaplar"
 
 msgid "Mapped values"
 msgstr "Eşlenen değerler"
@@ -9402,9 +9390,6 @@ msgstr "Doğru sütunlara ihtiyacınız var mı?"
 msgid "Needs a Business or Partner plan."
 msgstr "Business veya Partner planı gereklidir."
 
-msgid "Needs attention"
-msgstr "Dikkat gerekli"
-
 msgid "Needs fixing"
 msgstr "Onarılması gerekir"
 
@@ -9779,9 +9764,6 @@ msgstr "Ek yetenek eklenmedi"
 
 msgid "No Access"
 msgstr "Erişim Yok"
-
-msgid "No accounts mapped yet"
-msgstr "Henüz hiçbir hesap haritalanmamış"
 
 msgid "No accounts match your search"
 msgstr "Aramanızla eşleşen hesap yok"
@@ -10276,9 +10258,6 @@ msgstr "Bu konumda çekilecek başka hiçbir stok yok."
 
 msgid "Nothing in the archive"
 msgstr "Arşivde hiçbir şey yok"
-
-msgid "Nothing needs mapping"
-msgstr "Eşlenmesi gereken bir şey yok"
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Henüz hiçbir şey yok. Bir adım yalnızca yapılandırıldıktan sonra değerleri sunar."
@@ -12515,9 +12494,6 @@ msgstr "İki faktörlü kimlik doğrulamayı gerektir"
 msgid "Required"
 msgstr "Gerekli"
 
-msgid "Required accounts with no mapping, and accounts blocking a sync right now."
-msgstr "Eşleştirilmemiş gerekli hesaplar ve şu anda bir senkronizasyonu engelleyen hesaplar."
-
 msgid "Required Action"
 msgstr "Gerekli Eylem"
 
@@ -13868,9 +13844,6 @@ msgstr "Müşteri listesinde, müşteri formlarında ve açılır menülerde oku
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "Tedarikçi listesinde, tedarikçi formlarında ve açılır menülerde okunabilir bir Tedarikçi Kimliği sütunu gösterir. Tedarikçiler her iki durumda da dahili olarak tanımlanmaya devam eder."
-
-msgid "Show all accounts"
-msgstr "Tüm hesapları göster"
 
 msgid "Show Customer IDs"
 msgstr "Müşteri Kimliklerini Göster"

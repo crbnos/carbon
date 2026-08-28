@@ -6252,9 +6252,6 @@ msgstr "Ausnahmezertifikat"
 msgid "Exemption Reason"
 msgstr "Ausnahmegrunde"
 
-msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr "Existierende Zuordnungen. Wählen Sie ein anderes Provider-Konto zum Neuzuordnen."
-
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Vorhandene Zuordnungen. Wählen Sie eine andere Provider-Option zum Neu-Zuordnen."
 
@@ -7389,9 +7386,6 @@ msgstr "Hilfe"
 
 msgid "Hide"
 msgstr "Verbergen"
-
-msgid "Hide accounts"
-msgstr "Konten ausblenden"
 
 msgid "Hide raw"
 msgstr "Roh ausblenden"
@@ -8907,12 +8901,6 @@ msgstr "Herstellung"
 msgid "Map accounts"
 msgstr "Konten zuordnen"
 
-msgid "Map any account in the chart of accounts, not just the required ones."
-msgstr "Ordnen Sie jedes Konto im Kontenplan zu, nicht nur die erforderlichen."
-
-msgid "Map any Carbon account to the provider's chart of accounts. Accounts that automated postings run through are marked Required; the rest are optional. Posted journals push using the mapped provider account code."
-msgstr "Ordnen Sie jedes Carbon-Konto dem Kontenplan des Anbieters zu. Konten, über die automatisierte Buchungen laufen, sind als erforderlich gekennzeichnet; der Rest ist optional. Gebuchte Journale werden unter Verwendung des zugeordneten Anbieter-Kontocodes übertragen."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Extrahierte Rechnungspositionen zuordnen"
 
@@ -8922,11 +8910,11 @@ msgstr "Extrahierte Zeilen zuordnen"
 msgid "Map Lines Now"
 msgstr "Zeilen jetzt zuordnen"
 
+msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+msgstr "Ordnen Sie Ihren Kontenplan den Konten des Anbieters zu. Posting-Standard- und Ausgabenkonten sind als erforderlich gekennzeichnet; gebuchte Journale werden mit dem zugeordneten Anbieter-Kontokencode übertragen."
+
 msgid "Map your current process, systems, and data"
 msgstr "Ordnen Sie Ihren aktuellen Prozess, Ihre Systeme und Daten"
-
-msgid "Mapped accounts"
-msgstr "Zugeordnete Konten"
 
 msgid "Mapped values"
 msgstr "Zugeordnete Werte"
@@ -9402,9 +9390,6 @@ msgstr "Benötigen Sie die richtigen Spalten?"
 msgid "Needs a Business or Partner plan."
 msgstr "Benötigt einen Business- oder Partner-Plan."
 
-msgid "Needs attention"
-msgstr "Benötigt Aufmerksamkeit"
-
 msgid "Needs fixing"
 msgstr "Muss behoben werden"
 
@@ -9779,9 +9764,6 @@ msgstr "Keine Fähigkeiten hinzugefügt"
 
 msgid "No Access"
 msgstr "Kein Zugriff"
-
-msgid "No accounts mapped yet"
-msgstr "Noch keine Konten zugeordnet"
 
 msgid "No accounts match your search"
 msgstr "Keine Konten stimmen mit Ihrer Suche überein"
@@ -10276,9 +10258,6 @@ msgstr "Keine anderen Artikel an diesem Ort haben Bestand zum Entnehmen."
 
 msgid "Nothing in the archive"
 msgstr "Nichts im Archiv"
-
-msgid "Nothing needs mapping"
-msgstr "Nichts erfordert Zuordnung"
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Noch nichts. Ein Schritt bietet Werte erst nach der Konfiguration an."
@@ -12515,9 +12494,6 @@ msgstr "Zwei-Faktor-Authentifizierung erforderlich"
 msgid "Required"
 msgstr "Erforderlich"
 
-msgid "Required accounts with no mapping, and accounts blocking a sync right now."
-msgstr "Erforderliche Konten ohne Zuordnung und Konten, die eine Synchronisierung blockieren."
-
 msgid "Required Action"
 msgstr "Erforderliche Maßnahme"
 
@@ -13868,9 +13844,6 @@ msgstr "Zeigen Sie eine lesbare Kundennummern-Spalte in der Kundenliste, Kundenf
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "Zeigen Sie eine lesbare Lieferanten-ID-Spalte in der Lieferantenliste, Lieferantenformularen und Dropdowns an. Lieferanten werden intern in jedem Fall identifiziert."
-
-msgid "Show all accounts"
-msgstr "Alle Konten anzeigen"
 
 msgid "Show Customer IDs"
 msgstr "Kundenkennung anzeigen"

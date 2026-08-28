@@ -6252,9 +6252,6 @@ msgstr "豁免证书"
 msgid "Exemption Reason"
 msgstr "豁免原因"
 
-msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr "现有映射。选择不同的提供商账户以重新映射。"
-
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "现有映射。选择不同的提供商选项以重新映射。"
 
@@ -7389,9 +7386,6 @@ msgstr "帮助"
 
 msgid "Hide"
 msgstr "隐藏"
-
-msgid "Hide accounts"
-msgstr "隐藏账户"
 
 msgid "Hide raw"
 msgstr "隐藏原始内容"
@@ -8907,12 +8901,6 @@ msgstr "制造"
 msgid "Map accounts"
 msgstr "映射科目"
 
-msgid "Map any account in the chart of accounts, not just the required ones."
-msgstr "映射会计科目表中的任何账户，而不仅仅是必需的账户。"
-
-msgid "Map any Carbon account to the provider's chart of accounts. Accounts that automated postings run through are marked Required; the rest are optional. Posted journals push using the mapped provider account code."
-msgstr "将任何 Carbon 账户映射到提供商的会计科目表。自动过账运行的账户标记为必需；其余为可选。过账日记账使用映射的提供商账户代码推送。"
-
 msgid "Map Extracted Invoice Lines"
 msgstr "映射提取的发票行项目"
 
@@ -8922,11 +8910,11 @@ msgstr "映射提取的行"
 msgid "Map Lines Now"
 msgstr "立即映射行"
 
+msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+msgstr "将您的科目表映射到提供商的科目表。默认过账科目和费用科目标记为必需；已过账日记账使用映射的提供商科目代码进行推送。"
+
 msgid "Map your current process, systems, and data"
 msgstr "映射您当前的流程、系统和数据"
-
-msgid "Mapped accounts"
-msgstr "已映射账户"
 
 msgid "Mapped values"
 msgstr "已映射的值"
@@ -9402,9 +9390,6 @@ msgstr "需要正确的列吗？"
 msgid "Needs a Business or Partner plan."
 msgstr "需要业务或合作伙伴计划。"
 
-msgid "Needs attention"
-msgstr "需要注意"
-
 msgid "Needs fixing"
 msgstr "需要修复"
 
@@ -9779,9 +9764,6 @@ msgstr "未添加任何能力"
 
 msgid "No Access"
 msgstr "无权限"
-
-msgid "No accounts mapped yet"
-msgstr "尚未映射账户"
 
 msgid "No accounts match your search"
 msgstr "没有账户与您的搜索匹配"
@@ -10276,9 +10258,6 @@ msgstr "此位置没有其他可提取的库存。"
 
 msgid "Nothing in the archive"
 msgstr "存档中没有任何内容"
-
-msgid "Nothing needs mapping"
-msgstr "无需映射"
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "暂无内容。步骤配置后才会提供值。"
@@ -12515,9 +12494,6 @@ msgstr "需要双因素认证"
 msgid "Required"
 msgstr "必需"
 
-msgid "Required accounts with no mapping, and accounts blocking a sync right now."
-msgstr "没有映射的必需账户，以及阻止当前同步的账户。"
-
 msgid "Required Action"
 msgstr "必需操作"
 
@@ -13868,9 +13844,6 @@ msgstr "在客户列表、客户表单和下拉菜单上显示可读的客户ID�
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "在供应商列表、供应商表单和下拉菜单上显示可读的供应商 ID 列。无论哪种方式，供应商在内部仍然可以被识别。"
-
-msgid "Show all accounts"
-msgstr "显示所有账户"
 
 msgid "Show Customer IDs"
 msgstr "显示客户ID"

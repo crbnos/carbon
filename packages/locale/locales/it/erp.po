@@ -6252,9 +6252,6 @@ msgstr "Certificato di Esenzione"
 msgid "Exemption Reason"
 msgstr "Motivo dell'Esenzione"
 
-msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr "Mappature esistenti. Seleziona un conto provider diverso per rimappare."
-
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Mapping esistenti. Scegli un'opzione provider diversa per rimappare."
 
@@ -7389,9 +7386,6 @@ msgstr "Aiuto"
 
 msgid "Hide"
 msgstr "Nascondi"
-
-msgid "Hide accounts"
-msgstr "Nascondi account"
 
 msgid "Hide raw"
 msgstr "Nascondi raw"
@@ -8907,12 +8901,6 @@ msgstr "Produzione"
 msgid "Map accounts"
 msgstr "Mappa conti"
 
-msgid "Map any account in the chart of accounts, not just the required ones."
-msgstr "Mappa qualsiasi account nel piano dei conti, non solo quelli obbligatori."
-
-msgid "Map any Carbon account to the provider's chart of accounts. Accounts that automated postings run through are marked Required; the rest are optional. Posted journals push using the mapped provider account code."
-msgstr "Mappa qualsiasi account Carbon al piano dei conti del provider. Gli account attraverso i quali passano le registrazioni automatiche sono contrassegnati come Obbligatori; il resto sono facoltativi. I giornali registrati eseguono il push utilizzando il codice account del provider mappato."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Mappa Righe Fattura Estratte"
 
@@ -8922,11 +8910,11 @@ msgstr "Mappa Righe Estratte"
 msgid "Map Lines Now"
 msgstr "Mappa Righe Ora"
 
+msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+msgstr "Associa il tuo piano dei conti con quello del fornitore. I conti di registrazione predefinita e i conti spese sono contrassegnati come Obbligatori; i diari contabili registrati vengono inviati utilizzando il codice account del fornitore mappato."
+
 msgid "Map your current process, systems, and data"
 msgstr "Mappa il tuo processo attuale, i sistemi e i dati"
-
-msgid "Mapped accounts"
-msgstr "Conti mappati"
 
 msgid "Mapped values"
 msgstr "Valori mappati"
@@ -9402,9 +9390,6 @@ msgstr "Hai bisogno delle colonne giuste?"
 msgid "Needs a Business or Partner plan."
 msgstr "Richiede un piano Business o Partner."
 
-msgid "Needs attention"
-msgstr "Richiede attenzione"
-
 msgid "Needs fixing"
 msgstr "Necessita correzione"
 
@@ -9779,9 +9764,6 @@ msgstr "Nessuna competenza aggiunta"
 
 msgid "No Access"
 msgstr "Nessun accesso"
-
-msgid "No accounts mapped yet"
-msgstr "Nessun conto mappato ancora"
 
 msgid "No accounts match your search"
 msgstr "Nessun account corrisponde alla tua ricerca"
@@ -10276,9 +10258,6 @@ msgstr "Niente altro in questa posizione ha stock da cui prelevare."
 
 msgid "Nothing in the archive"
 msgstr "Niente nell'archivio"
-
-msgid "Nothing needs mapping"
-msgstr "Nulla necessita di mappatura"
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Non c'è ancora nulla. Un passaggio offre valori solo dopo essere stato configurato."
@@ -12515,9 +12494,6 @@ msgstr "Richiedi autenticazione a due fattori"
 msgid "Required"
 msgstr "Obbligatorio"
 
-msgid "Required accounts with no mapping, and accounts blocking a sync right now."
-msgstr "Account obbligatori senza mappatura e account che stanno bloccando una sincronizzazione in questo momento."
-
 msgid "Required Action"
 msgstr "Azione Richiesta"
 
@@ -13868,9 +13844,6 @@ msgstr "Mostra una colonna ID Cliente leggibile nell'elenco clienti, nei moduli 
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "Mostra una colonna ID Fornitore leggibile nell'elenco dei fornitori, nei moduli fornitori e nei menu a discesa. I fornitori sono comunque identificati internamente in entrambi i casi."
-
-msgid "Show all accounts"
-msgstr "Mostra tutti gli account"
 
 msgid "Show Customer IDs"
 msgstr "Mostra ID Cliente"

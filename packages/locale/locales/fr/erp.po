@@ -6252,9 +6252,6 @@ msgstr "Certificat d'Exonération"
 msgid "Exemption Reason"
 msgstr "Motif d'Exonération"
 
-msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr "Mappages existants. Choisissez un compte fournisseur différent pour remapper."
-
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Mappages existants. Choisissez une option de fournisseur différente pour remapper."
 
@@ -7389,9 +7386,6 @@ msgstr "Aide"
 
 msgid "Hide"
 msgstr "Masquer"
-
-msgid "Hide accounts"
-msgstr "Masquer les comptes"
 
 msgid "Hide raw"
 msgstr "Masquer le brut"
@@ -8907,12 +8901,6 @@ msgstr "Fabrication"
 msgid "Map accounts"
 msgstr "Mapper les comptes"
 
-msgid "Map any account in the chart of accounts, not just the required ones."
-msgstr "Mapper n'importe quel compte dans le plan comptable, pas seulement les comptes requis."
-
-msgid "Map any Carbon account to the provider's chart of accounts. Accounts that automated postings run through are marked Required; the rest are optional. Posted journals push using the mapped provider account code."
-msgstr "Mapper n'importe quel compte Carbon au plan comptable du fournisseur. Les comptes par lesquels les écritures automatisées passent sont marqués Requis; les autres sont facultatifs. Les journaux écris sont envoyés en utilisant le code de compte du fournisseur mappé."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Mapper les lignes de facture extraites"
 
@@ -8922,11 +8910,11 @@ msgstr "Mapper les lignes extraites"
 msgid "Map Lines Now"
 msgstr "Mapper les lignes maintenant"
 
+msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+msgstr "Mappez votre plan comptable avec celui du fournisseur. Les comptes par défaut de comptabilisation et les comptes de dépenses sont marqués Obligatoire ; les journaux comptabilisés sont poussés en utilisant le code de compte du fournisseur mappé."
+
 msgid "Map your current process, systems, and data"
 msgstr "Cartographiez votre processus actuel, vos systèmes et vos données"
-
-msgid "Mapped accounts"
-msgstr "Comptes mappés"
 
 msgid "Mapped values"
 msgstr "Valeurs mappées"
@@ -9402,9 +9390,6 @@ msgstr "Besoin des bonnes colonnes ?"
 msgid "Needs a Business or Partner plan."
 msgstr "Nécessite un plan Business ou Partner."
 
-msgid "Needs attention"
-msgstr "Nécessite une attention"
-
 msgid "Needs fixing"
 msgstr "Doit être réparé"
 
@@ -9779,9 +9764,6 @@ msgstr "Aucune compétence ajoutée"
 
 msgid "No Access"
 msgstr "Aucun accès"
-
-msgid "No accounts mapped yet"
-msgstr "Aucun compte mappé pour le moment"
 
 msgid "No accounts match your search"
 msgstr "Aucun compte ne correspond à votre recherche"
@@ -10276,9 +10258,6 @@ msgstr "Aucun autre article à cet endroit n'a de stock à prélever."
 
 msgid "Nothing in the archive"
 msgstr "Rien dans l'archive"
-
-msgid "Nothing needs mapping"
-msgstr "Rien n'a besoin de mappage"
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Rien pour le moment. Une étape n'offre des valeurs qu'une fois configurée."
@@ -12515,9 +12494,6 @@ msgstr "Exiger l'authentification à deux facteurs"
 msgid "Required"
 msgstr "Requis"
 
-msgid "Required accounts with no mapping, and accounts blocking a sync right now."
-msgstr "Comptes requis sans mappage, et comptes bloquant une synchronisation en ce moment."
-
 msgid "Required Action"
 msgstr "Action requise"
 
@@ -13868,9 +13844,6 @@ msgstr "Afficher une colonne ID client lisible sur la liste des clients, les for
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "Afficher une colonne ID Fournisseur lisible sur la liste des fournisseurs, les formulaires de fournisseur et les listes déroulantes. Les fournisseurs sont toujours identifiés en interne de toute façon."
-
-msgid "Show all accounts"
-msgstr "Afficher tous les comptes"
 
 msgid "Show Customer IDs"
 msgstr "Afficher les ID clients"

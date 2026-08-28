@@ -6252,9 +6252,6 @@ msgstr "Exemption Certificate"
 msgid "Exemption Reason"
 msgstr "Exemption Reason"
 
-msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr "Existing mappings. Pick a different provider account to re-map."
-
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Existing mappings. Pick a different provider option to re-map."
 
@@ -7389,9 +7386,6 @@ msgstr "Help"
 
 msgid "Hide"
 msgstr "Hide"
-
-msgid "Hide accounts"
-msgstr "Hide accounts"
 
 msgid "Hide raw"
 msgstr "Hide raw"
@@ -8907,12 +8901,6 @@ msgstr "Manufacturing"
 msgid "Map accounts"
 msgstr "Map accounts"
 
-msgid "Map any account in the chart of accounts, not just the required ones."
-msgstr "Map any account in the chart of accounts, not just the required ones."
-
-msgid "Map any Carbon account to the provider's chart of accounts. Accounts that automated postings run through are marked Required; the rest are optional. Posted journals push using the mapped provider account code."
-msgstr "Map any Carbon account to the provider's chart of accounts. Accounts that automated postings run through are marked Required; the rest are optional. Posted journals push using the mapped provider account code."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Map Extracted Invoice Lines"
 
@@ -8922,11 +8910,11 @@ msgstr "Map Extracted Lines"
 msgid "Map Lines Now"
 msgstr "Map Lines Now"
 
+msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+msgstr "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+
 msgid "Map your current process, systems, and data"
 msgstr "Map your current process, systems, and data"
-
-msgid "Mapped accounts"
-msgstr "Mapped accounts"
 
 msgid "Mapped values"
 msgstr "Mapped values"
@@ -9402,9 +9390,6 @@ msgstr "Need the right columns?"
 msgid "Needs a Business or Partner plan."
 msgstr "Needs a Business or Partner plan."
 
-msgid "Needs attention"
-msgstr "Needs attention"
-
 msgid "Needs fixing"
 msgstr "Needs fixing"
 
@@ -9779,9 +9764,6 @@ msgstr "No abilities added"
 
 msgid "No Access"
 msgstr "No Access"
-
-msgid "No accounts mapped yet"
-msgstr "No accounts mapped yet"
 
 msgid "No accounts match your search"
 msgstr "No accounts match your search"
@@ -10276,9 +10258,6 @@ msgstr "Nothing else at this location has stock to pull from."
 
 msgid "Nothing in the archive"
 msgstr "Nothing in the archive"
-
-msgid "Nothing needs mapping"
-msgstr "Nothing needs mapping"
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Nothing yet. A step only offers values once it is configured."
@@ -12515,9 +12494,6 @@ msgstr "Require two-factor authentication"
 msgid "Required"
 msgstr "Required"
 
-msgid "Required accounts with no mapping, and accounts blocking a sync right now."
-msgstr "Required accounts with no mapping, and accounts blocking a sync right now."
-
 msgid "Required Action"
 msgstr "Required Action"
 
@@ -13868,9 +13844,6 @@ msgstr "Show a readable Customer ID column on the customer list, customer forms,
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
-
-msgid "Show all accounts"
-msgstr "Show all accounts"
 
 msgid "Show Customer IDs"
 msgstr "Show Customer IDs"
