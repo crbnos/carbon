@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="nbBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7a5d19"/>
+      <stop offset="0.2" stop-color="#c9a445"/>
+      <stop offset="0.45" stop-color="#e8cd7c"/>
+      <stop offset="0.72" stop-color="#a8853a"/>
+      <stop offset="1" stop-color="#6a4f16"/>
+    </linearGradient>
+    <linearGradient id="heatTint" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a3a72" stop-opacity="0.9"/>
+      <stop offset="0.16" stop-color="#3f4f86" stop-opacity="0.72"/>
+      <stop offset="0.36" stop-color="#4c5f7e" stop-opacity="0.42"/>
+      <stop offset="0.62" stop-color="#8a6a2a" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#e0b45e" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="bellBore" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#5b4a2a"/>
+      <stop offset="0.4" stop-color="#2b2417"/>
+      <stop offset="1" stop-color="#131018"/>
+    </linearGradient>
+    <linearGradient id="steelBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="steelFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#eef1f3"/>
+      <stop offset="0.5" stop-color="#c3c9cd"/>
+      <stop offset="1" stop-color="#83898f"/>
+    </linearGradient>
+    <linearGradient id="tiBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8a9298"/>
+      <stop offset="0.2" stop-color="#d5dce1"/>
+      <stop offset="0.45" stop-color="#f0f4f6"/>
+      <stop offset="0.72" stop-color="#b2bac0"/>
+      <stop offset="1" stop-color="#798187"/>
+    </linearGradient>
+    <linearGradient id="tiFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#f0f4f6"/>
+      <stop offset="0.5" stop-color="#c6ced4"/>
+      <stop offset="1" stop-color="#8a9298"/>
+    </linearGradient>
+    <linearGradient id="tiTube" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f0f4f6"/>
+      <stop offset="0.5" stop-color="#b2bac0"/>
+      <stop offset="1" stop-color="#798187"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="512" cy="862" rx="360" ry="79" fill="url(#shadow)"/>
+
+  <!-- ===== two fine ceramic-feedthrough lead wires ===== -->
+  <g fill="none" stroke-linecap="round">
+    <path d="M668 160 C632 122 588 106 542 108" stroke="#8f979d" stroke-width="8" opacity="0.5"/>
+    <path d="M668 160 C632 122 588 106 542 108" stroke="#f2efe7" stroke-width="5"/>
+    <path d="M690 160 C662 126 622 116 578 128" stroke="#8f979d" stroke-width="8" opacity="0.5"/>
+    <path d="M690 160 C662 126 622 116 578 128" stroke="#f2efe7" stroke-width="5"/>
+  </g>
+
+  <!-- ===== propellant inlet tube, pale titanium ===== -->
+  <g fill="none" stroke-linecap="round">
+    <path d="M512 292 C512 222 552 186 616 200" stroke="#6b7278" stroke-width="34"/>
+    <path d="M512 292 C512 222 552 186 616 200" stroke="url(#tiTube)" stroke-width="27"/>
+    <path d="M505 290 C505 226 546 194 610 206" stroke="#ffffff" stroke-opacity="0.4" stroke-width="6"/>
+  </g>
+  <!-- tube union nut -->
+  <g>
+    <path d="M488 268 L536 268 L536 300 L488 300 Z" fill="url(#steelBarrel)" stroke="#5d6368" stroke-width="2"/>
+    <path d="M488 276 L536 276 M488 286 L536 286 M488 294 L536 294" stroke="#5d6368" stroke-width="2" opacity="0.6"/>
+  </g>
+
+  <!-- ===== compact valve body ===== -->
+  <g>
+    <path d="M618 175 L618 278 Q678 302 738 278 L738 175 Z" fill="url(#steelBarrel)" stroke="#5d6368" stroke-width="2.5"/>
+    <path d="M618 232 Q678 256 738 232" fill="none" stroke="#5d6368" stroke-width="3" opacity="0.6"/>
+    <path d="M618 240 Q678 264 738 240" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="2"/>
+    <ellipse cx="678" cy="175" rx="60" ry="23" fill="url(#steelFace)" stroke="#6a7076" stroke-width="2.5"/>
+    <ellipse cx="678" cy="175" rx="48" ry="18" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2"/>
+    <!-- ceramic feedthrough -->
+    <ellipse cx="678" cy="172" rx="26" ry="10" fill="#d9d3c3" stroke="#8f8a7c" stroke-width="2"/>
+    <ellipse cx="668" cy="171" rx="5" ry="3" fill="#6f766f"/>
+    <ellipse cx="689" cy="171" rx="5" ry="3" fill="#6f766f"/>
+  </g>
+
+  <!-- ===== catalyst bed chamber with heater tape ===== -->
+  <g>
+    <path d="M420 300 L420 470 L604 470 L604 300 Z" fill="url(#steelBarrel)" stroke="#5d6368" stroke-width="2.5"/>
+    <!-- heater tape windings -->
+    <g stroke="#4a5055" stroke-width="6" opacity="0.75" fill="none">
+      <path d="M420 322 L604 308"/><path d="M420 352 L604 338"/><path d="M420 382 L604 368"/>
+      <path d="M420 412 L604 398"/><path d="M420 442 L604 428"/><path d="M420 468 L604 454"/>
+    </g>
+    <g stroke="#eef1f3" stroke-width="9" opacity="0.55" fill="none">
+      <path d="M420 336 L604 322"/><path d="M420 366 L604 352"/><path d="M420 396 L604 382"/>
+      <path d="M420 426 L604 412"/><path d="M420 456 L604 442"/>
+    </g>
+    <!-- chamber top cap -->
+    <ellipse cx="512" cy="300" rx="92" ry="35" fill="url(#steelFace)" stroke="#6a7076" stroke-width="2.5"/>
+    <ellipse cx="512" cy="300" rx="76" ry="29" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2"/>
+    <ellipse cx="512" cy="300" rx="56" ry="21" fill="url(#steelFace)" stroke="#7b8288" stroke-width="2"/>
+  </g>
+
+  <!-- ===== convergent section into the throat ===== -->
+  <path d="M420 470 L466 512 L558 512 L604 470 Z" fill="url(#steelBarrel)" stroke="#5d6368" stroke-width="2.5"/>
+
+  <!-- ===== square mounting flange, midway along the body ===== -->
+  <g>
+    <g transform="translate(512 428) scale(1 0.38)">
+      <rect x="-186" y="-186" width="372" height="372" rx="30" fill="#6b7278"/>
+    </g>
+    <g transform="translate(512 400) scale(1 0.38)">
+      <rect x="-186" y="-186" width="372" height="372" rx="30" fill="url(#tiFace)" stroke="#6f767c" stroke-width="7"/>
+      <rect x="-166" y="-166" width="332" height="332" rx="24" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="7"/>
+      <circle cx="-128" cy="-128" r="30" fill="#9aa2a8"/><circle cx="-128" cy="-128" r="20" fill="#3a4045"/>
+      <circle cx="128" cy="-128" r="30" fill="#9aa2a8"/><circle cx="128" cy="-128" r="20" fill="#3a4045"/>
+      <circle cx="-128" cy="128" r="30" fill="#9aa2a8"/><circle cx="-128" cy="128" r="20" fill="#3a4045"/>
+      <circle cx="128" cy="128" r="30" fill="#9aa2a8"/><circle cx="128" cy="128" r="20" fill="#3a4045"/>
+    </g>
+  </g>
+
+  <!-- ===== flared bell nozzle, heat-discoloured niobium ===== -->
+  <g>
+    <path d="M466 512 C440 626 336 694 247 780 A265 101 0 0 0 777 780 C688 694 584 626 558 512 Z"
+          fill="url(#nbBarrel)" stroke="#4a3a12" stroke-width="3"/>
+    <path d="M466 512 C440 626 336 694 247 780 A265 101 0 0 0 777 780 C688 694 584 626 558 512 Z"
+          fill="url(#heatTint)"/>
+    <!-- rolled reinforcement bands on the bell -->
+    <path d="M420 592 Q512 646 604 592" fill="none" stroke="#4a3a12" stroke-width="4" opacity="0.55"/>
+    <path d="M420 602 Q512 656 604 602" fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.2"/>
+    <path d="M330 700 Q512 794 694 700" fill="none" stroke="#4a3a12" stroke-width="4" opacity="0.5"/>
+    <path d="M330 712 Q512 806 694 712" fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.2"/>
+    <!-- exit plane: bore interior -->
+    <ellipse cx="512" cy="780" rx="265" ry="101" fill="url(#bellBore)"/>
+    <ellipse cx="512" cy="780" rx="265" ry="101" fill="none" stroke="#e8cd7c" stroke-width="5" opacity="0.85"/>
+    <ellipse cx="512" cy="780" rx="248" ry="94" fill="none" stroke="#4a3a12" stroke-width="3" opacity="0.7"/>
+    <!-- lit inner wall of the far side -->
+    <path d="M285 754 A248 94 0 0 1 739 754" fill="none" stroke="#8a6a2a" stroke-width="30" opacity="0.55"/>
+    <path d="M300 744 A230 87 0 0 1 724 744" fill="none" stroke="#c9a445" stroke-width="12" opacity="0.35"/>
+    <ellipse cx="512" cy="762" rx="128" ry="49" fill="#191420"/>
+    <ellipse cx="512" cy="756" rx="72" ry="27" fill="#0d0b12"/>
+    <!-- key-light glance on the bell lip -->
+    <path d="M300 758 A265 101 0 0 1 452 690" fill="none" stroke="#ffffff" stroke-width="5" opacity="0.28"/>
+  </g>
+</svg>

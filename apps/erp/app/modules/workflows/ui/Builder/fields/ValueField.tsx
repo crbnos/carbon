@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useCustomFieldLabels } from "../catalog";
 import { useBuilderStoreApi } from "../context";
 import { pickControl } from "./control";
 import { Field } from "./Field";
@@ -22,9 +23,11 @@ export function ValueField({
   context,
   placeholder,
   issue,
-  partIssues
+  partIssues,
+  isReadOnly
 }: ValueFieldProps) {
   const store = useBuilderStoreApi();
+  const segmentLabels = useCustomFieldLabels();
   const [pickerOpen, setPickerOpen] = useState(false);
   const control = pickControl(type, value, choices);
   const acceptsFilter = pickAccepts(type, accepts);
@@ -54,6 +57,7 @@ export function ValueField({
           context={context}
           placeholder={placeholder}
           hasIssue={!!issue}
+          isReadOnly={isReadOnly}
           // A lone variable is stored bare, so the field's own message is about it.
           partIssues={
             value?.kind === "template"
@@ -80,7 +84,7 @@ export function ValueField({
         accepts={acceptsFilter}
         context={context}
         onChange={onChange}
-        open={pickerOpen}
+        open={isReadOnly ? false : pickerOpen}
         onOpenChange={setPickerOpen}
       >
         <div className="flex min-w-0 flex-1 items-center">
@@ -88,13 +92,16 @@ export function ValueField({
             <VariablePickControl
               placeholder={placeholder}
               hasIssue={!!issue}
+              isReadOnly={isReadOnly}
               onOpen={() => setPickerOpen(true)}
               chip={
                 control === "chip" && ref ? (
                   <VariableChip
                     variable={ref}
                     nodeTitle={nodeTitle}
+                    segmentLabels={segmentLabels}
                     invalid={issue}
+                    isReadOnly={isReadOnly}
                     onRemove={() => onChange(undefined)}
                     onReopen={() => setPickerOpen(true)}
                   />
@@ -117,6 +124,7 @@ export function ValueField({
               }
               onChange={onChange}
               onRequestVariable={() => setPickerOpen(true)}
+              isReadOnly={isReadOnly}
             />
           )}
         </div>

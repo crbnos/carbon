@@ -176,6 +176,9 @@ msgstr "Bloqueado por {0}"
 msgid "Blocking"
 msgstr "Bloqueando"
 
+msgid "Board view"
+msgstr "Visualização em quadro"
+
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "Mas não se preocupe. Você pode usar o fluxo de senha esquecida para solicitar um novo link mágico."
 
@@ -515,6 +518,9 @@ msgstr "Terminar {0}"
 msgid "Finish Anyways"
 msgstr "Terminar Mesmo Assim"
 
+msgid "Finish setting up your account"
+msgstr "Termine de configurar sua conta"
+
 msgid "Finish with material unpicked?"
 msgstr "Finalizar com material não selecionado?"
 
@@ -523,6 +529,9 @@ msgstr "Esqueceu de Registrar Saída?"
 
 msgid "Go back to operation"
 msgstr "Voltar para operação"
+
+msgid "Go to onboarding"
+msgstr "Ir para a integração"
 
 msgid "How many were actually picked?"
 msgstr "Quantos foram realmente apanhados?"
@@ -635,6 +644,9 @@ msgstr "Vamos construir algo"
 
 msgid "lines"
 msgstr "linhas"
+
+msgid "List view"
+msgstr "Visualização em lista"
 
 msgid "Loading item details..."
 msgstr "Carregando detalhes do item..."
@@ -864,6 +876,9 @@ msgstr "Nenhum registro de horas nesta semana"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Nenhum estoque de armazém está registrado para este item. Você ainda pode coletá-lo — o estoque disponível ficará negativo até que a contagem seja reconciliada."
+
+msgid "No Work Center"
+msgstr "Sem centro de trabalho"
 
 msgid "No work centers are blocked"
 msgstr "Nenhum centro de trabalho está bloqueado"
@@ -1496,6 +1511,9 @@ msgstr "Você marcou entrada às <0/>. Você pode editar a hora de saída abaixo
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Você está registrado há {hoursElapsed} horas. Esqueceu de registrar a saída?"
+
+msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
+msgstr "Sua conta ainda não faz parte de uma empresa. Complete a integração no Carbon ERP para continuar."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Sua organização requer um aplicativo autenticador. Configure-o no Carbon e retorne aqui."

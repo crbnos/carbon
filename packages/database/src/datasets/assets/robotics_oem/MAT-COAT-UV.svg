@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="amber" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8a5a12"/>
+      <stop offset="0.3" stop-color="#c9903a"/>
+      <stop offset="0.55" stop-color="#e0b25f"/>
+      <stop offset="0.8" stop-color="#a06f22"/>
+      <stop offset="1" stop-color="#7a4e10"/>
+    </linearGradient>
+    <linearGradient id="honey" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#a06f22"/>
+      <stop offset="0.3" stop-color="#e0b25f"/>
+      <stop offset="0.55" stop-color="#f2d497"/>
+      <stop offset="0.8" stop-color="#c9903a"/>
+      <stop offset="1" stop-color="#8a5a12"/>
+    </linearGradient>
+    <linearGradient id="amberTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#e6bd72"/>
+      <stop offset="0.5" stop-color="#c08636"/>
+      <stop offset="1" stop-color="#8a5a12"/>
+    </linearGradient>
+    <linearGradient id="capBlack" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#111315"/>
+      <stop offset="0.25" stop-color="#2c3033"/>
+      <stop offset="0.5" stop-color="#3b4044"/>
+      <stop offset="0.75" stop-color="#212528"/>
+      <stop offset="1" stop-color="#0d0f10"/>
+    </linearGradient>
+    <linearGradient id="capTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#454b50"/>
+      <stop offset="0.55" stop-color="#2a2e32"/>
+      <stop offset="1" stop-color="#111315"/>
+    </linearGradient>
+    <linearGradient id="seal" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#b9bec2"/>
+      <stop offset="0.2" stop-color="#e7eaec"/>
+      <stop offset="0.45" stop-color="#f7f9fa"/>
+      <stop offset="0.72" stop-color="#ced4d8"/>
+      <stop offset="1" stop-color="#a4aaae"/>
+    </linearGradient>
+    <linearGradient id="wallTint" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5e3c0a" stop-opacity="0.55"/>
+      <stop offset="0.28" stop-color="#e2b76c" stop-opacity="0.16"/>
+      <stop offset="0.5" stop-color="#ffe6b4" stop-opacity="0.24"/>
+      <stop offset="0.78" stop-color="#95661d" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#54350a" stop-opacity="0.6"/>
+    </linearGradient>
+    <clipPath id="bodyClip">
+      <path d="M322 356 L322 798 Q512 870 702 798 L702 356 Z"/>
+    </clipPath>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="512" cy="812" rx="300" ry="66" fill="url(#shadow)"/>
+
+  <!-- body -->
+  <path d="M322 356 L322 798 Q512 870 702 798 L702 356 Z" fill="url(#amber)" stroke="#5d3c0b" stroke-width="3"/>
+
+  <!-- pale honey contents seen through the translucent wall -->
+  <g clip-path="url(#bodyClip)">
+    <ellipse cx="512" cy="380" rx="176" ry="66.9" fill="url(#honey)" opacity="0.9"/>
+    <path d="M336 380 Q512 513.8 688 380 L688 790 Q512 857 336 790 Z" fill="url(#honey)"/>
+    <!-- slow viscous meniscus climbing the wall -->
+    <path d="M336 380 Q512 513.8 688 380" fill="none" stroke="#f7e3b4" stroke-width="7" opacity="0.75"/>
+    <path d="M336 392 Q512 520 688 392" fill="none" stroke="#8a5a12" stroke-width="5" opacity="0.35"/>
+    <path d="M336 372 Q384 424 404 448" fill="none" stroke="#fbeecb" stroke-width="5" opacity="0.5"/>
+    <path d="M688 372 Q640 424 620 448" fill="none" stroke="#fbeecb" stroke-width="5" opacity="0.5"/>
+    <!-- resin depth toward the base -->
+    <path d="M336 690 Q512 758 688 690 L688 800 Q512 866 336 800 Z" fill="#8a5a12" opacity="0.35"/>
+    <!-- wall tint over the contents -->
+    <rect x="322" y="356" width="380" height="520" fill="url(#wallTint)"/>
+    <!-- key light band -->
+    <path d="M378 366 Q366 570 390 796" fill="none" stroke="#ffe9bd" stroke-width="26" opacity="0.3"/>
+    <path d="M382 372 Q372 570 392 790" fill="none" stroke="#fff6e2" stroke-width="9" opacity="0.4"/>
+    <!-- right rim light -->
+    <path d="M686 366 Q694 570 682 794" fill="none" stroke="#ffdda0" stroke-width="10" opacity="0.28"/>
+
+    <!-- moulded finger grip recess, left side -->
+    <path d="M330 470 Q372 494 372 620 Q372 722 332 748 Q322 700 322 610 Q322 512 330 470 Z"
+          fill="#7a4e10" opacity="0.5"/>
+    <path d="M334 480 Q370 502 370 620 Q370 714 336 738" fill="none" stroke="#f0cf92" stroke-width="4" opacity="0.5"/>
+    <g fill="none" stroke="#5d3c0b" stroke-width="4" opacity="0.4">
+      <path d="M330 534 Q356 542 366 550"/>
+      <path d="M327 578 Q354 586 366 594"/>
+      <path d="M327 622 Q354 630 366 638"/>
+      <path d="M330 666 Q356 674 366 682"/>
+    </g>
+    <!-- moulded finger grip recess, right side -->
+    <path d="M694 470 Q652 494 652 620 Q652 722 692 748 Q702 700 702 610 Q702 512 694 470 Z"
+          fill="#6b430c" opacity="0.55"/>
+    <path d="M690 480 Q654 502 654 620 Q654 714 688 738" fill="none" stroke="#e2b76c" stroke-width="4" opacity="0.4"/>
+    <g fill="none" stroke="#5d3c0b" stroke-width="4" opacity="0.4">
+      <path d="M694 534 Q668 542 658 550"/>
+      <path d="M697 578 Q670 586 658 594"/>
+      <path d="M697 622 Q670 630 658 638"/>
+      <path d="M694 666 Q668 674 658 682"/>
+    </g>
+  </g>
+
+  <!-- squared shoulder -->
+  <path d="M322 356 L322 340 Q322 316 356 306 L446 292 L578 292 L668 306 Q702 316 702 340 L702 356 Q512 424 322 356 Z"
+        fill="url(#amber)" stroke="#5d3c0b" stroke-width="3"/>
+  <path d="M336 340 Q360 320 420 308" fill="none" stroke="#ffe9bd" stroke-width="8" opacity="0.35"/>
+  <path d="M330 350 Q512 414 694 350" fill="none" stroke="#5d3c0b" stroke-width="3" opacity="0.45"/>
+
+  <!-- fine pouring spout collar beneath the cap -->
+  <path d="M450 276 L450 300 Q512 323.6 574 300 L574 276 Z" fill="url(#amber)" stroke="#5d3c0b" stroke-width="2.5"/>
+  <path d="M456 288 Q512 310 568 288" fill="none" stroke="#ffe9bd" stroke-width="3" opacity="0.4"/>
+
+  <!-- plain white cap seal -->
+  <path d="M442 248 L442 276 Q512 302.6 582 276 L582 248 Z" fill="url(#seal)" stroke="#8b9195" stroke-width="2.5"/>
+  <path d="M446 262 Q512 288 578 262" fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.6"/>
+
+  <!-- black ribbed screw cap -->
+  <g>
+    <path d="M428 160 L428 248 Q512 280 596 248 L596 160 Z" fill="url(#capBlack)" stroke="#000000" stroke-width="3"/>
+    <g stroke="#4a5055" stroke-width="3" opacity="0.55" fill="none">
+      <path d="M434 172 L434 260"/><path d="M442 178 L442 266"/><path d="M450 182 L450 270"/><path d="M458 185 L458 273"/><path d="M466 187 L466 275"/><path d="M474 189 L474 277"/><path d="M482 190 L482 278"/><path d="M490 191 L490 279"/><path d="M498 191 L498 279"/><path d="M506 192 L506 280"/><path d="M514 192 L514 280"/><path d="M522 192 L522 280"/><path d="M530 191 L530 279"/><path d="M538 190 L538 278"/><path d="M546 189 L546 277"/><path d="M554 188 L554 276"/><path d="M562 186 L562 274"/><path d="M570 183 L570 271"/><path d="M578 180 L578 268"/><path d="M586 175 L586 263"/>
+    </g>
+    <g stroke="#0a0c0d" stroke-width="2" opacity="0.7" fill="none">
+      <path d="M438 175 L438 263"/><path d="M446 180 L446 268"/><path d="M454 184 L454 272"/><path d="M462 186 L462 274"/><path d="M470 188 L470 276"/><path d="M478 190 L478 278"/><path d="M486 191 L486 279"/><path d="M494 191 L494 279"/><path d="M502 192 L502 280"/><path d="M510 192 L510 280"/><path d="M518 192 L518 280"/><path d="M526 192 L526 280"/><path d="M534 191 L534 279"/><path d="M542 190 L542 278"/><path d="M550 188 L550 276"/><path d="M558 187 L558 275"/><path d="M566 184 L566 272"/><path d="M574 181 L574 269"/><path d="M582 178 L582 266"/>
+    </g>
+    <ellipse cx="512" cy="160" rx="84" ry="31.9" fill="url(#capTop)" stroke="#000000" stroke-width="2.5"/>
+    <ellipse cx="512" cy="160" rx="72" ry="27.4" fill="none" stroke="#565d63" stroke-width="2" opacity="0.7"/>
+    <ellipse cx="512" cy="159" rx="48" ry="18.2" fill="none" stroke="#4a5055" stroke-width="2" opacity="0.6"/>
+    <path d="M452 146 Q512 122 572 146" fill="none" stroke="#7f878d" stroke-width="4" opacity="0.35"/>
+  </g>
+</svg>

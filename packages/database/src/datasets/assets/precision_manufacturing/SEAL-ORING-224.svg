@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="nbr" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#111315"/><stop offset="0.25" stop-color="#2c3033"/>
+      <stop offset="0.5" stop-color="#3b4044"/><stop offset="0.75" stop-color="#212528"/>
+      <stop offset="1" stop-color="#0d0f10"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <!-- relaxed, very slightly out-of-round centreline of the cord -->
+    <path id="ring" d="M892 522
+      C 892 601 722 668 516 668
+      C 306 668 124 604 126 512
+      C 128 436 302 372 512 374
+      C 724 376 892 442 892 522 Z"/>
+  </defs>
+
+  <ellipse cx="512" cy="658" rx="470" ry="103" fill="url(#shadow)"/>
+
+  <!-- talc bloom settled under the shadowed lower-right arc -->
+  <g transform="translate(14 18)">
+    <use href="#ring" fill="none" stroke="#b6b0a8" stroke-opacity="0.13" stroke-width="26"
+         stroke-dasharray="46 34 22 60" stroke-linecap="round"/>
+  </g>
+
+  <!-- cord silhouette -->
+  <use href="#ring" fill="none" stroke="#08090a" stroke-width="62" stroke-linejoin="round"/>
+  <!-- cord body -->
+  <use href="#ring" fill="none" stroke="url(#nbr)" stroke-width="56" stroke-linejoin="round"/>
+
+  <!-- parting line just inside the outer circumference -->
+  <g transform="translate(512 522) scale(1.05) translate(-512 -522)">
+    <use href="#ring" fill="none" stroke="#575e63" stroke-opacity="0.45" stroke-width="2.5"/>
+  </g>
+  <g transform="translate(512 522) scale(1.048) translate(-512 -522)">
+    <use href="#ring" fill="none" stroke="#000000" stroke-opacity="0.35" stroke-width="2"/>
+  </g>
+
+  <!-- satin roll of light along the upper-left of the cord -->
+  <g transform="translate(-9 -11)">
+    <use href="#ring" fill="none" stroke="#5c6368" stroke-opacity="0.34" stroke-width="17" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(-13 -15)">
+    <use href="#ring" fill="none" stroke="#798188" stroke-opacity="0.6" stroke-width="7"
+         stroke-dasharray="230 640" stroke-dashoffset="380" stroke-linecap="round"/>
+  </g>
+  <!-- contact darkening where the cord meets the ground -->
+  <g transform="translate(6 13)">
+    <use href="#ring" fill="none" stroke="#000000" stroke-opacity="0.30" stroke-width="16" stroke-linecap="round"/>
+  </g>
+  <!-- one segment settled a little out of plane: lifted highlight, deeper cast under it -->
+  <path d="M188 430 C 262 392 372 372 486 374" fill="none" stroke="#6d757b" stroke-opacity="0.30"
+        stroke-width="10" stroke-linecap="round" transform="translate(-4 -6)"/>
+  <path d="M196 452 C 268 414 376 396 488 398" fill="none" stroke="#000000" stroke-opacity="0.22"
+        stroke-width="12" stroke-linecap="round" transform="translate(8 16)"/>
+</svg>

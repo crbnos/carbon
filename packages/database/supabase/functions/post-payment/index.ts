@@ -23,6 +23,17 @@ const payloadValidator = z.object({
   paymentId: z.string(),
   userId: z.string(),
   companyId: z.string(),
+  // A fee withheld by a payment processor before the cash reached the bank
+  // (e.g. Stripe Connect's per-charge commission). The caller resolves the
+  // account (an integration override or the company's service-charge
+  // default) — this function stays payment-processor-agnostic.
+  fee: z
+    .object({
+      amount: z.number().positive(),
+      accountId: z.string(),
+      description: z.string().optional(),
+    })
+    .optional(),
 });
 
 serve(async (req: Request) => {
@@ -32,7 +43,7 @@ serve(async (req: Request) => {
   const payload = await req.json();
 
   try {
-    const { type, paymentId, userId, companyId } =
+    const { type, paymentId, userId, companyId, fee } =
       payloadValidator.parse(payload);
 
     console.log({ function: "post-payment", type, paymentId, userId, companyId });
@@ -416,6 +427,7 @@ serve(async (req: Request) => {
           fxGainAccountId: ad.realizedExchangeGainAccount,
           fxLossAccountId: ad.realizedExchangeLossAccount,
         },
+        fee,
       });
       journalLineInserts.push(...lines);
     }

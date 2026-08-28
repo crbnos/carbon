@@ -1,0 +1,215 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="castBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4b4f52"/>
+      <stop offset="0.22" stop-color="#787d81"/>
+      <stop offset="0.45" stop-color="#8d9296"/>
+      <stop offset="0.72" stop-color="#63686c"/>
+      <stop offset="1" stop-color="#414548"/>
+    </linearGradient>
+    <linearGradient id="castFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#4b4f52"/>
+      <stop offset="0.22" stop-color="#787d81"/>
+      <stop offset="0.45" stop-color="#8d9296"/>
+      <stop offset="0.72" stop-color="#63686c"/>
+      <stop offset="1" stop-color="#414548"/>
+    </linearGradient>
+    <linearGradient id="castLink" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8d9296"/>
+      <stop offset="0.28" stop-color="#787d81"/>
+      <stop offset="0.62" stop-color="#63686c"/>
+      <stop offset="1" stop-color="#414548"/>
+    </linearGradient>
+    <linearGradient id="charcoalBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#26292c"/>
+      <stop offset="0.22" stop-color="#4a4f54"/>
+      <stop offset="0.45" stop-color="#5e646a"/>
+      <stop offset="0.72" stop-color="#383c40"/>
+      <stop offset="1" stop-color="#1e2124"/>
+    </linearGradient>
+    <linearGradient id="charcoalFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#26292c"/>
+      <stop offset="0.22" stop-color="#4a4f54"/>
+      <stop offset="0.45" stop-color="#5e646a"/>
+      <stop offset="0.72" stop-color="#383c40"/>
+      <stop offset="1" stop-color="#1e2124"/>
+    </linearGradient>
+    <linearGradient id="blackAno" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1c1f22"/>
+      <stop offset="0.2" stop-color="#43484d"/>
+      <stop offset="0.45" stop-color="#5a6167"/>
+      <stop offset="0.72" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="amber" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8a5a12"/>
+      <stop offset="0.3" stop-color="#c9903a"/>
+      <stop offset="0.55" stop-color="#e0b25f"/>
+      <stop offset="0.8" stop-color="#a06f22"/>
+      <stop offset="1" stop-color="#7a4e10"/>
+    </linearGradient>
+    <linearGradient id="steelFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <g transform="translate(-30 0)">
+    <ellipse cx="370" cy="838" rx="248" ry="55" fill="url(#shadow)"/>
+
+    <!-- ================= round cast base ================= -->
+    <path d="M204 776 A166 63 0 0 0 536 776 L536 804 A166 63 0 0 1 204 804 Z" fill="url(#castBarrel)" stroke="#33373a" stroke-width="3"/>
+    <path d="M204 786 A166 63 0 0 0 536 786" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="3"/>
+    <path d="M204 798 A166 63 0 0 0 536 798" fill="none" stroke="#000000" stroke-opacity="0.25" stroke-width="4"/>
+    <ellipse cx="370" cy="776" rx="166" ry="63" fill="url(#castFace)" stroke="#33373a" stroke-width="3"/>
+    <ellipse cx="370" cy="776" rx="156" ry="59.2" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2"/>
+    <ellipse cx="504.9" cy="797.2" rx="13" ry="5" fill="#ffffff" opacity="0.22"/>
+    <ellipse cx="504.9" cy="797.2" rx="9" ry="3.4" fill="#2c3236" stroke="#1c2124" stroke-width="1.5"/>
+    <ellipse cx="425.9" cy="827.3" rx="13" ry="5" fill="#ffffff" opacity="0.22"/>
+    <ellipse cx="425.9" cy="827.3" rx="9" ry="3.4" fill="#2c3236" stroke="#1c2124" stroke-width="1.5"/>
+    <ellipse cx="314.1" cy="827.3" rx="13" ry="5" fill="#ffffff" opacity="0.22"/>
+    <ellipse cx="314.1" cy="827.3" rx="9" ry="3.4" fill="#2c3236" stroke="#1c2124" stroke-width="1.5"/>
+    <ellipse cx="235.1" cy="797.2" rx="13" ry="5" fill="#ffffff" opacity="0.22"/>
+    <ellipse cx="235.1" cy="797.2" rx="9" ry="3.4" fill="#2c3236" stroke="#1c2124" stroke-width="1.5"/>
+    <ellipse cx="235.1" cy="754.8" rx="13" ry="5" fill="#ffffff" opacity="0.22"/>
+    <ellipse cx="235.1" cy="754.8" rx="9" ry="3.4" fill="#2c3236" stroke="#1c2124" stroke-width="1.5"/>
+    <ellipse cx="314.1" cy="724.7" rx="13" ry="5" fill="#ffffff" opacity="0.22"/>
+    <ellipse cx="314.1" cy="724.7" rx="9" ry="3.4" fill="#2c3236" stroke="#1c2124" stroke-width="1.5"/>
+    <ellipse cx="425.9" cy="724.7" rx="13" ry="5" fill="#ffffff" opacity="0.22"/>
+    <ellipse cx="425.9" cy="724.7" rx="9" ry="3.4" fill="#2c3236" stroke="#1c2124" stroke-width="1.5"/>
+    <ellipse cx="504.9" cy="754.8" rx="13" ry="5" fill="#ffffff" opacity="0.22"/>
+    <ellipse cx="504.9" cy="754.8" rx="9" ry="3.4" fill="#2c3236" stroke="#1c2124" stroke-width="1.5"/>
+
+    <!-- J1 rotary joint ring -->
+    <path d="M248 762 A122 46 0 0 0 492 762 L492 780 A122 46 0 0 1 248 780 Z" fill="url(#charcoalBarrel)" stroke="#181b1d" stroke-width="2.5"/>
+    <path d="M248 770 A122 46 0 0 0 492 770" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2.5"/>
+
+    <!-- ================= tapered column casting ================= -->
+    <path d="M248 762 L286 596 L454 596 L492 762 Q370 808 248 762 Z" fill="url(#castFace)" stroke="#33373a" stroke-width="3"/>
+    <!-- cast draft ribs on the column flanks -->
+    <g fill="none" stroke="#4b4f52" stroke-opacity="0.7" stroke-width="4">
+      <path d="M296 748 L322 606"/>
+      <path d="M444 748 L418 606"/>
+      <path d="M370 758 L370 604"/>
+    </g>
+    <g fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="2.5">
+      <path d="M302 748 L328 606"/>
+      <path d="M450 748 L424 606"/>
+      <path d="M376 758 L376 604"/>
+    </g>
+    <path d="M266 700 L474 700" fill="none" stroke="#000000" stroke-opacity="0.16" stroke-width="4"/>
+    <path d="M262 680 L478 680" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="4"/>
+    <ellipse cx="370" cy="596" rx="84" ry="32" fill="url(#castFace)" stroke="#33373a" stroke-width="2.5"/>
+
+    <!-- ================= lower link ================= -->
+    <path d="M314.0 493.4 L426.0 546.6 L537.8 268.9 L458.2 231.1 Z" fill="url(#castLink)" stroke="#33373a" stroke-width="3"/>
+    <g fill="none" stroke="#4b4f52" stroke-opacity="0.75" stroke-width="4">
+      <path d="M419.7 503.9 L516.9 298.7"/>
+      <path d="M401.7 495.3 L498.9 290.1"/>
+      <path d="M368.7 479.9 L465.9 274.7"/>
+      <path d="M351.1 471.3 L448.3 266.1"/>
+    </g>
+    <g fill="none" stroke="#ffffff" stroke-opacity="0.24" stroke-width="2.5">
+      <path d="M424.0 505.9 L521.2 300.7"/>
+      <path d="M406.0 497.3 L503.2 292.1"/>
+      <path d="M373.0 481.9 L470.2 276.7"/>
+      <path d="M355.4 473.3 L452.6 268.1"/>
+    </g>
+    <path d="M338.0 481.9 L462.0 240.9" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="7"/>
+    <path d="M422.0 544.6 L534.0 270.9" fill="none" stroke="#000000" stroke-opacity="0.22" stroke-width="7"/>
+
+    <!-- ================= J2 shoulder joint housing ================= -->
+    <path d="M252 500 Q252 466 288 466 L426 466 Q462 466 462 500 L462 572 Q462 606 426 606 L288 606 Q252 606 252 572 Z" fill="url(#charcoalFace)" stroke="#161a1c" stroke-width="3"/>
+    <path d="M268 480 Q268 476 276 476 L430 476" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="5"/>
+    <path d="M270 598 L440 598" fill="none" stroke="#000000" stroke-opacity="0.3" stroke-width="6"/>
+    <!-- large bolted cover plate -->
+    <ellipse cx="342" cy="540" rx="76" ry="88" fill="url(#charcoalFace)" stroke="#161a1c" stroke-width="3"/>
+    <ellipse cx="342" cy="540" rx="50" ry="58" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="2.5"/>
+    <ellipse cx="342" cy="540" rx="26" ry="30" fill="#22272a" stroke="#141719" stroke-width="2.5"/>
+    <ellipse cx="335" cy="532" rx="9" ry="10" fill="#ffffff" opacity="0.12"/>
+    <g fill="url(#steelFace)" stroke="#454b4f" stroke-width="1.6">
+      <ellipse cx="342.0" cy="469.0" rx="7" ry="7.5"/>
+      <ellipse cx="377.9" cy="482.6" rx="7" ry="7.5"/>
+      <ellipse cx="400.0" cy="518.1" rx="7" ry="7.5"/>
+      <ellipse cx="400.0" cy="561.9" rx="7" ry="7.5"/>
+      <ellipse cx="377.9" cy="597.4" rx="7" ry="7.5"/>
+      <ellipse cx="342.0" cy="611.0" rx="7" ry="7.5"/>
+      <ellipse cx="306.1" cy="597.4" rx="7" ry="7.5"/>
+      <ellipse cx="284.0" cy="561.9" rx="7" ry="7.5"/>
+      <ellipse cx="284.0" cy="518.1" rx="7" ry="7.5"/>
+      <ellipse cx="306.1" cy="482.6" rx="7" ry="7.5"/>
+    </g>
+
+    <!-- ================= upper link ================= -->
+    <path d="M471.5 288.8 L696.7 401.3 L731.3 342.7 L524.5 199.2 Z" fill="url(#castLink)" stroke="#33373a" stroke-width="3"/>
+    <g fill="none" stroke="#4b4f52" stroke-opacity="0.75" stroke-width="3.5">
+      <path d="M508.6 285.2 L672.8 382.4"/>
+      <path d="M516.8 271.4 L681.0 368.6"/>
+      <path d="M531.0 247.4 L695.2 344.6"/>
+    </g>
+    <g fill="none" stroke="#ffffff" stroke-opacity="0.24" stroke-width="2.2">
+      <path d="M512.0 279.4 L676.2 376.6"/>
+      <path d="M520.2 265.6 L684.4 362.8"/>
+      <path d="M534.4 241.6 L698.6 338.8"/>
+    </g>
+    <path d="M527.0 205.2 L727.0 344.7" fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="6"/>
+    <path d="M478.0 292.4 L694.0 396.3" fill="none" stroke="#000000" stroke-opacity="0.22" stroke-width="6"/>
+
+    <!-- corrugated cable conduit clipped to the outer flank -->
+    <path d="M528 212 C 592 236 660 276 733 334" fill="none" stroke="#0d0f10" stroke-width="26" stroke-linecap="round"/>
+    <path d="M528 212 C 592 236 660 276 733 334" fill="none" stroke="#2c3033" stroke-width="21" stroke-linecap="round"/>
+    <path d="M528 212 C 592 236 660 276 733 334" fill="none" stroke="#0d0f10" stroke-opacity="0.85" stroke-width="21" stroke-dasharray="4 12"/>
+    <path d="M524 204 C 588 228 656 268 729 326" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="4" stroke-linecap="round"/>
+    <path d="M578 226 L600 264" fill="none" stroke="#4a4f54" stroke-width="12" stroke-linecap="round"/>
+    <path d="M660 274 L682 312" fill="none" stroke="#4a4f54" stroke-width="12" stroke-linecap="round"/>
+
+    <!-- ================= J3 elbow joint housing ================= -->
+    <path d="M452 214 Q452 186 480 186 L542 186 Q570 186 570 214 L570 274 Q570 302 542 302 L480 302 Q452 302 452 274 Z" fill="url(#charcoalFace)" stroke="#161a1c" stroke-width="3"/>
+    <path d="M464 198 Q464 194 472 194 L546 194" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="4"/>
+    <ellipse cx="498" cy="240" rx="54" ry="62" fill="url(#charcoalFace)" stroke="#161a1c" stroke-width="3"/>
+    <ellipse cx="498" cy="240" rx="34" ry="39" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="2.5"/>
+    <ellipse cx="498" cy="240" rx="17" ry="20" fill="#22272a" stroke="#141719" stroke-width="2.5"/>
+    <g fill="url(#steelFace)" stroke="#454b4f" stroke-width="1.5">
+      <ellipse cx="498.0" cy="192.0" rx="6" ry="6.5"/>
+      <ellipse cx="527.0" cy="206.1" rx="6" ry="6.5"/>
+      <ellipse cx="539.0" cy="240.0" rx="6" ry="6.5"/>
+      <ellipse cx="527.0" cy="273.9" rx="6" ry="6.5"/>
+      <ellipse cx="498.0" cy="288.0" rx="6" ry="6.5"/>
+      <ellipse cx="469.0" cy="273.9" rx="6" ry="6.5"/>
+      <ellipse cx="457.0" cy="240.0" rx="6" ry="6.5"/>
+      <ellipse cx="469.0" cy="206.1" rx="6" ry="6.5"/>
+    </g>
+
+    <!-- ================= wrist, tool flange and two-finger gripper ================= -->
+    <g transform="translate(714 372) rotate(30.66)">
+      <path d="M-6 -32 L38 -32 L38 32 L-6 32 Z" fill="url(#charcoalFace)" stroke="#161a1c" stroke-width="3"/>
+      <path d="M0 -24 L34 -24" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="5"/>
+      <path d="M0 26 L34 26" fill="none" stroke="#000000" stroke-opacity="0.3" stroke-width="5"/>
+      <!-- restrained amber accent ring -->
+      <path d="M38 -34 L50 -34 L50 34 L38 34 Z" fill="url(#amber)" stroke="#5f3c0d" stroke-width="2.5"/>
+      <path d="M41 -30 L41 30" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="3"/>
+      <!-- tool flange -->
+      <path d="M50 -27 L64 -27 L64 27 L50 27 Z" fill="url(#steelFace)" stroke="#454b4f" stroke-width="2.5"/>
+      <!-- gripper body -->
+      <path d="M64 -42 L112 -42 L112 42 L64 42 Z" fill="url(#blackAno)" stroke="#101315" stroke-width="3"/>
+      <path d="M70 -34 L106 -34" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="5"/>
+      <path d="M70 34 L106 34" fill="none" stroke="#000000" stroke-opacity="0.35" stroke-width="5"/>
+      <ellipse cx="88" cy="0" rx="12" ry="13" fill="#22272a" stroke="#101315" stroke-width="2"/>
+      <!-- parallel fingers -->
+      <path d="M112 -40 L168 -40 L168 -16 L112 -16 Z" fill="url(#blackAno)" stroke="#101315" stroke-width="2.5"/>
+      <path d="M112 16 L168 16 L168 40 L112 40 Z" fill="url(#blackAno)" stroke="#101315" stroke-width="2.5"/>
+      <path d="M140 -18 L168 -18 L168 -8 L140 -8 Z" fill="#3b4044" stroke="#101315" stroke-width="2"/>
+      <path d="M140 8 L168 8 L168 18 L140 18 Z" fill="#3b4044" stroke="#101315" stroke-width="2"/>
+      <path d="M118 -34 L162 -34" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="3.5"/>
+      <path d="M118 34 L162 34" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="3.5"/>
+    </g>
+  </g>
+</svg>

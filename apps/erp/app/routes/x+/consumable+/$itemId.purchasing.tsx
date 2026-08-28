@@ -119,7 +119,7 @@ export default function ConsumablePurchasingRoute() {
   };
 
   return (
-    <VStack spacing={2} className="p-2">
+    <VStack spacing={4} className="p-4">
       <ItemPurchasingForm
         key={initialValues.itemId}
         initialValues={initialValues}

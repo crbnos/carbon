@@ -1,0 +1,30 @@
+Seeded row counts
+-----------------
+  location                    2
+  process                     9
+  workCenter                  7
+  customer                    4
+  supplier                    8
+  item                       34
+  makeMethod                 27
+  methodMaterial             51
+  itemLedger                 19
+  opportunity                11
+  salesRfq                    2
+  quote                       3
+  salesOrder                 10
+  shipment                    1
+  salesInvoice                1
+  supplierInteraction         6
+  purchasingRfq               1
+  supplierQuote               3
+  purchaseOrder               4
+  receipt                     1
+  purchaseInvoice             1
+  job                         8
+  jobOperation               81
+  nonConformance              2
+  changeOrder                 3
+  fixedAsset                  4
+  workflow                    7
+

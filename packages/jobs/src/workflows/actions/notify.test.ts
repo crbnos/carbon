@@ -1,6 +1,9 @@
-import { NotificationEvent } from "@carbon/notifications";
+import {
+  NotificationDestination,
+  NotificationEvent
+} from "@carbon/notifications";
 import type { RuntimeValue } from "@carbon/workflows";
-import { entityValue, primitiveValue } from "@carbon/workflows";
+import { entityValue, listValue, primitiveValue } from "@carbon/workflows";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { runNotifyAction } from "./notify";
 
@@ -77,6 +80,45 @@ describe("runNotifyAction", () => {
       error: "This step has nobody to notify."
     });
     expect(triggerMock).not.toHaveBeenCalled();
+  });
+
+  const channels = (...names: string[]) =>
+    listValue(
+      { kind: "primitive", of: "string" },
+      names.map((name) => primitiveValue("string", name))
+    ).value;
+
+  it("passes the chosen channels through as destinations", async () => {
+    await run({
+      user: entityValue("user", "usr_1"),
+      subject,
+      channels: channels("inApp", "slack")
+    });
+
+    expect(triggerMock).toHaveBeenCalledWith(
+      "notify",
+      expect.objectContaining({
+        destinations: [
+          NotificationDestination.InApp,
+          NotificationDestination.Slack
+        ]
+      })
+    );
+  });
+
+  // An absent field is the job's "use the default map for this event", which is what a
+  // node saved before the input existed still means.
+  it("omits destinations when no channel is chosen or none is recognised", async () => {
+    await run({ user: entityValue("user", "usr_1"), subject });
+    expect(triggerMock.mock.calls[0]?.[1]).not.toHaveProperty("destinations");
+
+    triggerMock.mockClear();
+    await run({
+      user: entityValue("user", "usr_1"),
+      subject,
+      channels: channels("carrier-pigeon")
+    });
+    expect(triggerMock.mock.calls[0]?.[1]).not.toHaveProperty("destinations");
   });
 
   it("falls back to the run id as the document when no record is named", async () => {

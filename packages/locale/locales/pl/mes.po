@@ -176,6 +176,9 @@ msgstr "Zablokowane przez {0}"
 msgid "Blocking"
 msgstr "Blokujące"
 
+msgid "Board view"
+msgstr "Widok tablicy"
+
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "Ale nie martw się. Możesz użyć funkcji resetowania hasła, aby poprosić o nowy magiczny link."
 
@@ -515,6 +518,9 @@ msgstr "Zakończ {0}"
 msgid "Finish Anyways"
 msgstr "Zakończ mimo wszystko"
 
+msgid "Finish setting up your account"
+msgstr "Ukończ konfigurowanie konta"
+
 msgid "Finish with material unpicked?"
 msgstr "Zakończyć bez wybranego materiału?"
 
@@ -523,6 +529,9 @@ msgstr "Zapomniałeś zakończyć zmianę?"
 
 msgid "Go back to operation"
 msgstr "Wróć do operacji"
+
+msgid "Go to onboarding"
+msgstr "Przejdź do procesu wdrażania"
 
 msgid "How many were actually picked?"
 msgstr "Ile faktycznie zostało zebrane?"
@@ -635,6 +644,9 @@ msgstr "Zbudujmy coś"
 
 msgid "lines"
 msgstr "linie"
+
+msgid "List view"
+msgstr "Widok listy"
 
 msgid "Loading item details..."
 msgstr "Ładowanie szczegółów pozycji..."
@@ -864,6 +876,9 @@ msgstr "Brak wpisów czasu pracy w tym tygodniu"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Brak zapasu w magazynie dla tego artykułu. Możesz go mimo tego pobrać — dostępna ilość będzie ujemna do czasu uzgodnienia stanu."
+
+msgid "No Work Center"
+msgstr "Brak stanowiska roboczego"
 
 msgid "No work centers are blocked"
 msgstr "Żadne gniazda produkcyjne nie są zablokowane"
@@ -1496,6 +1511,9 @@ msgstr "Zalogowałeś się o <0/>. Możesz edytować czas wylogowania poniżej l
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Jesteś zalogowany od {hoursElapsed} godzin. Czy zapomniałeś zakończyć zmianę?"
+
+msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
+msgstr "Twoje konto nie jest jeszcze częścią żadnej firmy. Dokończ proces wdrażania w aplikacji Carbon ERP, aby kontynuować."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Twoja organizacja wymaga aplikacji uwierzytelniającej. Skonfiguruj ją w aplikacji Carbon, a następnie wróć tutaj."

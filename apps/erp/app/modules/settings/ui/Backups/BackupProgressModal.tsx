@@ -11,6 +11,7 @@ import {
 import { useEffect, useState } from "react";
 import { LuCheck, LuLoaderCircle, LuTriangleAlert } from "react-icons/lu";
 import { useFetcher, useRevalidator } from "react-router";
+import { formatElapsed } from "./format";
 
 // The job reports progress as a stable phase KEY + done/total; these order the
 // keys and map them to labels per mode (display copy stays out of the job).
@@ -39,12 +40,6 @@ const PHASE_LABELS: Record<
     files: "Restoring files"
   }
 };
-
-function formatElapsed(ms: number): string {
-  const s = Math.max(0, Math.floor(ms / 1000));
-  const m = Math.floor(s / 60);
-  return m > 0 ? `${m}m ${s % 60}s` : `${s}s`;
-}
 
 // The animated step checklist. Completed steps get a check that pops in
 // (ease-out), the active step spins (constant motion → linear), pending steps sit

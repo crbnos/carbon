@@ -1,0 +1,183 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="nickel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="nickelTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#e9edef"/>
+      <stop offset="0.5" stop-color="#c0c7cc"/>
+      <stop offset="1" stop-color="#8f979d"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7a5d19"/>
+      <stop offset="0.2" stop-color="#c9a445"/>
+      <stop offset="0.45" stop-color="#e8cd7c"/>
+      <stop offset="0.72" stop-color="#a8853a"/>
+      <stop offset="1" stop-color="#6a4f16"/>
+    </linearGradient>
+    <linearGradient id="white" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#b9bec2"/>
+      <stop offset="0.2" stop-color="#e7eaec"/>
+      <stop offset="0.45" stop-color="#f7f9fa"/>
+      <stop offset="0.72" stop-color="#ced4d8"/>
+      <stop offset="1" stop-color="#a4aaae"/>
+    </linearGradient>
+    <linearGradient id="whiteTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#fbfcfc"/>
+      <stop offset="0.5" stop-color="#e2e6e9"/>
+      <stop offset="1" stop-color="#b6bcc0"/>
+    </linearGradient>
+    <linearGradient id="rubber" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#111315"/>
+      <stop offset="0.25" stop-color="#2c3033"/>
+      <stop offset="0.5" stop-color="#3b4044"/>
+      <stop offset="0.75" stop-color="#212528"/>
+      <stop offset="1" stop-color="#0d0f10"/>
+    </linearGradient>
+    <linearGradient id="bore" x1="0.3" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#3f454a"/>
+      <stop offset="1" stop-color="#20252a"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="512" cy="676" rx="428" ry="96" fill="url(#shadow)"/>
+
+  <!-- 1 : straight strain relief backshell -->
+  <g>
+    <path d="M124 606 L124 681 Q190 731 256 681 L256 606 Z" fill="url(#nickel)" stroke="#4a5055" stroke-width="2.5"/>
+    <g stroke="#5e656b" stroke-width="3" opacity="0.7" fill="none">
+      <path d="M133 619 L133 694"/><path d="M142 623 L142 698"/><path d="M151 626 L151 701"/><path d="M160 628 L160 703"/><path d="M169 630 L169 705"/><path d="M178 631 L178 706"/><path d="M187 631 L187 706"/><path d="M196 631 L196 706"/><path d="M205 630 L205 705"/><path d="M214 629 L214 704"/><path d="M223 628 L223 703"/><path d="M232 625 L232 700"/><path d="M241 622 L241 697"/><path d="M250 616 L250 691"/>
+    </g>
+    <ellipse cx="190" cy="606" rx="66" ry="25" fill="url(#nickelTop)" stroke="#7f868c" stroke-width="2"/>
+    <path d="M140 606 L140 562 L240 562 L240 606 Z" fill="url(#nickel)" stroke="#4a5055" stroke-width="2.5"/>
+    <ellipse cx="190" cy="562" rx="50" ry="19" fill="url(#nickelTop)" stroke="#7f868c" stroke-width="2"/>
+    <path d="M140 562 L157 520 L223 520 L240 562 Z" fill="url(#nickel)" stroke="#4a5055" stroke-width="2.5"/>
+    <g stroke="#ffffff" stroke-opacity="0.18" stroke-width="2.5" fill="none">
+      <path d="M145 550 L235 550"/><path d="M150 538 L230 538"/>
+    </g>
+    <ellipse cx="190" cy="520" rx="33" ry="12.5" fill="url(#nickelTop)" stroke="#7f868c" stroke-width="2"/>
+    <ellipse cx="190" cy="521" rx="21" ry="8" fill="url(#bore)"/>
+    <ellipse cx="190" cy="596" rx="58" ry="22" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="2"/>
+  </g>
+
+  <!-- 2 : white insulating insert with gold pin contacts -->
+  <g>
+    <path d="M270 621 L270 649 Q356 691 442 649 L442 621 Z" fill="url(#white)" stroke="#8b9195" stroke-width="2.5"/>
+    <ellipse cx="356" cy="621" rx="86" ry="32.7" fill="url(#whiteTop)" stroke="#9aa0a4" stroke-width="2.5"/>
+    <ellipse cx="356" cy="621" rx="74" ry="28.1" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2"/>
+    <!-- polarising keyway on the rim -->
+    <path d="M338 590 L338 597 L374 597 L374 590 Z" fill="#9aa1a6" opacity="0.75"/>
+    <g>
+      <ellipse cx="356.0" cy="599.7" rx="12" ry="4.6" fill="#b9bfc4" opacity="0.55"/>
+      <path d="M347.0 575.7 L347.0 599.7 Q356.0 606.5 365.0 599.7 L365.0 575.7 Z" fill="url(#gold)"/>
+      <ellipse cx="356.0" cy="575.7" rx="9" ry="3.4" fill="#efd894" stroke="#a8853a" stroke-width="1.2"/>
+      <ellipse cx="388.9" cy="603.8" rx="12" ry="4.6" fill="#b9bfc4" opacity="0.55"/>
+      <path d="M379.9 579.8 L379.9 603.8 Q388.9 610.6 397.9 603.8 L397.9 579.8 Z" fill="url(#gold)"/>
+      <ellipse cx="388.9" cy="579.8" rx="9" ry="3.4" fill="#efd894" stroke="#a8853a" stroke-width="1.2"/>
+      <ellipse cx="323.1" cy="603.8" rx="12" ry="4.6" fill="#b9bfc4" opacity="0.55"/>
+      <path d="M314.1 579.8 L314.1 603.8 Q323.1 610.6 332.1 603.8 L332.1 579.8 Z" fill="url(#gold)"/>
+      <ellipse cx="323.1" cy="579.8" rx="9" ry="3.4" fill="#efd894" stroke="#a8853a" stroke-width="1.2"/>
+      <ellipse cx="409.3" cy="614.4" rx="12" ry="4.6" fill="#b9bfc4" opacity="0.55"/>
+      <path d="M400.3 590.4 L400.3 614.4 Q409.3 621.2 418.3 614.4 L418.3 590.4 Z" fill="url(#gold)"/>
+      <ellipse cx="409.3" cy="590.4" rx="9" ry="3.4" fill="#efd894" stroke="#a8853a" stroke-width="1.2"/>
+      <ellipse cx="302.7" cy="614.4" rx="12" ry="4.6" fill="#b9bfc4" opacity="0.55"/>
+      <path d="M293.7 590.4 L293.7 614.4 Q302.7 621.2 311.7 614.4 L311.7 590.4 Z" fill="url(#gold)"/>
+      <ellipse cx="302.7" cy="590.4" rx="9" ry="3.4" fill="#efd894" stroke="#a8853a" stroke-width="1.2"/>
+      <ellipse cx="356.0" cy="621.0" rx="12" ry="4.6" fill="#b9bfc4" opacity="0.55"/>
+      <path d="M347.0 597 L347.0 621 Q356.0 627.8 365.0 621 L365.0 597 Z" fill="url(#gold)"/>
+      <ellipse cx="356.0" cy="597.0" rx="9" ry="3.4" fill="#efd894" stroke="#a8853a" stroke-width="1.2"/>
+      <ellipse cx="409.3" cy="627.6" rx="12" ry="4.6" fill="#b9bfc4" opacity="0.55"/>
+      <path d="M400.3 603.6 L400.3 627.6 Q409.3 634.4 418.3 627.6 L418.3 603.6 Z" fill="url(#gold)"/>
+      <ellipse cx="409.3" cy="603.6" rx="9" ry="3.4" fill="#efd894" stroke="#a8853a" stroke-width="1.2"/>
+      <ellipse cx="302.7" cy="627.6" rx="12" ry="4.6" fill="#b9bfc4" opacity="0.55"/>
+      <path d="M293.7 603.6 L293.7 627.6 Q302.7 634.4 311.7 627.6 L311.7 603.6 Z" fill="url(#gold)"/>
+      <ellipse cx="302.7" cy="603.6" rx="9" ry="3.4" fill="#efd894" stroke="#a8853a" stroke-width="1.2"/>
+      <ellipse cx="388.9" cy="638.2" rx="12" ry="4.6" fill="#b9bfc4" opacity="0.55"/>
+      <path d="M379.9 614.2 L379.9 638.2 Q388.9 645.0 397.9 638.2 L397.9 614.2 Z" fill="url(#gold)"/>
+      <ellipse cx="388.9" cy="614.2" rx="9" ry="3.4" fill="#efd894" stroke="#a8853a" stroke-width="1.2"/>
+      <ellipse cx="323.1" cy="638.2" rx="12" ry="4.6" fill="#b9bfc4" opacity="0.55"/>
+      <path d="M314.1 614.2 L314.1 638.2 Q323.1 645.0 332.1 638.2 L332.1 614.2 Z" fill="url(#gold)"/>
+      <ellipse cx="323.1" cy="614.2" rx="9" ry="3.4" fill="#efd894" stroke="#a8853a" stroke-width="1.2"/>
+      <ellipse cx="356.0" cy="642.3" rx="12" ry="4.6" fill="#b9bfc4" opacity="0.55"/>
+      <path d="M347.0 618.3 L347.0 642.3 Q356.0 649.1 365.0 642.3 L365.0 618.3 Z" fill="url(#gold)"/>
+      <ellipse cx="356.0" cy="618.3" rx="9" ry="3.4" fill="#efd894" stroke="#a8853a" stroke-width="1.2"/>
+    </g>
+  </g>
+
+  <!-- 3 : plug shell with knurled coupling nut -->
+  <g>
+    <!-- rear body -->
+    <path d="M446 520 L446 608 Q524 638 602 608 L602 520 Z" fill="url(#nickel)" stroke="#4a5055" stroke-width="2.5"/>
+    <g stroke="#ffffff" stroke-opacity="0.16" stroke-width="2" fill="none">
+      <path d="M452 592 Q524 618 596 592"/><path d="M452 572 Q524 598 596 572"/>
+    </g>
+    <!-- coupling nut -->
+    <path d="M428 420 L428 520 Q524 560 620 520 L620 420 Z" fill="url(#nickel)" stroke="#4a5055" stroke-width="2.5"/>
+    <g stroke="#5e656b" stroke-width="3.5" opacity="0.7" fill="none">
+      <path d="M439 437 L439 537"/><path d="M450 443 L450 543"/><path d="M461 448 L461 548"/><path d="M472 451 L472 551"/><path d="M483 453 L483 553"/><path d="M494 455 L494 555"/><path d="M505 456 L505 556"/><path d="M516 456 L516 556"/><path d="M527 456 L527 556"/><path d="M538 456 L538 556"/><path d="M549 455 L549 555"/><path d="M560 454 L560 554"/><path d="M571 452 L571 552"/><path d="M582 449 L582 549"/><path d="M593 445 L593 545"/><path d="M604 440 L604 540"/>
+    </g>
+    <g stroke="#eef1f3" stroke-width="1.6" opacity="0.4" fill="none">
+      <path d="M444 442 L444 542"/><path d="M455 446 L455 546"/><path d="M466 450 L466 550"/><path d="M477 452 L477 552"/><path d="M488 454 L488 554"/><path d="M499 456 L499 556"/><path d="M510 456 L510 556"/><path d="M521 456 L521 556"/><path d="M532 456 L532 556"/><path d="M543 456 L543 556"/><path d="M554 455 L554 555"/><path d="M565 453 L565 553"/><path d="M576 451 L576 551"/><path d="M587 447 L587 547"/><path d="M598 443 L598 543"/>
+    </g>
+    <!-- mating face -->
+    <ellipse cx="524" cy="420" rx="96" ry="36.5" fill="url(#nickelTop)" stroke="#7f868c" stroke-width="2.5"/>
+    <ellipse cx="524" cy="420" rx="85" ry="32.3" fill="none" stroke="#9aa2a8" stroke-width="2"/>
+    <ellipse cx="524" cy="422" rx="72" ry="27.4" fill="url(#bore)" stroke="#5b6167" stroke-width="2"/>
+    <ellipse cx="524" cy="426" rx="60" ry="22.8" fill="#161a1d" opacity="0.65"/>
+    <!-- keyway in the bore -->
+    <path d="M508 396 L508 406 L540 406 L540 396 Z" fill="#8e969c" opacity="0.7"/>
+    <g stroke="#ffffff" stroke-opacity="0.2" stroke-width="2" fill="none">
+      <ellipse cx="524" cy="420" rx="66" ry="25"/>
+    </g>
+  </g>
+
+  <!-- 4 : panel receptacle with threaded barrel and O ring -->
+  <g>
+    <!-- threaded barrel -->
+    <path d="M644 556 L644 646 Q706 670 768 646 L768 556 Z" fill="url(#nickel)" stroke="#4a5055" stroke-width="2.5"/>
+    <g stroke="#767d83" stroke-width="4" opacity="0.8" fill="none">
+      <path d="M644 578 L768 566"/><path d="M644 598 L768 586"/><path d="M644 618 L768 606"/><path d="M644 638 L768 626"/>
+    </g>
+    <g stroke="#eef1f3" stroke-width="2.4" opacity="0.45" fill="none">
+      <path d="M644 585 L768 573"/><path d="M644 605 L768 593"/><path d="M644 625 L768 613"/><path d="M644 645 L768 633"/>
+    </g>
+    <!-- nitrile O ring seated on the shoulder -->
+    <g>
+      <ellipse cx="706" cy="556" rx="78" ry="29.6" fill="url(#rubber)" stroke="#000000" stroke-width="2.5"/>
+      <ellipse cx="706" cy="550" rx="66" ry="25.1" fill="#2f3438"/>
+      <ellipse cx="706" cy="548" rx="52" ry="19.8" fill="#14171a"/>
+      <path d="M660 536 Q706 512 752 536" fill="none" stroke="#6b7278" stroke-width="3" opacity="0.4"/>
+    </g>
+    <!-- front body -->
+    <path d="M626 470 L626 542 Q706 574 786 542 L786 470 Z" fill="url(#nickel)" stroke="#4a5055" stroke-width="2.5"/>
+    <g stroke="#ffffff" stroke-opacity="0.16" stroke-width="2" fill="none">
+      <path d="M632 522 Q706 552 780 522"/><path d="M632 502 Q706 532 780 502"/>
+    </g>
+    <ellipse cx="706" cy="470" rx="80" ry="30.4" fill="url(#nickelTop)" stroke="#7f868c" stroke-width="2.5"/>
+    <ellipse cx="706" cy="470" rx="70" ry="26.6" fill="none" stroke="#9aa2a8" stroke-width="2"/>
+    <ellipse cx="706" cy="472" rx="56" ry="21.3" fill="url(#bore)" stroke="#5b6167" stroke-width="2"/>
+    <ellipse cx="706" cy="475" rx="45" ry="17.1" fill="#161a1d" opacity="0.6"/>
+    <path d="M694 452 L694 460 L720 460 L720 452 Z" fill="#8e969c" opacity="0.7"/>
+  </g>
+
+  <!-- 5 : clamping ferrule -->
+  <g>
+    <path d="M800 640 L800 692 Q852 712 904 692 L904 640 Z" fill="url(#nickel)" stroke="#4a5055" stroke-width="2.5"/>
+    <g stroke="#5e656b" stroke-width="2.6" opacity="0.65" fill="none">
+      <path d="M808 651 L808 703"/><path d="M816 654 L816 706"/><path d="M824 657 L824 709"/><path d="M832 658 L832 710"/><path d="M840 659 L840 711"/><path d="M848 660 L848 712"/><path d="M856 660 L856 712"/><path d="M864 659 L864 711"/><path d="M872 658 L872 710"/><path d="M880 657 L880 709"/><path d="M888 654 L888 706"/><path d="M896 651 L896 703"/>
+    </g>
+    <ellipse cx="852" cy="640" rx="52" ry="19.8" fill="url(#nickelTop)" stroke="#7f868c" stroke-width="2.5"/>
+    <ellipse cx="852" cy="640" rx="44" ry="16.7" fill="none" stroke="#9aa2a8" stroke-width="2"/>
+    <ellipse cx="852" cy="642" rx="35" ry="13.3" fill="url(#bore)" stroke="#5b6167" stroke-width="2"/>
+    <ellipse cx="852" cy="645" rx="27" ry="10.3" fill="#171b1e" opacity="0.6"/>
+  </g>
+</svg>

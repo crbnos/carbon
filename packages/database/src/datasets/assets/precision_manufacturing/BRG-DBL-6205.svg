@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="odBand" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4e5459"/><stop offset="0.14" stop-color="#dfe6ea"/><stop offset="0.34" stop-color="#ffffff"/><stop offset="0.6" stop-color="#9aa2a9"/><stop offset="1" stop-color="#464b50"/></linearGradient><linearGradient id="ringFace" x1="0.2" y1="0" x2="0.85" y2="1"><stop offset="0" stop-color="#f0f4f6"/><stop offset="0.42" stop-color="#c4ccd2"/><stop offset="1" stop-color="#828a91"/></linearGradient><linearGradient id="innerFace" x1="0.2" y1="0" x2="0.85" y2="1"><stop offset="0" stop-color="#e9eef1"/><stop offset="0.45" stop-color="#bcc4ca"/><stop offset="1" stop-color="#7c848b"/></linearGradient><linearGradient id="seal" x1="0.2" y1="0" x2="0.85" y2="1"><stop offset="0" stop-color="#111315"/><stop offset="0.25" stop-color="#2c3033"/><stop offset="0.5" stop-color="#3b4044"/><stop offset="0.75" stop-color="#212528"/><stop offset="1" stop-color="#0d0f10"/></linearGradient><linearGradient id="boreWall" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#20252a"/><stop offset="0.35" stop-color="#5b6268"/><stop offset="0.6" stop-color="#3d4348"/><stop offset="1" stop-color="#171b1e"/></linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="512" cy="738.0" rx="440" ry="94" fill="url(#shadow)"/>
+  <path d="M112.0 372.0 L112.0 604.0 Q512 908.0 912.0 604.0 L912.0 372.0 Z" fill="url(#odBand)" stroke="#3c4146" stroke-width="2.5"/>
+  <path d="M112.0 402.0 Q512 706.0 912.0 402.0" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="2"/>
+  <path d="M112.0 476.0 Q512 780.0 912.0 476.0" fill="none" stroke="#2f3438" stroke-opacity="0.55" stroke-width="6"/>
+  <path d="M112.0 490.0 Q512 794.0 912.0 490.0" fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="3"/>
+  <path d="M112.0 568.0 Q512 872.0 912.0 568.0" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2"/>
+  <ellipse cx="512" cy="372.0" rx="400" ry="152" fill="url(#ringFace)" stroke="#767e84" stroke-width="2.5"/>
+  <ellipse cx="512" cy="372.0" rx="386" ry="146.7" fill="none" stroke="#9aa2a8" stroke-width="2" opacity="0.8"/>
+  <ellipse cx="512" cy="372.0" rx="372" ry="141.4" fill="none" stroke="#3f4549" stroke-width="6" opacity="0.75"/>
+  <ellipse cx="512" cy="372.0" rx="366" ry="139.1" fill="none" stroke="#e8eef1" stroke-width="9"/>
+  <ellipse cx="512" cy="372.0" rx="366" ry="139.1" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="3" transform="translate(-4 -5)"/>
+  <ellipse cx="512" cy="372.0" rx="357" ry="135.7" fill="url(#seal)" stroke="#0c0e10" stroke-width="2"/>
+  <ellipse cx="512" cy="372.0" rx="330" ry="125.4" fill="none" stroke="#ffffff" stroke-opacity="0.10" stroke-width="2"/>
+  <ellipse cx="512" cy="372.0" rx="300" ry="114.0" fill="none" stroke="#ffffff" stroke-opacity="0.10" stroke-width="2"/>
+  <ellipse cx="512" cy="372.0" rx="272" ry="103.4" fill="none" stroke="#ffffff" stroke-opacity="0.10" stroke-width="2"/>
+  <ellipse cx="512" cy="372.0" rx="345" ry="131.1" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="4"/>
+  <ellipse cx="512" cy="372.0" rx="252" ry="95.8" fill="#15181a" opacity="0.9"/>
+  <ellipse cx="512" cy="372.0" rx="246" ry="93.5" fill="url(#innerFace)" stroke="#6f777d" stroke-width="2.5"/>
+  <ellipse cx="512" cy="372.0" rx="232" ry="88.2" fill="none" stroke="#ffffff" stroke-opacity="0.20" stroke-width="2"/>
+  <ellipse cx="512" cy="372.0" rx="218" ry="82.8" fill="none" stroke="#ffffff" stroke-opacity="0.20" stroke-width="2"/>
+  <clipPath id="boreC"><ellipse cx="512" cy="372.0" rx="192" ry="73"/></clipPath>
+  <g clip-path="url(#boreC)"><rect x="316" y="372.0" width="392" height="360" fill="url(#boreWall)"/><ellipse cx="512" cy="492.0" rx="192" ry="73" fill="#0f1214" opacity="0.55"/></g>
+  <ellipse cx="512" cy="372.0" rx="192" ry="73" fill="none" stroke="#8d959b" stroke-width="3"/>
+  <ellipse cx="512" cy="372.0" rx="200" ry="76" fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="3"/>
+</svg>

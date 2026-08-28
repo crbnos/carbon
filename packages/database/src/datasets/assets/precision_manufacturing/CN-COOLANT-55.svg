@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="blueBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#153046"/>
+      <stop offset="0.22" stop-color="#2b5b80"/>
+      <stop offset="0.45" stop-color="#3a739e"/>
+      <stop offset="0.72" stop-color="#22496a"/>
+      <stop offset="1" stop-color="#112536"/>
+    </linearGradient>
+    <linearGradient id="blueHead" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#153046"/>
+      <stop offset="0.22" stop-color="#2b5b80"/>
+      <stop offset="0.45" stop-color="#3a739e"/>
+      <stop offset="0.72" stop-color="#22496a"/>
+      <stop offset="1" stop-color="#112536"/>
+    </linearGradient>
+    <linearGradient id="zinc" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <radialGradient id="dust" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#dfe4e6" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#dfe4e6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="drumClip">
+      <path d="M302 210 L302 810 Q512 969.6 722 810 L722 210 Z"/>
+    </clipPath>
+    <clipPath id="headClip">
+      <ellipse cx="512" cy="210" rx="210" ry="79.8"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="512" cy="862" rx="272" ry="60" fill="url(#shadow)"/>
+
+  <!-- painted body -->
+  <path d="M302 210 L302 810 Q512 969.6 722 810 L722 210 Z" fill="url(#blueBarrel)" stroke="#0d1c2a" stroke-width="3"/>
+  <g clip-path="url(#drumClip)">
+    <!-- vertical sheen bands of a gloss enamel -->
+    <rect x="392" y="200" width="26" height="780" fill="#ffffff" opacity="0.14"/>
+    <rect x="424" y="200" width="10" height="780" fill="#ffffff" opacity="0.10"/>
+    <rect x="602" y="200" width="18" height="780" fill="#0b1926" opacity="0.16"/>
+    <!-- light scuffing -->
+    <g stroke="#9fb6c8" stroke-opacity="0.22" stroke-width="3" fill="none">
+      <path d="M356 640 L392 628"/><path d="M566 356 L610 350"/>
+      <path d="M470 724 L520 720"/><path d="M646 500 L676 492"/>
+    </g>
+    <g stroke="#0c1a27" stroke-opacity="0.28" stroke-width="2" fill="none">
+      <path d="M358 646 L394 634"/><path d="M470 730 L518 726"/>
+    </g>
+
+    <!-- top chime ring -->
+    <path d="M302 210 Q512 369.6 722 210 L722 246 Q512 405.6 302 246 Z" fill="url(#blueBarrel)" stroke="#0d1c2a" stroke-width="2.5"/>
+    <path d="M302 216 Q512 375.6 722 216" fill="none" stroke="#a9c4d8" stroke-opacity="0.35" stroke-width="4"/>
+    <path d="M302 242 Q512 401.6 722 242" fill="none" stroke="#0a1723" stroke-opacity="0.45" stroke-width="4"/>
+
+    <!-- upper rolling rib hoop -->
+    <path d="M302 418 Q512 577.6 722 418 L722 456 Q512 615.6 302 456 Z" fill="url(#blueBarrel)" stroke="#0d1c2a" stroke-width="2.5"/>
+    <path d="M302 425 Q512 584.6 722 425" fill="none" stroke="#b7d0e2" stroke-opacity="0.32" stroke-width="5"/>
+    <path d="M302 452 Q512 611.6 722 452" fill="none" stroke="#0a1723" stroke-opacity="0.42" stroke-width="5"/>
+
+    <!-- lower rolling rib hoop -->
+    <path d="M302 556 Q512 715.6 722 556 L722 594 Q512 753.6 302 594 Z" fill="url(#blueBarrel)" stroke="#0d1c2a" stroke-width="2.5"/>
+    <path d="M302 563 Q512 722.6 722 563" fill="none" stroke="#b7d0e2" stroke-opacity="0.32" stroke-width="5"/>
+    <path d="M302 590 Q512 749.6 722 590" fill="none" stroke="#0a1723" stroke-opacity="0.42" stroke-width="5"/>
+
+    <!-- bottom chime ring -->
+    <path d="M302 752 Q512 911.6 722 752 L722 792 Q512 951.6 302 792 Z" fill="url(#blueBarrel)" stroke="#0d1c2a" stroke-width="2.5"/>
+    <path d="M302 759 Q512 918.6 722 759" fill="none" stroke="#9db8cc" stroke-opacity="0.30" stroke-width="4"/>
+    <path d="M302 788 Q512 947.6 722 788" fill="none" stroke="#0a1723" stroke-opacity="0.45" stroke-width="4"/>
+
+    <!-- paint chips baring the steel at the lower chime -->
+    <g stroke="#243a4a" stroke-width="1.6">
+      <polygon points="372,806 392,802 400,814 380,820" fill="#8d9296"/>
+      <polygon points="470,846 492,844 498,856 476,858" fill="#9aa0a4"/>
+      <polygon points="590,824 606,818 614,830 596,834" fill="#8d9296"/>
+      <polygon points="336,770 348,766 352,776 340,780" fill="#9aa0a4"/>
+    </g>
+    <!-- roll-under shading at the base -->
+    <path d="M302 820 L722 820 L722 980 L302 980 Z" fill="#08131d" opacity="0.30"/>
+  </g>
+
+  <!-- slightly domed top head -->
+  <ellipse cx="512" cy="210" rx="210" ry="79.8" fill="url(#blueHead)" stroke="#0d1c2a" stroke-width="3"/>
+  <g clip-path="url(#headClip)">
+    <ellipse cx="508" cy="202" rx="186" ry="70.7" fill="#3a739e" opacity="0.28"/>
+    <ellipse cx="470" cy="188" rx="150" ry="57" fill="url(#dust)"/>
+    <ellipse cx="560" cy="228" rx="130" ry="49" fill="url(#dust)"/>
+    <g stroke="#0a1723" stroke-opacity="0.30" stroke-width="2" fill="none">
+      <ellipse cx="512" cy="210" rx="176" ry="66.9"/>
+    </g>
+    <g stroke="#ffffff" stroke-opacity="0.16" stroke-width="2" fill="none">
+      <ellipse cx="512" cy="210" rx="150" ry="57"/>
+      <ellipse cx="512" cy="210" rx="112" ry="42.6"/>
+    </g>
+  </g>
+  <!-- head-to-chime seam -->
+  <ellipse cx="512" cy="210" rx="196" ry="74.5" fill="none" stroke="#0a1723" stroke-opacity="0.55" stroke-width="3"/>
+  <ellipse cx="512" cy="210" rx="190" ry="72.2" fill="none" stroke="#b7d0e2" stroke-opacity="0.22" stroke-width="2.5"/>
+
+  <!-- large bare zinc bung -->
+  <ellipse cx="376" cy="186" rx="58" ry="22" fill="#1b3a52" stroke="#0a1723" stroke-width="2.5"/>
+  <ellipse cx="376" cy="184" rx="46" ry="17.5" fill="url(#zinc)" stroke="#5d6368" stroke-width="2"/>
+  <ellipse cx="376" cy="184" rx="36" ry="13.7" fill="none" stroke="#4f565b" stroke-width="2" opacity="0.8"/>
+  <g transform="translate(376 184) scale(1 0.38)">
+    <rect x="-19" y="-19" width="38" height="38" rx="4" fill="#3f464b" stroke="#2c3236" stroke-width="3"/>
+    <rect x="-13" y="-13" width="26" height="26" rx="3" fill="#5c646a" opacity="0.6"/>
+  </g>
+  <ellipse cx="376" cy="180" rx="40" ry="15.2" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="2"/>
+
+  <!-- small bare zinc bung -->
+  <ellipse cx="648" cy="234" rx="36" ry="13.7" fill="#1b3a52" stroke="#0a1723" stroke-width="2.5"/>
+  <ellipse cx="648" cy="232" rx="27" ry="10.3" fill="url(#zinc)" stroke="#5d6368" stroke-width="2"/>
+  <ellipse cx="648" cy="232" rx="19" ry="7.2" fill="none" stroke="#4f565b" stroke-width="1.8" opacity="0.8"/>
+  <g transform="translate(648 232) scale(1 0.38)">
+    <rect x="-11" y="-11" width="22" height="22" rx="3" fill="#3f464b" stroke="#2c3236" stroke-width="2.5"/>
+    <rect x="-7" y="-7" width="14" height="14" rx="2" fill="#5c646a" opacity="0.6"/>
+  </g>
+  <ellipse cx="648" cy="229" rx="23" ry="8.7" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="1.8"/>
+</svg>

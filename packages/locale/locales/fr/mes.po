@@ -176,6 +176,9 @@ msgstr "Bloqué par {0}"
 msgid "Blocking"
 msgstr "Bloquant"
 
+msgid "Board view"
+msgstr "Vue tableau"
+
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "Mais ne vous inquiétez pas. Vous pouvez utiliser la procédure de réinitialisation de mot de passe pour demander un nouveau lien magique."
 
@@ -515,6 +518,9 @@ msgstr "Terminer {0}"
 msgid "Finish Anyways"
 msgstr "Terminer quand même"
 
+msgid "Finish setting up your account"
+msgstr "Terminez la configuration de votre compte"
+
 msgid "Finish with material unpicked?"
 msgstr "Terminer avec du matériel non prélevé?"
 
@@ -523,6 +529,9 @@ msgstr "Oubli de pointer la sortie ?"
 
 msgid "Go back to operation"
 msgstr "Revenir à l'opération"
+
+msgid "Go to onboarding"
+msgstr "Aller à l'intégration"
 
 msgid "How many were actually picked?"
 msgstr "Combien ont réellement été prélevés ?"
@@ -635,6 +644,9 @@ msgstr "Construisons quelque chose"
 
 msgid "lines"
 msgstr "lignes"
+
+msgid "List view"
+msgstr "Vue liste"
 
 msgid "Loading item details..."
 msgstr "Chargement des détails de l'article..."
@@ -864,6 +876,9 @@ msgstr "Aucune saisie de temps pour cette semaine"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Aucun stock d'entrepôt n'est enregistré pour cet article. Vous pouvez toujours le prélever — le stock disponible deviendra négatif jusqu'à ce que le décompte soit rapproché."
+
+msgid "No Work Center"
+msgstr "Sans poste de travail"
 
 msgid "No work centers are blocked"
 msgstr "Aucun poste de travail n'est bloqué"
@@ -1496,6 +1511,9 @@ msgstr "Vous avez pointé à <0/>. Vous pouvez modifier votre heure de départ c
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "Vous êtes pointé depuis {hoursElapsed} heures. Avez-vous oublié de pointer la sortie ?"
+
+msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
+msgstr "Votre compte n'est pas encore associé à une entreprise. Complétez l'intégration dans l'ERP Carbon pour continuer."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Votre organisation nécessite une application d'authentification. Configurez-la dans Carbon, puis revenez ici."

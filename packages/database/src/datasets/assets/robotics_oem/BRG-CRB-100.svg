@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#3a3733"/>
+      <stop offset="0.2" stop-color="#6a655e"/>
+      <stop offset="0.45" stop-color="#807a72"/>
+      <stop offset="0.72" stop-color="#55504a"/>
+      <stop offset="1" stop-color="#302d2a"/>
+    </linearGradient>
+    <linearGradient id="ground" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#5b6167"/>
+      <stop offset="0.14" stop-color="#dfe6ea"/>
+      <stop offset="0.34" stop-color="#ffffff"/>
+      <stop offset="0.6" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <linearGradient id="bore" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2b2f33"/>
+      <stop offset="0.35" stop-color="#5a6167"/>
+      <stop offset="0.7" stop-color="#3c4247"/>
+      <stop offset="1" stop-color="#24282b"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="clipRim">
+      <path d="M112 470 L112 518 A400 152 0 0 0 912 518 L912 470 A400 152 0 0 1 112 470 Z"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="512" cy="660" rx="464" ry="102" fill="url(#shadow)"/>
+
+  <!-- oil-blackened outer rim, split race -->
+  <path d="M112 470 L112 518 A400 152 0 0 0 912 518 L912 470 A400 152 0 0 1 112 470 Z"
+        fill="url(#rim)" stroke="#26241f" stroke-width="3"/>
+  <!-- fine parting line of the split outer race -->
+  <g clip-path="url(#clipRim)">
+    <path d="M112 495 A400 152 0 0 0 912 495" fill="none" stroke="#1c1a17" stroke-width="4" opacity="0.85"/>
+    <path d="M112 490 A400 152 0 0 0 912 490" fill="none" stroke="#9b958c" stroke-width="1.8" opacity="0.4"/>
+    <!-- hint of crossed cylindrical rollers in the race gap -->
+    <g stroke="#c6ccd0" stroke-width="5" stroke-linecap="round" opacity="0.5">
+      <path d="M196 570 l16 -16 M236 585 l-16 -16 M276 597 l16 -16 M316 606 l-16 -16
+               M356 613 l16 -16 M396 618 l-16 -16 M436 621 l16 -16 M476 622 l-16 -16
+               M516 622 l16 -16 M556 621 l-16 -16 M596 618 l16 -16 M636 612 l-16 -16
+               M676 604 l16 -16 M716 594 l-16 -16 M756 580 l16 -16 M796 563 l-16 -16"/>
+    </g>
+    <g stroke="#2a2724" stroke-width="2" opacity="0.6">
+      <path d="M196 570 l16 -16 M236 585 l-16 -16 M276 597 l16 -16 M316 606 l-16 -16
+               M356 613 l16 -16 M396 618 l-16 -16 M436 621 l16 -16 M476 622 l-16 -16
+               M516 622 l16 -16 M556 621 l-16 -16 M596 618 l16 -16 M636 612 l-16 -16
+               M676 604 l16 -16 M716 594 l-16 -16 M756 580 l16 -16 M796 563 l-16 -16"/>
+    </g>
+    <!-- small radial grease port -->
+    <ellipse cx="330" cy="536" rx="20" ry="17" fill="#1a1815" stroke="#8d877e" stroke-width="3"/>
+    <ellipse cx="330" cy="536" rx="10" ry="8" fill="#0e0d0b"/>
+    <!-- turning sheen down the rim -->
+    <path d="M256 470 A400 152 0 0 0 300 560" fill="none" stroke="#ffffff" stroke-opacity="0.12" stroke-width="10"/>
+  </g>
+
+  <!-- bore: far inner wall seen through the hole -->
+  <ellipse cx="512" cy="518" rx="190" ry="72" fill="#1f2326"/>
+  <path d="M322 470 L322 518 A190 72 0 0 0 702 518 L702 470 A190 72 0 0 1 322 470 Z" fill="url(#bore)"/>
+  <path d="M322 470 A190 72 0 0 0 702 470" fill="none" stroke="#8a9298" stroke-width="2.5" opacity="0.5"/>
+
+  <!-- mirror ground top face (annulus) -->
+  <path d="M112 470 A400 152 0 0 0 912 470 A400 152 0 0 0 112 470 Z
+           M322 470 A190 72 0 0 1 702 470 A190 72 0 0 1 322 470 Z"
+        fill="url(#ground)" fill-rule="evenodd" stroke="#5f666b" stroke-width="2.5"/>
+
+  <!-- faint spiral turning pattern on the ground face -->
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2">
+    <ellipse cx="512" cy="470" rx="378" ry="144"/>
+    <ellipse cx="512" cy="470" rx="352" ry="134"/>
+    <ellipse cx="513" cy="471" rx="268" ry="102"/>
+    <ellipse cx="512" cy="470" rx="232" ry="88"/>
+  </g>
+  <g fill="none" stroke="#6e757a" stroke-opacity="0.3" stroke-width="1.6">
+    <ellipse cx="512" cy="471" rx="366" ry="139"/>
+    <ellipse cx="513" cy="470" rx="340" ry="129"/>
+    <ellipse cx="512" cy="471" rx="252" ry="96"/>
+    <ellipse cx="513" cy="470" rx="216" ry="82"/>
+  </g>
+
+  <!-- chamfer breaks -->
+  <ellipse cx="512" cy="470" rx="390" ry="148" fill="none" stroke="#c9d0d5" stroke-opacity="0.55" stroke-width="3"/>
+  <ellipse cx="512" cy="470" rx="204" ry="78" fill="none" stroke="#c9d0d5" stroke-opacity="0.45" stroke-width="3"/>
+
+  <!-- ring of countersunk mounting holes through both faces -->
+  <g>
+    <g fill="none" stroke="#ffffff" stroke-opacity="0.24" stroke-width="2.5">
+      <ellipse cx="822" cy="470" rx="32" ry="13"/><ellipse cx="781" cy="529" rx="32" ry="13"/>
+      <ellipse cx="667" cy="572" rx="32" ry="13"/><ellipse cx="512" cy="588" rx="32" ry="13"/>
+      <ellipse cx="357" cy="572" rx="32" ry="13"/><ellipse cx="243" cy="529" rx="32" ry="13"/>
+      <ellipse cx="202" cy="470" rx="32" ry="13"/><ellipse cx="243" cy="411" rx="32" ry="13"/>
+      <ellipse cx="357" cy="368" rx="32" ry="13"/><ellipse cx="512" cy="352" rx="32" ry="13"/>
+      <ellipse cx="667" cy="368" rx="32" ry="13"/><ellipse cx="781" cy="411" rx="32" ry="13"/>
+    </g>
+    <g fill="#8f979d" opacity="0.75">
+      <ellipse cx="822" cy="470" rx="29" ry="12"/><ellipse cx="781" cy="529" rx="29" ry="12"/>
+      <ellipse cx="667" cy="572" rx="29" ry="12"/><ellipse cx="512" cy="588" rx="29" ry="12"/>
+      <ellipse cx="357" cy="572" rx="29" ry="12"/><ellipse cx="243" cy="529" rx="29" ry="12"/>
+      <ellipse cx="202" cy="470" rx="29" ry="12"/><ellipse cx="243" cy="411" rx="29" ry="12"/>
+      <ellipse cx="357" cy="368" rx="29" ry="12"/><ellipse cx="512" cy="352" rx="29" ry="12"/>
+      <ellipse cx="667" cy="368" rx="29" ry="12"/><ellipse cx="781" cy="411" rx="29" ry="12"/>
+    </g>
+    <g fill="#3a4045">
+      <ellipse cx="822" cy="470" rx="16" ry="7"/><ellipse cx="781" cy="529" rx="16" ry="7"/>
+      <ellipse cx="667" cy="572" rx="16" ry="7"/><ellipse cx="512" cy="588" rx="16" ry="7"/>
+      <ellipse cx="357" cy="572" rx="16" ry="7"/><ellipse cx="243" cy="529" rx="16" ry="7"/>
+      <ellipse cx="202" cy="470" rx="16" ry="7"/><ellipse cx="243" cy="411" rx="16" ry="7"/>
+      <ellipse cx="357" cy="368" rx="16" ry="7"/><ellipse cx="512" cy="352" rx="16" ry="7"/>
+      <ellipse cx="667" cy="368" rx="16" ry="7"/><ellipse cx="781" cy="411" rx="16" ry="7"/>
+    </g>
+  </g>
+
+  <!-- outer silhouette -->
+  <path d="M112 470 L112 518 A400 152 0 0 0 912 518 L912 470" fill="none" stroke="#26241f" stroke-width="3"/>
+  <ellipse cx="512" cy="470" rx="400" ry="152" fill="none" stroke="#4b5156" stroke-width="3"/>
+</svg>

@@ -17,6 +17,7 @@ import {
   updateCompanySession
 } from "@carbon/auth/session.server";
 import { isAuditLogEnabled } from "@carbon/database/audit";
+import { getPlan } from "@carbon/ee/plan.server";
 import {
   detectImplementationSignals,
   getImplementationCheckStates,
@@ -60,7 +61,7 @@ import MfaEnrollmentRequired from "~/components/MfaEnrollmentRequired";
 import SessionLockOverlay from "~/components/SessionLockOverlay";
 import { TimeCardWarning } from "~/components/TimeCardWarning";
 import TrainingPanel from "~/components/TrainingPanel";
-import { useIdle, usePermissions } from "~/hooks";
+import { useIdle, usePermissions, useRecordRecentlyViewed } from "~/hooks";
 import { useTrainingPanel } from "~/hooks/useTrainingPanel";
 import { AgentRoot } from "~/modules/agent/ui/AgentRoot";
 import { getOpenClockEntry } from "~/modules/people";
@@ -159,6 +160,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     companies,
     employeeCompaniesResult,
     stripeCustomer,
+    plan,
     customFields,
     integrations,
     companySettings,
@@ -178,6 +180,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getCompanies(client, userId),
     getEmployeeCompanies(client, userId),
     getStripeCustomerByCompanyId(companyId, userId),
+    getPlan(client, companyId),
     getCustomFieldsSchemas(client, { companyId }),
     getCompanyIntegrations(client, companyId),
     getCompanySettings(client, companyId),
@@ -186,8 +189,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getUserClaims(userId, companyId),
     getUserGroups(client, userId),
     getUserDefaults(client, userId, companyId),
-    // Throws, unlike the {data, error} services around it — unguarded, a
-    // transient timeout on this flag 500s every page under /x.
     isAuditLogEnabled(client, companyId).catch(() => false),
     getModulePreferences(client, userId, companyId),
     getPrinterRoutes(client, companyId),
@@ -197,7 +198,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     itarCertificationPromise
   ]);
 
-  if (!claims || user.error || !user.data || !groups.data) {
+  // Empty groups is a valid pre-onboarding state (a first-run user with no
+  // company yet has zero memberships → groups is []), NOT an auth failure —
+  // logging out here made the `requiresOnboarding` redirect below unreachable.
+  // Only a genuine RPC error (groups.error) logs out.
+  if (!claims || user.error || !user.data || groups.error) {
     throw await destroyAuthSession(request);
   }
 
@@ -273,9 +278,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     customFields: customFields.data ?? [],
     defaults: defaults.data,
     integrations: integrations.data ?? [],
-    groups: groups.data,
+    groups: groups.data ?? [],
     permissions: claims?.permissions,
-    plan: stripeCustomer?.planId,
+    plan,
     role: claims?.role,
     user: user.data,
     modulePreferences: modulePreferences.data ?? [],
@@ -356,6 +361,11 @@ export default function AuthenticatedRoute() {
   const userFullName = user ? `${user.firstName} ${user.lastName}` : undefined;
   const companyId = company?.companyId;
   const companyName = company?.name;
+
+  // Record every detail document the user opens, for the home page's
+  // "Recently viewed" list. Reads the record's title from its breadcrumb handle,
+  // so no per-route wiring is needed.
+  useRecordRecentlyViewed(companyId);
 
   // Keyed on the identity rather than run once on mount: switching company
   // redirects back into x+/_layout without unmounting it, so a mount-only
@@ -460,7 +470,7 @@ export default function AuthenticatedRoute() {
                   <Topbar />
                   <div className="flex flex-1 h-[calc(100vh-49px)] relative">
                     <PrimaryNavigation />
-                    <main className="flex-1 overflow-y-auto scrollbar-hide border-l border-t bg-muted sm:rounded-tl-2xl relative z-10">
+                    <main className="flex-1 overflow-y-auto scrollbar-hide border-l border-t bg-card sm:rounded-tl-2xl relative z-10">
                       <Outlet />
                     </main>
                   </div>

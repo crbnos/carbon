@@ -49,8 +49,8 @@ msgid "(excluded for this customer)"
 msgstr "(исключено для этого клиента)"
 
 #. placeholder {0}: open.length
-msgid "{0, plural, one {This part is on 1 open change notice} other {This part is on # open change notices}}"
-msgstr "{0, plural, one {Эта деталь находится на 1 открытой уведомлении об изменении} other {Эта деталь находится на # открытых уведомлениях об изменении}}"
+msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
+msgstr "{0, plural, one {Этот товар находится в 1 открытом уведомлении об изменении} other {Этот товар находится в # открытых уведомлениях об изменении}}"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -167,6 +167,9 @@ msgstr "{from}–{to} из {count}"
 
 msgid "{from}–{to} of {count} operations"
 msgstr "{from}–{to} из {count} операций"
+
+msgid "{hiddenCount} more: {hiddenNames}"
+msgstr "{hiddenCount} ещё: {hiddenNames}"
 
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
@@ -299,7 +302,7 @@ msgstr "3ч"
 msgid "4h"
 msgstr "4ч"
 
-msgid "5 User Minimum"
+msgid "5 user minimum"
 msgstr "Минимум 5 пользователей"
 
 msgid "5-8 weeks"
@@ -355,6 +358,9 @@ msgstr "Расходный материал — это физический пр
 
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "Подрядчик — это контакт поставщика с особыми навыками и доступными часами"
+
+msgid "A custom solution to meet your needs"
+msgstr "Пользовательское решение в соответствии с вашими потребностями"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Клиент — это компания или физическое лицо, которое покупает ваши детали или услуги."
@@ -456,7 +462,7 @@ msgstr "Статус работы изменяется"
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "Список подключен к {0}, поэтому этот шаг выполняется один раз для каждого элемента и возвращает список результатов."
 
-#. placeholder {0}: label( actionInputLabelKey(actionId, batch.input), batch.input )
+#. placeholder {0}: inputLabel(batch.input)
 msgid "A list is wired into {0}, so this step runs once for each item in it — up to {MAX_LIST_ITEMS}."
 msgstr "Список подключен к {0}, поэтому этот шаг выполняется один раз для каждого элемента в нем — до {MAX_LIST_ITEMS}."
 
@@ -465,6 +471,12 @@ msgstr "Компонент \"Производство на заказ\", кот�
 
 msgid "A Make to Order component whose parts are issued together into the parent job — no separate build."
 msgstr "Компонент \"Производство на заказ\", части которого выпускаются вместе в родительское задание — без отдельного построения."
+
+msgid "A managed cloud-hosted version of Carbon"
+msgstr "Управляемая облачная версия Carbon"
+
+msgid "A managed version with all the advanced features"
+msgstr "Управляемая версия со всеми дополнительными функциями"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Материал — это физический предмет, используемый для изготовления детали, которая может использоваться в нескольких заданиях"
@@ -486,6 +498,9 @@ msgstr "Новая редакция будет создана с использ�
 
 msgid "A new size will be created using a copy of the current size"
 msgstr "Новый размер будет создан с использованием копии текущего размера"
+
+msgid "A new Stripe customer will be created"
+msgstr "Будет создан новый клиент Stripe"
 
 msgid "A non-cash document that settles an invoice against a reason account: a credit lowers what's owed, a debit raises it."
 msgstr "Неденежный документ, погашающий счёт-фактуру по счёту причин: кредит уменьшает сумму задолженности, дебет её увеличивает."
@@ -923,9 +938,6 @@ msgstr "Дебиторская задолженность"
 msgid "Accounts receivable for amounts owed by customers"
 msgstr "Дебиторская задолженность клиентов за задолженные суммы."
 
-msgid "Accounts referenced by posting defaults or journal history that have no provider mapping yet."
-msgstr "Счета, на которые ссылаются стандартные значения проводок или история журналов, которые еще не имеют сопоставления с системой."
-
 msgid "Accumulated Depreciation"
 msgstr "Накопленная амортизация"
 
@@ -1040,6 +1052,9 @@ msgstr "Добавить комментарий..."
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "Добавьте пользовательскую строку ценообразования для переопределения количества, цены, доставки, времени выполнения заказа и налога"
 
+msgid "Add a materials section that lists each item on the bill of materials with its quantity."
+msgstr "Добавить раздел материалов, в котором указывается каждый элемент спецификации материалов с его количеством."
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Добавьте принтер в параметры печати, чтобы печатать этикетки напрямую."
 
@@ -1063,6 +1078,9 @@ msgstr "Добавить корректировку"
 
 msgid "Add Affected Item"
 msgstr "Добавить затронутый элемент"
+
+msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
+msgstr "Добавьте дополнительный уровень безопасности, требуя код из приложения аутентификатора при входе."
 
 msgid "Add any notes about your decision..."
 msgstr "Добавьте любые заметки о вашем решении..."
@@ -1120,6 +1138,9 @@ msgstr "Добавить позицию"
 
 msgid "Add match"
 msgstr "Добавить совпадение"
+
+msgid "Add New"
+msgstr "Добавить"
 
 msgid "Add Note"
 msgstr "Добавить примечание"
@@ -1236,6 +1257,9 @@ msgstr "Добавлено"
 msgid "Added for this customer"
 msgstr "Добавлено для этого клиента"
 
+msgid "Adding demo records"
+msgstr "Добавление демо-записей"
+
 msgid "Adding..."
 msgstr "Добавление..."
 
@@ -1309,6 +1333,9 @@ msgstr "Все счёта"
 msgid "All actions selected"
 msgstr "Все действия выбраны"
 
+msgid "All advanced features available"
+msgstr "Все расширенные функции доступны"
+
 msgid "All Audit Logs"
 msgstr "Все журналы аудита"
 
@@ -1336,9 +1363,6 @@ msgstr "Все местоположения"
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Все члены выбранных групп и выбранные лица смогут одобрять запросы"
 
-msgid "All posting accounts are mapped"
-msgstr "Все счета проводок сопоставлены"
-
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "Все строки импортированы — {inserted} вставлено, {updated} обновлено."
 
@@ -1350,6 +1374,9 @@ msgstr "Все поставщики"
 
 msgid "All Time"
 msgstr "Все время"
+
+msgid "All tools"
+msgstr "Все инструменты"
 
 msgid "All Types"
 msgstr "Все типы"
@@ -1368,6 +1395,9 @@ msgstr "Альфа"
 
 msgid "Always"
 msgstr "Всегда"
+
+msgid "Always sent — every notification shows in the bell menu."
+msgstr "Всегда отправляется — каждое уведомление отображается в меню уведомлений."
 
 msgid "Always taken"
 msgstr "Всегда выбирается"
@@ -1557,9 +1587,6 @@ msgstr "Задолженность перед поставщиками"
 msgid "AP Overdue"
 msgstr "Просроченные кредиторские задолженности"
 
-msgid "API and Webhooks"
-msgstr "API и Webhooks"
-
 msgid "API Docs"
 msgstr "Документация API"
 
@@ -1577,6 +1604,9 @@ msgstr "API ключи"
 
 msgid "API keys for programmatic access to your Carbon data."
 msgstr "API ключи для программного доступа к вашим данным Carbon."
+
+msgid "API, webhooks, and integrations"
+msgstr "API, вебхуки и интеграции"
 
 msgid "Applied"
 msgstr "Применено"
@@ -1606,6 +1636,9 @@ msgstr "Применяется к функциям без собственног
 msgid "Apply"
 msgstr "Применить"
 
+msgid "Apply a demo template"
+msgstr "Применить шаблон демо"
+
 msgid "Apply available credits"
 msgstr "Применить доступные кредиты"
 
@@ -1632,6 +1665,12 @@ msgstr "Применить к счету"
 
 msgid "Apply to invoices"
 msgstr "Применить к счетам"
+
+msgid "Applying"
+msgstr "Применение"
+
+msgid "Applying demo data"
+msgstr "Применение демо-данных"
 
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "Приближение к лимиту {PO_EMAIL_ATTACHMENT_LIMIT_MB} МБ."
@@ -2262,6 +2301,9 @@ msgstr "Атрибуты наследуются из процедуры."
 msgid "Audit Log"
 msgstr "Журнал аудита"
 
+msgid "Audit logging"
+msgstr "Логирование аудита"
+
 msgid "Audit Logging"
 msgstr "Аудит логирования"
 
@@ -2310,12 +2352,6 @@ msgstr "Автоматически созданный QR-код"
 msgid "Auto-numbering formats for orders, jobs, parts, and more"
 msgstr "Форматы автонумерации для заказов, работ, деталей и многого другого"
 
-msgid "Auto-start the operator's timer when they open an operation in the MES so time logs are captured from the start."
-msgstr "Автоматически запускать таймер оператора при открытии операции в MES, чтобы логи времени записывались с начала."
-
-msgid "Auto-start timer on open"
-msgstr "Автоматически запустить таймер при открытии"
-
 msgid "Auto-suggest purchases from demand and reorder points"
 msgstr "Автоматически предлагать покупки на основе спроса и точек переупорядочения"
 
@@ -2336,6 +2372,9 @@ msgstr "Автоматические обновления времени пос�
 
 msgid "Automatic Updates"
 msgstr "Автоматические обновления"
+
+msgid "Automatic updates and backups"
+msgstr "Автоматические обновления и резервные копии"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
 msgstr "Автоматическое пропорциональное потребление материалов задания, не отслеживаемых при отчетности о выходе — отслеживаемые материалы выпускаются вручную."
@@ -2434,6 +2473,9 @@ msgstr "Базовая валюта"
 msgid "Base Price"
 msgstr "Базовая цена"
 
+msgid "Basic ERP, MES, and QMS functionality"
+msgstr "Базовая функциональность ERP, MES и QMS"
+
 msgid "Basic Information"
 msgstr "Основная информация"
 
@@ -2520,6 +2562,9 @@ msgstr "Заблокировано"
 msgid "Blocked by {0}"
 msgstr "Заблокировано {0}"
 
+msgid "Blocking sync"
+msgstr "Блокировка синхронизации"
+
 msgid "Blocks save until resolved"
 msgstr "Блокирует сохранение до разрешения"
 
@@ -2556,6 +2601,9 @@ msgstr "Дата блокировки книг (вручную)"
 msgid "Both"
 msgstr "Оба"
 
+msgid "Branch an editable copy of this version that you can change and publish."
+msgstr "Создайте редактируемую копию этой версии, которую вы сможете изменить и опубликовать."
+
 msgid "Breadcrumb"
 msgstr "Навигационная цепочка"
 
@@ -2564,6 +2612,9 @@ msgstr "Импортируйте ваши детали, спецификации
 
 msgid "Browse library"
 msgstr "Обзор библиотеки"
+
+msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
+msgstr "Просмотрите опубликованную версию в режиме только для чтения. Вы все равно можете переупорядочить шаги для чистоты макета."
 
 msgid "Bucket"
 msgstr "Хранилище"
@@ -2768,6 +2819,9 @@ msgstr "Невозможно отправить — отправка содер�
 
 msgid "Cannot send RFQ"
 msgstr "Невозможно отправить РФП"
+
+msgid "Cannot send through Stripe"
+msgstr "Невозможно отправить через Stripe"
 
 msgid "Cannot upload — supplier interaction not yet created"
 msgstr "Невозможно загрузить — взаимодействие с поставщиком еще не создано"
@@ -2980,6 +3034,9 @@ msgstr "Проверьте реестр товаров на наличие то�
 msgid "Check your email"
 msgstr "Проверьте вашу почту"
 
+msgid "Checking Stripe for this customer…"
+msgstr "Проверка Stripe для этого клиента…"
+
 msgid "Checkpoint ·"
 msgstr "Контрольная точка ·"
 
@@ -3000,6 +3057,9 @@ msgstr "Выберите серийный номер"
 
 msgid "Choose another file"
 msgstr "Выбрать другой файл"
+
+msgid "Choose what appears on the printed job traveler."
+msgstr "Выбрать, что отображается на распечатанном маршрутном листе работы."
 
 msgid "Choose your preferred language for the interface."
 msgstr "Выберите предпочитаемый язык для интерфейса."
@@ -3051,6 +3111,9 @@ msgstr "Транзитный счет между поступлением тов
 
 msgid "Clearing account for goods received / invoice received matching"
 msgstr "Счет взаимного зачета для поступления товаров / сопоставления поступления счета"
+
+msgid "Clearing demo data"
+msgstr "Удаление демо-данных"
 
 msgid "Click again to disconnect"
 msgstr "Нажмите еще раз, чтобы отключить"
@@ -3109,11 +3172,11 @@ msgstr "Закрытие"
 msgid "Closure blocked"
 msgstr "Закрытие заблокировано"
 
-msgid "Cloud-Hosted"
-msgstr "Размещено в облаке"
-
 msgid "Cloud, or your self-hosted environment."
 msgstr "Облако или ваша собственная размещённая среда."
+
+msgid "CMMC compliant"
+msgstr "Соответствие CMMC"
 
 msgid "Code"
 msgstr "Код"
@@ -3175,6 +3238,9 @@ msgstr "Назначьте пользователя-чемпиона для ка
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "Фиксирование квитанции, отправки или счета: количества движутся, записи журнала попадают в бухгалтерскую книгу, и статус становится Выполнено."
 
+msgid "Community support"
+msgstr "Поддержка сообщества"
+
 msgid "Companies"
 msgstr "Компании"
 
@@ -3234,9 +3300,6 @@ msgstr "Дата завершения"
 
 msgid "Completed Date"
 msgstr "Дата завершения"
-
-msgid "Completed Job Notifications"
-msgstr "Завершенные уведомления о работах"
 
 msgid "Completed Qty"
 msgstr "Завершённое кол-во"
@@ -3408,6 +3471,9 @@ msgstr "Подключить проблему Jira"
 msgid "Connect Linear issue"
 msgstr "Подключить Linear issue"
 
+msgid "Connect Slack under Settings → Integrations first."
+msgstr "Сначала подключите Slack в разделе Настройки → Интеграции."
+
 msgid "Connect the Otherwise handle to a node to run when no condition matches."
 msgstr "Подключите обработчик Otherwise к узлу для запуска, когда ни одно условие не совпадает."
 
@@ -3465,6 +3531,9 @@ msgstr "Контакт"
 msgid "Contact (optional)"
 msgstr "Контакт (опционально)"
 
+msgid "Contact us"
+msgstr "Свяжитесь с нами"
+
 msgid "contacts"
 msgstr "контакты"
 
@@ -3503,6 +3572,12 @@ msgstr "Подрядчики"
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "Контролировать изменения конструкции с помощью редакций / ECO"
+
+msgid "Control how operators pick material and track time on the shop floor."
+msgstr "Контролировать, как операторы подбирают материал и отслеживают время на производственном полу."
+
+msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
+msgstr "Управляйте тем, могут ли коды элементов (детали, материалы, расходники, инструменты и услуги) содержать символы нижнего регистра."
 
 msgid "Controller, Accountant"
 msgstr "Контроллер, Бухгалтер"
@@ -3869,6 +3944,12 @@ msgstr "Создайте новую заявку на техническое о�
 msgid "Create a new production job to fulfill the sales order"
 msgstr "Создайте новое производственное задание для выполнения заказа"
 
+msgid "Create a new Stripe customer instead"
+msgstr "Создайте нового клиента Stripe вместо этого"
+
+msgid "Create a new version"
+msgstr "Создать новую версию"
+
 msgid "Create a purchase order"
 msgstr "Создать заказ на закупку"
 
@@ -4196,6 +4277,9 @@ msgstr "Пользовательское поле"
 msgid "Custom Fields"
 msgstr "Пользовательские поля"
 
+msgid "Custom fields are not available for items yet."
+msgstr "Пользовательские поля пока недоступны для элементов."
+
 msgid "Custom SOW · we manage"
 msgstr "Пользовательское SOW · мы управляем"
 
@@ -4330,6 +4414,9 @@ msgstr "клиенты"
 
 msgid "Customers"
 msgstr "Клиенты"
+
+msgid "Customizations, training, and integrations"
+msgstr "Настройки, обучение и интеграции"
 
 msgid "Customize"
 msgstr "Настроить"
@@ -4993,6 +5080,18 @@ msgstr "Прогнозы спроса"
 msgid "Demand-Based"
 msgstr "На основе спроса"
 
+msgid "Demo data"
+msgstr "Демо-данные"
+
+msgid "Demo Data"
+msgstr "Демо-данные"
+
+msgid "Demo data applied"
+msgstr "Демо-данные применены"
+
+msgid "Demo data was applied to this company. Keep it, or revert to put back exactly what was here before."
+msgstr "Демо-данные применены к этой компании. Сохраните их или восстановите, чтобы вернуть ровно то, что было раньше."
+
 msgid "department"
 msgstr "отдел"
 
@@ -5100,6 +5199,9 @@ msgstr "Размеры"
 
 msgid "Direct"
 msgstr "Прямой"
+
+msgid "Direct message to each recipient in your Slack workspace."
+msgstr "Прямое сообщение каждому получателю в вашем рабочем пространстве Slack."
 
 msgid "Direction"
 msgstr "Направление"
@@ -5221,6 +5323,9 @@ msgstr "Документы"
 
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "Documents отправляет счета-фактуры, счета и платежи в виде родных документов поставщика; их журналы записываются как покрытые документом. Он также получает платежи, записанные в поставщик, обратно в Carbon, закрывая соответствующую счет-фактуру или счет и публикуя журнал GL Carbon. Off записывает их как намеренно исключенные."
+
+msgid "Documents you open will show up here for quick access."
+msgstr "Открытые вами документы появятся здесь для быстрого доступа."
 
 msgid "Don't Cancel"
 msgstr "Не отменять"
@@ -5848,6 +5953,9 @@ msgstr "Включите это правило, чтобы автоматиче�
 msgid "Enable timecard tracking for work shifts."
 msgstr "Включить отслеживание табелей учета рабочего времени для смен."
 
+msgid "Enable to allow lowercase characters in item IDs."
+msgstr "Включите, чтобы разрешить символы нижнего регистра в кодах элементов."
+
 msgid "Enable to allow shared workstation mode."
 msgstr "Включите, чтобы разрешить режим общей рабочей станции."
 
@@ -5917,9 +6025,6 @@ msgstr "Контакт инженера"
 
 msgid "Enroll"
 msgstr "Зарегистрировать"
-
-msgid "Enroll this company in the Implementation Hub"
-msgstr "Зарегистрировать эту компанию в центре внедрения"
 
 msgid "Enter a batch number before setting the expiration date"
 msgstr "Введите номер партии перед установкой даты истечения"
@@ -5999,9 +6104,6 @@ msgstr "Счет собственного капитала для накопле
 
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "Счет собственного капитала для корректировок курсовых разниц (CTA)"
-
-msgid "ERP, MES, QMS"
-msgstr "ERP, MES, QMS"
 
 msgid "Error"
 msgstr "Ошибка"
@@ -6111,6 +6213,9 @@ msgstr "Все тесты в области действия проходят в
 msgid "Every match"
 msgstr "Каждое совпадение"
 
+msgid "Every required action has already been added."
+msgstr "Все требуемые действия уже добавлены."
+
 msgid "Every required task must be Done or Skipped before the period can be closed."
 msgstr "Каждая требуемая задача должна быть завершена или пропущена перед закрытием периода."
 
@@ -6122,9 +6227,6 @@ msgstr "Все остальное"
 
 msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
 msgstr "Все остальное охватывает людей, импорт, интеграции и API — все, что не входит в ваши рабочие процессы."
-
-msgid "Everything from Starter"
-msgstr "Всё из Starter"
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Превышает {PO_EMAIL_ATTACHMENT_LIMIT_MB} МБ всего — удалите некоторые вложения для отправки."
@@ -6156,11 +6258,11 @@ msgstr "Сертификат освобождения"
 msgid "Exemption Reason"
 msgstr "Причина освобождения"
 
-msgid "Existing mappings. Pick a different provider account to re-map."
-msgstr "Существующие сопоставления. Выберите другой счет системы для переассоциации."
-
 msgid "Existing mappings. Pick a different provider option to re-map."
 msgstr "Существующие отображения. Выберите другой вариант провайдера для переотображения."
+
+msgid "Existing Stripe customer"
+msgstr "Существующий клиент Stripe"
 
 msgid "Expand"
 msgstr "Развернуть"
@@ -6750,6 +6852,9 @@ msgstr "Файлы, прикрепленные здесь, автоматиче�
 msgid "Files attached here ride along on every purchase order email sent to this supplier (in addition to company-wide defaults)."
 msgstr "Файлы, прикрепленные здесь, отправляются вместе с каждым письмом заказа на покупку, отправленным этому поставщику (в дополнение к общекорпоративным значениям по умолчанию)."
 
+msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
+msgstr "Заполните эту компанию реалистичной историей отрасли, чтобы на каждом экране было что-нибудь. Вы можете вернуть то, что было раньше."
+
 msgid "Filter"
 msgstr "Фильтр"
 
@@ -6867,12 +6972,6 @@ msgstr "Флаги"
 msgid "for anything. They'll pull in the right person."
 msgstr "для чего угодно. Они привлекут нужного человека."
 
-msgid "For growing businesses that need support"
-msgstr "Для растущих компаний, нуждающихся в поддержке"
-
-msgid "For US companies handling ITAR data"
-msgstr "Для компаний США, работающих с данными ITAR"
-
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "Метод прогнозирования: <0>{0}</0>. Эта строка не была получена из активных заданий, поэтому родительские источники недоступны."
@@ -6882,6 +6981,9 @@ msgstr "Забыли отметить уход?"
 
 msgid "Format"
 msgstr "Формат"
+
+msgid "Forward deployed engineer"
+msgstr "Развернутый инженер"
 
 msgid "Foundation"
 msgstr "Основа"
@@ -6935,6 +7037,9 @@ msgstr "Местоположение исполнения"
 
 msgid "Full name"
 msgstr "Полное имя"
+
+msgid "Full setup and migrations"
+msgstr "Полная настройка и миграции"
 
 msgid "Fully Depreciated"
 msgstr "Полностью амортизирован"
@@ -7531,11 +7636,11 @@ msgstr "Имперская"
 msgid "Implementation"
 msgstr "Внедрение"
 
+msgid "Implementation Hub"
+msgstr "Центр внедрения"
+
 msgid "Implementation Lead"
 msgstr "Руководитель внедрения"
-
-msgid "Implementation Support"
-msgstr "Поддержка внедрения"
 
 msgid "Import {label} CSV"
 msgstr "Импорт {label} CSV"
@@ -7592,6 +7697,9 @@ msgstr "Только в наличии"
 msgid "In the loop together"
 msgstr "В курсе дела вместе"
 
+msgid "In-app"
+msgstr "В приложении"
+
 msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
 msgstr "Уведомления в приложении всегда доставляются. Выберите, какие темы также будут доходить до вас по электронной почте или Slack."
 
@@ -7610,17 +7718,11 @@ msgstr "Входящая проверка"
 msgid "Inbox"
 msgstr "Входящие"
 
-msgid "Include a materials (bill of materials) section on the job traveler PDF with item numbers and quantities."
-msgstr "Включить раздел материалов (спецификация материалов) в PDF путевого листа задания с номерами товаров и количествами."
-
 msgid "Include extra parts in shipment"
 msgstr "Включить дополнительные детали в отправку"
 
 msgid "Include Inactive"
 msgstr "Включить неактивные"
-
-msgid "Include materials on traveler"
-msgstr "Включить материалы в путевой лист задания"
 
 msgid "Included"
 msgstr "Включено"
@@ -8033,6 +8135,9 @@ msgstr "Дата выпуска"
 msgid "Issues"
 msgstr "Проблемы"
 
+msgid "It will stop running until you publish a version again. Nothing is deleted."
+msgstr "Он будет остановлен до тех пор, пока вы снова не опубликуете версию. Ничего не удаляется."
+
 msgid "ITAR Certifications"
 msgstr "Сертификации ITAR"
 
@@ -8065,6 +8170,15 @@ msgstr "Группы товаров"
 
 msgid "Item ID"
 msgstr "ID товара"
+
+msgid "Item IDs"
+msgstr "Коды элементов"
+
+msgid "Item IDs are forced to uppercase"
+msgstr "Коды элементов преобразуются в верхний регистр"
+
+msgid "Item IDs keep the casing you type."
+msgstr "Коды элементов сохраняют вводимый вами регистр."
 
 msgid "Item ledger"
 msgstr "Реестр товаров"
@@ -8114,6 +8228,9 @@ msgstr "Товары в этом диапазоне получают жёлты�
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Товары: справочник товаров, спецификации, технологические процессы, инженерные изменения, САПР"
 
+msgid "Its design may change before the change notice is released."
+msgstr "Конструкция может измениться до выпуска уведомления об изменении."
+
 msgid "Job"
 msgstr "Задание"
 
@@ -8147,11 +8264,8 @@ msgstr "Приоритет работы"
 msgid "Job readable"
 msgstr "Читаемая работа"
 
-msgid "Job Traveler Materials"
-msgstr "Материалы путевого листа задания"
-
-msgid "Job traveler settings updated"
-msgstr "Параметры путевого листа задания обновлены"
+msgid "Job Traveler"
+msgstr "Маршрутный лист работы"
 
 msgid "Jobs"
 msgstr "Работы"
@@ -8198,6 +8312,9 @@ msgstr "Вывод Kanban"
 
 msgid "Kanbans"
 msgstr "Канбаны"
+
+msgid "Keep"
+msgstr "Сохранить"
 
 msgid "Keep Current"
 msgstr "Сохранить текущие"
@@ -8389,6 +8506,9 @@ msgstr "Меньше ручной работы"
 msgid "Less manual work, fewer errors"
 msgstr "Меньше ручной работы, меньше ошибок"
 
+msgid "Let's Build"
+msgstr "Давайте начнём"
+
 msgid "Let's build something"
 msgstr "Давайте создадим что-то"
 
@@ -8467,6 +8587,9 @@ msgstr "Связать проблему Jira"
 msgid "Link Linear Issue"
 msgstr "Связать проблему Linear"
 
+msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
+msgstr "Свяжите этого клиента Carbon с одним из них или создайте отдельного клиента Stripe."
+
 msgid "Link to sales order line"
 msgstr "Связать со строкой заказа на продажу"
 
@@ -8487,22 +8610,16 @@ msgstr "Параметры списка"
 msgid "List Parameters"
 msgstr "Параметры списка"
 
-#. placeholder {0}: label( actionInputLabelKey(actionId, batch.first), batch.first )
-#. placeholder {1}: label( actionInputLabelKey(actionId, batch.second), batch.second )
+#. placeholder {0}: inputLabel(batch.first)
+#. placeholder {1}: inputLabel(batch.second)
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
 msgstr "Списки привязаны к обоим {0} и {1}, поэтому этот шаг не может определить, какой из них повторить. Оставьте список только в одном из них."
-
-msgid "Live"
-msgstr "Активный"
 
 msgid "Live on Carbon"
 msgstr "Работает на Carbon"
 
 msgid "Live reloading"
 msgstr "Живая перезагрузка"
-
-msgid "Live Version"
-msgstr "Активная версия"
 
 msgid "Load newer"
 msgstr "Загрузить новые"
@@ -8566,9 +8683,6 @@ msgstr "Заблокирован"
 
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "Блокировка делает период доступным только для чтения для операционных документов (приёмки, отгрузки, счета-фактуры), при этом по-прежнему позволяя учётные корректировки, такие как амортизация и выбытие. Период должен быть заблокирован перед его закрытием."
-
-msgid "Log In"
-msgstr "Войти"
 
 msgid "Log nonconformances and drive a CAPA"
 msgstr "Регистрируйте несоответствия и инициируйте CAPA"
@@ -8639,6 +8753,9 @@ msgstr "Партионная проверка полученных товаро�
 
 msgid "Low"
 msgstr "Низкий"
+
+msgid "Lowercase item IDs are allowed"
+msgstr "Коды элементов в нижнем регистре разрешены"
 
 msgid "Machine"
 msgstr "Машина"
@@ -8790,9 +8907,6 @@ msgstr "Производство"
 msgid "Map accounts"
 msgstr "Сопоставить счета"
 
-msgid "Map Carbon accounts to the provider's chart of accounts. Posted journals push using the mapped provider account code."
-msgstr "Сопоставьте счета Carbon с планом счетов системы. Проводимые журналы отправляются, используя сопоставленный код счета системы."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Сопоставить извлеченные строки счета"
 
@@ -8802,11 +8916,11 @@ msgstr "Сопоставить извлеченные строки"
 msgid "Map Lines Now"
 msgstr "Сопоставить строки сейчас"
 
+msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
+msgstr "Сопоставьте свой план счетов с планом счетов провайдера. Счета учета по умолчанию и счета расходов обозначены как Требуемые; проведенные журналы отправляются с использованием сопоставленного кода счета провайдера."
+
 msgid "Map your current process, systems, and data"
 msgstr "Сопоставьте ваш текущий процесс, системы и данные"
-
-msgid "Mapped accounts"
-msgstr "Сопоставленные счета"
 
 msgid "Mapped values"
 msgstr "Отображенные значения"
@@ -8935,6 +9049,9 @@ msgstr "ID материала"
 msgid "Material IDs"
 msgstr "Идентификаторы материалов"
 
+msgid "Material is pre-selected"
+msgstr "Материал предварительно выбран"
+
 msgid "Material Properties"
 msgstr "Свойства материалов"
 
@@ -8976,6 +9093,12 @@ msgstr "Материалы"
 
 msgid "Materials"
 msgstr "Материалы"
+
+msgid "Materials are included"
+msgstr "Материалы включены"
+
+msgid "Materials are not included"
+msgstr "Материалы не включены"
 
 msgid "Max Qty"
 msgstr "Макс. кол-во"
@@ -9264,9 +9387,6 @@ msgstr "Встроенная интеграция CAD (например Onshape)
 msgid "Navigate"
 msgstr "Навигация"
 
-msgid "Navigation"
-msgstr ""
-
 msgid "NCRs by Type"
 msgstr "NCRs по типам"
 
@@ -9275,6 +9395,9 @@ msgstr "Требуется к"
 
 msgid "Need the right columns?"
 msgstr "Нужны правильные столбцы?"
+
+msgid "Needs a Business or Partner plan."
+msgstr "Требуется план Business или Partner."
 
 msgid "Needs fixing"
 msgstr "Требуется исправление"
@@ -9651,8 +9774,8 @@ msgstr "Нет добавленных навыков"
 msgid "No Access"
 msgstr "Нет доступа"
 
-msgid "No accounts mapped yet"
-msgstr "Счета еще не сопоставлены"
+msgid "No accounts match your search"
+msgstr "Ни один счет не соответствует вашему поиску"
 
 msgid "No action needed"
 msgstr "Никаких действий не требуется"
@@ -10154,6 +10277,12 @@ msgstr "Пока ничего. Шаг предоставляет значени�
 msgid "Notification"
 msgstr "Уведомление"
 
+msgid "Notification type"
+msgstr "Тип уведомления"
+
+msgid "Notification Type"
+msgstr "Тип уведомления"
+
 msgid "Notifications"
 msgstr "Уведомления"
 
@@ -10243,6 +10372,9 @@ msgstr "На заказе продажи"
 
 msgid "On Storage Unit"
 msgstr "На складском отделении"
+
+msgid "On this operation"
+msgstr "На эту операцию"
 
 msgid "On-account credit available"
 msgstr "Доступный кредит на счете"
@@ -10334,9 +10466,6 @@ msgstr "Открытая дебиторская задолженность"
 msgid "Open Audit Log"
 msgstr "Открыть журнал аудита"
 
-msgid "Open change notices affecting this part"
-msgstr "Открытые уведомления об изменении, влияющие на эту деталь"
-
 msgid "Open date"
 msgstr "Дата открытия"
 
@@ -10421,6 +10550,9 @@ msgstr "Открыт"
 msgid "Opening"
 msgstr "Открытие"
 
+msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
+msgstr "Открытие операции запускает её таймер, поэтому время отсчитывается с момента начала работы."
+
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "Начальный баланс амортизации, уже учтенный до добавления этого актива в Carbon (используйте 0 для новых приобретений)."
 
@@ -10450,9 +10582,6 @@ msgstr "Количество операций"
 
 msgid "Operation supplier process"
 msgstr "Процесс поставщика операции"
-
-msgid "Operation Timer"
-msgstr "Таймер операции"
 
 msgid "Operation type"
 msgstr "Тип операции"
@@ -10489,6 +10618,12 @@ msgstr "Операторы"
 
 msgid "Operators can use shared workstations with PIN authentication."
 msgstr "Операторы могут использовать общие рабочие станции с аутентификацией по PIN."
+
+msgid "Operators start on the Scan tab"
+msgstr "Операторы начинают на вкладке Сканирование"
+
+msgid "Operators start the timer themselves when they begin an operation."
+msgstr "Операторы запускают таймер сами, когда они начинают операцию."
 
 msgid "Opportunity"
 msgstr "Возможность"
@@ -10894,9 +11029,6 @@ msgstr "Процент"
 msgid "Percentage of Lot"
 msgstr "Процент партии"
 
-msgid "Perfect for low-cost evaluation"
-msgstr "Идеально для недорогой оценки"
-
 msgid "Period"
 msgstr "Период"
 
@@ -11199,9 +11331,6 @@ msgstr "Потенциальная потеря данных"
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Предварительно заполняется для нового товара, когда срок действия установлен как Фиксированная продолжительность."
 
-msgid "Pre-select material without a picking list"
-msgstr "Предварительно выбрать материал без списка подбора"
-
 msgid "Preferred Supplier"
 msgstr "Предпочитаемый поставщик"
 
@@ -11477,6 +11606,9 @@ msgstr "Защитите дату запуска"
 msgid "Protect training time and attend"
 msgstr "Защитите время обучения и участвуйте"
 
+msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
+msgstr "Защитите вашу компанию с помощью расширенных элементов управления безопасностью, таких как принудительное применение двухфакторной аутентификации."
+
 msgid "Protects your company's data"
 msgstr "Защищает данные вашей компании"
 
@@ -11502,8 +11634,17 @@ msgstr "Опубликовать"
 msgid "Publish Version {0}?"
 msgstr "Опубликовать версию {0}?"
 
+msgid "Published"
+msgstr "Опубликовано"
+
 msgid "Published by Carbon"
 msgstr "Опубликовано Carbon"
+
+msgid "Published Version"
+msgstr "Опубликованная версия"
+
+msgid "Published versions can't be edited. Look around read-only, or branch a new version to make changes."
+msgstr "Опубликованные версии нельзя редактировать. Просмотрите их в режиме только для чтения или создайте ветвь новой версии для внесения изменений."
 
 msgid "Pull"
 msgstr "Получить"
@@ -11651,6 +11792,9 @@ msgstr "Отправить журнал без размерности"
 
 msgid "Push to accounting"
 msgstr "Отправить в учет"
+
+msgid "Putting your data back"
+msgstr "Восстановление ваших данных"
 
 #. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
 msgid "QR Code to create a {0} for this kanban"
@@ -11896,6 +12040,9 @@ msgstr "Готово"
 
 msgid "Ready for Quote"
 msgstr "Готово к предложению"
+
+msgid "ready to keep or revert"
+msgstr "готово к сохранению или восстановлению"
 
 msgid "Real-time inventory and shop-floor visibility"
 msgstr "Видимость запасов и производства в реальном времени"
@@ -12296,6 +12443,9 @@ msgstr "Заменить существующие цены на значения
 msgid "Replace PDF"
 msgstr "Заменить PDF"
 
+msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
+msgstr "Замените данные этой компании набором демо-данных — сначала создан снимок, чтобы вы могли восстановить исходные данные."
+
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "Замена PDF удаляет все размещения выносок в этом документе. Строки функций и их значения остаются; вы можете снова разместить выноски на новом чертеже."
 
@@ -12337,6 +12487,9 @@ msgstr "Запрашиваемая дата"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Требовать 6-значный код из приложения-аутентификатора при входе."
+
+msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
+msgstr "Требуется приложение-аутентификатор, прежде чем кто-либо сможет открыть эту компанию. Их другие компании не будут затронуты."
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Требуется приложение аутентификации перед доступом к этой компании. Другие компании пользователей не затронуты. Посетите <0>страницу учетных записей сотрудников</0>, чтобы увидеть статус каждого человека."
@@ -12450,6 +12603,9 @@ msgstr "Восстановить эту сущность в доступный �
 msgid "Restore tracked entities to available"
 msgstr "Восстановить отслеживаемые объекты в доступные"
 
+msgid "Restoring files"
+msgstr "Восстановление файлов"
+
 msgid "Result"
 msgstr "Результат"
 
@@ -12476,6 +12632,9 @@ msgstr "Повторить"
 
 msgid "Retry all"
 msgstr "Повторить все"
+
+msgid "Retry revert"
+msgstr "Повторить восстановление"
 
 msgid "Return Home"
 msgstr "Вернуться на главную"
@@ -12507,6 +12666,9 @@ msgstr "Обратить все записи журнала и реестра з
 msgid "Reverse any item ledger entries from this invoice"
 msgstr "Отменить все записи реестра товаров из этого счета"
 
+msgid "Reverse charge"
+msgstr "Обратное начисление"
+
 msgid "Reverse Charge Sales Tax"
 msgstr "Налог на продажи с обратным взиманием"
 
@@ -12518,6 +12680,12 @@ msgstr "Отменить связанные записи в журнале"
 
 msgid "Reversed"
 msgstr "Сторнировано"
+
+msgid "Revert"
+msgstr "Восстановить"
+
+msgid "Reverting"
+msgstr "Восстановление"
 
 msgid "Review"
 msgstr "Обзор"
@@ -12897,6 +13065,9 @@ msgstr "Сохранено"
 msgid "Saved Views"
 msgstr "Сохраненные представления"
 
+msgid "Saving a copy of your current data"
+msgstr "Сохранение копии текущих данных"
+
 msgid "Saving..."
 msgstr "Сохранение..."
 
@@ -13013,6 +13184,9 @@ msgstr "Списано"
 
 msgid "Search"
 msgstr "Поиск"
+
+msgid "Search accounts"
+msgstr "Поиск счетов"
 
 msgid "Search accounts..."
 msgstr "Поиск счетов..."
@@ -13310,8 +13484,11 @@ msgstr "Выбрано: {selectedSum} / осталось после раздел
 msgid "Self Managed"
 msgstr "Самоуправляемый"
 
-msgid "Self-Onboarding with Carbon Academy"
-msgstr "Самостоятельное внедрение с Carbon Academy"
+msgid "Self-hosted or managed"
+msgstr "Размещается самостоятельно или управляется"
+
+msgid "Self-onboarding"
+msgstr "Самостоятельное подключение"
 
 msgid "Self-paced"
 msgstr "Самостоятельно"
@@ -13348,6 +13525,9 @@ msgstr "Отправляет этот документ на утверждени
 
 msgid "Sent complete date"
 msgstr "Дата отправки выполнена"
+
+msgid "Sent to each recipient who has email notifications turned on."
+msgstr "Отправляется каждому получателю, у которого включены email-уведомления."
 
 msgid "Sequences"
 msgstr "Последовательности"
@@ -13729,6 +13909,9 @@ msgstr "Отображается как бледный фон на каждой 
 msgid "Shown to the user when this rule fails."
 msgstr "Показывается пользователю при ошибке этого правила."
 
+msgid "Sign in to Carbon"
+msgstr "Войти в Carbon"
+
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Войдите с использованием биометрии вместо волшебной ссылки. Ключи доступа защищены Face ID, Touch ID или PIN-кодом вашего устройства."
 
@@ -13930,6 +14113,9 @@ msgstr "Разделить строку приемки"
 msgid "Split shipment line"
 msgstr "Разделить строку отправки"
 
+msgid "SSO/SAML"
+msgstr "SSO/SAML"
+
 msgid "Stand up hosting"
 msgstr "Развернуть хостинг"
 
@@ -13979,9 +14165,6 @@ msgstr "Начать истечение срока действия при за�
 msgid "Start Here"
 msgstr "Начните отсюда"
 
-msgid "Start Learning"
-msgstr "Начать обучение"
-
 msgid "Start Now"
 msgstr "Начать сейчас"
 
@@ -13999,6 +14182,9 @@ msgstr "Начните с"
 
 msgid "Started"
 msgstr "Начал"
+
+msgid "Starting…"
+msgstr "Начинаю…"
 
 msgid "State / Province"
 msgstr "Штат / Провинция"
@@ -14138,6 +14324,21 @@ msgstr "Сохраняйте фиксированное количество д�
 
 msgid "Straight line"
 msgstr "Линейный"
+
+msgid "Stripe"
+msgstr "Stripe"
+
+msgid "Stripe already has a customer with this email"
+msgstr "В Stripe уже есть клиент с этой электронной почтой"
+
+msgid "Stripe Due Date"
+msgstr "Срок платежа Stripe"
+
+msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
+msgstr "Stripe отправляет счет клиенту, поэтому требуется адрес. Это также будет сохранено в контакт в Carbon."
+
+msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
+msgstr "Stripe еще не имеет клиента для этого клиента Carbon. Отправка создаст его на вашем подключенном счете."
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Стиль вывода канбана для отображения в таблице Канбана"
@@ -14551,6 +14752,9 @@ msgstr "Налоговая амортизация"
 msgid "Tax Depreciation Method"
 msgstr "Метод налоговой амортизации"
 
+msgid "Tax exempt"
+msgstr "Не облагается налогом"
+
 msgid "Tax Exempt"
 msgstr "Налоговое освобождение"
 
@@ -14595,6 +14799,9 @@ msgstr "Налоги"
 
 msgid "Team trained"
 msgstr "Команда обучена"
+
+msgid "Technical support"
+msgstr "Техническая поддержка"
 
 msgid "Temperature"
 msgstr "Температура"
@@ -15282,6 +15489,12 @@ msgstr "Система проходит все тесты приемки в об
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "Цепочка, которая связывает RFQ продаж, его предложение и результирующий заказ на продажу — соединение, а не документ со своим статусом."
 
+msgid "The timer starts automatically"
+msgstr "Таймер запускается автоматически"
+
+msgid "The timer starts manually"
+msgstr "Таймер запускается вручную"
+
 msgid "The tooling and fixtures your operations rely on"
 msgstr "Инструменты и приспособления, на которые полагаются ваши операции"
 
@@ -15290,6 +15503,9 @@ msgstr "Общее количество для производства на в�
 
 msgid "The traceable reference (e.g. NIST standard, master gauge serial) the calibration values were compared against."
 msgstr "Отслеживаемая ссылка (например, стандарт NIST, серийный номер эталонного датчика), по которой сравнивались значения калибровки."
+
+msgid "The traveler lists each item on the bill of materials with its quantity."
+msgstr "Маршрутный лист содержит каждый элемент спецификации материалов с его количеством."
 
 msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
 msgstr "Тип управляет тем, какие разрешения по умолчанию получает новый сотрудник; выбор его здесь предварительно заполняет матрицу разрешений из шаблона типа."
@@ -15399,6 +15615,9 @@ msgstr "Это уведомление об изменении закрыто, п
 msgid "This completes the Discovery step."
 msgstr "Это завершает этап Discovery."
 
+msgid "This contact has no email address"
+msgstr "Этот контакт не имеет адреса электронной почты"
+
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Эта контрагент не имеет задолженности — платеж будет записан на счет."
 
@@ -15424,6 +15643,12 @@ msgstr "этот план проверки"
 msgid "This invitation to join {0} has expired. You can request a new invite to be sent to your email."
 msgstr "Это приглашение присоединиться к {0} истекло. Вы можете запросить новое приглашение, которое будет отправлено на вашу электронную почту."
 
+msgid "This invoice has no usable due date — choose one for Stripe."
+msgstr "Этот счет не имеет пригодного срока платежа — выберите один для Stripe."
+
+msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
+msgstr "Этот счет будет отправлен клиенту Stripe, уже связанному с этим клиентом Carbon. Чтобы изменить его детали, отредактируйте его в панели управления Stripe."
+
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "Это контролируемая среда, поэтому требуется приложение аутентификации."
 
@@ -15438,6 +15663,9 @@ msgstr "Это уникальный идентификатор для вебху
 
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "Это среда, контролируемая ITAR. Доступ ограничен для лиц США."
+
+msgid "This is taking longer than expected. It may still finish — if it doesn't, retry the revert to put your data back."
+msgstr "Это занимает больше времени, чем ожидалось. Процесс может все еще завершиться — если нет, повторите восстановление, чтобы вернуть ваши данные."
 
 msgid "This is the month your fiscal year starts."
 msgstr "Это месяц, когда начинается ваш финансовый год."
@@ -15542,6 +15770,9 @@ msgstr "Это обновляет тему для всех пользовате�
 msgid "This user does not have two-factor authentication enabled."
 msgstr "Этот пользователь не имеет включенную двухфакторную аутентификацию."
 
+msgid "This usually takes a few seconds. You can leave the page — it keeps running."
+msgstr "Обычно это занимает несколько секунд. Вы можете оставить страницу — она продолжит работу."
+
 msgid "This version belongs to an open <0>change notice</0>. Edit it there."
 msgstr "Эта версия принадлежит открытому <0>уведомлению об изменении</0>. Отредактируйте его там."
 
@@ -15552,8 +15783,11 @@ msgstr "Эта версия принадлежит уведомлению об �
 msgid "This version cannot be opened"
 msgstr "Эта версия не может быть открыта"
 
-msgid "This version is live. Create a new version to edit."
-msgstr "Эта версия активна. Создайте новую версию для редактирования."
+msgid "This version is published"
+msgstr "Эта версия опубликована"
+
+msgid "This version is published. Create a new version to edit."
+msgstr "Эта версия опубликована. Создайте новую версию для редактирования."
 
 msgid "This version's definition could not be read."
 msgstr "Определение этой версии не удалось прочитать."
@@ -15849,6 +16083,9 @@ msgstr "Отслеживаемая сущность"
 msgid "Tracked entity ID is required but none was found"
 msgstr "ID отслеживаемой сущности требуется, но ничего не найдено"
 
+msgid "Tracked material is pre-selected by pick order (FEFO), even without a picking list."
+msgstr "Отслеживаемый материал предварительно выбирается по порядку выборки (FEFO), даже без листа подбора."
+
 msgid "Tracking"
 msgstr "Отслеживание"
 
@@ -15958,6 +16195,9 @@ msgid "Two-Factor"
 msgstr "Двухфакторная аутентификация"
 
 msgid "Two-factor authentication"
+msgstr "Двухфакторная аутентификация"
+
+msgid "Two-Factor Authentication"
 msgstr "Двухфакторная аутентификация"
 
 msgid "Two-factor authentication disabled"
@@ -16092,11 +16332,17 @@ msgstr "Единицы, указанные как невозвратные пр�
 msgid "Unknown"
 msgstr "Неизвестно"
 
+msgid "unknown error"
+msgstr "неизвестная ошибка"
+
 msgid "unknown location"
 msgstr "неизвестное местоположение"
 
-msgid "Unlimited Functional Support"
+msgid "Unlimited functional support"
 msgstr "Неограниченная функциональная поддержка"
+
+msgid "Unlimited records"
+msgstr "Неограниченное количество записей"
 
 msgid "Unlink"
 msgstr "Отменить связь"
@@ -16109,9 +16355,6 @@ msgstr "Разблокировать"
 
 msgid "Unlock with passkey"
 msgstr "Разблокировка с помощью Passkey"
-
-msgid "Unmapped accounts"
-msgstr "Несопоставленные счета"
 
 msgid "Unmapped dimension values"
 msgstr "Неотображенные значения размерности"
@@ -16139,6 +16382,12 @@ msgstr "Открепить {0}"
 
 msgid "Unposted Documents"
 msgstr "Неопубликованные документы"
+
+msgid "Unpublish"
+msgstr "Отменить публикацию"
+
+msgid "Unpublish {name}?"
+msgstr "Отменить публикацию {name}?"
 
 msgid "Unreceived POs"
 msgstr "Неполученные ПО"
@@ -16497,9 +16746,9 @@ msgstr "Подтвердите вашу электронную почту"
 msgid "Version"
 msgstr "Версия"
 
-#. placeholder {0}: live.versionNumber
-msgid "Version {0} is live now and will be replaced."
-msgstr "Версия {0} сейчас в эфире и будет заменена."
+#. placeholder {0}: published.versionNumber
+msgid "Version {0} is published now and will be replaced."
+msgstr "Версия {0} опубликована и будет заменена."
 
 msgid "Version:"
 msgstr "Версия:"
@@ -16674,6 +16923,9 @@ msgstr "Просмотр предложения"
 
 msgid "View Suppliers"
 msgstr "Просмотр поставщиков"
+
+msgid "View the workflow"
+msgstr "Просмотр рабочего процесса"
 
 msgid "View tie-out"
 msgstr "Просмотр согласования"
@@ -16944,6 +17196,9 @@ msgstr "Что выходит за рамки"
 msgid "When"
 msgstr "Когда"
 
+msgid "When {name} changes"
+msgstr "Когда {name} изменяется"
+
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "Когда срок хранения готового продукта установлен на Рассчитанный, выберите, какие потребленные входные данные питают расчет."
 
@@ -16965,17 +17220,11 @@ msgstr "Когда включено, атрибуты в этой категор
 msgid "When on, employees can edit this attribute's value on their own profile; otherwise only admins can."
 msgstr "Когда включено, сотрудники могут редактировать значение этого атрибута в своем профиле; в противном случае это могут делать только администраторы."
 
-msgid "When on, opening an operation starts its timer automatically."
-msgstr "Когда включено, открытие операции автоматически запускает ее таймер."
-
 msgid "When on, pricing rules (volume discounts, promotions) still apply on top of this override; when off, this override is the final price."
 msgstr "Когда включено, правила цены (скидки по объемам, акции) по-прежнему применяются сверх этого переопределения; когда отключено, это переопределение — финальная цена."
 
 msgid "When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials."
 msgstr "Когда включено, сканирование операционного штрих-кода этого процесса сообщает всю оставшуюся открытую количество как завершенную в одном действии; отключите, если операторы регулярно сообщают о частичных."
-
-msgid "When on, the traveler PDF lists the job's required materials."
-msgstr "Когда включено, PDF путевого листа задания отображает необходимые материалы задания."
 
 msgid "When on, this party's invoices skip tax calculation; the party is responsible for keeping the exemption certificate current."
 msgstr "Если включено, счета этой стороны пропускают расчет налога; сторона отвечает за актуальность сертификата об освобождении."
@@ -16985,9 +17234,6 @@ msgstr "Если включено, это переопределение цен�
 
 msgid "When on, this rule fires for every target of its type. Assignment rows are ignored but preserved."
 msgstr "Когда включено, это правило срабатывает для каждой цели его типа. Строки назначения игнорируются, но сохраняются."
-
-msgid "When on, tracked material is pre-selected by pick order (FEFO) even without a picking list. When off, operators start on the Scan tab."
-msgstr "Когда включено, отслеживаемый материал предварительно выбирается по порядку подбора (FEFO) даже без списка подбора. Когда отключено, операторы начинают со вкладки 'Сканирование'."
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Когда ожидается ответ поставщиков; поставщики видят эту дату на портале RFQ, и Carbon перестает принимать поздние ответы после нее (настраивается)."
@@ -17048,6 +17294,9 @@ msgstr "Когда вы обязались доставить; планиров�
 
 msgid "When your fiscal and tax years start"
 msgstr "Когда начинаются ваши финансовый и налоговый годы"
+
+msgid "Where a workflow notification is delivered — in-app is always sent, while email needs a Business or Partner plan and Slack needs your Slack workspace connected."
+msgstr "Где доставляется уведомление рабочего процесса — в приложении всегда отправляется, email требует план Business или Partner, а Slack требует подключённого рабочего пространства Slack."
 
 msgid "Where an operation runs; carries labor and quoting rates, with overhead the difference between them."
 msgstr "Где работает операция; несет ставки труда и предложения, накладные расходы - разница между ними."
@@ -17198,6 +17447,9 @@ msgstr "Окно:"
 
 msgid "WIP"
 msgstr "НЗП"
+
+msgid "Without a picking list, operators pick material from the Scan tab."
+msgstr "Без листа подбора операторы подбирают материал со вкладки Сканирование."
 
 #. placeholder {0}: quarter.start + 1
 #. placeholder {1}: quarter.end
@@ -17379,6 +17631,9 @@ msgstr "Вы получили эту партию"
 
 msgid "You're live on Carbon"
 msgstr "Вы работаете на Carbon"
+
+msgid "You're one step away from your workspace."
+msgstr "Вы в одном шаге от вашего рабочего пространства."
 
 msgid "You're setting Carbon up yourself, at your own pace"
 msgstr "Вы самостоятельно настраиваете Carbon в удобном для вас темпе"

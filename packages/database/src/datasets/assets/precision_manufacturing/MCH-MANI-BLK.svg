@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bronzeFront" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#2e2620"/>
+      <stop offset="0.2" stop-color="#5c4c3d"/>
+      <stop offset="0.45" stop-color="#7a6650"/>
+      <stop offset="0.72" stop-color="#4a3d31"/>
+      <stop offset="1" stop-color="#241d18"/>
+    </linearGradient>
+    <linearGradient id="bronzeTop" x1="0.15" y1="1" x2="0.9" y2="0">
+      <stop offset="0" stop-color="#4a3d31"/>
+      <stop offset="0.28" stop-color="#7a6650"/>
+      <stop offset="0.6" stop-color="#8b7660"/>
+      <stop offset="1" stop-color="#5c4c3d"/>
+    </linearGradient>
+    <linearGradient id="bronzeSide" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3a3027"/>
+      <stop offset="0.45" stop-color="#4a3d31"/>
+      <stop offset="1" stop-color="#241d18"/>
+    </linearGradient>
+    <linearGradient id="insert" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="524" cy="712" rx="362" ry="80" fill="url(#shadow)"/>
+
+  <!-- right side face -->
+  <path d="M730 410 L839 332 L839 632 L730 710 Z" fill="url(#bronzeSide)" stroke="#1a1512" stroke-width="2.5"/>
+  <!-- cross-drilled relief slots through the side -->
+  <g fill="#171310" stroke="#0f0c0a" stroke-width="2">
+    <path d="M756 476 L826 426 L826 468 L756 518 Z"/>
+    <path d="M756 556 L826 506 L826 548 L756 598 Z"/>
+  </g>
+  <g fill="none" stroke="#a08a70" stroke-opacity="0.35" stroke-width="2">
+    <path d="M756 476 L826 426"/>
+    <path d="M756 556 L826 506"/>
+  </g>
+  <!-- bead-blasted matte striation on side -->
+  <g stroke="#ffffff" stroke-opacity="0.06" stroke-width="3" fill="none">
+    <path d="M736 690 L839 616"/>
+    <path d="M736 650 L839 576"/>
+    <path d="M736 430 L839 356"/>
+  </g>
+
+  <!-- top face -->
+  <path d="M210 410 L730 410 L839 332 L319 332 Z" fill="url(#bronzeTop)" stroke="#1a1512" stroke-width="2.5"/>
+  <!-- chamfer break inboard of the top edges -->
+  <path d="M224 402 L727 402 L827 331 L322 331 Z" fill="none" stroke="#a89078" stroke-opacity="0.45" stroke-width="2.5"/>
+  <!-- faint mill witness lines across the top -->
+  <g stroke="#ffffff" stroke-opacity="0.09" stroke-width="2" fill="none">
+    <path d="M232 410 L341 332"/>
+    <path d="M296 410 L405 332"/>
+    <path d="M360 410 L469 332"/>
+    <path d="M424 410 L533 332"/>
+    <path d="M488 410 L597 332"/>
+    <path d="M552 410 L661 332"/>
+    <path d="M616 410 L725 332"/>
+    <path d="M680 410 L789 332"/>
+  </g>
+
+  <!-- top-face ports: spotfaced flat + counterbore + bore -->
+  <g>
+    <ellipse cx="347" cy="387" rx="42" ry="16" fill="#6a5844" opacity="0.85"/>
+    <ellipse cx="347" cy="387" rx="34" ry="12.9" fill="#241d18" stroke="#8b7660" stroke-opacity="0.5" stroke-width="2"/>
+    <ellipse cx="347" cy="387" rx="22" ry="8.4" fill="#100d0b"/>
+    <ellipse cx="477" cy="387" rx="50" ry="19" fill="#6a5844" opacity="0.85"/>
+    <ellipse cx="477" cy="387" rx="41" ry="15.6" fill="#2b231c" stroke="#8b7660" stroke-opacity="0.5" stroke-width="2"/>
+    <ellipse cx="477" cy="387" rx="31" ry="11.8" fill="url(#insert)" stroke="#4b5156" stroke-width="2"/>
+    <ellipse cx="477" cy="387" rx="19" ry="7.2" fill="#12161a"/>
+    <ellipse cx="607" cy="387" rx="38" ry="14.4" fill="#6a5844" opacity="0.85"/>
+    <ellipse cx="607" cy="387" rx="30" ry="11.4" fill="#241d18" stroke="#8b7660" stroke-opacity="0.5" stroke-width="2"/>
+    <ellipse cx="607" cy="387" rx="19" ry="7.2" fill="#100d0b"/>
+    <ellipse cx="390" cy="356" rx="30" ry="11.4" fill="#5c4c3d" opacity="0.8"/>
+    <ellipse cx="390" cy="356" rx="22" ry="8.4" fill="#161210"/>
+    <ellipse cx="520" cy="356" rx="46" ry="17.5" fill="#6a5844" opacity="0.85"/>
+    <ellipse cx="520" cy="356" rx="37" ry="14.1" fill="#2b231c" stroke="#8b7660" stroke-opacity="0.5" stroke-width="2"/>
+    <ellipse cx="520" cy="356" rx="27" ry="10.3" fill="url(#insert)" stroke="#4b5156" stroke-width="2"/>
+    <ellipse cx="520" cy="356" rx="16" ry="6.1" fill="#12161a"/>
+    <ellipse cx="650" cy="356" rx="30" ry="11.4" fill="#5c4c3d" opacity="0.8"/>
+    <ellipse cx="650" cy="356" rx="22" ry="8.4" fill="#161210"/>
+  </g>
+
+  <!-- front face -->
+  <path d="M210 410 L730 410 L730 710 L210 710 Z" fill="url(#bronzeFront)" stroke="#1a1512" stroke-width="3"/>
+  <!-- uniform edge chamfers -->
+  <g fill="none" stroke="#a08a70" stroke-opacity="0.4" stroke-width="2.5">
+    <path d="M210 419 L730 419"/>
+    <path d="M219 410 L219 710"/>
+    <path d="M721 410 L721 710"/>
+    <path d="M210 701 L730 701"/>
+  </g>
+  <!-- faint mill witness lines on the largest face -->
+  <g stroke="#ffffff" stroke-opacity="0.07" stroke-width="2" fill="none">
+    <path d="M214 442 L726 442"/>
+    <path d="M214 474 L726 474"/>
+    <path d="M214 538 L726 538"/>
+    <path d="M214 570 L726 570"/>
+    <path d="M214 666 L726 666"/>
+  </g>
+
+  <!-- front-face ports -->
+  <g>
+    <circle cx="300" cy="500" r="46" fill="#6a5844" opacity="0.6"/>
+    <circle cx="300" cy="500" r="38" fill="none" stroke="#241d18" stroke-width="5"/>
+    <circle cx="300" cy="500" r="38" fill="#2b231c"/>
+    <circle cx="300" cy="500" r="28" fill="url(#insert)" stroke="#4b5156" stroke-width="2"/>
+    <circle cx="300" cy="500" r="16" fill="#12161a"/>
+    <circle cx="300" cy="500" r="46" fill="none" stroke="#a08a70" stroke-opacity="0.35" stroke-width="2"/>
+
+    <circle cx="452" cy="500" r="34" fill="#6a5844" opacity="0.55"/>
+    <circle cx="452" cy="500" r="26" fill="#171310" stroke="#8b7660" stroke-opacity="0.45" stroke-width="2"/>
+    <circle cx="452" cy="500" r="15" fill="#0f0c0a"/>
+
+    <circle cx="604" cy="500" r="30" fill="#6a5844" opacity="0.55"/>
+    <circle cx="604" cy="500" r="22" fill="#171310" stroke="#8b7660" stroke-opacity="0.45" stroke-width="2"/>
+    <circle cx="604" cy="500" r="12" fill="#0f0c0a"/>
+
+    <circle cx="300" cy="620" r="26" fill="#5c4c3d" opacity="0.5"/>
+    <circle cx="300" cy="620" r="18" fill="#171310" stroke="#8b7660" stroke-opacity="0.4" stroke-width="2"/>
+
+    <circle cx="452" cy="620" r="44" fill="#6a5844" opacity="0.6"/>
+    <circle cx="452" cy="620" r="36" fill="none" stroke="#241d18" stroke-width="5"/>
+    <circle cx="452" cy="620" r="36" fill="#2b231c"/>
+    <circle cx="452" cy="620" r="26" fill="url(#insert)" stroke="#4b5156" stroke-width="2"/>
+    <circle cx="452" cy="620" r="14" fill="#12161a"/>
+    <circle cx="452" cy="620" r="44" fill="none" stroke="#a08a70" stroke-opacity="0.35" stroke-width="2"/>
+
+    <circle cx="604" cy="620" r="26" fill="#5c4c3d" opacity="0.5"/>
+    <circle cx="604" cy="620" r="18" fill="#171310" stroke="#8b7660" stroke-opacity="0.4" stroke-width="2"/>
+  </g>
+
+  <!-- key-light sheen down the left of the front face -->
+  <path d="M228 418 L296 418 L262 702 L228 702 Z" fill="#ffffff" opacity="0.05"/>
+</svg>

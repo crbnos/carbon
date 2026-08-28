@@ -93,10 +93,39 @@ export async function provisionCompanyData(
 }
 
 /**
+ * Enqueue the demo template. Callers must already have a headquarters location —
+ * the dataset's pre-flight requires one. A failed enqueue is fatal rather than
+ * silent, otherwise onboarding reports success over an empty company.
+ *
+ * `snapshot: true` so a signup-time template stays revertible from
+ * Settings → Demo Data later. The company is nearly empty at this point, so the
+ * snapshot costs almost nothing, and it keeps one code path rather than two.
+ */
+async function startCompanyTemplate(
+  companyId: string,
+  userId: string,
+  template: string | null
+): Promise<void> {
+  if (!template) return;
+  try {
+    await trigger("company-template", {
+      companyId,
+      userId,
+      datasetKey: template,
+      templateRunId: nanoid(),
+      snapshot: true
+    });
+  } catch (err) {
+    logger.error("Failed to start company template", { error: err });
+    throw new Error("Fatal: failed to start company template");
+  }
+}
+
+/**
  * Insert-or-update the onboarding company, provision its data, and create the
  * headquarters location plus the owner's employee job. Returns the companyId.
  * Shared by the public company step (clean seed, `backup: null`) and the
- * internal data-choice step (restore from an uploaded backup).
+ * internal data-choice step (restore from an uploaded backup, or a demo template).
  */
 export async function provisionOnboardingCompany(
   serviceRole: ServiceRole,
@@ -104,7 +133,8 @@ export async function provisionOnboardingCompany(
   {
     userId,
     companyData,
-    backup
+    backup,
+    template
   }: {
     userId: string;
     companyData: z.infer<typeof companyValidator> & {
@@ -112,6 +142,8 @@ export async function provisionOnboardingCompany(
       customIndustryDescription?: string | null;
     };
     backup: Blob | null;
+    /** Dataset key for "Use a demo template", else null. */
+    template: string | null;
   }
 ): Promise<string> {
   const companies = await getCompanies(client, userId);
@@ -153,6 +185,8 @@ export async function provisionOnboardingCompany(
       });
       throw new Error("Fatal: failed to update location");
     }
+    // Re-entry still honours the template — the job refuses if items already exist.
+    await startCompanyTemplate(company.id!, userId, template);
     return company.id!;
   }
 
@@ -205,6 +239,9 @@ export async function provisionOnboardingCompany(
     logger.error("Failed to insert job", { error: job.error });
     throw new Error("Fatal: failed to insert job");
   }
+
+  // Deliberately after upsertLocation — the pre-flight needs that location.
+  await startCompanyTemplate(companyId, userId, template);
 
   return companyId;
 }
