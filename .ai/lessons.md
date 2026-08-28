@@ -1240,3 +1240,32 @@ canvas hosting Radix popovers/selects.
 **Rule:** When a bare-`tsx` (or plain-node) script hits `does not provide an export named …`, fix the SCRIPT's runtime import chain: move the pure logic it needs into a module with no runtime `@carbon/*` imports (type-only imports are fine — they erase) and import that. `packages/jobs/src/backups/schema.ts` is the pattern; `packages/database`'s seed scripts (relative `.ts` imports only) are the older precedent. Never change a shared package's `type`/`exports` for one script's benefit.
 
 **Applies to:** `packages/jobs/src/scripts/**`, `packages/database/src/{seed,check}-*.ts`, `ci/src/**`, and any new `tsx`-run script in a CJS-rooted package.
+## Dev response caches must allow-list, never blanket-cache GETs
+
+**Context:** Caching Onshape API GETs in Redis during development (`ONSHAPE_DEV_CACHE=1`) to protect the annual API quota.
+
+**Problem:** Caching every GET poisoned the translation poll loop: `GET /translations/{id}` was cached while `requestState` was still `ACTIVE`, so `waitForTranslation` saw the same in-flight state forever and the export never completed. The failure looks like a hung job, not a cache bug.
+
+**Rule:** A dev-mode response cache must be an explicit allow-list of stable content reads (`DEV_CACHEABLE_PATHS` in `packages/ee/src/onshape/lib/client.ts`). Never add a polling or status endpoint. When adding a cacheable path, ask: can two reads of this URL legitimately differ within the TTL?
+
+**Applies to:** `packages/ee/src/onshape/lib/client.ts`, any dev-mode HTTP cache in front of a third-party API.
+
+## Inngest dev: an event fired before its function's first registration wedges the run
+
+**Context:** Adding a new Inngest function and firing its event from a route during local development.
+
+**Problem:** If the event fires before the dev server has registered the new function, the run sits "Running" forever — and per-key `concurrency` then queues every retry behind the wedged run, so nothing ever executes. The dev server's state is in-memory.
+
+**Rule:** After adding or renaming an Inngest function, reload the Inngest dev server (`crbn reload inngest`) before firing its event; if a run is already wedged, cancel it and re-fire. Check `http://localhost:<PORT_INNGEST>/runs` when a background job seems to do nothing.
+
+**Applies to:** `packages/jobs/src/inngest/`, local dev via `crbn up`.
+
+## Scripted source patches must assert their anchors
+
+**Context:** Applying code changes to large files via scripted string replacement (python/sed) instead of hand editing.
+
+**Problem:** A `.replace()` whose anchor doesn't match (e.g. after Biome reformatted the code) is a silent no-op: the script reports success, the file is unchanged, and the missing code later presents as an inexplicable runtime bug. One silent miss cost hours of "stale module" mis-debugging — the client genuinely lacked a branch the server had.
+
+**Rule:** Every scripted patch must assert the anchor's occurrence count before replacing (`assert s.count(old) == 1`) and fail loudly on a miss. Never chain a patch script with `&&` after an unasserted step.
+
+**Applies to:** Any agent or script editing source by string replacement, repo-wide.

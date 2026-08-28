@@ -1,7 +1,7 @@
 ---
 title: CAD
 plan: Business
-description: Sync CAD data from Onshape into Carbon.
+description: Push CAD data from Onshape into Carbon.
 ---
 
 ## Onshape
@@ -22,7 +22,7 @@ Connect to **Onshape** over **OAuth** to bring CAD data into Carbon. No keys to 
   <Step>
   ### Tokens stored
 
-  Carbon stores the connection, the access and refresh tokens, and can then pull from your Onshape documents.
+  Carbon stores the connection, the access and refresh tokens, and can then read from your Onshape documents when you push.
   </Step>
 </Steps>
 
@@ -35,6 +35,52 @@ Onshape only appears when its OAuth client is configured server-side (`ONSHAPE_C
 [Environment variables](/docs/platform/self-hosting/environment-variables).
 </Callout>
 
+## The Carbon panel in Onshape
+
+Carbon also runs **inside Onshape** as an element right-panel app. You work in
+Onshape and push to Carbon when something is ready — Carbon never pulls on its
+own. Open a Part Studio or an assembly, click the Carbon icon in the right
+panel, and sign in (a popup that closes itself).
+
+The panel always shows status first: which parts of the current element are
+already in Carbon, which match an existing item by part number, and which are
+missing — before offering to push anything.
+
+### Push a part
+
+Creates or updates the Carbon item for an Onshape part: part number becomes the
+item ID, plus name, description, revision, the 3D model and a thumbnail.
+Pushing again after a change updates the item; pushing an unchanged part does
+nothing. Parts need a part number set in Onshape first.
+
+Fields that Onshape owns — item ID, name, description, revision, thumbnail,
+model — can't be edited in Carbon while the item is linked. The item page shows
+an **Onshape card** with the link, **Open in Onshape**, and **Detach** to
+release the fields back to Carbon.
+
+### Push an assembly
+
+Pushes the assembly and its whole bill of materials: every item in the BOM is
+created if missing, and the BOM lands on the assembly's make methods —
+subassemblies included. Pushes are a diff, not a rebuild: lines a previous push
+wrote are replaced, lines you added by hand in Carbon are left alone, and
+released methods are never touched.
+
+### Push a release
+
+The panel lists your document's Onshape releases. Pushing one:
+
+- creates a Carbon **revision** of every released part and assembly, at the
+  released revision letter, active and set as the default,
+- applies each released assembly's BOM (as of the released version) to the new
+  revision's method,
+- records one **draft change notice** listing everything the release touched —
+  releasing methods and production cutover stay in your hands,
+- attaches models and thumbnails at the released version, and released
+  drawings as PDF.
+
+Pushing the same release twice creates nothing twice.
+
 ## Related
 
 <Cards>
@@ -43,5 +89,8 @@ Onshape only appears when its OAuth client is configured server-side (`ONSHAPE_C
   </Card>
   <Card title="Methods & sourcing" href="/docs/reference/methods">
     How a part's bill of materials is built up.
+  </Card>
+  <Card title="Revisions" href="/docs/reference/revisions">
+    What a revision is and how the default revision works.
   </Card>
 </Cards>
