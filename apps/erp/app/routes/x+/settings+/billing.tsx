@@ -75,13 +75,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
     .eq("companyId", companyId)
     .single();
 
+  // Service accounts hold an employee-role userToCompany row so RLS can resolve
+  // their permissions. They are not people and cannot own a company.
   const userToCompany = await client
     .from("userToCompany")
-    .select("userId")
+    .select("userId, ...user(isServiceAccount)")
     .eq("companyId", companyId)
     .eq("role", "employee");
 
-  const userIds = userToCompany.data?.map((utc) => utc.userId) || [];
+  const userIds =
+    userToCompany.data
+      ?.filter((utc) => !utc.isServiceAccount)
+      .map((utc) => utc.userId) || [];
 
   const employees =
     userIds.length > 0

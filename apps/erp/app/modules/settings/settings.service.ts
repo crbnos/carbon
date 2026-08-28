@@ -17,6 +17,7 @@ import {
   toDocumentTemplate
 } from "@carbon/documents/template";
 import type { JSONContent } from "@carbon/react";
+import { getWorkflowServiceUserId } from "@carbon/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { plmReleaseControl as plmReleaseControlOptions } from "~/modules/items/items.models";
@@ -105,7 +106,19 @@ export async function deleteSubsidiary(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  return client.from("company").delete().eq("id", companyId);
+  const deleted = await client.from("company").delete().eq("id", companyId);
+  if (deleted.error) return deleted;
+
+  // The company cascade reaches everything scoped by companyId, but `user` has
+  // no companyId column, so the company's workflow service identity would be
+  // left behind. It is deleted after the company, never before: workflow.ownerId
+  // references it with no ON DELETE, so the workflows must go first.
+  await client
+    .from("user")
+    .delete()
+    .eq("id", getWorkflowServiceUserId(companyId));
+
+  return deleted;
 }
 
 export async function deleteWebhook(

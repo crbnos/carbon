@@ -60,6 +60,13 @@ payload, hand it to `executeWorkflowRun`. All the logic is in `engine/`.
 
 A workflow must never be able to do something its owner could not do by hand.
 
+- **Who the owner is** is `workflow.ownerKind`. `user` means the employee who
+  created it — their access IS the workflow's access, and it stops working when
+  they are deactivated. `company` means the per-company service identity
+  `wfsvc_<companyId>`: a `user` row with no auth account, no employee row and
+  read-only grants, provisioned by `provision_workflow_service_user`. `ownerId`
+  holds a real user id in both cases, so nothing in `engine/` branches on the
+  kind — it resolves an id and mints a client for it either way.
 - The owner's client is minted **per step**, inside the step:
   `getUserScopedClient(ownerId, { workflowRunId })`. The token lives five
   minutes; a run outlives that across retries.

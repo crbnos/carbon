@@ -301,6 +301,19 @@ export async function deactivateUser(
   actorId?: string,
   ip?: string
 ) {
+  // A service account is the company's own principal, not a person. Deactivating
+  // one would strip the permissions every workflow it owns runs with — the exact
+  // failure company ownership exists to prevent — and nothing could restore it.
+  const serviceAccount = await serviceRole
+    .from("user")
+    .select("isServiceAccount")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (serviceAccount.data?.isServiceAccount) {
+    return error(null, "Cannot deactivate a service account");
+  }
+
   const userToCompany = await serviceRole
     .from("userToCompany")
     .select("role")

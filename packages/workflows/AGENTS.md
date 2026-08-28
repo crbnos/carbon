@@ -118,6 +118,7 @@ src/runtime/
 ├── fixtures.ts  # TEST-ONLY fake loader/context. Not exported from the package root
 └── index.ts     # barrel
 
+src/owner.ts       # WorkflowOwnerKind + the per-company service identity's id
 src/run-trigger.ts # runTriggerSchema — what fired a run; shared with @carbon/lib and @carbon/jobs
 src/sync.ts        # trigger-event + subscription reconciler
 ```
@@ -125,7 +126,8 @@ src/sync.ts        # trigger-event + subscription reconciler
 `src/runtime/` is pure: no I/O, no database client, no Supabase. Records are read
 through the injected `EntityLoader`, and everything else that touches the world goes
 through `WorkflowServices`; `@carbon/jobs` implements both over the workflow owner's
-own connection. Comparison semantics live in `runtime/compare.ts` and must not be
+own connection — the employee who created it, or the company's read-only service
+identity when `workflow.ownerKind` is `company` (`src/owner.ts`). Comparison semantics live in `runtime/compare.ts` and must not be
 re-implemented anywhere else.
 
 Permission and execution share one `EXECUTORS` entry per node kind. Two lookups could
