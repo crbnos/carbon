@@ -7331,6 +7331,7 @@ export type Database = {
           accountsPayableEmail: string | null
           accountsReceivableAddress: boolean | null
           accountsReceivableEmail: string | null
+          allowLowercaseItemIds: boolean
           assetTaxDepreciationEnabled: boolean
           assetTaxRate: number | null
           autoSelectMaterialWithoutPickingList: boolean
@@ -7380,6 +7381,7 @@ export type Database = {
           accountsPayableEmail?: string | null
           accountsReceivableAddress?: boolean | null
           accountsReceivableEmail?: string | null
+          allowLowercaseItemIds?: boolean
           assetTaxDepreciationEnabled?: boolean
           assetTaxRate?: number | null
           autoSelectMaterialWithoutPickingList?: boolean
@@ -7429,6 +7431,7 @@ export type Database = {
           accountsPayableEmail?: string | null
           accountsReceivableAddress?: boolean | null
           accountsReceivableEmail?: string | null
+          allowLowercaseItemIds?: boolean
           assetTaxDepreciationEnabled?: boolean
           assetTaxRate?: number | null
           autoSelectMaterialWithoutPickingList?: boolean
