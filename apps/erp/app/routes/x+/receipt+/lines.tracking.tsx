@@ -184,12 +184,24 @@ export async function action({ request, context }: ActionFunctionArgs) {
         .single()
     ]);
 
-    if (receipt.error || receipt.data.sourceDocument !== "Sales Return Order") {
+    // Both sources re-tag an existing Consumed entity rather than minting a
+    // new serial: a sales return brings the customer's unit back, and a repair
+    // receipt takes custody of it (on intake, and again when the OEM returns
+    // it). The expected-entity check below is scoped per source.
+    const RE_TAG_RECEIPT_SOURCES = ["Sales Return Order", "Repair Order"];
+    if (
+      receipt.error ||
+      !RE_TAG_RECEIPT_SOURCES.includes(receipt.data.sourceDocument ?? "")
+    ) {
       return data(
-        { error: "Return tracking requires a sales-return receipt" },
+        {
+          error:
+            "Return tracking requires a sales-return or repair-order receipt"
+        },
         { status: 400 }
       );
     }
+    const isRepairReceipt = receipt.data.sourceDocument === "Repair Order";
     if (receiptLine.error || !receiptLine.data.lineId) {
       return data({ error: "Receipt line not found" }, { status: 400 });
     }
@@ -233,15 +245,27 @@ export async function action({ request, context }: ActionFunctionArgs) {
       );
     }
 
-    const expected = await client
-      .from("salesReturnOrderLineTrackedEntity")
-      .select("trackedEntityId")
-      .eq("salesReturnOrderLineId", receiptLine.data.lineId)
-      .eq("trackedEntityId", trackedEntityId)
-      .maybeSingle();
+    const expected = isRepairReceipt
+      ? await client
+          .from("repairOrderLineTrackedEntity")
+          .select("trackedEntityId")
+          .eq("repairOrderLineId", receiptLine.data.lineId)
+          .eq("trackedEntityId", trackedEntityId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : await client
+          .from("salesReturnOrderLineTrackedEntity")
+          .select("trackedEntityId")
+          .eq("salesReturnOrderLineId", receiptLine.data.lineId)
+          .eq("trackedEntityId", trackedEntityId)
+          .maybeSingle();
     if (!expected.data) {
       return data(
-        { error: "Entity is not expected on this return line" },
+        {
+          error: isRepairReceipt
+            ? "Entity is not the unit held on this repair line"
+            : "Entity is not expected on this return line"
+        },
         { status: 400 }
       );
     }

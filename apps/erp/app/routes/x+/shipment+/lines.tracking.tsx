@@ -58,13 +58,17 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // Return-to-customer shipments (source "Sales Return Order") ship returned
-  // stock, which is deliberately On Hold until dispositioned/shipped back —
-  // everything else ships Available stock only.
-  const allowedStatus =
-    shipmentResponse.data?.sourceDocument === "Sales Return Order"
-      ? "On Hold"
-      : "Available";
+  // Two sources ship stock that is deliberately NOT Available:
+  //   "Sales Return Order" — returned goods, On Hold until dispositioned.
+  //   "Repair Order"       — the customer's own unit, On Hold for its whole
+  //                          stay in custody (out to the OEM, and home again).
+  // Everything else ships Available stock only.
+  const ON_HOLD_SHIPMENT_SOURCES = ["Sales Return Order", "Repair Order"];
+  const allowedStatus = ON_HOLD_SHIPMENT_SOURCES.includes(
+    shipmentResponse.data?.sourceDocument ?? ""
+  )
+    ? "On Hold"
+    : "Available";
 
   if (trackedEntity.status !== allowedStatus) {
     return data(

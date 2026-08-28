@@ -117,11 +117,13 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
         const receivedQuantity = line.receivedQuantity ?? 0;
         if (receivedQuantity === 0) return;
 
-        // A sales-return receipt fills its slots by picking existing tracked
-        // entities (ReturnEntityForm) — the entity itself is the serial unit,
-        // so an assigned entity counts even when it carries no readableId.
-        const isSalesReturn =
-          routeData?.receipt?.sourceDocument === "Sales Return Order";
+        // Sales-return and repair receipts fill their slots by picking existing
+        // tracked entities (ReturnEntityForm) — the entity itself is the serial
+        // unit, so an assigned entity counts even when it carries no
+        // readableId.
+        const isSalesReturn = ["Sales Return Order", "Repair Order"].includes(
+          routeData?.receipt?.sourceDocument ?? ""
+        );
 
         // post-receipt consumes one serial per index in [0, receivedQuantity);
         // extra or duplicate entities are ignored at post time. Validate that

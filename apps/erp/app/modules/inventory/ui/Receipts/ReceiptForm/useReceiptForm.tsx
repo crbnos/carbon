@@ -87,6 +87,26 @@ export default function useReceiptForm({
           });
         break;
 
+      case "Repair Order":
+        carbon
+          ?.from("repairOrder")
+          .select("id, repairOrderId")
+          .eq("companyId", user.company.id)
+          .in("status", ["Confirmed", "In Progress"])
+          .then((response) => {
+            if (response.error) {
+              setError(response.error.message);
+            } else {
+              setSourceDocuments(
+                response.data.map((d) => ({
+                  name: d.repairOrderId,
+                  id: d.id
+                }))
+              );
+            }
+          });
+        break;
+
       case "Inbound Transfer":
         carbon
           ?.from("warehouseTransfer")

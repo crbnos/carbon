@@ -49,13 +49,14 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
     }[];
   }>(path.to.shipment(shipmentId));
 
-  // Return-to-customer shipments (source "Sales Return Order") ship returned
-  // stock, which is deliberately On Hold until shipped back — mirror the
-  // status lines.tracking required when the entity was assigned.
-  const expectedEntityStatus =
-    routeData?.shipment?.sourceDocument === "Sales Return Order"
-      ? "On Hold"
-      : "Available";
+  // Sales returns and repair orders both move stock that is deliberately On
+  // Hold rather than Available — mirror the status lines.tracking required
+  // when the entity was assigned.
+  const expectedEntityStatus = ["Sales Return Order", "Repair Order"].includes(
+    routeData?.shipment?.sourceDocument ?? ""
+  )
+    ? "On Hold"
+    : "Available";
 
   const navigation = useNavigation();
 

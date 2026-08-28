@@ -596,7 +596,7 @@ function ReceiptLineItem({
         </div>
       </div>
       {line.requiresBatchTracking &&
-        (receipt?.sourceDocument === "Sales Return Order" ? (
+        (isReTagSource(receipt?.sourceDocument) ? (
           <ReturnEntityForm
             receipt={receipt}
             line={line}
@@ -623,7 +623,7 @@ function ReceiptLineItem({
           />
         ))}
       {line.requiresSerialTracking &&
-        (receipt?.sourceDocument === "Sales Return Order" ? (
+        (isReTagSource(receipt?.sourceDocument) ? (
           <ReturnEntityForm
             receipt={receipt}
             line={line}
@@ -717,6 +717,15 @@ function ReceiptLineItem({
         </>
       )}
     </div>
+  );
+}
+
+// A sales-return receipt and a repair receipt both RE-TAG an existing tracked
+// entity (the unit coming back) instead of minting a new serial, so both use
+// ReturnEntityForm. Keep in step with receipt+/lines.tracking.tsx.
+function isReTagSource(sourceDocument?: string | null) {
+  return (
+    sourceDocument === "Sales Return Order" || sourceDocument === "Repair Order"
   );
 }
 

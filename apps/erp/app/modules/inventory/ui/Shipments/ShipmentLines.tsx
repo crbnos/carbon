@@ -647,11 +647,14 @@ function ShipmentLineItem({
   );
 }
 
-// Sales-return shipments (source "Sales Return Order") ship returned stock,
-// which is deliberately On Hold until it leaves — mirror the status
-// lines.tracking accepts when validating entities for this source.
+// Two sources ship stock that is deliberately NOT Available: a sales return
+// ships returned goods (On Hold until they leave), and a repair order ships the
+// customer's own unit, which is On Hold for its whole stay in custody — out to
+// the OEM and home again. Mirrors what lines.tracking accepts.
+const ON_HOLD_SHIPMENT_SOURCES = ["Sales Return Order", "Repair Order"];
+
 function expectedEntityStatus(shipment?: Shipment) {
-  return shipment?.sourceDocument === "Sales Return Order"
+  return ON_HOLD_SHIPMENT_SOURCES.includes(shipment?.sourceDocument ?? "")
     ? "On Hold"
     : "Available";
 }

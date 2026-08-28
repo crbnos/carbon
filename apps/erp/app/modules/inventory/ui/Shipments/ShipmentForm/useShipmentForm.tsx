@@ -106,6 +106,25 @@ export default function useShipmentForm({
             }
           });
         break;
+      case "Repair Order":
+        carbon
+          ?.from("repairOrder")
+          .select("id, repairOrderId")
+          .eq("companyId", user.company.id)
+          .in("status", ["Confirmed", "In Progress"])
+          .then((response) => {
+            if (response.error) {
+              setError(response.error.message);
+            } else {
+              setSourceDocuments(
+                response.data.map((d) => ({
+                  name: d.repairOrderId,
+                  id: d.id
+                }))
+              );
+            }
+          });
+        break;
       case "Purchase Return Order":
         carbon
           ?.from("purchaseReturnOrder")
