@@ -360,7 +360,6 @@ msgid "A contractor is a supplier contact with particular abilities and availabl
 msgstr "एक ठेकेदार एक आपूर्तिकर्ता संपर्क है जिसके पास विशेष क्षमताएं और उपलब्ध घंटे हैं"
 
 msgid "A custom solution to meet your needs"
-msgstr "आपकी ज़रूरतों को पूरा करने के लिए एक कस्टम समाधान"
 msgstr "आपकी जरूरतों को पूरा करने के लिए एक कस्टम समाधान"
 
 msgid "A customer is a business or person who buys your parts or services."
@@ -1619,7 +1618,6 @@ msgid "API keys for programmatic access to your Carbon data."
 msgstr "आपके Carbon डेटा के लिए प्रोग्रामेटिक एक्सेस के लिए API कुंजियाँ।"
 
 msgid "API, webhooks, and integrations"
-msgstr "API, वेबहुक, और एकीकरण"
 msgstr "API, webhooks, और integrations"
 
 msgid "Applied"
@@ -3190,7 +3188,6 @@ msgid "Cloud, or your self-hosted environment."
 msgstr "क्लाउड, या आपका स्व-होस्ट किया गया वातावरण।"
 
 msgid "CMMC compliant"
-msgstr "CMMC अनुपालक"
 msgstr "CMMC अनुरूप"
 
 msgid "Code"
@@ -3254,7 +3251,6 @@ msgid "Committing a receipt, shipment, or invoice: quantities move, journal entr
 msgstr "एक प्राप्ति, शिपमेंट या चालान की प्रतिबद्धता: मात्रा चलती है, जर्नल प्रविष्टियां बहीखाता को मारती हैं, और स्थिति पोस्ट की जाती है।"
 
 msgid "Community support"
-msgstr "सामुदायिक सहायता"
 msgstr "सामुदायिक समर्थन"
 
 msgid "Companies"
@@ -4438,7 +4434,6 @@ msgid "Customers"
 msgstr "ग्राहक"
 
 msgid "Customizations, training, and integrations"
-msgstr "अनुकूलन, प्रशिक्षण, और एकीकरण"
 msgstr "अनुकूलन, प्रशिक्षण, और integrations"
 
 msgid "Customize"
@@ -6246,7 +6241,6 @@ msgid "Every match"
 msgstr "हर मेल"
 
 msgid "Every required action has already been added."
-msgstr "प्रत्येक आवश्यक कार्रवाई पहले से ही जोड़ी जा चुकी है।"
 msgstr "हर आवश्यक कार्रवाई पहले से जोड़ी जा चुकी है।"
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
@@ -14882,7 +14876,6 @@ msgid "Team trained"
 msgstr "टीम प्रशिक्षित"
 
 msgid "Technical support"
-msgstr "तकनीकी सहायता"
 msgstr "तकनीकी समर्थन"
 
 msgid "Temperature"

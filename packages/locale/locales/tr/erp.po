@@ -303,7 +303,6 @@ msgid "4h"
 msgstr "4s"
 
 msgid "5 user minimum"
-msgstr "5 kullanıcı minimum"
 msgstr "5 kullanıcı minimumu"
 
 msgid "5-8 weeks"
@@ -475,10 +474,6 @@ msgstr "Parçaları ebeveyn işine birlikte verilen bir Sipariş üzere Üretim 
 
 msgid "A managed cloud-hosted version of Carbon"
 msgstr "Carbon'un yönetilen bir bulut barındırmalı sürümü"
-
-msgid "A managed version with all the advanced features"
-msgstr "Tüm gelişmiş özellikleri ile yönetilen bir sürüm"
-msgstr "Carbon'un yönetilen bulut barındırmalı sürümü"
 
 msgid "A managed version with all the advanced features"
 msgstr "Tüm gelişmiş özellikleri içeren yönetilen bir sürüm"
@@ -1348,7 +1343,6 @@ msgid "All actions selected"
 msgstr "Tüm eylemler seçildi"
 
 msgid "All advanced features available"
-msgstr "Tüm gelişmiş özellikler kullanılabilir"
 msgstr "Tüm gelişmiş özellikler mevcut"
 
 msgid "All Audit Logs"
@@ -3556,7 +3550,6 @@ msgid "Contact (optional)"
 msgstr "İletişim (isteğe bağlı)"
 
 msgid "Contact us"
-msgstr "Bizimle iletişime geçin"
 msgstr "Bize başvurun"
 
 msgid "contacts"
@@ -6248,7 +6241,6 @@ msgid "Every match"
 msgstr "Her eşleşme"
 
 msgid "Every required action has already been added."
-msgstr "Gerekli tüm işlemler zaten eklendi."
 msgstr "Gerekli olan tüm eylemler zaten eklendi."
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
@@ -7018,7 +7010,6 @@ msgid "Format"
 msgstr "Biçim"
 
 msgid "Forward deployed engineer"
-msgstr "İleriye dönük konuşlandırılmış mühendis"
 msgstr "Ön konuşlandırılmış mühendis"
 
 msgid "Foundation"
@@ -13558,10 +13549,6 @@ msgstr "Kendi Yönettiği"
 
 msgid "Self-hosted or managed"
 msgstr "Kendi kendine barındırılan veya yönetilen"
-
-msgid "Self-onboarding"
-msgstr "Kendi kendine yerleştirme"
-msgstr "Kendi barındırmalı veya yönetilen"
 
 msgid "Self-onboarding"
 msgstr "Kendi kendine katılım"

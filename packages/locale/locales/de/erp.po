@@ -3251,7 +3251,6 @@ msgid "Committing a receipt, shipment, or invoice: quantities move, journal entr
 msgstr "Commit einer Quittung, eines Versands oder einer Rechnung: Mengen bewegen sich, Journal-Einträge treffen das Ledger, und der Status wird Posted."
 
 msgid "Community support"
-msgstr "Community-Unterstützung"
 msgstr "Community-Support"
 
 msgid "Companies"
@@ -7011,7 +7010,6 @@ msgid "Format"
 msgstr "Format"
 
 msgid "Forward deployed engineer"
-msgstr "Vor-Ort-Ingenieur"
 msgstr "Ingenieur vor Ort"
 
 msgid "Foundation"
@@ -7068,7 +7066,6 @@ msgid "Full name"
 msgstr "Vollständiger Name"
 
 msgid "Full setup and migrations"
-msgstr "Vollständiges Setup und Migrationen"
 msgstr "Vollständige Einrichtung und Migrationen"
 
 msgid "Fully Depreciated"

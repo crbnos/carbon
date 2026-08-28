@@ -473,7 +473,6 @@ msgid "A Make to Order component whose parts are issued together into the parent
 msgstr "Um componente Fazer sob pedido cujas peças são emitidas juntas para o trabalho pai — sem construção separada."
 
 msgid "A managed cloud-hosted version of Carbon"
-msgstr "Uma versão gerenciada e hospedada em nuvem do Carbon"
 msgstr "Uma versão gerenciada hospedada em nuvem do Carbon"
 
 msgid "A managed version with all the advanced features"
@@ -2390,7 +2389,6 @@ msgid "Automatic Updates"
 msgstr "Atualizações Automáticas"
 
 msgid "Automatic updates and backups"
-msgstr "Atualizações automáticas e backups"
 msgstr "Atualizações e backups automáticos"
 
 msgid "Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually."
@@ -3190,7 +3188,6 @@ msgid "Cloud, or your self-hosted environment."
 msgstr "Nuvem, ou seu ambiente auto-hospedado."
 
 msgid "CMMC compliant"
-msgstr "Compatível com CMMC"
 msgstr "Conforme com CMMC"
 
 msgid "Code"
@@ -3254,7 +3251,6 @@ msgid "Committing a receipt, shipment, or invoice: quantities move, journal entr
 msgstr "Confirmar um recibo, remessa ou fatura: as quantidades se movem, os lançamentos do diário atingem o razão, e o status se torna Lançado."
 
 msgid "Community support"
-msgstr "Suporte da comunidade"
 msgstr "Suporte comunitário"
 
 msgid "Companies"
@@ -3554,7 +3550,6 @@ msgid "Contact (optional)"
 msgstr "Contacto (opcional)"
 
 msgid "Contact us"
-msgstr "Entre em contato"
 msgstr "Entre em contato conosco"
 
 msgid "contacts"
@@ -6246,7 +6241,6 @@ msgid "Every match"
 msgstr "Cada correspondência"
 
 msgid "Every required action has already been added."
-msgstr "Toda ação necessária já foi adicionada."
 msgstr "Todas as ações necessárias já foram adicionadas."
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
@@ -7016,7 +7010,6 @@ msgid "Format"
 msgstr "Formato"
 
 msgid "Forward deployed engineer"
-msgstr "Engenheiro distribuído dedicado"
 msgstr "Engenheiro implantado no local"
 
 msgid "Foundation"
@@ -13556,10 +13549,6 @@ msgstr "Autogerenciado"
 
 msgid "Self-hosted or managed"
 msgstr "Hospedagem própria ou gerenciada"
-
-msgid "Self-onboarding"
-msgstr "Integração independente"
-msgstr "Auto-hospedado ou gerenciado"
 
 msgid "Self-onboarding"
 msgstr "Integração automática"

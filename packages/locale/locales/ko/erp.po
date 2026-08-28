@@ -360,7 +360,6 @@ msgid "A contractor is a supplier contact with particular abilities and availabl
 msgstr "계약직은 특정 역량과 가용 시간을 가진 공급업체 담당자입니다"
 
 msgid "A custom solution to meet your needs"
-msgstr "귀하의 필요를 충족하는 맞춤형 솔루션"
 msgstr "당신의 요구를 충족하기 위한 맞춤형 솔루션"
 
 msgid "A customer is a business or person who buys your parts or services."
@@ -475,10 +474,6 @@ msgstr "부품이 상위 작업에 함께 투입되는 주문생산(Make to Orde
 
 msgid "A managed cloud-hosted version of Carbon"
 msgstr "Carbon의 관리형 클라우드 호스팅 버전"
-
-msgid "A managed version with all the advanced features"
-msgstr "모든 고급 기능이 포함된 관리형 버전"
-msgstr "Carbon의 관리되는 클라우드 호스팅 버전"
 
 msgid "A managed version with all the advanced features"
 msgstr "모든 고급 기능이 포함된 관리되는 버전"
@@ -3193,7 +3188,6 @@ msgid "Cloud, or your self-hosted environment."
 msgstr "클라우드 또는 자체 호스팅 환경."
 
 msgid "CMMC compliant"
-msgstr "CMMC 준수"
 msgstr "CMMC 규정 준수"
 
 msgid "Code"
@@ -4440,7 +4434,6 @@ msgid "Customers"
 msgstr "고객"
 
 msgid "Customizations, training, and integrations"
-msgstr "커스터마이제이션, 교육 및 통합"
 msgstr "맞춤화, 교육 및 통합"
 
 msgid "Customize"
@@ -7017,7 +7010,6 @@ msgid "Format"
 msgstr "형식"
 
 msgid "Forward deployed engineer"
-msgstr "현장 배치 엔지니어"
 msgstr "현지 배치 엔지니어"
 
 msgid "Foundation"

@@ -476,10 +476,6 @@ msgid "A managed cloud-hosted version of Carbon"
 msgstr "Una versión de Carbon alojada en la nube administrada"
 
 msgid "A managed version with all the advanced features"
-msgstr "Una versión administrada con todas las características avanzadas"
-msgstr "Una versión administrada y alojada en la nube de Carbon"
-
-msgid "A managed version with all the advanced features"
 msgstr "Una versión administrada con todas las funciones avanzadas"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
@@ -1347,7 +1343,6 @@ msgid "All actions selected"
 msgstr "Todas las acciones seleccionadas"
 
 msgid "All advanced features available"
-msgstr "Todas las características avanzadas disponibles"
 msgstr "Todas las funciones avanzadas disponibles"
 
 msgid "All Audit Logs"
@@ -3555,7 +3550,6 @@ msgid "Contact (optional)"
 msgstr "Contacto (opcional)"
 
 msgid "Contact us"
-msgstr "Contáctanos"
 msgstr "Contáctenos"
 
 msgid "contacts"
@@ -6247,7 +6241,6 @@ msgid "Every match"
 msgstr "Cada coincidencia"
 
 msgid "Every required action has already been added."
-msgstr "Cada acción requerida ya ha sido añadida."
 msgstr "Todas las acciones requeridas ya han sido agregadas."
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
@@ -7017,7 +7010,6 @@ msgid "Format"
 msgstr "Formato"
 
 msgid "Forward deployed engineer"
-msgstr "Ingeniero desplegado en el terreno"
 msgstr "Ingeniero desplegado en campo"
 
 msgid "Foundation"
@@ -13557,10 +13549,6 @@ msgstr "Autogestionado"
 
 msgid "Self-hosted or managed"
 msgstr "Auto-alojado o administrado"
-
-msgid "Self-onboarding"
-msgstr "Incorporación autónoma"
-msgstr "Alojado localmente o administrado"
 
 msgid "Self-onboarding"
 msgstr "Incorporación automática"

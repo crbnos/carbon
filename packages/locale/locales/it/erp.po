@@ -476,7 +476,6 @@ msgid "A managed cloud-hosted version of Carbon"
 msgstr "Una versione gestita di Carbon ospitata nel cloud"
 
 msgid "A managed version with all the advanced features"
-msgstr "Una versione gestita con tutte le funzionalità avanzate"
 msgstr "Una versione gestita con tutte le funzioni avanzate"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
@@ -1344,7 +1343,6 @@ msgid "All actions selected"
 msgstr "Tutte le azioni selezionate"
 
 msgid "All advanced features available"
-msgstr "Tutte le funzionalità avanzate disponibili"
 msgstr "Tutte le funzioni avanzate disponibili"
 
 msgid "All Audit Logs"
@@ -2319,7 +2317,6 @@ msgid "Audit Log"
 msgstr "Registro di Audit"
 
 msgid "Audit logging"
-msgstr "Registrazione di controllo"
 msgstr "Registrazione di audit"
 
 msgid "Audit Logging"
@@ -2492,7 +2489,6 @@ msgid "Base Price"
 msgstr "Prezzo Base"
 
 msgid "Basic ERP, MES, and QMS functionality"
-msgstr "Funzionalità di base di ERP, MES e QMS"
 msgstr "Funzionalità ERP, MES e QMS di base"
 
 msgid "Basic Information"
@@ -7014,7 +7010,6 @@ msgid "Format"
 msgstr "Formato"
 
 msgid "Forward deployed engineer"
-msgstr "Ingegnere dislocato in avanti"
 msgstr "Ingegnere distribuito in avanti"
 
 msgid "Foundation"
@@ -7071,7 +7066,6 @@ msgid "Full name"
 msgstr "Nome completo"
 
 msgid "Full setup and migrations"
-msgstr "Configurazione completa e migrazioni"
 msgstr "Configurazione e migrazioni complete"
 
 msgid "Fully Depreciated"
@@ -13557,7 +13551,6 @@ msgid "Self-hosted or managed"
 msgstr "Auto-ospitato o gestito"
 
 msgid "Self-onboarding"
-msgstr "Onboarding autonomo"
 msgstr "Auto-onboarding"
 
 msgid "Self-paced"

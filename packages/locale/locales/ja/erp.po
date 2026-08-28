@@ -303,7 +303,6 @@ msgid "4h"
 msgstr "4時間"
 
 msgid "5 user minimum"
-msgstr "ユーザー5人以上必須"
 msgstr "ユーザー最小5名"
 
 msgid "5-8 weeks"
@@ -361,7 +360,6 @@ msgid "A contractor is a supplier contact with particular abilities and availabl
 msgstr "契約者は、特定の能力と利用可能な時間を持つサプライヤー連絡先です"
 
 msgid "A custom solution to meet your needs"
-msgstr "ニーズに合わせたカスタムソリューション"
 msgstr "お客様のニーズに合わせたカスタムソリューション"
 
 msgid "A customer is a business or person who buys your parts or services."
@@ -475,7 +473,6 @@ msgid "A Make to Order component whose parts are issued together into the parent
 msgstr "その部品が親ジョブに一緒に発行される受注製造コンポーネント—別のビルドはありません。"
 
 msgid "A managed cloud-hosted version of Carbon"
-msgstr "クラウドでホストされたCarbonの管理版"
 msgstr "管理されたクラウドホスト版Carbon"
 
 msgid "A managed version with all the advanced features"
@@ -1621,7 +1618,6 @@ msgid "API keys for programmatic access to your Carbon data."
 msgstr "Carbonデータへのプログラマティックアクセス用のAPIキー。"
 
 msgid "API, webhooks, and integrations"
-msgstr "API、ウェブフック、統合"
 msgstr "API、ウェブフック、および統合"
 
 msgid "Applied"
@@ -2493,7 +2489,6 @@ msgid "Base Price"
 msgstr "基本価格"
 
 msgid "Basic ERP, MES, and QMS functionality"
-msgstr "基本的なERP、MES、QMS機能"
 msgstr "基本的なERP、MES、およびQMS機能"
 
 msgid "Basic Information"
@@ -3555,7 +3550,6 @@ msgid "Contact (optional)"
 msgstr "連絡先（オプション）"
 
 msgid "Contact us"
-msgstr "お問い合わせ"
 msgstr "お問い合わせください"
 
 msgid "contacts"
@@ -4440,7 +4434,6 @@ msgid "Customers"
 msgstr "顧客"
 
 msgid "Customizations, training, and integrations"
-msgstr "カスタマイズ、トレーニング、統合"
 msgstr "カスタマイズ、トレーニング、および統合"
 
 msgid "Customize"
@@ -6248,7 +6241,6 @@ msgid "Every match"
 msgstr "すべてのマッチ"
 
 msgid "Every required action has already been added."
-msgstr "すべての必須アクションは既に追加されています。"
 msgstr "すべての必須アクションが既に追加されています。"
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
@@ -7018,7 +7010,6 @@ msgid "Format"
 msgstr "フォーマット"
 
 msgid "Forward deployed engineer"
-msgstr "駐在エンジニア"
 msgstr "フィールドデプロイエンジニア"
 
 msgid "Foundation"
@@ -13557,7 +13548,6 @@ msgid "Self Managed"
 msgstr "自己管理"
 
 msgid "Self-hosted or managed"
-msgstr "セルフホストまたは管理"
 msgstr "セルフホスト型または管理型"
 
 msgid "Self-onboarding"
@@ -14886,7 +14876,6 @@ msgid "Team trained"
 msgstr "チームが訓練を受けた"
 
 msgid "Technical support"
-msgstr "技術サポート"
 msgstr "テクニカルサポート"
 
 msgid "Temperature"
@@ -16431,7 +16420,6 @@ msgid "Unlimited functional support"
 msgstr "無制限の機能サポート"
 
 msgid "Unlimited records"
-msgstr "無制限レコード"
 msgstr "無制限のレコード"
 
 msgid "Unlink"

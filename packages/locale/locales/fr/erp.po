@@ -303,7 +303,6 @@ msgid "4h"
 msgstr "4h"
 
 msgid "5 user minimum"
-msgstr "Minimum de 5 utilisateurs"
 msgstr "5 utilisateurs minimum"
 
 msgid "5-8 weeks"
@@ -361,7 +360,6 @@ msgid "A contractor is a supplier contact with particular abilities and availabl
 msgstr "Un entrepreneur est un contact fournisseur ayant des compétences particulières et des heures disponibles"
 
 msgid "A custom solution to meet your needs"
-msgstr "Une solution personnalisée adaptée à vos besoins"
 msgstr "Une solution personnalisée pour répondre à vos besoins"
 
 msgid "A customer is a business or person who buys your parts or services."
@@ -476,10 +474,6 @@ msgstr "Un composant Fabriquer sur commande dont les pièces sont émises ensemb
 
 msgid "A managed cloud-hosted version of Carbon"
 msgstr "Une version gérée en cloud de Carbon"
-
-msgid "A managed version with all the advanced features"
-msgstr "Une version gérée avec toutes les fonctionnalités avancées"
-msgstr "Une version managée du Cloud de Carbon"
 
 msgid "A managed version with all the advanced features"
 msgstr "Une version managée avec toutes les fonctionnalités avancées"
@@ -2495,7 +2489,6 @@ msgid "Base Price"
 msgstr "Prix de base"
 
 msgid "Basic ERP, MES, and QMS functionality"
-msgstr "Fonctionnalités ERP, MES et QMS de base"
 msgstr "Fonctionnalité de base ERP, MES et QMS"
 
 msgid "Basic Information"
@@ -13556,10 +13549,6 @@ msgstr "Autogéré"
 
 msgid "Self-hosted or managed"
 msgstr "Auto-hébergé ou géré"
-
-msgid "Self-onboarding"
-msgstr "Intégration autonome"
-msgstr "Auto-hébergé ou managé"
 
 msgid "Self-onboarding"
 msgstr "Auto-intégration"

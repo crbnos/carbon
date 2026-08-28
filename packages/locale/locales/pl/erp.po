@@ -360,7 +360,6 @@ msgid "A contractor is a supplier contact with particular abilities and availabl
 msgstr "Wykonawca to kontakt dostawcy z określonymi umiejętnościami i dostępnymi godzinami"
 
 msgid "A custom solution to meet your needs"
-msgstr "Niestandardowe rozwiązanie dostosowane do Twoich potrzeb"
 msgstr "Dostosowane rozwiązanie spełniające Twoje potrzeby"
 
 msgid "A customer is a business or person who buys your parts or services."
@@ -2490,7 +2489,6 @@ msgid "Base Price"
 msgstr "Cena bazowa"
 
 msgid "Basic ERP, MES, and QMS functionality"
-msgstr "Podstawowa funkcjonalność ERP, MES i QMS"
 msgstr "Podstawowe funkcje ERP, MES i QMS"
 
 msgid "Basic Information"
@@ -7012,7 +7010,6 @@ msgid "Format"
 msgstr "Format"
 
 msgid "Forward deployed engineer"
-msgstr "Inżynier wdrożony na miejscu"
 msgstr "Inżynier wdrażany on-site"
 
 msgid "Foundation"
@@ -7069,7 +7066,6 @@ msgid "Full name"
 msgstr "Pełne imię i nazwisko"
 
 msgid "Full setup and migrations"
-msgstr "Pełna konfiguracja i migracje"
 msgstr "Pełne ustawienie i migracje"
 
 msgid "Fully Depreciated"
@@ -13553,10 +13549,6 @@ msgstr "Samodzielnie zarządzane"
 
 msgid "Self-hosted or managed"
 msgstr "Samoobsługiwanie lub zarządzanie"
-
-msgid "Self-onboarding"
-msgstr "Samodzielne wdrożenie"
-msgstr "Samodzielnie hostowany lub zarządzany"
 
 msgid "Self-onboarding"
 msgstr "Samodzielne wdrażanie"

@@ -303,7 +303,6 @@ msgid "4h"
 msgstr "4小时"
 
 msgid "5 user minimum"
-msgstr "最少5个用户"
 msgstr "5 个用户最少"
 
 msgid "5-8 weeks"
@@ -361,7 +360,6 @@ msgid "A contractor is a supplier contact with particular abilities and availabl
 msgstr "承包商是具有特定能力和可用工作时间的供应商联系人"
 
 msgid "A custom solution to meet your needs"
-msgstr "根据您的需求定制的解决方案"
 msgstr "满足您需求的自定义解决方案"
 
 msgid "A customer is a business or person who buys your parts or services."
@@ -475,7 +473,6 @@ msgid "A Make to Order component whose parts are issued together into the parent
 msgstr "其零件一起发放到父项作业的按单生产组件——无单独构建。"
 
 msgid "A managed cloud-hosted version of Carbon"
-msgstr "托管的Carbon云端版本"
 msgstr "Carbon 的托管云托管版本"
 
 msgid "A managed version with all the advanced features"
@@ -1346,7 +1343,6 @@ msgid "All actions selected"
 msgstr "所有操作已选中"
 
 msgid "All advanced features available"
-msgstr "所有高级功能均可用"
 msgstr "所有高级功能可用"
 
 msgid "All Audit Logs"
@@ -1622,7 +1618,6 @@ msgid "API keys for programmatic access to your Carbon data."
 msgstr "用于以编程方式访问您的 Carbon 数据的 API 密钥。"
 
 msgid "API, webhooks, and integrations"
-msgstr "API、Webhook和集成"
 msgstr "API、webhooks 和集成"
 
 msgid "Applied"
@@ -2494,7 +2489,6 @@ msgid "Base Price"
 msgstr "基础价格"
 
 msgid "Basic ERP, MES, and QMS functionality"
-msgstr "基本ERP、MES和QMS功能"
 msgstr "基本 ERP、MES 和 QMS 功能"
 
 msgid "Basic Information"
@@ -3194,7 +3188,6 @@ msgid "Cloud, or your self-hosted environment."
 msgstr "云端或您自托管的环境。"
 
 msgid "CMMC compliant"
-msgstr "符合CMMC"
 msgstr "符合 CMMC"
 
 msgid "Code"
@@ -6248,7 +6241,6 @@ msgid "Every match"
 msgstr "每次匹配"
 
 msgid "Every required action has already been added."
-msgstr "所有必需的操作已添加。"
 msgstr "每个必需的操作已添加。"
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
@@ -7074,7 +7066,6 @@ msgid "Full name"
 msgstr "全名"
 
 msgid "Full setup and migrations"
-msgstr "完整的设置和迁移"
 msgstr "完整设置和迁移"
 
 msgid "Fully Depreciated"

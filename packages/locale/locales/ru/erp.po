@@ -360,7 +360,6 @@ msgid "A contractor is a supplier contact with particular abilities and availabl
 msgstr "Подрядчик — это контакт поставщика с особыми навыками и доступными часами"
 
 msgid "A custom solution to meet your needs"
-msgstr "Индивидуальное решение в соответствии с вашими потребностями"
 msgstr "Пользовательское решение в соответствии с вашими потребностями"
 
 msgid "A customer is a business or person who buys your parts or services."
@@ -477,7 +476,6 @@ msgid "A managed cloud-hosted version of Carbon"
 msgstr "Управляемая облачная версия Carbon"
 
 msgid "A managed version with all the advanced features"
-msgstr "Управляемая версия со всеми расширенными функциями"
 msgstr "Управляемая версия со всеми дополнительными функциями"
 
 msgid "A material is a physical item used to make a part that can be used across multiple jobs"
@@ -1620,7 +1618,6 @@ msgid "API keys for programmatic access to your Carbon data."
 msgstr "API ключи для программного доступа к вашим данным Carbon."
 
 msgid "API, webhooks, and integrations"
-msgstr "API, веб-перехватчики и интеграции"
 msgstr "API, вебхуки и интеграции"
 
 msgid "Applied"
@@ -6244,7 +6241,6 @@ msgid "Every match"
 msgstr "Каждое совпадение"
 
 msgid "Every required action has already been added."
-msgstr "Все необходимые действия уже добавлены."
 msgstr "Все требуемые действия уже добавлены."
 
 msgid "Every required task must be Done or Skipped before the period can be closed."
@@ -7014,7 +7010,6 @@ msgid "Format"
 msgstr "Формат"
 
 msgid "Forward deployed engineer"
-msgstr "Инженер развертывания на местах"
 msgstr "Развернутый инженер"
 
 msgid "Foundation"
@@ -13556,10 +13551,6 @@ msgid "Self-hosted or managed"
 msgstr "Самостоятельно размещенный или управляемый"
 
 msgid "Self-onboarding"
-msgstr "Самостоятельная адаптация"
-msgstr "Размещается самостоятельно или управляется"
-
-msgid "Self-onboarding"
 msgstr "Самостоятельное подключение"
 
 msgid "Self-paced"
@@ -16429,7 +16420,6 @@ msgid "Unlimited functional support"
 msgstr "Неограниченная функциональная поддержка"
 
 msgid "Unlimited records"
-msgstr "Неограниченные записи"
 msgstr "Неограниченное количество записей"
 
 msgid "Unlink"
