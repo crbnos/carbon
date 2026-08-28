@@ -13,7 +13,13 @@ No WAF was associated; billing/anomaly tooling doesn't exist in GovCloud.
    `mes.nodes.loadBalancer.arn`. This is the primary control for the incident class —
    the scanner's ~2,700 req/5min from a source IP now trips the rate rule, and the
    managed set flags the `/etc/passwd`, `../`, `@fs` traversal probes.
-2. **Request-count autoscaling.** Added `requestCount: 500` to both services' `scaling`
+2. **Two more free managed rule groups on `AppAlbWebAcl`** (ERP + MES):
+   `AWSManagedRulesAmazonIpReputationList` (priority 3) blocks IPs AWS already classifies
+   as bots/scanners/malicious before they cost anything; `AWSManagedRulesKnownBadInputsRuleSet`
+   (priority 4) directly catches the `.env` / `/etc/passwd` / SSRF-probe patterns the
+   common set only partially covers. ~927 WCU total, under the 1500-WCU default max. $0
+   marginal cost, no effect on legitimate traffic.
+3. **Request-count autoscaling.** Added `requestCount: 500` to both services' `scaling`
    (kept `min: 1`, `max: 10`). CPU/mem triggers never fired under the I/O-bound pile-up;
    this adds capacity for *legitimate* sustained bursts. Safe now that the WAF blocks
    floods before they reach targets — otherwise it would scale out to serve garbage.
@@ -76,6 +82,45 @@ new aws.costexplorer.AnomalySubscription("ServiceAnomalySubscription", {
 ```
 Optional hard backstop: a **Budget Action** at a ceiling that applies a restrictive IAM
 policy / notifies SNS. Blunt — prefer `max` + WAF + anomaly alerts for prod.
+
+## To do — Supabase auth rate limit (terraform, NOT SST)
+
+The `/auth/v1/*` endpoints (signup/otp/recover/magiclink) are served by the **Supabase
+edge**, not the ERP/MES ALBs: the `k8s-carbonpublic` ALB's `/*` catch-all fronts Supabase,
+protected by the `carbon-supabase-dev-app` WebACL — which is tagged `ManagedBy: terraform`
+(`Compliance: fedramp-moderate`). That ACL already has `RateLimit` (priority 1) +
+`AWSManagedCommon` (priority 2). So this rule can't be added through `sst.config.ts`; it
+belongs in the Supabase terraform stack. Each auth hit triggers an SES send + DB write, so
+a tight per-IP cap here caps email-bombing/enumeration cost — the global 1000/5min is far
+too loose to stop that. WAFv2 rule to add there (rate-based + scope-down on the URI path):
+
+```hcl
+rule {
+  name     = "AuthEndpointRateLimit"
+  priority = 0   # evaluate before the existing global RateLimit
+  action { block {} }
+  statement {
+    rate_based_statement {
+      limit              = 100   # per IP / 5-min window; tune to real signup volume
+      aggregate_key_type = "IP"
+      scope_down_statement {
+        regex_match_statement {
+          regex_string = "^/auth/v1/(signup|otp|recover|magiclink)"
+          field_to_match { uri_path {} }
+          text_transformation { priority = 0, type = "LOWERCASE" }
+        }
+      }
+    }
+  }
+  visibility_config {
+    cloudwatch_metrics_enabled = true
+    sampled_requests_enabled   = true
+    metric_name                = "AuthEndpointRateLimit"
+  }
+}
+```
+The same two managed groups (IP reputation, known-bad-inputs) are worth adding to that ACL
+too, for parity — also a terraform change, not SST.
 
 ## To do — ALB access logs (GovCloud/SST, follow-up)
 

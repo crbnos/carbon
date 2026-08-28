@@ -241,7 +241,50 @@ export default $config({
       },
     };
 
-    // WAF web ACL: rate-limit (1000 req/IP/5min) + AWS managed common rule set.
+    // AWS-classified malicious/bot/scanner IPs — blocked before they cost
+    // anything. Free managed group; not part of the common rule set.
+    const amazonIpReputationRule = {
+      name: "AmazonIpReputation",
+      statement: {
+        managedRuleGroupStatement: {
+          name: "AWSManagedRulesAmazonIpReputationList",
+          vendorName: "AWS",
+        },
+      },
+      priority: 3,
+      overrideAction: {
+        none: {},
+      },
+      visibilityConfig: {
+        cloudwatchMetricsEnabled: true,
+        sampledRequestsEnabled: true,
+        metricName: "AmazonIpReputation",
+      },
+    };
+
+    // Catches the .env / /etc/passwd / SSRF-probe patterns from the #1500
+    // scanner incident that the common rule set only partially covers. Free.
+    const knownBadInputsRule = {
+      name: "KnownBadInputs",
+      statement: {
+        managedRuleGroupStatement: {
+          name: "AWSManagedRulesKnownBadInputsRuleSet",
+          vendorName: "AWS",
+        },
+      },
+      priority: 4,
+      overrideAction: {
+        none: {},
+      },
+      visibilityConfig: {
+        cloudwatchMetricsEnabled: true,
+        sampledRequestsEnabled: true,
+        metricName: "KnownBadInputs",
+      },
+    };
+
+    // WAF web ACL: rate-limit (1000 req/IP/5min) + AWS managed rule groups
+    // (common, IP reputation, known-bad-inputs). ~927 WCU, under the 1500 max.
     const webAcl = new aws.wafv2.WebAcl("AppAlbWebAcl", {
       defaultAction: { allow: {} },
       scope: "REGIONAL",
@@ -250,7 +293,12 @@ export default $config({
         sampledRequestsEnabled: true,
         metricName: "AppAlbWebAcl",
       },
-      rules: [rateLimitRule, awsManagedRules],
+      rules: [
+        rateLimitRule,
+        awsManagedRules,
+        amazonIpReputationRule,
+        knownBadInputsRule,
+      ],
     });
 
     // Associate the web ACL with each service's ALB so the rules actually run.
