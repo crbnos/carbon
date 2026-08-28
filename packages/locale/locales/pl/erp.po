@@ -8929,7 +8929,7 @@ msgid "Map Lines Now"
 msgstr "Mapuj linie teraz"
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
-msgstr "Zmapuj swój plan kont na plan dostawcy. Konta Posting-default i wydatkowe są oznaczone jako Wymagane; zaksięgowane dzienniki są wysyłane przy użyciu zmapowanego kodu konta dostawcy."
+msgstr "Zmapuj swój plan kont na plan kont dostawcy. Konta domyślne dla księgowania i wydatkowe są oznaczone jako Wymagane; zaksięgowane dowody księgowe będą wysyłane przy użyciu zmapowanego kodu konta dostawcy."
 
 msgid "Map your current process, systems, and data"
 msgstr "Zmapuj swój obecny proces, systemy i dane"
@@ -14343,14 +14343,14 @@ msgid "Stripe emails the invoice to the customer, so an address is required. Thi
 msgstr "Stripe wysyła fakturę do klienta, dlatego wymagany jest adres. Zostanie to również zapisane w kontakcie w Carbon."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe nie ma jeszcze klienta dla tego klienta Carbon. Księgowanie utworzy go na Twoim połączonym koncie."
+msgstr "Stripe nie ma jeszcze klienta dla tego klienta Carbon. Księgowanie utworzy go na twoim podłączonym koncie."
 msgstr "Data płatności Stripe"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 msgstr "Stripe wysyła fakturę do klienta pocztą e-mail, więc wymagany jest adres. Zostanie również zapisany w kontakcie w Carbon."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe jeszcze nie ma klienta dla tego klienta Carbon. Posting utworzy jeden na Twoim połączonym koncie."
+msgstr "Stripe nie ma jeszcze klienta dla tego klienta Carbon. Księgowanie utworzy go na twoim podłączonym koncie."
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Styl wyjścia kanban do wyświetlenia w tabeli Kanban"

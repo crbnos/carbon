@@ -1087,7 +1087,7 @@ msgid "Add Affected Item"
 msgstr "Betroffenes Element hinzufügen"
 
 msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
-msgstr "Erhöhen Sie die Sicherheit, indem Sie beim Anmelden einen Code aus einer Authentifizierungs-App anfordern."
+msgstr "Fügen Sie eine zusätzliche Sicherheitsebene hinzu, indem Sie beim Anmelden einen Code aus einer Authentifizierungs-App verlangen."
 
 msgid "Add any notes about your decision..."
 msgstr "Notizen zu Ihrer Entscheidung hinzufügen..."
@@ -8932,7 +8932,7 @@ msgid "Map Lines Now"
 msgstr "Zeilen jetzt zuordnen"
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
-msgstr "Ordnen Sie Ihren Kontenplan den Konten des Anbieters zu. Posting-Standard- und Ausgabenkonten sind als erforderlich gekennzeichnet; gebuchte Journale werden mit dem zugeordneten Anbieter-Kontokencode übertragen."
+msgstr "Ordnen Sie Ihren Kontenplan dem des Anbieters zu. Buchungs-Standardkonten und Aufwandkonten sind als erforderlich gekennzeichnet. Gebuchte Buchungssätze werden mit dem zugeordneten Anbieterkontokode übertragen."
 
 msgid "Map your current process, systems, and data"
 msgstr "Ordnen Sie Ihren aktuellen Prozess, Ihre Systeme und Daten"
@@ -14349,11 +14349,11 @@ msgid "Stripe emails the invoice to the customer, so an address is required. Thi
 msgstr "Stripe sendet die Rechnung per E-Mail an den Kunden, daher ist eine Adresse erforderlich. Dies wird auch im Kontakt in Carbon gespeichert."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe hat noch keinen Kunden für diesen Carbon-Kunden. Die Buchung erstellt einen auf Ihrem verbundenen Konto."
+msgstr "Stripe hat noch keinen Kunden für diesen Carbon-Kunden. Beim Buchen wird einer auf Ihrem verbundenen Konto erstellt."
 msgstr "Stripe sendet die Rechnung per E-Mail an den Kunden, daher ist eine Adresse erforderlich. Dies wird auch als Kontakt in Carbon gespeichert."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe hat noch keinen Kunden für diesen Carbon-Kunden. Das Buchen erstellt einen auf Ihrem verbundenen Konto."
+msgstr "Stripe hat noch keinen Kunden für diesen Carbon-Kunden. Beim Buchen wird einer auf Ihrem verbundenen Konto erstellt."
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Stil der Kanban-Ausgabe, die in der Kanban-Tabelle angezeigt werden soll"

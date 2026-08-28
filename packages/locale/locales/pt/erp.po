@@ -14345,7 +14345,7 @@ msgid "Stripe emails the invoice to the customer, so an address is required. Thi
 msgstr "O Stripe envia a fatura para o cliente, portanto um endereço é obrigatório. Isso também será salvo no contato no Carbon."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "O Stripe não tem um cliente para este cliente do Carbon ainda. A contabilização criará um na sua conta conectada."
+msgstr "Stripe ainda não tem um cliente para este cliente do Carbon. A Contabilização criará um na sua conta conectada."
 msgstr "Stripe já possui um cliente com este e-mail"
 
 msgid "Stripe Due Date"
@@ -14355,7 +14355,7 @@ msgid "Stripe emails the invoice to the customer, so an address is required. Thi
 msgstr "O Stripe envia a fatura por e-mail ao cliente, portanto, um endereço é necessário. Isso também será salvo no contato no Carbon."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe ainda não possui um cliente para este cliente Carbon. O envio criará um em sua conta conectada."
+msgstr "Stripe ainda não tem um cliente para este cliente do Carbon. A Contabilização criará um na sua conta conectada."
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Estilo de saída do kanban para mostrar na tabela Kanban"

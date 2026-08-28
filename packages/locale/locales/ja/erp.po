@@ -8935,7 +8935,7 @@ msgid "Map Lines Now"
 msgstr "今すぐラインをマップ"
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
-msgstr "勘定科目表をプロバイダーのものにマップしてください。転記デフォルトと費用アカウントは必須としてマークされています。転記されたジャーナルはマップされたプロバイダーアカウントコードを使用してプッシュされます。"
+msgstr "勘定科目表をプロバイダーの表にマップしてください。転記用デフォルト科目と費用科目は「必須」とマークされています。転記済の仕訳はマップされたプロバイダー科目を使用して送信されます。"
 
 msgid "Map your current process, systems, and data"
 msgstr "現在のプロセス、システム、データをマップする"
@@ -11619,7 +11619,7 @@ msgid "Protect training time and attend"
 msgstr "教育訓練の時間を確保して参加する"
 
 msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
-msgstr "二段階認証の強制などの高度なセキュリティ管理で会社を保護してください。"
+msgstr "二要素認証の強制などの高度なセキュリティ制御で会社を保護します。"
 
 msgid "Protects your company's data"
 msgstr "会社データを保護します"
@@ -12499,7 +12499,7 @@ msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "サインイン時に認証器アプリから6桁のコードが必要です。"
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
-msgstr "このカンパニーを開く前に、認証アプリが必須です。他のカンパニーは影響を受けません。"
+msgstr "この会社にアクセスするにはオーセンティケーターアプリが必須です。他の会社は影響を受けません。"
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "このアプリケーション認証器を要求して、誰もがこの会社を開く前に認証を要求します。他の会社は影響を受けません。<0>従業員アカウントページ</0>にアクセスして、各個人のステータスを確認してください。"
@@ -14347,20 +14347,20 @@ msgid "Stripe Due Date"
 msgstr "Stripe期日"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripeは請求書を得意先にメール送信するため、住所が必要です。これはCarbonの担当者にも保存されます。"
+msgstr "Stripeは得意先に請求書をメール送信するため、住所が必須です。これはCarbonの担当者にも保存されます。"
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "このCarbonの得意先に対してまだStripeの顧客がありません。転記すると接続されたアカウントに顧客が作成されます。"
+msgstr "StripeにはこのCarbon得意先に対応する顧客がまだありません。転記すると、接続済みアカウント上に作成されます。"
 msgstr "Stripeにはこのメールアドレスを持つカスタマーが既に存在します"
 
 msgid "Stripe Due Date"
 msgstr "Stripe支払期日"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripeはカスタマーに請求書をメール送信するため、アドレスが必要です。これはCarbonの連絡先にも保存されます。"
+msgstr "Stripeは得意先に請求書をメール送信するため、住所が必須です。これはCarbonの担当者にも保存されます。"
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "StripeにはこのCarbonカスタマーのカスタマーがまだありません。投稿するとあなたの接続されたアカウントに1つ作成されます。"
+msgstr "StripeにはこのCarbon得意先に対応する顧客がまだありません。転記すると、接続済みアカウント上に作成されます。"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "かんばんテーブルに表示するかんばん出力のスタイル"
@@ -15671,11 +15671,11 @@ msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "この請求書には使用可能な期日がありません。Stripeの場合は、期日を選択してください。"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "この請求書は、この Carbon 得意先にすでにリンクされている Stripe 顧客に請求されます。詳細を変更するには、Stripe ダッシュボードで編集してください。"
+msgstr "この請求書は、すでにこのCarbon得意先にリンクされているStripe顧客に請求されます。詳細を変更するには、Stripeダッシュボードで編集してください。"
 msgstr "この請求書には使用可能な支払期日がありません — Stripeのために1つ選択してください。"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "この請求書は、このCarbonカスタマーに既にリンクされているStripeカスタマーに請求されます。その詳細を変更するには、Stripeダッシュボードで編集してください。"
+msgstr "この請求書は、すでにこのCarbon得意先にリンクされているStripe顧客に請求されます。詳細を変更するには、Stripeダッシュボードで編集してください。"
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "これは管理環境のため、認証アプリが必須です。"
@@ -15819,7 +15819,7 @@ msgstr "このバージョンは公開済です。編集するには新しいバ
 msgstr "このバージョンは公開されています"
 
 msgid "This version is published. Create a new version to edit."
-msgstr "このバージョンは公開されています。編集するために新しいバージョンを作成してください。"
+msgstr "このバージョンは公開済です。編集するには新しいバージョンを作成してください。"
 
 msgid "This version's definition could not be read."
 msgstr "このバージョンの定義を読み取ることができませんでした。"
@@ -16224,7 +16224,7 @@ msgid "Two-factor authentication"
 msgstr "二要素認証"
 
 msgid "Two-Factor Authentication"
-msgstr "2要素認証"
+msgstr "二要素認証"
 
 msgid "Two-factor authentication disabled"
 msgstr "二要素認証が無効になりました"

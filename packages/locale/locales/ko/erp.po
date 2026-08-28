@@ -3590,7 +3590,7 @@ msgid "Control how operators pick material and track time on the shop floor."
 msgstr "현장에서 작업자의 자재 피킹 및 시간 추적 방식을 제어합니다."
 
 msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
-msgstr "항목 ID(부품, 재료, 소비품, 도구 및 서비스)에 소문자가 포함될 수 있는지 제어합니다."
+msgstr "품목 ID(부품, 자재, 소모품, 공구, 서비스)에 소문자 포함 여부를 제어합니다."
 
 msgid "Controller, Accountant"
 msgstr "컨트롤러, 회계 담당자"
@@ -8940,7 +8940,7 @@ msgid "Map Lines Now"
 msgstr "지금 라인 매핑"
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
-msgstr "귀사의 계정과목을 제공자의 계정과목으로 매핑하세요. 기본 전기 계정과 비용 계정은 필수로 표시되어 있으며, 전기된 분개는 매핑된 제공자 계정 코드를 사용하여 전송됩니다."
+msgstr "계정과목표를 공급자와 매핑하세요. 전기 기본 및 비용 계정은 필수로 표시되며, 전기된 전표는 매핑된 공급자 계정 코드를 사용하여 전송됩니다."
 
 msgid "Map your current process, systems, and data"
 msgstr "현재 프로세스, 시스템, 데이터를 매핑하세요"
@@ -11624,7 +11624,7 @@ msgid "Protect training time and attend"
 msgstr "교육 시간을 확보하고 참석하세요"
 
 msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
-msgstr "이중 인증 강제와 같은 고급 보안 제어로 회사를 보호하세요."
+msgstr "2단계 인증 강제와 같은 고급 보안 제어로 회사를 보호하세요."
 
 msgid "Protects your company's data"
 msgstr "회사 데이터 보호"
@@ -14349,20 +14349,20 @@ msgid "Stripe Due Date"
 msgstr "Stripe 마감일"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripe은 송장을 고객에게 이메일로 전송하므로 주소가 필요합니다. 이것은 Carbon의 담당자에게도 저장됩니다."
+msgstr "Stripe가 송장을 고객에게 이메일로 보내므로 주소가 필요합니다. 이것도 Carbon의 담당자 정보에 저장됩니다."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe은 아직 이 Carbon 고객에 대한 고객이 없습니다. 전기하면 연결된 계정에 하나가 생성됩니다."
+msgstr "이 Carbon 고객에 대한 Stripe 고객이 아직 없습니다. 전기하면 연결된 계정에 생성됩니다."
 msgstr "Stripe에는 이미 이 이메일이 있는 고객이 있습니다"
 
 msgid "Stripe Due Date"
-msgstr "Stripe 만기일"
+msgstr "Stripe 마감일"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripe는 고객에게 인보이스를 이메일로 보내므로 주소가 필요합니다. 이것은 Carbon의 연락처에도 저장됩니다."
+msgstr "Stripe가 송장을 고객에게 이메일로 보내므로 주소가 필요합니다. 이것도 Carbon의 담당자 정보에 저장됩니다."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe에는 이 Carbon 고객을 위한 고객이 아직 없습니다. 게시하면 연결된 계정에서 하나를 생성합니다."
+msgstr "이 Carbon 고객에 대한 Stripe 고객이 아직 없습니다. 전기하면 연결된 계정에 생성됩니다."
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "칸반 테이블에 표시할 칸반 출력 스타일"
@@ -15672,11 +15672,11 @@ msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "이 송장은 사용 가능한 마감일이 없습니다 — Stripe를 위해 선택하십시오."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "이 송장은 이 Carbon 고객에 이미 연결된 Stripe 고객에게 청구됩니다. 세부 정보를 변경하려면 Stripe 대시보드에서 편집하십시오."
+msgstr "이 송장은 이미 이 Carbon 고객과 연결된 Stripe 고객에게 청구됩니다. 세부 사항을 변경하려면 Stripe 대시보드에서 편집하세요."
 msgstr "이 인보이스에는 사용할 수 있는 만기일이 없습니다 — Stripe에 대해 하나를 선택합니다."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "이 인보이스는 이미 이 Carbon 고객에 연결된 Stripe 고객에게 청구됩니다. 세부 정보를 변경하려면 Stripe 대시보드에서 편집합니다."
+msgstr "이 송장은 이미 이 Carbon 고객과 연결된 Stripe 고객에게 청구됩니다. 세부 사항을 변경하려면 Stripe 대시보드에서 편집하세요."
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "이것은 제어되는 환경이므로 인증자 앱이 필수입니다."

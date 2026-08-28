@@ -8935,7 +8935,7 @@ msgid "Map Lines Now"
 msgstr "Mapper les lignes maintenant"
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
-msgstr "Mappez votre plan comptable avec celui du fournisseur. Les comptes par défaut de comptabilisation et les comptes de dépenses sont marqués Obligatoire ; les journaux comptabilisés sont poussés en utilisant le code de compte du fournisseur mappé."
+msgstr "Mappez votre plan comptable au plan comptable du fournisseur. Les comptes de comptabilisation par défaut et les comptes de charge sont marqués Requis ; les écritures comptabilisées utilisent le code de compte du fournisseur mappé."
 
 msgid "Map your current process, systems, and data"
 msgstr "Cartographiez votre processus actuel, vos systèmes et vos données"
@@ -11619,7 +11619,7 @@ msgid "Protect training time and attend"
 msgstr "Protégez le temps de formation et participez"
 
 msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
-msgstr "Protégez votre entreprise avec des contrôles de sécurité avancés, comme l'authentification à deux facteurs obligatoire."
+msgstr "Protégez votre société avec des contrôles de sécurité avancés tels que l'application d'une authentification à deux facteurs."
 
 msgid "Protects your company's data"
 msgstr "Protège les données de votre société"
@@ -12498,7 +12498,7 @@ msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Exiger un code à 6 chiffres d'une application d'authentification lors de la connexion."
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
-msgstr "Exiger une application d'authentification avant que quiconque puisse ouvrir cette entreprise. Leurs autres entreprises ne sont pas affectées."
+msgstr "Exigez une application d'authentification avant que quiconque puisse ouvrir cette société. Leurs autres sociétés ne sont pas affectées."
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Exiger une application d'authentification avant que quiconque puisse ouvrir cette société. Leurs autres sociétés ne sont pas affectées. Visitez la <0>page des comptes employé</0> pour voir le statut de chaque personne."
@@ -14357,7 +14357,7 @@ msgstr "Stripe n'a pas encore de client pour ce client Carbon. La comptabilisati
 msgstr "Stripe envoie la facture par email au client, donc une adresse est requise. Celle-ci sera également enregistrée dans le contact dans Carbon."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe n'a pas encore de client pour ce client Carbon. La publication en créera un sur votre compte connecté."
+msgstr "Stripe n'a pas encore de client pour ce client Carbon. La comptabilisation en créera un sur votre compte connecté."
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Style de sortie kanban à afficher dans le tableau Kanban"

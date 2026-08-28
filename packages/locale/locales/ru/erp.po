@@ -8936,7 +8936,7 @@ msgid "Map Lines Now"
 msgstr "Сопоставить строки сейчас"
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
-msgstr "Сопоставьте свой план счетов с планом счетов провайдера. Счета учета по умолчанию и счета расходов обозначены как Требуемые; проведенные журналы отправляются с использованием сопоставленного кода счета провайдера."
+msgstr "Сопоставьте ваш план счетов с планом счетов провайдера. Счета проведения по умолчанию и счета расходов отмечены как требуемые; проведенные операции отправляются, используя сопоставленный код счета провайдера."
 
 msgid "Map your current process, systems, and data"
 msgstr "Сопоставьте ваш текущий процесс, системы и данные"
@@ -11620,7 +11620,7 @@ msgid "Protect training time and attend"
 msgstr "Защитите время обучения и участвуйте"
 
 msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
-msgstr "Защитите вашу компанию с помощью расширенных элементов управления безопасностью, таких как принудительное применение двухфакторной аутентификации."
+msgstr "Защитите свою организацию передовыми средствами управления безопасностью, такими как требование двухфакторной аутентификации."
 
 msgid "Protects your company's data"
 msgstr "Защищает данные вашей организации"
@@ -12499,7 +12499,7 @@ msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Требовать 6-значный код из приложения-аутентификатора при входе."
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
-msgstr "Требуется приложение-аутентификатор, прежде чем кто-либо сможет открыть эту компанию. Их другие компании не будут затронуты."
+msgstr "Требовать использование приложения аутентификатора, прежде чем кто-либо сможет открыть эту организацию. Их другие организации не затрагиваются."
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Требовать приложение аутентификатора перед тем как кто-либо сможет открыть эту организацию. Их другие организации не затронуты. Посетите страницу <0>учетных записей сотрудников</0>, чтобы увидеть статус каждого человека."
@@ -14352,17 +14352,17 @@ msgid "Stripe emails the invoice to the customer, so an address is required. Thi
 msgstr "Stripe отправляет счет-фактуру клиенту по электронной почте, поэтому требуется адрес. Он также будет сохранен в контакте в Carbon."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "В Stripe еще нет покупателя для этого покупателя Carbon. При проведении будет создан в вашей подключенной учетной записи."
+msgstr "Stripe еще не имеет покупателя для этого покупателя Carbon. Проведение создаст его на вашем подключенном счете."
 msgstr "В Stripe уже есть клиент с этой электронной почтой"
 
 msgid "Stripe Due Date"
-msgstr "Срок платежа Stripe"
+msgstr "Срок выполнения Stripe"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 msgstr "Stripe отправляет счет клиенту, поэтому требуется адрес. Это также будет сохранено в контакт в Carbon."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe еще не имеет клиента для этого клиента Carbon. Отправка создаст его на вашем подключенном счете."
+msgstr "Stripe еще не имеет покупателя для этого покупателя Carbon. Проведение создаст его на вашем подключенном счете."
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Стиль вывода канбана для отображения в таблице Канбана"
@@ -15672,11 +15672,11 @@ msgid "This invoice has no usable due date — choose one for Stripe."
 msgstr "Этот счет-фактура не имеет используемого срока выполнения — выберите один для Stripe."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "Этот счет-фактура будет выставлен покупателю Stripe, уже связанному с этим покупателем Carbon. Чтобы изменить его детали, отредактируйте его в панели инструментов Stripe."
+msgstr "Этот счет-фактура будет выставлен покупателю Stripe, уже связанному с этим покупателем Carbon. Чтобы изменить его данные, отредактируйте его в панели Stripe."
 msgstr "Этот счет не имеет пригодного срока платежа — выберите один для Stripe."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
-msgstr "Этот счет будет отправлен клиенту Stripe, уже связанному с этим клиентом Carbon. Чтобы изменить его детали, отредактируйте его в панели управления Stripe."
+msgstr "Этот счет-фактура будет выставлен покупателю Stripe, уже связанному с этим покупателем Carbon. Чтобы изменить его данные, отредактируйте его в панели Stripe."
 
 msgid "This is a controlled environment, so an authenticator app is required."
 msgstr "Это контролируемая среда, поэтому требуется приложение аутентификации."

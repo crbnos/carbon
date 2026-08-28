@@ -1088,7 +1088,7 @@ msgid "Add Affected Item"
 msgstr "Agregar artículo afectado"
 
 msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
-msgstr "Añada una capa adicional de seguridad requiriendo un código de una aplicación de autenticación al iniciar sesión."
+msgstr "Agregar una capa adicional de seguridad requiriendo un código de una aplicación autenticadora al iniciar sesión."
 
 msgid "Add any notes about your decision..."
 msgstr "Agregue notas sobre su decisión..."
@@ -8931,7 +8931,7 @@ msgid "Map Lines Now"
 msgstr "Mapear líneas ahora"
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
-msgstr "Asigna tu plan de cuentas al del proveedor. Las cuentas de contabilización predeterminada y de gastos están marcadas como Obligatorias; los diarios contabilizados se envían utilizando el código de cuenta asignado del proveedor."
+msgstr "Asigne su Plan de cuentas al del proveedor. Las cuentas predeterminadas de contabilización y de gasto están marcadas como Requeridas; los asientos contabilizados se impulsan utilizando el código de cuenta del proveedor asignado."
 
 msgid "Map your current process, systems, and data"
 msgstr "Mapea tu proceso actual, sistemas y datos"
@@ -9786,7 +9786,7 @@ msgid "No Access"
 msgstr "Sin acceso"
 
 msgid "No accounts match your search"
-msgstr "Ninguna cuenta coincide con tu búsqueda"
+msgstr "Ninguna cuenta coincide con su búsqueda"
 
 msgid "No action needed"
 msgstr "Sin acción necesaria"
@@ -14350,14 +14350,14 @@ msgid "Stripe emails the invoice to the customer, so an address is required. Thi
 msgstr "Stripe envía la factura al cliente por correo electrónico, por lo que se requiere una dirección. Esta también se guardará en el contacto en Carbon."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe aún no tiene un cliente para este cliente de Carbon. La contabilización creará uno en tu cuenta conectada."
+msgstr "Stripe aún no tiene un cliente para este cliente de Carbon. La contabilización creará uno en su cuenta conectada."
 msgstr "Fecha de Vencimiento de Stripe"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 msgstr "Stripe envía la factura por correo electrónico al cliente, por lo que se requiere una dirección. Esto también se guardará en el contacto en Carbon."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe aún no tiene un cliente para este cliente de Carbon. Al publicar, se creará uno en tu cuenta conectada."
+msgstr "Stripe aún no tiene un cliente para este cliente de Carbon. La contabilización creará uno en su cuenta conectada."
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Estilo de salida de kanban para mostrar en la tabla Kanban"

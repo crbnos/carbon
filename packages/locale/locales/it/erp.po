@@ -3584,7 +3584,7 @@ msgid "Control how operators pick material and track time on the shop floor."
 msgstr "Controlla come gli operatori prelevano il materiale e tracciano il tempo in officina."
 
 msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
-msgstr "Controlla se gli ID degli articoli (parti, materiali, consumabili, strumenti e servizi) possono contenere caratteri minuscoli."
+msgstr "Controlla se gli ID articolo (componenti, materiali, materiali di consumo, utensili e servizi) possono contenere caratteri minuscoli."
 
 msgid "Controller, Accountant"
 msgstr "Controllore, Contabile"
@@ -8933,7 +8933,7 @@ msgid "Map Lines Now"
 msgstr "Mappa Righe Ora"
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
-msgstr "Associa il tuo piano dei conti con quello del fornitore. I conti di registrazione predefinita e i conti spese sono contrassegnati come Obbligatori; i diari contabili registrati vengono inviati utilizzando il codice account del fornitore mappato."
+msgstr "Mappa il tuo piano dei conti a quello del provider. I conti predefiniti di registrazione e i conti di spesa sono contrassegnati come richiesti; le prime note registrate vengono inviate utilizzando il codice conto provider mappato."
 
 msgid "Map your current process, systems, and data"
 msgstr "Mappa il tuo processo attuale, i sistemi e i dati"

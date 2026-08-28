@@ -3588,7 +3588,7 @@ msgid "Control how operators pick material and track time on the shop floor."
 msgstr "Operatörlerin malzeme nasıl seçtiğini ve atölye katında zamanı nasıl takip ettiğini kontrol edin."
 
 msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
-msgstr "Ürün kimliklerinin (parçalar, malzemeler, tüketilebilir ürünler, araçlar ve hizmetler) küçük harf karakterler içerebilir olup olmadığını kontrol edin."
+msgstr "Stok kartı ID'lerinin (parçalar, malzeme, sarf malzemeleri, takımlar ve hizmetler) küçük harf içerebilmesini kontrol edin."
 
 msgid "Controller, Accountant"
 msgstr "Kontrolör, Muhasebeci"
@@ -8935,7 +8935,7 @@ msgid "Map Lines Now"
 msgstr "Satırları Şimdi Eşle"
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
-msgstr "Muhasebe planınızı sağlayıcıya eşleştirin. Deftere Nakil-varsayılan ve gider hesapları Gerekli olarak işaretlenmiştir; deftere nakledilen günlükler eşleştirilen sağlayıcı hesap kodunu kullanarak gönderilir."
+msgstr "Hesap planınızı sağlayıcıya eşleyin. Muhasebeleştirme varsayılanı ve gider hesapları Gerekli olarak işaretlenmiştir; muhasebeleştirilmiş muhasebe fişleri eşlenen sağlayıcı hesap kodunu kullanarak itilir."
 
 msgid "Map your current process, systems, and data"
 msgstr "Mevcut sürecinizi, sistemlerinizi ve verilerinizi eşleyin"
@@ -14344,23 +14344,23 @@ msgid "Stripe already has a customer with this email"
 msgstr "Stripe'ın zaten bu e-postaya sahip bir müşterisi var"
 
 msgid "Stripe Due Date"
-msgstr "Stripe Son tarihi"
+msgstr "Stripe Son Tarihi"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 msgstr "Stripe faturayı müşteriye e-posta ile gönderir, bu nedenle bir adres gereklidir. Bu, Carbon'daki ilgili kişiye de kaydedilecektir."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe'ın bu Carbon müşterisi için henüz bir müşterisi yok. Muhasebeleştirme, bağlı hesabınızda bir tane oluşturacaktır."
+msgstr "Bu Carbon müşterisi için Stripe'da henüz müşteri yok. Muhasebeleştirme, bağlı hesabınızda bir tane oluşturacak."
 msgstr "Stripe'da zaten bu e-postaya sahip bir müşteri var"
 
 msgid "Stripe Due Date"
-msgstr "Stripe Vade Tarihi"
+msgstr "Stripe Son Tarihi"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 msgstr "Stripe faturayı müşteriye e-postayla gönderir, bu nedenle bir adres gereklidir. Bu, Carbon'daki ilgili kişiye de kaydedilecek."
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe'da henüz bu Carbon müşterisi için bir müşteri yok. Gönderme, bağlı hesabınızda bir tane oluşturacak."
+msgstr "Bu Carbon müşterisi için Stripe'da henüz müşteri yok. Muhasebeleştirme, bağlı hesabınızda bir tane oluşturacak."
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Kanban tablosunda gösterilecek kanban çıktısı stili"

@@ -3581,7 +3581,7 @@ msgid "Control how operators pick material and track time on the shop floor."
 msgstr "नियंत्रित करें कि ऑपरेटर शॉप फ्लोर पर सामग्री कैसे चुनते हैं और समय कैसे ट्रैक करते हैं।"
 
 msgid "Control whether item IDs (parts, materials, consumables, tools, and services) may contain lowercase characters."
-msgstr "नियंत्रित करें कि क्या आइटम आईडी (भाग, सामग्री, उपभोग्य सामग्री, उपकरण, और सेवाएं) लोअरकेस वर्ण हो सकते हैं।"
+msgstr "नियंत्रित करें कि क्या आइटम ID (पार्ट्स, सामग्री, उपभोग्य सामग्री, टूल और सेवा) में लोअरकेस वर्ण हो सकते हैं।"
 
 msgid "Controller, Accountant"
 msgstr "नियंत्रक, लेखाकार"
@@ -8930,7 +8930,7 @@ msgid "Map Lines Now"
 msgstr "अभी लाइनें मैप करें"
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
-msgstr "अपने खाता चार्ट को प्रदाता के साथ मैप करें। पोस्टिंग-डिफ़ॉल्ट और व्यय खाते आवश्यक के रूप में चिह्नित हैं; पोस्ट किए गए जर्नल मैप किए गए प्रदाता खाता कोड का उपयोग करके पुश किए जाते हैं।"
+msgstr "अपने खातों का चार्ट को प्रदाता के साथ मैप करें। पोस्टिंग-डिफ़ॉल्ट और व्यय खाते आवश्यक के रूप में चिह्नित हैं; पोस्ट किए गए जर्नल मैप किए गए प्रदाता खाता कोड का उपयोग करके पुश किए जाते हैं।"
 
 msgid "Map your current process, systems, and data"
 msgstr "अपनी वर्तमान प्रक्रिया, सिस्टम और डेटा को मैप करें"
@@ -9785,7 +9785,7 @@ msgid "No Access"
 msgstr "कोई एक्सेस नहीं"
 
 msgid "No accounts match your search"
-msgstr "कोई खाते आपकी खोज से मेल नहीं खाते"
+msgstr "कोई खाता आपकी खोज से मेल नहीं खाता"
 
 msgid "No action needed"
 msgstr "कोई कार्रवाई की आवश्यकता नहीं है"
@@ -14342,17 +14342,17 @@ msgid "Stripe emails the invoice to the customer, so an address is required. Thi
 msgstr "Stripe चालान को ग्राहक को ईमेल करता है, इसलिए एक पता आवश्यक है। यह Carbon में संपर्क के लिए भी सहेजा जाएगा।"
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe के पास इस Carbon ग्राहक के लिए अभी तक कोई ग्राहक नहीं है। पोस्टिंग आपके जुड़े खाते पर एक बनाएगी।"
+msgstr "Stripe के पास इस Carbon ग्राहक के लिए अभी कोई ग्राहक नहीं है। पोस्टिंग आपके जुड़े खाते पर एक नया ग्राहक बना देगी।"
 msgstr "Stripe के पास पहले से इस ईमेल वाला एक ग्राहक है"
 
 msgid "Stripe Due Date"
-msgstr "Stripe देय तिथि"
+msgstr "Stripe नियत तिथि"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 msgstr "Stripe ग्राहक को चालान ईमेल करता है, इसलिए एक पता आवश्यक है। यह Carbon में संपर्क के लिए भी सहेजा जाएगा।"
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe के पास इस Carbon ग्राहक के लिए अभी कोई ग्राहक नहीं है। पोस्ट करने से आपके जुड़े खाते पर एक बनाया जाएगा।"
+msgstr "Stripe के पास इस Carbon ग्राहक के लिए अभी कोई ग्राहक नहीं है। पोस्टिंग आपके जुड़े खाते पर एक नया ग्राहक बना देगी।"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "कानबान तालिका में दिखाने के लिए कानबान आउटपुट की शैली"

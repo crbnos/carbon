@@ -1088,7 +1088,7 @@ msgid "Add Affected Item"
 msgstr "添加受影响项目"
 
 msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
-msgstr "通过在登录时要求来自身份验证应用的代码来增加额外的安全层。"
+msgstr "通过在登录时要求身份验证器应用的代码来添加额外的安全层级。"
 
 msgid "Add any notes about your decision..."
 msgstr "添加关于您的决定的任何备注..."
@@ -8935,7 +8935,7 @@ msgid "Map Lines Now"
 msgstr "立即映射行"
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
-msgstr "将您的科目表映射到提供商的科目表。默认过账科目和费用科目标记为必需；已过账日记账使用映射的提供商科目代码进行推送。"
+msgstr "将您的会计科目表映射到提供商的。过账默认账户和费用账户标记为必需；已过账凭证使用映射的提供商账户代码进行推送。"
 
 msgid "Map your current process, systems, and data"
 msgstr "映射您当前的流程、系统和数据"
@@ -11619,7 +11619,7 @@ msgid "Protect training time and attend"
 msgstr "保护培训时间并参加"
 
 msgid "Protect your company with advanced security controls like two-factor authentication enforcement."
-msgstr "使用双因素身份验证等高级安全控制措施保护您的公司。"
+msgstr "通过双因素认证强制执行等高级安全控制来保护您的公司。"
 
 msgid "Protects your company's data"
 msgstr "保护您公司的数据"
@@ -14347,7 +14347,7 @@ msgid "Stripe emails the invoice to the customer, so an address is required. Thi
 msgstr "Stripe 会向客户发送发票电子邮件，因此需要地址。这也将保存到 Carbon 中的联系人。"
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe 还没有此 Carbon 客户的客户。过账将在您的关联账户上创建一个。"
+msgstr "Stripe还没有该Carbon客户对应的客户。过账将在您的连接账户上创建一个。"
 msgstr "Stripe 已有使用此电子邮件的客户"
 
 msgid "Stripe Due Date"
@@ -14357,7 +14357,7 @@ msgid "Stripe emails the invoice to the customer, so an address is required. Thi
 msgstr "Stripe 将发票发送给客户，因此需要地址。这也将保存到 Carbon 中的联系人。"
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
-msgstr "Stripe 还没有该 Carbon 客户的客户。发布将在您连接的帐户上创建一个。"
+msgstr "Stripe还没有该Carbon客户对应的客户。过账将在您的连接账户上创建一个。"
 
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "看板输出在看板表中显示的样式"
@@ -16219,7 +16219,7 @@ msgid "Two-factor authentication"
 msgstr "双因素认证"
 
 msgid "Two-Factor Authentication"
-msgstr "双因素身份验证"
+msgstr "双因素认证"
 
 msgid "Two-factor authentication disabled"
 msgstr "双因素认证已禁用"
