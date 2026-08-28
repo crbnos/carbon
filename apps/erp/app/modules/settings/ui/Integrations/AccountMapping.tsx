@@ -1,6 +1,5 @@
 import { Combobox, Submit, ValidatedForm } from "@carbon/form";
 import {
-  Badge,
   Button,
   Drawer,
   DrawerBody,
@@ -111,6 +110,40 @@ const ACCOUNT_CLASS_ORDER = [
   "Expense"
 ];
 const OTHER_CLASS = "Other";
+
+/**
+ * Small status pill for an account row — a Vercel-style dot + label. Neutral
+ * (monochrome) marks a required posting-default account; warning (amber) marks
+ * an account currently blocking a sync.
+ */
+function AccountRowBadge({
+  tone,
+  children
+}: {
+  tone: "neutral" | "warning";
+  children: ReactNode;
+}) {
+  const warning = tone === "warning";
+  return (
+    <span
+      className={
+        warning
+          ? "inline-flex shrink-0 items-center gap-1.5 rounded-full border border-amber-500/25 bg-amber-500/5 py-0.5 pr-2 pl-1.5 text-[0.6875rem] font-medium text-amber-700 dark:text-amber-400"
+          : "inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border py-0.5 pr-2 pl-1.5 text-[0.6875rem] font-medium text-muted-foreground"
+      }
+    >
+      <span
+        aria-hidden
+        className={
+          warning
+            ? "size-1.5 rounded-full bg-amber-500"
+            : "size-1.5 rounded-full bg-muted-foreground/40"
+        }
+      />
+      {children}
+    </span>
+  );
+}
 
 export function AccountMapping({
   tabs,
@@ -300,13 +333,13 @@ export function AccountMapping({
               canUpdate={canUpdate}
               badge={
                 account.blocking ? (
-                  <Badge variant="orange">
+                  <AccountRowBadge tone="warning">
                     <Trans>Blocking sync</Trans>
-                  </Badge>
+                  </AccountRowBadge>
                 ) : (
-                  <Badge variant="gray">
+                  <AccountRowBadge tone="neutral">
                     <Trans>Required</Trans>
-                  </Badge>
+                  </AccountRowBadge>
                 )
               }
               rowRef={setRowRef(account.id)}
@@ -339,9 +372,9 @@ export function AccountMapping({
               canUpdate={canUpdate}
               badge={
                 requiredSet.has(mapping.accountId) ? (
-                  <Badge variant="gray">
+                  <AccountRowBadge tone="neutral">
                     <Trans>Required</Trans>
-                  </Badge>
+                  </AccountRowBadge>
                 ) : undefined
               }
               rowRef={setRowRef(mapping.accountId)}
@@ -419,9 +452,9 @@ export function AccountMapping({
                             canUpdate={canUpdate}
                             badge={
                               requiredSet.has(account.id) ? (
-                                <Badge variant="gray">
+                                <AccountRowBadge tone="neutral">
                                   <Trans>Required</Trans>
-                                </Badge>
+                                </AccountRowBadge>
                               ) : undefined
                             }
                             rowRef={setRowRef(account.id)}
