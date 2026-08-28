@@ -9387,6 +9387,9 @@ msgstr "Intégration CAO native (par exemple Onshape)"
 msgid "Navigate"
 msgstr "Naviguer"
 
+msgid "Navigation"
+msgstr ""
+
 msgid "NCRs by Type"
 msgstr "NCRs par type"
 

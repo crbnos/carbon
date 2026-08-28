@@ -592,6 +592,40 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const integration = availableIntegrations.find((i) => i.id === integrationId);
   if (!integration) throw new Error("Integration not found");
 
+  // Server-fetched options for "options"-type settings fields. Ramp populates
+  // its Account-group selects from the chart of accounts. These are needed on
+  // the INSTALL form (before any companyIntegration row exists), so they must be
+  // computed BEFORE the not-installed early return below — otherwise the account
+  // pickers render "No options available" for a brand-new install.
+  const dynamicOptions: Record<
+    string,
+    Array<{ value: string; label: string; description?: string }>
+  > = {};
+
+  // Ramp's account-mapping fields choose from the company's leaf accounts,
+  // partitioned by account class. Options over CHOICE_CARD_MAX_OPTIONS render
+  // as a Select automatically.
+  if (integrationId === "ramp") {
+    const accountsResult = await getAccountsList(client, companyGroupId, {
+      isGroup: false
+    });
+    const accounts = accountsResult.data ?? [];
+    const optionsForClass = (
+      accountClass: Database["public"]["Enums"]["glAccountClass"]
+    ) =>
+      accounts
+        .filter((account) => account.class === accountClass)
+        .map((account) => ({
+          value: account.id,
+          label: `${account.number} ${account.name}`
+        }));
+    const assetOptions = optionsForClass("Asset");
+    dynamicOptions.cardLiabilityAccountId = optionsForClass("Liability");
+    dynamicOptions.statementBankAccountId = assetOptions;
+    dynamicOptions.cashbackIncomeAccountId = optionsForClass("Revenue");
+    dynamicOptions.reimbursementBankAccountId = assetOptions;
+  }
+
   const integrationData = await getIntegration(
     client,
     integrationId,
@@ -602,7 +636,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     return {
       installed: false,
       metadata: {},
-      dynamicOptions: {},
+      dynamicOptions,
       syncActivity: null,
       accountMapping: null,
       postingSync: null,
@@ -753,37 +787,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     flattenedMetadata = unfoldRampCredentials(flattenedMetadata);
   }
 
-  // Server-fetched options for "options"-type settings fields. Ramp populates
-  // its Account-group selects from the chart of accounts below; IntegrationForm
-  // otherwise accepts this generically for a provider-fetched choice list.
-  const dynamicOptions: Record<
-    string,
-    Array<{ value: string; label: string; description?: string }>
-  > = {};
-
-  // Ramp's account-mapping fields choose from the company's leaf accounts,
-  // partitioned by account class. Options over CHOICE_CARD_MAX_OPTIONS render
-  // as a Select automatically.
-  if (integrationId === "ramp") {
-    const accountsResult = await getAccountsList(client, companyGroupId, {
-      isGroup: false
-    });
-    const accounts = accountsResult.data ?? [];
-    const optionsForClass = (
-      accountClass: Database["public"]["Enums"]["glAccountClass"]
-    ) =>
-      accounts
-        .filter((account) => account.class === accountClass)
-        .map((account) => ({
-          value: account.id,
-          label: `${account.number} ${account.name}`
-        }));
-    const assetOptions = optionsForClass("Asset");
-    dynamicOptions.cardLiabilityAccountId = optionsForClass("Liability");
-    dynamicOptions.statementBankAccountId = assetOptions;
-    dynamicOptions.cashbackIncomeAccountId = optionsForClass("Revenue");
-    dynamicOptions.reimbursementBankAccountId = assetOptions;
-  }
+  // (Ramp's account-mapping `dynamicOptions` are computed above, before the
+  // not-installed early return, so the install form has them too.)
 
   // Provider chart of accounts for the Account Mapping tab. Xero manual
   // journals reference accounts by code, so only coded accounts are

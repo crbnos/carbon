@@ -226,11 +226,13 @@ function SetupInstructions({ companyId }: { companyId: string }) {
           </span>{" "}
           Paste the Client ID and Client Secret into the fields below and set{" "}
           <span className="font-medium">Environment</span> to match your Ramp
-          app (Sandbox → demo-api.ramp.com, Production → api.ramp.com). Ramp's{" "}
-          <span className="font-medium">Redirect URI</span> and{" "}
-          <span className="font-medium">Allowed origins</span> are only used by
-          the browser OAuth flow, which Carbon doesn't use — leave them blank
-          (or set them to this Carbon URL if Ramp requires a value).
+          app (Sandbox → demo-api.ramp.com, Production → api.ramp.com). Carbon
+          connects <span className="font-medium">server-to-server</span> (client
+          credentials), so Ramp's{" "}
+          <span className="font-medium">Redirect URI</span> isn't used — leave
+          it blank, or set it to this Carbon URL if the form requires a value.
+          If Ramp asks for <span className="font-medium">Allowed origins</span>{" "}
+          or to verify a domain, use this Carbon URL.
         </li>
         <li>
           <span className="font-medium text-foreground">

@@ -9387,6 +9387,9 @@ msgstr "ネイティブCAD統合（例：Onshape）"
 msgid "Navigate"
 msgstr "ナビゲート"
 
+msgid "Navigation"
+msgstr ""
+
 msgid "NCRs by Type"
 msgstr "タイプ別NCR"
 

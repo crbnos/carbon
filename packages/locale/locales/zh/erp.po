@@ -9387,6 +9387,9 @@ msgstr "原生 CAD 集成（例如 Onshape）"
 msgid "Navigate"
 msgstr "导航"
 
+msgid "Navigation"
+msgstr ""
+
 msgid "NCRs by Type"
 msgstr "按类型分类的不符合项"
 

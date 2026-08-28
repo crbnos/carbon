@@ -9387,6 +9387,9 @@ msgstr "Yerel CAD entegrasyonu (örneğin Onshape)"
 msgid "Navigate"
 msgstr "Gözat"
 
+msgid "Navigation"
+msgstr ""
+
 msgid "NCRs by Type"
 msgstr "Tür Tipine Göre DÖF"
 
