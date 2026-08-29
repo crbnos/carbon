@@ -338,10 +338,6 @@ function SsoDomainRow({
   );
 }
 
-// Temporarily hide the Single Sign-On section from Settings → Security.
-// Set to true to restore it — the loader, action, and SSO UI remain intact.
-const SHOW_SSO_SETTINGS = false;
-
 export default function Security() {
   const { ssoEnabled, connection, domains, acsUrl, metadataUrl } =
     useLoaderData<typeof loader>();
@@ -465,7 +461,7 @@ export default function Security() {
           twoFactorCard
         )}
 
-        {SHOW_SSO_SETTINGS && ssoEnabled && (
+        {ssoEnabled && (
           <>
             <div className="flex items-end justify-between gap-4 w-full">
               <div className="flex flex-col gap-1">
