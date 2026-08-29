@@ -9244,6 +9244,9 @@ msgstr "Метрические единицы отключены"
 msgid "Metric units are enabled"
 msgstr "Метрические единицы включены"
 
+msgid "MFA"
+msgstr "MFA"
+
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "Условие середины месяца / середины квартала / половины года, определяющее вычет первого года."
 
@@ -12541,6 +12544,9 @@ msgstr "Запрошенная дата"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Требовать 6-значный код из приложения-аутентификатора при входе."
+
+msgid "Require a second factor when members sign in to this company."
+msgstr "Требовать второй фактор при входе сотрудников в эту организацию."
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Требовать приложение аутентификатора перед тем как кто-либо сможет открыть эту организацию. Их другие организации не затронуты. Посетите страницу <0>учетных записей сотрудников</0>, чтобы увидеть статус каждого человека."

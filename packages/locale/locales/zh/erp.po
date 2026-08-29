@@ -9244,6 +9244,9 @@ msgstr "公制单位已禁用"
 msgid "Metric units are enabled"
 msgstr "公制单位已启用"
 
+msgid "MFA"
+msgstr "MFA"
+
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "决定首年扣除的月中/季中/半年约定俗成的方法。"
 
@@ -12541,6 +12544,9 @@ msgstr "要求日期"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "登录时需要来自身份验证器应用的 6 位数字代码。"
+
+msgid "Require a second factor when members sign in to this company."
+msgstr "成员登录此公司时需要第二因素验证"
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "需要身份验证应用程序才能打开此公司。他们的其他公司不受影响。访问<0>员工账户页面</0>以查看每个人的状态。"

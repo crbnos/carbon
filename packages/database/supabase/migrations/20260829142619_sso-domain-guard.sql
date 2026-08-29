@@ -15,24 +15,30 @@
 -- verified-only guard would break that happy path. Reserved domains can never
 -- obtain a claim row via the app validator (PUBLIC_EMAIL_DOMAINS), and the
 -- reserved check below makes that hold against direct DB writes too.
+--
+-- The claim must also belong to the connection behind NEW."sso_provider_id", not
+-- just match the domain (CWE-863): a domain check alone would let a writer route
+-- a domain one company DNS-proved to a DIFFERENT company's IdP. The trigger joins
+-- the ssoDomain claim to its ssoConnection and checks the provider id matches.
 
 -- Global reserved-domain list. NOT company-scoped: a reserved domain can never be
 -- claimed by anyone. Kept in sync with PUBLIC_EMAIL_DOMAINS in
--- apps/erp/app/modules/settings/settings.models.ts, plus Carbon's own domains
--- (staff configure those directly, bypassing the tenant flow).
+-- apps/erp/app/modules/settings/settings.models.ts.
 CREATE TABLE IF NOT EXISTS "ssoReservedDomain" (
   "domain" TEXT PRIMARY KEY
 );
 
 INSERT INTO "ssoReservedDomain" ("domain") VALUES
-  -- Consumer mailbox providers (mirror PUBLIC_EMAIL_DOMAINS)
+  -- Consumer mailbox providers (mirror PUBLIC_EMAIL_DOMAINS). These are shared
+  -- across unrelated people, so DNS verification cannot prove single ownership —
+  -- they must never be claimable. Carbon's OWN domains are deliberately NOT here:
+  -- a domain a company controls can be proven via the DNS-TXT challenge and set up
+  -- for SSO like any other, so a blanket reservation was only friction.
   ('gmail.com'), ('googlemail.com'), ('outlook.com'), ('hotmail.com'),
   ('live.com'), ('msn.com'), ('yahoo.com'), ('ymail.com'), ('icloud.com'),
   ('me.com'), ('mac.com'), ('aol.com'), ('proton.me'), ('protonmail.com'),
   ('pm.me'), ('gmx.com'), ('gmx.net'), ('mail.com'), ('zoho.com'),
-  ('yandex.com'), ('qq.com'), ('163.com'), ('126.com'),
-  -- Carbon's own domains
-  ('carbon.ms'), ('carbon.us.org'), ('carbonms.onmicrosoft.com')
+  ('yandex.com'), ('qq.com'), ('163.com'), ('126.com')
 ON CONFLICT ("domain") DO NOTHING;
 
 ALTER TABLE "public"."ssoReservedDomain" ENABLE ROW LEVEL SECURITY;
@@ -68,13 +74,26 @@ BEGIN
       'auth.sso_domains insert blocked: % is a reserved domain', NEW."domain";
   END IF;
 
+  -- Bind the claim to the PROVIDER, not just the domain: the ssoDomain claim
+  -- must belong to the ssoConnection that owns NEW."sso_provider_id". A bare
+  -- domain check would let a writer register a claimed domain under an unrelated
+  -- company's provider (CWE-863) — the claim proving DNS ownership sits with one
+  -- company/connection, but the routing row would point at another's IdP. The
+  -- claim may still be 'pending' here: verifySsoDomain syncs GoTrue (writing
+  -- auth.sso_domains) before it flips the ssoDomain row to 'verified', by a
+  -- deliberate lockout-avoidance ordering, so we require a matching claim of ANY
+  -- status — only that it belongs to this provider's connection.
   IF NOT EXISTS (
-    SELECT 1 FROM public."ssoDomain"
-    WHERE lower("domain") = lower(NEW."domain")
+    SELECT 1
+    FROM public."ssoDomain" d
+    JOIN public."ssoConnection" c
+      ON c."id" = d."connectionId" AND c."companyId" = d."companyId"
+    WHERE lower(d."domain") = lower(NEW."domain")
+      AND c."providerId" = NEW."sso_provider_id"::text
   ) THEN
     RAISE EXCEPTION
-      'auth.sso_domains insert blocked: no ssoDomain claim exists for %',
-      NEW."domain";
+      'auth.sso_domains insert blocked: no ssoDomain claim for % under provider %',
+      NEW."domain", NEW."sso_provider_id";
   END IF;
 
   RETURN NEW;

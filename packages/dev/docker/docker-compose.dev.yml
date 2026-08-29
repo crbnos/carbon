@@ -83,7 +83,7 @@ services:
       GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:postgres@postgres:5432/postgres
       GOTRUE_SITE_URL: ${ERP_URL}
       GOTRUE_URI_ALLOW_LIST: ${ERP_URL},${ERP_URL}/callback,${MES_URL},${MES_URL}/callback,${GTM_URL}
-      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_DISABLE_SIGNUP: ${GOTRUE_DISABLE_SIGNUP:-false}
       GOTRUE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
       GOTRUE_JWT_EXP: 3600
       GOTRUE_SECURITY_REFRESH_TOKEN_REUSE_INTERVAL: 10

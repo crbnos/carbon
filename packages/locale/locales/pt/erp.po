@@ -9244,6 +9244,9 @@ msgstr "Unidades métricas desativadas"
 msgid "Metric units are enabled"
 msgstr "Unidades métricas ativadas"
 
+msgid "MFA"
+msgstr "MFA"
+
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "Convenção de meio de mês / meio de trimestre / meio de ano que determina a dedução do primeiro ano."
 
@@ -12541,6 +12544,9 @@ msgstr "Data Solicitada"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Exigir um código de 6 dígitos de uma aplicação autenticadora ao iniciar sessão."
+
+msgid "Require a second factor when members sign in to this company."
+msgstr "Exigir um segundo fator quando membros fazem login nesta empresa."
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Requer um aplicativo autenticador antes de qualquer pessoa poder abrir esta empresa. Suas outras empresas não são afetadas. Visite a <0>página de contas de funcionários</0> para ver o status de cada pessoa."

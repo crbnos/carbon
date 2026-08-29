@@ -433,6 +433,17 @@ export default function Security() {
             </Trans>
           </p>
         </div>
+
+        <div className="flex flex-col gap-1 w-full">
+          <Heading size="h3">
+            <Trans>MFA</Trans>
+          </Heading>
+          <p className="text-sm text-muted-foreground text-pretty max-w-xl">
+            <Trans>
+              Require a second factor when members sign in to this company.
+            </Trans>
+          </p>
+        </div>
         {mfaGated ? (
           <UpgradeOverlaySection
             icon={<LuShieldCheck className="size-6 text-muted-foreground" />}
@@ -625,7 +636,7 @@ export default function Security() {
                       resetAfterSubmit
                     >
                       <Hidden name="intent" value="addDomain" />
-                      <HStack className="w-full items-end">
+                      <div className="flex w-full items-end gap-2">
                         <div className="flex-1">
                           <Input
                             name="domain"
@@ -636,7 +647,7 @@ export default function Security() {
                         <Submit isDisabled={!canEdit} withBlocker={false}>
                           <Trans>Add</Trans>
                         </Submit>
-                      </HStack>
+                      </div>
                     </ValidatedForm>
                   </VStack>
                 </CardContent>

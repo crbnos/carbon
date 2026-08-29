@@ -9244,6 +9244,9 @@ msgstr "मीट्रिक इकाइयाँ अक्षम हैं"
 msgid "Metric units are enabled"
 msgstr "मीट्रिक इकाइयाँ सक्षम हैं"
 
+msgid "MFA"
+msgstr "MFA"
+
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "मध्य-महीना / मध्य-त्रैमासिक / आधा-वर्ष सम्मेलन जो पहले वर्ष की कटौती निर्धारित करता है।"
 
@@ -12541,6 +12544,9 @@ msgstr "अनुरोधित तिथि"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "साइन इन करते समय ऑथेंटिकेटर ऐप से 6-अंकीय कोड की आवश्यकता है।"
+
+msgid "Require a second factor when members sign in to this company."
+msgstr "जब सदस्य इस कंपनी में साइन इन करते हैं तो एक दूसरे कारक की आवश्यकता है।"
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "किसी को भी इस कंपनी को खोलने से पहले एक प्रमाणकर्ता ऐप की आवश्यकता है। उनकी अन्य कंपनियां प्रभावित नहीं हैं। प्रत्येक व्यक्ति की स्थिति देखने के लिए <0>कर्मचारी खातों पृष्ठ</0> पर जाएं।"

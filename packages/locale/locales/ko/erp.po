@@ -9244,6 +9244,9 @@ msgstr "미터법 단위가 비활성화됨"
 msgid "Metric units are enabled"
 msgstr "미터법 단위가 활성화됨"
 
+msgid "MFA"
+msgstr "MFA"
+
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "1차년도 공제액을 결정하는 월중/분기중/반기 컨벤션입니다."
 
@@ -12541,6 +12544,9 @@ msgstr "요청일"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "로그인 시 인증 앱의 6자리 코드를 입력하세요."
+
+msgid "Require a second factor when members sign in to this company."
+msgstr "회사에 로그인할 때 구성원들이 두 번째 인증 요소를 사용하도록 요구"
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "이 회사를 열기 전에 인증자 앱을 요구합니다. 다른 회사는 영향을 받지 않습니다. <0>직원 계정 페이지</0>를 방문하여 각 사람의 상태를 확인하세요."

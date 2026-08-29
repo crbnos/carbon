@@ -9244,6 +9244,9 @@ msgstr "Metrik birimleri devre dışı"
 msgid "Metric units are enabled"
 msgstr "Metrik birimler etkinleştirilmiş"
 
+msgid "MFA"
+msgstr "MFA"
+
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "Ay ortası / çeyrek ortası / yarı yıl kuralı, ilk yıl kesintisini belirler."
 
@@ -12541,6 +12544,9 @@ msgstr "Talep Edilen Tarih"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Oturum açarken kimlik doğrulayıcı uygulamasından 6 haneli kod isteyini."
+
+msgid "Require a second factor when members sign in to this company."
+msgstr "Bu şirkete giriş yaparken üyelerin ikinci bir faktör kullanmasını zorunlu tutun."
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Bu şirketi açabilmek için doğrulayıcı uygulamayı gerektir. Diğer şirketleri etkilenmez. Her kişinin durumunu görmek için <0>çalışan hesapları sayfasını</0> ziyaret edin."

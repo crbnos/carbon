@@ -9244,6 +9244,9 @@ msgstr "メートル法の単位は無効です"
 msgid "Metric units are enabled"
 msgstr "メートル法単位が有効です"
 
+msgid "MFA"
+msgstr "MFA"
+
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "初年度控除を決定する中月/四半期中/半年の慣例。"
 
@@ -12541,6 +12544,9 @@ msgstr "希望納期"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "サインイン時に認証器アプリから6桁のコードが必要です。"
+
+msgid "Require a second factor when members sign in to this company."
+msgstr "メンバーがこの会社にサインインする際に、セカンドファクタを必須にする。"
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "このアプリケーション認証器を要求して、誰もがこの会社を開く前に認証を要求します。他の会社は影響を受けません。<0>従業員アカウントページ</0>にアクセスして、各個人のステータスを確認してください。"

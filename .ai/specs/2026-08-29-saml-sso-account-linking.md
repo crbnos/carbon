@@ -92,7 +92,7 @@ with this section, **this section wins**.
 
 ## 1. Observed failure
 
-```
+```json
 {"error":"422: Signups not allowed for this instance",
  "path":"/sso/saml/acs","status":303,"time":"2026-08-29T04:53:13Z"}
 ```
@@ -202,20 +202,31 @@ silently trusted forever.
 
 ### 5.3 Reserved domains
 
-A domain on the reserved list can never be claimed:
+A domain on the reserved list can never be claimed — **consumer mailbox providers only**:
+`gmail.com`, `outlook.com`, `hotmail.com`, `yahoo.com`, `icloud.com`, `proton.me`, … A shared
+domain is used by unrelated people, so a DNS challenge cannot prove single ownership; it must
+never be claimable.
 
-- Carbon's own: `acme.com`, `acme.onmicrosoft.com`, `acme-app.com`
-- Consumer mailbox providers: `gmail.com`, `outlook.com`, `hotmail.com`, `yahoo.com`, `icloud.com`,
-  `proton.me`, … — a shared domain would link unrelated strangers to one IdP.
-
-Carbon's own domains are configured by staff directly, bypassing the tenant-facing flow.
+The vendor's own domains are **not** reserved. A domain a company actually controls can be proven
+through the same DNS-TXT challenge and set up for SSO like any other — a blanket reservation only
+added friction (and the DNS challenge, not a hardcoded list, is the real ownership gate). The
+reserved list is seeded in the `ssoReservedDomain` table (§5.4), mirroring `PUBLIC_EMAIL_DOMAINS`.
 
 ### 5.4 Defense in depth
 
 App-level gating is not enough on its own, since `auth.sso_domains` can also be written from Studio
-or a migration. Add a `BEFORE INSERT` trigger on `auth.sso_domains` that raises unless a verified,
-non-reserved `ssoDomainClaim` exists — or an explicit staff override flag is set. The gate then holds
-regardless of which path writes the row.
+or a migration. A `BEFORE INSERT` trigger on `auth.sso_domains` (`enforce_sso_domain_claim`) raises
+unless a non-reserved `ssoDomain` claim exists for the domain **AND that claim belongs to the
+connection behind `NEW."sso_provider_id"`** — or an explicit staff override flag
+(`app.sso_domain_override`) is set. The gate then holds regardless of which path writes the row.
+
+As shipped it requires a claim of **any** status, not `verified`: `verifySsoDomain` calls GoTrue
+(which writes `auth.sso_domains`) while the `ssoDomain` row is still `pending`, by a deliberate
+lockout-avoidance ordering, so a verified-only guard would refuse the happy path. The
+provider-binding join (`ssoDomain` → `ssoConnection` on `connectionId`/`companyId`, then
+`ssoConnection."providerId" = NEW."sso_provider_id"`) is what prevents a claimed domain from being
+routed to an unrelated company's IdP (CWE-863) — `companyId` on the claim alone can't prove the
+provider belongs to the company that passed DNS verification.
 
 ### 5.5 IdP NameID requirement
 
@@ -312,8 +323,8 @@ Cascaded deletes from `auth.sso_providers` fire T4 per row, so provider deletion
 | Risk | Mitigation |
 |---|---|
 | Tenant claims a domain they don't own → takeover of every user on it | §5.2 DNS verification, enforced in-DB by §5.4 |
-| Tenant claims `acme.com` → takeover of staff across all 8 tenants | §5.3 reserved list |
-| Tenant claims a consumer domain → links unrelated strangers | §5.3 reserved list |
+| Tenant claims `acme.com` (vendor domain) → takeover of staff across all 8 tenants | §5.2 DNS verification — a tenant cannot publish the `_carbon-challenge` TXT record on a domain it does not control, so it can never verify (or register in GoTrue) a domain it doesn't own |
+| Tenant claims a consumer domain → links unrelated strangers | §5.3 reserved list (consumer providers only — a DNS challenge can't prove single ownership of a shared domain) |
 | IdP asserts an email outside its verified domain | GoTrue matches on `(provider_id, provider)`; an unlinked email yields `CreateAccount` → refused by `DISABLE_SIGNUP` |
 | Domain ownership lapses / company offboards | Scheduled re-verification; T4 on domain removal |
 | Deactivated employee retains IdP access | App already enforces `employee.active`; unchanged by this spec |

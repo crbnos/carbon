@@ -122,6 +122,36 @@ querying), and every route entry point checks it too — login buttons, the
   trigger-created `user`/`userPermission` rows (no FK cascade between the schemas),
   guarded on zero memberships — or the leftover profile trips `authIdentityExists`
   and makes the email un-invitable. MES defers first login to ERP.
+- **Pre-seeded account linking** (`provisioning.server.ts`; spec
+  `.ai/specs/2026-08-29-saml-sso-account-linking.md`): Carbon runs GoTrue with
+  `GOTRUE_DISABLE_SIGNUP=true`, so a SAML sign-in that GoTrue classifies as
+  "create a new user" is rejected (422) — the callback link above only fires once
+  a user *already* has an identity to match. The fix is to pre-seed a row in
+  `auth.identities` for the existing user so GoTrue takes its LinkAccount /
+  AccountExists branch instead. **Provider-agnostic**: the match is carried by the
+  GENERATED `email` column (`identity_data.email = lower(email)`), NOT
+  `provider_id` — GoTrue marks every SAML assertion email Verified and falls back
+  to email-column matching for EVERY successful SAML login, so it works for any
+  IdP regardless of NameID shape (Okta email vs Entra opaque pairwise id). GoTrue
+  self-heals a second row keyed on the real NameID on first login; both are torn
+  down together. Three raw-`sql` writers (pinned by `sso.server.test.ts` via a
+  capturing Kysely driver): `seedSsoIdentityForUser` (one user, idempotent
+  `ON CONFLICT (provider_id, provider) DO NOTHING`) — called best-effort/logged by
+  `seedSsoIdentityForNewUser` in all three ERP account-creation flows
+  (`users.server.ts` create{Customer,Employee,Supplier}Account); and, run from the
+  domain-claim flows, `backfillSsoIdentitiesForDomain` (verify → seed EVERY
+  existing non-SSO user on the domain) and `removeSsoIdentitiesForDomain` (unregister
+  → delete, keyed on the email column so it also removes GoTrue's self-healed
+  NameID rows). Backfill/remove are deliberately **not** `companyId`-scoped: the
+  adopted policy is that the verified domain owner controls identity for that
+  domain instance-wide (GoTrue keys SSO on domain, not company), which the
+  cross-company verified-domain exclusivity index makes safe. Pure helpers
+  `emailDomain` / `ssoProviderColumn`. A DB guard — `enforce_sso_domain_claim`
+  trigger on `auth.sso_domains` + the `ssoReservedDomain` table (migration
+  `20260829142619_sso-domain-guard.sql`) — refuses any `auth.sso_domains` insert
+  for a reserved domain or one with no Carbon-side `ssoDomain` claim, so a domain
+  cannot be registered (and thus control identity) without going through
+  verification.
 - **Require SSO** (`ssoConnection.requireSso`): `isSsoRequiredForEmail`
   (`connections.server.ts`, like all connection lookups —
   `getSsoConnectionByDomain` / `getSsoConnectionByProviderId` are the ONE copy
