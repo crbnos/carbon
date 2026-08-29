@@ -24,11 +24,28 @@ vi.mock("./ledger", () => ({
   failInterruptedSteps: vi.fn(async () => 0)
 }));
 vi.mock("./owner", () => ({
-  getOwnerClient: vi.fn(async () => ({})),
+  // The engine reads the company custom fields through this client; a bare {} has no
+  // `.from`, so the stub answers that one query with an empty list.
+  getOwnerClient: vi.fn(async () => ({
+    from: () => ({
+      select: () => ({
+        eq: () => ({ eq: async () => ({ data: [], error: null }) })
+      })
+    })
+  })),
   readOwnerPermissions: vi.fn(async () => ({})),
   hasPermission: () => true
 }));
 vi.mock("../actions", () => ({ createWorkflowServices: vi.fn() }));
+// The real module pulls in the email templates and @carbon/env; the engine only wants a URL.
+vi.mock("../../inngest/functions/notifications/content", () => ({
+  buildNotificationLink: (
+    event: string,
+    documentId: string,
+    companyId: string
+  ) =>
+    `https://erp.test/api/link?event=${event}&documentId=${documentId}&companyId=${companyId}`
+}));
 
 const { executeWorkflowRun } = await import("./execute");
 const { loadRunContext } = await import("./log");
@@ -55,7 +72,7 @@ function seed(eventId: string, definition: SeedDefinition): void {
       eventId,
       status: "Queued"
     },
-    workflowActive: true,
+    workflowPublished: true,
     companyGroupId: "cg1",
     version: definition
   });

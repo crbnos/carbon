@@ -85,3 +85,59 @@ describe("computeEventIds", () => {
     ).toEqual([]);
   });
 });
+
+describe("custom-field events", () => {
+  const update = (
+    table: string,
+    oldFields: Record<string, unknown> | undefined,
+    newFields: Record<string, unknown> | undefined
+  ) =>
+    computeEventIds({
+      table,
+      operation: "UPDATE",
+      old: { ...base, customFields: oldFields },
+      new: { ...base, customFields: newFields }
+    });
+
+  it("derives the id from the diff key", () => {
+    expect(update("purchaseOrder", { cf_1: "a" }, { cf_1: "b" })).toEqual([
+      "purchaseOrder.customFields.cf_1.changed"
+    ]);
+  });
+
+  it("emits nothing for an untouched custom field", () => {
+    expect(update("purchaseOrder", { cf_1: "a" }, { cf_1: "a" })).toEqual([]);
+  });
+
+  it("emits one id per changed field", () => {
+    expect(
+      update(
+        "purchaseOrder",
+        { cf_1: "a", cf_2: "x" },
+        { cf_1: "b", cf_2: "y" }
+      )
+    ).toEqual([
+      "purchaseOrder.customFields.cf_1.changed",
+      "purchaseOrder.customFields.cf_2.changed"
+    ]);
+  });
+
+  // Item custom fields live on the subtypes; the catalog triggers on `item`.
+  it("emits nothing for item", () => {
+    expect(update("item", { cf_1: "a" }, { cf_1: "b" })).toEqual([]);
+  });
+
+  it("puts the watched column's id first when both changed", () => {
+    expect(
+      computeEventIds({
+        table: "purchaseOrder",
+        operation: "UPDATE",
+        old: { ...base, status: "Draft", customFields: { cf_1: "a" } },
+        new: { ...base, status: "Planned", customFields: { cf_1: "b" } }
+      })
+    ).toEqual([
+      "purchaseOrder.status.changed",
+      "purchaseOrder.customFields.cf_1.changed"
+    ]);
+  });
+});

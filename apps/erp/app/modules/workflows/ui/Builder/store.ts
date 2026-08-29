@@ -51,7 +51,14 @@ export type BuilderState = {
    * alongside `liveIssues`, and absent for a step that runs once. */
   batchPlans: Record<string, BatchPlan>;
   saveState: SaveState;
-  isReadOnly: boolean;
+  /** This version is the promoted one. Behaviour edits are refused; positions are not. */
+  isVersionLocked: boolean;
+  /** The viewer holds workflows_update. */
+  canEdit: boolean;
+  /** Config, nodes, edges and expand state — everything that changes what it does. */
+  canChangeDefinition: boolean;
+  /** Layout only. Follows permission, NOT the lock: tidying a live version is allowed. */
+  canMoveNodes: boolean;
   /** The viewer owns this workflow, so they may fire a test run. */
   isOwner: boolean;
   /** The trigger node whose test-run dialog is open, or null. */
@@ -111,9 +118,13 @@ export const snapshot = (nodes: BuilderNode[], edges: BuilderEdge[]) =>
 export function createBuilderStore(initial: {
   nodes: BuilderNode[];
   edges: BuilderEdge[];
-  isReadOnly: boolean;
+  isVersionLocked: boolean;
+  canEdit: boolean;
   isOwner: boolean;
 }) {
+  const canChangeDefinition = initial.canEdit && !initial.isVersionLocked;
+  const canMoveNodes = initial.canEdit;
+
   return createStore<BuilderState>((set, get) => ({
     nodes: initial.nodes,
     edges: initial.edges,
@@ -122,7 +133,10 @@ export function createBuilderStore(initial: {
     liveIssues: [],
     batchPlans: {},
     saveState: "idle",
-    isReadOnly: initial.isReadOnly,
+    isVersionLocked: initial.isVersionLocked,
+    canEdit: initial.canEdit,
+    canChangeDefinition,
+    canMoveNodes,
     isOwner: initial.isOwner,
     testRunFor: null,
     testRunStatus: "idle",
@@ -130,8 +144,19 @@ export function createBuilderStore(initial: {
     baseline: snapshot(initial.nodes, initial.edges),
 
     onNodesChange: (changes) => {
-      const { isReadOnly, nodes } = get();
-      if (isReadOnly) return;
+      const { canChangeDefinition, canMoveNodes, nodes } = get();
+
+      // Position, size and selection carry no behaviour, so they follow permission
+      // rather than the version lock — a live workflow can still be tidied and read.
+      const isLayout = (c: NodeChange<BuilderNode>) =>
+        c.type === "position" || c.type === "dimensions" || c.type === "select";
+
+      let incoming = changes;
+      if (!canChangeDefinition) {
+        if (!canMoveNodes) return;
+        incoming = changes.filter(isLayout);
+        if (!incoming.length) return;
+      }
 
       // Protect the last trigger — deletion is allowed only when another remains.
       const isRemove = (
@@ -140,27 +165,27 @@ export function createBuilderStore(initial: {
       const triggerIds = new Set(
         nodes.filter((n) => n.type === "trigger").map((n) => n.id)
       );
-      const triggerRemoveCount = changes
+      const triggerRemoveCount = incoming
         .filter(isRemove)
         .filter((c) => triggerIds.has(c.id)).length;
       const allowed =
         triggerRemoveCount >= triggerIds.size
-          ? changes.filter((c) => !(isRemove(c) && triggerIds.has(c.id)))
-          : changes;
+          ? incoming.filter((c) => !(isRemove(c) && triggerIds.has(c.id)))
+          : incoming;
       if (!allowed.length) return;
 
       set({ nodes: applyNodeChanges(allowed, nodes) });
     },
 
     onEdgesChange: (changes) => {
-      const { isReadOnly, edges } = get();
-      if (isReadOnly) return;
+      const { canChangeDefinition, edges } = get();
+      if (!canChangeDefinition) return;
       set({ edges: applyEdgeChanges(changes, edges) });
     },
 
     onConnect: (connection) => {
-      const { isReadOnly, nodes, edges } = get();
-      if (isReadOnly) return;
+      const { canChangeDefinition, nodes, edges } = get();
+      if (!canChangeDefinition) return;
       if (!canConnect(nodes, edges, connection)) return;
 
       set({
@@ -180,8 +205,8 @@ export function createBuilderStore(initial: {
     // unconnected. Without one (a palette click) it lands below the selection and
     // is wired from that node's first unused handle.
     addNode: (type, position) => {
-      const { isReadOnly, nodes, edges, selectedNodeId } = get();
-      if (isReadOnly) return;
+      const { canChangeDefinition, nodes, edges, selectedNodeId } = get();
+      if (!canChangeDefinition) return;
 
       const takenNames = new Set(nodes.map((n) => n.name));
       const from = position
@@ -257,14 +282,20 @@ export function createBuilderStore(initial: {
     // in flight must stay dirty or the next autosave skips them.
     rebaseline: (saved) => set({ baseline: saved }),
 
-    updateNodeData: (id, patch) =>
+    // The single gate every node config form funnels through. Without it a live
+    // version's trigger could be switched to Schedule and — autosave being off — the
+    // edit silently evaporated on reload, with no toast and no explanation.
+    updateNodeData: (id, patch) => {
+      if (!get().canChangeDefinition) return;
       set(({ nodes }) => ({
         nodes: nodes.map((n) =>
           n.id === id ? { ...n, data: { ...n.data, ...patch } } : n
         )
-      })),
+      }));
+    },
 
-    renameNode: (id, name) =>
+    renameNode: (id, name) => {
+      if (!get().canChangeDefinition) return;
       set(({ nodes }) => {
         const slug = slugifyNodeName(name);
         if (slug === "") return {};
@@ -275,9 +306,13 @@ export function createBuilderStore(initial: {
         return {
           nodes: nodes.map((n) => (n.id === id ? { ...n, name: unique } : n))
         };
-      }),
+      });
+    },
 
+    // `expanded` rides along in the persisted definition, so collapsing a card is a
+    // behaviour edit as far as the save route is concerned.
     setNodeExpanded: (id, expanded) => {
+      if (!get().canChangeDefinition) return;
       set(({ nodes }) => ({
         nodes: nodes.map((n) => (n.id === id ? { ...n, expanded } : n))
       }));
@@ -285,6 +320,7 @@ export function createBuilderStore(initial: {
     },
 
     setAllNodesExpanded: (expanded) => {
+      if (!get().canChangeDefinition) return;
       set(({ nodes }) => ({
         nodes: nodes.map((n) => ({ ...n, expanded }))
       }));
@@ -292,14 +328,14 @@ export function createBuilderStore(initial: {
     },
 
     arrangeNodes: () => {
-      const { nodes, edges, isReadOnly, setNodePositions } = get();
-      if (isReadOnly) return;
+      const { nodes, edges, canMoveNodes, setNodePositions } = get();
+      if (!canMoveNodes) return;
       setNodePositions(layoutPositions(nodes, edges));
     },
 
     setNodePositions: (positions) => {
-      const { isReadOnly, nodes } = get();
-      if (isReadOnly) return;
+      const { canMoveNodes, nodes } = get();
+      if (!canMoveNodes) return;
       set({
         nodes: nodes.map((n) =>
           positions[n.id] ? { ...n, position: positions[n.id] } : n
@@ -308,7 +344,8 @@ export function createBuilderStore(initial: {
     },
 
     removeNode: (id) => {
-      const { nodes, edges, selectedNodeId } = get();
+      const { canChangeDefinition, nodes, edges, selectedNodeId } = get();
+      if (!canChangeDefinition) return;
       const node = nodes.find((n) => n.id === id);
       if (!node) return;
       if (

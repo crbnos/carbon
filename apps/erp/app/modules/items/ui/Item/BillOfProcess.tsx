@@ -24,7 +24,6 @@ import {
   IconButton,
   Label,
   Loading,
-  ScrollArea,
   ToggleGroup,
   ToggleGroupItem,
   Tooltip,
@@ -163,7 +162,9 @@ type MethodMaterialType = {
   description?: string | null;
   quantity?: number | null;
   methodOperationId?: string | null;
-  methodMaterialStep?: { methodOperationStepId: string }[] | null;
+  methodMaterialStep?:
+    | { methodOperationStepId: string; quantity?: number | null }[]
+    | null;
 };
 
 type BillOfProcessProps = {
@@ -891,16 +892,14 @@ const BillOfProcess = ({
         {isProductionRevision && (
           <ReleaseLockAlert isLocked={isReleaseLocked} className="mb-4" />
         )}
-        <ScrollArea type="auto" className="max-h-[60dvh]">
-          <SortableList
-            isReadOnly={isReadOnly}
-            items={items}
-            onReorder={onReorder}
-            onToggleItem={onToggleItem}
-            onRemoveItem={onRemoveItem}
-            renderItem={renderListItem}
-          />
-        </ScrollArea>
+        <SortableList
+          isReadOnly={isReadOnly}
+          items={items}
+          onReorder={onReorder}
+          onToggleItem={onToggleItem}
+          onRemoveItem={onRemoveItem}
+          renderItem={renderListItem}
+        />
       </CardContent>
       {configuratorDisclosure.isOpen && configuration && (
         <ConfigurationEditor
@@ -1963,38 +1962,53 @@ function AttributesForm({
   const draftFileInputRef = useRef<HTMLInputElement>(null);
   const draftModelInputRef = useRef<HTMLInputElement>(null);
 
-  // Parts (this operation's BOM materials) the operator can assign to a step. Parts picked
-  // while CREATING a step are buffered here and attached right after the step is created.
+  // Parts the operator can assign to a step. The whole bill of material is offered —
+  // the BOM is the source of truth, and a line needn't be assigned to this operation
+  // to be referenced by a step. Parts picked while CREATING a step are buffered here
+  // and attached right after the step is created.
+  const [allItems] = useItems();
   const operationParts = useMemo(
     () =>
-      (materials ?? [])
-        .filter((m) => m.methodOperationId === operationId)
-        .map((m) => ({
-          id: m.id,
-          name: m.description || m.itemId,
-          quantity: m.quantity ?? 1
-        })),
-    [materials, operationId]
-  );
-  const [draftParts, setDraftParts] = useState<string[]>([]);
-
-  // Tools (this operation's tools) the operator can assign to a step — the tool twin of
-  // operationParts/draftParts. Tools picked while CREATING a step are buffered here and
-  // attached right after the step is created (see the effect below).
-  const allTools = useTools();
-  const operationTools = useMemo(
-    () =>
-      (tools ?? []).map((tl) => {
-        const tool = allTools.find((x) => x.id === tl.toolId);
+      (materials ?? []).map((m) => {
+        const item = allItems.find((i) => i.id === m.itemId);
         return {
-          id: tl.id ?? "",
-          name: tool?.readableIdWithRevision ?? tl.toolId ?? "",
-          secondary: tool?.name ?? undefined,
-          quantity: tl.quantity ?? 1
+          id: m.id,
+          name: item?.readableIdWithRevision ?? m.description ?? m.itemId,
+          secondary: item
+            ? (m.description ?? item.name ?? undefined)
+            : undefined,
+          quantity: m.quantity ?? 1
         };
       }),
-    [tools, allTools]
+    [materials, allItems]
   );
+  const [draftParts, setDraftParts] = useState<string[]>([]);
+  // Per-step share of each buffered part's BOM line (absent = the full line
+  // quantity), keyed by methodMaterial id; written with the links on step create.
+  const [draftPartQuantities, setDraftPartQuantities] = useState<
+    Record<string, number>
+  >({});
+
+  // Tools the operator can assign to a step — the tool twin of operationParts/
+  // draftParts. The whole tool LIBRARY is offered (keyed by tool item id); the
+  // operation tool row is created server-side on attach when it doesn't exist
+  // yet. Tools picked while CREATING a step are buffered here and attached
+  // right after the step is created (see the effect below).
+  const allTools = useTools();
+  const operationTools = useMemo(() => {
+    const opToolByToolId = new Map(
+      (tools ?? []).flatMap((tl) =>
+        tl.toolId ? [[tl.toolId, tl] as const] : []
+      )
+    );
+    return allTools.map((tool) => ({
+      id: tool.id,
+      name: tool.readableIdWithRevision,
+      secondary: tool.name ?? undefined,
+      quantity: opToolByToolId.get(tool.id)?.quantity ?? 1,
+      primary: opToolByToolId.has(tool.id)
+    }));
+  }, [tools, allTools]);
   const [draftTools, setDraftTools] = useState<string[]>([]);
 
   const onUploadImage = async (file: File) => {
@@ -2118,10 +2132,15 @@ function AttributesForm({
     if (!newStepId || draftParts.length === 0 || !carbon) return;
     let cancelled = false;
     (async () => {
+      // Omit the quantity column when unset so the default path still works
+      // against a pre-migration schema (the column only ships on main).
       const { error } = await carbon.from("methodMaterialStep").insert(
         draftParts.map((methodMaterialId) => ({
           methodMaterialId,
-          methodOperationStepId: newStepId
+          methodOperationStepId: newStepId,
+          ...(draftPartQuantities[methodMaterialId] != null
+            ? { quantity: draftPartQuantities[methodMaterialId] }
+            : {})
         }))
       );
       if (cancelled) return;
@@ -2130,6 +2149,7 @@ function AttributesForm({
         return;
       }
       setDraftParts([]);
+      setDraftPartQuantities({});
       revalidator.revalidate();
     })();
     return () => {
@@ -2138,20 +2158,29 @@ function AttributesForm({
   }, [fetcher.data]);
 
   // When the new step is created, attach any buffered tools, then revalidate + reset.
+  // Goes through the step-tool route (not a direct insert) because the buffer holds
+  // tool ITEM ids and the operation tool row may not exist yet — the route creates
+  // it before linking. Sequential so a repeated tool never races its own creation.
   // biome-ignore lint/correctness/useExhaustiveDependencies: keyed off the created step id
   useEffect(() => {
     const newStepId = (fetcher.data as { id?: string | null } | undefined)?.id;
     if (!newStepId || draftTools.length === 0 || !carbon) return;
     let cancelled = false;
     (async () => {
-      const { error } = await carbon.from("methodOperationToolStep").insert(
-        draftTools.map((methodOperationToolId) => ({
-          methodOperationToolId,
-          methodOperationStepId: newStepId
-        }))
-      );
+      let failed = false;
+      for (const toolId of draftTools) {
+        const fd = new FormData();
+        fd.append("toolId", toolId);
+        fd.append("stepId", newStepId);
+        fd.append("linked", "true");
+        const res = await fetch(path.to.methodOperationStepTool, {
+          method: "POST",
+          body: fd
+        });
+        if (!res.ok) failed = true;
+      }
       if (cancelled) return;
-      if (error) {
+      if (failed) {
         toast.error(t`Failed to save tools`);
         return;
       }
@@ -2332,7 +2361,10 @@ function AttributesForm({
                 emptyLabel={t`No parts`}
                 searchPlaceholder={t`Search parts...`}
                 removeLabel={t`Remove part`}
-                items={operationParts}
+                items={operationParts.map((p) => ({
+                  ...p,
+                  linkedQuantity: draftPartQuantities[p.id] ?? null
+                }))}
                 linkedIds={draftParts}
                 isDisabled={isDisabled}
                 onAdd={(partId) =>
@@ -2340,8 +2372,18 @@ function AttributesForm({
                     prev.includes(partId) ? prev : [...prev, partId]
                   )
                 }
-                onRemove={(partId) =>
-                  setDraftParts((prev) => prev.filter((id) => id !== partId))
+                onRemove={(partId) => {
+                  setDraftParts((prev) => prev.filter((id) => id !== partId));
+                  setDraftPartQuantities((prev) => {
+                    const { [partId]: _removed, ...rest } = prev;
+                    return rest;
+                  });
+                }}
+                onQuantityChange={(partId, quantity) =>
+                  setDraftPartQuantities((prev) => ({
+                    ...prev,
+                    [partId]: quantity
+                  }))
                 }
               />
 
@@ -2354,6 +2396,8 @@ function AttributesForm({
                 icon={<LuHammer />}
                 items={operationTools}
                 linkedIds={draftTools}
+                primaryGroupLabel={t`On this operation`}
+                secondaryGroupLabel={t`All tools`}
                 isDisabled={isDisabled}
                 onAdd={(toolId) =>
                   setDraftTools((prev) =>
@@ -2711,7 +2755,6 @@ function AttributesListItem({
             <StepSlides step={attribute} isDisabled={isDisabled} />
             <StepParts
               step={attribute}
-              operationId={operationId}
               materials={materials}
               isDisabled={isDisabled}
             />
@@ -2893,30 +2936,36 @@ function AttributesListItem({
   );
 }
 
-// Parts assigned to an EXISTING step — the step-side of the part↔step link. Lists this
-// operation's BOM parts and toggles each link immediately via the material route. Replaces
-// the old BOM "Steps" dropdown (assignment now lives on the step).
+// Parts assigned to an EXISTING step — the step-side of the part↔step link. Lists the
+// method's whole bill of material (the BOM is the source of truth; a line needn't be
+// assigned to this operation) and toggles each link immediately via the material route.
+// Replaces the old BOM "Steps" dropdown (assignment now lives on the step).
 function StepParts({
   step,
-  operationId,
   materials,
   isDisabled
 }: {
   step: OperationStep;
-  operationId: string;
   materials: MethodMaterialType[];
   isDisabled: boolean;
 }) {
   const { t } = useLingui();
   const fetcher = useFetcher();
+  const [allItems] = useItems();
 
-  const operationParts = (materials ?? [])
-    .filter((m) => m.methodOperationId === operationId)
-    .map((m) => ({
+  const operationParts = (materials ?? []).map((m) => {
+    const item = allItems.find((i) => i.id === m.itemId);
+    const link = (m.methodMaterialStep ?? []).find(
+      (s) => s.methodOperationStepId === step.id
+    );
+    return {
       id: m.id,
-      name: m.description || m.itemId,
-      quantity: m.quantity ?? 1
-    }));
+      name: item?.readableIdWithRevision ?? m.description ?? m.itemId,
+      secondary: item ? (m.description ?? item.name ?? undefined) : undefined,
+      quantity: m.quantity ?? 1,
+      linkedQuantity: link?.quantity ?? null
+    };
+  });
 
   const linkedPartIds = (materials ?? [])
     .filter((m) =>
@@ -2926,12 +2975,15 @@ function StepParts({
     )
     .map((m) => m.id);
 
-  const toggle = (partId: string, linked: boolean) => {
+  const toggle = (partId: string, linked: boolean, quantity?: number) => {
     if (!step.id) return;
     const fd = new FormData();
     fd.append("materialId", partId);
     fd.append("stepId", step.id);
     fd.append("linked", String(linked));
+    if (linked && quantity !== undefined) {
+      fd.append("quantity", String(quantity));
+    }
     fetcher.submit(fd, {
       method: "post",
       action: path.to.methodOperationStepMaterial
@@ -2951,6 +3003,7 @@ function StepParts({
       busy={fetcher.state !== "idle"}
       onAdd={(id) => toggle(id, true)}
       onRemove={(id) => toggle(id, false)}
+      onQuantityChange={(id, quantity) => toggle(id, true, quantity)}
     />
   );
 }
@@ -2971,15 +3024,19 @@ function StepTools({
   const fetcher = useFetcher();
   const allTools = useTools();
 
-  const operationTools = (tools ?? []).map((tl) => {
-    const tool = allTools.find((x) => x.id === tl.toolId);
-    return {
-      id: tl.id ?? "",
-      name: tool?.readableIdWithRevision ?? tl.toolId ?? "",
-      secondary: tool?.name ?? undefined,
-      quantity: tl.quantity ?? 1
-    };
-  });
+  // The whole tool LIBRARY is offered (keyed by tool item id) — an operation
+  // needn't have a tool on its Tools tab first; picking one here creates the
+  // operation tool row (quantity 1) server-side before linking it to the step.
+  const opToolByToolId = new Map(
+    (tools ?? []).flatMap((tl) => (tl.toolId ? [[tl.toolId, tl] as const] : []))
+  );
+  const stepTools = allTools.map((tool) => ({
+    id: tool.id,
+    name: tool.readableIdWithRevision,
+    secondary: tool.name ?? undefined,
+    quantity: opToolByToolId.get(tool.id)?.quantity ?? 1,
+    primary: opToolByToolId.has(tool.id)
+  }));
 
   const linkedToolIds = (tools ?? [])
     .filter((tl) =>
@@ -2994,7 +3051,7 @@ function StepTools({
         ).map((s) => s.methodOperationStepId)
       ).some((stepId) => stepId === step.id)
     )
-    .map((tl) => tl.id ?? "");
+    .flatMap((tl) => (tl.toolId ? [tl.toolId] : []));
 
   const toggle = (toolId: string, linked: boolean) => {
     if (!step.id) return;
@@ -3016,7 +3073,9 @@ function StepTools({
       searchPlaceholder={t`Search tools...`}
       removeLabel={t`Remove tool`}
       icon={<LuHammer />}
-      items={operationTools}
+      items={stepTools}
+      primaryGroupLabel={t`On this operation`}
+      secondaryGroupLabel={t`All tools`}
       linkedIds={linkedToolIds}
       isDisabled={isDisabled}
       busy={fetcher.state !== "idle"}

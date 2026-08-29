@@ -87,19 +87,19 @@ import {
 import type { InventoryItemType } from "./types";
 
 const PARTS_LIST_COLUMNS =
-  "active,defaultMethodType,description,itemTrackingType,name,replenishmentSystem,revision,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,revisions,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn" as const;
+  "active,defaultMethodType,description,itemTrackingType,name,replenishmentSystem,revision,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,revisions,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn,suppliers" as const;
 
 const MATERIALS_LIST_COLUMNS =
-  "active,defaultMethodType,description,itemTrackingType,name,unitOfMeasureCode,revision,readableId,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,unitOfMeasure,revisions,materialForm,materialSubstance,dimensions,finish,grade,materialType,materialSubstanceId,materialFormId,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn" as const;
+  "active,defaultMethodType,description,itemTrackingType,name,unitOfMeasureCode,revision,readableId,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,unitOfMeasure,revisions,materialForm,materialSubstance,dimensions,finish,grade,materialType,materialSubstanceId,materialFormId,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn,suppliers" as const;
 
 const TOOLS_LIST_COLUMNS =
-  "active,assignee,defaultMethodType,description,itemTrackingType,name,replenishmentSystem,revision,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,revisions,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn" as const;
+  "active,assignee,defaultMethodType,description,itemTrackingType,name,replenishmentSystem,revision,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,revisions,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn,suppliers" as const;
 
 const CONSUMABLES_LIST_COLUMNS =
-  "active,assignee,defaultMethodType,description,itemTrackingType,name,replenishmentSystem,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn" as const;
+  "active,assignee,defaultMethodType,description,itemTrackingType,name,replenishmentSystem,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn,suppliers" as const;
 
 const SERVICES_LIST_COLUMNS =
-  "active,defaultMethodType,description,name,replenishmentSystem,revision,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,revisions,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt" as const;
+  "active,defaultMethodType,description,name,replenishmentSystem,revision,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,revisions,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,suppliers" as const;
 
 const logger = getLogger("erp", "items");
 
@@ -556,7 +556,7 @@ export async function getConsumables(
   ]);
 
   if (args.supplierId) {
-    query = query.contains("supplierIds", [args.supplierId]);
+    query = query.contains("suppliers", [args.supplierId]);
   }
 
   query = setGenericQueryFilters(query, args, [
@@ -1254,7 +1254,7 @@ export async function getMaterials(
   ]);
 
   if (args.supplierId) {
-    query = query.contains("supplierIds", [args.supplierId]);
+    query = query.contains("suppliers", [args.supplierId]);
   }
 
   query = setGenericQueryFilters(query, args, [
@@ -1552,17 +1552,39 @@ export async function getMethodMaterials(
   return query;
 }
 
+// The step-link `quantity` column ships with this branch's migration, which only
+// runs on main — previews (and the prod window between app deploy and migration)
+// run this code against the pre-migration schema. PostgREST fails the WHOLE
+// select on an unknown embedded column, so fall back to the quantity-less query
+// instead of rendering an empty BOM. 42703 = Postgres undefined_column; PGRST204
+// = PostgREST's schema-cache miss for a written column.
+function isMissingQuantityColumn(
+  error: { code?: string; message?: string } | null
+) {
+  return error?.code === "42703" || error?.code === "PGRST204";
+}
+
 export async function getMethodMaterialsByMakeMethod(
   client: SupabaseClient<Database>,
   makeMethodId: string
 ) {
-  return client
+  const result = await client
     .from("methodMaterial")
     .select(
-      "*, item(name, itemTrackingType, replenishmentSystem, defaultMethodType, sourcingType), methodMaterialStep(methodOperationStepId)"
+      "*, item(name, itemTrackingType, replenishmentSystem, defaultMethodType, sourcingType), methodMaterialStep(methodOperationStepId, quantity)"
     )
     .eq("makeMethodId", makeMethodId)
     .order("order", { ascending: true });
+  if (isMissingQuantityColumn(result.error)) {
+    return (await client
+      .from("methodMaterial")
+      .select(
+        "*, item(name, itemTrackingType, replenishmentSystem, defaultMethodType, sourcingType), methodMaterialStep(methodOperationStepId)"
+      )
+      .eq("makeMethodId", makeMethodId)
+      .order("order", { ascending: true })) as unknown as typeof result;
+  }
+  return result;
 }
 
 export async function getMethodOperations(
@@ -1788,7 +1810,7 @@ export async function getParts(
   ]);
 
   if (args.supplierId) {
-    query = query.contains("supplierIds", [args.supplierId]);
+    query = query.contains("suppliers", [args.supplierId]);
   }
 
   query = setGenericQueryFilters(query, args, [
@@ -2041,7 +2063,7 @@ export async function getServices(
   }
 
   if (args.supplierId) {
-    query = query.contains("supplierIds", [args.supplierId]);
+    query = query.contains("suppliers", [args.supplierId]);
   }
 
   query = setGenericQueryFilters(query, args, [
@@ -2132,7 +2154,7 @@ export async function getTools(
   ]);
 
   if (args.supplierId) {
-    query = query.contains("supplierIds", [args.supplierId]);
+    query = query.contains("suppliers", [args.supplierId]);
   }
 
   query = setGenericQueryFilters(query, args, [
@@ -4177,10 +4199,17 @@ export async function duplicateMethodOperationStep(
   }
 
   // Copy step-scoped part/material links (same operation-level-vs-scoped semantics as tools).
-  const materialLinks = await client
+  // Pre-migration schema: no quantity column — copy the bare links instead.
+  let materialLinks = await client
     .from("methodMaterialStep")
-    .select("methodMaterialId")
+    .select("methodMaterialId, quantity")
     .eq("methodOperationStepId", args.id);
+  if (isMissingQuantityColumn(materialLinks.error)) {
+    materialLinks = (await client
+      .from("methodMaterialStep")
+      .select("methodMaterialId")
+      .eq("methodOperationStepId", args.id)) as unknown as typeof materialLinks;
+  }
   if (materialLinks.error) {
     return { data: null, error: materialLinks.error };
   }
@@ -4188,7 +4217,8 @@ export async function duplicateMethodOperationStep(
     const materialLinkInsert = await client.from("methodMaterialStep").insert(
       materialLinks.data.map((l) => ({
         methodMaterialId: l.methodMaterialId,
-        methodOperationStepId: newStepId
+        methodOperationStepId: newStepId,
+        ...(l.quantity != null ? { quantity: l.quantity } : {})
       }))
     );
     if (materialLinkInsert.error) {
@@ -4294,27 +4324,51 @@ export async function replaceMethodMaterialSteps(
   methodMaterialId: string,
   methodOperationStepIds: string[]
 ) {
+  // Per-step quantities are edited from the step side; a BOM-side rewrite of the
+  // step set must not wipe them, so carry each retained step's quantity across
+  // the delete-then-insert. Pre-migration schema: quantities don't exist, so
+  // fall back to the bare link set.
+  let quantityByStepId = new Map<string, number | null>();
+  const existing = await client
+    .from("methodMaterialStep")
+    .select("methodOperationStepId, quantity")
+    .eq("methodMaterialId", methodMaterialId);
+  if (existing.error && !isMissingQuantityColumn(existing.error)) {
+    return existing;
+  }
+  if (!existing.error) {
+    quantityByStepId = new Map(
+      (existing.data ?? []).map((l) => [l.methodOperationStepId, l.quantity])
+    );
+  }
   const del = await client
     .from("methodMaterialStep")
     .delete()
     .eq("methodMaterialId", methodMaterialId);
   if (del.error || methodOperationStepIds.length === 0) return del;
   return client.from("methodMaterialStep").insert(
-    methodOperationStepIds.map((methodOperationStepId) => ({
-      methodMaterialId,
-      methodOperationStepId
-    }))
+    methodOperationStepIds.map((methodOperationStepId) => {
+      const quantity = quantityByStepId.get(methodOperationStepId);
+      return {
+        methodMaterialId,
+        methodOperationStepId,
+        ...(quantity != null ? { quantity } : {})
+      };
+    })
   );
 }
 
 // Toggle a single part↔step link from the STEP side (the step editor's Parts picker).
 // `linked` true = link the material to the step, false = unlink. Idempotent on link.
+// `quantity` is the per-step share of the BOM line (NULL = the full line quantity);
+// re-linking an existing link updates the quantity, so the same call edits a split.
 export async function setMethodMaterialStepLink(
   client: SupabaseClient<Database>,
   args: {
     methodMaterialId: string;
     methodOperationStepId: string;
     linked: boolean;
+    quantity?: number | null;
   }
 ) {
   if (args.linked) {
@@ -4322,12 +4376,14 @@ export async function setMethodMaterialStepLink(
       [
         {
           methodMaterialId: args.methodMaterialId,
-          methodOperationStepId: args.methodOperationStepId
+          methodOperationStepId: args.methodOperationStepId,
+          // Omit the column when unset so the default link path still works
+          // against a pre-migration schema (see isMissingQuantityColumn).
+          ...(args.quantity != null ? { quantity: args.quantity } : {})
         }
       ],
       {
-        onConflict: "methodMaterialId,methodOperationStepId",
-        ignoreDuplicates: true
+        onConflict: "methodMaterialId,methodOperationStepId"
       }
     );
   }
@@ -4339,21 +4395,53 @@ export async function setMethodMaterialStepLink(
 }
 
 // Toggle a single tool↔step link from the STEP side (the step editor's Tools picker).
-// `linked` true = link the tool to the step, false = unlink. Idempotent on link. Twin of
-// setMethodMaterialStepLink.
+// Takes the tool ITEM id: the picker offers the whole tool library, and choosing a
+// tool implicitly ensures the operation-level tool row exists (quantity 1 — the same
+// row the operation's Tools tab would create) before linking it to the step. Unlink
+// removes only the step link; the operation tool row stays (the Tools tab owns it).
+// Twin of setMethodMaterialStepLink.
 export async function setMethodOperationToolStepLink(
   client: SupabaseClient<Database>,
   args: {
-    methodOperationToolId: string;
+    operationId: string;
+    toolId: string;
     methodOperationStepId: string;
     linked: boolean;
+    companyId: string;
+    createdBy: string;
   }
 ) {
+  const existingTool = await client
+    .from("methodOperationTool")
+    .select("id")
+    .eq("operationId", args.operationId)
+    .eq("toolId", args.toolId)
+    .order("createdAt", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (existingTool.error) return existingTool;
+  let methodOperationToolId = existingTool.data?.id;
+
   if (args.linked) {
+    if (!methodOperationToolId) {
+      const created = await client
+        .from("methodOperationTool")
+        .insert({
+          operationId: args.operationId,
+          toolId: args.toolId,
+          quantity: 1,
+          companyId: args.companyId,
+          createdBy: args.createdBy
+        })
+        .select("id")
+        .single();
+      if (created.error) return created;
+      methodOperationToolId = created.data.id;
+    }
     return client.from("methodOperationToolStep").upsert(
       [
         {
-          methodOperationToolId: args.methodOperationToolId,
+          methodOperationToolId,
           methodOperationStepId: args.methodOperationStepId
         }
       ],
@@ -4363,10 +4451,11 @@ export async function setMethodOperationToolStepLink(
       }
     );
   }
+  if (!methodOperationToolId) return { data: null, error: null };
   return client
     .from("methodOperationToolStep")
     .delete()
-    .eq("methodOperationToolId", args.methodOperationToolId)
+    .eq("methodOperationToolId", methodOperationToolId)
     .eq("methodOperationStepId", args.methodOperationStepId);
 }
 

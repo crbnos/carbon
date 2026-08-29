@@ -26,6 +26,7 @@ import {
   Th,
   Thead,
   Tr,
+  TruncatedTooltipText,
   VStack
 } from "@carbon/react";
 import { pluralize } from "@carbon/utils";
@@ -160,14 +161,17 @@ const SupplierQuoteCompareDrawer = ({
     setSelectedLines({});
   };
 
-  // Calculate order total from selected line items
+  // Calculate order total from selected line items. Base currency: the lines
+  // can come from suppliers quoting in different currencies, so the supplier*
+  // columns are not addable — unitPrice/shippingCost/taxAmount are each the
+  // supplier figure over the quote's exchangeRate.
   const orderTotal = useMemo(() => {
     let total = 0;
     for (const pricing of Object.values(selectedLines)) {
       total +=
-        pricing.supplierUnitPrice * pricing.quantity +
-        pricing.supplierShippingCost +
-        pricing.supplierTaxAmount;
+        pricing.unitPrice * pricing.quantity +
+        pricing.shippingCost +
+        pricing.taxAmount;
     }
     return total;
   }, [selectedLines]);
@@ -370,10 +374,14 @@ const ComparisonView = ({
 
         if (matchingPrice) {
           hasMatchingTier = true;
+          // Base currency — this total is compared against every other
+          // supplier's to pick `bestTotal`, and each supplier may quote in its
+          // own currency. Comparing raw supplier* amounts ranks by exchange
+          // rate rather than by price.
           total +=
-            (matchingPrice.supplierUnitPrice ?? 0) * matchingPrice.quantity +
-            (matchingPrice.supplierShippingCost ?? 0) +
-            (matchingPrice.supplierTaxAmount ?? 0);
+            (matchingPrice.unitPrice ?? 0) * matchingPrice.quantity +
+            (matchingPrice.shippingCost ?? 0) +
+            (matchingPrice.taxAmount ?? 0);
 
           if (
             matchingPrice.leadTime !== null &&
@@ -554,7 +562,9 @@ const ComparisonView = ({
                           )
                         : linePrices[0];
 
-                      return matchingPrice?.supplierUnitPrice ?? null;
+                      // Base currency: these are min'd across suppliers below,
+                      // and each may quote in its own.
+                      return matchingPrice?.unitPrice ?? null;
                     });
 
                     const validPrices = itemPrices.filter(
@@ -609,7 +619,7 @@ const ComparisonView = ({
                           }
 
                           const isBest =
-                            linePrice.supplierUnitPrice === bestPrice &&
+                            linePrice.unitPrice === bestPrice &&
                             bestPrice !== null;
 
                           return (
@@ -625,9 +635,7 @@ const ComparisonView = ({
                                       isBest && "text-green-600"
                                     )}
                                   >
-                                    {formatter.format(
-                                      linePrice.supplierUnitPrice ?? 0
-                                    )}
+                                    {formatter.format(linePrice.unitPrice ?? 0)}
                                     /ea
                                   </span>
                                 </HStack>
@@ -690,20 +698,27 @@ const LineSelectionView = ({
               {line.thumbnailPath ? (
                 <img
                   alt={line.itemReadableId!}
-                  className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
+                  className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
                   src={getPrivateUrl(line.thumbnailPath)}
                 />
               ) : (
-                <div className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
+                <div className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
                   <LuImage className="w-16 h-16 text-muted-foreground" />
                 </div>
               )}
 
-              <VStack spacing={0}>
-                <Heading>{line.itemReadableId}</Heading>
-                <span className="text-muted-foreground text-base truncate">
+              {/* flex-1 + min-w-0, not VStack's default w-full: `width: 100%`
+                  on a flex item resolves against the row's full width and
+                  ignores the thumbnail beside it, pushing the description past
+                  the card edge. min-w-0 is what lets truncate bite. */}
+              <VStack spacing={0} className="flex-1 min-w-0">
+                <Heading className="min-w-0">{line.itemReadableId}</Heading>
+                <TruncatedTooltipText
+                  className="text-muted-foreground text-base truncate"
+                  tooltip={line.description}
+                >
                   {line.description}
-                </span>
+                </TruncatedTooltipText>
               </VStack>
             </HStack>
 
@@ -761,6 +776,7 @@ const LinePricingOptions = ({
               shippingCost: selectedOption.shippingCost ?? 0,
               leadTime: selectedOption.leadTime ?? 0,
               supplierTaxAmount: selectedOption.supplierTaxAmount ?? 0,
+              taxAmount: selectedOption.taxAmount ?? 0,
               taxPercent: selectedOption.taxPercent ?? 0
             }
           }));
@@ -815,18 +831,18 @@ const LinePricingOptions = ({
                     </label>
                   </Td>
                   <Td>{option.quantity}</Td>
-                  <Td>{formatter.format(option.supplierUnitPrice ?? 0)}</Td>
-                  <Td>{formatter.format(option.supplierShippingCost ?? 0)}</Td>
+                  <Td>{formatter.format(option.unitPrice ?? 0)}</Td>
+                  <Td>{formatter.format(option.shippingCost ?? 0)}</Td>
                   <Td>
                     {option.leadTime ?? 0}{" "}
                     {pluralize(option.leadTime ?? 0, "day")}
                   </Td>
-                  <Td>{formatter.format(option.supplierTaxAmount ?? 0)}</Td>
+                  <Td>{formatter.format(option.taxAmount ?? 0)}</Td>
                   <Td>
                     {formatter.format(
-                      (option.supplierUnitPrice ?? 0) * option.quantity +
-                        (option.supplierShippingCost ?? 0) +
-                        (option.supplierTaxAmount ?? 0)
+                      (option.unitPrice ?? 0) * option.quantity +
+                        (option.shippingCost ?? 0) +
+                        (option.taxAmount ?? 0)
                     )}
                   </Td>
                 </Tr>

@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="oxTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#1c1f22"/>
+      <stop offset="0.2" stop-color="#43484d"/>
+      <stop offset="0.45" stop-color="#5a6167"/>
+      <stop offset="0.72" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="oxFront" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1c1f22"/>
+      <stop offset="0.2" stop-color="#43484d"/>
+      <stop offset="0.45" stop-color="#5a6167"/>
+      <stop offset="0.72" stop-color="#33383d"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="oxSide" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#33383d"/>
+      <stop offset="0.6" stop-color="#22262a"/>
+      <stop offset="1" stop-color="#15181a"/>
+    </linearGradient>
+    <linearGradient id="chrome" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5b6167"/>
+      <stop offset="0.14" stop-color="#dfe6ea"/>
+      <stop offset="0.34" stop-color="#ffffff"/>
+      <stop offset="0.6" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <linearGradient id="chromeTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.5" stop-color="#c6ced4"/>
+      <stop offset="1" stop-color="#7f878d"/>
+    </linearGradient>
+    <linearGradient id="pilot" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="520" cy="775" rx="400" ry="88" fill="url(#shadow)"/>
+
+  <!-- base plate -->
+  <polygon points="190,700 790,700 887,631 287,631" fill="url(#oxTop)" stroke="#0f1113" stroke-width="3"/>
+  <polygon points="790,700 887,631 887,701 790,770" fill="url(#oxSide)" stroke="#0f1113" stroke-width="3"/>
+  <polygon points="190,700 790,700 790,770 190,770" fill="url(#oxFront)" stroke="#0f1113" stroke-width="3"/>
+  <!-- chamfers -->
+  <polyline points="198,694 782,694 875,628" fill="none" stroke="#6b7278" stroke-width="2.5" opacity="0.55"/>
+  <polyline points="190,708 790,708 887,639" fill="none" stroke="#6b7278" stroke-width="2.5" opacity="0.4"/>
+  <polyline points="196,764 784,764" fill="none" stroke="#000" stroke-opacity="0.5" stroke-width="3"/>
+
+  <!-- flycut swirl on the plate top face -->
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.1" stroke-width="2">
+    <ellipse cx="400" cy="668" rx="120" ry="24"/>
+    <ellipse cx="520" cy="662" rx="150" ry="28"/>
+    <ellipse cx="660" cy="666" rx="120" ry="24"/>
+    <ellipse cx="470" cy="650" rx="200" ry="20"/>
+  </g>
+
+  <!-- milled T-slots running front to back -->
+  <g>
+    <polygon points="292,700 314,700 411,631 389,631" fill="#101315"/>
+    <polygon points="296,700 310,700 407,631 393,631" fill="#2a2f33"/>
+    <polygon points="640,700 662,700 759,631 737,631" fill="#101315"/>
+    <polygon points="644,700 658,700 755,631 741,631" fill="#2a2f33"/>
+    <polygon points="466,700 488,700 585,631 563,631" fill="#101315" opacity="0.9"/>
+    <polygon points="470,700 484,700 581,631 567,631" fill="#2a2f33" opacity="0.9"/>
+  </g>
+
+  <!-- central relieved bore -->
+  <ellipse cx="538" cy="665" rx="104" ry="40" fill="#2b3034" stroke="#6b7278" stroke-width="2.5"/>
+  <ellipse cx="538" cy="668" rx="86" ry="33" fill="#14171a"/>
+  <ellipse cx="538" cy="671" rx="66" ry="25" fill="#0b0d0e"/>
+  <ellipse cx="538" cy="665" rx="95" ry="36" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="2"/>
+
+  <!-- guide posts, full height (platen drawn over them later) -->
+  <g>
+    <path d="M314 176 L314 665 L382 665 L382 176 Z" fill="url(#chrome)"/>
+    <path d="M694 176 L694 665 L762 665 L762 176 Z" fill="url(#chrome)"/>
+  </g>
+  <!-- post base collars + retaining screws -->
+  <g>
+    <ellipse cx="348" cy="665" rx="72" ry="27" fill="url(#oxTop)" stroke="#0f1113" stroke-width="2.5"/>
+    <ellipse cx="348" cy="662" rx="56" ry="21" fill="none" stroke="#6b7278" stroke-width="2" opacity="0.6"/>
+    <ellipse cx="728" cy="665" rx="72" ry="27" fill="url(#oxTop)" stroke="#0f1113" stroke-width="2.5"/>
+    <ellipse cx="728" cy="662" rx="56" ry="21" fill="none" stroke="#6b7278" stroke-width="2" opacity="0.6"/>
+    <g>
+      <ellipse cx="288" cy="672" rx="20" ry="8" fill="#4a5055"/>
+      <ellipse cx="288" cy="670" rx="14" ry="5.5" fill="#22262a"/>
+      <ellipse cx="410" cy="672" rx="20" ry="8" fill="#4a5055"/>
+      <ellipse cx="410" cy="670" rx="14" ry="5.5" fill="#22262a"/>
+      <ellipse cx="668" cy="672" rx="20" ry="8" fill="#4a5055"/>
+      <ellipse cx="668" cy="670" rx="14" ry="5.5" fill="#22262a"/>
+      <ellipse cx="790" cy="672" rx="20" ry="8" fill="#4a5055"/>
+      <ellipse cx="790" cy="670" rx="14" ry="5.5" fill="#22262a"/>
+    </g>
+  </g>
+
+  <!-- tapered pressing pilot under the platen, aligned with the bore -->
+  <path d="M468 300 L506 548 L570 548 L608 300 Z" fill="url(#pilot)" stroke="#4b5156" stroke-width="2.5"/>
+  <ellipse cx="538" cy="548" rx="32" ry="12" fill="#cdd4d9" stroke="#4b5156" stroke-width="2.5"/>
+  <ellipse cx="538" cy="546" rx="20" ry="7.5" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2"/>
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2">
+    <path d="M480 380 L596 380"/><path d="M488 434 L588 434"/><path d="M496 488 L580 488"/>
+  </g>
+
+  <!-- top platen -->
+  <polygon points="268,300 768,300 865,231 365,231" fill="url(#oxTop)" stroke="#0f1113" stroke-width="3"/>
+  <polygon points="768,300 865,231 865,293 768,362" fill="url(#oxSide)" stroke="#0f1113" stroke-width="3"/>
+  <polygon points="268,300 768,300 768,362 268,362" fill="url(#oxFront)" stroke="#0f1113" stroke-width="3"/>
+  <polyline points="276,294 760,294 853,228" fill="none" stroke="#6b7278" stroke-width="2.5" opacity="0.55"/>
+  <polyline points="274,356 762,356" fill="none" stroke="#000" stroke-opacity="0.5" stroke-width="3"/>
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.1" stroke-width="2">
+    <ellipse cx="440" cy="268" rx="120" ry="22"/>
+    <ellipse cx="640" cy="266" rx="130" ry="24"/>
+  </g>
+
+  <!-- linear bushing bosses and post tops -->
+  <g>
+    <path d="M300 246 L300 270 L396 270 L396 246 Z" fill="url(#oxFront)"/>
+    <ellipse cx="348" cy="270" rx="48" ry="18" fill="#22262a"/>
+    <ellipse cx="348" cy="246" rx="48" ry="18" fill="url(#oxTop)" stroke="#0f1113" stroke-width="2.5"/>
+    <path d="M680 246 L680 270 L776 270 L776 246 Z" fill="url(#oxFront)"/>
+    <ellipse cx="728" cy="270" rx="48" ry="18" fill="#22262a"/>
+    <ellipse cx="728" cy="246" rx="48" ry="18" fill="url(#oxTop)" stroke="#0f1113" stroke-width="2.5"/>
+  </g>
+  <g>
+    <path d="M314 176 L314 248 L382 248 L382 176 Z" fill="url(#chrome)"/>
+    <path d="M694 176 L694 248 L762 248 L762 176 Z" fill="url(#chrome)"/>
+    <ellipse cx="348" cy="176" rx="34" ry="13" fill="url(#chromeTop)" stroke="#5d6368" stroke-width="2.5"/>
+    <ellipse cx="348" cy="176" rx="24" ry="9" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2"/>
+    <ellipse cx="728" cy="176" rx="34" ry="13" fill="url(#chromeTop)" stroke="#5d6368" stroke-width="2.5"/>
+    <ellipse cx="728" cy="176" rx="24" ry="9" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2"/>
+  </g>
+</svg>

@@ -85,6 +85,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Issues (NCR, CAPA, ECO, RMA) | `.claude/rules/issue-module.md` |
 | Traceability / lot tracking | `.claude/rules/traceability-model.md` |
 | Revision system | `.claude/rules/revision-system.md` |
+| Item supersession (phase-out / successor swaps) | `.claude/rules/supersession-system.md` |
 | Kanban | `.claude/rules/kanban-system.md` |
 | Workflows (customer automation rules) | `.claude/rules/workflow-event-catalog.md` + `.claude/rules/workflow-matcher.md` + `.claude/rules/workflow-engine.md` + `packages/workflows/AGENTS.md` |
 | Workflow run history + retention | `.claude/rules/workflow-run-history.md` |
@@ -113,6 +114,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Customer/supplier DB schema | `.claude/rules/customer-supplier-database-schema.md` |
 | User/employee/job relationships | `.claude/rules/user-employee-job-relationships.md` |
 | Company backup/restore | `.claude/rules/company-backup-restore.md` |
+| Onboarding demo templates / dev seed datasets | `.claude/rules/onboarding-company-templates.md` |
 | Environment configuration | `.claude/rules/environment-configuration.md` |
 | MCP tools reference | `.claude/rules/mcp-tools-reference.md` |
 | Adding a new module | `.ai/docs/module-conventions.md` |

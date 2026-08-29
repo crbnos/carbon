@@ -33,13 +33,19 @@ import { useDropzone } from "react-dropzone";
 import { LuCloudUpload, LuRefreshCw, LuZap } from "react-icons/lu";
 import { useFetcher, useRevalidator } from "react-router";
 import { useModelUpload, useUser } from "~/hooks";
+import type { ModelUpload } from "~/types";
 import { getPrivateUrl, getRawModelUrl, path } from "~/utils/path";
 import { ModelUploadProgress } from "./ModelUploadProgress";
 
 const SIZE_LIMIT = getFileSizeLimit("CAD_MODEL_UPLOAD");
 
 type CadModelProps = {
-  modelPath: string | null;
+  /**
+   * The whole row, not just its path — without `modelId` the viewer guesses the id
+   * out of the filename, which only holds for `${companyId}/models/${id}.ext`
+   * uploads, so a bundled demo-template or legacy model 404s its artifacts silently.
+   */
+  modelUpload?: ModelUpload | null;
   metadata?: {
     itemId?: string;
     salesRfqLineId?: string;
@@ -59,12 +65,13 @@ type CadModelProps = {
 const CadModel = ({
   isReadOnly,
   metadata,
-  modelPath,
+  modelUpload,
   title,
   titleExtras,
   uploadClassName,
   viewerClassName
 }: CadModelProps) => {
+  const { modelPath = null, modelId: modelUploadId = null } = modelUpload ?? {};
   const {
     company: { id: companyId }
   } = useUser();
@@ -92,7 +99,7 @@ const CadModel = ({
     regenerate,
     cancel: onCancelWait,
     actionBusy
-  } = useOptimizedModel({ modelPath, companyId, file });
+  } = useOptimizedModel({ modelPath, modelUploadId, companyId, file });
   // Never on top of the upload progress overlay.
   const showOptimizeProgress = optimizeProgressActive && upload === null;
 

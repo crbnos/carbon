@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="chromeWall" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5b6167"/>
+      <stop offset="0.14" stop-color="#dfe6ea"/>
+      <stop offset="0.34" stop-color="#ffffff"/>
+      <stop offset="0.6" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <linearGradient id="chromeTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.34" stop-color="#dfe6ea"/>
+      <stop offset="0.7" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#5b6167"/>
+    </linearGradient>
+    <linearGradient id="chamferBand" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8d959b"/>
+      <stop offset="0.28" stop-color="#ffffff"/>
+      <stop offset="0.52" stop-color="#eef3f6"/>
+      <stop offset="0.78" stop-color="#a7aeb4"/>
+      <stop offset="1" stop-color="#5b6167"/>
+    </linearGradient>
+    <linearGradient id="innerConcave" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7d858c"/>
+      <stop offset="0.3" stop-color="#c8d0d6"/>
+      <stop offset="0.55" stop-color="#e9eef1"/>
+      <stop offset="0.8" stop-color="#8f979e"/>
+      <stop offset="1" stop-color="#5b6167"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="512" cy="866" rx="422" ry="93" fill="url(#shadow)"/>
+
+  <!-- concave inner face, seen through the arc opening -->
+  <path d="M253.1 356.4 A 268 102 0 0 0 770.9 356.4 L 770.9 756.4 A 268 102 0 0 1 253.1 756.4 Z"
+        fill="url(#innerConcave)" stroke="#4a5055" stroke-width="2"/>
+  <g stroke="#ffffff" stroke-opacity="0.16" stroke-width="2" fill="none">
+    <path d="M262 420 A 268 102 0 0 0 762 420"/>
+    <path d="M262 520 A 268 102 0 0 0 762 520"/>
+    <path d="M262 620 A 268 102 0 0 0 762 620"/>
+  </g>
+
+  <!-- convex outer wall (front) -->
+  <path d="M145 367.3 A 380 144 0 0 0 879 367.3 L 879 767.3 A 380 144 0 0 1 145 767.3 Z"
+        fill="url(#chromeWall)" stroke="#3f454a" stroke-width="3"/>
+  <!-- grinding swirl on the convex face -->
+  <g stroke="#ffffff" stroke-opacity="0.15" stroke-width="2.5" fill="none">
+    <path d="M150 430 A 380 144 0 0 0 874 430"/>
+    <path d="M150 520 A 380 144 0 0 0 874 520"/>
+    <path d="M150 610 A 380 144 0 0 0 874 610"/>
+    <path d="M150 700 A 380 144 0 0 0 874 700"/>
+  </g>
+  <g stroke="#2f353a" stroke-opacity="0.20" stroke-width="2" fill="none">
+    <path d="M150 470 A 380 144 0 0 0 874 470"/>
+    <path d="M150 560 A 380 144 0 0 0 874 560"/>
+    <path d="M150 650 A 380 144 0 0 0 874 650"/>
+  </g>
+  <!-- specular sweep -->
+  <path d="M150 470 A 380 144 0 0 0 874 470" fill="none" stroke="#ffffff" stroke-opacity="0.30" stroke-width="14"/>
+
+  <!-- ground top face (annular sector) -->
+  <path d="M145 367.3 A 380 144 0 0 0 879 367.3 L 770.9 356.4 A 268 102 0 0 1 253.1 356.4 Z"
+        fill="url(#chromeTop)" stroke="#4a5055" stroke-width="3"/>
+  <!-- 45 degree chamfers on the two long edges -->
+  <path d="M145 367.3 A 380 144 0 0 0 879 367.3 L 858 364.6 A 356 135 0 0 1 166 364.6 Z"
+        fill="url(#chamferBand)" stroke="#7f878d" stroke-width="1.5"/>
+  <path d="M253.1 356.4 A 268 102 0 0 0 770.9 356.4 L 749 358.9 A 292 111 0 0 1 275 358.9 Z"
+        fill="url(#chamferBand)" stroke="#7f878d" stroke-width="1.5"/>
+  <!-- concentric grind arcs on the top face -->
+  <g stroke="#ffffff" stroke-opacity="0.18" stroke-width="2" fill="none">
+    <path d="M186 363 A 340 129 0 0 0 838 363"/>
+    <path d="M226 361 A 300 114 0 0 0 798 361"/>
+  </g>
+
+  <!-- hairline plating witness on the right short end -->
+  <path d="M879 367.3 L 879 767.3" stroke="#ffffff" stroke-opacity="0.55" stroke-width="3" fill="none"/>
+  <path d="M871 369 L 871 765" stroke="#2f353a" stroke-opacity="0.35" stroke-width="2" fill="none"/>
+  <!-- left short end break -->
+  <path d="M145 367.3 L 145 767.3" stroke="#2f353a" stroke-opacity="0.45" stroke-width="3" fill="none"/>
+
+  <!-- bottom edge highlight -->
+  <path d="M152 762 A 380 144 0 0 0 872 762" fill="none" stroke="#ffffff" stroke-opacity="0.20" stroke-width="3"/>
+</svg>

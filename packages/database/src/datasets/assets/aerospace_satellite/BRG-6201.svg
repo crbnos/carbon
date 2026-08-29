@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="chrome" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5b6167"/>
+      <stop offset="0.14" stop-color="#dfe6ea"/>
+      <stop offset="0.34" stop-color="#ffffff"/>
+      <stop offset="0.6" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <linearGradient id="chromeFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.34" stop-color="#dfe6ea"/>
+      <stop offset="0.6" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <linearGradient id="bore" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.35" stop-color="#aab1b7"/>
+      <stop offset="0.7" stop-color="#7d848a"/>
+      <stop offset="1" stop-color="#454b50"/>
+    </linearGradient>
+    <linearGradient id="shield" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#93a0ab"/>
+      <stop offset="0.3" stop-color="#7d8a95"/>
+      <stop offset="0.62" stop-color="#5b6773"/>
+      <stop offset="1" stop-color="#3d454c"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="512" cy="782" rx="414" ry="91" fill="url(#shadow)"/>
+
+  <!-- outer race outside diameter -->
+  <path d="M152 430 L152 650 Q512 787 872 650 L872 430 Z" fill="url(#chrome)" stroke="#41474c" stroke-width="3"/>
+  <!-- ground OD banding + edge chamfers -->
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.20" stroke-width="3">
+    <path d="M152 462 Q512 599 872 462"/>
+    <path d="M152 620 Q512 757 872 620"/>
+  </g>
+  <g fill="none" stroke="#2f353a" stroke-opacity="0.35" stroke-width="2">
+    <path d="M152 476 Q512 613 872 476"/>
+    <path d="M152 606 Q512 743 872 606"/>
+    <path d="M152 540 Q512 677 872 540"/>
+  </g>
+
+  <!-- cavity behind the shield -->
+  <ellipse cx="512" cy="434" rx="212" ry="80" fill="#232a30"/>
+  <!-- ball pockets, faintly readable through the shield gap -->
+  <g fill="#0f1315" opacity="0.55">
+    <ellipse cx="715" cy="434" rx="19" ry="11"/>
+    <ellipse cx="678" cy="479" rx="19" ry="11"/>
+    <ellipse cx="575" cy="507" rx="19" ry="11"/>
+    <ellipse cx="449" cy="507" rx="19" ry="11"/>
+    <ellipse cx="346" cy="479" rx="19" ry="11"/>
+    <ellipse cx="309" cy="434" rx="19" ry="11"/>
+    <ellipse cx="346" cy="389" rx="19" ry="11"/>
+    <ellipse cx="449" cy="361" rx="19" ry="11"/>
+    <ellipse cx="575" cy="361" rx="19" ry="11"/>
+    <ellipse cx="678" cy="389" rx="19" ry="11"/>
+  </g>
+  <g fill="#aab1b7" opacity="0.35">
+    <ellipse cx="571" cy="502" rx="10" ry="5"/>
+    <ellipse cx="453" cy="502" rx="10" ry="5"/>
+    <ellipse cx="674" cy="475" rx="10" ry="5"/>
+  </g>
+
+  <!-- inner race, standing slightly proud of the shield -->
+  <path d="M322 414 L322 430 Q512 502 702 430 L702 414 Z" fill="url(#chrome)" stroke="#41474c" stroke-width="2.5"/>
+
+  <!-- bore: far wall lit, darkness below -->
+  <ellipse cx="512" cy="414" rx="135" ry="51" fill="#1a1e21"/>
+  <ellipse cx="512" cy="438" rx="135" ry="51" fill="url(#bore)"/>
+  <ellipse cx="512" cy="462" rx="135" ry="51" fill="#161a1d"/>
+
+  <!-- inner race top land -->
+  <path fill-rule="evenodd" fill="url(#chromeFace)" stroke="#41474c" stroke-width="2.5"
+    d="M322 414 a190 72 0 1 0 380 0 a190 72 0 1 0 -380 0 Z M377 414 a135 51 0 1 0 270 0 a135 51 0 1 0 -270 0 Z"/>
+  <ellipse cx="512" cy="414" rx="178" ry="67" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="2.5"/>
+  <ellipse cx="512" cy="414" rx="147" ry="56" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2"/>
+
+  <!-- pressed-in shield -->
+  <path fill-rule="evenodd" fill="url(#shield)" stroke="#333b41" stroke-width="2.5"
+    d="M190 430 a322 122 0 1 0 644 0 a322 122 0 1 0 -644 0 Z M312 430 a200 76 0 1 0 400 0 a200 76 0 1 0 -400 0 Z"/>
+  <!-- stamped relief rings on the shield -->
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="2.5">
+    <ellipse cx="512" cy="430" rx="300" ry="114"/>
+    <ellipse cx="512" cy="430" rx="252" ry="96"/>
+    <ellipse cx="512" cy="430" rx="216" ry="82"/>
+  </g>
+  <g fill="none" stroke="#1d2429" stroke-opacity="0.45" stroke-width="2">
+    <ellipse cx="512" cy="430" rx="276" ry="105"/>
+    <ellipse cx="512" cy="430" rx="232" ry="88"/>
+  </g>
+
+  <!-- outer race top land + shield retaining groove -->
+  <path fill-rule="evenodd" fill="url(#chromeFace)" stroke="#41474c" stroke-width="3"
+    d="M152 430 a360 137 0 1 0 720 0 a360 137 0 1 0 -720 0 Z M190 430 a322 122 0 1 0 644 0 a322 122 0 1 0 -644 0 Z"/>
+  <ellipse cx="512" cy="430" rx="348" ry="132" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="2.5"/>
+  <ellipse cx="512" cy="430" rx="332" ry="126" fill="none" stroke="#2f353a" stroke-opacity="0.45" stroke-width="2"/>
+  <ellipse cx="512" cy="430" rx="326" ry="124" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="2"/>
+</svg>

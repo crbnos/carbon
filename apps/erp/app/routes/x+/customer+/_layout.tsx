@@ -42,7 +42,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function CustomerRoute() {
   return (
-    <div className="flex h-full w-full justify-center bg-muted">
+    <div className="flex h-full w-full justify-center bg-card">
       <VStack spacing={4} className="h-full p-4 w-full max-w-[80rem]">
         <Outlet />
       </VStack>

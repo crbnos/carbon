@@ -1,4 +1,6 @@
+import { join } from "node:path";
 import { intro, log, outro, spinner } from "@clack/prompts";
+import { config as loadDotenv } from "dotenv";
 import pc from "picocolors";
 import { recreateServices } from "../services/compose.js";
 import { getWorktreeRoot, projectName, resolveSlug } from "../worktree.js";
@@ -21,6 +23,12 @@ export async function reload(services: string[]) {
   }
 
   const root = await getWorktreeRoot();
+  // Mirror `crbn up`: compose interpolation reads process.env first, so root
+  // .env values referenced by docker-compose.dev.yml (e.g. the GOTRUE_SAML_*
+  // bindings on ${SAML_ENABLED}/${SAML_PRIVATE_KEY}) survive a reload instead
+  // of silently resetting to their defaults. .env.local takes precedence.
+  loadDotenv({ path: join(root, ".env.local"), override: false });
+  loadDotenv({ path: join(root, ".env"), override: false });
   const slug = resolveSlug(root);
   log.info(
     `worktree: ${pc.cyan(slug)}  project: ${pc.cyan(projectName(slug))}`

@@ -7,11 +7,14 @@ export interface ActionInputLike {
   required: boolean;
   label: string;
   template?: boolean;
+  /** Prose a person reads: a record dropped in renders as a link. Not for webhook bodies,
+   * where a markdown link would ship to someone else's API as literal text. */
+  linkify?: boolean;
   /** Allowed literal values. The generated side infers these from the database schema;
    * a hand-written action is not a schema entity, so it must say so here. */
   choices?: readonly string[];
   /** What the builder seeds a new node with. Nothing reads it at run time. */
-  defaultValue?: string;
+  defaultValue?: string | readonly string[];
   /** The value is a set of name/value rows. */
   pairs?: boolean;
   /** Only shown, and only required, while `input` holds one of `equals`. */
@@ -142,18 +145,35 @@ export const WORKFLOW_ACTIONS = {
     permission: { module: "users", action: "view" },
     inputs: {
       user: { type: t.entity("user"), required: false, label: "person" },
-      role: { type: t.entity("group"), required: false, label: "role" },
+      // The stored key stays `role`; renaming it would need a v4 format migration for a
+      // label change, and the value is already a group id.
+      role: { type: t.entity("group"), required: false, label: "group" },
+      // In-app is always delivered whatever is stored here — the notify job adds it to
+      // every notification — so this is optional rather than required: a required field
+      // whose one guaranteed member cannot be ticked is a trap on older nodes.
+      channels: {
+        type: t.list({ kind: "primitive", of: "string" }),
+        required: false,
+        label: "notification type",
+        choices: ["inApp", "email", "slack"],
+        // What the action has always sent. An absent value means the same thing.
+        defaultValue: ["inApp", "email"],
+        help: "workflow-notify-channels"
+      },
       subject: {
         type: t.string,
         required: true,
         label: "subject",
         template: true
       },
+      // The body is prose someone reads, so a record dropped in becomes a link.
+      // Deliberately not the subject: an email subject renders markdown literally.
       message: {
         type: t.string,
         required: false,
         label: "message",
-        template: true
+        template: true,
+        linkify: true
       },
       // The value model has no "any record" type, so the record is named in two parts.
       aboutId: {

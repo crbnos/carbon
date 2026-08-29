@@ -131,7 +131,7 @@ export default function ToolPlanningRoute() {
   if (!sharedToolsData) throw new Error("Could not load shared tools data");
 
   return (
-    <VStack spacing={2} className="p-2">
+    <VStack spacing={4} className="p-4">
       <ItemPlanningForm
         key={toolPlanning.itemId}
         initialValues={{

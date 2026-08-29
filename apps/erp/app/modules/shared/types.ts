@@ -1,7 +1,7 @@
 import type { Database } from "@carbon/database";
 import type { ColumnPinningState } from "@tanstack/react-table";
 import type { z } from "zod";
-import type { StorageItem } from "~/types";
+import type { ModelUpload, StorageItem } from "~/types";
 import type {
   ApprovalDocumentType,
   approvalRequestValidator,
@@ -22,6 +22,9 @@ import type {
   getApprovalRuleByAmount,
   getNotes
 } from "./shared.service";
+
+/** A `ModelUpload` read off an item, carrying the item it came from. */
+export type ItemModelUpload = ModelUpload & { itemId: string | null };
 
 export type ApprovalFilters = {
   documentType?: ApprovalDocumentType | null;

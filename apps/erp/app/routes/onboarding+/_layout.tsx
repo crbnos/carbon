@@ -75,8 +75,12 @@ export default function OnboardingLayout() {
     <TooltipProvider>
       <div className="relative h-screen w-screen">
         <MeshGradientBackground />
-        <div className="relative z-10 flex h-full w-full items-center justify-center p-4">
-          <Outlet />
+        {/* The scroll container is the wrapper, not the centering flex — a step
+            taller than the window would otherwise be clipped at both ends. */}
+        <div className="absolute inset-0 z-10 overflow-y-auto">
+          <div className="flex min-h-full w-full items-center justify-center p-4">
+            <Outlet />
+          </div>
         </div>
       </div>
     </TooltipProvider>

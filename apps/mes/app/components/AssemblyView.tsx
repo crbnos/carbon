@@ -932,25 +932,43 @@ export function AssemblyView({
     // row flips to issued the instant the owning step is done. Extra parts
     // (perUnit 0, issued ad-hoc from the floor) are excluded so their raw
     // quantityIssued drives the X/0 display instead.
-    const perUnit = m.quantity ?? 0;
+    //
+    // A link may carry a per-step quantity (the BOM line split across steps:
+    // 5 screws here, 5 on another step). The row on THIS step then shows and
+    // flips by the current step's share, matching the per-step backflush.
+    // UNTRACKED only: tracked (serial/batch) parts are issued by scanning and
+    // their quantityIssued is attributed per line, not per step — pairing a
+    // per-step requirement with line-level issued would overstate completion
+    // on later steps, so tracked cards keep the whole-line numbers.
+    const linkShare =
+      !isTrackedMat && step?.id != null
+        ? ((m.jobOperationStepQuantities ?? {})[step.id] ?? null)
+        : null;
+    const perUnit = linkShare ?? m.quantity ?? 0;
     const ownedStepDoneForUnit = isLoose
       ? !!firstStep && isStepDone(firstStep)
-      : steps.some(
-          (s) => (m.jobOperationStepIds ?? []).includes(s.id) && isStepDone(s)
-        );
+      : linkShare !== null && step != null
+        ? isStepDone(step)
+        : steps.some(
+            (s) => (m.jobOperationStepIds ?? []).includes(s.id) && isStepDone(s)
+          );
     const issuedOverride =
       !isTrackedMat && perUnit > 0
         ? ownedStepDoneForUnit
           ? perUnit
           : 0
         : undefined;
-    const state = getIssuedForUnit(m, {
+    // Shadow the line quantity with the step share so the card's required/issued
+    // numbers describe this step's portion of the split, not the whole line.
+    const effectiveMaterial =
+      linkShare !== null ? { ...m, quantity: perUnit } : m;
+    const state = getIssuedForUnit(effectiveMaterial, {
       unitIndex: currentUnitIndex,
       issuedIsPerUnit,
       issuedOverride
     });
     return {
-      m,
+      m: effectiveMaterial,
       stepNumbers,
       isTrackedMat,
       issuedIsPerUnit,

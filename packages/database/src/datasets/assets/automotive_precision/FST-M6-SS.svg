@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="headTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="socket" x1="0.3" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#3f454a"/>
+      <stop offset="1" stop-color="#6d757b"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="headClip">
+      <path d="M416 200 L416 282 Q512 354.96 608 282 L608 200 Z"/>
+    </clipPath>
+    <clipPath id="shankClip">
+      <path d="M464 282 L464 806 L474 834 Q512 850 550 834 L560 806 L560 282 Z"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="512" cy="886" rx="172" ry="38" fill="url(#shadow)"/>
+
+  <!-- shank: plain grip, rolled thread over the lower portion -->
+  <path d="M464 282 L464 806 L474 834 Q512 850 550 834 L560 806 L560 282 Z" fill="url(#steel)"/>
+  <g clip-path="url(#shankClip)">
+    <g stroke="#7b8288" stroke-width="4" opacity="0.75" fill="none">
+      <path d="M464 566 L560 549"/>
+      <path d="M464 596 L560 579"/>
+      <path d="M464 626 L560 609"/>
+      <path d="M464 656 L560 639"/>
+      <path d="M464 686 L560 669"/>
+      <path d="M464 716 L560 699"/>
+      <path d="M464 746 L560 729"/>
+      <path d="M464 776 L560 759"/>
+    </g>
+    <g stroke="#f2f5f6" stroke-width="2.5" opacity="0.5" fill="none">
+      <path d="M464 578 L560 561"/>
+      <path d="M464 608 L560 591"/>
+      <path d="M464 638 L560 621"/>
+      <path d="M464 668 L560 651"/>
+      <path d="M464 698 L560 681"/>
+      <path d="M464 728 L560 711"/>
+      <path d="M464 758 L560 741"/>
+      <path d="M464 788 L560 771"/>
+    </g>
+    <path d="M464 556 L560 539" stroke="#565c61" stroke-width="4" opacity="0.8" fill="none"/>
+    <path d="M464 806 Q512 824 560 806" fill="none" stroke="#525860" stroke-width="4" opacity="0.85"/>
+  </g>
+  <path d="M464 282 L464 806 L474 834 Q512 850 550 834 L560 806 L560 282 Z" fill="none" stroke="#4b5156" stroke-width="2.5"/>
+
+  <!-- slim cylindrical barrel head, knurled band round the periphery -->
+  <path d="M416 200 L416 282 Q512 354.96 608 282 L608 200 Z" fill="url(#steel)"/>
+  <g clip-path="url(#headClip)">
+    <g stroke="#5f666b" stroke-width="3" opacity="0.6">
+      <path d="M422 212 L422 290.69"/>
+      <path d="M433 212 L433 298.73"/>
+      <path d="M444 212 L444 303.75"/>
+      <path d="M455 212 L455 307.35"/>
+      <path d="M466 212 L466 310.02"/>
+      <path d="M477 212 L477 311.97"/>
+      <path d="M488 212 L488 313.32"/>
+      <path d="M499 212 L499 314.14"/>
+      <path d="M510 212 L510 314.47"/>
+      <path d="M521 212 L521 314.32"/>
+      <path d="M532 212 L532 313.68"/>
+      <path d="M543 212 L543 312.53"/>
+      <path d="M554 212 L554 310.8"/>
+      <path d="M565 212 L565 308.42"/>
+      <path d="M576 212 L576 305.19"/>
+      <path d="M587 212 L587 300.77"/>
+      <path d="M598 212 L598 294.21"/>
+    </g>
+    <g stroke="#eef1f3" stroke-width="1.6" opacity="0.4">
+      <path d="M427 214 L427 292.96"/>
+      <path d="M438 214 L438 299.24"/>
+      <path d="M449 214 L449 303.53"/>
+      <path d="M460 214 L460 306.66"/>
+      <path d="M471 214 L471 308.99"/>
+      <path d="M482 214 L482 310.65"/>
+      <path d="M493 214 L493 311.76"/>
+      <path d="M504 214 L504 312.35"/>
+      <path d="M515 214 L515 312.46"/>
+      <path d="M526 214 L526 312.09"/>
+      <path d="M537 214 L537 311.22"/>
+      <path d="M548 214 L548 309.82"/>
+      <path d="M559 214 L559 307.81"/>
+      <path d="M570 214 L570 305.07"/>
+      <path d="M581 214 L581 301.36"/>
+      <path d="M592 214 L592 296.17"/>
+    </g>
+  </g>
+  <path d="M416 200 L416 282 Q512 354.96 608 282 L608 200 Z" fill="none" stroke="#4b5156" stroke-width="2.5"/>
+
+  <ellipse cx="512" cy="200" rx="96" ry="36.48" fill="url(#headTop)" stroke="#7f868c" stroke-width="2.5"/>
+  <!-- edge chamfer break -->
+  <ellipse cx="512" cy="200" rx="87" ry="33.06" fill="none" stroke="#9aa2a8" stroke-width="2" opacity="0.85"/>
+  <g transform="translate(512 200) scale(1 0.38)" stroke="#ffffff" stroke-opacity="0.16" stroke-width="2.5" fill="none">
+    <path d="M57.77 5.21 L84.66 7.64"/>
+    <path d="M52.5 24.66 L76.94 36.13"/>
+    <path d="M40.9 41.12 L59.94 60.27"/>
+    <path d="M24.37 52.63 L35.71 77.13"/>
+    <path d="M4.9 57.79 L7.18 84.7"/>
+    <path d="M-15.16 55.98 L-22.22 82.04"/>
+    <path d="M-33.4 47.42 L-48.94 69.49"/>
+    <path d="M-47.6 33.14 L-69.76 48.56"/>
+    <path d="M-56.06 14.86 L-82.16 21.78"/>
+    <path d="M-57.77 -5.21 L-84.66 -7.64"/>
+    <path d="M-52.5 -24.66 L-76.94 -36.13"/>
+    <path d="M-40.9 -41.12 L-59.94 -60.27"/>
+    <path d="M-24.37 -52.63 L-35.71 -77.13"/>
+    <path d="M-4.9 -57.79 L-7.18 -84.7"/>
+    <path d="M15.16 -55.98 L22.22 -82.04"/>
+    <path d="M33.4 -47.42 L48.94 -69.49"/>
+    <path d="M47.6 -33.14 L69.76 -48.56"/>
+    <path d="M56.06 -14.86 L82.16 -21.78"/>
+  </g>
+  <!-- deep hexagonal drive socket -->
+  <g transform="translate(512 202) scale(1 0.38)">
+    <polygon points="52,0 26,45.03 -26,45.03 -52,0 -26,-45.03 26,-45.03" fill="url(#socket)" stroke="#454b50" stroke-width="3"/>
+    <polygon points="42,0 21,36.37 -21,36.37 -42,0 -21,-36.37 21,-36.37" fill="#2b3135" opacity="0.6"/>
+  </g>
+  <g stroke="#ffffff" stroke-opacity="0.18" stroke-width="2" fill="none">
+    <ellipse cx="512" cy="200" rx="76" ry="28.9"/>
+    <ellipse cx="512" cy="200" rx="65" ry="24.7"/>
+  </g>
+</svg>

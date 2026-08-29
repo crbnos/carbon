@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="ssBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="ssFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#eef1f3"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#e4e9ec"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="nitrile" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#111315"/>
+      <stop offset="0.25" stop-color="#2c3033"/>
+      <stop offset="0.5" stop-color="#3b4044"/>
+      <stop offset="0.75" stop-color="#212528"/>
+      <stop offset="1" stop-color="#0d0f10"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="512" cy="752" rx="380" ry="84" fill="url(#shadow)"/>
+
+  <!-- pilot nose (smallest register step) -->
+  <path d="M362 675 L362 745 Q512 802 662 745 L662 675 Z" fill="url(#ssBarrel)" stroke="#4a5055" stroke-width="2"/>
+
+  <!-- register spigot -->
+  <path d="M297 520 L297 675 Q512 757 727 675 L727 520 Z" fill="url(#ssBarrel)" stroke="#4a5055" stroke-width="2"/>
+  <!-- step shoulder onto the pilot nose -->
+  <path d="M362 675 Q512 732 662 675" fill="none" stroke="#565c62" stroke-width="3" opacity="0.85"/>
+
+  <!-- O-ring groove: square-cornered walls -->
+  <path d="M297 522 Q512 604 727 522" fill="none" stroke="#4e545a" stroke-width="4" opacity="0.9"/>
+  <path d="M297 610 Q512 692 727 610" fill="none" stroke="#4e545a" stroke-width="4" opacity="0.9"/>
+  <path d="M297 526 Q512 640 727 526 L727 606 Q512 690 297 606 Z" fill="#6a7076" opacity="0.55"/>
+
+  <!-- black nitrile O-ring seated in the groove -->
+  <path d="M284 565 Q512 681 740 565" fill="none" stroke="url(#nitrile)" stroke-width="36" stroke-linecap="round"/>
+  <path d="M300 575 Q512 676 724 575" fill="none" stroke="#5b6165" stroke-width="4" stroke-opacity="0.45"/>
+
+  <!-- disc body -->
+  <path d="M182 395 L182 520 Q512 645 842 520 L842 395 Z" fill="url(#ssBarrel)" stroke="#4a5055" stroke-width="3"/>
+  <!-- bead-blasted rim band + bottom chamfer break -->
+  <path d="M182 505 Q512 630 842 505" fill="none" stroke="#7d848a" stroke-width="3" opacity="0.6"/>
+
+  <!-- front face -->
+  <ellipse cx="512" cy="395" rx="330" ry="125" fill="url(#ssFace)" stroke="#4a5055" stroke-width="3"/>
+  <!-- rim chamfer -->
+  <ellipse cx="512" cy="395" rx="312" ry="118" fill="none" stroke="#9aa2a8" stroke-width="3" opacity="0.9"/>
+  <!-- fine concentric turning rings -->
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2">
+    <ellipse cx="512" cy="395" rx="286" ry="108"/>
+    <ellipse cx="512" cy="395" rx="242" ry="92"/>
+    <ellipse cx="512" cy="395" rx="196" ry="74"/>
+    <ellipse cx="512" cy="395" rx="148" ry="56"/>
+    <ellipse cx="512" cy="395" rx="104" ry="39"/>
+  </g>
+  <g fill="none" stroke="#5f666c" stroke-opacity="0.35" stroke-width="1.5">
+    <ellipse cx="512" cy="395" rx="264" ry="100"/>
+    <ellipse cx="512" cy="395" rx="220" ry="83"/>
+    <ellipse cx="512" cy="395" rx="172" ry="65"/>
+    <ellipse cx="512" cy="395" rx="126" ry="48"/>
+  </g>
+
+  <!-- central tapped hole -->
+  <ellipse cx="512" cy="395" rx="62" ry="24" fill="#3a4045" stroke="#8f979d" stroke-width="2"/>
+  <ellipse cx="512" cy="399" rx="48" ry="18" fill="#23282c"/>
+  <g fill="none" stroke="#767d83" stroke-width="2" stroke-opacity="0.6">
+    <path d="M466 392 L558 385"/>
+    <path d="M466 402 L558 395"/>
+  </g>
+</svg>

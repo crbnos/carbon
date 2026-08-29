@@ -394,7 +394,11 @@ describe("duplicateMethodOperationStep", () => {
         { methodOperationToolId: "tool-1", methodOperationStepId: "step-1" }
       ],
       methodMaterialStep: [
-        { methodMaterialId: "mat-1", methodOperationStepId: "step-1" }
+        {
+          methodMaterialId: "mat-1",
+          methodOperationStepId: "step-1",
+          quantity: 5
+        }
       ]
     };
   }
@@ -431,7 +435,13 @@ describe("duplicateMethodOperationStep", () => {
       { methodOperationToolId: "tool-1", methodOperationStepId: "step-new" }
     ]);
     expect(inserts.find((i) => i.table === "methodMaterialStep")?.rows).toEqual(
-      [{ methodMaterialId: "mat-1", methodOperationStepId: "step-new" }]
+      [
+        {
+          methodMaterialId: "mat-1",
+          methodOperationStepId: "step-new",
+          quantity: 5
+        }
+      ]
     );
   });
 

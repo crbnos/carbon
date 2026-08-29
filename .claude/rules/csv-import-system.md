@@ -64,14 +64,36 @@ Other exports: `creatableLookups`, and types `CreatableLookup`, `CreatableForm`.
 `part`, `material`, `tool`, `fixture`, `consumable`, `methodMaterial`, `bom`,
 `operations`, `partWithMethod`, `materialSubstance`, `materialForm`, `materialFinish`,
 `materialGrade`, `materialType`, `materialDimension` → `parts`;
-`workCenter`, `process` → `production`; `fixedAsset` → `accounting`.
+`workCenter`, `process` → `production`; `storageUnit` → `inventory`;
+`fixedAsset` → `accounting`.
 
 The edge function's own `table` enum (`import-csv/index.ts`) accepts: `consumable`,
 `customer`, `customerContact`, `fixture`, `material`, `bom`, `operations`,
 `partWithMethod`, `part`, `supplier`, `supplierContact`, `tool`, `workCenter`,
-`process`, `materialSubstance`, `materialForm`, `materialFinish`, `materialGrade`,
-`materialType`, `materialDimension`. Note it does **not** list `fixedAsset` or
-`methodMaterial` (see Gotchas).
+`process`, `storageUnit`, `materialSubstance`, `materialForm`, `materialFinish`,
+`materialGrade`, `materialType`, `materialDimension`. Note it does **not** list
+`fixedAsset` or `methodMaterial` (see Gotchas).
+
+### Storage-unit import (natural-key match + two-pass parent linking)
+
+`storageUnit` imports the fields `id` (Unique ID), `name`, `locationId` (Location,
+an enum resolved via the FieldMappings location fetcher), `parentName`,
+`storageTypeNames` (comma-separated), and `active`. Because storage unit names are
+unique **per location** (`storageUnit_name_locationId_key`), both in-file dedup and
+match-existing-to-update key on `(locationId, lower(name))` — NOT `classifyImportRow`'s
+name-only dedup. A csv `id` still writes an `externalIntegrationMapping` for id-based
+re-import. Updates deliberately never change `locationId` (avoids the "cannot move a
+unit with children" interceptor); a unit's location is **immutable via import**, so a row
+whose csv id resolves to a unit in a DIFFERENT location than the row states is reported as
+a row error (not a silent move), and an id-matched rename onto a name another unit already
+owns in that location is likewise reported rather than crashing the batch on
+`storageUnit_name_locationId_key`. `storageTypeNames` resolve case-insensitively against
+existing company `storageType` rows, **creating** any missing ones (mirrors the creatable
+StorageTypes combobox). `parentName` is applied in a **second pass** after all inserts —
+individual `UPDATE`s outside the insert transaction — so a parent defined later in the
+same file resolves and an unresolved/cyclic/self parent reports a per-row error instead
+of rolling back the whole import. The DB same-location / no-cycle interceptors
+(`20260417000200`) are the final guard; their exceptions are caught per row.
 
 ### Material-property imports (skip-duplicate, create-only)
 

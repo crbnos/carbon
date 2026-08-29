@@ -193,6 +193,31 @@ export class ExternalIntegrationMappingService {
   }
 
   /**
+   * Get every mapping for an external ID — for the many-to-one relationships
+   * `link()`'s `allowDuplicateExternalId` option enables. `getByExternalId`
+   * (singular) uses `executeTakeFirst()` and can only ever surface one of them.
+   */
+  async getAllByExternalId(
+    integration: string,
+    externalId: string,
+    entityType?: string
+  ): Promise<ExternalIntegrationMapping[]> {
+    let query = this.db
+      .selectFrom("externalIntegrationMapping")
+      .selectAll()
+      .where("integration", "=", integration)
+      .where("externalId", "=", externalId)
+      .where("companyId", "=", this.companyId);
+
+    if (entityType) {
+      query = query.where("entityType", "=", entityType);
+    }
+
+    const mappings = await query.execute();
+    return mappings as ExternalIntegrationMapping[];
+  }
+
+  /**
    * Get all mappings for a Carbon entity (across all integrations).
    */
   async getAllByEntity(

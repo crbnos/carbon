@@ -372,6 +372,9 @@ export async function refreshAuthSession(
   if (refreshedAuthSession && authSession?.mfaVerified) {
     refreshedAuthSession.mfaVerified = authSession.mfaVerified;
   }
+  if (refreshedAuthSession && authSession?.ssoProviderId) {
+    refreshedAuthSession.ssoProviderId = authSession.ssoProviderId;
+  }
   // Preserve session age + last-activity across a silent token refresh — a
   // refresh is neither a re-auth nor user activity, so it must not reset the
   // absolute-cap clock (3.1.11) or the idle clock (3.1.10).

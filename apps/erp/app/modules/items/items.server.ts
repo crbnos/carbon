@@ -5,6 +5,7 @@ import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
+import { chunkArray } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { data } from "react-router";
 import {
@@ -678,4 +679,180 @@ function normalizeSupersessionMode(
   return (supersessionModes as readonly string[]).includes(mode ?? "")
     ? (mode as Database["public"]["Enums"]["supersessionMode"])
     : "Consume First";
+}
+
+// -----------------------------------------------------------------------------
+// Unreleased-change-order guard.
+//
+// Release is what activates a change notice's items: `applyChangeNotice` flips
+// `active` on the revisions and parts the notice minted. Nothing stops a user
+// switching the Active toggle on by hand first, and once it is on the item is
+// selectable everywhere — carrying the notice's un-approved draft BOM, since a
+// minted revision's only make method is that Draft and `activeMakeMethods` falls
+// back to it when no Active version exists.
+//
+// So two kinds of write ask this question: one that would ACTIVATE such an item,
+// and one that would CONSUME it (a sales order line, a purchase order line, a
+// job).
+//
+// `item.changeOrderId` is NOT a draft marker on its own — release leaves it in
+// place as a provenance back-link, so the owning change order's status decides.
+// Release IS the Implementation -> Done transition, so every other status means
+// the item is still a draft.
+//
+// Pass a service-role client: reading `changeOrder` requires `parts_view`, which
+// the caller need not have.
+// -----------------------------------------------------------------------------
+const RELEASED_CHANGE_ORDER_STATUS = "Done";
+
+export type UnreleasedChangeOrderItem = {
+  itemId: string;
+  itemName: string;
+  changeOrderReadableId: string;
+};
+
+// PostgREST caps a response at `max_rows` (1000) and an `in` filter rides in the
+// URL, so both reads walk their ids in batches. Truncating either one would drop
+// an item from the answer, and a missing row reads as "no change order holds it".
+const CHANGE_ORDER_ID_BATCH_SIZE = 500;
+
+async function readIdsInBatches<T>(
+  ids: string[],
+  read: (
+    batch: string[]
+  ) => PromiseLike<{ data: T[] | null; error: unknown | null }>
+): Promise<{ data: T[]; error: unknown | null }> {
+  const rows: T[] = [];
+  for (const batch of chunkArray(ids, CHANGE_ORDER_ID_BATCH_SIZE)) {
+    const result = await read(batch);
+    if (result.error) return { data: [], error: result.error };
+    rows.push(...(result.data ?? []));
+  }
+  return { data: rows, error: null };
+}
+
+// Two queries per batch of ids — the bulk item update can carry a whole table
+// selection.
+//
+// `error` is a message to show the user, not a thrown failure — a read that did
+// not answer says nothing about the items, so callers block on it rather than
+// wave the write through on a database blip.
+export async function getUnreleasedChangeOrderItems(
+  client: SupabaseClient<Database>,
+  args: { itemIds: string[]; companyId: string }
+): Promise<{ data: UnreleasedChangeOrderItem[]; error: string | null }> {
+  if (args.itemIds.length === 0) return { data: [], error: null };
+
+  const items = await readIdsInBatches(args.itemIds, (batch) =>
+    client
+      .from("item")
+      .select("id, readableIdWithRevision, changeOrderId")
+      .in("id", batch)
+      .eq("companyId", args.companyId)
+  );
+
+  if (items.error) {
+    logger.error("Failed to read items for change order check", {
+      error: items.error,
+      itemIds: args.itemIds
+    });
+    return {
+      data: [],
+      error: "These items could not be checked against their change orders."
+    };
+  }
+
+  const owned = (items.data ?? []).filter(
+    (item): item is typeof item & { changeOrderId: string } =>
+      !!item.changeOrderId
+  );
+  if (owned.length === 0) return { data: [], error: null };
+
+  const changeOrders = await readIdsInBatches(
+    [...new Set(owned.map((item) => item.changeOrderId))],
+    (batch) =>
+      client
+        .from("changeOrder")
+        .select("id, changeOrderId, status")
+        .in("id", batch)
+        .eq("companyId", args.companyId)
+  );
+
+  if (changeOrders.error) {
+    logger.error("Failed to read change orders for change order check", {
+      error: changeOrders.error,
+      itemIds: args.itemIds
+    });
+    return {
+      data: [],
+      error: "These items could not be checked against their change orders."
+    };
+  }
+
+  const unreleased = new Map(
+    (changeOrders.data ?? [])
+      .filter((co) => co.status !== RELEASED_CHANGE_ORDER_STATUS)
+      .map((co) => [co.id, co.changeOrderId])
+  );
+
+  return {
+    data: owned.flatMap((item) => {
+      const changeOrderReadableId = unreleased.get(item.changeOrderId);
+      if (!changeOrderReadableId) return [];
+      return [
+        {
+          itemId: item.id,
+          itemName: item.readableIdWithRevision ?? "This item",
+          changeOrderReadableId
+        }
+      ];
+    }),
+    error: null
+  };
+}
+
+// Single-item form for the loaders that only need to know whether to lock the
+// Active toggle on this one item's page. Best-effort: a failed read leaves the
+// toggle unlocked, and the action behind it still refuses the write.
+export async function getUnreleasedChangeOrderForItem(
+  client: SupabaseClient<Database>,
+  args: { itemId: string; companyId: string }
+): Promise<UnreleasedChangeOrderItem | null> {
+  const unreleased = await getUnreleasedChangeOrderItems(client, {
+    itemIds: [args.itemId],
+    companyId: args.companyId
+  });
+  return unreleased.data[0] ?? null;
+}
+
+// Single-item form for the actions that put an item into circulation. Returns
+// the reason to refuse, or null. Unlike the loader form this fails closed: a
+// read that did not answer says nothing about the item.
+//
+// Deliberately does NOT judge `active`. Plain inactive items are allowed onto
+// these documents today, and changing that is a separate decision from closing
+// the change order hole.
+export async function getUnreleasedChangeOrderIssue(
+  client: SupabaseClient<Database>,
+  args: { itemId: string; companyId: string }
+): Promise<string | null> {
+  const unreleased = await getUnreleasedChangeOrderItems(client, {
+    itemIds: [args.itemId],
+    companyId: args.companyId
+  });
+  if (unreleased.error) return unreleased.error;
+  if (unreleased.data.length === 0) return null;
+  return unreleasedChangeOrderItemsMessage(unreleased.data);
+}
+
+// Names every offending item so a bulk edit says which row to fix.
+export function unreleasedChangeOrderItemsMessage(
+  unreleased: UnreleasedChangeOrderItem[]
+) {
+  return unreleased
+    .map(
+      (item) =>
+        `${item.itemName} was created by change order ${item.changeOrderReadableId}, which has not been released yet.`
+    )
+    .join(" ");
 }

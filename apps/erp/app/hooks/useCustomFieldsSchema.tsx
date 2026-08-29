@@ -29,6 +29,11 @@ export function useCustomFieldsSchema() {
 const fieldValidator = z
   .array(
     z.object({
+      // Absent on older rows; the view emits it, and zod would otherwise strip it.
+      active: z
+        .boolean()
+        .nullish()
+        .transform((v) => v ?? true),
       dataTypeId: z.number(),
       id: z.string(),
       listOptions: z.array(z.string()).nullable(),

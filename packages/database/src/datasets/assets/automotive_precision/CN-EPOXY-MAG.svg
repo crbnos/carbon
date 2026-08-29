@@ -1,0 +1,194 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- blank matte white containers -->
+    <linearGradient id="whiteBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#a9aeb2"/>
+      <stop offset="0.2" stop-color="#dde2e5"/>
+      <stop offset="0.45" stop-color="#f2f5f6"/>
+      <stop offset="0.72" stop-color="#c3c9cd"/>
+      <stop offset="1" stop-color="#989ea3"/>
+    </linearGradient>
+    <linearGradient id="whiteFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#f2f5f6"/>
+      <stop offset="0.45" stop-color="#dde2e5"/>
+      <stop offset="1" stop-color="#a9aeb2"/>
+    </linearGradient>
+    <linearGradient id="whiteShoulder" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#9ba0a5"/>
+      <stop offset="0.22" stop-color="#d6dbde"/>
+      <stop offset="0.45" stop-color="#eaeef0"/>
+      <stop offset="0.74" stop-color="#b8bec2"/>
+      <stop offset="1" stop-color="#8e9499"/>
+    </linearGradient>
+    <linearGradient id="greyCap" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4b4f52"/>
+      <stop offset="0.22" stop-color="#787d81"/>
+      <stop offset="0.45" stop-color="#8d9296"/>
+      <stop offset="0.72" stop-color="#63686c"/>
+      <stop offset="1" stop-color="#414548"/>
+    </linearGradient>
+    <linearGradient id="greyCapTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#8d9296"/>
+      <stop offset="0.45" stop-color="#787d81"/>
+      <stop offset="1" stop-color="#4b4f52"/>
+    </linearGradient>
+    <linearGradient id="amberCap" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8a5a12"/>
+      <stop offset="0.3" stop-color="#c9903a"/>
+      <stop offset="0.55" stop-color="#e0b25f"/>
+      <stop offset="0.8" stop-color="#a06f22"/>
+      <stop offset="1" stop-color="#7a4e10"/>
+    </linearGradient>
+    <linearGradient id="amberCapTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#e0b25f"/>
+      <stop offset="0.45" stop-color="#c9903a"/>
+      <stop offset="1" stop-color="#7a4e10"/>
+    </linearGradient>
+    <linearGradient id="nozzleBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9ba0a5"/>
+      <stop offset="0.2" stop-color="#d6dbde"/>
+      <stop offset="0.45" stop-color="#eff2f3"/>
+      <stop offset="0.72" stop-color="#b5bbc0"/>
+      <stop offset="1" stop-color="#8b9196"/>
+    </linearGradient>
+    <linearGradient id="collar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4b4f52"/>
+      <stop offset="0.22" stop-color="#787d81"/>
+      <stop offset="0.45" stop-color="#8d9296"/>
+      <stop offset="0.72" stop-color="#63686c"/>
+      <stop offset="1" stop-color="#414548"/>
+    </linearGradient>
+    <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8a6a45"/>
+      <stop offset="0.2" stop-color="#c8a577"/>
+      <stop offset="0.45" stop-color="#dcbd94"/>
+      <stop offset="0.72" stop-color="#a9855c"/>
+      <stop offset="1" stop-color="#7a5c3c"/>
+    </linearGradient>
+    <linearGradient id="resin" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#e0b25f"/>
+      <stop offset="0.5" stop-color="#b57c22"/>
+      <stop offset="1" stop-color="#6d4a0d"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="bodyL">
+      <path d="M272 336 L272 648 Q380 730 488 648 L488 336 Z"/>
+    </clipPath>
+    <clipPath id="bodyR">
+      <path d="M536 336 L536 648 Q644 730 752 648 L752 336 Z"/>
+    </clipPath>
+    <clipPath id="nozzleClip">
+      <path d="M-180 -36 L180 -18 A6.8 18 0 0 1 180 18 L-180 36 A13.7 36 0 0 0 -180 -36 Z"/>
+    </clipPath>
+    <clipPath id="paddleClip">
+      <path d="M-288 -22 L288 -22 A22 22 0 0 1 288 22 L-288 22 A22 22 0 0 1 -288 -22 Z"/>
+    </clipPath>
+  </defs>
+
+  <ellipse cx="512" cy="764" rx="358" ry="90" fill="url(#shadow)"/>
+
+  <!-- cartridge 1: pale grey cap -->
+  <g>
+    <path d="M272 336 L272 648 Q380 730 488 648 L488 336 Z" fill="url(#whiteBarrel)"/>
+    <g clip-path="url(#bodyL)">
+      <g stroke="#8e9499" stroke-opacity="0.3" stroke-width="3" fill="none">
+        <path d="M310 336 L310 700"/>
+        <path d="M452 336 L452 700"/>
+      </g>
+      <path d="M400 336 L400 712" stroke="#ffffff" stroke-opacity="0.35" stroke-width="3"/>
+      <!-- base rim -->
+      <path d="M272 612 Q380 694 488 612" fill="none" stroke="#8e9499" stroke-width="5" stroke-opacity="0.45"/>
+      <path d="M272 624 Q380 706 488 624" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-opacity="0.4"/>
+      <path d="M272 664 Q380 746 488 664 L488 700 L272 700 Z" fill="#8e9499" opacity="0.22"/>
+    </g>
+    <path d="M272 336 L272 648 Q380 730 488 648 L488 336 Z" fill="none" stroke="#7f858a" stroke-width="3"/>
+    <ellipse cx="380" cy="336" rx="108" ry="41" fill="url(#whiteFace)" stroke="#7f858a" stroke-width="2.5"/>
+    <path d="M272 336 Q380 418 488 336 L434 270 Q380 312 326 270 Z" fill="url(#whiteShoulder)" stroke="#7f858a" stroke-width="3"/>
+    <path d="M286 342 Q380 408 474 342" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="4"/>
+    <path d="M324 218 L324 270 Q380 312 436 270 L436 218 Z" fill="url(#greyCap)" stroke="#33373a" stroke-width="2.5"/>
+    <g stroke="#33373a" stroke-opacity="0.55" stroke-width="3" fill="none">
+      <path d="M340 224 L340 292"/><path d="M360 226 L360 302"/>
+      <path d="M380 226 L380 306"/><path d="M400 226 L400 304"/>
+      <path d="M420 224 L420 294"/>
+    </g>
+    <ellipse cx="380" cy="218" rx="56" ry="21" fill="url(#greyCapTop)" stroke="#33373a" stroke-width="2.5"/>
+    <ellipse cx="380" cy="218" rx="44" ry="17" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2.5"/>
+  </g>
+
+  <!-- cartridge 2: amber cap, equal length -->
+  <g>
+    <path d="M536 336 L536 648 Q644 730 752 648 L752 336 Z" fill="url(#whiteBarrel)"/>
+    <g clip-path="url(#bodyR)">
+      <g stroke="#8e9499" stroke-opacity="0.3" stroke-width="3" fill="none">
+        <path d="M574 336 L574 700"/>
+        <path d="M716 336 L716 700"/>
+      </g>
+      <path d="M664 336 L664 712" stroke="#ffffff" stroke-opacity="0.35" stroke-width="3"/>
+      <path d="M536 612 Q644 694 752 612" fill="none" stroke="#8e9499" stroke-width="5" stroke-opacity="0.45"/>
+      <path d="M536 624 Q644 706 752 624" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-opacity="0.4"/>
+      <path d="M536 664 Q644 746 752 664 L752 700 L536 700 Z" fill="#8e9499" opacity="0.22"/>
+    </g>
+    <path d="M536 336 L536 648 Q644 730 752 648 L752 336 Z" fill="none" stroke="#7f858a" stroke-width="3"/>
+    <ellipse cx="644" cy="336" rx="108" ry="41" fill="url(#whiteFace)" stroke="#7f858a" stroke-width="2.5"/>
+    <path d="M536 336 Q644 418 752 336 L698 270 Q644 312 590 270 Z" fill="url(#whiteShoulder)" stroke="#7f858a" stroke-width="3"/>
+    <path d="M550 342 Q644 408 738 342" fill="none" stroke="#ffffff" stroke-opacity="0.3" stroke-width="4"/>
+    <path d="M588 218 L588 270 Q644 312 700 270 L700 218 Z" fill="url(#amberCap)" stroke="#5e3a08" stroke-width="2.5"/>
+    <g stroke="#6b430b" stroke-opacity="0.5" stroke-width="3" fill="none">
+      <path d="M604 224 L604 292"/><path d="M624 226 L624 302"/>
+      <path d="M644 226 L644 306"/><path d="M664 226 L664 304"/>
+      <path d="M684 224 L684 294"/>
+    </g>
+    <ellipse cx="644" cy="218" rx="56" ry="21" fill="url(#amberCapTop)" stroke="#5e3a08" stroke-width="2.5"/>
+    <ellipse cx="644" cy="218" rx="44" ry="17" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="2.5"/>
+  </g>
+
+  <!-- spiral static mixing nozzle, lying diagonally in front -->
+  <g transform="translate(490 728) rotate(-13)">
+    <path d="M-180 -36 L180 -18 A6.8 18 0 0 1 180 18 L-180 36 A13.7 36 0 0 0 -180 -36 Z"
+          fill="url(#nozzleBody)" stroke="#7f858a" stroke-width="3"/>
+    <g clip-path="url(#nozzleClip)">
+      <!-- helical mixer element seen through the tube -->
+      <polyline points="-160,-35 -128,33.4 -96,-31.8 -64,30.2 -32,-28.6 0,27 32,-25.4 64,23.8 96,-22.2 128,20.6 160,-19"
+                fill="none" stroke="#8a9095" stroke-width="6" stroke-opacity="0.55"/>
+      <polyline points="-160,35 -128,-33.4 -96,31.8 -64,-30.2 -32,28.6 0,-27 32,25.4 64,-23.8 96,22.2 128,-20.6 160,19"
+                fill="none" stroke="#a7adb2" stroke-width="4" stroke-opacity="0.35"/>
+      <path d="M-180 -24 L180 -11 L180 -3 L-180 -12 Z" fill="#ffffff" opacity="0.4"/>
+      <path d="M-180 26 L180 12 L180 36 L-180 36 Z" fill="#6f767b" opacity="0.28"/>
+    </g>
+    <!-- tip -->
+    <ellipse cx="180" cy="0" rx="6.8" ry="18" fill="#cfd5d9" stroke="#7f858a" stroke-width="2"/>
+    <!-- keyed inlet collar -->
+    <path d="M-206 -46 L-170 -46 A17.5 46 0 0 1 -170 46 L-206 46 A17.5 46 0 0 0 -206 -46 Z"
+          fill="url(#collar)" stroke="#33373a" stroke-width="2.5"/>
+    <ellipse cx="-206" cy="0" rx="17.5" ry="46" fill="url(#greyCapTop)" stroke="#33373a" stroke-width="2.5"/>
+    <ellipse cx="-206" cy="0" rx="9" ry="24" fill="#2b2f32"/>
+    <path d="M-188 -40 L-188 40" stroke="#ffffff" stroke-opacity="0.22" stroke-width="4"/>
+  </g>
+
+  <!-- flat wooden stirring paddle angled across the base -->
+  <g transform="translate(512 814) rotate(-6)">
+    <path d="M-288 -12 L288 -12 A22 22 0 0 1 288 32 L-288 32 A22 22 0 0 1 -288 -12 Z" fill="#6a4f34"/>
+    <path d="M-288 -22 L288 -22 A22 22 0 0 1 288 22 L-288 22 A22 22 0 0 1 -288 -22 Z"
+          fill="url(#wood)" stroke="#61492f" stroke-width="2.5"/>
+    <g clip-path="url(#paddleClip)">
+      <g stroke="#8a6a45" stroke-opacity="0.45" stroke-width="2.5" fill="none">
+        <path d="M-306 -12 C-120 -16 100 -8 306 -13"/>
+        <path d="M-306 1 C-120 -3 100 5 306 0"/>
+        <path d="M-306 14 C-120 10 100 18 306 13"/>
+      </g>
+      <g stroke="#eed6b0" stroke-opacity="0.4" stroke-width="2" fill="none">
+        <path d="M-306 -6 C-120 -10 100 -2 306 -7"/>
+        <path d="M-306 8 C-120 4 100 12 306 7"/>
+      </g>
+      <path d="M-306 -22 L306 -22 L306 -14 L-306 -14 Z" fill="#ffffff" opacity="0.22"/>
+      <path d="M-306 14 L306 14 L306 22 L-306 22 Z" fill="#4d3a25" opacity="0.25"/>
+    </g>
+    <!-- dried bead of clear amber resin on the tip -->
+    <ellipse cx="262" cy="-2" rx="30" ry="15" fill="url(#resin)" stroke="#5e3a08" stroke-width="2"/>
+    <ellipse cx="254" cy="-7" rx="13" ry="5" fill="#f3d79a" opacity="0.6"/>
+  </g>
+</svg>

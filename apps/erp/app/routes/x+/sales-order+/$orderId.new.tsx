@@ -1,10 +1,12 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect, useParams } from "react-router";
 import { useRouteData, useUser } from "~/hooks";
+import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.server";
 import type { Customer, SalesOrder, SalesOrderLineType } from "~/modules/sales";
 import {
   getSalesOrder,
@@ -60,6 +62,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
   } else {
     d.accountId = undefined;
     d.assetId = undefined;
+  }
+
+  // An item a change notice is still holding is not sellable — it is a draft
+  // revision whose BOM has not been approved. Checked here rather than only in
+  // the picker because this action is also reached by the API and the MCP tools.
+  if (d.itemId) {
+    const unreleasedIssue = await getUnreleasedChangeOrderIssue(
+      getCarbonServiceRole(),
+      { itemId: d.itemId, companyId }
+    );
+    if (unreleasedIssue) {
+      return validationError({
+        fieldErrors: { itemId: `${unreleasedIssue} It cannot be ordered.` }
+      });
+    }
   }
 
   const createSalesOrderLine = await upsertSalesOrderLine(client, {

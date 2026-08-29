@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="anoBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8a9298"/>
+      <stop offset="0.2" stop-color="#d5dce1"/>
+      <stop offset="0.45" stop-color="#f0f4f6"/>
+      <stop offset="0.72" stop-color="#b2bac0"/>
+      <stop offset="1" stop-color="#798187"/>
+    </linearGradient>
+    <linearGradient id="anoTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#f0f4f6"/>
+      <stop offset="0.2" stop-color="#d5dce1"/>
+      <stop offset="0.45" stop-color="#e6ebee"/>
+      <stop offset="0.72" stop-color="#b2bac0"/>
+      <stop offset="1" stop-color="#798187"/>
+    </linearGradient>
+    <linearGradient id="anoFootTop" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#e9eef1"/>
+      <stop offset="0.5" stop-color="#c3cbd1"/>
+      <stop offset="1" stop-color="#8d959b"/>
+    </linearGradient>
+    <linearGradient id="anoSide" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#a9b1b7"/>
+      <stop offset="0.5" stop-color="#8a9298"/>
+      <stop offset="1" stop-color="#6b7379"/>
+    </linearGradient>
+    <linearGradient id="brgSteel" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#eef1f3"/>
+      <stop offset="0.3" stop-color="#c3c9cd"/>
+      <stop offset="0.7" stop-color="#8f979d"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="brgSeal" x1="0.25" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#5f676d"/>
+      <stop offset="0.45" stop-color="#434a50"/>
+      <stop offset="1" stop-color="#2b3135"/>
+    </linearGradient>
+    <radialGradient id="deepBore" cx="0.45" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#525a60"/>
+      <stop offset="0.55" stop-color="#2e3438"/>
+      <stop offset="1" stop-color="#171b1e"/>
+    </radialGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="512" cy="748" rx="420" ry="92" fill="url(#shadow)"/>
+
+  <!-- square mounting foot: right side face -->
+  <polygon points="663,685 881,529 881,599 663,755" fill="url(#anoSide)" stroke="#5f676d" stroke-width="3"/>
+  <!-- foot front face -->
+  <polygon points="143,685 663,685 663,755 143,755" fill="url(#anoBarrel)" stroke="#5f676d" stroke-width="3"/>
+  <!-- bottom chamfer break on the foot -->
+  <path d="M143 742 L663 742 L881 586" fill="none" stroke="#767e84" stroke-width="3" opacity="0.65"/>
+
+  <!-- foot top face -->
+  <polygon points="143,685 663,685 881,529 361,529" fill="url(#anoFootTop)" stroke="#5f676d" stroke-width="3"/>
+  <!-- chamfered top edges -->
+  <polygon points="163,679 655,679 863,530 371,530" fill="none" stroke="#aab2b8" stroke-width="2.5" opacity="0.85"/>
+  <!-- lightly bead-blasted milling passes across the foot -->
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="3">
+    <path d="M180 673 L698 673"/>
+    <path d="M226 640 L744 640"/>
+    <path d="M272 607 L790 607"/>
+    <path d="M318 574 L836 574"/>
+    <path d="M364 541 L882 541"/>
+  </g>
+
+  <!-- four counterbored bolt holes -->
+  <g>
+    <ellipse cx="202" cy="673" rx="48" ry="18" fill="#9aa2a8" stroke="#6e767c" stroke-width="2"/>
+    <ellipse cx="202" cy="676" rx="34" ry="13" fill="#3a4045"/>
+    <ellipse cx="639" cy="673" rx="48" ry="18" fill="#9aa2a8" stroke="#6e767c" stroke-width="2"/>
+    <ellipse cx="639" cy="676" rx="34" ry="13" fill="#3a4045"/>
+    <ellipse cx="822" cy="541" rx="48" ry="18" fill="#9aa2a8" stroke="#6e767c" stroke-width="2"/>
+    <ellipse cx="822" cy="544" rx="34" ry="13" fill="#3a4045"/>
+    <ellipse cx="385" cy="541" rx="48" ry="18" fill="#9aa2a8" stroke="#6e767c" stroke-width="2"/>
+    <ellipse cx="385" cy="544" rx="34" ry="13" fill="#3a4045"/>
+  </g>
+
+  <!-- cylindrical housing body -->
+  <path d="M327 307 L327 607 Q512 763 697 607 L697 307 Z" fill="url(#anoBarrel)" stroke="#5f676d" stroke-width="3"/>
+  <!-- fillet shading where the body meets the foot -->
+  <path d="M327 592 Q512 748 697 592" fill="none" stroke="#6b7379" stroke-width="6" opacity="0.5"/>
+  <!-- satin bead-blast sheen on the barrel -->
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="3">
+    <path d="M372 330 L372 600"/>
+    <path d="M400 326 L400 606"/>
+  </g>
+  <g fill="none" stroke="#6b7379" stroke-opacity="0.30" stroke-width="2">
+    <path d="M628 328 L628 604"/>
+    <path d="M656 332 L656 598"/>
+  </g>
+  <!-- machined relief band around the barrel -->
+  <path d="M327 402 Q512 558 697 402" fill="none" stroke="#767e84" stroke-width="3" opacity="0.55"/>
+  <path d="M327 424 Q512 580 697 424" fill="none" stroke="#eef2f4" stroke-width="2" stroke-opacity="0.45"/>
+
+  <!-- top face -->
+  <ellipse cx="512" cy="307" rx="185" ry="70" fill="url(#anoTop)" stroke="#5f676d" stroke-width="3"/>
+  <!-- outer edge chamfer -->
+  <ellipse cx="512" cy="307" rx="172" ry="65" fill="none" stroke="#aab2b8" stroke-width="3" opacity="0.9"/>
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2">
+    <ellipse cx="512" cy="307" rx="162" ry="61"/>
+    <ellipse cx="512" cy="307" rx="128" ry="48"/>
+  </g>
+
+  <!-- small threaded inserts ringing the top face -->
+  <g>
+    <g><ellipse cx="652" cy="307" rx="21" ry="8" fill="#aab2b8" stroke="#7b8389" stroke-width="1.5"/><ellipse cx="652" cy="308" rx="14" ry="5.5" fill="#31373b"/></g>
+    <g><ellipse cx="582" cy="353" rx="21" ry="8" fill="#aab2b8" stroke="#7b8389" stroke-width="1.5"/><ellipse cx="582" cy="354" rx="14" ry="5.5" fill="#31373b"/></g>
+    <g><ellipse cx="442" cy="353" rx="21" ry="8" fill="#aab2b8" stroke="#7b8389" stroke-width="1.5"/><ellipse cx="442" cy="354" rx="14" ry="5.5" fill="#31373b"/></g>
+    <g><ellipse cx="372" cy="307" rx="21" ry="8" fill="#aab2b8" stroke="#7b8389" stroke-width="1.5"/><ellipse cx="372" cy="308" rx="14" ry="5.5" fill="#31373b"/></g>
+    <g><ellipse cx="442" cy="261" rx="21" ry="8" fill="#aab2b8" stroke="#7b8389" stroke-width="1.5"/><ellipse cx="442" cy="262" rx="14" ry="5.5" fill="#31373b"/></g>
+    <g><ellipse cx="582" cy="261" rx="21" ry="8" fill="#aab2b8" stroke="#7b8389" stroke-width="1.5"/><ellipse cx="582" cy="262" rx="14" ry="5.5" fill="#31373b"/></g>
+  </g>
+
+  <!-- deep stepped bearing bore: seat mouth + first machined shoulder -->
+  <ellipse cx="512" cy="307" rx="112" ry="43" fill="url(#deepBore)" stroke="#7b8389" stroke-width="3"/>
+  <ellipse cx="512" cy="309" rx="106" ry="40" fill="#20262a"/>
+  <!-- second machined shoulder further down the bore -->
+  <path d="M406 309 L406 340 Q512 380 618 340 L618 309 Z" fill="#1a1f22"/>
+  <path d="M406 330 Q512 370 618 330" fill="none" stroke="#8d959b" stroke-width="2.5" stroke-opacity="0.45"/>
+
+  <!-- shiny sealed bearing pressed into the upper seat -->
+  <g>
+    <ellipse cx="512" cy="316" rx="100" ry="38" fill="url(#brgSteel)" stroke="#5a6167" stroke-width="2.5"/>
+    <ellipse cx="512" cy="316" rx="92" ry="35" fill="none" stroke="#ffffff" stroke-opacity="0.30" stroke-width="2"/>
+    <!-- seal shield -->
+    <ellipse cx="512" cy="317" rx="84" ry="32" fill="url(#brgSeal)" stroke="#5a6167" stroke-width="2"/>
+    <ellipse cx="512" cy="317" rx="74" ry="28" fill="none" stroke="#7f878d" stroke-width="2" stroke-opacity="0.5"/>
+    <ellipse cx="512" cy="317" rx="62" ry="23" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2"/>
+    <!-- inner race + shaft bore -->
+    <ellipse cx="512" cy="317" rx="50" ry="19" fill="url(#brgSteel)" stroke="#5a6167" stroke-width="2"/>
+    <ellipse cx="512" cy="318" rx="38" ry="14" fill="url(#deepBore)" stroke="#8f979d" stroke-width="2"/>
+    <ellipse cx="512" cy="326" rx="28" ry="10" fill="#14181b"/>
+  </g>
+</svg>

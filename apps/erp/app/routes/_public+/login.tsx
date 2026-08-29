@@ -16,6 +16,7 @@ import {
   signInWithBypassEmail,
   verifyAuthSession
 } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   clearAuthCookies,
   flash,
@@ -24,6 +25,7 @@ import {
 } from "@carbon/auth/session.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { sendVerificationCode } from "@carbon/auth/verification.server";
+import { isSsoEnabled, isSsoRequiredForEmail } from "@carbon/ee/sso.server";
 import { Hidden, Input, Submit, ValidatedForm, validator } from "@carbon/form";
 import { AccountLockout, Ratelimit, redis } from "@carbon/kv";
 import {
@@ -72,6 +74,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const hasOutlookAuth = isAuthProviderEnabled("azure");
   const hasGoogleAuth = isAuthProviderEnabled("google");
   const hasPasskeyAuth = isAuthProviderEnabled("passkey");
+  const hasSsoAuth = isSsoEnabled();
 
   if (authSession) {
     if (await verifyAuthSession(authSession)) {
@@ -79,7 +82,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
     const cookieHeaders = await clearAuthCookies(request);
     return data(
-      { hasOutlookAuth, hasGoogleAuth, hasPasskeyAuth },
+      { hasOutlookAuth, hasGoogleAuth, hasPasskeyAuth, hasSsoAuth },
       { headers: cookieHeaders }
     );
   }
@@ -87,7 +90,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return {
     hasOutlookAuth,
     hasGoogleAuth,
-    hasPasskeyAuth
+    hasPasskeyAuth,
+    hasSsoAuth
   };
 }
 
@@ -210,6 +214,24 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
+  // Require-SSO gate: a covered + enforced domain may only authenticate via
+  // SSO — refuse the magic link (and the signup verification-code path) here,
+  // server-side. Deliberately AFTER the dev-bypass branch above so local dev
+  // keeps working.
+  if (await isSsoRequiredForEmail(getCarbonServiceRole(), email)) {
+    const SSO_REQUIRED_MESSAGE =
+      "Your organization requires single sign-on. Sign in with your work email to continue.";
+    logAuthEvent("login_failed", {
+      actor: email,
+      ip,
+      reason: "sso required for domain"
+    });
+    return data(
+      { success: false, message: SSO_REQUIRED_MESSAGE },
+      await flash(request, error(null, SSO_REQUIRED_MESSAGE))
+    );
+  }
+
   if (user.data && user.data.active) {
     const magicLink = await sendMagicLink(email);
 
@@ -253,16 +275,19 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function LoginRoute() {
   const { t } = useLingui();
-  const { hasOutlookAuth, hasGoogleAuth, hasPasskeyAuth } =
+  const { hasOutlookAuth, hasGoogleAuth, hasPasskeyAuth, hasSsoAuth } =
     useLoaderData<typeof loader>();
 
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? undefined;
+  const emailParam = searchParams.get("email") ?? undefined;
   const [mode, setMode] = useState<"login" | "signup" | "verify">("login");
   const [signupEmail, setSignupEmail] = useState<string>("");
   const [turnstileToken, setTurnstileToken] = useState<string>("");
   const [passkeySupported, setPasskeySupported] = useState(false);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
+  const [ssoLoading, setSsoLoading] = useState(false);
+  const [ssoError, setSsoError] = useState<string | null>(null);
   const conditionalAbortRef = useRef<AbortController | null>(null);
 
   const fetcher = useFetcher<Result & { mode?: string; email?: string }>();
@@ -416,6 +441,77 @@ export default function LoginRoute() {
     }
   };
 
+  // Invisible SSO fork: runs as the email form's onSubmit (after validation).
+  // If the entered email's domain is an SSO-registered domain, suppress the
+  // magic-link POST and route the browser to the identity provider instead.
+  // Otherwise it returns and the form submits normally (magic link / signup).
+  const onSubmitEmail = async (
+    formData: { email?: string },
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
+    // No SSO configured for this deployment — never pay a round-trip.
+    if (!hasSsoAuth) return;
+
+    setSsoError(null);
+    const email = String(formData.email ?? "")
+      .trim()
+      .toLowerCase();
+    const domain = email.split("@")[1];
+    if (!domain) return; // let the server validator handle a bad address
+
+    let enabled = false;
+    try {
+      const body = new FormData();
+      body.append("email", email);
+      const response = await fetch(path.to.api.ssoCheck, {
+        method: "POST",
+        body
+      });
+      enabled = response.ok ? Boolean((await response.json()).enabled) : false;
+    } catch {
+      // Fall through to the magic-link path; the server-side require-SSO gate
+      // is the defense-in-depth that still refuses an SSO-required domain.
+      enabled = false;
+    }
+
+    if (!enabled) return; // ordinary domain — magic-link submit proceeds
+
+    // SSO domain — stop the magic-link POST and hand off to the IdP.
+    event.preventDefault();
+    setSsoLoading(true);
+    const { data, error } = await carbonClient.auth.signInWithSSO({
+      domain,
+      options: {
+        redirectTo: `${window.location.origin}/callback${
+          redirectTo ? `?redirectTo=${redirectTo}` : ""
+        }`
+      }
+    });
+
+    if (error) {
+      setSsoError(error.message);
+      setSsoLoading(false);
+      return;
+    }
+
+    if (data?.url) {
+      // Prefill the user's email at the IdP so they don't retype it. The
+      // returned url is the IdP's SAML redirect-binding endpoint; login_hint is
+      // an extra query param (URL-encoded by URLSearchParams) that Okta/Entra
+      // honor and other IdPs safely ignore — it is not covered by the SAML
+      // request signature, so appending it never invalidates the request.
+      let target = data.url;
+      try {
+        const url = new URL(data.url);
+        url.searchParams.set("login_hint", email);
+        target = url.toString();
+      } catch {
+        // Non-absolute url — navigate to it unchanged.
+      }
+      window.location.href = target; // navigate away; keep the loading state
+    }
+  };
+
   return (
     <>
       <div className="flex justify-center mb-8">
@@ -473,20 +569,24 @@ export default function LoginRoute() {
           <ValidatedForm
             fetcher={fetcher}
             validator={magicLinkValidator}
-            defaultValues={{ redirectTo }}
+            defaultValues={{ redirectTo, email: emailParam }}
             method="post"
             action="/login"
+            onSubmit={onSubmitEmail}
           >
             <Hidden name="redirectTo" value={redirectTo} type="hidden" />
             <Hidden name="turnstileToken" value={turnstileToken} />
             <VStack spacing={2}>
-              {fetcher.data?.success === false && fetcher.data?.message && (
+              {((fetcher.data?.success === false && fetcher.data?.message) ||
+                ssoError) && (
                 <Alert variant="destructive">
                   <LuCircleAlert className="w-4 h-4" />
                   <AlertTitle>
                     <Trans>Authentication Error</Trans>
                   </AlertTitle>
-                  <AlertDescription>{fetcher.data?.message}</AlertDescription>
+                  <AlertDescription>
+                    {ssoError ?? fetcher.data?.message}
+                  </AlertDescription>
                 </Alert>
               )}
 
@@ -548,15 +648,16 @@ export default function LoginRoute() {
               <Submit
                 isDisabled={
                   fetcher.state !== "idle" ||
+                  ssoLoading ||
                   (!!CLOUDFLARE_TURNSTILE_SITE_KEY && !turnstileToken)
                 }
-                isLoading={fetcher.state === "submitting"}
+                isLoading={fetcher.state === "submitting" || ssoLoading}
                 size="lg"
                 className="w-full"
                 withBlocker={false}
                 variant="secondary"
               >
-                <Trans>Sign in with Email</Trans>
+                <Trans>Continue</Trans>
               </Submit>
               {!!CLOUDFLARE_TURNSTILE_SITE_KEY && (
                 <div className="w-full flex justify-center">

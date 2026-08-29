@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="ssBarrel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="ssRoll" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="ssFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#eef1f3"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#e2e7ea"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="513" cy="632" rx="441" ry="97" fill="url(#shadow)"/>
+
+  <!-- 1: standing, tallest (30mm) -->
+  <g>
+    <path d="M130 405 L130 600 Q208 660 286 600 L286 405 Z" fill="url(#ssBarrel)" stroke="#4a5055" stroke-width="3"/>
+    <path d="M130 588 Q208 648 286 588" fill="none" stroke="#7b8288" stroke-width="2.5" opacity="0.6"/>
+    <ellipse cx="208" cy="405" rx="78" ry="30" fill="url(#ssFace)" stroke="#4a5055" stroke-width="3"/>
+    <ellipse cx="208" cy="405" rx="70" ry="27" fill="none" stroke="#9aa2a8" stroke-width="2" opacity="0.9"/>
+    <g fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2">
+      <ellipse cx="208" cy="405" rx="62" ry="24"/>
+      <ellipse cx="208" cy="405" rx="52" ry="20"/>
+    </g>
+    <ellipse cx="208" cy="405" rx="45" ry="17" fill="#8f979d"/>
+    <ellipse cx="208" cy="406" rx="39" ry="15" fill="#333a3f"/>
+    <path d="M169 406 L169 590 Q208 620 247 590 L247 406" fill="#262c30" opacity="0.55"/>
+  </g>
+
+  <!-- 2: standing (24mm) -->
+  <g>
+    <path d="M321 444 L321 600 Q399 660 477 600 L477 444 Z" fill="url(#ssBarrel)" stroke="#4a5055" stroke-width="3"/>
+    <path d="M321 588 Q399 648 477 588" fill="none" stroke="#7b8288" stroke-width="2.5" opacity="0.6"/>
+    <ellipse cx="399" cy="444" rx="78" ry="30" fill="url(#ssFace)" stroke="#4a5055" stroke-width="3"/>
+    <ellipse cx="399" cy="444" rx="70" ry="27" fill="none" stroke="#9aa2a8" stroke-width="2" opacity="0.9"/>
+    <g fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2">
+      <ellipse cx="399" cy="444" rx="62" ry="24"/>
+      <ellipse cx="399" cy="444" rx="52" ry="20"/>
+    </g>
+    <ellipse cx="399" cy="444" rx="45" ry="17" fill="#8f979d"/>
+    <ellipse cx="399" cy="445" rx="39" ry="15" fill="#333a3f"/>
+    <path d="M360 445 L360 590 Q399 620 438 590 L438 445" fill="#262c30" opacity="0.55"/>
+  </g>
+
+  <!-- 3: lying (18mm) -->
+  <g>
+    <path d="M512 474 L629 474 A 27 78 0 0 1 629 630 L512 630 A 27 78 0 0 1 512 474 Z" fill="url(#ssRoll)" stroke="#4a5055" stroke-width="3"/>
+    <g fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2">
+      <path d="M519 502 L622 502"/>
+      <path d="M519 524 L622 524"/>
+    </g>
+    <path d="M519 600 L622 600" fill="none" stroke="#5f666c" stroke-opacity="0.35" stroke-width="2"/>
+    <ellipse cx="629" cy="552" rx="27" ry="78" fill="url(#ssFace)" stroke="#4a5055" stroke-width="3"/>
+    <ellipse cx="629" cy="552" rx="23" ry="70" fill="none" stroke="#9aa2a8" stroke-width="2" opacity="0.9"/>
+    <ellipse cx="629" cy="552" rx="16" ry="45" fill="#8f979d"/>
+    <ellipse cx="629" cy="552" rx="13" ry="39" fill="#333a3f"/>
+  </g>
+
+  <!-- 4: lying (12mm) -->
+  <g>
+    <path d="M691 474 L769 474 A 27 78 0 0 1 769 630 L691 630 A 27 78 0 0 1 691 474 Z" fill="url(#ssRoll)" stroke="#4a5055" stroke-width="3"/>
+    <g fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2">
+      <path d="M698 502 L762 502"/>
+      <path d="M698 524 L762 524"/>
+    </g>
+    <path d="M698 600 L762 600" fill="none" stroke="#5f666c" stroke-opacity="0.35" stroke-width="2"/>
+    <ellipse cx="769" cy="552" rx="27" ry="78" fill="url(#ssFace)" stroke="#4a5055" stroke-width="3"/>
+    <ellipse cx="769" cy="552" rx="23" ry="70" fill="none" stroke="#9aa2a8" stroke-width="2" opacity="0.9"/>
+    <ellipse cx="769" cy="552" rx="16" ry="45" fill="#8f979d"/>
+    <ellipse cx="769" cy="552" rx="13" ry="39" fill="#333a3f"/>
+  </g>
+
+  <!-- 5: lying, shortest (6mm) -->
+  <g>
+    <path d="M831 474 L870 474 A 27 78 0 0 1 870 630 L831 630 A 27 78 0 0 1 831 474 Z" fill="url(#ssRoll)" stroke="#4a5055" stroke-width="3"/>
+    <path d="M838 508 L862 508" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2"/>
+    <ellipse cx="870" cy="552" rx="27" ry="78" fill="url(#ssFace)" stroke="#4a5055" stroke-width="3"/>
+    <ellipse cx="870" cy="552" rx="23" ry="70" fill="none" stroke="#9aa2a8" stroke-width="2" opacity="0.9"/>
+    <ellipse cx="870" cy="552" rx="16" ry="45" fill="#8f979d"/>
+    <ellipse cx="870" cy="552" rx="13" ry="39" fill="#333a3f"/>
+  </g>
+</svg>

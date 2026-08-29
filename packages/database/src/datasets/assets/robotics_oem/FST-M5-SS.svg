@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="chrome" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5b6167"/>
+      <stop offset="0.14" stop-color="#dfe6ea"/>
+      <stop offset="0.34" stop-color="#ffffff"/>
+      <stop offset="0.6" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <linearGradient id="chromeV" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5b6167"/>
+      <stop offset="0.14" stop-color="#dfe6ea"/>
+      <stop offset="0.34" stop-color="#ffffff"/>
+      <stop offset="0.6" stop-color="#9aa2a9"/>
+      <stop offset="1" stop-color="#4e5459"/>
+    </linearGradient>
+    <linearGradient id="chromeFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#f4f8fa"/>
+      <stop offset="0.45" stop-color="#cdd5da"/>
+      <stop offset="1" stop-color="#7f878e"/>
+    </linearGradient>
+    <linearGradient id="hexHole" x1="0.3" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#343a3f"/>
+      <stop offset="1" stop-color="#697178"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="512" cy="836" rx="372" ry="82" fill="url(#shadow)"/>
+
+  <!-- companion M5 screw lying flat beside it -->
+  <g transform="translate(742 764) rotate(-7)">
+    <path d="M-172 -42 L150 -42 L150 42 L-172 42 Z" fill="url(#chromeV)" stroke="#4a5055" stroke-width="2.5"/>
+    <path d="M-172 -88 L-96 -88 L-96 88 L-172 88 Z" fill="url(#chromeV)" stroke="#4a5055" stroke-width="2.5"/>
+    <g stroke="#7d848b" stroke-width="3.4" opacity="0.75" fill="none">
+      <path d="M-88 -42 L-78 42 M-64 -42 L-54 42 M-40 -42 L-30 42 M-16 -42 L-6 42
+               M8 -42 L18 42 M32 -42 L42 42 M56 -42 L66 42 M80 -42 L90 42
+               M104 -42 L114 42 M128 -42 L138 42"/>
+    </g>
+    <g stroke="#ffffff" stroke-width="2" opacity="0.45" fill="none">
+      <path d="M-80 -42 L-70 42 M-56 -42 L-46 42 M-32 -42 L-22 42 M-8 -42 L2 42
+               M16 -42 L26 42 M40 -42 L50 42 M64 -42 L74 42 M88 -42 L98 42
+               M112 -42 L122 42 M136 -42 L146 42"/>
+    </g>
+    <!-- flat cut end -->
+    <ellipse cx="150" cy="0" rx="16" ry="42" fill="#c3cacf" stroke="#6b7278" stroke-width="2.5"/>
+    <!-- head end face with narrow hex socket -->
+    <ellipse cx="-172" cy="0" rx="30" ry="88" fill="url(#chromeFace)" stroke="#767d83" stroke-width="2.5"/>
+    <g transform="translate(-172 0) scale(0.34 1)">
+      <polygon points="0,-44 38,-22 38,22 0,44 -38,22 -38,-22" fill="url(#hexHole)" stroke="#3f4549" stroke-width="5"/>
+    </g>
+    <path d="M-168 -62 L146 -62" stroke="#ffffff" stroke-opacity="0.28" stroke-width="7" fill="none"/>
+  </g>
+
+  <!-- main M5 x 16 screw standing upright on its head -->
+  <g>
+    <!-- head barrel -->
+    <path d="M302 742 L302 806 Q430 904 558 806 L558 742 Z" fill="url(#chrome)" stroke="#454b50" stroke-width="3"/>
+    <!-- fine knurl on the head circumference -->
+    <g stroke="#5c6369" stroke-width="2.6" opacity="0.5" fill="none">
+      <path d="M316 745 L316 800 M334 748 L334 810 M352 750 L352 818 M370 751 L370 824
+               M388 752 L388 828 M406 752 L406 831 M424 752 L424 832 M442 752 L442 832
+               M460 752 L460 830 M478 751 L478 826 M496 750 L496 821 M514 748 L514 813
+               M532 746 L532 803 M548 744 L548 790"/>
+    </g>
+    <g stroke="#ffffff" stroke-width="1.8" opacity="0.32" fill="none">
+      <path d="M325 746 L325 805 M343 749 L343 814 M361 750 L361 821 M379 751 L379 826
+               M397 752 L397 830 M415 752 L415 832 M433 752 L433 832 M451 752 L451 831
+               M469 751 L469 828 M487 750 L487 824 M505 749 L505 817 M523 747 L523 808
+               M541 745 L541 797"/>
+    </g>
+
+    <!-- fully threaded shank, no plain shoulder -->
+    <path d="M370 160 L370 742 L490 742 L490 160 Z" fill="url(#chrome)" stroke="#454b50" stroke-width="2.5"/>
+    <g stroke="#7d848b" stroke-width="4" opacity="0.78" fill="none">
+      <path d="M370 730 L490 719 M370 704 L490 693 M370 678 L490 667 M370 652 L490 641
+               M370 626 L490 615 M370 600 L490 589 M370 574 L490 563 M370 548 L490 537
+               M370 522 L490 511 M370 496 L490 485 M370 470 L490 459 M370 444 L490 433
+               M370 418 L490 407 M370 392 L490 381 M370 366 L490 355 M370 340 L490 329
+               M370 314 L490 303 M370 288 L490 277 M370 262 L490 251 M370 236 L490 225
+               M370 210 L490 199 M370 184 L490 173"/>
+    </g>
+    <g stroke="#ffffff" stroke-width="2.4" opacity="0.5" fill="none">
+      <path d="M370 738 L490 727 M370 712 L490 701 M370 686 L490 675 M370 660 L490 649
+               M370 634 L490 623 M370 608 L490 597 M370 582 L490 571 M370 556 L490 545
+               M370 530 L490 519 M370 504 L490 493 M370 478 L490 467 M370 452 L490 441
+               M370 426 L490 415 M370 400 L490 389 M370 374 L490 363 M370 348 L490 337
+               M370 322 L490 311 M370 296 L490 285 M370 270 L490 259 M370 244 L490 233
+               M370 218 L490 207 M370 192 L490 181"/>
+    </g>
+    <!-- cool mirror highlight down the shank -->
+    <path d="M398 176 L398 736" stroke="#ffffff" stroke-opacity="0.3" stroke-width="9" fill="none"/>
+
+    <!-- head top face where the shank emerges -->
+    <ellipse cx="430" cy="742" rx="128" ry="49" fill="url(#chromeFace)" stroke="#767d83" stroke-width="2.5"/>
+    <ellipse cx="430" cy="742" rx="116" ry="44" fill="none" stroke="#ffffff" stroke-opacity="0.24" stroke-width="2.5"/>
+    <ellipse cx="430" cy="742" rx="96" ry="36" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2"/>
+    <path d="M370 742 A60 23 0 0 0 490 742 L490 720 L370 720 Z" fill="#aab2b8" opacity="0.5"/>
+    <ellipse cx="430" cy="742" rx="60" ry="23" fill="none" stroke="#6f767c" stroke-width="2.5"/>
+
+    <!-- flat cut end of the shank -->
+    <ellipse cx="430" cy="160" rx="60" ry="23" fill="#dfe5e9" stroke="#6f767c" stroke-width="2.5"/>
+    <ellipse cx="430" cy="160" rx="48" ry="18" fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="2"/>
+    <ellipse cx="430" cy="160" rx="34" ry="13" fill="none" stroke="#9aa2a8" stroke-opacity="0.5" stroke-width="2"/>
+  </g>
+</svg>

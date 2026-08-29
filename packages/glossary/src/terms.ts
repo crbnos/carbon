@@ -1998,6 +1998,10 @@ export const terms = {
     term: msg`About (notification)`,
     definition: msg`The record a workflow notification points at, named as an id plus its kind; leave it empty and the notification links to the workflow run itself.`
   },
+  "workflow-notify-channels": {
+    term: msg`Notification Type`,
+    definition: msg`Where a workflow notification is delivered — in-app is always sent, while email needs a Business or Partner plan and Slack needs your Slack workspace connected.`
+  },
   "workflow-webhook-url": {
     term: msg`Webhook URL`,
     definition: msg`The https address a workflow's webhook step posts to — plain http, redirects, and hosts resolving to private or link-local addresses are refused, and the call gives up after ten seconds.`
@@ -2013,5 +2017,19 @@ export const terms = {
   "workflow-webhook-headers": {
     term: msg`Webhook Headers`,
     definition: msg`Extra information sent with the request, such as an authorization key; header values are hidden in run history, though the names stay readable.`
+  },
+  "single-sign-on": {
+    term: msg`Single sign-on (SSO)`,
+    definition: msg`An Enterprise sign-in method where everyone on a company's registered email domains authenticates through the company's own SAML identity provider instead of a magic link, so IT grants and revokes access centrally.`,
+    href: "/docs/platform/single-sign-on"
+  },
+  "identity-provider": {
+    term: msg`Identity provider (IdP)`,
+    definition: msg`The system a company uses to manage its people's logins — Okta, Entra ID, or Google Workspace — which vouches for who someone is when they sign in to Carbon via SSO.`,
+    href: "/docs/platform/single-sign-on"
+  },
+  "magic-link": {
+    term: msg`Magic link`,
+    definition: msg`Carbon's default passwordless sign-in: an emailed one-time link that signs you in when opened, with no password to remember or leak.`
   }
 } as const satisfies Record<string, GlossaryEntry>;

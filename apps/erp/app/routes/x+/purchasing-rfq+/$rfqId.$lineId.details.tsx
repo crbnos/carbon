@@ -23,6 +23,7 @@ import {
   SupplierInteractionLineDocuments,
   SupplierInteractionLineNotes
 } from "~/modules/purchasing/ui/SupplierInteraction";
+import { getModelByItemId } from "~/modules/shared";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
@@ -47,8 +48,17 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     );
   }
 
+  // purchasingRfqLines is the one line view that exposes modelPath without the
+  // model's id, so read the whole row off the item instead — only when the line
+  // says there is a model at all.
+  const model =
+    line.data?.modelPath && line.data.itemId
+      ? await getModelByItemId(serviceRole, line.data.itemId)
+      : null;
+
   return {
     line: line.data,
+    model,
     files: getSupplierInteractionLineDocuments(serviceRole, companyId, lineId)
   };
 };
@@ -106,7 +116,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function PurchasingRFQLine() {
-  const { line, files } = useLoaderData<typeof loader>();
+  const { line, model, files } = useLoaderData<typeof loader>();
 
   const permissions = usePermissions();
 
@@ -165,7 +175,7 @@ export default function PurchasingRFQLine() {
           purchasingRfqLineId: line.id ?? undefined,
           itemId: line.itemId ?? undefined
         }}
-        modelPath={line?.modelPath ?? null}
+        modelUpload={model}
         title="CAD Model"
         uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
         viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
