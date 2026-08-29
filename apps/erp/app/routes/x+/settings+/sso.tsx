@@ -15,6 +15,7 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { ssoConnectionValidator, ssoDomainValidator } from "~/modules/settings";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 // Action-only route — the SSO admin UI lives on the Security screen. A direct
@@ -142,11 +143,15 @@ export async function action({ request }: ActionFunctionArgs) {
       return data({}, await flash(request, error(null, "Unknown domain")));
     }
 
-    const result = await verifySsoDomain(getCarbonServiceRole(), {
-      companyId,
-      domainId,
-      userId
-    });
+    const result = await verifySsoDomain(
+      getCarbonServiceRole(),
+      getDatabaseClient(),
+      {
+        companyId,
+        domainId,
+        userId
+      }
+    );
 
     if (result.error) {
       return data({}, await flash(request, error(result.error, result.error)));
@@ -179,10 +184,14 @@ export async function action({ request }: ActionFunctionArgs) {
       return data({}, await flash(request, error(null, "Unknown domain")));
     }
 
-    const removal = await removeSsoDomain(getCarbonServiceRole(), {
-      companyId,
-      domainId
-    });
+    const removal = await removeSsoDomain(
+      getCarbonServiceRole(),
+      getDatabaseClient(),
+      {
+        companyId,
+        domainId
+      }
+    );
 
     if (removal.error) {
       return data(

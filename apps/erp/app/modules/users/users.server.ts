@@ -18,7 +18,11 @@ import { now, parseAbsolute } from "@internationalized/date";
 export { getUserClaims } from "@carbon/auth/users.server";
 
 import {
+  emailDomain,
   getSsoConnection,
+  getSsoConnectionByDomain,
+  isSsoEnabled,
+  seedSsoIdentityForUser,
   uncoveredSsoDomainError
 } from "@carbon/ee/sso.server";
 import { getLogger } from "@carbon/logger";
@@ -36,6 +40,7 @@ import type {
   User
 } from "~/modules/users";
 import { getPermissionsByEmployeeType } from "~/modules/users";
+import { getDatabaseClient } from "~/services/database.server";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
 import { insertEmployeeJob } from "../people/people.service";
@@ -290,6 +295,43 @@ export async function addUserToCompany(
   return client.from("userToCompany").insert(userToCompany);
 }
 
+/**
+ * Pre-seed a SAML SSO identity for a newly-created auth user when their email
+ * domain already has a verified SSO connection — so their first SAML sign-in
+ * links to this account instead of being rejected by GOTRUE_DISABLE_SIGNUP.
+ * (Existing users on a domain are handled by the backfill in verifySsoDomain.)
+ *
+ * Best-effort: a failure is logged, never thrown — account creation must not
+ * fail because seeding failed, and the domain-verify backfill is a fallback.
+ * Rollback-safe: identities cascade-delete with auth.users, so a later insert
+ * failure that deletes the auth account also removes this row. Self-gates on
+ * isSsoEnabled(); off-Enterprise it does not query.
+ */
+async function seedSsoIdentityForNewUser(
+  serviceRole: SupabaseClient<Database>,
+  { userId, email }: { userId: string; email: string }
+): Promise<void> {
+  if (!isSsoEnabled()) return;
+  const domain = emailDomain(email);
+  if (!domain) return;
+
+  const connection = await getSsoConnectionByDomain(serviceRole, domain);
+  if (connection.error || !connection.data) return;
+
+  const seed = await seedSsoIdentityForUser(getDatabaseClient(), {
+    userId,
+    email,
+    providerId: connection.data.providerId
+  });
+  if (seed.error) {
+    logger.error("Failed to pre-seed SSO identity for new user", {
+      userId,
+      domain,
+      error: seed.error
+    });
+  }
+}
+
 export async function createCustomerAccount(
   client: SupabaseClient<Database>,
   {
@@ -354,6 +396,8 @@ export async function createCustomerAccount(
       await deleteAuthAccount(serviceRole, userId);
       return { success: false, message: createCarbonUser.error.message };
     }
+
+    await seedSsoIdentityForNewUser(serviceRole, { userId, email });
   }
 
   const code = crypto.randomUUID();
@@ -491,6 +535,8 @@ export async function createEmployeeAccount(
       await deleteAuthAccount(serviceRole, userId);
       return { success: false, message: createCarbonUser.error.message };
     }
+
+    await seedSsoIdentityForNewUser(serviceRole, { userId, email });
   }
 
   const code = crypto.randomUUID();
@@ -610,6 +656,8 @@ export async function createSupplierAccount(
       await deleteAuthAccount(serviceRole, userId);
       return { success: false, message: createCarbonUser.error.message };
     }
+
+    await seedSsoIdentityForNewUser(serviceRole, { userId, email });
   }
 
   const code = crypto.randomUUID();

@@ -29,6 +29,16 @@ vi.mock("@carbon/logger", () => ({
   })
 }));
 
+// connections.server now imports provisioning.server, which pulls in the auth
+// client and Redis at module load. Stub them so the module graph loads without a
+// real Supabase/Redis connection — these tests never reach code that uses them.
+vi.mock("@carbon/auth", () => ({
+  getPermissionCacheKey: (id: string) => `permissions:${id}`
+}));
+vi.mock("@carbon/kv", () => ({
+  redis: { del: vi.fn() }
+}));
+
 // Stub the DNS challenge so no test resolves real TXT records.
 const { checkDomainVerificationMock } = vi.hoisted(() => ({
   checkDomainVerificationMock: vi.fn()
@@ -49,6 +59,9 @@ const {
   upsertSsoConnection,
   verifySsoDomain
 } = await import("./connections.server");
+const { emailDomain, ssoProviderColumn } = await import(
+  "./provisioning.server"
+);
 
 function makeUser(overrides: {
   identityProviders?: string[];
@@ -403,7 +416,10 @@ describe("ssoDomain claim exclusivity", () => {
       }
     } as never;
 
-    const result = await verifySsoDomain(client, {
+    // This path returns at the cross-company conflict check, before any
+    // auth-schema write, so the db handle is never exercised here.
+    const dbStub = {} as never;
+    const result = await verifySsoDomain(client, dbStub, {
       companyId: "c1",
       domainId: "dom_1",
       userId: "user_1"
@@ -412,6 +428,27 @@ describe("ssoDomain claim exclusivity", () => {
     expect(result.error).toBe("Failed to verify domain");
     expect(result.error).not.toContain("another company");
     expect(checkDomainVerificationMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("pre-seed identity helpers (provider-agnostic linking)", () => {
+  it("ssoProviderColumn builds the auth.identities provider value", () => {
+    expect(ssoProviderColumn("11111111-2222-3333-4444-555555555555")).toBe(
+      "sso:11111111-2222-3333-4444-555555555555"
+    );
+  });
+
+  it("emailDomain lowercases, trims, and takes the part after @", () => {
+    expect(emailDomain("Jane.Doe@Acme.COM")).toBe("acme.com");
+    expect(emailDomain("user@sub.acme.com")).toBe("sub.acme.com");
+    expect(emailDomain("  spaced@acme.com  ")).toBe("acme.com");
+  });
+
+  it("emailDomain returns null when there is no domain part", () => {
+    expect(emailDomain("no-at-sign")).toBeNull();
+    expect(emailDomain("")).toBeNull();
+    // A trailing "@" leaves an empty domain segment after trimming.
+    expect(emailDomain("trailing@")).toBe("");
   });
 });
 

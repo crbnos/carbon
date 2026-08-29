@@ -24,6 +24,72 @@ misconfiguration into a live takeover path.
 
 ---
 
+## 0. Design revision (v2, 2026-08-29) — grounded against shipped code
+
+The sections below were written before auditing PR #1455, which already shipped much of §5, and
+before verifying GoTrue v2.177.0's linking internals across IdPs. The **implemented** design (see
+`.ai/plans/2026-08-29-saml-sso-account-linking.md`) corrects three things. Where §5/§6 below conflict
+with this section, **this section wins**.
+
+1. **Reuse #1455's tables, don't create `ssoDomainClaim`.** `ssoConnection` + `ssoDomain` (with a
+   `pending → verified` DNS-TXT lifecycle in `packages/ee/src/sso/verification.server.ts`,
+   `_carbon-challenge.<domain>` / `carbon-domain-verification=<token>`) already are the claim table.
+   The reserved-domain list already exists as `PUBLIC_EMAIL_DOMAINS` in `settings.models.ts`.
+
+2. **Key linking on the `auth.identities.email` column, not `provider_id` — this is the
+   provider-agnostic fix.** GoTrue v2.177.0 marks every SAML assertion email `Verified` (hardcoded)
+   and hard-rejects (400) an assertion with no extractable email, so its email-column fallback in
+   `DetermineAccountLinking` fires on *every* successful SAML sign-in, for *any* IdP (Okta, Entra,
+   OneLogin, Ping, Google, JumpCloud, ADFS). Pre-seeding a row with `provider = 'sso:<providerId>'`
+   and `identity_data.email = lower(email)` (so the generated `email` column = `lower(email)`) makes
+   GoTrue `LinkAccount` to the existing user regardless of the NameID's shape. It then self-heals: the
+   next login's `provider_id == NameID` lookup hits the row GoTrue created. The spec's original
+   `provider_id = email` keying only worked because Okta's NameID *is* the email; Entra's default is an
+   opaque persistent pairwise id, which that key misses. `provider_id` is now just a human-readable
+   placeholder; the email column carries the match.
+
+3. **§5.5 changes from "require email-format NameID" to a live-assertion email check.** Requiring
+   `NameID Format = emailAddress` wrongly rejects Entra and is neither necessary nor sufficient. The
+   real guarantees (operational, validated from a captured test assertion at activation — not a config
+   string): (a) GoTrue extracts a non-empty email (guards ADFS/no-email-claim and Entra null-`user.mail`
+   — these fail *loud* with a 400, not silently), and (b) that email equals the seeded `lower(email)`
+   (guards Entra B2B guests whose email resolves to the mangled `user_..#EXT#@tenant.onmicrosoft.com`
+   UPN, and secondary-address mismatches). Under `DISABLE_SIGNUP=true`, a mismatch is a visible 422, not
+   a silent duplicate user.
+
+**Mechanism, implementation, and prerequisites of v2:**
+
+- **Architecture: pre-seed under `DISABLE_SIGNUP=true`.** #1455 was built for the *opposite* config —
+  it lets GoTrue JIT-create a user, then repairs it in `callback.tsx` (`linkSsoIdentityToUser`). That
+  repair needs `DISABLE_SIGNUP=false`; production runs `true`, so GoTrue 422s at step one and the whole
+  repair path is dead code in production. Pre-seeding makes GoTrue take the `LinkAccount`/`AccountExists`
+  branch, which needs no signup — so `DISABLE_SIGNUP=true` stays, and the email self-registration hole
+  never reopens.
+- **Implemented app-layer, matching #1455 (no DB triggers T1–T4).** Pre-seeding lives in
+  `packages/ee/src/sso/provisioning.server.ts` and is wired at two points and torn down at a third:
+  `verifySsoDomain` backfills every existing on-domain user when a domain is verified (§6's T3);
+  the three account-creation flows (`createEmployeeAccount` / `createCustomerAccount` /
+  `createSupplierAccount`) seed a newly-invited user whose domain already has a verified connection
+  (T1); `removeSsoDomain` deletes that domain's seeded identities, keyed on the `email` column so it
+  also catches GoTrue's self-healed opaque-NameID rows (T2/T4). The rogue-IdP defense stays where
+  #1455 put it — the callback's domain check before any identity write.
+- **§5.4 in-DB guard kept as defense-in-depth**, adapted to the shipped verify ordering: a
+  `BEFORE INSERT` trigger on `auth.sso_domains` raises unless a `ssoDomain` claim row exists for the
+  domain (the shipped flow syncs GoTrue while the row is still `pending`, by a deliberate
+  lockout-avoidance ordering — a "verified-only" guard would break it, so the guard requires a *claim*,
+  which still blocks injecting an unclaimed domain from Studio/a migration). Reserved domains are
+  blocked in-DB too via a seeded `ssoReservedDomain` table (kept in sync with `PUBLIC_EMAIL_DOMAINS`).
+  A session-local `app.sso_domain_override` GUC lets staff scripts bypass for Carbon-own domains.
+- **OQ4 audit:** `verifySsoDomain` writes a best-effort audit-log entry recording the backfill
+  (domain, provider, linked-user count) — a privilege-granting event.
+- **Deployment prerequisites (NOT in this repo — the `crbnos/supabase` fork):** keep
+  `GOTRUE_DISABLE_SIGNUP=true`; the Kong SAML route + `GOTRUE_URI_ALLOW_LIST` fixes from §10. The
+  repo-side code is inert without them, so the PR ships as a draft flagged **e2e-unverified — needs a
+  SAML env** (Okta/Entra IdP + DNS). In-repo verification is unit tests + a rolled-back-transaction
+  migration check on the guard trigger.
+
+---
+
 ## 1. Observed failure
 
 ```
@@ -279,14 +345,19 @@ rather than implicit and unchecked.
 
 ## 9. Open questions
 
-1. Is tenant-facing SSO activation self-serve, or staff-operated? Self-serve makes §5 mandatory and
-   urgent; staff-operated makes it defense in depth.
-2. Do we offer per-domain **SSO enforcement** (disable password login for a domain)? Common ask from
-   customers with an IdP, and not expressible in GoTrue — it would live in Carbon's login route.
-3. `internal.example` appears as an employee domain in `COMPANY_2`. Non-routable, so it
-   can never be DNS-verified. Confirm it's a service/test account before it becomes a support ticket.
-4. Do we need an audit record when a backfill links N accounts? Recommended — it's a
-   privilege-granting event and should be visible in the audit log.
+All resolved 2026-08-29 (Brad):
+
+1. **Self-serve vs staff-operated activation → staff-operated for v1.** Claims are created and
+   verified by internal staff only; there is no tenant-facing UI. §5 is therefore defense in depth
+   rather than a self-serve gate — but it still ships first, and the in-DB guard on
+   `auth.sso_domains` (§5.4) is the real enforcement point regardless of who writes the claim.
+2. **Per-domain SSO enforcement (disable password login) → out of scope.** GoTrue has no per-domain
+   enforcement; if we build it later it lives in Carbon's login route, not here.
+3. **Non-routable domains (e.g. `internal.example`) → ineligible.** They can never pass DNS
+   verification, so they simply never become verified claims; no special-casing beyond that. Treat
+   the underlying accounts as service/test accounts.
+4. **Audit record on backfill → yes.** A backfill that links N accounts is a privilege-granting
+   event and writes an audit-log entry.
 
 ## 10. Prior context
 
