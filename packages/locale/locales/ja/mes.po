@@ -286,6 +286,9 @@ msgstr "消費済み"
 msgid "Consumed expired"
 msgstr "消費期限切れ"
 
+msgid "Continue"
+msgstr "続行"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "過去{0}日間の未計画保全原価"
@@ -1282,9 +1285,6 @@ msgstr "不足"
 
 msgid "Short pick {itemName}"
 msgstr "短いピック {itemName}"
-
-msgid "Sign in with Email"
-msgstr "メールでサインイン"
 
 msgid "Sign in with Google"
 msgstr "Googleでサインイン"

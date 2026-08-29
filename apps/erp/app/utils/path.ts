@@ -251,6 +251,7 @@ export const path = {
       shifts: (id: string) =>
         generatePath(`${api}/people/shifts?location=${id}`),
       shippingMethods: `${api}/inventory/shipping-methods`,
+      ssoCheck: `${api}/sso/check`,
       storageTypes: `${api}/inventory/storage-types`,
       storageUnitChildren: (parentId: string) =>
         generatePath(
@@ -2035,6 +2036,7 @@ export const path = {
       generatePath(`${x}/inventory/shipping-methods/${id}`),
     shippingMethods: `${x}/inventory/shipping-methods`,
     splitIssueItem: `${x}/issue/item/split`,
+    sso: `${x}/settings/sso`,
     stockMovementCorrect: (id: string) =>
       generatePath(`${x}/inventory/stock-movements/${id}/correct`),
     stockMovements: `${x}/inventory/stock-movements`,

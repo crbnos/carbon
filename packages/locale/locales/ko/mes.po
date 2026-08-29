@@ -286,6 +286,9 @@ msgstr "소비됨"
 msgid "Consumed expired"
 msgstr "소모 만료"
 
+msgid "Continue"
+msgstr "계속"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "계획되지 않은 유지보수의 원가, 최근 {0}일"
@@ -1282,9 +1285,6 @@ msgstr "짧게"
 
 msgid "Short pick {itemName}"
 msgstr "{itemName} 부족 피킹"
-
-msgid "Sign in with Email"
-msgstr "이메일로 로그인"
 
 msgid "Sign in with Google"
 msgstr "Google로 로그인"

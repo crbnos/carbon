@@ -138,6 +138,43 @@ function UpgradeOverlayDialog({
   );
 }
 
+/**
+ * Generic section-level gate: blurs the real (inert) section and centers the
+ * upgrade card over it. Unlike the full-page overlays, it sizes to the section
+ * — the min-height only guarantees the card fits over short content.
+ */
+function UpgradeOverlaySection({
+  icon,
+  title,
+  description,
+  children,
+  className
+}: {
+  icon: ReactNode;
+  title: ReactNode;
+  description: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <UpgradeOverlayRoot className={cn("min-h-80", className)}>
+      <UpgradeOverlayPreview className="flex min-h-80 flex-col justify-center">
+        {children}
+      </UpgradeOverlayPreview>
+      <UpgradeOverlayCard>
+        <UpgradeOverlayIcon>{icon}</UpgradeOverlayIcon>
+        <UpgradeOverlayContent>
+          <UpgradeOverlayTitle>{title}</UpgradeOverlayTitle>
+          <UpgradeOverlayDescription>{description}</UpgradeOverlayDescription>
+        </UpgradeOverlayContent>
+        <UpgradeOverlayActions>
+          <UpgradeOverlayUpgradeButton />
+        </UpgradeOverlayActions>
+      </UpgradeOverlayCard>
+    </UpgradeOverlayRoot>
+  );
+}
+
 function UpgradeOverlayUpgradeButton({
   children,
   to = path.to.billing
@@ -164,6 +201,7 @@ export {
   UpgradeOverlayIcon,
   UpgradeOverlayInline,
   UpgradeOverlayPreview,
+  UpgradeOverlaySection,
   UpgradeOverlayStickyGradient,
   UpgradeOverlayTitle,
   UpgradeOverlayUpgradeButton

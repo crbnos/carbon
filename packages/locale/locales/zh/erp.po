@@ -1032,6 +1032,9 @@ msgstr "购置成本"
 msgid "Acquisition Date"
 msgstr "收购日期"
 
+msgid "ACS URL"
+msgstr "ACS URL"
+
 msgid "Action"
 msgstr "操作"
 
@@ -1109,6 +1112,9 @@ msgstr "添加评论..."
 
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "添加自定义定价行以覆盖数量、价格、运费、提前期和税费"
+
+msgid "Add a domain"
+msgstr "添加一个域"
 
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "添加一个列出物料清单上每个物料及其数量的物料部分。"
@@ -1295,6 +1301,9 @@ msgstr "添加供应商"
 
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "在同一系统上添加下一个功能，而不是购买另一个工具。"
+
+msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
+msgstr "在您的 DNS 主机上添加此 TXT 记录，然后单击验证。DNS 更改可能需要几分钟才能传播。"
 
 msgid "Add Timecard"
 msgstr "添加工时卡"
@@ -1520,6 +1529,9 @@ msgstr "您在画布上构建的自动化：一个触发器，然后是检查条
 
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "工程变更是指受影响的物料，其方法在草稿上修订后一起下达，以取代之前的版本。"
+
+msgid "An Enterprise sign-in method where everyone on a company's registered email domains authenticates through the company's own SAML identity provider instead of a magic link, so IT grants and revokes access centrally."
+msgstr "一种企业登录方法,公司注册电子邮件域中的所有人通过公司自己的 SAML 身份提供商进行身份验证,而不是使用魔法链接,因此 IT 可以集中授予和撤销访问权限。"
 
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "当工作流到达该步骤时，Carbon向您的系统发送的HTTPS请求，携带您配置的任何标头和请求体。"
@@ -1869,6 +1881,9 @@ msgstr "确定要为此销售订单创建工单吗？这将为所有尚未有工
 #. placeholder {0}: routeData?.supplier?.name
 msgid "Are you sure you want to deactivate {0}?"
 msgstr "你确定要停用 {0} 吗？"
+
+msgid "Are you sure you want to deactivate SAML SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
+msgstr "您确定要停用 SAML SSO 吗？注册域上的用户将无法再通过身份提供者登录。此操作无法撤销。"
 
 #. placeholder {0}: selectedCategory?.name
 msgid "Are you sure you want to deactivate the {0} attribute category?"
@@ -3035,6 +3050,9 @@ msgstr "仅限Carbon · 为此客户填入真实目标。他们可以看到这�
 msgid "Carbon-only · the customer sees this text, locked."
 msgstr "仅限Carbon · 客户可以看到此文本，已锁定。"
 
+msgid "Carbon's default passwordless sign-in: an emailed one-time link that signs you in when opened, with no password to remember or leak."
+msgstr "Carbon 的默认无密码登录:一个通过电子邮件发送的一次性链接,打开时会自动登录您,无需记住或泄露任何密码。"
+
 msgid "Carbon's name for a bill of material and bill of process (routing): the components plus the operations that make a part."
 msgstr "Carbon对物料清单和工序清单（工艺路线）的称呼：组成零件的物料和工序。"
 
@@ -3607,6 +3625,9 @@ msgstr "冲突"
 msgid "Conflict reason"
 msgstr "冲突原因"
 
+msgid "Connect"
+msgstr "连接"
+
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "将 Carbon 连接到您的会计、项目管理和 CAD 工具等更多应用。"
 
@@ -3624,6 +3645,9 @@ msgstr "将 Otherwise 句柄连接到节点，以便在没有条件匹配时运�
 
 msgid "Connect the outside tools your company already runs on"
 msgstr "连接您的公司已在使用的外部工具"
+
+msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
+msgstr "通过粘贴身份提供商的元数据 URL 或原始元数据 XML(两者中恰好一个)来连接您的身份提供商。"
 
 msgid "Connected to"
 msgstr "连接到"
@@ -3699,6 +3723,9 @@ msgstr "内容"
 
 msgid "Context"
 msgstr "上下文"
+
+msgid "Continue"
+msgstr "继续"
 
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "固定资产累计折旧对冲资产账户"
@@ -4732,6 +4759,9 @@ msgstr "停用员工"
 
 msgid "Deactivate Process"
 msgstr "停用流程"
+
+msgid "Deactivate Single Sign-On"
+msgstr "停用单点登录"
 
 msgid "Deactivate Supplier"
 msgstr "停用供应商"
@@ -6082,6 +6112,9 @@ msgstr "电子邮件"
 
 msgid "Email Address"
 msgstr "电子邮件地址"
+
+msgid "Email Domains"
+msgstr "电子邮件域"
 
 msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
 msgstr "电子邮件通知不包含在贵公司的当前计划中；如果启用电子邮件偏好设置，这些偏好将适用。"
@@ -7688,6 +7721,9 @@ msgstr "跳转 {depth}"
 msgid "Hope the day's treating you well, {name}."
 msgstr ""
 
+msgid "Host"
+msgstr "主机"
+
 msgid "Host, secure, and back up the platform"
 msgstr "托管、保护和备份平台"
 
@@ -7867,6 +7903,18 @@ msgstr "幂等键"
 
 msgid "Identifiers"
 msgstr "标识符"
+
+msgid "Identity Provider"
+msgstr "身份提供商"
+
+msgid "Identity provider (IdP)"
+msgstr "身份提供商 (IdP)"
+
+msgid "IdP Metadata URL"
+msgstr "IdP 元数据 URL"
+
+msgid "IdP Metadata XML"
+msgstr "IdP 元数据 XML"
 
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "ID 和描述是为原材料生成的。"
@@ -8789,6 +8837,9 @@ msgstr "更少的手动工作，更少的错误"
 msgid "Less overtime"
 msgstr "较少加班"
 
+msgid "Let members sign in through your identity provider with SAML."
+msgstr "允许成员通过您的身份提供商使用 SAML 登录。"
+
 msgid "Let's Build"
 msgstr "让我们构建"
 
@@ -9094,6 +9145,9 @@ msgstr "MACRS公约"
 msgid "MACRS Property Class"
 msgstr "MACRS资产类别"
 
+msgid "Magic link"
+msgstr "魔法链接"
+
 msgid "Maintain a single part and item master"
 msgstr "维护单一零件和物料主数据"
 
@@ -9174,6 +9228,9 @@ msgstr "启用此文件并使其可见。"
 
 msgid "Manage"
 msgstr "管理"
+
+msgid "Manage authentication and sign-in requirements for your company."
+msgstr "管理您公司的身份验证和登录要求。"
 
 msgid "Manage how shelf life is tracked, computed, and enforced across inventory."
 msgstr "管理保质期在库存管理中的跟踪、计算和执行方式。"
@@ -9505,6 +9562,9 @@ msgstr "公制单位已禁用"
 
 msgid "Metric units are enabled"
 msgstr "公制单位已启用"
+
+msgid "MFA"
+msgstr "MFA"
 
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "决定首年扣除的月中/季中/半年约定俗成的方法。"
@@ -10595,6 +10655,9 @@ msgstr "不是表，而是总账余额：成本随着工单物料的领料而累
 msgid "Not certified"
 msgstr "未认证"
 
+msgid "Not configured"
+msgstr "未配置"
+
 msgid "Not enough jobs to cover quantity"
 msgstr "工单数量不足以覆盖所需数量"
 
@@ -11358,6 +11421,9 @@ msgstr "通行密钥已禁用"
 msgid "Past due"
 msgstr "逾期"
 
+msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
+msgstr "如果您的身份提供商未发布元数据 URL,请粘贴元数据 XML"
+
 msgid "Path"
 msgstr "路径"
 
@@ -12069,8 +12135,14 @@ msgstr "通过双因素认证强制执行等高级安全控制来保护您的公
 msgid "Protects your company's data"
 msgstr "保护您公司的数据"
 
+msgid "Prove ownership of each email domain with a DNS TXT record before it can route SAML SSO sign-ins. Add the record at DNS host, then click Verify — only verified domains participate in single sign-on."
+msgstr "在路由 SAML SSO 登录前，通过 DNS TXT 记录证明每个电子邮件域的所有权。在 DNS 主机上添加记录，然后单击验证 — 仅经过验证的域参与单点登录。"
+
 msgid "Provide process knowledge and inputs"
 msgstr "提供流程知识和输入"
+
+msgid "Provide these URLs to your identity provider (Okta, Entra ID, Google Workspace, etc.) when registering Carbon as a SAML application."
+msgstr "在将 Carbon 注册为 SAML 应用程序时,将这些 URL 提供给您的身份提供商(Okta、Entra ID、Google Workspace 等)。"
 
 msgid "Provider"
 msgstr "提供商"
@@ -12975,11 +13047,11 @@ msgstr "要求日期"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "登录时需要来自身份验证器应用的 6 位数字代码。"
 
+msgid "Require a second factor when members sign in to this company."
+msgstr "成员登录此公司时需要第二因素验证"
+
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr ""
-
-msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
-msgstr "需要身份验证器应用才能打开此公司。其他公司不受影响。"
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "需要身份验证应用程序才能打开此公司。他们的其他公司不受影响。访问<0>员工账户页面</0>以查看每个人的状态。"
@@ -12992,6 +13064,9 @@ msgstr "根据金额阈值对采购订单需要审批"
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "工作流中的质量文档需要审批"
+
+msgid "Require SAML SSO"
+msgstr "需要 SAML SSO"
 
 msgid "Require two-factor authentication"
 msgstr "需要双因素认证"
@@ -13564,6 +13639,9 @@ msgstr "保存并覆盖"
 msgid "Save applications"
 msgstr "保存应用"
 
+msgid "Save changes"
+msgstr "保存更改"
+
 msgid "Save contacts"
 msgstr "保存联系人"
 
@@ -14133,6 +14211,9 @@ msgstr "服务详情"
 msgid "Service ID"
 msgstr "服务ID"
 
+msgid "Service Provider Details"
+msgstr "服务提供商详情"
+
 msgid "services"
 msgstr "服务"
 
@@ -14465,9 +14546,6 @@ msgstr "登录 Carbon"
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "使用生物识别而不是魔法链接登录。通行密钥由 Face ID、Touch ID 或您的设备 PIN 保护。"
 
-msgid "Sign in with Email"
-msgstr "用邮箱登录"
-
 msgid "Sign in with Google"
 msgstr "用 Google 登录"
 
@@ -14503,6 +14581,12 @@ msgstr "登录还需要来自您的身份验证器应用的一次性代码"
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "登录将不再需要代码。输入您的身份验证器应用中的当前 6 位数字代码以确认。"
+
+msgid "Single Sign-On"
+msgstr "单点登录"
+
+msgid "Single sign-on (SSO)"
+msgstr "单点登录 (SSO)"
 
 msgid "Sites & locations"
 msgstr "站点和位置"
@@ -14629,6 +14713,9 @@ msgstr "采购类型"
 
 msgid "Sourcing Type"
 msgstr "采购类型"
+
+msgid "SP Metadata URL"
+msgstr "SP 元数据 URL"
 
 msgid "Span"
 msgstr "跨度"
@@ -14906,7 +14993,7 @@ msgid "Stripe Due Date"
 msgstr "Stripe 到期日期"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripe 将发票发送给客户，因此需要地址。这也将保存到 Carbon 中的联系人。"
+msgstr "Stripe 将发票通过电子邮件发送给客户，因此需要地址。这也将保存到 Carbon 中的联系人。"
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe还没有该Carbon客户对应的客户。过账将在您的连接账户上创建一个。"
@@ -15990,6 +16077,9 @@ msgstr "零件的修订版号"
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "为供应而创建此作业的销售订单行，将作业与其后的客户需求联系起来。"
 
+msgid "The SAML metadata URL published by your identity provider"
+msgstr "您的身份提供商发布的 SAML 元数据 URL"
+
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "用于在其使用年限内分摊此资产成本的排程（直线法、余额递减法、生产单位法）。"
 
@@ -16088,6 +16178,9 @@ msgstr "接收此RFQ的供应商；每个都在RFQ上获得自己的行，他们
 
 msgid "The surface finishes available on your materials"
 msgstr "你的原材料可用的表面处理工艺"
+
+msgid "The system a company uses to manage its people's logins — Okta, Entra ID, or Google Workspace — which vouches for who someone is when they sign in to Carbon via SSO."
+msgstr "公司用来管理员工登录的系统——Okta、Entra ID 或 Google Workspace——当员工通过 SSO 登录 Carbon 时,它会证明身份。"
 
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "系统在您配置的系统中通过了每个范围内的验收测试,使用您的数据;数据已验证;您签署确认。然后上线。"
@@ -16241,6 +16334,9 @@ msgstr "此文件不再可用，或您没有权限下载它。"
 
 msgid "This Fiscal Year"
 msgstr "此会计年度"
+
+msgid "This has no effect until an email domain is verified below."
+msgstr "在下面验证电子邮件域之前，这不会产生任何影响。"
 
 msgid "This information will be used on document headers"
 msgstr "此信息将用于文件标题"
@@ -17301,6 +17397,9 @@ msgstr "允许用户和组重命名、替换或重新标记此文件；上传者
 msgid "Users can update this value for themselves"
 msgstr "用户可以自行更新此值"
 
+msgid "Users on covered domains can sign in only with SAML SSO; magic link, Google, and passkeys are refused."
+msgstr "覆盖域上的用户只能使用 SAML SSO 登录；magic link、Google 和通行密钥被拒绝。"
+
 msgid "Users to Update"
 msgstr "要更新的用户"
 
@@ -17384,6 +17483,9 @@ msgstr "验证错误"
 
 msgid "Verification failed"
 msgstr "验证失败"
+
+msgid "Verified"
+msgstr "已验证"
 
 msgid "Verify"
 msgstr "验证"
@@ -18358,6 +18460,9 @@ msgstr "您面向客户的价格表"
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "您的数据可访问且相对干净"
+
+msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
+msgstr "您的 DNS 提供商可能会自动将您的域追加到记录名称中 — 如果是这样，只需输入它之前的部分（例如 _carbon-challenge 加上任何子域）。"
 
 msgid "Your Email"
 msgstr "你的电子邮件"

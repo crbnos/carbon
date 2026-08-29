@@ -286,6 +286,9 @@ msgstr "Zużyte"
 msgid "Consumed expired"
 msgstr "Zużyte wygasłe"
 
+msgid "Continue"
+msgstr "Kontynuuj"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Koszt nieplanowanego utrzymania ruchu, ostatnie {0} dni"
@@ -1282,9 +1285,6 @@ msgstr "Brakuje"
 
 msgid "Short pick {itemName}"
 msgstr "Krótki pick {itemName}"
-
-msgid "Sign in with Email"
-msgstr "Zaloguj się przez e-mail"
 
 msgid "Sign in with Google"
 msgstr "Zaloguj się przez Google"

@@ -286,6 +286,9 @@ msgstr "已消耗"
 msgid "Consumed expired"
 msgstr "已消耗已过期"
 
+msgid "Continue"
+msgstr "继续"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "过去 {0} 天的计划外维护成本"
@@ -1282,9 +1285,6 @@ msgstr "缺货"
 
 msgid "Short pick {itemName}"
 msgstr "短缺拣货 {itemName}"
-
-msgid "Sign in with Email"
-msgstr "使用邮箱登录"
 
 msgid "Sign in with Google"
 msgstr "使用 Google 登录"

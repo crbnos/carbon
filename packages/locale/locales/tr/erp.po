@@ -1032,6 +1032,9 @@ msgstr "Edinme maliyeti"
 msgid "Acquisition Date"
 msgstr "Satın alma tarihi"
 
+msgid "ACS URL"
+msgstr "ACS URL'si"
+
 msgid "Action"
 msgstr "İşlem"
 
@@ -1109,6 +1112,9 @@ msgstr "Bir yorum ekle..."
 
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "Miktarı, fiyatı, nakliyeyi, tedarik süresini ve vergiyi geçersiz kılmak için özel bir fiyatlandırma satırı ekleyin"
+
+msgid "Add a domain"
+msgstr "Alan adı ekle"
 
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Ürün ağacısındaki her stok kartını miktarı ile listeleyen bir bölüm ekleyin"
@@ -1295,6 +1301,9 @@ msgstr "Tedarikçi Ekle"
 
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "Aynı sistem üzerinde bir sonraki özelliği ekleyin, başka bir araç satın almak yerine."
+
+msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
+msgstr "Bu TXT kaydını DNS sağlayıcınıza ekleyin, ardından Doğrula'ya tıklayın. DNS değişiklikleri yaygınlaştırılması birkaç dakika sürebilir."
 
 msgid "Add Timecard"
 msgstr "Zaman Kartı Ekle"
@@ -1520,6 +1529,9 @@ msgstr "Bir kanvas üzerinde oluşturduğunuz bir otomasyon: bir tetikleyici, ar
 
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "Bir mühendislik değişikliği: yöntemleri taslak üzerinde revize edilen ve birlikte yayınlanan, yerini aldıkları sürümlerin yerine geçen etkilenen öğeler."
+
+msgid "An Enterprise sign-in method where everyone on a company's registered email domains authenticates through the company's own SAML identity provider instead of a magic link, so IT grants and revokes access centrally."
+msgstr "Bir şirketin kayıtlı e-posta etki alanlarındaki herkesin sihirli bağlantı yerine şirketin kendi SAML kimlik sağlayıcısı aracılığıyla doğrulanması sağlayan bir Kurumsal oturum açma yöntemi; böylece BT merkezi olarak erişim verir ve kaldırır."
 
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "Bir iş akışı bu adıma ulaştığında Carbon'un sisteminize gönderdiği bir https isteği, yapılandırdığınız başlıkları ve gövdeyi taşır."
@@ -1869,6 +1881,9 @@ msgstr "Bu satış siparişi için iş emirleri oluşturmak istediğinizden emin
 #. placeholder {0}: routeData?.supplier?.name
 msgid "Are you sure you want to deactivate {0}?"
 msgstr "{0}'yi devre dışı bırakmak istediğinizden emin misiniz?"
+
+msgid "Are you sure you want to deactivate SAML SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
+msgstr "SAML SSO'yu devre dışı bırakmak istediğinizden emin misiniz? Kayıtlı etki alanlarınızdaki kullanıcılar artık kimlik sağlayıcınız aracılığıyla oturum açamayacaklardır. Bu işlem geri alınamaz."
 
 #. placeholder {0}: selectedCategory?.name
 msgid "Are you sure you want to deactivate the {0} attribute category?"
@@ -3035,6 +3050,9 @@ msgstr "Yalnızca Carbon · bu müşteri için gerçek hedefleri doldurun. Değe
 msgid "Carbon-only · the customer sees this text, locked."
 msgstr "Carbon-only · müşteri bu metni görür, kilitli."
 
+msgid "Carbon's default passwordless sign-in: an emailed one-time link that signs you in when opened, with no password to remember or leak."
+msgstr "Carbon'un varsayılan parolasız oturum açma: e-postayla gönderilen, açıldığında sizi oturum açan ve hatırlanması veya sızması gereken bir parola olmayan tek kullanımlık bir bağlantı."
+
 msgid "Carbon's name for a bill of material and bill of process (routing): the components plus the operations that make a part."
 msgstr "Carbon'ın ürün ağacı ve operasyon listesi (rota) için adı: bir parçayı yapan bileşenler artı operasyonlar."
 
@@ -3607,6 +3625,9 @@ msgstr "Çakışma"
 msgid "Conflict reason"
 msgstr "Çatışma nedeni"
 
+msgid "Connect"
+msgstr "Bağlan"
+
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Carbon'ı muhasebe, proje yönetimi ve CAD araçlarınızla ve çok daha fazlasıyla bağlayın."
 
@@ -3624,6 +3645,9 @@ msgstr "Hiçbir koşul eşleşmediğinde çalıştırılacak bir düğüme Aksi 
 
 msgid "Connect the outside tools your company already runs on"
 msgstr "Şirketinizin zaten kullandığı dış araçları bağlayın"
+
+msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
+msgstr "Kimlik sağlayıcınızı, meta veri URL'sini veya ham meta veri XML'sini yapıştırarak bağlayın — ikisinden tam olarak birini yapıştırın."
 
 msgid "Connected to"
 msgstr "Bağlı"
@@ -3699,6 +3723,9 @@ msgstr "İçerik"
 
 msgid "Context"
 msgstr "Bağlam"
+
+msgid "Continue"
+msgstr "Devam Et"
 
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "Sabit kıymetlerin toplam amortismanı için karşı hesap"
@@ -4732,6 +4759,9 @@ msgstr "Çalışanları Devre Dışı Bırak"
 
 msgid "Deactivate Process"
 msgstr "İş Sürecini Devre Dışı Bırak"
+
+msgid "Deactivate Single Sign-On"
+msgstr "Tekli Oturum Açmayı Devre Dışı Bırak"
 
 msgid "Deactivate Supplier"
 msgstr "Tedarikçiyi Devre Dışı Bırak"
@@ -6082,6 +6112,9 @@ msgstr "E-posta"
 
 msgid "Email Address"
 msgstr "E-posta Adresi"
+
+msgid "Email Domains"
+msgstr "E-posta Etki Alanları"
 
 msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
 msgstr "E-posta bildirimleri şirketinizin mevcut planına dahil değildir; e-posta tercihleriniz etkinleştirildiğinde uygulanacaktır."
@@ -7688,6 +7721,9 @@ msgstr "Atlama {depth}"
 msgid "Hope the day's treating you well, {name}."
 msgstr ""
 
+msgid "Host"
+msgstr "Ana bilgisayar"
+
 msgid "Host, secure, and back up the platform"
 msgstr "Platformu barındırın, güvenli hale getirin ve yedekleyin"
 
@@ -7867,6 +7903,18 @@ msgstr "İdempotentlik Anahtarı"
 
 msgid "Identifiers"
 msgstr "Tanımlayıcılar"
+
+msgid "Identity Provider"
+msgstr "Kimlik Sağlayıcı"
+
+msgid "Identity provider (IdP)"
+msgstr "Kimlik Sağlayıcı (IdP)"
+
+msgid "IdP Metadata URL"
+msgstr "IdP Meta Veri URL'si"
+
+msgid "IdP Metadata XML"
+msgstr "IdP Meta Veri XML'si"
 
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "Kimlikler ve açıklamalar hammadde için oluşturulur."
@@ -8789,6 +8837,9 @@ msgstr "Daha az manuel çalışma, daha az hata"
 msgid "Less overtime"
 msgstr "Daha az fazla mesai"
 
+msgid "Let members sign in through your identity provider with SAML."
+msgstr "Üyelerin SAML ile kimlik sağlayıcınız üzerinden oturum açmasını sağlayın."
+
 msgid "Let's Build"
 msgstr "Üretelim"
 
@@ -9094,6 +9145,9 @@ msgstr "MACRS Sözleşmesi"
 msgid "MACRS Property Class"
 msgstr "MACRS Mülk Sınıfı"
 
+msgid "Magic link"
+msgstr "Sihirli Bağlantı"
+
 msgid "Maintain a single part and item master"
 msgstr "Tek bir parça ve madde ana kaydını yönetin"
 
@@ -9174,6 +9228,9 @@ msgstr "Bu belgeyi aktif ve görünür yapar."
 
 msgid "Manage"
 msgstr "Yönet"
+
+msgid "Manage authentication and sign-in requirements for your company."
+msgstr "Şirketiniz için kimlik doğrulama ve oturum açma gereksinimlerini yönetin."
 
 msgid "Manage how shelf life is tracked, computed, and enforced across inventory."
 msgstr "Envanterdeki raf ömrünün nasıl izlendiğini, hesaplandığını ve uygulandığını yönetin."
@@ -9505,6 +9562,9 @@ msgstr "Metrik birimleri devre dışı"
 
 msgid "Metric units are enabled"
 msgstr "Metrik birimler etkinleştirilmiş"
+
+msgid "MFA"
+msgstr "MFA"
 
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "Ay ortası / çeyrek ortası / yarı yıl kuralı, ilk yıl kesintisini belirler."
@@ -10595,6 +10655,9 @@ msgstr "Bir tablo değil, büyük defter bakiyesi: iş emri malzemeleri çıktı
 msgid "Not certified"
 msgstr "Sertifikalı değil"
 
+msgid "Not configured"
+msgstr "Yapılandırılmadı"
+
 msgid "Not enough jobs to cover quantity"
 msgstr "Miktarı karşılamak için yeterli iş emri yok"
 
@@ -11358,6 +11421,9 @@ msgstr "Geçiş Anahtarları Devre Dışı Bırakılmış"
 msgid "Past due"
 msgstr "Vadesi geçmiş"
 
+msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
+msgstr "Kimlik sağlayıcınız bir meta veri URL'si yayınlamıyorsa meta veri XML'sini yapıştırın"
+
 msgid "Path"
 msgstr "Yol"
 
@@ -12069,8 +12135,14 @@ msgstr "Şirketinizi iki faktörlü kimlik doğrulama zorunluluğu gibi gelişmi
 msgid "Protects your company's data"
 msgstr "Şirketinizin verilerini korur"
 
+msgid "Prove ownership of each email domain with a DNS TXT record before it can route SAML SSO sign-ins. Add the record at DNS host, then click Verify — only verified domains participate in single sign-on."
+msgstr "Her bir e-posta etki alanının sahipliğini kanıtlayın - SAML SSO oturum açma işlemini yönlendirebilmesi için DNS TXT kaydıyla. Kaydı DNS ana bilgisayarına ekleyin, ardından Doğrula'ya tıklayın — yalnızca doğrulanmış etki alanları çoklu oturum açmada yer alır."
+
 msgid "Provide process knowledge and inputs"
 msgstr "Süreç bilgisi ve girdileri sağlayın"
+
+msgid "Provide these URLs to your identity provider (Okta, Entra ID, Google Workspace, etc.) when registering Carbon as a SAML application."
+msgstr "Carbon'u bir SAML uygulaması olarak kaydederken bu URL'leri kimlik sağlayıcınıza (Okta, Entra ID, Google Workspace, vb.) sağlayın."
 
 msgid "Provider"
 msgstr "Sağlayıcı"
@@ -12975,11 +13047,11 @@ msgstr "Talep Edilen Tarih"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Oturum açarken kimlik doğrulayıcı uygulamasından 6 haneli kod isteyini."
 
+msgid "Require a second factor when members sign in to this company."
+msgstr "Bu şirkete giriş yaparken üyelerin ikinci bir faktör kullanmasını zorunlu tutun."
+
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr ""
-
-msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
-msgstr "Bu şirketi açmadan önce bir kimlik doğrulayıcı uygulaması gerekli hale getirin. Diğer şirketler etkilenmez."
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Bu şirketi açabilmek için doğrulayıcı uygulamayı gerektir. Diğer şirketleri etkilenmez. Her kişinin durumunu görmek için <0>çalışan hesapları sayfasını</0> ziyaret edin."
@@ -12992,6 +13064,9 @@ msgstr "Belirli tutar eşiklerine göre satın alma siparişleri için onay gere
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "İş akışınızdaki kalite belgeleri için onay gerektirir"
+
+msgid "Require SAML SSO"
+msgstr "SAML SSO Gerekli"
 
 msgid "Require two-factor authentication"
 msgstr "İki faktörlü kimlik doğrulamayı gerektir"
@@ -13564,6 +13639,9 @@ msgstr "Kaydet ve Üzerine Yaz"
 msgid "Save applications"
 msgstr "Uygulamaları kaydet"
 
+msgid "Save changes"
+msgstr "Değişiklikleri kaydet"
+
 msgid "Save contacts"
 msgstr "İlgili Kişileri Kaydet"
 
@@ -14133,6 +14211,9 @@ msgstr "Hizmet Detayları"
 msgid "Service ID"
 msgstr "Hizmet Kimliği"
 
+msgid "Service Provider Details"
+msgstr "Hizmet Sağlayıcı Ayrıntıları"
+
 msgid "services"
 msgstr "hizmetler"
 
@@ -14465,9 +14546,6 @@ msgstr "Carbon'a giriş yapın"
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Sihirli bağlantı yerine biyometrik kimlik doğrulama ile oturum açın. Geçiş Anahtarları Face ID, Touch ID veya cihaz PIN'iniz tarafından korunur."
 
-msgid "Sign in with Email"
-msgstr "E-posta ile Giriş Yap"
-
 msgid "Sign in with Google"
 msgstr "Google ile giriş yap"
 
@@ -14503,6 +14581,12 @@ msgstr "Oturum açma ayrıca doğrulayıcı uygulamanızdan bir kerelik kod gere
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "Oturum açma artık kod gerektirmez. Onaylamak için kimlik doğrulayıcı uygulamanızdan mevcut 6 haneli kodu girin."
+
+msgid "Single Sign-On"
+msgstr "Tekli Oturum Açma"
+
+msgid "Single sign-on (SSO)"
+msgstr "Tekli oturum açma (SSO)"
 
 msgid "Sites & locations"
 msgstr "Siteler & konumlar"
@@ -14629,6 +14713,9 @@ msgstr "Tedarik türü"
 
 msgid "Sourcing Type"
 msgstr "Kaynak Türü"
+
+msgid "SP Metadata URL"
+msgstr "SP Meta Veri URL'si"
 
 msgid "Span"
 msgstr "Zaman Aralığı"
@@ -15990,6 +16077,9 @@ msgstr "Parçanın revizyon numarası"
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "Bu iş emrinin arzulanacak satış siparişi satırı, iş emrini arkasındaki müşteri talebine bağlayan."
 
+msgid "The SAML metadata URL published by your identity provider"
+msgstr "Kimlik sağlayıcınız tarafından yayınlanan SAML meta veri URL'si"
+
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "Bu varlığın maliyetini faydalı ömrüne yaymayla kullanılan çizelge (doğrusal, azalan bakiye, üretim birimleri)."
 
@@ -16088,6 +16178,9 @@ msgstr "Bu RFQ'yu alan tedarikçiler; her biri kendi fiyatlandırmaları ile yan
 
 msgid "The surface finishes available on your materials"
 msgstr "Malzemelerinizde kullanılabilir yüzey bitişleri"
+
+msgid "The system a company uses to manage its people's logins — Okta, Entra ID, or Google Workspace — which vouches for who someone is when they sign in to Carbon via SSO."
+msgstr "Bir şirketin kişilerinin oturum açışlarını yönetmek için kullandığı sistem — Okta, Entra ID veya Google Workspace — bu sistem SSO aracılığıyla Carbon'a oturum açarken birinin kimliğinin doğru olduğunu doğrular."
 
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "Sistem, yapılandırılmış sisteminizde kapsamdaki her kabul testini geçer, verilerinizle; veriler doğrulanır; ve siz onay verirsiniz. Ardından canlı yayına geçin."
@@ -16241,6 +16334,9 @@ msgstr "Bu dosya artık kullanılabilir değil veya bunu indirme izniniz yok."
 
 msgid "This Fiscal Year"
 msgstr "Bu Mali Yıl"
+
+msgid "This has no effect until an email domain is verified below."
+msgstr "Bu, aşağıda bir e-posta etki alanı doğrulanana kadar hiçbir etkisi yoktur."
 
 msgid "This information will be used on document headers"
 msgstr "Bu bilgiler belge başlıklarında kullanılacaktır"
@@ -17301,6 +17397,9 @@ msgstr "Bu belgeyi yeniden adlandırmaya, değiştirmeye veya yeniden etiketleme
 msgid "Users can update this value for themselves"
 msgstr "Kullanıcılar bu değeri kendileri için güncelleyebilir"
 
+msgid "Users on covered domains can sign in only with SAML SSO; magic link, Google, and passkeys are refused."
+msgstr "Kapsanan etki alanlarındaki kullanıcılar yalnızca SAML SSO ile oturum açabilir; sihirli bağlantı, Google ve geçiş anahtarları reddedilir."
+
 msgid "Users to Update"
 msgstr "Güncellenecek Kullanıcılar"
 
@@ -17384,6 +17483,9 @@ msgstr "Doğrulama Hatası"
 
 msgid "Verification failed"
 msgstr "Doğrulama başarısız"
+
+msgid "Verified"
+msgstr "Doğrulandı"
 
 msgid "Verify"
 msgstr "Doğrula"
@@ -18354,6 +18456,9 @@ msgstr "Müşterilerinize sunduğunuz fiyat listeleri"
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "Verileriniz erişilebilir ve makul ölçüde temizdir"
+
+msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
+msgstr "DNS sağlayıcınız kaydın adına etki alanınızı otomatik olarak ekleyebilir — eğer öyleyse, yalnızca önceki kısmı girin (ör. _carbon-challenge artı herhangi bir alt alan adı)."
 
 msgid "Your Email"
 msgstr "E-posta Adresiniz"

@@ -286,6 +286,9 @@ msgstr "खपत"
 msgid "Consumed expired"
 msgstr "खपत की गई समाप्त"
 
+msgid "Continue"
+msgstr "जारी रखें"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "अनियोजित रखरखाव की लागत, पिछले {0} दिन"
@@ -1282,9 +1285,6 @@ msgstr "कम"
 
 msgid "Short pick {itemName}"
 msgstr "Short pick {itemName}"
-
-msgid "Sign in with Email"
-msgstr "ईमेल के साथ साइन इन करें"
 
 msgid "Sign in with Google"
 msgstr "Google के साथ साइन इन करें"

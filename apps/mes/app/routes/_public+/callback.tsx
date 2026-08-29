@@ -16,6 +16,12 @@ import {
   setPendingMfaSession
 } from "@carbon/auth/session.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
+import {
+  getSsoConnectionByProviderId,
+  getSsoProviderIdFromSession,
+  isSsoEnabled,
+  isSsoRequiredForEmail
+} from "@carbon/ee/sso.server";
 import { validator } from "@carbon/form";
 import { AccountLockout, redis } from "@carbon/kv";
 import {
@@ -80,9 +86,111 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  // ── SSO branch ─────────────────────────────────────────────────────────
+  // Mirrors the ERP callback's enforcement (provider → company binding +
+  // registered email domain), but MES runs no invite migration: a first SSO
+  // login must happen in the ERP, which owns the invite-accept transaction.
+  // Outside Enterprise the classification (and its admin API call) is skipped.
+  let ssoProviderId: string | null = null;
+  if (isSsoEnabled()) {
+    const authUser = await serviceRole.auth.admin.getUserById(userId);
+    ssoProviderId = authUser.data?.user
+      ? getSsoProviderIdFromSession(authSession.accessToken, authUser.data.user)
+      : null;
+  }
+
+  if (ssoProviderId) {
+    const connection = await getSsoConnectionByProviderId(
+      serviceRole,
+      ssoProviderId
+    );
+    if (!connection.data) {
+      return redirect(
+        path.to.root,
+        await flash(
+          request,
+          error(
+            connection.error,
+            "SAML SSO connection is not active. Contact your administrator."
+          )
+        )
+      );
+    }
+
+    const emailDomain = authSession.email.split("@")[1]?.toLowerCase() ?? "";
+    if (!connection.data.domains.includes(emailDomain)) {
+      return redirect(
+        path.to.root,
+        await flash(
+          request,
+          error(
+            null,
+            "SAML SSO sign-in rejected: this email domain is not registered for your company's SAML SSO connection."
+          )
+        )
+      );
+    }
+
+    const ssoCompanyId = connection.data.companyId;
+    const isMember = (companies.data ?? []).some(
+      (c) => c.companyId === ssoCompanyId
+    );
+    if (!isMember) {
+      return redirect(
+        path.to.root,
+        await flash(
+          request,
+          error(
+            null,
+            "Complete your first SAML SSO sign-in in Carbon ERP, then return here."
+          )
+        )
+      );
+    }
+
+    const ssoCompany = await serviceRole
+      .from("company")
+      .select("companyGroupId")
+      .eq("id", ssoCompanyId)
+      .maybeSingle();
+    authSession.companyId = ssoCompanyId;
+    authSession.companyGroupId = ssoCompany.data?.companyGroupId ?? "";
+    authSession.ssoProviderId = ssoProviderId;
+
+    await new AccountLockout({ redis }).reset(authSession.email);
+
+    // The IdP owns MFA for SSO sessions, including controlled environments
+    // (user decision — attestation shifts to the IdP policy).
+    authSession.mfaVerified = true;
+
+    const ssoSessionCookie = await setAuthSession(request, { authSession });
+    return redirect(path.to.authenticatedRoot, {
+      headers: [
+        ["Set-Cookie", ssoSessionCookie],
+        ["Set-Cookie", setCompanyId(ssoCompanyId)]
+      ]
+    });
+  }
+
   const user = await getUserByEmail(authSession.email);
 
   if (user?.data) {
+    // Require-SSO gate: this is the non-SSO path (magic link, Google/Azure
+    // OAuth, magic links minted elsewhere) — a covered + enforced domain may
+    // only authenticate via SSO, so refuse before any session state is minted.
+    if (await isSsoRequiredForEmail(serviceRole, authSession.email)) {
+      return redirect(
+        path.to.root,
+        await flash(
+          request,
+          error(
+            null,
+            "Your organization requires single sign-on. Sign in with your work email to continue."
+          )
+        )
+      );
+    }
+
     // Genuine login (magic-link / OAuth first factor verified) — clear any
     // accumulated per-account lockout state (NIST 3.1.8 reset-on-success). Runs
     // before the TOTP gate so an MFA-enrolled user's counter clears too.

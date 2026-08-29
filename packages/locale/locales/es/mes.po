@@ -286,6 +286,9 @@ msgstr "Consumido"
 msgid "Consumed expired"
 msgstr "Consumido vencido"
 
+msgid "Continue"
+msgstr "Continuar"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Costo del mantenimiento no planificado, últimos {0} días"
@@ -1282,9 +1285,6 @@ msgstr "Faltante"
 
 msgid "Short pick {itemName}"
 msgstr "Picking corto {itemName}"
-
-msgid "Sign in with Email"
-msgstr "Iniciar sesión con correo electrónico"
 
 msgid "Sign in with Google"
 msgstr "Iniciar sesión con Google"

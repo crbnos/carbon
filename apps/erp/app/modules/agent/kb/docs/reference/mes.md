@@ -8,7 +8,7 @@ Every mutation here hits the network. The MES keeps an IndexedDB read-cache for 
 
 ## Getting onto the floor
 
-An operator signs in on the login screen with whichever methods the company has enabled: **"Sign in with Google"**, **"Sign in with Outlook"**, **"Sign in with Passkey"**, or **"Sign in with Email"** (a magic link, which lands on a **"Check your email"** confirmation). The available buttons follow the company's `AUTH_PROVIDERS`, so a floor that only allows passkeys sees only that one.
+An operator signs in on the login screen with whichever methods the company has enabled: **"Sign in with Google"**, **"Sign in with Outlook"**, **"Sign in with Passkey"**, or an email address plus **"Continue"** (which sends a magic link and lands on a **"Check your email"** confirmation, or routes an SSO-registered domain to its identity provider). The available buttons follow the company's `AUTH_PROVIDERS`, so a floor that only allows passkeys sees only that one.
 
 Once in, the operator sets their context. If the company has more than one location, a **"Location"** submenu appears in the sidebar to pick which floor they're standing on. With a single location the choice is skipped entirely. This selection scopes the board, the assigned lists, and everything they report.
 

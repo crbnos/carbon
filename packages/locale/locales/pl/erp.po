@@ -1032,6 +1032,9 @@ msgstr "Cena nabycia"
 msgid "Acquisition Date"
 msgstr "Data nabycia"
 
+msgid "ACS URL"
+msgstr "Adres URL ACS"
+
 msgid "Action"
 msgstr "Akcja"
 
@@ -1109,6 +1112,9 @@ msgstr "Dodaj komentarz..."
 
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "Dodaj niestandardowy wiersz cennika, aby nadpisać ilość, cenę, wysyłkę, czas realizacji i podatek"
+
+msgid "Add a domain"
+msgstr "Dodaj domenę"
 
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Dodaj sekcję materiałów, która zawiera listę każdego elementu zestawienia materiałowego z jego ilością."
@@ -1295,6 +1301,9 @@ msgstr "Dodaj dostawcę"
 
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "Dodaj następną funkcję w tym samym systemie zamiast kupować inne narzędzie."
+
+msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
+msgstr "Dodaj ten rekord TXT u dostawcy DNS, a następnie kliknij Weryfikuj. Zmiany DNS mogą potrwać kilka minut."
 
 msgid "Add Timecard"
 msgstr "Dodaj kartę czasu pracy"
@@ -1520,6 +1529,9 @@ msgstr "Automatyzacja, którą budujesz na kanwie: jeden wyzwalacz, a następnie
 
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "Zmiana konstrukcyjna — artykuły objęte zmianą, których metody zostały zmienione w wersji roboczej i uwolnione razem, zastępując poprzednie wersje."
+
+msgid "An Enterprise sign-in method where everyone on a company's registered email domains authenticates through the company's own SAML identity provider instead of a magic link, so IT grants and revokes access centrally."
+msgstr "Metoda logowania dla przedsiębiorstw, w której wszyscy użytkownicy z zarejestrowanych domen e-mail firmy uwierzytelniają się za pośrednictwem własnego dostawcy tożsamości SAML zamiast magicznego linku, dzięki czemu dział IT udziela i cofa dostęp centralnie."
 
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "Żądanie https, które Carbon wysyła do Twojego systemu, gdy przepływ pracy osiągnie ten krok, zawierając nagłówki i treść, które skonfigurowałeś."
@@ -1869,6 +1881,9 @@ msgstr "Czy chcesz utworzyć zlecenia produkcyjne dla tego zamówienia sprzedaż
 #. placeholder {0}: routeData?.supplier?.name
 msgid "Are you sure you want to deactivate {0}?"
 msgstr "Czy na pewno chcesz dezaktywować {0}?"
+
+msgid "Are you sure you want to deactivate SAML SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
+msgstr "Czy na pewno chcesz wyłączyć SAML SSO? Użytkownicy w Twoich zarejestrowanych domenach nie będą już mogli się logować poprzez dostawcę tożsamości. Tej operacji nie można cofnąć."
 
 #. placeholder {0}: selectedCategory?.name
 msgid "Are you sure you want to deactivate the {0} attribute category?"
@@ -3035,6 +3050,9 @@ msgstr "Tylko dla Carbon · wpisz rzeczywiste cele dla tego klienta. Widzi warto
 msgid "Carbon-only · the customer sees this text, locked."
 msgstr "Tylko dla Carbon · klient widzi ten tekst, zablokowany."
 
+msgid "Carbon's default passwordless sign-in: an emailed one-time link that signs you in when opened, with no password to remember or leak."
+msgstr "Domyślne logowanie bez hasła w Carbon: wysłany e-mailem jednorazowy link, który Cię zaloguje po otwarciu, bez hasła do zapamiętania lub ujawnienia."
+
 msgid "Carbon's name for a bill of material and bill of process (routing): the components plus the operations that make a part."
 msgstr "Nazwa Carbon dla listy materiałów i listy operacji (marszruta): komponenty plus operacje, które tworzą część."
 
@@ -3607,6 +3625,9 @@ msgstr "Konflikt"
 msgid "Conflict reason"
 msgstr "Powód konfliktu"
 
+msgid "Connect"
+msgstr "Połącz"
+
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Połącz Carbon ze swoimi narzędziami księgowości, zarządzania projektami, CAD i wieloma innymi."
 
@@ -3624,6 +3645,9 @@ msgstr "Połącz uchwyt Otherwise z węzłem do uruchomienia, gdy żaden warunek
 
 msgid "Connect the outside tools your company already runs on"
 msgstr "Połącz zewnętrzne narzędzia, które Twoja firma już wykorzystuje"
+
+msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
+msgstr "Połącz dostawcę tożsamości, wklejając adres URL jego metadanych lub surowy kod XML metadanych — dokładnie jeden z nich."
 
 msgid "Connected to"
 msgstr "Połączono z"
@@ -3699,6 +3723,9 @@ msgstr "Zawartość"
 
 msgid "Context"
 msgstr "Kontekst"
+
+msgid "Continue"
+msgstr "Kontynuuj"
 
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "Konto aktywa przeciwnego dla całkowitej amortyzacji środków trwałych"
@@ -4732,6 +4759,9 @@ msgstr "Dezaktywuj pracowników"
 
 msgid "Deactivate Process"
 msgstr "Dezaktywuj proces"
+
+msgid "Deactivate Single Sign-On"
+msgstr "Dezaktywuj logowanie jednokrotne"
 
 msgid "Deactivate Supplier"
 msgstr "Dezaktywuj dostawcę"
@@ -6082,6 +6112,9 @@ msgstr "E-mail"
 
 msgid "Email Address"
 msgstr "Adres e-mail"
+
+msgid "Email Domains"
+msgstr "Domeny e-mail"
 
 msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
 msgstr "Powiadomienia e-mail nie są uwzględnione w bieżącym planie Twojej firmy; preferencje e-mail będą obowiązywać, jeśli zostaną włączone."
@@ -7688,6 +7721,9 @@ msgstr "Przeskok {depth}"
 msgid "Hope the day's treating you well, {name}."
 msgstr ""
 
+msgid "Host"
+msgstr "Host"
+
 msgid "Host, secure, and back up the platform"
 msgstr "Hostuj, zabezpiecz i wykonuj kopie zapasowe platformy"
 
@@ -7867,6 +7903,18 @@ msgstr "Klucz idempotencji"
 
 msgid "Identifiers"
 msgstr "Identyfikatory"
+
+msgid "Identity Provider"
+msgstr "Dostawca tożsamości"
+
+msgid "Identity provider (IdP)"
+msgstr "Dostawca tożsamości (IdP)"
+
+msgid "IdP Metadata URL"
+msgstr "Adres URL metadanych IdP"
+
+msgid "IdP Metadata XML"
+msgstr "XML metadanych IdP"
 
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "Identyfikatory i opisy są generowane dla surowców."
@@ -8789,6 +8837,9 @@ msgstr "Mniej pracy ręcznej, mniej błędów"
 msgid "Less overtime"
 msgstr "Mniej nadgodzin"
 
+msgid "Let members sign in through your identity provider with SAML."
+msgstr "Umożliwij użytkownikom logowanie się za pośrednictwem dostawcy tożsamości z SAML."
+
 msgid "Let's Build"
 msgstr "Zbudujmy"
 
@@ -9094,6 +9145,9 @@ msgstr "Konwencja MACRS"
 msgid "MACRS Property Class"
 msgstr "Klasa Właściwości MACRS"
 
+msgid "Magic link"
+msgstr "Magiczny link"
+
 msgid "Maintain a single part and item master"
 msgstr "Utrzymuj pojedynczy katalog części i artykułów"
 
@@ -9174,6 +9228,9 @@ msgstr "Sprawia, że dokument jest aktywny i widoczny."
 
 msgid "Manage"
 msgstr "Zarządzaj"
+
+msgid "Manage authentication and sign-in requirements for your company."
+msgstr "Zarządzaj wymogami uwierzytelniania i logowania dla Twojej firmy."
 
 msgid "Manage how shelf life is tracked, computed, and enforced across inventory."
 msgstr "Zarządzaj sposobem śledzenia, obliczania i egzekwowania okresu przydatności w całym magazynie."
@@ -9505,6 +9562,9 @@ msgstr "Jednostki metryczne są wyłączone"
 
 msgid "Metric units are enabled"
 msgstr "Jednostki metryczne są włączone"
+
+msgid "MFA"
+msgstr "MFA"
 
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "Konwencja połowy miesiąca / połowy kwartału / połowy roku, która określa potrącenie w pierwszym roku."
@@ -10595,6 +10655,9 @@ msgstr "To nie jest tabela, lecz saldo konta głównego: koszt gromadzi się gdy
 msgid "Not certified"
 msgstr "Nie certyfikowany"
 
+msgid "Not configured"
+msgstr "Nie skonfigurowano"
+
 msgid "Not enough jobs to cover quantity"
 msgstr "Niewystarczająco zleceń produkcyjnych aby pokryć ilość"
 
@@ -11358,6 +11421,9 @@ msgstr "Klucze dostępu są wyłączone"
 msgid "Past due"
 msgstr "Zaległy"
 
+msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
+msgstr "Wklej kod XML metadanych, jeśli Twój dostawca tożsamości nie publikuje adresu URL metadanych"
+
 msgid "Path"
 msgstr "Ścieżka"
 
@@ -12069,8 +12135,14 @@ msgstr "Chroń swoją firmę za pomocą zaawansowanych kontroli bezpieczeństwa,
 msgid "Protects your company's data"
 msgstr "Chroni dane twojej firmy"
 
+msgid "Prove ownership of each email domain with a DNS TXT record before it can route SAML SSO sign-ins. Add the record at DNS host, then click Verify — only verified domains participate in single sign-on."
+msgstr "Udowodnij własność każdej domeny e-mail za pomocą rekordu TXT DNS, zanim będzie ona mogła obsługiwać logowania SAML SSO. Dodaj rekord u dostawcy DNS, a następnie kliknij Weryfikuj — tylko zweryfikowane domeny uczestniczą w logowaniu jednokrotnym."
+
 msgid "Provide process knowledge and inputs"
 msgstr "Udostępnij wiedzę procesową i dane wejściowe"
+
+msgid "Provide these URLs to your identity provider (Okta, Entra ID, Google Workspace, etc.) when registering Carbon as a SAML application."
+msgstr "Podaj te adresy URL dostawcy tożsamości (Okta, Entra ID, Google Workspace, itp.) podczas rejestracji Carbon jako aplikacji SAML."
 
 msgid "Provider"
 msgstr "Dostawca"
@@ -12975,11 +13047,11 @@ msgstr "Data żądana"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Wymagaj 6-cyfrowego kodu z aplikacji Authenticator przy logowaniu."
 
+msgid "Require a second factor when members sign in to this company."
+msgstr "Wymagaj drugiego czynnika podczas logowania członków do tej firmy."
+
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr ""
-
-msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
-msgstr "Wymagaj aplikacji uwierzytelniającej zanim ktokolwiek będzie mógł otworzyć tę firmę. Ich inne firmy nie będą dotknięte."
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Wymagaj aplikacji authenticator przed otwarciem tej firmy. Pozostałe firmy danej osoby nie są objęte. Odwiedź <0>stronę kont pracowników</0>, aby zobaczyć status każdej osoby."
@@ -12992,6 +13064,9 @@ msgstr "Wymagaj zatwierdzenia dla zamówień zakupu na podstawie progów kwotowy
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "Wymagaj zatwierdzenia dla dokumentów jakości w przepływie pracy"
+
+msgid "Require SAML SSO"
+msgstr "Wymagaj SAML SSO"
 
 msgid "Require two-factor authentication"
 msgstr "Wymagaj uwierzytelniania dwuskładnikowego"
@@ -13564,6 +13639,9 @@ msgstr "Zapisz i Zastąp"
 msgid "Save applications"
 msgstr "Zapisz aplikacje"
 
+msgid "Save changes"
+msgstr "Zapisz zmiany"
+
 msgid "Save contacts"
 msgstr "Zapisz kontakty"
 
@@ -14133,6 +14211,9 @@ msgstr "Szczegóły usługi"
 msgid "Service ID"
 msgstr "Identyfikator Serwisu"
 
+msgid "Service Provider Details"
+msgstr "Szczegóły dostawcy usług"
+
 msgid "services"
 msgstr "usługi"
 
@@ -14465,9 +14546,6 @@ msgstr "Zaloguj się do Carbon"
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Zaloguj się za pomocą biometrii zamiast linku magicznego. Klucze dostępu są zabezpieczone za pomocą Face ID, Touch ID lub numeru PIN urządzenia."
 
-msgid "Sign in with Email"
-msgstr "Zaloguj się za pomocą poczty e-mail"
-
 msgid "Sign in with Google"
 msgstr "Zaloguj się za pomocą Google"
 
@@ -14503,6 +14581,12 @@ msgstr "Logowanie wymaga również kodu jednorazowego z aplikacji authenticator"
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "Logowanie nie będzie już wymagać kodu. Wpisz bieżący 6-cyfrowy kod z aplikacji Authenticator, aby potwierdzić."
+
+msgid "Single Sign-On"
+msgstr "Logowanie jednokrotne"
+
+msgid "Single sign-on (SSO)"
+msgstr "Logowanie jednokrotne (SSO)"
 
 msgid "Sites & locations"
 msgstr "Lokalizacje i obiekty"
@@ -14629,6 +14713,9 @@ msgstr "Typ pozyskania"
 
 msgid "Sourcing Type"
 msgstr "Typ pozyskiwania"
+
+msgid "SP Metadata URL"
+msgstr "Adres URL metadanych SP"
 
 msgid "Span"
 msgstr "Zakres"
@@ -15990,6 +16077,9 @@ msgstr "Numer rewizji części"
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "Pozycja zamówienia sprzedaży, do której to zlecenie zostało utworzone, wiążące zlecenie z zapotrzebowaniem klienta stojącym za tym."
 
+msgid "The SAML metadata URL published by your identity provider"
+msgstr "Adres URL metadanych SAML opublikowany przez dostawcę tożsamości"
+
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "Harmonogram używany do rozłożenia kosztu tego zasobu na jego okres użytkowania (liniowy, metoda degresywna, jednostki produkcji)."
 
@@ -16088,6 +16178,9 @@ msgstr "Dostawcy otrzymujący to RFQ; każdy otrzymuje swoją pozycję w RFQ, na
 
 msgid "The surface finishes available on your materials"
 msgstr "Dostępne wykończenia powierzchni Twoich materiałów"
+
+msgid "The system a company uses to manage its people's logins — Okta, Entra ID, or Google Workspace — which vouches for who someone is when they sign in to Carbon via SSO."
+msgstr "System, którego firma używa do zarządzania logowaniem użytkowników — Okta, Entra ID lub Google Workspace — który poświadcza tożsamość osoby podczas logowania do Carbon za pośrednictwem logowania jednokrotnego."
 
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "System przechodzi każdy test akceptacyjny w zakresie w Twoim skonfigurowanym systemie, z Twoimi danymi; dane są zweryfikowane; i podpisujesz. Następnie uruchamiasz się na żywo."
@@ -16241,6 +16334,9 @@ msgstr "Ten plik nie jest już dostępny lub nie masz uprawnień do jego pobrani
 
 msgid "This Fiscal Year"
 msgstr "Ten rok obrotowy"
+
+msgid "This has no effect until an email domain is verified below."
+msgstr "To nie ma żadnego wpływu do momentu weryfikacji domeny e-mail poniżej."
 
 msgid "This information will be used on document headers"
 msgstr "Te informacje będą używane w nagłówkach dokumentów"
@@ -17029,7 +17125,7 @@ msgid "Unposted Documents"
 msgstr "Nieopublikowane dokumenty"
 
 msgid "Unpublish"
-msgstr "Cofnij publikację"
+msgstr "Cofnij publikowanie"
 
 msgid "Unpublish {name}?"
 msgstr "Cofnąć publikację {name}?"
@@ -17301,6 +17397,9 @@ msgstr "Użytkownicy i grupy uprawnieni do zmiany nazwy, zamiany lub ponownego e
 msgid "Users can update this value for themselves"
 msgstr "Użytkownicy mogą aktualizować tę wartość dla siebie"
 
+msgid "Users on covered domains can sign in only with SAML SSO; magic link, Google, and passkeys are refused."
+msgstr "Użytkownicy w domenach objętych wymogiem mogą się logować tylko za pomocą SAML SSO; linki magiczne, Google i klucze dostępu są blokowane."
+
 msgid "Users to Update"
 msgstr "Użytkownicy do aktualizacji"
 
@@ -17384,6 +17483,9 @@ msgstr "Błąd weryfikacji"
 
 msgid "Verification failed"
 msgstr "Weryfikacja nie powiodła się"
+
+msgid "Verified"
+msgstr "Zweryfikowany"
 
 msgid "Verify"
 msgstr "Weryfikuj"
@@ -18354,6 +18456,9 @@ msgstr "Twoje cenniki dostępne dla klientów"
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "Twoje dane są dostępne i w rozsądnie czystej formie"
+
+msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
+msgstr "Twój dostawca DNS może automatycznie dołączyć Twoją domenę do nazwy rekordu — jeśli tak się stanie, wpisz tylko część przed nią (np. _carbon-challenge plus dowolna poddomena)."
 
 msgid "Your Email"
 msgstr "Twój e-mail"

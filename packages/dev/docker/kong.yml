@@ -57,6 +57,21 @@ services:
     plugins:
       - name: cors
 
+  # SAML SSO endpoints at the path GoTrue self-declares. GoTrue builds its SP
+  # entityID and ACS URL from API_EXTERNAL_URL (no /auth/v1 prefix here) and
+  # validates each assertion's Destination against that exact URL — so the
+  # un-prefixed /sso/ path must route, and it is the canonical one to give an
+  # IdP. Public by design: the IdP posts assertions directly to the ACS.
+  - name: auth-v1-sso
+    url: http://gotrue:9999/sso/
+    routes:
+      - name: auth-v1-sso
+        strip_path: true
+        paths:
+          - /sso/
+    plugins:
+      - name: cors
+
   - name: rest-v1
     url: http://postgrest:3000/
     routes:

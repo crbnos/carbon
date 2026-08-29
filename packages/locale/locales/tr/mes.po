@@ -286,6 +286,9 @@ msgstr "Tüketildi"
 msgid "Consumed expired"
 msgstr "Tüketildi süresi doldu"
 
+msgid "Continue"
+msgstr "Devam Et"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Planlanmamış bakım maliyeti, son {0} gün"
@@ -1282,9 +1285,6 @@ msgstr "Azalt"
 
 msgid "Short pick {itemName}"
 msgstr "Kısmi toplama {itemName}"
-
-msgid "Sign in with Email"
-msgstr "E-posta ile Giriş Yap"
 
 msgid "Sign in with Google"
 msgstr "Google ile giriş yap"

@@ -260,10 +260,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // non-privileged accounts), so a company cannot switch it back off.
   const mfaRequired =
     CONTROLLED_ENVIRONMENT || companySettings.data?.requireMfa === true;
+  // SSO sessions trust the IdP for MFA in all environments, including
+  // controlled — user decision: attestation is delegated to the IdP policy.
+  const ssoMfaExempt = Boolean(authSession.ssoProviderId);
   // Redis-cached + memoized per read; only queried when it could gate.
-  const mfaEnrolled = mfaRequired
-    ? await userHasVerifiedTotpFactor(userId)
-    : true;
+  const mfaEnrolled =
+    mfaRequired && !ssoMfaExempt
+      ? await userHasVerifiedTotpFactor(userId)
+      : true;
 
   return data({
     session: {

@@ -1032,6 +1032,9 @@ msgstr "取得原価"
 msgid "Acquisition Date"
 msgstr "取得日"
 
+msgid "ACS URL"
+msgstr "ACS URL"
+
 msgid "Action"
 msgstr "アクション"
 
@@ -1109,6 +1112,9 @@ msgstr "コメントを追加..."
 
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "数量、価格、配送、リードタイム、および税を上書きするカスタム価格設定行を追加します"
+
+msgid "Add a domain"
+msgstr "ドメインを追加"
 
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "部品表の各項目とその数量をリストアップした材料セクションを追加します。"
@@ -1295,6 +1301,9 @@ msgstr "仕入先を追加"
 
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "同じシステム上に次の機能を追加して、別のツールを購入する代わりにします。"
+
+msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
+msgstr "このTXTレコードをDNSホストに追加し、[確認]をクリックしてください。DNSの変更が反映されるまで数分かかる場合があります。"
 
 msgid "Add Timecard"
 msgstr "タイムカードを追加"
@@ -1520,6 +1529,9 @@ msgstr "キャンバス上に構築するオートメーション：1つのト�
 
 msgid "An engineering change: the affected items whose methods are revised on a draft and released together, superseding the versions they replace."
 msgstr "設計変更。影響を受ける品目の製法が下書きで改訂され、一緒にリリースされ、置き換える版に置き換わります。"
+
+msgid "An Enterprise sign-in method where everyone on a company's registered email domains authenticates through the company's own SAML identity provider instead of a magic link, so IT grants and revokes access centrally."
+msgstr "エンタープライズのサインイン方法。登録されたメールドメインのすべてのユーザーが、マジックリンクの代わりに企業独自のSAML IDプロバイダーを通じて認証され、ITが一元的にアクセスを付与・取り消しできます。"
 
 msgid "An https request Carbon sends to a system of yours when a workflow reaches that step, carrying whatever headers and body you configured."
 msgstr "ワークフローがそのステップに到達したときに、Carbonがあなたのシステムに送信するHTTPSリクエスト。設定したヘッダーと本文が含まれます。"
@@ -1869,6 +1881,9 @@ msgstr "この受注の製造指図を作成してもよろしいですか?ま�
 #. placeholder {0}: routeData?.supplier?.name
 msgid "Are you sure you want to deactivate {0}?"
 msgstr "{0} を無効化してもよろしいですか?"
+
+msgid "Are you sure you want to deactivate SAML SSO? Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone."
+msgstr "SAML SSOを無効化してもよろしいですか？登録済みドメインのユーザーは、ID プロバイダー経由でのサインインができなくなります。この操作は元に戻せません。"
 
 #. placeholder {0}: selectedCategory?.name
 msgid "Are you sure you want to deactivate the {0} attribute category?"
@@ -3035,6 +3050,9 @@ msgstr "Carbon のみ · このお客様の実際の目標を入力してくだ�
 msgid "Carbon-only · the customer sees this text, locked."
 msgstr "Carbon のみ · 顧客に表示されるロック中のテキスト。"
 
+msgid "Carbon's default passwordless sign-in: an emailed one-time link that signs you in when opened, with no password to remember or leak."
+msgstr "Carbonのデフォルトのパスワードレスサインイン：メール送信された一度限りのリンクをクリックするだけでサインイン。パスワードを覚えたり漏らしたりする心配がありません。"
+
 msgid "Carbon's name for a bill of material and bill of process (routing): the components plus the operations that make a part."
 msgstr "部品表と工程表（工順）に対するCarbonの名前：部品を製造するための部品と工程。"
 
@@ -3607,6 +3625,9 @@ msgstr "競合"
 msgid "Conflict reason"
 msgstr "紛争の理由"
 
+msgid "Connect"
+msgstr "接続"
+
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Carbonを会計、プロジェクト管理、CADツールなど、さまざまなツールに接続できます。"
 
@@ -3624,6 +3645,9 @@ msgstr "条件に一致しないときに実行するノードにOtherwiseハン
 
 msgid "Connect the outside tools your company already runs on"
 msgstr "会社がすでに実行している外部ツールに接続"
+
+msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
+msgstr "IDプロバイダーのメタデータURLまたは生のメタデータXMLを貼り付けて接続します。どちらか一つだけを入力してください。"
 
 msgid "Connected to"
 msgstr "接続先"
@@ -3699,6 +3723,9 @@ msgstr "コンテンツ"
 
 msgid "Context"
 msgstr "コンテキスト"
+
+msgid "Continue"
+msgstr "続行"
 
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "固定資産の総減価償却費の逆資産勘定"
@@ -4732,6 +4759,9 @@ msgstr "従業員を無効化"
 
 msgid "Deactivate Process"
 msgstr "プロセスを無効化"
+
+msgid "Deactivate Single Sign-On"
+msgstr "シングルサインオンを無効化"
 
 msgid "Deactivate Supplier"
 msgstr "仕入先を無効化"
@@ -6082,6 +6112,9 @@ msgstr "メール"
 
 msgid "Email Address"
 msgstr "メールアドレス"
+
+msgid "Email Domains"
+msgstr "メールドメイン"
 
 msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
 msgstr "メール通知はあなたの会社の現在のプランに含まれていません。メール設定が有効になっている場合は適用されます。"
@@ -7688,6 +7721,9 @@ msgstr "ホップ {depth}"
 msgid "Hope the day's treating you well, {name}."
 msgstr ""
 
+msgid "Host"
+msgstr "ホスト"
+
 msgid "Host, secure, and back up the platform"
 msgstr "プラットフォームをホストし、保護し、バックアップする"
 
@@ -7867,6 +7903,18 @@ msgstr "冪等性キー"
 
 msgid "Identifiers"
 msgstr "識別子"
+
+msgid "Identity Provider"
+msgstr "IDプロバイダー"
+
+msgid "Identity provider (IdP)"
+msgstr "IDプロバイダー（IdP）"
+
+msgid "IdP Metadata URL"
+msgstr "IdP メタデータURL"
+
+msgid "IdP Metadata XML"
+msgstr "IdP メタデータXML"
 
 msgid "IDs and descriptions are generated for raw materials."
 msgstr "IDと説明は原材料に対して生成されます。"
@@ -8789,6 +8837,9 @@ msgstr "手作業を減らし、エラーを削減"
 msgid "Less overtime"
 msgstr "残業を減らす"
 
+msgid "Let members sign in through your identity provider with SAML."
+msgstr "SAMLを使用してIDプロバイダーを通じてメンバーがサインインできるようにします。"
+
 msgid "Let's Build"
 msgstr "ビルドしましょう"
 
@@ -9094,6 +9145,9 @@ msgstr "MACRS規約"
 msgid "MACRS Property Class"
 msgstr "MACRS資産クラス"
 
+msgid "Magic link"
+msgstr "マジックリンク"
+
 msgid "Maintain a single part and item master"
 msgstr "単一の部品とアイテムマスターを維持する"
 
@@ -9174,6 +9228,9 @@ msgstr "このドキュメントを有効にして表示します。"
 
 msgid "Manage"
 msgstr "管理"
+
+msgid "Manage authentication and sign-in requirements for your company."
+msgstr "会社の認証とサインイン要件を管理します。"
 
 msgid "Manage how shelf life is tracked, computed, and enforced across inventory."
 msgstr "保存期間が在庫全体で追跡、計算、および適用される方法を管理します。"
@@ -9505,6 +9562,9 @@ msgstr "メートル法の単位は無効です"
 
 msgid "Metric units are enabled"
 msgstr "メートル法単位が有効です"
+
+msgid "MFA"
+msgstr "MFA"
 
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "初年度控除を決定する中月/四半期中/半年の慣例。"
@@ -10595,6 +10655,9 @@ msgstr "テーブルではなく総勘定元帳の残高です。指図材料が
 msgid "Not certified"
 msgstr "認定されていない"
 
+msgid "Not configured"
+msgstr "未設定"
+
 msgid "Not enough jobs to cover quantity"
 msgstr "数量をカバーするのに十分な製造指図がありません"
 
@@ -11358,6 +11421,9 @@ msgstr "パスキーは無効です"
 msgid "Past due"
 msgstr "期限切れ"
 
+msgid "Paste the metadata XML if your identity provider does not publish a metadata URL"
+msgstr "IDプロバイダーがメタデータURLを公開していない場合は、メタデータXMLを貼り付けてください"
+
 msgid "Path"
 msgstr "パス"
 
@@ -12069,8 +12135,14 @@ msgstr "二要素認証の強制などの高度なセキュリティ制御で会
 msgid "Protects your company's data"
 msgstr "会社データを保護します"
 
+msgid "Prove ownership of each email domain with a DNS TXT record before it can route SAML SSO sign-ins. Add the record at DNS host, then click Verify — only verified domains participate in single sign-on."
+msgstr "SAML SSO サインインをルーティングする前に、DNS TXTレコードでメールドメインの所有権を証明してください。DNSホストでレコードを追加してから[確認]をクリックします。検証済みドメインのみシングル サインオンに参加できます。"
+
 msgid "Provide process knowledge and inputs"
 msgstr "プロセスの知識と入力を提供する"
+
+msgid "Provide these URLs to your identity provider (Okta, Entra ID, Google Workspace, etc.) when registering Carbon as a SAML application."
+msgstr "CarbonをSAMLアプリケーションとして登録する際に、これらのURLをIDプロバイダー（Okta、Entra ID、Google Workspaceなど）に提供してください。"
 
 msgid "Provider"
 msgstr "プロバイダー"
@@ -12975,11 +13047,11 @@ msgstr "希望納期"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "サインイン時に認証器アプリから6桁のコードが必要です。"
 
+msgid "Require a second factor when members sign in to this company."
+msgstr "メンバーがこの会社にサインインする際に、セカンドファクタを必須にする。"
+
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr ""
-
-msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected."
-msgstr "この会社にアクセスするにはオーセンティケーターアプリが必須です。他の会社は影響を受けません。"
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "このアプリケーション認証器を要求して、誰もがこの会社を開く前に認証を要求します。他の会社は影響を受けません。<0>従業員アカウントページ</0>にアクセスして、各個人のステータスを確認してください。"
@@ -12992,6 +13064,9 @@ msgstr "金額の閾値に基づいて発注書の承認が必要です"
 
 msgid "Require approval for quality documents in your workflow"
 msgstr "ワークフローの品質ドキュメントについて承認が必要です"
+
+msgid "Require SAML SSO"
+msgstr "SAML SSOを必須にする"
 
 msgid "Require two-factor authentication"
 msgstr "二要素認証が必要です"
@@ -13564,6 +13639,9 @@ msgstr "保存して上書き"
 msgid "Save applications"
 msgstr "アプリケーションを保存"
 
+msgid "Save changes"
+msgstr "変更を保存"
+
 msgid "Save contacts"
 msgstr "担当者を保存"
 
@@ -14133,6 +14211,9 @@ msgstr "サービス詳細"
 msgid "Service ID"
 msgstr "サービスID"
 
+msgid "Service Provider Details"
+msgstr "サービスプロバイダーの詳細"
+
 msgid "services"
 msgstr "サービス"
 
@@ -14465,9 +14546,6 @@ msgstr "Carbonにサインイン"
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "マジックリンクの代わりに生体認証でサインインします。パスキーはFace ID、Touch ID、またはデバイスPINで保護されます。"
 
-msgid "Sign in with Email"
-msgstr "メールでサインイン"
-
 msgid "Sign in with Google"
 msgstr "Googleでサインイン"
 
@@ -14503,6 +14581,12 @@ msgstr "サインインには認証アプリからのワンタイムコードも
 
 msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
 msgstr "サインインにはコードが不要になります。確認するために、認証器アプリの現在の6桁のコードを入力します。"
+
+msgid "Single Sign-On"
+msgstr "シングルサインオン"
+
+msgid "Single sign-on (SSO)"
+msgstr "シングルサインオン（SSO）"
 
 msgid "Sites & locations"
 msgstr "サイトと場所"
@@ -14629,6 +14713,9 @@ msgstr "調達タイプ"
 
 msgid "Sourcing Type"
 msgstr "調達タイプ"
+
+msgid "SP Metadata URL"
+msgstr "SP メタデータURL"
 
 msgid "Span"
 msgstr "スパン"
@@ -15990,6 +16077,9 @@ msgstr "部品のリビジョン番号"
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "この製造指図が供給するために作成された受注明細であり、製造指図を背後の得意先所要量に結びつけます。"
 
+msgid "The SAML metadata URL published by your identity provider"
+msgstr "IDプロバイダーが公開したSAMLメタデータURL"
+
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "この資産の原価を耐用年数にわたって配分するために使用されるスケジュール（定額法、定率法、生産単位法）。"
 
@@ -16088,6 +16178,9 @@ msgstr "この見積依頼を受け取る仕入先。各仕入先は見積依頼
 
 msgid "The surface finishes available on your materials"
 msgstr "あなたの材料で利用可能な表面仕上げ"
+
+msgid "The system a company uses to manage its people's logins — Okta, Entra ID, or Google Workspace — which vouches for who someone is when they sign in to Carbon via SSO."
+msgstr "企業が従業員のログインを管理するシステム（Okta、Entra ID、Google Workspaceなど）。SSOを通じてCarbonにサインインする際に、ユーザーの身元を確認します。"
 
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "システムは、設定されたシステム内のすべてのスコープ内受け入れテストに合格し、データが検証され、サインオフされます。その後、本番環境に移行します。"
@@ -16241,6 +16334,9 @@ msgstr "このファイルはもう利用できないか、またはそれをダ
 
 msgid "This Fiscal Year"
 msgstr "この会計年度"
+
+msgid "This has no effect until an email domain is verified below."
+msgstr "メールドメインが下で検証されるまで、これは効果がありません。"
 
 msgid "This information will be used on document headers"
 msgstr "この情報は文書ヘッダーで使用されます"
@@ -17301,6 +17397,9 @@ msgstr "この文書の名前変更、置き換え、または再ラベル付け
 msgid "Users can update this value for themselves"
 msgstr "ユーザーは自分でこの値を更新できます"
 
+msgid "Users on covered domains can sign in only with SAML SSO; magic link, Google, and passkeys are refused."
+msgstr "対象ドメインのユーザーは SAML SSO でのみサインインでき、マジック リンク、Google、パスキーは拒否されます。"
+
 msgid "Users to Update"
 msgstr "更新するユーザー"
 
@@ -17384,6 +17483,9 @@ msgstr "認証エラー"
 
 msgid "Verification failed"
 msgstr "検証に失敗しました"
+
+msgid "Verified"
+msgstr "検証済み"
 
 msgid "Verify"
 msgstr "検証"
@@ -18354,6 +18456,9 @@ msgstr "顧客向けの価格表"
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "あなたのデータはアクセス可能で、適切にクリーンです"
+
+msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
+msgstr "DNS プロバイダーはレコード名にドメインを自動的に追加する場合があります。その場合は、その前の部分のみを入力してください（例：_carbon-challenge または任意のサブドメイン付き）。"
 
 msgid "Your Email"
 msgstr "あなたのメールアドレス"
