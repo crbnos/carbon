@@ -86023,6 +86023,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.requireMfa"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -86223,6 +86226,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.requireMfa"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -86375,6 +86381,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.requireMfa"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -139954,7 +139963,8 @@ export default {
         "includeMaterialsOnTraveler",
         "returnPickedMaterialTiming",
         "showCurrencyTrailingZeros",
-        "requireMfa"
+        "requireMfa",
+        "allowLowercaseItemIds"
       ],
       properties: {
         id: {
@@ -140207,6 +140217,11 @@ export default {
           type: "boolean"
         },
         requireMfa: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        allowLowercaseItemIds: {
           default: false,
           format: "boolean",
           type: "boolean"
@@ -186598,6 +186613,12 @@ export default {
     },
     "rowFilter.companySettings.requireMfa": {
       name: "requireMfa",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.allowLowercaseItemIds": {
+      name: "allowLowercaseItemIds",
       required: false,
       in: "query",
       type: "string"
