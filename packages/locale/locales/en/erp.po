@@ -2803,9 +2803,6 @@ msgstr "Bulk Import"
 msgid "Bulk Jobs"
 msgstr "Bulk Jobs"
 
-msgid "Burning the midnight oil."
-msgstr "Burning the midnight oil."
-
 msgid "Business moment"
 msgstr "Business moment"
 
@@ -4704,6 +4701,9 @@ msgstr "Date Paid"
 msgid "Dates"
 msgstr "Dates"
 
+msgid "Dawn's breaking, {name}."
+msgstr "Dawn's breaking, {name}."
+
 msgid "Day"
 msgstr "Day"
 
@@ -5755,9 +5755,6 @@ msgstr "Each, lb, ft…"
 
 msgid "Earliest operation start"
 msgstr "Earliest operation start"
-
-msgid "Early bird gets the worm."
-msgstr "Early bird gets the worm."
 
 msgid "Easier to extend"
 msgstr "Easier to extend"
@@ -7171,6 +7168,9 @@ msgstr "Finishing an incomplete pick"
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "Finishing is refused until every line is picked or marked Short."
 
+msgid "First light, {name}."
+msgstr "First light, {name}."
+
 msgid "First name"
 msgstr "First name"
 
@@ -7718,8 +7718,8 @@ msgstr "Home Phone"
 msgid "Hop {depth}"
 msgstr "Hop {depth}"
 
-msgid "Hope the day's treating you well, {name}."
-msgstr "Hope the day's treating you well, {name}."
+msgid "Hope things are treating you well, {name}."
+msgstr "Hope things are treating you well, {name}."
 
 msgid "Host"
 msgstr "Host"
@@ -8774,6 +8774,9 @@ msgstr "Last Training Date"
 msgid "Last used"
 msgstr "Last used"
 
+msgid "Late in the evening, {name}."
+msgstr "Late in the evening, {name}."
+
 msgid "Latest operation end"
 msgstr "Latest operation end"
 
@@ -9568,6 +9571,9 @@ msgstr "MFA"
 
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
+
+msgid "Midnight on the clock, {name}."
+msgstr "Midnight on the clock, {name}."
 
 msgid "Migrate data"
 msgstr "Migrate data"
@@ -10782,9 +10788,6 @@ msgstr "Off — handled outside the sync"
 
 msgid "Off — released revisions stay editable"
 msgstr "Off — released revisions stay editable"
-
-msgid "Off to an early start, {name}."
-msgstr "Off to an early start, {name}."
 
 msgid "ok"
 msgstr "ok"
@@ -12465,6 +12468,9 @@ msgstr "Question"
 msgid "Queued"
 msgstr "Queued"
 
+msgid "Quiet on the floor tonight, {name}."
+msgstr "Quiet on the floor tonight, {name}."
+
 msgid "Quote"
 msgstr "Quote"
 
@@ -13343,9 +13349,6 @@ msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "Right item"
-
-msgid "Rise and shine, {name}."
-msgstr "Rise and shine, {name}."
 
 msgid "Risk"
 msgstr "Risk"
@@ -14898,8 +14901,8 @@ msgstr "Steps are inherited from the assembly instruction."
 msgid "Steps are inherited from the inspection plan."
 msgstr "Steps are inherited from the inspection plan."
 
-msgid "Still at it, {name}."
-msgstr "Still at it, {name}."
+msgid "Still dark out on the floor."
+msgstr "Still dark out on the floor."
 
 msgid "Stock movement corrected"
 msgstr "Stock movement corrected"
@@ -15696,6 +15699,9 @@ msgstr "The default tax rate applied to this customer's quote and sales-order li
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 
+msgid "The early hours, {name}."
+msgstr "The early hours, {name}."
+
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 
@@ -15710,6 +15716,9 @@ msgstr "The endpoint that receives a POST request with the updated data when the
 
 msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
 msgstr "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
+
+msgid "The evening hours, {name}."
+msgstr "The evening hours, {name}."
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
 msgstr "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
@@ -15928,6 +15937,9 @@ msgstr "The next scheduled work at this location starts {0}."
 
 msgid "The night shift suits you, {name}."
 msgstr "The night shift suits you, {name}."
+
+msgid "The night's still young, {name}."
+msgstr "The night's still young, {name}."
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
@@ -17166,9 +17178,6 @@ msgstr "Unused picked material flushed back from the work center to the warehous
 msgid "UoM"
 msgstr "UoM"
 
-msgid "Up with the sun."
-msgstr "Up with the sun."
-
 msgid "Update"
 msgstr "Update"
 
@@ -18219,9 +18228,6 @@ msgstr "Why this line is being declined; surfaced on the printable quote and rec
 msgid "Will remain as a comment line"
 msgstr "Will remain as a comment line"
 
-msgid "Winding down for the day, {name}."
-msgstr "Winding down for the day, {name}."
-
 msgid "Window:"
 msgstr "Window:"
 
@@ -18314,17 +18320,11 @@ msgstr "Workflow run"
 msgid "Workflows"
 msgstr "Workflows"
 
-msgid "Working late tonight, {name}."
-msgstr "Working late tonight, {name}."
-
 msgid "Working sessions on configuration and data"
 msgstr "Working sessions on configuration and data"
 
 msgid "Worst Performing Machines"
 msgstr "Worst Performing Machines"
-
-msgid "Wrapping up the day, {name}."
-msgstr "Wrapping up the day, {name}."
 
 msgid "Write-Down Account"
 msgstr "Write-Down Account"

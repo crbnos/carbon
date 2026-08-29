@@ -2803,9 +2803,6 @@ msgstr "批量导入"
 msgid "Bulk Jobs"
 msgstr "批量工单"
 
-msgid "Burning the midnight oil."
-msgstr ""
-
 msgid "Business moment"
 msgstr "业务时刻"
 
@@ -4704,6 +4701,9 @@ msgstr "支付日期"
 msgid "Dates"
 msgstr "日期"
 
+msgid "Dawn's breaking, {name}."
+msgstr ""
+
 msgid "Day"
 msgstr "天"
 
@@ -5755,9 +5755,6 @@ msgstr "每个、磅、英尺…"
 
 msgid "Earliest operation start"
 msgstr "最早操作开始"
-
-msgid "Early bird gets the worm."
-msgstr ""
 
 msgid "Easier to extend"
 msgstr "更容易扩展"
@@ -7171,6 +7168,9 @@ msgstr "完成不完整的拣货"
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "在所有行都被拣货或标记为短缺后才能完成。"
 
+msgid "First light, {name}."
+msgstr ""
+
 msgid "First name"
 msgstr "名字"
 
@@ -7718,7 +7718,7 @@ msgstr "家庭电话"
 msgid "Hop {depth}"
 msgstr "跳转 {depth}"
 
-msgid "Hope the day's treating you well, {name}."
+msgid "Hope things are treating you well, {name}."
 msgstr ""
 
 msgid "Host"
@@ -8774,6 +8774,9 @@ msgstr "最后培训日期"
 msgid "Last used"
 msgstr "最后使用"
 
+msgid "Late in the evening, {name}."
+msgstr ""
+
 msgid "Latest operation end"
 msgstr "最新操作结束"
 
@@ -9568,6 +9571,9 @@ msgstr "MFA"
 
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "决定首年扣除的月中/季中/半年约定俗成的方法。"
+
+msgid "Midnight on the clock, {name}."
+msgstr ""
 
 msgid "Migrate data"
 msgstr "迁移数据"
@@ -10782,9 +10788,6 @@ msgstr "关闭 — 在同步外处理"
 
 msgid "Off — released revisions stay editable"
 msgstr "关闭 — 已下达修订版保持可编辑"
-
-msgid "Off to an early start, {name}."
-msgstr ""
 
 msgid "ok"
 msgstr "确定"
@@ -12465,6 +12468,9 @@ msgstr "问题"
 msgid "Queued"
 msgstr "排队中"
 
+msgid "Quiet on the floor tonight, {name}."
+msgstr ""
+
 msgid "Quote"
 msgstr "报价"
 
@@ -13343,9 +13349,6 @@ msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "右项"
-
-msgid "Rise and shine, {name}."
-msgstr ""
 
 msgid "Risk"
 msgstr "风险"
@@ -14898,7 +14901,7 @@ msgstr "步骤继承自装配说明。"
 msgid "Steps are inherited from the inspection plan."
 msgstr "步骤继承自检验计划。"
 
-msgid "Still at it, {name}."
+msgid "Still dark out on the floor."
 msgstr ""
 
 msgid "Stock movement corrected"
@@ -15696,6 +15699,9 @@ msgstr "适用于此客户的报价和销售订单行的默认税率，在每行
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "该部门汇总用于报告和人员数量层级的部门；对于顶级部门，请留空。"
 
+msgid "The early hours, {name}."
+msgstr ""
+
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "八大纪律质量方法，通过不合格工作流的任务建模，而非硬编码。"
 
@@ -15710,6 +15716,9 @@ msgstr "接收表格更新时包含更新数据的POST请求的端点"
 
 msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
 msgstr "此检验计划关联的工程图纸；针对此零件记录的检验将引用此图纸。"
+
+msgid "The evening hours, {name}."
+msgstr ""
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
 msgstr "此物料产出在生产期间预期丢失的百分比；计划将需求乘以 1 / (1 − 报废) 来补偿。"
@@ -15927,6 +15936,9 @@ msgid "The next scheduled work at this location starts {0}."
 msgstr ""
 
 msgid "The night shift suits you, {name}."
+msgstr ""
+
+msgid "The night's still young, {name}."
 msgstr ""
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
@@ -17166,9 +17178,6 @@ msgstr "未使用的已拣货物料从工作中心冲回至仓库。"
 msgid "UoM"
 msgstr "计量单位"
 
-msgid "Up with the sun."
-msgstr ""
-
 msgid "Update"
 msgstr "更新"
 
@@ -18219,9 +18228,6 @@ msgstr "该行被拒绝的原因;显示在可打印报价上,并为损益报告�
 msgid "Will remain as a comment line"
 msgstr "将保留为注释行"
 
-msgid "Winding down for the day, {name}."
-msgstr ""
-
 msgid "Window:"
 msgstr "窗口："
 
@@ -18314,17 +18320,11 @@ msgstr "工作流运行"
 msgid "Workflows"
 msgstr "工作流"
 
-msgid "Working late tonight, {name}."
-msgstr ""
-
 msgid "Working sessions on configuration and data"
 msgstr "配置和数据工作会议"
 
 msgid "Worst Performing Machines"
 msgstr "性能最差的机器"
-
-msgid "Wrapping up the day, {name}."
-msgstr ""
 
 msgid "Write-Down Account"
 msgstr "减值账户"

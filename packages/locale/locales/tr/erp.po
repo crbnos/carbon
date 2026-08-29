@@ -2803,9 +2803,6 @@ msgstr "Toplu İçe Aktarma"
 msgid "Bulk Jobs"
 msgstr "Toplu İş Emirleri"
 
-msgid "Burning the midnight oil."
-msgstr ""
-
 msgid "Business moment"
 msgstr "İş anı"
 
@@ -4704,6 +4701,9 @@ msgstr "Ödeme Tarihi"
 msgid "Dates"
 msgstr "Tarihler"
 
+msgid "Dawn's breaking, {name}."
+msgstr ""
+
 msgid "Day"
 msgstr "Gün"
 
@@ -5755,9 +5755,6 @@ msgstr "Her, lb, ft…"
 
 msgid "Earliest operation start"
 msgstr "En erken operasyon başlangıcı"
-
-msgid "Early bird gets the worm."
-msgstr ""
 
 msgid "Easier to extend"
 msgstr "Genişletmesi daha kolay"
@@ -7171,6 +7168,9 @@ msgstr "Eksik Seçimi Bitirme"
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "Bitirme, her satır seçilene veya Kısa olarak işaretlenene kadar reddedilir."
 
+msgid "First light, {name}."
+msgstr ""
+
 msgid "First name"
 msgstr "Adı"
 
@@ -7718,7 +7718,7 @@ msgstr "Ev Telefonu"
 msgid "Hop {depth}"
 msgstr "Atlama {depth}"
 
-msgid "Hope the day's treating you well, {name}."
+msgid "Hope things are treating you well, {name}."
 msgstr ""
 
 msgid "Host"
@@ -8774,6 +8774,9 @@ msgstr "Son Eğitim Tarihi"
 msgid "Last used"
 msgstr "Son Kullanılan"
 
+msgid "Late in the evening, {name}."
+msgstr ""
+
 msgid "Latest operation end"
 msgstr "En son işlem sonu"
 
@@ -9568,6 +9571,9 @@ msgstr "MFA"
 
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "Ay ortası / çeyrek ortası / yarı yıl kuralı, ilk yıl kesintisini belirler."
+
+msgid "Midnight on the clock, {name}."
+msgstr ""
 
 msgid "Migrate data"
 msgstr "Verileri Taşı"
@@ -10782,9 +10788,6 @@ msgstr "Kapalı — senkronizasyon dışında işlenir"
 
 msgid "Off — released revisions stay editable"
 msgstr "Kapalı — yayınlanan revizyonlar düzenlenebilir kalır"
-
-msgid "Off to an early start, {name}."
-msgstr ""
 
 msgid "ok"
 msgstr "tamam"
@@ -12465,6 +12468,9 @@ msgstr "Soru"
 msgid "Queued"
 msgstr "Kuyrukta"
 
+msgid "Quiet on the floor tonight, {name}."
+msgstr ""
+
 msgid "Quote"
 msgstr "Teklif"
 
@@ -13343,9 +13349,6 @@ msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "Sağ öğe"
-
-msgid "Rise and shine, {name}."
-msgstr ""
 
 msgid "Risk"
 msgstr "Risk"
@@ -14898,7 +14901,7 @@ msgstr "Adımlar montaj talimatından devralınır."
 msgid "Steps are inherited from the inspection plan."
 msgstr "Adımlar kontrol planından devralınır."
 
-msgid "Still at it, {name}."
+msgid "Still dark out on the floor."
 msgstr ""
 
 msgid "Stock movement corrected"
@@ -15696,6 +15699,9 @@ msgstr "Bu müşterinin alıntı ve satış siparişi satırlarına uygulanan va
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Bu departmanın raporlama ve personel sayısı hiyerarşisinde bağlı olduğu departman; üst seviye bir departman için boş bırakın."
 
+msgid "The early hours, {name}."
+msgstr ""
+
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "Sekiz disiplin kalite yöntemi, uygunsuzluk iş akışının görevleriyle modellenmiş olup sabit kodlanmamıştır."
 
@@ -15710,6 +15716,9 @@ msgstr "Tablo güncellendiğinde güncellenmiş verilerle bir POST isteği alan 
 
 msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
 msgstr "Bu kontrol planının bağlı olduğu mühendislik çizimi; bu parçaya karşı kaydedilen muayeneler bu çizime geri referans verir."
+
+msgid "The evening hours, {name}."
+msgstr ""
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
 msgstr "Bu stok kartının üretim sırasında kaybettiği beklenen yüzde; planlama, talep tarafı 1 / (1 − Fire) ile çarpılarak telafi edilir."
@@ -15927,6 +15936,9 @@ msgid "The next scheduled work at this location starts {0}."
 msgstr ""
 
 msgid "The night shift suits you, {name}."
+msgstr ""
+
+msgid "The night's still young, {name}."
 msgstr ""
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
@@ -17166,9 +17178,6 @@ msgstr "İş merkezinden depoya geri gönderilen kullanılmayan alınan malzeme.
 msgid "UoM"
 msgstr "Birim"
 
-msgid "Up with the sun."
-msgstr ""
-
 msgid "Update"
 msgstr "Güncelle"
 
@@ -18219,9 +18228,6 @@ msgstr "Bu satırın neden reddedildiği; yazdırılabilir teklifte gösterilir 
 msgid "Will remain as a comment line"
 msgstr "Yorum satırı olarak kalacak"
 
-msgid "Winding down for the day, {name}."
-msgstr ""
-
 msgid "Window:"
 msgstr "Pencere:"
 
@@ -18314,17 +18320,11 @@ msgstr "İş akışı çalışması"
 msgid "Workflows"
 msgstr "İş akışları"
 
-msgid "Working late tonight, {name}."
-msgstr ""
-
 msgid "Working sessions on configuration and data"
 msgstr "Yapılandırma ve veri üzerinde çalışma oturumları"
 
 msgid "Worst Performing Machines"
 msgstr "En kötü performans gösteren makineler"
-
-msgid "Wrapping up the day, {name}."
-msgstr ""
 
 msgid "Write-Down Account"
 msgstr "Değer Düşüklüğü Hesabı"

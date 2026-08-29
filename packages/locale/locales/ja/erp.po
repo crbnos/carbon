@@ -2803,9 +2803,6 @@ msgstr "一括インポート"
 msgid "Bulk Jobs"
 msgstr "一括製造指図"
 
-msgid "Burning the midnight oil."
-msgstr ""
-
 msgid "Business moment"
 msgstr "ビジネスモーメント"
 
@@ -4704,6 +4701,9 @@ msgstr "支払日"
 msgid "Dates"
 msgstr "日付"
 
+msgid "Dawn's breaking, {name}."
+msgstr ""
+
 msgid "Day"
 msgstr "日"
 
@@ -5755,9 +5755,6 @@ msgstr "各、ポンド、フィート…"
 
 msgid "Earliest operation start"
 msgstr "最早操作開始"
-
-msgid "Early bird gets the worm."
-msgstr ""
 
 msgid "Easier to extend"
 msgstr "拡張が簡単"
@@ -7171,6 +7168,9 @@ msgstr "不完全なピックの完了"
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "すべてのラインがピックされるか「短い」とマークされるまで、完了は拒否されます。"
 
+msgid "First light, {name}."
+msgstr ""
+
 msgid "First name"
 msgstr "名"
 
@@ -7718,7 +7718,7 @@ msgstr "自宅電話"
 msgid "Hop {depth}"
 msgstr "ホップ {depth}"
 
-msgid "Hope the day's treating you well, {name}."
+msgid "Hope things are treating you well, {name}."
 msgstr ""
 
 msgid "Host"
@@ -8774,6 +8774,9 @@ msgstr "最後のトレーニング日付"
 msgid "Last used"
 msgstr "最後に使用"
 
+msgid "Late in the evening, {name}."
+msgstr ""
+
 msgid "Latest operation end"
 msgstr "最終操作終了"
 
@@ -9568,6 +9571,9 @@ msgstr "MFA"
 
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "初年度控除を決定する中月/四半期中/半年の慣例。"
+
+msgid "Midnight on the clock, {name}."
+msgstr ""
 
 msgid "Migrate data"
 msgstr "データを移行"
@@ -10782,9 +10788,6 @@ msgstr "オフ — 同期外で処理"
 
 msgid "Off — released revisions stay editable"
 msgstr "オフ - リリースされたリビジョンは編集可能なままです"
-
-msgid "Off to an early start, {name}."
-msgstr ""
 
 msgid "ok"
 msgstr "OK"
@@ -12465,6 +12468,9 @@ msgstr "質問"
 msgid "Queued"
 msgstr "キュー待ち"
 
+msgid "Quiet on the floor tonight, {name}."
+msgstr ""
+
 msgid "Quote"
 msgstr "見積"
 
@@ -13343,9 +13349,6 @@ msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "右側の項目"
-
-msgid "Rise and shine, {name}."
-msgstr ""
 
 msgid "Risk"
 msgstr "リスク"
@@ -14898,7 +14901,7 @@ msgstr "ステップは組立指示から継承されます。"
 msgid "Steps are inherited from the inspection plan."
 msgstr "ステップは検査計画から継承されます。"
 
-msgid "Still at it, {name}."
+msgid "Still dark out on the floor."
 msgstr ""
 
 msgid "Stock movement corrected"
@@ -15696,6 +15699,9 @@ msgstr "得意先の見積および販売注文明細に適用される既定の
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "レポートとヘッドカウント階層のために、このロールアップが行われるセクション。トップレベル部門の場合は空白のままにしてください。"
 
+msgid "The early hours, {name}."
+msgstr ""
+
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "8つの規律品質法。ハードコーディングではなく、不適合ワークフローのタスクでモデル化されています。"
 
@@ -15710,6 +15716,9 @@ msgstr "テーブルが更新されたときに、更新されたデータを含
 
 msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
 msgstr "この検査計画が関連付けられているエンジニアリング図面。このパーツに対して記録された検査はこの図面を参照します。"
+
+msgid "The evening hours, {name}."
+msgstr ""
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
 msgstr "生産中にこの品目の出力の失われると予想される割合。計画は所要量に1 / (1 − スクラップ)を乗算して補正します。"
@@ -15927,6 +15936,9 @@ msgid "The next scheduled work at this location starts {0}."
 msgstr ""
 
 msgid "The night shift suits you, {name}."
+msgstr ""
+
+msgid "The night's still young, {name}."
 msgstr ""
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
@@ -17166,9 +17178,6 @@ msgstr "未使用のピッキング済み材料が作業区から倉庫に戻さ
 msgid "UoM"
 msgstr "UoM"
 
-msgid "Up with the sun."
-msgstr ""
-
 msgid "Update"
 msgstr "更新"
 
@@ -18219,9 +18228,6 @@ msgstr "この行が拒否されている理由。印刷可能な見積もりに
 msgid "Will remain as a comment line"
 msgstr "コメント行として残ります"
 
-msgid "Winding down for the day, {name}."
-msgstr ""
-
 msgid "Window:"
 msgstr "ウィンドウ:"
 
@@ -18314,17 +18320,11 @@ msgstr "ワークフロー実行"
 msgid "Workflows"
 msgstr "ワークフロー"
 
-msgid "Working late tonight, {name}."
-msgstr ""
-
 msgid "Working sessions on configuration and data"
 msgstr "設定とデータに関するワーキングセッション"
 
 msgid "Worst Performing Machines"
 msgstr "最も性能が低い機械"
-
-msgid "Wrapping up the day, {name}."
-msgstr ""
 
 msgid "Write-Down Account"
 msgstr "評価減勘定"

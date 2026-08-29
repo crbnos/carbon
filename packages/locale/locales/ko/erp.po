@@ -2803,9 +2803,6 @@ msgstr "일괄 가져오기"
 msgid "Bulk Jobs"
 msgstr "대량 작업 지시"
 
-msgid "Burning the midnight oil."
-msgstr ""
-
 msgid "Business moment"
 msgstr "비즈니스 순간"
 
@@ -4704,6 +4701,9 @@ msgstr "지급일"
 msgid "Dates"
 msgstr "날짜"
 
+msgid "Dawn's breaking, {name}."
+msgstr ""
+
 msgid "Day"
 msgstr "요일"
 
@@ -5755,9 +5755,6 @@ msgstr "개, lb, ft…"
 
 msgid "Earliest operation start"
 msgstr "최초 작업 시작"
-
-msgid "Early bird gets the worm."
-msgstr ""
 
 msgid "Easier to extend"
 msgstr "확장이 더 쉬움"
@@ -7171,6 +7168,9 @@ msgstr "불완전한 픽 완료"
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "모든 라인이 선택되거나 부족으로 표시될 때까지 완료가 거부됩니다."
 
+msgid "First light, {name}."
+msgstr ""
+
 msgid "First name"
 msgstr "이름"
 
@@ -7718,7 +7718,7 @@ msgstr "자택 전화번호"
 msgid "Hop {depth}"
 msgstr "홉 {depth}"
 
-msgid "Hope the day's treating you well, {name}."
+msgid "Hope things are treating you well, {name}."
 msgstr ""
 
 msgid "Host"
@@ -8774,6 +8774,9 @@ msgstr "마지막 교육 날짜"
 msgid "Last used"
 msgstr "마지막 사용"
 
+msgid "Late in the evening, {name}."
+msgstr ""
+
 msgid "Latest operation end"
 msgstr "최신 작업 종료"
 
@@ -9568,6 +9571,9 @@ msgstr "MFA"
 
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "1차년도 공제액을 결정하는 월중/분기중/반기 컨벤션입니다."
+
+msgid "Midnight on the clock, {name}."
+msgstr ""
 
 msgid "Migrate data"
 msgstr "데이터 마이그레이션"
@@ -10782,9 +10788,6 @@ msgstr "끔 — 동기화 외부에서 처리됨"
 
 msgid "Off — released revisions stay editable"
 msgstr "꺼짐 — 릴리스된 리비전은 편집 가능한 상태로 유지됨"
-
-msgid "Off to an early start, {name}."
-msgstr ""
 
 msgid "ok"
 msgstr "확인"
@@ -12465,6 +12468,9 @@ msgstr "질문"
 msgid "Queued"
 msgstr "대기열"
 
+msgid "Quiet on the floor tonight, {name}."
+msgstr ""
+
 msgid "Quote"
 msgstr "견적"
 
@@ -13343,9 +13349,6 @@ msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "올바른 품목"
-
-msgid "Rise and shine, {name}."
-msgstr ""
 
 msgid "Risk"
 msgstr "리스크"
@@ -14898,7 +14901,7 @@ msgstr "단계는 조립 지시사항에서 상속됩니다."
 msgid "Steps are inherited from the inspection plan."
 msgstr "단계는 검사 계획에서 상속됩니다."
 
-msgid "Still at it, {name}."
+msgid "Still dark out on the floor."
 msgstr ""
 
 msgid "Stock movement corrected"
@@ -15696,6 +15699,9 @@ msgstr "이 고객의 견적 및 판매주문 라인에 적용되는 기본 세�
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "보고 및 인원 계층구조에서 이 부서가 속하는 상위 부서입니다. 최상위 부서인 경우 비워두세요."
 
+msgid "The early hours, {name}."
+msgstr ""
+
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "8D 품질 기법으로, 하드코딩되지 않고 부적합 워크플로의 작업으로 모델링됩니다."
 
@@ -15710,6 +15716,9 @@ msgstr "테이블이 업데이트될 때 변경된 데이터를 담은 POST 요�
 
 msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
 msgstr "이 검사 계획이 연결된 엔지니어링 드로잉입니다. 이 부품에 대해 기록된 검사는 이 드로잉을 참조합니다."
+
+msgid "The evening hours, {name}."
+msgstr ""
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
 msgstr "생산 중 이 품목의 출력량 손실의 예상 비율로, 계획에서는 이를 보상하기 위해 소요량에 1 / (1 - 스크랩)을 곱합니다."
@@ -15927,6 +15936,9 @@ msgid "The next scheduled work at this location starts {0}."
 msgstr ""
 
 msgid "The night shift suits you, {name}."
+msgstr ""
+
+msgid "The night's still young, {name}."
 msgstr ""
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
@@ -17166,9 +17178,6 @@ msgstr "작업장에서 창고로 반환된 미사용 선택 재료."
 msgid "UoM"
 msgstr "UoM"
 
-msgid "Up with the sun."
-msgstr ""
-
 msgid "Update"
 msgstr "업데이트"
 
@@ -18219,9 +18228,6 @@ msgstr "이 라인이 거절되는 이유로, 인쇄용 견적서에 표시되�
 msgid "Will remain as a comment line"
 msgstr "댓글 라인으로 유지됩니다"
 
-msgid "Winding down for the day, {name}."
-msgstr ""
-
 msgid "Window:"
 msgstr "구간:"
 
@@ -18314,17 +18320,11 @@ msgstr "워크플로우 실행"
 msgid "Workflows"
 msgstr "워크플로우"
 
-msgid "Working late tonight, {name}."
-msgstr ""
-
 msgid "Working sessions on configuration and data"
 msgstr "설정 및 데이터에 대한 작업 세션"
 
 msgid "Worst Performing Machines"
 msgstr "성능이 가장 낮은 기계"
-
-msgid "Wrapping up the day, {name}."
-msgstr ""
 
 msgid "Write-Down Account"
 msgstr "평가감 계정"

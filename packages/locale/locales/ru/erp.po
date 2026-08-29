@@ -2803,9 +2803,6 @@ msgstr "Массовый импорт"
 msgid "Bulk Jobs"
 msgstr "Массовые производственные заказы"
 
-msgid "Burning the midnight oil."
-msgstr ""
-
 msgid "Business moment"
 msgstr "Бизнес-момент"
 
@@ -4704,6 +4701,9 @@ msgstr "Дата оплаты"
 msgid "Dates"
 msgstr "Даты"
 
+msgid "Dawn's breaking, {name}."
+msgstr ""
+
 msgid "Day"
 msgstr "День"
 
@@ -5755,9 +5755,6 @@ msgstr "Каждый, фунт, фут…"
 
 msgid "Earliest operation start"
 msgstr "Самое раннее начало операции"
-
-msgid "Early bird gets the worm."
-msgstr ""
 
 msgid "Easier to extend"
 msgstr "Проще расширять"
@@ -7171,6 +7168,9 @@ msgstr "Завершение неполного подбора"
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "Завершение отклоняется до тех пор, пока каждая строка не будет подобрана или отмечена как 'Недостаточно'."
 
+msgid "First light, {name}."
+msgstr ""
+
 msgid "First name"
 msgstr "Имя"
 
@@ -7718,7 +7718,7 @@ msgstr "Домашний телефон"
 msgid "Hop {depth}"
 msgstr "Шаг {depth}"
 
-msgid "Hope the day's treating you well, {name}."
+msgid "Hope things are treating you well, {name}."
 msgstr ""
 
 msgid "Host"
@@ -8774,6 +8774,9 @@ msgstr "Дата последнего обучения"
 msgid "Last used"
 msgstr "Последний раз использован"
 
+msgid "Late in the evening, {name}."
+msgstr ""
+
 msgid "Latest operation end"
 msgstr "Конец последней операции"
 
@@ -9568,6 +9571,9 @@ msgstr "MFA"
 
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "Условие середины месяца / середины квартала / половины года, определяющее вычет первого года."
+
+msgid "Midnight on the clock, {name}."
+msgstr ""
 
 msgid "Migrate data"
 msgstr "Перенос данных"
@@ -10782,9 +10788,6 @@ msgstr "Отключено — обработано вне синхрониза�
 
 msgid "Off — released revisions stay editable"
 msgstr "Отключено — выпущенные ревизии остаются редактируемыми"
-
-msgid "Off to an early start, {name}."
-msgstr ""
 
 msgid "ok"
 msgstr "хорошо"
@@ -12465,6 +12468,9 @@ msgstr "Вопрос"
 msgid "Queued"
 msgstr "В очереди"
 
+msgid "Quiet on the floor tonight, {name}."
+msgstr ""
+
 msgid "Quote"
 msgstr "Предложение"
 
@@ -13343,9 +13349,6 @@ msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "Правый элемент"
-
-msgid "Rise and shine, {name}."
-msgstr ""
 
 msgid "Risk"
 msgstr "Риск"
@@ -14898,7 +14901,7 @@ msgstr "Шаги наследуются из инструкции сборки."
 msgid "Steps are inherited from the inspection plan."
 msgstr "Шаги наследуются из плана контроля."
 
-msgid "Still at it, {name}."
+msgid "Still dark out on the floor."
 msgstr ""
 
 msgid "Stock movement corrected"
@@ -15696,6 +15699,9 @@ msgstr "Налоговая ставка по умолчанию, применя�
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Отдел, под который это накапливается для отчетности и иерархий подсчета; оставить пусто для отдела верхнего уровня."
 
+msgid "The early hours, {name}."
+msgstr ""
+
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "Метод качества восьми дисциплин, моделируемый с помощью задач рабочего процесса несоответствия, а не жестко закодированный."
 
@@ -15710,6 +15716,9 @@ msgstr "Конечная точка, которая получает POST-зап
 
 msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
 msgstr "Техническая схема, к которой привязан данный план контроля; проверки, записанные для этой детали, ссылаются на эту схему."
+
+msgid "The evening hours, {name}."
+msgstr ""
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
 msgstr "Ожидаемый процент выпуска этой номенклатуры, потерянного во время производства; планирование умножает потребность на 1 / (1 − брак) для компенсации."
@@ -15927,6 +15936,9 @@ msgid "The next scheduled work at this location starts {0}."
 msgstr ""
 
 msgid "The night shift suits you, {name}."
+msgstr ""
+
+msgid "The night's still young, {name}."
 msgstr ""
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
@@ -17166,9 +17178,6 @@ msgstr "Неиспользованный отобранный материал �
 msgid "UoM"
 msgstr "УИ"
 
-msgid "Up with the sun."
-msgstr ""
-
 msgid "Update"
 msgstr "Обновить"
 
@@ -18219,9 +18228,6 @@ msgstr "Почему эта строка отклоняется; отображ�
 msgid "Will remain as a comment line"
 msgstr "Останется в виде строки комментария"
 
-msgid "Winding down for the day, {name}."
-msgstr ""
-
 msgid "Window:"
 msgstr "Окно:"
 
@@ -18314,17 +18320,11 @@ msgstr "Запуск рабочего процесса"
 msgid "Workflows"
 msgstr "Рабочие процессы"
 
-msgid "Working late tonight, {name}."
-msgstr ""
-
 msgid "Working sessions on configuration and data"
 msgstr "Рабочие сессии по конфигурации и данным"
 
 msgid "Worst Performing Machines"
 msgstr "Худшие станки"
-
-msgid "Wrapping up the day, {name}."
-msgstr ""
 
 msgid "Write-Down Account"
 msgstr "Счет уценки"

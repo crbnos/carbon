@@ -2803,9 +2803,6 @@ msgstr "Massenimport"
 msgid "Bulk Jobs"
 msgstr "Massenaufträge"
 
-msgid "Burning the midnight oil."
-msgstr ""
-
 msgid "Business moment"
 msgstr "Geschäftsereignis"
 
@@ -4704,6 +4701,9 @@ msgstr "Zahlungsdatum"
 msgid "Dates"
 msgstr "Daten"
 
+msgid "Dawn's breaking, {name}."
+msgstr ""
+
 msgid "Day"
 msgstr "Tag"
 
@@ -5755,9 +5755,6 @@ msgstr "Stück, kg, m…"
 
 msgid "Earliest operation start"
 msgstr "Frühestmöglicher Operationsbeginn"
-
-msgid "Early bird gets the worm."
-msgstr ""
 
 msgid "Easier to extend"
 msgstr "Einfacher zu erweitern"
@@ -7171,6 +7168,9 @@ msgstr "Unvollständige Kommissionierung abschließen"
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "Das Abschließen wird verweigert, bis jede Zeile kommissioniert oder als Kurzbestand markiert ist."
 
+msgid "First light, {name}."
+msgstr ""
+
 msgid "First name"
 msgstr "Vorname"
 
@@ -7718,7 +7718,7 @@ msgstr "Telefon zu Hause"
 msgid "Hop {depth}"
 msgstr "Ebene {depth}"
 
-msgid "Hope the day's treating you well, {name}."
+msgid "Hope things are treating you well, {name}."
 msgstr ""
 
 msgid "Host"
@@ -8774,6 +8774,9 @@ msgstr "Datum der letzten Schulung"
 msgid "Last used"
 msgstr "Zuletzt verwendet"
 
+msgid "Late in the evening, {name}."
+msgstr ""
+
 msgid "Latest operation end"
 msgstr "Ende der neuesten Operation"
 
@@ -9568,6 +9571,9 @@ msgstr "MFA"
 
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "Konvention für Mitte des Monats / Quartal / Halbjahr, die den Abzug im ersten Jahr bestimmt."
+
+msgid "Midnight on the clock, {name}."
+msgstr ""
 
 msgid "Migrate data"
 msgstr "Daten migrieren"
@@ -10782,9 +10788,6 @@ msgstr "Aus — außerhalb der Synchronisierung behandelt"
 
 msgid "Off — released revisions stay editable"
 msgstr "Aus — ausgegebene Revisionen bleiben bearbeitbar"
-
-msgid "Off to an early start, {name}."
-msgstr ""
 
 msgid "ok"
 msgstr "ok"
@@ -12465,6 +12468,9 @@ msgstr "Frage"
 msgid "Queued"
 msgstr "In Warteschlange"
 
+msgid "Quiet on the floor tonight, {name}."
+msgstr ""
+
 msgid "Quote"
 msgstr "Angebot"
 
@@ -13343,9 +13349,6 @@ msgstr "Rider v{0}"
 
 msgid "Right item"
 msgstr "Rechtes Element"
-
-msgid "Rise and shine, {name}."
-msgstr ""
 
 msgid "Risk"
 msgstr "Risiko"
@@ -14898,7 +14901,7 @@ msgstr "Die Schritte werden von der Montageanleitungen geerbt."
 msgid "Steps are inherited from the inspection plan."
 msgstr "Schritte werden vom Prüfplan übernommen."
 
-msgid "Still at it, {name}."
+msgid "Still dark out on the floor."
 msgstr ""
 
 msgid "Stock movement corrected"
@@ -15696,6 +15699,9 @@ msgstr "Der Steuersatz, der auf die Angebots- und Kundenauftrags-Positionen dies
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Die Abteilung, unter die diese für Berichterstattung und Kopfzahlen-Hierarchien untergeordnet ist; leer lassen für eine Abteilung der obersten Ebene."
 
+msgid "The early hours, {name}."
+msgstr ""
+
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "Die Acht-Disziplinen-Qualitätsmethode, modelliert mit den Aufgaben des Nichtkonformitäts-Workflows statt hartcodiert."
 
@@ -15710,6 +15716,9 @@ msgstr "Der Endpunkt, der eine POST-Anfrage mit den aktualisierten Daten empfän
 
 msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
 msgstr "Die technische Zeichnung, an die dieser Prüfplan gekoppelt ist; Prüfungen, die gegen diesen Teil aufgezeichnet werden, beziehen sich auf diese Zeichnung."
+
+msgid "The evening hours, {name}."
+msgstr ""
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
 msgstr "Der erwartete Prozentsatz der Ausgabe dieses Artikels, der während der Produktion verloren geht; die Planung multipliziert den Bedarf mit 1 / (1 − Ausschuss), um dies auszugleichen."
@@ -15927,6 +15936,9 @@ msgid "The next scheduled work at this location starts {0}."
 msgstr ""
 
 msgid "The night shift suits you, {name}."
+msgstr ""
+
+msgid "The night's still young, {name}."
 msgstr ""
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
@@ -17166,9 +17178,6 @@ msgstr "Ungenutzte kommissionierte Materialien werden vom Arbeitsplatz zurück i
 msgid "UoM"
 msgstr "UoM"
 
-msgid "Up with the sun."
-msgstr ""
-
 msgid "Update"
 msgstr "Aktualisieren"
 
@@ -18219,9 +18228,6 @@ msgstr "Warum diese Zeile abgelehnt wird; auf dem druckbaren Angebot angezeigt u
 msgid "Will remain as a comment line"
 msgstr "Bleibt als Kommentarzeile erhalten"
 
-msgid "Winding down for the day, {name}."
-msgstr ""
-
 msgid "Window:"
 msgstr "Fenster:"
 
@@ -18314,17 +18320,11 @@ msgstr "Workflow-Ausführung"
 msgid "Workflows"
 msgstr "Workflows"
 
-msgid "Working late tonight, {name}."
-msgstr ""
-
 msgid "Working sessions on configuration and data"
 msgstr "Arbeitssitzungen zu Konfiguration und Daten"
 
 msgid "Worst Performing Machines"
 msgstr "Schlechteste Maschinen"
-
-msgid "Wrapping up the day, {name}."
-msgstr ""
 
 msgid "Write-Down Account"
 msgstr "Abwertungskonto"
