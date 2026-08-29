@@ -280,21 +280,18 @@ function SearchBar() {
   const openSearchModal = useUIStore((s) => s.openSearchModal);
   const modifierKey = platform === "mac" ? "⌘" : "Ctrl";
   return (
-    // Outer layer (bg-muted frame) wrapping an inset inner field. Total height
-    // matches the size="lg" "Add New" button (h-11). Concentric radius: outer =
-    // inner + padding, so rounded-lg (8px) = rounded-sm (4px) + p-1 (4px).
+    // Single-border button matching the module cards' rounded-lg. Height matches
+    // the size="lg" "Add New" button (h-11).
     <button
       type="button"
       onClick={openSearchModal}
-      className="group flex flex-1 h-11 p-1 rounded-xl border border-border bg-card transition-colors active:scale-[0.995]"
+      className="group flex flex-1 items-center gap-2 h-11 px-3 rounded-lg border border-border bg-muted/20 text-muted-foreground hover:border-foreground/20 transition-colors active:scale-[0.995]"
     >
-      <div className="flex flex-1 items-center gap-2 px-3 rounded-md border border-border bg-muted/30 text-muted-foreground transition-colors">
-        <RxMagnifyingGlass className="w-4 h-4 shrink-0" />
-        <span className="text-base truncate">{t`Search`}</span>
-        <div className="ml-auto flex items-center gap-1">
-          <KeyCap>{modifierKey}</KeyCap>
-          <KeyCap>K</KeyCap>
-        </div>
+      <RxMagnifyingGlass className="w-4 h-4 shrink-0" />
+      <span className="text-base truncate">{t`Search`}</span>
+      <div className="ml-auto flex items-center gap-1">
+        <KeyCap>{modifierKey}</KeyCap>
+        <KeyCap>K</KeyCap>
       </div>
     </button>
   );
