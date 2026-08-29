@@ -3573,6 +3573,9 @@ msgstr "コンテンツ"
 msgid "Context"
 msgstr "コンテキスト"
 
+msgid "Continue"
+msgstr "続行"
+
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "固定資産の総減価償却費の逆資産勘定"
 
@@ -6077,9 +6080,6 @@ msgstr "認証器アプリから6桁のコードを入力して再開します�
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "この移動がどの数量であるべきかを入力します。差分の反対の移動は、オリジナルの横に、オリジナルの期間に投稿されます。"
-
-msgid "Enter your email first"
-msgstr "まずメールアドレスを入力してください"
 
 msgid "Entered At Receipt"
 msgstr "受領時に入力"
@@ -13068,12 +13068,6 @@ msgstr "営業担当者"
 msgid "Same as Book"
 msgstr "簿価と同じ"
 
-msgid "SAML SSO"
-msgstr "SAML SSO"
-
-msgid "SAML SSO is not configured for your email domain."
-msgstr "SAML SSO はメールドメイン用に構成されていません。"
-
 msgid "Sample"
 msgstr "サンプル"
 
@@ -13980,9 +13974,6 @@ msgstr "Carbonにサインイン"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "マジックリンクの代わりに生体認証でサインインします。パスキーはFace ID、Touch ID、またはデバイスPINで保護されます。"
-
-msgid "Sign in with Email"
-msgstr "メールでサインイン"
 
 msgid "Sign in with Google"
 msgstr "Googleでサインイン"

@@ -3573,6 +3573,9 @@ msgstr "Содержание"
 msgid "Context"
 msgstr "Контекст"
 
+msgid "Continue"
+msgstr "Продолжить"
+
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "Контрактивный счет учета на общую амортизацию основных средств"
 
@@ -6077,9 +6080,6 @@ msgstr "Введите 6-значный код из приложения-аут�
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Введите количество, которое должно было быть в этом движении. Противоположное движение для разницы размещается рядом с оригинальным в его временном периоде."
-
-msgid "Enter your email first"
-msgstr "Сначала введите свой адрес электронной почты"
 
 msgid "Entered At Receipt"
 msgstr "Введено при получении"
@@ -13068,12 +13068,6 @@ msgstr "Продавец"
 msgid "Same as Book"
 msgstr "Как в книге"
 
-msgid "SAML SSO"
-msgstr "SAML SSO"
-
-msgid "SAML SSO is not configured for your email domain."
-msgstr "SAML SSO не настроен для вашего домена электронной почты."
-
 msgid "Sample"
 msgstr "Образец"
 
@@ -13980,9 +13974,6 @@ msgstr "Войти в Carbon"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Войдите с использованием биометрии вместо волшебной ссылки. Ключи доступа защищены Face ID, Touch ID или PIN-кодом вашего устройства."
-
-msgid "Sign in with Email"
-msgstr "Войти с помощью электронной почты"
 
 msgid "Sign in with Google"
 msgstr "Войти с помощью Google"

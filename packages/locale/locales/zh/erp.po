@@ -3573,6 +3573,9 @@ msgstr "内容"
 msgid "Context"
 msgstr "上下文"
 
+msgid "Continue"
+msgstr "继续"
+
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "固定资产累计折旧对冲资产账户"
 
@@ -6077,9 +6080,6 @@ msgstr "输入您的身份验证器应用中的 6 位数字代码以继续。"
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "输入此移动应该的数量。差异的相反移动在原始时期内的原始旁边过账。"
-
-msgid "Enter your email first"
-msgstr "请先输入您的电子邮件"
 
 msgid "Entered At Receipt"
 msgstr "在收货时输入"
@@ -13068,12 +13068,6 @@ msgstr "销售人员"
 msgid "Same as Book"
 msgstr "与账面相同"
 
-msgid "SAML SSO"
-msgstr "SAML SSO"
-
-msgid "SAML SSO is not configured for your email domain."
-msgstr "未为您的电子邮件域配置 SAML SSO。"
-
 msgid "Sample"
 msgstr "样本"
 
@@ -13980,9 +13974,6 @@ msgstr "登录 Carbon"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "使用生物识别而不是魔法链接登录。通行密钥由 Face ID、Touch ID 或您的设备 PIN 保护。"
-
-msgid "Sign in with Email"
-msgstr "用邮箱登录"
 
 msgid "Sign in with Google"
 msgstr "用 Google 登录"

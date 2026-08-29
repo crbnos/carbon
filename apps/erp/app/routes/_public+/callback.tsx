@@ -231,7 +231,7 @@ export async function action({ request }: ActionFunctionArgs) {
             request,
             error(
               link.error ?? verified?.error,
-              "Your SAML SSO identity was linked. Sign in with SAML SSO again to continue."
+              "Your single sign-on identity was linked. Sign in with your work email again to continue."
             )
           )
         );
@@ -351,7 +351,7 @@ export async function action({ request }: ActionFunctionArgs) {
           request,
           error(
             null,
-            'Your organization requires single sign-on. Use "SAML SSO".'
+            "Your organization requires single sign-on. Sign in with your work email to continue."
           )
         )
       );

@@ -280,6 +280,9 @@ msgstr "Consumido"
 msgid "Consumed expired"
 msgstr "Consumido vencido"
 
+msgid "Continue"
+msgstr "Continuar"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Costo del mantenimiento no planificado, últimos {0} días"
@@ -430,9 +433,6 @@ msgstr "Ingresa el código de 6 dígitos de tu aplicación de autenticación"
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Ingrese el código de 6 dígitos de su aplicación de autenticador para reanudar."
-
-msgid "Enter your email first"
-msgstr "Ingresa tu correo electrónico primero"
 
 msgid "Error"
 msgstr "Error"
@@ -1116,12 +1116,6 @@ msgstr "En ejecución"
 msgid "Sales Order"
 msgstr "Pedido de venta"
 
-msgid "SAML SSO"
-msgstr "SAML SSO"
-
-msgid "SAML SSO is not configured for your email domain."
-msgstr "SAML SSO no está configurado para su dominio de correo electrónico."
-
 msgid "Save"
 msgstr "Guardar"
 
@@ -1277,9 +1271,6 @@ msgstr "Faltante"
 
 msgid "Short pick {itemName}"
 msgstr "Picking corto {itemName}"
-
-msgid "Sign in with Email"
-msgstr "Iniciar sesión con correo electrónico"
 
 msgid "Sign in with Google"
 msgstr "Iniciar sesión con Google"

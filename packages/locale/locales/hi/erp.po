@@ -3573,6 +3573,9 @@ msgstr "सामग्री"
 msgid "Context"
 msgstr "संदर्भ"
 
+msgid "Continue"
+msgstr "जारी रखें"
+
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "अचल संपत्तियों के कुल मूल्यह्रास के लिए विरोधी संपत्ति खाता"
 
@@ -6077,9 +6080,6 @@ msgstr "पुनः शुरू करने के लिए अपने ऑ
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "वह मात्रा दर्ज करें जो यह आंदोलन होना चाहिए था। अंतर के लिए एक विपरीत आंदोलन मूल के बगल में, मूल की समय अवधि में पोस्ट किया जाता है।"
-
-msgid "Enter your email first"
-msgstr "पहले अपना ईमेल दर्ज करें"
 
 msgid "Entered At Receipt"
 msgstr "रसीद पर दर्ज"
@@ -13068,12 +13068,6 @@ msgstr "विक्रयकर्ता"
 msgid "Same as Book"
 msgstr "किताब के समान"
 
-msgid "SAML SSO"
-msgstr "SAML SSO"
-
-msgid "SAML SSO is not configured for your email domain."
-msgstr "आपके ईमेल डोमेन के लिए SAML SSO कॉन्फ़िगर नहीं है।"
-
 msgid "Sample"
 msgstr "नमूना"
 
@@ -13980,9 +13974,6 @@ msgstr "Carbon में साइन इन करें"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "जादुई लिंक के बजाय बायोमेट्रिक्स के साथ साइन इन करें। पासकीज़ Face ID, Touch ID, या आपकी डिवाइस PIN द्वारा सुरक्षित हैं।"
-
-msgid "Sign in with Email"
-msgstr "ईमेल के साथ साइन इन करें"
 
 msgid "Sign in with Google"
 msgstr "Google के साथ साइन इन करें"

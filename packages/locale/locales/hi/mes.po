@@ -280,6 +280,9 @@ msgstr "खपत"
 msgid "Consumed expired"
 msgstr "खपत की गई समाप्त"
 
+msgid "Continue"
+msgstr "जारी रखें"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "अनियोजित रखरखाव की लागत, पिछले {0} दिन"
@@ -430,9 +433,6 @@ msgstr "अपने ऑथेंटिकेटर ऐप से 6-अंकी
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "अपने प्रमाणक ऐप्लिकेशन से 6-अंकीय कोड दर्ज करें जारी रखने के लिए।"
-
-msgid "Enter your email first"
-msgstr "पहले अपना ईमेल दर्ज करें"
 
 msgid "Error"
 msgstr "त्रुटि"
@@ -1116,12 +1116,6 @@ msgstr "चल रहा है"
 msgid "Sales Order"
 msgstr "विक्रय आदेश"
 
-msgid "SAML SSO"
-msgstr "SAML SSO"
-
-msgid "SAML SSO is not configured for your email domain."
-msgstr "SAML SSO आपके ईमेल डोमेन के लिए कॉन्फ़िगर नहीं है।"
-
 msgid "Save"
 msgstr "सहेजें"
 
@@ -1277,9 +1271,6 @@ msgstr "कम"
 
 msgid "Short pick {itemName}"
 msgstr "Short pick {itemName}"
-
-msgid "Sign in with Email"
-msgstr "ईमेल के साथ साइन इन करें"
 
 msgid "Sign in with Google"
 msgstr "Google के साथ साइन इन करें"

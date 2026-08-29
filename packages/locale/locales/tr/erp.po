@@ -3573,6 +3573,9 @@ msgstr "İçerik"
 msgid "Context"
 msgstr "Bağlam"
 
+msgid "Continue"
+msgstr "Devam Et"
+
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "Sabit kıymetlerin toplam amortismanı için karşı hesap"
 
@@ -6077,9 +6080,6 @@ msgstr "Devam etmek için kimlik doğrulayıcı uygulamanızdan 6 haneli kodu gi
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Bu hareketin olması gereken miktarı girin. Farktaki ters hareket, orijinalin zaman döneminde orijinalin yanında deftere kaydedilir."
-
-msgid "Enter your email first"
-msgstr "Önce e-postanızı girin"
 
 msgid "Entered At Receipt"
 msgstr "Alındığında Girildi"
@@ -13068,12 +13068,6 @@ msgstr "Satış danışmanı"
 msgid "Same as Book"
 msgstr "Kitapta aynı"
 
-msgid "SAML SSO"
-msgstr "SAML SSO"
-
-msgid "SAML SSO is not configured for your email domain."
-msgstr "E-posta etki alanınız için SAML SSO yapılandırılmamıştır."
-
 msgid "Sample"
 msgstr "Örnek"
 
@@ -13980,9 +13974,6 @@ msgstr "Carbon'a giriş yapın"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Sihirli bağlantı yerine biyometrik kimlik doğrulama ile oturum açın. Geçiş Anahtarları Face ID, Touch ID veya cihaz PIN'iniz tarafından korunur."
-
-msgid "Sign in with Email"
-msgstr "E-posta ile Giriş Yap"
 
 msgid "Sign in with Google"
 msgstr "Google ile giriş yap"

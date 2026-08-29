@@ -280,6 +280,9 @@ msgstr "消費済み"
 msgid "Consumed expired"
 msgstr "消費期限切れ"
 
+msgid "Continue"
+msgstr "続行"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "過去{0}日間の未計画保全原価"
@@ -430,9 +433,6 @@ msgstr "認証器アプリから6桁のコードを入力してください"
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "認証アプリから6桁のコードを入力して再開してください。"
-
-msgid "Enter your email first"
-msgstr "先にメールアドレスを入力してください"
 
 msgid "Error"
 msgstr "エラー"
@@ -1116,12 +1116,6 @@ msgstr "実行中"
 msgid "Sales Order"
 msgstr "受注"
 
-msgid "SAML SSO"
-msgstr "SAML SSO"
-
-msgid "SAML SSO is not configured for your email domain."
-msgstr "ご使用のメールドメインでは SAML SSO が設定されていません。"
-
 msgid "Save"
 msgstr "保存"
 
@@ -1277,9 +1271,6 @@ msgstr "不足"
 
 msgid "Short pick {itemName}"
 msgstr "短いピック {itemName}"
-
-msgid "Sign in with Email"
-msgstr "メールでサインイン"
 
 msgid "Sign in with Google"
 msgstr "Googleでサインイン"

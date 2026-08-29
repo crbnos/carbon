@@ -42,7 +42,7 @@ import {
   startAuthentication
 } from "@simplewebauthn/browser";
 import { useRef, useState } from "react";
-import { LuCircleAlert, LuFingerprint, LuKeyRound } from "react-icons/lu";
+import { LuCircleAlert, LuFingerprint } from "react-icons/lu";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
@@ -149,7 +149,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // SSO — refuse the magic link here, server-side.
   if (await isSsoRequiredForEmail(getCarbonServiceRole(), email)) {
     const SSO_REQUIRED_MESSAGE =
-      'Your organization requires single sign-on. Use "SAML SSO".';
+      "Your organization requires single sign-on. Sign in with your work email to continue.";
     logAuthEvent("login_failed", {
       actor: email,
       ip,
@@ -331,26 +331,25 @@ export default function LoginRoute() {
     }
   };
 
-  const onSignInWithSSO = async () => {
+  // Invisible SSO fork: runs as the email form's onSubmit (after validation).
+  // If the entered email's domain is an SSO-registered domain, suppress the
+  // magic-link POST and route the browser to the identity provider instead.
+  // Otherwise it returns and the form submits normally (magic link).
+  const onSubmitEmail = async (
+    formData: { email?: string },
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
+    // No SSO configured for this deployment — never pay a round-trip.
+    if (!hasSsoAuth) return;
+
     setSsoError(null);
-    const email =
-      document
-        .querySelector<HTMLInputElement>('input[name="email"]')
-        ?.value.trim()
-        .toLowerCase() ?? "";
-
-    if (!email) {
-      setSsoError(t`Enter your email first`);
-      return;
-    }
-
+    const email = String(formData.email ?? "")
+      .trim()
+      .toLowerCase();
     const domain = email.split("@")[1];
-    if (!domain) {
-      setSsoError(t`SAML SSO is not configured for your email domain.`);
-      return;
-    }
+    if (!domain) return; // let the server validator handle a bad address
 
-    setSsoLoading(true);
+    let enabled = false;
     try {
       const body = new FormData();
       body.append("email", email);
@@ -358,32 +357,48 @@ export default function LoginRoute() {
         method: "POST",
         body
       });
-      const result = response.ok ? await response.json() : { enabled: false };
+      enabled = response.ok ? Boolean((await response.json()).enabled) : false;
+    } catch {
+      // Fall through to the magic-link path; the server-side require-SSO gate
+      // is the defense-in-depth that still refuses an SSO-required domain.
+      enabled = false;
+    }
 
-      if (!result.enabled) {
-        setSsoError(t`SAML SSO is not configured for your email domain.`);
-        return;
+    if (!enabled) return; // ordinary domain — magic-link submit proceeds
+
+    // SSO domain — stop the magic-link POST and hand off to the IdP.
+    event.preventDefault();
+    setSsoLoading(true);
+    const { data, error } = await carbonClient.auth.signInWithSSO({
+      domain,
+      options: {
+        redirectTo: `${window.location.origin}/callback${
+          redirectTo ? `?redirectTo=${redirectTo}` : ""
+        }`
       }
+    });
 
-      const { data, error } = await carbonClient.auth.signInWithSSO({
-        domain,
-        options: {
-          redirectTo: `${window.location.origin}/callback${
-            redirectTo ? `?redirectTo=${redirectTo}` : ""
-          }`
-        }
-      });
-
-      if (error) {
-        setSsoError(error.message);
-        return;
-      }
-
-      if (data?.url) {
-        window.location.href = data.url;
-      }
-    } finally {
+    if (error) {
+      setSsoError(error.message);
       setSsoLoading(false);
+      return;
+    }
+
+    if (data?.url) {
+      // Prefill the user's email at the IdP so they don't retype it. The
+      // returned url is the IdP's SAML redirect-binding endpoint; login_hint is
+      // an extra query param (URL-encoded by URLSearchParams) that Okta/Entra
+      // honor and other IdPs safely ignore — it is not covered by the SAML
+      // request signature, so appending it never invalidates the request.
+      let target = data.url;
+      try {
+        const url = new URL(data.url);
+        url.searchParams.set("login_hint", email);
+        target = url.toString();
+      } catch {
+        // Non-absolute url — navigate to it unchanged.
+      }
+      window.location.href = target; // navigate away; keep the loading state
     }
   };
 
@@ -421,6 +436,7 @@ export default function LoginRoute() {
             validator={magicLinkValidator}
             defaultValues={{ redirectTo, email: emailParam }}
             method="post"
+            onSubmit={onSubmitEmail}
           >
             <Hidden name="redirectTo" value={redirectTo} type="hidden" />
             <VStack spacing={2}>
@@ -482,25 +498,7 @@ export default function LoginRoute() {
                 </Button>
               )}
 
-              {hasSsoAuth && (
-                <Button
-                  type="button"
-                  size="lg"
-                  className="w-full"
-                  onClick={onSignInWithSSO}
-                  isDisabled={ssoLoading || fetcher.state !== "idle"}
-                  isLoading={ssoLoading}
-                  variant="secondary"
-                  leftIcon={<LuKeyRound className="size-4" />}
-                >
-                  <Trans>SAML SSO</Trans>
-                </Button>
-              )}
-
-              {(hasGoogleAuth ||
-                hasOutlookAuth ||
-                hasPasskeyAuth ||
-                hasSsoAuth) && (
+              {(hasGoogleAuth || hasOutlookAuth || hasPasskeyAuth) && (
                 <div className="py-3 w-full">
                   <Separator />
                 </div>
@@ -514,14 +512,14 @@ export default function LoginRoute() {
               />
 
               <Submit
-                isDisabled={fetcher.state !== "idle"}
-                isLoading={fetcher.state === "submitting"}
+                isDisabled={fetcher.state !== "idle" || ssoLoading}
+                isLoading={fetcher.state === "submitting" || ssoLoading}
                 size="lg"
                 className="w-full"
                 withBlocker={false}
                 variant="secondary"
               >
-                <Trans>Sign in with Email</Trans>
+                <Trans>Continue</Trans>
               </Submit>
             </VStack>
           </ValidatedForm>

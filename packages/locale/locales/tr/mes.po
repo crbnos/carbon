@@ -280,6 +280,9 @@ msgstr "Tüketildi"
 msgid "Consumed expired"
 msgstr "Tüketildi süresi doldu"
 
+msgid "Continue"
+msgstr "Devam Et"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Planlanmamış bakım maliyeti, son {0} gün"
@@ -430,9 +433,6 @@ msgstr "Kimlik doğrulama uygulamanızdan 6 haneli kodu girin"
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Devam etmek için kimlik doğrulama uygulamanızdan 6 haneli kodu girin."
-
-msgid "Enter your email first"
-msgstr "Önce e-postanızı girin"
 
 msgid "Error"
 msgstr "Hata"
@@ -1116,12 +1116,6 @@ msgstr "Çalışıyor"
 msgid "Sales Order"
 msgstr "Satış Siparişi"
 
-msgid "SAML SSO"
-msgstr "SAML SSO"
-
-msgid "SAML SSO is not configured for your email domain."
-msgstr "SAML SSO, e-posta etki alanınız için yapılandırılmamıştır."
-
 msgid "Save"
 msgstr "Kaydet"
 
@@ -1277,9 +1271,6 @@ msgstr "Azalt"
 
 msgid "Short pick {itemName}"
 msgstr "Kısmi toplama {itemName}"
-
-msgid "Sign in with Email"
-msgstr "E-posta ile Giriş Yap"
 
 msgid "Sign in with Google"
 msgstr "Google ile giriş yap"

@@ -280,6 +280,9 @@ msgstr "Использовано"
 msgid "Consumed expired"
 msgstr "Израсходовано - истек срок"
 
+msgid "Continue"
+msgstr "Продолжить"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Себестоимость внепланового техобслуживания за последние {0} дней"
@@ -430,9 +433,6 @@ msgstr "Введите 6-значный код из приложения аут�
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Введите 6-значный код из приложения аутентификатора для продолжения."
-
-msgid "Enter your email first"
-msgstr "Сначала введите свой адрес электронной почты"
 
 msgid "Error"
 msgstr "Ошибка"
@@ -1116,12 +1116,6 @@ msgstr "Работает"
 msgid "Sales Order"
 msgstr "Заказ покупателя"
 
-msgid "SAML SSO"
-msgstr "SAML SSO"
-
-msgid "SAML SSO is not configured for your email domain."
-msgstr "SAML SSO не настроен для вашего почтового домена."
-
 msgid "Save"
 msgstr "Сохранить"
 
@@ -1277,9 +1271,6 @@ msgstr "Недостача"
 
 msgid "Short pick {itemName}"
 msgstr "Короткий отбор {itemName}"
-
-msgid "Sign in with Email"
-msgstr "Войти по электронной почте"
 
 msgid "Sign in with Google"
 msgstr "Войти через Google"

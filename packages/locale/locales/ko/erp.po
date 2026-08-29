@@ -3573,6 +3573,9 @@ msgstr "콘텐츠"
 msgid "Context"
 msgstr "컨텍스트"
 
+msgid "Continue"
+msgstr "계속"
+
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "고정자산 총 감가상각액에 대한 자산 차감 계정"
 
@@ -6077,9 +6080,6 @@ msgstr "계속하려면 인증 앱의 6자리 코드를 입력하세요."
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "이 이동이 있었어야 할 수량을 입력하십시오. 차이에 대한 반대 이동은 원본 옆의 원본의 시간 기간에 게시됩니다."
-
-msgid "Enter your email first"
-msgstr "먼저 이메일을 입력하세요"
 
 msgid "Entered At Receipt"
 msgstr "입고 시 입력됨"
@@ -13068,12 +13068,6 @@ msgstr "영업사원"
 msgid "Same as Book"
 msgstr "장부와 동일"
 
-msgid "SAML SSO"
-msgstr "SAML SSO"
-
-msgid "SAML SSO is not configured for your email domain."
-msgstr "이메일 도메인에 대해 SAML SSO가 구성되지 않았습니다."
-
 msgid "Sample"
 msgstr "샘플"
 
@@ -13980,9 +13974,6 @@ msgstr "Carbon에 로그인"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "매직 링크 대신 생체 인식으로 로그인하세요. 패스키는 Face ID, Touch ID 또는 기기 PIN으로 보호됩니다."
-
-msgid "Sign in with Email"
-msgstr "이메일로 로그인"
 
 msgid "Sign in with Google"
 msgstr "Google로 로그인"

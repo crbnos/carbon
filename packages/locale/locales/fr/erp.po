@@ -3573,6 +3573,9 @@ msgstr "Contenu"
 msgid "Context"
 msgstr "Contexte"
 
+msgid "Continue"
+msgstr "Continuer"
+
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "Compte correcteur d'actif pour l'amortissement total des immobilisations"
 
@@ -6077,9 +6080,6 @@ msgstr "Entrez le code à 6 chiffres de votre application d'authentification pou
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Entrez la quantité que ce mouvement aurait dû avoir. Un mouvement opposé pour la différence est posté à côté de l'original, dans la période de l'original."
-
-msgid "Enter your email first"
-msgstr "Entrez d'abord votre adresse e-mail"
 
 msgid "Entered At Receipt"
 msgstr "Saisi à la réception"
@@ -13068,12 +13068,6 @@ msgstr "Représentant commercial"
 msgid "Same as Book"
 msgstr "Identique à la comptabilité"
 
-msgid "SAML SSO"
-msgstr "SAML SSO"
-
-msgid "SAML SSO is not configured for your email domain."
-msgstr "SAML SSO n'est pas configuré pour votre domaine de messagerie."
-
 msgid "Sample"
 msgstr "Échantillon"
 
@@ -13980,9 +13974,6 @@ msgstr "Se connecter à Carbon"
 
 msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
 msgstr "Connectez-vous avec la biométrie au lieu d'un lien magique. Les clés d'accès sont sécurisées par Face ID, Touch ID ou votre code PIN de l'appareil."
-
-msgid "Sign in with Email"
-msgstr "Se connecter avec Email"
 
 msgid "Sign in with Google"
 msgstr "Se connecter avec Google"

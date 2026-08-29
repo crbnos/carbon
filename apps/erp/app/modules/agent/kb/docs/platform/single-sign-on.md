@@ -2,11 +2,11 @@
 
 > Route sign-in for your company's email domains through your own identity provider with enterprise SAML SSO.
 
-Single sign-on hands control of Carbon sign-in to your own identity provider — Okta, Entra ID, Google Workspace, or any SAML 2.0 IdP. You register your email domains once — proving you own each one with a DNS record — and from then on your IT team grants and revokes access centrally: everyone on those domains can sign in to both ERP and MES with **"Continue with SSO"**. Registering alone doesn't take anything away — the magic link and other methods keep working until you turn on [Require SSO](#requiring-sso).
+Single sign-on hands control of Carbon sign-in to your own identity provider — Okta, Entra ID, Google Workspace, or any SAML 2.0 IdP. You register your email domains once — proving you own each one with a DNS record — and from then on your IT team grants and revokes access centrally: everyone on those domains signs in to both ERP and MES with their normal work email — Carbon recognizes the domain and routes them to your IdP automatically, with no SSO button to find. Registering alone doesn't take anything away — the magic link and other methods keep working until you turn on [Require SSO](#requiring-sso).
 
 ## Requirements
 
-SSO is an Enterprise feature. The **"Continue with SSO"** button and the settings section render only when the instance runs the **Enterprise** edition (`CARBON_EDITION=enterprise`), which requires a `docs/platform/licensing`. It is a capability of your own `docs/platform/self-hosting` deployment — Carbon Cloud sign-in is unaffected.
+SSO is an Enterprise feature. Automatic SSO routing on the login page and the settings section are active only when the instance runs the **Enterprise** edition (`CARBON_EDITION=enterprise`), which requires a `docs/platform/licensing`. It is a capability of your own `docs/platform/self-hosting` deployment — Carbon Cloud sign-in is unaffected.
 
 Enable it through `docs/platform/self-hosting/environment-variables`:
 
@@ -52,7 +52,7 @@ To turn SSO off, use the **"Deactivate"** button in the Identity Provider card. 
 
 ## How sign-in works
 
-The login page is email-first. The user types their email, then clicks **"Continue with SSO"** — clicking with the field empty shows **"Enter your email first"**. Carbon checks whether the email's domain has an active connection (a rate-limited check that reveals nothing beyond yes or no); if it doesn't, the page shows **"SSO is not configured for your email domain."** Otherwise the browser redirects to your IdP, the user authenticates there, and lands back in Carbon signed in to the connection's company.
+The login page is email-first, and the SSO fork is invisible. The user types their email and presses **"Continue"** — there is no separate SSO button to choose. Carbon checks whether the email's domain has an active connection (a rate-limited check that reveals nothing beyond yes or no); if it does, the browser redirects to your IdP, the user authenticates there, and lands back in Carbon signed in to the connection's company. If it doesn't, the same button falls through to the ordinary magic-link (or sign-up) flow. Users never have to know whether their company uses SSO.
 
 Before any session is created, Carbon enforces the connection's boundaries itself: the asserted email's domain must be one of the connection's **verified** email domains. An assertion outside them is rejected with **"SSO sign-in rejected: this email domain is not registered for your company's SSO connection."** — even a misconfigured or hostile IdP can't sign someone into another company.
 
@@ -64,7 +64,7 @@ Provisioning is **invite-first** — there is no self-serve signup through SSO. 
 
 Invites cooperate with this automatically: when you invite someone whose email domain has an active SSO connection, the invite email links to the login page with their address prefilled instead of carrying a magic-link code — the IdP is never bypassed, even on day one.
 
-MES shows the same **"Continue with SSO"** button and enforces the same domain rules, but it doesn't run first-time provisioning. A brand-new SSO user who starts at MES sees **"Complete your first SSO sign-in in Carbon ERP, then return here."** — after that one ERP sign-in, MES works normally.
+MES uses the same email-first sign-in and enforces the same domain rules, but it doesn't run first-time provisioning. A brand-new SSO user who starts at MES sees **"Complete your first SSO sign-in in Carbon ERP, then return here."** — after that one ERP sign-in, MES works normally.
 
 ## Existing accounts
 
@@ -76,7 +76,7 @@ Coverage follows the registered domains: every existing member whose email domai
 
 ## Requiring SSO
 
-Once the connection works, you can make it the only way in. The **"Identity Provider"** card carries a **"Require SSO"** switch: while it's on, anyone whose email domain is **verified** on the active connection can sign in **only** through your identity provider (a pending domain enforces nothing). Every other method is refused server-side — the magic-link form, Google and Outlook sign-in, and passkeys all answer with **"Your organization requires single sign-on. Use "Continue with SSO"."** and no session is created.
+Once the connection works, you can make it the only way in. The **"Identity Provider"** card carries a **"Require SSO"** switch: while it's on, anyone whose email domain is **verified** on the active connection can sign in **only** through your identity provider (a pending domain enforces nothing). Every other method is refused server-side — the magic-link form, Google and Outlook sign-in, and passkeys all answer with **"Your organization requires single sign-on. Sign in with your work email to continue."** and no session is created.
 
 The ordering protects you from locking yourself out: the switch exists only on an active connection, so the path is always *set up SSO, prove a sign-in works, enforce last*. Turning the switch off — or deactivating the connection — immediately restores the other sign-in methods for those domains.
 
