@@ -36,7 +36,12 @@ import {
   LuChevronRight,
   LuRefreshCw
 } from "react-icons/lu";
-import { useFetcher, useNavigate, useSearchParams } from "react-router";
+import {
+  useFetcher,
+  useNavigate,
+  useNavigation,
+  useSearchParams
+} from "react-router";
 import { useLocations } from "~/components/Form/Location";
 import { path } from "~/utils/path";
 
@@ -94,6 +99,18 @@ export function ForecastHeader({
   const [dateOpen, setDateOpen] = useState(false);
   const parsedDate = parseDate(date);
 
+  // A forecast window can take seconds to load, so stepping through days or
+  // weeks needs feedback: the arrow that was clicked spins, and both arrows are
+  // disabled until the new window lands so an impatient double-click cannot
+  // queue up navigations the user then has to step back through.
+  const navigation = useNavigation();
+  const isNavigating = navigation.state !== "idle";
+  const [pendingDirection, setPendingDirection] = useState<-1 | 1 | null>(null);
+
+  useEffect(() => {
+    if (navigation.state === "idle") setPendingDirection(null);
+  }, [navigation.state]);
+
   const setParam = (mutate: (params: URLSearchParams) => void) => {
     const newParams = new URLSearchParams(searchParams);
     mutate(newParams);
@@ -119,7 +136,8 @@ export function ForecastHeader({
 
   // A shift is a single calendar day, so it steps by a day like the day view;
   // the week view steps by a whole week.
-  const navigateDate = (direction: number) =>
+  const navigateDate = (direction: -1 | 1) => {
+    setPendingDirection(direction);
     setParam((params) =>
       params.set(
         "date",
@@ -128,6 +146,7 @@ export function ForecastHeader({
           .toString()
       )
     );
+  };
 
   const weekStart = startOfWeek(parsedDate, "en-GB");
 
@@ -277,6 +296,8 @@ export function ForecastHeader({
             variant="secondary"
             onClick={() => navigateDate(-1)}
             icon={<LuChevronLeft />}
+            isDisabled={isNavigating}
+            isLoading={isNavigating && pendingDirection === -1}
             aria-label={range === "week" ? t`Previous week` : t`Previous day`}
           />
           <Popover open={dateOpen} onOpenChange={setDateOpen}>
@@ -332,6 +353,8 @@ export function ForecastHeader({
             variant="secondary"
             onClick={() => navigateDate(1)}
             icon={<LuChevronRight />}
+            isDisabled={isNavigating}
+            isLoading={isNavigating && pendingDirection === 1}
             aria-label={range === "week" ? t`Next week` : t`Next day`}
           />
         </HStack>
