@@ -34,18 +34,18 @@ export function Greeting({ hour, pick, ...props }: GreetingProps) {
     const pool =
       hour < 4
         ? [
-            t`Burning the midnight oil.`,
-            t`The night shift suits you, ${name}.`,
             t`Deep in the small hours, ${name}.`,
+            t`The night shift suits you, ${name}.`,
+            t`Midnight on the clock, ${name}.`,
             t`Nice and quiet at this hour.`,
             t`Welcome back, ${name}.`
           ]
         : hour < 8
           ? [
-              t`Rise and shine, ${name}.`,
-              t`Early bird gets the worm.`,
-              t`Off to an early start, ${name}.`,
-              t`Up with the sun.`,
+              t`Dawn's breaking, ${name}.`,
+              t`The early hours, ${name}.`,
+              t`Still dark out on the floor.`,
+              t`First light, ${name}.`,
               t`Good morning, ${name}.`
             ]
           : hour < 12
@@ -62,21 +62,21 @@ export function Greeting({ hour, pick, ...props }: GreetingProps) {
                   t`Afternoon, ${name}.`,
                   t`Welcome back, ${name}.`,
                   t`${name} returns!`,
-                  t`Hope the day's treating you well, ${name}.`
+                  t`Hope things are treating you well, ${name}.`
                 ]
               : hour < 21
                 ? [
                     t`Good evening, ${name}.`,
                     t`Evening, ${name}.`,
                     t`Welcome back, ${name}.`,
-                    t`Winding down for the day, ${name}.`,
+                    t`The evening hours, ${name}.`,
                     t`${name} returns!`
                   ]
                 : [
-                    t`Working late tonight, ${name}.`,
-                    t`Still at it, ${name}.`,
+                    t`Late in the evening, ${name}.`,
+                    t`The night's still young, ${name}.`,
                     t`Welcome back, ${name}.`,
-                    t`Wrapping up the day, ${name}.`,
+                    t`Quiet on the floor tonight, ${name}.`,
                     t`Good evening, ${name}.`
                   ];
 
