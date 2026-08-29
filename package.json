@@ -1,10 +1,10 @@
 {
   "name": "carbon",
   "devDependencies": {
-    "@biomejs/biome": "2.3.8",
+    "@biomejs/biome": "2.5.10",
     "@lingui/cli": "catalog:",
     "@react-router/dev": "catalog:",
-    "@types/aws-lambda": "8.10.152",
+    "@types/aws-lambda": "8.10.162",
     "@types/node": "catalog:",
     "@typescript/native-preview": "catalog:",
     "cli-table3": "^0.6.5",
@@ -18,7 +18,7 @@
     "supabase": "catalog:",
     "ts-morph": "22.0.0",
     "tsx": "catalog:",
-    "turbo": "2.9.6",
+    "turbo": "2.10.12",
     "typescript": "catalog:",
     "vite-plugin-babel-macros": "catalog:"
   },

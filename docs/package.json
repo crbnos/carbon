@@ -34,7 +34,7 @@
   "devDependencies": {
     "@carbon/config": "workspace:*",
     "@httptoolkit/httpsnippet": "^3.0.2",
-    "@lingui/swc-plugin": "^6.4.0",
+    "@lingui/swc-plugin": "^6.6.0",
     "@tailwindcss/postcss": "^4",
     "@tailwindcss/typography": "catalog:",
     "@types/mdx": "^2.0.14",
