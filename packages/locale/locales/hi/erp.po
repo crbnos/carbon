@@ -7964,6 +7964,9 @@ msgstr "कार्यान्वयन नेता"
 msgid "Import {label} CSV"
 msgstr "{label} CSV आयात करें"
 
+msgid "Import Departments CSV"
+msgstr ""
+
 msgid "Import results"
 msgstr "आयात परिणाम"
 

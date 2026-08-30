@@ -7964,6 +7964,9 @@ msgstr "实施主管"
 msgid "Import {label} CSV"
 msgstr "导入 {label} CSV"
 
+msgid "Import Departments CSV"
+msgstr ""
+
 msgid "Import results"
 msgstr "导入结果"
 

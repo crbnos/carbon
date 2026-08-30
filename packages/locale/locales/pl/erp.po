@@ -7964,6 +7964,9 @@ msgstr "Lider Wdrożenia"
 msgid "Import {label} CSV"
 msgstr "Importuj {label} CSV"
 
+msgid "Import Departments CSV"
+msgstr ""
+
 msgid "Import results"
 msgstr "Wyniki Importu"
 

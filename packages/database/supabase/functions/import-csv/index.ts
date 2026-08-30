@@ -1686,9 +1686,17 @@ serve(async (req: Request) => {
             }
 
             const { id, ...rest } = item.data;
+            // A blank Revision cell arrives as "" — not undefined — so the
+            // `??` this replaced let it through and the item landed with an
+            // empty revision instead of the "0" the wizard advertises as the
+            // default. (Unreachable until the route stopped stripping the
+            // field, which made `rest.revision` genuinely present-but-empty.)
+            // Normalize once, before the dedup key is built from it, so the
+            // key and the stored value cannot disagree.
+            const revision = rest.revision || "0";
             const readableIdWithRevision = getReadableIdWithRevision(
               item.data.readableId,
-              item.data.revision
+              revision
             );
 
             if (
@@ -1702,7 +1710,7 @@ serve(async (req: Request) => {
                 id: existingEntityId,
                 data: {
                   ...rest,
-                  revision: rest.revision ?? "0",
+                  revision,
                   active: rest.active?.toLowerCase() !== "false" ?? true,
                   unitOfMeasureCode: rest.unitOfMeasureCode || undefined,
                   description: rest.description || undefined,
@@ -1801,7 +1809,7 @@ serve(async (req: Request) => {
                   | "Fixture"
                   | "Consumable",
                 companyId,
-                revision: rest.revision ?? "0",
+                revision,
                 createdAt: new Date().toISOString(),
                 createdBy: userId,
               };
