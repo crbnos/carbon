@@ -99,6 +99,12 @@ const DepartmentsTable = memo(({ data, count }: DepartmentsTableProps) => {
       data={rows}
       count={count}
       columns={columns}
+      importCSV={[
+        {
+          table: "department" as const,
+          label: t`Departments`
+        }
+      ]}
       primaryAction={
         permissions.can("create", "people") && (
           <New label={t`Department`} to={`new?${params.toString()}`} />

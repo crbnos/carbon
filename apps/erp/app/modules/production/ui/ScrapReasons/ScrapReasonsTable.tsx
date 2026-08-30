@@ -76,6 +76,12 @@ const ScrapReasonsTable = memo(({ data, count }: ScrapReasonsTableProps) => {
       data={data}
       columns={columns}
       count={count}
+      importCSV={[
+        {
+          table: "scrapReason" as const,
+          label: t`Scrap Reasons`
+        }
+      ]}
       primaryAction={
         permissions.can("create", "production") && (
           <New

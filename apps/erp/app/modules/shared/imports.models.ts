@@ -15,6 +15,9 @@ const methodType = [
   "Make to Order"
 ] as const;
 const itemReplenishmentSystems = ["Buy", "Make", "Buy and Make"] as const;
+// Services are either bought from a supplier (outside processing) or performed
+// in-house — they are never both.
+const serviceReplenishmentSystems = ["Buy", "Make"] as const;
 const itemTrackingTypes = [
   "Inventory",
   "Non-Inventory",
@@ -1265,6 +1268,69 @@ export const fieldMappings = {
     ...itemPurchasingImportFields,
     ...itemCostImportFields
   },
+  service: {
+    id: {
+      label: "Unique ID",
+      required: true,
+      type: "string"
+    },
+    readableId: {
+      label: "Service ID",
+      required: true,
+      type: "string"
+    },
+    revision: {
+      label: "Revision",
+      required: true,
+      type: "string",
+      default: "0"
+    },
+    name: {
+      label: "Description",
+      required: true,
+      type: "string"
+    },
+    active: {
+      label: "Active",
+      required: false,
+      type: "boolean"
+    },
+    replenishmentSystem: {
+      label: "Replenishment System",
+      required: false,
+      type: "enum",
+      enumData: {
+        description:
+          "Whether the service is bought from a supplier (outside processing) or performed in-house",
+        options: serviceReplenishmentSystems,
+        default: "Buy"
+      }
+    },
+    defaultMethodType: {
+      label: "Default Method",
+      required: false,
+      type: "enum",
+      enumData: {
+        description:
+          "How the service is fulfilled when it is required in production",
+        options: methodType,
+        default: "Purchase to Order"
+      }
+    },
+    unitOfMeasureCode: {
+      label: "Unit of Measure",
+      required: false,
+      type: "enum",
+      enumData: {
+        description: "The unit of measure of the service",
+        fetcher: unitOfMeasureFetcher,
+        default: "EA"
+      }
+    },
+    ...supplierPartImportFields,
+    ...itemPurchasingImportFields,
+    ...itemCostImportFields
+  },
   material: {
     id: {
       label: "Unique ID",
@@ -1614,6 +1680,56 @@ export const fieldMappings = {
       type: "boolean"
     }
   },
+  unitOfMeasure: {
+    code: {
+      label: "Code",
+      required: true,
+      type: "string"
+    },
+    name: {
+      label: "Name",
+      required: true,
+      type: "string"
+    }
+  },
+  itemPostingGroup: {
+    name: {
+      label: "Name",
+      required: true,
+      type: "string"
+    },
+    description: {
+      label: "Description",
+      required: false,
+      type: "string"
+    }
+  },
+  storageType: {
+    name: {
+      label: "Name",
+      required: true,
+      type: "string"
+    }
+  },
+  scrapReason: {
+    name: {
+      label: "Name",
+      required: true,
+      type: "string"
+    }
+  },
+  department: {
+    name: {
+      label: "Name",
+      required: true,
+      type: "string"
+    },
+    parentName: {
+      label: "Parent Department",
+      required: false,
+      type: "string"
+    }
+  },
   fixedAsset: {
     name: {
       label: "Name",
@@ -1805,6 +1921,12 @@ export const importPermissions: Record<keyof typeof fieldMappings, string> = {
   workCenter: "production",
   process: "production",
   storageUnit: "inventory",
+  service: "parts",
+  unitOfMeasure: "parts",
+  itemPostingGroup: "accounting",
+  storageType: "parts",
+  scrapReason: "production",
+  department: "people",
   fixedAsset: "accounting",
   materialSubstance: "parts",
   materialForm: "parts",
@@ -2466,6 +2588,114 @@ export const importSchemas: Record<
       .string()
       .optional()
       .describe("Whether the storage unit is active (true/false)")
+  }),
+  service: z.object({
+    id: z
+      .string()
+      .min(1, { message: "ID is required" })
+      .describe("The unique ID of the service"),
+    readableId: z
+      .string()
+      .min(1, { message: "Service ID is required" })
+      .describe("The service ID shown throughout the app"),
+    revision: z.string().optional().describe("The revision of the service"),
+    name: z
+      .string()
+      .min(1, { message: "Description is required" })
+      .describe("The description of the service"),
+    active: z
+      .string()
+      .optional()
+      .describe("Whether the service is active (true/false)"),
+    replenishmentSystem: z
+      .string()
+      .optional()
+      .describe(
+        "Whether the service is bought from a supplier or performed in-house"
+      ),
+    defaultMethodType: z
+      .string()
+      .optional()
+      .describe("How the service is fulfilled when required in production"),
+    unitOfMeasureCode: z
+      .string()
+      .optional()
+      .describe("The unit of measure code of the service"),
+    supplierId: z
+      .string()
+      .optional()
+      .describe("The supplier that performs the service"),
+    supplierPartId: z
+      .string()
+      .optional()
+      .describe("The supplier's own identifier for the service"),
+    supplierUnitOfMeasureCode: z
+      .string()
+      .optional()
+      .describe("How the supplier sells the service"),
+    minimumOrderQuantity: z
+      .string()
+      .optional()
+      .describe("The minimum order quantity for the service"),
+    orderMultiple: z
+      .string()
+      .optional()
+      .describe("The order multiple for the service"),
+    conversionFactor: z
+      .string()
+      .optional()
+      .describe("The supplier-to-internal unit conversion factor"),
+    unitPrice: z
+      .string()
+      .optional()
+      .describe("The supplier's unit price for the service"),
+    leadTime: z
+      .string()
+      .optional()
+      .describe("The lead time in days for the service"),
+    unitCost: z.string().optional().describe("The unit cost of the service")
+  }),
+  unitOfMeasure: z.object({
+    code: z
+      .string()
+      .min(1, { message: "Code is required" })
+      .describe("The short code for the unit of measure (e.g. EA, BOX, KG)"),
+    name: z
+      .string()
+      .min(1, { message: "Name is required" })
+      .describe("The name of the unit of measure")
+  }),
+  itemPostingGroup: z.object({
+    name: z
+      .string()
+      .min(1, { message: "Name is required" })
+      .describe("The name of the item posting group"),
+    description: z
+      .string()
+      .optional()
+      .describe("The description of the item posting group")
+  }),
+  storageType: z.object({
+    name: z
+      .string()
+      .min(1, { message: "Name is required" })
+      .describe("The name of the storage type (e.g. Cold Storage, Hazardous)")
+  }),
+  scrapReason: z.object({
+    name: z
+      .string()
+      .min(1, { message: "Name is required" })
+      .describe("The name of the scrap reason")
+  }),
+  department: z.object({
+    name: z
+      .string()
+      .min(1, { message: "Name is required" })
+      .describe("The name of the department"),
+    parentName: z
+      .string()
+      .optional()
+      .describe("The name of the parent department, if any")
   }),
   fixedAsset: z.object({
     name: z
