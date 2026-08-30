@@ -1451,12 +1451,20 @@ serve(async (req: Request) => {
           return `${table}:${id}`;
         };
 
-        // A service can never be shipped, received or stocked, so the wizard
-        // does not offer a Tracking Type column for it. The item validator
-        // below requires one, and `upsertService` hard-codes the same value.
+        // A service can never be shipped, received or stocked. The wizard
+        // therefore offers neither a Tracking Type nor a Default Method column
+        // for one: the validator below requires a tracking type, and the method
+        // is fully determined by the replenishment system — "Pull from
+        // Inventory" is not valid for a Non-Inventory item, and an independent
+        // column could contradict the replenishment system on the same row.
+        // `ServiceForm` derives both the same way and hides the method field.
         if (table === "service") {
           for (const record of mappedRecords) {
             record.itemTrackingType = "Non-Inventory";
+            record.defaultMethodType =
+              record.replenishmentSystem === "Make"
+                ? "Make to Order"
+                : "Purchase to Order";
           }
         }
 

@@ -1306,17 +1306,12 @@ export const fieldMappings = {
         default: "Buy"
       }
     },
-    defaultMethodType: {
-      label: "Default Method",
-      required: false,
-      type: "enum",
-      enumData: {
-        description:
-          "How the service is fulfilled when it is required in production",
-        options: methodType,
-        default: "Purchase to Order"
-      }
-    },
+    // No Default Method column: a service is Non-Inventory, so its method is
+    // fully determined by the replenishment system and "Pull from Inventory" is
+    // not a valid value for it. `ServiceForm` derives it and renders it hidden
+    // for the same reason; the edge function derives it identically. Offering
+    // the column would admit both an invalid method and one that contradicts
+    // the replenishment system on the same row.
     unitOfMeasureCode: {
       label: "Unit of Measure",
       required: false,
@@ -2613,10 +2608,6 @@ export const importSchemas: Record<
       .describe(
         "Whether the service is bought from a supplier or performed in-house"
       ),
-    defaultMethodType: z
-      .string()
-      .optional()
-      .describe("How the service is fulfilled when required in production"),
     unitOfMeasureCode: z
       .string()
       .optional()

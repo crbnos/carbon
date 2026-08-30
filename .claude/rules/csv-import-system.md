@@ -73,9 +73,16 @@ Other exports: `creatableLookups`, and types `CreatableLookup`, `CreatableForm`.
 `part`, `material`, `tool`, `fixture`, `consumable`, `service`, `bom`,
 `operations`, `partWithMethod`, `materialSubstance`, `materialForm`, `materialFinish`,
 `materialGrade`, `materialType`, `materialDimension`, `unitOfMeasure`,
-`itemPostingGroup`, `storageType` → `parts`;
+`storageType` → `parts`;
 `workCenter`, `process`, `scrapReason` → `production`; `storageUnit` → `inventory`;
-`department` → `people`; `fixedAsset` → `accounting`.
+`department` → `people`; `itemPostingGroup`, `fixedAsset` → `accounting`.
+
+An import's permission is the one its table's **RLS INSERT policy** requires, not
+the one that opens its list page. The edge function writes through a service-role
+Kysely connection that bypasses RLS, so `importPermissions` is the only
+authorization on a bulk import — taking it from the page gate would let a user
+create rows the database itself would refuse. `itemPostingGroup` is where the two
+disagree: its page is parts-gated, its policies are `accounting_*`.
 
 The edge function's own `table` enum (`import-csv/index.ts`) accepts: `consumable`,
 `customer`, `customerContact`, `fixture`, `material`, `bom`, `operations`,
