@@ -86,6 +86,10 @@ export default function Route() {
   // the Bulk Import entry cannot arrive through its `importCSV` prop. Same
   // dropdown shape as TableHeader so the control is where users expect it.
   const [importOpen, setImportOpen] = useState(false);
+  // Named `label` deliberately: Lingui bakes the placeholder name into the
+  // msgid, so this must match TableHeader's `Import {label} CSV` to reuse its
+  // existing translation rather than create a second, untranslated key.
+  const label = t`Departments`;
 
   const handleAddChild = useCallback(
     (parentId: string) => {
@@ -123,7 +127,10 @@ export default function Route() {
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setImportOpen(true)}>
                 <DropdownMenuIcon icon={<LuDownload />} />
-                {t`Import Departments CSV`}
+                {/* Reuses TableHeader's parameterized msgid rather than
+                    introducing a second one that every catalog would have to
+                    translate again. */}
+                {t`Import ${label} CSV`}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

@@ -7964,9 +7964,6 @@ msgstr "실행 리드"
 msgid "Import {label} CSV"
 msgstr "{label} CSV 가져오기"
 
-msgid "Import Departments CSV"
-msgstr ""
-
 msgid "Import results"
 msgstr "가져오기 결과"
 

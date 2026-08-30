@@ -7964,9 +7964,6 @@ msgstr "実施リード"
 msgid "Import {label} CSV"
 msgstr "{label} CSV をインポート"
 
-msgid "Import Departments CSV"
-msgstr ""
-
 msgid "Import results"
 msgstr "インポート結果"
 

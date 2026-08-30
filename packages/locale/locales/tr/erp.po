@@ -7964,9 +7964,6 @@ msgstr "Uygulama Müdürü"
 msgid "Import {label} CSV"
 msgstr "İçe aktarılacak {label} CSV"
 
-msgid "Import Departments CSV"
-msgstr ""
-
 msgid "Import results"
 msgstr "İçe Aktarma Sonuçları"
 

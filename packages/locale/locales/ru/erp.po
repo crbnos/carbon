@@ -7964,9 +7964,6 @@ msgstr "Руководитель внедрения"
 msgid "Import {label} CSV"
 msgstr "Импортировать {label} CSV"
 
-msgid "Import Departments CSV"
-msgstr ""
-
 msgid "Import results"
 msgstr "Импортировать результаты"
 
