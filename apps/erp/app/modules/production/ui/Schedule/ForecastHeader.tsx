@@ -47,7 +47,7 @@ import { path } from "~/utils/path";
 
 export type ForecastRange = "day" | "week" | "shift";
 
-/** Which date control started the in-flight navigation, so only it spins. */
+/** Which date control the in-flight navigation belongs to, so only it spins. */
 type PendingNav = "prev" | "next" | "today" | "date";
 
 type ForecastHeaderProps = {
@@ -102,18 +102,22 @@ export function ForecastHeader({
   const [dateOpen, setDateOpen] = useState(false);
   const parsedDate = parseDate(date);
 
-  // A forecast window can take seconds to load, so every date control needs
-  // feedback: the control that was clicked spins, and the whole cluster is
-  // disabled until the new window lands so an impatient second click cannot
-  // queue up navigations the user then has to step back through.
+  // A forecast window can take seconds to load, so every date control reports
+  // its own pending state. `navigation.location` IS the URL being loaded, so
+  // which control is pending is derived from it rather than remembered from the
+  // click: browser back/forward lights the right control too, and no click can
+  // leave a spinner stuck. Scoping to this route's pathname keeps a navigation
+  // away from the forecast (a sidebar link) from disabling the cluster.
   const navigation = useNavigation();
-  const isNavigating = navigation.state !== "idle";
-  const [pendingNav, setPendingNav] = useState<PendingNav | null>(null);
-  const isPending = (nav: PendingNav) => isNavigating && pendingNav === nav;
+  const pendingParams =
+    navigation.location?.pathname === path.to.scheduleForecast
+      ? new URLSearchParams(navigation.location.search)
+      : null;
 
-  useEffect(() => {
-    if (navigation.state === "idle") setPendingNav(null);
-  }, [navigation.state]);
+  // The board reloads for a department or range change too, so the whole
+  // cluster locks while anything is in flight — an impatient second click
+  // cannot queue up navigations the user then has to step back through.
+  const isNavigating = pendingParams !== null;
 
   const setParam = (mutate: (params: URLSearchParams) => void) => {
     const newParams = new URLSearchParams(searchParams);
@@ -136,24 +140,31 @@ export function ForecastHeader({
   const setShift = (value: string) =>
     setParam((params) => params.set("shift", value));
 
-  const goToToday = () => {
-    setPendingNav("today");
-    setParam((params) => params.delete("date"));
-  };
+  const goToToday = () => setParam((params) => params.delete("date"));
 
   // A shift is a single calendar day, so it steps by a day like the day view;
   // the week view steps by a whole week.
-  const navigateDate = (direction: -1 | 1) => {
-    setPendingNav(direction === -1 ? "prev" : "next");
-    setParam((params) =>
-      params.set(
-        "date",
-        parsedDate
-          .add({ days: range === "week" ? direction * 7 : direction })
-          .toString()
-      )
-    );
-  };
+  const steppedDate = (direction: -1 | 1) =>
+    parsedDate
+      .add({ days: range === "week" ? direction * 7 : direction })
+      .toString();
+
+  const navigateDate = (direction: -1 | 1) =>
+    setParam((params) => params.set("date", steppedDate(direction)));
+
+  // Each control owns a distinct destination, so matching the pending `date`
+  // against them names the one to spin. An unchanged `date` means the pending
+  // navigation came from another control (range, department, shift) and no date
+  // control should claim it.
+  const pendingNav = ((): PendingNav | null => {
+    if (!pendingParams) return null;
+    const pendingDate = pendingParams.get("date");
+    if (pendingDate === searchParams.get("date")) return null;
+    if (pendingDate === null) return "today";
+    if (pendingDate === steppedDate(-1)) return "prev";
+    if (pendingDate === steppedDate(1)) return "next";
+    return "date";
+  })();
 
   const weekStart = startOfWeek(parsedDate, "en-GB");
 
@@ -300,7 +311,7 @@ export function ForecastHeader({
             variant="secondary"
             onClick={goToToday}
             isDisabled={isNavigating}
-            isLoading={isPending("today")}
+            isLoading={pendingNav === "today"}
           >
             <Trans>Today</Trans>
           </Button>
@@ -309,7 +320,7 @@ export function ForecastHeader({
             onClick={() => navigateDate(-1)}
             icon={<LuChevronLeft />}
             isDisabled={isNavigating}
-            isLoading={isPending("prev")}
+            isLoading={pendingNav === "prev"}
             aria-label={range === "week" ? t`Previous week` : t`Previous day`}
           />
           <Popover open={dateOpen} onOpenChange={setDateOpen}>
@@ -319,7 +330,7 @@ export function ForecastHeader({
                 className="min-w-[150px]"
                 leftIcon={<LuCalendarDays />}
                 isDisabled={isNavigating}
-                isLoading={isPending("date")}
+                isLoading={pendingNav === "date"}
               >
                 {dateLabel}
               </Button>
@@ -339,7 +350,6 @@ export function ForecastHeader({
                       )}
                       onClick={() => {
                         setDateOpen(false);
-                        setPendingNav("date");
                         setParam((params) => params.set("date", week.start));
                       }}
                     >
@@ -358,7 +368,6 @@ export function ForecastHeader({
                   onChange={(value) => {
                     if (!value) return;
                     setDateOpen(false);
-                    setPendingNav("date");
                     setParam((params) => params.set("date", value.toString()));
                   }}
                 />
@@ -370,7 +379,7 @@ export function ForecastHeader({
             onClick={() => navigateDate(1)}
             icon={<LuChevronRight />}
             isDisabled={isNavigating}
-            isLoading={isPending("next")}
+            isLoading={pendingNav === "next"}
             aria-label={range === "week" ? t`Next week` : t`Next day`}
           />
         </HStack>
