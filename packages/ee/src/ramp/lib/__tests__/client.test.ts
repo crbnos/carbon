@@ -99,6 +99,136 @@ describe("RampClient token cache", () => {
   });
 });
 
+describe("RampClient OAuth (authorization code + refresh)", () => {
+  const oauthApp = {
+    clientId: "carbon-app",
+    clientSecret: "carbon-app-secret"
+  };
+
+  it("exchanges an authorization code with the app's Basic auth", async () => {
+    let tokenInit: RequestInit | undefined;
+    const fetchMock = vi.fn(async (url: unknown, init?: RequestInit) => {
+      if (isTokenRequest(url)) {
+        tokenInit = init;
+        return mockResponse({
+          access_token: "acc-1",
+          refresh_token: "ref-1",
+          expires_in: 3600
+        });
+      }
+      return mockResponse({});
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const client = new RampClient(
+      { type: "oauth2", accessToken: "", environment: "production" },
+      { oauthApp }
+    );
+    const tokens = await client.exchangeAuthorizationCode(
+      "the-code",
+      "https://erp.example.test/api/integrations/ramp/oauth"
+    );
+
+    expect(tokens.accessToken).toBe("acc-1");
+    expect(tokens.refreshToken).toBe("ref-1");
+    expect(tokens.expiresAt).toBeTypeOf("string");
+    // Basic auth uses the OAuth APP credentials, not the (empty) oauth2 creds.
+    const expectedBasic = Buffer.from(
+      `${oauthApp.clientId}:${oauthApp.clientSecret}`
+    ).toString("base64");
+    expect((tokenInit?.headers as Record<string, string>).Authorization).toBe(
+      `Basic ${expectedBasic}`
+    );
+    expect(String(tokenInit?.body)).toContain("grant_type=authorization_code");
+    expect(String(tokenInit?.body)).toContain("code=the-code");
+  });
+
+  it("refreshes an expired oauth2 token and persists the new access token", async () => {
+    const refreshed: Array<{ accessToken: string; expiresAt: string }> = [];
+    let tokenBody = "";
+    let apiAuth: string | undefined;
+    const fetchMock = vi.fn(async (url: unknown, init?: RequestInit) => {
+      if (isTokenRequest(url)) {
+        tokenBody = String(init?.body);
+        return mockResponse({ access_token: "fresh-access", expires_in: 3600 });
+      }
+      apiAuth = (init?.headers as Record<string, string>).Authorization;
+      return mockResponse({ data: [], page: { next: null } });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const client = new RampClient(
+      {
+        type: "oauth2",
+        accessToken: "stale-access",
+        refreshToken: "the-refresh",
+        expiresAt: new Date(Date.now() - 1000).toISOString(),
+        environment: "production"
+      },
+      {
+        oauthApp,
+        onTokensRefreshed: async (tokens) => {
+          refreshed.push(tokens);
+        }
+      }
+    );
+
+    await drain(client.listTransactions());
+
+    // A refresh_token grant ran, the persist callback fired, and the API call
+    // used the freshly-minted access token.
+    expect(tokenBody).toContain("grant_type=refresh_token");
+    expect(tokenBody).toContain("refresh_token=the-refresh");
+    expect(refreshed).toEqual([
+      { accessToken: "fresh-access", expiresAt: expect.any(String) }
+    ]);
+    expect(apiAuth).toBe("Bearer fresh-access");
+  });
+
+  it("uses a still-valid oauth2 token without refreshing", async () => {
+    let tokenCalls = 0;
+    const fetchMock = vi.fn(async (url: unknown) => {
+      if (isTokenRequest(url)) {
+        tokenCalls++;
+        return mockResponse({ access_token: "should-not-be-used" });
+      }
+      return mockResponse({ data: [], page: { next: null } });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const client = new RampClient(
+      {
+        type: "oauth2",
+        accessToken: "valid-access",
+        refreshToken: "the-refresh",
+        expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
+        environment: "production"
+      },
+      { oauthApp }
+    );
+    await drain(client.listTransactions());
+
+    expect(tokenCalls).toBe(0);
+  });
+
+  it("throws when an oauth2 token is expired and there is no refresh token", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => mockResponse({ data: [], page: { next: null } }))
+    );
+    const client = new RampClient({
+      type: "oauth2",
+      accessToken: "stale",
+      expiresAt: new Date(Date.now() - 1000).toISOString(),
+      environment: "production"
+    });
+
+    await expect(drain(client.listTransactions())).rejects.toThrow(
+      /reconnect/i
+    );
+  });
+});
+
 describe("RampClient rate limiting", () => {
   it("throws RampRateLimitError carrying Retry-After on a 429", async () => {
     const fetchMock = vi.fn(async (url: unknown) => {

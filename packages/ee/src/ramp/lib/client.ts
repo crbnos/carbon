@@ -37,6 +37,17 @@ export const RAMP_SCOPES = [
   "business:read"
 ] as const;
 
+/**
+ * Scopes requested in the OAuth authorization-code (Connect) flow. Same resource
+ * scopes as client-credentials, plus `offline_access` so Ramp returns a refresh
+ * token (the app must also have the Refresh Token grant enabled).
+ */
+export const RAMP_OAUTH_SCOPES = [...RAMP_SCOPES, "offline_access"] as const;
+
+/** Ramp OAuth authorize endpoints (production / sandbox). */
+export const RAMP_PRODUCTION_AUTHORIZE_URL = `${RAMP_PRODUCTION_HOST}/v1/authorize`;
+export const RAMP_SANDBOX_AUTHORIZE_URL = `${RAMP_SANDBOX_HOST}/v1/authorize`;
+
 /** Re-mint a client-credentials token when fewer than this many ms remain. */
 const TOKEN_REFRESH_MARGIN_MS = 60_000;
 
@@ -96,33 +107,146 @@ function toSearchParams(init?: SearchParamsInit): URLSearchParams {
 // *                      RampClient                        *
 // \********************************************************/
 
+/**
+ * Server-only wiring for the OAuth2 (authorization-code) path. `oauthApp` is
+ * Carbon's single registered Ramp OAuth application (client id/secret from env,
+ * NOT the customer's) — required to exchange a code and to refresh. Refresh
+ * tokens are NOT rotated by Ramp (a refresh returns a new access token only), so
+ * `onTokensRefreshed` persists just the new access token + expiry; the refresh
+ * token is unchanged.
+ */
+export type RampClientOptions = {
+  oauthApp?: { clientId: string; clientSecret: string };
+  onTokensRefreshed?: (tokens: {
+    accessToken: string;
+    expiresAt: string;
+  }) => void | Promise<void>;
+};
+
 export class RampClient {
   private readonly host: string;
   private accessToken?: string;
   /** Epoch ms at which the cached token expires. */
   private tokenExpiresAt?: number;
+  /** Live oauth2 token state (mutated on refresh). */
+  private oauthAccessToken?: string;
+  private oauthExpiresAt?: number;
 
-  constructor(private readonly credentials: RampCredentials) {
+  constructor(
+    private readonly credentials: RampCredentials,
+    private readonly options: RampClientOptions = {}
+  ) {
     this.host =
       credentials.environment === "sandbox"
         ? RAMP_SANDBOX_HOST
         : RAMP_PRODUCTION_HOST;
+    if (credentials.type === "oauth2") {
+      this.oauthAccessToken = credentials.accessToken;
+      this.oauthExpiresAt = credentials.expiresAt
+        ? Date.parse(credentials.expiresAt)
+        : undefined;
+    }
   }
 
   /**
-   * Return a valid bearer token, minting/caching one for client-credentials and
-   * re-minting when fewer than 60s remain. OAuth2 returns the stored token
-   * (refresh is a later phase — an expired oauth2 token throws).
+   * Exchange an OAuth authorization code for tokens (the Connect-flow callback).
+   * Uses Carbon's OAuth app credentials with HTTP Basic auth.
+   */
+  async exchangeAuthorizationCode(
+    code: string,
+    redirectUri: string
+  ): Promise<{
+    accessToken: string;
+    refreshToken?: string;
+    expiresAt?: string;
+  }> {
+    const data = await this.oauthTokenRequest({
+      grant_type: "authorization_code",
+      code,
+      redirect_uri: redirectUri
+    });
+    return {
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      expiresAt: data.expires_in
+        ? new Date(Date.now() + data.expires_in * 1000).toISOString()
+        : undefined
+    };
+  }
+
+  /** POST /token with Carbon's OAuth app credentials (Basic auth). */
+  private async oauthTokenRequest(body: Record<string, string>): Promise<{
+    access_token: string;
+    refresh_token?: string;
+    expires_in?: number;
+  }> {
+    const app = this.options.oauthApp;
+    if (!app?.clientId || !app?.clientSecret) {
+      throw new Error(
+        "Ramp OAuth app credentials are not configured (RAMP_CLIENT_ID / RAMP_CLIENT_SECRET)"
+      );
+    }
+    const basic = Buffer.from(`${app.clientId}:${app.clientSecret}`).toString(
+      "base64"
+    );
+    const response = await fetch(`${this.host}/developer/v1/token`, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${basic}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json"
+      },
+      body: new URLSearchParams(body)
+    });
+    if (response.status === 429) {
+      throw new RampRateLimitError(parseRetryAfter(response));
+    }
+    if (!response.ok) {
+      await throwRampApiError(response);
+    }
+    return (await response.json()) as {
+      access_token: string;
+      refresh_token?: string;
+      expires_in?: number;
+    };
+  }
+
+  /**
+   * Return a valid bearer token. client_credentials mints/caches (re-minting
+   * under the refresh margin). oauth2 returns the stored access token, and when
+   * it is within the refresh margin runs the `refresh_token` grant, persisting
+   * the new access token via `onTokensRefreshed`.
    */
   private async getAccessToken(): Promise<string> {
     if (this.credentials.type === "oauth2") {
-      const { accessToken, expiresAt } = this.credentials;
-      if (expiresAt && Date.parse(expiresAt) - Date.now() < 0) {
+      const now = Date.now();
+      if (
+        this.oauthAccessToken &&
+        (this.oauthExpiresAt === undefined ||
+          this.oauthExpiresAt - now > TOKEN_REFRESH_MARGIN_MS)
+      ) {
+        return this.oauthAccessToken;
+      }
+
+      const { refreshToken } = this.credentials;
+      if (!refreshToken) {
         throw new Error(
-          "OAuth refresh not implemented — use client_credentials"
+          "Ramp OAuth access token expired and no refresh token is available — reconnect Ramp"
         );
       }
-      return accessToken;
+      const data = await this.oauthTokenRequest({
+        grant_type: "refresh_token",
+        refresh_token: refreshToken
+      });
+      this.oauthAccessToken = data.access_token;
+      this.oauthExpiresAt = now + (data.expires_in ?? 0) * 1000;
+      // Ramp does not rotate refresh tokens — persist the new access token +
+      // expiry only; the stored refresh token stays valid.
+      await this.options.onTokensRefreshed?.({
+        accessToken: this.oauthAccessToken,
+        expiresAt: new Date(this.oauthExpiresAt).toISOString()
+      });
+      return this.oauthAccessToken;
     }
 
     const now = Date.now();

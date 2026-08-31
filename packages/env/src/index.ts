@@ -285,6 +285,21 @@ export const QUICKBOOKS_ENVIRONMENT =
     isSecret: false
   }) ?? "production";
 
+/**
+ * Carbon's own Ramp OAuth application (the "Connect to Ramp" authorization-code
+ * flow). Distinct from any single customer's client-credentials pair — this is
+ * the one app Carbon registers with Ramp. The client id is public (it appears in
+ * the authorize URL); the secret is server-only (code exchange + token refresh).
+ */
+export const RAMP_CLIENT_ID = getEnv("RAMP_CLIENT_ID", {
+  isRequired: false
+});
+
+export const RAMP_CLIENT_SECRET = getEnv("RAMP_CLIENT_SECRET", {
+  isRequired: false,
+  isSecret: true
+});
+
 export const QUICKBOOKS_WEBHOOK_SECRET = getEnv("QUICKBOOKS_WEBHOOK_SECRET", {
   isRequired: false,
   isSecret: true

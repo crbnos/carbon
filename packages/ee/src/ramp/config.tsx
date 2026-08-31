@@ -1,8 +1,38 @@
+import { RAMP_CLIENT_ID } from "@carbon/auth";
 import { Copy, Input, InputGroup, InputRightElement } from "@carbon/react";
 import { isBrowser } from "@carbon/utils";
 import type { ComponentProps } from "react";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
+
+/**
+ * OAuth "Connect to Ramp" authorization-code flow (production). Declared inline
+ * (not imported from `./lib/client`, which pulls `node:crypto` into the
+ * client bundle). Sandbox / self-hosted use the client-credentials fields below.
+ * `offline_access` requests a refresh token; the app must have the Refresh Token
+ * grant enabled. IntegrationCard builds the authorize redirect from this block.
+ */
+const RAMP_AUTHORIZE_URL = "https://api.ramp.com/v1/authorize";
+const RAMP_TOKEN_URL = "https://api.ramp.com/developer/v1/token";
+const RAMP_OAUTH_SCOPES = [
+  "accounting:read",
+  "accounting:write",
+  "transactions:read",
+  "bills:read",
+  "bills:write",
+  "vendors:read",
+  "vendors:write",
+  "reimbursements:read",
+  "purchase_orders:read",
+  "purchase_orders:write",
+  "transfers:read",
+  "statements:read",
+  "cashbacks:read",
+  "receipts:read",
+  "entities:read",
+  "business:read",
+  "offline_access"
+];
 
 /**
  * Ramp settings form schema. The credentials (clientId/clientSecret/
@@ -12,8 +42,11 @@ import { defineIntegration } from "../fns";
  * "keep the existing vaulted secret" (D4a anti-overwrite in splitSecrets).
  */
 const RampSettingsSchema = z.object({
-  clientId: z.string().min(1),
-  // Empty means "keep the existing vaulted secret"; presence enforced at install.
+  // Optional: OAuth-connected installs get their credentials from the Connect
+  // flow, so the client-credentials fields are only for the advanced /
+  // self-hosted / sandbox path. The install hook's `getBusiness()` is the real
+  // credential gate. Empty clientSecret means "keep the existing vaulted secret".
+  clientId: z.string().optional(),
   clientSecret: z.string().optional(),
   environment: z.enum(["production", "sandbox"]).default("production"),
   entityId: z.string().optional(),
@@ -43,6 +76,16 @@ export const Ramp = defineIntegration({
   shortDescription:
     "Pull card transactions, bills, and reimbursements; push your chart of accounts.",
   images: [],
+  // One-click "Connect to Ramp" (production OAuth). When present, Install opens
+  // this authorize URL; the callback (`/api/integrations/ramp/oauth`) exchanges
+  // the code, and account mapping happens afterwards in the Details drawer.
+  oauth: {
+    authUrl: RAMP_AUTHORIZE_URL,
+    clientId: RAMP_CLIENT_ID ?? "",
+    redirectUri: "/api/integrations/ramp/oauth",
+    scopes: RAMP_OAUTH_SCOPES,
+    tokenUrl: RAMP_TOKEN_URL
+  },
   settingGroups: [
     {
       name: "Connection",
@@ -60,22 +103,22 @@ export const Ramp = defineIntegration({
   settings: [
     {
       name: "clientId",
-      label: "Client ID",
+      label: "Client ID (advanced)",
       description:
-        "Create an API client in Ramp under Settings → Developer API and paste its Client ID here.",
+        "Optional — most customers connect via the Connect to Ramp button. For a self-hosted or sandbox client-credentials setup, create an API client in Ramp under Settings → Developer API and paste its Client ID here.",
       group: "Connection",
       type: "text" as const,
-      required: true,
+      required: false,
       value: ""
     },
     {
       name: "clientSecret",
-      label: "Client secret",
+      label: "Client secret (advanced)",
       description:
         "The Client Secret paired with the Client ID above. Leave blank to keep the stored secret.",
       group: "Connection",
       type: "secret" as const,
-      required: true,
+      required: false,
       value: ""
     },
     {

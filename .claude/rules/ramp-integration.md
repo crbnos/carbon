@@ -98,6 +98,32 @@ providers, which own the data and mirror it out.
   `rampHealthcheck`, registered in `packages/ee/src/hooks.server.ts` under `ramp`. Cloned
   from the Rillet hook shape.
 
+## Auth: client-credentials AND OAuth (Connect flow)
+
+`RampCredentialsSchema` (`lib/models.ts`) is a discriminated union on `type`:
+`client_credentials` (`clientId`/`clientSecret`) and `oauth2`
+(`accessToken`/`refreshToken`/`expiresAt`). **Both are wired.**
+
+- **OAuth "Connect to Ramp" (production, primary)**: `config.tsx` declares an
+  `oauth` block, so `IntegrationCard` renders a one-click Connect that redirects
+  to `https://api.ramp.com/v1/authorize` (scopes incl. `offline_access`). The
+  callback `apps/erp/app/routes/api+/integrations.ramp.oauth.ts` calls
+  `exchangeRampOAuthCode` → stores `type: "oauth2"` creds via
+  `upsertCompanyIntegration` (vaults access+refresh) → `rampOnInstall`. Account
+  mapping happens afterwards in the Details drawer. Carbon's OAuth app id/secret
+  are env (`RAMP_CLIENT_ID`/`RAMP_CLIENT_SECRET`), read lazily from `process.env`
+  in `service.ts` (never `import "@carbon/env"` there — it eagerly validates
+  unrelated required vars and breaks server-only tests).
+- **Token refresh**: `RampClient.getAccessToken` runs the `refresh_token` grant
+  when an oauth2 access token is within the refresh margin. Ramp does NOT rotate
+  refresh tokens, so the `onTokensRefreshed` hook (wired in `getRampIntegration`)
+  persists the new access token + expiry only. The OAuth app creds are passed
+  into `RampClient` via its `RampClientOptions` (client.ts stays env-free — it is
+  client-bundled). Pinned by `lib/__tests__/client.test.ts`.
+- **client-credentials (advanced / sandbox / self-hosted)**: the `clientId`/
+  `clientSecret` settings are now optional; a customer creating their own API app
+  still works. All sandbox verification to date used this path.
+
 ## Install / converge (hooks.server.ts)
 
 `convergeRamp` runs on install (with a fired initial sync) and on every settings save

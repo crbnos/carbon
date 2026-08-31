@@ -16,6 +16,7 @@ import {
 import { buildRampIdempotencyKey, RampClient } from "./client";
 import {
   RampAccountingConnectionSchema,
+  type RampCredentials,
   type RampCursors,
   type RampIntegrationMetadata,
   RampIntegrationMetadataSchema,
@@ -211,9 +212,72 @@ export async function getRampIntegration(
   const parsed = RampIntegrationMetadataSchema.safeParse(resolved);
   if (!parsed.success) return null;
 
+  // Carbon's OAuth app — needed to refresh oauth2 access tokens. Read lazily
+  // from process.env (importing @carbon/env here would eagerly validate
+  // unrelated required vars and break server-only tests).
+  const rampClientId = process.env.RAMP_CLIENT_ID;
+  const rampClientSecret = process.env.RAMP_CLIENT_SECRET;
+  const oauthApp =
+    rampClientId && rampClientSecret
+      ? { clientId: rampClientId, clientSecret: rampClientSecret }
+      : undefined;
+
+  const client = new RampClient(parsed.data.credentials, {
+    oauthApp,
+    // Persist a refreshed access token + expiry back to the vault (Ramp does not
+    // rotate the refresh token, so it is left untouched). Only relevant to oauth2.
+    onTokensRefreshed:
+      parsed.data.credentials.type === "oauth2"
+        ? async ({ accessToken, expiresAt }) => {
+            const current = resolved as {
+              credentials?: Record<string, unknown>;
+            };
+            await persistIntegrationSecrets(serviceRole, companyId, RAMP, {
+              ...resolved,
+              credentials: {
+                ...(current.credentials ?? {}),
+                accessToken,
+                expiresAt
+              }
+            });
+          }
+        : undefined
+  });
+
+  return { client, metadata: parsed.data };
+}
+
+/**
+ * Exchange an OAuth authorization code (the Connect-flow callback) for oauth2
+ * credentials, using Carbon's registered Ramp OAuth app. OAuth is the production
+ * flow, so the returned credentials are pinned to `environment: "production"`.
+ * The caller stores these via `upsertCompanyIntegration` (which vaults the
+ * access + refresh tokens) and then runs `rampOnInstall`.
+ */
+export async function exchangeRampOAuthCode(
+  code: string,
+  redirectUri: string
+): Promise<Extract<RampCredentials, { type: "oauth2" }>> {
+  const clientId = process.env.RAMP_CLIENT_ID;
+  const clientSecret = process.env.RAMP_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    throw new Error(
+      "Ramp OAuth is not configured (set RAMP_CLIENT_ID / RAMP_CLIENT_SECRET)"
+    );
+  }
+  // A placeholder access token just to construct the client; the exchange only
+  // uses the OAuth app credentials + host (production).
+  const client = new RampClient(
+    { type: "oauth2", accessToken: "", environment: "production" },
+    { oauthApp: { clientId, clientSecret } }
+  );
+  const tokens = await client.exchangeAuthorizationCode(code, redirectUri);
   return {
-    client: new RampClient(parsed.data.credentials),
-    metadata: parsed.data
+    type: "oauth2",
+    accessToken: tokens.accessToken,
+    refreshToken: tokens.refreshToken,
+    expiresAt: tokens.expiresAt,
+    environment: "production"
   };
 }
 
