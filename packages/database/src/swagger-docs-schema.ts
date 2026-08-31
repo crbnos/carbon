@@ -24511,10 +24511,13 @@ export default {
             $ref: "#/parameters/rowFilter.process.active"
           },
           {
+            $ref: "#/parameters/rowFilter.process.requiresAbility"
+          },
+          {
             $ref: "#/parameters/rowFilter.process.batchable"
           },
           {
-            $ref: "#/parameters/rowFilter.process.requiresAbility"
+            $ref: "#/parameters/rowFilter.process.batchRules"
           },
           {
             $ref: "#/parameters/select"
@@ -24615,10 +24618,13 @@ export default {
             $ref: "#/parameters/rowFilter.process.active"
           },
           {
+            $ref: "#/parameters/rowFilter.process.requiresAbility"
+          },
+          {
             $ref: "#/parameters/rowFilter.process.batchable"
           },
           {
-            $ref: "#/parameters/rowFilter.process.requiresAbility"
+            $ref: "#/parameters/rowFilter.process.batchRules"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -24673,10 +24679,13 @@ export default {
             $ref: "#/parameters/rowFilter.process.active"
           },
           {
+            $ref: "#/parameters/rowFilter.process.requiresAbility"
+          },
+          {
             $ref: "#/parameters/rowFilter.process.batchable"
           },
           {
-            $ref: "#/parameters/rowFilter.process.requiresAbility"
+            $ref: "#/parameters/rowFilter.process.batchRules"
           },
           {
             $ref: "#/parameters/body.process"
@@ -25202,6 +25211,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.workCenters.alwaysOn"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenters.batchCapacity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenters.minimumBatchQuantity"
           },
           {
             $ref: "#/parameters/rowFilter.workCenters.locationName"
@@ -42220,10 +42235,10 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.jobOperationBatchId"
+            $ref: "#/parameters/rowFilter.jobOperation.projectedCompletionAt"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.projectedCompletionAt"
+            $ref: "#/parameters/rowFilter.jobOperation.jobOperationBatchId"
           },
           {
             $ref: "#/parameters/select"
@@ -42429,10 +42444,10 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.jobOperationBatchId"
+            $ref: "#/parameters/rowFilter.jobOperation.projectedCompletionAt"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.projectedCompletionAt"
+            $ref: "#/parameters/rowFilter.jobOperation.jobOperationBatchId"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -42592,10 +42607,10 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.jobOperationBatchId"
+            $ref: "#/parameters/rowFilter.jobOperation.projectedCompletionAt"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.projectedCompletionAt"
+            $ref: "#/parameters/rowFilter.jobOperation.jobOperationBatchId"
           },
           {
             $ref: "#/parameters/body.jobOperation"
@@ -67207,10 +67222,13 @@ export default {
             $ref: "#/parameters/rowFilter.processes.active"
           },
           {
+            $ref: "#/parameters/rowFilter.processes.requiresAbility"
+          },
+          {
             $ref: "#/parameters/rowFilter.processes.batchable"
           },
           {
-            $ref: "#/parameters/rowFilter.processes.requiresAbility"
+            $ref: "#/parameters/rowFilter.processes.batchRules"
           },
           {
             $ref: "#/parameters/rowFilter.processes.workCenters"
@@ -76597,6 +76615,12 @@ export default {
             $ref: "#/parameters/rowFilter.workCentersWithBlockingStatus.alwaysOn"
           },
           {
+            $ref: "#/parameters/rowFilter.workCentersWithBlockingStatus.batchCapacity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCentersWithBlockingStatus.minimumBatchQuantity"
+          },
+          {
             $ref: "#/parameters/rowFilter.workCentersWithBlockingStatus.locationName"
           },
           {
@@ -82648,6 +82672,12 @@ export default {
             $ref: "#/parameters/rowFilter.workCenter.alwaysOn"
           },
           {
+            $ref: "#/parameters/rowFilter.workCenter.batchCapacity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.minimumBatchQuantity"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -82764,6 +82794,12 @@ export default {
             $ref: "#/parameters/rowFilter.workCenter.alwaysOn"
           },
           {
+            $ref: "#/parameters/rowFilter.workCenter.batchCapacity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.minimumBatchQuantity"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -82832,6 +82868,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.workCenter.alwaysOn"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.batchCapacity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.minimumBatchQuantity"
           },
           {
             $ref: "#/parameters/body.workCenter"
@@ -106590,7 +106632,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -106639,7 +106681,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -112209,8 +112251,8 @@ export default {
         "processType",
         "completeAllOnScan",
         "active",
-        "batchable",
-        "requiresAbility"
+        "requiresAbility",
+        "batchable"
       ],
       properties: {
         id: {
@@ -112293,15 +112335,20 @@ export default {
           format: "boolean",
           type: "boolean"
         },
+        requiresAbility: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
         batchable: {
           default: false,
           format: "boolean",
           type: "boolean"
         },
-        requiresAbility: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
+        batchRules: {
+          description:
+            "Per-dimension batch compatibility levels (must|guide|ignore); NULL = defaults (substance/grade/dimension guide, form/finish/item ignore).",
+          format: "jsonb"
         }
       },
       type: "object"
@@ -112587,6 +112634,14 @@ export default {
         alwaysOn: {
           format: "boolean",
           type: "boolean"
+        },
+        batchCapacity: {
+          format: "numeric",
+          type: "number"
+        },
+        minimumBatchQuantity: {
+          format: "numeric",
+          type: "number"
         },
         locationName: {
           format: "text",
@@ -120760,14 +120815,14 @@ export default {
           format: "text",
           type: "string"
         },
-        jobOperationBatchId: {
-          format: "text",
-          type: "string"
-        },
         projectedCompletionAt: {
           description:
             "Forward finite simulation: when this operation is projected to finish. Volatile (rewritten every regen).",
           format: "timestamp with time zone",
+          type: "string"
+        },
+        jobOperationBatchId: {
+          format: "text",
           type: "string"
         }
       },
@@ -132278,13 +132333,16 @@ export default {
           format: "boolean",
           type: "boolean"
         },
+        requiresAbility: {
+          format: "boolean",
+          type: "boolean"
+        },
         batchable: {
           format: "boolean",
           type: "boolean"
         },
-        requiresAbility: {
-          format: "boolean",
-          type: "boolean"
+        batchRules: {
+          format: "jsonb"
         },
         workCenters: {
           format: "text[]",
@@ -136643,6 +136701,14 @@ export default {
           format: "boolean",
           type: "boolean"
         },
+        batchCapacity: {
+          format: "numeric",
+          type: "number"
+        },
+        minimumBatchQuantity: {
+          format: "numeric",
+          type: "number"
+        },
         locationName: {
           format: "text",
           type: "string"
@@ -140051,6 +140117,18 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        batchCapacity: {
+          description:
+            "Advisory maximum pieces per batch run; NULL means no capacity model.",
+          format: "numeric",
+          type: "number"
+        },
+        minimumBatchQuantity: {
+          description:
+            "Advisory minimum pieces to justify a batch run; NULL means no minimum.",
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -156046,14 +156124,22 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.process.requiresAbility": {
+      name: "requiresAbility",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.process.batchable": {
       name: "batchable",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.process.requiresAbility": {
-      name: "requiresAbility",
+    "rowFilter.process.batchRules": {
+      name: "batchRules",
+      description:
+        "Per-dimension batch compatibility levels (must|guide|ignore); NULL = defaults (substance/grade/dimension guide, form/finish/item ignore).",
       required: false,
       in: "query",
       type: "string"
@@ -156375,6 +156461,18 @@ export default {
     },
     "rowFilter.workCenters.alwaysOn": {
       name: "alwaysOn",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenters.batchCapacity": {
+      name: "batchCapacity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenters.minimumBatchQuantity": {
+      name: "minimumBatchQuantity",
       required: false,
       in: "query",
       type: "string"
@@ -165307,16 +165405,16 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.jobOperation.jobOperationBatchId": {
-      name: "jobOperationBatchId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.jobOperation.projectedCompletionAt": {
       name: "projectedCompletionAt",
       description:
         "Forward finite simulation: when this operation is projected to finish. Volatile (rewritten every regen).",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperation.jobOperationBatchId": {
+      name: "jobOperationBatchId",
       required: false,
       in: "query",
       type: "string"
@@ -178219,14 +178317,20 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.processes.requiresAbility": {
+      name: "requiresAbility",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.processes.batchable": {
       name: "batchable",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.processes.requiresAbility": {
-      name: "requiresAbility",
+    "rowFilter.processes.batchRules": {
+      name: "batchRules",
       required: false,
       in: "query",
       type: "string"
@@ -183118,6 +183222,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.workCentersWithBlockingStatus.batchCapacity": {
+      name: "batchCapacity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCentersWithBlockingStatus.minimumBatchQuantity": {
+      name: "minimumBatchQuantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.workCentersWithBlockingStatus.locationName": {
       name: "locationName",
       required: false,
@@ -186975,6 +187091,22 @@ export default {
     },
     "rowFilter.workCenter.alwaysOn": {
       name: "alwaysOn",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenter.batchCapacity": {
+      name: "batchCapacity",
+      description:
+        "Advisory maximum pieces per batch run; NULL means no capacity model.",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenter.minimumBatchQuantity": {
+      name: "minimumBatchQuantity",
+      description:
+        "Advisory minimum pieces to justify a batch run; NULL means no minimum.",
       required: false,
       in: "query",
       type: "string"

@@ -1,4 +1,9 @@
 import type { Database, Json } from "@carbon/database";
+import {
+  type BatchRules,
+  compactBatchRules,
+  resolveBatchRules
+} from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -1756,6 +1761,42 @@ export async function upsertPartner(
   }
 }
 
+// Fold the six per-dimension form fields into the sparse `batchRules` JSONB the
+// process row stores. All-default (or empty) → null, which reads back as today's
+// behavior via resolveBatchRules. Returns { batchRules } plus the six fields to
+// strip from the process write (they are not columns).
+function extractBatchRules<
+  T extends {
+    batchRuleItem?: BatchRules["item"];
+    batchRuleSubstance?: BatchRules["substance"];
+    batchRuleGrade?: BatchRules["grade"];
+    batchRuleDimension?: BatchRules["dimension"];
+    batchRuleForm?: BatchRules["form"];
+    batchRuleFinish?: BatchRules["finish"];
+  }
+>(source: T) {
+  const {
+    batchRuleItem,
+    batchRuleSubstance,
+    batchRuleGrade,
+    batchRuleDimension,
+    batchRuleForm,
+    batchRuleFinish,
+    ...rest
+  } = source;
+  const batchRules = compactBatchRules(
+    resolveBatchRules({
+      item: batchRuleItem,
+      substance: batchRuleSubstance,
+      grade: batchRuleGrade,
+      dimension: batchRuleDimension,
+      form: batchRuleForm,
+      finish: batchRuleFinish
+    })
+  ) as Json;
+  return { batchRules, rest };
+}
+
 export async function upsertProcess(
   client: SupabaseClient<Database>,
   process:
@@ -1772,12 +1813,14 @@ export async function upsertProcess(
       })
 ) {
   if ("createdBy" in process) {
-    const { workCenters, ...insert } = process;
+    const { batchRules, rest: withoutRules } = extractBatchRules(process);
+    const { workCenters, ...insert } = withoutRules;
     const processInsert = await client
       .from("process")
       .insert([
         {
           ...insert,
+          batchRules,
           defaultStandardFactor: insert.defaultStandardFactor ?? "Minutes/Piece"
         }
       ])
@@ -1806,10 +1849,13 @@ export async function upsertProcess(
 
     return processInsert;
   }
-  const { workCenters, ...update } = process;
+  const { batchRules, rest: withoutRules } = extractBatchRules(process);
+  const { workCenters, ...update } = withoutRules;
   const processUpdate = await client
     .from("process")
-    .update(sanitize(update))
+    // batchRules is set explicitly (outside sanitize) so a cleared-to-null rule
+    // set persists rather than being stripped as an empty value.
+    .update({ ...sanitize(update), batchRules })
     .eq("id", process.id);
   if (processUpdate.error) {
     return processUpdate;

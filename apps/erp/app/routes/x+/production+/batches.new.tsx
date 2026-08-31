@@ -1,6 +1,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import type { BatchRules } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
 import {
@@ -96,7 +97,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
-    processes: processes.data ?? [],
+    processes: (processes.data ?? []).map((p) => ({
+      id: p.id,
+      name: p.name,
+      batchRules: (p.batchRules ?? null) as BatchRules | null
+    })),
     locations: (locations.data ?? []).map((l) => ({ id: l.id, name: l.name })),
     workCenters: (workCenters.data ?? [])
       .filter((wc): wc is typeof wc & { id: string; name: string } =>
@@ -108,7 +113,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
         locationId: wc.locationId,
         // Which processes this center can run (workCenterProcess links, from
         // the view) — the builder's picker filters on the scoped process.
-        processes: (wc.processes as string[] | null) ?? []
+        processes: (wc.processes as string[] | null) ?? [],
+        batchCapacity: wc.batchCapacity,
+        minimumBatchQuantity: wc.minimumBatchQuantity
       })),
     defaultLocationId,
     initialLocationId,

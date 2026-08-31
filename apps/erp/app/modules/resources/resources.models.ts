@@ -1,7 +1,30 @@
-import { isValidTimeZone } from "@carbon/utils";
+import {
+  type BatchRules,
+  isValidTimeZone,
+  resolveBatchRules
+} from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { operationTypes, standardFactorType } from "../shared";
+
+// Batch compatibility rule levels — mirrors BatchRuleLevel in @carbon/utils.
+// A tuple literal is needed for z.enum; kept in sync with BATCH_RULE_DIMENSIONS.
+export const batchRuleLevels = ["must", "guide", "ignore"] as const;
+
+// Seed the six process-form batch-rule fields from a stored (sparse/null)
+// `batchRules` value, filling defaults. Used by the process create/edit forms so
+// an untouched process shows Guide/Ignore defaults and a saved one round-trips.
+export function batchRuleInitialValues(raw: BatchRules | null | undefined) {
+  const r = resolveBatchRules(raw);
+  return {
+    batchRuleItem: r.item,
+    batchRuleSubstance: r.substance,
+    batchRuleGrade: r.grade,
+    batchRuleDimension: r.dimension,
+    batchRuleForm: r.form,
+    batchRuleFinish: r.finish
+  };
+}
 
 export const abilityCurveValidator = z.object({
   data: z
@@ -315,7 +338,13 @@ export const processValidator = z
       .optional(),
     completeAllOnScan: zfd.checkbox(),
     batchable: zfd.checkbox(),
-    requiresAbility: zfd.checkbox()
+    requiresAbility: zfd.checkbox(),
+    batchRuleItem: z.enum(batchRuleLevels).optional(),
+    batchRuleSubstance: z.enum(batchRuleLevels).optional(),
+    batchRuleGrade: z.enum(batchRuleLevels).optional(),
+    batchRuleDimension: z.enum(batchRuleLevels).optional(),
+    batchRuleForm: z.enum(batchRuleLevels).optional(),
+    batchRuleFinish: z.enum(batchRuleLevels).optional()
   })
   .refine((data) => {
     if (data.processType !== "Outside Processing" && !data.workCenters) {
@@ -495,21 +524,34 @@ export const trainingValidator = z.object({
   grantsAbilityId: zfd.text(z.string().optional())
 });
 
-export const workCenterValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  name: z.string().trim().min(1, { message: "Name is required" }),
-  description: z.string(),
-  defaultStandardFactor: z.enum(standardFactorType, {
-    errorMap: () => ({ message: "Standard factor is required" })
-  }),
-  departmentId: zfd.text(z.string().optional()),
-  laborRate: zfd.numeric(z.number().min(0)),
-  locationId: z.string().min(1, { message: "Location is required" }),
-  machineRate: zfd.numeric(z.number().min(0)),
-  overheadRate: zfd.numeric(z.number().min(0)),
-  processes: z
-    .array(z.string().min(1, { message: "Invalid process" }))
-    .optional(),
-  shifts: z.array(z.string().min(1, { message: "Invalid shift" })).optional(),
-  alwaysOn: zfd.checkbox()
-});
+export const workCenterValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    name: z.string().trim().min(1, { message: "Name is required" }),
+    description: z.string(),
+    defaultStandardFactor: z.enum(standardFactorType, {
+      errorMap: () => ({ message: "Standard factor is required" })
+    }),
+    departmentId: zfd.text(z.string().optional()),
+    laborRate: zfd.numeric(z.number().min(0)),
+    locationId: z.string().min(1, { message: "Location is required" }),
+    machineRate: zfd.numeric(z.number().min(0)),
+    overheadRate: zfd.numeric(z.number().min(0)),
+    processes: z
+      .array(z.string().min(1, { message: "Invalid process" }))
+      .optional(),
+    shifts: z.array(z.string().min(1, { message: "Invalid shift" })).optional(),
+    alwaysOn: zfd.checkbox(),
+    batchCapacity: zfd.numeric(z.number().int().min(1).optional()),
+    minimumBatchQuantity: zfd.numeric(z.number().int().min(1).optional())
+  })
+  .refine(
+    (data) =>
+      data.batchCapacity == null ||
+      data.minimumBatchQuantity == null ||
+      data.minimumBatchQuantity <= data.batchCapacity,
+    {
+      message: "Minimum batch quantity cannot exceed batch capacity",
+      path: ["minimumBatchQuantity"]
+    }
+  );

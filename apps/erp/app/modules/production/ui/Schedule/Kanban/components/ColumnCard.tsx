@@ -21,7 +21,6 @@ import { LuGripVertical } from "react-icons/lu";
 import { Link } from "react-router";
 import { path } from "~/utils/path";
 import type { Column, Item, Progress } from "../types";
-import { BatchOpportunity } from "./BatchOpportunity";
 import { ItemCard } from "./ItemCard";
 
 type CardComponentProps<T extends Item> = {
@@ -148,7 +147,6 @@ export function ColumnCard<T extends Item = Item>({
                 No scheduled time
               </span>
             )}
-            <BatchOpportunity items={items} />
           </div>
         </div>
         {!disableColumnDrag && (

@@ -3,7 +3,10 @@ import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure, useMount } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
-import type { getProcessesList } from "~/modules/resources";
+import {
+  batchRuleInitialValues,
+  type getProcessesList
+} from "~/modules/resources";
 import ProcessForm from "~/modules/resources/ui/Processes/ProcessForm";
 import { path } from "~/utils/path";
 import { Enumerable } from "../Enumerable";
@@ -77,7 +80,8 @@ const Process = ({
             completeAllOnScan: false,
             batchable: false,
             requiresAbility: false,
-            workCenters: []
+            workCenters: [],
+            ...batchRuleInitialValues(null)
           }}
         />
       )}

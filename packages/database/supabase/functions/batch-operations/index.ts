@@ -10,6 +10,13 @@ import {
   buildBatchCompletionPlan,
   planBatchCompletion
 } from "../shared/batch-time-split.ts";
+import {
+  BATCH_RULE_DIMENSIONS,
+  type BatchRules,
+  type MemberValueSets,
+  mustViolations,
+  resolveBatchRules
+} from "../shared/batch-compatibility.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
 
 const pool = getConnectionPool(1);
@@ -125,6 +132,85 @@ async function assertEligible(
     );
   }
   return { operations, processId };
+}
+
+// Enforce the process's "must match" compatibility rules across the WHOLE batch
+// membership (create: the incoming set; add: existing members + incoming). Skips
+// entirely when the process has no "must" dimension. Uses ids where the client
+// (BatchBuilder) uses names — mustViolations is value-agnostic, so both agree.
+async function assertMaterialCompatible(
+  // deno-lint-ignore no-explicit-any
+  trx: any,
+  companyId: string,
+  processId: string,
+  jobOperationIds: string[]
+) {
+  const process = await trx
+    .selectFrom("process")
+    .select(["batchRules"])
+    .where("id", "=", processId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  const rules = resolveBatchRules(
+    (process?.batchRules ?? null) as BatchRules | null
+  );
+  if (!BATCH_RULE_DIMENSIONS.some((d) => rules[d] === "must")) return;
+
+  const rows = await trx
+    .selectFrom("jobMaterial as jm")
+    .innerJoin("item as mi", (join: any) =>
+      join
+        .onRef("mi.id", "=", "jm.itemId")
+        .onRef("mi.companyId", "=", "jm.companyId")
+    )
+    .leftJoin("material as m", (join: any) =>
+      join
+        .onRef("m.id", "=", "mi.readableId")
+        .onRef("m.companyId", "=", "mi.companyId")
+    )
+    .select([
+      "jm.jobOperationId as opId",
+      "mi.readableId as itemReadableId",
+      "m.materialSubstanceId as substanceId",
+      "m.gradeId as gradeId",
+      "m.dimensionId as dimensionId",
+      "m.materialFormId as formId",
+      "m.finishId as finishId"
+    ])
+    .where("jm.jobOperationId", "in", jobOperationIds)
+    .where("jm.companyId", "=", companyId)
+    .execute();
+
+  const byOp = new Map<string, MemberValueSets>();
+  for (const id of jobOperationIds) {
+    byOp.set(id, {
+      item: [],
+      substance: [],
+      grade: [],
+      dimension: [],
+      form: [],
+      finish: []
+    });
+  }
+  for (const r of rows) {
+    const sets = byOp.get(r.opId);
+    if (!sets) continue;
+    if (r.itemReadableId) sets.item!.push(r.itemReadableId);
+    if (r.substanceId) sets.substance!.push(r.substanceId);
+    if (r.gradeId) sets.grade!.push(r.gradeId);
+    if (r.dimensionId) sets.dimension!.push(r.dimensionId);
+    if (r.formId) sets.form!.push(r.formId);
+    if (r.finishId) sets.finish!.push(r.finishId);
+  }
+
+  const violations = mustViolations(rules, Array.from(byOp.values()));
+  if (violations.length > 0) {
+    throw new Error(
+      `These operations can't share a batch — the ${violations.join(
+        ", "
+      )} must match on this process`
+    );
+  }
 }
 
 // Two-phase, resumable batch completion.
@@ -517,6 +603,12 @@ serve(async (req: Request) => {
             companyId,
             payload.jobOperationIds
           );
+          await assertMaterialCompatible(
+            trx,
+            companyId,
+            processId,
+            payload.jobOperationIds
+          );
           // The board's "Create batch" sends no work center (assignment is a
           // drag) — but when every member already sits on the same one, that IS
           // the batch's work center; adopt it so the header isn't blank.
@@ -604,6 +696,20 @@ serve(async (req: Request) => {
             payload.jobOperationIds,
             batch.processId
           );
+
+          // Compatibility is a property of the whole run: check existing members
+          // plus the incoming ops together, not the newcomers in isolation.
+          const existingMembers = await trx
+            .selectFrom("jobOperation")
+            .select("id")
+            .where("jobOperationBatchId", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .execute();
+          await assertMaterialCompatible(trx, companyId, batch.processId, [
+            // deno-lint-ignore no-explicit-any
+            ...existingMembers.map((m: any) => m.id as string),
+            ...payload.jobOperationIds
+          ]);
 
           const memberUpdate: Record<string, unknown> = {
             jobOperationBatchId: batch.id,

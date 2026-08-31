@@ -33,7 +33,18 @@ import {
   useLocalStorage,
   VStack
 } from "@carbon/react";
-import { formatDate, formatDurationMilliseconds } from "@carbon/utils";
+import {
+  BATCH_RULE_DIMENSIONS,
+  type BatchRuleDimension,
+  type BatchRules,
+  formatDate,
+  formatDurationMilliseconds,
+  type MemberValueSets,
+  mustViolations,
+  RoundingMode,
+  resolveBatchRules,
+  round
+} from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
@@ -45,6 +56,7 @@ import {
   LuLayoutGrid,
   LuList,
   LuListFilter,
+  LuLock,
   LuPackageSearch,
   LuPlus,
   LuSearch,
@@ -101,14 +113,116 @@ function lineMatchesFacet(
   return values.includes(line[key as keyof BatchMaterial] as string);
 }
 
-// One BOM line's display/grouping string: the normalized properties when they
-// exist, else the material item itself — BOMs without normalized material
-// properties still group and read by what they actually consume.
-function lineSignature(line: BatchMaterial): string | null {
-  const props = [line.substanceName, line.gradeName, line.dimensionName]
-    .filter(Boolean)
-    .join(" · ");
-  return props || line.itemReadableId || null;
+// Default rules resolve to substance/grade/dimension = guide, form/finish/item =
+// ignore — which is the pre-rules signature exactly, so an unconfigured process
+// groups as it always did.
+const DEFAULT_RESOLVED_RULES = resolveBatchRules(null);
+
+// One BOM line's display/grouping string, honoring the process's compatibility
+// rules: the value of each non-"ignore" dimension, in a stable order; else the
+// material item itself — BOMs without normalized properties still group by what
+// they actually consume. With default rules this is substance/grade/dimension.
+function lineSignature(
+  line: BatchMaterial,
+  rules: Required<BatchRules> = DEFAULT_RESOLVED_RULES
+): string | null {
+  const parts: string[] = [];
+  if (rules.substance !== "ignore" && line.substanceName)
+    parts.push(line.substanceName);
+  if (rules.grade !== "ignore" && line.gradeName) parts.push(line.gradeName);
+  if (rules.dimension !== "ignore" && line.dimensionName)
+    parts.push(line.dimensionName);
+  if (rules.form !== "ignore" && line.formName) parts.push(line.formName);
+  if (rules.finish !== "ignore" && line.finishName) parts.push(line.finishName);
+  if (rules.item !== "ignore" && line.itemReadableId)
+    parts.push(line.itemReadableId);
+  return parts.join(" · ") || line.itemReadableId || null;
+}
+
+// The per-dimension value sets one candidate carries across its BOM lines, for
+// mustViolations (client side uses names; the interface is value-agnostic).
+function candidateValueSets(candidate: BatchCandidate): MemberValueSets {
+  const item: string[] = [];
+  const substance: string[] = [];
+  const grade: string[] = [];
+  const dimension: string[] = [];
+  const form: string[] = [];
+  const finish: string[] = [];
+  for (const m of candidate.materials ?? []) {
+    if (m.itemReadableId) item.push(m.itemReadableId);
+    if (m.substanceName) substance.push(m.substanceName);
+    if (m.gradeName) grade.push(m.gradeName);
+    if (m.dimensionName) dimension.push(m.dimensionName);
+    if (m.formName) form.push(m.formName);
+    if (m.finishName) finish.push(m.finishName);
+  }
+  return { item, substance, grade, dimension, form, finish };
+}
+
+// Per-candidate compatibility signals against the current selection, threaded to
+// the list views. `lockedById` = must-blocked (not co-selectable); `guideMismatchById`
+// = advisory guide mismatch; `dimLabel` = translated dimension names for tags.
+type CompatInfo = {
+  rules: Required<BatchRules>;
+  lockedById: Map<string, BatchRuleDimension[]>;
+  guideMismatchById: Map<string, BatchRuleDimension[]>;
+  dimLabel: Record<BatchRuleDimension, string>;
+};
+
+const NO_COMPAT: CompatInfo = {
+  rules: DEFAULT_RESOLVED_RULES,
+  lockedById: new Map(),
+  guideMismatchById: new Map(),
+  dimLabel: {
+    item: "material item",
+    substance: "substance",
+    grade: "grade",
+    dimension: "dimension",
+    form: "form",
+    finish: "finish"
+  }
+};
+
+// One quiet tag on a candidate row: a locked "must" mismatch (grey, with lock),
+// or an advisory guide mismatch (amber). Locked wins when both are present.
+function CompatBadge({
+  candidateId,
+  compat
+}: {
+  candidateId: string;
+  compat: CompatInfo;
+}) {
+  const { t } = useLingui();
+  const locked = compat.lockedById.get(candidateId);
+  const guide = compat.guideMismatchById.get(candidateId);
+
+  if (locked?.length) {
+    const names = locked.map((d) => compat.dimLabel[d]).join(", ");
+    return (
+      <span
+        className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+        title={t`A "must match" rule on this process blocks these from sharing a batch`}
+      >
+        <LuLock className="size-3" />
+        {t`${names} must match — separate load`}
+      </span>
+    );
+  }
+
+  if (guide?.length) {
+    const names = guide.map((d) => compat.dimLabel[d]).join(", ");
+    return (
+      <span
+        className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs text-amber-600 dark:text-amber-400"
+        title={t`Differs from the selection — allowed, but confirm they nest together`}
+      >
+        <LuTriangleAlert className="size-3" />
+        {t`${names} differs`}
+      </span>
+    );
+  }
+
+  return null;
 }
 
 // The material chips shown on a candidate row: one per distinct BOM line —
@@ -132,10 +246,13 @@ function materialChips(candidate: BatchCandidate): string[] {
 // A candidate's material signature: the sorted set of its BOM lines'
 // signatures (see lineSignature). Two candidates with the same signature are
 // nesting-compatible and can be grouped/suggested as a batch.
-function candidateSignature(candidate: BatchCandidate): string {
+function candidateSignature(
+  candidate: BatchCandidate,
+  rules: Required<BatchRules> = DEFAULT_RESOLVED_RULES
+): string {
   const sigs = new Set<string>();
   for (const m of candidate.materials ?? []) {
-    const s = lineSignature(m);
+    const s = lineSignature(m, rules);
     if (s) sigs.add(s);
   }
   return [...sigs].sort().join(" + ");
@@ -257,12 +374,14 @@ export function BatchBuilder({
   initialLocationId?: string | null;
   initialProcessId?: string | null;
   locations: { id: string; name: string }[];
-  processes: { id: string; name: string }[];
+  processes: { id: string; name: string; batchRules?: BatchRules | null }[];
   workCenters: {
     id: string;
     name: string;
     locationId: string | null;
     processes: string[];
+    batchCapacity: number | null;
+    minimumBatchQuantity: number | null;
   }[];
   batch?: BatchBuilderBatch | null;
 }) {
@@ -426,6 +545,98 @@ export function BatchBuilder({
     );
   }, [allCandidates]);
 
+  // Compatibility rules for the scoped process. Defaults (substance/grade/
+  // dimension guide, the rest ignore) reproduce the pre-rules behavior, so an
+  // unconfigured process groups and warns exactly as before.
+  const rules = useMemo(
+    () =>
+      resolveBatchRules(
+        processes.find((p) => p.id === processId)?.batchRules ?? null
+      ),
+    [processes, processId]
+  );
+
+  const dimLabel = useMemo<Record<BatchRuleDimension, string>>(
+    () => ({
+      item: t`material item`,
+      substance: t`substance`,
+      grade: t`grade`,
+      dimension: t`dimension`,
+      form: t`form`,
+      finish: t`finish`
+    }),
+    [t]
+  );
+
+  // The selection's per-dimension value sets, and their folded intersection per
+  // dimension (only members that carry a value for it). Drives must-locks and
+  // guide-mismatch tags against the current selection.
+  const selectedValueSets = useMemo(
+    () => [...selectedById.values()].map(candidateValueSets),
+    [selectedById]
+  );
+  const selectionDimSets = useMemo(() => {
+    const folded = new Map<BatchRuleDimension, Set<string> | null>();
+    for (const dim of BATCH_RULE_DIMENSIONS) {
+      let acc: string[] | null = null;
+      for (const sets of selectedValueSets) {
+        const vals = sets[dim];
+        if (!vals || vals.length === 0) continue;
+        if (acc === null) {
+          acc = vals.slice();
+        } else {
+          const current = new Set(vals);
+          acc = acc.filter((v) => current.has(v));
+        }
+      }
+      folded.set(dim, acc === null ? null : new Set(acc));
+    }
+    return folded;
+  }, [selectedValueSets]);
+
+  // A candidate is LOCKED when adding it to the current selection would leave a
+  // "must" dimension with no shared value. Empty selection locks nothing.
+  const lockedById = useMemo(() => {
+    const map = new Map<string, BatchRuleDimension[]>();
+    if (selectedValueSets.length === 0) return map;
+    for (const c of candidates) {
+      if (selectedById.has(c.id)) continue;
+      const dims = mustViolations(rules, [
+        ...selectedValueSets,
+        candidateValueSets(c)
+      ]);
+      if (dims.length) map.set(c.id, dims);
+    }
+    return map;
+  }, [candidates, selectedValueSets, selectedById, rules]);
+
+  // GUIDE mismatches (advisory): a guide dimension where the selection has a
+  // value the candidate can't match. Warned, never blocked.
+  const guideMismatchById = useMemo(() => {
+    const map = new Map<string, BatchRuleDimension[]>();
+    if (selectedValueSets.length === 0) return map;
+    for (const c of candidates) {
+      if (selectedById.has(c.id)) continue;
+      const sets = candidateValueSets(c);
+      const dims: BatchRuleDimension[] = [];
+      for (const dim of BATCH_RULE_DIMENSIONS) {
+        if (rules[dim] !== "guide") continue;
+        const selectionSet = selectionDimSets.get(dim);
+        if (!selectionSet || selectionSet.size === 0) continue;
+        const vals = sets[dim];
+        if (!vals || vals.length === 0) continue;
+        if (!vals.some((v) => selectionSet.has(v))) dims.push(dim);
+      }
+      if (dims.length) map.set(c.id, dims);
+    }
+    return map;
+  }, [candidates, selectedValueSets, selectionDimSets, selectedById, rules]);
+
+  const compat = useMemo<CompatInfo>(
+    () => ({ rules, lockedById, guideMismatchById, dimLabel }),
+    [rules, lockedById, guideMismatchById, dimLabel]
+  );
+
   // Filterable dimensions derived from what the candidates' BOMs actually
   // contain: the material items themselves plus whichever normalized
   // properties are populated. A dimension with no values doesn't appear.
@@ -539,7 +750,8 @@ export function BatchBuilder({
     const groups = new Map<string, BatchCandidate[]>();
     for (const c of candidates) {
       if (selectedById.has(c.id)) continue;
-      const sig = candidateSignature(c);
+      if (lockedById.has(c.id)) continue; // not co-selectable with the selection
+      const sig = candidateSignature(c, rules);
       if (!sig) continue;
       const g = groups.get(sig) ?? [];
       g.push(c);
@@ -556,24 +768,38 @@ export function BatchBuilder({
         (a, b) => b.saving - a.saving || b.members.length - a.members.length
       )
       .slice(0, 6);
-  }, [candidates, selectedById]);
+  }, [candidates, selectedById, lockedById, rules]);
 
-  const toggle = useCallback((candidate: BatchCandidate) => {
-    setSelectedById((prev) => {
-      const next = new Map(prev);
-      if (next.has(candidate.id)) next.delete(candidate.id);
-      else next.set(candidate.id, candidate);
-      return next;
-    });
-  }, []);
+  const toggle = useCallback(
+    (candidate: BatchCandidate) => {
+      // A must-locked candidate can't join the current selection — no-op unless
+      // it's already selected (then it's a deselect).
+      if (lockedById.has(candidate.id) && !selectedById.has(candidate.id)) {
+        return;
+      }
+      setSelectedById((prev) => {
+        const next = new Map(prev);
+        if (next.has(candidate.id)) next.delete(candidate.id);
+        else next.set(candidate.id, candidate);
+        return next;
+      });
+    },
+    [lockedById, selectedById]
+  );
 
-  const selectMany = useCallback((toAdd: BatchCandidate[]) => {
-    setSelectedById((prev) => {
-      const next = new Map(prev);
-      for (const c of toAdd) next.set(c.id, c);
-      return next;
-    });
-  }, []);
+  const selectMany = useCallback(
+    (toAdd: BatchCandidate[]) => {
+      setSelectedById((prev) => {
+        const next = new Map(prev);
+        for (const c of toAdd) {
+          if (lockedById.has(c.id) && !next.has(c.id)) continue;
+          next.set(c.id, c);
+        }
+        return next;
+      });
+    },
+    [lockedById]
+  );
 
   const deselectMany = useCallback((toRemove: BatchCandidate[]) => {
     setSelectedById((prev) => {
@@ -583,19 +809,25 @@ export function BatchBuilder({
     });
   }, []);
 
+  // "Select all" ignores must-locked rows (they can't join the selection), so
+  // all-selected means every SELECTABLE visible row is selected.
   const allVisibleSelected =
-    visible.length > 0 && visible.every((c) => selectedById.has(c.id));
+    visible.length > 0 &&
+    visible
+      .filter((c) => !lockedById.has(c.id))
+      .every((c) => selectedById.has(c.id));
   const toggleAllVisible = useCallback(() => {
     setSelectedById((prev) => {
       const next = new Map(prev);
-      const shouldSelect = !visible.every((c) => next.has(c.id));
-      for (const c of visible) {
+      const selectable = visible.filter((c) => !lockedById.has(c.id));
+      const shouldSelect = !selectable.every((c) => next.has(c.id));
+      for (const c of selectable) {
         if (shouldSelect) next.set(c.id, c);
         else next.delete(c.id);
       }
       return next;
     });
-  }, [visible]);
+  }, [visible, lockedById]);
 
   const selected = useMemo(() => [...selectedById.values()], [selectedById]);
 
@@ -679,6 +911,11 @@ export function BatchBuilder({
       };
     });
   }, [workCenters, workCenterLoad, locationId, processId, t]);
+
+  const selectedWorkCenter = useMemo(
+    () => workCenters.find((wc) => wc.id === workCenterId) ?? null,
+    [workCenters, workCenterId]
+  );
 
   return (
     <Drawer
@@ -764,6 +1001,7 @@ export function BatchBuilder({
                 allVisibleSelected={allVisibleSelected}
                 onToggleAllVisible={toggleAllVisible}
                 workCenterNameById={workCenterNameById}
+                compat={compat}
               />
             )
           }
@@ -772,10 +1010,15 @@ export function BatchBuilder({
               isAddMode={isAddMode}
               existingMembers={batch?.members ?? []}
               selected={selected}
+              rules={rules}
               onRemove={toggle}
               workCenterId={workCenterId}
               workCenterOptions={workCenterOptions}
               onWorkCenterChange={setWorkCenterId}
+              batchCapacity={selectedWorkCenter?.batchCapacity ?? null}
+              minimumBatchQuantity={
+                selectedWorkCenter?.minimumBatchQuantity ?? null
+              }
               notes={notes}
               onNotesChange={setNotes}
             />
@@ -1141,7 +1384,8 @@ function ComposePanel({
   onDeselectMany,
   allVisibleSelected,
   onToggleAllVisible,
-  workCenterNameById
+  workCenterNameById,
+  compat
 }: {
   view: BuilderView;
   onViewChange: (view: BuilderView) => void;
@@ -1165,6 +1409,7 @@ function ComposePanel({
   allVisibleSelected: boolean;
   onToggleAllVisible: () => void;
   workCenterNameById: Map<string, string>;
+  compat: CompatInfo;
 }) {
   const { t } = useLingui();
 
@@ -1304,6 +1549,7 @@ function ComposePanel({
           allVisibleSelected={allVisibleSelected}
           onToggleAllVisible={onToggleAllVisible}
           workCenterNameById={workCenterNameById}
+          compat={compat}
         />
       ) : (
         <GroupedCandidateList
@@ -1316,6 +1562,7 @@ function ComposePanel({
           onSelectMany={onSelectMany}
           onDeselectMany={onDeselectMany}
           workCenterNameById={workCenterNameById}
+          compat={compat}
         />
       )}
 
@@ -1347,7 +1594,8 @@ function CandidateTable({
   onToggle,
   allVisibleSelected,
   onToggleAllVisible,
-  workCenterNameById
+  workCenterNameById,
+  compat = NO_COMPAT
 }: {
   isLoading: boolean;
   isFiltered: boolean;
@@ -1358,6 +1606,7 @@ function CandidateTable({
   allVisibleSelected: boolean;
   onToggleAllVisible: () => void;
   workCenterNameById: Map<string, string>;
+  compat?: CompatInfo;
 }) {
   const { t } = useLingui();
   const { locale } = useLocale();
@@ -1378,20 +1627,30 @@ function CandidateTable({
             />
           </div>
         ),
-        cell: ({ row }) => (
-          <button
-            type="button"
-            className="flex items-center cursor-pointer p-3 -m-3"
-            onClick={() => onToggle(row.original)}
-            aria-label={t`Select operation`}
-          >
-            <Checkbox
-              checked={selectedById.has(row.original.id)}
-              className="pointer-events-none"
-              tabIndex={-1}
-            />
-          </button>
-        )
+        cell: ({ row }) => {
+          const locked =
+            compat.lockedById.has(row.original.id) &&
+            !selectedById.has(row.original.id);
+          return (
+            <button
+              type="button"
+              className={cn(
+                "flex items-center p-3 -m-3",
+                locked ? "cursor-not-allowed" : "cursor-pointer"
+              )}
+              onClick={() => !locked && onToggle(row.original)}
+              disabled={locked}
+              aria-label={t`Select operation`}
+            >
+              <Checkbox
+                checked={selectedById.has(row.original.id)}
+                disabled={locked}
+                className="pointer-events-none"
+                tabIndex={-1}
+              />
+            </button>
+          );
+        }
       },
       {
         accessorKey: "jobReadableId",
@@ -1464,24 +1723,25 @@ function CandidateTable({
         header: t`Material`,
         cell: ({ row }) => {
           const chips = materialChips(row.original);
-          if (chips.length === 0)
-            return (
-              <span className="text-xs text-muted-foreground italic">
-                {t`No materials`}
-              </span>
-            );
           return (
             <HStack spacing={1} className="flex-wrap gap-y-1">
-              {chips.map((chip) => (
-                <Badge
-                  key={chip}
-                  variant="outline"
-                  className="max-w-[200px] font-normal text-muted-foreground"
-                  title={chip}
-                >
-                  <span className="truncate">{chip}</span>
-                </Badge>
-              ))}
+              {chips.length === 0 ? (
+                <span className="text-xs text-muted-foreground italic">
+                  {t`No materials`}
+                </span>
+              ) : (
+                chips.map((chip) => (
+                  <Badge
+                    key={chip}
+                    variant="outline"
+                    className="max-w-[200px] font-normal text-muted-foreground"
+                    title={chip}
+                  >
+                    <span className="truncate">{chip}</span>
+                  </Badge>
+                ))
+              )}
+              <CompatBadge candidateId={row.original.id} compat={compat} />
             </HStack>
           );
         }
@@ -1494,7 +1754,8 @@ function CandidateTable({
       onToggle,
       allVisibleSelected,
       onToggleAllVisible,
-      workCenterNameById
+      workCenterNameById,
+      compat
     ]
   );
 
@@ -1553,7 +1814,8 @@ function GroupedCandidateList({
   onToggle,
   onSelectMany,
   onDeselectMany,
-  workCenterNameById
+  workCenterNameById,
+  compat = NO_COMPAT
 }: {
   isLoading: boolean;
   isFiltered: boolean;
@@ -1564,6 +1826,7 @@ function GroupedCandidateList({
   onSelectMany: (cs: BatchCandidate[]) => void;
   onDeselectMany: (cs: BatchCandidate[]) => void;
   workCenterNameById: Map<string, string>;
+  compat?: CompatInfo;
 }) {
   const { t } = useLingui();
   const { locale } = useLocale();
@@ -1574,7 +1837,7 @@ function GroupedCandidateList({
     const bySig = new Map<string, BatchCandidate[]>();
     const ungrouped: BatchCandidate[] = [];
     for (const c of visible) {
-      const sig = candidateSignature(c);
+      const sig = candidateSignature(c, compat.rules);
       if (!sig) {
         ungrouped.push(c);
         continue;
@@ -1593,7 +1856,7 @@ function GroupedCandidateList({
         (a, b) => b.saving - a.saving || b.members.length - a.members.length
       );
     return { grouped, ungrouped };
-  }, [visible]);
+  }, [visible, compat.rules]);
 
   if (isLoading) {
     return (
@@ -1637,6 +1900,7 @@ function GroupedCandidateList({
             onDeselectMany={onDeselectMany}
             workCenterNameById={workCenterNameById}
             locale={locale}
+            compat={compat}
           />
         ))}
         {sections.ungrouped.length > 0 && (
@@ -1650,6 +1914,7 @@ function GroupedCandidateList({
             onDeselectMany={onDeselectMany}
             workCenterNameById={workCenterNameById}
             locale={locale}
+            compat={compat}
             muted
           />
         )}
@@ -1668,6 +1933,7 @@ function CandidateGroup({
   onDeselectMany,
   workCenterNameById,
   locale,
+  compat = NO_COMPAT,
   muted = false
 }: {
   title: string;
@@ -1679,6 +1945,7 @@ function CandidateGroup({
   onDeselectMany: (cs: BatchCandidate[]) => void;
   workCenterNameById: Map<string, string>;
   locale: string;
+  compat?: CompatInfo;
   muted?: boolean;
 }) {
   const { t } = useLingui();
@@ -1723,22 +1990,26 @@ function CandidateGroup({
       <VStack spacing={1} className="w-full">
         {members.map((c) => {
           const isSelected = selectedById.has(c.id);
+          const isLocked = compat.lockedById.has(c.id) && !isSelected;
           const due = dueDateOf(c);
           return (
             <button
               key={c.id}
               type="button"
-              onClick={() => onToggle(c)}
+              onClick={() => !isLocked && onToggle(c)}
+              disabled={isLocked}
               className={cn(
-                "w-full min-w-0 rounded-lg border p-2.5 text-left transition-colors cursor-pointer",
+                "w-full min-w-0 rounded-lg border p-2.5 text-left transition-colors",
+                isLocked ? "cursor-not-allowed opacity-60" : "cursor-pointer",
                 isSelected
                   ? "border-primary/40 bg-primary/5"
-                  : "hover:bg-muted/40"
+                  : !isLocked && "hover:bg-muted/40"
               )}
             >
               <HStack spacing={3} className="w-full items-center">
                 <Checkbox
                   checked={isSelected}
+                  disabled={isLocked}
                   className="pointer-events-none flex-shrink-0"
                   tabIndex={-1}
                 />
@@ -1759,6 +2030,7 @@ function CandidateGroup({
                   <span className="text-xs text-muted-foreground truncate">
                     {c.description}
                   </span>
+                  <CompatBadge candidateId={c.id} compat={compat} />
                 </VStack>
                 <VStack
                   spacing={0}
@@ -1784,20 +2056,75 @@ function CandidateGroup({
   );
 }
 
+// Advisory load meter for the selected work center. Purely informational — it
+// never blocks Create. Loads = ceil(qty / capacity) whole runs.
+function CapacityFill({
+  totalQuantity,
+  batchCapacity,
+  minimumBatchQuantity
+}: {
+  totalQuantity: number;
+  batchCapacity: number;
+  minimumBatchQuantity: number | null;
+}) {
+  const { t } = useLingui();
+  const over = totalQuantity > batchCapacity;
+  const loads = over
+    ? round(totalQuantity / batchCapacity, 0, RoundingMode.Up)
+    : 1;
+  const pct = Math.min(100, (totalQuantity / batchCapacity) * 100);
+  const shortOfMin =
+    minimumBatchQuantity != null && totalQuantity < minimumBatchQuantity;
+
+  return (
+    <VStack spacing={1} className="items-stretch">
+      <div className="h-[5px] w-full overflow-hidden rounded-full bg-muted">
+        <div
+          className={cn(
+            "h-full rounded-full transition-[width]",
+            over ? "bg-amber-500" : "bg-emerald-500"
+          )}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <div className="flex items-center justify-between text-xs tabular-nums text-muted-foreground">
+        <span>
+          {over
+            ? t`${totalQuantity} / ${batchCapacity} pcs · over capacity — ${loads} loads of ${batchCapacity}`
+            : t`${totalQuantity} / ${batchCapacity} pcs · fits in one run`}
+        </span>
+        {minimumBatchQuantity != null ? (
+          <span
+            className={cn(shortOfMin && "text-amber-600 dark:text-amber-400")}
+          >
+            {shortOfMin
+              ? t`min ${minimumBatchQuantity} — short`
+              : t`min ${minimumBatchQuantity} — met`}
+          </span>
+        ) : null}
+      </div>
+    </VStack>
+  );
+}
+
 function ReviewPanel({
   isAddMode,
   existingMembers,
   selected,
+  rules = DEFAULT_RESOLVED_RULES,
   onRemove,
   workCenterId,
   workCenterOptions,
   onWorkCenterChange,
+  batchCapacity,
+  minimumBatchQuantity,
   notes,
   onNotesChange
 }: {
   isAddMode: boolean;
   existingMembers: BatchBuilderBatch["members"];
   selected: BatchCandidate[];
+  rules?: Required<BatchRules>;
   onRemove: (c: BatchCandidate) => void;
   workCenterId: string | null;
   workCenterOptions: {
@@ -1806,6 +2133,8 @@ function ReviewPanel({
     helper?: string;
   }[];
   onWorkCenterChange: (id: string | null) => void;
+  batchCapacity: number | null;
+  minimumBatchQuantity: number | null;
   notes: string;
   onNotesChange: (v: string) => void;
 }) {
@@ -1842,7 +2171,9 @@ function ReviewPanel({
 
   // Mixed materials: distinct non-empty signatures among the selection.
   const signatures = [
-    ...new Set(selected.map(candidateSignature).filter(Boolean))
+    ...new Set(
+      selected.map((c) => candidateSignature(c, rules)).filter(Boolean)
+    )
   ];
   const showMixedWarning = signatures.length >= 2;
 
@@ -1933,6 +2264,13 @@ function ReviewPanel({
             isClearable
             placeholder={t`Work center (optional)`}
           />
+          {workCenterId && batchCapacity ? (
+            <CapacityFill
+              totalQuantity={totalQuantity}
+              batchCapacity={batchCapacity}
+              minimumBatchQuantity={minimumBatchQuantity}
+            />
+          ) : null}
           <Input
             size="sm"
             value={notes}

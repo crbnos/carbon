@@ -38566,6 +38566,7 @@ export type Database = {
         Row: {
           active: boolean
           batchable: boolean
+          batchRules: Json | null
           companyId: string
           completeAllOnScan: boolean
           createdAt: string
@@ -38583,6 +38584,7 @@ export type Database = {
         Insert: {
           active?: boolean
           batchable?: boolean
+          batchRules?: Json | null
           companyId: string
           completeAllOnScan?: boolean
           createdAt?: string
@@ -38600,6 +38602,7 @@ export type Database = {
         Update: {
           active?: boolean
           batchable?: boolean
+          batchRules?: Json | null
           companyId?: string
           completeAllOnScan?: boolean
           createdAt?: string
@@ -59957,6 +59960,7 @@ export type Database = {
         Row: {
           active: boolean
           alwaysOn: boolean
+          batchCapacity: number | null
           companyId: string
           createdAt: string
           createdBy: string
@@ -59968,6 +59972,7 @@ export type Database = {
           laborRate: number
           locationId: string | null
           machineRate: number
+          minimumBatchQuantity: number | null
           name: string
           overheadRate: number
           requiredAbilityId: string | null
@@ -59978,6 +59983,7 @@ export type Database = {
         Insert: {
           active?: boolean
           alwaysOn?: boolean
+          batchCapacity?: number | null
           companyId: string
           createdAt?: string
           createdBy: string
@@ -59989,6 +59995,7 @@ export type Database = {
           laborRate?: number
           locationId?: string | null
           machineRate?: number
+          minimumBatchQuantity?: number | null
           name: string
           overheadRate?: number
           requiredAbilityId?: string | null
@@ -59999,6 +60006,7 @@ export type Database = {
         Update: {
           active?: boolean
           alwaysOn?: boolean
+          batchCapacity?: number | null
           companyId?: string
           createdAt?: string
           createdBy?: string
@@ -60010,6 +60018,7 @@ export type Database = {
           laborRate?: number
           locationId?: string | null
           machineRate?: number
+          minimumBatchQuantity?: number | null
           name?: string
           overheadRate?: number
           requiredAbilityId?: string | null
@@ -69028,6 +69037,7 @@ export type Database = {
         Row: {
           active: boolean | null
           batchable: boolean | null
+          batchRules: Json | null
           companyId: string | null
           completeAllOnScan: boolean | null
           createdAt: string | null
@@ -70190,14 +70200,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -74178,14 +74188,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -77174,6 +77184,7 @@ export type Database = {
         Row: {
           active: boolean | null
           alwaysOn: boolean | null
+          batchCapacity: number | null
           companyId: string | null
           createdAt: string | null
           createdBy: string | null
@@ -77187,6 +77198,7 @@ export type Database = {
           locationId: string | null
           locationName: string | null
           machineRate: number | null
+          minimumBatchQuantity: number | null
           name: string | null
           overheadRate: number | null
           processes: string[] | null
@@ -77321,6 +77333,7 @@ export type Database = {
         Row: {
           active: boolean | null
           alwaysOn: boolean | null
+          batchCapacity: number | null
           blockingDispatchId: string | null
           blockingDispatchReadableId: string | null
           companyId: string | null
@@ -77336,6 +77349,7 @@ export type Database = {
           locationId: string | null
           locationName: string | null
           machineRate: number | null
+          minimumBatchQuantity: number | null
           name: string | null
           overheadRate: number | null
           requiredAbilityId: string | null

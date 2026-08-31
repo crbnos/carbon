@@ -6,7 +6,6 @@ import {
   CardContent,
   CardFooter,
   CardHeader,
-  Checkbox,
   cn,
   DropdownMenu,
   DropdownMenuContent,
@@ -27,7 +26,7 @@ import {
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { parseDate } from "@internationalized/date";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { useLingui } from "@lingui/react/macro";
 import { cva } from "class-variance-authority";
 import {
   LuCalendarClock,
@@ -63,10 +62,6 @@ import { getDeadlineIcon } from "~/modules/production/ui/Jobs/Deadline";
 import { JobOperationStatus } from "~/modules/production/ui/Jobs/JobOperationStatus";
 import { getPrivateUrl, path } from "~/utils/path";
 import { KANBAN_CARD_SHELL } from "../cardShell";
-import {
-  isBatchableOperation,
-  useBatchSelection
-} from "../context/BatchSelectionContext";
 import { useKanban } from "../context/KanbanContext";
 import type { Item } from "../types";
 import { isBatchItem } from "../types";
@@ -131,7 +126,6 @@ function OperationCard({
   const { formatRelativeTime } = useDateFormatter();
   const { displaySettings, selectedGroup, setSelectedGroup, tags } =
     useKanban();
-  const batchSelection = useBatchSelection();
   const {
     setNodeRef,
     attributes,
@@ -151,8 +145,6 @@ function OperationCard({
   });
 
   const isHighlighted = selectedGroup === item.jobReadableId;
-  const isSelectableForBatch = batchSelection?.isSelectable(item) ?? false;
-  const isSelectedForBatch = batchSelection?.selectedIds.has(item.id) ?? false;
   const scheduleToday = useScheduleToday();
 
   const style = {
@@ -196,8 +188,7 @@ function OperationCard({
           // @ts-expect-error TS2322 - TODO: fix type
           status: status,
           highlighted: isHighlighted
-        }),
-        isSelectedForBatch && "ring-2 ring-primary"
+        })
       )}
     >
       <CardHeader className="flex flex-col justify-between relative gap-2">
@@ -216,24 +207,6 @@ function OperationCard({
             </Link>
           </div>
           <HStack spacing={1} className="flex-shrink-0 -mr-2">
-            {(isSelectableForBatch || isSelectedForBatch) && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Checkbox
-                    aria-label={t`Select for batch`}
-                    checked={isSelectedForBatch}
-                    onCheckedChange={() => {
-                      if (isBatchableOperation(item))
-                        batchSelection?.toggle(item);
-                    }}
-                    className="mr-1"
-                  />
-                </TooltipTrigger>
-                <TooltipContent side="top">
-                  <Trans>Select for batch</Trans>
-                </TooltipContent>
-              </Tooltip>
-            )}
             {item.hasConflict && (
               <Tooltip>
                 <TooltipTrigger>

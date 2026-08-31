@@ -181,6 +181,7 @@ msgstr "Lot numarası zorunludur"
 
 msgid "Batched jobs"
 msgstr "Toplu işler"
+
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Hedeften {daysBehindTarget} gün geride"
 

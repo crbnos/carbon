@@ -91,7 +91,7 @@ const ProcessForm = ({
           if (!open) onClose?.();
         }}
       >
-        <ModalDrawerContent>
+        <ModalDrawerContent size="lg">
           <ValidatedForm
             validator={processValidator}
             method="post"
@@ -164,6 +164,7 @@ const ProcessForm = ({
                   label={t`Batchable`}
                   description={t`Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath`}
                 />
+                <BatchCompatibilityRules />
                 <CustomFormFields table="process" />
               </VStack>
             </ModalDrawerBody>
@@ -185,6 +186,92 @@ const ProcessForm = ({
 };
 
 export default ProcessForm;
+
+// Per-dimension batch compatibility. Only shown once a process is Batchable.
+// "Must match" blocks incompatible ops from sharing a batch; "Guide" warns and
+// splits suggestion groups; "Ignore" never considers the dimension. Defaults
+// (substance/grade/dimension = Guide, the rest = Ignore) reproduce today's
+// behavior, so an untouched process behaves exactly as before.
+function BatchCompatibilityRules() {
+  const { t } = useLingui();
+  const [batchable] = useControlField<boolean>("batchable");
+
+  if (!batchable) return null;
+
+  const levelOptions = [
+    { value: "must", label: t`Must match` },
+    { value: "guide", label: t`Guide` },
+    { value: "ignore", label: t`Ignore` }
+  ];
+
+  const rules: { name: string; label: string; description: string }[] = [
+    {
+      name: "batchRuleFinish",
+      label: t`Finish`,
+      description: t`Surface finish — e.g. anodized vs powder-coat`
+    },
+    {
+      name: "batchRuleSubstance",
+      label: t`Substance`,
+      description: t`Base material — e.g. steel vs aluminum`
+    },
+    {
+      name: "batchRuleGrade",
+      label: t`Grade`,
+      description: t`Material grade or alloy designation`
+    },
+    {
+      name: "batchRuleDimension",
+      label: t`Dimension`,
+      description: t`Stock size — e.g. sheet thickness or bar diameter`
+    },
+    {
+      name: "batchRuleForm",
+      label: t`Form`,
+      description: t`Material form — e.g. sheet, bar, tube`
+    },
+    {
+      name: "batchRuleItem",
+      label: t`Material item`,
+      description: t`The exact material part, not just its properties`
+    }
+  ];
+
+  return (
+    <div className="flex flex-col gap-3 w-full rounded-md border border-border p-3">
+      <div className="flex flex-col gap-0.5">
+        <span className="text-sm font-medium">
+          <Trans>Compatibility rules</Trans>
+        </span>
+        <span className="text-xs text-muted-foreground text-pretty">
+          <Trans>
+            How strictly each material property must match for operations to
+            share a batch on this process.
+          </Trans>
+        </span>
+      </div>
+      {rules.map((rule) => (
+        <div
+          key={rule.name}
+          className="grid grid-cols-[1fr_9rem] items-center gap-4"
+        >
+          <div className="flex flex-col gap-0.5 min-w-0">
+            <span className="text-sm">{rule.label}</span>
+            <span className="text-xs text-muted-foreground text-pretty">
+              {rule.description}
+            </span>
+          </div>
+          <Select
+            name={rule.name}
+            label=""
+            options={levelOptions}
+            isOptional={false}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function SupplierProcesses({ processId }: { processId?: string }) {
   const { t } = useLingui();

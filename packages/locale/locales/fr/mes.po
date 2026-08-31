@@ -181,6 +181,7 @@ msgstr "Le numéro de lot est requis"
 
 msgid "Batched jobs"
 msgstr "Emplois groupés"
+
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "En retard de {daysBehindTarget} jour(s)"
 

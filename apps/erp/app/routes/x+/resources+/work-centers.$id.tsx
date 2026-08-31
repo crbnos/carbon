@@ -114,6 +114,8 @@ export default function WorkCenterRoute() {
     overheadRate: workCenter?.overheadRate ?? 0,
     processes: workCenter?.processes ?? [],
     shifts: workCenter?.shifts ?? [],
+    batchCapacity: workCenter?.batchCapacity ?? undefined,
+    minimumBatchQuantity: workCenter?.minimumBatchQuantity ?? undefined,
     ...getCustomFields(workCenter?.customFields)
   };
 

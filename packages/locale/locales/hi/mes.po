@@ -181,6 +181,7 @@ msgstr "बैच नंबर आवश्यक है"
 
 msgid "Batched jobs"
 msgstr "बैच की गई नौकरियां"
+
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "लक्ष्य से {daysBehindTarget} दिन(दिन) पीछे"
 

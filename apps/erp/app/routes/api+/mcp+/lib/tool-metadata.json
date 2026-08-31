@@ -1,6 +1,6 @@
 {
-  "generated": "2026-08-31T09:40:24.150Z",
-  "totalTools": 1488,
+  "generated": "2026-08-31T22:00:43.306Z",
+  "totalTools": 1496,
   "modules": 15,
   "tools": [
     {
@@ -22851,7 +22851,7 @@
       "module": "production",
       "classification": "WRITE",
       "description": "upsert production event",
-      "paramCount": 55,
+      "paramCount": 58,
       "serviceParams": [
         "client",
         "productionEvent"
@@ -22903,6 +22903,24 @@
           "locationId": {
             "type": "string"
           },
+          "workCenterId": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "batchId": {
+            "type": "string"
+          },
+          "intent": {
+            "type": "string",
+            "enum": [
+              "add",
+              "remove",
+              "update",
+              "dissolve"
+            ]
+          },
           "name": {
             "type": "string"
           },
@@ -22916,9 +22934,6 @@
             "type": "string"
           },
           "oeeImpact": {
-            "type": "string"
-          },
-          "workCenterId": {
             "type": "string"
           },
           "suspectedFailureModeId": {
@@ -23047,6 +23062,8 @@
           "columnId",
           "priority",
           "locationId",
+          "batchId",
+          "intent",
           "name",
           "status",
           "maintenanceDispatchId",
@@ -25668,6 +25685,267 @@
         "required": [
           "kind",
           "reason"
+        ]
+      }
+    },
+    {
+      "name": "production_getJobOperationBatches",
+      "module": "production",
+      "classification": "READ",
+      "description": "get job operation batches",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "production_getJobOperationBatchMemberStats",
+      "module": "production",
+      "classification": "READ",
+      "description": "get job operation batch member stats",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "batchIds"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "batchIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "batchIds"
+        ]
+      }
+    },
+    {
+      "name": "production_getJobOperationBatchWithMembers",
+      "module": "production",
+      "classification": "READ",
+      "description": "get job operation batch with members",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "batchId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "batchId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "batchId"
+        ]
+      }
+    },
+    {
+      "name": "production_getJobOperationBatchEvents",
+      "module": "production",
+      "classification": "READ",
+      "description": "get job operation batch events",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "batchId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "batchId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "batchId"
+        ]
+      }
+    },
+    {
+      "name": "production_getBatchableOperations",
+      "module": "production",
+      "classification": "READ",
+      "description": "get batchable operations",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "processId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "locationId",
+          "processId"
+        ]
+      }
+    },
+    {
+      "name": "production_getBatchableProcesses",
+      "module": "production",
+      "classification": "READ",
+      "description": "get batchable processes",
+      "paramCount": 0,
+      "serviceParams": [
+        "client",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "production_createJobOperationBatch",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "create job operation batch",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "jobOperationIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "workCenterId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "jobOperationIds",
+          "locationId"
+        ]
+      }
+    },
+    {
+      "name": "production_updateJobOperationBatch",
+      "module": "production",
+      "classification": "WRITE",
+      "description": "update job operation batch",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "add",
+              "remove",
+              "update",
+              "dissolve"
+            ]
+          },
+          "batchId": {
+            "type": "string"
+          },
+          "jobOperationIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "workCenterId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "batchId"
         ]
       }
     },
@@ -36805,7 +37083,7 @@
       "module": "resources",
       "classification": "WRITE",
       "description": "upsert maintenance dispatch event",
-      "paramCount": 41,
+      "paramCount": 32,
       "serviceParams": [
         "client",
         "event"
@@ -36921,36 +37199,6 @@
           "grantsAbilityId": {
             "type": "string"
           },
-          "description": {
-            "type": "string"
-          },
-          "defaultStandardFactor": {
-            "type": "string"
-          },
-          "departmentId": {
-            "type": "string"
-          },
-          "laborRate": {
-            "type": "number"
-          },
-          "machineRate": {
-            "type": "number"
-          },
-          "overheadRate": {
-            "type": "number"
-          },
-          "processes": {
-            "type": "string"
-          },
-          "shifts": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "alwaysOn": {
-            "type": "string"
-          },
           "_operation": {
             "type": "string",
             "enum": [
@@ -36979,9 +37227,6 @@
           "trainingAssignmentId",
           "employeeId",
           "name",
-          "description",
-          "defaultStandardFactor",
-          "alwaysOn",
           "_operation"
         ]
       }
@@ -37363,7 +37608,7 @@
       "module": "resources",
       "classification": "DESTRUCTIVE",
       "description": "upsert work center",
-      "paramCount": 12,
+      "paramCount": 1,
       "serviceParams": [
         "client",
         "workCenter"
@@ -37376,45 +37621,7 @@
       "schema": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "defaultStandardFactor": {
-            "type": "string"
-          },
-          "departmentId": {
-            "type": "string"
-          },
-          "laborRate": {
-            "type": "number"
-          },
-          "locationId": {
-            "type": "string"
-          },
-          "machineRate": {
-            "type": "number"
-          },
-          "overheadRate": {
-            "type": "number"
-          },
-          "processes": {
-            "type": "string"
-          },
-          "shifts": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "alwaysOn": {
-            "type": "string"
-          },
+          "workCenter": {},
           "_operation": {
             "type": "string",
             "enum": [
@@ -37425,11 +37632,7 @@
           }
         },
         "required": [
-          "name",
-          "description",
-          "defaultStandardFactor",
-          "locationId",
-          "alwaysOn",
+          "workCenter",
           "_operation"
         ]
       }

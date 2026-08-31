@@ -56,9 +56,6 @@ import type {
   Progress
 } from "~/modules/production/ui/Schedule/Kanban";
 import { isBatchItem, Kanban } from "~/modules/production/ui/Schedule/Kanban";
-import { BatchOpportunityBanner } from "~/modules/production/ui/Schedule/Kanban/components/BatchOpportunityBanner";
-import { BatchSelectionBar } from "~/modules/production/ui/Schedule/Kanban/components/BatchSelectionBar";
-import { BatchSelectionProvider } from "~/modules/production/ui/Schedule/Kanban/context/BatchSelectionContext";
 import { comparePriorityThenId } from "~/modules/production/ui/Schedule/Kanban/placement";
 import { ScheduleNavigation } from "~/modules/production/ui/Schedule/Kanban/ScheuleNavigation";
 import {
@@ -827,20 +824,13 @@ function KanbanSchedule() {
       <div className="flex flex-grow h-full items-stretch overflow-hidden relative">
         <div className="flex flex-1 min-h-0 w-full relative">
           {columns.length > 0 ? (
-            <BatchSelectionProvider>
-              <Kanban
-                columns={visibleColumns}
-                items={items}
-                progressByItemId={progressByOperation}
-                tags={tags}
-                {...mergedDisplaySettings}
-              />
-              <BatchOpportunityBanner items={items} />
-              <BatchSelectionBar
-                locationId={locationId}
-                batches={items.filter(isBatchItem)}
-              />
-            </BatchSelectionProvider>
+            <Kanban
+              columns={visibleColumns}
+              items={items}
+              progressByItemId={progressByOperation}
+              tags={tags}
+              {...mergedDisplaySettings}
+            />
           ) : hasFilters ? (
             <div className="flex flex-col w-full h-full items-center justify-center gap-4">
               <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">

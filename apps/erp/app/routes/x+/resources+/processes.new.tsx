@@ -8,6 +8,7 @@ import type {
 } from "react-router";
 import { redirect, useNavigate } from "react-router";
 import {
+  batchRuleInitialValues,
   ensureProcessAbility,
   ProcessForm,
   processValidator,
@@ -108,7 +109,8 @@ export default function NewProcessRoute() {
     defaultStandardFactor: "Minutes/Piece" as const,
     completeAllOnScan: false,
     batchable: false,
-    requiresAbility: false
+    requiresAbility: false,
+    ...batchRuleInitialValues(null)
   };
 
   return <ProcessForm initialValues={initialValues} onClose={onClose} />;

@@ -181,6 +181,7 @@ msgstr "Numer partii jest wymagany"
 
 msgid "Batched jobs"
 msgstr "Zadania zgrupowane"
+
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Opóźnione o {daysBehindTarget} dni"
 

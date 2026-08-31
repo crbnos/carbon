@@ -181,6 +181,7 @@ msgstr "Номер партии обязателен"
 
 msgid "Batched jobs"
 msgstr "Пакетные работы"
+
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Отставание на {daysBehindTarget} дн."
 

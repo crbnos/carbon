@@ -181,6 +181,7 @@ msgstr "El número de lote es obligatorio"
 
 msgid "Batched jobs"
 msgstr "Trabajos agrupados"
+
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Retrasado por {daysBehindTarget} día(s)"
 

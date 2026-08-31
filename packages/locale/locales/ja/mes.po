@@ -181,6 +181,7 @@ msgstr "バッチ番号は必須です"
 
 msgid "Batched jobs"
 msgstr "バッチ処理されたジョブ"
+
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "目標より{daysBehindTarget}日遅れ"
 

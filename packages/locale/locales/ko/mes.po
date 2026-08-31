@@ -181,6 +181,7 @@ msgstr "배치 번호가 필요합니다"
 
 msgid "Batched jobs"
 msgstr "일괄 작업"
+
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "목표에서 {daysBehindTarget}일 뒤짐"
 

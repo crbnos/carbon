@@ -190,7 +190,7 @@ All rows locked: 2026-07-03 with Brad, upgraded 2026-07-16 post-#1137, grilled
 | Completion mechanism | **Two-phase, resumable**, wholly owned by the `batch-operations` edge fn. Phase 1 (one txn, `SELECT … FOR UPDATE`): slice + quantities + guarded `Active → Completing`. Phase 2 (post-commit, idempotent): issue → Done → GL → guarded `Completing → Completed` | `sync_finish_job_operation` is BEFORE/FOR EACH ROW, so each member's downstream op releases independently. v1's single-txn design left the batch `Completed` with unissued materials / unposted GL and no recovery on partial failure — the proven gap #1137 existed to close |
 | Phase-2 failure mode | **Fail-fast** — stop at the first error (issue, Done flip, or GL post), return it verbatim, batch stays `Completing`; no error aggregation, no continuing to later members | Resume makes retries cheap: idempotency (backflush cap, already-`Done` skip, `postedToGL` skip) fast-forwards past completed work. One error at a time keeps the edge fn simple |
 | Resume payload contract | Resume **rejects changed quantities loudly** — submitted member quantities/scrap are compared against the `productionQuantity` rows Phase 1 committed; mismatch errors with the recorded values named | Silent ignore is quiet data corruption (operator believes the edit took); accepting the edit reopens the Phase-1 transaction boundary. Post-completion corrections are out of scope (existing per-op paths apply) |
-| Board placement | **Composition lives ON the operations schedule board** (`x/schedule/operations`) — no separate view. Batchable, unstarted operations get a select checkbox; a floating bar creates a batch from the selection; live batches render as one collapsed `BAT` card in their work-center column; material facets join the board's existing filter bar. (Supersedes the earlier dedicated `x/schedule/batching` board — removed 2026-08-21 at Sid's direction: the separate view read as bolted-on. APS precedent: PlanetTogether/Opcenter compose batches inside the main scheduling view) |
+| Board placement | **SUPERSEDED 2026-09-01: composition happens only in the batch builder.** The board's select-to-batch flow (checkboxes, floating create bar, opportunity banner) was removed at Sid's direction — the builder is the single composition surface. The board still renders live batches as one collapsed `BAT` card per work-center column, and dragging the card reassigns the batch work center. (History: composition first lived on a dedicated `x/schedule/batching` board, moved onto the operations board 2026-08-21, then consolidated into the builder) |
 | Board visibility of `Completing` | A `Completing` batch's collapsed card renders **read-only** on the operations board (yellow badge, drag/dissolve/member-remove disabled, link to the MES batch page) | Durable `Completing` exists so failures wait visibly for a human — hiding them from the planning surface would undercut it |
 | MES batch page states | Status badge (`secondary` Active / `yellow` Completing / `green` Completed), timers gated to `Active`, complete form enabled for `Active`+`Completing`, submit relabeled "Retry Completion" while `Completing`, live elapsed timer, all strings i18n'd | The UI counterpart of the two-phase workflow — the operator must see and retry a stuck completion |
 | Planning integration | Manual board only in v1; no MRP/scheduler auto-suggestions | APS auto-grouping is solver territory (v2); manual composer matches the MES precedent (Critical Manufacturing) |
@@ -201,6 +201,8 @@ All rows locked: 2026-07-03 with Brad, upgraded 2026-07-16 post-#1137, grilled
 | Form pattern | Process form: `Boolean` field in existing `ValidatedForm`; batch completion: `ValidatedForm` + zod validator in MES | House pattern; clone `completeAllOnScan` |
 | Module layout | Validators in `production.models.ts`, services in `production.service.ts`; process flag in `resources.models.ts`/`resources.service.ts`; no new files beyond UI components/routes | One service/models per module |
 | Backward compatibility | All columns additive/nullable (or defaulted); inert until a process is flagged batchable; `get_active_job_operations_by_location` re-declared additively (both boards read it); `processes` view recreated from newest definition | No frozen surface touched; unflagged behavior byte-for-byte unchanged |
+| Work-center batch capacity (2026-09-01, Sid) | `workCenter.batchCapacity` / `minimumBatchQuantity` (NUMERIC, nullable) — ADVISORY only. A fill bar in the builder's review panel shows selected qty vs capacity ("fits in one run" / "over capacity — N loads") + a min met/short line; Create NEVER blocks. NULL = no capacity model, today's behavior | Consistent with the batch-size "no cap" decision and the "material guides, never blocks" stance — capacity informs load-building without gating it (Plex/Steelhead pieces-first pattern). Both `workCenters` views re-declared (DROP+CREATE, new `wc.*` cols precede `locationName`) |
+| Per-process compatibility rules (2026-09-01, Sid) | `process.batchRules` (JSONB, sparse, nullable) sets each BOM dimension to `must`/`guide`/`ignore`. **"Must" is an explicit per-process OPT-IN to blocking** — it is the one level that refuses a batch (client lock + server `assertMaterialCompatible` in the edge fn, whole-membership, ids↔names via the shared `batch-compatibility` fold). "Guide" warns + splits suggestion groups; "ignore" is invisible. Default (`batchRules IS NULL`) = substance/grade/dimension guide, form/finish/item ignore → reproduces the pre-rules suggestion signature byte-for-byte | Amends the "material guides, never blocks" decision: blocking exists but ONLY where a process explicitly opts in, so the default surface is unchanged. No competitor ships this configurably (Steelhead hard-codes, Fulcrum fixes material+thickness, Epicor validates nothing) |
 
 ## Data Model Changes
 
@@ -477,6 +479,41 @@ through; `ProcessForm` gains the Boolean field (clone `completeAllOnScan`).
   pattern); v1 batches are unbounded by design.
 
 ## Changelog
+
+### 2026-09-01 — Work-center capacity + per-process compatibility rules
+
+- **Work-center batch capacity** (`workCenter.batchCapacity` / `minimumBatchQuantity`,
+  NUMERIC nullable): advisory fill bar in the builder's review panel (qty vs
+  capacity, "fits in one run" / "over capacity — N loads", min met/short). Never
+  blocks Create. Edited on the work-center form's new "Batching" section. Both
+  `workCenters` / `workCentersWithBlockingStatus` views re-declared (DROP+CREATE)
+  to expose the columns.
+- **Per-process compatibility rules** (`process.batchRules`, sparse JSONB): each
+  BOM dimension set to `must` / `guide` / `ignore` on the batchable process form's
+  "Compatibility rules" card. `must` is the one blocking level (opt-in) — enforced
+  client-side (row lock) AND server-side (`assertMaterialCompatible` in the
+  `batch-operations` edge fn, whole membership, on create + add). `guide` warns +
+  splits suggestion groups; `ignore` is invisible. NULL = pre-rules defaults
+  (substance/grade/dimension guide, form/finish/item ignore), so an unconfigured
+  process behaves byte-for-byte as before.
+- New shared pure module `@carbon/utils` `batch-compatibility` (Deno source under
+  `supabase/functions/shared/`): `resolveBatchRules`, `compactBatchRules`,
+  `mustViolations` — one intersection-fold owned by both client (names) and edge
+  fn (ids). Pinned by `packages/utils/src/batch-compatibility.test.ts`.
+- Deferred from the design canvas (not built): scored-suggestions v2, arriving-soon lane.
+
+### 2026-09-01 — Board select-to-batch removed; builder is the sole composition surface
+
+- Removed from the operations priority board: the per-card batch checkboxes,
+  `BatchSelectionProvider`/`BatchSelectionBar` (floating create bar), and the
+  `BatchOpportunity` banner + column hints. Batch creation and adding members now
+  happen only in the batch builder (`/x/production/batches/new`).
+- The board keeps `BatchItemCard` (collapsed live batches, drag-to-reassign work
+  center, read-only `Completing` cards) — it displays batches, it no longer
+  composes them.
+- Catalogs re-extracted; the removed strings ("Select for batch",
+  "{count} selected", "Batch {0} × {1}…", "Create batch") pruned.
+
 
 - 2026-08-21: Created as the **fresh restart** on `feat/job-operation-batching-v2`,
   superseding the 2026-07-03 spec/plan (deleted this branch) and both prior

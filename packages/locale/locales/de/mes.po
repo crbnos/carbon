@@ -181,6 +181,7 @@ msgstr "Chargennummer ist erforderlich"
 
 msgid "Batched jobs"
 msgstr "Gebündelte Aufträge"
+
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Hinter dem Ziel um {daysBehindTarget} Tag(e)"
 

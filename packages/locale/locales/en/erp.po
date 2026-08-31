@@ -221,9 +221,6 @@ msgstr "{conflictCount} conflicts"
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# course} other {# courses}}"
 
-msgid "{count} selected"
-msgstr "{count} selected"
-
 msgid "{days}d"
 msgstr "{days}d"
 
@@ -268,6 +265,12 @@ msgstr "{name} deleted"
 msgid "{name} returns!"
 msgstr "{name} returns!"
 
+msgid "{names} differs"
+msgstr "{names} differs"
+
+msgid "{names} must match — separate load"
+msgstr "{names} must match — separate load"
+
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} parts skipped — nothing to make"
 
@@ -292,6 +295,12 @@ msgstr "{total} phases to go live"
 
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# unit} other {# units}}"
+
+msgid "{totalQuantity} / {batchCapacity} pcs · fits in one run"
+msgstr "{totalQuantity} / {batchCapacity} pcs · fits in one run"
+
+msgid "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads of {batchCapacity}"
+msgstr "{totalQuantity} / {batchCapacity} pcs · over capacity — {loads} loads of {batchCapacity}"
 
 msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
@@ -419,6 +428,9 @@ msgstr "9-12 weeks"
 
 msgid "90D"
 msgstr "90D"
+
+msgid "A \"must match\" rule on this process blocks these from sharing a batch"
+msgstr "A \"must match\" rule on this process blocks these from sharing a batch"
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "A Carbon-run data migration — you load your own data"
@@ -1361,7 +1373,6 @@ msgstr "Add this TXT record at your DNS host, then click Verify. DNS changes can
 msgid "Add Timecard"
 msgstr "Add Timecard"
 
-#. placeholder {0}: batch.batchReadableId
 #. placeholder {0}: target.readableId
 msgid "Add to {0}"
 msgstr "Add to {0}"
@@ -2655,6 +2666,9 @@ msgstr "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand
 msgid "Base Currency"
 msgstr "Base Currency"
 
+msgid "Base material — e.g. steel vs aluminum"
+msgstr "Base material — e.g. steel vs aluminum"
+
 msgid "Base Price"
 msgstr "Base Price"
 
@@ -2667,18 +2681,11 @@ msgstr "Basic Information"
 msgid "Batch"
 msgstr "Batch"
 
-#. placeholder {0}: group.length
-#. placeholder {1}: group[0].processName ?? group[0].description ?? ""
-msgid "Batch {0} × {1}"
-msgstr "Batch {0} × {1}"
-
-#. placeholder {0}: group.length
-#. placeholder {1}: group[0].processName ?? group[0].description ?? ""
-msgid "Batch {0} × {1} across {columnCount} work centers"
-msgstr "Batch {0} × {1} across {columnCount} work centers"
-
 msgid "Batch / Serial"
 msgstr "Batch / Serial"
+
+msgid "Batch Capacity"
+msgstr "Batch Capacity"
 
 msgid "Batch items require a sales order"
 msgstr "Batch items require a sales order"
@@ -2709,6 +2716,9 @@ msgstr "Batchable process"
 
 msgid "Batches"
 msgstr "Batches"
+
+msgid "Batching"
+msgstr "Batching"
 
 msgid "Beginning"
 msgstr "Beginning"
@@ -3520,6 +3530,9 @@ msgstr "Compare Quotes"
 msgid "Compare Supplier Quotes"
 msgstr "Compare Supplier Quotes"
 
+msgid "Compatibility rules"
+msgstr "Compatibility rules"
+
 msgid "Complete"
 msgstr "Complete"
 
@@ -3552,6 +3565,7 @@ msgstr "Completed Qty"
 
 msgid "Completing"
 msgstr "Completing"
+
 msgid "Completing this training grants or renews the selected ability."
 msgstr "Completing this training grants or renews the selected ability."
 
@@ -4268,9 +4282,6 @@ msgstr "Create and approve purchase orders"
 
 msgid "Create audit trail entries"
 msgstr "Create audit trail entries"
-
-msgid "Create batch"
-msgstr "Create batch"
 
 #. placeholder {0}: selected.length
 msgid "Create batch ({0})"
@@ -5483,6 +5494,9 @@ msgstr "Developer"
 
 msgid "Diagram saved"
 msgstr "Diagram saved"
+
+msgid "Differs from the selection — allowed, but confirm they nest together"
+msgstr "Differs from the selection — allowed, but confirm they nest together"
 
 msgid "Digital Quote"
 msgstr "Digital Quote"
@@ -7410,6 +7424,9 @@ msgstr "Forecast method: <0>{0}</0>. This row was not derived from active jobs, 
 msgid "Forgot to Clock Out?"
 msgstr "Forgot to Clock Out?"
 
+msgid "form"
+msgstr "form"
+
 msgid "Form"
 msgstr "Form"
 
@@ -7806,6 +7823,9 @@ msgstr "Group Name"
 msgid "Groups"
 msgstr "Groups"
 
+msgid "Guide"
+msgstr "Guide"
+
 msgid "Guided"
 msgstr "Guided"
 
@@ -7989,6 +8009,9 @@ msgstr "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle C
 msgid "How strict the Due Date is — Hard Deadline blocks scheduling past it, Soft Deadline lets planning push out with a warning, No Deadline ignores it entirely."
 msgstr "How strict the Due Date is — Hard Deadline blocks scheduling past it, Soft Deadline lets planning push out with a warning, No Deadline ignores it entirely."
 
+msgid "How strictly each material property must match for operations to share a batch on this process."
+msgstr "How strictly each material property must match for operations to share a batch on this process."
+
 msgid "How the material is sourced (make, purchase, or pull from inventory) and the storage unit it's pulled from."
 msgstr "How the material is sourced (make, purchase, or pull from inventory) and the storage unit it's pulled from."
 
@@ -8105,6 +8128,9 @@ msgstr "If something is off track"
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
+
+msgid "Ignore"
+msgstr "Ignore"
 
 msgid "II (normal default)"
 msgstr "II (normal default)"
@@ -9585,8 +9611,14 @@ msgstr "Material Finishes"
 msgid "Material Form"
 msgstr "Material Form"
 
+msgid "Material form — e.g. sheet, bar, tube"
+msgstr "Material form — e.g. sheet, bar, tube"
+
 msgid "Material Grade"
 msgstr "Material Grade"
+
+msgid "Material grade or alloy designation"
+msgstr "Material grade or alloy designation"
 
 msgid "Material Grades"
 msgstr "Material Grades"
@@ -9599,6 +9631,12 @@ msgstr "Material IDs"
 
 msgid "Material is pre-selected"
 msgstr "Material is pre-selected"
+
+msgid "material item"
+msgstr "material item"
+
+msgid "Material item"
+msgstr "Material item"
 
 msgid "Material Planning"
 msgstr "Material Planning"
@@ -9762,6 +9800,12 @@ msgstr "Midnight on the clock, {name}."
 msgid "Migrate data"
 msgstr "Migrate data"
 
+msgid "min {minimumBatchQuantity} — met"
+msgstr "min {minimumBatchQuantity} — met"
+
+msgid "min {minimumBatchQuantity} — short"
+msgstr "min {minimumBatchQuantity} — short"
+
 msgid "Min Qty"
 msgstr "Min Qty"
 
@@ -9770,6 +9814,9 @@ msgstr "Minimum"
 
 msgid "Minimum Amount"
 msgstr "Minimum Amount"
+
+msgid "Minimum Batch Quantity"
+msgstr "Minimum Batch Quantity"
 
 msgid "Minimum Cost"
 msgstr "Minimum Cost"
@@ -9810,12 +9857,13 @@ msgstr "Missing Shipping Costs"
 msgid "Missing Suppliers"
 msgstr "Missing Suppliers"
 
+msgid "Missing:"
+msgstr "Missing:"
+
 #. placeholder {0}: signatures .slice(0, 3) .join( ", " )
 #. placeholder {1}: signatures.length > 3 ? "…" : ""
 msgid "Mixing materials: {0}{1}. Confirm they nest together on this run."
 msgstr "Mixing materials: {0}{1}. Confirm they nest together on this run."
-msgid "Missing:"
-msgstr "Missing:"
 
 msgid "Mobile Phone"
 msgstr "Mobile Phone"
@@ -9959,6 +10007,9 @@ msgstr "Multiple jobs can run on this process at the same time — e.g. a laser 
 
 msgid "Must be in the same location"
 msgstr "Must be in the same location"
+
+msgid "Must match"
+msgstr "Must match"
 
 msgid "My Documents"
 msgstr "My Documents"
@@ -10509,6 +10560,7 @@ msgstr "No editable properties for this item."
 
 msgid "No eligible operations"
 msgstr "No eligible operations"
+
 msgid "No employees assigned this week"
 msgstr "No employees assigned this week"
 
@@ -10954,10 +11006,11 @@ msgstr "Nothing here matches your search and filters."
 msgid "Nothing in the archive"
 msgstr "Nothing in the archive"
 
-msgid "Nothing selected yet"
-msgstr "Nothing selected yet"
 msgid "Nothing scheduled — add a station below."
 msgstr "Nothing scheduled — add a station below."
+
+msgid "Nothing selected yet"
+msgstr "Nothing selected yet"
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "Nothing yet. A step only offers values once it is configured."
@@ -11891,6 +11944,9 @@ msgstr "Picking Lists"
 
 msgid "Picking offers tracked entities earliest-expiry-first, so the soonest-to-expire stock leaves first by default."
 msgstr "Picking offers tracked entities earliest-expiry-first, so the soonest-to-expire stock leaves first by default."
+
+msgid "Pieces per run. Leave empty for no limit."
+msgstr "Pieces per run. Leave empty for no limit."
 
 msgid "Pieces/Hour"
 msgstr "Pieces/Hour"
@@ -13159,6 +13215,7 @@ msgstr "Remove Filters"
 
 msgid "Remove from batch"
 msgstr "Remove from batch"
+
 msgid "Remove from board"
 msgstr "Remove from board"
 
@@ -14319,9 +14376,6 @@ msgstr "Select Employee Type"
 msgid "Select field"
 msgstr "Select field"
 
-msgid "Select for batch"
-msgstr "Select for batch"
-
 msgid "Select Gauge"
 msgstr "Select Gauge"
 
@@ -14955,6 +15009,9 @@ msgstr "Slice expenses by location, cost center, or any dimension"
 msgid "Slice revenue by customer, customer type, or any dimension"
 msgstr "Slice revenue by customer, customer type, or any dimension"
 
+msgid "Smallest run worth batching. Leave empty for none."
+msgstr "Smallest run worth batching. Leave empty for none."
+
 msgid "Smoke-test the core daily flows end to end"
 msgstr "Smoke-test the core daily flows end to end"
 
@@ -15228,6 +15285,9 @@ msgstr "Still dark out on the floor."
 
 msgid "Stock movement corrected"
 msgstr "Stock movement corrected"
+
+msgid "Stock size — e.g. sheet thickness or bar diameter"
+msgstr "Stock size — e.g. sheet thickness or bar diameter"
 
 msgid "Stock Transfer ID"
 msgstr "Stock Transfer ID"
@@ -15596,6 +15656,9 @@ msgstr "Support"
 #. placeholder {0}: supportedModelTypes.join(", ")
 msgid "Supports {0} files"
 msgstr "Supports {0} files"
+
+msgid "Surface finish — e.g. anodized vs powder-coat"
+msgstr "Surface finish — e.g. anodized vs powder-coat"
 
 msgid "Surfaces"
 msgstr "Surfaces"
@@ -16050,6 +16113,9 @@ msgstr "The engineering drawing this inspection plan is tied to; inspections rec
 
 msgid "The evening hours, {name}."
 msgstr "The evening hours, {name}."
+
+msgid "The exact material part, not just its properties"
+msgstr "The exact material part, not just its properties"
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
 msgstr "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
@@ -18623,6 +18689,7 @@ msgstr "Work Center"
 
 msgid "Work center (optional)"
 msgstr "Work center (optional)"
+
 msgid "Work Center Reservation"
 msgstr "Work Center Reservation"
 

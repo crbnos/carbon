@@ -2,6 +2,7 @@ import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import type { BatchRules } from "@carbon/utils";
 import type {
   ActionFunctionArgs,
   ClientActionFunctionArgs,
@@ -10,6 +11,7 @@ import type {
 import { redirect, useLoaderData, useNavigate } from "react-router";
 import { notifyScheduleInputsChanged } from "~/modules/production";
 import {
+  batchRuleInitialValues,
   ensureProcessAbility,
   getProcess,
   ProcessForm,
@@ -168,7 +170,8 @@ export default function ProcessRoute() {
     ...getCustomFields(process.customFields),
     completeAllOnScan: process.completeAllOnScan ?? false,
     batchable: process.batchable ?? false,
-    requiresAbility: process.requiresAbility ?? false
+    requiresAbility: process.requiresAbility ?? false,
+    ...batchRuleInitialValues(process.batchRules as BatchRules | null)
   };
 
   return <ProcessForm initialValues={initialValues} onClose={onClose} />;

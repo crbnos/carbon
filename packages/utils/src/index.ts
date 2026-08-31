@@ -3,6 +3,7 @@ export * from "./address";
 export * from "./all";
 export * from "./arrays";
 export * from "./assembly-units";
+export * from "./batch-compatibility";
 export * from "./batch-time-split";
 export * from "./bom";
 export * from "./color";
