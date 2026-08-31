@@ -6817,9 +6817,6 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.assemblyInstructionId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.readyAt"
-          },
-          {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.inspectionDocumentId"
           },
           {
@@ -7023,9 +7020,6 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.assemblyInstructionId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.readyAt"
-          },
-          {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.inspectionDocumentId"
           },
           {
@@ -7181,9 +7175,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.assemblyInstructionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.readyAt"
           },
           {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.inspectionDocumentId"
@@ -19513,16 +19504,16 @@ export default {
             $ref: "#/parameters/rowFilter.jobs.priority"
           },
           {
-            $ref: "#/parameters/rowFilter.jobs.scheduleOutdatedReason"
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobs.scheduleOutdatedAt"
+            $ref: "#/parameters/rowFilter.jobs.productionQuantity"
           },
           {
             $ref: "#/parameters/rowFilter.jobs.projectedCompletionAt"
           },
           {
-            $ref: "#/parameters/rowFilter.jobs.productionQuantity"
+            $ref: "#/parameters/rowFilter.jobs.scheduleOutdatedReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.scheduleOutdatedAt"
           },
           {
             $ref: "#/parameters/rowFilter.jobs.jobMakeMethodId"
@@ -32224,16 +32215,16 @@ export default {
             $ref: "#/parameters/rowFilter.job.priority"
           },
           {
-            $ref: "#/parameters/rowFilter.job.scheduleOutdatedReason"
-          },
-          {
-            $ref: "#/parameters/rowFilter.job.scheduleOutdatedAt"
+            $ref: "#/parameters/rowFilter.job.productionQuantity"
           },
           {
             $ref: "#/parameters/rowFilter.job.projectedCompletionAt"
           },
           {
-            $ref: "#/parameters/rowFilter.job.productionQuantity"
+            $ref: "#/parameters/rowFilter.job.scheduleOutdatedReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.scheduleOutdatedAt"
           },
           {
             $ref: "#/parameters/select"
@@ -32406,16 +32397,16 @@ export default {
             $ref: "#/parameters/rowFilter.job.priority"
           },
           {
-            $ref: "#/parameters/rowFilter.job.scheduleOutdatedReason"
-          },
-          {
-            $ref: "#/parameters/rowFilter.job.scheduleOutdatedAt"
+            $ref: "#/parameters/rowFilter.job.productionQuantity"
           },
           {
             $ref: "#/parameters/rowFilter.job.projectedCompletionAt"
           },
           {
-            $ref: "#/parameters/rowFilter.job.productionQuantity"
+            $ref: "#/parameters/rowFilter.job.scheduleOutdatedReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.scheduleOutdatedAt"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -32542,16 +32533,16 @@ export default {
             $ref: "#/parameters/rowFilter.job.priority"
           },
           {
-            $ref: "#/parameters/rowFilter.job.scheduleOutdatedReason"
-          },
-          {
-            $ref: "#/parameters/rowFilter.job.scheduleOutdatedAt"
+            $ref: "#/parameters/rowFilter.job.productionQuantity"
           },
           {
             $ref: "#/parameters/rowFilter.job.projectedCompletionAt"
           },
           {
-            $ref: "#/parameters/rowFilter.job.productionQuantity"
+            $ref: "#/parameters/rowFilter.job.scheduleOutdatedReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.scheduleOutdatedAt"
           },
           {
             $ref: "#/parameters/body.job"
@@ -42331,10 +42322,10 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.assemblyInstructionId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
+            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
+            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
           },
           {
             $ref: "#/parameters/rowFilter.jobOperation.projectedCompletionAt"
@@ -42537,10 +42528,10 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.assemblyInstructionId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
+            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
+            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
           },
           {
             $ref: "#/parameters/rowFilter.jobOperation.projectedCompletionAt"
@@ -42697,10 +42688,10 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.assemblyInstructionId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
+            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
+            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
           },
           {
             $ref: "#/parameters/rowFilter.jobOperation.projectedCompletionAt"
@@ -79894,9 +79885,6 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.assemblyInstructionId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.readyAt"
-          },
-          {
             $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.inspectionDocumentId"
           },
           {
@@ -103942,10 +103930,6 @@ export default {
           format: "text",
           type: "string"
         },
-        readyAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
         inspectionDocumentId: {
           description:
             "Note:\nThis is a Foreign Key to `inspectionDocument.id`.<fk table='inspectionDocument' column='id'/>",
@@ -106826,7 +106810,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -106875,7 +106859,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -110016,6 +110000,14 @@ export default {
           format: "double precision",
           type: "number"
         },
+        productionQuantity: {
+          format: "numeric",
+          type: "number"
+        },
+        projectedCompletionAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
         scheduleOutdatedReason: {
           format: "text",
           type: "string"
@@ -110023,14 +110015,6 @@ export default {
         scheduleOutdatedAt: {
           format: "timestamp with time zone",
           type: "string"
-        },
-        projectedCompletionAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        productionQuantity: {
-          format: "numeric",
-          type: "number"
         },
         jobMakeMethodId: {
           description: "Note:\nThis is a Primary Key.<pk/>",
@@ -116250,6 +116234,16 @@ export default {
           format: "double precision",
           type: "number"
         },
+        productionQuantity: {
+          format: "numeric",
+          type: "number"
+        },
+        projectedCompletionAt: {
+          description:
+            "Simulated finish of the job's last operation (forward-ASAP finite schedule). Null until first regen.",
+          format: "timestamp with time zone",
+          type: "string"
+        },
         scheduleOutdatedReason: {
           description:
             'Why the stored schedule may be stale (e.g. "Qualification changed: Solder"). Null = schedule current.',
@@ -116259,16 +116253,6 @@ export default {
         scheduleOutdatedAt: {
           format: "timestamp with time zone",
           type: "string"
-        },
-        projectedCompletionAt: {
-          description:
-            "Simulated finish of the job's last operation (forward-ASAP finite schedule). Null until first regen.",
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        productionQuantity: {
-          format: "numeric",
-          type: "number"
         }
       },
       type: "object"
@@ -121053,14 +121037,14 @@ export default {
           format: "text",
           type: "string"
         },
-        readyAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
         inspectionDocumentId: {
           description:
             "Note:\nThis is a Foreign Key to `inspectionDocument.id`.<fk table='inspectionDocument' column='id'/>",
           format: "text",
+          type: "string"
+        },
+        readyAt: {
+          format: "timestamp with time zone",
           type: "string"
         },
         projectedCompletionAt: {
@@ -138751,10 +138735,6 @@ export default {
           format: "text",
           type: "string"
         },
-        readyAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
         inspectionDocumentId: {
           description:
             "Note:\nThis is a Foreign Key to `inspectionDocument.id`.<fk table='inspectionDocument' column='id'/>",
@@ -146787,12 +146767,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.jobOperationsWithDependencies.readyAt": {
-      name: "readyAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.jobOperationsWithDependencies.inspectionDocumentId": {
       name: "inspectionDocumentId",
       required: false,
@@ -153587,14 +153561,8 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.jobs.scheduleOutdatedReason": {
-      name: "scheduleOutdatedReason",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.jobs.scheduleOutdatedAt": {
-      name: "scheduleOutdatedAt",
+    "rowFilter.jobs.productionQuantity": {
+      name: "productionQuantity",
       required: false,
       in: "query",
       type: "string"
@@ -153605,8 +153573,14 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.jobs.productionQuantity": {
-      name: "productionQuantity",
+    "rowFilter.jobs.scheduleOutdatedReason": {
+      name: "scheduleOutdatedReason",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobs.scheduleOutdatedAt": {
+      name: "scheduleOutdatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -160579,16 +160553,8 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.job.scheduleOutdatedReason": {
-      name: "scheduleOutdatedReason",
-      description:
-        'Why the stored schedule may be stale (e.g. "Qualification changed: Solder"). Null = schedule current.',
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.job.scheduleOutdatedAt": {
-      name: "scheduleOutdatedAt",
+    "rowFilter.job.productionQuantity": {
+      name: "productionQuantity",
       required: false,
       in: "query",
       type: "string"
@@ -160601,8 +160567,16 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.job.productionQuantity": {
-      name: "productionQuantity",
+    "rowFilter.job.scheduleOutdatedReason": {
+      name: "scheduleOutdatedReason",
+      description:
+        'Why the stored schedule may be stale (e.g. "Qualification changed: Solder"). Null = schedule current.',
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.job.scheduleOutdatedAt": {
+      name: "scheduleOutdatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -165749,14 +165723,14 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.jobOperation.readyAt": {
-      name: "readyAt",
+    "rowFilter.jobOperation.inspectionDocumentId": {
+      name: "inspectionDocumentId",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.jobOperation.inspectionDocumentId": {
-      name: "inspectionDocumentId",
+    "rowFilter.jobOperation.readyAt": {
+      name: "readyAt",
       required: false,
       in: "query",
       type: "string"
@@ -185587,12 +185561,6 @@ export default {
     },
     "rowFilter.jobOperationsWithMakeMethods.assemblyInstructionId": {
       name: "assemblyInstructionId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.jobOperationsWithMakeMethods.readyAt": {
-      name: "readyAt",
       required: false,
       in: "query",
       type: "string"

@@ -19,6 +19,7 @@ declare global {
       ONSHAPE_CLIENT_ID: string;
       POSTHOG_API_HOST: string;
       POSTHOG_PROJECT_PUBLIC_KEY: string;
+      RAMP_CLIENT_ID: string;
       SUPABASE_URL: string;
       SUPABASE_ANON_KEY: string;
       VERCEL_URL: string;
@@ -553,6 +554,7 @@ export function getBrowserEnv() {
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
     QUICKBOOKS_CLIENT_ID,
+    RAMP_CLIENT_ID,
     SUPABASE_ANON_KEY,
     SUPABASE_URL,
     VERCEL_ENV,

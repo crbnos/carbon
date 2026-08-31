@@ -67,7 +67,10 @@ const RampSettingsSchema = z.object({
 export const Ramp = defineIntegration({
   name: "Ramp",
   id: "ramp",
-  active: true,
+  // Gate on the OAuth app client id (mirrors jira/onshape). Without a configured
+  // RAMP_CLIENT_ID the "Connect to Ramp" authorize URL would be built with an
+  // empty client_id, so the card reads "Coming soon" until the app is set up.
+  active: !!RAMP_CLIENT_ID,
   category: "Spend Management",
   logo: Logo,
   setupInstructions: SetupInstructions,
