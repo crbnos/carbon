@@ -142,6 +142,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // and Fixed Asset lines carry no itemId). Blocked submissions return
   // violations for the form's violation modal; acknowledged warns pass
   // through on re-submit.
+  let acknowledgedViolations: ReturnType<typeof dedupeViolations> = [];
+  let acknowledgedRuleNames: Record<string, string> = {};
   if (d.itemId) {
     const acknowledged = formData.get("acknowledged") === "true";
     const serviceRole = getCarbonServiceRole();
@@ -163,22 +165,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
     const deduped = dedupeViolations(violations);
     if (deduped.length > 0) {
-      const blocked = isBlocked(deduped, acknowledged);
-      await recordSalesRuleOutcome(serviceRole, {
-        companyId,
-        userId,
-        documentType: "salesOrder",
-        documentId: orderId,
-        documentLineId: lineId,
-        itemId: d.itemId ?? null,
-        outcome: blocked ? "blocked" : "acknowledged",
-        violations: deduped,
-        ruleNames
-      });
-
-      if (blocked) {
+      if (isBlocked(deduped, acknowledged)) {
+        await recordSalesRuleOutcome(serviceRole, {
+          companyId,
+          userId,
+          documentType: "salesOrder",
+          documentId: orderId,
+          documentLineId: lineId,
+          itemId: d.itemId ?? null,
+          outcome: "blocked",
+          violations: deduped,
+          ruleNames
+        });
         return { error: null, data: null, violations: deduped, ruleNames };
       }
+      acknowledgedViolations = deduped;
+      acknowledgedRuleNames = ruleNames;
     }
   }
 
@@ -197,6 +199,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
         error(updateSalesOrderLine.error, "Failed to update sales order line")
       )
     );
+  }
+
+  // Acknowledged proceed: record only after the write committed — evidence
+  // (and its notification) must describe a change that actually landed.
+  if (acknowledgedViolations.length > 0) {
+    await recordSalesRuleOutcome(getCarbonServiceRole(), {
+      companyId,
+      userId,
+      documentType: "salesOrder",
+      documentId: orderId,
+      documentLineId: lineId,
+      itemId: d.itemId ?? null,
+      outcome: "acknowledged",
+      violations: acknowledgedViolations,
+      ruleNames: acknowledgedRuleNames
+    });
   }
 
   throw redirect(path.to.salesOrderLine(orderId, lineId));

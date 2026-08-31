@@ -106,8 +106,10 @@ export async function evaluateSalesRuleLines({
           .eq("id", customerLocationId)
           // companyId scope matters here: the invoice-post gate evaluates with
           // the service-role client, so RLS is not backstopping this read.
+          // maybeSingle: a missing location is an expected state — the null
+          // country flows into required-field semantics (fail closed).
           .eq("companyId", companyId)
-          .single()
+          .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
     itemIds.size > 0
       ? client
@@ -394,10 +396,12 @@ export async function evaluateSalesRulesForSalesDocument({
         .eq("companyId", companyId)
     ]);
 
-    // A lines-read error that silently yields zero lines turns the gate off.
-    if (linesRes.error) {
+    // A read error that silently yields zero lines (or a null header, whose
+    // missing customer would soften country rules) turns the gate off.
+    if (rfqRes.error || linesRes.error) {
+      const err = rfqRes.error ?? linesRes.error;
       throw new Error(
-        `Sales rule evaluation could not load salesRfq lines for ${documentId}: ${linesRes.error.message}`
+        `Sales rule evaluation could not load salesRfq ${documentId}: ${err?.message}`
       );
     }
 
@@ -435,10 +439,12 @@ export async function evaluateSalesRulesForSalesDocument({
         .eq("companyId", companyId)
     ]);
 
-    // A lines-read error that silently yields zero lines turns the gate off.
-    if (linesRes.error) {
+    // A read error that silently yields zero lines (or a null header, whose
+    // missing customer would soften country rules) turns the gate off.
+    if (quoteRes.error || linesRes.error) {
+      const err = quoteRes.error ?? linesRes.error;
       throw new Error(
-        `Sales rule evaluation could not load quote lines for ${documentId}: ${linesRes.error.message}`
+        `Sales rule evaluation could not load quote ${documentId}: ${err?.message}`
       );
     }
 

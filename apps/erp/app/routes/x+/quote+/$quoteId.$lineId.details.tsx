@@ -223,8 +223,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     customerLocationId: quote.data?.customerLocationId ?? null
   });
   const deduped = dedupeViolations(violations);
-  if (deduped.length > 0) {
-    const blocked = isBlocked(deduped, acknowledged);
+  if (deduped.length > 0 && isBlocked(deduped, acknowledged)) {
     await recordSalesRuleOutcome(serviceRole, {
       companyId,
       userId,
@@ -232,14 +231,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
       documentId: quoteId,
       documentLineId: lineId,
       itemId: d.itemId ?? null,
-      outcome: blocked ? "blocked" : "acknowledged",
+      outcome: "blocked",
       violations: deduped,
       ruleNames
     });
-
-    if (blocked) {
-      return { error: null, data: null, violations: deduped, ruleNames };
-    }
+    return { error: null, data: null, violations: deduped, ruleNames };
   }
   const existingPrices = await serviceRole
     .from("quoteLinePrice")
@@ -339,6 +335,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.quoteLine(quoteId, lineId),
       await flash(request, error(err, "Failed to update quote line"))
     );
+  }
+
+  // Acknowledged proceed: record only after the write committed — evidence
+  // (and its notification) must describe a change that actually landed.
+  if (deduped.length > 0) {
+    await recordSalesRuleOutcome(serviceRole, {
+      companyId,
+      userId,
+      documentType: "quote",
+      documentId: quoteId,
+      documentLineId: lineId,
+      itemId: d.itemId ?? null,
+      outcome: "acknowledged",
+      violations: deduped,
+      ruleNames
+    });
   }
 
   throw redirect(path.to.quoteLine(quoteId, lineId));

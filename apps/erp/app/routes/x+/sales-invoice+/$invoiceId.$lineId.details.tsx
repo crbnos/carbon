@@ -111,6 +111,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // invented — the bill-to is a different address, so a null location flows
   // into the engine's required-field semantics and a destination rule blocks
   // rather than passes.
+  let acknowledgedViolations: ReturnType<typeof dedupeViolations> = [];
+  let acknowledgedRuleNames: Record<string, string> = {};
   if (d.itemId) {
     const serviceRole = getCarbonServiceRole();
     const acknowledged = formData.get("acknowledged") === "true";
@@ -150,22 +152,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
     const deduped = dedupeViolations(violations);
     if (deduped.length > 0) {
-      const blocked = isBlocked(deduped, acknowledged);
-      await recordSalesRuleOutcome(serviceRole, {
-        companyId,
-        userId,
-        documentType: "salesInvoice",
-        documentId: invoiceId,
-        documentLineId: lineId,
-        itemId: d.itemId ?? null,
-        outcome: blocked ? "blocked" : "acknowledged",
-        violations: deduped,
-        ruleNames
-      });
-
-      if (blocked) {
+      if (isBlocked(deduped, acknowledged)) {
+        await recordSalesRuleOutcome(serviceRole, {
+          companyId,
+          userId,
+          documentType: "salesInvoice",
+          documentId: invoiceId,
+          documentLineId: lineId,
+          itemId: d.itemId ?? null,
+          outcome: "blocked",
+          violations: deduped,
+          ruleNames
+        });
         return { error: null, data: null, violations: deduped, ruleNames };
       }
+      acknowledgedViolations = deduped;
+      acknowledgedRuleNames = ruleNames;
     }
   }
 
@@ -187,6 +189,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
         )
       )
     );
+  }
+
+  // Acknowledged proceed: record only after the write committed — evidence
+  // (and its notification) must describe a change that actually landed.
+  if (acknowledgedViolations.length > 0) {
+    await recordSalesRuleOutcome(getCarbonServiceRole(), {
+      companyId,
+      userId,
+      documentType: "salesInvoice",
+      documentId: invoiceId,
+      documentLineId: lineId,
+      itemId: d.itemId ?? null,
+      outcome: "acknowledged",
+      violations: acknowledgedViolations,
+      ruleNames: acknowledgedRuleNames
+    });
   }
 
   throw redirect(path.to.salesInvoiceLine(invoiceId, lineId));

@@ -622,6 +622,10 @@ async function buildEventContent(
       // "<quote|salesOrder|salesInvoice>:<documentId>:<blocked|acknowledged>"
       const [docType, docId, outcome] = documentId.split(":");
       if (!docId) return null;
+      // Service-role lookups below — scope by companyId so a stale or
+      // mangled compound id can never surface another company's document.
+      const companyId = opts?.companyId;
+      if (!companyId) return null;
 
       const phrase =
         outcome === "blocked"
@@ -636,6 +640,7 @@ async function buildEventContent(
           .from("salesInvoice")
           .select("invoiceId, customer!salesInvoice_customerId_fkey(name)")
           .eq("id", docId)
+          .eq("companyId", companyId)
           .single();
 
         if (salesInvoice.error) {
@@ -658,6 +663,7 @@ async function buildEventContent(
           .from("salesOrder")
           .select("salesOrderId, customer(name)")
           .eq("id", docId)
+          .eq("companyId", companyId)
           .single();
 
         if (salesOrder.error) {
@@ -679,6 +685,7 @@ async function buildEventContent(
         .from("quote")
         .select("quoteId, customer(name)")
         .eq("id", docId)
+        .eq("companyId", companyId)
         .single();
 
       if (quote.error) {

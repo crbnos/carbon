@@ -2,7 +2,7 @@ import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { requirePlan } from "@carbon/ee/plan.server";
-import { validator } from "@carbon/form";
+import { validationError, validator } from "@carbon/form";
 import type { ConditionAst } from "@carbon/utils";
 import type {
   ActionFunctionArgs,
@@ -46,7 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const validation = await validator(storageRuleValidator).validate(formData);
-  if (validation.error) return validation.error;
+  if (validation.error) return validationError(validation.error);
 
   const update = await upsertEnforcementRule(client, "storage", companyId, {
     ...validation.data,

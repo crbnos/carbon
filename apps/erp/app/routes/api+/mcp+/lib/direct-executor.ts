@@ -147,15 +147,35 @@ async function checkSalesRulesForSalesLineWrite(
           : null;
   if (!surface || !args) return null;
 
-  // The invoicing tool's payload arrives nested under its parameter name
-  // (`serviceParams: ["client", "salesInvoiceLine"]`); the sales tools' args
-  // are flat.
-  const payload: Record<string, any> =
-    surface === "salesInvoiceLine" &&
-    args.salesInvoiceLine &&
-    typeof args.salesInvoiceLine === "object"
-      ? args.salesInvoiceLine
-      : args;
+  // Resolve the payload the SERVICE will actually receive, mirroring the
+  // positional-argument fallbacks in `executeFunction` below: the named
+  // parameter key first (`quotationLine` / `salesOrderLine` /
+  // `salesInvoiceLine`), then the single-key wrapper unwrap (`{ args: {...} }`
+  // or any guessed key), then the flat args themselves. Reading only the flat
+  // shape here would let a nested request skip evaluation and still reach the
+  // service.
+  const paramName =
+    surface === "quoteLine"
+      ? "quotationLine"
+      : surface === "salesOrderLine"
+        ? "salesOrderLine"
+        : "salesInvoiceLine";
+  const payload: Record<string, any> = (() => {
+    const named = args[paramName];
+    if (named && typeof named === "object" && !Array.isArray(named)) {
+      return named;
+    }
+    const values = Object.values(args);
+    if (
+      Object.keys(args).length === 1 &&
+      values[0] !== null &&
+      typeof values[0] === "object" &&
+      !Array.isArray(values[0])
+    ) {
+      return values[0] as Record<string, any>;
+    }
+    return args;
+  })();
 
   const itemId = typeof payload.itemId === "string" ? payload.itemId : null;
   if (!itemId) return null;
@@ -312,10 +332,22 @@ async function checkSalesRulesForSalesDocumentTransition(
 
   // `finalizeQuote` takes flat args (`quoteId`); the two convert functions
   // take a nested `payload` (`serviceParams: ["client", "payload"]`) whose
-  // document id is `id`. Accept both shapes so a flat-args call is still
-  // gated.
-  const payload: Record<string, any> =
-    args.payload && typeof args.payload === "object" ? args.payload : args;
+  // document id is `id`. Mirror `executeFunction`'s fallbacks — named key,
+  // then single-key wrapper unwrap (`{ args: {...} }`), then flat — so a
+  // nested request cannot skip the gate.
+  const payload: Record<string, any> = (() => {
+    if (args.payload && typeof args.payload === "object") return args.payload;
+    const values = Object.values(args);
+    if (
+      Object.keys(args).length === 1 &&
+      values[0] !== null &&
+      typeof values[0] === "object" &&
+      !Array.isArray(values[0])
+    ) {
+      return values[0] as Record<string, any>;
+    }
+    return args;
+  })();
   const documentId =
     typeof payload.quoteId === "string"
       ? payload.quoteId
