@@ -63,6 +63,9 @@ msgstr "{fails} örnek hata(ları) kaydedildi ve tamamlanmayacak — bunları i�
 msgid "+{overflow} more"
 msgstr "+{overflow} daha fazla"
 
+msgid "3D model"
+msgstr ""
+
 msgid "About"
 msgstr "Hakkında"
 
@@ -288,6 +291,9 @@ msgstr "Tüketildi süresi doldu"
 
 msgid "Continue"
 msgstr "Devam Et"
+
+msgid "Converting…"
+msgstr ""
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -559,6 +565,9 @@ msgstr "Fikirler, öneriler veya sorunlar?"
 
 msgid "Idle for"
 msgstr "Boş olma süresi"
+
+msgid "Image format not supported"
+msgstr ""
 
 msgid "Impact"
 msgstr "Etki"

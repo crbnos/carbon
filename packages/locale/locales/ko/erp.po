@@ -7277,6 +7277,9 @@ msgstr "작업 종료를 잊으셨습니까?"
 msgid "Format"
 msgstr "형식"
 
+msgid "Format can't be displayed — re-upload as JPEG or PNG"
+msgstr ""
+
 msgid "Forward deployed engineer"
 msgstr "현장 배치 엔지니어"
 
@@ -7690,6 +7693,9 @@ msgstr ""
 
 msgid "Headers"
 msgstr "헤더"
+
+msgid "HEIC photos can't be displayed in a browser. On iPhone, Settings → Camera → Formats → Most Compatible saves photos as JPEG."
+msgstr ""
 
 msgid "Help"
 msgstr "도움말"
@@ -15586,6 +15592,9 @@ msgstr "테스트 값"
 
 msgid "Text size"
 msgstr "글자 크기"
+
+msgid "That file isn't an image browsers can display. Use JPEG, PNG, WebP, AVIF or GIF."
+msgstr ""
 
 msgid "That name is already used by another step."
 msgstr "해당 이름은 이미 다른 단계에서 사용 중입니다."

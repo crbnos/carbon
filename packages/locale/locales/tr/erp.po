@@ -7277,6 +7277,9 @@ msgstr "İş bitişini mi unuttunuz?"
 msgid "Format"
 msgstr "Biçim"
 
+msgid "Format can't be displayed — re-upload as JPEG or PNG"
+msgstr ""
+
 msgid "Forward deployed engineer"
 msgstr "Sahadaki mühendis"
 
@@ -7690,6 +7693,9 @@ msgstr ""
 
 msgid "Headers"
 msgstr "Başlıklar"
+
+msgid "HEIC photos can't be displayed in a browser. On iPhone, Settings → Camera → Formats → Most Compatible saves photos as JPEG."
+msgstr ""
 
 msgid "Help"
 msgstr "Yardım"
@@ -15586,6 +15592,9 @@ msgstr "Test Değeri"
 
 msgid "Text size"
 msgstr "Metin boyutu"
+
+msgid "That file isn't an image browsers can display. Use JPEG, PNG, WebP, AVIF or GIF."
+msgstr ""
 
 msgid "That name is already used by another step."
 msgstr "Bu ad başka bir adım tarafından zaten kullanılıyor."

@@ -453,9 +453,31 @@ export async function getJobOperationProcedure(
       .eq("operationId", operationId)
   ]);
 
+  const steps = attributes.data ?? [];
+
+  // 3D model slides carry only a modelUploadId; resolve their render metadata in
+  // one query so BOTH execution views (standard step list and assembly) can paint
+  // them. Without this the standard view silently drops every model slide the
+  // planner attached.
+  const slideModelIds = Array.from(
+    new Set(
+      steps.flatMap((step) =>
+        (step.jobOperationStepSlide ?? []).map((slide) => slide.modelUploadId)
+      )
+    )
+  ).filter((id): id is string => !!id);
+
+  const slideModelUploads =
+    slideModelIds.length > 0
+      ? await getModelUploadsByIds(client, slideModelIds)
+      : null;
+
   return {
-    attributes: attributes.data ?? [],
-    parameters: parameters.data ?? []
+    attributes: steps,
+    parameters: parameters.data ?? [],
+    slideModels: Object.fromEntries(
+      (slideModelUploads?.data ?? []).map((model) => [model.id, model])
+    )
   };
 }
 

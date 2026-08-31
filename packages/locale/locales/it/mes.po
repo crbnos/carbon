@@ -63,6 +63,9 @@ msgstr "{fails} errore(i) campionato(i) registrato(i) e NON sarà(sarranno) comp
 msgid "+{overflow} more"
 msgstr "+{overflow} altri"
 
+msgid "3D model"
+msgstr ""
+
 msgid "About"
 msgstr "Informazioni"
 
@@ -288,6 +291,9 @@ msgstr "Consumato scaduto"
 
 msgid "Continue"
 msgstr "Continua"
+
+msgid "Converting…"
+msgstr ""
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -559,6 +565,9 @@ msgstr "Idee, suggerimenti o problemi?"
 
 msgid "Idle for"
 msgstr "Inattivo per"
+
+msgid "Image format not supported"
+msgstr ""
 
 msgid "Impact"
 msgstr "Impatto"

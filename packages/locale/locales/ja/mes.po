@@ -63,6 +63,9 @@ msgstr "{fails}件のサンプル不良が記録されており、完了され�
 msgid "+{overflow} more"
 msgstr "+{overflow} その他"
 
+msgid "3D model"
+msgstr ""
+
 msgid "About"
 msgstr "バージョン情報"
 
@@ -288,6 +291,9 @@ msgstr "消費期限切れ"
 
 msgid "Continue"
 msgstr "続行"
+
+msgid "Converting…"
+msgstr ""
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -559,6 +565,9 @@ msgstr "アイデア、提案、または問題はありますか？"
 
 msgid "Idle for"
 msgstr "待機時間"
+
+msgid "Image format not supported"
+msgstr ""
 
 msgid "Impact"
 msgstr "影響"

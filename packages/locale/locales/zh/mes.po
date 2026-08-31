@@ -63,6 +63,9 @@ msgstr "{fails} 个抽样不合格已被记录，将不会被完成 — 从操�
 msgid "+{overflow} more"
 msgstr "还有 +{overflow} 个"
 
+msgid "3D model"
+msgstr ""
+
 msgid "About"
 msgstr "关于"
 
@@ -288,6 +291,9 @@ msgstr "已消耗已过期"
 
 msgid "Continue"
 msgstr "继续"
+
+msgid "Converting…"
+msgstr ""
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -559,6 +565,9 @@ msgstr "有想法、建议或问题？"
 
 msgid "Idle for"
 msgstr "闲置时间"
+
+msgid "Image format not supported"
+msgstr ""
 
 msgid "Impact"
 msgstr "影响"

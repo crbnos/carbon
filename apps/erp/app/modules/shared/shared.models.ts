@@ -1,5 +1,5 @@
 import type { Database } from "@carbon/database";
-import { textToTiptap } from "@carbon/utils";
+import { isSupportedSlideImagePath, textToTiptap } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 
@@ -419,6 +419,16 @@ export const operationStepSlideValidator = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "An image or model is required",
+        path: ["imagePath"]
+      });
+    }
+    // The client sniffs the file before uploading, but the storage write is
+    // direct-to-Supabase and this route also serves API-key callers — so the row
+    // gets its own check. A slide the MES can't paint must never be persisted.
+    if (slide.imagePath && !isSupportedSlideImagePath(slide.imagePath)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Unsupported image format. Use JPEG, PNG, WebP, AVIF or GIF.",
         path: ["imagePath"]
       });
     }

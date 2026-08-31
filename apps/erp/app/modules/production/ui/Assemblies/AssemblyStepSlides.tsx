@@ -1,9 +1,13 @@
 import { useCarbon } from "@carbon/auth";
 import { toast } from "@carbon/react";
-import { nanoid } from "nanoid";
+import { useLingui } from "@lingui/react/macro";
 import { useRef, useState } from "react";
 import { useFetcher } from "react-router";
-import { SlidesEditor, uploadStepSlideModel } from "~/components/SlidesEditor";
+import {
+  SlidesEditor,
+  uploadStepSlideImage,
+  uploadStepSlideModel
+} from "~/components/SlidesEditor";
 import { useUser } from "~/hooks";
 import type { SlideAnnotation, SlideSize } from "~/modules/shared";
 import { path } from "~/utils/path";
@@ -27,6 +31,7 @@ export default function AssemblyStepSlides({
   slides: slideRows,
   isDisabled
 }: AssemblyStepSlidesProps) {
+  const { i18n } = useLingui();
   const fetcher = useFetcher();
   const captionFetcher = useFetcher();
   const { carbon } = useCarbon();
@@ -50,18 +55,19 @@ export default function AssemblyStepSlides({
     if (!file || !carbon) return;
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
-      const fileName = `${companyId}/assembly/${instructionId}/${nanoid()}.${ext}`;
-      const result = await carbon.storage
-        .from("private")
-        .upload(fileName, file);
-      if (result.error || !result.data) {
-        toast.error("Failed to upload image");
+      const result = await uploadStepSlideImage(
+        carbon,
+        companyId,
+        file,
+        `assembly/${instructionId}`
+      );
+      if (result.error) {
+        toast.error(i18n._(result.error));
         return;
       }
       const fd = new FormData();
       fd.append("stepId", stepId);
-      fd.append("imagePath", result.data.path);
+      fd.append("imagePath", result.path);
       fd.append("sortOrder", String(nextSortOrder()));
       fetcher.submit(fd, {
         method: "post",

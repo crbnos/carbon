@@ -7277,6 +7277,9 @@ msgstr "कार्य समाप्त करना भूल गए?"
 msgid "Format"
 msgstr "प्रारूप"
 
+msgid "Format can't be displayed — re-upload as JPEG or PNG"
+msgstr ""
+
 msgid "Forward deployed engineer"
 msgstr "अग्रपंक्ति में तैनात इंजीनियर"
 
@@ -7690,6 +7693,9 @@ msgstr ""
 
 msgid "Headers"
 msgstr "हेडर"
+
+msgid "HEIC photos can't be displayed in a browser. On iPhone, Settings → Camera → Formats → Most Compatible saves photos as JPEG."
+msgstr ""
 
 msgid "Help"
 msgstr "मदद"
@@ -15586,6 +15592,9 @@ msgstr "परीक्षण मान"
 
 msgid "Text size"
 msgstr "पाठ आकार"
+
+msgid "That file isn't an image browsers can display. Use JPEG, PNG, WebP, AVIF or GIF."
+msgstr ""
 
 msgid "That name is already used by another step."
 msgstr "वह नाम पहले से ही एक अन्य चरण द्वारा उपयोग किया जा रहा है।"

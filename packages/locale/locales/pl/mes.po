@@ -63,6 +63,9 @@ msgstr "{fails} zarejestrowanych niepowodzeń będzie NIEUKOŃCZONYCH — rozwi�
 msgid "+{overflow} more"
 msgstr "+{overflow} więcej"
 
+msgid "3D model"
+msgstr ""
+
 msgid "About"
 msgstr "O programie"
 
@@ -288,6 +291,9 @@ msgstr "Zużyte wygasłe"
 
 msgid "Continue"
 msgstr "Kontynuuj"
+
+msgid "Converting…"
+msgstr ""
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -559,6 +565,9 @@ msgstr "Pomysły, sugestie czy problemy?"
 
 msgid "Idle for"
 msgstr "Bezczynny przez"
+
+msgid "Image format not supported"
+msgstr ""
 
 msgid "Impact"
 msgstr "Wpływ"

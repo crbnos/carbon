@@ -7277,6 +7277,9 @@ msgstr "Forgot to Clock Out?"
 msgid "Format"
 msgstr "Format"
 
+msgid "Format can't be displayed — re-upload as JPEG or PNG"
+msgstr "Format can't be displayed — re-upload as JPEG or PNG"
+
 msgid "Forward deployed engineer"
 msgstr "Forward deployed engineer"
 
@@ -7690,6 +7693,9 @@ msgstr "Has operations that can't be scheduled"
 
 msgid "Headers"
 msgstr "Headers"
+
+msgid "HEIC photos can't be displayed in a browser. On iPhone, Settings → Camera → Formats → Most Compatible saves photos as JPEG."
+msgstr "HEIC photos can't be displayed in a browser. On iPhone, Settings → Camera → Formats → Most Compatible saves photos as JPEG."
 
 msgid "Help"
 msgstr "Help"
@@ -15586,6 +15592,9 @@ msgstr "Test Value"
 
 msgid "Text size"
 msgstr "Text size"
+
+msgid "That file isn't an image browsers can display. Use JPEG, PNG, WebP, AVIF or GIF."
+msgstr "That file isn't an image browsers can display. Use JPEG, PNG, WebP, AVIF or GIF."
 
 msgid "That name is already used by another step."
 msgstr "That name is already used by another step."
