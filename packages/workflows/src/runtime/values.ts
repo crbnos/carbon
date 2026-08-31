@@ -2,9 +2,11 @@ import { MAX_LIST_ITEMS } from "../definition/schema";
 import type {
   Literal,
   PrimitiveKind,
+  RecordType,
   ScalarType,
   ValueType
 } from "../definition/types";
+import { assertNever } from "../definition/types";
 import type { RuntimeValue } from "./types";
 
 export function primitiveValue(
@@ -61,41 +63,67 @@ export function isNull(value: RuntimeValue): boolean {
   return value.kind === "primitive" && value.value === null;
 }
 
+export function recordValue(
+  of: RecordType,
+  fields: Record<string, RuntimeValue>
+): RuntimeValue {
+  return { kind: "record", of, fields };
+}
+
 /** Coerces a raw database column value against its catalog type; anything unusable is null. */
 export function fromColumn(type: ValueType, raw: unknown): RuntimeValue {
-  if (type.kind === "list") {
-    if (!Array.isArray(raw)) return { kind: "list", of: type.of, items: [] };
-    return listValue(
-      type.of,
-      raw.map((entry) => fromColumn(type.of, entry))
-    ).value;
-  }
-
-  if (raw === null || raw === undefined) return nullValue();
-
-  if (type.kind === "entity") {
-    return raw === "" ? nullValue() : entityValue(type.of, String(raw));
-  }
-
-  switch (type.of) {
-    case "date": {
-      const parsed = new Date(raw as string);
-      return Number.isNaN(parsed.getTime())
-        ? nullValue()
-        : primitiveValue("date", parsed.toISOString());
+  switch (type.kind) {
+    case "list": {
+      if (!Array.isArray(raw)) return { kind: "list", of: type.of, items: [] };
+      return listValue(
+        type.of,
+        raw.map((entry) => fromColumn(type.of, entry))
+      ).value;
     }
-    case "number": {
-      const parsed = Number(raw);
-      return Number.isFinite(parsed)
-        ? primitiveValue("number", parsed)
-        : nullValue();
+    case "entity": {
+      if (raw === null || raw === undefined) return nullValue();
+      return raw === "" ? nullValue() : entityValue(type.of, String(raw));
     }
-    case "boolean":
-      return primitiveValue("boolean", Boolean(raw));
-    case "string":
-      return primitiveValue("string", String(raw));
-    case "null":
-      return nullValue();
+    case "record": {
+      // Driven by the DECLARED fields, not the raw object's keys, so a vendor
+      // sending something extra cannot smuggle it into a typed value. A field the
+      // response omits becomes null rather than absent, which is what lets a walk
+      // into it answer "nothing" instead of failing.
+      const source =
+        raw !== null && typeof raw === "object" && !Array.isArray(raw)
+          ? (raw as Record<string, unknown>)
+          : {};
+      const fields: Record<string, RuntimeValue> = {};
+      for (const [name, fieldType] of Object.entries(type.fields)) {
+        fields[name] = fromColumn(fieldType, source[name]);
+      }
+      return recordValue(type, fields);
+    }
+    case "primitive": {
+      if (raw === null || raw === undefined) return nullValue();
+      switch (type.of) {
+        case "date": {
+          const parsed = new Date(raw as string);
+          return Number.isNaN(parsed.getTime())
+            ? nullValue()
+            : primitiveValue("date", parsed.toISOString());
+        }
+        case "number": {
+          const parsed = Number(raw);
+          return Number.isFinite(parsed)
+            ? primitiveValue("number", parsed)
+            : nullValue();
+        }
+        case "boolean":
+          return primitiveValue("boolean", Boolean(raw));
+        case "string":
+          return primitiveValue("string", String(raw));
+        case "null":
+          return nullValue();
+      }
+    }
+    default:
+      return assertNever(type);
   }
 }
 

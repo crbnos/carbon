@@ -485,6 +485,52 @@ describe("validateCatalogInputs", () => {
     expect(problems.join("\n")).toMatch(/names entity "nobody"/);
   });
 
+  it("refuses a record-typed input on an action and on an integration step", () => {
+    const recordType = {
+      kind: "record" as const,
+      fields: { summary: { kind: "primitive" as const, of: "string" as const } }
+    };
+    const problems = validateCatalogInputs(
+      {},
+      {},
+      {
+        notify: {
+          label: "Notify",
+          permission: { module: "users", action: "view" },
+          call: "notify",
+          inputs: {
+            payload: { type: recordType, required: true, label: "Payload" }
+          },
+          outputs: {},
+          batchable: false
+        }
+      },
+      {},
+      schema,
+      {
+        "integration.x.y": {
+          label: "X: Y",
+          permission: { module: "workflows", action: "update" },
+          // A LIST of objects is refused for the same reason a single one is.
+          inputs: {
+            rows: {
+              type: { kind: "list", of: recordType },
+              required: false,
+              label: "Rows"
+            }
+          },
+          outputs: {},
+          batchable: false,
+          piece: { name: "x", action: "y", label: "X" }
+        }
+      }
+    );
+    expect(problems).toEqual([
+      "notify.payload is an object, which cannot be filled in by a person.",
+      "integration.x.y.rows is an object, which cannot be filled in by a person."
+    ]);
+  });
+
   it("returns nothing for the real hand-written inputs", () => {
     expect(
       validateCatalogInputs(

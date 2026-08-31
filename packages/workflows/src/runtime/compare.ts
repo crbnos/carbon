@@ -1,5 +1,6 @@
 import type { Operator } from "@carbon/utils";
 import type { Clause, Combinator } from "../definition/types";
+import { assertNever } from "../definition/types";
 import { resolveValue } from "./resolve";
 import type { ClauseEvaluation, RuntimeContext, RuntimeValue } from "./types";
 import { isNull } from "./values";
@@ -19,18 +20,29 @@ function orderable(value: RuntimeValue): number | undefined {
 }
 
 function equals(left: RuntimeValue, right: RuntimeValue): boolean {
-  if (left.kind === "entity") {
-    return (
-      right.kind === "entity" && left.of === right.of && left.id === right.id
-    );
+  switch (left.kind) {
+    case "entity":
+      return (
+        right.kind === "entity" && left.of === right.of && left.id === right.id
+      );
+    case "primitive": {
+      if (right.kind !== "primitive") return false;
+      if (left.of === "date" || right.of === "date") {
+        const a = orderable(left);
+        const b = orderable(right);
+        return a !== undefined && a === b;
+      }
+      return left.value === right.value;
+    }
+    // Lists, rows and objects have no equality worth defining. `operatorsForType`
+    // offers none for a record, and `contains` on a list compares ELEMENTS, not wholes.
+    case "list":
+    case "pairs":
+    case "record":
+      return false;
+    default:
+      return assertNever(left);
   }
-  if (left.kind !== "primitive" || right.kind !== "primitive") return false;
-  if (left.of === "date" || right.of === "date") {
-    const a = orderable(left);
-    const b = orderable(right);
-    return a !== undefined && a === b;
-  }
-  return left.value === right.value;
 }
 
 /** `contains`/`startsWith`/`endsWith` ignore case; `eq`/`neq` do not. */

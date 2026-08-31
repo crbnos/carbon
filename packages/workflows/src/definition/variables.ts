@@ -290,7 +290,12 @@ export function variablesFromHandle(
           name: "probe",
           type: "filter",
           position: { x: 0, y: 0 },
-          data: { combinator: "and", clauses: [] }
+          data: {
+            combinator: "and",
+            clauses: [],
+            operation: "filter",
+            flatten: false
+          }
         }
       ],
       edges: [

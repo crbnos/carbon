@@ -22,6 +22,12 @@ export {
   isMultiSelect,
   walkPath
 } from "./definition/catalog";
+export {
+  DATA_OPERATIONS,
+  type DataOperation,
+  type DataOperationSpec,
+  operationOf
+} from "./definition/data-operations";
 export type { WorkflowIssue, WorkflowIssueCode } from "./definition/issues";
 export { REFERENCE_ISSUE_CODES } from "./definition/issues";
 export {

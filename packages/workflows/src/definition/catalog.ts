@@ -122,6 +122,9 @@ export function integrationAppLabelKey(piece: string): string {
 export interface CatalogIntegration {
   id: string;
   inputs: Record<string, CatalogInput>;
+  /** Inputs hidden from the ordinary form and shown only under Advanced. Separate
+   * from `inputs` so nothing validating required fields can demand one. */
+  advancedInputs?: Record<string, CatalogInput>;
   outputs: Record<string, ValueType>;
   batchable: boolean;
   permission: RequiredPermission;
@@ -171,6 +174,13 @@ export function walkPath(
 ): ValueType | undefined {
   let current = type;
   for (const segment of path) {
+    // A record carries its own fields, so it needs no catalog lookup.
+    if (current.kind === "record") {
+      const next = current.fields[segment];
+      if (next === undefined) return undefined;
+      current = next;
+      continue;
+    }
     if (current.kind !== "entity") return undefined;
     const entity = catalog.getEntity(current.of);
     if (entity === undefined) return undefined;

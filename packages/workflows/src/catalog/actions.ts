@@ -47,6 +47,10 @@ export interface IntegrationDeclarationLike
   extends Omit<ActionDeclarationLike, "call" | "update"> {
   /** `label` is the APP's own name — see `integrationAppLabelKey`. */
   piece: { name: string; action: string; label: string };
+  /** Inputs a person does not see by default — vendor API trivia, or a value we
+   * pin. Kept apart from `inputs` so the validator never demands one; the builder
+   * renders them under Advanced, so a hidden field is demoted, never lost. */
+  advancedInputs?: ActionDeclarationLike["inputs"];
 }
 
 /** Identity helper, so each entry's shape is checked where it is written. */

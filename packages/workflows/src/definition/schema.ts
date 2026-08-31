@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { dataOperationSchema } from "./data-operations";
 import {
   clauseSchema,
   combinatorSchema,
@@ -83,13 +84,23 @@ const lookupNode = z.object({
   })
 });
 
+/** The data node. Still typed `"filter"`: every saved workflow holds that literal,
+ * and `operation` defaults to `"filter"`, so a node stored before this existed
+ * parses and behaves exactly as it did — no format bump, no migration. */
 const filterNode = z.object({
   ...nodeBase,
   type: z.literal("filter"),
   data: z.object({
     source: variableRefSchema.optional(),
     combinator: combinatorSchema.default("and"),
-    clauses: z.array(clauseSchema).default([])
+    clauses: z.array(clauseSchema).default([]),
+    operation: dataOperationSchema.default("filter"),
+    /** `pluck` only: a dotted path to the field projected off each item. */
+    field: z.string().optional(),
+    /** `pluck` only: flatten a list-valued field into ONE list, since
+     * `list<list<T>>` is unrepresentable. Off by default so a node never stores a
+     * flag that means nothing; the builder sets it when the field is a list. */
+    flatten: z.boolean().default(false)
   })
 });
 

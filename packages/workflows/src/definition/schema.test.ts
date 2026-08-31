@@ -61,6 +61,48 @@ describe("node defaults", () => {
     expect(parsed.data.origin).toBe("Both");
   });
 
+  // The data node was widened in place rather than renamed, so a filter node saved
+  // before `operation` existed must still parse AND behave identically — that is
+  // what lets this ship with no format bump and no migration.
+  it("reads a filter node saved before the data operations existed", () => {
+    const parsed = nodeSchema.parse({
+      id: "n3",
+      name: "filter_0",
+      type: "filter",
+      position: { x: 0, y: 0 },
+      data: {
+        source: { kind: "ref", nodeId: "t1", output: "record", path: [] },
+        combinator: "or",
+        clauses: []
+      }
+    });
+    if (parsed.type !== "filter") throw new Error("expected a filter node");
+    expect(parsed.data.operation).toBe("filter");
+    // Off by default: a stored `flatten` on a non-pluck node would mean nothing.
+    expect(parsed.data.flatten).toBe(false);
+    expect(parsed.data.field).toBeUndefined();
+    // Everything it DID carry survives untouched.
+    expect(parsed.data.combinator).toBe("or");
+    expect(parsed.data.source).toEqual({
+      kind: "ref",
+      nodeId: "t1",
+      output: "record",
+      path: []
+    });
+  });
+
+  it("refuses an operation the data node does not offer", () => {
+    const parse = () =>
+      nodeSchema.parse({
+        id: "n4",
+        name: "filter_1",
+        type: "filter",
+        position: { x: 0, y: 0 },
+        data: { combinator: "and", clauses: [], operation: "sum" }
+      });
+    expect(parse).toThrow();
+  });
+
   // Repeating used to be a stored flag, and rows written then still carry it. Reading
   // one has to drop it rather than fail, or those workflows become unopenable.
   it("drops the batch flag an older row still carries", () => {

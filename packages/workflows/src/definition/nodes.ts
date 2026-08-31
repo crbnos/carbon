@@ -4,6 +4,7 @@ import {
   integrationStepId,
   type WorkflowCatalog
 } from "./catalog";
+import { dataNodeKind } from "./data-node";
 import type { WorkflowIssue } from "./issues";
 import {
   type ActionNode,
@@ -11,7 +12,6 @@ import {
   DEFAULT_HANDLE,
   DEFAULT_OUTPUT,
   FAILURE_HANDLE,
-  type FilterNode,
   type IntegrationNode,
   SUCCESS_HANDLE,
   type WorkflowNode,
@@ -75,7 +75,7 @@ export interface NodeContext {
 }
 
 /** Everything one kind of node declares about itself. */
-interface NodeKind<N extends WorkflowNode> {
+export interface NodeKind<N extends WorkflowNode> {
   /** Outgoing connection points, by name. */
   handles(node: N): string[];
   values(node: N): ValueSite[];
@@ -89,7 +89,7 @@ interface NodeKind<N extends WorkflowNode> {
   checkConfig(node: N, ctx: NodeContext): WorkflowIssue[];
 }
 
-function clauseValues(clauses: Clause[], prefix: string): ValueSite[] {
+export function clauseValues(clauses: Clause[], prefix: string): ValueSite[] {
   return clauses.flatMap((clause, index) => [
     { value: clause.left, field: `${prefix}.${index}.left` },
     ...(clause.right === undefined
@@ -99,7 +99,7 @@ function clauseValues(clauses: Clause[], prefix: string): ValueSite[] {
 }
 
 /** A draft may save a clause with no right-hand side; publishing one may not. */
-function clauseConfigIssues(
+export function clauseConfigIssues(
   node: WorkflowNode,
   clauses: Clause[],
   prefix: string
@@ -119,16 +119,6 @@ function clauseConfigIssues(
 
 function inputValues(inputs: Record<string, ValueOrRef>): ValueSite[] {
   return Object.entries(inputs).map(([field, value]) => ({ value, field }));
-}
-
-/** A bad source is reported by the filter's own `checkTypes`/`checkConfig`. */
-function filterLoopList(node: FilterNode, ctx: NodeContext): LoopList {
-  if (node.data.source === undefined) return { failure: "unconfigured" };
-  const source = ctx.resolveValue(node.data.source, node.id);
-  if ("type" in source && source.type.kind === "list") {
-    return { type: source.type };
-  }
-  return { failure: "unconfigured" };
 }
 
 /** The first operation input wired to a list where the operation expects a single value.
@@ -190,7 +180,7 @@ function stepLoopList(
     : { failure: "unconfigured" };
 }
 
-function checkClauses(
+export function checkClauses(
   node: WorkflowNode,
   clauses: Clause[],
   prefix: string,
@@ -405,7 +395,7 @@ function checkInputs(
   return issues;
 }
 
-const incomplete = (
+export const incomplete = (
   node: WorkflowNode,
   field: string,
   message: string
@@ -661,42 +651,7 @@ export const NODE_KINDS: {
     }
   },
 
-  filter: {
-    handles: () => [DEFAULT_HANDLE],
-    values: (node) => [
-      ...(node.data.source === undefined
-        ? []
-        : [{ value: node.data.source, field: "source" }]),
-      ...clauseValues(node.data.clauses, "clauses")
-    ],
-    outputs: (node, ctx) => {
-      const list = filterLoopList(node, ctx);
-      return "type" in list ? { [DEFAULT_OUTPUT]: list.type } : undefined;
-    },
-    loopList: filterLoopList,
-    // A filter has no catalog entry to be missing.
-    configured: () => true,
-    checkTypes: (node, ctx) => {
-      if (node.data.source === undefined) return [];
-      const source = ctx.typeOf(node.data.source, node.id);
-      if (source === undefined) return [];
-      if (source.kind !== "list") {
-        return [
-          {
-            code: "TYPE_MISMATCH",
-            nodeId: node.id,
-            field: "source",
-            message: `A filter works through a list, but this is ${describeType(source)}.`
-          }
-        ];
-      }
-      return checkClauses(node, node.data.clauses, "clauses", ctx);
-    },
-    checkConfig: (node) =>
-      node.data.source === undefined
-        ? [incomplete(node, "source", "Choose the list to filter.")]
-        : clauseConfigIssues(node, node.data.clauses, "clauses")
-  },
+  filter: dataNodeKind,
 
   action: {
     handles: () => [SUCCESS_HANDLE, FAILURE_HANDLE],
@@ -766,7 +721,16 @@ export const NODE_KINDS: {
       const step = stepDefinition(node, ctx);
       if (step === undefined) return [];
       const batching = stepBatchPlan(node, ctx).kind !== "none";
-      return checkInputs(node, node.data.inputs, step.inputs, batching, ctx);
+      // Advanced inputs write into the SAME `inputs` bag, so validating only the
+      // visible ones let an off-enum choice or a mistyped ref reach the vendor
+      // with no issue raised in the builder.
+      return checkInputs(
+        node,
+        node.data.inputs,
+        { ...step.inputs, ...step.advancedInputs },
+        batching,
+        ctx
+      );
     },
     checkConfig: (node, ctx) => {
       if (node.data.piece.length === 0) {

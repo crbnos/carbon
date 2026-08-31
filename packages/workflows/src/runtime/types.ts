@@ -7,6 +7,7 @@ import type { WorkflowNode } from "../definition/schema";
 import type {
   Combinator,
   PrimitiveKind,
+  RecordType,
   ScalarType
 } from "../definition/types";
 
@@ -20,6 +21,10 @@ export type RuntimeValue =
   // `row` holds a snapshot the loader cannot produce: "before" shares its id with "after".
   | { kind: "entity"; of: string; id: string; row?: Record<string, unknown> }
   | { kind: "list"; of: ScalarType; items: RuntimeValue[] }
+  /** An object, with its data in hand. Carries `of` so a walk knows each field's
+   * declared type without a catalog lookup — records are structural and registered
+   * nowhere. Reading a field never touches the loader. */
+  | { kind: "record"; of: RecordType; fields: Record<string, RuntimeValue> }
   /** Named rows, resolved. Runtime only — nothing declares it as a `ValueType`, so it is
    * never compared, looped over, or produced as a step output. It exists so a resolved
    * header set stays recognisable to the log redactor. */

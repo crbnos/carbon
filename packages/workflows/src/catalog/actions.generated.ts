@@ -385,17 +385,52 @@ export const WORKFLOW_INTEGRATION_CATALOG: Record<string, BuiltIntegration> = {
         type: { kind: "primitive", of: "boolean" },
         required: false
       },
-      send_notifications: {
-        type: { kind: "primitive", of: "string" },
-        required: true,
-        choices: ["all", "externalOnly", "none"]
-      },
       create_meet_link: {
         type: { kind: "primitive", of: "boolean" },
         required: false
       }
     },
-    outputs: { result: { kind: "primitive", of: "string" } },
+    advancedInputs: {
+      send_notifications: {
+        type: { kind: "primitive", of: "string" },
+        required: false,
+        choices: ["all", "externalOnly", "none"]
+      }
+    },
+    outputs: {
+      summary: { kind: "primitive", of: "string" },
+      status: { kind: "primitive", of: "string" },
+      htmlLink: { kind: "primitive", of: "string" },
+      id: { kind: "primitive", of: "string" },
+      eventType: { kind: "primitive", of: "string" },
+      start: {
+        kind: "record",
+        fields: {
+          dateTime: { kind: "primitive", of: "date" },
+          timeZone: { kind: "primitive", of: "string" }
+        }
+      },
+      end: {
+        kind: "record",
+        fields: {
+          dateTime: { kind: "primitive", of: "date" },
+          timeZone: { kind: "primitive", of: "string" }
+        }
+      },
+      creator: {
+        kind: "record",
+        fields: { email: { kind: "primitive", of: "string" } }
+      },
+      organizer: {
+        kind: "record",
+        fields: { email: { kind: "primitive", of: "string" } }
+      },
+      created: { kind: "primitive", of: "date" },
+      updated: { kind: "primitive", of: "date" },
+      iCalUID: { kind: "primitive", of: "string" },
+      count: { kind: "primitive", of: "number" },
+      result: { kind: "primitive", of: "string" }
+    },
     batchable: false,
     permission: { module: "workflows", action: "update" },
     piece: { name: "google-calendar", action: "create_google_calendar_event" }
@@ -423,20 +458,50 @@ export const WORKFLOW_INTEGRATION_CATALOG: Record<string, BuiltIntegration> = {
           dependsOn: ["connectionId"]
         }
       },
-      event_types: {
-        type: { kind: "list", of: { kind: "primitive", of: "string" } },
-        required: true,
-        choices: ["default", "outOfOffice", "focusTime", "workingLocation"]
-      },
       search: { type: { kind: "primitive", of: "string" }, required: false },
       start_date: { type: { kind: "primitive", of: "date" }, required: false },
-      end_date: { type: { kind: "primitive", of: "date" }, required: false },
+      end_date: { type: { kind: "primitive", of: "date" }, required: false }
+    },
+    advancedInputs: {
+      event_types: {
+        type: { kind: "list", of: { kind: "primitive", of: "string" } },
+        required: false,
+        choices: ["default", "outOfOffice", "focusTime", "workingLocation"]
+      },
       singleEvents: {
         type: { kind: "primitive", of: "boolean" },
-        required: true
+        required: false
       }
     },
-    outputs: { result: { kind: "primitive", of: "string" } },
+    outputs: {
+      status: { kind: "primitive", of: "string" },
+      summary: { kind: "primitive", of: "string" },
+      timeZone: { kind: "primitive", of: "string" },
+      accessRole: { kind: "primitive", of: "string" },
+      updated: { kind: "primitive", of: "date" },
+      items: {
+        kind: "list",
+        of: {
+          kind: "record",
+          fields: {
+            summary: { kind: "primitive", of: "string" },
+            status: { kind: "primitive", of: "string" },
+            id: { kind: "primitive", of: "string" },
+            eventType: { kind: "primitive", of: "string" },
+            htmlLink: { kind: "primitive", of: "string" },
+            startDateTime: { kind: "primitive", of: "date" },
+            endDateTime: { kind: "primitive", of: "date" },
+            creatorEmail: { kind: "primitive", of: "string" },
+            organizerEmail: { kind: "primitive", of: "string" },
+            created: { kind: "primitive", of: "date" },
+            updated: { kind: "primitive", of: "date" },
+            iCalUID: { kind: "primitive", of: "string" }
+          }
+        }
+      },
+      count: { kind: "primitive", of: "number" },
+      result: { kind: "primitive", of: "string" }
+    },
     batchable: false,
     permission: { module: "workflows", action: "update" },
     piece: { name: "google-calendar", action: "google_calendar_get_events" }

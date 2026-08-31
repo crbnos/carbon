@@ -10,6 +10,7 @@ import {
   fromColumn,
   fromLiteral,
   isNull,
+  nullValue,
   pairsValue,
   primitiveValue
 } from "./values";
@@ -50,8 +51,9 @@ export function renderValue(value: RuntimeValue): string {
   if (value.kind === "list") return value.items.map(renderValue).join(", ");
   if (value.kind === "entity")
     return pickDisplay(value.row, INLINE_ENTITY_COLUMNS) ?? value.id;
-  // Rows have no reading as a sentence; nothing writes one into text.
-  if (value.kind === "pairs") return "";
+  // Neither rows nor objects have a reading as a sentence, and `rendersAsText`
+  // keeps both out of a template — this is the belt to that suspenders.
+  if (value.kind === "pairs" || value.kind === "record") return "";
   return value.value === null ? "" : String(value.value);
 }
 
@@ -64,7 +66,12 @@ async function entityText(
   value: Extract<RuntimeValue, { kind: "entity" }>,
   ctx: RuntimeContext
 ): Promise<string> {
-  const columns = ctx.catalog.getEntity(value.of)?.display ?? [];
+  // The catalog's own display columns first, then the conventional ones: an entity
+  // that declares none still reads by the name it carries rather than by its id.
+  const columns = [
+    ...(ctx.catalog.getEntity(value.of)?.display ?? []),
+    ...INLINE_ENTITY_COLUMNS
+  ];
   return (
     pickDisplay(value.row, columns) ??
     pickDisplay(await ctx.loader.load(value.of, value.id), columns) ??
@@ -77,7 +84,7 @@ async function entityText(
  * where it lives. Every other value renders exactly as `renderValue` does — a LIST of
  * records never reaches here, because `rendersAsText` refuses one as a template part.
  */
-async function renderPart(
+export async function renderPart(
   value: RuntimeValue,
   ctx: RuntimeContext,
   linkFor?: (of: string, id: string) => string | null
@@ -161,7 +168,7 @@ export async function resolveItem(
 }
 
 /** A null anywhere along the path ends the walk as null rather than failing. */
-async function walk(
+export async function walk(
   start: RuntimeValue,
   path: string[],
   ctx: RuntimeContext
@@ -170,6 +177,14 @@ async function walk(
 
   for (const segment of path) {
     if (isNull(current)) return { ok: true, value: current };
+
+    // A record holds its data inline, so there is nothing to load. A field the
+    // vendor did not send reads as null rather than failing the step — the schema
+    // it was declared from is the vendor's, and nothing validates it.
+    if (current.kind === "record") {
+      current = current.fields[segment] ?? nullValue();
+      continue;
+    }
 
     if (current.kind !== "entity") {
       return {

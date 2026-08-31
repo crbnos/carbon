@@ -123,6 +123,8 @@ export interface BuiltIntegration
   /** Which piece, and which of its actions. The app's display name lives in the
    * label map instead, so it is not repeated on every step. */
   piece: { name: string; action: string };
+  /** Hidden inputs, rendered only under the node's Advanced section. */
+  advancedInputs?: Record<string, BuiltActionInput>;
 }
 
 export interface BuiltOperation {
@@ -467,8 +469,30 @@ export function validateCatalogInputs(
     ) {
       problems.push(`Action "${id}" has no implementation route.`);
     }
-    for (const [input, spec] of Object.entries(declaration.inputs)) {
+    // Advanced inputs are hidden in the form but land in the same `inputs` bag at
+    // run time, so they get every structural check the visible ones get. Only the
+    // required/`requireOneOf` rules are inapplicable — and this loop has none.
+    const declaredInputs: Record<
+      string,
+      ActionDeclarationLike["inputs"][string]
+    > = {
+      ...declaration.inputs,
+      ...(declaration as IntegrationDeclarationLike).advancedInputs
+    };
+    for (const [input, spec] of Object.entries(declaredInputs)) {
       checkEntityType(`${kind} "${id}"`, `input "${input}"`, spec.type);
+      // An object is a step's OUTPUT, never something a person fills in: there is
+      // no field that could edit one, and no literal that could hold one. Refusing
+      // it here is what keeps every existing form, template and condition free of
+      // a record case.
+      if (
+        spec.type.kind === "record" ||
+        (spec.type.kind === "list" && spec.type.of.kind === "record")
+      ) {
+        problems.push(
+          `${id}.${input} is an object, which cannot be filled in by a person.`
+        );
+      }
       if (
         spec.template === true &&
         !(spec.type.kind === "primitive" && spec.type.of === "string")
@@ -516,14 +540,14 @@ export function validateCatalogInputs(
         );
       }
       for (const dependency of spec.options?.dependsOn ?? []) {
-        if (declaration.inputs[dependency] !== undefined) continue;
+        if (declaredInputs[dependency] !== undefined) continue;
         problems.push(
           `${id}.${input} fetches its values using "${dependency}", which is not an input of "${id}".`
         );
       }
       const gate = spec.showWhen;
       if (gate !== undefined) {
-        const target = declaration.inputs[gate.input];
+        const target = declaredInputs[gate.input];
         if (target === undefined) {
           problems.push(
             `${id}.${input} is shown when "${gate.input}" is set, but that is not an input of "${id}".`
@@ -781,6 +805,16 @@ export function buildCatalog(
     const { name, action, label: appLabel } = declaration.piece;
     integrations[id] = {
       inputs: buildDeclaredInputs(id, declaration, registry, schema),
+      ...(declaration.advancedInputs === undefined
+        ? {}
+        : {
+            advancedInputs: buildDeclaredInputs(
+              id,
+              { ...declaration, inputs: declaration.advancedInputs },
+              registry,
+              schema
+            )
+          }),
       outputs: declaration.outputs,
       batchable: declaration.batchable,
       permission: declaration.permission,

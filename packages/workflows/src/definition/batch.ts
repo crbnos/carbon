@@ -6,6 +6,9 @@ type ListType = Extract<ValueType, { kind: "list" }>;
 /** All batching needs of a step — an action or an integration step alike. */
 export type BatchableStep = {
   inputs: Record<string, CatalogInput>;
+  /** Hidden behind the form's Advanced section, but written into the same `inputs`
+   * bag — so every check the visible ones get, these need too. */
+  advancedInputs?: Record<string, CatalogInput>;
   batchable: boolean;
 };
 

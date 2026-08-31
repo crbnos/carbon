@@ -10,20 +10,59 @@ export const primitiveKindSchema = z.enum([
 ]);
 export type PrimitiveKind = z.infer<typeof primitiveKindSchema>;
 
-/** A single-item type: a primitive, or a reference to a record type. */
-export const scalarTypeSchema = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("primitive"), of: primitiveKindSchema }),
-  z.object({ kind: z.literal("entity"), of: z.string() })
-]);
-export type ScalarType = z.infer<typeof scalarTypeSchema>;
+/**
+ * A bag of named fields — Carbon's object type.
+ *
+ * Deliberately NOT an `entity`: an entity has a table, an id, a permission module
+ * and a loader that fetches its row. A record has none of those. It is data a step
+ * already holds (a vendor's JSON), so its fields travel with the value and reading
+ * one never touches the database.
+ *
+ * Structural rather than named: the type carries its own fields, so nothing is
+ * registered anywhere and a saved workflow can never reference a shape that
+ * vanished. Records are legal only as node OUTPUTS and inside the data node — never
+ * as a catalog input, a stored literal, a template part or a condition operand.
+ */
+export interface RecordType {
+  kind: "record";
+  fields: Record<string, ValueType>;
+}
+
+/** A single-item type: a primitive, an entity reference, or an object. */
+export type ScalarType =
+  | { kind: "primitive"; of: PrimitiveKind }
+  | { kind: "entity"; of: string }
+  | RecordType;
 
 /** A list's `of` accepts only scalars, so `list<list<T>>` is unrepresentable. */
-export const valueTypeSchema = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("primitive"), of: primitiveKindSchema }),
-  z.object({ kind: z.literal("entity"), of: z.string() }),
-  z.object({ kind: z.literal("list"), of: scalarTypeSchema })
-]);
-export type ValueType = z.infer<typeof valueTypeSchema>;
+export type ValueType = ScalarType | { kind: "list"; of: ScalarType };
+
+// The schemas are annotated and built with `z.lazy` because `RecordType` is
+// recursive, and a lazy member cannot sit inside `z.discriminatedUnion` — hence
+// `z.union` here. The explicit `z.ZodType<…>` annotations keep TypeScript from
+// inferring through the recursion, which is what would otherwise risk TS2589 in
+// `apps/erp` (see packages/workflows/AGENTS.md).
+export const recordTypeSchema: z.ZodType<RecordType> = z.lazy(() =>
+  z.object({
+    kind: z.literal("record"),
+    fields: z.record(z.string(), valueTypeSchema)
+  })
+);
+
+export const scalarTypeSchema: z.ZodType<ScalarType> = z.lazy(() =>
+  z.union([
+    z.object({ kind: z.literal("primitive"), of: primitiveKindSchema }),
+    z.object({ kind: z.literal("entity"), of: z.string() }),
+    recordTypeSchema
+  ])
+);
+
+export const valueTypeSchema: z.ZodType<ValueType> = z.lazy(() =>
+  z.union([
+    scalarTypeSchema,
+    z.object({ kind: z.literal("list"), of: scalarTypeSchema })
+  ])
+);
 
 /** The canonical `ValueType` constructors; prefer these over inline literals. */
 export const t = {
@@ -32,18 +71,46 @@ export const t = {
   boolean: { kind: "primitive", of: "boolean" },
   date: { kind: "primitive", of: "date" },
   entity: (of: string): ValueType => ({ kind: "entity", of }),
-  list: (of: ScalarType): ValueType => ({ kind: "list", of })
+  list: (of: ScalarType): ValueType => ({ kind: "list", of }),
+  record: (fields: Record<string, ValueType>): ValueType => ({
+    kind: "record",
+    fields
+  })
 } as const satisfies Record<
   string,
   ValueType | ((...args: never[]) => ValueType)
 >;
 
+/**
+ * Compile-time exhaustiveness for a dispatch over a value's `kind`.
+ *
+ * The kind chains in this package are `if`/`else` rather than `switch`, so a new
+ * `ValueType` or `RuntimeValue` member falls through them silently — passing both
+ * typecheck and tests while doing nothing. Ending a dispatch here turns that into
+ * a type error at the site that forgot the member.
+ */
+export function assertNever(value: never): never {
+  throw new Error(`Unhandled kind: ${JSON.stringify(value)}`);
+}
+
 export function typesEqual(a: ValueType, b: ValueType): boolean {
-  if (a.kind === "list" && b.kind === "list") {
-    return a.of.kind === b.of.kind && a.of.of === b.of.of;
-  }
+  // Recursive rather than comparing `of.of`: a record has no `of`, so the old
+  // shorthand read `undefined === undefined` and called two different record
+  // lists equal.
+  if (a.kind === "list" && b.kind === "list") return typesEqual(a.of, b.of);
   if (a.kind === "primitive" && b.kind === "primitive") return a.of === b.of;
   if (a.kind === "entity" && b.kind === "entity") return a.of === b.of;
+  if (a.kind === "record" && b.kind === "record") {
+    const names = Object.keys(a.fields);
+    if (names.length !== Object.keys(b.fields).length) return false;
+    return names.every((name) => {
+      const left = a.fields[name];
+      const right = b.fields[name];
+      return (
+        left !== undefined && right !== undefined && typesEqual(left, right)
+      );
+    });
+  }
   return false;
 }
 
@@ -83,12 +150,21 @@ export function expectedClauseRightType(
  * entity part is never a list.
  */
 export function rendersAsText(type: ValueType): boolean {
-  return type.kind !== "list" || type.of.kind !== "entity";
+  // An object has no reading in a sentence — the field the author meant is one hop
+  // further in — so it is kept out of every template the same way a list of records is.
+  if (type.kind === "record") return false;
+  if (type.kind !== "list") return true;
+  return type.of.kind !== "entity" && type.of.kind !== "record";
 }
 
 /** Customer-facing rendering of a type, for issue messages. */
 export function describeType(type: ValueType): string {
-  if (type.kind === "list") return `a list of ${type.of.of}`;
+  if (type.kind === "record") return "an object";
+  if (type.kind === "list") {
+    return type.of.kind === "record"
+      ? "a list of objects"
+      : `a list of ${type.of.of}`;
+  }
   if (type.of === "null") return "nothing";
   return `a ${type.of}`;
 }
@@ -113,7 +189,12 @@ export const operatorSchema = z.enum(WORKFLOW_OPERATORS);
 
 export function operatorsForType(type: ValueType): readonly Operator[] {
   if (type.kind === "primitive") return OPERATORS_BY_TYPE[type.of];
-  if (type.kind === "list") return OPERATORS_BY_TYPE.list;
+  // Objects are not comparable: `equals` has no reading for one, so `contains` on a
+  // list of them would silently never match. Reach into a field and compare that.
+  if (type.kind === "record") return [];
+  if (type.kind === "list") {
+    return type.of.kind === "record" ? [] : OPERATORS_BY_TYPE.list;
+  }
   return OPERATORS_BY_TYPE.entity;
 }
 
@@ -179,6 +260,9 @@ export const pairsSchema = z.object({
 export type Pairs = z.infer<typeof pairsSchema>;
 
 function scalarValueMatches(type: ScalarType, value: unknown): boolean {
+  // A record is never a literal — it only ever arrives as a step's output — so no
+  // stored value may claim to be one.
+  if (type.kind === "record") return false;
   if (type.kind === "entity") return typeof value === "string";
   switch (type.of) {
     case "boolean":
