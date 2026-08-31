@@ -20,6 +20,35 @@ import { path } from "~/utils/path";
 import { CustodyStatus } from "./RepairOrderStatus";
 import type { RepairOrderLine } from "./types";
 
+/**
+ * Coverage, not registration. "In warranty" used to mean only that a
+ * registration was attached at intake, so a lapsed unit read as covered right
+ * up to the moment it billed itself to Warranty Expense. The classes are shown
+ * separately when they disagree, because parts and labor expire on their own
+ * clocks and the charge default follows whichever one the charge belongs to.
+ */
+function WarrantyVerdict({ line }: { line: RepairOrderLine }) {
+  if (!line.warrantyRegistrationId) {
+    return (
+      <span className="text-muted-foreground">
+        <Trans>Not registered</Trans>
+      </span>
+    );
+  }
+
+  const { partsInWarranty, laborInWarranty } = line;
+
+  if (partsInWarranty && laborInWarranty) return <Trans>In warranty</Trans>;
+  if (partsInWarranty) return <Trans>Parts only</Trans>;
+  if (laborInWarranty) return <Trans>Labor only</Trans>;
+
+  return (
+    <span className="text-muted-foreground">
+      <Trans>Expired</Trans>
+    </span>
+  );
+}
+
 type RepairOrderLinesTableProps = {
   repairOrderId: string;
   status: string;
@@ -90,13 +119,7 @@ const RepairOrderLinesTable = ({
                     <CustodyStatus status={line.status} />
                   </Td>
                   <Td>
-                    {line.underWarranty ? (
-                      <Trans>In warranty</Trans>
-                    ) : (
-                      <span className="text-muted-foreground">
-                        <Trans>Not registered</Trans>
-                      </span>
-                    )}
+                    <WarrantyVerdict line={line} />
                   </Td>
                   <Td>{line.returnReason?.name ?? "—"}</Td>
                   <Td>

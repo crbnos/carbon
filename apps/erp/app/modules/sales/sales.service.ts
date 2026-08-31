@@ -8070,9 +8070,10 @@ export async function getRepairOrder(
 export async function getRepairOrderLines(
   client: SupabaseClient<Database>,
   repairOrderId: string,
-  companyId: string
+  companyId: string,
+  today: string
 ) {
-  return client
+  const result = await client
     .from("repairOrderLine")
     .select(
       "*, item(readableIdWithRevision, name, itemTrackingType), returnReason(name), repairOrderLineTrackedEntity(trackedEntityId, quantity, trackedEntity(readableId, status))"
@@ -8080,6 +8081,75 @@ export async function getRepairOrderLines(
     .eq("repairOrderId", repairOrderId)
     .eq("companyId", companyId)
     .order("lineNumber");
+
+  if (result.error || !result.data) return result;
+
+  // Coverage is read from the registrations in ONE keyed query rather than a
+  // PostgREST embed: the FK is composite, so the embed needs a constraint-name
+  // hint that silently returns no rows when it drifts — and this read is what
+  // the billing default hangs off.
+  const registrationIds = [
+    ...new Set(
+      result.data
+        .map((line) => line.warrantyRegistrationId)
+        .filter((id): id is string => !!id)
+    )
+  ];
+
+  const registrations = registrationIds.length
+    ? await client
+        .from("warrantyRegistration")
+        .select(
+          "id, coversParts, partsExpirationDate, coversLabor, laborExpirationDate"
+        )
+        .in("id", registrationIds)
+        .eq("companyId", companyId)
+    : { data: [], error: null };
+
+  const byId = new Map(
+    (registrations.data ?? []).map((row) => [row.id, row] as const)
+  );
+
+  // Coverage is evaluated at READ time, not frozen at intake: a repair order
+  // can outlive the warranty it was opened under, and the charge defaults must
+  // follow what is true today. `underWarranty` on the row stays the intake
+  // record; these two booleans are the live verdict the UI bills from.
+  return {
+    ...result,
+    data: result.data.map((line) => {
+      const registration = line.warrantyRegistrationId
+        ? byId.get(line.warrantyRegistrationId)
+        : undefined;
+      return {
+        ...line,
+        partsInWarranty: isCoverageActive(
+          registration?.coversParts,
+          registration?.partsExpirationDate,
+          today
+        ),
+        laborInWarranty: isCoverageActive(
+          registration?.coversLabor,
+          registration?.laborExpirationDate,
+          today
+        )
+      };
+    })
+  };
+}
+
+/**
+ * One class of a registration still covers the unit on `today`. Mirrors the
+ * `active()` rule inside `coverageVerdict` — DATE columns, so lexicographic
+ * YYYY-MM-DD comparison is chronological, and a NULL expiration with the class
+ * covered means lifetime.
+ */
+export function isCoverageActive(
+  covers: boolean | null | undefined,
+  until: string | null | undefined,
+  today: string
+): boolean {
+  if (!covers) return false;
+  return until === null || until === undefined || until >= today;
 }
 
 export async function getRepairOrderCharges(
@@ -8971,17 +9041,34 @@ export async function createRepairOrderFromReturnLine(
       .execute();
 
     let registrationId: string | null = null;
+    let registrationCovers = false;
     if (entities.length > 0) {
-      const registration = await trx
+      const registrations = await trx
         .selectFrom("warrantyRegistration")
-        .select(["id"])
+        .select([
+          "id",
+          "coversParts",
+          "partsExpirationDate",
+          "coversLabor",
+          "laborExpirationDate"
+        ])
         .where("trackedEntityId", "=", entities[0].trackedEntityId)
         .where("companyId", "=", companyId)
         .orderBy("startDate", "desc")
         .orderBy("createdAt", "desc")
         .orderBy("id", "desc")
-        .executeTakeFirst();
-      registrationId = registration?.id ?? null;
+        .execute();
+
+      // Prefer a registration that still covers the unit today, and only then
+      // fall back to the most recent. Recency alone lets an expired-but-newer
+      // row (a lapsed repair warranty) shadow the original that is still live.
+      const covers = (row: (typeof registrations)[number]) =>
+        isCoverageActive(row.coversParts, row.partsExpirationDate, today) ||
+        isCoverageActive(row.coversLabor, row.laborExpirationDate, today);
+
+      const preferred = registrations.find(covers) ?? registrations[0] ?? null;
+      registrationId = preferred?.id ?? null;
+      registrationCovers = preferred ? covers(preferred) : false;
     }
 
     const line = await trx
@@ -8995,7 +9082,7 @@ export async function createRepairOrderFromReturnLine(
         // The unit is already in the building, On Hold from the return receipt.
         status: "Received",
         warrantyRegistrationId: registrationId,
-        underWarranty: !!registrationId,
+        underWarranty: registrationCovers,
         returnReasonId: returnLine.returnReasonId,
         salesReturnOrderLineId,
         companyId,

@@ -60,7 +60,7 @@ import { Empty, ItemThumbnail, PrintButton } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useStorageUnits } from "~/components/Form/StorageUnit";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import WarrantyTerm from "~/components/Form/WarrantyTerm";
+import { useWarrantyTerms } from "~/components/Form/WarrantyTerm";
 import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
 import type {
@@ -614,17 +614,14 @@ function ShipmentLineItem({
               the item default would give, the shipper can override it here on
               the day. Empty means "use the rules". */}
           {shipment?.sourceDocument === "Sales Order" && (
-            <WarrantyTerm
-              name={`warrantyTerm:${line.id}`}
-              label={undefined}
-              value={line.warrantyTermId ?? undefined}
+            <WarrantyTermSelect
+              warrantyTermId={line.warrantyTermId ?? null}
               isReadOnly={isReadOnly}
-              placeholder="Warranty (from rules)"
-              onChange={(option) => {
+              onChange={(warrantyTermId) => {
                 onUpdate({
                   lineId: line.id!,
                   field: "warrantyTermId",
-                  value: option?.value ?? null
+                  value: warrantyTermId
                 });
               }}
             />
@@ -1347,6 +1344,42 @@ function StorageUnit({
           }}
           options={options}
           isReadOnly={isReadOnly}
+          inline={(value, options) => {
+            const option = options.find((o) => o.value === value);
+            return option?.label ?? "";
+          }}
+        />
+      </div>
+    </VStack>
+  );
+}
+
+function WarrantyTermSelect({
+  warrantyTermId,
+  isReadOnly,
+  onChange
+}: {
+  warrantyTermId: string | null;
+  isReadOnly: boolean;
+  onChange: (warrantyTermId: string | null) => void;
+}) {
+  const options = useWarrantyTerms();
+
+  return (
+    <VStack spacing={1} className="min-w-[140px] text-sm">
+      <label className="text-xs text-muted-foreground">
+        <Trans>Warranty</Trans>
+      </label>
+      <div className="py-1">
+        <Combobox
+          value={warrantyTermId ?? undefined}
+          onChange={(newValue) => {
+            onChange(newValue || null);
+          }}
+          options={options}
+          isClearable
+          isReadOnly={isReadOnly}
+          placeholder="Warranty (from rules)"
           inline={(value, options) => {
             const option = options.find((o) => o.value === value);
             return option?.label ?? "";

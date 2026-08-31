@@ -18,6 +18,7 @@ import type { Json } from "../lib/types.ts";
 import { TrackedEntityAttributes, credit, debit, journalReference } from "../lib/utils.ts";
 
 import { buildBatchSplitRecords } from "../shared/batch-split.ts";
+import { round } from "../shared/precision.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { bookAdjustment } from "../shared/post-adjustment.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";

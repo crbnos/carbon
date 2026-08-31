@@ -2807,9 +2807,7 @@ serve(async (req: Request) => {
           );
           if (receivedQuantity <= 0) continue;
 
-          const item = itemDetails.data?.find(
-            (i) => i.id === receiptLine.itemId
-          );
+          const item = items.data?.find((i) => i.id === receiptLine.itemId);
           const itemTrackingType = item?.itemTrackingType ?? "Inventory";
 
           if (itemTrackingType === "Inventory") {
@@ -2920,7 +2918,6 @@ serve(async (req: Request) => {
               // customer's unit back out would consume a real VALUED layer
               // instead of the zero-value one it came in on.
               remainingQuantity: round(receivedQuantity),
-              createdBy: userId,
               companyId,
             });
           }

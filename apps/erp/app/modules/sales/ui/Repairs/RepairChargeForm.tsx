@@ -1,4 +1,4 @@
-import { ValidatedForm } from "@carbon/form";
+import { useControlField, ValidatedForm } from "@carbon/form";
 import {
   Button,
   HStack,
@@ -12,7 +12,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import {
   CustomFormFields,
@@ -38,6 +38,28 @@ type RepairChargeFormProps = {
   onClose: () => void;
 };
 
+/**
+ * Re-derives the billing code when the unit or the charge type changes. Lives
+ * INSIDE the form because `defaultValues` only applies on mount, and the two
+ * inputs that decide coverage are both editable after it. The first run is
+ * skipped so the mount-time default stands; a later manual override survives
+ * until one of those two inputs actually moves the verdict.
+ */
+function BillingCodeDefault({ covered }: { covered: boolean }) {
+  const [, setBillingCode] = useControlField<string>("billingCode");
+  const isFirstRun = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRun.current) {
+      isFirstRun.current = false;
+      return;
+    }
+    setBillingCode(covered ? "Warranty" : "Billable");
+  }, [covered, setBillingCode]);
+
+  return null;
+}
+
 const RepairChargeForm = ({
   repairOrderId,
   lines,
@@ -51,10 +73,18 @@ const RepairChargeForm = ({
   // requires — the user can still override it in either direction until the
   // charge is issued.
   const [lineId, setLineId] = useState<string>(lines[0]?.id ?? "");
+  const [chargeType, setChargeType] = useState<"Part" | "Service">("Part");
   const selectedLine = lines.find((line) => line.id === lineId);
-  const defaultBillingCode = selectedLine?.underWarranty
-    ? "Warranty"
-    : "Billable";
+
+  // Coverage is split by class, so the default follows the CHARGE TYPE: a Part
+  // bills against parts coverage, a Service against labor. `underWarranty` is
+  // only "a registration was attached at intake" — reading the default off it
+  // sent expired work to Warranty Expense, which the spec calls out by name.
+  const covered =
+    chargeType === "Service"
+      ? (selectedLine?.laborInWarranty ?? false)
+      : (selectedLine?.partsInWarranty ?? false);
+  const defaultBillingCode = covered ? "Warranty" : "Billable";
 
   return (
     <ModalDrawerProvider type="drawer">
@@ -87,6 +117,7 @@ const RepairChargeForm = ({
             </ModalDrawerHeader>
             <ModalDrawerBody>
               <Hidden name="repairOrderId" />
+              <BillingCodeDefault covered={covered} />
               <VStack spacing={4}>
                 <Select
                   name="repairOrderLineId"
@@ -106,6 +137,11 @@ const RepairChargeForm = ({
                     label: type,
                     value: type
                   }))}
+                  onChange={(option) =>
+                    setChargeType(
+                      (option?.value as "Part" | "Service") ?? "Part"
+                    )
+                  }
                   helperText={t`A Part consumes shop stock; a Service records labor or a fee`}
                 />
                 <Item name="itemId" label={t`Item`} type="Item" />

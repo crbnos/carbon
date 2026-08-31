@@ -1,7 +1,9 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getCompanyTimeZone } from "@carbon/database";
 import { VStack } from "@carbon/react";
+import { datetime } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect } from "react-router";
@@ -30,9 +32,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
+  // Coverage is judged against the company's today, not the server's UTC day —
+  // the two disagree for a slice of every day, and a warranty that lapsed
+  // overnight must bill as Billable from the customer's morning, not ours.
+  const timezone = await getCompanyTimeZone(client, companyId);
+  const today = datetime.today(timezone).toString();
+
   const [repairOrder, lines, charges, warrantyTerms] = await Promise.all([
     getRepairOrder(client, id, companyId),
-    getRepairOrderLines(client, id, companyId),
+    getRepairOrderLines(client, id, companyId, today),
     getRepairOrderCharges(client, id, companyId),
     getWarrantyTermsList(client, companyId)
   ]);
