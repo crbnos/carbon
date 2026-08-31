@@ -1,6 +1,10 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { emailHealthcheck } from "./email/hooks.server";
-import { revokeConnectionsForPiece } from "./integrations/connections";
+import {
+  connectionsHealthy,
+  readConnections,
+  revokeConnectionsForPiece
+} from "./integrations/connections";
 import { jiraHealthcheck } from "./jira/hooks.server";
 import { linearHealthcheck } from "./linear/hooks.server";
 import { onshapeOnUninstall } from "./onshape/hooks.server";
@@ -35,6 +39,29 @@ import {
 } from "./xero/hooks.server";
 
 /**
+ * A workflow integration is healthy when it has at least one usable account.
+ *
+ * Its credentials live per CONNECTION rather than on the integration row, so the
+ * secret-based check the other integrations use cannot see them — and without a
+ * check of its own the card reports "Healthy" unconditionally (`resolveHealth`
+ * defaults to healthy when none is declared), so a revoked account read as fine
+ * while every workflow step using it failed.
+ *
+ * Shared rather than written per vendor: nothing here is Google-specific.
+ */
+async function pieceConnectionsHealthy(
+  companyId: string,
+  pieceName: string
+): Promise<boolean> {
+  const connections = await readConnections(
+    getCarbonServiceRole(),
+    companyId,
+    pieceName
+  );
+  return connectionsHealthy(connections);
+}
+
+/**
  * Server-side hooks registry for integrations.
  *
  * Hooks that depend on server-only modules (like getCarbonServiceRole)
@@ -56,6 +83,11 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
   // it connected", and its `id` IS the piece name — so a new piece is this one line,
   // not a hooks file of its own.
   "google-calendar": {
+    // Without this the card reports "Healthy" unconditionally — `resolveHealth`
+    // defaults to healthy when an integration declares no check — so a revoked
+    // account read as fine while every workflow step using it failed.
+    onHealthcheck: (companyId) =>
+      pieceConnectionsHealthy(companyId, "google-calendar"),
     onUninstall: (companyId) =>
       revokeConnectionsForPiece(
         getCarbonServiceRole(),

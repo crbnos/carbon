@@ -150,4 +150,10 @@ CREATE TRIGGER trg_drop_connection_secret
   AFTER DELETE ON "integrationConnection"
   FOR EACH ROW EXECUTE FUNCTION drop_connection_secret_on_delete();
 
+-- The piece is an ordinary integration card, and companyIntegration.id is an FK to
+-- integration.id, so the connect callback's "installed" write needs this row.
+INSERT INTO "integration" ("id", "jsonschema")
+VALUES ('google-calendar', '{"type": "object", "properties": {}}'::json)
+ON CONFLICT ("id") DO NOTHING;
+
 NOTIFY pgrst, 'reload schema';

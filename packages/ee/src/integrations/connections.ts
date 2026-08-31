@@ -76,6 +76,48 @@ const POLL_ATTEMPTS = 20;
  * shape from it — these are the ONLY place that gap is bridged, rather than every
  * caller asserting the same shape for itself.
  */
+/**
+ * THE definition of an account a workflow step can actually act as.
+ *
+ * Every surface that asks "is this app connected?" — the settings card's health
+ * badge, the Accounts tab, the builder's connection dropdown, the node's empty
+ * state — must derive its answer from this one predicate. They disagreed before:
+ * the card read `companyIntegration.active` (set once, at install) while the
+ * builder counted rows in `integrationConnection`, so uninstalling or revoking an
+ * account left Settings saying "Installed / Healthy" while the node said "isn't
+ * connected yet". Two tables encoded one fact, and only one of them was true.
+ */
+export function connectionUsable(
+  connection: Pick<IntegrationConnection, "status">
+): boolean {
+  // `status`, and nothing derived. An expired token is the NORMAL state — the
+  // next use refreshes it — so judging usability by expiry hid working accounts
+  // from the builder while Settings still listed them. When a refresh genuinely
+  // fails, the refresh path records it here; that is what this reads.
+  return connection.status === "Active";
+}
+
+/** The usable accounts, in the order `readConnections` returned them. */
+export function usableConnections<
+  T extends Pick<IntegrationConnection, "status">
+>(connections: readonly T[]): T[] {
+  return connections.filter(connectionUsable);
+}
+
+/**
+ * Whether a piece's connections are in a state a workflow could actually use.
+ *
+ * NO accounts is not unhealthy — the card is Installed and both it and the builder
+ * already offer a Connect button, so flagging it red would be noise. An account
+ * that has GONE BAD is: every step using it fails, and nothing else tells anyone.
+ */
+export function connectionsHealthy(
+  connections: readonly Pick<IntegrationConnection, "status">[]
+): boolean {
+  if (connections.length === 0) return true;
+  return connections.some(connectionUsable);
+}
+
 export async function readConnections(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -118,6 +160,39 @@ export async function createConnection(
     createdBy: string;
   }
 ): Promise<{ id: string }> {
+  // Reconnecting a broken account REVIVES its row rather than inserting beside it.
+  // `disconnectConnection` deliberately keeps the row so a saved workflow node's
+  // reference stays valid — but the name is unique per piece, so a fresh insert
+  // under the same name always collided, and the only account the customer wanted
+  // to fix was the one they could never re-add.
+  const existing = await serviceClient
+    .from("integrationConnection")
+    .select("id")
+    .eq("companyId", args.companyId)
+    .eq("pieceName", args.pieceName)
+    .eq("name", args.name)
+    .maybeSingle();
+
+  if (existing.data?.id) {
+    const id = existing.data.id;
+    await writeTokens(serviceClient, args.companyId, id, args.tokens);
+    const { error: reviveError } = await serviceClient
+      .from("integrationConnection")
+      .update({
+        authType: args.authType ?? "OAUTH2",
+        accountLabel: args.accountLabel ?? null,
+        expiresAt: args.expiresAt ?? null,
+        refreshingAt: null,
+        status: "Active",
+        lastError: null,
+        updatedBy: args.createdBy
+      })
+      .eq("companyId", args.companyId)
+      .eq("id", id);
+    if (reviveError) throw new Error(reviveError.message);
+    return { id };
+  }
+
   const { data, error } = await serviceClient
     .from("integrationConnection")
     .insert({
@@ -257,6 +332,17 @@ function expiringSoon(expiresAt: string | null): boolean {
  * Claim the refresh with a conditional UPDATE. A Postgres advisory lock would
  * release at the RPC's transaction end, which is before the token exchange
  * finishes — this claim survives it. Returns true when we own the refresh.
+ *
+ * Two sequential single-filter updates, NOT one `.or(...)`: PostgREST (13.0.8)
+ * builds the or-tree of a mutation with an unquoted table qualifier, so on a
+ * camelCase table like this one every such UPDATE fails with 42703 — which,
+ * with the error then discarded, read as "someone else holds the claim" and
+ * surfaced to the customer as an endless "still being reconnected". The split
+ * is race-safe: under READ COMMITTED the second writer re-checks its WHERE
+ * against the row the first one committed, so exactly one caller wins.
+ *
+ * A DB error is thrown, never folded into "claim lost": the losing path polls
+ * for a refresh that no one is doing, and the timeout it ends in names nothing.
  */
 async function claimRefresh(
   serviceClient: SupabaseClient<Database>,
@@ -268,15 +354,27 @@ async function claimRefresh(
     now.getTime() - CLAIM_STALE_SECONDS * 1000
   ).toISOString();
 
-  const { data } = await serviceClient
+  // The common case: nobody is refreshing.
+  const fresh = await serviceClient
     .from("integrationConnection")
     .update({ refreshingAt: now.toISOString() })
     .eq("companyId", companyId)
     .eq("id", connectionId)
-    .or(`refreshingAt.is.null,refreshingAt.lt.${staleBefore}`)
+    .is("refreshingAt", null)
     .select("id");
+  if (fresh.error) throw new Error(fresh.error.message);
+  if (Array.isArray(fresh.data) && fresh.data.length > 0) return true;
 
-  return Array.isArray(data) && data.length > 0;
+  // A claim exists — take it over only if its holder has been gone too long.
+  const stale = await serviceClient
+    .from("integrationConnection")
+    .update({ refreshingAt: now.toISOString() })
+    .eq("companyId", companyId)
+    .eq("id", connectionId)
+    .lt("refreshingAt", staleBefore)
+    .select("id");
+  if (stale.error) throw new Error(stale.error.message);
+  return Array.isArray(stale.data) && stale.data.length > 0;
 }
 
 const wait = (ms: number) =>
@@ -335,10 +433,15 @@ export async function resolveConnectionAuth(
     };
   }
 
-  const refreshed = await exchangeRefreshToken(
-    oauth,
-    tokens.refreshToken
-  ).catch(async (cause: unknown) => {
+  // Everything from here until the claim is cleared must release it on ANY failure.
+  // `claimRefresh` writes a fresh `refreshingAt` when it wins, so a throw in between
+  // leaves a live 30-second claim: every later request loses the claim, polls for
+  // the full 5 seconds, and fails with a timeout that names nothing. Only the token
+  // exchange used to be guarded — a vault write that threw stranded the claim.
+  let refreshed: ExchangedTokens;
+  try {
+    refreshed = await exchangeRefreshToken(oauth, tokens.refreshToken);
+  } catch (cause) {
     await markExpired(
       serviceClient,
       companyId,
@@ -346,24 +449,31 @@ export async function resolveConnectionAuth(
       cause instanceof Error ? cause.message : "The connection was rejected."
     );
     throw new ConnectionRevokedError(connectionId);
-  });
+  }
 
-  await writeTokens(serviceClient, companyId, connectionId, {
-    accessToken: refreshed.accessToken,
-    // Google omits the refresh token on a refresh response; keep the stored one.
-    refreshToken: refreshed.refreshToken ?? tokens.refreshToken
-  });
+  try {
+    await writeTokens(serviceClient, companyId, connectionId, {
+      accessToken: refreshed.accessToken,
+      // Google omits the refresh token on a refresh response; keep the stored one.
+      refreshToken: refreshed.refreshToken ?? tokens.refreshToken
+    });
 
-  await serviceClient
-    .from("integrationConnection")
-    .update({
-      expiresAt: refreshed.expiresAt,
-      refreshingAt: null,
-      status: "Active",
-      lastError: null
-    })
-    .eq("companyId", companyId)
-    .eq("id", connectionId);
+    await serviceClient
+      .from("integrationConnection")
+      .update({
+        expiresAt: refreshed.expiresAt,
+        refreshingAt: null,
+        status: "Active",
+        lastError: null
+      })
+      .eq("companyId", companyId)
+      .eq("id", connectionId);
+  } catch (cause) {
+    // The token itself is fine — storing it was not. Release the claim so the next
+    // attempt can retry immediately rather than waiting out a phantom refresh.
+    await releaseClaim(serviceClient, companyId, connectionId);
+    throw cause;
+  }
 
   return {
     accessToken: refreshed.accessToken,
@@ -393,6 +503,19 @@ async function awaitRefreshedToken(
     }
   }
   throw new ConnectionRefreshTimeoutError(connectionId);
+}
+
+/** Drop a refresh claim without touching status — the connection may still be fine. */
+async function releaseClaim(
+  serviceClient: SupabaseClient<Database>,
+  companyId: string,
+  connectionId: string
+): Promise<void> {
+  await serviceClient
+    .from("integrationConnection")
+    .update({ refreshingAt: null })
+    .eq("companyId", companyId)
+    .eq("id", connectionId);
 }
 
 async function markExpired(

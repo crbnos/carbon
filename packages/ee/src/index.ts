@@ -84,6 +84,8 @@ export {
   ConnectionRefreshTimeoutError,
   ConnectionRevokedError,
   ConnectionSecretUnavailableError,
+  connectionsHealthy,
+  connectionUsable,
   createConnection,
   disconnectConnection,
   exchangeAuthorizationCode,
@@ -92,7 +94,8 @@ export {
   readConnections,
   renameConnection,
   resolveConnectionAuth,
-  revokeConnectionsForPiece
+  revokeConnectionsForPiece,
+  usableConnections
 } from "./integrations/connections";
 export {
   IntegrationSecretUnavailableError,

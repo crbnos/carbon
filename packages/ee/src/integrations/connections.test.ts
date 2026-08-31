@@ -3,8 +3,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ConnectionRevokedError,
+  connectionsHealthy,
+  connectionUsable,
   createConnection,
-  resolveConnectionAuth
+  resolveConnectionAuth,
+  usableConnections
 } from "./connections";
 
 const COMPANY = "cmp_1";
@@ -63,6 +66,7 @@ function makeClient(initial?: Partial<Row>) {
 
   function builder(operation: "select" | "update", patch?: object) {
     const filters: Record<string, unknown> = {};
+    const ltFilters: Record<string, string> = {};
     let orClause: string | undefined;
 
     const self = {
@@ -72,6 +76,14 @@ function makeClient(initial?: Partial<Row>) {
       },
       or(clause: string) {
         orClause = clause;
+        return self;
+      },
+      is(column: string, value: unknown) {
+        filters[column] = value;
+        return self;
+      },
+      lt(column: string, value: string) {
+        ltFilters[column] = value;
         return self;
       },
       order() {
@@ -94,16 +106,32 @@ function makeClient(initial?: Partial<Row>) {
             : { data: row, error: null }
         );
       },
-      then(resolve: (value: { data: unknown; error: null }) => unknown) {
-        let targets = matching(filters);
-
+      then(
+        resolve: (value: {
+          data: unknown;
+          error: { message: string } | null;
+        }) => unknown
+      ) {
+        // What the REAL PostgREST does (13.0.8): the or-tree of a mutation is
+        // built with an unquoted table qualifier, so on this camelCase table
+        // every `.or(...)` UPDATE fails with 42703. The fake used to honour the
+        // filter instead — which is exactly how a claim that never once
+        // succeeded in production stayed green in here.
         if (operation === "update" && orClause !== undefined) {
-          // Mirrors `refreshingAt.is.null,refreshingAt.lt.<iso>`.
-          const staleBefore = orClause.split("refreshingAt.lt.")[1]!;
-          targets = targets.filter(
-            (row) => row.refreshingAt === null || row.refreshingAt < staleBefore
-          );
+          return resolve({
+            data: null,
+            error: {
+              message:
+                "column integrationConnection.refreshingAt does not exist"
+            }
+          });
         }
+        let targets = matching(filters).filter((row) =>
+          Object.entries(ltFilters).every(([key, value]) => {
+            const held = row[key as keyof Row];
+            return typeof held === "string" && held < value;
+          })
+        );
         if (operation === "update") {
           for (const row of targets) Object.assign(row, patch);
         }
@@ -238,6 +266,36 @@ describe("resolveConnectionAuth", () => {
     expect(second.accessToken).toBe("at-2");
   });
 
+  // A crashed refresher must not hold the claim forever: a claim past the stale
+  // window is abandoned, and the next caller takes it over instead of polling
+  // out the clock behind it.
+  it("takes over a claim whose holder has been gone too long", async () => {
+    const { client, rows } = makeClient({ expiresAt: inMinutes(1) });
+    rows.get(CONNECTION)!.refreshingAt = new Date(
+      Date.now() - 60 * 1000
+    ).toISOString();
+    await client.rpc("upsert_connection_secret", {
+      p_company_id: COMPANY,
+      p_connection_id: CONNECTION,
+      p_secret: { accessToken: "at-1", refreshToken: "rt-1" } as never
+    });
+
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ access_token: "at-2", expires_in: 3600 })
+    } as Response);
+
+    const { accessToken } = await resolveConnectionAuth(
+      client,
+      COMPANY,
+      CONNECTION,
+      OAUTH
+    );
+
+    expect(accessToken).toBe("at-2");
+    expect(rows.get(CONNECTION)!.refreshingAt).toBeNull();
+  });
+
   it("keeps the stored refresh token when the vendor omits one", async () => {
     const { client, vault } = makeClient({ expiresAt: inMinutes(1) });
     await client.rpc("upsert_connection_secret", {
@@ -280,5 +338,159 @@ describe("resolveConnectionAuth", () => {
     ).rejects.toBeInstanceOf(ConnectionRevokedError);
     expect(rows.get(CONNECTION)!.status).toBe("Expired");
     expect(rows.get(CONNECTION)!.lastError).toContain("400");
+  });
+
+  // A connection that has gone bad is exactly the one a customer wants to re-add —
+  // and `disconnectConnection` keeps the row (a saved workflow node references its
+  // id), while the name is unique per piece. So re-consenting under the same name
+  // hit the unique constraint and failed with "save-failed", leaving no way back.
+  it("revives an existing connection instead of colliding with its name", async () => {
+    const { client, rows } = makeClient({ expiresAt: inMinutes(60) });
+    const row = rows.get(CONNECTION)!;
+    row.status = "Revoked";
+    row.lastError = "The connection was rejected (400).";
+
+    const { id } = await createConnection(client, {
+      companyId: COMPANY,
+      pieceName: row.pieceName,
+      name: row.name,
+      tokens: { accessToken: "at-new", refreshToken: "rt-new" },
+      expiresAt: inMinutes(60),
+      createdBy: "u1"
+    });
+
+    // The SAME row, so every workflow node still pointing at it keeps working.
+    expect(id).toBe(CONNECTION);
+    expect(rows.size).toBe(1);
+    expect(rows.get(CONNECTION)!.status).toBe("Active");
+    expect(rows.get(CONNECTION)!.lastError).toBeNull();
+
+    // And the new credentials really landed, not just the status.
+    const { data } = await client.rpc("get_connection_secret", {
+      p_company_id: COMPANY,
+      p_connection_id: CONNECTION
+    });
+    expect(data).toMatchObject({ accessToken: "at-new" });
+  });
+
+  // The bug behind a constantly-failing calendar dropdown: `claimRefresh` writes a
+  // fresh `refreshingAt` when it wins, and only the token EXCHANGE was guarded. A
+  // throw while storing the new token left that claim standing, so every later
+  // request lost the claim and polled the full 5 seconds before timing out — with
+  // the connection still reading Active, so nothing pointed at the cause.
+  it("releases the refresh claim when storing the new token fails", async () => {
+    const { client, rows } = makeClient({ expiresAt: inMinutes(1) });
+    await client.rpc("upsert_connection_secret", {
+      p_company_id: COMPANY,
+      p_connection_id: CONNECTION,
+      p_secret: { accessToken: "at-1", refreshToken: "rt-1" } as never
+    });
+
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ access_token: "at-2", expires_in: 3600 })
+    } as Response);
+
+    // The vault write fails — the token is fine, storing it is not.
+    const rpc = client.rpc.bind(client);
+    client.rpc = ((name: string, args: unknown) =>
+      name === "upsert_connection_secret"
+        ? Promise.reject(new Error("vault unavailable"))
+        : rpc(name as never, args as never)) as unknown as typeof client.rpc;
+
+    await expect(
+      resolveConnectionAuth(client, COMPANY, CONNECTION, OAUTH)
+    ).rejects.toThrow("vault unavailable");
+
+    // The claim must not survive the failure, or the next attempt waits 5s for a
+    // refresh that already gave up.
+    expect(rows.get(CONNECTION)!.refreshingAt).toBeNull();
+    // And the connection is NOT condemned — the token itself was never rejected.
+    expect(rows.get(CONNECTION)!.status).toBe("Active");
+  });
+});
+
+describe("connectionsHealthy", () => {
+  const at = (status: string) => ({ status }) as never;
+
+  // The card reports health from this. Without a check of its own, `resolveHealth`
+  // defaults every integration to "healthy" — so a revoked Google account showed a
+  // green HEALTHY badge while every workflow step using it failed.
+  it("is unhealthy when every account has gone bad", () => {
+    expect(connectionsHealthy([at("Revoked")])).toBe(false);
+    expect(connectionsHealthy([at("Revoked"), at("Expired")])).toBe(false);
+  });
+
+  it("is healthy while at least one account still works", () => {
+    expect(connectionsHealthy([at("Revoked"), at("Active")])).toBe(true);
+    expect(connectionsHealthy([at("Active")])).toBe(true);
+  });
+
+  // Not yet connected is not broken: the card is Installed and both it and the
+  // builder already offer a Connect button, so red here would be noise.
+  it("is healthy with no accounts at all", () => {
+    expect(connectionsHealthy([])).toBe(true);
+  });
+
+  /**
+   * An expired token is the NORMAL state — the next use refreshes it. Judging
+   * usability by expiry instead of by status hid a working account from the
+   * builder's dropdown while Settings still listed it, which is the mismatch that
+   * replaced the original bug. Status is the only signal; the refresh path is what
+   * writes it.
+   */
+  it("is healthy for an Active account whose token has expired", () => {
+    const longDead = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    expect(
+      connectionsHealthy([{ status: "Active", expiresAt: longDead } as never])
+    ).toBe(true);
+  });
+});
+
+/**
+ * Settings and the builder each decided "is this app connected?" for themselves,
+ * and disagreed: the card read `companyIntegration.active` (written once, at
+ * install) while the node counted `integrationConnection` rows. Disconnecting the
+ * last account left Settings saying Installed/Healthy and the node saying "isn't
+ * connected yet" — the exact contradiction a customer reported.
+ *
+ * `connectionUsable` is now the single answer both derive from, so these pin the
+ * one definition rather than each surface's copy of it.
+ */
+describe("connectionUsable is the one definition of a usable account", () => {
+  const at = (status: string) => ({ status }) as never;
+
+  it("counts only an Active account", () => {
+    expect(connectionUsable(at("Active"))).toBe(true);
+    expect(connectionUsable(at("Revoked"))).toBe(false);
+    expect(connectionUsable(at("Expired"))).toBe(false);
+  });
+
+  // A revoked account in the builder's dropdown is a trap: picking it builds a
+  // workflow that cannot run, and the author gets a vendor error at run time
+  // rather than a "reconnect this" they could act on while editing.
+  it("filters a broken account out of the list a workflow can pick from", () => {
+    const rows = [
+      { id: "a", status: "Revoked" },
+      { id: "b", status: "Active" },
+      { id: "c", status: "Expired" }
+    ] as never[];
+    expect(
+      usableConnections(rows).map((row) => (row as { id: string }).id)
+    ).toEqual(["b"]);
+  });
+
+  // The health badge and the builder must not be able to disagree. If a piece has
+  // accounts, "healthy" and "the builder offers something" are the same question.
+  it("agrees with the health badge whenever accounts exist", () => {
+    for (const statuses of [
+      ["Active"],
+      ["Revoked"],
+      ["Revoked", "Active"],
+      ["Expired", "Revoked"]
+    ]) {
+      const rows = statuses.map(at);
+      expect(usableConnections(rows).length > 0).toBe(connectionsHealthy(rows));
+    }
   });
 });
