@@ -467,7 +467,7 @@ export function BatchDetailDrawer({
             )}
             {isLive && (
               <Button variant="secondary" leftIcon={<LuLayers />} asChild>
-                <Link to={path.to.scheduleOperation}>
+                <Link to={path.to.priorityOperation}>
                   {t`View on schedule board`}
                 </Link>
               </Button>

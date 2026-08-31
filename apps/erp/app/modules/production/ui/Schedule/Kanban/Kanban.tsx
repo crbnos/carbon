@@ -204,7 +204,7 @@ const Kanban = ({
       if (f.state !== "idle") {
         const intent = f.formData?.get("intent");
         if (
-          f.formAction === path.to.scheduleBatchingUpdate &&
+          f.formAction === path.to.priorityBatchingUpdate &&
           typeof intent === "string"
         ) {
           pendingBatchIntent.current.set(f.key, intent);
@@ -577,7 +577,7 @@ const Kanban = ({
               },
               {
                 method: "post",
-                action: path.to.scheduleBatchingUpdate,
+                action: path.to.priorityBatchingUpdate,
                 navigate: false,
                 flushSync: true,
                 fetcherKey: `item:${origin.item.id}`
@@ -593,7 +593,7 @@ const Kanban = ({
             },
             {
               method: "post",
-              action: path.to.scheduleOperationUpdate,
+              action: path.to.priorityOperationUpdate,
               navigate: false,
               flushSync: true,
               fetcherKey: `item:${origin.item.id}`
@@ -642,7 +642,7 @@ function usePendingItems() {
 
   const operationMoves = fetchers
     .filter((fetcher): fetcher is PendingItem => {
-      return fetcher.formAction === path.to.scheduleOperationUpdate;
+      return fetcher.formAction === path.to.priorityOperationUpdate;
     })
     .map((fetcher) => {
       let columnId = String(fetcher.formData.get("columnId"));
@@ -661,7 +661,7 @@ function usePendingItems() {
   const batchMoves = fetchers
     .filter((fetcher): fetcher is PendingItem => {
       return (
-        fetcher.formAction === path.to.scheduleBatchingUpdate &&
+        fetcher.formAction === path.to.priorityBatchingUpdate &&
         fetcher.formData?.get("intent") === "update" &&
         fetcher.formData?.has("workCenterId")
       );

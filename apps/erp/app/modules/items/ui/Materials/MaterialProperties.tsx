@@ -160,6 +160,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
   } | null>(null);
 
   const settings = useSettings();
+  const allowLowercaseItemIds = settings.allowLowercaseItemIds === true;
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
@@ -295,7 +296,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
     <>
       <VStack
         spacing={4}
-        className="w-96 bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2 text-sm"
+        className="w-96 bg-background h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2 text-sm"
       >
         <VStack spacing={2}>
           <HStack className="w-full justify-between">
@@ -392,6 +393,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
                     name="materialId"
                     inline
                     size="sm"
+                    isUppercase={!allowLowercaseItemIds}
                     value={routeData?.materialSummary?.readableId ?? ""}
                     onBlur={(e) => {
                       onUpdate("materialId", e.target.value ?? null);
@@ -408,7 +410,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
               validator={z.object({
                 name: z.string()
               })}
-              className="w-full -mt-2"
+              className="w-full"
             >
               <span className="text-xs text-muted-foreground">
                 <InputControlled

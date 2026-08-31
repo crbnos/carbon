@@ -641,7 +641,7 @@ export function BatchBuilder({
     for (const id of selectedById.keys()) fd.append("jobOperationIds", id);
     submitFetcher.submit(fd, {
       method: "post",
-      action: path.to.scheduleBatchingUpdate
+      action: path.to.priorityBatchingUpdate
     });
   };
 

@@ -2,31 +2,38 @@ import { randomUUID } from "node:crypto";
 import { createInterface } from "node:readline";
 import { Readable } from "node:stream";
 import { createGunzip, createGzip } from "node:zlib";
-import type { TableName } from "@carbon/database/audit.config";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, type RawBuilder, sql } from "kysely";
 import { nanoid } from "nanoid";
+import {
+  BACKUP_KIND,
+  type Catalog,
+  type ColumnInfo,
+  type CompatibilityFinding,
+  type Manifest,
+  reportBackupCompatibility,
+  SECRET_TABLES,
+  type TableInfo
+} from "../../../backups/schema";
+
+// Catalog introspection + compatibility live in src/backups/ (shared with the
+// drift check and the ERP Backups page); re-exported so the backup jobs keep
+// one import surface.
+export * from "../../../backups/renames";
+export * from "../../../backups/schema";
 
 const log = getLogger("jobs", "company-backup");
 
 /**
- * Shared core for company backup export/import.
- *
- * The table catalog is derived from the live database schema
- * (information_schema + pg_constraint) rather than a hand-maintained list,
- * so new company-scoped tables are picked up automatically.
+ * Shared core for company backup export/import. A backup is a folder
+ * `exports/<name>/` of small objects: `manifest.json`, one
+ * `tables/<table>.ndjson.gz` per non-empty table (dumped + loaded in
+ * parallel), and `assets/<path>` files. Per-table NDJSON is read/written a
+ * line at a time, so a huge table never materializes as one >512MB string.
  */
 
-export const BACKUP_KIND = "carbon-company-backup";
-// A backup is a folder `exports/<name>/` of small objects: `manifest.json`, one
-// `tables/<table>.ndjson.gz` per non-empty table (dumped + loaded in parallel),
-// and `assets/<path>` files. Each object stays under the bucket size cap; the
-// whole folder bundles into one `.carbon.tar.gz` for cross-environment transfer.
-// Per-table NDJSON is read/written a line at a time, so a huge table never
-// materializes as one >512MB string (V8's max) or one giant JSON.parse.
-export const BACKUP_VERSION = 1;
 export const BACKUP_INTEGRATION = "company-backup";
 export const EXPORTS_PREFIX = "exports";
 /** Shared, env-agnostic bucket holding the onboarding backup templates. */
@@ -122,74 +129,6 @@ export function rewriteStoragePath(
 }
 
 /**
- * Tables whose contents must never travel in a backup — credentials,
- * integration tokens and webhook targets stay with the source company.
- */
-export const SECRET_TABLES = [
-  "apiKey",
-  // Worthless without its (secret, stripped) apiKey, which it references via a
-  // NOT-NULL FK — exporting it alone dangles every row on restore. It's also an
-  // UNLOGGED operational rate-limit counter, never user data.
-  "apiKeyRateLimit",
-  "companyIntegration",
-  "webhook",
-  "oauthClient",
-  "oauthToken"
-];
-
-/**
- * Company-singleton config tables: one row per company, keyed by `id` (the row's
- * `id` IS the company id, via an `id -> company` FK), with no `companyId` column.
- * They're a company's data, so the catalog includes them scoped by `id` directly
- * (`WHERE id = companyId`) — no redundant `companyId` column needed. `companyPlan`
- * is a singleton too but is deliberately NOT listed: it's billing/Stripe identity
- * tied to the target company and must never travel.
- */
-export const COMPANY_SINGLETON_TABLES = [
-  "companySettings",
-  "terms",
-  "companyAccountsPayableBillingAddress",
-  "companyAccountsReceivableBillingAddress"
-] as const satisfies readonly TableName[];
-
-/**
- * Tenant-root tables that carry a scope column but are NOT tenant data — the
- * company shell itself is created by onboarding, never imported. Excluded
- * from the catalog entirely.
- */
-export const STRUCTURAL_TABLES = ["company"];
-
-/**
- * MRP planning output — the `mrp` edge function deletes then re-inserts these
- * wholesale per company on every run, and nothing else writes them. They hold
- * no user-authored data, so a backup must not carry them: restoring stale
- * projections is pure bloat (the next MRP run rebuilds them), and
- * `demandForecastSource`'s discriminator CHECK (`sourceType` ↔ which FK is
- * non-null) makes a remapped restore brittle — the FK-nulling dangling-ref
- * policy silently violates it. Excluded from the catalog entirely, so they are
- * never exported, wiped, or loaded. (`demandForecast` is deliberately NOT here:
- * it also has a user-forecast write path and carries no such CHECK.)
- */
-export const TRANSIENT_TABLES = [
-  "demandForecastSource",
-  "demandActual",
-  "supplyForecast",
-  "supplyActual"
-] as const satisfies readonly TableName[];
-
-/**
- * Tables deliberately kept out of the catalog: the company shell + MRP planning
- * output. The catalog skips them so they're never exported/wiped/loaded, and
- * `assertBackupImportable` skips them too — an older backup that still carries
- * one of these (made before it was excluded) is NOT schema drift; its rows are
- * simply ignored on load (the next MRP run rebuilds the data).
- */
-export const CATALOG_EXCLUDED_TABLES = new Set<string>([
-  ...STRUCTURAL_TABLES,
-  ...TRANSIENT_TABLES
-]);
-
-/**
  * Additional tables skipped in `reseed` mode — memberships, invites and
  * integration state belong to the source company's users, not to a copy.
  * The importing company already has its admin membership from onboarding.
@@ -222,90 +161,6 @@ export const IN_PLACE_SKIPPED_TABLES = new Set([
 
 /** Integration key for the in-place restore marker (holds the snapshot path). */
 export const RESTORE_INTEGRATION = "company-restore";
-
-export type ColumnInfo = {
-  name: string;
-  /** information_schema data_type, e.g. 'ARRAY', 'jsonb', 'USER-DEFINED' */
-  dataType: string;
-  /** information_schema udt_name, e.g. '_text', 'jsonb', 'bytea' */
-  udtName: string;
-  isNullable: boolean;
-  /** GENERATED ALWAYS / identity columns — excluded from export & insert */
-  isGenerated: boolean;
-  /** has a column default (so a backup that omits it can still insert) */
-  hasDefault: boolean;
-};
-
-export type ForeignKey = {
-  column: string;
-  refTable: string;
-  refColumn: string;
-};
-
-/**
- * How a table's rows are scoped to a company:
- * - `direct`: the table itself has a scope column — `companyId`/`companyGroupId`,
- *   or `id` for a company-singleton (whose `id` IS the company id, see
- *   {@link COMPANY_SINGLETON_TABLES}).
- * - `via`: the table has no scope column but a FK (`column` → `parent.refColumn`)
- *   to a table that IS scoped (possibly transitively). It inherits that scope —
- *   e.g. `customerContact.customerId → customer`. Resolved from the FK graph so
- *   child tables (contacts, locations, line prices, history) travel with their
- *   parent without a hand-maintained list.
- */
-export type Scope =
-  | { kind: "direct"; column: "companyId" | "companyGroupId" | "id" }
-  | { kind: "via"; column: string; refColumn: string; parent: string };
-
-export type TableInfo = {
-  name: string;
-  columns: ColumnInfo[];
-  /** How the table is scoped to a company (direct column or via a parent FK). */
-  scope: Scope;
-  /**
-   * The resolved ROOT tenant column the rows ultimately belong to — `companyId`
-   * for most data, `companyGroupId` for shared config (chart of accounts,
-   * currencies, …). For a `via` table it's the root ancestor's column. Used for
-   * the "which tenant" decisions (wipe/reseed scope); the actual row filter is
-   * built by `buildScopeFilter`.
-   */
-  scopeColumn: "companyId" | "companyGroupId";
-  /** primary key column names (empty when the table has no PK) */
-  pkColumns: string[];
-  /**
-   * Every column that participates in ANY uniqueness constraint — primary key,
-   * unique constraint, or bare unique index (deduped). A foreign restore that
-   * collapses a user FK in one of these would collide, so it's the signal for
-   * `isUserScopedIdentityTable` (PK alone misses unique-index keys like
-   * `trainingCompletion(trainingAssignmentId, employeeId, period)`).
-   */
-  uniqueColumns: string[];
-  /** true when the primary key is exactly the single column "id" */
-  hasId: boolean;
-  foreignKeys: ForeignKey[];
-};
-
-export type Catalog = {
-  schemaVersion: string;
-  /** topologically sorted — referenced tables come first */
-  tables: TableInfo[];
-};
-
-export type Manifest = {
-  kind: typeof BACKUP_KIND;
-  version: typeof BACKUP_VERSION;
-  schemaVersion: string;
-  sourceCompanyId: string;
-  sourceCompanyGroupId: string | null;
-  sourceCompanyName: string | null;
-  exportedAt: string;
-  exportedBy: string;
-  label: string | null;
-  includeStorage: "none" | "all";
-  tables: Array<{ name: string; rows: number; columns: string[] }>;
-  storage: Array<{ path: string; size: number; included: boolean }>;
-  excludedTables: string[];
-};
 
 export type CompanyBackup = {
   manifest: Manifest;
@@ -512,288 +367,38 @@ export async function readBackup(
 }
 
 /**
- * Build the catalog of tenant-scoped tables (public base tables with a
- * "companyId" or "companyGroupId" column), their columns, FK edges and a
- * topological order. A table that has both columns is treated as
- * companyId-scoped.
- */
-export async function getCompanyTableCatalog(
-  db: Kysely<KyselyDatabase>
-): Promise<Catalog> {
-  const scopeRows = await sql<{ name: string; column_name: string }>`
-    SELECT c.table_name AS name, c.column_name
-    FROM information_schema.columns c
-    JOIN information_schema.tables t
-      ON t.table_schema = c.table_schema AND t.table_name = c.table_name
-    WHERE c.table_schema = 'public'
-      AND c.column_name IN ('companyId', 'companyGroupId')
-      AND t.table_type = 'BASE TABLE'
-  `.execute(db);
-
-  // companyId wins when a table carries both columns.
-  // Excluded from the catalog entirely: the company shell + MRP planning output
-  // (regenerated every run, never user data — see CATALOG_EXCLUDED_TABLES).
-  const structural = CATALOG_EXCLUDED_TABLES;
-  const scopeByTable = new Map<string, "companyId" | "companyGroupId">();
-  for (const r of scopeRows.rows) {
-    if (structural.has(r.name)) continue;
-    if (r.column_name === "companyId") {
-      scopeByTable.set(r.name, "companyId");
-    } else if (!scopeByTable.has(r.name)) {
-      scopeByTable.set(r.name, "companyGroupId");
-    }
-  }
-
-  const columns = await sql<{
-    table_name: string;
-    column_name: string;
-    data_type: string;
-    udt_name: string;
-    is_nullable: string;
-    is_generated: string;
-    identity_generation: string | null;
-    column_default: string | null;
-  }>`
-    SELECT table_name, column_name, data_type, udt_name, is_nullable,
-           is_generated, identity_generation, column_default
-    FROM information_schema.columns
-    WHERE table_schema = 'public'
-  `.execute(db);
-
-  const primaryKeys = await sql<{
-    table_name: string;
-    column_name: string;
-    ordinal_position: string | number;
-  }>`
-    SELECT tc.table_name, kcu.column_name, kcu.ordinal_position
-    FROM information_schema.table_constraints tc
-    JOIN information_schema.key_column_usage kcu
-      ON kcu.constraint_name = tc.constraint_name
-      AND kcu.table_schema = tc.table_schema
-    WHERE tc.table_schema = 'public' AND tc.constraint_type = 'PRIMARY KEY'
-    ORDER BY tc.table_name, kcu.ordinal_position
-  `.execute(db);
-
-  // Columns in ANY unique index (covers PKs, unique constraints, and bare
-  // CREATE UNIQUE INDEX — the last is how training tables key their employee).
-  // `attnum = ANY(indkey)` skips expression-index entries (attnum 0).
-  const uniqueColumns = await sql<{ table_name: string; column_name: string }>`
-    SELECT t.relname AS table_name, a.attname AS column_name
-    FROM pg_index ix
-    JOIN pg_class t ON t.oid = ix.indrelid
-    JOIN pg_namespace nsp ON nsp.oid = t.relnamespace
-    JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY (ix.indkey)
-    WHERE ix.indisunique AND nsp.nspname = 'public'
-  `.execute(db);
-
-  const foreignKeys = await sql<{
-    table_name: string;
-    column_name: string;
-    ref_table: string;
-    ref_column: string;
-  }>`
-    SELECT src.relname AS table_name, att.attname AS column_name,
-           tgt.relname AS ref_table, tatt.attname AS ref_column
-    FROM pg_constraint con
-    JOIN pg_class src ON src.oid = con.conrelid
-    JOIN pg_namespace nsp ON nsp.oid = src.relnamespace
-    JOIN pg_class tgt ON tgt.oid = con.confrelid
-    CROSS JOIN LATERAL unnest(con.conkey, con.confkey)
-      WITH ORDINALITY AS u(attnum, fattnum, ord)
-    JOIN pg_attribute att
-      ON att.attrelid = src.oid AND att.attnum = u.attnum
-    JOIN pg_attribute tatt
-      ON tatt.attrelid = tgt.oid AND tatt.attnum = u.fattnum
-    WHERE con.contype = 'f' AND nsp.nspname = 'public'
-  `.execute(db);
-
-  // FK graph for EVERY table (not just the directly-scoped ones), so scope can
-  // be resolved transitively below.
-  const allFksByTable = new Map<string, ForeignKey[]>();
-  for (const f of foreignKeys.rows) {
-    const list = allFksByTable.get(f.table_name) ?? [];
-    list.push({
-      column: f.column_name,
-      refTable: f.ref_table,
-      refColumn: f.ref_column
-    });
-    allFksByTable.set(f.table_name, list);
-  }
-
-  // Resolve scope transitively: a table with no companyId/companyGroupId column
-  // but a FK to an already-scoped table inherits that scope (nearest scoped
-  // parent wins — BFS by passes converges on the shortest path). This pulls in
-  // child tables (contacts, locations, line prices, status history, …) without a
-  // hand-maintained list.
-  const scope = new Map<string, Scope>();
-  const scopeRoot = new Map<string, "companyId" | "companyGroupId">();
-  for (const [name, column] of scopeByTable) {
-    scope.set(name, { kind: "direct", column });
-    scopeRoot.set(name, column);
-  }
-  // Company-singletons: keyed by `id` (= the company id via an id->company FK),
-  // with no companyId column. Scope them by `id` directly — a company's data
-  // without a redundant column. Inject BEFORE via-resolution so a FK to a scoped
-  // table (e.g. a notification-group ref) can't mis-scope them through it.
-  const existingTables = new Set(columns.rows.map((c) => c.table_name));
-  for (const name of COMPANY_SINGLETON_TABLES) {
-    if (!existingTables.has(name) || scope.has(name)) continue;
-    scope.set(name, { kind: "direct", column: "id" });
-    scopeRoot.set(name, "companyId");
-  }
-  let resolvedMore = true;
-  while (resolvedMore) {
-    resolvedMore = false;
-    for (const [name, fks] of allFksByTable) {
-      if (scope.has(name) || structural.has(name)) continue;
-      const fk = fks.find((f) => f.refTable !== name && scope.has(f.refTable));
-      if (!fk) continue;
-      scope.set(name, {
-        kind: "via",
-        column: fk.column,
-        refColumn: fk.refColumn,
-        parent: fk.refTable
-      });
-      scopeRoot.set(name, scopeRoot.get(fk.refTable)!);
-      resolvedMore = true;
-    }
-  }
-  const tableSet = new Set(scope.keys());
-
-  let schemaVersion = "unknown";
-  try {
-    const migration = await sql<{ version: string }>`
-      SELECT version FROM supabase_migrations.schema_migrations
-      ORDER BY version DESC LIMIT 1
-    `.execute(db);
-    schemaVersion = migration.rows[0]?.version ?? "unknown";
-  } catch {
-    // migrations table unavailable — leave as unknown
-  }
-
-  const columnsByTable = new Map<string, ColumnInfo[]>();
-  for (const c of columns.rows) {
-    if (!tableSet.has(c.table_name)) continue;
-    const list = columnsByTable.get(c.table_name) ?? [];
-    list.push({
-      name: c.column_name,
-      dataType: c.data_type,
-      udtName: c.udt_name,
-      isNullable: c.is_nullable === "YES",
-      isGenerated:
-        c.is_generated === "ALWAYS" || c.identity_generation !== null,
-      hasDefault: c.column_default !== null
-    });
-    columnsByTable.set(c.table_name, list);
-  }
-
-  const pkColumnsByTable = new Map<string, string[]>();
-  for (const p of primaryKeys.rows) {
-    const list = pkColumnsByTable.get(p.table_name) ?? [];
-    list.push(p.column_name);
-    pkColumnsByTable.set(p.table_name, list);
-  }
-
-  const uniqueColumnsByTable = new Map<string, Set<string>>();
-  for (const u of uniqueColumns.rows) {
-    const set = uniqueColumnsByTable.get(u.table_name) ?? new Set<string>();
-    set.add(u.column_name);
-    uniqueColumnsByTable.set(u.table_name, set);
-  }
-
-  const fksByTable = new Map<string, ForeignKey[]>();
-  for (const f of foreignKeys.rows) {
-    if (!tableSet.has(f.table_name)) continue;
-    const list = fksByTable.get(f.table_name) ?? [];
-    list.push({
-      column: f.column_name,
-      refTable: f.ref_table,
-      refColumn: f.ref_column
-    });
-    fksByTable.set(f.table_name, list);
-  }
-
-  const tables: TableInfo[] = [...tableSet].sort().map((name) => {
-    const pkColumns = pkColumnsByTable.get(name) ?? [];
-    return {
-      name,
-      columns: columnsByTable.get(name) ?? [],
-      scope: scope.get(name)!,
-      scopeColumn: scopeRoot.get(name)!,
-      pkColumns,
-      uniqueColumns: [...(uniqueColumnsByTable.get(name) ?? [])],
-      hasId: pkColumns.length === 1 && pkColumns[0] === "id",
-      foreignKeys: fksByTable.get(name) ?? []
-    };
-  });
-
-  return { schemaVersion, tables: topologicalSort(tables) };
-}
-
-/**
- * Decide whether a backup can be imported into the *current* schema. A backup
- * is a point-in-time snapshot; a breaking migration since then would make the
- * insert fail. Incompatible when, for a table the backup populates, the live
- * schema either no longer has the table, or has gained a required column (NOT
- * NULL, no default, not generated) the backup can't supply. Additive migrations
- * (new nullable/defaulted columns, new tables) stay compatible automatically —
- * so there's no version to bump by hand.
+ * Decide whether a backup can be imported into the *current* schema — the hard
+ * gate the restore and import jobs call, and the boolean form of exactly the same
+ * question `reportBackupCompatibility` answers in detail.
+ *
+ * It DELEGATES to that function rather than restating its rules. The two were
+ * separate implementations kept in step by hand, and they drifted: table renames
+ * reached the report but not the gate, so the pre-restore screen said "restorable"
+ * and the restore then refused. A finding is `blocked` or it is not; that decision
+ * now exists in one place.
+ *
+ * Reads only the manifest, so the verdict never depends on which table files a
+ * caller happens to have loaded.
  */
 export function assertBackupImportable(
   catalog: Catalog,
   backup: CompanyBackup
 ): { ok: true } | { ok: false; reason: string } {
-  const { manifest } = backup;
+  const { findings } = reportBackupCompatibility(catalog, backup.manifest);
+  const blocking = findings.find((f) => f.kind === "blocked");
+  if (!blocking) return { ok: true };
+  return { ok: false, reason: blockingReason(blocking) };
+}
 
-  if (manifest.version !== BACKUP_VERSION) {
-    return {
-      ok: false,
-      reason: `its format (generation ${manifest.version}) is no longer supported (current is ${BACKUP_VERSION})`
-    };
+/**
+ * A `blocked` finding as one sentence, for a caller with nowhere to render the
+ * `table`/`column` fields the UI shows beside `reason`.
+ */
+function blockingReason(f: CompatibilityFinding): string {
+  if (f.column) {
+    return `"${f.table}" now requires column "${f.column}", which this backup predates`;
   }
-
-  // Account defaults reference the chart of accounts, so the two must travel
-  // together; defaults without accounts came from a groupless company and would
-  // leave a dangling FK (the export-side guard now prevents producing these).
-  if (
-    (backup.data.accountDefault?.length ?? 0) > 0 &&
-    (backup.data.account?.length ?? 0) === 0
-  ) {
-    return {
-      ok: false,
-      reason:
-        "it has account defaults but no chart of accounts (exported from a company with no group)"
-    };
-  }
-
-  const liveByName = new Map(catalog.tables.map((t) => [t.name, t]));
-  for (const backupTable of manifest.tables) {
-    // A backup table the catalog now excludes by design (MRP output, the company
-    // shell) is not schema drift — skip it; its rows are ignored on load.
-    if (CATALOG_EXCLUDED_TABLES.has(backupTable.name)) continue;
-    const live = liveByName.get(backupTable.name);
-    if (!live) {
-      return {
-        ok: false,
-        reason: `table "${backupTable.name}" no longer exists in the current schema`
-      };
-    }
-    const backupCols = new Set(backupTable.columns);
-    const missing = live.columns.find(
-      (c) =>
-        !c.isNullable &&
-        !c.hasDefault &&
-        !c.isGenerated &&
-        !backupCols.has(c.name)
-    );
-    if (missing) {
-      return {
-        ok: false,
-        reason: `"${backupTable.name}" now requires column "${missing.name}", which this backup predates`
-      };
-    }
-  }
-  return { ok: true };
+  return f.reason;
 }
 
 /**
@@ -808,52 +413,6 @@ export const RETAINED_REF_TABLES = new Set([
   "company",
   "companyGroup"
 ]);
-
-/**
- * Kahn's algorithm over in-set FK edges (referenced tables first). Cycles
- * are broken deterministically by picking the remaining table with the
- * fewest unmet dependencies (then alphabetically). Order is best-effort:
- * imports run with FK enforcement relaxed when possible.
- */
-export function topologicalSort(tables: TableInfo[]): TableInfo[] {
-  const byName = new Map(tables.map((t) => [t.name, t]));
-  const remaining = new Set(byName.keys());
-  const deps = new Map<string, Set<string>>();
-
-  for (const t of tables) {
-    const set = new Set<string>();
-    for (const fk of t.foreignKeys) {
-      if (fk.refTable !== t.name && byName.has(fk.refTable)) {
-        set.add(fk.refTable);
-      }
-    }
-    deps.set(t.name, set);
-  }
-
-  const sorted: TableInfo[] = [];
-  while (remaining.size > 0) {
-    let next: string | null = null;
-    let fewest = Infinity;
-    for (const name of [...remaining].sort()) {
-      const unmet = [...(deps.get(name) ?? [])].filter((d) =>
-        remaining.has(d)
-      ).length;
-      if (unmet === 0) {
-        next = name;
-        break;
-      }
-      if (unmet < fewest) {
-        fewest = unmet;
-        next = name;
-      }
-    }
-    if (!next) break;
-    remaining.delete(next);
-    sorted.push(byName.get(next)!);
-  }
-
-  return sorted;
-}
 
 /**
  * A fresh primary-key value for a table, matching its `id` column's type as the
@@ -932,12 +491,11 @@ export function buildScopeFilter(
  * Export-time closure guard — refuse to PRODUCE a backup that could never be
  * restored. For each NOT-NULL FK from an exportable scoped table to another
  * exportable scoped table, count rows in this company's export scope whose
- * reference falls OUTSIDE the referenced table's export scope (a cross-company /
- * out-of-scope ref: the child row would be dumped but its parent would not).
- * DB-level and count-only, so no rows are held in memory. This is the export
- * mirror of the restore-side `assertReferentiallyClosed`. Skips nullable FKs
- * (restore nulls a missing nullable ref) and refs to retained/global/secret
- * tables (`user`, `company`, …, and anything not exported).
+ * reference falls OUTSIDE the referenced table's export scope (the child row
+ * would be dumped but its parent would not). DB-level and count-only. The
+ * export mirror of the restore-side `assertReferentiallyClosed`. Skips
+ * nullable FKs (restore nulls a missing ref) and refs to retained/global/
+ * secret tables.
  */
 export async function findExportScopeViolations(
   db: Kysely<KyselyDatabase>,
@@ -964,12 +522,9 @@ export async function findExportScopeViolations(
         companyId,
         companyGroupId
       );
-      // A NOT-NULL FK is only a real gap when it points at ANOTHER company's row.
-      // A `companyId IS NULL` row is shared substrate (seeded `material*`,
-      // currencies, …) present in every target, so it is never a gap — widen the
-      // existence set to include it. A ref to a row owned by a different company
-      // (scopeCol = some other value) is still NOT matched, so it still surfaces.
-      // This is the one cross-tenant rule, no per-table allow-list.
+      // A `companyId IS NULL` parent row is shared substrate (seeded
+      // `material*`, currencies, …) present in every target — never a gap. A
+      // row owned by a DIFFERENT company still surfaces.
       const parentExistence =
         parent.scope.kind === "direct"
           ? sql`${parentScope} OR ${sql.id(parent.scope.column)} IS NULL`

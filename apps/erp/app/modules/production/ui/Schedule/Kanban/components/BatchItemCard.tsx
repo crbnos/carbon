@@ -154,7 +154,7 @@ export function BatchItemCard({
   const submitBatch = (fd: FormData) => {
     fetcher.submit(fd, {
       method: "post",
-      action: path.to.scheduleBatchingUpdate
+      action: path.to.priorityBatchingUpdate
     });
   };
 

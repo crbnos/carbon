@@ -3,7 +3,6 @@ import type { JSONContent } from "@carbon/react";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
   generateHTML,
@@ -81,7 +80,6 @@ const ItemNotes = ({
           <CardTitle>
             <Trans>Notes</Trans>
           </CardTitle>
-          <CardDescription>{subTitle}</CardDescription>
         </CardHeader>
 
         <CardContent>

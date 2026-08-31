@@ -1,5 +1,6 @@
 import type { IconType } from "react-icons";
 import {
+  LuBlocks,
   LuFileCheck,
   LuGauge,
   LuHardHat,
@@ -7,8 +8,7 @@ import {
   LuPackageSearch,
   LuShoppingCart,
   LuSquareUser,
-  LuUser,
-  LuWrench
+  LuUser
 } from "react-icons/lu";
 import { PiShareNetworkFill } from "react-icons/pi";
 import {
@@ -28,7 +28,7 @@ export const entityTypeConfig: Record<
   item: {
     bgColor: "bg-emerald-100 dark:bg-emerald-900/30",
     textColor: "text-emerald-600 dark:text-emerald-400",
-    icon: LuWrench
+    icon: LuBlocks
   },
   job: {
     bgColor: "bg-orange-100 dark:bg-orange-900/30",

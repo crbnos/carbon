@@ -345,7 +345,7 @@ function TraceabilityRouteInner() {
       null);
 
   return (
-    <div className="flex bg-card h-[calc(100dvh-49px)] w-full overflow-hidden scrollbar-hide">
+    <div className="flex bg-card h-[calc(100dvh-var(--topbar-height))] w-full overflow-hidden scrollbar-hide">
       <VStack className="flex-1 min-w-0 h-full" spacing={0}>
         <div className="flex flex-1 w-full h-full overflow-hidden">
           <div className="w-full h-full">

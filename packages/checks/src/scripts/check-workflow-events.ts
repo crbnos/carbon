@@ -39,7 +39,7 @@ async function main() {
          FROM "workflowTriggerEvent" t
          JOIN "workflow" w
            ON w."id" = t."workflowId" AND w."companyId" = t."companyId"
-        WHERE w."active" = TRUE
+        WHERE w."publishedVersionId" IS NOT NULL
         ORDER BY t."eventId"`
     );
 

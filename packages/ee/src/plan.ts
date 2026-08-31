@@ -15,7 +15,9 @@ export const FEATURE_PLANS = {
   STORAGE_RULES: [Plan.Business, Plan.Partner],
   CUSTOMER_PORTALS: [Plan.Business, Plan.Partner],
   AI_AGENT: [Plan.Business, Plan.Partner],
-  WORKFLOWS: [Plan.Business, Plan.Partner]
+  WORKFLOWS: [Plan.Business, Plan.Partner],
+  FORECAST: [Plan.Business, Plan.Partner],
+  TWO_FACTOR: [Plan.Business, Plan.Partner]
 } as const satisfies Record<string, Plan[]>;
 
 export type Feature = keyof typeof FEATURE_PLANS;

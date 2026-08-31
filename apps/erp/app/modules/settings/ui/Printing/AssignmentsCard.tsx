@@ -21,9 +21,9 @@ import { useCallback, useEffect, useMemo } from "react";
 import {
   LuBlocks,
   LuHandCoins,
+  LuLocateFixed,
   LuMapPin,
-  LuTruck,
-  LuWrench
+  LuTruck
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
 
@@ -216,7 +216,7 @@ function LocationSection({
       context: "workCenter",
       contextId: wc.id,
       label: wc.name,
-      icon: <LuWrench />,
+      icon: <LuLocateFixed />,
       explicit: assignment?.workCenters?.[wc.id] ?? null
     }))
   ];

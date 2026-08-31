@@ -249,7 +249,7 @@ export default function GetStartedLayout() {
 
   return (
     <CollapsibleSidebarProvider>
-      <div className="bg-card grid grid-cols-[auto_1fr] grid-rows-[minmax(0,1fr)] w-full h-full overflow-hidden">
+      <div className="bg-card grid grid-cols-[auto_minmax(0,1fr)] grid-rows-[minmax(0,1fr)] w-full h-full overflow-hidden">
         <GroupedContentSidebar groups={groups} exactMatch />
         <div className="relative min-w-0 overflow-hidden bg-card">
           <div ref={scrollRef} className="relative z-10 h-full overflow-y-auto">

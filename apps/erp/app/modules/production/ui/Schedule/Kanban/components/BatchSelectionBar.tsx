@@ -93,7 +93,7 @@ export function BatchSelectionBar({
     }
     fetcher.submit(fd, {
       method: "post",
-      action: path.to.scheduleBatchingUpdate
+      action: path.to.priorityBatchingUpdate
     });
   };
 

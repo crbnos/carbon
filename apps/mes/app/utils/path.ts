@@ -34,6 +34,7 @@ export const path = {
       qualityIssueTypes: `${api}/quality-issue-types`,
       serialNumbers: (itemId: string) =>
         generatePath(`${api}/serial-numbers?itemId=${itemId}`),
+      ssoCheck: `${api}/sso/check`,
       suggestedAllocation: (
         itemId: string,
         locationId: string,
@@ -172,6 +173,7 @@ export const path = {
     onboarding: `${ERP_URL}/onboarding`,
     operation: (id: string) => generatePath(`${x}/operation/${id}`),
     operations: `${x}/operations?saved=1`,
+    peopleOverride: `${x}/people-override`,
     picking: `${x}/picking`,
     pickingDetail: (id: string) => generatePath(`${x}/picking/${id}`),
     pickingLineQuantity: (id: string) =>
@@ -197,6 +199,7 @@ export const path = {
       return parentId ? `${basePath}?parentId=${parentId}` : basePath;
     },
     scrapReasons: `${api}/scrap-reasons`,
+    setupRequired: "/setup-required",
     startOperation: (id: string) => generatePath(`${x}/start/${id}`),
     suggestion: `${x}/suggestion`,
     switchCompany: (companyId: string) =>

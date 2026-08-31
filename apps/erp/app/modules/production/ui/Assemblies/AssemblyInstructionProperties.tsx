@@ -145,11 +145,11 @@ const AssemblyInstructionProperties = ({
   return (
     <VStack
       spacing={0}
-      className="w-[450px] bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border text-sm"
+      className="w-[450px] bg-background h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border text-sm"
     >
       {/* Sticky panel header: which step you're editing, its status, and a
           one-glance summary (component count, flagged). */}
-      <div className="sticky top-0 z-10 w-full min-w-0 flex-none border-b border-border bg-card/95 px-4 py-3 backdrop-blur">
+      <div className="sticky top-0 z-10 w-full min-w-0 flex-none border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
         {step ? (
           <VStack spacing={1} className="w-full min-w-0">
             <HStack className="w-full min-w-0 items-center justify-between gap-2">

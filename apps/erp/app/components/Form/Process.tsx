@@ -76,6 +76,7 @@ const Process = ({
             defaultStandardFactor: "Minutes/Piece",
             completeAllOnScan: false,
             batchable: false,
+            requiresAbility: false,
             workCenters: []
           }}
         />

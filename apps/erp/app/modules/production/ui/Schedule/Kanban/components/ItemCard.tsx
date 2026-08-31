@@ -21,13 +21,16 @@ import {
 } from "@carbon/react";
 import {
   convertDateStringToIsoString,
+  formatDate,
   formatDurationMilliseconds
 } from "@carbon/utils";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { cva } from "class-variance-authority";
 import {
+  LuCalendarClock,
   LuCalendarDays,
   LuCircleCheck,
   LuCirclePlay,
@@ -41,6 +44,7 @@ import {
   LuSquareUser,
   LuTimer,
   LuTrash,
+  LuTriangleAlert,
   LuUsers
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
@@ -161,6 +165,17 @@ function OperationCard({
       ? item.dueDate < scheduleToday
       : false;
 
+  const projectedCompletionDate = item.projectedCompletionAt
+    ? item.projectedCompletionAt.slice(0, 10)
+    : null;
+  const daysBehindTarget =
+    projectedCompletionDate && item.dueDate
+      ? parseDate(projectedCompletionDate).compare(
+          parseDate(item.dueDate.slice(0, 10))
+        )
+      : 0;
+  const isBehindTarget = daysBehindTarget > 0;
+
   const progress = progressByItemId[item.id]?.progress ?? 0;
   const status = progressByItemId[item.id]?.active
     ? "In Progress"
@@ -175,6 +190,7 @@ function OperationCard({
       style={style}
       className={cn(
         "group/card max-w-[330px]",
+        item.hasConflict && "border-red-500 border-2",
         cardVariants({
           dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
           // @ts-expect-error TS2322 - TODO: fix type
@@ -215,6 +231,16 @@ function OperationCard({
                 </TooltipTrigger>
                 <TooltipContent side="top">
                   <Trans>Select for batch</Trans>
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {item.hasConflict && (
+              <Tooltip>
+                <TooltipTrigger>
+                  <LuTriangleAlert className="h-4 w-4 text-red-500 flex-shrink-0" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  {item.conflictReason ?? t`Scheduling conflict`}
                 </TooltipContent>
               </Tooltip>
             )}
@@ -406,6 +432,31 @@ function OperationCard({
             <span className="text-sm">
               <DateTime value={item.dueDate} variant="date" />
             </span>
+          </HStack>
+        )}
+        {displaySettings.showDueDate && projectedCompletionDate && (
+          <HStack className="justify-start space-x-2">
+            <LuCalendarClock
+              className={
+                isBehindTarget ? "text-amber-500" : "text-muted-foreground"
+              }
+            />
+            {isBehindTarget ? (
+              <Tooltip>
+                <TooltipTrigger>
+                  <span className="text-sm text-amber-500">
+                    {t`Proj. ${formatDate(projectedCompletionDate)}`}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  {t`Behind target by ${daysBehindTarget} day(s)`}
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <span className="text-sm text-muted-foreground">
+                {t`Proj. ${formatDate(projectedCompletionDate)}`}
+              </span>
+            )}
           </HStack>
         )}
 

@@ -230,6 +230,21 @@
       "headings": ["Recipes"]
     },
     {
+      "slug": "docs/platform/single-sign-on",
+      "title": "Single sign-on",
+      "description": "Route sign-in for your company's email domains through your own identity provider with enterprise SAML SSO.",
+      "keywords": ["single", "sign-on", "docs", "platform", "sign"],
+      "headings": [
+        "Requirements",
+        "Connect your identity provider",
+        "Verifying a domain",
+        "How sign-in works",
+        "Existing accounts",
+        "Requiring SSO",
+        "Two-factor authentication"
+      ]
+    },
+    {
       "slug": "docs/reference/account",
       "title": "Your account",
       "description": "Personal, self-service settings for profile, passkeys and two-factor, notification preferences, theme, and language, kept separate from the company-wide settings an admin controls.",
@@ -1551,6 +1566,7 @@
         "Someone is stuck on the setup screen and can't get in",
         "The Two-Factor column isn't in the employee list",
         "Turning enforcement on didn't prompt anyone",
+        "Nobody got the announcement email",
         "An admin can't turn enforcement off"
       ]
     },

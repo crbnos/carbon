@@ -1,4 +1,12 @@
-import { cn, IconButton, useIsMobile } from "@carbon/react";
+import {
+  cn,
+  Drawer,
+  DrawerContent,
+  DrawerTitle,
+  IconButton,
+  useIsMobile
+} from "@carbon/react";
+import { Trans } from "@lingui/react/macro";
 import { motion, useReducedMotion } from "framer-motion";
 import type { ComponentProps, PropsWithChildren } from "react";
 import {
@@ -9,6 +17,7 @@ import {
   useMemo
 } from "react";
 import { LuPanelLeft } from "react-icons/lu";
+import { useOptimisticLocation } from "~/hooks";
 import { useUIStore } from "~/stores/ui";
 
 interface CollapsibleSidebarContextValue {
@@ -35,6 +44,9 @@ export function CollapsibleSidebarProvider({ children }: PropsWithChildren) {
   const isSidebarOpen = useUIStore((state) => state.isSidebarOpen);
   const setSidebarOpen = useUIStore((state) => state.setSidebarOpen);
   const toggleSidebar = useUIStore((state) => state.toggleSidebar);
+  const setHasContentSidebar = useUIStore(
+    (state) => state.setHasContentSidebar
+  );
 
   useEffect(() => {
     if (isMobile) {
@@ -43,6 +55,13 @@ export function CollapsibleSidebarProvider({ children }: PropsWithChildren) {
       setSidebarOpen(true);
     }
   }, [isMobile, setSidebarOpen]);
+
+  // Tell the (global) Topbar that this route has a content sub-nav, so it can
+  // surface a mobile "Sections" trigger. Cleared when the module unmounts.
+  useEffect(() => {
+    setHasContentSidebar(true);
+    return () => setHasContentSidebar(false);
+  }, [setHasContentSidebar]);
 
   return (
     <CollapsibleSidebarContext.Provider
@@ -89,6 +108,9 @@ export const CollapsibleSidebar = ({
 }: PropsWithChildren<{ width?: number }>) => {
   const { isOpen } = useCollapsibleSidebar();
   const shouldReduceMotion = useReducedMotion();
+  const isMobile = useIsMobile();
+  const setSidebarOpen = useUIStore((state) => state.setSidebarOpen);
+  const location = useOptimisticLocation();
 
   const variants = useMemo(() => {
     return {
@@ -102,6 +124,39 @@ export const CollapsibleSidebar = ({
       }
     };
   }, [width]);
+
+  // On mobile the sub-nav is an overlay drawer; close it once the user picks a
+  // section (the pathname changes) so it doesn't sit over the destination.
+  useEffect(() => {
+    if (isMobile) setSidebarOpen(false);
+  }, [location.pathname, isMobile, setSidebarOpen]);
+
+  if (isMobile) {
+    return (
+      <>
+        {/* The sub-nav is a portaled overlay on mobile, but the module layout
+            grid (`grid-cols-[auto_minmax(0,1fr)]`) still expects a node in its
+            first (`auto`) track. Without this zero-width occupant the content
+            slides into the `auto` track and the `1fr` track becomes an empty
+            gutter on the right. */}
+        <div aria-hidden className="w-0" />
+        <Drawer open={isOpen} onOpenChange={setSidebarOpen}>
+          <DrawerContent
+            position="left"
+            size="content"
+            className="w-[17rem] max-w-[85vw] p-0"
+          >
+            <DrawerTitle className="px-4 py-3">
+              <Trans>Submodules</Trans>
+            </DrawerTitle>
+            <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
+              {children}
+            </div>
+          </DrawerContent>
+        </Drawer>
+      </>
+    );
+  }
 
   return (
     <motion.div
@@ -117,7 +172,7 @@ export const CollapsibleSidebar = ({
             }
       }
       variants={variants}
-      className="relative flex h-[calc(100dvh-49px)]"
+      className="relative flex h-[calc(100dvh-var(--topbar-height))]"
     >
       <div className="h-full w-full overflow-hidden bg-card border-r border-border">
         {isOpen ? children : null}

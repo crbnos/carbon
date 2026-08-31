@@ -48,7 +48,8 @@ const Processes = (props: ProcessSelectProps) => {
             processType: "Process",
             workCenters: [],
             completeAllOnScan: false,
-            batchable: false
+            batchable: false,
+            requiresAbility: false
           }}
         />
       )}

@@ -76,7 +76,7 @@ export default function LogosRoute() {
   if (!company) throw new Error("Company not found");
 
   return (
-    <ScrollArea className="w-full h-[calc(100dvh-49px)]">
+    <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height))]">
       <VStack spacing={4} className="py-12 px-4 max-w-[60rem] h-full mx-auto">
         <div className="flex w-full justify-between items-center gap-1">
           <Heading size="h3">

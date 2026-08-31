@@ -127,13 +127,17 @@ replay can never double-fire:
 - `syncWorkflowTriggers(db, companyId, workflowId, lockCompany)` — rewrite one workflow's trigger rows
   (delete-then-insert; the table has no UPDATE policy by design), **write `workflow.nextRunAt`**
   (the scheduler's bookmark, or null for event-triggered workflows), and reconcile the company's
-  subscriptions. Returns `{ eventIds, tables, scheduled }`. Call it on promote, on trigger edit,
-  and on activate/deactivate.
+  subscriptions. Returns `{ eventIds, tables, scheduled }`. Call it on publish, on trigger edit,
+  and on unpublish.
 - `syncWorkflowSubscriptions(db, companyId)` — standalone repair from existing rows.
 
 Reconciliation is surgical: only `handlerType = 'WORKFLOW'` rows are touched, matched by
 exact `(companyId, name, table)`, and a row with the wrong `operations` is deleted and
 re-inserted. It never resets a company's WEBHOOK/SEARCH/AUDIT subscriptions.
+
+The gate inside it is `workflow.publishedVersionId` alone — set means published, `NULL` means
+draft and an empty desired set. The old `active` boolean was removed in migration
+`20260824163808_workflow-publish-unpublish.sql`.
 
 **Why this lives in `@carbon/workflows` and not `@carbon/database`:** it must read
 `WORKFLOW_EVENTS`, and `@carbon/workflows` already dev-depends on `@carbon/database` — the
@@ -150,7 +154,7 @@ The caller owns it because `@carbon/workflows` imports Kysely **type-only** (the
 for the browser) and cannot run raw SQL; `workflows.server.ts` supplies
 `` sql`SELECT pg_advisory_xact_lock(hashtext(${companyId}))` ``.
 
-Kysely bypasses RLS. **The caller authorizes first** — phase 7's activation route gates on
+Kysely bypasses RLS. **The caller authorizes first** — the publish and unpublish routes gate on
 `workflows_update` before calling.
 
 ## Gotchas

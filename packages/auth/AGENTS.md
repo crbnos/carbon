@@ -43,6 +43,9 @@ pnpm --filter @carbon/auth test
 | `./passkey.server` | WebAuthn/passkey registration and authentication |
 | `./middleware/flash.server` | Flash message middleware |
 
+SAML SSO lives in `@carbon/ee/sso.server` (Enterprise-gated), NOT here — auth
+only carries `AuthSession.ssoProviderId` and its preservation across refresh.
+
 ## Cross-References
 
 - `.claude/rules/authentication-system.md` — full auth architecture, login flows, claims caching

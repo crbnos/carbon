@@ -11,6 +11,7 @@ import {
   validator
 } from "@carbon/form";
 import {
+  Badge,
   Button,
   Card,
   CardContent,
@@ -47,25 +48,28 @@ import {
   deleteCompanyBackup,
   exportCompanyBackup,
   getCompanyExportRun,
-  getCompanyRestoreRuns,
-  listCompanyBackups
+  getCompanyRestoreRuns
 } from "~/modules/settings";
 import {
   dismissCompanyExportFailure,
   finalizeCompanyRestore,
+  getCompanyBackups,
   revertCompanyRestore,
   startCompanyRestore
 } from "~/modules/settings/backups.server";
+import type { BackupStatus } from "~/modules/settings/ui/Backups";
 import {
   BackupContentsInfo,
   BackupSourcePicker,
+  backupStatusLabel,
+  backupStatusVariant,
   formatBackupDate,
   formatBackupName,
   IncludeStorageChoice,
   JobProgressModal,
+  RestoreDisclosure,
   RestoreIncludeChoice,
-  RestoreReviewRow,
-  RestoreSubmit
+  RestoreReviewRow
 } from "~/modules/settings/ui/Backups";
 import { canAccessBackups } from "~/utils/backups";
 import { getEdgeFunctionErrorMessage } from "~/utils/error";
@@ -107,7 +111,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   requireBackupAccess(email);
 
   const [backupsList, restoreRuns, exportRun] = await Promise.all([
-    listCompanyBackups(client, companyId),
+    getCompanyBackups(client, companyId),
     getCompanyRestoreRuns(client, companyId),
     getCompanyExportRun(client, companyId)
   ]);
@@ -261,6 +265,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function BackupsRoute() {
   const { files, restoreRuns, exportRun } = useLoaderData<typeof loader>();
+  const readyBackups = files.filter((f) => f.status === "ready");
   const fetcher = useFetcher<{
     success?: boolean;
     message?: string;
@@ -381,7 +386,7 @@ export default function BackupsRoute() {
   }, [fetcher.data, readyBackupNames]);
 
   return (
-    <ScrollArea className="w-full h-[calc(100dvh-49px)]">
+    <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height))]">
       <div className="py-12 px-4 max-w-[72rem] mx-auto flex flex-col gap-4">
         <Heading size="h3">Backups</Heading>
 
@@ -441,9 +446,7 @@ export default function BackupsRoute() {
                 <div className="flex flex-col gap-6">
                   <div className="flex flex-col gap-1.5">
                     <span className="text-sm">Source</span>
-                    <BackupSourcePicker
-                      backups={files.filter((f) => f.status === "ready")}
-                    />
+                    <BackupSourcePicker backups={readyBackups} />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <span className="text-sm">Include</span>
@@ -452,7 +455,18 @@ export default function BackupsRoute() {
                 </div>
               </CardContent>
               <CardFooter>
-                <RestoreSubmit />
+                {/* The disclosure screen is the only way this form submits — it
+                    submits through the fetcher rather than the form's own submit
+                    button, because the modal is portaled outside the <form>. */}
+                <RestoreDisclosure
+                  backups={readyBackups}
+                  onConfirm={({ source, includeStorage }) =>
+                    fetcher.submit(
+                      { intent: "restore", source, includeStorage },
+                      { method: "post" }
+                    )
+                  }
+                />
               </CardFooter>
             </ValidatedForm>
           </Card>
@@ -520,10 +534,14 @@ export default function BackupsRoute() {
                   <HStack className="w-full justify-between rounded-lg border border-destructive/50 bg-destructive/5 p-3">
                     <VStack spacing={0} className="min-w-0">
                       <span className="text-sm font-medium">Backup failed</span>
+                      {/* Never "the system", and never "contact support" for
+                          something the reason already explains — the old copy
+                          blamed the product for what is usually a data problem
+                          the message itself names. */}
                       <span className="break-words text-xs text-muted-foreground">
-                        The system created an invalid backup — please contact
-                        Carbon support.
-                        {exportRun?.error ? ` (${exportRun.error})` : null}
+                        {exportRun?.error
+                          ? `This backup could not be completed. ${exportRun.error}`
+                          : "This backup could not be completed."}
                       </span>
                     </VStack>
                     <Button
@@ -592,6 +610,13 @@ function BackupRow({ file }: { file: CompanyBackupSummary }) {
     );
   });
   const name = file.label || formatBackupName(file.name);
+  // A half-written folder has no verdict — the incompleteness is the whole story.
+  // A null verdict means the schema could not be read: show no badge rather than
+  // a green one nothing actually checked.
+  const status: BackupStatus | null =
+    file.status === "pending"
+      ? "incomplete"
+      : (file.compatibility?.status ?? null);
 
   return (
     <HStack
@@ -599,13 +624,13 @@ function BackupRow({ file }: { file: CompanyBackupSummary }) {
         file.status === "pending" || isDeleting ? "opacity-70" : ""
       }`}
     >
-      <VStack spacing={0}>
-        <span className="text-sm font-medium">{name}</span>
+      <VStack spacing={0} className="min-w-0">
+        <span className="text-sm font-medium truncate">{name}</span>
         <span className="text-xs text-muted-foreground">
           {file.status === "pending" ? (
             // A pending folder with no running export is a dead partial — never
             // lie with "Preparing…".
-            <>Incomplete backup — not restorable</>
+            <Trans>Incomplete backup — not restorable</Trans>
           ) : (
             <>
               <DateTime value={file.exportedAt} variant="absolute" />
@@ -619,7 +644,15 @@ function BackupRow({ file }: { file: CompanyBackupSummary }) {
           )}
         </span>
       </VStack>
-      <HStack spacing={2}>
+      <HStack spacing={2} className="shrink-0">
+        {/* Status sits with the actions, not against the name — it describes
+            what you can DO with the row (restore it or not), and a loud chip
+            beside a quiet text-sm title read as part of the name. */}
+        {status ? (
+          <Badge variant={backupStatusVariant(status)}>
+            {t(backupStatusLabel(status))}
+          </Badge>
+        ) : null}
         {file.status === "ready" && !isDeleting ? (
           <Button asChild variant="secondary">
             <a

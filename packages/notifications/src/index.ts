@@ -24,6 +24,9 @@ export enum NotificationEvent {
   JobCompleted = "job-completed",
   JobOperationAssignment = "job-operation-assignment",
   JobOperationMessage = "job-operation-message",
+  // Digest (documentIds-shaped): jobs a regen flipped to projected-late, one
+  // digest per assignee. In-app only by default.
+  JobsProjectedLate = "jobs-projected-late",
   MaintenanceDispatchAssignment = "maintenance-dispatch-assignment",
   MaintenanceDispatchCreated = "maintenance-dispatch-created",
   NonConformanceAssignment = "issue-assignment",
@@ -127,6 +130,7 @@ export function getNotificationTopic(
     case NotificationEvent.JobOperationAssignment:
     case NotificationEvent.JobOperationMessage:
     case NotificationEvent.JobCompleted:
+    case NotificationEvent.JobsProjectedLate:
       return NotificationTopic.Job;
     case NotificationEvent.PurchaseInvoiceAssignment:
     case NotificationEvent.PurchaseOrderAssignment:
@@ -187,6 +191,8 @@ export function getNotificationEmailHeading(event: NotificationEvent): string {
       return "Job assigned to you";
     case NotificationEvent.JobCompleted:
       return "Job completed";
+    case NotificationEvent.JobsProjectedLate:
+      return "Jobs projected late";
     case NotificationEvent.JobOperationAssignment:
       return "Job operation assigned to you";
     case NotificationEvent.JobOperationMessage:
@@ -272,6 +278,7 @@ export function getNotificationEmailCtaLabel(event: NotificationEvent): string {
     case NotificationEvent.ChangeNoticeDone:
       return "View change notice";
     case NotificationEvent.JobCompleted:
+    case NotificationEvent.JobsProjectedLate:
       return "View job";
     case NotificationEvent.SuggestionResponse:
       return "View suggestion";

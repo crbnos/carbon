@@ -106,8 +106,9 @@ vi.mock("react-router", () => ({
 vi.mock("~/utils/path", () => ({
   path: {
     to: {
-      scheduleDatesUpdate: "/schedule/dates/update",
-      scheduleOperationUpdate: "/schedule/operations/update"
+      priorityBatchingUpdate: "/priority/batching/update",
+      priorityDatesUpdate: "/priority/dates/update",
+      priorityOperationUpdate: "/priority/operations/update"
     }
   }
 }));
@@ -117,6 +118,9 @@ vi.mock("./components/ColumnCard", () => ({
 }));
 vi.mock("./components/ItemCard", () => ({
   ItemCard: () => null
+}));
+vi.mock("./components/BatchItemCard", () => ({
+  BatchItemCard: () => null
 }));
 vi.mock("./components/JobCard", () => ({
   JobCard: () => null
@@ -281,7 +285,7 @@ function pendingDateFetcher({
     formData.set("optimisticColumnId", optimisticColumnId);
   }
   return {
-    formAction: "/schedule/dates/update",
+    formAction: "/priority/dates/update",
     formData,
     key: `job:${id}`,
     state: "loading"
@@ -341,7 +345,7 @@ describe("Dates board drag lifecycle", () => {
         optimisticColumnId: "2026-08-08",
         priority: 11
       },
-      expect.objectContaining({ action: "/schedule/dates/update" })
+      expect.objectContaining({ action: "/priority/dates/update" })
     );
   });
 
@@ -378,7 +382,7 @@ describe("Dates board drag lifecycle", () => {
         optimisticColumnId: "2026-08-08",
         priority: 21
       },
-      expect.objectContaining({ action: "/schedule/dates/update" })
+      expect.objectContaining({ action: "/priority/dates/update" })
     );
     expect(submit).not.toHaveBeenCalledWith(
       expect.objectContaining({ columnId: "2026-08-16" }),
@@ -408,7 +412,7 @@ describe("Dates board drag lifecycle", () => {
         locationId: "location-1",
         columnId: "2026-08-15"
       }),
-      expect.objectContaining({ action: "/schedule/dates/update" })
+      expect.objectContaining({ action: "/priority/dates/update" })
     );
     expect(submit).not.toHaveBeenCalledWith(
       expect.objectContaining({ columnId: "2026-08-16" }),
@@ -419,7 +423,7 @@ describe("Dates board drag lifecycle", () => {
   it("ignores a Dates fetcher without form data and preserves the next drag origin", () => {
     fetchers.current = [
       {
-        formAction: "/schedule/dates/update",
+        formAction: "/priority/dates/update",
         formData: undefined,
         key: "job:job-a",
         state: "loading"
@@ -443,7 +447,7 @@ describe("Dates board drag lifecycle", () => {
         optimisticColumnId: "2026-08-08",
         priority: 11
       },
-      expect.objectContaining({ action: "/schedule/dates/update" })
+      expect.objectContaining({ action: "/priority/dates/update" })
     );
   });
 
@@ -533,7 +537,7 @@ describe("Dates board drag lifecycle", () => {
         optimisticColumnId: "next-week",
         priority: 21
       },
-      expect.objectContaining({ action: "/schedule/dates/update" })
+      expect.objectContaining({ action: "/priority/dates/update" })
     );
     expect(submit).not.toHaveBeenCalledWith(
       expect.objectContaining({ columnId: "2026-08-09" }),
@@ -634,7 +638,7 @@ describe("Operations board drag lifecycle", () => {
     expect(submit).toHaveBeenCalledTimes(1);
     expect(submit).toHaveBeenCalledWith(
       { id: "operation-a", columnId: "wc-2", priority: 19 },
-      expect.objectContaining({ action: "/schedule/operations/update" })
+      expect.objectContaining({ action: "/priority/operations/update" })
     );
   });
 

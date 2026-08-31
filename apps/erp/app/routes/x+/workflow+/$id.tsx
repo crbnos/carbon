@@ -146,7 +146,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     definition: read.definition,
     failure: null,
     message: null,
-    isVersionLocked: versionId === workflow.activeVersionId
+    isVersionLocked: versionId === workflow.publishedVersionId
   };
 }
 
@@ -195,7 +195,7 @@ export default function WorkflowBuilderRoute() {
         canEdit={canEdit}
         isOwner={isOwner}
       >
-        <div className="flex h-[calc(100dvh-49px)] w-full flex-col">
+        <div className="flex h-[calc(100dvh-var(--topbar-height))] w-full flex-col">
           <BuilderHeader
             workflow={workflow}
             versions={versions}

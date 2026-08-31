@@ -20,8 +20,8 @@ const everyDataset = Object.entries(SEED_WORKFLOW_BUILDERS).flatMap(
 );
 
 describe("dev seed workflows", () => {
-  it("ships exactly one active workflow", () => {
-    expect(workflows.filter((w) => w.active).map((w) => w.name)).toEqual([
+  it("ships exactly one published workflow", () => {
+    expect(workflows.filter((w) => w.published).map((w) => w.name)).toEqual([
       "Assign new sales orders"
     ]);
   });

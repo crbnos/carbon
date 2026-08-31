@@ -46,7 +46,7 @@ export function buildRoboticsWorkflows(refs: {
       name: "Assign new sales orders",
       description:
         "Puts every incoming arm order on someone's desk the moment it is created.",
-      active: true,
+      published: true,
       nodes: [
         {
           id: "trigger_order",
@@ -78,7 +78,7 @@ export function buildRoboticsWorkflows(refs: {
       name: "Escalate high-priority issues",
       description:
         "Notifies the quality owner when an issue is raised to High or Critical.",
-      active: false,
+      published: false,
       nodes: [
         {
           id: "trigger_priority",
@@ -161,7 +161,7 @@ export function buildRoboticsWorkflows(refs: {
       name: "Flag large purchase orders",
       description:
         "Works out a purchase order's total when its status changes and flags anything over 10,000.",
-      active: false,
+      published: false,
       nodes: [
         {
           id: "trigger_po_status",
@@ -243,7 +243,7 @@ export function buildRoboticsWorkflows(refs: {
       name: "Chase jobs that have not started producing",
       description:
         "Every weekday morning, finds in-progress jobs with nothing completed yet and puts each one back on the owner's desk.",
-      active: false,
+      published: false,
       nodes: [
         {
           id: "trigger_morning",
@@ -325,7 +325,7 @@ export function buildRoboticsWorkflows(refs: {
       name: "Announce a released job",
       description:
         "Tells whoever released a job that it is now on the floor. Fires on the business moment, not on a column change.",
-      active: false,
+      published: false,
       nodes: [
         {
           id: "trigger_released",
@@ -372,7 +372,7 @@ export function buildRoboticsWorkflows(refs: {
       name: "Open an issue when a shipment is voided",
       description:
         "A voided shipment usually means something went wrong in the warehouse — this raises the paperwork for it automatically.",
-      active: false,
+      published: false,
       nodes: [
         {
           id: "trigger_shipment",
@@ -444,7 +444,7 @@ export function buildRoboticsWorkflows(refs: {
       name: "Tell an outside system a supplier was approved",
       description:
         "Posts to a URL of your choosing when a supplier turns Active. Point the webhook at your own endpoint before switching this on.",
-      active: false,
+      published: false,
       nodes: [
         {
           id: "trigger_supplier",

@@ -18,7 +18,7 @@ function UpgradeOverlayRoot({ children, className }: WithChildren) {
   return (
     <div
       className={cn(
-        "relative w-full h-full min-h-[calc(100dvh-49px)]",
+        "relative w-full h-full min-h-[calc(100dvh-var(--topbar-height))]",
         className
       )}
     >
@@ -129,12 +129,49 @@ function UpgradeOverlayDialog({
 }) {
   return (
     <Modal open={open} onOpenChange={onOpenChange}>
-      <ModalContent className="max-w-md">
-        <CardContent className="flex flex-col items-center text-center gap-4 pt-8 pb-6">
+      <ModalContent className="max-w-md bg-card dark:bg-muted/40">
+        <div className="flex flex-col items-center text-center gap-4 px-6 pt-4 pb-8">
           {children}
-        </CardContent>
+        </div>
       </ModalContent>
     </Modal>
+  );
+}
+
+/**
+ * Generic section-level gate: blurs the real (inert) section and centers the
+ * upgrade card over it. Unlike the full-page overlays, it sizes to the section
+ * — the min-height only guarantees the card fits over short content.
+ */
+function UpgradeOverlaySection({
+  icon,
+  title,
+  description,
+  children,
+  className
+}: {
+  icon: ReactNode;
+  title: ReactNode;
+  description: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <UpgradeOverlayRoot className={cn("min-h-80", className)}>
+      <UpgradeOverlayPreview className="flex min-h-80 flex-col justify-center">
+        {children}
+      </UpgradeOverlayPreview>
+      <UpgradeOverlayCard>
+        <UpgradeOverlayIcon>{icon}</UpgradeOverlayIcon>
+        <UpgradeOverlayContent>
+          <UpgradeOverlayTitle>{title}</UpgradeOverlayTitle>
+          <UpgradeOverlayDescription>{description}</UpgradeOverlayDescription>
+        </UpgradeOverlayContent>
+        <UpgradeOverlayActions>
+          <UpgradeOverlayUpgradeButton />
+        </UpgradeOverlayActions>
+      </UpgradeOverlayCard>
+    </UpgradeOverlayRoot>
   );
 }
 
@@ -164,6 +201,7 @@ export {
   UpgradeOverlayIcon,
   UpgradeOverlayInline,
   UpgradeOverlayPreview,
+  UpgradeOverlaySection,
   UpgradeOverlayStickyGradient,
   UpgradeOverlayTitle,
   UpgradeOverlayUpgradeButton

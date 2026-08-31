@@ -160,12 +160,12 @@ export async function syncWorkflowTriggers(
 ): Promise<{ eventIds: string[]; tables: string[]; scheduled: boolean }> {
   return db.transaction().execute(async (trx) => {
     // First statement in the transaction — everything below reads company-wide
-    // state and must not interleave with another publish or toggle.
+    // state and must not interleave with another publish or unpublish.
     await lockCompany(trx, companyId);
 
     const workflow = await trx
       .selectFrom("workflow")
-      .select(["active", "activeVersionId"])
+      .select(["publishedVersionId"])
       .where("id", "=", workflowId)
       .where("companyId", "=", companyId)
       .executeTakeFirst();
@@ -173,11 +173,13 @@ export async function syncWorkflowTriggers(
     let versionId: string | null = null;
     let desired: DesiredTriggerRow[] = [];
     let schedule: Schedule | null = null;
-    if (workflow?.active && workflow.activeVersionId) {
+    // The pointer IS the on/off switch: unpublishing nulls it, so everything below
+    // computes an empty desired set and the workflow stops firing.
+    if (workflow?.publishedVersionId) {
       const version = await trx
         .selectFrom("workflowVersion")
         .select(["id", "nodes"])
-        .where("id", "=", workflow.activeVersionId)
+        .where("id", "=", workflow.publishedVersionId)
         .where("companyId", "=", companyId)
         .executeTakeFirst();
       if (version) {
@@ -208,7 +210,7 @@ export async function syncWorkflowTriggers(
         .execute();
     }
 
-    // Sole writer of workflow.nextRunAt. Folded in here so a promote or toggle cannot wire
+    // Sole writer of workflow.nextRunAt. Folded in here so a publish or unpublish cannot wire
     // trigger rows and forget the due time — the failure would be silent (workflow never runs).
     const nextRunAt =
       schedule && versionId
