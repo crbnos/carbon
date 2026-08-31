@@ -142,7 +142,22 @@ export function variableMenuItems(
     };
 
     const expand = (type: ValueType, path: string[], labels: string[]) => {
-      if (path.length >= MAX_PATH || type.kind !== "entity") return;
+      if (path.length >= MAX_PATH) return;
+
+      // An object carries its own fields, so it needs no catalog lookup — and its
+      // field names are the vendor's own data, never translated, exactly as a
+      // customer's custom field names are not.
+      if (type.kind === "record") {
+        for (const [field, fieldType] of Object.entries(type.fields)) {
+          const nextPath = [...path, field];
+          const nextLabels = [...labels, field];
+          add(nextPath, nextLabels, fieldType);
+          expand(fieldType, nextPath, nextLabels);
+        }
+        return;
+      }
+
+      if (type.kind !== "entity") return;
       const entity = catalog.getEntity(type.of);
       if (!entity) return;
       for (const [property, propertyType] of Object.entries(
@@ -227,6 +242,24 @@ export function variableTree(
           }
         : undefined
     };
+
+    // An object's fields are on the type itself; there is nothing to look up, and
+    // the field name IS the label — it is the vendor's word, not ours to translate.
+    if (path.length < MAX_PATH && type.kind === "record") {
+      const children = Object.entries(type.fields)
+        .map(([field, fieldType]) =>
+          build(
+            variable,
+            fieldType,
+            [...path, field],
+            [...pathLabels, field],
+            field
+          )
+        )
+        .filter((child): child is VariableTreeNode => child !== null);
+      if (children.length) node.children = children;
+      if (!node.item && !children.length) return null;
+    }
 
     if (path.length < MAX_PATH && type.kind === "entity") {
       const entity = catalog.getEntity(type.of);

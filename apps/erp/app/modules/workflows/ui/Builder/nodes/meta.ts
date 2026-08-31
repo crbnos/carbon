@@ -1,6 +1,10 @@
 import { OPERATOR_LABELS } from "@carbon/utils";
 import type { WorkflowNode, WorkflowNodeType } from "@carbon/workflows";
-import { integrationStepId } from "@carbon/workflows";
+import {
+  DATA_OPERATIONS,
+  integrationStepId,
+  operationOf
+} from "@carbon/workflows";
 import { WORKFLOW_LABELS } from "@carbon/workflows/labels";
 import type { IconType } from "react-icons";
 import {
@@ -153,14 +157,22 @@ export const NODE_KIND_META: Record<WorkflowNodeType, NodeKindMeta> = {
         : `Find ${entity}`;
     }
   },
+  // Stored type stays `filter` — every saved workflow holds that literal. Only the
+  // name a person reads widened, along with what the node can do.
   filter: {
-    name: "Filter",
+    name: "Data",
     Icon: LuFilter,
-    description: "Keeps only the items that match",
-    defaultTitle: "Narrow a list",
+    description: "Works through a list — filter, count, pick or combine",
+    defaultTitle: "Work through a list",
     hasTarget: NODE_ACCEPTS_INCOMING.filter,
     summary: (node) => {
       if (node.type !== "filter") return undefined;
+      // Same fallback as the node kind and the form, so a raw node cannot read as
+      // one operation on the card and run as another.
+      const operation = operationOf(node.data.operation);
+      if (operation !== "filter") {
+        return DATA_OPERATIONS[operation].label;
+      }
       const n = node.data.clauses?.length ?? 0;
       return n > 0
         ? `Keep items matching ${count(n, "rule", "rules")}`

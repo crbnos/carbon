@@ -90,10 +90,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const all = versions.data ?? [];
 
   const requested = new URL(request.url).searchParams.get("version");
+  // Ranked by `versionNumber`, which is what "latest" MEANS here and is never null.
+  // Sorting on `updatedAt` alone read a never-edited version as epoch 0, so creating
+  // a new version left the builder still showing the older one that happened to have
+  // been edited — and a test run then posted that stale id.
   const mostRecent = [...all].sort(
-    (a, b) =>
-      new Date(b.updatedAt ?? 0).getTime() -
-      new Date(a.updatedAt ?? 0).getTime()
+    (a, b) => (b.versionNumber ?? 0) - (a.versionNumber ?? 0)
   )[0];
   const versionId =
     (requested && all.some((version) => version.id === requested)

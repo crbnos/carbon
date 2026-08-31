@@ -1,6 +1,9 @@
 import type { ConnectRouteResponse } from "@carbon/ee/integrations/connect";
 import { openConsentPopup } from "@carbon/ee/integrations/connect";
-import type { IntegrationConnection } from "@carbon/ee/integrations/connections";
+import {
+  connectionUsable,
+  type IntegrationConnection
+} from "@carbon/ee/integrations/connections";
 import {
   Badge,
   Button,
@@ -12,10 +15,11 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { LuPlug, LuUnplug } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { path } from "~/utils/path";
+import { suggestConnectionName } from "./connectionName";
 
 /** Derived, not restated: the loader hands these rows straight through, so a column
  * that changes type upstream fails here rather than rendering something else. */
@@ -24,6 +28,8 @@ export type ConnectionRow = Pick<
   "id" | "pieceName" | "name" | "accountLabel" | "status" | "lastError"
 >;
 
+// Keyed by the SAME status the shared predicate reads, so the badge cannot say
+// one thing while `connectionUsable` says another.
 const STATUS_VARIANT = {
   Active: "green",
   Expired: "yellow",
@@ -53,9 +59,21 @@ export function ConnectionsTab({
   const [name, setName] = useState("");
   const connect = useFetcher<ConnectRouteResponse>();
 
-  const taken = new Set(connections.map((connection) => connection.name));
-  const proposed = name.trim() || defaultName;
-  const duplicate = taken.has(proposed);
+  // The default is the app's own name, so the SECOND account always collided with
+  // the first — leaving the button disabled and the field showing a name the user
+  // never typed, with nothing explaining what to do. Suggest a free one instead.
+  const taken = useMemo(
+    () => new Set(connections.map((connection) => connection.name)),
+    [connections]
+  );
+  const suggested = useMemo(
+    () => suggestConnectionName(defaultName, taken),
+    [defaultName, taken]
+  );
+
+  const proposed = name.trim() || suggested;
+  // Only what the user actually TYPED can collide — the suggestion never does.
+  const duplicate = name.trim() !== "" && taken.has(proposed);
 
   // The consent screen opens from the URL the connect loader builds, so the signed
   // `state` never has to round-trip through the browser's own code.
@@ -96,7 +114,7 @@ export function ConnectionsTab({
             size="sm"
             className="max-w-64"
             value={name}
-            placeholder={defaultName}
+            placeholder={suggested}
             aria-label={t`Connection name`}
             onChange={(event) => setName(event.target.value)}
           />
@@ -117,7 +135,9 @@ export function ConnectionsTab({
           </Button>
           {duplicate && (
             <span className="text-sm text-destructive">
-              <Trans>That name is already used.</Trans>
+              <Trans>
+                An account is already called that — pick a different name.
+              </Trans>
             </span>
           )}
         </HStack>
@@ -132,12 +152,12 @@ function ConnectionItem({ connection }: { connection: ConnectionRow }) {
   const [name, setName] = useState(connection.name);
 
   return (
-    <HStack className="w-full justify-between border rounded-md p-2">
-      <VStack spacing={0}>
-        <HStack spacing={2}>
+    <HStack className="w-full items-start justify-between gap-3 border rounded-md p-3">
+      <VStack spacing={1} className="min-w-0 flex-1">
+        <HStack spacing={2} className="w-full">
           <Input
             size="sm"
-            className="max-w-56"
+            className="min-w-0 flex-1"
             value={name}
             aria-label={t`Connection name`}
             onChange={(event) => setName(event.target.value)}
@@ -152,7 +172,10 @@ function ConnectionItem({ connection }: { connection: ConnectionRow }) {
               );
             }}
           />
-          <Badge variant={STATUS_VARIANT[connection.status]}>
+          <Badge
+            variant={STATUS_VARIANT[connection.status]}
+            className="shrink-0"
+          >
             {connection.status}
           </Badge>
         </HStack>
@@ -161,15 +184,31 @@ function ConnectionItem({ connection }: { connection: ConnectionRow }) {
             {connection.accountLabel}
           </span>
         )}
+        {!connectionUsable(connection) && (
+          <span className="text-xs text-muted-foreground">
+            <Trans>
+              This account has stopped working. Add it again to reconnect —
+              workflow steps using it will fail until you do.
+            </Trans>
+          </span>
+        )}
         {connection.lastError && (
-          <span className="text-xs text-destructive">
+          <span className="break-words text-xs text-destructive">
             {connection.lastError}
           </span>
         )}
       </VStack>
-      <fetcher.Form method="post" action={path.to.integrationConnections}>
+      <fetcher.Form
+        method="post"
+        action={path.to.integrationConnections}
+        className="shrink-0"
+      >
         <input type="hidden" name="intent" value="disconnect" />
         <input type="hidden" name="id" value={connection.id} />
+        {/* The card's health badge is cached per piece; disconnecting has to drop
+            that entry or Settings keeps reporting "Healthy" for an app the builder
+            already treats as disconnected. */}
+        <input type="hidden" name="pieceName" value={connection.pieceName} />
         <Button
           type="submit"
           size="sm"

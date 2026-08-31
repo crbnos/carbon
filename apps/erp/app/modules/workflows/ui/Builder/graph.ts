@@ -142,13 +142,22 @@ export function canConnect(
   return !wouldCreateCycle(edges, source, target);
 }
 
+/** What a new node of each kind is CALLED. Defaults to the type; `filter` differs
+ * because its stored type is a legacy spelling of what the node now does. */
+const NODE_NAME_SLUG: Partial<Record<WorkflowNodeType, string>> = {
+  filter: "data"
+};
+
 export function createNode(
   type: WorkflowNodeType,
   position: { x: number; y: number },
   takenNames: Iterable<string> = []
 ): WorkflowNode {
   const id = nanoid();
-  const name = nextNodeName(type, takenNames);
+  // The default NAME is the display slug, not the stored type: a data node stored
+  // as `filter` would otherwise be born called "Filter 0" and read as the old,
+  // narrower node. The type is untouched — only what a new node is called.
+  const name = nextNodeName(NODE_NAME_SLUG[type] ?? type, takenNames);
 
   switch (type) {
     case "trigger":
@@ -200,7 +209,12 @@ export function createNode(
         type,
         position,
         expanded: true,
-        data: { combinator: "and", clauses: [] }
+        data: {
+          combinator: "and",
+          clauses: [],
+          operation: "filter",
+          flatten: false
+        }
       };
     case "action":
       return {

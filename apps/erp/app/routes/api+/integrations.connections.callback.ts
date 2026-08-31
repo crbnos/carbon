@@ -139,10 +139,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
       return connectionFailed(request, "duplicate-name");
     }
     if (message.includes("rejected") || message.includes("access token")) {
-      logger.error("Integration token exchange failed", { message });
+      logger.error(`Integration token exchange failed: ${message}`);
       return connectionFailed(request, "token-exchange");
     }
-    logger.error("Integration connection save failed", { message });
+    logger.error(
+      `Integration connection save failed: name=${err instanceof Error ? err.name : typeof err} detail=${message.slice(0, 400)}`
+    );
     return connectionFailed(request, "save-failed");
   }
 

@@ -9,15 +9,22 @@ import {
   cn,
   Popover,
   PopoverContent,
-  PopoverTrigger
+  PopoverTrigger,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@carbon/react";
 
-import type { Clause } from "@carbon/workflows";
+import type { Clause, DataOperation, ValueType } from "@carbon/workflows";
+import { DATA_OPERATIONS, operationOf } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import { LuChevronDown, LuPlus } from "react-icons/lu";
-import { describeValueType } from "../../catalog";
+import { describeValueType, useWorkflowCatalog } from "../../catalog";
 import { useBuilderStore } from "../../context";
+import { useDataOperationLabel } from "../../dataOperationLabels";
 import { useAvailableVariables } from "../../useDefinition";
 import ClauseRow from "../ClauseRow";
 import { CombinatorToggle } from "../CombinatorToggle";
@@ -44,13 +51,19 @@ export function FilterForm({
   isReadOnly
 }: NodeFormProps<"filter">) {
   const updateNodeData = useBuilderStore((s) => s.updateNodeData);
+  const catalog = useWorkflowCatalog();
   const { t } = useLingui();
 
-  const { source, combinator, clauses } = node.data;
+  const { source, combinator, clauses, field, flatten } = node.data;
+  // `operationOf` is the SAME fallback the node kind uses, so the form and the
+  // validator can never disagree about which operation a raw node is running.
+  const operationLabel = useDataOperationLabel();
+  const operation = operationOf(node.data.operation);
+  const spec = DATA_OPERATIONS[operation];
 
   const [sourceOpen, setSourceOpen] = useState(false);
 
-  // Only list-type variables are valid sources
+  // Every operation works through a list; what the list HOLDS may now be an object.
   const vars = useAvailableVariables(node.id);
   const listVars = useMemo(
     () => vars.filter((v) => v.type.kind === "list"),
@@ -68,15 +81,78 @@ export function FilterForm({
     sourceVar?.type.kind === "list" ? sourceVar.type.of : undefined;
   const entityName = itemType?.kind === "entity" ? itemType.of : undefined;
 
+  // A new source means new items: a clause and a field were both written against
+  // the OLD element type, so keeping them leaves the node red over a choice the
+  // author never made, pointing at a field the picker no longer offers.
   const handleSourceSelect = (nodeId: string, output: string) => {
     updateNodeData(node.id, {
-      source: { kind: "ref", nodeId, output, path: [] }
+      source: { kind: "ref", nodeId, output, path: [] },
+      clauses: [],
+      field: undefined,
+      flatten: false
     });
     setSourceOpen(false);
   };
 
   const handleClearSource = () => {
-    updateNodeData(node.id, { source: undefined, clauses: [] });
+    updateNodeData(node.id, {
+      source: undefined,
+      clauses: [],
+      field: undefined
+    });
+  };
+
+  // Switching operation drops what only made sense for the old one: a clause means
+  // nothing to `count`, and a field means nothing outside `pluck`.
+  const handleOperationChange = (next: string) => {
+    const chosen = next as DataOperation;
+    if (chosen === operation) return;
+    updateNodeData(node.id, {
+      operation: chosen,
+      ...(DATA_OPERATIONS[chosen].usesClauses ? {} : { clauses: [] }),
+      ...(DATA_OPERATIONS[chosen].usesField
+        ? {}
+        : { field: undefined, flatten: false })
+    });
+  };
+
+  // Which fields a `pluck` may take, read off the element type the source holds.
+  const fieldChoices = useMemo(() => {
+    // A list of Carbon records can be plucked too — its fields come from the
+    // catalog rather than the type. Offering only object fields left `pluck` over
+    // a lookup's results validating but with nothing to choose.
+    if (itemType?.kind === "entity") {
+      const entity = catalog.getEntity(itemType.of);
+      return Object.entries(entity?.properties ?? {}).map(([name, type]) => ({
+        path: name,
+        type
+      }));
+    }
+    if (itemType?.kind !== "record") return [];
+    const found: { path: string; type: ValueType }[] = [];
+    const walk = (fields: Record<string, ValueType>, prefix: string[]) => {
+      for (const [name, type] of Object.entries(fields)) {
+        const path = [...prefix, name];
+        found.push({ path: path.join("."), type });
+        // One hop of nesting is enough to reach `organizer.email`; deeper paths
+        // are reachable by chaining a second data node.
+        if (type.kind === "record" && prefix.length === 0) {
+          walk(type.fields, path);
+        }
+      }
+    };
+    walk(itemType.fields, []);
+    return found;
+  }, [itemType, catalog]);
+
+  const handleFieldChange = (next: string) => {
+    const chosen = fieldChoices.find((option) => option.path === next);
+    updateNodeData(node.id, {
+      field: next,
+      // A list-valued field can ONLY be taken flat: `list<list<T>>` cannot exist,
+      // so the choice is made here rather than offered as a toggle that can be wrong.
+      flatten: chosen?.type.kind === "list"
+    });
   };
 
   function handleClauseChange(index: number, patch: Partial<Clause>) {
@@ -99,6 +175,30 @@ export function FilterForm({
 
   return (
     <FormStack spacing={4}>
+      <div className="space-y-1">
+        <Section>
+          <Trans>Operation</Trans>
+        </Section>
+        {/* Built from DATA_OPERATIONS, never a second list: the same table drives
+            the stored enum, the output type and the runtime. */}
+        <Select
+          value={operation}
+          onValueChange={handleOperationChange}
+          disabled={isReadOnly}
+        >
+          <SelectTrigger className="w-full" disabled={isReadOnly}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.keys(DATA_OPERATIONS).map((name) => (
+              <SelectItem key={name} value={name}>
+                {operationLabel(name as DataOperation)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Source list picker */}
       <div className="space-y-1">
         <Section>
@@ -170,8 +270,47 @@ export function FilterForm({
         )}
       </div>
 
-      {/* Clause section — only shown once a source is chosen */}
-      {source && (
+      {/* Which field to take — `pluck` only. */}
+      {source && spec.usesField && (
+        <div className="space-y-1">
+          <Section>
+            <Trans>Field</Trans>
+          </Section>
+          {fieldChoices.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              <Trans>The items in that list have no fields to take.</Trans>
+            </p>
+          ) : (
+            <Select
+              value={field ?? ""}
+              onValueChange={handleFieldChange}
+              disabled={isReadOnly}
+            >
+              <SelectTrigger className="w-full" disabled={isReadOnly}>
+                <SelectValue placeholder={t`Pick a field…`} />
+              </SelectTrigger>
+              <SelectContent>
+                {fieldChoices.map((option) => (
+                  <SelectItem key={option.path} value={option.path}>
+                    {option.path}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          {flatten && (
+            <p className="text-xs text-muted-foreground">
+              <Trans>
+                That field holds several values, so they are combined into one
+                list.
+              </Trans>
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Clause section — filtering only; another operation stores no clauses */}
+      {source && spec.usesClauses && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Section>

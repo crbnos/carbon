@@ -8,6 +8,7 @@ import {
 } from "@carbon/ee/integrations/connections";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { invalidateIntegrationHealthCache } from "~/modules/settings/settings.server";
 
 export const config = {
   runtime: "nodejs"
@@ -49,10 +50,18 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (intent === "disconnect") {
+    const pieceName = String(formData.get("pieceName") ?? "");
     try {
       // Dropping the vaulted token needs the service role; the row is scoped by
       // the companyId this request already authorized.
       await disconnectConnection(getCarbonServiceRole(), companyId, id, userId);
+      // The card's badge is cached for five minutes and its health is computed
+      // from these very rows, so without this the customer disconnects an
+      // account and Settings keeps saying "Healthy" while the builder already
+      // says the app isn't connected. Same reason the callback invalidates it.
+      if (pieceName) {
+        await invalidateIntegrationHealthCache(pieceName, companyId);
+      }
     } catch (err) {
       return data(
         { success: false },

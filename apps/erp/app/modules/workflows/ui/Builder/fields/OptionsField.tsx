@@ -1,4 +1,4 @@
-import { Combobox, MultiSelect } from "@carbon/react";
+import { Button, Combobox, MultiSelect } from "@carbon/react";
 import type { OptionsSource, ValueOrRef, ValueType } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Link } from "react-router";
@@ -53,8 +53,17 @@ export function OptionsField({
   isReadOnly?: boolean;
 }) {
   const { t } = useLingui();
-  const { ready, missing, loaded, isLoading, options, emptyHref, error } =
-    useWorkflowOptions(source, values);
+  const {
+    ready,
+    missing,
+    loaded,
+    isLoading,
+    options,
+    emptyHref,
+    errorCode,
+    errorHref,
+    retry
+  } = useWorkflowOptions(source, values);
 
   if (!ready) {
     const named = missing
@@ -65,6 +74,50 @@ export function OptionsField({
         <p className="text-sm text-muted-foreground">
           <Trans>Choose {named} first.</Trans>
         </p>
+      </Field>
+    );
+  }
+
+  // A failed lookup is NOT an empty one. Without this the vendor's error fell
+  // through to an empty dropdown, which reads as "this account has nothing" —
+  // sending the author off to fix data that was never the problem.
+  if (loaded && errorCode) {
+    return (
+      <Field label={label} required={required} issue={issue}>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* The specific reason when the provider knew one — "this account needs
+              to be reconnected" is actionable, "couldn't load the choices" is not. */}
+          <p className="text-sm text-muted-foreground">
+            {errorCode === "reconnect" ? (
+              <Trans>This account needs to be reconnected.</Trans>
+            ) : errorCode === "refreshing" ? (
+              <Trans>
+                That account is still being reconnected. Try again in a moment.
+              </Trans>
+            ) : (
+              <Trans>Couldn't load the choices for this field.</Trans>
+            )}
+          </p>
+          {errorHref ? (
+            <Link
+              className="text-sm underline underline-offset-2"
+              to={errorHref}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <Trans>Fix this</Trans>
+            </Link>
+          ) : null}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={retry}
+            isDisabled={isReadOnly}
+            isLoading={isLoading}
+          >
+            <Trans>Try again</Trans>
+          </Button>
+        </div>
       </Field>
     );
   }
@@ -90,7 +143,7 @@ export function OptionsField({
   const placeholder = isLoading || !loaded ? t`Loading…` : t`Select an option…`;
 
   return (
-    <Field label={label} required={required} issue={issue ?? error}>
+    <Field label={label} required={required} issue={issue}>
       {type.kind === "list" ? (
         <MultiSelect
           options={options}

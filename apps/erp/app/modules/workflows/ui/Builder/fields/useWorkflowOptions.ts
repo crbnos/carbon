@@ -1,12 +1,15 @@
 import type { OptionsSource } from "@carbon/workflows";
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useFetcher } from "react-router";
+import type { OptionsErrorCode } from "~/modules/workflows/options-providers.server";
 import { path } from "~/utils/path";
 
 export type WorkflowOptions = {
   options: { label: string; value: string }[];
   emptyHref?: string;
-  error?: string;
+  errorCode?: OptionsErrorCode;
+  /** Where the author can go to fix what the error describes. */
+  errorHref?: string;
 };
 
 /**
@@ -47,11 +50,40 @@ export function useWorkflowOptions(
     return params.toString();
   }, [source, dependsOn, payload]);
 
+  // Keyed on the QUERY, not on `fetcher.data` being undefined. The latter is only
+  // true before the first response, so a field never refetched when a dependency
+  // changed — and a first load that FAILED left `data` set to `{options: []}`,
+  // pinning the field empty for the rest of the editing session with no way back.
+  const loadedQuery = useRef<string | undefined>(undefined);
+
+  // What the field SHOULD be showing, which is not always what is in flight: a
+  // dependency that changes twice while a request is out would otherwise leave the
+  // last query unissued, pinning the field on the previous dependency's choices.
+  const wantedQuery = useRef<string | undefined>(undefined);
+
   useEffect(() => {
     if (!ready || query === undefined) return;
-    if (fetcher.state === "idle" && fetcher.data === undefined) {
-      fetcher.load(`${path.to.api.workflowOptions}?${query}`);
-    }
+    wantedQuery.current = query;
+    if (fetcher.state !== "idle") return;
+    if (loadedQuery.current === query) return;
+    loadedQuery.current = query;
+    fetcher.load(`${path.to.api.workflowOptions}?${query}`);
+  }, [fetcher, query, ready]);
+
+  // The in-flight request has landed; issue the one the author has since asked for.
+  useEffect(() => {
+    if (fetcher.state !== "idle") return;
+    const wanted = wantedQuery.current;
+    if (wanted === undefined || loadedQuery.current === wanted) return;
+    loadedQuery.current = wanted;
+    fetcher.load(`${path.to.api.workflowOptions}?${wanted}`);
+  }, [fetcher]);
+
+  /** Re-request the same query after a failure. */
+  const retry = useCallback(() => {
+    if (!ready || query === undefined) return;
+    loadedQuery.current = query;
+    fetcher.load(`${path.to.api.workflowOptions}?${query}`);
   }, [fetcher, query, ready]);
 
   return {
@@ -62,6 +94,8 @@ export function useWorkflowOptions(
     isLoading: fetcher.state === "loading",
     options: fetcher.data?.options ?? [],
     emptyHref: fetcher.data?.emptyHref,
-    error: fetcher.data?.error
+    errorCode: fetcher.data?.errorCode,
+    errorHref: fetcher.data?.errorHref,
+    retry
   };
 }

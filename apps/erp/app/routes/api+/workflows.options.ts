@@ -9,7 +9,8 @@ export const config = {
 
 const logger = getLogger("erp", "workflows", "options");
 
-const FAILED = "Couldn't load the choices for this field.";
+/** A code, not a sentence — the builder owns the wording so it can translate it. */
+const FAILED = "failed" as const;
 
 /** A JSON query parameter of plain string values, or `{}` — a malformed one is an
  * empty bag rather than a failure, since a provider decides what it needs anyway. */
@@ -49,7 +50,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // unauthenticated. `workflows_view` is the weakest permission any provider uses.
     await requirePermissions(request, { view: "workflows" });
     logger.error("Unknown workflow options provider", { provider: providerId });
-    return { options: [], error: FAILED };
+    return { options: [], errorCode: FAILED };
   }
 
   const { client, companyId } = await requirePermissions(
@@ -66,12 +67,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
       search: url.searchParams.get("search") ?? undefined
     });
   } catch (err) {
-    // Never echo a provider's raw payload: for an integration it can carry the
-    // vendor's own message, and the auth value is never far from it.
-    logger.error("Workflow options lookup failed", {
-      provider: providerId,
-      message: err instanceof Error ? err.message : ""
-    });
-    return { options: [], error: FAILED };
+    // Never echo a provider's raw payload to the CUSTOMER — for an integration it
+    // carries the vendor's own message, and the auth value is never far from it.
+    // The server log is a different audience: without the error's name and the
+    // vendor's status code, "lookup failed" is unactionable, and a piece's
+    // `HttpError` carries a JSON blob as its `message` that says nothing on its own.
+    const status =
+      typeof err === "object" && err !== null && "status" in err
+        ? (err as { status?: unknown }).status
+        : undefined;
+    // Interpolated into the MESSAGE, not passed as properties: the dev console uses
+    // LogTape's `ansiColorFormatter`, which renders the template and drops anything
+    // not referenced by it — so structured fields alone were invisible, and
+    // "lookup failed" said nothing an operator could act on.
+    const name = err instanceof Error ? err.name : typeof err;
+    const detail = err instanceof Error ? err.message.slice(0, 300) : "";
+    logger.error(
+      `Workflow options lookup failed: provider=${providerId} error=${name} status=${status ?? "none"} detail=${detail}`
+    );
+    return { options: [], errorCode: FAILED };
   }
 }

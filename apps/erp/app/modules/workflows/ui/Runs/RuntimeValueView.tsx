@@ -27,6 +27,7 @@ type RuntimeValue =
   | { kind: "primitive"; of: string; value: string | number | boolean | null }
   | { kind: "entity"; of: string; id: string; row?: Record<string, unknown> }
   | { kind: "list"; of: unknown; items: unknown[] }
+  | { kind: "record"; of: unknown; fields: Record<string, unknown> }
   | { kind: "pairs"; entries: unknown[] };
 
 function isRuntimeValue(v: unknown): v is RuntimeValue {
@@ -36,6 +37,7 @@ function isRuntimeValue(v: unknown): v is RuntimeValue {
     obj.kind === "primitive" ||
     obj.kind === "entity" ||
     obj.kind === "list" ||
+    obj.kind === "record" ||
     obj.kind === "pairs"
   );
 }
@@ -193,6 +195,37 @@ export function RuntimeValueView({
     }
     return (
       <ListValue items={value.items} depth={depth} recordNames={recordNames} />
+    );
+  }
+
+  // An object reads exactly like named rows: field name on the left, the value
+  // rendered by this same component on the right.
+  if (value.kind === "record") {
+    const fields = Object.entries(value.fields ?? {});
+    if (fields.length === 0) {
+      return (
+        <span className="text-muted-foreground italic text-xs">
+          <Trans>Nothing</Trans>
+        </span>
+      );
+    }
+    return (
+      <dl className="grid grid-cols-[minmax(0,7rem)_minmax(0,1fr)] gap-x-3 gap-y-1.5 items-baseline">
+        {fields.map(([name, field]) => (
+          <Fragment key={`field-${name}`}>
+            <dt className="text-xs text-muted-foreground text-left break-words">
+              {name}
+            </dt>
+            <dd className="min-w-0">
+              <RuntimeValueView
+                value={field}
+                depth={depth + 1}
+                recordNames={recordNames}
+              />
+            </dd>
+          </Fragment>
+        ))}
+      </dl>
     );
   }
 

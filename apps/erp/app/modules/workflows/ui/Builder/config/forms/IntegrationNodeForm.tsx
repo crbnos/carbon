@@ -1,4 +1,8 @@
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
   Button,
   Select,
   SelectContent,
@@ -14,7 +18,7 @@ import {
   WORKFLOW_INTEGRATION_CATALOG
 } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Link } from "react-router";
 import { path } from "~/utils/path";
 import {
@@ -78,6 +82,10 @@ export function IntegrationNodeForm({
     `integration-connections:${piece}`
   );
   const connected = connections.length > 0;
+  // One connection is not a choice — hide the field, but still STORE the id: a
+  // second account added later must not silently repoint existing workflows.
+  const onlyConnection =
+    connections.length === 1 ? connections[0]?.value : undefined;
 
   const appLabel = (name: string) => label(integrationAppLabelKey(name));
   const appName = piece ? appLabel(piece) : "";
@@ -107,6 +115,27 @@ export function IntegrationNodeForm({
     updateNodeData(node.id, { inputs: next });
   }
 
+  // The value is STORED even though no field is shown: the run resolves against it,
+  // and a second account added later must not silently repoint existing workflows.
+  useEffect(() => {
+    // Only once THIS app's connections have come back. Without the gate, the answer
+    // still in hand from the previous app could be written into the new app's
+    // inputs, pinning a connection that belongs to a different piece.
+    if (!checked) return;
+    if (onlyConnection === undefined) return;
+    if (inputs[INTEGRATION_CONNECTION_INPUT] !== undefined) return;
+    updateNodeData(node.id, {
+      inputs: {
+        ...inputs,
+        [INTEGRATION_CONNECTION_INPUT]: {
+          kind: "literal",
+          type: { kind: "primitive", of: "string" },
+          value: onlyConnection
+        }
+      }
+    });
+  }, [checked, onlyConnection, inputs, node.id, updateNodeData]);
+
   // Required first, then optional, preserving catalog order within each — the same
   // ordering the action form uses.
   const inputNames = useMemo(() => {
@@ -114,11 +143,25 @@ export function IntegrationNodeForm({
     const required: string[] = [];
     const optional: string[] = [];
     for (const [name, inputDef] of Object.entries(step.inputs)) {
+      // The connection is stored but not shown when there is only one to pick.
+      if (
+        name === INTEGRATION_CONNECTION_INPUT &&
+        onlyConnection !== undefined
+      ) {
+        continue;
+      }
       if (inputDef.required) required.push(name);
       else optional.push(name);
     }
     return [...required, ...optional];
-  }, [step]);
+  }, [step, onlyConnection]);
+
+  // Hidden by the catalog's visibility rules. Shown here, editable, so a hidden
+  // field is demoted rather than lost — being wrong about one costs a click.
+  const advancedNames = useMemo(
+    () => Object.keys(step?.advancedInputs ?? {}),
+    [step]
+  );
 
   return (
     <FormStack spacing={4}>
@@ -217,6 +260,39 @@ export function IntegrationNodeForm({
             });
           })}
         </div>
+      )}
+
+      {connected && step && advancedNames.length > 0 && (
+        <Accordion type="single" collapsible>
+          <AccordionItem value="advanced" className="border-none">
+            <AccordionTrigger className="py-2 text-sm text-muted-foreground hover:no-underline">
+              <Trans>Advanced properties</Trans>
+            </AccordionTrigger>
+            <AccordionContent className="space-y-3 pt-1">
+              {advancedNames.map((name) => {
+                const inputDef = step.advancedInputs?.[name];
+                if (!inputDef) return null;
+                return renderStepInput({
+                  name,
+                  inputDef,
+                  label: inputLabel(name),
+                  helpTermId: workflowFieldHelp(
+                    actionInputLabelKey(stepId ?? "", name)
+                  ),
+                  inputs,
+                  issues,
+                  nodeId: node.id,
+                  batching: false,
+                  isReadOnly,
+                  onChange: handleInputChange,
+                  labelFor: inputLabel,
+                  choiceOptions,
+                  lockedChoices
+                });
+              })}
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       )}
     </FormStack>
   );
