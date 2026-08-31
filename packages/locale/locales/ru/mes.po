@@ -55,7 +55,7 @@ msgid "{0} Scrapped"
 msgstr "{0} Списано"
 
 msgid "{completions} passed unit(s) will be completed."
-msgstr "{completions} прошедших единиц будут завершены."
+msgstr "{completions} пройденных единиц будут завершены."
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} записанных отказов будут НЕ завершены — разрешите их из меню действий."
@@ -94,7 +94,7 @@ msgid "Add & Issue"
 msgstr "Добавить и выдать"
 
 msgid "Add a printer in the printing settings to print labels directly."
-msgstr "Добавьте принтер в параметры печати, чтобы печатать этикетки напрямую."
+msgstr "Добавьте принтер в настройки печати, чтобы печатать наклейки непосредственно."
 
 msgid "Add Inventory"
 msgstr "Добавить запас"
@@ -112,7 +112,7 @@ msgid "All clear"
 msgstr "Все в порядке"
 
 msgid "All rework"
-msgstr "Все переработки"
+msgstr "Все доработки"
 
 msgid "All scrap"
 msgstr "Весь брак"
@@ -169,12 +169,18 @@ msgstr "Номер партии {0}"
 msgid "Batch number is required"
 msgstr "Номер партии обязателен"
 
+msgid "Behind target by {daysBehindTarget} day(s)"
+msgstr "Отставание на {daysBehindTarget} дн."
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Заблокировано {0}"
 
 msgid "Blocking"
 msgstr "Блокирующие"
+
+msgid "Board view"
+msgstr "Вид доски"
 
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "Но не волнуйтесь. Вы можете использовать функцию восстановления пароля, чтобы запросить новую волшебную ссылку."
@@ -207,16 +213,19 @@ msgid "Clear"
 msgstr "Очистить"
 
 msgid "Clear Filters"
-msgstr "Сбросить фильтры"
+msgstr "Очистить фильтры"
 
 msgid "Clear Search"
 msgstr "Очистить поиск"
 
+msgid "Clear station default"
+msgstr "Очистить станцию по умолчанию"
+
 msgid "Clock In"
-msgstr "Отметить приход"
+msgstr "Начало работы"
 
 msgid "Clock Out"
-msgstr "Отметить уход"
+msgstr "Окончание работы"
 
 msgid "Clocked in since <0/>"
 msgstr "Отметился в системе с <0/>"
@@ -248,7 +257,7 @@ msgid "Columns"
 msgstr "Столбцы"
 
 msgid "Company"
-msgstr "Компания"
+msgstr "Организация"
 
 msgid "Complete"
 msgstr "Завершить"
@@ -257,7 +266,7 @@ msgid "Complete All"
 msgstr "Завершить все"
 
 msgid "Complete passed"
-msgstr "Завершить прошедшие"
+msgstr "Завершить пройденные"
 
 msgid "Completed"
 msgstr "Завершено"
@@ -275,11 +284,14 @@ msgid "Consumed"
 msgstr "Использовано"
 
 msgid "Consumed expired"
-msgstr "Потреблено истекшее"
+msgstr "Израсходовано - истек срок"
+
+msgid "Continue"
+msgstr "Продолжить"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
-msgstr "Стоимость незапланированного обслуживания за последние {0} дней"
+msgstr "Себестоимость внепланового техобслуживания за последние {0} дней"
 
 #. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
 #. placeholder {0}: search.trim() === "" ? label : search
@@ -293,13 +305,13 @@ msgid "Create Quality Issue"
 msgstr "Создать проблему качества"
 
 msgid "Create Rework"
-msgstr "Создать переделку"
+msgstr "Создать доработку"
 
 msgid "Current work"
 msgstr "Текущая работа"
 
 msgid "Customer"
-msgstr "Заказчик"
+msgstr "Покупатель"
 
 msgid "Dark Mode"
 msgstr "Тёмная тема"
@@ -314,7 +326,7 @@ msgid "Default"
 msgstr "По умолчанию"
 
 msgid "Default Storage Unit"
-msgstr "Хранилище по умолчанию"
+msgstr "Единица хранения по умолчанию"
 
 msgid "Delete"
 msgstr "Удалить"
@@ -338,7 +350,7 @@ msgid "Details"
 msgstr "Детали"
 
 msgid "Dispatch not found"
-msgstr "Наряд не найден"
+msgstr "Заявка на техобслуживание не найдена"
 
 msgid "Display"
 msgstr "Отображение"
@@ -350,20 +362,20 @@ msgid "Down"
 msgstr "Простой"
 
 msgid "Down for maintenance"
-msgstr "На техническом обслуживании"
+msgstr "На техобслуживание"
 
 #. placeholder {0}: workCenter.blockingDispatchReadableId
 msgid "Down for maintenance · {0}"
-msgstr "На техническом обслуживании · {0}"
+msgstr "На техобслуживание · {0}"
 
 msgid "Down for planned maintenance"
-msgstr "На плановом техническом обслуживании"
+msgstr "На плановое техобслуживание"
 
 msgid "Download"
 msgstr "Скачать"
 
 msgid "Download Labels"
-msgstr "Загрузить этикетки"
+msgstr "Скачать наклейки"
 
 msgid "Draft"
 msgstr "Черновик"
@@ -395,22 +407,22 @@ msgid "Due today?"
 msgstr "Срок сегодня?"
 
 msgid "Duplicate batch number"
-msgstr "Дублирующийся номер партии"
+msgstr "Дублированный номер серии"
 
 msgid "Duplicate serial number"
-msgstr "Дублирующийся серийный номер"
+msgstr "Дублированный серийный номер"
 
 msgid "Duration"
 msgstr "Длительность"
 
 msgid "Edit"
-msgstr "Редактировать"
+msgstr "Изменить"
 
 msgid "Elapsed"
 msgstr "Прошедшее время"
 
 msgid "Email Address"
-msgstr "Электронная почта"
+msgstr "Адрес электронной почты"
 
 msgid "Empty work centers"
 msgstr "Пустые рабочие центры"
@@ -435,17 +447,17 @@ msgid "Estimated"
 msgstr "План"
 
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
-msgstr "Каждый блок имеет вердикт: {passes} прошли и {fails} не прошли. Партия закрывается с маршрутизацией каждого блока к его собственному результату."
+msgstr "Каждая единица имеет результат: {passes} пройдено и {fails} отклонено. Партия закрывается с распределением каждой единицы по её результату."
 
 msgid "Expand features table"
 msgstr "Развернуть таблицу функций"
 
 msgid "Expired"
-msgstr "Истекло"
+msgstr "Истек срок"
 
 #. placeholder {0}: formatDate(date)
 msgid "Expired {0}"
-msgstr "Истекла {0}"
+msgstr "Истек {0}"
 
 msgid "Expires <0/>"
 msgstr "Истекает <0/>"
@@ -497,13 +509,13 @@ msgid "Files"
 msgstr "Файлы"
 
 msgid "Files related to the job and the opportunity line."
-msgstr "Файлы, связанные с заданием и позицией заказа."
+msgstr "Файлы, связанные с производственным заказом и позицией сделки."
 
 msgid "Filter"
-msgstr "Фильтр"
+msgstr "Фильтровать"
 
 msgid "Filter by location"
-msgstr "Фильтр по расположению"
+msgstr "Фильтровать по площадке"
 
 msgid "Finish"
 msgstr "Завершить"
@@ -515,14 +527,20 @@ msgstr "Завершить {0}"
 msgid "Finish Anyways"
 msgstr "Завершить в любом случае"
 
+msgid "Finish setting up your account"
+msgstr "Завершите настройку вашего аккаунта"
+
 msgid "Finish with material unpicked?"
 msgstr "Завершить с неподобранным материалом?"
 
 msgid "Forgot to Clock Out?"
-msgstr "Забыли отметить уход?"
+msgstr "Забыли отметить окончание работы?"
 
 msgid "Go back to operation"
 msgstr "Вернуться к операции"
+
+msgid "Go to onboarding"
+msgstr "Перейти к первоначальной настройке"
 
 msgid "How many were actually picked?"
 msgstr "Сколько было фактически собрано?"
@@ -610,10 +628,10 @@ msgid "Job Traveler"
 msgstr "Маршрутный лист"
 
 msgid "Jobs"
-msgstr "Работы"
+msgstr "Производственные заказы"
 
 msgid "Keep picking"
-msgstr "Продолжить сбор"
+msgstr "Продолжить отбор"
 
 msgid "Kit"
 msgstr "Комплект"
@@ -635,6 +653,9 @@ msgstr "Давайте создадим что-то"
 
 msgid "lines"
 msgstr "строки"
+
+msgid "List view"
+msgstr "Вид списка"
 
 msgid "Loading item details..."
 msgstr "Загрузка данных номенклатуры..."
@@ -679,16 +700,16 @@ msgid "Machine"
 msgstr "Станок"
 
 msgid "Machine down for maintenance now?"
-msgstr "Машина на обслуживании сейчас?"
+msgstr "Станок на техобслуживание сейчас?"
 
 msgid "Maintenance"
-msgstr "Обслуживание"
+msgstr "Техобслуживание"
 
 msgid "Maintenance Completed"
-msgstr "Обслуживание завершено"
+msgstr "Техобслуживание завершено"
 
 msgid "Maintenance overdue"
-msgstr "Обслуживание просрочено"
+msgstr "Техобслуживание просрочено"
 
 msgid "Make a replacement"
 msgstr "Создать замену"
@@ -697,7 +718,7 @@ msgid "Manually add items to inventory"
 msgstr "Добавить номенклатуру на склад вручную"
 
 msgid "Manually remove items from inventory"
-msgstr "Списать номенклатуру со склада вручную"
+msgstr "Вручную убрать позиции из запасов"
 
 msgid "Mark Short"
 msgstr "Отметить как недостача"
@@ -764,7 +785,7 @@ msgid "No active job at this work center"
 msgstr "Нет активной работы на этом рабочем центре"
 
 msgid "No active maintenance dispatches"
-msgstr "Нет активных нарядов на обслуживание"
+msgstr "Нет активных заявок на техобслуживание"
 
 msgid "No active operations"
 msgstr "Нет активных операций"
@@ -785,7 +806,7 @@ msgid "No available tracked entities found"
 msgstr "Не найдено доступных отслеживаемых объектов"
 
 msgid "No dispatches assigned to you"
-msgstr "Нет нарядов, назначенных вам"
+msgstr "Вам не назначены никакие заявки на техобслуживание"
 
 msgid "No files"
 msgstr "Нет файлов"
@@ -797,7 +818,7 @@ msgid "No issue types configured"
 msgstr "Типы проблем не настроены"
 
 msgid "No maintenance scheduled for today"
-msgstr "На сегодня обслуживание не запланировано"
+msgstr "На сегодня техобслуживание не запланировано"
 
 msgid "No matches. Type to create one."
 msgstr "Совпадений не найдено. Введите текст для создания."
@@ -806,7 +827,7 @@ msgid "No materials"
 msgstr "Нет материалов"
 
 msgid "No open jobs"
-msgstr "Нет открытых заданий"
+msgstr "Нет открытых производственных заказов"
 
 msgid "No open units to allocate"
 msgstr "Нет открытых единиц для распределения"
@@ -821,7 +842,7 @@ msgid "No options found."
 msgstr "Варианты не найдены."
 
 msgid "No picking lists assigned"
-msgstr "Нет назначенных списков комплектации"
+msgstr "Листы отбора не назначены"
 
 msgid "No printer configured"
 msgstr "Принтер не настроен"
@@ -865,6 +886,9 @@ msgstr "Нет записей учёта времени за эту неделю
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "На складе нет записей о наличии этого товара. Вы все равно можете его подобрать — количество в наличии станет отрицательным до тех пор, пока инвентаризация не будет согласована."
 
+msgid "No Work Center"
+msgstr "Без рабочего центра"
+
 msgid "No work centers are blocked"
 msgstr "Нет заблокированных рабочих центров"
 
@@ -884,7 +908,7 @@ msgid "Nothing scheduled at this work center"
 msgstr "Ничего не запланировано на этом рабочем центре"
 
 msgid "Nothing to scrap"
-msgstr "Нечего списывать"
+msgstr "Нечего браковать"
 
 msgid "OEE Impact"
 msgstr "Влияние на OEE"
@@ -912,7 +936,7 @@ msgid "Open an NCR for MRB disposition"
 msgstr "Открыть NCR для решения MRB"
 
 msgid "Open Jobs"
-msgstr "Открытые задания"
+msgstr "Открытые производственные заказы"
 
 msgid "Operations"
 msgstr "Операции"
@@ -948,16 +972,16 @@ msgid "Partial"
 msgstr "Частичный"
 
 msgid "Partial Disposition"
-msgstr "Частичное распределение"
+msgstr "Частичное решение"
 
 msgid "Passed Inspection"
 msgstr "Контроль пройден"
 
 msgid "Passkey unlock failed"
-msgstr "Ошибка разблокировки по пропуску"
+msgstr "Не удалось разблокировать ключ доступа"
 
 msgid "Pause"
-msgstr "Пауза"
+msgstr "Приостановить"
 
 msgid "Pick"
 msgstr "Выбрать"
@@ -978,7 +1002,7 @@ msgid "Picked up Column {0} at position: {1} of {2}"
 msgstr "Столбец {0} взят с позиции: {1} из {2}"
 
 msgid "Picking"
-msgstr "Комплектация"
+msgstr "Отбор"
 
 msgid "Pin Out"
 msgstr "Выход по PIN"
@@ -999,13 +1023,13 @@ msgid "Prev"
 msgstr "Назад"
 
 msgid "Preventive"
-msgstr "Профилактическое"
+msgstr "Предупреждающее"
 
 msgid "Print"
 msgstr "Печать"
 
 msgid "Printer Settings"
-msgstr "Параметры принтера"
+msgstr "Настройки принтера"
 
 msgid "Priority"
 msgstr "Приоритет"
@@ -1025,6 +1049,11 @@ msgstr "Процессы"
 msgid "Progress"
 msgstr "Прогресс"
 
+#. placeholder {0}: formatDate( projectedCompletionDate )
+#. placeholder {0}: formatDate(projectedCompletionDate)
+msgid "Proj. {0}"
+msgstr "Прогноз. {0}"
+
 msgid "Quality Issue"
 msgstr "Проблема качества"
 
@@ -1041,7 +1070,7 @@ msgid "Queue empty"
 msgstr "Очередь пуста"
 
 msgid "Reason for rework"
-msgstr "Причина переделки"
+msgstr "Причина доработки"
 
 msgid "Recent"
 msgstr "Недавние"
@@ -1066,37 +1095,37 @@ msgid "Reject Lot"
 msgstr "Отклонить партию"
 
 msgid "Remove"
-msgstr "Удалить"
+msgstr "Убрать"
 
 msgid "Remove filter"
-msgstr "Удалить фильтр"
+msgstr "Убрать фильтр"
 
 msgid "Remove Inventory"
-msgstr "Списать запас"
+msgstr "Убрать запасы"
 
 msgid "Remove part"
-msgstr "Удалить деталь"
+msgstr "Убрать деталь"
 
 msgid "Reopen the subassembly and create a replacement unit"
-msgstr "Снова открыть узел и создать сменный агрегат"
+msgstr "Открыть заново узел и создать единицу для замены"
 
 msgid "Result"
 msgstr "Результат"
 
 msgid "Rework"
-msgstr "Переделка"
+msgstr "Доработка"
 
 msgid "Rework created successfully"
-msgstr "Переработка успешно создана"
+msgstr "Доработка успешно создана"
 
 msgid "Rework quantity"
-msgstr "Количество переработки"
+msgstr "Количество для доработки"
 
 msgid "Running"
 msgstr "Работает"
 
 msgid "Sales Order"
-msgstr "Заказ на продажу"
+msgstr "Заказ покупателя"
 
 msgid "Save"
 msgstr "Сохранить"
@@ -1108,31 +1137,34 @@ msgid "Scan a tracked entity to add the first sample column."
 msgstr "Отсканируйте отслеживаемый объект, чтобы добавить первый столбец образца."
 
 msgid "Scan or enter serial number"
-msgstr "Сканируйте или введите серийный номер"
+msgstr "Отсканируйте или введите серийный номер"
 
 msgid "Scan or enter tracked entity ID, serial, or batch"
-msgstr "Отсканируйте или введите ID отслеживаемого объекта, серийный номер или партию"
+msgstr "Отсканируйте или введите ID отслеживаемого объекта, серийный номер или серию"
 
 msgid "Scan or enter tracking number"
 msgstr "Отсканируйте или введите номер отслеживания"
 
 msgid "Scan or search serial number..."
-msgstr "Сканируйте или ищите серийный номер..."
+msgstr "Отсканируйте или найдите серийный номер..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
-msgstr "Отсканируйте или выберите отслеживаемый объект из этой партии, чтобы добавить его в качестве столбца образца, затем запишите его результат в сетку."
+msgstr "Отсканируйте или выберите отслеживаемый объект из этой партии для добавления его как столбца образца, затем запишите его результат в сетку."
 
 msgid "Schedule"
 msgstr "Расписание"
+
+msgid "Scheduling conflict"
+msgstr "Конфликт расписания"
 
 msgid "Scrap"
 msgstr "Брак"
 
 msgid "Scrap {readableId}"
-msgstr "Списать {readableId}"
+msgstr "Браковать {readableId}"
 
 msgid "Scrap material"
-msgstr "Списать материал"
+msgstr "Браковка материала"
 
 msgid "Scrap quantity"
 msgstr "Количество брака"
@@ -1234,7 +1266,7 @@ msgid "Session locked"
 msgstr "Сеанс заблокирован"
 
 msgid "Set Clock Out"
-msgstr "Установить время ухода"
+msgstr "Установить окончание работы"
 
 msgid "Set clock-out time"
 msgstr "Установить время ухода"
@@ -1254,9 +1286,6 @@ msgstr "Недостача"
 msgid "Short pick {itemName}"
 msgstr "Короткий отбор {itemName}"
 
-msgid "Sign in with Email"
-msgstr "Войти по электронной почте"
-
 msgid "Sign in with Google"
 msgstr "Войти через Google"
 
@@ -1264,7 +1293,7 @@ msgid "Sign in with Outlook"
 msgstr "Войти через Outlook"
 
 msgid "Sign in with Passkey"
-msgstr "Войти с помощью Passkey"
+msgstr "Войти с ключом доступа"
 
 msgid "Sign out"
 msgstr "Выход"
@@ -1301,7 +1330,7 @@ msgstr "Станция: {stationName}"
 
 #. placeholder {0}: inspection.lotSize
 msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s). Route the units below to scrap or rework, or record the verdict only."
-msgstr "Статистическая приемка не пройдена, поэтому вся партия из {0} считается несоответствующей (ISO 9001:2015 §8.7) — {passes} прошедших образцов и {fails} отказов. Направьте единицы ниже в брак или переработку, или только зафиксируйте результат."
+msgstr "Статистическая приемка не пройдена, поэтому вся партия из {0} считается несоответствующей требованиям (ISO 9001:2015 §8.7) — {passes} образцов из выборки прошли проверку и {fails} образцов не прошли. Направьте единицы ниже в брак или доработку, либо только запишите решение."
 
 msgid "Status"
 msgstr "Статус"
@@ -1346,19 +1375,19 @@ msgid "The lot will still be dispositioned, but an NCR cannot be created until a
 msgstr "Партия все еще будет распределена, но NCR не может быть создана до тех пор, пока не будет настроен хотя бы один тип проблемы."
 
 msgid "There are no available or consumed tracked parts for this material."
-msgstr "Для этого материала нет доступных или использованных отслеживаемых компонентов."
+msgstr "Для этого материала нет доступных или израсходованных отслеживаемых деталей."
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "В спецификации есть материалы с серийным или партионным учётом, которые не были полностью выданы. Завершение без выдачи может привести к некорректным записям прослеживаемости."
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
-msgstr "Эти позиции содержат материал для подбора. Завершение отметит список как Неполный."
+msgstr "Эти позиции еще содержат материал для отбора. Завершение сейчас отметит список как частичный."
 
 msgid "This lot is expired and can't be picked."
-msgstr "Эта партия истекла и не может быть выбрана."
+msgstr "Эта партия истекла и не может быть отобрана."
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
-msgstr "Эта часть была изготовлена на заказ. Её списание может снова открыть маршрут для создания замены."
+msgstr "Эта деталь была произведена на заказ. Списание может открыть заново ее маршрут для создания замены."
 
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "Эта часть будет списана со склада. Её требование остается открытым, чтобы вы могли выдать замену."
@@ -1421,7 +1450,7 @@ msgid "Unlock"
 msgstr "Разблокировать"
 
 msgid "Unlock with passkey"
-msgstr "Разблокировать с помощью пропуска"
+msgstr "Разблокируйте ключом доступа"
 
 msgid "Unpick"
 msgstr "Отменить выбор"
@@ -1435,7 +1464,7 @@ msgstr "Незапланированное время простоя"
 
 #. placeholder {0}: board.unplannedCount.days
 msgid "Unplanned maintenance items, last {0} days"
-msgstr "Элементы незапланированного обслуживания за последние {0} дней"
+msgstr "Незапланированные элементы техобслуживания за последние {0} дней"
 
 msgid "Unsaved changes"
 msgstr "Несохранённые изменения"
@@ -1444,7 +1473,7 @@ msgid "Up next"
 msgstr "Следующее"
 
 msgid "Up to {maxAllocatable} unit(s) can be allocated; the rest is recorded without a posting."
-msgstr "До {maxAllocatable} единиц могут быть распределены; остальное записывается без проводки."
+msgstr "Можно распределить до {maxAllocatable} единиц(ы); остальное записывается без проведения."
 
 msgid "Update"
 msgstr "Обновить"
@@ -1471,7 +1500,7 @@ msgid "Verify"
 msgstr "Подтвердить"
 
 msgid "View maintenance dispatch"
-msgstr "Просмотреть наряд на обслуживание"
+msgstr "Просмотреть заявку на техобслуживание"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Мы отправили вам ссылку для входа в ваш аккаунт."
@@ -1480,7 +1509,7 @@ msgid "What is {translatedTerm}?"
 msgstr "Что такое {translatedTerm}?"
 
 msgid "WIP"
-msgstr "НЗП"
+msgstr "Незавершенное производство"
 
 msgid "Work Center"
 msgstr "Рабочий центр"
@@ -1492,13 +1521,20 @@ msgid "Yes"
 msgstr "Да"
 
 msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Вы отметились в системе в <0/>. Вы можете отредактировать время выхода ниже или подтвердить, что вы еще работаете."
+msgstr "Вы начали работу в <0/>. Ниже вы можете изменить время окончания работы или подтвердить, что вы все еще работаете."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
-msgstr "Вы на смене уже {hoursElapsed} часов. Вы забыли отметить уход?"
+msgstr "Вы проработали {hoursElapsed} часов. Вы забыли завершить работу?"
+
+msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
+msgstr "Ваша учетная запись еще не входит ни в одну Организацию. Завершите подготовку к работе в Carbon ERP, чтобы продолжить."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Ваша организация требует приложения аутентификатора. Настройте его в Carbon, а затем вернитесь сюда."
 
 msgid "Your session was locked after inactivity."
 msgstr "Ваш сеанс был заблокирован после неактивности."
+
+#. placeholder {0}: peopleStation.name
+msgid "Your station: {0}"
+msgstr "Ваша станция: {0}"

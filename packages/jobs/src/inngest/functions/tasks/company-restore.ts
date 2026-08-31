@@ -1,9 +1,10 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { chunkArray } from "@carbon/utils";
 import { sql } from "kysely";
+import { applyTableRenames } from "../../../backups/renames";
 import { getJobDatabaseClient, type JobDatabase } from "../../../db";
 import { inngest } from "../../client";
-import type { Catalog, CompanyBackup } from "./company-backup";
+import type { Catalog, CompanyBackup, JobProgress } from "./company-backup";
 import {
   assertBackupImportable,
   assertWipeSafe,
@@ -14,17 +15,18 @@ import {
   canSetReplicationRole,
   getCompanyTableCatalog,
   isUserScopedIdentityTable,
-  newIdForTable,
   RESTORE_INTEGRATION,
   readBackup,
   removeStoragePrefix,
   restoreAssetsFromBackup,
   selectWipeableTables,
+  throttleProgress,
   wipeScopedData,
   writeBackupManifest
 } from "./company-backup";
 import {
   assertReferentiallyClosed,
+  buildIdMaps,
   buildRowTransforms,
   loadSubstrateIds
 } from "./company-backup.transforms";
@@ -43,8 +45,11 @@ type ServiceRole = ReturnType<typeof getCarbonServiceRole>;
  *   including the chart of accounts (group-scoped), which is why `includeGroup`
  *   is set for foreign restores.
  * Runs in one transaction with FK enforcement relaxed when possible.
+ *
+ * Exported: `company-template.ts` is a second caller — a demo template's revert
+ * reloads its pre-apply snapshot through exactly this path.
  */
-async function wipeAndLoad(
+export async function wipeAndLoad(
   db: JobDatabase,
   catalog: Catalog,
   backup: CompanyBackup,
@@ -93,24 +98,14 @@ async function wipeAndLoad(
     backup.manifest.tables.map((t) => [t.name, new Set(t.columns)])
   );
 
-  // Foreign: assign a fresh id to every id-keyed row up front so FKs (and the
-  // ids embedded in storage paths) can be rewritten in a single pass. Only remap
-  // string ids (text/uuid) — integer/serial ids (e.g. `journal`) can't take a
-  // nanoid, and since the table is wiped first their original ids are free to
-  // reuse verbatim (FKs to them stay valid by keeping the original value).
-  const idMaps = new Map<string, Map<string, string>>();
+  // Foreign: assign a fresh id to every id-bearing row up front so FKs (and the
+  // ids embedded in storage paths) can be rewritten in a single pass. See
+  // `buildIdMaps` for what qualifies and why.
+  const idMaps = remap
+    ? buildIdMaps(loadTables, backup.data)
+    : new Map<string, Map<string, string>>();
   const idRewrite = new Map<string, string>();
   if (remap) {
-    for (const t of loadTables) {
-      if (!t.hasId) continue;
-      const idType = t.columns.find((c) => c.name === "id")?.udtName;
-      if (idType !== "uuid" && idType !== "text") continue;
-      const map = new Map<string, string>();
-      for (const row of backup.data[t.name]!) {
-        if (typeof row.id === "string") map.set(row.id, newIdForTable(t));
-      }
-      idMaps.set(t.name, map);
-    }
     for (const map of idMaps.values()) {
       for (const [oldId, newId] of map) idRewrite.set(oldId, newId);
     }
@@ -211,10 +206,6 @@ async function wipeAndLoad(
 }
 
 type RestoreStatus = "running" | "ready" | "failed" | "reverting";
-/** Live progress of the current phase. `phase` is a stable KEY
- *  (`snapshot`/`wipe`/`load`/`files`); the UI maps it to a human label per mode
- *  (restore vs revert), so the job never bakes in display copy. */
-type JobProgress = { phase: string; done: number; total: number };
 type RestoreMeta = {
   restoreRunId: string;
   status: RestoreStatus;
@@ -235,7 +226,8 @@ type RestoreMeta = {
   includeGroup?: boolean;
 };
 
-async function getCompanyGroupId(
+/** Exported: also used by `company-template.ts` when reverting a demo template. */
+export async function getCompanyGroupId(
   client: ServiceRole,
   companyId: string
 ): Promise<string | null> {
@@ -246,6 +238,32 @@ async function getCompanyGroupId(
     .single();
   if (company.error) throw new Error(company.error.message);
   return company.data?.companyGroupId ?? null;
+}
+
+/**
+ * Which scope a wipe-and-load should cover for this company. Group-scoped data
+ * (chart of accounts, currencies, dimensions) is shared by every company in the
+ * group, so we only wipe/reload it when this company is the group's SOLE member —
+ * then the group is effectively this company's. In a multi-company group it is
+ * left untouched and managed at the group level.
+ *
+ * Exported: shared by the restore path and the demo-template path so the two can
+ * never disagree about what a revert is allowed to touch.
+ */
+export async function resolveRestoreScope(
+  client: ServiceRole,
+  companyId: string
+): Promise<{ targetGroupId: string | null; includeGroup: boolean }> {
+  const targetGroupId = await getCompanyGroupId(client, companyId);
+  const groupCompanyCount = targetGroupId
+    ? ((
+        await client
+          .from("company")
+          .select("id", { count: "exact", head: true })
+          .eq("companyGroupId", targetGroupId)
+      ).count ?? 1)
+    : 0;
+  return { targetGroupId, includeGroup: groupCompanyCount === 1 };
 }
 
 async function readRestoreMarker(
@@ -313,35 +331,16 @@ async function writeRestoreMarker(
   }
 }
 
-// Throttled progress writer: drop same-phase ticks within the window, always
-// flush a phase change or a terminal done===total. The marker write is a separate
-// connection, so this is safe to call inside the wipe+load transaction.
-const PROGRESS_THROTTLE_MS = 250;
+// The marker write is a separate connection, so this is safe to call inside the
+// wipe+load transaction.
 function makeProgressReporter(
   client: ServiceRole,
   companyId: string,
   restoreRunId: string
 ): (p: JobProgress) => Promise<void> {
-  let lastAt = 0;
-  let lastPhase = "";
-  return async (progress) => {
-    const now = Date.now();
-    const terminal = progress.done >= progress.total;
-    if (
-      progress.phase === lastPhase &&
-      !terminal &&
-      now - lastAt < PROGRESS_THROTTLE_MS
-    ) {
-      return;
-    }
-    lastPhase = progress.phase;
-    lastAt = now;
-    await writeRestoreMarker(client, {
-      companyId,
-      restoreRunId,
-      patch: { progress }
-    });
-  };
+  return throttleProgress((progress) =>
+    writeRestoreMarker(client, { companyId, restoreRunId, patch: { progress } })
+  );
 }
 
 async function deleteRestoreMarker(
@@ -407,27 +406,15 @@ export const companyRestoreFunction = inngest.createFunction(
 
       try {
         const name = backupNameFromSource(filePath);
-        const backup = await readBackup(client, companyId, name);
-        const targetGroupId = await getCompanyGroupId(client, companyId);
-
-        // Group-scoped data (chart of accounts, currencies, dimensions) is shared
-        // by every company in the group. We only wipe/reload it when this company
-        // is the group's SOLE member — then the group is effectively this
-        // company's, so a restore (own or foreign) covers it fully. In a
-        // multi-company group it's left untouched and managed at the group level.
-        const groupCompanyCount = targetGroupId
-          ? ((
-              await client
-                .from("company")
-                .select("id", { count: "exact", head: true })
-                .eq("companyGroupId", targetGroupId)
-            ).count ?? 1)
-          : 0;
-        const includeGroup = groupCompanyCount === 1;
+        const raw = await readBackup(client, companyId, name);
+        const { targetGroupId, includeGroup } = await resolveRestoreScope(
+          client,
+          companyId
+        );
 
         // A backup from ANOTHER company must re-stamp the chart of accounts onto
         // this group, so it's only allowed when the group is this company's alone.
-        const foreign = backup.manifest.sourceCompanyId !== companyId;
+        const foreign = raw.manifest.sourceCompanyId !== companyId;
         if (foreign && !includeGroup) {
           throw new Error(
             !targetGroupId
@@ -441,6 +428,10 @@ export const companyRestoreFunction = inngest.createFunction(
         }
 
         const catalog = await getCompanyTableCatalog(db);
+        // Move renamed tables onto their current names BEFORE the gate, so the
+        // gate, the closure preflight and the load all agree on what this backup
+        // contains. An unmapped missing table survives this and the gate refuses it.
+        const backup = applyTableRenames(catalog, raw);
         const compatibility = assertBackupImportable(catalog, backup);
         if (!compatibility.ok) {
           throw new Error(
@@ -660,9 +651,11 @@ export const companyRestoreRevertFunction = inngest.createFunction(
         // check). Wipe + reload the SAME scope the forward restore touched so the
         // undo is exact — including group data (chart of accounts) when the
         // forward run covered it.
-        const snapshot = await readBackup(client, companyId, snapshotPath);
+        const rawSnapshot = await readBackup(client, companyId, snapshotPath);
         const targetGroupId = await getCompanyGroupId(client, companyId);
         const catalog = await getCompanyTableCatalog(db);
+        // A snapshot predates any migration deployed since the restore it undoes.
+        const snapshot = applyTableRenames(catalog, rawSnapshot);
         const { rows, idRewrite } = await wipeAndLoad(db, catalog, snapshot, {
           companyId,
           userId: "",

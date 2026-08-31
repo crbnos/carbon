@@ -7,7 +7,11 @@ import { fromReactFlow } from "./graph";
 
 const DEBOUNCE_MS = 1000;
 
-/** Debounced autosave. Safe because the version being edited is never the live one. */
+/**
+ * Debounced autosave, in two modes. An editable version posts the whole definition to
+ * `/save`. A LIVE version posts positions only, to `/positions` — the store lets nothing
+ * else through, and `/save` would refuse it with a 409 anyway.
+ */
 export function Autosave({
   workflowId,
   versionId
@@ -23,10 +27,13 @@ export function Autosave({
 
   const nodes = useBuilderStore((state) => state.nodes);
   const edges = useBuilderStore((state) => state.edges);
-  const isReadOnly = useBuilderStore((state) => state.isReadOnly);
+  const canChangeDefinition = useBuilderStore(
+    (state) => state.canChangeDefinition
+  );
+  const canMoveNodes = useBuilderStore((state) => state.canMoveNodes);
 
   useEffect(() => {
-    if (isReadOnly) return;
+    if (!canChangeDefinition && !canMoveNodes) return;
 
     const timer = setTimeout(() => {
       const state = store.getState();
@@ -36,22 +43,50 @@ export function Autosave({
 
       const formData = new FormData();
       formData.append("versionId", versionId);
-      formData.append("nodes", JSON.stringify(definition.nodes));
-      formData.append("edges", JSON.stringify(definition.edges));
-      formData.append("formatVersion", String(definition.formatVersion));
+
+      if (canChangeDefinition) {
+        formData.append("nodes", JSON.stringify(definition.nodes));
+        formData.append("edges", JSON.stringify(definition.edges));
+        formData.append("formatVersion", String(definition.formatVersion));
+      } else {
+        // Live version: a drag is the only thing the store let through, so positions
+        // are the only thing worth sending — and the only thing the server accepts.
+        formData.append(
+          "positions",
+          JSON.stringify(
+            Object.fromEntries(
+              definition.nodes.map((node) => [
+                node.id,
+                { x: node.position.x, y: node.position.y }
+              ])
+            )
+          )
+        );
+      }
 
       submittedRef.current = submitted;
       state.setSaveState("saving");
       submit(formData, {
         method: "post",
-        action: path.to.workflowSave(workflowId)
+        action: canChangeDefinition
+          ? path.to.workflowSave(workflowId)
+          : path.to.workflowPositions(workflowId)
       });
     }, DEBOUNCE_MS);
 
     return () => clearTimeout(timer);
     // `fetcher` is deliberately not a dependency — its identity changes on every
     // state tick, which would restart the debounce forever.
-  }, [nodes, edges, isReadOnly, store, versionId, workflowId, submit]);
+  }, [
+    nodes,
+    edges,
+    canChangeDefinition,
+    canMoveNodes,
+    store,
+    versionId,
+    workflowId,
+    submit
+  ]);
 
   useEffect(() => {
     const submitted = submittedRef.current;

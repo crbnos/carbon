@@ -10,6 +10,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import {
+  LuAward,
   LuBookOpen,
   LuClock,
   LuPencil,
@@ -22,6 +23,7 @@ import {
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import type { TrainingListItem } from "~/modules/resources";
@@ -114,6 +116,25 @@ const TrainingsTable = memo(({ data, count, tags }: TrainingsTableProps) => {
               { value: "Quarterly", label: "Quarterly" },
               { value: "Annual", label: "Annual" }
             ]
+          }
+        }
+      },
+      {
+        accessorKey: "grantsAbilityId",
+        header: t`Grants Ability`,
+        cell: ({ row }) => (
+          <Enumerable value={row.original.grantsAbilityName ?? null} />
+        ),
+        meta: {
+          icon: <LuAward />,
+          filter: {
+            type: "fetcher",
+            endpoint: path.to.api.abilities,
+            transform: (data: { id: string; name: string }[] | null) =>
+              data?.map((ability) => ({
+                value: ability.id,
+                label: ability.name
+              })) ?? []
           }
         }
       },

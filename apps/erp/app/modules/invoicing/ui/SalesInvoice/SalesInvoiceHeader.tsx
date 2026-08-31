@@ -11,6 +11,7 @@ import {
   Heading,
   HStack,
   IconButton,
+  Status,
   useDisclosure
 } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
@@ -85,6 +86,7 @@ const SalesInvoiceHeader = () => {
     salesInvoiceLines: SalesInvoiceLine[];
     defaultCc: string[];
     orgHasCredits: boolean;
+    stripeInvoiceUrl: string | null;
   }>(path.to.salesInvoice(invoiceId));
 
   if (!routeData?.salesInvoice) throw new Error("salesInvoice not found");
@@ -204,7 +206,7 @@ const SalesInvoiceHeader = () => {
   });
   return (
     <>
-      <div className="flex flex-shrink-0 items-center justify-between p-2 bg-background border-b h-[50px] overflow-x-auto scrollbar-hide">
+      <div className="flex flex-shrink-0 items-center justify-between gap-x-4 p-2 bg-card border-b h-[var(--header-height)] overflow-x-auto scrollbar-hide">
         <HStack className="w-full justify-between">
           <HStack>
             <IconButton
@@ -301,6 +303,18 @@ const SalesInvoiceHeader = () => {
               </DropdownMenuContent>
             </DropdownMenu>
             <SalesInvoiceStatus status={salesInvoice.status} />
+            {routeData?.stripeInvoiceUrl && isPosted && (
+              <a
+                href={routeData.stripeInvoiceUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="no-underline"
+              >
+                <Status color="purple">
+                  <Trans>Stripe</Trans>
+                </Status>
+              </a>
+            )}
           </HStack>
           <HStack>
             {relatedDocs.salesOrders.length === 1 && (
@@ -435,6 +449,7 @@ const SalesInvoiceHeader = () => {
           invoiceId={invoiceId}
           customerId={salesInvoice.invoiceCustomerId}
           customerContactId={salesInvoice.invoiceCustomerContactId}
+          dateDue={salesInvoice.dateDue}
           isOpen={postingModal.isOpen}
           onClose={postingModal.onClose}
           linesToShip={linesNotAssociatedWithSO}

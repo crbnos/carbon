@@ -42,6 +42,7 @@ import {
   getSupplierParts,
   isChangeNoticeOpen
 } from "~/modules/items";
+import { getUnreleasedChangeOrderForItem } from "~/modules/items/items.server";
 import type { Method } from "~/modules/items/types";
 import {
   BoMActions,
@@ -83,7 +84,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     tags,
     supersession,
     supersededBy,
-    allChangeNotices
+    allChangeNotices,
+    unreleasedChangeOrder
   ] = await Promise.all([
     getPart(client, itemId, companyId),
     getSupplierParts(client, itemId, companyId),
@@ -93,7 +95,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getItemSupersededBy(client, itemId, companyId),
     // Every CO, any status; the open subset (which locks manual version/revision
     // creation) is derived below.
-    findChangeNoticesForItem(client, { itemId, companyId })
+    findChangeNoticesForItem(client, { itemId, companyId }),
+    // Locks the Active toggle while the change notice that minted this item is
+    // still open — release is what activates it.
+    getUnreleasedChangeOrderForItem(client, { itemId, companyId })
   ]);
 
   if (partSummary.data?.companyId !== companyId) {
@@ -168,7 +173,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     changeNotices,
     openChangeNotices,
     // Fail closed: a lookup we couldn't read can't prove the item is CO-free.
-    changeNoticesUnavailable: allChangeNotices.error !== null
+    changeNoticesUnavailable: allChangeNotices.error !== null,
+    unreleasedChangeOrder
   };
 }
 
@@ -191,9 +197,9 @@ export default function PartRoute() {
   const [filterText, setFilterText] = useState("");
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
+    <div className="flex flex-col h-[calc(100dvh-var(--topbar-height))] overflow-hidden w-full">
       <PartHeader />
-      <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+      <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-hidden w-full">
         <div className="flex flex-grow overflow-hidden">
           <ResizablePanels
             explorer={
@@ -600,7 +606,7 @@ export default function PartRoute() {
               </div>
             }
             content={
-              <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-hide w-full">
+              <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-y-auto scrollbar-hide w-full">
                 <Outlet />
               </div>
             }

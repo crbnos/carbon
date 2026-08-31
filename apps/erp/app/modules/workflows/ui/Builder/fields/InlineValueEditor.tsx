@@ -6,6 +6,7 @@ import {
 import type { ValueOrRef, ValueType } from "@carbon/workflows";
 import { useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useRef } from "react";
+import { useCustomFieldLabels } from "../catalog";
 import { useBuilderStoreApi } from "../context";
 import { InlineVariableMenu } from "./InlineVariableMenu";
 import { publishVariableMenuData, retractVariableMenuData } from "./menuBridge";
@@ -48,6 +49,8 @@ type Props = {
   /** Fires as focus enters and leaves. Lets the field hold back advice about a value
    * the user is still in the middle of typing. */
   onFocusChange?: (focused: boolean) => void;
+  /** The version is published: show the value, refuse every edit. */
+  isReadOnly?: boolean;
 };
 
 export function InlineValueEditor({
@@ -63,9 +66,12 @@ export function InlineValueEditor({
   maxRows,
   minRows,
   multiline,
-  onFocusChange
+  onFocusChange,
+  isReadOnly = false
 }: Props) {
   const { t } = useLingui();
+  // A custom field's path segment is its id; only this map knows what to call it.
+  const segmentLabels = useCustomFieldLabels();
   const store = useBuilderStoreApi();
   const getMenuData = useVariableMenuData(context, accepts, textOnly);
 
@@ -97,12 +103,14 @@ export function InlineValueEditor({
     <div
       className="min-w-0 flex-1"
       onFocusCapture={() => {
+        if (isReadOnly) return;
         publishVariableMenuData(getData);
         onFocusChange?.(true);
       }}
       onBlurCapture={() => {
+        if (isReadOnly) return;
         onFocusChange?.(false);
-        const parts = toEditorParts(value, nodeName);
+        const parts = toEditorParts(value, nodeName, undefined, segmentLabels);
         const trimmed = withoutTrailingSpace(parts);
         // Same array back means nothing to trim; writing anyway dirties the workflow
         // on every focus change.
@@ -112,7 +120,7 @@ export function InlineValueEditor({
       }}
     >
       <VariableText
-        value={toEditorParts(value, nodeName, partIssues)}
+        value={toEditorParts(value, nodeName, partIssues, segmentLabels)}
         onChange={(next: VariableTextPart[]) =>
           onChange(fromEditorParts(next, { collapseSingleRef }))
         }
@@ -124,6 +132,7 @@ export function InlineValueEditor({
         renderTokenLabel={leafOfLabel}
         maxRows={maxRows}
         minRows={minRows}
+        isReadOnly={isReadOnly}
         className={cn("w-full", hasIssue && "border-destructive")}
       />
     </div>

@@ -23,6 +23,7 @@ import type {
   ApprovalRequestForViewCheck,
   ApprovalRule,
   CreateApprovalRequestInput,
+  ItemModelUpload,
   UpsertApprovalRuleInput
 } from "./types";
 
@@ -822,42 +823,47 @@ export function getDocumentType(
   return "Other";
 }
 
+/**
+ * The item's CAD model in the same shape the line views expose it, so it drops
+ * straight into `<CadModel modelUpload={...} />`. Always the full shape — an item
+ * with no model is every field null, never a narrower branch.
+ */
 export async function getModelByItemId(
   client: SupabaseClient<Database>,
   itemId: string
-) {
+): Promise<ItemModelUpload> {
   const item = await client
     .from("item")
-    .select("id, type, modelUploadId")
+    .select("id, modelUploadId")
     .eq("id", itemId)
     .single();
 
-  if (!item.data || !item.data.modelUploadId) {
-    return {
-      itemId: item.data?.id ?? null,
-      type: item.data?.type ?? null,
-      modelPath: null
-    };
-  }
+  const noModel: ItemModelUpload = {
+    itemId: item.data?.id ?? null,
+    modelId: null,
+    modelName: null,
+    modelPath: null,
+    modelSize: null,
+    thumbnailPath: null
+  };
+
+  if (!item.data?.modelUploadId) return noModel;
 
   const model = await client
     .from("modelUpload")
-    .select("*")
+    .select("id, name, modelPath, size, thumbnailPath")
     .eq("id", item.data.modelUploadId)
     .maybeSingle();
 
-  if (!model.data) {
-    return {
-      itemId: item.data?.id ?? null,
-      type: item.data?.type ?? null,
-      modelSize: null
-    };
-  }
+  if (!model.data) return noModel;
 
   return {
-    itemId: item.data!.id,
-    type: item.data!.type,
-    ...model.data
+    itemId: item.data.id,
+    modelId: model.data.id,
+    modelName: model.data.name,
+    modelPath: model.data.modelPath,
+    modelSize: model.data.size,
+    thumbnailPath: model.data.thumbnailPath
   };
 }
 
@@ -1392,6 +1398,32 @@ export function lookupBuyPriceFromMap(
     entry.priceBreaks,
     requestedQty,
     entry.fallbackUnitPrice ?? fallbackCost
+  );
+}
+
+/**
+ * What a "Purchase to Order" quote material's unit cost IS: a typed cost wins,
+ * anything else re-resolves from supplier price breaks. Every reader of a
+ * bought-to-order cost must go through this — reaching for
+ * lookupBuyPriceFromMap directly silently ignores a typed cost.
+ *
+ * Mirrored in the Deno edge runtime (`functions/lib/methods.ts`).
+ */
+export function resolveBuyUnitCost(
+  material: {
+    itemId: string;
+    unitCost: number;
+    unitCostSource?: string | null;
+  },
+  requestedQty: number,
+  priceMap: SupplierPriceMap
+): number {
+  if (material.unitCostSource === "manual") return material.unitCost;
+  return lookupBuyPriceFromMap(
+    material.itemId,
+    requestedQty,
+    priceMap,
+    material.unitCost
   );
 }
 

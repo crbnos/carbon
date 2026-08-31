@@ -19,7 +19,6 @@ import {
   HStack,
   IconButton,
   Label,
-  ScrollArea,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -39,12 +38,12 @@ import {
   LuArrowLeft,
   LuChevronDown,
   LuChevronRight,
-  LuCog,
   LuExternalLink,
   LuGitPullRequest,
   LuGitPullRequestCreate,
   LuGitPullRequestCreateArrow,
   LuLock,
+  LuRedoDot,
   LuSquareFunction,
   LuTruck
 } from "react-icons/lu";
@@ -545,16 +544,14 @@ const BillOfMaterial = ({
         {isProductionRevision && (
           <ReleaseLockAlert isLocked={isReleaseLocked} className="mb-4" />
         )}
-        <ScrollArea type="auto" className="max-h-[60dvh]">
-          <SortableList
-            isReadOnly={isReadOnly}
-            items={materials}
-            onReorder={onReorder}
-            onToggleItem={onToggleItem}
-            onRemoveItem={onRemoveItem}
-            renderItem={renderListItem}
-          />
-        </ScrollArea>
+        <SortableList
+          isReadOnly={isReadOnly}
+          items={materials}
+          onReorder={onReorder}
+          onToggleItem={onToggleItem}
+          onRemoveItem={onRemoveItem}
+          renderItem={renderListItem}
+        />
       </CardContent>
       {configuratorDisclosure.isOpen && configuration && (
         <ConfigurationEditor
@@ -1065,7 +1062,7 @@ function MaterialForm({
                 methodOperations.length > 0 ? "secondary" : "destructive"
               }
             >
-              <LuCog className="size-3 mr-1" />
+              <LuRedoDot className="size-3 mr-1" />
               {itemData.methodOperationId
                 ? methodOperations.find(
                     (o) => o.id === itemData.methodOperationId

@@ -127,13 +127,17 @@ replay can never double-fire:
 - `syncWorkflowTriggers(db, companyId, workflowId, lockCompany)` — rewrite one workflow's trigger rows
   (delete-then-insert; the table has no UPDATE policy by design), **write `workflow.nextRunAt`**
   (the scheduler's bookmark, or null for event-triggered workflows), and reconcile the company's
-  subscriptions. Returns `{ eventIds, tables, scheduled }`. Call it on promote, on trigger edit,
-  and on activate/deactivate.
+  subscriptions. Returns `{ eventIds, tables, scheduled }`. Call it on publish, on trigger edit,
+  and on unpublish.
 - `syncWorkflowSubscriptions(db, companyId)` — standalone repair from existing rows.
 
 Reconciliation is surgical: only `handlerType = 'WORKFLOW'` rows are touched, matched by
 exact `(companyId, name, table)`, and a row with the wrong `operations` is deleted and
 re-inserted. It never resets a company's WEBHOOK/SEARCH/AUDIT subscriptions.
+
+The gate inside it is `workflow.publishedVersionId` alone — set means published, `NULL` means
+draft and an empty desired set. The old `active` boolean was removed in migration
+`20260824163808_workflow-publish-unpublish.sql`.
 
 **Why this lives in `@carbon/workflows` and not `@carbon/database`:** it must read
 `WORKFLOW_EVENTS`, and `@carbon/workflows` already dev-depends on `@carbon/database` — the
@@ -150,7 +154,7 @@ The caller owns it because `@carbon/workflows` imports Kysely **type-only** (the
 for the browser) and cannot run raw SQL; `workflows.server.ts` supplies
 `` sql`SELECT pg_advisory_xact_lock(hashtext(${companyId}))` ``.
 
-Kysely bypasses RLS. **The caller authorizes first** — phase 7's activation route gates on
+Kysely bypasses RLS. **The caller authorizes first** — the publish and unpublish routes gate on
 `workflows_update` before calling.
 
 ## Gotchas
@@ -164,3 +168,17 @@ Kysely bypasses RLS. **The caller authorizes first** — phase 7's activation ro
   account's concurrency, not a per-`companyId`/per-`workflowId` cap. See `workflow-engine.md`.
 - Deploy-time drift checks live with `packages/checks`: the `workflow-trigger-event-drift`
   SQL invariant and `pnpm --filter @carbon/checks workflow-events`.
+
+## Custom-field trigger ids
+
+`computeEventIds` emits `<entity>.customFields.<fieldId>.changed` for every
+`customFields.<id>` key in the diff, on any table that maps to a triggerable entity. The id is
+**derived from the data, never looked up** — it is per company and the catalog is not — so the
+matcher stays company-blind and no company lookup enters the hot path. `catalog.getEvent(id)`
+is what decides whether the entity may carry one at all (`item` and reference-only entities
+cannot), so that rule lives in exactly one place. Custom-field ids are appended AFTER the
+generated `.changed` ids, keeping "first event id wins" picking the same winner as before for a
+workflow subscribed to both a column and a field on the same update.
+
+`deriveWorkflowSubscriptions` resolves through `getCatalogEvent` rather than indexing
+`WORKFLOW_EVENTS`, which is what gives a custom-field trigger its `UPDATE` subscription.

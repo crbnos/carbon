@@ -33,7 +33,6 @@ import {
   LuClipboardCheck,
   LuClock,
   LuClock3,
-  LuCog,
   LuContainer,
   LuCreditCard,
   LuExternalLink,
@@ -48,9 +47,11 @@ import {
   LuLandmark,
   LuList,
   LuListChecks,
+  LuLocateFixed,
   LuMapPin,
   LuPizza,
   LuQrCode,
+  LuRedoDot,
   LuRotateCcw,
   LuShoppingCart,
   LuSquare,
@@ -62,8 +63,7 @@ import {
   LuTriangleAlert,
   LuTruck,
   LuUser,
-  LuUsers,
-  LuWrench
+  LuUsers
 } from "react-icons/lu";
 import { RxCodesandboxLogo } from "react-icons/rx";
 import { TbTargetOff } from "react-icons/tb";
@@ -677,9 +677,9 @@ export const DimensionEntityTypeIcon = ({
     case "CostCenter":
       return <LuCircleDollarSign className={className} />;
     case "WorkCenter":
-      return <LuWrench className={className} />;
+      return <LuLocateFixed className={className} />;
     case "Process":
-      return <LuCog className={className} />;
+      return <LuRedoDot className={className} />;
     case "ScrapReason":
       return <LuTriangleAlert className={className} />;
   }

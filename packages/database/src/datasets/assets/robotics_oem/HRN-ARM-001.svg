@@ -1,0 +1,192 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="steelV" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="steelFace" x1="0.2" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#6e747a"/>
+      <stop offset="0.18" stop-color="#c3c9cd"/>
+      <stop offset="0.42" stop-color="#eef1f3"/>
+      <stop offset="0.7" stop-color="#aab1b7"/>
+      <stop offset="1" stop-color="#5d6368"/>
+    </linearGradient>
+    <linearGradient id="rubberV" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#111315"/>
+      <stop offset="0.25" stop-color="#2c3033"/>
+      <stop offset="0.5" stop-color="#3b4044"/>
+      <stop offset="0.75" stop-color="#212528"/>
+      <stop offset="1" stop-color="#0d0f10"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000" stop-opacity="0.30"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- cable centrelines -->
+    <path id="trunk" fill="none" pathLength="1000"
+      d="M390 375 C520 340 600 400 570 480 C540 562 370 550 350 620 C330 692 520 712 660 660"/>
+    <g id="branches" fill="none">
+      <path d="M390 375 C356 330 330 282 292 236"/>
+      <path d="M390 375 C360 374 328 372 296 372"/>
+      <path d="M390 375 C356 424 322 466 292 502"/>
+      <path d="M660 660 C682 636 704 612 726 592"/>
+      <path d="M660 660 C684 668 708 680 730 690"/>
+      <path d="M660 660 C672 676 688 700 700 720"/>
+    </g>
+    <g id="legs" fill="none">
+      <path d="M548 511 C614 524 686 512 748 480"/>
+      <path d="M368 593 C328 616 284 642 246 668"/>
+    </g>
+
+    <!-- straight circular connector, axis pointing -x, origin at the cable entry -->
+    <g id="conn">
+      <path d="M0 -19 L-44 -27 L-44 27 L0 19 Z" fill="url(#rubberV)" stroke="#0a0c0d" stroke-width="2.5"/>
+      <g stroke="#000000" stroke-opacity="0.4" stroke-width="3.5" fill="none">
+        <path d="M-11 -21 L-11 21"/><path d="M-23 -24 L-23 24"/><path d="M-35 -26 L-35 26"/>
+      </g>
+      <path d="M-8 -18 L-42 -25" fill="none" stroke="#6c7378" stroke-opacity="0.35" stroke-width="3"/>
+      <path d="M-44 -30 L-92 -30 L-92 30 L-44 30 Z" fill="url(#steelV)" stroke="#464c50" stroke-width="2.5"/>
+      <path d="M-92 -38 L-150 -38 L-150 38 L-92 38 Z" fill="url(#steelV)" stroke="#464c50" stroke-width="2.5"/>
+      <g stroke="#4e555a" stroke-opacity="0.75" stroke-width="2.4" fill="none">
+        <path d="M-150 -35.5 L-92 -35.5"/><path d="M-150 -33 L-92 -33"/><path d="M-150 -29.5 L-92 -29.5"/>
+        <path d="M-150 -25 L-92 -25"/><path d="M-150 -19.5 L-92 -19.5"/><path d="M-150 -13 L-92 -13"/>
+        <path d="M-150 -6 L-92 -6"/><path d="M-150 1 L-92 1"/><path d="M-150 8 L-92 8"/>
+        <path d="M-150 14.5 L-92 14.5"/><path d="M-150 20.5 L-92 20.5"/><path d="M-150 26 L-92 26"/>
+        <path d="M-150 30.5 L-92 30.5"/><path d="M-150 34 L-92 34"/><path d="M-150 36.5 L-92 36.5"/>
+      </g>
+      <path d="M-150 -22 L-92 -22" fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="4"/>
+      <path d="M-150 -33 L-150 38" fill="none" stroke="#3d4347" stroke-width="2.5"/>
+      <path d="M-150 -33 L-166 -33 L-166 33 L-150 33 Z" fill="url(#steelV)" stroke="#464c50" stroke-width="2.5"/>
+      <ellipse cx="-166" cy="0" rx="13" ry="33" fill="url(#steelFace)" stroke="#464c50" stroke-width="2.5"/>
+      <ellipse cx="-166" cy="0" rx="8.5" ry="25" fill="#2b3135" stroke="#1e2427" stroke-width="2"/>
+      <g fill="#8d9599" opacity="0.85">
+        <ellipse cx="-166" cy="-14" rx="2.6" ry="4"/>
+        <ellipse cx="-166" cy="-5" rx="2.6" ry="4"/>
+        <ellipse cx="-166" cy="4" rx="2.6" ry="4"/>
+        <ellipse cx="-166" cy="13" rx="2.6" ry="4"/>
+      </g>
+      <path d="M-160 -26 A13 33 0 0 0 -160 26" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="3"/>
+    </g>
+
+    <!-- right-angle connector, cable enters at the origin from above, body exits +x -->
+    <g id="connRA">
+      <path d="M-19 0 L19 0 L27 44 L-27 44 Z" fill="url(#rubberV)" stroke="#0a0c0d" stroke-width="2.5"/>
+      <g stroke="#000000" stroke-opacity="0.4" stroke-width="3.5" fill="none">
+        <path d="M-21 11 L21 11"/><path d="M-24 23 L24 23"/><path d="M-26 35 L26 35"/>
+      </g>
+      <path d="M-38 44 L38 44 L38 118 L-38 118 Z" fill="url(#steelV)" stroke="#464c50" stroke-width="2.5"/>
+      <path d="M-30 52 L30 52" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="4"/>
+      <path d="M-30 110 L30 110" fill="none" stroke="#000000" stroke-opacity="0.3" stroke-width="4"/>
+      <path d="M38 44 L96 44 L96 118 L38 118 Z" fill="url(#steelV)" stroke="#464c50" stroke-width="2.5"/>
+      <g stroke="#4e555a" stroke-opacity="0.75" stroke-width="2.4" fill="none">
+        <path d="M38 46.5 L96 46.5"/><path d="M38 49 L96 49"/><path d="M38 52.5 L96 52.5"/>
+        <path d="M38 57 L96 57"/><path d="M38 62.5 L96 62.5"/><path d="M38 69 L96 69"/>
+        <path d="M38 76 L96 76"/><path d="M38 83 L96 83"/><path d="M38 90 L96 90"/>
+        <path d="M38 96.5 L96 96.5"/><path d="M38 102.5 L96 102.5"/><path d="M38 108 L96 108"/>
+        <path d="M38 112.5 L96 112.5"/><path d="M38 116 L96 116"/>
+      </g>
+      <path d="M38 60 L96 60" fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="4"/>
+      <path d="M96 48 L112 48 L112 114 L96 114 Z" fill="url(#steelV)" stroke="#464c50" stroke-width="2.5"/>
+      <ellipse cx="112" cy="81" rx="13" ry="33" fill="url(#steelFace)" stroke="#464c50" stroke-width="2.5"/>
+      <ellipse cx="112" cy="81" rx="8.5" ry="25" fill="#2b3135" stroke="#1e2427" stroke-width="2"/>
+      <g fill="#8d9599" opacity="0.85">
+        <ellipse cx="112" cy="67" rx="2.6" ry="4"/>
+        <ellipse cx="112" cy="76" rx="2.6" ry="4"/>
+        <ellipse cx="112" cy="85" rx="2.6" ry="4"/>
+        <ellipse cx="112" cy="94" rx="2.6" ry="4"/>
+      </g>
+      <path d="M106 55 A13 33 0 0 0 106 107" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="3"/>
+    </g>
+  </defs>
+
+  <ellipse cx="238" cy="566" rx="196" ry="43" fill="url(#shadow)"/>
+  <ellipse cx="472" cy="702" rx="286" ry="63" fill="url(#shadow)"/>
+  <ellipse cx="778" cy="796" rx="232" ry="51" fill="url(#shadow)"/>
+
+  <!-- ===== breakout legs ===== -->
+  <use href="#legs" stroke="#08090a" stroke-width="42" stroke-linecap="round"/>
+  <use href="#legs" stroke="#1a1e21" stroke-width="36" stroke-linecap="round"/>
+  <use href="#legs" stroke="#000000" stroke-opacity="0.28" stroke-width="36" stroke-dasharray="6 12"/>
+  <use href="#legs" stroke="#697077" stroke-opacity="0.20" stroke-width="36" stroke-dasharray="6 12" stroke-dashoffset="9"/>
+  <use href="#legs" stroke="#7f878d" stroke-opacity="0.26" stroke-width="11" transform="translate(0 -7)"/>
+  <!-- taped, capped leg ends -->
+  <g>
+    <ellipse cx="748" cy="480" rx="22" ry="22" fill="#15181a" stroke="#08090a" stroke-width="2.5"/>
+    <path d="M714 464 L742 452 L748 468 L720 480 Z" fill="#0f1214" stroke="#08090a" stroke-width="2"/>
+    <ellipse cx="246" cy="668" rx="22" ry="22" fill="#15181a" stroke="#08090a" stroke-width="2.5"/>
+    <path d="M270 646 L288 668 L274 680 L256 658 Z" fill="#0f1214" stroke="#08090a" stroke-width="2"/>
+  </g>
+
+  <!-- ===== branch tails ===== -->
+  <use href="#branches" stroke="#08090a" stroke-width="50" stroke-linecap="round"/>
+  <use href="#branches" stroke="#1a1e21" stroke-width="44" stroke-linecap="round"/>
+  <use href="#branches" stroke="#000000" stroke-opacity="0.28" stroke-width="44" stroke-dasharray="7 13"/>
+  <use href="#branches" stroke="#6d747a" stroke-opacity="0.22" stroke-width="44" stroke-dasharray="7 13" stroke-dashoffset="10"/>
+  <use href="#branches" stroke="#7f878d" stroke-opacity="0.28" stroke-width="14" transform="translate(0 -9)"/>
+  <use href="#branches" stroke="#000000" stroke-opacity="0.28" stroke-width="10" transform="translate(0 13)"/>
+
+  <!-- ===== main trunk: black braided sleeving ===== -->
+  <use href="#trunk" stroke="#08090a" stroke-width="74" stroke-linecap="round"/>
+  <use href="#trunk" stroke="#1a1e21" stroke-width="66" stroke-linecap="round"/>
+  <use href="#trunk" stroke="#000000" stroke-opacity="0.30" stroke-width="66" stroke-dasharray="8 15"/>
+  <use href="#trunk" stroke="#6d747a" stroke-opacity="0.22" stroke-width="66" stroke-dasharray="8 15" stroke-dashoffset="11"/>
+  <use href="#trunk" stroke="#000000" stroke-opacity="0.30" stroke-width="18" transform="translate(0 19)"/>
+  <use href="#trunk" stroke="#7f878d" stroke-opacity="0.28" stroke-width="21" transform="translate(0 -12)"/>
+  <use href="#trunk" stroke="#aab1b7" stroke-opacity="0.26" stroke-width="8" transform="translate(0 -18)"/>
+
+  <!-- spiral wrap over two stretches of the run -->
+  <use href="#trunk" pathLength="1000" stroke="#22272a" stroke-width="72" stroke-linecap="butt"
+       stroke-dasharray="0 150 200 1000"/>
+  <use href="#trunk" pathLength="1000" stroke="#3d4348" stroke-opacity="0.9" stroke-width="72" stroke-linecap="butt"
+       stroke-dasharray="0 156 14 12 14 12 14 12 14 12 14 12 14 12 14 12 14 1000"/>
+  <use href="#trunk" pathLength="1000" stroke="#8d9499" stroke-opacity="0.30" stroke-width="20" stroke-linecap="butt"
+       transform="translate(0 -14)" stroke-dasharray="0 156 14 12 14 12 14 12 14 12 14 12 14 12 14 12 14 1000"/>
+  <use href="#trunk" pathLength="1000" stroke="#22272a" stroke-width="72" stroke-linecap="butt"
+       stroke-dasharray="0 610 170 1000"/>
+  <use href="#trunk" pathLength="1000" stroke="#3d4348" stroke-opacity="0.9" stroke-width="72" stroke-linecap="butt"
+       stroke-dasharray="0 616 14 12 14 12 14 12 14 12 14 12 14 12 14 1000"/>
+  <use href="#trunk" pathLength="1000" stroke="#8d9499" stroke-opacity="0.30" stroke-width="20" stroke-linecap="butt"
+       transform="translate(0 -14)" stroke-dasharray="0 616 14 12 14 12 14 12 14 12 14 12 14 12 14 1000"/>
+
+  <!-- cable ties at intervals -->
+  <use href="#trunk" pathLength="1000" stroke="#0b0d0e" stroke-width="78" stroke-linecap="butt"
+       stroke-dasharray="0 86 16 1000"/>
+  <use href="#trunk" pathLength="1000" stroke="#0b0d0e" stroke-width="78" stroke-linecap="butt"
+       stroke-dasharray="0 380 16 1000"/>
+  <use href="#trunk" pathLength="1000" stroke="#0b0d0e" stroke-width="78" stroke-linecap="butt"
+       stroke-dasharray="0 500 16 1000"/>
+  <use href="#trunk" pathLength="1000" stroke="#0b0d0e" stroke-width="78" stroke-linecap="butt"
+       stroke-dasharray="0 570 16 1000"/>
+  <use href="#trunk" pathLength="1000" stroke="#0b0d0e" stroke-width="78" stroke-linecap="butt"
+       stroke-dasharray="0 830 16 1000"/>
+  <use href="#trunk" pathLength="1000" stroke="#586066" stroke-opacity="0.45" stroke-width="20" stroke-linecap="butt"
+       transform="translate(0 -13)" stroke-dasharray="0 86 16 278 16 104 16 54 16 244 16 1000"/>
+  <!-- tie heads with their trimmed tails -->
+  <g fill="#0d0f11" stroke="#08090a" stroke-width="2">
+    <path d="M454 312 L480 312 L480 336 L454 336 Z"/>
+    <path d="M489 481 L514 484 L509 508 L484 504 Z"/>
+    <path d="M394 516 L419 519 L414 542 L389 538 Z"/>
+    <path d="M327 552 L351 556 L347 578 L323 574 Z"/>
+    <path d="M499 636 L524 636 L524 659 L499 659 Z"/>
+  </g>
+  <g fill="#3a4044" opacity="0.6">
+    <path d="M458 316 L476 316 L476 322 L458 322 Z"/>
+    <path d="M493 486 L511 489 L510 495 L492 492 Z"/>
+    <path d="M398 521 L416 524 L415 530 L397 527 Z"/>
+    <path d="M331 557 L348 560 L347 566 L330 563 Z"/>
+    <path d="M503 640 L520 640 L520 646 L503 646 Z"/>
+  </g>
+
+  <!-- ===== six connectors ===== -->
+  <use href="#conn" transform="translate(292 236) rotate(20)"/>
+  <use href="#conn" transform="translate(296 372)"/>
+  <use href="#conn" transform="translate(292 502) rotate(-18)"/>
+  <use href="#conn" transform="translate(726 592) rotate(164)"/>
+  <use href="#conn" transform="translate(730 690) rotate(180)"/>
+  <use href="#connRA" transform="translate(700 720)"/>
+</svg>

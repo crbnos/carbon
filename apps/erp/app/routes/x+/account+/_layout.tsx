@@ -23,11 +23,11 @@ export default function AccountRoute() {
 
   return (
     <CollapsibleSidebarProvider>
-      <div className="grid grid-cols-[auto_1fr] w-full h-full bg-card">
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] w-full h-full bg-card">
         <GroupedContentSidebar groups={groups} />
         <VStack
           spacing={0}
-          className="overflow-y-auto scrollbar-hide h-[calc(100dvh-49px)]"
+          className="overflow-y-auto scrollbar-hide h-[calc(100dvh-var(--topbar-height))]"
         >
           <VStack
             spacing={4}

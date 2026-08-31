@@ -1486,6 +1486,132 @@ export const assemblyUnitValidator = z.object({
   itemId: zfd.text(z.string().optional())
 });
 
+export const peopleAssignmentValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  workCenterId: z.string().min(1, { message: "Work center is required" }),
+  employeeId: z.string().min(1, { message: "Employee is required" }),
+  locationId: z.string().min(1, { message: "Location is required" }),
+  date: z.string().min(1, { message: "Date is required" }), // YYYY-MM-DD
+  shiftId: zfd.text(z.string().optional()),
+  note: zfd.text(z.string().optional()),
+  // set when assigning a partial-day remainder; absent = whole shift
+  hours: zfd.numeric(z.number().gt(0).max(24).optional())
+});
+
+export const peopleAbsenceValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  employeeId: z.string().min(1, { message: "Employee is required" }),
+  date: z.string().min(1, { message: "Date is required" }),
+  shiftId: zfd.text(z.string().optional()),
+  note: zfd.text(z.string().optional())
+});
+
+export const copyPeopleBoardValidator = z.object({
+  locationId: z.string().min(1),
+  fromDate: z.string().min(1),
+  toDate: z.string().min(1),
+  shiftId: zfd.text(z.string().optional())
+});
+
+export const peopleWeekAssignValidator = z.object({
+  locationId: z.string().min(1),
+  employeeId: z.string().min(1, { message: "Employee is required" }),
+  workCenterId: z.string().min(1, { message: "Work center is required" }),
+  weekStart: z.string().min(1), // Monday, YYYY-MM-DD
+  shiftId: zfd.text(z.string().optional())
+});
+
+export const peopleWeekUnassignValidator = z.object({
+  employeeId: z.string().min(1, { message: "Employee is required" }),
+  workCenterId: z.string().min(1, { message: "Work center is required" }),
+  weekStart: z.string().min(1),
+  shiftId: zfd.text(z.string().optional())
+});
+
+export const peopleWeekMoveValidator = z.object({
+  employeeId: z.string().min(1, { message: "Employee is required" }),
+  fromWorkCenterId: z.string().min(1),
+  workCenterId: z.string().min(1, { message: "Work center is required" }),
+  weekStart: z.string().min(1),
+  shiftId: zfd.text(z.string().optional())
+});
+
+export const copyPeopleWeekValidator = z.object({
+  locationId: z.string().min(1),
+  fromWeekStart: z.string().min(1), // Monday, YYYY-MM-DD
+  toWeekStart: z.string().min(1),
+  shiftId: zfd.text(z.string().optional())
+});
+
+export const peopleAbsenceRangeValidator = z
+  .object({
+    employeeId: z.string().min(1, { message: "Employee is required" }),
+    fromDate: z.string().min(1, { message: "Start date is required" }),
+    toDate: z.string().min(1, { message: "End date is required" }),
+    shiftId: zfd.text(z.string().optional()),
+    note: zfd.text(z.string().optional())
+  })
+  .refine((value) => value.toDate >= value.fromDate, {
+    message: "End date must be on or after the start date",
+    path: ["toDate"]
+  })
+  .refine(
+    (value) =>
+      new Date(`${value.toDate}T00:00:00Z`).getTime() -
+        new Date(`${value.fromDate}T00:00:00Z`).getTime() <=
+      62 * 24 * 3_600_000,
+    { message: "Range is limited to 62 days", path: ["toDate"] }
+  );
+
+export const peopleMoveValidator = z.object({
+  id: z.string().min(1, { message: "Assignment is required" }),
+  workCenterId: z.string().min(1, { message: "Work center is required" })
+});
+
+// One atomic edit of a person's whole day: the given rows become the day's
+// assignments (update/insert/delete reconciliation in one transaction)
+export const peopleDayValidator = z.object({
+  employeeId: z.string().min(1, { message: "Employee is required" }),
+  locationId: z.string().min(1),
+  date: z.string().min(1),
+  shiftId: zfd.text(z.string().optional()),
+  // day-scoped note: written to every row of the person's day
+  note: zfd.text(z.string().optional()),
+  // day-scoped overtime: a longer DAY, not extra hours per station
+  overtimeHours: zfd.numeric(z.number().min(0).max(16)),
+  rows: jsonField(
+    z
+      .array(
+        z.object({
+          workCenterId: z.string().min(1),
+          hours: z.number().gt(0).max(24).nullable()
+        })
+      )
+      .max(20)
+  )
+});
+
+// Absent hours = back to the whole shift (stored as null)
+export const peopleHoursValidator = z.object({
+  id: z.string().min(1, { message: "Assignment is required" }),
+  hours: zfd.numeric(z.number().gt(0).max(24).optional())
+});
+
+export const peopleOvertimeBulkValidator = z
+  .object({
+    locationId: z.string().min(1),
+    date: z.string().min(1),
+    /** inclusive end of the range; omitted = the single `date` only */
+    toDate: zfd.text(z.string().optional()),
+    hours: zfd.numeric(z.number().min(0).max(16)),
+    departmentId: zfd.text(z.string().optional()),
+    shiftId: zfd.text(z.string().optional())
+  })
+  .refine((value) => !value.toDate || value.toDate >= value.date, {
+    message: "End date must be on or after the start date",
+    path: ["toDate"]
+  });
+
 export type Motion = z.infer<typeof motionSchema>;
 export type CameraPose = z.infer<typeof cameraSchema>;
 export type Fastener = z.infer<typeof fastenerSchema>;
@@ -1867,3 +1993,31 @@ export const inspectionSaveAnchorsPayloadValidator = z
     delete: z.array(z.string().min(1)).default([])
   })
   .strict();
+
+/**
+ * Weekday flag columns on `shift`, Monday-first — the order people week rows
+ * are dealt out in.
+ */
+export const WEEKDAYS_MONDAY_FIRST = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday"
+] as const;
+
+/**
+ * The same weekday names Sunday-first — indexable directly by
+ * `getDayOfWeek(date, "en-US")` (0 = Sunday).
+ */
+export const WEEKDAYS_SUNDAY_FIRST = [
+  "sunday",
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday"
+] as const;

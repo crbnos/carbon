@@ -11,6 +11,7 @@ import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import { verifyPasskeyAuthentication } from "@carbon/auth/passkey.server";
 import {
   completeMfaChallenge,
+  destroyAuthSession,
   flash,
   getAuthSession,
   isSessionExpiredAbsolute,
@@ -96,8 +97,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const redirectTo =
     new URL(request.url).searchParams.get("redirectTo") ?? undefined;
 
+  // Absolute cap passed → terminate. DESTROY (not a bare redirect): valid tokens
+  // would make /login bounce the user back into the app and /unlock relock them,
+  // an ERR_TOO_MANY_REDIRECTS loop. Clearing the cookie makes /login render.
   if (isSessionExpiredAbsolute(authSession)) {
-    throw redirect(path.to.login);
+    throw await destroyAuthSession(request);
   }
   if (!isSessionIdleLocked(authSession)) {
     throw redirect(safeRedirect(redirectTo, path.to.authenticatedRoot));
@@ -105,8 +109,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // Unlock credentials: a verified TOTP factor and/or a registered passkey.
   // Either can re-establish access here; a session with neither cannot unlock
-  // (should not happen under CONTROLLED_ENVIRONMENT, where MFA is forced) —
-  // fall through to a full re-login.
+  // (happens on FIRST-RUN enterprise: a user who idle-locks before enrolling
+  // MFA has nothing to present) — DESTROY the session and force a full re-login.
+  // A bare redirect(login) would loop against the still-valid tokens.
   const [hasTotp, hasPasskey] = await Promise.all([
     userHasVerifiedTotpFactor(authSession.userId),
     isAuthProviderEnabled("passkey")
@@ -115,7 +120,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ]);
 
   if (!hasTotp && !hasPasskey) {
-    throw redirect(path.to.login);
+    throw await destroyAuthSession(request);
   }
 
   return { hasTotp, hasPasskey };
@@ -405,7 +410,7 @@ export default function UnlockRoute() {
           className="w-24 hidden dark:block"
         />
       </div>
-      <div className="rounded-lg md:bg-card md:border md:border-border md:shadow-lg p-8 w-[380px]">
+      <div className="rounded-lg p-8 w-[380px]">
         <VStack spacing={4} className="items-center">
           <LuLock className="w-8 h-8 text-muted-foreground" />
           <Heading size="h3">

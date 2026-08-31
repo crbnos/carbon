@@ -1,0 +1,123 @@
+---
+title: Single sign-on
+description: Route sign-in for your company's email domains through your own identity provider with enterprise SAML SSO.
+---
+
+Single sign-on hands control of Carbon sign-in to your own <Term>identity provider</Term> — Okta, Entra ID, Google Workspace, or any SAML 2.0 IdP. You register your email domains once — proving you own each one with a DNS record — and from then on your IT team grants and revokes access centrally: everyone on those domains signs in to both ERP and MES with their normal work email — Carbon recognizes the domain and routes them to your IdP automatically, with no SSO button to find. Registering alone doesn't take anything away — the <Term>magic link</Term> and other methods keep working until you turn on [Require SSO](#requiring-sso).
+
+## Requirements
+
+SSO is an Enterprise feature. Automatic SSO routing on the login page and the settings section are active only when the instance runs the **Enterprise** edition (`CARBON_EDITION=enterprise`), which requires a [commercial license](/docs/platform/licensing). It is a capability of your own [self-hosted](/docs/platform/self-hosting) deployment — Carbon Cloud sign-in is unaffected.
+
+Enable it through [environment variables](/docs/platform/self-hosting/environment-variables):
+
+<EnvVars>
+<EnvVar name="AUTH_PROVIDERS" type="enum[]">Add `sso` to the comma-separated list of sign-in methods. Without it, the button never renders.</EnvVar>
+<EnvVar name="SAML_ENABLED" type="boolean">Turns on the SAML engine in the auth service (GoTrue).</EnvVar>
+<EnvVar name="SAML_PRIVATE_KEY" type="string">The SAML signing key — a base64-encoded PKCS#1 DER RSA key, minimum 2048-bit. The exact `openssl` generation command is in `.env.example`.</EnvVar>
+</EnvVars>
+
+Carbon registers providers directly against the auth service with its service-role key — no Supabase account or plan is involved.
+
+## Connect your identity provider
+
+The whole exchange lives on one screen: **Settings** → **Security**, under the **"Single Sign-On"** heading. Viewing it requires the `settings` view permission; saving requires `settings` update.
+
+<Steps>
+<Step>
+
+**Copy Carbon's service provider details.** The **"Service Provider Details"** card shows the **"ACS URL"** and **"SP Metadata URL"** with copy buttons. Copy them from the screen rather than constructing them by hand.
+
+</Step>
+<Step>
+
+**Register Carbon in your IdP.** In Okta, Entra ID, or Google Workspace, create a SAML application using those two URLs. The assertion must include an **email attribute** — the email is how Carbon matches each sign-in to a person and a company.
+
+</Step>
+<Step>
+
+**Paste the IdP metadata back into Carbon.** In the **"Identity Provider"** card, provide either the **"IdP Metadata URL"** or the raw **"IdP Metadata XML"** — exactly one of the two — then **"Save"**. After saving, the card gains a **"Require SSO"** switch and a **"Deactivate"** button — the sign that the connection is active.
+
+</Step>
+<Step>
+
+**Verify your email domains.** The **"Email Domains"** card appears once the connection exists. Add each domain your people sign in with, publish the DNS record it shows you, and click **"Verify"** — see [Verifying a domain](#verifying-a-domain). Only verified domains route SSO sign-ins.
+
+</Step>
+</Steps>
+
+<FieldTable>
+<Field name="IdP Metadata URL" type="url">The SAML metadata URL published by your identity provider. Provide this *or* the XML, never both — the form rejects the submission with **"Provide either a metadata URL or metadata XML (exactly one)"**.</Field>
+<Field name="IdP Metadata XML" type="xml">The raw metadata document, for IdPs that don't publish a metadata URL.</Field>
+<Field name="Add a domain" type="text">One domain at a time, e.g. `example.com`. Domains are lowercased and must be bare hostnames — no `@`, no spaces; enter internationalized domains in punycode (`xn--`) form. Public email providers (`gmail.com`, `outlook.com`, …) are refused. Several companies may hold a **pending** claim on the same domain at once — a claim on its own blocks nobody. Exclusivity kicks in at verification: only one company can ever hold a domain **verified**, and only DNS control gets you there. Adding a domain your own company already has fails with **"This domain has already been added"**.</Field>
+</FieldTable>
+
+## Verifying a domain
+
+A domain routes SSO sign-ins only after you prove your company controls it. Each added domain starts **Pending** with a DNS challenge — a unique TXT record shown right on the card:
+
+| Record | Value |
+| --- | --- |
+| **Host** | `_carbon-challenge.example.com` |
+| **Type** | `TXT` |
+| **Value** | `carbon-domain-verification=<your unique token>` |
+
+Add the record at your DNS host (copy both fields from the card — the token is unique to your company and this domain), then click **"Verify"**. Many DNS providers auto-append your domain to the record's name field: in Cloudflare, for example, enter only `_carbon-challenge` (plus any subdomain) and check the preview under the field shows the host once, not twice. Carbon looks the record up and, on a match, flips the domain to **Verified** — from then on it participates in sign-in routing and [Require SSO](#requiring-sso) enforcement. Verification is one-time: the domain stays verified until you remove it, and the TXT record may be deleted afterwards if you prefer a tidy zone.
+
+If verification fails, the message tells you why: the record isn't visible yet (DNS changes can take a few minutes to propagate — wait and retry), the record's value doesn't match the token (re-copy it exactly), or the DNS lookup itself failed (the server couldn't reach the public resolvers; check its outbound DNS access). A **Pending** domain has no effect anywhere: it can't capture sign-ins, and it never triggers Require SSO — so adding a domain is always safe.
+
+<Callout type="warn" title="Verified claims are exclusive until removed">
+Only one company can hold a domain verified — first to prove DNS control wins. A **"Verify"** attempt on a domain another company already verified fails with a deliberately generic message, so the button can't be used to probe which domains are registered where. Verification is also permanent: the holder keeps the domain even if DNS control later changes hands (a domain sale, a rebrand). The clean handover is for the holding company to **Remove** the domain from its list, which frees it for the new owner to verify. Failing that, operators of a self-hosted deployment can delete the claim directly (`DELETE FROM "ssoDomain" WHERE "domain" = 'example.com';`) — note the previous holder's provider registration keeps routing the domain until its connection is re-saved, though sign-ins on it are rejected either way once the row is gone.
+</Callout>
+
+To turn SSO off, use the **"Deactivate"** button in the Identity Provider card. It opens a **"Deactivate Single Sign-On"** confirmation warning that "Users on your registered domains will no longer be able to sign in through your identity provider. This cannot be undone." — the provider registration is deleted outright and the domain claims are released, so re-enabling means saving the connection again and re-verifying your domains.
+
+## How sign-in works
+
+The login page is email-first, and the SSO fork is invisible. The user types their email and presses **"Continue"** — there is no separate SSO button to choose. Carbon checks whether the email's domain has an active connection (a rate-limited check that reveals nothing beyond yes or no); if it does, the browser redirects to your IdP, the user authenticates there, and lands back in Carbon signed in to the connection's company. If it doesn't, the same button falls through to the ordinary magic-link (or sign-up) flow. Users never have to know whether their company uses SSO.
+
+Before any session is created, Carbon enforces the connection's boundaries itself: the asserted email's domain must be one of the connection's **verified** email domains. An assertion outside them is rejected with **"SSO sign-in rejected: this email domain is not registered for your company's SSO connection."** — even a misconfigured or hostile IdP can't sign someone into another company.
+
+Provisioning is **invite-first** — there is no self-serve signup through SSO. Three outcomes:
+
+- **Already a member** of the connection's company: signed straight in.
+- **Has a pending invite**: the first SSO sign-in accepts it — the person lands in the company with exactly the invite's role and permissions.
+- **Neither**: rejected with **"SSO sign-in succeeded but no invite exists for `jane@example.com`. Contact your administrator."** (the message names the address). Nothing is provisioned, so creating the invite and retrying just works.
+
+Invites cooperate with this automatically: when you invite someone whose email domain has an active SSO connection, the invite email links to the login page with their address prefilled instead of carrying a magic-link code — the IdP is never bypassed, even on day one.
+
+<Callout type="note" title="First sign-in happens in ERP">
+MES uses the same email-first sign-in and enforces the same domain rules, but it doesn't run first-time provisioning. A brand-new SSO user who starts at MES sees **"Complete your first SSO sign-in in Carbon ERP, then return here."** — after that one ERP sign-in, MES works normally.
+</Callout>
+
+## Existing accounts
+
+People who already sign in with a magic link or OAuth don't lose anything when SSO arrives.
+
+<Callout type="note" title="Existing accounts are linked automatically">
+The first SSO sign-in quietly attaches the SAML identity to the existing account. Nothing changes for the user: it's the same account, the magic link keeps working, and no invite is needed, because an existing member is already authorized.
+</Callout>
+
+Coverage follows the registered domains: every existing member whose email domain is registered with the connection signs in with SSO automatically on their next login, no re-invite needed. People not yet in the company still need an invite from the [employees directory](/docs/reference/people); invite emails for these domains route to SSO automatically.
+
+## Requiring SSO
+
+Once the connection works, you can make it the only way in. The **"Identity Provider"** card carries a **"Require SSO"** switch: while it's on, anyone whose email domain is **verified** on the active connection can sign in **only** through your identity provider (a pending domain enforces nothing). Every other method is refused server-side — the magic-link form, Google and Outlook sign-in, and passkeys all answer with **"Your organization requires single sign-on. Sign in with your work email to continue."** and no session is created.
+
+The ordering protects you from locking yourself out: the switch exists only on an active connection, so the path is always *set up SSO, prove a sign-in works, enforce last*. Turning the switch off — or deactivating the connection — immediately restores the other sign-in methods for those domains.
+
+<Callout type="warn" title="Break-glass recovery">
+If enforcement is on and your identity provider is unreachable, nobody on the covered domains can sign in to turn it off. Operators of a self-hosted deployment can lift the requirement directly in the database:
+
+```sql
+UPDATE "ssoConnection" SET "requireSso" = false WHERE "companyId" = '<id>';
+```
+
+Magic-link sign-in works again on the next attempt; re-enable the switch once the IdP is healthy.
+</Callout>
+
+## Two-factor authentication
+
+<Callout type="tip" title="Your IdP owns MFA">
+SSO sessions skip Carbon's [two-factor challenge](/docs/reference/two-factor) and the company-wide two-factor requirement in every environment, including controlled (ITAR) deployments. Your identity provider already enforced its own MFA policy during sign-in, and challenging twice is friction without security — MFA attestation for SSO sign-ins belongs to the IdP policy. Magic-link logins still go through Carbon's own two-factor challenge.
+</Callout>

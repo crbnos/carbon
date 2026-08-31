@@ -55,7 +55,7 @@ msgid "{0} Scrapped"
 msgstr "{0} स्क्रैप किया गया"
 
 msgid "{completions} passed unit(s) will be completed."
-msgstr "{completions} पास किए गए यूनिट(यूनिट्स) पूरी की जाएंगी।"
+msgstr "{completions} उत्तीर्ण इकाई(यों) को पूर्ण किया जाएगा।"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} नमूना विफलता(एं) दर्ज की गई है और पूर्ण नहीं की जाएगी — उन्हें क्रियाएं मेनू से हल करें।"
@@ -94,7 +94,7 @@ msgid "Add & Issue"
 msgstr "जोड़ें और जारी करें"
 
 msgid "Add a printer in the printing settings to print labels directly."
-msgstr "प्रिंटिंग सेटिंग्स में एक प्रिंटर जोड़ें ताकि लेबल सीधे प्रिंट कर सकें।"
+msgstr "प्रिंटिंग सेटिंग्स में एक प्रिंटर जोड़ें ताकि सीधे लेबल प्रिंट कर सकें।"
 
 msgid "Add Inventory"
 msgstr "इन्वेंटरी जोड़ें"
@@ -112,7 +112,7 @@ msgid "All clear"
 msgstr "सब कुछ स्पष्ट"
 
 msgid "All rework"
-msgstr "सभी रीवर्क"
+msgstr "सभी पुनः कार्य"
 
 msgid "All scrap"
 msgstr "सभी स्क्रैप"
@@ -124,13 +124,13 @@ msgid "Allocate units"
 msgstr "इकाइयों को आवंटित करें"
 
 msgid "Are you sure you want to delete this step?"
-msgstr "क्या आप सुनिश्चित हैं कि आप इस चरण को हटाना चाहते हैं?"
+msgstr "क्या आप वाकई इस चरण को हटाना चाहते हैं?"
 
 msgid "Are you sure you want to delete this timecard? This cannot be undone."
-msgstr "क्या आप सुनिश्चित हैं कि आप इस टाइमकार्ड को हटाना चाहते हैं? यह पूर्ववत नहीं किया जा सकता।"
+msgstr "क्या आप वाकई इस टाइमकार्ड को हटाना चाहते हैं? यह अपरिवर्तनीय है।"
 
 msgid "Are you sure you want to end all production events? This will end all active operations without completing or finishing them."
-msgstr "क्या आप सुनिश्चित हैं कि आप सभी उत्पादन घटनाओं को समाप्त करना चाहते हैं? यह सभी सक्रिय संचालन को पूरा किए बिना या समाप्त किए बिना समाप्त कर देगा।"
+msgstr "क्या आप सभी उत्पादन इवेंट को समाप्त करना चाहते हैं? यह सभी चल रहे ऑपरेशन को पूर्ण किए बिना समाप्त कर देगा।"
 
 msgid "Are you sure you want to finish this operation? This will end all active production events for this operation."
 msgstr "क्या आप सुनिश्चित हैं कि आप इस ऑपरेशन को समाप्त करना चाहते हैं? यह इस ऑपरेशन के लिए सभी सक्रिय उत्पादन इवेंट को समाप्त कर देगा।"
@@ -169,12 +169,18 @@ msgstr "बैच नंबर {0}"
 msgid "Batch number is required"
 msgstr "बैच नंबर आवश्यक है"
 
+msgid "Behind target by {daysBehindTarget} day(s)"
+msgstr "लक्ष्य से {daysBehindTarget} दिन(दिन) पीछे"
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "{0} द्वारा अवरुद्ध"
 
 msgid "Blocking"
 msgstr "अवरुद्ध"
+
+msgid "Board view"
+msgstr "बोर्ड दृश्य"
 
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "लेकिन चिंता न करें। आप नया जादुई लिंक अनुरोध करने के लिए भूल गए पासवर्ड प्रवाह का उपयोग कर सकते हैं।"
@@ -210,13 +216,16 @@ msgid "Clear Filters"
 msgstr "फ़िल्टर साफ़ करें"
 
 msgid "Clear Search"
-msgstr "खोज साफ़ करें"
+msgstr "खोज साफ करें"
+
+msgid "Clear station default"
+msgstr "स्टेशन डिफ़ॉल्ट को साफ़ करें"
 
 msgid "Clock In"
-msgstr "घड़ी में प्रवेश करें"
+msgstr "कार्य प्रारंभ"
 
 msgid "Clock Out"
-msgstr "घड़ी बंद करें"
+msgstr "कार्य समाप्त"
 
 msgid "Clocked in since <0/>"
 msgstr "<0/> से घड़ी चालू है"
@@ -257,7 +266,7 @@ msgid "Complete All"
 msgstr "सभी को पूर्ण करें"
 
 msgid "Complete passed"
-msgstr "पूर्ण पास"
+msgstr "उत्तीर्ण को पूर्ण करें"
 
 msgid "Completed"
 msgstr "पूर्ण"
@@ -277,6 +286,9 @@ msgstr "खपत"
 msgid "Consumed expired"
 msgstr "खपत की गई समाप्त"
 
+msgid "Continue"
+msgstr "जारी रखें"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "अनियोजित रखरखाव की लागत, पिछले {0} दिन"
@@ -293,7 +305,7 @@ msgid "Create Quality Issue"
 msgstr "गुणवत्ता समस्या बनाएं"
 
 msgid "Create Rework"
-msgstr "रीवर्क बनाएं"
+msgstr "पुनः कार्य बनाएँ"
 
 msgid "Current work"
 msgstr "वर्तमान कार्य"
@@ -314,7 +326,7 @@ msgid "Default"
 msgstr "डिफ़ॉल्ट"
 
 msgid "Default Storage Unit"
-msgstr "डिफ़ॉल्ट स्टोरेज यूनिट"
+msgstr "डिफ़ॉल्ट भंडारण इकाई"
 
 msgid "Delete"
 msgstr "हटाएं"
@@ -338,7 +350,7 @@ msgid "Details"
 msgstr "विवरण"
 
 msgid "Dispatch not found"
-msgstr "डिस्पैच नहीं मिला"
+msgstr "रखरखाव कार्य नहीं मिला"
 
 msgid "Display"
 msgstr "प्रदर्शन"
@@ -360,7 +372,7 @@ msgid "Down for planned maintenance"
 msgstr "नियोजित रखरखाव के लिए बंद"
 
 msgid "Download"
-msgstr "डाउनलोड"
+msgstr "डाउनलोड करें"
 
 msgid "Download Labels"
 msgstr "लेबल डाउनलोड करें"
@@ -385,7 +397,7 @@ msgid "Due {0}"
 msgstr "Due {0} के लिए"
 
 msgid "Due Date"
-msgstr "देय तारीख"
+msgstr "नियत तिथि"
 
 #. placeholder {0}: board.dueSoon.days
 msgid "Due in the next {0} days?"
@@ -395,7 +407,7 @@ msgid "Due today?"
 msgstr "आज देय?"
 
 msgid "Duplicate batch number"
-msgstr "डुप्लिकेट बैच नंबर"
+msgstr "डुप्लिकेट बैच संख्या"
 
 msgid "Duplicate serial number"
 msgstr "डुप्लिकेट सीरियल नंबर"
@@ -413,10 +425,10 @@ msgid "Email Address"
 msgstr "ईमेल पता"
 
 msgid "Empty work centers"
-msgstr "खाली कार्य केंद्र"
+msgstr "खाली वर्क सेंटर"
 
 msgid "End Operations"
-msgstr "संचालन समाप्त करें"
+msgstr "ऑपरेशन समाप्त करें"
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -435,7 +447,7 @@ msgid "Estimated"
 msgstr "अनुमानित"
 
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
-msgstr "हर इकाई का एक निर्णय है: {passes} पास और {fails} विफल। लॉट बंद हो जाता है और प्रत्येक इकाई अपने परिणाम के लिए रूट की जाती है।"
+msgstr "प्रत्येक इकाई का निर्णय है: {passes} उत्तीर्ण और {fails} असफल। लॉट बंद हो जाता है जब प्रत्येक इकाई को अपने परिणाम के अनुसार भेजा जाता है।"
 
 msgid "Expand features table"
 msgstr "फीचर्स टेबल को विस्तृत करें"
@@ -463,10 +475,10 @@ msgid "Failed to complete inventory adjustment"
 msgstr "इन्वेंटरी समायोजन पूरा करने में विफल"
 
 msgid "Failed to end operations"
-msgstr "संचालन समाप्त करने में विफल"
+msgstr "ऑपरेशन समाप्त करने में विफल"
 
 msgid "Failed to fetch active operations"
-msgstr "सक्रिय संचालन प्राप्त करने में विफल"
+msgstr "चल रहे ऑपरेशन प्राप्त करने में विफल"
 
 msgid "Failed to fetch storageUnits"
 msgstr "storageUnits को प्राप्त करने में विफल"
@@ -500,7 +512,7 @@ msgid "Files related to the job and the opportunity line."
 msgstr "नौकरी और अवसर लाइन से संबंधित फाइलें।"
 
 msgid "Filter"
-msgstr "फ़िल्टर"
+msgstr "फ़िल्टर करें"
 
 msgid "Filter by location"
 msgstr "स्थान के अनुसार फ़िल्टर करें"
@@ -515,14 +527,20 @@ msgstr "{0} को समाप्त करें"
 msgid "Finish Anyways"
 msgstr "वैसे भी समाप्त करें"
 
+msgid "Finish setting up your account"
+msgstr "अपना खाता सेट अप करना पूर्ण करें"
+
 msgid "Finish with material unpicked?"
 msgstr "सामग्री बिना चुने समाप्त करें?"
 
 msgid "Forgot to Clock Out?"
-msgstr "घड़ी से बाहर निकलना भूल गए?"
+msgstr "कार्य समाप्त करना भूल गए?"
 
 msgid "Go back to operation"
 msgstr "ऑपरेशन पर वापस जाएं"
+
+msgid "Go to onboarding"
+msgstr "ऑनबोर्डिंग पर जाएं"
 
 msgid "How many were actually picked?"
 msgstr "वास्तव में कितने चुने गए?"
@@ -610,10 +628,10 @@ msgid "Job Traveler"
 msgstr "जॉब ट्रैवलर"
 
 msgid "Jobs"
-msgstr "नौकरियां"
+msgstr "जॉब"
 
 msgid "Keep picking"
-msgstr "चुनना जारी रखें"
+msgstr "पिकिंग जारी रखें"
 
 msgid "Kit"
 msgstr "किट"
@@ -636,6 +654,9 @@ msgstr "चलिए कुछ बनाते हैं"
 msgid "lines"
 msgstr "लाइनें"
 
+msgid "List view"
+msgstr "सूची दृश्य"
+
 msgid "Loading item details..."
 msgstr "आइटम विवरण लोड हो रहे हैं..."
 
@@ -656,11 +677,11 @@ msgid "Log completed for {0}"
 msgstr "{0} के लिए पूर्ण लॉग करें"
 
 msgid "Log Rework"
-msgstr "रीवर्क लॉग करें"
+msgstr "पुनः कार्य लॉग करें"
 
 #. placeholder {0}: operation.itemReadableId
 msgid "Log rework for {0}"
-msgstr "{0} के लिए रीवर्क लॉग करें"
+msgstr "{0} के लिए पुनः कार्य लॉग करें"
 
 msgid "Log Scrap"
 msgstr "स्क्रैप लॉग करें"
@@ -697,7 +718,7 @@ msgid "Manually add items to inventory"
 msgstr "इन्वेंटरी में आइटम मैन्युअली जोड़ें"
 
 msgid "Manually remove items from inventory"
-msgstr "इन्वेंटरी से आइटम को मैन्युअली हटाएं"
+msgstr "इन्वेंटरी से मैनुअल रूप से आइटम निकालें"
 
 msgid "Mark Short"
 msgstr "कम चिह्नित करें"
@@ -761,22 +782,22 @@ msgid "No"
 msgstr "नहीं"
 
 msgid "No active job at this work center"
-msgstr "इस कार्य केंद्र पर कोई सक्रिय कार्य नहीं"
+msgstr "इस वर्क सेंटर पर कोई चल रहा जॉब नहीं है"
 
 msgid "No active maintenance dispatches"
-msgstr "कोई सक्रिय रखरखाव प्रेषण नहीं"
+msgstr "कोई चल रहा रखरखाव कार्य नहीं है"
 
 msgid "No active operations"
-msgstr "कोई सक्रिय संचालन नहीं"
+msgstr "कोई चल रहा ऑपरेशन नहीं है"
 
 msgid "No active work centers at this location."
-msgstr "इस स्थान पर कोई सक्रिय कार्य केंद्र नहीं।"
+msgstr "इस स्थान पर कोई कार्यशील वर्क सेंटर नहीं हैं।"
 
 msgid "No assigned operations"
 msgstr "कोई नियुक्त ऑपरेशन नहीं"
 
 msgid "No available filters"
-msgstr "कोई उपलब्ध फ़िल्टर नहीं"
+msgstr "कोई उपलब्ध फ़िल्टर नहीं है"
 
 msgid "No available serial numbers found"
 msgstr "कोई उपलब्ध सीरियल नंबर नहीं मिला"
@@ -785,7 +806,7 @@ msgid "No available tracked entities found"
 msgstr "कोई उपलब्ध ट्रैक किए गए इकाइयां नहीं मिलीं"
 
 msgid "No dispatches assigned to you"
-msgstr "आपको कोई डिस्पैच असाइन नहीं किया गया है"
+msgstr "आपको कोई असाइन किया गया रखरखाव कार्य नहीं है"
 
 msgid "No files"
 msgstr "कोई फ़ाइलें नहीं"
@@ -806,7 +827,7 @@ msgid "No materials"
 msgstr "कोई सामग्री नहीं"
 
 msgid "No open jobs"
-msgstr "कोई खुली नौकरी नहीं"
+msgstr "कोई खुली जॉब नहीं"
 
 msgid "No open units to allocate"
 msgstr "आवंटित करने के लिए कोई खुली इकाई नहीं"
@@ -827,7 +848,7 @@ msgid "No printer configured"
 msgstr "कोई प्रिंटर कॉन्फ़िगर नहीं किया गया"
 
 msgid "No recent operations"
-msgstr "कोई हाल के संचालन नहीं"
+msgstr "कोई हाल की ऑपरेशन नहीं"
 
 msgid "No remaining entities to inspect."
 msgstr "निरीक्षण करने के लिए कोई शेष इकाई नहीं है।"
@@ -865,11 +886,14 @@ msgstr "इस सप्ताह के लिए कोई समय प्र
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "इस आइटम के लिए कोई गोदाम स्टॉक रिकॉर्ड पर नहीं है। आप इसे अभी भी चुन सकते हैं — ऑन-हैंड नकारात्मक हो जाएगा जब तक गिनती समेकित नहीं हो जाती।"
 
+msgid "No Work Center"
+msgstr "कोई वर्क सेंटर नहीं"
+
 msgid "No work centers are blocked"
-msgstr "कोई कार्य केंद्र अवरुद्ध नहीं हैं"
+msgstr "कोई वर्क सेंटर अवरुद्ध नहीं है"
 
 msgid "No work centers exist"
-msgstr "कोई कार्य केंद्र मौजूद नहीं है"
+msgstr "कोई वर्क सेंटर मौजूद नहीं है"
 
 msgid "None"
 msgstr "कोई नहीं"
@@ -881,7 +905,7 @@ msgid "Nothing running"
 msgstr "कुछ नहीं चल रहा"
 
 msgid "Nothing scheduled at this work center"
-msgstr "इस कार्य केंद्र पर कुछ भी शेड्यूल नहीं है"
+msgstr "इस वर्क सेंटर पर कुछ भी शेड्यूल नहीं है"
 
 msgid "Nothing to scrap"
 msgstr "स्क्रैप करने के लिए कुछ नहीं"
@@ -906,19 +930,19 @@ msgid "Open"
 msgstr "खुला"
 
 msgid "Open a display on the screen mounted at the work center and leave it running. Each board refreshes on its own."
-msgstr "कार्य केंद्र पर लगी स्क्रीन पर एक डिस्प्ले खोलें और इसे चलता रहने दें। प्रत्येक बोर्ड अपने आप ताज़ा हो जाता है।"
+msgstr "वर्क सेंटर पर लगी स्क्रीन पर एक डिस्प्ले खोलें और इसे चलाते रहें। प्रत्येक बोर्ड स्वयं रीफ्रेश होता है।"
 
 msgid "Open an NCR for MRB disposition"
-msgstr "एमआरबी डिस्पोजिशन के लिए एनसीआर खोलें"
+msgstr "MRB निपटान के लिए एक NCR खोलें"
 
 msgid "Open Jobs"
-msgstr "खुली नौकरियां"
+msgstr "खुली जॉब्स"
 
 msgid "Operations"
-msgstr "संचालन"
+msgstr "ऑपरेशन"
 
 msgid "Operations ended"
-msgstr "संचालन समाप्त"
+msgstr "ऑपरेशन समाप्त"
 
 msgid "Operator"
 msgstr "ऑपरेटर"
@@ -951,7 +975,7 @@ msgid "Partial Disposition"
 msgstr "आंशिक निपटान"
 
 msgid "Passed Inspection"
-msgstr "निरीक्षण पास किया"
+msgstr "निरीक्षण उत्तीर्ण"
 
 msgid "Passkey unlock failed"
 msgstr "पासकी अनलॉक विफल"
@@ -1011,7 +1035,7 @@ msgid "Priority"
 msgstr "प्राथमिकता"
 
 msgid "Procedure"
-msgstr "प्रक्रिया"
+msgstr "कार्यविधि"
 
 msgid "Process"
 msgstr "प्रक्रिया"
@@ -1024,6 +1048,11 @@ msgstr "प्रक्रियाएं"
 
 msgid "Progress"
 msgstr "प्रगति"
+
+#. placeholder {0}: formatDate( projectedCompletionDate )
+#. placeholder {0}: formatDate(projectedCompletionDate)
+msgid "Proj. {0}"
+msgstr "प्रोज. {0}"
 
 msgid "Quality Issue"
 msgstr "गुणवत्ता समस्या"
@@ -1041,7 +1070,7 @@ msgid "Queue empty"
 msgstr "कतार खाली"
 
 msgid "Reason for rework"
-msgstr "रीवर्क का कारण"
+msgstr "पुनः कार्य का कारण"
 
 msgid "Recent"
 msgstr "हाल ही में"
@@ -1066,37 +1095,37 @@ msgid "Reject Lot"
 msgstr "लॉट अस्वीकार करें"
 
 msgid "Remove"
-msgstr "हटाएं"
+msgstr "निकालें"
 
 msgid "Remove filter"
-msgstr "फ़िल्टर हटाएं"
+msgstr "फ़िल्टर निकालें"
 
 msgid "Remove Inventory"
-msgstr "इन्वेंटरी हटाएं"
+msgstr "इन्वेंटरी निकालें"
 
 msgid "Remove part"
-msgstr "भाग हटाएं"
+msgstr "पार्ट निकालें"
 
 msgid "Reopen the subassembly and create a replacement unit"
-msgstr "सबअ्यासेम्बली को फिर से खोलें और एक प्रतिस्थापन इकाई बनाएं"
+msgstr "सब-असेंबली को फिर से खोलें और एक रिप्लेसमेंट इकाई बनाएँ"
 
 msgid "Result"
 msgstr "परिणाम"
 
 msgid "Rework"
-msgstr "रीवर्क"
+msgstr "पुनः कार्य"
 
 msgid "Rework created successfully"
-msgstr "रीवर्क सफलतापूर्वक बनाया गया"
+msgstr "पुनः कार्य सफलतापूर्वक बनाया गया"
 
 msgid "Rework quantity"
-msgstr "रीवर्क मात्रा"
+msgstr "पुनः कार्य की मात्रा"
 
 msgid "Running"
 msgstr "चल रहा है"
 
 msgid "Sales Order"
-msgstr "बिक्रय आदेश"
+msgstr "विक्रय आदेश"
 
 msgid "Save"
 msgstr "सहेजें"
@@ -1105,7 +1134,7 @@ msgid "Scan"
 msgstr "स्कैन करें"
 
 msgid "Scan a tracked entity to add the first sample column."
-msgstr "पहले नमूना कॉलम जोड़ने के लिए ट्रैक की गई इकाई को स्कैन करें।"
+msgstr "पहली नमूना कॉलम जोड़ने के लिए एक ट्रैक की गई इकाई को स्कैन करें।"
 
 msgid "Scan or enter serial number"
 msgstr "स्कैन करें या सीरियल नंबर दर्ज करें"
@@ -1117,13 +1146,16 @@ msgid "Scan or enter tracking number"
 msgstr "स्कैन करें या ट्रैकिंग नंबर दर्ज करें"
 
 msgid "Scan or search serial number..."
-msgstr "सीरियल नंबर स्कैन या खोजें..."
+msgstr "सीरियल नंबर स्कैन करें या खोजें..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
-msgstr "इस लॉट से ट्रैक की गई इकाई को स्कैन या चुनें इसे नमूना कॉलम के रूप में जोड़ने के लिए, फिर ग्रिड में इसके परिणाम को रिकॉर्ड करें।"
+msgstr "इस लॉट से एक ट्रैक की गई इकाई को स्कैन या चुनें, इसे नमूना कॉलम के रूप में जोड़ें, और फिर ग्रिड में इसका परिणाम रिकॉर्ड करें।"
 
 msgid "Schedule"
 msgstr "शेड्यूल"
+
+msgid "Scheduling conflict"
+msgstr "शेड्यूलिंग संघर्ष"
 
 msgid "Scrap"
 msgstr "स्क्रैप"
@@ -1168,7 +1200,7 @@ msgid "Select a completion quantity"
 msgstr "पूर्ण मात्रा का चयन करें"
 
 msgid "Select a rework quantity"
-msgstr "रीवर्क मात्रा चुनें"
+msgstr "पुनः कार्य की मात्रा चुनें"
 
 msgid "Select a scrap quantity and reason"
 msgstr "स्क्रैप मात्रा और कारण चुनें"
@@ -1234,7 +1266,7 @@ msgid "Session locked"
 msgstr "सत्र लॉक किया गया"
 
 msgid "Set Clock Out"
-msgstr "क्लॉक आउट सेट करें"
+msgstr "कार्य समाप्ति सेट करें"
 
 msgid "Set clock-out time"
 msgstr "घड़ी बंद करने का समय सेट करें"
@@ -1253,9 +1285,6 @@ msgstr "कम"
 
 msgid "Short pick {itemName}"
 msgstr "Short pick {itemName}"
-
-msgid "Sign in with Email"
-msgstr "ईमेल के साथ साइन इन करें"
 
 msgid "Sign in with Google"
 msgstr "Google के साथ साइन इन करें"
@@ -1301,7 +1330,7 @@ msgstr "स्टेशन: {stationName}"
 
 #. placeholder {0}: inspection.lotSize
 msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s). Route the units below to scrap or rework, or record the verdict only."
-msgstr "सांख्यिकीय स्वीकृति विफल हुई, इसलिए {0} का पूरा लॉट गैर-अनुरूप माना जाता है (ISO 9001:2015 §8.7) — {passes} नमूना पास और {fails} विफलता(एं)। नीचे दी गई इकाइयों को स्क्रैप या रीवर्क के लिए रूट करें, या केवल निर्णय रिकॉर्ड करें।"
+msgstr "सांख्यिकीय स्वीकृति विफल हुई, इसलिए {0} का पूरा लॉट गैर-अनुरूप माना जाता है (ISO 9001:2015 §8.7) — {passes} नमूनाकृत उत्तीर्ण और {fails} विफलता(एं)। नीचे दी गई इकाइयों को स्क्रैप या पुनः कार्य के लिए रूट करें, या केवल फैसला रिकॉर्ड करें।"
 
 msgid "Status"
 msgstr "स्थिति"
@@ -1340,13 +1369,13 @@ msgid "The completed quantity for this operation is less than the required quant
 msgstr "इस ऑपरेशन के लिए पूर्ण मात्रा आवश्यक मात्रा {targetQuantity} से कम है।"
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
-msgstr "लॉट को पास के रूप में चिह्नित किया जाएगा और {remaining} शेष इकाई(यों) को इस ऑपरेशन पर पूरा किया जाएगा।"
+msgstr "लॉट को उत्तीर्ण के रूप में चिह्नित किया जाएगा और {remaining} शेष इकाई(यों) को इस ऑपरेशन पर पूर्ण किया जाएगा।"
 
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "लॉट को अभी भी डिस्पोज़ किया जाएगा, लेकिन कम से कम एक Issue Type कॉन्फ़िगर होने तक NCR नहीं बनाया जा सकता।"
 
 msgid "There are no available or consumed tracked parts for this material."
-msgstr "इस सामग्री के लिए कोई उपलब्ध या खपत ट्रैक की गई वस्तुएं नहीं हैं।"
+msgstr "इस सामग्री के लिए कोई उपलब्ध या उपयोग की गई ट्रैक की गई पार्ट नहीं है।"
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "बिल ऑफ मेटेरियल पर सीरियल या बैच ट्रैक किए गए मेटेरियल हैं जो पूरी तरह से जारी नहीं किए गए हैं। जारी किए बिना पूरा करने से गलत ट्रेसेबिलिटी रिकॉर्ड हो सकते हैं।"
@@ -1358,13 +1387,13 @@ msgid "This lot is expired and can't be picked."
 msgstr "यह लॉट समाप्त हो गया है और इसे चुना नहीं जा सकता।"
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
-msgstr "यह हिस्सा आदेश के अनुसार बनाया गया था। इसे स्क्रैप करने से इसका रूटिंग फिर से खुल सकता है प्रतिस्थापन बनाने के लिए।"
+msgstr "यह पार्ट ऑर्डर के अनुसार बनाया गया था। इसे स्क्रैप करने से इसकी रूटिंग को फिर से खोला जा सकता है ताकि एक रिप्लेसमेंट बनाया जा सके।"
 
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "यह हिस्सा स्टॉक से स्क्रैप किया जाएगा। इसकी आवश्यकता खुली रहती है ताकि आप एक प्रतिस्थापन जारी कर सकें।"
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr "यह इकाई स्थायी रूप से स्क्रैप की जाएगी और एक प्रतिस्थापन सीरीयल नंबर बनाया जाएगा।"
+msgstr "इस इकाई को स्थायी रूप से स्क्रैप किया जाएगा और एक रिप्लेसमेंट सीरियल नंबर बनाया जाएगा।"
 
 msgid "Thumbnail"
 msgstr "थंबनेल"
@@ -1400,10 +1429,10 @@ msgid "Tracking"
 msgstr "ट्रैकिंग"
 
 msgid "Two-factor authentication"
-msgstr "दो-फ़ैक्टर प्रमाणीकरण"
+msgstr "दो-कारक प्रमाणीकरण"
 
 msgid "Two-factor authentication required"
-msgstr "दो-फ़ैक्टर प्रमाणीकरण आवश्यक है"
+msgstr "दो-कारक प्रमाणीकरण आवश्यक है"
 
 msgid "Type a message..."
 msgstr "एक संदेश लिखें..."
@@ -1471,7 +1500,7 @@ msgid "Verify"
 msgstr "सत्यापित करें"
 
 msgid "View maintenance dispatch"
-msgstr "रखरखाव डिस्पैच देखें"
+msgstr "रखरखाव कार्य देखें"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "हमने आपके खाते में साइन इन करने के लिए आपको एक जादुई लिंक भेजा है।"
@@ -1483,22 +1512,29 @@ msgid "WIP"
 msgstr "WIP"
 
 msgid "Work Center"
-msgstr "कार्य केंद्र"
+msgstr "वर्क सेंटर"
 
 msgid "Work Center Displays"
-msgstr "कार्य केंद्र डिस्प्ले"
+msgstr "वर्क सेंटर डिस्प्ले"
 
 msgid "Yes"
 msgstr "हां"
 
 msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "आपने <0/> पर घड़ी शुरू की है। आप नीचे अपने निकास समय को संपादित कर सकते हैं या स्वीकार कर सकते हैं कि आप अभी भी काम कर रहे हैं।"
+msgstr "आपने <0/> पर कार्य शुरू किया। आप नीचे अपने कार्य समाप्ति समय को संपादित कर सकते हैं या स्वीकार कर सकते हैं कि आप अभी भी काम कर रहे हैं।"
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
-msgstr "आप {hoursElapsed} घंटे के लिए क्लॉक इन हैं। क्या आप क्लॉक आउट करना भूल गए?"
+msgstr "आप {hoursElapsed} घंटों से कार्य पर हैं। क्या आप कार्य समाप्त करना भूल गए?"
+
+msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
+msgstr "आपका खाता अभी तक किसी कंपनी का हिस्सा नहीं है। जारी रखने के लिए Carbon ERP में ऑनबोर्डिंग पूर्ण करें।"
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "आपके संगठन को एक ऑथेंटिकेटर ऐप की आवश्यकता है। इसे Carbon में सेट अप करें, फिर यहाँ वापस आएं।"
 
 msgid "Your session was locked after inactivity."
 msgstr "आपका सत्र निष्क्रियता के बाद लॉक किया गया था।"
+
+#. placeholder {0}: peopleStation.name
+msgid "Your station: {0}"
+msgstr "आपका स्टेशन: {0}"

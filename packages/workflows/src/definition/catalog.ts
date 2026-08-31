@@ -27,11 +27,14 @@ export interface CatalogInput {
   required: boolean;
   /** Allowed literal values, where the underlying column is an enum. */
   choices?: readonly string[];
-  /** What the builder seeds a new node with. Must be one of `choices` when both are set.
-   * Stored like any other value — nothing reads it at run time. */
-  defaultValue?: string;
+  /** What the builder seeds a new node with. Must be drawn from `choices` when both are
+   * set. Stored like any other value — nothing reads it at run time. */
+  defaultValue?: string | readonly string[];
   /** Prose that may interleave text and variables; the builder renders a chip editor. */
   template?: boolean;
+  /** This input is prose a person reads, so a record dropped into it renders as a link
+   * when the caller supplies a resolver. Webhook bodies deliberately do not set this. */
+  linkify?: boolean;
   /** Table a non-entity foreign key points at, so the write can be scoped to the company. */
   scopeTable?: string;
   /** The column rejects null; an input resolving to nothing is skipped, not written. */
@@ -43,6 +46,23 @@ export interface CatalogInput {
    * values. Evaluated on literals only: a variable-valued gate cannot be read at build
    * time, so it opens rather than guessing and hiding the user's work. */
   showWhen?: { input: string; equals: readonly string[] };
+}
+
+/**
+ * Whether an input holds a SET of its `choices` rather than one of them — the builder
+ * renders a multi-select and stores a list literal. Derived rather than declared: a fixed
+ * set of values on a list of text has no other reading, and a hand-set flag could only
+ * ever disagree with the type it describes.
+ */
+export function isMultiSelect<
+  T extends { type: ValueType; choices?: readonly string[] }
+>(input: T): input is T & { choices: readonly string[] } {
+  return (
+    input.choices !== undefined &&
+    input.type.kind === "list" &&
+    input.type.of.kind === "primitive" &&
+    input.type.of.of === "string"
+  );
 }
 
 export interface CatalogAction {
@@ -71,6 +91,8 @@ export interface CatalogEntity {
   /** Plain-English per-column description, keyed by column name.
    * Only present for columns the registry explicitly describes. */
   descriptions?: Record<string, string>;
+  /** Columns that spell this record's name, best first — how it reads in prose. */
+  display?: readonly string[];
 }
 
 /** What the validator needs to look up, and nothing more. */
@@ -81,6 +103,10 @@ export interface WorkflowCatalog {
   getEntity(name: string): CatalogEntity | undefined;
   /** Allowed values for an entity's column, or undefined when it is not an enum. */
   getEnum(entity: string, property: string): readonly string[] | undefined;
+  /** The customer's own name for a property, when it is a custom field. */
+  getPropertyLabel(entity: string, property: string): string | undefined;
+  /** The customer's own name for an action input, when it is a custom field. */
+  getInputLabel(actionId: string, input: string): string | undefined;
 }
 
 /** The type at the end of a property path, or undefined where it does not exist. */
@@ -120,7 +146,8 @@ const FIXTURE_ENTITIES: CatalogEntity[] = [
       status: t.string,
       assignee: t.entity("user")
     },
-    permission: { module: "purchasing", action: "view" }
+    permission: { module: "purchasing", action: "view" },
+    display: ["purchaseOrderId"]
   },
   {
     name: "user",
@@ -192,6 +219,12 @@ const FIXTURE_ACTIONS: CatalogAction[] = [
         type: t.string,
         required: false,
         choices: ["Buyer", "Manager", "Admin"]
+      },
+      channels: {
+        type: t.list({ kind: "primitive", of: "string" }),
+        required: false,
+        choices: ["inApp", "email", "slack"],
+        defaultValue: ["inApp"]
       }
     },
     outputs: {},
@@ -272,6 +305,9 @@ export function createFixtureCatalog(
     getEntity: (name) => entities.get(name),
     getEnum: options.omitEnums
       ? () => undefined
-      : (entity, property) => FIXTURE_ENUMS[entity]?.[property]
+      : (entity, property) => FIXTURE_ENUMS[entity]?.[property],
+    // The fixtures carry no custom fields, so nothing here has a customer-given name.
+    getPropertyLabel: () => undefined,
+    getInputLabel: () => undefined
   };
 }

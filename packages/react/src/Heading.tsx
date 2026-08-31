@@ -6,7 +6,7 @@ import { forwardRef } from "react";
 import { cn } from "./utils/cn";
 
 const headingVariants = cva(
-  "font-semibold font-headline leading-none tracking-tight text-foreground text-balance",
+  "font-medium font-headline leading-[1.1] tracking-tight text-foreground text-balance",
   {
     variants: {
       size: {

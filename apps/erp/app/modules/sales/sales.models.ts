@@ -377,6 +377,9 @@ export const quoteMaterialValidator = z
     quantity: zfd.numeric(z.number().min(0)),
     storageUnitId: zfd.text(z.string().optional()),
     unitCost: zfd.numeric(z.number().min(0)),
+    // Required, not optional-with-default: a form that omits it fails loudly
+    // instead of silently downgrading a typed cost to 'system'.
+    unitCostSource: z.enum(["system", "manual"]),
     unitOfMeasureCode: z
       .string()
       .min(1, { message: "Unit of Measure is required" })

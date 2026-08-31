@@ -24,6 +24,27 @@ service functions as ERP tools. It lives entirely under
 - A fresh `McpServer` (`createMcpServer(ctx)`) is built per request and connected
   to a fresh transport.
 
+## Public discovery endpoints (unauthenticated)
+
+Three GET routes let an agent or registry find and connect to the server without
+a credential. All derive their URLs from `getAppUrl() || url.origin`, so a
+self-hosted / ITAR instance advertises its OWN endpoint — never hard-code
+`app.carbon.ms`.
+
+- `GET /.well-known/mcp.json` (`routes/[.]well-known.mcp[.]json.ts` → `lib/manifest.ts`
+  `buildMcpManifest(origin)`) — the MCP registry `server.json`: `remotes[]` with
+  `type: "streamable-http"`, tool/module counts derived from `tool-metadata.json`.
+- `GET /.well-known/oauth-protected-resource` + `/.well-known/oauth-authorization-server`
+  (routes at the app root) — RFC 9728 / OAuth AS discovery for the connector flow.
+- `GET /agent-setup/prompt.md` (`routes/agent-setup.prompt[.]md.tsx` →
+  `lib/agent-setup-prompt.ts` `buildAgentSetupPrompt(origin)`) — an agent-facing
+  markdown "connect your MCP client" doc (modeled on Cloudflare's
+  `agent-setup/prompt.md`). The prose is the raw file `lib/agent-setup-prompt.md`,
+  imported with Vite `?raw`; `{{MCP_URL}}` / `{{ORIGIN}}` tokens are replaced at
+  request time. The template is a colocation file, NOT a route — remix-flat-routes
+  only promotes `index|route|layout|page|_x|x.route` names, so a plain-named `.md`
+  under `lib/` is ignored (same reason `manifest.ts` there isn't a route).
+
 ## Auth (`_index.ts` → `resolveAuth`)
 
 Three ways in, resolved in this order:
@@ -67,7 +88,12 @@ registered individually:
 - `tool-metadata.json` provides `serviceParams` (positional arg order, e.g.
   `["client", "args"]`) and `injectAuth`. The executor builds the positional
   arg array: `client`/`userId`/`companyId`/`companyGroupId` come from `ctx`;
-  payload params are stamped with auth fields via `enrichWithAuthContext`.
+  payload params are stamped with auth fields via `enrichWithAuthContext`. When a
+  payload param is an **array** of rows, `enrichWithAuthContext` stamps
+  `createdBy` into each element (insert only) — the top-level stamp never reached
+  inside, so a NOT NULL `createdBy` on the row table (e.g. `quoteLinePrice`) used
+  to fail. Only `createdBy` is injected per element; `companyId`/`updatedBy` are
+  left to the service, since element keys spread straight into an INSERT.
 - Blocked tools (`lib/mcp-blocked-tools.ts`, `MCP_BLOCKED_TOOL_NAMES`) are rejected
   in both `call_tool` and the executor. Currently only `settings_seedCompany`.
 - Supabase query builders returned by services are awaited; result is
@@ -77,19 +103,28 @@ registered individually:
 
 `tool-metadata.json` is **generated**, never hand-edited. Run
 `npx tsx scripts/generate-mcp.ts`; it parses every `apps/erp/app/modules/*/*.service.ts`
-(falling back to the `.ee`-licensed `<module>.ee.service.ts` — e.g. `accounting`)
-and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
+(falling back to the `.ee`-licensed `<module>.ee.service.ts` — e.g. `accounting`),
+plus an optional server-only companion `<module>.mcp.server.ts` when present (for MCP
+functions that must import `*.server` modules — see the gotcha below — e.g.
+`production.mcp.server.ts`; `direct-executor.ts` merges its exports into the same module
+namespace), and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
 (`{ generated, totalTools, modules, tools }`). Each tool entry:
 `{ name, module, classification, description, paramCount, serviceParams, injectAuth, schema }`.
 
 - **Classification** (`classifyFunction`): `delete*` → `DESTRUCTIVE`;
-  `get|list|fetch|search|find|count|check|is|has*` → `READ`; everything else →
+  `get|list|fetch|search|find|count|check|is|has*` → `READ`; a WRITE whose
+  **body issues a delete** (`.delete(` / `.deleteFrom(`, detected by
+  `functionBodyDeletes`) → `DESTRUCTIVE` too — a delete-and-reinsert `upsert*`
+  (e.g. `upsertQuoteLinePrices`, `replace*Steps`, favourite toggles) is
+  destructive-by-omission and the client must treat it as such; everything else →
   `WRITE`. Drives the MCP annotations (`READ_ONLY_/WRITE_/DESTRUCTIVE_ANNOTATIONS`
   in `lib/types.ts`).
-- **injectAuth** (`computeInjectAuth`): READ/DESTRUCTIVE → `["companyId"]`;
-  `upsert|create|insert|add|new|copy|duplicate|generate*` →
-  `["companyId","createdBy","updatedBy"]`; `update|set|sync|run|…*` →
-  `["companyId","updatedBy"]`.
+- **injectAuth** (`computeInjectAuth`): keyed off the **name verb, not the
+  classification** — only `READ` takes `["companyId"]`. `upsert|create|insert|
+  add|new|copy|duplicate|generate*` → `["companyId","createdBy","updatedBy"]`;
+  `update|set|sync|run|…*` → `["companyId","updatedBy"]`; anything else (incl. a
+  genuine `delete*`) → `["companyId"]`. A DESTRUCTIVE-classified `upsert*` still
+  inserts rows, so it keeps its `createdBy` — the label is only a caller hint.
 
 - **`_operation`** (`usesCreatedByDiscriminator`): the ~96 tools whose service picks
   insert-vs-update with `if ("createdBy" in …)` get a **required**
@@ -112,11 +147,17 @@ and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
 
 ## Gotchas
 
-- The generator reads a service's **parameter list textually**. A parameter typed
-  with a named alias (`prices: QuoteLinePriceInput[]`) publishes as an untyped
-  `{"type":"array","items":{}}` — only literal object types get inlined — and a
-  `//` comment inside the parameter list is parsed as a property name. Spell the
-  object type out inline and keep comments above the function.
+- The generator reads a service's **parameter list textually**, but resolves more
+  shapes than it used to. An **inline** array-of-objects
+  (`prices: { quantity: number; ... }[]`) now publishes as a typed
+  `{"type":"array","items":{...}}`; a `z.infer<typeof V>` validator param resolves
+  `V.merge(z.object({...}))` / `applyX(...)` wrappers / referenced `*Validator`s
+  (same models file) into real fields; and an `errorMap: () => (...)` inside a
+  validator no longer truncates the fields after it. A parameter typed with a bare
+  **named alias** (`prices: QuoteLinePriceInput[]`) still publishes with opaque
+  `items` — the alias isn't resolved — so spell the object type out inline. Keep
+  `//` comments above the function, not inside the parameter list (a comment there
+  is parsed as a property name).
 - A service whose first parameter is `db` (a Kysely transaction client) is served
   `getDatabaseClient()` by `direct-executor.ts`, the same way `client` is served
   the supabase one. A first parameter named anything else falls through to the
@@ -129,3 +170,13 @@ and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
   *different*, still-current concept — don't conflate them.
 - To block a tool from MCP, add its `<module>_<func>` name to
   `MCP_BLOCKED_TOOL_NAMES` and regenerate metadata.
+- **A `{module}.service.ts` must not import a `*.server` module** (`@carbon/auth/users.server`,
+  `@carbon/ee/storage-rules.server`, an app `*.server.ts`, …) — even via `await import(...)`.
+  The module barrel (`~/modules/{module}`) re-exports the service, and client components
+  value-import that barrel for validators/enums, so the service is in the **client** bundle;
+  React Router's `react-router:dot-server` plugin then fails the build with *"Server-only
+  module referenced by client"*. Put such MCP write functions in a server-only companion
+  `{module}.mcp.server.ts` instead (never re-exported by the barrel). The generator parses it
+  and `direct-executor.ts` spreads its exports into the module namespace, so the tool names and
+  metadata are identical to a service-file function. Precedent: `production.mcp.server.ts`
+  holds `issueMaterial` / `completeJob`.

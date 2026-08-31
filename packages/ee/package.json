@@ -5,6 +5,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./accounting": "./src/accounting/index.ts",
+    "./planning": "./src/planning/index.ts",
     "./integrations/secrets": "./src/integrations/secrets.ts",
     "./action-task-entity": "./src/lib/actionTaskEntity.ts",
     "./storage-rules": "./src/storage-rules/index.ts",
@@ -21,10 +22,12 @@
     "./plan.server": "./src/plan.server.ts",
     "./slack.server": "./src/slack.server.ts",
     "./slack/messages": "./src/slack/lib/messages.ts",
+    "./sso.server": "./src/sso/index.server.ts",
     "./hooks.server": "./src/hooks.server.ts",
     "./quickbooks/hooks.server": "./src/quickbooks/hooks.server.ts",
     "./rillet/hooks.server": "./src/rillet/hooks.server.ts",
-    "./xero/hooks.server": "./src/xero/hooks.server.ts"
+    "./xero/hooks.server": "./src/xero/hooks.server.ts",
+    "./stripe-connect.server": "./src/stripe-connect/payment.server.ts"
   },
   "private": true,
   "scripts": {
@@ -43,6 +46,7 @@
     "@carbon/lib": "workspace:*",
     "@carbon/logger": "workspace:*",
     "@carbon/react": "workspace:*",
+    "@carbon/stripe": "workspace:*",
     "@carbon/utils": "workspace:*",
     "@internationalized/date": "catalog:",
     "@slack/bolt": "4.4.0",
@@ -54,9 +58,10 @@
     "axios": "catalog:",
     "cookie": "catalog:",
     "dompurify": "catalog:",
+    "jose": "catalog:",
     "kysely": "catalog:",
     "nanoid": "catalog:",
-    "nodemailer": "6.10.1",
+    "nodemailer": "9.0.1",
     "react": "catalog:",
     "react-icons": "catalog:",
     "react-pdf": "catalog:",

@@ -1568,6 +1568,52 @@ export const fieldMappings = {
       }
     }
   },
+  storageUnit: {
+    id: {
+      label: "Unique ID",
+      required: true,
+      type: "string"
+    },
+    name: {
+      label: "Name",
+      required: true,
+      type: "string"
+    },
+    locationId: {
+      label: "Location",
+      required: true,
+      type: "enum",
+      enumData: {
+        description:
+          "The location this storage unit belongs to — match by location name",
+        fetcher: async (
+          client: SupabaseClient<Database>,
+          companyId: string
+        ) => {
+          return client
+            .from("location")
+            .select("id, name")
+            .eq("companyId", companyId)
+            .order("name");
+        }
+      }
+    },
+    parentName: {
+      label: "Parent Storage Unit",
+      required: false,
+      type: "string"
+    },
+    storageTypeNames: {
+      label: "Storage Types",
+      required: false,
+      type: "string"
+    },
+    active: {
+      label: "Active",
+      required: false,
+      type: "boolean"
+    }
+  },
   fixedAsset: {
     name: {
       label: "Name",
@@ -1758,6 +1804,7 @@ export const importPermissions: Record<keyof typeof fieldMappings, string> = {
   consumable: "parts",
   workCenter: "production",
   process: "production",
+  storageUnit: "inventory",
   fixedAsset: "accounting",
   materialSubstance: "parts",
   materialForm: "parts",
@@ -1820,6 +1867,7 @@ const methodPartSchema = {
   readableId: z.string().optional(),
   revision: z.string().optional(),
   name: z.string().optional(),
+  mpn: z.string().optional(),
   active: z.string().optional(),
   replenishmentSystem: z.string().optional(),
   defaultMethodType: z.string().optional(),
@@ -2032,6 +2080,12 @@ export const importSchemas: Record<
       .describe(
         "The readable id of the part. Usually a number or set of alphanumeric characters."
       ),
+    revision: z
+      .string()
+      .optional()
+      .describe(
+        'The revision of the part. Defaults to "0" when the column is absent.'
+      ),
     name: z
       .string()
       .min(1, { message: "Name is required" })
@@ -2076,6 +2130,12 @@ export const importSchemas: Record<
       .min(1, { message: "Part Number is required" })
       .describe(
         "The readable id of the tool. Usually a number or set of alphanumeric characters."
+      ),
+    revision: z
+      .string()
+      .optional()
+      .describe(
+        'The revision of the tool. Defaults to "0" when the column is absent.'
       ),
     name: z
       .string()
@@ -2125,6 +2185,12 @@ export const importSchemas: Record<
       .describe(
         "The readable id of the fixture. Usually a number or set of alphanumeric characters."
       ),
+    revision: z
+      .string()
+      .optional()
+      .describe(
+        'The revision of the fixture. Defaults to "0" when the column is absent.'
+      ),
     name: z
       .string()
       .min(1, { message: "Name is required" })
@@ -2173,6 +2239,12 @@ export const importSchemas: Record<
       .describe(
         "The readable id of the part. Usually a number or set of alphanumeric characters."
       ),
+    revision: z
+      .string()
+      .optional()
+      .describe(
+        'The revision of the consumable. Defaults to "0" when the column is absent.'
+      ),
     name: z
       .string()
       .min(1, { message: "Name is required" })
@@ -2217,6 +2289,12 @@ export const importSchemas: Record<
       .min(1, { message: "Part Number is required" })
       .describe(
         "The readable id of the material. Usually a number or set of alphanumeric characters."
+      ),
+    revision: z
+      .string()
+      .optional()
+      .describe(
+        'The revision of the material. Defaults to "0" when the column is absent.'
       ),
     name: z
       .string()
@@ -2354,6 +2432,40 @@ export const importSchemas: Record<
       .describe(
         "Whether scanning a barcode should complete all operations for this process"
       )
+  }),
+  storageUnit: z.object({
+    id: z
+      .string()
+      .min(1, { message: "ID is required" })
+      .describe(
+        "The unique ID of the storage unit, usually a number or set of alphanumeric characters."
+      ),
+    name: z
+      .string()
+      .min(1, { message: "Name is required" })
+      .describe(
+        "The name/label of the storage unit (e.g. bin, shelf, rack, or zone). Unique within a location."
+      ),
+    locationId: z
+      .string()
+      .min(1, { message: "Location is required" })
+      .describe("The location ID of the storage unit"),
+    parentName: z
+      .string()
+      .optional()
+      .describe(
+        "The name of the parent storage unit — must be in the same location"
+      ),
+    storageTypeNames: z
+      .string()
+      .optional()
+      .describe(
+        "Comma-separated storage type names (e.g. Cold Storage, Hazardous)"
+      ),
+    active: z
+      .string()
+      .optional()
+      .describe("Whether the storage unit is active (true/false)")
   }),
   fixedAsset: z.object({
     name: z

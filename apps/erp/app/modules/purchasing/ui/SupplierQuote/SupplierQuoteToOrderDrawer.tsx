@@ -22,6 +22,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   Tr,
+  TruncatedTooltipText,
   VStack
 } from "@carbon/react";
 import {
@@ -204,6 +205,10 @@ const LinePricingForm = ({
         const lineHeading = isGlAccount
           ? line.description || "Indirect Expense"
           : line.itemReadableId;
+        const lineDescription = isGlAccount
+          ? (accounts.find((a) => a.id === line.accountId)?.name ??
+            "G/L Account")
+          : line.description;
 
         return (
           <VStack key={line.id}>
@@ -211,23 +216,27 @@ const LinePricingForm = ({
               {line.thumbnailPath ? (
                 <img
                   alt={lineHeading!}
-                  className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
+                  className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
                   src={getPrivateUrl(line.thumbnailPath)}
                 />
               ) : (
-                <div className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
+                <div className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
                   <LuImage className="w-16 h-16 text-muted-foreground" />
                 </div>
               )}
 
-              <VStack spacing={0}>
-                <Heading>{lineHeading}</Heading>
-                <span className="text-muted-foreground text-base truncate">
-                  {isGlAccount
-                    ? (accounts.find((a) => a.id === line.accountId)?.name ??
-                      "G/L Account")
-                    : line.description}
-                </span>
+              {/* flex-1 + min-w-0, not VStack's default w-full: `width: 100%`
+                  on a flex item resolves against the row's full width and
+                  ignores the thumbnail beside it, pushing the description past
+                  the card edge. min-w-0 is what lets truncate bite. */}
+              <VStack spacing={0} className="flex-1 min-w-0">
+                <Heading className="min-w-0">{lineHeading}</Heading>
+                <TruncatedTooltipText
+                  className="text-muted-foreground text-base truncate"
+                  tooltip={lineDescription}
+                >
+                  {lineDescription}
+                </TruncatedTooltipText>
               </VStack>
             </HStack>
             <LinePricingOptions
@@ -278,6 +287,7 @@ const LinePricingOptions = ({
     supplierShippingCost: 0,
     shippingCost: 0,
     supplierTaxAmount: 0,
+    taxAmount: 0,
     taxPercent: 0
   });
 
@@ -294,6 +304,7 @@ const LinePricingOptions = ({
           shippingCost: overridePricing.shippingCost,
           leadTime: overridePricing.leadTime,
           supplierTaxAmount: overridePricing.supplierTaxAmount,
+          taxAmount: overridePricing.taxAmount,
           // Override collects amounts only — seed the rate from the canonical
           // denominator (unit price x quantity + shipping).
           taxPercent: deriveRate(
@@ -337,6 +348,7 @@ const LinePricingOptions = ({
                 shippingCost: selectedOption.shippingCost ?? 0,
                 leadTime: selectedOption.leadTime,
                 supplierTaxAmount: selectedOption.supplierTaxAmount ?? 0,
+                taxAmount: selectedOption.taxAmount ?? 0,
                 taxPercent: selectedOption.taxPercent ?? 0
               }
             }));
@@ -536,7 +548,10 @@ const LinePricingOptions = ({
                     onChange={(taxAmount) =>
                       setOverridePricing((v) => ({
                         ...v,
-                        supplierTaxAmount: taxAmount
+                        supplierTaxAmount: taxAmount,
+                        // Same conversion the unit price and shipping overrides
+                        // above use, so the three stay consistent with each other.
+                        taxAmount: taxAmount * quoteExchangeRate
                       }))
                     }
                   >

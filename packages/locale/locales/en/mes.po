@@ -169,12 +169,18 @@ msgstr "Batch Number {0}"
 msgid "Batch number is required"
 msgstr "Batch number is required"
 
+msgid "Behind target by {daysBehindTarget} day(s)"
+msgstr "Behind target by {daysBehindTarget} day(s)"
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Blocked by {0}"
 
 msgid "Blocking"
 msgstr "Blocking"
+
+msgid "Board view"
+msgstr "Board view"
 
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "But don't worry. You can use the forgot password flow to request a new magic link."
@@ -211,6 +217,9 @@ msgstr "Clear Filters"
 
 msgid "Clear Search"
 msgstr "Clear Search"
+
+msgid "Clear station default"
+msgstr "Clear station default"
 
 msgid "Clock In"
 msgstr "Clock In"
@@ -276,6 +285,9 @@ msgstr "Consumed"
 
 msgid "Consumed expired"
 msgstr "Consumed expired"
+
+msgid "Continue"
+msgstr "Continue"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -515,6 +527,9 @@ msgstr "Finish {0}"
 msgid "Finish Anyways"
 msgstr "Finish Anyways"
 
+msgid "Finish setting up your account"
+msgstr "Finish setting up your account"
+
 msgid "Finish with material unpicked?"
 msgstr "Finish with material unpicked?"
 
@@ -523,6 +538,9 @@ msgstr "Forgot to Clock Out?"
 
 msgid "Go back to operation"
 msgstr "Go back to operation"
+
+msgid "Go to onboarding"
+msgstr "Go to onboarding"
 
 msgid "How many were actually picked?"
 msgstr "How many were actually picked?"
@@ -635,6 +653,9 @@ msgstr "Let's build something"
 
 msgid "lines"
 msgstr "lines"
+
+msgid "List view"
+msgstr "List view"
 
 msgid "Loading item details..."
 msgstr "Loading item details..."
@@ -865,6 +886,9 @@ msgstr "No time entries for this week"
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 
+msgid "No Work Center"
+msgstr "No Work Center"
+
 msgid "No work centers are blocked"
 msgstr "No work centers are blocked"
 
@@ -1025,6 +1049,11 @@ msgstr "Processes"
 msgid "Progress"
 msgstr "Progress"
 
+#. placeholder {0}: formatDate( projectedCompletionDate )
+#. placeholder {0}: formatDate(projectedCompletionDate)
+msgid "Proj. {0}"
+msgstr "Proj. {0}"
+
 msgid "Quality Issue"
 msgstr "Quality Issue"
 
@@ -1124,6 +1153,9 @@ msgstr "Scan or select a tracked entity from this lot to add it as a sample colu
 
 msgid "Schedule"
 msgstr "Schedule"
+
+msgid "Scheduling conflict"
+msgstr "Scheduling conflict"
 
 msgid "Scrap"
 msgstr "Scrap"
@@ -1253,9 +1285,6 @@ msgstr "Short"
 
 msgid "Short pick {itemName}"
 msgstr "Short pick {itemName}"
-
-msgid "Sign in with Email"
-msgstr "Sign in with Email"
 
 msgid "Sign in with Google"
 msgstr "Sign in with Google"
@@ -1497,8 +1526,15 @@ msgstr "You clocked in at <0/>. You can edit your clock-out time below or acknow
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 
+msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
+msgstr "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
+
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 
 msgid "Your session was locked after inactivity."
 msgstr "Your session was locked after inactivity."
+
+#. placeholder {0}: peopleStation.name
+msgid "Your station: {0}"
+msgstr "Your station: {0}"

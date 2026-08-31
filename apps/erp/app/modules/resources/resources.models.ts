@@ -17,24 +17,10 @@ export const abilityNameValidator = z.object({
   name: z.string().trim().min(1, { message: "Name is required" })
 });
 
-export const abilityValidator = z
-  .object({
-    name: z.string().trim().min(1, { message: "Name is required" }),
-    startingPoint: zfd.numeric(
-      z.number().min(0, { message: "Learning curve is required" })
-    ),
-    weeks: zfd.numeric(z.number().min(0, { message: "Weeks is required" })),
-    shadowWeeks: zfd.numeric(
-      z.number().min(0, { message: "Shadow is required" })
-    ),
-    employees: z
-      .array(z.string().min(1, { message: "Invalid selection" }))
-      .min(1, { message: "Group members are required" })
-      .optional()
-  })
-  .refine((schema) => schema.shadowWeeks <= schema.weeks, {
-    message: "name is required when you send color on request"
-  });
+export const abilityValidator = z.object({
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  recertifyEveryDays: zfd.numeric(z.number().int().min(1).optional())
+});
 
 export const contractorValidator = z.object({
   id: z.string().min(1, { message: "Supplier Contact is required" }),
@@ -48,11 +34,11 @@ export const contractorValidator = z.object({
   assignee: zfd.text(z.string().optional())
 });
 
-export const employeeAbilityValidator = z.object({
+export const employeeAbilityCellValidator = z.object({
   employeeId: z.string().min(1, { message: "Employee is required" }),
-  trainingStatus: z.string().min(1, { message: "Status is required" }),
-  trainingPercent: zfd.numeric(z.number().optional()),
-  trainingDays: zfd.numeric(z.number().optional())
+  abilityId: z.string().min(1, { message: "Ability is required" }),
+  lastTrainingDate: zfd.text(z.string().optional()),
+  expiresAt: zfd.text(z.string().optional())
 });
 
 export const maintenanceFailureModeType = [
@@ -196,6 +182,7 @@ export const maintenanceDispatchValidator = z.object({
   suspectedFailureModeId: zfd.text(z.string().optional()),
   plannedStartTime: zfd.text(z.string().optional()),
   plannedEndTime: zfd.text(z.string().optional()),
+  takesWorkCenterOffline: zfd.checkbox(),
   assignee: zfd.text(z.string().optional()),
   content: zfd.text(z.string().optional())
 });
@@ -242,30 +229,50 @@ export const maintenanceScheduleItemValidator = z.object({
     .min(1, { message: "Unit of measure is required" })
 });
 
-export const maintenanceScheduleValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  name: z.string().trim().min(1, { message: "Name is required" }),
-  description: zfd.text(z.string().optional()),
-  workCenterId: z.string().min(1, { message: "Work center is required" }),
-  locationId: z.string().min(1, { message: "Location is required" }),
-  frequency: z.enum(maintenanceFrequency),
-  priority: z.enum(maintenanceDispatchPriority),
-  estimatedDuration: zfd.numeric(z.number().optional()),
-  nextDueAt: zfd.text(z.string().optional()),
-  active: zfd.checkbox(),
-  // Day-of-week fields for daily frequency
-  monday: zfd.checkbox(),
-  tuesday: zfd.checkbox(),
-  wednesday: zfd.checkbox(),
-  thursday: zfd.checkbox(),
-  friday: zfd.checkbox(),
-  saturday: zfd.checkbox(),
-  sunday: zfd.checkbox(),
-  // Skip holidays option
-  skipHolidays: zfd.checkbox(),
-  // Procedure
-  procedureId: zfd.text(z.string().optional())
-});
+export const maintenanceScheduleValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    name: z.string().trim().min(1, { message: "Name is required" }),
+    description: zfd.text(z.string().optional()),
+    workCenterId: z.string().min(1, { message: "Work center is required" }),
+    locationId: z.string().min(1, { message: "Location is required" }),
+    frequency: z.enum(maintenanceFrequency),
+    priority: z.enum(maintenanceDispatchPriority),
+    estimatedDuration: zfd.numeric(z.number().optional()),
+    takesWorkCenterOffline: zfd.checkbox(),
+    nextDueAt: zfd.text(z.string().optional()),
+    active: zfd.checkbox(),
+    // Day-of-week fields for daily frequency
+    monday: zfd.checkbox(),
+    tuesday: zfd.checkbox(),
+    wednesday: zfd.checkbox(),
+    thursday: zfd.checkbox(),
+    friday: zfd.checkbox(),
+    saturday: zfd.checkbox(),
+    sunday: zfd.checkbox(),
+    // Skip holidays option
+    skipHolidays: zfd.checkbox(),
+    // Procedure
+    procedureId: zfd.text(z.string().optional())
+  })
+  .superRefine((data, ctx) => {
+    // An offline PM subtracts its plannedStartTime → plannedEndTime window from the
+    // work center's capacity; plannedEndTime is derived from estimatedDuration, so
+    // without a duration the block would be open-ended. Require it when offline.
+    if (
+      data.takesWorkCenterOffline &&
+      (data.estimatedDuration === undefined ||
+        data.estimatedDuration === null ||
+        data.estimatedDuration <= 0)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["estimatedDuration"],
+        message:
+          "Estimated duration is required when the PM takes the work center offline"
+      });
+    }
+  });
 
 export const maintenanceSeverity = [
   "Preventive",
@@ -306,7 +313,8 @@ export const processValidator = z
     workCenters: z
       .array(z.string().min(1, { message: "Invalid work center" }))
       .optional(),
-    completeAllOnScan: zfd.checkbox()
+    completeAllOnScan: zfd.checkbox(),
+    requiresAbility: zfd.checkbox()
   })
   .refine((data) => {
     if (data.processType !== "Outside Processing" && !data.workCenters) {
@@ -482,7 +490,8 @@ export const trainingType = ["Mandatory", "Optional"] as const;
 export const trainingValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().trim().min(1, { message: "Name is required" }),
-  content: zfd.text(z.string().optional())
+  content: zfd.text(z.string().optional()),
+  grantsAbilityId: zfd.text(z.string().optional())
 });
 
 export const workCenterValidator = z.object({
@@ -499,6 +508,7 @@ export const workCenterValidator = z.object({
   overheadRate: zfd.numeric(z.number().min(0)),
   processes: z
     .array(z.string().min(1, { message: "Invalid process" }))
-    .optional()
-  // requiredAbilityId: zfd.text(z.string().optional()),
+    .optional(),
+  shifts: z.array(z.string().min(1, { message: "Invalid shift" })).optional(),
+  alwaysOn: zfd.checkbox()
 });

@@ -23,7 +23,7 @@ export type DueWorkflow = {
   id: string;
   companyId: string;
   ownerId: string;
-  activeVersionId: string;
+  publishedVersionId: string;
   nextRunAt: Date;
   nodes: unknown;
 };
@@ -36,19 +36,20 @@ export async function scanDue(
     .selectFrom("workflow as w")
     .innerJoin("workflowVersion as v", (join) =>
       join
-        .onRef("v.id", "=", "w.activeVersionId")
+        .onRef("v.id", "=", "w.publishedVersionId")
         .onRef("v.companyId", "=", "w.companyId")
     )
     .select([
       "w.id",
       "w.companyId",
       "w.ownerId",
-      "w.activeVersionId",
+      "w.publishedVersionId",
       "w.nextRunAt",
       "v.nodes"
     ])
-    .where("w.active", "=", true)
-    .where("w.activeVersionId", "is not", null)
+    // Reads as redundant beside the join, but it is what lets the planner match the partial
+    // `workflow_due_idx` — a join qual cannot prove that index's predicate. Do not delete.
+    .where("w.publishedVersionId", "is not", null)
     .where("w.nextRunAt", "<=", now.toISOString())
     .orderBy("w.nextRunAt", "asc")
     .limit(MAX_DUE_PER_WAKE)
@@ -57,8 +58,7 @@ export async function scanDue(
   const futureRow = await db
     .selectFrom("workflow as w")
     .select("w.nextRunAt")
-    .where("w.active", "=", true)
-    .where("w.activeVersionId", "is not", null)
+    .where("w.publishedVersionId", "is not", null)
     .where("w.nextRunAt", ">", now.toISOString())
     .orderBy("w.nextRunAt", "asc")
     .limit(1)
@@ -67,8 +67,8 @@ export async function scanDue(
   return {
     due: due
       .filter(
-        (r): r is typeof r & { activeVersionId: string } =>
-          r.activeVersionId !== null
+        (r): r is typeof r & { publishedVersionId: string } =>
+          r.publishedVersionId !== null
       )
       .map((r) => ({
         ...r,
@@ -250,7 +250,7 @@ export async function dispatchDue(
     const planned: PlannedRun[] = [
       {
         workflowId: row.id,
-        workflowVersionId: row.activeVersionId,
+        workflowVersionId: row.publishedVersionId,
         eventId: SCHEDULE_EVENT_ID,
         ownerId: row.ownerId,
         status,

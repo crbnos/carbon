@@ -55,7 +55,7 @@ msgid "{0} Scrapped"
 msgstr "{0} 스크랩됨"
 
 msgid "{completions} passed unit(s) will be completed."
-msgstr "{completions}개의 합격 단위가 완료됩니다."
+msgstr "{completions}개의 통과 단위가 완료 처리될 예정입니다."
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails}개의 샘플 불량이 기록되었으며 완료되지 않습니다 — 작업 메뉴에서 해결하세요."
@@ -115,7 +115,7 @@ msgid "All rework"
 msgstr "모두 재작업"
 
 msgid "All scrap"
-msgstr "모두 폐기"
+msgstr "모든 스크랩"
 
 msgid "Allocate failed units"
 msgstr "실패한 단위 할당"
@@ -151,16 +151,16 @@ msgid "Authentication Error"
 msgstr "인증 오류"
 
 msgid "available"
-msgstr "사용 가능"
+msgstr "가용"
 
 msgid "Available"
-msgstr "사용 가능"
+msgstr "가용"
 
 msgid "Batch"
 msgstr "배치"
 
 msgid "Batch is not available"
-msgstr "배치를 사용할 수 없습니다"
+msgstr "배치는 가용하지 않습니다"
 
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
@@ -169,12 +169,18 @@ msgstr "배치 번호 {0}"
 msgid "Batch number is required"
 msgstr "배치 번호가 필요합니다"
 
+msgid "Behind target by {daysBehindTarget} day(s)"
+msgstr "목표에서 {daysBehindTarget}일 뒤짐"
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "{0}에 의해 차단됨"
 
 msgid "Blocking"
 msgstr "차단"
+
+msgid "Board view"
+msgstr "보드 보기"
 
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "걱정하지 마세요. 비밀번호 찾기를 통해 새 매직 링크를 요청할 수 있습니다."
@@ -212,11 +218,14 @@ msgstr "필터 지우기"
 msgid "Clear Search"
 msgstr "검색 지우기"
 
+msgid "Clear station default"
+msgstr "스테이션 기본값 초기화"
+
 msgid "Clock In"
-msgstr "출근"
+msgstr "작업 시작"
 
 msgid "Clock Out"
-msgstr "퇴근"
+msgstr "작업 종료"
 
 msgid "Clocked in since <0/>"
 msgstr "<0/>부터 근무 중"
@@ -257,7 +266,7 @@ msgid "Complete All"
 msgstr "모두 완료"
 
 msgid "Complete passed"
-msgstr "완료된 합격"
+msgstr "완료 처리 통과"
 
 msgid "Completed"
 msgstr "완료됨"
@@ -275,11 +284,14 @@ msgid "Consumed"
 msgstr "소비됨"
 
 msgid "Consumed expired"
-msgstr "만료 후 소모됨"
+msgstr "소모 만료"
+
+msgid "Continue"
+msgstr "계속"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
-msgstr "계획되지 않은 유지보수 비용, 최근 {0}일"
+msgstr "계획되지 않은 유지보수의 원가, 최근 {0}일"
 
 #. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
 #. placeholder {0}: search.trim() === "" ? label : search
@@ -314,7 +326,7 @@ msgid "Default"
 msgstr "기본값"
 
 msgid "Default Storage Unit"
-msgstr "기본 저장 단위"
+msgstr "기본 보관 단위"
 
 msgid "Delete"
 msgstr "삭제"
@@ -338,7 +350,7 @@ msgid "Details"
 msgstr "상세 정보"
 
 msgid "Dispatch not found"
-msgstr "작업지시를 찾을 수 없습니다"
+msgstr "유지보수 지시를 찾을 수 없습니다"
 
 msgid "Display"
 msgstr "표시"
@@ -376,7 +388,7 @@ msgstr "그리기 및 기능 크기 조정하려면 드래그하세요"
 
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
-msgstr "{0} 끌기가 취소되었습니다."
+msgstr "{0} 드래그 취소됨."
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
@@ -385,7 +397,7 @@ msgid "Due {0}"
 msgstr "기한 {0}"
 
 msgid "Due Date"
-msgstr "기한일"
+msgstr "마감일"
 
 #. placeholder {0}: board.dueSoon.days
 msgid "Due in the next {0} days?"
@@ -398,13 +410,13 @@ msgid "Duplicate batch number"
 msgstr "중복된 배치 번호"
 
 msgid "Duplicate serial number"
-msgstr "중복된 일련번호"
+msgstr "중복된 시리얼 번호"
 
 msgid "Duration"
 msgstr "기간"
 
 msgid "Edit"
-msgstr "수정"
+msgstr "편집"
 
 msgid "Elapsed"
 msgstr "경과 시간"
@@ -435,7 +447,7 @@ msgid "Estimated"
 msgstr "예상"
 
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
-msgstr "모든 단위에 판정이 있습니다: {passes}개 합격 및 {fails}개 불합격. 로트는 각 단위가 자신의 결과로 라우팅되면서 종료됩니다."
+msgstr "각 개는 판정을 가집니다: {passes}개 통과하고 {fails}개 불합격합니다. 로트는 각 개가 자신의 결과로 배정되면서 마감됩니다."
 
 msgid "Expand features table"
 msgstr "기능 테이블 확장"
@@ -497,7 +509,7 @@ msgid "Files"
 msgstr "파일"
 
 msgid "Files related to the job and the opportunity line."
-msgstr "작업 및 기회 라인과 관련된 파일입니다."
+msgstr "작업 지시 및 영업 기회 라인과 관련된 파일입니다."
 
 msgid "Filter"
 msgstr "필터"
@@ -515,14 +527,20 @@ msgstr "{0} 완료"
 msgid "Finish Anyways"
 msgstr "그래도 완료"
 
+msgid "Finish setting up your account"
+msgstr "계정 설정을 완료하세요"
+
 msgid "Finish with material unpicked?"
 msgstr "미선택 재료가 있는 상태로 완료하시겠습니까?"
 
 msgid "Forgot to Clock Out?"
-msgstr "퇴근 체크를 잊으셨나요?"
+msgstr "작업 종료를 잊었나요?"
 
 msgid "Go back to operation"
 msgstr "공정작업으로 돌아가기"
+
+msgid "Go to onboarding"
+msgstr "온보딩으로 이동"
 
 msgid "How many were actually picked?"
 msgstr "실제로 몇 개를 피킹했습니까?"
@@ -607,13 +625,13 @@ msgid "Job Details"
 msgstr "작업 상세정보"
 
 msgid "Job Traveler"
-msgstr "작업 트래블러"
+msgstr "작업 이동표"
 
 msgid "Jobs"
-msgstr "작업"
+msgstr "작업 지시"
 
 msgid "Keep picking"
-msgstr "계속 선택"
+msgstr "피킹을 계속하세요"
 
 msgid "Kit"
 msgstr "키트"
@@ -635,6 +653,9 @@ msgstr "무언가를 만들어봅시다"
 
 msgid "lines"
 msgstr "라인"
+
+msgid "List view"
+msgstr "목록 보기"
 
 msgid "Loading item details..."
 msgstr "품목 세부정보를 불러오는 중..."
@@ -679,7 +700,7 @@ msgid "Machine"
 msgstr "기계"
 
 msgid "Machine down for maintenance now?"
-msgstr "현재 유지보수로 가동 중단?"
+msgstr "기계가 지금 유지보수 중인가요?"
 
 msgid "Maintenance"
 msgstr "유지보수"
@@ -688,7 +709,7 @@ msgid "Maintenance Completed"
 msgstr "유지보수 완료"
 
 msgid "Maintenance overdue"
-msgstr "기한이 지난 유지보수"
+msgstr "유지보수 기한 초과"
 
 msgid "Make a replacement"
 msgstr "교체품 만들기"
@@ -761,31 +782,31 @@ msgid "No"
 msgstr "아니요"
 
 msgid "No active job at this work center"
-msgstr "이 작업 센터에 활성 작업 없음"
+msgstr "이 작업장에서 진행 중인 작업 지시가 없습니다"
 
 msgid "No active maintenance dispatches"
-msgstr "진행 중인 유지보수 작업지시가 없습니다"
+msgstr "진행 중인 유지보수 지시가 없습니다"
 
 msgid "No active operations"
 msgstr "진행 중인 공정작업이 없습니다"
 
 msgid "No active work centers at this location."
-msgstr "이 위치에 활성 작업 센터 없음."
+msgstr "이 사업장에는 운영 중인 작업장이 없습니다."
 
 msgid "No assigned operations"
 msgstr "배정된 공정작업이 없습니다"
 
 msgid "No available filters"
-msgstr "사용 가능한 필터가 없습니다"
+msgstr "가용 필터가 없습니다"
 
 msgid "No available serial numbers found"
-msgstr "사용 가능한 일련번호를 찾을 수 없습니다"
+msgstr "가용 시리얼 번호를 찾을 수 없습니다"
 
 msgid "No available tracked entities found"
-msgstr "사용 가능한 추적 개체가 없습니다"
+msgstr "가용 추적 항목을 찾을 수 없습니다"
 
 msgid "No dispatches assigned to you"
-msgstr "배정된 작업지시가 없습니다"
+msgstr "당신에게 할당된 유지보수 지시가 없습니다"
 
 msgid "No files"
 msgstr "파일 없음"
@@ -800,13 +821,13 @@ msgid "No maintenance scheduled for today"
 msgstr "오늘 예정된 유지보수가 없습니다"
 
 msgid "No matches. Type to create one."
-msgstr "일치하는 항목이 없습니다. 입력하여 새로 만드세요."
+msgstr "일치항목이 없습니다. 입력하여 새로 만드세요."
 
 msgid "No materials"
 msgstr "자재 없음"
 
 msgid "No open jobs"
-msgstr "진행 중인 작업이 없습니다"
+msgstr "미결 작업 지시가 없습니다"
 
 msgid "No open units to allocate"
 msgstr "할당할 열린 단위가 없습니다"
@@ -821,7 +842,7 @@ msgid "No options found."
 msgstr "옵션이 없습니다."
 
 msgid "No picking lists assigned"
-msgstr "배정된 피킹 목록이 없습니다"
+msgstr "할당된 피킹 리스트가 없습니다"
 
 msgid "No printer configured"
 msgstr "설정된 프린터가 없습니다"
@@ -848,10 +869,10 @@ msgid "No scheduled time"
 msgstr "예정된 시간 없음"
 
 msgid "No serial numbers"
-msgstr "일련번호 없음"
+msgstr "시리얼 번호 없음"
 
 msgid "No serial numbers found"
-msgstr "일련번호를 찾을 수 없습니다"
+msgstr "시리얼 번호를 찾을 수 없습니다"
 
 msgid "No spare parts added yet"
 msgstr "아직 추가된 예비 부품이 없습니다"
@@ -864,6 +885,9 @@ msgstr "이번 주 시간 기록이 없습니다"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "이 품목에 대한 창고 재고 기록이 없습니다. 그래도 피킹할 수 있으며, 실사로 수량이 조정될 때까지 보유수량이 음수로 표시됩니다."
+
+msgid "No Work Center"
+msgstr "작업장 없음"
 
 msgid "No work centers are blocked"
 msgstr "차단된 작업장이 없습니다"
@@ -881,10 +905,10 @@ msgid "Nothing running"
 msgstr "실행 중인 것 없음"
 
 msgid "Nothing scheduled at this work center"
-msgstr "이 작업 센터에서 예정된 것 없음"
+msgstr "이 작업장에 예정된 작업이 없습니다"
 
 msgid "Nothing to scrap"
-msgstr "폐기할 것이 없습니다"
+msgstr "스크랩할 것이 없습니다"
 
 msgid "OEE Impact"
 msgstr "OEE 영향"
@@ -897,7 +921,7 @@ msgstr "오래된순"
 
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
-msgstr "{0}만 사용 가능"
+msgstr "{0}개만 가용합니다"
 
 msgid "Oops. You shouldn't see this page. Eventually it will be a landing page."
 msgstr "이런. 이 페이지가 보이면 안 됩니다. 나중에 랜딩 페이지가 될 예정입니다."
@@ -906,13 +930,13 @@ msgid "Open"
 msgstr "열림"
 
 msgid "Open a display on the screen mounted at the work center and leave it running. Each board refreshes on its own."
-msgstr "작업 센터에 설치된 화면에 디스플레이를 열고 실행 중인 상태로 두십시오. 각 보드는 자동으로 새로고침됩니다."
+msgstr "작업장에 설치된 화면에 디스플레이를 열고 계속 실행 상태로 두세요. 각 보드는 자동으로 새로고침됩니다."
 
 msgid "Open an NCR for MRB disposition"
-msgstr "MRB 처리를 위한 NCR 열기"
+msgstr "MRB 처분 결정을 위해 NCR을 여세요"
 
 msgid "Open Jobs"
-msgstr "진행 중인 작업"
+msgstr "작업 지시 열기"
 
 msgid "Operations"
 msgstr "공정작업"
@@ -936,7 +960,7 @@ msgid "Overall result"
 msgstr "전체 결과"
 
 msgid "Overdue PMs?"
-msgstr "기한이 지난 PM?"
+msgstr "기한 초과된 PM이 있나요?"
 
 msgid "Parameters"
 msgstr "파라미터"
@@ -948,16 +972,16 @@ msgid "Partial"
 msgstr "부분"
 
 msgid "Partial Disposition"
-msgstr "부분 처리"
+msgstr "부분 처분 결정"
 
 msgid "Passed Inspection"
-msgstr "검사 합격"
+msgstr "검사 통과"
 
 msgid "Passkey unlock failed"
 msgstr "패스키 잠금 해제 실패"
 
 msgid "Pause"
-msgstr "일시정지"
+msgstr "일시 중지"
 
 msgid "Pick"
 msgstr "피킹"
@@ -1011,7 +1035,7 @@ msgid "Priority"
 msgstr "우선순위"
 
 msgid "Procedure"
-msgstr "절차"
+msgstr "절차서"
 
 msgid "Process"
 msgstr "공정"
@@ -1024,6 +1048,11 @@ msgstr "공정"
 
 msgid "Progress"
 msgstr "진행 상황"
+
+#. placeholder {0}: formatDate( projectedCompletionDate )
+#. placeholder {0}: formatDate(projectedCompletionDate)
+msgid "Proj. {0}"
+msgstr "예상. {0}"
 
 msgid "Quality Issue"
 msgstr "품질 이슈"
@@ -1078,7 +1107,7 @@ msgid "Remove part"
 msgstr "품목 제거"
 
 msgid "Reopen the subassembly and create a replacement unit"
-msgstr "부분 조립품을 다시 열고 교체 단위를 생성합니다"
+msgstr "서브어셈블리를 다시 열고 대체 부품을 생성하세요"
 
 msgid "Result"
 msgstr "결과"
@@ -1096,7 +1125,7 @@ msgid "Running"
 msgstr "실행 중"
 
 msgid "Sales Order"
-msgstr "판매주문"
+msgstr "수주"
 
 msgid "Save"
 msgstr "저장"
@@ -1105,37 +1134,40 @@ msgid "Scan"
 msgstr "스캔"
 
 msgid "Scan a tracked entity to add the first sample column."
-msgstr "추적된 엔터티를 스캔하여 첫 번째 샘플 열을 추가하세요."
+msgstr "첫 번째 샘플 열을 추가하려면 추적 대상을 스캔하세요."
 
 msgid "Scan or enter serial number"
-msgstr "일련번호를 스캔하거나 입력하세요"
+msgstr "시리얼 번호를 스캔하거나 입력하세요"
 
 msgid "Scan or enter tracked entity ID, serial, or batch"
-msgstr "추적된 엔터티 ID, 일련번호 또는 배치를 스캔하거나 입력하세요"
+msgstr "추적 대상 ID, 시리얼 번호 또는 배치를 스캔하거나 입력하세요"
 
 msgid "Scan or enter tracking number"
 msgstr "추적 번호를 스캔하거나 입력하세요"
 
 msgid "Scan or search serial number..."
-msgstr "일련번호를 스캔하거나 검색하세요..."
+msgstr "시리얼 번호를 스캔하거나 검색하세요..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
-msgstr "이 로트에서 추적된 엔터티를 스캔하거나 선택하여 샘플 열로 추가한 다음 그리드에 그 결과를 기록하세요."
+msgstr "이 로트에서 추적 대상을 스캔하거나 선택하여 샘플 열로 추가한 다음 그리드에 결과를 기록하세요."
 
 msgid "Schedule"
 msgstr "일정"
+
+msgid "Scheduling conflict"
+msgstr "일정 충돌"
 
 msgid "Scrap"
 msgstr "스크랩"
 
 msgid "Scrap {readableId}"
-msgstr "{readableId} 폐기"
+msgstr "{readableId} 스크랩"
 
 msgid "Scrap material"
-msgstr "자재 폐기"
+msgstr "자재 스크랩"
 
 msgid "Scrap quantity"
-msgstr "폐기 수량"
+msgstr "스크랩 수량"
 
 msgid "Scrap Reason"
 msgstr "스크랩 사유"
@@ -1174,7 +1206,7 @@ msgid "Select a scrap quantity and reason"
 msgstr "스크랩 수량과 사유를 선택하세요"
 
 msgid "Select a serial number to continue with this operation"
-msgstr "이 공정작업을 계속하려면 일련번호를 선택하세요"
+msgstr "이 공정을 계속하려면 시리얼 번호를 선택하세요"
 
 msgid "Select an issue type"
 msgstr "문제 유형 선택"
@@ -1197,7 +1229,7 @@ msgid "Select Serial {0}"
 msgstr "일련번호 {0} 선택"
 
 msgid "Select Serial Number"
-msgstr "일련번호 선택"
+msgstr "시리얼 번호 선택"
 
 msgid "Select the operation to go back to. All operations from that point to the current operation will be redone."
 msgstr "되돌아갈 공정작업을 선택하세요. 해당 시점부터 현재 공정작업까지 모두 다시 진행됩니다."
@@ -1216,25 +1248,25 @@ msgstr "일련번호"
 
 #. placeholder {0}: index + 1
 msgid "Serial Number {0}"
-msgstr "일련번호 {0}"
+msgstr "시리얼 번호 {0}"
 
 msgid "Serial number is not available"
-msgstr "일련번호를 사용할 수 없습니다"
+msgstr "시리얼 번호를 사용할 수 없습니다"
 
 msgid "Serial number is required"
-msgstr "일련번호가 필요합니다"
+msgstr "시리얼 번호가 필요합니다"
 
 msgid "Serial numbers"
-msgstr "일련번호"
+msgstr "시리얼 번호"
 
 msgid "Serial Numbers"
-msgstr "일련번호"
+msgstr "시리얼 번호"
 
 msgid "Session locked"
-msgstr "세션이 잠겨 있음"
+msgstr "세션 잠김"
 
 msgid "Set Clock Out"
-msgstr "퇴근 처리"
+msgstr "작업 종료 설정"
 
 msgid "Set clock-out time"
 msgstr "퇴근 시간 설정"
@@ -1253,9 +1285,6 @@ msgstr "짧게"
 
 msgid "Short pick {itemName}"
 msgstr "{itemName} 부족 피킹"
-
-msgid "Sign in with Email"
-msgstr "이메일로 로그인"
 
 msgid "Sign in with Google"
 msgstr "Google로 로그인"
@@ -1319,7 +1348,7 @@ msgid "Steps are missing"
 msgstr "단계가 누락되었습니다"
 
 msgid "Storage Unit"
-msgstr "저장 단위"
+msgstr "보관 단위"
 
 msgid "Submit anonymously"
 msgstr "익명으로 제출"
@@ -1340,31 +1369,31 @@ msgid "The completed quantity for this operation is less than the required quant
 msgstr "이 공정작업의 완료 수량이 필요 수량 {targetQuantity}보다 적습니다."
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
-msgstr "로트가 합격으로 표시되고 {remaining}개의 남은 단위가 이 작업에서 완료됩니다."
+msgstr "로트는 통과로 표시되고 이 공정에서 남은 {remaining}개가 완료됩니다."
 
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "로트는 여전히 처리되지만 최소한 하나의 Issue Type이 구성될 때까지 NCR을 생성할 수 없습니다."
 
 msgid "There are no available or consumed tracked parts for this material."
-msgstr "이 재료에 대해 사용 가능하거나 소비된 추적된 부품이 없습니다."
+msgstr "이 자재에 대해 가용 또는 소모된 추적 부품이 없습니다."
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
-msgstr "자재명세서(BOM)에 아직 완전히 출고되지 않은 일련번호 또는 배치 추적 자재가 있습니다. 출고하지 않고 완료하면 이력추적 기록이 부정확해질 수 있습니다."
+msgstr "부품표(BOM)에 완전히 발행되지 않은 시리얼 또는 배치 추적 자재가 있습니다. 발행하지 않고 완료하면 잘못된 추적성 기록이 발생할 수 있습니다."
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "이 항목들은 아직 선택할 재료가 있습니다. 지금 완료하면 목록이 부분으로 표시됩니다."
 
 msgid "This lot is expired and can't be picked."
-msgstr "이 로트는 만료되어 피킹할 수 없습니다."
+msgstr "이 로트는 만료되었으므로 피킹할 수 없습니다."
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
-msgstr "이 부품은 주문 제작되었습니다. 폐기하면 교체품을 만들기 위해 라우팅을 다시 열 수 있습니다."
+msgstr "이 부품은 주문 제작되었습니다. 이를 스크랩하면 라우팅을 다시 열어서 대체 부품을 만들 수 있습니다."
 
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
 msgstr "이 부품은 재고에서 폐기됩니다. 요구사항은 열려있으므로 교체품을 발급할 수 있습니다."
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
-msgstr "이 단위는 영구적으로 폐기되며 교체 일련번호가 생성됩니다."
+msgstr "이 개가 영구적으로 스크랩되고 대체 시리얼 번호가 생성됩니다."
 
 msgid "Thumbnail"
 msgstr "썸네일"
@@ -1394,7 +1423,7 @@ msgid "Total: {0}"
 msgstr "합계: {0}"
 
 msgid "Tracked Entity"
-msgstr "추적된 엔터티"
+msgstr "추적 대상"
 
 msgid "Tracking"
 msgstr "추적"
@@ -1431,7 +1460,7 @@ msgid "Unpick {0}"
 msgstr "{0} 피킹 취소"
 
 msgid "Unplanned downtime"
-msgstr "계획되지 않은 다운타임"
+msgstr "계획되지 않은 비가동 시간"
 
 #. placeholder {0}: board.unplannedCount.days
 msgid "Unplanned maintenance items, last {0} days"
@@ -1471,7 +1500,7 @@ msgid "Verify"
 msgstr "확인"
 
 msgid "View maintenance dispatch"
-msgstr "유지보수 작업지시 보기"
+msgstr "유지보수 지시 보기"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "계정에 로그인할 수 있는 매직 링크를 보내드렸습니다."
@@ -1486,7 +1515,7 @@ msgid "Work Center"
 msgstr "작업장"
 
 msgid "Work Center Displays"
-msgstr "작업 센터 디스플레이"
+msgstr "작업장 화면"
 
 msgid "Yes"
 msgstr "예"
@@ -1495,10 +1524,17 @@ msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowl
 msgstr "<0/>에 근무를 시작했습니다. 아래에서 퇴근 시간을 편집하거나 현재 근무 중임을 확인할 수 있습니다."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
-msgstr "{hoursElapsed}시간 동안 출근 상태입니다. 퇴근 처리를 잊으셨나요?"
+msgstr "{hoursElapsed}시간 동안 작업 중입니다. 작업 종료를 잊으셨나요?"
+
+msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
+msgstr "아직 회사에 속하지 않은 계정입니다. Carbon ERP에서 온보딩을 완료해 주시기 바랍니다."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "조직에서 인증 앱을 요구하고 있습니다. Carbon에서 설정한 후 여기로 돌아오세요."
 
 msgid "Your session was locked after inactivity."
 msgstr "세션이 비활성 후 잠겼습니다."
+
+#. placeholder {0}: peopleStation.name
+msgid "Your station: {0}"
+msgstr "비활성으로 인해 세션이 잠겼습니다."

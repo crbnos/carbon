@@ -41,7 +41,8 @@ export function useBuilderStoreApi(): StoreApi<BuilderState> {
 type WorkflowBuilderProviderProps = {
   nodes: BuilderNode[];
   edges: BuilderEdge[];
-  isReadOnly: boolean;
+  isVersionLocked: boolean;
+  canEdit: boolean;
   isOwner: boolean;
 };
 

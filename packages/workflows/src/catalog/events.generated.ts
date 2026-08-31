@@ -964,7 +964,6 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     deadlineType: { kind: "primitive", of: "string" },
     quantity: { kind: "primitive", of: "number" },
     scrapQuantity: { kind: "primitive", of: "number" },
-    productionQuantity: { kind: "primitive", of: "number" },
     quantityComplete: { kind: "primitive", of: "number" },
     quantityShipped: { kind: "primitive", of: "number" },
     quantityReceivedToInventory: { kind: "primitive", of: "number" },
@@ -986,7 +985,11 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     secondsToComplete: { kind: "primitive", of: "number" },
     startDate: { kind: "primitive", of: "date" },
     storageUnitId: { kind: "primitive", of: "string" },
-    priority: { kind: "primitive", of: "number" }
+    priority: { kind: "primitive", of: "number" },
+    productionQuantity: { kind: "primitive", of: "number" },
+    projectedCompletionAt: { kind: "primitive", of: "date" },
+    scheduleOutdatedReason: { kind: "primitive", of: "string" },
+    scheduleOutdatedAt: { kind: "primitive", of: "date" }
   },
   jobOperation: {
     id: { kind: "primitive", of: "string" },
@@ -1031,7 +1034,9 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     manuallyScheduled: { kind: "primitive", of: "boolean" },
     reworkId: { kind: "primitive", of: "string" },
     assemblyInstructionId: { kind: "primitive", of: "string" },
-    inspectionDocumentId: { kind: "primitive", of: "string" }
+    inspectionDocumentId: { kind: "primitive", of: "string" },
+    readyAt: { kind: "primitive", of: "date" },
+    projectedCompletionAt: { kind: "primitive", of: "date" }
   },
   location: {
     id: { kind: "primitive", of: "string" },
@@ -1047,7 +1052,9 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     longitude: { kind: "primitive", of: "number" },
     createdBy: { kind: "primitive", of: "string" },
     createdAt: { kind: "primitive", of: "date" },
-    tags: { kind: "list", of: { kind: "primitive", of: "string" } }
+    tags: { kind: "list", of: { kind: "primitive", of: "string" } },
+    code: { kind: "primitive", of: "string" },
+    requiresStaffing: { kind: "primitive", of: "boolean" }
   },
   nonConformance: {
     id: { kind: "primitive", of: "string" },

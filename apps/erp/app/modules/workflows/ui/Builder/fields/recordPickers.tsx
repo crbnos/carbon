@@ -135,6 +135,9 @@ const UserPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => (
   <UserSelect
     value={value}
     usersOnly
+    // "employee" is defined negatively by get_user_select_groups: not customer- and
+    // not supplier-flagged. Ad-hoc company groups stay listed.
+    type="employee"
     isMulti={false}
     insideCanvas
     disabled={isDisabled}
@@ -147,6 +150,7 @@ const UserPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => (
 const GroupPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => (
   <UserSelect
     value={value}
+    type="employee"
     isMulti={false}
     insideCanvas
     disabled={isDisabled}

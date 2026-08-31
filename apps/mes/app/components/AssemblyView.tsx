@@ -165,6 +165,9 @@ type SlideModel = {
   modelPath: string | null;
   thumbnailPath: string | null;
   glbPath: string | null;
+  // The optimiser's output, recorded by model-optimize. Preferred over deriving
+  // the path, which is only ever a guess.
+  optimizedModelPath?: string | null;
   processingStatus?: string | null;
 };
 
@@ -932,25 +935,43 @@ export function AssemblyView({
     // row flips to issued the instant the owning step is done. Extra parts
     // (perUnit 0, issued ad-hoc from the floor) are excluded so their raw
     // quantityIssued drives the X/0 display instead.
-    const perUnit = m.quantity ?? 0;
+    //
+    // A link may carry a per-step quantity (the BOM line split across steps:
+    // 5 screws here, 5 on another step). The row on THIS step then shows and
+    // flips by the current step's share, matching the per-step backflush.
+    // UNTRACKED only: tracked (serial/batch) parts are issued by scanning and
+    // their quantityIssued is attributed per line, not per step — pairing a
+    // per-step requirement with line-level issued would overstate completion
+    // on later steps, so tracked cards keep the whole-line numbers.
+    const linkShare =
+      !isTrackedMat && step?.id != null
+        ? ((m.jobOperationStepQuantities ?? {})[step.id] ?? null)
+        : null;
+    const perUnit = linkShare ?? m.quantity ?? 0;
     const ownedStepDoneForUnit = isLoose
       ? !!firstStep && isStepDone(firstStep)
-      : steps.some(
-          (s) => (m.jobOperationStepIds ?? []).includes(s.id) && isStepDone(s)
-        );
+      : linkShare !== null && step != null
+        ? isStepDone(step)
+        : steps.some(
+            (s) => (m.jobOperationStepIds ?? []).includes(s.id) && isStepDone(s)
+          );
     const issuedOverride =
       !isTrackedMat && perUnit > 0
         ? ownedStepDoneForUnit
           ? perUnit
           : 0
         : undefined;
-    const state = getIssuedForUnit(m, {
+    // Shadow the line quantity with the step share so the card's required/issued
+    // numbers describe this step's portion of the split, not the whole line.
+    const effectiveMaterial =
+      linkShare !== null ? { ...m, quantity: perUnit } : m;
+    const state = getIssuedForUnit(effectiveMaterial, {
       unitIndex: currentUnitIndex,
       issuedIsPerUnit,
       issuedOverride
     });
     return {
-      m,
+      m: effectiveMaterial,
       stepNumbers,
       isTrackedMat,
       issuedIsPerUnit,
@@ -1003,10 +1024,17 @@ export function AssemblyView({
     if (slide.modelUploadId) {
       const model = slideModels?.[slide.modelUploadId] ?? null;
       // ModelPreview loads the assembler-converted GLB fast tier when present and
-      // falls back to parsing the raw upload client-side (WASM tier).
+      // falls back to parsing the raw upload client-side (WASM tier). Only a REAL
+      // recorded artifact may be passed as glbUrl: a non-null value makes
+      // ModelPreview treat a server model as available and skip the raw tier
+      // entirely (`useRawTier` requires `!hasServerModel`), so guessing the
+      // optimiser's `optimized.glb` path left an unconverted model showing
+      // "Couldn't load the 3D model." instead of rendering from the raw upload.
       const glbUrl = model?.glbPath
         ? getPrivateUrl(model.glbPath)
-        : optimizedModelPreviewUrl(model?.modelPath ?? null);
+        : model?.optimizedModelPath
+          ? getPrivateUrl(model.optimizedModelPath)
+          : null;
       const rawUrl = model?.modelPath ? getPrivateUrl(model.modelPath) : null;
       return {
         kind: "model" as const,

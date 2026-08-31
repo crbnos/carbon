@@ -32,7 +32,8 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Inspections`, to: path.to.inspections },
     (data) => data?.inspection?.inspectionId
-  )
+  ),
+  module: "quality"
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

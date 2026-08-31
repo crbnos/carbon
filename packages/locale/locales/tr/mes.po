@@ -44,7 +44,7 @@ msgstr "{0} adet tamamlandı"
 
 #. placeholder {0}: rows.length
 msgid "{0} queued"
-msgstr "{0} sırada bekleniyor"
+msgstr "{0} kuyrukta"
 
 #. placeholder {0}: activeWork.length
 msgid "{0} running"
@@ -55,7 +55,7 @@ msgid "{0} Scrapped"
 msgstr "{0} Hurdaya Çıkarılmış"
 
 msgid "{completions} passed unit(s) will be completed."
-msgstr "{completions} geçen birim(ler) tamamlanacaktır."
+msgstr "{completions} geçti birim(ler) tamamlanacak."
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} örnek hata(ları) kaydedildi ve tamamlanmayacak — bunları işlemler menüsünden çözün."
@@ -115,7 +115,7 @@ msgid "All rework"
 msgstr "Tümünü yeniden işle"
 
 msgid "All scrap"
-msgstr "Tümünü hurdaya çıkar"
+msgstr "Hepsi fire"
 
 msgid "Allocate failed units"
 msgstr "Başarısız birimleri tahsis et"
@@ -130,7 +130,7 @@ msgid "Are you sure you want to delete this timecard? This cannot be undone."
 msgstr "Bu zaman kartını silmek istediğinizden emin misiniz? Bu geri alınamaz."
 
 msgid "Are you sure you want to end all production events? This will end all active operations without completing or finishing them."
-msgstr "Tüm üretim etkinliklerini sonlandırmak istediğinizden emin misiniz? Bu, tüm aktif operasyonları tamamlamadan veya bitirmeden sonlandıracaktır."
+msgstr "Tüm üretim olaylarını sonlandırmak istediğinizden emin misiniz? Bu, tüm etkin operasyonları tamamlamadan veya bitirmeden sonlandıracaktır."
 
 msgid "Are you sure you want to finish this operation? This will end all active production events for this operation."
 msgstr "Bu işlemi bitirmek istediğinizden emin misiniz? Bu, bu işlem için tüm aktif üretim olaylarını sonlandıracaktır."
@@ -151,16 +151,16 @@ msgid "Authentication Error"
 msgstr "Kimlik Doğrulama Hatası"
 
 msgid "available"
-msgstr "mevcut"
+msgstr "kullanılabilir"
 
 msgid "Available"
-msgstr "Mevcut"
+msgstr "Kullanılabilir"
 
 msgid "Batch"
 msgstr "Parti"
 
 msgid "Batch is not available"
-msgstr "Parti bulunamadı"
+msgstr "Parti kullanılabilir değil"
 
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
@@ -169,12 +169,18 @@ msgstr "Lot Numarası {0}"
 msgid "Batch number is required"
 msgstr "Lot numarası zorunludur"
 
+msgid "Behind target by {daysBehindTarget} day(s)"
+msgstr "Hedeften {daysBehindTarget} gün geride"
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Engelli edildi: {0}"
 
 msgid "Blocking"
 msgstr "Bloklayıcı"
+
+msgid "Board view"
+msgstr "Pano görünümü"
 
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "Ama endişelenmeyin. Yeni bir sihirli bağlantı talep etmek için şifremi unuttum akışını kullanabilirsiniz."
@@ -212,11 +218,14 @@ msgstr "Filtreleri Temizle"
 msgid "Clear Search"
 msgstr "Aramayı Temizle"
 
+msgid "Clear station default"
+msgstr "İstasyon varsayılanını temizle"
+
 msgid "Clock In"
-msgstr "Giriş Yap"
+msgstr "İş başlangıcı"
 
 msgid "Clock Out"
-msgstr "Çıkış Yap"
+msgstr "İş bitişi"
 
 msgid "Clocked in since <0/>"
 msgstr "<0/>'den beri kaydedilmiş"
@@ -275,7 +284,10 @@ msgid "Consumed"
 msgstr "Tüketildi"
 
 msgid "Consumed expired"
-msgstr "Tüketilmiş süre dolmuş"
+msgstr "Tüketildi süresi doldu"
+
+msgid "Continue"
+msgstr "Devam Et"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -338,7 +350,7 @@ msgid "Details"
 msgstr "Detaylar"
 
 msgid "Dispatch not found"
-msgstr "Görevlendirme bulunamadı"
+msgstr "Bakım emri bulunamadı"
 
 msgid "Display"
 msgstr "Görüntüleme"
@@ -395,10 +407,10 @@ msgid "Due today?"
 msgstr "Bugün vade bitecek mi?"
 
 msgid "Duplicate batch number"
-msgstr "Tekrarlanan parti numarası"
+msgstr "Çoğaltılmış parti numarası"
 
 msgid "Duplicate serial number"
-msgstr "Tekrarlanan seri numarası"
+msgstr "Çoğaltılmış seri numarası"
 
 msgid "Duration"
 msgstr "Süre"
@@ -441,11 +453,11 @@ msgid "Expand features table"
 msgstr "Özellikler tablosunu genişlet"
 
 msgid "Expired"
-msgstr "Süresi Dolmuş"
+msgstr "Süresi doldu"
 
 #. placeholder {0}: formatDate(date)
 msgid "Expired {0}"
-msgstr "Süresi dolmuş {0}"
+msgstr "Süresi {0} doldu"
 
 msgid "Expires <0/>"
 msgstr "Süresi doluyor <0/>"
@@ -460,10 +472,10 @@ msgid "Failed features"
 msgstr "Başarısız özellikler"
 
 msgid "Failed to complete inventory adjustment"
-msgstr "Envanter ayarlaması tamamlanamadı"
+msgstr "Stok düzeltme tamamlanamadı"
 
 msgid "Failed to end operations"
-msgstr "İşlemler sonlandırılamadı"
+msgstr "Operasyonlar sonlandırılamadı"
 
 msgid "Failed to fetch active operations"
 msgstr "Aktif operasyonlar alınamadı"
@@ -515,14 +527,20 @@ msgstr "Bitir {0}"
 msgid "Finish Anyways"
 msgstr "Yine de Bitir"
 
+msgid "Finish setting up your account"
+msgstr "Hesabınızı ayarlamayı tamamlayın"
+
 msgid "Finish with material unpicked?"
 msgstr "Malzeme seçilmeden bitir?"
 
 msgid "Forgot to Clock Out?"
-msgstr "Çıkış yapmayı unuttunuz mu?"
+msgstr "İş bitişini unutmuş musunuz?"
 
 msgid "Go back to operation"
 msgstr "İşleme geri dön"
+
+msgid "Go to onboarding"
+msgstr "Başlangıç adımına git"
 
 msgid "How many were actually picked?"
 msgstr "Gerçekte kaç tane alındı?"
@@ -568,10 +586,10 @@ msgid "Insufficient quantity"
 msgstr "Yetersiz miktar"
 
 msgid "Inventory adjustment completed"
-msgstr "Stok ayarlaması tamamlandı"
+msgstr "Stok düzeltme tamamlandı"
 
 msgid "Inventory Adjustments"
-msgstr "Stok Ayarlamaları"
+msgstr "Stok düzeltmeleri"
 
 msgid "is"
 msgstr "eşittir"
@@ -607,19 +625,19 @@ msgid "Job Details"
 msgstr "İş Detayları"
 
 msgid "Job Traveler"
-msgstr "İş Seyir Belgesi"
+msgstr "İş emri takip kartı"
 
 msgid "Jobs"
-msgstr "İşler"
+msgstr "İş emirleri"
 
 msgid "Keep picking"
-msgstr "Seçmeye devam et"
+msgstr "Toplamaya devam et"
 
 msgid "Kit"
 msgstr "Set"
 
 msgid "Labor"
-msgstr "İşgücü"
+msgstr "İşçilik"
 
 msgid "Last completed"
 msgstr "Son olarak tamamlanan"
@@ -635,6 +653,9 @@ msgstr "Bir şeyler inşa edelim"
 
 msgid "lines"
 msgstr "satırlar"
+
+msgid "List view"
+msgstr "Liste görünümü"
 
 msgid "Loading item details..."
 msgstr "Ürün detayları yükleniyor..."
@@ -660,14 +681,14 @@ msgstr "Yeniden İşlem Kaydet"
 
 #. placeholder {0}: operation.itemReadableId
 msgid "Log rework for {0}"
-msgstr "Rework için kayıt yap {0}"
+msgstr "{0} için yeniden işleme kaydı"
 
 msgid "Log Scrap"
-msgstr "Hurdayı Kaydet"
+msgstr "Fire kaydı"
 
 #. placeholder {0}: operation.itemReadableId
 msgid "Log scrap for {0}"
-msgstr "Hata için kayıt yap {0}"
+msgstr "{0} için fire kaydı"
 
 msgid "Login"
 msgstr "Giriş Yap"
@@ -688,7 +709,7 @@ msgid "Maintenance Completed"
 msgstr "Bakım Tamamlandı"
 
 msgid "Maintenance overdue"
-msgstr "Bakım vadesi geçmiş"
+msgstr "Bakım gecikmiş"
 
 msgid "Make a replacement"
 msgstr "Bir yedek oluştur"
@@ -697,7 +718,7 @@ msgid "Manually add items to inventory"
 msgstr "Envantere öğeler eklemek için manuel olarak"
 
 msgid "Manually remove items from inventory"
-msgstr "Envanterden öğeleri manuel olarak çıkarın"
+msgstr "Envanterden stok kartlarını manuel kaldır"
 
 msgid "Mark Short"
 msgstr "Kısa Teslim Et"
@@ -764,10 +785,10 @@ msgid "No active job at this work center"
 msgstr "Bu iş merkezinde etkin iş yok"
 
 msgid "No active maintenance dispatches"
-msgstr "Aktif bakım sevkıyatı bulunmamaktadır"
+msgstr "Etkin bakım emri yok"
 
 msgid "No active operations"
-msgstr "Aktif işlem yok"
+msgstr "Etkin operasyon yok"
 
 msgid "No active work centers at this location."
 msgstr "Bu konumda etkin iş merkezi yok."
@@ -785,7 +806,7 @@ msgid "No available tracked entities found"
 msgstr "Kullanılabilir izlenen varlık bulunamadı"
 
 msgid "No dispatches assigned to you"
-msgstr "Sizeplanlar size atanmadı"
+msgstr "Size atanmış bakım emri yok"
 
 msgid "No files"
 msgstr "Dosya yok"
@@ -806,7 +827,7 @@ msgid "No materials"
 msgstr "Malzeme yok"
 
 msgid "No open jobs"
-msgstr "Açık iş yok"
+msgstr "Açık iş emri yok"
 
 msgid "No open units to allocate"
 msgstr "Tahsis edilecek açık birim yok"
@@ -827,7 +848,7 @@ msgid "No printer configured"
 msgstr "Yazıcı yapılandırılmadı"
 
 msgid "No recent operations"
-msgstr "Son yakın işlemler yok"
+msgstr "Son operasyon yok"
 
 msgid "No remaining entities to inspect."
 msgstr "İncelenecek kalan varlık yok."
@@ -865,6 +886,9 @@ msgstr "Bu hafta için zaman girişi yok"
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Bu ürün için depoda kayıtlı stok bulunmamaktadır. Sayım yeniden yapılana kadar eldeki stok negatif olabilir, ancak yine de alabilirsiniz."
 
+msgid "No Work Center"
+msgstr "İş merkezi yok"
+
 msgid "No work centers are blocked"
 msgstr "Bloke edilmiş iş merkezi yok"
 
@@ -884,20 +908,20 @@ msgid "Nothing scheduled at this work center"
 msgstr "Bu iş merkezinde hiçbir şey planlanmadı"
 
 msgid "Nothing to scrap"
-msgstr "Atılacak hiçbir şey yok"
+msgstr "Fire edilecek birşey yok"
 
 msgid "OEE Impact"
 msgstr "OEE Etkisi"
 
 msgid "OEM Required"
-msgstr "Üretici Tarafından Gerekiyor"
+msgstr "OEM Gerekli"
 
 msgid "Oldest first"
 msgstr "En eski önce"
 
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
-msgstr "Yalnızca {0} adet mevcut"
+msgstr "Sadece {0} kullanılabilir"
 
 msgid "Oops. You shouldn't see this page. Eventually it will be a landing page."
 msgstr "Üzgünüz. Bu sayfayı görmemelisiniz. Sonunda bir açılış sayfası olacak."
@@ -912,13 +936,13 @@ msgid "Open an NCR for MRB disposition"
 msgstr "MRB kararı için NCR aç"
 
 msgid "Open Jobs"
-msgstr "Açık İşler"
+msgstr "Açık İş emirleri"
 
 msgid "Operations"
 msgstr "Operasyonlar"
 
 msgid "Operations ended"
-msgstr "İşlemler sonlandırıldı"
+msgstr "Operasyonlar bitti"
 
 msgid "Operator"
 msgstr "Operatör"
@@ -936,7 +960,7 @@ msgid "Overall result"
 msgstr "Genel sonuç"
 
 msgid "Overdue PMs?"
-msgstr "Vadesi geçmiş PM'ler?"
+msgstr "Gecikmiş PM'ler?"
 
 msgid "Parameters"
 msgstr "Parametreler"
@@ -948,13 +972,13 @@ msgid "Partial"
 msgstr "Kısmi"
 
 msgid "Partial Disposition"
-msgstr "Kısmi Disposition"
+msgstr "Kısmi Karar"
 
 msgid "Passed Inspection"
-msgstr "Kontrolden Geçti"
+msgstr "Muayenede Geçti"
 
 msgid "Passkey unlock failed"
-msgstr "Parola anahtarı kilidini açma başarısız oldu"
+msgstr "Geçiş anahtarı ile açma başarısız"
 
 msgid "Pause"
 msgstr "Duraklat"
@@ -978,7 +1002,7 @@ msgid "Picked up Column {0} at position: {1} of {2}"
 msgstr "Sütun {0} alındı, konumu: {1} / {2}"
 
 msgid "Picking"
-msgstr "Seçim"
+msgstr "Toplama"
 
 msgid "Pin Out"
 msgstr "Çıkış Yap"
@@ -1024,6 +1048,11 @@ msgstr "Süreçler"
 
 msgid "Progress"
 msgstr "İlerleme"
+
+#. placeholder {0}: formatDate( projectedCompletionDate )
+#. placeholder {0}: formatDate(projectedCompletionDate)
+msgid "Proj. {0}"
+msgstr "Proj. {0}"
 
 msgid "Quality Issue"
 msgstr "Kalite Sorunu"
@@ -1072,7 +1101,7 @@ msgid "Remove filter"
 msgstr "Filtreyi kaldır"
 
 msgid "Remove Inventory"
-msgstr "Stoktan Çıkar"
+msgstr "Envanter Kaldır"
 
 msgid "Remove part"
 msgstr "Parçayı kaldır"
@@ -1084,7 +1113,7 @@ msgid "Result"
 msgstr "Sonuç"
 
 msgid "Rework"
-msgstr "Revizyon"
+msgstr "Yeniden işleme"
 
 msgid "Rework created successfully"
 msgstr "Yeniden işleme başarıyla oluşturuldu"
@@ -1125,20 +1154,23 @@ msgstr "Bu lottan izlenen bir varlığı tarayın veya seçin, onu bir örnek s�
 msgid "Schedule"
 msgstr "Planlama"
 
+msgid "Scheduling conflict"
+msgstr "Zamanlama çakışması"
+
 msgid "Scrap"
-msgstr "Hurda"
+msgstr "Fire"
 
 msgid "Scrap {readableId}"
-msgstr "Hurdala {readableId}"
+msgstr "Fire {readableId}"
 
 msgid "Scrap material"
-msgstr "Malzeme hurdası"
+msgstr "Fire malzemesi"
 
 msgid "Scrap quantity"
-msgstr "Hurda miktarı"
+msgstr "Fire miktarı"
 
 msgid "Scrap Reason"
-msgstr "Hurda Nedeni"
+msgstr "Fire nedeni"
 
 msgid "Scrapped"
 msgstr "Hurdaya Ayrılan"
@@ -1171,7 +1203,7 @@ msgid "Select a rework quantity"
 msgstr "Bir yeniden işleme miktarı seçin"
 
 msgid "Select a scrap quantity and reason"
-msgstr "Bir hurda miktarı ve nedeni seçin"
+msgstr "Fire miktarı ve nedeni seçin"
 
 msgid "Select a serial number to continue with this operation"
 msgstr "Bu işlemle devam etmek için bir seri numarası seçin"
@@ -1200,7 +1232,7 @@ msgid "Select Serial Number"
 msgstr "Seri Numarası Seçin"
 
 msgid "Select the operation to go back to. All operations from that point to the current operation will be redone."
-msgstr "Geri dönülecek işlemi seçin. O noktadan mevcut işleme kadar olan tüm işlemler yeniden yapılacaktır."
+msgstr "Geri dönülecek operasyonu seçin. O noktadan geçerli operasyona kadar tüm operasyonlar yeniden yapılacaktır."
 
 msgid "Selected"
 msgstr "Seçildi"
@@ -1219,7 +1251,7 @@ msgid "Serial Number {0}"
 msgstr "Seri Numarası {0}"
 
 msgid "Serial number is not available"
-msgstr "Seri numarası mevcut değil"
+msgstr "Seri numarası kullanılabilir değildir"
 
 msgid "Serial number is required"
 msgstr "Seri numarası gereklidir"
@@ -1234,7 +1266,7 @@ msgid "Session locked"
 msgstr "Oturum kilitlendi"
 
 msgid "Set Clock Out"
-msgstr "Çıkış Yap"
+msgstr "İş bitişini ayarla"
 
 msgid "Set clock-out time"
 msgstr "Çıkış zamanını ayarla"
@@ -1254,9 +1286,6 @@ msgstr "Azalt"
 msgid "Short pick {itemName}"
 msgstr "Kısmi toplama {itemName}"
 
-msgid "Sign in with Email"
-msgstr "E-posta ile Giriş Yap"
-
 msgid "Sign in with Google"
 msgstr "Google ile giriş yap"
 
@@ -1264,7 +1293,7 @@ msgid "Sign in with Outlook"
 msgstr "Outlook ile giriş yap"
 
 msgid "Sign in with Passkey"
-msgstr "Passkey ile Giriş Yap"
+msgstr "Geçiş anahtarı ile oturum aç"
 
 msgid "Sign out"
 msgstr "Oturumu kapat"
@@ -1301,7 +1330,7 @@ msgstr "İstasyon: {stationName}"
 
 #. placeholder {0}: inspection.lotSize
 msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s). Route the units below to scrap or rework, or record the verdict only."
-msgstr "İstatistiksel kabul başarısız oldu, bu nedenle {0} birimlik tüm lot uygunsuz olarak kabul edilir (ISO 9001:2015 §8.7) — {passes} örnek geçti ve {fails} hata(lar). Aşağıdaki birimleri hurda veya yeniden işlemeye yönlendirin veya yalnızca kararı kaydedin."
+msgstr "İstatistiksel kabul başarısız oldu, bu nedenle {0} lot'unun tamamı uygun olmayan olarak kabul edilir (ISO 9001:2015 §8.7) — {passes} uygun örnek ve {fails} başarısız. Aşağıdaki birimleri fire veya yeniden işlemeye yönlendirin, ya da sadece kararı kaydedin."
 
 msgid "Status"
 msgstr "Durum"
@@ -1340,13 +1369,13 @@ msgid "The completed quantity for this operation is less than the required quant
 msgstr "Bu işlem için tamamlanan miktar, gerekli miktar olan {targetQuantity}'dan azdır."
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
-msgstr "Lot Passed olarak işaretlenecek ve {remaining} kalan birim(ler) bu operasyonda tamamlanacaktır."
+msgstr "Lot Geçti olarak işaretlenecek ve {remaining} kalan birim bu operasyonda tamamlanacak."
 
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "Lot yine de işleme tabi tutulacak, ancak en az bir Sorun Türü yapılandırılana kadar bir NCR oluşturulamaz."
 
 msgid "There are no available or consumed tracked parts for this material."
-msgstr "Bu malzeme için mevcut veya tüketilmiş izlenen parça bulunmamaktadır."
+msgstr "Bu malzeme için hiçbir kullanılabilir veya tüketilmiş izlenmiş parça yoktur."
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
 msgstr "Malzeme listesindeki seri veya parti takipli malzemeler tam olarak verilmemiş. Vermeden tamamlamak, yanlış izlenebilirlik kayıtlarına neden olabilir."
@@ -1355,13 +1384,13 @@ msgid "These items still have material to pick. Finishing now marks the list Par
 msgstr "Bu öğelerin hala seçilecek malzemesi var. Şimdi bitirmek listeyi Kısmi olarak işaretler."
 
 msgid "This lot is expired and can't be picked."
-msgstr "Bu parti süresi dolmuş ve alınamaz."
+msgstr "Bu lot süresi dolmuştur ve toplanamaz."
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "Bu parça siparişe göre yapılmıştır. Hurdalaması, bir yedek yapmak için rotasını yeniden açabilir."
 
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
-msgstr "Bu parça stoktan hurdaya çıkarılacaktır. Gereksinimleri açık kalır, böylece bir yedek çıkarabilirsiniz."
+msgstr "Bu parça stoktan fire olacaktır. Gereksinimli açık kalacak, böylece yedek talep edebilirsiniz."
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "Bu birim kalıcı olarak hurdaya çıkarılacak ve yedek bir seri numarası oluşturulacaktır."
@@ -1421,7 +1450,7 @@ msgid "Unlock"
 msgstr "Kilit aç"
 
 msgid "Unlock with passkey"
-msgstr "Parola anahtarı ile kilit aç"
+msgstr "Geçiş anahtarı ile açın"
 
 msgid "Unpick"
 msgstr "Çıkart"
@@ -1431,7 +1460,7 @@ msgid "Unpick {0}"
 msgstr "Çıkart {0}"
 
 msgid "Unplanned downtime"
-msgstr "Planlanmamış kesinti"
+msgstr "Planlanmamış Duruş"
 
 #. placeholder {0}: board.unplannedCount.days
 msgid "Unplanned maintenance items, last {0} days"
@@ -1444,7 +1473,7 @@ msgid "Up next"
 msgstr "Sırada"
 
 msgid "Up to {maxAllocatable} unit(s) can be allocated; the rest is recorded without a posting."
-msgstr "En fazla {maxAllocatable} birim ayrılabilir; geri kalanı deftere kaydedilmeden kaydedilir."
+msgstr "En fazla {maxAllocatable} adet tahsis edilebilir; geri kalanı muhasebeleştirme olmadan kaydedilir."
 
 msgid "Update"
 msgstr "Güncelle"
@@ -1471,7 +1500,7 @@ msgid "Verify"
 msgstr "Doğrula"
 
 msgid "View maintenance dispatch"
-msgstr "Bakım sevkıyatını görüntüle"
+msgstr "Bakım emrini Görüntüle"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Hesabınıza giriş yapmak için size bir sihirli bağlantı gönderdik."
@@ -1495,10 +1524,17 @@ msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowl
 msgstr "Saat <0/>'te kaydedildiniz. Aşağıda çıkış saatinizi düzenleyebilir veya hala çalışmakta olduğunuzu onaylayabilirsiniz."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
-msgstr "Ne kadar süredir giriş yaptınız? Çıkış yapmayı unuttunuz mu?"
+msgstr "{hoursElapsed} saattir zaman kaydı yapıyorsunuz. İş bitişini yapmayı unuttunuz mu?"
+
+msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
+msgstr "Hesabınız henüz bir şirkete ait değildir. Devam etmek için Carbon ERP'de yerleşimi tamamlayın."
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Kuruluşunuz bir kimlik doğrulama uygulaması gerektirir. Bunu Carbon'da ayarlayın, ardından buraya geri dönün."
 
 msgid "Your session was locked after inactivity."
 msgstr "Oturumunuz hareketsizlik nedeniyle kilitlendi."
+
+#. placeholder {0}: peopleStation.name
+msgid "Your station: {0}"
+msgstr "İstasyonunuz: {0}"

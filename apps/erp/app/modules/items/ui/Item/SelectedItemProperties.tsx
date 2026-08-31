@@ -70,7 +70,7 @@ export function SelectedItemProperties({
   const ready = d && d.itemId === selectedItemId;
   if (!ready || fetcher.state === "loading") {
     return (
-      <div className="flex w-96 items-center justify-center bg-card h-full border-l border-border">
+      <div className="flex w-96 items-center justify-center bg-background h-full border-l border-border">
         <Spinner className="h-6 w-6" />
       </div>
     );
@@ -82,7 +82,8 @@ export function SelectedItemProperties({
     files: filesPromise,
     supplierParts: d.supplierParts,
     pickMethods: d.pickMethods,
-    tags: d.tags
+    tags: d.tags,
+    unreleasedChangeOrder: d.unreleasedChangeOrder
   };
 
   switch (d.type) {

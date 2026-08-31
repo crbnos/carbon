@@ -19,7 +19,7 @@ msgstr "{0} - 组 {1}"
 
 #. placeholder {0}: employeeIds.length
 msgid "{0} Active"
-msgstr "{0} 个活跃"
+msgstr "{0} 启用"
 
 #. placeholder {0}: precise?.text
 msgid "{0} ago"
@@ -44,7 +44,7 @@ msgstr "{0} / {1} 已完成"
 
 #. placeholder {0}: rows.length
 msgid "{0} queued"
-msgstr "已排队 {0} 个"
+msgstr "{0} 排队中"
 
 #. placeholder {0}: activeWork.length
 msgid "{0} running"
@@ -55,10 +55,10 @@ msgid "{0} Scrapped"
 msgstr "{0} 已报废"
 
 msgid "{completions} passed unit(s) will be completed."
-msgstr "{completions} 个合格单位将被完成。"
+msgstr "{completions} 个已通过的件将被完成。"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
-msgstr "{fails} 个抽样失败已记录，将不会完成 — 请从操作菜单中解决。"
+msgstr "{fails} 个抽样不合格已被记录，将不会被完成 — 从操作菜单解决它们。"
 
 msgid "+{overflow} more"
 msgstr "还有 +{overflow} 个"
@@ -67,13 +67,13 @@ msgid "About"
 msgstr "关于"
 
 msgid "Accept"
-msgstr "接收"
+msgstr "接受"
 
 msgid "Accept Lot"
-msgstr "接收批次"
+msgstr "接受批次"
 
 msgid "Accept lot?"
-msgstr "接收批次？"
+msgstr "接受批次？"
 
 msgid "Account Settings"
 msgstr "账户设置"
@@ -82,7 +82,7 @@ msgid "Acknowledge & finish"
 msgstr "确认并完成"
 
 msgid "Active"
-msgstr "活跃"
+msgstr "启用"
 
 msgid "Actual"
 msgstr "实际"
@@ -97,7 +97,7 @@ msgid "Add a printer in the printing settings to print labels directly."
 msgstr "在打印设置中添加打印机以直接打印标签。"
 
 msgid "Add Inventory"
-msgstr "添加库存"
+msgstr "添加库存管理"
 
 msgid "Add Sample"
 msgstr "添加样本"
@@ -130,10 +130,10 @@ msgid "Are you sure you want to delete this timecard? This cannot be undone."
 msgstr "确定要删除此考勤记录吗？此操作无法撤销。"
 
 msgid "Are you sure you want to end all production events? This will end all active operations without completing or finishing them."
-msgstr "确定要结束所有生产事件吗？这将终止所有活跃工序，而不会完成它们。"
+msgstr "您确定要结束所有生产事件吗？这会结束所有活跃工序而不完成或结束它们。"
 
 msgid "Are you sure you want to finish this operation? This will end all active production events for this operation."
-msgstr "您确定要完成此操作吗？这将结束此操作的所有活跃生产事件。"
+msgstr "您确定要完成此工序吗？这会结束此工序的所有活跃生产事件。"
 
 msgid "Are you sure you want to leave this page?"
 msgstr "您确定要离开此页面吗？"
@@ -142,10 +142,10 @@ msgid "Assigned"
 msgstr "已分配"
 
 msgid "Assigned to Me"
-msgstr "分配给我"
+msgstr "已分配给我"
 
 msgid "Assignee"
-msgstr "负责人"
+msgstr "经办人"
 
 msgid "Authentication Error"
 msgstr "认证错误"
@@ -169,12 +169,18 @@ msgstr "批次号 {0}"
 msgid "Batch number is required"
 msgstr "批次号为必填项"
 
+msgid "Behind target by {daysBehindTarget} day(s)"
+msgstr "落后于目标 {daysBehindTarget} 天"
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "被 {0} 阻塞"
 
 msgid "Blocking"
 msgstr "阻塞中"
+
+msgid "Board view"
+msgstr "看板视图"
 
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "但别担心。您可以使用忘记密码流程来请求新的魔法链接。"
@@ -212,11 +218,14 @@ msgstr "清除筛选"
 msgid "Clear Search"
 msgstr "清除搜索"
 
+msgid "Clear station default"
+msgstr "清除工作站默认值"
+
 msgid "Clock In"
-msgstr "上班打卡"
+msgstr "开工"
 
 msgid "Clock Out"
-msgstr "下班打卡"
+msgstr "收工"
 
 msgid "Clocked in since <0/>"
 msgstr "自 <0/> 起打卡"
@@ -275,7 +284,10 @@ msgid "Consumed"
 msgstr "已消耗"
 
 msgid "Consumed expired"
-msgstr "已消耗过期"
+msgstr "已消耗已过期"
+
+msgid "Continue"
+msgstr "继续"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -314,7 +326,7 @@ msgid "Default"
 msgstr "默认"
 
 msgid "Default Storage Unit"
-msgstr "默认存储单位"
+msgstr "默认存储单元"
 
 msgid "Delete"
 msgstr "删除"
@@ -338,7 +350,7 @@ msgid "Details"
 msgstr "详情"
 
 msgid "Dispatch not found"
-msgstr "未找到工单"
+msgstr "找不到维护工单"
 
 msgid "Display"
 msgstr "显示"
@@ -357,7 +369,7 @@ msgid "Down for maintenance · {0}"
 msgstr "正在维护 · {0}"
 
 msgid "Down for planned maintenance"
-msgstr "计划维护中"
+msgstr "因已计划维护停机"
 
 msgid "Download"
 msgstr "下载"
@@ -385,7 +397,7 @@ msgid "Due {0}"
 msgstr "截止 {0}"
 
 msgid "Due Date"
-msgstr "截止日期"
+msgstr "到期日"
 
 #. placeholder {0}: board.dueSoon.days
 msgid "Due in the next {0} days?"
@@ -395,10 +407,10 @@ msgid "Due today?"
 msgstr "今天到期？"
 
 msgid "Duplicate batch number"
-msgstr "重复的批次号"
+msgstr "生产批次号重复"
 
 msgid "Duplicate serial number"
-msgstr "重复的序列号"
+msgstr "序列号重复"
 
 msgid "Duration"
 msgstr "时长"
@@ -410,7 +422,7 @@ msgid "Elapsed"
 msgstr "已用时长"
 
 msgid "Email Address"
-msgstr "电子邮箱"
+msgstr "电子邮件地址"
 
 msgid "Empty work centers"
 msgstr "空的工作中心"
@@ -435,7 +447,7 @@ msgid "Estimated"
 msgstr "估计"
 
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
-msgstr "每个单位都有判定结果：{passes} 个合格，{fails} 个不合格。批次关闭，每个单位按其各自的结果进行处理。"
+msgstr "每件都有一个结果：{passes} 个已通过，{fails} 个不合格。批次随着每件分配到其结果而关闭。"
 
 msgid "Expand features table"
 msgstr "展开功能表"
@@ -515,17 +527,23 @@ msgstr "完成 {0}"
 msgid "Finish Anyways"
 msgstr "仍然完成"
 
+msgid "Finish setting up your account"
+msgstr "完成账户设置"
+
 msgid "Finish with material unpicked?"
-msgstr "物料未拣选完毕，是否完成？"
+msgstr "物料未拣货的情况下要完成吗？"
 
 msgid "Forgot to Clock Out?"
-msgstr "忘记打卡下班了？"
+msgstr "忘记收工了吗？"
 
 msgid "Go back to operation"
 msgstr "返回操作"
 
+msgid "Go to onboarding"
+msgstr "前往入门"
+
 msgid "How many were actually picked?"
-msgstr "实际上捡了多少个？"
+msgstr "实际拣了多少？"
 
 msgid "How many?"
 msgstr "多少个？"
@@ -583,7 +601,7 @@ msgid "Issue"
 msgstr "发放"
 
 msgid "Issue Material"
-msgstr "发放物料"
+msgstr "领料"
 
 msgid "Issue Type"
 msgstr "问题类型"
@@ -610,10 +628,10 @@ msgid "Job Traveler"
 msgstr "工单流转卡"
 
 msgid "Jobs"
-msgstr "工作"
+msgstr "工单"
 
 msgid "Keep picking"
-msgstr "继续拣选"
+msgstr "继续拣货"
 
 msgid "Kit"
 msgstr "套件"
@@ -635,6 +653,9 @@ msgstr "让我们开始构建"
 
 msgid "lines"
 msgstr "行"
+
+msgid "List view"
+msgstr "列表视图"
 
 msgid "Loading item details..."
 msgstr "正在加载物料详情..."
@@ -688,16 +709,16 @@ msgid "Maintenance Completed"
 msgstr "维护已完成"
 
 msgid "Maintenance overdue"
-msgstr "维护逾期"
+msgstr "维护已逾期"
 
 msgid "Make a replacement"
 msgstr "制作替换件"
 
 msgid "Manually add items to inventory"
-msgstr "手动添加物料到库存"
+msgstr "手动添加物料至库存管理"
 
 msgid "Manually remove items from inventory"
-msgstr "手动从库存中移除物料"
+msgstr "手动从库存管理中移除物料"
 
 msgid "Mark Short"
 msgstr "标记短缺"
@@ -706,7 +727,7 @@ msgid "matches"
 msgstr "匹配"
 
 msgid "Materials"
-msgstr "物料"
+msgstr "原材料"
 
 msgid "Maximum number of records reached"
 msgstr "已达到最大记录数"
@@ -761,16 +782,16 @@ msgid "No"
 msgstr "否"
 
 msgid "No active job at this work center"
-msgstr "该工作中心没有活跃作业"
+msgstr "此工作中心无活跃工单"
 
 msgid "No active maintenance dispatches"
-msgstr "无活跃的维护工单"
+msgstr "没有启用的维护工单"
 
 msgid "No active operations"
-msgstr "无活跃工序"
+msgstr "没有启用的工序"
 
 msgid "No active work centers at this location."
-msgstr "该位置没有活跃工作中心。"
+msgstr "此地点没有启用的工作中心。"
 
 msgid "No assigned operations"
 msgstr "无已分配工序"
@@ -785,7 +806,7 @@ msgid "No available tracked entities found"
 msgstr "未找到可用的追踪实体"
 
 msgid "No dispatches assigned to you"
-msgstr "没有分配给您的工单"
+msgstr "没有分配给您的维护工单"
 
 msgid "No files"
 msgstr "无文件"
@@ -803,13 +824,13 @@ msgid "No matches. Type to create one."
 msgstr "没有匹配项。输入以创建一个。"
 
 msgid "No materials"
-msgstr "无物料"
+msgstr "没有原材料"
 
 msgid "No open jobs"
-msgstr "没有开放的工作"
+msgstr "没有未结的工单"
 
 msgid "No open units to allocate"
-msgstr "没有可分配的开放单位"
+msgstr "没有未结的件可分配"
 
 msgid "No operators"
 msgstr "无操作员"
@@ -821,7 +842,7 @@ msgid "No options found."
 msgstr "未找到选项。"
 
 msgid "No picking lists assigned"
-msgstr "未分配拣货单"
+msgstr "没有分配的拣货单"
 
 msgid "No printer configured"
 msgstr "未配置打印机"
@@ -863,7 +884,10 @@ msgid "No time entries for this week"
 msgstr "本周无考勤记录"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
-msgstr "此项目没有仓库库存记录。您仍然可以领取它——现有库存将变为负数，直到库存被核对。"
+msgstr "此物料的仓库库存无记录。您仍可拣货 — 库存将为负数，直到数量被核对。"
+
+msgid "No Work Center"
+msgstr "无工作中心"
 
 msgid "No work centers are blocked"
 msgstr "无工作中心被阻塞"
@@ -903,16 +927,16 @@ msgid "Oops. You shouldn't see this page. Eventually it will be a landing page."
 msgstr "抱歉，您不应该看到此页面。此页面最终将成为首页。"
 
 msgid "Open"
-msgstr "打开"
+msgstr "未结"
 
 msgid "Open a display on the screen mounted at the work center and leave it running. Each board refreshes on its own."
-msgstr "在安装在工作中心的屏幕上打开显示，然后让其运行。每个面板都会自动刷新。"
+msgstr "在安装于工作中心的屏幕上打开显示屏并保持其运行。每个看板自动刷新。"
 
 msgid "Open an NCR for MRB disposition"
-msgstr "为 MRB 处置打开 NCR"
+msgstr "为MRB处置打开NCR"
 
 msgid "Open Jobs"
-msgstr "开放工作"
+msgstr "未结工单"
 
 msgid "Operations"
 msgstr "工序"
@@ -936,7 +960,7 @@ msgid "Overall result"
 msgstr "总体结果"
 
 msgid "Overdue PMs?"
-msgstr "逾期的 PM？"
+msgstr "已逾期的PM？"
 
 msgid "Parameters"
 msgstr "参数"
@@ -951,34 +975,34 @@ msgid "Partial Disposition"
 msgstr "部分处置"
 
 msgid "Passed Inspection"
-msgstr "检验通过"
+msgstr "已通过检验"
 
 msgid "Passkey unlock failed"
-msgstr "密钥解锁失败"
+msgstr "通行密钥解锁失败"
 
 msgid "Pause"
 msgstr "暂停"
 
 msgid "Pick"
-msgstr "拣选"
+msgstr "拣货"
 
 msgid "Pick tracked item"
-msgstr "拣选追踪项目"
+msgstr "拣货追踪物料"
 
 msgid "Picked"
-msgstr "已拣选"
+msgstr "已拣货"
 
 msgid "Picked quantity"
-msgstr "已拣选数量"
+msgstr "已拣货数量"
 
 #. placeholder {0}: startColumn?.title
 #. placeholder {1}: startIndex + 1
 #. placeholder {2}: columnOrder.length
 msgid "Picked up Column {0} at position: {1} of {2}"
-msgstr "已拾取列 {0}，位于第 {1} 个位置（共 {2} 个）"
+msgstr "在位置{1}（共{2}）处选取了列{0}"
 
 msgid "Picking"
-msgstr "拣选"
+msgstr "拣货"
 
 msgid "Pin Out"
 msgstr "退出登录"
@@ -993,7 +1017,7 @@ msgid "Please select an item"
 msgstr "请选择一个物料"
 
 msgid "PM schedule lapsed"
-msgstr "PM 计划已过期"
+msgstr "PM排程已逾期"
 
 msgid "Prev"
 msgstr "上一个"
@@ -1011,7 +1035,7 @@ msgid "Priority"
 msgstr "优先级"
 
 msgid "Procedure"
-msgstr "程序"
+msgstr "程序文件"
 
 msgid "Process"
 msgstr "工艺"
@@ -1024,6 +1048,11 @@ msgstr "工艺"
 
 msgid "Progress"
 msgstr "进度"
+
+#. placeholder {0}: formatDate( projectedCompletionDate )
+#. placeholder {0}: formatDate(projectedCompletionDate)
+msgid "Proj. {0}"
+msgstr "预计 {0}"
 
 msgid "Quality Issue"
 msgstr "质量问题"
@@ -1060,10 +1089,10 @@ msgid "Record Partial"
 msgstr "记录部分"
 
 msgid "Reject"
-msgstr "退收"
+msgstr "拒绝"
 
 msgid "Reject Lot"
-msgstr "退收批次"
+msgstr "拒绝批次"
 
 msgid "Remove"
 msgstr "移除"
@@ -1072,13 +1101,13 @@ msgid "Remove filter"
 msgstr "移除筛选"
 
 msgid "Remove Inventory"
-msgstr "移除库存"
+msgstr "移除库存管理"
 
 msgid "Remove part"
 msgstr "移除零件"
 
 msgid "Reopen the subassembly and create a replacement unit"
-msgstr "重新打开子装配体并创建替换单元"
+msgstr "重新打开子装配件并创建替代件"
 
 msgid "Result"
 msgstr "结果"
@@ -1102,28 +1131,31 @@ msgid "Save"
 msgstr "保存"
 
 msgid "Scan"
-msgstr "扫描"
+msgstr "扫码"
 
 msgid "Scan a tracked entity to add the first sample column."
-msgstr "扫描跟踪实体以添加第一个样本列。"
+msgstr "扫码追踪实体以添加第一个样本列。"
 
 msgid "Scan or enter serial number"
-msgstr "扫描或输入序列号"
+msgstr "扫码或输入序列号"
 
 msgid "Scan or enter tracked entity ID, serial, or batch"
-msgstr "扫描或输入跟踪实体 ID、序列号或批次"
+msgstr "扫码或输入追踪实体ID、序列号或生产批次"
 
 msgid "Scan or enter tracking number"
-msgstr "扫描或输入追踪号"
+msgstr "扫码或输入追踪号"
 
 msgid "Scan or search serial number..."
-msgstr "扫描或搜索序列号..."
+msgstr "扫码或搜索序列号..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
-msgstr "从此批次扫描或选择跟踪实体以将其添加为样本列，然后在网格中记录其结果。"
+msgstr "从此批次中扫码或选择追踪实体并将其添加为样本列，然后在网格中记录其结果。"
 
 msgid "Schedule"
 msgstr "排程"
+
+msgid "Scheduling conflict"
+msgstr "排程冲突"
 
 msgid "Scrap"
 msgstr "报废"
@@ -1132,7 +1164,7 @@ msgid "Scrap {readableId}"
 msgstr "报废 {readableId}"
 
 msgid "Scrap material"
-msgstr "报废物料"
+msgstr "报废原材料"
 
 msgid "Scrap quantity"
 msgstr "报废数量"
@@ -1200,7 +1232,7 @@ msgid "Select Serial Number"
 msgstr "选择序列号"
 
 msgid "Select the operation to go back to. All operations from that point to the current operation will be redone."
-msgstr "选择要返回的操作。从该点到当前操作的所有操作都将重新进行。"
+msgstr "选择要回到的工序。从该点到当前工序的所有工序都将重新执行。"
 
 msgid "Selected"
 msgstr "已选择"
@@ -1234,7 +1266,7 @@ msgid "Session locked"
 msgstr "会话已锁定"
 
 msgid "Set Clock Out"
-msgstr "设置下班时间"
+msgstr "设置收工"
 
 msgid "Set clock-out time"
 msgstr "设置下班打卡时间"
@@ -1243,7 +1275,7 @@ msgid "Set up in Carbon"
 msgstr "在 Carbon 中设置"
 
 msgid "Setup"
-msgstr "设置"
+msgstr "换型"
 
 msgid "short"
 msgstr "短缺"
@@ -1254,9 +1286,6 @@ msgstr "缺货"
 msgid "Short pick {itemName}"
 msgstr "短缺拣货 {itemName}"
 
-msgid "Sign in with Email"
-msgstr "使用邮箱登录"
-
 msgid "Sign in with Google"
 msgstr "使用 Google 登录"
 
@@ -1264,7 +1293,7 @@ msgid "Sign in with Outlook"
 msgstr "使用 Outlook 登录"
 
 msgid "Sign in with Passkey"
-msgstr "使用密钥登录"
+msgstr "使用通行密钥登录"
 
 msgid "Sign out"
 msgstr "登出"
@@ -1301,7 +1330,7 @@ msgstr "工位：{stationName}"
 
 #. placeholder {0}: inspection.lotSize
 msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s). Route the units below to scrap or rework, or record the verdict only."
-msgstr "统计验收失败，因此整个批次 {0} 被视为不符合要求 (ISO 9001:2015 §8.7) — {passes} 个样品合格和 {fails} 个失败。将下面的单位路由到报废或返工，或仅记录判定结果。"
+msgstr "统计验收失败，因此全部 {0} 的批次被视为不合格（ISO 9001:2015 §8.7）— {passes} 个样品合格，{fails} 个不合格。将下列单位路由到报废或返工，或仅记录判定。"
 
 msgid "Status"
 msgstr "状态"
@@ -1319,7 +1348,7 @@ msgid "Steps are missing"
 msgstr "缺少步骤"
 
 msgid "Storage Unit"
-msgstr "存储单位"
+msgstr "存储单元"
 
 msgid "Submit anonymously"
 msgstr "匿名提交"
@@ -1340,28 +1369,28 @@ msgid "The completed quantity for this operation is less than the required quant
 msgstr "此工序的完成数量小于所需数量 {targetQuantity}。"
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
-msgstr "该批次将被标记为\"通过\"，{remaining} 个剩余单位将在此操作中完成。"
+msgstr "批次将标记为已通过，{remaining} 个剩余件将在此工序完成。"
 
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "该批次仍将进行处置，但在至少配置一个问题类型之前，无法创建NCR。"
 
 msgid "There are no available or consumed tracked parts for this material."
-msgstr "此材料没有可用或已消耗的追踪件。"
+msgstr "此原材料没有可用或已消耗的受追踪零件。"
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
-msgstr "物料清单中有序列号或批次追踪的物料尚未完全发放。不发放即完成可能导致追溯记录不正确。"
+msgstr "物料清单中有序列号或生产批次追踪的物料尚未完全领料。未完全领料情况下完成可能导致可追溯性记录不正确。"
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
-msgstr "这些项目仍有物料需要拣选。现在完成将把列表标记为部分完成。"
+msgstr "这些物料仍有原材料需要拣货。现在完成将标记列表为部分。"
 
 msgid "This lot is expired and can't be picked."
-msgstr "此批次已过期，无法领取。"
+msgstr "此批次已过期，无法拣货。"
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
-msgstr "此部件是按订单生产的。报废它可以重新打开其路线以制作替换件。"
+msgstr "此零件是按订单制造的。将其报废可重新打开其工艺路线以制造替换件。"
 
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
-msgstr "此部件将从库存中报废。其需求保持打开状态，以便您可以发放替换件。"
+msgstr "此零件将从库存报废。其要求保持未结，以便您可以领料替代品。"
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "此单元将被永久报废，并将创建替换序列号。"
@@ -1387,14 +1416,14 @@ msgstr "总数量"
 
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Total time: {0}"
-msgstr "总时间：{0}"
+msgstr "总耗时：{0}"
 
 #. placeholder {0}: formatTotalHours(entries)
 msgid "Total: {0}"
-msgstr "合计：{0}"
+msgstr "总计：{0}"
 
 msgid "Tracked Entity"
-msgstr "跟踪实体"
+msgstr "追踪实体"
 
 msgid "Tracking"
 msgstr "追踪"
@@ -1412,7 +1441,7 @@ msgid "Unable to unlock"
 msgstr "无法解锁"
 
 msgid "Unissued serial/batch materials"
-msgstr "未发放的序列号/批次物料"
+msgstr "未领料的序列号/生产批次物料"
 
 msgid "Unknown"
 msgstr "未知"
@@ -1421,7 +1450,7 @@ msgid "Unlock"
 msgstr "解锁"
 
 msgid "Unlock with passkey"
-msgstr "使用密钥解锁"
+msgstr "使用通行密钥解锁"
 
 msgid "Unpick"
 msgstr "取消拣选"
@@ -1435,7 +1464,7 @@ msgstr "非计划停机时间"
 
 #. placeholder {0}: board.unplannedCount.days
 msgid "Unplanned maintenance items, last {0} days"
-msgstr "过去 {0} 天的非计划维护项目"
+msgstr "最近{0}天的计划外维护项"
 
 msgid "Unsaved changes"
 msgstr "未保存的更改"
@@ -1495,10 +1524,17 @@ msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowl
 msgstr "您在 <0/> 打卡。您可以编辑下方的下班时间，或确认您仍在工作。"
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
-msgstr "您已打卡上班 {hoursElapsed} 小时。您是否忘记打卡下班了？"
+msgstr "您已打卡 {hoursElapsed} 小时。您是否忘记收工？"
+
+msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
+msgstr "您的账户尚未属于任何公司。完成 Carbon ERP 入职流程以继续。"
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "您的组织需要身份验证器应用。在 Carbon 中设置，然后返回此处。"
 
 msgid "Your session was locked after inactivity."
 msgstr "您的会话因不活动而被锁定。"
+
+#. placeholder {0}: peopleStation.name
+msgid "Your station: {0}"
+msgstr "您的会话因不活跃而被锁定。"

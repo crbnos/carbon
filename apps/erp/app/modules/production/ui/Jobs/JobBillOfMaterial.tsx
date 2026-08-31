@@ -18,7 +18,6 @@ import {
   HStack,
   IconButton,
   Label,
-  ScrollArea,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -37,11 +36,11 @@ import {
   LuArrowLeft,
   LuChevronDown,
   LuChevronRight,
-  LuCog,
   LuExternalLink,
   LuGitPullRequest,
   LuGitPullRequestCreate,
-  LuGitPullRequestCreateArrow
+  LuGitPullRequestCreateArrow,
+  LuRedoDot
 } from "react-icons/lu";
 import { Link, useFetcher, useFetchers, useParams } from "react-router";
 import type { z } from "zod";
@@ -571,15 +570,13 @@ const JobBillOfMaterial = ({
         </CardAction>
       </HStack>
       <CardContent>
-        <ScrollArea type="auto" className="max-h-[60dvh]">
-          <SortableList
-            items={items}
-            onReorder={onReorder}
-            onToggleItem={onToggleItem}
-            onRemoveItem={onRemoveItem}
-            renderItem={renderListItem}
-          />
-        </ScrollArea>
+        <SortableList
+          items={items}
+          onReorder={onReorder}
+          onToggleItem={onToggleItem}
+          onRemoveItem={onRemoveItem}
+          renderItem={renderListItem}
+        />
       </CardContent>
     </Card>
   );
@@ -959,7 +956,7 @@ function MaterialForm({
             <Badge
               variant={jobOperations.length > 0 ? "secondary" : "destructive"}
             >
-              <LuCog className="size-3 mr-1" />
+              <LuRedoDot className="size-3 mr-1" />
               {itemData.jobOperationId
                 ? jobOperations.find((o) => o.id === itemData.jobOperationId)
                     ?.description || t`Selected Operation`

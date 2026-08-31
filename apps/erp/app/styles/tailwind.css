@@ -47,6 +47,7 @@ html.mode-transitioning *::after {
   }
 
   :root {
+    --topbar-height: 49px;
     --header-height: 50px;
     --filters-height: 38px;
 
