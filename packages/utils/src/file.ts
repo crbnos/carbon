@@ -140,9 +140,14 @@ export const supportedSlideImageTypes = [
   "webp"
 ];
 
-// Whether a stored slide path (or a filename) ends in a format the browser can
-// paint. Used at upload time to reject, and at render time to show an explicit
-// "unsupported format" placeholder for rows written before the gate existed.
+/**
+ * Whether a stored slide path (or filename) ends in a format the browser can
+ * paint. Used at upload time to reject, and at render time to show an explicit
+ * "unsupported format" placeholder for rows written before the gate existed.
+ *
+ * @param path Storage path or filename; a missing path is not supported.
+ * @returns True when the extension is in {@link supportedSlideImageTypes}.
+ */
 export function isSupportedSlideImagePath(
   path: string | null | undefined
 ): boolean {
@@ -151,14 +156,19 @@ export function isSupportedSlideImagePath(
   return !!ext && supportedSlideImageTypes.includes(ext);
 }
 
-// Magic-number sniff for the allowed slide formats. `accept` is only a picker
-// filter and the browser's `file.type` is derived from the extension, so a
-// renamed `.heic` → `.jpg` passes both — this reads the container header and is
-// the only check that catches it. Identification only: the bytes are never
-// decoded or rewritten. Returns the canonical extension, or null when the
-// header matches nothing we can serve.
-export async function sniffSlideImageType(file: Blob): Promise<string | null> {
-  const header = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+/**
+ * Magic-number sniff for the allowed slide formats. `accept` is only a picker
+ * filter and the browser's `file.type` is derived from the extension, so a
+ * renamed `.heic` → `.jpg` passes both — reading the container header is the
+ * only check that catches it. Identification only: the bytes are never decoded
+ * or rewritten, and this stays a synchronous pure function (the caller does the
+ * I/O and passes the header in).
+ *
+ * @param header The file's first bytes — 12 minimum, {@link SLIDE_IMAGE_HEADER_BYTES} covers every case.
+ * @returns The canonical extension to store the file under, or null when the
+ *   header matches nothing a browser can paint.
+ */
+export function sniffSlideImageType(header: Uint8Array): string | null {
   if (header.length < 12) return null;
 
   const startsWith = (...bytes: number[]) =>
@@ -186,3 +196,6 @@ export async function sniffSlideImageType(file: Blob): Promise<string | null> {
   }
   return null;
 }
+
+/** Bytes of a file's head to read before calling {@link sniffSlideImageType}. */
+export const SLIDE_IMAGE_HEADER_BYTES = 16;

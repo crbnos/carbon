@@ -438,6 +438,12 @@ export function getFileType(fileName: string): (typeof documentTypes)[number] {
   return "Other";
 }
 
+/**
+ * A job operation's steps (with their recorded values and reference slides) and
+ * its process parameters, plus the render metadata for any 3D model slides —
+ * resolved here so BOTH execution views (standard step list and assembly) paint
+ * models from the same query.
+ */
 export async function getJobOperationProcedure(
   client: SupabaseClient<Database>,
   operationId: string

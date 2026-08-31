@@ -1,9 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { isSupportedSlideImagePath, sniffSlideImageType } from "./file";
+import {
+  isSupportedSlideImagePath,
+  SLIDE_IMAGE_HEADER_BYTES,
+  sniffSlideImageType
+} from "./file";
 
 // Minimal container headers — enough bytes for the sniffer to reach a verdict.
 const header = (...bytes: number[]) =>
-  new Blob([new Uint8Array([...bytes, ...new Array(16).fill(0)])]);
+  new Uint8Array([
+    ...bytes,
+    ...new Array(SLIDE_IMAGE_HEADER_BYTES).fill(0)
+  ]).slice(0, SLIDE_IMAGE_HEADER_BYTES);
 const ascii = (text: string) => Array.from(text, (c) => c.charCodeAt(0));
 
 const PNG = header(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a);
@@ -16,29 +23,27 @@ const AVIF = header(0, 0, 0, 0x20, ...ascii("ftypavif"));
 const HEIC = header(0, 0, 0, 0x20, ...ascii("ftypheic"));
 
 describe("sniffSlideImageType", () => {
-  it("identifies every format a browser can paint", async () => {
-    expect(await sniffSlideImageType(PNG)).toBe("png");
-    expect(await sniffSlideImageType(JPEG)).toBe("jpg");
-    expect(await sniffSlideImageType(GIF)).toBe("gif");
-    expect(await sniffSlideImageType(WEBP)).toBe("webp");
-    expect(await sniffSlideImageType(AVIF)).toBe("avif");
+  it("identifies every format a browser can paint", () => {
+    expect(sniffSlideImageType(PNG)).toBe("png");
+    expect(sniffSlideImageType(JPEG)).toBe("jpg");
+    expect(sniffSlideImageType(GIF)).toBe("gif");
+    expect(sniffSlideImageType(WEBP)).toBe("webp");
+    expect(sniffSlideImageType(AVIF)).toBe("avif");
   });
 
-  it("rejects HEIC even though it shares AVIF's container", async () => {
-    expect(await sniffSlideImageType(HEIC)).toBeNull();
+  it("rejects HEIC even though it shares AVIF's container", () => {
+    expect(sniffSlideImageType(HEIC)).toBeNull();
   });
 
-  it("rejects a file too short to identify", async () => {
-    expect(await sniffSlideImageType(new Blob([new Uint8Array([0xff])]))).toBe(
+  it("rejects a header too short to identify", () => {
+    expect(sniffSlideImageType(new Uint8Array([0xff]))).toBeNull();
+  });
+
+  it("reads only the header, so a renamed file is judged on its bytes", () => {
+    // What the upload layer passes for `fixture-setup.jpg` that is really HEIC.
+    expect(sniffSlideImageType(HEIC.slice(0, SLIDE_IMAGE_HEADER_BYTES))).toBe(
       null
     );
-  });
-
-  it("ignores the filename — a renamed HEIC is still rejected", async () => {
-    const renamed = new File([HEIC], "fixture-setup.jpg", {
-      type: "image/jpeg"
-    });
-    expect(await sniffSlideImageType(renamed)).toBeNull();
   });
 });
 

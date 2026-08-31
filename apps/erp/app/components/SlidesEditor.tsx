@@ -3,6 +3,7 @@ import type { Database } from "@carbon/database";
 import { Button, cn, IconButton, Label, VStack } from "@carbon/react";
 import {
   isSupportedSlideImagePath,
+  SLIDE_IMAGE_HEADER_BYTES,
   sniffSlideImageType,
   supportedModelTypes,
   supportedSlideImageTypes
@@ -39,23 +40,31 @@ export type SlideImageUploadResult =
   | { path: string; error?: undefined }
   | { path?: undefined; error: MessageDescriptor };
 
-// Upload an image for a step slide. The file is stored byte-for-byte — nothing is
-// decoded, re-encoded or resized — so the gate is up front: the container header
-// must be a format every browser can paint. `accept` alone isn't enough (it's a
-// picker hint, and `file.type` is derived from the extension), so a renamed
-// `.heic` → `.jpg` is caught here and nowhere else.
-//
-// `folder` is the path segment(s) under the company prefix: "parts" for BOP steps,
-// `assembly/{instructionId}` for assembly instructions. The stored extension comes
-// from the sniff, not the filename, so an extension-less upload still serves with
-// the right Content-Type.
+/**
+ * Upload an image for a step slide. The file is stored byte-for-byte — nothing
+ * is decoded, re-encoded or resized — so the gate is up front: the container
+ * header must be a format every browser can paint. `accept` alone isn't enough
+ * (it's a picker hint, and `file.type` is derived from the extension), so a
+ * renamed `.heic` → `.jpg` is caught here and nowhere else.
+ *
+ * @param folder Path segment(s) under the company prefix: "parts" for BOP steps,
+ *   `assembly/{instructionId}` for assembly instructions.
+ * @returns The stored path, or a translatable message describing the rejection.
+ *   The stored extension comes from the sniff, not the filename, so an
+ *   extension-less upload still serves with the right Content-Type.
+ */
 export async function uploadStepSlideImage(
   carbon: SupabaseClient<Database>,
   companyId: string,
   file: File,
   folder: string
 ): Promise<SlideImageUploadResult> {
-  const ext = await sniffSlideImageType(file);
+  // The header read is the upload layer's job — @carbon/utils stays synchronous
+  // and pure, so it gets the bytes rather than the Blob.
+  const header = new Uint8Array(
+    await file.slice(0, SLIDE_IMAGE_HEADER_BYTES).arrayBuffer()
+  );
+  const ext = sniffSlideImageType(header);
   if (!ext) {
     const named = file.name.toLowerCase().split(".").pop() ?? "";
     const isHeic = named === "heic" || named === "heif";
@@ -75,11 +84,15 @@ export async function uploadStepSlideImage(
   return { path: upload.data.path };
 }
 
-// Upload a 3D model file for a step slide: the raw file goes to the private bucket
-// under the models prefix, then the model-upload API registers the modelUpload row —
-// `convert` also starts the assembler's STEP → GLB conversion (best-effort, so the
-// slide still works via client-side parsing when the assembler is unavailable).
-// Returns the new modelUpload id, or null on failure.
+/**
+ * Upload a 3D model file for a step slide: the raw file goes to the private
+ * bucket under the models prefix, then the model-upload API registers the
+ * modelUpload row — `convert` also starts the assembler's STEP → GLB conversion
+ * (best-effort, so the slide still works via client-side parsing when the
+ * assembler is unavailable).
+ *
+ * @returns The new modelUpload id, or null on failure.
+ */
 export async function uploadStepSlideModel(
   carbon: SupabaseClient<Database>,
   companyId: string,

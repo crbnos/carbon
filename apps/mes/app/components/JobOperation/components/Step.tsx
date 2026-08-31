@@ -107,6 +107,11 @@ function hasStepDescription(
   return documentHasImages(doc);
 }
 
+/**
+ * One step of the operator's procedure: its type icon, name, record/complete
+ * controls, reference slides (images, 3D models, and an explicit placeholder for
+ * an image stored in a format no browser can paint) and its description.
+ */
 export function StepsListItem({
   activeStep,
   step,
