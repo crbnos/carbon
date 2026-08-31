@@ -69,6 +69,12 @@ export default defineConfig(({ isSsrBuild, mode }) => {
          * whole `konva` package — react-konva imports `konva/lib/Core.js`, etc.).
          */
         canvas: path.resolve(__dirname, "app/ssr-shims/canvas-stub.cjs"),
+        /**
+         * rhino3dm's Emscripten runtime requires `ws` in its Node-only socket
+         * branches, without declaring it as a dependency. Nothing in the viewer
+         * takes that path, but the bundler must still resolve the specifier.
+         */
+        ws: path.resolve(__dirname, "app/ssr-shims/ws-stub.cjs"),
         // Directory (not index.ts) so subpath imports like
         // `@carbon/utils/favicon` resolve to `src/favicon.ts`.
         "@carbon/utils": path.resolve(__dirname, "../../packages/utils/src"),
