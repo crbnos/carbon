@@ -98,6 +98,8 @@ plans the screen shows an upgrade prompt and no rules are evaluated.
 
 ## Related
 
+  - Sales rules The sibling rule family: the same condition builder, applied to quote, sales order, and sales invoice
+    lines.
   - Items The most common rule target: scope by item type or group, or assign per item.
   - Inventory Storage rules run on inventory transactions: receipts, shipments, transfers, picks.
   - Work centers The other target: guards on operation start/finish and material issue/receive.

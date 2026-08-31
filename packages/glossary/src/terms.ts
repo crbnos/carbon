@@ -193,6 +193,10 @@ export const terms = {
     definition: msg`A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled.`,
     href: "/docs/reference/quotes"
   },
+  "drop-shipment": {
+    term: msg`Drop shipment`,
+    definition: msg`A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's.`
+  },
   rfq: {
     term: msg`RFQ (request for quote)`,
     definition: msg`A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask suppliers); both feed the opportunity thread.`,

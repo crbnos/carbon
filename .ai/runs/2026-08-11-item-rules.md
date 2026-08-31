@@ -19,7 +19,7 @@
 
 ## Phase log
 - research: skipped (see Phase plan) — evidence lives in the PRD (storage-rules engine map, customer/location model, line-add flows)
-- spec: .ai/specs/2026-08-11-item-rules.md (converted from PRD)
+- spec: .ai/specs/implemented/2026-08-11-item-rules.md (converted from PRD)
 
 ## Outcome
 - All 16 plan tasks complete. Verification sweep green: typecheck 6/6 packages (@carbon/utils, @carbon/ee, @carbon/database, erp, @carbon/jobs, @carbon/notifications), @carbon/utils 76 tests, @carbon/ee 40 tests, lint clean (32 tasks, only pre-existing warnings).

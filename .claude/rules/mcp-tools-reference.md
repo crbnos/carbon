@@ -133,7 +133,7 @@ namespace), and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
 - To block a tool from MCP, add its `<module>_<func>` name to
   `MCP_BLOCKED_TOOL_NAMES` and regenerate metadata.
 - **A `{module}.service.ts` must not import a `*.server` module** (`@carbon/auth/users.server`,
-  `@carbon/ee/storage-rules.server`, an app `*.server.ts`, …) — even via `await import(...)`.
+  `@carbon/ee/rules.server`, an app `*.server.ts`, …) — even via `await import(...)`.
   The module barrel (`~/modules/{module}`) re-exports the service, and client components
   value-import that barrel for validators/enums, so the service is in the **client** bundle;
   React Router's `react-router:dot-server` plugin then fails the build with *"Server-only

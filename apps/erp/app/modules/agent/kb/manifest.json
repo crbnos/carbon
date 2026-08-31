@@ -1321,6 +1321,22 @@
       ]
     },
     {
+      "slug": "docs/reference/sales-rules",
+      "title": "Sales rules",
+      "description": "Predicate guards on sales documents: block a restricted item with an error, or warn and let the user acknowledge and continue.",
+      "keywords": ["sales", "rules", "docs", "reference"],
+      "headings": [
+        "What a rule checks",
+        "Where rules fire",
+        "Block or warn",
+        "Scope and assignment",
+        "Rule fields",
+        "Where to manage them",
+        "Related",
+        "Troubleshooting"
+      ]
+    },
+    {
       "slug": "docs/reference/scheduling",
       "title": "Scheduling",
       "description": "The board where jobs get dates and operations get a dispatch order, and the engine that computes both.",

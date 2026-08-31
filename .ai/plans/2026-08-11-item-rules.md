@@ -1,6 +1,6 @@
 # Item Rules — implementation plan
 
-**Spec:** .ai/specs/2026-08-11-item-rules.md
+**Spec:** .ai/specs/implemented/2026-08-11-item-rules.md
 **Research:** (in-session; baked into spec §"Existing infrastructure")
 **Branch:** cambridge-bom-feature-gap-audit (NO commits — user grants commit separately)
 

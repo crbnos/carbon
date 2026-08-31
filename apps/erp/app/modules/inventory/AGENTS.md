@@ -81,7 +81,7 @@ import { inventoryAdjustmentValidator, receiptValidator } from "~/modules/invent
 
 ## Storage Rules (sub-area)
 
-Configurable if-condition-then-error/warn rules evaluated on **warehouse/MES transaction surfaces** (the storage-legal subset of `enforcementRuleSurface`: receipt, shipment, stockTransfer, warehouseTransfer, inventoryAdjustment, place, pick, operationStart, operationFinish, materialIssue, materialReceive). Lives **inside** this module: validators in `inventory.models.ts`, CRUD in `inventory.service.ts`, UI in `ui/StorageRules/`. There is no `modules/storage-rules` directory — a rule feature is not its own domain.
+Configurable if-condition-then-error/warn rules evaluated on **warehouse/MES transaction surfaces** (the storage-legal subset of `enforcementRuleSurface`: receipt, shipment, stockTransfer, warehouseTransfer, inventoryAdjustment, place, pick, operationStart, operationFinish, materialIssue, materialReceive). Lives **inside** this module: validators in `inventory.models.ts`, UI in `ui/StorageRules/`; the admin CRUD is the family-parametrized implementation in `~/modules/shared` (see "Service functions" below). There is no `modules/storage-rules` directory — a rule feature is not its own domain.
 
 Sibling feature to **sales rules** (`~/modules/sales`, sales-document surfaces). Both share the engine in `@carbon/utils` (`rules.ts` + `field-registry.ts` + the zod AST mirror in `rules-schema.ts`), the evaluator/violation UI in `@carbon/ee/rules(.server)`, AND the `enforcementRule` table — one table for both families, discriminated by `family`.
 

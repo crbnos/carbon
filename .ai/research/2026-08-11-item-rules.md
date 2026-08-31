@@ -46,4 +46,4 @@ Separate `itemRule` table + Items-module home (clean `parts_*` permissions, own 
 
 Two stale-doc findings for whoever touches the engine: `packages/utils/AGENTS.md` described `storage-rules.ts` as "Supabase storage bucket access policies" (it is the rule engine), and older references to a `db:build` script are dead.
 
-**Spec:** `.ai/specs/2026-08-11-item-rules.md`
+**Spec:** `.ai/specs/implemented/2026-08-11-item-rules.md`
