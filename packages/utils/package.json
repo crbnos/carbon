@@ -17,7 +17,7 @@
     "@types/lodash.template": "4.5.3",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "humanize-duration": "3.33.2",
+    "humanize-duration": "3.34.1",
     "react": "catalog:",
     "sst": "catalog:",
     "tsup": "catalog:",

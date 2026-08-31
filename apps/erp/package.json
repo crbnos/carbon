@@ -150,7 +150,7 @@
     "@tailwindcss/vite": "catalog:",
     "@types/d3": "7.4.3",
     "@types/d3-force": "3.0.10",
-    "@types/lodash": "4.17.24",
+    "@types/lodash": "4.17.25",
     "@types/lodash.template": "4.5.3",
     "@types/nprogress": "0.2.3",
     "@types/papaparse": "5.5.2",
