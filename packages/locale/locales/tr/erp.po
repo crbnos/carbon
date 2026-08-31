@@ -1303,6 +1303,9 @@ msgstr "{nextStatus} konumuna geç"
 msgid "Advanced"
 msgstr "Gelişmiş"
 
+msgid "Advanced properties"
+msgstr ""
+
 msgid "Affected item not found."
 msgstr "Etkilenen öğe bulunamadı."
 
@@ -1434,6 +1437,9 @@ msgstr "{0} için uygulanacak tutar"
 msgid "Amount Type"
 msgstr "Tutar Türü"
 
+msgid "An account is already called that — pick a different name."
+msgstr ""
+
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "Departman veya işlev tarafından harcamaları gruplandıran bir muhasebe kovası, böylece GL harcamaları hesap tarafından değil grup tarafından raporlayabilir."
 
@@ -1554,9 +1560,6 @@ msgstr "VE"
 #. placeholder {0}: count - documents.length
 msgid "And {0} more — resolve these to see the rest."
 msgstr "Ve {0} tane daha — bunları çözmek için geri kalanını görmek için."
-
-msgid "and {hidden} more"
-msgstr "ve {hidden} tane daha"
 
 msgid "and {remaining} more"
 msgstr "ve daha fazla"
@@ -3921,6 +3924,9 @@ msgstr "Belgeler yüklenemedi"
 msgid "Couldn't load related documents. Refresh before creating a new one to avoid duplicates."
 msgstr "İlgili belgeler yüklenemedi. Yeni bir tane oluşturmadan önce yenileyerek tekrarları önleyin."
 
+msgid "Couldn't load the choices for this field."
+msgstr ""
+
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "Sağlayıcının boyut hedefleri yüklenemedi — bağlantıyı kontrol edin ve sayfayı yeniden yükleyin."
 
@@ -3941,6 +3947,9 @@ msgstr "Sayım Geçmişi"
 
 msgid "Count ID"
 msgstr "Sayım Kimliği"
+
+msgid "Count items"
+msgstr ""
 
 msgid "Counted Qty"
 msgstr "Sayılan Mik."
@@ -6253,9 +6262,6 @@ msgstr "Etkinlik"
 msgid "Event Type"
 msgstr "Olay Türü"
 
-msgid "Event types"
-msgstr "Etkinlik türleri"
-
 msgid "Events"
 msgstr "Etkinlikler"
 
@@ -6340,9 +6346,6 @@ msgstr "İşçilik Genişlet"
 
 msgid "Expand Machine"
 msgstr "Makineyi Genişlet"
-
-msgid "Expand Recurring Event?"
-msgstr "Yinelenen Etkinliği Genişlet?"
 
 msgid "Expand Setup"
 msgstr "Kurulumu Genişlet"
@@ -6993,6 +6996,9 @@ msgstr "Uygun görünümü"
 
 msgid "Fix the problems with this workflow before testing it"
 msgstr "Bu iş akışının problemlerini test etmeden önce düzeltiniz"
+
+msgid "Fix this"
+msgstr ""
 
 msgid "Fixed"
 msgstr "Sabit"
@@ -8350,6 +8356,9 @@ msgstr "Malzeme listesinde bu ürünü içeren işler"
 msgid "Join {0}"
 msgstr "Join {0}"
 
+msgid "Join into text"
+msgstr ""
+
 msgid "Journal"
 msgstr "Dergi"
 
@@ -8388,6 +8397,9 @@ msgstr "Mevcut Tut"
 
 msgid "Keep existing pricing, only add new items"
 msgstr "Mevcut fiyatlandırmayı koru, yalnızca yeni öğeler ekle"
+
+msgid "Keep matching items"
+msgstr ""
 
 msgid "Keep only items where…"
 msgstr "Yalnızca öğeleri sakla…"
@@ -11162,6 +11174,9 @@ msgstr "Fiyatlandırmalarını görüntülemek için bir müşteri veya müşter
 msgid "Pick a date or leave blank to clear it."
 msgstr "Bir tarih seçin veya temizlemek için boş bırakın."
 
+msgid "Pick a field…"
+msgstr ""
+
 msgid "Pick a list variable…"
 msgstr "Bir liste değişkeni seçin…"
 
@@ -13578,9 +13593,6 @@ msgstr "Davet Gönder"
 msgid "Send Invites"
 msgstr "Davet Gönder"
 
-msgid "Send Notifications"
-msgstr "Bildirimleri Gönder"
-
 msgid "Send RFQ to Suppliers"
 msgstr "Tedarikçilere RFQ Gönder"
 
@@ -14744,6 +14756,15 @@ msgstr "Etiketler"
 msgid "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 msgstr "Bu hub'ı müşteri için özelleştirin. Değişiklikler bunu görüntüleyen herkes için canlı olarak uygulanır. Müşteriye burada asla gösterilmez."
 
+msgid "Take one field from every item"
+msgstr ""
+
+msgid "Take the first item"
+msgstr ""
+
+msgid "Take the last item"
+msgstr ""
+
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Bu öğeyi üretmek için tüketilen malzemelerdeki en kısa kalan raf ömrünü alır. Ürünün son kullanma tarihinin bileşenlerine bağlı olduğu durumlarda kullanılır."
 
@@ -14915,14 +14936,17 @@ msgstr "Test Değeri"
 msgid "Text size"
 msgstr "Metin boyutu"
 
+msgid "That account is still being reconnected. Try again in a moment."
+msgstr ""
+
 msgid "That connection name is already used"
 msgstr "Bu bağlantı adı zaten kullanıldı"
 
+msgid "That field holds several values, so they are combined into one list."
+msgstr ""
+
 msgid "That name is already used by another step."
 msgstr "Bu ad başka bir adım tarafından zaten kullanılıyor."
-
-msgid "That name is already used."
-msgstr "Bu ad zaten kullanıldı."
 
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
@@ -15236,6 +15260,9 @@ msgstr "Bir sevkiyat muhasebeleştirildiğinde tanınan envanter maliyeti, madde
 
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "Bu varlık için MACRS kapsamında IRS kurtarma süresi sınıfı (3, 5, 7, 10, 15, 20, 27.5, 39 yıl)."
+
+msgid "The items in that list have no fields to take."
+msgstr ""
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "Bu dış işleme satırının kapsadığı işlem, işi; satırın alındığı bu işi karşı operasyonu kapatır."
@@ -15702,6 +15729,12 @@ msgstr "Bu işler bu iş merkezine atanmış işlemlere sahiptir:"
 
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Bu muhasebe kayıtları hâlâ Taslak durumundadır, bu nedenle borç ve alacakları bu dönem için defteri kebir'de değildir. Her birini deftere geçirin veya daha sonraki bir açık döneme yeniden tarihlendiriniz."
+
+msgid "This account has stopped working. Add it again to reconnect — workflow steps using it will fail until you do."
+msgstr ""
+
+msgid "This account needs to be reconnected."
+msgstr ""
 
 msgid "This Carbon instance is missing its OAuth credentials for this integration. Ask an administrator to set them."
 msgstr "Bu Carbon örneği bu entegrasyon için OAuth kimlik bilgilerine sahip değil. Bir yöneticiye bunları ayarlamasını söyleyin."
@@ -16287,6 +16320,9 @@ msgstr "Tarafından tetiklendi"
 
 msgid "Triggers"
 msgstr "Tetikleyiciler"
+
+msgid "Try again"
+msgstr ""
 
 msgid "Tuesday"
 msgstr "Salı"

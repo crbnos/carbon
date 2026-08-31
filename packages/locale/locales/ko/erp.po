@@ -1303,6 +1303,9 @@ msgstr "{nextStatus}로 진행"
 msgid "Advanced"
 msgstr "고급"
 
+msgid "Advanced properties"
+msgstr ""
+
 msgid "Affected item not found."
 msgstr "영향받는 항목을 찾을 수 없습니다."
 
@@ -1434,6 +1437,9 @@ msgstr "{0}에 적용할 금액"
 msgid "Amount Type"
 msgstr "금액 유형"
 
+msgid "An account is already called that — pick a different name."
+msgstr ""
+
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "부서나 기능별로 비용을 그룹화하여 총계정원장이 계정뿐 아니라 그룹별로도 지출을 보고할 수 있게 하는 회계 버킷입니다."
 
@@ -1554,9 +1560,6 @@ msgstr "그리고"
 #. placeholder {0}: count - documents.length
 msgid "And {0} more — resolve these to see the rest."
 msgstr "그리고 {0}건 더 — 이를 해결하면 나머지를 볼 수 있습니다."
-
-msgid "and {hidden} more"
-msgstr "및 {hidden}개 더"
 
 msgid "and {remaining} more"
 msgstr "외 {remaining}개"
@@ -3921,6 +3924,9 @@ msgstr "문서를 불러올 수 없습니다"
 msgid "Couldn't load related documents. Refresh before creating a new one to avoid duplicates."
 msgstr "관련 문서를 불러올 수 없습니다. 중복 생성을 방지하려면 새로 만들기 전에 새로고침하세요."
 
+msgid "Couldn't load the choices for this field."
+msgstr ""
+
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "제공자의 차원 대상을 로드할 수 없습니다 — 연결을 확인하고 다시 로드하세요."
 
@@ -3941,6 +3947,9 @@ msgstr "계산 기록"
 
 msgid "Count ID"
 msgstr "실사 ID"
+
+msgid "Count items"
+msgstr ""
 
 msgid "Counted Qty"
 msgstr "실사 수량"
@@ -6253,9 +6262,6 @@ msgstr "이벤트"
 msgid "Event Type"
 msgstr "이벤트 유형"
 
-msgid "Event types"
-msgstr "이벤트 유형"
-
 msgid "Events"
 msgstr "이벤트"
 
@@ -6340,9 +6346,6 @@ msgstr "노무 펼치기"
 
 msgid "Expand Machine"
 msgstr "기계 펼치기"
-
-msgid "Expand Recurring Event?"
-msgstr "반복 이벤트 확장?"
 
 msgid "Expand Setup"
 msgstr "셋업 펼치기"
@@ -6993,6 +6996,9 @@ msgstr "보기에 맞춤"
 
 msgid "Fix the problems with this workflow before testing it"
 msgstr "테스트하기 전에 이 워크플로우의 문제를 해결하십시오"
+
+msgid "Fix this"
+msgstr ""
 
 msgid "Fixed"
 msgstr "고정"
@@ -8350,6 +8356,9 @@ msgstr "자재명세서에 이 품목이 포함된 작업"
 msgid "Join {0}"
 msgstr "{0} 참여"
 
+msgid "Join into text"
+msgstr ""
+
 msgid "Journal"
 msgstr "전표"
 
@@ -8388,6 +8397,9 @@ msgstr "현재 값 유지"
 
 msgid "Keep existing pricing, only add new items"
 msgstr "기존 가격은 유지하고 새 품목만 추가"
+
+msgid "Keep matching items"
+msgstr ""
 
 msgid "Keep only items where…"
 msgstr "...인 항목만 유지"
@@ -11162,6 +11174,9 @@ msgstr "가격을 확인할 고객 또는 고객 유형을 선택하세요."
 msgid "Pick a date or leave blank to clear it."
 msgstr "날짜를 선택하거나 비워두어 지우세요."
 
+msgid "Pick a field…"
+msgstr ""
+
 msgid "Pick a list variable…"
 msgstr "목록 변수 선택…"
 
@@ -13578,9 +13593,6 @@ msgstr "초대 보내기"
 msgid "Send Invites"
 msgstr "초대 보내기"
 
-msgid "Send Notifications"
-msgstr "알림 전송"
-
 msgid "Send RFQ to Suppliers"
 msgstr "공급업체에 RFQ 전송"
 
@@ -14744,6 +14756,15 @@ msgstr "태그"
 msgid "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 msgstr "이 허브를 고객에 맞게 조정하세요. 변경 사항은 이를 보는 모든 사람에게 즉시 적용됩니다. 이 화면은 고객에게 표시되지 않습니다."
 
+msgid "Take one field from every item"
+msgstr ""
+
+msgid "Take the first item"
+msgstr ""
+
+msgid "Take the last item"
+msgstr ""
+
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "이 품목을 만드는 데 사용된 자재 중 가장 짧은 잔여 유통기한을 적용합니다. 제품의 유효기한이 원재료에 좌우될 때 사용하세요."
 
@@ -14915,14 +14936,17 @@ msgstr "테스트 값"
 msgid "Text size"
 msgstr "글자 크기"
 
+msgid "That account is still being reconnected. Try again in a moment."
+msgstr ""
+
 msgid "That connection name is already used"
 msgstr "해당 연결 이름은 이미 사용 중입니다"
 
+msgid "That field holds several values, so they are combined into one list."
+msgstr ""
+
 msgid "That name is already used by another step."
 msgstr "해당 이름은 이미 다른 단계에서 사용 중입니다."
-
-msgid "That name is already used."
-msgstr "해당 이름은 이미 사용 중입니다."
 
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
@@ -15236,6 +15260,9 @@ msgstr "출하가 전기될 때 인식되는 재고 원가로, 품목의 원가 
 
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "MACRS(수정가속상각법)에 따른 이 자산의 IRS 내용연수 등급(3, 5, 7, 10, 15, 20, 27.5, 39년)입니다."
+
+msgid "The items in that list have no fields to take."
+msgstr ""
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "이 외주 라인이 처리하는 공정작업이 속한 작업입니다. 이 라인의 입고는 해당 작업의 공정작업을 마감합니다."
@@ -15702,6 +15729,12 @@ msgstr "다음 작업에 이 작업장이 지정된 공정작업이 있습니다
 
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "이 분개들은 아직 임시이므로 그 차변과 대변이 이 기간의 총계정원장에 없습니다. 각각을 전기하거나 나중의 개방된 기간으로 재날짜하세요."
+
+msgid "This account has stopped working. Add it again to reconnect — workflow steps using it will fail until you do."
+msgstr ""
+
+msgid "This account needs to be reconnected."
+msgstr ""
 
 msgid "This Carbon instance is missing its OAuth credentials for this integration. Ask an administrator to set them."
 msgstr "이 Carbon 인스턴스는 이 통합을 위한 OAuth 자격증명이 누락되었습니다. 관리자에게 설정해달라고 요청하세요."
@@ -16287,6 +16320,9 @@ msgstr "트리거된 사람/것"
 
 msgid "Triggers"
 msgstr "트리거"
+
+msgid "Try again"
+msgstr ""
 
 msgid "Tuesday"
 msgstr "화요일"

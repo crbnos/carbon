@@ -1303,6 +1303,9 @@ msgstr "{nextStatus} को आगे बढ़ाएं"
 msgid "Advanced"
 msgstr "उन्नत"
 
+msgid "Advanced properties"
+msgstr ""
+
 msgid "Affected item not found."
 msgstr "प्रभावित आइटम नहीं मिला।"
 
@@ -1434,6 +1437,9 @@ msgstr "{0} के लिए लागू करने की राशि"
 msgid "Amount Type"
 msgstr "राशि प्रकार"
 
+msgid "An account is already called that — pick a different name."
+msgstr ""
+
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "एक लेखांकन बाल्टी जो विभाग या कार्य द्वारा व्यय को समूहबद्ध करती है ताकि GL खाते द्वारा नहीं बल्कि समूह द्वारा व्यय की रिपोर्ट कर सके।"
 
@@ -1554,9 +1560,6 @@ msgstr "और"
 #. placeholder {0}: count - documents.length
 msgid "And {0} more — resolve these to see the rest."
 msgstr "और {0} अधिक — बाकी देखने के लिए इन्हें हल करें।"
-
-msgid "and {hidden} more"
-msgstr "और {hidden} अधिक"
 
 msgid "and {remaining} more"
 msgstr "और {remaining} अधिक"
@@ -3921,6 +3924,9 @@ msgstr "दस्तावेज़ लोड नहीं हो सके"
 msgid "Couldn't load related documents. Refresh before creating a new one to avoid duplicates."
 msgstr "संबंधित दस्तावेज़ लोड नहीं हो सके। डुप्लीकेट से बचने के लिए नया बनाने से पहले रीफ्रेश करें।"
 
+msgid "Couldn't load the choices for this field."
+msgstr ""
+
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "प्रदाता के आयाम लक्ष्य लोड नहीं कर सके — कनेक्शन जांचें और फिर से लोड करें।"
 
@@ -3941,6 +3947,9 @@ msgstr "गणना इतिहास"
 
 msgid "Count ID"
 msgstr "गणना आईडी"
+
+msgid "Count items"
+msgstr ""
 
 msgid "Counted Qty"
 msgstr "गिनी गई मात्रा"
@@ -6253,9 +6262,6 @@ msgstr "घटना"
 msgid "Event Type"
 msgstr "ईवेंट प्रकार"
 
-msgid "Event types"
-msgstr "इवेंट प्रकार"
-
 msgid "Events"
 msgstr "घटनाएं"
 
@@ -6340,9 +6346,6 @@ msgstr "श्रम विस्तृत करें"
 
 msgid "Expand Machine"
 msgstr "मशीन का विस्तार करें"
-
-msgid "Expand Recurring Event?"
-msgstr "आवर्ती इवेंट विस्तृत करें?"
 
 msgid "Expand Setup"
 msgstr "सेटअप विस्तृत करें"
@@ -6993,6 +6996,9 @@ msgstr "व्यू फिट करें"
 
 msgid "Fix the problems with this workflow before testing it"
 msgstr "इसे परीक्षण करने से पहले इस वर्कफ़्लो की समस्याओं को ठीक करें"
+
+msgid "Fix this"
+msgstr ""
 
 msgid "Fixed"
 msgstr "निश्चित"
@@ -8350,6 +8356,9 @@ msgstr "जिन कार्यों की सामग्री सूच�
 msgid "Join {0}"
 msgstr "{0} में शामिल हों"
 
+msgid "Join into text"
+msgstr ""
+
 msgid "Journal"
 msgstr "जर्नल"
 
@@ -8388,6 +8397,9 @@ msgstr "वर्तमान रखें"
 
 msgid "Keep existing pricing, only add new items"
 msgstr "मौजूदा मूल्य निर्धारण रखें, केवल नई वस्तुएं जोड़ें"
+
+msgid "Keep matching items"
+msgstr ""
 
 msgid "Keep only items where…"
 msgstr "केवल आइटम रखें जहां…"
@@ -11162,6 +11174,9 @@ msgstr "उनकी मूल्य निर्धारण देखने �
 msgid "Pick a date or leave blank to clear it."
 msgstr "एक तारीख चुनें या इसे साफ करने के लिए खाली छोड़ें।"
 
+msgid "Pick a field…"
+msgstr ""
+
 msgid "Pick a list variable…"
 msgstr "एक लिस्ट वेरिएबल चुनें…"
 
@@ -13578,9 +13593,6 @@ msgstr "आमंत्रण भेजें"
 msgid "Send Invites"
 msgstr "आमंत्रण भेजें"
 
-msgid "Send Notifications"
-msgstr "सूचनाएं भेजें"
-
 msgid "Send RFQ to Suppliers"
 msgstr "आपूर्तिकर्ताओं को RFQ भेजें"
 
@@ -14744,6 +14756,15 @@ msgstr "टैग"
 msgid "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 msgstr "इस हब को ग्राहक के लिए अनुकूलित करें। परिवर्तन सभी के लिए लाइव लागू होते हैं जो इसे देख रहे हैं। ग्राहक को यहां कभी नहीं दिखाया जाता है।"
 
+msgid "Take one field from every item"
+msgstr ""
+
+msgid "Take the first item"
+msgstr ""
+
+msgid "Take the last item"
+msgstr ""
+
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "इस आइटम को बनाने के लिए उपयोग की गई सामग्रियों में सबसे कम शेष शेल्फ लाइफ लें। जब उत्पाद की समाप्ति तारीख इसकी सामग्री पर निर्भर करती है तो उपयोग करें।"
 
@@ -14915,14 +14936,17 @@ msgstr "परीक्षण मान"
 msgid "Text size"
 msgstr "पाठ आकार"
 
+msgid "That account is still being reconnected. Try again in a moment."
+msgstr ""
+
 msgid "That connection name is already used"
 msgstr "वह कनेक्शन नाम पहले से उपयोग किया जा रहा है"
 
+msgid "That field holds several values, so they are combined into one list."
+msgstr ""
+
 msgid "That name is already used by another step."
 msgstr "वह नाम पहले से ही एक अन्य चरण द्वारा उपयोग किया जा रहा है।"
-
-msgid "That name is already used."
-msgstr "वह नाम पहले से उपयोग किया जा रहा है।"
 
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
@@ -15236,6 +15260,9 @@ msgstr "इन्वेंटरी लागत जो शिपमेंट �
 
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "MACRS के तहत इस संपत्ति के लिए IRS पुनर्प्राप्ति-अवधि वर्ग (3, 5, 7, 10, 15, 20, 27.5, 39-वर्ष)।"
+
+msgid "The items in that list have no fields to take."
+msgstr ""
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "वह काम जिसका संचालन यह बाहरी-प्रसंस्करण लाइन कवर करता है; लाइन की रसीद इस काम के विरुद्ध संचालन को बंद करती है।"
@@ -15702,6 +15729,12 @@ msgstr "इन कार्यों के पास इस कार्य क
 
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "ये जर्नल प्रविष्टियाँ अभी भी ड्राफ्ट हैं, इसलिए उनके डेबिट और क्रेडिट इस अवधि के लिए लेजर में नहीं हैं। प्रत्येक को पोस्ट करें, या इसे बाद की खुली अवधि में पुनः दिनांकित करें।"
+
+msgid "This account has stopped working. Add it again to reconnect — workflow steps using it will fail until you do."
+msgstr ""
+
+msgid "This account needs to be reconnected."
+msgstr ""
 
 msgid "This Carbon instance is missing its OAuth credentials for this integration. Ask an administrator to set them."
 msgstr "यह Carbon उदाहरण इस एकीकरण के लिए अपने OAuth क्रेडेंशियल गायब हैं। व्यवस्थापक को उन्हें सेट करने के लिए कहें।"
@@ -16287,6 +16320,9 @@ msgstr "ट्रिगर किया गया"
 
 msgid "Triggers"
 msgstr "ट्रिगर"
+
+msgid "Try again"
+msgstr ""
 
 msgid "Tuesday"
 msgstr "मंगलवार"

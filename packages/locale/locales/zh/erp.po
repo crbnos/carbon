@@ -1303,6 +1303,9 @@ msgstr "推进到{nextStatus}"
 msgid "Advanced"
 msgstr "高级"
 
+msgid "Advanced properties"
+msgstr ""
+
 msgid "Affected item not found."
 msgstr "未找到受影响的项目。"
 
@@ -1434,6 +1437,9 @@ msgstr "应用于 {0} 的金额"
 msgid "Amount Type"
 msgstr "金额类型"
 
+msgid "An account is already called that — pick a different name."
+msgstr ""
+
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "一个会计桶，按部门或职能对支出进行分组，以便GL可以按组而非按账户报告支出。"
 
@@ -1554,9 +1560,6 @@ msgstr "且"
 #. placeholder {0}: count - documents.length
 msgid "And {0} more — resolve these to see the rest."
 msgstr "还有 {0} 份 — 解决这些以查看其余部分。"
-
-msgid "and {hidden} more"
-msgstr "以及{hidden}个更多"
 
 msgid "and {remaining} more"
 msgstr "和 {remaining} 个更多"
@@ -3921,6 +3924,9 @@ msgstr "无法加载文档"
 msgid "Couldn't load related documents. Refresh before creating a new one to avoid duplicates."
 msgstr "无法加载相关文档。创建新文档前请先刷新以避免重复。"
 
+msgid "Couldn't load the choices for this field."
+msgstr ""
+
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "无法加载提供商的维度目标 — 检查连接并重新加载。"
 
@@ -3941,6 +3947,9 @@ msgstr "盘点历史"
 
 msgid "Count ID"
 msgstr "盘点ID"
+
+msgid "Count items"
+msgstr ""
 
 msgid "Counted Qty"
 msgstr "已计数数量"
@@ -6253,9 +6262,6 @@ msgstr "事件"
 msgid "Event Type"
 msgstr "事件类型"
 
-msgid "Event types"
-msgstr "事件类型"
-
 msgid "Events"
 msgstr "事件"
 
@@ -6340,9 +6346,6 @@ msgstr "展开人工"
 
 msgid "Expand Machine"
 msgstr "展开机器"
-
-msgid "Expand Recurring Event?"
-msgstr "展开循环事件？"
 
 msgid "Expand Setup"
 msgstr "展开设置"
@@ -6993,6 +6996,9 @@ msgstr "适应视图"
 
 msgid "Fix the problems with this workflow before testing it"
 msgstr "在测试之前修复此工作流的问题"
+
+msgid "Fix this"
+msgstr ""
 
 msgid "Fixed"
 msgstr "固定"
@@ -8350,6 +8356,9 @@ msgstr "物料清单中包含此物品的工作"
 msgid "Join {0}"
 msgstr "加入 {0}"
 
+msgid "Join into text"
+msgstr ""
+
 msgid "Journal"
 msgstr "日记"
 
@@ -8388,6 +8397,9 @@ msgstr "保持当前"
 
 msgid "Keep existing pricing, only add new items"
 msgstr "保留现有定价，仅添加新项目"
+
+msgid "Keep matching items"
+msgstr ""
 
 msgid "Keep only items where…"
 msgstr "仅保留符合以下条件的项目…"
@@ -11162,6 +11174,9 @@ msgstr "选择客户或客户类型以查看其定价。"
 msgid "Pick a date or leave blank to clear it."
 msgstr "选择日期或留空以清除。"
 
+msgid "Pick a field…"
+msgstr ""
+
 msgid "Pick a list variable…"
 msgstr "选择列表变量…"
 
@@ -13578,9 +13593,6 @@ msgstr "发送邀请"
 msgid "Send Invites"
 msgstr "发送邀请"
 
-msgid "Send Notifications"
-msgstr "发送通知"
-
 msgid "Send RFQ to Suppliers"
 msgstr "向供应商发送询价单"
 
@@ -14744,6 +14756,15 @@ msgstr "标签"
 msgid "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 msgstr "为客户定制此中心。更改对所有查看者实时生效。永远不会向客户显示此内容。"
 
+msgid "Take one field from every item"
+msgstr ""
+
+msgid "Take the first item"
+msgstr ""
+
+msgid "Take the last item"
+msgstr ""
+
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "采用消耗的材料中最短的剩余保质期来制造此物品。当产品的有效期取决于其成分时使用。"
 
@@ -14915,14 +14936,17 @@ msgstr "测试值"
 msgid "Text size"
 msgstr "文本大小"
 
+msgid "That account is still being reconnected. Try again in a moment."
+msgstr ""
+
 msgid "That connection name is already used"
 msgstr "该连接名称已被使用"
 
+msgid "That field holds several values, so they are combined into one list."
+msgstr ""
+
 msgid "That name is already used by another step."
 msgstr "该名称已被另一个步骤使用。"
-
-msgid "That name is already used."
-msgstr "该名称已被使用。"
 
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
@@ -15236,6 +15260,9 @@ msgstr "发货过账时确认的库存成本，按物品的成本计算方法评
 
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "根据MACRS，该资产的国税局回收期类别（3、5、7、10、15、20、27.5、39年）。"
+
+msgid "The items in that list have no fields to take."
+msgstr ""
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "该外部处理行所涵盖的操作工作；行的收据关闭对该工作的操作。"
@@ -15702,6 +15729,12 @@ msgstr "这些工作有分配给此工作中心的操作："
 
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "这些日记账条目仍为草稿状态，因此其借贷金额不在本期分类账中。过账每一份，或将其重新标记日期至较晚的开放期间。"
+
+msgid "This account has stopped working. Add it again to reconnect — workflow steps using it will fail until you do."
+msgstr ""
+
+msgid "This account needs to be reconnected."
+msgstr ""
 
 msgid "This Carbon instance is missing its OAuth credentials for this integration. Ask an administrator to set them."
 msgstr "此 Carbon 实例缺少此集成的 OAuth 凭证。请要求管理员设置。"
@@ -16287,6 +16320,9 @@ msgstr "触发者"
 
 msgid "Triggers"
 msgstr "触发器"
+
+msgid "Try again"
+msgstr ""
 
 msgid "Tuesday"
 msgstr "星期二"

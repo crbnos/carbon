@@ -1303,6 +1303,9 @@ msgstr "{nextStatus}に進む"
 msgid "Advanced"
 msgstr "詳細"
 
+msgid "Advanced properties"
+msgstr ""
+
 msgid "Affected item not found."
 msgstr "影響を受けるアイテムが見つかりません。"
 
@@ -1434,6 +1437,9 @@ msgstr "{0}に適用する金額"
 msgid "Amount Type"
 msgstr "金額タイプ"
 
+msgid "An account is already called that — pick a different name."
+msgstr ""
+
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "部門や機能別に費用をグループ化する会計バケットで、GLがアカウントだけでなくグループ別に支出を報告できるようにします。"
 
@@ -1554,9 +1560,6 @@ msgstr "AND"
 #. placeholder {0}: count - documents.length
 msgid "And {0} more — resolve these to see the rest."
 msgstr "さらに{0}件あります。これらを解決して残りを表示してください。"
-
-msgid "and {hidden} more"
-msgstr "そして{hidden}個以上"
 
 msgid "and {remaining} more"
 msgstr "そして{remaining}件以上"
@@ -3921,6 +3924,9 @@ msgstr "ドキュメントを読み込めませんでした"
 msgid "Couldn't load related documents. Refresh before creating a new one to avoid duplicates."
 msgstr "関連ドキュメントを読み込めませんでした。重複を避けるため、新規作成前に更新してください。"
 
+msgid "Couldn't load the choices for this field."
+msgstr ""
+
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "プロバイダーのディメンションターゲットを読み込めませんでした。接続を確認して再度読み込んでください。"
 
@@ -3941,6 +3947,9 @@ msgstr "カウント履歴"
 
 msgid "Count ID"
 msgstr "カウントID"
+
+msgid "Count items"
+msgstr ""
 
 msgid "Counted Qty"
 msgstr "計数数量"
@@ -6253,9 +6262,6 @@ msgstr "イベント"
 msgid "Event Type"
 msgstr "イベントタイプ"
 
-msgid "Event types"
-msgstr "イベントタイプ"
-
 msgid "Events"
 msgstr "イベント"
 
@@ -6340,9 +6346,6 @@ msgstr "労働を展開"
 
 msgid "Expand Machine"
 msgstr "機械を展開"
-
-msgid "Expand Recurring Event?"
-msgstr "定期イベントを展開しますか？"
 
 msgid "Expand Setup"
 msgstr "段取りを展開"
@@ -6993,6 +6996,9 @@ msgstr "ビューに合わせる"
 
 msgid "Fix the problems with this workflow before testing it"
 msgstr "テストする前に、このワークフローの問題を修正してください"
+
+msgid "Fix this"
+msgstr ""
 
 msgid "Fixed"
 msgstr "固定"
@@ -8350,6 +8356,9 @@ msgstr "このアイテムが部品表に含まれるジョブ"
 msgid "Join {0}"
 msgstr "{0}に参加"
 
+msgid "Join into text"
+msgstr ""
+
 msgid "Journal"
 msgstr "ジャーナル"
 
@@ -8388,6 +8397,9 @@ msgstr "現在の設定を保持"
 
 msgid "Keep existing pricing, only add new items"
 msgstr "既存の価格を保持し、新しい項目のみを追加"
+
+msgid "Keep matching items"
+msgstr ""
 
 msgid "Keep only items where…"
 msgstr "以下の条件を満たすアイテムのみを保持…"
@@ -11162,6 +11174,9 @@ msgstr "顧客または顧客タイプを選択して、その価格を表示し
 msgid "Pick a date or leave blank to clear it."
 msgstr "日付を選択するか、空白のままにしてクリアしてください。"
 
+msgid "Pick a field…"
+msgstr ""
+
 msgid "Pick a list variable…"
 msgstr "リスト変数を選択..."
 
@@ -13578,9 +13593,6 @@ msgstr "招待を送信"
 msgid "Send Invites"
 msgstr "招待を送信"
 
-msgid "Send Notifications"
-msgstr "通知を送信"
-
 msgid "Send RFQ to Suppliers"
 msgstr "RFQをサプライヤーに送信"
 
@@ -14744,6 +14756,15 @@ msgstr "タグ"
 msgid "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 msgstr "このハブを顧客向けにカスタマイズします。変更はそれを表示している全員にリアルタイムで適用されます。顧客にはここに表示されません。"
 
+msgid "Take one field from every item"
+msgstr ""
+
+msgid "Take the first item"
+msgstr ""
+
+msgid "Take the last item"
+msgstr ""
+
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "このアイテムを製造するために消費される材料全体で、最も短い残りの賞味期限を取得します。製品の有効期限がその成分に依存する場合に使用します。"
 
@@ -14915,14 +14936,17 @@ msgstr "テスト値"
 msgid "Text size"
 msgstr "テキストサイズ"
 
+msgid "That account is still being reconnected. Try again in a moment."
+msgstr ""
+
 msgid "That connection name is already used"
 msgstr "その接続名はすでに使用されています"
 
+msgid "That field holds several values, so they are combined into one list."
+msgstr ""
+
 msgid "That name is already used by another step."
 msgstr "その名前は別のステップで既に使用されています。"
-
-msgid "That name is already used."
-msgstr "その名前はすでに使用されています。"
 
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
@@ -15236,6 +15260,9 @@ msgstr "出荷が転記されるときに認識されるインベントリコス
 
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "MACRS（3、5、7、10、15、20、27.5、39年）に基づくこのアセットのIRS回収期間クラス。"
+
+msgid "The items in that list have no fields to take."
+msgstr ""
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "この外部加工明細が対象とする作業。行の受領はこの作業に対して操作を閉じます。"
@@ -15702,6 +15729,12 @@ msgstr "これらのジョブにはこのワークセンターに割り当てら
 
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "これらの仕訳はまだ下書きであるため、それらの借方と貸方は当期の元帳に含まれていません。各仕訳を転記するか、後の開いている期間に再度日付を付け直してください。"
+
+msgid "This account has stopped working. Add it again to reconnect — workflow steps using it will fail until you do."
+msgstr ""
+
+msgid "This account needs to be reconnected."
+msgstr ""
 
 msgid "This Carbon instance is missing its OAuth credentials for this integration. Ask an administrator to set them."
 msgstr "このCarbonインスタンスには、この統合のOAuth認証情報がありません。管理者に設定するよう依頼してください。"
@@ -16287,6 +16320,9 @@ msgstr "トリガー元"
 
 msgid "Triggers"
 msgstr "トリガー"
+
+msgid "Try again"
+msgstr ""
 
 msgid "Tuesday"
 msgstr "火曜日"

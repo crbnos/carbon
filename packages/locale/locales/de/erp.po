@@ -1303,6 +1303,9 @@ msgstr "Zu {nextStatus} übergehen"
 msgid "Advanced"
 msgstr "Erweitert"
 
+msgid "Advanced properties"
+msgstr ""
+
 msgid "Affected item not found."
 msgstr "Betroffenes Element nicht gefunden."
 
@@ -1434,6 +1437,9 @@ msgstr "Anzuwendender Betrag für {0}"
 msgid "Amount Type"
 msgstr "Betragtyp"
 
+msgid "An account is already called that — pick a different name."
+msgstr ""
+
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "Ein Rechnungsfach, das Ausgaben nach Abteilung oder Funktion gruppiert, damit die Bilanz die Ausgaben nach Gruppe, nicht nur nach Konto, berichten kann."
 
@@ -1554,9 +1560,6 @@ msgstr "UND"
 #. placeholder {0}: count - documents.length
 msgid "And {0} more — resolve these to see the rest."
 msgstr "Und {0} weitere — lösen Sie diese auf, um den Rest zu sehen."
-
-msgid "and {hidden} more"
-msgstr "und {hidden} weitere"
 
 msgid "and {remaining} more"
 msgstr "und {remaining} weitere"
@@ -3921,6 +3924,9 @@ msgstr "Dokumente konnten nicht geladen werden"
 msgid "Couldn't load related documents. Refresh before creating a new one to avoid duplicates."
 msgstr "Verwandte Dokumente konnten nicht geladen werden. Aktualisieren Sie die Seite, bevor Sie ein neues erstellen, um Duplikate zu vermeiden."
 
+msgid "Couldn't load the choices for this field."
+msgstr ""
+
 msgid "Couldn't load the provider's dimension targets — check the connection and reload."
 msgstr "Die Dimensionsziele des Providers konnten nicht geladen werden — überprüfen Sie die Verbindung und laden Sie neu."
 
@@ -3941,6 +3947,9 @@ msgstr "Zählverlauf"
 
 msgid "Count ID"
 msgstr "Zählung-ID"
+
+msgid "Count items"
+msgstr ""
 
 msgid "Counted Qty"
 msgstr "Gezählte Menge"
@@ -6253,9 +6262,6 @@ msgstr "Ereignis"
 msgid "Event Type"
 msgstr "Ereignistyp"
 
-msgid "Event types"
-msgstr "Ereignisarten"
-
 msgid "Events"
 msgstr "Ereignisse"
 
@@ -6340,9 +6346,6 @@ msgstr "Arbeit ausklappen"
 
 msgid "Expand Machine"
 msgstr "Maschine ausklappen"
-
-msgid "Expand Recurring Event?"
-msgstr "Wiederkehrendes Ereignis erweitern?"
 
 msgid "Expand Setup"
 msgstr "Rüsten ausklappen"
@@ -6993,6 +6996,9 @@ msgstr "Ansicht anpassen"
 
 msgid "Fix the problems with this workflow before testing it"
 msgstr "Beheben Sie die Probleme mit diesem Workflow, bevor Sie ihn testen"
+
+msgid "Fix this"
+msgstr ""
 
 msgid "Fixed"
 msgstr "Fest"
@@ -8350,6 +8356,9 @@ msgstr "Aufträge, die diesen Artikel auf ihrer Stückliste haben"
 msgid "Join {0}"
 msgstr "Treten Sie {0} bei"
 
+msgid "Join into text"
+msgstr ""
+
 msgid "Journal"
 msgstr "Tagebuch"
 
@@ -8388,6 +8397,9 @@ msgstr "Aktuell behalten"
 
 msgid "Keep existing pricing, only add new items"
 msgstr "Behalten Sie bestehende Preise, fügen Sie nur neue Artikel hinzu"
+
+msgid "Keep matching items"
+msgstr ""
 
 msgid "Keep only items where…"
 msgstr "Nur Artikel behalten, bei denen…"
@@ -11162,6 +11174,9 @@ msgstr "Wählen Sie einen Kunden oder einen Kundentyp aus, um deren Preise anzuz
 msgid "Pick a date or leave blank to clear it."
 msgstr "Wählen Sie ein Datum oder lassen Sie es leer, um es zu löschen."
 
+msgid "Pick a field…"
+msgstr ""
+
 msgid "Pick a list variable…"
 msgstr "Wählen Sie eine Listenvariable…"
 
@@ -13578,9 +13593,6 @@ msgstr "Einladung senden"
 msgid "Send Invites"
 msgstr "Einladungen senden"
 
-msgid "Send Notifications"
-msgstr "Benachrichtigungen senden"
-
 msgid "Send RFQ to Suppliers"
 msgstr "RFQ an Lieferanten senden"
 
@@ -14744,6 +14756,15 @@ msgstr "Tags"
 msgid "Tailor this hub for the customer. Changes apply live for everyone viewing it. Never shown to the customer here."
 msgstr "Passen Sie diesen Hub für den Kunden an. Änderungen werden live für alle angewendet, die ihn anzeigen. Wird dem Kunden hier nie angezeigt."
 
+msgid "Take one field from every item"
+msgstr ""
+
+msgid "Take the first item"
+msgstr ""
+
+msgid "Take the last item"
+msgstr ""
+
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Nehmen Sie die kürzeste verbleibende Haltbarkeitsdauer der Materialien, die zur Herstellung dieses Artikels verbraucht werden. Verwenden Sie dies, wenn die Haltbarkeit des Produkts von seinen Inhaltsstoffen abhängt."
 
@@ -14915,14 +14936,17 @@ msgstr "Testwert"
 msgid "Text size"
 msgstr "Textgröße"
 
+msgid "That account is still being reconnected. Try again in a moment."
+msgstr ""
+
 msgid "That connection name is already used"
 msgstr "Dieser Verbindungsname wird bereits verwendet"
 
+msgid "That field holds several values, so they are combined into one list."
+msgstr ""
+
 msgid "That name is already used by another step."
 msgstr "Dieser Name wird bereits von einem anderen Schritt verwendet."
-
-msgid "That name is already used."
-msgstr "Dieser Name wird bereits verwendet."
 
 #. placeholder {0}: i18n._(step.title)
 msgid "The \"{0}\" phase checks itself off once all of its tasks in the project plan are done."
@@ -15236,6 +15260,9 @@ msgstr "Die Bestandskosten, die bei der Buchung einer Lieferung erfasst werden, 
 
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "Die IRS-Wiederherstellungsperiode-Klasse für diesen Gegenstand nach MACRS (3, 5, 7, 10, 15, 20, 27,5, 39 Jahre)."
+
+msgid "The items in that list have no fields to take."
+msgstr ""
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "Der Auftrag, dessen Operation diese Außenbearbeitungslinie abdeckt; der Beleg der Zeile schließt die Operation gegen diesen Auftrag."
@@ -15702,6 +15729,12 @@ msgstr "Diese Aufträge haben Operationen, die diesem Arbeitszentrum zugewiesen 
 
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Diese Journaleinträge sind noch im Entwurf, daher befinden sich ihre Belastungen und Gutschriften nicht im Ledger für diese Periode. Buchen Sie jeden Eintrag, oder buchen Sie ihn in eine spätere offene Periode um."
+
+msgid "This account has stopped working. Add it again to reconnect — workflow steps using it will fail until you do."
+msgstr ""
+
+msgid "This account needs to be reconnected."
+msgstr ""
 
 msgid "This Carbon instance is missing its OAuth credentials for this integration. Ask an administrator to set them."
 msgstr "Dieser Carbon-Instance fehlen die OAuth-Anmeldedaten für diese Integration. Bitten Sie einen Administrator, diese festzulegen."
@@ -16287,6 +16320,9 @@ msgstr "Ausgelöst von"
 
 msgid "Triggers"
 msgstr "Auslöser"
+
+msgid "Try again"
+msgstr ""
 
 msgid "Tuesday"
 msgstr "Dienstag"
