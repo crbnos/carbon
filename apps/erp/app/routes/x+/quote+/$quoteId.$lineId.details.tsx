@@ -8,9 +8,6 @@ import {
   isBlocked
 } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
-import { trigger } from "@carbon/jobs";
-import { getLogger } from "@carbon/logger";
-import { NotificationEvent } from "@carbon/notifications";
 import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
@@ -52,7 +49,10 @@ import {
   quoteLineValidator,
   reconcileQuantityBreaks
 } from "~/modules/sales";
-import { saveQuoteLineWithPrices } from "~/modules/sales/sales.server";
+import {
+  recordSalesRuleOutcome,
+  saveQuoteLineWithPrices
+} from "~/modules/sales/sales.server";
 import {
   OpportunityLineDocuments,
   OpportunityLineNotes
@@ -68,14 +68,11 @@ import {
 } from "~/modules/sales/ui/Quotes";
 import QuoteLinePricingHistory from "~/modules/sales/ui/Quotes/QuoteLinePricingHistory";
 import QuoteLineRiskRegister from "~/modules/sales/ui/Quotes/QuoteLineRiskRegister";
-import { getCompanySettings } from "~/modules/settings";
 import { getTagsList, type SupplierPriceMap } from "~/modules/shared";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 import { sanitize } from "~/utils/supabase";
-
-const logger = getLogger("erp", "quoteid-lineid-details");
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { client, companyId } = await requirePermissions(request, {
@@ -228,54 +225,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const deduped = dedupeViolations(violations);
   if (deduped.length > 0) {
     const blocked = isBlocked(deduped, acknowledged);
-    const outcome = blocked ? ("blocked" as const) : ("acknowledged" as const);
-
-    // Persist override evidence — one row per deduped violation. Failures
-    // must never break the submission.
-    const acknowledgmentInsert = await serviceRole
-      .from("enforcementRuleAcknowledgment")
-      .insert(
-        deduped.map((v) => ({
-          companyId,
-          ruleId: v.ruleId,
-          ruleName: ruleNames[v.ruleId] ?? null,
-          documentType: "quote" as const,
-          documentId: quoteId,
-          documentLineId: lineId,
-          itemId: d.itemId ?? null,
-          severity: v.severity,
-          outcome,
-          message: v.message,
-          createdBy: userId
-        }))
-      );
-    if (acknowledgmentInsert.error) {
-      logger.error("Failed to record sales rule acknowledgments", {
-        error: acknowledgmentInsert.error
-      });
-    }
-
-    // Notify the configured group — fire-and-forget; a notification failure
-    // must never break the submission.
-    try {
-      const companySettings = await getCompanySettings(serviceRole, companyId);
-      if (companySettings.data?.salesRuleNotificationGroup?.length) {
-        await trigger("notify", {
-          companyId,
-          documentId: `quote:${quoteId}:${outcome}`,
-          event: NotificationEvent.SalesRuleViolation,
-          recipient: {
-            type: "group",
-            groupIds: companySettings.data.salesRuleNotificationGroup
-          },
-          from: userId
-        });
-      }
-    } catch (err) {
-      logger.error("Failed to trigger sales rule violation notification", {
-        error: err
-      });
-    }
+    await recordSalesRuleOutcome(serviceRole, {
+      companyId,
+      userId,
+      documentType: "quote",
+      documentId: quoteId,
+      documentLineId: lineId,
+      itemId: d.itemId ?? null,
+      outcome: blocked ? "blocked" : "acknowledged",
+      violations: deduped,
+      ruleNames
+    });
 
     if (blocked) {
       return { error: null, data: null, violations: deduped, ruleNames };

@@ -673,6 +673,9 @@ msgstr "販売注文が削除される"
 msgid "A sales order line contains order details for a particular item"
 msgstr "販売注文行には、特定の品目の注文詳細が含まれています"
 
+msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
+msgstr "注文顧客のヘッダーアドレスとは異なる顧客および場所に直接出荷される販売注文。出荷先がヘッダーのアドレスを上書きします。"
+
 msgid "A sales order's assignee changes"
 msgstr "販売注文の担当者が変更される"
 
@@ -5367,6 +5370,9 @@ msgstr "図面番号"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "図面が置き換わりました。バルーン配置は削除されました。機能行は変更されていません。"
 
+msgid "Drop shipment"
+msgstr "ドロップシップメント"
+
 msgid "Drop Shipment"
 msgstr "ドロップシップメント"
 
@@ -5972,8 +5978,8 @@ msgstr "終了 ({0})"
 msgid "Enforce — edits are blocked"
 msgstr "強制 - 編集はブロックされます"
 
-msgid "Enforce checks on quote and sales order lines for this item."
-msgstr "このアイテムの見積書および販売注文行に対するチェックを実行します。"
+msgid "Enforce checks on quote, sales order, and sales invoice lines for this item."
+msgstr "この品目の見積、販売注文、および販売請求書の行に対するチェックを適用します。"
 
 msgid "Enforce customer and item checks when items are added to quotes, sales orders, and sales invoices."
 msgstr "見積書、受注、売上請求書に品目を追加する際に、顧客と品目のチェックを実施します。"

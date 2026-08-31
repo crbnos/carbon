@@ -673,6 +673,9 @@ msgstr "एक विक्रय आदेश हटाया गया है"
 msgid "A sales order line contains order details for a particular item"
 msgstr "एक बिक्रय आदेश पंक्ति किसी विशेष आइटम के लिए आदेश विवरण रखती है"
 
+msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
+msgstr "एक बिक्रय आदेश सीधे एक अलग ग्राहक और स्थान पर भेजा गया है, जो आदेश देने वाले ग्राहक के हेडर पते से अलग है; शिपमेंट का गंतव्य हेडर को ओवरराइड करता है।"
+
 msgid "A sales order's assignee changes"
 msgstr "किसी विक्रय आदेश के नियुक्त व्यक्ति में परिवर्तन होता है"
 
@@ -5367,6 +5370,9 @@ msgstr "ड्राइंग नंबर"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "ड्राइंग बदल दी गई। बैलून प्लेसमेंट हटा दिए गए; फीचर पंक्तियां अपरिवर्तित हैं।"
 
+msgid "Drop shipment"
+msgstr "ड्रॉप शिपमेंट"
+
 msgid "Drop Shipment"
 msgstr "ड्रॉप शिपमेंट"
 
@@ -5972,8 +5978,8 @@ msgstr "समाप्त ({0})"
 msgid "Enforce — edits are blocked"
 msgstr "लागू करें — संपादन अवरुद्ध हैं"
 
-msgid "Enforce checks on quote and sales order lines for this item."
-msgstr "इस आइटम के लिए उद्धरण और बिक्रय आदेश लाइनों पर जांच लागू करें।"
+msgid "Enforce checks on quote, sales order, and sales invoice lines for this item."
+msgstr "इस आइटम के लिए उद्धरण, बिक्रय आदेश और बिक्रय चालान पंक्तियों पर जांच लागू करें।"
 
 msgid "Enforce customer and item checks when items are added to quotes, sales orders, and sales invoices."
 msgstr "जब आइटम उद्धरण, बिक्रय आदेश और बिक्रय चालान में जोड़े जाते हैं, तब ग्राहक और आइटम जांच लागू करें।"

@@ -8,9 +8,7 @@ import {
   isBlocked
 } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
-import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
-import { NotificationEvent } from "@carbon/notifications";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
@@ -23,7 +21,7 @@ import {
   upsertQuoteLine,
   upsertQuoteLineMethod
 } from "~/modules/sales";
-import { getCompanySettings } from "~/modules/settings";
+import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
@@ -94,62 +92,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
   const deduped = dedupeViolations(violations);
   const blocked = deduped.length > 0 && isBlocked(deduped, acknowledged);
-  if (deduped.length > 0) {
-    const outcome = blocked ? ("blocked" as const) : ("acknowledged" as const);
-
-    if (blocked) {
-      // Persist blocked evidence — one row per deduped violation. No line
-      // exists on a blocked create, so documentLineId stays null. Failures
-      // must never break the submission.
-      const acknowledgmentInsert = await serviceRole
-        .from("enforcementRuleAcknowledgment")
-        .insert(
-          deduped.map((v) => ({
-            companyId,
-            ruleId: v.ruleId,
-            ruleName: ruleNames[v.ruleId] ?? null,
-            documentType: "quote" as const,
-            documentId: quoteId,
-            documentLineId: null,
-            itemId: d.itemId ?? null,
-            severity: v.severity,
-            outcome,
-            message: v.message,
-            createdBy: userId
-          }))
-        );
-      if (acknowledgmentInsert.error) {
-        logger.error("Failed to record sales rule acknowledgments", {
-          error: acknowledgmentInsert.error
-        });
-      }
-    }
-
-    // Notify the configured group — fire-and-forget; a notification failure
-    // must never break the submission.
-    try {
-      const companySettings = await getCompanySettings(serviceRole, companyId);
-      if (companySettings.data?.salesRuleNotificationGroup?.length) {
-        await trigger("notify", {
-          companyId,
-          documentId: `quote:${quoteId}:${outcome}`,
-          event: NotificationEvent.SalesRuleViolation,
-          recipient: {
-            type: "group",
-            groupIds: companySettings.data.salesRuleNotificationGroup
-          },
-          from: userId
-        });
-      }
-    } catch (err) {
-      logger.error("Failed to trigger sales rule violation notification", {
-        error: err
-      });
-    }
-
-    if (blocked) {
-      return { error: null, data: null, violations: deduped, ruleNames };
-    }
+  if (blocked) {
+    // No line exists on a blocked create, so documentLineId stays null.
+    await recordSalesRuleOutcome(serviceRole, {
+      companyId,
+      userId,
+      documentType: "quote",
+      documentId: quoteId,
+      itemId: d.itemId ?? null,
+      outcome: "blocked",
+      violations: deduped,
+      ruleNames
+    });
+    return { error: null, data: null, violations: deduped, ruleNames };
   }
 
   const createQuotationLine = await upsertQuoteLine(serviceRole, {
@@ -176,31 +131,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const quoteLineId = createQuotationLine.data.id;
 
   // Acknowledged proceed: persist override evidence now that the line exists
-  // so documentLineId captures the created line. Failures must never break
-  // the submission.
-  if (deduped.length > 0 && !blocked) {
-    const acknowledgmentInsert = await serviceRole
-      .from("enforcementRuleAcknowledgment")
-      .insert(
-        deduped.map((v) => ({
-          companyId,
-          ruleId: v.ruleId,
-          ruleName: ruleNames[v.ruleId] ?? null,
-          documentType: "quote" as const,
-          documentId: quoteId,
-          documentLineId: quoteLineId,
-          itemId: d.itemId ?? null,
-          severity: v.severity,
-          outcome: "acknowledged" as const,
-          message: v.message,
-          createdBy: userId
-        }))
-      );
-    if (acknowledgmentInsert.error) {
-      logger.error("Failed to record sales rule acknowledgments", {
-        error: acknowledgmentInsert.error
-      });
-    }
+  // so documentLineId captures the created line (and the notification only
+  // fires for a line that actually landed).
+  if (deduped.length > 0) {
+    await recordSalesRuleOutcome(serviceRole, {
+      companyId,
+      userId,
+      documentType: "quote",
+      documentId: quoteId,
+      documentLineId: quoteLineId,
+      itemId: d.itemId ?? null,
+      outcome: "acknowledged",
+      violations: deduped,
+      ruleNames
+    });
   }
 
   if (d.methodType === "Purchase to Order") {

@@ -122,6 +122,14 @@ export function useRuleViolations<T = unknown>({
         // Violations — keep modal open, don't fire success.
         return;
       }
+      // A non-violation failure (`{ success: false, message }` — e.g. a PDF
+      // that failed to generate) is not success: don't close the caller's
+      // modal over it. The caller's own toast effect surfaces the message;
+      // toasting here too would double it up.
+      if ((data as { success?: boolean } | undefined)?.success === false) {
+        pendingSuccessRef.current = false;
+        return;
+      }
       if (!pendingSuccessRef.current) return;
       pendingSuccessRef.current = false;
       onSuccess?.();

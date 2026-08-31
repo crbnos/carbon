@@ -1036,8 +1036,3 @@ export const salesRuleValidator = z
       }
     });
   });
-
-export const salesRuleAssignmentValidator = z.object({
-  itemId: z.string().min(1, { message: "Item ID is required" }),
-  ruleId: z.string().min(1, { message: "Rule ID is required" })
-});

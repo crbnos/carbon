@@ -31,15 +31,20 @@ const ITEM_TYPES_OPTIONS = enumOptions(inventoryItemTypes);
 const ITEM_TRACKING_TYPES_OPTIONS = enumOptions(itemTrackingTypes);
 const REPLENISHMENT_SYSTEMS_OPTIONS = enumOptions(itemReplenishmentSystems);
 
-export function useValueOptions(): ValueOptionsByLoader {
+export function useValueOptions(
+  opts: { includeCustomerFields?: boolean } = {}
+): ValueOptionsByLoader {
+  const { includeCustomerFields = false } = opts;
   const locations = useLocations();
   const storageTypes = useStorageTypes();
   const itemPostingGroups = useItemPostingGroups();
   // Sales-rule loaders (customer-context fields). `countries` values are
   // alpha-2 codes, matching the persisted `customer.location.countryCode`.
-  const customerTypes = useCustomerTypes();
-  const customerStatuses = useCustomerStatuses();
-  const countries = useCountries();
+  // Only fetched when the builder's field pool actually contains customer
+  // fields — a storage-rule builder never shows them.
+  const customerTypes = useCustomerTypes(includeCustomerFields);
+  const customerStatuses = useCustomerStatuses(includeCustomerFields);
+  const countries = useCountries(includeCustomerFields);
 
   return useMemo<ValueOptionsByLoader>(
     () => ({

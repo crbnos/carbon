@@ -67,7 +67,7 @@ CustomerStatus.displayName = "CustomerStatus";
 
 export default CustomerStatus;
 
-export const useCustomerStatuses = () => {
+export const useCustomerStatuses = (enabled = true) => {
   const customerStatusFetcher =
     useFetcher<Awaited<ReturnType<typeof getCustomerStatusesList>>>();
 
@@ -78,7 +78,7 @@ export const useCustomerStatuses = () => {
   const hasCustomerData = sharedCustomerData?.customerStatuses;
 
   useMount(() => {
-    if (!hasCustomerData)
+    if (enabled && !hasCustomerData)
       customerStatusFetcher.load(path.to.api.customerStatuses);
   });
 

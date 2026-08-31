@@ -220,7 +220,7 @@ export const FIELD_REGISTRY: FieldDef[] = [
 
   // ── StorageUnit context (item target) ─────────────────────────────────────
   // Loaded by the evaluator when `line.storageUnitId` is set. `nullable: true`
-  // on every entry so sales rules can guard with `isSet`/`isNotSet`.
+  // on every entry so storage rules can guard with `isSet`/`isNotSet`.
   fields.synthetic({
     path: "storageUnit.id",
     derivedFrom: "The bin chosen on this transaction line.",

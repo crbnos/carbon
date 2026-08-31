@@ -5,7 +5,9 @@ import type { Database } from "@carbon/database";
 import {
   dedupeViolations,
   evaluateSalesRuleLines,
-  resolveSalesOrderShipTo
+  evaluateSalesRulesForSalesDocument,
+  resolveSalesOrderShipTo,
+  type SalesDocumentType
 } from "@carbon/ee/rules.server";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -21,6 +23,7 @@ import * as productionFunctions from "~/modules/production/production.service";
 import * as purchasingFunctions from "~/modules/purchasing/purchasing.service";
 import * as qualityFunctions from "~/modules/quality/quality.service";
 import * as resourcesFunctions from "~/modules/resources/resources.service";
+import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import * as salesFunctions from "~/modules/sales/sales.service";
 import * as settingsFunctions from "~/modules/settings/settings.service";
 import * as sharedFunctions from "~/modules/shared/shared.service";
@@ -219,7 +222,7 @@ async function checkSalesRulesForSalesLineWrite(
           ? payload.quantity
           : 1;
 
-  const { violations } = await evaluateSalesRuleLines({
+  const { violations, ruleNames } = await evaluateSalesRuleLines({
     client: serviceRole,
     companyId: context.companyId,
     userId: context.userId,
@@ -239,6 +242,100 @@ async function checkSalesRulesForSalesLineWrite(
     (v) => v.severity === "error"
   );
   if (errors.length === 0) return null;
+
+  // Blocked evidence, same as the human line routes. Warns that passed leave
+  // no row on purpose: "acknowledged" means a person waved them past, and no
+  // person did here.
+  await recordSalesRuleOutcome(serviceRole, {
+    companyId: context.companyId,
+    userId: context.userId,
+    documentType:
+      surface === "quoteLine"
+        ? "quote"
+        : surface === "salesOrderLine"
+          ? "salesOrder"
+          : "salesInvoice",
+    documentId,
+    documentLineId: lineId === "new" ? null : lineId,
+    itemId,
+    outcome: "blocked",
+    violations: errors,
+    ruleNames
+  });
+
+  return {
+    success: false,
+    error: `Blocked by sales rules: ${errors.map((v) => v.message).join("; ")}`
+  };
+}
+
+/**
+ * Sales-rule backstop for the terminal sales-document transitions reached
+ * through MCP. The route actions run `evaluateSalesRulesForSalesDocument`
+ * before finalizing a quote, converting a quote to an order, or converting an
+ * RFQ to a quote — but this executor calls the same service functions by name,
+ * so without this gate an agent could finalize or convert a document carrying
+ * error-severity violations that every human path blocks.
+ *
+ * Same block semantics as the line-write backstop above: only `error`
+ * violations block; there is no human on this path to acknowledge a `warn`.
+ */
+async function checkSalesRulesForSalesDocumentTransition(
+  functionName: string,
+  context: ExecutorContext,
+  args?: Record<string, any>
+): Promise<{ success: false; error: string } | null> {
+  const documentType: SalesDocumentType | null =
+    functionName === "sales_finalizeQuote" ||
+    functionName === "sales_convertQuoteToOrder"
+      ? "quote"
+      : functionName === "sales_convertSalesRfqToQuote"
+        ? "salesRfq"
+        : null;
+  if (!documentType || !args) return null;
+
+  // `finalizeQuote` takes flat args (`quoteId`); the two convert functions
+  // take a nested `payload` (`serviceParams: ["client", "payload"]`) whose
+  // document id is `id`. Accept both shapes so a flat-args call is still
+  // gated.
+  const payload: Record<string, any> =
+    args.payload && typeof args.payload === "object" ? args.payload : args;
+  const documentId =
+    typeof payload.quoteId === "string"
+      ? payload.quoteId
+      : typeof payload.id === "string"
+        ? payload.id
+        : null;
+  if (!documentId) return null;
+
+  const serviceRole = getCarbonServiceRole();
+  const { violations, ruleNames } = await evaluateSalesRulesForSalesDocument({
+    client: serviceRole,
+    companyId: context.companyId,
+    userId: context.userId,
+    documentType,
+    documentId
+  });
+
+  const errors = dedupeViolations(violations).filter(
+    (v) => v.severity === "error"
+  );
+  if (errors.length === 0) return null;
+
+  // Blocked evidence, same as the route gates. An RFQ has no evidence row
+  // (the acknowledgment table's documentType CHECK covers quote / salesOrder /
+  // salesInvoice only); its lines are re-gated at the quote stage.
+  if (documentType === "quote") {
+    await recordSalesRuleOutcome(serviceRole, {
+      companyId: context.companyId,
+      userId: context.userId,
+      documentType: "quote",
+      documentId,
+      outcome: "blocked",
+      violations: errors,
+      ruleNames
+    });
+  }
 
   return {
     success: false,
@@ -309,6 +406,13 @@ export async function executeFunction(
     normalizedArgs
   );
   if (salesRuleBlock) return salesRuleBlock;
+
+  const salesDocumentBlock = await checkSalesRulesForSalesDocumentTransition(
+    functionName,
+    context,
+    normalizedArgs
+  );
+  if (salesDocumentBlock) return salesDocumentBlock;
 
   // Parse the function name to get module and function
   const parts = functionName.split("_");

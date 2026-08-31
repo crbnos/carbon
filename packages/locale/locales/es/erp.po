@@ -673,6 +673,9 @@ msgstr "Se elimina un pedido de venta"
 msgid "A sales order line contains order details for a particular item"
 msgstr "Una línea de orden de venta contiene detalles de pedido para un artículo en particular"
 
+msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
+msgstr "Un pedido de venta enviado directamente a un cliente diferente y a una ubicación diferente de la dirección del encabezado del cliente que realiza el pedido; el destino del envío anula el del encabezado."
+
 msgid "A sales order's assignee changes"
 msgstr "El asignado de un pedido de venta cambia"
 
@@ -5367,6 +5370,9 @@ msgstr "Número de Dibujo"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "Dibujo reemplazado. Las ubicaciones de globos se eliminaron; las filas de características no cambiaron."
 
+msgid "Drop shipment"
+msgstr "Envío directo"
+
 msgid "Drop Shipment"
 msgstr "Envío Directo"
 
@@ -5972,8 +5978,8 @@ msgstr "Final ({0})"
 msgid "Enforce — edits are blocked"
 msgstr "Aplicar — las ediciones están bloqueadas"
 
-msgid "Enforce checks on quote and sales order lines for this item."
-msgstr "Aplicar verificaciones en líneas de cotización y orden de venta para este elemento."
+msgid "Enforce checks on quote, sales order, and sales invoice lines for this item."
+msgstr "Aplicar verificaciones en líneas de cotización, pedido de venta y factura de venta para este artículo."
 
 msgid "Enforce customer and item checks when items are added to quotes, sales orders, and sales invoices."
 msgstr "Aplicar verificaciones de cliente y artículo cuando se agregan artículos a cotizaciones, órdenes de venta y facturas de venta."

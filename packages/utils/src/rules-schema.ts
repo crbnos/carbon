@@ -3,9 +3,8 @@
 //
 // Lives here rather than in an ERP module because BOTH rule families validate
 // the same AST: storage rules (`~/modules/inventory`) and sales rules
-// (`~/modules/items`). Keeping it in the engine package means neither module
-// has to import the other — `inventory` already depends on `items`, so the
-// reverse edge would be a cycle.
+// (`~/modules/sales`). Keeping it in the engine package means neither module
+// has to import the other for its rule validator.
 
 import { z } from "zod";
 import type { MatchKind, Operator, Severity } from "./rules";

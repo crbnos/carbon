@@ -21,7 +21,6 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
-import type { FetcherWithComponents } from "react-router";
 import { useParams } from "react-router";
 import {
   CustomerContact,
@@ -46,14 +45,12 @@ type QuotationFinalizeModalProps = {
   onClose: () => void;
   quote?: Quotation;
   shipment: QuotationShipment | null;
-  fetcher: FetcherWithComponents<{}>;
   defaultCc?: string[];
 };
 
 const QuotationFinalizeModal = ({
   quote,
   onClose,
-  fetcher: _fetcher,
   shipment,
   defaultCc = []
 }: QuotationFinalizeModalProps) => {

@@ -41,6 +41,7 @@ import {
   STRIPE_CONNECT_INTEGRATION
 } from "~/modules/invoicing/stripe-customer.server";
 import { getCustomerContact, updateCustomerContact } from "~/modules/sales";
+import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import { getCompany } from "~/modules/settings";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getUser } from "~/modules/users/users.server";
@@ -538,13 +539,27 @@ export async function action(args: ActionFunctionArgs) {
       documentId: invoiceId
     });
     const deduped = dedupeViolations(violations);
-    if (isBlocked(deduped, acknowledged)) {
-      return {
-        success: false,
-        message: "Sales rules blocked posting this invoice",
+    if (deduped.length > 0) {
+      const blocked = isBlocked(deduped, acknowledged);
+      // Record the same evidence + notification the per-line checks write —
+      // posting is the revenue checkpoint, the strongest override there is.
+      await recordSalesRuleOutcome(serviceRole, {
+        companyId,
+        userId,
+        documentType: "salesInvoice",
+        documentId: invoiceId,
+        outcome: blocked ? "blocked" : "acknowledged",
         violations: deduped,
         ruleNames
-      };
+      });
+      if (blocked) {
+        return {
+          success: false,
+          message: "Sales rules blocked posting this invoice",
+          violations: deduped,
+          ruleNames
+        };
+      }
     }
   }
 

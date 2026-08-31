@@ -58,7 +58,6 @@ import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import type { SalesInvoice } from "~/modules/invoicing/types";
 import SalesInvoiceStatus from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceStatus";
 import type { Job } from "~/modules/production/types";
-import type { action as confirmAction } from "~/routes/x+/sales-order+/$orderId.confirm";
 import type { action as statusAction } from "~/routes/x+/sales-order+/$orderId.status";
 import { useCustomers } from "~/stores/customers";
 import { path } from "~/utils/path";
@@ -69,12 +68,10 @@ import SalesStatus from "./SalesStatus";
 import { useSalesOrder } from "./useSalesOrder";
 
 const SalesOrderConfirmModal = ({
-  fetcher: _fetcher,
   salesOrder,
   onClose,
   defaultCc = []
 }: {
-  fetcher: FetcherWithComponents<{ success: boolean; message: string }>;
   salesOrder?: SalesOrder;
   onClose: () => void;
   defaultCc?: string[];
@@ -218,7 +215,6 @@ const SalesOrderHeader = () => {
   const isLocked = isSalesOrderLocked(routeData?.salesOrder?.status);
 
   const statusFetcher = useFetcher<typeof statusAction>();
-  const confirmFetcher = useFetcher<typeof confirmAction>();
   const { ship, invoice } = useSalesOrder();
 
   const linesRequireJobs = hasLinesRequiringJobs({
@@ -411,10 +407,8 @@ const SalesOrderHeader = () => {
                   ? "primary"
                   : "secondary"
               }
-              isLoading={confirmFetcher.state !== "idle"}
               onClick={confirmDisclosure.onOpen}
               isDisabled={
-                confirmFetcher.state !== "idle" ||
                 !["Draft", "Needs Approval"].includes(
                   routeData?.salesOrder?.status ?? ""
                 ) ||
@@ -634,7 +628,6 @@ const SalesOrderHeader = () => {
       )}
       {confirmDisclosure.isOpen && (
         <SalesOrderConfirmModal
-          fetcher={confirmFetcher}
           salesOrder={routeData?.salesOrder}
           onClose={confirmDisclosure.onClose}
           defaultCc={routeData?.defaultCc ?? []}

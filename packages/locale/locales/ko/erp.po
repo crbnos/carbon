@@ -673,6 +673,9 @@ msgstr "판매 주문이 삭제되었습니다"
 msgid "A sales order line contains order details for a particular item"
 msgstr "판매주문 라인에는 특정 품목에 대한 주문 세부 정보가 포함됩니다"
 
+msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
+msgstr "주문 고객의 헤더 주소와 다른 고객 및 위치로 직접 배송되는 판매 주문입니다. 배송 목적지가 헤더 주소를 무시합니다."
+
 msgid "A sales order's assignee changes"
 msgstr "판매 주문의 담당자가 변경되었습니다"
 
@@ -5367,6 +5370,9 @@ msgstr "도면 번호"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "도면이 교체되었습니다. 벌룬 배치는 제거되었으며, 피처 행은 변경되지 않습니다."
 
+msgid "Drop shipment"
+msgstr "직배송"
+
 msgid "Drop Shipment"
 msgstr "직송 출하"
 
@@ -5972,8 +5978,8 @@ msgstr "종료 ({0})"
 msgid "Enforce — edits are blocked"
 msgstr "강제 — 편집이 차단되었습니다."
 
-msgid "Enforce checks on quote and sales order lines for this item."
-msgstr "이 항목에 대한 견적서 및 판매 주문 라인에 검사를 적용합니다."
+msgid "Enforce checks on quote, sales order, and sales invoice lines for this item."
+msgstr "이 항목에 대해 견적, 판매 주문, 판매 송장 라인에 점검을 강제합니다."
 
 msgid "Enforce customer and item checks when items are added to quotes, sales orders, and sales invoices."
 msgstr "견적, 판매 주문 및 판매 송장에 항목이 추가될 때 고객 및 항목 검사를 적용합니다."

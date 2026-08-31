@@ -665,20 +665,3 @@ export const storageRuleValidator = z
       }
     });
   });
-
-/**
- * Polymorphic assignment validator factory. The form's hidden field tells the
- * action which targetType is in play, then this validator picks the right
- * target-id key.
- */
-export const storageRuleAssignmentValidator = (
-  targetType: "item" | "workCenter"
-) => {
-  const idKey = targetType === "item" ? "itemId" : "workCenterId";
-  return z.object({
-    [idKey]: z.string().min(1, { message: "Target ID is required" }),
-    ruleId: z.string().min(1, { message: "Rule ID is required" })
-  });
-};
-
-export const storageRuleAcknowledgeValidator = zfd.checkbox();

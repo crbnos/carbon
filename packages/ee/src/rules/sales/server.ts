@@ -104,6 +104,9 @@ export async function evaluateSalesRuleLines({
           .from("customerLocation")
           .select("id, address(countryCode)")
           .eq("id", customerLocationId)
+          // companyId scope matters here: the invoice-post gate evaluates with
+          // the service-role client, so RLS is not backstopping this read.
+          .eq("companyId", companyId)
           .single()
       : Promise.resolve({ data: null, error: null }),
     itemIds.size > 0

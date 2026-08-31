@@ -36,7 +36,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   if (rules.error) {
     throw redirect(
-      path.to.items,
+      path.to.salesOrders,
       await flash(request, error(rules.error, "Failed to load sales rules"))
     );
   }

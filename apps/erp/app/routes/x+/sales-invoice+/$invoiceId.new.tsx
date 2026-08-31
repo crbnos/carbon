@@ -8,9 +8,6 @@ import {
   isBlocked
 } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
-import { trigger } from "@carbon/jobs";
-import { getLogger } from "@carbon/logger";
-import { NotificationEvent } from "@carbon/notifications";
 import { useRouteData } from "@carbon/react";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect, useParams } from "react-router";
@@ -23,13 +20,11 @@ import {
   upsertSalesInvoiceLine
 } from "~/modules/invoicing";
 import SalesInvoiceLineForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm";
-import { getCompanySettings } from "~/modules/settings";
+import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import type { MethodItemType } from "~/modules/shared";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "invoiceid-new");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -104,64 +99,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const deduped = dedupeViolations(violations);
     if (deduped.length > 0) {
       const blocked = isBlocked(deduped, acknowledged);
-      const outcome = blocked
-        ? ("blocked" as const)
-        : ("acknowledged" as const);
-
       if (blocked) {
-        // Persist blocked evidence — one row per deduped violation. No line
-        // exists on a blocked create, so documentLineId stays null. Failures
-        // must never break the submission.
-        const acknowledgmentInsert = await serviceRole
-          .from("enforcementRuleAcknowledgment")
-          .insert(
-            deduped.map((v) => ({
-              companyId,
-              ruleId: v.ruleId,
-              ruleName: ruleNames[v.ruleId] ?? null,
-              documentType: "salesInvoice" as const,
-              documentId: invoiceId,
-              documentLineId: null,
-              itemId: d.itemId ?? null,
-              severity: v.severity,
-              outcome,
-              message: v.message,
-              createdBy: userId
-            }))
-          );
-        if (acknowledgmentInsert.error) {
-          logger.error("Failed to record sales rule acknowledgments", {
-            error: acknowledgmentInsert.error
-          });
-        }
-      }
-
-      // Notify the configured group — fire-and-forget; a notification failure
-      // must never break the submission.
-      try {
-        const companySettings = await getCompanySettings(
-          serviceRole,
-          companyId
-        );
-        if (companySettings.data?.salesRuleNotificationGroup?.length) {
-          await trigger("notify", {
-            companyId,
-            documentId: `salesInvoice:${invoiceId}:${outcome}`,
-            event: NotificationEvent.SalesRuleViolation,
-            recipient: {
-              type: "group",
-              groupIds: companySettings.data.salesRuleNotificationGroup
-            },
-            from: userId
-          });
-        }
-      } catch (err) {
-        logger.error("Failed to trigger sales rule violation notification", {
-          error: err
+        // No line exists on a blocked create, so documentLineId stays null.
+        await recordSalesRuleOutcome(serviceRole, {
+          companyId,
+          userId,
+          documentType: "salesInvoice",
+          documentId: invoiceId,
+          itemId: d.itemId ?? null,
+          outcome: "blocked",
+          violations: deduped,
+          ruleNames
         });
-      }
-
-      if (blocked) {
         return { error: null, data: null, violations: deduped, ruleNames };
       }
       acknowledgedViolations = deduped;
@@ -190,31 +139,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Acknowledged proceed: persist override evidence now that the line exists
-  // so documentLineId captures the created line. Failures must never break
-  // the submission.
+  // so documentLineId captures the created line (and the notification only
+  // fires for a line that actually landed).
   if (acknowledgedViolations.length > 0) {
-    const acknowledgmentInsert = await serviceRole
-      .from("enforcementRuleAcknowledgment")
-      .insert(
-        acknowledgedViolations.map((v) => ({
-          companyId,
-          ruleId: v.ruleId,
-          ruleName: acknowledgedRuleNames[v.ruleId] ?? null,
-          documentType: "salesInvoice" as const,
-          documentId: invoiceId,
-          documentLineId: createSalesInvoiceLine.data.id,
-          itemId: d.itemId ?? null,
-          severity: v.severity,
-          outcome: "acknowledged" as const,
-          message: v.message,
-          createdBy: userId
-        }))
-      );
-    if (acknowledgmentInsert.error) {
-      logger.error("Failed to record sales rule acknowledgments", {
-        error: acknowledgmentInsert.error
-      });
-    }
+    await recordSalesRuleOutcome(serviceRole, {
+      companyId,
+      userId,
+      documentType: "salesInvoice",
+      documentId: invoiceId,
+      documentLineId: createSalesInvoiceLine.data.id,
+      itemId: d.itemId ?? null,
+      outcome: "acknowledged",
+      violations: acknowledgedViolations,
+      ruleNames: acknowledgedRuleNames
+    });
   }
 
   throw redirect(path.to.salesInvoiceDetails(invoiceId));

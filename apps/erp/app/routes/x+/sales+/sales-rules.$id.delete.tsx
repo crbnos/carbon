@@ -14,10 +14,12 @@ import { getParams, path } from "~/utils/path";
 import { getCompanyId, salesRulesQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, { delete: "sales" });
+  const { client, companyId } = await requirePermissions(request, {
+    delete: "sales"
+  });
   const { id } = params;
   if (!id) throw notFound("id required");
-  const rule = await getEnforcementRule(client, "sales", id);
+  const rule = await getEnforcementRule(client, "sales", id, companyId);
   if (rule.error || !rule.data) {
     throw redirect(
       path.to.salesRules,
@@ -44,7 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("id required");
 
-  const result = await deleteEnforcementRule(client, "sales", id);
+  const result = await deleteEnforcementRule(client, "sales", id, companyId);
   if (result.error) {
     throw redirect(
       `${path.to.salesRules}?${getParams(request)}`,

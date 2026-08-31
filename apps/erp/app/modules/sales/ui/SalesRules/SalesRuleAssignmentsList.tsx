@@ -89,7 +89,7 @@ export default function SalesRuleAssignmentsList({
   // Assignment mutations are gated on `update: "sales"` (the assign/unassign
   // routes), so the UI mirrors that single permission.
   const canUpdate = permissions.can("update", "sales");
-  const description = t`Enforce checks on quote and sales order lines for this item.`;
+  const description = t`Enforce checks on quote, sales order, and sales invoice lines for this item.`;
 
   const assignedSet = useMemo(
     () => new Set(assignments.map((a) => a.ruleId)),

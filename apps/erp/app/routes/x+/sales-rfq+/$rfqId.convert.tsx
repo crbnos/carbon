@@ -41,6 +41,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     documentId: id
   });
   const deduped = dedupeViolations(violations);
+  // No acknowledgment evidence here: the table's documentType CHECK covers
+  // quote / salesOrder / salesInvoice only, and the minted quote's own line
+  // checks and finalize/convert gates re-evaluate (and record) everything
+  // downstream.
   if (deduped.length > 0 && isBlocked(deduped, acknowledged)) {
     return { violations: deduped, ruleNames };
   }

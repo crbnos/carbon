@@ -673,6 +673,9 @@ msgstr "Bir satış siparişi silindi"
 msgid "A sales order line contains order details for a particular item"
 msgstr "Bir satış siparişi satırı belirli bir ürünün sipariş ayrıntılarını içerir"
 
+msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
+msgstr "Sipariş veren müşterinin başlık adresinden farklı bir müşteriye ve konuma doğrudan gönderilen bir satış siparişi; sevkiyatın hedefi başlığı geçersiz kılar."
+
 msgid "A sales order's assignee changes"
 msgstr "Satış siparişinin atanmış kişisi değişti"
 
@@ -5367,6 +5370,9 @@ msgstr "Çizim Numarası"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "Çizim değiştirildi. Balon yerleşimleri kaldırıldı; özellik satırları değişmedi."
 
+msgid "Drop shipment"
+msgstr "Doğrudan Sevkiyat"
+
 msgid "Drop Shipment"
 msgstr "Sevkiyatı Başka Bir Yere Gönderme"
 
@@ -5972,8 +5978,8 @@ msgstr "Son ({0})"
 msgid "Enforce — edits are blocked"
 msgstr "Zorunlu — düzenlemeler engellendi"
 
-msgid "Enforce checks on quote and sales order lines for this item."
-msgstr "Bu öğe için alıntı ve satış siparişi satırlarında kontrolleri uygulayın."
+msgid "Enforce checks on quote, sales order, and sales invoice lines for this item."
+msgstr "Bu ürün için teklif, satış siparişi ve satış faturası satırlarında kontrolleri zorla."
 
 msgid "Enforce customer and item checks when items are added to quotes, sales orders, and sales invoices."
 msgstr "Öğeler tekliflere, satış siparişlerine ve satış faturalarına eklendiğinde müşteri ve öğe kontrolleri uygulayın."

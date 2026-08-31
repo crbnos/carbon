@@ -673,6 +673,9 @@ msgstr "销售订单已删除"
 msgid "A sales order line contains order details for a particular item"
 msgstr "销售订单行包含特定项目的订单详情"
 
+msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
+msgstr "销售订单直接运送给与订购客户的抬头地址不同的客户和地点；货运目的地优先于抬头地址。"
+
 msgid "A sales order's assignee changes"
 msgstr "销售订单的受理人已更改"
 
@@ -5367,6 +5370,9 @@ msgstr "图纸编号"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "图纸已替换。气球位置已移除；功能行保持不变。"
 
+msgid "Drop shipment"
+msgstr "直发"
+
 msgid "Drop Shipment"
 msgstr "直运"
 
@@ -5972,8 +5978,8 @@ msgstr "结束 ({0})"
 msgid "Enforce — edits are blocked"
 msgstr "强制执行—编辑被阻止"
 
-msgid "Enforce checks on quote and sales order lines for this item."
-msgstr "对此项目的报价和销售订单行强制执行检查。"
+msgid "Enforce checks on quote, sales order, and sales invoice lines for this item."
+msgstr "对本项目的报价单、销售订单和销售发票行执行检查。"
 
 msgid "Enforce customer and item checks when items are added to quotes, sales orders, and sales invoices."
 msgstr "当项目添加到报价、销售订单和销售发票时，强制执行客户和项目检查。"

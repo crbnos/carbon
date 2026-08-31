@@ -17,6 +17,7 @@ import {
   getSalesOrderLines,
   salesConfirmValidator
 } from "~/modules/sales";
+import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import {
   generateAndAttachSalesOrderPdf,
   sendSalesOrderEmail
@@ -78,13 +79,27 @@ export async function action(args: ActionFunctionArgs) {
       documentId: orderId
     });
     const deduped = dedupeViolations(violations);
-    if (deduped.length > 0 && isBlocked(deduped, acknowledged)) {
-      return {
-        success: false,
-        message: "Sales rule violations must be resolved before confirming",
+    if (deduped.length > 0) {
+      const blocked = isBlocked(deduped, acknowledged);
+      // Record the same evidence + notification the per-line checks write —
+      // an override at a gate is the strongest kind and must leave a trail.
+      await recordSalesRuleOutcome(serviceRole, {
+        companyId,
+        userId,
+        documentType: "salesOrder",
+        documentId: orderId,
+        outcome: blocked ? "blocked" : "acknowledged",
         violations: deduped,
         ruleNames
-      };
+      });
+      if (blocked) {
+        return {
+          success: false,
+          message: "Sales rule violations must be resolved before confirming",
+          violations: deduped,
+          ruleNames
+        };
+      }
     }
 
     const acceptLanguage = request.headers.get("accept-language");

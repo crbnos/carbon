@@ -9,9 +9,6 @@ import {
   resolveSalesOrderShipTo
 } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
-import { trigger } from "@carbon/jobs";
-import { getLogger } from "@carbon/logger";
-import { NotificationEvent } from "@carbon/notifications";
 import type { JSONContent } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
@@ -28,17 +25,15 @@ import {
 } from "~/modules/invoicing";
 import SalesInvoiceLineForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm";
 import { getOpportunityLineDocuments } from "~/modules/sales";
+import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import {
   OpportunityLineDocuments,
   OpportunityLineNotes
 } from "~/modules/sales/ui/Opportunity";
-import { getCompanySettings } from "~/modules/settings";
 import { useItems } from "~/stores";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "invoiceid-lineid-details");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -156,60 +151,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const deduped = dedupeViolations(violations);
     if (deduped.length > 0) {
       const blocked = isBlocked(deduped, acknowledged);
-      const outcome = blocked
-        ? ("blocked" as const)
-        : ("acknowledged" as const);
-
-      // Persist evidence — one row per deduped violation; the line already
-      // exists, so both outcomes carry its id. Failures must never break the
-      // submission.
-      const acknowledgmentInsert = await serviceRole
-        .from("enforcementRuleAcknowledgment")
-        .insert(
-          deduped.map((v) => ({
-            companyId,
-            ruleId: v.ruleId,
-            ruleName: ruleNames[v.ruleId] ?? null,
-            documentType: "salesInvoice" as const,
-            documentId: invoiceId,
-            documentLineId: lineId,
-            itemId: d.itemId ?? null,
-            severity: v.severity,
-            outcome,
-            message: v.message,
-            createdBy: userId
-          }))
-        );
-      if (acknowledgmentInsert.error) {
-        logger.error("Failed to record sales rule acknowledgments", {
-          error: acknowledgmentInsert.error
-        });
-      }
-
-      // Notify the configured group — fire-and-forget; a notification failure
-      // must never break the submission.
-      try {
-        const companySettings = await getCompanySettings(
-          serviceRole,
-          companyId
-        );
-        if (companySettings.data?.salesRuleNotificationGroup?.length) {
-          await trigger("notify", {
-            companyId,
-            documentId: `salesInvoice:${invoiceId}:${outcome}`,
-            event: NotificationEvent.SalesRuleViolation,
-            recipient: {
-              type: "group",
-              groupIds: companySettings.data.salesRuleNotificationGroup
-            },
-            from: userId
-          });
-        }
-      } catch (err) {
-        logger.error("Failed to trigger sales rule violation notification", {
-          error: err
-        });
-      }
+      await recordSalesRuleOutcome(serviceRole, {
+        companyId,
+        userId,
+        documentType: "salesInvoice",
+        documentId: invoiceId,
+        documentLineId: lineId,
+        itemId: d.itemId ?? null,
+        outcome: blocked ? "blocked" : "acknowledged",
+        violations: deduped,
+        ruleNames
+      });
 
       if (blocked) {
         return { error: null, data: null, violations: deduped, ruleNames };

@@ -98,7 +98,14 @@ export default function RuleBuilder({
       ? initial.conditions
       : [emptyConditionFor(targetType, surfaces, fields)]
   );
-  const optionsByLoader = useValueOptions();
+  // Customer-context option lists exist only when the caller's field pool has
+  // customer fields (i.e. the sales-rule builder); the default storage pools
+  // never do, so their builders skip those fetches entirely.
+  const includeCustomerFields = useMemo(
+    () => (fields ?? []).some((f) => f.context === "customer"),
+    [fields]
+  );
+  const optionsByLoader = useValueOptions({ includeCustomerFields });
 
   // Keep parents in sync with the live condition list. `onConditionsChange`
   // identity isn't tracked — parents wrap in `useCallback` if they need it.

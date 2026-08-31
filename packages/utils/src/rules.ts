@@ -93,9 +93,10 @@ export type RuleSurface = TransactionSurface | SalesRuleSurface;
  * a rule's `surfaces` array against this map; the evaluator skips surfaces
  * a rule didn't subscribe to.
  *
- * Sales rules own every inventory/storage surface — including `place`/`pick`
- * (bin-level guards that used to live on the now-removed `storageUnit` target).
- * They reference bin context via the `storageUnit.*` fields in the registry.
+ * Item-target storage rules own every inventory/storage surface — including
+ * `place`/`pick` (bin-level guards that used to live on the now-removed
+ * `storageUnit` target). They reference bin context via the `storageUnit.*`
+ * fields in the registry.
  */
 export const SURFACES_BY_TARGET_TYPE: Record<
   TargetType,

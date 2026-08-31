@@ -35,7 +35,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { locationId, lines } = validation.data;
   const acknowledged = formData.get("acknowledged") === "true";
 
-  // Sales Rule pre-flight. Create-Transfer auto-releases (insert sets
+  // Storage Rule pre-flight. Create-Transfer auto-releases (insert sets
   // status="Released"), so this is the gate where rules must fire before
   // any stock-moving is started. Evaluate against the destination side
   // (`toStorageUnitId`) — that's where stock will land.

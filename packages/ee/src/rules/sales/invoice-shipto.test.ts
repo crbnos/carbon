@@ -93,8 +93,8 @@ const BASE_ROWS: Record<string, Record<string, unknown>[]> = {
     }
   ],
   customerLocation: [
-    { id: "loc_us", address: { countryCode: "US" } },
-    { id: "loc_ir", address: { countryCode: "IR" } }
+    { id: "loc_us", companyId: COMPANY_ID, address: { countryCode: "US" } },
+    { id: "loc_ir", companyId: COMPANY_ID, address: { countryCode: "IR" } }
   ],
   item: [
     {

@@ -20,11 +20,11 @@ Country.displayName = "Country";
 
 export default Country;
 
-export const useCountries = () => {
+export const useCountries = (enabled = true) => {
   const countryFetcher = useFetcher<Awaited<ReturnType<typeof getCountries>>>();
 
   useMount(() => {
-    countryFetcher.load(path.to.api.countries);
+    if (enabled) countryFetcher.load(path.to.api.countries);
   });
 
   const options = useMemo(() => {

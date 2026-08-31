@@ -1,5 +1,6 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { QuoteEmail } from "@carbon/documents/email";
 import { getQuoteDisplayId } from "@carbon/documents/pdf";
@@ -22,6 +23,7 @@ import {
   getQuote,
   quoteFinalizeValidator
 } from "~/modules/sales";
+import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import { getCompany, getCompanySettings } from "~/modules/settings";
 import { upsertExternalLink } from "~/modules/shared";
 import { getUser } from "~/modules/users/users.server";
@@ -69,8 +71,22 @@ export async function action(args: ActionFunctionArgs) {
     documentId: quoteId
   });
   const deduped = dedupeViolations(violations);
-  if (deduped.length > 0 && isBlocked(deduped, acknowledged)) {
-    return { violations: deduped, ruleNames };
+  if (deduped.length > 0) {
+    const blocked = isBlocked(deduped, acknowledged);
+    // The strongest overrides happen at gates like this one — record the
+    // same evidence + notification the per-line checks write.
+    await recordSalesRuleOutcome(getCarbonServiceRole(), {
+      companyId,
+      userId,
+      documentType: "quote",
+      documentId: quoteId,
+      outcome: blocked ? "blocked" : "acknowledged",
+      violations: deduped,
+      ruleNames
+    });
+    if (blocked) {
+      return { violations: deduped, ruleNames };
+    }
   }
 
   const externalLink = await upsertExternalLink(client, {

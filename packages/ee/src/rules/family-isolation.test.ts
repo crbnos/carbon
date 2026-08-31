@@ -13,6 +13,7 @@
 
 import { describe, expect, it } from "vitest";
 import { getActiveSalesRulesForItems } from "./sales/service";
+import { getActiveRulesForTargets } from "./storage/service";
 
 type Filter = { col: string; val: unknown };
 
@@ -137,5 +138,72 @@ describe("enforcementRule family isolation", () => {
     expect(pinCall).toBeDefined();
     // No embed on the shared table — it would cross the family boundary.
     expect(pinCall?.select).not.toContain("(");
+  });
+
+  // The reverse direction: the storage fetches must be pinned to the storage
+  // family the same way. Without these, dropping an `.eq("family", "storage")`
+  // in storage/service.ts would only ever be caught in production.
+
+  const STORAGE_RULE = {
+    id: "rule_storage",
+    targetType: "item",
+    severity: "error",
+    message: "blocked",
+    conditionAst: { kind: "all", conditions: [] },
+    surfaces: ["receipt"],
+    updatedAt: null,
+    active: true,
+    filteredItemTypes: [],
+    filteredItemGroupIds: [],
+    filteredItemMatchAll: false
+  };
+
+  it("scopes every storage rule fetch to the storage family", async () => {
+    const { client, calls } = makeClient({
+      enforcementRule: [STORAGE_RULE],
+      enforcementRuleItemAssignment: [
+        { itemId: "item_1", ruleId: "rule_storage" }
+      ]
+    });
+
+    await getActiveRulesForTargets(
+      // biome-ignore lint/suspicious/noExplicitAny: test double
+      client as any,
+      { targetType: "item", targetIds: ["item_1"], companyId: "company_1" }
+    );
+
+    const ruleCalls = calls.filter((c) => c.table === "enforcementRule");
+    // Broadcast fetch + explicit-pin resolution — both must carry the family.
+    expect(ruleCalls.length).toBeGreaterThanOrEqual(2);
+    for (const call of ruleCalls) {
+      expect(call.filters).toContainEqual({ col: "family", val: "storage" });
+      expect(call.filters).toContainEqual({
+        col: "companyId",
+        val: "company_1"
+      });
+    }
+  });
+
+  it("ignores a pin that points at a sales rule", async () => {
+    // The shared pin table returns a row for a SALES rule id. The
+    // family-filtered rule fetch never returns that id, so it must not become
+    // a storage assignment.
+    const { client } = makeClient({
+      enforcementRule: [STORAGE_RULE],
+      enforcementRuleItemAssignment: [
+        { itemId: "item_1", ruleId: "rule_storage" },
+        { itemId: "item_1", ruleId: "rule_sales_pinned_to_same_item" }
+      ]
+    });
+
+    const { data, error } = await getActiveRulesForTargets(
+      // biome-ignore lint/suspicious/noExplicitAny: test double
+      client as any,
+      { targetType: "item", targetIds: ["item_1"], companyId: "company_1" }
+    );
+
+    expect(error).toBeNull();
+    const assigned = data.get("item_1") ?? [];
+    expect(assigned.map((r) => r.id)).toEqual(["rule_storage"]);
   });
 });

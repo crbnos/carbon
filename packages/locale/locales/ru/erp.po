@@ -673,6 +673,9 @@ msgstr "Заказ на продажу удален"
 msgid "A sales order line contains order details for a particular item"
 msgstr "Строка заказа на продажу содержит детали заказа для конкретного товара"
 
+msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
+msgstr "Заказ на продажу, отправленный напрямую другому клиенту и в другое место, чем адрес клиента в заголовке заказа; пункт назначения отправки переопределяет адрес в заголовке."
+
 msgid "A sales order's assignee changes"
 msgstr "Назначенный ответственный за заказ на продажу меняется"
 
@@ -5367,6 +5370,9 @@ msgstr "Номер чертежа"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "Рисунок заменён. Размещение выносок удалено; строки функций не изменены."
 
+msgid "Drop shipment"
+msgstr "Прямая отправка"
+
 msgid "Drop Shipment"
 msgstr "Прямая поставка"
 
@@ -5972,8 +5978,8 @@ msgstr "Конец ({0})"
 msgid "Enforce — edits are blocked"
 msgstr "Принудить — редактирование заблокировано"
 
-msgid "Enforce checks on quote and sales order lines for this item."
-msgstr "Применять проверки в строках предложения и заказа продажи для этого товара."
+msgid "Enforce checks on quote, sales order, and sales invoice lines for this item."
+msgstr "Применять проверки к строкам предложения, заказа на продажу и счета-фактуры продажи для этого товара."
 
 msgid "Enforce customer and item checks when items are added to quotes, sales orders, and sales invoices."
 msgstr "Применять проверки клиента и товара при добавлении товаров к предложениям, заказам продаж и счетам-фактурам продаж."

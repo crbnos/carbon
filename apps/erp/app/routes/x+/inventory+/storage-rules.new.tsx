@@ -9,7 +9,7 @@ import type {
   ClientActionFunctionArgs,
   LoaderFunctionArgs
 } from "react-router";
-import { redirect, useLoaderData, useNavigate } from "react-router";
+import { data, redirect, useLoaderData, useNavigate } from "react-router";
 import { storageRuleValidator } from "~/modules/inventory";
 import StorageRuleForm from "~/modules/inventory/ui/StorageRules/StorageRuleForm";
 import { upsertEnforcementRule } from "~/modules/shared";
@@ -44,7 +44,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const validation = await validator(storageRuleValidator).validate(formData);
   if (validation.error) return validation.error;
 
-  const insert = await upsertEnforcementRule(client, "storage", {
+  const insert = await upsertEnforcementRule(client, "storage", companyId, {
     ...validation.data,
     description: validation.data.description ?? null,
     companyId,
@@ -52,10 +52,10 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (insert.error) {
-    return await flash(
-      request,
-      error(insert.error, "Failed to create rule")
-    ).then(() => null);
+    return data(
+      {},
+      await flash(request, error(insert.error, "Failed to create rule"))
+    );
   }
 
   throw redirect(`${path.to.storageRules}?${getParams(request)}`);

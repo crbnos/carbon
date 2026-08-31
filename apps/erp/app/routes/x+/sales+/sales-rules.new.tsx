@@ -8,7 +8,7 @@ import type {
   ClientActionFunctionArgs,
   LoaderFunctionArgs
 } from "react-router";
-import { redirect, useNavigate } from "react-router";
+import { data, redirect, useNavigate } from "react-router";
 import { salesRuleValidator } from "~/modules/sales";
 import { SalesRuleForm } from "~/modules/sales/ui/SalesRules";
 import { upsertEnforcementRule } from "~/modules/shared";
@@ -38,7 +38,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const validation = await validator(salesRuleValidator).validate(formData);
   if (validation.error) return validation.error;
 
-  const insert = await upsertEnforcementRule(client, "sales", {
+  const insert = await upsertEnforcementRule(client, "sales", companyId, {
     ...validation.data,
     description: validation.data.description ?? null,
     companyId,
@@ -46,10 +46,10 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (insert.error) {
-    return await flash(
-      request,
-      error(insert.error, "Failed to create rule")
-    ).then(() => null);
+    return data(
+      {},
+      await flash(request, error(insert.error, "Failed to create rule"))
+    );
   }
 
   throw redirect(`${path.to.salesRules}?${getParams(request)}`);

@@ -1528,19 +1528,27 @@ export async function getEnforcementRules(
 export async function getEnforcementRule(
   client: SupabaseClient<Database>,
   family: EnforcementRuleFamily,
-  id: string
+  id: string,
+  companyId: string
 ) {
-  return client
-    .from("enforcementRule")
-    .select("*")
-    .eq("id", id)
-    .eq("family", family)
-    .single();
+  return (
+    client
+      .from("enforcementRule")
+      .select("*")
+      .eq("id", id)
+      .eq("family", family)
+      // RLS scopes the user client already; the explicit predicate is
+      // defense-in-depth for service-role callers (these functions are
+      // MCP-exposed).
+      .eq("companyId", companyId)
+      .single()
+  );
 }
 
 export async function upsertEnforcementRule(
   client: SupabaseClient<Database>,
   family: EnforcementRuleFamily,
+  companyId: string,
   rule: EnforcementRuleInsert | EnforcementRuleUpdate
 ) {
   if ("createdBy" in rule) {
@@ -1548,6 +1556,7 @@ export async function upsertEnforcementRule(
       .from("enforcementRule")
       .insert({
         ...rule,
+        companyId,
         family,
         conditionAst: rule.conditionAst as unknown as Json
       })
@@ -1563,6 +1572,7 @@ export async function upsertEnforcementRule(
     })
     .eq("id", rule.id)
     .eq("family", family)
+    .eq("companyId", companyId)
     .select("id")
     .single();
 }
@@ -1570,13 +1580,15 @@ export async function upsertEnforcementRule(
 export async function deleteEnforcementRule(
   client: SupabaseClient<Database>,
   family: EnforcementRuleFamily,
-  id: string
+  id: string,
+  companyId: string
 ) {
   return client
     .from("enforcementRule")
     .delete()
     .eq("id", id)
-    .eq("family", family);
+    .eq("family", family)
+    .eq("companyId", companyId);
 }
 
 /**
