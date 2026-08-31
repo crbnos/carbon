@@ -310,7 +310,7 @@ export default function ProductionDashboard() {
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground bg-muted dark:bg-card">
       <div className="grid w-full gap-y-4 lg:gap-x-4 grid-cols-1 lg:grid-cols-6">
         <MetricCard
-          className="col-span-3"
+          className="col-span-1 lg:col-span-3"
           icon={<LuCirclePlay />}
           title={<Trans>Active Jobs</Trans>}
           value={activeJobs}
@@ -319,7 +319,7 @@ export default function ProductionDashboard() {
         />
 
         <MetricCard
-          className="col-span-3"
+          className="col-span-1 lg:col-span-3"
           icon={<LuInbox />}
           title={<Trans>Jobs Assigned to Me</Trans>}
           value={assignedJobs}
@@ -327,8 +327,8 @@ export default function ProductionDashboard() {
           linkLabel={t`View Assigned Jobs`}
         />
 
-        <Card className="col-span-6">
-          <HStack className="justify-between items-center">
+        <Card className="col-span-1 lg:col-span-6">
+          <HStack className="flex-col items-start gap-2 sm:flex-row sm:justify-between sm:items-center">
             <CardHeader>
               <div className="flex w-full justify-start items-center gap-2">
                 <DropdownMenu>

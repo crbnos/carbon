@@ -6644,6 +6644,9 @@ msgstr "La péremption débute quand le procédé sélectionné démarre."
 msgid "Expiry trace"
 msgstr "Trace de péremption"
 
+msgid "Explorer"
+msgstr ""
+
 msgid "Export"
 msgstr "Exporter"
 
@@ -9787,6 +9790,9 @@ msgstr "Intégration CAO native (par exemple Onshape)"
 msgid "Navigate"
 msgstr "Naviguer"
 
+msgid "Navigation"
+msgstr ""
+
 msgid "NCRs by Type"
 msgstr "NCRs par type"
 
@@ -10971,6 +10977,9 @@ msgstr "Ordres de fabrication ouverts"
 
 msgid "Open menu"
 msgstr "Ouvrir le menu"
+
+msgid "Open navigation"
+msgstr ""
 
 msgid "Open payables by supplier and age"
 msgstr "Dettes fournisseurs ouvertes par fournisseur et ancienneté"
@@ -13890,6 +13899,9 @@ msgstr "Secret copié dans le presse-papiers"
 
 msgid "Section"
 msgstr "Section"
+
+msgid "Sections"
+msgstr ""
 
 msgid "Secure your account with 2FA"
 msgstr "Sécurisez votre compte avec l'authentification à deux facteurs"

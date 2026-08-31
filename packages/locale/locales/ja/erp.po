@@ -6644,6 +6644,9 @@ msgstr "選択した工法が開始すると使用期限が開始します。"
 msgid "Expiry trace"
 msgstr "使用期限トレース"
 
+msgid "Explorer"
+msgstr ""
+
 msgid "Export"
 msgstr "エクスポート"
 
@@ -9787,6 +9790,9 @@ msgstr "ネイティブCAD連携(例えばOnshape)"
 msgid "Navigate"
 msgstr "ナビゲート"
 
+msgid "Navigation"
+msgstr ""
+
 msgid "NCRs by Type"
 msgstr "タイプ別NCR"
 
@@ -10971,6 +10977,9 @@ msgstr "オープン製造指図"
 
 msgid "Open menu"
 msgstr "メニューを開く"
+
+msgid "Open navigation"
+msgstr ""
 
 msgid "Open payables by supplier and age"
 msgstr "仕入先・日数別オープン買掛金"
@@ -13890,6 +13899,9 @@ msgstr "シークレットをクリップボードにコピーしました"
 
 msgid "Section"
 msgstr "セクション"
+
+msgid "Sections"
+msgstr ""
 
 msgid "Secure your account with 2FA"
 msgstr "2FAでアカウントを保護"

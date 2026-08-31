@@ -6644,6 +6644,9 @@ msgstr "유통기한은 선택된 공법이 시작될 때 시작됩니다."
 msgid "Expiry trace"
 msgstr "유통기한 추적"
 
+msgid "Explorer"
+msgstr ""
+
 msgid "Export"
 msgstr "내보내기"
 
@@ -9787,6 +9790,9 @@ msgstr "네이티브 CAD 연동(예: Onshape)"
 msgid "Navigate"
 msgstr "이동"
 
+msgid "Navigation"
+msgstr ""
+
 msgid "NCRs by Type"
 msgstr "유형별 NCR"
 
@@ -10971,6 +10977,9 @@ msgstr "미결 작업 지시"
 
 msgid "Open menu"
 msgstr "메뉴 열기"
+
+msgid "Open navigation"
+msgstr ""
 
 msgid "Open payables by supplier and age"
 msgstr "공급업체 및 기간별 미결 매입채무"
@@ -13890,6 +13899,9 @@ msgstr "시크릿이 클립보드에 복사되었습니다"
 
 msgid "Section"
 msgstr "섹션"
+
+msgid "Sections"
+msgstr ""
 
 msgid "Secure your account with 2FA"
 msgstr "2FA로 계정 보호"

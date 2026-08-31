@@ -6644,6 +6644,9 @@ msgstr "A validade começa quando o processo selecionado é iniciado."
 msgid "Expiry trace"
 msgstr "Rastreamento de validade"
 
+msgid "Explorer"
+msgstr ""
+
 msgid "Export"
 msgstr "Exportar"
 
@@ -9787,6 +9790,9 @@ msgstr "Integração nativa de CAD (por exemplo Onshape)"
 msgid "Navigate"
 msgstr "Navegar"
 
+msgid "Navigation"
+msgstr ""
+
 msgid "NCRs by Type"
 msgstr "NCRs por Tipo"
 
@@ -10971,6 +10977,9 @@ msgstr "Ordens de produção abertas"
 
 msgid "Open menu"
 msgstr "Abrir menu"
+
+msgid "Open navigation"
+msgstr ""
 
 msgid "Open payables by supplier and age"
 msgstr "Contas a pagar em aberto por fornecedor e idade"
@@ -13890,6 +13899,9 @@ msgstr "Segredo copiado para a área de transferência"
 
 msgid "Section"
 msgstr "Seção"
+
+msgid "Sections"
+msgstr ""
 
 msgid "Secure your account with 2FA"
 msgstr "Proteja sua conta com 2FA"

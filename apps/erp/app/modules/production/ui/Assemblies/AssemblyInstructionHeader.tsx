@@ -94,7 +94,7 @@ const AssemblyInstructionHeader = () => {
   };
 
   return (
-    <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border h-[var(--header-height)] overflow-x-auto scrollbar-hide">
+    <div className="flex flex-shrink-0 items-center justify-between gap-x-4 px-4 py-2 bg-card border-b border-border h-[var(--header-height)] overflow-x-auto scrollbar-hide">
       <HStack className="flex-grow" spacing={1}>
         <IconButton
           aria-label="Toggle Explorer"

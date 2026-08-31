@@ -6644,6 +6644,9 @@ msgstr "समाप्ति तब शुरू होती है जब च
 msgid "Expiry trace"
 msgstr "समाप्ति ट्रेस"
 
+msgid "Explorer"
+msgstr ""
+
 msgid "Export"
 msgstr "निर्यात करें"
 
@@ -9787,6 +9790,9 @@ msgstr "नेटिव CAD एकीकरण (उदाहरण के लि
 msgid "Navigate"
 msgstr "नेविगेट करें"
 
+msgid "Navigation"
+msgstr ""
+
 msgid "NCRs by Type"
 msgstr "प्रकार के अनुसार NCR"
 
@@ -10971,6 +10977,9 @@ msgstr "खुली जॉबें"
 
 msgid "Open menu"
 msgstr "मेनू खोलें"
+
+msgid "Open navigation"
+msgstr ""
 
 msgid "Open payables by supplier and age"
 msgstr "आपूर्तिकर्ता और आयु के अनुसार खुली देय राशि"
@@ -13890,6 +13899,9 @@ msgstr "गुप्त क्लिपबोर्ड में कॉपी �
 
 msgid "Section"
 msgstr "अनुभाग"
+
+msgid "Sections"
+msgstr ""
 
 msgid "Secure your account with 2FA"
 msgstr "2FA के साथ अपने खाते को सुरक्षित करें"

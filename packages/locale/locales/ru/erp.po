@@ -6644,6 +6644,9 @@ msgstr "Срок годности начинается при запуске в�
 msgid "Expiry trace"
 msgstr "Трассировка срока годности"
 
+msgid "Explorer"
+msgstr ""
+
 msgid "Export"
 msgstr "Экспортировать"
 
@@ -9787,6 +9790,9 @@ msgstr "Встроенная интеграция CAD (например Onshape)
 msgid "Navigate"
 msgstr "Навигация"
 
+msgid "Navigation"
+msgstr ""
+
 msgid "NCRs by Type"
 msgstr "NCRs по типам"
 
@@ -10971,6 +10977,9 @@ msgstr "Открытые производственные заказы"
 
 msgid "Open menu"
 msgstr "Открыть меню"
+
+msgid "Open navigation"
+msgstr ""
 
 msgid "Open payables by supplier and age"
 msgstr "Открытая кредиторская задолженность по поставщикам и срокам"
@@ -13890,6 +13899,9 @@ msgstr "Секрет скопирован в буфер обмена"
 
 msgid "Section"
 msgstr "Раздел"
+
+msgid "Sections"
+msgstr ""
 
 msgid "Secure your account with 2FA"
 msgstr "Защитите свою учетную запись с помощью 2FA"

@@ -6644,6 +6644,9 @@ msgstr "Expiry begins when the selected process starts."
 msgid "Expiry trace"
 msgstr "Expiry trace"
 
+msgid "Explorer"
+msgstr "Explorer"
+
 msgid "Export"
 msgstr "Export"
 
@@ -9787,6 +9790,9 @@ msgstr "Native CAD integration (for example Onshape)"
 msgid "Navigate"
 msgstr "Navigate"
 
+msgid "Navigation"
+msgstr "Navigation"
+
 msgid "NCRs by Type"
 msgstr "NCRs by Type"
 
@@ -10971,6 +10977,9 @@ msgstr "Open jobs"
 
 msgid "Open menu"
 msgstr "Open menu"
+
+msgid "Open navigation"
+msgstr "Open navigation"
 
 msgid "Open payables by supplier and age"
 msgstr "Open payables by supplier and age"
@@ -13890,6 +13899,9 @@ msgstr "Secret copied to clipboard"
 
 msgid "Section"
 msgstr "Section"
+
+msgid "Sections"
+msgstr "Sections"
 
 msgid "Secure your account with 2FA"
 msgstr "Secure your account with 2FA"

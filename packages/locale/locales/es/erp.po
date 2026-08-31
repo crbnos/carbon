@@ -6644,6 +6644,9 @@ msgstr "La caducidad comienza cuando se inicia el proceso seleccionado."
 msgid "Expiry trace"
 msgstr "Trazabilidad de caducidad"
 
+msgid "Explorer"
+msgstr ""
+
 msgid "Export"
 msgstr "Exportar"
 
@@ -9787,6 +9790,9 @@ msgstr "Integración nativa de CAD (por ejemplo Onshape)"
 msgid "Navigate"
 msgstr "Navegar"
 
+msgid "Navigation"
+msgstr ""
+
 msgid "NCRs by Type"
 msgstr "NCR por Tipo"
 
@@ -10971,6 +10977,9 @@ msgstr "Órdenes de trabajo abiertas"
 
 msgid "Open menu"
 msgstr "Abrir menú"
+
+msgid "Open navigation"
+msgstr ""
 
 msgid "Open payables by supplier and age"
 msgstr "Cuentas por pagar abiertas por proveedor y antigüedad"
@@ -13890,6 +13899,9 @@ msgstr "Código secreto copiado al portapapeles"
 
 msgid "Section"
 msgstr "Sección"
+
+msgid "Sections"
+msgstr ""
 
 msgid "Secure your account with 2FA"
 msgstr "Asegura tu cuenta con 2FA"

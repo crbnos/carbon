@@ -6644,6 +6644,9 @@ msgstr "Son kullanma tarihi seçilen işlem başladığında başlar."
 msgid "Expiry trace"
 msgstr "Son kullanma tarihi izi"
 
+msgid "Explorer"
+msgstr ""
+
 msgid "Export"
 msgstr "Dışa Aktar"
 
@@ -9787,6 +9790,9 @@ msgstr "Yerel CAD entegrasyonu (örneğin Onshape)"
 msgid "Navigate"
 msgstr "Gözat"
 
+msgid "Navigation"
+msgstr ""
+
 msgid "NCRs by Type"
 msgstr "Tipe Göre NCR'ler"
 
@@ -10971,6 +10977,9 @@ msgstr "Açık İş emirleri"
 
 msgid "Open menu"
 msgstr "Menüyü aç"
+
+msgid "Open navigation"
+msgstr ""
 
 msgid "Open payables by supplier and age"
 msgstr "Tedarikçi ve yaşa göre açık borçlar"
@@ -13890,6 +13899,9 @@ msgstr "Gizli, panoya kopyalandı"
 
 msgid "Section"
 msgstr "Bölüm"
+
+msgid "Sections"
+msgstr ""
 
 msgid "Secure your account with 2FA"
 msgstr "Hesabınızı 2FA ile güvenli hale getirin"

@@ -58,7 +58,7 @@ const ServiceHeader = () => {
 
   return (
     <>
-      <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border h-[var(--header-height)] overflow-x-auto scrollbar-hide">
+      <div className="flex flex-shrink-0 items-center justify-between gap-x-4 px-4 py-2 bg-card border-b border-border h-[var(--header-height)] overflow-x-auto scrollbar-hide">
         <VStack spacing={0} className="flex-grow">
           <HStack>
             <Link to={path.to.serviceDetails(itemId)}>

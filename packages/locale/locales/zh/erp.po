@@ -6644,6 +6644,9 @@ msgstr "有效期从选定的流程开始时开始。"
 msgid "Expiry trace"
 msgstr "有效期追踪"
 
+msgid "Explorer"
+msgstr ""
+
 msgid "Export"
 msgstr "导出"
 
@@ -9787,6 +9790,9 @@ msgstr "原生 CAD 集成（例如 Onshape）"
 msgid "Navigate"
 msgstr "导航"
 
+msgid "Navigation"
+msgstr ""
+
 msgid "NCRs by Type"
 msgstr "按类型分类的NCR"
 
@@ -10971,6 +10977,9 @@ msgstr "未结工单"
 
 msgid "Open menu"
 msgstr "打开菜单"
+
+msgid "Open navigation"
+msgstr ""
 
 msgid "Open payables by supplier and age"
 msgstr "按供应商和期限打开应付款项"
@@ -13890,6 +13899,9 @@ msgstr "密码已复制到剪贴板"
 
 msgid "Section"
 msgstr "部分"
+
+msgid "Sections"
+msgstr ""
 
 msgid "Secure your account with 2FA"
 msgstr "使用2FA保护您的账户"

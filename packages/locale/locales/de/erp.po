@@ -6644,6 +6644,9 @@ msgstr "Der Verfall beginnt, wenn das ausgewählte Verfahren beginnt."
 msgid "Expiry trace"
 msgstr "Verfallsdatum-Nachverfolgung"
 
+msgid "Explorer"
+msgstr ""
+
 msgid "Export"
 msgstr "Exportieren"
 
@@ -9787,6 +9790,9 @@ msgstr "Native CAD-Integration (zum Beispiel Onshape)"
 msgid "Navigate"
 msgstr "Navigieren"
 
+msgid "Navigation"
+msgstr ""
+
 msgid "NCRs by Type"
 msgstr "NCRs nach Typ"
 
@@ -10971,6 +10977,9 @@ msgstr "Offene Fertigungsaufträge"
 
 msgid "Open menu"
 msgstr "Menü öffnen"
+
+msgid "Open navigation"
+msgstr ""
 
 msgid "Open payables by supplier and age"
 msgstr "Offene Verbindlichkeiten nach Lieferant und Fälligkeitsdauer"
@@ -13890,6 +13899,9 @@ msgstr "Geheimnis in die Zwischenablage kopiert"
 
 msgid "Section"
 msgstr "Abschnitt"
+
+msgid "Sections"
+msgstr ""
 
 msgid "Secure your account with 2FA"
 msgstr "Schützen Sie Ihr Konto mit 2FA"

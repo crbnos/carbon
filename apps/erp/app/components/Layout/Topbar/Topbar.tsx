@@ -1,8 +1,10 @@
 import { HStack, IconButton } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { LuSquarePen } from "react-icons/lu";
+import { LuPanelLeft, LuSquarePen } from "react-icons/lu";
 import { useUser } from "~/hooks";
+import { useUIStore } from "~/stores/ui";
 import AvatarMenu from "../../AvatarMenu";
+import MobileNavigation from "../Navigation/MobileNavigation";
 import AskDocs from "./AskDocs";
 import Breadcrumbs from "./Breadcrumbs";
 import CompanySwitcher from "./CompanySwitcher";
@@ -14,13 +16,24 @@ const Topbar = () => {
   const { t } = useLingui();
   const user = useUser();
   const notificationsKey = `${user.id}:${user.company.id}`;
+  const hasContentSidebar = useUIStore((s) => s.hasContentSidebar);
+  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
 
   return (
     <div className="h-[var(--topbar-height)] grid grid-cols-[1fr_auto] bg-background text-foreground px-4 top-0 sticky z-10 items-center">
       <div className="flex-1 hidden md:block">
         <Breadcrumbs />
       </div>
-      <div className="flex-1 md:hidden">
+      <div className="flex-1 md:hidden flex items-center gap-1 min-w-0">
+        <MobileNavigation />
+        {hasContentSidebar && (
+          <IconButton
+            aria-label={t`Sections`}
+            icon={<LuPanelLeft />}
+            variant="ghost"
+            onClick={toggleSidebar}
+          />
+        )}
         <CompanySwitcher />
       </div>
       <HStack spacing={1} className="flex-1 justify-end py-2">

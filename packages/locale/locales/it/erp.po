@@ -6644,6 +6644,9 @@ msgstr "La scadenza inizia quando il processo selezionato si avvia."
 msgid "Expiry trace"
 msgstr "Traccia scadenza"
 
+msgid "Explorer"
+msgstr ""
+
 msgid "Export"
 msgstr "Esporta"
 
@@ -9787,6 +9790,9 @@ msgstr "Integrazione CAD nativa (ad esempio Onshape)"
 msgid "Navigate"
 msgstr "Naviga"
 
+msgid "Navigation"
+msgstr ""
+
 msgid "NCRs by Type"
 msgstr "NCR per tipo"
 
@@ -10971,6 +10977,9 @@ msgstr "Ordini di produzione aperti"
 
 msgid "Open menu"
 msgstr "Apri menu"
+
+msgid "Open navigation"
+msgstr ""
 
 msgid "Open payables by supplier and age"
 msgstr "Debiti aperti per fornitore e anzianità"
@@ -13890,6 +13899,9 @@ msgstr "Segreto copiato negli appunti"
 
 msgid "Section"
 msgstr "Sezione"
+
+msgid "Sections"
+msgstr ""
 
 msgid "Secure your account with 2FA"
 msgstr "Proteggi il tuo account con 2FA"

@@ -19513,13 +19513,13 @@ export default {
             $ref: "#/parameters/rowFilter.jobs.priority"
           },
           {
+            $ref: "#/parameters/rowFilter.jobs.projectedCompletionAt"
+          },
+          {
             $ref: "#/parameters/rowFilter.jobs.scheduleOutdatedReason"
           },
           {
             $ref: "#/parameters/rowFilter.jobs.scheduleOutdatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobs.projectedCompletionAt"
           },
           {
             $ref: "#/parameters/rowFilter.jobs.productionQuantity"
@@ -32224,13 +32224,13 @@ export default {
             $ref: "#/parameters/rowFilter.job.priority"
           },
           {
+            $ref: "#/parameters/rowFilter.job.projectedCompletionAt"
+          },
+          {
             $ref: "#/parameters/rowFilter.job.scheduleOutdatedReason"
           },
           {
             $ref: "#/parameters/rowFilter.job.scheduleOutdatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.job.projectedCompletionAt"
           },
           {
             $ref: "#/parameters/rowFilter.job.productionQuantity"
@@ -32406,13 +32406,13 @@ export default {
             $ref: "#/parameters/rowFilter.job.priority"
           },
           {
+            $ref: "#/parameters/rowFilter.job.projectedCompletionAt"
+          },
+          {
             $ref: "#/parameters/rowFilter.job.scheduleOutdatedReason"
           },
           {
             $ref: "#/parameters/rowFilter.job.scheduleOutdatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.job.projectedCompletionAt"
           },
           {
             $ref: "#/parameters/rowFilter.job.productionQuantity"
@@ -32542,13 +32542,13 @@ export default {
             $ref: "#/parameters/rowFilter.job.priority"
           },
           {
+            $ref: "#/parameters/rowFilter.job.projectedCompletionAt"
+          },
+          {
             $ref: "#/parameters/rowFilter.job.scheduleOutdatedReason"
           },
           {
             $ref: "#/parameters/rowFilter.job.scheduleOutdatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.job.projectedCompletionAt"
           },
           {
             $ref: "#/parameters/rowFilter.job.productionQuantity"
@@ -106285,7 +106285,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -106334,7 +106334,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -109475,15 +109475,15 @@ export default {
           format: "double precision",
           type: "number"
         },
+        projectedCompletionAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
         scheduleOutdatedReason: {
           format: "text",
           type: "string"
         },
         scheduleOutdatedAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        projectedCompletionAt: {
           format: "timestamp with time zone",
           type: "string"
         },
@@ -115708,6 +115708,12 @@ export default {
           format: "double precision",
           type: "number"
         },
+        projectedCompletionAt: {
+          description:
+            "Simulated finish of the job's last operation (forward-ASAP finite schedule). Null until first regen.",
+          format: "timestamp with time zone",
+          type: "string"
+        },
         scheduleOutdatedReason: {
           description:
             'Why the stored schedule may be stale (e.g. "Qualification changed: Solder"). Null = schedule current.',
@@ -115715,12 +115721,6 @@ export default {
           type: "string"
         },
         scheduleOutdatedAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        projectedCompletionAt: {
-          description:
-            "Simulated finish of the job's last operation (forward-ASAP finite schedule). Null until first regen.",
           format: "timestamp with time zone",
           type: "string"
         },
@@ -152805,6 +152805,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.jobs.projectedCompletionAt": {
+      name: "projectedCompletionAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.jobs.scheduleOutdatedReason": {
       name: "scheduleOutdatedReason",
       required: false,
@@ -152813,12 +152819,6 @@ export default {
     },
     "rowFilter.jobs.scheduleOutdatedAt": {
       name: "scheduleOutdatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.jobs.projectedCompletionAt": {
-      name: "projectedCompletionAt",
       required: false,
       in: "query",
       type: "string"
@@ -159797,6 +159797,14 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.job.projectedCompletionAt": {
+      name: "projectedCompletionAt",
+      description:
+        "Simulated finish of the job's last operation (forward-ASAP finite schedule). Null until first regen.",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.job.scheduleOutdatedReason": {
       name: "scheduleOutdatedReason",
       description:
@@ -159807,14 +159815,6 @@ export default {
     },
     "rowFilter.job.scheduleOutdatedAt": {
       name: "scheduleOutdatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.job.projectedCompletionAt": {
-      name: "projectedCompletionAt",
-      description:
-        "Simulated finish of the job's last operation (forward-ASAP finite schedule). Null until first regen.",
       required: false,
       in: "query",
       type: "string"
