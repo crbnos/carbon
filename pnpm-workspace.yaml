@@ -15,6 +15,39 @@ overrides:
   "@types/react": 18.3.28
   "@types/react-dom": 18.3.7
   semver: 7.7.4
+  # --- Security pins for transitive/leaf deps (Dependabot critical/high) ---
+  # Major-qualified selectors where multiple majors coexist in the tree.
+  "@grpc/grpc-js": 1.14.4
+  axios: 1.16.0
+  "@opentelemetry/auto-instrumentations-node": 0.75.0
+  "@opentelemetry/exporter-prometheus": 0.217.0
+  "@opentelemetry/propagator-jaeger": 2.9.0
+  "@opentelemetry/sdk-node": 0.217.0
+  "@remix-run/server-runtime": 2.17.5
+  "@rvf/set-get": 7.0.2
+  "brace-expansion@1": 1.1.16
+  "brace-expansion@2": 2.1.2
+  "brace-expansion@5": 5.0.9
+  fast-uri: 3.1.5
+  "form-data@3": 3.0.5
+  "form-data@4": 4.0.6
+  hono: 4.12.25
+  ip-address: 10.3.1
+  js-cookie: 3.0.7
+  js-yaml: 4.3.1
+  linkify-it: 5.0.2
+  lodash: 4.18.1
+  "nanoid@3": 3.3.18
+  "nanoid@5": 5.1.16
+  "next@15": 15.5.21
+  "next@16": 16.2.11
+  postcss: 8.5.18
+  protobufjs: 7.6.1
+  sharp: 0.35.0
+  shell-quote: 1.9.0
+  tmp: 0.2.6
+  "vite@7": 7.3.5
+  "ws@8": 8.21.0
 
 catalog:
   '@ai-sdk/openai': 2.0.102
@@ -70,7 +103,7 @@ catalog:
   '@types/node': '24'
   '@vercel/analytics': 1.6.1
   '@vercel/react-router': 1.2.6
-  axios: 1.15.0
+  axios: 1.16.0
   class-variance-authority: 0.7.1
   cookie: 1.1.1
   cross-env: 7.0.3
@@ -80,9 +113,9 @@ catalog:
   intl-parse-accept-language: 1.0.0
   isbot: '5'
   jose: 6.0.11
-  kysely: 0.28.15
+  kysely: 0.28.17
   match-sorter: 8.1.0
-  nanoid: 5.1.7
+  nanoid: 5.1.16
   nanostores: 0.9.5
   nodemon: 3.1.14
   non.geist: 1.0.4
@@ -108,7 +141,7 @@ catalog:
   tsup: 8.5.1
   tsx: 4.21.0
   typescript: 5.8.3
-  vite: 8.0.10
+  vite: 8.0.16
   vite-plugin-babel-macros: 1.0.6
   vitest: 4.1.6
   wait-on: 7.2.0

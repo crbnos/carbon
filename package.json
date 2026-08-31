@@ -84,7 +84,7 @@
     "@react-router/remix-routes-option-adapter": "catalog:",
     "cookie": "catalog:",
     "dompurify": "catalog:",
-    "fast-uri": "3.1.0",
+    "fast-uri": "3.1.5",
     "fdir": "6.5.0",
     "nanoid": "catalog:",
     "react-pdf": "catalog:",
