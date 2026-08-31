@@ -468,7 +468,9 @@ export async function getModelUploadsByIds(
 ) {
   return client
     .from("modelUpload")
-    .select("id, name, modelPath, thumbnailPath, glbPath, processingStatus")
+    .select(
+      "id, name, modelPath, thumbnailPath, glbPath, processingStatus, optimizedModelPath"
+    )
     .in("id", ids);
 }
 
