@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { getCurrencyByCode } from "~/modules/accounting";
+import { resolveCurrencyAndRate } from "~/modules/accounting";
 import {
   getPurchaseInvoice,
   isPurchaseInvoiceLocked,
@@ -44,21 +44,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase invoice."
   });
 
-  const formData = await request.formData();
-  const currencyCode = formData.get("currencyCode") as string;
-  if (!currencyCode) throw new Error("Could not find currencyCode");
+  // The currency comes from the document, never from the request: this route
+  // refreshes a rate, and trusting a client-supplied code lets a crafted POST
+  // stamp another currency's rate onto a document that keeps its own code.
+  const currencyCode = purchaseInvoice.data?.currencyCode;
+  if (!currencyCode)
+    throw new Error("Document has no currency to refresh a rate for");
 
-  const currency = await getCurrencyByCode(
+  const resolved = await resolveCurrencyAndRate(
     client,
     companyGroupId,
     currencyCode
   );
-  if (currency.error || !currency.data.exchangeRate)
-    throw new Error("Could not find currency");
+  if (resolved.error) throw new Error(resolved.error.message);
 
   const update = await updatePurchaseInvoiceExchangeRate(client, {
     id: invoiceId,
-    exchangeRate: currency.data.exchangeRate,
+    exchangeRate: resolved.data.exchangeRate,
     updatedBy: userId
   });
 
