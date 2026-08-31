@@ -384,17 +384,13 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
         )}
         {displaySettings.showDueDate && projectedCompletionDate && (
           <HStack className="justify-start space-x-2">
-            <LuCalendarClock
-              className={
-                isBehindTarget ? "text-amber-500" : "text-muted-foreground"
-              }
-            />
+            <LuCalendarClock className="text-muted-foreground" />
             {isBehindTarget ? (
               <Tooltip>
-                <TooltipTrigger>
-                  <span className="text-sm text-amber-500">
+                <TooltipTrigger asChild>
+                  <Badge variant="red">
                     {t`Proj. ${formatDate(projectedCompletionDate)}`}
-                  </span>
+                  </Badge>
                 </TooltipTrigger>
                 <TooltipContent side="right">
                   {t`Behind target by ${daysBehindTarget} day(s)`}

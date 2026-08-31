@@ -770,12 +770,12 @@ export const JobOperation = ({
                       {projectedCompletionDate &&
                         (isBehindTarget ? (
                           <Tooltip>
-                            <TooltipTrigger>
-                              <span className="text-sm text-amber-500">
+                            <TooltipTrigger asChild>
+                              <Badge variant="red">
                                 {t`Proj. ${formatDate(
                                   projectedCompletionDate
                                 )}`}
-                              </span>
+                              </Badge>
                             </TooltipTrigger>
                             <TooltipContent>
                               {t`Behind target by ${daysBehindTarget} day(s)`}
