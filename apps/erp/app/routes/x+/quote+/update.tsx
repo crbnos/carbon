@@ -36,7 +36,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   switch (field) {
     case "customerId":
-      if (value && ids.length === 1) {
+      if (value) {
         const customer = await client
           ?.from("customer")
           .select("currencyCode")

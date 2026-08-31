@@ -41,9 +41,30 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   switch (field) {
+    case "exchangeRate": {
+      // A rate written directly still has to be usable: 0 zeroes every sales
+      // `converted*` column (they carry no zero-guard) and a null violates the
+      // NOT NULL on the invoice tables.
+      const rate = Number(value);
+      if (!Number.isFinite(rate) || rate <= 0) {
+        return {
+          error: { message: "Exchange rate must be greater than zero" },
+          data: null
+        };
+      }
+      return await client
+        .from("salesInvoice")
+        .update({
+          exchangeRate: rate,
+          exchangeRateUpdatedAt: new Date().toISOString(),
+          updatedBy: userId,
+          updatedAt: new Date().toISOString()
+        })
+        .in("id", ids as string[]);
+    }
     case "invoiceCustomerId":
       let currencyCode: string | undefined;
-      if (value && ids.length === 1) {
+      if (value) {
         const customer = await client
           ?.from("customer")
           .select("currencyCode")
@@ -159,7 +180,6 @@ export async function action({ request }: ActionFunctionArgs) {
     case "invoiceCustomerLocationId":
     case "locationId":
     case "customerReference":
-    case "exchangeRate":
     case "dateDue":
     case "datePaid":
       return await client
