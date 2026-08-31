@@ -228,6 +228,29 @@ filtered due-date list is essentially unclaimed territory**.
   with tolerance bands; deliberate over-scheduling to fill a vessel, excess
   packed off as WIP.
 
+## Grounding update (2026-08-31, post-merge of main)
+
+Main shipped **finite-capacity scheduling** (#1151, merged into this branch),
+which changes the footing of several recommendations below:
+
+- The scheduler now writes `jobOperation.projectedCompletionAt` (forward
+  forecast) and `jobOperation.dueDate` (backward need-by target) every regen,
+  plus `capacityReservation` rows per work center/employee. So:
+  - **"Arriving soon" (rec 4) is now data-backed for free**: a candidate's
+    predecessor op has a real `projectedCompletionAt` — no estimation needed.
+  - **Due-slack scoring (rec 3) already has its input**: `op.dueDate` IS the
+    demand-anchored need-by; slack = need-by minus projected finish, both
+    stored. The suggestion score can read them directly.
+  - The builder's WC picker "N in queue" can graduate to real load from
+    `capacityReservation` spans instead of a count.
+- Work centers now carry **operating hours** (`workCenterShift` / `alwaysOn`)
+  and are finite (one op at a time) — but still have NO per-run load size, so
+  rec 1 (`batchCapacity`) remains the gap; it composes cleanly since a batch
+  already occupies the WC as one op.
+- The schedule routes moved (`x/schedule/*` → `x/priority/*`); recurring load
+  windows (rec above) could anchor on `workCenterShift` rows rather than a new
+  schedule concept.
+
 ## Recommended Approach for Carbon
 
 Ordered by leverage; each names the pattern it follows.
