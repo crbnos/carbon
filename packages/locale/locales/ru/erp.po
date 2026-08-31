@@ -228,7 +228,7 @@ msgid "{name} deleted"
 msgstr "{name} удален"
 
 msgid "{name} returns!"
-msgstr ""
+msgstr "{name} возвращается!"
 
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} деталей пропущено — нечего делать"
@@ -259,7 +259,7 @@ msgid "{uncounted, plural, one {# uncounted line} other {# uncounted lines}}"
 msgstr "{uncounted, plural, one {# непосчитанная строка} other {# непосчитанные строки}}"
 
 msgid "{unschedulableCount} can't be scheduled"
-msgstr ""
+msgstr "{unschedulableCount} не может быть спланировано"
 
 msgid "{updatedJobCount} jobs updated"
 msgstr "{updatedJobCount} производственных заказов обновлено"
@@ -301,7 +301,7 @@ msgid "0-4 weeks"
 msgstr "0-4 недели"
 
 msgid "1 can't be scheduled"
-msgstr ""
+msgstr "1 не может быть спланировано"
 
 msgid "1 conflict"
 msgstr "1 конфликт"
@@ -814,6 +814,9 @@ msgstr "Номер отслеживания отгрузки изменился"
 
 msgid "A step needs a name."
 msgstr "Шаг должен иметь имя."
+
+msgid "A stored booking of a work center or operator for one operation's placed time span — the materialized output of a scheduling run, and what the Forecast draws."
+msgstr "Сохраненное бронирование рабочего центра или оператора на время размещения одной операции — материализованный результат запуска планирования и то, что отображает Прогноз."
 
 msgid "A supplier is created"
 msgstr "Поставщик создан"
@@ -1373,7 +1376,7 @@ msgid "After (calculation method)"
 msgstr "После (способ расчета)"
 
 msgid "Afternoon, {name}."
-msgstr ""
+msgstr "Добрый день, {name}."
 
 msgid "Aging"
 msgstr "Возраст"
@@ -1611,8 +1614,8 @@ msgstr "Единица измерения элемента изменяется"
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "Операция, выполняемая внешним поставщиком вместо изготовления на собственном рабочем центре, предусмотренная заказом поставщику на субподряд."
 
-msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
-msgstr "Положение операции в очереди её рабочего центра — порядок, в котором площадка берёт работу — устанавливается переупорядочением карточек на доске Рабочих центров без изменения дат."
+msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
+msgstr "Позиция операции в очереди ее рабочего центра — порядок, в котором цех берет работу. Двигатель нумерует ее по порядку размещения (самое раннее предполагаемое начало в первую очередь); переупорядочение карт на доске Рабочих центров переопределяет его без изменения дат."
 
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "При подключении к Onshape произошла непредвиденная ошибка. Повторите попытку подключения."
@@ -2897,7 +2900,7 @@ msgid "Called a method in Carbon — the components plus operations that produce
 msgstr "Называется метод в Carbon — компоненты плюс операции, которые создают деталь."
 
 msgid "Can't be scheduled"
-msgstr ""
+msgstr "Не может быть спланировано"
 
 msgid "Can't delete this period"
 msgstr "Невозможно удалить этот период"
@@ -2988,6 +2991,9 @@ msgstr "Невозможно загрузить в корзину деталей
 
 msgid "Capacity"
 msgstr "Емкость"
+
+msgid "Capacity reservation"
+msgstr "Резервирование мощности"
 
 msgid "Caption"
 msgstr "Заголовок"
@@ -3800,10 +3806,10 @@ msgid "Copied link to clipboard"
 msgstr "Ссылка скопирована в буфер обмена"
 
 msgid "Copied setup prompt to your clipboard"
-msgstr ""
+msgstr "Подсказка наладки скопирована в буфер обмена"
 
 msgid "Copies a setup prompt for your AI coding tool"
-msgstr ""
+msgstr "Копирует подсказку наладки для вашего инструмента кодирования AI"
 
 msgid "Copy"
 msgstr "Копировать"
@@ -4702,7 +4708,7 @@ msgid "Dates"
 msgstr "Даты"
 
 msgid "Dawn's breaking, {name}."
-msgstr ""
+msgstr "Рассветает, {name}."
 
 msgid "Day"
 msgstr "День"
@@ -4810,7 +4816,7 @@ msgid "Declining balance"
 msgstr "Уменьшаемый остаток"
 
 msgid "Deep in the small hours, {name}."
-msgstr ""
+msgstr "Глубокая ночь, {name}."
 
 msgid "Default"
 msgstr "По умолчанию"
@@ -5536,7 +5542,7 @@ msgid "Don't Cancel"
 msgstr "Не отменять"
 
 msgid "Don't show this again"
-msgstr ""
+msgstr "Не показывать снова"
 
 msgid "done"
 msgstr "готово"
@@ -6434,7 +6440,7 @@ msgid "Estimator"
 msgstr "Сметчик"
 
 msgid "Evening, {name}."
-msgstr ""
+msgstr "Добрый вечер, {name}."
 
 msgid "Event"
 msgstr "Событие"
@@ -6645,7 +6651,7 @@ msgid "Expiry trace"
 msgstr "Трассировка срока годности"
 
 msgid "Explorer"
-msgstr ""
+msgstr "Обозреватель"
 
 msgid "Export"
 msgstr "Экспортировать"
@@ -6924,7 +6930,7 @@ msgid "Failed to move account: {0}"
 msgstr "Не удалось переместить счет: {0}"
 
 msgid "Failed to regenerate schedule"
-msgstr ""
+msgstr "Ошибка при пересчете графика"
 
 msgid "Failed to regenerate thumbnail"
 msgstr "Не удалось повторно создать миниатюру"
@@ -7172,7 +7178,7 @@ msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "Завершение отклоняется до тех пор, пока каждая строка не будет подобрана или отмечена как 'Недостаточно'."
 
 msgid "First light, {name}."
-msgstr ""
+msgstr "Первый свет, {name}."
 
 msgid "First name"
 msgstr "Имя"
@@ -7569,7 +7575,7 @@ msgid "Go to implementation hub"
 msgstr "Перейти в центр внедрения"
 
 msgid "Go to that week"
-msgstr ""
+msgstr "Перейти на эту неделю"
 
 msgid "Go-Live"
 msgstr "Запуск"
@@ -7590,13 +7596,13 @@ msgid "Going live on Carbon"
 msgstr "Запуск на Carbon"
 
 msgid "Good afternoon, {name}."
-msgstr ""
+msgstr "Добрый день, {name}."
 
 msgid "Good evening, {name}."
-msgstr ""
+msgstr "Добрый вечер, {name}."
 
 msgid "Good morning, {name}."
-msgstr ""
+msgstr "Доброе утро, {name}."
 
 msgid "Google Places API key not configured"
 msgstr "Google Places API key не настроен"
@@ -7665,7 +7671,7 @@ msgid "Has conflict"
 msgstr "Имеет конфликт"
 
 msgid "Has operations that can't be scheduled"
-msgstr ""
+msgstr "Имеет операции, которые не могут быть спланированы"
 
 msgid "Headers"
 msgstr "Заголовки"
@@ -7722,7 +7728,7 @@ msgid "Hop {depth}"
 msgstr "Шаг {depth}"
 
 msgid "Hope things are treating you well, {name}."
-msgstr ""
+msgstr "Надеюсь, у вас все идет хорошо, {name}."
 
 msgid "Host"
 msgstr "Хост"
@@ -7823,8 +7829,8 @@ msgstr "Как часто это средство измерения должн�
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "Как часто это техобслуживание повторяется — Ежедневно, Еженедельно, Ежемесячно, На циклический пересчет; выбор «Ежедневно» показывает селектор дня недели, остальные используют более простую математику интервалов."
 
-msgid "How strict the Due Date is — Hard Deadline blocks scheduling past it, Soft Deadline lets planning push out with a warning, No Deadline ignores it entirely."
-msgstr "Насколько строг срок выполнения — жесткий срок блокирует планирование после него, мягкий срок позволяет планированию сдвинуться с предупреждением, отсутствие срока полностью его игнорирует."
+msgid "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
+msgstr "Как производственный заказ рангируется, когда планировщик распределяет мощность — ASAP занимает первое место, затем Жесткий срок, Мягкий срок и Нет срока в последнюю очередь. Только сигнал ранжирования; ни один тип срока не блокирует и не ограничивает размещение."
 
 msgid "How the material is sourced (make, purchase, or pull from inventory) and the storage unit it's pulled from."
 msgstr "Как материал пополняется (производство, закупка или со склада) и единица хранения, из которой он изымается."
@@ -8778,7 +8784,7 @@ msgid "Last used"
 msgstr "Последний раз использован"
 
 msgid "Late in the evening, {name}."
-msgstr ""
+msgstr "Поздно вечером, {name}."
 
 msgid "Latest operation end"
 msgstr "Конец последней операции"
@@ -8853,7 +8859,7 @@ msgid "Let's build something"
 msgstr "Давайте создадим что-то"
 
 msgid "Let's make it a good one, {name}."
-msgstr ""
+msgstr "Давайте сделаем это хорошим днем, {name}."
 
 msgid "Let's set up your new company"
 msgstr "Создадим вашу новую организацию"
@@ -9576,7 +9582,7 @@ msgid "Mid-month / mid-quarter / half-year convention that determines the first-
 msgstr "Условие середины месяца / середины квартала / половины года, определяющее вычет первого года."
 
 msgid "Midnight on the clock, {name}."
-msgstr ""
+msgstr "Полночь, {name}."
 
 msgid "Migrate data"
 msgstr "Перенос данных"
@@ -9708,7 +9714,7 @@ msgid "More overtime"
 msgstr "Больше переработки"
 
 msgid "Morning, {name}."
-msgstr ""
+msgstr "Доброе утро, {name}."
 
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "Большинство проблем выявляются и решаются здесь. Называйте их четко."
@@ -9791,7 +9797,7 @@ msgid "Navigate"
 msgstr "Навигация"
 
 msgid "Navigation"
-msgstr ""
+msgstr "Навигация"
 
 msgid "NCRs by Type"
 msgstr "NCRs по типам"
@@ -9801,6 +9807,9 @@ msgstr "Требуется к"
 
 msgid "Need the right columns?"
 msgstr "Нужны правильные столбцы?"
+
+msgid "Need-by target"
+msgstr "Целевая дата потребности"
 
 msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
 msgstr "Необходимо - это рабочие часы, приходящиеся на день, делённые на {personDayHours}ч, округленные в большую сторону — смена, по которой вы фильтруете, или наиболее распространённая длина смены в этом месте."
@@ -10178,7 +10187,7 @@ msgid "Next:"
 msgstr "Далее:"
 
 msgid "Nice and quiet at this hour."
-msgstr ""
+msgstr "Спокойно и тихо в этот час."
 
 msgid "No"
 msgstr "Нет"
@@ -10380,7 +10389,7 @@ msgid "No items have inventory activity here yet."
 msgstr "Здесь еще нет активности с товарами."
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
-msgstr ""
+msgstr "На этой площадке еще не запланированы производственные заказы — запустите производственный заказ в работу, чтобы увидеть нагрузку на рабочий центр."
 
 msgid "No jobs were created"
 msgstr "Производственные заказы не были созданы"
@@ -10548,7 +10557,7 @@ msgid "No rules assigned"
 msgstr "Нет назначенных правил"
 
 msgid "No scheduled work in this window"
-msgstr ""
+msgstr "Нет запланированной работы в этом окне"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "Смены не настроены — предполагается Пн–Пт, 8ч дни"
@@ -10871,7 +10880,7 @@ msgid "On-time delivery"
 msgstr "Своевременная доставка"
 
 msgid "Onboard your agent to Carbon"
-msgstr ""
+msgstr "Подключите вашего агента к Carbon"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Одно выполнение рабочего процесса, записанное пошагово со значениями, использованными и созданными каждым шагом, выполняющееся с правами доступа владельца рабочего процесса."
@@ -10979,7 +10988,7 @@ msgid "Open menu"
 msgstr "Открыть меню"
 
 msgid "Open navigation"
-msgstr ""
+msgstr "Открыть навигацию"
 
 msgid "Open payables by supplier and age"
 msgstr "Открытая кредиторская задолженность по поставщикам и срокам"
@@ -11673,7 +11682,7 @@ msgid "Plan"
 msgstr "План"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
-msgstr ""
+msgstr "Планируйте заранее, прогнозируя потребность по номенклатуре и площадке, затем подавайте ее прямо в MRP и планирование."
 
 msgid "Plan the work"
 msgstr "Спланируйте работу"
@@ -12086,7 +12095,7 @@ msgid "Projected completion"
 msgstr "Прогнозное завершение"
 
 msgid "Projected completion at"
-msgstr ""
+msgstr "Прогнозируемое завершение в"
 
 msgid "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
 msgstr "Прогнозное завершение, если эта работа переместится в начало расписания её места. Ничего не сохраняется."
@@ -12478,7 +12487,7 @@ msgid "Queued"
 msgstr "В очереди"
 
 msgid "Quiet on the floor tonight, {name}."
-msgstr ""
+msgstr "Тихо на цехе сегодня ночью, {name}."
 
 msgid "Quote"
 msgstr "Предложение"
@@ -12589,7 +12598,7 @@ msgid "Ready"
 msgstr "Готово"
 
 msgid "Ready at"
-msgstr ""
+msgstr "Готово в"
 
 msgid "Ready for Quote"
 msgstr "Готово к предложению"
@@ -12788,10 +12797,10 @@ msgid "Refresh exchange rate"
 msgstr "Обновить валютный курс"
 
 msgid "Regenerate"
-msgstr ""
+msgstr "Пересчитать"
 
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
-msgstr ""
+msgstr "Пересчитать график для этой площадки сейчас. Пересчет также выполняется автоматически примерно через 30 секунд после последнего изменения в планировании (изменения группируются, поэтому несколько быстрых изменений запускают один пересчет)."
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "Восстановить миниатюру из 3D модели"
@@ -13066,7 +13075,7 @@ msgid "Require a second factor when members sign in to this company."
 msgstr "Требовать второй фактор при входе сотрудников в эту организацию."
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
-msgstr ""
+msgstr "Требовать назначенного оператора перед размещением планировщиком работ на площадке. Когда включено, рабочие центры без персонала не получают работу, а операция без назначенного оператора отображается как невозможная для планирования. Круглосуточные (24×7) рабочие центры освобождены от этого требования."
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "Требовать приложение аутентификатора перед тем как кто-либо сможет открыть эту организацию. Их другие организации не затронуты. Посетите страницу <0>учетных записей сотрудников</0>, чтобы увидеть статус каждого человека."
@@ -13132,7 +13141,7 @@ msgid "Requires Repair"
 msgstr "Требует ремонта"
 
 msgid "Requires staffing"
-msgstr ""
+msgstr "Требует персонала"
 
 msgid "Reserve floor"
 msgstr "Минимальный уровень запаса"
@@ -13730,13 +13739,13 @@ msgid "Schedule Name"
 msgstr "Имя расписания"
 
 msgid "Schedule outdated at"
-msgstr ""
+msgstr "График неактуален на"
 
 msgid "Schedule outdated reason"
-msgstr ""
+msgstr "Причина неактуальности графика"
 
 msgid "Schedule regenerated"
-msgstr ""
+msgstr "График пересчитан"
 
 msgid "Scheduled"
 msgstr "Запланировано"
@@ -13901,7 +13910,7 @@ msgid "Section"
 msgstr "Раздел"
 
 msgid "Sections"
-msgstr ""
+msgstr "Разделы"
 
 msgid "Secure your account with 2FA"
 msgstr "Защитите свою учетную запись с помощью 2FA"
@@ -13910,7 +13919,7 @@ msgid "Security"
 msgstr "Безопасность"
 
 msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
-msgstr ""
+msgstr "Просмотр динамического прогноза мощности каждого рабочего центра — когда запланирован запуск и завершение каждого производственного заказа в вашем цехе."
 
 msgid "Segments that drive customer pricing and terms"
 msgstr "Сегменты, которые определяют ценообразование и условия для покупателей"
@@ -14775,10 +14784,10 @@ msgid "SSO/SAML"
 msgstr "SSO/SAML"
 
 msgid "Staffing optional"
-msgstr ""
+msgstr "Персонал необязателен"
 
 msgid "Staffing required"
-msgstr ""
+msgstr "Требуется персонал"
 
 msgid "Stand up hosting"
 msgstr "Развернуть хостинг"
@@ -14914,7 +14923,7 @@ msgid "Steps are inherited from the inspection plan."
 msgstr "Шаги наследуются из плана контроля."
 
 msgid "Still dark out on the floor."
-msgstr ""
+msgstr "На производстве всё ещё темно."
 
 msgid "Stock movement corrected"
 msgstr "Движение запаса исправлено"
@@ -15050,7 +15059,7 @@ msgid "Submitted By"
 msgstr "Отправлено"
 
 msgid "Submodules"
-msgstr ""
+msgstr "Подмодули"
 
 msgid "substance"
 msgstr "Вещество"
@@ -15564,6 +15573,9 @@ msgstr "Журнал доступного только для добавлени
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Авторизация была отклонена в Onshape. Повторите попытку подключения."
 
+msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
+msgstr "Дата завершения операции, вычисленная в обратном порядке, чтобы производственный заказ был выполнен вовремя, записываемая в срок выполнения операции. Стабильная цель для измерения прогресса — никогда не является ограничением при размещении."
+
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "Журнал всех проведенных операций, сгруппированных по счетам — ведется только когда в организации включена бухгалтерия."
 
@@ -15666,8 +15678,8 @@ msgstr "Покупатели, которым вы продаете и отпра
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "Пунктирный порог, ниже которого вы не хотите, чтобы опускался инвентарь."
 
-msgid "The date a job's quantity is needed, which together with Deadline Type sets the job's place in its location's schedule queue."
-msgstr "Дата, к которой требуется количество для работы, которая вместе с типом срока определяет место работы в очереди графика её местоположения."
+msgid "The date a job's quantity is needed — the yardstick lateness is measured against, and (with Deadline Type) the order jobs claim capacity in. Not a placement anchor; a job with no due date still schedules."
+msgstr "Дата, к которой требуется количество производственного заказа — мерило, против которого измеряется опоздание, и (с типом сроков выполнения) порядок, в котором производственные заказы запрашивают мощность. Не якорь размещения; производственный заказ без срока выполнения по-прежнему планируется."
 
 msgid "The date depreciation begins for this asset; usually the in-service date."
 msgstr "Дата начала амортизации данного основного средства; обычно дата ввода в эксплуатацию."
@@ -15715,7 +15727,7 @@ msgid "The department this one rolls up under for reporting and headcount hierar
 msgstr "Отдел, под который это накапливается для отчетности и иерархий подсчета; оставить пусто для отдела верхнего уровня."
 
 msgid "The early hours, {name}."
-msgstr ""
+msgstr "Ранние часы, {name}."
 
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "Метод качества восьми дисциплин, моделируемый с помощью задач рабочего процесса несоответствия, а не жестко закодированный."
@@ -15733,7 +15745,7 @@ msgid "The engineering drawing this inspection plan is tied to; inspections reco
 msgstr "Техническая схема, к которой привязан данный план контроля; проверки, записанные для этой детали, ссылаются на эту схему."
 
 msgid "The evening hours, {name}."
-msgstr ""
+msgstr "Вечерние часы, {name}."
 
 msgid "The expected percentage of this item's output lost during production; planning multiplies demand by 1 / (1 − scrap) to compensate."
 msgstr "Ожидаемый процент выпуска этой номенклатуры, потерянного во время производства; планирование умножает потребность на 1 / (1 − брак) для компенсации."
@@ -15932,7 +15944,7 @@ msgstr "Наиболее вероятный режим отказа, котор�
 
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The most recent scheduled work at this location was {0}."
-msgstr ""
+msgstr "Самая недавняя запланированная работа на этой площадке была {0}."
 
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "Согласованная цена за единицу на этой строке; значок встроенной трассировки показывает, какое правило ценообразования или переопределение его создало."
@@ -15948,13 +15960,13 @@ msgstr "Новый номер версии процедуры"
 
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The next scheduled work at this location starts {0}."
-msgstr ""
+msgstr "Следующая запланированная работа на этой площадке начинается {0}."
 
 msgid "The night shift suits you, {name}."
-msgstr ""
+msgstr "Ночная смена вам подходит, {name}."
 
 msgid "The night's still young, {name}."
-msgstr ""
+msgstr "Ночь еще молода, {name}."
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "Количество дней между размещением заказа у основного поставщика и прибытием товара на склад; планирование смещает спрос назад на столько же дней."
@@ -16424,10 +16436,10 @@ msgid "This job's own required quantity for the material."
 msgstr "Собственное требуемое количество материала для этого задания."
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
-msgstr ""
+msgstr "Эта площадка планирует только рабочие центры с персоналом, но это круглосуточная (24×7) станция — она освобождена и продолжает работать без присмотра."
 
 msgid "This location only schedules work where an operator is assigned on the manning board. With no one assigned here, work is not scheduled and shows as unschedulable."
-msgstr ""
+msgstr "На этой площадке планируется только работа, где оператор назначен на таблицу назначений. Если здесь никто не назначен, работа не планируется и отображается как невозможная для планирования."
 
 msgid "This lot is expired and can't be picked."
 msgstr "Эта партия с истекшим сроком и не может быть отобрана."
@@ -16442,7 +16454,7 @@ msgid "This Month"
 msgstr "Этот месяц"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
-msgstr ""
+msgstr "Эта операция не может быть запланирована пока — полоса отмечает, где она будет выполняться после разрешения конфликта. Она не занимает мощность."
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "Эта страница вашего центра внедрения разрабатывается. Начните с командного центра, пока мы его завершаем."
@@ -16496,10 +16508,10 @@ msgid "This sales order has lines that require jobs to be created"
 msgstr "Этот заказ покупателя имеет строки, требующие создания производственных заказов"
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
-msgstr ""
+msgstr "Эта станция выполняет работу с управлением по навыкам — она работает только во время смены квалифицированного оператора; операторы, назначенные на таблицу назначений, дополнительно формируют доступный труд."
 
 msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
-msgstr ""
+msgstr "Эта станция выполняет работу без требований навыков; операторы, назначенные на таблицу назначений, формируют доступный труд."
 
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."
@@ -17164,7 +17176,7 @@ msgid "Unsaved changes"
 msgstr "Несохранённые изменения"
 
 msgid "Unschedulable"
-msgstr ""
+msgstr "Невозможно для планирования"
 
 msgid "Unscheduled"
 msgstr "Незапланировано"
@@ -17905,7 +17917,7 @@ msgid "Weighted average cost over last year calculated when the invoice is poste
 msgstr "Взвешенная средняя себестоимость за последний год рассчитывается при проведении счета-фактуры"
 
 msgid "Welcome back, {name}."
-msgstr ""
+msgstr "Добро пожаловать назад, {name}."
 
 msgid "Welcome to Carbon"
 msgstr "Добро пожаловать в Carbon"
