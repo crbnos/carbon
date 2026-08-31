@@ -22,8 +22,10 @@
 #   ADMIN_PASSWORD  password to set on that account locally (default: localpass)
 #   SCRUB_EMAILS    set to any non-empty value to scrub every email address
 #                   (auth.users, auth.identities, public.user, company,
-#                   contact, invite, companySettings, quote) to @example.test
+#                   contact, invite, companySettings, the AP/AR billing
+#                   addresses, quote) to @example.test
 #                   so no production emails can be contacted from local.
+#                   The script FAILS (exit 1) if any non-admin email survives.
 #                   The ADMIN_EMAIL account is preserved so you can still log in.
 #   KEEP_STORAGE_OBJECTS
 #                   set to any non-empty value to KEEP the dump's
@@ -51,6 +53,10 @@
 #   - Refuses to run if the worktree isn't registered in ~/.carbon/dev-ports.json.
 #
 set -euo pipefail
+# Private, unpredictable error-log path (a fixed /tmp name is symlink-attackable
+# and can be pre-created by another local user).
+RESTORE_LOG="$(mktemp "${TMPDIR:-/tmp}/restore-errors.XXXXXX.log")"
+RESTORE_INCOMPLETE=""
 ADMIN_EMAIL="${ADMIN_EMAIL:-}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-localpass}"
 SCRUB_EMAILS="${SCRUB_EMAILS:-}"
@@ -124,22 +130,82 @@ BEGIN
   IF to_regclass('storage.buckets') IS NOT NULL THEN TRUNCATE storage.buckets CASCADE; END IF;
 END \$\$;
 " >/dev/null
+# The migration ledger must travel WITH the schema. The public schema was just
+# dropped, so the local supabase_migrations ledger no longer describes anything
+# real — and left in place it survives the restore (the dump's own ledger rows
+# lose their primary-key conflicts under ON_ERROR_STOP=0), pairing the dump's
+# OLDER schema with the local NEWER ledger. The post-restore "apply migrations
+# the backup predates" step then no-ops and the DB is silently missing weeks of
+# migrations. Truncate it so the dump's ledger lands cleanly; anything the
+# backup predates then genuinely pends.
+$PSQL_PG -c "
+DO \$\$
+BEGIN
+  IF to_regclass('supabase_migrations.schema_migrations') IS NOT NULL THEN
+    TRUNCATE supabase_migrations.schema_migrations;
+  END IF;
+END \$\$;
+" >/dev/null
 # ── 3. Restore ───────────────────────────────────────────────────────────────
 # Supports both plain-text SQL dumps (Supabase cluster .backup files) and
 # custom-format pg_dump archives (.dump, magic bytes 'PGDMP').
 echo "▶ Restoring backup (this can take several minutes)"
 if head -c 5 "$BACKUP_FILE" | grep -q '^PGDMP'; then
   echo "  → custom-format archive detected, using pg_restore"
+  # `|| true`: pg_restore exits nonzero whenever ANY error occurred, including
+  # the expected 'already exists' noise, so its exit code cannot gate the script.
   pg_restore -h 127.0.0.1 -p "$PORT_DB" -U supabase_admin -d postgres \
     --no-owner --no-privileges \
-    "$BACKUP_FILE" 2> /tmp/restore-errors.log || true
+    "$BACKUP_FILE" 2> "$RESTORE_LOG" || true
+  restore_pipe=(0 0)
 else
-  # Plain-text SQL: strip PG17 \restrict/\unrestrict so psql isn't sandboxed
-  sed -E '/^\\(restrict|unrestrict)([[:space:]]|$)/d' "$BACKUP_FILE" \
-    | $PSQL_SA -v ON_ERROR_STOP=0 2> /tmp/restore-errors.log
+  # Plain-text SQL: strip PG17 \restrict/\unrestrict so psql isn't sandboxed.
+  # The pipeline must not run bare under `set -e`: if the server drops the
+  # connection mid-restore (e.g. a crash on a schema-drifted COPY), psql exits
+  # 2 and the script would die HERE — silently skipping localization, the
+  # SCRUB_EMAILS scrub, and the admin grant, leaving real production emails in
+  # the local DB with no warning. But a blanket `|| true` would ALSO swallow an
+  # unreadable backup or a psql that never connected, so capture PIPESTATUS and
+  # sort the failure modes out below.
+  if sed -E '/^\\(restrict|unrestrict)([[:space:]]|$)/d' "$BACKUP_FILE" \
+    | $PSQL_SA -v ON_ERROR_STOP=0 2> "$RESTORE_LOG"; then
+    restore_pipe=(0 0)
+  else
+    restore_pipe=("${PIPESTATUS[@]}")
+  fi
 fi
-err_count=$(grep -ci '^\(pg_restore: \)\?error' /tmp/restore-errors.log || true)
-echo "  → /tmp/restore-errors.log ($err_count errors; most are harmless 'already exists' / role permission noise)"
+err_count=$(grep -ci '^\(pg_restore: \)\?error' "$RESTORE_LOG" || true)
+echo "  → $RESTORE_LOG ($err_count errors; most are harmless 'already exists' / role permission noise)"
+# Sort out how the restore ended. A dropped server connection is the one
+# failure we deliberately continue through (Docker restarts Postgres, and the
+# post-restore safety steps — localization, email scrub — must still run over
+# whatever data landed); the script then exits nonzero at the END. Note the
+# connection-loss check comes first: when psql dies mid-pipe, sed is killed by
+# SIGPIPE too, so its exit code is only meaningful when the connection held.
+if grep -qE 'server closed the connection|connection to server was lost' "$RESTORE_LOG"; then
+  RESTORE_INCOMPLETE=1
+  echo "  ⚠ the server connection dropped during the restore — the restored data is"
+  echo "    likely INCOMPLETE (see $RESTORE_LOG). Waiting for Postgres to"
+  echo "    come back so the post-restore steps (email scrub, localization) still run."
+elif [[ "${restore_pipe[0]:-0}" -ne 0 ]]; then
+  echo "✗ Could not read the backup file (exit ${restore_pipe[0]}) — nothing was restored." >&2
+  exit 1
+elif [[ "${restore_pipe[1]:-0}" -ne 0 ]]; then
+  echo "✗ psql failed before the data load completed (exit ${restore_pipe[1]}) — see $RESTORE_LOG" >&2
+  exit 1
+fi
+for attempt in $(seq 1 30); do
+  if $PSQL_PG -c 'SELECT 1' >/dev/null 2>&1; then
+    break
+  fi
+  if [[ "$attempt" -eq 30 ]]; then
+    echo "✗ Postgres did not come back after the restore. Nothing after the data load" >&2
+    echo "  has run — including the SCRUB_EMAILS scrub. Start the stack ('crbn up')" >&2
+    echo "  and re-run this script." >&2
+    exit 1
+  fi
+  sleep 2
+done
 # Reapply superuser to postgres (the dump's ALTER ROLE strips it).
 $PSQL_SA -c "ALTER ROLE postgres WITH SUPERUSER CREATEROLE CREATEDB LOGIN REPLICATION BYPASSRLS;" \
   >/dev/null 2>&1 || true
@@ -367,6 +433,8 @@ BEGIN
       ('public', 'invite',          'email',                       'inv_'),
       ('public', 'companySettings', 'accountsPayableEmail',        'ap_'),
       ('public', 'companySettings', 'accountsReceivableEmail',     'ar_'),
+      ('public', 'companyAccountsPayableBillingAddress',    'email', 'apb_'),
+      ('public', 'companyAccountsReceivableBillingAddress', 'email', 'arb_'),
       ('public', 'quote',           'digitalQuoteAcceptedByEmail', 'qa_'),
       ('public', 'quote',           'digitalQuoteRejectedByEmail', 'qr_')
     ) AS t(schema_name, table_name, column_name, prefix)
@@ -472,5 +540,73 @@ if [[ -n "$SCRUB_EMAILS" ]]; then
     UNION ALL SELECT 'public.company leaked', count(*) FROM public.company   WHERE email IS NOT NULL AND email NOT LIKE '%@example.test'
     UNION ALL SELECT 'public.contact leaked', count(*) FROM public.contact   WHERE email IS NOT NULL AND email NOT LIKE '%@example.test';
   "
+  # The scrub was explicitly requested, so an incomplete one is a FAILURE, not
+  # a table of numbers to eyeball. Only the preserved admin may remain (one row
+  # each in auth.users and public.user). The assertion walks the SAME
+  # (table, column) mapping the scrub does — guarded by information_schema, so
+  # a dump predating one of the tables passes instead of erroring — and any
+  # column added to the scrub must be added here too.
+  LEAKED=$($PSQL_PG -Atq <<'SQL'
+CREATE TEMP TABLE _scrub_leaks(n BIGINT);
+DO $$
+DECLARE
+  r RECORD;
+  c BIGINT;
+  total BIGINT := 0;
+BEGIN
+  FOR r IN
+    SELECT * FROM (VALUES
+      ('auth',   'users',           'email'),
+      ('public', 'user',            'email'),
+      ('public', 'company',         'email'),
+      ('public', 'contact',         'email'),
+      ('public', 'invite',          'email'),
+      ('public', 'companySettings', 'accountsPayableEmail'),
+      ('public', 'companySettings', 'accountsReceivableEmail'),
+      ('public', 'companyAccountsPayableBillingAddress',    'email'),
+      ('public', 'companyAccountsReceivableBillingAddress', 'email'),
+      ('public', 'quote',           'digitalQuoteAcceptedByEmail'),
+      ('public', 'quote',           'digitalQuoteRejectedByEmail')
+    ) AS t(schema_name, table_name, column_name)
+  LOOP
+    IF EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = r.schema_name AND table_name = r.table_name
+        AND column_name = r.column_name
+    ) THEN
+      EXECUTE format(
+        'SELECT count(*) FROM %I.%I WHERE %I IS NOT NULL AND %I NOT LIKE %L',
+        r.schema_name, r.table_name, r.column_name, r.column_name, '%@example.test'
+      ) INTO c;
+      total := total + c;
+    END IF;
+  END LOOP;
+  INSERT INTO _scrub_leaks VALUES (total);
+END $$;
+SELECT n FROM _scrub_leaks;
+SQL
+  )
+  ALLOWED=0
+  [[ -n "$ADMIN_USER_ID" ]] && ALLOWED=2
+  # An EMPTY result means the verification query itself failed — refuse rather
+  # than let a broken check read as a clean scrub.
+  if [[ -z "$LEAKED" ]]; then
+    echo "✗ The scrub verification query failed — treat the scrub as NOT verified." >&2
+    exit 1
+  fi
+  if [[ "$LEAKED" -gt "$ALLOWED" ]]; then
+    echo "✗ SCRUB_EMAILS was set but $LEAKED real email addresses remain (see the" >&2
+    echo "  counts above). The restore may have failed partway — check" >&2
+    echo "  $RESTORE_LOG, then re-run this script." >&2
+    exit 1
+  fi
+fi
+# An interrupted data load is a failed restore even though the safety steps
+# above ran — exit nonzero so callers (crbn restore, CI) see it.
+if [[ -n "$RESTORE_INCOMPLETE" ]]; then
+  echo "✗ The server connection dropped during the restore, so the data load is likely" >&2
+  echo "  incomplete. Localization and the email scrub DID run over what landed." >&2
+  echo "  Check $RESTORE_LOG, then re-run this script end-to-end." >&2
+  exit 1
 fi
 echo "✅ Done — Studio: http://127.0.0.1:$((PORT_DB+2))   (port_db+2 is the Studio port crbn assigned)"

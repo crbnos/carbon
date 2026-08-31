@@ -43,12 +43,136 @@ Magic link is the primary flow. The action rate-limits by IP (Upstash via `@carb
   verification-code signup). Enterprise edition rejects unknown users.
 
 Other methods on the login page: Google + Azure OAuth (`signInWithOAuth`, redirect to
-`/callback`), and Passkey/WebAuthn (`@simplewebauthn`, `/api/passkey/authenticate/*`,
-backed by `passkey.server.ts`). Availability gated by `isAuthProviderEnabled(...)`.
+`/callback`), Passkey/WebAuthn (`@simplewebauthn`, `/api/passkey/authenticate/*`,
+backed by `passkey.server.ts`), and — Enterprise edition with `sso` in
+`AUTH_PROVIDERS` — SAML SSO ("Continue with SSO" → `api+/sso.check.ts` →
+`signInWithSSO` → IdP → `/callback`; see the SSO section below). Availability
+gated by `isAuthProviderEnabled(...)`.
 <!-- UNVERIFIED: there is no /signup route; the old cache doc's "/signup" + "Sign up for free" claims were stale (and contained a git merge-conflict artifact). Signup happens via the verification-code flow above. -->
 
 Routes live under `_public+/` (`login`, `callback`, `logout`, `magic-link`, `verify`,
 `invite.$code`, `refresh-session`). MES mirrors a subset under its own `_public+/`.
+
+## Enterprise SAML SSO (`@carbon/ee/sso.server` + `ssoConnection`)
+
+Self-hosted-only (direct `auth.identities` writes). The whole feature lives in
+`packages/ee/src/sso/` behind **`isSsoEnabled()`** (`gate.ts`): Enterprise
+edition AND `sso` in `AUTH_PROVIDERS`. The connection lookups and admin
+mutations SELF-GATE on it (they answer "no connection" / refuse without
+querying), and every route entry point checks it too — login buttons, the
+`sso.check` endpoints, the settings action, and the callbacks' SSO branch
+(which then also skips the `admin.getUserById` call). `@carbon/auth` keeps only
+`AuthSession.ssoProviderId` + its preservation across refresh. Design record:
+`.ai/specs/2026-08-21-enterprise-saml-sso.md`.
+
+- **Provider management**: `packages/ee/src/sso/provider.server.ts` wraps the GoTrue
+  admin SSO API (`create/update/delete/getGoTrueSsoProvider`, service-role key).
+  `getSamlSpUrls()` returns the UN-prefixed `/sso/saml/{acs,metadata}` URLs — GoTrue
+  self-declares its SP entityID/ACS from `API_EXTERNAL_URL` without `/auth/v1` and
+  validates each assertion's `Destination` against that exact URL; Kong routes `/sso/`
+  (`kong.yml` `auth-v1-sso`). Admin UX: Settings → Security (`x+/settings+/security.tsx`,
+  action `x+/settings+/sso.tsx`) via `upsertSsoConnection` / `updateSsoRequireSso` /
+  `deactivateSsoConnection` in `connections.server.ts`.
+- **`ssoConnection` table** (migration `20260820215433`; partial unique index also
+  in `20260825185617` for pre-squash DBs) binds a provider to a company:
+  `providerId` UNIQUE, `metadataUrl` XOR `metadataXml` (CHECK),
+  `active`, `requireSso`, and at most ONE active row per company
+  (`ssoConnection_companyId_active_key` — readers use `.maybeSingle()`). GoTrue
+  providers are project-global, so the CALLBACK — not GoTrue — enforces
+  provider → company + email-domain binding.
+- **Domain ownership verification** (`ssoDomain` table, same migration; spec
+  `.ai/specs/2026-08-27-sso-domain-verification.md`): one row per claimed email
+  domain — `verificationToken` (32-hex, per row), `status pending|verified`.
+  Exclusivity attaches to VERIFICATION, not the claim: `UNIQUE("companyId","domain")`
+  plus a partial unique index on `("domain") WHERE status='verified'` — any number
+  of companies may hold pending claims on one domain (a free pending row must not
+  block the rightful owner — that would be a squatting vector); first to verify
+  wins, race-free. A cross-company verify conflict fails fast with a deliberately
+  GENERIC message ("Failed to verify domain") — a distinct one would be an oracle
+  for probing which domains are verified where. `addSsoDomain` pre-checks the
+  company's own duplicate (no error-code branching). A domain
+  routes SSO / enforces `requireSso` only while VERIFIED; the connection lookups
+  in `connections.server.ts` attach a computed `domains: string[]` of verified
+  domains, so consumers (callbacks, invite guards) keep the old shape. The DNS
+  challenge (`verification.server.ts`): TXT at `_carbon-challenge.<domain>` with
+  `carbon-domain-verification=<token>`, checked manually via the Verify button
+  (pinned resolvers 1.1.1.1/8.8.8.8; no polling, no re-verification — one-shot
+  by design). Only verified domains are pushed to the GoTrue provider
+  (`syncGoTrueDomains`); a new connection registers with `domains: []`.
+  Domain admin flows: `addSsoDomain` / `verifySsoDomain` / `removeSsoDomain`
+  intents on `x+/settings+/sso.tsx`; UI is the Email Domains card on
+  Settings → Security. Deactivating a connection DELETES its `ssoDomain` rows
+  (releases the claims; re-activation re-verifies). Public email providers are
+  denied at validation (`PUBLIC_EMAIL_DOMAINS`, `settings.models.ts`).
+- **Session classification**: `getSsoProviderIdFromSession(accessToken, user)` requires
+  an `amr` entry with `method: "sso/saml"` before resolving the provider id; fails
+  CLOSED to the non-SSO path. `getSsoProviderIdFromUser` only answers "HAS an SSO
+  identity" — a linked account's Google/magic-link login also satisfies it; never use
+  it to classify a session. `AuthSession.ssoProviderId` is stamped at the callback and
+  preserved across refresh and company switch.
+- **Callback SSO branch** (ERP `_public+/callback.tsx`): verifies connection + domain;
+  an ACTIVE same-email account gets the SAML identity LINKED onto it
+  (`linkSsoIdentityToUser` — also deletes stale `sso:%` identities on the target, then
+  the duplicate auth user is deleted and a session minted via server-side magic-link
+  redemption); otherwise the invite-first migration `migrateUserToSso` runs (one Kysely
+  transaction: user row, role-keyed account activation — `employee` /
+  `customerAccount` / `supplierAccount` — membership, permission merge, invite accept
+  under FOR UPDATE). No invite (and the domain-mismatch rejection) → rejected;
+  `deleteJitSsoUser` removes the WHOLE throwaway JIT user — auth user plus the
+  trigger-created `user`/`userPermission` rows (no FK cascade between the schemas),
+  guarded on zero memberships — or the leftover profile trips `authIdentityExists`
+  and makes the email un-invitable. MES defers first login to ERP.
+- **Pre-seeded account linking** (`provisioning.server.ts`; spec
+  `.ai/specs/2026-08-29-saml-sso-account-linking.md`): Carbon runs GoTrue with
+  `GOTRUE_DISABLE_SIGNUP=true`, so a SAML sign-in that GoTrue classifies as
+  "create a new user" is rejected (422) — the callback link above only fires once
+  a user *already* has an identity to match. The fix is to pre-seed a row in
+  `auth.identities` for the existing user so GoTrue takes its LinkAccount /
+  AccountExists branch instead. **Provider-agnostic**: the match is carried by the
+  GENERATED `email` column (`identity_data.email = lower(email)`), NOT
+  `provider_id` — GoTrue marks every SAML assertion email Verified and falls back
+  to email-column matching for EVERY successful SAML login, so it works for any
+  IdP regardless of NameID shape (Okta email vs Entra opaque pairwise id). GoTrue
+  self-heals a second row keyed on the real NameID on first login; both are torn
+  down together. Three raw-`sql` writers (pinned by `sso.server.test.ts` via a
+  capturing Kysely driver): `seedSsoIdentityForUser` (one user, idempotent
+  `ON CONFLICT (provider_id, provider) DO NOTHING`) — called best-effort/logged by
+  `seedSsoIdentityForNewUser` in all three ERP account-creation flows
+  (`users.server.ts` create{Customer,Employee,Supplier}Account); and, run from the
+  domain-claim flows, `backfillSsoIdentitiesForDomain` (verify → seed EVERY
+  existing non-SSO user on the domain) and `removeSsoIdentitiesForDomain` (unregister
+  → delete, keyed on the email column so it also removes GoTrue's self-healed
+  NameID rows). Backfill/remove are deliberately **not** `companyId`-scoped: the
+  adopted policy is that the verified domain owner controls identity for that
+  domain instance-wide (GoTrue keys SSO on domain, not company), which the
+  cross-company verified-domain exclusivity index makes safe. Pure helpers
+  `emailDomain` / `ssoProviderColumn`. A DB guard — `enforce_sso_domain_claim`
+  trigger on `auth.sso_domains` + the `ssoReservedDomain` table (migration
+  `20260829142619_sso-domain-guard.sql`) — refuses any `auth.sso_domains` insert
+  for a reserved domain or one with no Carbon-side `ssoDomain` claim, so a domain
+  cannot be registered (and thus control identity) without going through
+  verification.
+- **Require SSO** (`ssoConnection.requireSso`): `isSsoRequiredForEmail`
+  (`connections.server.ts`, like all connection lookups —
+  `getSsoConnectionByDomain` / `getSsoConnectionByProviderId` are the ONE copy
+  shared by ERP, MES, and jobs) refuses non-SSO logins server-side at the login
+  actions, the callbacks' non-SSO branch, and the passkey verify routes in both
+  apps. `DEV_BYPASS_EMAIL` is exempt. Break-glass:
+  `UPDATE "ssoConnection" SET "requireSso" = false WHERE "companyId" = '<id>';`.
+- **MFA**: SSO sessions mint `mfaVerified: true` unconditionally (including
+  `CONTROLLED_ENVIRONMENT`) and the `requireMfa` enrollment gate exempts them — the
+  IdP owns MFA (user decision).
+- **Trigger**: `create_public_user()` SKIPS (inserts nothing) when the new auth user's
+  email already belongs to a DIFFERENT `public."user"` row — the callback migration
+  owns that case; inserting would FK/unique-crash GoTrue's signup transaction.
+- **Invites**: `getSsoAwareInviteLink` (`connections.server.ts`; used by the ERP
+  invite routes and jobs `user-admin.ts`) routes covered-domain invite emails to
+  `/login?email=...` instead of `/invite/<code>`, so the IdP is never bypassed.
+  Employee invites outside the covered domains are refused up front
+  (`getSsoInviteDomainError` in ERP `users.server.ts` → `uncoveredSsoDomainError`).
+- **Config**: GoTrue SAML via `SAML_ENABLED` / `SAML_PRIVATE_KEY` in root `.env`
+  (compose substitution → `GOTRUE_SAML_*`; `crbn reload` does not read root `.env` —
+  see `.ai/lessons.md`).
 
 ## Sessions (`session.server.ts`)
 
@@ -107,7 +231,9 @@ Supabase's `auth.mfa_factors` — no app table.
   escape it, and any gap there is a lockout or a hole. Mirrors the ITAR gate.
   Scoped to the ACTIVE company only: a user in a company that does not require
   MFA is not gated, and the shell re-runs on company switch. Console sessions are
-  exempt (a shared kiosk cannot complete a personal enrollment); MES has no
+  exempt (a shared kiosk cannot complete a personal enrollment); SSO sessions
+  (`authSession.ssoProviderId` set) are exempt too, including under
+  `CONTROLLED_ENVIRONMENT` — the IdP owns MFA (see the SSO section); MES has no
   enrollment UI so its gate links to ERP.
 - **Email**: `~/services/mfa-email.server.ts` owns both MFA emails
   (`MfaRequiredEmail` / `MfaEnabledEmail` in `@carbon/documents/email`).
@@ -207,9 +333,20 @@ ERP exposes an OAuth 2.0 AS for use as a remote Claude/MCP connector. Routes und
 ## Schema (newest migrations; `packages/database/supabase/migrations`)
 
 - `user` / `userPermission` (`id`, `permissions` JSONB) — seeded by the
-  `create_public_user()` trigger (`on_auth_user_created` on `auth.users`).
+  `create_public_user()` trigger (`on_auth_user_created` on `auth.users`) — which
+  SKIPS inserting when the email already belongs to a different `user` row (the
+  SSO duplicate case; the callback migration owns it).
 - `userToCompany` — junction, PK `(userId, companyId)`, `role` enum
   `'employee' | 'supplier' | 'customer'`.
+- `ssoConnection` — SAML SSO tenant binding (see the SSO section): PK
+  `(id, companyId)`, `providerId` UNIQUE,
+  `metadataUrl`/`metadataXml` (exactly one, CHECK), `active`, `requireSso`.
+  SELECT: employee role; writes: `settings_update`.
+- `ssoDomain` — DNS-verified email domain claims: PK `(id, companyId)`,
+  composite FK → `ssoConnection`, `UNIQUE("companyId","domain")` + partial unique
+  `("domain") WHERE status='verified'` (first-to-verify-wins), `verificationToken`,
+  `status` (`ssoDomainStatus` enum: `pending|verified`), `verifiedAt`. Same RLS split as
+  `ssoConnection`.
 - `apiKey` — `keyHash` (unique), `keyPreview`, `name`, `companyId`, `createdBy`, `scopes`
   JSONB, `rateLimit` (default **60**), `rateLimitWindow` (default `'1m'`), `expiresAt`,
   `lastUsedAt`. The old plaintext `key` column was dropped.

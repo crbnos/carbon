@@ -4,7 +4,7 @@ Tracks item quantities across locations and storage units. Manages receipts, shi
 
 ## Key Domain Concepts
 
-- **Storage Unit** — hierarchical container (bin, shelf, rack, zone) within a location. Tree structure via `parentId`. Renamed from `shelf` in migration `20260417000100`. MUST use `storageUnit` naming, never `shelf`.
+- **Storage Unit** — hierarchical container (bin, shelf, rack, zone) within a location. Tree structure via `parentId`. Renamed from `shelf` in migration `20260417000100`. MUST use `storageUnit` naming, never `shelf`. Bulk **CSV import** is wired via the shared import system (`table: "storageUnit"`, permission `inventory`): fields `id`, `name`, `locationId`, `parentName`, `storageTypeNames`, `active`; matched on `(locationId, lower(name))` since names are unique per location, parents linked in a second pass. See `.claude/rules/csv-import-system.md`.
 - **Tracked Entity** — serial/batch/lot-tracked item instance with `readableId` (serial or batch number), `status` (Available/Reserved/On Hold/Consumed/Rejected/Scrapped), `quantity`, and `expirationDate`. `Scrapped` is terminal but recoverable via the Unscrap adjustment. Batch items have `batchProperty` definitions.
 - **Item Ledger** — append-only log of every inventory movement (`itemLedger` table). Source of truth for on-hand quantities. MUST never INSERT directly — always go through service functions.
 - **Receipt** — inbound inventory from POs or production. Lines link to `purchaseOrderLine` or jobs. Posting creates ledger entries and tracked entities.

@@ -28,6 +28,7 @@ import { normalizeOperationSourceIds } from "../shared";
 import {
   getModelByItemId,
   lookupBuyPriceFromMap,
+  resolveBuyUnitCost,
   upsertExternalLink
 } from "../shared/shared.service";
 import type {
@@ -61,7 +62,12 @@ import type {
   selectedLinesValidator
 } from "./sales.models";
 import { costCategoryKeys, OPEN_SALES_ORDER_STATUSES } from "./sales.models";
-import { decideRecalcPricing, getEffectiveDefaultMarkups } from "./sales.utils";
+import type { CategoryMarkups, QuoteLinePriceSource } from "./sales.utils";
+import {
+  decideRecalcPricing,
+  getEffectiveDefaultMarkups,
+  resolvePreservedQuoteLinePriceFields
+} from "./sales.utils";
 import type {
   MatchedRule,
   OverrideEntry,
@@ -3918,10 +3924,13 @@ export async function upsertQuoteLineAdditionalCharges(
 type QuoteLinePriceInput = {
   quoteLineId: string;
   unitPrice: number;
-  leadTime: number;
-  discountPercent: number;
   quantity: number;
   createdBy: string;
+  // Optional: an explicit value wins, an omitted one preserves the stored value
+  // for that quantity (so a cost recalc can leave user-entered fields alone).
+  leadTime?: number;
+  discountPercent?: number;
+  shippingCost?: number;
   categoryMarkups?: Record<string, number>;
   priceSource?: "system" | "manual";
 };
@@ -3934,10 +3943,11 @@ export async function upsertQuoteLinePrices(
   quoteLinePrices: {
     quoteLineId: string;
     unitPrice: number;
-    leadTime: number;
-    discountPercent: number;
     quantity: number;
     createdBy: string;
+    leadTime?: number;
+    discountPercent?: number;
+    shippingCost?: number;
     categoryMarkups?: Record<string, number>;
     priceSource?: "system" | "manual";
   }[]
@@ -4018,16 +4028,40 @@ async function rewriteQuoteLinePrices(
           companyId,
           quoteId,
           unitPrice: round(p.unitPrice, quoteLine.unitPricePrecision),
-          discountPercent: existing?.discountPercent ?? p.discountPercent,
-          leadTime: existing?.leadTime ?? p.leadTime,
-          shippingCost: existing?.shippingCost ?? 0,
-          categoryMarkups: p.categoryMarkups ?? existing?.categoryMarkups ?? {},
-          priceSource: p.priceSource ?? existing?.priceSource ?? "system",
+          // Explicit value wins, omitted value is preserved from the stored row.
+          ...resolvePreservedQuoteLinePriceFields(p, {
+            leadTime: existing ? Number(existing.leadTime) : undefined,
+            discountPercent: existing
+              ? Number(existing.discountPercent)
+              : undefined,
+            shippingCost: existing ? Number(existing.shippingCost) : undefined,
+            categoryMarkups:
+              (existing?.categoryMarkups as CategoryMarkups | null) ??
+              undefined,
+            priceSource:
+              (existing?.priceSource as QuoteLinePriceSource | null) ??
+              undefined
+          }),
           exchangeRate: quote.exchangeRate ?? 1
         };
       })
     )
     .execute();
+
+  // Keep quoteLine.quantity in step with the rows that now exist, but only when
+  // the caller supplied an explicit price set — the precision rebuild
+  // (quoteLinePrices omitted) must not touch the line's quantity breaks.
+  if (quoteLinePrices) {
+    const quantities = [
+      ...new Set(replacements.map((p) => Number(p.quantity)))
+    ].sort((a, b) => a - b);
+    await trx
+      .updateTable("quoteLine")
+      .set({ quantity: quantities })
+      .where("id", "=", lineId)
+      .where("companyId", "=", companyId)
+      .execute();
+  }
 }
 
 async function buildCostEffects(
@@ -4041,10 +4075,11 @@ async function buildCostEffects(
 
   const operations = operationsResult.data ?? [];
 
-  // Fix Buy material costs
+  // Refresh Buy material costs from supplier price breaks; resolveBuyUnitCost
+  // leaves a typed cost alone.
   const buyMaterials = await client
     .from("quoteMaterial")
-    .select("id, itemId, unitCost")
+    .select("id, itemId, unitCost, unitCostSource")
     .eq("quoteLineId", quoteLineId)
     .eq("methodType", "Purchase to Order");
 
@@ -4054,7 +4089,8 @@ async function buildCostEffects(
   const priceMap = await getSupplierPriceBreaksForItems(client, buyItemIds);
 
   for (const mat of buyMaterials.data ?? []) {
-    const price = lookupBuyPriceFromMap(mat.itemId, 1, priceMap, mat.unitCost);
+    if (mat.unitCostSource === "manual") continue;
+    const price = resolveBuyUnitCost(mat, 1, priceMap);
     if (price !== mat.unitCost) {
       await client
         .from("quoteMaterial")
@@ -4170,13 +4206,17 @@ async function buildCostEffects(
     itemId: string,
     itemType: string,
     quantity: number,
-    unitCost: number
+    unitCost: number,
+    unitCostSource: string | null
   ) {
     const costFn = (outerQty: number) => {
       const requestedQty = quantity * outerQty;
       return (
-        lookupBuyPriceFromMap(itemId, requestedQty, priceMap, unitCost) *
-        requestedQty
+        resolveBuyUnitCost(
+          { itemId, unitCost, unitCostSource },
+          requestedQty,
+          priceMap
+        ) * requestedQty
       );
     };
     const key =
@@ -4199,7 +4239,13 @@ async function buildCostEffects(
     const qty = d.quantity * parentQuantity;
 
     if (d.methodType === "Purchase to Order") {
-      pushBuyCostEffect(d.itemId, d.itemType, qty, d.unitCost);
+      pushBuyCostEffect(
+        d.itemId,
+        d.itemType,
+        qty,
+        d.unitCost,
+        d.unitCostSource
+      );
     } else if (d.methodType === "Pull from Inventory") {
       const costFn = (outerQty: number) => d.unitCost * qty * outerQty;
       const key =

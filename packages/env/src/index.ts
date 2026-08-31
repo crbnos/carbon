@@ -115,7 +115,7 @@ export function getEnv(
  * Server env
  */
 
-export type AuthProvider = "email" | "google" | "azure" | "passkey";
+export type AuthProvider = "email" | "google" | "azure" | "passkey" | "sso";
 
 export const AUTH_PROVIDERS =
   getEnv("AUTH_PROVIDERS", {
@@ -343,7 +343,6 @@ export const SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID = getEnv(
     isSecret: true
   }
 );
-
 export const SESSION_SECRET = getEnv("SESSION_SECRET");
 export const SESSION_KEY = "auth";
 export const SESSION_ERROR_KEY = "error";

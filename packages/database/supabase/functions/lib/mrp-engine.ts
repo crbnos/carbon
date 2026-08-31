@@ -142,7 +142,10 @@ export function computeLowLevelCodes(
 
   let head = 0;
   while (head < queue.length) {
-    const item = queue[head++];
+    // `head < queue.length` guarantees this is defined; the `!` satisfies
+    // noUncheckedIndexedAccess under the Node typecheck (this file is now
+    // Node-consumed via @carbon/database/mrp-engine).
+    const item = queue[head++]!;
     const level = llc.get(item) ?? 0;
     for (const child of bomByItem.get(item) ?? []) {
       const next = level + 1;

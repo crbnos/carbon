@@ -28,6 +28,8 @@ Once you have a verified authenticator, every sign-in asks for a code — magic 
 
 Passkeys are challenged too, which surprises people. A passkey is strong, but in Carbon it resolves into an ordinary session like any other sign-in method, so exempting it would leave a way around the requirement. If you'd rather not be asked twice, that's an argument for using a passkey *instead of* two-factor, not alongside it.
 
+`docs/platform/single-sign-on` is the one method that isn't challenged. An SSO session arrives with your identity provider's MFA policy already enforced at sign-in, so Carbon skips its own code screen and the company-wide requirement for those sessions — in every environment, including controlled (ITAR) deployments. Sign in with a magic link instead and the challenge applies as usual.
+
 A code is valid for its thirty-second window plus one window either side, to absorb small drift. If codes are consistently rejected on a phone whose time is set manually, switch it to network time. It's the single most common cause of "the code is right but Carbon says no".
 
 Repeated attempts are rate-limited on the same budget as sign-in itself, so guessing your way through isn't practical — and neither is retrying twenty times because you mistyped.
@@ -48,7 +50,7 @@ This is the part worth reading twice. If you belong to two companies and only on
 
 But once you've set one up, you're asked for a code at **every** sign-in, to either company. There's no such thing as being half-enrolled — the authenticator is attached to your account, not to a membership. Turning the requirement on in one company therefore does change how its people sign in everywhere else, which is worth saying out loud before you flip it.
 
-Controlled environments are the exception to all of the above. When Carbon is deployed for ITAR or CMMC work, two-factor is mandatory and the switch is locked on, because NIST 800-171 requires it for network access to non-privileged accounts. Admins can see the setting but not turn it off, and the enrollment screen offers no way around it.
+Controlled environments are the exception to all of the above. When Carbon is deployed for ITAR or CMMC work, two-factor is mandatory and the switch is locked on, because NIST 800-171 requires it for network access to non-privileged accounts. Admins can see the setting but not turn it off, and the enrollment screen offers no way around it. SSO sessions remain exempt even here — the identity provider owns their MFA.
 
 ## Seeing who has set it up
 

@@ -13,6 +13,7 @@ export { noLegacyRls } from "./conformance/no-legacy-rls";
 export { noLocalTimezone } from "./conformance/no-local-timezone";
 export { noNumericPrecision } from "./conformance/no-numeric-precision";
 export { noRawRounding } from "./conformance/no-raw-rounding";
+export { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
 export { noZeroConcurrency } from "./conformance/no-zero-concurrency";
 export {
   type Invariant,

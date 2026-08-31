@@ -15,7 +15,8 @@ import { LuCopy, LuKeySquare, LuLink } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import Assignee, { useOptimisticAssignment } from "~/components/Assignee";
-import { InputControlled, Tags } from "~/components/Form";
+import { Enumerable } from "~/components/Enumerable";
+import { Ability, InputControlled, Tags } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
 import { useTags } from "~/hooks/useTags";
 import type { Training } from "~/modules/resources";
@@ -55,7 +56,8 @@ const TrainingProperties = () => {
         | "type"
         | "frequency"
         | "estimatedDuration"
-        | "description",
+        | "description"
+        | "grantsAbilityId",
       value: string | null
     ) => {
       const formData = new FormData();
@@ -91,7 +93,7 @@ const TrainingProperties = () => {
   return (
     <VStack
       spacing={4}
-      className="w-[450px] bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2 text-sm"
+      className="w-[450px] bg-background h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2 text-sm"
     >
       <VStack spacing={2}>
         <HStack className="w-full justify-between">
@@ -285,6 +287,38 @@ const TrainingProperties = () => {
               onUpdate("estimatedDuration", e.target.value ?? null);
             }}
             className="text-muted-foreground"
+          />
+        </span>
+      </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{
+          grantsAbilityId: routeData?.training?.grantsAbilityId ?? undefined
+        }}
+        validator={z.object({
+          grantsAbilityId: z.string().optional()
+        })}
+        className="w-full"
+      >
+        <span className="text-sm tracking-tight">
+          <Ability
+            label={t`Grants Ability`}
+            name="grantsAbilityId"
+            inline={(value, options) => {
+              const label = options.find((o) => o.value === value)?.label;
+              return typeof label === "string" ? (
+                <Enumerable value={label} />
+              ) : (
+                <span className="text-muted-foreground">
+                  <Trans>None</Trans>
+                </span>
+              );
+            }}
+            value={routeData?.training?.grantsAbilityId ?? ""}
+            onChange={(value) => {
+              onUpdate("grantsAbilityId", value?.value ?? null);
+            }}
+            isReadOnly={!permissions.can("update", "people")}
           />
         </span>
       </ValidatedForm>

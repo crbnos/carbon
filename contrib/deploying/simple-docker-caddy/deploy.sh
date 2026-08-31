@@ -29,7 +29,7 @@ readonly ENV_EXAMPLE="$HERE/.env.example"
 # NOT in GENERATED_SECRETS. ALL_SECRETS is the full set the stack needs to deploy.
 readonly GENERATED_SECRETS="session_secret inngest_signing_key inngest_event_key"
 readonly TRIO_SECRETS="jwt_secret anon_key service_role_key"
-readonly SUPPLIED_SECRETS="resend_api_key smtp_password"
+readonly SUPPLIED_SECRETS="resend_api_key smtp_password saml_private_key"
 readonly ALL_SECRETS="postgres_password postgrest_db_uri $GENERATED_SECRETS $TRIO_SECRETS $SUPPLIED_SECRETS"
 
 log()   { printf '\033[0;36m[%s]\033[0m %s\n' "$(date '+%H:%M:%S')" "$*"; }
@@ -133,6 +133,8 @@ cmd_init() {
         case "$s" in
             resend_api_key) create_secret "$s" "re_placeholder_change_me" ;;
             smtp_password)  create_secret "$s" "change_me" ;;
+            # Ignored while SAML_ENABLED=false; replace before enabling SAML.
+            saml_private_key) create_secret "$s" "change_me" ;;
         esac
     done
     

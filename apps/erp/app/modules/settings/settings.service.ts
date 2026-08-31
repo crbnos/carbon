@@ -1098,6 +1098,17 @@ export async function updateMetricSettings(
     .eq("id", companyId);
 }
 
+export async function updateAllowLowercaseItemIdsSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  allowLowercaseItemIds: boolean
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ allowLowercaseItemIds }))
+    .eq("id", companyId);
+}
+
 export async function updatePlmReleaseControlSetting(
   client: SupabaseClient<Database>,
   companyId: string,

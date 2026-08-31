@@ -66,6 +66,85 @@ export const apiKeyValidator = z.object({
   )
 });
 
+const ssoDomainRegex = /^[a-z0-9.-]+\.[a-z]{2,}$/;
+
+/**
+ * Consumer email providers no company can own. The DNS TXT challenge is the
+ * real gate (nobody can publish a record under gmail.com), but refusing these
+ * at validation gives an instant, honest error instead of a claim that can
+ * never verify. ASCII, lowercase — compared after normalization.
+ */
+export const PUBLIC_EMAIL_DOMAINS = [
+  "gmail.com",
+  "googlemail.com",
+  "outlook.com",
+  "hotmail.com",
+  "live.com",
+  "msn.com",
+  "yahoo.com",
+  "ymail.com",
+  "icloud.com",
+  "me.com",
+  "mac.com",
+  "aol.com",
+  "proton.me",
+  "protonmail.com",
+  "pm.me",
+  "gmx.com",
+  "gmx.net",
+  "mail.com",
+  "zoho.com",
+  "yandex.com",
+  "qq.com",
+  "163.com",
+  "126.com"
+] as const;
+
+/**
+ * SAML SSO connection form. The IdP metadata comes in as EITHER a metadata URL
+ * or raw metadata XML (exactly one — GoTrue takes one or the other). Email
+ * domains are managed separately per-domain with a DNS ownership challenge
+ * (ssoDomainValidator), not on this form.
+ */
+export const ssoConnectionValidator = z
+  .object({
+    metadataUrl: zfd.text(
+      z.string().url({ message: "Must be a valid URL" }).optional()
+    ),
+    metadataXml: zfd.text(z.string().optional())
+  })
+  .refine(
+    (input) => Boolean(input.metadataUrl) !== Boolean(input.metadataXml),
+    {
+      message: "Provide either a metadata URL or metadata XML (exactly one)",
+      path: ["metadataUrl"]
+    }
+  );
+
+/**
+ * A single SSO email domain claim. Lowercased ASCII hostname (enter
+ * internationalized domains in punycode `xn--` form); public email providers
+ * are refused outright.
+ */
+export const ssoDomainValidator = z.object({
+  domain: zfd
+    .text(z.string().min(1, { message: "Domain is required" }))
+    .transform((value) => value.trim().toLowerCase())
+    .refine((domain) => ssoDomainRegex.test(domain) && !domain.includes("@"), {
+      message: "Must be a valid hostname like example.com (no @ or spaces)"
+    })
+    .refine(
+      (domain) =>
+        !PUBLIC_EMAIL_DOMAINS.includes(
+          domain as (typeof PUBLIC_EMAIL_DOMAINS)[number]
+        ),
+      {
+        message:
+          "Public email providers cannot be registered for single sign-on"
+      }
+    )
+});
+
 const companyAddress = {
   name: z.string().trim().min(1, { message: "Name is required" }),
   addressLine1: z.string().min(1, { message: "Address is required" }),

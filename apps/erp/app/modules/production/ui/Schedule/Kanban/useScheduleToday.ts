@@ -11,6 +11,6 @@ import { path } from "~/utils/path";
  * midnight UTC and flags jobs due today as overdue for viewers behind UTC.
  */
 export function useScheduleToday(): string {
-  const data = useRouteData<{ timezone?: string }>(path.to.scheduleDates);
+  const data = useRouteData<{ timezone?: string }>(path.to.priorityDates);
   return today(data?.timezone ?? getLocalTimeZone()).toString();
 }

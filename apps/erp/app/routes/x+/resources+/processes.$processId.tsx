@@ -8,7 +8,9 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
+import { notifyScheduleInputsChanged } from "~/modules/production";
 import {
+  ensureProcessAbility,
   getProcess,
   ProcessForm,
   processValidator,
@@ -57,6 +59,10 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw notFound("Process ID was not found");
 
+  const existingProcess = await getProcess(client, id);
+  const previouslyRequiredAbility =
+    existingProcess.data?.requiresAbility ?? false;
+
   const createProcess = await upsertProcess(client, {
     id,
     ...d,
@@ -73,6 +79,66 @@ export async function action({ request }: ActionFunctionArgs) {
         error(createProcess.error, "Failed to create process.")
       )
     );
+  }
+
+  let abilityId: string | undefined;
+  if (d.requiresAbility) {
+    const abilityResult = await ensureProcessAbility(client, {
+      processId: id,
+      processName: d.name,
+      companyId,
+      userId
+    });
+    if (abilityResult.error) {
+      // Don't leave an unschedulable process behind: requiresAbility=true
+      // without its backing ability gates scheduling on a qualification
+      // nobody can hold
+      await client
+        .from("process")
+        .update({ requiresAbility: previouslyRequiredAbility })
+        .eq("id", id)
+        .eq("companyId", companyId);
+      throw redirect(
+        path.to.processes,
+        await flash(
+          request,
+          error(abilityResult.error, "Failed to create process ability.")
+        )
+      );
+    }
+    abilityId = abilityResult.data?.id;
+  } else if (previouslyRequiredAbility) {
+    const ability = await client
+      .from("ability")
+      .select("id")
+      .eq("processId", id)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    abilityId = ability.data?.id;
+  }
+
+  const requiresAbility = d.requiresAbility ?? false;
+  if (requiresAbility !== previouslyRequiredAbility) {
+    // A requiresAbility flip changes the operator gate for every job with an
+    // unfinished operation on this process, so the schedule must be recomputed.
+    // Prefer the process's ability for precise scoping (the "ability" kind
+    // resolves ability → process → affected jobs); fall back to a company-wide
+    // mark when the ability can't be resolved, so the notify NEVER silently
+    // no-ops — that gap is why a requiresAbility change could leave the forecast
+    // stale.
+    const reason = requiresAbility
+      ? `Process "${d.name}" now requires an ability`
+      : `Process "${d.name}" no longer requires an ability`;
+    if (abilityId) {
+      await notifyScheduleInputsChanged(
+        companyId,
+        "ability",
+        reason,
+        abilityId
+      );
+    } else {
+      await notifyScheduleInputsChanged(companyId, "reorder", reason);
+    }
   }
 
   return modal ? createProcess : redirect(path.to.processes);
@@ -100,7 +166,8 @@ export default function ProcessRoute() {
     // @ts-ignore
     suppliers: (process.suppliers ?? []).map((s) => s.id) ?? [],
     ...getCustomFields(process.customFields),
-    completeAllOnScan: process.completeAllOnScan ?? false
+    completeAllOnScan: process.completeAllOnScan ?? false,
+    requiresAbility: process.requiresAbility ?? false
   };
 
   return <ProcessForm initialValues={initialValues} onClose={onClose} />;

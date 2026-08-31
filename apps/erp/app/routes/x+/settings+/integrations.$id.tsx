@@ -9,7 +9,9 @@ import {
   buildXeroTrackingTarget,
   getAccountingIntegration,
   getAccountMappings,
+  getAccountsBlockingSync,
   getDimensionValueMappings,
+  getFullChartMappableAccounts,
   getProviderIntegration,
   getSyncOperations,
   getUnmappedPostingAccounts,
@@ -181,13 +183,21 @@ function unfoldRilletCredentials(
  * already passed requirePermissions and every query is companyId-scoped.
  */
 async function getAccountMappingTabData(
+  client: SupabaseClient<Database>,
   companyId: string,
   integrationId: string,
   chart: Array<{ id: string; code: string; name: string }>
 ) {
   const db = getDatabaseClient();
 
-  const [mappings, unmapped, proposals, accountDefaultIds] = await Promise.all([
+  const [
+    mappings,
+    unmapped,
+    proposals,
+    accountDefaultIds,
+    allAccounts,
+    blocking
+  ] = await Promise.all([
     getAccountMappings(db, { companyId, integration: integrationId }),
     getUnmappedPostingAccounts(db, { companyId, integration: integrationId }),
     chart.length > 0
@@ -197,33 +207,41 @@ async function getAccountMappingTabData(
           providerAccounts: chart
         })
       : Promise.resolve({ data: [], error: null }),
-    loadAccountDefaultAccountIds(db, companyId)
+    loadAccountDefaultAccountIds(db, companyId),
+    getFullChartMappableAccounts(db, { companyId }),
+    getAccountsBlockingSync(client, { companyId, integration: integrationId })
   ]);
 
   // Don't block the settings drawer on a mapping load failure — render
   // what loaded and log the cause.
-  for (const result of [mappings, unmapped, proposals]) {
+  for (const result of [mappings, unmapped, proposals, allAccounts, blocking]) {
     if (result.error) {
       console.error("Failed to load account mapping data:", result.error);
     }
   }
 
-  // The tab manages only accountDefault accounts (the mappable set — every
-  // automated posting runs through one), so hide any legacy mapping for an
-  // account outside that set: it never syncs and would only inflate the list.
-  // getAccountMappings itself is left untouched so the journal/bill/invoice
-  // syncers' account resolution keeps seeing every mapping. Unmapped and
-  // proposals are already accountDefault-scoped in @carbon/ee.
-  const mappableIds = new Set(accountDefaultIds);
-  const scopedMappings = (mappings.data ?? []).filter((mapping) =>
-    mappableIds.has(mapping.accountId)
-  );
+  // The tab spans the FULL chart of accounts (getAccountMappings is unscoped and
+  // the syncers already see every mapping). The "required" set — badged and
+  // surfaced as needing mapping — is the accountDefault posting accounts PLUS
+  // every Expense account: any Expense account can be charged directly on a PO
+  // G/L-account line, so it should be mapped up front rather than parking a
+  // journal later.
+  const fullChart = allAccounts.data ?? [];
+  const expenseAccountIds = fullChart
+    .filter((account) => account.class === "Expense")
+    .map((account) => account.id);
+  const requiredAccountIds = [
+    ...new Set([...accountDefaultIds, ...expenseAccountIds])
+  ];
 
   return {
-    mappings: scopedMappings,
+    mappings: mappings.data ?? [],
     unmapped: unmapped.data ?? [],
     chart,
-    proposals: proposals.data ?? []
+    proposals: proposals.data ?? [],
+    requiredAccountIds,
+    allAccounts: fullChart,
+    blocking: blocking.data ?? []
   };
 }
 
@@ -857,7 +875,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const accountMapping = isAccountingInstalled
-    ? await getAccountMappingTabData(companyId, integrationId, chartAccounts)
+    ? await getAccountMappingTabData(
+        client,
+        companyId,
+        integrationId,
+        chartAccounts
+      )
     : null;
 
   const resolvedPostingSettings = isAccountingInstalled
@@ -1682,6 +1705,10 @@ export default function IntegrationRoute() {
           unmapped={accountMapping.unmapped}
           chart={accountMapping.chart}
           proposals={accountMapping.proposals}
+          requiredAccountIds={accountMapping.requiredAccountIds}
+          allAccounts={accountMapping.allAccounts}
+          blocking={accountMapping.blocking}
+          focusAccountIds={searchParams.getAll("focusAccount")}
         />
       )
     });

@@ -421,6 +421,38 @@ async function buildEventContent(
       };
     }
 
+    case NotificationEvent.JobsProjectedLate: {
+      // One digest covering the recipient's jobs that a regen flipped to
+      // projected-late (payload.documentIds = the job ids). The reason that
+      // triggered the regen is carried on the payload body.
+      const ids = opts?.documentIds?.length ? opts.documentIds : [documentId];
+      const jobs = await client
+        .from("job")
+        .select("id, jobId, dueDate, projectedCompletionAt")
+        .in("id", ids);
+      if (jobs.error) {
+        console.error("Failed to get jobs", jobs.error);
+        throw jobs.error;
+      }
+      const rows = jobs.data ?? [];
+      if (rows.length === 0) return null;
+
+      const n = rows.length;
+      const readable = rows.map((r) => r.jobId).filter(Boolean) as string[];
+      const CAP = 10;
+      const shown = readable.slice(0, CAP).join(", ");
+      const overflow = readable.length - CAP;
+      const list = overflow > 0 ? `${shown}, +${overflow} more` : shown;
+
+      return {
+        description: `${n} job${n === 1 ? "" : "s"} newly projected late`,
+        details: buildDetails([
+          { label: "Jobs", value: list },
+          { label: "Reason", value: opts?.body }
+        ])
+      };
+    }
+
     case NotificationEvent.JobOperationAssignment:
     case NotificationEvent.JobOperationMessage: {
       const [, operationId] = documentId.split(":");

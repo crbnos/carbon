@@ -62,6 +62,14 @@ export default defineConfig(({ mode, isSsrBuild }) => {
          * konva entry itself — the drawing pane needs the real browser build).
          */
         canvas: path.resolve(__dirname, "app/ssr-shims/canvas-stub.cjs"),
+        /**
+         * `rhino3dm` (via @carbon/viewer) has a Node-only branch that
+         * `require("ws")`, but declares no dependencies, so `ws` is not
+         * resolvable from it. Rolldown (Vite 8) resolves that statically while
+         * bundling the viewer's worker entry and fails the build; esbuild did
+         * not. Nothing here uses `ws` — stub it like `canvas` above.
+         */
+        ws: path.resolve(__dirname, "app/ssr-shims/ws-stub.cjs"),
         // Directory (not index.ts) so subpath imports like
         // `@carbon/utils/favicon` resolve to `src/favicon.ts`.
         "@carbon/utils": path.resolve(__dirname, "../../packages/utils/src"),

@@ -12,7 +12,7 @@ import {
 } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
-import type { DB } from "./database.ts";
+import type { DB } from "./postgres/index.ts";
 import { type AnyPostgresClient, isKysely, isoWeekFromYmd } from "./utils.ts";
 import type { Database } from "./types.ts";
 

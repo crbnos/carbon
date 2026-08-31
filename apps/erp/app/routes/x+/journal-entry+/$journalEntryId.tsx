@@ -16,7 +16,8 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: "Journal Entries", to: path.to.accountingJournals },
     (data) => data?.journalEntry?.journalEntryId
-  )
+  ),
+  module: "accounting"
 };
 
 // Maps a journal's sourceType to the document it was posted from, so the
@@ -127,7 +128,7 @@ export default function JournalEntryRoute() {
   if (!journalEntryId) throw new Error("Could not find journalEntryId");
 
   return (
-    <div className="flex h-[calc(100dvh-49px)] overflow-y-auto scrollbar-hide w-full">
+    <div className="flex h-[calc(100dvh-var(--topbar-height))] overflow-y-auto scrollbar-hide w-full">
       <div className="h-full p-4 w-full max-w-5xl mx-auto">
         <Outlet />
       </div>

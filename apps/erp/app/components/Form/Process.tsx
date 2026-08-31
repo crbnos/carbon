@@ -75,6 +75,7 @@ const Process = ({
             processType: "Process",
             defaultStandardFactor: "Minutes/Piece",
             completeAllOnScan: false,
+            requiresAbility: false,
             workCenters: []
           }}
         />

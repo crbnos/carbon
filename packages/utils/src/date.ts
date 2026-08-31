@@ -49,6 +49,10 @@ function getRelativeFormatter(locale: string): Intl.RelativeTimeFormat {
   return f;
 }
 
+/** Milliseconds per hour/day — for arithmetic on absolute epoch instants. */
+export const HOUR_MS = 3_600_000;
+export const DAY_MS = 24 * HOUR_MS;
+
 export function convertDateStringToIsoString(dateString: string) {
   return new Date(dateString).toISOString();
 }

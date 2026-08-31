@@ -13,6 +13,7 @@ import { noLegacyRls } from "./conformance/no-legacy-rls";
 import { noLocalTimezone } from "./conformance/no-local-timezone";
 import { noNumericPrecision } from "./conformance/no-numeric-precision";
 import { noRawRounding } from "./conformance/no-raw-rounding";
+import { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
 import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
 import { loadSqlFiles, migrationsDir, repoRoot } from "./sources/migrations";
 import { loadModules, modulesDir } from "./sources/modules";
@@ -22,7 +23,8 @@ import { loadTypescriptFiles } from "./sources/typescript";
 export const CONFORMANCE_CHECKS: ConformanceCheck[] = [
   noNumericPrecision,
   noLegacyRls,
-  noDerivedPercentColumn
+  noDerivedPercentColumn,
+  noRequiredColumnWithoutDefault
 ];
 
 /** Checks that run over server-side TS, not SQL migrations. */

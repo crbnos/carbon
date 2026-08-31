@@ -1,13 +1,24 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
+import { notifyScheduleInputsChanged } from "~/modules/production";
 import {
   isMaintenanceDispatchLocked,
   updateMaintenanceDispatch
 } from "~/modules/resources";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 
+// Field changes that can move a work center's downtime window.
+const SCHEDULE_AFFECTING_FIELDS = new Set([
+  "status",
+  "workCenterId",
+  "plannedStartTime",
+  "plannedEndTime",
+  "actualStartTime",
+  "actualEndTime"
+]);
+
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "resources"
   });
 
@@ -23,10 +34,11 @@ export async function action({ request }: ActionFunctionArgs) {
     return { error: { message: "Invalid form data" }, data: null };
   }
 
-  // Per-ID locked check
+  // Per-ID locked check (also carries the offline flag + work center so a
+  // downtime-affecting edit can stamp the schedule below).
   const dispatches = await client
     .from("maintenanceDispatch")
-    .select("id, status")
+    .select("id, status, takesWorkCenterOffline, workCenterId")
     .in("id", ids as string[]);
 
   const lockedError = requireUnlockedBulk({
@@ -91,6 +103,25 @@ export async function action({ request }: ActionFunctionArgs) {
       error: { message: "Failed to update maintenance dispatch(es)" },
       data: null
     };
+  }
+
+  // A downtime-affecting change on an offline dispatch (status, work center, or
+  // timing) moves the work center's outage window — stamp it so the wave
+  // regenerates. Completing/cancelling restores the hours the same way.
+  if (SCHEDULE_AFFECTING_FIELDS.has(field)) {
+    const affectedWorkCenterIds = new Set<string>();
+    for (const d of dispatches.data ?? []) {
+      if (!d.takesWorkCenterOffline) continue;
+      if (d.workCenterId) affectedWorkCenterIds.add(d.workCenterId);
+    }
+    for (const workCenterId of affectedWorkCenterIds) {
+      await notifyScheduleInputsChanged(
+        companyId,
+        "work-center",
+        "Machine downtime changed",
+        workCenterId
+      );
+    }
   }
 
   return { data: results.map((result) => result.data) };

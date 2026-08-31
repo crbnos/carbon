@@ -12,7 +12,7 @@ A projection lives on the `demandProjection` table, keyed by item, location, and
 
 Only **make parts** carry projections. The item picker on the form is fixed to `type="Part"` with `replenishmentSystem="Make"` (`apps/erp/app/modules/production/ui/Projection/DemandProjectionForm.tsx:195-202`), so you project the things you build. Their purchased components inherit demand through the BOM explosion, not through their own projection.
 
-Two tables look alike. `demandProjection` is your input — the numbers you type. `demandForecast` is planning's output — the exploded, per-component demand the MRP run writes back (`forecastMethod` = `"mrp"`). You never edit `demandForecast` by hand; it's rebuilt on every run (`packages/database/supabase/functions/mrp/index.ts:781-819`). The Projections screen only ever touches `demandProjection`.
+Two tables look alike. `demandProjection` is your input — the numbers you type. `demandForecast` is planning's output — the exploded, per-component demand the MRP run writes back (`forecastMethod` = `"mrp"`). You never edit `demandForecast` by hand; it's rebuilt on every run (`packages/ee/src/planning/mrp/mrp.ts:918-963`). The Projections screen only ever touches `demandProjection`.
 
 ## How you enter one
 
@@ -24,11 +24,11 @@ The grid spans 52 weeks (`WEEKS_TO_PROJECT = 12 * 4`, `apps/erp/app/routes/x+/pr
 
 ## How planning consumes it
 
-The `mrp` edge function reads `demandProjection` directly as a demand source (`packages/database/supabase/functions/mrp/index.ts:123-129`). For each projected week it does one piece of netting before anything else: it subtracts open production orders already scheduled to land in that period, so a projection you're partway to covering doesn't get double-planned.
+Planning runs in-process from `@carbon/ee/planning` (`runMrp`), and it reads `demandProjection` directly as a demand source (`packages/ee/src/planning/mrp/mrp.ts:159-161`). A projected week's full quantity drives gross demand — open production you've already planned is *not* pre-subtracted here; instead firm job and purchase-order supply is credited exactly once during the BOM explosion's running balance, so a projection you're partway to covering doesn't get double-planned.
 
-Net demand for a projected week is `max(0, forecastQuantity − open production for that item/location/week)` (`packages/database/supabase/functions/mrp/index.ts:361-364`). If you projected 100 and there are already 30 units in flight from earlier jobs, planning acts on 70. Actual **sales orders** and **job material** demand are *not* netted this way — they're firm, so they're added in full alongside the netted projection (`packages/database/supabase/functions/mrp/index.ts:387-445`).
+A projection's full `forecastQuantity` enters gross demand at face value — it is *not* pre-netted against open production (`packages/ee/src/planning/mrp/mrp.ts:430-461`). Firm job/PO supply is instead credited once through the BOM explosion's running on-hand/supply balance, so a projection partway covered by in-flight jobs isn't planned twice. Actual **sales orders** and **job material** demand are firm too — they're added in full alongside the projection (`packages/ee/src/planning/mrp/mrp.ts:463-531`).
 
-That netted projection demand joins actual demand (open sales order lines and open job materials) in the gross-demand tally, and MRP explodes each make part's method to push component demand down the BOM. The result is written to `demandForecast` and to a `demandForecastSource` lineage table that tags every unit with where it came from: `"Sales Order"`, `"Job Material"`, or `"Demand Projection"` (`packages/database/supabase/functions/mrp/index.ts:376-377`, `582-625`). On a part's planning page you can open the demand for any week and see exactly which projections, orders, and parent jobs make it up (`apps/erp/app/modules/items/items.service.ts:695-753`).
+That projection demand joins actual demand (open sales order lines and open job materials) in the gross-demand tally, and MRP explodes each make part's method to push component demand down the BOM. The result is written to `demandForecast` and to a `demandForecastSource` lineage table that tags every unit with where it came from: `"Sales Order"`, `"Job Material"`, or `"Demand Projection"` (`packages/ee/src/planning/mrp/mrp.ts:653-712`). On a part's planning page you can open the demand for any week and see exactly which projections, orders, and parent jobs make it up (`apps/erp/app/modules/items/items.service.ts:695-753`).
 
 The run turns projected demand into *suggested* jobs and purchase orders. Nothing is created until you act on a suggestion. See `docs/reference/planning` for how those suggestions surface and how you convert them, and `docs/reference/reordering` for the per-part numbers (lead time, lot size, safety stock) that shape what a projection turns into.
 
@@ -57,7 +57,7 @@ You never edit `demandForecast` by hand — it's planning's **output**, rebuilt 
 Deleting a part's projections clears **every future week** for that item and location (current week and beyond), not just the visible tab. It's an all-or-nothing clear per item/location, so delete only when you mean to wipe the whole forward projection.
 
 ### My projected quantity didn't turn into a full job/PO
-Projections are **netted** against production you've already planned: net demand for a week is `max(0, forecastQuantity − open production for that item/location/week)`. If you projected 100 and 30 units are already in flight, planning acts on 70. (Actual sales orders and job material demand are firm — added in full, not netted.) And MRP only *suggests* jobs and POs; nothing is created until you act on a suggestion.
+Open production you've already planned reduces what a projection drives — but the credit happens once during the BOM explosion (firm job/PO supply is netted there), not by pre-subtracting from the projection. If you projected 100 and 30 units are already in flight, planning acts on the shortfall. And MRP only *suggests* jobs and POs; nothing is created until you act on a suggestion.
 
 ### A zero cell isn't saved
 A blank or zero cell stores nothing — it's deleted rather than persisted, so the grid stays sparse. That's expected; only non-zero weeks become `demandProjection` rows.

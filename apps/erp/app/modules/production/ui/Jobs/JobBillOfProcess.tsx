@@ -49,8 +49,12 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { formatDurationMilliseconds, INPUT_FORMAT } from "@carbon/utils";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import {
+  formatDate,
+  formatDurationMilliseconds,
+  INPUT_FORMAT
+} from "@carbon/utils";
+import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import type { DragControls } from "framer-motion";
@@ -177,6 +181,7 @@ export type Operation = z.infer<typeof jobOperationValidator> & {
   assignee: string | null;
   dueDate?: string | null;
   manuallyScheduled?: boolean;
+  projectedCompletionAt?: string | null;
   status: JobOperation["status"];
   tags: string[] | null;
   workInstruction: JSONContent | null;
@@ -239,6 +244,16 @@ function makeItem(
   urlParams: { [key: string]: string },
   t: ReturnType<typeof useLingui>["t"]
 ): ItemWithData {
+  // Forward forecast vs backward need-by target: calendar-day comparison via
+  // parseDate (never JS Date arithmetic). Positive = projected finish is late.
+  const projectedDate = operation.projectedCompletionAt
+    ? operation.projectedCompletionAt.slice(0, 10)
+    : null;
+  const behindDays =
+    projectedDate && operation.dueDate
+      ? parseDate(projectedDate).compare(parseDate(operation.dueDate))
+      : 0;
+
   return {
     id: operation.id!,
     title: (
@@ -300,6 +315,25 @@ function makeItem(
           />
         </HStack>
         <HStack>
+          {projectedDate &&
+            (behindDays > 0 ? (
+              <Tooltip>
+                <TooltipTrigger>
+                  <span className="text-xs text-amber-500 whitespace-nowrap">
+                    <Trans>Projected {formatDate(projectedDate)}</Trans>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <span>
+                    <Trans>Behind target by {behindDays} day(s)</Trans>
+                  </span>
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                <Trans>Projected {formatDate(projectedDate)}</Trans>
+              </span>
+            ))}
           <OperationDueDatePicker
             operationId={operation.id!}
             dueDate={operation.dueDate ?? null}
@@ -3099,20 +3133,22 @@ function OperationForm({
             />
           </>
         ) : (
-          <WorkCenter
-            name="workCenterId"
-            label={t`Work Center`}
-            termId="work-center"
-            autoSelectSingleOption={Boolean(processData.processId)}
-            locationId={locationId}
-            isOptional={["Draft", "Planned"].includes(job?.status ?? "")}
-            processId={processData.processId}
-            onChange={(value) => {
-              if (value) {
-                onWorkCenterChange(value?.value as string);
-              }
-            }}
-          />
+          <>
+            <WorkCenter
+              name="workCenterId"
+              label={t`Work Center`}
+              termId="work-center"
+              autoSelectSingleOption={Boolean(processData.processId)}
+              locationId={locationId}
+              isOptional={["Draft", "Planned"].includes(job?.status ?? "")}
+              processId={processData.processId}
+              onChange={(value) => {
+                if (value) {
+                  onWorkCenterChange(value?.value as string);
+                }
+              }}
+            />
+          </>
         )}
 
         <InputControlled

@@ -1,6 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import {
   LuClock,
+  LuGraduationCap,
   LuHardHat,
   LuList,
   LuStickyNote,
@@ -23,6 +24,11 @@ export function usePersonSidebar(
       name: t`Job`,
       to: "job",
       icon: <LuHardHat />
+    },
+    {
+      name: t`Abilities`,
+      to: "abilities",
+      icon: <LuGraduationCap />
     },
     {
       name: t`Notes`,

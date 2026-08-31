@@ -67,7 +67,9 @@ const itemValidator = z.object({
   salesOrderId: z.string().optional(),
   salesOrderLineId: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  thumbnailPath: z.string().optional()
+  thumbnailPath: z.string().optional(),
+  hasConflict: z.boolean().optional(),
+  conflictReason: z.string().optional()
 });
 
 export type Item = z.infer<typeof itemValidator>;
