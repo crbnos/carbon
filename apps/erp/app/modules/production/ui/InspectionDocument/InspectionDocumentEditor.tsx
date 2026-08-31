@@ -2735,7 +2735,7 @@ export default function InspectionDocumentEditor({
       />
 
       {/* Header bar — min-height only so controls are not clipped when the row wraps */}
-      <div className="flex min-h-[50px] flex-shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 overflow-x-auto border-b border-border bg-card px-4 py-2 scrollbar-hide">
+      <div className="flex min-h-[var(--header-height)] flex-shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 overflow-x-auto border-b border-border bg-card px-4 py-2 scrollbar-hide">
         <div className="flex min-w-0 items-center gap-1 pr-2">
           <Input
             borderless

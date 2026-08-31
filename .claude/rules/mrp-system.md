@@ -2,7 +2,7 @@
 description: MRP (Material Requirements Planning) — run flow, data model, planning UI
 paths:
   - "packages/jobs/src/inngest/functions/scheduled/mrp.ts"
-  - "packages/database/supabase/functions/mrp/**"
+  - "packages/ee/src/planning/mrp/**"
   - "packages/database/supabase/functions/lib/mrp-engine.ts"
   - "apps/erp/app/modules/{production,purchasing}/ui/Planning/**"
 ---
@@ -11,16 +11,22 @@ paths:
 
 MRP nets demand against supply per item/location/period and projects on-hand
 forward so users can create planned purchase orders (purchasing) and jobs
-(production). It runs as an **Inngest** scheduled job that invokes a **Supabase
-Deno edge function** — NOT Trigger.dev, and not inline in the app server.
+(production). It runs **IN-PROCESS in Node** via `runMrp` (exported from
+`@carbon/ee/planning`, source `packages/ee/src/planning/mrp/mrp.ts`), driven
+either by an **Inngest** scheduled cron or a manual route POST — NOT a Supabase
+edge function (the old `mrp` Deno function and its `config.toml` entry were
+DELETED), and NOT Trigger.dev. `runMrp(client, db, payload)` takes an injected
+service-role Supabase client (PostgREST reads) and a Kysely handle (the atomic
+Phase-7 write) and throws on failure.
 
 ## Run flow (inputs → compute → outputs)
 
 1. **Scheduled job** — `packages/jobs/src/inngest/functions/scheduled/mrp.ts`.
    `inngest.createFunction({ id: "mrp", retries: 2 }, { cron: "0 */3 * * *" }, …)`
    — every 3 hours. Fans out **per company**: selects all rows from `company`
-   and, for each, calls `serviceRole.functions.invoke("mrp", { body: { type:
-   "company", id, companyId, userId: "system" } })`. There is no location-scoped
+   and, for each, calls `runMrp(serviceRole, getJobDatabaseClient(), { type:
+   "company", id, companyId, userId: "system" })` **in-process** (`runMrp` throws
+   on failure; the loop try/catches per company). There is no location-scoped
    cron — only company-wide.
 
    It enumerated `companyPlan` until 2026-08-26. MRP is not in `FEATURE_PLANS`,
@@ -47,15 +53,23 @@ Deno edge function** — NOT Trigger.dev, and not inline in the app server.
    `update: "inventory"`). Reads `?location` query param; calls
    `runMRP(getCarbonServiceRole(), { type: locationId ? "location" : "company",
    id: locationId ?? companyId, companyId, userId })`. `runMRP` lives in
-   `apps/erp/app/modules/production/production.service.ts` and just wraps
-   `client.functions.invoke("mrp", { body })`. The planning tables submit to this
-   via `path.to.api.mrp(locationId)`.
+   `apps/erp/app/modules/production/production.service.ts`; it dynamic-imports
+   `runMrp` from `@carbon/ee/planning`, gets a Kysely handle via
+   `getSchedulingDb()`, calls `runMrp(client, db, params)` **in-process**, and
+   preserves the `{ data, error }` shape (catching the throw). The planning tables
+   submit to this via `path.to.api.mrp(locationId)`.
 
-3. **Edge function** — `packages/database/supabase/functions/mrp/index.ts` (Deno,
-   ~880 lines). Payload validator accepts `type: "company" | "location" | "item"
-   | "job" | "purchaseOrder" | "salesOrder"`, `id?` (required for non-company),
-   `companyId`, `userId`. Computation engine is
-   `packages/database/supabase/functions/lib/mrp-engine.ts` (`explodeBom(...)`).
+3. **In-process engine** — `packages/ee/src/planning/mrp/mrp.ts`
+   (`runMrp(client, db, payload)`, Node, ~1130 lines). Reads go through the
+   injected service-role Supabase client (PostgREST); the atomic Phase-7 write
+   goes through the injected Kysely handle. Payload validator accepts
+   `type: "company" | "location" | "item" | "job" | "purchaseOrder" |
+   "salesOrder"`, `id?` (required for non-company), `companyId`, `userId`.
+   Computation engine is
+   `packages/database/supabase/functions/lib/mrp-engine.ts` (`explodeBom(...)`),
+   which STAYS in the edge-lib (still used by the Deno `recalculate` function +
+   job-quantities-engine) and is reached from Node via the
+   `@carbon/database/mrp-engine` barrel.
 
    - **Periods**: generates/fetches weekly `period` rows ~18 weeks (126 days)
      forward from today (`"Week"` granularity). <!-- UNVERIFIED: exact week count not re-confirmed line-by-line; old doc said 72, code comment said 18 -->
@@ -68,8 +82,9 @@ Deno edge function** — NOT Trigger.dev, and not inline in the app server.
      `20260812002454`) — an indexed per-company read, replacing the old full
      `itemLedger` GROUP BY that grew with total history. Excludes `Rejected`
      tracked stock (matching `get_inventory_quantities`); the raw scan counted it.
-   - **Reads paginate**: every PostgREST read goes through `lib/fetch-all.ts`
-     (1000-row pages + stable `.order()`) — production `max_rows = 1000`
+   - **Reads paginate**: every PostgREST read goes through `fetchAll`
+     (`@carbon/database/fetch-all`, 1000-row pages + stable `.order()`) —
+     production `max_rows = 1000`
      truncates bare `.select("*")` reads, and the dev stack does NOT enforce
      the cap, so truncation is invisible locally.
    - **Writes are atomic**: the Phase-7 delete-and-rewrite of
@@ -180,10 +195,12 @@ All join through `itemReplenishment` to expose `replenishmentSystem`, `leadTime`
 
 ## Gotchas
 
-- It is **Inngest**, not Trigger.dev. There is no `apps/erp/app/trigger/mrp.ts`.
+- The cron is **Inngest**, not Trigger.dev. There is no `apps/erp/app/trigger/mrp.ts`.
+  The engine itself is in-process Node (`runMrp` from `@carbon/ee/planning`), NOT
+  a Supabase edge function — the `mrp` Deno function was deleted.
 - MRP itself writes `demandForecast`/`demandActual`/`supplyActual`/
   `demandForecastSource`; it does **not** write `supplyForecast` — that comes from
   the user-driven `planning.update` routes (planned orders).
-- The edge function currently runs full MRP regardless of `type`/`id` scope
+- The engine currently runs full MRP regardless of `type`/`id` scope
   (effectively company-wide). <!-- UNVERIFIED: scope-narrowing TODO not re-confirmed in current code -->
 - Don't rebuild the DB to test schema; ask the user (per AGENTS.md).

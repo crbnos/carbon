@@ -418,7 +418,7 @@ export default function Security() {
   );
 
   return (
-    <ScrollArea className="w-full h-[calc(100dvh-49px)]">
+    <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height))]">
       <VStack
         spacing={4}
         className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-8"
@@ -430,6 +430,17 @@ export default function Security() {
           <p className="text-sm text-muted-foreground text-pretty">
             <Trans>
               Manage authentication and sign-in requirements for your company.
+            </Trans>
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-1 w-full">
+          <Heading size="h3">
+            <Trans>MFA</Trans>
+          </Heading>
+          <p className="text-sm text-muted-foreground text-pretty max-w-xl">
+            <Trans>
+              Require a second factor when members sign in to this company.
             </Trans>
           </p>
         </div>
@@ -625,7 +636,7 @@ export default function Security() {
                       resetAfterSubmit
                     >
                       <Hidden name="intent" value="addDomain" />
-                      <HStack className="w-full items-end">
+                      <div className="flex w-full items-end gap-2">
                         <div className="flex-1">
                           <Input
                             name="domain"
@@ -636,7 +647,7 @@ export default function Security() {
                         <Submit isDisabled={!canEdit} withBlocker={false}>
                           <Trans>Add</Trans>
                         </Submit>
-                      </HStack>
+                      </div>
                     </ValidatedForm>
                   </VStack>
                 </CardContent>

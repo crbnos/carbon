@@ -1958,6 +1958,12 @@ importers:
       '@internationalized/date':
         specifier: 'catalog:'
         version: 3.12.0
+      '@logtape/logtape':
+        specifier: 'catalog:'
+        version: 2.2.3
+      '@logtape/redaction':
+        specifier: 'catalog:'
+        version: 2.2.3(@logtape/logtape@2.2.3)
       '@supabase/postgrest-js':
         specifier: 'catalog:'
         version: 2.80.0

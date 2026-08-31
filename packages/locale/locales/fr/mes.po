@@ -169,6 +169,9 @@ msgstr "Numéro de lot {0}"
 msgid "Batch number is required"
 msgstr "Le numéro de lot est requis"
 
+msgid "Behind target by {daysBehindTarget} day(s)"
+msgstr "En retard de {daysBehindTarget} jour(s)"
+
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "Bloqué par {0}"
@@ -214,6 +217,9 @@ msgstr "Effacer les filtres"
 
 msgid "Clear Search"
 msgstr "Effacer la recherche"
+
+msgid "Clear station default"
+msgstr "Effacer la station par défaut"
 
 msgid "Clock In"
 msgstr "Pointage début"
@@ -1043,6 +1049,11 @@ msgstr "Processus"
 msgid "Progress"
 msgstr "Progression"
 
+#. placeholder {0}: formatDate( projectedCompletionDate )
+#. placeholder {0}: formatDate(projectedCompletionDate)
+msgid "Proj. {0}"
+msgstr "Proj. {0}"
+
 msgid "Quality Issue"
 msgstr "Problème de qualité"
 
@@ -1142,6 +1153,9 @@ msgstr "Scannez ou sélectionnez une entité suivie de ce lot pour l'ajouter en 
 
 msgid "Schedule"
 msgstr "Planification"
+
+msgid "Scheduling conflict"
+msgstr "Conflit d'ordonnancement"
 
 msgid "Scrap"
 msgstr "Rebut"
@@ -1520,3 +1534,7 @@ msgstr "Votre organisation nécessite une application d'authentification. Config
 
 msgid "Your session was locked after inactivity."
 msgstr "Votre session a été verrouillée après inactivité."
+
+#. placeholder {0}: peopleStation.name
+msgid "Your station: {0}"
+msgstr "Votre station : {0}"

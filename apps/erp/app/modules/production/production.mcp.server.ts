@@ -6,7 +6,7 @@ import {
   isBlocked
 } from "@carbon/ee/storage-rules.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { triggerJobSchedule } from "./production.service";
+import { recalculateJobOperationDependencies } from "./production.service";
 
 // MCP-exposed production writes that depend on server-only modules
 // (`@carbon/auth/users.server`, `@carbon/ee/storage-rules.server`). These CANNOT
@@ -140,16 +140,18 @@ export async function completeJob(
 }
 
 /**
- * Schedule or reschedule a job's operations. Routes through `triggerJobSchedule` (the Inngest
- * scheduling path) rather than invoking the `schedule` edge function directly, so the MCP entry
- * point uses the same validated dispatch the rest of the app does. Invalid `mode`/`direction`
- * strings are rejected up front rather than only at the edge function.
+ * Schedule or reschedule a job's operations. Routes through
+ * `recalculateJobOperationDependencies`, which resolves the job's location and
+ * regenerates the whole location IN-PROCESS via `@carbon/ee/planning`
+ * (`runLocationSchedule`) — the same in-process path the rest of the app uses now
+ * that the `schedule` edge function is gone. Forecast-first scheduling is a single
+ * forward-ASAP pass, so there are no `mode`/`direction` knobs to validate.
  *
- * `triggerJobSchedule` fires an Inngest event with no gate of its own — every ERP route that
- * calls it does `requirePermissions({ update: "production" })` first — so the same
- * `production` update gate is re-applied here (the MCP executor performs no per-tool check).
- * `client` is unused (the work is an Inngest event) but MUST stay named `client` and first —
- * the MCP executor injects it positionally by that exact name; renaming breaks the tool.
+ * The scheduling path has no gate of its own — every ERP route that reschedules
+ * does `requirePermissions({ update: "production" })` first — so the same
+ * `production` update gate is re-applied here (the MCP executor performs no
+ * per-tool check). `client` MUST stay named `client` and first — the MCP executor
+ * injects it positionally by that exact name; renaming breaks the tool.
  */
 export async function scheduleJob(
   client: SupabaseClient<Database>,
@@ -157,8 +159,6 @@ export async function scheduleJob(
   userId: string,
   args: {
     jobId: string;
-    mode?: "initial" | "reschedule";
-    direction?: "backward" | "forward";
   }
 ) {
   const claims = await getUserClaims(userId, companyId);
@@ -167,17 +167,9 @@ export async function scheduleJob(
       "You do not have permission to schedule jobs (production update)."
     );
   }
-  const mode = args.mode ?? "reschedule";
-  const direction = args.direction ?? "backward";
-  if (mode !== "initial" && mode !== "reschedule") {
-    throw new Error(
-      `Invalid schedule mode "${mode}". Expected "initial" or "reschedule".`
-    );
-  }
-  if (direction !== "backward" && direction !== "forward") {
-    throw new Error(
-      `Invalid schedule direction "${direction}". Expected "backward" or "forward".`
-    );
-  }
-  return triggerJobSchedule(args.jobId, companyId, userId, mode, direction);
+  return recalculateJobOperationDependencies(client, {
+    jobId: args.jobId,
+    companyId,
+    userId
+  });
 }

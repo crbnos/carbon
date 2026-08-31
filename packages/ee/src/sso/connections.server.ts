@@ -1,5 +1,7 @@
 import type { Database } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { getAppUrl } from "@carbon/env";
+import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isSsoEnabled } from "./gate";
@@ -9,9 +11,15 @@ import {
   updateGoTrueSsoProvider
 } from "./provider.server";
 import {
+  backfillSsoIdentitiesForDomain,
+  removeSsoIdentitiesForDomain
+} from "./provisioning.server";
+import {
   checkDomainVerification,
   generateVerificationToken
 } from "./verification.server";
+
+const logger = getLogger("ee");
 
 // --- "ssoConnection" lookups ----------------------------------------------
 // The one copy shared by ERP, MES, and jobs — domain and provider routing must
@@ -278,6 +286,7 @@ export async function addSsoDomain(
  */
 export async function verifySsoDomain(
   serviceRole: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { companyId: string; domainId: string; userId: string }
 ) {
   if (!isSsoEnabled()) return { data: null, error: DISABLED_ERROR };
@@ -361,11 +370,39 @@ export async function verifySsoDomain(
     return { data: null, error: update.error.message };
   }
 
+  // Backfill SSO identities for every existing user on the now-verified domain,
+  // so a SAML sign-in resolves to their existing account under DISABLE_SIGNUP.
+  // Verification has already committed — a backfill failure must NOT fail the
+  // verify (the next verify/remove re-runs it); log and continue.
+  const backfill = await backfillSsoIdentitiesForDomain(db, {
+    providerId: connection.data.providerId,
+    domain: row.data.domain
+  });
+  if (backfill.error) {
+    logger.error("SSO identity backfill failed after domain verification", {
+      companyId: args.companyId,
+      domain: row.data.domain,
+      error: backfill.error
+    });
+  } else {
+    // Privilege-granting event: a verified domain now controls identity for
+    // every user on it. Recorded here as a structured log line. (Surfacing it
+    // in the audit-log UI needs an audit.config.ts entity — Ask First.)
+    logger.info("SSO identities backfilled for verified domain", {
+      companyId: args.companyId,
+      domain: row.data.domain,
+      providerId: connection.data.providerId,
+      linkedCount: backfill.data?.linkedUserIds.length ?? 0,
+      actorId: args.userId
+    });
+  }
+
   return { data: { verified: true as const }, error: null };
 }
 
 export async function removeSsoDomain(
   serviceRole: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { companyId: string; domainId: string }
 ) {
   if (!isSsoEnabled()) return { data: null, error: DISABLED_ERROR };
@@ -404,6 +441,25 @@ export async function removeSsoDomain(
       const sync = await syncGoTrueDomains(serviceRole, connection.data);
       if (sync.error) {
         return { data: null, error: sync.error };
+      }
+
+      // Tear down the pre-seeded (and self-healed) SSO identities for the
+      // domain we just unregistered. Keyed on the identity email column, so it
+      // also removes rows GoTrue created with the IdP's real NameID. Best-effort
+      // after the row is gone — log on failure, don't fail the removal.
+      const removed = await removeSsoIdentitiesForDomain(db, {
+        providerId: connection.data.providerId,
+        domain: row.data.domain
+      });
+      if (removed.error) {
+        logger.error(
+          "Failed to remove SSO identities for unregistered domain",
+          {
+            companyId: args.companyId,
+            domain: row.data.domain,
+            error: removed.error
+          }
+        );
       }
     }
   }

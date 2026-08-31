@@ -135,14 +135,20 @@ export function useRecordRecentlyViewed(companyId: string | null | undefined) {
 // the custom event, and across tabs via `storage`.
 export function useRecentlyViewed(companyId: string | null | undefined) {
   const [documents, setDocuments] = useState<RecentDocument[]>([]);
+  // localStorage is only readable client-side, so on the server and until the
+  // first effect runs we don't yet know whether there are recents. Track that
+  // so the home page can show a skeleton instead of flashing the empty state.
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!companyId) {
       setDocuments([]);
+      setLoading(false);
       return;
     }
     const sync = () => setDocuments(readRecent(companyId));
     sync();
+    setLoading(false);
     window.addEventListener(RECENT_EVENT, sync);
     window.addEventListener("storage", sync);
     return () => {
@@ -161,5 +167,5 @@ export function useRecentlyViewed(companyId: string | null | undefined) {
     [companyId]
   );
 
-  return { documents, remove };
+  return { documents, remove, loading };
 }

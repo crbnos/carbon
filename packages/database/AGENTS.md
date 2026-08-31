@@ -37,6 +37,12 @@ pnpm --filter @carbon/database typecheck
 |---------|----------|
 | `.` (index) | `Database` type, `fetchAllFromTable`, `fetchAllRecords`, `fetchRecordsInBatches` |
 | `./client` | `Kysely`, `KyselyDatabase`, Postgres pool factories (`getPostgresClient`, `getPostgresConnectionPool`) |
+| `./datetime` | Node re-export of `supabase/functions/lib/datetime.ts` — the edge-runtime datetime helpers (`datetime`, `getCompanyTimeZone`, `getLocationTimeZone`) for Node consumers |
+| `./methods` | Node re-export of `supabase/functions/lib/methods.ts` — shared make-method helpers |
+| `./logging` | Node re-export of `supabase/functions/lib/logging.ts` (`getFunctionLogger`) |
+| `./mrp-engine` | Node re-export of `supabase/functions/lib/mrp-engine.ts` (`explodeBom`, `makeKey`, `makeLocationItemKey`, `makeActualKey`, …) — the pure MRP compute engine consumed by `@carbon/ee/planning`'s `runMrp` (the engine STAYS in the edge-lib; still used by the Deno `recalculate` function) |
+| `./fetch-all` | Node re-export of `supabase/functions/lib/fetch-all.ts` (`fetchAll` — paginated PostgREST reads) |
+| `./supersession-pick` | Node re-export of `supabase/functions/lib/supersession-pick.ts` (`buildSupersessionRedirectMap`) |
 | `./event` | `QueueMessage`, `EventSchema`, `createEventSystemSubscription`, `deleteEventSystemSubscription` |
 | `./quality` | Inspection execution engine shared by ERP + MES (`upsertInspectionSample`, `upsertInspectionMeasurement`, `dispositionInspection` — optional one-shot `requireOpen`, `reconcileInspectionSamplingPlans`, `changeInspectionDocument`, `getOrCreateJobOperationInspection`, pure `valuateMeasurement`); Passed/Failed/Partial are all hard-terminal and samples linked from `productionQuantity.inspectionSampleId` are locked; every fn takes a `Kysely<KyselyDatabase>` first arg — authorize at the route, see `.claude/rules/inspection-system.md` |
 | `./sampling` | Node-side re-export of `supabase/functions/shared/sampling-engine.ts` (Z1.4 / ISO 2859-1 resolvers) |

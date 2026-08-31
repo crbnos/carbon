@@ -21,7 +21,8 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Customers`, to: path.to.customers },
     (data) => data?.customer?.name
-  )
+  ),
+  module: "sales"
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

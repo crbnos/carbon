@@ -1,4 +1,11 @@
 import type { User, UserIdentity } from "@supabase/supabase-js";
+import type { CompiledQuery, DatabaseConnection, Driver } from "kysely";
+import {
+  Kysely,
+  PostgresAdapter,
+  PostgresIntrospector,
+  PostgresQueryCompiler
+} from "kysely";
 import { describe, expect, it, vi } from "vitest";
 
 // Isolation mocks — the SSO module reads env constants and constructs a logger
@@ -29,6 +36,16 @@ vi.mock("@carbon/logger", () => ({
   })
 }));
 
+// connections.server now imports provisioning.server, which pulls in the auth
+// client and Redis at module load. Stub them so the module graph loads without a
+// real Supabase/Redis connection — these tests never reach code that uses them.
+vi.mock("@carbon/auth", () => ({
+  getPermissionCacheKey: (id: string) => `permissions:${id}`
+}));
+vi.mock("@carbon/kv", () => ({
+  redis: { del: vi.fn() }
+}));
+
 // Stub the DNS challenge so no test resolves real TXT records.
 const { checkDomainVerificationMock } = vi.hoisted(() => ({
   checkDomainVerificationMock: vi.fn()
@@ -49,6 +66,13 @@ const {
   upsertSsoConnection,
   verifySsoDomain
 } = await import("./connections.server");
+const {
+  backfillSsoIdentitiesForDomain,
+  emailDomain,
+  removeSsoIdentitiesForDomain,
+  seedSsoIdentityForUser,
+  ssoProviderColumn
+} = await import("./provisioning.server");
 
 function makeUser(overrides: {
   identityProviders?: string[];
@@ -403,7 +427,10 @@ describe("ssoDomain claim exclusivity", () => {
       }
     } as never;
 
-    const result = await verifySsoDomain(client, {
+    // This path returns at the cross-company conflict check, before any
+    // auth-schema write, so the db handle is never exercised here.
+    const dbStub = {} as never;
+    const result = await verifySsoDomain(client, dbStub, {
       companyId: "c1",
       domainId: "dom_1",
       userId: "user_1"
@@ -412,6 +439,27 @@ describe("ssoDomain claim exclusivity", () => {
     expect(result.error).toBe("Failed to verify domain");
     expect(result.error).not.toContain("another company");
     expect(checkDomainVerificationMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("pre-seed identity helpers (provider-agnostic linking)", () => {
+  it("ssoProviderColumn builds the auth.identities provider value", () => {
+    expect(ssoProviderColumn("11111111-2222-3333-4444-555555555555")).toBe(
+      "sso:11111111-2222-3333-4444-555555555555"
+    );
+  });
+
+  it("emailDomain lowercases, trims, and takes the part after @", () => {
+    expect(emailDomain("Jane.Doe@Acme.COM")).toBe("acme.com");
+    expect(emailDomain("user@sub.acme.com")).toBe("sub.acme.com");
+    expect(emailDomain("  spaced@acme.com  ")).toBe("acme.com");
+  });
+
+  it("emailDomain returns null when there is no domain part", () => {
+    expect(emailDomain("no-at-sign")).toBeNull();
+    expect(emailDomain("")).toBeNull();
+    // A trailing "@" leaves an empty domain segment after trimming.
+    expect(emailDomain("trailing@")).toBe("");
   });
 });
 
@@ -443,5 +491,170 @@ describe("isSsoEnabled gate (AUTH_PROVIDERS half toggled off)", () => {
     } finally {
       enabled.sso = true;
     }
+  });
+});
+
+// --- auth.identities write coverage -----------------------------------------
+// The pre-seed helpers issue raw `sql` writes to the auth schema — the load-
+// bearing half of provider-agnostic linking. A stubbed db handle proves nothing,
+// so drive Kysely's REAL Postgres compiler with a fake driver that captures the
+// compiled SQL + parameters. A revert of the target table, columns, ON CONFLICT
+// clause, email/domain lowercasing, or RETURNING would fail these.
+function makeKysely(connection: DatabaseConnection) {
+  const driver: Driver = {
+    async init() {},
+    async acquireConnection() {
+      return connection;
+    },
+    async beginTransaction() {},
+    async commitTransaction() {},
+    async rollbackTransaction() {},
+    async releaseConnection() {},
+    async destroy() {}
+  };
+  return new Kysely<Record<string, never>>({
+    dialect: {
+      createAdapter: () => new PostgresAdapter(),
+      createDriver: () => driver,
+      createIntrospector: (db) => new PostgresIntrospector(db),
+      createQueryCompiler: () => new PostgresQueryCompiler()
+    }
+  });
+}
+
+function makeCapturingDb(result: {
+  rows?: unknown[];
+  numAffectedRows?: bigint;
+}) {
+  const captured: { sql: string; parameters: readonly unknown[] }[] = [];
+  const connection: DatabaseConnection = {
+    async executeQuery(compiledQuery: CompiledQuery) {
+      captured.push({
+        sql: compiledQuery.sql,
+        parameters: compiledQuery.parameters
+      });
+      return {
+        rows: result.rows ?? [],
+        numAffectedRows: result.numAffectedRows
+      } as never;
+    },
+    async *streamQuery() {}
+  };
+  return { db: makeKysely(connection) as never, captured };
+}
+
+function makeThrowingDb(message: string) {
+  const connection: DatabaseConnection = {
+    async executeQuery() {
+      throw new Error(message);
+    },
+    async *streamQuery() {}
+  };
+  return makeKysely(connection) as never;
+}
+
+describe("pre-seed identity writes (auth.identities SQL)", () => {
+  it("seedSsoIdentityForUser inserts a link row keyed on the lowercased email", async () => {
+    const { db, captured } = makeCapturingDb({ numAffectedRows: 1n });
+    const result = await seedSsoIdentityForUser(db, {
+      userId: "11111111-1111-1111-1111-111111111111",
+      email: "Jane.Doe@Acme.COM",
+      providerId: "prov-1"
+    });
+
+    expect(result.error).toBeNull();
+    expect(result.data).toEqual({ seeded: true });
+    expect(captured).toHaveLength(1);
+
+    const { sql, parameters } = captured[0]!;
+    expect(sql).toContain("INSERT INTO auth.identities");
+    expect(sql).toContain("(provider_id, provider) DO NOTHING");
+    // email is lowercased before it becomes provider_id and identity_data
+    expect(parameters).toContain("jane.doe@acme.com");
+    expect(parameters).not.toContain("Jane.Doe@Acme.COM");
+    expect(parameters).toContain("11111111-1111-1111-1111-111111111111");
+    expect(parameters).toContain("sso:prov-1");
+  });
+
+  it("seedSsoIdentityForUser reports seeded:false when the row already exists", async () => {
+    const { db } = makeCapturingDb({ numAffectedRows: 0n });
+    const result = await seedSsoIdentityForUser(db, {
+      userId: "u1",
+      email: "a@acme.com",
+      providerId: "prov-1"
+    });
+    expect(result).toEqual({ data: { seeded: false }, error: null });
+  });
+
+  it("canonicalizes a mixed-case IdP email to lowercase in every seeded slot", async () => {
+    // GoTrue's account-linking fallback matches on the GENERATED email column
+    // (lower(identity_data->>'email')), so a case-preserving NameID must still
+    // resolve to the seeded row. Every occurrence — provider_id and both
+    // identity_data keys — must be the lowercased email, and the mixed-case
+    // form must never reach the parameters.
+    const { db, captured } = makeCapturingDb({ numAffectedRows: 1n });
+    await seedSsoIdentityForUser(db, {
+      userId: "u1",
+      email: "Jane.DOE+tag@Acme.COM",
+      providerId: "prov-1"
+    });
+    const { parameters } = captured[0]!;
+    const lower = "jane.doe+tag@acme.com";
+    // provider_id + jsonb 'sub' + jsonb 'email' = three lowercased copies
+    expect(parameters.filter((p) => p === lower)).toHaveLength(3);
+    expect(
+      parameters.some((p) => typeof p === "string" && p !== p.toLowerCase())
+    ).toBe(false);
+  });
+
+  it("backfillSsoIdentitiesForDomain selects on-domain non-SSO users and returns their ids", async () => {
+    const { db, captured } = makeCapturingDb({
+      rows: [{ user_id: "u1" }, { user_id: "u2" }]
+    });
+    const result = await backfillSsoIdentitiesForDomain(db, {
+      providerId: "prov-1",
+      domain: "Acme.com"
+    });
+
+    expect(result.error).toBeNull();
+    expect(result.data).toEqual({ linkedUserIds: ["u1", "u2"] });
+
+    const { sql, parameters } = captured[0]!;
+    expect(sql).toContain("INSERT INTO auth.identities");
+    expect(sql).toContain("FROM auth.users");
+    expect(sql).toContain("is_sso_user = false");
+    expect(sql).toContain("RETURNING user_id");
+    expect(parameters).toContain("acme.com"); // domain lowercased
+    expect(parameters).toContain("sso:prov-1");
+  });
+
+  it("removeSsoIdentitiesForDomain deletes by provider + domain and counts affected rows", async () => {
+    const { db, captured } = makeCapturingDb({ numAffectedRows: 3n });
+    const result = await removeSsoIdentitiesForDomain(db, {
+      providerId: "prov-1",
+      domain: "ACME.com"
+    });
+
+    expect(result.error).toBeNull();
+    expect(result.data).toEqual({ removed: 3 });
+
+    const { sql, parameters } = captured[0]!;
+    expect(sql).toContain("DELETE FROM auth.identities");
+    expect(sql).toContain("split_part(email, '@', 2)");
+    expect(parameters).toContain("acme.com");
+    expect(parameters).toContain("sso:prov-1");
+  });
+
+  it("returns an error (never throws) when the auth-schema write fails", async () => {
+    const result = await seedSsoIdentityForUser(
+      makeThrowingDb("connection reset"),
+      {
+        userId: "u1",
+        email: "a@acme.com",
+        providerId: "prov-1"
+      }
+    );
+    expect(result.data).toBeNull();
+    expect(result.error).toBe("connection reset");
   });
 });

@@ -24,6 +24,27 @@ service functions as ERP tools. It lives entirely under
 - A fresh `McpServer` (`createMcpServer(ctx)`) is built per request and connected
   to a fresh transport.
 
+## Public discovery endpoints (unauthenticated)
+
+Three GET routes let an agent or registry find and connect to the server without
+a credential. All derive their URLs from `getAppUrl() || url.origin`, so a
+self-hosted / ITAR instance advertises its OWN endpoint — never hard-code
+`app.carbon.ms`.
+
+- `GET /.well-known/mcp.json` (`routes/[.]well-known.mcp[.]json.ts` → `lib/manifest.ts`
+  `buildMcpManifest(origin)`) — the MCP registry `server.json`: `remotes[]` with
+  `type: "streamable-http"`, tool/module counts derived from `tool-metadata.json`.
+- `GET /.well-known/oauth-protected-resource` + `/.well-known/oauth-authorization-server`
+  (routes at the app root) — RFC 9728 / OAuth AS discovery for the connector flow.
+- `GET /agent-setup/prompt.md` (`routes/agent-setup.prompt[.]md.tsx` →
+  `lib/agent-setup-prompt.ts` `buildAgentSetupPrompt(origin)`) — an agent-facing
+  markdown "connect your MCP client" doc (modeled on Cloudflare's
+  `agent-setup/prompt.md`). The prose is the raw file `lib/agent-setup-prompt.md`,
+  imported with Vite `?raw`; `{{MCP_URL}}` / `{{ORIGIN}}` tokens are replaced at
+  request time. The template is a colocation file, NOT a route — remix-flat-routes
+  only promotes `index|route|layout|page|_x|x.route` names, so a plain-named `.md`
+  under `lib/` is ignored (same reason `manifest.ts` there isn't a route).
+
 ## Auth (`_index.ts` → `resolveAuth`)
 
 Three ways in, resolved in this order:
