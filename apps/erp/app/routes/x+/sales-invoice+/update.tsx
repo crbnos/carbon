@@ -1,6 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
-import { getCurrencyByCode } from "~/modules/accounting";
+import { resolveCurrencyAndRate } from "~/modules/accounting";
 import {
   computeInvoiceDateDue,
   isSalesInvoiceLocked
@@ -52,19 +52,21 @@ export async function action({ request }: ActionFunctionArgs) {
 
         if (customer.data?.currencyCode) {
           currencyCode = customer.data.currencyCode;
-          const currency = await getCurrencyByCode(
+          const resolved = await resolveCurrencyAndRate(
             client,
             companyGroupId,
             currencyCode
           );
+          if (resolved.error) return resolved;
           return await client
             .from("salesInvoice")
             .update({
               invoiceCustomerId: value ?? undefined,
               invoiceCustomerContactId: null,
               invoiceCustomerLocationId: null,
-              currencyCode: currencyCode ?? undefined,
-              exchangeRate: currency.data?.exchangeRate ?? 1,
+              currencyCode: resolved.data.currencyCode,
+              exchangeRate: resolved.data.exchangeRate,
+              exchangeRateUpdatedAt: new Date().toISOString(),
               updatedBy: userId,
               updatedAt: new Date().toISOString()
             })
@@ -131,26 +133,27 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       break;
     // don't break -- just let it catch the next case
-    case "currencyCode":
-      if (value) {
-        const currency = await getCurrencyByCode(
-          client,
-          companyGroupId,
-          value as string
-        );
-        if (currency.data) {
-          return await client
-            .from("salesInvoice")
-            .update({
-              currencyCode: value as string,
-              exchangeRate: currency.data.exchangeRate ?? 1,
-              updatedBy: userId,
-              updatedAt: new Date().toISOString()
-            })
-            .in("id", ids as string[]);
-        }
+    case "currencyCode": {
+      if (!value) {
+        return { error: { message: "A currency is required" }, data: null };
       }
-    // don't break -- just let it catch the next case
+      const resolved = await resolveCurrencyAndRate(
+        client,
+        companyGroupId,
+        value as string
+      );
+      if (resolved.error) return resolved;
+      return await client
+        .from("salesInvoice")
+        .update({
+          currencyCode: resolved.data.currencyCode,
+          exchangeRate: resolved.data.exchangeRate,
+          exchangeRateUpdatedAt: new Date().toISOString(),
+          updatedBy: userId,
+          updatedAt: new Date().toISOString()
+        })
+        .in("id", ids as string[]);
+    }
     case "customerId":
     case "invoiceCustomerContactId":
     case "invoiceCustomerLocationId":

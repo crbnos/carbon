@@ -1950,6 +1950,40 @@ export async function getCurrencyByCode(
     .single();
 }
 
+/**
+ * A document's `currencyCode` and `exchangeRate` are ONE VALUE PAIR. A document
+ * denominated in a currency we hold no rate for cannot be priced, and a rate
+ * fabricated as 1 silently quotes a foreign-currency party at par. Resolve the
+ * two together, or refuse -- never write the code and leave the rate behind.
+ *
+ * A rate of 0 is refused for the same reason: the sales `converted*` generated
+ * columns have no zero-guard, so it would zero every line on the document.
+ */
+export async function resolveCurrencyAndRate(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  currencyCode: string
+): Promise<
+  | { data: { currencyCode: string; exchangeRate: number }; error: null }
+  | { data: null; error: { message: string } }
+> {
+  const currency = await getCurrencyByCode(
+    client,
+    companyGroupId,
+    currencyCode
+  );
+  const exchangeRate = currency.data?.exchangeRate;
+  if (currency.error || !exchangeRate) {
+    return {
+      data: null,
+      error: {
+        message: `No exchange rate is configured for ${currencyCode}. Set one under Accounting > Exchange Rates before using it on a document.`
+      }
+    };
+  }
+  return { data: { currencyCode, exchangeRate }, error: null };
+}
+
 export async function getCurrencies(
   client: SupabaseClient<Database>,
   companyGroupId: string,
