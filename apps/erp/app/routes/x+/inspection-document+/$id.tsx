@@ -102,7 +102,7 @@ export default function BalloonDetailRoute() {
   const content = diagram.content as InspectionDocumentContent | null;
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
+    <div className="flex flex-col h-[calc(100dvh-var(--topbar-height))] overflow-hidden w-full">
       <ClientOnly
         fallback={
           <div className="flex h-full w-full items-center justify-center">

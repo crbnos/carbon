@@ -52,10 +52,7 @@ export async function deleteEmployeeAbility(
   client: SupabaseClient<Database>,
   employeeAbilityId: string
 ) {
-  return client
-    .from("employeeAbility")
-    .update({ active: false })
-    .eq("id", employeeAbilityId);
+  return client.from("employeeAbility").delete().eq("id", employeeAbilityId);
 }
 
 export async function deleteFailureMode(
@@ -205,20 +202,40 @@ export async function getAbilities(
   companyId: string,
   args: GenericQueryFilters & { search: string | null }
 ) {
+  // The "employees" filter narrows abilities to those a selected employee is
+  // assigned to. It targets employeeAbility (a related table), not a column on
+  // ability, so resolve it to a set of abilityIds first and drop it from the
+  // generic column filters.
+  const employeeFilter = args.filters?.find((f) => f.column === "employees");
+  const filters = args.filters?.filter((f) => f.column !== "employees");
+
   let query = client
     .from("ability")
-    .select(`*, employeeAbility(employeeId)`, {
+    .select(`*, employeeAbility(employeeId, expiresAt)`, {
       count: "exact"
     })
     .eq("companyId", companyId)
-    .eq("active", true)
-    .eq("employeeAbility.active", true);
+    .eq("active", true);
+
+  if (employeeFilter?.value) {
+    const employeeIds = employeeFilter.value.split(",");
+    const assigned = await client
+      .from("employeeAbility")
+      .select("abilityId")
+      .eq("companyId", companyId)
+      .in("employeeId", employeeIds);
+    const abilityIds = [
+      ...new Set((assigned.data ?? []).map((row) => row.abilityId))
+    ];
+    // No matching abilities → force an empty result rather than no filter
+    query = query.in("id", abilityIds.length > 0 ? abilityIds : [""]);
+  }
 
   if (args?.search) {
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
+  query = setGenericQueryFilters(query, { ...args, filters }, [
     { column: "name", ascending: true }
   ]);
   return query;
@@ -232,6 +249,7 @@ export async function getAbilitiesList(
     .from("ability")
     .select(`id, name`)
     .eq("companyId", companyId)
+    .eq("active", true)
     .order("name");
 }
 
@@ -241,15 +259,11 @@ export async function getAbility(
 ) {
   return client
     .from("ability")
-    .select(
-      `*, employeeAbility(id, employeeId, lastTrainingDate, trainingDays, trainingCompleted)`,
-      {
-        count: "exact"
-      }
-    )
+    .select(`*, employeeAbility(id, employeeId, lastTrainingDate, expiresAt)`, {
+      count: "exact"
+    })
     .eq("id", abilityId)
     .eq("active", true)
-    .eq("employeeAbility.active", true)
     .single();
 }
 
@@ -292,13 +306,25 @@ export async function getContractors(
 
 export async function getEmployeeAbilities(
   client: SupabaseClient<Database>,
-  employeeId: string
+  employeeId: string,
+  companyId: string
 ) {
   return client
     .from("employeeAbility")
     .select(`*, ability(id, name, curve, shadowWeeks)`)
     .eq("employeeId", employeeId)
-    .eq("active", true);
+    .eq("companyId", companyId);
+}
+
+export async function getEmployeeAbility(
+  client: SupabaseClient<Database>,
+  employeeAbilityId: string
+) {
+  return client
+    .from("employeeAbility")
+    .select("*")
+    .eq("id", employeeAbilityId)
+    .single();
 }
 
 export async function getFailureMode(
@@ -640,6 +666,37 @@ export async function getOutstandingTrainingsForUser(
   return { data: filteredData, error: null };
 }
 
+export async function getTrainingAssignmentStatusForEmployee(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  employeeId: string
+) {
+  const { data, error } = await client.rpc("get_training_assignment_status", {
+    p_company_id: companyId,
+    p_employee_id: employeeId
+  });
+
+  if (error) return { data: null, error };
+
+  // Surface the trainings that need attention first: Overdue, then Pending,
+  // then Not Required, then Completed.
+  const statusOrder: Record<string, number> = {
+    Overdue: 0,
+    Pending: 1,
+    "Not Required": 2,
+    Completed: 3
+  };
+
+  const sorted = (data ?? []).sort((a, b) => {
+    const aOrder = statusOrder[a.status] ?? 4;
+    const bOrder = statusOrder[b.status] ?? 4;
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return (a.trainingName ?? "").localeCompare(b.trainingName ?? "");
+  });
+
+  return { data: sorted, error: null };
+}
+
 export async function getPartner(
   client: SupabaseClient<Database>,
   partnerId: string,
@@ -938,12 +995,33 @@ export async function getWorkCenter(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client
+  const workCenter = await client
     .from("workCenters")
     .select("*")
     .eq("active", true)
     .eq("id", id)
     .single();
+
+  if (workCenter.error) {
+    return workCenter;
+  }
+
+  // The "workCenters" view now exposes "alwaysOn" (recreated in the
+  // capacity-planning migration), but read it explicitly here alongside the
+  // "workCenterShift" operating-shift assignments the view does not carry.
+  const [alwaysOn, shifts] = await Promise.all([
+    client.from("workCenter").select("alwaysOn").eq("id", id).single(),
+    client.from("workCenterShift").select("shiftId").eq("workCenterId", id)
+  ]);
+
+  return {
+    ...workCenter,
+    data: {
+      ...workCenter.data,
+      alwaysOn: alwaysOn.data?.alwaysOn ?? false,
+      shifts: shifts.data?.map((shift) => shift.shiftId) ?? []
+    }
+  };
 }
 
 export async function getWorkCenters(
@@ -1041,38 +1119,12 @@ export async function insertAbility(
   client: SupabaseClient<Database>,
   ability: {
     name: string;
-    curve: {
-      data: {
-        week: number;
-        value: number;
-      }[];
-    };
-    shadowWeeks: number;
+    recertifyEveryDays?: number | null;
     companyId: string;
     createdBy: string;
   }
 ) {
   return client.from("ability").insert([ability]).select("*").single();
-}
-
-export async function insertEmployeeAbilities(
-  client: SupabaseClient<Database>,
-  abilityId: string,
-  employeeIds: string[],
-  companyId: string
-) {
-  const employeeAbilities = employeeIds.map((employeeId) => ({
-    abilityId,
-    employeeId,
-    companyId,
-    trainingCompleted: true
-  }));
-
-  return client
-    .from("employeeAbility")
-    .insert(employeeAbilities)
-    .select("id")
-    .single();
 }
 
 export async function insertTrainingCompletion(
@@ -1096,21 +1148,130 @@ export async function insertTrainingCompletion(
     .single();
 }
 
+/**
+ * The ability a training assignment's training grants on completion, or null.
+ * Completing training upserts an `employeeAbility` via the
+ * `grant_ability_on_training_completion` trigger, so the caller can restamp the
+ * scheduler (`notifyScheduleInputsChanged`) for that ability's operator pool.
+ */
+export async function getTrainingGrantedAbilityId(
+  client: SupabaseClient<Database>,
+  trainingAssignmentId: string,
+  companyId: string
+): Promise<string | null> {
+  const assignment = await client
+    .from("trainingAssignment")
+    .select("trainingId")
+    .eq("id", trainingAssignmentId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (!assignment.data?.trainingId) return null;
+
+  const training = await client
+    .from("training")
+    .select("grantsAbilityId")
+    .eq("id", assignment.data.trainingId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  return training.data?.grantsAbilityId ?? null;
+}
+
 export async function updateAbility(
   client: SupabaseClient<Database>,
   id: string,
   ability: Partial<{
     name: string;
-    curve: {
-      data: {
-        week: number;
-        value: number;
-      }[];
-    };
-    shadowWeeks: number;
+    recertifyEveryDays: number | null;
   }>
 ) {
   return client.from("ability").update(sanitize(ability)).eq("id", id);
+}
+
+/**
+ * Resolves the qualification expiry for an employee ability. An explicit
+ * expiresAt wins; otherwise it is computed from lastTrainingDate + the
+ * ability's recertifyEveryDays (null when the ability never expires).
+ */
+export async function resolveEmployeeAbilityExpiresAt(
+  client: SupabaseClient<Database>,
+  abilityId: string,
+  lastTrainingDate: string | null,
+  expiresAt: string | null
+): Promise<string | null> {
+  if (expiresAt || !lastTrainingDate) return expiresAt;
+
+  const ability = await client
+    .from("ability")
+    .select("recertifyEveryDays")
+    .eq("id", abilityId)
+    .single();
+
+  if (!ability.data?.recertifyEveryDays) return null;
+
+  const [y, m, d] = lastTrainingDate.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + ability.data.recertifyEveryDays))
+    .toISOString()
+    .slice(0, 10);
+}
+
+export async function upsertEmployeeAbilityCell(
+  client: SupabaseClient<Database>,
+  cell: {
+    employeeId: string;
+    abilityId: string;
+    companyId: string;
+    lastTrainingDate: string | null;
+    expiresAt: string | null;
+  }
+) {
+  return client
+    .from("employeeAbility")
+    .upsert(cell, { onConflict: "employeeId,abilityId" })
+    .select("id")
+    .single();
+}
+
+/**
+ * Find-or-create the ability linked 1:1 to a process. Called when a process
+ * has "Requires Ability" toggled on — the ability (named after the process)
+ * is what employees get qualified against.
+ */
+export async function ensureProcessAbility(
+  client: SupabaseClient<Database>,
+  args: {
+    processId: string;
+    processName: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const existing = await client
+    .from("ability")
+    .select("id")
+    .eq("processId", args.processId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+
+  if (existing.error || existing.data) {
+    return existing;
+  }
+
+  return client
+    .from("ability")
+    .insert([
+      {
+        name: args.processName,
+        processId: args.processId,
+        companyId: args.companyId,
+        curve: {
+          data: [{ week: 0, value: 100 }]
+        },
+        shadowWeeks: 0,
+        createdBy: args.userId
+      }
+    ])
+    .select("id")
+    .single();
 }
 
 export async function updateSuggestionEmoji(
@@ -1204,44 +1365,6 @@ export async function upsertContractor(
   return client.from("contractorAbility").insert(contractorAbilities);
 }
 
-export async function upsertEmployeeAbility(
-  client: SupabaseClient<Database>,
-  employeeAbility: {
-    id?: string;
-    abilityId: string;
-    employeeId: string;
-    trainingCompleted: boolean;
-    trainingDays?: number;
-    companyId: string;
-  }
-) {
-  const { id, ...update } = employeeAbility;
-  if (id) {
-    return client.from("employeeAbility").update(sanitize(update)).eq("id", id);
-  }
-
-  const deactivatedId = await client
-    .from("employeeAbility")
-    .select("id")
-    .eq("employeeId", employeeAbility.employeeId)
-    .eq("abilityId", employeeAbility.abilityId)
-    .eq("active", false)
-    .single();
-
-  if (deactivatedId.data?.id) {
-    return client
-      .from("employeeAbility")
-      .update(sanitize({ ...update, active: true }))
-      .eq("id", deactivatedId.data.id);
-  }
-
-  return client
-    .from("employeeAbility")
-    .insert([{ ...update }])
-    .select("id")
-    .single();
-}
-
 export async function upsertFailureMode(
   client: SupabaseClient<Database>,
   failureMode:
@@ -1313,6 +1436,7 @@ export async function insertMaintenanceDispatch(
     suspectedFailureModeId?: string;
     plannedStartTime?: string;
     plannedEndTime?: string;
+    takesWorkCenterOffline?: boolean;
     content?: Json;
   }
 ): Promise<{
@@ -1355,6 +1479,7 @@ export async function insertMaintenanceDispatch(
       suspectedFailureModeId: input.suspectedFailureModeId ?? null,
       plannedStartTime: input.plannedStartTime ?? null,
       plannedEndTime: input.plannedEndTime ?? null,
+      takesWorkCenterOffline: input.takesWorkCenterOffline ?? false,
       content: input.content,
       companyId: input.companyId,
       createdBy: input.createdBy,
@@ -1398,6 +1523,7 @@ export async function updateMaintenanceDispatch(
     plannedEndTime?: string | null;
     actualStartTime?: string | null;
     actualEndTime?: string | null;
+    takesWorkCenterOffline?: boolean;
     content?: Json;
   }
 ): Promise<{
@@ -1818,7 +1944,7 @@ export async function upsertWorkCenter(
       })
 ) {
   if ("createdBy" in workCenter) {
-    const { processes, ...insert } = workCenter;
+    const { processes, shifts, ...insert } = workCenter;
     const workCenterInsert = await client
       .from("workCenter")
       .insert([insert])
@@ -1845,9 +1971,26 @@ export async function upsertWorkCenter(
       }
     }
 
+    const workCenterShifts = shifts?.map((shift) => ({
+      workCenterId,
+      shiftId: shift,
+      companyId: insert.companyId,
+      createdBy: insert.createdBy
+    }));
+
+    if (workCenterShifts) {
+      const workCenterShiftInsert = await client
+        .from("workCenterShift")
+        .insert(workCenterShifts);
+
+      if (workCenterShiftInsert.error) {
+        return workCenterShiftInsert;
+      }
+    }
+
     return workCenterInsert;
   }
-  const { processes, ...update } = workCenter;
+  const { processes, shifts, ...update } = workCenter;
   const workCenterUpdate = await client
     .from("workCenter")
     .update(sanitize(update))
@@ -1878,6 +2021,31 @@ export async function upsertWorkCenter(
       .insert(workCenterProcesses);
     if (workCenterProcessUpdate.error) {
       return workCenterProcessUpdate;
+    }
+  }
+
+  const deleteShifts = await client
+    .from("workCenterShift")
+    .delete()
+    .eq("workCenterId", workCenter.id);
+
+  if (deleteShifts.error) {
+    return deleteShifts;
+  }
+
+  const workCenterShifts = shifts?.map((shift) => ({
+    workCenterId: workCenter.id,
+    shiftId: shift,
+    companyId: update.companyId,
+    createdBy: update.updatedBy
+  }));
+
+  if (workCenterShifts) {
+    const workCenterShiftUpdate = await client
+      .from("workCenterShift")
+      .insert(workCenterShifts);
+    if (workCenterShiftUpdate.error) {
+      return workCenterShiftUpdate;
     }
   }
 

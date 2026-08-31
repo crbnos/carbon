@@ -1958,6 +1958,12 @@ importers:
       '@internationalized/date':
         specifier: 'catalog:'
         version: 3.12.0
+      '@logtape/logtape':
+        specifier: 'catalog:'
+        version: 2.2.3
+      '@logtape/redaction':
+        specifier: 'catalog:'
+        version: 2.2.3(@logtape/logtape@2.2.3)
       '@supabase/postgrest-js':
         specifier: 'catalog:'
         version: 2.80.0
@@ -2258,6 +2264,9 @@ importers:
       dompurify:
         specifier: 'catalog:'
         version: 3.4.0
+      jose:
+        specifier: 'catalog:'
+        version: 6.0.11
       kysely:
         specifier: 'catalog:'
         version: 0.28.15
@@ -2315,7 +2324,7 @@ importers:
         version: 5.8.3
       vitest:
         specifier: 'catalog:'
-        version: 4.1.6(@opentelemetry/api@1.9.0)(@types/node@26.1.0)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
+        version: 4.1.6(@opentelemetry/api@1.9.0)(@types/node@26.1.0)(vite@8.0.10(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
 
   packages/env:
     dependencies:

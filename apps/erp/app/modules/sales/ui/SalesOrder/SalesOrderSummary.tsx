@@ -193,9 +193,6 @@ const SalesOrderSummary = ({
           <HStack className="justify-between items-center">
             <div className="flex flex-col gap-1">
               <CardTitle>{routeData?.salesOrder.salesOrderId}</CardTitle>
-              <CardDescription>
-                <Trans>Sales Order</Trans>
-              </CardDescription>
             </div>
             <div className="flex flex-col gap-1 items-end">
               <CustomerAvatar

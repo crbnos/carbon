@@ -367,7 +367,7 @@ const PartProperties = ({
           : "flex flex-col items-start space-y-4",
         embedded
           ? "px-1 py-2"
-          : "w-96 bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2"
+          : "w-96 bg-background h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2"
       )}
     >
       {formLayout ? (

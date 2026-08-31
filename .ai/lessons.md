@@ -498,6 +498,26 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Applies to:** `packages/jobs/src/inngest/functions/events/queue.ts`; any new Inngest function reaching for `debounce`/flow-control that will be exercised in local dev.
 
+## Table cells in @carbon/react highlight on row hover by default
+
+**Context:** The people Capacity view needed a hover-free (then row-scoped-hover) table; removing every hover class in the feature file changed nothing — cells still tinted on row hover, and a rowSpan name cell lit up whenever its first row was hovered.
+
+**Problem:** `packages/react/src/Table.tsx` bakes the hover in at the primitive level: `Tr` carries the Tailwind `group` class and `Td`/`Th` ship `group-hover:bg-muted`. No amount of feature-level class removal turns it off, and a `rowSpan` cell belongs to its first row, so that row's hover tints it.
+
+**Rule:** To opt a table out of (or customize) hover, override per cell with `group-hover:bg-transparent` (tailwind-merge lets the passed className win) — a local `<Td>` wrapper keeps it tidy. For a rowSpan cell that must stay static, also give it an opaque `bg-card` so sibling-row tints can't bleed through. If more tables need this, promote a `static` prop into `packages/react` instead of copying wrappers.
+
+**Applies to:** any table built on `@carbon/react` `Tr`/`Td`/`Th`, especially with `rowSpan` cells or custom hover semantics (`PeopleCapacity.tsx` is the reference).
+
+## position:sticky inside a horizontal board needs a content-width row and a clamped scroll root
+
+**Context:** Making the people board's Unassigned column sticky worked for one viewport-width of scrolling, then scrolled away; fixing that caused page-level overflow on small screens.
+
+**Problem:** Sticky elements only stick within their parent's bounds. The flex row inside the Radix ScrollArea was viewport-width (columns overflowed it), so the sticky column ran out of parent after one screenful. Adding `min-w-max` fixed that but let the ScrollArea (a flex item, which sizes to content) exceed ITS parent, pushing overflow to the page.
+
+**Rule:** The sizing contract for a sticky column in a scrollable flex board is three layers: scroll root clamped (`w-full min-w-0 max-w-full`) > row content-width (`min-w-max`) > column `sticky left-0 z-10` with an opaque background. With dnd-kit on top, add `measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}` — cached droppable rects assume elements move with the scroll, and sticky ones don't.
+
+**Applies to:** `BoardContainer` (`ColumnCard.tsx`) and any kanban wanting a pinned column; any dnd-kit board with sticky droppables.
+
 ## Regenerating `src/email/previews/` fixtures requires a follow-up biome format pass
 
 **Context:** Adding ChangeOrder* entries to `packages/documents/scripts/generate-notification-previews.mjs` and re-running it to emit the per-event preview fixtures.
@@ -966,6 +986,16 @@ canvas hosting Radix popovers/selects.
 
 **Applies to:** `apps/erp/app/modules/sales/sales.service.ts` (`upsertQuoteLinePrices`), any `Kysely<KyselyDatabase>` service in `apps/erp/app/modules/**` or `packages/database/supabase/functions/**`, and the `getPostgresClient` pool in `packages/database/supabase/functions/lib/postgres/index.ts`.
 
+## The migration ledger must travel with the schema it describes
+
+**Context:** A `crbn restore` left the people board dead ("Failed to load people assignments"): the dump's schema was weeks older than the branch, yet `supabase migration up` reported "schema already up to date", so ~60 migrations' worth of tables (people, workflows, inspections, the operationType enum consolidation) silently didn't exist.
+
+**Problem:** The restore script dropped every `public` object and loaded the dump — but never touched `supabase_migrations.schema_migrations`. The local ledger (which recorded everything as applied against the PRE-restore database) survived, and the dump's own ledger rows lost their primary-key conflicts under `ON_ERROR_STOP=0`. Result: an older schema paired with a newer ledger, which makes every "apply what's pending" mechanism a no-op. Diagnosing it required probing per-migration artifacts (tables, enum values, functions) because the ledger could no longer be trusted; recovery was deleting the stale ledger rows and replaying, marking the two genuinely-applied ones on their loud "already exists" failures.
+
+**Rule:** Any operation that replaces schema state wholesale (restore, snapshot rollback, volume swap) must replace the migration ledger in the same stroke — truncate it before the load so the source's ledger lands and anything the backup predates genuinely pends. When a ledger and its schema disagree, believe the schema: probe artifacts, don't trust records. `scripts/restore-database.sh` now truncates the ledger before loading the dump; `crbn restore`'s trailing `applyMigrations` step is unchanged and picks up the pending set.
+
+**Applies to:** `scripts/restore-database.sh`, any future backup/restore or snapshot tooling.
+
 ## A VERIFY-flagged provider endpoint in a cron loop is an outage, not a TODO
 
 **Context:** The Rillet AP payment pull assumed an org-wide `GET /bill-payments` feed mirroring `/invoice-payments`. The method carried a VERIFY comment ("assumed to mirror… not confirmed") and even named its own fallback, but shipped unguarded inside `listChanges`. The endpoint does not exist (404).
@@ -1122,6 +1152,15 @@ canvas hosting Radix popovers/selects.
 
 **Applies to:** `packages/database/supabase/functions/get-method/index.ts` (`quoteToQuote`), `apps/erp/app/modules/sales/sales.service.ts` (`deleteQuote`), any insert into `externalLink`.
 
+## `crbn reload` must load root `.env` — compose-substituted secrets silently reset
+
+**Context:** Enabling GoTrue SAML via `${SAML_ENABLED:-false}` / `${SAML_PRIVATE_KEY:-}` in docker-compose.dev.yml, values kept in root `.env`.
+
+**Problem:** `crbn reload <service>` invoked `docker compose up -d --force-recreate` with only `--env-file .env.local` and no dotenv preload. Root `.env` vars referenced by compose substitution resolved to their defaults, and — worse — recreating ANY service also reconciles other services whose definition changed, so a `crbn reload kong` recreated gotrue with SAML silently OFF even though the user's earlier `crbn up` had it on. (`crbn up` was immune only because it loads `.env.local` then `.env` into process.env first, and shell env wins compose interpolation.)
+
+**Rule:** Any crbn command that invokes docker compose must preload BOTH env files into process.env the way `up.ts` does (`loadDotenv(.env.local)` then `loadDotenv(.env)`, both `override: false`). `reload.ts` now does this. After any reload, still verify the dependent feature's health endpoint (e.g. `curl .../sso/saml/metadata` → 200), not just container status.
+
+**Applies to:** packages/dev reload/compose commands; any GoTrue/Kong/storage env sourced from root `.env`.
 ## An incremental pull-sweep cursor must advance on the SAME field the query filters on
 
 **Context:** The Stripe Connect payment pull sweep (`stripe-connect-pull-sweep.ts`) queried Stripe with `invoices.list({ status: "paid", created: { gte: since } })` but advanced the cursor to `latest status_transitions.paid_at + 1`. An invoice created before the cursor but paid after it (a normal case — invoices are created, then paid later) would never be returned by a future `created`-filtered query once the cursor passed its `paid_at`, so it was permanently skipped with no error, no log, and no retry.

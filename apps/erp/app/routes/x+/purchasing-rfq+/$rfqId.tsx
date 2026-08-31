@@ -27,7 +27,8 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`RFQs`, to: path.to.purchasingRfqs },
     (data) => data?.rfqSummary?.rfqId
-  )
+  ),
+  module: "purchasing"
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -115,14 +116,14 @@ export default function PurchasingRFQRoute() {
 
   return (
     <PanelProvider>
-      <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
+      <div className="flex flex-col h-[calc(100dvh-var(--topbar-height))] overflow-hidden w-full">
         <PurchasingRFQHeader />
-        <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+        <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
               explorer={<PurchasingRFQExplorer />}
               content={
-                <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <VStack spacing={4} className="p-4">
                     <Outlet />
                   </VStack>

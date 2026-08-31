@@ -31,7 +31,7 @@ const taskToEvent = {
   "ramp-sync": "carbon/ramp-sync",
   "print-job": "carbon/print-job",
   recalculate: "carbon/recalculate",
-  "schedule-job": "carbon/reschedule-job",
+  "schedule-inputs-changed": "carbon/schedule.inputs.changed",
   "send-email": "carbon/send-email",
   "send-slack": "carbon/send-slack",
   "slack-document-assignment-update": "carbon/slack-document-assignment-update",

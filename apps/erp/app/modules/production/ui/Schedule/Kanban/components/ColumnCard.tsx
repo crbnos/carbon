@@ -186,14 +186,19 @@ export function ColumnCard<T extends Item = Item>({
 export function BoardContainer({ children }: { children: React.ReactNode }) {
   const dndContext = useDndContext();
 
-  const variations = cva("relative px-0 flex lg:justify-center", {
-    variants: {
-      dragging: {
-        default: "snap-x snap-mandatory",
-        active: "snap-none"
+  // w-full/min-w-0/max-w-full: the scroll area must never exceed its parent —
+  // the min-w-max row inside it scrolls, the page does not
+  const variations = cva(
+    "relative w-full min-w-0 max-w-full px-0 flex lg:justify-center",
+    {
+      variants: {
+        dragging: {
+          default: "snap-x snap-mandatory",
+          active: "snap-none"
+        }
       }
     }
-  });
+  );
 
   return (
     <ScrollArea
@@ -201,7 +206,9 @@ export function BoardContainer({ children }: { children: React.ReactNode }) {
         dragging: dndContext.active ? "active" : "default"
       })}
     >
-      <div className="flex gap-0 items-start flex-row justify-start p-0">
+      {/* min-w-max: the row must span the full scroll width so a sticky
+          column keeps sticking past the first viewport-width of scrolling */}
+      <div className="flex min-w-max gap-0 items-start flex-row justify-start p-0">
         {children}
       </div>
       <ScrollBar orientation="horizontal" forceMount className="h-5" />

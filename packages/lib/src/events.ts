@@ -319,14 +319,28 @@ export type Events = {
         };
   };
 
-  // Job rescheduling
-  "carbon/reschedule-job": {
+  // Scheduling inputs changed (shift/qualification/work-center/etc.) —
+  // consumed by the mark + debounced replan-wave functions
+  "carbon/schedule.inputs.changed": {
     data: {
-      jobId: string;
       companyId: string;
-      userId: string;
-      mode?: "initial" | "reschedule";
-      direction?: "backward" | "forward";
+      kind:
+        | "ability"
+        | "shift"
+        | "employee-shift"
+        | "work-center"
+        | "location"
+        | "reorder"
+        | "people";
+      reason: string;
+      /** The changed record (abilityId, workCenterId, ...) for precise scoping */
+      entityId?: string;
+      /**
+       * Set by the replan wave when chaining a follow-up batch. The remaining
+       * jobs are already stamped stale, so the mark function must skip this
+       * event — re-marking would stamp the whole company and loop forever.
+       */
+      continuation?: boolean;
     };
   };
 

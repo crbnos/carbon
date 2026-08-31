@@ -24,6 +24,7 @@ import {
 import { parseDate } from "@internationalized/date";
 import type { FileObject, StorageError } from "@supabase/storage-js";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
+import type { ExpressionBuilder } from "kysely";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
 import type { StorageItem } from "~/types";
@@ -85,7 +86,8 @@ import {
   JOB_SUPPLY_STATUS_PRIORITY,
   motionSchema,
   PO_STATUS_PRIORITY,
-  stepPlanWarningsSchema
+  stepPlanWarningsSchema,
+  WEEKDAYS_MONDAY_FIRST
 } from "./production.models";
 import type {
   AssemblyInstructionStepRow,
@@ -985,6 +987,75 @@ export async function getJob(client: SupabaseClient<Database>, id: string) {
   return client.from("jobs").select("*").eq("id", id).single();
 }
 
+// Lazy Node Kysely handle for the IN-PROCESS scheduling engine. Built through a
+// dynamic import so this module — which is ALSO bundled for the browser (it is
+// imported by client components via the module barrel) — never STATICALLY pulls
+// in `pg` or a `.server` module. Same tactic as notifyScheduleInputsChanged's
+// `await import("@carbon/jobs")` below. A modest dedicated pool: a regen uses one
+// connection at a time (sequential per job).
+let schedulingDbPromise: Promise<Kysely<KyselyDatabase>> | undefined;
+function getSchedulingDb(): Promise<Kysely<KyselyDatabase>> {
+  if (!schedulingDbPromise) {
+    schedulingDbPromise = (async () => {
+      const { getPostgresClient, getPostgresConnectionPool } = await import(
+        "@carbon/database/client"
+      );
+      const { PostgresDriver } = await import("kysely");
+      return getPostgresClient(getPostgresConnectionPool(5), PostgresDriver);
+    })();
+  }
+  return schedulingDbPromise;
+}
+
+// Read-only "best case" what-if: runs the job first in its location's schedule
+// IN-PROCESS (persists nothing) and returns the projected completion +
+// bottleneck cause. Returns null when the job isn't in the schedulable set
+// (e.g. not Ready/In Progress/Paused).
+export async function getJobExpediteForecast(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  companyId: string,
+  userId: string
+) {
+  const { data: job, error: jobError } = await client
+    .from("job")
+    .select("locationId")
+    .eq("id", jobId)
+    .eq("companyId", companyId)
+    .single();
+
+  if (jobError || !job?.locationId) {
+    return { data: null, error: jobError };
+  }
+
+  // Simulate-only what-if, run IN-PROCESS (Node) — persists nothing.
+  try {
+    const { runExpediteWhatIf } = await import("@carbon/ee/planning");
+    const expedite = await runExpediteWhatIf({
+      db: await getSchedulingDb(),
+      client,
+      locationId: job.locationId,
+      companyId,
+      userId,
+      expediteJobId: jobId
+    });
+    return {
+      data: expedite
+        ? {
+            projectedCompletionAt: expedite.projectedCompletionAt,
+            cause: expedite.cause
+          }
+        : null,
+      error: null
+    };
+  } catch (err) {
+    return {
+      data: null,
+      error: err instanceof Error ? err : new Error("Failed to expedite")
+    };
+  }
+}
+
 export async function getJobByOperationId(
   client: SupabaseClient<Database>,
   operationId: string
@@ -1006,6 +1077,115 @@ export async function getJobPurchaseOrderLines(
       "id, itemId, purchaseQuantity, quantityReceived, quantityShipped, purchaseOrder(id, purchaseOrderId, status, supplierId, supplierInteractionId), jobOperation(id, description, operationQuantity)"
     )
     .eq("jobId", jobId);
+}
+
+export async function getJobOperationsForTimeline(
+  client: SupabaseClient<Database>,
+  jobId: string
+) {
+  return client
+    .from("jobOperation")
+    .select(
+      `id, description, order, status, startDate, dueDate, projectedCompletionAt, hasConflict, conflictReason, assignee, workCenterId,
+       workCenter(name),
+       jobMakeMethod(id, parentMaterialId, item(readableId, name))`
+    )
+    .eq("jobId", jobId)
+    .order("order");
+}
+
+export async function getCapacityReservationsByJob(
+  client: SupabaseClient<Database>,
+  jobId: string
+) {
+  return client
+    .from("capacityReservation")
+    .select(
+      "id, operationId, resourceKind, resourceId, startAt, endAt, earliestStartAt, scheduleNote, workHours"
+    )
+    .eq("jobId", jobId)
+    .is("scenarioId", null);
+}
+
+export async function getCapacityReservationsForResources(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  locationId?: string,
+  /**
+   * Explicit [from, to) instant window (ISO strings) for the resource Gantt's
+   * day/week/shift views — returns reservations that OVERLAP it. Omit to keep
+   * the default forward horizon (everything ending within the last day onward).
+   */
+  window?: { from: string; to: string }
+) {
+  // Live/upcoming reservations across ALL jobs — feeds the resource-lane
+  // Gantt. Cancelled/completed/closed jobs keep their reservation rows until
+  // the next reschedule, so filter them out here — they are no longer real load.
+  let query = client
+    .from("capacityReservation")
+    .select(
+      `id, operationId, jobId, resourceKind, resourceId, startAt, endAt, scheduleNote, workHours, isPlaceholder,
+       job!inner(jobId, status, dueDate, locationId),
+       jobOperation(description, hasConflict, conflictReason)`
+    )
+    .eq("companyId", companyId)
+    .is("scenarioId", null)
+    .not("job.status", "in", '("Cancelled","Completed","Closed")');
+
+  if (window) {
+    // A reservation [startAt, endAt) overlaps [from, to) iff it starts before
+    // the window ends and ends after the window starts.
+    query = query.lt("startAt", window.to).gt("endAt", window.from);
+  } else {
+    // Rows that ended within the last day stay visible for context.
+    const cutoff = new Date(Date.now() - 24 * 3_600_000).toISOString();
+    query = query.gte("endAt", cutoff);
+  }
+
+  // Scope to a single plant so the resource Gantt matches its work-center list.
+  if (locationId) {
+    query = query.eq("job.locationId", locationId);
+  }
+
+  return query.order("startAt");
+}
+
+export async function getMaintenanceDowntimeForResources(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  locationId?: string
+) {
+  // Open maintenance dispatches that take a work center OFFLINE — the same rows
+  // the scheduler subtracts from a machine's availability. Surfaced on the
+  // resource Gantt so downtime is drawn, not just implied by the gap it leaves.
+  // Few per plant, so no window filter here; the timeline clips to the view.
+  let query = client
+    .from("maintenanceDispatch")
+    .select(
+      "id, maintenanceDispatchId, workCenterId, plannedStartTime, plannedEndTime, actualStartTime, actualEndTime"
+    )
+    .eq("companyId", companyId)
+    .eq("takesWorkCenterOffline", true)
+    .not("status", "in", '("Completed","Cancelled")')
+    .not("workCenterId", "is", null);
+
+  if (locationId) {
+    query = query.eq("locationId", locationId);
+  }
+
+  return query.order("plannedStartTime");
+}
+
+export async function getProductionEventsByJob(
+  client: SupabaseClient<Database>,
+  jobId: string
+) {
+  return client
+    .from("productionEvent")
+    .select(
+      "id, jobOperationId, type, startTime, endTime, employeeId, jobOperation!inner(jobId)"
+    )
+    .eq("jobOperation.jobId", jobId);
 }
 
 export async function getJobs(
@@ -2345,15 +2525,37 @@ export async function recalculateJobOperationDependencies(
     userId: string;
   }
 ) {
-  return client.functions.invoke("schedule", {
-    body: {
-      jobId: params.jobId,
+  // Forecast-first scheduling regenerates the WHOLE LOCATION; resolve the job's
+  // location and regenerate it (the job is part of that pass).
+  const { data: job, error } = await client
+    .from("job")
+    .select("locationId")
+    .eq("id", params.jobId)
+    .eq("companyId", params.companyId)
+    .single();
+  if (error || !job?.locationId) {
+    return { data: null, error: error ?? new Error("Job has no location") };
+  }
+  // Regenerate the whole location IN-PROCESS (Node) instead of round-tripping to
+  // the `schedule` edge function — no cold start, no HTTP hop. The caller's
+  // client reads the (same-company) master data; writes go through the Node
+  // Kysely pool.
+  try {
+    const { runLocationSchedule } = await import("@carbon/ee/planning");
+    const data = await runLocationSchedule({
+      db: await getSchedulingDb(),
+      client,
+      locationId: job.locationId,
       companyId: params.companyId,
-      userId: params.userId,
-      mode: "reschedule",
-      direction: "backward"
-    }
-  });
+      userId: params.userId
+    });
+    return { data, error: null };
+  } catch (err) {
+    return {
+      data: null,
+      error: err instanceof Error ? err : new Error("Failed to reschedule")
+    };
+  }
 }
 export async function recalculateJobRequirements(
   client: SupabaseClient<Database>,
@@ -2402,11 +2604,20 @@ export async function runMRP(
     userId: string;
   }
 ) {
-  return client.functions.invoke("mrp", {
-    body: {
-      ...params
-    }
-  });
+  // Run MRP IN-PROCESS (Node) instead of round-tripping to the `mrp` edge
+  // function — no cold start, no HTTP hop. The caller's service-role client does
+  // the PostgREST reads; the atomic Phase-7 write goes through the Node Kysely
+  // pool. Preserves the `{ data, error }` shape the caller (api+/mrp.ts) returns.
+  try {
+    const { runMrp } = await import("@carbon/ee/planning");
+    const data = await runMrp(client, await getSchedulingDb(), params);
+    return { data, error: null };
+  } catch (err) {
+    return {
+      data: null,
+      error: err instanceof Error ? err : new Error("Failed to run MRP")
+    };
+  }
 }
 
 export async function updateJobBatchNumber(
@@ -3507,6 +3718,53 @@ export async function upsertJobOperationParameter(
     .single();
 }
 
+/**
+ * Promise date = the job's forward-ASAP forecast finish (`projectedCompletionAt`,
+ * stamped by every regen). No operation-date fallback: `jobOperation.dueDate` is
+ * now the backward need-by target, so max(op.dueDate) ≈ the job due date —
+ * answering "when will it be done?" with the ask, not a forecast. Before the
+ * first regen the promise date is simply null.
+ * Implements the §7 `{ date, confidence? }` contract — confidence is a string
+ * enum, "low" when the schedule may not hold (a conflicted op or a pending
+ * replan) and "scheduled" otherwise.
+ */
+export async function getJobPromiseDate(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  companyId: string
+) {
+  const job = await client
+    .from("job")
+    .select("projectedCompletionAt, scheduleOutdatedReason")
+    .eq("id", jobId)
+    .eq("companyId", companyId)
+    .single();
+  if (job.error) return job;
+
+  const operations = await client
+    .from("jobOperation")
+    .select("id, hasConflict")
+    .eq("jobId", jobId)
+    .eq("companyId", companyId)
+    .in("status", ["Todo", "Waiting", "Ready", "In Progress", "Paused"]);
+  if (operations.error) return operations;
+
+  const hasConflict = (operations.data ?? []).some((o) => o.hasConflict);
+  const confidence =
+    hasConflict || job.data.scheduleOutdatedReason
+      ? ("low" as const)
+      : ("scheduled" as const);
+
+  return {
+    data: {
+      promiseDate: job.data.projectedCompletionAt ?? null,
+      basis: "schedule" as const,
+      confidence
+    },
+    error: null
+  };
+}
+
 export async function upsertJobOperationTool(
   client: SupabaseClient<Database>,
   jobOperationTool:
@@ -4416,28 +4674,1121 @@ export async function upsertDemandProjections(
   };
 }
 
+export async function getPeopleAssignments(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { locationId: string; date: string }
+) {
+  return client
+    .from("peopleAssignment")
+    .select(
+      "id, workCenterId, employeeId, shiftId, note, date, overtimeHours, hours"
+    )
+    .eq("companyId", companyId)
+    .eq("locationId", args.locationId)
+    .eq("date", args.date);
+}
+
+export async function getPeopleAbsences(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  date: string
+) {
+  return client
+    .from("peopleAbsence")
+    .select("id, employeeId, shiftId, note, date")
+    .eq("companyId", companyId)
+    .eq("date", date);
+}
+
+export async function getPeopleAssignmentsRange(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { locationId: string; startDate: string; endDate: string }
+) {
+  return client
+    .from("peopleAssignment")
+    .select(
+      "id, workCenterId, employeeId, shiftId, date, note, overtimeHours, hours"
+    )
+    .eq("companyId", companyId)
+    .eq("locationId", args.locationId)
+    .gte("date", args.startDate)
+    .lte("date", args.endDate)
+    .order("date")
+    .order("shiftId", { nullsFirst: true });
+}
+
+export async function getPeopleAbsencesRange(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { startDate: string; endDate: string }
+) {
+  return client
+    .from("peopleAbsence")
+    .select("id, employeeId, shiftId, date")
+    .eq("companyId", companyId)
+    .gte("date", args.startDate)
+    .lte("date", args.endDate);
+}
+
+/**
+ * Open job-operation hours per work center for the capacity view. Draft and
+ * Planned jobs are excluded — only released (firm) work counts toward load,
+ * matching the industry release-gating convention. Paginated — the default
+ * PostgREST max_rows (1000) would silently truncate a busy location.
+ */
+export async function getPeopleCapacityOperations(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { locationId: string; startDate: string | null; endDate: string }
+) {
+  return fetchAllFromTable<{
+    id: string;
+    workCenterId: string | null;
+    dueDate: string | null;
+    status: string;
+    operationQuantity: number | null;
+    setupTime: number;
+    setupUnit: string;
+    laborTime: number;
+    laborUnit: string;
+    machineTime: number;
+    machineUnit: string;
+  }>(
+    client,
+    "jobOperation",
+    `id, workCenterId, dueDate, status, operationQuantity,
+     setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit,
+     job!inner(status, locationId)`,
+    (query) => {
+      let scoped = query
+        .eq("companyId", companyId)
+        .eq("job.locationId", args.locationId)
+        .not("workCenterId", "is", null)
+        .lte("dueDate", args.endDate)
+        .not("status", "in", '("Done","Canceled")')
+        .not(
+          "job.status",
+          "in",
+          '("Draft","Planned","Completed","Cancelled","Closed")'
+        );
+      // Null start = no floor: overdue work back to the earliest open op counts
+      // toward Past due (the released-only status filters already bound the set).
+      if (args.startDate != null) {
+        scoped = scoped.gte("dueDate", args.startDate);
+      }
+      return scoped.order("id");
+    }
+  );
+}
+
+/**
+ * The `workCenterShift` links (rung 1 of the availability ladder) for a set of
+ * work centers, in ONE `.in()` query. Feeds the Capacity view's per-work-center
+ * calendar-hours DISPLAY mirror of the engine ladder.
+ */
+export async function getWorkCenterShifts(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  workCenterIds: string[]
+) {
+  return client
+    .from("workCenterShift")
+    .select("workCenterId, shiftId")
+    .eq("companyId", companyId)
+    .in("workCenterId", workCenterIds);
+}
+
+/**
+ * WorkCenter-kind reservations overlapping a window — the Capacity view's
+ * Scheduled series. Bounded by the window (not "recent only") so earlier days
+ * of the current week keep their completed bookings, filtered to WorkCenter
+ * rows server-side, and paginated past the PostgREST max_rows cap.
+ */
+export async function getWorkCenterReservationsRange(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { startAt: string; endAt: string }
+) {
+  return fetchAllFromTable<{
+    id: string;
+    resourceId: string;
+    startAt: string;
+    endAt: string;
+    workHours: number | null;
+  }>(
+    client,
+    "capacityReservation",
+    `id, resourceId, startAt, endAt, workHours, job!inner(status)`,
+    (query) =>
+      query
+        .eq("companyId", companyId)
+        .eq("resourceKind", "WorkCenter")
+        .is("scenarioId", null)
+        // Placeholders mark unplaceable ops — not real bookings, so they must
+        // not inflate the Capacity view's Scheduled load.
+        .eq("isPlaceholder", false)
+        .lt("startAt", args.endAt)
+        .gt("endAt", args.startAt)
+        .not("job.status", "in", '("Cancelled","Completed","Closed")')
+        .order("id")
+  );
+}
+
+export async function getLocationEmployees(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  locationId: string
+) {
+  return client
+    .from("employees")
+    .select("id, name, avatarUrl")
+    .eq("companyId", companyId)
+    .eq("locationId", locationId);
+}
+
+/**
+ * Gated abilities per work center at a location, for the people board's
+ * advisory qualification badge. Chained lookups instead of a PostgREST embed —
+ * the composite tenant FKs break alias:fkColumn(...) embeds.
+ */
+export async function getWorkCenterRequiredAbilities(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  locationId: string
+): Promise<{
+  data:
+    | { workCenterId: string; abilityId: string; abilityName: string }[]
+    | null;
+  error: PostgrestError | null;
+}> {
+  const workCenters = await client
+    .from("workCenter")
+    .select("id")
+    .eq("companyId", companyId)
+    .eq("locationId", locationId);
+  if (workCenters.error) return { data: null, error: workCenters.error };
+  const workCenterIds = (workCenters.data ?? []).map((w) => w.id);
+  if (workCenterIds.length === 0) return { data: [], error: null };
+
+  const workCenterProcesses = await client
+    .from("workCenterProcess")
+    .select("workCenterId, processId")
+    .eq("companyId", companyId)
+    .in("workCenterId", workCenterIds);
+  if (workCenterProcesses.error)
+    return { data: null, error: workCenterProcesses.error };
+  const processIds = [
+    ...new Set((workCenterProcesses.data ?? []).map((r) => r.processId))
+  ];
+  if (processIds.length === 0) return { data: [], error: null };
+
+  const processes = await client
+    .from("process")
+    .select("id, requiresAbility")
+    .eq("companyId", companyId)
+    .in("id", processIds);
+  if (processes.error) return { data: null, error: processes.error };
+  const gatedProcessIds = (processes.data ?? [])
+    .filter((p) => p.requiresAbility)
+    .map((p) => p.id);
+  if (gatedProcessIds.length === 0) return { data: [], error: null };
+
+  const abilities = await client
+    .from("ability")
+    .select("id, name, processId")
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .in("processId", gatedProcessIds);
+  if (abilities.error) return { data: null, error: abilities.error };
+  const abilityByProcess = new Map(
+    (abilities.data ?? [])
+      .filter((a) => a.processId)
+      .map((a) => [a.processId as string, a])
+  );
+
+  const rows = (workCenterProcesses.data ?? []).flatMap(
+    ({ workCenterId, processId }) => {
+      const ability = abilityByProcess.get(processId);
+      return ability
+        ? [{ workCenterId, abilityId: ability.id, abilityName: ability.name }]
+        : [];
+    }
+  );
+  return { data: rows, error: null };
+}
+
+export async function getActiveEmployeeAbilities(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  // Qualification is presence-based: any employeeAbility row counts (subject
+  // only to expiry, applied by the caller). The ability name rides along so the
+  // people board can badge each person with what they can do.
+  return client
+    .from("employeeAbility")
+    .select("employeeId, abilityId, expiresAt, ability(name)")
+    .eq("companyId", companyId);
+}
+
+/**
+ * Filter `peopleAssignment` rows to those whose EFFECTIVE shift is `shiftId`:
+ * the row's stamped shift, or — for shift-less rows — the person's own
+ * `employeeShift`. The same ladder the boards' shift filter displays through,
+ * so a row a filtered board shows is always a row its mutations can reach.
+ */
+function whereEffectiveShift(shiftId: string) {
+  return (eb: ExpressionBuilder<KyselyDatabase, "peopleAssignment">) =>
+    eb.or([
+      eb("shiftId", "=", shiftId),
+      eb.and([
+        eb("shiftId", "is", null),
+        eb(
+          "employeeId",
+          "in",
+          eb
+            .selectFrom("employeeShift")
+            .select("employeeId")
+            .where("shiftId", "=", shiftId)
+        )
+      ])
+    ]);
+}
+
+/**
+ * Move-semantics upsert: one magnet per person per date/shift — any existing
+ * assignment for the person on that date/shift is replaced.
+ */
+export async function upsertPeopleAssignment(
+  db: Kysely<KyselyDatabase>,
+  assignment: {
+    companyId: string;
+    locationId: string;
+    workCenterId: string;
+    employeeId: string;
+    date: string;
+    shiftId: string | null;
+    note?: string;
+    /** partial-day remainder; undefined = whole shift (replaces other rows) */
+    hours?: number;
+    createdBy: string;
+  }
+) {
+  if (assignment.hours !== undefined) {
+    // remainder assignment: ADD hours at this station without touching the
+    // person's other stations; same-station rows merge their hours
+    return db.transaction().execute(async (trx) => {
+      let existing = trx
+        .selectFrom("peopleAssignment")
+        .select(["id", "hours"])
+        .where("companyId", "=", assignment.companyId)
+        .where("employeeId", "=", assignment.employeeId)
+        .where("date", "=", assignment.date)
+        .where("workCenterId", "=", assignment.workCenterId);
+      existing = assignment.shiftId
+        ? existing.where(whereEffectiveShift(assignment.shiftId))
+        : existing.where("shiftId", "is", null);
+      const row = await existing.executeTakeFirst();
+      if (row) {
+        return trx
+          .updateTable("peopleAssignment")
+          .set({
+            hours:
+              row.hours === null
+                ? null
+                : Number(row.hours) + (assignment.hours ?? 0)
+          })
+          .where("id", "=", row.id)
+          .where("companyId", "=", assignment.companyId)
+          .returning(["id", "workCenterId"])
+          .executeTakeFirstOrThrow();
+      }
+      return trx
+        .insertInto("peopleAssignment")
+        .values({
+          companyId: assignment.companyId,
+          locationId: assignment.locationId,
+          workCenterId: assignment.workCenterId,
+          employeeId: assignment.employeeId,
+          date: assignment.date,
+          shiftId: assignment.shiftId,
+          note: assignment.note ?? null,
+          hours: assignment.hours,
+          createdBy: assignment.createdBy
+        })
+        .returning(["id", "workCenterId"])
+        .executeTakeFirstOrThrow();
+    });
+  }
+  return db.transaction().execute(async (trx) => {
+    // Every read AND write here is location-scoped: the board is per-location,
+    // so a person assigned at another site must never be read from or deleted by
+    // an action taken on this one.
+    let existing = trx
+      .selectFrom("peopleAssignment")
+      .select("overtimeHours")
+      .where("companyId", "=", assignment.companyId)
+      .where("locationId", "=", assignment.locationId)
+      .where("employeeId", "=", assignment.employeeId)
+      .where("date", "=", assignment.date);
+    existing = assignment.shiftId
+      ? existing.where(whereEffectiveShift(assignment.shiftId))
+      : existing.where("shiftId", "is", null);
+    // moving stations keeps the person's authorized overtime for that day
+    const carriedOvertime = (await existing.executeTakeFirst())?.overtimeHours;
+
+    let del = trx
+      .deleteFrom("peopleAssignment")
+      .where("companyId", "=", assignment.companyId)
+      .where("locationId", "=", assignment.locationId)
+      .where("employeeId", "=", assignment.employeeId)
+      .where("date", "=", assignment.date);
+    del = assignment.shiftId
+      ? del.where(whereEffectiveShift(assignment.shiftId))
+      : del.where("shiftId", "is", null);
+    await del.execute();
+    return trx
+      .insertInto("peopleAssignment")
+      .values({
+        companyId: assignment.companyId,
+        locationId: assignment.locationId,
+        workCenterId: assignment.workCenterId,
+        employeeId: assignment.employeeId,
+        date: assignment.date,
+        shiftId: assignment.shiftId,
+        note: assignment.note ?? null,
+        overtimeHours: carriedOvertime ?? 0,
+        createdBy: assignment.createdBy
+      })
+      .returning(["id", "workCenterId"])
+      .executeTakeFirstOrThrow();
+  });
+}
+
+export async function deletePeopleAssignment(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("peopleAssignment")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .select("id, workCenterId, employeeId")
+    .single();
+}
+
+export async function setPeopleAbsence(
+  client: SupabaseClient<Database>,
+  absence: {
+    companyId: string;
+    employeeId: string;
+    date: string;
+    shiftId: string | null;
+    note?: string;
+    createdBy: string;
+  }
+) {
+  return client.from("peopleAbsence").insert([absence]).select("id").single();
+}
+
+export async function clearPeopleAbsence(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("peopleAbsence")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .select("id, employeeId")
+    .single();
+}
+
+/**
+ * Copy one day's people board to another date, skipping people already assigned
+ * on the target date or marked absent there.
+ */
+/**
+ * Move one assignment row to another station (drag = move). If the person
+ * already has a row at the target station for the same shift/date, the rows
+ * merge (hours add; a whole-shift row absorbs the other).
+ */
+export async function movePeopleAssignment(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string; workCenterId: string }
+) {
+  return db.transaction().execute(async (trx) => {
+    const source = await trx
+      .selectFrom("peopleAssignment")
+      .selectAll()
+      .where("id", "=", args.id)
+      .where("companyId", "=", args.companyId)
+      .executeTakeFirstOrThrow();
+
+    // merge with target rows sharing the source's EFFECTIVE shift — a
+    // shift-less row belongs to the person's own shift, like the boards show it
+    const effectiveShiftId =
+      source.shiftId ??
+      (
+        await trx
+          .selectFrom("employeeShift")
+          .select("shiftId")
+          .where("employeeId", "=", source.employeeId)
+          .executeTakeFirst()
+      )?.shiftId ??
+      null;
+    let targetQuery = trx
+      .selectFrom("peopleAssignment")
+      .select(["id", "hours"])
+      .where("companyId", "=", args.companyId)
+      .where("employeeId", "=", source.employeeId)
+      .where("date", "=", source.date)
+      .where("workCenterId", "=", args.workCenterId);
+    targetQuery = effectiveShiftId
+      ? targetQuery.where(whereEffectiveShift(effectiveShiftId))
+      : targetQuery.where("shiftId", "is", null);
+    const target = await targetQuery.executeTakeFirst();
+
+    if (target) {
+      const mergedHours =
+        source.hours === null || target.hours === null
+          ? null
+          : Number(source.hours) + Number(target.hours);
+      await trx
+        .updateTable("peopleAssignment")
+        .set({ hours: mergedHours })
+        .where("id", "=", target.id)
+        .where("companyId", "=", args.companyId)
+        .execute();
+      await trx
+        .deleteFrom("peopleAssignment")
+        .where("id", "=", source.id)
+        .where("companyId", "=", args.companyId)
+        .execute();
+      return {
+        id: target.id,
+        workCenterId: args.workCenterId,
+        previousWorkCenterId: source.workCenterId
+      };
+    }
+
+    const moved = await trx
+      .updateTable("peopleAssignment")
+      .set({ workCenterId: args.workCenterId })
+      .where("id", "=", source.id)
+      .where("companyId", "=", args.companyId)
+      .returning(["id", "workCenterId"])
+      .executeTakeFirstOrThrow();
+    return { ...moved, previousWorkCenterId: source.workCenterId };
+  });
+}
+
+/**
+ * Atomically make the given rows a person's day: existing rows at kept
+ * stations are updated (hours/overtime), new stations inserted, stations
+ * not in `rows` deleted. Scoped to the shift when one is given. One
+ * transaction — the Working-hours popover's Save.
+ */
+export async function setPeopleDay(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    locationId: string;
+    employeeId: string;
+    date: string;
+    shiftId: string | null;
+    /** day-scoped note, written to every surviving row of the day */
+    note: string | null;
+    /**
+     * Day-scoped overtime, written to every surviving row of the day. The
+     * scheduler reads the MAX across a day's rows (never the sum), so 2h of
+     * overtime stays 2h however many stations the person splits across.
+     */
+    overtimeHours: number;
+    rows: {
+      workCenterId: string;
+      hours: number | null;
+    }[];
+    createdBy: string;
+  }
+) {
+  return db.transaction().execute(async (trx) => {
+    // location-scoped: the rows this reconciliation may DELETE must be limited
+    // to the board the edit was made on
+    let existingQuery = trx
+      .selectFrom("peopleAssignment")
+      .select(["id", "workCenterId"])
+      .where("companyId", "=", args.companyId)
+      .where("locationId", "=", args.locationId)
+      .where("employeeId", "=", args.employeeId)
+      .where("date", "=", args.date);
+    if (args.shiftId) {
+      existingQuery = existingQuery.where(whereEffectiveShift(args.shiftId));
+    }
+    const existing = await existingQuery.execute();
+    const existingByStation = new Map(
+      existing.map((row) => [row.workCenterId, row.id])
+    );
+    const keptStations = new Set(args.rows.map((row) => row.workCenterId));
+
+    for (const row of args.rows) {
+      const id = existingByStation.get(row.workCenterId);
+      if (id) {
+        await trx
+          .updateTable("peopleAssignment")
+          .set({
+            hours: row.hours,
+            overtimeHours: args.overtimeHours,
+            note: args.note,
+            updatedBy: args.createdBy,
+            updatedAt: new Date().toISOString()
+          })
+          .where("id", "=", id)
+          .where("companyId", "=", args.companyId)
+          .execute();
+      } else {
+        await trx
+          .insertInto("peopleAssignment")
+          .values({
+            companyId: args.companyId,
+            locationId: args.locationId,
+            workCenterId: row.workCenterId,
+            employeeId: args.employeeId,
+            date: args.date,
+            shiftId: args.shiftId,
+            hours: row.hours,
+            overtimeHours: args.overtimeHours,
+            note: args.note,
+            createdBy: args.createdBy
+          })
+          .execute();
+      }
+    }
+
+    const removed = existing.filter(
+      (row) => !keptStations.has(row.workCenterId)
+    );
+    for (const row of removed) {
+      await trx
+        .deleteFrom("peopleAssignment")
+        .where("id", "=", row.id)
+        .where("companyId", "=", args.companyId)
+        .execute();
+    }
+    return {
+      updated: args.rows.length,
+      removed: removed.length
+    };
+  });
+}
+
+/**
+ * Set the hours an assignment occupies at its station (null = the whole
+ * shift). Lowering hours releases the remainder back to the board's
+ * free-hours pool; splitting across stations = lower here, then drag the
+ * remainder card to the next station.
+ */
+export async function setPeopleAssignmentHours(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { id: string; hours: number | null; updatedBy: string }
+) {
+  return client
+    .from("peopleAssignment")
+    .update({
+      hours: args.hours,
+      updatedBy: args.updatedBy,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", args.id)
+    .eq("companyId", companyId)
+    .select("id, workCenterId, date")
+    .single();
+}
+
+/**
+ * Authorize overtime for every assignment on a date, optionally scoped to a
+ * department (via the location's work centers) and/or a shift. One UPDATE so
+ * partial application can't happen; department resolves server-side (never a
+ * client-supplied work-center list).
+ */
+export async function setPeopleOvertimeBulk(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    locationId: string;
+    date: string;
+    /** inclusive end of the range; omitted = the single `date` only */
+    toDate?: string | null;
+    hours: number;
+    shiftId?: string | null;
+    departmentId?: string | null;
+    updatedBy: string;
+  }
+) {
+  return db.transaction().execute(async (trx) => {
+    let query = trx
+      .updateTable("peopleAssignment")
+      .set({
+        overtimeHours: args.hours,
+        updatedBy: args.updatedBy,
+        updatedAt: new Date().toISOString()
+      })
+      .where("companyId", "=", args.companyId)
+      .where("locationId", "=", args.locationId);
+    query = args.toDate
+      ? query.where("date", ">=", args.date).where("date", "<=", args.toDate)
+      : query.where("date", "=", args.date);
+    if (args.shiftId) {
+      query = query.where(whereEffectiveShift(args.shiftId));
+    }
+    if (args.departmentId) {
+      const departmentId = args.departmentId;
+      query = query.where("workCenterId", "in", (eb) =>
+        eb
+          .selectFrom("workCenter")
+          .select("id")
+          .where("companyId", "=", args.companyId)
+          .where("departmentId", "=", departmentId)
+      );
+    }
+    return query.returning(["id", "workCenterId"]).execute();
+  });
+}
+
+export async function copyPeopleBoard(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    locationId: string;
+    fromDate: string;
+    toDate: string;
+    shiftId: string | null;
+    createdBy: string;
+  }
+) {
+  return db.transaction().execute(async (trx) => {
+    const result = await copyPeopleDayInTransaction(trx, args);
+    return result;
+  });
+}
+
+/** One day's copy inside an open transaction — shared by day and week copy.
+ * Splits (`hours`) copy with the assignment; overtime deliberately does not
+ * (it's a per-day authorization). */
+async function copyPeopleDayInTransaction(
+  trx: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    locationId: string;
+    fromDate: string;
+    toDate: string;
+    shiftId: string | null;
+    createdBy: string;
+  }
+) {
+  let sourceQuery = trx
+    .selectFrom("peopleAssignment")
+    .select(["workCenterId", "employeeId", "shiftId", "note", "hours"])
+    .where("companyId", "=", args.companyId)
+    .where("locationId", "=", args.locationId)
+    .where("date", "=", args.fromDate);
+  if (args.shiftId) {
+    sourceQuery = sourceQuery.where(whereEffectiveShift(args.shiftId));
+  }
+  const source = await sourceQuery.execute();
+
+  const [existing, absences] = await Promise.all([
+    // location-scoped: a person assigned at ANOTHER site on the target date must
+    // not silently suppress the copy on this board
+    trx
+      .selectFrom("peopleAssignment")
+      .select(["employeeId"])
+      .where("companyId", "=", args.companyId)
+      .where("locationId", "=", args.locationId)
+      .where("date", "=", args.toDate)
+      .execute(),
+    // peopleAbsence has no locationId — a person is absent company-wide
+    trx
+      .selectFrom("peopleAbsence")
+      .select(["employeeId"])
+      .where("companyId", "=", args.companyId)
+      .where("date", "=", args.toDate)
+      .execute()
+  ]);
+  const skip = new Set([
+    ...existing.map((r) => r.employeeId),
+    ...absences.map((r) => r.employeeId)
+  ]);
+
+  const rows = source
+    .filter((r) => !skip.has(r.employeeId))
+    .map((r) => ({
+      companyId: args.companyId,
+      locationId: args.locationId,
+      workCenterId: r.workCenterId,
+      employeeId: r.employeeId,
+      date: args.toDate,
+      shiftId: r.shiftId,
+      note: r.note,
+      hours: r.hours,
+      createdBy: args.createdBy
+    }));
+  if (rows.length > 0) {
+    await trx.insertInto("peopleAssignment").values(rows).execute();
+  }
+  return { copied: rows.length, skipped: source.length - rows.length };
+}
+
+const addIsoDays = (date: string, days: number) =>
+  parseDate(date).add({ days }).toString();
+
+// pg returns DATE columns as JS Date objects at server-local midnight —
+// normalize with local getters, never toISOString (UTC shift can move the day)
+const toIsoDate = (value: unknown) => {
+  if (typeof value === "string") return value.slice(0, 10);
+  const date = new Date(value as Date);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+    2,
+    "0"
+  )}-${String(date.getDate()).padStart(2, "0")}`;
+};
+
+/**
+ * Assign a person to a station for a whole Monday-start week: one row per
+ * working day (the shift's weekdays when a shift is given, Mon–Fri
+ * otherwise), skipping days where they're absent or already assigned.
+ */
+export async function assignPeopleWeek(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    locationId: string;
+    employeeId: string;
+    workCenterId: string;
+    weekStart: string;
+    shiftId: string | null;
+    createdBy: string;
+  }
+) {
+  return db.transaction().execute(async (trx) => {
+    // working days: the chosen shift's weekdays → the person's own shift's
+    // weekdays → Mon–Fri
+    let activeWeekdays: readonly string[] = WEEKDAYS_MONDAY_FIRST.slice(0, 5);
+    let shift: Record<string, boolean | null> | undefined;
+    if (args.shiftId) {
+      shift = await trx
+        .selectFrom("shift")
+        .select([
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday",
+          "sunday"
+        ])
+        .where("id", "=", args.shiftId)
+        .where("companyId", "=", args.companyId)
+        .executeTakeFirst();
+    } else {
+      shift = await trx
+        .selectFrom("employeeShift")
+        .innerJoin("shift", "shift.id", "employeeShift.shiftId")
+        .select([
+          "shift.monday",
+          "shift.tuesday",
+          "shift.wednesday",
+          "shift.thursday",
+          "shift.friday",
+          "shift.saturday",
+          "shift.sunday"
+        ])
+        .where("employeeShift.employeeId", "=", args.employeeId)
+        .where("shift.companyId", "=", args.companyId)
+        .executeTakeFirst();
+    }
+    if (shift) {
+      activeWeekdays = WEEKDAYS_MONDAY_FIRST.filter((day) => shift?.[day]);
+    }
+    const weekEnd = addIsoDays(args.weekStart, 6);
+    const [existing, absences] = await Promise.all([
+      // Company-wide (NOT location-scoped): the unique index is
+      // peopleAssignment_person_day_key (companyId, employeeId, date,
+      // COALESCE(shiftId,'')) — a person already booked for this day+shift at
+      // ANY location/station collides, so a location-scoped skip let the bulk
+      // insert violate the constraint and fail the whole week assignment.
+      trx
+        .selectFrom("peopleAssignment")
+        .select(["date", "shiftId"])
+        .where("companyId", "=", args.companyId)
+        .where("employeeId", "=", args.employeeId)
+        .where("date", ">=", args.weekStart)
+        .where("date", "<=", weekEnd)
+        .execute(),
+      trx
+        .selectFrom("peopleAbsence")
+        .select(["date"])
+        .where("companyId", "=", args.companyId)
+        .where("employeeId", "=", args.employeeId)
+        .where("date", ">=", args.weekStart)
+        .where("date", "<=", weekEnd)
+        .execute()
+    ]);
+    // Key on date + shift to mirror the unique index exactly.
+    const slotKey = (date: string, shiftId: string | null) =>
+      `${date}:${shiftId ?? ""}`;
+    const takenSlots = new Set(
+      existing.map((row) => slotKey(toIsoDate(row.date), row.shiftId))
+    );
+    const absentDays = new Set(absences.map((row) => toIsoDate(row.date)));
+
+    const rows = [];
+    for (let offset = 0; offset < 7; offset++) {
+      const date = addIsoDays(args.weekStart, offset);
+      // weekStart is a Monday, so offset maps 1:1 onto WEEKDAYS_MONDAY_FIRST
+      if (!activeWeekdays.includes(WEEKDAYS_MONDAY_FIRST[offset])) continue;
+      if (absentDays.has(date)) continue;
+      if (takenSlots.has(slotKey(date, args.shiftId))) continue;
+      rows.push({
+        companyId: args.companyId,
+        locationId: args.locationId,
+        workCenterId: args.workCenterId,
+        employeeId: args.employeeId,
+        date,
+        shiftId: args.shiftId,
+        createdBy: args.createdBy
+      });
+    }
+    if (rows.length > 0) {
+      await trx.insertInto("peopleAssignment").values(rows).execute();
+    }
+    return {
+      assigned: rows.length,
+      skipped: takenSlots.size + absentDays.size
+    };
+  });
+}
+
+/** Remove a person from a station for the whole week (their other stations
+ * and other weeks are untouched). */
+export async function unassignPeopleWeek(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    employeeId: string;
+    workCenterId: string;
+    weekStart: string;
+    shiftId: string | null;
+  }
+) {
+  let query = db
+    .deleteFrom("peopleAssignment")
+    .where("companyId", "=", args.companyId)
+    .where("employeeId", "=", args.employeeId)
+    .where("workCenterId", "=", args.workCenterId)
+    .where("date", ">=", args.weekStart)
+    .where("date", "<=", addIsoDays(args.weekStart, 6));
+  if (args.shiftId) {
+    query = query.where(whereEffectiveShift(args.shiftId));
+  }
+  return query.execute();
+}
+
+/**
+ * Move a person's whole week from one station to another. Days where they
+ * already have a row at the target station keep the target row (the source
+ * row is dropped); other days simply change station.
+ */
+export async function movePeopleWeek(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    employeeId: string;
+    fromWorkCenterId: string;
+    workCenterId: string;
+    weekStart: string;
+    shiftId: string | null;
+  }
+) {
+  const weekEnd = addIsoDays(args.weekStart, 6);
+  return db.transaction().execute(async (trx) => {
+    let sourceQuery = trx
+      .selectFrom("peopleAssignment")
+      .select(["id", "date", "shiftId"])
+      .where("companyId", "=", args.companyId)
+      .where("employeeId", "=", args.employeeId)
+      .where("workCenterId", "=", args.fromWorkCenterId)
+      .where("date", ">=", args.weekStart)
+      .where("date", "<=", weekEnd);
+    if (args.shiftId) {
+      sourceQuery = sourceQuery.where(whereEffectiveShift(args.shiftId));
+    }
+    const source = await sourceQuery.execute();
+
+    const target = await trx
+      .selectFrom("peopleAssignment")
+      .select(["date", "shiftId"])
+      .where("companyId", "=", args.companyId)
+      .where("employeeId", "=", args.employeeId)
+      .where("workCenterId", "=", args.workCenterId)
+      .where("date", ">=", args.weekStart)
+      .where("date", "<=", weekEnd)
+      .execute();
+    const occupied = new Set(
+      target.map((row) => `${toIsoDate(row.date)}:${row.shiftId ?? ""}`)
+    );
+
+    let moved = 0;
+    for (const row of source) {
+      if (occupied.has(`${toIsoDate(row.date)}:${row.shiftId ?? ""}`)) {
+        await trx
+          .deleteFrom("peopleAssignment")
+          .where("id", "=", row.id)
+          .where("companyId", "=", args.companyId)
+          .execute();
+      } else {
+        await trx
+          .updateTable("peopleAssignment")
+          .set({ workCenterId: args.workCenterId })
+          .where("id", "=", row.id)
+          .where("companyId", "=", args.companyId)
+          .execute();
+        moved += 1;
+      }
+    }
+    return { moved, merged: source.length - moved };
+  });
+}
+
+/**
+ * Copy a whole Monday-start week of people assignments onto another week,
+ * day by day, with the same skip rules as the day copy (people already
+ * assigned or absent on the target date are left alone). One transaction.
+ */
+export async function copyPeopleWeek(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    locationId: string;
+    fromWeekStart: string;
+    toWeekStart: string;
+    shiftId: string | null;
+    createdBy: string;
+  }
+) {
+  const addDays = (date: string, days: number) =>
+    parseDate(date).add({ days }).toString();
+  return db.transaction().execute(async (trx) => {
+    let copied = 0;
+    let skipped = 0;
+    for (let offset = 0; offset < 7; offset++) {
+      const result = await copyPeopleDayInTransaction(trx, {
+        companyId: args.companyId,
+        locationId: args.locationId,
+        fromDate: addDays(args.fromWeekStart, offset),
+        toDate: addDays(args.toWeekStart, offset),
+        shiftId: args.shiftId,
+        createdBy: args.createdBy
+      });
+      copied += result.copied;
+      skipped += result.skipped;
+    }
+    return { copied, skipped };
+  });
+}
+
+/**
+ * Mark a person absent for every date in [fromDate, toDate] (vacation as one
+ * action). Dates that already carry an absence for the person are skipped.
+ */
+export async function setPeopleAbsenceRange(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    employeeId: string;
+    fromDate: string;
+    toDate: string;
+    shiftId: string | null;
+    note?: string;
+    createdBy: string;
+  }
+) {
+  return db.transaction().execute(async (trx) => {
+    const existing = await trx
+      .selectFrom("peopleAbsence")
+      .select(["date"])
+      .where("companyId", "=", args.companyId)
+      .where("employeeId", "=", args.employeeId)
+      .where("date", ">=", args.fromDate)
+      .where("date", "<=", args.toDate)
+      .execute();
+    const have = new Set(existing.map((row) => toIsoDate(row.date)));
+
+    const rows: {
+      companyId: string;
+      employeeId: string;
+      date: string;
+      shiftId: string | null;
+      note: string | null;
+      createdBy: string;
+    }[] = [];
+    for (
+      let day = parseDate(args.fromDate);
+      day.compare(parseDate(args.toDate)) <= 0;
+      day = day.add({ days: 1 })
+    ) {
+      const date = day.toString();
+      if (have.has(date)) continue;
+      rows.push({
+        companyId: args.companyId,
+        employeeId: args.employeeId,
+        date,
+        shiftId: args.shiftId,
+        note: args.note ?? null,
+        createdBy: args.createdBy
+      });
+    }
+    if (rows.length > 0) {
+      await trx.insertInto("peopleAbsence").values(rows).execute();
+    }
+    return { created: rows.length, skipped: have.size };
+  });
+}
+
 /**
  * Trigger a job scheduling task via Inngest.
  * Supports both initial scheduling and rescheduling.
  */
-export async function triggerJobSchedule(
-  jobId: string,
+/**
+ * Reactive replanning: notify that a scheduling INPUT changed (shift,
+ * qualification, work center, location). Marks the company's active jobs
+ * schedule-outdated immediately and schedules a debounced replan wave.
+ */
+export async function notifyScheduleInputsChanged(
   companyId: string,
-  userId: string,
-  mode: "initial" | "reschedule" = "reschedule",
-  direction: "backward" | "forward" = "backward"
+  kind:
+    | "ability"
+    | "shift"
+    | "employee-shift"
+    | "work-center"
+    | "location"
+    | "reorder"
+    | "people",
+  reason: string,
+  entityId?: string
 ) {
   const { trigger } = await import("@carbon/jobs");
-
-  await trigger("schedule-job", {
-    jobId,
+  await trigger("schedule-inputs-changed", {
     companyId,
-    userId,
-    mode,
-    direction
+    kind,
+    reason,
+    entityId
   });
-
-  return { success: true };
 }
 
 // --- Assembly Instructions ---------------------------------------------

@@ -2,6 +2,7 @@ import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
+import { runLocationSchedule } from "@carbon/ee/planning";
 import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
@@ -12,7 +13,6 @@ import { Suspense } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData } from "react-router";
 import { Redirect } from "~/components/Redirect";
-
 import { getDefaultStorageUnitForJob, getKanban } from "~/modules/inventory";
 import { getItemReplenishment } from "~/modules/items";
 import {
@@ -30,6 +30,7 @@ import {
   getCompanyTimeZone,
   getLocationTimeZone
 } from "~/modules/shared/timezone.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "kanban");
@@ -169,14 +170,12 @@ async function handleKanban({
           companyId,
           userId
         }),
-        serviceRole.functions.invoke("schedule", {
-          body: {
-            jobId: id,
-            companyId,
-            userId,
-            mode: "initial",
-            direction: "backward"
-          }
+        runLocationSchedule({
+          db: getDatabaseClient(),
+          client: serviceRole,
+          locationId: kanban.data.locationId!,
+          companyId,
+          userId
         }),
         serviceRole
           .from("job")

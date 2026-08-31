@@ -189,7 +189,7 @@ function usePendingItems(locationId: string) {
   return useFetchers()
     .filter((fetcher): fetcher is PendingItem => {
       return (
-        fetcher.formAction === path.to.scheduleDatesUpdate &&
+        fetcher.formAction === path.to.priorityDatesUpdate &&
         fetcher.formData?.get("locationId") === locationId
       );
     })
@@ -229,7 +229,7 @@ function useDateUpdateFailureToast() {
 
   useEffect(() => {
     for (const fetcher of fetchers) {
-      if (fetcher.formAction !== path.to.scheduleDatesUpdate) continue;
+      if (fetcher.formAction !== path.to.priorityDatesUpdate) continue;
       const key = fetcher.key;
 
       if (fetcher.state === "submitting") {
@@ -408,7 +408,7 @@ const DateKanban = ({
         },
         {
           method: "post",
-          action: path.to.scheduleDatesUpdate,
+          action: path.to.priorityDatesUpdate,
           navigate: false,
           flushSync: true,
           fetcherKey: `job:${origin.item.id}`

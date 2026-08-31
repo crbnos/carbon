@@ -35,7 +35,7 @@ pnpm --filter @carbon/utils typecheck
 | `accounting` | Currency formatting, financial calculations |
 | `arrays` | Array manipulation, grouping, deduplication |
 | `bom` | Bill of Materials traversal and level computation |
-| `date` | Date formatting, parsing, range helpers (uses `@internationalized/date`) |
+| `date` | Date formatting, parsing, range helpers (uses `@internationalized/date`); `HOUR_MS`/`DAY_MS` millisecond constants for instant arithmetic |
 | `datetime` | Server-side date derivation with mandatory explicit timezone: `timestamp()`, `today(tz)`, `now(tz)`, `businessDay(instant, tz)`, `weekBounds(tz, offset?, anchor?)` (DST-safe Monday→Sunday instant bounds), `weekNumber(date)`. DST/exotic-zone stress suite in `datetime.test.ts` (gap/overlap disambiguation, midnight-skipping zones, 167/169h weeks, ±30/45-min offsets). Mirrored for Deno at `packages/database/supabase/functions/lib/datetime.ts` — keep in sync |
 | `hash` | The repo's stable content hashes — `fnv1a32`/`fnv1a64` (cache and idempotency keys) and `getBucket`. Browser-safe; never add `node:crypto` here |
 | `math` | `clamp`/`lerp`/`inverseLerp`, plus the whole numeric-precision API re-exported from the edge-runtime module: `SCALE`, `EPSILON`, `round`, `scrapAllowance`, `applyRate`, `deriveRate`, `isBalanced`, `assertBalanced`, `RoundingMode` (re-exported from `precision.ts`) |

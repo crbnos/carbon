@@ -1,9 +1,11 @@
 import { useLingui } from "@lingui/react/macro";
 import { IoBalloonOutline } from "react-icons/io5";
 import {
+  LuChartBarBig,
   LuChartLine,
   LuCirclePlay,
   LuListChecks,
+  LuListTodo,
   LuSquareChartGantt,
   LuSquareKanban,
   LuStepForward,
@@ -31,23 +33,38 @@ export default function useProductionSubmodules() {
       ]
     },
     {
-      name: t`Plan`,
+      name: t`Planning`,
       routes: [
         {
-          name: t`Planning`,
-          to: path.to.productionPlanning,
-          icon: <LuSquareChartGantt />,
-          table: "production-planning"
-        },
-        {
-          name: t`Projections`,
+          name: t`Demand Forecasts`,
           to: path.to.demandProjections,
           icon: <LuChartLine />,
           table: "demand-projection"
         },
         {
-          name: t`Schedule`,
-          to: path.to.scheduleDates,
+          name: t`Material Planning`,
+          to: path.to.productionPlanning,
+          icon: <LuListTodo />,
+          table: "production-planning"
+        },
+        {
+          name: t`Resource Planning`,
+          to: path.to.priorityPeople,
+          icon: <LuChartBarBig />
+        }
+      ]
+    },
+    {
+      name: t`Scheduling`,
+      routes: [
+        {
+          name: t`Forecast`,
+          to: path.to.scheduleForecast,
+          icon: <LuSquareChartGantt />
+        },
+        {
+          name: t`Priorities`,
+          to: path.to.priorityDates,
           icon: <LuSquareKanban />
         }
       ]

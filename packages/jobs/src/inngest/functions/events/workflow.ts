@@ -23,7 +23,13 @@ export const workflowFunction = inngest.createFunction(
   {
     id: "event-handler-workflow",
     retries: 3,
-    idempotency: "event.data.msgId"
+    idempotency: "event.data.msgId",
+    // One in-flight run per record, so a rapid update burst can't reorder.
+    // limit must be >= 1 -- 0 is no capacity, not unlimited.
+    concurrency: {
+      limit: 1,
+      key: "event.data.data.table + '-' + event.data.data.recordId"
+    }
   },
   { event: "carbon/event-workflow" },
   async ({ event, step }) => {

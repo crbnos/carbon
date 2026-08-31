@@ -104,7 +104,7 @@ const QuoteHeader = () => {
 
   return (
     <>
-      <div className="flex flex-shrink-0 items-center justify-between p-2 bg-background border-b h-[50px] overflow-x-auto scrollbar-hide">
+      <div className="flex flex-shrink-0 items-center justify-between p-2 bg-card border-b h-[var(--header-height)] overflow-x-auto scrollbar-hide">
         <HStack className="w-full justify-between">
           <HStack>
             <IconButton

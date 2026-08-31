@@ -16,6 +16,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!personId) throw new Error("Could not find personId");
 
   const account = await getAccount(client, personId);
+
   if (account.error) {
     throw redirect(
       path.to.people,

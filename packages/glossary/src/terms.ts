@@ -2017,5 +2017,19 @@ export const terms = {
   "workflow-webhook-headers": {
     term: msg`Webhook Headers`,
     definition: msg`Extra information sent with the request, such as an authorization key; header values are hidden in run history, though the names stay readable.`
+  },
+  "single-sign-on": {
+    term: msg`Single sign-on (SSO)`,
+    definition: msg`An Enterprise sign-in method where everyone on a company's registered email domains authenticates through the company's own SAML identity provider instead of a magic link, so IT grants and revokes access centrally.`,
+    href: "/docs/platform/single-sign-on"
+  },
+  "identity-provider": {
+    term: msg`Identity provider (IdP)`,
+    definition: msg`The system a company uses to manage its people's logins — Okta, Entra ID, or Google Workspace — which vouches for who someone is when they sign in to Carbon via SSO.`,
+    href: "/docs/platform/single-sign-on"
+  },
+  "magic-link": {
+    term: msg`Magic link`,
+    definition: msg`Carbon's default passwordless sign-in: an emailed one-time link that signs you in when opened, with no password to remember or leak.`
   }
 } as const satisfies Record<string, GlossaryEntry>;

@@ -1,12 +1,14 @@
 import { useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLocationTimeZone } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import {
   Button,
   ClientOnly,
   Heading,
   HStack,
+  IconButton,
   LoadingBars,
   Popover,
   PopoverContent,
@@ -21,6 +23,7 @@ import {
   useRealtimeChannel,
   VStack
 } from "@carbon/react";
+import { datetime } from "@carbon/utils";
 import {
   getLocalTimeZone,
   now,
@@ -29,9 +32,9 @@ import {
 } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { LuSettings2, LuTriangleAlert } from "react-icons/lu";
+import { LuFactory, LuSettings2, LuTriangleAlert, LuX } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { data, redirect, useLoaderData } from "react-router";
+import { data, redirect, useFetcher, useLoaderData } from "react-router";
 
 import type { ColumnFilter } from "~/components/Filter";
 import { ActiveFilters, Filter, useFilters } from "~/components/Filter";
@@ -44,11 +47,14 @@ import { getFilters, setFilters } from "~/services/operation.server";
 import {
   getActiveJobOperationsByLocation,
   getCustomers,
+  getMyPeopleAssignment,
   getProcessesList,
   getWorkCentersByLocation
 } from "~/services/operations.service";
+import { getPeopleOverride } from "~/services/people.server";
 import { usePeople } from "~/stores";
 import { makeDurations } from "~/utils/durations";
+import { path } from "~/utils/path";
 
 const log = getLogger("mes");
 
@@ -139,6 +145,32 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
 
   const locationId = context.get(userContext)?.locationId;
 
+  // People-assignment station default: when the operator has a manning-board
+  // assignment for today and no explicit work-center filter (and hasn't
+  // dismissed the default this session), open on their station.
+  const effectiveUserId = context.get(userContext)?.effectiveUserId;
+  let peopleStation: { workCenterId: string; name: string } | null = null;
+  let peopleDate: string | null = null;
+  if (selectedWorkCenterIds.length === 0 && effectiveUserId && locationId) {
+    const today = datetime
+      .today(await getLocationTimeZone(serviceRole, locationId, companyId))
+      .toString();
+    peopleDate = today;
+    const dismissed = await getPeopleOverride(request);
+    if (dismissed !== today) {
+      const myAssignment = await getMyPeopleAssignment(serviceRole, {
+        companyId,
+        employeeId: effectiveUserId,
+        date: today
+      });
+      const assignment = myAssignment.data?.[0];
+      if (assignment) {
+        selectedWorkCenterIds = [assignment.workCenterId];
+        peopleStation = { workCenterId: assignment.workCenterId, name: "" };
+      }
+    }
+  }
+
   const [workCenters, processes, operations] = await Promise.all([
     getWorkCentersByLocation(serviceRole, locationId),
     getProcessesList(serviceRole, companyId),
@@ -225,8 +257,16 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     new Set(filteredOperations.flatMap((op) => op.tags || []))
   ).sort();
 
+  if (peopleStation) {
+    peopleStation.name =
+      workCenters.data?.find((wc: any) => wc.id === peopleStation?.workCenterId)
+        ?.name ?? "";
+  }
+
   return data(
     {
+      peopleStation,
+      peopleDate,
       columns: filteredWorkCenters
         .map((wc: any) => ({
           id: wc.id!,
@@ -273,7 +313,9 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
           reworkId: op.reworkId,
           setupDuration: operation.setupDuration,
           laborDuration: operation.laborDuration,
-          machineDuration: operation.machineDuration
+          machineDuration: operation.machineDuration,
+          hasConflict: op.hasConflict ?? undefined,
+          conflictReason: op.conflictReason ?? undefined
         };
       }) ?? []) satisfies Item[],
       processes: processes.data ?? [],
@@ -321,8 +363,11 @@ function KanbanSchedule() {
     items: initialItems,
     processes,
     workCenters,
-    availableTags
+    availableTags,
+    peopleStation,
+    peopleDate
   } = useLoaderData<typeof loader>();
+  const peopleOverrideFetcher = useFetcher();
   const [items, setItems] = useState<Item[]>(initialItems);
 
   useEffect(() => {
@@ -435,6 +480,32 @@ function KanbanSchedule() {
           <HStack>
             <SearchFilter param="search" size="sm" placeholder={t`Search`} />
             <Filter filters={filters} />
+            {peopleStation &&
+              !currentFilters.some((filter) =>
+                filter.startsWith("workCenterId:")
+              ) && (
+                <HStack
+                  spacing={0}
+                  className="rounded-md border border-border bg-card"
+                >
+                  <span className="flex items-center gap-1.5 px-2 py-1 text-sm whitespace-nowrap">
+                    <LuFactory className="flex-shrink-0" />
+                    <Trans>Your station: {peopleStation.name}</Trans>
+                  </span>
+                  <IconButton
+                    aria-label={t`Clear station default`}
+                    icon={<LuX />}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      peopleOverrideFetcher.submit(
+                        { date: peopleDate ?? "" },
+                        { method: "post", action: path.to.peopleOverride }
+                      )
+                    }
+                  />
+                </HStack>
+              )}
           </HStack>
 
           <Popover>

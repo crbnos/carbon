@@ -32,8 +32,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  const operationData = validation.data;
+
   const insertJobOperation = await upsertJobOperation(serviceRole, {
-    ...validation.data,
+    ...operationData,
     jobId,
     companyId,
     createdBy: userId,

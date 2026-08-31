@@ -60,9 +60,12 @@ import {
   cleanupFunction,
   dispatchFunction,
   generateMaintenanceForScheduleFunction,
+  markScheduleStaleFunction,
   mrpFunction,
+  nightlyReplanFunction,
   notificationDigestFunction,
   notificationPurgeFunction,
+  scheduleReplanWaveFunction,
   updateExchangeRatesFunction,
   weeklyFunction,
   workflowRunRetentionFunction
@@ -86,7 +89,6 @@ import {
   printJobDeliverFunction,
   printJobFunction,
   recalculateFunction,
-  rescheduleJobFunction,
   updatePermissionsFunction,
   userAdminFunction
 } from "./functions/tasks";
@@ -134,7 +136,6 @@ export const functions = [
   recalculateFunction,
   userAdminFunction,
   postTransactionFunction,
-  rescheduleJobFunction,
   onboardFunction,
   printJobFunction,
   printJobDeliverFunction,
@@ -144,6 +145,9 @@ export const functions = [
   generateMaintenanceForScheduleFunction,
   auditArchiveFunction,
   mrpFunction,
+  markScheduleStaleFunction,
+  nightlyReplanFunction,
+  scheduleReplanWaveFunction,
   weeklyFunction,
   updateExchangeRatesFunction,
   notificationDigestFunction,

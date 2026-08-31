@@ -117,7 +117,7 @@ export const CollapsibleSidebar = ({
             }
       }
       variants={variants}
-      className="relative flex h-[calc(100dvh-49px)]"
+      className="relative flex h-[calc(100dvh-var(--topbar-height))]"
     >
       <div className="h-full w-full overflow-hidden bg-card border-r border-border">
         {isOpen ? children : null}

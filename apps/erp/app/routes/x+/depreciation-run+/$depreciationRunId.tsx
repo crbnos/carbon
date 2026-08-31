@@ -47,7 +47,8 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Depreciation`, to: path.to.depreciationRuns },
     (data) => data?.run?.depreciationRunId
-  )
+  ),
+  module: "accounting"
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -106,7 +107,7 @@ export default function DepreciationRunDetailRoute() {
     : "grid-cols-[auto_1fr_1fr_120px_120px_120px_120px]";
 
   return (
-    <div className="flex h-[calc(100dvh-49px)] overflow-y-auto scrollbar-hide w-full">
+    <div className="flex h-[calc(100dvh-var(--topbar-height))] overflow-y-auto scrollbar-hide w-full">
       <div className="h-full p-4 pb-16 w-full max-w-5xl mx-auto">
         <Card>
           <CardHeader className="flex-row items-center justify-between">

@@ -169,11 +169,6 @@ verify_jwt = true
 # static_files = [ "./functions/post-sales-invoice/*.html" ]
 
 
-[functions.mrp]
-enabled = true
-verify_jwt = true
-
-
 [functions.pick]
 enabled = true
 verify_jwt = true

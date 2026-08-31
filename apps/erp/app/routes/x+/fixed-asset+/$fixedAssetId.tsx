@@ -61,7 +61,8 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Fixed Assets`, to: path.to.fixedAssets },
     (data) => data?.asset?.fixedAssetId
-  )
+  ),
+  module: "accounting"
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -133,7 +134,7 @@ export default function FixedAssetDetailRoute() {
   const canUpdate = permissions.can("update", "accounting");
 
   return (
-    <div className="flex h-[calc(100dvh-49px)] overflow-y-auto scrollbar-hide w-full">
+    <div className="flex h-[calc(100dvh-var(--topbar-height))] overflow-y-auto scrollbar-hide w-full">
       <div className="h-full p-4 pb-16 w-full max-w-5xl mx-auto space-y-4">
         {/* Main Details */}
         <Card>

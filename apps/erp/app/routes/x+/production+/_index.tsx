@@ -1,5 +1,6 @@
 import { useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { activeJobStatuses } from "@carbon/database";
 import {
   Badge,
   Button,
@@ -80,8 +81,6 @@ import type { loader as kpiLoader } from "~/routes/api+/production.kpi.$key";
 import { path } from "~/utils/path";
 import { capitalize } from "~/utils/string";
 
-const OPEN_JOB_STATUSES = ["Ready", "In Progress", "Paused"] as const;
-
 const chartConfig = {
   value: {
     color: "hsl(var(--primary))"
@@ -106,7 +105,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .from("job")
       .select("id,status,assignee")
       .eq("companyId", companyId)
-      .in("status", OPEN_JOB_STATUSES),
+      .in("status", activeJobStatuses),
     client
       .from("job")
       .select("id,status,assignee")
@@ -315,7 +314,7 @@ export default function ProductionDashboard() {
           icon={<LuCirclePlay />}
           title={<Trans>Active Jobs</Trans>}
           value={activeJobs}
-          to={`${path.to.jobs}?filter=status:in:${OPEN_JOB_STATUSES.join(",")}`}
+          to={`${path.to.jobs}?filter=status:in:${activeJobStatuses.join(",")}`}
           linkLabel={t`View Active Jobs`}
         />
 
@@ -944,7 +943,7 @@ function WorkCenterCards({
                 )}
               </CardFooter>
             ) : (
-              <CardFooter className="h-[49px]" />
+              <CardFooter className="h-[var(--topbar-height)]" />
             )}
           </Card>
         );
