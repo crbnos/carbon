@@ -420,19 +420,19 @@ in-memory types. `integrationConnection` and the vault RPCs are untouched.
 
 - [ ] Dropping a Google Calendar "Get all Events" step and opening the variable picker shows
       named fields (Title, Start, Organizer → Email), not a single `result` text variable.
-- [ ] `pnpm run generate:workflow-catalog && pnpm run check:workflow-catalog` both pass, and
+- [x] `pnpm run generate:workflow-catalog && pnpm run check:workflow-catalog` both pass, and
       the committed catalog contains `list<record>` outputs for both allowlisted actions.
-- [ ] Allowlisting an action whose piece ships no `outputSchema` fails the generator with a
+- [x] Allowlisting an action whose piece ships no `outputSchema` fails the generator with a
       message naming the piece and action, and writes no files.
-- [ ] A data node with `operation: "count"` on the events list outputs a number, and a
+- [x] A data node with `operation: "count"` on the events list outputs a number, and a
       condition can branch on `count > 0`.
-- [ ] A data node with `operation: "pluck"`, `field: "organizer.email"` outputs
+- [x] A data node with `operation: "pluck"`, `field: "organizer.email"` outputs
       `list<string>`; with a list-typed field and `flatten`, it outputs a flat list, not a
       list of lists.
-- [ ] An existing saved workflow containing a filter node loads, validates and runs unchanged,
+- [x] An existing saved workflow containing a filter node loads, validates and runs unchanged,
       with `operation` absent from its stored data.
-- [ ] A workflow referencing `result` on an integration step still publishes and runs.
-- [ ] `singleEvents` and `event_types` do not appear on the Get-all-Events form; the step still
+- [x] A workflow referencing `result` on an integration step still publishes and runs.
+- [x] `singleEvents` and `event_types` do not appear on the Get-all-Events form; the step still
       sends `singleEvents: true`, verified by the recorded step inputs.
 - [ ] Opening **Advanced properties** reveals `singleEvents`, editable; setting it to `false`
       on one node affects only that node.
@@ -441,9 +441,9 @@ in-memory types. `integrationConnection` and the vault RPCs are untouched.
       the original still selected.
 - [ ] When the calendar options call fails, the field shows an error state distinct from
       "nothing to choose", and a retry succeeds without reloading the page.
-- [ ] A record-typed value cannot be selected into an action input, a template, or a condition
+- [x] A record-typed value cannot be selected into an action input, a template, or a condition
       operand anywhere in the builder.
-- [ ] A declared field missing from a vendor response resolves to null at run time; the step
+- [x] A declared field missing from a vendor response resolves to null at run time; the step
       succeeds and the run log shows the null rather than an error.
 
 ## Risks

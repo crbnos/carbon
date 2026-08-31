@@ -317,12 +317,65 @@ in this path.
    `integrations` array. Its `hooks.server.ts` entry is one line —
    `onUninstall: (companyId) => revokeConnectionsForPiece(getCarbonServiceRole(), "<piece>", companyId)`
    — never a per-vendor hooks file; there is nothing vendor-specific in that behaviour.
-6. `pnpm run generate:workflow-catalog && pnpm run check:workflow-catalog`.
+6. Check every action you expose ships an `outputSchema` — the generator refuses one
+   that does not, and coverage is all-or-nothing per piece.
+7. `pnpm run generate:workflow-catalog && pnpm run check:workflow-catalog`.
 
 Step 3 is the real work and the real gate. The rest takes minutes.
 
+## Outputs come from the piece's own `outputSchema`
+
+`integrations/outputs.ts` maps an action's `outputSchema` to Carbon `ValueType`s:
+`listItems` → `list<record>`, `children` → a nested `record`, `format` → a primitive
+(`datetime`/`number`/`boolean`; everything else is text). A `dynamicKey` field is
+**omitted** — the vendor is declaring its keys cannot be enumerated, so naming one
+would be a guess. An array inside an array is dropped too: `list.of` takes only a
+scalar, so `list<list<T>>` has no representation.
+
+Every step also gets `count` (a list's length — `compare` has no "is empty" operator,
+so branching on "did anything come back?" needs it) and `result`, the raw JSON, kept
+so already-saved workflows keep working and so a field the schema missed stays
+reachable.
+
+**An action with no `outputSchema` fails the generator** (`UnmappableOutputError`),
+exactly as `UnmappablePropertyError` refuses an unmappable input. Coverage is
+all-or-nothing per piece — ~100% on Google Calendar, Sheets, Airtable, Notion, GitHub
+and Slack; **0%** on HubSpot, Salesforce, Jira, Shopify, Excel 365 and Xero — so this
+is caught when a piece is allowlisted, never by a customer.
+
+`outputSchema` is **authoring-time metadata, not a contract**: upstream scopes it to
+presentation, `run()` returns `Promise<unknown | void>`, and nothing validates a
+response against it. So `integrations/project.ts` shapes the real response field by
+field and yields `null` for anything absent or mistyped — it never throws, because a
+vendor disagreeing with its own schema must not fail a step that really did call it.
+
+## The form shows a curated subset
+
+`integrations/visibility.ts` decides which props a person sees. Two generic rules cost
+nothing per action and apply to every piece: a prop that is **required AND already has a
+`defaultValue`** is hidden (nothing to decide — omitting it lets the piece apply its own
+default), as is a dropdown with **exactly one** possible value. The allowlist's optional
+`props` block is the rare exception, for a vendor default that is *wrong for us* rather
+than merely uninteresting — `google_calendar_get_events.singleEvents` is the one case
+today: it defaults to `false`, and an unexpanded recurring event carries the SERIES start
+date, so "events tomorrow" silently misses every recurring meeting.
+
+A pinned `value` is merged in by `toPropsValue` **at run time**, never stored on the node,
+so changing a pin fixes every existing workflow at once. A node value always wins over a
+pin — otherwise the Advanced section would be a lie.
+
+Hidden inputs are emitted as **`advancedInputs`**, a second map beside `inputs`, and
+rendered in the node's collapsed "Advanced properties" section. They are separate maps on
+purpose: every `required` check and the validator itself iterate `inputs`, so a
+hidden-but-present required input would have the validator demand a field the author was
+never shown. A required prop hidden with no value to send — from us or from the piece —
+**fails the generator**.
+
+The connection field is hidden when the company has exactly one connection, but the id is
+still **stored on the node**: a second account added later must not silently repoint every
+existing workflow.
+
 ## Non-goals (v1)
 
-Triggers (a piece's `triggers` need a webhook enable/disable lifecycle), non-OAuth2 auth
-(`SECRET_TEXT`, `BASIC_AUTH`, `CUSTOM_AUTH`), and mapping a piece's output schema —
-`outputs` is `{ result: t.string }` holding the JSON the piece returned.
+Triggers (a piece's `triggers` need a webhook enable/disable lifecycle) and non-OAuth2
+auth (`SECRET_TEXT`, `BASIC_AUTH`, `CUSTOM_AUTH`).
