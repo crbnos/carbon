@@ -2896,6 +2896,9 @@ msgstr "외부 URL 호출"
 msgid "Called a method in Carbon — the components plus operations that produce a part."
 msgstr "Carbon에서는 이를 방법(method)이라고 부릅니다 — 품목을 만드는 구성품과 공정작업의 조합입니다."
 
+msgid "Can't be restored"
+msgstr "복원할 수 없습니다"
+
 msgid "Can't be scheduled"
 msgstr ""
 
@@ -4009,6 +4012,9 @@ msgstr "원가 센터"
 msgid "Cost History"
 msgstr "원가 이력"
 
+msgid "Cost ledger"
+msgstr "원가 원장"
+
 msgid "Cost of Goods Sold"
 msgstr "매출원가"
 
@@ -4088,6 +4094,9 @@ msgstr "거래처"
 
 msgid "Counterparty"
 msgstr "거래처"
+
+msgid "Counting…"
+msgstr "집계 중…"
 
 msgid "Country"
 msgstr "국가"
@@ -4400,6 +4409,9 @@ msgstr "누적"
 
 msgid "Cumulative %"
 msgstr "누적 %"
+
+msgid "Currencies"
+msgstr "통화"
 
 msgid "Currencies & tax"
 msgstr "통화 및 세금"
@@ -5419,6 +5431,9 @@ msgstr "비활성화됨"
 
 msgid "Discard"
 msgstr "폐기"
+
+msgid "Discarded"
+msgstr "폐기됨"
 
 msgid "Disconnect"
 msgstr "연결 해제"
@@ -6445,6 +6460,9 @@ msgstr "이벤트 유형"
 msgid "Events"
 msgstr "이벤트"
 
+msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
+msgstr "회사 범위의 모든 레코드. 자격 증명, 통합 토큰, 웹훅은 포함되지 않습니다."
+
 msgid "Every condition must match"
 msgstr "모든 조건이 일치해야 함"
 
@@ -7122,6 +7140,9 @@ msgstr "여기에 첨부된 파일은 이 공급업체로 전송되는 모든 �
 
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
 msgstr "이 회사를 현실적인 산업 시나리오로 채워서 모든 화면에 데이터가 표시되도록 합니다. 이전 상태로 복원할 수 있습니다."
+
+msgid "Filled with a default"
+msgstr "기본값으로 채워짐"
 
 msgid "Filter"
 msgstr "필터"
@@ -8073,6 +8094,12 @@ msgstr "입고"
 msgid "Incoming"
 msgstr "입고"
 
+msgid "Incomplete"
+msgstr "불완전"
+
+msgid "Incomplete backup — not restorable"
+msgstr "불완전한 백업 — 복원할 수 없음"
+
 msgid "Incoterm"
 msgstr "인코텀즈"
 
@@ -8619,6 +8646,9 @@ msgstr "이 기간에 날짜가 있고 아직 초안인 전표는 전기되어�
 
 msgid "Journal Entry"
 msgstr "분개"
+
+msgid "Journal lines"
+msgstr "분개 라인"
 
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "이 날짜 또는 이전 날짜의 전표는 잠김으로 처리됩니다. 둘 다 존재할 때 공급자 보고 잠금 날짜와 병합됩니다."
@@ -10637,6 +10667,9 @@ msgstr "부적합 워크플로우"
 msgid "Non-conformance (issue)"
 msgstr "부적합(이슈)"
 
+msgid "Non-conformances"
+msgstr "부적합"
+
 msgid "Non-Inventory"
 msgstr "비재고"
 
@@ -10684,6 +10717,9 @@ msgstr "아직 어디에서도 참조되지 않음."
 
 msgid "Not Required"
 msgstr "필수 아님"
+
+msgid "Not restorable"
+msgstr "복원 불가"
 
 msgid "Not scheduled"
 msgstr "예약되지 않음"
@@ -11203,6 +11239,9 @@ msgstr "원본"
 
 msgid "Original Count"
 msgstr "원본 계산"
+
+msgid "Other"
+msgstr "기타"
 
 msgid "Other Expense"
 msgstr "영업외비용"
@@ -12220,6 +12259,9 @@ msgstr "매입 송장 금액"
 msgid "Purchase Invoice Line"
 msgstr "매입 송장 라인"
 
+msgid "Purchase invoices"
+msgstr "구매 인보이스"
+
 msgid "Purchase Invoices"
 msgstr "매입 송장"
 
@@ -12249,6 +12291,9 @@ msgstr "발주서가 성공적으로 제거되었습니다"
 
 msgid "Purchase Order Type"
 msgstr "발주서 유형"
+
+msgid "Purchase orders"
+msgstr "구매주문"
 
 msgid "Purchase Orders"
 msgstr "발주서"
@@ -13189,14 +13234,26 @@ msgstr "자원"
 msgid "Resources"
 msgstr "자원"
 
+msgid "Restorable with changes"
+msgstr "변경 사항과 함께 복원 가능"
+
+msgid "Restore"
+msgstr "복원"
+
 msgid "Restore from Trash"
 msgstr "휴지통에서 복원"
+
+msgid "Restore this company from a backup"
+msgstr "백업에서 이 회사 복원"
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
 msgstr "이 엔티티를 스크랩 전의 빈과 원가로 가용 재고에 복원합니다."
 
 msgid "Restore tracked entities to available"
 msgstr "추적된 엔티티를 가용으로 복원"
+
+msgid "Restore…"
+msgstr "복원…"
 
 msgid "Restoring files"
 msgstr "파일 복원 중"
@@ -13564,6 +13621,9 @@ msgstr "매출 송장"
 msgid "Sales Invoice Line"
 msgstr "매출 송장 라인"
 
+msgid "Sales invoices"
+msgstr "판매 인보이스"
+
 msgid "Sales Invoices"
 msgstr "매출 송장"
 
@@ -13593,6 +13653,9 @@ msgstr "수주 사업장"
 
 msgid "Sales Order Number"
 msgstr "수주 번호"
+
+msgid "Sales orders"
+msgstr "판매주문"
 
 msgid "Sales Orders"
 msgstr "수주"
@@ -14660,6 +14723,9 @@ msgstr "솔루션 엔지니어"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "PDF에서 추출된 일부 라인을 재고 품목에 자동으로 매핑할 수 없습니다. 아래에서 각 라인을 검토하고 매핑하세요."
 
+msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
+msgstr "일부 레코드는 돌아오지 않습니다. 계속하려면 <0>{CONFIRM_WORD}</0>를 입력하세요."
+
 msgid "Some Shifts"
 msgstr "일부 교대"
 
@@ -15005,7 +15071,7 @@ msgid "Stripe already has a customer with this email"
 msgstr "Stripe에 이미 이 이메일을 가진 고객이 있습니다"
 
 msgid "Stripe Due Date"
-msgstr "Stripe 마감일"
+msgstr "Stripe 만기일"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 msgstr "Stripe가 송장을 고객에게 이메일로 보내므로 주소가 필요합니다. 이것도 Carbon의 담당자 정보에 저장됩니다."
@@ -16335,6 +16401,9 @@ msgstr "이 전표들은 아직 초안 상태이므로 이 기간에 차변 및 
 msgid "this ability"
 msgstr "이 능력"
 
+msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
+msgstr "이 백업은 아직 확인되지 않았습니다. 복원이 실행될 때 차이점이 발견됩니다."
+
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "이 Carbon 인스턴스에 Onshape OAuth 자격 증명이 없습니다. 관리자에게 설정을 요청하세요."
 
@@ -16343,6 +16412,9 @@ msgstr "이 변경 통지가 구현 중이므로 변경 사항이 잠겨 있습�
 
 msgid "This change notice is closed, so its changes are read-only."
 msgstr "이 변경 통지는 마감되었으므로 변경 사항은 읽기 전용입니다."
+
+msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
+msgstr "이 회사의 데이터는 이 백업의 내용으로 바뀝니다. 오늘의 데이터가 먼저 저장되므로 되돌릴 수 있습니다."
 
 msgid "This completes the Discovery step."
 msgstr "이것으로 발견(Discovery) 단계가 완료됩니다."
@@ -16376,7 +16448,7 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "{0}에 가입하라는 초대가 만료되었습니다. 이메일로 새 초대를 보내도록 요청할 수 있습니다."
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "이 송장은 사용 가능한 마감일이 없습니다 — Stripe를 위해 선택하십시오."
+msgstr "이 청구서에는 사용할 수 있는 만기일이 없습니다 — Stripe를 위해 하나를 선택하세요."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "이 송장은 이미 이 Carbon 고객과 연결된 Stripe 고객에게 청구됩니다. 세부 사항을 변경하려면 Stripe 대시보드에서 편집하세요."
@@ -16793,6 +16865,9 @@ msgstr "이 사업장의 모든 보관 단위에 있는 품목의 현재고 총 
 
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "이 사업장의 모든 활성 작업 지시 및 수주에서 필요한 총 수량입니다 — 이 작업 지시만이 아닙니다."
+
+msgid "Total records"
+msgstr "총 레코드"
 
 msgid "Total scrap quantity"
 msgstr "스크랩 총 수량"
@@ -17913,6 +17988,9 @@ msgstr "Carbon에 오신 것을 환영합니다"
 msgid "Welcome, {companyName}"
 msgstr "환영합니다, {companyName}님"
 
+msgid "What a backup contains"
+msgstr "백업에 포함된 내용"
+
 msgid "What category of failure this is — Mechanical, Electrical, Software, Operator, Material, etc.; rolls up into the failure-mode pareto report so the category breakdown is meaningful."
 msgstr "이 고장의 범주(기계적, 전기적, 소프트웨어, 작업자, 자재 등)로, 고장 모드 파레토 보고서에 집계되어 범주별 분석이 의미를 갖도록 합니다."
 
@@ -17981,6 +18059,9 @@ msgstr "저희가 전제하는 사항"
 
 msgid "What you need to do"
 msgstr "해야 할 일"
+
+msgid "What's in a backup"
+msgstr "백업의 내용"
 
 msgid "What's in scope"
 msgstr "범위에 포함되는 것"

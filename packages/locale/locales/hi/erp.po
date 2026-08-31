@@ -2896,6 +2896,9 @@ msgstr "बाहरी URL को कॉल करें"
 msgid "Called a method in Carbon — the components plus operations that produce a part."
 msgstr "Carbon में एक विधि कहा जाता है — घटक साथ ऑपरेशन जो एक पार्ट का उत्पादन करते हैं।"
 
+msgid "Can't be restored"
+msgstr "पुनः स्थापित नहीं किया जा सकता"
+
 msgid "Can't be scheduled"
 msgstr ""
 
@@ -4009,6 +4012,9 @@ msgstr "लागत केंद्र"
 msgid "Cost History"
 msgstr "लागत इतिहास"
 
+msgid "Cost ledger"
+msgstr "लागत खाता"
+
 msgid "Cost of Goods Sold"
 msgstr "बेचे गए माल की लागत"
 
@@ -4088,6 +4094,9 @@ msgstr "प्रतिपक्ष"
 
 msgid "Counterparty"
 msgstr "प्रतिपक्ष"
+
+msgid "Counting…"
+msgstr "गिनती हो रही है…"
 
 msgid "Country"
 msgstr "देश"
@@ -4400,6 +4409,9 @@ msgstr "संचयी"
 
 msgid "Cumulative %"
 msgstr "संचयी %"
+
+msgid "Currencies"
+msgstr "मुद्राएँ"
 
 msgid "Currencies & tax"
 msgstr "मुद्राएं और कर"
@@ -5419,6 +5431,9 @@ msgstr "अक्षम"
 
 msgid "Discard"
 msgstr "त्यागें"
+
+msgid "Discarded"
+msgstr "छोड़ा गया"
 
 msgid "Disconnect"
 msgstr "डिस्कनेक्ट करें"
@@ -6445,6 +6460,9 @@ msgstr "ईवेंट प्रकार"
 msgid "Events"
 msgstr "घटनाएं"
 
+msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
+msgstr "कंपनी के दायरे के सभी रिकॉर्ड। क्रेडेंशियल, इंटीग्रेशन टोकन और वेबहुक कभी शामिल नहीं होते।"
+
 msgid "Every condition must match"
 msgstr "हर शर्त मेल खानी चाहिए"
 
@@ -7122,6 +7140,9 @@ msgstr "यहां संलग्न की गई फाइलें इस 
 
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
 msgstr "इस कंपनी को एक यथार्थवादी उद्योग की कहानी से भरें ताकि हर स्क्रीन में कुछ न कुछ हो। आप पहले जो यहां था उसे वापस डाल सकते हैं।"
+
+msgid "Filled with a default"
+msgstr "डिफ़ॉल्ट के साथ भरा गया"
 
 msgid "Filter"
 msgstr "फ़िल्टर करें"
@@ -8073,6 +8094,12 @@ msgstr "आने वाला"
 msgid "Incoming"
 msgstr "आने वाली"
 
+msgid "Incomplete"
+msgstr "अधूरा"
+
+msgid "Incomplete backup — not restorable"
+msgstr "अधूरा बैकअप — पुनर्स्थापना योग्य नहीं"
+
 msgid "Incoterm"
 msgstr "इनकोटर्म"
 
@@ -8619,6 +8646,9 @@ msgstr "इस अवधि में दिनांकित जर्नल �
 
 msgid "Journal Entry"
 msgstr "जर्नल प्रविष्टि"
+
+msgid "Journal lines"
+msgstr "जर्नल पंक्तियाँ"
 
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "इस तारीख को या इससे पहले दिनांकित जर्नल को लॉक माना जाता है। दोनों मौजूद होने पर प्रदाता द्वारा रिपोर्ट की गई लॉक तारीख के साथ मर्ज किया जाता है।"
@@ -10637,6 +10667,9 @@ msgstr "गैर-अनुरूपता वर्कफ़्लो"
 msgid "Non-conformance (issue)"
 msgstr "गैर-अनुरूपता (निर्गम)"
 
+msgid "Non-conformances"
+msgstr "गैर-अनुरूपताएँ"
+
 msgid "Non-Inventory"
 msgstr "गैर-इन्वेंटरी"
 
@@ -10684,6 +10717,9 @@ msgstr "अभी तक कहीं भी संदर्भित नही�
 
 msgid "Not Required"
 msgstr "आवश्यक नहीं"
+
+msgid "Not restorable"
+msgstr "पुनर्स्थापना योग्य नहीं"
 
 msgid "Not scheduled"
 msgstr "अनुसूचित नहीं"
@@ -11203,6 +11239,9 @@ msgstr "मूल"
 
 msgid "Original Count"
 msgstr "मूल गणना"
+
+msgid "Other"
+msgstr "अन्य"
 
 msgid "Other Expense"
 msgstr "अन्य व्यय"
@@ -12220,6 +12259,9 @@ msgstr "क्रय चालान राशि"
 msgid "Purchase Invoice Line"
 msgstr "क्रय चालान पंक्ति"
 
+msgid "Purchase invoices"
+msgstr "खरीद चालान"
+
 msgid "Purchase Invoices"
 msgstr "क्रय चालान"
 
@@ -12249,6 +12291,9 @@ msgstr "क्रय आदेश सफलतापूर्वक हटा �
 
 msgid "Purchase Order Type"
 msgstr "क्रय आदेश प्रकार"
+
+msgid "Purchase orders"
+msgstr "क्रय आदेश"
 
 msgid "Purchase Orders"
 msgstr "क्रय आदेश"
@@ -13189,14 +13234,26 @@ msgstr "संसाधन"
 msgid "Resources"
 msgstr "संसाधन"
 
+msgid "Restorable with changes"
+msgstr "बदलावों के साथ पुनर्स्थापना योग्य"
+
+msgid "Restore"
+msgstr "पुनः स्थापित करें"
+
 msgid "Restore from Trash"
 msgstr "ट्रैश से पुनः स्थापित करें"
+
+msgid "Restore this company from a backup"
+msgstr "बैकअप से इस कंपनी को पुनः स्थापित करें"
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
 msgstr "इस इकाई को उसी बिन और लागत पर उपलब्ध स्टॉक में पुनः स्थापित करें जहां से इसे स्क्रैप किया गया था।"
 
 msgid "Restore tracked entities to available"
 msgstr "ट्रैक किए गए इकाइयों को उपलब्ध में पुनः स्थापित करें"
+
+msgid "Restore…"
+msgstr "पुनः स्थापित करें…"
 
 msgid "Restoring files"
 msgstr "फ़ाइलें पुनः स्थापित कर रहे हैं"
@@ -13564,6 +13621,9 @@ msgstr "विक्रय चालान"
 msgid "Sales Invoice Line"
 msgstr "विक्रय चालान पंक्ति"
 
+msgid "Sales invoices"
+msgstr "बिक्रय चालान"
+
 msgid "Sales Invoices"
 msgstr "विक्रय चालान"
 
@@ -13593,6 +13653,9 @@ msgstr "विक्रय आदेश स्थान"
 
 msgid "Sales Order Number"
 msgstr "विक्रय आदेश संख्या"
+
+msgid "Sales orders"
+msgstr "बिक्रय आदेश"
 
 msgid "Sales Orders"
 msgstr "विक्रय आदेश"
@@ -14660,6 +14723,9 @@ msgstr "समाधान इंजीनियर"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "PDF से निकाली गई कुछ पंक्तियों को आपकी इन्वेंटरी आइटम्स से स्वचालित रूप से मैप नहीं किया जा सका। नीचे प्रत्येक पंक्ति की समीक्षा करें और मैप करें।"
 
+msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
+msgstr "कुछ रिकॉर्ड वापस नहीं आएंगे। जारी रखने के लिए <0>{CONFIRM_WORD}</0> टाइप करें।"
+
 msgid "Some Shifts"
 msgstr "कुछ शिफ्ट"
 
@@ -15005,7 +15071,7 @@ msgid "Stripe already has a customer with this email"
 msgstr "Stripe के पास पहले से इस ईमेल के साथ एक ग्राहक है"
 
 msgid "Stripe Due Date"
-msgstr "Stripe नियत तिथि"
+msgstr "Stripe देय तारीख"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
 msgstr "Stripe ग्राहक को चालान ईमेल करता है, इसलिए एक पता आवश्यक है। यह Carbon में संपर्क के लिए भी सहेजा जाएगा।"
@@ -16335,6 +16401,9 @@ msgstr "ये जर्नल प्रविष्टियां अभी �
 msgid "this ability"
 msgstr "यह क्षमता"
 
+msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
+msgstr "इस बैकअप की अभी जांच नहीं की गई है। कोई भी अंतर पुनः स्थापित करने के समय पाया जाता है।"
+
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "इस Carbon इंस्टेंस में Onshape OAuth क्रेडेंशियल नहीं हैं। किसी व्यवस्थापक से उन्हें सेट करने के लिए कहें।"
 
@@ -16343,6 +16412,9 @@ msgstr "यह परिवर्तन सूचना कार्यान्
 
 msgid "This change notice is closed, so its changes are read-only."
 msgstr "यह परिवर्तन सूचना बंद है, इसलिए इसके परिवर्तन केवल पढ़ने के लिए हैं।"
+
+msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
+msgstr "इस कंपनी का डेटा इस बैकअप की सामग्री के साथ प्रतिस्थापित किया जाता है। आज का डेटा पहले सहेजा जाता है, इसलिए आप पूर्ववत कर सकते हैं।"
 
 msgid "This completes the Discovery step."
 msgstr "यह Discovery चरण को पूरा करता है।"
@@ -16376,7 +16448,7 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "यह आमंत्रण {0} में शामिल होने के लिए समाप्त हो गया है। आप अपने ईमेल पर भेजने के लिए नया आमंत्रण का अनुरोध कर सकते हैं।"
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "इस चालान के पास कोई उपयोगी नियत तिथि नहीं है — Stripe के लिए एक चुनें।"
+msgstr "इस चालान के पास कोई उपयोगी देय तारीख नहीं है — Stripe के लिए एक चुनें।"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "इस चालान को Stripe ग्राहक को बिल दिया जाएगा जो पहले से इस Carbon ग्राहक से जुड़ा हुआ है। इसके विवरण को बदलने के लिए, Stripe डैशबोर्ड में संपादित करें।"
@@ -16793,6 +16865,9 @@ msgstr "इस स्थान पर सभी भंडारण इकाइ�
 
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "इस स्थान पर सभी सक्रिय जॉब और विक्रय आदेशों के पार कुल मात्रा की आवश्यकता है — केवल इस जॉब नहीं।"
+
+msgid "Total records"
+msgstr "कुल रिकॉर्ड"
 
 msgid "Total scrap quantity"
 msgstr "कुल स्क्रैप मात्रा"
@@ -17913,6 +17988,9 @@ msgstr "कार्बन में आपका स्वागत है"
 msgid "Welcome, {companyName}"
 msgstr "स्वागत है, {companyName}"
 
+msgid "What a backup contains"
+msgstr "बैकअप में क्या शामिल है"
+
 msgid "What category of failure this is — Mechanical, Electrical, Software, Operator, Material, etc.; rolls up into the failure-mode pareto report so the category breakdown is meaningful."
 msgstr "यह किस विफलता श्रेणी का है — यांत्रिक, विद्युत, सॉफ्टवेयर, ऑपरेटर, सामग्री, आदि; विफलता-मोड पेरेटो रिपोर्ट में संक्षेपित होता है ताकि श्रेणी विभाजन सार्थक हो।"
 
@@ -17981,6 +18059,9 @@ msgstr "हम क्या मान रहे हैं"
 
 msgid "What you need to do"
 msgstr "आपको क्या करना है"
+
+msgid "What's in a backup"
+msgstr "बैकअप में क्या है"
 
 msgid "What's in scope"
 msgstr "स्कोप में क्या है"

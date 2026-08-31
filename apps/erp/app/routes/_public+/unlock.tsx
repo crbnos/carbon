@@ -404,7 +404,7 @@ export default function UnlockRoute() {
           className="w-24 hidden dark:block"
         />
       </div>
-      <div className="rounded-lg md:bg-card md:border md:border-border md:shadow-lg p-8 w-[380px]">
+      <div className="rounded-lg p-8 w-[380px]">
         <VStack spacing={4} className="items-center">
           <LuLock className="w-8 h-8 text-muted-foreground" />
           <Heading size="h3">

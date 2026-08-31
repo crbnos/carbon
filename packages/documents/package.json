@@ -33,7 +33,7 @@
     "@testing-library/dom": "8.20.1",
     "@types/dompurify": "2.4.0",
     "@types/react": "catalog:",
-    "postcss": "8.5.15",
+    "postcss": "8.5.18",
     "react": "catalog:",
     "react-email": "4.2.8",
     "tsup": "catalog:",

@@ -12,11 +12,12 @@ import {
   buildScopeFilter,
   copyAssetsToBackup,
   encodeValue,
+  exportableColumns,
   findExportScopeViolations,
   getCompanyTableCatalog,
   mapWithConcurrency,
-  SECRET_TABLES,
   STORAGE_BUCKET,
+  selectExportableTables,
   serializeTable,
   writeBackupManifest
 } from "./company-backup";
@@ -100,17 +101,19 @@ export async function buildCompanyBackup(
   // Secrets (credentials/tokens) never travel — they belong to the source
   // company, not a copy. (Billing identity like companyPlan never enters the
   // catalog: it's a company-singleton deliberately left out of the scoped set.)
-  const secretTables = new Set<string>(SECRET_TABLES);
-  const excludedTables = catalog.tables
-    .filter((t) => secretTables.has(t.name))
-    .map((t) => t.name);
-  const exportable = catalog.tables.filter((t) => !secretTables.has(t.name));
+  const { exportable, excludedTables } = selectExportableTables(catalog);
   const byName = new Map(catalog.tables.map((t) => [t.name, t]));
 
   // Closure guard — never write a backup that couldn't be restored. A NOT-NULL FK
   // pointing outside the company's scope (cross-company / out-of-scope) would dump
   // the child but not its parent, dangling on restore. Fail BEFORE writing any
   // table file, listing every offending FK.
+  //
+  // This refusal is DELIBERATE and is not a backup bug to route around. Row-level
+  // security hides another tenant's rows from every ordinary read, so an export —
+  // which runs without it — is the first thing in the system wide enough to see a
+  // cross-tenant reference at all. Excluding the rows and carrying on would make
+  // the only detector we have go quiet.
   const scopeViolations = await findExportScopeViolations(
     db,
     exportable,
@@ -131,7 +134,7 @@ export async function buildCompanyBackup(
   const tableManifest: Manifest["tables"] = [];
   let dumped = 0; // incremented as each table completes (single-threaded → safe)
   await mapWithConcurrency(exportable, TABLE_CONCURRENCY, async (table) => {
-    const columns = table.columns.filter((c) => !c.isGenerated);
+    const columns = exportableColumns(table);
     // a prior import's revert ledger must never travel in an artifact
     const ledgerFilter =
       table.name === "externalIntegrationMapping"

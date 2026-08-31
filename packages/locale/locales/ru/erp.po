@@ -2896,6 +2896,9 @@ msgstr "Вызвать внешний URL"
 msgid "Called a method in Carbon — the components plus operations that produce a part."
 msgstr "Называется метод в Carbon — компоненты плюс операции, которые создают деталь."
 
+msgid "Can't be restored"
+msgstr "Невозможно восстановить"
+
 msgid "Can't be scheduled"
 msgstr ""
 
@@ -4009,6 +4012,9 @@ msgstr "Центры затрат"
 msgid "Cost History"
 msgstr "История себестоимости"
 
+msgid "Cost ledger"
+msgstr "Книга затрат"
+
 msgid "Cost of Goods Sold"
 msgstr "Себестоимость реализованной продукции"
 
@@ -4088,6 +4094,9 @@ msgstr "Контрагенты"
 
 msgid "Counterparty"
 msgstr "Контрагент"
+
+msgid "Counting…"
+msgstr "Подсчёт…"
 
 msgid "Country"
 msgstr "Страна"
@@ -4400,6 +4409,9 @@ msgstr "Нарастающий итог"
 
 msgid "Cumulative %"
 msgstr "Кумулятивный %"
+
+msgid "Currencies"
+msgstr "Валюты"
 
 msgid "Currencies & tax"
 msgstr "Валюты и налоги"
@@ -5419,6 +5431,9 @@ msgstr "Отключено"
 
 msgid "Discard"
 msgstr "Отклонить"
+
+msgid "Discarded"
+msgstr "Отклонено"
 
 msgid "Disconnect"
 msgstr "Отключить"
@@ -6445,6 +6460,9 @@ msgstr "Тип события"
 msgid "Events"
 msgstr "События"
 
+msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
+msgstr "Все записи компании. Учётные данные, токены интеграций и вебхуки никогда не включаются."
+
 msgid "Every condition must match"
 msgstr "Каждое условие должно совпадать"
 
@@ -7122,6 +7140,9 @@ msgstr "Файлы, прикрепленные здесь, отправляют�
 
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
 msgstr "Заполните организацию реалистичной историей отрасли, чтобы каждый экран содержал данные. Вы можете восстановить то, что было здесь раньше."
+
+msgid "Filled with a default"
+msgstr "Заполнено значением по умолчанию"
 
 msgid "Filter"
 msgstr "Фильтровать"
@@ -8073,6 +8094,12 @@ msgstr "входящий"
 msgid "Incoming"
 msgstr "Входящие"
 
+msgid "Incomplete"
+msgstr "Неполная"
+
+msgid "Incomplete backup — not restorable"
+msgstr "Неполная резервная копия — восстановление невозможно"
+
 msgid "Incoterm"
 msgstr "Инкотермс"
 
@@ -8619,6 +8646,9 @@ msgstr "Проводки, датированные в этом периоде и
 
 msgid "Journal Entry"
 msgstr "Проводка"
+
+msgid "Journal lines"
+msgstr "Строки журнала"
 
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "Операции, датированные в эту дату или ранее, считаются заблокированными. Объединены с датой блокировки, указанной поставщиком, если обе существуют."
@@ -10637,6 +10667,9 @@ msgstr "Рабочий процесс несоответствия"
 msgid "Non-conformance (issue)"
 msgstr "Несоответствие (проблема)"
 
+msgid "Non-conformances"
+msgstr "Несоответствия"
+
 msgid "Non-Inventory"
 msgstr "Нескладской"
 
@@ -10684,6 +10717,9 @@ msgstr "Пока не на что-либо ссылается."
 
 msgid "Not Required"
 msgstr "Не требуется"
+
+msgid "Not restorable"
+msgstr "Восстановление невозможно"
 
 msgid "Not scheduled"
 msgstr "Не запланировано"
@@ -11203,6 +11239,9 @@ msgstr "Оригинал"
 
 msgid "Original Count"
 msgstr "Исходный подсчет"
+
+msgid "Other"
+msgstr "Прочее"
 
 msgid "Other Expense"
 msgstr "Прочие расходы"
@@ -12220,6 +12259,9 @@ msgstr "Сумма счета-фактуры полученного"
 msgid "Purchase Invoice Line"
 msgstr "Строка счета-фактуры полученного"
 
+msgid "Purchase invoices"
+msgstr "Счета-фактуры покупателя"
+
 msgid "Purchase Invoices"
 msgstr "Счета-фактуры полученные"
 
@@ -12249,6 +12291,9 @@ msgstr "Заказ поставщику успешно удален"
 
 msgid "Purchase Order Type"
 msgstr "Тип Заказа поставщику"
+
+msgid "Purchase orders"
+msgstr "Заказы на покупку"
 
 msgid "Purchase Orders"
 msgstr "Заказы поставщику"
@@ -13189,14 +13234,26 @@ msgstr "ресурсы"
 msgid "Resources"
 msgstr "Ресурсы"
 
+msgid "Restorable with changes"
+msgstr "Восстановима с изменениями"
+
+msgid "Restore"
+msgstr "Восстановить"
+
 msgid "Restore from Trash"
 msgstr "Восстановить из корзины"
+
+msgid "Restore this company from a backup"
+msgstr "Восстановить компанию из резервной копии"
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
 msgstr "Восстановить эту сущность в доступный запас по ячейке и себестоимости, откуда она была выбракована."
 
 msgid "Restore tracked entities to available"
 msgstr "Восстановить отслеживаемые объекты в доступные"
+
+msgid "Restore…"
+msgstr "Восстановить…"
 
 msgid "Restoring files"
 msgstr "Восстановление файлов"
@@ -13564,6 +13621,9 @@ msgstr "Счет-фактура выданный"
 msgid "Sales Invoice Line"
 msgstr "Строка счета-фактуры выданного"
 
+msgid "Sales invoices"
+msgstr "Счета-фактуры продажи"
+
 msgid "Sales Invoices"
 msgstr "Счета-фактуры выданные"
 
@@ -13593,6 +13653,9 @@ msgstr "Площадка заказа покупателя"
 
 msgid "Sales Order Number"
 msgstr "Номер заказа покупателя"
+
+msgid "Sales orders"
+msgstr "Заказы на продажу"
 
 msgid "Sales Orders"
 msgstr "Заказы покупателей"
@@ -14660,6 +14723,9 @@ msgstr "Инженер решений"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Некоторые строки, извлеченные из PDF, не удалось автоматически сопоставить с вашими номенклатурными позициями. Проверьте и сопоставьте каждую строку ниже."
 
+msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
+msgstr "Некоторые записи не вернутся. Введите <0>{CONFIRM_WORD}</0> для продолжения."
+
 msgid "Some Shifts"
 msgstr "Некоторые смены"
 
@@ -15002,7 +15068,7 @@ msgid "Stripe"
 msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr "У Stripe уже есть покупатель с этим адресом электронной почты"
+msgstr "В Stripe уже есть клиент с этим адресом электронной почты"
 
 msgid "Stripe Due Date"
 msgstr "Срок выполнения Stripe"
@@ -16335,6 +16401,9 @@ msgstr "Эти операции по-прежнему находятся в ре
 msgid "this ability"
 msgstr "этот навык"
 
+msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
+msgstr "Эта резервная копия еще не была проверена. Любые различия будут обнаружены при запуске восстановления."
+
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "В этом экземпляре Carbon отсутствуют учётные данные OAuth для Onshape. Попросите администратора настроить их."
 
@@ -16343,6 +16412,9 @@ msgstr "Это извещение об изменении внедряется, 
 
 msgid "This change notice is closed, so its changes are read-only."
 msgstr "Это извещение об изменении закрыто, поэтому его изменения доступны только для чтения."
+
+msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
+msgstr "Данные компании заменяются содержимым этой резервной копии. Сначала сохраняются данные за сегодня, чтобы можно было откатить."
 
 msgid "This completes the Discovery step."
 msgstr "Этим завершается этап обнаружения."
@@ -16376,7 +16448,7 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "Это приглашение присоединиться к {0} истекло. Вы можете запросить отправку нового приглашения на вашу электронную почту."
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "Этот счет-фактура не имеет используемого срока выполнения — выберите один для Stripe."
+msgstr "Этот счет не имеет пригодной даты платежа — выберите одну для Stripe."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Этот счет-фактура будет выставлен покупателю Stripe, уже связанному с этим покупателем Carbon. Чтобы изменить его данные, отредактируйте его в панели Stripe."
@@ -16793,6 +16865,9 @@ msgstr "Итоговый остаток на складе для номенкл�
 
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "Общее количество, требуемое для всех активных производственных заказов и заказов покупателей на этой площадке — не только для этого производственного заказа"
+
+msgid "Total records"
+msgstr "Всего записей"
 
 msgid "Total scrap quantity"
 msgstr "Общее количество брака"
@@ -17913,6 +17988,9 @@ msgstr "Добро пожаловать в Carbon"
 msgid "Welcome, {companyName}"
 msgstr "Добро пожаловать, {companyName}"
 
+msgid "What a backup contains"
+msgstr "Что содержит резервная копия"
+
 msgid "What category of failure this is — Mechanical, Electrical, Software, Operator, Material, etc.; rolls up into the failure-mode pareto report so the category breakdown is meaningful."
 msgstr "Какая это категория отказа — Механическая, Электрическая, Программная, Оператор, Материал и т. д.; обобщается в отчете парето режима отказа, чтобы разбиение по категориям было значимым."
 
@@ -17981,6 +18059,9 @@ msgstr "Что мы предполагаем"
 
 msgid "What you need to do"
 msgstr "Что вам нужно сделать"
+
+msgid "What's in a backup"
+msgstr "Содержимое резервной копии"
 
 msgid "What's in scope"
 msgstr "Что входит в область"

@@ -2896,6 +2896,9 @@ msgstr "Llamar a una URL externa"
 msgid "Called a method in Carbon — the components plus operations that produce a part."
 msgstr "Llamada una método en Carbon — los componentes más las operaciones que producen una parte."
 
+msgid "Can't be restored"
+msgstr "No se puede restaurar"
+
 msgid "Can't be scheduled"
 msgstr ""
 
@@ -4009,6 +4012,9 @@ msgstr "Centros de Costos"
 msgid "Cost History"
 msgstr "Historial de Costos"
 
+msgid "Cost ledger"
+msgstr "Libro de costos"
+
 msgid "Cost of Goods Sold"
 msgstr "Costo de ventas"
 
@@ -4088,6 +4094,9 @@ msgstr "Contrapartes"
 
 msgid "Counterparty"
 msgstr "Contraparte"
+
+msgid "Counting…"
+msgstr "Contando…"
 
 msgid "Country"
 msgstr "País"
@@ -4400,6 +4409,9 @@ msgstr "Acumulativo"
 
 msgid "Cumulative %"
 msgstr "% Acumulativo"
+
+msgid "Currencies"
+msgstr "Monedas"
 
 msgid "Currencies & tax"
 msgstr "Monedas e impuestos"
@@ -5419,6 +5431,9 @@ msgstr "Deshabilitado"
 
 msgid "Discard"
 msgstr "Descartar"
+
+msgid "Discarded"
+msgstr "Descartado"
 
 msgid "Disconnect"
 msgstr "Desconectar"
@@ -6445,6 +6460,9 @@ msgstr "Tipo de Evento"
 msgid "Events"
 msgstr "Eventos"
 
+msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
+msgstr "Todos los registros de la empresa. Las credenciales, los tokens de integración y los webhooks nunca se incluyen."
+
 msgid "Every condition must match"
 msgstr "Todas las condiciones deben coincidir"
 
@@ -7122,6 +7140,9 @@ msgstr "Los archivos adjuntos aquí se incluyen en cada correo electrónico de o
 
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
 msgstr "Llena esta empresa con una historia realista de la industria para que cada pantalla tenga algo. Puedes restaurar lo que había aquí antes."
+
+msgid "Filled with a default"
+msgstr "Rellenado con un valor predeterminado"
 
 msgid "Filter"
 msgstr "Filtro"
@@ -8073,6 +8094,12 @@ msgstr "entrante"
 msgid "Incoming"
 msgstr "Entrante"
 
+msgid "Incomplete"
+msgstr "Incompleto"
+
+msgid "Incomplete backup — not restorable"
+msgstr "Copia de seguridad incompleta — no restaurable"
+
 msgid "Incoterm"
 msgstr "Incoterm"
 
@@ -8619,6 +8646,9 @@ msgstr "Los asientos de diario fechados en este período que aún están en Borr
 
 msgid "Journal Entry"
 msgstr "Apunte"
+
+msgid "Journal lines"
+msgstr "Líneas de asiento"
 
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "Los asientos fechados en o antes de esta fecha se tratan como bloqueados. Se combinan con la fecha de bloqueo reportada por el proveedor cuando ambas existen."
@@ -10637,6 +10667,9 @@ msgstr "Flujo de trabajo de no conformidad"
 msgid "Non-conformance (issue)"
 msgstr "No conformidad (problema)"
 
+msgid "Non-conformances"
+msgstr "No conformidades"
+
 msgid "Non-Inventory"
 msgstr "No Inventario"
 
@@ -10684,6 +10717,9 @@ msgstr "Sin referencias aún."
 
 msgid "Not Required"
 msgstr "No requerido"
+
+msgid "Not restorable"
+msgstr "No restaurable"
 
 msgid "Not scheduled"
 msgstr "No programado"
@@ -11203,6 +11239,9 @@ msgstr "Original"
 
 msgid "Original Count"
 msgstr "Conteo Original"
+
+msgid "Other"
+msgstr "Otros"
 
 msgid "Other Expense"
 msgstr "Otro Gasto"
@@ -12220,6 +12259,9 @@ msgstr "Monto de Factura de Compra"
 msgid "Purchase Invoice Line"
 msgstr "Línea de Factura de Compra"
 
+msgid "Purchase invoices"
+msgstr "Facturas de Compra"
+
 msgid "Purchase Invoices"
 msgstr "Facturas de Compra"
 
@@ -12249,6 +12291,9 @@ msgstr "Orden de compra eliminada exitosamente"
 
 msgid "Purchase Order Type"
 msgstr "Tipo de Orden de Compra"
+
+msgid "Purchase orders"
+msgstr "Órdenes de Compra"
 
 msgid "Purchase Orders"
 msgstr "Órdenes de Compra"
@@ -13189,14 +13234,26 @@ msgstr "recursos"
 msgid "Resources"
 msgstr "Recursos"
 
+msgid "Restorable with changes"
+msgstr "Restaurable con cambios"
+
+msgid "Restore"
+msgstr "Restaurar"
+
 msgid "Restore from Trash"
 msgstr "Restaurar desde la papelera"
+
+msgid "Restore this company from a backup"
+msgstr "Restaure esta empresa desde una copia de seguridad"
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
 msgstr "Restaurar esta entidad al stock disponible en el contenedor al costo desde el cual fue descartado."
 
 msgid "Restore tracked entities to available"
 msgstr "Restaurar entidades rastreadas a disponibles"
+
+msgid "Restore…"
+msgstr "Restaurar…"
 
 msgid "Restoring files"
 msgstr "Restaurando archivos"
@@ -13564,6 +13621,9 @@ msgstr "Factura de Venta"
 msgid "Sales Invoice Line"
 msgstr "Línea de Factura de Venta"
 
+msgid "Sales invoices"
+msgstr "Facturas de Venta"
+
 msgid "Sales Invoices"
 msgstr "Facturas de Venta"
 
@@ -13593,6 +13653,9 @@ msgstr "Ubicación de pedido de venta"
 
 msgid "Sales Order Number"
 msgstr "Número de pedido de venta"
+
+msgid "Sales orders"
+msgstr "Órdenes de Venta"
 
 msgid "Sales Orders"
 msgstr "Pedidos de venta"
@@ -14659,6 +14722,9 @@ msgstr "Ingeniero de Soluciones"
 
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Algunas líneas extraídas del PDF no se pudieron asignar automáticamente a sus artículos de inventario. Revise y asigne cada línea a continuación."
+
+msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
+msgstr "Algunos registros no volverán. Escriba <0>{CONFIRM_WORD}</0> para continuar."
 
 msgid "Some Shifts"
 msgstr "Algunos turnos"
@@ -16335,6 +16401,9 @@ msgstr "Estos asientos aún están en Borrador, por lo que sus debe y haber no e
 msgid "this ability"
 msgstr "esta habilidad"
 
+msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
+msgstr "Esta copia de seguridad aún no ha sido verificada. Se encontrarán diferencias cuando se ejecute la restauración."
+
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "Esta instancia de Carbon no tiene credenciales OAuth de Onshape. Pide a un administrador que las configure."
 
@@ -16343,6 +16412,9 @@ msgstr "Este aviso de cambio se está implementando, por lo que sus cambios est�
 
 msgid "This change notice is closed, so its changes are read-only."
 msgstr "Este aviso de cambio está cerrado, por lo que sus cambios son de solo lectura."
+
+msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
+msgstr "Los datos de esta empresa se reemplazan con el contenido de esta copia de seguridad. Primero se guardan los datos de hoy para que pueda revertir."
 
 msgid "This completes the Discovery step."
 msgstr "Esto completa el paso de Descubrimiento."
@@ -16376,7 +16448,7 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "Esta invitación para unirse a {0} ha vencido. Puedes solicitar que se envíe una nueva invitación a tu correo electrónico."
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "Esta factura no tiene una fecha de vencimiento utilizable: elige una para Stripe."
+msgstr "Esta factura no tiene una fecha de vencimiento utilizable: elija una para Stripe."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Esta factura se facturará al cliente de Stripe ya vinculado a este cliente de Carbon. Para cambiar sus detalles, edítalo en el panel de Stripe."
@@ -16793,6 +16865,9 @@ msgstr "Cantidad total en existencia del artículo en todas las unidades de alma
 
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "Cantidad total requerida en todas las órdenes de trabajo activas y pedidos de venta en esta ubicación, no solo esta orden de trabajo."
+
+msgid "Total records"
+msgstr "Registros totales"
 
 msgid "Total scrap quantity"
 msgstr "Cantidad total de desperdicio"
@@ -17913,6 +17988,9 @@ msgstr "Bienvenido a Carbon"
 msgid "Welcome, {companyName}"
 msgstr "Bienvenido, {companyName}"
 
+msgid "What a backup contains"
+msgstr "Qué contiene una copia de seguridad"
+
 msgid "What category of failure this is — Mechanical, Electrical, Software, Operator, Material, etc.; rolls up into the failure-mode pareto report so the category breakdown is meaningful."
 msgstr "Qué categoría de falla es esta — Mecánica, Eléctrica, Software, Operador, Material, etc.; se resume en el informe de pareto de modo de falla para que el desglose de categorías sea significativo."
 
@@ -17981,6 +18059,9 @@ msgstr "Lo que estamos asumiendo"
 
 msgid "What you need to do"
 msgstr "Lo que necesitas hacer"
+
+msgid "What's in a backup"
+msgstr "Qué hay en una copia de seguridad"
 
 msgid "What's in scope"
 msgstr "Qué está incluido en el alcance"

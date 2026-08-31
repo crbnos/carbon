@@ -2896,6 +2896,9 @@ msgstr "Harici bir URL çağır"
 msgid "Called a method in Carbon — the components plus operations that produce a part."
 msgstr "Carbon'da bir yöntem olarak adlandırılır — bir parçayı oluşturan bileşenler artı operasyonlar."
 
+msgid "Can't be restored"
+msgstr "Geri yüklenemez"
+
 msgid "Can't be scheduled"
 msgstr ""
 
@@ -4009,6 +4012,9 @@ msgstr "Maliyet Merkezleri"
 msgid "Cost History"
 msgstr "Maliyet Geçmişi"
 
+msgid "Cost ledger"
+msgstr "Maliyet defteri"
+
 msgid "Cost of Goods Sold"
 msgstr "Satılan malın maliyeti"
 
@@ -4088,6 +4094,9 @@ msgstr "Muhasebeleştirilecek Taraflar"
 
 msgid "Counterparty"
 msgstr "Karşı Taraf"
+
+msgid "Counting…"
+msgstr "Sayılıyor…"
 
 msgid "Country"
 msgstr "Ülke"
@@ -4400,6 +4409,9 @@ msgstr "Kümülatif"
 
 msgid "Cumulative %"
 msgstr "Kümülatif %"
+
+msgid "Currencies"
+msgstr "Para birimleri"
 
 msgid "Currencies & tax"
 msgstr "Para birimler ve vergi"
@@ -5419,6 +5431,9 @@ msgstr "Devre Dışı"
 
 msgid "Discard"
 msgstr "Atıkla"
+
+msgid "Discarded"
+msgstr "İptal edildi"
 
 msgid "Disconnect"
 msgstr "Bağlantıyı kes"
@@ -6445,6 +6460,9 @@ msgstr "Olay Türü"
 msgid "Events"
 msgstr "Etkinlikler"
 
+msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
+msgstr "Şirket kapsamındaki tüm kayıtlar. Kimlik bilgileri, entegrasyon belirteçleri ve webhook'lar asla dahil edilmez."
+
 msgid "Every condition must match"
 msgstr "Her koşul eşleşmelidir"
 
@@ -7122,6 +7140,9 @@ msgstr "Buraya eklenen dosyalar, bu tedarikçiye gönderilen her satın alma sip
 
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
 msgstr "Bu şirketi gerçekçi bir endüstri hikayesiyle doldurun, böylece her ekran bir şey içerir. Önceki durumu geri getirebilirsiniz."
+
+msgid "Filled with a default"
+msgstr "Varsayılan değerle dolduruldu"
 
 msgid "Filter"
 msgstr "Filtre"
@@ -8073,6 +8094,12 @@ msgstr "gelen"
 msgid "Incoming"
 msgstr "Gelen"
 
+msgid "Incomplete"
+msgstr "Eksik"
+
+msgid "Incomplete backup — not restorable"
+msgstr "Eksik yedek — geri yüklenemez"
+
 msgid "Incoterm"
 msgstr "Incoterm"
 
@@ -8619,6 +8646,9 @@ msgstr "Bu dönemde tarihlendirilen ve hala Taslak durumunda olan yevmiye kayıt
 
 msgid "Journal Entry"
 msgstr "Yevmiye kaydı"
+
+msgid "Journal lines"
+msgstr "Yevmiye satırları"
 
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "Bu tarihte veya öncesinde tarihlendirilen muhasebe fişleri kilitli olarak değerlendirilir. Her ikisi de mevcutsa sağlayıcı tarafından rapor edilen kilit tarihi ile birleştirilir."
@@ -10637,6 +10667,9 @@ msgstr "Uygunsuzluk İş Akışı"
 msgid "Non-conformance (issue)"
 msgstr "Uygunsuzluk (sorun)"
 
+msgid "Non-conformances"
+msgstr "Uygunsuzluklar"
+
 msgid "Non-Inventory"
 msgstr "Stok dışı"
 
@@ -10684,6 +10717,9 @@ msgstr "Henüz hiçbir yerde referans verilmemiş."
 
 msgid "Not Required"
 msgstr "Gerekli Değil"
+
+msgid "Not restorable"
+msgstr "Geri yüklenemez"
 
 msgid "Not scheduled"
 msgstr "Planlanmadı"
@@ -11203,6 +11239,9 @@ msgstr "Orijinal"
 
 msgid "Original Count"
 msgstr "Orijinal Sayım"
+
+msgid "Other"
+msgstr "Diğer"
 
 msgid "Other Expense"
 msgstr "Diğer Gider"
@@ -12220,6 +12259,9 @@ msgstr "Alış faturası tutarı"
 msgid "Purchase Invoice Line"
 msgstr "Alış faturası satırı"
 
+msgid "Purchase invoices"
+msgstr "Satın Alma Faturaları"
+
 msgid "Purchase Invoices"
 msgstr "Alış faturaları"
 
@@ -12249,6 +12291,9 @@ msgstr "Satın alma siparişi başarıyla kaldırıldı"
 
 msgid "Purchase Order Type"
 msgstr "Satın Alma Siparişi Türü"
+
+msgid "Purchase orders"
+msgstr "Satın Alma Siparişleri"
 
 msgid "Purchase Orders"
 msgstr "Satın Alma Siparişleri"
@@ -13189,14 +13234,26 @@ msgstr "kaynaklar"
 msgid "Resources"
 msgstr "Kaynaklar"
 
+msgid "Restorable with changes"
+msgstr "Değişikliklerle geri yüklenebilir"
+
+msgid "Restore"
+msgstr "Geri yükle"
+
 msgid "Restore from Trash"
 msgstr "Çöp'ten Geri Yükle"
+
+msgid "Restore this company from a backup"
+msgstr "Bu şirketi bir yedekten geri yükle"
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
 msgstr "Bu varlığı, hurdaya çıkarıldığı gözde ve maliyette kullanılabilir stoka geri yükle."
 
 msgid "Restore tracked entities to available"
 msgstr "Takip edilen varlıkları kullanılabilir hale getir"
+
+msgid "Restore…"
+msgstr "Geri yükle…"
 
 msgid "Restoring files"
 msgstr "Dosyalar geri yükleniyor"
@@ -13564,6 +13621,9 @@ msgstr "Satış Faturası"
 msgid "Sales Invoice Line"
 msgstr "Satış Faturası Kalemi"
 
+msgid "Sales invoices"
+msgstr "Satış Faturaları"
+
 msgid "Sales Invoices"
 msgstr "Satış Faturaları"
 
@@ -13593,6 +13653,9 @@ msgstr "Satış Siparişi Konumu"
 
 msgid "Sales Order Number"
 msgstr "Satış Siparişi Numarası"
+
+msgid "Sales orders"
+msgstr "Satış Siparişleri"
 
 msgid "Sales Orders"
 msgstr "Satış Siparişleri"
@@ -14660,6 +14723,9 @@ msgstr "Çözüm Mühendisi"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "PDF'den çıkarılan bazı satırlar stok kartlarınıza otomatik olarak eşleştirilemedi. Aşağıdaki her satırı gözden geçirin ve eşleştirin."
 
+msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
+msgstr "Bazı kayıtlar geri gelmeyecek. Devam etmek için <0>{CONFIRM_WORD}</0> yazın."
+
 msgid "Some Shifts"
 msgstr "Bazı Vardiyalar"
 
@@ -15002,7 +15068,7 @@ msgid "Stripe"
 msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr "Stripe'ın zaten bu e-postaya sahip bir müşterisi var"
+msgstr "Stripe'ın zaten bu e-posta ile bir müşterisi var"
 
 msgid "Stripe Due Date"
 msgstr "Stripe Son Tarihi"
@@ -16335,6 +16401,9 @@ msgstr "Bu muhasebe fişleri hala Taslak halinde olduğundan borç ve alacaklar�
 msgid "this ability"
 msgstr "bu yetenek"
 
+msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
+msgstr "Bu yedek henüz kontrol edilmedi. Herhangi bir fark, geri yükleme çalıştığında bulunur."
+
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "Bu Carbon örneğinde Onshape OAuth kimlik bilgileri eksik. Bir yöneticiden bunları ayarlamasını isteyin."
 
@@ -16343,6 +16412,9 @@ msgstr "Bu değişiklik bildirimi uygulanmakta olduğundan, değişiklikleri kil
 
 msgid "This change notice is closed, so its changes are read-only."
 msgstr "Bu değişiklik bildirimi kapalı olduğundan, değişiklikleri salt okunurdur."
+
+msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
+msgstr "Bu şirketin verileri bu yedeklemenin içeriği ile değiştirilir. Bugünün verileri önce kaydedilir, bu nedenle geri alabilirsiniz."
 
 msgid "This completes the Discovery step."
 msgstr "Bu, Keşif adımını tamamlar."
@@ -16376,7 +16448,7 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "{0} grubuna katılma davetinizin süresi doldu. Yeni bir davet talebinde bulunabilirsiniz ve bu e-postanıza gönderilir."
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "Bu fatura, Stripe için kullanılabilir bir son tarih içermiyor — lütfen bir tane seçin."
+msgstr "Bu faturanın kullanılabilir bir vade tarihi yok — Stripe için birini seçin."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "Bu fatura, zaten bu Carbon müşterisine bağlı olan Stripe müşterisine faturalanacak. Ayrıntılarını değiştirmek için Stripe panosunda düzenleyin."
@@ -16793,6 +16865,9 @@ msgstr "Bu konumdaki tüm depolama birimlerinde öğenin toplam eldeki miktarı.
 
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "Bu konumdaki tüm devam eden iş emirleri ve satış siparişlerinde gerekli olan toplam miktar — yalnızca bu iş emri değil."
+
+msgid "Total records"
+msgstr "Toplam kayıt"
 
 msgid "Total scrap quantity"
 msgstr "Toplam fire miktarı"
@@ -17913,6 +17988,9 @@ msgstr "Carbon'a Hoş Geldiniz"
 msgid "Welcome, {companyName}"
 msgstr "Hoş geldiniz, {companyName}"
 
+msgid "What a backup contains"
+msgstr "Bir yedek neler içerir"
+
 msgid "What category of failure this is — Mechanical, Electrical, Software, Operator, Material, etc.; rolls up into the failure-mode pareto report so the category breakdown is meaningful."
 msgstr "Bu hangi başarısızlık kategorisidir — Mekanik, Elektrik, Yazılım, Operatör, Malzeme, vb.; arıza modu pareto raporunda özetlenir, böylece kategori dökümü anlamlı olur."
 
@@ -17981,6 +18059,9 @@ msgstr "Neyi varsaydığımız"
 
 msgid "What you need to do"
 msgstr "Yapmanız gereken şeyler"
+
+msgid "What's in a backup"
+msgstr "Yedeğin içeriği"
 
 msgid "What's in scope"
 msgstr "Kapsamda neler var"

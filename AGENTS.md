@@ -47,7 +47,15 @@ pnpm run build               # Full build
 pnpm db:migrate:new <name>   # Create new migration
 pnpm db:migrate              # Apply pending migrations
 pnpm run generate:types      # Regenerate DB types (after migrations)
+pnpm db:check:datasets       # Do the demo datasets still apply? (pre-commit gate)
+pnpm db:check:backups        # Would existing customer backups still restore? (pre-commit gate)
 ```
+
+Both `db:check:*` commands read your live local schema. They run from
+`.husky/pre-commit`, so run `pnpm db:migrate` before either — a stale database makes
+the dataset check fail for the wrong reason and makes the backup check refuse to give
+a verdict at all. Run by hand, both write nothing; from the hook, `db:check:backups`
+additionally regenerates and stages `packages/jobs/manifests/schema.json` on success.
 
 ## Task Router — Where to Find Detailed Guidance
 

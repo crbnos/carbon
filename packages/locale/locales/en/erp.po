@@ -2896,6 +2896,9 @@ msgstr "Call an outside URL"
 msgid "Called a method in Carbon — the components plus operations that produce a part."
 msgstr "Called a method in Carbon — the components plus operations that produce a part."
 
+msgid "Can't be restored"
+msgstr "Can't be restored"
+
 msgid "Can't be scheduled"
 msgstr "Can't be scheduled"
 
@@ -4009,6 +4012,9 @@ msgstr "Cost Centers"
 msgid "Cost History"
 msgstr "Cost History"
 
+msgid "Cost ledger"
+msgstr "Cost ledger"
+
 msgid "Cost of Goods Sold"
 msgstr "Cost of Goods Sold"
 
@@ -4088,6 +4094,9 @@ msgstr "Counterparties"
 
 msgid "Counterparty"
 msgstr "Counterparty"
+
+msgid "Counting…"
+msgstr "Counting…"
 
 msgid "Country"
 msgstr "Country"
@@ -4400,6 +4409,9 @@ msgstr "Cumulative"
 
 msgid "Cumulative %"
 msgstr "Cumulative %"
+
+msgid "Currencies"
+msgstr "Currencies"
 
 msgid "Currencies & tax"
 msgstr "Currencies & tax"
@@ -5419,6 +5431,9 @@ msgstr "Disabled"
 
 msgid "Discard"
 msgstr "Discard"
+
+msgid "Discarded"
+msgstr "Discarded"
 
 msgid "Disconnect"
 msgstr "Disconnect"
@@ -6445,6 +6460,9 @@ msgstr "Event Type"
 msgid "Events"
 msgstr "Events"
 
+msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
+msgstr "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
+
 msgid "Every condition must match"
 msgstr "Every condition must match"
 
@@ -7122,6 +7140,9 @@ msgstr "Files attached here ride along on every purchase order email sent to thi
 
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
 msgstr "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
+
+msgid "Filled with a default"
+msgstr "Filled with a default"
 
 msgid "Filter"
 msgstr "Filter"
@@ -8073,6 +8094,12 @@ msgstr "incoming"
 msgid "Incoming"
 msgstr "Incoming"
 
+msgid "Incomplete"
+msgstr "Incomplete"
+
+msgid "Incomplete backup — not restorable"
+msgstr "Incomplete backup — not restorable"
+
 msgid "Incoterm"
 msgstr "Incoterm"
 
@@ -8619,6 +8646,9 @@ msgstr "Journal entries dated in this period that are still Draft must be posted
 
 msgid "Journal Entry"
 msgstr "Journal Entry"
+
+msgid "Journal lines"
+msgstr "Journal lines"
 
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
@@ -10637,6 +10667,9 @@ msgstr "Non conformance workflow"
 msgid "Non-conformance (issue)"
 msgstr "Non-conformance (issue)"
 
+msgid "Non-conformances"
+msgstr "Non-conformances"
+
 msgid "Non-Inventory"
 msgstr "Non-Inventory"
 
@@ -10684,6 +10717,9 @@ msgstr "Not referenced anywhere yet."
 
 msgid "Not Required"
 msgstr "Not Required"
+
+msgid "Not restorable"
+msgstr "Not restorable"
 
 msgid "Not scheduled"
 msgstr "Not scheduled"
@@ -11203,6 +11239,9 @@ msgstr "Original"
 
 msgid "Original Count"
 msgstr "Original Count"
+
+msgid "Other"
+msgstr "Other"
 
 msgid "Other Expense"
 msgstr "Other Expense"
@@ -12220,6 +12259,9 @@ msgstr "Purchase Invoice Amount"
 msgid "Purchase Invoice Line"
 msgstr "Purchase Invoice Line"
 
+msgid "Purchase invoices"
+msgstr "Purchase invoices"
+
 msgid "Purchase Invoices"
 msgstr "Purchase Invoices"
 
@@ -12249,6 +12291,9 @@ msgstr "Purchase order removed successfully"
 
 msgid "Purchase Order Type"
 msgstr "Purchase Order Type"
+
+msgid "Purchase orders"
+msgstr "Purchase orders"
 
 msgid "Purchase Orders"
 msgstr "Purchase Orders"
@@ -13189,14 +13234,26 @@ msgstr "resources"
 msgid "Resources"
 msgstr "Resources"
 
+msgid "Restorable with changes"
+msgstr "Restorable with changes"
+
+msgid "Restore"
+msgstr "Restore"
+
 msgid "Restore from Trash"
 msgstr "Restore from Trash"
+
+msgid "Restore this company from a backup"
+msgstr "Restore this company from a backup"
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
 msgstr "Restore this entity to available stock at the bin and cost it was scrapped from."
 
 msgid "Restore tracked entities to available"
 msgstr "Restore tracked entities to available"
+
+msgid "Restore…"
+msgstr "Restore…"
 
 msgid "Restoring files"
 msgstr "Restoring files"
@@ -13564,6 +13621,9 @@ msgstr "Sales Invoice"
 msgid "Sales Invoice Line"
 msgstr "Sales Invoice Line"
 
+msgid "Sales invoices"
+msgstr "Sales invoices"
+
 msgid "Sales Invoices"
 msgstr "Sales Invoices"
 
@@ -13593,6 +13653,9 @@ msgstr "Sales Order Location"
 
 msgid "Sales Order Number"
 msgstr "Sales Order Number"
+
+msgid "Sales orders"
+msgstr "Sales orders"
 
 msgid "Sales Orders"
 msgstr "Sales Orders"
@@ -14659,6 +14722,9 @@ msgstr "Solutions Engineer"
 
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
+
+msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
+msgstr "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 
 msgid "Some Shifts"
 msgstr "Some Shifts"
@@ -16335,6 +16401,9 @@ msgstr "These journal entries are still Draft, so their debits and credits aren'
 msgid "this ability"
 msgstr "this ability"
 
+msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
+msgstr "This backup hasn't been checked yet. Any differences are found when the restore runs."
+
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 
@@ -16343,6 +16412,9 @@ msgstr "This change notice is being implemented, so its changes are locked. Reop
 
 msgid "This change notice is closed, so its changes are read-only."
 msgstr "This change notice is closed, so its changes are read-only."
+
+msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
+msgstr "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
 
 msgid "This completes the Discovery step."
 msgstr "This completes the Discovery step."
@@ -16793,6 +16865,9 @@ msgstr "Total quantity on hand for the item across all storage units at this loc
 
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "Total quantity required across all active jobs and sales orders at this location — not just this job."
+
+msgid "Total records"
+msgstr "Total records"
 
 msgid "Total scrap quantity"
 msgstr "Total scrap quantity"
@@ -17913,6 +17988,9 @@ msgstr "Welcome to Carbon"
 msgid "Welcome, {companyName}"
 msgstr "Welcome, {companyName}"
 
+msgid "What a backup contains"
+msgstr "What a backup contains"
+
 msgid "What category of failure this is — Mechanical, Electrical, Software, Operator, Material, etc.; rolls up into the failure-mode pareto report so the category breakdown is meaningful."
 msgstr "What category of failure this is — Mechanical, Electrical, Software, Operator, Material, etc.; rolls up into the failure-mode pareto report so the category breakdown is meaningful."
 
@@ -17981,6 +18059,9 @@ msgstr "What we're assuming"
 
 msgid "What you need to do"
 msgstr "What you need to do"
+
+msgid "What's in a backup"
+msgstr "What's in a backup"
 
 msgid "What's in scope"
 msgstr "What's in scope"

@@ -61,7 +61,7 @@
     "jose": "catalog:",
     "kysely": "catalog:",
     "nanoid": "catalog:",
-    "nodemailer": "6.10.1",
+    "nodemailer": "9.0.1",
     "react": "catalog:",
     "react-icons": "catalog:",
     "react-pdf": "catalog:",

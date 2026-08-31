@@ -2896,6 +2896,9 @@ msgstr "外部URLを呼び出す"
 msgid "Called a method in Carbon — the components plus operations that produce a part."
 msgstr "Carbonで「製法」と呼ばれるもの — 部品を製造するための部品と工程。"
 
+msgid "Can't be restored"
+msgstr "復元できません"
+
 msgid "Can't be scheduled"
 msgstr ""
 
@@ -4009,6 +4012,9 @@ msgstr "原価センター"
 msgid "Cost History"
 msgstr "原価履歴"
 
+msgid "Cost ledger"
+msgstr "原価元帳"
+
 msgid "Cost of Goods Sold"
 msgstr "売上原価"
 
@@ -4088,6 +4094,9 @@ msgstr "取引先"
 
 msgid "Counterparty"
 msgstr "相手先"
+
+msgid "Counting…"
+msgstr "集計中…"
 
 msgid "Country"
 msgstr "国"
@@ -4400,6 +4409,9 @@ msgstr "累積"
 
 msgid "Cumulative %"
 msgstr "累積%"
+
+msgid "Currencies"
+msgstr "通貨"
 
 msgid "Currencies & tax"
 msgstr "通貨と税"
@@ -5419,6 +5431,9 @@ msgstr "無効"
 
 msgid "Discard"
 msgstr "破棄"
+
+msgid "Discarded"
+msgstr "破棄されました"
 
 msgid "Disconnect"
 msgstr "切断"
@@ -6445,6 +6460,9 @@ msgstr "イベントタイプ"
 msgid "Events"
 msgstr "イベント"
 
+msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
+msgstr "会社に属するすべてのレコード。認証情報、連携トークン、Webhookは含まれません。"
+
 msgid "Every condition must match"
 msgstr "すべての条件が一致する必要があります"
 
@@ -7122,6 +7140,9 @@ msgstr "ここに添付されたファイルは、この仕入先に送信され
 
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
 msgstr "この会社に現実的な業界ストーリーを入れて、すべての画面に何かが表示されるようにします。以前ここにあったものを戻すことができます。"
+
+msgid "Filled with a default"
+msgstr "デフォルト値で埋められました"
 
 msgid "Filter"
 msgstr "絞り込み"
@@ -8073,6 +8094,12 @@ msgstr "入庫"
 msgid "Incoming"
 msgstr "入荷予定"
 
+msgid "Incomplete"
+msgstr "不完全"
+
+msgid "Incomplete backup — not restorable"
+msgstr "不完全なバックアップ — 復元できません"
+
 msgid "Incoterm"
 msgstr "インコタームズ"
 
@@ -8619,6 +8646,9 @@ msgstr "当期に日付が付けられた仕訳がまだ下書きの場合は、
 
 msgid "Journal Entry"
 msgstr "仕訳行"
+
+msgid "Journal lines"
+msgstr "仕訳明細"
 
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "この日付以前の仕訳はロック中として扱われます。両方が存在する場合、プロバイダーが報告したロック日付とマージされます。"
@@ -10637,6 +10667,9 @@ msgstr "不適合ワークフロー"
 msgid "Non-conformance (issue)"
 msgstr "不適合（問題）"
 
+msgid "Non-conformances"
+msgstr "不適合"
+
 msgid "Non-Inventory"
 msgstr "非在庫"
 
@@ -10684,6 +10717,9 @@ msgstr "どこでも参照されていません。"
 
 msgid "Not Required"
 msgstr "不要"
+
+msgid "Not restorable"
+msgstr "復元不可"
 
 msgid "Not scheduled"
 msgstr "未スケジュール"
@@ -11203,6 +11239,9 @@ msgstr "元"
 
 msgid "Original Count"
 msgstr "元のカウント"
+
+msgid "Other"
+msgstr "その他"
 
 msgid "Other Expense"
 msgstr "営業外費用"
@@ -12220,6 +12259,9 @@ msgstr "仕入先請求書金額"
 msgid "Purchase Invoice Line"
 msgstr "仕入先請求書明細"
 
+msgid "Purchase invoices"
+msgstr "購入請求書"
+
 msgid "Purchase Invoices"
 msgstr "仕入先請求書"
 
@@ -12249,6 +12291,9 @@ msgstr "発注書は正常に削除されました"
 
 msgid "Purchase Order Type"
 msgstr "発注書種別"
+
+msgid "Purchase orders"
+msgstr "購入注文"
 
 msgid "Purchase Orders"
 msgstr "発注書"
@@ -13189,14 +13234,26 @@ msgstr "リソース"
 msgid "Resources"
 msgstr "リソース"
 
+msgid "Restorable with changes"
+msgstr "変更ありで復元可能"
+
+msgid "Restore"
+msgstr "復元"
+
 msgid "Restore from Trash"
 msgstr "ゴミ箱から復元"
+
+msgid "Restore this company from a backup"
+msgstr "バックアップからこの会社を復元する"
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
 msgstr "このエンティティを、スクラップされた元のビンと原価で利用可能な在庫に復元します。"
 
 msgid "Restore tracked entities to available"
 msgstr "追跡対象エンティティを利用可能に復元"
+
+msgid "Restore…"
+msgstr "復元…"
 
 msgid "Restoring files"
 msgstr "ファイルを復元中"
@@ -13564,6 +13621,9 @@ msgstr "売上請求書"
 msgid "Sales Invoice Line"
 msgstr "売上請求書行"
 
+msgid "Sales invoices"
+msgstr "売上請求書"
+
 msgid "Sales Invoices"
 msgstr "売上請求書"
 
@@ -13593,6 +13653,9 @@ msgstr "受注拠点"
 
 msgid "Sales Order Number"
 msgstr "受注番号"
+
+msgid "Sales orders"
+msgstr "販売注文"
 
 msgid "Sales Orders"
 msgstr "受注"
@@ -14660,6 +14723,9 @@ msgstr "ソリューションズエンジニア"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "PDFから抽出された一部の明細は在庫品目に自動的にマップできませんでした。以下の各明細を確認してマップしてください。"
 
+msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
+msgstr "いくつかのレコードは戻りません。続行するには<0>{CONFIRM_WORD}</0>と入力してください。"
+
 msgid "Some Shifts"
 msgstr "一部のシフト"
 
@@ -15008,7 +15074,7 @@ msgid "Stripe Due Date"
 msgstr "Stripe支払期日"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
-msgstr "Stripeは得意先に請求書をメール送信するため、住所が必須です。これはCarbonの担当者にも保存されます。"
+msgstr "Stripeは請求書をカスタマーにメール送信するため、住所が必要です。これもCarbonの連絡先に保存されます。"
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "StripeにはこのCarbon得意先に対応する顧客がまだありません。転記すると、接続済みアカウント上に作成されます。"
@@ -16335,6 +16401,9 @@ msgstr "これらの仕訳はまだ下書きであるため、それらの借方
 msgid "this ability"
 msgstr "このスキル"
 
+msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
+msgstr "このバックアップはまだチェックされていません。違いは復元の実行時に見つかります。"
+
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "この Carbon インスタンスには Onshape の OAuth 認証情報がありません。管理者に設定を依頼してください。"
 
@@ -16343,6 +16412,9 @@ msgstr "この変更通知は実施中のため、その変更はロック中で
 
 msgid "This change notice is closed, so its changes are read-only."
 msgstr "この変更通知は閉じられているため、変更は読み取り専用です。"
+
+msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
+msgstr "この会社のデータはこのバックアップの内容に置き換えられます。今日のデータが最初に保存されるため、元に戻すことができます。"
 
 msgid "This completes the Discovery step."
 msgstr "これはDiscoveryステップを完了します。"
@@ -16376,7 +16448,7 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "この{0}への参加への招待は期限切れです。新しい招待をメールで送信されるようにリクエストできます。"
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "この請求書には使用可能な期日がありません。Stripeの場合は、期日を選択してください。"
+msgstr "この請求書には使用可能な支払期日がありません— Stripeのものを選択してください。"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "この請求書は、すでにこのCarbon得意先にリンクされているStripe顧客に請求されます。詳細を変更するには、Stripeダッシュボードで編集してください。"
@@ -16793,6 +16865,9 @@ msgstr "この拠点のすべての保管ユニット全体にわたる品目の
 
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "この拠点の全有効製造指図および受注で必要な総数量—このジョブのみではありません。"
+
+msgid "Total records"
+msgstr "レコード合計"
 
 msgid "Total scrap quantity"
 msgstr "合計スクラップ数量"
@@ -17913,6 +17988,9 @@ msgstr "Carbonへようこそ"
 msgid "Welcome, {companyName}"
 msgstr "ようこそ、{companyName}"
 
+msgid "What a backup contains"
+msgstr "バックアップに含まれる内容"
+
 msgid "What category of failure this is — Mechanical, Electrical, Software, Operator, Material, etc.; rolls up into the failure-mode pareto report so the category breakdown is meaningful."
 msgstr "障害のカテゴリー（機械的、電気的、ソフトウェア、作業者、材料など）を指定します。障害モードパレート報告書に集計されるため、カテゴリー分類が意味のあるものになります。"
 
@@ -17981,6 +18059,9 @@ msgstr "私たちが想定していること"
 
 msgid "What you need to do"
 msgstr "あなたがすべきこと"
+
+msgid "What's in a backup"
+msgstr "バックアップの内容"
 
 msgid "What's in scope"
 msgstr "スコープ内"

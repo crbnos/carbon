@@ -2896,6 +2896,9 @@ msgstr "调用外部 URL"
 msgid "Called a method in Carbon — the components plus operations that produce a part."
 msgstr "在Carbon中称为方法 — 生产一个零件的组成部分和工序。"
 
+msgid "Can't be restored"
+msgstr "无法恢复"
+
 msgid "Can't be scheduled"
 msgstr ""
 
@@ -4009,6 +4012,9 @@ msgstr "成本中心"
 msgid "Cost History"
 msgstr "成本历史记录"
 
+msgid "Cost ledger"
+msgstr "成本分类账"
+
 msgid "Cost of Goods Sold"
 msgstr "销售成本"
 
@@ -4088,6 +4094,9 @@ msgstr "交易对手"
 
 msgid "Counterparty"
 msgstr "交易对手"
+
+msgid "Counting…"
+msgstr "统计中…"
 
 msgid "Country"
 msgstr "国家"
@@ -4400,6 +4409,9 @@ msgstr "累计"
 
 msgid "Cumulative %"
 msgstr "累积%"
+
+msgid "Currencies"
+msgstr "货币"
 
 msgid "Currencies & tax"
 msgstr "货币和税务"
@@ -5419,6 +5431,9 @@ msgstr "已禁用"
 
 msgid "Discard"
 msgstr "丢弃"
+
+msgid "Discarded"
+msgstr "已放弃"
 
 msgid "Disconnect"
 msgstr "断开连接"
@@ -6445,6 +6460,9 @@ msgstr "事件类型"
 msgid "Events"
 msgstr "事件"
 
+msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
+msgstr "公司范围内的所有记录。凭据、集成令牌和 Webhook 永不包含在内。"
+
 msgid "Every condition must match"
 msgstr "每个条件都必须匹配"
 
@@ -7122,6 +7140,9 @@ msgstr "此处附加的文件将随附在发送给此供应商的每份采购订
 
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
 msgstr "用逼真的行业故事填充此公司，使每个屏幕都有内容。您可以恢复之前的内容。"
+
+msgid "Filled with a default"
+msgstr "填充默认值"
 
 msgid "Filter"
 msgstr "筛选"
@@ -8073,6 +8094,12 @@ msgstr "来货"
 msgid "Incoming"
 msgstr "传入"
 
+msgid "Incomplete"
+msgstr "不完整"
+
+msgid "Incomplete backup — not restorable"
+msgstr "备份不完整 — 无法恢复"
+
 msgid "Incoterm"
 msgstr "贸易术语"
 
@@ -8619,6 +8646,9 @@ msgstr "本期日期的凭证如果仍为草稿状态必须过账，或将其日
 
 msgid "Journal Entry"
 msgstr "分录"
+
+msgid "Journal lines"
+msgstr "日记账行"
 
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "在此日期或之前日期的凭证被视为已锁定。当两者都存在时，与提供商报告的锁定日期合并。"
@@ -10637,6 +10667,9 @@ msgstr "不合格工作流"
 msgid "Non-conformance (issue)"
 msgstr "不合格(领料)"
 
+msgid "Non-conformances"
+msgstr "不合格项"
+
 msgid "Non-Inventory"
 msgstr "非库存"
 
@@ -10684,6 +10717,9 @@ msgstr "还没有在任何地方被引用。"
 
 msgid "Not Required"
 msgstr "不需要"
+
+msgid "Not restorable"
+msgstr "无法恢复"
 
 msgid "Not scheduled"
 msgstr "未计划"
@@ -11203,6 +11239,9 @@ msgstr "原始"
 
 msgid "Original Count"
 msgstr "原始盘点"
+
+msgid "Other"
+msgstr "其他"
 
 msgid "Other Expense"
 msgstr "营业外支出"
@@ -12220,6 +12259,9 @@ msgstr "采购发票金额"
 msgid "Purchase Invoice Line"
 msgstr "采购发票行"
 
+msgid "Purchase invoices"
+msgstr "采购发票"
+
 msgid "Purchase Invoices"
 msgstr "采购发票"
 
@@ -12249,6 +12291,9 @@ msgstr "采购订单已成功删除"
 
 msgid "Purchase Order Type"
 msgstr "采购订单类型"
+
+msgid "Purchase orders"
+msgstr "采购订单"
 
 msgid "Purchase Orders"
 msgstr "采购订单"
@@ -13189,14 +13234,26 @@ msgstr "资源"
 msgid "Resources"
 msgstr "资源"
 
+msgid "Restorable with changes"
+msgstr "可恢复（有变更）"
+
+msgid "Restore"
+msgstr "恢复"
+
 msgid "Restore from Trash"
 msgstr "从垃圾箱恢复"
+
+msgid "Restore this company from a backup"
+msgstr "从备份中恢复此公司"
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
 msgstr "将此实体恢复到来自其被报废的料箱和成本的可用库存。"
 
 msgid "Restore tracked entities to available"
 msgstr "将跟踪的实体恢复为可用"
+
+msgid "Restore…"
+msgstr "恢复…"
 
 msgid "Restoring files"
 msgstr "正在恢复文件"
@@ -13564,6 +13621,9 @@ msgstr "销售发票"
 msgid "Sales Invoice Line"
 msgstr "销售发票行"
 
+msgid "Sales invoices"
+msgstr "销售发票"
+
 msgid "Sales Invoices"
 msgstr "销售发票"
 
@@ -13593,6 +13653,9 @@ msgstr "销售订单位置"
 
 msgid "Sales Order Number"
 msgstr "销售订单号"
+
+msgid "Sales orders"
+msgstr "销售订单"
 
 msgid "Sales Orders"
 msgstr "销售订单"
@@ -14660,6 +14723,9 @@ msgstr "解决方案工程师"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "从 PDF 提取的某些行无法自动映射到你的库存物料。查看并映射下面的每一行。"
 
+msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
+msgstr "某些记录不会回来。输入 <0>{CONFIRM_WORD}</0> 继续。"
+
 msgid "Some Shifts"
 msgstr "某些班次"
 
@@ -15002,7 +15068,7 @@ msgid "Stripe"
 msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr "Stripe 已拥有此电子邮件的客户"
+msgstr "Stripe 已经有一个具有此电子邮件的客户"
 
 msgid "Stripe Due Date"
 msgstr "Stripe 到期日期"
@@ -16335,6 +16401,9 @@ msgstr "这些凭证仍是草稿，所以其借方和贷方不在此期间的账
 msgid "this ability"
 msgstr "此能力"
 
+msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
+msgstr "此备份尚未检查。还原运行时将发现任何差异。"
+
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "此 Carbon 实例缺少 Onshape 的 OAuth 凭据。请让管理员进行设置。"
 
@@ -16343,6 +16412,9 @@ msgstr "此变更通知正在实施中，因此其更改已锁定。重新打开
 
 msgid "This change notice is closed, so its changes are read-only."
 msgstr "此变更通知已关闭，因此其更改为只读。"
+
+msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
+msgstr "此公司的数据将替换为此备份的内容。首先保存今天的数据，以便您可以恢复。"
 
 msgid "This completes the Discovery step."
 msgstr "这完成了发现步骤。"
@@ -16376,7 +16448,7 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "加入 {0} 的邀请已过期。您可以请求将新邀请发送到您的电子邮件。"
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "此发票没有可用的到期日——为Stripe选择一个。"
+msgstr "此发票没有可用的截止日期 — 为 Stripe 选择一个。"
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
 msgstr "此发票将计费给已链接到此 Carbon 客户的 Stripe 客户。要更改其详细信息，请在 Stripe 仪表板中编辑它。"
@@ -16793,6 +16865,9 @@ msgstr "该地点全部存储单元中物料的总现有量。当现有量加上
 
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "此地点所有启用的工单和销售订单所需的总数量——不仅仅是此工单。"
+
+msgid "Total records"
+msgstr "记录总数"
 
 msgid "Total scrap quantity"
 msgstr "总报废数量"
@@ -17913,6 +17988,9 @@ msgstr "欢迎来到 Carbon"
 msgid "Welcome, {companyName}"
 msgstr "欢迎，{companyName}"
 
+msgid "What a backup contains"
+msgstr "备份包含的内容"
+
 msgid "What category of failure this is — Mechanical, Electrical, Software, Operator, Material, etc.; rolls up into the failure-mode pareto report so the category breakdown is meaningful."
 msgstr "这是什么类别的故障 — 机械、电气、软件、操作员、原材料等；汇总到故障模式帕累托报告中，以便类别细分有意义。"
 
@@ -17981,6 +18059,9 @@ msgstr "我们的假设"
 
 msgid "What you need to do"
 msgstr "你需要做的事情"
+
+msgid "What's in a backup"
+msgstr "备份内容"
 
 msgid "What's in scope"
 msgstr "范围内的内容"

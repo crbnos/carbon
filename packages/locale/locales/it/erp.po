@@ -2896,6 +2896,9 @@ msgstr "Chiama un URL esterno"
 msgid "Called a method in Carbon — the components plus operations that produce a part."
 msgstr "Chiamata una metodo in Carbon — i componenti più le operazioni che producono una parte."
 
+msgid "Can't be restored"
+msgstr "Non può essere ripristinato"
+
 msgid "Can't be scheduled"
 msgstr ""
 
@@ -4009,6 +4012,9 @@ msgstr "Centri di Costo"
 msgid "Cost History"
 msgstr "Cronologia dei costi"
 
+msgid "Cost ledger"
+msgstr "Libro dei costi"
+
 msgid "Cost of Goods Sold"
 msgstr "Costo del venduto"
 
@@ -4088,6 +4094,9 @@ msgstr "Controparte"
 
 msgid "Counterparty"
 msgstr "Controparte"
+
+msgid "Counting…"
+msgstr "Conteggio…"
 
 msgid "Country"
 msgstr "Paese"
@@ -4400,6 +4409,9 @@ msgstr "Cumulativo"
 
 msgid "Cumulative %"
 msgstr "% Cumulativo"
+
+msgid "Currencies"
+msgstr "Valute"
 
 msgid "Currencies & tax"
 msgstr "Valute e imposte"
@@ -5419,6 +5431,9 @@ msgstr "Disabilitato"
 
 msgid "Discard"
 msgstr "Scarta"
+
+msgid "Discarded"
+msgstr "Scartato"
 
 msgid "Disconnect"
 msgstr "Disconnetti"
@@ -6445,6 +6460,9 @@ msgstr "Tipo di Evento"
 msgid "Events"
 msgstr "Eventi"
 
+msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
+msgstr "Tutti i record dell'azienda. Credenziali, token di integrazione e webhook non sono mai inclusi."
+
 msgid "Every condition must match"
 msgstr "Ogni condizione deve corrispondere"
 
@@ -7122,6 +7140,9 @@ msgstr "I file allegati qui vengono inclusi in ogni email di ordine d'acquisto i
 
 msgid "Fill this company with a realistic industry story so every screen has something in it. You can put back what was here before."
 msgstr "Riempi questa azienda con una storia industriale realistica in modo che ogni schermata abbia qualcosa. Puoi ripristinare quello che era qui prima."
+
+msgid "Filled with a default"
+msgstr "Compilato con un valore predefinito"
 
 msgid "Filter"
 msgstr "Filtro"
@@ -8073,6 +8094,12 @@ msgstr "in arrivo"
 msgid "Incoming"
 msgstr "In arrivo"
 
+msgid "Incomplete"
+msgstr "Incompleto"
+
+msgid "Incomplete backup — not restorable"
+msgstr "Backup incompleto — non ripristinabile"
+
 msgid "Incoterm"
 msgstr "Incoterm"
 
@@ -8619,6 +8646,9 @@ msgstr "Le righe di registrazione datate in questo periodo ancora in Bozza devon
 
 msgid "Journal Entry"
 msgstr "Riga di registrazione"
+
+msgid "Journal lines"
+msgstr "Righe di registrazione"
 
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "Le prime note datate su o prima di questa data sono trattate come bloccate. Unite alla data di blocco segnalata dal provider quando entrambe esistono."
@@ -10637,6 +10667,9 @@ msgstr "Flusso di lavoro di non conformità"
 msgid "Non-conformance (issue)"
 msgstr "Non conformità (problema)"
 
+msgid "Non-conformances"
+msgstr "Non conformità"
+
 msgid "Non-Inventory"
 msgstr "Non a magazzino"
 
@@ -10684,6 +10717,9 @@ msgstr "Non referenziato da nessuna parte ancora."
 
 msgid "Not Required"
 msgstr "Non richiesto"
+
+msgid "Not restorable"
+msgstr "Non ripristinabile"
 
 msgid "Not scheduled"
 msgstr "Non programmato"
@@ -11203,6 +11239,9 @@ msgstr "Originale"
 
 msgid "Original Count"
 msgstr "Conteggio Originale"
+
+msgid "Other"
+msgstr "Altro"
 
 msgid "Other Expense"
 msgstr "Altre spese"
@@ -12220,6 +12259,9 @@ msgstr "Importo Fattura di Acquisto"
 msgid "Purchase Invoice Line"
 msgstr "Riga Fattura di Acquisto"
 
+msgid "Purchase invoices"
+msgstr "Fatture di Acquisto"
+
 msgid "Purchase Invoices"
 msgstr "Fatture di Acquisto"
 
@@ -12249,6 +12291,9 @@ msgstr "Ordine di acquisto rimosso con successo"
 
 msgid "Purchase Order Type"
 msgstr "Tipo di Ordine d'Acquisto"
+
+msgid "Purchase orders"
+msgstr "Ordini di Acquisto"
 
 msgid "Purchase Orders"
 msgstr "Ordini di Acquisto"
@@ -13189,14 +13234,26 @@ msgstr "risorse"
 msgid "Resources"
 msgstr "Risorse"
 
+msgid "Restorable with changes"
+msgstr "Ripristinabile con modifiche"
+
+msgid "Restore"
+msgstr "Ripristina"
+
 msgid "Restore from Trash"
 msgstr "Ripristina dal Cestino"
+
+msgid "Restore this company from a backup"
+msgstr "Ripristina questa azienda da un backup"
 
 msgid "Restore this entity to available stock at the bin and cost it was scrapped from."
 msgstr "Ripristina questa entità alle giacenze disponibili nel contenitore e al costo da cui è stata scartata."
 
 msgid "Restore tracked entities to available"
 msgstr "Ripristina le entità tracciate come disponibili"
+
+msgid "Restore…"
+msgstr "Ripristina…"
 
 msgid "Restoring files"
 msgstr "Ripristino dei file"
@@ -13564,6 +13621,9 @@ msgstr "Fattura di vendita"
 msgid "Sales Invoice Line"
 msgstr "Riga Fattura di Vendita"
 
+msgid "Sales invoices"
+msgstr "Fatture di vendita"
+
 msgid "Sales Invoices"
 msgstr "Fatture di vendita"
 
@@ -13593,6 +13653,9 @@ msgstr "Ubicazione Ordine di Vendita"
 
 msgid "Sales Order Number"
 msgstr "Numero Ordine Vendita"
+
+msgid "Sales orders"
+msgstr "Ordini di vendita"
 
 msgid "Sales Orders"
 msgstr "Ordini di vendita"
@@ -14659,6 +14722,9 @@ msgstr "Solutions Engineer"
 
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Alcune righe estratte dal PDF non potevano essere mappate automaticamente ai tuoi articoli. Rivedi e mappa ogni riga di seguito."
+
+msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
+msgstr "Alcuni record non torneranno. Digita <0>{CONFIRM_WORD}</0> per continuare."
 
 msgid "Some Shifts"
 msgstr "Alcuni turni"
@@ -16335,6 +16401,9 @@ msgstr "Queste voci di prima nota sono ancora Bozza, quindi i loro dare e avere 
 msgid "this ability"
 msgstr "questa competenza"
 
+msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
+msgstr "Questo backup non è stato ancora verificato. Le eventuali differenze vengono rilevate quando il ripristino viene eseguito."
+
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "A questa istanza di Carbon mancano le credenziali OAuth di Onshape. Chiedi a un amministratore di configurarle."
 
@@ -16343,6 +16412,9 @@ msgstr "Questo avviso di modifica è in corso di implementazione, quindi le sue 
 
 msgid "This change notice is closed, so its changes are read-only."
 msgstr "Questo avviso di modifica è chiuso, quindi le sue modifiche sono di sola lettura."
+
+msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
+msgstr "I dati di questa azienda vengono sostituiti con il contenuto di questo backup. I dati di oggi vengono salvati per primi, quindi puoi ripristinare."
 
 msgid "This completes the Discovery step."
 msgstr "Questo completa il passaggio Discovery."
@@ -16793,6 +16865,9 @@ msgstr "Quantità totale in giacenza per l'articolo in tutte le unità di stocca
 
 msgid "Total quantity required across all active jobs and sales orders at this location — not just this job."
 msgstr "Quantità totale richiesta in tutti gli ordini di produzione e gli ordini di vendita attivi in questa ubicazione — non solo questo ordine di produzione."
+
+msgid "Total records"
+msgstr "Totale record"
 
 msgid "Total scrap quantity"
 msgstr "Quantità totale di scarto"
@@ -17913,6 +17988,9 @@ msgstr "Benvenuto in Carbon"
 msgid "Welcome, {companyName}"
 msgstr "Benvenuto, {companyName}"
 
+msgid "What a backup contains"
+msgstr "Cosa contiene un backup"
+
 msgid "What category of failure this is — Mechanical, Electrical, Software, Operator, Material, etc.; rolls up into the failure-mode pareto report so the category breakdown is meaningful."
 msgstr "Quale categoria di guasto è questa — Meccanico, Elettrico, Software, Operatore, Materiale, ecc.; si riassume nel rapporto di pareto della modalità di guasto in modo che la ripartizione per categoria sia significativa."
 
@@ -17981,6 +18059,9 @@ msgstr "Cosa stiamo assumendo"
 
 msgid "What you need to do"
 msgstr "Cosa devi fare"
+
+msgid "What's in a backup"
+msgstr "Cosa c'è in un backup"
 
 msgid "What's in scope"
 msgstr "Cosa rientra nell'ambito"
