@@ -33,12 +33,45 @@ export interface PieceProperty {
   refreshers?: readonly string[];
 }
 
+/**
+ * One field of an action's declared output.
+ *
+ * Presentation metadata upstream — the Activepieces docs scope `outputSchema` to
+ * "a friendly, labelled presentation ... without changing the expression paths used
+ * in automations", `run()` returns `Promise<unknown | void>`, and nothing validates
+ * a response against it. So it is good enough to OFFER an author paths and labels
+ * at build time, and never good enough to enforce a shape at run time.
+ */
+export interface PieceOutputField {
+  key: string;
+  label: string;
+  /** Dotted path to read from, relative to the container. Absent means read `key`. */
+  value?: string;
+  /** A display hint (`datetime`, `number`, `boolean`, `url`, `email`, …), not a type. */
+  format?: string;
+  /** Present when this field is a nested object. */
+  children?: readonly PieceOutputField[];
+  /** Present when this field is an array; describes ONE element. */
+  listItems?: readonly PieceOutputField[];
+  labelKey?: string;
+  /** The vendor declaring that keys here vary per account and cannot be listed. */
+  dynamicKey?: boolean;
+}
+
+export interface PieceOutputSchema {
+  fields: readonly PieceOutputField[];
+  itemLabel?: string;
+}
+
 export interface PieceAction {
   name: string;
   displayName: string;
   description?: string;
   props: Record<string, PieceProperty>;
   run: (context: unknown) => Promise<unknown>;
+  /** Optional upstream: ~8% of pieces declare it, and coverage is all-or-nothing
+   * per piece. `buildPieceActionDeclarations` refuses an action without one. */
+  outputSchema?: PieceOutputSchema;
 }
 
 export interface OAuth2AuthDeclaration {

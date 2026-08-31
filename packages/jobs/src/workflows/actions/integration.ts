@@ -14,8 +14,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { PIECE_ALLOWLIST } from "../integrations/allowlist";
 import { buildPieceContext } from "../integrations/context";
 import { buildRefreshConfig } from "../integrations/oauth";
+import { projectOutputs } from "../integrations/project";
 import { toPropsValue } from "../integrations/properties";
 import { getPieceAction } from "../integrations/registry";
+import { pinnedValues } from "../integrations/visibility";
 
 const NO_CONNECTION = "This step needs a connection.";
 /** A vendor message is theirs, not ours — keep it short enough to read in a step row. */
@@ -93,7 +95,11 @@ export async function runIntegrationAction(args: {
 
   try {
     const action = await getPieceAction(pieceName, actionName);
-    const propsValue = toPropsValue(action.props, inputs);
+    const propsValue = toPropsValue(
+      action.props,
+      inputs,
+      pinnedValues(pieceName, actionName, action.props)
+    );
     const result = await action.run(
       buildPieceContext({ auth: { access_token: accessToken }, propsValue })
     );
@@ -101,6 +107,7 @@ export async function runIntegrationAction(args: {
     return {
       ok: true,
       outputs: {
+        ...projectOutputs(action.outputSchema, result),
         result: {
           kind: "primitive",
           of: "string",

@@ -30,6 +30,24 @@ export function compactForLog(value: unknown, depth = 0): unknown {
     if (record.kind === "entity") {
       return { kind: record.kind, of: record.of, id: record.id };
     }
+    // An object shrinks by its FIELDS. Its `of` is the declared type, not data —
+    // left to the generic branch it would be compacted as a nested payload and
+    // roughly double what the log keeps, while burying the values a reader wants.
+    if (
+      record.kind === "record" &&
+      record.fields !== null &&
+      typeof record.fields === "object"
+    ) {
+      const fields = Object.entries(record.fields as Record<string, unknown>);
+      const kept: Record<string, unknown> = {};
+      for (const [name, field] of fields.slice(0, MAX_OBJECT_KEYS)) {
+        kept[name] = compactForLog(field, depth + 1);
+      }
+      if (fields.length > MAX_OBJECT_KEYS) {
+        kept["…"] = `${fields.length - MAX_OBJECT_KEYS} more keys`;
+      }
+      return { kind: "record", fields: kept };
+    }
     // Named rows shrink like a list: cap the entries, recurse into each value.
     if (record.kind === "pairs" && Array.isArray(record.entries)) {
       const rows = record.entries as Record<string, unknown>[];

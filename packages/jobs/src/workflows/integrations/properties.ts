@@ -106,6 +106,13 @@ function toPlain(value: RuntimeValue): unknown {
       return Object.fromEntries(
         value.entries.map((entry) => [entry.name, toPlain(entry.value)])
       );
+    case "record":
+      return Object.fromEntries(
+        Object.entries(value.fields).map(([name, field]) => [
+          name,
+          toPlain(field)
+        ])
+      );
   }
 }
 
@@ -113,17 +120,35 @@ function toPlain(value: RuntimeValue): unknown {
  * omitted rather than sent as null: pieces branch on `undefined`. */
 export function toPropsValue(
   props: Record<string, PieceProperty>,
-  inputs: Record<string, RuntimeValue>
+  inputs: Record<string, RuntimeValue>,
+  /** Values pinned by the allowlist, applied only where the node supplied nothing.
+   * Merged HERE rather than stored on the node, so changing a pin fixes every
+   * existing workflow at once instead of leaving stale literals behind. */
+  pinned: Record<string, unknown> = {}
 ): Record<string, unknown> {
   const propsValue: Record<string, unknown> = {};
 
   for (const name of Object.keys(props)) {
     const input = inputs[name];
-    if (input === undefined) continue;
+    if (input === undefined) {
+      // A node value always wins: an author who opened Advanced and set this
+      // deliberately must not be overridden by our default.
+      if (pinned[name] !== undefined) propsValue[name] = pinned[name];
+      continue;
+    }
 
     const plain = toPlain(input);
-    if (plain === null || plain === undefined) continue;
-    if (Array.isArray(plain) && plain.length === 0) continue;
+    if (plain === null || plain === undefined) {
+      if (pinned[name] !== undefined) propsValue[name] = pinned[name];
+      continue;
+    }
+    // An emptied multi-select is "nothing chosen", not "send an empty list": the
+    // piece reads a required list unguarded. Falls back to the pin for the same
+    // reason an absent input does — omitting it is what crashed the vendor.
+    if (Array.isArray(plain) && plain.length === 0) {
+      if (pinned[name] !== undefined) propsValue[name] = pinned[name];
+      continue;
+    }
 
     propsValue[name] = plain;
   }

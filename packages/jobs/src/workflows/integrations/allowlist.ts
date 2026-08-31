@@ -17,6 +17,16 @@
  * screen, no callback route, no refresh cycle), so they get their own work rather
  * than a special case bolted onto this path.
  */
+/** A reviewed decision about one prop of one action. Written when a piece is
+ * allowlisted — which is already a deliberate, human-gated step. */
+export interface AllowlistPropOverride {
+  /** Keep it out of the ordinary form; it still appears under Advanced. */
+  hidden?: boolean;
+  /** Sent at RUN time when the node supplies nothing, never stored on the node —
+   * so changing our mind here fixes every existing workflow at once. */
+  value?: unknown;
+}
+
 export interface AllowlistEntry {
   package: string;
   /** The EXACT version, no range prefix — `assertPinnedVersions` holds this and
@@ -46,6 +56,10 @@ export interface AllowlistEntry {
     /** Which top-level field of the JSON response to display. */
     field: string;
   };
+  /** Per-action prop overrides, keyed by action then prop. Only for a vendor
+   * default that is WRONG for us — the generic rules in `visibility.ts` handle
+   * merely-uninteresting fields with no per-action data. */
+  props?: Record<string, Record<string, AllowlistPropOverride>>;
 }
 
 export const PIECE_ALLOWLIST: Record<string, AllowlistEntry> = {
@@ -62,6 +76,15 @@ export const PIECE_ALLOWLIST: Record<string, AllowlistEntry> = {
     accountLabel: {
       url: "https://www.googleapis.com/oauth2/v2/userinfo",
       field: "email"
+    },
+    props: {
+      google_calendar_get_events: {
+        // "Expand Recurring Event?" defaults to FALSE upstream, and an unexpanded
+        // recurring event carries the SERIES start date — so a workflow asking for
+        // "events tomorrow" silently misses every recurring meeting. Nearly every
+        // workflow wants it on, and the vendor's default is simply wrong for us.
+        singleEvents: { hidden: true, value: true }
+      }
     }
   }
 };
