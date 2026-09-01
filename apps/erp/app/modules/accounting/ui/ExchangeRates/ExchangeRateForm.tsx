@@ -163,7 +163,11 @@ const CurrencyForm = ({
                 name="exchangeRate"
                 label={t`Exchange Rate`}
                 termId="exchange-rate"
-                minValue={isBaseCurrency ? 1 : 0}
+                // No floor for a foreign currency: a minValue CLAMPS on blur,
+                // so a typed 0 would silently commit as the step (0.00001)
+                // instead of being refused. Let the schema reject it with a
+                // message the user can act on.
+                minValue={isBaseCurrency ? 1 : undefined}
                 maxValue={isBaseCurrency ? 1 : undefined}
                 step={INPUT_STEP.exchangeRate}
                 formatOptions={INPUT_FORMAT.exchangeRate}

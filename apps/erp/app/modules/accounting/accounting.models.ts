@@ -417,9 +417,14 @@ export const currencyValidator = z.object({
   id: zfd.text(z.string().optional()),
   code: z.string().trim().min(1, { message: "Code is required" }),
   decimalPlaces: zfd.numeric(z.number().min(0).max(4)),
-  exchangeRate: zfd.numeric(z.number().min(0, { message: "Rate is required" })),
+  // Zero is not a rate. It is refused at the database too
+  // (`currency_exchangeRate_check`), so accepting it here only produces a
+  // constraint violation the user cannot act on.
+  exchangeRate: zfd.numeric(
+    z.number().positive({ message: "Rate must be greater than zero" })
+  ),
   historicalExchangeRate: zfd.numeric(
-    z.number().min(0, { message: "Rate must be positive" }).optional()
+    z.number().positive({ message: "Rate must be greater than zero" }).optional()
   )
 });
 
