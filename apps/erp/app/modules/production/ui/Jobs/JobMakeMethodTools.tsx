@@ -370,10 +370,6 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
             </HStack>
           </Menubar>
         )}
-      {/* Rendered unconditionally (open-controlled) so Radix keeps the content
-          mounted just long enough to play the exit animation — the old
-          `isOpen && <Modal open>` pattern unmounted it mid-close, which
-          made closing look abrupt/jittery. Content only mounts while open. */}
       <Modal
         open={getMethodModal.isOpen}
         onOpenChange={(open) => {

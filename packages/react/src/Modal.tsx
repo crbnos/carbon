@@ -32,11 +32,6 @@ const ModalOverlay = forwardRef<
       // 'z-50 fixed h-full w-full left-0 top-0',
       // 'bg-alternative/90 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
       "bg-alternative/90 backdrop-blur-sm",
-      // The previous `data-open:animate-overlay-show` / `data-closed:animate-overlay-hide`
-      // pair was inert twice over: no such keyframes exist, and Radix sets
-      // `data-state="open"`, not `data-open` — so the full-screen blur popped in
-      // and out with no transition. These are the tailwindcss-animate classes
-      // ModalContent already uses.
       "z-50 fixed inset-0 grid place-items-center overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
 
       className
