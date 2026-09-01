@@ -160,15 +160,19 @@ describe("SalesInvoiceSyncer.mapToRemote (item revenue account)", () => {
  * BASE currency (`convertedUnitPrice` is the document mirror), so a payload
  * declaring `CurrencyCode: "EUR"` must carry EUR amounts, not the base ones.
  *
- * Xero's `CurrencyRate` is base-per-foreign — the rate that converts the
- * invoice's currency INTO the organisation's base. Carbon's
- * `currency.exchangeRate` is foreign-per-base, so the two are reciprocal.
+ * Xero's `CurrencyRate` runs the SAME direction as Carbon's
+ * `currency.exchangeRate`: foreign per base. Xero's multicurrency guide is
+ * explicit — "The units of CurrencyRate are always [Foreign Currency] PER
+ * [Base Currency] ... A CurrencyRate of 1.10 for a EUR invoice against a
+ * GBP-base-currency organisation says that 1 GBP = 1.1 EUR." So the rate is
+ * passed through unchanged; inverting it triggers Xero's "inverse rate"
+ * warning and books base amounts wrong.
  */
 const fxInvoice = (): Accounting.SalesInvoice =>
   ({
     ...invoice(),
     currencyCode: "EUR",
-    // 0.80 EUR per 1 USD of base
+    // 0.80 EUR per 1 USD of base -- Xero's units exactly
     exchangeRate: 0.8,
     subtotal: 100,
     totalAmount: 100,
@@ -215,9 +219,16 @@ describe("SalesInvoiceSyncer.mapToRemote (foreign currency)", () => {
     expect(payload.LineItems[0]?.LineAmount).toBe(80);
   });
 
-  it("sends CurrencyRate in Xero's direction (base per foreign)", async () => {
+  it("passes CurrencyRate through unchanged (foreign per base, both sides)", async () => {
     const payload = await makeInvoiceSyncer(db()).mapToRemote(fxInvoice());
-    // Carbon stores 0.8 EUR per USD; Xero wants USD per EUR = 1.25
-    expect(payload.CurrencyRate).toBeCloseTo(1.25, 6);
+    // Xero wants EUR per USD, which is what Carbon already stores. Sending the
+    // reciprocal (1.25) is the documented "inverse rate" mistake.
+    expect(payload.CurrencyRate).toBeCloseTo(0.8, 6);
+  });
+
+  it("omits CurrencyRate on a base-currency invoice rather than sending 1", async () => {
+    const payload = await makeInvoiceSyncer(db()).mapToRemote(invoice());
+    // Xero: "Setting a CurrencyRate of 1 is redundant and considered incorrect."
+    expect(payload.CurrencyRate).toBeUndefined();
   });
 });

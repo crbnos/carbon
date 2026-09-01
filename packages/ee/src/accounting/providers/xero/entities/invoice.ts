@@ -461,13 +461,13 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
       AmountDue: local.balance,
       AmountPaid: local.totalAmount - local.balance,
       CurrencyCode: local.currencyCode,
-      // Xero's CurrencyRate converts the invoice currency INTO the org's base
-      // (base per foreign). Carbon's exchangeRate is foreign per base, so the
-      // two are reciprocal -- passing ours through inverted the rate.
-      CurrencyRate:
-        local.exchangeRate !== 1 && local.exchangeRate > 0
-          ? 1 / local.exchangeRate
-          : undefined
+      // Xero's CurrencyRate is [invoice currency] PER [base currency] -- the
+      // same direction Carbon stores exchangeRate in, so it passes through
+      // unchanged. Inverting it earns Xero's "inverse rate" warning and books
+      // the base amounts wrong. Omit it on base-currency invoices: Xero calls
+      // an explicit rate of 1 redundant and warns on a 1 that reaches an FX
+      // document.
+      CurrencyRate: local.exchangeRate !== 1 ? local.exchangeRate : undefined
     };
   }
 
