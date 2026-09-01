@@ -1269,3 +1269,23 @@ canvas hosting Radix popovers/selects.
 **Rule:** Every scripted patch must assert the anchor's occurrence count before replacing (`assert s.count(old) == 1`) and fail loudly on a miss. Never chain a patch script with `&&` after an unasserted step.
 
 **Applies to:** Any agent or script editing source by string replacement, repo-wide.
+
+## One-shot stores: peek for validation, take only for the write
+
+**Context:** The Onshape panel's plan/apply split stores a reviewed plan in Redis and consumes it with GETDEL so a double-submitted apply cannot write twice.
+
+**Problem:** Taking the plan before validating the user's edits meant a 422 (one bad field) destroyed the review; the corrected retry hit 410 and forced a fresh Onshape read. The one-shot guarantee and the validation step were fighting over the same read.
+
+**Rule:** For any GETDEL-style one-shot record, validate against a peek (plain GET) and take the record only immediately before the first write. A rejected request must leave the record exactly as it was.
+
+**Applies to:** `packages/ee/src/onshape/lib/panel-plan-store.ts`, any Redis-backed one-shot token/plan/challenge consumed by a request that also validates input.
+
+## Never build PostgREST `.or()` filter strings from external values
+
+**Context:** Mapping-row deletes used `.or(`entityId.eq.${id},externalId.eq.${externalId}`)` where `externalId` embeds an Onshape part number.
+
+**Problem:** A part number containing `,` or `(` `)` changes the filter's meaning — the value is interpolated into PostgREST's filter grammar unquoted, so the delete can match other rows or fail. Every `.in()` / `.eq()` call passes values as parameters and is immune.
+
+**Rule:** Use `.eq()` / `.in()` per column (two calls if two columns must match) instead of a hand-built `.or()` string whenever any operand comes from outside Carbon (CAD part numbers, external ids, user text).
+
+**Applies to:** every Supabase client call with `.or(` whose operands are not literals; `apps/erp/app/routes/api+/integrations.onshape.*`.
