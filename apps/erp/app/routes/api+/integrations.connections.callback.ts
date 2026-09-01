@@ -154,9 +154,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
       logger.error(`Integration token exchange failed: ${message}`);
       return connectionFailed(request, "token-exchange");
     }
-    logger.error(
-      `Integration connection save failed: name=${err instanceof Error ? err.name : typeof err} detail=${message.slice(0, 400)}`
-    );
+    // A PostgREST failure is a plain object, not an Error: its `message`, `code`
+    // and `details` are the only clue to a constraint the write hit.
+    const detail =
+      err instanceof Error
+        ? `name=${err.name} detail=${message.slice(0, 400)}`
+        : `name=${typeof err} detail=${JSON.stringify(err).slice(0, 400)}`;
+    logger.error(`Integration connection save failed: ${detail}`);
     return connectionFailed(request, "save-failed");
   }
 
