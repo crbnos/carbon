@@ -6,7 +6,7 @@ export function NodePalette() {
   const addNode = useBuilderStore((state) => state.addNode);
 
   return (
-    <aside className="flex h-full flex-col gap-1 overflow-y-auto border-r bg-background p-2">
+    <aside className="flex h-full flex-col gap-1 overflow-y-auto border-r bg-card p-2">
       {NODE_KIND_ORDER.map((type) => {
         const meta = NODE_KIND_META[type];
 

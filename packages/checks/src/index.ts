@@ -7,6 +7,7 @@ export type {
 } from "./check";
 export { findClobbers, objectRefs } from "./clobber";
 export { moduleShape } from "./conformance/module-shape";
+export { noDbClientInService } from "./conformance/no-db-client-in-service";
 export { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
 export { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits";
 export { noLegacyRls } from "./conformance/no-legacy-rls";

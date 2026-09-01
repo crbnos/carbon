@@ -69,6 +69,7 @@ import type {
   SchedulingOptions,
   SchedulingResult
 } from "./types.ts";
+import { capacityHoldingJobStatuses } from "./types.ts";
 import {
   applyWorkCenterSelections,
   type FiniteSchedulingContext,
@@ -469,15 +470,40 @@ export class SchedulingEngine {
         }
       });
 
-      // Update operations with no dependencies to Ready status (outside the
-      // rebuild txn so the advisory lock is held only for the delete/insert).
-      for (const [opId, deps] of allDependencies) {
-        if (deps.size === 0) {
-          await this.db
-            .updateTable("jobOperation")
-            .set({ status: "Ready" })
-            .where("id", "=", opId)
-            .execute();
+      // Unblock dependency-free operations to Ready (outside the rebuild txn so
+      // the advisory lock is held only for the delete/insert). Two guards keep
+      // this from RE-OPENING work that is already finished or in flight:
+      //
+      //  1. Only OPEN jobs. A terminal job (Completed/Closed/Cancelled) or a
+      //     pre-release Draft/Planned job is never re-opened by a regen. Open
+      //     work is `capacityHoldingJobStatuses`; the batch loader already
+      //     filters to these, so this is defense-in-depth for any direct caller.
+      //  2. Only resettable operation statuses. Never overwrite an operation
+      //     that is Done/Canceled (finished) or In Progress/Paused (running) —
+      //     only Ready/Waiting/Todo become Ready. Without this, a first op that
+      //     an operator already completed was flipped back to Ready, and because
+      //     `is_last_job_operation` requires EVERY op Done, the finished job
+      //     could then never auto-complete (it sat stuck as open work).
+      const jobIsOpen =
+        this.job?.status != null &&
+        (capacityHoldingJobStatuses as readonly string[]).includes(
+          this.job.status
+        );
+      if (jobIsOpen) {
+        for (const [opId, deps] of allDependencies) {
+          if (deps.size === 0) {
+            await this.db
+              .updateTable("jobOperation")
+              .set({ status: "Ready" })
+              .where("id", "=", opId)
+              .where("status", "not in", [
+                "Done",
+                "Canceled",
+                "In Progress",
+                "Paused"
+              ])
+              .execute();
+          }
         }
       }
     }

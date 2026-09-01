@@ -987,25 +987,11 @@ export async function getJob(client: SupabaseClient<Database>, id: string) {
   return client.from("jobs").select("*").eq("id", id).single();
 }
 
-// Lazy Node Kysely handle for the IN-PROCESS scheduling engine. Built through a
-// dynamic import so this module — which is ALSO bundled for the browser (it is
-// imported by client components via the module barrel) — never STATICALLY pulls
-// in `pg` or a `.server` module. Same tactic as notifyScheduleInputsChanged's
-// `await import("@carbon/jobs")` below. A modest dedicated pool: a regen uses one
-// connection at a time (sequential per job).
-let schedulingDbPromise: Promise<Kysely<KyselyDatabase>> | undefined;
-function getSchedulingDb(): Promise<Kysely<KyselyDatabase>> {
-  if (!schedulingDbPromise) {
-    schedulingDbPromise = (async () => {
-      const { getPostgresClient, getPostgresConnectionPool } = await import(
-        "@carbon/database/client"
-      );
-      const { PostgresDriver } = await import("kysely");
-      return getPostgresClient(getPostgresConnectionPool(5), PostgresDriver);
-    })();
-  }
-  return schedulingDbPromise;
-}
+// The IN-PROCESS scheduling/MRP engines need a Node Kysely handle. It is built
+// in `~/services/database.server` (getDatabaseClient) and passed in as `db` by
+// the route action — NEVER constructed here. This module is also bundled for the
+// browser (imported by client components via the module barrel), so it must not
+// pull in `pg`/`kysely`. Enforced by the no-db-client-in-service conformance check.
 
 // Read-only "best case" what-if: runs the job first in its location's schedule
 // IN-PROCESS (persists nothing) and returns the projected completion +
@@ -1013,6 +999,7 @@ function getSchedulingDb(): Promise<Kysely<KyselyDatabase>> {
 // (e.g. not Ready/In Progress/Paused).
 export async function getJobExpediteForecast(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   jobId: string,
   companyId: string,
   userId: string
@@ -1032,7 +1019,7 @@ export async function getJobExpediteForecast(
   try {
     const { runExpediteWhatIf } = await import("@carbon/ee/planning");
     const expedite = await runExpediteWhatIf({
-      db: await getSchedulingDb(),
+      db,
       client,
       locationId: job.locationId,
       companyId,
@@ -2519,6 +2506,7 @@ export async function getTrackedEntitiesByJobId(
  */
 export async function recalculateJobOperationDependencies(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   params: {
     jobId: string;
     companyId: string;
@@ -2543,7 +2531,7 @@ export async function recalculateJobOperationDependencies(
   try {
     const { runLocationSchedule } = await import("@carbon/ee/planning");
     const data = await runLocationSchedule({
-      db: await getSchedulingDb(),
+      db,
       client,
       locationId: job.locationId,
       companyId: params.companyId,
@@ -2591,6 +2579,7 @@ export async function recalculateJobMakeMethodRequirements(
 
 export async function runMRP(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   params: {
     type:
       | "company"
@@ -2610,7 +2599,7 @@ export async function runMRP(
   // pool. Preserves the `{ data, error }` shape the caller (api+/mrp.ts) returns.
   try {
     const { runMrp } = await import("@carbon/ee/planning");
-    const data = await runMrp(client, await getSchedulingDb(), params);
+    const data = await runMrp(client, db, params);
     return { data, error: null };
   } catch (err) {
     return {

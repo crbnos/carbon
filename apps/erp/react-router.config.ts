@@ -6,4 +6,8 @@ export default {
   ssr: true,
   presets: process.env.VERCEL ? [vercelPreset()] : undefined,
   future: { unstable_optimizeDeps: true, v8_middleware: true },
+  allowedActionOrigins:
+    process.env.NODE_ENV === "development"
+      ? ["erp.*.dev", "**.localhost"]
+      : undefined,
 } satisfies Config;

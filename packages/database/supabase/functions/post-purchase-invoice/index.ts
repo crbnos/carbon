@@ -2261,7 +2261,6 @@ serve(async (req: Request) => {
       await trx
         .updateTable("purchaseInvoice")
         .set({
-          datePaid: today, // TODO: remove this once we have payments working
           ...(dateDue ? { dateDue } : {}),
           postingDate: today,
           status: "Open",

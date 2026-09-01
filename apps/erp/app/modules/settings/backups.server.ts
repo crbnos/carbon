@@ -4,7 +4,9 @@ import { trigger } from "@carbon/jobs";
 import {
   compatibilityStatus,
   getCompanyTableCatalog,
-  reportBackupCompatibility
+  purgeScopeViolations,
+  reportBackupCompatibility,
+  selectExportableTables
 } from "@carbon/jobs/backups";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -120,4 +122,44 @@ export async function dismissCompanyExportFailure(
     .delete()
     .eq("integration", "company-export")
     .eq("companyId", companyId);
+}
+
+/**
+ * Permanently delete this company's rows whose NOT-NULL FK escapes company scope
+ * (and rows depending on them) — the data the export guard refuses on, and the
+ * reason a restore's pre-restore snapshot fails on a company with them. Only
+ * ever called from the user-confirmed "Remove corrupted data and restore"
+ * action. One transaction; children first (see `purgeScopeViolations`).
+ */
+export async function purgeCorruptedRows(
+  companyId: string
+): Promise<{ deleted: Array<{ table: string; rows: number }> }> {
+  const db = getDatabaseClient();
+  const serviceRole = getCarbonServiceRole();
+  const company = await serviceRole
+    .from("company")
+    .select("companyGroupId")
+    .eq("id", companyId)
+    .single();
+  if (company.error) throw new Error(company.error.message);
+
+  const catalog = await getCompanyTableCatalog(db);
+  const { exportable } = selectExportableTables(catalog);
+  const byName = new Map(catalog.tables.map((t) => [t.name, t]));
+  const result = await db
+    .transaction()
+    .execute((trx) =>
+      purgeScopeViolations(
+        trx,
+        exportable,
+        byName,
+        companyId,
+        company.data.companyGroupId ?? null
+      )
+    );
+  log.warn("Backups: purged out-of-scope rows before restore", {
+    companyId,
+    deleted: result.deleted
+  });
+  return result;
 }

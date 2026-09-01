@@ -20,7 +20,7 @@ import { getLocalTimeZone, startOfWeek, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
-import { useEffect, useState } from "react";
+import { memo, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useFetcher, useLoaderData } from "react-router";
 import {
   Bar,
@@ -127,25 +127,39 @@ const DemandProjectionsForm = ({
     });
   };
 
-  // Per-week demand plus a running/cumulative total, so the chart shows both the
-  // shape of demand and the total committed across the horizon.
-  let cumulative = 0;
-  const chartData = weekValues.map((demand, i) => {
-    cumulative += demand;
-    return {
-      week: i + 1,
-      demand,
-      cumulative
-    };
-  });
+  // Editing a week input commits on blur — i.e. exactly as focus tabs to the next
+  // field. Rendering the recharts chart in that same synchronous commit tears its
+  // SVG/container DOM down and back up mid-focus-move, hijacking the tab. Defer the
+  // chart's data so the urgent render (input value + focus move) lands first and the
+  // chart re-renders in a low-priority pass afterwards, off the focus path.
+  const deferredWeekValues = useDeferredValue(weekValues);
 
-  const chartConfig: ChartConfig = {
-    demand: { label: t`Weekly demand`, color: "hsl(var(--primary))" },
-    cumulative: {
-      label: t`Cumulative`,
-      color: "hsl(var(--muted-foreground))"
-    }
-  };
+  // Per-week demand plus a running/cumulative total, so the chart shows both the
+  // shape of demand and the total committed across the horizon. Memoized on the
+  // deferred values so the chart child's props are referentially stable during the
+  // urgent commit and <DemandChart> (memo) skips it.
+  const chartData = useMemo(() => {
+    let cumulative = 0;
+    return deferredWeekValues.map((demand, i) => {
+      cumulative += demand;
+      return {
+        week: i + 1,
+        demand,
+        cumulative
+      };
+    });
+  }, [deferredWeekValues]);
+
+  const chartConfig: ChartConfig = useMemo(
+    () => ({
+      demand: { label: t`Weekly demand`, color: "hsl(var(--primary))" },
+      cumulative: {
+        label: t`Cumulative`,
+        color: "hsl(var(--muted-foreground))"
+      }
+    }),
+    [t]
+  );
 
   return (
     <Drawer
@@ -209,51 +223,11 @@ const DemandProjectionsForm = ({
                 <div className="text-sm font-medium mb-2">
                   {t`52-week demand`}
                 </div>
-                <ChartContainer
-                  config={chartConfig}
-                  className="w-full h-[180px]"
-                >
-                  <ComposedChart
-                    data={chartData}
-                    margin={{ top: 8, right: 8, bottom: 0, left: -8 }}
-                  >
-                    <CartesianGrid vertical={false} />
-                    <XAxis
-                      dataKey="week"
-                      tickLine={false}
-                      axisLine={false}
-                      minTickGap={16}
-                      tickFormatter={(value) => `${value}`}
-                    />
-                    <YAxis
-                      tickLine={false}
-                      axisLine={false}
-                      width={40}
-                      allowDecimals={false}
-                    />
-                    <ChartTooltip
-                      cursor={{ fill: "hsl(var(--muted) / 0.4)" }}
-                      content={
-                        <DemandChartTooltip formatter={numberFormatter} />
-                      }
-                    />
-                    <Bar
-                      dataKey="demand"
-                      fill="hsl(var(--primary))"
-                      fillOpacity={0.6}
-                      radius={[2, 2, 0, 0]}
-                      isAnimationActive={false}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="cumulative"
-                      stroke="hsl(var(--muted-foreground))"
-                      strokeWidth={2}
-                      dot={false}
-                      isAnimationActive={false}
-                    />
-                  </ComposedChart>
-                </ChartContainer>
+                <DemandChart
+                  chartData={chartData}
+                  chartConfig={chartConfig}
+                  numberFormatter={numberFormatter}
+                />
               </div>
 
               {/* Quarter tabs. ALL 52 week inputs stay mounted (forceMount +
@@ -318,6 +292,64 @@ const DemandProjectionsForm = ({
     </Drawer>
   );
 };
+
+// Isolated so its re-render is driven only by the (deferred) chart props, never by
+// a week input committing. memo + referentially-stable props keep it out of the
+// urgent Tab/blur commit — see the useDeferredValue note above.
+type DemandChartProps = {
+  chartData: Array<{ week: number; demand: number; cumulative: number }>;
+  chartConfig: ChartConfig;
+  numberFormatter: Intl.NumberFormat;
+};
+
+const DemandChart = memo(function DemandChart({
+  chartData,
+  chartConfig,
+  numberFormatter
+}: DemandChartProps) {
+  return (
+    <ChartContainer config={chartConfig} className="w-full h-[180px]">
+      <ComposedChart
+        data={chartData}
+        margin={{ top: 8, right: 8, bottom: 0, left: -8 }}
+      >
+        <CartesianGrid vertical={false} />
+        <XAxis
+          dataKey="week"
+          tickLine={false}
+          axisLine={false}
+          minTickGap={16}
+          tickFormatter={(value) => `${value}`}
+        />
+        <YAxis
+          tickLine={false}
+          axisLine={false}
+          width={40}
+          allowDecimals={false}
+        />
+        <ChartTooltip
+          cursor={{ fill: "hsl(var(--muted) / 0.4)" }}
+          content={<DemandChartTooltip formatter={numberFormatter} />}
+        />
+        <Bar
+          dataKey="demand"
+          fill="hsl(var(--primary))"
+          fillOpacity={0.6}
+          radius={[2, 2, 0, 0]}
+          isAnimationActive={false}
+        />
+        <Line
+          type="monotone"
+          dataKey="cumulative"
+          stroke="hsl(var(--muted-foreground))"
+          strokeWidth={2}
+          dot={false}
+          isAnimationActive={false}
+        />
+      </ComposedChart>
+    </ChartContainer>
+  );
+});
 
 function DemandChartTooltip({
   active,
