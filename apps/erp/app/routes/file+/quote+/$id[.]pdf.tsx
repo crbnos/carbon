@@ -141,7 +141,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       }, {}) ?? {};
   }
 
-  let exchangeRate = 1;
+  // The rate is the QUOTE's snapshot, not today's. The line amounts this PDF
+  // renders come from `converted*` generated columns, which bake in the rate
+  // stored on the quote; taking the live rate for the header charges made one
+  // document mix two rates as soon as the daily cron moved the currency.
+  // The currency row is still read, but only for its decimalPlaces.
+  const exchangeRate = quote.data?.exchangeRate ?? 1;
   let currencyDecimals: number | null = null;
   if (quote.data?.currencyCode) {
     const currency = await getCurrencyByCode(
@@ -149,9 +154,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       companyGroupId,
       quote.data.currencyCode
     );
-    if (currency.data?.exchangeRate) {
-      exchangeRate = currency.data.exchangeRate;
-    }
     currencyDecimals = currency.data?.decimalPlaces ?? null;
   }
 
