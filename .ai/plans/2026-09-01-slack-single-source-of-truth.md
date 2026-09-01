@@ -9,7 +9,7 @@
 - [x] Task 2: `connectionMetadataFrom` / `accountLabelFromBody` + tests
 - [x] Task 3: `ExchangedTokens.body` + `readConnectionAccessToken` + tests
 - [x] Task 4: Callback uses body-derived label + metadata
-- [x] Task 5: Migration `20260901044047_slack-connections-single-source.sql` (hardened after review: user-validated `createdBy`, vault read before insert, `Expired` when tokenless, `Revoked` without secret, partial index, no webhook URL)
+- [x] Task 5: Migration `20260901173100_slack-connections-single-source.sql` (hardened after review: user-validated `createdBy`, vault read before insert, `Expired` when tokenless, `Revoked` without secret, partial index, no webhook URL)
 - [x] Task 6: Slack service — `getSlackWorkspace`, `getSlackWorkspaceByTeamId` (+ `AmbiguousSlackWorkspaceError`), `getSlackAuth` on connections
 - [x] Task 7: Jobs — `send-slack.ts` (token resolved inside the single step), `slack-document-sync.ts` (four functions), `notify.ts` (added after review)
 - [x] Task 8: Interactive route on `getSlackWorkspaceByTeamId`; `integrations.slack.install.ts` deleted; `integrations.slack.oauth.ts` kept as a 302 forwarder

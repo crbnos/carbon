@@ -266,7 +266,7 @@ starts differing.
 ## F10 — permission boundary worth confirming (not necessarily a change)
 
 The `integrationConnection` SELECT policy is `settings_view`
-(`20260827044707_...sql`), but `connectionProvider` runs at `workflows_view`
+(`20260901173000_...sql`), but `connectionProvider` runs at `workflows_view`
 (`options-providers.server.ts:56`) using the requester's own client.
 
 A workflow author with `workflows_update` but without `settings_view` therefore gets zero

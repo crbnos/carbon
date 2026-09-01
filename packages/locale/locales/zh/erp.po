@@ -2679,6 +2679,9 @@ msgstr "批次追踪"
 msgid "Batch Tracking"
 msgstr "批次追踪"
 
+msgid "BCC Email"
+msgstr ""
+
 msgid "Beginning"
 msgstr "开始"
 
@@ -2767,6 +2770,9 @@ msgstr "看板"
 
 msgid "Body"
 msgstr "正文"
+
+msgid "Body for the email you want to send"
+msgstr ""
 
 msgid "BoM"
 msgstr "物料清单"
@@ -3155,6 +3161,9 @@ msgstr "导致运行："
 
 msgid "CC"
 msgstr "抄送"
+
+msgid "CC Email"
+msgstr ""
 
 msgid "Centralized Billing Address"
 msgstr "集中式账单地址"
@@ -6237,6 +6246,9 @@ msgstr "电子邮件"
 msgid "Email Address"
 msgstr "电子邮件地址"
 
+msgid "Email address to set as the \"Reply-To\" header"
+msgstr ""
+
 msgid "Email Domains"
 msgstr "电子邮件域"
 
@@ -7702,6 +7714,12 @@ msgstr "总账对账"
 
 msgid "GL Tie-Out"
 msgstr "总账对账"
+
+msgid "Gmail"
+msgstr ""
+
+msgid "Gmail: Send Email"
+msgstr ""
 
 msgid "Go live right the first time — with our team alongside you"
 msgstr "第一次就上线成功 — 我们的团队陪伴您"
@@ -12941,6 +12959,9 @@ msgstr "接收人"
 msgid "Received Qty"
 msgstr "已收货数量"
 
+msgid "Receiver Email (To)"
+msgstr ""
+
 msgid "Receiving Location"
 msgstr "收货地点"
 
@@ -13277,6 +13298,9 @@ msgid "Replenishment System"
 msgstr "补货方式"
 
 msgid "Reply to Thread (Thread Message Link/Timestamp)"
+msgstr ""
+
+msgid "Reply-To Email"
 msgstr ""
 
 msgid "Report"
@@ -14430,6 +14454,12 @@ msgstr "发送至 Carbon"
 
 msgid "Send Via"
 msgstr "通过以下方式发送"
+
+msgid "Sender Email"
+msgstr ""
+
+msgid "Sender Name"
+msgstr ""
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "将有缺陷的单位送回较早的操作进行更正，而不是报废。"
@@ -15862,6 +15892,9 @@ msgstr "Carbon 自动记账的账户"
 msgid "The action that copies a saved method (its materials, operations, and work instructions) onto a job or quote line."
 msgstr "将保存的方法（其原材料、工序和作业指导书）复制到工单或报价行的操作。"
 
+msgid "The address must be listed in your GMail account's settings"
+msgstr ""
+
 msgid "The allowed values for a list-type attribute; users pick from these rather than free-typing."
 msgstr "列表类型属性的允许值；用户从这些值中选择而不是自由输入。"
 
@@ -15885,6 +15918,7 @@ msgstr "授权在 Onshape 中被拒绝。请重新连接。"
 
 msgid "The authorization was rejected"
 msgstr "授权被拒绝"
+
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "为保持其工单按时完成，工序必须完成的反向计算日期，写入工序的到期日。测量进度的稳定目标 — 永远不是放置约束。"
 
@@ -17369,6 +17403,9 @@ msgstr "输入 {TRIGGER} 以插入变量"
 
 msgid "Type a message..."
 msgstr "输入消息..."
+
+msgid "Type a value and press Enter…"
+msgstr ""
 
 msgid "Type an email and press Enter to add an external recipient"
 msgstr "输入电子邮件并按 Enter 键以添加外部收件人"

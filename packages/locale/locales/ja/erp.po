@@ -2679,6 +2679,9 @@ msgstr "バッチ追跡"
 msgid "Batch Tracking"
 msgstr "バッチ追跡"
 
+msgid "BCC Email"
+msgstr ""
+
 msgid "Beginning"
 msgstr "開始"
 
@@ -2767,6 +2770,9 @@ msgstr "ボード"
 
 msgid "Body"
 msgstr "本文"
+
+msgid "Body for the email you want to send"
+msgstr ""
 
 msgid "BoM"
 msgstr "BoM"
@@ -3155,6 +3161,9 @@ msgstr "実行を引き起こす:"
 
 msgid "CC"
 msgstr "CC"
+
+msgid "CC Email"
+msgstr ""
 
 msgid "Centralized Billing Address"
 msgstr "一元化された請求先住所"
@@ -6237,6 +6246,9 @@ msgstr "メール"
 msgid "Email Address"
 msgstr "メールアドレス"
 
+msgid "Email address to set as the \"Reply-To\" header"
+msgstr ""
+
 msgid "Email Domains"
 msgstr "メールドメイン"
 
@@ -7702,6 +7714,12 @@ msgstr "GL試算表"
 
 msgid "GL Tie-Out"
 msgstr "GL試算表"
+
+msgid "Gmail"
+msgstr ""
+
+msgid "Gmail: Send Email"
+msgstr ""
 
 msgid "Go live right the first time — with our team alongside you"
 msgstr "初回から正しく本番運用を開始 — 当社チームがサポートします"
@@ -12941,6 +12959,9 @@ msgstr "受け取った人"
 msgid "Received Qty"
 msgstr "受け取り数量"
 
+msgid "Receiver Email (To)"
+msgstr ""
+
 msgid "Receiving Location"
 msgstr "入荷拠点"
 
@@ -13277,6 +13298,9 @@ msgid "Replenishment System"
 msgstr "調達方式"
 
 msgid "Reply to Thread (Thread Message Link/Timestamp)"
+msgstr ""
+
+msgid "Reply-To Email"
 msgstr ""
 
 msgid "Report"
@@ -14430,6 +14454,12 @@ msgstr "Carbon に送信"
 
 msgid "Send Via"
 msgstr "経由で送信"
+
+msgid "Sender Email"
+msgstr ""
+
+msgid "Sender Name"
+msgstr ""
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "不良ユニットをスクラップするのではなく、以前の操作に戻して修正する。"
@@ -15862,6 +15892,9 @@ msgstr "Carbonが自動的に転記するアカウント"
 msgid "The action that copies a saved method (its materials, operations, and work instructions) onto a job or quote line."
 msgstr "保存された製法（その材料、工程、および作業手順書）をジョブまたは見積明細にコピーするアクション。"
 
+msgid "The address must be listed in your GMail account's settings"
+msgstr ""
+
 msgid "The allowed values for a list-type attribute; users pick from these rather than free-typing."
 msgstr "リスト型属性の許可された値。ユーザーは自由入力ではなくこれらの中から選択します。"
 
@@ -15885,6 +15918,7 @@ msgstr "Onshape で認可が拒否されました。もう一度接続してく�
 
 msgid "The authorization was rejected"
 msgstr "認可が拒否されました"
+
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "その製造指図を時間通りに保つために、工程が終了する必要のある後方計算日であり、工程の期日に書き込まれます。進捗を測定するための安定した目標であり、配置の制約ではありません。"
 
@@ -17369,6 +17403,9 @@ msgstr "変数を挿入するために {TRIGGER} を入力してください"
 
 msgid "Type a message..."
 msgstr "メッセージを入力..."
+
+msgid "Type a value and press Enter…"
+msgstr ""
 
 msgid "Type an email and press Enter to add an external recipient"
 msgstr "メールを入力して Enter キーを押し、社外受取人を追加します"

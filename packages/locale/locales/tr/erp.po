@@ -2679,6 +2679,9 @@ msgstr "Batch takibi"
 msgid "Batch Tracking"
 msgstr "Lot Takibi"
 
+msgid "BCC Email"
+msgstr ""
+
 msgid "Beginning"
 msgstr "Başlangıç"
 
@@ -2767,6 +2770,9 @@ msgstr "Pano"
 
 msgid "Body"
 msgstr "Gövde"
+
+msgid "Body for the email you want to send"
+msgstr ""
 
 msgid "BoM"
 msgstr "BOM"
@@ -3155,6 +3161,9 @@ msgstr "Neden olan çalıştırma: "
 
 msgid "CC"
 msgstr "Bilgi"
+
+msgid "CC Email"
+msgstr ""
 
 msgid "Centralized Billing Address"
 msgstr "Merkezi Faturalama Adresi"
@@ -6237,6 +6246,9 @@ msgstr "E-posta"
 msgid "Email Address"
 msgstr "E-posta Adresi"
 
+msgid "Email address to set as the \"Reply-To\" header"
+msgstr ""
+
 msgid "Email Domains"
 msgstr "E-posta Etki Alanları"
 
@@ -7702,6 +7714,12 @@ msgstr "Muhasebe mutabakatı"
 
 msgid "GL Tie-Out"
 msgstr "Muhasebe Mutabakatı"
+
+msgid "Gmail"
+msgstr ""
+
+msgid "Gmail: Send Email"
+msgstr ""
 
 msgid "Go live right the first time — with our team alongside you"
 msgstr "İlk seferde canlı yayına geç — ekibimiz yanınızda"
@@ -12941,6 +12959,9 @@ msgstr "Kim Aldığı Kişi"
 msgid "Received Qty"
 msgstr "Alınan Miktar"
 
+msgid "Receiver Email (To)"
+msgstr ""
+
 msgid "Receiving Location"
 msgstr "Mal kabul lokasyonu"
 
@@ -13277,6 +13298,9 @@ msgid "Replenishment System"
 msgstr "İkmal Yöntemi"
 
 msgid "Reply to Thread (Thread Message Link/Timestamp)"
+msgstr ""
+
+msgid "Reply-To Email"
 msgstr ""
 
 msgid "Report"
@@ -14430,6 +14454,12 @@ msgstr "Carbon'a Gönder"
 
 msgid "Send Via"
 msgstr "Gönderim Yolu"
+
+msgid "Sender Email"
+msgstr ""
+
+msgid "Sender Name"
+msgstr ""
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Hatalı ürünleri hurdalanması yerine, daha önceki bir operasyona düzeltilmesi için geri göndermek."
@@ -15862,6 +15892,9 @@ msgstr "Carbon'ın otomatik olarak deftere naklettiği hesaplar"
 msgid "The action that copies a saved method (its materials, operations, and work instructions) onto a job or quote line."
 msgstr "Kayıtlı bir yöntemi (malzemeleri, operasyonları ve iş talimatlarını) bir iş veya teklif satırına kopyalayan eylem."
 
+msgid "The address must be listed in your GMail account's settings"
+msgstr ""
+
 msgid "The allowed values for a list-type attribute; users pick from these rather than free-typing."
 msgstr "Bir liste türü özniteliği için izin verilen değerler; kullanıcılar serbest yazma yerine bunların arasından seçer."
 
@@ -15885,6 +15918,7 @@ msgstr "Yetkilendirme Onshape'te reddedildi. Yeniden bağlanmayı deneyin."
 
 msgid "The authorization was rejected"
 msgstr "Yetkilendirme reddedildi"
+
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "Bir operasyon'un iş emri'sini zamanında tutmak için bitirmesi gereken geriye doğru hesaplanan tarih, operasyon'un son tarih'e yazılır. İlerlemeyi ölçmek için kararlı bir hedef — yerleştirilme üzerinde hiçbir zaman bir kısıtlama değildir."
 
@@ -17369,6 +17403,9 @@ msgstr "Bir değişken eklemek için {TRIGGER} yazın"
 
 msgid "Type a message..."
 msgstr "Bir mesaj yaz..."
+
+msgid "Type a value and press Enter…"
+msgstr ""
 
 msgid "Type an email and press Enter to add an external recipient"
 msgstr "Harici bir alıcı eklemek için bir e-posta girin ve Enter tuşuna basın"

@@ -2679,6 +2679,9 @@ msgstr "बैच ट्रैकिंग"
 msgid "Batch Tracking"
 msgstr "बैच ट्रैकिंग"
 
+msgid "BCC Email"
+msgstr ""
+
 msgid "Beginning"
 msgstr "आरंभ"
 
@@ -2767,6 +2770,9 @@ msgstr "बोर्ड"
 
 msgid "Body"
 msgstr "निकाय"
+
+msgid "Body for the email you want to send"
+msgstr ""
 
 msgid "BoM"
 msgstr "BoM"
@@ -3155,6 +3161,9 @@ msgstr "कारण बनने वाला रन: "
 
 msgid "CC"
 msgstr "CC"
+
+msgid "CC Email"
+msgstr ""
 
 msgid "Centralized Billing Address"
 msgstr "केंद्रीकृत बिलिंग पता"
@@ -6237,6 +6246,9 @@ msgstr "ईमेल"
 msgid "Email Address"
 msgstr "ईमेल पता"
 
+msgid "Email address to set as the \"Reply-To\" header"
+msgstr ""
+
 msgid "Email Domains"
 msgstr "ईमेल डोमेन"
 
@@ -7702,6 +7714,12 @@ msgstr "सामान्य खाता बही समन्वय"
 
 msgid "GL Tie-Out"
 msgstr "सामान्य खाता बही समन्वय"
+
+msgid "Gmail"
+msgstr ""
+
+msgid "Gmail: Send Email"
+msgstr ""
 
 msgid "Go live right the first time — with our team alongside you"
 msgstr "पहली बार ही सही तरीके से लाइव जाएं — हमारी टीम आपके साथ है"
@@ -12941,6 +12959,9 @@ msgstr "द्वारा प्राप्त"
 msgid "Received Qty"
 msgstr "प्राप्त मात्रा"
 
+msgid "Receiver Email (To)"
+msgstr ""
+
 msgid "Receiving Location"
 msgstr "प्राप्ति स्थान"
 
@@ -13277,6 +13298,9 @@ msgid "Replenishment System"
 msgstr "पुनःपूर्ति प्रणाली"
 
 msgid "Reply to Thread (Thread Message Link/Timestamp)"
+msgstr ""
+
+msgid "Reply-To Email"
 msgstr ""
 
 msgid "Report"
@@ -14430,6 +14454,12 @@ msgstr "Carbon को भेजें"
 
 msgid "Send Via"
 msgstr "के माध्यम से भेजें"
+
+msgid "Sender Email"
+msgstr ""
+
+msgid "Sender Name"
+msgstr ""
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "दोषपूर्ण इकाइयों को उन्हें स्क्रैप करने के बजाय सुधारने के लिए पहली ऑपरेशन में वापस भेजना।"
@@ -15862,6 +15892,9 @@ msgstr "वे खाते जो Carbon स्वचालित रूप स
 msgid "The action that copies a saved method (its materials, operations, and work instructions) onto a job or quote line."
 msgstr "किसी सहेजी गई विधि (इसकी सामग्री, ऑपरेशन और कार्य निर्देश) को किसी जॉब या कोटेशन पंक्ति पर प्रतिलिपि करने की कार्रवाई।"
 
+msgid "The address must be listed in your GMail account's settings"
+msgstr ""
+
 msgid "The allowed values for a list-type attribute; users pick from these rather than free-typing."
 msgstr "एक सूची-प्रकार की विशेषता के लिए अनुमत मान; उपयोगकर्ता स्वतंत्र रूप से टाइप करने के बजाय इन में से चुनते हैं।"
 
@@ -15885,6 +15918,7 @@ msgstr "Onshape में प्राधिकरण अस्वीकार �
 
 msgid "The authorization was rejected"
 msgstr "प्राधिकरण को अस्वीकार कर दिया गया"
+
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "वह पिछड़ी हुई गणना की गई तारीख जिस तक एक ऑपरेशन को अपने जॉब को समय पर रखने के लिए समाप्त करना चाहिए, ऑपरेशन की नियत तिथि में लिखा गया है। प्रगति को मापने के लिए एक स्थिर लक्ष्य — कभी भी प्लेसमेंट पर बाधा नहीं।"
 
@@ -17369,6 +17403,9 @@ msgstr "एक variable insert करने के लिए {TRIGGER} दर्
 
 msgid "Type a message..."
 msgstr "एक संदेश लिखें..."
+
+msgid "Type a value and press Enter…"
+msgstr ""
 
 msgid "Type an email and press Enter to add an external recipient"
 msgstr "एक ईमेल टाइप करें और बाहरी प्राप्तकर्ता जोड़ने के लिए Enter दबाएँ"

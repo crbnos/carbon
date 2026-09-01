@@ -50,7 +50,7 @@ as a working tree it hides the real change. Fix: `pnpm run lingui:clean`.
 
 ## MAJOR 3 — the migration can abort a deploy, or leave an Active connection with no secret
 
-`packages/database/supabase/migrations/20260901044047_slack-connections-single-source.sql:32-63`
+`packages/database/supabase/migrations/20260901173100_slack-connections-single-source.sql:32-63`
 
 - `companyIntegration.updatedBy` is bare `TEXT` (no FK — verified against `pg_constraint`), but it is
   copied into `integrationConnection.createdBy/updatedBy`, both `REFERENCES "user"`. One stale user

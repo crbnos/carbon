@@ -2679,6 +2679,9 @@ msgstr "배치 추적"
 msgid "Batch Tracking"
 msgstr "배치 추적"
 
+msgid "BCC Email"
+msgstr ""
+
 msgid "Beginning"
 msgstr "시작"
 
@@ -2767,6 +2770,9 @@ msgstr "보드"
 
 msgid "Body"
 msgstr "본문"
+
+msgid "Body for the email you want to send"
+msgstr ""
 
 msgid "BoM"
 msgstr "BOM"
@@ -3155,6 +3161,9 @@ msgstr "원인 실행: "
 
 msgid "CC"
 msgstr "참조"
+
+msgid "CC Email"
+msgstr ""
 
 msgid "Centralized Billing Address"
 msgstr "통합 청구 주소"
@@ -6237,6 +6246,9 @@ msgstr "이메일"
 msgid "Email Address"
 msgstr "이메일 주소"
 
+msgid "Email address to set as the \"Reply-To\" header"
+msgstr ""
+
 msgid "Email Domains"
 msgstr "이메일 도메인"
 
@@ -7702,6 +7714,12 @@ msgstr "총계정원장 대사"
 
 msgid "GL Tie-Out"
 msgstr "총계정원장 대사"
+
+msgid "Gmail"
+msgstr ""
+
+msgid "Gmail: Send Email"
+msgstr ""
 
 msgid "Go live right the first time — with our team alongside you"
 msgstr "저희 팀과 함께 첫 시도에 성공적으로 도입하세요"
@@ -12941,6 +12959,9 @@ msgstr "입고 담당자"
 msgid "Received Qty"
 msgstr "입고 수량"
 
+msgid "Receiver Email (To)"
+msgstr ""
+
 msgid "Receiving Location"
 msgstr "입고 사업장"
 
@@ -13277,6 +13298,9 @@ msgid "Replenishment System"
 msgstr "조달 방식"
 
 msgid "Reply to Thread (Thread Message Link/Timestamp)"
+msgstr ""
+
+msgid "Reply-To Email"
 msgstr ""
 
 msgid "Report"
@@ -14430,6 +14454,12 @@ msgstr "Carbon에 보내기"
 
 msgid "Send Via"
 msgstr "전송 방법"
+
+msgid "Sender Email"
+msgstr ""
+
+msgid "Sender Name"
+msgstr ""
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "불량 유닛을 폐기하는 대신 이전 공정작업으로 되돌려 수정하는 것입니다."
@@ -15862,6 +15892,9 @@ msgstr "Carbon이 자동으로 전기하는 계정"
 msgid "The action that copies a saved method (its materials, operations, and work instructions) onto a job or quote line."
 msgstr "저장된 방법(자재, 공정 및 작업 표준서)을 작업 지시 또는 견적 라인에 복사하는 동작입니다."
 
+msgid "The address must be listed in your GMail account's settings"
+msgstr ""
+
 msgid "The allowed values for a list-type attribute; users pick from these rather than free-typing."
 msgstr "목록형 속성에 허용되는 값으로, 사용자는 직접 입력하는 대신 이 중에서 선택합니다."
 
@@ -15885,6 +15918,7 @@ msgstr "Onshape에서 인증이 거부되었습니다. 다시 연결해 보세�
 
 msgid "The authorization was rejected"
 msgstr "인증이 거부되었습니다"
+
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "공정이 작업 지시를 제때 완료하기 위해 마감일까지 완료되어야 하는 역계산된 날짜이며 공정의 마감일에 기록됩니다. 진행 상황을 측정하기 위한 안정적인 목표 — 배치에 대한 제약 조건이 아닙니다."
 
@@ -17369,6 +17403,9 @@ msgstr "변수를 삽입하려면 {TRIGGER}를 입력하세요."
 
 msgid "Type a message..."
 msgstr "메시지를 입력하세요..."
+
+msgid "Type a value and press Enter…"
+msgstr ""
 
 msgid "Type an email and press Enter to add an external recipient"
 msgstr "이메일을 입력하고 Enter 키를 눌러 외부 수신자를 추가하세요"

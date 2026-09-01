@@ -2679,6 +2679,9 @@ msgstr "Batch tracking"
 msgid "Batch Tracking"
 msgstr "Batch Tracking"
 
+msgid "BCC Email"
+msgstr "BCC Email"
+
 msgid "Beginning"
 msgstr "Beginning"
 
@@ -2767,6 +2770,9 @@ msgstr "Board"
 
 msgid "Body"
 msgstr "Body"
+
+msgid "Body for the email you want to send"
+msgstr "Body for the email you want to send"
 
 msgid "BoM"
 msgstr "BoM"
@@ -3155,6 +3161,9 @@ msgstr "Causing run: "
 
 msgid "CC"
 msgstr "CC"
+
+msgid "CC Email"
+msgstr "CC Email"
 
 msgid "Centralized Billing Address"
 msgstr "Centralized Billing Address"
@@ -6237,6 +6246,9 @@ msgstr "Email"
 msgid "Email Address"
 msgstr "Email Address"
 
+msgid "Email address to set as the \"Reply-To\" header"
+msgstr "Email address to set as the \"Reply-To\" header"
+
 msgid "Email Domains"
 msgstr "Email Domains"
 
@@ -7702,6 +7714,12 @@ msgstr "GL tie-out"
 
 msgid "GL Tie-Out"
 msgstr "GL Tie-Out"
+
+msgid "Gmail"
+msgstr "Gmail"
+
+msgid "Gmail: Send Email"
+msgstr "Gmail: Send Email"
 
 msgid "Go live right the first time — with our team alongside you"
 msgstr "Go live right the first time — with our team alongside you"
@@ -12941,6 +12959,9 @@ msgstr "Received By"
 msgid "Received Qty"
 msgstr "Received Qty"
 
+msgid "Receiver Email (To)"
+msgstr "Receiver Email (To)"
+
 msgid "Receiving Location"
 msgstr "Receiving Location"
 
@@ -13278,6 +13299,9 @@ msgstr "Replenishment System"
 
 msgid "Reply to Thread (Thread Message Link/Timestamp)"
 msgstr "Reply to Thread (Thread Message Link/Timestamp)"
+
+msgid "Reply-To Email"
+msgstr "Reply-To Email"
 
 msgid "Report"
 msgstr "Report"
@@ -14430,6 +14454,12 @@ msgstr "Send to Carbon"
 
 msgid "Send Via"
 msgstr "Send Via"
+
+msgid "Sender Email"
+msgstr "Sender Email"
+
+msgid "Sender Name"
+msgstr "Sender Name"
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
@@ -15862,6 +15892,9 @@ msgstr "The accounts Carbon posts to automatically"
 msgid "The action that copies a saved method (its materials, operations, and work instructions) onto a job or quote line."
 msgstr "The action that copies a saved method (its materials, operations, and work instructions) onto a job or quote line."
 
+msgid "The address must be listed in your GMail account's settings"
+msgstr "The address must be listed in your GMail account's settings"
+
 msgid "The allowed values for a list-type attribute; users pick from these rather than free-typing."
 msgstr "The allowed values for a list-type attribute; users pick from these rather than free-typing."
 
@@ -15885,6 +15918,7 @@ msgstr "The authorization was refused in Onshape. Try connecting again."
 
 msgid "The authorization was rejected"
 msgstr "The authorization was rejected"
+
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 
@@ -17369,6 +17403,9 @@ msgstr "Type {TRIGGER} to insert a variable"
 
 msgid "Type a message..."
 msgstr "Type a message..."
+
+msgid "Type a value and press Enter…"
+msgstr "Type a value and press Enter…"
 
 msgid "Type an email and press Enter to add an external recipient"
 msgstr "Type an email and press Enter to add an external recipient"

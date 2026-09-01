@@ -8,7 +8,7 @@ Branch: `feat/active-pieces-integration` · Executed 2026-08-27 · Nothing commi
 
 | Task | Result |
 |---|---|
-| 1. Migration | `20260827044707_workflow-integration-connections.sql` — `integrationConnection` + 4 RLS policies + 3 `*_connection_secret` RPCs + delete trigger. Applied. |
+| 1. Migration | `20260901173000_workflow-integration-connections.sql` — `integrationConnection` + 4 RLS policies + 3 `*_connection_secret` RPCs + delete trigger. Applied. |
 | 2. Types | `pnpm db:migrate` regenerated; `integrationConnection` present in `packages/database/src/types.ts`. |
 | 3. Env | `GOOGLE_OAUTH_CLIENT_ID` / `_SECRET` / `_REDIRECT_URL` in `packages/env/src/index.ts` + `.env.example`. |
 | 4. Piece dep | `@activepieces/piece-google-calendar@0.10.3` (exact pin) + `allowlist.ts` + `registry.ts` + `types.ts`. |

@@ -2679,6 +2679,9 @@ msgstr "Suivi des lots"
 msgid "Batch Tracking"
 msgstr "Suivi par lot"
 
+msgid "BCC Email"
+msgstr ""
+
 msgid "Beginning"
 msgstr "Début"
 
@@ -2767,6 +2770,9 @@ msgstr "Tableau"
 
 msgid "Body"
 msgstr "Corps"
+
+msgid "Body for the email you want to send"
+msgstr ""
 
 msgid "BoM"
 msgstr "BoM"
@@ -3155,6 +3161,9 @@ msgstr "Exécution causale : "
 
 msgid "CC"
 msgstr "CC"
+
+msgid "CC Email"
+msgstr ""
 
 msgid "Centralized Billing Address"
 msgstr "Adresse de facturation centralisée"
@@ -6237,6 +6246,9 @@ msgstr "E-mail"
 msgid "Email Address"
 msgstr "Adresse e-mail"
 
+msgid "Email address to set as the \"Reply-To\" header"
+msgstr ""
+
 msgid "Email Domains"
 msgstr "Domaines de messagerie"
 
@@ -7702,6 +7714,12 @@ msgstr "Rapprochement du grand livre"
 
 msgid "GL Tie-Out"
 msgstr "Rapprochement du grand livre"
+
+msgid "Gmail"
+msgstr ""
+
+msgid "Gmail: Send Email"
+msgstr ""
 
 msgid "Go live right the first time — with our team alongside you"
 msgstr "Lancez-vous correctement du premier coup — avec notre équipe à vos côtés"
@@ -12941,6 +12959,9 @@ msgstr "Reçu par"
 msgid "Received Qty"
 msgstr "Quantité reçue"
 
+msgid "Receiver Email (To)"
+msgstr ""
+
 msgid "Receiving Location"
 msgstr "Site de réception"
 
@@ -13277,6 +13298,9 @@ msgid "Replenishment System"
 msgstr "Mode d'approvisionnement"
 
 msgid "Reply to Thread (Thread Message Link/Timestamp)"
+msgstr ""
+
+msgid "Reply-To Email"
 msgstr ""
 
 msgid "Report"
@@ -14430,6 +14454,12 @@ msgstr "Envoyer à Carbon"
 
 msgid "Send Via"
 msgstr "Envoyer via"
+
+msgid "Sender Email"
+msgstr ""
+
+msgid "Sender Name"
+msgstr ""
 
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Renvoi des unités défectueuses à une opération antérieure pour correction au lieu d'être mises au rebut."
@@ -15862,6 +15892,9 @@ msgstr "Les comptes sur lesquels Carbon enregistre automatiquement"
 msgid "The action that copies a saved method (its materials, operations, and work instructions) onto a job or quote line."
 msgstr "L'action qui copie une méthode enregistrée (ses matières, opérations et modes opératoires) sur un ordre de fabrication ou une ligne de devis."
 
+msgid "The address must be listed in your GMail account's settings"
+msgstr ""
+
 msgid "The allowed values for a list-type attribute; users pick from these rather than free-typing."
 msgstr "Les valeurs autorisées pour un attribut de type liste; les utilisateurs choisissent parmi ceux-ci plutôt que de taper librement."
 
@@ -15885,6 +15918,7 @@ msgstr "L'autorisation a été refusée dans Onshape. Réessayez de vous connect
 
 msgid "The authorization was rejected"
 msgstr "L'autorisation a été rejetée"
+
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "La date calculée rétroactivement à laquelle une opération doit être terminée pour que son ordre de fabrication soit à l'heure, écrite à la date d'échéance de l'opération. Une cible stable pour mesurer la progression — jamais une contrainte de placement."
 
@@ -17369,6 +17403,9 @@ msgstr "Tapez {TRIGGER} pour insérer une variable"
 
 msgid "Type a message..."
 msgstr "Tapez un message..."
+
+msgid "Type a value and press Enter…"
+msgstr ""
 
 msgid "Type an email and press Enter to add an external recipient"
 msgstr "Tapez un e-mail et appuyez sur Entrée pour ajouter un destinataire externe"
