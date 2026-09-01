@@ -741,20 +741,20 @@ export default function BackupsRoute() {
                   <Trans>
                     These rows link to data outside this company, so a safety
                     copy of your current data can't be made. Deleting them
-                    cannot be undone. The restore will start right after.
+                    cannot be undone. If they turn out to be shared with other
+                    companies in this group, nothing is deleted and the restore
+                    doesn't start.
                   </Trans>
                 </p>
+                {/* Per TABLE, not per FK edge: the title counts distinct rows,
+                    and a per-edge list beside it would show larger numbers for
+                    the same delete. */}
                 <ul className="mt-3 flex flex-col gap-1 text-xs font-mono">
-                  {purgeRun.violations.map((v) => (
-                    <li
-                      key={`${v.table}.${v.column}`}
-                      className="flex justify-between gap-3"
-                    >
-                      <span className="break-all">
-                        {v.table}.{v.column} → {v.refTable}
-                      </span>
+                  {purgeRun.violationRowsByTable.map((t) => (
+                    <li key={t.table} className="flex justify-between gap-3">
+                      <span className="break-all">{t.table}</span>
                       <span className="tabular-nums shrink-0">
-                        {v.rows.toLocaleString()}
+                        {t.rows.toLocaleString()}
                       </span>
                     </li>
                   ))}

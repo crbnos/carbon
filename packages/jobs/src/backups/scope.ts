@@ -488,6 +488,24 @@ export async function purgeScopeViolations(
     companyId,
     companyGroupId
   );
+
+  // A `companyGroupId`-scoped row (chart of accounts, currencies, dimensions) is
+  // shared with the sibling companies in the group, so deleting it reaches data
+  // this company does not own — and the delete is irreversible. Refused
+  // unconditionally rather than gated on the group having siblings today, since
+  // one can be added later. Mirrors `resolveRestoreScope`, which is why a restore
+  // refuses to touch group data unless the company is its group's only member.
+  const shared = [...exclusions.predicates.keys()].filter(
+    (name) => byName.get(name)?.scopeColumn === "companyGroupId"
+  );
+  if (shared.length > 0) {
+    throw new Error(
+      "These rows are shared with the other companies in this group, so " +
+        "removing them would change their records too. They need to be " +
+        `corrected directly (${shared.join(", ")}).`
+    );
+  }
+
   const deleted: Array<{ table: string; rows: number }> = [];
   for (const table of [...exportable].reverse()) {
     const predicate = exclusions.predicates.get(table.name);

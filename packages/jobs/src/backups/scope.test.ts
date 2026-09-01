@@ -264,3 +264,18 @@ describe("totalExcludedRows", () => {
     expect(totalExcludedRows([])).toBe(0);
   });
 });
+
+describe("purgeScopeViolations tenancy guard", () => {
+  // A `companyGroupId`-scoped table is shared with the sibling companies in the
+  // group, so its rows are not this company's to delete.
+  const groupScoped = (name: string): TableInfo => ({
+    ...table(name, [col("id"), col("companyGroupId")]),
+    scope: { kind: "direct", column: "companyGroupId" },
+    scopeColumn: "companyGroupId"
+  });
+
+  it("marks group-scoped tables as shared, company-scoped ones as not", () => {
+    expect(groupScoped("currency").scopeColumn).toBe("companyGroupId");
+    expect(pickMethod.scopeColumn).toBe("companyId");
+  });
+});

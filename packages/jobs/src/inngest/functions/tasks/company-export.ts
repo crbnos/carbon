@@ -142,9 +142,18 @@ export async function buildCompanyBackup(
       companyGroupId
     );
     if (exclusions.summary.length > 0) {
+      // Skipping a group-shared row deletes nothing, but the artifact then
+      // lacks config the whole group depends on — worth its own log line. The
+      // purge refuses outright on these; see `purgeScopeViolations`.
+      const shared = exclusions.summary.filter(
+        (e) => byName.get(e.table)?.scopeColumn === "companyGroupId"
+      );
       log.warn("Company export skipping out-of-scope rows", {
         companyId,
-        excludedRows: exclusions.summary
+        excludedRows: exclusions.summary,
+        ...(shared.length > 0
+          ? { sharedGroupTablesAffected: shared.map((e) => e.table) }
+          : {})
       });
     }
   } else {

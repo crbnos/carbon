@@ -16458,8 +16458,8 @@ msgstr "これらの製造指図には、この作業区に割り当てられた
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "これらの仕訳はまだ下書きであるため、それらの借方と貸方は当期の元帳に含まれていません。各仕訳を転記するか、後の開いている期間に再度日付を付け直してください。"
 
-msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. The restore will start right after."
-msgstr "これらの行は会社外のデータにリンクしているため、現在のデータの安全なコピーを作成できません。削除は取り消せません。復元はすぐに開始されます。"
+msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
+msgstr ""
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "これらの行は会社外のデータにリンクしているため、復元することはできません。その他すべてがバックアップされました。"

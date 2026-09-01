@@ -16458,8 +16458,8 @@ msgstr "Bu iş emirlerinin bu iş merkezine atanmış operasyonları vardır:"
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Bu muhasebe fişleri hala Taslak halinde olduğundan borç ve alacakları bu dönemin defterine girmedi. Her birini muhasebeleştir veya daha sonraki açık bir döneme yeniden tarihle."
 
-msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. The restore will start right after."
-msgstr "Bu satırlar bu şirket dışındaki verilere bağlı, bu nedenle mevcut verilerinizin güvenlik kopyası alınamaz. Bu satırları silmek geri alınamaz. Geri yükleme hemen sonra başlayacak."
+msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
+msgstr ""
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Bu satırlar bu şirket dışındaki verilere bağlantılı, bu nedenle bunlar hiçbir zaman geri yüklenemez. Diğer her şey yedeklendi."
