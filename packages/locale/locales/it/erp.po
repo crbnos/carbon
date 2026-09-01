@@ -13491,7 +13491,7 @@ msgid "Resources"
 msgstr "Risorse"
 
 msgid "Restock"
-msgstr ""
+msgstr "Riapprovvigionamento"
 
 msgid "restock fee"
 msgstr "canone di rifornimento"
@@ -13504,7 +13504,7 @@ msgid "Restocking fee {0}"
 msgstr "Costo di ristoccaggio {0}"
 
 msgid "Restocking fee:"
-msgstr ""
+msgstr "Commissione di riapprovvigionamento:"
 
 msgid "Restorable with changes"
 msgstr "Ripristinabile con modifiche"
@@ -14914,7 +14914,7 @@ msgid "Shortcuts"
 msgstr "Scorciatoie"
 
 msgid "Show"
-msgstr ""
+msgstr "Mostra"
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "Mostra una colonna ID Cliente leggibile nell'elenco clienti, nei moduli cliente e nei menu a discesa. I clienti sono comunque identificati internamente in entrambi i casi."
@@ -16800,7 +16800,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "Queste voci di prima nota sono ancora Bozza, quindi i loro dare e avere non sono nel registro per questo periodo. Registra ognuno, o ri-datalo in un periodo aperto successivo."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
-msgstr ""
+msgstr "Queste righe collegano i dati al di fuori di questa Azienda, quindi non è possibile creare una copia di sicurezza dei dati attuali. L'eliminazione non può essere annullata. Se risultano essere condivise con altre Aziende di questo gruppo, nulla viene eliminato e il ripristino non inizia."
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Queste righe collegano i dati al di fuori di questa azienda, quindi non potrebbero mai essere ripristinate. Tutto il resto è stato sottoposto a backup."

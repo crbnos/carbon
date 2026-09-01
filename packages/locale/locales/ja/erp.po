@@ -13491,7 +13491,7 @@ msgid "Resources"
 msgstr "リソース"
 
 msgid "Restock"
-msgstr ""
+msgstr "補充"
 
 msgid "restock fee"
 msgstr "再在庫手数料"
@@ -13504,7 +13504,7 @@ msgid "Restocking fee {0}"
 msgstr "返品手数料 {0}"
 
 msgid "Restocking fee:"
-msgstr ""
+msgstr "補充手数料："
 
 msgid "Restorable with changes"
 msgstr "変更ありで復元可能"
@@ -14914,7 +14914,7 @@ msgid "Shortcuts"
 msgstr "ショートカット"
 
 msgid "Show"
-msgstr ""
+msgstr "表示"
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "得意先リスト、得意先フォーム、ドロップダウンで読みやすい得意先IDカラムを表示します。得意先はどちらの方法でも内部的に識別されます。"
@@ -16800,7 +16800,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "これらの仕訳はまだ下書きであるため、それらの借方と貸方は当期の元帳に含まれていません。各仕訳を転記するか、後の開いている期間に再度日付を付け直してください。"
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
-msgstr ""
+msgstr "これらの行は、この会社外のデータにリンクしています。そのため、現在のデータのセーフティコピーを作成できません。これらの削除は元に戻すことはできません。もしこれらがこのグループ内の他の会社と共有されていることが判明した場合、何も削除されず、復元は開始されません。"
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "これらの行は会社外のデータにリンクしているため、復元することはできません。その他すべてがバックアップされました。"
