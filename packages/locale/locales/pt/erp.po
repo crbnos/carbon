@@ -7851,9 +7851,6 @@ msgstr "Nome do Grupo"
 msgid "Groups"
 msgstr "Grupos"
 
-msgid "Guide"
-msgstr "Guia"
-
 msgid "Guided"
 msgstr "Orientado"
 
@@ -10035,9 +10032,6 @@ msgstr "Vários trabalhos podem ser executados neste processo ao mesmo tempo —
 
 msgid "Must be in the same location"
 msgstr "Deve estar no mesmo local"
-
-msgid "Must match"
-msgstr "Deve coincidir"
 
 msgid "My Documents"
 msgstr "Meus Documentos"
@@ -13419,6 +13413,9 @@ msgstr "Exigir aprovação para pedidos de compra com base em limites de valor"
 msgid "Require approval for quality documents in your workflow"
 msgstr "Exigir aprovação para documentos de qualidade no seu fluxo de trabalho"
 
+msgid "Require Match"
+msgstr "Exigir Correspondência"
+
 msgid "Require SAML SSO"
 msgstr "Exigir SAML SSO"
 
@@ -15499,6 +15496,9 @@ msgstr "Sugerir mapeamentos"
 
 msgid "Suggest mappings with AI"
 msgstr "Sugerir mapeamentos com IA"
+
+msgid "Suggest Match"
+msgstr "Sugerir Correspondência"
 
 msgid "Suggest with AI"
 msgstr "Sugerir com IA"

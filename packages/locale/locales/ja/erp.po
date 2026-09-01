@@ -7851,9 +7851,6 @@ msgstr "グループ名"
 msgid "Groups"
 msgstr "グループ"
 
-msgid "Guide"
-msgstr "ガイド"
-
 msgid "Guided"
 msgstr "ガイド付き"
 
@@ -10035,9 +10032,6 @@ msgstr "複数のジョブがこのプロセスで同時に実行できます �
 
 msgid "Must be in the same location"
 msgstr "同じ場所にある必要があります"
-
-msgid "Must match"
-msgstr "一致必須"
 
 msgid "My Documents"
 msgstr "マイドキュメント"
@@ -13419,6 +13413,9 @@ msgstr "金額の閾値に基づいて発注書の承認が必要です"
 msgid "Require approval for quality documents in your workflow"
 msgstr "ワークフローの品質ドキュメントについて承認が必要です"
 
+msgid "Require Match"
+msgstr "照合が必須"
+
 msgid "Require SAML SSO"
 msgstr "SAML SSOを必須にする"
 
@@ -15499,6 +15496,9 @@ msgstr "マッピングを提案"
 
 msgid "Suggest mappings with AI"
 msgstr "AIでマッピングを提案"
+
+msgid "Suggest Match"
+msgstr "照合を提案"
 
 msgid "Suggest with AI"
 msgstr "AIで提案"

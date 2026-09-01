@@ -7851,9 +7851,6 @@ msgstr "Group Name"
 msgid "Groups"
 msgstr "Groups"
 
-msgid "Guide"
-msgstr "Guide"
-
 msgid "Guided"
 msgstr "Guided"
 
@@ -10035,9 +10032,6 @@ msgstr "Multiple jobs can run on this process at the same time — e.g. a laser 
 
 msgid "Must be in the same location"
 msgstr "Must be in the same location"
-
-msgid "Must match"
-msgstr "Must match"
 
 msgid "My Documents"
 msgstr "My Documents"
@@ -13419,6 +13413,9 @@ msgstr "Require approval for purchase orders based on amount thresholds"
 msgid "Require approval for quality documents in your workflow"
 msgstr "Require approval for quality documents in your workflow"
 
+msgid "Require Match"
+msgstr "Require Match"
+
 msgid "Require SAML SSO"
 msgstr "Require SAML SSO"
 
@@ -15499,6 +15496,9 @@ msgstr "Suggest mappings"
 
 msgid "Suggest mappings with AI"
 msgstr "Suggest mappings with AI"
+
+msgid "Suggest Match"
+msgstr "Suggest Match"
 
 msgid "Suggest with AI"
 msgstr "Suggest with AI"

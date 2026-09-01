@@ -134,6 +134,28 @@ async function assertEligible(
   return { operations, processId };
 }
 
+// Record ids in the payload come straight from the caller and prove nothing
+// about tenancy — requirePermissions only authorizes the CALLER for companyId.
+// Re-read the record under companyId and refuse on a miss (the same rule the
+// composite FKs enforce at the schema level; this gives the caller a named
+// error instead of a constraint violation).
+async function assertCompanyRecord(
+  // deno-lint-ignore no-explicit-any
+  trx: any,
+  table: "location" | "workCenter",
+  id: string,
+  companyId: string,
+  label: string
+) {
+  const row = await trx
+    .selectFrom(table)
+    .select("id")
+    .where("id", "=", id)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!row) throw new Error(`${label} not found`);
+}
+
 // Enforce the process's "must match" compatibility rules across the WHOLE batch
 // membership (create: the incoming set; add: existing members + incoming). Skips
 // entirely when the process has no "must" dimension. Uses ids where the client
@@ -603,6 +625,22 @@ serve(async (req: Request) => {
             companyId,
             payload.jobOperationIds
           );
+          await assertCompanyRecord(
+            trx,
+            "location",
+            payload.locationId,
+            companyId,
+            "Location"
+          );
+          if (payload.workCenterId) {
+            await assertCompanyRecord(
+              trx,
+              "workCenter",
+              payload.workCenterId,
+              companyId,
+              "Work center"
+            );
+          }
           await assertMaterialCompatible(
             trx,
             companyId,
@@ -784,6 +822,15 @@ serve(async (req: Request) => {
             .where("companyId", "=", companyId)
             .executeTakeFirst();
           if (!batch) throw new Error("Batch not found");
+          if (nextWorkCenterId) {
+            await assertCompanyRecord(
+              trx,
+              "workCenter",
+              nextWorkCenterId,
+              companyId,
+              "Work center"
+            );
+          }
           // A Completed/Completing batch's events are already attributed to a
           // machine — re-pointing the work center would rewrite that history.
           assertBatchWorkCenterMutable(batch.status);

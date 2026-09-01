@@ -7851,9 +7851,6 @@ msgstr "组名"
 msgid "Groups"
 msgstr "组"
 
-msgid "Guide"
-msgstr "指南"
-
 msgid "Guided"
 msgstr "引导式"
 
@@ -10035,9 +10032,6 @@ msgstr "多个作业可以同时在此工序上运行 — 例如激光切割机�
 
 msgid "Must be in the same location"
 msgstr "必须在同一位置"
-
-msgid "Must match"
-msgstr "必须匹配"
 
 msgid "My Documents"
 msgstr "我的文档"
@@ -13419,6 +13413,9 @@ msgstr "根据金额阈值对采购订单需要审批"
 msgid "Require approval for quality documents in your workflow"
 msgstr "工作流中的质量文档需要审批"
 
+msgid "Require Match"
+msgstr "必需匹配"
+
 msgid "Require SAML SSO"
 msgstr "需要 SAML SSO"
 
@@ -15499,6 +15496,9 @@ msgstr "建议映射"
 
 msgid "Suggest mappings with AI"
 msgstr "使用 AI 建议映射"
+
+msgid "Suggest Match"
+msgstr "建议匹配"
 
 msgid "Suggest with AI"
 msgstr "使用 AI 建议"

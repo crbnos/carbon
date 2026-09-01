@@ -7851,9 +7851,6 @@ msgstr "समूह का नाम"
 msgid "Groups"
 msgstr "समूह"
 
-msgid "Guide"
-msgstr "गाइड"
-
 msgid "Guided"
 msgstr "निर्देशित"
 
@@ -10035,9 +10032,6 @@ msgstr "इस प्रक्रिया पर एक ही समय मे
 
 msgid "Must be in the same location"
 msgstr "एक ही स्थान में होना चाहिए"
-
-msgid "Must match"
-msgstr "मेल खाना चाहिए"
 
 msgid "My Documents"
 msgstr "मेरे दस्तावेज़"
@@ -13419,6 +13413,9 @@ msgstr "राशि सीमा के आधार पर क्रय आद
 msgid "Require approval for quality documents in your workflow"
 msgstr "आपके वर्कफ़्लो में गुणवत्ता दस्तावेज़ों के लिए अनुमोदन की आवश्यकता है"
 
+msgid "Require Match"
+msgstr "मिलान आवश्यक है"
+
 msgid "Require SAML SSO"
 msgstr "SAML SSO आवश्यक करें"
 
@@ -15499,6 +15496,9 @@ msgstr "मैपिंग सुझाएं"
 
 msgid "Suggest mappings with AI"
 msgstr "एआई के साथ मैपिंग सुझाएं"
+
+msgid "Suggest Match"
+msgstr "मिलान सुझाएं"
 
 msgid "Suggest with AI"
 msgstr "एआई के साथ सुझाएं"

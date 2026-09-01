@@ -480,6 +480,33 @@ through; `ProcessForm` gains the Boolean field (clone `completeAllOnScan`).
 
 ## Changelog
 
+### 2026-09-01 — Self-review fixes: tenant integrity, signature split, logic module
+
+- **Tenant integrity**: the `batch-operations` edge fn now re-reads payload
+  `locationId`/`workCenterId` under `companyId` (`assertCompanyRecord`) and the
+  batch table's location/process/workCenter FKs became composite
+  `(<col>, "companyId")` (`20260901132702_batch-composite-tenant-fks.sql`;
+  `UNIQUE (id, companyId)` added to location/workCenter/process to support them,
+  PG15 `ON DELETE SET NULL ("workCenterId")` for the nullable FK). Cross-tenant
+  ids are refused by the fn AND rejected by the schema.
+- **Signature split**: `materialSignature` (materials only, empty when the op has
+  none) vs `groupingKey` (item fallback for material-less assembly ops). Grouping
+  and suggestions use the key; the mixed-materials warning uses the signature, so
+  the item fallback can no longer fake a material clash between two material-less
+  ops with different produced items.
+- **Logic module**: signatures, value sets, duration math, and `rankSuggestions`
+  extracted to `ui/Batches/batch-builder-logic.ts` (no JSX/lingui) with a unit
+  suite at `apps/erp/test/batch-suggestions.test.ts`. Specificity is now counted
+  from dimension value sets, not by splitting the signature string (a material
+  name containing " · " no longer inflates it).
+- `repCapacity` is hybrid: the selected work center's own `batchCapacity` when
+  one is chosen (fill bar and "fills a run" chip can no longer disagree), else
+  the max across eligible centers. `getBatchableOperations` takes `companyId`
+  and filters RPC rows as defense in depth.
+- Compatibility rule labels renamed in the process form: Must match → "Require
+  Match", Guide → "Suggest Match" (display only; stored values stay
+  `must`/`guide`/`ignore`).
+
 ### 2026-09-01 — Work-center capacity + per-process compatibility rules
 
 - **Work-center batch capacity** (`workCenter.batchCapacity` / `minimumBatchQuantity`,
@@ -500,7 +527,7 @@ through; `ProcessForm` gains the Boolean field (clone `completeAllOnScan`).
   `supabase/functions/shared/`): `resolveBatchRules`, `compactBatchRules`,
   `mustViolations` — one intersection-fold owned by both client (names) and edge
   fn (ids). Pinned by `packages/utils/src/batch-compatibility.test.ts`.
-- Deferred from the design canvas (not built): scored-suggestions v2, arriving-soon lane.
+- Deferred from the design canvas at the time: scored-suggestions v2 (built later the same day — see the next entry) and the arriving-soon lane (still unbuilt).
 
 ### 2026-09-01 — Board select-to-batch removed; builder is the sole composition surface
 

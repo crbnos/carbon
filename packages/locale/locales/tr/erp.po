@@ -7851,9 +7851,6 @@ msgstr "Grup Adı"
 msgid "Groups"
 msgstr "Gruplar"
 
-msgid "Guide"
-msgstr "Rehber"
-
 msgid "Guided"
 msgstr "Rehberli"
 
@@ -10035,9 +10032,6 @@ msgstr "Bu işlem üzerinde birden fazla iş aynı anda çalışabilir — örn.
 
 msgid "Must be in the same location"
 msgstr "Aynı konumda olmalıdır"
-
-msgid "Must match"
-msgstr "Eşleşmeli"
 
 msgid "My Documents"
 msgstr "Belgelerim"
@@ -13419,6 +13413,9 @@ msgstr "Belirli tutar eşiklerine göre satın alma siparişleri için onay gere
 msgid "Require approval for quality documents in your workflow"
 msgstr "İş akışınızdaki kalite belgeleri için onay gerektirir"
 
+msgid "Require Match"
+msgstr "Eşleştirme Gerekli"
+
 msgid "Require SAML SSO"
 msgstr "SAML SSO Gerekli"
 
@@ -15499,6 +15496,9 @@ msgstr "Eşlemeleri Öner"
 
 msgid "Suggest mappings with AI"
 msgstr "Yapay Zeka ile Eşlemeleri Öner"
+
+msgid "Suggest Match"
+msgstr "Eşleştirme Öner"
 
 msgid "Suggest with AI"
 msgstr "Yapay Zeka ile Öner"

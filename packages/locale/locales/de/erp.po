@@ -7851,9 +7851,6 @@ msgstr "Gruppenname"
 msgid "Groups"
 msgstr "Gruppen"
 
-msgid "Guide"
-msgstr "Leitfaden"
-
 msgid "Guided"
 msgstr "Geführt"
 
@@ -10035,9 +10032,6 @@ msgstr "Mehrere Aufträge können gleichzeitig auf diesem Prozess laufen – z. 
 
 msgid "Must be in the same location"
 msgstr "Muss sich am selben Ort befinden"
-
-msgid "Must match"
-msgstr "Muss übereinstimmen"
 
 msgid "My Documents"
 msgstr "Meine Dokumente"
@@ -13419,6 +13413,9 @@ msgstr "Genehmigung für Bestellungen basierend auf Schwellenwertbeträgen erfor
 msgid "Require approval for quality documents in your workflow"
 msgstr "Genehmigung für Qualitätsdokumente in Ihrem Workflow erforderlich"
 
+msgid "Require Match"
+msgstr "Abgleich erforderlich"
+
 msgid "Require SAML SSO"
 msgstr "SAML SSO erforderlich"
 
@@ -15499,6 +15496,9 @@ msgstr "Zuordnungen vorschlagen"
 
 msgid "Suggest mappings with AI"
 msgstr "Zuordnungen mit KI vorschlagen"
+
+msgid "Suggest Match"
+msgstr "Abgleich vorschlagen"
 
 msgid "Suggest with AI"
 msgstr "Mit KI vorschlagen"

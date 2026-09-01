@@ -7851,9 +7851,6 @@ msgstr "그룹 이름"
 msgid "Groups"
 msgstr "그룹"
 
-msgid "Guide"
-msgstr "가이드"
-
 msgid "Guided"
 msgstr "가이드형"
 
@@ -10035,9 +10032,6 @@ msgstr "여러 작업이 이 프로세스에서 동시에 실행될 수 있습�
 
 msgid "Must be in the same location"
 msgstr "동일한 위치에 있어야 합니다"
-
-msgid "Must match"
-msgstr "일치해야 함"
 
 msgid "My Documents"
 msgstr "내 문서"
@@ -13419,6 +13413,9 @@ msgstr "금액 임계값을 기준으로 발주서에 대한 승인 필요"
 msgid "Require approval for quality documents in your workflow"
 msgstr "워크플로 내 품질 문서에 승인 필요"
 
+msgid "Require Match"
+msgstr "필수 일치"
+
 msgid "Require SAML SSO"
 msgstr "SAML SSO 필수"
 
@@ -15499,6 +15496,9 @@ msgstr "매핑 제안"
 
 msgid "Suggest mappings with AI"
 msgstr "AI로 매핑 제안"
+
+msgid "Suggest Match"
+msgstr "일치 제안"
 
 msgid "Suggest with AI"
 msgstr "AI로 제안"

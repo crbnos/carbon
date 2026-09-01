@@ -62,7 +62,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const [operations, activeOps, processOps] = await Promise.all([
-    getBatchableOperations(client, { locationId, processId }),
+    getBatchableOperations(client, companyId, { locationId, processId }),
     // Location-wide active ops with a work center → per-WC queue depth.
     client
       .from("jobOperation")

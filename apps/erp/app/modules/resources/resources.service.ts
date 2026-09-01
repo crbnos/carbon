@@ -1853,8 +1853,9 @@ export async function upsertProcess(
   const { workCenters, ...update } = withoutRules;
   const processUpdate = await client
     .from("process")
-    // batchRules is set explicitly (outside sanitize) so a cleared-to-null rule
-    // set persists rather than being stripped as an empty value.
+    // batchRules isn't in `update` — extractBatchRules destructured the six
+    // batchRule* form fields out and folded them into this value — so it must
+    // be added explicitly (null = all-default, and null must be written).
     .update({ ...sanitize(update), batchRules })
     .eq("id", process.id);
   if (processUpdate.error) {

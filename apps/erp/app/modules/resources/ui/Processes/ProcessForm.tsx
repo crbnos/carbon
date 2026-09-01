@@ -200,8 +200,8 @@ function BatchCompatibilityRules() {
   if (!batchable) return null;
 
   const levelOptions = [
-    { value: "must", label: t`Must match` },
-    { value: "guide", label: t`Guide` },
+    { value: "must", label: t`Require Match` },
+    { value: "guide", label: t`Suggest Match` },
     { value: "ignore", label: t`Ignore` }
   ];
 

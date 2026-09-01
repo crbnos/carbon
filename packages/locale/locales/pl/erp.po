@@ -7851,9 +7851,6 @@ msgstr "Nazwa grupy"
 msgid "Groups"
 msgstr "Grupy"
 
-msgid "Guide"
-msgstr "Przewodnik"
-
 msgid "Guided"
 msgstr "Wspomagane"
 
@@ -10035,9 +10032,6 @@ msgstr "Wiele zadań może działać na tym procesie jednocześnie — np. laser
 
 msgid "Must be in the same location"
 msgstr "Musi być w tej samej lokalizacji"
-
-msgid "Must match"
-msgstr "Muszą się zgadzać"
 
 msgid "My Documents"
 msgstr "Moje dokumenty"
@@ -13419,6 +13413,9 @@ msgstr "Wymagaj zatwierdzenia dla zamówień zakupu na podstawie progów kwotowy
 msgid "Require approval for quality documents in your workflow"
 msgstr "Wymagaj zatwierdzenia dla dokumentów jakości w przepływie pracy"
 
+msgid "Require Match"
+msgstr "Wymaga dopasowania"
+
 msgid "Require SAML SSO"
 msgstr "Wymagaj SAML SSO"
 
@@ -15499,6 +15496,9 @@ msgstr "Zasugeruj mapowania"
 
 msgid "Suggest mappings with AI"
 msgstr "Zasugeruj mapowania przy pomocy AI"
+
+msgid "Suggest Match"
+msgstr "Sugeruj dopasowanie"
 
 msgid "Suggest with AI"
 msgstr "Zasugeruj przy pomocy AI"

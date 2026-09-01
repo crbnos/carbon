@@ -5931,12 +5931,20 @@ export async function getJobOperationBatchEvents(
 
 export async function getBatchableOperations(
   client: SupabaseClient<Database>,
+  companyId: string,
   args: { locationId: string; processId: string }
 ) {
-  return client.rpc("get_batchable_operations", {
+  const result = await client.rpc("get_batchable_operations", {
     location_id: args.locationId,
     process_id: args.processId
   });
+  // The RPC is SECURITY INVOKER so RLS already scopes the read; filtering on
+  // the returned companyId column is defense in depth against a caller passing
+  // another tenant's location/process ids.
+  if (result.data) {
+    result.data = result.data.filter((row) => row.companyId === companyId);
+  }
+  return result;
 }
 
 export async function getBatchableProcesses(

@@ -23894,24 +23894,24 @@ export type Database = {
           },
           {
             foreignKeyName: "jobOperationBatch_locationId_fkey"
-            columns: ["locationId"]
+            columns: ["locationId", "companyId"]
             isOneToOne: false
             referencedRelation: "location"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "jobOperationBatch_processId_fkey"
-            columns: ["processId"]
+            columns: ["processId", "companyId"]
             isOneToOne: false
             referencedRelation: "process"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "jobOperationBatch_processId_fkey"
-            columns: ["processId"]
+            columns: ["processId", "companyId"]
             isOneToOne: false
             referencedRelation: "processes"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "jobOperationBatch_updatedBy_fkey"
@@ -23950,31 +23950,24 @@ export type Database = {
           },
           {
             foreignKeyName: "jobOperationBatch_workCenterId_fkey"
-            columns: ["workCenterId"]
-            isOneToOne: false
-            referencedRelation: "riskRegisters"
-            referencedColumns: ["workCenterId"]
-          },
-          {
-            foreignKeyName: "jobOperationBatch_workCenterId_fkey"
-            columns: ["workCenterId"]
+            columns: ["workCenterId", "companyId"]
             isOneToOne: false
             referencedRelation: "workCenter"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "jobOperationBatch_workCenterId_fkey"
-            columns: ["workCenterId"]
+            columns: ["workCenterId", "companyId"]
             isOneToOne: false
             referencedRelation: "workCenters"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "jobOperationBatch_workCenterId_fkey"
-            columns: ["workCenterId"]
+            columns: ["workCenterId", "companyId"]
             isOneToOne: false
             referencedRelation: "workCentersWithBlockingStatus"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
         ]
       }
@@ -73634,14 +73627,14 @@ export type Database = {
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -74188,14 +74181,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

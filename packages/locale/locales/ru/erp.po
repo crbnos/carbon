@@ -7851,9 +7851,6 @@ msgstr "Название группы"
 msgid "Groups"
 msgstr "Группы"
 
-msgid "Guide"
-msgstr "Справка"
-
 msgid "Guided"
 msgstr "Управляемый"
 
@@ -10035,9 +10032,6 @@ msgstr "Несколько заданий могут выполняться на
 
 msgid "Must be in the same location"
 msgstr "Должно быть в одном месте"
-
-msgid "Must match"
-msgstr "Должны совпадать"
 
 msgid "My Documents"
 msgstr "Мои документы"
@@ -13419,6 +13413,9 @@ msgstr "Требовать утверждение для заказов пост
 msgid "Require approval for quality documents in your workflow"
 msgstr "Требовать утверждение для документов качества в вашем рабочем процессе"
 
+msgid "Require Match"
+msgstr "Требовать совпадение"
+
 msgid "Require SAML SSO"
 msgstr "Требовать SAML SSO"
 
@@ -15499,6 +15496,9 @@ msgstr "Предложить сопоставления"
 
 msgid "Suggest mappings with AI"
 msgstr "Предложить сопоставления с помощью ИИ"
+
+msgid "Suggest Match"
+msgstr "Предложить совпадение"
 
 msgid "Suggest with AI"
 msgstr "Предложить с помощью ИИ"
