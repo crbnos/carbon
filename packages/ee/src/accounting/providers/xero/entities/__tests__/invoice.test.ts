@@ -154,3 +154,70 @@ describe("SalesInvoiceSyncer.mapToRemote (item revenue account)", () => {
     });
   });
 });
+
+/**
+ * Foreign-currency AR. `salesInvoiceLine.unitPrice` is stored in the company
+ * BASE currency (`convertedUnitPrice` is the document mirror), so a payload
+ * declaring `CurrencyCode: "EUR"` must carry EUR amounts, not the base ones.
+ *
+ * Xero's `CurrencyRate` is base-per-foreign — the rate that converts the
+ * invoice's currency INTO the organisation's base. Carbon's
+ * `currency.exchangeRate` is foreign-per-base, so the two are reciprocal.
+ */
+const fxInvoice = (): Accounting.SalesInvoice =>
+  ({
+    ...invoice(),
+    currencyCode: "EUR",
+    // 0.80 EUR per 1 USD of base
+    exchangeRate: 0.8,
+    subtotal: 100,
+    totalAmount: 100,
+    balance: 100,
+    lines: [
+      {
+        id: "sil-1",
+        invoiceLineType: "Part",
+        itemId: "item-1",
+        itemCode: "WIDGET-1",
+        description: "Widget",
+        quantity: 2,
+        // base currency: 2 x 50 = 100 base, i.e. 80 EUR
+        unitPrice: 50,
+        convertedUnitPrice: 40,
+        taxPercent: 0,
+        lineAmount: 100
+      }
+    ]
+  }) as unknown as Accounting.SalesInvoice;
+
+describe("SalesInvoiceSyncer.mapToRemote (foreign currency)", () => {
+  const db = () =>
+    makeInvoiceDb({
+      accountDefault: { salesAccount: "acct_sales" },
+      accountMappings: [
+        {
+          id: "m-1",
+          accountId: "acct_sales",
+          externalId: "sales-remote",
+          metadata: { externalCode: "4000" },
+          lastSyncedAt: null,
+          accountNumber: "4000",
+          accountName: "Sales Revenue"
+        }
+      ]
+    });
+
+  it("pushes line amounts in the currency the payload declares", async () => {
+    const payload = await makeInvoiceSyncer(db()).mapToRemote(fxInvoice());
+    expect(payload.CurrencyCode).toBe("EUR");
+    // 40 EUR/ea, not the 50 base
+    expect(payload.LineItems[0]?.UnitAmount).toBe(40);
+    expect(payload.LineItems[0]?.LineAmount).toBe(80);
+  });
+
+  it("sends CurrencyRate in Xero's direction (base per foreign)", async () => {
+    const payload = await makeInvoiceSyncer(db()).mapToRemote(fxInvoice());
+    // Carbon stores 0.8 EUR per USD; Xero wants USD per EUR = 1.25
+    expect(payload.CurrencyRate).toBeCloseTo(1.25, 6);
+  });
+});

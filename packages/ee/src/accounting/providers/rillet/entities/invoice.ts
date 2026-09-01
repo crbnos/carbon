@@ -81,7 +81,10 @@ type InvoiceLineRow = {
   itemId: string | null;
   description: string | null;
   quantity: number;
+  /** BASE currency, as stored. */
   unitPrice: number;
+  /** Document-currency mirror (unitPrice * exchangeRate). */
+  convertedUnitPrice: number | null;
   taxPercent: number;
   itemReadableIdWithRevision: string | null;
 };
@@ -133,7 +136,13 @@ export function mapSalesInvoiceToRilletInvoice(args: {
       product_id: productId,
       description: line.description ?? line.itemCode ?? "Invoice line",
       quantity: line.quantity,
-      total_amount: toRilletMoney(line.quantity * line.unitPrice, currency),
+      // `currency` is the DOCUMENT currency, so the amount must be too.
+      // salesInvoiceLine.unitPrice is stored in the company BASE currency;
+      // convertedUnitPrice is the document-currency mirror.
+      total_amount: toRilletMoney(
+        line.quantity * (line.convertedUnitPrice ?? line.unitPrice),
+        currency
+      ),
       // CUSTOMER_CUSTOM satisfies rev-rec validation and carries the line id
       // for audit. NO `carbon` ref here: Rillet counts header + item
       // references together for RESTRICTED types, and organizations that
@@ -244,6 +253,7 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
         "salesInvoiceLine.description",
         "salesInvoiceLine.quantity",
         "salesInvoiceLine.unitPrice",
+        "salesInvoiceLine.convertedUnitPrice",
         "salesInvoiceLine.taxPercent",
         "item.readableIdWithRevision as itemReadableIdWithRevision"
       ])
@@ -286,6 +296,11 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
         lines: lines.map((line) => {
           const quantity = Number(line.quantity) || 0;
           const unitPrice = Number(line.unitPrice) || 0;
+          const convertedUnitPrice =
+            line.convertedUnitPrice === null ||
+            line.convertedUnitPrice === undefined
+              ? null
+              : Number(line.convertedUnitPrice);
           return {
             id: line.id,
             invoiceLineType: line.invoiceLineType,
@@ -294,6 +309,7 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
             description: line.description,
             quantity,
             unitPrice,
+            convertedUnitPrice,
             taxPercent: Number(line.taxPercent) || 0,
             lineAmount: quantity * unitPrice
           };
