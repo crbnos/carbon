@@ -46,6 +46,42 @@ The panel always shows status first: which parts of the current element are
 already in Carbon, which match an existing item by part number, and which are
 missing — before offering to push anything.
 
+### Review before anything is written
+
+Every push is two steps. Pressing **Push** shows a review of exactly what
+Carbon would do — nothing is written yet:
+
+- items that will be **created**, with the values they will get. Name,
+  description, Buy/Make, default method, tracking type and unit of measure are
+  editable here; the item ID and revision come from Onshape and are not.
+- items that will be **linked** to an existing Carbon item by part number, or
+  **updated** because Onshape changed, showing which Onshape-owned fields will
+  be overwritten. These take no edits — Onshape owns them.
+- for an assembly, each make method with the lines it gains, the lines a
+  previous push wrote that will be replaced, and the lines you added by hand
+  that are kept. A released method is called out: its lines will not be
+  applied.
+- for a release, every revision that will be created, the name and description
+  of the change notice, and whether the new revisions become the default.
+
+Untick a part, or a BOM item that would be created, to leave it out. **Push
+to Carbon** applies the
+review as shown; **Cancel** writes nothing. A review is held for 15 minutes and
+then has to be opened again. Editable values apply only when an item is
+created; after that the item's fields are owned by Onshape as described below.
+
+### Custom fields
+
+Open **Fields** in the panel to map Onshape properties (Vendor, Project,
+Material, your company's custom properties) onto Carbon custom fields on the
+part — creating the Carbon field on the spot if it doesn't exist. Each mapping
+is either **owned by Onshape** (written on every push and locked in Carbon,
+like the name) or a **default** (filled in when the item is created, editable
+in the review, and yours in Carbon afterwards). Values appear in every review
+before they're written; a property that doesn't fit its field (a date that
+isn't a date) is called out and skipped, and properties with values that
+aren't mapped yet are listed so the map can grow as you push.
+
 ### Push a part
 
 Creates or updates the Carbon item for an Onshape part: part number becomes the
