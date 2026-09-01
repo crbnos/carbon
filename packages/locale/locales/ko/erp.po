@@ -48,6 +48,14 @@ msgstr "\"{taskName}\" 완료 — 설정 맵 항목 {0}개가 모두 설정되�
 msgid "(excluded for this customer)"
 msgstr "(이 고객에게는 제외됨)"
 
+#. placeholder {0}: totalScopeRows(run.violationRowsByTable)
+msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
+msgstr ""
+
+#. placeholder {0}: totalScopeRows( exportRun.violationRowsByTable )
+msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
+msgstr ""
+
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {이 품목은 1개의 미결 변경 통지에 포함되어 있습니다} other {이 품목은 # 개의 미결 변경 통지에 포함되어 있습니다}}"
@@ -113,6 +121,10 @@ msgstr "공정 {0}개"
 #. placeholder {0}: result.credentialName ?? "Passkey"
 msgid "{0} registered"
 msgstr "{0} 등록됨"
+
+#. placeholder {0}: run.rows.toLocaleString()
+msgid "{0} rows"
+msgstr ""
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -195,6 +207,9 @@ msgstr "교육과정 {count}개"
 msgid "{done} of {total} phases complete"
 msgstr "{done}개 중 {total}개 단계 완료"
 
+msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
+msgstr ""
+
 msgid "{from}–{to} of {count}"
 msgstr "{count}개 중 {from}–{to}"
 
@@ -236,6 +251,9 @@ msgstr "{noDemandItemCount}개 부품이 건너뜀 — 만들 것이 없음"
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel}은(는) 리비전 {0}으로 편집하기 위해 다시 열립니다. 이미 공급업체로 전송된 문서는 리비전을 완료하고 다시 전송할 때까지 변경되지 않습니다."
+
+msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
+msgstr ""
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining}단계 남음"
@@ -2539,6 +2557,9 @@ msgstr "추적성으로 돌아가기"
 
 msgid "Backflush"
 msgstr "백플러시"
+
+msgid "Backup failed"
+msgstr ""
 
 msgid "Backups"
 msgstr "백업"
@@ -4975,6 +4996,9 @@ msgstr "작업 삭제"
 msgid "Delete Action"
 msgstr "작업 삭제"
 
+msgid "Delete and restore"
+msgstr ""
+
 msgid "Delete API Key"
 msgstr "API 키 삭제"
 
@@ -5323,6 +5347,9 @@ msgstr "부서"
 
 msgid "Departments"
 msgstr "부서"
+
+msgid "depends on an excluded row"
+msgstr ""
 
 msgid "Depreciation"
 msgstr "감가상각"
@@ -5758,6 +5785,12 @@ msgstr "예: Zebra 2x1"
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "각 셀은 그 날짜에 필요한 인력과 배정된 인력을 비교합니다."
+
+msgid "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
+msgstr ""
+
+msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
+msgstr ""
 
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "각 작업의 미사용 재료는 해당 작업이 완료되는 즉시 반환됩니다."
@@ -8965,6 +8998,9 @@ msgstr "Jira 이슈 연결"
 
 msgid "Link Linear Issue"
 msgstr "Linear 이슈 연결"
+
+msgid "link outside company"
+msgstr ""
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "이 Carbon 고객을 그 중 하나에 연결하거나 별도의 Stripe 고객을 생성합니다."
@@ -12941,6 +12977,9 @@ msgstr "절 제거"
 msgid "Remove condition"
 msgstr "조건 제거"
 
+msgid "Remove corrupted data and restore"
+msgstr ""
+
 msgid "Remove Employee"
 msgstr "직원 제거"
 
@@ -13258,6 +13297,9 @@ msgstr "복원…"
 msgid "Restoring files"
 msgstr "파일 복원 중"
 
+msgid "restoring…"
+msgstr ""
+
 msgid "Result"
 msgstr "결과"
 
@@ -13338,6 +13380,9 @@ msgstr "복원"
 
 msgid "Reverting"
 msgstr "복원 중"
+
+msgid "reverting…"
+msgstr ""
 
 msgid "Review"
 msgstr "검토"
@@ -13463,6 +13508,9 @@ msgstr "라우팅"
 
 msgid "rows"
 msgstr "행"
+
+msgid "Rows left out of this backup"
+msgstr ""
 
 msgid "Rule"
 msgstr "규칙"
@@ -14681,6 +14729,9 @@ msgstr "사이즈"
 msgid "Skip"
 msgstr "건너뛰기"
 
+msgid "Skip corrupted rows and retry"
+msgstr ""
+
 msgid "Skip Existing"
 msgstr "기존 항목 건너뛰기"
 
@@ -15548,6 +15599,9 @@ msgstr "세금"
 msgid "Team trained"
 msgstr "팀 교육 완료"
 
+msgid "Technical details"
+msgstr ""
+
 msgid "Technical support"
 msgstr "기술 지원"
 
@@ -15629,6 +15683,9 @@ msgstr "모든 재고 이동을 추가 전용으로 기록한 원장으로, 보�
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Onshape에서 인증이 거부되었습니다. 다시 연결해 보세요."
+
+msgid "The backup job reported this error."
+msgstr ""
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "모든 전기된 전표 라인의 기록으로 계정별로 집계되며 회사의 회계가 활성화되었을 때만 작성됩니다."
@@ -16161,6 +16218,9 @@ msgstr "작업 마감 시 남은 재공품(WIP)으로, 생산 차이 계정으�
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "Onshape의 응답에 필수 매개변수가 없습니다. 다시 연결해 보세요."
 
+msgid "The restore job reported this error."
+msgstr ""
+
 msgid "The result will not appear on the Runs page."
 msgstr "결과는 실행 페이지에 나타나지 않습니다."
 
@@ -16398,8 +16458,17 @@ msgstr "이 작업장에 할당된 공정이 있는 작업 지시:"
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "이 전표들은 아직 초안 상태이므로 이 기간에 차변 및 대변이 원장에 없습니다. 각 전표를 전기하거나 이후 미결 기간으로 다시 날짜를 지정하십시오."
 
+msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. The restore will start right after."
+msgstr ""
+
+msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
+msgstr ""
+
 msgid "this ability"
 msgstr "이 능력"
+
+msgid "This backup could not be completed."
+msgstr ""
 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "이 백업은 아직 확인되지 않았습니다. 복원이 실행될 때 차이점이 발견됩니다."
@@ -16548,6 +16617,12 @@ msgstr "이번 분기"
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "이것은 그들의 인증 앱을 제거하므로 다음 로그인에는 매직 링크만 필요합니다. 그들이 인증 수단에 대한 접근을 잃었을 때 이것을 사용하세요. 이것은 그들이 속한 모든 회사에 대한 로그인에 영향을 미칩니다."
+
+msgid "This restore could not be completed."
+msgstr ""
+
+msgid "This revert could not be completed."
+msgstr ""
 
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "이 리비전은 릴리스되었습니다 (생산). 변경 사항은 정상적으로 변경 통지를 통해 진행되어야 합니다."
@@ -18318,8 +18393,14 @@ msgstr "이것이 잠긴 이유는 무엇입니까?"
 msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set (replace count with a measured value)."
 msgstr "재고가 변경되는 이유 — 긍정(발견), 부정(손실/스크랩) 또는 설정(측정된 값으로 수량 교체)."
 
+msgid "Why this backup failed"
+msgstr ""
+
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "이 라인이 거절되는 이유로, 인쇄용 견적서에 표시되며 수주/실주 보고를 위해 기록됩니다."
+
+msgid "Why this restore failed"
+msgstr ""
 
 msgid "Will remain as a comment line"
 msgstr "댓글 라인으로 유지됩니다"
@@ -18552,6 +18633,9 @@ msgstr "고객 대상 가격표"
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "데이터에 접근 가능하고 어느 정도 정리되어 있음"
+
+msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
+msgstr ""
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "DNS 공급자가 레코드 이름에 도메인을 자동으로 추가할 수 있습니다 — 그렇다면 그 앞 부분만 입력하세요 (예: _carbon-challenge 및 모든 하위 도메인)."

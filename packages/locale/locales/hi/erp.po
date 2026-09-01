@@ -48,6 +48,14 @@ msgstr "\"{taskName}\" पूरा हो गया — इसके सभी 
 msgid "(excluded for this customer)"
 msgstr "(इस ग्राहक के लिए बाहर रखा गया)"
 
+#. placeholder {0}: totalScopeRows(run.violationRowsByTable)
+msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
+msgstr ""
+
+#. placeholder {0}: totalScopeRows( exportRun.violationRowsByTable )
+msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
+msgstr ""
+
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {यह आइटम 1 खुली परिवर्तन सूचना पर है} other {यह आइटम # खुली परिवर्तन सूचनाओं पर है}}"
@@ -113,6 +121,10 @@ msgstr "{0} प्रक्रियाएं"
 #. placeholder {0}: result.credentialName ?? "Passkey"
 msgid "{0} registered"
 msgstr "{0} पंजीकृत"
+
+#. placeholder {0}: run.rows.toLocaleString()
+msgid "{0} rows"
+msgstr ""
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -195,6 +207,9 @@ msgstr "{count, plural, one {# कोर्स} other {# कोर्स}}"
 msgid "{done} of {total} phases complete"
 msgstr "{done} में से {total} चरण पूर्ण"
 
+msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
+msgstr ""
+
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} में से {count}"
 
@@ -236,6 +251,9 @@ msgstr "{noDemandItemCount} पार्ट्स छोड़ दिए गए 
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} को रिवीजन {0} के रूप में संपादन के लिए फिर से खोला जाएगा। आपूर्तिकर्ता को भेजा गया दस्तावेज़ अपरिवर्तित रहेगा जब तक आप क्रय आदेश को अंतिम रूप न दें और पुनः न भेजें।"
+
+msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
+msgstr ""
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# चरण बचा} other {# चरण बचे}}"
@@ -2539,6 +2557,9 @@ msgstr "ट्रेसेबिलिटी पर वापस जाएं"
 
 msgid "Backflush"
 msgstr "बैकफ्लश"
+
+msgid "Backup failed"
+msgstr ""
 
 msgid "Backups"
 msgstr "बैकअप"
@@ -4975,6 +4996,9 @@ msgstr "क्रिया हटाएं"
 msgid "Delete Action"
 msgstr "कार्रवाई हटाएं"
 
+msgid "Delete and restore"
+msgstr ""
+
 msgid "Delete API Key"
 msgstr "API कुंजी हटाएँ"
 
@@ -5323,6 +5347,9 @@ msgstr "विभाग"
 
 msgid "Departments"
 msgstr "विभाग"
+
+msgid "depends on an excluded row"
+msgstr ""
 
 msgid "Depreciation"
 msgstr "मूल्यह्रास"
@@ -5758,6 +5785,12 @@ msgstr "उदाहरण के लिए Zebra 2x1"
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "प्रत्येक सेल उन लोगों को दर्शाता है जो दिन के काम के लिए आवश्यक लोगों के खिलाफ असाइन किए गए हैं।"
+
+msgid "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
+msgstr ""
+
+msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
+msgstr ""
 
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "प्रत्येक ऑपरेशन की अप्रयुक्त सामग्री जैसे ही ऑपरेशन हो जाता है तुरंत वापस आती है।"
@@ -8965,6 +8998,9 @@ msgstr "Jira समस्या को लिंक करें"
 
 msgid "Link Linear Issue"
 msgstr "Linear समस्या को लिंक करें"
+
+msgid "link outside company"
+msgstr ""
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "इस Carbon ग्राहक को इनमें से किसी एक से जोड़ें, या एक अलग Stripe ग्राहक बनाएँ।"
@@ -12941,6 +12977,9 @@ msgstr "खंड निकालें"
 msgid "Remove condition"
 msgstr "शर्त निकालें"
 
+msgid "Remove corrupted data and restore"
+msgstr ""
+
 msgid "Remove Employee"
 msgstr "कर्मचारी को हटाएँ"
 
@@ -13258,6 +13297,9 @@ msgstr "पुनः स्थापित करें…"
 msgid "Restoring files"
 msgstr "फ़ाइलें पुनः स्थापित कर रहे हैं"
 
+msgid "restoring…"
+msgstr ""
+
 msgid "Result"
 msgstr "परिणाम"
 
@@ -13338,6 +13380,9 @@ msgstr "पूर्ववत् करें"
 
 msgid "Reverting"
 msgstr "पूर्ववत् कर रहे हैं"
+
+msgid "reverting…"
+msgstr ""
 
 msgid "Review"
 msgstr "समीक्षा"
@@ -13463,6 +13508,9 @@ msgstr "रूटिंग"
 
 msgid "rows"
 msgstr "पंक्तियाँ"
+
+msgid "Rows left out of this backup"
+msgstr ""
 
 msgid "Rule"
 msgstr "नियम"
@@ -14681,6 +14729,9 @@ msgstr "आकार"
 msgid "Skip"
 msgstr "छोड़ें"
 
+msgid "Skip corrupted rows and retry"
+msgstr ""
+
 msgid "Skip Existing"
 msgstr "मौजूदा को छोड़ें"
 
@@ -15548,6 +15599,9 @@ msgstr "कर"
 msgid "Team trained"
 msgstr "टीम प्रशिक्षित"
 
+msgid "Technical details"
+msgstr ""
+
 msgid "Technical support"
 msgstr "तकनीकी समर्थन"
 
@@ -15629,6 +15683,9 @@ msgstr "प्रत्येक स्टॉक आंदोलन का क�
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Onshape में प्राधिकरण अस्वीकार कर दिया गया। दोबारा कनेक्ट करने का प्रयास करें।"
+
+msgid "The backup job reported this error."
+msgstr ""
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "सभी पोस्ट की गई जर्नल पंक्तियों की पुस्तक, खाते द्वारा योग किया गया - केवल तभी लिखा जाता है जब कंपनी के लिए लेखांकन सक्षम हो।"
@@ -16161,6 +16218,9 @@ msgstr "अवशिष्ट WIP जो एक जॉब के पास ब�
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "Onshape की प्रतिक्रिया में आवश्यक पैरामीटर नहीं थे। दोबारा कनेक्ट करने का प्रयास करें।"
 
+msgid "The restore job reported this error."
+msgstr ""
+
 msgid "The result will not appear on the Runs page."
 msgstr "परिणाम Runs page पर प्रदर्शित नहीं होगा।"
 
@@ -16398,8 +16458,17 @@ msgstr "ये जॉब इस वर्क सेंटर को असाइ
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "ये जर्नल प्रविष्टियां अभी भी ड्राफ्ट हैं, इसलिए उनके नामे और जमा इस अवधि के लिए खाता बही में नहीं हैं। प्रत्येक को पोस्ट करें, या इसे बाद की खुली अवधि में फिर से दिनांकित करें।"
 
+msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. The restore will start right after."
+msgstr ""
+
+msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
+msgstr ""
+
 msgid "this ability"
 msgstr "यह क्षमता"
+
+msgid "This backup could not be completed."
+msgstr ""
 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "इस बैकअप की अभी जांच नहीं की गई है। कोई भी अंतर पुनः स्थापित करने के समय पाया जाता है।"
@@ -16548,6 +16617,12 @@ msgstr "इस त्रैमासिक"
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "यह उनके प्रमाणीकरणकर्ता ऐप को निकालता है, इसलिए उनके अगले साइन-इन के लिए केवल एक जादुई लिंक की आवश्यकता होती है। जब वे अपने प्रमाणीकरणकर्ता तक पहुंच खो गए हों तो इसका उपयोग करें। यह उनके साइन-इन को उन सभी कंपनियों के लिए प्रभावित करता है जिनसे वे संबंधित हैं।"
+
+msgid "This restore could not be completed."
+msgstr ""
+
+msgid "This revert could not be completed."
+msgstr ""
 
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "यह रिवीजन जारी है (उत्पादन)। परिवर्तन आमतौर पर एक परिवर्तन सूचना के माध्यम से प्रवाहित होने चाहिए।"
@@ -18318,8 +18393,14 @@ msgstr "यह क्यों लॉक है?"
 msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set (replace count with a measured value)."
 msgstr "स्टॉक क्यों बदल रहा है — सकारात्मक (पाया गया), नकारात्मक (खोया/स्क्रैप) या सेट करें (गिनती को मापा मूल्य से बदलें)।"
 
+msgid "Why this backup failed"
+msgstr ""
+
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "यह पंक्ति क्यों अस्वीकार की जा रही है; मुद्रण योग्य उद्धरण पर प्रदर्शित और जीत-हानि रिपोर्टिंग के लिए दर्ज।"
+
+msgid "Why this restore failed"
+msgstr ""
 
 msgid "Will remain as a comment line"
 msgstr "टिप्पणी पंक्ति के रूप में रहेगा"
@@ -18556,6 +18637,9 @@ msgstr "आपकी ग्राहक-सामना करने वाल�
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "आपका डेटा सुलभ है और उचित रूप से स्वच्छ है"
+
+msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
+msgstr ""
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "आपका DNS प्रदाता रिकॉर्ड नाम में आपका डोमेन स्वचालित रूप से जोड़ सकता है — यदि ऐसा है, तो केवल इससे पहले का भाग दर्ज करें (उदाहरण के लिए _carbon-challenge प्लस कोई भी सबडोमेन)।"

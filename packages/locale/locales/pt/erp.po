@@ -48,6 +48,14 @@ msgstr "\"{taskName}\" está feito — todos os {0} itens do seu Mapa de Setup e
 msgid "(excluded for this customer)"
 msgstr "(excluído para este cliente)"
 
+#. placeholder {0}: totalScopeRows(run.violationRowsByTable)
+msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
+msgstr ""
+
+#. placeholder {0}: totalScopeRows( exportRun.violationRowsByTable )
+msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
+msgstr ""
+
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {Este item está em 1 aviso de alteração aberto} other {Este item está em # avisos de alteração abertos}}"
@@ -113,6 +121,10 @@ msgstr "{0} Processos"
 #. placeholder {0}: result.credentialName ?? "Passkey"
 msgid "{0} registered"
 msgstr "{0} registado"
+
+#. placeholder {0}: run.rows.toLocaleString()
+msgid "{0} rows"
+msgstr ""
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -195,6 +207,9 @@ msgstr "{count, plural, one {# curso} other {# cursos}}"
 msgid "{done} of {total} phases complete"
 msgstr "{done} de {total} fases concluídas"
 
+msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
+msgstr ""
+
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} de {count}"
 
@@ -236,6 +251,9 @@ msgstr "{noDemandItemCount} peças ignoradas — nada para fabricar"
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} será reaberto para edição como revisão {0}. O documento já enviado ao fornecedor permanece inalterado até que você finalize e reenvie o pedido."
+
+msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
+msgstr ""
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# fase restante} other {# fases restantes}}"
@@ -2539,6 +2557,9 @@ msgstr "Voltar para rastreabilidade"
 
 msgid "Backflush"
 msgstr "Baixa automática"
+
+msgid "Backup failed"
+msgstr ""
 
 msgid "Backups"
 msgstr "Backups"
@@ -4975,6 +4996,9 @@ msgstr "Excluir ação"
 msgid "Delete Action"
 msgstr "Excluir Ação"
 
+msgid "Delete and restore"
+msgstr ""
+
 msgid "Delete API Key"
 msgstr "Excluir chave de API"
 
@@ -5323,6 +5347,9 @@ msgstr "departamentos"
 
 msgid "Departments"
 msgstr "Departamentos"
+
+msgid "depends on an excluded row"
+msgstr ""
 
 msgid "Depreciation"
 msgstr "Depreciação"
@@ -5758,6 +5785,12 @@ msgstr "p.ex. Zebra 2x1"
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Cada célula mostra as pessoas atribuídas em comparação com as pessoas que o trabalho do dia precisa."
+
+msgid "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
+msgstr ""
+
+msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
+msgstr ""
 
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "O material não utilizado de cada operação retorna assim que a operação é concluída."
@@ -8965,6 +8998,9 @@ msgstr "Vincular Problema do Jira"
 
 msgid "Link Linear Issue"
 msgstr "Vincular Problema Linear"
+
+msgid "link outside company"
+msgstr ""
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "Vincule este cliente Carbon a um deles ou crie um cliente Stripe separado."
@@ -12941,6 +12977,9 @@ msgstr "Remover cláusula"
 msgid "Remove condition"
 msgstr "Remover condição"
 
+msgid "Remove corrupted data and restore"
+msgstr ""
+
 msgid "Remove Employee"
 msgstr "Remover Funcionário"
 
@@ -13258,6 +13297,9 @@ msgstr "Restaurar…"
 msgid "Restoring files"
 msgstr "Restaurando arquivos"
 
+msgid "restoring…"
+msgstr ""
+
 msgid "Result"
 msgstr "Resultado"
 
@@ -13338,6 +13380,9 @@ msgstr "Reverter"
 
 msgid "Reverting"
 msgstr "Revertendo"
+
+msgid "reverting…"
+msgstr ""
 
 msgid "Review"
 msgstr "Revisar"
@@ -13463,6 +13508,9 @@ msgstr "Roteiro de produção"
 
 msgid "rows"
 msgstr "linhas"
+
+msgid "Rows left out of this backup"
+msgstr ""
 
 msgid "Rule"
 msgstr "Regra"
@@ -14681,6 +14729,9 @@ msgstr "Tamanhos"
 msgid "Skip"
 msgstr "Saltar"
 
+msgid "Skip corrupted rows and retry"
+msgstr ""
+
 msgid "Skip Existing"
 msgstr "Ignorar Existentes"
 
@@ -15548,6 +15599,9 @@ msgstr "Impostos"
 msgid "Team trained"
 msgstr "Equipa treinada"
 
+msgid "Technical details"
+msgstr ""
+
 msgid "Technical support"
 msgstr "Suporte técnico"
 
@@ -15629,6 +15683,9 @@ msgstr "O registro de adição ao final de cada movimento de estoque; a quantida
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "A autorização foi recusada no Onshape. Tente conectar novamente."
+
+msgid "The backup job reported this error."
+msgstr ""
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "O livro de todas as linhas de diário registradas, somadas por conta – escrito apenas quando a contabilidade está habilitada para a empresa."
@@ -16161,6 +16218,9 @@ msgstr "O produto em processo residual que uma ordem de produção deixa ao fech
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "A resposta do Onshape não incluía os parâmetros necessários. Tente conectar novamente."
 
+msgid "The restore job reported this error."
+msgstr ""
+
 msgid "The result will not appear on the Runs page."
 msgstr "O resultado não aparecerá na página de Execuções."
 
@@ -16398,8 +16458,17 @@ msgstr "Estas ordens de produção têm operações atribuídas a este centro de
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Estes lançamentos de diário ainda estão em Rascunho, portanto seus débitos e créditos não estão no livro-razão para este período. Lance cada um, ou redatē-o para um período aberto posterior."
 
+msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. The restore will start right after."
+msgstr ""
+
+msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
+msgstr ""
+
 msgid "this ability"
 msgstr "esta capacidade"
+
+msgid "This backup could not be completed."
+msgstr ""
 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "Este backup ainda não foi verificado. As diferenças são encontradas quando a restauração é executada."
@@ -16548,6 +16617,12 @@ msgstr "Este Trimestre"
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "Isso remove seu aplicativo autenticador, portanto seu próximo login só precisa de um link mágico. Use isso quando eles tiverem perdido acesso ao seu autenticador. Afeta seu login para cada empresa a que pertencem."
+
+msgid "This restore could not be completed."
+msgstr ""
+
+msgid "This revert could not be completed."
+msgstr ""
 
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "Esta revisão é liberada (Produção). As alterações devem normalmente fluir através de um aviso de alteração."
@@ -18318,8 +18393,14 @@ msgstr "Por que isso está bloqueado?"
 msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set (replace count with a measured value)."
 msgstr "Por que o estoque está mudando — Positivo (encontrado), Negativo (perdido/refugo), ou Definir (substituir a contagem por um valor medido)."
 
+msgid "Why this backup failed"
+msgstr ""
+
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "Por que esta linha está sendo recusada; mostrado na cotação imprimível e registrado para relatórios de ganho-perda."
+
+msgid "Why this restore failed"
+msgstr ""
 
 msgid "Will remain as a comment line"
 msgstr "Permanecerá como uma linha de comentário"
@@ -18552,6 +18633,9 @@ msgstr "Suas listas de preços voltadas para o cliente"
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "Os seus dados são acessíveis e razoavelmente limpos"
+
+msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
+msgstr ""
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "Seu provedor de DNS pode anexar automaticamente seu domínio ao nome do registro — se for o caso, digite apenas a parte anterior (por exemplo, _carbon-challenge mais qualquer subdomínio)."

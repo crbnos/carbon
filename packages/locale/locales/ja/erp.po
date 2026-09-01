@@ -48,6 +48,14 @@ msgstr "「{taskName}」は完了しました — セットアップマップの
 msgid "(excluded for this customer)"
 msgstr "（このお客様向けに除外されています）"
 
+#. placeholder {0}: totalScopeRows(run.violationRowsByTable)
+msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
+msgstr ""
+
+#. placeholder {0}: totalScopeRows( exportRun.violationRowsByTable )
+msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
+msgstr ""
+
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {このアイテムは1つの未完了の変更通知に含まれています} other {このアイテムは#つの未完了の変更通知に含まれています}}"
@@ -113,6 +121,10 @@ msgstr "{0}個のプロセス"
 #. placeholder {0}: result.credentialName ?? "Passkey"
 msgid "{0} registered"
 msgstr "{0}登録済み"
+
+#. placeholder {0}: run.rows.toLocaleString()
+msgid "{0} rows"
+msgstr ""
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -195,6 +207,9 @@ msgstr "{count, plural, one {# コース} other {# コース}}"
 msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} フェーズ完了"
 
+msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
+msgstr ""
+
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} / {count}"
 
@@ -236,6 +251,9 @@ msgstr "{noDemandItemCount}個の部品はスキップ済 — 製造する必要
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} はリビジョン {0} として編集のため再度オープンされます。仕入先に送信済みの文書は、ファイナライズして発注書を再送信するまで変更されません。"
+
+msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
+msgstr ""
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# フェーズ残り} other {# フェーズ残り}}"
@@ -2539,6 +2557,9 @@ msgstr "トレーサビリティに戻る"
 
 msgid "Backflush"
 msgstr "バックフラッシュ"
+
+msgid "Backup failed"
+msgstr ""
 
 msgid "Backups"
 msgstr "バックアップ"
@@ -4975,6 +4996,9 @@ msgstr "アクションを削除"
 msgid "Delete Action"
 msgstr "アクションを削除"
 
+msgid "Delete and restore"
+msgstr ""
+
 msgid "Delete API Key"
 msgstr "APIキーを削除"
 
@@ -5323,6 +5347,9 @@ msgstr "部門"
 
 msgid "Departments"
 msgstr "部門"
+
+msgid "depends on an excluded row"
+msgstr ""
 
 msgid "Depreciation"
 msgstr "減価償却"
@@ -5758,6 +5785,12 @@ msgstr "例：Zebra 2x1"
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "各セルは、その日の作業に必要な人員に対して配置された人員です"
+
+msgid "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
+msgstr ""
+
+msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
+msgstr ""
 
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "各操作の未使用材料は操作が完了するとすぐに戻されます。"
@@ -8965,6 +8998,9 @@ msgstr "Jira イシューをリンク"
 
 msgid "Link Linear Issue"
 msgstr "Linear イシューをリンク"
+
+msgid "link outside company"
+msgstr ""
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "このCarbonの得意先をいずれかにリンクするか、別のStripe顧客を作成してください。"
@@ -12941,6 +12977,9 @@ msgstr "条項を除去"
 msgid "Remove condition"
 msgstr "条件を除去"
 
+msgid "Remove corrupted data and restore"
+msgstr ""
+
 msgid "Remove Employee"
 msgstr "従業員を削除"
 
@@ -13258,6 +13297,9 @@ msgstr "復元…"
 msgid "Restoring files"
 msgstr "ファイルを復元中"
 
+msgid "restoring…"
+msgstr ""
+
 msgid "Result"
 msgstr "結果"
 
@@ -13338,6 +13380,9 @@ msgstr "リバート"
 
 msgid "Reverting"
 msgstr "リバート中"
+
+msgid "reverting…"
+msgstr ""
 
 msgid "Review"
 msgstr "レビュー"
@@ -13463,6 +13508,9 @@ msgstr "工順"
 
 msgid "rows"
 msgstr "行"
+
+msgid "Rows left out of this backup"
+msgstr ""
 
 msgid "Rule"
 msgstr "ルール"
@@ -14681,6 +14729,9 @@ msgstr "サイズ"
 msgid "Skip"
 msgstr "スキップ"
 
+msgid "Skip corrupted rows and retry"
+msgstr ""
+
 msgid "Skip Existing"
 msgstr "既存をスキップ"
 
@@ -15548,6 +15599,9 @@ msgstr "税金"
 msgid "Team trained"
 msgstr "チームが訓練を受けた"
 
+msgid "Technical details"
+msgstr ""
+
 msgid "Technical support"
 msgstr "テクニカルサポート"
 
@@ -15629,6 +15683,9 @@ msgstr "すべての在庫移動の追加専用レコード。手持在庫はそ
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Onshape で認可が拒否されました。もう一度接続してください。"
+
+msgid "The backup job reported this error."
+msgstr ""
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "投稿されたすべての仕訳行のブック（勘定ごとに合計）。会社で会計が有効な場合にのみ記入されます。"
@@ -16161,6 +16218,9 @@ msgstr "製造指図がクローズ時に残した残留仕掛品は、生産差
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "Onshape からの応答に必須パラメーターが含まれていませんでした。もう一度接続してください。"
 
+msgid "The restore job reported this error."
+msgstr ""
+
 msgid "The result will not appear on the Runs page."
 msgstr "結果は実行ページに表示されません。"
 
@@ -16398,8 +16458,17 @@ msgstr "これらの製造指図には、この作業区に割り当てられた
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "これらの仕訳はまだ下書きであるため、それらの借方と貸方は当期の元帳に含まれていません。各仕訳を転記するか、後の開いている期間に再度日付を付け直してください。"
 
+msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. The restore will start right after."
+msgstr ""
+
+msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
+msgstr ""
+
 msgid "this ability"
 msgstr "このスキル"
+
+msgid "This backup could not be completed."
+msgstr ""
 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "このバックアップはまだチェックされていません。違いは復元の実行時に見つかります。"
@@ -16548,6 +16617,12 @@ msgstr "今四半期"
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "これにより認証器アプリが削除されるため、次回のサインインはマジックリンクのみが必要になります。認証器へのアクセスを失った場合にこれを使用してください。彼らが属するすべての会社のサインインに影響します。"
+
+msgid "This restore could not be completed."
+msgstr ""
+
+msgid "This revert could not be completed."
+msgstr ""
 
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "このリビジョンはリリース済（生産）です。変更は通常、変更通知を介してフローする必要があります。"
@@ -18318,8 +18393,14 @@ msgstr "なぜこれはロック中ですか？"
 msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set (replace count with a measured value)."
 msgstr "在庫が変わっている理由 — 正（見つかった）、負（失った/スクラップ）、または設定（カウントを測定値で置き換える）。"
 
+msgid "Why this backup failed"
+msgstr ""
+
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "この行が拒否されている理由。印刷可能な見積もりに表示され、win-loss報告用に記録されます。"
+
+msgid "Why this restore failed"
+msgstr ""
 
 msgid "Will remain as a comment line"
 msgstr "コメント行として残ります"
@@ -18552,6 +18633,9 @@ msgstr "顧客向けの価格表"
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "あなたのデータはアクセス可能で、適切にクリーンです"
+
+msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
+msgstr ""
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "DNS プロバイダーはレコード名にドメインを自動的に追加する場合があります。その場合は、その前の部分のみを入力してください（例：_carbon-challenge または任意のサブドメイン付き）。"

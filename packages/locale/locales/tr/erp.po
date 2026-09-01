@@ -48,6 +48,14 @@ msgstr "\"{taskName}\" bitti — tüm {0} Kurulum Haritası öğesi yapılandır
 msgid "(excluded for this customer)"
 msgstr "(bu müşteri için hariç tutulmuş)"
 
+#. placeholder {0}: totalScopeRows(run.violationRowsByTable)
+msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
+msgstr ""
+
+#. placeholder {0}: totalScopeRows( exportRun.violationRowsByTable )
+msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
+msgstr ""
+
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {Bu ürün 1 açık değişiklik bildirisinde yer alıyor} other {Bu ürün # açık değişiklik bildirisinde yer alıyor}}"
@@ -113,6 +121,10 @@ msgstr "{0} Süreçler"
 #. placeholder {0}: result.credentialName ?? "Passkey"
 msgid "{0} registered"
 msgstr "{0} kaydedildi"
+
+#. placeholder {0}: run.rows.toLocaleString()
+msgid "{0} rows"
+msgstr ""
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -195,6 +207,9 @@ msgstr "{count, plural, one {# kurs} other {# kurs}}"
 msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} aşama tamamlandı"
 
+msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
+msgstr ""
+
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} / {count}"
 
@@ -236,6 +251,9 @@ msgstr "{noDemandItemCount} parça atlandı — yapılacak bir şey yok"
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} revizyon {0} olarak düzenlenmek üzere yeniden açılacaktır. Tedarikçiye gönderilen belge, siparişi sonlandırıp yeniden gönderene kadar değişmez."
+
+msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
+msgstr ""
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# aşama kaldı} other {# aşama kaldı}}"
@@ -2539,6 +2557,9 @@ msgstr "İzlenebilirliğe geri dön"
 
 msgid "Backflush"
 msgstr "Geriye dönük tüketim"
+
+msgid "Backup failed"
+msgstr ""
 
 msgid "Backups"
 msgstr "Yedeklemeler"
@@ -4975,6 +4996,9 @@ msgstr "Eylemi sil"
 msgid "Delete Action"
 msgstr "İşlemi Sil"
 
+msgid "Delete and restore"
+msgstr ""
+
 msgid "Delete API Key"
 msgstr "API Anahtarını Sil"
 
@@ -5323,6 +5347,9 @@ msgstr "departmanlar"
 
 msgid "Departments"
 msgstr "Departmanlar"
+
+msgid "depends on an excluded row"
+msgstr ""
 
 msgid "Depreciation"
 msgstr "Amortisman"
@@ -5758,6 +5785,12 @@ msgstr "örneğin Zebra 2x1"
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Her hücre, günün işinin ihtiyaç duyduğu insanlara karşı atanan insanları gösterir."
+
+msgid "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
+msgstr ""
+
+msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
+msgstr ""
 
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "Her operasyonun kullanılmayan malzemesi operasyon tamamlandıktan hemen sonra geri döner."
@@ -8965,6 +8998,9 @@ msgstr "Jira Sorununu Bağla"
 
 msgid "Link Linear Issue"
 msgstr "Linear sorununu bağla"
+
+msgid "link outside company"
+msgstr ""
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "Bu Carbon müşterisini bunlardan birine bağlayın veya ayrı bir Stripe müşterisi oluşturun."
@@ -12941,6 +12977,9 @@ msgstr "Maddeyi kaldır"
 msgid "Remove condition"
 msgstr "Koşulu kaldır"
 
+msgid "Remove corrupted data and restore"
+msgstr ""
+
 msgid "Remove Employee"
 msgstr "Çalışanı Kaldır"
 
@@ -13258,6 +13297,9 @@ msgstr "Geri yükle…"
 msgid "Restoring files"
 msgstr "Dosyalar geri yükleniyor"
 
+msgid "restoring…"
+msgstr ""
+
 msgid "Result"
 msgstr "Sonuç"
 
@@ -13338,6 +13380,9 @@ msgstr "Geri Al"
 
 msgid "Reverting"
 msgstr "Geri alınıyor"
+
+msgid "reverting…"
+msgstr ""
 
 msgid "Review"
 msgstr "İncele"
@@ -13463,6 +13508,9 @@ msgstr "Operasyon rotası"
 
 msgid "rows"
 msgstr "satırlar"
+
+msgid "Rows left out of this backup"
+msgstr ""
 
 msgid "Rule"
 msgstr "Kural"
@@ -14681,6 +14729,9 @@ msgstr "Boyutlar"
 msgid "Skip"
 msgstr "Atla"
 
+msgid "Skip corrupted rows and retry"
+msgstr ""
+
 msgid "Skip Existing"
 msgstr "Mevcut Olanı Atla"
 
@@ -15548,6 +15599,9 @@ msgstr "Vergiler"
 msgid "Team trained"
 msgstr "Takım eğitildi"
 
+msgid "Technical details"
+msgstr ""
+
 msgid "Technical support"
 msgstr "Teknik destek"
 
@@ -15629,6 +15683,9 @@ msgstr "Her stok hareketinin yalnızca ekleme kaydı; eldeki tutar, imzalı gird
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Yetkilendirme Onshape'te reddedildi. Yeniden bağlanmayı deneyin."
+
+msgid "The backup job reported this error."
+msgstr ""
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "Tüm muhasebeleştirilmiş muhasebe fiş satırlarının hesaba göre toplandığı defter — yalnızca şirketin muhasebesi etkin olduğunda yazılır."
@@ -16161,6 +16218,9 @@ msgstr "Bir iş emrinin kapatıldığında bıraktığı artık yarı mamul, Ür
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "Onshape'ten gelen yanıtta gerekli parametreler eksikti. Yeniden bağlanmayı deneyin."
 
+msgid "The restore job reported this error."
+msgstr ""
+
 msgid "The result will not appear on the Runs page."
 msgstr "Sonuç Çalıştırmalar sayfasında görünmeyecektir."
 
@@ -16398,8 +16458,17 @@ msgstr "Bu iş emirlerinin bu iş merkezine atanmış operasyonları vardır:"
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Bu muhasebe fişleri hala Taslak halinde olduğundan borç ve alacakları bu dönemin defterine girmedi. Her birini muhasebeleştir veya daha sonraki açık bir döneme yeniden tarihle."
 
+msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. The restore will start right after."
+msgstr ""
+
+msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
+msgstr ""
+
 msgid "this ability"
 msgstr "bu yetenek"
+
+msgid "This backup could not be completed."
+msgstr ""
 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "Bu yedek henüz kontrol edilmedi. Herhangi bir fark, geri yükleme çalıştığında bulunur."
@@ -16548,6 +16617,12 @@ msgstr "Bu Çeyrek"
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "Bu işlem onların kimlik doğrulayıcı uygulamasını kaldırır, bu nedenle sonraki oturum açışları yalnızca sihirli bir bağlantı gerektirir. Kimlik doğrulayıcılarına erişimini kaybettikleri zaman bunu kullanın. Ait oldukları her şirket için oturum açışlarını etkiler."
+
+msgid "This restore could not be completed."
+msgstr ""
+
+msgid "This revert could not be completed."
+msgstr ""
 
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "Bu revizyon yayınlanmıştır (Üretim). Değişiklikler normalde bir değişiklik bildirisi yoluyla akmalıdır."
@@ -18318,8 +18393,14 @@ msgstr "Bu neden kilitli?"
 msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set (replace count with a measured value)."
 msgstr "Stok neden değişiyor — Pozitif (bulundu), Negatif (kayboldu/Fire), veya Ayarla (sayıyı ölçülen bir değerle değiştirin)."
 
+msgid "Why this backup failed"
+msgstr ""
+
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "Bu satırın neden reddedildiği; yazdırılabilir teklifte gösterilir ve kazanç-kayıp raporlaması için kaydedilir."
+
+msgid "Why this restore failed"
+msgstr ""
 
 msgid "Will remain as a comment line"
 msgstr "Yorum satırı olarak kalacak"
@@ -18552,6 +18633,9 @@ msgstr "Müşterilerinize sunduğunuz fiyat listeleri"
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "Verileriniz erişilebilir ve makul ölçüde temizdir"
+
+msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
+msgstr ""
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "DNS sağlayıcınız kaydın adına etki alanınızı otomatik olarak ekleyebilir — eğer öyleyse, yalnızca önceki kısmı girin (ör. _carbon-challenge artı herhangi bir alt alan adı)."

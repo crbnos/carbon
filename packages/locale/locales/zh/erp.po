@@ -48,6 +48,14 @@ msgstr "\"{taskName}\"已完成——其所有{0}个设置映射项都已配置�
 msgid "(excluded for this customer)"
 msgstr "(已为此客户排除)"
 
+#. placeholder {0}: totalScopeRows(run.violationRowsByTable)
+msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
+msgstr ""
+
+#. placeholder {0}: totalScopeRows( exportRun.violationRowsByTable )
+msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
+msgstr ""
+
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {此物料有1个未结的变更通知} other {此物料有#个未结的变更通知}}"
@@ -113,6 +121,10 @@ msgstr "{0} 个流程"
 #. placeholder {0}: result.credentialName ?? "Passkey"
 msgid "{0} registered"
 msgstr "{0}已登记"
+
+#. placeholder {0}: run.rows.toLocaleString()
+msgid "{0} rows"
+msgstr ""
 
 #. placeholder {0}: ap.count
 msgid "{0} suppliers with a balance"
@@ -195,6 +207,9 @@ msgstr "{count, plural, one {# 门课程} other {# 门课程}}"
 msgid "{done} of {total} phases complete"
 msgstr "{done}个/{total}个阶段已完成"
 
+msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
+msgstr ""
+
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} 共 {count}"
 
@@ -236,6 +251,9 @@ msgstr "{noDemandItemCount} 个零件已跳过 — 没有需要生产的"
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} 将被重新打开以作为修订版本 {0} 进行编辑。已发送给供应商的文件在您完成并重新发送订单前保持不变。"
+
+msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
+msgstr ""
 
 msgid "{remaining, plural, one {# phase left} other {# phases left}}"
 msgstr "{remaining, plural, one {# 个阶段剩余} other {# 个阶段剩余}}"
@@ -2539,6 +2557,9 @@ msgstr "返回可追溯性"
 
 msgid "Backflush"
 msgstr "倒冲"
+
+msgid "Backup failed"
+msgstr ""
 
 msgid "Backups"
 msgstr "备份"
@@ -4975,6 +4996,9 @@ msgstr "删除操作"
 msgid "Delete Action"
 msgstr "删除操作"
 
+msgid "Delete and restore"
+msgstr ""
+
 msgid "Delete API Key"
 msgstr "删除API密钥"
 
@@ -5323,6 +5347,9 @@ msgstr "部门"
 
 msgid "Departments"
 msgstr "部门"
+
+msgid "depends on an excluded row"
+msgstr ""
 
 msgid "Depreciation"
 msgstr "折旧"
@@ -5758,6 +5785,12 @@ msgstr "例如 Zebra 2x1"
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "每个单元格显示分配的人员与该天工作所需的人员对比。"
+
+msgid "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
+msgstr ""
+
+msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
+msgstr ""
 
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "每个工序的未使用原材料在工序完成后立即退回。"
@@ -8965,6 +8998,9 @@ msgstr "关联 Jira 问题"
 
 msgid "Link Linear Issue"
 msgstr "关联 Linear 问题"
+
+msgid "link outside company"
+msgstr ""
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "将此 Carbon 客户链接到其中一个，或创建单独的 Stripe 客户。"
@@ -12941,6 +12977,9 @@ msgstr "移除条款"
 msgid "Remove condition"
 msgstr "移除条件"
 
+msgid "Remove corrupted data and restore"
+msgstr ""
+
 msgid "Remove Employee"
 msgstr "移除员工"
 
@@ -13258,6 +13297,9 @@ msgstr "恢复…"
 msgid "Restoring files"
 msgstr "正在恢复文件"
 
+msgid "restoring…"
+msgstr ""
+
 msgid "Result"
 msgstr "结果"
 
@@ -13338,6 +13380,9 @@ msgstr "还原"
 
 msgid "Reverting"
 msgstr "正在还原"
+
+msgid "reverting…"
+msgstr ""
 
 msgid "Review"
 msgstr "评审"
@@ -13463,6 +13508,9 @@ msgstr "工艺路线"
 
 msgid "rows"
 msgstr "行"
+
+msgid "Rows left out of this backup"
+msgstr ""
 
 msgid "Rule"
 msgstr "规则"
@@ -14681,6 +14729,9 @@ msgstr "尺寸"
 msgid "Skip"
 msgstr "跳过"
 
+msgid "Skip corrupted rows and retry"
+msgstr ""
+
 msgid "Skip Existing"
 msgstr "跳过现有"
 
@@ -15548,6 +15599,9 @@ msgstr "税"
 msgid "Team trained"
 msgstr "班组已培训"
 
+msgid "Technical details"
+msgstr ""
+
 msgid "Technical support"
 msgstr "技术支持"
 
@@ -15629,6 +15683,9 @@ msgstr "每个库存变动的追加专用记录；在手数量是其带符号条
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "授权在 Onshape 中被拒绝。请重新连接。"
+
+msgid "The backup job reported this error."
+msgstr ""
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "所有已过账凭证行的汇总簿，按账户汇总——仅当公司启用会计时才编制。"
@@ -16161,6 +16218,9 @@ msgstr "工作在关闭时留下的残余在制品，扫至生产差异帐户 - 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "Onshape 的响应缺少必需的参数。请重新连接。"
 
+msgid "The restore job reported this error."
+msgstr ""
+
 msgid "The result will not appear on the Runs page."
 msgstr "结果不会出现在运行页面上。"
 
@@ -16398,8 +16458,17 @@ msgstr "这些工单在此工作中心分配了工序:"
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "这些凭证仍是草稿，所以其借方和贷方不在此期间的账簿中。过账每一个，或将其重新标注日期到更后的未结期间。"
 
+msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. The restore will start right after."
+msgstr ""
+
+msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
+msgstr ""
+
 msgid "this ability"
 msgstr "此能力"
+
+msgid "This backup could not be completed."
+msgstr ""
 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "此备份尚未检查。还原运行时将发现任何差异。"
@@ -16548,6 +16617,12 @@ msgstr "本季度"
 
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "此操作移除其身份验证应用，因此其下次登录只需要魔法链接。当他们无法访问其身份验证器时使用此选项。它影响其所属每个公司的登录。"
+
+msgid "This restore could not be completed."
+msgstr ""
+
+msgid "This revert could not be completed."
+msgstr ""
 
 msgid "This revision is released (Production). Changes should normally flow through a change notice."
 msgstr "这个修订版已下达（生产）。更改应该通常通过变更通知进行。"
@@ -18318,8 +18393,14 @@ msgstr "为什么这个被已锁定了?"
 msgid "Why stock is changing — Positive (found), Negative (lost/scrap), or Set (replace count with a measured value)."
 msgstr "为什么库存在变化 — 正向（发现）、负向（丢失/报废）或设置（用测量值替换计数）。"
 
+msgid "Why this backup failed"
+msgstr ""
+
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "该行被拒绝的原因;显示在可打印报价上,并为损益报告记录。"
+
+msgid "Why this restore failed"
+msgstr ""
 
 msgid "Will remain as a comment line"
 msgstr "将保留为注释行"
@@ -18556,6 +18637,9 @@ msgstr "您面向客户的价格表"
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "您的数据可访问且相对干净"
+
+msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
+msgstr ""
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "您的 DNS 提供商可能会自动将您的域追加到记录名称中 — 如果是这样，只需输入它之前的部分（例如 _carbon-challenge 加上任何子域）。"
