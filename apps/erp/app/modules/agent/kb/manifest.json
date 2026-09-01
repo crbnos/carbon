@@ -66,9 +66,18 @@
     {
       "slug": "docs/integrations/cad",
       "title": "CAD",
-      "description": "Sync CAD data from Onshape into Carbon.",
+      "description": "Push CAD data from Onshape into Carbon.",
       "keywords": ["cad", "docs", "integrations"],
-      "headings": ["Onshape", "Related"]
+      "headings": [
+        "Onshape",
+        "The Carbon panel in Onshape",
+        "Review before anything is written",
+        "Custom fields",
+        "Push a part",
+        "Push an assembly",
+        "Push a release",
+        "Related"
+      ]
     },
     {
       "slug": "docs/integrations/email",
@@ -93,6 +102,21 @@
         "How a connection works",
         "What's available depends on your deployment",
         "Browse by category",
+        "Related"
+      ]
+    },
+    {
+      "slug": "docs/integrations/onshape-setup",
+      "title": "Onshape setup",
+      "description": "Register an Onshape application and point it at your Carbon instance, so the Carbon panel appears inside Onshape.",
+      "keywords": ["onshape", "setup", "docs", "integrations"],
+      "headings": [
+        "1. Register the application",
+        "2. Add the panel extensions",
+        "3. Publish it to yourself and subscribe",
+        "4. Point Carbon at the application",
+        "5. Check it end to end",
+        "Costs and limits worth knowing before you push a lot",
         "Related"
       ]
     },

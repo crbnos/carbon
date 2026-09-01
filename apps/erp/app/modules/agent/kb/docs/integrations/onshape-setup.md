@@ -1,0 +1,126 @@
+# Onshape setup
+
+> Register an Onshape application and point it at your Carbon instance, so the Carbon panel appears inside Onshape.
+
+The `docs/integrations/cad` need an Onshape
+**application** that you own. This page registers one and connects it to your instance —
+whether that instance is a deployment or a checkout running on your own machine.
+
+Do this once. What you end up with: the OAuth credentials Carbon needs, and a Carbon icon
+in the right-hand strip of every Part Studio and assembly.
+
+The Onshape dev portal needs a Professional or Enterprise account, and pushing a release
+additionally needs an Onshape **company** with release management enabled. Check both
+before starting.
+
+## 1. Register the application
+
+In the Onshape dev portal, create an application.
+
+| Field | Value |
+| --- | --- |
+| Application type | **Integrated Cloud App** |
+| OAuth redirect URL | `<your Carbon URL>/api/integrations/onshape/oauth` |
+| Permissions | **OAuth2Read** and **OAuth2Write** |
+
+Both permissions are required. Write is what creates the export jobs and manages the release
+webhook subscription — with read alone, asset sync cannot be turned on at all.
+
+Keep the OAuth client id and secret; they go into your Carbon environment in step 4.
+**Connected Desktop App** is the wrong application type and cannot carry the extensions
+added next.
+
+## 2. Add the panel extensions
+
+Add three extensions to the application, identical except for their context. Each is a
+**Element right panel** extension, and together they cover the places the panel opens from.
+
+| Field | Value |
+| --- | --- |
+| Name | `Carbon` |
+| Location | Element right panel |
+| Context | one each of **Inside part studio**, **Inside assembly**, **Selected part** |
+| Icon | an SVG (the portal accepts SVG only, 100 KB maximum) |
+
+The action URL is the same for all three:
+
+```
+<your Carbon URL>/onshape/panel?documentId={$documentId}&wv={$workspaceOrVersion}&wvId={$workspaceOrVersionId}&elementId={$elementId}&partNumber={$partNumber}&revision={$revision}&nodeId={$nodeId}&occurrencePath={$occurrencePath}&configuration={$configuration}
+```
+
+Onshape appends `server`, `companyId`, `userId`, `locale` and `clientId` itself. A
+placeholder with nothing to resolve to — `partNumber` in a Part Studio, say — arrives
+literally and is read as absent, which is why every placeholder can be listed
+unconditionally.
+
+The dev portal accepts an action URL starting with `https://` **or** `http://localhost`, so
+`http://localhost:3000` works with no tunnel and no public hostname. Use Chrome: a browser
+that refuses to frame `http://localhost` from an `https://` page will show an empty panel.
+
+## 3. Publish it to yourself and subscribe
+
+An extension renders only for users **subscribed** to the application. An OAuth grant is not
+a subscription, and this is the step whose absence looks like nothing at all — no icon, no
+error.
+
+  
+  ### Create a store entry
+
+  In the dev portal, create a store entry for the application (an unpublished one is visible
+  only to you). It needs a category, a vendor name and a version.
+  
+  
+  ### Subscribe to it
+
+  Open the store entry's App Store URL and choose **Subscribe** → **Get for free**. App Store
+  search does not list private entries, so reach it by its URL.
+  
+
+## 4. Point Carbon at the application
+
+Set these in your Carbon environment — see
+`docs/platform/self-hosting/environment-variables`:
+
+```bash
+ONSHAPE_CLIENT_ID="…"
+ONSHAPE_CLIENT_SECRET="…"
+ONSHAPE_OAUTH_REDIRECT_URL="<your Carbon URL>/api/integrations/onshape/oauth"
+CARBON_EDITION="enterprise"
+```
+
+Without `ONSHAPE_CLIENT_ID` the Onshape cards render as "Coming soon" with Install disabled,
+and on the Community edition every enterprise integration renders as an upgrade prompt.
+Neither is a licensing failure to debug — both are this configuration.
+
+Then, in Carbon: **Settings → Integrations → Onshape → Install**. The OAuth popup closes
+itself and the card flips to Installed.
+
+Two things the first push needs that a brand-new company does not have: at least one **unit
+of measure**, and a **part number** set on the Onshape parts you intend to push.
+
+## 5. Check it end to end
+
+Open a Part Studio, click the Carbon icon in the right strip, and sign in through the popup.
+The panel lists the studio's parts with their Carbon status.
+
+A document that exercises the whole app has: a Part Studio with three or more parts, two of
+them with **Part number** and **Revision** set and one without; an assembly of those parts
+including one subassembly; and a drawing of one part.
+
+## Costs and limits worth knowing before you push a lot
+
+- **API quota is the application owner's.** A private application debits your own annual
+  Onshape quota on every read. Publicly listed App Store applications are exempt, which is
+  why a production integration ships as a public listing rather than a private one.
+- **Configurations are not carried.** A part or assembly in a non-default configuration
+  resolves to the *default* bill of materials and lands on the *default* item — including
+  its model file. Push configured geometry only once you have checked what it maps to.
+- **A review holds for 15 minutes**, and its Onshape reads are spent whether or not you
+  go on to push.
+- **Released methods are never written.** A push that touches one is refused, naming the part.
+
+## Related
+
+  - CAD What the panel does once it is running.
+  - Environment variables Every variable that configures an instance.
+  - Local development Running the stack on your own machine.

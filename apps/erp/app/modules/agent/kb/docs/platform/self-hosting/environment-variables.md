@@ -86,6 +86,7 @@ Slack OAuth client id.
 Slack OAuth client secret.
 Onshape OAuth client id.
 Onshape OAuth client secret.
+Onshape OAuth callback, matching the redirect URL registered on the Onshape application — `<your Carbon URL>/api/integrations/onshape/oauth`.
 Currency exchange-rate feed.
 Address autocomplete.
 
