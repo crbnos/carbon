@@ -50,10 +50,36 @@ export const streamTimeout = 60_000;
 // loading, and sets only mobile-code / injection-vector controls — object-src
 // 'none' (no plugins), base-uri 'self', frame-ancestors 'self' (no cross-origin
 // framing/clickjacking while still allowing same-origin embeds like previews).
+const BASELINE_CSP_DIRECTIVES = [
+  "object-src 'none'",
+  "base-uri 'self'",
+  "frame-ancestors 'self'"
+];
+
+// Compose the baseline CSP with any route-set policy rather than replacing it:
+// a route may attach its own directives (script-src with a nonce/hash, etc.)
+// that must survive. Keep the route's policy intact and append only the
+// baseline directives it omits (matched by directive name).
+function composeContentSecurityPolicy(existing: string | null): string {
+  if (!existing?.trim()) return BASELINE_CSP_DIRECTIVES.join("; ");
+  const present = new Set(
+    existing
+      .split(";")
+      .map((directive) => directive.trim().split(/\s+/)[0]?.toLowerCase())
+      .filter(Boolean)
+  );
+  const additions = BASELINE_CSP_DIRECTIVES.filter(
+    (directive) => !present.has(directive.split(/\s+/)[0].toLowerCase())
+  );
+  return additions.length
+    ? `${existing.replace(/;\s*$/, "")}; ${additions.join("; ")}`
+    : existing;
+}
+
 function applySecurityHeaders(headers: Headers) {
   headers.set(
     "Content-Security-Policy",
-    "object-src 'none'; base-uri 'self'; frame-ancestors 'self'"
+    composeContentSecurityPolicy(headers.get("Content-Security-Policy"))
   );
   headers.set("X-Content-Type-Options", "nosniff");
   headers.set("X-Frame-Options", "SAMEORIGIN");
