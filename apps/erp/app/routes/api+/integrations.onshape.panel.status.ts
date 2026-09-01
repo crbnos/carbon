@@ -1,8 +1,10 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import type { PanelItemRow } from "@carbon/ee";
+import type { PanelAssemblyLineInput, PanelItemRow } from "@carbon/ee";
 import {
+  buildAssemblyLineStatuses,
   buildPartStatuses,
   externalIdForAssembly,
+  externalIdForBomLine,
   metadataProperty,
   parseBomTree
 } from "@carbon/ee";
@@ -111,14 +113,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     } catch {
       // Identity stays null; the panel asks for a part number.
     }
-    const flat: Array<{
-      index: string;
-      level: number;
-      partNumber: string | null;
-      name: string | null;
-      quantity: number;
-      purchased: boolean;
-    }> = [];
+    const flat: PanelAssemblyLineInput[] = [];
     const walk = (nodes: ReturnType<typeof parseBomTree>["lines"]) => {
       for (const node of nodes) {
         flat.push({
@@ -127,7 +122,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
           partNumber: node.partNumber,
           name: node.name,
           quantity: node.quantity,
-          purchased: node.purchased
+          purchased: node.purchased,
+          itemSource: node.itemSource
         });
         walk(node.children);
       }
@@ -141,16 +137,34 @@ export async function loader({ request }: LoaderFunctionArgs) {
         )
       )
     ];
+    // A child's mapping is keyed by the part studio it came from, not by this
+    // assembly element, so the lookup is over the lines' own source keys.
+    const lineExternalIds = [
+      ...new Set(
+        flat
+          .map((line) => externalIdForBomLine(line.itemSource))
+          .filter((id): id is string => !!id)
+      )
+    ];
 
-    const [rootMapping, items] = await Promise.all([
+    const [rootMapping, lineMappings, items] = await Promise.all([
       client
         .from("externalIntegrationMapping")
-        .select("entityId, lastSyncedAt")
+        .select("entityId, externalId, lastSyncedAt")
         .eq("companyId", companyId)
         .eq("integration", "onshape")
         .eq("entityType", "item")
         .eq("externalId", externalIdForAssembly(documentId, elementId))
         .maybeSingle(),
+      lineExternalIds.length > 0
+        ? client
+            .from("externalIntegrationMapping")
+            .select("entityId, externalId, lastSyncedAt")
+            .eq("companyId", companyId)
+            .eq("integration", "onshape")
+            .eq("entityType", "item")
+            .in("externalId", lineExternalIds)
+        : Promise.resolve({ data: [], error: null }),
       partNumbers.length > 0
         ? client
             .from("item")
@@ -160,11 +174,45 @@ export async function loader({ request }: LoaderFunctionArgs) {
         : Promise.resolve({ data: [], error: null })
     ]);
 
+    if (lineMappings.error) {
+      return data(
+        { error: "Failed to read Onshape mappings" },
+        { status: 500 }
+      );
+    }
+
+    // entityId is polymorphic and unconstrained, so a mapping can outlive its
+    // item. Load the mapped items to tell a live link from a stale row.
+    const assemblyItems = (items.data ?? []) as PanelItemRow[];
+    const mappedItemIds = [
+      ...new Set(
+        [
+          ...(lineMappings.data ?? []),
+          ...(rootMapping.data ? [rootMapping.data] : [])
+        ]
+          .map((m) => m.entityId)
+          .filter((id) => !assemblyItems.some((i) => i.id === id))
+      )
+    ];
+    let mappedItems: PanelItemRow[] = [];
+    if (mappedItemIds.length > 0) {
+      const result = await client
+        .from("item")
+        .select("id, readableId, revision, name")
+        .eq("companyId", companyId)
+        .in("id", mappedItemIds);
+      mappedItems = (result.data ?? []) as PanelItemRow[];
+    }
+    const allItems = [...assemblyItems, ...mappedItems];
+
     const itemByReadableId = new Map(
-      ((items.data ?? []) as PanelItemRow[]).map((i) => [i.readableId, i])
+      assemblyItems.map((i) => [i.readableId, i])
     );
     const rootItem = rootPartNumber
       ? itemByReadableId.get(rootPartNumber)
+      : undefined;
+    const rootLinkedItem = rootMapping.data
+      ? allItems.find((i) => i.id === rootMapping.data?.entityId)
       : undefined;
 
     return data(
@@ -174,25 +222,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
           root: {
             partNumber: rootPartNumber,
             name: rootName,
-            state: rootMapping.data
+            state: rootLinkedItem
               ? ("linked" as const)
               : rootItem
                 ? ("matched" as const)
                 : ("missing" as const),
-            itemId: rootMapping.data?.entityId ?? rootItem?.id ?? null,
-            lastSyncedAt: rootMapping.data?.lastSyncedAt ?? null
-          },
-          lines: flat.map((line) => ({
-            ...line,
-            state: line.partNumber
-              ? itemByReadableId.has(line.partNumber)
-                ? ("matched" as const)
-                : ("missing" as const)
-              : ("missing" as const),
-            itemId: line.partNumber
-              ? (itemByReadableId.get(line.partNumber)?.id ?? null)
+            itemId: rootLinkedItem?.id ?? rootItem?.id ?? null,
+            lastSyncedAt: rootLinkedItem
+              ? (rootMapping.data?.lastSyncedAt ?? null)
               : null
-          }))
+          },
+          lines: buildAssemblyLineStatuses({
+            lines: flat,
+            mappings: lineMappings.data ?? [],
+            items: allItems
+          })
         }
       },
       { headers: { "Cache-Control": "no-store" } }
