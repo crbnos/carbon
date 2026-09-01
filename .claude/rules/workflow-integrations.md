@@ -42,7 +42,7 @@ does not (`custom_api_call` is real and deliberately unreachable).
 
 The ceiling is not engineering time. Every usable OAuth integration needs an app *we*
 register and get verified with that vendor, so breadth is bounded by that. ~400 pieces
-exist; the allowlist has one.
+exist; the allowlist has two (Google Calendar, Slack).
 
 Versions are pinned exactly (`"0.10.3"`, no `^`) — an upstream release must never silently
 change code we execute against a customer's account.
@@ -145,6 +145,22 @@ never in `metadata`** — `connections.test.ts` asserts that directly.
 a saved workflow node references the id, and a dangling id produces a worse error than a
 clear "reconnect this".
 
+### Scope drift — "Reconnect needed"
+
+A connection records what the vendor granted in `metadata.scopes` (from the token response's
+`scope`, declared on the allowlist row's `metadata` map; Slack's is comma-separated, the v2
+backfill wrote spaces). `missingScopes(connection, required)` (ee, pure) compares it with
+`requiredScopesFor(piece)` (jobs — the row's `oauth.scope` override or the piece's own list,
+i.e. exactly what `buildConsentUrl` asks for). Unknown grants are never flagged. Four surfaces
+say the same thing: the Accounts row ("Reconnect needed" + a **Reconnect** button that re-runs
+the consent under the same name — `createConnection` revives the row and refreshes its
+metadata), the builder (the connection provider returns `errorCode: "reconnect"` instead of
+listing an under-scoped account, and `IntegrationNodeForm` shows a reconnect banner), the card
+(`getIntegrationHealth` marks a piece card unhealthy while any usable account is under-scoped —
+checked in erp because ee cannot see the allowlist), and the step runner (fails before the
+vendor call with copy naming Settings → Integrations → App → Accounts → Reconnect, and maps a
+vendor `missing_scope` to the same words).
+
 ### The refresh claim
 
 Two workflow steps hitting an expiring token would both refresh and one would clobber the
@@ -167,10 +183,16 @@ Same guarantee `resolveIntegrationSecrets` already gives the 12 existing integra
 not "simplify" this to one client: the owner's client cannot read the secret, and the
 service-role client alone would skip the tenancy check.
 
+Outside a workflow step, a vendor whose tokens never expire (Slack bot tokens) is read with
+`readConnectionAccessToken(serviceRole, companyId, connectionId)`. It refuses a non-Active
+connection and one whose `expiresAt` is inside the refresh window — a refreshable vendor must
+go through `resolveConnectionAuth`, which owns the refresh claim.
+
 ## OAuth round trip
 
-- `api+/integrations.connections.$piece.connect.ts` — builds the consent URL from the
-  piece's own `authUrl`/`scope` plus the app `resolveOAuthApp(piece)` returns.
+- `api+/integrations.connections.$piece.connect.ts` — builds the consent URL with
+  `buildConsentUrl` from the piece's own `authUrl`/`scope` (or the row's overrides) plus the
+  app `resolveOAuthApp(piece)` returns.
   `access_type=offline` **and** `prompt=consent`: without both,
   Google returns no refresh token on a re-authorization. Returns `{ url }` like the Slack
   install route; the client opens a popup.
@@ -253,9 +275,22 @@ the SAME string as the piece name, so nothing has to map between the two.
 - `settings: []` and `schema: z.object({})`, so the drawer shows no settings form and no
   Submit. Install runs `onClientInstall` → the connect route → the consent popup, exactly
   like Onshape and Slack.
-- The **callback upserts the `companyIntegration` row**. That row is what "Installed" means
-  to the grid; without it the card would keep offering Install for an already-connected
-  account.
+- The callback calls **`markIntegrationInstalled`**, which inserts the `companyIntegration`
+  row if absent or re-activates it, and **never overwrites metadata**. That row is what
+  "Installed" means to the grid; without it the card would keep offering Install for an
+  already-connected account.
+- **Slack's card IS the piece card.** The Carbon Assistant (slash commands, issue threads,
+  notification fan-out) is a *consumer* of the company's Slack connection: `getSlackWorkspace`
+  returns the OLDEST Active `slack` connection (token from the vault, `team_id` /
+  `channel_id` / `bot_user_id` from its metadata) and `getSlackWorkspaceByTeamId` matches an
+  inbound slash command to its workspace. One consent — the allowlist row's `scope` is the
+  union of Assistant and workflow scopes — installs both. `companyIntegration.slack` holds no
+  token and no workspace facts; the Assistant's private `@slack/oauth` install flow and
+  `SLACK_STATE_SECRET` are gone. `SLACK_OAUTH_REDIRECT_URL` keeps its name and may keep its
+  deployed value: `api+/integrations.slack.oauth.ts` is now a 302 forwarder onto the
+  connections callback, so no environment or Slack-app redirect change is needed to ship. Migration
+  `20260901044047_slack-connections-single-source.sql` backfilled existing installs. The
+  builder's "Connect …" link deep-links to `?tab=connections`.
 - `ui/Integrations/ConnectionsTab.tsx` is an `IntegrationFormTab` ("Accounts") on that card,
   listing the connected accounts with rename, Disconnect and Add account. It is the ONE place
   this integration differs from the others, and only because a workflow step picks which
@@ -287,10 +322,20 @@ action names, a row declares:
   the values (this module is imported by build-time catalog scripts). `resolveOAuthApp` in
   `integrations/oauth.ts` reads them through `getEnv` and throws
   `No OAuth app is configured for ${pieceName}.` if any is unset — a half-configured vendor
-  must fail before a customer reaches a consent screen that cannot come back.
-- `accountLabel` — optional `{ url, field }` for reading back which account authorized, so
-  two connections are tellable apart. The callback's `accountLabelFor` is best-effort: a
-  failure there must never lose a connection that already authorized.
+  must fail before a customer reaches a consent screen that cannot come back. Optional
+  `authUrl` and `scope` **override the piece's own**: Slack's piece bakes `user_scope=` (a
+  personal user token) into its URL and asks for 30 bot scopes, and we request sixteen: the
+  ten the Carbon Assistant already used plus the six the four workflow actions need. `buildConsentUrl` (same file) is the one place the URL is assembled;
+  the connect route only calls it.
+- `accountLabel` — optional `{ url, field }` (a GET on the vendor's identity endpoint) or
+  `{ path }` (a dot path into the token response — Slack's `team.name`) for reading back
+  which account authorized, so two connections are tellable apart. The callback's
+  `accountLabelFor` is best-effort: a failure there must never lose a connection that
+  already authorized.
+- `metadata` — optional `{ metadataKey: tokenResponsePath }`: workspace facts to keep on the
+  connection's `metadata` column. Slack's response carries `team.id`, `bot_user_id` and the
+  `incoming_webhook` channel the person picked; `connectionMetadataFrom` copies exactly the
+  listed paths and nothing else, so a token can never land there.
 
 **Only OAuth2 pieces are supported.** `getPieceOAuth2Auth` refuses `SECRET_TEXT`,
 `BASIC_AUTH` and `CUSTOM_AUTH` with `UnsupportedPieceAuthError`. That is deliberate and
@@ -308,17 +353,20 @@ in this path.
    vendor has such an endpoint.
 3. Register the OAuth app with the vendor and set those env vars (add them to
    `.env.example` too).
-4. Add the client id to `getBrowserEnv()` and the `Window.env` declaration in
-   `packages/env/src/index.ts`. That list is fixed and cannot be looked up by name, and the
-   settings card reads it client-side to decide "Coming soon" — this is the one step the
-   allowlist row cannot carry for you.
+4. If the card is new: add the client id to `getBrowserEnv()` and the `Window.env`
+   declaration in `packages/env/src/index.ts`. That list is fixed and cannot be looked up by
+   name, and the settings card reads it client-side to decide "Coming soon" — this is the one
+   step the allowlist row cannot carry for you. (Skip when the card already exists and is
+   already gated, as Slack's is.)
 5. Add an ordinary `defineIntegration` config whose `id` IS the piece name, with
    `onClientInstall: () => startIntegrationConnect(...)`, and register it in the
    `integrations` array. Its `hooks.server.ts` entry is one line —
    `onUninstall: (companyId) => revokeConnectionsForPiece(getCarbonServiceRole(), "<piece>", companyId)`
    — never a per-vendor hooks file; there is nothing vendor-specific in that behaviour.
 6. Check every action you expose ships an `outputSchema` — the generator refuses one
-   that does not, and coverage is all-or-nothing per piece.
+   that does not, and coverage is all-or-nothing per piece. Then run the generator and read
+   its refusals: each unmappable prop is a decision — `omit` it (optional, or required with
+   a `value`) or drop the action.
 7. `pnpm run generate:workflow-catalog && pnpm run check:workflow-catalog`.
 
 Step 3 is the real work and the real gate. The rest takes minutes.
@@ -363,6 +411,16 @@ date, so "events tomorrow" silently misses every recurring meeting.
 A pinned `value` is merged in by `toPropsValue` **at run time**, never stored on the node,
 so changing a pin fixes every existing workflow at once. A node value always wins over a
 pin — otherwise the Advanced section would be a lie.
+
+`omit: true` is the stronger override: the prop is in **neither** map. It is for a prop
+whose non-default value needs a host capability the shim refuses (`mentionOriginFlow` reads
+the flow context; `sendAsBot: false` needs a user token we do not request) or a type Carbon
+cannot render (`FILE`, `JSON`). A pinned `value` is still sent at run time, and a required
+prop must carry one (`sendAsBot: { omit: true, value: true }`). `MARKDOWN` props are omitted
+automatically — Activepieces `Property.MarkDown` is help text and never collects a value.
+Everything else unmappable still **fails the generator**: omission is a reviewed decision on
+the allowlist, never a silent drop. The generator consults visibility BEFORE `toValueType`,
+so a type is only ever an error for a prop a person would see.
 
 Hidden inputs are emitted as **`advancedInputs`**, a second map beside `inputs`, and
 rendered in the node's collapsed "Advanced properties" section. They are separate maps on

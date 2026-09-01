@@ -227,7 +227,7 @@ Three things about it are load-bearing:
   on notify nodes saved before the field existed in a picker where the author
   cannot tick the one channel that is actually on.
 - **Availability is a build-time concern.** Email needs `EMAIL_NOTIFICATIONS`
-  (Business/Partner) and Slack needs the company's Slack integration active; the
+  (Business/Partner) and Slack needs a usable Slack connection (`getSlackWorkspace`); the
   job skips a channel it cannot use with a `console.warn` at most. The builder
   disables the option and says why (`fields/choiceOptions.tsx`) — that is the only
   place the author ever finds out. "Unavailable" only blocks ADDING a channel; one

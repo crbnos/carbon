@@ -1161,3 +1161,28 @@ canvas hosting Radix popovers/selects.
 **Rule:** Adding a browser-safe var is THREE edits, not one: the `getEnv` export, `getBrowserEnv()` + the `Window.env` interface, AND the consuming app's root-loader `env` object (destructure + literal) for every app that needs it client-side. The loader's hand-curated `env` is the real source of `window.env` on the happy path — a key present in `getBrowserEnv()` but absent there is `undefined` in the browser. When an env-driven feature is dark despite the server value being set, diff `getBrowserEnv()`'s keys against the loader's `env` object before touching anything else.
 
 **Applies to:** `apps/erp/app/root.tsx` (and `apps/mes/app/root.tsx`) loader `env` objects, `packages/env/src/index.ts` `getBrowserEnv()`, any `window.env`-gated integration/feature flag.
+
+## Secret material is read through ONE reader — never off a column
+
+**Context:** After `20260817132607` moved integration tokens into the Vault, three readers kept
+reading `companyIntegration.metadata.access_token` directly (`send-slack.ts`, `integrations.slack.interactive.ts`,
+`notify.ts`). They did not fail — they got `undefined`, fell back or returned `[]`, and Slack DMs /
+slash commands silently stopped for weeks. When Slack later moved to `integrationConnection`
+(`20260901044047`), the same class of miss happened again with `notify.ts` because the consumer map
+was built from module exports, not from a grep of the column.
+
+**Rule:** A credential has exactly one reader (`resolveIntegrationSecrets` for `companyIntegration`,
+`readConnectionAccessToken` / `resolveConnectionAuth` for `integrationConnection`). Before changing
+where a secret lives, grep for the *column and id* (`"companyIntegration"` + `"slack"`,
+`metadata.access_token`, `secretRef`) across `apps/` and `packages/`, not for function names — and
+make the old path fail loudly (throw) rather than return `undefined`.
+
+**Applies to:** every `companyIntegration` / `integrationConnection` reader; any future secret move.
+
+## `.po` catalogs are committed only after `lingui:clean`
+
+**Context:** `pnpm run lingui:extract` alone leaves `#: path:line` origin comments and a
+`POT-Creation-Date` header in all 26 catalogs — 170k diff lines for ~30 real strings.
+
+**Rule:** always `pnpm run lingui:extract && pnpm run lingui:clean` (or `pnpm run translate`);
+the commit hook normalises, but the working tree should never carry the noise.
