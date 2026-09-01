@@ -53,6 +53,18 @@ export class ConnectionSecretUnavailableError extends Error {
   }
 }
 
+/**
+ * The vendor answered the token request with a definitive no (4xx — a revoked or
+ * invalid grant). Only this condemns a connection; a network failure or a vendor
+ * 5xx is transient and must leave the row Active so the next use retries.
+ */
+export class ConnectionRejectedError extends Error {
+  constructor(status: number) {
+    super(`The connection was rejected (${status}).`);
+    this.name = "ConnectionRejectedError";
+  }
+}
+
 /** Another worker claimed the refresh and never finished it. */
 export class ConnectionRefreshTimeoutError extends Error {
   constructor(connectionId: string) {
@@ -442,13 +454,14 @@ export async function resolveConnectionAuth(
   try {
     refreshed = await exchangeRefreshToken(oauth, tokens.refreshToken);
   } catch (cause) {
-    await markExpired(
-      serviceClient,
-      companyId,
-      connectionId,
-      cause instanceof Error ? cause.message : "The connection was rejected."
-    );
-    throw new ConnectionRevokedError(connectionId);
+    // Only a definitive vendor rejection condemns the connection; a network error
+    // or vendor 5xx is transient, so release the claim and let the next use retry.
+    if (cause instanceof ConnectionRejectedError) {
+      await markExpired(serviceClient, companyId, connectionId, cause.message);
+      throw new ConnectionRevokedError(connectionId);
+    }
+    await releaseClaim(serviceClient, companyId, connectionId);
+    throw cause;
   }
 
   try {
@@ -554,8 +567,11 @@ async function postTokenRequest(
     body: new URLSearchParams(body)
   });
 
+  if (response.status >= 400 && response.status < 500) {
+    throw new ConnectionRejectedError(response.status);
+  }
   if (!response.ok) {
-    throw new Error(`The connection was rejected (${response.status}).`);
+    throw new Error(`The vendor token endpoint failed (${response.status}).`);
   }
   return readTokenResponse(await response.json());
 }

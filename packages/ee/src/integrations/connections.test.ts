@@ -340,6 +340,34 @@ describe("resolveConnectionAuth", () => {
     expect(rows.get(CONNECTION)!.lastError).toContain("400");
   });
 
+  // A wifi blip at the moment the access token expired flipped a working Google
+  // account to Expired for good: every throw from the refresh — including undici's
+  // `fetch failed` — was read as the vendor revoking us.
+  it.each([
+    ["the network fails", () => Promise.reject(new TypeError("fetch failed"))],
+    [
+      "the vendor returns a 5xx",
+      () => Promise.resolve({ ok: false, status: 503 } as Response)
+    ]
+  ])("keeps the connection Active when %s during a refresh", async (_, impl) => {
+    const { client, rows } = makeClient({ expiresAt: inMinutes(1) });
+    await client.rpc("upsert_connection_secret", {
+      p_company_id: COMPANY,
+      p_connection_id: CONNECTION,
+      p_secret: { accessToken: "at-1", refreshToken: "rt-1" } as never
+    });
+
+    vi.mocked(fetch).mockImplementation(impl as typeof fetch);
+
+    await expect(
+      resolveConnectionAuth(client, COMPANY, CONNECTION, OAUTH)
+    ).rejects.not.toBeInstanceOf(ConnectionRevokedError);
+    expect(rows.get(CONNECTION)!.status).toBe("Active");
+    expect(rows.get(CONNECTION)!.lastError).toBeNull();
+    // The claim is released so the retry does not wait out a phantom refresh.
+    expect(rows.get(CONNECTION)!.refreshingAt).toBeNull();
+  });
+
   // A connection that has gone bad is exactly the one a customer wants to re-add —
   // and `disconnectConnection` keeps the row (a saved workflow node references its
   // id), while the name is unique per piece. So re-consenting under the same name
