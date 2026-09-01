@@ -95,8 +95,9 @@ Neither is a licensing failure to debug — both are this configuration.
 Then, in Carbon: **Settings → Integrations → Onshape → Install**. The OAuth popup closes
 itself and the card flips to Installed.
 
-Two things the first push needs that a brand-new company does not have: at least one **unit
-of measure**, and a **part number** set on the Onshape parts you intend to push.
+Two things the first push needs: a **part number** set on the Onshape parts you intend to
+push, and at least one **unit of measure** on the company (onboarding seeds a standard set,
+so this is usually already true — a push takes the item's unit from that list).
 
 ## 5. Check it end to end
 
