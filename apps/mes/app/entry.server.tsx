@@ -44,6 +44,26 @@ if (
 
 export const streamTimeout = 60_000;
 
+// Baseline security response headers (NIST 800-171 3.13.13 control-of-mobile-code
+// + SC-7/SC-8 hardening). The CSP is a deliberately SAFE SUBSET: it omits
+// default-src/script-src so it cannot break the SPA's script/style/connect
+// loading, and sets only mobile-code / injection-vector controls — object-src
+// 'none' (no plugins), base-uri 'self', frame-ancestors 'self' (no cross-origin
+// framing/clickjacking while still allowing same-origin embeds like previews).
+function applySecurityHeaders(headers: Headers) {
+  headers.set(
+    "Content-Security-Policy",
+    "object-src 'none'; base-uri 'self'; frame-ancestors 'self'"
+  );
+  headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("X-Frame-Options", "SAMEORIGIN");
+  headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  headers.set(
+    "Strict-Transport-Security",
+    "max-age=31536000; includeSubDomains"
+  );
+}
+
 /**
  * React Router v7 server error hook: fires with the actual error thrown by any
  * loader/action/render that RR catches — the "why" behind a `GET 500 …` line
@@ -84,6 +104,7 @@ export default function handleRequest(
   routerContext: EntryContext,
   _loadContext: RouterContextProvider // RouterContextProvider when v8_middleware is turned on
 ) {
+  applySecurityHeaders(responseHeaders);
   return vercelHandleRequest(
     request,
     responseStatusCode,
