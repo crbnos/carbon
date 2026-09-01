@@ -10685,6 +10685,9 @@ msgstr "कोई चर {query} से मेल नहीं खाता"
 msgid "No variables available"
 msgstr "कोई चर उपलब्ध नहीं"
 
+msgid "No versions available"
+msgstr "कोई संस्करण उपलब्ध नहीं है"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "इस आइटम के लिए कोई गोदाम स्टॉक रिकॉर्ड पर नहीं है। आप इसे अभी भी चुन सकते हैं — गणना के समाधान तक हाथ पर नकारात्मक हो जाएगा।"
 
@@ -14041,6 +14044,9 @@ msgstr "चुनें"
 msgid "Select a assignee"
 msgstr "एक असाइनी चुनें"
 
+msgid "Select a completed job"
+msgstr "एक पूर्ण जॉब चुनें"
+
 msgid "Select a default approver"
 msgstr "एक डिफ़ॉल्ट अनुमोदक चुनें"
 
@@ -14833,6 +14839,9 @@ msgstr "स्रोत दस्तावेज़ पठनीय"
 
 msgid "Source Item"
 msgstr "स्रोत आइटम"
+
+msgid "Source Job"
+msgstr "स्रोत जॉब"
 
 msgid "Source list"
 msgstr "स्रोत सूची"
@@ -16471,7 +16480,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "ये जर्नल प्रविष्टियां अभी भी ड्राफ्ट हैं, इसलिए उनके नामे और जमा इस अवधि के लिए खाता बही में नहीं हैं। प्रत्येक को पोस्ट करें, या इसे बाद की खुली अवधि में फिर से दिनांकित करें।"
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
-msgstr ""
+msgstr "ये पंक्तियां इस कंपनी के बाहर के डेटा से जुड़ी हुई हैं, इसलिए आपके वर्तमान डेटा की सुरक्षा प्रति नहीं बनाई जा सकती। उन्हें हटाना पूर्ववत नहीं किया जा सकता। यदि वे इस समूह की अन्य कंपनियों के साथ साझा की जाती हैं, तो कुछ भी हटाया नहीं जाता है और पुनर्स्थापन शुरू नहीं होता है।"
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "ये पंक्तियां इस कंपनी के बाहर के डेटा से जुड़ी हुई हैं, इसलिए उन्हें कभी भी पुनर्स्थापित नहीं किया जा सकता। बाकी सब कुछ बैक अप किया गया था।"

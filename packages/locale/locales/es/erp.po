@@ -10685,6 +10685,9 @@ msgstr "Ninguna variable coincide con {query}"
 msgid "No variables available"
 msgstr "No hay variables disponibles"
 
+msgid "No versions available"
+msgstr "No hay versiones disponibles"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "No hay stock de almacén registrado para este artículo. Aún puedes recogerlo — el disponible se volverá negativo hasta que se reconcilie el recuento."
 
@@ -14041,6 +14044,9 @@ msgstr "Seleccionar"
 msgid "Select a assignee"
 msgstr "Seleccionar un asignado"
 
+msgid "Select a completed job"
+msgstr "Selecciona una orden de trabajo completada"
+
 msgid "Select a default approver"
 msgstr "Selecciona un aprobador predeterminado"
 
@@ -14833,6 +14839,9 @@ msgstr "Documento de origen legible"
 
 msgid "Source Item"
 msgstr "Artículo de origen"
+
+msgid "Source Job"
+msgstr "Orden de origen"
 
 msgid "Source list"
 msgstr "Lista de origen"
@@ -16471,7 +16480,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "Estos asientos aún están en Borrador, por lo que sus debe y haber no están en el libro mayor para este período. Contabiliza cada uno, o cambia su fecha a un período abierto posterior."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
-msgstr ""
+msgstr "Estas filas contienen referencias a datos fuera de esta empresa, por lo que no se puede crear una copia de seguridad de protección de los datos actuales. La eliminación de estas filas no se puede deshacer. Si se encuentran compartidas con otras empresas del grupo, nada se eliminará y la restauración no se iniciará."
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Estas filas se vinculan a datos fuera de esta empresa, por lo que nunca podrían ser restauradas. Todo lo demás fue respaldado."

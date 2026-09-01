@@ -10685,6 +10685,9 @@ msgstr "没有变量匹配{query}"
 msgid "No variables available"
 msgstr "没有可用的变量"
 
+msgid "No versions available"
+msgstr "没有可用的版本"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "此物料的仓库库存无记录。您仍然可以拣货 — 在手库存将变为负数，直到盘点协调。"
 
@@ -14041,6 +14044,9 @@ msgstr "选择"
 msgid "Select a assignee"
 msgstr "选择经办人"
 
+msgid "Select a completed job"
+msgstr "选择已完成的工单"
+
 msgid "Select a default approver"
 msgstr "选择默认审批人"
 
@@ -14833,6 +14839,9 @@ msgstr "源单据可读"
 
 msgid "Source Item"
 msgstr "源项目"
+
+msgid "Source Job"
+msgstr "源工单"
 
 msgid "Source list"
 msgstr "源列表"
@@ -16471,7 +16480,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "这些凭证仍是草稿，所以其借方和贷方不在此期间的账簿中。过账每一个，或将其重新标注日期到更后的未结期间。"
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
-msgstr ""
+msgstr "这些行链接到此公司外的数据，因此无法创建当前数据的安全备份。删除它们无法撤销。如果这些行实际上与此集团中的其他公司共享，则不删除任何行，且不启动还原。"
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "这些行链接到公司外的数据，因此无法恢复它们。其他所有内容都已备份。"

@@ -10685,6 +10685,9 @@ msgstr "Nessuna variabile corrisponde a {query}"
 msgid "No variables available"
 msgstr "Nessuna variabile disponibile"
 
+msgid "No versions available"
+msgstr "Nessuna versione disponibile"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Nessuna giacenza di magazzino è registrata per questo articolo. Puoi comunque prelevarlo — la giacenza disponibile diventerà negativa fino al riconciliamento del conteggio."
 
@@ -14041,6 +14044,9 @@ msgstr "Seleziona"
 msgid "Select a assignee"
 msgstr "Seleziona un assegnatario"
 
+msgid "Select a completed job"
+msgstr "Seleziona un ordine di produzione completato"
+
 msgid "Select a default approver"
 msgstr "Seleziona un approvatore predefinito"
 
@@ -14833,6 +14839,9 @@ msgstr "Documento di origine leggibile"
 
 msgid "Source Item"
 msgstr "Articolo Sorgente"
+
+msgid "Source Job"
+msgstr "Ordine di produzione di origine"
 
 msgid "Source list"
 msgstr "Elenco di origine"
@@ -16471,7 +16480,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "Queste voci di prima nota sono ancora Bozza, quindi i loro dare e avere non sono nel registro per questo periodo. Registra ognuno, o ri-datalo in un periodo aperto successivo."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
-msgstr ""
+msgstr "Queste righe sono collegate a dati esterni a questa azienda, pertanto non è possibile effettuare una copia di sicurezza dei dati attuali. La loro eliminazione non può essere annullata. Se risultano condivise con altre aziende del gruppo, nulla viene eliminato e il ripristino non si avvierà."
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Queste righe collegano i dati al di fuori di questa azienda, quindi non potrebbero mai essere ripristinate. Tutto il resto è stato sottoposto a backup."

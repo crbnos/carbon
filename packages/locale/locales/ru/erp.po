@@ -10685,6 +10685,9 @@ msgstr "Нет переменных соответствующих {query}"
 msgid "No variables available"
 msgstr "Нет доступных переменных"
 
+msgid "No versions available"
+msgstr "Нет доступных версий"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "На складе нет записей о наличии этого товара. Вы все равно можете его отобрать — остаток на руках станет отрицательным до тех пор, пока инвентаризация не будет согласована."
 
@@ -14041,6 +14044,9 @@ msgstr "Выбрать"
 msgid "Select a assignee"
 msgstr "Выберите исполнителя"
 
+msgid "Select a completed job"
+msgstr "Выберите завершённый производственный заказ"
+
 msgid "Select a default approver"
 msgstr "Выберите утверждающего по умолчанию"
 
@@ -14833,6 +14839,9 @@ msgstr "Читаемый документ-основание"
 
 msgid "Source Item"
 msgstr "Исходный элемент"
+
+msgid "Source Job"
+msgstr "Исходный производственный заказ"
 
 msgid "Source list"
 msgstr "Список источников"
@@ -16471,7 +16480,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "Эти операции по-прежнему находятся в режиме Черновик, поэтому их дебеты и кредиты не включены в главную книгу для этого периода. Проведите каждый из них или переведите его в более поздний открытый период."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
-msgstr ""
+msgstr "Эти строки связаны с данными вне этой организации, поэтому не удаётся создать резервную копию текущих данных. Удаление их не может быть отменено. Если окажется, что они используются другими организациями в этой группе, ничего не удаляется и восстановление не начинается."
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Эти строки ссылаются на данные вне этой организации, поэтому они не могут быть восстановлены. Всё остальное было сохранено в резервной копии."

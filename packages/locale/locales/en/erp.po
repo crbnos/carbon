@@ -10685,6 +10685,9 @@ msgstr "No variable matches {query}"
 msgid "No variables available"
 msgstr "No variables available"
 
+msgid "No versions available"
+msgstr "No versions available"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 
@@ -14041,6 +14044,9 @@ msgstr "Select"
 msgid "Select a assignee"
 msgstr "Select a assignee"
 
+msgid "Select a completed job"
+msgstr "Select a completed job"
+
 msgid "Select a default approver"
 msgstr "Select a default approver"
 
@@ -14833,6 +14839,9 @@ msgstr "Source document readable"
 
 msgid "Source Item"
 msgstr "Source Item"
+
+msgid "Source Job"
+msgstr "Source Job"
 
 msgid "Source list"
 msgstr "Source list"

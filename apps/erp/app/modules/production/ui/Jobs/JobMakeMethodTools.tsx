@@ -1,5 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import { SelectControlled, ValidatedForm } from "@carbon/form";
+import { Combobox, SelectControlled, ValidatedForm } from "@carbon/form";
 import {
   Alert,
   AlertTitle,
@@ -30,10 +30,11 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuBlocks,
   LuChevronRight,
+  LuCirclePlay,
   LuGitBranch,
   LuGitFork,
   LuGitMerge,
@@ -225,6 +226,67 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
     }
   };
 
+  // Source-method versions for the Get Method modal's item tab. Separate from
+  // `makeMethods` above: Save Method lists Draft versions only (the writable
+  // ones), while Get Method can read ANY version of the source item's method.
+  const [sourceMakeMethods, setSourceMakeMethods] = useState<
+    { label: JSX.Element; value: string }[]
+  >([]);
+  const [selectedSourceVersion, setSelectedSourceVersion] = useState<
+    string | null
+  >(null);
+
+  const sourceVersionRequestRef = useRef(0);
+  const getSourceMakeMethods = async (itemId: string | null) => {
+    const requestId = ++sourceVersionRequestRef.current;
+    setSourceMakeMethods([]);
+    setSelectedSourceVersion(null);
+    if (!itemId || !carbon) return;
+
+    const [versions, activeVersion] = await Promise.all([
+      carbon
+        .from("makeMethod")
+        .select("id, version, status")
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
+        .order("version", { ascending: false }),
+      // The default mirrors what get-method uses when no version is chosen:
+      // the Active version, else the highest non-archived (which can be a
+      // Draft). The view owns that ranking — don't re-derive it here.
+      carbon
+        .from("activeMakeMethods")
+        .select("id")
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
+        .maybeSingle()
+    ]);
+
+    // A newer selection superseded this load — drop it, or a slow item A's
+    // versions could render (and submit a versionId) against item B's sourceId.
+    if (requestId !== sourceVersionRequestRef.current) return;
+
+    if (versions.error) {
+      toast.error(versions.error.message);
+      return;
+    }
+
+    setSourceMakeMethods(
+      (versions.data ?? []).map(({ id, version, status }) => ({
+        label: (
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">V{version}</Badge>{" "}
+            <MakeMethodVersionStatus status={status} />
+          </div>
+        ),
+        value: id
+      }))
+    );
+
+    if (activeVersion.data?.id) {
+      setSelectedSourceVersion(activeVersion.data.id);
+    }
+  };
+
   useMount(() => {
     if (isJobMethod && routeData?.job.itemId) {
       getMakeMethods(routeData.job.itemId);
@@ -242,7 +304,13 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
                   isLoading={isGetMethodLoading}
                   isDisabled={isDisabled || isGetMethodLoading}
                   leftIcon={<LuGitBranch />}
-                  onClick={getMethodModal.onOpen}
+                  onClick={() => {
+                    // The modal's Item picker opens empty — clear any versions
+                    // loaded on a previous open so the two can't disagree.
+                    setSourceMakeMethods([]);
+                    setSelectedSourceVersion(null);
+                    getMethodModal.onOpen();
+                  }}
                 >
                   <Trans>Get Method</Trans>
                 </MenubarItem>
@@ -330,13 +398,17 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
               <ModalBody>
                 <Tabs defaultValue="item" className="w-full">
                   {isJobMethod && (
-                    <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsList className="grid w-full grid-cols-3 mb-4">
                       <TabsTrigger value="item">
                         <LuBlocks className="mr-2" /> Item
                       </TabsTrigger>
                       <TabsTrigger value="quote">
                         <RiProgress4Line className="mr-2" />
                         <Trans>Quote</Trans>
+                      </TabsTrigger>
+                      <TabsTrigger value="job">
+                        <LuCirclePlay className="mr-2" />
+                        <Trans>Job</Trans>
                       </TabsTrigger>
                     </TabsList>
                   )}
@@ -373,6 +445,27 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
                         includeInactive={includeInactive === true}
                         locationId={routeData?.job?.locationId ?? undefined}
                         replenishmentSystem="Make"
+                        onChange={(value) => {
+                          getSourceMakeMethods(value?.value ?? null);
+                        }}
+                      />
+                      <SelectControlled
+                        name="versionId"
+                        options={sourceMakeMethods}
+                        label={t`Version`}
+                        value={selectedSourceVersion ?? undefined}
+                        onChange={(value) => {
+                          if (value) {
+                            setSelectedSourceVersion(value?.value);
+                          } else {
+                            setSelectedSourceVersion(null);
+                          }
+                        }}
+                        placeholder={
+                          sourceMakeMethods.length === 0
+                            ? t`No versions available`
+                            : undefined
+                        }
                       />
                       <div className="flex items-center space-x-2">
                         <Checkbox
@@ -396,6 +489,14 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
                     <Hidden name="targetId" value={jobId} />
                     <VStack spacing={4}>
                       <QuoteLineMethodForm />
+                      <AdvancedSection onChange={setHasMethodParts} />
+                    </VStack>
+                  </TabsContent>
+                  <TabsContent value="job">
+                    <Hidden name="type" value="job" />
+                    <Hidden name="targetId" value={jobId} />
+                    <VStack spacing={4}>
+                      <CompletedJobMethodForm currentJobId={jobId} />
                       <AdvancedSection onChange={setHasMethodParts} />
                     </VStack>
                   </TabsContent>
@@ -620,6 +721,37 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
     </Fragment>
   );
 };
+
+function CompletedJobMethodForm({ currentJobId }: { currentJobId: string }) {
+  const { t } = useLingui();
+  const jobsFetcher = useFetcher<{
+    data: { id: string; jobId: string }[] | null;
+  }>();
+
+  useMount(() => {
+    jobsFetcher.load(`${path.to.api.jobs}?status=Completed&status=Closed`);
+  });
+
+  const jobOptions = useMemo(
+    () =>
+      jobsFetcher.data?.data
+        ?.filter((job) => job.id !== currentJobId)
+        .map((job) => ({
+          label: job.jobId,
+          value: job.id
+        })) ?? [],
+    [jobsFetcher.data, currentJobId]
+  );
+
+  return (
+    <Combobox
+      name="sourceId"
+      label={t`Source Job`}
+      options={jobOptions}
+      placeholder={t`Select a completed job`}
+    />
+  );
+}
 
 function AdvancedSection({
   onChange

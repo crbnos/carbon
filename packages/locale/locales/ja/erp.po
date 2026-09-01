@@ -10685,6 +10685,9 @@ msgstr "{query}に一致する変数がありません"
 msgid "No variables available"
 msgstr "利用可能な変数がありません"
 
+msgid "No versions available"
+msgstr "利用可能なバージョンがありません"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "このアイテムの倉庫在庫は記録されていません。それでも選択できます。実在庫がマイナスになり、数量が調整されるまで続きます。"
 
@@ -14041,6 +14044,9 @@ msgstr "選択"
 msgid "Select a assignee"
 msgstr "担当者を選択"
 
+msgid "Select a completed job"
+msgstr "完了した製造指図を選択してください"
+
 msgid "Select a default approver"
 msgstr "デフォルト承認者を選択"
 
@@ -14833,6 +14839,9 @@ msgstr "参照伝票判読可能"
 
 msgid "Source Item"
 msgstr "ソースアイテム"
+
+msgid "Source Job"
+msgstr "ソース製造指図"
 
 msgid "Source list"
 msgstr "ソースリスト"
@@ -16471,7 +16480,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "これらの仕訳はまだ下書きであるため、それらの借方と貸方は当期の元帳に含まれていません。各仕訳を転記するか、後の開いている期間に再度日付を付け直してください。"
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
-msgstr ""
+msgstr "これらの行はこの会社外のデータにリンクしているため、現在のデータのバックアップを作成できません。削除を元に戻すことはできません。このグループ内の他の会社と共有されていることが判明した場合、何も削除されず、復元は開始されません。"
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "これらの行は会社外のデータにリンクしているため、復元することはできません。その他すべてがバックアップされました。"

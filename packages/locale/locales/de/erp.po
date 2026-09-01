@@ -10685,6 +10685,9 @@ msgstr "Keine Variable stimmt mit {query} überein"
 msgid "No variables available"
 msgstr "Keine Variablen verfügbar"
 
+msgid "No versions available"
+msgstr "Keine Versionen verfügbar"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Kein Lagerbestand für diesen Artikel ist erfasst. Sie können ihn trotzdem kommissionieren — der verfügbare Bestand wird negativ, bis die Inventur abgestimmt ist."
 
@@ -14041,6 +14044,9 @@ msgstr "Auswählen"
 msgid "Select a assignee"
 msgstr "Einen Bearbeiter auswählen"
 
+msgid "Select a completed job"
+msgstr "Wählen Sie einen fertiggestellten Fertigungsauftrag"
+
 msgid "Select a default approver"
 msgstr "Wählen Sie einen Standard-Genehmiger"
 
@@ -14833,6 +14839,9 @@ msgstr "Ursprungsbeleg lesbar"
 
 msgid "Source Item"
 msgstr "Quellartikel"
+
+msgid "Source Job"
+msgstr "Quell-Fertigungsauftrag"
 
 msgid "Source list"
 msgstr "Quellenliste"
@@ -16471,7 +16480,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "Diese Buchungssätze sind noch Entwurf, sodass ihre Sollposten und Habenposten nicht im Sachkonto für diesen Zeitraum enthalten sind. Buchen Sie jeden einzelnen oder ändern Sie das Datum zu einem späteren offenen Zeitraum."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
-msgstr ""
+msgstr "Diese Zeilen verlinken auf Daten außerhalb dieses Unternehmens. Daher kann keine Sicherheitskopie Ihrer aktuellen Daten erstellt werden. Das Löschen kann nicht rückgängig gemacht werden. Sollten diese sich als gemeinsam mit anderen Unternehmen in dieser Gruppe herausstellen, wird nichts gelöscht und die Wiederherstellung wird nicht gestartet."
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Diese Zeilen sind mit Daten außerhalb dieses Unternehmens verknüpft, daher könnten sie nie wiederhergestellt werden. Alles andere wurde gesichert."

@@ -10685,6 +10685,9 @@ msgstr "Aucune variable ne correspond à {query}"
 msgid "No variables available"
 msgstr "Aucune variable disponible"
 
+msgid "No versions available"
+msgstr "Aucune version disponible"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Aucun stock d'entrepôt n'est enregistré pour cet article. Vous pouvez toujours le prélever — le stock disponible deviendra négatif jusqu'à ce que le décompte soit rapproché."
 
@@ -14041,6 +14044,9 @@ msgstr "Sélectionner"
 msgid "Select a assignee"
 msgstr "Sélectionner un assigné"
 
+msgid "Select a completed job"
+msgstr "Sélectionner un ordre de fabrication terminé"
+
 msgid "Select a default approver"
 msgstr "Sélectionner un approbateur par défaut"
 
@@ -14833,6 +14839,9 @@ msgstr "document d'origine lisible"
 
 msgid "Source Item"
 msgstr "Élément source"
+
+msgid "Source Job"
+msgstr "Ordre de fabrication source"
 
 msgid "Source list"
 msgstr "Liste source"
@@ -16471,7 +16480,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "Ces écritures de journal sont encore Brouillon, de sorte que leurs débits et crédits ne se trouvent pas dans le grand livre pour cette période. Comptabilisez chacune ou redatez-la à une période ouverte ultérieure."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
-msgstr ""
+msgstr "Ces lignes sont liées à des données en dehors de cette Société, c'est pourquoi une copie de sécurité de vos données actuelles ne peut pas être créée. La suppression de ces lignes ne peut pas être annulée. S'il s'avère qu'elles sont partagées avec d'autres Sociétés de ce groupe, rien n'est supprimé et la restauration ne démarre pas."
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Ces lignes sont liées à des données en dehors de cette société, donc elles ne pourraient jamais être restaurées. Tout le reste a été sauvegardé."

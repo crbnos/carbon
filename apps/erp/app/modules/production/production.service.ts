@@ -1213,14 +1213,19 @@ export async function getJobsBySalesOrderLine(
 
 export async function getJobsList(
   client: SupabaseClient<Database>,
-  companyId: string
+  companyId: string,
+  statuses?: Database["public"]["Enums"]["jobStatus"][]
 ) {
   return fetchAllFromTable<{
     id: string;
     jobId: string;
-  }>(client, "job", "id, jobId", (query) =>
-    query.eq("companyId", companyId).order("jobId")
-  );
+  }>(client, "job", "id, jobId", (query) => {
+    let filtered = query.eq("companyId", companyId);
+    if (statuses && statuses.length > 0) {
+      filtered = filtered.in("status", statuses);
+    }
+    return filtered.order("jobId");
+  });
 }
 
 export async function getJobMakeMethodById(
@@ -3928,13 +3933,14 @@ export async function setJobOperationToolStepLink(
 
 export async function upsertJobMethod(
   client: SupabaseClient<Database>,
-  type: "itemToJob" | "quoteLineToJob",
+  type: "itemToJob" | "quoteLineToJob" | "jobToJob",
   jobMethod: {
     sourceId: string;
     targetId: string;
     companyId: string;
     userId: string;
     configuration?: Record<string, unknown>;
+    versionId?: string;
     parts?: {
       billOfMaterial: boolean;
       billOfProcess: boolean;
@@ -3946,12 +3952,13 @@ export async function upsertJobMethod(
   }
 ) {
   const body: {
-    type: "itemToJob" | "quoteLineToJob";
+    type: "itemToJob" | "quoteLineToJob" | "jobToJob";
     sourceId: string;
     targetId: string;
     companyId: string;
     userId: string;
     configuration?: Record<string, unknown>;
+    versionId?: string;
     parts?: {
       billOfMaterial: boolean;
       billOfProcess: boolean;
@@ -3971,6 +3978,11 @@ export async function upsertJobMethod(
   // Only add configuration if it exists
   if (jobMethod.configuration !== undefined) {
     body.configuration = jobMethod.configuration;
+  }
+
+  // A specific source method version (itemToJob only); absent = active method
+  if (jobMethod.versionId) {
+    body.versionId = jobMethod.versionId;
   }
 
   // Only add parts if it exists
@@ -3999,6 +4011,7 @@ export async function upsertJobMaterialMakeMethod(
     companyId: string;
     userId: string;
     configuration?: Record<string, unknown>;
+    versionId?: string;
     parts?: {
       billOfMaterial: boolean;
       billOfProcess: boolean;
@@ -4016,6 +4029,7 @@ export async function upsertJobMaterialMakeMethod(
     companyId: string;
     userId: string;
     configuration?: Record<string, unknown>;
+    versionId?: string;
     parts?: {
       billOfMaterial: boolean;
       billOfProcess: boolean;
@@ -4035,6 +4049,11 @@ export async function upsertJobMaterialMakeMethod(
   // Only add configuration if it exists
   if (jobMaterial.configuration !== undefined) {
     body.configuration = jobMaterial.configuration;
+  }
+
+  // A specific source method version; absent = active method
+  if (jobMaterial.versionId) {
+    body.versionId = jobMaterial.versionId;
   }
 
   // Only add parts if it exists

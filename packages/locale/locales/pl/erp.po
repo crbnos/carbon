@@ -10685,6 +10685,9 @@ msgstr "Żadna zmienna nie pasuje do {query}"
 msgid "No variables available"
 msgstr "Brak dostępnych zmiennych"
 
+msgid "No versions available"
+msgstr "Brak dostępnych wersji"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Brak zapasu w magazynie dla tego artykułu. Możesz go mimo tego pobrać — dostępna ilość będzie ujemna do czasu uzgodnienia stanu."
 
@@ -14041,6 +14044,9 @@ msgstr "Wybierz"
 msgid "Select a assignee"
 msgstr "Wybierz osobę przypisaną"
 
+msgid "Select a completed job"
+msgstr "Wybierz zakończone zlecenie produkcyjne"
+
 msgid "Select a default approver"
 msgstr "Wybierz domyślnego zatwierdzającego"
 
@@ -14833,6 +14839,9 @@ msgstr "Dokument źródłowy czytelny"
 
 msgid "Source Item"
 msgstr "Element źródłowy"
+
+msgid "Source Job"
+msgstr "Zlecenie źródłowe"
 
 msgid "Source list"
 msgstr "Lista źródłowa"
@@ -16471,7 +16480,7 @@ msgid "These journal entries are still Draft, so their debits and credits aren't
 msgstr "Te dowody księgowe są wciąż w wersji roboczej, dlatego ich wpisy Winien i Ma nie znajdują się w księdze dla tego okresu. Zaksięguj każdy z nich lub przesyć go do późniejszego otwartego okresu."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
-msgstr ""
+msgstr "Te wiersze łączą się z danymi spoza tej firmy, dlatego nie można wykonać bezpiecznej kopii bieżących danych. Usunięcie ich nie może być cofnięte. Jeśli okaże się, że są współdzielone z innymi firmami w tej grupie, nic nie zostanie usunięte i przywracanie nie zostanie uruchomione."
 
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Te wiersze są połączone z danymi spoza tej firmy, dlatego nigdy nie mogły być przywrócone. Wszystko inne miało kopię zapasową."
