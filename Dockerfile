@@ -17,6 +17,19 @@ ARG NODE_OPTIONS="--max-old-space-size=8024"
 ENV NODE_OPTIONS=${NODE_OPTIONS}
 RUN pnpm run build:${APP}
 
+# --- Ops image (DB migrations + first-boot seed) --------------------------
+# The migrate Job (supabase migration up) and the seed Helm hook (tsx src/seed.ts)
+# repurpose the app build to run one-off ops tasks. They need the supabase CLI
+# and tsx/esbuild — exactly the build tooling the `runner` stage strips for its
+# CVE posture. Rather than un-harden the served image, publish a separate
+# un-stripped ops image from the `deps` stage for those short-lived Jobs. It is
+# never exposed and is scanned report-only (it intentionally carries build-tool
+# CVEs). migrate.yml and charts/apps seed-job point at carbon/ops:<same-tag>.
+# Kept BEFORE `runner` so `runner` remains the default (no --target) build stage.
+FROM deps AS ops
+WORKDIR /repo/packages/database
+CMD ["bash"]
+
 FROM node:22-slim AS runner
 ARG APP
 WORKDIR /repo

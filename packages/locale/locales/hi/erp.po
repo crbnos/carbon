@@ -244,6 +244,7 @@ msgstr "{name} हटाया गया"
 
 msgid "{name} returns!"
 msgstr "{name} लौट आया!"
+msgstr "{name} लौट गए!"
 
 msgid "{noDemandItemCount} parts skipped — nothing to make"
 msgstr "{noDemandItemCount} पार्ट्स छोड़ दिए गए — निर्माण करने के लिए कुछ नहीं है"
@@ -832,6 +833,9 @@ msgstr "एक शिपमेंट का ट्रैकिंग नंब�
 
 msgid "A step needs a name."
 msgstr "एक चरण को एक नाम की आवश्यकता है।"
+
+msgid "A stored booking of a work center or operator for one operation's placed time span — the materialized output of a scheduling run, and what the Forecast draws."
+msgstr "एक वर्क सेंटर या ऑपरेटर की एक संग्रहीत बुकिंग एक ऑपरेशन की रखी गई समय अवधि के लिए — एक शेड्यूलिंग रन का मूर्त आउटपुट, और जो पूर्वानुमान में दिखाई देता है।"
 
 msgid "A supplier is created"
 msgstr "एक आपूर्तिकर्ता बनाया गया है"
@@ -1629,8 +1633,8 @@ msgstr "किसी आइटम की माप की इकाई बदल
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "एक आपूर्तिकर्ता द्वारा किया गया एक ऑपरेशन एक इन-हाउस वर्क सेंटर के बजाय, एक उप-अनुबंध क्रय आदेश द्वारा कवर किया गया।"
 
-msgid "An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates."
-msgstr "एक ऑपरेशन की अपने वर्क सेंटर की कतार में स्थिति — वह क्रम जिसमें फर्श काम उठाता है — वर्क सेंटर बोर्ड पर कार्ड को पुनः क्रमित करके सेट किया गया है बिना किसी तारीख को बदले।"
+msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
+msgstr "एक ऑपरेशन की वर्क सेंटर की कतार में स्थिति — वह क्रम जिसमें फ्लोर काम लेता है। इंजन इसे प्लेसमेंट क्रम से संख्या देता है (सबसे पहली अनुमानित शुरुआत पहले); वर्क सेंटर बोर्ड पर कार्ड्स को पुनः क्रमित करना तारीख बदले बिना इसे निरस्त करता है।"
 
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "Onshape से कनेक्ट करते समय एक अनपेक्षित त्रुटि हुई। दोबारा कनेक्ट करने का प्रयास करें।"
@@ -3013,6 +3017,9 @@ msgstr "आइटम ID के बिना पार्ट्स बकेट �
 msgid "Capacity"
 msgstr "क्षमता"
 
+msgid "Capacity reservation"
+msgstr "क्षमता आरक्षण"
+
 msgid "Caption"
 msgstr "कैप्शन"
 
@@ -3828,6 +3835,7 @@ msgstr "सेटअप प्रॉम्प्ट को आपके क्�
 
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "आपके AI कोडिंग टूल के लिए सेटअप प्रॉम्प्ट की प्रति बनाता है"
+msgstr "आपकी AI कोडिंग टूल के लिए एक सेटअप प्रॉम्प्ट कॉपी करता है"
 
 msgid "Copy"
 msgstr "कॉपी करें"
@@ -4736,6 +4744,7 @@ msgstr "तारीखें"
 
 msgid "Dawn's breaking, {name}."
 msgstr "भोर हो रही है, {name}।"
+msgstr "सुबह टूट रही है, {name}।"
 
 msgid "Day"
 msgstr "दिन"
@@ -4844,6 +4853,7 @@ msgstr "ह्रासमान शेष"
 
 msgid "Deep in the small hours, {name}."
 msgstr "रात के गहरे पहर में, {name}।"
+msgstr "गहरी रात में, {name}।"
 
 msgid "Default"
 msgstr "डिफ़ॉल्ट"
@@ -5579,6 +5589,7 @@ msgstr "रद्द न करें"
 
 msgid "Don't show this again"
 msgstr "इसे फिर से न दिखाएँ"
+msgstr "दोबारा न दिखाएं"
 
 msgid "done"
 msgstr "हो गया"
@@ -6697,6 +6708,7 @@ msgstr "समाप्ति ट्रेस"
 
 msgid "Explorer"
 msgstr "खोजकर्ता"
+msgstr "एक्सप्लोरर"
 
 msgid "Export"
 msgstr "निर्यात करें"
@@ -6976,6 +6988,7 @@ msgstr "खाता स्थानांतरित करने में �
 
 msgid "Failed to regenerate schedule"
 msgstr "शेड्यूल को पुनः जेनरेट करने में विफल"
+msgstr "शेड्यूल पुनः उत्पन्न करने में विफल"
 
 msgid "Failed to regenerate thumbnail"
 msgstr "थंबनेल को पुनः उत्पन्न करने में विफल"
@@ -7624,6 +7637,7 @@ msgstr "कार्यान्वयन हब पर जाएं"
 
 msgid "Go to that week"
 msgstr "उस सप्ताह पर जाएँ"
+msgstr "उस सप्ताह पर जाएं"
 
 msgid "Go-Live"
 msgstr "गो-लाइव"
@@ -7651,6 +7665,13 @@ msgstr "शुभ संध्या, {name}।"
 
 msgid "Good morning, {name}."
 msgstr "शुभ प्रभात, {name}।"
+msgstr "दोपहर की शुभकामनाएं, {name}।"
+
+msgid "Good evening, {name}."
+msgstr "शाम की शुभकामनाएं, {name}।"
+
+msgid "Good morning, {name}."
+msgstr "सुबह की शुभकामनाएं, {name}।"
 
 msgid "Google Places API key not configured"
 msgstr "Google Places API कुंजी कॉन्फ़िगर नहीं की गई"
@@ -7777,6 +7798,7 @@ msgstr "हॉप {depth}"
 
 msgid "Hope things are treating you well, {name}."
 msgstr "आशा है कि सब कुछ आपके साथ अच्छा चल रहा है, {name}।"
+msgstr "उम्मीद है कि चीजें आपके साथ अच्छी तरह से व्यवहार कर रही हैं, {name}।"
 
 msgid "Host"
 msgstr "होस्ट"
@@ -7877,8 +7899,8 @@ msgstr "यह गेज कितनी बार पुनः-अंशां�
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "यह रखरखाव कितनी बार दोहराया जाता है — दैनिक, साप्ताहिक, मासिक, चक्रीय गणना पर; दैनिक सप्ताह-की-दिन चयनकर्ता को प्रकट करता है, अन्य सरल अंतराल गणित का उपयोग करते हैं।"
 
-msgid "How strict the Due Date is — Hard Deadline blocks scheduling past it, Soft Deadline lets planning push out with a warning, No Deadline ignores it entirely."
-msgstr "नियत तिथि कितनी कठोर है — कठोर समयसीमा इसके बाद शेड्यूलिंग को ब्लॉक करती है, नरम समयसीमा योजना को चेतावनी के साथ आगे बढ़ने देती है, कोई समयसीमा नहीं इसे पूरी तरह अनदेखा करती है।"
+msgid "How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement."
+msgstr "जब शेड्यूलर क्षमता देता है तो जॉब कैसे रैंक करता है — ASAP पहले दावे करता है, फिर कठोर समय सीमा, नरम समय सीमा, और कोई समय सीमा नहीं अंतिम। केवल एक रैंकिंग संकेत; कोई समय सीमा प्रकार प्लेसमेंट को रोकता या प्रतिबंधित नहीं करता है।"
 
 msgid "How the material is sourced (make, purchase, or pull from inventory) and the storage unit it's pulled from."
 msgstr "सामग्री को कैसे आपूर्ति किया जाता है (निर्माण, खरीद, या इन्वेंटरी से लें) और भंडारण इकाई जहां से इसे लिया जाता है।"
@@ -8842,6 +8864,7 @@ msgstr "अंतिम उपयोग"
 
 msgid "Late in the evening, {name}."
 msgstr "शाम के देर में, {name}।"
+msgstr "शाम को देर में, {name}।"
 
 msgid "Latest operation end"
 msgstr "नवीनतम ऑपरेशन अंत"
@@ -8917,6 +8940,7 @@ msgstr "चलिए कुछ बनाते हैं"
 
 msgid "Let's make it a good one, {name}."
 msgstr "इसे एक अच्छा दिन बनाते हैं, {name}।"
+msgstr "चलिए इसे एक अच्छा बनाते हैं, {name}।"
 
 msgid "Let's set up your new company"
 msgstr "आइए अपनी नई कंपनी सेट अप करें"
@@ -9643,6 +9667,7 @@ msgstr "मध्य-महीना / मध्य-त्रैमासिक 
 
 msgid "Midnight on the clock, {name}."
 msgstr "घड़ी पर आधी रात, {name}।"
+msgstr "मध्य रात्रि को, {name}।"
 
 msgid "Migrate data"
 msgstr "डेटा माइग्रेट करें"
@@ -9867,6 +9892,9 @@ msgstr "आवश्यकता की तारीख"
 
 msgid "Need the right columns?"
 msgstr "क्या आपको सही कॉलम चाहिए?"
+
+msgid "Need-by target"
+msgstr "आवश्यकता-द्वारा लक्ष्य"
 
 msgid "Needed is the job hours due that day divided by {personDayHours}h, rounded up — the shift you're filtering by, or the most common shift length at this location."
 msgstr "आवश्यक उस दिन के कारण काम के घंटे को {personDayHours}h से विभाजित किया जाता है, गोल किया जाता है — आप जिस शिफ्ट को फ़िल्टर कर रहे हैं, या इस स्थान पर सबसे सामान्य शिफ्ट की लंबाई।"
@@ -10245,6 +10273,7 @@ msgstr "अगला:"
 
 msgid "Nice and quiet at this hour."
 msgstr "इस समय बहुत शांत है।"
+msgstr "इस घंटे में अच्छा और शांत।"
 
 msgid "No"
 msgstr "नहीं"
@@ -10447,6 +10476,7 @@ msgstr "अभी तक यहाँ कोई आइटम इन्वें�
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "इस स्थान पर अभी कोई जॉब शेड्यूल नहीं किया गया है — कार्य-केंद्र लोड देखने के लिए एक जॉब जारी करें।"
+msgstr "इस स्थान पर अभी तक कोई जॉब शेड्यूल नहीं किया गया है — वर्क-सेंटर लोड देखने के लिए एक जॉब जारी करें।"
 
 msgid "No jobs were created"
 msgstr "कोई जॉब नहीं बनाया गया"
@@ -10615,6 +10645,7 @@ msgstr "कोई नियम असाइन नहीं किया गय�
 
 msgid "No scheduled work in this window"
 msgstr "इस विंडो में कोई शेड्यूल किया गया कार्य नहीं है"
+msgstr "इस विंडो में कोई शेड्यूल किया हुआ काम नहीं"
 
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "कोई पारियाँ कॉन्फ़िगर नहीं — सोमवार–शुक्रवार, 8 घंटे की दिन मानी जा रही है"
@@ -11749,6 +11780,7 @@ msgstr "योजना"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "आइटम और स्थान के लिए मांग का पूर्वानुमान करके आगे की योजना बनाएं, फिर इसे सीधे MRP और शेड्यूलिंग में डालें।"
+msgstr "आइटम और स्थान के अनुसार मांग का अनुमान लगाकर आगे की योजना बनाएं, फिर इसे सीधे MRP और शेड्यूलिंग में डालें।"
 
 msgid "Plan the work"
 msgstr "काम की योजना बनाएं"
@@ -12162,6 +12194,7 @@ msgstr "अनुमानित पूर्णता"
 
 msgid "Projected completion at"
 msgstr "पर पूर्ण होने का अनुमान"
+msgstr "अनुमानित समापन पर"
 
 msgid "Projected completion if this job jumped to the front of its location's schedule. Nothing is saved."
 msgstr "अनुमानित पूर्णता यदि यह नौकरी अपने स्थान के अनुसूचन के सामने कूद गई। कुछ भी सहेजा नहीं जाता है।"
@@ -12560,6 +12593,7 @@ msgstr "कतार में"
 
 msgid "Quiet on the floor tonight, {name}."
 msgstr "आज रात फर्श पर शांत है, {name}।"
+msgstr "आज रात फ्लोर पर शांत, {name}।"
 
 msgid "Quote"
 msgstr "उद्धरण"
@@ -12671,6 +12705,7 @@ msgstr "तैयार"
 
 msgid "Ready at"
 msgstr "पर तैयार"
+msgstr "तैयार है"
 
 msgid "Ready for Quote"
 msgstr "कोटेशन के लिए तैयार"
@@ -12873,6 +12908,10 @@ msgstr "पुनर्जनित करें"
 
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "इस स्थान के शेड्यूल को अभी पुनर्जनित करें। यह अंतिम शेड्यूलिंग परिवर्तन के लगभग 30 सेकंड बाद स्वचालित रूप से भी चलता है (संपादन बैच किए जाते हैं, इसलिए कई त्वरित परिवर्तन एक एकल पुनर्जनन को ट्रिगर करते हैं)।"
+msgstr "पुनः उत्पन्न करें"
+
+msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
+msgstr "इस स्थान के लिए अभी शेड्यूल फिर से जेनरेट करें। यह अंतिम शेड्यूलिंग परिवर्तन के लगभग 30 सेकंड बाद स्वचालित रूप से भी चलता है (संपादन बैच किए जाते हैं, इसलिए कई त्वरित परिवर्तन एकल पुनर्जनन को ट्रिगर करते हैं)।"
 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "3D मॉडल से थंबनेल पुनः उत्पन्न करें"
@@ -13151,6 +13190,7 @@ msgstr "जब सदस्य इस कंपनी में साइन इ
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "शेड्यूलर किसी स्थान पर काम रखने से पहले असाइन किए गए ऑपरेटर की आवश्यकता होती है। जब सक्षम हो, तो अप्रबंधित वर्क सेंटर को कोई काम नहीं मिलता और कोई ऑपरेशन जिसके पास कोई कर्मचारी कवरेज नहीं है, अनुसूचीबद्ध नहीं दिखता है। लाइट्स-आउट (24×7) वर्क सेंटर छूट प्राप्त हैं।"
+msgstr "शेड्यूलर किसी स्थान पर काम रखने से पहले एक असाइन किया गया ऑपरेटर आवश्यक करें। जब सक्षम हो, तो अनस्टाफ्ड वर्क सेंटर को कोई काम नहीं मिलते और कोई मानव कवरेज के बिना एक ऑपरेशन गैर-शेड्यूल करने योग्य दिखाई देता है। लाइट-आउट (24×7) वर्क सेंटर छूट प्राप्त हैं।"
 
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "किसी को भी इस कंपनी को खोलने से पहले एक प्रमाणकर्ता ऐप की आवश्यकता है। उनकी अन्य कंपनियां प्रभावित नहीं हैं। प्रत्येक व्यक्ति की स्थिति देखने के लिए <0>कर्मचारी खातों पृष्ठ</0> पर जाएं।"
@@ -13217,6 +13257,7 @@ msgstr "मरम्मत की आवश्यकता है"
 
 msgid "Requires staffing"
 msgstr "कर्मचारी आवश्यक है"
+msgstr "स्टाफिंग आवश्यक है"
 
 msgid "Reserve floor"
 msgstr "रिज़र्व फ़्लोर"
@@ -13848,6 +13889,13 @@ msgstr "शेड्यूल पुरानी होने का कार�
 
 msgid "Schedule regenerated"
 msgstr "शेड्यूल पुनर्जनित किया गया"
+msgstr "शेड्यूल पुरातन पर"
+
+msgid "Schedule outdated reason"
+msgstr "शेड्यूल पुरातन कारण"
+
+msgid "Schedule regenerated"
+msgstr "शेड्यूल पुनर्जनित"
 
 msgid "Scheduled"
 msgstr "अनुसूचित"
@@ -14022,6 +14070,7 @@ msgstr "सुरक्षा"
 
 msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
 msgstr "प्रत्येक वर्क सेंटर की लाइव क्षमता पूर्वानुमान देखें — जब प्रत्येक जॉब आपकी दुकान में चलने और समाप्त होने का अनुमान लगाया जाता है।"
+msgstr "हर वर्क सेंटर का लाइव क्षमता पूर्वानुमान देखें — जब प्रत्येक जॉब अपनी दुकान में चलने और समाप्त होने का अनुमान लगाया जाता है।"
 
 msgid "Segments that drive customer pricing and terms"
 msgstr "ऐसे सेगमेंट जो ग्राहक मूल्य निर्धारण और शर्तों को चलाते हैं"
@@ -14896,6 +14945,10 @@ msgstr "कर्मचारी वैकल्पिक है"
 
 msgid "Staffing required"
 msgstr "कर्मचारी आवश्यक है"
+msgstr "स्टाफिंग वैकल्पिक"
+
+msgid "Staffing required"
+msgstr "स्टाफिंग आवश्यक"
 
 msgid "Stand up hosting"
 msgstr "होस्टिंग सेट अप करें"
@@ -15032,6 +15085,7 @@ msgstr "चरण निरीक्षण योजना से विरा�
 
 msgid "Still dark out on the floor."
 msgstr "फर्श पर अभी भी अंधेरा है।"
+msgstr "अभी भी फर्श पर अंधकार है।"
 
 msgid "Stock movement corrected"
 msgstr "स्टॉक आंदोलन सही किया गया"
@@ -15168,6 +15222,7 @@ msgstr "द्वारा प्रस्तुत"
 
 msgid "Submodules"
 msgstr "सबमॉड्यूल"
+msgstr "उप-मॉड्यूल"
 
 msgid "substance"
 msgstr "पदार्थ"
@@ -15686,6 +15741,8 @@ msgstr "Onshape में प्राधिकरण अस्वीकार �
 
 msgid "The backup job reported this error."
 msgstr "बैकअप जॉब ने इस त्रुटि की रिपोर्ट की।"
+msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
+msgstr "वह पिछड़ी हुई गणना की गई तारीख जिस तक एक ऑपरेशन को अपने जॉब को समय पर रखने के लिए समाप्त करना चाहिए, ऑपरेशन की नियत तिथि में लिखा गया है। प्रगति को मापने के लिए एक स्थिर लक्ष्य — कभी भी प्लेसमेंट पर बाधा नहीं।"
 
 msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
 msgstr "सभी पोस्ट की गई जर्नल पंक्तियों की पुस्तक, खाते द्वारा योग किया गया - केवल तभी लिखा जाता है जब कंपनी के लिए लेखांकन सक्षम हो।"
@@ -15789,8 +15846,8 @@ msgstr "जिन ग्राहकों को आप बेचते और 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "डैश्ड थ्रेसहोल्ड जिसके नीचे आप इन्वेंटरी नहीं गिरना चाहते।"
 
-msgid "The date a job's quantity is needed, which together with Deadline Type sets the job's place in its location's schedule queue."
-msgstr "वह तारीख जब किसी नौकरी की मात्रा की आवश्यकता होती है, जो Deadline Type के साथ मिलकर स्थान की शेड्यूल कतार में नौकरी की स्थिति निर्धारित करती है।"
+msgid "The date a job's quantity is needed — the yardstick lateness is measured against, and (with Deadline Type) the order jobs claim capacity in. Not a placement anchor; a job with no due date still schedules."
+msgstr "वह तारीख जिस तक एक जॉब की मात्रा आवश्यक है — देरी को मापा जाता है, और (डेडलाइन प्रकार के साथ) जॉब क्षमता का दावा करने का क्रम। प्लेसमेंट एंकर नहीं; एक जॉब बिना नियत तिथि के भी शेड्यूल होता है।"
 
 msgid "The date depreciation begins for this asset; usually the in-service date."
 msgstr "वह तारीख जब इस संपत्ति के लिए मूल्यह्रास शुरू होता है; आमतौर पर सेवा शुरुआत की तारीख।"
@@ -16056,6 +16113,7 @@ msgstr "सबसे संभावित विफलता मोड जि�
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The most recent scheduled work at this location was {0}."
 msgstr "इस स्थान पर सबसे हाल का अनुसूचित काम {0} था।"
+msgstr "इस स्थान पर सबसे हाल ही में शेड्यूल किया गया काम {0} था।"
 
 msgid "The negotiated price per unit on this line; the inline trace icon shows which pricing rule or override produced it."
 msgstr "इस लाइन पर प्रति यूनिट मूल्य; इनलाइन ट्रेस आइकन दिखाता है कि कौन सा मूल्य नियम या ओवरराइड इसे उत्पादित किया।"
@@ -16072,12 +16130,14 @@ msgstr "कार्यविधि की नई संस्करण सं�
 #. placeholder {0}: formatDate( nextScheduledDate, { weekday: "long", month: "short", day: "numeric" }, locale )
 msgid "The next scheduled work at this location starts {0}."
 msgstr "इस स्थान पर अगली अनुसूचित काम {0} से शुरू होती है।"
+msgstr "इस स्थान पर अगला शेड्यूल किया गया काम {0} से शुरू होता है।"
 
 msgid "The night shift suits you, {name}."
 msgstr "रात की शिफ्ट आपको सूट करती है, {name}।"
 
 msgid "The night's still young, {name}."
 msgstr "रात अभी जवान है, {name}।"
+msgstr "रात अभी युवा है, {name}।"
 
 msgid "The number of days between placing a PO with the preferred supplier and the goods arriving on the dock; planning offsets demand backward by this much."
 msgstr "पसंदीदा आपूर्तिकर्ता के साथ एक PO देने और सामान डॉक पर पहुंचने के बीच दिनों की संख्या; योजना इस राशि से मांग को पीछे की ओर ऑफसेट करता है।"
@@ -16569,6 +16629,10 @@ msgstr "यह स्थान केवल कर्मचारी वर्�
 
 msgid "This location only schedules work where an operator is assigned on the manning board. With no one assigned here, work is not scheduled and shows as unschedulable."
 msgstr "यह स्थान केवल उस काम को शेड्यूल करता है जहां ऑपरेटर मैनिंग बोर्ड पर असाइन किया गया है। यहाँ किसी के असाइन न होने से, काम अनुसूचित नहीं है और अनुसूचीबद्ध नहीं दिखता है।"
+msgstr "यह स्थान केवल स्टाफ्ड वर्क सेंटर को शेड्यूल करता है, लेकिन यह एक लाइट-आउट (24×7) स्टेशन है — यह छूट प्राप्त है और निरीक्षण के बिना चलता रहता है।"
+
+msgid "This location only schedules work where an operator is assigned on the manning board. With no one assigned here, work is not scheduled and shows as unschedulable."
+msgstr "यह स्थान केवल उस काम को शेड्यूल करता है जहां मैनिंग बोर्ड पर एक ऑपरेटर असाइन किया गया है। यहां कोई असाइन नहीं होने पर, काम शेड्यूल नहीं किया जाता और गैर-शेड्यूल करने योग्य दिखाई देता है।"
 
 msgid "This lot is expired and can't be picked."
 msgstr "यह लॉट समाप्त हो गया है और इसे चुना नहीं जा सकता।"
@@ -16584,6 +16648,7 @@ msgstr "इस महीने"
 
 msgid "This operation can't be scheduled yet — the bar marks where it would run once the conflict is resolved. It isn't holding capacity."
 msgstr "यह ऑपरेशन अभी अनुसूचित नहीं किया जा सकता — बार यह चिह्नित करता है कि यह कहां चलेगा जब विरोध हल हो जाता है। यह क्षमता नहीं रखता है।"
+msgstr "इस ऑपरेशन को अभी तक शेड्यूल नहीं किया जा सकता — बार उस स्थान को चिन्हित करता है जहां यह चलेगा एक बार विवाद समाधान हो जाएगा। यह क्षमता धारण नहीं कर रहा है।"
 
 msgid "This page of your Implementation Hub is being built. Start from the command center while we finish it."
 msgstr "आपके कार्यान्वयन हब के इस पृष्ठ को बनाया जा रहा है। कमांड सेंटर से शुरू करें जबकि हम इसे पूरा करते हैं।"
@@ -16647,6 +16712,10 @@ msgstr "यह स्टेशन कौशल-आधारित कार्�
 
 msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
 msgstr "यह स्टेशन बिना कौशल आवश्यकता के कार्य चलाता है; मैनिंग बोर्ड पर असाइन किए गए ऑपरेटर उपलब्ध श्रम को आकार देते हैं।"
+msgstr "यह स्टेशन कौशल-गेटेड काम चलाता है — यह केवल तब चलता है जब एक योग्य ऑपरेटर शिफ्ट पर हो; मैनिंग बोर्ड पर असाइन किए गए ऑपरेटर आगे उपलब्ध श्रम को आकार देते हैं।"
+
+msgid "This station runs work with no ability requirement; operators assigned on the manning board shape available labor."
+msgstr "यह स्टेशन कोई कौशल आवश्यकता के बिना काम चलाता है; मैनिंग बोर्ड पर असाइन किए गए ऑपरेटर उपलब्ध श्रम को आकार देते हैं।"
 
 #. placeholder {0}: usageCount === 1 ? "" : "s"
 msgid "This storage type is currently used by {usageCount} storage unit{0}."
@@ -17315,6 +17384,7 @@ msgstr "असहेजे परिवर्तन"
 
 msgid "Unschedulable"
 msgstr "शेड्यूल योग्य नहीं"
+msgstr "गैर-शेड्यूल करने योग्य"
 
 msgid "Unscheduled"
 msgstr "अनुसूचित नहीं"
@@ -18056,6 +18126,7 @@ msgstr "पिछले साल की भारित औसत लागत 
 
 msgid "Welcome back, {name}."
 msgstr "फिर से स्वागत है, {name}।"
+msgstr "आपका स्वागत है, {name}।"
 
 msgid "Welcome to Carbon"
 msgstr "कार्बन में आपका स्वागत है"

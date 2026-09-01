@@ -1286,11 +1286,12 @@ export const terms = {
   },
   "job-deadline-type": {
     term: msg`Deadline Type`,
-    definition: msg`How strict the Due Date is — Hard Deadline blocks scheduling past it, Soft Deadline lets planning push out with a warning, No Deadline ignores it entirely.`
+    definition: msg`How the job ranks when the scheduler hands out capacity — ASAP claims first, then Hard Deadline, Soft Deadline, and No Deadline last. A ranking signal only; no deadline type blocks or gates placement.`,
+    href: "/docs/reference/scheduling#placement-against-real-capacity"
   },
   "job-due-date": {
     term: msg`Due Date (job)`,
-    definition: msg`The date a job's quantity is needed, which together with Deadline Type sets the job's place in its location's schedule queue.`
+    definition: msg`The date a job's quantity is needed — the yardstick lateness is measured against, and (with Deadline Type) the order jobs claim capacity in. Not a placement anchor; a job with no due date still schedules.`
   },
   "job-priority": {
     term: msg`Job Priority`,
@@ -1921,8 +1922,18 @@ export const terms = {
   },
   "dispatch-priority": {
     term: msg`Dispatch priority`,
-    definition: msg`An operation's position in its work center's queue — the order the floor picks work up — set by reordering cards on the Work Centers board without changing any dates.`,
-    href: "/docs/reference/scheduling"
+    definition: msg`An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates.`,
+    href: "/docs/reference/scheduling#placement-against-real-capacity"
+  },
+  "capacity-reservation": {
+    term: msg`Capacity reservation`,
+    definition: msg`A stored booking of a work center or operator for one operation's placed time span — the materialized output of a scheduling run, and what the Forecast draws.`,
+    href: "/docs/reference/scheduling#the-forecast-explains-the-schedule"
+  },
+  "need-by-date": {
+    term: msg`Need-by target`,
+    definition: msg`The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement.`,
+    href: "/docs/reference/scheduling#two-dates-on-every-operation"
   },
 
   // ── Shop floor: MES, kanban, picking, lineside ──────────────────────────
