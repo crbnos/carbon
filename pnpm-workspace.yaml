@@ -70,9 +70,9 @@ catalog:
   '@react-aria/i18n': 3.12.16
   '@react-email/components': 0.3.3
   '@react-pdf/renderer': 3.4.5
-  '@react-router/dev': 7.15.1
-  '@react-router/remix-routes-option-adapter': 7.15.1
-  '@react-router/serve': 7.15.1
+  '@react-router/dev': 7.18.0
+  '@react-router/remix-routes-option-adapter': 7.18.0
+  '@react-router/serve': 7.18.0
   '@shikijs/langs': 4.0.2
   '@shikijs/themes': 4.0.2
   '@shikijs/types': 4.0.2
@@ -128,7 +128,7 @@ catalog:
   react-icons: 5.6.0
   react-pdf: 10.4.1
   react-resizable-panels: 2.1.9
-  react-router: 7.15.1
+  react-router: 7.18.0
   remix-flat-routes: 0.8.5
   rimraf: 5.0.10
   sst: 4.6.9

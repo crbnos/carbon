@@ -112,9 +112,18 @@
       "sharp",
       "supabase"
     ],
+    "overrides": {
+      "tar": "7.5.19",
+      "brace-expansion@1": "1.1.17",
+      "brace-expansion@2": "2.1.3",
+      "socket.io-parser": "4.2.7",
+      "tmp": "0.2.7",
+      "next": "15.4.8",
+      "turbo-stream": "3.0.0"
+    },
     "patchedDependencies": {
       "@ai-sdk-tools/store@1.2.0": "patches/@ai-sdk-tools__store@1.2.0.patch",
-      "@react-router/dev@7.15.1": "patches/@react-router__dev@7.15.1.patch",
+      "@react-router/dev@7.18.0": "patches/@react-router__dev@7.18.0.patch",
       "@vercel/react-router@1.2.6": "patches/@vercel__react-router@1.2.6.patch",
       "supabase@2.89.0": "patches/supabase@2.89.0.patch"
     }
